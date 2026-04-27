@@ -1,24 +1,46 @@
 /**
  * ShareExtension — root component for the iOS Share Extension target.
  *
- * Behavior:
- *   - Receives `url` and/or `text` from iOS as initial props (see
- *     expo-share-extension README). For Safari URL shares it's `url`;
- *     for Instagram/TikTok it's usually `text` containing a caption +
- *     URL, so we extract the first https URL from it.
- *   - Immediately opens the host app at `nearr://share?url=<encoded>`
- *     (via `openHostApp("share?url=...")`) and dismisses the sheet.
- *   - The host app's existing app/share.tsx flow (added in V2 beta)
- *     auto-runs the save flow when it sees the `url` param.
+ * Current behavior (V2 beta, 2026-04-27):
+ *   - Receives `url` and/or `text` from iOS as initial props.
+ *   - Extracts the first https URL from the payload.
+ *   - Calls `processSharedUrl(url)` (currently a stub) to decide what
+ *     to do next.
+ *   - The stub always returns { status: "open_app" }, so the extension
+ *     hands off to the host app at `nearr://share?url=<encoded>`,
+ *     preserving the existing working flow. The host app's
+ *     [/share](app/share.tsx) screen auto-runs the save flow.
  *
- * UX note: we render a tiny "Saving to Nearr…" placeholder so the user
- * sees something for the ~half second before iOS animates the sheet
- * away. We never ask the user to tap anything inside the extension.
+ * Desired future behavior (see docs/IOS_SHARE_EXTENSION.md):
+ *   `processSharedUrl` will POST to a Supabase Edge Function
+ *   (`processShareLink`) which performs the heavy work server-side
+ *   (OG fetch, AI extraction, Places lookup, save) and returns one of:
+ *
+ *     {
+ *       status: "saved" | "ambiguous" | "failed_requires_app" | "open_app",
+ *       savedPlaceId?: string,
+ *       candidates?: PlaceCandidate[],
+ *       message?: string,
+ *     }
+ *
+ *   - "saved": render "Saved to Nearr" and `close()` after a short delay.
+ *   - "ambiguous" / "failed_requires_app": hand off to the host app at
+ *     `nearr://share?url=...` for candidate selection / error recovery.
+ *   - "open_app": legacy fallback (current behavior); just open the
+ *     host app and let it run the existing flow.
+ *
+ * Constraints (do NOT change):
+ *   - No Gemini / Google Places API keys live in this extension.
+ *   - No heavy AI / transcription runs here.
+ *   - Until the backend endpoint exists, we keep the redirect flow
+ *     as the fallback.
  */
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { close, openHostApp, type InitialProps } from 'expo-share-extension';
+
+import { sharedAuth } from './lib/sharedAuth';
 
 const URL_REGEX = /https?:\/\/[^\s<>"']+/i;
 const TRAILING_PUNCT = /[.,)\]!?;:]+$/;
@@ -43,14 +65,128 @@ function pickSharedUrl(props: InitialProps): string | null {
   return firstUrlIn(props.text);
 }
 
+/**
+ * Shape of a place candidate the backend may return when it can't
+ * confidently pick one. Intentionally minimal here — we never render
+ * candidates inside the extension; we hand off to the host app.
+ */
+export type PlaceCandidate = {
+  id: string;
+  name: string;
+  address?: string;
+};
+
+/**
+ * Result returned by `processSharedUrl`. This is the contract the
+ * future backend (`processShareLink` Edge Function) will fulfill.
+ *
+ * Expected future backend response shape:
+ *   {
+ *     status: "saved" | "ambiguous" | "failed_requires_app" | "open_app",
+ *     savedPlaceId?: string,
+ *     candidates?: PlaceCandidate[],
+ *     message?: string,
+ *   }
+ */
+export type ProcessSharedUrlResult =
+  | { status: 'saved'; savedPlaceId?: string; message?: string }
+  | { status: 'ambiguous'; candidates?: PlaceCandidate[]; message?: string }
+  | { status: 'failed_requires_app'; message?: string }
+  | { status: 'open_app'; reason?: string };
+
+/**
+ * Decide what to do with a shared URL.
+ *
+ * Real implementation: POST to the Supabase Edge Function
+ * `process-share-link`. The endpoint URL is read from
+ * `EXPO_PUBLIC_PROCESS_SHARE_LINK_URL` (a public, non-secret URL — the
+ * extension can safely embed it).
+ *
+ * Auth: we read the user's Supabase access token from the App Group
+ * shared UserDefaults via the local `nearr-shared-auth` Expo Module.
+ * The host app writes the token there on every auth state change (see
+ * lib/supabase.ts). If the token is missing (user not signed in, or
+ * native module not yet linked) we fall back to `open_app` and the
+ * existing deep-link flow runs.
+ *
+ * Constraints (do NOT change):
+ *   - No API keys (Gemini, Google Places, service role) may live here.
+ *   - No heavy work (transcription, AI) runs in-extension.
+ *   - Any failure falls back to `open_app` so the user is never stuck.
+ */
+async function processSharedUrl(
+  url: string,
+): Promise<ProcessSharedUrlResult> {
+  const endpoint = process.env.EXPO_PUBLIC_PROCESS_SHARE_LINK_URL;
+  if (!endpoint) {
+    console.log('[shareExtension] no PROCESS_SHARE_LINK_URL configured, falling back to open_app');
+    return { status: 'open_app', reason: 'backend_not_configured' };
+  }
+
+  // Read JWT written by the host app into the App Group container.
+  const accessToken = sharedAuth.getToken();
+  console.debug('[share-extension] token present:', !!accessToken);
+
+  if (!accessToken) {
+    // No session in the host app, or the bridge isn't linked yet. Either
+    // way the backend can't identify the user — let the host app handle it.
+    return { status: 'open_app', reason: 'missing_auth' };
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 6000);
+  try {
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({ url, accessToken }),
+      signal: controller.signal,
+    });
+    if (!res.ok) {
+      console.warn('[shareExtension] backend HTTP', res.status);
+      return { status: 'open_app', reason: `http_${res.status}` };
+    }
+    const json = (await res.json()) as ProcessSharedUrlResult;
+    if (!json || typeof (json as any).status !== 'string') {
+      return { status: 'open_app', reason: 'invalid_response' };
+    }
+    return json;
+  } catch (err) {
+    console.warn('[shareExtension] processSharedUrl failed', err);
+    return { status: 'open_app', reason: 'network_error' };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function handOffToHostApp(url: string) {
+  const encoded = encodeURIComponent(url);
+  const path = `share?url=${encoded}`;
+  console.log('[shareExtension] opening host app at', path);
+  try {
+    openHostApp(path);
+  } catch (err) {
+    console.warn('[shareExtension] openHostApp failed', err);
+  }
+}
+
+type UiState =
+  | { kind: 'working' }
+  | { kind: 'saved'; message?: string }
+  | { kind: 'error'; message: string };
+
 export default function ShareExtension(props: InitialProps) {
   // Guard against React 18 strict-mode double-invocation: only fire the
   // host-app handoff once per extension instantiation.
-  const handedOffRef = useRef(false);
+  const handledRef = useRef(false);
+  const [ui, setUi] = useState<UiState>({ kind: 'working' });
 
   useEffect(() => {
-    if (handedOffRef.current) return;
-    handedOffRef.current = true;
+    if (handledRef.current) return;
+    handledRef.current = true;
 
     const url = pickSharedUrl(props);
     if (!url) {
@@ -61,20 +197,66 @@ export default function ShareExtension(props: InitialProps) {
       return;
     }
 
-    const encoded = encodeURIComponent(url);
-    const path = `share?url=${encoded}`;
-    console.log('[shareExtension] opening host app at', path);
-    try {
-      openHostApp(path);
-    } catch (err) {
-      console.warn('[shareExtension] openHostApp failed', err);
-    }
-    // Give iOS a beat to perform the openURL handoff before we tear down.
-    const t = setTimeout(() => {
-      close();
-    }, 250);
-    return () => clearTimeout(t);
+    let cancelled = false;
+    let closeTimer: ReturnType<typeof setTimeout> | null = null;
+
+    (async () => {
+      let result: ProcessSharedUrlResult;
+      try {
+        result = await processSharedUrl(url);
+      } catch (err) {
+        console.warn('[shareExtension] processSharedUrl threw', err);
+        result = { status: 'open_app', reason: 'exception' };
+      }
+      if (cancelled) return;
+
+      switch (result.status) {
+        case 'saved': {
+          // Backend handled it confidently. Confirm in-sheet and close.
+          setUi({ kind: 'saved', message: result.message });
+          closeTimer = setTimeout(() => close(), 900);
+          return;
+        }
+        case 'ambiguous':
+        case 'failed_requires_app': {
+          // Need the full host-app UI for candidate selection or error
+          // recovery (manual search, retry).
+          handOffToHostApp(url);
+          closeTimer = setTimeout(() => close(), 250);
+          return;
+        }
+        case 'open_app':
+        default: {
+          // Legacy/fallback path: same behavior as before this change.
+          handOffToHostApp(url);
+          closeTimer = setTimeout(() => close(), 250);
+          return;
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      if (closeTimer) clearTimeout(closeTimer);
+    };
   }, [props]);
+
+  if (ui.kind === 'saved') {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.checkmark}>✓</Text>
+        <Text style={styles.label}>{ui.message ?? 'Saved to Nearr'}</Text>
+      </View>
+    );
+  }
+
+  if (ui.kind === 'error') {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.label}>{ui.message}</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -95,5 +277,9 @@ const styles = StyleSheet.create({
     marginTop: 12,
     fontSize: 16,
     color: '#111',
+  },
+  checkmark: {
+    fontSize: 40,
+    color: '#1a8a3a',
   },
 });

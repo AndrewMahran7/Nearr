@@ -1,98 +1,154 @@
-# Nearr Database Schema (V1)
+# Nearr — Database Schema
 
-Source of truth: [supabase/migrations/20260426000001_init_schema.sql](../supabase/migrations/20260426000001_init_schema.sql).
-The legacy single-file `supabase/schema.sql` is kept only for reference and is **superseded** by the migration.
+> Last updated: 2026-04-27
+> Source of truth: Codebase (not assumptions)
 
-## Apply the migration
+> Source: [supabase/migrations/20260426000001_init_schema.sql](../supabase/migrations/20260426000001_init_schema.sql).
+> The legacy [supabase/schema.sql](../supabase/schema.sql) file is a
+> pre-normalized prototype — DO NOT use it.
 
-```bash
-# With the Supabase CLI (preferred — keeps history)
-supabase db push
+## Diagram
 
-# Or, in the Supabase dashboard:
-# SQL Editor → New query → paste contents of the migration file → Run
+```
+auth.users (Supabase managed)
+    │ 1
+    │
+    ▼
+profiles (PK = auth.users.id)
+    │ 1
+    │
+    ▼ N
+saved_places ──► places (M:1 via place_id)
+    │ 1
+    │
+    ▼ N
+notification_events
 ```
 
 ## Tables
 
 ### `profiles`
-One row per `auth.users` user. Stores user-level defaults and notification preferences. A trigger on `auth.users` (`on_auth_user_created`) auto-inserts a row on signup, so the client can always read `profiles` after the first session.
 
-| column | purpose |
-| --- | --- |
-| `id` | PK, FK → `auth.users.id` (cascade delete) |
-| `email` | mirrored from auth, denormalized for convenience |
-| `default_radius_value` | numeric, default `1` |
-| `default_radius_unit` | `'miles'` or `'minutes'`, default `'miles'` |
-| `notifications_enabled` | master toggle |
-| `nearby_notifications_enabled` | nearby-alerts toggle (separate from any future kinds) |
-| `quiet_hours_enabled` | gate for quiet-hours window |
-| `quiet_hours_start` / `quiet_hours_end` | `time` columns |
-| `created_at` / `updated_at` | timestamps; `updated_at` maintained by trigger |
+| Column | Type | Notes |
+| --- | --- | --- |
+| `id` | uuid PK | references `auth.users(id)` ON DELETE CASCADE |
+| `email` | text | mirrored at signup, kept loosely in sync |
+| `default_radius_unit` | text | `'miles' | 'minutes'`, default `'miles'` |
+| `default_radius_value` | numeric | default `1` |
+| `notifications_enabled` | bool | default `true` |
+| `nearby_notifications_enabled` | bool | default `true` |
+| `quiet_hours_start` | text | `'HH:MM'` 24h, default `'22:00'` |
+| `quiet_hours_end` | text | `'HH:MM'` 24h, default `'07:00'` |
+| `created_at` / `updated_at` | timestamptz | `now()` defaults; `updated_at` maintained by trigger |
+
+Auto-created by trigger `handle_new_user` on `auth.users` insert.
 
 ### `places`
-Canonical place records — **shared** across users. Deduped on `google_place_id` (unique). Holds Google Places metadata only; nothing user-specific lives here.
 
-| column | purpose |
-| --- | --- |
-| `id` | PK |
-| `google_place_id` | unique, used as the dedupe key |
-| `name`, `formatted_address`, `latitude`, `longitude` | from Google |
-| `category`, `google_maps_url` | optional metadata |
-| `created_at` | timestamp |
+| Column | Type | Notes |
+| --- | --- | --- |
+| `id` | uuid PK | `gen_random_uuid()` |
+| `google_place_id` | text UNIQUE NOT NULL | dedupes everything |
+| `name` | text NOT NULL |
+| `address` | text |
+| `lat` | double precision NOT NULL |
+| `lng` | double precision NOT NULL |
+| `categories` | text[] |
+| `created_at` | timestamptz |
 
-Indexed on `(latitude, longitude)` for future geo queries.
+Cache of resolved Google places. **One row per `google_place_id`.**
+RLS: anyone authenticated can SELECT/INSERT; **UPDATE / DELETE are
+denied.** This is enforced in code by always doing SELECT-then-INSERT
+in [savedPlacesService.saveSavedPlace](../services/savedPlacesService.ts)
+(and in the Edge Function), with 23505 race recovery.
+
+Index: `idx_places_google_place_id`.
 
 ### `saved_places`
-The per-user "I want to go here" record. Joins a user to a `places` row with overrides.
 
-| column | purpose |
-| --- | --- |
-| `id` | PK |
-| `user_id` | FK → `auth.users.id` (cascade) |
-| `place_id` | FK → `places.id` (cascade) |
-| `radius_value`, `radius_unit` | per-place override (nullable → use profile default) |
-| `notes` | user notes |
-| `source_type` | `'manual' \| 'tiktok' \| 'instagram' \| 'link'` |
-| `source_url` | original share URL |
-| `notifications_enabled` | per-place toggle |
-| `last_notified_at` | populated by the proximity loop for cooldown |
-| `created_at` / `updated_at` | timestamps |
+| Column | Type | Notes |
+| --- | --- | --- |
+| `id` | uuid PK |
+| `user_id` | uuid → `auth.users(id)` ON DELETE CASCADE |
+| `place_id` | uuid → `places(id)` ON DELETE CASCADE |
+| `radius_unit` | text NULL | `'miles' | 'minutes'`; NULL = inherit profile |
+| `radius_value` | numeric NULL | NULL = inherit profile |
+| `notes` | text |
+| `notifications_enabled` | bool default `true` |
+| `last_notified_at` | timestamptz |
+| `source_type` | text default `'manual'` | `'manual' | 'instagram' | 'tiktok' | 'youtube' | 'twitter' | 'facebook' | 'pinterest' | 'reddit' | 'web'` |
+| `source_url` | text |
+| `created_at` / `updated_at` | timestamptz |
 
-`unique (user_id, place_id)` so a user can only save a given place once.
+Constraints:
+
+- `unique_user_place UNIQUE (user_id, place_id)` — one save per user
+  per place. The save path catches 23505 and converts it into an UPDATE
+  of `source_type` / `source_url` / `notes` / radius.
+- Indexes: `idx_saved_places_user_id`, `idx_saved_places_place_id`,
+  `idx_saved_places_user_created`.
+- Trigger: `updated_at = now()` on UPDATE.
 
 ### `notification_events`
-Append-only audit log. The proximity loop inserts a row each time it fires (or silences) an alert. Useful for debugging cooldowns and as a source of truth instead of in-memory state.
 
-| column | purpose |
-| --- | --- |
-| `id` | PK |
-| `user_id` | FK → `auth.users.id` |
-| `saved_place_id` | FK → `saved_places.id` |
-| `event_type` | `'nearby' \| 'entered' \| 'exited' \| 'silenced'` |
-| `user_latitude`, `user_longitude`, `distance_meters` | telemetry |
-| `created_at` | timestamp |
+| Column | Type | Notes |
+| --- | --- | --- |
+| `id` | uuid PK |
+| `user_id` | uuid → `auth.users(id)` ON DELETE CASCADE |
+| `saved_place_id` | uuid → `saved_places(id)` ON DELETE CASCADE |
+| `event_type` | text CHECK (`'nearby' | 'entered' | 'exited' | 'silenced'`) |
+| `distance_meters` | numeric |
+| `created_at` | timestamptz |
 
-Indexed on `(user_id, created_at desc)` and `(saved_place_id, created_at desc)`.
+Indexes: `idx_notification_events_user`, `idx_notification_events_saved_place`,
+`idx_notification_events_created`.
 
-## Row-Level Security
+**Reality check.** Only `'nearby'` is emitted today
+(see [lib/notifications.ts](../lib/notifications.ts) → `fireNotification`).
+`'entered'`, `'exited'`, `'silenced'` are V2 placeholders kept in the
+CHECK constraint so we can ship richer events without a migration. In
+particular, quiet-hours suppressions silently skip both the local
+notification AND the event-row insert today.
 
-RLS is **enabled on every table**. Policies:
+## Row Level Security
 
-| table | policies |
-| --- | --- |
-| `profiles` | `select / insert / update` only where `auth.uid() = id`. |
-| `places` | `select / insert` open to **authenticated** users. No update or delete from clients. (Multiple users naturally share rows because of the `google_place_id` unique constraint.) |
-| `saved_places` | `select / insert / update / delete` only where `auth.uid() = user_id`. |
-| `notification_events` | `select / insert` only where `auth.uid() = user_id`. No update or delete (audit log is immutable from clients). |
+Enabled on every table. Policies (per migration):
 
-There is no service-role bypass needed for the V1 client; everything works with the anon key + a logged-in session.
+- `profiles`
+  - SELECT: `auth.uid() = id`
+  - UPDATE: `auth.uid() = id`
+  - INSERT: by trigger only (no client INSERT path)
+- `places`
+  - SELECT: any authenticated
+  - INSERT: any authenticated (server and clients alike)
+  - **No UPDATE, no DELETE policy.** Code never tries.
+- `saved_places`
+  - All four verbs gated on `auth.uid() = user_id`.
+- `notification_events`
+  - SELECT / INSERT gated on `auth.uid() = user_id`. No UPDATE / DELETE
+    policy needed — events are append-only.
 
-## Triggers
+The Edge Function uses the **service-role** key, so it bypasses RLS;
+it explicitly verifies `auth.getUser(accessToken)` before doing any
+write so the effective user identity is still the caller's.
 
-- `set_updated_at()` — generic `before update` trigger; attached to `profiles` and `saved_places`.
-- `handle_new_user()` — `after insert on auth.users`; auto-creates the matching `profiles` row.
+## Triggers / Functions
 
-## Migration relationship to `lib/` types
+- `handle_updated_at()` — generic `updated_at = now()` BEFORE UPDATE.
+  Attached to `profiles` and `saved_places`.
+- `handle_new_user()` — AFTER INSERT on `auth.users`, inserts a
+  matching `profiles` row with defaults.
 
-The TypeScript types in `types/index.ts` will be updated in the next task to match this normalized schema (currently they reflect the older flat `places` table). The migration file is the source of truth — types follow it.
+## Migration / setup
+
+1. Initialize project: `supabase init` (already committed).
+2. Link: `supabase link --project-ref <ref>`.
+3. Push: `supabase db push` (applies migrations in
+   [supabase/migrations](../supabase/migrations)).
+4. Verify in dashboard: tables exist, RLS is on for all four, the
+   `handle_new_user` trigger fires (sign up a test user → check
+   `profiles`).
+5. Edge Function: `supabase functions deploy process-share-link` plus
+   `supabase secrets set GEMINI_API_KEY=… GOOGLE_PLACES_KEY=…`.
+6. Auth: confirm Site URL + redirect URLs include `nearr://auth-callback`
+   AND `exp://…/--/auth-callback` for Expo Go testing.

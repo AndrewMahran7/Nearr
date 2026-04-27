@@ -4,13 +4,17 @@
  * Responsible for the two-step write that turns a Google Places search
  * result into a row the user owns:
  *
- *   1. Upsert the canonical place into `places` (dedup by `google_place_id`).
- *   2. Insert a `saved_places` row tying that place to the current user with
- *      their chosen radius / source / notes.
- *
- * Duplicate saves (`unique(user_id, place_id)`, Postgres error 23505) are
- * caught and surfaced as a non-throwing `{ status: 'duplicate' }` result so
- * the UI can show a friendly message instead of a stack trace.
+ *   1. Look up the canonical row in `places` by `google_place_id`. If it
+ *      already exists, REUSE its id. Only INSERT if missing. We never
+ *      UPDATE the shared `places` row — RLS only permits SELECT/INSERT,
+ *      and an UPDATE path (via upsert/onConflict) would be rejected with
+ *      "new row violates row-level security policy" for any place that
+ *      another user already saved.
+ *   2. Insert a `saved_places` row tying that place to the current user
+ *      with their chosen radius / source / notes. If the user already has
+ *      this place saved (`unique(user_id, place_id)`, Postgres 23505), we
+ *      gracefully update the existing row's source / notes / radius
+ *      instead of crashing.
  */
 
 import { supabase } from '@/lib/supabase';
@@ -66,30 +70,86 @@ export async function saveSavedPlace(
   const userId = userRes.user?.id;
   if (!userId) throw new Error('Not signed in.');
 
-  // --- 1. upsert canonical place -----------------------------------------
-  const placePayload = {
-    google_place_id: candidate.googlePlaceId,
-    name: candidate.name,
-    formatted_address: candidate.formattedAddress,
-    latitude: candidate.latitude,
-    longitude: candidate.longitude,
-    category: candidate.category,
-    google_maps_url: candidate.googleMapsUrl,
-  };
+  // --- 1. resolve canonical place (SELECT first, INSERT only if missing) -
+  // We deliberately do NOT use `.upsert(..., { onConflict: 'google_place_id' })`
+  // here. Upsert compiles to INSERT ... ON CONFLICT DO UPDATE, and the
+  // `places` table's RLS policy only grants SELECT + INSERT (no UPDATE),
+  // so the conflict path would fail with:
+  //   "new row violates row-level security policy (USING expression) for
+  //    table \"places\""
+  // ...whenever the place was previously inserted (by this user or any
+  // other user). Reusing the existing row by id is correct anyway —
+  // `places` is intentionally a shared, dedup-by-google_place_id table.
+  let placeRow: PlaceRow | null = null;
 
-  const { data: place, error: placeErr } = await supabase
-    .from('places')
-    .upsert(placePayload, { onConflict: 'google_place_id' })
-    .select()
-    .single();
+  if (candidate.googlePlaceId) {
+    const { data: existing, error: lookupErr } = await supabase
+      .from('places')
+      .select('*')
+      .eq('google_place_id', candidate.googlePlaceId)
+      .maybeSingle();
 
-  if (placeErr || !place) {
-    console.warn('[savedPlacesService] place upsert failed', placeErr?.message);
-    throw new Error(placeErr?.message ?? 'Could not save place.');
+    if (lookupErr) {
+      console.warn('[savedPlacesService] place lookup failed', lookupErr.message);
+      throw new Error(lookupErr.message);
+    }
+
+    if (existing) {
+      console.debug('[savedPlacesService] place exists, reusing', {
+        googlePlaceId: candidate.googlePlaceId,
+        placeId: (existing as PlaceRow).id,
+      });
+      placeRow = existing as PlaceRow;
+    }
   }
-  const placeRow = place as PlaceRow;
 
-  // --- 2. insert saved_places row ----------------------------------------
+  if (!placeRow) {
+    const placePayload = {
+      google_place_id: candidate.googlePlaceId,
+      name: candidate.name,
+      formatted_address: candidate.formattedAddress,
+      latitude: candidate.latitude,
+      longitude: candidate.longitude,
+      category: candidate.category,
+      google_maps_url: candidate.googleMapsUrl,
+    };
+
+    console.debug('[savedPlacesService] inserting new place', {
+      googlePlaceId: candidate.googlePlaceId,
+    });
+
+    const { data: inserted, error: insertErr } = await supabase
+      .from('places')
+      .insert(placePayload)
+      .select()
+      .single();
+
+    if (insertErr || !inserted) {
+      // Race: another client inserted the same google_place_id between our
+      // SELECT and INSERT. Recover by re-selecting.
+      if ((insertErr as any)?.code === '23505' && candidate.googlePlaceId) {
+        const { data: raced } = await supabase
+          .from('places')
+          .select('*')
+          .eq('google_place_id', candidate.googlePlaceId)
+          .maybeSingle();
+        if (raced) {
+          placeRow = raced as PlaceRow;
+        }
+      }
+      if (!placeRow) {
+        console.warn(
+          '[savedPlacesService] place insert failed',
+          insertErr?.message,
+        );
+        throw new Error(insertErr?.message ?? 'Could not save place.');
+      }
+    } else {
+      placeRow = inserted as PlaceRow;
+    }
+  }
+
+  // --- 2. insert (or update) saved_places row ----------------------------
   const savedPayload = {
     user_id: userId,
     place_id: placeRow.id,
@@ -100,6 +160,11 @@ export async function saveSavedPlace(
     notes: input.notes ?? null,
   };
 
+  console.debug('[savedPlacesService] saving user place', {
+    userId,
+    placeId: placeRow.id,
+  });
+
   const { data: saved, error: savedErr } = await supabase
     .from('saved_places')
     .insert(savedPayload)
@@ -107,13 +172,41 @@ export async function saveSavedPlace(
     .single();
 
   if (savedErr) {
-    // Postgres unique_violation on (user_id, place_id)
-    // PostgREST exposes it as code "23505".
+    // Postgres unique_violation on (user_id, place_id) — user already has
+    // this place saved. Update the existing row's source / radius / notes
+    // so a re-save from a new link refreshes those fields, and return it
+    // as a duplicate so the UI can show "Already saved".
     if ((savedErr as any).code === '23505') {
-      console.log('[savedPlacesService] duplicate save', {
+      console.debug('[savedPlacesService] saved_places duplicate, updating existing', {
         userId,
         placeId: placeRow.id,
       });
+
+      const patch: Record<string, unknown> = {};
+      // Only overwrite source fields when the caller actually supplied
+      // them — preserves an existing TikTok source if the user later
+      // re-saves the same place via manual search.
+      if (input.sourceType !== undefined) patch.source_type = input.sourceType;
+      if (input.sourceUrl !== undefined) patch.source_url = input.sourceUrl;
+      if (input.notes !== undefined) patch.notes = input.notes;
+      if (radiusValue !== null || radiusUnit !== null) {
+        patch.radius_value = radiusValue;
+        patch.radius_unit = radiusUnit;
+      }
+
+      if (Object.keys(patch).length > 0) {
+        const { error: updErr } = await supabase
+          .from('saved_places')
+          .update(patch)
+          .eq('user_id', userId)
+          .eq('place_id', placeRow.id);
+        if (updErr) {
+          console.warn(
+            '[savedPlacesService] duplicate update failed (non-fatal)',
+            updErr.message,
+          );
+        }
+      }
       return { status: 'duplicate', place: placeRow };
     }
     console.warn('[savedPlacesService] saved_places insert failed', savedErr.message);

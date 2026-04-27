@@ -1,166 +1,208 @@
-# Nearr — V1 Testing Checklist
+# Nearr — Manual Testing Checklist
 
-Manual end-to-end checklist for V1. Run every section on a real device (iOS or
-Android) for the notification + map flows; the simulator/emulator is fine for
-auth, search, and settings.
+> Last updated: 2026-04-27
+> Source of truth: Codebase (not assumptions)
 
-> Source of truth for V1 scope: `docs/V1_SCOPE_FREEZE.md`.
-
----
+> Run before every TestFlight / Play Internal cut. **Background
+> location, the iOS share extension, and the Android share intent only
+> work in EAS dev/prod builds.** Expo Go is fine for the rest.
 
 ## 0. Setup
 
-```powershell
-# Install dependencies
-npm install
+- [ ] `.env` populated per [ENVIRONMENT.md](ENVIRONMENT.md).
+- [ ] `supabase db push` applied; tables + RLS visible in dashboard.
+- [ ] Edge Function `process-share-link` deployed; secrets set;
+      `EXPO_PUBLIC_PROCESS_SHARE_LINK_URL` set.
+- [ ] `npx expo prebuild --clean` succeeds; generated
+      `ios/NearrShareExtension/NearrShareExtension.entitlements`
+      contains App Group `group.com.nearr.ios`.
+- [ ] EAS dev build installed on a real iOS device AND a real Android
+      device. (Simulators are OK for everything except background
+      location and the iOS share extension.)
+- [ ] `EXPO_PUBLIC_DEMO_MODE` and `EXPO_PUBLIC_MAP_PREVIEW_MODE` are
+      both unset for production-flow testing.
 
-# Type-check (must exit 0)
-npm run typecheck
+## 1. Auth
 
-# Start Metro / Expo
-npm run start
-# then press `i` (iOS sim), `a` (Android emu), or scan QR with Expo Go
-```
+- [ ] Sign-in screen renders email field, button label "Send magic
+      link", validation error on empty / malformed email.
+- [ ] Magic link arrives within ~30 s, opens the app via
+      `nearr://auth-callback`, lands on `/(tabs)/home`.
+- [ ] Restart the app → still signed in (Supabase session restored
+      from AsyncStorage).
+- [ ] Settings → Sign out → confirmation dialog → returns to
+      `/(auth)/sign-in`.
+- [ ] **Dev sign-in.** With `__DEV__` (Expo Go or dev build), type
+      `dev@nearr.test`. Form swaps to a password field + "Sign in as
+      developer" button. Wrong password → friendly error. Correct
+      password → real session, normal home screen.
 
-### Required env (`.env` at repo root)
+## 2. Manual save
 
-```
-EXPO_PUBLIC_SUPABASE_URL=https://<project>.supabase.co
-EXPO_PUBLIC_SUPABASE_ANON_KEY=<anon-jwt>
-EXPO_PUBLIC_GOOGLE_MAPS_API_KEY=<google-maps-key-with-Places+Maps+SDK>
-GOOGLE_MAPS_IOS_KEY=<same-or-ios-restricted-key>
-GOOGLE_MAPS_ANDROID_KEY=<same-or-android-restricted-key>
-```
+- [ ] FAB on Home opens `/add-place`.
+- [ ] Typing "blu" shows a hint; typing 3+ chars debounces ~300 ms and
+      returns Google Places candidates.
+- [ ] Foreground location, when granted, biases results to nearby
+      matches; when denied, search still works (no prompt is forced).
+- [ ] Picking a candidate shows the confirm card with three radius
+      modes: Default, Miles, Minutes.
+- [ ] "Use default" saves with NULL radius_value/unit (verify in
+      Supabase).
+- [ ] Saving with Miles=0 or Minutes=-1 → blocked with validation
+      error, no DB write.
+- [ ] After save, app routes to Home and the new card appears at top.
+- [ ] Saving the same place twice does NOT create a duplicate
+      `saved_places` row — instead source / notes / radius are updated
+      in place.
 
-If any of the first three are missing the app boots but logs a `[supabase]` /
-`MISSING_API_KEY` warning. **Search will fail with a friendly error message
-inside `/add-place` if the Google key is missing.**
+## 3. Paste-link share (host app)
 
-### Supabase prerequisites
+- [ ] Tabs → Map / Home → FAB or Settings → "Add from link" opens
+      `/share`.
+- [ ] Paste an Instagram reel URL. Expected: parse → AI/heuristic
+      query → Places search → either silent save (alert + route to
+      `/(tabs)/map`) OR a candidate chooser.
+- [ ] Paste a TikTok URL. Same expectation.
+- [ ] Paste a YouTube short URL with a clear venue in the title.
+- [ ] Paste a non-share URL (e.g. random news article). Expected:
+      `'failed'` phase with manual search fallback that actually
+      finds places when you type into it.
+- [ ] Paste a URL whose page returns a 4xx/5xx (`metadataFailed=true`).
+      Expected: parser still produces a `suggestedQuery` from the URL
+      path; UI ends up in `'failed'` phase with helpful copy.
+- [ ] Source attribution: the saved row's `source_type` /
+      `source_url` reflect the platform (instagram / tiktok /
+      youtube / web / etc.).
+- [ ] Address-resolver path: paste a TikTok caption that's mostly an
+      address ("123 Main St, Austin, TX"). Expected: top result is a
+      business near that address, not the raw geocode.
+- [ ] Franchise path: paste a known chain URL with a city in the
+      caption. Expected: the picked branch is in / near that city,
+      not the closest one to the device.
 
-- Migration `supabase/migrations/20260426000001_init_schema.sql` applied.
-- Auth → URL Configuration → Redirect URLs includes:
-  - `nearr://auth-callback`
-  - `exp://*` (or your specific Expo Go dev URL)
+## 4. iOS Share Extension (REAL DEVICE, EAS dev build)
 
----
+- [ ] In Safari: share an instagram.com / tiktok.com / google.com/maps
+      URL → "Save to Nearr" appears in the share sheet.
+- [ ] First run: tapping it shows the extension UI; if a session JWT
+      has been bridged, **silent-save** message appears within ~6 s
+      and dismisses; otherwise the extension hands off to the host
+      app's `/share` and the URL is processed there.
+- [ ] In the Instagram or TikTok native app: share a reel/post →
+      "Save to Nearr" → same outcomes.
+- [ ] Sign out in the host app, then trigger the share extension →
+      it MUST hand off to the host app (no silent save with stale
+      token).
+- [ ] Sign in again → JWT is re-published to the App Group; next
+      share-extension invocation can silent-save again.
+- [ ] If `EXPO_PUBLIC_PROCESS_SHARE_LINK_URL` is unset OR the Edge
+      Function returns `open_app`: extension still successfully
+      hands off to host app.
 
-## 1. Auth (magic link)
+See [IOS_SHARE_EXTENSION.md](IOS_SHARE_EXTENSION.md) for verification
+details if any of the above fails.
 
-- [ ] `/(auth)/sign-in` shows the tagline, three accent-dot bullets, email input.
-- [ ] Empty / non-`@` email → `Enter a valid email` alert.
-- [ ] Valid email → `Send magic link` button shows spinner → "Check your email…" copy.
-- [ ] Email arrives within ~1 minute. Open it on the same device.
-- [ ] Deep link routes back into the app and lands on `/(tabs)/home`.
-- [ ] In Supabase: a row exists in `profiles` with the new `id` (created by `handle_new_user` trigger).
-- [ ] Killing + relaunching the app keeps the session (no sign-in screen).
+## 5. Android share sheet (REAL DEVICE, EAS dev build)
 
-## 2. Manual save (`/add-place`)
+- [ ] Share a TikTok URL from Chrome → "Nearr" appears in the share
+      sheet.
+- [ ] Tapping it cold-starts the app, lands on `/share`, and the
+      pasted URL pre-populates and auto-runs.
+- [ ] Repeat from inside the TikTok app (warm start): same flow via
+      `onNewIntent`.
+- [ ] Share plain text containing a URL ("check this out
+      https://… cool right") → URL is extracted and used.
+- [ ] Share plain text containing NO URL → app opens to `/share`
+      with empty state; no crash.
 
-- [ ] FAB on Map and "Save a place" on Home both open `/add-place`.
-- [ ] Empty list state shows the "Search for a place" prompt.
-- [ ] Searching `joe's pizza brooklyn` returns up to 8 candidates.
-- [ ] Network off → `Search failed` empty state with retry.
-- [ ] Tap a candidate → confirmation card with name / address / category.
-- [ ] Radius modes:
-  - [ ] `Default (X miles|minutes)` saves with `radius_value=null, radius_unit=null`.
-  - [ ] `Miles` rejects 0 / negative / non-numeric input.
-  - [ ] `Minutes` rejects 0 / negative / non-integer-friendly input.
-- [ ] On save: row appears in `saved_places` with correct `source_type='manual'`,
-      a `places` row exists (upsert by `google_place_id`), and Home/Places/Map all
-      show the new card/marker on next focus.
-- [ ] Saving the same place twice → friendly "Already saved" alert (no error trace).
+## 6. Map
 
-## 3. Share-link ingestion (`/share`)
+- [ ] Granting location shows the user dot + zone bubbles for every
+      saved place.
+- [ ] Each place's circle radius matches its effective radius
+      (per-place > profile default > 1 mile fallback).
+- [ ] `fitToCoordinates` includes the radius edges (no clipped
+      circles on first load).
+- [ ] Marker tap → preview card with name / address / "Open in Maps"
+      / "View details". FAB hides while preview is shown.
+- [ ] "Open in Maps" launches Google Maps (or Apple Maps fallback) at
+      the place's lat/lng — **NOT** as `place_id:` query.
+- [ ] Denying location → empty state with re-request and
+      open-settings affordances; FAB still works.
+- [ ] Stuck / no-fix emulator → after ~6 s the screen falls through
+      to fallback rendering instead of spinning.
+- [ ] Deep link `nearr://(tabs)/map?savedPlaceId=<uuid>` (or tapping
+      a notification) animates to that place once and stops.
 
-- [ ] Pasting a TikTok URL → `parsing` → preview card shows `TikTok`, title, snippet.
-- [ ] `Find this place` hands off to `/add-place` with `q` prefilled, `source_url` and `source_type='tiktok'` attached.
-- [ ] Saved row's `source_type` and `source_url` reflect the TikTok URL.
-- [ ] Same flow for an Instagram URL → `source_type='instagram'`.
-- [ ] Generic `https://` URL with OG tags → `source_type='link'`.
-- [ ] URL whose preview can't be fetched → "Couldn't read this link" → `Search manually` still attaches `source_url`.
-- [ ] Pasting plain text or `tel:` → "Paste a valid link" alert.
+## 7. Notifications (proximity)
 
-## 4. Map (`/(tabs)/map`)
+- [ ] Settings → enable notifications → enable nearby notifications
+      → grant foreground + background location prompts as they appear.
+- [ ] On iOS, after granting "Always", visit a saved place at walking
+      pace; an `Alert` may take several minutes due to OS coalescing.
+- [ ] Quiet-hours window: enter a saved-place radius during quiet
+      hours → no notification (and no `notification_events` row).
+- [ ] Re-entering the same radius within 1 hour → no second
+      notification (cooldown).
+- [ ] Per-place toggle off → no notification for that place even when
+      proximity matches.
+- [ ] Tapping a delivered notification opens the app to
+      `/(tabs)/map?savedPlaceId=<uuid>` and focuses the place.
+- [ ] On AppState → 'active' (and on session start), a one-shot
+      proximity check runs without spamming notifications.
 
-- [ ] First entry: location permission prompt appears.
-  - [ ] Granted: blue user dot, region centered on user, then `fitToSuppliedMarkers` zooms to show all saved places.
-  - [ ] Denied: "Location is off" banner with "Open settings" button. Map still renders centered on first saved place (or US fallback).
-- [ ] Tapping a marker → preview card with name / address / category and two buttons.
-- [ ] `Open in Maps` opens platform Maps via `place.google_maps_url` (or lat/lng fallback).
-- [ ] `View details` closes the preview and routes to `/place/<saved_id>`.
-- [ ] Tapping empty map dismisses the preview.
-- [ ] Returning from `/place/<id>` after deleting → marker is gone (focus refresh).
+## 8. Place detail
 
-## 5. Notifications (proximity)
+- [ ] Tapping a card on Home / Places opens `/place/[id]`.
+- [ ] Edit notes / radius unit / radius value → save → reflected in
+      list immediately (no stale list).
+- [ ] Toggle per-place notifications off → reflected in row and
+      respected by proximity check.
+- [ ] Delete → confirmation → row gone from Home, Places, Map.
+- [ ] Open in Maps from detail screen works the same as from the map
+      preview.
 
-> Test on a real device. Background-location requires a development build, **not** Expo Go.
+## 9. Settings
 
-- [ ] Settings → enable "Notifications" + "Nearby alerts" + Save.
-  - [ ] OS notification permission prompt appears.
-  - [ ] Granted → `[notifications] proximity watch started` log.
-  - [ ] Declined → "Notifications blocked" alert; settings still saved.
-- [ ] Save a place near your current location with a small radius (e.g. `0.1 miles`).
-- [ ] Foreground check: switch the app away and back to foreground. Within ~10s a notification fires for any place currently in radius.
-- [ ] Background watch: walk / drive into the radius. Notification fires within a minute or two.
-- [ ] `notification_events` row exists: `place_id`, `distance_meters` populated, `created_at` recent.
-- [ ] Cooldown: within ~1 hour of firing, re-entering the radius does **not** re-notify (in-memory cooldown + `last_notified_at` check).
-- [ ] Quiet hours: enable, set to a window covering "now", save → no notification fires; `notification_events` not inserted.
-- [ ] Disabling "Notifications" or "Nearby alerts" → watch stops (`[notifications] proximity watch stopped` log).
+- [ ] Profile defaults: change unit + value → reflected immediately
+      and on next "Use default" save.
+- [ ] Notifications master toggle off → "nearby" toggle disabled and
+      the proximity task is stopped.
+- [ ] Quiet hours: invalid times rejected; valid times persisted and
+      respected by `inQuietHours`.
+- [ ] Sign out always works, including under Demo Mode (it bypasses
+      the real call).
 
-## 6. Place detail (`/place/[id]`)
+## 10. Demo Mode (`EXPO_PUBLIC_DEMO_MODE=true`)
 
-- [ ] Loads the joined `saved_places` + `places` row.
-- [ ] Toggling `Notifications` and saving persists `notifications_enabled`.
-- [ ] Switching radius modes saves `radius_value`/`radius_unit` correctly.
-- [ ] Editing notes saves; empty notes → `null`.
-- [ ] `Remove from saved` → confirm dialog → delete + back nav.
-- [ ] Source URL link opens the original TikTok/Instagram/web URL when present.
-- [ ] Deleted-out-from-under-you state ("This place no longer exists.") shows when `id` is unknown.
+- [ ] App launches straight into Home as `demo-user` (no sign-in
+      screen).
+- [ ] Red `DemoModeBanner` visible on all tabs.
+- [ ] Map renders [MapFallbackList](../components/MapFallbackList.tsx),
+      not `MapView`.
+- [ ] Saving / editing / deleting places persists across reload
+      (AsyncStorage) within Demo Mode.
+- [ ] Settings → "Simulate notification" fires an `Alert`.
+- [ ] No real network requests (verify with Charles / browser dev
+      tools).
+- [ ] On a non-`__DEV__` build: a one-shot `console.warn` appears at
+      startup.
 
-## 7. Settings (`/(tabs)/settings`)
+## 11. Map Preview Mode (`EXPO_PUBLIC_MAP_PREVIEW_MODE=true`)
 
-- [ ] Loads profile defaults from `profiles`.
-- [ ] Radius validation: must be > 0 and finite.
-- [ ] Quiet-hours validation: both fields HH:MM (24h), start ≠ end.
-- [ ] Saving updates `profiles` row (verify in Supabase).
-- [ ] Side effect: when "Notifications" + "Nearby alerts" both ON, `startProximityWatch` runs; otherwise `stopProximityWatch`.
-- [ ] Sign-out → confirm → back to `/(auth)/sign-in`. `getSession()` returns null.
+- [ ] Real sign-in screen still required.
+- [ ] After sign-in, Home / Places show the seeded dataset.
+- [ ] Map shows the real `MapView` recentered on the seeded region
+      with a `Map Preview Mode` badge; no location prompt.
+- [ ] Saving from `/add-place` returns to a no-op (still seeded
+      dataset).
+- [ ] Demo Mode flag wins when both are set.
 
-## 8. Smoke / regressions
+## 12. Smoke
 
-- [ ] No `\u2019` (literal `\u2019`) text rendered in any error state.
-- [ ] No console errors on cold start (warnings from missing env vars are expected if `.env` is not set).
-- [ ] `npm run typecheck` exits 0.
-- [ ] App handles airplane mode gracefully on Home / Map / Settings (visible error states, not crashes).
-
-## 9. Dev Mode (developer convenience, optional)
-
-> `__DEV__`-only shortcut that lets you navigate the app without a Supabase session. Read-only by design — any DB write fails RLS because there is no real JWT. Production builds (`expo export` / EAS production) must NOT show any of these affordances.
-
-- [ ] Sign-in screen (DEV build): "Continue in Dev Mode" secondary button is visible under the magic-link form, with the "Skips Supabase. UI / navigation only — DB writes will fail." fineprint.
-- [ ] Tap it → routed to `/(tabs)/home`. Header shows the **Dev Mode** banner with the RLS caption.
-- [ ] Map / Places / Settings navigate without errors. Lists are empty (expected — no real `auth.uid()`).
-- [ ] Settings shows the **Dev Mode** banner at the top. If no profile row exists for the fake user, a dedicated dev-mode screen appears with banner + "Exit Dev Mode" button instead of a generic load error.
-- [ ] Below the Account card (when in dev session), a ghost **Exit Dev Mode** button is visible. Tap → returned to `/(auth)/sign-in`. Banner is gone.
-- [ ] Reload the app while dev mode is enabled → still lands on Home with banner (flag persists via AsyncStorage `'nearr.devAuthEnabled'`).
-- [ ] AuthGate skips the proximity check when `isDevSession` is true (no location permission prompt fires from `app/_layout.tsx` on launch).
-- [ ] Attempting to save a place in dev mode either fails or silently no-ops at the DB layer — expected. Banner explains this.
-- [ ] **Production smoke (when an EAS production build is available):** "Continue in Dev Mode" button is absent on sign-in. `enableDevAuth()` would be a no-op. Banners do not render.
-
-
-## 10. Demo Mode (dev-only)
-
-With `EXPO_PUBLIC_DEMO_MODE=true` in `.env` and Metro restarted:
-
-- [ ] App launches into Home with Demo Mode banner visible (no sign-in required).
-- [ ] Saved places list shows ~10 seeded entries across Santa Cruz, OC, and LA.
-- [ ] Place search on Add Place returns local catalog matches (try `tacos`, `coffee`, `bbq`, `thrift`).
-- [ ] Saving a place adds it to the list and persists across reload.
-- [ ] Editing radius / notes / notifications persists across reload.
-- [ ] Sharing a TikTok or Instagram URL into Add Place produces a synthesized title and never hits the network.
-- [ ] Map tab renders the fallback list with name + address + lat/lng for each place; no native map errors.
-- [ ] Settings ? Demo Mode ? Simulate nearby notification fires an `Alert`.
-- [ ] Settings ? Demo Mode ? Reset demo data restores the seed.
-- [ ] Removing the env var and restarting Metro returns to real-services mode.
-- [ ] A production build with the flag set still ignores it (verify the one-shot warning logs).
+- [ ] `npx tsc --noEmit` passes.
+- [ ] App boots cold to Home in < 3 s on a midrange device.
+- [ ] No `[serviceName] action failed` errors during a basic flow
+      (manual save → list → map → detail → delete → sign out).
+- [ ] No `console.warn` about `EXPO_PUBLIC_DEMO_MODE` /
+      `EXPO_PUBLIC_MAP_PREVIEW_MODE` shipping in a release build.

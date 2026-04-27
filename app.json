@@ -7,9 +7,11 @@
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "icon": "./assets/icon.png",
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.nearr.ios",
+      "icon": "./assets/icon.png",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Nearr uses your location to notify you when you are near saved places.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Nearr uses your location in the background to notify you when you are near saved places.",
@@ -27,6 +29,10 @@
     },
     "android": {
       "package": "com.nearr.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#FFFFFF"
+      },
       "permissions": [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",

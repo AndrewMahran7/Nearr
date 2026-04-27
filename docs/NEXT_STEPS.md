@@ -1,165 +1,95 @@
 # Nearr — Next Steps
 
-> What to build (and what *not* to build) after the V1 bug sweep is done.
-> This file is meant to survive a chat handoff — read it together with
-> [V1_SCOPE_FREEZE.md](V1_SCOPE_FREEZE.md) and
-> [TESTING_CHECKLIST.md](TESTING_CHECKLIST.md).
+> Last updated: 2026-04-27
+> Source of truth: Codebase (not assumptions)
 
-## Status as of 2026-04-26
+> Ordered by what blocks the next TestFlight / Play Internal cut.
+> Don't shuffle — items below #5 assume #1–#5 are done.
 
-- V1 code is **scope-frozen** (Task 14).
-- V1 bug sweep complete (Task 15) — typecheck clean, no orphans, two real
-  rendering bugs fixed.
-- Manual end-to-end QA on a real device is the next gate. Run the full
-  [TESTING_CHECKLIST.md](TESTING_CHECKLIST.md). Do not start V2 work until
-  every P0 item passes.
+## Pre-build hardening (do this first)
 
----
+1. **Rotate the leaked Google Maps key** that is hard-coded in
+   [app.json](../app.json). Replace the literal value with
+   `process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY` (consider migrating
+   `app.json` → `app.config.ts` so env interpolation is first-class).
+   Restrict the new client key to `com.nearr.ios` + the Android SHA-1
+   fingerprints, and to Maps SDK iOS / Maps SDK Android / Places only.
+   Issue a separate, IP-restricted server key for the Edge Function's
+   `GOOGLE_PLACES_KEY` secret.
+2. **De-duplicate `UIBackgroundModes`** in
+   `expo.ios.infoPlist.UIBackgroundModes`. It currently contains
+   `location, fetch, location, fetch`. Should be just `["location",
+   "fetch"]`.
+3. **Delete dead share-extension scaffold** at
+   [native/share-extension/](../native/share-extension/) (uses
+   `group.com.nearr.app`). Keeping it around risks somebody re-enabling
+   `plugins/withShareExtension.js` and breaking the real
+   `expo-share-extension`-managed target.
+4. **Deploy the Edge Function** and set its secrets:
 
-## Immediately next (pre-TestFlight)
+   ```sh
+   supabase secrets set GEMINI_API_KEY=… GOOGLE_PLACES_KEY=…
+   supabase functions deploy process-share-link
+   ```
 
-These are completion tasks for V1, not new features. Do them in order.
+   Capture the resulting URL and set it as
+   `EXPO_PUBLIC_PROCESS_SHARE_LINK_URL` in `.env` and EAS env
+   profiles.
+5. **Verify the iOS App Group bridge end-to-end** on a real device:
 
-### 1. Run TESTING_CHECKLIST.md end-to-end on a real device
-- iOS first (TestFlight is the target), then Android sanity.
-- Background notifications **require an EAS dev build**, not Expo Go.
-- Capture any failure as a logged issue under "Known bugs/TODOs" in
-  [PROJECT_CONTEXT.md](PROJECT_CONTEXT.md). Fix only what blocks ship.
+   - Confirm `group.com.nearr.ios` is enabled on both targets in the
+     Apple Developer portal AND in the generated entitlements.
+   - Sign in to the host app, kill it, share a URL via Safari, watch
+     for the "Saved to Nearr ✓" confirmation.
+   - Sign out → share → confirm graceful host-app handoff.
+   - See [IOS_SHARE_EXTENSION.md](IOS_SHARE_EXTENSION.md) for the
+     verification recipe.
 
-### 2. Audit Supabase config against the schema
-- Confirm RLS is on for all four tables.
-- Confirm the `handle_new_user` trigger actually creates a `profiles` row
-  for new signups (sign up a throwaway email and verify in the dashboard).
-- Confirm the magic-link redirect allow-list includes both `nearr://*` and
-  the LAN `exp://` URL you actually use.
-- Confirm the `places` table is **shared** (any authenticated user can
-  insert) — multiple users saving the same restaurant should NOT create
-  duplicate `places` rows.
+## Build + verify
 
-### 3. Lock down Google Maps Platform
-- Restrict the production key by bundle ID / package + SHA-1 (see
-  [ENVIRONMENT.md](ENVIRONMENT.md) §5).
-- Set a daily quota cap to avoid runaway costs.
-- Confirm Places API + Maps SDK iOS + Maps SDK Android are the only
-  enabled APIs on the key.
+6. Run `npx expo prebuild --clean`.
+7. `eas build --profile development --platform ios`. Install on a
+   real device.
+8. `eas build --profile development --platform android`. Install on a
+   real device.
+9. Walk the entire [TESTING_CHECKLIST.md](TESTING_CHECKLIST.md). Any
+   ❌ blocks the cut.
+10. Cut `eas build --profile production` for both platforms once the
+    checklist is green.
 
-### 4. Cut an EAS dev build
-- Add `eas.json` with a `development` profile.
-- Build for iOS (and Android if you have a tester). This is the build that
-  will validate background notifications.
+## Submit
 
-### 5. TestFlight readiness
-- Update `app.json` `version` and bump build number.
-- Write App Store Connect copy describing why the app uses background
-  location ("notify the user when they are physically nearby a place they
-  saved"). Apple **will** ask.
-- Review [V1_SCOPE_FREEZE.md](V1_SCOPE_FREEZE.md) "Risks for app review"
-  section and address each one.
+11. TestFlight: `eas submit --platform ios --profile production` after
+    confirming Privacy Manifest, age rating, and the
+    "Always" location-permission justification copy.
+12. Play Internal: `eas submit --platform android --profile production`
+    after confirming the data-safety form mentions location +
+    URL-share-target usage.
 
----
+## V2 candidates (post-launch)
 
-## V2 candidates (do not start until V1 ships)
+These were intentionally cut from V1 — see
+[V1_SCOPE_FREEZE.md](V1_SCOPE_FREEZE.md). Pick at most two for the
+first V2 milestone:
 
-Ordered by ROI for the actual product.
-
-### A. Real OS-level geofencing
-- Replace the polled `Location.startLocationUpdatesAsync` loop with
-  `Location.startGeofencingAsync` + `LocationGeofencingEventType` regions.
-- Emits real `entered` / `exited` transitions instead of V1's `'nearby'` ticks.
-- Requires capping `saved_places` per user to stay under the OS region limit
-  (iOS: 20 simultaneous geofences, Android: 100). Add a "limit reached"
-  state in `add-place` save.
-- `notification_events.event_type` already supports `'entered'`/`'exited'`.
-
-### B. iOS share extension activation
-- Scaffold already at [native/share-extension/](../native/share-extension/).
-- Register the config plugin via `@bacons/xcode` or `expo-share-extension`.
-- App Group bridge (`group.com.nearr.app`) so the extension can hand off
-  the URL via `UserDefaults` + a `nearr://share?url=...` deep link.
-- Full TODO in [IOS_SHARE_EXTENSION.md](IOS_SHARE_EXTENSION.md).
-
-### C. Place photos
-- Add `photos` field to the Google Places `Details` request.
-- Cache photo URLs on the canonical `places` row.
-- Show on `SavedPlaceCard`, place detail, and map preview card.
-
-### D. List filtering and search
-- Filter saved places by `source_type` (manual / tiktok / instagram / link).
-- Free-text search across `places.name` + `saved_places.notes`.
-- Sort modes (newest / nearest / alphabetical).
-
-### E. Drive-time radius (real)
-- Replace the 25 mph fixed approximation in `lib/geo.ts:minutesToMeters`
-  with a Google Distance Matrix or Mapbox Directions call.
-- Cache results per place to avoid quota burn.
-
-### F. Push notifications (server-driven)
-- Move proximity decisioning to a Supabase Edge Function or external worker
-  using user-reported location pings.
-- Lets the server batch and deduplicate alerts; lets the app stop running
-  background tasks. Big battery win.
-- Requires implementing Apple/Google push tokens in the client and an
-  `expo-notifications` push pipeline server-side.
-
-### G. Profile editing
-- Display name, avatar, account deletion.
-- Wire a "Delete my account" path that cascades through the foreign keys
-  already declared in the migration.
-
-### H. Per-day quiet hours
-- Currently a single daily window. Extend to per-weekday schedules.
-- Schema-compatible: turn `quiet_hours_*` into a JSONB `quiet_hours` array.
-
-### I. Tests
-- Pure functions first: `lib/geo`, `lib/shareParser:buildQuery`,
-  `lib/notifications:effectiveRadiusMeters` and `inQuietHours` and
-  `decideProximity`. These are the highest-ROI test targets.
-- Then: Supabase service layer with a test project + recorded fixtures.
-- React component tests can wait until there are tests for the logic that
-  actually breaks.
-
-### J. App Group `UserDefaults` JS bridge
-- Companion to V2-B. Lets the share extension persist the last-shared URL
-  even when the host app is fully killed.
-
----
-
-## What NOT to build yet
-
-If a request comes in for any of these before V1 is live on TestFlight,
-push back:
-
-- ❌ **Social features** (sharing places between users, public lists, follows,
-  comments, ratings). Not in V1, no schema for it, and adds review risk.
-- ❌ **Categories / tags / custom lists.** V1 sorts newest-first. That's it.
-- ❌ **Photos / og:image thumbnails.** Decided in scope freeze. Wait for V2-C.
-- ❌ **Background-task health UI** ("last checked at" badges). Diagnostic noise
-  until we have user reports of background-tick problems.
-- ❌ **Native iOS share extension activation.** Scaffold exists; activating it
-  without a verified EAS pipeline silently breaks `expo run:ios`. V2-B.
-- ❌ **Server-driven push.** Local notifications cover V1. V2-F.
-- ❌ **A test framework.** Manual checklist is the V1 contract. V2-I.
-- ❌ **A second auth provider.** Magic-link is enough for V1.
-- ❌ **Web build.** `expo start --web` is a dev convenience, not a target.
-- ❌ **Refactoring "for cleanliness".** V1 was scope-frozen for a reason.
-  Touch only what the bug sweep or QA flags.
-
----
-
-## How to onboard a new chat / developer
-
-1. Read [PROJECT_CONTEXT.md](PROJECT_CONTEXT.md) — what Nearr is, V1 goals,
-   feature list, prompt history.
-2. Read [ARCHITECTURE.md](ARCHITECTURE.md) — folder layout + each subsystem's
-   data flow.
-3. Read [ENVIRONMENT.md](ENVIRONMENT.md) — get the app running.
-4. Read [DATABASE.md](DATABASE.md) — schema + RLS reference.
-5. Read [V1_SCOPE_FREEZE.md](V1_SCOPE_FREEZE.md) — what V1 is and isn't.
-6. Read this file — what's next.
-7. Run [TESTING_CHECKLIST.md](TESTING_CHECKLIST.md) on a real device before
-   touching code.
-
-The full chronological build log lives at
-[../logs/claude_runs/2026-04-26_nearr_build_log.md](../logs/claude_runs/2026-04-26_nearr_build_log.md).
-Each entry has Files modified / deleted / created, key decisions,
-assumptions, commands run, and known issues.
+- True OS geofencing (iOS region monitoring + Android
+  `addGeofences`); replace the polled location task.
+- Real transcription provider behind
+  [lib/transcription/](../lib/transcription/) (Whisper / AssemblyAI),
+  feeding into the same `process-share-link` pipeline so audio reels
+  can be processed.
+- Photos on places (`place_photos` table + Storage bucket + UI on
+  Place detail).
+- Push notifications via `expo-notifications` push tokens + a
+  Supabase Edge Function dispatcher; lets us notify from the server
+  instead of relying on local scheduling.
+- Emit `'entered'` / `'exited'` / `'silenced'` events into
+  `notification_events` (CHECK constraint already allows them) and
+  build a history view in Settings.
+- Apple / Google OAuth sign-in.
+- An automated test suite. Start with Jest unit tests for `lib/`
+  pure helpers (`geo`, `shareParser`, `placeExtractor`,
+  `externalMaps`) and Detox e2e for the manual-save and share-paste
+  flows.
+- Lists / collections (saved places grouped by trip, theme, etc.).
+- Friends + shared lists + comments.

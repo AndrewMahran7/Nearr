@@ -38,6 +38,7 @@ import { Colors, Radius, Spacing, Typography } from '@/constants';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
 import { isDemoMode } from '@/lib/demoMode';
 import { isMapPreviewMode } from '@/lib/mapPreview';
+import { openExternalMaps as openInExternalMaps } from '@/lib/externalMaps';
 import { milesToMeters, minutesToMeters } from '@/lib/geo';
 import { getDemoSeededSavedPlacesSync } from '@/services/demo';
 import { getProfile } from '@/services/profileService';
@@ -446,10 +447,7 @@ export default function MapScreen() {
 
   // -----------------------------------------------------------------------
   function openExternalMaps(item: SavedPlaceWithPlace) {
-    const url =
-      item.place.google_maps_url ??
-      `https://www.google.com/maps/search/?api=1&query=${item.place.latitude},${item.place.longitude}`;
-    Linking.openURL(url).catch((e) => console.warn('[map] openURL failed', e));
+    void openInExternalMaps(item.place);
   }
 
   /**

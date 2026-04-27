@@ -1,0 +1,10 @@
+{
+  "name": "nearr-shared-auth",
+  "version": "0.1.0",
+  "description": "Local Expo module: share the Supabase access token between the Nearr app and its iOS Share Extension via the App Group container (UserDefaults).",
+  "main": "index.ts",
+  "private": true,
+  "expo": {
+    "platforms": ["ios"]
+  }
+}

@@ -187,6 +187,15 @@ function assertOk(json: any, allowZeroResults: boolean) {
   throw new PlacesError(code, `${status}${json.error_message ? `: ${json.error_message}` : ''}`);
 }
 
+// NOTE on `googleMapsUrl`:
+//   The Google Places `details` endpoint returns a real, openable canonical
+//   URL on the `url` field (e.g. https://maps.google.com/?cid=...). textsearch
+//   does NOT. We deliberately leave `googleMapsUrl` null for textsearch
+//   results rather than synthesising the legacy
+//   `https://www.google.com/maps/place/?q=place_id:<ID>` form, which Google
+//   Maps treats as free-text and reports as "No results found." The runtime
+//   helper in lib/externalMaps.ts always falls back to a lat/lng URL with
+//   `query_place_id`, which is the format Google actually documents.
 function toCandidateFromTextSearch(r: any): PlaceCandidate {
   return {
     googlePlaceId: r.place_id,
@@ -195,7 +204,7 @@ function toCandidateFromTextSearch(r: any): PlaceCandidate {
     latitude: r.geometry?.location?.lat,
     longitude: r.geometry?.location?.lng,
     category: pickCategory(r.types),
-    googleMapsUrl: r.place_id ? `https://www.google.com/maps/place/?q=place_id:${r.place_id}` : null,
+    googleMapsUrl: null,
     rawTypes: Array.isArray(r.types) ? r.types : undefined,
   };
 }
@@ -208,7 +217,9 @@ function toCandidateFromDetails(r: any): PlaceCandidate {
     latitude: r.geometry?.location?.lat,
     longitude: r.geometry?.location?.lng,
     category: pickCategory(r.types),
-    googleMapsUrl: r.url ?? (r.place_id ? `https://www.google.com/maps/place/?q=place_id:${r.place_id}` : null),
+    // `r.url` is Google's official canonical maps URL for the place. Only
+    // use it when present; never synthesise the broken `place_id:` form.
+    googleMapsUrl: typeof r.url === 'string' && r.url.length > 0 ? r.url : null,
     rawTypes: Array.isArray(r.types) ? r.types : undefined,
   };
 }
