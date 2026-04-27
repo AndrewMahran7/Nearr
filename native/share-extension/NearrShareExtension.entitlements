@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Entitlements for the iOS share extension target.
+  SCAFFOLD — not wired into the Expo build by default.
+
+  The App Group identifier MUST match the host app's entitlements
+  AND the appGroupId constant in ShareViewController.swift.
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>com.apple.security.application-groups</key>
+  <array>
+    <string>group.com.nearr.app</string>
+  </array>
+</dict>
+</plist>

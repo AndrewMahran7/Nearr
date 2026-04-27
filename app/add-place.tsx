@@ -1,0 +1,430 @@
+/**
+ * SavePlace screen — manual flow.
+ *
+ * Two-step UX:
+ *   1. Search by text -> Google Places results list.
+ *   2. Tap a result   -> confirmation card with radius chooser + Save.
+ *
+ * Radius modes:
+ *   - 'default'  : leave radius_value / radius_unit NULL so the profile
+ *                  default (default_radius_value / default_radius_unit) is
+ *                  used at notification time.
+ *   - 'miles'    : numeric override in miles.
+ *   - 'minutes'  : numeric override in minutes (drive-time).
+ *
+ * On success: replace the route with /(tabs)/home so the user sees their
+ * feed (and won't accidentally pop back to the search list).
+ *
+ * Duplicates are non-fatal: we show a friendly alert and still navigate.
+ */
+
+import { useEffect, useMemo, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+
+import { Button, Card, EmptyState, Input, Screen } from '@/components';
+import { Colors, Radius, Spacing, Typography } from '@/constants';
+
+import { usePlacesSearch } from '@/hooks/usePlacesSearch';
+import { getProfile } from '@/services/profileService';
+import { saveSavedPlace } from '@/services/savedPlacesService';
+import type { PlaceCandidate, PlacesError } from '@/services/placesService';
+import type { Profile, RadiusUnit, SourceType } from '@/types';
+
+type RadiusMode = 'default' | 'miles' | 'minutes';
+
+const SOURCE_TYPES: SourceType[] = ['manual', 'tiktok', 'instagram', 'link'];
+
+function isSourceType(v: string | undefined): v is SourceType {
+  return !!v && (SOURCE_TYPES as string[]).includes(v);
+}
+
+function placesErrorMessage(err: PlacesError): string {
+  switch (err.code) {
+    case 'MISSING_API_KEY':
+      return 'Google Places API key is missing. Set EXPO_PUBLIC_GOOGLE_MAPS_API_KEY.';
+    case 'NETWORK':
+      return 'Network error. Check your connection and try again.';
+    case 'OVER_QUERY_LIMIT':
+      return 'Search quota exceeded for now. Try again later.';
+    case 'REQUEST_DENIED':
+      return 'Search request denied. Check the API key configuration.';
+    case 'INVALID_REQUEST':
+      return 'Could not understand that search.';
+    case 'NOT_FOUND':
+      return 'No results.';
+    default:
+      return err.message || 'Something went wrong.';
+  }
+}
+
+export default function SavePlace() {
+  const router = useRouter();
+  const params = useLocalSearchParams<{
+    q?: string;
+    source_url?: string;
+    source_type?: string;
+  }>();
+
+  const incomingSourceType: SourceType = isSourceType(params.source_type)
+    ? params.source_type
+    : 'manual';
+  const incomingSourceUrl = params.source_url ?? null;
+
+  // ---- search state ------------------------------------------------------
+  const [query, setQuery] = useState(params.q ?? '');
+  const { results, loading, error, lastQuery, search, reset } = usePlacesSearch();
+
+  // ---- selection / confirmation state ------------------------------------
+  const [selected, setSelected] = useState<PlaceCandidate | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  // ---- profile (for default radius display) ------------------------------
+  const [profile, setProfile] = useState<Profile | null>(null);
+  useEffect(() => {
+    let alive = true;
+    getProfile().then((p) => {
+      if (alive) setProfile(p);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  // ---- radius chooser state ----------------------------------------------
+  const [radiusMode, setRadiusMode] = useState<RadiusMode>('default');
+  const [milesText, setMilesText] = useState('1');
+  const [minutesText, setMinutesText] = useState('10');
+
+  const defaultRadiusLabel = useMemo(() => {
+    if (!profile) return 'Profile default';
+    return `${profile.default_radius_value} ${profile.default_radius_unit}`;
+  }, [profile]);
+
+  // ---- auto-search if a query came in via deep-link/share ---------------
+  useEffect(() => {
+    if (params.q && params.q.trim()) {
+      void search(params.q.trim());
+    }
+    // Only run on mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // -----------------------------------------------------------------------
+
+  function runSearch() {
+    void search(query);
+  }
+
+  function clearSelection() {
+    setSelected(null);
+  }
+
+  async function handleSave() {
+    if (!selected) return;
+
+    let radiusValue: number | null = null;
+    let radiusUnit: RadiusUnit | null = null;
+
+    if (radiusMode === 'miles') {
+      const n = Number.parseFloat(milesText);
+      if (!Number.isFinite(n) || n <= 0) {
+        Alert.alert('Invalid radius', 'Enter a positive number of miles.');
+        return;
+      }
+      radiusValue = n;
+      radiusUnit = 'miles';
+    } else if (radiusMode === 'minutes') {
+      const n = Number.parseInt(minutesText, 10);
+      if (!Number.isFinite(n) || n <= 0) {
+        Alert.alert('Invalid radius', 'Enter a positive number of minutes.');
+        return;
+      }
+      radiusValue = n;
+      radiusUnit = 'minutes';
+    }
+
+    setSaving(true);
+    try {
+      const result = await saveSavedPlace({
+        candidate: selected,
+        radiusValue,
+        radiusUnit,
+        sourceType: incomingSourceType,
+        sourceUrl: incomingSourceUrl,
+      });
+
+      if (result.status === 'duplicate') {
+        Alert.alert('Already saved', `${selected.name} is already in your places.`);
+      }
+      router.replace('/(tabs)/home');
+    } catch (e: any) {
+      console.warn('[SavePlace] save failed', e?.message);
+      Alert.alert('Could not save', e?.message ?? 'Unknown error.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  // -----------------------------------------------------------------------
+  // Render: confirmation step
+  // -----------------------------------------------------------------------
+  if (selected) {
+    return (
+      <Screen>
+        <Text style={[Typography.title, styles.headerTitle]}>Save place</Text>
+
+        <Card style={styles.confirmCard}>
+          <Text style={Typography.heading}>{selected.name}</Text>
+          {selected.formattedAddress ? (
+            <Text style={[Typography.body, styles.muted]}>{selected.formattedAddress}</Text>
+          ) : null}
+          {selected.category ? (
+            <Text style={[Typography.caption, styles.muted, { marginTop: Spacing.xs }]}>
+              {selected.category}
+            </Text>
+          ) : null}
+        </Card>
+
+        <Text style={[Typography.label, styles.sectionLabel]}>Notify me when within</Text>
+
+        <View style={styles.radiusGroup}>
+          <RadiusOption
+            label={`Default (${defaultRadiusLabel})`}
+            active={radiusMode === 'default'}
+            onPress={() => setRadiusMode('default')}
+          />
+          <RadiusOption
+            label="Miles"
+            active={radiusMode === 'miles'}
+            onPress={() => setRadiusMode('miles')}
+          />
+          <RadiusOption
+            label="Minutes"
+            active={radiusMode === 'minutes'}
+            onPress={() => setRadiusMode('minutes')}
+          />
+        </View>
+
+        {radiusMode === 'miles' ? (
+          <Input
+            value={milesText}
+            onChangeText={setMilesText}
+            keyboardType="decimal-pad"
+            placeholder="e.g. 1.5"
+            style={styles.numberInput}
+          />
+        ) : null}
+        {radiusMode === 'minutes' ? (
+          <Input
+            value={minutesText}
+            onChangeText={setMinutesText}
+            keyboardType="number-pad"
+            placeholder="e.g. 10"
+            style={styles.numberInput}
+          />
+        ) : null}
+
+        <View style={styles.actions}>
+          <Button title="Back" variant="secondary" onPress={clearSelection} disabled={saving} />
+          <View style={{ width: Spacing.md }} />
+          <Button title="Save" onPress={handleSave} loading={saving} style={{ flex: 1 }} />
+        </View>
+      </Screen>
+    );
+  }
+
+  // -----------------------------------------------------------------------
+  // Render: search step
+  // -----------------------------------------------------------------------
+  return (
+    <Screen>
+      <Text style={[Typography.title, styles.headerTitle]}>Add a place</Text>
+
+      <View style={styles.searchRow}>
+        <Input
+          value={query}
+          onChangeText={setQuery}
+          placeholder="Search for a place"
+          onSubmitEditing={runSearch}
+          returnKeyType="search"
+          autoFocus
+          style={{ flex: 1 }}
+        />
+        <View style={{ width: Spacing.sm }} />
+        <Button title="Search" onPress={runSearch} loading={loading} />
+      </View>
+
+      <FlatList
+        data={results}
+        keyExtractor={(r) => r.googlePlaceId}
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={results.length === 0 ? styles.emptyContent : undefined}
+        ItemSeparatorComponent={() => <View style={styles.sep} />}
+        renderItem={({ item }) => (
+          <Pressable
+            style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+            onPress={() => setSelected(item)}
+          >
+            <Text style={Typography.bodyStrong}>{item.name}</Text>
+            {item.formattedAddress ? (
+              <Text style={[Typography.caption, styles.muted, { marginTop: 2 }]}>
+                {item.formattedAddress}
+              </Text>
+            ) : null}
+          </Pressable>
+        )}
+        ListEmptyComponent={
+          <SearchEmptyState
+            loading={loading}
+            error={error}
+            lastQuery={lastQuery}
+            onClear={reset}
+          />
+        }
+      />
+    </Screen>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Subcomponents
+// ---------------------------------------------------------------------------
+
+function RadiusOption({
+  label,
+  active,
+  onPress,
+}: {
+  label: string;
+  active: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={[styles.radiusOption, active && styles.radiusOptionActive]}
+    >
+      <Text
+        style={[
+          Typography.label,
+          { color: active ? Colors.textInverse : Colors.text },
+        ]}
+      >
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+function SearchEmptyState({
+  loading,
+  error,
+  lastQuery,
+  onClear,
+}: {
+  loading: boolean;
+  error: PlacesError | null;
+  lastQuery: string | null;
+  onClear: () => void;
+}) {
+  if (loading) {
+    return (
+      <View style={styles.emptyBox}>
+        <ActivityIndicator />
+      </View>
+    );
+  }
+  if (error) {
+    return (
+      <View style={styles.emptyBox}>
+        <EmptyState
+          framed={false}
+          variant="error"
+          title="Search failed"
+          body={placesErrorMessage(error)}
+          actionTitle="Try again"
+          onAction={onClear}
+        />
+      </View>
+    );
+  }
+  if (lastQuery && !loading) {
+    return (
+      <View style={styles.emptyBox}>
+        <EmptyState
+          framed={false}
+          title="No results"
+          body={`We couldn\u2019t find anything for \u201C${lastQuery}\u201D. Try a more specific name, or include the city.`}
+        />
+      </View>
+    );
+  }
+  return (
+    <View style={styles.emptyBox}>
+      <EmptyState
+        framed={false}
+        title="Search for a place"
+        body={'Try \u201CJoe\u2019s Pizza Brooklyn\u201D or paste the venue name from a TikTok or Instagram post.'}
+      />
+    </View>
+  );
+}
+
+// ---------------------------------------------------------------------------
+const styles = StyleSheet.create({
+  headerTitle: { marginBottom: Spacing.lg },
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: Spacing.lg,
+  },
+  row: {
+    paddingVertical: Spacing.md,
+  },
+  rowPressed: { opacity: 0.6 },
+  sep: { height: 1, backgroundColor: Colors.border },
+  muted: { color: Colors.textMuted },
+  emptyContent: { flexGrow: 1, justifyContent: 'center' },
+  emptyBox: {
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.xxl,
+    alignItems: 'center',
+  },
+
+  // confirmation
+  confirmCard: { marginBottom: Spacing.xl },
+  sectionLabel: { marginBottom: Spacing.sm },
+  radiusGroup: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+    marginBottom: Spacing.md,
+  },
+  radiusOption: {
+    flex: 1,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    borderRadius: Radius.pill,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.surface,
+    alignItems: 'center',
+  },
+  radiusOptionActive: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
+  numberInput: { marginBottom: Spacing.lg },
+  actions: {
+    flexDirection: 'row',
+    marginTop: Spacing.lg,
+  },
+});
