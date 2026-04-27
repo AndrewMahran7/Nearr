@@ -22,9 +22,6 @@
           "fetch"
         ],
         "ITSAppUsesNonExemptEncryption": false
-      },
-      "config": {
-        "googleMapsApiKey": "AIzaSyCDEl9gx-qw8VhFObsJ1mxGTAO2gjnNBKM"
       }
     },
     "android": {
@@ -65,12 +62,7 @@
             }
           ]
         }
-      ],
-      "config": {
-        "googleMaps": {
-          "apiKey": "AIzaSyCDEl9gx-qw8VhFObsJ1mxGTAO2gjnNBKM"
-        }
-      }
+      ]
     },
     "plugins": [
       "expo-router",
@@ -102,9 +94,6 @@
       ]
     ],
     "extra": {
-      "supabaseUrl": "$SUPABASE_URL",
-      "supabaseAnonKey": "$SUPABASE_ANON_KEY",
-      "googlePlacesKey": "$GOOGLE_PLACES_KEY",
       "router": {
         "origin": false
       },
