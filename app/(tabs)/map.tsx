@@ -29,17 +29,89 @@ import {
   Text,
   View,
 } from 'react-native';
-import MapView, { Marker, PROVIDER_GOOGLE, Region } from 'react-native-maps';
+import MapView, { Circle, Marker, PROVIDER_GOOGLE, Region } from 'react-native-maps';
 import * as Location from 'expo-location';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 
 import { Button, Card, DemoModeBanner, MapFallbackList } from '@/components';
 import { Colors, Radius, Spacing, Typography } from '@/constants';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
 import { isDemoMode } from '@/lib/demoMode';
 import { isMapPreviewMode } from '@/lib/mapPreview';
+import { milesToMeters, minutesToMeters } from '@/lib/geo';
 import { getDemoSeededSavedPlacesSync } from '@/services/demo';
-import type { SavedPlaceWithPlace } from '@/types';
+import { getProfile } from '@/services/profileService';
+import type { Profile, SavedPlaceWithPlace } from '@/types';
+
+// Default radius used when neither the saved place nor the profile specify one.
+// Matches the V1 default surfaced in add-place.tsx.
+const DEFAULT_RADIUS_MILES = 1;
+
+/**
+ * Effective radius (in meters) for a saved place, used to render a Life360-
+ * style zone bubble. Honors:
+ *   1. per-place radius_value/radius_unit if set
+ *   2. else profile default_radius_value/default_radius_unit if available
+ *   3. else 1 mile
+ */
+function effectiveRadiusMeters(
+  s: SavedPlaceWithPlace,
+  profile: Profile | null,
+): number {
+  const value =
+    s.radius_value ?? profile?.default_radius_value ?? DEFAULT_RADIUS_MILES;
+  const unit = s.radius_unit ?? profile?.default_radius_unit ?? 'miles';
+  return unit === 'minutes' ? minutesToMeters(value) : milesToMeters(value);
+}
+
+// Approximate degrees-of-latitude per meter. Good enough for camera framing
+// (we do NOT use this for distance math — that lives in lib/geo.ts).
+const METERS_PER_DEGREE_LAT = 111_000;
+
+/**
+ * Build the two diagonal corners of a square that bounds a circle of
+ * `radiusMeters` centered at `(lat, lng)`. We pad by 30% so the circle
+ * never touches the screen edge — this is what makes the zone feel like
+ * a real bubble instead of a clipped arc.
+ */
+function radiusBoundingCoords(
+  lat: number,
+  lng: number,
+  radiusMeters: number,
+): Array<{ latitude: number; longitude: number }> {
+  const padded = radiusMeters * 1.3;
+  const dLat = padded / METERS_PER_DEGREE_LAT;
+  // Longitude degrees shrink with latitude; correct for it so circles near
+  // the poles still frame correctly.
+  const cosLat = Math.max(0.01, Math.cos((lat * Math.PI) / 180));
+  const dLng = padded / (METERS_PER_DEGREE_LAT * cosLat);
+  return [
+    { latitude: lat + dLat, longitude: lng + dLng },
+    { latitude: lat - dLat, longitude: lng - dLng },
+  ];
+}
+
+/**
+ * Build bounding coords that cover ALL saved-place zones (each marker plus
+ * its radius bubble). Used so multi-place fitting frames the circles, not
+ * just the pins.
+ */
+function allZoneBoundingCoords(
+  places: SavedPlaceWithPlace[],
+  profile: Profile | null,
+): Array<{ latitude: number; longitude: number }> {
+  const coords: Array<{ latitude: number; longitude: number }> = [];
+  for (const p of places) {
+    coords.push(
+      ...radiusBoundingCoords(
+        p.place.latitude,
+        p.place.longitude,
+        effectiveRadiusMeters(p, profile),
+      ),
+    );
+  }
+  return coords;
+}
 
 type PermissionState = 'pending' | 'granted' | 'denied' | 'unavailable';
 
@@ -59,6 +131,17 @@ const FALLBACK_REGION: Region = {
 
 export default function MapScreen() {
   const router = useRouter();
+  // Optional deep-link param: when present, the map should center on this
+  // saved place and open its preview card. Set by "Show on map" actions on
+  // the place detail screen and saved-place cards. We track the last id we
+  // already handled in `handledTargetIdRef` so we don't re-animate every
+  // render or fight the user's panning.
+  const { savedPlaceId: rawSavedPlaceId } = useLocalSearchParams<{
+    savedPlaceId?: string | string[];
+  }>();
+  const savedPlaceId = Array.isArray(rawSavedPlaceId)
+    ? rawSavedPlaceId[0]
+    : rawSavedPlaceId;
   const { data: liveData, loading: liveLoading, refresh } = useSavedPlaces();
   const mapRef = useRef<MapView | null>(null);
   const demo = isDemoMode();
@@ -104,11 +187,13 @@ export default function MapScreen() {
   const [userRegion, setUserRegion] = useState<Region | null>(null);
   const [currentLocationLoading, setCurrentLocationLoading] = useState(false);
   const [selected, setSelected] = useState<SavedPlaceWithPlace | null>(null);
+  const [mapReady, setMapReady] = useState(false);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const didFitRef = useRef(false);
-  // Controlled region — required so we can imperatively re-target the camera
-  // once places load. `react-native-maps` will not always re-render markers
-  // after initial mount unless the region prop is driven from state.
-  const [region, setRegion] = useState<Region>(FALLBACK_REGION);
+  // Tracks which `savedPlaceId` deep-link we've already focused on. Reset
+  // implicitly when the param changes to a new id so coming back to the
+  // same place from a different card still triggers the focus animation.
+  const handledTargetIdRef = useRef<string | null>(null);
 
   // ---- permission + initial location ------------------------------------
   // IMPORTANT: this effect must NEVER block map rendering. The map should be
@@ -206,6 +291,24 @@ export default function MapScreen() {
     }, [refresh]),
   );
 
+  // ---- load profile (for default radius fallback) -----------------------
+  // Best-effort. If this fails or returns null we just fall back to 1 mile
+  // per place — never blocks the map.
+  useEffect(() => {
+    if (mapPreview) return;
+    let cancelled = false;
+    getProfile()
+      .then((p) => {
+        if (!cancelled) setProfile(p);
+      })
+      .catch((e) => {
+        if (__DEV__) console.debug('[map] getProfile failed', e);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [mapPreview]);
+
   // ---- pick an initial region -------------------------------------------
   // Map Preview Mode uses a hard-coded Santa Cruz region so the map always
   // has a valid camera target on first paint, regardless of seed loading.
@@ -215,11 +318,15 @@ export default function MapScreen() {
     latitudeDelta: 0.08,
     longitudeDelta: 0.08,
   };
+  // Computed exactly once for `initialRegion`. We deliberately do NOT
+  // recompute this on every data/userRegion change — `react-native-maps`
+  // ignores changes to `initialRegion` after mount, and we re-target the
+  // camera imperatively below instead.
   const initialRegion = useMemo<Region>(() => {
     if (mapPreview) return PREVIEW_INITIAL_REGION;
     if (userRegion) return userRegion;
-    if (data.length > 0) {
-      const first = data[0].place;
+    if (validPlaces.length > 0) {
+      const first = validPlaces[0].place;
       return {
         latitude: first.latitude,
         longitude: first.longitude,
@@ -228,55 +335,96 @@ export default function MapScreen() {
       };
     }
     return FALLBACK_REGION;
-  }, [mapPreview, userRegion, data]);
-
-  // Keep the controlled `region` in sync with whatever the rest of this
-  // component decides is the right initial target. In Map Preview Mode this
-  // also force-pushes the Santa Cruz region the moment seeded places appear,
-  // which is what unsticks the marker layer on first paint.
-  useEffect(() => {
-    if (mapPreview && places.length > 0) {
-      setRegion(PREVIEW_INITIAL_REGION);
-      return;
-    }
-    setRegion(initialRegion);
-    // PREVIEW_INITIAL_REGION is a stable literal declared above; safe to omit.
+    // Intentionally only depends on mapPreview — initialRegion is captured
+    // once at first mount and the camera is moved imperatively after that.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mapPreview, places.length, initialRegion]);
+  }, [mapPreview]);
 
-  // ---- once we have data + a map, fit the camera to all markers --------
-  // NOTE: completely skipped in Map Preview Mode — the controlled `region`
-  // above is the single source of truth there, and didFitRef would otherwise
-  // block the seeded markers from showing.
+  // ---- once we have data + a ready map, fit the camera to all zones ----
+  // Guarded by `mapReady` so we never call into the native map before the
+  // view is fully wired up. Skipped in Map Preview Mode — the static
+  // `initialRegion` is the single source of truth there.
+  //
+  // We frame the *zones* (marker + radius bubble), not just the pins. This
+  // is what makes the screen read as Life360-style coverage instead of a
+  // tightly-zoomed pin. For a single place this means the whole circle is
+  // visible on first paint; for many it means none of the bubbles get
+  // clipped at the screen edge.
   useEffect(() => {
     if (mapPreview) return;
+    if (!mapReady) return;
     if (didFitRef.current) return;
     if (!mapRef.current) return;
     if (validPlaces.length === 0) return;
 
-    const coords = validPlaces.map((s) => ({
-      latitude: s.place.latitude,
-      longitude: s.place.longitude,
-    }));
-    // Guard: fitToCoordinates throws on an empty array; we already checked
-    // length above, but double-check after the map() in case of any future
-    // refactor.
+    const coords = allZoneBoundingCoords(validPlaces, profile);
     if (coords.length === 0) return;
     didFitRef.current = true;
-    // Defer to next tick so markers are mounted and the map ref is fully
-    // wired up natively.
-    setTimeout(() => {
-      if (!mapRef.current) return;
-      try {
-        mapRef.current.fitToCoordinates(coords, {
-          edgePadding: { top: 100, right: 80, bottom: 180, left: 80 },
-          animated: true,
-        });
-      } catch (e) {
-        if (__DEV__) console.debug('[map] fitToCoordinates skipped', e);
-      }
-    }, 250);
-  }, [validPlaces, mapPreview]);
+    try {
+      mapRef.current.fitToCoordinates(coords, {
+        edgePadding: { top: 100, right: 100, bottom: 180, left: 100 },
+        animated: true,
+      });
+    } catch (e) {
+      if (__DEV__) console.debug('[map] fitToCoordinates skipped', e);
+    }
+  }, [validPlaces, mapPreview, mapReady, profile]);
+
+  // When we acquire a GPS fix *after* the map has mounted (and we haven't
+  // already fit to the saved-places set), gently animate the camera there.
+  useEffect(() => {
+    if (mapPreview) return;
+    if (!mapReady) return;
+    if (!userRegion) return;
+    if (didFitRef.current) return;
+    if (validPlaces.length > 0) return; // fit-to-coords path will handle it
+    try {
+      mapRef.current?.animateToRegion(userRegion, 400);
+    } catch (e) {
+      if (__DEV__) console.debug('[map] animateToRegion skipped', e);
+    }
+  }, [userRegion, mapReady, mapPreview, validPlaces.length]);
+
+  // ---- deep-link target: focus a specific saved place -------------------
+  // Triggered by the "Show on map" action elsewhere in the app. Runs once
+  // per `savedPlaceId` change, after the map is ready and the saved-places
+  // list has loaded. We:
+  //   1. find the matching saved place
+  //   2. mark it as `selected` (opens the preview card)
+  //   3. frame its full radius zone via fitToCoordinates (not just a pin)
+  //   4. mark `didFitRef` so the multi-zone auto-fit doesn't run after us
+  // If the id doesn't match anything, we silently fall back to the normal
+  // map behavior.
+  useEffect(() => {
+    if (!mapReady) return;
+    if (!savedPlaceId) return;
+    if (handledTargetIdRef.current === savedPlaceId) return;
+    if (validPlaces.length === 0) return; // wait for data to arrive
+    const target = validPlaces.find((p) => p.id === savedPlaceId);
+    if (!target) {
+      // Unknown id (e.g. deleted on another device). Mark as handled so we
+      // don't keep scanning, but don't move the camera.
+      handledTargetIdRef.current = savedPlaceId;
+      if (__DEV__) console.log('[map] target id not found', savedPlaceId);
+      return;
+    }
+    handledTargetIdRef.current = savedPlaceId;
+    didFitRef.current = true;
+    setSelected(target);
+    try {
+      const coords = radiusBoundingCoords(
+        target.place.latitude,
+        target.place.longitude,
+        effectiveRadiusMeters(target, profile),
+      );
+      mapRef.current?.fitToCoordinates(coords, {
+        edgePadding: { top: 100, right: 100, bottom: 220, left: 100 },
+        animated: true,
+      });
+    } catch (e) {
+      if (__DEV__) console.debug('[map] focus target skipped', e);
+    }
+  }, [savedPlaceId, mapReady, validPlaces, profile]);
 
   // ---- DEBUG ------------------------------------------------------------
   // Temporary verbose logs requested while diagnosing the "spinner forever"
@@ -289,7 +437,8 @@ export default function MapScreen() {
       validPlacesLength: validPlaces.length,
       locationPermissionState: permission,
       currentLocationLoading,
-      mapRegion: region,
+      mapReady,
+      initialRegion,
       markersRendered: validPlaces.length,
       mapPreview,
     });
@@ -301,6 +450,28 @@ export default function MapScreen() {
       item.place.google_maps_url ??
       `https://www.google.com/maps/search/?api=1&query=${item.place.latitude},${item.place.longitude}`;
     Linking.openURL(url).catch((e) => console.warn('[map] openURL failed', e));
+  }
+
+  /**
+   * Frame the map around a single saved place's zone (marker + radius
+   * bubble). Called when the user taps a marker so the selection feels
+   * like "zoom into this zone" instead of "jump to a pin".
+   */
+  function focusZone(item: SavedPlaceWithPlace) {
+    if (!mapRef.current) return;
+    const coords = radiusBoundingCoords(
+      item.place.latitude,
+      item.place.longitude,
+      effectiveRadiusMeters(item, profile),
+    );
+    try {
+      mapRef.current.fitToCoordinates(coords, {
+        edgePadding: { top: 100, right: 100, bottom: 220, left: 100 },
+        animated: true,
+      });
+    } catch (e) {
+      if (__DEV__) console.debug('[map] focusZone skipped', e);
+    }
   }
 
   // -----------------------------------------------------------------------
@@ -328,63 +499,79 @@ export default function MapScreen() {
   // -----------------------------------------------------------------------
   return (
     <View style={styles.container}>
-      {/* Defer mounting MapView until we actually have valid places to draw.
-          This avoids the react-native-maps quirk where markers added after
-          the first frame are silently dropped. The `key` ties the MapView's
-          identity to the dataset size, so any change forces a clean remount
-          and a guaranteed marker pass. */}
-      {validPlaces.length > 0 ? (
-        <MapView
-          key={`map-${validPlaces.length}`}
-          ref={mapRef}
-          provider={PROVIDER_GOOGLE}
-          style={StyleSheet.absoluteFill}
-          // Only show the user dot when we actually have a fix. Toggling
-          // `showsUserLocation` on without a usable provider can leave the
-          // Google Maps Android view in a "loading" state.
-          showsUserLocation={!mapPreview && permission === 'granted' && !!userRegion}
-          showsMyLocationButton={!mapPreview && permission === 'granted' && !!userRegion}
-          region={region}
-          onRegionChangeComplete={setRegion}
-          onPress={() => setSelected(null)}
-        >
-          {validPlaces.map((p) => (
-            <Marker
-              key={p.id}
-              identifier={p.id}
-              coordinate={{
-                latitude: p.place.latitude,
-                longitude: p.place.longitude,
-              }}
-              title={p.place.name}
-              description={p.place.formatted_address ?? undefined}
-              onPress={(e) => {
-                e.stopPropagation?.();
-                setSelected(p);
-              }}
-            >
-              <View
-                style={{
-                  width: 24,
-                  height: 24,
-                  borderRadius: 12,
-                  backgroundColor: '#111',
-                  borderWidth: 2,
-                  borderColor: '#fff',
-                }}
-              />
-            </Marker>
-          ))}
-        </MapView>
-      ) : null}
+      {/* MapView ALWAYS mounts. Empty / loading / no-GPS states render as
+          non-blocking overlays on top of the map — never as replacements
+          for it. This is what makes the screen feel alive instead of a
+          spinner-trapped shell. */}
+      <MapView
+        ref={mapRef}
+        provider={PROVIDER_GOOGLE}
+        style={StyleSheet.absoluteFill}
+        // Only show the user dot when we actually have a fix. Toggling
+        // `showsUserLocation` on without a usable provider can leave the
+        // Google Maps Android view in a "loading" state.
+        showsUserLocation={!mapPreview && permission === 'granted' && !!userRegion}
+        showsMyLocationButton={!mapPreview && permission === 'granted' && !!userRegion}
+        initialRegion={initialRegion}
+        onMapReady={() => setMapReady(true)}
+        onPress={() => setSelected(null)}
+      >
+        {/* Life360-style zone bubbles. Rendered as a separate pass before
+            markers so marker pins always sit on top of their own circle.
+            Stroke is intentionally darker than the fill so the boundary
+            reads clearly on satellite, dark, and light map tiles alike. */}
+        {validPlaces.map((p) => (
+          <Circle
+            key={`circle-${p.id}`}
+            center={{
+              latitude: p.place.latitude,
+              longitude: p.place.longitude,
+            }}
+            radius={effectiveRadiusMeters(p, profile)}
+            strokeColor="rgba(0,0,0,0.35)"
+            strokeWidth={2}
+            fillColor="rgba(0,0,0,0.10)"
+          />
+        ))}
+        {validPlaces.map((p) => (
+          <Marker
+            key={p.id}
+            identifier={p.id}
+            coordinate={{
+              latitude: p.place.latitude,
+              longitude: p.place.longitude,
+            }}
+            // Custom marker views default to bottom-center anchoring, which
+            // would offset our pin upward from the geographic coordinate and
+            // visually push it off-center inside the radius circle. Anchor
+            // (and iOS centerOffset) at the marker's middle so the pin sits
+            // exactly on the coordinate that the Circle is centered on.
+            anchor={{ x: 0.5, y: 0.5 }}
+            centerOffset={{ x: 0, y: 0 }}
+            title={p.place.name}
+            description={p.place.formatted_address ?? undefined}
+            onPress={(e) => {
+              e.stopPropagation?.();
+              setSelected(p);
+              focusZone(p);
+            }}
+          >
+            {/* "Home base" pin: a soft halo around a solid dot reinforces
+                that this is the center of the zone, not just a pin drop.
+                Static (no animation) to keep V1 light. */}
+            <View style={styles.markerWrap}>
+              <View style={styles.markerHalo} />
+              <View style={styles.markerDot} />
+            </View>
+          </Marker>
+        ))}
+      </MapView>
 
-      {/* Fallback when no valid places are available. Distinguishes between
-          "still loading" and "loaded zero places" so the user isn't stuck
-          looking at a blank screen. */}
+      {/* Non-blocking empty/loading pill. The map keeps rendering underneath. */}
       {validPlaces.length === 0 ? (
-        <View style={styles.emptyOverlay} pointerEvents="none">
-          <Text style={styles.emptyText}>
-            {liveLoading ? 'Loading places…' : 'No places loaded'}
+        <View style={styles.emptyPill} pointerEvents="none">
+          <Text style={styles.emptyPillText}>
+            {liveLoading ? 'Loading places…' : 'No saved places yet'}
           </Text>
         </View>
       ) : null}
@@ -489,6 +676,30 @@ export default function MapScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
 
+  markerWrap: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  markerHalo: {
+    position: 'absolute',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(0,0,0,0.18)',
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.25)',
+  },
+  markerDot: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: '#111',
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
+
   locPill: {
     position: 'absolute',
     bottom: Spacing.lg + 4,
@@ -550,23 +761,25 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  emptyOverlay: {
+  emptyPill: {
     position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emptyText: {
-    ...Typography.body,
-    color: Colors.text,
-    backgroundColor: Colors.surface,
-    paddingVertical: Spacing.sm,
+    top: Spacing.lg,
+    alignSelf: 'center',
+    paddingVertical: Spacing.xs,
     paddingHorizontal: Spacing.md,
-    borderRadius: Radius.md,
-    overflow: 'hidden',
+    borderRadius: Radius.pill,
+    backgroundColor: Colors.surface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: Colors.textMuted,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  emptyPillText: {
+    ...Typography.caption,
+    color: Colors.text,
   },
 
   previewWrap: {

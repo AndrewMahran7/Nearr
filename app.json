@@ -9,17 +9,20 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.nearr.app",
+      "bundleIdentifier": "com.nearr.ios",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Nearr uses your location to notify you when you are near saved places.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Nearr uses your location in the background to notify you when you are near saved places.",
         "UIBackgroundModes": [
           "location",
+          "fetch",
+          "location",
           "fetch"
-        ]
+        ],
+        "ITSAppUsesNonExemptEncryption": false
       },
       "config": {
-        "googleMapsApiKey": "$GOOGLE_MAPS_IOS_KEY"
+        "googleMapsApiKey": "AIzaSyCDEl9gx-qw8VhFObsJ1mxGTAO2gjnNBKM"
       }
     },
     "android": {
@@ -59,7 +62,7 @@
       ],
       "config": {
         "googleMaps": {
-          "apiKey": "$GOOGLE_MAPS_ANDROID_KEY"
+          "apiKey": "AIzaSyCDEl9gx-qw8VhFObsJ1mxGTAO2gjnNBKM"
         }
       }
     },
@@ -71,7 +74,26 @@
           "locationAlwaysAndWhenInUsePermission": "Allow Nearr to use your location to notify you near saved places."
         }
       ],
-      "expo-notifications"
+      "expo-notifications",
+      "./plugins/withAndroidShareIntent",
+      [
+        "expo-share-extension",
+        {
+          "activationRules": [
+            { "type": "url", "max": 1 },
+            { "type": "text" }
+          ],
+          "excludedPackages": [
+            "expo-dev-client",
+            "expo-splash-screen",
+            "expo-updates",
+            "expo-notifications",
+            "expo-location",
+            "expo-task-manager"
+          ],
+          "height": 220
+        }
+      ]
     ],
     "extra": {
       "supabaseUrl": "$SUPABASE_URL",

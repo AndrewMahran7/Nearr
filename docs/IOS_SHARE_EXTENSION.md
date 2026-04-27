@@ -1,197 +1,260 @@
 # iOS Share Extension — Plan & Status
 
-> **Status:** **scaffolded, not enabled.** The Swift / Info.plist / entitlements
-> files exist under `native/share-extension/`, and a no-op config plugin lives
-> at `plugins/withShareExtension.js`, but the plugin is **not** registered in
-> `app.json`. The app today uses the in-app **paste-link** flow on the
-> [`/share`](../app/share.tsx) screen, which works in Expo Go and EAS dev builds.
+> **Status (V2 beta, 2026-04-27):**
+> - **Android: SHIPPING.** Native "Share to Nearr" works end-to-end via a
+>   patched `MainActivity.kt` + the
+>   [withAndroidShareIntent](../plugins/withAndroidShareIntent.js) config plugin.
+> - **iOS: WIRED via `expo-share-extension` (v1.10.7).** Plugin registered
+>   in [app.json](../app.json), entry files
+>   [index.share.js](../index.share.js) + [ShareExtension.tsx](../ShareExtension.tsx)
+>   in repo root, [metro.config.js](../metro.config.js) recognizes
+>   `share.js` as a source ext. The extension is a thin pass-through:
+>   it grabs the first URL from the shared payload and opens
+>   `nearr://share?url=<encoded>` in the host app, where the existing
+>   [/share](../app/share.tsx) flow auto-runs.
+> - **Manual paste fallback** still works on both platforms.
 
-This document describes what was scaffolded, why each piece exists, what's
-still required to ship a real "Share to Nearr" experience from TikTok /
-Instagram / Safari, and the specific Expo Go limitations involved.
+This document describes how the iOS share extension is wired, the manual
+Apple Developer setup required for the App Group, the EAS build steps,
+and the manual test matrix.
 
 ---
 
 ## What's fully implemented today
 
-- **Manual paste-link flow** ([app/share.tsx](../app/share.tsx)):
-  - User opens Nearr → "Save from a link" → pastes URL → preview → confirm.
-  - Works in Expo Go and EAS builds.
-  - Calls [`parseShare`](../lib/shareParser.ts) which fetches public OpenGraph
-    metadata (no auth, no scraping), extracts a Google-Places-friendly query,
-    and hands off to [`/add-place`](../app/add-place.tsx) for candidate
-    selection and save.
-  - Source attribution (`source_type`, `source_url`) is preserved on the
-    `saved_places` row.
-- **Deep link plumbing**: `expo.scheme` is `"nearr"` in
-  [app.json](../app.json), so `nearr://share?url=...` already routes to
-  [`/share`](../app/share.tsx) and auto-parses on mount (Task 11).
-- **Android `SEND` intent filter**: the manifest entry already exists in
-  [app.json](../app.json) under `android.intentFilters`, so on Android a user
-  can already pick "Nearr" from the system share sheet for `text/plain` data.
-  The host app receives the URL as a deep link parameter handled by Expo
-  Router. This works today in EAS / `expo run:android` builds (not in
-  Expo Go).
+### Android (V2 beta — shipping)
 
-## What's scaffolded but **not** wired in
+- Intent filter for `android.intent.action.SEND` with `text/plain` is
+  declared in [app.json](../app.json) under `android.intentFilters`.
+- [android/app/src/main/java/com/nearr/app/MainActivity.kt](../android/app/src/main/java/com/nearr/app/MainActivity.kt)
+  rewrites incoming `ACTION_SEND` intents into our existing
+  `nearr://share?url=<encoded>` deep link, in both `onCreate` (cold start)
+  and `onNewIntent` (warm start). It extracts the first `https?://` URL
+  from `EXTRA_TEXT` (Instagram/TikTok captions often look like
+  `"check this out https://www.tiktok.com/..."`) and trims trailing
+  punctuation.
+- [plugins/withAndroidShareIntent.js](../plugins/withAndroidShareIntent.js)
+  re-applies the same MainActivity patch on every `expo prebuild`, so the
+  feature survives a clean prebuild. Wired in [app.json](../app.json)
+  `expo.plugins`. The plugin is idempotent (gated on a marker comment).
+- [app/share.tsx](../app/share.tsx) auto-runs the save flow when a `url`
+  param arrives, using a `lastProcessedUrlRef` so a NEW share mid-session
+  re-triggers the flow but unrelated re-renders do not.
+- Header copy on the share screen swaps to "Saving from share…" when
+  launched with a URL param, hiding the manual paste hint.
 
-These files exist on disk but are not yet referenced by the build:
+### Manual paste fallback (always)
 
-| File | Purpose |
-| --- | --- |
-| [native/share-extension/ShareViewController.swift](../native/share-extension/ShareViewController.swift) | Reads the first `public.url` (or text-with-URL) attachment, persists it to the App Group `UserDefaults` (`lastSharedUrl`), then opens `nearr://share?url=<encoded>` to wake the host app. |
-| [native/share-extension/Info.plist](../native/share-extension/Info.plist) | `NSExtensionActivationRule` so "Nearr" appears in the iOS share sheet for URLs / text containing URLs / image+url combos. |
-| [native/share-extension/NearrShareExtension.entitlements](../native/share-extension/NearrShareExtension.entitlements) | App Group entitlement (`group.com.nearr.app`). |
-| [plugins/withShareExtension.js](../plugins/withShareExtension.js) | No-op config plugin placeholder. Logs a warning if accidentally enabled. |
+- [app/share.tsx](../app/share.tsx) still accepts a pasted URL. This is
+  the fallback path on iOS until the share extension is enabled, and a
+  defensive backup on Android if the share intent is dropped.
+- Calls [parseShare](../lib/shareParser.ts) which fetches public OpenGraph
+  metadata (no auth, no scraping), extracts a Google-Places-friendly
+  query, and hands off to candidate selection / save.
+- Source attribution (`source_type`, `source_url`) is preserved on the
+  `saved_places` row.
 
-These are kept under `native/` (not `ios/`) on purpose: `expo prebuild`
-**overwrites `ios/`** but leaves `native/` alone. A real config plugin will
-copy from `native/share-extension/` into the generated Xcode project on each
-prebuild.
+### Deep-link plumbing (already in place pre-V2)
 
----
+- `expo.scheme` is `"nearr"` in [app.json](../app.json), so
+  `nearr://share?url=...` routes to [/share](../app/share.tsx) and
+  auto-parses on mount.
 
-## What still needs to be done
+## What's scaffolded but **not** wired in (iOS)
 
-### 1. Decide on the implementation path
+> The legacy hand-rolled scaffold under [native/share-extension/](../native/share-extension/)
+> is **superseded** by `expo-share-extension`. It is intentionally kept for
+> reference but is no longer compiled into the build. The
+> [plugins/withShareExtension.js](../plugins/withShareExtension.js) plugin
+> is still a no-op and should NOT be re-enabled.
 
-Two viable options:
-
-**Option A — Use `expo-share-extension` (or similar community plugin).**
-- Pros: less custom Xcode work, the package handles target creation,
-  entitlements, and pbxproj rewrites for you.
-- Cons: another dependency; needs vetting; behavior must be tested end-to-end
-  with a real EAS build against TikTok/Instagram share sheets.
-- Recommended starting point if available on npm at the time of build.
-
-**Option B — Hand-roll using `@bacons/xcode` in our own config plugin.**
-- Pros: full control; no extra runtime dep.
-- Cons: more code; the plugin must mutate `Nearr.xcodeproj/project.pbxproj`
-  to add a second target — non-trivial and brittle across Xcode versions.
-
-Either way, the runtime contract is the same: the extension drops a URL into
-the App Group and opens `nearr://share?url=...`.
-
-### 2. Xcode steps the chosen plugin must perform on prebuild
-
-When the config plugin runs, it must:
-
-1. **Create a new app extension target** named `NearrShareExtension`.
-   - Bundle id: `com.nearr.app.shareextension`.
-   - Deployment target: same as the host app.
-   - Add `ShareViewController.swift`, `Info.plist`,
-     `NearrShareExtension.entitlements`, and a `MainInterface.storyboard`
-     (auto-generated; can be the default empty storyboard).
-2. **Add the App Group capability** (`group.com.nearr.app`) to **both**
-   targets (host + extension). This requires the App Group to also be
-   created and assigned in Apple Developer Portal under the same Team ID
-   used for code signing.
-3. **Add the extension target as an embedded binary** of the host app so it
-   ships inside the .ipa.
-4. **Update Podfile** so the extension target inherits Pods needed for Swift
-   stdlib (usually nothing else is required for a plain Swift extension).
-5. **Add `LSApplicationQueriesSchemes`** entry in the host Info.plist if we
-   ever want the host app to call back into other share targets (not needed
-   for our current flow).
-
-### 3. Host app changes
-
-- **App Group entitlement**: must be added to the host app's entitlements
-  (the config plugin should also patch `ios/Nearr/Nearr.entitlements` or the
-  equivalent generated file).
-- **Read the App Group on launch / foreground**: in [`app/_layout.tsx`](../app/_layout.tsx)
-  add (when iOS) a tiny native module call (or a JS bridge using
-  `react-native-shared-group-preferences`) to read `lastSharedUrl`, then
-  navigate to `/share?url=...` and clear the key. This is a redundant safety
-  net in case the `nearr://share` URL is dropped while the app was killed.
-- **Deep-link handling for `nearr://share`** is already wired via Expo
-  Router (the `/share` route + `useLocalSearchParams<{url}>()`); no change
-  needed there.
-
-### 4. Build & test
-
-- `npx expo prebuild --clean` must succeed and produce an `ios/` project
-  with **two** targets (`Nearr`, `NearrShareExtension`).
-- `eas build --platform ios --profile development` must pass code signing
-  for both targets. Both need provisioning profiles tied to the App Group.
-- Manual test matrix:
-  - Share from Safari → URL → Nearr appears → tap → app opens on `/share`
-    with URL prefilled and metadata preview rendered.
-  - Share from TikTok → "Copy link" path: the share sheet sometimes
-    delivers plain text containing a URL rather than a URL attachment;
-    `ShareViewController.firstUrl(in:)` handles this.
-  - Share from Instagram → similar to TikTok; some posts deliver only an
-    image attachment with no URL — in that case the extension does
-    nothing (acceptable for V1).
+| File | Purpose | Status |
+| --- | --- | --- |
+| [native/share-extension/ShareViewController.swift](../native/share-extension/ShareViewController.swift) | Hand-rolled Swift extension (App Group + deep link). | **Superseded** — `expo-share-extension` generates an equivalent target during prebuild. |
+| [native/share-extension/Info.plist](../native/share-extension/Info.plist) | Hand-rolled extension Info.plist with activation rules. | **Superseded.** |
+| [native/share-extension/NearrShareExtension.entitlements](../native/share-extension/NearrShareExtension.entitlements) | App Group entitlement. | **Superseded.** |
+| [plugins/withShareExtension.js](../plugins/withShareExtension.js) | Original no-op placeholder plugin. | **Do not enable** — `expo-share-extension` replaces it. |
 
 ---
 
-## App Groups
+## How the iOS share extension works now
+
+1. `expo-share-extension` is registered in [app.json](../app.json) under
+   `expo.plugins` with activation rules `url` (max 1) and `text`.
+   - On `expo prebuild` it creates a second iOS target (`NearrShareExtension`,
+     bundle id `com.nearr.app.ShareExtension`).
+   - It adds the App Group entitlement `group.com.nearr.app` to **both**
+     targets automatically.
+   - It writes the extension Info.plist with the activation rules above.
+   - It updates the Podfile to include the extension target.
+2. Metro is configured ([metro.config.js](../metro.config.js)) to recognize
+   `share.js` as a source extension. This lets [index.share.js](../index.share.js)
+   become the entry point of the extension bundle, distinct from the host
+   app's [index.js](../index.js).
+3. [ShareExtension.tsx](../ShareExtension.tsx) is the extension's root
+   React component:
+   - Reads `url` and/or `text` from `InitialProps` (Safari → `url`;
+     IG/TikTok → `text` containing the URL).
+   - Extracts the first `https?://` URL via regex (with trailing
+     punctuation trim, mirroring the Android logic).
+   - Calls `openHostApp("share?url=<encoded>")` — `expo-share-extension`
+     prepends the app scheme automatically, so this becomes
+     `nearr://share?url=<encoded>`.
+   - Calls `close()` after a short delay so iOS can finish the openURL
+     handoff before the sheet is torn down.
+4. [app/share.tsx](../app/share.tsx) (already in place from V2 beta)
+   reads the `url` param via `useLocalSearchParams<{url}>()` and
+   auto-runs the existing save flow.
+
+The extension never asks the user to tap anything. The total user-visible
+time inside the share sheet is roughly the openURL latency + the 250ms
+debounce — typically < 1s.
+
+---
+
+## Apple Developer Portal setup (one-time, manual)
+
+`expo-share-extension` configures the build, but the App Group itself must
+exist in the Apple Developer Portal under the same Team ID used to sign
+the app:
+
+1. **Apple Developer → Certificates, Identifiers & Profiles → Identifiers**.
+2. Click **+ → App Groups → Continue**.
+3. Description: `Nearr Share Group`. Identifier: `group.com.nearr.app`.
+   Continue → Register.
+4. **Identifiers → App IDs**: edit `com.nearr.app` and `com.nearr.app.ShareExtension`
+   (the latter is created by EAS on the next build) and check the
+   **App Groups** capability, assigning `group.com.nearr.app` to both.
+5. Re-generate provisioning profiles for both bundle ids. EAS will do
+   this automatically the next time you run `eas build` — answer "Yes"
+   when prompted to update credentials.
+
+That's the entire one-time setup. There is no UserDefaults bridge to
+maintain because the share extension hands off via the deep link path,
+not the App Group container. (The App Group entitlement is still
+required by `expo-share-extension` for shared-bundle plumbing.)
+
+---
+
+## EAS build steps
+
+```sh
+# 1. Regenerate the iOS project so the share-extension target is created.
+npx expo prebuild --clean --platform ios
+
+# 2. Build a dev client. EAS will prompt to provision the new
+#    com.nearr.app.ShareExtension bundle id; accept.
+eas build --platform ios --profile development
+
+# 3. Install the resulting .ipa on a physical device (Safari / IG / TikTok
+#    do not appear in the share sheet on the simulator).
+```
+
+After install, sign in to Nearr at least once so the host app's auth
+context is initialized — otherwise the deep link will land on the auth
+gate and the user has to re-share after signing in.
+
+---
+
+## App Group reference
 
 - **Identifier**: `group.com.nearr.app`
-- **Where it appears**:
-  - [native/share-extension/NearrShareExtension.entitlements](../native/share-extension/NearrShareExtension.entitlements)
-  - [native/share-extension/ShareViewController.swift](../native/share-extension/ShareViewController.swift) `appGroupId` constant
-  - The host app's entitlements (added by the config plugin during prebuild)
-  - Apple Developer Portal → Identifiers → App Groups (must exist there)
-- **Used for**: persisting `lastSharedUrl` so the host app can recover it
-  even if the `nearr://share?url=...` deep link is dropped (e.g. host app
-  was force-killed).
+- **Generated by**: `expo-share-extension` (entitlements + Info.plist
+  written automatically during prebuild for both targets).
+- **Used for**: required by iOS for the share-extension plumbing (shared
+  container, font sharing, etc.). Nearr does not currently read or write
+  to the container itself — handoff is via the `nearr://share?url=...`
+  deep link.
 
 ---
 
 ## How shared URLs are passed to the main app
 
-Two complementary channels, both safe to use simultaneously:
+A single channel: the extension calls `openHostApp("share?url=<encoded>")`,
+which `expo-share-extension` translates into `nearr://share?url=<encoded>`
+(using the host app's `expo.scheme`). iOS launches/foregrounds the host
+app, Expo Router parses the URL, the [/share](../app/share.tsx) screen
+reads `useLocalSearchParams<{url}>()` and auto-runs the existing save
+flow.
 
-1. **Deep link (primary)**: the extension calls
-   `nearr://share?url=<urlencoded>`. iOS launches the host app or
-   foregrounds it, Expo Router parses the URL, the [`/share`](../app/share.tsx)
-   screen reads `useLocalSearchParams<{url}>()` and auto-runs `parseShare`.
-2. **App Group `UserDefaults` (fallback)**: the extension also writes
-   `lastSharedUrl` and `lastSharedAt` into
-   `UserDefaults(suiteName: "group.com.nearr.app")`. On host app foreground,
-   we can read these via a JS bridge and navigate to `/share?url=...` if
-   the deep link was missed. **This bridge is not yet implemented** — see
-   "Host app changes" above.
+The legacy hand-rolled scaffold also wrote the URL into
+`UserDefaults(suiteName: "group.com.nearr.app")` as a fallback. We
+deliberately removed that channel here because:
 
-Both paths converge on the same Expo Router screen, so the rest of the
-flow (metadata fetch, preview, candidate selection, save) is identical to
-the manual paste flow.
+- `openHostApp` is reliable in practice; the deep link is delivered cold
+  and warm.
+- Adding a UserDefaults bridge requires another native module
+  (`react-native-shared-group-preferences` or hand-rolled), which is
+  more code and more risk than it's worth for a redundant safety net.
+
+If we ever observe dropped shares in the wild, the App Group container is
+already provisioned (required by `expo-share-extension`), so adding the
+fallback later is a small follow-up, not a re-architecture.
 
 ---
 
 ## Limitations of Expo Go
 
-- **Custom native targets are unsupported.** Expo Go ships a fixed bundle of
-  native modules; you cannot add a second iOS target (the share extension)
-  without leaving Expo Go.
-- **Background tasks are unsupported in Expo Go.** This is already noted for
-  the proximity notifications feature (Task 10), but it applies here too:
-  any feature that requires custom native code requires an **EAS dev build**
-  (`eas build --profile development`) or a local prebuild
-  (`npx expo run:ios`) once the share-extension plugin is enabled.
-- **What still works in Expo Go**: the entire paste-link flow on
-  [`/share`](../app/share.tsx), including OpenGraph metadata extraction,
-  candidate search, and save. No regression from scaffolding the extension
-  files since they aren't compiled in Expo Go.
+- **Custom native targets are unsupported.** Expo Go cannot host the
+  share extension target. Use an EAS dev build (`eas build --profile
+  development`) or a local prebuild (`npx expo run:ios`).
+- **What still works in Expo Go**: the manual paste-link flow on
+  [/share](../app/share.tsx).
 
 ---
 
-## Honesty checklist (current state, 2026-04-26)
+## Honesty checklist (current state, 2026-04-27)
 
 - [x] Manual paste-link flow works end-to-end in Expo Go and EAS dev builds.
-- [x] Android system share sheet entry exists in `app.json` and works in EAS
-      builds (not Expo Go).
-- [x] iOS Swift / Info.plist / entitlements scaffolds written under
-      `native/share-extension/`.
-- [x] Config plugin file exists at [plugins/withShareExtension.js](../plugins/withShareExtension.js)
-      as a no-op placeholder.
-- [ ] Config plugin actually creates the iOS target on prebuild.
-- [ ] App Group is created in Apple Developer Portal.
-- [ ] Host app reads `UserDefaults(suiteName:)` on foreground as a fallback.
+- [x] Android system share sheet is **shipping**.
+- [x] iOS share extension wired via `expo-share-extension` v1.10.7
+      (plugin registered, entry files + metro config in repo, App Group
+      auto-configured during prebuild).
+- [x] Hand-rolled iOS scaffold under `native/share-extension/` deprecated
+      with a note in this doc; not compiled into the build.
+- [ ] App Group `group.com.nearr.app` created in Apple Developer Portal
+      (one-time manual step — see "Apple Developer Portal setup" above).
 - [ ] EAS dev build verified end-to-end with a real share from TikTok /
-      Instagram / Safari.
+      Instagram / Safari **on iOS** (cannot be verified without an Apple
+      developer account + physical iOS device; see test checklist below).
 
-The unchecked items are the work required to turn the scaffold into a
-shipping feature. None of them block the rest of the app today.
+---
+
+## Manual test checklist
+
+### Android (after `npx expo run:android` or EAS dev build)
+
+1. Install the dev build on a physical Android device.
+2. Safari/Chrome → any URL → **Share** → **Nearr** → expect "Saving from
+   share…" header and auto-save/picker.
+3. Instagram Reel → **Share** → **More** → **Nearr** → same.
+4. TikTok video → **Share** → **Nearr** → same.
+5. While Nearr is already open on Home, repeat step 2 — `onNewIntent`
+   handles the warm-start case.
+6. Verify saved row carries the original `source_url` and right
+   `source_type`.
+
+### iOS (after `npx expo prebuild --clean --platform ios` + `eas build --platform ios --profile development`)
+
+Requires a **physical iOS device**. The share sheet does not present
+extensions on the simulator for Safari/IG/TikTok.
+
+1. Install the EAS dev client `.ipa` on a real device.
+2. Open Nearr once and sign in (so the auth gate is satisfied).
+3. **Safari**: open any URL → tap **Share** → scroll the second row →
+   tap **Save to Nearr**. Expect: a brief "Saving to Nearr…" sheet, then
+   Nearr opens to `/share` with the URL param and auto-runs the save
+   flow.
+4. **Instagram**: open a Reel → **Share** (paper-airplane) → scroll
+   apps → **Save to Nearr**. Instagram passes a `text` payload
+   containing the URL; the regex extractor picks it out.
+5. **TikTok**: open a video → **Share** → **Save to Nearr**. Same
+   text-with-URL path as Instagram.
+6. Verify the saved row has the correct `source_url` and matching
+   `source_type` (instagram / tiktok / link).
+7. Force-quit Nearr, then repeat step 3 — confirm cold-start delivery
+   of the deep link.
+
+If "Save to Nearr" does not appear in the share sheet, long-press the
+last item in the second row → **Edit Actions** → enable **Save to Nearr**.
+This is standard iOS behavior the first time a new extension is installed.

@@ -5,7 +5,7 @@
  * when the user just wants to scan their saved list.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -17,7 +17,7 @@ import {
 } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 
-import { Button, Card, EmptyState, SavedPlaceCard, Screen } from '@/components';
+import { Button, Card, EmptyState, Input, SavedPlaceCard, Screen } from '@/components';
 import { Colors, Spacing, Typography } from '@/constants';
 
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
@@ -29,6 +29,20 @@ export default function PlacesTab() {
   const router = useRouter();
   const { data, loading, refreshing, error, refresh } = useSavedPlaces();
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [filter, setFilter] = useState('');
+
+  // Client-side filter — case-insensitive match across place name and
+  // address. List is small (V1 = personal saves), so doing this in JS is
+  // simpler than re-querying Supabase and feels instant while typing.
+  const filteredData = useMemo(() => {
+    const q = filter.trim().toLowerCase();
+    if (!q) return data;
+    return data.filter((s) => {
+      const name = s.place?.name?.toLowerCase() ?? '';
+      const addr = s.place?.formatted_address?.toLowerCase() ?? '';
+      return name.includes(q) || addr.includes(q);
+    });
+  }, [data, filter]);
 
   const loadProfile = useCallback(async () => {
     setProfile(await getProfile());
@@ -80,11 +94,23 @@ export default function PlacesTab() {
 
   return (
     <Screen padded={false}>
+      {data.length > 0 ? (
+        <View style={styles.searchWrap}>
+          <Input
+            value={filter}
+            onChangeText={setFilter}
+            placeholder="Search your places"
+            autoCapitalize="none"
+            autoCorrect={false}
+            clearButtonMode="while-editing"
+          />
+        </View>
+      ) : null}
       <FlatList
-        data={data}
+        data={filteredData}
         keyExtractor={(s) => s.id}
         contentContainerStyle={
-          data.length === 0 ? styles.emptyContent : styles.listContent
+          filteredData.length === 0 ? styles.emptyContent : styles.listContent
         }
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}
         renderItem={({ item }) => (
@@ -93,18 +119,34 @@ export default function PlacesTab() {
             profile={profile}
             onPress={() => router.push(`/place/${item.id}`)}
             onDelete={() => handleDelete(item.id)}
+            onShowOnMap={() =>
+              router.push({
+                pathname: '/(tabs)/map',
+                params: { savedPlaceId: item.id },
+              })
+            }
           />
         )}
         ListEmptyComponent={
-          <EmptyState
-            framed={false}
-            title="No places yet"
-            body="Save your first spot, or paste a link from TikTok or Instagram."
-            actionTitle="Save a place"
-            onAction={() => router.push('/add-place')}
-            secondaryTitle="Save from a link"
-            onSecondary={() => router.push('/share')}
-          />
+          filter.trim() ? (
+            <EmptyState
+              framed={false}
+              title="No matches"
+              body={`No saved places match “${filter.trim()}”.`}
+              actionTitle="Clear search"
+              onAction={() => setFilter('')}
+            />
+          ) : (
+            <EmptyState
+              framed={false}
+              title="No places yet"
+              body="Save your first spot, or paste a link from TikTok or Instagram."
+              actionTitle="Save a place"
+              onAction={() => router.push('/add-place')}
+              secondaryTitle="Save from a link"
+              onSecondary={() => router.push('/share')}
+            />
+          )
         }
       />
     </Screen>
@@ -112,6 +154,11 @@ export default function PlacesTab() {
 }
 
 const styles = StyleSheet.create({
+  searchWrap: {
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.lg,
+    paddingBottom: Spacing.sm,
+  },
   listContent: { padding: Spacing.lg, paddingBottom: Spacing.xxl },
   emptyContent: { flexGrow: 1, justifyContent: 'center', padding: Spacing.lg },
   emptyBox: { alignItems: 'center' },

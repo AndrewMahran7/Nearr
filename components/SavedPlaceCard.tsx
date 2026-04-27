@@ -16,6 +16,12 @@ type Props = {
   profile: Profile | null;
   onPress: () => void;
   onDelete: () => void;
+  /**
+   * When provided, renders a small "Show on map" affordance in the meta
+   * row that jumps the user to the Map tab focused on this place.
+   * Optional so callers that don't want it (e.g. raw lists) opt out.
+   */
+  onShowOnMap?: () => void;
 };
 
 function formatRadius(saved: SavedPlaceWithPlace, profile: Profile | null): string {
@@ -41,7 +47,7 @@ function sourceLabel(saved: SavedPlaceWithPlace): string | null {
   }
 }
 
-export function SavedPlaceCard({ saved, profile, onPress, onDelete }: Props) {
+export function SavedPlaceCard({ saved, profile, onPress, onDelete, onShowOnMap }: Props) {
   const place = saved.place;
   const radius = formatRadius(saved, profile);
   const source = sourceLabel(saved);
@@ -90,6 +96,22 @@ export function SavedPlaceCard({ saved, profile, onPress, onDelete }: Props) {
               <Text style={[styles.pillText, { color: Colors.textInverse }]}>{source}</Text>
             </View>
           ) : null}
+          {onShowOnMap ? (
+            // Stop propagation so tapping this pill doesn't also fire the
+            // outer card press (which would navigate to the detail screen).
+            <Pressable
+              onPress={(e) => {
+                e.stopPropagation();
+                onShowOnMap();
+              }}
+              hitSlop={8}
+              style={[styles.pill, styles.pillMap]}
+              accessibilityRole="button"
+              accessibilityLabel={`Show ${place.name} on map`}
+            >
+              <Text style={[styles.pillText, { color: Colors.textInverse }]}>Show on map</Text>
+            </Pressable>
+          ) : null}
         </View>
       </Card>
     </Pressable>
@@ -124,6 +146,7 @@ const styles = StyleSheet.create({
   pillOn: { backgroundColor: Colors.success, borderColor: Colors.success },
   pillOff: { backgroundColor: Colors.bg, borderColor: Colors.border },
   pillAccent: { backgroundColor: Colors.accent, borderColor: Colors.accent },
+  pillMap: { backgroundColor: Colors.primary, borderColor: Colors.primary },
   pillText: { fontSize: 12, fontWeight: '600', color: Colors.text },
   pillTextOn: { color: Colors.textInverse },
   pillTextOff: { color: Colors.textMuted },

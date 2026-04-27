@@ -172,14 +172,30 @@ function cleanDescription(raw: string | null): string | null {
  * Build a Google Places-friendly query.
  * - Prefer the title (the most place-relevant signal).
  * - If title is missing, use the first sentence of the description.
- * - Strip hashtags, urls, collapse whitespace, cap length.
+ * - Strip hashtags, urls, emoji, social boilerplate, collapse whitespace,
+ *   and cap length so we never feed a 500-char caption to Places.
  */
 function buildQuery(title: string | null, description: string | null): string | null {
   const candidate = title ?? firstSentence(description);
   if (!candidate) return null;
   let q = candidate
+    // Hashtags and @mentions are pure noise for a place search.
     .replace(/#[\p{L}\p{N}_]+/gu, ' ')
+    .replace(/@[\p{L}\p{N}_.]+/gu, ' ')
+    // URLs leaked into captions.
     .replace(/https?:\/\/\S+/g, ' ')
+    // Social platform boilerplate.
+    .replace(/\s+on Instagram\b.*$/i, ' ')
+    .replace(/\s+on TikTok\b.*$/i, ' ')
+    .replace(/\bReel by\b/gi, ' ')
+    .replace(/\bPhoto by\b/gi, ' ')
+    // Strip emoji / pictographs / symbols. Place names are letters+digits.
+    .replace(
+      /[\p{Extended_Pictographic}\p{Emoji_Presentation}\p{So}\p{Sk}]/gu,
+      ' ',
+    )
+    // Surrounding quotes.
+    .replace(/["\u201C\u201D'`]+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
   if (q.length > 120) q = q.slice(0, 120).trim();
@@ -193,14 +209,38 @@ function firstSentence(s: string | null): string | null {
 }
 
 function decodeHtml(s: string): string {
-  return s
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&#x27;/g, "'")
-    .replace(/&nbsp;/g, ' ');
+  return (
+    s
+      // Numeric hex entities: &#x1f4cd; &#x2019;
+      .replace(/&#x([0-9a-f]+);/gi, (_, hex) => {
+        const code = parseInt(hex, 16);
+        if (!Number.isFinite(code) || code <= 0) return '';
+        try {
+          return String.fromCodePoint(code);
+        } catch {
+          return '';
+        }
+      })
+      // Numeric decimal entities: &#8217; &#128205;
+      .replace(/&#(\d+);/g, (_, dec) => {
+        const code = parseInt(dec, 10);
+        if (!Number.isFinite(code) || code <= 0) return '';
+        try {
+          return String.fromCodePoint(code);
+        } catch {
+          return '';
+        }
+      })
+      // Named entities (the small set we actually see in OG tags).
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&apos;/g, "'")
+      .replace(/&#39;/g, "'")
+      .replace(/&#x27;/g, "'")
+      .replace(/&nbsp;/g, ' ')
+  );
 }
 
 /**

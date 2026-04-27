@@ -18,7 +18,7 @@
  * Duplicates are non-fatal: we show a friendly alert and still navigate.
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -29,6 +29,7 @@ import {
   View,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import * as Location from 'expo-location';
 
 import { Button, Card, EmptyState, Input, Screen } from '@/components';
 import { Colors, Radius, Spacing, Typography } from '@/constants';
@@ -36,7 +37,7 @@ import { Colors, Radius, Spacing, Typography } from '@/constants';
 import { usePlacesSearch } from '@/hooks/usePlacesSearch';
 import { getProfile } from '@/services/profileService';
 import { saveSavedPlace } from '@/services/savedPlacesService';
-import type { PlaceCandidate, PlacesError } from '@/services/placesService';
+import type { LocationBias, PlaceCandidate, PlacesError } from '@/services/placesService';
 import type { Profile, RadiusUnit, SourceType } from '@/types';
 
 type RadiusMode = 'default' | 'miles' | 'minutes';
@@ -99,6 +100,32 @@ export default function SavePlace() {
     };
   }, []);
 
+  // ---- best-effort user location for search bias ------------------------
+  // Used so manual searches like "Starbucks" surface the closest one when
+  // we already have foreground permission. We never prompt -- if the user
+  // hasn't granted location, we just fall back to unbiased Places ranking.
+  const userLatLngRef = useRef<LocationBias | null>(null);
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const perm = await Location.getForegroundPermissionsAsync();
+        if (perm.status !== 'granted') return;
+        const last = await Location.getLastKnownPositionAsync({});
+        if (!alive || !last) return;
+        userLatLngRef.current = {
+          lat: last.coords.latitude,
+          lng: last.coords.longitude,
+        };
+      } catch {
+        // ignore -- bias is best-effort
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
   // ---- radius chooser state ----------------------------------------------
   const [radiusMode, setRadiusMode] = useState<RadiusMode>('default');
   const [milesText, setMilesText] = useState('1');
@@ -112,16 +139,38 @@ export default function SavePlace() {
   // ---- auto-search if a query came in via deep-link/share ---------------
   useEffect(() => {
     if (params.q && params.q.trim()) {
-      void search(params.q.trim());
+      void search(params.q.trim(), userLatLngRef.current ?? undefined);
     }
     // Only run on mount.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // ---- debounced live search as the user types ---------------------------
+  // 300ms after the last keystroke we issue a search. Short enough to feel
+  // like an autocomplete dropdown, long enough that we don't burn a Places
+  // call on every character. The hook itself drops stale responses, so the
+  // user always sees results for the most recent query.
+  //
+  // Skipped while we're showing the confirmation card (`selected !== null`)
+  // and while a saved deep-link query is being served on mount, to avoid
+  // double-firing.
+  useEffect(() => {
+    if (selected) return;
+    const q = query.trim();
+    // Don't fire on very short input -- 1-2 chars produces noise.
+    if (q.length < 3) return;
+    // Skip if this is the same query we already last fetched.
+    if (q === lastQuery) return;
+    const handle = setTimeout(() => {
+      void search(q, userLatLngRef.current ?? undefined);
+    }, 300);
+    return () => clearTimeout(handle);
+  }, [query, selected, lastQuery, search]);
+
   // -----------------------------------------------------------------------
 
   function runSearch() {
-    void search(query);
+    void search(query, userLatLngRef.current ?? undefined);
   }
 
   function clearSelection() {

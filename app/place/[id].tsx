@@ -285,6 +285,20 @@ export default function PlaceDetail() {
         />
 
         <View style={{ height: Spacing.xl }} />
+        <Button
+          title="Show on map"
+          variant="secondary"
+          onPress={() => {
+            // Jump to the Map tab focused on this saved place. We use
+            // `replace` so the user doesn't end up with a back stack of
+            // detail → map → detail → map when bouncing between the two.
+            router.replace({
+              pathname: '/(tabs)/map',
+              params: { savedPlaceId: saved.id },
+            });
+          }}
+        />
+        <View style={{ height: Spacing.sm }} />
         <Button title="Save changes" onPress={handleSave} loading={saving} />
         <View style={{ height: Spacing.sm }} />
         <Button

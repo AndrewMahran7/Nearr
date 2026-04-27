@@ -1,0 +1,224 @@
+[
+  {
+    "name": "instagram-tagged-handle-with-city",
+    "input": {
+      "title": "Jack's Dining Room (@jacksdiningroom) on Instagram: My favorite chicken sandwich in town. @lecoupe_friedchicken, Los Angeles",
+      "description": "Crispy, juicy, hot honey drizzle. #friedchicken #lafood",
+      "url": "https://www.instagram.com/p/Cabc123/",
+      "sourceType": "instagram"
+    },
+    "expectedQuery": "Le Coupe Fried Chicken Los Angeles"
+  },
+  {
+    "name": "instagram-pin-emoji",
+    "input": {
+      "title": "Foodie Adventures on Instagram",
+      "description": "Best ramen of my life 📍 Tatsu Ramen, Sawtelle Japantown #ramen #latefood",
+      "url": "https://www.instagram.com/p/Cdef456/",
+      "sourceType": "instagram"
+    },
+    "expectedQuery": "Tatsu Ramen Sawtelle Japantown"
+  },
+  {
+    "name": "tiktok-creator-trap",
+    "input": {
+      "title": "Sarah Eats LA on TikTok: you HAVE to try this taco spot",
+      "description": "@guerrilla_tacos slaps. Downtown LA vibes only. #tacos #dtla",
+      "url": "https://www.tiktok.com/@saraheatsla/video/7212345",
+      "sourceType": "tiktok"
+    },
+    "expectedQuery": "Guerrilla Tacos Los Angeles"
+  },
+  {
+    "name": "tiktok-hashtag-spam",
+    "input": {
+      "title": "best coffee in nyc #fyp #coffee #nyc #foryou #foodie #latte",
+      "description": "@devocion is the move 🫶 #coffeeshop",
+      "url": "https://www.tiktok.com/@coffeebro/video/7234567",
+      "sourceType": "tiktok"
+    },
+    "expectedQuery": "Devocion New York"
+  },
+  {
+    "name": "instagram-comma-city",
+    "input": {
+      "title": "Pasta night at Felix Trattoria, Venice",
+      "description": "Cacio e pepe, handmade tagliatelle. Worth the wait.",
+      "url": "https://www.instagram.com/p/Cghi789/",
+      "sourceType": "instagram"
+    },
+    "expectedQuery": "Felix Trattoria Venice"
+  },
+  {
+    "name": "instagram-no-place",
+    "input": {
+      "title": "morning thoughts ☕️",
+      "description": "just vibing with my dog. nothing to see here.",
+      "url": "https://www.instagram.com/p/Cnope000/",
+      "sourceType": "instagram"
+    },
+    "expectedQuery": ""
+  },
+  {
+    "name": "tiktok-pin-emoji-only",
+    "input": {
+      "title": "you NEED to go here",
+      "description": "📍 Tartine Bakery, San Francisco — get the morning bun",
+      "url": "https://www.tiktok.com/@bakeryhunter/video/7245678",
+      "sourceType": "tiktok"
+    },
+    "expectedQuery": "Tartine Bakery San Francisco"
+  },
+  {
+    "name": "instagram-creator-name-looks-like-place",
+    "input": {
+      "title": "Jack's Dining Room on Instagram: brunch goals",
+      "description": "Eggs benedict at @sqirlla — Silver Lake. #brunch",
+      "url": "https://www.instagram.com/p/Cjkl012/",
+      "sourceType": "instagram"
+    },
+    "expectedQuery": "Sqirl Los Angeles"
+  },
+  {
+    "name": "tiktok-no-handle-just-name",
+    "input": {
+      "title": "Joe's Pizza in Brooklyn is unreal",
+      "description": "Plain slice perfection. #pizza #nyc",
+      "url": "https://www.tiktok.com/@pizzanerd/video/7256789",
+      "sourceType": "tiktok"
+    },
+    "expectedQuery": "Joe's Pizza Brooklyn"
+  },
+  {
+    "name": "instagram-multilingual",
+    "input": {
+      "title": "Café Du Monde on Instagram: beignets at sunrise",
+      "description": "📍 New Orleans, French Quarter. #beignets #nola",
+      "url": "https://www.instagram.com/p/Cmno345/",
+      "sourceType": "instagram"
+    },
+    "expectedQuery": "Café Du Monde New Orleans"
+  },
+  {
+    "name": "tiktok-emoji-noise",
+    "input": {
+      "title": "🔥🔥🔥 best burger ever 🍔",
+      "description": "@fathersoffice santa monica. order the office burger. 🤤 #burger #la",
+      "url": "https://www.tiktok.com/@burgerlord/video/7267890",
+      "sourceType": "tiktok"
+    },
+    "expectedQuery": "Father's Office Santa Monica"
+  },
+  {
+    "name": "instagram-handle-with-numbers",
+    "input": {
+      "title": "Bestia LA on Instagram",
+      "description": "Reservations dropped! @bestiala downtown. #italian #dtla",
+      "url": "https://www.instagram.com/p/Cpqr678/",
+      "sourceType": "instagram"
+    },
+    "expectedQuery": "Bestia Los Angeles"
+  },
+  {
+    "name": "generic-link-google-maps",
+    "input": {
+      "title": "Republique - Google Maps",
+      "description": "Republique · 624 S La Brea Ave, Los Angeles, CA 90036",
+      "url": "https://maps.google.com/?cid=12345",
+      "sourceType": "link"
+    },
+    "expectedQuery": "Republique Los Angeles"
+  },
+  {
+    "name": "tiktok-mostly-hashtags",
+    "input": {
+      "title": "#fyp #foryou #foodtok #viral #foodie",
+      "description": "#nyc #pizza #foodporn",
+      "url": "https://www.tiktok.com/@spammer/video/7278901",
+      "sourceType": "tiktok"
+    },
+    "expectedQuery": ""
+  },
+  {
+    "name": "instagram-creator-with-handle-and-pin",
+    "input": {
+      "title": "Eater LA (@eater_la) on Instagram: new opening alert",
+      "description": "📍 Kismet Rotisserie, Los Feliz. Whole chickens, glorious sides.",
+      "url": "https://www.instagram.com/p/Cstu901/",
+      "sourceType": "instagram"
+    },
+    "expectedQuery": "Kismet Rotisserie Los Feliz"
+  },
+  {
+    "name": "tiktok-comma-neighborhood",
+    "input": {
+      "title": "this dumpling spot is criminally underrated",
+      "description": "Din Tai Fung, Arcadia — soup dumplings forever. #xlb",
+      "url": "https://www.tiktok.com/@dumplingdaily/video/7289012",
+      "sourceType": "tiktok"
+    },
+    "expectedQuery": "Din Tai Fung Arcadia"
+  },
+  {
+    "name": "instagram-meta-only-handle",
+    "input": {
+      "title": "@nightandmarketwh",
+      "description": "Thai larb crispy rice, Night + Market WeHo. #thai",
+      "url": "https://www.instagram.com/p/Cvwx234/",
+      "sourceType": "instagram"
+    },
+    "expectedQuery": "Night + Market WeHo"
+  },
+  {
+    "name": "tiktok-very-messy",
+    "input": {
+      "title": "GUYS RUN don't walk 😭😭😭",
+      "description": "okay so @sushinozawa in studio city is INSANE. omakase. trust. #sushi #la #studiocity",
+      "url": "https://www.tiktok.com/@omakasekid/video/7290123",
+      "sourceType": "tiktok"
+    },
+    "expectedQuery": "Sushi Nozawa Studio City"
+  },
+  {
+    "name": "instagram-villas-tacos-pin-is-neighborhood",
+    "input": {
+      "title": "huANGRYfoodie on Instagram: @villastacoslosangeles Villa\u2019s Tacos was no joke",
+      "description": "\ud83d\udccd Highland Park, Los Angeles, CA also a location in Grand Central Market #tacos #lafood",
+      "url": "https://www.instagram.com/p/Cvilla123/",
+      "sourceType": "instagram"
+    },
+    "expectedQuery": "Villa's Tacos Highland Park Los Angeles"
+  },
+  {
+    "name": "transcript-tacos-los-chulos",
+    "input": {
+      "title": "best tacos in la fr",
+      "description": "you HAVE to try this 🌮 #tacos #losangeles",
+      "url": "https://www.tiktok.com/@foodie/video/7300000001",
+      "sourceType": "tiktok",
+      "transcript": "Yo what's up guys, we're at Tacos Los Chulos and these al pastor tacos are insane."
+    },
+    "expectedQuery": "Tacos Los Chulos Los Angeles"
+  },
+  {
+    "name": "transcript-vague-caption-named-in-audio",
+    "input": {
+      "title": "this place SLAPS",
+      "description": "📍 Brooklyn vibes only #foodie",
+      "url": "https://www.instagram.com/p/Ctranscript01/",
+      "sourceType": "instagram",
+      "transcript": "Welcome to Lucali — arguably the best pizza in Brooklyn."
+    },
+    "expectedQuery": "Lucali Brooklyn"
+  },
+  {
+    "name": "transcript-unavailable-falls-back-to-caption",
+    "input": {
+      "title": "Joe's Pizza in Brooklyn is unreal",
+      "description": "Plain slice perfection. #pizza #nyc",
+      "url": "https://www.tiktok.com/@pizzanerd/video/7300000002",
+      "sourceType": "tiktok"
+    },
+    "expectedQuery": "Joe's Pizza Brooklyn"
+  }
+]

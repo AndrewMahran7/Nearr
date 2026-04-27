@@ -180,6 +180,12 @@ export default function Home() {
             profile={profile}
             onPress={() => router.push(`/place/${item.id}`)}
             onDelete={() => handleDelete(item.id)}
+            onShowOnMap={() =>
+              router.push({
+                pathname: '/(tabs)/map',
+                params: { savedPlaceId: item.id },
+              })
+            }
           />
         )}
         ListEmptyComponent={
