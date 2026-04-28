@@ -62,6 +62,7 @@ import {
   type PlaceCandidate,
 } from '@/services/placesService';
 import { saveSavedPlace } from '@/services/savedPlacesService';
+import { trackEvent } from '@/lib/analytics';
 import * as Location from 'expo-location';
 
 type Phase =
@@ -83,6 +84,20 @@ const PLATFORM_LABELS: Record<ShareSource, string> = {
 const FAIL_NO_QUERY = "We couldn't identify a place from this link.";
 const FAIL_NO_RESULTS = 'No place found. Try searching by name.';
 const FAIL_GENERIC = "We couldn't identify a place from this link.";
+
+/**
+ * Best-effort hostname extraction for analytics. Returns `null` for
+ * malformed input so we never log anything weird. We log host only — the
+ * full URL can contain user-identifying tokens (e.g. tracking params).
+ */
+function safeHostname(url: string | null | undefined): string | null {
+  if (!url) return null;
+  try {
+    return new URL(url).hostname || null;
+  } catch {
+    return null;
+  }
+}
 
 export default function ShareScreen() {
   const router = useRouter();
@@ -149,6 +164,11 @@ export default function ShareScreen() {
     if (__DEV__) {
       console.log('[share] auto-running from incoming url param', incoming);
     }
+    // Cold/warm start from share extension (or deep link with ?url=...).
+    void trackEvent('share_received', {
+      flow: Platform.OS === 'ios' ? 'ios_share' : 'android_share',
+      url_host: safeHostname(incoming),
+    });
     void runSaveFlow(incoming);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.url]);
@@ -173,11 +193,23 @@ export default function ShareScreen() {
 
     // ---- 1. parse ------------------------------------------------------
     setPhase('parsing');
+    void trackEvent('share_parse_started', { url_host: safeHostname(trimmed) });
     let parsedResult: ParsedShare;
     try {
       parsedResult = await parseShare(trimmed);
+      void trackEvent('share_parse_success', {
+        source_type: parsedResult.source,
+        url_host: safeHostname(parsedResult.url),
+        has_title: !!parsedResult.title,
+        has_description: !!parsedResult.description,
+        metadata_failed: !!parsedResult.metadataFailed,
+      });
     } catch (err) {
       console.warn('[share] parseShare threw', (err as Error)?.message);
+      void trackEvent('share_parse_failed', {
+        url_host: safeHostname(trimmed),
+        error_code: 'parse_threw',
+      });
       parsedResult = {
         url: trimmed,
         source: 'link',
@@ -341,6 +373,16 @@ export default function ShareScreen() {
           ? placesErrorMessage(err)
           : ((err as Error)?.message ?? FAIL_GENERIC);
       console.warn('[share] searchPlaces failed', msg);
+      void trackEvent('save_failed', {
+        source_type: sourceType,
+        flow:
+          params.url && isLikelyUrl(params.url)
+            ? 'share_extension'
+            : 'paste_link',
+        query,
+        error_code: err instanceof PlacesError ? err.code : 'places_threw',
+        confidence: chosenConfidence,
+      });
       setFailMessage(msg);
       setManualQuery(query);
       setPhase('failed');
@@ -350,6 +392,17 @@ export default function ShareScreen() {
     console.log('[share] places results', { query, count: results.length });
 
     if (results.length === 0) {
+      void trackEvent('save_failed', {
+        source_type: sourceType,
+        flow:
+          params.url && isLikelyUrl(params.url)
+            ? 'share_extension'
+            : 'paste_link',
+        query,
+        candidate_count: 0,
+        error_code: 'no_results',
+        confidence: chosenConfidence,
+      });
       setFailMessage(FAIL_NO_RESULTS);
       setManualQuery(query);
       setPhase('failed');
@@ -544,6 +597,14 @@ export default function ShareScreen() {
     sourceType: ShareSource,
   ) {
     setPhase('saving');
+    const flow =
+      params.url && isLikelyUrl(params.url) ? 'share_extension' : 'paste_link';
+    void trackEvent('save_started', {
+      source_type: sourceType,
+      flow,
+      google_place_id: candidate.googlePlaceId ?? null,
+      candidate_count: candidates.length || 1,
+    });
     try {
       const result = await saveSavedPlace({
         candidate,
@@ -562,10 +623,24 @@ export default function ShareScreen() {
       } else {
         Alert.alert('Saved to your map', candidate.name);
       }
+      void trackEvent('save_success', {
+        source_type: sourceType,
+        flow,
+        google_place_id: candidate.googlePlaceId ?? null,
+        saved_place_id:
+          result.status === 'saved' ? result.saved.id : null,
+        duplicate: result.status === 'duplicate',
+      });
       router.replace('/(tabs)/map');
     } catch (err) {
       const msg = (err as Error)?.message ?? 'Could not save place.';
       console.warn('[share] saveSavedPlace failed', msg);
+      void trackEvent('save_failed', {
+        source_type: sourceType,
+        flow,
+        google_place_id: candidate.googlePlaceId ?? null,
+        error_code: 'save_threw',
+      });
       Alert.alert("Couldn't save", msg);
       // Stay on the choose/failed screen so the user can try again.
       setPhase(candidates.length > 0 ? 'choose' : 'failed');
@@ -673,13 +748,18 @@ export default function ShareScreen() {
               {candidates.map((c) => (
                 <Pressable
                   key={c.googlePlaceId}
-                  onPress={() =>
+                  onPress={() => {
+                    void trackEvent('share_candidate_selected', {
+                      source_type: parsed?.source ?? 'link',
+                      google_place_id: c.googlePlaceId ?? null,
+                      candidate_count: candidates.length,
+                    });
                     saveCandidate(
                       c,
                       parsed?.url ?? null,
                       parsed?.source ?? 'link',
-                    )
-                  }
+                    );
+                  }}
                   style={({ pressed }) => [
                     styles.candidate,
                     pressed && styles.candidatePressed,

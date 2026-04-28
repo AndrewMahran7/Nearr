@@ -46,6 +46,7 @@ import { useSavedPlaces } from '@/hooks/useSavedPlaces';
 import { isDemoMode } from '@/lib/demoMode';
 import { isMapPreviewMode } from '@/lib/mapPreview';
 import { openExternalMaps as openInExternalMaps } from '@/lib/externalMaps';
+import { trackEvent } from '@/lib/analytics';
 import { milesToMeters, minutesToMeters } from '@/lib/geo';
 import { getDemoSeededSavedPlacesSync } from '@/services/demo';
 import { getProfile } from '@/services/profileService';
@@ -296,6 +297,7 @@ export default function MapScreen() {
   useFocusEffect(
     useCallback(() => {
       void refresh();
+      void trackEvent('map_opened', {});
     }, [refresh]),
   );
 
@@ -454,6 +456,11 @@ export default function MapScreen() {
 
   // -----------------------------------------------------------------------
   function openExternalMaps(item: SavedPlaceWithPlace) {
+    void trackEvent('open_in_maps_tapped', {
+      saved_place_id: item.id,
+      google_place_id: item.place.google_place_id ?? null,
+      surface: 'map_preview_card',
+    });
     void openInExternalMaps(item.place);
   }
 
@@ -557,6 +564,10 @@ export default function MapScreen() {
             description={p.place.formatted_address ?? undefined}
             onPress={(e) => {
               e.stopPropagation?.();
+              void trackEvent('place_marker_tapped', {
+                saved_place_id: p.id,
+                google_place_id: p.place.google_place_id ?? null,
+              });
               setSelected(p);
               focusZone(p);
             }}

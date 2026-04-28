@@ -36,6 +36,7 @@ import {
   getSavedPlace,
   updateSavedPlace,
 } from '@/services/savedPlacesService';
+import { trackEvent } from '@/lib/analytics';
 import type { Profile, RadiusUnit, SavedPlaceWithPlace } from '@/types';
 
 type RadiusMode = 'default' | 'miles' | 'minutes';
@@ -75,6 +76,11 @@ export default function PlaceDetail() {
         setSaved(null);
       } else {
         setSaved(s);
+        void trackEvent('place_detail_opened', {
+          saved_place_id: s.id,
+          google_place_id: s.place.google_place_id ?? null,
+          source_type: s.source_type ?? null,
+        });
         setNotifyOn(s.notifications_enabled);
         setMode(modeFromSaved(s));
         if (s.radius_unit === 'miles' && s.radius_value != null) {

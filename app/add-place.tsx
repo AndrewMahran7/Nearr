@@ -37,6 +37,7 @@ import { Colors, Radius, Spacing, Typography } from '@/constants';
 import { usePlacesSearch } from '@/hooks/usePlacesSearch';
 import { getProfile } from '@/services/profileService';
 import { saveSavedPlace } from '@/services/savedPlacesService';
+import { trackEvent } from '@/lib/analytics';
 import type { LocationBias, PlaceCandidate, PlacesError } from '@/services/placesService';
 import type { Profile, RadiusUnit, SourceType } from '@/types';
 
@@ -202,6 +203,13 @@ export default function SavePlace() {
     }
 
     setSaving(true);
+    void trackEvent('save_started', {
+      source_type: incomingSourceType,
+      flow: 'manual',
+      google_place_id: selected.googlePlaceId ?? null,
+      query: query.trim() || null,
+      candidate_count: results.length,
+    });
     try {
       const result = await saveSavedPlace({
         candidate: selected,
@@ -214,9 +222,23 @@ export default function SavePlace() {
       if (result.status === 'duplicate') {
         Alert.alert('Already saved', `${selected.name} is already in your places.`);
       }
+      void trackEvent('save_success', {
+        source_type: incomingSourceType,
+        flow: 'manual',
+        google_place_id: selected.googlePlaceId ?? null,
+        saved_place_id:
+          result.status === 'saved' ? result.saved.id : null,
+        duplicate: result.status === 'duplicate',
+      });
       router.replace('/(tabs)/home');
     } catch (e: any) {
       console.warn('[SavePlace] save failed', e?.message);
+      void trackEvent('save_failed', {
+        source_type: incomingSourceType,
+        flow: 'manual',
+        google_place_id: selected.googlePlaceId ?? null,
+        error_code: 'save_threw',
+      });
       Alert.alert('Could not save', e?.message ?? 'Unknown error.');
     } finally {
       setSaving(false);

@@ -1,8 +1,10 @@
-# 🧭 NEARR — VERSION GATE SYSTEM
+# 🧭 NEARR — VERSION GATE SYSTEM (FEATURE ↔ METRIC LINKED)
 
 ## 🚨 MASTER RULE
 
 You do NOT build the next version until ALL metrics are hit.
+
+Every feature MUST directly improve a tracked metric.
 
 ---
 
@@ -11,27 +13,60 @@ You do NOT build the next version until ALL metrics are hit.
 ## 🎯 Goal
 User can save a place → see it → understand it
 
-## 📊 REQUIRED METRICS (ALL must pass)
+## 📊 REQUIRED METRICS
 
-- Downloads: ≥ 30  
-- WAU: ≥ 15  
-- WAU / Downloads: ≥ 40%  
+- Downloads ≥ 30  
+- WAU ≥ 15  
+- WAU / Downloads ≥ 40%  
 
-- Avg saves per user (first session): ≥ 3  
-- Save success rate: ≥ 70%  
-- Completely wrong saves: ≤ 20%  
+- Avg saves per user ≥ 3  
+- Save success rate ≥ 70%  
+- Wrong saves ≤ 20%  
 
-- Crash rate: < 5% of sessions  
-- Users who understand app without explanation: ≥ 70%
+- Crash rate < 5%  
+- Understanding ≥ 70%
 
-## 🚫 If ANY fail
-- Fix extraction  
-- Fix onboarding clarity  
-- Fix crashes  
-- NO new features  
+---
 
-## 🚀 Unlock
-Stage 1 (v2)
+## 🧱 FEATURES UNLOCKED
+
+### Capture + Save
+- Save from link
+- Basic extraction
+- Candidate selection
+
+👉 Drives:
+- Save success rate
+- Saves per user
+
+---
+
+### Map + View
+- Map loads correctly
+- Pins display correctly
+
+👉 Drives:
+- Map load success
+- User understanding
+
+---
+
+### UX Basics
+- Loading states
+- Clear confirmation
+- Error handling
+
+👉 Drives:
+- Understanding %
+- Save success rate
+
+---
+
+## 🚫 LOCKED FEATURES
+- Social  
+- Notifications  
+- Visited/photos  
+- Recommendations  
 
 ---
 
@@ -42,23 +77,49 @@ User saves → remembers → sees value
 
 ## 📊 REQUIRED METRICS
 
-- Downloads: ≥ 75  
-- WAU: ≥ 25  
+- Downloads ≥ 75  
+- WAU ≥ 25  
+- 3-day retention ≥ 25%  
 
-- 3-day retention: ≥ 25%  
-- Avg saves per user (lifetime): ≥ 4  
+- Avg saves per user ≥ 4  
+- Reopen rate ≥ 40%  
+- Map success ≥ 95%
 
-- % users who reopen app after saving: ≥ 40%  
-- % users who say “this is useful”: ≥ 60%  
+---
 
-- Map load success rate: ≥ 95%
+## 🧱 FEATURES UNLOCKED
 
-## 🚫 If ANY fail
-You do NOT have product-market signal  
-Fix core loop ONLY
+### Save → Recall Loop
+- “Open original video”
+- Better place detail view
 
-## 🚀 Unlock
-Stage 2 (Share + friction removal)
+👉 Drives:
+- Reopen rate
+- Retention
+
+---
+
+### UI System
+- Clean colors + layout
+
+👉 Drives:
+- Retention
+- User clarity
+
+---
+
+### Extraction Improvements
+- Better parsing logic
+
+👉 Drives:
+- Save success rate
+
+---
+
+## 🚫 LOCKED FEATURES
+- Notifications  
+- Social  
+- Visited/photos  
 
 ---
 
@@ -69,24 +130,51 @@ Saving becomes effortless
 
 ## 📊 REQUIRED METRICS
 
-- Downloads: ≥ 200  
-- WAU: ≥ 75  
+- Downloads ≥ 200  
+- WAU ≥ 75  
 
-- % saves via share: ≥ 50%  
-- Save success rate: ≥ 80%  
+- Share saves ≥ 50%  
+- Save success ≥ 80%  
+- Time to save ≤ 5s  
 
-- Time to save (share → confirmation): ≤ 5s  
+- Saves/user ≥ 5  
 
-- % users who save without being told: ≥ 50%  
+---
 
-- Avg saves per user: ≥ 5  
+## 🧱 FEATURES UNLOCKED
 
-## 🚫 If ANY fail
-UX is too clunky  
-Fix share flow / speed
+### Share Flow
+- Native share improvements
+- Faster parsing
 
-## 🚀 Unlock
-Stage 3 (Notifications)
+👉 Drives:
+- Share %
+- Saves/user
+
+---
+
+### Performance
+- Faster UI
+- Reduced loading time
+
+👉 Drives:
+- Save completion rate
+
+---
+
+### Reliability
+- Retry system
+- Fallback parsing
+
+👉 Drives:
+- Save success %
+
+---
+
+## 🚫 LOCKED FEATURES
+- Notifications  
+- Social  
+- Visited/photos  
 
 ---
 
@@ -97,146 +185,273 @@ User comes back without being told
 
 ## 📊 REQUIRED METRICS
 
-- Downloads: ≥ 500  
-- WAU: ≥ 150  
+- Downloads ≥ 500  
+- WAU ≥ 150  
+- WAU / Downloads ≥ 30%  
 
-- WAU / Downloads: ≥ 30%  
+- 3-day retention ≥ 35%  
+- 7-day retention ≥ 20%  
 
-- 3-day retention: ≥ 35%  
-- 7-day retention: ≥ 20%  
+- % open without sharing ≥ 30%  
+- Action rate ≥ 10–15%  
+- Notification CTR ≥ 15%
 
-- % users who open app WITHOUT sharing: ≥ 30%  
+---
 
-- % users who act on a saved place: ≥ 10–15%  
+## 🧱 FEATURES UNLOCKED
 
-- Notification CTR: ≥ 15%  
+### Notifications
+- “You’re near X”
+- “You saved this recently”
 
-## 🚫 If ANY fail
-You do NOT have a habit  
-Fix notifications + timing
+👉 Drives:
+- WAU
+- Retention
 
-## 🚀 Unlock
-Stage 4 (Decision layer)
+---
+
+### Context Awareness
+- Near-me suggestions
+
+👉 Drives:
+- Open without sharing %
+
+---
+
+## 🆕 COMPLETION LOOP
+
+### “Mark as Visited”
+- Timestamp stored
+
+👉 Drives:
+- Retention
+- Habit formation
+
+---
+
+### Photo Capture
+- Optional photo
+
+👉 Drives:
+- Emotional attachment
+- Return usage
+
+---
+
+### Visual Progress
+- Visited vs saved
+
+👉 Drives:
+- Repeat engagement
+
+---
+
+## 🚫 LOCKED FEATURES
+- Social posts  
+- Feed  
+- Followers  
 
 ---
 
 # 🌍 STAGE 4 — DECISION LAYER
 
 ## 🎯 Goal
-User opens Nearr BEFORE deciding where to go
+User uses Nearr to decide where to go
 
 ## 📊 REQUIRED METRICS
 
-- Downloads: ≥ 2,000  
-- WAU: ≥ 500  
+- Downloads ≥ 2,000  
+- WAU ≥ 500  
 
-- Sessions per user/week: ≥ 2  
+- Sessions/week ≥ 2  
+- Non-share sessions ≥ 40%  
+- Session time ≥ 60–90s  
 
-- % sessions NOT triggered by share: ≥ 40%  
+---
 
-- Avg session time: ≥ 60–90s  
+## 🧱 FEATURES UNLOCKED
 
-- % users browsing (not just saving): ≥ 50%  
+### Decision UI
+- “Near me”
+- Filters
+- Ranking
 
-## 🚫 If ANY fail
-You are still just a storage app  
-Improve discovery UX
+👉 Drives:
+- Session time
+- Decision rate
 
-## 🚀 Unlock
-Stage 5 (Expansion)
+---
+
+### Action Layer
+- “Go here”
+- Open directions
+
+👉 Drives:
+- Weekly Active Deciders (WAD)
+
+---
+
+### Core Metric Unlock
+
+**WAD (Weekly Active Deciders)**  
+Users who:
+- tap “go”
+- open maps
+- start navigation
+
+👉 This becomes your NORTH STAR
+
+---
+
+## 🚫 LOCKED FEATURES
+- Social feed  
+- Public sharing  
 
 ---
 
 # 🧩 STAGE 5 — EXPANSION
 
 ## 🎯 Goal
-Multiple categories without confusion
+More use cases without confusion
 
 ## 📊 REQUIRED METRICS
 
-- Downloads: ≥ 10,000  
-- WAU: ≥ 2,000  
+- Downloads ≥ 10,000  
+- WAU ≥ 2,000  
 
-- % non-food saves: ≥ 20%  
+- Non-food saves ≥ 20%  
+- Retention stable  
 
-- Retention does NOT drop after expansion  
+---
 
-- User confusion complaints: < 10%  
+## 🧱 FEATURES UNLOCKED
 
-## 🚫 If ANY fail
-Expanded too early  
-Revert + simplify
+### Categories
+- Activities
+- Events
+- Stores
 
-## 🚀 Unlock
-Stage 6 (Social)
+👉 Drives:
+- Saves/user
+- WAU
+
+---
+
+### Search + Discovery
+- Global search
+
+👉 Drives:
+- Session depth
+
+---
+
+## 🚫 LOCKED FEATURES
+- Social feed  
 
 ---
 
 # 🧑‍🤝‍🧑 STAGE 6 — SOCIAL
 
 ## 🎯 Goal
-People follow and explore others
+People influence each other
 
 ## 📊 REQUIRED METRICS
 
-- Downloads: ≥ 50,000  
-- WAU: ≥ 10,000  
+- Downloads ≥ 50,000  
+- WAU ≥ 10,000  
 
-- % users following others: ≥ 25%  
+- Following ≥ 25%  
+- Social viewing ≥ 30%  
 
-- % sessions viewing others’ content: ≥ 30%  
+---
 
-- Organic shares increasing week-over-week  
+## 🧱 FEATURES UNLOCKED
 
-## 🚫 If ANY fail
-Social is premature  
-Return to core usage
+### Profiles
+- Public maps
 
-## 🚀 Unlock
-Stage 7 (AI / recommendations)
+👉 Drives:
+- Social engagement
+
+---
+
+### Following
+- Friends/influencers
+
+👉 Drives:
+- Retention
+
+---
+
+### Shared Maps
+- Group planning
+
+👉 Drives:
+- WAU
+
+---
+
+### Photo Socialization
+- Visited photos visible
+
+👉 Drives:
+- Content creation
 
 ---
 
 # 🧠 STAGE 7 — INTELLIGENCE
 
 ## 🎯 Goal
-Nearr recommends where to go
+Nearr predicts what you should do
 
 ## 📊 REQUIRED METRICS
 
-- Downloads: ≥ 200,000  
-- WAU: ≥ 50,000  
+- Downloads ≥ 200,000  
+- WAU ≥ 50,000  
 
-- Recommendation CTR: ≥ 20%  
+- Recommendation CTR ≥ 20%  
+- Action rate ≥ 15%
 
-- % users acting on recommendations: ≥ 15%  
+---
+
+## 🧱 FEATURES UNLOCKED
+
+### AI Recommendations
+- Personalized suggestions
+
+👉 Drives:
+- WAD
+
+---
+
+### Intent Graph
+- Predict behavior
+
+👉 Drives:
+- Retention
 
 ---
 
 # 🚨 FINAL RULES
 
 ## 1. ALL metrics must pass
-No exceptions.
 
 ## 2. If metrics fail
-DO NOT BUILD NEW FEATURES  
-Only fix the current stage.
+DO NOT BUILD FEATURES  
+Fix the stage
 
-## 3. Partner responsibility
+## 3. Core metric progression
 
-- Acquire users  
-- Track metrics  
-- Report weekly  
-- Diagnose bottlenecks  
+- Stage 0–2 → Saves
+- Stage 3 → Retention
+- Stage 4+ → **WAD (Decisions)**
 
 ---
 
-# 🎯 EARLY SUCCESS TARGET
+# 🎯 EARLY SUCCESS
 
 If you cannot hit:
-
 - 50 downloads  
 - 25 WAU  
 
-You do NOT have a scaling problem.  
 You have a PRODUCT problem.

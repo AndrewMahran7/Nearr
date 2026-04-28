@@ -8,6 +8,7 @@ import * as Linking from 'expo-linking';
 import { useAuth } from '@/hooks/useAuth';
 import { handleAuthDeepLink } from '@/lib/authDeepLink';
 import { clearDevAuth } from '@/lib/devAuth';
+import { trackEvent } from '@/lib/analytics';
 import { checkProximityOnce } from '@/services/notifications';
 import '@/lib/notifications'; // registers background task
 
@@ -15,6 +16,16 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   const { session, loading, isDevSession } = useAuth();
   const segments = useSegments();
   const router = useRouter();
+
+  // Fire `session_started` once per real Supabase session (id changes when
+  // the user signs in, signs out + back in, or the JWT identity changes).
+  // Skipped for dev/demo sessions so we don't pollute production analytics.
+  useEffect(() => {
+    if (!session || isDevSession) return;
+    void trackEvent('session_started', { user_id: session.user.id });
+    // Intentionally keyed on user id only — an access-token refresh on the
+    // same user must not re-fire this event.
+  }, [session?.user.id, isDevSession]);
 
   useEffect(() => {
     if (loading) return;
