@@ -1,346 +1,242 @@
-Good. This is exactly how you should think: **gated progression, not feature dumping.**
+# 🧭 NEARR — VERSION GATE SYSTEM
 
-I’m going to turn your vision into a **build → measure → unlock system** so you always know:
+## 🚨 MASTER RULE
 
-* what to build
-* when to move on
-* when to stop
+You do NOT build the next version until ALL metrics are hit.
 
 ---
 
-# 🧭 NEARR PROGRESSION CHECKLIST
+# 🔥 STAGE 0 — FOUNDATION (v1 BETA)
+
+## 🎯 Goal
+User can save a place → see it → understand it
+
+## 📊 REQUIRED METRICS (ALL must pass)
+
+- Downloads: ≥ 30  
+- WAU: ≥ 15  
+- WAU / Downloads: ≥ 40%  
+
+- Avg saves per user (first session): ≥ 3  
+- Save success rate: ≥ 70%  
+- Completely wrong saves: ≤ 20%  
+
+- Crash rate: < 5% of sessions  
+- Users who understand app without explanation: ≥ 70%
+
+## 🚫 If ANY fail
+- Fix extraction  
+- Fix onboarding clarity  
+- Fix crashes  
+- NO new features  
+
+## 🚀 Unlock
+Stage 1 (v2)
 
 ---
 
-# 🔥 STAGE 0 — FOUNDATION (Right now)
+# ⚡ STAGE 1 — CORE LOOP
 
-### Goal:
+## 🎯 Goal
+User saves → remembers → sees value
 
-> **User can reliably save a place and see it on a map**
+## 📊 REQUIRED METRICS
 
----
+- Downloads: ≥ 75  
+- WAU: ≥ 25  
 
-## ✅ Build
+- 3-day retention: ≥ 25%  
+- Avg saves per user (lifetime): ≥ 4  
 
-* [ ] Save from link (works end-to-end)
-* [ ] Correct place extraction ~70–80%
-* [ ] Map loads instantly
-* [ ] “Show on map” button works
-* [ ] Radius bubbles visible + accurate
-* [ ] App doesn’t crash / major bugs
+- % users who reopen app after saving: ≥ 40%  
+- % users who say “this is useful”: ≥ 60%  
 
----
+- Map load success rate: ≥ 95%
 
-## 📊 Checkpoint (DO NOT SKIP)
+## 🚫 If ANY fail
+You do NOT have product-market signal  
+Fix core loop ONLY
 
-* [ ] Users save ≥ 3 places in first session
-* [ ] <20% of saves are completely wrong
-* [ ] Users understand what the app does without explanation
-
----
-
-## 🚫 If this fails:
-
-→ Fix extraction + UX
-→ Do NOT add features
-
----
-
-## 🚀 Unlock:
-
-👉 **Beta Release (20–50 users)**
-
----
-
-# ⚡ STAGE 1 — CORE LOOP (Make it useful)
-
-### Goal:
-
-> **User saves → remembers → considers going**
-
----
-
-## ✅ Build
-
-* [ ] Improve extraction accuracy (mentions + fallback)
-* [ ] Add “Open original video”
-* [ ] Map opens centered on user location
-* [ ] Fix franchise logic (closest location)
-* [ ] Clean save flow (no dead ends)
-* [ ] Basic “near me” awareness (even without notifications)
-
----
-
-## 📊 Checkpoint
-
-* [ ] 3-day retention ≥ 25–30%
-* [ ] Users open app at least once after saving
-* [ ] Users say “this is useful” (qualitative)
-* [ ] Saves per user ≥ 4–5
-
----
-
-## 🚫 If this fails:
-
-→ Your product is not sticky
-→ Fix **core loop**, not features
-
----
-
-## 🚀 Unlock:
-
-👉 **Share to Nearr (native integration)**
+## 🚀 Unlock
+Stage 2 (Share + friction removal)
 
 ---
 
 # 🚀 STAGE 2 — FRICTION REMOVAL
 
-### Goal:
+## 🎯 Goal
+Saving becomes effortless
 
-> **Saving becomes effortless**
+## 📊 REQUIRED METRICS
 
----
+- Downloads: ≥ 200  
+- WAU: ≥ 75  
 
-## ✅ Build
+- % saves via share: ≥ 50%  
+- Save success rate: ≥ 80%  
 
-* [ ] Native share (IG/TikTok → Nearr)
-* [ ] Auto-processing on open (no manual input)
-* [ ] Candidate selection UI (if uncertain)
-* [ ] Logging system for failed saves
-* [ ] Basic transcription fallback trigger (even if manual or partial)
+- Time to save (share → confirmation): ≤ 5s  
 
----
+- % users who save without being told: ≥ 50%  
 
-## 📊 Checkpoint
+- Avg saves per user: ≥ 5  
 
-* [ ] >50% of saves come from share (not paste)
-* [ ] Save success rate ≥ 80%
-* [ ] Users save places without being told
-* [ ] Users send you links saying “add this”
+## 🚫 If ANY fail
+UX is too clunky  
+Fix share flow / speed
 
----
-
-## 🚫 If this fails:
-
-→ Your UX is too clunky
-→ Fix onboarding + save flow
+## 🚀 Unlock
+Stage 3 (Notifications)
 
 ---
 
-## 🚀 Unlock:
+# 🔥 STAGE 3 — HABIT LOOP
 
-👉 **Notifications (real loop begins)**
+## 🎯 Goal
+User comes back without being told
 
----
+## 📊 REQUIRED METRICS
 
-# 🔥 STAGE 3 — HABIT LOOP (THIS IS MAKE OR BREAK)
+- Downloads: ≥ 500  
+- WAU: ≥ 150  
 
-### Goal:
+- WAU / Downloads: ≥ 30%  
 
-> **User opens Nearr without being told**
+- 3-day retention: ≥ 35%  
+- 7-day retention: ≥ 20%  
 
----
+- % users who open app WITHOUT sharing: ≥ 30%  
 
-## ✅ Build
+- % users who act on a saved place: ≥ 10–15%  
 
-* [ ] “You’re near X” notification
-* [ ] “You saved this recently” reminder
-* [ ] Tap notification → opens correct map view
-* [ ] Nearby list view (quick decision mode)
+- Notification CTR: ≥ 15%  
 
----
+## 🚫 If ANY fail
+You do NOT have a habit  
+Fix notifications + timing
 
-## 📊 Checkpoint
-
-* [ ] 3-day retention ≥ 35–40%
-* [ ] Users open app when going out
-* [ ] At least 10–20% users:
-
-  * act on a saved place
-* [ ] Users say:
-
-  > “I forgot about that place until the app showed me”
-
----
-
-## 🚫 If this fails:
-
-→ Notifications are not valuable
-→ Timing/context is wrong
-
----
-
-## 🚀 Unlock:
-
-👉 **Near Me Decision Engine**
+## 🚀 Unlock
+Stage 4 (Decision layer)
 
 ---
 
 # 🌍 STAGE 4 — DECISION LAYER
 
-### Goal:
+## 🎯 Goal
+User opens Nearr BEFORE deciding where to go
 
-> **Nearr becomes the “what should I do?” app**
+## 📊 REQUIRED METRICS
 
----
+- Downloads: ≥ 2,000  
+- WAU: ≥ 500  
 
-## ✅ Build
+- Sessions per user/week: ≥ 2  
 
-* [ ] “Near me” tab
-* [ ] Filter by category (food first)
-* [ ] Show saved + nearby options
-* [ ] Quick “go here” action
-* [ ] Basic ranking (distance + relevance)
+- % sessions NOT triggered by share: ≥ 40%  
 
----
+- Avg session time: ≥ 60–90s  
 
-## 📊 Checkpoint
+- % users browsing (not just saving): ≥ 50%  
 
-* [ ] Users open Nearr BEFORE choosing where to go
-* [ ] Users browse, not just save
-* [ ] Session length increases
-* [ ] Repeat usage without prompting
+## 🚫 If ANY fail
+You are still just a storage app  
+Improve discovery UX
 
----
-
-## 🚫 If this fails:
-
-→ Product is still just storage
-→ Improve decision UX
+## 🚀 Unlock
+Stage 5 (Expansion)
 
 ---
 
-## 🚀 Unlock:
+# 🧩 STAGE 5 — EXPANSION
 
-👉 **Multi-category support**
+## 🎯 Goal
+Multiple categories without confusion
 
----
+## 📊 REQUIRED METRICS
 
-# 🧩 STAGE 5 — EXPANSION (careful)
+- Downloads: ≥ 10,000  
+- WAU: ≥ 2,000  
 
-### Goal:
+- % non-food saves: ≥ 20%  
 
-> **Expand beyond restaurants cleanly**
+- Retention does NOT drop after expansion  
 
----
+- User confusion complaints: < 10%  
 
-## ✅ Build
+## 🚫 If ANY fail
+Expanded too early  
+Revert + simplify
 
-* [ ] Categories: food → activities → events → stores
-* [ ] UI adapts cleanly per category
-* [ ] Search works across categories
-
----
-
-## 📊 Checkpoint
-
-* [ ] Users naturally save non-food items
-* [ ] No confusion in UI
-* [ ] No drop in retention
+## 🚀 Unlock
+Stage 6 (Social)
 
 ---
 
-## 🚫 If this fails:
+# 🧑‍🤝‍🧑 STAGE 6 — SOCIAL
 
-→ Too early → revert to food focus
+## 🎯 Goal
+People follow and explore others
 
----
+## 📊 REQUIRED METRICS
 
-## 🚀 Unlock:
+- Downloads: ≥ 50,000  
+- WAU: ≥ 10,000  
 
-👉 **Social Layer**
+- % users following others: ≥ 25%  
 
----
+- % sessions viewing others’ content: ≥ 30%  
 
-# 🧑‍🤝‍🧑 STAGE 6 — SOCIAL (only now)
+- Organic shares increasing week-over-week  
 
-### Goal:
+## 🚫 If ANY fail
+Social is premature  
+Return to core usage
 
-> **People trust other people’s taste**
-
----
-
-## ✅ Build
-
-* [ ] Personal maps
-* [ ] Follow users
-* [ ] View others’ saved places
-* [ ] Lightweight reviews
-
----
-
-## 📊 Checkpoint
-
-* [ ] Users follow others
-* [ ] Users view others’ maps
-* [ ] Some organic sharing happens
-
----
-
-## 🚫 If this fails:
-
-→ Social launched too early
-→ return to core usage
-
----
-
-## 🚀 Unlock:
-
-👉 **Creator / Influencer Maps**
+## 🚀 Unlock
+Stage 7 (AI / recommendations)
 
 ---
 
 # 🧠 STAGE 7 — INTELLIGENCE
 
-### Goal:
+## 🎯 Goal
+Nearr recommends where to go
 
-> **Nearr tells you where to go before you think**
+## 📊 REQUIRED METRICS
 
----
+- Downloads: ≥ 200,000  
+- WAU: ≥ 50,000  
 
-## ✅ Build
+- Recommendation CTR: ≥ 20%  
 
-* [ ] “People who saved X also saved Y”
-* [ ] “Trending near you”
-* [ ] Personalized recommendations
-
----
-
-## 📊 Checkpoint
-
-* [ ] Users trust recommendations
-* [ ] Click-through rate is high
-* [ ] Users discover new places without input
+- % users acting on recommendations: ≥ 15%  
 
 ---
 
-## 🚀 Unlock:
+# 🚨 FINAL RULES
 
-👉 **Full product maturity (v100)**
+## 1. ALL metrics must pass
+No exceptions.
 
----
+## 2. If metrics fail
+DO NOT BUILD NEW FEATURES  
+Only fix the current stage.
 
-# 🧭 MASTER RULE (never break this)
+## 3. Partner responsibility
 
-At ANY stage:
-
-> ❌ If checkpoint fails → do NOT add features
-> ✅ Fix the current stage until it passes
-
----
-
-# 🔥 Final takeaway
-
-This entire roadmap is built around one thing:
-
-> **Nearr must move users from “I saw this” → “I actually went”**
-
-If that doesn’t happen:
-→ nothing else matters
+- Acquire users  
+- Track metrics  
+- Report weekly  
+- Diagnose bottlenecks  
 
 ---
 
-If you want, next I can:
+# 🎯 EARLY SUCCESS TARGET
 
-* turn this into a **Notion board you can use daily**
-* or define exactly **what to track in Supabase for each checkpoint**
+If you cannot hit:
+
+- 50 downloads  
+- 25 WAU  
+
+You do NOT have a scaling problem.  
+You have a PRODUCT problem.
