@@ -18,6 +18,20 @@ const GOOGLE_MAPS_ANDROID_KEY =
   process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY ||
   '';
 
+// NOTE(ios-share-extension): Re-enabled in app.json after the first
+// TestFlight build shipped as a single-target app. Before submitting a
+// build that includes the extension, make sure:
+//   1. App Group `group.com.nearr.ios` exists in the Apple Developer
+//      portal and is attached to BOTH `com.nearr.ios` and
+//      `com.nearr.ios.ShareExtension`.
+//   2. EAS has provisioning profiles for BOTH bundle IDs
+//      (`eas credentials` → iOS → add the extension bundle ID).
+//   3. A dev build (`eas build --profile development --platform ios`) on
+//      a real device successfully receives a shared URL.
+// If App Store Connect upload fails again with a multi-target error,
+// remove the `expo-share-extension` plugin entry from app.json to revert
+// to a single-target build while you debug provisioning.
+
 module.exports = ({ config }) => {
   return {
     ...config,

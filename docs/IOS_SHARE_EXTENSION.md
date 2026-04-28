@@ -9,9 +9,21 @@
 
 ## TL;DR
 
+> **Status (2026-04-27): TEMPORARILY DISABLED for first TestFlight.**
+> The `expo-share-extension` plugin entry was removed from
+> [app.json](../app.json) because EAS Submit kept failing on the
+> multi-target iOS build (`com.nearr.ios` + `com.nearr.ios.ShareExtension`),
+> most likely an App Group or provisioning-profile mismatch on the
+> extension target. The full restore snippet + re-enable checklist
+> live in the TODO at the top of [app.config.js](../app.config.js).
+> Everything below describes how the extension is wired *when enabled*.
+> Until it's re-enabled, iOS users use the host-app paste-link flow on
+> `/share`, and Android share intent is unaffected.
+
 - We use **`expo-share-extension` ^1.10.7** (declared in
-  [package.json](../package.json) and registered as a plugin in
-  [app.json](../app.json)). It generates the native target during
+  [package.json](../package.json); plugin entry in [app.json](../app.json)
+  is currently commented out via the TODO in [app.config.js](../app.config.js)).
+  When enabled, it generates the native target during
   `npx expo prebuild` so we don't hand-edit Xcode.
 - The share-extension JS bundle entry is
   [index.share.js](../index.share.js) → [ShareExtension.tsx](../ShareExtension.tsx).

@@ -55,7 +55,16 @@ as a release-blocker until checked off in
 [TESTING_CHECKLIST.md](TESTING_CHECKLIST.md).
 
 - **iOS Share Extension** via `expo-share-extension` ^1.10.7.
-  - Generated target lives in
+  - **TEMPORARILY DISABLED** for the first TestFlight submission. The
+    plugin entry was removed from [app.json](../app.json) because the
+    multi-target build (`com.nearr.ios` + `com.nearr.ios.ShareExtension`)
+    failed App Store Connect upload, almost certainly an App Group /
+    provisioning issue on the extension target. Re-enable after
+    provisioning is verified — see [app.config.js](../app.config.js)
+    for the exact snippet to restore.
+  - Until then, iOS users save shared links via the host-app paste-link
+    flow on `/share` (still wired). Android share intent is unaffected.
+  - Generated target (when enabled) lives in
     [ios/NearrShareExtension/](../ios/NearrShareExtension/).
   - Active App Group is `group.com.nearr.ios`. The legacy
     [native/share-extension/](../native/share-extension/) scaffold uses

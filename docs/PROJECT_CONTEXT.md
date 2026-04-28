@@ -29,7 +29,12 @@ share-sheet driven.
 - Location / notifications: `expo-location` ~17, `expo-notifications` ~0.28,
   `expo-task-manager` ~11.8
 - Storage: `@react-native-async-storage/async-storage` (Supabase session)
-- iOS share extension: `expo-share-extension` ^1.10.7 (active, registered)
+- iOS share extension: `expo-share-extension` ^1.10.7 — **temporarily
+  disabled** for first TestFlight (plugin entry removed from
+  [app.json](../app.json); see TODO in [app.config.js](../app.config.js)).
+  Source files (`ShareExtension.tsx`, `index.share.js`,
+  `modules/nearr-shared-auth`) are kept in place to make re-enabling
+  trivial after App Group / provisioning is verified.
 - Android share intent: in-repo config plugin
   [withAndroidShareIntent](../plugins/withAndroidShareIntent.js) patches
   `MainActivity.kt` to convert `ACTION_SEND` into a `nearr://share` deep

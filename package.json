@@ -8,6 +8,7 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
+    "postinstall": "patch-package",
     "eval:share-extraction": "ts-node --project scripts/tsconfig.json scripts/evalShareExtraction.ts"
   },
   "dependencies": {
@@ -23,8 +24,8 @@
     "expo-share-extension": "^1.10.7",
     "expo-status-bar": "~1.12.0",
     "expo-task-manager": "~11.8.0",
-    "react": "18.2.0",
     "nearr-shared-auth": "file:./modules/nearr-shared-auth",
+    "react": "18.2.0",
     "react-native": "0.74.5",
     "react-native-gesture-handler": "~2.16.0",
     "react-native-maps": "1.14.0",
@@ -36,6 +37,7 @@
   "devDependencies": {
     "@types/node": "^25.6.0",
     "@types/react": "~18.2.79",
+    "patch-package": "^8.0.1",
     "ts-node": "^10.9.2",
     "typescript": "~5.3.3"
   },

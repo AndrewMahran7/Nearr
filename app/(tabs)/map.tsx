@@ -24,12 +24,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Linking,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
 import MapView, { Circle, Marker, PROVIDER_GOOGLE, Region } from 'react-native-maps';
+
+// iOS uses the default provider (Apple Maps) — the Google Maps iOS SDK
+// requires the `AirGoogleMaps` Xcode subproject, which we don't link in
+// our managed/EAS build. Android keeps PROVIDER_GOOGLE since the Google
+// Maps Android SDK is wired via app.json `android.config.googleMaps`.
+const MAP_PROVIDER = Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined;
 import * as Location from 'expo-location';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 
@@ -503,7 +510,7 @@ export default function MapScreen() {
           spinner-trapped shell. */}
       <MapView
         ref={mapRef}
-        provider={PROVIDER_GOOGLE}
+        provider={MAP_PROVIDER}
         style={StyleSheet.absoluteFill}
         // Only show the user dot when we actually have a fix. Toggling
         // `showsUserLocation` on without a usable provider can leave the

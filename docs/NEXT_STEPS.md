@@ -8,6 +8,16 @@
 
 ## Pre-build hardening (do this first)
 
+0. **Re-enable the iOS Share Extension (post first TestFlight).** The
+   `expo-share-extension` plugin entry was removed from
+   [app.json](../app.json) so the first iOS TestFlight build could
+   ship as a single-target app. The exact JSON snippet + re-enable
+   checklist (App Group, EAS credentials for the extension bundle ID,
+   dev-build verification on a real device) is in the TODO at the top
+   of [app.config.js](../app.config.js). Until then iOS share-sheet
+   saves are unavailable; the host-app paste-link flow on `/share`
+   and the Android share intent both still work.
+
 1. **Rotate the leaked Google Maps key** that is hard-coded in
    [app.json](../app.json). Replace the literal value with
    `process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY` (consider migrating
