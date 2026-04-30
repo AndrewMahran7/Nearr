@@ -1,0 +1,30 @@
+# Local dev compose file. In production, deploy the image directly to your
+# platform of choice (Railway / Render / Fly / VPS) — see README.
+#
+# Secrets MUST come from the host's .env (not committed). Nothing here is
+# baked into the image.
+services:
+  transcription:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: nearr/transcription-service:local
+    container_name: nearr-transcription
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "8080:8080"
+    # Persist the Whisper model cache so subsequent container starts don't
+    # re-download ~140MB (base) / ~470MB (small) etc.
+    volumes:
+      - whisper-cache:/root/.cache/whisper
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
+
+volumes:
+  whisper-cache:

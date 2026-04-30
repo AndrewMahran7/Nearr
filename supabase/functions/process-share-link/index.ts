@@ -167,14 +167,53 @@ async function processShareLink(url: string, accessToken: string): Promise<Resul
 
   const heuristicQuery = buildQuery(title, description);
 
-  // ---- 3. AI extraction (Gemini) -------------------------------------
+  // ---- 3. Conditional transcription fallback -------------------------
+  // Cheap heuristic confidence on metadata alone. If it's strong enough we
+  // skip the transcription call entirely (transcription is the slowest +
+  // most fragile step in the whole pipeline). If it's weak, we try to pull
+  // a transcript from the configured provider and feed it into the AI step.
+  //
+  // Confidence is a number in [0,1]; threshold is 0.6. We never block the
+  // pipeline on transcription — failures, timeouts, missing config all
+  // degrade gracefully to "no transcript" and the AI call proceeds with
+  // just title/description as before.
+  const metadataConfidence = scoreMetadataConfidence(title, description, heuristicQuery);
+  let transcript: string | null = null;
+  if (metadataConfidence >= 0.6) {
+    console.log(
+      `[process-share-link] TRANSCRIPT_SKIPPED_LOW_CONFIDENCE=false url=${truncForLog(url)} confidence=${metadataConfidence.toFixed(2)}`,
+    );
+  } else {
+    console.log(
+      `[process-share-link] TRANSCRIPT_REQUESTED url=${truncForLog(url)} confidence=${metadataConfidence.toFixed(2)}`,
+    );
+    transcript = await fetchTranscriptSafe(url);
+    if (transcript) {
+      console.log(
+        `[process-share-link] TRANSCRIPT_SUCCESS url=${truncForLog(url)} length=${transcript.length}`,
+      );
+    } else {
+      console.log(
+        `[process-share-link] TRANSCRIPT_FAILED url=${truncForLog(url)} confidence=${metadataConfidence.toFixed(2)}`,
+      );
+    }
+  }
+
+  // ---- 4. AI extraction (Gemini) -------------------------------------
   const ai = await extractPlaceAI({
     sourceType: source,
     url,
     title: title ?? undefined,
     description: description ?? undefined,
+    transcript: transcript ?? undefined,
     fallbackQuery: heuristicQuery ?? undefined,
   });
+
+  if (transcript) {
+    console.log(
+      `[process-share-link] TRANSCRIPT_USED_IN_AI url=${truncForLog(url)} length=${transcript.length} aiConfidence=${ai.confidence}`,
+    );
+  }
 
   const chosenQuery = (ai.query && ai.query.trim()) || heuristicQuery || '';
   const confidence: 'high' | 'medium' | 'low' = ai.confidence;
@@ -378,6 +417,7 @@ async function extractPlaceAI(input: {
   url?: string;
   title?: string;
   description?: string;
+  transcript?: string;
   fallbackQuery?: string;
 }): Promise<AIResult> {
   const apiKey = Deno.env.get('GEMINI_API_KEY') ?? '';
@@ -433,20 +473,32 @@ function buildAIPrompt(input: {
   url?: string;
   title?: string;
   description?: string;
+  transcript?: string;
   fallbackQuery?: string;
 }): string {
+  // Truncate transcript to keep token cost predictable. The prompt instructs
+  // the model to use it ONLY if title/description are insufficient, so a
+  // short window is fine in practice.
+  const TRANSCRIPT_MAX = 1800;
+  const rawT = (input.transcript ?? '').trim();
+  const transcript = rawT.length > TRANSCRIPT_MAX
+    ? rawT.slice(0, TRANSCRIPT_MAX) + '…'
+    : rawT;
+
   return [
     'You are a place-extraction assistant for a maps app.',
     'Identify the SINGLE real-world business or place referenced by this social media share.',
     'Ignore creator handles, hashtags, emoji, and platform boilerplate.',
     'Prefer tagged business handles (@name) and named venues over neighborhoods.',
     'If only a neighborhood/city is mentioned (no business), confidence MUST be "low".',
+    'If a transcript is provided, use it ONLY when title/description do not name a venue.',
     'Return STRICT JSON: {"query": string, "confidence": "high"|"medium"|"low", "reason": string}',
     '',
     `sourceType: ${input.sourceType ?? ''}`,
     `url: ${input.url ?? ''}`,
     `title: ${input.title ?? ''}`,
     `description: ${input.description ?? ''}`,
+    `transcript: ${transcript}`,
     `fallbackQuery: ${input.fallbackQuery ?? ''}`,
   ].join('\n');
 }
@@ -622,4 +674,294 @@ function nameOverlapScore(name: string, query: string): number {
   let hits = 0;
   for (const t of tok(query)) if (c.has(t)) hits++;
   return hits;
+}
+
+// ---------------------------------------------------------------------------
+// Transcription fallback (SoScripted)
+//
+// Mirrors lib/transcription/providers/soscripted.ts but inlined here because
+// the Edge Function runs on Deno and cannot import the Node-side lib code
+// directly. Both must stay behaviorally consistent.
+//
+// Contracts:
+//   - Never throws. Returns null on any failure (timeout, non-2xx, parse).
+//   - Hard timeout per provider so a slow third party can never stall the
+//     share-save flow.
+//   - Honors TRANSCRIPTION_PROVIDER env var. Supported values:
+//       "placeholder"  → no-op, returns null (default when unset)
+//       "soscripted"   → POST https://soscripted.com/transcript-api
+//       "self_hosted"  → POST $SELF_HOSTED_TRANSCRIPTION_URL/transcribe
+//                        (yt-dlp + Whisper microservice; see transcription-service/)
+// ---------------------------------------------------------------------------
+
+const SOSCRIPTED_ENDPOINT = 'https://soscripted.com/transcript-api';
+const SOSCRIPTED_TIMEOUT_MS = 7_000;
+// Self-hosted Whisper can take 20–40s on CPU; cap so the Edge Function
+// itself doesn't time out (Supabase default ~60s).
+const SELF_HOSTED_TIMEOUT_MS = 45_000;
+
+async function fetchTranscriptSafe(url: string): Promise<string | null> {
+  const provider = (Deno.env.get('TRANSCRIPTION_PROVIDER') ?? '').trim().toLowerCase();
+  if (!provider || provider === 'placeholder') {
+    // No provider configured -- silently degrade. This preserves prior
+    // behavior (no transcription) when the env var isn't set.
+    return null;
+  }
+  if (!isLikelyVideoUrl(url)) {
+    // Skip non-video shares (e.g. plain http links). Avoids burning the
+    // transcript-API budget on URLs it can't process.
+    return null;
+  }
+
+  if (provider === 'self_hosted') {
+    return await fetchSelfHostedTranscript(url);
+  }
+  if (provider === 'soscripted') {
+    return await fetchSoScriptedTranscript(url);
+  }
+  console.log(`[process-share-link] unknown TRANSCRIPTION_PROVIDER="${provider}" -- skipping`);
+  return null;
+}
+
+async function fetchSoScriptedTranscript(url: string): Promise<string | null> {
+  const apiKey = (Deno.env.get('SOSCRIPTED_API_KEY') ?? '').trim();
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), SOSCRIPTED_TIMEOUT_MS);
+  try {
+    const headers: Record<string, string> = {
+      'content-type': 'application/json',
+      accept: 'application/json',
+    };
+    if (apiKey) headers.authorization = `Bearer ${apiKey}`;
+
+    const res = await fetch(SOSCRIPTED_ENDPOINT, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ url }),
+      signal: ctrl.signal,
+    });
+    if (!res.ok) {
+      console.log(`[process-share-link] soscripted http ${res.status}`);
+      return null;
+    }
+    const json = await res.json().catch(() => null) as any;
+    if (!json || typeof json !== 'object') return null;
+    const t =
+      (typeof json.transcript === 'string' && json.transcript) ||
+      (typeof json.text === 'string' && json.text) ||
+      (typeof json?.data?.transcript === 'string' && json.data.transcript) ||
+      (typeof json?.data?.text === 'string' && json.data.text) ||
+      (typeof json?.result?.transcript === 'string' && json.result.transcript) ||
+      (typeof json?.result?.text === 'string' && json.result.text) ||
+      '';
+    const trimmed = (t as string).trim();
+    return trimmed.length > 0 ? trimmed : null;
+  } catch (err) {
+    const reason = (err as Error)?.name === 'AbortError' ? 'timeout' : (err as Error)?.message;
+    console.log(`[process-share-link] soscripted error ${reason}`);
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function fetchSelfHostedTranscript(url: string): Promise<string | null> {
+  const baseUrl = (Deno.env.get('SELF_HOSTED_TRANSCRIPTION_URL') ?? '').trim();
+  if (!baseUrl) {
+    console.log('[process-share-link] TRANSCRIPT_SELF_HOSTED_FAILED reason=missing_endpoint');
+    return null;
+  }
+
+  // Cheap pre-flight: if the service isn't reachable / healthy we skip
+  // the (slow, expensive) /transcribe call entirely. This keeps us from
+  // waiting up to 45s on a known-down service.
+  const healthy = await selfHostedHealthCheck(baseUrl);
+  if (!healthy) {
+    console.log(
+      `[process-share-link] TRANSCRIPT_SKIPPED_SERVICE_UNHEALTHY url=${truncForLog(url)}`,
+    );
+    return null;
+  }
+
+  const endpoint = buildSelfHostedUrl(baseUrl, '/transcribe');
+  const apiKey = (Deno.env.get('TRANSCRIPTION_SERVICE_API_KEY') ?? '').trim();
+
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), SELF_HOSTED_TIMEOUT_MS);
+  const startedAt = Date.now();
+  console.log(`[process-share-link] TRANSCRIPT_SELF_HOSTED_REQUESTED url=${truncForLog(url)}`);
+  try {
+    const headers: Record<string, string> = {
+      'content-type': 'application/json',
+      accept: 'application/json',
+    };
+    if (apiKey) headers['x-api-key'] = apiKey;
+
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ url }),
+      signal: ctrl.signal,
+    });
+    if (!res.ok) {
+      console.log(
+        `[process-share-link] TRANSCRIPT_SELF_HOSTED_FAILED url=${truncForLog(url)} reason=http_${res.status}`,
+      );
+      return null;
+    }
+    const json = (await res.json().catch(() => null)) as
+      | { success?: boolean; transcript?: string; error?: string }
+      | null;
+    if (!json || typeof json !== 'object') {
+      console.log(
+        `[process-share-link] TRANSCRIPT_SELF_HOSTED_FAILED url=${truncForLog(url)} reason=parse_error`,
+      );
+      return null;
+    }
+    if (json.success && typeof json.transcript === 'string' && json.transcript.trim().length > 0) {
+      const transcript = json.transcript.trim();
+      console.log(
+        `[process-share-link] TRANSCRIPT_SELF_HOSTED_SUCCESS url=${truncForLog(url)} length=${transcript.length} ms=${Date.now() - startedAt}`,
+      );
+      return transcript;
+    }
+    console.log(
+      `[process-share-link] TRANSCRIPT_SELF_HOSTED_FAILED url=${truncForLog(url)} reason=${json.error ?? 'empty_transcript'}`,
+    );
+    return null;
+  } catch (err) {
+    const isAbort = (err as Error)?.name === 'AbortError';
+    const reason = isAbort ? 'timeout' : (err as Error)?.message;
+    console.log(
+      `[process-share-link] ${isAbort ? 'TRANSCRIPT_SELF_HOSTED_TIMEOUT' : 'TRANSCRIPT_SELF_HOSTED_FAILED'} url=${truncForLog(url)} reason=${reason}`,
+    );
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// SELF_HOSTED_TRANSCRIPTION_URL may be configured as either:
+//   https://host.example.com           → append the requested path
+//   https://host.example.com/transcribe → strip /transcribe, then append
+// We always want /health to hit /health and /transcribe to hit /transcribe.
+function buildSelfHostedUrl(baseUrl: string, path: '/health' | '/transcribe'): string {
+  let trimmed = baseUrl.replace(/\/+$/, '');
+  if (trimmed.toLowerCase().endsWith('/transcribe')) {
+    trimmed = trimmed.slice(0, -'/transcribe'.length).replace(/\/+$/, '');
+  } else if (trimmed.toLowerCase().endsWith('/health')) {
+    trimmed = trimmed.slice(0, -'/health'.length).replace(/\/+$/, '');
+  }
+  return `${trimmed}${path}`;
+}
+
+const SELF_HOSTED_HEALTH_TIMEOUT_MS = 2_000;
+
+async function selfHostedHealthCheck(baseUrl: string): Promise<boolean> {
+  const endpoint = buildSelfHostedUrl(baseUrl, '/health');
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), SELF_HOSTED_HEALTH_TIMEOUT_MS);
+  console.log(`[process-share-link] TRANSCRIPT_HEALTH_CHECK_REQUESTED endpoint=${truncForLog(endpoint)}`);
+  try {
+    const res = await fetch(endpoint, {
+      method: 'GET',
+      headers: { accept: 'application/json' },
+      signal: ctrl.signal,
+    });
+    if (!res.ok) {
+      console.log(`[process-share-link] TRANSCRIPT_HEALTH_CHECK_FAILED reason=http_${res.status}`);
+      return false;
+    }
+    const body = (await res.json().catch(() => null)) as
+      | { ok?: boolean; yt_dlp_available?: boolean; ffmpeg_available?: boolean }
+      | null;
+    if (!body || body.ok !== true) {
+      console.log('[process-share-link] TRANSCRIPT_HEALTH_CHECK_FAILED reason=not_ok');
+      return false;
+    }
+    // The service answers, but its native deps are missing → can't transcribe.
+    if (body.yt_dlp_available === false || body.ffmpeg_available === false) {
+      console.log(
+        `[process-share-link] TRANSCRIPT_HEALTH_CHECK_FAILED reason=missing_binaries yt_dlp=${body.yt_dlp_available} ffmpeg=${body.ffmpeg_available}`,
+      );
+      return false;
+    }
+    console.log('[process-share-link] TRANSCRIPT_HEALTH_CHECK_SUCCESS');
+    return true;
+  } catch (err) {
+    const reason = (err as Error)?.name === 'AbortError' ? 'timeout' : (err as Error)?.message;
+    console.log(`[process-share-link] TRANSCRIPT_HEALTH_CHECK_FAILED reason=${reason}`);
+    return false;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function isLikelyVideoUrl(url: string): boolean {
+  const u = url.toLowerCase();
+  return (
+    u.includes('tiktok.com') ||
+    u.includes('instagram.com/reel') ||
+    u.includes('instagram.com/p/') ||
+    u.includes('instagram.com/tv/') ||
+    u.includes('youtube.com/shorts') ||
+    u.includes('youtu.be/')
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Metadata heuristic confidence
+//
+// Returns a score in [0,1] estimating how confident we are that the
+// title/description ALONE name a real venue. Used to decide whether to
+// spend the transcription budget. Threshold: < 0.6 -> fetch transcript.
+//
+// Heuristic (cheap on purpose -- the AI step does the real work):
+//   + 0.2 baseline if we have any heuristicQuery at all
+//   + 0.3 for each capitalized multi-word proper-noun-ish token (cap at 2)
+//   + 0.2 if title/description contains an @handle
+//   + 0.2 if it contains an explicit venue cue ("at <Capitalized>", "@", "in <Capitalized>")
+//   - 0.3 if the only useful tokens are generic ("food", "vibes", "spot"…)
+// ---------------------------------------------------------------------------
+
+const VENUE_KEYWORDS = new Set([
+  'restaurant','cafe','coffee','bar','pub','bistro','brewery','bakery','diner',
+  'pizzeria','taqueria','grill','kitchen','lounge','club','market','shop','store',
+  'gallery','museum','theater','theatre','park','gym','spa','hotel','inn',
+]);
+const GENERIC_TOKENS = new Set([
+  'food','vibes','spot','place','best','amazing','must','try','love','foodie',
+  'aesthetic','cute','nice','good','great','review','tour','visit',
+]);
+
+function scoreMetadataConfidence(
+  title: string | null,
+  description: string | null,
+  heuristicQuery: string | null,
+): number {
+  if (!heuristicQuery) return 0;
+  let score = 0.2;
+
+  const properNounTokens = (heuristicQuery.match(/\b[A-Z][a-zA-Z'’]{2,}\b/g) ?? []).length;
+  score += Math.min(properNounTokens, 2) * 0.3;
+
+  const blob = `${title ?? ''} ${description ?? ''}`;
+  if (/@[A-Za-z0-9_.]{2,}/.test(blob)) score += 0.2;
+  if (/\b(?:at|in)\s+[A-Z][a-zA-Z'’]{2,}/.test(blob)) score += 0.2;
+
+  const lower = heuristicQuery.toLowerCase();
+  const hasVenueKeyword = [...VENUE_KEYWORDS].some((k) => lower.includes(k));
+  if (hasVenueKeyword) score += 0.1;
+
+  const tokens = lower.split(/\s+/).filter((t) => t.length >= 3);
+  const usefulTokens = tokens.filter((t) => !GENERIC_TOKENS.has(t));
+  if (tokens.length > 0 && usefulTokens.length === 0) score -= 0.3;
+
+  if (score < 0) score = 0;
+  if (score > 1) score = 1;
+  return score;
+}
+
+function truncForLog(s: string): string {
+  return s.length > 120 ? s.slice(0, 117) + '...' : s;
 }

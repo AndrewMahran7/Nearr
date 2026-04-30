@@ -2,8 +2,16 @@ node_modules/
 .expo/
 dist/
 web-build/
+
+# Local env files — never commit real secrets.
+# Allow the templates so contributors know which vars exist.
 .env
-.env.local
+.env.*
+!.env.example
+!transcription-service/.env.example
+# Convention for archiving rotated keys locally.
+.env_old
+
 *.log
 .DS_Store
 ios/

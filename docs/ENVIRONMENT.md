@@ -46,12 +46,22 @@ bundle. Server / script values are NOT prefixed and live in either
 | `EXPO_PUBLIC_PROCESS_SHARE_LINK_URL` | client | recommended | URL of the deployed `process-share-link` Edge Function. If unset, the iOS share extension always falls back to opening the host app. |
 | `EXPO_PUBLIC_DEMO_MODE` | client | no | `true` → mock everything (no network) |
 | `EXPO_PUBLIC_MAP_PREVIEW_MODE` | client | no | `true` → real auth + real map, seeded data, no location prompt |
+| `GOOGLE_MAPS_IOS_KEY` / `GOOGLE_MAPS_ANDROID_KEY` | native build | no | Optional per-platform overrides read by `app.config.js`. Falls back to `EXPO_PUBLIC_GOOGLE_MAPS_API_KEY` when unset. |
 | `GEMINI_API_KEY` | Edge Function secret | optional | Server-side place extraction via Gemini 1.5 Flash. If missing, function falls back to a deterministic heuristic. |
 | `GOOGLE_PLACES_KEY` | Edge Function secret | yes (for the function) | Server-side Google Places Text Search |
 | `SUPABASE_URL` | Edge Function secret | auto | Provided by `supabase functions deploy` |
 | `SUPABASE_SERVICE_ROLE_KEY` | Edge Function secret | auto | Provided by `supabase functions deploy` |
-| `TRANSCRIPTION_PROVIDER` | server / script | no | Currently only `'placeholder'` is implemented |
-| `TRANSCRIPTION_API_KEY` | server / script | no | Reserved for the real provider |
+| `TRANSCRIPTION_PROVIDER` | Edge Function / script | no | `placeholder` (default, no-op), `soscripted` (paid API), or `self_hosted` (our FastAPI service in [transcription-service/](../transcription-service/)). |
+| `SELF_HOSTED_TRANSCRIPTION_URL` | Edge Function / script | iff `self_hosted` | Base URL of the FastAPI service. Bare host or `/transcribe` both work. |
+| `TRANSCRIPTION_SERVICE_API_KEY` | Edge Function / script + service | iff `self_hosted` | Shared `x-api-key` between the Edge Function and the FastAPI service. Must match on both sides. |
+| `SOSCRIPTED_API_KEY` | Edge Function / script | iff `soscripted` | Bearer token for the SoScripted API. |
+
+### Deprecated / legacy aliases
+
+| Var | Replaced by | Status |
+| --- | --- | --- |
+| `EXPO_PUBLIC_GOOGLE_PLACES_KEY` | `EXPO_PUBLIC_GOOGLE_MAPS_API_KEY` | Still read as a fallback by `services/placesService.ts` and the Edge Function. New setups should use the canonical name. |
+| `TRANSCRIPTION_API_KEY` | `SOSCRIPTED_API_KEY` / `TRANSCRIPTION_SERVICE_API_KEY` | Read only by the placeholder provider (no real effect). Don't set in new configs. |
 
 > **`app.json` audit.** A Google Maps API key is currently hard-coded
 > into `expo.ios.config.googleMapsApiKey` /
