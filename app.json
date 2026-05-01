@@ -3,7 +3,7 @@
     "name": "Nearr",
     "slug": "nearr",
     "scheme": "nearr",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -16,8 +16,6 @@
         "NSLocationWhenInUseUsageDescription": "Nearr uses your location to notify you when you are near saved places.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Nearr uses your location in the background to notify you when you are near saved places.",
         "UIBackgroundModes": [
-          "location",
-          "fetch",
           "location",
           "fetch"
         ],

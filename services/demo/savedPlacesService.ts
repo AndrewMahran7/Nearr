@@ -78,6 +78,7 @@ function seed(): SavedPlaceWithPlace[] {
       source_url: s.source_url,
       notifications_enabled: s.notifications_enabled,
       last_notified_at: null,
+      notification_count: 0,
       created_at: created,
       updated_at: created,
       place: catalogToPlaceRow(cat, created),
@@ -165,6 +166,7 @@ export async function saveDemoSavedPlace(
     source_url: input.sourceUrl ?? null,
     notifications_enabled: true,
     last_notified_at: null,
+    notification_count: 0,
     created_at: nowIso,
     updated_at: nowIso,
   };

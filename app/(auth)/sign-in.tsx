@@ -1,9 +1,20 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  TouchableWithoutFeedback,
+  Keyboard,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { Screen, Input, Button } from '@/components';
 import { Colors, Spacing, Typography } from '@/constants';
 import { sendMagicLink, signInWithPassword } from '@/services/auth';
+import { isSupabaseConfigured } from '@/lib/supabase';
 
 // Dev-only password sign-in. This email triggers the password input and
 // the "Sign in as developer" button instead of the magic-link flow — but
@@ -25,6 +36,13 @@ export default function SignIn() {
 
   async function send() {
     if (!email.includes('@')) return Alert.alert('Enter a valid email');
+    if (!isSupabaseConfigured) {
+      console.error('[auth] Supabase config missing — cannot send magic link');
+      return Alert.alert(
+        'Configuration error',
+        'App configuration is missing. Please reinstall the latest build.',
+      );
+    }
     setSending(true);
     const { error } = await sendMagicLink(email);
     setSending(false);
@@ -54,82 +72,99 @@ export default function SignIn() {
 
   return (
     <Screen>
-      <View style={styles.inner}>
-        <Text style={[Typography.display, styles.brand]}>Nearr</Text>
-        <Text style={[Typography.heading, styles.tagline]}>
-          Save places once. Nearr reminds you when you&apos;re nearby.
-        </Text>
+      {/* KeyboardAvoidingView lifts content when the iOS software keyboard
+          appears. ScrollView ensures the button stays reachable on small
+          screens. TouchableWithoutFeedback lets tapping the background
+          dismiss the keyboard. */}
+      <KeyboardAvoidingView
+        style={styles.keyboardView}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={styles.inner}>
+              <Text style={[Typography.display, styles.brand]}>Nearr</Text>
+              <Text style={[Typography.heading, styles.tagline]}>
+                Save places once. Nearr reminds you when you&apos;re nearby.
+              </Text>
 
-        <View style={styles.bullets}>
-          <Bullet text="Save spots from TikTok, Instagram, or anywhere." />
-          <Bullet text="Set how close is &ldquo;nearby&rdquo; — in miles or minutes." />
-          <Bullet text="Get a quiet ping when you&apos;re in range." />
-        </View>
+              <View style={styles.bullets}>
+                <Bullet text="Save spots from TikTok, Instagram, or anywhere." />
+                <Bullet text="Set how close is &ldquo;nearby&rdquo; — in miles or minutes." />
+                <Bullet text="Get a quiet ping when you&apos;re in range." />
+              </View>
 
-        {sent ? (
-          <Text style={[Typography.body, styles.sent]}>
-            Check your email for a magic link. Open it on this device to sign in.
-          </Text>
-        ) : (
-          <>
-            <Input
-              placeholder="you@example.com"
-              autoCapitalize="none"
-              autoComplete="email"
-              keyboardType="email-address"
-              value={email}
-              onChangeText={setEmail}
-              style={{ marginBottom: Spacing.md }}
-            />
-            {isDevEmail ? (
-              <>
-                <Input
-                  placeholder="Dev password"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  autoComplete="off"
-                  secureTextEntry
-                  value={password}
-                  onChangeText={setPassword}
-                  style={{ marginBottom: Spacing.md }}
-                />
-                <Button
-                  title="Sign in as developer"
-                  onPress={devSignIn}
-                  loading={signingIn}
-                />
-                <Text style={[Typography.caption, styles.fineprint]}>
-                  Dev-only password sign-in for the {DEV_EMAIL} test user.
+              {sent ? (
+                <Text style={[Typography.body, styles.sent]}>
+                  Check your email for a magic link. Open it on this device to sign in.
                 </Text>
-              </>
-            ) : (
-              <>
-                <Button
-                  title="Send magic link"
-                  onPress={send}
-                  loading={sending}
-                />
-                <Text style={[Typography.caption, styles.fineprint]}>
-                  No password. We&apos;ll email you a one-tap link to sign in.
-                </Text>
-              </>
-            )}
-          </>
-        )}
+              ) : (
+                <>
+                  <Input
+                    placeholder="you@example.com"
+                    autoCapitalize="none"
+                    autoComplete="email"
+                    keyboardType="email-address"
+                    value={email}
+                    onChangeText={setEmail}
+                    style={{ marginBottom: Spacing.md }}
+                  />
+                  {isDevEmail ? (
+                    <>
+                      <Input
+                        placeholder="Dev password"
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                        autoComplete="off"
+                        secureTextEntry
+                        value={password}
+                        onChangeText={setPassword}
+                        style={{ marginBottom: Spacing.md }}
+                      />
+                      <Button
+                        title="Sign in as developer"
+                        onPress={devSignIn}
+                        loading={signingIn}
+                      />
+                      <Text style={[Typography.caption, styles.fineprint]}>
+                        Dev-only password sign-in for the {DEV_EMAIL} test user.
+                      </Text>
+                    </>
+                  ) : (
+                    <>
+                      <Button
+                        title="Send magic link"
+                        onPress={send}
+                        loading={sending}
+                      />
+                      <Text style={[Typography.caption, styles.fineprint]}>
+                        No password. We&apos;ll email you a one-tap link to sign in.
+                      </Text>
+                    </>
+                  )}
+                </>
+              )}
 
-        {__DEV__ ? (
-          <View style={styles.devBlock}>
-            <View style={styles.devDivider} />
-            <Text style={[Typography.caption, styles.devLabel]}>
-              Development
-            </Text>
-            <Text style={[Typography.caption, styles.devNote]}>
-              For development, sign in with your test email above to exercise
-              real Supabase data (profiles, saved_places, settings).
-            </Text>
-          </View>
-        ) : null}
-      </View>
+              {__DEV__ ? (
+                <View style={styles.devBlock}>
+                  <View style={styles.devDivider} />
+                  <Text style={[Typography.caption, styles.devLabel]}>
+                    Development
+                  </Text>
+                  <Text style={[Typography.caption, styles.devNote]}>
+                    For development, sign in with your test email above to exercise
+                    real Supabase data (profiles, saved_places, settings).
+                  </Text>
+                </View>
+              ) : null}
+            </View>
+          </ScrollView>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
     </Screen>
   );
 }
@@ -144,6 +179,12 @@ function Bullet({ text }: { text: string }) {
 }
 
 const styles = StyleSheet.create({
+  // flex: 1 on the KAV fills the Screen's padded View.
+  keyboardView: { flex: 1 },
+  // flexGrow: 1 lets the ScrollView content expand to at least the full
+  // screen height so justifyContent: 'center' on the inner View still works
+  // when there is not enough content to scroll.
+  scrollContent: { flexGrow: 1 },
   inner: { flex: 1, justifyContent: 'center' },
   brand: { marginBottom: Spacing.sm },
   tagline: { color: Colors.text, marginBottom: Spacing.xl, lineHeight: 26 },

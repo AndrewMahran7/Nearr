@@ -75,17 +75,41 @@ const ALERT_COOLDOWN_MS = 60 * 60 * 1000; // 1 hour
  */
 const lastAlertAtMem = new Map<string, number>();
 
+/**
+ * Per-place inside/outside radius state. Used to detect the outside→inside
+ * crossing that triggers a notification. Absent = first check this session
+ * (we never notify on cold-start regardless of position).
+ *
+ * Reset on every app launch — the DB's last_notified_at handles cross-restart
+ * cooldowns, so this only needs to track the current run.
+ */
+const insideStateMap = new Map<string, boolean>();
+
+// ---------------------------------------------------------------------------
+// Notification categories (action buttons on iOS / Android)
+// ---------------------------------------------------------------------------
+
+/** Category identifier used for notifications 1 and 2 (standard actions). */
+export const NOTIFY_CATEGORY_STANDARD = 'NEARR_NEARBY_STANDARD';
+/** Category identifier used for notification 3 (final chance actions). */
+export const NOTIFY_CATEGORY_FINAL = 'NEARR_NEARBY_FINAL';
+
 // Foreground display config. Without this, notifications can be silently
 // suppressed when the app is in the foreground on iOS.
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+console.log('[NOTIFICATIONS_INIT] setting notification handler');
+try {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: false,
+      shouldShowBanner: true,
+      shouldShowList: true,
+    }),
+  });
+} catch (e) {
+  console.error('[NOTIFICATIONS_INIT] setNotificationHandler failed (non-fatal)', e);
+}
 
 // ---------------------------------------------------------------------------
 // Permissions
@@ -170,6 +194,99 @@ export async function stopProximityWatch(): Promise<void> {
   if (started) {
     await Location.stopLocationUpdatesAsync(LOCATION_TASK);
     console.log('[notifications] proximity watch stopped');
+  }
+}
+
+/**
+ * Register notification action categories with the OS. Call once on app
+ * startup from the root layout. Idempotent and wrapped in try/catch —
+ * failure must never prevent notification delivery.
+ *
+ * TODO(ios-actions): Notification actions require a production / TestFlight
+ * build with push-notification entitlements on iOS. They are silently ignored
+ * in Expo Go and Simulator. Verify on a real device before shipping.
+ */
+export async function registerNotificationCategories(): Promise<void> {
+  try {
+    await Notifications.setNotificationCategoryAsync(NOTIFY_CATEGORY_STANDARD, [
+      {
+        identifier: 'going',
+        buttonTitle: "I'm going",
+        options: { opensAppToForeground: true },
+      },
+      {
+        identifier: 'next_time',
+        buttonTitle: 'Next time',
+        options: { opensAppToForeground: false },
+      },
+      {
+        identifier: 'reduce_radius',
+        buttonTitle: 'Reduce radius',
+        options: { opensAppToForeground: true },
+      },
+    ]);
+    await Notifications.setNotificationCategoryAsync(NOTIFY_CATEGORY_FINAL, [
+      {
+        identifier: 'going',
+        buttonTitle: "I'm going",
+        options: { opensAppToForeground: true },
+      },
+      {
+        identifier: 'reset_count',
+        buttonTitle: 'Give me 3 more chances',
+        options: { opensAppToForeground: true },
+      },
+      {
+        identifier: 'reduce_radius',
+        buttonTitle: 'Reduce radius',
+        options: { opensAppToForeground: true },
+      },
+    ]);
+    console.log('[notifications] categories registered');
+  } catch (e) {
+    console.warn('[notifications] registerNotificationCategories failed (non-fatal)', e);
+  }
+}
+
+/**
+ * Handle a notification action tap. Called from the root layout's
+ * `addNotificationResponseReceivedListener`. Navigation TODOs are logged
+ * so they're easy to find when implementing deep-link routing.
+ */
+export async function handleNotificationAction(
+  actionIdentifier: string,
+  savedPlaceId: string | undefined,
+  placeId: string | undefined,
+): Promise<void> {
+  if (!savedPlaceId) return;
+
+  if (actionIdentifier === 'reset_count') {
+    // "Give me 3 more chances" — reset the notification count to 0.
+    const { error } = await supabase
+      .from('saved_places')
+      .update({ notification_count: 0 })
+      .eq('id', savedPlaceId);
+    if (error) {
+      console.warn('[notifications] reset_count update failed', error.message);
+    } else {
+      console.log(`[notifications] NOTIFICATION_COUNT_RESET savedPlaceId=${savedPlaceId}`);
+    }
+    return;
+  }
+
+  if (actionIdentifier === 'going') {
+    // TODO(notification-actions): open external maps directions to this place.
+    // Fetch the place row (lat/lng/google_maps_url) via supabase and call
+    // buildExternalMapsUrl from lib/externalMaps.ts, then Linking.openURL.
+    console.log(`[notifications] TODO action=going savedPlaceId=${savedPlaceId} placeId=${placeId ?? 'unknown'}`);
+    return;
+  }
+
+  if (actionIdentifier === 'reduce_radius') {
+    // TODO(notification-actions): navigate to place/[id] settings.
+    // Requires router.push — pass a callback or navigate from the calling component.
+    console.log(`[notifications] TODO action=reduce_radius savedPlaceId=${savedPlaceId}`);
+    return;
   }
 }
 
@@ -332,8 +449,53 @@ export async function checkProximity(
   const here: LatLng = { latitude, longitude };
   const now = Date.now();
   for (const s of saved) {
+    const radius = effectiveRadiusMeters(s, profile);
+    const dist = distanceMeters(here, {
+      latitude: s.place.latitude,
+      longitude: s.place.longitude,
+    });
+    const isCurrentlyInside = dist <= radius;
+    const wasInside = insideStateMap.get(s.id);
+
+    // Always record current state for the next tick regardless of other checks.
+    insideStateMap.set(s.id, isCurrentlyInside);
+
+    if (!isCurrentlyInside) {
+      console.log(
+        `[checkProximity] NOTIFICATION_SKIPPED_OUTSIDE place=${s.place.name} dist=${Math.round(dist)}m radius=${Math.round(radius)}m`,
+      );
+      continue;
+    }
+
+    if (wasInside === undefined) {
+      // First check this session — establish baseline; never notify on cold-start.
+      continue;
+    }
+
+    if (wasInside === true) {
+      console.log(`[checkProximity] NOTIFICATION_SKIPPED_ALREADY_INSIDE place=${s.place.name}`);
+      continue;
+    }
+
+    // wasInside === false → outside→inside transition. Run cooldown + settings checks.
     const decision = decideProximity(here, s, profile, now);
-    if (decision.kind === 'skip') continue;
+    if (decision.kind === 'skip') {
+      // decideProximity will re-check range (redundantly) and then check cooldown/settings.
+      console.log(
+        `[checkProximity] NOTIFICATION_TRIGGERED place=${s.place.name} skipped_reason=${decision.reason}`,
+      );
+      continue;
+    }
+
+    // Feature 2: notification count limit.
+    const count = s.notification_count ?? 0;
+    if (count >= 3) {
+      console.log(
+        `[checkProximity] NOTIFICATION_LIMIT_REACHED place=${s.place.name} count=${count}`,
+      );
+      continue;
+    }
+
     await fireNotification(userId, s, here, decision.distanceMeters);
     lastAlertAtMem.set(s.id, now);
   }
@@ -349,10 +511,12 @@ async function fireNotification(
   here: LatLng,
   distance: number,
 ): Promise<void> {
+  const count = saved.notification_count ?? 0;
+  // Notification 3 (count already at 2) uses the "Give me 3 more chances" category.
+  const categoryIdentifier = count >= 2 ? NOTIFY_CATEGORY_FINAL : NOTIFY_CATEGORY_STANDARD;
+
   console.log(
-    '[notifications] firing for',
-    saved.place.name,
-    `${Math.round(distance)}m`,
+    `[notifications] NOTIFICATION_TRIGGERED place=${saved.place.name} dist=${Math.round(distance)}m count=${count} category=${categoryIdentifier}`,
   );
 
   // 1. Local notification.
@@ -362,23 +526,29 @@ async function fireNotification(
         title: `You're near ${saved.place.name}`,
         body: saved.place.formatted_address ?? 'Saved in Nearr',
         data: { savedPlaceId: saved.id, placeId: saved.place.id },
+        categoryIdentifier,
       },
       trigger: null, // fire immediately
     });
+    console.log(`[notifications] NOTIFICATION_SENT_SUCCESS place=${saved.place.name}`);
   } catch (e) {
-    console.warn('[notifications] schedule failed', e);
+    console.warn(`[notifications] NOTIFICATION_SEND_FAILED place=${saved.place.name}`, e);
     // Don't update DB if the notification itself didn't go out.
     return;
   }
 
-  // 2. Bump last_notified_at on the saved place.
+  // 2. Bump last_notified_at and increment notification_count.
   const nowIso = new Date().toISOString();
   const { error: upErr } = await supabase
     .from('saved_places')
-    .update({ last_notified_at: nowIso })
+    .update({ last_notified_at: nowIso, notification_count: count + 1 })
     .eq('id', saved.id);
   if (upErr) {
-    console.warn('[notifications] last_notified_at update failed', upErr.message);
+    console.warn('[notifications] saved_places update failed', upErr.message);
+  } else {
+    console.log(
+      `[notifications] NOTIFICATION_COUNT_INCREMENTED place=${saved.place.name} new_count=${count + 1}`,
+    );
   }
 
   // 3. Append to notification_events (audit log, insert-only per RLS).
@@ -530,20 +700,25 @@ export async function checkProximityOnce(): Promise<CheckProximityOnceResult> {
 // their definitions here so they're registered on every cold start.
 // ---------------------------------------------------------------------------
 
-if (!TaskManager.isTaskDefined(LOCATION_TASK)) {
-  TaskManager.defineTask(LOCATION_TASK, async ({ data, error }) => {
-    if (error) {
-      console.warn('[locationTask] error', error.message);
-      return;
-    }
-    const locs = (data as { locations?: Location.LocationObject[] } | undefined)
-      ?.locations;
-    const last = locs?.[locs.length - 1];
-    if (!last) return;
-    try {
-      await checkProximity(last.coords.latitude, last.coords.longitude);
-    } catch (e) {
-      console.warn('[locationTask] checkProximity failed', e);
-    }
-  });
+try {
+  if (!TaskManager.isTaskDefined(LOCATION_TASK)) {
+    console.log('[NOTIFICATIONS_INIT] registering background location task');
+    TaskManager.defineTask(LOCATION_TASK, async ({ data, error }) => {
+      if (error) {
+        console.warn('[locationTask] error', error.message);
+        return;
+      }
+      const locs = (data as { locations?: Location.LocationObject[] } | undefined)
+        ?.locations;
+      const last = locs?.[locs.length - 1];
+      if (!last) return;
+      try {
+        await checkProximity(last.coords.latitude, last.coords.longitude);
+      } catch (e) {
+        console.warn('[locationTask] checkProximity failed', e);
+      }
+    });
+  }
+} catch (e) {
+  console.error('[NOTIFICATIONS_INIT] defineTask failed (non-fatal)', e);
 }

@@ -129,13 +129,13 @@ export async function trackEvent(
 
     const { error } = await supabase.from('analytics_events').insert(row);
     if (error) {
-      if (__DEV__) {
-        console.warn(
-          '[analytics] insert failed (non-fatal)',
-          eventName,
-          error.message,
-        );
-      }
+      // Always log analytics errors so missing migrations surface in device logs.
+      // This is intentionally non-fatal — analytics failures never affect the user.
+      console.warn(
+        '[analytics] insert failed (non-fatal)',
+        eventName,
+        error.message,
+      );
       return;
     }
     if (__DEV__) {

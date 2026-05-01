@@ -31,14 +31,14 @@ import {
   View,
 } from 'react-native';
 import MapView, { Circle, Marker, PROVIDER_GOOGLE, Region } from 'react-native-maps';
+import * as Location from 'expo-location';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 
 // iOS uses the default provider (Apple Maps) — the Google Maps iOS SDK
 // requires the `AirGoogleMaps` Xcode subproject, which we don't link in
 // our managed/EAS build. Android keeps PROVIDER_GOOGLE since the Google
 // Maps Android SDK is wired via app.json `android.config.googleMaps`.
 const MAP_PROVIDER = Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined;
-import * as Location from 'expo-location';
-import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 
 import { Button, Card, DemoModeBanner, MapFallbackList } from '@/components';
 import { Colors, Radius, Spacing, Typography } from '@/constants';

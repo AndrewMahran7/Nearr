@@ -218,11 +218,69 @@ async function processShareLink(url: string, accessToken: string): Promise<Resul
   const chosenQuery = (ai.query && ai.query.trim()) || heuristicQuery || '';
   const confidence: 'high' | 'medium' | 'low' = ai.confidence;
 
+  // ---- 4b. Feature 5: auto-note from share context -------------------
+  const autoNote = generateAutoNote(title, description, transcript);
+  if (autoNote) {
+    console.log(`[process-share-link] AI_NOTE_GENERATED note="${autoNote}"`);
+  } else {
+    console.log('[process-share-link] AI_NOTE_SKIPPED_LOW_CONFIDENCE');
+  }
+
+  // ---- 4c. Feature 4: @handle fallback (no transcript, low confidence) -
+  const handleCandidates = extractHandleCandidates(title, description);
+  console.log(
+    `[process-share-link] HANDLE_CANDIDATES_EXTRACTED count=${handleCandidates.length} url=${truncForLog(url)}`,
+  );
+
+  if (!transcript && confidence === 'low' && handleCandidates.length > 0) {
+    for (const hc of handleCandidates) {
+      console.log(
+        `[process-share-link] HANDLE_QUERY_ATTEMPTED query="${hc.readableName}" url=${truncForLog(url)}`,
+      );
+      try {
+        const handleResults = await searchPlaces(hc.readableName, PLACES_KEY);
+        const handleBusinesses = handleResults.filter(
+          (c) => !isAddressLikeTypes(c.types) && !isLocalityLikeTypes(c.types),
+        );
+        if (handleBusinesses.length > 0) {
+          console.log(
+            `[process-share-link] HANDLE_QUERY_SUCCESS query="${hc.readableName}" results=${handleBusinesses.length}`,
+          );
+          // Never auto-save from the low-confidence handle fallback — the AI
+          // confidence was already "low" when we entered this branch, so a
+          // single Google Places hit is not reliable enough to save silently.
+          // Always surface candidates to the app for user confirmation.
+          if (handleBusinesses.length === 1) {
+            console.log(
+              `[process-share-link] HANDLE_FALLBACK_BLOCKED_AUTOSAVE place="${handleBusinesses[0].name}"`,
+            );
+          }
+          console.log(
+            `[process-share-link] HANDLE_FALLBACK_RETURNED_AMBIGUOUS count=${handleBusinesses.length}`,
+          );
+          return {
+            status: 'ambiguous',
+            candidates: handleBusinesses.slice(0, 5),
+            reason: 'handle_candidates',
+          };
+        } else {
+          console.log(
+            `[process-share-link] HANDLE_QUERY_FAILED query="${hc.readableName}" reason=no_results`,
+          );
+        }
+      } catch (err) {
+        console.log(
+          `[process-share-link] HANDLE_QUERY_FAILED query="${hc.readableName}" reason=${(err as Error)?.message}`,
+        );
+      }
+    }
+  }
+
   if (!chosenQuery) {
     return { status: 'failed_requires_app', reason: 'no_query' };
   }
 
-  // ---- 4. Google Places search ---------------------------------------
+  // ---- 5. Google Places search (main) --------------------------------
   let candidates: ResultCandidate[];
   try {
     candidates = await searchPlaces(chosenQuery, PLACES_KEY);
@@ -248,9 +306,6 @@ async function processShareLink(url: string, accessToken: string): Promise<Resul
   }
 
   // ---- 5. decide silent-save vs ambiguous ----------------------------
-  // Silent save only when:
-  //   - AI confidence is "high"
-  //   - exactly one strong business candidate (or one clearly dominant)
   const top = businesses[0];
   const second = businesses[1];
 
@@ -276,11 +331,12 @@ async function processShareLink(url: string, accessToken: string): Promise<Resul
       top,
       url,
       source,
+      autoNote,
     );
     return {
       status: 'saved',
       savedPlaceId,
-      message: `Saved “${top.name}” to Nearr`,
+      message: `Saved "${top.name}" to Nearr`,
     };
   } catch (err) {
     console.warn('[process-share-link] save failed', (err as Error)?.message);
@@ -298,6 +354,7 @@ async function saveForUser(
   c: ResultCandidate,
   sourceUrl: string,
   source: 'tiktok' | 'instagram' | 'link',
+  autoNote?: string | null,
 ): Promise<string> {
   // 1. Resolve canonical places row (SELECT first, INSERT only if missing).
   let placeId: string | null = null;
@@ -350,7 +407,7 @@ async function saveForUser(
     radius_unit: null,
     source_type: source,
     source_url: sourceUrl,
-    notes: null,
+    notes: autoNote ?? null, // Feature 5: AI-generated note
   };
 
   const { data: saved, error: savedErr } = await client
@@ -964,4 +1021,172 @@ function scoreMetadataConfidence(
 
 function truncForLog(s: string): string {
   return s.length > 120 ? s.slice(0, 117) + '...' : s;
+}
+
+// ---------------------------------------------------------------------------
+// Feature 4: @handle extraction helper
+//
+// Extracts @handles from title/description that are likely business names
+// (co-located with food/place keywords or location emoji).
+// Does NOT scrape Instagram profiles or use the Graph API.
+// ---------------------------------------------------------------------------
+
+type HandleCandidate = {
+  handle: string;
+  readableName: string;
+  confidence: number;
+  reason: string;
+};
+
+const HANDLE_FOOD_WORDS = [
+  'restaurant', 'cafe', 'coffee', 'bar', 'pizza', 'taco', 'tacos', 'sushi',
+  'ramen', 'burger', 'bbq', 'bakery', 'kitchen', 'grill', 'chicken',
+  'sandwich', 'deli', 'fried', 'grilled', 'house', 'market', 'eatery',
+  'bistro', 'diner', 'boba', 'donut', 'gelato', 'brewery', 'winery',
+];
+
+const HANDLE_SPLIT_TOKENS = [
+  ...HANDLE_FOOD_WORDS,
+  'los', 'angeles', 'new', 'york', 'san', 'francisco', 'santa', 'monica',
+  'downtown', 'brooklyn', 'hollywood', 'beverly', 'hills', 'bros', 'co',
+  'company', 'roasted', 'smoked', 'spicy', 'sweet',
+];
+
+function humanizeHandleEdge(handle: string): string {
+  let s = handle.replace(/[._]+/g, ' ').toLowerCase();
+  for (let pass = 0; pass < 2; pass++) {
+    for (const tok of HANDLE_SPLIT_TOKENS) {
+      const compact = tok.replace(/\s+/g, '');
+      if (!/^[a-z]+$/.test(compact)) continue;
+      const reBefore = new RegExp(`([a-z])(${compact})(?=[a-z]|$)`, 'g');
+      s = s.replace(reBefore, '$1 $2');
+      const reAfter = new RegExp(`(^|\\s)(${compact})(?=[a-z])`, 'g');
+      s = s.replace(reAfter, '$1$2 ');
+    }
+  }
+  return s.replace(/\s+/g, ' ').trim();
+}
+
+function extractHandleCandidates(
+  title: string | null,
+  description: string | null,
+): HandleCandidate[] {
+  const combined = [title, description].filter(Boolean).join('\n');
+  if (!combined) return [];
+
+  const lower = combined.toLowerCase();
+  const handleRe = /@([A-Za-z0-9._]+)/g;
+  const handles: string[] = [];
+  let m: RegExpExecArray | null;
+  while ((m = handleRe.exec(combined)) !== null) {
+    handles.push(m[1]);
+  }
+  if (handles.length === 0) return [];
+
+  const candidates: HandleCandidate[] = [];
+  for (const h of handles) {
+    const hLower = h.toLowerCase().replace(/[._]/g, '');
+    if (/^\d+$/.test(h) || h.length < 4) continue;
+
+    let score = 0;
+    let reason = 'handle';
+
+    // Handle itself contains a food/place keyword?
+    for (const kw of HANDLE_FOOD_WORDS) {
+      if (hLower.includes(kw.replace(/\s/g, ''))) {
+        score += 2;
+        reason = 'handle+food_keyword';
+        break;
+      }
+    }
+
+    // Caption text near the handle contains food/place context?
+    for (const kw of HANDLE_FOOD_WORDS) {
+      if (lower.includes(kw)) {
+        score += 1;
+        break;
+      }
+    }
+
+    // Location emoji in caption?
+    if (combined.includes('\u{1F4CD}') || combined.includes('\u{1F4CC}')) score += 1;
+
+    // Handle appears in description (more likely to be the tagged business)?
+    if (description?.toLowerCase().includes('@' + h.toLowerCase())) score += 1;
+
+    if (score >= 2) {
+      candidates.push({
+        handle: h,
+        readableName: humanizeHandleEdge(h),
+        confidence: score,
+        reason,
+      });
+    }
+  }
+
+  candidates.sort((a, b) => b.confidence - a.confidence);
+  return candidates.slice(0, 3);
+}
+
+// ---------------------------------------------------------------------------
+// Feature 5: auto-note generation
+//
+// Generates a short (<=8 word) food/experience note from share context.
+// Returns null if confidence is too low to produce a useful note.
+// ---------------------------------------------------------------------------
+
+function generateAutoNote(
+  title: string | null,
+  description: string | null,
+  transcript: string | null,
+): string | null {
+  // Prefer transcript > title > description as the primary signal.
+  const text = [transcript, title, description].filter(Boolean).join(' ');
+  if (!text) return null;
+
+  const lower = text.toLowerCase();
+
+  const foodKeywords = [
+    'burger', 'burgers', 'pizza', 'tacos', 'taco', 'ramen', 'sushi',
+    'sandwich', 'sandwiches', 'dumplings', 'dumpling', 'pasta', 'steak',
+    'chicken', 'fish', 'seafood', 'matcha', 'coffee', 'latte', 'espresso',
+    'croissant', 'pastry', 'pastries', 'brunch', 'cocktails', 'cocktail',
+    'wine', 'dessert', 'ice cream', 'gelato', 'fried rice', 'noodles',
+    'boba', 'donut', 'donuts', 'wings', 'ribs', 'bbq', 'barbecue',
+  ];
+
+  const qualifiers = [
+    'amazing', 'great', 'best', 'incredible', 'delicious', 'fantastic',
+    'perfect', 'classic', 'fire', 'juicy', 'crispy', 'tender', 'fluffy',
+    'fresh', 'spicy', 'creamy', 'cheesy', 'smoky', 'good',
+  ];
+
+  const experienceKeywords = [
+    'date night', 'date-night', 'romantic', 'cozy', 'rooftop', 'outdoor',
+    'hidden gem', 'brunch spot', 'anniversary',
+  ];
+
+  // Try experience keywords first (high signal).
+  for (const kw of experienceKeywords) {
+    if (lower.includes(kw)) {
+      return `Saved for ${kw}`;
+    }
+  }
+
+  // Try food keyword with optional qualifier.
+  for (const kw of foodKeywords) {
+    if (!lower.includes(kw)) continue;
+    for (const q of qualifiers) {
+      const re = new RegExp(`${q}\\s+${kw.replace(/\s/g, '\\s+')}`, 'i');
+      if (re.test(text)) {
+        const note = `Saved for ${q} ${kw}`;
+        if (note.split(' ').length <= 8) return note;
+      }
+    }
+    // No qualifier found — use the keyword alone.
+    const note = `Saved for ${kw}`;
+    if (note.split(' ').length <= 8) return note;
+  }
+
+  return null;
 }

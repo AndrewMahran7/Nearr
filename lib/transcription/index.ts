@@ -22,7 +22,7 @@
 import type { TranscriptionInput, TranscriptionResult } from './types';
 import { transcribeSocialVideo as placeholderTranscribe } from './providers/placeholder';
 import { transcribeSocialVideo as soscriptedTranscribe } from './providers/soscripted';
-import { transcribeSocialVideo as selfHostedTranscribe } from './providers/selfHosted';
+import { transcribeSocialVideo as selfHostedTranscribe, checkServiceHealth } from './providers/selfHosted';
 
 export type {
   TranscriptionInput,
@@ -30,6 +30,13 @@ export type {
   TranscriptionStatus,
   TranscriptionSourceType,
 } from './types';
+
+/**
+ * Check whether the configured transcription service is reachable.
+ * Only relevant when TRANSCRIPTION_PROVIDER=self_hosted.
+ * Never throws; returns false on any error or when no service is configured.
+ */
+export { checkServiceHealth };
 
 const LOG = '[transcription]';
 

@@ -73,14 +73,22 @@ export function useAuth() {
         mounted = false;
       };
     }
+    console.log('[AUTH_INIT_START] loading session');
     Promise.all([supabase.auth.getSession(), loadDevAuth()]).then(
       ([{ data }, dev]) => {
         if (!mounted) return;
+        console.log('[AUTH_INIT_SUCCESS] session present=', !!data.session);
         setSession(data.session);
         setDevEnabled(dev);
         setLoading(false);
       },
-    );
+    ).catch((err) => {
+      if (!mounted) return;
+      console.error('[AUTH_INIT_FAIL]', err instanceof Error ? err.message : err);
+      // Fail safe: treat as signed-out so AuthGate can route to sign-in.
+      setSession(null);
+      setLoading(false);
+    });
     const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
       console.log('[useAuth] onAuthStateChange', event, 'hasSession=', !!s);
       setSession(s);

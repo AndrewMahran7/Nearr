@@ -140,6 +140,63 @@ bundle. Server / script values are NOT prefixed and live in either
      rewritten to `nearr://share?url=…`. After EAS prebuild, verify the
      patched `MainActivity.kt` actually contains the rewrite.
 
+### Setting environment variables for EAS builds
+
+`EXPO_PUBLIC_*` variables are inlined by Metro **at build time**. They are
+**not** read from `.env` during an EAS build — you must set them in the
+Expo/EAS dashboard (or via the CLI) for each build environment you use.
+
+**Required for every build profile that talks to Supabase
+(`preview`, `production`, `development`):**
+
+| Variable | Value |
+| --- | --- |
+| `EXPO_PUBLIC_SUPABASE_URL` | Your Supabase project URL (e.g. `https://xxxx.supabase.co`) |
+| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Your Supabase anon/public key |
+| `EXPO_PUBLIC_GOOGLE_MAPS_API_KEY` | Restricted client API key |
+
+**Option A — EAS CLI (run once per variable per environment):**
+
+```sh
+# For the "preview" environment (TestFlight / internal distribution)
+eas env:create --scope project --name EXPO_PUBLIC_SUPABASE_URL \
+  --value "https://xxxx.supabase.co" \
+  --environment preview --type plain-text
+
+eas env:create --scope project --name EXPO_PUBLIC_SUPABASE_ANON_KEY \
+  --value "eyJhb..." \
+  --environment preview --type sensitive
+
+eas env:create --scope project --name EXPO_PUBLIC_GOOGLE_MAPS_API_KEY \
+  --value "AIza..." \
+  --environment preview --type sensitive
+
+# Repeat with --environment production for App Store builds.
+```
+
+**Option B — Expo dashboard:**
+
+1. Open [expo.dev](https://expo.dev) → your project → **Environment variables**.
+2. Click **Create variable**.
+3. Set **Environment** to `Preview` (and separately `Production`).
+4. Add each variable above.
+
+> **Why "Network request failed" appears without these:** Without the
+> env vars, `lib/supabase.ts` falls back to a placeholder URL/key that
+> prevents a launch crash. But the first real network call (magic-link
+> sign-in) hits the placeholder host and fails with a generic network
+> error. The app now detects this and shows "App configuration is
+> missing. Please reinstall the latest build." instead.
+
+**Verify after a new build** — check the Metro build log for:
+
+```
+[ENV_VALIDATION_SUCCESS] Supabase configured url_prefix=https://xxxx.supabase.co ...
+```
+
+If you see `[ENV_VALIDATION_FAILED]` instead, the variables were not
+available to the EAS build worker.
+
 ## Demo Mode (`EXPO_PUBLIC_DEMO_MODE=true`)
 
 - Auto-creates a fake `demo-user` session (no Supabase call).

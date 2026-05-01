@@ -16,3 +16,7 @@ web-build/
 .DS_Store
 ios/
 android/
+
+# Python virtual environments
+.venv/
+**/.venv/

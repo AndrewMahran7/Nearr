@@ -41,6 +41,8 @@ export type SavedPlace = {
   source_url: string | null;
   notifications_enabled: boolean;
   last_notified_at: string | null;
+  /** Number of proximity notifications sent for this place. Max 3. */
+  notification_count: number;
   created_at: string;
   updated_at: string;
 };

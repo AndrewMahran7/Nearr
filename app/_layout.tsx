@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { AppState } from 'react-native';
+import { Component, useEffect } from 'react';
+import { AppState, Text, View, StyleSheet } from 'react-native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -9,8 +9,63 @@ import { useAuth } from '@/hooks/useAuth';
 import { handleAuthDeepLink } from '@/lib/authDeepLink';
 import { clearDevAuth } from '@/lib/devAuth';
 import { trackEvent } from '@/lib/analytics';
-import { checkProximityOnce } from '@/services/notifications';
+import { checkProximityOnce, registerNotificationCategories, handleNotificationAction } from '@/services/notifications';
+import * as Notifications from 'expo-notifications';
 import '@/lib/notifications'; // registers background task
+
+console.log('[APP_START] _layout module loaded');
+
+// ---------------------------------------------------------------------------
+// Crash-safe Error Boundary — catches render exceptions that would otherwise
+// produce a blank screen in production. Shows a minimal recovery UI instead.
+// ---------------------------------------------------------------------------
+
+type ErrorBoundaryState = { hasError: boolean; message: string };
+
+class AppErrorBoundary extends Component<
+  { children: React.ReactNode },
+  ErrorBoundaryState
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, message: '' };
+  }
+
+  static getDerivedStateFromError(error: unknown): ErrorBoundaryState {
+    const message =
+      error instanceof Error ? error.message : String(error ?? 'Unknown error');
+    console.error('[APP_ERROR_BOUNDARY] caught render error:', message);
+    return { hasError: true, message };
+  }
+
+  componentDidCatch(error: unknown, info: { componentStack?: string }) {
+    console.error('[APP_ERROR_BOUNDARY] componentDidCatch', error, info?.componentStack);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <View style={errorStyles.container}>
+          <Text style={errorStyles.title}>Something went wrong</Text>
+          <Text style={errorStyles.body}>
+            The app encountered an unexpected error. Please force-quit and reopen.
+          </Text>
+          {__DEV__ && (
+            <Text style={errorStyles.detail}>{this.state.message}</Text>
+          )}
+        </View>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+const errorStyles = StyleSheet.create({
+  container: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
+  title: { fontSize: 20, fontWeight: '600', marginBottom: 12 },
+  body: { fontSize: 15, textAlign: 'center', color: '#555', marginBottom: 16 },
+  detail: { fontSize: 12, color: '#999', textAlign: 'center' },
+});
 
 function AuthGate({ children }: { children: React.ReactNode }) {
   const { session, loading, isDevSession } = useAuth();
@@ -30,16 +85,18 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (loading) return;
     const inAuth = segments[0] === '(auth)';
-    console.log('[AuthGate] decide', {
-      hasSession: !!session,
-      inAuth,
-      segments: segments.join('/'),
-    });
+    if (__DEV__) {
+      console.log('[AuthGate] decide', {
+        hasSession: !!session,
+        inAuth,
+        segments: segments.join('/'),
+      });
+    }
     if (!session && !inAuth) {
-      console.log('[AuthGate] -> /(auth)/sign-in');
+      if (__DEV__) console.log('[AuthGate] -> /(auth)/sign-in');
       router.replace('/(auth)/sign-in');
     } else if (session && inAuth) {
-      console.log('[AuthGate] -> /(tabs)/home');
+      if (__DEV__) console.log('[AuthGate] -> /(tabs)/home');
       router.replace('/(tabs)/home');
     }
   }, [session, loading, segments, router]);
@@ -77,26 +134,44 @@ export default function RootLayout() {
     });
     // Warm-start: app already open.
     const sub = Linking.addEventListener('url', ({ url }) => {
-      console.log('[deeplink]', url);
+      if (__DEV__) console.log('[deeplink]', url);
       handleAuthDeepLink(url);
     });
     return () => sub.remove();
   }, []);
 
+  // Register notification action categories once per launch, and handle
+  // action taps (e.g. "Give me 3 more chances" resets notification_count).
+  useEffect(() => {
+    void registerNotificationCategories();
+    const sub = Notifications.addNotificationResponseReceivedListener((response) => {
+      const { actionIdentifier, notification } = response;
+      const data = (notification.request.content.data ?? {}) as Record<string, unknown>;
+      void handleNotificationAction(
+        actionIdentifier,
+        data.savedPlaceId as string | undefined,
+        data.placeId as string | undefined,
+      );
+    });
+    return () => sub.remove();
+  }, []);
+
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
-        <AuthGate>
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="(auth)" />
-            <Stack.Screen name="(tabs)" />
-            <Stack.Screen name="add-place" options={{ presentation: 'modal', headerShown: true, title: 'Save place' }} />
-            <Stack.Screen name="share" options={{ presentation: 'modal', headerShown: true, title: 'Save from link' }} />
-            <Stack.Screen name="place/[id]" options={{ headerShown: true, title: 'Place' }} />
-          </Stack>
-        </AuthGate>
-        <StatusBar style="auto" />
-      </SafeAreaProvider>
-    </GestureHandlerRootView>
+    <AppErrorBoundary>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <SafeAreaProvider>
+          <AuthGate>
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="(auth)" />
+              <Stack.Screen name="(tabs)" />
+              <Stack.Screen name="add-place" options={{ presentation: 'modal', headerShown: true, title: 'Save place' }} />
+              <Stack.Screen name="share" options={{ presentation: 'modal', headerShown: true, title: 'Save from link' }} />
+              <Stack.Screen name="place/[id]" options={{ headerShown: true, title: 'Place' }} />
+            </Stack>
+          </AuthGate>
+          <StatusBar style="auto" />
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
+    </AppErrorBoundary>
   );
 }
