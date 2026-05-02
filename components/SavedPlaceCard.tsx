@@ -6,7 +6,9 @@
  * and a small delete affordance. Tapping the body opens the detail screen.
  */
 
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Feather } from '@expo/vector-icons';
+import { Button } from './Button';
 import { Card } from './Card';
 import { Colors, Radius, Spacing, Typography } from '@/constants';
 import type { Profile, SavedPlaceWithPlace } from '@/types';
@@ -16,6 +18,7 @@ type Props = {
   profile: Profile | null;
   onPress: () => void;
   onDelete: () => void;
+  metaPrefix?: string | null;
   /**
    * When provided, renders a small "Show on map" affordance in the meta
    * row that jumps the user to the Map tab focused on this place.
@@ -24,34 +27,35 @@ type Props = {
   onShowOnMap?: () => void;
 };
 
-function formatRadius(saved: SavedPlaceWithPlace, profile: Profile | null): string {
-  if (saved.radius_value != null && saved.radius_unit) {
-    return `${saved.radius_value} ${saved.radius_unit}`;
-  }
-  if (profile) {
-    return `${profile.default_radius_value} ${profile.default_radius_unit} (default)`;
-  }
-  return 'Default radius';
-}
-
 function sourceLabel(saved: SavedPlaceWithPlace): string | null {
   switch (saved.source_type) {
     case 'tiktok':
-      return 'TikTok';
+      return 'Saved from TikTok';
     case 'instagram':
-      return 'Instagram';
+      return 'Saved from Instagram';
     case 'link':
-      return 'Link';
+      return 'Saved from a link';
     default:
       return null; // 'manual' or null
   }
 }
 
-export function SavedPlaceCard({ saved, profile, onPress, onDelete, onShowOnMap }: Props) {
+function sourceActionLabel(saved: SavedPlaceWithPlace): string {
+  return saved.source_type === 'link' ? 'Open original link' : 'View original post';
+}
+
+export function SavedPlaceCard({
+  saved,
+  profile: _profile,
+  onPress,
+  onDelete,
+  onShowOnMap,
+  metaPrefix,
+}: Props) {
   const place = saved.place;
-  const radius = formatRadius(saved, profile);
   const source = sourceLabel(saved);
-  const notifyOn = saved.notifications_enabled;
+  const remindersLabel = saved.notifications_enabled ? 'Reminder on' : null;
+  const meta = [metaPrefix, source, remindersLabel].filter(Boolean).join(' · ');
 
   function confirmDelete() {
     Alert.alert(
@@ -65,89 +69,124 @@ export function SavedPlaceCard({ saved, profile, onPress, onDelete, onShowOnMap 
   }
 
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [pressed && styles.pressed]}>
-      <Card style={styles.card}>
-        <View style={styles.headerRow}>
+    <Card style={styles.card}>
+      <Pressable onPress={onPress} style={({ pressed }) => [styles.cardPressable, pressed && styles.pressed]}>
+        <View style={styles.thumb}>
+          <Feather
+            name={source === 'Instagram' ? 'instagram' : source === 'TikTok' ? 'video' : 'map-pin'}
+            size={18}
+            color={Colors.textSecondary}
+          />
+        </View>
+
+        <View style={styles.copy}>
           <Text style={Typography.bodyStrong} numberOfLines={1}>
             {place.name}
           </Text>
-          <Pressable onPress={confirmDelete} hitSlop={12} style={styles.deleteBtn}>
-            <Text style={[Typography.label, { color: Colors.danger }]}>Remove</Text>
-          </Pressable>
-        </View>
 
-        {place.formatted_address ? (
-          <Text style={[Typography.caption, styles.muted]} numberOfLines={2}>
-            {place.formatted_address}
-          </Text>
-        ) : null}
-
-        <View style={styles.metaRow}>
-          <View style={styles.pill}>
-            <Text style={styles.pillText}>{radius}</Text>
-          </View>
-          <View style={[styles.pill, notifyOn ? styles.pillOn : styles.pillOff]}>
-            <Text style={[styles.pillText, notifyOn ? styles.pillTextOn : styles.pillTextOff]}>
-              {notifyOn ? 'Notify on' : 'Notify off'}
+          {place.formatted_address ? (
+            <Text style={[Typography.caption, styles.muted]} numberOfLines={2}>
+              {place.formatted_address}
             </Text>
-          </View>
-          {source ? (
-            <View style={[styles.pill, styles.pillAccent]}>
-              <Text style={[styles.pillText, { color: Colors.textInverse }]}>{source}</Text>
-            </View>
           ) : null}
-          {onShowOnMap ? (
-            // Stop propagation so tapping this pill doesn't also fire the
-            // outer card press (which would navigate to the detail screen).
-            <Pressable
-              onPress={(e) => {
-                e.stopPropagation();
-                onShowOnMap();
-              }}
-              hitSlop={8}
-              style={[styles.pill, styles.pillMap]}
-              accessibilityRole="button"
-              accessibilityLabel={`Show ${place.name} on map`}
-            >
-              <Text style={[styles.pillText, { color: Colors.textInverse }]}>Show on map</Text>
-            </Pressable>
-          ) : null}
+
+          <Text style={[Typography.caption, styles.metaText]} numberOfLines={2}>
+            {meta}
+          </Text>
         </View>
-      </Card>
-    </Pressable>
+      </Pressable>
+
+      <View style={styles.actionRow}>
+        <Button title="Show on map" onPress={onShowOnMap ?? onPress} style={styles.primaryAction} />
+        {onShowOnMap ? (
+          <Button
+            title="Details"
+            variant="secondary"
+            onPress={onPress}
+            style={styles.secondaryAction}
+          />
+        ) : null}
+      </View>
+
+      <View style={styles.footerRow}>
+        {saved.source_url ? (
+          <Pressable
+            onPress={() => Linking.openURL(saved.source_url!).catch(() => undefined)}
+            hitSlop={8}
+          >
+            <Text style={styles.footerAction}>{sourceActionLabel(saved)}</Text>
+          </Pressable>
+        ) : <View />}
+
+        <Pressable onPress={confirmDelete} hitSlop={12} style={styles.deleteBtn}>
+          <Text style={styles.removeText}>Remove</Text>
+        </Pressable>
+      </View>
+    </Card>
   );
 }
 
 const styles = StyleSheet.create({
-  card: { marginBottom: Spacing.md },
+  card: {
+    marginBottom: Spacing.md,
+    backgroundColor: Colors.surfaceElevated,
+    padding: 14,
+  },
+  cardPressable: {
+    flexDirection: 'row',
+    gap: Spacing.md,
+    alignItems: 'flex-start',
+  },
   pressed: { opacity: 0.7 },
-  headerRow: {
+  thumb: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  copy: {
+    flex: 1,
+  },
+  muted: { color: Colors.textSecondary, marginTop: 2 },
+  metaText: {
+    color: Colors.textMuted,
+    marginTop: Spacing.xs,
+    lineHeight: 18,
+  },
+  actionRow: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+    marginTop: Spacing.sm,
+  },
+  primaryAction: {
+    flex: 1,
+    paddingVertical: 10,
+  },
+  secondaryAction: {
+    flex: 1,
+    paddingVertical: 10,
+  },
+  footerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: Spacing.sm,
+    marginTop: Spacing.sm,
   },
-  deleteBtn: { paddingVertical: 2, paddingHorizontal: Spacing.xs },
-  muted: { color: Colors.textMuted, marginTop: 4 },
-  metaRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.xs,
-    marginTop: Spacing.md,
-  },
-  pill: {
-    paddingHorizontal: Spacing.md,
+  deleteBtn: {
     paddingVertical: 4,
-    borderRadius: Radius.pill,
-    backgroundColor: Colors.bg,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    paddingHorizontal: Spacing.xs,
   },
-  pillOn: { backgroundColor: Colors.success, borderColor: Colors.success },
-  pillOff: { backgroundColor: Colors.bg, borderColor: Colors.border },
-  pillAccent: { backgroundColor: Colors.accent, borderColor: Colors.accent },
-  pillMap: { backgroundColor: Colors.primary, borderColor: Colors.primary },
-  pillText: { fontSize: 12, fontWeight: '600', color: Colors.text },
-  pillTextOn: { color: Colors.textInverse },
-  pillTextOff: { color: Colors.textMuted },
+  footerAction: {
+    ...Typography.caption,
+    color: Colors.textSecondary,
+  },
+  removeText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: Colors.textMuted,
+  },
 });

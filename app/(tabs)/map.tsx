@@ -30,6 +30,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 import MapView, { Circle, Marker, PROVIDER_GOOGLE, Region } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
@@ -40,6 +41,30 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 // Maps Android SDK is wired via app.json `android.config.googleMaps`.
 const MAP_PROVIDER = Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined;
 
+const DARK_MAP_STYLE = [
+  { elementType: 'geometry', stylers: [{ color: '#141414' }] },
+  { elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: '#787878' }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: '#141414' }] },
+  { featureType: 'administrative', elementType: 'geometry', stylers: [{ color: '#1e1e1e' }] },
+  { featureType: 'administrative.country', elementType: 'labels.text.fill', stylers: [{ color: '#9e9e9e' }] },
+  { featureType: 'administrative.land_parcel', stylers: [{ visibility: 'off' }] },
+  { featureType: 'administrative.locality', elementType: 'labels.text.fill', stylers: [{ color: '#b3b3b3' }] },
+  { featureType: 'poi', elementType: 'geometry', stylers: [{ color: '#1a1a1a' }] },
+  { featureType: 'poi', elementType: 'labels.text.fill', stylers: [{ color: '#5f6368' }] },
+  { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#11171a' }] },
+  { featureType: 'poi.park', elementType: 'labels.text.fill', stylers: [{ color: '#556064' }] },
+  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#2c2c2c' }] },
+  { featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: '#202020' }] },
+  { featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#8a8a8a' }] },
+  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#343434' }] },
+  { featureType: 'road.highway', elementType: 'geometry.stroke', stylers: [{ color: '#252525' }] },
+  { featureType: 'road.highway', elementType: 'labels.text.fill', stylers: [{ color: '#b5b5b5' }] },
+  { featureType: 'transit', stylers: [{ visibility: 'off' }] },
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0b0f14' }] },
+  { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#4d6470' }] },
+];
+
 import { Button, Card, DemoModeBanner, MapFallbackList } from '@/components';
 import { Colors, Radius, Spacing, Typography } from '@/constants';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
@@ -47,10 +72,41 @@ import { isDemoMode } from '@/lib/demoMode';
 import { isMapPreviewMode } from '@/lib/mapPreview';
 import { openExternalMaps as openInExternalMaps } from '@/lib/externalMaps';
 import { trackEvent } from '@/lib/analytics';
-import { milesToMeters, minutesToMeters } from '@/lib/geo';
+import { distanceMeters, milesToMeters, minutesToMeters } from '@/lib/geo';
 import { getDemoSeededSavedPlacesSync } from '@/services/demo';
 import { getProfile } from '@/services/profileService';
 import type { Profile, SavedPlaceWithPlace } from '@/types';
+
+function formatDistanceAway(meters: number): string {
+  const miles = meters / 1609.344;
+  if (miles < 0.1) return 'Nearby now';
+  const rounded = miles >= 10 ? Math.round(miles) : Math.round(miles * 10) / 10;
+  return `${rounded} mi away`;
+}
+
+function selectedMeta(saved: SavedPlaceWithPlace): string | null {
+  switch (saved.source_type) {
+    case 'instagram':
+      return 'Saved from Instagram';
+    case 'tiktok':
+      return 'Saved from TikTok';
+    case 'link':
+      return 'Saved from a link';
+    default:
+      return saved.place.category ?? null;
+  }
+}
+
+function selectedIconName(saved: SavedPlaceWithPlace): React.ComponentProps<typeof Feather>['name'] {
+  switch (saved.source_type) {
+    case 'instagram':
+      return 'instagram';
+    case 'tiktok':
+      return 'video';
+    default:
+      return 'map-pin';
+  }
+}
 
 // Default radius used when neither the saved place nor the profile specify one.
 // Matches the V1 default surfaced in add-place.tsx.
@@ -420,6 +476,11 @@ export default function MapScreen() {
   if (__DEV__) {
     // eslint-disable-next-line no-console
     console.log('[map] state', {
+      platform: Platform.OS,
+      providerIntended: MAP_PROVIDER ?? 'default',
+      googleProviderIntended: MAP_PROVIDER === PROVIDER_GOOGLE,
+      customMapStyleLength: DARK_MAP_STYLE.length,
+      customMapStyleEnabled: Platform.OS === 'android',
       savedPlacesLoading: liveLoading,
       savedPlacesLength: data.length,
       validPlacesLength: validPlaces.length,
@@ -441,6 +502,14 @@ export default function MapScreen() {
     });
     void openInExternalMaps(item.place);
   }
+
+  const selectedDistance = useMemo(() => {
+    if (!selected || !userRegion) return null;
+    return distanceMeters(
+      { latitude: userRegion.latitude, longitude: userRegion.longitude },
+      { latitude: selected.place.latitude, longitude: selected.place.longitude },
+    );
+  }, [selected, userRegion]);
 
   /**
    * Frame the map around a single saved place's zone (marker + radius
@@ -497,6 +566,7 @@ export default function MapScreen() {
         ref={mapRef}
         provider={MAP_PROVIDER}
         style={StyleSheet.absoluteFill}
+        customMapStyle={Platform.OS === 'android' ? DARK_MAP_STYLE : undefined}
         // Only show the user dot when we actually have a fix. Toggling
         // `showsUserLocation` on without a usable provider can leave the
         // Google Maps Android view in a "loading" state.
@@ -519,9 +589,17 @@ export default function MapScreen() {
               longitude: p.place.longitude,
             }}
             radius={effectiveRadiusMeters(p, profile)}
-            strokeColor="rgba(0,0,0,0.35)"
-            strokeWidth={2}
-            fillColor="rgba(0,0,0,0.10)"
+            strokeColor={
+              selected?.id === p.id
+                ? 'rgba(255,106,26,0.52)'
+                : 'rgba(255,106,26,0.14)'
+            }
+            strokeWidth={selected?.id === p.id ? 2 : 1}
+            fillColor={
+              selected?.id === p.id
+                ? 'rgba(255,106,26,0.12)'
+                : 'rgba(255,106,26,0.035)'
+            }
           />
         ))}
         {validPlaces.map((p) => (
@@ -556,6 +634,7 @@ export default function MapScreen() {
                 Static (no animation) to keep V1 light. */}
             <View style={styles.markerWrap}>
               <View style={styles.markerHalo} />
+              <View style={styles.markerCore} />
               <View style={styles.markerDot} />
             </View>
           </Marker>
@@ -609,46 +688,67 @@ export default function MapScreen() {
       {selected ? (
         <View style={styles.previewWrap} pointerEvents="box-none">
           <Card style={styles.previewCard}>
-            <View style={styles.previewHeader}>
-              <Text style={Typography.heading} numberOfLines={1}>
-                {selected.place.name}
-              </Text>
-              <Pressable
-                onPress={() => setSelected(null)}
-                hitSlop={12}
-                style={styles.closeBtn}
-              >
-                <Text style={styles.closeText}>×</Text>
-              </Pressable>
+            <View style={styles.previewTopRow}>
+              <View style={styles.previewThumb}>
+                <Feather
+                  name={selectedIconName(selected)}
+                  size={18}
+                  color={Colors.accent}
+                />
+              </View>
+              <View style={styles.previewCopy}>
+                <View style={styles.previewHeader}>
+                  <Text style={Typography.heading} numberOfLines={1}>
+                    {selected.place.name}
+                  </Text>
+                  <Pressable
+                    onPress={() => setSelected(null)}
+                    hitSlop={12}
+                    style={styles.closeBtn}
+                  >
+                    <Text style={styles.closeText}>×</Text>
+                  </Pressable>
+                </View>
+                {selected.place.formatted_address ? (
+                  <Text style={[Typography.caption, styles.previewAddress]} numberOfLines={1}>
+                    {selected.place.formatted_address}
+                  </Text>
+                ) : null}
+                <View style={styles.previewMetaRow}>
+                  {selectedDistance != null ? (
+                    <Text style={[Typography.caption, styles.previewMetaText]}>
+                      {formatDistanceAway(selectedDistance)}
+                    </Text>
+                  ) : null}
+                  {selectedMeta(selected) ? (
+                    <View style={styles.metaPill}>
+                      <Text style={styles.metaPillText} numberOfLines={1}>
+                        {selectedMeta(selected)}
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
+              </View>
             </View>
-            {selected.place.formatted_address ? (
-              <Text style={[Typography.caption, styles.muted]} numberOfLines={2}>
-                {selected.place.formatted_address}
-              </Text>
-            ) : null}
-            {selected.place.category ? (
-              <Text style={[Typography.caption, styles.muted, { marginTop: 2 }]}>
-                {selected.place.category}
-              </Text>
-            ) : null}
             <View style={styles.previewActions}>
               <Button
-                title="Open in Maps"
-                variant="secondary"
+                title="Get directions"
                 onPress={() => openExternalMaps(selected)}
-                style={{ flex: 1 }}
-              />
-              <View style={{ width: Spacing.sm }} />
-              <Button
-                title="View details"
-                onPress={() => {
-                  const id = selected.id;
-                  setSelected(null);
-                  router.push(`/place/${id}`);
-                }}
-                style={{ flex: 1 }}
+                style={styles.previewPrimaryAction}
               />
             </View>
+            <Pressable
+              onPress={() => {
+                const id = selected.id;
+                setSelected(null);
+                router.push(`/place/${id}`);
+              }}
+              hitSlop={10}
+              style={styles.previewSecondaryRow}
+            >
+              <Text style={styles.previewSecondaryText}>Details</Text>
+              <Feather name="chevron-right" size={16} color={Colors.textSecondary} />
+            </Pressable>
           </Card>
         </View>
       ) : null}
@@ -696,27 +796,34 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
 
   markerWrap: {
-    width: 44,
-    height: 44,
+    width: 40,
+    height: 40,
     alignItems: 'center',
     justifyContent: 'center',
   },
   markerHalo: {
     position: 'absolute',
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(0,0,0,0.18)',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,106,26,0.16)',
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.25)',
+    borderColor: 'rgba(255,106,26,0.22)',
   },
-  markerDot: {
+  markerCore: {
+    position: 'absolute',
     width: 18,
     height: 18,
     borderRadius: 9,
-    backgroundColor: '#111',
+    backgroundColor: 'rgba(255,106,26,0.28)',
+  },
+  markerDot: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: Colors.primary,
     borderWidth: 2,
-    borderColor: '#fff',
+    borderColor: Colors.text,
   },
 
   locPill: {
@@ -726,12 +833,12 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.xs,
     paddingHorizontal: Spacing.md,
     borderRadius: Radius.pill,
-    backgroundColor: Colors.surface,
+    backgroundColor: Colors.surfaceElevated,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: Colors.textMuted,
+    borderColor: Colors.border,
     shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
   },
@@ -759,12 +866,12 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.xs,
     paddingHorizontal: Spacing.md,
     borderRadius: Radius.pill,
-    backgroundColor: Colors.surface,
+    backgroundColor: Colors.surfaceElevated,
     borderWidth: 1,
     borderColor: Colors.accent,
     shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
   },
@@ -787,12 +894,12 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.xs,
     paddingHorizontal: Spacing.md,
     borderRadius: Radius.pill,
-    backgroundColor: Colors.surface,
+    backgroundColor: Colors.surfaceElevated,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: Colors.textMuted,
+    borderColor: Colors.border,
     shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
   },
@@ -808,18 +915,70 @@ const styles = StyleSheet.create({
     bottom: Spacing.lg,
   },
   previewCard: {
+    backgroundColor: Colors.surfaceElevated,
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
     shadowColor: '#000',
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 6,
+    shadowOpacity: 0.34,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 8,
+    padding: 14,
+  },
+  previewTopRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacing.md,
+  },
+  previewThumb: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: Colors.primary,
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 3 },
+  },
+  previewCopy: {
+    flex: 1,
   },
   previewHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
     gap: Spacing.sm,
-    marginBottom: Spacing.xs,
+  },
+  previewAddress: {
+    color: Colors.textSecondary,
+    marginTop: 2,
+  },
+  previewMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: Spacing.xs,
+    marginTop: Spacing.sm,
+  },
+  previewMetaText: {
+    color: Colors.textSecondary,
+  },
+  metaPill: {
+    paddingVertical: 5,
+    paddingHorizontal: Spacing.sm,
+    borderRadius: Radius.pill,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  metaPillText: {
+    ...Typography.caption,
+    color: Colors.textSecondary,
   },
   closeBtn: {
     width: 28,
@@ -827,6 +986,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 14,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   closeText: {
     fontSize: 22,
@@ -835,8 +997,22 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   previewActions: {
-    flexDirection: 'row',
     marginTop: Spacing.md,
+  },
+  previewPrimaryAction: {
+    width: '100%',
+  },
+  previewSecondaryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: Spacing.sm,
+    paddingHorizontal: Spacing.xs,
+    paddingVertical: Spacing.xs,
+  },
+  previewSecondaryText: {
+    ...Typography.label,
+    color: Colors.textSecondary,
   },
 
   viewAllBtn: {
@@ -846,12 +1022,12 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.xs,
     paddingHorizontal: Spacing.md,
     borderRadius: Radius.pill,
-    backgroundColor: Colors.surface,
+    backgroundColor: Colors.surfaceElevated,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: Colors.textMuted,
+    borderColor: Colors.border,
     shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
   },
@@ -872,9 +1048,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.28,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 6 },
     elevation: 4,
   },
   fabText: { color: Colors.textInverse, fontSize: 28, lineHeight: 30 },

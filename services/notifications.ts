@@ -1,9 +1,12 @@
 export {
   ensureNotificationPermission,
+  getNotificationPermissionState,
   ensureForegroundLocationPermission,
   ensureBackgroundLocationPermission,
   startProximityWatch,
   stopProximityWatch,
+  syncProximityWatch,
+  sendTestNotification,
   checkProximity,
   checkProximityOnce,
   effectiveRadiusMeters,

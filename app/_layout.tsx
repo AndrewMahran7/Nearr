@@ -1,17 +1,32 @@
-import { Component, useEffect } from 'react';
-import { AppState, Text, View, StyleSheet } from 'react-native';
+import { Component, useCallback, useEffect, useState } from 'react';
+import { AppState, Linking, StyleSheet, Text, View } from 'react-native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import * as Linking from 'expo-linking';
+import * as ExpoLinking from 'expo-linking';
 import { useAuth } from '@/hooks/useAuth';
+import {
+  HowNearrWorksModal,
+  hasSeenHowNearrWorks,
+  markHowNearrWorksSeen,
+} from '@/components/HowNearrWorksModal';
+import { SetupReminderModal } from '@/components';
+import { getLocationStatus } from '@/components/SetupChecklist';
 import { handleAuthDeepLink } from '@/lib/authDeepLink';
 import { clearDevAuth } from '@/lib/devAuth';
 import { trackEvent } from '@/lib/analytics';
-import { checkProximityOnce, registerNotificationCategories, handleNotificationAction } from '@/services/notifications';
+import {
+  checkProximityOnce,
+  ensureNotificationPermission,
+  getNotificationPermissionState,
+  handleNotificationAction,
+  registerNotificationCategories,
+  syncProximityWatch,
+} from '@/services/notifications';
 import * as Notifications from 'expo-notifications';
 import '@/lib/notifications'; // registers background task
+import { Colors } from '@/constants';
 
 console.log('[APP_START] _layout module loaded');
 
@@ -61,16 +76,27 @@ class AppErrorBoundary extends Component<
 }
 
 const errorStyles = StyleSheet.create({
-  container: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
-  title: { fontSize: 20, fontWeight: '600', marginBottom: 12 },
-  body: { fontSize: 15, textAlign: 'center', color: '#555', marginBottom: 16 },
-  detail: { fontSize: 12, color: '#999', textAlign: 'center' },
+  container: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+    backgroundColor: Colors.bg,
+  },
+  title: { fontSize: 20, fontWeight: '600', marginBottom: 12, color: Colors.text },
+  body: { fontSize: 15, textAlign: 'center', color: Colors.textSecondary, marginBottom: 16 },
+  detail: { fontSize: 12, color: Colors.textMuted, textAlign: 'center' },
 });
 
 function AuthGate({ children }: { children: React.ReactNode }) {
   const { session, loading, isDevSession } = useAuth();
   const segments = useSegments();
   const router = useRouter();
+  const [howNearrWorksVisible, setHowNearrWorksVisible] = useState(false);
+  const [setupReminderVisible, setSetupReminderVisible] = useState(false);
+  const [needsNotifications, setNeedsNotifications] = useState(false);
+  const [needsLocation, setNeedsLocation] = useState(false);
+  const [setupReminderDismissedThisSession, setSetupReminderDismissedThisSession] = useState(false);
 
   // Fire `session_started` once per real Supabase session (id changes when
   // the user signs in, signs out + back in, or the JWT identity changes).
@@ -81,6 +107,92 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     // Intentionally keyed on user id only — an access-token refresh on the
     // same user must not re-fire this event.
   }, [session?.user.id, isDevSession]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!session || isDevSession) {
+      setHowNearrWorksVisible(false);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    void (async () => {
+      const seen = await hasSeenHowNearrWorks(session.user.id);
+      if (cancelled || seen) return;
+      setHowNearrWorksVisible(true);
+      void trackEvent('how_nearr_works_shown', {
+        entry_point: 'first_sign_in',
+        user_id: session.user.id,
+      });
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [session, session?.user.id, isDevSession]);
+
+  async function handleHowNearrWorks(action: 'completed' | 'skipped') {
+    if (session && !isDevSession) {
+      await markHowNearrWorksSeen(session.user.id);
+      void trackEvent(
+        action === 'completed'
+          ? 'how_nearr_works_completed'
+          : 'how_nearr_works_skipped',
+        {
+          entry_point: 'first_sign_in',
+          user_id: session.user.id,
+        },
+      );
+    }
+    setHowNearrWorksVisible(false);
+  }
+
+  const refreshSetupReminder = useCallback(async (force = false) => {
+    if (!session || isDevSession) {
+      setSetupReminderVisible(false);
+      setNeedsNotifications(false);
+      setNeedsLocation(false);
+      return;
+    }
+    if (howNearrWorksVisible) return;
+    if (setupReminderDismissedThisSession && !force) return;
+
+    const [notificationStatus, locationStatus] = await Promise.all([
+      getNotificationPermissionState(),
+      getLocationStatus(),
+    ]);
+
+    const missingNotifications = notificationStatus !== 'granted';
+    const missingLocation = locationStatus !== 'always';
+
+    setNeedsNotifications(missingNotifications);
+    setNeedsLocation(missingLocation);
+    setSetupReminderVisible(missingNotifications || missingLocation);
+  }, [howNearrWorksVisible, isDevSession, session, setupReminderDismissedThisSession]);
+
+  async function handleEnableNotifications() {
+    if (!needsNotifications) return;
+
+    const current = await getNotificationPermissionState();
+    if (current === 'denied') {
+      await Linking.openSettings().catch(() => undefined);
+      return;
+    }
+
+    await ensureNotificationPermission();
+    await refreshSetupReminder(true);
+  }
+
+  async function handleOpenLocationSettings() {
+    await Linking.openSettings().catch(() => undefined);
+  }
+
+  function dismissSetupReminder() {
+    setSetupReminderDismissedThisSession(true);
+    setSetupReminderVisible(false);
+  }
 
   useEffect(() => {
     if (loading) return;
@@ -108,14 +220,53 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   // empty and we'd needlessly trigger the location prompt.
   useEffect(() => {
     if (!session || isDevSession) return;
+    void syncProximityWatch();
     void checkProximityOnce();
     const sub = AppState.addEventListener('change', (state) => {
-      if (state === 'active') void checkProximityOnce();
+      if (state === 'active') {
+        setSetupReminderDismissedThisSession(false);
+        void syncProximityWatch();
+        void checkProximityOnce();
+        void refreshSetupReminder();
+      } else if (state === 'background' || state === 'inactive') {
+        setSetupReminderDismissedThisSession(false);
+      }
     });
     return () => sub.remove();
-  }, [session, isDevSession]);
+  }, [session, isDevSession, refreshSetupReminder]);
 
-  return <>{children}</>;
+  useEffect(() => {
+    if (!session || isDevSession) {
+      setSetupReminderVisible(false);
+      setNeedsNotifications(false);
+      setNeedsLocation(false);
+      setSetupReminderDismissedThisSession(false);
+      return;
+    }
+    if (howNearrWorksVisible) {
+      setSetupReminderVisible(false);
+      return;
+    }
+    void refreshSetupReminder();
+  }, [session, isDevSession, howNearrWorksVisible, refreshSetupReminder]);
+
+  return (
+    <>
+      {children}
+      <HowNearrWorksModal
+        visible={howNearrWorksVisible}
+        onPrimary={() => void handleHowNearrWorks('completed')}
+        onSecondary={() => void handleHowNearrWorks('skipped')}
+      />
+      <SetupReminderModal
+        visible={setupReminderVisible && !howNearrWorksVisible}
+        needs={{ notifications: needsNotifications, location: needsLocation }}
+        onEnableNotifications={() => void handleEnableNotifications()}
+        onOpenLocationSettings={() => void handleOpenLocationSettings()}
+        onDismiss={dismissSetupReminder}
+      />
+    </>
+  );
 }
 
 export default function RootLayout() {
@@ -131,7 +282,7 @@ export default function RootLayout() {
   // Handle deep links (magic-link callback + share-incoming).
   useEffect(() => {
     // Cold-start: app launched by tapping the link.
-    Linking.getInitialURL().then(async (url) => {
+    ExpoLinking.getInitialURL().then(async (url) => {
       if (!url) return;
       console.log('[deeplink] received URL =', url.replace(/[?#].*$/, ''));
       const handled = await handleAuthDeepLink(url);
@@ -142,7 +293,7 @@ export default function RootLayout() {
       }
     });
     // Warm-start: app already open (e.g. tapping link while app is in background).
-    const sub = Linking.addEventListener('url', async ({ url }) => {
+    const sub = ExpoLinking.addEventListener('url', async ({ url }) => {
       console.log('[deeplink] received URL =', url.replace(/[?#].*$/, ''));
       const handled = await handleAuthDeepLink(url);
       if (handled) {
@@ -173,15 +324,31 @@ export default function RootLayout() {
       <GestureHandlerRootView style={{ flex: 1 }}>
         <SafeAreaProvider>
           <AuthGate>
-            <Stack screenOptions={{ headerShown: false }}>
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                contentStyle: { backgroundColor: Colors.bg },
+                headerStyle: { backgroundColor: Colors.bg },
+                headerTitleStyle: { color: Colors.text },
+                headerTintColor: Colors.text,
+                headerShadowVisible: false,
+                headerBackTitleVisible: false,
+              }}
+            >
               <Stack.Screen name="(auth)" />
               <Stack.Screen name="(tabs)" />
-              <Stack.Screen name="add-place" options={{ presentation: 'modal', headerShown: true, title: 'Save place' }} />
-              <Stack.Screen name="share" options={{ presentation: 'modal', headerShown: true, title: 'Save from link' }} />
+              <Stack.Screen
+                name="add-place"
+                options={{ presentation: 'modal', headerShown: true, title: 'Save place' }}
+              />
+              <Stack.Screen
+                name="share"
+                options={{ presentation: 'modal', headerShown: true, title: 'Save from link' }}
+              />
               <Stack.Screen name="place/[id]" options={{ headerShown: true, title: 'Place' }} />
             </Stack>
           </AuthGate>
-          <StatusBar style="auto" />
+          <StatusBar style="light" />
         </SafeAreaProvider>
       </GestureHandlerRootView>
     </AppErrorBoundary>

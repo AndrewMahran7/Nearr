@@ -6,7 +6,7 @@
  * round-trips on every keystroke / toggle.
  *
  * Fields:
- *   - default radius value + unit (miles / minutes)
+ *   - default reminder distance value + unit (miles / minutes)
  *   - global notifications enabled
  *   - nearby notifications enabled (only meaningful when global is on)
  *   - quiet hours enabled
@@ -30,10 +30,11 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 
-import { Button, Card, DemoModeBanner, DevModeBanner, EmptyState, Input, Screen, SetupChecklist } from '@/components';
+import { Button, Card, DemoModeBanner, DevModeBanner, EmptyState, HowNearrWorksModal, Input, Screen, SetupChecklist } from '@/components';
 import { Colors, Radius, Spacing, Typography } from '@/constants';
 
 import { useAuth } from '@/hooks/useAuth';
+import { trackEvent } from '@/lib/analytics';
 import { disableDevAuth } from '@/lib/devAuth';
 import { isDemoMode } from '@/lib/demoMode';
 import { getProfile, updateProfile } from '@/services/profileService';
@@ -41,6 +42,7 @@ import { signOut } from '@/services/auth';
 import { resetAllDemoData, simulateDemoNearbyNotification } from '@/services/demo';
 import {
   ensureNotificationPermission,
+  sendTestNotification,
   startProximityWatch,
   stopProximityWatch,
 } from '@/services/notifications';
@@ -83,6 +85,7 @@ export default function SettingsScreen() {
   const [quietOn, setQuietOn] = useState(false);
   const [quietStart, setQuietStart] = useState('');
   const [quietEnd, setQuietEnd] = useState('');
+  const [howNearrWorksVisible, setHowNearrWorksVisible] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -121,11 +124,11 @@ export default function SettingsScreen() {
   // Save
   // ---------------------------------------------------------------------
   async function handleSave() {
-    // --- validate radius ---
+    // --- validate reminder distance ---
     const radius = Number.parseFloat(radiusText);
     if (!Number.isFinite(radius) || radius <= 0) {
       Alert.alert(
-        'Invalid radius',
+        'Invalid reminder distance',
         `Enter a positive number of ${radiusUnit}.`,
       );
       return;
@@ -262,6 +265,33 @@ export default function SettingsScreen() {
     );
   }
 
+  function openHowNearrWorks() {
+    setHowNearrWorksVisible(true);
+    void trackEvent('how_nearr_works_shown', { entry_point: 'settings' });
+  }
+
+  function closeHowNearrWorks(action: 'completed' | 'skipped') {
+    setHowNearrWorksVisible(false);
+    void trackEvent(
+      action === 'completed'
+        ? 'how_nearr_works_completed'
+        : 'how_nearr_works_skipped',
+      { entry_point: 'settings' },
+    );
+  }
+
+  async function handleSendTestNotification() {
+    const ok = await ensureNotificationPermission();
+    if (!ok) {
+      Alert.alert(
+        'Notifications blocked',
+        'Enable notifications first to test local alerts.',
+      );
+      return;
+    }
+    await sendTestNotification();
+  }
+
   // ---------------------------------------------------------------------
   if (loading) {
     return (
@@ -316,20 +346,20 @@ export default function SettingsScreen() {
         <DevModeBanner visible={isLocalUiSession} />
         <DemoModeBanner />
         {/* --- Default radius ------------------------------------------- */}
-        <Text style={styles.sectionLabel}>Default radius</Text>
+        <Text style={styles.sectionLabel}>Default reminder distance</Text>
         <Card style={styles.section}>
           <Text style={[Typography.caption, styles.muted]}>
-            Used when a saved place doesn&apos;t set its own radius.
+            Used when a place uses your usual nearby reminder setting.
           </Text>
 
           <View style={styles.unitRow}>
             <UnitOption
-              label="Miles"
+              label="Distance"
               active={radiusUnit === 'miles'}
               onPress={() => setRadiusUnit('miles')}
             />
             <UnitOption
-              label="Minutes"
+              label="Time away"
               active={radiusUnit === 'minutes'}
               onPress={() => setRadiusUnit('minutes')}
             />
@@ -344,18 +374,18 @@ export default function SettingsScreen() {
         </Card>
 
         {/* --- Notifications ------------------------------------------- */}
-        <Text style={styles.sectionLabel}>Notifications</Text>
+        <Text style={styles.sectionLabel}>Nearby alerts</Text>
         <Card style={styles.section}>
           <ToggleRow
-            label="Notifications"
-            sub="Master switch for all alerts from Nearr."
+            label="Allow notifications"
+            sub="Let Nearr send reminders and updates."
             value={notificationsOn}
             onValueChange={setNotificationsOn}
           />
           <View style={styles.divider} />
           <ToggleRow
             label="Nearby alerts"
-            sub="Notify me when I&apos;m near a saved place."
+            sub="Remind me when I&apos;m near a place I saved."
             value={nearbyOn}
             onValueChange={setNearbyOn}
             disabled={!notificationsOn}
@@ -367,7 +397,7 @@ export default function SettingsScreen() {
         <Card style={styles.section}>
           <ToggleRow
             label="Enable quiet hours"
-            sub="Suppress notifications during a daily window."
+            sub="Pause reminders during a daily window."
             value={quietOn}
             onValueChange={setQuietOn}
           />
@@ -404,10 +434,38 @@ export default function SettingsScreen() {
         <View style={{ height: Spacing.lg }} />
         <Button title="Save changes" onPress={handleSave} loading={saving} />
 
+        {/* --- Help ---------------------------------------------------- */}
+        <View style={{ height: Spacing.xxl }} />
+        <Text style={styles.sectionLabel}>Help</Text>
+        <Card style={styles.section}>
+          <Pressable style={styles.helpRow} onPress={openHowNearrWorks}>
+            <View style={styles.helpCopy}>
+              <Text style={Typography.bodyStrong}>How Nearr works</Text>
+              <Text style={[Typography.caption, styles.muted, styles.helpBody]}>
+                See the save to reminder to go loop again.
+              </Text>
+            </View>
+            <Text style={[Typography.bodyStrong, styles.helpChevron]}>›</Text>
+          </Pressable>
+        </Card>
+
         {/* --- Setup -------------------------------------------------- */}
         <View style={{ height: Spacing.xxl }} />
         <Text style={styles.sectionLabel}>Setup Nearr</Text>
         <SetupChecklist />
+
+        <View style={{ height: Spacing.xxl }} />
+        <Text style={styles.sectionLabel}>Testing</Text>
+        <Card style={styles.section}>
+          <Text style={[Typography.caption, styles.muted]}>
+            Beta only. Use this to confirm nearby reminders can appear on this device.
+          </Text>
+          <Button
+            title="Send test notification"
+            variant="secondary"
+            onPress={() => void handleSendTestNotification()}
+          />
+        </Card>
 
         {/* --- Account ------------------------------------------------- */}
         <View style={{ height: Spacing.xxl }} />
@@ -467,6 +525,13 @@ export default function SettingsScreen() {
           </>
         ) : null}
       </ScrollView>
+      <HowNearrWorksModal
+        visible={howNearrWorksVisible}
+        primaryLabel="Got it"
+        secondaryLabel="Close"
+        onPrimary={() => closeHowNearrWorks('completed')}
+        onSecondary={() => closeHowNearrWorks('skipped')}
+      />
     </Screen>
   );
 }
@@ -530,7 +595,7 @@ function ToggleRow({
 const styles = StyleSheet.create({
   scroll: { padding: Spacing.lg, paddingBottom: Spacing.xxl },
   center: { paddingVertical: Spacing.xxl, alignItems: 'center' },
-  muted: { color: Colors.textMuted },
+  muted: { color: Colors.textSecondary },
 
   sectionLabel: {
     ...Typography.label,
@@ -541,6 +606,20 @@ const styles = StyleSheet.create({
     marginTop: Spacing.lg,
   },
   section: { marginBottom: Spacing.sm, gap: Spacing.md },
+  helpRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  helpCopy: {
+    flex: 1,
+  },
+  helpBody: {
+    marginTop: 2,
+  },
+  helpChevron: {
+    color: Colors.textMuted,
+    marginLeft: Spacing.md,
+  },
 
   unitRow: {
     flexDirection: 'row',

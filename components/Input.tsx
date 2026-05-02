@@ -19,6 +19,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
     color: Colors.text,
-    backgroundColor: Colors.bg,
+    backgroundColor: Colors.surfaceElevated,
   },
 });

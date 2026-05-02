@@ -25,6 +25,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 
 import { Button, Card, Input, Screen } from '@/components';
@@ -47,6 +48,51 @@ function modeFromSaved(s: SavedPlaceWithPlace): RadiusMode {
   return 'default';
 }
 
+function formatUnit(value: number, unit: RadiusUnit): string {
+  const noun = unit === 'miles' ? (value === 1 ? 'mile' : 'miles') : value === 1 ? 'minute' : 'minutes';
+  return `${value} ${noun}`;
+}
+
+function sourceDisplay(saved: SavedPlaceWithPlace): string | null {
+  switch (saved.source_type) {
+    case 'instagram':
+      return 'Saved from Instagram';
+    case 'tiktok':
+      return 'Saved from TikTok';
+    case 'link':
+      return 'Saved from a link';
+    default:
+      return null;
+  }
+}
+
+function sourceActionLabel(saved: SavedPlaceWithPlace): string {
+  if (saved.source_type === 'link') return 'Open original link';
+  return 'View original post';
+}
+
+function reminderDistanceSummary(
+  mode: RadiusMode,
+  profile: Profile | null,
+  milesText: string,
+  minutesText: string,
+): string {
+  if (mode === 'default') {
+    if (!profile) return 'Using your usual nearby reminder setting';
+    return 'Using your usual nearby reminder setting';
+  }
+  if (mode === 'miles') {
+    const parsed = Number.parseFloat(milesText);
+    return Number.isFinite(parsed) && parsed > 0
+      ? 'Using a custom distance reminder'
+      : 'Custom reminder distance';
+  }
+  const parsed = Number.parseInt(minutesText, 10);
+  return Number.isFinite(parsed) && parsed > 0
+    ? 'Using a custom time-away reminder'
+    : 'Custom reminder timing';
+}
+
 export default function PlaceDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -64,6 +110,7 @@ export default function PlaceDetail() {
   const [milesText, setMilesText] = useState('1');
   const [minutesText, setMinutesText] = useState('10');
   const [notes, setNotes] = useState('');
+  const [reminderSettingsExpanded, setReminderSettingsExpanded] = useState(false);
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -90,6 +137,7 @@ export default function PlaceDetail() {
           setMinutesText(String(s.radius_value));
         }
         setNotes(s.notes ?? '');
+        setReminderSettingsExpanded(false);
       }
       setProfile(p);
     } catch (e: any) {
@@ -103,10 +151,57 @@ export default function PlaceDetail() {
     void load();
   }, [load]);
 
-  const defaultRadiusLabel = useMemo(() => {
-    if (!profile) return 'Profile default';
-    return `${profile.default_radius_value} ${profile.default_radius_unit}`;
-  }, [profile]);
+  const sourceLabel = useMemo(() => (saved ? sourceDisplay(saved) : null), [saved]);
+
+  const dirty = useMemo(() => {
+    if (!saved) return false;
+
+    const nextNotes = notes.trim() ? notes.trim() : null;
+    const savedNotes = saved.notes ?? null;
+
+    if (notifyOn !== saved.notifications_enabled) return true;
+    if (nextNotes !== savedNotes) return true;
+
+    if (mode === 'default') {
+      return saved.radius_unit !== null || saved.radius_value !== null;
+    }
+
+    if (mode === 'miles') {
+      const parsedMiles = Number.parseFloat(milesText);
+      if (!Number.isFinite(parsedMiles) || parsedMiles <= 0) return true;
+      return saved.radius_unit !== 'miles' || saved.radius_value !== parsedMiles;
+    }
+
+    const parsedMinutes = Number.parseInt(minutesText, 10);
+    if (!Number.isFinite(parsedMinutes) || parsedMinutes <= 0) return true;
+    return saved.radius_unit !== 'minutes' || saved.radius_value !== parsedMinutes;
+  }, [milesText, minutesText, mode, notes, notifyOn, saved]);
+
+  const radiusHelperText = useMemo(() => {
+    if (mode === 'default') {
+      return profile
+        ? `Use your usual reminder distance: ${formatUnit(
+            profile.default_radius_value,
+            profile.default_radius_unit,
+          )}.`
+        : 'Use your usual reminder distance.';
+    }
+    if (mode === 'miles') {
+      const parsed = Number.parseFloat(milesText);
+      return Number.isFinite(parsed) && parsed > 0
+        ? `Remind me when I’m within ${formatUnit(parsed, 'miles')}.`
+        : 'Remind me when I’m within this many miles.';
+    }
+    const parsed = Number.parseInt(minutesText, 10);
+    return Number.isFinite(parsed) && parsed > 0
+      ? `Remind me when I’m about ${formatUnit(parsed, 'minutes')} away.`
+      : 'Remind me when I’m about this many minutes away.';
+  }, [milesText, minutesText, mode, profile]);
+
+  const reminderSummary = useMemo(
+    () => reminderDistanceSummary(mode, profile, milesText, minutesText),
+    [milesText, minutesText, mode, profile],
+  );
 
   async function handleSave() {
     if (!saved) return;
@@ -116,7 +211,7 @@ export default function PlaceDetail() {
     if (mode === 'miles') {
       const n = Number.parseFloat(milesText);
       if (!Number.isFinite(n) || n <= 0) {
-        Alert.alert('Invalid radius', 'Enter a positive number of miles.');
+        Alert.alert('Invalid reminder distance', 'Enter a positive number of miles.');
         return;
       }
       radiusValue = n;
@@ -124,7 +219,7 @@ export default function PlaceDetail() {
     } else if (mode === 'minutes') {
       const n = Number.parseInt(minutesText, 10);
       if (!Number.isFinite(n) || n <= 0) {
-        Alert.alert('Invalid radius', 'Enter a positive number of minutes.');
+        Alert.alert('Invalid reminder distance', 'Enter a positive number of minutes.');
         return;
       }
       radiusValue = n;
@@ -176,7 +271,7 @@ export default function PlaceDetail() {
   if (loading) {
     return (
       <Screen>
-        <Stack.Screen options={{ title: 'Place' }} />
+        <Stack.Screen options={{ title: 'Place details' }} />
         <View style={styles.center}>
           <ActivityIndicator />
         </View>
@@ -187,7 +282,7 @@ export default function PlaceDetail() {
   if (loadError || !saved) {
     return (
       <Screen>
-        <Stack.Screen options={{ title: 'Place' }} />
+        <Stack.Screen options={{ title: 'Place details' }} />
         <Card>
           <Text style={[Typography.bodyStrong, { color: Colors.danger }]}>
             {loadError ?? 'Place not found.'}
@@ -201,111 +296,153 @@ export default function PlaceDetail() {
 
   const place = saved.place;
   const sourceText = saved.source_url ?? null;
+  const sourceActionText = sourceActionLabel(saved);
 
   return (
     <Screen padded={false}>
-      <Stack.Screen options={{ title: place.name }} />
+      <Stack.Screen options={{ title: 'Place details' }} />
       <ScrollView contentContainerStyle={styles.scroll}>
-        <Card style={{ marginBottom: Spacing.lg }}>
+        <Card style={styles.heroCard}>
           <Text style={Typography.heading}>{place.name}</Text>
           {place.formatted_address ? (
             <Text style={[Typography.body, styles.muted]}>{place.formatted_address}</Text>
           ) : null}
           {place.category ? (
-            <Text style={[Typography.caption, styles.muted, { marginTop: 2 }]}>
+            <Text style={[Typography.caption, styles.metaText]}>
               {place.category}
             </Text>
           ) : null}
           {sourceText ? (
-            <Pressable
-              onPress={() => Linking.openURL(sourceText).catch(() => undefined)}
-              style={{ marginTop: Spacing.md }}
-            >
-              <Text style={[Typography.caption, { color: Colors.accent }]} numberOfLines={1}>
-                Source: {sourceText}
-              </Text>
-            </Pressable>
+            <View style={styles.sourceRow}>
+              {sourceLabel ? (
+                <Text style={[Typography.caption, styles.sourceText]} numberOfLines={1}>
+                  {sourceLabel}
+                </Text>
+              ) : null}
+              <Pressable
+                onPress={() => Linking.openURL(sourceText).catch(() => undefined)}
+                style={({ pressed }) => [
+                  styles.sourceAction,
+                  pressed && styles.sourceActionPressed,
+                ]}
+              >
+                <Text style={[Typography.bodyStrong, styles.linkText]} numberOfLines={1}>
+                  {sourceActionText}
+                </Text>
+                <Feather name="arrow-up-right" size={18} color={Colors.accent} />
+              </Pressable>
+            </View>
           ) : null}
         </Card>
 
-        <View style={styles.rowBetween}>
-          <View style={{ flex: 1 }}>
-            <Text style={Typography.bodyStrong}>Notifications</Text>
-            <Text style={[Typography.caption, styles.muted]}>
-              Notify me when I&apos;m nearby.
-            </Text>
-          </View>
-          <Switch value={notifyOn} onValueChange={setNotifyOn} />
-        </View>
-
-        <View style={styles.divider} />
-
-        <Text style={[Typography.bodyStrong, { marginBottom: Spacing.sm }]}>
-          Notification radius
-        </Text>
-        <View style={styles.radiusGroup}>
-          <RadiusOption
-            label={`Default (${defaultRadiusLabel})`}
-            active={mode === 'default'}
-            onPress={() => setMode('default')}
-          />
-          <RadiusOption
-            label="Miles"
-            active={mode === 'miles'}
-            onPress={() => setMode('miles')}
-          />
-          <RadiusOption
-            label="Minutes"
-            active={mode === 'minutes'}
-            onPress={() => setMode('minutes')}
-          />
-        </View>
-        {mode === 'miles' ? (
-          <Input
-            value={milesText}
-            onChangeText={setMilesText}
-            keyboardType="decimal-pad"
-            placeholder="e.g. 1.5"
-            style={styles.numberInput}
-          />
-        ) : null}
-        {mode === 'minutes' ? (
-          <Input
-            value={minutesText}
-            onChangeText={setMinutesText}
-            keyboardType="number-pad"
-            placeholder="e.g. 10"
-            style={styles.numberInput}
-          />
-        ) : null}
-
-        <View style={styles.divider} />
-
-        <Text style={[Typography.bodyStrong, { marginBottom: Spacing.sm }]}>Notes</Text>
-        <Input
-          value={notes}
-          onChangeText={setNotes}
-          placeholder="Why you saved this..."
-          multiline
-          style={styles.notesInput}
-        />
-
-        <View style={{ height: Spacing.xl }} />
         <Button
-          title="Show on map"
-          variant="secondary"
+          title="Get directions"
           onPress={() => {
-            // Jump to the Map tab focused on this saved place. We use
-            // `replace` so the user doesn't end up with a back stack of
-            // detail → map → detail → map when bouncing between the two.
             router.replace({
               pathname: '/(tabs)/map',
               params: { savedPlaceId: saved.id },
             });
           }}
         />
-        <View style={{ height: Spacing.sm }} />
-        <Button title="Save changes" onPress={handleSave} loading={saving} />
+
+        <View style={{ height: Spacing.md }} />
+
+        <Card style={styles.sectionCard}>
+          <View style={styles.rowBetween}>
+            <View style={{ flex: 1 }}>
+              <Text style={Typography.bodyStrong}>Nearby reminder</Text>
+              <Text style={[Typography.caption, styles.muted, styles.sectionCopy]}>
+                {notifyOn
+                  ? 'Nearr will remind you when you’re nearby.'
+                  : 'Turn this on if you want Nearr to remind you nearby.'}
+              </Text>
+            </View>
+            <Switch value={notifyOn} onValueChange={setNotifyOn} />
+          </View>
+
+          <View style={styles.reminderSummaryRow}>
+            <Text style={[Typography.caption, styles.helperText, styles.reminderSummaryText]}>
+              {notifyOn ? reminderSummary : 'Nearby reminder is off'}
+            </Text>
+            <Pressable
+              onPress={() => setReminderSettingsExpanded((value) => !value)}
+              hitSlop={12}
+            >
+              <Text style={styles.changeLink}>
+                {reminderSettingsExpanded ? 'Hide' : 'Change'}
+              </Text>
+            </Pressable>
+          </View>
+
+          {reminderSettingsExpanded ? (
+            <View style={styles.advancedWrap}>
+              <Text style={[Typography.bodyStrong, styles.advancedTitle]}>
+                Reminder settings
+              </Text>
+              <View style={styles.radiusGroup}>
+                <RadiusOption
+                  label="Default"
+                  active={mode === 'default'}
+                  onPress={() => setMode('default')}
+                />
+                <RadiusOption
+                  label="Distance"
+                  active={mode === 'miles'}
+                  onPress={() => setMode('miles')}
+                />
+                <RadiusOption
+                  label="Time"
+                  active={mode === 'minutes'}
+                  onPress={() => setMode('minutes')}
+                />
+              </View>
+              <Text style={[Typography.caption, styles.helperText]}>{radiusHelperText}</Text>
+              {mode === 'miles' ? (
+                <Input
+                  value={milesText}
+                  onChangeText={setMilesText}
+                  keyboardType="decimal-pad"
+                  placeholder="e.g. 1.5"
+                  style={styles.numberInput}
+                />
+              ) : null}
+              {mode === 'minutes' ? (
+                <Input
+                  value={minutesText}
+                  onChangeText={setMinutesText}
+                  keyboardType="number-pad"
+                  placeholder="e.g. 10"
+                  style={styles.numberInput}
+                />
+              ) : null}
+            </View>
+          ) : null}
+        </Card>
+
+        <View style={{ height: Spacing.md }} />
+
+        <Card style={styles.sectionCard}>
+          <Text style={[Typography.bodyStrong, { marginBottom: Spacing.sm }]}>Your note</Text>
+          <Input
+            value={notes}
+            onChangeText={setNotes}
+            placeholder="What should you remember about this place?"
+            multiline
+            style={styles.notesInput}
+          />
+        </Card>
+
+        {dirty ? (
+          <>
+            <View style={{ height: Spacing.lg }} />
+            <Button
+              title="Save changes"
+              variant="secondary"
+              onPress={handleSave}
+              loading={saving}
+            />
+          </>
+        ) : null}
         <View style={{ height: Spacing.sm }} />
         <Button
           title="Remove from saved"
@@ -348,20 +485,66 @@ function RadiusOption({
 const styles = StyleSheet.create({
   scroll: { padding: Spacing.lg, paddingBottom: Spacing.xxl },
   center: { paddingVertical: Spacing.xxl, alignItems: 'center' },
-  muted: { color: Colors.textMuted },
+  heroCard: { marginBottom: Spacing.md, backgroundColor: Colors.surfaceElevated },
+  sectionCard: { backgroundColor: Colors.surfaceElevated },
+  muted: { color: Colors.textSecondary },
+  metaText: { color: Colors.textMuted, marginTop: 2 },
+  sourceRow: { marginTop: Spacing.md },
+  sourceText: { color: Colors.textSecondary, marginBottom: Spacing.sm },
+  sourceAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.md,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.md,
+  },
+  sourceActionPressed: {
+    opacity: 0.75,
+  },
+  linkText: { color: Colors.accent },
   rowBetween: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.md,
   },
-  divider: {
-    height: 1,
-    backgroundColor: Colors.border,
-    marginVertical: Spacing.lg,
+  sectionCopy: {
+    marginTop: 2,
+  },
+  reminderSummaryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: Spacing.md,
+    marginTop: Spacing.md,
+  },
+  reminderSummaryText: {
+    flex: 1,
+    marginBottom: 0,
+  },
+  changeLink: {
+    ...Typography.label,
+    color: Colors.accent,
+  },
+  advancedWrap: {
+    marginTop: Spacing.md,
+    paddingTop: Spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+  },
+  advancedTitle: {
+    marginBottom: Spacing.sm,
   },
   radiusGroup: {
     flexDirection: 'row',
     gap: Spacing.sm,
+    marginBottom: Spacing.sm,
+  },
+  helperText: {
+    color: Colors.textSecondary,
     marginBottom: Spacing.md,
   },
   radiusOption: {
@@ -371,7 +554,7 @@ const styles = StyleSheet.create({
     borderRadius: Radius.pill,
     borderWidth: 1,
     borderColor: Colors.border,
-    backgroundColor: Colors.surface,
+    backgroundColor: Colors.surfaceElevated,
     alignItems: 'center',
   },
   radiusOptionActive: {
@@ -379,6 +562,6 @@ const styles = StyleSheet.create({
     borderColor: Colors.primary,
   },
   numberInput: { marginBottom: Spacing.sm },
-  notesInput: { minHeight: 80, textAlignVertical: 'top' },
+  notesInput: { minHeight: 60, textAlignVertical: 'top' },
   deleteBtn: { borderWidth: 0 },
 });

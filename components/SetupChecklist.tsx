@@ -1,10 +1,11 @@
 /**
  * SetupChecklist
  *
- * Two setup nudge items for beta onboarding:
- *   1. Always Location  — prompts users to upgrade to "Always" location access
- *      so background proximity notifications work correctly.
- *   2. Share Sheet Favorites — educates users on how to pin Nearr in the iOS
+ * Three setup nudge items for beta onboarding:
+ *   1. Notifications    — prompts users to enable notification permission.
+ *   2. Always Location  — prompts users to upgrade to "Always" location access
+ *      so background proximity reminders can run correctly.
+ *   3. Share Sheet Favorites — educates users on how to pin Nearr in the iOS
  *      Share Sheet so saving from Instagram/TikTok takes two taps.
  *
  * Persistence:
@@ -18,6 +19,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
+  AppState,
   Linking,
   Modal,
   Pressable,
@@ -28,6 +30,11 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Location from 'expo-location';
+import {
+  ensureNotificationPermission,
+  getNotificationPermissionState,
+  syncProximityWatch,
+} from '@/services/notifications';
 
 import { Colors, Radius, Spacing, Typography } from '@/constants';
 
@@ -41,7 +48,9 @@ const SHARE_FAV_DONE_KEY = 'nearr:setupShareFavDone';
 // Helpers
 // ---------------------------------------------------------------------------
 
-async function getLocationStatus(): Promise<'always' | 'whenInUse' | 'denied' | 'undetermined'> {
+export async function getLocationStatus(): Promise<
+  'always' | 'whenInUse' | 'denied' | 'undetermined'
+> {
   try {
     const fg = await Location.getForegroundPermissionsAsync();
     if (fg.status !== 'granted') {
@@ -60,6 +69,9 @@ async function getLocationStatus(): Promise<'always' | 'whenInUse' | 'denied' | 
 // ---------------------------------------------------------------------------
 
 export function SetupChecklist() {
+  const [notificationStatus, setNotificationStatus] = useState<
+    'granted' | 'denied' | 'undetermined' | null
+  >(null);
   const [locationStatus, setLocationStatus] = useState<
     'always' | 'whenInUse' | 'denied' | 'undetermined' | null
   >(null);
@@ -67,10 +79,12 @@ export function SetupChecklist() {
   const [stepsVisible, setStepsVisible] = useState(false);
 
   const refresh = useCallback(async () => {
-    const [status, stored] = await Promise.all([
+    const [notification, status, stored] = await Promise.all([
+      getNotificationPermissionState(),
       getLocationStatus(),
       AsyncStorage.getItem(SHARE_FAV_DONE_KEY),
     ]);
+    setNotificationStatus(notification);
     setLocationStatus(status);
     setShareFavDone(stored === 'true');
   }, []);
@@ -78,6 +92,34 @@ export function SetupChecklist() {
   useEffect(() => {
     void refresh();
   }, [refresh]);
+
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') void refresh();
+    });
+    return () => sub.remove();
+  }, [refresh]);
+
+  async function handleNotificationPrimary() {
+    if (notificationStatus === 'denied') {
+      Linking.openSettings().catch(() => {
+        Alert.alert(
+          'Cannot open settings',
+          'Open iPhone Settings, then enable notifications for Nearr.',
+        );
+      });
+      return;
+    }
+
+    const granted = await ensureNotificationPermission();
+    if (!granted) {
+      await refresh();
+      return;
+    }
+
+    await syncProximityWatch();
+    await refresh();
+  }
 
   async function handleMarkShareFavDone() {
     await AsyncStorage.setItem(SHARE_FAV_DONE_KEY, 'true');
@@ -90,18 +132,40 @@ export function SetupChecklist() {
     setShareFavDone(false);
   }
 
+  const notificationsDone = notificationStatus === 'granted';
   const locationDone = locationStatus === 'always';
 
   return (
     <>
+      {/* ---- Notifications item -------------------------------------- */}
+      <ChecklistItem
+        done={notificationsDone}
+        title="Turn on Notifications"
+        body={
+          notificationsDone
+            ? 'Notifications are on. Nearr can remind you when a saved place is nearby.'
+            : 'Turn this on so Nearr can remind you when you\'re near places you saved.'
+        }
+        primaryLabel={
+          notificationsDone
+            ? undefined
+            : notificationStatus === 'denied'
+              ? 'Open Settings'
+              : 'Enable Notifications'
+        }
+        onPrimary={notificationsDone ? undefined : handleNotificationPrimary}
+      />
+
+      <View style={{ height: Spacing.sm }} />
+
       {/* ---- Location item -------------------------------------------- */}
       <ChecklistItem
         done={locationDone}
         title="Turn on Always Location"
         body={
           locationDone
-            ? 'Location is set to Always. Background notifications are active.'
-            : 'Nearr can only notify you when you\u2019re near saved places if location access is set to Always.'
+            ? 'Always Location is on. Nearby reminders can keep working when you are not in the app.'
+            : 'Turn on Always Location so Nearr can keep nearby reminders working in the background.'
         }
         primaryLabel={locationDone ? undefined : 'Open Location Settings'}
         onPrimary={
@@ -212,10 +276,12 @@ function ShareStepsModal({
   visible,
   onDone,
   onDismiss,
+  doneLabel = 'Done — I added Nearr',
 }: {
   visible: boolean;
   onDone: () => void;
   onDismiss: () => void;
+  doneLabel?: string;
 }) {
   return (
     <Modal
@@ -253,7 +319,7 @@ function ShareStepsModal({
 
           <Pressable style={styles.btnPrimary} onPress={onDone}>
             <Text style={[Typography.label, { color: Colors.textInverse }]}>
-              Done — I added Nearr
+              {doneLabel}
             </Text>
           </Pressable>
 
@@ -271,6 +337,8 @@ function ShareStepsModal({
     </Modal>
   );
 }
+
+export { ShareStepsModal };
 
 // ---------------------------------------------------------------------------
 // Styles

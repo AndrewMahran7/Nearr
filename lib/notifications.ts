@@ -66,8 +66,10 @@ import type { Profile, SavedPlaceWithPlace } from '@/types';
 
 export const LOCATION_TASK = 'nearr-location-task';
 
+export type NotificationPermissionState = 'granted' | 'denied' | 'undetermined';
+
 /** How long to wait before re-notifying for the *same* saved place. */
-const ALERT_COOLDOWN_MS = 60 * 60 * 1000; // 1 hour
+const ALERT_COOLDOWN_MS = 12 * 60 * 60 * 1000; // 12 hours
 
 /**
  * In-memory short-circuit so the same task tick doesn't double-fire.
@@ -118,10 +120,23 @@ try {
 export async function ensureNotificationPermission(): Promise<boolean> {
   const cur = await Notifications.getPermissionsAsync();
   if (cur.status === 'granted') return true;
-  const req = await Notifications.requestPermissionsAsync();
+  const req = await Notifications.requestPermissionsAsync({
+    ios: {
+      allowAlert: true,
+      allowBadge: false,
+      allowSound: true,
+    },
+  });
   const ok = req.status === 'granted';
   console.log('[notifications] permission =', ok);
   return ok;
+}
+
+export async function getNotificationPermissionState(): Promise<NotificationPermissionState> {
+  const cur = await Notifications.getPermissionsAsync();
+  if (cur.status === 'granted') return 'granted';
+  if (cur.status === 'denied') return 'denied';
+  return 'undetermined';
 }
 
 /**
@@ -171,6 +186,11 @@ export async function startProximityWatch(): Promise<void> {
     console.warn('[notifications] background location not granted — watch not started');
     return;
   }
+  await startLocationUpdatesTask();
+  console.log('[notifications] proximity watch started');
+}
+
+async function startLocationUpdatesTask(): Promise<void> {
   const already = await Location.hasStartedLocationUpdatesAsync(LOCATION_TASK);
   if (already) return;
 
@@ -182,10 +202,9 @@ export async function startProximityWatch(): Promise<void> {
     // Android: a foreground-service notification keeps the task alive.
     foregroundService: {
       notificationTitle: 'Nearr',
-      notificationBody: 'Watching for places nearby',
+      notificationBody: 'Watching for saved places nearby',
     },
   });
-  console.log('[notifications] proximity watch started');
 }
 
 export async function stopProximityWatch(): Promise<void> {
@@ -195,6 +214,62 @@ export async function stopProximityWatch(): Promise<void> {
     await Location.stopLocationUpdatesAsync(LOCATION_TASK);
     console.log('[notifications] proximity watch stopped');
   }
+}
+
+export async function syncProximityWatch(): Promise<'started' | 'stopped' | 'skipped'> {
+  if (isDemoMode() || isMapPreviewMode()) return 'skipped';
+
+  const started = await Location.hasStartedLocationUpdatesAsync(LOCATION_TASK);
+
+  const { data: userRes, error: userErr } = await supabase.auth.getUser();
+  if (userErr || !userRes.user) {
+    if (started) {
+      await stopProximityWatch();
+      return 'stopped';
+    }
+    return 'skipped';
+  }
+
+  const { data: profileData } = await supabase
+    .from('profiles')
+    .select('notifications_enabled, nearby_notifications_enabled')
+    .eq('id', userRes.user.id)
+    .maybeSingle();
+
+  const profile = profileData as Pick<Profile, 'notifications_enabled' | 'nearby_notifications_enabled'> | null;
+  if (!profile?.notifications_enabled || !profile.nearby_notifications_enabled) {
+    if (started) {
+      await stopProximityWatch();
+      return 'stopped';
+    }
+    return 'skipped';
+  }
+
+  const [notificationPermission, backgroundLocation] = await Promise.all([
+    getNotificationPermissionState(),
+    Location.getBackgroundPermissionsAsync(),
+  ]);
+
+  if (notificationPermission !== 'granted' || backgroundLocation.status !== 'granted') {
+    if (started) {
+      await stopProximityWatch();
+      return 'stopped';
+    }
+    return 'skipped';
+  }
+
+  await startLocationUpdatesTask();
+  return 'started';
+}
+
+export async function sendTestNotification(): Promise<void> {
+  await Notifications.scheduleNotificationAsync({
+    content: {
+      title: 'Nearr test reminder',
+      body: 'You are all set for nearby reminders.',
+    },
+    trigger: null,
+  });
 }
 
 /**
@@ -556,8 +631,6 @@ async function fireNotification(
     user_id: userId,
     saved_place_id: saved.id,
     event_type: 'nearby',
-    user_latitude: here.latitude,
-    user_longitude: here.longitude,
     distance_meters: distance,
   });
   if (evErr) {
