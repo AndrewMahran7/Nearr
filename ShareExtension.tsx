@@ -124,12 +124,24 @@ async function processSharedUrl(
   }
 
   // Read JWT written by the host app into the App Group container.
+  const nativeAvailable = sharedAuth.isAvailable();
   const accessToken = sharedAuth.getToken();
-  console.debug('[share-extension] token present:', !!accessToken);
+  console.log(
+    '[share-extension] auth_bridge_check native_available=' + nativeAvailable +
+    ' token_present=' + !!accessToken,
+  );
 
   if (!accessToken) {
-    // No session in the host app, or the bridge isn't linked yet. Either
-    // way the backend can't identify the user — let the host app handle it.
+    // No session in the host app, or the native module isn't linked yet.
+    // Diagnose: if native_available=false the NearrSharedAuth module isn't
+    // compiled into this share extension build — a new EAS/TestFlight build
+    // is required. If native_available=true but token_present=false the host
+    // app has not written the token yet (open the Nearr app first while
+    // signed in).
+    console.warn(
+      '[share-extension] missing shared auth token, falling back to host app' +
+      ' native_available=' + nativeAvailable,
+    );
     return { status: 'open_app', reason: 'missing_auth' };
   }
 
@@ -162,9 +174,11 @@ async function processSharedUrl(
   }
 }
 
-function handOffToHostApp(url: string) {
+function handOffToHostApp(url: string, reason?: string) {
   const encoded = encodeURIComponent(url);
-  const path = `share?url=${encoded}`;
+  const path = reason
+    ? `share?url=${encoded}&ext_reason=${encodeURIComponent(reason)}`
+    : `share?url=${encoded}`;
   console.log('[shareExtension] opening host app at', path);
   try {
     openHostApp(path);
@@ -221,14 +235,14 @@ export default function ShareExtension(props: InitialProps) {
         case 'failed_requires_app': {
           // Need the full host-app UI for candidate selection or error
           // recovery (manual search, retry).
-          handOffToHostApp(url);
+          handOffToHostApp(url, result.status);
           closeTimer = setTimeout(() => close(), 250);
           return;
         }
         case 'open_app':
         default: {
           // Legacy/fallback path: same behavior as before this change.
-          handOffToHostApp(url);
+          handOffToHostApp(url, (result as { reason?: string }).reason);
           closeTimer = setTimeout(() => close(), 250);
           return;
         }

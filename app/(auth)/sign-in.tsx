@@ -16,11 +16,12 @@ import { Colors, Spacing, Typography } from '@/constants';
 import { sendMagicLink, signInWithPassword } from '@/services/auth';
 import { isSupabaseConfigured } from '@/lib/supabase';
 
-// Dev-only password sign-in. This email triggers the password input and
-// the "Sign in as developer" button instead of the magic-link flow — but
-// only when ``__DEV__`` is true. In production builds, this email behaves
-// like any other (magic link). The matching Supabase Auth user must be
-// created manually in the dashboard; the client never creates users.
+// Test-account password sign-in. This email triggers the password input
+// and the "Sign in as test user" button instead of the magic-link flow in
+// ALL builds, including TestFlight/production. It is restricted to this
+// single hardcoded address — every other email uses magic-link only.
+// The matching Supabase Auth user must be created manually in the dashboard;
+// the client never creates users.
 const DEV_EMAIL = 'dev@nearr.test';
 
 export default function SignIn() {
@@ -31,8 +32,8 @@ export default function SignIn() {
   const [signingIn, setSigningIn] = useState(false);
   const [sent, setSent] = useState(false);
 
-  const isDevEmail =
-    __DEV__ && email.trim().toLowerCase() === DEV_EMAIL;
+  // No __DEV__ check — password login for this account works in all builds.
+  const isDevEmail = email.trim().toLowerCase() === DEV_EMAIL;
 
   async function send() {
     if (!email.includes('@')) return Alert.alert('Enter a valid email');
@@ -54,20 +55,22 @@ export default function SignIn() {
   }
 
   async function devSignIn() {
-    if (!__DEV__) return;
+    // Guard: this function must only be reachable via the isDevEmail branch
+    // in the UI. Double-check the email here as a defence-in-depth measure.
+    if (email.trim().toLowerCase() !== DEV_EMAIL) return;
     if (!password) {
-      return Alert.alert('Password required', 'Enter the dev password.');
+      return Alert.alert('Password required', 'Enter the test account password.');
     }
     setSigningIn(true);
     const { error } = await signInWithPassword(email, password);
     setSigningIn(false);
     if (error) {
-      console.warn('[auth] dev password sign-in error', error);
+      console.warn('[auth] test-account password sign-in error', error.message);
       return Alert.alert('Sign in failed', error.message);
     }
     // The auth state listener in useAuth will pick up the new session and
     // AuthGate will route into the tabs. No manual navigation needed.
-    console.log('[auth] dev password sign-in OK');
+    console.log('[auth] test-account password sign-in OK');
   }
 
   return (
@@ -116,7 +119,7 @@ export default function SignIn() {
                   {isDevEmail ? (
                     <>
                       <Input
-                        placeholder="Dev password"
+                        placeholder="Test password"
                         autoCapitalize="none"
                         autoCorrect={false}
                         autoComplete="off"
@@ -126,12 +129,12 @@ export default function SignIn() {
                         style={{ marginBottom: Spacing.md }}
                       />
                       <Button
-                        title="Sign in as developer"
+                        title="Sign in as test user"
                         onPress={devSignIn}
                         loading={signingIn}
                       />
                       <Text style={[Typography.caption, styles.fineprint]}>
-                        Dev-only password sign-in for the {DEV_EMAIL} test user.
+                        Test account sign-in for {DEV_EMAIL}.
                       </Text>
                     </>
                   ) : (

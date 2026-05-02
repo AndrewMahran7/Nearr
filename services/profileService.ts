@@ -19,6 +19,7 @@ export async function getProfile(): Promise<Profile | null> {
     return null;
   }
   const userId = userRes.user?.id;
+  console.log('[profileService] getProfile start, userId present=', !!userId);
   if (!userId) return null;
 
   const { data, error } = await supabase
@@ -28,10 +29,60 @@ export async function getProfile(): Promise<Profile | null> {
     .maybeSingle();
 
   if (error) {
-    console.warn('[profileService] fetch failed', error.message);
+    console.warn(
+      '[profileService] fetch failed',
+      'message=', error.message,
+      'code=', (error as any).code,
+      'details=', (error as any).details,
+    );
     return null;
   }
-  return (data as Profile) ?? null;
+  console.log('[profileService] getProfile done, rowFound=', !!data);
+
+  if (data) return data as Profile;
+
+  // No row found — the handle_new_user trigger may not have run for this
+  // user (e.g. the user was created before the migration). The existing
+  // "profiles: self upsert" INSERT policy (auth.uid() = id) allows the
+  // authenticated client to create their own profile row safely.
+  console.warn('[profileService] profile row missing, recovering for user', userId);
+  const userEmail = userRes.user?.email ?? null;
+  const { data: recovered, error: insertErr } = await supabase
+    .from('profiles')
+    .insert({ id: userId, email: userEmail })
+    .select()
+    .single();
+
+  if (insertErr) {
+    // 23505 = unique_violation: another process inserted the row between our
+    // select and our insert (race condition). Re-select to get the new row.
+    if ((insertErr as any).code === '23505') {
+      console.log('[profileService] insert race on recovery, re-selecting');
+      const { data: raced, error: raceErr } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle();
+      if (raceErr) {
+        console.warn(
+          '[profileService] re-select after race failed',
+          'message=', raceErr.message,
+          'code=', (raceErr as any).code,
+        );
+        return null;
+      }
+      return (raced as Profile) ?? null;
+    }
+    console.warn(
+      '[profileService] profile recovery insert failed',
+      'message=', insertErr.message,
+      'code=', (insertErr as any).code,
+      'details=', (insertErr as any).details,
+    );
+    return null;
+  }
+  console.log('[profileService] profile recovered successfully');
+  return recovered as Profile;
 }
 
 export type ProfilePatch = {

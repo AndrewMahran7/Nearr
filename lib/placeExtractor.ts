@@ -146,7 +146,10 @@ export function extractPlaceQueryFromShareMetadata(
     const location = (pinIsLocationOnly ? pinPick : null) ?? city;
     chosen = {
       value: location ? `${name} ${location}` : name,
-      confidence: location ? 'high' : 'medium',
+      // Handles are medium confidence at most — a raw @ identity cannot be
+      // verified as a restaurant from the client. The server-side AI layer
+      // provides higher confidence when it has enriched account context.
+      confidence: location ? 'medium' : 'low',
       reason: location ? 'handle+location' : 'handle+keyword',
     };
   } else if (pinPick && !pinIsLocationOnly) {
@@ -226,6 +229,40 @@ function pickAfterLocationPin(s: string): string | null {
   return cleaned.split(' ').slice(0, 6).join(' ');
 }
 
+// ---------------------------------------------------------------------------
+// Creator / repost handle detection
+//
+// Returns true when a handle most likely belongs to a food creator,
+// influencer, or repost-aggregator rather than an actual venue. Such
+// handles are penalized in pickPlaceyHandle to prevent a wrong-restaurant
+// autosave.
+//
+// This is intentionally conservative: false negatives (e.g. treating an
+// unusual restaurant called "Hungry Bear" as a creator) are preferred over
+// false positives that silently save the wrong place.
+//
+// The same constants are duplicated in supabase/functions/process-share-link/
+// index.ts (Deno cannot import from lib/). Keep both in sync.
+// ---------------------------------------------------------------------------
+const _CREATOR_EATS_RE = /eats(?:[a-z]{0,4})?$/;
+const _CREATOR_INDICATOR_WORDS: readonly string[] = [
+  'foodie', 'hungry', 'munchies', 'tasting',
+];
+const _REPOST_PREFIX_RE =
+  /^(?:la|nyc|sf|chi|miami|seattle|dallas|austin|boston|philly|atl|dc|sd|oc)/;
+const _REPOST_SUFFIX_RE =
+  /(?:eats|bites|food|grub|spots|picks|finds|guide|scene|digest|insider)$/;
+
+function looksLikeCreatorOrRepostHandle(handle: string): boolean {
+  const h = handle.toLowerCase().replace(/[._]/g, '');
+  if (_CREATOR_EATS_RE.test(h)) return true;
+  for (const w of _CREATOR_INDICATOR_WORDS) {
+    if (h.includes(w)) return true;
+  }
+  if (_REPOST_PREFIX_RE.test(h) && _REPOST_SUFFIX_RE.test(h)) return true;
+  return false;
+}
+
 function pickPlaceyHandle(s: string): string | null {
   if (!s) return null;
   const lower = s.toLowerCase();
@@ -246,9 +283,12 @@ function pickPlaceyHandle(s: string): string | null {
       if (lower.includes(kw)) score += 1;
     }
     if (/^\d+$/.test(hLower)) score -= 5;
+    // Penalize creator / repost handles — they are not restaurant identities.
+    if (looksLikeCreatorOrRepostHandle(h)) score -= 10;
     if (!best || score > best.score) best = { handle: h, score };
   }
 
+  // Require positive score after creator penalty.
   if (!best || best.score <= 0) return null;
   return best.handle;
 }

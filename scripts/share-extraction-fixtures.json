@@ -182,8 +182,8 @@
   {
     "name": "instagram-villas-tacos-pin-is-neighborhood",
     "input": {
-      "title": "huANGRYfoodie on Instagram: @villastacoslosangeles Villa\u2019s Tacos was no joke",
-      "description": "\ud83d\udccd Highland Park, Los Angeles, CA also a location in Grand Central Market #tacos #lafood",
+      "title": "huANGRYfoodie on Instagram: @villastacoslosangeles Villa’s Tacos was no joke",
+      "description": "📍 Highland Park, Los Angeles, CA also a location in Grand Central Market #tacos #lafood",
       "url": "https://www.instagram.com/p/Cvilla123/",
       "sourceType": "instagram"
     },
@@ -220,5 +220,104 @@
       "sourceType": "tiktok"
     },
     "expectedQuery": "Joe's Pizza Brooklyn"
+  },
+  {
+    "name": "creator-handle-ignored-caption-text-wins",
+    "input": {
+      "title": "@saraheatsla on TikTok: Joe's Pizza in NYC is legendary",
+      "description": "Plain slice perfection. #pizza #nyc",
+      "url": "https://www.tiktok.com/@saraheatsla/video/7400000001",
+      "sourceType": "tiktok"
+    },
+    "expectedQuery": "Joe's Pizza NYC",
+    "_comment": "Creator handle @saraheatsla must be ignored; caption text names the restaurant directly."
+  },
+  {
+    "name": "creator-handle-only-no-strong-candidate",
+    "input": {
+      "title": "follow @hungryjackie for the best food recs",
+      "description": "#foodblogger #lafood",
+      "url": "https://www.instagram.com/p/Ccreator01/",
+      "sourceType": "instagram"
+    },
+    "expectedQuery": "",
+    "_comment": "No restaurant name in caption. Handle @hungryjackie gives no bio or address evidence. Expected: no save."
+  },
+  {
+    "name": "caption-restaurant-name-plus-unrelated-tag",
+    "input": {
+      "title": "dinner last night",
+      "description": "went to Nobu Malibu with @mike_johnson, so good. #malibu",
+      "url": "https://www.instagram.com/p/Cunrelated01/",
+      "sourceType": "instagram"
+    },
+    "expectedQuery": "Nobu Malibu",
+    "_comment": "@mike_johnson is a personal tag. Restaurant name Nobu Malibu in caption must win."
+  },
+  {
+    "name": "address-in-caption-strong-signal",
+    "input": {
+      "title": "hidden gem in nyc",
+      "description": "Joe's Pizza 7 Carmine St New York — still the best slice. #pizza #nyc",
+      "url": "https://www.instagram.com/p/Caddress01/",
+      "sourceType": "instagram"
+    },
+    "expectedQuery": "Joe's Pizza New York",
+    "_comment": "Caption has restaurant name + street address. AI should extract Joe's Pizza New York with high confidence."
+  },
+  {
+    "name": "multiple-handles-only-one-restaurant",
+    "input": {
+      "title": "taco Tuesday",
+      "description": "@saraheatsla discovers @guerrilla_tacos — Downtown LA. #tacos",
+      "url": "https://www.tiktok.com/@saraheatsla/video/7400000002",
+      "sourceType": "tiktok"
+    },
+    "expectedQuery": "Guerrilla Tacos Los Angeles",
+    "_comment": "Caption text names @guerrilla_tacos with Downtown LA context. Gemini uses caption text as evidence, not handle words."
+  },
+  {
+    "name": "no-signal-show-chooser",
+    "input": {
+      "title": "vibes only",
+      "description": "having fun with the crew tonight",
+      "url": "https://www.instagram.com/p/Cnosignal01/",
+      "sourceType": "instagram"
+    },
+    "expectedQuery": "",
+    "_comment": "No restaurant name, no handle, no location. Both heuristic and AI should return empty / low confidence."
+  },
+  {
+    "name": "poster-bio-evidence-beats-tagged-handle",
+    "input": {
+      "title": "Mad Yolks (@mad_yolks) on Instagram: “Sunday brunch done right 🍳”",
+      "description": "Crispy fried eggs, all day brunch vibes. Eggs from @glaumeggranch 🥚 #breakfast #losangeles",
+      "url": "https://www.instagram.com/reel/C-BEtdnyGdR/",
+      "sourceType": "instagram"
+    },
+    "expectedQuery": "Mad Yolks",
+    "_comment": "Poster is @mad_yolks. If bio enrichment classifies @mad_yolks as restaurant_or_business (extractedName=Mad Yolks, extractedCity=Los Angeles), that is the primary venue. @glaumeggranch is a tagged account but the caption does not name it as the place being visited. The pipeline uses poster bio evidence first; @glaumeggranch would not be enriched as a restaurant."
+  },
+  {
+    "name": "handle-text-alone-no-bio-no-caption-name",
+    "input": {
+      "title": "going here this weekend 😍",
+      "description": "check out @madyolkskitchen #brunch #eggs",
+      "url": "https://www.instagram.com/p/Chandle_only_01/",
+      "sourceType": "instagram"
+    },
+    "expectedQuery": "",
+    "_comment": "Handle @madyolkskitchen looks like a restaurant name but no caption names the restaurant explicitly, no address, and no bio enrichment. Handle text alone must NOT be used as a Places query. Expected: no query, manual fallback."
+  },
+  {
+    "name": "tagged-handle-bio-evidence-poster-also-has-bio",
+    "input": {
+      "title": "Collab post from @mad_yolks featuring @sqirlla",
+      "description": "Two of our favorite spots doing a brunch collab. Both have incredible eggs. #brunch #losangeles",
+      "url": "https://www.instagram.com/reel/C-collab02/",
+      "sourceType": "instagram"
+    },
+    "expectedQuery": "Mad Yolks",
+    "_comment": "Both @mad_yolks (poster) and @sqirlla (tagged) may have restaurant bio evidence. Caption mentions both but does not clearly name one as primary. Poster bio evidence is preferred. If both queries produce results, return ambiguous for user confirmation, not silent save."
   }
 ]

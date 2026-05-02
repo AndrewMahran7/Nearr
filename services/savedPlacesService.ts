@@ -227,15 +227,31 @@ export async function saveSavedPlace(
 export async function listSavedPlaces(): Promise<SavedPlaceWithPlace[]> {
   if (isDemoMode()) return await listDemoSavedPlaces();
   if (isMapPreviewMode()) return await listDemoSavedPlaces();
+
+  // Log the session state before querying so we can confirm RLS will pass.
+  // Never log the actual token — only booleans.
+  const { data: sessionData } = await supabase.auth.getSession();
+  const sessionUserId = sessionData.session?.user?.id;
+  console.log(
+    '[savedPlacesService] listSavedPlaces start, sessionPresent=', !!sessionData.session,
+    'userIdPresent=', !!sessionUserId,
+  );
+
   const { data, error } = await supabase
     .from('saved_places')
     .select('*, place:places(*)')
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.warn('[savedPlacesService] list failed', error.message);
+    console.warn(
+      '[savedPlacesService] list failed',
+      'message=', error.message,
+      'code=', (error as any).code,
+      'details=', (error as any).details,
+    );
     throw new Error(error.message);
   }
+  console.log('[savedPlacesService] listSavedPlaces done, count=', (data ?? []).length);
   return (data ?? []) as SavedPlaceWithPlace[];
 }
 

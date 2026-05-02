@@ -39,6 +39,11 @@ export const sharedAuth = {
     if (__DEV__) {
       // Never log the token itself — only presence.
       console.debug('[sharedAuth] setToken ok=', ok, 'present=', !!token);
+    } else if (!ok) {
+      // Log failures outside dev so we can see them in production crash
+      // reporters. Causes: App Group not provisioned, native module not
+      // linked, or AppGroup key missing from host app Info.plist.
+      console.warn('[sharedAuth] setToken failed: App Group write returned false');
     }
     return ok;
   },

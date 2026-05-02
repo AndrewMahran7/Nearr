@@ -119,6 +119,8 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 }
 
 export default function RootLayout() {
+  const router = useRouter();
+
   // One-shot wipe of any leftover Local UI Mode flag. Old installs may have
   // ``nearr.devAuthEnabled=1`` persisted from before the UI entry point was
   // removed; without this, sign-out would silently re-enter Local UI Mode.
@@ -129,16 +131,26 @@ export default function RootLayout() {
   // Handle deep links (magic-link callback + share-incoming).
   useEffect(() => {
     // Cold-start: app launched by tapping the link.
-    Linking.getInitialURL().then((url) => {
-      if (url) handleAuthDeepLink(url);
+    Linking.getInitialURL().then(async (url) => {
+      if (!url) return;
+      console.log('[deeplink] received URL =', url.replace(/[?#].*$/, ''));
+      const handled = await handleAuthDeepLink(url);
+      // Fallback: if onAuthStateChange didn't trigger a navigation, push
+      // the user to home explicitly so the sign-in screen doesn't stay visible.
+      if (handled) {
+        router.replace('/(tabs)/home');
+      }
     });
-    // Warm-start: app already open.
-    const sub = Linking.addEventListener('url', ({ url }) => {
-      if (__DEV__) console.log('[deeplink]', url);
-      handleAuthDeepLink(url);
+    // Warm-start: app already open (e.g. tapping link while app is in background).
+    const sub = Linking.addEventListener('url', async ({ url }) => {
+      console.log('[deeplink] received URL =', url.replace(/[?#].*$/, ''));
+      const handled = await handleAuthDeepLink(url);
+      if (handled) {
+        router.replace('/(tabs)/home');
+      }
     });
     return () => sub.remove();
-  }, []);
+  }, [router]);
 
   // Register notification action categories once per launch, and handle
   // action taps (e.g. "Give me 3 more chances" resets notification_count).

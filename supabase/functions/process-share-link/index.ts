@@ -1,4 +1,4 @@
-// supabase/functions/process-share-link/index.ts
+﻿// supabase/functions/process-share-link/index.ts
 //
 // Server-side handler for the iOS Share Extension's "silent save" flow.
 //
@@ -67,6 +67,8 @@ const CORS_HEADERS = {
 };
 
 serve(async (req) => {
+  console.log('[process-share-link] FUNCTION_INVOKED method=' + req.method);
+
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: CORS_HEADERS });
   }
@@ -88,9 +90,13 @@ serve(async (req) => {
 
   // Accept token from body OR Authorization: Bearer <jwt>.
   const headerAuth = req.headers.get('authorization') ?? '';
-  const bearer = headerAuth.toLowerCase().startsWith('bearer ')
-    ? headerAuth.slice(7).trim()
-    : '';
+  const hasAuthHeader = headerAuth.toLowerCase().startsWith('bearer ');
+  const bearer = hasAuthHeader ? headerAuth.slice(7).trim() : '';
+  const bodyHasToken = !!(body.accessToken?.trim());
+  console.log(
+    '[process-share-link] AUTH_STATE has_authorization_header=' + hasAuthHeader +
+    ' body_has_access_token=' + bodyHasToken,
+  );
   const accessToken = (body.accessToken ?? bearer ?? '').trim();
 
   try {
@@ -167,6 +173,63 @@ async function processShareLink(url: string, accessToken: string): Promise<Resul
 
   const heuristicQuery = buildQuery(title, description);
 
+  // ---- 2b. Instagram public profile enrichment (best-effort) ---------
+  // Strict: max 2 handles per share, 4s per fetch, never throws, never
+  // logs raw bio/HTML. If IG blocks us we fall through normally.
+  let profileEnrichments: InstagramProfileEnrichment[] = [];
+  // Poster handle detected from og:title / meta description / source URL.
+  const posterHandle = source === 'instagram'
+    ? detectPosterHandle(title, description, url)
+    : null;
+  if (posterHandle) {
+    console.log(`[process-share-link] POSTER_HANDLE_DETECTED handle=@${posterHandle}`);
+  }
+  if (source === 'instagram') {
+    const handlesToEnrich = extractRawHandles(
+      title,
+      description,
+      url,
+      MAX_PROFILE_ENRICHMENTS_PER_SHARE,
+      posterHandle,
+    );
+    if (handlesToEnrich.length > 0) {
+      console.log(
+        `[process-share-link] ACCOUNT_ENRICHMENT_REQUESTED count=${handlesToEnrich.length}`,
+      );
+      profileEnrichments = await Promise.all(
+        handlesToEnrich.map((h) => enrichInstagramProfile(h)),
+      );
+      for (const e of profileEnrichments) {
+        if (e.blocked) {
+          console.log(
+            `[process-share-link] ACCOUNT_ENRICHMENT_BLOCKED handle=@${e.handle} reasons=${e.reasons.join(',')}`,
+          );
+        } else if (e.fetched) {
+          console.log(
+            `[process-share-link] ACCOUNT_ENRICHMENT_FETCHED handle=@${e.handle}`,
+          );
+          console.log(
+            `[process-share-link] ACCOUNT_ENRICHMENT_CLASSIFIED handle=@${e.handle} classification=${e.classification} confidence=${e.confidence} reasons=${e.reasons.join(',')}`,
+          );
+          if (e.reasons.includes('no_bio_evidence')) {
+            console.log(
+              `[process-share-link] enrichment_ignored_no_bio_evidence handle=@${e.handle}`,
+            );
+          }
+          if (e.displayName && !e.extractedName) {
+            console.log(
+              `[process-share-link] display_name_not_used_without_bio_evidence handle=@${e.handle}`,
+            );
+          }
+        } else {
+          console.log(
+            `[process-share-link] ACCOUNT_ENRICHMENT_SKIPPED handle=@${e.handle} reasons=${e.reasons.join(',')}`,
+          );
+        }
+      }
+    }
+  }
+
   // ---- 3. Conditional transcription fallback -------------------------
   // Cheap heuristic confidence on metadata alone. If it's strong enough we
   // skip the transcription call entirely (transcription is the slowest +
@@ -207,6 +270,7 @@ async function processShareLink(url: string, accessToken: string): Promise<Resul
     description: description ?? undefined,
     transcript: transcript ?? undefined,
     fallbackQuery: heuristicQuery ?? undefined,
+    profileEnrichments,
   });
 
   if (transcript) {
@@ -227,29 +291,85 @@ async function processShareLink(url: string, accessToken: string): Promise<Resul
   }
 
   // ---- 4c. Feature 4: @handle fallback (no transcript, low confidence) -
-  const handleCandidates = extractHandleCandidates(title, description);
-  console.log(
-    `[process-share-link] HANDLE_CANDIDATES_EXTRACTED count=${handleCandidates.length} url=${truncForLog(url)}`,
+  // Only Places queries derived from bio evidence (extractedName +
+  // extractedAddress/extractedCity) are used here. Raw or humanized
+  // handles are NEVER used as Places queries.
+  type FallbackQuery = {
+    query: string;
+    handle: string;
+    requiredNameHint?: string;
+  };
+  const fallbackQueries: FallbackQuery[] = [];
+
+  // Build a lookup of enrichments by handle (lowercase).
+  const enrichmentByHandle = new Map(
+    profileEnrichments.map((e) => [e.handle.toLowerCase(), e]),
   );
 
-  if (!transcript && confidence === 'low' && handleCandidates.length > 0) {
-    for (const hc of handleCandidates) {
+  // Priority A: poster account enrichment if classified restaurant_or_business
+  // with bio-derived geo anchor.
+  if (posterHandle) {
+    const pe = enrichmentByHandle.get(posterHandle.toLowerCase());
+    if (pe?.fetched && pe.classification === 'restaurant_or_business') {
+      const q = buildPlacesQueryFromEnrichment(pe);
+      if (q) {
+        console.log(`[process-share-link] POSTER_HANDLE_PRIORITIZED handle=@${pe.handle}`);
+        fallbackQueries.push({ query: q, handle: pe.handle, requiredNameHint: pe.extractedName });
+      }
+    }
+  }
+
+  // Priority B: tagged handle enrichments with bio-derived geo anchor.
+  // Only use if the enriched profile is classified restaurant_or_business.
+  // If both poster and a tagged handle have valid enrichment and the caption
+  // does not clearly name one venue, both are queued; the results are returned
+  // as ambiguous so the user can confirm.
+  const queuedHandles = new Set(fallbackQueries.map((f) => f.handle.toLowerCase()));
+  for (const pe of profileEnrichments) {
+    if (queuedHandles.has(pe.handle.toLowerCase())) continue;
+    if (!pe.fetched) continue;
+    if (pe.classification !== 'restaurant_or_business') continue;
+    const q = buildPlacesQueryFromEnrichment(pe);
+    if (q) {
+      console.log(`[process-share-link] TAGGED_HANDLE_ENRICHMENT_USED handle=@${pe.handle}`);
+      fallbackQueries.push({ query: q, handle: pe.handle, requiredNameHint: pe.extractedName });
+    }
+  }
+
+  if (!transcript && confidence === 'low' && fallbackQueries.length > 0) {
+    for (const fq of fallbackQueries) {
       console.log(
-        `[process-share-link] HANDLE_QUERY_ATTEMPTED query="${hc.readableName}" url=${truncForLog(url)}`,
+        `[process-share-link] HANDLE_QUERY_ATTEMPTED query="${fq.query}" handle=@${fq.handle} url=${truncForLog(url)}`,
       );
       try {
-        const handleResults = await searchPlaces(hc.readableName, PLACES_KEY);
-        const handleBusinesses = handleResults.filter(
+        const handleResults = await searchPlaces(fq.query, PLACES_KEY);
+        let handleBusinesses = handleResults.filter(
           (c) => !isAddressLikeTypes(c.types) && !isLocalityLikeTypes(c.types),
         );
+
+        // Wrong-result guard: discard Places results that don't name-overlap
+        // the bio-extracted name. Prevents a query for "Mad Yolks Los Angeles"
+        // from returning an unrelated business.
+        if (fq.requiredNameHint && handleBusinesses.length > 0) {
+          const filtered = handleBusinesses.filter(
+            (c) => nameOverlapScore(c.name, fq.requiredNameHint!) >= 1,
+          );
+          if (filtered.length > 0) {
+            handleBusinesses = filtered;
+          } else {
+            console.log(
+              `[process-share-link] HANDLE_RESULTS_FILTERED_NAME_MISMATCH handle=@${fq.handle} hint="${fq.requiredNameHint}" discarded=${handleBusinesses.length}`,
+            );
+            handleBusinesses = [];
+          }
+        }
+
         if (handleBusinesses.length > 0) {
           console.log(
-            `[process-share-link] HANDLE_QUERY_SUCCESS query="${hc.readableName}" results=${handleBusinesses.length}`,
+            `[process-share-link] ACCOUNT_ENRICHMENT_USED_FOR_PLACES handle=@${fq.handle} results=${handleBusinesses.length}`,
           );
-          // Never auto-save from the low-confidence handle fallback — the AI
-          // confidence was already "low" when we entered this branch, so a
-          // single Google Places hit is not reliable enough to save silently.
-          // Always surface candidates to the app for user confirmation.
+          // Never auto-save from the low-confidence handle fallback.
+          // Always surface candidates for user confirmation.
           if (handleBusinesses.length === 1) {
             console.log(
               `[process-share-link] HANDLE_FALLBACK_BLOCKED_AUTOSAVE place="${handleBusinesses[0].name}"`,
@@ -265,17 +385,16 @@ async function processShareLink(url: string, accessToken: string): Promise<Resul
           };
         } else {
           console.log(
-            `[process-share-link] HANDLE_QUERY_FAILED query="${hc.readableName}" reason=no_results`,
+            `[process-share-link] HANDLE_QUERY_FAILED query="${fq.query}" handle=@${fq.handle} reason=no_results`,
           );
         }
       } catch (err) {
         console.log(
-          `[process-share-link] HANDLE_QUERY_FAILED query="${hc.readableName}" reason=${(err as Error)?.message}`,
+          `[process-share-link] HANDLE_QUERY_FAILED query="${fq.query}" handle=@${fq.handle} reason=${(err as Error)?.message}`,
         );
       }
     }
   }
-
   if (!chosenQuery) {
     return { status: 'failed_requires_app', reason: 'no_query' };
   }
@@ -476,6 +595,7 @@ async function extractPlaceAI(input: {
   description?: string;
   transcript?: string;
   fallbackQuery?: string;
+  profileEnrichments?: InstagramProfileEnrichment[];
 }): Promise<AIResult> {
   const apiKey = Deno.env.get('GEMINI_API_KEY') ?? '';
   if (!apiKey) {
@@ -532,6 +652,7 @@ function buildAIPrompt(input: {
   description?: string;
   transcript?: string;
   fallbackQuery?: string;
+  profileEnrichments?: InstagramProfileEnrichment[];
 }): string {
   // Truncate transcript to keep token cost predictable. The prompt instructs
   // the model to use it ONLY if title/description are insufficient, so a
@@ -542,13 +663,66 @@ function buildAIPrompt(input: {
     ? rawT.slice(0, TRANSCRIPT_MAX) + '…'
     : rawT;
 
+  // Build a sanitized profile-enrichment summary. Only include classification
+  // and EXTRACTED business evidence. Never include raw bio text in the prompt.
+  const profileLines: string[] = [];
+  for (const e of input.profileEnrichments ?? []) {
+    if (!e.fetched) continue;
+    const parts = [
+      `@${e.handle}`,
+      `classification=${e.classification}`,
+      `confidence=${e.confidence}`,
+    ];
+    if (e.displayName) parts.push(`displayName="${e.displayName.replace(/"/g, "'")}"`);
+    if (e.extractedName) parts.push(`extractedName="${e.extractedName.replace(/"/g, "'")}"`);
+    if (e.extractedAddress) parts.push(`extractedAddress="${e.extractedAddress.replace(/"/g, "'")}"`);
+    if (e.extractedCity) parts.push(`extractedCity="${e.extractedCity.replace(/"/g, "'")}"`);
+    profileLines.push(parts.join(' '));
+  }
+  const profileBlock = profileLines.length > 0
+    ? profileLines.join('\n')
+    : '(none)';
+
   return [
     'You are a place-extraction assistant for a maps app.',
-    'Identify the SINGLE real-world business or place referenced by this social media share.',
-    'Ignore creator handles, hashtags, emoji, and platform boilerplate.',
-    'Prefer tagged business handles (@name) and named venues over neighborhoods.',
-    'If only a neighborhood/city is mentioned (no business), confidence MUST be "low".',
-    'If a transcript is provided, use it ONLY when title/description do not name a venue.',
+    'Identify the PRIMARY real-world restaurant or place that this social media post is ABOUT.',
+    'The primary venue is where the poster is eating, visiting, or recommending.',
+    '',
+    'Evidence priority (highest to lowest):',
+    '  1. Explicit address in caption/title (highest confidence).',
+    '  2. Explicit restaurant/place name in caption/title.',
+    '  3. Profile bio evidence: extractedName + extractedAddress/extractedCity from profileMetadata.',
+    '  4. Transcript content (only when 1-3 are absent or ambiguous).',
+    '  5. Nothing else — do NOT infer from handle text, display names, or general keywords.',
+    '',
+    'CRITICAL — handle text is NOT evidence:',
+    '  - Do NOT use the words inside an @handle to guess a restaurant name.',
+    '  - @handles are only pointers to profile metadata. Ignore the handle string itself.',
+    '  - @handle alone, however business-like it looks, is NOT sufficient evidence.',
+    '',
+    'Tagged accounts in a post are NOT automatically the primary venue:',
+    '  - A tagged account may be a supplier, collaborator, ingredient source, or credit.',
+    '  - Only treat a tagged account as the primary venue if caption/bio/transcript',
+    '    clearly establishes it as the place being visited or reviewed.',
+    '  - If the poster\'s own profile (classification=restaurant_or_business) has bio',
+    '    evidence and the caption does not clearly name a different restaurant,',
+    '    prefer the poster\'s profile as the primary venue.',
+    '',
+    'displayName rules:',
+    '  - displayName is an account name, NOT a confirmed restaurant name.',
+    '  - Do NOT output a displayName as the restaurant name unless the bio confirms it',
+    '    with extractedAddress or extractedCity. Without geo evidence, confidence = "low".',
+    '',
+    'profileMetadata comes from PUBLIC Instagram profile pages:',
+    '  - Use ONLY extractedName/extractedAddress/extractedCity (derived from bio text).',
+    '  - If classification is food_creator/repost_page/personal_account/unrelated_or_unknown,',
+    '    do NOT treat that handle as a venue identity.',
+    '  - If classification=restaurant_or_business but extractedAddress and extractedCity',
+    '    are both absent, treat as low confidence.',
+    '',
+    'Output rules:',
+    '  - The query MUST be a physical place name + location, NEVER a social handle.',
+    '  - Prefer named venues over neighborhoods. City/neighborhood alone → confidence = "low".',
     'Return STRICT JSON: {"query": string, "confidence": "high"|"medium"|"low", "reason": string}',
     '',
     `sourceType: ${input.sourceType ?? ''}`,
@@ -557,6 +731,7 @@ function buildAIPrompt(input: {
     `description: ${input.description ?? ''}`,
     `transcript: ${transcript}`,
     `fallbackQuery: ${input.fallbackQuery ?? ''}`,
+    `profileMetadata:\n${profileBlock}`,
   ].join('\n');
 }
 
@@ -1003,7 +1178,7 @@ function scoreMetadataConfidence(
   score += Math.min(properNounTokens, 2) * 0.3;
 
   const blob = `${title ?? ''} ${description ?? ''}`;
-  if (/@[A-Za-z0-9_.]{2,}/.test(blob)) score += 0.2;
+
   if (/\b(?:at|in)\s+[A-Z][a-zA-Z'’]{2,}/.test(blob)) score += 0.2;
 
   const lower = heuristicQuery.toLowerCase();
@@ -1026,107 +1201,56 @@ function truncForLog(s: string): string {
 // ---------------------------------------------------------------------------
 // Feature 4: @handle extraction helper
 //
-// Extracts @handles from title/description that are likely business names
-// (co-located with food/place keywords or location emoji).
-// Does NOT scrape Instagram profiles or use the Graph API.
+// @handles are only pointers to profile metadata. Handle text is never
+// used as restaurant evidence. Places queries are only built from
+// bio-derived extractedName + extractedAddress/extractedCity.
 // ---------------------------------------------------------------------------
 
 type HandleCandidate = {
   handle: string;
-  readableName: string;
-  confidence: number;
-  reason: string;
+  /** Where the handle came from. */
+  source: 'poster' | 'caption_tag' | 'url' | 'unknown';
 };
 
-const HANDLE_FOOD_WORDS = [
-  'restaurant', 'cafe', 'coffee', 'bar', 'pizza', 'taco', 'tacos', 'sushi',
-  'ramen', 'burger', 'bbq', 'bakery', 'kitchen', 'grill', 'chicken',
-  'sandwich', 'deli', 'fried', 'grilled', 'house', 'market', 'eatery',
-  'bistro', 'diner', 'boba', 'donut', 'gelato', 'brewery', 'winery',
-];
-
-const HANDLE_SPLIT_TOKENS = [
-  ...HANDLE_FOOD_WORDS,
-  'los', 'angeles', 'new', 'york', 'san', 'francisco', 'santa', 'monica',
-  'downtown', 'brooklyn', 'hollywood', 'beverly', 'hills', 'bros', 'co',
-  'company', 'roasted', 'smoked', 'spicy', 'sweet',
-];
-
-function humanizeHandleEdge(handle: string): string {
-  let s = handle.replace(/[._]+/g, ' ').toLowerCase();
-  for (let pass = 0; pass < 2; pass++) {
-    for (const tok of HANDLE_SPLIT_TOKENS) {
-      const compact = tok.replace(/\s+/g, '');
-      if (!/^[a-z]+$/.test(compact)) continue;
-      const reBefore = new RegExp(`([a-z])(${compact})(?=[a-z]|$)`, 'g');
-      s = s.replace(reBefore, '$1 $2');
-      const reAfter = new RegExp(`(^|\\s)(${compact})(?=[a-z])`, 'g');
-      s = s.replace(reAfter, '$1$2 ');
-    }
-  }
-  return s.replace(/\s+/g, ' ').trim();
-}
-
-function extractHandleCandidates(
+/**
+ * Try to determine the poster's Instagram handle from share metadata.
+ * Returns lowercase handle without @, or null if not determinable.
+ *
+ * For a reel URL like instagram.com/reel/XXX the path does not contain the
+ * poster's handle. Instead, og:title often reads:
+ *   "Mad Yolks (@mad_yolks) • Instagram photo"
+ * and og:description starts with
+ *   "N Followers … - Mad Yolks (@mad_yolks) on Instagram: \"…\""
+ * We also check the source URL itself in case it IS a profile URL.
+ */
+function detectPosterHandle(
   title: string | null,
   description: string | null,
-): HandleCandidate[] {
-  const combined = [title, description].filter(Boolean).join('\n');
-  if (!combined) return [];
+  sourceUrl: string,
+): string | null {
+  // 1. Source URL is a profile page: instagram.com/<handle>/
+  const profileMatch = sourceUrl.match(
+    /instagram\.com\/(?!(?:p|reel|reels|tv|explore|stories|accounts)\b)([A-Za-z0-9._]{2,30})(?:\/|$)/i,
+  );
+  if (profileMatch) return profileMatch[1].toLowerCase();
 
-  const lower = combined.toLowerCase();
-  const handleRe = /@([A-Za-z0-9._]+)/g;
-  const handles: string[] = [];
-  let m: RegExpExecArray | null;
-  while ((m = handleRe.exec(combined)) !== null) {
-    handles.push(m[1]);
-  }
-  if (handles.length === 0) return [];
-
-  const candidates: HandleCandidate[] = [];
-  for (const h of handles) {
-    const hLower = h.toLowerCase().replace(/[._]/g, '');
-    if (/^\d+$/.test(h) || h.length < 4) continue;
-
-    let score = 0;
-    let reason = 'handle';
-
-    // Handle itself contains a food/place keyword?
-    for (const kw of HANDLE_FOOD_WORDS) {
-      if (hLower.includes(kw.replace(/\s/g, ''))) {
-        score += 2;
-        reason = 'handle+food_keyword';
-        break;
-      }
-    }
-
-    // Caption text near the handle contains food/place context?
-    for (const kw of HANDLE_FOOD_WORDS) {
-      if (lower.includes(kw)) {
-        score += 1;
-        break;
-      }
-    }
-
-    // Location emoji in caption?
-    if (combined.includes('\u{1F4CD}') || combined.includes('\u{1F4CC}')) score += 1;
-
-    // Handle appears in description (more likely to be the tagged business)?
-    if (description?.toLowerCase().includes('@' + h.toLowerCase())) score += 1;
-
-    if (score >= 2) {
-      candidates.push({
-        handle: h,
-        readableName: humanizeHandleEdge(h),
-        confidence: score,
-        reason,
-      });
-    }
+  // 2. og:title: "Name (@handle) • …"
+  if (title) {
+    const m = title.match(/\(@([A-Za-z0-9._]{2,30})\)/);
+    if (m) return m[1].toLowerCase();
   }
 
-  candidates.sort((a, b) => b.confidence - a.confidence);
-  return candidates.slice(0, 3);
+  // 3. og:description / meta description
+  if (description) {
+    // "… - Name (@handle) on Instagram:"
+    const m = description.match(/\(@([A-Za-z0-9._]{2,30})\)\s+on\s+Instagram/i);
+    if (m) return m[1].toLowerCase();
+  }
+
+  return null;
 }
+
+
 
 // ---------------------------------------------------------------------------
 // Feature 5: auto-note generation
@@ -1189,4 +1313,521 @@ function generateAutoNote(
   }
 
   return null;
+}
+
+// ---------------------------------------------------------------------------
+// Instagram public profile enrichment
+//
+// Best-effort fetch of public Instagram profile pages to:
+//   1. Classify a handle as a real business vs. a creator/repost page.
+//   2. Extract a real place name / address / city to feed Google Places.
+//
+// Strict rules:
+//   - PUBLIC pages only. No login. No cookies. No credentials.
+//   - No browser automation, no third-party scraping APIs.
+//   - Strict per-handle timeout (4s). Hard cap on enrichments per share (2).
+//   - Never throws. Failures return { fetched:false, blocked, confidence:'low' }.
+//   - Do not log raw bio or HTML. Log only classification + reason codes.
+//   - When Instagram returns a login wall, 4xx, 5xx, or empty meta tags,
+//     the share flow continues normally (no inflated confidence).
+// ---------------------------------------------------------------------------
+
+type InstagramProfileClassification =
+  | 'restaurant_or_business'
+  | 'food_creator'
+  | 'repost_page'
+  | 'personal_account'
+  | 'unrelated_or_unknown';
+
+type InstagramProfileEnrichment = {
+  platform: 'instagram';
+  handle: string;
+  fetched: boolean;
+  blocked: boolean;
+  classification: InstagramProfileClassification;
+  displayName?: string;
+  /** Sanitized bio. Bounded length. Stored only in-memory; never logged. */
+  bio?: string;
+  website?: string;
+  extractedName?: string;
+  extractedAddress?: string;
+  extractedCity?: string;
+  confidence: 'high' | 'medium' | 'low';
+  reasons: string[];
+};
+
+const PROFILE_FETCH_TIMEOUT_MS = 4_000;
+const MAX_PROFILE_ENRICHMENTS_PER_SHARE = 2;
+const PROFILE_BIO_MAX_LEN = 400;
+const PROFILE_USER_AGENT =
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 ' +
+  '(KHTML, like Gecko) Version/17.4 Safari/605.1.15';
+
+const PROFILE_BUSINESS_KEYWORDS: readonly string[] = [
+  'restaurant', 'cafe', 'café', 'coffee', 'bakery', 'bar', 'pub', 'pizza',
+  'pizzeria', 'ramen', 'sushi', 'taco', 'tacos', 'taqueria', 'burger',
+  'burgers', 'kitchen', 'grill', 'bistro', 'diner', 'dessert', 'boba',
+  'ice cream', 'gelato', 'bbq', 'barbecue', 'noodle', 'noodles', 'dumpling',
+  'deli', 'eatery', 'brunch', 'brasserie', 'trattoria', 'osteria', 'izakaya',
+  'taproom', 'brewery', 'winery', 'patisserie', 'creperie', 'cantina',
+  'smokehouse', 'steakhouse', 'sandwich', 'chicken', 'donut', 'doughnut',
+];
+
+const PROFILE_CREATOR_PHRASES: readonly string[] = [
+  'food blogger', 'food critic', 'food writer', 'food influencer',
+  'content creator', 'foodie', 'food creator', 'reviews', 'food reviews',
+  'restaurant reviews', 'finds', 'food finds', 'guide', 'food guide',
+  'eats', 'best eats', 'media', 'magazine', 'newsletter', 'curator',
+];
+
+// Address: "<#> <street name> <suffix>". Conservative.
+const PROFILE_ADDRESS_RE =
+  /\b\d{1,5}\s+[A-Za-z][\w'.\- ]{1,40}?\s+(?:st|street|ave|avenue|blvd|boulevard|rd|road|dr|drive|way|ln|lane|ct|court|pl|place|hwy|highway)\b\.?/i;
+
+// City + state pattern: "Los Angeles, CA" / "Brooklyn, NY".
+const PROFILE_CITY_STATE_RE =
+  /\b([A-Z][a-zA-Z][\w'.\- ]{1,30}?),\s*([A-Z]{2})\b/;
+
+const PROFILE_WEBSITE_RE = /\bhttps?:\/\/[^\s"'<>]+/i;
+
+/**
+ * Enrich a single Instagram handle from its public profile page.
+ * Best-effort. Always resolves; never throws.
+ */
+async function enrichInstagramProfile(
+  handle: string,
+): Promise<InstagramProfileEnrichment> {
+  const safeHandle = (handle ?? '').replace(/^@+/, '').trim();
+  const empty: InstagramProfileEnrichment = {
+    platform: 'instagram',
+    handle: safeHandle,
+    fetched: false,
+    blocked: false,
+    classification: 'unrelated_or_unknown',
+    confidence: 'low',
+    reasons: [],
+  };
+  if (!safeHandle || !/^[A-Za-z0-9._]{2,30}$/.test(safeHandle)) {
+    return { ...empty, reasons: ['invalid_handle'] };
+  }
+
+  const url = `https://www.instagram.com/${encodeURIComponent(safeHandle)}/`;
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), PROFILE_FETCH_TIMEOUT_MS);
+
+  let html = '';
+  let httpStatus = 0;
+  try {
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'User-Agent': PROFILE_USER_AGENT,
+        Accept: 'text/html,application/xhtml+xml',
+        'Accept-Language': 'en-US,en;q=0.9',
+      },
+      signal: ctrl.signal,
+      redirect: 'follow',
+    });
+    httpStatus = res.status;
+    if (!res.ok) {
+      // 401/403/429/5xx → treat as blocked.
+      const blocked = res.status === 401 || res.status === 403 || res.status === 429 || res.status >= 500;
+      return {
+        ...empty,
+        blocked,
+        reasons: [`http_${res.status}`],
+      };
+    }
+    html = await res.text();
+  } catch (err) {
+    const isAbort = (err as Error)?.name === 'AbortError';
+    return {
+      ...empty,
+      blocked: false,
+      reasons: [isAbort ? 'timeout' : 'fetch_error'],
+    };
+  } finally {
+    clearTimeout(timer);
+  }
+
+  if (!html || html.length < 200) {
+    return { ...empty, reasons: ['empty_html'] };
+  }
+
+  // Login wall detection. IG often renders a thin shell with a login prompt
+  // for unauthenticated requests to private/limited profiles.
+  const looksLikeLoginWall =
+    /loginForm|"requires_login":true|Log in to Instagram|Log in to see/i.test(html);
+  if (looksLikeLoginWall && !pickMeta(html, 'og:description')) {
+    return { ...empty, blocked: true, reasons: ['login_wall'] };
+  }
+
+  // Parse public meta only.
+  const ogTitle = pickMeta(html, 'og:title');
+  const ogDescription = pickMeta(html, 'og:description');
+  const metaDescription = pickMeta(html, 'description'); // <meta name="description">
+  const twTitle = pickMeta(html, 'twitter:title');
+  const twDescription = pickMeta(html, 'twitter:description');
+  const pageTitle = pickTitle(html);
+
+  // og:title typically: "Display Name (@handle) • Instagram photos and videos"
+  // meta name="description" typically:
+  //   "1,645 Followers, 302 Following, 187 Posts - CruzHacks (@cruzhacks) on Instagram: "⭐️ UC Santa Cruz's Premier Hackathon ...""
+  // The quoted portion after "on Instagram:" is the actual profile bio.
+  // Prefer meta name="description" over og:description for the bio since it
+  // more reliably includes the quoted bio text in the format IG uses for
+  // unauthenticated public page renders.
+  const rawTitle = ogTitle ?? twTitle ?? pageTitle ?? '';
+
+  // Try meta name="description" first for the bio (highest fidelity).
+  const bioFromMetaDesc = metaDescription
+    ? extractInstagramBioFromMetaDescription(metaDescription)
+    : undefined;
+
+  // Fallback: derive bio from og:description (or twitter:description).
+  const rawDesc = ogDescription ?? twDescription ?? metaDescription ?? '';
+  const bioFromOgDesc = parseBioFromOgDescription(rawDesc, undefined, safeHandle);
+
+  const displayName = parseDisplayNameFromOgTitle(rawTitle) ??
+    parseDisplayNameFromMetaDescription(metaDescription) ?? undefined;
+  const bio = bioFromMetaDesc ?? bioFromOgDesc;
+
+  if (!displayName && !bio) {
+    return {
+      ...empty,
+      fetched: true,
+      reasons: ['no_useful_metadata'],
+    };
+  }
+
+  const evidence = extractBusinessEvidenceFromProfileMetadata(
+    displayName,
+    bio,
+    /* website */ undefined,
+  );
+
+  // Classify.
+  const classification = classifyProfile({
+    handle: safeHandle,
+    displayName,
+    bio,
+    evidence,
+  });
+
+  return {
+    platform: 'instagram',
+    handle: safeHandle,
+    fetched: true,
+    blocked: false,
+    classification: classification.classification,
+    displayName,
+    bio: bio?.slice(0, PROFILE_BIO_MAX_LEN),
+    website: evidence.website,
+    extractedName: evidence.extractedName,
+    extractedAddress: evidence.extractedAddress,
+    extractedCity: evidence.extractedCity,
+    confidence: classification.confidence,
+    reasons: classification.reasons,
+  };
+}
+
+function parseDisplayNameFromOgTitle(s: string | null | undefined): string | null {
+  if (!s) return null;
+  // "Display Name (@handle) • Instagram photos and videos"
+  const m = s.match(/^(.*?)\s*\(@[A-Za-z0-9._]+\)/);
+  if (m && m[1]) return m[1].trim().slice(0, 80);
+  // Fallback: take part before bullet/pipe.
+  const cleaned = s.split(/\s*[•|·]\s*/)[0]?.trim();
+  return cleaned ? cleaned.slice(0, 80) : null;
+}
+
+/**
+ * Extract the display name from meta name="description" content.
+ *
+ * Format IG uses for public profiles:
+ *   "1,645 Followers, 302 Following, 187 Posts - CruzHacks (@cruzhacks) on Instagram: ..."
+ *
+ * Returns the name before the (@handle) portion, e.g. "CruzHacks".
+ */
+function parseDisplayNameFromMetaDescription(s: string | null | undefined): string | null {
+  if (!s) return null;
+  // Match: "... - <Name> (@handle) on Instagram:"
+  const m = s.match(/[-–]\s+(.*?)\s*\(@[A-Za-z0-9._]+\)\s+on Instagram:/i);
+  if (m && m[1]) return m[1].trim().slice(0, 80);
+  return null;
+}
+
+/**
+ * Extract the actual profile bio from meta name="description" content.
+ *
+ * IG encodes the profile bio as a quoted string after "on Instagram:":
+ *   "1,645 Followers, 302 Following, 187 Posts - CruzHacks (@cruzhacks) on Instagram: "⭐️ UC Santa Cruz's Premier Hackathon ...""
+ *
+ * Returns the unquoted bio text, e.g. "⭐️ UC Santa Cruz's Premier Hackathon ..."
+ * Returns null if the pattern is not found.
+ *
+ * Examples:
+ *   extractInstagramBioFromMetaDescription(
+ *     '1,645 Followers, 302 Following, 187 Posts - CruzHacks (@cruzhacks) on Instagram: "⭐️ UC Santa Cruz\'s Premier Hackathon"'
+ *   ) → '⭐️ UC Santa Cruz\'s Premier Hackathon'
+ *
+ *   extractInstagramBioFromMetaDescription(
+ *     '200 Followers, 50 Following, 12 Posts - Joe\'s Pizza (@joespizzanyc) on Instagram: "7 Carmine St, New York, NY · Best pizza in NYC"'
+ *   ) → '7 Carmine St, New York, NY · Best pizza in NYC'
+ */
+function extractInstagramBioFromMetaDescription(s: string): string | null {
+  if (!s) return null;
+  // Match: `... on Instagram: "bio text"` — both curly (\u201C/\u201D) and straight quotes.
+  const m = s.match(/on Instagram:\s*[\u201C"]([\s\S]*?)[\u201D"]?\s*$/i);
+  if (m && m[1]) {
+    const bio = m[1].replace(/\s+/g, ' ').trim();
+    return bio.length >= 2 ? bio.slice(0, PROFILE_BIO_MAX_LEN) : null;
+  }
+  // Fallback: everything after "on Instagram: " without quotes.
+  const m2 = s.match(/on Instagram:\s+([\s\S]{4,})/i);
+  if (m2 && m2[1]) {
+    const bio = m2[1].replace(/\s+/g, ' ').trim();
+    return bio.length >= 2 ? bio.slice(0, PROFILE_BIO_MAX_LEN) : null;
+  }
+  return null;
+}
+
+function parseBioFromOgDescription(
+  desc: string | null | undefined,
+  displayName?: string,
+  handle?: string,
+): string | undefined {
+  if (!desc) return undefined;
+  // IG og:description usually starts with "N Followers, M Following, K Posts - See Instagram photos and videos from <Name>"
+  // followed sometimes by " - <bio prefix>". We try to take whatever is AFTER
+  // the standard "See Instagram..." sentinel as bio content.
+  const sentinelRe = /See Instagram (?:photos|reels and photos|posts and reels|videos|reels) (?:from|by)\s+[^.\n]{1,80}\.?/i;
+  let bio: string | undefined;
+  const splitIdx = desc.search(sentinelRe);
+  if (splitIdx >= 0) {
+    const afterMatch = desc.slice(splitIdx).replace(sentinelRe, '').trim();
+    if (afterMatch.length >= 4) bio = afterMatch;
+  }
+  // Fallback: if og:description is short (< 220 chars) and doesn't look like
+  // the followers boilerplate, treat it as the bio.
+  if (!bio && desc.length < 220 && !/Followers,\s*\d/.test(desc)) {
+    bio = desc;
+  }
+  if (!bio) return undefined;
+
+  // Strip leading display name / handle echoes.
+  if (displayName) {
+    bio = bio.replace(new RegExp(`^${escapeReg(displayName)}[\\s:,-]+`, 'i'), '');
+  }
+  if (handle) {
+    bio = bio.replace(new RegExp(`^@?${escapeReg(handle)}[\\s:,-]+`, 'i'), '');
+  }
+  bio = bio.replace(/\s+/g, ' ').trim();
+  if (bio.length > PROFILE_BIO_MAX_LEN) bio = bio.slice(0, PROFILE_BIO_MAX_LEN);
+  return bio || undefined;
+}
+
+function escapeReg(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+type BusinessEvidence = {
+  extractedName?: string;
+  extractedAddress?: string;
+  extractedCity?: string;
+  website?: string;
+  hasBusinessKeyword: boolean;
+  hasCreatorPhrase: boolean;
+};
+
+function extractBusinessEvidenceFromProfileMetadata(
+  displayName?: string,
+  bio?: string,
+  website?: string,
+): BusinessEvidence {
+  const ev: BusinessEvidence = {
+    hasBusinessKeyword: false,
+    hasCreatorPhrase: false,
+  };
+
+  // IMPORTANT: scan BIO only for keyword/creator signals.
+  // Using displayName in the scan would let a display name like "Ramen Palace"
+  // classify any account as a restaurant even with zero bio evidence.
+  const bioLower = (bio ?? '').toLowerCase();
+
+  for (const kw of PROFILE_BUSINESS_KEYWORDS) {
+    if (bioLower.includes(kw)) {
+      ev.hasBusinessKeyword = true;
+      break;
+    }
+  }
+  for (const p of PROFILE_CREATOR_PHRASES) {
+    if (bioLower.includes(p)) {
+      ev.hasCreatorPhrase = true;
+      break;
+    }
+  }
+
+  if (bio) {
+    const addr = bio.match(PROFILE_ADDRESS_RE);
+    if (addr) ev.extractedAddress = addr[0].replace(/\s+/g, ' ').trim();
+    const cs = bio.match(PROFILE_CITY_STATE_RE);
+    if (cs) ev.extractedCity = `${cs[1].trim()}, ${cs[2]}`;
+    const w = bio.match(PROFILE_WEBSITE_RE);
+    if (w) ev.website = w[0];
+  }
+  if (website && !ev.website) ev.website = website;
+
+  if (displayName) {
+    // Only promote displayName to extractedName when BIO contains real
+    // business evidence (address, city, or business keyword).
+    // A display name alone — however business-sounding — is NOT evidence
+    // that the account represents a single physical restaurant.
+    const bioHasEvidence =
+      !!ev.extractedAddress ||
+      !!ev.extractedCity ||
+      ev.hasBusinessKeyword;
+    if (bioHasEvidence) {
+      ev.extractedName = displayName.trim().slice(0, 80);
+    } else {
+      // displayName is kept as metadata on the enrichment object but must
+      // not be used as a Places query on its own.
+      // Callers log: display_name_not_used_without_bio_evidence
+    }
+  }
+
+  return ev;
+}
+
+function classifyProfile(input: {
+  handle: string;
+  displayName?: string;
+  bio?: string;
+  evidence: BusinessEvidence;
+}): { classification: InstagramProfileClassification; confidence: 'high' | 'medium' | 'low'; reasons: string[] } {
+  const { handle, evidence } = input;
+  const reasons: string[] = [];
+
+  // Creator/repost evidence wins over business evidence (avoid wrong saves).
+  if (evidence.hasCreatorPhrase) {
+    reasons.push('bio_creator_phrase');
+    return { classification: 'food_creator', confidence: 'high', reasons };
+  }
+  // Strong business signals: address OR (business keyword + city/state).
+  if (evidence.extractedAddress) {
+    reasons.push('bio_address');
+    if (evidence.extractedCity) reasons.push('bio_city_state');
+    return {
+      classification: 'restaurant_or_business',
+      confidence: 'high',
+      reasons,
+    };
+  }
+  if (evidence.hasBusinessKeyword && evidence.extractedCity) {
+    reasons.push('bio_business_keyword');
+    reasons.push('bio_city_state');
+    return {
+      classification: 'restaurant_or_business',
+      confidence: 'high',
+      reasons,
+    };
+  }
+  if (evidence.hasBusinessKeyword) {
+    reasons.push('bio_business_keyword');
+    return {
+      classification: 'restaurant_or_business',
+      confidence: 'medium',
+      reasons,
+    };
+  }
+
+  // No bio evidence at all. A business-like handle or display name is not
+  // enough — log and return unrelated_or_unknown so the handle is not
+  // searched as a venue name.
+  reasons.push('no_bio_evidence');
+  return {
+    classification: 'unrelated_or_unknown',
+    confidence: 'low',
+    reasons,
+  };
+}
+
+/**
+ * Build a Google Places query from a fetched + classified profile.
+ *
+ * Requires at least one geo anchor (address or city) from the bio.
+ * displayName or handle alone are NOT sufficient — we would risk searching
+ * an unrelated business with the same display name in a different city.
+ * Logs enrichment_query_blocked_no_address_or_city when blocked.
+ */
+function buildPlacesQueryFromEnrichment(
+  e: InstagramProfileEnrichment,
+): string | null {
+  if (e.classification !== 'restaurant_or_business') return null;
+
+  // Require at least one geo anchor derived from the bio.
+  const hasGeoAnchor = !!e.extractedAddress || !!e.extractedCity;
+  if (!hasGeoAnchor) {
+    console.log(
+      `[process-share-link] enrichment_query_blocked_no_address_or_city handle=@${e.handle}`,
+    );
+    return null;
+  }
+
+  const parts: string[] = [];
+  // Prefer bio-derived name; never fall back to raw displayName or handle.
+  if (e.extractedName) parts.push(e.extractedName);
+  if (e.extractedAddress) parts.push(e.extractedAddress);
+  else if (e.extractedCity) parts.push(e.extractedCity);
+  const q = parts.join(' ').replace(/\s+/g, ' ').trim();
+
+  if (q.length < 4) {
+    console.log(
+      `[process-share-link] enrichment_query_blocked_no_address_or_city handle=@${e.handle}`,
+    );
+    return null;
+  }
+  return q;
+}
+
+/**
+ * Extract raw @handles from text (no creator filtering). Used to decide
+ * which handles to enrich. Returns at most `limit` unique lowercase handles
+ * in order of first appearance.
+ */
+function extractRawHandles(
+  title: string | null,
+  description: string | null,
+  sourceUrl: string,
+  limit: number,
+  posterHandle: string | null,
+): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  const push = (h: string) => {
+    const key = h.toLowerCase();
+    if (seen.has(key)) return;
+    if (!/^[A-Za-z0-9._]{2,30}$/.test(h)) return;
+    if (/^\d+$/.test(h)) return;
+    seen.add(key);
+    out.push(h);
+  };
+
+  // Poster handle always comes first so it is enriched before caption-tagged handles.
+  if (posterHandle) push(posterHandle);
+
+  const blob = [title, description].filter(Boolean).join('\n');
+  const re = /@([A-Za-z0-9._]+)/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(blob)) !== null) {
+    push(m[1]);
+    if (out.length >= limit) return out;
+  }
+  // Pull handle from URL path: instagram.com/<handle>/...
+  const urlMatch = sourceUrl.match(/instagram\.com\/([A-Za-z0-9._]+)(?:\/|$)/i);
+  if (urlMatch) {
+    const reserved = new Set(['p', 'reel', 'reels', 'tv', 'explore', 'stories', 'accounts']);
+    if (!reserved.has(urlMatch[1].toLowerCase())) push(urlMatch[1]);
+  }
+  return out.slice(0, limit);
 }
