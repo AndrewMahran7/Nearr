@@ -199,6 +199,9 @@ export default function MapScreen() {
   const [mapReady, setMapReady] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
   const didFitRef = useRef(false);
+  // Set to true when the user pans or zooms the map so auto-centering
+  // effects don't override the user's chosen viewport.
+  const hasUserMovedRef = useRef(false);
   // Tracks which `savedPlaceId` deep-link we've already focused on. Reset
   // implicitly when the param changes to a new id so coming back to the
   // same place from a different card still triggers the focus animation.
@@ -269,8 +272,8 @@ export default function MapScreen() {
         setUserRegion({
           latitude: loc.coords.latitude,
           longitude: loc.coords.longitude,
-          latitudeDelta: 0.05,
-          longitudeDelta: 0.05,
+          latitudeDelta: 0.03,
+          longitudeDelta: 0.03,
         });
       } catch (e) {
         if (cancelled) return;
@@ -350,50 +353,25 @@ export default function MapScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mapPreview]);
 
-  // ---- once we have data + a ready map, fit the camera to all zones ----
-  // Guarded by `mapReady` so we never call into the native map before the
-  // view is fully wired up. Skipped in Map Preview Mode — the static
-  // `initialRegion` is the single source of truth there.
-  //
-  // We frame the *zones* (marker + radius bubble), not just the pins. This
-  // is what makes the screen read as Life360-style coverage instead of a
-  // tightly-zoomed pin. For a single place this means the whole circle is
-  // visible on first paint; for many it means none of the bubbles get
-  // clipped at the screen edge.
-  useEffect(() => {
-    if (mapPreview) return;
-    if (!mapReady) return;
-    if (didFitRef.current) return;
-    if (!mapRef.current) return;
-    if (validPlaces.length === 0) return;
-
-    const coords = allZoneBoundingCoords(validPlaces, profile);
-    if (coords.length === 0) return;
-    didFitRef.current = true;
-    try {
-      mapRef.current.fitToCoordinates(coords, {
-        edgePadding: { top: 100, right: 100, bottom: 180, left: 100 },
-        animated: true,
-      });
-    } catch (e) {
-      if (__DEV__) console.debug('[map] fitToCoordinates skipped', e);
-    }
-  }, [validPlaces, mapPreview, mapReady, profile]);
-
-  // When we acquire a GPS fix *after* the map has mounted (and we haven't
-  // already fit to the saved-places set), gently animate the camera there.
+  // ---- center on user location once on initial map load ----------------
+  // Runs when we have both a ready map and a GPS fix. Skipped if:
+  //   - the user has already panned (hasUserMovedRef)
+  //   - a deep-link target already set the camera (didFitRef)
+  //   - Map Preview Mode (static initialRegion handles it)
+  // Does NOT auto-fit saved places — use the "View All" button for that.
   useEffect(() => {
     if (mapPreview) return;
     if (!mapReady) return;
     if (!userRegion) return;
     if (didFitRef.current) return;
-    if (validPlaces.length > 0) return; // fit-to-coords path will handle it
+    if (hasUserMovedRef.current) return;
+    didFitRef.current = true;
     try {
       mapRef.current?.animateToRegion(userRegion, 400);
     } catch (e) {
       if (__DEV__) console.debug('[map] animateToRegion skipped', e);
     }
-  }, [userRegion, mapReady, mapPreview, validPlaces.length]);
+  }, [userRegion, mapReady, mapPreview]);
 
   // ---- deep-link target: focus a specific saved place -------------------
   // Triggered by the "Show on map" action elsewhere in the app. Runs once
@@ -527,6 +505,7 @@ export default function MapScreen() {
         initialRegion={initialRegion}
         onMapReady={() => setMapReady(true)}
         onPress={() => setSelected(null)}
+        onPanDrag={() => { hasUserMovedRef.current = true; }}
       >
         {/* Life360-style zone bubbles. Rendered as a separate pass before
             markers so marker pins always sit on top of their own circle.
@@ -672,6 +651,30 @@ export default function MapScreen() {
             </View>
           </Card>
         </View>
+      ) : null}
+
+      {/* "View All" pill — fits all saved-place zones on demand. Only shown
+          when there are places to frame and we're not in preview mode. */}
+      {validPlaces.length > 0 && !mapPreview ? (
+        <Pressable
+          style={styles.viewAllBtn}
+          onPress={() => {
+            if (!mapRef.current) return;
+            const coords = allZoneBoundingCoords(validPlaces, profile);
+            if (coords.length === 0) return;
+            try {
+              mapRef.current.fitToCoordinates(coords, {
+                edgePadding: { top: 100, right: 100, bottom: 180, left: 100 },
+                animated: true,
+              });
+            } catch (e) {
+              if (__DEV__) console.debug('[map] viewAll skipped', e);
+            }
+          }}
+          accessibilityLabel="View all saved places"
+        >
+          <Text style={styles.viewAllText}>View All</Text>
+        </Pressable>
       ) : null}
 
       {/* FAB → Save Place. Hidden while a preview card is showing so the
@@ -834,6 +837,28 @@ const styles = StyleSheet.create({
   previewActions: {
     flexDirection: 'row',
     marginTop: Spacing.md,
+  },
+
+  viewAllBtn: {
+    position: 'absolute',
+    top: Spacing.lg,
+    right: Spacing.lg,
+    paddingVertical: Spacing.xs,
+    paddingHorizontal: Spacing.md,
+    borderRadius: Radius.pill,
+    backgroundColor: Colors.surface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: Colors.textMuted,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  viewAllText: {
+    ...Typography.caption,
+    color: Colors.text,
+    fontWeight: '600',
   },
 
   fab: {

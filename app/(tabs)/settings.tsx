@@ -30,7 +30,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 
-import { Button, Card, DemoModeBanner, DevModeBanner, EmptyState, Input, Screen } from '@/components';
+import { Button, Card, DemoModeBanner, DevModeBanner, EmptyState, Input, Screen, SetupChecklist } from '@/components';
 import { Colors, Radius, Spacing, Typography } from '@/constants';
 
 import { useAuth } from '@/hooks/useAuth';
@@ -403,6 +403,11 @@ export default function SettingsScreen() {
         {/* --- Save ---------------------------------------------------- */}
         <View style={{ height: Spacing.lg }} />
         <Button title="Save changes" onPress={handleSave} loading={saving} />
+
+        {/* --- Setup -------------------------------------------------- */}
+        <View style={{ height: Spacing.xxl }} />
+        <Text style={styles.sectionLabel}>Setup Nearr</Text>
+        <SetupChecklist />
 
         {/* --- Account ------------------------------------------------- */}
         <View style={{ height: Spacing.xxl }} />

@@ -7,3 +7,4 @@ export { Input } from './Input';
 export { MapFallbackList } from './MapFallbackList';
 export { Screen } from './Screen';
 export { SavedPlaceCard } from './SavedPlaceCard';
+export { SetupChecklist } from './SetupChecklist';
