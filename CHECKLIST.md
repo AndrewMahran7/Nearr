@@ -6,9 +6,21 @@ You do NOT build the next version until ALL metrics are hit.
 
 Every feature MUST directly improve a tracked metric.
 
+Deadlines do not unlock stages. Metrics unlock stages.
+
+If a deadline passes and metrics are not hit, metrics still win.
+
+Valuation estimates in this document are rough, traction-dependent, and not guaranteed.
+
+Estimated valuation means: if metrics are real, retention is healthy, and growth is believable.
+
 ---
 
 # 🔥 STAGE 0 — FOUNDATION (v1 BETA)
+
+**Target deadline:** May 2026  
+**Estimated valuation:** $0-$250K if metrics are real and retention is healthy  
+**Valuation logic:** Prototype/beta value only. Not fundable at meaningful terms unless there is unusual user pull.
 
 ## 🎯 Goal
 User can save a place → see it → understand it
@@ -72,6 +84,10 @@ User can save a place → see it → understand it
 
 # ⚡ STAGE 1 — CORE LOOP
 
+**Target deadline:** June 15, 2026  
+**Estimated valuation:** $250K-$750K if metrics are real and retention is healthy  
+**Valuation logic:** Early proof of value, but still fragile without repeat usage and real reopen behavior.
+
 ## 🎯 Goal
 User saves → remembers → sees value
 
@@ -124,6 +140,10 @@ User saves → remembers → sees value
 ---
 
 # 🚀 STAGE 2 — FRICTION REMOVAL
+
+**Target deadline:** August 1, 2026  
+**Estimated valuation:** $750K-$2M if metrics are real and retention is healthy  
+**Valuation logic:** Stronger if share-driven saving is clearly working, but still pre-habit and not yet a durable network.
 
 ## 🎯 Goal
 Saving becomes effortless
@@ -179,6 +199,10 @@ Saving becomes effortless
 ---
 
 # 🔥 STAGE 3 — HABIT LOOP
+
+**Target deadline:** September 15, 2026  
+**Estimated valuation:** $2M-$5M if metrics are real and retention is healthy  
+**Valuation logic:** First stage where investor interest becomes more credible if user pull is obvious and users come back on their own.
 
 ## 🎯 Goal
 User comes back without being told
@@ -255,6 +279,10 @@ User comes back without being told
 
 # 🌍 STAGE 4 — DECISION LAYER
 
+**Target deadline:** December 31, 2026  
+**Estimated valuation:** $5M-$12M if metrics are real and retention is healthy  
+**Valuation logic:** Nearr starts to look like a real decision product, not just a save utility, especially if WAD behavior is real.
+
 ## 🎯 Goal
 User uses Nearr to decide where to go
 
@@ -311,6 +339,10 @@ Users who:
 
 # 🧩 STAGE 5 — EXPANSION
 
+**Target deadline:** June 30, 2027  
+**Estimated valuation:** $10M-$25M if metrics are real and retention is healthy  
+**Valuation logic:** Expansion is valuable only if the core loop stays clean while new categories widen usage without adding confusion.
+
 ## 🎯 Goal
 More use cases without confusion
 
@@ -351,6 +383,10 @@ More use cases without confusion
 ---
 
 # 🧑‍🤝‍🧑 STAGE 6 — SOCIAL
+
+**Target deadline:** December 31, 2027  
+**Estimated valuation:** $25M-$75M if metrics are real and retention is healthy  
+**Valuation logic:** Social can re-rate the company fast, but only if influence, viewing, and follow behavior are authentic rather than superficial.
 
 ## 🎯 Goal
 People influence each other
@@ -401,6 +437,10 @@ People influence each other
 
 # 🧠 STAGE 7 — INTELLIGENCE
 
+**Target deadline:** June 30, 2028  
+**Estimated valuation:** $75M-$250M+ if metrics are real and retention is healthy  
+**Valuation logic:** This only matters if recommendations consistently drive action. Without that, AI story alone is worth very little.
+
 ## 🎯 Goal
 Nearr predicts what you should do
 
@@ -440,11 +480,26 @@ Nearr predicts what you should do
 DO NOT BUILD FEATURES  
 Fix the stage
 
-## 3. Core metric progression
+## 3. Deadlines do not unlock stages
+Metrics unlock stages.
+
+## 4. Valuation estimates are conditional
+Valuation estimates assume real users, clean retention, and believable growth. Vanity downloads do not count.
+
+## 5. Core metric progression
 
 - Stage 0–2 → Saves
 - Stage 3 → Retention
 - Stage 4+ → **WAD (Decisions)**
+
+---
+
+# 💸 FUNDING GUIDANCE
+
+- Self-fund through Stages 0-2 unless costs become painful.
+- Consider angels/pre-seed around Stage 3 if retention and user pull are real.
+- VC becomes more realistic around Stage 4+ when Nearr has decision behavior/WAD, not just saves.
+- Do not raise just to build features. Raise when money clearly accelerates a validated loop.
 
 ---
 
