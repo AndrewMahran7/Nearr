@@ -30,6 +30,9 @@ export const DEMO_PROFILE: Profile = {
   quiet_hours_enabled: false,
   quiet_hours_start: null,
   quiet_hours_end: null,
+  terms_accepted_at: null,
+  privacy_accepted_at: null,
+  legal_version: null,
   created_at: new Date('2026-04-01T00:00:00.000Z').toISOString(),
   updated_at: new Date('2026-04-01T00:00:00.000Z').toISOString(),
 };

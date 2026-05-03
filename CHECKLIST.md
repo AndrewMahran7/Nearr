@@ -25,6 +25,21 @@ Estimated valuation means: if metrics are real, retention is healthy, and growth
 ## 🎯 Goal
 User can save a place → see it → understand it
 
+## 💸 Expected Monthly Spend
+
+**Expected monthly spend:** $50-$300/month
+
+**Normal costs:**
+- AI tools: $20-$100
+- Supabase/hosting: $0-$50
+- Resend/email: $0-$20
+- domain: $10-$30/year
+- website/domain/static hosting: $0-$50/month
+- Apple Developer: $99/year
+- Google Maps/Places: low or free-tier unless usage spikes
+- marketing: $0-$100
+- legal: $0-$500 one-time using templates or basic review
+
 ## 📊 REQUIRED METRICS
 
 - Downloads ≥ 30  
@@ -91,6 +106,21 @@ User can save a place → see it → understand it
 ## 🎯 Goal
 User saves → remembers → sees value
 
+## 💸 Expected Monthly Spend
+
+**Expected monthly spend:** $100-$500/month
+
+**Normal costs:**
+- AI tools: $20-$120
+- Supabase/hosting: $0-$80
+- email/auth delivery: $0-$30
+- website/domain/static hosting: $0-$100/month
+- Apple Developer and domain amortization: low fixed cost
+- Google Maps/Places: low, but monitor usage
+- analytics/crash tooling: $0-$50
+- lightweight user research or testing incentives: $0-$150
+- legal/company: usually still minimal if remaining in closed beta
+
 ## 📊 REQUIRED METRICS
 
 - Downloads ≥ 75  
@@ -147,6 +177,22 @@ User saves → remembers → sees value
 
 ## 🎯 Goal
 Saving becomes effortless
+
+## 💸 Expected Monthly Spend
+
+**Expected monthly spend:** $250-$1,000/month
+
+**Normal costs:**
+- AI tools: $40-$150
+- Supabase/hosting: $25-$150
+- email/SMTP: $10-$50
+- website/domain/static hosting: $0-$100/month
+- Google Maps/Places: $25-$200 depending on save volume
+- analytics/crash reporting: $0-$100
+- transcription if used: $0-$250
+- design/assets/testing incentives: $0-$150
+- public launch website design/assets if needed: $100-$500 one-time
+- contractor or implementation help if needed: $0-$500
 
 ## 📊 REQUIRED METRICS
 
@@ -206,6 +252,21 @@ Saving becomes effortless
 
 ## 🎯 Goal
 User comes back without being told
+
+## 💸 Expected Monthly Spend
+
+**Expected monthly spend:** $500-$2,500/month
+
+**Normal costs:**
+- AI tools: $50-$200
+- Supabase/hosting: $50-$300
+- email/notification infrastructure: $20-$100
+- Google Maps/Places: $50-$300
+- analytics/crash tooling: $20-$150
+- transcription or other AI processing: $50-$400
+- design/content/community ops: $0-$300
+- paid testing or small-scale growth experiments: $0-$500
+- company formation/legal may be $500-$2,000 one-time if not done yet
 
 ## 📊 REQUIRED METRICS
 
@@ -286,6 +347,22 @@ User comes back without being told
 ## 🎯 Goal
 User uses Nearr to decide where to go
 
+## 💸 Expected Monthly Spend
+
+**Expected monthly spend:** $1,500-$7,500/month
+
+**Normal costs:**
+- AI tools and developer tooling: $100-$400
+- backend/hosting/database: $150-$1,000
+- email and lifecycle messaging: $25-$150
+- Google Maps/Places: $150-$1,000
+- analytics/crash/reporting stack: $50-$300
+- transcription/ML services if active: $100-$1,000
+- design/assets/content production: $100-$750
+- legal/company/accounting: $100-$1,000
+- contractors/freelancers: $0-$3,000
+- marketing tests and ambassadors: $250-$2,000
+
 ## 📊 REQUIRED METRICS
 
 - Downloads ≥ 2,000  
@@ -346,6 +423,21 @@ Users who:
 ## 🎯 Goal
 More use cases without confusion
 
+## 💸 Expected Monthly Spend
+
+**Expected monthly spend:** $5,000-$20,000/month
+
+**Normal costs:**
+- engineering and AI tools: $150-$700
+- backend/database/hosting: $300-$2,500
+- email/lifecycle tooling: $50-$250
+- Google Maps/Places and related APIs: $300-$2,500
+- analytics/crash/data tooling: $100-$600
+- design/content/assets: $250-$1,500
+- legal/accounting/compliance: $250-$2,000
+- contractors/freelancers: $1,000-$8,000
+- marketing, creators, ambassadors: $1,000-$8,000
+
 ## 📊 REQUIRED METRICS
 
 - Downloads ≥ 10,000  
@@ -390,6 +482,22 @@ More use cases without confusion
 
 ## 🎯 Goal
 People influence each other
+
+## 💸 Expected Monthly Spend
+
+**Expected monthly spend:** $15,000-$75,000/month
+
+**Normal costs:**
+- product and AI tooling: $250-$1,000
+- backend/infrastructure/database: $1,000-$8,000
+- messaging/email/notification systems: $100-$800
+- maps/places APIs: $1,000-$10,000
+- analytics/data/crash tooling: $250-$1,500
+- trust, moderation, and support operations: $500-$5,000
+- design/content/community: $500-$4,000
+- legal/privacy/accounting: $500-$5,000
+- contractors or hires: $5,000-$30,000
+- paid growth, creators, partnerships: $5,000-$40,000
 
 ## 📊 REQUIRED METRICS
 
@@ -444,6 +552,20 @@ People influence each other
 ## 🎯 Goal
 Nearr predicts what you should do
 
+## 💸 Expected Monthly Spend
+
+**Expected monthly spend:** $50,000+/month
+
+**Normal costs:**
+- AI/ML/model usage and tooling: $2,000+
+- infrastructure/database/backend: $5,000+
+- maps/places and third-party APIs: $3,000+
+- analytics/data platform/crash/reporting: $1,000+
+- privacy/security/compliance: $1,000+
+- legal/accounting: $1,000+
+- team, contractors, and recruiting: major cost center
+- growth and partnerships: major cost center
+
 ## 📊 REQUIRED METRICS
 
 - Downloads ≥ 200,000  
@@ -492,12 +614,136 @@ Valuation estimates assume real users, clean retention, and believable growth. V
 - Stage 3 → Retention
 - Stage 4+ → **WAD (Decisions)**
 
+## 6. Spend rules
+
+- Expenses should scale with validated usage, not ambition.
+- Spending more than the normal range before hitting stage metrics is a warning sign unless there is a specific bottleneck.
+- Metrics unlock stages. Spending does not unlock stages.
+- Deadlines do not unlock stages.
+- Raising money should happen only when money accelerates a validated loop.
+
+---
+
+# 🌐 WEBSITE / LANDING PAGE GATE
+
+The website supports trust and conversion. It does not prove product-market fit.
+
+## Timing
+
+- Create a simple website soon after closed beta starts.
+- The website is for credibility, explanation, beta signups, legal/support pages later, and eventual public-launch support.
+- The website must support the mobile app loop, not distract from it.
+
+## Core rule
+
+- The website should NOT delay the beta.
+- If the app is not stable, fix the app first.
+- Do not spend more than one evening on the first version.
+
+## Closed beta website requirements
+
+- One-page landing page
+- Clear headline
+- Join beta CTA
+- Contact/support email
+- Basic privacy and terms links if available
+
+How it works should explain Nearr in 10 seconds:
+1. See a place online
+2. Share it to Nearr
+3. See it on your map
+4. Get reminded nearby
+5. Go try it
+
+Suggested first headline:
+“Save places from Instagram and TikTok. Remember them when you’re nearby.”
+
+Suggested CTA:
+“Join the beta”
+
+## Public launch website requirements
+
+- Landing page
+- App Store link
+- Privacy Policy
+- Terms of Service
+- Support/contact
+- Account deletion instructions
+- Short FAQ
+- Screenshots or demo video
+
+## Fundraising / press website requirements
+
+- Strong product positioning
+- Clean visuals and screenshots
+- Metrics or traction if public
+- Founder/contact info
+- Press kit optional later
+
+## Do NOT build yet
+
+- Login/dashboard
+- Blog
+- SEO content farm
+- Complex CMS
+- Fake testimonials
+- Web version of the app
+- Recommendation pages
+- Anything that distracts from mobile app usage
+
 ---
 
 # 💸 FUNDING GUIDANCE
 
 - Self-fund through Stages 0-2 unless costs become painful.
 - Consider angels/pre-seed around Stage 3 if retention and user pull are real.
+
+---
+
+# ⚖️ BUSINESS / LEGAL GATE SYSTEM
+
+Closed beta can happen before incorporation.
+
+Public launch should ideally happen after incorporation if Nearr is intended to be a venture-backed startup.
+
+Company formation protects the project. It does not prove product-market fit.
+
+## Required legal/product readiness before public launch
+
+- Terms of Service
+- Privacy Policy
+- beta disclaimer while the product is still unstable
+- account deletion/contact process
+- data/privacy review for location, notifications, accounts, saved links, source URLs, and diagnostics
+- permission copy that does not promise reminder delivery or extraction accuracy
+
+## Company Formation Stage
+
+Form the company before:
+- public App Store launch
+- revenue collection
+- partnerships
+- paid marketing at scale
+- giving equity
+- raising money
+
+Recommended structure:
+- Delaware C-Corp if pursuing the venture-backed startup path
+- LLC only if intentionally staying small, cash-flow oriented, or self-funded
+
+## Founder / team legal basics
+
+- Founder IP assignment should be explicit
+- Use signed contractor, advisor, and cofounder agreements
+- Do not promise equity casually in messages or calls
+- If there are cofounders, set vesting and paperwork early
+- If founder stock is issued, 83(b) usually must be filed within 30 days; consult a lawyer or accountant
+
+## Brand / risk basics
+
+- Do a basic trademark and domain search before public launch
+- Consider a formal trademark later if traction warrants it
+- Review app claims so Nearr does not promise guaranteed reminders, guaranteed extraction accuracy, or affiliation with third-party platforms or restaurants
 - VC becomes more realistic around Stage 4+ when Nearr has decision behavior/WAD, not just saves.
 - Do not raise just to build features. Raise when money clearly accelerates a validated loop.
 

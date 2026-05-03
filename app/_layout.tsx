@@ -11,11 +11,12 @@ import {
   hasSeenHowNearrWorks,
   markHowNearrWorksSeen,
 } from '@/components/HowNearrWorksModal';
-import { SetupReminderModal } from '@/components';
+import { LegalAgreementModal, SetupReminderModal } from '@/components';
 import { getLocationStatus } from '@/components/SetupChecklist';
 import { handleAuthDeepLink } from '@/lib/authDeepLink';
 import { clearDevAuth } from '@/lib/devAuth';
 import { trackEvent } from '@/lib/analytics';
+import { LEGAL_ACCEPTANCE_REQUIRED, LEGAL_VERSION } from '@/constants';
 import {
   checkProximityOnce,
   ensureNotificationPermission,
@@ -24,6 +25,7 @@ import {
   registerNotificationCategories,
   syncProximityWatch,
 } from '@/services/notifications';
+import { acceptLegalTerms, getLegalAcceptanceStatus } from '@/services/profileService';
 import * as Notifications from 'expo-notifications';
 import '@/lib/notifications'; // registers background location task
 import '@/lib/geofencing'; // registers geofence task
@@ -99,6 +101,8 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   const [needsNotifications, setNeedsNotifications] = useState(false);
   const [needsLocation, setNeedsLocation] = useState(false);
   const [setupReminderDismissedThisSession, setSetupReminderDismissedThisSession] = useState(false);
+  const [legalAgreementVisible, setLegalAgreementVisible] = useState(false);
+  const [acceptingLegal, setAcceptingLegal] = useState(false);
 
   // Fire `session_started` once per real Supabase session (id changes when
   // the user signs in, signs out + back in, or the JWT identity changes).
@@ -113,7 +117,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let cancelled = false;
 
-    if (!session || isDevSession) {
+    if (!session || isDevSession || legalAgreementVisible) {
       setHowNearrWorksVisible(false);
       return () => {
         cancelled = true;
@@ -128,6 +132,27 @@ function AuthGate({ children }: { children: React.ReactNode }) {
         entry_point: 'first_sign_in',
         user_id: session.user.id,
       });
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [session, session?.user.id, isDevSession, legalAgreementVisible]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!session || isDevSession || !LEGAL_ACCEPTANCE_REQUIRED) {
+      setLegalAgreementVisible(false);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    void (async () => {
+      const status = await getLegalAcceptanceStatus(session.user.id);
+      if (cancelled) return;
+      setLegalAgreementVisible(!status?.acceptedCurrentVersion);
     })();
 
     return () => {
@@ -158,6 +183,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
       setNeedsLocation(false);
       return;
     }
+    if (LEGAL_ACCEPTANCE_REQUIRED && legalAgreementVisible) return;
     if (howNearrWorksVisible) return;
     if (setupReminderDismissedThisSession && !force) return;
 
@@ -172,7 +198,18 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     setNeedsNotifications(missingNotifications);
     setNeedsLocation(missingLocation);
     setSetupReminderVisible(missingNotifications || missingLocation);
-  }, [howNearrWorksVisible, isDevSession, session, setupReminderDismissedThisSession]);
+  }, [howNearrWorksVisible, isDevSession, legalAgreementVisible, session, setupReminderDismissedThisSession]);
+
+  async function handleAcceptLegal() {
+    if (!session) return;
+    setAcceptingLegal(true);
+    try {
+      await acceptLegalTerms(session.user.id, LEGAL_VERSION);
+      setLegalAgreementVisible(false);
+    } finally {
+      setAcceptingLegal(false);
+    }
+  }
 
   async function handleEnableNotifications() {
     if (!needsNotifications) return;
@@ -265,8 +302,15 @@ function AuthGate({ children }: { children: React.ReactNode }) {
         onPrimary={() => void handleHowNearrWorks('completed')}
         onSecondary={() => void handleHowNearrWorks('skipped')}
       />
+      <LegalAgreementModal
+        visible={LEGAL_ACCEPTANCE_REQUIRED && legalAgreementVisible}
+        onViewTerms={() => router.push('/legal/terms')}
+        onViewPrivacy={() => router.push('/legal/privacy')}
+        onAgree={() => void handleAcceptLegal()}
+        agreeing={acceptingLegal}
+      />
       <SetupReminderModal
-        visible={setupReminderVisible && !howNearrWorksVisible}
+        visible={setupReminderVisible && !howNearrWorksVisible && !legalAgreementVisible}
         needs={{ notifications: needsNotifications, location: needsLocation }}
         onEnableNotifications={() => void handleEnableNotifications()}
         onOpenLocationSettings={() => void handleOpenLocationSettings()}
@@ -344,6 +388,7 @@ export default function RootLayout() {
             >
               <Stack.Screen name="(auth)" />
               <Stack.Screen name="(tabs)" />
+              <Stack.Screen name="auth-callback" />
               <Stack.Screen
                 name="add-place"
                 options={{ presentation: 'modal', headerShown: true, title: 'Save place' }}
@@ -352,6 +397,8 @@ export default function RootLayout() {
                 name="share"
                 options={{ presentation: 'modal', headerShown: true, title: 'Save from link' }}
               />
+              <Stack.Screen name="legal/terms" options={{ headerShown: true, title: 'Terms of Service' }} />
+              <Stack.Screen name="legal/privacy" options={{ headerShown: true, title: 'Privacy Policy' }} />
               <Stack.Screen name="place/[id]" options={{ headerShown: true, title: 'Place' }} />
             </Stack>
           </AuthGate>

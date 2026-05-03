@@ -7,8 +7,16 @@
 
 import { supabase } from '@/lib/supabase';
 import { isDemoMode } from '@/lib/demoMode';
+import { LEGAL_VERSION } from '@/constants';
 import { getDemoProfile, updateDemoProfile } from '@/services/demo';
 import type { Profile, RadiusUnit } from '@/types';
+
+export type LegalAcceptanceStatus = {
+  termsAcceptedAt: string | null;
+  privacyAcceptedAt: string | null;
+  acceptedVersion: string | null;
+  acceptedCurrentVersion: boolean;
+};
 
 /** Fetch the current user's profile. Returns null if signed-out or not yet created. */
 export async function getProfile(): Promise<Profile | null> {
@@ -94,6 +102,9 @@ export type ProfilePatch = {
   /** "HH:MM" or "HH:MM:SS" — Postgres `time` accepts both. */
   quiet_hours_start?: string | null;
   quiet_hours_end?: string | null;
+  terms_accepted_at?: string | null;
+  privacy_accepted_at?: string | null;
+  legal_version?: string | null;
 };
 
 /** Patch the current user's profile row. Throws on auth or DB errors. */
@@ -116,5 +127,59 @@ export async function updateProfile(patch: ProfilePatch): Promise<Profile> {
     console.warn('[profileService] update failed', error.message);
     throw new Error(error.message);
   }
+  return data as Profile;
+}
+
+export async function getLegalAcceptanceStatus(userId: string): Promise<LegalAcceptanceStatus | null> {
+  if (isDemoMode()) return null;
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('terms_accepted_at, privacy_accepted_at, legal_version')
+    .eq('id', userId)
+    .maybeSingle();
+
+  if (error) {
+    console.warn('[profileService] getLegalAcceptanceStatus failed', error.message);
+    return null;
+  }
+
+  const row = (data ?? null) as Pick<Profile, 'terms_accepted_at' | 'privacy_accepted_at' | 'legal_version'> | null;
+  const acceptedCurrentVersion = Boolean(
+    row?.terms_accepted_at &&
+    row?.privacy_accepted_at &&
+    row?.legal_version === LEGAL_VERSION,
+  );
+
+  return {
+    termsAcceptedAt: row?.terms_accepted_at ?? null,
+    privacyAcceptedAt: row?.privacy_accepted_at ?? null,
+    acceptedVersion: row?.legal_version ?? null,
+    acceptedCurrentVersion,
+  };
+}
+
+export async function acceptLegalTerms(userId: string, legalVersion: string): Promise<Profile> {
+  if (isDemoMode()) {
+    throw new Error('Legal acceptance is unavailable in demo mode.');
+  }
+
+  const nowIso = new Date().toISOString();
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({
+      terms_accepted_at: nowIso,
+      privacy_accepted_at: nowIso,
+      legal_version: legalVersion,
+    })
+    .eq('id', userId)
+    .select()
+    .single();
+
+  if (error) {
+    console.warn('[profileService] acceptLegalTerms failed', error.message);
+    throw new Error(error.message);
+  }
+
   return data as Profile;
 }

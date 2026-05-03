@@ -14,6 +14,9 @@ export type Profile = {
   quiet_hours_enabled: boolean;
   quiet_hours_start: string | null; // "HH:MM:SS"
   quiet_hours_end: string | null;
+  terms_accepted_at: string | null;
+  privacy_accepted_at: string | null;
+  legal_version: string | null;
   created_at: string;
   updated_at: string;
 };

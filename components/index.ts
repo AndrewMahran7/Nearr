@@ -5,6 +5,7 @@ export { DevModeBanner } from './DevModeBanner';
 export { EmptyState } from './EmptyState';
 export { HowNearrWorksModal } from './HowNearrWorksModal';
 export { Input } from './Input';
+export { LegalAgreementModal } from './LegalAgreementModal';
 export { MapFallbackList } from './MapFallbackList';
 export { Screen } from './Screen';
 export { SavedPlaceCard } from './SavedPlaceCard';

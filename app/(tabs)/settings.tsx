@@ -37,7 +37,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { trackEvent } from '@/lib/analytics';
 import { disableDevAuth } from '@/lib/devAuth';
 import { isDemoMode } from '@/lib/demoMode';
-import { getProfile, updateProfile } from '@/services/profileService';
+import { LEGAL_ACCEPTANCE_REQUIRED, LEGAL_VERSION } from '@/constants';
+import { getProfile, getLegalAcceptanceStatus, updateProfile } from '@/services/profileService';
 import { signOut } from '@/services/auth';
 import { resetAllDemoData, simulateDemoNearbyNotification } from '@/services/demo';
 import {
@@ -90,6 +91,8 @@ export default function SettingsScreen() {
   const [quietStart, setQuietStart] = useState('');
   const [quietEnd, setQuietEnd] = useState('');
   const [howNearrWorksVisible, setHowNearrWorksVisible] = useState(false);
+  const [legalAcceptedVersion, setLegalAcceptedVersion] = useState<string | null>(null);
+  const [legalAcceptedAt, setLegalAcceptedAt] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -113,6 +116,14 @@ export default function SettingsScreen() {
       setQuietOn(p.quiet_hours_enabled);
       setQuietStart(trimSeconds(p.quiet_hours_start));
       setQuietEnd(trimSeconds(p.quiet_hours_end));
+      setLegalAcceptedVersion(p.legal_version ?? null);
+      setLegalAcceptedAt(p.privacy_accepted_at ?? p.terms_accepted_at ?? null);
+
+      if (p.id) {
+        const legalStatus = await getLegalAcceptanceStatus(p.id);
+        setLegalAcceptedVersion(legalStatus?.acceptedVersion ?? p.legal_version ?? null);
+        setLegalAcceptedAt(legalStatus?.privacyAcceptedAt ?? legalStatus?.termsAcceptedAt ?? null);
+      }
     } catch (e: any) {
       setLoadError(e?.message ?? 'Could not load profile.');
     } finally {
@@ -307,6 +318,13 @@ export default function SettingsScreen() {
     await sendTestNotification();
   }
 
+  function formatAcceptedAt(value: string | null): string | null {
+    if (!value) return null;
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return null;
+    return date.toLocaleDateString();
+  }
+
   // ---------------------------------------------------------------------
   if (loading) {
     return (
@@ -462,6 +480,43 @@ export default function SettingsScreen() {
             </View>
             <Text style={[Typography.bodyStrong, styles.helpChevron]}>›</Text>
           </Pressable>
+        </Card>
+
+        <View style={{ height: Spacing.xxl }} />
+        <Text style={styles.sectionLabel}>Legal</Text>
+        <Card style={styles.section}>
+          <Pressable style={styles.helpRow} onPress={() => router.push('/legal/terms')}>
+            <View style={styles.helpCopy}>
+              <Text style={Typography.bodyStrong}>Terms of Service</Text>
+              <Text style={[Typography.caption, styles.muted, styles.helpBody]}>
+                Production draft for later public launch review.
+              </Text>
+            </View>
+            <Text style={[Typography.bodyStrong, styles.helpChevron]}>›</Text>
+          </Pressable>
+          <View style={styles.divider} />
+          <Pressable style={styles.helpRow} onPress={() => router.push('/legal/privacy')}>
+            <View style={styles.helpCopy}>
+              <Text style={Typography.bodyStrong}>Privacy Policy</Text>
+              <Text style={[Typography.caption, styles.muted, styles.helpBody]}>
+                How Nearr handles accounts, saved places, and nearby-reminder data.
+              </Text>
+            </View>
+            <Text style={[Typography.bodyStrong, styles.helpChevron]}>›</Text>
+          </Pressable>
+          <View style={{ height: Spacing.xs }} />
+          <Text style={[Typography.caption, styles.muted]}>
+            Legal acceptance required now: {LEGAL_ACCEPTANCE_REQUIRED ? 'Yes' : 'No'}
+          </Text>
+          <Text style={[Typography.caption, styles.muted]}>
+            Current legal version: {LEGAL_VERSION}
+          </Text>
+          {legalAcceptedVersion ? (
+            <Text style={[Typography.caption, styles.muted]}>
+              Accepted version: {legalAcceptedVersion}
+              {formatAcceptedAt(legalAcceptedAt) ? ` on ${formatAcceptedAt(legalAcceptedAt)}` : ''}
+            </Text>
+          ) : null}
         </Card>
 
         {/* --- Setup -------------------------------------------------- */}
