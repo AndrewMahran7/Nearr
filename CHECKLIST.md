@@ -14,6 +14,33 @@ Valuation estimates in this document are rough, traction-dependent, and not guar
 
 Estimated valuation means: if metrics are real, retention is healthy, and growth is believable.
 
+## FEATURE MATURITY DEFINITIONS
+
+- Built: code exists, but it may still be rough, beta-only, unreliable, or not central to the user promise.
+- Beta-tested: tested with real users or real devices enough to expose the obvious failures.
+- Productized: reliable enough to be part of the core UX promise.
+- Metric-unlocked: proven to improve the current stage metric enough to justify more investment.
+
+Built does not equal unlocked.
+
+## CURRENT BUILD REALITY
+
+- Core save loop: magic-link auth, dev/test password login, custom SMTP, save from link/share, source URL saving, AI/place extraction, saved places, place detail, original-post viewing.
+- Map/place management: saved-place list, map pins, show-on-map flows, directions, notes, place filters, selected-place bottom card.
+- Reminder infrastructure: reminder toggle, distance settings, notification setup, background proximity checks, geofencing, setup reminder UI. This exists for beta testing, not yet as a proven retention engine.
+- Auth/legal/ops: auth callback route fix, account/profile recovery, legal scaffolding disabled for beta, website/landing-page planning.
+- UI/onboarding: dark/orange refresh, How Nearr Works onboarding, settings checklist, crash/performance cleanup.
+
+## ROADMAP DRIFT RULE
+
+If a feature is built early, it must still be assigned to the stage metric it is supposed to improve. Early implementation does not move the company to that stage.
+
+Examples:
+- Geofencing built in Stage 0 does not mean Stage 3 is unlocked.
+- Legal scaffolding built in Stage 0 does not mean public launch readiness.
+- Places filters built in Stage 0 do not mean decision-layer behavior exists.
+- Dark UI built in Stage 0 does not mean retention is solved.
+
 ---
 
 # 🔥 STAGE 0 — FOUNDATION (v1 BETA)
@@ -57,10 +84,24 @@ User can save a place → see it → understand it
 
 ## 🧱 FEATURES UNLOCKED
 
+### Auth + Entry
+- Magic-link auth + SMTP reliability
+- Dev/test password login
+- Auth callback works with no unmatched-route failure
+
+👉 Drives:
+- Save start rate
+- Understanding
+- Crash rate
+
+---
+
 ### Capture + Save
 - Save from link
+- Native/share entry works
 - Basic extraction
 - Candidate selection
+- Saved places persist correctly
 
 👉 Drives:
 - Save success rate
@@ -71,6 +112,8 @@ User can save a place → see it → understand it
 ### Map + View
 - Map loads correctly
 - Pins display correctly
+- Place detail is understandable
+- Original post/source can be opened
 
 👉 Drives:
 - Map load success
@@ -82,6 +125,10 @@ User can save a place → see it → understand it
 - Loading states
 - Clear confirmation
 - Error handling
+- How Nearr Works onboarding
+- Basic settings and setup checklist
+- Crash/performance fixes
+- Basic reminder infrastructure testing, but not as the core metric
 
 👉 Drives:
 - Understanding %
@@ -89,9 +136,20 @@ User can save a place → see it → understand it
 
 ---
 
+## ✅ STAGE 0 BETA ACCEPTANCE
+
+- Magic link works reliably.
+- No unmatched-route auth callback failure.
+- Save flow works end-to-end from link/share.
+- Wrong saves stay under the stage threshold.
+- Map and place details are understandable.
+- App does not crash while idle during normal beta use.
+
+---
+
 ## 🚫 LOCKED FEATURES
 - Social  
-- Notifications  
+- Notification-driven habit loop  
 - Visited/photos  
 - Recommendations  
 
@@ -138,6 +196,7 @@ User saves → remembers → sees value
 ### Save → Recall Loop
 - “Open original video”
 - Better place detail view
+- Stronger source recall and context
 
 👉 Drives:
 - Reopen rate
@@ -147,6 +206,8 @@ User saves → remembers → sees value
 
 ### UI System
 - Clean colors + layout
+- Cleaner detail pages
+- Less confusion in the save → map → detail flow
 
 👉 Drives:
 - Retention
@@ -156,14 +217,26 @@ User saves → remembers → sees value
 
 ### Extraction Improvements
 - Better parsing logic
+- Improved save accuracy
+- Better user understanding of what got saved
 
 👉 Drives:
 - Save success rate
 
 ---
 
+### Reminder Positioning
+- Reminder infrastructure may be present for beta testing.
+- Stage 1 success is still save → remember → reopen, not full habit automation.
+
+👉 Drives:
+- Product clarity
+- Correct roadmap focus
+
+---
+
 ## 🚫 LOCKED FEATURES
-- Notifications  
+- Notification-driven habit loop  
 - Social  
 - Visited/photos  
 
@@ -212,6 +285,7 @@ Saving becomes effortless
 ### Share Flow
 - Native share improvements
 - Faster parsing
+- Save in under 5 seconds becomes the bar
 
 👉 Drives:
 - Share %
@@ -222,15 +296,28 @@ Saving becomes effortless
 ### Performance
 - Faster UI
 - Reduced loading time
+- Faster save completion from app open to saved place
 
 👉 Drives:
 - Save completion rate
 
 ---
 
+### Extraction Stack
+- Harden extraction stack
+- Fallback parsing
+- Source parsing reliability
+- Fewer wrong saves
+
+👉 Drives:
+- Save success %
+- Wrong saves
+
+---
+
 ### Reliability
 - Retry system
-- Fallback parsing
+- Fewer failed saves
 
 👉 Drives:
 - Save success %
@@ -238,7 +325,7 @@ Saving becomes effortless
 ---
 
 ## 🚫 LOCKED FEATURES
-- Notifications  
+- Notification-driven habit loop  
 - Social  
 - Visited/photos  
 
@@ -251,7 +338,7 @@ Saving becomes effortless
 **Valuation logic:** First stage where investor interest becomes more credible if user pull is obvious and users come back on their own.
 
 ## 🎯 Goal
-User comes back without being told
+Productize reminders and completion loop
 
 ## 💸 Expected Monthly Spend
 
@@ -281,25 +368,25 @@ User comes back without being told
 - Action rate ≥ 10–15%  
 - Notification CTR ≥ 15%
 
+Basic reminder infrastructure may exist earlier for testing, but Stage 3 is where it becomes a metric-owned product loop.
+
+Reminder infrastructure may be built earlier, but Stage 3 requires evidence that reminders create return behavior.
+
 ---
 
 ## 🧱 FEATURES UNLOCKED
 
-### Notifications
+### Notification-Driven Habit Loop
 - “You’re near X”
 - “You saved this recently”
+- Real-device reminder reliability on real iPhones
+- Notification quality, timing, and copy
+- Meaningful notification CTR and reopen behavior
 
 👉 Drives:
 - WAU
 - Retention
-
----
-
-### Context Awareness
-- Near-me suggestions
-
-👉 Drives:
-- Open without sharing %
+- Notification CTR
 
 ---
 
@@ -307,10 +394,12 @@ User comes back without being told
 
 ### “Mark as Visited”
 - Timestamp stored
+- Completion action after reminder
 
 👉 Drives:
 - Retention
 - Habit formation
+- Action rate
 
 ---
 
@@ -332,6 +421,7 @@ User comes back without being told
 ---
 
 ## 🚫 LOCKED FEATURES
+- Decision layer  
 - Social posts  
 - Feed  
 - Followers  
@@ -372,6 +462,8 @@ User uses Nearr to decide where to go
 - Non-share sessions ≥ 40%  
 - Session time ≥ 60–90s  
 
+Basic map, filters, and search can exist earlier. Stage 4 is when they become decision tools.
+
 ---
 
 ## 🧱 FEATURES UNLOCKED
@@ -380,6 +472,7 @@ User uses Nearr to decide where to go
 - “Near me”
 - Filters
 - Ranking
+- Map/search/filtering used to choose where to go now
 
 👉 Drives:
 - Session time
@@ -390,6 +483,7 @@ User uses Nearr to decide where to go
 ### Action Layer
 - “Go here”
 - Open directions
+- Start navigation becomes the north-star behavior
 
 👉 Drives:
 - Weekly Active Deciders (WAD)
@@ -449,6 +543,8 @@ More use cases without confusion
 ---
 
 ## 🧱 FEATURES UNLOCKED
+
+Expansion only matters if the food loop stays stable.
 
 ### Categories
 - Activities
@@ -510,6 +606,8 @@ People influence each other
 ---
 
 ## 🧱 FEATURES UNLOCKED
+
+Social only matters if private saved-place behavior is already strong.
 
 ### Profiles
 - Public maps
@@ -578,6 +676,8 @@ Nearr predicts what you should do
 
 ## 🧱 FEATURES UNLOCKED
 
+AI only matters if recommendations drive real actions, not just clicks.
+
 ### AI Recommendations
 - Personalized suggestions
 
@@ -621,6 +721,12 @@ Valuation estimates assume real users, clean retention, and believable growth. V
 - Metrics unlock stages. Spending does not unlock stages.
 - Deadlines do not unlock stages.
 - Raising money should happen only when money accelerates a validated loop.
+
+## 7. Roadmap drift rule
+
+- Early implementation does not unlock a stage.
+- Built infrastructure still belongs to the stage metric it is meant to improve.
+- Do not let code already written fool you into claiming product maturity you have not earned.
 
 ---
 
@@ -716,6 +822,8 @@ Company formation protects the project. It does not prove product-market fit.
 - account deletion/contact process
 - data/privacy review for location, notifications, accounts, saved links, source URLs, and diagnostics
 - permission copy that does not promise reminder delivery or extraction accuracy
+- Legal scaffolding and in-app acceptance flows can be built before public launch.
+- Beta should not force production legal acceptance unless there is a specific risk reason.
 
 ## Company Formation Stage
 
