@@ -29,7 +29,7 @@ import { Feather } from '@expo/vector-icons';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 
 import { Button, Card, Input, Screen } from '@/components';
-import { Colors, Radius, Spacing, Typography } from '@/constants';
+import { Radius, Spacing } from '@/constants';
 
 import { getProfile } from '@/services/profileService';
 import {
@@ -38,6 +38,7 @@ import {
   updateSavedPlace,
 } from '@/services/savedPlacesService';
 import { trackEvent } from '@/lib/analytics';
+import { useTheme } from '@/lib/theme';
 import type { Profile, RadiusUnit, SavedPlaceWithPlace } from '@/types';
 
 type RadiusMode = 'default' | 'miles' | 'minutes';
@@ -96,6 +97,8 @@ function reminderDistanceSummary(
 export default function PlaceDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { colors, typography } = useTheme();
+  const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
 
   const [saved, setSaved] = useState<SavedPlaceWithPlace | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -284,7 +287,7 @@ export default function PlaceDetail() {
       <Screen>
         <Stack.Screen options={{ title: 'Place details' }} />
         <Card>
-          <Text style={[Typography.bodyStrong, { color: Colors.danger }]}>
+          <Text style={[typography.bodyStrong, { color: colors.danger }]}>
             {loadError ?? 'Place not found.'}
           </Text>
           <View style={{ height: Spacing.md }} />
@@ -303,19 +306,19 @@ export default function PlaceDetail() {
       <Stack.Screen options={{ title: 'Place details' }} />
       <ScrollView contentContainerStyle={styles.scroll}>
         <Card style={styles.heroCard}>
-          <Text style={Typography.heading}>{place.name}</Text>
+          <Text style={typography.heading}>{place.name}</Text>
           {place.formatted_address ? (
-            <Text style={[Typography.body, styles.muted]}>{place.formatted_address}</Text>
+            <Text style={[typography.body, styles.muted]}>{place.formatted_address}</Text>
           ) : null}
           {place.category ? (
-            <Text style={[Typography.caption, styles.metaText]}>
+            <Text style={[typography.caption, styles.metaText]}>
               {place.category}
             </Text>
           ) : null}
           {sourceText ? (
             <View style={styles.sourceRow}>
               {sourceLabel ? (
-                <Text style={[Typography.caption, styles.sourceText]} numberOfLines={1}>
+                <Text style={[typography.caption, styles.sourceText]} numberOfLines={1}>
                   {sourceLabel}
                 </Text>
               ) : null}
@@ -326,10 +329,10 @@ export default function PlaceDetail() {
                   pressed && styles.sourceActionPressed,
                 ]}
               >
-                <Text style={[Typography.bodyStrong, styles.linkText]} numberOfLines={1}>
+                <Text style={[typography.bodyStrong, styles.linkText]} numberOfLines={1}>
                   {sourceActionText}
                 </Text>
-                <Feather name="arrow-up-right" size={18} color={Colors.accent} />
+                <Feather name="arrow-up-right" size={18} color={colors.accent} />
               </Pressable>
             </View>
           ) : null}
@@ -350,8 +353,8 @@ export default function PlaceDetail() {
         <Card style={styles.sectionCard}>
           <View style={styles.rowBetween}>
             <View style={{ flex: 1 }}>
-              <Text style={Typography.bodyStrong}>Nearby reminder</Text>
-              <Text style={[Typography.caption, styles.muted, styles.sectionCopy]}>
+              <Text style={typography.bodyStrong}>Nearby reminder</Text>
+              <Text style={[typography.caption, styles.muted, styles.sectionCopy]}>
                 {notifyOn
                   ? 'Nearr will remind you when you’re nearby.'
                   : 'Turn this on if you want Nearr to remind you nearby.'}
@@ -361,7 +364,7 @@ export default function PlaceDetail() {
           </View>
 
           <View style={styles.reminderSummaryRow}>
-            <Text style={[Typography.caption, styles.helperText, styles.reminderSummaryText]}>
+            <Text style={[typography.caption, styles.helperText, styles.reminderSummaryText]}>
               {notifyOn ? reminderSummary : 'Nearby reminder is off'}
             </Text>
             <Pressable
@@ -376,7 +379,7 @@ export default function PlaceDetail() {
 
           {reminderSettingsExpanded ? (
             <View style={styles.advancedWrap}>
-              <Text style={[Typography.bodyStrong, styles.advancedTitle]}>
+              <Text style={[typography.bodyStrong, styles.advancedTitle]}>
                 Reminder settings
               </Text>
               <View style={styles.radiusGroup}>
@@ -396,7 +399,7 @@ export default function PlaceDetail() {
                   onPress={() => setMode('minutes')}
                 />
               </View>
-              <Text style={[Typography.caption, styles.helperText]}>{radiusHelperText}</Text>
+              <Text style={[typography.caption, styles.helperText]}>{radiusHelperText}</Text>
               {mode === 'miles' ? (
                 <Input
                   value={milesText}
@@ -422,7 +425,7 @@ export default function PlaceDetail() {
         <View style={{ height: Spacing.md }} />
 
         <Card style={styles.sectionCard}>
-          <Text style={[Typography.bodyStrong, { marginBottom: Spacing.sm }]}>Your note</Text>
+          <Text style={[typography.bodyStrong, { marginBottom: Spacing.sm }]}>Your note</Text>
           <Input
             value={notes}
             onChangeText={setNotes}
@@ -465,6 +468,8 @@ function RadiusOption({
   active: boolean;
   onPress: () => void;
 }) {
+  const { colors, typography } = useTheme();
+  const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
   return (
     <Pressable
       onPress={onPress}
@@ -472,8 +477,8 @@ function RadiusOption({
     >
       <Text
         style={[
-          Typography.label,
-          { color: active ? Colors.textInverse : Colors.text },
+          typography.label,
+          { color: active ? colors.textInverse : colors.text },
         ]}
       >
         {label}
@@ -482,86 +487,91 @@ function RadiusOption({
   );
 }
 
-const styles = StyleSheet.create({
-  scroll: { padding: Spacing.lg, paddingBottom: Spacing.xxl },
-  center: { paddingVertical: Spacing.xxl, alignItems: 'center' },
-  heroCard: { marginBottom: Spacing.md, backgroundColor: Colors.surfaceElevated },
-  sectionCard: { backgroundColor: Colors.surfaceElevated },
-  muted: { color: Colors.textSecondary },
-  metaText: { color: Colors.textMuted, marginTop: 2 },
-  sourceRow: { marginTop: Spacing.md },
-  sourceText: { color: Colors.textSecondary, marginBottom: Spacing.sm },
-  sourceAction: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.md,
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.md,
-  },
-  sourceActionPressed: {
-    opacity: 0.75,
-  },
-  linkText: { color: Colors.accent },
-  rowBetween: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.md,
-  },
-  sectionCopy: {
-    marginTop: 2,
-  },
-  reminderSummaryRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: Spacing.md,
-    marginTop: Spacing.md,
-  },
-  reminderSummaryText: {
-    flex: 1,
-    marginBottom: 0,
-  },
-  changeLink: {
-    ...Typography.label,
-    color: Colors.accent,
-  },
-  advancedWrap: {
-    marginTop: Spacing.md,
-    paddingTop: Spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
-  },
-  advancedTitle: {
-    marginBottom: Spacing.sm,
-  },
-  radiusGroup: {
-    flexDirection: 'row',
-    gap: Spacing.sm,
-    marginBottom: Spacing.sm,
-  },
-  helperText: {
-    color: Colors.textSecondary,
-    marginBottom: Spacing.md,
-  },
-  radiusOption: {
-    flex: 1,
-    paddingVertical: Spacing.sm,
-    paddingHorizontal: Spacing.md,
-    borderRadius: Radius.pill,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.surfaceElevated,
-    alignItems: 'center',
-  },
-  radiusOptionActive: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
-  },
-  numberInput: { marginBottom: Spacing.sm },
-  notesInput: { minHeight: 60, textAlignVertical: 'top' },
-  deleteBtn: { borderWidth: 0 },
-});
+function createStyles(
+  colors: ReturnType<typeof useTheme>['colors'],
+  typography: ReturnType<typeof useTheme>['typography'],
+) {
+  return StyleSheet.create({
+    scroll: { padding: Spacing.lg, paddingBottom: Spacing.xxl },
+    center: { paddingVertical: Spacing.xxl, alignItems: 'center' },
+    heroCard: { marginBottom: Spacing.md, backgroundColor: colors.surfaceElevated },
+    sectionCard: { backgroundColor: colors.surfaceElevated },
+    muted: { color: colors.textSecondary },
+    metaText: { color: colors.textMuted, marginTop: 2 },
+    sourceRow: { marginTop: Spacing.md },
+    sourceText: { color: colors.textSecondary, marginBottom: Spacing.sm },
+    sourceAction: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surface,
+      borderRadius: Radius.md,
+      paddingVertical: Spacing.md,
+      paddingHorizontal: Spacing.md,
+    },
+    sourceActionPressed: {
+      opacity: 0.75,
+    },
+    linkText: { color: colors.accent },
+    rowBetween: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.md,
+    },
+    sectionCopy: {
+      marginTop: 2,
+    },
+    reminderSummaryRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: Spacing.md,
+      marginTop: Spacing.md,
+    },
+    reminderSummaryText: {
+      flex: 1,
+      marginBottom: 0,
+    },
+    changeLink: {
+      ...typography.label,
+      color: colors.accent,
+    },
+    advancedWrap: {
+      marginTop: Spacing.md,
+      paddingTop: Spacing.md,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+    },
+    advancedTitle: {
+      marginBottom: Spacing.sm,
+    },
+    radiusGroup: {
+      flexDirection: 'row',
+      gap: Spacing.sm,
+      marginBottom: Spacing.sm,
+    },
+    helperText: {
+      color: colors.textSecondary,
+      marginBottom: Spacing.md,
+    },
+    radiusOption: {
+      flex: 1,
+      paddingVertical: Spacing.sm,
+      paddingHorizontal: Spacing.md,
+      borderRadius: Radius.pill,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surface,
+      alignItems: 'center',
+    },
+    radiusOptionActive: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    numberInput: { marginBottom: Spacing.sm },
+    notesInput: { minHeight: 60, textAlignVertical: 'top' },
+    deleteBtn: { borderWidth: 0 },
+  });
+}

@@ -1,283 +1,182 @@
-﻿# Nearr — Project Context
+# Nearr — Project Context
 
-> Last updated: 2026-04-27
-> Source of truth: Codebase (not assumptions)
+> Last updated: 2026-05-02
+> Source of truth: current codebase
 
-> Handoff entry point. New chat / new dev: start here, then read
-> [ARCHITECTURE.md](ARCHITECTURE.md), [ENVIRONMENT.md](ENVIRONMENT.md),
-> [DATABASE.md](DATABASE.md), [IOS_SHARE_EXTENSION.md](IOS_SHARE_EXTENSION.md),
-> [TESTING_CHECKLIST.md](TESTING_CHECKLIST.md),
-> [V1_SCOPE_FREEZE.md](V1_SCOPE_FREEZE.md), [NEXT_STEPS.md](NEXT_STEPS.md).
+Start here before changing product code. This file is the top-level reality check for what Nearr is, what is actually shipping, and what is still partial, disabled, deferred, or just scaffolding.
 
 ## What Nearr is
 
-Mobile app that lets a user save real-world places (especially restaurants
-discovered on TikTok / Instagram), pins them on a map, and notifies them
-when they're physically nearby. Saves can be manual, paste-link, or
-share-sheet driven.
+Nearr is a mobile app for saving places you discover online, seeing them on a personal map, and optionally getting reminded when you are nearby.
 
-## Tech stack (as actually configured)
+Core loop:
 
-- Expo SDK ~51 + React Native 0.74.5 + Expo Router ~3.5 + TypeScript ~5.3
-- Supabase (Postgres + Auth + RLS) via `@supabase/supabase-js` ^2.45
-- Supabase Edge Functions (Deno) for the server-side share pipeline
-- Auth: Supabase magic link (email OTP) over `nearr://auth-callback`,
-  plus a dev-only password sign-in for the `dev@nearr.test` test user
-- Maps: `react-native-maps` 1.14 (Google provider)
-- Places: Google Places Web Service (Text Search + Details), called from
-  the client and mirrored server-side in the Edge Function
-- Location / notifications: `expo-location` ~17, `expo-notifications` ~0.28,
-  `expo-task-manager` ~11.8
-- Storage: `@react-native-async-storage/async-storage` (Supabase session)
-- iOS share extension: `expo-share-extension` ^1.10.7 — **temporarily
-  disabled** for first TestFlight (plugin entry removed from
-  [app.json](../app.json); see TODO in [app.config.js](../app.config.js)).
-  Source files (`ShareExtension.tsx`, `index.share.js`,
-  `modules/nearr-shared-auth`) are kept in place to make re-enabling
-  trivial after App Group / provisioning is verified.
-- Android share intent: in-repo config plugin
-  [withAndroidShareIntent](../plugins/withAndroidShareIntent.js) patches
-  `MainActivity.kt` to convert `ACTION_SEND` into a `nearr://share` deep
-  link
-- Local Expo Module
-  [nearr-shared-auth](../modules/nearr-shared-auth/index.ts) bridges the
-  Supabase access token through the App Group `UserDefaults` to the iOS
-  share extension
-- AI extraction: Gemini 1.5 Flash, server-side only — same logic ported
-  into [aiExtractPlace.ts](../lib/aiExtractPlace.ts) (Node-only) and
-  inlined in the Edge Function
+- See a place online
+- Want to try it
+- Save it
+- See it on your map
+- Get reminded nearby
+- Go
 
-## Current real-world feature state
+Supported save entry points in the current app:
 
-Status legend: **shipping** = works end-to-end on device; **partial** =
-works with caveats noted; **scaffold** = present but inert / not used.
+- Manual search
+- Paste link in the host app
+- Android system share sheet
+- iOS share extension / host-app handoff
 
-| Feature | Status | Notes |
+## Status legend
+
+- `shipping`: built in the app and intended for beta use now
+- `partial`: built, but depends on environment or lacks full real-device verification
+- `disabled`: code/scaffolding exists but is intentionally off
+- `deferred`: not part of the current beta promise
+- `scaffolding`: code or docs exist, but not a real shipped feature yet
+
+## Stack
+
+- Expo SDK 51, React Native 0.74, Expo Router 3.5, TypeScript 5.3
+- Supabase Auth + Postgres + RLS
+- Supabase Edge Functions for server-side share processing
+- Google Places + react-native-maps
+- expo-location + expo-notifications + expo-task-manager
+- expo-share-extension for iOS share target
+- Local Expo module `nearr-shared-auth` for App Group JWT bridging
+
+## Current feature state
+
+| Area | Status | Reality |
 | --- | --- | --- |
-| Magic-link sign-in | shipping | [sign-in.tsx](../app/(auth)/sign-in.tsx) + [authDeepLink.ts](../lib/authDeepLink.ts) (implicit + PKCE). |
-| Dev-only password sign-in for `dev@nearr.test` | shipping | `__DEV__`-only; surfaces a password input + "Sign in as developer" button when that exact email is typed. The Supabase user must be created manually. |
-| Home dashboard | shipping | [home.tsx](../app/(tabs)/home.tsx). Greeting, "Save a place" / "Save from link" CTAs, list, "Nearby alerts off" hint, pull-to-refresh, focus refresh. |
-| Manual place save | shipping | [add-place.tsx](../app/add-place.tsx). Debounced live search (300 ms after 3+ chars), best-effort foreground-location bias, confirmation card with Default / Miles / Minutes radius. |
-| Paste-link save | shipping | [share.tsx](../app/share.tsx) auto-runs the full pipeline on `?url=` deep link. |
-| AI place extraction in share flow | partial | [aiExtractPlace.ts](../lib/aiExtractPlace.ts) requires `GEMINI_API_KEY`, which is intentionally **not** in the mobile bundle. In RN it always falls back to the local heuristic in [placeExtractor.ts](../lib/placeExtractor.ts). Real AI runs only inside the Edge Function. |
-| Address-only / franchise resolution | shipping | When Places returns a street address or many same-named candidates, [placesService.ts](../services/placesService.ts) re-queries against the location context (e.g. text after `📍`) extracted from the caption and ranks by proximity. |
-| One-tap auto-save in share flow | shipping | When exactly one strong candidate comes back, the share screen saves immediately with the profile-default radius, alerts the user, and routes to `/(tabs)/map`. |
-| Saved-place picker (ambiguous share) | shipping | Multi-candidate UI on the share screen. |
-| iOS Share Extension ("Save to Nearr") | partial | Wired via `expo-share-extension`. The extension extracts the URL and POSTs to `process-share-link` if `EXPO_PUBLIC_PROCESS_SHARE_LINK_URL` is set AND the App Group JWT is present. Otherwise it hands off via `nearr://share?url=…`. End-to-end silent save has not been verified on a real device in this checkout. |
-| Android system share sheet | shipping | `ACTION_SEND text/plain` rewritten to `nearr://share?url=…` in `MainActivity.kt` (cold + warm start). |
-| Supabase Edge Function `process-share-link` | shipping (code) / unverified (deploy) | [process-share-link/index.ts](../supabase/functions/process-share-link/index.ts). Auth via Bearer token, public OG fetch, Gemini extraction, Google Places search, address/locality filter, idempotent save. Returns one of `saved` / `ambiguous` / `failed_requires_app` / `open_app`. Whether it is actually deployed to a Supabase project is a per-environment concern. |
-| Map | shipping | [map.tsx](../app/(tabs)/map.tsx). Markers, per-place radius bubbles via `<Circle>`, zone-aware `fitToCoordinates`, permission state machine (`pending` / `granted` / `denied` / `unavailable`), in-app preview card, "Show on map" deep link via `?savedPlaceId=`. |
-| Saved-place detail / edit / delete | shipping | [place/[id].tsx](../app/place/[id].tsx). |
-| Settings | shipping | Default radius, master + nearby toggles, quiet hours (HH:MM text inputs, no time picker), sign-out. |
-| Nearby notifications | partial | Polled `Location.startLocationUpdatesAsync` + a TaskManager task. Per-place 1 h cooldown, quiet hours, `notification_events` audit. Background only works in EAS dev/prod builds, never Expo Go. **Not** OS-level geofencing. |
-| Demo Mode (dev-only) | shipping | `EXPO_PUBLIC_DEMO_MODE=true` mocks Supabase / Places / Maps / location / notifications. Triple-guarded on `__DEV__`. |
-| Map Preview Mode (dev-only) | shipping | `EXPO_PUBLIC_MAP_PREVIEW_MODE=true` keeps the real `MapView` but uses seeded data and skips the location prompt. Triple-guarded on `__DEV__`. |
-| Local UI Mode (legacy fake-local session) | disabled | UI entry point removed; `ALLOW_LOCAL_UI_MODE = false` in [useAuth.ts](../hooks/useAuth.ts) hard-disables it; `clearDevAuth()` runs on every cold start. |
-| Transcription fallback (audio → text) | scaffold | [lib/transcription/](../lib/transcription/) only ships a `placeholder` provider that returns `status='unavailable'`. No real provider integrated; nothing is transcribed at runtime. |
-| Eval harness | shipping (script) | [scripts/evalShareExtraction.ts](../scripts/evalShareExtraction.ts) replays fixtures through the AI extractor. Outputs to [logs/share-extraction-eval-*.json](../logs/). |
+| Supabase magic-link auth | shipping | Auth uses Supabase magic links. Redirects are handled through `/auth-callback` and `handleAuthDeepLink`. |
+| `/auth-callback` route | shipping | [app/auth-callback.tsx](../app/auth-callback.tsx) exists specifically to avoid Expo Router unmatched-route failures during auth callbacks. |
+| `dev@nearr.test` password login | shipping | Password login is available for that exact email in all builds, not just `__DEV__`. |
+| Home dashboard | shipping | Dark/orange UI, activation card under 3 saves, recent saves, nearby section, save CTAs. |
+| Manual save | shipping | Search, choose, radius selection, save, then redirect to focused map. |
+| Paste-link save | shipping | Host-app share screen parses a URL, searches Places, saves, then redirects to focused map. |
+| Android share intent | shipping | `ACTION_SEND text/plain` is rewritten into `nearr://share?url=...` and flows into the host-app share route. |
+| iOS share extension target | partial | Enabled in config and compiled via `expo-share-extension`, but end-to-end silent save still depends on native build setup, App Group wiring, auth token bridge, and deployed Edge Function. |
+| `process-share-link` Edge Function | partial | Code exists and is usable, but deployment and secrets are environment-specific. Do not describe it as universally live. |
+| Save success → focused map | shipping | Manual save, host-app share save, and duplicate-save routing all use `savedPlaceId` to open the map focused on that saved place. |
+| Map `?savedPlaceId=` focus | shipping | The map selects the saved place, frames its zone, highlights marker/radius, and opens the bottom card once. |
+| Map dismissal behavior | shipping | Selected-place card can be dismissed by swipe down, map tap, or the X button. |
+| Marker callouts | shipping | Native marker callouts are intentionally not used for the UX; custom marker views and an in-app preview card are used instead. |
+| Map stability/perf fixes | shipping | Map logging is throttled and sync paths are coalesced to reduce event spam and idle memory pressure. |
+| Places tab filters | shipping | Filters: All, Recent, Nearby, Instagram, TikTok, Reminders on. |
+| Place detail screen | shipping | Get directions, view original post/link, nearby reminder toggle, collapsed reminder settings, note, and low-emphasis remove. |
+| Notification permission setup | shipping | App shows setup reminders, can request notifications, and can send a test notification from Settings. |
+| Background proximity checks | shipping | Background location task plus one-shot foreground checks are implemented. Requires native build and real permissions. |
+| OS geofencing | shipping for beta testing | `NEARR_GEOFENCE_TASK` exists, syncs up to 20 saved places, and complements the background location watch rather than replacing it. |
+| Legal scaffolding | partial | Terms/privacy content, profile columns, modal, and settings display exist. Acceptance is currently disabled for beta via `LEGAL_ACCEPTANCE_REQUIRED = false`. |
+| Demo Mode | shipping | Full seeded mock mode. |
+| Map Preview Mode | shipping | Real map with seeded data and no location prompt. |
+| Local UI Mode | disabled | Legacy fake-session mode is intentionally hard-disabled. |
+| Transcription | scaffolding | Placeholder-only. No real transcription provider is wired into runtime. |
 
-## Folder structure (as it actually is)
+## Auth reality
 
-```
-app/                          Expo Router screens
-  _layout.tsx                 Root stack + AuthGate + deep links + AppState proximity
-  index.tsx                   <Redirect href="/(tabs)/home" />
-  (auth)/sign-in.tsx          Magic link + dev password (when email == dev@nearr.test)
-  (tabs)/                     home / map / places / settings
-  add-place.tsx               Modal: Google Places search → confirm → save
-  share.tsx                   Modal: paste-link / share-extension target
-  place/[id].tsx              Saved-place detail / edit / delete
-ShareExtension.tsx            Root component for the iOS share-extension target
-index.share.js                Entry point for the iOS share-extension bundle
-metro.config.js               Registers `share.js` as a source ext
-components/                   Button, Card, EmptyState, Input, Screen,
-                              SavedPlaceCard, DemoModeBanner, DevModeBanner,
-                              MapFallbackList
-constants/                    colors, spacing, typography
-hooks/                        useAuth, usePlacesSearch, useSavedPlaces
-lib/                          Integrations + pure helpers (no React)
-  supabase.ts                 Client + writes access token into App Group
-  authDeepLink.ts             Magic-link callback (implicit + PKCE)
-  geo.ts                      Haversine + miles/minutes ↔ meters
-  notifications.ts            Background task + proximity decision logic
-  shareParser.ts              OG / Twitter / <title> extraction
-  placeExtractor.ts           Local deterministic place-name heuristic
-  aiExtractPlace.ts           Gemini-backed extractor (server / script only)
-  externalMaps.ts             Build Google / Apple Maps URLs
-  mapPreview.ts               Map Preview Mode flag + seeded region
-  demoMode.ts / demoData.ts   Demo Mode flag + seed catalog
-  devAuth.ts                  Legacy Local UI Mode (now disabled)
-  sharedAuth.ts               JS wrapper over modules/nearr-shared-auth
-  transcription/              Placeholder transcription dispatcher
-modules/nearr-shared-auth/    Local Expo Module: App Group UserDefaults bridge
-services/                     Thin façade over lib/Supabase for screens
-  auth.ts                     sendMagicLink, signInWithPassword, signOut
-  notifications.ts            Public proximity API
-  placesService.ts            Google Places search + details + ranking
-  profileService.ts           profiles row read/update
-  savedPlacesService.ts       saved_places + places upsert/list/get/update/delete
-  demo/                       Demo Mode mocks for the above
-plugins/
-  withAndroidShareIntent.js   Patches MainActivity.kt for ACTION_SEND
-  withShareExtension.js       NO-OP placeholder (do NOT enable; superseded
-                              by expo-share-extension)
-native/share-extension/       DEAD scaffold (uses obsolete App Group
-                              `group.com.nearr.app`); not compiled
-ios/NearrShareExtension/      Generated by `expo prebuild` (App Group =
-                              `group.com.nearr.ios`)
-android/                      Generated by `expo prebuild`
-supabase/
-  schema.sql                  DEPRECATED — do not run
-  migrations/
-    20260426000001_init_schema.sql   Source of truth
-  functions/process-share-link/index.ts
-                              Server-side share pipeline (Deno Edge Function)
-scripts/                      evalShareExtraction.ts, testProcessShareLink.ts
-docs/                         This handoff bundle
-logs/                         Eval logs + per-day build logs
-```
+- The sign-in screen is [app/(auth)/sign-in.tsx](../app/(auth)/sign-in.tsx).
+- Normal auth path is email magic link via `sendMagicLink()` in [services/auth.ts](../services/auth.ts).
+- `Linking.createURL('auth-callback')` is used to build the callback URL.
+- Callback parsing and session exchange live in [lib/authDeepLink.ts](../lib/authDeepLink.ts).
+- [app/_layout.tsx](../app/_layout.tsx) handles both cold-start and warm-start deep links and routes to home when auth succeeds.
+- [app/auth-callback.tsx](../app/auth-callback.tsx) is a real file-backed route that shows a loading state while the session resolves.
+- `dev@nearr.test` switches the sign-in form to password mode and calls `signInWithPassword()` in all builds.
 
-Path alias `@/*` maps to repo root.
+## Save and share reality
 
-## Subsystem summary
+### Manual save
 
-Diagrams in [ARCHITECTURE.md](ARCHITECTURE.md). One-liner each:
+- Screen: [app/add-place.tsx](../app/add-place.tsx)
+- Flow: search Places -> choose result -> select reminder radius -> save -> redirect to `/(tabs)/map?savedPlaceId=<id>`
 
-- **Auth.** `services/auth.sendMagicLink` → email link → `nearr://auth-callback`
-  → `app/_layout.tsx` calls `handleAuthDeepLink` (handles implicit
-  `#access_token` AND PKCE `?code=`) → `setSession` /
-  `exchangeCodeForSession`. Dev shortcut for `dev@nearr.test`:
-  `signInWithPassword` (real Supabase user, real RLS).
-- **Manual save.** `usePlacesSearch` → `searchPlaces` → confirm →
-  `saveSavedPlace`: SELECT-then-INSERT on `places` (RLS denies UPDATE on
-  the shared table), INSERT on `saved_places` with `23505` recovery that
-  refreshes source/notes/radius.
-- **Share-link (host app).** `parseShare` (public OG / Twitter / `<title>`,
-  8 s timeout) → `extractPlaceQueryFromShareMetadata` (local heuristic) +
-  `extractPlaceAI` (no-op without server key) → `searchPlaces` with
-  caption-derived location bias → if 1 strong candidate, silent save +
-  navigate to map; otherwise picker; address/locality results trigger a
-  business resolver near the geocoded context.
-- **Share-link (iOS extension).** Pull first URL from share payload, POST
-  to `process-share-link` if `EXPO_PUBLIC_PROCESS_SHARE_LINK_URL` is set
-  and a JWT is in the App Group. Otherwise hand off via
-  `nearr://share?url=…`. The fallback path is what ships today.
-- **Share-link (Android).** `withAndroidShareIntent` patches
-  `MainActivity` to rewrite `ACTION_SEND text/plain` into
-  `nearr://share?url=…`; the host app's `/share` screen does the rest.
-- **Notifications.** Polled `startLocationUpdatesAsync` → TaskManager task
-  → `checkProximity` → effective radius (per-place > profile default >
-  1 mile) → quiet hours → 1 h cooldown (memory + `last_notified_at`) →
-  local notification + `notification_events` row. One-shot foreground
-  check on session start and on `AppState 'active'`.
-- **Map.** Markers + per-place `<Circle>` zone bubbles. `fitToCoordinates`
-  uses zone-bounding corners (markers + radius edges). `?savedPlaceId=`
-  deep link focuses the matching place. Preview card overlays; FAB hides
-  while card is shown.
+### Host-app link/share save
 
-## Database schema
+- Screen: [app/share.tsx](../app/share.tsx)
+- Handles pasted links and incoming `?url=` deep links.
+- Parses metadata, runs the place extraction pipeline, resolves candidates, saves, and routes to focused map.
+- Duplicate saves still route to the existing saved place when its `savedPlaceId` is available.
 
-Migration: [20260426000001_init_schema.sql](../supabase/migrations/20260426000001_init_schema.sql).
-Full reference: [DATABASE.md](DATABASE.md). Tables:
+### Android share intent
 
-- `profiles` (1:1 with `auth.users`) — defaults + notification prefs.
-  Auto-created by `handle_new_user` trigger.
-- `places` — canonical Google Places records. **Shared** across users
-  (any authenticated user can SELECT + INSERT, no UPDATE/DELETE).
-  Deduped by `google_place_id`.
-- `saved_places` — per-user "I want to go here" with overrides
-  (`radius_value`, `radius_unit`, `notes`, `notifications_enabled`,
-  `last_notified_at`, `source_type`, `source_url`). Unique on
-  `(user_id, place_id)`.
-- `notification_events` — append-only audit (`event_type` ∈
-  `'nearby' | 'entered' | 'exited' | 'silenced'`; only `'nearby'` is
-  emitted today; `'silenced'` is referenced in code but not currently
-  inserted).
+- Plugin: [plugins/withAndroidShareIntent.js](../plugins/withAndroidShareIntent.js)
+- Shipping path: Android `ACTION_SEND` text intents are converted into `nearr://share?url=…`.
 
-RLS on all four. Owner-only on profiles / saved_places / notification_events.
+### iOS share extension
 
-## Setup
+- Root: [ShareExtension.tsx](../ShareExtension.tsx)
+- Config plugin entry is present in [app.json](../app.json).
+- Current behavior is environment-dependent:
+  - If the Edge Function URL and App Group auth token are available, the extension can attempt a silent server-side save.
+  - On `ambiguous`, `failed_requires_app`, missing token, missing endpoint, or other failure, it hands off to the host app.
+  - On `saved`, it now opens the host app directly to the focused map route when `savedPlaceId` is returned.
+- End-to-end silent save is still `partial` until verified on a real native build with deployed backend.
 
-Walkthrough: [ENVIRONMENT.md](ENVIRONMENT.md). TL;DR:
+## Map reality
 
-```powershell
-npm install
-cp .env.example .env        # then fill in keys
-npm run typecheck           # must exit 0
-npm run start               # Metro
-```
+- Screen: [app/(tabs)/map.tsx](../app/(tabs)/map.tsx)
+- Uses custom markers and in-app preview card, not sticky native callouts.
+- Focus flow is driven by `savedPlaceId` in the route params.
+- Selected place state opens the bottom preview card and highlights the relevant radius bubble and marker.
+- Dismiss paths:
+  - swipe down on the card
+  - tap the X button
+  - tap the map background
+- User-location centering does not immediately override a deep-linked place focus.
+- Map fallback behavior exists for denied/unavailable location without blocking the screen.
 
-## Known limitations / current reality
+## Notifications and geofencing reality
 
-These are real and live in production code. Read them before promising
-behavior to a tester or reviewer.
+- Notification code: [lib/notifications.ts](../lib/notifications.ts)
+- Public exports: [services/notifications.ts](../services/notifications.ts)
+- Geofencing code: [lib/geofencing.ts](../lib/geofencing.ts)
+- Root layout imports both task modules so tasks register on app startup.
 
-- **iOS share extension silent-save is unverified end-to-end.** The
-  extension reads the access token from the App Group via
-  `nearr-shared-auth`, but the JWT bridge has not been QA'd on a real
-  device with a deployed Edge Function in this checkout. The extension
-  defaults to `open_app` whenever the token or endpoint is missing, and
-  the host-app deep-link flow runs.
-- **Background location requires an EAS dev/prod build.** Expo Go does
-  not run TaskManager background tasks.
-- **Proximity is polled (~60 s / 100 m), not OS geofenced.** iOS
-  coalesces background ticks aggressively; the interval is a request,
-  not a guarantee. Android 12+ requires a separate background-location
-  prompt.
-- **`notification_events.event_type`** only ever gets `'nearby'` today;
-  `'entered'` / `'exited'` / `'silenced'` exist in the CHECK constraint
-  for future use.
-- **"Minutes" radii** use a fixed 25 mph approximation in
-  [geo.ts](../lib/geo.ts); there is no routing API.
-- **Gemini AI extraction does not run on device.** `extractPlaceAI` looks
-  for `process.env.GEMINI_API_KEY`, intentionally absent from the mobile
-  bundle. In RN it always returns the fallback query at
-  `confidence: 'low'`. Real AI extraction happens only in the Edge
-  Function.
-- **Transcription is a stub.** [lib/transcription/](../lib/transcription/)
-  only ships the `placeholder` provider; the dispatcher always returns
-  `status='unavailable'`. Despite hooks in the AI prompt for a
-  `transcript` field, no audio is transcribed at runtime.
-- **Quiet-hours UI is plain HH:MM text inputs**, no time picker.
-- **The hand-rolled iOS share-extension scaffold under
-  [native/share-extension/](../native/share-extension/) is dead code.**
-  It uses the obsolete App Group identifier `group.com.nearr.app` and is
-  not compiled. The active extension lives at
-  [ios/NearrShareExtension/](../ios/NearrShareExtension/) (generated by
-  prebuild) with App Group `group.com.nearr.ios`.
-- **`plugins/withShareExtension.js` is a no-op.** Enabling it would log
-  a warning. Superseded by `expo-share-extension`.
-- **Local UI Mode (legacy fake-local session) is hard-disabled** in
-  [useAuth.ts](../hooks/useAuth.ts) and [_layout.tsx](../app/_layout.tsx);
-  the AsyncStorage flag is wiped on every cold start.
-- **No automated tests.** [TESTING_CHECKLIST.md](TESTING_CHECKLIST.md) is
-  the V1 contract. The eval harness in
-  [evalShareExtraction.ts](../scripts/evalShareExtraction.ts) only covers
-  the share-extraction prompt.
-- **No retry/backoff on Google Places quota errors.** `OVER_QUERY_LIMIT`
-  surfaces directly to the user with a friendly message.
-- **`app.json` has a hard-coded Google Maps API key** in
-  `ios.config.googleMapsApiKey` and `android.config.googleMaps.apiKey`.
-  This is checked in. Rotate before any public release.
-- **`UIBackgroundModes`** in `app.json` lists `location` and `fetch`
-  twice (duplicate entries) — harmless to iOS but worth cleaning before
-  TestFlight.
+Current behavior:
 
-## What to build next
+- Notification permissions can be requested from setup UI and Settings.
+- Test notifications can be sent from Settings.
+- One-shot proximity checks run on sign-in and app foreground.
+- Background location watch remains active as a fallback path.
+- OS geofences are also synced when possible.
+- Geofences are limited to 20 saved places and use `NEARR_GEOFENCE_TASK`.
+- Cooldown and count-limit logic live in app code, not DB constraints.
+- Notification action categories are registered, but some action handlers are still TODOs.
 
-Full plan in [NEXT_STEPS.md](NEXT_STEPS.md). Headlines:
+Practical limits:
 
-1. Run [TESTING_CHECKLIST.md](TESTING_CHECKLIST.md) end-to-end on a real
-   iOS device and a real Android device.
-2. Verify the iOS share extension JWT bridge end-to-end (App Group
-   provisioned + access token actually written + extension reading it +
-   Edge Function deployed).
-3. Deploy `process-share-link`, set `EXPO_PUBLIC_PROCESS_SHARE_LINK_URL`,
-   and confirm silent-save works for a real shared TikTok / Instagram URL.
-4. Rotate and lock down the Google Maps Platform key (bundle/package
-   restrictions, daily quota cap).
-5. Audit Supabase RLS + redirect URLs against the live project.
-6. Cut TestFlight + Play Internal Testing builds.
+- Real background behavior requires a native build, not Expo Go.
+- iOS geofencing/background location testing requires a real device.
+- Android emulator behavior is not a substitute for real-device validation.
 
-Do not start V2 features (real geofencing, real transcription, photos,
-push, social, automated test suite) until V1 is on TestFlight.
+## Legal and business reality
+
+- Legal constants live in [constants/legal.ts](../constants/legal.ts).
+- Terms/privacy content and legal acceptance columns exist.
+- Acceptance modal and profile writes are implemented.
+- `LEGAL_ACCEPTANCE_REQUIRED = false`, so legal acceptance is intentionally disabled for the current beta.
+- Settings still surfaces current legal version and acceptance status.
+- External infrastructure such as Supabase custom SMTP with Resend is operationally relevant but configured outside this repo.
+
+## Config and environment reality
+
+- `app.json` contains the Expo config and plugin list.
+- Native map keys are injected through [app.config.js](../app.config.js) from environment variables.
+- The repo no longer hardcodes a Google Maps key in [app.json](../app.json).
+- Supabase config is read from `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY`, with [app.config.js](../app.config.js) also copying them into `extra` as runtime fallback.
+
+## Current beta caveats
+
+- iOS share extension silent save should still be treated as partially verified until a fresh native build is tested on-device.
+- `process-share-link` code exists, but deployment, secrets, and function URL are environment-specific.
+- Transcription is not a shipping feature.
+- Legal acceptance is intentionally off for beta even though the scaffolding exists.
+
+## Recommended doc reading order
+
+1. [ARCHITECTURE.md](ARCHITECTURE.md)
+2. [ENVIRONMENT.md](ENVIRONMENT.md)
+3. [DATABASE.md](DATABASE.md)
+4. [TESTING_CHECKLIST.md](TESTING_CHECKLIST.md)
+5. [IOS_SHARE_EXTENSION.md](IOS_SHARE_EXTENSION.md)
+6. [V1_SCOPE_FREEZE.md](V1_SCOPE_FREEZE.md)
+7. [NEXT_STEPS.md](NEXT_STEPS.md)

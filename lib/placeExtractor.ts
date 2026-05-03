@@ -45,11 +45,22 @@ export type PlaceExtractionInput = {
 
 export type PlaceExtractionConfidence = 'high' | 'medium' | 'low';
 
+export type PlaceQueryStrength = 'strong' | 'medium' | 'weak';
+
 export type PlaceExtraction = {
   query: string;
   confidence: PlaceExtractionConfidence;
   /** Short, human-readable reason for debugging / dev surface. */
   reason?: string;
+};
+
+export type AccountIdentityExtraction = {
+  query: string;
+  confidence: PlaceExtractionConfidence;
+  reason:
+    | 'account-display-name'
+    | 'account-handle'
+    | 'profile-url-handle';
 };
 
 // ---------------------------------------------------------------------------
@@ -97,6 +108,16 @@ const LOCATION_EMOJI_RE =
 
 // @handles -- letters, digits, dots, underscores.
 const HANDLE_RE = /@([A-Za-z0-9._]+)/g;
+const ADDRESS_RE =
+  /\b\d{1,5}\s+[A-Za-z][\w'.\- ]{1,40}?\s+(?:st|street|ave|avenue|blvd|boulevard|rd|road|dr|drive|way|ln|lane|ct|court|pl|place|hwy|highway)\b/i;
+const CITY_STATE_RE =
+  /\b([A-Z][\p{L}.'\u2019-]+(?:\s+[A-Z][\p{L}.'\u2019-]+){0,3}),\s*([A-Z]{2})\b/u;
+const GENERIC_WEAK_PREFIX_RE =
+  /^(?:my|our|this|that|best|favorite|hidden gem|vibes|going|follow|check out|come with|come to|run don'?t walk|guys run|need to go|you need to go|you have to try|having fun)\b/i;
+const GENERIC_WEAK_QUERY_RE =
+  /\b(?:vibes only|good time|with the crew|date night|weekend plans|must try|slaps|so good|fire|yum|yummy|delicious|food recs?)\b/i;
+const ACCOUNT_PROFILE_URL_RE =
+  /(?:instagram|tiktok)\.com\/(?!(?:p|reel|reels|tv|explore|stories|accounts|video)\b)([A-Za-z0-9._]{2,30})(?:\/|$)/i;
 
 // ---------------------------------------------------------------------------
 // Public API
@@ -125,6 +146,7 @@ export function extractPlaceQueryFromShareMetadata(
   const handlePick = pickPlaceyHandle(haystack);
   const city = pickTrailingCity(haystack);
   const phrasePick = pickTitleCasedPhrase(titleStripped);
+  const accountPick = extractAccountIdentityFromShareMetadata(input);
 
   // Priority: a tagged business handle is the strongest signal, even when a
   // 📍 pin emoji is also present — pins very often hold ONLY a
@@ -139,7 +161,13 @@ export function extractPlaceQueryFromShareMetadata(
   // should treat it as location context rather than the venue name.
   const pinIsLocationOnly = !!pinPick && looksLikeLocationOnly(pinPick);
 
-  if (handlePick) {
+  if (accountPick && accountPick.reason === 'account-display-name') {
+    chosen = {
+      value: accountPick.query,
+      confidence: accountPick.confidence,
+      reason: accountPick.reason,
+    };
+  } else if (handlePick) {
     const name = humanizeHandle(handlePick);
     // Prefer pin-derived location over a trailing-city match when present,
     // since pins are explicitly marked by the author.
@@ -164,6 +192,12 @@ export function extractPlaceQueryFromShareMetadata(
       value: phrasePick,
       confidence: city ? 'medium' : 'low',
       reason: city ? 'titlecase+city' : 'titlecase',
+    };
+  } else if (accountPick) {
+    chosen = {
+      value: accountPick.query,
+      confidence: accountPick.confidence,
+      reason: accountPick.reason,
     };
   } else if (pinPick && pinIsLocationOnly) {
     // Pin is location-only AND we have nothing else — still better than
@@ -197,6 +231,93 @@ export function extractPlaceQueryFromShareMetadata(
   return { query, confidence: chosen.confidence, reason: chosen.reason };
 }
 
+export function extractAccountIdentityFromShareMetadata(
+  input: PlaceExtractionInput,
+): AccountIdentityExtraction | null {
+  const profileHandle = detectProfileUrlHandle(input.url);
+  const posterHandle = detectPosterHandle(input.title, input.description, input.url);
+  if (profileHandle && isLikelyBusinessIdentity(profileHandle)) {
+    return {
+      query: humanizeHandle(profileHandle),
+      confidence: 'medium',
+      reason: 'profile-url-handle',
+    };
+  }
+
+  const displayName =
+    parseDisplayNameFromTitle(input.title) ??
+    parseDisplayNameFromDescription(input.description) ??
+    null;
+  if ((posterHandle || profileHandle) && displayName && isLikelyBusinessIdentity(displayName)) {
+    return {
+      query: collapseWhitespace(stripHandleSuffix(displayName)),
+      confidence: 'medium',
+      reason: 'account-display-name',
+    };
+  }
+
+  if (posterHandle && isLikelyBusinessIdentity(posterHandle)) {
+    return {
+      query: humanizeHandle(posterHandle),
+      confidence: 'low',
+      reason: 'account-handle',
+    };
+  }
+
+  return null;
+}
+
+export function classifyPlaceQueryStrength(params: {
+  query: string | null | undefined;
+  extractionReason?: string | null;
+  confidence?: PlaceExtractionConfidence | null;
+  sourceContextText?: string | null;
+  accountIdentityUsed?: boolean;
+}): PlaceQueryStrength {
+  const query = collapseWhitespace(params.query ?? '');
+  if (!query) return 'weak';
+
+  if (ADDRESS_RE.test(query)) return 'strong';
+
+  const hasContext = !!params.sourceContextText || CITY_STATE_RE.test(query) || looksLikeLocationOnly(query);
+  const businessLike = looksLikeBusinessQuery(query) || isLikelyBusinessIdentity(query);
+  const confidence = params.confidence ?? null;
+  const reason = params.extractionReason ?? '';
+  const generic = isGenericWeakQuery(query);
+
+  if (generic && !businessLike) return 'weak';
+  if (businessLike && hasContext) return 'strong';
+  if (reason === 'after-location-pin' && businessLike) return 'strong';
+  if (businessLike && (params.accountIdentityUsed || confidence === 'high' || confidence === 'medium')) {
+    return 'medium';
+  }
+  if (businessLike && tokenizeQuery(query).length >= 3 && !generic) return 'medium';
+  return 'weak';
+}
+
+export function isExplicitAddressQuery(query: string | null | undefined): boolean {
+  return !!query && ADDRESS_RE.test(query);
+}
+
+export function isAccountIdentityReason(reason: string | null | undefined): boolean {
+  return (
+    reason === 'account-display-name' ||
+    reason === 'account-handle' ||
+    reason === 'profile-url-handle'
+  );
+}
+
+export function hasExplicitSourceBusinessSignal(
+  reason: string | null | undefined,
+): boolean {
+  return (
+    reason === 'after-location-pin' ||
+    reason === 'handle+location' ||
+    reason === 'titlecase' ||
+    reason === 'titlecase+city'
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Internals
 // ---------------------------------------------------------------------------
@@ -212,6 +333,52 @@ function stripCreatorBoilerplate(s: string | null): string | null {
   const m = s.match(CREATOR_BOILERPLATE_RE);
   if (m && m[1]) return m[1].trim();
   return s.trim();
+}
+
+function detectPosterHandle(
+  title: string | null,
+  description: string | null,
+  sourceUrl: string,
+): string | null {
+  const profileHandle = detectProfileUrlHandle(sourceUrl);
+  if (profileHandle) return profileHandle.toLowerCase();
+
+  if (title) {
+    const m = title.match(/\(@([A-Za-z0-9._]{2,30})\)/);
+    if (m) return m[1].toLowerCase();
+  }
+
+  if (description) {
+    const m = description.match(/\(@([A-Za-z0-9._]{2,30})\)\s+on\s+(?:Instagram|TikTok)/i);
+    if (m) return m[1].toLowerCase();
+  }
+
+  return null;
+}
+
+function detectProfileUrlHandle(url: string): string | null {
+  const match = url.match(ACCOUNT_PROFILE_URL_RE);
+  return match?.[1]?.toLowerCase() ?? null;
+}
+
+function parseDisplayNameFromTitle(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const trimmed = value.trim();
+  const handleMatch = trimmed.match(/^(.+?)\s*\(@[A-Za-z0-9._]{2,30}\)$/);
+  if (handleMatch?.[1]) return handleMatch[1].trim();
+  const platformMatch = trimmed.match(/^(.+?)\s+on\s+(?:instagram|tiktok)\b/i);
+  if (platformMatch?.[1]) return platformMatch[1].trim();
+  return null;
+}
+
+function parseDisplayNameFromDescription(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const match = value.match(/-\s*([^\n]+?)\s*\(@[A-Za-z0-9._]{2,30}\)\s+on\s+(?:Instagram|TikTok)/i);
+  return match?.[1]?.trim() ?? null;
+}
+
+function stripHandleSuffix(value: string): string {
+  return value.replace(/\s*\(@[A-Za-z0-9._]{2,30}\)\s*$/i, '').trim();
 }
 
 function pickAfterLocationPin(s: string): string | null {
@@ -319,6 +486,30 @@ function humanizeHandle(handle: string): string {
   return collapseWhitespace(s);
 }
 
+function isLikelyBusinessIdentity(value: string): boolean {
+  const normalized = collapseWhitespace(value).toLowerCase();
+  if (!normalized) return false;
+  if (looksLikeCreatorOrRepostHandle(normalized)) return false;
+  if (GENERIC_WEAK_QUERY_RE.test(normalized)) return false;
+
+  const compact = normalized.replace(/[^a-z0-9 ]+/g, ' ');
+  const tokens = compact.split(/\s+/).filter(Boolean);
+  const placeKeywordHits = tokens.filter((token) =>
+    PLACE_KEYWORDS.some((keyword) => keyword.replace(/\s+/g, '') === token || keyword === token),
+  ).length;
+
+  if (placeKeywordHits >= 1 && tokens.length >= 2) return true;
+  if (tokens.length >= 3 && /^[a-z0-9 ._'-]+$/i.test(value) && !GENERIC_WEAK_PREFIX_RE.test(value)) {
+    return true;
+  }
+  return false;
+}
+
+function looksLikeBusinessQuery(query: string): boolean {
+  const lower = query.toLowerCase();
+  return PLACE_KEYWORDS.some((keyword) => lower.includes(keyword));
+}
+
 function pickTrailingCity(s: string): string | null {
   if (!s) return null;
   const lines = s.split(/[\n\r]/).map((l) => l.trim()).filter(Boolean);
@@ -348,6 +539,27 @@ function pickTitleCasedPhrase(titleStripped: string | null): string | null {
 
 function collapseWhitespace(s: string): string {
   return s.replace(/\s+/g, ' ').trim();
+}
+
+function tokenizeQuery(s: string): string[] {
+  return collapseWhitespace(s)
+    .toLowerCase()
+    .replace(/[^a-z0-9 ]+/g, ' ')
+    .split(/\s+/)
+    .filter((token) => token.length >= 3);
+}
+
+function isGenericWeakQuery(query: string): boolean {
+  const trimmed = collapseWhitespace(query);
+  if (!trimmed) return true;
+  if (GENERIC_WEAK_PREFIX_RE.test(trimmed) || GENERIC_WEAK_QUERY_RE.test(trimmed)) {
+    return true;
+  }
+  const tokens = tokenizeQuery(trimmed);
+  if (tokens.length <= 2 && !looksLikeBusinessQuery(trimmed) && !ADDRESS_RE.test(trimmed)) {
+    return true;
+  }
+  return false;
 }
 
 // Words that, on their own or as part of a comma-list, identify a place as

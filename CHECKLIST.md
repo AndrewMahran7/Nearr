@@ -23,13 +23,21 @@ Estimated valuation means: if metrics are real, retention is healthy, and growth
 
 Built does not equal unlocked.
 
+## PRODUCT EXPERIENCE RULE
+
+The product experience section describes what the app should feel like at a stage.
+
+It does not unlock the stage by itself.
+
+The app must still hit the required metrics before moving forward.
+
 ## CURRENT BUILD REALITY
 
-- Core save loop: magic-link auth, dev/test password login, custom SMTP, save from link/share, source URL saving, AI/place extraction, saved places, place detail, original-post viewing.
-- Map/place management: saved-place list, map pins, show-on-map flows, directions, notes, place filters, selected-place bottom card.
-- Reminder infrastructure: reminder toggle, distance settings, notification setup, background proximity checks, geofencing, setup reminder UI. This exists for beta testing, not yet as a proven retention engine.
-- Auth/legal/ops: auth callback route fix, account/profile recovery, legal scaffolding disabled for beta, website/landing-page planning.
-- UI/onboarding: dark/orange refresh, How Nearr Works onboarding, settings checklist, crash/performance cleanup.
+- Core save loop: magic-link auth, `dev@nearr.test` password login in all builds, save from link/share/manual, source URL saving, saved places, place detail, and save -> focused map via `savedPlaceId`.
+- Map/place management: saved-place list, map pins and radius zones, focused show-on-map flows, dismissible selected-place bottom card, directions, notes, original-post viewing, and place filters.
+- Reminder infrastructure: reminder toggle, distance settings, notification setup, test notification, foreground/background proximity checks, geofencing, and setup reminder UI. Built for beta testing, not yet proven as a retention engine.
+- Auth/legal/ops: file-backed auth-callback route, account/profile recovery, legal scaffolding present but disabled for beta, website/landing-page planning.
+- UI/onboarding: dark/orange refresh, How Nearr Works onboarding, activation progress card, settings checklist, crash/performance cleanup.
 
 ## ROADMAP DRIFT RULE
 
@@ -51,6 +59,12 @@ Examples:
 
 ## 🎯 Goal
 User can save a place → see it → understand it
+
+## 🧭 Product Experience
+
+Nearr should feel understandable. A new user should know what the app does within 30 seconds. They should be able to save a place, see it on the map, open details, and understand why it saved. The app can still feel beta, but it should not feel broken.
+
+Main feeling: “Oh, I get it. This saves places I want to try.”
 
 ## 💸 Expected Monthly Spend
 
@@ -98,10 +112,12 @@ User can save a place → see it → understand it
 
 ### Capture + Save
 - Save from link
-- Native/share entry works
+- Manual save
+- Native/share entry works, with iOS silent-save still requiring real-device verification
 - Basic extraction
 - Candidate selection
 - Saved places persist correctly
+- Save success focuses the saved place on Map
 
 👉 Drives:
 - Save success rate
@@ -163,6 +179,12 @@ User can save a place → see it → understand it
 
 ## 🎯 Goal
 User saves → remembers → sees value
+
+## 🧭 Product Experience
+
+Nearr should feel useful after a few saves. The user should be able to reopen the app and remember why they saved each place. Original post and source recall should feel obvious. Place details should feel human, not like database rows.
+
+Main feeling: “I’m glad I saved this.”
 
 ## 💸 Expected Monthly Spend
 
@@ -250,6 +272,12 @@ User saves → remembers → sees value
 
 ## 🎯 Goal
 Saving becomes effortless
+
+## 🧭 Product Experience
+
+Saving should feel fast and natural. Sharing or pasting a link should rarely require thinking. If extraction is uncertain, the app should help the user choose quickly. Wrong saves and failed saves should feel rare.
+
+Main feeling: “Saving to Nearr is effortless.”
 
 ## 💸 Expected Monthly Spend
 
@@ -339,6 +367,12 @@ Saving becomes effortless
 
 ## 🎯 Goal
 Productize reminders and completion loop
+
+## 🧭 Product Experience
+
+Nearr should start bringing users back without them manually remembering. Nearby reminders should feel timely and useful, not spammy. Users should start completing the loop by visiting places. The app should make saved vs visited feel satisfying.
+
+Main feeling: “Nearr reminded me at the right moment.”
 
 ## 💸 Expected Monthly Spend
 
@@ -437,6 +471,12 @@ Reminder infrastructure may be built earlier, but Stage 3 requires evidence that
 ## 🎯 Goal
 User uses Nearr to decide where to go
 
+## 🧭 Product Experience
+
+Nearr should help users decide where to go now. Map, filters, ranking, and nearby context should feel like decision tools. The app should shift from “things I saved” to “what should I do?” Getting directions should become a core action.
+
+Main feeling: “Nearr helps me choose.”
+
 ## 💸 Expected Monthly Spend
 
 **Expected monthly spend:** $1,500-$7,500/month
@@ -517,6 +557,12 @@ Users who:
 ## 🎯 Goal
 More use cases without confusion
 
+## 🧭 Product Experience
+
+Nearr should work beyond restaurants without becoming confusing. Activities, stores, events, and other places should fit naturally. Food should still work well. The product should feel broader but not bloated.
+
+Main feeling: “I can save anything I want to do later.”
+
 ## 💸 Expected Monthly Spend
 
 **Expected monthly spend:** $5,000-$20,000/month
@@ -578,6 +624,12 @@ Expansion only matters if the food loop stays stable.
 
 ## 🎯 Goal
 People influence each other
+
+## 🧭 Product Experience
+
+Social should feel like useful influence, not a feed for its own sake. Users should discover places through friends, creators, or shared maps. Profiles and following should make the app more useful, not more distracting. Private saved-place behavior must still remain strong.
+
+Main feeling: “People I trust help me find places.”
 
 ## 💸 Expected Monthly Spend
 
@@ -649,6 +701,12 @@ Social only matters if private saved-place behavior is already strong.
 
 ## 🎯 Goal
 Nearr predicts what you should do
+
+## 🧭 Product Experience
+
+Nearr should feel predictive. The app should recommend what to do based on intent, context, history, and location. Recommendations should drive real actions, not just clicks. AI should feel invisible and useful, not gimmicky.
+
+Main feeling: “Nearr knows what I’d probably want to do.”
 
 ## 💸 Expected Monthly Spend
 

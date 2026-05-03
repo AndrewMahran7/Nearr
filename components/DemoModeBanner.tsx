@@ -8,20 +8,24 @@
  * Renders nothing if `isDemoMode()` is false.
  */
 
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Card } from './Card';
-import { Colors, Spacing, Typography } from '@/constants';
+import { Spacing } from '@/constants';
 import { isDemoMode } from '@/lib/demoMode';
+import { useTheme } from '@/lib/theme';
 
 export function DemoModeBanner() {
+  const { colors, typography } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   if (!isDemoMode()) return null;
   return (
     <Card style={styles.card}>
       <View style={styles.row}>
         <View style={styles.dot} />
-        <Text style={Typography.bodyStrong}>Demo Mode</Text>
+        <Text style={typography.bodyStrong}>Demo Mode</Text>
       </View>
-      <Text style={[Typography.caption, styles.body]}>
+      <Text style={[typography.caption, styles.body]}>
         Showing seeded demo data. Supabase, Google Places, real location, and
         notifications are all mocked. Disable with EXPO_PUBLIC_DEMO_MODE.
       </Text>
@@ -29,24 +33,26 @@ export function DemoModeBanner() {
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    marginBottom: Spacing.lg,
-    backgroundColor: Colors.surface,
-    borderColor: Colors.accent,
-    borderWidth: 1,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-    marginBottom: Spacing.xs,
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: Colors.accent,
-  },
-  body: { color: Colors.textMuted, lineHeight: 18 },
-});
+function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
+  return StyleSheet.create({
+    card: {
+      marginBottom: Spacing.lg,
+      backgroundColor: colors.surface,
+      borderColor: colors.accent,
+      borderWidth: 1,
+    },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.sm,
+      marginBottom: Spacing.xs,
+    },
+    dot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: colors.accent,
+    },
+    body: { color: colors.textMuted, lineHeight: 18 },
+  });
+}

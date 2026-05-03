@@ -19,7 +19,7 @@ Nearr may collect:
 - reminder and notification settings
 - location permission status
 - current or approximate location when needed for nearby reminders
-- app diagnostics and reliability information used to debug and improve the product
+- lightweight product analytics events and app diagnostics used to debug and improve the product
 
 ## 3. How Data Is Used
 
@@ -46,6 +46,8 @@ Nearr may use Resend or another SMTP/email provider to send sign-in emails or se
 Nearr may use Google Maps or Places APIs and Apple or Google mapping services to display maps, place details, or directions links.
 
 Instagram and TikTok links may be stored as source URLs when users save content from those services.
+
+If enabled in a native iOS build, Nearr may also process shared URLs from the iOS share sheet and hand those URLs into the app or related backend services.
 
 ## 7. Sharing and Disclosure
 

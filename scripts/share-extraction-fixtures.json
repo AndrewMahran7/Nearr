@@ -222,6 +222,17 @@
     "expectedQuery": "Joe's Pizza Brooklyn"
   },
   {
+    "name": "caption-keeps-ny-source-context",
+    "input": {
+      "title": "No Good Burger Joint NY",
+      "description": "Burger spot I need to try next time I'm in the city.",
+      "url": "https://www.instagram.com/p/Cnycontext01/",
+      "sourceType": "instagram"
+    },
+    "expectedQuery": "No Good Burger Joint NY",
+    "_comment": "Extraction should preserve the explicit NY context so downstream ranking can bias to New York instead of nearby device location."
+  },
+  {
     "name": "creator-handle-ignored-caption-text-wins",
     "input": {
       "title": "@saraheatsla on TikTok: Joe's Pizza in NYC is legendary",
@@ -299,6 +310,28 @@
     "_comment": "Poster is @mad_yolks. If bio enrichment classifies @mad_yolks as restaurant_or_business (extractedName=Mad Yolks, extractedCity=Los Angeles), that is the primary venue. @glaumeggranch is a tagged account but the caption does not name it as the place being visited. The pipeline uses poster bio evidence first; @glaumeggranch would not be enriched as a restaurant."
   },
   {
+    "name": "restaurant-owned-post-uses-account-identity",
+    "input": {
+      "title": "weekend burger drop",
+      "description": "18,201 Followers, 412 Following, 899 Posts - No Good Burger Joint (@nogoodburgerjoint) on Instagram: \"Open daily for smashburgers and fries\"",
+      "url": "https://www.instagram.com/reel/Caccountidentity01/",
+      "sourceType": "instagram"
+    },
+    "expectedQuery": "No Good Burger Joint",
+    "_comment": "Post text is generic. Poster account identity should become the candidate query instead of vague caption text or a random nearby place."
+  },
+  {
+    "name": "reported-reel-account-identity-needs-confirmation",
+    "input": {
+      "title": "stuffin grilled cheeses with smashburgers",
+      "description": "513,100 views, 1,100 comments - No Good Burger Joint NY (@nogoodburgerjointny) on Instagram: \"Open daily for smashburgers and fries\"",
+      "url": "https://www.instagram.com/reel/DNT_wptv1K9/",
+      "sourceType": "instagram"
+    },
+    "expectedQuery": "No Good Burger Joint NY",
+    "_comment": "This mirrors the reported reel pattern: generic reel text plus poster account identity but no proven address/city in shared metadata. Query may use account identity for search, but host and edge flows must not silently save a random San Jose/Santa Cruz candidate."
+  },
+  {
     "name": "handle-text-alone-no-bio-no-caption-name",
     "input": {
       "title": "going here this weekend 😍",
@@ -308,6 +341,17 @@
     },
     "expectedQuery": "",
     "_comment": "Handle @madyolkskitchen looks like a restaurant name but no caption names the restaurant explicitly, no address, and no bio enrichment. Handle text alone must NOT be used as a Places query. Expected: no query, manual fallback."
+  },
+  {
+    "name": "weak-generic-food-post-no-place",
+    "input": {
+      "title": "best thing i ate this week",
+      "description": "crispy, juicy, absolutely unreal. save this for later.",
+      "url": "https://www.instagram.com/p/Cweakgeneric02/",
+      "sourceType": "instagram"
+    },
+    "expectedQuery": "",
+    "_comment": "No place name, no address, no account identity. The pipeline should stay weak and require chooser/manual fallback instead of generating a random Places query."
   },
   {
     "name": "tagged-handle-bio-evidence-poster-also-has-bio",

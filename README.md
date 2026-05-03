@@ -1,57 +1,81 @@
 # Nearr
 
-Save the spots you want to visit. Get pinged when you're nearby.
+Nearr helps people save places they discover online, see them on a personal map, and optionally get reminded when they are nearby.
 
-## Quick start
+## Current beta reality
 
-1. `npm install`
-2. Create a Supabase project, then run `supabase/schema.sql` in the SQL editor.
-3. In Supabase Auth settings, enable email magic links and add `nearr://auth-callback` as a redirect URL.
-4. Get a Google Maps Platform key with Places API + Maps SDK enabled.
-5. Copy `.env.example` to `.env` and fill values, then put the same values into `app.json` `extra` and `config` fields (or replace `$VARS` with literals for now).
-6. `npm run start` and open in Expo Go (note: background location + native maps require a dev build).
+- Auth is Supabase magic-link based.
+- `/auth-callback` is a real route in the app.
+- `dev@nearr.test` password login exists for the dedicated test account in all builds.
+- Save flows route to Map focused on the saved place using `savedPlaceId`.
+- Notifications, background proximity checks, and geofencing exist in code.
+- iOS share extension is enabled in config but still needs real-device verification for the silent-save path.
+- Legal acceptance scaffolding exists, but acceptance is disabled for beta.
 
-## Stack
+## Quick setup
 
-- Expo + Expo Router
-- Supabase (auth + Postgres with RLS)
-- Google Places + react-native-maps
-- expo-location + expo-notifications + expo-task-manager
+1. Install dependencies:
 
-See `docs/PROJECT_CONTEXT.md` for the full picture.
+   ```sh
+   npm install
+   ```
 
-## Transcription fallback
+2. Create `.env` from `.env.example`.
 
-Nearr saves places from social links. Sometimes the caption doesn't include
-the venue name but the video's audio does — e.g. "we're at Tacos Los Chulos".
-We want a future-ready hook to transcribe that audio and feed the spoken
-name into the AI extractor (so the Places query becomes
-`Tacos Los Chulos Los Angeles`).
+3. Set at least:
 
-**Status: placeholder only.** No transcription provider is integrated yet.
+   - `EXPO_PUBLIC_SUPABASE_URL`
+   - `EXPO_PUBLIC_SUPABASE_ANON_KEY`
+   - `EXPO_PUBLIC_GOOGLE_MAPS_API_KEY`
 
-- The abstraction lives in [lib/transcription/index.ts](lib/transcription/index.ts) with types in [lib/transcription/types.ts](lib/transcription/types.ts).
-- The only implementation today is [lib/transcription/providers/placeholder.ts](lib/transcription/providers/placeholder.ts), which returns `{ status: "unavailable" }` when no provider env var is set and never throws.
-- The eval harness ([scripts/evalShareExtraction.ts](scripts/evalShareExtraction.ts)) uses it: fixtures may include a `transcript` field directly, otherwise the placeholder is called and the eval logs the result without failing.
-- The AI extractor ([lib/aiExtractPlace.ts](lib/aiExtractPlace.ts)) accepts an optional `transcript` and prioritizes spoken phrases like "we're at ___", "welcome to ___", "today we're trying ___".
+4. Configure Supabase Auth redirect URLs to include:
 
-**Production path.** The React Native client must NOT call a transcription
-provider directly — that would either ship a secret API key in the Expo
-bundle or require an undocumented scraping endpoint. Instead, the share
-screen ([app/share.tsx](app/share.tsx)) should call a Supabase Edge Function
-that wraps `transcribeSocialVideo(...)` server-side. That Edge Function is
-the only place `TRANSCRIPTION_PROVIDER` / `TRANSCRIPTION_API_KEY` should
-be read.
+   - `nearr://auth-callback`
+   - `nearr:///auth-callback`
+   - `exp://*/--/auth-callback`
 
-**Why no Choppity / GetTheScript integration?** As of writing there is no
-documented public API or API key available for either service. We
-deliberately do NOT hardcode an undocumented endpoint or scrape their UI.
-When a documented API + key materialize, drop a new file under
-`lib/transcription/providers/` and route to it from
-`lib/transcription/index.ts` based on `TRANSCRIPTION_PROVIDER`.
+5. Apply migrations:
 
-Realistic future providers:
+   ```sh
+   supabase db push
+   ```
 
-- A documented Choppity / GetTheScript REST API (if/when one exists).
-- Server-side `yt-dlp`-style download + OpenAI Whisper.
-- Deepgram / AssemblyAI / OpenAI Whisper fed an audio URL extracted server-side.
+6. Start the app:
+
+   ```sh
+   npm run start
+   ```
+
+## Native / build commands
+
+- Android local run: `npm run android`
+- iOS local run: `npm run ios`
+- Type check: `npm run typecheck`
+- Share-eval script: `npm run eval:share-extraction`
+
+For real background location, Android share intent, iOS share extension, and geofencing, use a native build rather than Expo Go.
+
+## Important env / infra notes
+
+- Native Google Maps keys are injected through [app.config.js](app.config.js), not hardcoded in [app.json](app.json).
+- Supabase custom SMTP / Resend configuration is external to this repo.
+- `process-share-link` code exists in the repo, but deployment is environment-specific.
+- iOS share extension silent save depends on App Group setup, native build provisioning, deployed Edge Function, and the shared auth token bridge.
+
+## Where docs live
+
+- [docs/PROJECT_CONTEXT.md](docs/PROJECT_CONTEXT.md): current product and feature reality
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): auth/save/map/notification/share flows
+- [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md): env vars, Supabase, EAS, native requirements
+- [docs/DATABASE.md](docs/DATABASE.md): migration-backed schema
+- [docs/TESTING_CHECKLIST.md](docs/TESTING_CHECKLIST.md): current beta test pass list
+- [docs/IOS_SHARE_EXTENSION.md](docs/IOS_SHARE_EXTENSION.md): current iOS share-extension status and setup
+- [docs/V1_SCOPE_FREEZE.md](docs/V1_SCOPE_FREEZE.md): what is shipping vs partial vs disabled vs deferred
+- [docs/NEXT_STEPS.md](docs/NEXT_STEPS.md): current validation and release priorities
+- [docs/ANALYTICS_QUERIES.md](docs/ANALYTICS_QUERIES.md): current SQL queries for product metrics
+
+## Beta caveats
+
+- Treat the iOS share extension as partial until it is re-verified on a fresh native build.
+- Background reminders and geofencing need a real device.
+- Transcription is not a shipping feature yet.

@@ -75,6 +75,7 @@ import { isMapPreviewMode } from '@/lib/mapPreview';
 import { openExternalMaps as openInExternalMaps } from '@/lib/externalMaps';
 import { trackEvent } from '@/lib/analytics';
 import { distanceMeters, milesToMeters, minutesToMeters } from '@/lib/geo';
+import { useTheme } from '@/lib/theme';
 import { getDemoSeededSavedPlacesSync } from '@/services/demo';
 import { getProfile } from '@/services/profileService';
 import type { Profile, SavedPlaceWithPlace } from '@/types';
@@ -207,6 +208,8 @@ const PREVIEW_INITIAL_REGION: Region = {
 
 export default function MapScreen() {
   const router = useRouter();
+  const { colors, typography, resolvedTheme } = useTheme();
+  const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
   // Optional deep-link param: when present, the map should center on this
   // saved place and open its preview card. Set by "Show on map" actions on
   // the place detail screen and saved-place cards. We track the last id we
@@ -467,7 +470,11 @@ export default function MapScreen() {
     }
     handledTargetIdRef.current = savedPlaceId;
     didFitRef.current = true;
-    selectPlace(target);
+    try {
+      selectPlace(target);
+    } catch (err) {
+      console.warn('[map] focus failed', (err as Error)?.message ?? err);
+    }
   }, [savedPlaceId, mapReady, validPlaces, profile]);
 
   // ---- DEBUG ------------------------------------------------------------
@@ -570,7 +577,11 @@ export default function MapScreen() {
   function selectPlace(item: SavedPlaceWithPlace) {
     previousRegionRef.current = lastRegionRef.current;
     setSelected(item);
-    focusZone(item);
+    try {
+      focusZone(item);
+    } catch (err) {
+      console.warn('[map] focus failed', (err as Error)?.message ?? err);
+    }
   }
 
   const previewPanResponder = useMemo(
@@ -653,7 +664,7 @@ export default function MapScreen() {
         ref={mapRef}
         provider={MAP_PROVIDER}
         style={StyleSheet.absoluteFill}
-        customMapStyle={Platform.OS === 'android' ? DARK_MAP_STYLE : undefined}
+        customMapStyle={Platform.OS === 'android' && resolvedTheme === 'dark' ? DARK_MAP_STYLE : undefined}
         // Only show the user dot when we actually have a fix. Toggling
         // `showsUserLocation` on without a usable provider can leave the
         // Google Maps Android view in a "loading" state.
@@ -788,12 +799,12 @@ export default function MapScreen() {
                 <Feather
                   name={selectedIconName(selected)}
                   size={18}
-                  color={Colors.accent}
+                  color={colors.accent}
                 />
               </View>
               <View style={styles.previewCopy}>
                 <View style={styles.previewHeader}>
-                  <Text style={Typography.heading} numberOfLines={1}>
+                  <Text style={typography.heading} numberOfLines={1}>
                     {selected.place.name}
                   </Text>
                   <Pressable
@@ -805,13 +816,13 @@ export default function MapScreen() {
                   </Pressable>
                 </View>
                 {selected.place.formatted_address ? (
-                  <Text style={[Typography.caption, styles.previewAddress]} numberOfLines={1}>
+                  <Text style={[typography.caption, styles.previewAddress]} numberOfLines={1}>
                     {selected.place.formatted_address}
                   </Text>
                 ) : null}
                 <View style={styles.previewMetaRow}>
                   {selectedDistance != null ? (
-                    <Text style={[Typography.caption, styles.previewMetaText]}>
+                    <Text style={[typography.caption, styles.previewMetaText]}>
                       {formatDistanceAway(selectedDistance)}
                     </Text>
                   ) : null}
@@ -842,7 +853,7 @@ export default function MapScreen() {
               style={styles.previewSecondaryRow}
             >
               <Text style={styles.previewSecondaryText}>Details</Text>
-              <Feather name="chevron-right" size={16} color={Colors.textSecondary} />
+              <Feather name="chevron-right" size={16} color={colors.textSecondary} />
             </Pressable>
           </Card>
         </Animated.View>
@@ -887,8 +898,12 @@ export default function MapScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.bg },
+function createStyles(
+  colors: ReturnType<typeof useTheme>['colors'],
+  typography: ReturnType<typeof useTheme>['typography'],
+) {
+  return StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.bg },
 
   markerWrap: {
     width: 40,
@@ -916,9 +931,9 @@ const styles = StyleSheet.create({
     width: 14,
     height: 14,
     borderRadius: 7,
-    backgroundColor: Colors.primary,
+    backgroundColor: colors.primary,
     borderWidth: 2,
-    borderColor: Colors.text,
+    borderColor: colors.text,
   },
 
   locPill: {
@@ -928,9 +943,9 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.xs,
     paddingHorizontal: Spacing.md,
     borderRadius: Radius.pill,
-    backgroundColor: Colors.surfaceElevated,
+    backgroundColor: colors.surfaceElevated,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: Colors.border,
+    borderColor: colors.border,
     shadowColor: '#000',
     shadowOpacity: 0.2,
     shadowRadius: 10,
@@ -938,8 +953,8 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   locPillText: {
-    ...Typography.caption,
-    color: Colors.text,
+    ...typography.caption,
+    color: colors.text,
   },
 
   banner: {
@@ -949,7 +964,7 @@ const styles = StyleSheet.create({
     right: Spacing.lg,
   },
   bannerCard: {},
-  muted: { color: Colors.textMuted, marginTop: 2 },
+  muted: { color: colors.textMuted, marginTop: 2 },
 
   previewBadge: {
     position: 'absolute',
@@ -961,9 +976,9 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.xs,
     paddingHorizontal: Spacing.md,
     borderRadius: Radius.pill,
-    backgroundColor: Colors.surfaceElevated,
+    backgroundColor: colors.surfaceElevated,
     borderWidth: 1,
-    borderColor: Colors.accent,
+    borderColor: colors.accent,
     shadowColor: '#000',
     shadowOpacity: 0.2,
     shadowRadius: 10,
@@ -974,11 +989,11 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: Colors.accent,
+    backgroundColor: colors.accent,
   },
   previewBadgeText: {
-    ...Typography.caption,
-    color: Colors.text,
+    ...typography.caption,
+    color: colors.text,
     fontWeight: '600',
   },
 
@@ -989,9 +1004,9 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.xs,
     paddingHorizontal: Spacing.md,
     borderRadius: Radius.pill,
-    backgroundColor: Colors.surfaceElevated,
+    backgroundColor: colors.surfaceElevated,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: Colors.border,
+    borderColor: colors.border,
     shadowColor: '#000',
     shadowOpacity: 0.2,
     shadowRadius: 10,
@@ -999,8 +1014,8 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   emptyPillText: {
-    ...Typography.caption,
-    color: Colors.text,
+    ...typography.caption,
+    color: colors.text,
   },
 
   previewWrap: {
@@ -1010,12 +1025,12 @@ const styles = StyleSheet.create({
     bottom: Spacing.lg,
   },
   previewCard: {
-    backgroundColor: Colors.surfaceElevated,
+    backgroundColor: colors.surfaceElevated,
     borderRadius: Radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.border,
     shadowColor: '#000',
-    shadowOpacity: 0.34,
+    shadowOpacity: resolvedShadowOpacity(colors),
     shadowRadius: 20,
     shadowOffset: { width: 0, height: 10 },
     elevation: 8,
@@ -1030,7 +1045,7 @@ const styles = StyleSheet.create({
     width: 42,
     height: 5,
     borderRadius: Radius.pill,
-    backgroundColor: Colors.border,
+    backgroundColor: colors.border,
   },
   previewTopRow: {
     flexDirection: 'row',
@@ -1041,12 +1056,12 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 16,
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: Colors.primary,
+    shadowColor: colors.primary,
     shadowOpacity: 0.12,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 3 },
@@ -1061,7 +1076,7 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   previewAddress: {
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     marginTop: 2,
   },
   previewMetaRow: {
@@ -1072,19 +1087,19 @@ const styles = StyleSheet.create({
     marginTop: Spacing.sm,
   },
   previewMetaText: {
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
   },
   metaPill: {
     paddingVertical: 5,
     paddingHorizontal: Spacing.sm,
     borderRadius: Radius.pill,
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
   },
   metaPillText: {
-    ...Typography.caption,
-    color: Colors.textSecondary,
+    ...typography.caption,
+    color: colors.textSecondary,
   },
   closeBtn: {
     width: 28,
@@ -1092,14 +1107,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 14,
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
   },
   closeText: {
     fontSize: 22,
     lineHeight: 22,
-    color: Colors.textMuted,
+    color: colors.textMuted,
     fontWeight: '600',
   },
   previewActions: {
@@ -1117,8 +1132,8 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.xs,
   },
   previewSecondaryText: {
-    ...Typography.label,
-    color: Colors.textSecondary,
+    ...typography.label,
+    color: colors.textSecondary,
   },
 
   viewAllBtn: {
@@ -1128,9 +1143,9 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.xs,
     paddingHorizontal: Spacing.md,
     borderRadius: Radius.pill,
-    backgroundColor: Colors.surfaceElevated,
+    backgroundColor: colors.surfaceElevated,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: Colors.border,
+    borderColor: colors.border,
     shadowColor: '#000',
     shadowOpacity: 0.2,
     shadowRadius: 10,
@@ -1138,8 +1153,8 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   viewAllText: {
-    ...Typography.caption,
-    color: Colors.text,
+    ...typography.caption,
+    color: colors.text,
     fontWeight: '600',
   },
 
@@ -1150,7 +1165,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: Radius.pill,
-    backgroundColor: Colors.primary,
+    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
@@ -1159,5 +1174,10 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 6 },
     elevation: 4,
   },
-  fabText: { color: Colors.textInverse, fontSize: 28, lineHeight: 30 },
-});
+  fabText: { color: colors.textInverse, fontSize: 28, lineHeight: 30 },
+  });
+}
+
+function resolvedShadowOpacity(colors: ReturnType<typeof useTheme>['colors']) {
+  return colors.bg === '#FFF8F1' ? 0.12 : 0.34;
+}

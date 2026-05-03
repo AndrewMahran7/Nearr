@@ -607,6 +607,10 @@ export type RankContext = {
   userLatLng?: LocationBias;
 };
 
+export type ShareCandidateRejectionReason =
+  | 'far_from_source_context'
+  | 'name_mismatch';
+
 /**
  * Sort candidates best-first using a small additive scoring model. Higher
  * score = better match. Pure function -- no API calls, no side effects.
@@ -637,6 +641,7 @@ export function rankPlaceCandidates(
 
     if (businessName) {
       s += nameOverlapScore(c.name, businessName) * 12;
+      if (hasMeaningfulNameMatch(c, businessName)) s += 18;
     }
 
     if (
@@ -647,8 +652,17 @@ export function rankPlaceCandidates(
       const km =
         haversineMeters(target.lat, target.lng, c.latitude, c.longitude) /
         1000;
-      // Smooth penalty: 0km -> 0, 10km -> -10, 50km+ -> -50 cap.
-      s -= Math.min(50, km);
+      if (ctx.contextLatLng) {
+        // Source context should dominate: very far results become strongly
+        // disfavored even if Google surfaced them due to a device-biased query.
+        if (km > 250) s -= 220;
+        else if (km > 100) s -= 120;
+        else if (km > 40) s -= 60;
+        else s -= Math.min(30, km * 0.75);
+      } else {
+        // Device proximity is only a fallback nudge.
+        s -= Math.min(20, km * 0.35);
+      }
     }
 
     return s;
@@ -675,6 +689,8 @@ export function rankPlaceCandidates(
  */
 export function extractLocationContext(text: string | null | undefined): string | null {
   if (!text) return null;
+  const cleanedText = text.replace(/\s+/g, ' ').trim();
+
   const pinIdx = text.search(/[\u{1F4CD}\u{1F4CC}]/u);
   if (pinIdx >= 0) {
     const tail = text.slice(pinIdx + 2, pinIdx + 200).split(/[\n\r]/)[0];
@@ -687,14 +703,131 @@ export function extractLocationContext(text: string | null | undefined): string 
     // ("📍 Highland Park, Los Angeles, CA also a location in Grand Central").
     const stopMatch = cleaned.split(/\b(?:also|and|or|plus)\b|[+|]/i)[0].trim();
     if (stopMatch && stopMatch.length >= 3 && stopMatch.length <= 80) {
-      return stopMatch;
+      return normalizeLocationContext(stopMatch);
     }
   }
+
+  const addressMatch = cleanedText.match(
+    /\b\d{1,5}\s+[A-Za-z0-9.'\- ]{2,60}\s+(?:st|street|ave|avenue|blvd|boulevard|rd|road|dr|drive|ln|lane|way|hwy|highway|ct|court|pl|place)\b[^\n,;]*?(?:,\s*[A-Za-z.'\- ]+)?(?:,\s*[A-Z]{2})?/i,
+  );
+  if (addressMatch?.[0]) return normalizeLocationContext(addressMatch[0]);
+
+  const cityState = cleanedText.match(
+    /\b([A-Z][\p{L}.'\u2019-]+(?:\s+[A-Z][\p{L}.'\u2019-]+){0,3}),\s*([A-Z]{2})\b/u,
+  );
+  if (cityState?.[0]) return normalizeLocationContext(cityState[0]);
+
   const trailing = text.match(
     /,\s*([A-Z][\p{L}.'\u2019-]+(?:[\s,]+[A-Z][\p{L}.'\u2019-]+){0,4})\s*[.!?]?\s*$/u,
   );
-  if (trailing && trailing[1]) return trailing[1].trim();
+  if (trailing && trailing[1]) return normalizeLocationContext(trailing[1]);
+
+  for (const alias of LOCATION_CONTEXT_ALIASES) {
+    if (alias.pattern.test(cleanedText)) {
+      return alias.value;
+    }
+  }
+
   return null;
+}
+
+export function hasMeaningfulNameMatch(
+  candidate: PlaceCandidate,
+  extractedBusinessName: string | null | undefined,
+): boolean {
+  if (!extractedBusinessName) return true;
+
+  const normalizedCandidate = normalizeName(candidate.name);
+  const normalizedQuery = normalizeName(extractedBusinessName);
+  if (!normalizedCandidate || !normalizedQuery) return true;
+
+  if (
+    normalizedCandidate === normalizedQuery ||
+    normalizedCandidate.includes(normalizedQuery) ||
+    normalizedQuery.includes(normalizedCandidate)
+  ) {
+    return true;
+  }
+
+  const overlap = nameOverlapScore(candidate.name, extractedBusinessName);
+  const queryTokens = tokenize(extractedBusinessName).filter((t) => !STOP_TOKENS.has(t));
+  if (queryTokens.length <= 2) return overlap >= 1;
+  return overlap >= 2;
+}
+
+export function hasStrongNameMatch(
+  candidate: PlaceCandidate,
+  extractedBusinessName: string | null | undefined,
+): boolean {
+  if (!extractedBusinessName) return false;
+
+  const normalizedCandidate = normalizeName(candidate.name);
+  const normalizedQuery = normalizeName(extractedBusinessName);
+  if (!normalizedCandidate || !normalizedQuery) return false;
+
+  if (
+    normalizedCandidate === normalizedQuery ||
+    normalizedCandidate.includes(normalizedQuery) ||
+    normalizedQuery.includes(normalizedCandidate)
+  ) {
+    return true;
+  }
+
+  const overlap = nameOverlapScore(candidate.name, extractedBusinessName);
+  const queryTokens = tokenize(extractedBusinessName).filter((t) => !STOP_TOKENS.has(t));
+  if (queryTokens.length <= 2) return overlap >= 2;
+  return overlap >= Math.min(3, queryTokens.length);
+}
+
+export function getShareCandidateRejectionReason(
+  candidate: PlaceCandidate,
+  ctx: RankContext,
+): ShareCandidateRejectionReason | null {
+  const businessName = ctx.extractedBusinessName?.trim() ?? '';
+  if (businessName && !hasMeaningfulNameMatch(candidate, businessName)) {
+    return 'name_mismatch';
+  }
+
+  if (
+    ctx.contextLatLng &&
+    Number.isFinite(candidate.latitude) &&
+    Number.isFinite(candidate.longitude)
+  ) {
+    const km =
+      haversineMeters(
+        ctx.contextLatLng.lat,
+        ctx.contextLatLng.lng,
+        candidate.latitude,
+        candidate.longitude,
+      ) / 1000;
+    const overlap = businessName ? nameOverlapScore(candidate.name, businessName) : 0;
+    if (km > 250 && overlap < 2) {
+      return 'far_from_source_context';
+    }
+  }
+
+  return null;
+}
+
+const LOCATION_CONTEXT_ALIASES: Array<{ pattern: RegExp; value: string }> = [
+  { pattern: /\bNYC\b/i, value: 'New York, NY' },
+  { pattern: /\bNY\b/i, value: 'New York, NY' },
+  { pattern: /\bNew York\b/i, value: 'New York, NY' },
+  { pattern: /\bBrooklyn\b/i, value: 'Brooklyn, NY' },
+  { pattern: /\bManhattan\b/i, value: 'Manhattan, NY' },
+  { pattern: /\bLos Angeles\b/i, value: 'Los Angeles, CA' },
+  { pattern: /\bLA\b/i, value: 'Los Angeles, CA' },
+  { pattern: /\bOrange County\b/i, value: 'Orange County, CA' },
+  { pattern: /\bOC\b/i, value: 'Orange County, CA' },
+  { pattern: /\bSanta Cruz\b/i, value: 'Santa Cruz, CA' },
+];
+
+function normalizeLocationContext(value: string): string {
+  const trimmed = value.replace(/[.!?]+$/g, '').trim();
+  for (const alias of LOCATION_CONTEXT_ALIASES) {
+    if (alias.pattern.test(trimmed)) return alias.value;
+  }
+  return trimmed;
 }
 
 /**

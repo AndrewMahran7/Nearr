@@ -48,8 +48,8 @@ export type SaveSavedPlaceInput = {
 };
 
 export type SaveSavedPlaceResult =
-  | { status: 'saved'; saved: SavedPlaceWithPlace }
-  | { status: 'duplicate'; place: PlaceRow };
+  | { status: 'saved'; saved: SavedPlaceWithPlace; savedPlaceId: string }
+  | { status: 'duplicate'; place: PlaceRow; savedPlaceId: string | null };
 
 /** Upsert place + insert saved_place. Throws on unexpected errors. */
 export async function saveSavedPlace(
@@ -208,7 +208,26 @@ export async function saveSavedPlace(
           );
         }
       }
-      return { status: 'duplicate', place: placeRow };
+
+      const { data: existingSaved, error: existingSavedErr } = await supabase
+        .from('saved_places')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('place_id', placeRow.id)
+        .maybeSingle();
+
+      if (existingSavedErr) {
+        console.warn(
+          '[savedPlacesService] duplicate lookup failed (non-fatal)',
+          existingSavedErr.message,
+        );
+      }
+
+      return {
+        status: 'duplicate',
+        place: placeRow,
+        savedPlaceId: existingSaved?.id ?? null,
+      };
     }
     console.warn('[savedPlacesService] saved_places insert failed', savedErr.message);
     throw new Error(savedErr.message);
@@ -221,6 +240,7 @@ export async function saveSavedPlace(
   return {
     status: 'saved',
     saved: saved as SavedPlace & { place: PlaceRow },
+    savedPlaceId: (saved as SavedPlace).id,
   };
 }
 

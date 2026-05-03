@@ -187,6 +187,18 @@ function handOffToHostApp(url: string, reason?: string) {
   }
 }
 
+function openHostMap(savedPlaceId?: string) {
+  const path = savedPlaceId
+    ? `(tabs)/map?savedPlaceId=${encodeURIComponent(savedPlaceId)}`
+    : '(tabs)/map';
+  console.log('[shareExtension] opening host app at', path);
+  try {
+    openHostApp(path);
+  } catch (err) {
+    console.warn('[shareExtension] openHostApp failed', err);
+  }
+}
+
 type UiState =
   | { kind: 'working' }
   | { kind: 'saved'; message?: string }
@@ -226,9 +238,13 @@ export default function ShareExtension(props: InitialProps) {
 
       switch (result.status) {
         case 'saved': {
-          // Backend handled it confidently. Confirm in-sheet and close.
-          setUi({ kind: 'saved', message: result.message });
-          closeTimer = setTimeout(() => close(), 900);
+          // Backend handled it confidently. Reuse the map focus deep link so
+          // the host app opens directly to the place the extension just saved.
+          if (!result.savedPlaceId) {
+            console.warn('[save-flow] saved place id missing; opening map without focus');
+          }
+          openHostMap(result.savedPlaceId);
+          closeTimer = setTimeout(() => close(), 250);
           return;
         }
         case 'ambiguous':

@@ -21,10 +21,11 @@ import * as Location from 'expo-location';
 import { useFocusEffect, useRouter } from 'expo-router';
 
 import { EmptyState, Input, SavedPlaceCard, Screen } from '@/components';
-import { Colors, Radius, Spacing, Typography } from '@/constants';
+import { Radius, Spacing } from '@/constants';
 
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
 import { distanceMeters } from '@/lib/geo';
+import { useTheme } from '@/lib/theme';
 import { getProfile } from '@/services/profileService';
 import { deleteSavedPlace } from '@/services/savedPlacesService';
 import type { Profile, SavedPlaceWithPlace } from '@/types';
@@ -76,6 +77,8 @@ function filterLabel(filter: PlacesFilter): string {
 
 export default function PlacesTab() {
   const router = useRouter();
+  const { colors, typography } = useTheme();
+  const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
   const { data, loading, refreshing, error, refresh } = useSavedPlaces();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [filter, setFilter] = useState('');
@@ -319,8 +322,8 @@ export default function PlacesTab() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}
         ListHeaderComponent={
           <View style={styles.header}>
-            <Text style={Typography.title}>Places</Text>
-            <Text style={[Typography.body, styles.sub]}>
+            <Text style={[typography.title, styles.title]}>Places</Text>
+            <Text style={[typography.body, styles.sub]}>
               Find places you wanted to try.
             </Text>
 
@@ -341,36 +344,49 @@ export default function PlacesTab() {
                   horizontal
                   showsHorizontalScrollIndicator={false}
                   contentContainerStyle={styles.filterRow}
+                  style={styles.filterScroll}
                 >
                   <FilterChip
                     label={`All${counts.all ? ` ${counts.all}` : ''}`}
                     active={activeFilter === 'all'}
                     onPress={() => setFilterAndResetLocation('all')}
+                    colors={colors}
+                    typography={typography}
                   />
                   <FilterChip
                     label={`Recent${counts.recent ? ` ${counts.recent}` : ''}`}
                     active={activeFilter === 'recent'}
                     onPress={() => setFilterAndResetLocation('recent')}
+                    colors={colors}
+                    typography={typography}
                   />
                   <FilterChip
                     label={`Nearby${counts.nearby ? ` ${counts.nearby}` : ''}`}
                     active={activeFilter === 'nearby'}
                     onPress={() => setFilterAndResetLocation('nearby')}
+                    colors={colors}
+                    typography={typography}
                   />
                   <FilterChip
                     label={`Instagram${counts.instagram ? ` ${counts.instagram}` : ''}`}
                     active={activeFilter === 'instagram'}
                     onPress={() => setFilterAndResetLocation('instagram')}
+                    colors={colors}
+                    typography={typography}
                   />
                   <FilterChip
                     label={`TikTok${counts.tiktok ? ` ${counts.tiktok}` : ''}`}
                     active={activeFilter === 'tiktok'}
                     onPress={() => setFilterAndResetLocation('tiktok')}
+                    colors={colors}
+                    typography={typography}
                   />
                   <FilterChip
                     label={`Reminders on${counts.remindersOn ? ` ${counts.remindersOn}` : ''}`}
                     active={activeFilter === 'reminders-on'}
                     onPress={() => setFilterAndResetLocation('reminders-on')}
+                    colors={colors}
+                    typography={typography}
                   />
                 </ScrollView>
               </>
@@ -397,45 +413,72 @@ export default function PlacesTab() {
   );
 }
 
-const styles = StyleSheet.create({
-  header: {
-    paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.lg,
-    paddingBottom: Spacing.sm,
-  },
-  sub: {
-    color: Colors.textSecondary,
-    marginTop: Spacing.xs,
-  },
-  searchWrap: {
-    marginTop: Spacing.lg,
-  },
-  filterRow: {
-    gap: Spacing.sm,
-    marginTop: Spacing.md,
-    marginBottom: Spacing.sm,
-    paddingRight: Spacing.lg,
-  },
-  listContent: { padding: Spacing.lg, paddingBottom: Spacing.xxl },
-  emptyContent: { flexGrow: 1, justifyContent: 'center', padding: Spacing.lg },
-  center: { paddingVertical: Spacing.xxl, alignItems: 'center' },
-});
+function createStyles(
+  colors: ReturnType<typeof useTheme>['colors'],
+  typography: ReturnType<typeof useTheme>['typography'],
+) {
+  return StyleSheet.create({
+    header: {
+      paddingHorizontal: Spacing.lg,
+      paddingTop: Spacing.lg,
+      paddingBottom: Spacing.sm,
+    },
+    title: {
+      ...typography.title,
+      color: colors.text,
+    },
+    sub: {
+      color: colors.textSecondary,
+      marginTop: Spacing.xs,
+    },
+    searchWrap: {
+      marginTop: Spacing.lg,
+    },
+    filterScroll: {
+      marginHorizontal: -Spacing.lg,
+    },
+    filterRow: {
+      gap: Spacing.sm,
+      marginTop: Spacing.md,
+      marginBottom: Spacing.sm,
+      paddingHorizontal: Spacing.lg,
+    },
+    listContent: { padding: Spacing.lg, paddingBottom: Spacing.xxl },
+    emptyContent: { flexGrow: 1, justifyContent: 'center', padding: Spacing.lg },
+    center: { paddingVertical: Spacing.xxl, alignItems: 'center' },
+  });
+}
 
 function FilterChip({
   label,
   active,
   onPress,
+  colors,
+  typography,
 }: {
   label: string;
   active: boolean;
   onPress: () => void;
+  colors: ReturnType<typeof useTheme>['colors'];
+  typography: ReturnType<typeof useTheme>['typography'];
 }) {
   return (
     <Pressable
       onPress={onPress}
-      style={[stylesChip.base, active ? stylesChip.active : stylesChip.inactive]}
+      style={[
+        stylesChip.base,
+        { borderColor: active ? colors.primary : colors.border },
+        active
+          ? { backgroundColor: colors.primary }
+          : { backgroundColor: colors.surfaceElevated },
+      ]}
     >
-      <Text style={[Typography.label, active ? stylesChip.activeText : stylesChip.inactiveText]}>
+      <Text
+        style={[
+          typography.label,
+          { color: active ? colors.textInverse : colors.text },
+        ]}
+      >
         {label}
       </Text>
     </Pressable>
@@ -448,19 +491,5 @@ const stylesChip = StyleSheet.create({
     paddingVertical: Spacing.sm,
     borderRadius: Radius.pill,
     borderWidth: 1,
-  },
-  active: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
-  },
-  inactive: {
-    backgroundColor: Colors.surfaceElevated,
-    borderColor: Colors.border,
-  },
-  activeText: {
-    color: Colors.textInverse,
-  },
-  inactiveText: {
-    color: Colors.text,
   },
 });

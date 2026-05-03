@@ -6,11 +6,13 @@
  * and a small delete affordance. Tapping the body opens the detail screen.
  */
 
+import { useMemo } from 'react';
 import { Alert, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { Button } from './Button';
 import { Card } from './Card';
-import { Colors, Radius, Spacing, Typography } from '@/constants';
+import { Radius, Spacing } from '@/constants';
+import { useTheme } from '@/lib/theme';
 import type { Profile, SavedPlaceWithPlace } from '@/types';
 
 type Props = {
@@ -52,6 +54,8 @@ export function SavedPlaceCard({
   onShowOnMap,
   metaPrefix,
 }: Props) {
+  const { colors, typography } = useTheme();
+  const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
   const place = saved.place;
   const source = sourceLabel(saved);
   const remindersLabel = saved.notifications_enabled ? 'Reminder on' : null;
@@ -75,22 +79,22 @@ export function SavedPlaceCard({
           <Feather
             name={source === 'Instagram' ? 'instagram' : source === 'TikTok' ? 'video' : 'map-pin'}
             size={18}
-            color={Colors.textSecondary}
+            color={colors.textSecondary}
           />
         </View>
 
         <View style={styles.copy}>
-          <Text style={Typography.bodyStrong} numberOfLines={1}>
+          <Text style={typography.bodyStrong} numberOfLines={1}>
             {place.name}
           </Text>
 
           {place.formatted_address ? (
-            <Text style={[Typography.caption, styles.muted]} numberOfLines={2}>
+            <Text style={[typography.caption, styles.muted]} numberOfLines={2}>
               {place.formatted_address}
             </Text>
           ) : null}
 
-          <Text style={[Typography.caption, styles.metaText]} numberOfLines={2}>
+          <Text style={[typography.caption, styles.metaText]} numberOfLines={2}>
             {meta}
           </Text>
         </View>
@@ -126,67 +130,72 @@ export function SavedPlaceCard({
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    marginBottom: Spacing.md,
-    backgroundColor: Colors.surfaceElevated,
-    padding: 14,
-  },
-  cardPressable: {
-    flexDirection: 'row',
-    gap: Spacing.md,
-    alignItems: 'flex-start',
-  },
-  pressed: { opacity: 0.7 },
-  thumb: {
-    width: 52,
-    height: 52,
-    borderRadius: 16,
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  copy: {
-    flex: 1,
-  },
-  muted: { color: Colors.textSecondary, marginTop: 2 },
-  metaText: {
-    color: Colors.textMuted,
-    marginTop: Spacing.xs,
-    lineHeight: 18,
-  },
-  actionRow: {
-    flexDirection: 'row',
-    gap: Spacing.sm,
-    marginTop: Spacing.sm,
-  },
-  primaryAction: {
-    flex: 1,
-    paddingVertical: 10,
-  },
-  secondaryAction: {
-    flex: 1,
-    paddingVertical: 10,
-  },
-  footerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: Spacing.sm,
-  },
-  deleteBtn: {
-    paddingVertical: 4,
-    paddingHorizontal: Spacing.xs,
-  },
-  footerAction: {
-    ...Typography.caption,
-    color: Colors.textSecondary,
-  },
-  removeText: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: Colors.textMuted,
-  },
-});
+function createStyles(
+  colors: ReturnType<typeof useTheme>['colors'],
+  typography: ReturnType<typeof useTheme>['typography'],
+) {
+  return StyleSheet.create({
+    card: {
+      marginBottom: Spacing.md,
+      backgroundColor: colors.surfaceElevated,
+      padding: 14,
+    },
+    cardPressable: {
+      flexDirection: 'row',
+      gap: Spacing.md,
+      alignItems: 'flex-start',
+    },
+    pressed: { opacity: 0.7 },
+    thumb: {
+      width: 52,
+      height: 52,
+      borderRadius: 16,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    copy: {
+      flex: 1,
+    },
+    muted: { color: colors.textSecondary, marginTop: 2 },
+    metaText: {
+      color: colors.textMuted,
+      marginTop: Spacing.xs,
+      lineHeight: 18,
+    },
+    actionRow: {
+      flexDirection: 'row',
+      gap: Spacing.sm,
+      marginTop: Spacing.sm,
+    },
+    primaryAction: {
+      flex: 1,
+      paddingVertical: 10,
+    },
+    secondaryAction: {
+      flex: 1,
+      paddingVertical: 10,
+    },
+    footerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginTop: Spacing.sm,
+    },
+    deleteBtn: {
+      paddingVertical: 4,
+      paddingHorizontal: Spacing.xs,
+    },
+    footerAction: {
+      ...typography.caption,
+      color: colors.textSecondary,
+    },
+    removeText: {
+      fontSize: 12,
+      fontWeight: '500',
+      color: colors.textMuted,
+    },
+  });
+}

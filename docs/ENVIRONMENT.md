@@ -1,79 +1,88 @@
 # Nearr — Environment Setup
 
-> Last updated: 2026-04-27
-> Source of truth: Codebase (not assumptions)
+> Last updated: 2026-05-02
+> Source of truth: current codebase plus required external setup
+
+This document covers the env vars, Supabase setup, native-build requirements, and current beta caveats.
 
 ## Prerequisites
 
-- Node 18+ and npm 9+
-- Xcode 15+ (iOS dev / share extension)
-- Android Studio + JDK 17 (Android dev)
-- `eas-cli` (`npm i -g eas-cli`) for dev/prod builds
-- Supabase CLI (`brew install supabase/tap/supabase`) for migrations + Edge Functions
-- A Supabase project (free tier is fine)
-- A Google Cloud project with the **Maps SDK for Android**, **Maps SDK
-  for iOS**, **Places API** (the legacy v1 Web Service one) all
-  enabled, and a billing account attached
-- Optional: a **Gemini API key** if you want server-side AI extraction
-  to actually run
+- Node 18+
+- npm 9+
+- Xcode 15+ for iOS native builds
+- Android Studio + JDK 17 for Android native builds
+- `eas-cli`
+- Supabase CLI
+- Supabase project
+- Google Cloud project with Maps SDK for iOS, Maps SDK for Android, and Places API enabled
 
-## Install
+## Local install
 
 ```sh
-git clone <repo>
-cd Nearr
 npm install
 cp .env.example .env
-# Fill in EXPO_PUBLIC_* values, then:
-npx expo start
 ```
 
-Expo Go works for the basic UI loop. Anything that needs background
-location, the iOS share extension, or the Android share intent requires
-an EAS dev build.
+Then fill in the required client env values and run:
 
-## Environment variables
+```sh
+npm run start
+```
 
-All client values are `EXPO_PUBLIC_*` so they get inlined into the JS
-bundle. Server / script values are NOT prefixed and live in either
-`supabase secrets`, EAS secret env, or local CLI shell only.
+Expo Go is fine for basic UI work. Native share targets, background location, and geofencing require a native build.
 
-| Var | Where | Required | Purpose |
-| --- | --- | --- | --- |
-| `EXPO_PUBLIC_SUPABASE_URL` | client | yes | Supabase REST URL |
-| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | client | yes | Supabase anon key |
-| `EXPO_PUBLIC_GOOGLE_MAPS_API_KEY` | client | yes | iOS + Android map tiles + Places search from device |
-| `EXPO_PUBLIC_PROCESS_SHARE_LINK_URL` | client | recommended | URL of the deployed `process-share-link` Edge Function. If unset, the iOS share extension always falls back to opening the host app. |
-| `EXPO_PUBLIC_DEMO_MODE` | client | no | `true` → mock everything (no network) |
-| `EXPO_PUBLIC_MAP_PREVIEW_MODE` | client | no | `true` → real auth + real map, seeded data, no location prompt |
-| `GOOGLE_MAPS_IOS_KEY` / `GOOGLE_MAPS_ANDROID_KEY` | native build | no | Optional per-platform overrides read by `app.config.js`. Falls back to `EXPO_PUBLIC_GOOGLE_MAPS_API_KEY` when unset. |
-| `GEMINI_API_KEY` | Edge Function secret | optional | Server-side place extraction via Gemini 1.5 Flash. If missing, function falls back to a deterministic heuristic. |
-| `GOOGLE_PLACES_KEY` | Edge Function secret | yes (for the function) | Server-side Google Places Text Search |
-| `SUPABASE_URL` | Edge Function secret | auto | Provided by `supabase functions deploy` |
-| `SUPABASE_SERVICE_ROLE_KEY` | Edge Function secret | auto | Provided by `supabase functions deploy` |
-| `TRANSCRIPTION_PROVIDER` | Edge Function / script | no | `placeholder` (default, no-op), `soscripted` (paid API), or `self_hosted` (our FastAPI service in [transcription-service/](../transcription-service/)). |
-| `SELF_HOSTED_TRANSCRIPTION_URL` | Edge Function / script | iff `self_hosted` | Base URL of the FastAPI service. Bare host or `/transcribe` both work. |
-| `TRANSCRIPTION_SERVICE_API_KEY` | Edge Function / script + service | iff `self_hosted` | Shared `x-api-key` between the Edge Function and the FastAPI service. Must match on both sides. |
-| `SOSCRIPTED_API_KEY` | Edge Function / script | iff `soscripted` | Bearer token for the SoScripted API. |
+## Client env vars
 
-### Deprecated / legacy aliases
+Required for the app to talk to Supabase and Google Places:
 
-| Var | Replaced by | Status |
-| --- | --- | --- |
-| `EXPO_PUBLIC_GOOGLE_PLACES_KEY` | `EXPO_PUBLIC_GOOGLE_MAPS_API_KEY` | Still read as a fallback by `services/placesService.ts` and the Edge Function. New setups should use the canonical name. |
-| `TRANSCRIPTION_API_KEY` | `SOSCRIPTED_API_KEY` / `TRANSCRIPTION_SERVICE_API_KEY` | Read only by the placeholder provider (no real effect). Don't set in new configs. |
+- `EXPO_PUBLIC_SUPABASE_URL`
+- `EXPO_PUBLIC_SUPABASE_ANON_KEY`
+- `EXPO_PUBLIC_GOOGLE_MAPS_API_KEY`
 
-> **`app.json` audit.** A Google Maps API key is currently hard-coded
-> into `expo.ios.config.googleMapsApiKey` /
-> `expo.android.config.googleMaps.apiKey`. Rotate it in Google Cloud
-> before TestFlight, replace the inline value with
-> `process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY` (or move the entire
-> file to `app.config.ts`), and treat the leaked key as compromised.
+Used by iOS share extension / silent-save path when deployed:
+
+- `EXPO_PUBLIC_PROCESS_SHARE_LINK_URL`
+
+Optional dev flags:
+
+- `EXPO_PUBLIC_DEMO_MODE`
+- `EXPO_PUBLIC_MAP_PREVIEW_MODE`
+
+Optional native per-platform overrides read by [app.config.js](../app.config.js):
+
+- `GOOGLE_MAPS_IOS_KEY`
+- `GOOGLE_MAPS_ANDROID_KEY`
+
+## Server / Edge Function secrets
+
+For `process-share-link`:
+
+- `GOOGLE_PLACES_KEY` required
+- `GEMINI_API_KEY` optional
+
+Provided by Supabase runtime when deployed:
+
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+
+## Supabase Auth redirect URLs
+
+The app handles both normal and triple-slash callback shapes. Configure Supabase Auth to allow:
+
+- `nearr://auth-callback`
+- `nearr:///auth-callback`
+- `exp://*/--/auth-callback`
+
+Why both custom-scheme variants matter:
+
+- `services/auth.ts` uses `Linking.createURL('auth-callback')`
+- `lib/authDeepLink.ts` explicitly supports both `nearr://auth-callback` and `nearr:///auth-callback`
 
 ## Supabase setup
 
-1. Create the project, copy the URL + anon key into `.env`.
-2. Apply migrations:
+1. Create the project.
+2. Put the URL and anon key into `.env` / EAS env.
+3. Apply migrations:
 
    ```sh
    supabase login
@@ -81,153 +90,85 @@ bundle. Server / script values are NOT prefixed and live in either
    supabase db push
    ```
 
-   This runs [20260426000001_init_schema.sql](../supabase/migrations/20260426000001_init_schema.sql)
-   and provisions the four tables, RLS policies, and triggers documented
-   in [DATABASE.md](DATABASE.md).
-3. Auth → URL configuration:
-   - Site URL: `nearr://auth-callback`
-   - Additional redirect URLs: `exp://*/--/auth-callback`,
-     `nearr://auth-callback`, plus any preview deep link you use.
-4. (Dev sign-in only.) Create one user via Auth → Users → "Add user"
-   with email `dev@nearr.test` and a password you'll remember. The
-   sign-in screen exposes a password field for that email when
-   `__DEV__` is true.
-5. Deploy the Edge Function:
+4. Create the dedicated test account manually in Supabase Auth if you want password login for `dev@nearr.test`.
+5. If using the Edge Function:
 
    ```sh
-   supabase secrets set \
-       GEMINI_API_KEY="…" \
-       GOOGLE_PLACES_KEY="…"
+   supabase secrets set GOOGLE_PLACES_KEY="..."
+   supabase secrets set GEMINI_API_KEY="..."
    supabase functions deploy process-share-link
    ```
 
-   Copy the function URL into `EXPO_PUBLIC_PROCESS_SHARE_LINK_URL`.
+6. Set `EXPO_PUBLIC_PROCESS_SHARE_LINK_URL` to the deployed function URL in local env and EAS env.
 
-## Google Cloud setup
+## Email / SMTP
 
-- Enable: Maps SDK for iOS, Maps SDK for Android, Places API.
-- Restrict the **client** key by:
-  - Application restrictions → iOS bundle (`com.nearr.ios`) AND Android
-    SHA-1 fingerprints from your dev / prod keystore.
-  - API restrictions → Maps SDK iOS, Maps SDK Android, Places API.
-- The **server** key (`GOOGLE_PLACES_KEY` in Supabase secrets) should
-  be a **separate** key restricted to "IP addresses" → Supabase Edge
-  runtime egress IPs, and to "Places API" only. Never reuse the client
-  key on the server.
+Nearr uses Supabase magic links. Custom SMTP and any Resend setup are external operational configuration, not code-level configuration in this repo.
 
-## EAS / native builds
+Docs should treat SMTP/Resend as:
 
-1. `eas login`
-2. `eas build:configure`
-3. Profiles in [eas.json](../eas.json):
-   - `development` — internal distribution dev client (background
-     location + share extension actually run here)
-   - `preview` — internal distribution prod client
-   - `production` — store builds
-4. iOS-specific:
-   - The share extension is generated by `expo-share-extension`. The
-     active App Group is `group.com.nearr.ios` (verified in
-     [ios/NearrShareExtension/NearrShareExtension.entitlements](../ios/NearrShareExtension/NearrShareExtension.entitlements)).
-     The legacy `native/share-extension/` scaffold uses
-     `group.com.nearr.app` and is NOT compiled.
-   - The local Expo Module `nearr-shared-auth` reads/writes the JWT in
-     that App Group's `UserDefaults`.
-   - See [IOS_SHARE_EXTENSION.md](IOS_SHARE_EXTENSION.md) for the full
-     wiring + verification checklist.
-5. Android-specific:
-   - [plugins/withAndroidShareIntent.js](../plugins/withAndroidShareIntent.js)
-     patches `MainActivity.kt` so `ACTION_SEND` text intents are
-     rewritten to `nearr://share?url=…`. After EAS prebuild, verify the
-     patched `MainActivity.kt` actually contains the rewrite.
+- required for production-quality email delivery
+- configured in Supabase/Auth infrastructure
+- not represented as a committed app secret in this repo
 
-### Setting environment variables for EAS builds
+## Google Maps / Places keys
 
-`EXPO_PUBLIC_*` variables are inlined by Metro **at build time**. They are
-**not** read from `.env` during an EAS build — you must set them in the
-Expo/EAS dashboard (or via the CLI) for each build environment you use.
+Current code reality:
 
-**Required for every build profile that talks to Supabase
-(`preview`, `production`, `development`):**
+- The repo does not hardcode a Google Maps key in [app.json](../app.json).
+- [app.config.js](../app.config.js) injects iOS and Android map keys from env.
+- `EXPO_PUBLIC_GOOGLE_MAPS_API_KEY` is also copied into Expo `extra` as fallback runtime config.
 
-| Variable | Value |
-| --- | --- |
-| `EXPO_PUBLIC_SUPABASE_URL` | Your Supabase project URL (e.g. `https://xxxx.supabase.co`) |
-| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Your Supabase anon/public key |
-| `EXPO_PUBLIC_GOOGLE_MAPS_API_KEY` | Restricted client API key |
+Recommended setup:
 
-**Option A — EAS CLI (run once per variable per environment):**
+- client key restricted to app bundle/package and Maps/Places APIs
+- separate server key for `GOOGLE_PLACES_KEY` if you want stricter server-side separation
+
+## EAS builds
+
+Useful commands:
 
 ```sh
-# For the "preview" environment (TestFlight / internal distribution)
-eas env:create --scope project --name EXPO_PUBLIC_SUPABASE_URL \
-  --value "https://xxxx.supabase.co" \
-  --environment preview --type plain-text
-
-eas env:create --scope project --name EXPO_PUBLIC_SUPABASE_ANON_KEY \
-  --value "eyJhb..." \
-  --environment preview --type sensitive
-
-eas env:create --scope project --name EXPO_PUBLIC_GOOGLE_MAPS_API_KEY \
-  --value "AIza..." \
-  --environment preview --type sensitive
-
-# Repeat with --environment production for App Store builds.
+eas build --profile development --platform ios
+eas build --profile development --platform android
+eas build --profile preview --platform ios
+eas build --profile preview --platform android
 ```
 
-**Option B — Expo dashboard:**
+Environment reminder:
 
-1. Open [expo.dev](https://expo.dev) → your project → **Environment variables**.
-2. Click **Create variable**.
-3. Set **Environment** to `Preview` (and separately `Production`).
-4. Add each variable above.
+- `EXPO_PUBLIC_*` vars must be present in the EAS build environment at build time
+- do not assume local `.env` is automatically available to EAS workers
 
-> **Why "Network request failed" appears without these:** Without the
-> env vars, `lib/supabase.ts` falls back to a placeholder URL/key that
-> prevents a launch crash. But the first real network call (magic-link
-> sign-in) hits the placeholder host and fails with a generic network
-> error. The app now detects this and shows "App configuration is
-> missing. Please reinstall the latest build." instead.
+## iOS share extension requirements
 
-**Verify after a new build** — check the Metro build log for:
+The share extension is enabled in [app.json](../app.json), but it depends on native setup.
 
-```
-[ENV_VALIDATION_SUCCESS] Supabase configured url_prefix=https://xxxx.supabase.co ...
-```
+Required:
 
-If you see `[ENV_VALIDATION_FAILED]` instead, the variables were not
-available to the EAS build worker.
+- real native build
+- App Group configured on both host app and extension
+- `nearr-shared-auth` module correctly linked into the build
+- `EXPO_PUBLIC_PROCESS_SHARE_LINK_URL` if you want silent-save attempts
+- valid host-app Supabase session so the access token can be bridged into the App Group
 
-## Demo Mode (`EXPO_PUBLIC_DEMO_MODE=true`)
+If those are missing, the extension should still fall back to opening the host app share flow.
 
-- Auto-creates a fake `demo-user` session (no Supabase call).
-- Replaces all `services/` with the implementations in
-  [services/demo/](../services/demo/).
-- Replaces `MapView` with [MapFallbackList](../components/MapFallbackList.tsx).
-- Persists demo profile + saved places to AsyncStorage so changes stick
-  across reloads.
-- Settings → Demo Mode → "Simulate notification" fires an in-app
-  `Alert` (no real notification permission).
-- A red `DemoModeBanner` is visible on every screen.
-- A one-shot `console.warn` at startup if `EXPO_PUBLIC_DEMO_MODE=true`
-  ships in a non-`__DEV__` build.
+## Android share intent requirements
 
-## Map Preview Mode (`EXPO_PUBLIC_MAP_PREVIEW_MODE=true`)
+Android share entry depends on the patched native activity produced by the config plugin. Test in a native build, not just Expo Go.
 
-- Real `MapView`, real Supabase auth (you must still sign in).
-- `placesService.searchPlaces` AND `savedPlacesService.list*` short-circuit
-  to the seeded dataset in [services/demo/](../services/demo/).
-- Map screen skips the location permission prompt, recenters on the
-  seeded region from [lib/mapPreview.ts](../lib/mapPreview.ts), and
-  shows a small `Map Preview Mode` badge.
-- Demo Mode wins if both flags are set.
+## Background location and geofencing limits
 
-## Local UI Mode (DISABLED)
+Current code supports both background proximity watch and OS geofencing, but there are hard platform limits:
 
-The legacy "fake-session UI mode" entry point was removed.
-[hooks/useAuth.ts](../hooks/useAuth.ts) sets
-`ALLOW_LOCAL_UI_MODE = false`, so:
+- Expo Go is not sufficient for background location tasks
+- geofencing must be tested on a real device
+- iOS needs Always Location
+- Android needs background location permission
+- geofences are capped at 20 saved places in current code
 
-- `loadDevAuth()` always returns `false` and clears any stored flag.
-- `enableDevAuth()` is a no-op (and warns).
-- The Settings toggle for it is gone.
-- Use Demo Mode or Map Preview Mode instead.
+## Current beta caveats
+
+- iOS share extension silent-save is still an environment-sensitive feature and should be treated as partially verified until retested on a fresh native build.
+- Edge Function code existing in the repo does not mean your current environment has it deployed.

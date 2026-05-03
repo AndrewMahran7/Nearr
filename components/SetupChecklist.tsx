@@ -16,12 +16,13 @@
  * Both items always appear in Settings so users can re-visit them.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   AppState,
   Linking,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -36,7 +37,8 @@ import {
   syncProximityWatch,
 } from '@/services/notifications';
 
-import { Colors, Radius, Spacing, Typography } from '@/constants';
+import { Radius, Spacing } from '@/constants';
+import { useTheme } from '@/lib/theme';
 
 // ---------------------------------------------------------------------------
 // Storage key
@@ -69,6 +71,8 @@ export async function getLocationStatus(): Promise<
 // ---------------------------------------------------------------------------
 
 export function SetupChecklist() {
+  const { colors, typography, resolvedTheme } = useTheme();
+  const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
   const [notificationStatus, setNotificationStatus] = useState<
     'granted' | 'denied' | 'undetermined' | null
   >(null);
@@ -154,6 +158,8 @@ export function SetupChecklist() {
               : 'Enable Notifications'
         }
         onPrimary={notificationsDone ? undefined : handleNotificationPrimary}
+        styles={styles}
+        typography={typography}
       />
 
       <View style={{ height: Spacing.sm }} />
@@ -180,6 +186,8 @@ export function SetupChecklist() {
                 });
               }
         }
+        styles={styles}
+        typography={typography}
       />
 
       <View style={{ height: Spacing.sm }} />
@@ -191,12 +199,16 @@ export function SetupChecklist() {
         body={
           shareFavDone
             ? 'Nearr is in your Share Sheet favorites.'
-            : 'Put Nearr at the front of your iPhone Share Sheet so saving places takes two taps.'
+            : Platform.OS === 'ios'
+              ? 'Put Nearr at the front of your iPhone Share Sheet so saving places takes two taps.'
+              : 'On iPhone, put Nearr at the front of the Share Sheet so saving places takes two taps.'
         }
         primaryLabel={shareFavDone ? undefined : 'Show Steps'}
         onPrimary={shareFavDone ? undefined : () => setStepsVisible(true)}
         secondaryLabel={shareFavDone ? 'Undo' : undefined}
         onSecondary={shareFavDone ? handleUnmarkShareFav : undefined}
+        styles={styles}
+        typography={typography}
       />
 
       {/* ---- Share steps modal ---------------------------------------- */}
@@ -204,6 +216,9 @@ export function SetupChecklist() {
         visible={stepsVisible}
         onDone={handleMarkShareFavDone}
         onDismiss={() => setStepsVisible(false)}
+        styles={styles}
+        typography={typography}
+        resolvedTheme={resolvedTheme}
       />
     </>
   );
@@ -221,6 +236,8 @@ function ChecklistItem({
   onPrimary,
   secondaryLabel,
   onSecondary,
+  styles,
+  typography,
 }: {
   done: boolean;
   title: string;
@@ -229,18 +246,20 @@ function ChecklistItem({
   onPrimary?: () => void;
   secondaryLabel?: string;
   onSecondary?: () => void;
+  styles: ReturnType<typeof createStyles>;
+  typography: ReturnType<typeof useTheme>['typography'];
 }) {
   return (
     <View style={[styles.item, done && styles.itemDone]}>
       <View style={styles.itemHeader}>
         <View style={[styles.dot, done && styles.dotDone]} />
-        <Text style={[Typography.label, styles.itemTitle]}>{title}</Text>
+        <Text style={[typography.label, styles.itemTitle]}>{title}</Text>
       </View>
-      <Text style={[Typography.caption, styles.itemBody]}>{body}</Text>
+      <Text style={[typography.caption, styles.itemBody]}>{body}</Text>
       {(!done && primaryLabel) ? (
         <View style={styles.itemActions}>
           <Pressable style={styles.btnPrimary} onPress={onPrimary}>
-            <Text style={[Typography.label, { color: Colors.textInverse }]}>
+            <Text style={[typography.label, styles.primaryButtonText]}>
               {primaryLabel}
             </Text>
           </Pressable>
@@ -249,7 +268,7 @@ function ChecklistItem({
       {(done && secondaryLabel) ? (
         <View style={styles.itemActions}>
           <Pressable onPress={onSecondary}>
-            <Text style={[Typography.caption, { color: Colors.textMuted }]}>
+            <Text style={[typography.caption, styles.secondaryActionText]}>
               {secondaryLabel}
             </Text>
           </Pressable>
@@ -277,11 +296,17 @@ function ShareStepsModal({
   onDone,
   onDismiss,
   doneLabel = 'Done — I added Nearr',
+  styles,
+  typography,
+  resolvedTheme,
 }: {
   visible: boolean;
   onDone: () => void;
   onDismiss: () => void;
   doneLabel?: string;
+  styles: ReturnType<typeof createStyles>;
+  typography: ReturnType<typeof useTheme>['typography'];
+  resolvedTheme: ReturnType<typeof useTheme>['resolvedTheme'];
 }) {
   return (
     <Modal
@@ -289,36 +314,38 @@ function ShareStepsModal({
       animationType="slide"
       presentationStyle="pageSheet"
       onRequestClose={onDismiss}
+      statusBarTranslucent={resolvedTheme === 'dark'}
     >
       <View style={styles.modalContainer}>
         <View style={styles.modalHeader}>
-          <Text style={Typography.heading}>Add Nearr to Share Favorites</Text>
+          <Text style={typography.heading}>Add Nearr to Share Favorites</Text>
           <Pressable onPress={onDismiss} style={styles.modalClose} hitSlop={12}>
-            <Text style={[Typography.bodyStrong, { color: Colors.textMuted }]}>✕</Text>
+            <Text style={[typography.bodyStrong, styles.modalCloseText]}>✕</Text>
           </Pressable>
         </View>
 
         <ScrollView style={styles.modalScroll} contentContainerStyle={styles.modalContent}>
-          <Text style={[Typography.body, styles.modalIntro]}>
-            Follow these steps once on your iPhone so saving places from Instagram or
-            TikTok takes just two taps.
+          <Text style={[typography.body, styles.modalIntro]}>
+            {Platform.OS === 'ios'
+              ? 'Follow these steps once on your iPhone so saving places from Instagram or TikTok takes just two taps.'
+              : 'These are the iPhone steps for adding Nearr to Share Favorites.'}
           </Text>
 
           {SHARE_STEPS.map((step, i) => (
             <View key={i} style={styles.step}>
               <View style={styles.stepNum}>
-                <Text style={[Typography.label, { color: Colors.textInverse }]}>
+                <Text style={styles.stepNumText}>
                   {i + 1}
                 </Text>
               </View>
-              <Text style={[Typography.body, styles.stepText]}>{step}</Text>
+              <Text style={[typography.body, styles.stepText]}>{step}</Text>
             </View>
           ))}
 
           <View style={{ height: Spacing.xl }} />
 
           <Pressable style={styles.btnPrimary} onPress={onDone}>
-            <Text style={[Typography.label, { color: Colors.textInverse }]}>
+            <Text style={[typography.label, styles.primaryButtonText]}>
               {doneLabel}
             </Text>
           </Pressable>
@@ -326,7 +353,7 @@ function ShareStepsModal({
           <View style={{ height: Spacing.md }} />
 
           <Pressable onPress={onDismiss} style={styles.btnGhost}>
-            <Text style={[Typography.caption, { color: Colors.textMuted }]}>
+            <Text style={[typography.caption, styles.secondaryActionText]}>
               Not now
             </Text>
           </Pressable>
@@ -344,107 +371,122 @@ export { ShareStepsModal };
 // Styles
 // ---------------------------------------------------------------------------
 
-const styles = StyleSheet.create({
-  // checklist item
-  item: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.md,
-    padding: Spacing.lg,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  itemDone: {
-    borderColor: Colors.success,
-    backgroundColor: '#F0FDF4', // very light green, inline — no token needed
-  },
-  itemHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: Spacing.sm,
-  },
-  dot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: Colors.border,
-    marginRight: Spacing.sm,
-  },
-  dotDone: {
-    backgroundColor: Colors.success,
-  },
-  itemTitle: {
-    color: Colors.text,
-    flex: 1,
-  },
-  itemBody: {
-    color: Colors.textMuted,
-    lineHeight: 18,
-  },
-  itemActions: {
-    marginTop: Spacing.md,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.md,
-  },
-  // buttons
-  btnPrimary: {
-    backgroundColor: Colors.primary,
-    borderRadius: Radius.md,
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.lg,
-    alignItems: 'center',
-  },
-  btnGhost: {
-    alignItems: 'center',
-    paddingVertical: Spacing.sm,
-  },
-  // modal
-  modalContainer: {
-    flex: 1,
-    backgroundColor: Colors.bg,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: Spacing.lg,
-    paddingTop: Spacing.xl,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-  },
-  modalClose: {
-    padding: Spacing.sm,
-  },
-  modalScroll: {
-    flex: 1,
-  },
-  modalContent: {
-    padding: Spacing.lg,
-  },
-  modalIntro: {
-    color: Colors.textMuted,
-    marginBottom: Spacing.xl,
-    lineHeight: 22,
-  },
-  step: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: Spacing.lg,
-  },
-  stepNum: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: Colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: Spacing.md,
-    marginTop: 1,
-    flexShrink: 0,
-  },
-  stepText: {
-    flex: 1,
-    color: Colors.text,
-    lineHeight: 22,
-  },
-});
+function createStyles(
+  colors: ReturnType<typeof useTheme>['colors'],
+  typography: ReturnType<typeof useTheme>['typography'],
+) {
+  return StyleSheet.create({
+    item: {
+      backgroundColor: colors.surface,
+      borderRadius: Radius.md,
+      padding: Spacing.lg,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    itemDone: {
+      borderColor: colors.success,
+      backgroundColor: colors.surface,
+    },
+    itemHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: Spacing.sm,
+    },
+    dot: {
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+      backgroundColor: colors.border,
+      marginRight: Spacing.sm,
+    },
+    dotDone: {
+      backgroundColor: colors.success,
+    },
+    itemTitle: {
+      color: colors.text,
+      flex: 1,
+    },
+    itemBody: {
+      color: colors.textMuted,
+      lineHeight: 18,
+    },
+    itemActions: {
+      marginTop: Spacing.md,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.md,
+    },
+    btnPrimary: {
+      backgroundColor: colors.primary,
+      borderRadius: Radius.md,
+      paddingVertical: Spacing.md,
+      paddingHorizontal: Spacing.lg,
+      alignItems: 'center',
+    },
+    btnGhost: {
+      alignItems: 'center',
+      paddingVertical: Spacing.sm,
+    },
+    primaryButtonText: {
+      color: colors.textInverse,
+    },
+    secondaryActionText: {
+      color: colors.textMuted,
+    },
+    modalContainer: {
+      flex: 1,
+      backgroundColor: colors.bg,
+    },
+    modalHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: Spacing.lg,
+      paddingTop: Spacing.xl,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    modalClose: {
+      padding: Spacing.sm,
+    },
+    modalCloseText: {
+      color: colors.textMuted,
+    },
+    modalScroll: {
+      flex: 1,
+    },
+    modalContent: {
+      padding: Spacing.lg,
+    },
+    modalIntro: {
+      color: colors.textMuted,
+      marginBottom: Spacing.xl,
+      lineHeight: 22,
+    },
+    step: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      marginBottom: Spacing.lg,
+    },
+    stepNum: {
+      width: 26,
+      height: 26,
+      borderRadius: 13,
+      backgroundColor: colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: Spacing.md,
+      marginTop: 1,
+      flexShrink: 0,
+    },
+    stepNumText: {
+      ...typography.label,
+      color: colors.textInverse,
+    },
+    stepText: {
+      flex: 1,
+      color: colors.text,
+      lineHeight: 22,
+    },
+  });
+}

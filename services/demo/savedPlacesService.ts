@@ -140,7 +140,11 @@ export async function saveDemoSavedPlace(
   );
   if (existing) {
     console.log('[demo:saved] duplicate', candidate.googlePlaceId);
-    return { status: 'duplicate', place: existing.place };
+    return {
+      status: 'duplicate',
+      place: existing.place,
+      savedPlaceId: existing.id,
+    };
   }
 
   const nowIso = new Date().toISOString();
@@ -175,7 +179,7 @@ export async function saveDemoSavedPlace(
   cache = [withPlace, ...list];
   await persist();
   console.log('[demo:saved] saved', candidate.name);
-  return { status: 'saved', saved: withPlace };
+  return { status: 'saved', saved: withPlace, savedPlaceId: withPlace.id };
 }
 
 export async function updateDemoSavedPlace(

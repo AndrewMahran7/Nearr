@@ -14,10 +14,12 @@
  * Keep this component dumb — no animation, no async logic.
  */
 
+import { useMemo } from 'react';
 import { StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { Button } from './Button';
 import { Card } from './Card';
-import { Colors, Spacing, Typography } from '@/constants';
+import { Spacing } from '@/constants';
+import { useTheme } from '@/lib/theme';
 
 type Variant = 'default' | 'error';
 
@@ -47,13 +49,15 @@ export function EmptyState({
   framed = true,
   style,
 }: Props) {
-  const titleColor = variant === 'error' ? Colors.danger : Colors.text;
+  const { colors, typography } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const titleColor = variant === 'error' ? colors.danger : colors.text;
 
   const content = (
     <>
-      <Text style={[Typography.heading, { color: titleColor }]}>{title}</Text>
+      <Text style={[typography.heading, { color: titleColor }]}>{title}</Text>
       {body ? (
-        <Text style={[Typography.body, styles.body]} numberOfLines={4}>
+        <Text style={[typography.body, styles.body]} numberOfLines={4}>
           {body}
         </Text>
       ) : null}
@@ -80,26 +84,28 @@ export function EmptyState({
   return <View style={[styles.bare, style]}>{content}</View>;
 }
 
-const styles = StyleSheet.create({
-  card: {
-    alignItems: 'flex-start',
-  },
-  bare: {
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.xl,
-    alignItems: 'flex-start',
-  },
-  body: {
-    color: Colors.textMuted,
-    marginTop: Spacing.xs,
-    lineHeight: 22,
-  },
-  actionWrap: {
-    marginTop: Spacing.lg,
-    alignSelf: 'stretch',
-  },
-  secondaryWrap: {
-    marginTop: Spacing.xs,
-    alignSelf: 'stretch',
-  },
-});
+function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
+  return StyleSheet.create({
+    card: {
+      alignItems: 'flex-start',
+    },
+    bare: {
+      paddingHorizontal: Spacing.lg,
+      paddingVertical: Spacing.xl,
+      alignItems: 'flex-start',
+    },
+    body: {
+      color: colors.textMuted,
+      marginTop: Spacing.xs,
+      lineHeight: 22,
+    },
+    actionWrap: {
+      marginTop: Spacing.lg,
+      alignSelf: 'stretch',
+    },
+    secondaryWrap: {
+      marginTop: Spacing.xs,
+      alignSelf: 'stretch',
+    },
+  });
+}

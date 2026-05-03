@@ -33,10 +33,11 @@ import * as Location from 'expo-location';
 
 import { Button, Card, EmptyState, Input, Screen } from '@/components';
 import { Colors, Radius, Spacing, Typography } from '@/constants';
+import { getActivationSaveFeedback } from '@/lib/activation';
 
 import { usePlacesSearch } from '@/hooks/usePlacesSearch';
 import { getProfile } from '@/services/profileService';
-import { saveSavedPlace } from '@/services/savedPlacesService';
+import { listSavedPlaces, saveSavedPlace } from '@/services/savedPlacesService';
 import { trackEvent } from '@/lib/analytics';
 import type { LocationBias, PlaceCandidate, PlacesError } from '@/services/placesService';
 import type { Profile, RadiusUnit, SourceType } from '@/types';
@@ -65,6 +66,16 @@ function placesErrorMessage(err: PlacesError): string {
       return 'No results.';
     default:
       return err.message || 'Something went wrong.';
+  }
+}
+
+async function getPostSaveCount(): Promise<number | null> {
+  try {
+    const places = await listSavedPlaces();
+    return places.length;
+  } catch (err) {
+    console.warn('[save-flow] post-save count lookup failed', (err as Error)?.message);
+    return null;
   }
 }
 
@@ -221,16 +232,47 @@ export default function SavePlace() {
 
       if (result.status === 'duplicate') {
         Alert.alert('Already saved', `${selected.name} is already in your places.`);
+      } else {
+        const postSaveCount = await getPostSaveCount();
+        if (postSaveCount == null) {
+          Alert.alert('Saved to your map', selected.name);
+        } else {
+          const feedback = getActivationSaveFeedback(postSaveCount);
+          Alert.alert(feedback.title, feedback.message);
+          if (feedback.milestoneEvent) {
+            void trackEvent(feedback.milestoneEvent, {
+              source_type: incomingSourceType,
+              flow: 'manual',
+              saved_place_id: result.savedPlaceId,
+              saved_count: postSaveCount,
+            });
+          }
+          if (feedback.completed) {
+            void trackEvent('activation_completed_3_saves', {
+              source_type: incomingSourceType,
+              flow: 'manual',
+              saved_place_id: result.savedPlaceId,
+              saved_count: postSaveCount,
+            });
+          }
+        }
       }
       void trackEvent('save_success', {
         source_type: incomingSourceType,
         flow: 'manual',
         google_place_id: selected.googlePlaceId ?? null,
-        saved_place_id:
-          result.status === 'saved' ? result.saved.id : null,
+        saved_place_id: result.savedPlaceId,
         duplicate: result.status === 'duplicate',
       });
-      router.replace('/(tabs)/home');
+      if (!result.savedPlaceId) {
+        console.warn('[save-flow] saved place id missing; opening map without focus');
+        router.replace('/(tabs)/map');
+        return;
+      }
+      router.replace({
+        pathname: '/(tabs)/map',
+        params: { savedPlaceId: result.savedPlaceId },
+      });
     } catch (e: any) {
       console.warn('[SavePlace] save failed', e?.message);
       void trackEvent('save_failed', {

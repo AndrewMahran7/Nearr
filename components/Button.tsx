@@ -1,5 +1,7 @@
+import { useMemo } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, ViewStyle } from 'react-native';
-import { Colors, Radius, Spacing, Typography } from '@/constants';
+import { Radius, Spacing } from '@/constants';
+import { useTheme } from '@/lib/theme';
 
 type Props = {
   title: string;
@@ -11,6 +13,8 @@ type Props = {
 };
 
 export function Button({ title, onPress, variant = 'primary', loading, disabled, style }: Props) {
+  const { colors, typography } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const isPrimary = variant === 'primary';
   const isSecondary = variant === 'secondary';
   return (
@@ -27,9 +31,9 @@ export function Button({ title, onPress, variant = 'primary', loading, disabled,
       ]}
     >
       {loading ? (
-        <ActivityIndicator color={isPrimary ? Colors.textInverse : Colors.text} />
+        <ActivityIndicator color={isPrimary ? colors.textInverse : colors.text} />
       ) : (
-        <Text style={[Typography.bodyStrong, isPrimary ? styles.primaryText : styles.darkText]}>
+        <Text style={[typography.bodyStrong, isPrimary ? styles.primaryText : styles.darkText]}>
           {title}
         </Text>
       )}
@@ -37,29 +41,31 @@ export function Button({ title, onPress, variant = 'primary', loading, disabled,
   );
 }
 
-const styles = StyleSheet.create({
-  base: {
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.lg,
-    borderRadius: Radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  primary: {
-    backgroundColor: Colors.primary,
-    shadowColor: Colors.primary,
-    shadowOpacity: 0.3,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 4,
-  },
-  secondary: {
-    backgroundColor: Colors.surfaceElevated,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  ghost: { backgroundColor: 'transparent' },
-  disabled: { opacity: 0.5 },
-  primaryText: { color: Colors.textInverse },
-  darkText: { color: Colors.text },
-});
+function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
+  return StyleSheet.create({
+    base: {
+      paddingVertical: Spacing.md,
+      paddingHorizontal: Spacing.lg,
+      borderRadius: Radius.md,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    primary: {
+      backgroundColor: colors.primary,
+      shadowColor: colors.primary,
+      shadowOpacity: 0.3,
+      shadowRadius: 14,
+      shadowOffset: { width: 0, height: 6 },
+      elevation: 4,
+    },
+    secondary: {
+      backgroundColor: colors.surfaceElevated,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    ghost: { backgroundColor: 'transparent' },
+    disabled: { opacity: 0.5 },
+    primaryText: { color: colors.textInverse },
+    darkText: { color: colors.text },
+  });
+}

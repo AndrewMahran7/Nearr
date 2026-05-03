@@ -50,6 +50,11 @@ type ResultCandidate = {
   types?: string[];
 };
 
+type SearchBias = {
+  lat: number;
+  lng: number;
+};
+
 type Result =
   | { status: 'saved'; savedPlaceId: string; message?: string }
   | { status: 'ambiguous'; candidates: ResultCandidate[]; reason?: string; message?: string }
@@ -279,8 +284,47 @@ async function processShareLink(url: string, accessToken: string): Promise<Resul
     );
   }
 
-  const chosenQuery = (ai.query && ai.query.trim()) || heuristicQuery || '';
-  const confidence: 'high' | 'medium' | 'low' = ai.confidence;
+  let chosenQuery = (ai.query && ai.query.trim()) || heuristicQuery || '';
+  let confidence: 'high' | 'medium' | 'low' = ai.confidence;
+  let accountIdentityUsed = false;
+  const accountIdentityQuery = buildAccountIdentityQuery({
+    title,
+    description,
+    sourceUrl: url,
+    posterHandle,
+    profileEnrichments,
+  });
+  const preliminaryStrength = classifyQueryStrength({
+    query: chosenQuery,
+    confidence,
+    sourceContextText: null,
+    accountIdentityUsed: false,
+  });
+  if (accountIdentityQuery && (!chosenQuery || preliminaryStrength === 'weak')) {
+    chosenQuery = accountIdentityQuery.query;
+    confidence = accountIdentityQuery.confidence;
+    accountIdentityUsed = true;
+  }
+  const sourceContext = extractLocationContext(
+    [title, description, chosenQuery].filter(Boolean).join('\n'),
+  );
+  const contextBias = sourceContext
+    ? await geocodeContextText(sourceContext, PLACES_KEY)
+    : null;
+  const queryStrength = classifyQueryStrength({
+    query: chosenQuery,
+    confidence,
+    sourceContextText: sourceContext,
+    accountIdentityUsed,
+  });
+  console.log(`[share-extract] query_strength=${queryStrength}`);
+  console.log(`[share-extract] account_identity_used=${accountIdentityUsed}`);
+  if (accountIdentityQuery?.query) {
+    console.log(`[share-rank] account_query=${accountIdentityQuery.query}`);
+  }
+  console.log(`[share-rank] source_context=${sourceContext ?? 'none'}`);
+  console.log(`[share-rank] context_bias_used=${!!contextBias}`);
+  console.log('[share-rank] device_bias_used=false');
 
   // ---- 4b. Feature 5: auto-note from share context -------------------
   const autoNote = generateAutoNote(title, description, transcript);
@@ -402,7 +446,7 @@ async function processShareLink(url: string, accessToken: string): Promise<Resul
   // ---- 5. Google Places search (main) --------------------------------
   let candidates: ResultCandidate[];
   try {
-    candidates = await searchPlaces(chosenQuery, PLACES_KEY);
+    candidates = await searchPlaces(chosenQuery, PLACES_KEY, contextBias ?? undefined);
   } catch (err) {
     console.warn('[process-share-link] places search failed', (err as Error)?.message);
     return { status: 'open_app', reason: 'places_error' };
@@ -415,7 +459,23 @@ async function processShareLink(url: string, accessToken: string): Promise<Resul
     (c) => !isAddressLikeTypes(c.types) && !isLocalityLikeTypes(c.types),
   );
 
-  if (businesses.length === 0) {
+  const rankedBusinesses = rankCandidates(businesses, chosenQuery, contextBias);
+  const trustedBusinesses = rankedBusinesses.filter((candidate) => {
+    const rejection = getCandidateRejectionReason(candidate, chosenQuery, contextBias);
+    if (rejection) {
+      console.log(`[share-rank] rejected_candidate_reason=${rejection}`);
+      return false;
+    }
+    return true;
+  });
+
+  console.log('[share-rank] candidates', trustedBusinesses.slice(0, 5).map((candidate) => ({
+    name: candidate.name,
+    address: candidate.formattedAddress ?? null,
+    googlePlaceId: candidate.googlePlaceId,
+  })));
+
+  if (trustedBusinesses.length === 0) {
     if (candidates.length > 0) {
       // We got results but they were all addresses/regions — let the host
       // app try its richer resolution.
@@ -424,20 +484,66 @@ async function processShareLink(url: string, accessToken: string): Promise<Resul
     return { status: 'failed_requires_app', reason: 'no_candidate' };
   }
 
+  const strongMatchBusinesses = trustedBusinesses.filter((candidate) =>
+    hasStrongNameMatch(candidate.name, chosenQuery),
+  );
+  const accountIdentityOnly =
+    accountIdentityQuery?.source === 'account_display_name' ||
+    accountIdentityQuery?.source === 'account_handle';
+  const explicitAddressSignal = PROFILE_ADDRESS_RE.test(chosenQuery);
+  const explicitSourceBusinessSignal =
+    !accountIdentityOnly &&
+    confidence === 'high' &&
+    !isGenericWeakQuery(chosenQuery) &&
+    looksLikeBusinessQuery(chosenQuery);
+
+  if (queryStrength === 'weak') {
+    console.log('[share-rank] auto_save_blocked_reason=weak_query');
+    if (strongMatchBusinesses.length > 0) {
+      console.log('[share-rank] auto_save_blocked_reason=needs_user_confirmation');
+      return {
+        status: 'ambiguous',
+        candidates: strongMatchBusinesses.slice(0, 5),
+        reason: 'weak_query',
+      };
+    }
+    return { status: 'failed_requires_app', reason: 'weak_query' };
+  }
+
   // ---- 5. decide silent-save vs ambiguous ----------------------------
-  const top = businesses[0];
-  const second = businesses[1];
+  const top = trustedBusinesses[0];
+  const second = trustedBusinesses[1];
+  const hasSourceContext = !!contextBias;
+  const hasVerifiedProfileEvidence = accountIdentityQuery?.source === 'verified_profile';
+  const topHasStrongAutoSaveEvidence =
+    explicitAddressSignal ||
+    (hasSourceContext && hasStrongNameMatch(top.name, chosenQuery)) ||
+    (explicitSourceBusinessSignal && hasStrongNameMatch(top.name, chosenQuery)) ||
+    (hasVerifiedProfileEvidence && hasStrongNameMatch(top.name, chosenQuery));
 
   const dominant =
     !second ||
-    (confidence === 'high' && nameOverlapScore(top.name, chosenQuery) >= 1);
+    (confidence === 'high' && hasMeaningfulNameMatch(top.name, chosenQuery));
 
-  const canSilentSave = confidence === 'high' && dominant;
+  const canSilentSave =
+    queryStrength === 'strong' &&
+    confidence === 'high' &&
+    dominant &&
+    hasMeaningfulNameMatch(top.name, chosenQuery) &&
+    topHasStrongAutoSaveEvidence &&
+    !accountIdentityOnly;
 
   if (!canSilentSave) {
+    if (accountIdentityOnly && !hasSourceContext && !hasVerifiedProfileEvidence) {
+      console.log('[share-rank] auto_save_blocked_reason=account_identity_not_enough');
+    } else if (!topHasStrongAutoSaveEvidence) {
+      console.log(
+        `[share-rank] auto_save_blocked_reason=${hasSourceContext ? 'needs_user_confirmation' : 'no_source_context_name_not_strong'}`,
+      );
+    }
     return {
       status: 'ambiguous',
-      candidates: businesses.slice(0, 5),
+      candidates: trustedBusinesses.slice(0, 5),
       reason: 'multiple_candidates',
     };
   }
@@ -561,8 +667,16 @@ async function saveForUser(
 // Google Places (server-side text search)
 // ---------------------------------------------------------------------------
 
-async function searchPlaces(query: string, key: string): Promise<ResultCandidate[]> {
+async function searchPlaces(
+  query: string,
+  key: string,
+  bias?: SearchBias,
+): Promise<ResultCandidate[]> {
   const params = new URLSearchParams({ query, key });
+  if (bias) {
+    params.set('location', `${bias.lat},${bias.lng}`);
+    params.set('radius', '50000');
+  }
   const res = await fetch(
     `https://maps.googleapis.com/maps/api/place/textsearch/json?${params}`,
   );
@@ -906,6 +1020,351 @@ function nameOverlapScore(name: string, query: string): number {
   let hits = 0;
   for (const t of tok(query)) if (c.has(t)) hits++;
   return hits;
+}
+
+function tokenizeQuery(value: string): string[] {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9 ]+/g, ' ')
+    .split(/\s+/)
+    .filter((token) => token.length >= 3 && !STOP.has(token));
+}
+
+function normalizeName(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9 ]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function hasMeaningfulNameMatch(name: string, query: string): boolean {
+  const normalizedName = normalizeName(name);
+  const normalizedQuery = normalizeName(query);
+  if (!normalizedName || !normalizedQuery) return true;
+  if (
+    normalizedName === normalizedQuery ||
+    normalizedName.includes(normalizedQuery) ||
+    normalizedQuery.includes(normalizedName)
+  ) {
+    return true;
+  }
+  const overlap = nameOverlapScore(name, query);
+  const queryTokens = normalizedQuery.split(' ').filter((token) => token.length >= 3 && !STOP.has(token));
+  if (queryTokens.length <= 2) return overlap >= 1;
+  return overlap >= 2;
+}
+
+function hasStrongNameMatch(name: string, query: string): boolean {
+  const normalizedName = normalizeName(name);
+  const normalizedQuery = normalizeName(query);
+  if (!normalizedName || !normalizedQuery) return false;
+  if (
+    normalizedName === normalizedQuery ||
+    normalizedName.includes(normalizedQuery) ||
+    normalizedQuery.includes(normalizedName)
+  ) {
+    return true;
+  }
+  const overlap = nameOverlapScore(name, query);
+  const queryTokens = tokenizeQuery(query);
+  if (queryTokens.length <= 2) return overlap >= 2;
+  return overlap >= Math.min(3, queryTokens.length);
+}
+
+function looksLikeBusinessQuery(query: string): boolean {
+  const lower = query.toLowerCase();
+  return PROFILE_BUSINESS_KEYWORDS.some((keyword) => lower.includes(keyword));
+}
+
+function isGenericWeakQuery(query: string): boolean {
+  if (!query) return true;
+  if (/^(?:my|our|this|that|best|favorite|hidden gem|vibes|going|follow|check out|come with|need to go|you need to go|you have to try)\b/i.test(query)) {
+    return true;
+  }
+  if (/\b(?:vibes only|with the crew|must try|slaps|so good|fire|yum|yummy|delicious|food recs?)\b/i.test(query)) {
+    return true;
+  }
+  const tokens = tokenizeQuery(query);
+  return tokens.length <= 2 && !looksLikeBusinessQuery(query) && !PROFILE_ADDRESS_RE.test(query);
+}
+
+function classifyQueryStrength(params: {
+  query: string | null | undefined;
+  confidence: 'high' | 'medium' | 'low';
+  sourceContextText: string | null;
+  accountIdentityUsed: boolean;
+}): 'strong' | 'medium' | 'weak' {
+  const query = (params.query ?? '').trim();
+  if (!query) return 'weak';
+  if (PROFILE_ADDRESS_RE.test(query)) return 'strong';
+  const hasContext = !!params.sourceContextText || PROFILE_CITY_STATE_RE.test(query);
+  const businessLike = looksLikeBusinessQuery(query) || isLikelyBusinessIdentity(query);
+  if (isGenericWeakQuery(query) && !businessLike) return 'weak';
+  if (businessLike && hasContext) return 'strong';
+  if (businessLike && (params.accountIdentityUsed || params.confidence !== 'low')) return 'medium';
+  if (businessLike && tokenizeQuery(query).length >= 3 && !isGenericWeakQuery(query)) return 'medium';
+  return 'weak';
+}
+
+function isLikelyBusinessIdentity(value: string): boolean {
+  const normalized = value.toLowerCase().replace(/[._]+/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!normalized) return false;
+  if (PROFILE_CREATOR_PHRASES.some((phrase) => normalized.includes(phrase))) return false;
+  const tokens = normalized.split(/\s+/).filter(Boolean);
+  const businessHits = tokens.filter((token) =>
+    PROFILE_BUSINESS_KEYWORDS.some((keyword) => keyword.replace(/\s+/g, '') === token || keyword === token),
+  ).length;
+  if (businessHits >= 1 && tokens.length >= 2) return true;
+  return tokens.length >= 3 && !/\b(?:foodie|hungry|eats|bites|finds|guide|reviews)\b/i.test(normalized);
+}
+
+function humanizeHandle(handle: string): string {
+  let s = handle.replace(/[._]+/g, ' ').toLowerCase();
+  const splitTokens = [
+    ...PROFILE_BUSINESS_KEYWORDS,
+    'house', 'bros', 'co', 'company',
+    'los', 'angeles', 'new', 'york', 'san', 'francisco', 'santa', 'monica',
+    'brooklyn', 'queens', 'manhattan', 'venice', 'pasadena', 'arcadia',
+    'highland', 'park', 'silver', 'lake', 'echo', 'feliz', 'studio',
+    'downtown', 'hollywood', 'beverly', 'hills',
+  ];
+  for (let pass = 0; pass < 2; pass++) {
+    for (const token of splitTokens) {
+      const compact = token.replace(/\s+/g, '');
+      if (!/^[a-z]+$/.test(compact)) continue;
+      const reBefore = new RegExp(`([a-z])(${compact})(?=[a-z]|$)`, 'g');
+      s = s.replace(reBefore, '$1 $2');
+      const reAfter = new RegExp(`(^|\\s)(${compact})(?=[a-z])`, 'g');
+      s = s.replace(reAfter, '$1$2 ');
+    }
+  }
+  return s.replace(/\s+/g, ' ').trim();
+}
+
+function buildAccountIdentityQuery(params: {
+  title: string | null;
+  description: string | null;
+  sourceUrl: string;
+  posterHandle: string | null;
+  profileEnrichments: InstagramProfileEnrichment[];
+}): {
+  query: string;
+  confidence: 'high' | 'medium' | 'low';
+  source: 'verified_profile' | 'account_display_name' | 'account_handle';
+} | null {
+  const posterEnrichment = params.posterHandle
+    ? params.profileEnrichments.find((entry) => entry.handle.toLowerCase() === params.posterHandle?.toLowerCase())
+    : null;
+  if (
+    posterEnrichment?.classification === 'restaurant_or_business' &&
+    posterEnrichment.extractedName &&
+    (posterEnrichment.extractedAddress || posterEnrichment.extractedCity)
+  ) {
+    return {
+      query: posterEnrichment.extractedName.trim(),
+      confidence: 'high',
+      source: 'verified_profile',
+    };
+  }
+  if (posterEnrichment?.displayName && isLikelyBusinessIdentity(posterEnrichment.displayName)) {
+    return {
+      query: posterEnrichment.displayName.trim(),
+      confidence: 'medium',
+      source: 'account_display_name',
+    };
+  }
+
+  const displayName = parseDisplayNameFromOgTitle(params.title) ??
+    parseDisplayNameFromMetaDescription(params.description) ??
+    null;
+  if (displayName && isLikelyBusinessIdentity(displayName)) {
+    return {
+      query: displayName.trim(),
+      confidence: 'medium',
+      source: 'account_display_name',
+    };
+  }
+
+  const profileMatch = params.sourceUrl.match(
+    /(?:instagram|tiktok)\.com\/(?!(?:p|reel|reels|tv|explore|stories|accounts|video)\b)([A-Za-z0-9._]{2,30})(?:\/|$)/i,
+  );
+  const urlHandle = profileMatch?.[1] ?? null;
+  const corroboratedHandle = params.posterHandle ?? urlHandle;
+  const handle = params.posterHandle ?? urlHandle;
+  if (corroboratedHandle && displayName && isLikelyBusinessIdentity(displayName)) {
+    return {
+      query: displayName.trim(),
+      confidence: 'medium',
+      source: 'account_display_name',
+    };
+  }
+
+  if (handle && isLikelyBusinessIdentity(handle)) {
+    return {
+      query: humanizeHandle(handle),
+      confidence: 'low',
+      source: 'account_handle',
+    };
+  }
+
+  return null;
+}
+
+function haversineMeters(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number,
+): number {
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const R = 6371000;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+function rankCandidates(
+  candidates: ResultCandidate[],
+  query: string,
+  contextBias: SearchBias | null,
+): ResultCandidate[] {
+  return [...candidates]
+    .map((candidate) => {
+      let score = 0;
+      if (candidate.types?.some((type) => BUSINESS_LIKE.has(type))) score += 25;
+      if (hasMeaningfulNameMatch(candidate.name, query)) score += 18;
+      score += nameOverlapScore(candidate.name, query) * 12;
+      if (
+        contextBias &&
+        Number.isFinite(candidate.latitude) &&
+        Number.isFinite(candidate.longitude)
+      ) {
+        const km =
+          haversineMeters(
+            contextBias.lat,
+            contextBias.lng,
+            candidate.latitude!,
+            candidate.longitude!,
+          ) / 1000;
+        if (km > 250) score -= 220;
+        else if (km > 100) score -= 120;
+        else if (km > 40) score -= 60;
+        else score -= Math.min(30, km * 0.75);
+      }
+      return { candidate, score };
+    })
+    .sort((a, b) => b.score - a.score)
+    .map(({ candidate }) => candidate);
+}
+
+function getCandidateRejectionReason(
+  candidate: ResultCandidate,
+  query: string,
+  contextBias: SearchBias | null,
+): 'far_from_source_context' | 'name_mismatch' | null {
+  if (!hasMeaningfulNameMatch(candidate.name, query)) {
+    return 'name_mismatch';
+  }
+  if (
+    contextBias &&
+    Number.isFinite(candidate.latitude) &&
+    Number.isFinite(candidate.longitude)
+  ) {
+    const km =
+      haversineMeters(
+        contextBias.lat,
+        contextBias.lng,
+        candidate.latitude!,
+        candidate.longitude!,
+      ) / 1000;
+    if (km > 250 && nameOverlapScore(candidate.name, query) < 2) {
+      return 'far_from_source_context';
+    }
+  }
+  return null;
+}
+
+const LOCATION_CONTEXT_ALIASES: Array<{ pattern: RegExp; value: string }> = [
+  { pattern: /\bNYC\b/i, value: 'New York, NY' },
+  { pattern: /\bNY\b/i, value: 'New York, NY' },
+  { pattern: /\bNew York\b/i, value: 'New York, NY' },
+  { pattern: /\bBrooklyn\b/i, value: 'Brooklyn, NY' },
+  { pattern: /\bManhattan\b/i, value: 'Manhattan, NY' },
+  { pattern: /\bLos Angeles\b/i, value: 'Los Angeles, CA' },
+  { pattern: /\bLA\b/i, value: 'Los Angeles, CA' },
+  { pattern: /\bOrange County\b/i, value: 'Orange County, CA' },
+  { pattern: /\bOC\b/i, value: 'Orange County, CA' },
+  { pattern: /\bSanta Cruz\b/i, value: 'Santa Cruz, CA' },
+];
+
+function normalizeLocationContext(value: string): string {
+  const trimmed = value.replace(/[.!?]+$/g, '').trim();
+  for (const alias of LOCATION_CONTEXT_ALIASES) {
+    if (alias.pattern.test(trimmed)) return alias.value;
+  }
+  return trimmed;
+}
+
+function extractLocationContext(text: string | null | undefined): string | null {
+  if (!text) return null;
+  const cleanedText = text.replace(/\s+/g, ' ').trim();
+  const pinIdx = text.search(/[\u{1F4CD}\u{1F4CC}]/u);
+  if (pinIdx >= 0) {
+    const tail = text.slice(pinIdx + 2, pinIdx + 200).split(/[\n\r]/)[0];
+    const cleaned = tail
+      .replace(/#[\p{L}\p{N}_]+/gu, ' ')
+      .replace(/["\u201C\u201D'`]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    const stopMatch = cleaned.split(/\b(?:also|and|or|plus)\b|[+|]/i)[0].trim();
+    if (stopMatch && stopMatch.length >= 3 && stopMatch.length <= 80) {
+      return normalizeLocationContext(stopMatch);
+    }
+  }
+  const addressMatch = cleanedText.match(
+    /\b\d{1,5}\s+[A-Za-z0-9.'\- ]{2,60}\s+(?:st|street|ave|avenue|blvd|boulevard|rd|road|dr|drive|ln|lane|way|hwy|highway|ct|court|pl|place)\b[^\n,;]*?(?:,\s*[A-Za-z.'\- ]+)?(?:,\s*[A-Z]{2})?/i,
+  );
+  if (addressMatch?.[0]) return normalizeLocationContext(addressMatch[0]);
+  const cityState = cleanedText.match(/\b([A-Z][A-Za-z][\w'.\- ]{1,30}?),\s*([A-Z]{2})\b/);
+  if (cityState?.[0]) return normalizeLocationContext(cityState[0]);
+  const trailing = text.match(
+    /,\s*([A-Z][\p{L}.'\u2019-]+(?:[\s,]+[A-Z][\p{L}.'\u2019-]+){0,4})\s*[.!?]?\s*$/u,
+  );
+  if (trailing?.[1]) return normalizeLocationContext(trailing[1]);
+  for (const alias of LOCATION_CONTEXT_ALIASES) {
+    if (alias.pattern.test(cleanedText)) return alias.value;
+  }
+  return null;
+}
+
+async function geocodeContextText(
+  contextText: string,
+  key: string,
+): Promise<SearchBias | null> {
+  const trimmed = contextText.trim();
+  if (!trimmed) return null;
+  const params = new URLSearchParams({ query: trimmed, key });
+  const res = await fetch(
+    `https://maps.googleapis.com/maps/api/place/textsearch/json?${params}`,
+  );
+  if (!res.ok) return null;
+  const json = await res.json();
+  const status = json.status as string;
+  if (status !== 'OK' && status !== 'ZERO_RESULTS') return null;
+  const raw = Array.isArray(json.results) ? json.results : [];
+  if (raw.length === 0) return null;
+  const first = raw[0];
+  const lat = first?.geometry?.location?.lat;
+  const lng = first?.geometry?.location?.lng;
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  return { lat, lng };
 }
 
 // ---------------------------------------------------------------------------

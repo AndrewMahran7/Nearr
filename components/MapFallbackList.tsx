@@ -5,10 +5,12 @@
  * and a "View details" button.
  */
 
+import { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Card } from './Card';
 import { EmptyState } from './EmptyState';
-import { Colors, Radius, Spacing, Typography } from '@/constants';
+import { Radius, Spacing } from '@/constants';
+import { useTheme } from '@/lib/theme';
 import type { SavedPlaceWithPlace } from '@/types';
 
 type Props = {
@@ -17,11 +19,13 @@ type Props = {
 };
 
 export function MapFallbackList({ data, onPressItem }: Props) {
+  const { colors, typography } = useTheme();
+  const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
   return (
     <ScrollView contentContainerStyle={styles.scroll}>
       <View style={styles.headerCard}>
-        <Text style={Typography.bodyStrong}>Map unavailable in demo mode</Text>
-        <Text style={[Typography.caption, styles.muted, { marginTop: Spacing.xs }]}>
+        <Text style={typography.bodyStrong}>Map unavailable in demo mode</Text>
+        <Text style={[typography.caption, styles.muted, { marginTop: Spacing.xs }]}>
           Native map keys aren&apos;t configured, so we&apos;re showing a list of
           your saved places with their coordinates instead.
         </Text>
@@ -35,13 +39,13 @@ export function MapFallbackList({ data, onPressItem }: Props) {
         data.map((s) => (
           <Pressable key={s.id} onPress={() => onPressItem(s)}>
             <Card style={styles.row}>
-              <Text style={Typography.heading} numberOfLines={1}>{s.place.name}</Text>
+              <Text style={typography.heading} numberOfLines={1}>{s.place.name}</Text>
               {s.place.formatted_address ? (
-                <Text style={[Typography.caption, styles.muted]} numberOfLines={2}>
+                <Text style={[typography.caption, styles.muted]} numberOfLines={2}>
                   {s.place.formatted_address}
                 </Text>
               ) : null}
-              <Text style={[Typography.caption, styles.coord]}>
+              <Text style={[typography.caption, styles.coord]}>
                 {s.place.latitude.toFixed(4)}, {s.place.longitude.toFixed(4)}
               </Text>
               <View style={styles.actionRow}>
@@ -55,19 +59,24 @@ export function MapFallbackList({ data, onPressItem }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  scroll: { padding: Spacing.lg, paddingBottom: Spacing.xxl },
-  headerCard: {
-    padding: Spacing.md,
-    borderRadius: Radius.md,
-    borderWidth: 1,
-    borderColor: Colors.accent,
-    backgroundColor: Colors.surface,
-    marginBottom: Spacing.md,
-  },
-  row: { marginBottom: Spacing.sm, gap: Spacing.xs },
-  muted: { color: Colors.textMuted },
-  coord: { color: Colors.textMuted, marginTop: Spacing.xs },
-  actionRow: { marginTop: Spacing.sm },
-  action: { color: Colors.primary, ...Typography.label },
-});
+function createStyles(
+  colors: ReturnType<typeof useTheme>['colors'],
+  typography: ReturnType<typeof useTheme>['typography'],
+) {
+  return StyleSheet.create({
+    scroll: { padding: Spacing.lg, paddingBottom: Spacing.xxl },
+    headerCard: {
+      padding: Spacing.md,
+      borderRadius: Radius.md,
+      borderWidth: 1,
+      borderColor: colors.accent,
+      backgroundColor: colors.surface,
+      marginBottom: Spacing.md,
+    },
+    row: { marginBottom: Spacing.sm, gap: Spacing.xs },
+    muted: { color: colors.textMuted },
+    coord: { color: colors.textMuted, marginTop: Spacing.xs },
+    actionRow: { marginTop: Spacing.sm },
+    action: { ...typography.label, color: colors.primary },
+  });
+}

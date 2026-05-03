@@ -31,6 +31,7 @@ import '@/lib/notifications'; // registers background location task
 import '@/lib/geofencing'; // registers geofence task
 import { syncGeofencesForSavedPlaces } from '@/lib/geofencing';
 import { Colors } from '@/constants';
+import { ThemeProvider, useTheme } from '@/lib/theme';
 
 console.log('[APP_START] _layout module loaded');
 
@@ -321,7 +322,16 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 }
 
 export default function RootLayout() {
+  return (
+    <ThemeProvider>
+      <RootLayoutContent />
+    </ThemeProvider>
+  );
+}
+
+function RootLayoutContent() {
   const router = useRouter();
+  const { colors, resolvedTheme } = useTheme();
 
   // One-shot wipe of any leftover Local UI Mode flag. Old installs may have
   // ``nearr.devAuthEnabled=1`` persisted from before the UI entry point was
@@ -378,10 +388,10 @@ export default function RootLayout() {
             <Stack
               screenOptions={{
                 headerShown: false,
-                contentStyle: { backgroundColor: Colors.bg },
-                headerStyle: { backgroundColor: Colors.bg },
-                headerTitleStyle: { color: Colors.text },
-                headerTintColor: Colors.text,
+                contentStyle: { backgroundColor: colors.bg },
+                headerStyle: { backgroundColor: colors.bg },
+                headerTitleStyle: { color: colors.text },
+                headerTintColor: colors.text,
                 headerShadowVisible: false,
                 headerBackTitleVisible: false,
               }}
@@ -402,7 +412,7 @@ export default function RootLayout() {
               <Stack.Screen name="place/[id]" options={{ headerShown: true, title: 'Place' }} />
             </Stack>
           </AuthGate>
-          <StatusBar style="light" />
+          <StatusBar style={resolvedTheme === 'dark' ? 'light' : 'dark'} />
         </SafeAreaProvider>
       </GestureHandlerRootView>
     </AppErrorBoundary>

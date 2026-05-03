@@ -1,25 +1,26 @@
 import { Tabs } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
-import { Colors } from '@/constants';
+import { useTheme } from '@/lib/theme';
 
 export default function TabsLayout() {
+  const { colors } = useTheme();
   return (
     <Tabs
       screenOptions={{
         headerShown: true,
         headerStyle: {
-          backgroundColor: Colors.bg,
+          backgroundColor: colors.bg,
         },
         headerTitleStyle: {
-          color: Colors.text,
+          color: colors.text,
         },
-        headerTintColor: Colors.text,
+        headerTintColor: colors.text,
         headerShadowVisible: false,
-        tabBarActiveTintColor: Colors.primary,
-        tabBarInactiveTintColor: Colors.textMuted,
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textMuted,
         tabBarStyle: {
-          backgroundColor: Colors.surface,
-          borderTopColor: Colors.border,
+          backgroundColor: colors.surface,
+          borderTopColor: colors.border,
         },
         tabBarLabelStyle: {
           color: undefined,

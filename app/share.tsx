@@ -34,6 +34,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { Button, Card, Input, Screen } from '@/components';
 import { Colors, Radius, Spacing, Typography } from '@/constants';
+import { getActivationSaveFeedback } from '@/lib/activation';
 import {
   isLikelyUrl,
   parseShare,
@@ -41,8 +42,14 @@ import {
   type ShareSource,
 } from '@/lib/shareParser';
 import {
+  classifyPlaceQueryStrength,
   extractPlaceQueryFromShareMetadata,
+  extractAccountIdentityFromShareMetadata,
+  hasExplicitSourceBusinessSignal,
+  isAccountIdentityReason,
+  isExplicitAddressQuery,
   type PlaceExtraction,
+  type PlaceQueryStrength,
 } from '@/lib/placeExtractor';
 import {
   extractPlaceAI,
@@ -55,13 +62,16 @@ import {
   isLocalityLikePlace,
   isLikelyMultiLocationPlace,
   rankPlaceCandidates,
+  getShareCandidateRejectionReason,
+  hasMeaningfulNameMatch,
+  hasStrongNameMatch,
   resolveBusinessNearAddress,
   extractLocationContext,
   geocodeContextText,
   type LocationBias,
   type PlaceCandidate,
 } from '@/services/placesService';
-import { saveSavedPlace } from '@/services/savedPlacesService';
+import { listSavedPlaces, saveSavedPlace } from '@/services/savedPlacesService';
 import { trackEvent } from '@/lib/analytics';
 import * as Location from 'expo-location';
 
@@ -84,6 +94,16 @@ const PLATFORM_LABELS: Record<ShareSource, string> = {
 const FAIL_NO_QUERY = "We couldn't identify a place from this link.";
 const FAIL_NO_RESULTS = 'No place found. Try searching by name.';
 const FAIL_GENERIC = "We couldn't identify a place from this link.";
+
+async function getPostSaveCount(): Promise<number | null> {
+  try {
+    const places = await listSavedPlaces();
+    return places.length;
+  } catch (err) {
+    console.warn('[save-flow] post-save count lookup failed', (err as Error)?.message);
+    return null;
+  }
+}
 
 /**
  * Best-effort hostname extraction for analytics. Returns `null` for
@@ -169,7 +189,9 @@ export default function ShareScreen() {
       flow: Platform.OS === 'ios' ? 'ios_share' : 'android_share',
       url_host: safeHostname(incoming),
     });
-    void runSaveFlow(incoming);
+    void runSaveFlow(incoming).catch((err) => {
+      console.warn('[share] save flow failed', (err as Error)?.message ?? err);
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.url]);
 
@@ -236,6 +258,13 @@ export default function ShareScreen() {
       url: parsedResult.url,
       cleanedQuery: parsedResult.suggestedQuery,
     });
+    const accountIdentity = extractAccountIdentityFromShareMetadata({
+      source: parsedResult.source,
+      title: parsedResult.title,
+      description: parsedResult.description,
+      url: parsedResult.url,
+      cleanedQuery: parsedResult.suggestedQuery,
+    });
     setExtraction(extracted);
     console.log('[share] heuristic extraction', extracted);
 
@@ -274,33 +303,60 @@ export default function ShareScreen() {
     // search prompt.
     let chosenQuery: string | null = null;
     let chosenConfidence: 'high' | 'medium' | 'low' = 'low';
+    let chosenReason: string | null = null;
+    let accountIdentityUsed = false;
     if (ai && ai.confidence === 'high' && ai.query) {
       chosenQuery = ai.query;
       chosenConfidence = 'high';
+      chosenReason = 'ai-high';
     } else if (ai && ai.confidence === 'medium' && ai.query) {
       chosenQuery = ai.query;
       chosenConfidence = 'medium';
+      chosenReason = 'ai-medium';
     } else if (extracted && extracted.confidence !== 'low' && extracted.query) {
       chosenQuery = extracted.query;
       chosenConfidence = extracted.confidence;
+      chosenReason = extracted.reason ?? null;
     } else if (extracted && extracted.query) {
       chosenQuery = extracted.query;
       chosenConfidence = 'low';
+      chosenReason = extracted.reason ?? null;
+    } else if (accountIdentity && accountIdentity.query) {
+      chosenQuery = accountIdentity.query;
+      chosenConfidence = accountIdentity.confidence;
+      chosenReason = accountIdentity.reason;
+      accountIdentityUsed = true;
     } else if (ai && ai.query) {
       chosenQuery = ai.query;
       chosenConfidence = 'low';
+      chosenReason = 'ai-low';
     } else if (parsedResult.suggestedQuery) {
       chosenQuery = parsedResult.suggestedQuery;
       chosenConfidence = 'low';
+      chosenReason = 'suggested-query';
     }
 
     if (__DEV__) {
       console.debug('[share] flow chose query', {
         chosenQuery,
         chosenConfidence,
+        chosenReason,
         heuristic: extracted?.query,
         ai: ai?.query,
       });
+    }
+
+    const preliminaryStrength = classifyPlaceQueryStrength({
+      query: chosenQuery,
+      extractionReason: chosenReason,
+      confidence: chosenConfidence,
+      accountIdentityUsed: false,
+    });
+    if (accountIdentity?.query && preliminaryStrength === 'weak') {
+      chosenQuery = accountIdentity.query;
+      chosenConfidence = accountIdentity.confidence;
+      chosenReason = accountIdentity.reason;
+      accountIdentityUsed = true;
     }
 
     if (!chosenQuery) {
@@ -340,12 +396,30 @@ export default function ShareScreen() {
       }
     }
 
+    const queryStrength = classifyPlaceQueryStrength({
+      query: chosenQuery,
+      extractionReason: chosenReason,
+      confidence: chosenConfidence,
+      sourceContextText: contextText,
+      accountIdentityUsed,
+    });
+    console.log(`[share-extract] query_strength=${queryStrength}`);
+    console.log(`[share-extract] account_identity_used=${accountIdentityUsed}`);
+    if (accountIdentity?.query) {
+      console.log(`[share-rank] account_query=${accountIdentity.query}`);
+    }
+
     // ---- 4. search Google Places --------------------------------------
     await runSearchAndMaybeSave(
       chosenQuery,
       parsedResult.url,
       parsedResult.source,
       chosenConfidence,
+      queryStrength,
+      {
+        chosenReason,
+        accountIdentityUsed,
+      },
       { contextText, contextLatLng },
     );
   }
@@ -355,6 +429,11 @@ export default function ShareScreen() {
     sourceUrl: string,
     sourceType: ShareSource,
     chosenConfidence: 'high' | 'medium' | 'low' = 'low',
+    queryStrength: PlaceQueryStrength = 'weak',
+    queryEvidence: {
+      chosenReason: string | null;
+      accountIdentityUsed: boolean;
+    } = { chosenReason: null, accountIdentityUsed: false },
     locationCtx: {
       contextText: string | null;
       contextLatLng: LocationBias | null;
@@ -364,6 +443,15 @@ export default function ShareScreen() {
     // Bias priority: explicit post context > user device location > none.
     const bias: LocationBias | undefined =
       locationCtx.contextLatLng ?? userLatLngRef.current ?? undefined;
+    console.log(
+      `[share-rank] source_context=${locationCtx.contextText ?? 'none'}`,
+    );
+    console.log(
+      `[share-rank] context_bias_used=${!!locationCtx.contextLatLng}`,
+    );
+    console.log(
+      `[share-rank] device_bias_used=${!locationCtx.contextLatLng && !!userLatLngRef.current}`,
+    );
     let results: PlaceCandidate[] = [];
     try {
       results = await searchPlaces(query, bias);
@@ -460,16 +548,40 @@ export default function ShareScreen() {
     // Without any anchor we leave Google's ordering alone -- showing a
     // candidate list is the safest UX.
     const isMultiLocation = isLikelyMultiLocationPlace(query, localityRanked);
+    const rankingContext = {
+      extractedBusinessName: query,
+      contextLatLng: locationCtx.contextLatLng ?? undefined,
+      contextText: locationCtx.contextText ?? undefined,
+      userLatLng: locationCtx.contextLatLng ? undefined : userLatLngRef.current ?? undefined,
+    };
     const rankAnchor: LocationBias | null =
-      locationCtx.contextLatLng ?? userLatLngRef.current ?? null;
-    let finalResults = localityRanked;
-    if (isMultiLocation && rankAnchor) {
-      finalResults = rankPlaceCandidates(localityRanked, {
-        extractedBusinessName: query,
-        contextLatLng: locationCtx.contextLatLng ?? undefined,
-        contextText: locationCtx.contextText ?? undefined,
-        userLatLng: userLatLngRef.current ?? undefined,
+      rankingContext.contextLatLng ?? rankingContext.userLatLng ?? null;
+    const rankedResults = rankPlaceCandidates(localityRanked, rankingContext);
+    const finalResults = rankedResults.filter((candidate) => {
+      const rejection = getShareCandidateRejectionReason(candidate, rankingContext);
+      if (rejection) {
+        console.log(`[share-rank] rejected_candidate_reason=${rejection}`);
+        return false;
+      }
+      return true;
+    });
+
+    if (finalResults.length === 0) {
+      void trackEvent('save_failed', {
+        source_type: sourceType,
+        flow:
+          params.url && isLikelyUrl(params.url)
+            ? 'share_extension'
+            : 'paste_link',
+        query,
+        candidate_count: 0,
+        error_code: 'all_candidates_rejected',
+        confidence: chosenConfidence,
       });
+      setFailMessage(FAIL_NO_RESULTS);
+      setManualQuery(query);
+      setPhase('failed');
+      return;
     }
     if (__DEV__) {
       console.debug('[places] franchise resolution', {
@@ -481,6 +593,42 @@ export default function ShareScreen() {
         chosen: finalResults[0]?.name ?? null,
         candidateCount: finalResults.length,
       });
+    }
+
+    console.log('[share-rank] candidates', finalResults.slice(0, 5).map((candidate) => ({
+      name: candidate.name,
+      address: candidate.formattedAddress ?? null,
+      googlePlaceId: candidate.googlePlaceId ?? null,
+    })));
+
+    const hasSourceContext = !!locationCtx.contextLatLng;
+    const strongMatchCandidates = finalResults.filter((candidate) =>
+      hasStrongNameMatch(candidate, query),
+    );
+    const accountIdentityOnly =
+      queryEvidence.accountIdentityUsed ||
+      isAccountIdentityReason(queryEvidence.chosenReason);
+    const explicitAddressSignal = isExplicitAddressQuery(query);
+    const explicitSourceBusinessSignal = hasExplicitSourceBusinessSignal(
+      queryEvidence.chosenReason,
+    );
+    const topHasStrongAutoSaveEvidence = (candidate: PlaceCandidate): boolean =>
+      explicitAddressSignal ||
+      (hasSourceContext && hasStrongNameMatch(candidate, query)) ||
+      (explicitSourceBusinessSignal && hasStrongNameMatch(candidate, query));
+
+    if (queryStrength === 'weak') {
+      console.log('[share-rank] auto_save_blocked_reason=weak_query');
+      if (strongMatchCandidates.length > 0) {
+        console.log('[share-rank] auto_save_blocked_reason=needs_user_confirmation');
+        setCandidates(strongMatchCandidates.slice(0, 5));
+        setPhase('choose');
+        return;
+      }
+      setFailMessage(FAIL_NO_RESULTS);
+      setManualQuery(query);
+      setPhase('failed');
+      return;
     }
 
     // Strong-match heuristic: exactly one result. Save it -- even if it's
@@ -509,6 +657,27 @@ export default function ShareScreen() {
         setPhase('choose');
         return;
       }
+      if (!hasMeaningfulNameMatch(only, query)) {
+        console.log('[share-rank] rejected_candidate_reason=name_mismatch');
+        setFailMessage(FAIL_NO_RESULTS);
+        setManualQuery(query);
+        setPhase('failed');
+        return;
+      }
+      if (accountIdentityOnly && !hasSourceContext) {
+        console.log('[share-rank] auto_save_blocked_reason=account_identity_not_enough');
+        setCandidates(strongMatchCandidates.length > 0 ? strongMatchCandidates.slice(0, 5) : finalResults);
+        setPhase('choose');
+        return;
+      }
+      if (!topHasStrongAutoSaveEvidence(only)) {
+        console.log(
+          `[share-rank] auto_save_blocked_reason=${hasSourceContext ? 'needs_user_confirmation' : 'no_source_context_name_not_strong'}`,
+        );
+        setCandidates(strongMatchCandidates.length > 0 ? strongMatchCandidates.slice(0, 5) : finalResults);
+        setPhase('choose');
+        return;
+      }
       if (__DEV__) {
         console.debug('[share] flow', {
           extractedQuery: query,
@@ -533,7 +702,10 @@ export default function ShareScreen() {
       chosenConfidence === 'high' &&
       finalResults.length > 1 &&
       !isAddressLikePlace(finalResults[0]) &&
-      !isLocalityLikePlace(finalResults[0])
+      !isLocalityLikePlace(finalResults[0]) &&
+      hasMeaningfulNameMatch(finalResults[0], query) &&
+      topHasStrongAutoSaveEvidence(finalResults[0]) &&
+      !accountIdentityOnly
     ) {
       if (__DEV__) {
         console.debug('[share] flow', {
@@ -555,10 +727,14 @@ export default function ShareScreen() {
     // the closest branch to the post / user. Save it.
     if (
       isMultiLocation &&
+      locationCtx.contextLatLng &&
       rankAnchor &&
       finalResults.length > 0 &&
       !isLocalityLikePlace(finalResults[0]) &&
-      !isAddressLikePlace(finalResults[0])
+      !isAddressLikePlace(finalResults[0]) &&
+      hasMeaningfulNameMatch(finalResults[0], query) &&
+      topHasStrongAutoSaveEvidence(finalResults[0]) &&
+      !accountIdentityOnly
     ) {
       if (__DEV__) {
         console.debug('[share] flow', {
@@ -576,6 +752,11 @@ export default function ShareScreen() {
 
     // Multiple candidates → let the user pick. NEVER fall through to the
     // manual-search card when we have real results.
+    if (accountIdentityOnly && !hasSourceContext) {
+      console.log('[share-rank] auto_save_blocked_reason=account_identity_not_enough');
+    } else {
+      console.log('[share-rank] auto_save_blocked_reason=needs_user_confirmation');
+    }
     if (__DEV__) {
       console.debug('[share] flow', {
         extractedQuery: query,
@@ -621,17 +802,54 @@ export default function ShareScreen() {
           `${candidate.name} is already on your map.`,
         );
       } else {
-        Alert.alert('Saved to your map', candidate.name);
+        const postSaveCount = await getPostSaveCount();
+        if (postSaveCount == null) {
+          Alert.alert('Saved to your map', candidate.name);
+        } else {
+          const feedback = getActivationSaveFeedback(postSaveCount);
+          Alert.alert(feedback.title, feedback.message);
+          if (feedback.milestoneEvent) {
+            void trackEvent(feedback.milestoneEvent, {
+              source_type: sourceType,
+              flow,
+              saved_place_id: result.savedPlaceId,
+              saved_count: postSaveCount,
+            });
+          }
+          if (feedback.completed) {
+            void trackEvent('activation_completed_3_saves', {
+              source_type: sourceType,
+              flow,
+              saved_place_id: result.savedPlaceId,
+              saved_count: postSaveCount,
+            });
+          }
+        }
       }
       void trackEvent('save_success', {
         source_type: sourceType,
         flow,
         google_place_id: candidate.googlePlaceId ?? null,
-        saved_place_id:
-          result.status === 'saved' ? result.saved.id : null,
+        saved_place_id: result.savedPlaceId,
         duplicate: result.status === 'duplicate',
       });
-      router.replace('/(tabs)/map');
+      if (!result.savedPlaceId) {
+        console.warn('[save-flow] saved place id missing; opening map without focus');
+        try {
+          router.replace('/(tabs)/map');
+        } catch (navErr) {
+          console.warn('[share] navigation failed', (navErr as Error)?.message ?? navErr);
+        }
+        return;
+      }
+      try {
+        router.replace({
+          pathname: '/(tabs)/map',
+          params: { savedPlaceId: result.savedPlaceId },
+        });
+      } catch (navErr) {
+        console.warn('[share] navigation failed', (navErr as Error)?.message ?? navErr);
+      }
     } catch (err) {
       const msg = (err as Error)?.message ?? 'Could not save place.';
       console.warn('[share] saveSavedPlace failed', msg);
@@ -655,7 +873,11 @@ export default function ShareScreen() {
     if (!q) return;
     const sourceUrl = parsed?.url ?? (url.trim() || '');
     const sourceType: ShareSource = parsed?.source ?? 'link';
-    await runSearchAndMaybeSave(q, sourceUrl, sourceType);
+    try {
+      await runSearchAndMaybeSave(q, sourceUrl, sourceType);
+    } catch (err) {
+      console.warn('[share] save flow failed', (err as Error)?.message ?? err);
+    }
   }
 
   // ---------------------------------------------------------------------
@@ -719,14 +941,22 @@ export default function ShareScreen() {
             autoCorrect={false}
             keyboardType="url"
             editable={!busy}
-            onSubmitEditing={() => runSaveFlow(url)}
+            onSubmitEditing={() => {
+              void runSaveFlow(url).catch((err) => {
+                console.warn('[share] save flow failed', (err as Error)?.message ?? err);
+              });
+            }}
           />
 
           <View style={{ height: Spacing.md }} />
 
           <Button
             title={primaryButtonTitle}
-            onPress={() => runSaveFlow(url)}
+            onPress={() => {
+              void runSaveFlow(url).catch((err) => {
+                console.warn('[share] save flow failed', (err as Error)?.message ?? err);
+              });
+            }}
             loading={busy}
             disabled={busy || !url.trim()}
           />

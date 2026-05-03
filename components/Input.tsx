@@ -1,24 +1,30 @@
+import { useMemo } from 'react';
 import { TextInput, TextInputProps, StyleSheet } from 'react-native';
-import { Colors, Radius, Spacing, Typography } from '@/constants';
+import { Radius, Spacing } from '@/constants';
+import { useTheme } from '@/lib/theme';
 
 export function Input(props: TextInputProps) {
+  const { colors, typography } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <TextInput
-      placeholderTextColor={Colors.textMuted}
+      placeholderTextColor={colors.textMuted}
       {...props}
-      style={[styles.input, Typography.body, props.style]}
+      style={[styles.input, typography.body, props.style]}
     />
   );
 }
 
-const styles = StyleSheet.create({
-  input: {
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: Radius.md,
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-    color: Colors.text,
-    backgroundColor: Colors.surfaceElevated,
-  },
-});
+function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
+  return StyleSheet.create({
+    input: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: Radius.md,
+      paddingHorizontal: Spacing.lg,
+      paddingVertical: Spacing.md,
+      color: colors.text,
+      backgroundColor: colors.surfaceElevated,
+    },
+  });
+}

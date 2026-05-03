@@ -1,7 +1,9 @@
+import { useMemo } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Button } from './Button';
 import { Card } from './Card';
-import { Colors, Radius, Spacing, Typography } from '@/constants';
+import { Radius, Spacing } from '@/constants';
+import { useTheme } from '@/lib/theme';
 
 export type SetupReminderNeeds = {
   notifications: boolean;
@@ -39,29 +41,32 @@ export function SetupReminderModal({
   onOpenLocationSettings,
   onDismiss,
 }: Props) {
+  const { colors, typography, resolvedTheme } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <Modal
       visible={visible}
       animationType="fade"
       transparent
       onRequestClose={onDismiss}
+      statusBarTranslucent={resolvedTheme === 'dark'}
     >
       <View style={styles.backdrop}>
         <Card style={styles.card}>
           <View style={styles.header}>
-            <Text style={Typography.heading}>{titleForNeeds(needs)}</Text>
+            <Text style={typography.heading}>{titleForNeeds(needs)}</Text>
             <Pressable onPress={onDismiss} hitSlop={12} style={styles.closeButton}>
-              <Text style={[Typography.bodyStrong, styles.closeText]}>X</Text>
+              <Text style={[typography.bodyStrong, styles.closeText]}>X</Text>
             </Pressable>
           </View>
 
-          <Text style={[Typography.body, styles.body]}>{bodyForNeeds(needs)}</Text>
+          <Text style={[typography.body, styles.body]}>{bodyForNeeds(needs)}</Text>
 
           <View style={styles.rows}>
             {needs.notifications ? (
               <View style={styles.row}>
-                <Text style={Typography.bodyStrong}>Notifications</Text>
-                <Text style={[Typography.caption, styles.rowBody]}>
+                <Text style={typography.bodyStrong}>Notifications</Text>
+                <Text style={[typography.caption, styles.rowBody]}>
                   Lets Nearr send nearby reminders.
                 </Text>
               </View>
@@ -69,8 +74,8 @@ export function SetupReminderModal({
 
             {needs.location ? (
               <View style={styles.row}>
-                <Text style={Typography.bodyStrong}>Always Location</Text>
-                <Text style={[Typography.caption, styles.rowBody]}>
+                <Text style={typography.bodyStrong}>Always Location</Text>
+                <Text style={[typography.caption, styles.rowBody]}>
                   Helps Nearr notice when you&apos;re near a place you saved.
                 </Text>
               </View>
@@ -102,59 +107,61 @@ export function SetupReminderModal({
   );
 }
 
-const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(17, 17, 17, 0.35)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: Spacing.lg,
-  },
-  card: {
-    width: '100%',
-    maxWidth: 440,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: Spacing.md,
-  },
-  closeButton: {
-    width: 32,
-    height: 32,
-    borderRadius: Radius.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  closeText: {
-    color: Colors.textMuted,
-  },
-  body: {
-    color: Colors.textMuted,
-    marginTop: Spacing.sm,
-    lineHeight: 22,
-  },
-  rows: {
-    marginTop: Spacing.lg,
-    gap: Spacing.sm,
-  },
-  row: {
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: Radius.md,
-    padding: Spacing.md,
-    backgroundColor: Colors.bg,
-  },
-  rowBody: {
-    color: Colors.textMuted,
-    marginTop: Spacing.xs,
-    lineHeight: 18,
-  },
-  actions: {
-    marginTop: Spacing.lg,
-  },
-  spacedAction: {
-    marginTop: Spacing.sm,
-  },
-});
+function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
+  return StyleSheet.create({
+    backdrop: {
+      flex: 1,
+      backgroundColor: colors.modalBackdrop,
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: Spacing.lg,
+    },
+    card: {
+      width: '100%',
+      maxWidth: 440,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: Spacing.md,
+    },
+    closeButton: {
+      width: 32,
+      height: 32,
+      borderRadius: Radius.pill,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    closeText: {
+      color: colors.textMuted,
+    },
+    body: {
+      color: colors.textMuted,
+      marginTop: Spacing.sm,
+      lineHeight: 22,
+    },
+    rows: {
+      marginTop: Spacing.lg,
+      gap: Spacing.sm,
+    },
+    row: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: Radius.md,
+      padding: Spacing.md,
+      backgroundColor: colors.bg,
+    },
+    rowBody: {
+      color: colors.textMuted,
+      marginTop: Spacing.xs,
+      lineHeight: 18,
+    },
+    actions: {
+      marginTop: Spacing.lg,
+    },
+    spacedAction: {
+      marginTop: Spacing.sm,
+    },
+  });
+}
