@@ -21,9 +21,11 @@
  * V1 deliberately omits filters, clustering, and tile/style customization.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ComponentRef } from 'react';
 import {
+  Animated,
   Linking,
+  PanResponder,
   Platform,
   Pressable,
   StyleSheet,
@@ -194,6 +196,15 @@ const FALLBACK_REGION: Region = {
   longitudeDelta: 30,
 };
 
+// Hoisted to module scope so its identity is stable across renders. Used
+// only when Map Preview Mode is active.
+const PREVIEW_INITIAL_REGION: Region = {
+  latitude: 36.9741,
+  longitude: -122.0308,
+  latitudeDelta: 0.08,
+  longitudeDelta: 0.08,
+};
+
 export default function MapScreen() {
   const router = useRouter();
   // Optional deep-link param: when present, the map should center on this
@@ -209,6 +220,7 @@ export default function MapScreen() {
     : rawSavedPlaceId;
   const { data: liveData, loading: liveLoading, refresh } = useSavedPlaces();
   const mapRef = useRef<MapView | null>(null);
+  const markerRefs = useRef<Record<string, ComponentRef<typeof Marker> | null>>({});
   const demo = isDemoMode();
   // Map Preview keeps the real MapView but skips Supabase / Google / location.
   // Demo Mode wins if both flags are set (it doesn't render MapView at all).
@@ -240,8 +252,11 @@ export default function MapScreen() {
 
   // ---- DEBUG (Map Preview only) ----------------------------------------
   // Verify the seeded data shape and exact coordinates handed to <Marker>.
-  // The richer per-render state log lives further below.
-  if (mapPreview && __DEV__) {
+  // Logged once per data identity to avoid flooding the JS thread on
+  // every render (which can starve native event dispatch).
+  const previewLoggedRef = useRef<unknown>(null);
+  if (mapPreview && __DEV__ && previewLoggedRef.current !== places) {
+    previewLoggedRef.current = places;
     places.forEach((p) => {
       // eslint-disable-next-line no-console
       console.log('[map] preview coord', p?.place?.latitude, p?.place?.longitude);
@@ -254,6 +269,7 @@ export default function MapScreen() {
   const [selected, setSelected] = useState<SavedPlaceWithPlace | null>(null);
   const [mapReady, setMapReady] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const previewTranslateY = useRef(new Animated.Value(0)).current;
   const didFitRef = useRef(false);
   // Set to true when the user pans or zooms the map so auto-centering
   // effects don't override the user's chosen viewport.
@@ -262,6 +278,8 @@ export default function MapScreen() {
   // implicitly when the param changes to a new id so coming back to the
   // same place from a different card still triggers the focus animation.
   const handledTargetIdRef = useRef<string | null>(null);
+  const previousRegionRef = useRef<Region | null>(null);
+  const lastRegionRef = useRef<Region | null>(null);
 
   // ---- permission + initial location ------------------------------------
   // IMPORTANT: this effect must NEVER block map rendering. The map should be
@@ -379,14 +397,9 @@ export default function MapScreen() {
   }, [mapPreview]);
 
   // ---- pick an initial region -------------------------------------------
-  // Map Preview Mode uses a hard-coded Santa Cruz region so the map always
-  // has a valid camera target on first paint, regardless of seed loading.
-  const PREVIEW_INITIAL_REGION: Region = {
-    latitude: 36.9741,
-    longitude: -122.0308,
-    latitudeDelta: 0.08,
-    longitudeDelta: 0.08,
-  };
+  // Map Preview Mode uses the hoisted PREVIEW_INITIAL_REGION so the map
+  // always has a valid camera target on first paint, regardless of seed
+  // loading. (See module-scope constant above.)
   // Computed exactly once for `initialRegion`. We deliberately do NOT
   // recompute this on every data/userRegion change — `react-native-maps`
   // ignores changes to `initialRegion` after mount, and we re-target the
@@ -454,43 +467,37 @@ export default function MapScreen() {
     }
     handledTargetIdRef.current = savedPlaceId;
     didFitRef.current = true;
-    setSelected(target);
-    try {
-      const coords = radiusBoundingCoords(
-        target.place.latitude,
-        target.place.longitude,
-        effectiveRadiusMeters(target, profile),
-      );
-      mapRef.current?.fitToCoordinates(coords, {
-        edgePadding: { top: 100, right: 100, bottom: 220, left: 100 },
-        animated: true,
-      });
-    } catch (e) {
-      if (__DEV__) console.debug('[map] focus target skipped', e);
-    }
+    selectPlace(target);
   }, [savedPlaceId, mapReady, validPlaces, profile]);
 
   // ---- DEBUG ------------------------------------------------------------
   // Temporary verbose logs requested while diagnosing the "spinner forever"
-  // bug. Cheap and dev-only; remove once the map is reliable.
+  // bug. Throttled to fire only when one of the watched fields actually
+  // changes — logging on every render starves the JS thread under idle
+  // AppState / Supabase chatter and contributed to a native
+  // EventDispatcher OOM observed on Android.
+  const debugStateRef = useRef<string>('');
   if (__DEV__) {
-    // eslint-disable-next-line no-console
-    console.log('[map] state', {
-      platform: Platform.OS,
-      providerIntended: MAP_PROVIDER ?? 'default',
-      googleProviderIntended: MAP_PROVIDER === PROVIDER_GOOGLE,
-      customMapStyleLength: DARK_MAP_STYLE.length,
-      customMapStyleEnabled: Platform.OS === 'android',
-      savedPlacesLoading: liveLoading,
-      savedPlacesLength: data.length,
-      validPlacesLength: validPlaces.length,
-      locationPermissionState: permission,
-      currentLocationLoading,
-      mapReady,
-      initialRegion,
-      markersRendered: validPlaces.length,
-      mapPreview,
-    });
+    const sig = `${liveLoading}|${data.length}|${validPlaces.length}|${permission}|${currentLocationLoading}|${mapReady}|${mapPreview}`;
+    if (debugStateRef.current !== sig) {
+      debugStateRef.current = sig;
+      // eslint-disable-next-line no-console
+      console.log('[map] state', {
+        platform: Platform.OS,
+        providerIntended: MAP_PROVIDER ?? 'default',
+        googleProviderIntended: MAP_PROVIDER === PROVIDER_GOOGLE,
+        customMapStyleLength: DARK_MAP_STYLE.length,
+        customMapStyleEnabled: Platform.OS === 'android',
+        savedPlacesLoading: liveLoading,
+        savedPlacesLength: data.length,
+        validPlacesLength: validPlaces.length,
+        locationPermissionState: permission,
+        currentLocationLoading,
+        mapReady,
+        markersRendered: validPlaces.length,
+        mapPreview,
+      });
+    }
   }
 
   // -----------------------------------------------------------------------
@@ -510,6 +517,33 @@ export default function MapScreen() {
       { latitude: selected.place.latitude, longitude: selected.place.longitude },
     );
   }, [selected, userRegion]);
+
+  const dismissSelectedPlace = useCallback(
+    (options?: { restoreRegion?: boolean }) => {
+      if (!selected) return;
+
+      markerRefs.current[selected.id]?.hideCallout?.();
+      previewTranslateY.stopAnimation();
+      previewTranslateY.setValue(0);
+      setSelected(null);
+
+      if (options?.restoreRegion === false) {
+        previousRegionRef.current = null;
+        return;
+      }
+
+      const previousRegion = previousRegionRef.current;
+      previousRegionRef.current = null;
+      if (!previousRegion) return;
+
+      try {
+        mapRef.current?.animateToRegion(previousRegion, 250);
+      } catch (e) {
+        if (__DEV__) console.debug('[map] dismiss restore skipped', e);
+      }
+    },
+    [previewTranslateY, selected],
+  );
 
   /**
    * Frame the map around a single saved place's zone (marker + radius
@@ -532,6 +566,59 @@ export default function MapScreen() {
       if (__DEV__) console.debug('[map] focusZone skipped', e);
     }
   }
+
+  function selectPlace(item: SavedPlaceWithPlace) {
+    previousRegionRef.current = lastRegionRef.current;
+    setSelected(item);
+    focusZone(item);
+  }
+
+  const previewPanResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onMoveShouldSetPanResponder: (_, gestureState) =>
+          !!selected &&
+          gestureState.dy > 6 &&
+          Math.abs(gestureState.dy) > Math.abs(gestureState.dx),
+        onPanResponderMove: (_, gestureState) => {
+          previewTranslateY.setValue(Math.max(0, gestureState.dy));
+        },
+        onPanResponderRelease: (_, gestureState) => {
+          if (gestureState.dy > 80 && Math.abs(gestureState.dy) > Math.abs(gestureState.dx)) {
+            dismissSelectedPlace();
+            return;
+          }
+
+          Animated.spring(previewTranslateY, {
+            toValue: 0,
+            useNativeDriver: true,
+            bounciness: 6,
+          }).start();
+        },
+        onPanResponderTerminate: () => {
+          Animated.spring(previewTranslateY, {
+            toValue: 0,
+            useNativeDriver: true,
+            bounciness: 6,
+          }).start();
+        },
+      }),
+    [dismissSelectedPlace, previewTranslateY, selected],
+  );
+
+  // Stable handlers passed to MapView. onPanDrag fires on every gesture
+  // sample (potentially dozens per second) so we early-out once the flag
+  // is set instead of recreating closures or re-writing the ref.
+  const handlePanDrag = useCallback(() => {
+    if (!hasUserMovedRef.current) hasUserMovedRef.current = true;
+  }, []);
+  const handleRegionChangeComplete = useCallback((region: Region) => {
+    lastRegionRef.current = region;
+  }, []);
+  const handleMapReady = useCallback(() => setMapReady(true), []);
+  const handleMapPress = useCallback(() => {
+    dismissSelectedPlace();
+  }, [dismissSelectedPlace]);
 
   // -----------------------------------------------------------------------
   if (demo) {
@@ -573,9 +660,10 @@ export default function MapScreen() {
         showsUserLocation={!mapPreview && permission === 'granted' && !!userRegion}
         showsMyLocationButton={!mapPreview && permission === 'granted' && !!userRegion}
         initialRegion={initialRegion}
-        onMapReady={() => setMapReady(true)}
-        onPress={() => setSelected(null)}
-        onPanDrag={() => { hasUserMovedRef.current = true; }}
+        onMapReady={handleMapReady}
+        onPress={handleMapPress}
+        onPanDrag={handlePanDrag}
+        onRegionChangeComplete={handleRegionChangeComplete}
       >
         {/* Life360-style zone bubbles. Rendered as a separate pass before
             markers so marker pins always sit on top of their own circle.
@@ -606,6 +694,9 @@ export default function MapScreen() {
           <Marker
             key={p.id}
             identifier={p.id}
+            ref={(ref) => {
+              markerRefs.current[p.id] = ref;
+            }}
             coordinate={{
               latitude: p.place.latitude,
               longitude: p.place.longitude,
@@ -617,16 +708,13 @@ export default function MapScreen() {
             // exactly on the coordinate that the Circle is centered on.
             anchor={{ x: 0.5, y: 0.5 }}
             centerOffset={{ x: 0, y: 0 }}
-            title={p.place.name}
-            description={p.place.formatted_address ?? undefined}
             onPress={(e) => {
               e.stopPropagation?.();
               void trackEvent('place_marker_tapped', {
                 saved_place_id: p.id,
                 google_place_id: p.place.google_place_id ?? null,
               });
-              setSelected(p);
-              focusZone(p);
+              selectPlace(p);
             }}
           >
             {/* "Home base" pin: a soft halo around a solid dot reinforces
@@ -686,8 +774,15 @@ export default function MapScreen() {
 
       {/* Preview card */}
       {selected ? (
-        <View style={styles.previewWrap} pointerEvents="box-none">
+        <Animated.View
+          style={[styles.previewWrap, { transform: [{ translateY: previewTranslateY }] }]}
+          pointerEvents="box-none"
+          {...previewPanResponder.panHandlers}
+        >
           <Card style={styles.previewCard}>
+            <View style={styles.previewHandleWrap}>
+              <View style={styles.previewHandle} />
+            </View>
             <View style={styles.previewTopRow}>
               <View style={styles.previewThumb}>
                 <Feather
@@ -702,7 +797,7 @@ export default function MapScreen() {
                     {selected.place.name}
                   </Text>
                   <Pressable
-                    onPress={() => setSelected(null)}
+                    onPress={() => dismissSelectedPlace()}
                     hitSlop={12}
                     style={styles.closeBtn}
                   >
@@ -740,7 +835,7 @@ export default function MapScreen() {
             <Pressable
               onPress={() => {
                 const id = selected.id;
-                setSelected(null);
+                dismissSelectedPlace({ restoreRegion: false });
                 router.push(`/place/${id}`);
               }}
               hitSlop={10}
@@ -750,7 +845,7 @@ export default function MapScreen() {
               <Feather name="chevron-right" size={16} color={Colors.textSecondary} />
             </Pressable>
           </Card>
-        </View>
+        </Animated.View>
       ) : null}
 
       {/* "View All" pill — fits all saved-place zones on demand. Only shown
@@ -925,6 +1020,17 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 10 },
     elevation: 8,
     padding: 14,
+  },
+  previewHandleWrap: {
+    alignItems: 'center',
+    marginTop: -2,
+    marginBottom: Spacing.sm,
+  },
+  previewHandle: {
+    width: 42,
+    height: 5,
+    borderRadius: Radius.pill,
+    backgroundColor: Colors.border,
   },
   previewTopRow: {
     flexDirection: 'row',

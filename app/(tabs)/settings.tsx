@@ -46,6 +46,10 @@ import {
   startProximityWatch,
   stopProximityWatch,
 } from '@/services/notifications';
+import {
+  stopNearrGeofencing,
+  syncGeofencesForSavedPlaces,
+} from '@/lib/geofencing';
 import type { Profile, RadiusUnit } from '@/types';
 
 // ---------------------------------------------------------------------------
@@ -184,8 +188,12 @@ export default function SettingsScreen() {
           );
         }
         await startProximityWatch();
+        // Resync OS-level geofences in case master / nearby switches
+        // were just turned back on. Non-blocking on failure.
+        void syncGeofencesForSavedPlaces();
       } else {
         await stopProximityWatch();
+        await stopNearrGeofencing();
       }
 
       Alert.alert('Saved', 'Your settings have been updated.');
@@ -210,6 +218,13 @@ export default function SettingsScreen() {
             console.log('[signOut] step 1: clearing legacy Local UI Mode flag');
             await disableDevAuth();
             console.log('[signOut] step 2: supabase.auth.signOut()');
+            // Tear down OS-level geofences before clearing the session
+            // so the OS isn't left tracking regions for a signed-out user.
+            try {
+              await stopNearrGeofencing();
+            } catch {
+              /* non-fatal */
+            }
             const { error } = await signOut();
             if (error) {
               console.warn('[signOut] supabase signOut returned error', error);

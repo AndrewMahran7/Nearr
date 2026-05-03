@@ -20,6 +20,7 @@
 import { supabase } from '@/lib/supabase';
 import { isDemoMode } from '@/lib/demoMode';
 import { isMapPreviewMode } from '@/lib/mapPreview';
+import { triggerGeofenceResync } from '@/lib/geofencing';
 import {
   deleteDemoSavedPlace,
   getDemoSavedPlace,
@@ -213,6 +214,10 @@ export async function saveSavedPlace(
     throw new Error(savedErr.message);
   }
 
+  // Resync OS-level geofences after a successful save. Fire-and-forget;
+  // never block the UI on geofence registration.
+  triggerGeofenceResync();
+
   return {
     status: 'saved',
     saved: saved as SavedPlace & { place: PlaceRow },
@@ -287,6 +292,14 @@ export async function updateSavedPlace(id: string, patch: SavedPlacePatch): Prom
     console.warn('[savedPlacesService] update failed', error.message);
     throw new Error(error.message);
   }
+  // Toggling reminders / changing radius affects the geofence set.
+  if (
+    patch.notifications_enabled !== undefined ||
+    patch.radius_value !== undefined ||
+    patch.radius_unit !== undefined
+  ) {
+    triggerGeofenceResync();
+  }
 }
 
 export async function deleteSavedPlace(id: string): Promise<void> {
@@ -297,4 +310,5 @@ export async function deleteSavedPlace(id: string): Promise<void> {
     console.warn('[savedPlacesService] delete failed', error.message);
     throw new Error(error.message);
   }
+  triggerGeofenceResync();
 }

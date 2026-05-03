@@ -216,7 +216,32 @@ export async function stopProximityWatch(): Promise<void> {
   }
 }
 
+let proximityWatchSyncInFlight: Promise<'started' | 'stopped' | 'skipped'> | null = null;
+
 export async function syncProximityWatch(): Promise<'started' | 'stopped' | 'skipped'> {
+  // Coalesce concurrent callers (AppState 'active' + foreground check +
+  // saved-place mutations can all arrive within a few ms). Without this,
+  // each caller fires a fresh chain of Supabase + Location queries which
+  // pile work onto the JS thread and contributed to a native event
+  // dispatcher backlog observed during idle on Android.
+  if (proximityWatchSyncInFlight) {
+    if (__DEV__) {
+      console.log('[perf] proximity_sync_skipped reason=already_running');
+    }
+    return proximityWatchSyncInFlight;
+  }
+  proximityWatchSyncInFlight = (async () => {
+    if (__DEV__) console.log('[perf] proximity_sync_start');
+    try {
+      return await runSyncProximityWatch();
+    } finally {
+      proximityWatchSyncInFlight = null;
+    }
+  })();
+  return proximityWatchSyncInFlight;
+}
+
+async function runSyncProximityWatch(): Promise<'started' | 'stopped' | 'skipped'> {
   if (isDemoMode() || isMapPreviewMode()) return 'skipped';
 
   const started = await Location.hasStartedLocationUpdatesAsync(LOCATION_TASK);
@@ -571,8 +596,131 @@ export async function checkProximity(
       continue;
     }
 
-    await fireNotification(userId, s, here, decision.distanceMeters);
+    await fireNotification(userId, s, decision.distanceMeters);
     lastAlertAtMem.set(s.id, now);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Shared per-place notify (used by background-location path + geofence ENTER)
+// ---------------------------------------------------------------------------
+
+/**
+ * Reasons a notify attempt was made. Kept short — used in dev logs only.
+ */
+export type NotifyReason =
+  | 'geofence_enter'
+  | 'background_location'
+  | 'foreground_check';
+
+export type MaybeNotifyResult =
+  | { sent: true }
+  | {
+      sent: false;
+      reason:
+        | 'demo_or_preview'
+        | 'no_user'
+        | 'place_missing'
+        | 'place_off'
+        | 'master_off'
+        | 'nearby_off'
+        | 'quiet_hours'
+        | 'cooldown_mem'
+        | 'cooldown_db'
+        | 'count_limit'
+        | 'send_failed';
+    };
+
+/**
+ * Eligibility check + send for a single saved place, identified by id.
+ *
+ * Centralizes the spam-prevention rules so the background-location task and
+ * the geofence ENTER handler stay in lockstep:
+ *   - master / nearby switches
+ *   - quiet hours
+ *   - per-place toggle
+ *   - 12-hour cooldown (in-memory + DB)
+ *   - 3-notification lifetime cap per place
+ *
+ * On success: schedules a local notification, bumps `last_notified_at` and
+ * `notification_count`, and inserts a `notification_events` audit row.
+ *
+ * Never throws — always returns a structured result.
+ */
+export async function maybeNotifyForSavedPlace(
+  savedPlaceId: string,
+  reason: NotifyReason,
+): Promise<MaybeNotifyResult> {
+  if (isDemoMode() || isMapPreviewMode()) {
+    return { sent: false, reason: 'demo_or_preview' };
+  }
+
+  try {
+    const { data: userRes, error: userErr } = await supabase.auth.getUser();
+    if (userErr || !userRes.user) return { sent: false, reason: 'no_user' };
+    const userId = userRes.user.id;
+
+    const { data: savedRow } = await supabase
+      .from('saved_places')
+      .select('*, place:places(*)')
+      .eq('id', savedPlaceId)
+      .eq('user_id', userId)
+      .maybeSingle();
+    const saved = (savedRow as SavedPlaceWithPlace | null) ?? null;
+    if (!saved || !saved.place) return { sent: false, reason: 'place_missing' };
+    if (!saved.notifications_enabled) return { sent: false, reason: 'place_off' };
+
+    const { data: profileData } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .maybeSingle();
+    const profile = (profileData as Profile | null) ?? null;
+
+    if (profile && !profile.notifications_enabled) {
+      return { sent: false, reason: 'master_off' };
+    }
+    if (profile && !profile.nearby_notifications_enabled) {
+      return { sent: false, reason: 'nearby_off' };
+    }
+    if (inQuietHours(profile)) return { sent: false, reason: 'quiet_hours' };
+
+    const now = Date.now();
+    const memLast = lastAlertAtMem.get(saved.id) ?? 0;
+    if (now - memLast < ALERT_COOLDOWN_MS) {
+      return { sent: false, reason: 'cooldown_mem' };
+    }
+    if (saved.last_notified_at) {
+      const ts = Date.parse(saved.last_notified_at);
+      if (Number.isFinite(ts) && now - ts < ALERT_COOLDOWN_MS) {
+        return { sent: false, reason: 'cooldown_db' };
+      }
+    }
+
+    const count = saved.notification_count ?? 0;
+    if (count >= 3) return { sent: false, reason: 'count_limit' };
+
+    // Distance is unknown for OS geofence ENTER — the OS only tells us we
+    // crossed the boundary, not how far inside we are. Use the effective
+    // radius as a safe upper bound for the audit log.
+    const radius = effectiveRadiusMeters(saved, profile);
+
+    // Use the requested copy for geofence ENTER; preserve existing copy for
+    // the legacy proximity-watch path so we don't churn user-visible text.
+    const copyOverride =
+      reason === 'geofence_enter'
+        ? {
+            title: "You're near a saved place",
+            body: `${saved.place.name} is nearby.`,
+          }
+        : undefined;
+
+    await fireNotification(userId, saved, radius, copyOverride);
+    lastAlertAtMem.set(saved.id, now);
+    return { sent: true };
+  } catch (e) {
+    console.warn('[notifications] maybeNotifyForSavedPlace failed', e);
+    return { sent: false, reason: 'send_failed' };
   }
 }
 
@@ -583,8 +731,8 @@ export async function checkProximity(
 async function fireNotification(
   userId: string,
   saved: SavedPlaceWithPlace,
-  here: LatLng,
   distance: number,
+  copyOverride?: { title: string; body: string },
 ): Promise<void> {
   const count = saved.notification_count ?? 0;
   // Notification 3 (count already at 2) uses the "Give me 3 more chances" category.
@@ -594,12 +742,16 @@ async function fireNotification(
     `[notifications] NOTIFICATION_TRIGGERED place=${saved.place.name} dist=${Math.round(distance)}m count=${count} category=${categoryIdentifier}`,
   );
 
+  const title = copyOverride?.title ?? `You're near ${saved.place.name}`;
+  const body =
+    copyOverride?.body ?? (saved.place.formatted_address ?? 'Saved in Nearr');
+
   // 1. Local notification.
   try {
     await Notifications.scheduleNotificationAsync({
       content: {
-        title: `You're near ${saved.place.name}`,
-        body: saved.place.formatted_address ?? 'Saved in Nearr',
+        title,
+        body,
         data: { savedPlaceId: saved.id, placeId: saved.place.id },
         categoryIdentifier,
       },

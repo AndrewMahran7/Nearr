@@ -25,7 +25,9 @@ import {
   syncProximityWatch,
 } from '@/services/notifications';
 import * as Notifications from 'expo-notifications';
-import '@/lib/notifications'; // registers background task
+import '@/lib/notifications'; // registers background location task
+import '@/lib/geofencing'; // registers geofence task
+import { syncGeofencesForSavedPlaces } from '@/lib/geofencing';
 import { Colors } from '@/constants';
 
 console.log('[APP_START] _layout module loaded');
@@ -222,11 +224,16 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     if (!session || isDevSession) return;
     void syncProximityWatch();
     void checkProximityOnce();
+    // Register OS-level geofences alongside the background-location
+    // fallback. Failure is non-fatal — geofencing only works on real
+    // devices and only with Always location + notification permission.
+    void syncGeofencesForSavedPlaces();
     const sub = AppState.addEventListener('change', (state) => {
       if (state === 'active') {
         setSetupReminderDismissedThisSession(false);
         void syncProximityWatch();
         void checkProximityOnce();
+        void syncGeofencesForSavedPlaces();
         void refreshSetupReminder();
       } else if (state === 'background' || state === 'inactive') {
         setSetupReminderDismissedThisSession(false);
