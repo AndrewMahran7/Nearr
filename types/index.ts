@@ -46,6 +46,18 @@ export type SavedPlace = {
   last_notified_at: string | null;
   /** Number of proximity notifications sent for this place. Max 3. */
   notification_count: number;
+  /**
+   * Number of nearby-opportunity reminders the user has received. Mirrors
+   * `notification_count` at the delivery boundary; gates auto-archive after
+   * the third opportunity is declined.
+   */
+  reminder_opportunity_count: number;
+  /** Set when archived (manually or auto after 3 declined opportunities). */
+  archived_at: string | null;
+  /** Set when the user marks the place visited from the opportunity screen. */
+  visited_at: string | null;
+  /** Set when archive happened because reminders were exhausted (3/3 declined). */
+  reminders_exhausted_at: string | null;
   created_at: string;
   updated_at: string;
 };

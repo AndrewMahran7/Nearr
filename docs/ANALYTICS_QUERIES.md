@@ -1,6 +1,6 @@
 # Nearr Analytics Queries
 
-> Last updated: 2026-05-02
+> Last updated: 2026-05-03
 > Source of truth: `public.analytics_events` plus live product tables where noted
 
 Nearr currently has lightweight product analytics through `public.analytics_events`.
@@ -31,10 +31,27 @@ Examples confirmed in code:
 - `how_nearr_works_shown`
 - `how_nearr_works_completed`
 - `how_nearr_works_skipped`
+- `opportunity_notification_opened`
+- `opportunity_get_directions_tapped`
+- `opportunity_maybe_next_time_tapped`
+- `opportunity_visited_tapped`
+- `opportunity_adjust_radius_tapped`
+- `opportunity_archived_after_3`
+- `place_marked_visited`
+- `archived_filter_viewed`
+- `visited_filter_viewed`
+- `archived_place_restored`
+
+What this means for the recent product work:
+
+- Restaurant extraction v2 is shipping, but the analytics table does not currently expose a dedicated event for exact wrong-save confirmation, influencer-vs-restaurant classification quality, or address-first wins.
+- Grouped nearby notifications are shipping, but there is not currently a dedicated grouped-notification analytics event in `analytics_events`.
+- Opportunity / visited / archived analytics ARE live as of `20260503000001_opportunity_archive.sql`. Use the events listed above to track the post-notification flow.
 
 ## What is not currently tracked
 
 - exact wrong-save confirmations as a dedicated event
+- grouped nearby notifications as a dedicated analytics event
 - crash rate
 - user understanding / survey comprehension
 - install count from App Store / Play Store APIs
@@ -245,6 +262,8 @@ order by 1 desc;
 ## 12. Metrics not currently answerable from code alone
 
 - Wrong saves: not directly tracked as a dedicated analytics event.
+- Grouped-notification usage: not directly queryable from `analytics_events` today.
+- Opportunity / visited / archive funnel: not queryable yet because the underlying feature and events are not live.
 - Crash rate: not tracked.
 - Understanding/comprehension: not tracked.
 

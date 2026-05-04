@@ -26,14 +26,17 @@ import { Radius, Spacing } from '@/constants';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
 import { distanceMeters } from '@/lib/geo';
 import { useTheme } from '@/lib/theme';
+import { trackEvent } from '@/lib/analytics';
 import { getProfile } from '@/services/profileService';
-import { deleteSavedPlace } from '@/services/savedPlacesService';
+import { deleteSavedPlace, unarchive } from '@/services/savedPlacesService';
 import type { Profile, SavedPlaceWithPlace } from '@/types';
 
 type PlacesFilter =
-  | 'all'
+  | 'active'
   | 'recent'
   | 'nearby'
+  | 'visited'
+  | 'archived'
   | 'instagram'
   | 'tiktok'
   | 'reminders-on';
@@ -64,6 +67,10 @@ function filterLabel(filter: PlacesFilter): string {
       return 'recent';
     case 'nearby':
       return 'nearby saved places';
+    case 'visited':
+      return 'visited';
+    case 'archived':
+      return 'archived';
     case 'instagram':
       return 'Instagram';
     case 'tiktok':
@@ -71,7 +78,7 @@ function filterLabel(filter: PlacesFilter): string {
     case 'reminders-on':
       return 'reminders on';
     default:
-      return 'all';
+      return 'active';
   }
 }
 
@@ -82,7 +89,7 @@ export default function PlacesTab() {
   const { data, loading, refreshing, error, refresh } = useSavedPlaces();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [filter, setFilter] = useState('');
-  const [activeFilter, setActiveFilter] = useState<PlacesFilter>('all');
+  const [activeFilter, setActiveFilter] = useState<PlacesFilter>('active');
   const [currentLocation, setCurrentLocation] = useState<Location.LocationObjectCoords | null>(null);
   const [locationState, setLocationState] = useState<LocationState>('idle');
 
@@ -112,9 +119,14 @@ export default function PlacesTab() {
     }
   }, []);
 
+  const activeData = useMemo(
+    () => data.filter((s) => !s.archived_at && !s.visited_at),
+    [data],
+  );
+
   const nearbyItems = useMemo<NearbyItem[]>(() => {
     if (!currentLocation) return [];
-    return data
+    return activeData
       .filter(
         (saved) =>
           Number.isFinite(saved.place?.latitude) && Number.isFinite(saved.place?.longitude),
@@ -127,18 +139,20 @@ export default function PlacesTab() {
         ),
       }))
       .sort((left, right) => left.distance - right.distance);
-  }, [currentLocation, data]);
+  }, [currentLocation, activeData]);
 
   const counts = useMemo(
     () => ({
-      all: data.length,
-      recent: data.filter((saved) => isRecent(saved.created_at)).length,
+      active: activeData.length,
+      recent: activeData.filter((saved) => isRecent(saved.created_at)).length,
       nearby: nearbyItems.length,
-      instagram: data.filter((saved) => matchesSource(saved, 'instagram')).length,
-      tiktok: data.filter((saved) => matchesSource(saved, 'tiktok')).length,
-      remindersOn: data.filter((saved) => saved.notifications_enabled).length,
+      visited: data.filter((saved) => !!saved.visited_at).length,
+      archived: data.filter((saved) => !!saved.archived_at && !saved.visited_at).length,
+      instagram: activeData.filter((saved) => matchesSource(saved, 'instagram')).length,
+      tiktok: activeData.filter((saved) => matchesSource(saved, 'tiktok')).length,
+      remindersOn: activeData.filter((saved) => saved.notifications_enabled).length,
     }),
-    [data, nearbyItems],
+    [activeData, data, nearbyItems],
   );
 
   // Client-side filter — case-insensitive match across place name and
@@ -146,21 +160,37 @@ export default function PlacesTab() {
   // simpler than re-querying Supabase and feels instant while typing.
   const filteredData = useMemo(() => {
     const q = filter.trim().toLowerCase();
-    let base: SavedPlaceWithPlace[] = data;
+    let base: SavedPlaceWithPlace[] = activeData;
 
     if (activeFilter === 'recent') {
-      base = [...data].sort(
+      base = [...activeData].sort(
         (left, right) =>
           new Date(right.created_at).getTime() - new Date(left.created_at).getTime(),
       );
     } else if (activeFilter === 'nearby') {
       base = nearbyItems.map(({ saved }) => saved);
+    } else if (activeFilter === 'visited') {
+      base = data
+        .filter((saved) => !!saved.visited_at)
+        .sort(
+          (left, right) =>
+            new Date(right.visited_at ?? right.updated_at).getTime() -
+            new Date(left.visited_at ?? left.updated_at).getTime(),
+        );
+    } else if (activeFilter === 'archived') {
+      base = data
+        .filter((saved) => !!saved.archived_at && !saved.visited_at)
+        .sort(
+          (left, right) =>
+            new Date(right.archived_at ?? right.updated_at).getTime() -
+            new Date(left.archived_at ?? left.updated_at).getTime(),
+        );
     } else if (activeFilter === 'instagram') {
-      base = data.filter((saved) => matchesSource(saved, 'instagram'));
+      base = activeData.filter((saved) => matchesSource(saved, 'instagram'));
     } else if (activeFilter === 'tiktok') {
-      base = data.filter((saved) => matchesSource(saved, 'tiktok'));
+      base = activeData.filter((saved) => matchesSource(saved, 'tiktok'));
     } else if (activeFilter === 'reminders-on') {
-      base = data.filter((saved) => saved.notifications_enabled);
+      base = activeData.filter((saved) => saved.notifications_enabled);
     }
 
     if (!q) return base;
@@ -169,7 +199,7 @@ export default function PlacesTab() {
       const addr = s.place?.formatted_address?.toLowerCase() ?? '';
       return name.includes(q) || addr.includes(q);
     });
-  }, [activeFilter, data, filter, nearbyItems]);
+  }, [activeData, activeFilter, data, filter, nearbyItems]);
 
   const loadProfile = useCallback(async () => {
     setProfile(await getProfile());
@@ -204,6 +234,16 @@ export default function PlacesTab() {
     }
   }
 
+  async function handleRestore(id: string) {
+    try {
+      await unarchive(id);
+      void trackEvent('archived_place_restored', { saved_place_id: id });
+      await refresh();
+    } catch (e: any) {
+      Alert.alert('Could not restore', e?.message ?? 'Unknown error.');
+    }
+  }
+
   if (loading && data.length === 0) {
     return (
       <Screen>
@@ -233,6 +273,11 @@ export default function PlacesTab() {
     if (next === 'nearby') {
       setLocationState('idle');
     }
+    if (next === 'visited') {
+      void trackEvent('visited_filter_viewed');
+    } else if (next === 'archived') {
+      void trackEvent('archived_filter_viewed');
+    }
   }
 
   function renderEmptyState() {
@@ -245,7 +290,7 @@ export default function PlacesTab() {
           actionTitle="Clear search"
           onAction={() => setFilter('')}
           secondaryTitle="Clear filter"
-          onSecondary={() => setFilterAndResetLocation('all')}
+          onSecondary={() => setFilterAndResetLocation('active')}
         />
       );
     }
@@ -262,12 +307,12 @@ export default function PlacesTab() {
             void loadNearbyLocation();
           }}
           secondaryTitle="Clear filter"
-          onSecondary={() => setFilterAndResetLocation('all')}
+          onSecondary={() => setFilterAndResetLocation('active')}
         />
       );
     }
 
-    if (activeFilter !== 'all') {
+    if (activeFilter !== 'active') {
       const title =
         activeFilter === 'instagram'
           ? 'No Instagram saves yet'
@@ -277,7 +322,11 @@ export default function PlacesTab() {
               ? 'No reminders on yet'
               : activeFilter === 'recent'
                 ? 'No recent saves yet'
-                : 'No nearby saved places yet';
+                : activeFilter === 'visited'
+                  ? 'No visited places yet'
+                  : activeFilter === 'archived'
+                    ? 'Nothing archived yet'
+                    : 'No nearby saved places yet';
       const body =
         activeFilter === 'recent'
           ? 'You have not saved any new places recently.'
@@ -285,15 +334,19 @@ export default function PlacesTab() {
             ? 'Nothing you saved looks close enough to go right now.'
             : activeFilter === 'reminders-on'
               ? 'Turn on a nearby reminder for a place and it will show up here.'
-              : `No ${filterLabel(activeFilter)} yet.`;
+              : activeFilter === 'visited'
+                ? 'Mark a place visited from the nearby reminder and it will show up here.'
+                : activeFilter === 'archived'
+                  ? 'Archived places live here. Restore one to start getting reminders again.'
+                  : `No ${filterLabel(activeFilter)} yet.`;
 
       return (
         <EmptyState
           framed={false}
           title={title}
           body={body}
-          actionTitle="Clear filter"
-          onAction={() => setFilterAndResetLocation('all')}
+          actionTitle="Show active places"
+          onAction={() => setFilterAndResetLocation('active')}
         />
       );
     }
@@ -347,9 +400,9 @@ export default function PlacesTab() {
                   style={styles.filterScroll}
                 >
                   <FilterChip
-                    label={`All${counts.all ? ` ${counts.all}` : ''}`}
-                    active={activeFilter === 'all'}
-                    onPress={() => setFilterAndResetLocation('all')}
+                    label={`Active${counts.active ? ` ${counts.active}` : ''}`}
+                    active={activeFilter === 'active'}
+                    onPress={() => setFilterAndResetLocation('active')}
                     colors={colors}
                     typography={typography}
                   />
@@ -364,6 +417,20 @@ export default function PlacesTab() {
                     label={`Nearby${counts.nearby ? ` ${counts.nearby}` : ''}`}
                     active={activeFilter === 'nearby'}
                     onPress={() => setFilterAndResetLocation('nearby')}
+                    colors={colors}
+                    typography={typography}
+                  />
+                  <FilterChip
+                    label={`Visited${counts.visited ? ` ${counts.visited}` : ''}`}
+                    active={activeFilter === 'visited'}
+                    onPress={() => setFilterAndResetLocation('visited')}
+                    colors={colors}
+                    typography={typography}
+                  />
+                  <FilterChip
+                    label={`Archived${counts.archived ? ` ${counts.archived}` : ''}`}
+                    active={activeFilter === 'archived'}
+                    onPress={() => setFilterAndResetLocation('archived')}
                     colors={colors}
                     typography={typography}
                   />
@@ -404,6 +471,11 @@ export default function PlacesTab() {
                 pathname: '/(tabs)/map',
                 params: { savedPlaceId: item.id },
               })
+            }
+            onRestore={
+              activeFilter === 'archived' && item.archived_at
+                ? () => handleRestore(item.id)
+                : undefined
             }
           />
         )}

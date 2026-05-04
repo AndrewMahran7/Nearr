@@ -79,6 +79,10 @@ function seed(): SavedPlaceWithPlace[] {
       notifications_enabled: s.notifications_enabled,
       last_notified_at: null,
       notification_count: 0,
+      reminder_opportunity_count: 0,
+      archived_at: null,
+      visited_at: null,
+      reminders_exhausted_at: null,
       created_at: created,
       updated_at: created,
       place: catalogToPlaceRow(cat, created),
@@ -171,6 +175,10 @@ export async function saveDemoSavedPlace(
     notifications_enabled: true,
     last_notified_at: null,
     notification_count: 0,
+    reminder_opportunity_count: 0,
+    archived_at: null,
+    visited_at: null,
+    reminders_exhausted_at: null,
     created_at: nowIso,
     updated_at: nowIso,
   };
@@ -221,4 +229,56 @@ export async function resetDemoSavedPlaces(): Promise<void> {
   cache = seed();
   await persist();
   console.log('[demo:saved] reset to seed');
+}
+
+// ---------------------------------------------------------------------------
+// Opportunity / visited / archived helpers
+// ---------------------------------------------------------------------------
+
+async function patchById(
+  id: string,
+  patch: Partial<SavedPlaceWithPlace>,
+): Promise<void> {
+  const list = await load();
+  const idx = list.findIndex((s) => s.id === id);
+  if (idx < 0) {
+    console.warn('[demo:saved] patch: not found', id);
+    return;
+  }
+  const next: SavedPlaceWithPlace = {
+    ...list[idx],
+    ...patch,
+    updated_at: new Date().toISOString(),
+  };
+  cache = [...list.slice(0, idx), next, ...list.slice(idx + 1)];
+  await persist();
+}
+
+export async function markDemoVisited(id: string): Promise<void> {
+  await patchById(id, {
+    visited_at: new Date().toISOString(),
+    notifications_enabled: false,
+  });
+  console.log('[demo:saved] visited', id);
+}
+
+export async function markDemoArchived(
+  id: string,
+  opts: { exhausted?: boolean } = {},
+): Promise<void> {
+  const nowIso = new Date().toISOString();
+  await patchById(id, {
+    archived_at: nowIso,
+    notifications_enabled: false,
+    reminders_exhausted_at: opts.exhausted ? nowIso : null,
+  });
+  console.log('[demo:saved] archived', id, opts);
+}
+
+export async function unarchiveDemo(id: string): Promise<void> {
+  await patchById(id, {
+    archived_at: null,
+    reminders_exhausted_at: null,
+  });
+  console.log('[demo:saved] unarchived', id);
 }

@@ -368,17 +368,45 @@ function RootLayoutContent() {
   // action taps (e.g. "Give me 3 more chances" resets notification_count).
   useEffect(() => {
     void registerNotificationCategories();
-    const sub = Notifications.addNotificationResponseReceivedListener((response) => {
+
+    function routeFromResponse(response: Notifications.NotificationResponse) {
       const { actionIdentifier, notification } = response;
       const data = (notification.request.content.data ?? {}) as Record<string, unknown>;
-      void handleNotificationAction(
-        actionIdentifier,
-        data.savedPlaceId as string | undefined,
-        data.placeId as string | undefined,
-      );
-    });
+      const savedPlaceId = data.savedPlaceId as string | undefined;
+      const placeId = data.placeId as string | undefined;
+
+      // Action-button taps keep their existing handler (reset_count, going,
+      // reduce_radius, next_time). Default tap (just opened the notification)
+      // routes the user into the opportunity flow.
+      const isDefaultTap =
+        !actionIdentifier ||
+        actionIdentifier === Notifications.DEFAULT_ACTION_IDENTIFIER;
+
+      if (isDefaultTap && savedPlaceId) {
+        void trackEvent('opportunity_notification_opened', {
+          saved_place_id: savedPlaceId,
+        });
+        router.push({
+          pathname: '/opportunity/[id]',
+          params: { id: savedPlaceId },
+        });
+        return;
+      }
+
+      void handleNotificationAction(actionIdentifier, savedPlaceId, placeId);
+    }
+
+    // Cold-start: app was launched by tapping a notification.
+    void Notifications.getLastNotificationResponseAsync()
+      .then((response) => {
+        if (response) routeFromResponse(response);
+      })
+      .catch(() => undefined);
+
+    // Warm-start: app already open.
+    const sub = Notifications.addNotificationResponseReceivedListener(routeFromResponse);
     return () => sub.remove();
-  }, []);
+  }, [router]);
 
   return (
     <AppErrorBoundary>

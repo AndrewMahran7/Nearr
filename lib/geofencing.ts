@@ -118,7 +118,10 @@ try {
           console.log(`[geofence] GEOFENCE_ENTER savedPlaceId=${savedPlaceId}`);
         }
         try {
-          const result = await maybeNotifyForSavedPlace(savedPlaceId, 'geofence_enter');
+          const result = await maybeNotifyForSavedPlace(savedPlaceId, 'geofence_enter', {
+            latitude: region.latitude,
+            longitude: region.longitude,
+          });
           if (__DEV__) {
             if (result.sent) {
               console.log(`[geofence] GEOFENCE_NOTIFY_SENT savedPlaceId=${savedPlaceId}`);
@@ -277,6 +280,8 @@ async function runSyncGeofencesForSavedPlaces(): Promise<GeofenceSyncStatus> {
     .select('*, place:places(*)')
     .eq('user_id', userId)
     .eq('notifications_enabled', true)
+    .is('archived_at', null)
+    .is('visited_at', null)
     .order('created_at', { ascending: false });
 
   if (savedErr) {

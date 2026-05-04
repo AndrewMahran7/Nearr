@@ -25,6 +25,9 @@ export {
   deleteDemoSavedPlace,
   resetDemoSavedPlaces,
   getDemoSeededSavedPlacesSync,
+  markDemoVisited,
+  markDemoArchived,
+  unarchiveDemo,
 } from './savedPlacesService';
 
 export { simulateDemoNearbyNotification } from './notifications';

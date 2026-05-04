@@ -1,6 +1,6 @@
 # Nearr — Manual Testing Checklist
 
-> Last updated: 2026-05-02
+> Last updated: 2026-05-03
 > Source of truth: current codebase
 
 This is the current beta checklist. Use it before TestFlight or Play Internal builds. Because this is a docs-only update, treat every item below as a manual or device verification task.
@@ -9,6 +9,7 @@ This is the current beta checklist. Use it before TestFlight or Play Internal bu
 
 - [ ] `.env` or EAS env includes current Supabase and Google Maps values
 - [ ] `supabase db push` applied all migrations
+- [ ] After any Android manifest / permission change in [app.json](../app.json), install a fresh native Android build before testing background reminders or geofencing
 - [ ] Native build installed on a real iPhone and a real Android device for notification/share/geofencing tests
 - [ ] `EXPO_PUBLIC_DEMO_MODE` and `EXPO_PUBLIC_MAP_PREVIEW_MODE` are off for production-flow testing
 - [ ] If testing silent iOS extension save: `EXPO_PUBLIC_PROCESS_SHARE_LINK_URL` points to a deployed function and the host app is signed in
@@ -40,6 +41,9 @@ This is the current beta checklist. Use it before TestFlight or Play Internal bu
 - [ ] Successful save redirects to Map focused on the saved place
 - [ ] Duplicate save focuses the existing saved place when possible
 - [ ] Ambiguous save shows candidate selection instead of failing silently
+- [ ] Address-first extraction behaves correctly when a street address is present in the source content
+- [ ] `@` handles alone do not cause a wrong silent save
+- [ ] Influencer post vs restaurant account distinction behaves correctly on a small real-world sample
 
 ### Android share intent
 
@@ -69,11 +73,27 @@ This is the current beta checklist. Use it before TestFlight or Play Internal bu
 
 ## 4. Places and detail screens
 
-- [ ] Places filters work: All, Recent, Nearby, Instagram, TikTok, Reminders on
+- [ ] Places filters work: Active (default), Recent, Nearby, Visited, Archived, Instagram, TikTok, Reminders on
+- [ ] Active filter is selected on first open of the Places tab
+- [ ] Active filter hides rows with `archived_at` or `visited_at` set
 - [ ] SavedPlaceCard shows Show on map and View original post/link behavior correctly
+- [ ] SavedPlaceCard shows a Visited badge on visited rows and an Archived badge on archived rows
+- [ ] Archived filter shows a Restore action that clears `archived_at`
 - [ ] Place detail shows Get directions, original post/link, nearby reminder, note, and remove action
 - [ ] Place detail “Get directions” path routes into map focus for that saved place
 - [ ] Low-emphasis remove flow still works
+
+## 4b. Opportunity flow
+
+- [ ] Tapping the body of a nearby reminder opens `/opportunity/[id]` (warm-start)
+- [ ] Tapping the body of a nearby reminder while the app is fully suspended cold-starts into `/opportunity/[id]`
+- [ ] Opportunity screen shows `Opportunity N of 3` matching `reminder_opportunity_count`
+- [ ] Get directions opens external maps and closes the screen
+- [ ] I went here marks the place visited, plays the checkmark animation, and closes
+- [ ] Adjust reminder radius routes to the place detail screen
+- [ ] Maybe next time on opportunity 3 archives the place and stamps `reminders_exhausted_at`
+- [ ] Visited and archived places no longer appear in proximity / geofence eligibility on the next sync
+- [ ] Map marker for archived places is subdued and renders without a radius circle
 
 ## 5. Notifications and geofencing
 
@@ -86,6 +106,9 @@ This is the current beta checklist. Use it before TestFlight or Play Internal bu
 - [ ] Geofencing respects the 20-region cap behavior
 - [ ] Background location fallback still works when geofencing is unavailable
 - [ ] Notification action categories register without crashing the app
+- [ ] Overlapping saved-place radii produce one grouped notification instead of multiple notifications
+- [ ] Grouped-notification copy is sensible for 2-place and 3+-place cases
+- [ ] Do not treat grouped reminder behavior as proven until validated on real devices
 
 ## 6. Legal and settings
 
@@ -107,3 +130,13 @@ These should not be treated as simulator/Expo Go pass criteria:
 - background location reminders
 - OS geofencing
 - Always Location behavior
+- grouped nearby reminder delivery reliability
+
+## 9. Not in the current build
+
+Do not mark these as regressions unless code lands for them first:
+
+- opportunity screen after notification tap
+- visited completion state
+- archived reminder state
+- Archive / Visited filters

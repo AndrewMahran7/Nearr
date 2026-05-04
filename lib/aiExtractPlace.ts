@@ -47,6 +47,21 @@ export type AIExtractResult = {
   confidence: AIExtractConfidence;
   reason: string;
   candidates?: string[];
+  // ---- Structured evidence (v2). All optional for backward compat. ----
+  /** The actual restaurant/place name the AI believes is the answer. */
+  placeName?: string | null;
+  /** Street address if explicitly present in caption / description / bio. */
+  address?: string | null;
+  /** City, neighborhood, or other locality referenced in source text. */
+  city?: string | null;
+  /** US state abbreviation when present. */
+  state?: string | null;
+  /** restaurant | influencer | unknown. "restaurant" requires bio evidence. */
+  posterType?: 'restaurant' | 'influencer' | 'unknown';
+  /** Tagged restaurant accounts that the AI corroborated. */
+  taggedAccounts?: string[];
+  /** True when the AI believes the user must confirm before saving. */
+  needsUserConfirmation?: boolean;
 };
 
 const GEMINI_ENDPOINT =
@@ -61,57 +76,76 @@ const LOG = '[aiExtractPlace]';
  */
 function buildPrompt(input: AIExtractInput): string {
   const lines = [
-    'You are a place-extraction assistant for a maps app.',
-    'Given social media share metadata, identify the SINGLE real-world business or place being referenced.',
+    'You are a place-extraction assistant for a maps app called Nearr.',
+    'Identify the PRIMARY real-world restaurant or place that the post is about.',
+    'Wrong silent saves are worse than asking the user. When unsure, set needs_user_confirmation=true.',
     '',
-    'CRITICAL: distinguish between the BUSINESS NAME (what to save) and LOCATION CONTEXT (city / neighborhood / address / state).',
-    'A neighborhood like "Highland Park" or "Sawtelle Japantown" is NEVER the answer by itself when an actual business is also mentioned.',
+    'EVIDENCE PRIORITY (highest to lowest). Use the FIRST that applies:',
+    '  1. A street ADDRESS in the caption / description (e.g. "7 Carmine St, New York").',
+    '  2. An explicit RESTAURANT / PLACE NAME written out in the caption text.',
+    '  3. An explicit place name plus a CITY / STATE / neighborhood.',
+    '  4. A POSTER profile that looks like a restaurant\'s own account (display name + bio confirms a real venue).',
+    '  5. A TAGGED restaurant account that the caption clearly identifies as the venue.',
+    '  6. A TRANSCRIPT line like "we\'re at ___" / "welcome to ___" / "this place is called ___".',
+    '  7. Otherwise: no answer. Return placeName=null and needs_user_confirmation=true.',
     '',
-    'Priority for picking the business name (use the FIRST that applies):',
-    '  1. A BUSINESS handle in the caption that looks like an actual venue name',
-    '     (e.g. @villastacoslosangeles, @lecoupe_friedchicken, @tatsu.ramen).',
-    '     Convert the handle into readable words: @villastacoslosangeles -> "Villa\'s Tacos".',
-    '     SKIP handles that look like food-creator / reviewer accounts',
-    '     (e.g. @saraheatsla, @hungryjackie, @eater_la, @laeats) -- these review food, not serve it.',
-    '  2. A business name written in the caption text immediately near the handle (e.g. "Villa\'s Tacos was no joke").',
-    '  3. A clearly named restaurant / cafe / shop / venue in the caption.',
-    '  4. ONLY if no business name can be found, fall back to the most specific location.',,
+    'CRITICAL @ HANDLE RULE:',
+    '  Handles are EVIDENCE, not truth. Do NOT make a restaurant decision SOLELY from words after @.',
+    '  Never invent a restaurant name from handle text alone. A handle helps only when corroborated by:',
+    '    - the poster account looks like the restaurant itself (display name + bio match), OR',
+    '    - the caption text near the handle names the venue (e.g. "@villastacos Villa\'s Tacos was no joke"), OR',
+    '    - the bio classifies as a real business with an address or city.',
+    '  Examples of handles you must NOT silently turn into restaurant names without corroboration:',
+    '    @marysdiner, @nycfoodking, @madyolkskitchen, @joespizzanyc',
     '',
-    'Rules:',
-    '  - If a TRANSCRIPT is provided, treat it as a HIGH-PRIORITY signal. Spoken phrases like',
-    '      "we\'re at ___", "we went to ___", "this place is called ___", "today we\'re trying ___",',
-    '      "welcome to ___", "I\'m at ___"  almost always reveal the actual venue name. Use the spoken',
-    '      name PLUS any city/neighborhood from the caption/description for the final query.',
-    '      Example transcript: "We\'re at Tacos Los Chulos." + caption mentions Los Angeles ->',
-    '      query "Tacos Los Chulos Los Angeles".',
-    '  - IGNORE creator / influencer handles, channel names, captions framing ("X on Instagram"), emojis, and hashtags.',
-    '  - Distinguish BUSINESS handles from CREATOR/REVIEWER handles:',
-    '      Business handle: looks like the restaurant name itself -- @lecoupe_friedchicken, @villastacoslosangeles.',
-    '      Creator handle: person or media brand reviewing food -- @saraheatsla, @hungryjackie, @eater_la.',
-    '      If a handle contains words like "eats", "foodie", "hungry", "bites", treat it as a creator -- NOT a restaurant.',
-    '  - Raw @handle alone is WEAK evidence. Always prefer an explicit restaurant name or address from the caption.',
-    '  - Prefer tagged BUSINESS handles over creator handles. Creator handles are usually the post author (the "X on Instagram" prefix); business handles appear inside the caption text.',
-    '  - When you find a business name AND a location, return them combined: "<Business Name> <Neighborhood or City>".',
-    '  - Pin emojis (\ud83d\udccd) usually mark LOCATION CONTEXT, not the venue name. Use the pin\'s text as the location half of the query, not as the whole answer.',
-    '  - Never return JUST a neighborhood, city, state, address, or market name (e.g. "Highland Park", "Los Angeles", "Grand Central Market", "CA") when the post mentions a specific business.',
-    '  - If you cannot confidently identify a specific business, set confidence to "low" and return your best guess.',
+    'INFLUENCER / CREATOR RULE:',
+    '  If the poster looks like a food blogger, reviewer, repost page, or media account',
+    '  (handle contains "eats", "foodie", "hungry", "bites"; or display name says "Food Critic", "Eater LA", etc.):',
+    '    - posterType MUST be "influencer".',
+    '    - DO NOT treat the poster handle / display name as the restaurant.',
+    '    - Use caption text, address, or tagged restaurant accounts instead.',
+    '    - If no restaurant evidence exists, set needs_user_confirmation=true.',
     '',
-    'Examples (input -> output):',
+    'ADDRESS RULE:',
+    '  If an address exists, it is the strongest signal. Return it in the address field.',
+    '  The query MUST include the address. The candidate must be at/near that address — never override an address with device location.',
     '',
-    'Input title: "huANGRYfoodie on Instagram: @villastacoslosangeles Villa\u2019s Tacos was no joke"',
-    'Input description: "\ud83d\udccd Highland Park, Los Angeles, CA also a location in Grand Central Market #tacos"',
-    'Output: {"query": "Villa\'s Tacos Highland Park Los Angeles", "confidence": "high", "reason": "Tagged business handle @villastacoslosangeles plus business name Villa\'s Tacos; Highland Park used as location context only", "candidates": ["Villa\'s Tacos Highland Park", "Villa\'s Tacos Grand Central Market"]}',
+    'POSTER TYPE:',
+    '  posterType="restaurant" only when the poster account itself is a single physical venue (display name + caption tone match a real restaurant).',
+    '  posterType="influencer" for reviewers, food bloggers, repost pages, media brands.',
+    '  posterType="unknown" otherwise.',
     '',
-    'Input title: "Jack\'s Dining Room on Instagram: amazing chicken sandwich"',
-    'Input description: "@lecoupe_friedchicken, Los Angeles"',
-    'Output: {"query": "Le Coupe Fried Chicken Los Angeles", "confidence": "high", "reason": "Tagged business handle plus city; creator name ignored", "candidates": []}',
+    'OUTPUT (STRICT JSON, no markdown):',
+    '{',
+    '  "placeName": string | null,        // the actual restaurant/place name, or null',
+    '  "address": string | null,          // street address from caption/bio, or null',
+    '  "city": string | null,             // city or neighborhood, or null',
+    '  "state": string | null,            // 2-letter US state, or null',
+    '  "posterType": "restaurant" | "influencer" | "unknown",',
+    '  "taggedAccounts": string[],        // tagged restaurant @handles you used as evidence',
+    '  "query": string,                   // Places query: place name + address-or-city',
+    '  "confidence": "high" | "medium" | "low",',
+    '  "needsUserConfirmation": boolean,  // true unless evidence is corroborated',
+    '  "reason": string                   // one short sentence',
+    '}',
     '',
-    'Input title: "morning thoughts \u2615\ufe0f"',
-    'Input description: "just vibing with my dog"',
-    'Output: {"query": "", "confidence": "low", "reason": "No business or place referenced", "candidates": []}',
+    'EXAMPLES:',
     '',
-    'Return STRICT JSON ONLY (no markdown, no commentary) in this exact shape:',
-    '{"query": string, "confidence": "high" | "medium" | "low", "reason": string, "candidates": string[]}',
+    'Input title: "hidden gem in nyc"',
+    'Input description: "Joe\'s Pizza 7 Carmine St New York — still the best slice. #pizza #nyc"',
+    'Output: {"placeName":"Joe\'s Pizza","address":"7 Carmine St","city":"New York","state":"NY","posterType":"unknown","taggedAccounts":[],"query":"Joe\'s Pizza 7 Carmine St New York","confidence":"high","needsUserConfirmation":false,"reason":"Address + name in caption"}',
+    '',
+    'Input title: "Sarah Eats LA on TikTok: you HAVE to try this taco spot"',
+    'Input description: "@guerrilla_tacos slaps. Downtown LA vibes only. #tacos #dtla"',
+    'Output: {"placeName":"Guerrilla Tacos","address":null,"city":"Downtown LA","state":"CA","posterType":"influencer","taggedAccounts":["guerrilla_tacos"],"query":"Guerrilla Tacos Downtown Los Angeles","confidence":"medium","needsUserConfirmation":false,"reason":"Influencer post tags restaurant by name; city corroborates"}',
+    '',
+    'Input title: "going here this weekend 😍"',
+    'Input description: "check out @madyolkskitchen #brunch #eggs"',
+    'Output: {"placeName":null,"address":null,"city":null,"state":null,"posterType":"unknown","taggedAccounts":[],"query":"","confidence":"low","needsUserConfirmation":true,"reason":"Handle text alone is not evidence; no caption name or address"}',
+    '',
+    'Input title: "follow @hungryjackie for the best food recs"',
+    'Input description: "#foodblogger #lafood"',
+    'Output: {"placeName":null,"address":null,"city":null,"state":null,"posterType":"influencer","taggedAccounts":[],"query":"","confidence":"low","needsUserConfirmation":true,"reason":"Influencer profile, no restaurant evidence"}',
     '',
     'Input metadata:',
     `sourceType: ${input.sourceType ?? ''}`,
@@ -226,8 +260,22 @@ function extractJsonObject(text: string): string | null {
 function coerceResult(parsed: unknown): AIExtractResult | null {
   if (!parsed || typeof parsed !== 'object') return null;
   const obj = parsed as Record<string, unknown>;
-  const query = typeof obj.query === 'string' ? obj.query.trim() : '';
-  if (!query) return null;
+  // v2 prompt may return placeName but no "query". Synthesize one from the
+  // structured fields so older callers still work.
+  let query = typeof obj.query === 'string' ? obj.query.trim() : '';
+  const placeName =
+    typeof obj.placeName === 'string' && obj.placeName.trim() ? obj.placeName.trim() : null;
+  const address =
+    typeof obj.address === 'string' && obj.address.trim() ? obj.address.trim() : null;
+  const city =
+    typeof obj.city === 'string' && obj.city.trim() ? obj.city.trim() : null;
+  const state =
+    typeof obj.state === 'string' && obj.state.trim() ? obj.state.trim() : null;
+  if (!query && placeName) {
+    query = [placeName, address ?? city, state].filter(Boolean).join(' ').trim();
+  }
+  if (!query && !placeName) return null;
+
   const confRaw = typeof obj.confidence === 'string' ? obj.confidence.toLowerCase() : '';
   const confidence: AIExtractConfidence =
     confRaw === 'high' || confRaw === 'medium' || confRaw === 'low'
@@ -238,7 +286,28 @@ function coerceResult(parsed: unknown): AIExtractResult | null {
   if (Array.isArray(obj.candidates)) {
     candidates = obj.candidates.filter((c): c is string => typeof c === 'string');
   }
-  return { query, confidence, reason, candidates };
+  let taggedAccounts: string[] | undefined;
+  if (Array.isArray(obj.taggedAccounts)) {
+    taggedAccounts = obj.taggedAccounts.filter((c): c is string => typeof c === 'string');
+  }
+  const ptRaw = typeof obj.posterType === 'string' ? obj.posterType.toLowerCase() : '';
+  const posterType: 'restaurant' | 'influencer' | 'unknown' =
+    ptRaw === 'restaurant' || ptRaw === 'influencer' ? ptRaw : 'unknown';
+  const needsUserConfirmation =
+    typeof obj.needsUserConfirmation === 'boolean' ? obj.needsUserConfirmation : undefined;
+  return {
+    query,
+    confidence,
+    reason,
+    candidates,
+    placeName,
+    address,
+    city,
+    state,
+    posterType,
+    taggedAccounts,
+    needsUserConfirmation,
+  };
 }
 
 /**

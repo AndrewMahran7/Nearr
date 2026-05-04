@@ -52,6 +52,10 @@ import {
   type PlaceQueryStrength,
 } from '@/lib/placeExtractor';
 import {
+  runExtractionPipeline,
+  type ExtractionResult,
+} from '@/lib/extractionPipeline';
+import {
   extractPlaceAI,
   type AIExtractResult,
 } from '@/lib/aiExtractPlace';
@@ -68,6 +72,7 @@ import {
   resolveBusinessNearAddress,
   extractLocationContext,
   geocodeContextText,
+  verifyPlaceAtAddress,
   type LocationBias,
   type PlaceCandidate,
 } from '@/services/placesService';
@@ -409,6 +414,103 @@ export default function ShareScreen() {
       console.log(`[share-rank] account_query=${accountIdentity.query}`);
     }
 
+    // ---- 3b. Evidence-based extraction pipeline (v2) ------------------
+    // The pipeline is the AUTHORITATIVE silent-save gate. The earlier
+    // heuristic (`extractPlaceQueryFromShareMetadata`) and AI step still
+    // build the Places query; the pipeline decides whether the resulting
+    // candidate may be silently saved without user confirmation.
+    //
+    // On device we have no IG profile enrichment and no transcription, so
+    // the pipeline runs caption-only. That means handle-derived queries
+    // never satisfy the auto-save gate here -- the Edge Function's
+    // silent-save path handles those when bio enrichment is available.
+    const extractionResult = runExtractionPipeline({
+      source: parsedResult.source,
+      url: parsedResult.url,
+      title: parsedResult.title,
+      description: parsedResult.description,
+      cleanedQuery: parsedResult.suggestedQuery,
+      ai: ai
+        ? {
+            query: ai.query,
+            placeName: ai.placeName ?? null,
+            address: ai.address ?? null,
+            city: ai.city ?? null,
+            state: ai.state ?? null,
+            posterType: ai.posterType,
+            taggedAccounts: ai.taggedAccounts,
+            confidence: ai.confidence,
+            reason: ai.reason,
+            needsUserConfirmation: ai.needsUserConfirmation,
+          }
+        : null,
+    });
+    console.log(
+      `[share-extract] evidence=${JSON.stringify(extractionResult.evidence)}`,
+    );
+    console.log(`[share-extract] poster_type=${extractionResult.posterType}`);
+    console.log(`[share-extract] address_found=${!!extractionResult.address}`);
+    console.log(`[share-extract] handle_used=${extractionResult.evidence.handleUsed}`);
+    console.log(
+      `[share-rank] auto_save_allowed=${extractionResult.autoSaveAllowed}`,
+    );
+    if (!extractionResult.autoSaveAllowed && extractionResult.needsConfirmationReason) {
+      console.log(
+        `[share-rank] auto_save_blocked_reason=${extractionResult.needsConfirmationReason}`,
+      );
+    }
+
+    // ---- 3c. Address-first verification gate --------------------------
+    // When the pipeline detected a literal street address in the share
+    // (caption or bio), do NOT trust device location or the city-bias
+    // textsearch. Geocode the address to a rooftop coordinate, then
+    // require a real business within ADDRESS_VERIFY_RADIUS_M of that
+    // point — and a strong name match when a place name was extracted —
+    // before silently saving.
+    let addressContextLatLng: LocationBias | null = contextLatLng;
+    if (extractionResult.address) {
+      console.log(`[share-geocode] address_found=${extractionResult.address}`);
+      const verification = await verifyPlaceAtAddress(
+        extractionResult.address,
+        extractionResult.placeName,
+      );
+      console.log(
+        `[share-geocode] geocode_success=${verification.geocoded !== null}`,
+      );
+      if (verification.status === 'verified') {
+        console.log(
+          `[share-geocode] candidate_distance_m=${Math.round(verification.distanceMeters)} verified=true`,
+        );
+        await saveCandidate(
+          verification.candidate,
+          parsedResult.url,
+          parsedResult.source,
+        );
+        return;
+      }
+      if (verification.status === 'ambiguous') {
+        console.log(
+          '[share-geocode] verified=false ambiguous_after_address_verify',
+        );
+        setCandidates(verification.candidates);
+        setPhase('choose');
+        return;
+      }
+      // status === 'failed'
+      console.log(
+        `[share-geocode] verified=false address_verification_failed_reason=${verification.reason}`,
+      );
+      // If we got a real geocode but no business matched, prefer the
+      // rooftop coordinate over the city-scale bias for the fallback
+      // search. Device location must NEVER override an address.
+      if (verification.geocoded) {
+        addressContextLatLng = {
+          lat: verification.geocoded.latitude,
+          lng: verification.geocoded.longitude,
+        };
+      }
+    }
+
     // ---- 4. search Google Places --------------------------------------
     await runSearchAndMaybeSave(
       chosenQuery,
@@ -420,7 +522,8 @@ export default function ShareScreen() {
         chosenReason,
         accountIdentityUsed,
       },
-      { contextText, contextLatLng },
+      { contextText, contextLatLng: addressContextLatLng },
+      extractionResult,
     );
   }
 
@@ -438,6 +541,7 @@ export default function ShareScreen() {
       contextText: string | null;
       contextLatLng: LocationBias | null;
     } = { contextText: null, contextLatLng: null },
+    extractionResult: ExtractionResult | null = null,
   ) {
     setPhase('searching');
     // Bias priority: explicit post context > user device location > none.
@@ -616,6 +720,24 @@ export default function ShareScreen() {
       explicitAddressSignal ||
       (hasSourceContext && hasStrongNameMatch(candidate, query)) ||
       (explicitSourceBusinessSignal && hasStrongNameMatch(candidate, query));
+
+    // Pipeline gate (v2). The evidence-based pipeline is authoritative for
+    // the silent-save decision. If it says "do not auto-save", we always
+    // surface the candidate picker -- never save silently -- regardless of
+    // what the legacy heuristics would have allowed.
+    const pipelineBlocksAutoSave =
+      extractionResult !== null && extractionResult.autoSaveAllowed === false;
+    if (pipelineBlocksAutoSave) {
+      const reason = extractionResult?.needsConfirmationReason ?? 'pipeline_blocked';
+      console.log(`[share-rank] auto_save_blocked_reason=${reason}`);
+      if (strongMatchCandidates.length > 0) {
+        setCandidates(strongMatchCandidates.slice(0, 5));
+      } else {
+        setCandidates(finalResults.slice(0, 5));
+      }
+      setPhase('choose');
+      return;
+    }
 
     if (queryStrength === 'weak') {
       console.log('[share-rank] auto_save_blocked_reason=weak_query');

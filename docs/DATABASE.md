@@ -1,6 +1,6 @@
 # Nearr — Database Schema
 
-> Last updated: 2026-05-02
+> Last updated: 2026-05-03
 > Source of truth: `supabase/migrations/`
 
 Do not use `supabase/schema.sql` as the canonical schema. The migration files under `supabase/migrations/` are the source of truth.
@@ -11,6 +11,7 @@ Do not use `supabase/schema.sql` as the canonical schema. The migration files un
 - `20260427000001_analytics_events.sql`
 - `20260501000001_notification_count.sql`
 - `20260502000001_legal_acceptance.sql`
+- `20260503000001_opportunity_archive.sql`
 
 ## Schema overview
 
@@ -95,18 +96,26 @@ Columns from init migration:
 Column added later:
 
 - `notification_count integer not null default 0` from `20260501000001_notification_count.sql`
+- `reminder_opportunity_count integer not null default 0` from `20260503000001_opportunity_archive.sql`
+- `archived_at timestamptz null` from `20260503000001_opportunity_archive.sql`
+- `visited_at timestamptz null` from `20260503000001_opportunity_archive.sql`
+- `reminders_exhausted_at timestamptz null` from `20260503000001_opportunity_archive.sql`
 
 Constraints and indexes:
 
 - unique `(user_id, place_id)`
 - `saved_places_user_idx`
 - `saved_places_place_idx`
+- `saved_places_active_idx` partial index on `(user_id) where archived_at is null and visited_at is null` from `20260503000001_opportunity_archive.sql`
 - `saved_places_set_updated_at` trigger updates `updated_at`
 
 Important current behavior:
 
 - Duplicate saves are handled in app logic by updating the existing row instead of erroring to the user.
 - `notification_count` is enforced in app logic, not by a DB constraint.
+- Grouped nearby notifications increment `notification_count` for every saved place included in the grouped notification.
+- `reminder_opportunity_count` is incremented atomically by the SQL function `bump_reminder_opportunity_count(saved_place_ids uuid[])` (see migration `20260503000001`) at notification delivery time. The function is `security invoker` and restricted to rows owned by `auth.uid()`.
+- `archived_at`, `visited_at`, and `reminders_exhausted_at` are written by the app's opportunity flow (`markVisited`, `markArchived`, `unarchive` in [services/savedPlacesService.ts](../services/savedPlacesService.ts)). The proximity and geofence queries filter `archived_at IS NULL AND visited_at IS NULL` so archived/visited places never trigger reminders.
 
 ## `notification_events`
 
@@ -190,11 +199,13 @@ Current policy model:
 ## Current code assumptions that matter
 
 - `saved_places.notification_count` must exist for reminder count-limit behavior and reset actions.
+- There is currently no `saved_places` column for archived state, visited state, reminder-opportunity count, or reminder exhaustion state.
 - Legal acceptance columns must exist for the profile/legal scaffolding to work, even though acceptance is disabled in beta.
 - `places` is intentionally shared and reused across users.
 
 ## Do not claim these as current schema behavior
 
 - no `deleted_at` on `saved_places`
+- no `archived_at`, `visited_at`, `reminder_opportunity_count`, or `reminders_exhausted_at` on `saved_places`
 - no photo tables or visit-completion tables
 - no dedicated crash analytics tables

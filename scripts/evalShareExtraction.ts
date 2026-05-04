@@ -24,6 +24,7 @@ import type { ShareSource } from '../lib/shareParser';
 import { extractPlaceAI } from '../lib/aiExtractPlace';
 import { transcribeSocialVideo } from '../lib/transcription';
 import type { TranscriptionResult, TranscriptionSourceType } from '../lib/transcription';
+import { runExtractionPipeline } from '../lib/extractionPipeline';
 
 type Fixture = {
   name: string;
@@ -36,12 +37,19 @@ type Fixture = {
     transcript?: string;
   };
   expectedQuery: string;
+  /**
+   * Optional v2 assertion: whether the extraction pipeline should allow a
+   * silent save without showing the user a chooser. When omitted the eval
+   * does not assert against the pipeline decision.
+   */
+  expectedAutoSave?: boolean;
 };
 
 type EvalRow = {
   name: string;
   input: Fixture['input'];
   expectedQuery: string;
+  expectedAutoSave?: boolean;
   heuristicQuery: string;
   heuristicConfidence: string;
   heuristicReason: string;
@@ -53,6 +61,10 @@ type EvalRow = {
   transcriptionProvider: string;
   transcriptionReason: string;
   placesTopResult?: string;
+  pipelineAutoSaveAllowed: boolean;
+  pipelineBlockedReason: string | null;
+  pipelinePosterType: string;
+  autoSaveAssertionPass: boolean | null;
   pass: boolean;
   aiBeatsHeuristic: boolean;
   notes: string;
@@ -222,10 +234,46 @@ async function main(): Promise<void> {
 
     const placesTopResult = await placesLookup(ai.query || heuristic.query);
 
+    // Run the v2 evidence pipeline. The eval treats this as the
+    // authoritative auto-save decision.
+    const pipeline = runExtractionPipeline({
+      source: asShareSource(fx.input.sourceType),
+      url: fx.input.url ?? '',
+      title: fx.input.title ?? null,
+      description: fx.input.description ?? null,
+      cleanedQuery: heuristic.query || null,
+      transcript: transcript ?? null,
+      ai: ai
+        ? {
+            query: ai.query,
+            placeName: ai.placeName ?? null,
+            address: ai.address ?? null,
+            city: ai.city ?? null,
+            state: ai.state ?? null,
+            posterType: ai.posterType,
+            taggedAccounts: ai.taggedAccounts,
+            confidence: ai.confidence,
+            reason: ai.reason,
+            needsUserConfirmation: ai.needsUserConfirmation,
+          }
+        : null,
+    });
+
     const heuristicMatch = softMatch(heuristic.query, fx.expectedQuery);
     const aiMatch = softMatch(ai.query, fx.expectedQuery);
     // For "no place" fixtures (expectedQuery === ""), pass = both produced empty/low.
-    const pass = fx.expectedQuery === '' ? !heuristicMatch && !aiMatch : aiMatch || heuristicMatch;
+    const queryPass = fx.expectedQuery === '' ? !heuristicMatch && !aiMatch : aiMatch || heuristicMatch;
+
+    // Auto-save assertion: only enforced when the fixture explicitly sets
+    // expectedAutoSave. A wrong silent-save (false positive) or a missed
+    // safe save (false negative) both fail the fixture.
+    const autoSaveAssertionPass: boolean | null =
+      typeof fx.expectedAutoSave === 'boolean'
+        ? pipeline.autoSaveAllowed === fx.expectedAutoSave
+        : null;
+
+    const pass =
+      queryPass && (autoSaveAssertionPass === null || autoSaveAssertionPass === true);
     const aiBeatsHeuristic = aiMatch && !heuristicMatch;
 
     const notes: string[] = [];
@@ -233,11 +281,20 @@ async function main(): Promise<void> {
     if (!aiMatch && heuristicMatch) notes.push('heuristic better than AI');
     if (!aiMatch && !heuristicMatch && fx.expectedQuery) notes.push('both missed');
     if (fx.expectedQuery === '' && (heuristicMatch || aiMatch)) notes.push('false positive');
+    if (autoSaveAssertionPass === false) {
+      notes.push(
+        `auto-save mismatch: expected=${fx.expectedAutoSave} actual=${pipeline.autoSaveAllowed}` +
+          (pipeline.needsConfirmationReason
+            ? ` reason=${pipeline.needsConfirmationReason}`
+            : ''),
+      );
+    }
 
     rows.push({
       name: fx.name,
       input: fx.input,
       expectedQuery: fx.expectedQuery,
+      expectedAutoSave: fx.expectedAutoSave,
       heuristicQuery: heuristic.query,
       heuristicConfidence: heuristic.confidence,
       heuristicReason: heuristic.reason ?? '',
@@ -249,6 +306,10 @@ async function main(): Promise<void> {
       transcriptionProvider: transcriptionResult.provider,
       transcriptionReason: transcriptionResult.reason ?? '',
       placesTopResult,
+      pipelineAutoSaveAllowed: pipeline.autoSaveAllowed,
+      pipelineBlockedReason: pipeline.needsConfirmationReason ?? null,
+      pipelinePosterType: pipeline.posterType,
+      autoSaveAssertionPass,
       pass,
       aiBeatsHeuristic,
       notes: notes.join('; '),
@@ -259,21 +320,37 @@ async function main(): Promise<void> {
   const total = rows.length;
   const passed = rows.filter((r) => r.pass).length;
   const aiWins = rows.filter((r) => r.aiBeatsHeuristic).length;
+  const autoSaveAsserted = rows.filter((r) => r.autoSaveAssertionPass !== null).length;
+  const autoSavePassed = rows.filter((r) => r.autoSaveAssertionPass === true).length;
 
   console.log('\n[eval] === Summary ===');
   console.log(`[eval] total=${total} passed=${passed} aiBeatsHeuristic=${aiWins}`);
+  console.log(
+    `[eval] auto-save assertions: ${autoSavePassed}/${autoSaveAsserted} passed`,
+  );
   console.log('\n[eval] === Per-fixture ===');
   for (const r of rows) {
     const tag = r.pass ? 'PASS' : 'FAIL';
     const marker = r.aiBeatsHeuristic ? ' ★' : '';
+    const autoSaveLine =
+      r.autoSaveAssertionPass === null
+        ? `       pipeline:  autoSave=${r.pipelineAutoSaveAllowed} poster=${r.pipelinePosterType}` +
+          (r.pipelineBlockedReason ? ` blocked=${r.pipelineBlockedReason}` : '') +
+          '\n'
+        : `       pipeline:  autoSave=${r.pipelineAutoSaveAllowed} (expected ${r.expectedAutoSave}) poster=${r.pipelinePosterType}` +
+          (r.pipelineBlockedReason ? ` blocked=${r.pipelineBlockedReason}` : '') +
+          '\n';
     console.log(
       `[eval] ${tag}${marker} ${r.name}\n` +
         `       expected:  "${r.expectedQuery}"\n` +
         `       heuristic: "${r.heuristicQuery}" (${r.heuristicConfidence}, ${r.heuristicReason})\n` +
-        `       ai:        "${r.aiQuery}" (${r.aiConfidence}) ${r.aiReason}\n` +        `       transcr:   ${r.transcriptionStatus} via ${r.transcriptionProvider}` +
+        `       ai:        "${r.aiQuery}" (${r.aiConfidence}) ${r.aiReason}\n` +
+        `       transcr:   ${r.transcriptionStatus} via ${r.transcriptionProvider}` +
         (r.transcriptionReason ? ` (${r.transcriptionReason})` : '') +
         (r.transcript ? ` -- "${r.transcript.slice(0, 80)}"` : '') +
-        '\n' +        (r.placesTopResult ? `       places:    ${r.placesTopResult}\n` : '') +
+        '\n' +
+        autoSaveLine +
+        (r.placesTopResult ? `       places:    ${r.placesTopResult}\n` : '') +
         (r.notes ? `       notes:     ${r.notes}\n` : ''),
     );
   }
@@ -285,7 +362,13 @@ async function main(): Promise<void> {
     runAt: new Date().toISOString(),
     geminiKeyPresent: Boolean(process.env.GEMINI_API_KEY),
     googlePlacesKeyPresent: Boolean(process.env.GOOGLE_PLACES_KEY),
-    summary: { total, passed, aiBeatsHeuristic: aiWins },
+    summary: {
+      total,
+      passed,
+      aiBeatsHeuristic: aiWins,
+      autoSaveAsserted,
+      autoSavePassed,
+    },
     results: rows,
   };
   fs.writeFileSync(outPath, JSON.stringify(report, null, 2), 'utf8');

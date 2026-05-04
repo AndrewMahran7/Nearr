@@ -21,14 +21,18 @@ import { supabase } from '@/lib/supabase';
 import { isDemoMode } from '@/lib/demoMode';
 import { isMapPreviewMode } from '@/lib/mapPreview';
 import { triggerGeofenceResync } from '@/lib/geofencing';
+import { distanceMeters } from '@/lib/geo';
 import {
   deleteDemoSavedPlace,
   getDemoSavedPlace,
   listDemoSavedPlaces,
   saveDemoSavedPlace,
   updateDemoSavedPlace,
+  markDemoVisited,
+  markDemoArchived,
+  unarchiveDemo,
 } from '@/services/demo';
-import type { PlaceCandidate } from '@/services/placesService';
+import { isAddressLikePlace, type PlaceCandidate } from '@/services/placesService';
 import type {
   PlaceRow,
   RadiusUnit,
@@ -51,6 +55,151 @@ export type SaveSavedPlaceResult =
   | { status: 'saved'; saved: SavedPlaceWithPlace; savedPlaceId: string }
   | { status: 'duplicate'; place: PlaceRow; savedPlaceId: string | null };
 
+type ExistingSavedPlaceLookup = Pick<SavedPlace, 'id' | 'source_url'> & {
+  place: PlaceRow;
+};
+
+type ExistingSavedPlaceLookupRow = Pick<SavedPlace, 'id' | 'source_url'> & {
+  place: PlaceRow | PlaceRow[] | null;
+};
+
+const DEDUPE_DISTANCE_M = 40;
+
+function normalizeDedupeText(value: string | null | undefined): string {
+  return (value ?? '')
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9 ]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function looksLikeAddressName(value: string | null | undefined): boolean {
+  const normalized = normalizeDedupeText(value);
+  if (!normalized) return false;
+  return /^\d{1,6}\s+/.test(normalized) &&
+    /\b(st|street|ave|avenue|blvd|boulevard|rd|road|dr|drive|ln|lane|way|hwy|highway|pkwy|parkway|ct|court|ter|terrace|pl|place)\b/.test(normalized);
+}
+
+function sameNormalizedName(a: string | null | undefined, b: string | null | undefined): boolean {
+  const left = normalizeDedupeText(a);
+  const right = normalizeDedupeText(b);
+  if (!left || !right) return false;
+  return left === right || left.includes(right) || right.includes(left);
+}
+
+function isNearbyPlace(candidate: PlaceCandidate, place: PlaceRow): boolean {
+  if (
+    !Number.isFinite(candidate.latitude) ||
+    !Number.isFinite(candidate.longitude) ||
+    !Number.isFinite(place.latitude) ||
+    !Number.isFinite(place.longitude)
+  ) {
+    return false;
+  }
+  return (
+    distanceMeters(
+      { latitude: candidate.latitude, longitude: candidate.longitude },
+      { latitude: place.latitude, longitude: place.longitude },
+    ) <= DEDUPE_DISTANCE_M
+  );
+}
+
+function matchesExistingRealPlace(
+  candidate: PlaceCandidate,
+  existing: ExistingSavedPlaceLookup,
+): boolean {
+  if (candidate.googlePlaceId && existing.place.google_place_id === candidate.googlePlaceId) {
+    return true;
+  }
+
+  if (!isNearbyPlace(candidate, existing.place)) {
+    return false;
+  }
+
+  const sameAddress =
+    !!candidate.formattedAddress &&
+    !!existing.place.formatted_address &&
+    normalizeDedupeText(candidate.formattedAddress) ===
+      normalizeDedupeText(existing.place.formatted_address);
+  const sameName = sameNormalizedName(candidate.name, existing.place.name);
+  const candidateIsAddressLike =
+    isAddressLikePlace(candidate) || looksLikeAddressName(candidate.name);
+  const existingIsAddressLike =
+    looksLikeAddressName(existing.place.name) ||
+    (!!existing.place.formatted_address &&
+      normalizeDedupeText(existing.place.name) ===
+        normalizeDedupeText(existing.place.formatted_address));
+
+  if (sameName && sameAddress) return true;
+  if (sameName) return true;
+  if ((candidateIsAddressLike || existingIsAddressLike) && sameAddress) return true;
+  return false;
+}
+
+async function patchExistingSavedPlace(
+  savedPlaceId: string,
+  input: SaveSavedPlaceInput,
+): Promise<void> {
+  const patch: Record<string, unknown> = {};
+  if (input.sourceType !== undefined) patch.source_type = input.sourceType;
+  if (input.sourceUrl !== undefined) patch.source_url = input.sourceUrl;
+  if (input.notes !== undefined) patch.notes = input.notes;
+  if (input.radiusValue !== null || input.radiusUnit !== null) {
+    patch.radius_value = input.radiusValue;
+    patch.radius_unit = input.radiusUnit;
+  }
+  if (Object.keys(patch).length === 0) return;
+
+  const { error } = await supabase
+    .from('saved_places')
+    .update(patch)
+    .eq('id', savedPlaceId);
+  if (error) {
+    console.warn(
+      '[savedPlacesService] existing saved_place update failed (non-fatal)',
+      error.message,
+    );
+  }
+}
+
+async function findExistingSavedPlaceForUser(
+  userId: string,
+  candidate: PlaceCandidate,
+  sourceUrl: string | null | undefined,
+): Promise<ExistingSavedPlaceLookup | null> {
+  const { data, error } = await supabase
+    .from('saved_places')
+    .select('id, source_url, place:places(*)')
+    .eq('user_id', userId);
+
+  if (error) {
+    console.warn('[savedPlacesService] fallback dedupe lookup failed', error.message);
+    return null;
+  }
+
+  const rows = ((data ?? []) as ExistingSavedPlaceLookupRow[])
+    .map((row) => {
+      const place = Array.isArray(row.place) ? row.place[0] : row.place;
+      if (!place) return null;
+      return {
+        id: row.id,
+        source_url: row.source_url,
+        place,
+      } satisfies ExistingSavedPlaceLookup;
+    })
+    .filter((row): row is ExistingSavedPlaceLookup => row !== null);
+  if (rows.length === 0) return null;
+
+  if (sourceUrl) {
+    const exactSourceMatch = rows.find((row) => row.source_url === sourceUrl);
+    if (exactSourceMatch) return exactSourceMatch;
+  }
+
+  return rows.find((row) => matchesExistingRealPlace(candidate, row)) ?? null;
+}
+
 /** Upsert place + insert saved_place. Throws on unexpected errors. */
 export async function saveSavedPlace(
   input: SaveSavedPlaceInput,
@@ -70,6 +219,25 @@ export async function saveSavedPlace(
   if (userErr) throw new Error(`Not signed in: ${userErr.message}`);
   const userId = userRes.user?.id;
   if (!userId) throw new Error('Not signed in.');
+
+  const existingForUser = await findExistingSavedPlaceForUser(
+    userId,
+    candidate,
+    input.sourceUrl,
+  );
+  if (existingForUser?.source_url && input.sourceUrl && existingForUser.source_url === input.sourceUrl) {
+    console.debug('[savedPlacesService] exact source_url duplicate, reusing existing save', {
+      sourceUrl: input.sourceUrl,
+      savedPlaceId: existingForUser.id,
+      placeId: existingForUser.place.id,
+    });
+    await patchExistingSavedPlace(existingForUser.id, input);
+    return {
+      status: 'duplicate',
+      place: existingForUser.place,
+      savedPlaceId: existingForUser.id,
+    };
+  }
 
   // --- 1. resolve canonical place (SELECT first, INSERT only if missing) -
   // We deliberately do NOT use `.upsert(..., { onConflict: 'google_place_id' })`
@@ -102,6 +270,16 @@ export async function saveSavedPlace(
       });
       placeRow = existing as PlaceRow;
     }
+  }
+
+  if (!placeRow && existingForUser?.place) {
+    console.debug('[savedPlacesService] fallback dedupe matched existing user place', {
+      candidateGooglePlaceId: candidate.googlePlaceId,
+      existingPlaceId: existingForUser.place.id,
+      existingSavedPlaceId: existingForUser.id,
+      addressLikeName: isAddressLikePlace(candidate),
+    });
+    placeRow = existingForUser.place;
   }
 
   if (!placeRow) {
@@ -183,32 +361,6 @@ export async function saveSavedPlace(
         placeId: placeRow.id,
       });
 
-      const patch: Record<string, unknown> = {};
-      // Only overwrite source fields when the caller actually supplied
-      // them — preserves an existing TikTok source if the user later
-      // re-saves the same place via manual search.
-      if (input.sourceType !== undefined) patch.source_type = input.sourceType;
-      if (input.sourceUrl !== undefined) patch.source_url = input.sourceUrl;
-      if (input.notes !== undefined) patch.notes = input.notes;
-      if (radiusValue !== null || radiusUnit !== null) {
-        patch.radius_value = radiusValue;
-        patch.radius_unit = radiusUnit;
-      }
-
-      if (Object.keys(patch).length > 0) {
-        const { error: updErr } = await supabase
-          .from('saved_places')
-          .update(patch)
-          .eq('user_id', userId)
-          .eq('place_id', placeRow.id);
-        if (updErr) {
-          console.warn(
-            '[savedPlacesService] duplicate update failed (non-fatal)',
-            updErr.message,
-          );
-        }
-      }
-
       const { data: existingSaved, error: existingSavedErr } = await supabase
         .from('saved_places')
         .select('id')
@@ -221,6 +373,10 @@ export async function saveSavedPlace(
           '[savedPlacesService] duplicate lookup failed (non-fatal)',
           existingSavedErr.message,
         );
+      }
+
+      if (existingSaved?.id) {
+        await patchExistingSavedPlace(existingSaved.id, input);
       }
 
       return {
@@ -332,3 +488,84 @@ export async function deleteSavedPlace(id: string): Promise<void> {
   }
   triggerGeofenceResync();
 }
+
+// ---------------------------------------------------------------------------
+// Opportunity / visited / archived state
+// ---------------------------------------------------------------------------
+
+/**
+ * Mark a saved place as visited. Visited rows are hidden from the default
+ * Places filter and excluded from proximity / geofence eligibility.
+ *
+ * Also turns reminders off so the OS-level geofence is dropped on the next
+ * resync (and so the explicit `archived_at IS NULL AND visited_at IS NULL`
+ * filter is redundant-safe).
+ */
+export async function markVisited(savedPlaceId: string): Promise<void> {
+  if (isDemoMode()) return await markDemoVisited(savedPlaceId);
+  const nowIso = new Date().toISOString();
+  const { error } = await supabase
+    .from('saved_places')
+    .update({
+      visited_at: nowIso,
+      notifications_enabled: false,
+    })
+    .eq('id', savedPlaceId);
+  if (error) {
+    console.warn('[savedPlacesService] markVisited failed', error.message);
+    throw new Error(error.message);
+  }
+  triggerGeofenceResync();
+}
+
+/**
+ * Mark a saved place as archived. When `exhausted` is true (auto-archive
+ * after the user declines the 3rd opportunity) we also stamp
+ * `reminders_exhausted_at` so the analytics + future "opportunity expired"
+ * UI can distinguish manual archive from reminder-exhaustion archive.
+ */
+export async function markArchived(
+  savedPlaceId: string,
+  opts: { exhausted?: boolean } = {},
+): Promise<void> {
+  if (isDemoMode()) return await markDemoArchived(savedPlaceId, opts);
+  const nowIso = new Date().toISOString();
+  const patch: Record<string, unknown> = {
+    archived_at: nowIso,
+    notifications_enabled: false,
+  };
+  if (opts.exhausted) {
+    patch.reminders_exhausted_at = nowIso;
+  }
+  const { error } = await supabase
+    .from('saved_places')
+    .update(patch)
+    .eq('id', savedPlaceId);
+  if (error) {
+    console.warn('[savedPlacesService] markArchived failed', error.message);
+    throw new Error(error.message);
+  }
+  triggerGeofenceResync();
+}
+
+/**
+ * Restore an archived saved place. Clears `archived_at` and
+ * `reminders_exhausted_at`; does NOT automatically re-enable notifications
+ * (the user can flip the per-place toggle in the detail screen).
+ */
+export async function unarchive(savedPlaceId: string): Promise<void> {
+  if (isDemoMode()) return await unarchiveDemo(savedPlaceId);
+  const { error } = await supabase
+    .from('saved_places')
+    .update({
+      archived_at: null,
+      reminders_exhausted_at: null,
+    })
+    .eq('id', savedPlaceId);
+  if (error) {
+    console.warn('[savedPlacesService] unarchive failed', error.message);
+    throw new Error(error.message);
+  }
+  triggerGeofenceResync();
+}
+

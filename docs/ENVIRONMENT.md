@@ -14,7 +14,7 @@ This document covers the env vars, Supabase setup, native-build requirements, an
 - `eas-cli`
 - Supabase CLI
 - Supabase project
-- Google Cloud project with Maps SDK for iOS, Maps SDK for Android, and Places API enabled
+- Google Cloud project with Maps SDK for iOS, Maps SDK for Android, Places API, **and Geocoding API** enabled
 
 ## Local install
 
@@ -121,8 +121,10 @@ Current code reality:
 
 Recommended setup:
 
-- client key restricted to app bundle/package and Maps/Places APIs
-- separate server key for `GOOGLE_PLACES_KEY` if you want stricter server-side separation
+- client key restricted to app bundle/package and Maps/Places/**Geocoding** APIs
+- separate server key for `GOOGLE_PLACES_KEY` if you want stricter server-side separation; that server key must also have **Geocoding API** enabled
+
+Why Geocoding API matters: the share-save flow's address-first verification gate (`verifyPlaceAtAddress` in [services/placesService.ts](../services/placesService.ts) and `verifyPlaceAtAddressServer` in [supabase/functions/process-share-link/index.ts](../supabase/functions/process-share-link/index.ts)) calls `https://maps.googleapis.com/maps/api/geocode/json` to resolve a literal street address found in the share to a rooftop coordinate before it is allowed to silent-save. If Geocoding is not enabled on the key, every address-bearing share falls back to the candidate picker (safe, but worse UX).
 
 ## EAS builds
 
@@ -157,6 +159,12 @@ If those are missing, the extension should still fall back to opening the host a
 ## Android share intent requirements
 
 Android share entry depends on the patched native activity produced by the config plugin. Test in a native build, not just Expo Go.
+
+## Native rebuild required after manifest changes
+
+Any change to Android permissions or Expo config plugins in [app.json](../app.json) requires a new native Android build. Restarting Expo or reloading JS is not enough because the manifest and foreground-service declarations are compiled into the native app.
+
+This matters for Nearr's nearby reminders: background location watch and OS geofencing should be validated only on a fresh Android dev/preview/prod build after changing location or notification permissions.
 
 ## Background location and geofencing limits
 

@@ -48,6 +48,7 @@
 import * as Location from 'expo-location';
 import * as Notifications from 'expo-notifications';
 import * as TaskManager from 'expo-task-manager';
+import { Platform } from 'react-native';
 
 import { isDemoMode } from './demoMode';
 import { isMapPreviewMode } from './mapPreview';
@@ -66,6 +67,8 @@ import type { Profile, SavedPlaceWithPlace } from '@/types';
 
 export const LOCATION_TASK = 'nearr-location-task';
 
+type LocationTaskStartStatus = 'started' | 'already_started' | 'skipped';
+
 export type NotificationPermissionState = 'granted' | 'denied' | 'undetermined';
 
 /** How long to wait before re-notifying for the *same* saved place. */
@@ -78,6 +81,12 @@ const ALERT_COOLDOWN_MS = 12 * 60 * 60 * 1000; // 12 hours
 const lastAlertAtMem = new Map<string, number>();
 
 /**
+ * Group-level cooldown so duplicate saved_places rows for the same real
+ * place do not send separate notifications in the same run.
+ */
+const lastAlertAtGroupMem = new Map<string, number>();
+
+/**
  * Per-place inside/outside radius state. Used to detect the outside→inside
  * crossing that triggers a notification. Absent = first check this session
  * (we never notify on cold-start regardless of position).
@@ -86,6 +95,253 @@ const lastAlertAtMem = new Map<string, number>();
  * cooldowns, so this only needs to track the current run.
  */
 const insideStateMap = new Map<string, boolean>();
+
+const ADDRESS_LABEL_RE = /^\s*\d{1,6}\s+\S+/i;
+const STREET_SUFFIX_RE =
+  /\b(st|street|ave|avenue|blvd|boulevard|rd|road|dr|drive|ln|lane|way|hwy|highway|pkwy|parkway|ct|court|ter|terrace|pl|place)\b\.?/i;
+
+function normalizeNotificationText(value: string | null | undefined): string {
+  return (value ?? '')
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9 ]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function isAddressLikePlaceName(place: Pick<SavedPlaceWithPlace['place'], 'name' | 'formatted_address'>): boolean {
+  const name = (place.name ?? '').trim();
+  if (!name) return true;
+  if (
+    place.formatted_address &&
+    normalizeNotificationText(name) === normalizeNotificationText(place.formatted_address)
+  ) {
+    return true;
+  }
+  return ADDRESS_LABEL_RE.test(name) && STREET_SUFFIX_RE.test(name);
+}
+
+function notificationPrimaryLabel(saved: SavedPlaceWithPlace): string {
+  return isAddressLikePlaceName(saved.place)
+    ? 'a saved place'
+    : saved.place.name.trim();
+}
+
+function notificationDedupKey(saved: SavedPlaceWithPlace): string {
+  if (saved.place.google_place_id) {
+    return `google:${saved.place.google_place_id}`;
+  }
+  const normalizedName = normalizeNotificationText(saved.place.name);
+  const normalizedAddress = normalizeNotificationText(saved.place.formatted_address);
+  if (normalizedName && normalizedAddress) {
+    return `nameaddr:${normalizedName}|${normalizedAddress}`;
+  }
+  if (normalizedName) {
+    return `name:${normalizedName}`;
+  }
+  if (saved.place_id) {
+    return `place:${saved.place_id}`;
+  }
+  return `saved:${saved.id}`;
+}
+
+type NotificationIdentityGroup = {
+  key: string;
+  representative: SavedPlaceWithPlace;
+  members: SavedPlaceWithPlace[];
+};
+
+type NotificationAreaGroup = {
+  key: string;
+  representative: SavedPlaceWithPlace;
+  identities: NotificationIdentityGroup[];
+  members: SavedPlaceWithPlace[];
+  allSavedPlaceIds: string[];
+  labels: string[];
+};
+
+function pickNotificationRepresentative(
+  group: SavedPlaceWithPlace[],
+  here?: LatLng,
+): SavedPlaceWithPlace {
+  const sorted = [...group].sort((left, right) => {
+    const leftAddressLike = isAddressLikePlaceName(left.place) ? 1 : 0;
+    const rightAddressLike = isAddressLikePlaceName(right.place) ? 1 : 0;
+    if (leftAddressLike !== rightAddressLike) {
+      return leftAddressLike - rightAddressLike;
+    }
+    const leftGoogle = left.place.google_place_id ? 0 : 1;
+    const rightGoogle = right.place.google_place_id ? 0 : 1;
+    if (leftGoogle !== rightGoogle) {
+      return leftGoogle - rightGoogle;
+    }
+    if (here) {
+      const leftDistance = distanceMeters(here, {
+        latitude: left.place.latitude,
+        longitude: left.place.longitude,
+      });
+      const rightDistance = distanceMeters(here, {
+        latitude: right.place.latitude,
+        longitude: right.place.longitude,
+      });
+      if (leftDistance !== rightDistance) {
+        return leftDistance - rightDistance;
+      }
+    }
+    return left.created_at.localeCompare(right.created_at);
+  });
+  return sorted[0];
+}
+
+function latestGroupLastNotifiedAt(group: SavedPlaceWithPlace[]): number {
+  let latest = 0;
+  for (const saved of group) {
+    if (!saved.last_notified_at) continue;
+    const ts = Date.parse(saved.last_notified_at);
+    if (Number.isFinite(ts)) {
+      latest = Math.max(latest, ts);
+    }
+  }
+  return latest;
+}
+
+function maxGroupNotificationCount(group: SavedPlaceWithPlace[]): number {
+  let count = 0;
+  for (const saved of group) {
+    count = Math.max(count, saved.notification_count ?? 0);
+  }
+  return count;
+}
+
+function buildNearbyCopy(label: string): { title: string; body: string } {
+  if (label === 'a saved place') {
+    return {
+      title: "You're near a saved place",
+      body: 'One of your saved places is nearby.',
+    };
+  }
+  return {
+    title: `You're near ${label}`,
+    body: `${label} is nearby.`,
+  };
+}
+
+function buildGroupNotificationCopy(labels: string[]): { title: string; body: string } {
+  if (labels.length <= 1) {
+    return buildNearbyCopy(labels[0] ?? 'a saved place');
+  }
+  if (labels.length === 2) {
+    return {
+      title: "You're near 2 saved places",
+      body: `${labels[0]} and ${labels[1]} are nearby.`,
+    };
+  }
+  if (labels.length === 3) {
+    return {
+      title: "You're near 3 saved places",
+      body: `${labels[0]}, ${labels[1]}, and ${labels[2]} are nearby.`,
+    };
+  }
+  return {
+    title: `You're near ${labels.length} saved places`,
+    body: `${labels[0]}, ${labels[1]}, and ${labels.length - 2} more are nearby.`,
+  };
+}
+
+function groupSavedPlacesByIdentity(
+  saved: SavedPlaceWithPlace[],
+  here?: LatLng,
+): NotificationIdentityGroup[] {
+  const groups = new Map<string, SavedPlaceWithPlace[]>();
+  for (const row of saved) {
+    const key = notificationDedupKey(row);
+    const existing = groups.get(key);
+    if (existing) existing.push(row);
+    else groups.set(key, [row]);
+  }
+  return Array.from(groups.entries()).map(([key, members]) => ({
+    key,
+    members,
+    representative: pickNotificationRepresentative(members, here),
+  }));
+}
+
+function getIdentityGroupCooldownReason(
+  identity: NotificationIdentityGroup,
+  now: number,
+): 'cooldown_mem' | 'cooldown_db' | 'count_limit' | null {
+  const memLast = lastAlertAtMem.get(identity.representative.id) ?? 0;
+  if (now - memLast < ALERT_COOLDOWN_MS) {
+    return 'cooldown_mem';
+  }
+  const dbLast = latestGroupLastNotifiedAt(identity.members);
+  if (dbLast > 0 && now - dbLast < ALERT_COOLDOWN_MS) {
+    return 'cooldown_db';
+  }
+  if (maxGroupNotificationCount(identity.members) >= 3) {
+    return 'count_limit';
+  }
+  return null;
+}
+
+function buildNotificationAreaGroup(params: {
+  triggered: SavedPlaceWithPlace;
+  allSaved: SavedPlaceWithPlace[];
+  triggerPoint: LatLng;
+  profile: Profile | null;
+  now: number;
+}): NotificationAreaGroup {
+  const { triggered, allSaved, triggerPoint, profile, now } = params;
+  const identities = groupSavedPlacesByIdentity(allSaved, triggerPoint);
+  const triggeredIdentityKey = notificationDedupKey(triggered);
+  const triggeredIdentity =
+    identities.find((identity) => identity.key === triggeredIdentityKey) ?? {
+      key: triggeredIdentityKey,
+      representative: triggered,
+      members: [triggered],
+    };
+  const triggerRadius = effectiveRadiusMeters(triggeredIdentity.representative, profile);
+
+  const overlapping = identities
+    .filter((identity) => getIdentityGroupCooldownReason(identity, now) === null)
+    .filter((identity) => {
+      if (identity.key === triggeredIdentity.key) return true;
+      const placeRadius = effectiveRadiusMeters(identity.representative, profile);
+      const distance = distanceMeters(triggerPoint, {
+        latitude: identity.representative.place.latitude,
+        longitude: identity.representative.place.longitude,
+      });
+      return distance <= triggerRadius + placeRadius;
+    })
+    .sort((left, right) => {
+      if (left.key === triggeredIdentity.key) return -1;
+      if (right.key === triggeredIdentity.key) return 1;
+      const leftDistance = distanceMeters(triggerPoint, {
+        latitude: left.representative.place.latitude,
+        longitude: left.representative.place.longitude,
+      });
+      const rightDistance = distanceMeters(triggerPoint, {
+        latitude: right.representative.place.latitude,
+        longitude: right.representative.place.longitude,
+      });
+      return leftDistance - rightDistance;
+    });
+
+  const allSavedPlaceIds = overlapping
+    .flatMap((identity) => identity.members.map((member) => member.id))
+    .sort();
+  const members = overlapping.flatMap((identity) => identity.members);
+  const labels = overlapping.map((identity) => notificationPrimaryLabel(identity.representative));
+  return {
+    key: allSavedPlaceIds.join('|'),
+    representative: triggeredIdentity.representative,
+    identities: overlapping,
+    members,
+    allSavedPlaceIds,
+    labels,
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Notification categories (action buttons on iOS / Android)
@@ -186,25 +442,52 @@ export async function startProximityWatch(): Promise<void> {
     console.warn('[notifications] background location not granted — watch not started');
     return;
   }
-  await startLocationUpdatesTask();
-  console.log('[notifications] proximity watch started');
+  const status = await startLocationUpdatesTask();
+  if (status === 'started' || status === 'already_started') {
+    console.log('[notifications] proximity watch started');
+    return;
+  }
+  console.warn('[notifications] proximity watch skipped — native Android foreground service config missing or start rejected');
 }
 
-async function startLocationUpdatesTask(): Promise<void> {
-  const already = await Location.hasStartedLocationUpdatesAsync(LOCATION_TASK);
-  if (already) return;
+function isAndroidForegroundServiceConfigError(error: unknown): boolean {
+  if (Platform.OS !== 'android') return false;
+  const message =
+    error instanceof Error ? error.message : typeof error === 'string' ? error : '';
+  if (!message) return false;
+  return (
+    message.includes("Couldn't start the foreground service") ||
+    message.includes('Foreground service permissions were not found in the manifest')
+  );
+}
 
-  await Location.startLocationUpdatesAsync(LOCATION_TASK, {
-    accuracy: Location.Accuracy.Balanced,
-    timeInterval: 60_000,
-    distanceInterval: 100,
-    showsBackgroundLocationIndicator: false,
-    // Android: a foreground-service notification keeps the task alive.
-    foregroundService: {
-      notificationTitle: 'Nearr',
-      notificationBody: 'Watching for saved places nearby',
-    },
-  });
+async function startLocationUpdatesTask(): Promise<LocationTaskStartStatus> {
+  const already = await Location.hasStartedLocationUpdatesAsync(LOCATION_TASK);
+  if (already) return 'already_started';
+
+  try {
+    await Location.startLocationUpdatesAsync(LOCATION_TASK, {
+      accuracy: Location.Accuracy.Balanced,
+      timeInterval: 60_000,
+      distanceInterval: 100,
+      showsBackgroundLocationIndicator: false,
+      // Android: a foreground-service notification keeps the task alive.
+      foregroundService: {
+        notificationTitle: 'Nearr',
+        notificationBody: 'Watching for saved places nearby',
+      },
+    });
+    return 'started';
+  } catch (error) {
+    if (isAndroidForegroundServiceConfigError(error)) {
+      console.warn(
+        '[notifications] background watch skipped — Android foreground service permission/config missing; install a new native build after manifest changes',
+      );
+      return 'skipped';
+    }
+    console.warn('[notifications] startLocationUpdatesAsync failed (non-fatal)', error);
+    return 'skipped';
+  }
 }
 
 export async function stopProximityWatch(): Promise<void> {
@@ -283,8 +566,8 @@ async function runSyncProximityWatch(): Promise<'started' | 'stopped' | 'skipped
     return 'skipped';
   }
 
-  await startLocationUpdatesTask();
-  return 'started';
+  const startStatus = await startLocationUpdatesTask();
+  return startStatus === 'skipped' ? 'skipped' : 'started';
 }
 
 export async function sendTestNotification(): Promise<void> {
@@ -531,12 +814,14 @@ export async function checkProximity(
     return;
   }
 
-  // --- saved places (only those with notifications enabled) ---
+  // --- saved places (only those with notifications enabled, not visited, not archived) ---
   const { data: savedRows, error: savedErr } = await supabase
     .from('saved_places')
     .select('*, place:places(*)')
     .eq('user_id', userId)
-    .eq('notifications_enabled', true);
+    .eq('notifications_enabled', true)
+    .is('archived_at', null)
+    .is('visited_at', null);
 
   if (savedErr) {
     console.warn('[checkProximity] saved_places fetch failed', savedErr.message);
@@ -548,21 +833,23 @@ export async function checkProximity(
   // --- evaluate ---
   const here: LatLng = { latitude, longitude };
   const now = Date.now();
-  for (const s of saved) {
+  for (const identity of groupSavedPlacesByIdentity(saved, here)) {
+    const s = identity.representative;
     const radius = effectiveRadiusMeters(s, profile);
     const dist = distanceMeters(here, {
       latitude: s.place.latitude,
       longitude: s.place.longitude,
     });
     const isCurrentlyInside = dist <= radius;
-    const wasInside = insideStateMap.get(s.id);
+    const wasInside = insideStateMap.get(identity.key);
+    const label = notificationPrimaryLabel(s);
 
     // Always record current state for the next tick regardless of other checks.
-    insideStateMap.set(s.id, isCurrentlyInside);
+    insideStateMap.set(identity.key, isCurrentlyInside);
 
     if (!isCurrentlyInside) {
       console.log(
-        `[checkProximity] NOTIFICATION_SKIPPED_OUTSIDE place=${s.place.name} dist=${Math.round(dist)}m radius=${Math.round(radius)}m`,
+        `[checkProximity] NOTIFICATION_SKIPPED_OUTSIDE place=${label} dist=${Math.round(dist)}m radius=${Math.round(radius)}m`,
       );
       continue;
     }
@@ -573,7 +860,7 @@ export async function checkProximity(
     }
 
     if (wasInside === true) {
-      console.log(`[checkProximity] NOTIFICATION_SKIPPED_ALREADY_INSIDE place=${s.place.name}`);
+      console.log(`[checkProximity] NOTIFICATION_SKIPPED_ALREADY_INSIDE place=${label}`);
       continue;
     }
 
@@ -582,22 +869,49 @@ export async function checkProximity(
     if (decision.kind === 'skip') {
       // decideProximity will re-check range (redundantly) and then check cooldown/settings.
       console.log(
-        `[checkProximity] NOTIFICATION_TRIGGERED place=${s.place.name} skipped_reason=${decision.reason}`,
+        `[checkProximity] NOTIFICATION_TRIGGERED place=${label} skipped_reason=${decision.reason}`,
       );
       continue;
     }
 
-    // Feature 2: notification count limit.
-    const count = s.notification_count ?? 0;
-    if (count >= 3) {
-      console.log(
-        `[checkProximity] NOTIFICATION_LIMIT_REACHED place=${s.place.name} count=${count}`,
-      );
+    const overlapGroup = buildNotificationAreaGroup({
+      triggered: s,
+      allSaved: saved,
+      triggerPoint: here,
+      profile,
+      now,
+    });
+    if (overlapGroup.allSavedPlaceIds.length === 0) {
+      console.log(`[checkProximity] NOTIFICATION_SKIPPED place=${label} reason=no_eligible_overlap_group`);
       continue;
     }
 
-    await fireNotification(userId, s, decision.distanceMeters);
+    const groupMemLast = lastAlertAtGroupMem.get(overlapGroup.key) ?? 0;
+    if (now - groupMemLast < ALERT_COOLDOWN_MS) {
+      console.log(`[checkProximity] NOTIFICATION_SKIPPED_GROUP_COOLDOWN place=${label}`);
+      continue;
+    }
+
+    const groupDbLast = latestGroupLastNotifiedAt(
+      overlapGroup.identities.flatMap((groupIdentity) => groupIdentity.members),
+    );
+    if (groupDbLast > 0 && now - groupDbLast < ALERT_COOLDOWN_MS) {
+      console.log(`[checkProximity] NOTIFICATION_SKIPPED_GROUP_DB_COOLDOWN place=${label}`);
+      continue;
+    }
+
+    const copy = buildGroupNotificationCopy(overlapGroup.labels);
+
+    await fireNotification(
+      userId,
+      overlapGroup.representative,
+      decision.distanceMeters,
+      copy,
+      overlapGroup.members,
+      overlapGroup.labels[0] ?? label,
+    );
     lastAlertAtMem.set(s.id, now);
+    lastAlertAtGroupMem.set(overlapGroup.key, now);
   }
 }
 
@@ -650,6 +964,7 @@ export type MaybeNotifyResult =
 export async function maybeNotifyForSavedPlace(
   savedPlaceId: string,
   reason: NotifyReason,
+  triggerPoint?: LatLng,
 ): Promise<MaybeNotifyResult> {
   if (isDemoMode() || isMapPreviewMode()) {
     return { sent: false, reason: 'demo_or_preview' };
@@ -665,10 +980,21 @@ export async function maybeNotifyForSavedPlace(
       .select('*, place:places(*)')
       .eq('id', savedPlaceId)
       .eq('user_id', userId)
+      .is('archived_at', null)
+      .is('visited_at', null)
       .maybeSingle();
     const saved = (savedRow as SavedPlaceWithPlace | null) ?? null;
     if (!saved || !saved.place) return { sent: false, reason: 'place_missing' };
     if (!saved.notifications_enabled) return { sent: false, reason: 'place_off' };
+
+    const { data: allSavedRows } = await supabase
+      .from('saved_places')
+      .select('*, place:places(*)')
+      .eq('user_id', userId)
+      .eq('notifications_enabled', true)
+      .is('archived_at', null)
+      .is('visited_at', null);
+    const allSaved = (allSavedRows ?? []) as SavedPlaceWithPlace[];
 
     const { data: profileData } = await supabase
       .from('profiles')
@@ -686,37 +1012,59 @@ export async function maybeNotifyForSavedPlace(
     if (inQuietHours(profile)) return { sent: false, reason: 'quiet_hours' };
 
     const now = Date.now();
-    const memLast = lastAlertAtMem.get(saved.id) ?? 0;
-    if (now - memLast < ALERT_COOLDOWN_MS) {
+    const trigger = triggerPoint ?? {
+      latitude: saved.place.latitude,
+      longitude: saved.place.longitude,
+    };
+    const identities = groupSavedPlacesByIdentity(allSaved, trigger);
+    const triggeredIdentity =
+      identities.find((identity) => identity.key === notificationDedupKey(saved)) ?? {
+        key: notificationDedupKey(saved),
+        representative: saved,
+        members: [saved],
+      };
+    const identityReason = getIdentityGroupCooldownReason(triggeredIdentity, now);
+    if (identityReason) {
+      return { sent: false, reason: identityReason };
+    }
+
+    const overlapGroup = buildNotificationAreaGroup({
+      triggered: saved,
+      allSaved,
+      triggerPoint: trigger,
+      profile,
+      now,
+    });
+    if (overlapGroup.allSavedPlaceIds.length === 0) {
+      return { sent: false, reason: 'count_limit' };
+    }
+
+    const groupMemLast = lastAlertAtGroupMem.get(overlapGroup.key) ?? 0;
+    if (now - groupMemLast < ALERT_COOLDOWN_MS) {
       return { sent: false, reason: 'cooldown_mem' };
     }
-    if (saved.last_notified_at) {
-      const ts = Date.parse(saved.last_notified_at);
-      if (Number.isFinite(ts) && now - ts < ALERT_COOLDOWN_MS) {
-        return { sent: false, reason: 'cooldown_db' };
-      }
+    const groupDbLast = latestGroupLastNotifiedAt(
+      overlapGroup.identities.flatMap((identity) => identity.members),
+    );
+    if (groupDbLast > 0 && now - groupDbLast < ALERT_COOLDOWN_MS) {
+      return { sent: false, reason: 'cooldown_db' };
     }
 
-    const count = saved.notification_count ?? 0;
-    if (count >= 3) return { sent: false, reason: 'count_limit' };
+    // For geofence ENTER we only know the trigger region center, not the
+    // exact user coordinate. Use the triggered place radius as an upper bound.
+    const radius = effectiveRadiusMeters(overlapGroup.representative, profile);
+    const copyOverride = buildGroupNotificationCopy(overlapGroup.labels);
 
-    // Distance is unknown for OS geofence ENTER — the OS only tells us we
-    // crossed the boundary, not how far inside we are. Use the effective
-    // radius as a safe upper bound for the audit log.
-    const radius = effectiveRadiusMeters(saved, profile);
-
-    // Use the requested copy for geofence ENTER; preserve existing copy for
-    // the legacy proximity-watch path so we don't churn user-visible text.
-    const copyOverride =
-      reason === 'geofence_enter'
-        ? {
-            title: "You're near a saved place",
-            body: `${saved.place.name} is nearby.`,
-          }
-        : undefined;
-
-    await fireNotification(userId, saved, radius, copyOverride);
-    lastAlertAtMem.set(saved.id, now);
+    await fireNotification(
+      userId,
+      overlapGroup.representative,
+      radius,
+      copyOverride,
+      overlapGroup.members,
+      overlapGroup.labels[0] ?? notificationPrimaryLabel(overlapGroup.representative),
+    );
+    lastAlertAtMem.set(overlapGroup.representative.id, now);
+    lastAlertAtGroupMem.set(overlapGroup.key, now);
     return { sent: true };
   } catch (e) {
     console.warn('[notifications] maybeNotifyForSavedPlace failed', e);
@@ -733,18 +1081,22 @@ async function fireNotification(
   saved: SavedPlaceWithPlace,
   distance: number,
   copyOverride?: { title: string; body: string },
+  groupedSavedPlaces: SavedPlaceWithPlace[] = [saved],
+  preferredLabel?: string,
 ): Promise<void> {
-  const count = saved.notification_count ?? 0;
+  const groupedSavedPlaceIds = groupedSavedPlaces.map((grouped) => grouped.id);
+  const count = Math.max(...groupedSavedPlaces.map((grouped) => grouped.notification_count ?? 0));
   // Notification 3 (count already at 2) uses the "Give me 3 more chances" category.
   const categoryIdentifier = count >= 2 ? NOTIFY_CATEGORY_FINAL : NOTIFY_CATEGORY_STANDARD;
+  const label = preferredLabel ?? notificationPrimaryLabel(saved);
+  const defaultCopy = buildNearbyCopy(label);
 
   console.log(
-    `[notifications] NOTIFICATION_TRIGGERED place=${saved.place.name} dist=${Math.round(distance)}m count=${count} category=${categoryIdentifier}`,
+    `[notifications] NOTIFICATION_TRIGGERED place=${label} dist=${Math.round(distance)}m count=${count} category=${categoryIdentifier}`,
   );
 
-  const title = copyOverride?.title ?? `You're near ${saved.place.name}`;
-  const body =
-    copyOverride?.body ?? (saved.place.formatted_address ?? 'Saved in Nearr');
+  const title = copyOverride?.title ?? defaultCopy.title;
+  const body = copyOverride?.body ?? defaultCopy.body;
 
   // 1. Local notification.
   try {
@@ -757,34 +1109,56 @@ async function fireNotification(
       },
       trigger: null, // fire immediately
     });
-    console.log(`[notifications] NOTIFICATION_SENT_SUCCESS place=${saved.place.name}`);
+    console.log(`[notifications] NOTIFICATION_SENT_SUCCESS place=${label}`);
   } catch (e) {
-    console.warn(`[notifications] NOTIFICATION_SEND_FAILED place=${saved.place.name}`, e);
+    console.warn(`[notifications] NOTIFICATION_SEND_FAILED place=${label}`, e);
     // Don't update DB if the notification itself didn't go out.
     return;
   }
 
-  // 2. Bump last_notified_at and increment notification_count.
+  // 2. Bump last_notified_at and increment notification_count for all
+  // included saved places in the group. This keeps the 3-reminder limit
+  // aligned with what the user actually saw.
   const nowIso = new Date().toISOString();
-  const { error: upErr } = await supabase
-    .from('saved_places')
-    .update({ last_notified_at: nowIso, notification_count: count + 1 })
-    .eq('id', saved.id);
-  if (upErr) {
-    console.warn('[notifications] saved_places update failed', upErr.message);
-  } else {
-    console.log(
-      `[notifications] NOTIFICATION_COUNT_INCREMENTED place=${saved.place.name} new_count=${count + 1}`,
+  for (const grouped of groupedSavedPlaces) {
+    const { error: upErr } = await supabase
+      .from('saved_places')
+      .update({
+        last_notified_at: nowIso,
+        notification_count: (grouped.notification_count ?? 0) + 1,
+      })
+      .eq('id', grouped.id);
+    if (upErr) {
+      console.warn('[notifications] saved_places update failed', upErr.message);
+    }
+  }
+  console.log(
+    `[notifications] NOTIFICATION_COUNT_INCREMENTED place=${label} group_size=${groupedSavedPlaceIds.length}`,
+  );
+
+  // 2b. Bump reminder_opportunity_count atomically for every grouped row.
+  // The RPC runs `where id = any($ids) and user_id = auth.uid()` so it's
+  // race-safe and RLS-safe. Failure is non-fatal: the user already saw
+  // the notification, and the next opportunity will catch up.
+  const { error: bumpErr } = await supabase.rpc('bump_reminder_opportunity_count', {
+    saved_place_ids: groupedSavedPlaceIds,
+  });
+  if (bumpErr) {
+    console.warn(
+      '[notifications] bump_reminder_opportunity_count failed (non-fatal)',
+      bumpErr.message,
     );
   }
 
   // 3. Append to notification_events (audit log, insert-only per RLS).
-  const { error: evErr } = await supabase.from('notification_events').insert({
-    user_id: userId,
-    saved_place_id: saved.id,
-    event_type: 'nearby',
-    distance_meters: distance,
-  });
+  const { error: evErr } = await supabase.from('notification_events').insert(
+    groupedSavedPlaceIds.map((savedPlaceId) => ({
+      user_id: userId,
+      saved_place_id: savedPlaceId,
+      event_type: 'nearby',
+      distance_meters: distance,
+    })),
+  );
   if (evErr) {
     console.warn('[notifications] event insert failed', evErr.message);
   }

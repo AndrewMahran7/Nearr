@@ -27,6 +27,11 @@ type Props = {
    * Optional so callers that don't want it (e.g. raw lists) opt out.
    */
   onShowOnMap?: () => void;
+  /**
+   * When provided (typically only for cards rendered inside the Archived
+   * filter), shows a Restore button that clears `archived_at`.
+   */
+  onRestore?: () => void;
 };
 
 function sourceLabel(saved: SavedPlaceWithPlace): string | null {
@@ -52,13 +57,17 @@ export function SavedPlaceCard({
   onPress,
   onDelete,
   onShowOnMap,
+  onRestore,
   metaPrefix,
 }: Props) {
   const { colors, typography } = useTheme();
   const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
   const place = saved.place;
   const source = sourceLabel(saved);
-  const remindersLabel = saved.notifications_enabled ? 'Reminder on' : null;
+  const isVisited = !!saved.visited_at;
+  const isArchived = !!saved.archived_at && !isVisited;
+  const remindersLabel =
+    !isVisited && !isArchived && saved.notifications_enabled ? 'Reminder on' : null;
   const meta = [metaPrefix, source, remindersLabel].filter(Boolean).join(' · ');
 
   function confirmDelete() {
@@ -84,9 +93,20 @@ export function SavedPlaceCard({
         </View>
 
         <View style={styles.copy}>
-          <Text style={typography.bodyStrong} numberOfLines={1}>
-            {place.name}
-          </Text>
+          <View style={styles.titleRow}>
+            <Text style={[typography.bodyStrong, styles.titleText]} numberOfLines={1}>
+              {place.name}
+            </Text>
+            {isVisited ? (
+              <View style={[styles.badge, styles.badgeVisited]}>
+                <Text style={styles.badgeText}>Visited</Text>
+              </View>
+            ) : isArchived ? (
+              <View style={[styles.badge, styles.badgeArchived]}>
+                <Text style={styles.badgeText}>Archived</Text>
+              </View>
+            ) : null}
+          </View>
 
           {place.formatted_address ? (
             <Text style={[typography.caption, styles.muted]} numberOfLines={2}>
@@ -94,14 +114,20 @@ export function SavedPlaceCard({
             </Text>
           ) : null}
 
-          <Text style={[typography.caption, styles.metaText]} numberOfLines={2}>
-            {meta}
-          </Text>
+          {meta ? (
+            <Text style={[typography.caption, styles.metaText]} numberOfLines={2}>
+              {meta}
+            </Text>
+          ) : null}
         </View>
       </Pressable>
 
       <View style={styles.actionRow}>
-        <Button title="Show on map" onPress={onShowOnMap ?? onPress} style={styles.primaryAction} />
+        {onRestore ? (
+          <Button title="Restore" onPress={onRestore} style={styles.primaryAction} />
+        ) : (
+          <Button title="Show on map" onPress={onShowOnMap ?? onPress} style={styles.primaryAction} />
+        )}
         {onShowOnMap ? (
           <Button
             title="Details"
@@ -158,6 +184,31 @@ function createStyles(
     },
     copy: {
       flex: 1,
+    },
+    titleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.sm,
+    },
+    titleText: { flexShrink: 1 },
+    badge: {
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+      borderRadius: 999,
+      borderWidth: 1,
+    },
+    badgeVisited: {
+      backgroundColor: colors.surface,
+      borderColor: colors.accent,
+    },
+    badgeArchived: {
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+    },
+    badgeText: {
+      ...typography.caption,
+      fontSize: 11,
+      color: colors.textSecondary,
     },
     muted: { color: colors.textSecondary, marginTop: 2 },
     metaText: {

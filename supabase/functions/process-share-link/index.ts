@@ -443,10 +443,76 @@ async function processShareLink(url: string, accessToken: string): Promise<Resul
     return { status: 'failed_requires_app', reason: 'no_query' };
   }
 
+  // ---- 4d. Address-first verification gate ---------------------------
+  // When the AI extracted a literal street address, geocode it to a
+  // rooftop coordinate and require a real business at that point — and a
+  // strong name match when a place name was extracted — before silent-
+  // saving. This mirrors the host-app gate in app/share.tsx so a noisy
+  // caption with an out-of-state address can never silent-save a wrong
+  // business near the device's bias.
+  let effectiveContextBias = contextBias;
+  if (ai.address) {
+    console.log(`[share-geocode] address_found=${ai.address}`);
+    const verification = await verifyPlaceAtAddressServer(
+      ai.address,
+      ai.placeName ?? null,
+      PLACES_KEY,
+    );
+    console.log(
+      `[share-geocode] geocode_success=${verification.geocoded !== null}`,
+    );
+    if (verification.status === 'verified') {
+      console.log(
+        `[share-geocode] candidate_distance_m=${Math.round(verification.distanceMeters)} verified=true`,
+      );
+      try {
+        const savedPlaceId = await saveForUser(
+          userClient,
+          userId,
+          verification.candidate,
+          url,
+          source,
+          autoNote,
+        );
+        return {
+          status: 'saved',
+          savedPlaceId,
+          message: `Saved "${verification.candidate.name}" to Nearr`,
+        };
+      } catch (err) {
+        console.warn(
+          '[process-share-link] address-verified save failed',
+          (err as Error)?.message,
+        );
+        return { status: 'failed_requires_app', reason: 'save_error' };
+      }
+    }
+    if (verification.status === 'ambiguous') {
+      console.log('[share-geocode] verified=false ambiguous_after_address_verify');
+      return {
+        status: 'ambiguous',
+        candidates: verification.candidates.slice(0, 5),
+        reason: 'address_ambiguous',
+      };
+    }
+    console.log(
+      `[share-geocode] verified=false address_verification_failed_reason=${verification.reason}`,
+    );
+    if (verification.geocoded) {
+      // Prefer the rooftop coordinate over the city-scale contextBias for
+      // the fallback search. Device location must NEVER override an
+      // explicit address.
+      effectiveContextBias = {
+        lat: verification.geocoded.latitude,
+        lng: verification.geocoded.longitude,
+      };
+    }
+  }
+
   // ---- 5. Google Places search (main) --------------------------------
   let candidates: ResultCandidate[];
   try {
-    candidates = await searchPlaces(chosenQuery, PLACES_KEY, contextBias ?? undefined);
+    candidates = await searchPlaces(chosenQuery, PLACES_KEY, effectiveContextBias ?? undefined);
   } catch (err) {
     console.warn('[process-share-link] places search failed', (err as Error)?.message);
     return { status: 'open_app', reason: 'places_error' };
@@ -459,9 +525,9 @@ async function processShareLink(url: string, accessToken: string): Promise<Resul
     (c) => !isAddressLikeTypes(c.types) && !isLocalityLikeTypes(c.types),
   );
 
-  const rankedBusinesses = rankCandidates(businesses, chosenQuery, contextBias);
+  const rankedBusinesses = rankCandidates(businesses, chosenQuery, effectiveContextBias);
   const trustedBusinesses = rankedBusinesses.filter((candidate) => {
-    const rejection = getCandidateRejectionReason(candidate, chosenQuery, contextBias);
+    const rejection = getCandidateRejectionReason(candidate, chosenQuery, effectiveContextBias);
     if (rejection) {
       console.log(`[share-rank] rejected_candidate_reason=${rejection}`);
       return false;
@@ -513,8 +579,32 @@ async function processShareLink(url: string, accessToken: string): Promise<Resul
   // ---- 5. decide silent-save vs ambiguous ----------------------------
   const top = trustedBusinesses[0];
   const second = trustedBusinesses[1];
-  const hasSourceContext = !!contextBias;
+  const hasSourceContext = !!effectiveContextBias;
   const hasVerifiedProfileEvidence = accountIdentityQuery?.source === 'verified_profile';
+
+  // Pipeline (v2) structured-evidence logging. Mirrors the host-app log
+  // markers so a single share can be traced across both pipelines.
+  const aiPosterType: 'restaurant' | 'influencer' | 'unknown' =
+    ai.posterType ??
+    inferPosterTypeFromEnrichments(profileEnrichments);
+  const handleUsedForQuery =
+    accountIdentityOnly && !hasVerifiedProfileEvidence;
+  const addressFound =
+    explicitAddressSignal || !!ai.address;
+  console.log(
+    `[share-extract] evidence=${JSON.stringify({
+      placeName: ai.placeName ?? null,
+      address: ai.address ?? null,
+      city: ai.city ?? null,
+      state: ai.state ?? null,
+      handleUsed: handleUsedForQuery,
+      hasVerifiedProfile: hasVerifiedProfileEvidence,
+    })}`,
+  );
+  console.log(`[share-extract] poster_type=${aiPosterType}`);
+  console.log(`[share-extract] address_found=${addressFound}`);
+  console.log(`[share-extract] handle_used=${handleUsedForQuery}`);
+
   const topHasStrongAutoSaveEvidence =
     explicitAddressSignal ||
     (hasSourceContext && hasStrongNameMatch(top.name, chosenQuery)) ||
@@ -531,7 +621,19 @@ async function processShareLink(url: string, accessToken: string): Promise<Resul
     dominant &&
     hasMeaningfulNameMatch(top.name, chosenQuery) &&
     topHasStrongAutoSaveEvidence &&
-    !accountIdentityOnly;
+    !accountIdentityOnly &&
+    pipelineAllowsAutoSave({
+      ai,
+      profileEnrichments,
+      explicitAddressSignal,
+      explicitSourceBusinessSignal,
+      hasVerifiedProfileEvidence,
+      accountIdentityOnly,
+      hasSourceContext,
+      chosenQuery,
+    });
+
+  console.log(`[share-rank] auto_save_allowed=${canSilentSave}`);
 
   if (!canSilentSave) {
     if (accountIdentityOnly && !hasSourceContext && !hasVerifiedProfileEvidence) {
@@ -581,6 +683,15 @@ async function saveForUser(
   source: 'tiktok' | 'instagram' | 'link',
   autoNote?: string | null,
 ): Promise<string> {
+  const existingForUser = await findExistingSavedPlaceForUser(client, userId, c, sourceUrl);
+  if (existingForUser?.source_url === sourceUrl) {
+    console.log(
+      `[process-share-link] SAVE_DUPLICATE_SOURCE_URL_REUSED savedPlaceId=${existingForUser.id} placeId=${existingForUser.place.id}`,
+    );
+    await patchExistingSavedPlaceForUser(client, existingForUser.id, source, sourceUrl, autoNote);
+    return existingForUser.id;
+  }
+
   // 1. Resolve canonical places row (SELECT first, INSERT only if missing).
   let placeId: string | null = null;
   if (c.googlePlaceId) {
@@ -591,6 +702,13 @@ async function saveForUser(
       .maybeSingle();
     if (lookupErr) throw new Error(`place lookup: ${lookupErr.message}`);
     if (existing) placeId = existing.id;
+  }
+
+  if (!placeId && existingForUser?.place?.id) {
+    console.log(
+      `[process-share-link] SAVE_FALLBACK_DEDUPE_REUSED placeId=${existingForUser.place.id} savedPlaceId=${existingForUser.id}`,
+    );
+    placeId = existingForUser.place.id;
   }
 
   if (!placeId) {
@@ -651,16 +769,144 @@ async function saveForUser(
         .eq('place_id', placeId)
         .maybeSingle();
       if (existingSaved) {
-        await client
-          .from('saved_places')
-          .update({ source_type: source, source_url: sourceUrl })
-          .eq('id', existingSaved.id);
+        await patchExistingSavedPlaceForUser(
+          client,
+          existingSaved.id,
+          source,
+          sourceUrl,
+          autoNote,
+        );
         return existingSaved.id;
       }
     }
     throw new Error(`saved_places insert: ${savedErr.message}`);
   }
   return saved.id;
+}
+
+type ExistingSavedPlaceRow = {
+  id: string;
+  source_url: string | null;
+  place_id: string;
+  place: {
+    id: string;
+    google_place_id: string | null;
+    name: string;
+    formatted_address: string | null;
+    latitude: number;
+    longitude: number;
+  };
+};
+
+const SAVE_DEDUPE_DISTANCE_M = 40;
+const ADDRESS_NAME_RE = /^\s*\d{1,6}\s+\S+/i;
+const STREET_SUFFIX_RE =
+  /\b(st|street|ave|avenue|blvd|boulevard|rd|road|dr|drive|ln|lane|way|hwy|highway|pkwy|parkway|ct|court|ter|terrace|pl|place)\b\.?/i;
+
+function looksLikeAddressName(value: string | null | undefined): boolean {
+  if (!value) return false;
+  return ADDRESS_NAME_RE.test(value) && STREET_SUFFIX_RE.test(value);
+}
+
+function isNearbySavedPlaceMatch(
+  candidate: ResultCandidate,
+  existing: ExistingSavedPlaceRow,
+): boolean {
+  if (candidate.googlePlaceId && existing.place.google_place_id === candidate.googlePlaceId) {
+    return true;
+  }
+
+  if (
+    !Number.isFinite(candidate.latitude) ||
+    !Number.isFinite(candidate.longitude) ||
+    !Number.isFinite(existing.place.latitude) ||
+    !Number.isFinite(existing.place.longitude)
+  ) {
+    return false;
+  }
+
+  if (
+    haversineMeters(
+      candidate.latitude!,
+      candidate.longitude!,
+      existing.place.latitude,
+      existing.place.longitude,
+    ) > SAVE_DEDUPE_DISTANCE_M
+  ) {
+    return false;
+  }
+
+  const sameName = sameNormalizedName(candidate.name, existing.place.name);
+  const sameAddress =
+    !!candidate.formattedAddress &&
+    !!existing.place.formatted_address &&
+    normalizeName(candidate.formattedAddress) ===
+      normalizeName(existing.place.formatted_address);
+  const candidateIsAddressLike =
+    isAddressLikeTypes(candidate.types) || looksLikeAddressName(candidate.name);
+  const existingIsAddressLike =
+    looksLikeAddressName(existing.place.name) ||
+    (!!existing.place.formatted_address &&
+      normalizeName(existing.place.name) === normalizeName(existing.place.formatted_address));
+
+  if (sameName && sameAddress) return true;
+  if (sameName) return true;
+  if ((candidateIsAddressLike || existingIsAddressLike) && sameAddress) return true;
+  return false;
+}
+
+function sameNormalizedName(left: string | null | undefined, right: string | null | undefined): boolean {
+  const a = normalizeName(left ?? '');
+  const b = normalizeName(right ?? '');
+  if (!a || !b) return false;
+  return a === b || a.includes(b) || b.includes(a);
+}
+
+async function findExistingSavedPlaceForUser(
+  client: any,
+  userId: string,
+  candidate: ResultCandidate,
+  sourceUrl: string,
+): Promise<ExistingSavedPlaceRow | null> {
+  const { data, error } = await client
+    .from('saved_places')
+    .select('id, source_url, place_id, place:places(id, google_place_id, name, formatted_address, latitude, longitude)')
+    .eq('user_id', userId);
+  if (error) {
+    console.log('[process-share-link] save fallback lookup failed', error.message);
+    return null;
+  }
+
+  const rows = (data ?? []) as ExistingSavedPlaceRow[];
+  if (rows.length === 0) return null;
+
+  const exactSourceMatch = rows.find((row) => row.source_url && row.source_url === sourceUrl);
+  if (exactSourceMatch) return exactSourceMatch;
+
+  return rows.find((row) => isNearbySavedPlaceMatch(candidate, row)) ?? null;
+}
+
+async function patchExistingSavedPlaceForUser(
+  client: any,
+  savedPlaceId: string,
+  source: 'tiktok' | 'instagram' | 'link',
+  sourceUrl: string,
+  autoNote?: string | null,
+): Promise<void> {
+  const patch: Record<string, unknown> = {
+    source_type: source,
+    source_url: sourceUrl,
+  };
+  if (autoNote !== undefined) {
+    patch.notes = autoNote ?? null;
+  }
+  const { error } = await client
+    .from('saved_places')
+    .update(patch)
+    .eq('id', savedPlaceId);
+  if (error) {
+    console.log('[process-share-link] duplicate saved_place update failed', error.message);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -700,7 +946,19 @@ async function searchPlaces(
 // Gemini (server-side AI extraction)
 // ---------------------------------------------------------------------------
 
-type AIResult = { query: string; confidence: 'high' | 'medium' | 'low'; reason: string };
+type AIResult = {
+  query: string;
+  confidence: 'high' | 'medium' | 'low';
+  reason: string;
+  // ---- Structured evidence (v2). Optional for backward compat. ----
+  placeName?: string | null;
+  address?: string | null;
+  city?: string | null;
+  state?: string | null;
+  posterType?: 'restaurant' | 'influencer' | 'unknown';
+  taggedAccounts?: string[];
+  needsUserConfirmation?: boolean;
+};
 
 async function extractPlaceAI(input: {
   sourceType?: string;
@@ -737,18 +995,49 @@ async function extractPlaceAI(input: {
     const text: string = json?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
     if (!text) throw new Error('empty gemini response');
     const obj = JSON.parse(extractJsonObject(text) ?? text);
-    const query = typeof obj.query === 'string' ? obj.query.trim() : '';
+    let query = typeof obj.query === 'string' ? obj.query.trim() : '';
+    const placeName =
+      typeof obj.placeName === 'string' && obj.placeName.trim() ? obj.placeName.trim() : null;
+    const address =
+      typeof obj.address === 'string' && obj.address.trim() ? obj.address.trim() : null;
+    const city =
+      typeof obj.city === 'string' && obj.city.trim() ? obj.city.trim() : null;
+    const state =
+      typeof obj.state === 'string' && obj.state.trim() ? obj.state.trim() : null;
+    if (!query && placeName) {
+      query = [placeName, address ?? city, state].filter(Boolean).join(' ').trim();
+    }
     const confRaw = typeof obj.confidence === 'string' ? obj.confidence.toLowerCase() : '';
     const confidence: 'high' | 'medium' | 'low' =
       confRaw === 'high' || confRaw === 'medium' || confRaw === 'low' ? confRaw : 'low';
-    if (!query) {
+    const ptRaw = typeof obj.posterType === 'string' ? obj.posterType.toLowerCase() : '';
+    const posterType: 'restaurant' | 'influencer' | 'unknown' =
+      ptRaw === 'restaurant' || ptRaw === 'influencer' ? ptRaw : 'unknown';
+    let taggedAccounts: string[] | undefined;
+    if (Array.isArray(obj.taggedAccounts)) {
+      taggedAccounts = obj.taggedAccounts.filter((c: unknown): c is string => typeof c === 'string');
+    }
+    const needsUserConfirmation =
+      typeof obj.needsUserConfirmation === 'boolean' ? obj.needsUserConfirmation : undefined;
+    if (!query && !placeName) {
       return {
         query: (input.fallbackQuery ?? '').trim(),
         confidence: 'low',
         reason: 'gemini empty query',
       };
     }
-    return { query, confidence, reason: typeof obj.reason === 'string' ? obj.reason : '' };
+    return {
+      query,
+      confidence,
+      reason: typeof obj.reason === 'string' ? obj.reason : '',
+      placeName,
+      address,
+      city,
+      state,
+      posterType,
+      taggedAccounts,
+      needsUserConfirmation,
+    };
   } catch (err) {
     console.log('[process-share-link] gemini failed', (err as Error)?.message);
     return {
@@ -837,7 +1126,24 @@ function buildAIPrompt(input: {
     'Output rules:',
     '  - The query MUST be a physical place name + location, NEVER a social handle.',
     '  - Prefer named venues over neighborhoods. City/neighborhood alone → confidence = "low".',
-    'Return STRICT JSON: {"query": string, "confidence": "high"|"medium"|"low", "reason": string}',
+    '  - posterType="restaurant" only when the poster account itself is the venue (display name + bio confirm).',
+    '  - posterType="influencer" for reviewers, food bloggers, repost pages, media brands.',
+    '  - posterType="unknown" otherwise.',
+    '  - Set needsUserConfirmation=true unless evidence comes from caption-explicit name OR explicit address OR a verified restaurant profile bio.',
+    '',
+    'Return STRICT JSON in this shape:',
+    '{',
+    '  "placeName": string | null,',
+    '  "address": string | null,',
+    '  "city": string | null,',
+    '  "state": string | null,',
+    '  "posterType": "restaurant" | "influencer" | "unknown",',
+    '  "taggedAccounts": string[],',
+    '  "query": string,',
+    '  "confidence": "high" | "medium" | "low",',
+    '  "needsUserConfirmation": boolean,',
+    '  "reason": string',
+    '}',
     '',
     `sourceType: ${input.sourceType ?? ''}`,
     `url: ${input.url ?? ''}`,
@@ -1365,6 +1671,176 @@ async function geocodeContextText(
   const lng = first?.geometry?.location?.lng;
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
   return { lat, lng };
+}
+
+// ---------------------------------------------------------------------------
+// Address-first geocoding + verification (Edge mirror).
+// Mirrors services/placesService.ts. Same contracts:
+//   - Geocode hits the dedicated Geocoding API (NOT Places textsearch
+//     locality fallback) to get a true rooftop coordinate.
+//   - Verification requires a real business within ADDRESS_VERIFY_RADIUS_M
+//     of that coordinate; when a place name is supplied it must also
+//     strong-name-match. Otherwise we never silent-save.
+//   - Never throws. Hard 4s timeout on the geocode itself.
+// ---------------------------------------------------------------------------
+
+const ADDRESS_VERIFY_RADIUS_M = 150;
+const GEOCODE_TIMEOUT_MS = 4_000;
+
+type GeocodedAddress = {
+  latitude: number;
+  longitude: number;
+  formattedAddress: string;
+  placeId?: string;
+  locationType?: string;
+};
+
+type AddressVerification =
+  | {
+      status: 'verified';
+      candidate: ResultCandidate;
+      geocoded: GeocodedAddress;
+      distanceMeters: number;
+    }
+  | { status: 'ambiguous'; candidates: ResultCandidate[]; geocoded: GeocodedAddress }
+  | {
+      status: 'failed';
+      reason:
+        | 'geocode_failed'
+        | 'no_candidates_near_address'
+        | 'name_mismatch'
+        | 'no_business_near_address';
+      geocoded: GeocodedAddress | null;
+    };
+
+async function geocodeAddressServer(
+  address: string,
+  key: string,
+): Promise<GeocodedAddress | null> {
+  const trimmed = (address ?? '').trim();
+  if (!trimmed || !key) return null;
+  const params = new URLSearchParams({ address: trimmed, key });
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), GEOCODE_TIMEOUT_MS);
+  let json: any;
+  try {
+    const res = await fetch(
+      `https://maps.googleapis.com/maps/api/geocode/json?${params}`,
+      { signal: ctrl.signal },
+    );
+    if (!res.ok) return null;
+    json = await res.json();
+  } catch (err) {
+    console.warn('[share-geocode] fetch failed', (err as Error)?.message);
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+  const status: string = json?.status ?? 'UNKNOWN';
+  if (status !== 'OK') return null;
+  const raw = Array.isArray(json.results) ? json.results : [];
+  if (raw.length === 0) return null;
+  const first = raw[0];
+  const lat = first?.geometry?.location?.lat;
+  const lng = first?.geometry?.location?.lng;
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  return {
+    latitude: lat,
+    longitude: lng,
+    formattedAddress:
+      typeof first.formatted_address === 'string' ? first.formatted_address : trimmed,
+    placeId: typeof first.place_id === 'string' ? first.place_id : undefined,
+    locationType:
+      typeof first.geometry?.location_type === 'string' ? first.geometry.location_type : undefined,
+  };
+}
+
+async function verifyPlaceAtAddressServer(
+  address: string,
+  optionalPlaceName: string | null,
+  key: string,
+): Promise<AddressVerification> {
+  const geocoded = await geocodeAddressServer(address, key);
+  if (!geocoded) {
+    return { status: 'failed', reason: 'geocode_failed', geocoded: null };
+  }
+  const query = (optionalPlaceName?.trim() || geocoded.formattedAddress || address).trim();
+  const params = new URLSearchParams({
+    query,
+    location: `${geocoded.latitude},${geocoded.longitude}`,
+    radius: '200',
+    key,
+  });
+  let json: any;
+  try {
+    const res = await fetch(
+      `https://maps.googleapis.com/maps/api/place/textsearch/json?${params}`,
+    );
+    if (!res.ok) {
+      return { status: 'failed', reason: 'no_business_near_address', geocoded };
+    }
+    json = await res.json();
+  } catch {
+    return { status: 'failed', reason: 'no_business_near_address', geocoded };
+  }
+  const status: string = json?.status ?? 'UNKNOWN';
+  if (status !== 'OK' && status !== 'ZERO_RESULTS') {
+    return { status: 'failed', reason: 'no_business_near_address', geocoded };
+  }
+  const raw: any[] = Array.isArray(json.results) ? json.results : [];
+  const all: ResultCandidate[] = raw.map((r: any) => ({
+    googlePlaceId: r.place_id,
+    name: r.name,
+    formattedAddress: r.formatted_address ?? undefined,
+    latitude: r.geometry?.location?.lat,
+    longitude: r.geometry?.location?.lng,
+    types: Array.isArray(r.types) ? r.types : undefined,
+  }));
+
+  const nearby = all.filter((c) => {
+    if (!Number.isFinite(c.latitude) || !Number.isFinite(c.longitude)) return false;
+    if (isAddressLikeTypes(c.types)) return false;
+    if (isLocalityLikeTypes(c.types)) return false;
+    const d = haversineMeters(
+      geocoded.latitude,
+      geocoded.longitude,
+      c.latitude!,
+      c.longitude!,
+    );
+    return d <= ADDRESS_VERIFY_RADIUS_M;
+  });
+
+  if (nearby.length === 0) {
+    return { status: 'failed', reason: 'no_business_near_address', geocoded };
+  }
+
+  if (optionalPlaceName && optionalPlaceName.trim()) {
+    const nameMatches = nearby.filter((c) => hasStrongNameMatch(c.name, optionalPlaceName));
+    if (nameMatches.length === 1) {
+      const distanceMeters = haversineMeters(
+        geocoded.latitude,
+        geocoded.longitude,
+        nameMatches[0].latitude!,
+        nameMatches[0].longitude!,
+      );
+      return { status: 'verified', candidate: nameMatches[0], geocoded, distanceMeters };
+    }
+    if (nameMatches.length > 1) {
+      return { status: 'ambiguous', candidates: nameMatches.slice(0, 5), geocoded };
+    }
+    return { status: 'failed', reason: 'name_mismatch', geocoded };
+  }
+
+  if (nearby.length === 1) {
+    const distanceMeters = haversineMeters(
+      geocoded.latitude,
+      geocoded.longitude,
+      nearby[0].latitude!,
+      nearby[0].longitude!,
+    );
+    return { status: 'verified', candidate: nearby[0], geocoded, distanceMeters };
+  }
+  return { status: 'ambiguous', candidates: nearby.slice(0, 5), geocoded };
 }
 
 // ---------------------------------------------------------------------------
@@ -2289,4 +2765,75 @@ function extractRawHandles(
     if (!reserved.has(urlMatch[1].toLowerCase())) push(urlMatch[1]);
   }
   return out.slice(0, limit);
+}
+
+// ---------------------------------------------------------------------------
+// Extraction pipeline (v2) -- Edge-side gate, mirrors lib/extractionPipeline.ts
+// ---------------------------------------------------------------------------
+
+/**
+ * Edge-side mirror of `runExtractionPipeline`'s decideAutoSave gate. We do
+ * NOT re-run the full pipeline here -- the existing Edge code already does
+ * sophisticated profile enrichment, business-evidence resolution, and
+ * franchise ranking. This function only enforces the v2 evidence rules
+ * that the legacy gate did not check:
+ *
+ *   - poster classified as influencer + name came from poster identity
+ *     => never silent-save (the user must confirm via the picker).
+ *   - AI explicitly set needsUserConfirmation=true => never silent-save.
+ *
+ * Address-first and explicit-name paths are already enforced by the
+ * `topHasStrongAutoSaveEvidence` and `accountIdentityOnly` checks above.
+ */
+function pipelineAllowsAutoSave(args: {
+  ai: AIResult;
+  profileEnrichments: InstagramProfileEnrichment[];
+  explicitAddressSignal: boolean;
+  explicitSourceBusinessSignal: boolean;
+  hasVerifiedProfileEvidence: boolean;
+  accountIdentityOnly: boolean;
+  hasSourceContext: boolean;
+  chosenQuery: string;
+}): boolean {
+  const { ai, profileEnrichments, explicitAddressSignal, hasVerifiedProfileEvidence,
+    accountIdentityOnly } = args;
+
+  // Hard veto: AI flagged "needs confirmation".
+  if (ai.needsUserConfirmation === true && !explicitAddressSignal) {
+    console.log('[share-rank] auto_save_blocked_reason=ai_needs_confirmation');
+    return false;
+  }
+
+  // Influencer rule: when the post comes from an influencer/creator and the
+  // chosen candidate was derived from poster identity (no caption-explicit
+  // name, no explicit address), block silent save.
+  const posterType = ai.posterType ?? inferPosterTypeFromEnrichments(profileEnrichments);
+  if (
+    posterType === 'influencer' &&
+    accountIdentityOnly &&
+    !explicitAddressSignal &&
+    !hasVerifiedProfileEvidence
+  ) {
+    console.log('[share-rank] auto_save_blocked_reason=poster_is_influencer');
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * If the AI didn't classify posterType, infer from the IG profile
+ * enrichment classifications we already computed.
+ */
+function inferPosterTypeFromEnrichments(
+  enrichments: InstagramProfileEnrichment[],
+): 'restaurant' | 'influencer' | 'unknown' {
+  for (const e of enrichments ?? []) {
+    if (!e.fetched) continue;
+    if (e.classification === 'restaurant_or_business') return 'restaurant';
+    if (e.classification === 'food_creator' || e.classification === 'repost_page') {
+      return 'influencer';
+    }
+  }
+  return 'unknown';
 }

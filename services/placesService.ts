@@ -871,3 +871,225 @@ export async function geocodeContextText(
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
   return { lat, lng };
 }
+
+// ---------------------------------------------------------------------------
+// Address-first geocoding + verification
+//
+// Why this exists:
+//   `geocodeContextText` above resolves free-text city/neighborhood hints
+//   to a *city-scale* lat/lng (it intentionally prefers locality results).
+//   That bias is fine for franchise ranking, but it is NOT a substitute
+//   for a real rooftop geocode when the share contains a literal street
+//   address. Without a rooftop coordinate we can't guarantee the candidate
+//   we're about to silently save actually sits at that address — Google's
+//   text search routinely returns a wrong business near the city center.
+//
+//   `geocodeAddress` hits the dedicated Geocoding API (no locality bias),
+//   and `verifyPlaceAtAddress` uses the resulting coordinate to constrain
+//   the Places search and enforce a hard distance + name-match gate before
+//   anyone is allowed to silent-save.
+//
+// Requires the Geocoding API to be enabled on the same key
+// (EXPO_PUBLIC_GOOGLE_MAPS_API_KEY) used elsewhere in this file.
+// ---------------------------------------------------------------------------
+
+/** Maximum distance (meters) a Places candidate may sit from the geocoded
+ *  address point and still be treated as "the place at this address". */
+const ADDRESS_VERIFY_RADIUS_M = 150;
+
+const GEOCODE_BASE = 'https://maps.googleapis.com/maps/api/geocode/json';
+const GEOCODE_TIMEOUT_MS = 4_000;
+
+export type GeocodedAddress = {
+  latitude: number;
+  longitude: number;
+  formattedAddress: string;
+  placeId?: string;
+  /** Google's `geometry.location_type`: ROOFTOP | RANGE_INTERPOLATED |
+   *  GEOMETRIC_CENTER | APPROXIMATE. ROOFTOP / RANGE_INTERPOLATED are the
+   *  only ones we trust as a true address coordinate. */
+  locationType?: string;
+};
+
+/**
+ * Geocode a free-text street address to lat/lng using the Google Geocoding
+ * API. Never throws — returns null on missing key, network/HTTP failure,
+ * non-OK status, or no usable result. Hard timeout via AbortController so
+ * the share flow can never stall on a slow geocode.
+ */
+export async function geocodeAddress(
+  address: string,
+): Promise<GeocodedAddress | null> {
+  const trimmed = (address ?? '').trim();
+  if (!trimmed) return null;
+  if (isDemoMode() || isMapPreviewMode()) return null;
+  const key = resolveApiKey();
+  if (!key) return null;
+
+  const params = new URLSearchParams({ address: trimmed, key });
+  const url = `${GEOCODE_BASE}?${params.toString()}`;
+
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), GEOCODE_TIMEOUT_MS);
+  let json: any;
+  try {
+    const res = await fetch(url, { signal: ctrl.signal });
+    if (!res.ok) return null;
+    json = await res.json();
+  } catch (err) {
+    if (__DEV__) console.debug('[share-geocode] fetch failed', (err as Error)?.message);
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+
+  const status: string = json?.status ?? 'UNKNOWN';
+  if (status !== 'OK') return null;
+  const raw: any[] = Array.isArray(json.results) ? json.results : [];
+  if (raw.length === 0) return null;
+  const first = raw[0];
+  const lat = first?.geometry?.location?.lat;
+  const lng = first?.geometry?.location?.lng;
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  return {
+    latitude: lat,
+    longitude: lng,
+    formattedAddress: typeof first.formatted_address === 'string' ? first.formatted_address : trimmed,
+    placeId: typeof first.place_id === 'string' ? first.place_id : undefined,
+    locationType:
+      typeof first.geometry?.location_type === 'string'
+        ? first.geometry.location_type
+        : undefined,
+  };
+}
+
+export type AddressVerification =
+  | {
+      status: 'verified';
+      candidate: PlaceCandidate;
+      geocoded: GeocodedAddress;
+      distanceMeters: number;
+    }
+  | {
+      status: 'ambiguous';
+      candidates: PlaceCandidate[];
+      geocoded: GeocodedAddress;
+    }
+  | {
+      status: 'failed';
+      reason:
+        | 'geocode_failed'
+        | 'no_candidates_near_address'
+        | 'name_mismatch'
+        | 'no_business_near_address';
+      geocoded: GeocodedAddress | null;
+    };
+
+/**
+ * Address-first verification gate. Geocodes the address, runs a Places
+ * text search biased to that exact point with a tight radius, filters to
+ * real businesses within ADDRESS_VERIFY_RADIUS_M of the geocoded point,
+ * and (when a place name was provided) enforces a strong name match
+ * before declaring a single candidate "verified".
+ *
+ * Decision matrix:
+ *   - Exactly one strong-name-match business within the radius → verified
+ *   - >1 strong-name candidates OR no name provided + >=1 nearby business
+ *     → ambiguous (caller should show the picker)
+ *   - Geocode failed                                          → failed (geocode_failed)
+ *   - Geocode ok, but no business within radius               → failed (no_business_near_address)
+ *   - Place name provided but no candidate matches it nearby  → failed (name_mismatch)
+ *
+ * Never throws. Caller is responsible for honoring the result — most
+ * importantly, "failed" must NOT silently save a random nearby place.
+ */
+export async function verifyPlaceAtAddress(
+  address: string,
+  optionalPlaceName: string | null,
+): Promise<AddressVerification> {
+  const geocoded = await geocodeAddress(address);
+  if (!geocoded) {
+    return { status: 'failed', reason: 'geocode_failed', geocoded: null };
+  }
+
+  if (isDemoMode() || isMapPreviewMode()) {
+    // No live Places lookup in demo/preview — degrade safely.
+    return { status: 'failed', reason: 'no_business_near_address', geocoded };
+  }
+
+  const key = resolveApiKey();
+  if (!key) {
+    return { status: 'failed', reason: 'no_business_near_address', geocoded };
+  }
+
+  // Bias to the geocoded point with a tight 200 m radius. Reuses the same
+  // textsearch endpoint the rest of this file uses (no new billing tier).
+  const query = (optionalPlaceName?.trim() || geocoded.formattedAddress || address).trim();
+  const params = new URLSearchParams({
+    query,
+    location: `${geocoded.latitude},${geocoded.longitude}`,
+    radius: '200',
+    key,
+  });
+  const url = `${BASE}/textsearch/json?${params.toString()}`;
+
+  let json: any;
+  try {
+    json = await safeFetch(url);
+  } catch (err) {
+    if (__DEV__) console.debug('[share-geocode] verify fetch failed', err);
+    return { status: 'failed', reason: 'no_business_near_address', geocoded };
+  }
+  const status: string = json?.status ?? 'UNKNOWN';
+  if (status !== 'OK' && status !== 'ZERO_RESULTS') {
+    return { status: 'failed', reason: 'no_business_near_address', geocoded };
+  }
+  const raw: any[] = Array.isArray(json.results) ? json.results : [];
+  const all = raw.map(toCandidateFromTextSearch);
+
+  // Keep only real businesses within the strict radius. Reject address-
+  // only and locality-only candidates outright — saving "Highland Park"
+  // or "355 S Atlantic Blvd" as the place name is never the goal.
+  const nearby = all.filter((c) => {
+    if (!Number.isFinite(c.latitude) || !Number.isFinite(c.longitude)) return false;
+    if (isAddressLikePlace(c)) return false;
+    if (isLocalityLikePlace(c)) return false;
+    const d = haversineMeters(geocoded.latitude, geocoded.longitude, c.latitude, c.longitude);
+    return d <= ADDRESS_VERIFY_RADIUS_M;
+  });
+
+  if (nearby.length === 0) {
+    return { status: 'failed', reason: 'no_business_near_address', geocoded };
+  }
+
+  if (optionalPlaceName && optionalPlaceName.trim()) {
+    const nameMatches = nearby.filter((c) => hasStrongNameMatch(c, optionalPlaceName));
+    if (nameMatches.length === 1) {
+      const distanceMeters = haversineMeters(
+        geocoded.latitude,
+        geocoded.longitude,
+        nameMatches[0].latitude,
+        nameMatches[0].longitude,
+      );
+      return { status: 'verified', candidate: nameMatches[0], geocoded, distanceMeters };
+    }
+    if (nameMatches.length > 1) {
+      return { status: 'ambiguous', candidates: nameMatches.slice(0, 5), geocoded };
+    }
+    // Name was specified but nothing nearby matches it.
+    return { status: 'failed', reason: 'name_mismatch', geocoded };
+  }
+
+  // No name provided. If exactly one business sits at the address, that's
+  // a clean address-only verification. Otherwise let the user pick.
+  if (nearby.length === 1) {
+    const distanceMeters = haversineMeters(
+      geocoded.latitude,
+      geocoded.longitude,
+      nearby[0].latitude,
+      nearby[0].longitude,
+    );
+    return { status: 'verified', candidate: nearby[0], geocoded, distanceMeters };
+  }
+  return { status: 'ambiguous', candidates: nearby.slice(0, 5), geocoded };
+}

@@ -1,22 +1,78 @@
 # Nearr — Project Context
 
-> Last updated: 2026-05-02
+> Last updated: 2026-05-03
 > Source of truth: current codebase
 
 Start here before changing product code. This file is the top-level reality check for what Nearr is, what is actually shipping, and what is still partial, disabled, deferred, or just scaffolding.
 
 ## What Nearr is
 
-Nearr is a mobile app for saving places you discover online, seeing them on a personal map, and optionally getting reminded when you are nearby.
+Nearr is a memory-to-action app for real-world places.
 
-Core loop:
+It should not feel like a generic map app. It should feel like: “I saw this place online, Nearr helped me remember it at the right moment, and now I can actually go.”
+
+Current shipping loop:
 
 - See a place online
 - Want to try it
 - Save it
-- See it on your map
-- Get reminded nearby
-- Go
+- Nearr remembers it
+- Nearr reminds you when you are nearby
+- Open the map / place details and decide what to do next
+
+## Current product rules
+
+- Wrong silent saves are worse than asking the user to choose.
+- Nearr should not ask for confirmation constantly.
+- Nearr should auto-save when evidence is strong.
+- Nearr should ask only when evidence is weak or conflicting.
+- Regular users should never pay and should never see traditional ads.
+- Monetization, if it exists later, should come from creators, restaurants, and businesses that benefit from real-world intent and attribution.
+
+## Current product state
+
+### Shipping now
+
+#### 1. Restaurant extraction v2
+
+- Extraction is evidence-based rather than handle-first.
+- Caption and description evidence wins first.
+- If a specific address is present, extraction treats it as the strongest signal.
+- If a restaurant name is found, the app tries to verify the exact place through Places.
+- `@` handles are treated as supporting evidence, not truth.
+- Poster identity distinguishes restaurant vs influencer vs unknown.
+- Weak or conflicting evidence falls back to candidate selection instead of silent save.
+
+#### 2. Grouped nearby notifications
+
+- When one saved place triggers, the app checks for other eligible saved places whose reminder circles overlap that trigger area.
+- One grouped notification is sent instead of multiple separate alerts.
+- Notification copy can say things like “You're near 3 saved places.”
+
+### Partial or environment-dependent
+
+- iOS share-extension silent save remains environment-dependent and still needs real-device verification.
+- Background reminder behavior and geofencing are implemented, but real-device reliability is still a validation task.
+
+### Future, not built yet
+
+- Dedicated opportunity screen after notification tap
+- Up to 3 opportunity decisions per place
+- Visited completion state with celebration
+- Archived state and Archive / Visited filters
+
+## Future ideas to log, not build yet
+
+- Adaptive ellipse/blob zones for overlapping saved places
+- More advanced cluster geometry beyond simple circle intersection
+- Audio transcription fallback for restaurant names
+- Tagged-account profile inspection
+- Restaurant/creator attribution dashboard
+- Archived/visited map visibility controls
+- Social/shared maps
+- Creator dashboards
+- Restaurant campaign reports
+- Monetization through restaurants, creators, and businesses rather than regular users
 
 Supported save entry points in the current app:
 
@@ -61,11 +117,14 @@ Supported save entry points in the current app:
 | Map dismissal behavior | shipping | Selected-place card can be dismissed by swipe down, map tap, or the X button. |
 | Marker callouts | shipping | Native marker callouts are intentionally not used for the UX; custom marker views and an in-app preview card are used instead. |
 | Map stability/perf fixes | shipping | Map logging is throttled and sync paths are coalesced to reduce event spam and idle memory pressure. |
-| Places tab filters | shipping | Filters: All, Recent, Nearby, Instagram, TikTok, Reminders on. |
+| Places tab filters | shipping | Filters: All, Recent, Nearby, Instagram, TikTok, Reminders on. Archive / Visited filters are not built yet. |
 | Place detail screen | shipping | Get directions, view original post/link, nearby reminder toggle, collapsed reminder settings, note, and low-emphasis remove. |
 | Notification permission setup | shipping | App shows setup reminders, can request notifications, and can send a test notification from Settings. |
-| Background proximity checks | shipping | Background location task plus one-shot foreground checks are implemented. Requires native build and real permissions. |
-| OS geofencing | shipping for beta testing | `NEARR_GEOFENCE_TASK` exists, syncs up to 20 saved places, and complements the background location watch rather than replacing it. |
+| Background proximity checks | shipping | Background location task plus one-shot foreground checks are implemented. Requires native build and real permissions, and still needs real-device validation for reliability claims. |
+| OS geofencing | shipping for beta testing | `NEARR_GEOFENCE_TASK` exists, syncs up to 20 saved places, and complements the background location watch rather than replacing it. Real-device validation still required. |
+| Restaurant extraction v2 | shipping | Evidence-based extraction prefers caption/address evidence, treats handles as evidence not truth, distinguishes influencer vs restaurant, and falls back to candidate selection when confidence is weak. |
+| Grouped nearby notifications | shipping | Overlapping saved-place reminder areas can collapse into one grouped nearby notification. |
+| Opportunity flow / visited / archive states | deferred | Not implemented in app routes, schema, or Places filters yet. |
 | Legal scaffolding | partial | Terms/privacy content, profile columns, modal, and settings display exist. Acceptance is currently disabled for beta via `LEGAL_ACCEPTANCE_REQUIRED = false`. |
 | Demo Mode | shipping | Full seeded mock mode. |
 | Map Preview Mode | shipping | Real map with seeded data and no location prompt. |
@@ -168,6 +227,8 @@ Practical limits:
 
 - iOS share extension silent save should still be treated as partially verified until a fresh native build is tested on-device.
 - `process-share-link` code exists, but deployment, secrets, and function URL are environment-specific.
+- Nearby notification grouping is implemented, but real-device reminder delivery still needs validation in native builds.
+- Opportunity screen, visited state, archived state, and archive/visited filters are not current beta features.
 - Transcription is not a shipping feature.
 - Legal acceptance is intentionally off for beta even though the scaffolding exists.
 

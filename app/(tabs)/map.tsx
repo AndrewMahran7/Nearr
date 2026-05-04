@@ -679,32 +679,37 @@ export default function MapScreen() {
         {/* Life360-style zone bubbles. Rendered as a separate pass before
             markers so marker pins always sit on top of their own circle.
             Stroke is intentionally darker than the fill so the boundary
-            reads clearly on satellite, dark, and light map tiles alike. */}
+            reads clearly on satellite, dark, and light map tiles alike.
+            Archived places are rendered without a radius circle to keep
+            the active set visually quiet. */}
         {validPlaces.map((p) => (
-          <Circle
-            key={`circle-${p.id}`}
-            center={{
-              latitude: p.place.latitude,
-              longitude: p.place.longitude,
-            }}
-            radius={effectiveRadiusMeters(p, profile)}
-            strokeColor={
-              selected?.id === p.id
-                ? 'rgba(255,106,26,0.52)'
-                : 'rgba(255,106,26,0.14)'
-            }
-            strokeWidth={selected?.id === p.id ? 2 : 1}
-            fillColor={
-              selected?.id === p.id
-                ? 'rgba(255,106,26,0.12)'
-                : 'rgba(255,106,26,0.035)'
-            }
-          />
+          p.archived_at ? null : (
+            <Circle
+              key={`circle-${p.id}`}
+              center={{
+                latitude: p.place.latitude,
+                longitude: p.place.longitude,
+              }}
+              radius={effectiveRadiusMeters(p, profile)}
+              strokeColor={
+                selected?.id === p.id
+                  ? 'rgba(255,106,26,0.52)'
+                  : 'rgba(255,106,26,0.14)'
+              }
+              strokeWidth={selected?.id === p.id ? 2 : 1}
+              fillColor={
+                selected?.id === p.id
+                  ? 'rgba(255,106,26,0.12)'
+                  : 'rgba(255,106,26,0.035)'
+              }
+            />
+          )
         ))}
         {validPlaces.map((p) => (
           <Marker
             key={p.id}
             identifier={p.id}
+            opacity={p.archived_at || p.visited_at ? 0.45 : 1}
             ref={(ref) => {
               markerRefs.current[p.id] = ref;
             }}

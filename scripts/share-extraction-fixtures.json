@@ -252,6 +252,7 @@
       "sourceType": "instagram"
     },
     "expectedQuery": "",
+    "expectedAutoSave": false,
     "_comment": "No restaurant name in caption. Handle @hungryjackie gives no bio or address evidence. Expected: no save."
   },
   {
@@ -274,7 +275,8 @@
       "sourceType": "instagram"
     },
     "expectedQuery": "Joe's Pizza New York",
-    "_comment": "Caption has restaurant name + street address. AI should extract Joe's Pizza New York with high confidence."
+    "expectedAutoSave": true,
+    "_comment": "Caption has restaurant name + street address. AI should extract Joe's Pizza New York with high confidence. Address-in-caption is the strongest auto-save signal and must beat any device location bias."
   },
   {
     "name": "multiple-handles-only-one-restaurant",
@@ -296,6 +298,7 @@
       "sourceType": "instagram"
     },
     "expectedQuery": "",
+    "expectedAutoSave": false,
     "_comment": "No restaurant name, no handle, no location. Both heuristic and AI should return empty / low confidence."
   },
   {
@@ -329,6 +332,7 @@
       "sourceType": "instagram"
     },
     "expectedQuery": "No Good Burger Joint NY",
+    "expectedAutoSave": false,
     "_comment": "This mirrors the reported reel pattern: generic reel text plus poster account identity but no proven address/city in shared metadata. Query may use account identity for search, but host and edge flows must not silently save a random San Jose/Santa Cruz candidate."
   },
   {
@@ -340,6 +344,7 @@
       "sourceType": "instagram"
     },
     "expectedQuery": "",
+    "expectedAutoSave": false,
     "_comment": "Handle @madyolkskitchen looks like a restaurant name but no caption names the restaurant explicitly, no address, and no bio enrichment. Handle text alone must NOT be used as a Places query. Expected: no query, manual fallback."
   },
   {
@@ -351,6 +356,7 @@
       "sourceType": "instagram"
     },
     "expectedQuery": "",
+    "expectedAutoSave": false,
     "_comment": "No place name, no address, no account identity. The pipeline should stay weak and require chooser/manual fallback instead of generating a random Places query."
   },
   {
@@ -363,5 +369,41 @@
     },
     "expectedQuery": "Mad Yolks",
     "_comment": "Both @mad_yolks (poster) and @sqirlla (tagged) may have restaurant bio evidence. Caption mentions both but does not clearly name one as primary. Poster bio evidence is preferred. If both queries produce results, return ambiguous for user confirmation, not silent save."
+  },
+  {
+    "name": "address-with-restaurant-name-allows-autosave",
+    "input": {
+      "title": "Best burger in the city @nogoodburgerjoint",
+      "description": "No Good Burger Joint, 25 Cleveland Pl, New York, NY 10012 — go now! #nyc #burgers",
+      "url": "https://www.instagram.com/reel/Caddr_full_01/",
+      "sourceType": "instagram"
+    },
+    "expectedQuery": "No Good Burger Joint New York",
+    "expectedAutoSave": true,
+    "_comment": "Caption contains both an explicit restaurant name and a full street address. Pipeline must allow auto-save (caller verifies via geocodeAddress + verifyPlaceAtAddress before silent-save). Eval asserts pipeline-level autoSaveAllowed=true; the Places/Geocoding round-trip is enforced at runtime, not in CI."
+  },
+  {
+    "name": "address-only-no-name-allows-autosave-pipeline-defers-to-verifier",
+    "input": {
+      "title": "going here this weekend",
+      "description": "📍 25 Cleveland Pl, New York, NY 10012",
+      "url": "https://www.instagram.com/reel/Caddr_only_02/",
+      "sourceType": "instagram"
+    },
+    "expectedQuery": "25 Cleveland Pl New York",
+    "expectedAutoSave": true,
+    "_comment": "Address-only signal: pipeline marks autoSaveAllowed=true with the explicit understanding that the caller (host app + Edge Function) MUST run verifyPlaceAtAddress before actually silent-saving. If the geocode resolves to a single business at that point, save it; if multiple businesses sit at the address, surface the picker; if none, fall back to manual. Eval here only asserts the pipeline contract."
+  },
+  {
+    "name": "ny-address-with-noisy-caption-must-not-trigger-device-bias",
+    "input": {
+      "title": "the best slice ever",
+      "description": "Joe's Pizza, 7 Carmine St, New York, NY 10014 — go #pizza #nyc",
+      "url": "https://www.instagram.com/reel/Caddr_ny_03/",
+      "sourceType": "instagram"
+    },
+    "expectedQuery": "Joe's Pizza New York",
+    "expectedAutoSave": true,
+    "_comment": "Even if the device is in CA, this share's NY address must drive the silent-save target. Pipeline-level: autoSaveAllowed=true with name+address present. Runtime: verifyPlaceAtAddress geocodes 7 Carmine St → NYC rooftop → Places nearby search at that point → Joe's Pizza within 150m → silent save. Device location must NEVER override this."
   }
 ]

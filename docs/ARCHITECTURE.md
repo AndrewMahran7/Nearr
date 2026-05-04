@@ -1,9 +1,9 @@
 # Nearr — Architecture
 
-> Last updated: 2026-05-02
+> Last updated: 2026-05-03
 > Source of truth: current codebase
 
-This document describes the current data and control flow for auth, save flows, map focus, notifications, geofencing, and sharing.
+This document describes the current data and control flow for auth, save flows, extraction, map focus, notifications, geofencing, and sharing.
 
 ## App shell
 
@@ -58,15 +58,31 @@ This path is not limited to `__DEV__`; the email gate is the product gate.
 
 1. User pastes a URL or arrives on [app/share.tsx](../app/share.tsx) with `?url=`.
 2. `parseShare()` extracts platform/source metadata.
-3. `extractPlaceQueryFromShareMetadata()` produces the local heuristic query.
-4. `extractPlaceAI()` runs as best-effort helper but is low-confidence fallback on device.
-5. `searchPlaces()` runs with post/location bias.
-6. Address-like and multi-location results are re-ranked or resolved.
-7. App either:
+3. The extraction pipeline combines local heuristics plus structured AI evidence when available.
+4. Evidence priority is address-first, then explicit place name, then corroborated handle/poster evidence.
+5. Poster identity is classified as restaurant vs influencer vs unknown so creator accounts are not treated as venue truth by default.
+6. `@` handles are treated as evidence, not truth.
+7. `searchPlaces()` runs with post/location bias.
+8. Address-like and multi-location results are re-ranked or resolved.
+9. App either:
    - auto-saves a confident result, or
    - shows a candidate picker, or
    - falls back to manual search input
-8. Save success routes to focused map with `savedPlaceId`.
+10. Save success routes to focused map with `savedPlaceId`.
+
+### Extraction v2 behavior
+
+Current extraction behavior is intentionally conservative:
+
+- address evidence outranks social-handle evidence
+- exact restaurant-name verification goes through Places
+- influencer posts can still produce a confident save when the restaurant is corroborated elsewhere in the content
+- weak or conflicting evidence falls back to candidate selection rather than silent save
+
+Not currently built:
+
+- audio transcription fallback in runtime
+- tagged-account profile inspection beyond the immediate extracted metadata
 
 ### Android share intent
 
@@ -180,7 +196,38 @@ Persistence side effects:
 - local notification scheduling
 - `saved_places.last_notified_at`
 - `saved_places.notification_count`
+- `saved_places.reminder_opportunity_count` (incremented atomically via the `bump_reminder_opportunity_count` SQL function on every successful delivery, including each member of a grouped notification)
 - `notification_events` insert
+
+## Nearby-opportunity flow
+
+When the user taps the body of a nearby reminder (default tap, not an action button), `app/_layout.tsx` routes to `/opportunity/[id]` with the `savedPlaceId` from the notification payload. Cold-start handling uses `Notifications.getLastNotificationResponseAsync()`; warm-start handling uses `Notifications.addNotificationResponseReceivedListener()`.
+
+The opportunity screen (`app/opportunity/[id].tsx`) reads `reminder_opportunity_count` and shows `Opportunity N of 3` with copy that varies by N. Four actions:
+
+1. Get directions — opens external maps via `openExternalMaps`. Tracks `opportunity_get_directions_tapped`.
+2. I went here — calls `markVisited`, plays a lightweight checkmark animation built on the existing `Animated` API (no new dependency), then closes. Tracks `opportunity_visited_tapped` and `place_marked_visited`.
+3. Adjust reminder radius — routes to `/place/[id]`. Tracks `opportunity_adjust_radius_tapped`.
+4. Maybe next time — closes. If `reminder_opportunity_count >= 3` it also calls `markArchived(id, { exhausted: true })`, stamping `reminders_exhausted_at`. Tracks `opportunity_maybe_next_time_tapped` and (when applicable) `opportunity_archived_after_3`.
+
+`markVisited` and `markArchived` both set `notifications_enabled = false` so the next geofence resync drops the region. `unarchive` clears `archived_at` and `reminders_exhausted_at` but does NOT re-enable notifications — the user opts back in from the place detail screen.
+
+The Active filter on the Places tab is the new default; it hides any row with `archived_at` or `visited_at` set. Visited and Archived filters surface those rows; the Archived filter exposes a Restore action on each card. On the map, archived places render their marker at lower opacity with no radius circle to keep the active set visually quiet.
+
+Current grouping behavior:
+
+- When one saved place triggers, the app uses that place's effective radius as the trigger circle.
+- Other eligible saved places are grouped into the same notification when their own effective-radius circles intersect that trigger circle.
+- Group cooldown is keyed in app memory from the sorted included `saved_place` ids.
+- Grouping changes notification copy and persistence updates, but it does not create a separate opportunity route or archive state yet.
+- Adaptive ellipse/blob zones are intentionally deferred as future work.
+
+Not yet built:
+
+- notification tap -> dedicated opportunity screen
+- visited completion state
+- archived reminder exhaustion state
+- archive / visited list filters
 
 ## Geofencing
 
@@ -244,3 +291,4 @@ Important status distinction:
 - Geofencing should be validated only on real devices.
 - iOS share extension requires a native build and correct App Group/provisioning.
 - Android share intent requires a native build with the patched MainActivity.
+- Grouped-notification delivery is implemented in code, but reminder reliability claims still require native real-device testing.

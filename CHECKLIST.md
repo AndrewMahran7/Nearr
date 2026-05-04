@@ -49,6 +49,63 @@ Examples:
 - Places filters built in Stage 0 do not mean decision-layer behavior exists.
 - Dark UI built in Stage 0 does not mean retention is solved.
 
+## 2026-05-03 PRODUCT STATUS UPDATE
+
+### Current product vision
+
+Nearr is a memory-to-action app for real-world places.
+
+Core loop:
+
+- See a place online
+- Want to try it
+- Save it
+- Nearr remembers it
+- Nearr reminds you when you are nearby
+- You open the saved place on the map and decide what to do next
+
+The product should not feel like a generic map app. It should feel like: “I saw this place online, Nearr helped me remember it at the right moment, and now I can actually go.”
+
+### Product rules
+
+- Wrong silent saves are worse than asking the user to choose.
+- Nearr should not ask for confirmation constantly.
+- Auto-save when evidence is strong.
+- Ask only when evidence is weak or conflicting.
+- Regular users should never pay and should never see traditional ads.
+- Later monetization should come from creators, restaurants, and businesses that benefit from real-world intent and attribution.
+
+### Shipping now
+
+- Restaurant extraction v2: evidence-based extraction, address-first bias, exact-name verification through Places, careful poster identity reading, and candidate-picker fallback when evidence is weak.
+- `@` handles are treated as evidence, not truth. Influencer vs restaurant distinction is part of the extraction decision.
+- Nearby reminders group overlapping saved-place zones into one notification instead of sending separate alerts.
+
+### Partial or still needing validation
+
+- Native iOS share-extension silent save still needs real-device verification in the current environment.
+- Background reminder reliability and geofencing still need real-device validation; do not treat simulator or Expo Go behavior as proof.
+
+### Future, not built yet
+
+- Nearby opportunity screen after notification tap
+- Visited completion state
+- Archived state after missed opportunities
+- Archive / Visited filters in Places
+
+### Future ideas to log, not build yet
+
+- Adaptive ellipse/blob zones for overlapping saved places
+- More advanced cluster geometry beyond simple circle intersection
+- Audio transcription fallback for restaurant names
+- Tagged-account profile inspection
+- Restaurant / creator attribution dashboard
+- Archived / visited map visibility controls
+- Social maps
+- Creator dashboards
+- Restaurant campaign reports
+- Monetization through restaurants, creators, and businesses, not regular users
+
 ---
 
 # 🔥 STAGE 0 — FOUNDATION (v1 BETA)
