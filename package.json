@@ -9,7 +9,11 @@
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
     "postinstall": "patch-package",
-    "eval:share-extraction": "ts-node --project scripts/tsconfig.json scripts/evalShareExtraction.ts"
+    "eval:share-extraction": "ts-node --project scripts/tsconfig.json scripts/evalShareExtraction.ts",
+    "eval:share-agent-shadow": "ts-node --project scripts/tsconfig.json scripts/evalShareAgentShadow.ts",
+    "test:address-match": "ts-node -P scripts/tsconfig.json scripts/testAddressMatch.ts",
+    "test:safety-description-only": "ts-node -P scripts/tsconfig.json scripts/testSafetyDescriptionOnly.ts",
+    "test:share-remote": "ts-node -P scripts/tsconfig.json scripts/testProcessShareLinkRemote.ts"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "1.23.1",
