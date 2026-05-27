@@ -38,6 +38,7 @@ import {
   DevModeBanner,
   EmptyState,
   HowNearrWorksModal,
+  OfflineBanner,
   SavedPlaceCard,
   Screen,
 } from '@/components';
@@ -86,7 +87,7 @@ export default function Home() {
   const { user, isLocalUiSession } = useAuth();
   const { colors, typography } = useTheme();
   const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
-  const { data, loading, refreshing, error, refresh } = useSavedPlaces();
+  const { data, loading, refreshing, error, offline, lastSyncedAt, refresh } = useSavedPlaces();
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [howNearrWorksVisible, setHowNearrWorksVisible] = useState(false);
@@ -242,15 +243,24 @@ export default function Home() {
   }
 
   if (error && data.length === 0) {
+    const offlineNoCache = offline;
     return (
       <Screen>
         <View style={styles.content}>
           <Text style={[typography.title, styles.greeting]}>{greeting(user?.email)}</Text>
-          <Text style={[typography.body, styles.sub]}>We couldn&apos;t load your dashboard yet.</Text>
+          <Text style={[typography.body, styles.sub]}>
+            {offlineNoCache
+              ? 'You\u2019re offline and we don\u2019t have anything cached on this device yet.'
+              : 'We couldn\u2019t load your dashboard yet.'}
+          </Text>
           <EmptyState
             variant="error"
-            title={'Couldn\u2019t load your places'}
-            body={error}
+            title={offlineNoCache ? 'You\u2019re offline' : 'Couldn\u2019t load your places'}
+            body={
+              offlineNoCache
+                ? 'Reconnect to the internet and pull to refresh \u2014 your saved places will appear here.'
+                : error
+            }
             actionTitle="Try again"
             onAction={refresh}
           />
@@ -278,6 +288,7 @@ export default function Home() {
       >
         <DevModeBanner visible={isLocalUiSession} />
         <DemoModeBanner />
+        <OfflineBanner visible={offline} lastSyncedAt={lastSyncedAt} />
 
         <View style={styles.hero}>
           <Text style={[typography.title, styles.greeting]}>{greeting(user?.email)}</Text>

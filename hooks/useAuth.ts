@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { DEMO_USER, isDemoMode } from '@/lib/demoMode';
+import { logDebug, logError } from '@/lib/logger';
 import {
   DEV_USER,
   isDevAuthEnabled,
@@ -73,29 +74,48 @@ export function useAuth() {
         mounted = false;
       };
     }
-    console.log('[AUTH_INIT_START] loading session');
+    logDebug('useAuth', 'AUTH_INIT_START loading session');
+    // Safety timeout: if Supabase getSession() never resolves (rare network
+    // edge case where the JS promise hangs because the underlying fetch
+    // never settles) we still want to clear `loading` so AuthGate can
+    // route the user to the sign-in screen instead of leaving them on a
+    // blank Home / loading view forever. 8s is well past a normal cold
+    // start; anything beyond it is effectively offline.
+    const AUTH_INIT_TIMEOUT_MS = 8000;
+    const timeout = setTimeout(() => {
+      if (!mounted) return;
+      logError('useAuth', 'AUTH_INIT_TIMEOUT — forcing signed-out state', {
+        timeoutMs: AUTH_INIT_TIMEOUT_MS,
+      });
+      console.warn('[onboarding] stuck_state_recovered auth_init_timeout');
+      setSession(null);
+      setLoading(false);
+    }, AUTH_INIT_TIMEOUT_MS);
     Promise.all([supabase.auth.getSession(), loadDevAuth()]).then(
       ([{ data }, dev]) => {
         if (!mounted) return;
-        console.log('[AUTH_INIT_SUCCESS] session present=', !!data.session);
+        clearTimeout(timeout);
+        logDebug('useAuth', 'AUTH_INIT_SUCCESS', { hasSession: !!data.session });
         setSession(data.session);
         setDevEnabled(dev);
         setLoading(false);
       },
     ).catch((err) => {
       if (!mounted) return;
-      console.error('[AUTH_INIT_FAIL]', err instanceof Error ? err.message : err);
+      clearTimeout(timeout);
+      logError('useAuth', 'AUTH_INIT_FAIL', err instanceof Error ? err.message : err);
       // Fail safe: treat as signed-out so AuthGate can route to sign-in.
       setSession(null);
       setLoading(false);
     });
     const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
-      console.log('[useAuth] onAuthStateChange', event, 'hasSession=', !!s);
+      logDebug('useAuth', 'onAuthStateChange', { event, hasSession: !!s });
       setSession(s);
     });
     const unsubDev = subscribeDevAuth(setDevEnabled);
     return () => {
       mounted = false;
+      clearTimeout(timeout);
       sub.subscription.unsubscribe();
       unsubDev();
     };
@@ -121,16 +141,14 @@ export function useAuth() {
   // Temporarily verbose so we can confirm sign-out routes back to sign-in
   // and that demo / map-preview / local-UI flags do NOT silently log the
   // user back in. Safe to remove once verified in QA.
-  if (__DEV__) {
-    console.log('[useAuth] state', {
-      realSessionExists: !!session,
-      demoMode: demo,
-      mapPreviewMode: 'screen-scoped (does not affect auth)',
-      localUiAllowed: ALLOW_LOCAL_UI_MODE,
-      localUiEnabled: devEnabled,
-      finalAuthState: effectiveSession ? 'authenticated' : 'unauthenticated',
-    });
-  }
+  logDebug('useAuth', 'state', {
+    realSessionExists: !!session,
+    demoMode: demo,
+    mapPreviewMode: 'screen-scoped (does not affect auth)',
+    localUiAllowed: ALLOW_LOCAL_UI_MODE,
+    localUiEnabled: devEnabled,
+    finalAuthState: effectiveSession ? 'authenticated' : 'unauthenticated',
+  });
 
 
   return {

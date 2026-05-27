@@ -61,6 +61,12 @@ module.exports = ({ config }) => {
       supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL || '',
       supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '',
       googlePlacesKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY || '',
+      // 2026-05-26: surface PROCESS_SHARE_LINK_URL in extra too. The iOS
+      // share extension and lib/shareExtractionBackend.ts both fall back
+      // to Constants.expoConfig.extra.processShareLinkUrl when the env
+      // var was not inlined at build time (EAS builds without
+      // `eas env:create EXPO_PUBLIC_PROCESS_SHARE_LINK_URL ...`).
+      processShareLinkUrl: process.env.EXPO_PUBLIC_PROCESS_SHARE_LINK_URL || '',
     },
   };
 };

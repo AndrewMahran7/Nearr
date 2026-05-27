@@ -54,6 +54,7 @@ import type {
   ExtractionProposal,
   SafetyDecision,
 } from './types.ts';
+import { compactNameMatches, isWrongLocationCandidate } from './recoveryHints.ts';
 
 const STRONG_EVIDENCE: ReadonlySet<EvidenceKey> = new Set<EvidenceKey>([
   'caption_explicit_venue',
@@ -101,6 +102,20 @@ export type SafetyContext = {
    * address. Pass `null` when the proposal had no address to compare.
    */
   resolvedPlaceAddressMatchesProposal?: boolean | null;
+  /**
+   * 2026-05-27 — Patch 9 (wrong-location guard). The resolved
+   * place's formatted address (verbatim from Places), so safety
+   * can confirm it sits in the caption's inferred US state /
+   * country. Pass null when no place was resolved.
+   */
+  resolvedFormattedAddress?: string | null;
+  /**
+   * 2026-05-27 — Patch 9 (wrong-location guard). Two-letter US
+   * state code (uppercase) inferred from caption text — typically
+   * `extractCityStateContext(text).state` or the state pulled from
+   * an extracted street address. Pass null when unknown.
+   */
+  expectedState?: string | null;
 };
 
 const AUTOSAVE_TOP_SCORE_FLOOR = 0.75;
@@ -214,12 +229,53 @@ export function evaluateSafety(
     reasons.push('profile_fetch_blocked_superseded_by_strong_description');
   }
 
+  // 2026-05-27 — Patch 9 (wrong-location guard): if the resolved
+  // place is in a different country / US state than the caption's
+  // address context, the candidate is unsafe to surface (let alone
+  // auto-save). Recorded as a reason and used to block both
+  // auto_save AND the plausible-candidate upgrade below.
+  const wrongLocation = isWrongLocationCandidate(
+    context.resolvedFormattedAddress ?? null,
+    context.expectedState ?? proposal.state ?? null,
+  );
+  if (wrongLocation) reasons.push('candidate_wrong_location');
+
+  // 2026-05-27 — Patch 10 (auto_save tightening): explicit street
+  // address evidence is now required. Posts with only name+city
+  // signal (e.g. "Tacos El Chuy" + Santa Cruz hashtag) must reach
+  // the user as candidate_confirmation, never silent-save.
+  const hasExplicitAddress = evidenceSet.has('caption_explicit_address');
+  if (
+    proposal.decision === 'auto_save' &&
+    !hasExplicitAddress &&
+    !reasons.includes('autosave_requires_explicit_address')
+  ) {
+    reasons.push('autosave_requires_explicit_address');
+  }
+
+  // 2026-05-27 — Patch 13 (multi-branch auto_save block).
+  //
+  // Auto-save must NEVER fire when Places returned two or more
+  // candidates whose normalized names match (e.g. multiple
+  // "Taqueria Los Pericos" branches at different addresses) AND
+  // the runner-up score is non-trivial (>= 0.5). Without a full
+  // address in the caption we cannot pick the right branch; that
+  // decision belongs to the user via candidate_confirmation.
+  const sameBrandRunnerUp =
+    typeof context.secondMatchScore === 'number' &&
+    context.secondMatchScore >= 0.5 &&
+    multipleSameBrandCandidates(proposal);
+  if (sameBrandRunnerUp) reasons.push('multiple_same_brand_candidates');
+
   // ---- Decision ------------------------------------------------------
   const eligibleForAutoSave =
     proposal.decision === 'auto_save' &&
     proposal.confidence === 'high' &&
     accepted.length > 0 &&
     hasPlacesStrong &&
+    hasExplicitAddress &&
+    !wrongLocation &&
+    !sameBrandRunnerUp &&
     !placesProblem &&
     !ambiguous &&
     !nameMismatch &&
@@ -302,6 +358,46 @@ export function evaluateSafety(
     safeToAutoSave = false;
   }
 
+  // 2026-05-27 — Patch 11 (plausible-candidate upgrade).
+  //
+  // Manual fallback is a poor user experience — it asks the user to
+  // type a search query from scratch. When the backend has
+  // ALREADY located a plausible Google Places candidate (either via
+  // the synchronous agent path or the timeout-recovery path), we
+  // should surface it as `candidate_confirmation` so the user can
+  // confirm or pick an alternative, instead of starting over.
+  //
+  // Plausibility rules (ALL must hold to upgrade):
+  //   - decision is currently `manual_fallback`
+  //   - we have at least one candidate with a real Place ID, OR a
+  //     resolved place from this run
+  //   - the candidate name compactly matches the proposal's place
+  //     name (or the safety context already verified the match)
+  //   - we are NOT blocked by wrong-location
+  //   - the post is NOT pure generic content without ANY explicit
+  //     anchor — if generic_content evidence is set BUT the caption
+  //     also carried an explicit venue or street address (i.e. it's
+  //     actually a single-place post that just happens to read like
+  //     food porn), the plausible candidate IS surfaceable.
+  //   - handle_only stays a block UNLESS Places returned a strong
+  //     match for that handle (the strong external match is itself
+  //     trustworthy evidence the handle resolves to a real venue).
+  const genericBlocksUpgrade =
+    hasGeneric && !hasStrongCaptionEvidence;
+  const handleOnlyBlocksUpgrade = handleOnly && !hasPlacesStrong;
+  if (
+    decision === 'manual_fallback' &&
+    !wrongLocation &&
+    !genericBlocksUpgrade &&
+    !handleOnlyBlocksUpgrade
+  ) {
+    const plausibleCandidate = pickPlausibleCandidate(proposal, context);
+    if (plausibleCandidate) {
+      decision = 'candidate_confirmation';
+      reasons.push('manual_fallback_upgraded_plausible_candidate');
+    }
+  }
+
   return {
     decision,
     safeToAutoSave,
@@ -309,6 +405,76 @@ export function evaluateSafety(
     acceptedEvidence: accepted,
     rejectedEvidence: rejected,
   };
+}
+
+/**
+ * 2026-05-27 — Patch 11 helper.
+ *
+ * Returns the first proposal candidate whose name compactly matches
+ * the proposal's place name (i.e. is a plausible same-business
+ * match), or null when no such candidate exists. Also accepts the
+ * safety context's resolved-name flag as positive evidence when set.
+ *
+ * Stub candidates produced by Gemini (`googlePlaceId === name`) are
+ * skipped — they would surface as broken Place cards on the client.
+ */
+/**
+ * 2026-05-27 — Patch 13 helper.
+ *
+ * True when proposal.candidates contains 2+ entries whose compact
+ * normalized names are equal — i.e. the same brand at different
+ * addresses (e.g. "Taqueria Los Pericos" in Santa Cruz AND Aptos).
+ */
+function multipleSameBrandCandidates(proposal: ExtractionProposal): boolean {
+  const candidates = proposal.candidates ?? [];
+  if (candidates.length < 2) return false;
+  const normalize = (value: string | null | undefined): string =>
+    (value ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const seen = new Map<string, number>();
+  for (const candidate of candidates) {
+    const key = normalize(candidate.name);
+    if (!key) continue;
+    seen.set(key, (seen.get(key) ?? 0) + 1);
+    if ((seen.get(key) ?? 0) >= 2) return true;
+  }
+  return false;
+}
+
+function pickPlausibleCandidate(
+  proposal: ExtractionProposal,
+  context: SafetyContext,
+): { googlePlaceId: string; name: string } | null {
+  const placeName = (proposal.placeName ?? '').trim();
+  if (
+    context.resolvedPlaceNameMatchesProposal === true &&
+    context.resolvedPlaceFromThisRun === true
+  ) {
+    // The agent already verified the resolved place matches the
+    // proposal — the upgrade is unambiguously safe.
+    return { googlePlaceId: 'context-verified', name: placeName || 'resolved_place' };
+  }
+  const evidenceSet = new Set(proposal.evidenceUsed ?? []);
+  const hasAddressAnchor = evidenceSet.has('caption_explicit_address');
+  let firstRealCandidate: { googlePlaceId: string; name: string } | null = null;
+  for (const candidate of proposal.candidates ?? []) {
+    const id = (candidate.googlePlaceId ?? '').trim();
+    const name = (candidate.name ?? '').trim();
+    if (!id || !name) continue;
+    // Skip Gemini stubs whose Place ID is just the name echoed back.
+    if (id.toLowerCase() === name.toLowerCase()) continue;
+    if (!firstRealCandidate) firstRealCandidate = { googlePlaceId: id, name };
+    if (placeName && compactNameMatches(placeName, name)) {
+      return { googlePlaceId: id, name };
+    }
+  }
+  // 2026-05-27 — Patch 11b: when the post had an explicit street
+  // address in the caption AND Places returned a real candidate
+  // (even one Gemini didn't strictly name-match), it is much better
+  // UX to surface that candidate for confirmation than to dump the
+  // user into manual search. The address anchor is the strong
+  // evidence — the user can confirm or pick an alternative.
+  if (hasAddressAnchor && firstRealCandidate) return firstRealCandidate;
+  return null;
 }
 
 function pickDowngradedDecision(args: {

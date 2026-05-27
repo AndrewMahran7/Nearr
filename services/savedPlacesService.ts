@@ -19,9 +19,16 @@
 
 import { supabase } from '@/lib/supabase';
 import { isDemoMode } from '@/lib/demoMode';
+import { logDebug } from '@/lib/logger';
 import { isMapPreviewMode } from '@/lib/mapPreview';
 import { triggerGeofenceResync } from '@/lib/geofencing';
 import { distanceMeters } from '@/lib/geo';
+import {
+  isLikelyOfflineError,
+  OfflineMutationError,
+  readSavedPlaceFromCache,
+  writeSavedPlacesCache,
+} from '@/lib/savedPlacesCache';
 import {
   deleteDemoSavedPlace,
   getDemoSavedPlace,
@@ -207,7 +214,7 @@ export async function saveSavedPlace(
   if (isDemoMode()) return await saveDemoSavedPlace(input);
   const { candidate, radiusValue, radiusUnit } = input;
 
-  console.log('[savedPlacesService] saving', {
+  logDebug('savedPlacesService', 'saving', {
     googlePlaceId: candidate.googlePlaceId,
     name: candidate.name,
     radiusValue,
@@ -413,10 +420,10 @@ export async function listSavedPlaces(): Promise<SavedPlaceWithPlace[]> {
   // Never log the actual token — only booleans.
   const { data: sessionData } = await supabase.auth.getSession();
   const sessionUserId = sessionData.session?.user?.id;
-  console.log(
-    '[savedPlacesService] listSavedPlaces start, sessionPresent=', !!sessionData.session,
-    'userIdPresent=', !!sessionUserId,
-  );
+  logDebug('savedPlacesService', 'listSavedPlaces start', {
+    sessionPresent: !!sessionData.session,
+    userIdPresent: !!sessionUserId,
+  });
 
   const { data, error } = await supabase
     .from('saved_places')
@@ -432,25 +439,51 @@ export async function listSavedPlaces(): Promise<SavedPlaceWithPlace[]> {
     );
     throw new Error(error.message);
   }
-  console.log('[savedPlacesService] listSavedPlaces done, count=', (data ?? []).length);
-  return (data ?? []) as SavedPlaceWithPlace[];
+  logDebug('savedPlacesService', 'listSavedPlaces done', { count: (data ?? []).length });
+  const rows = (data ?? []) as SavedPlaceWithPlace[];
+  // Refresh the offline cache on every successful list. The hook
+  // (`useSavedPlaces`) also writes the cache, but doing it here covers any
+  // service caller that bypasses the hook (future code, scripts).
+  if (sessionUserId) void writeSavedPlacesCache(sessionUserId, rows);
+  return rows;
 }
 
-/** Fetch a single saved place by its `saved_places.id`. */
+/**
+ * Fetch a single saved place by its `saved_places.id`.
+ *
+ * Offline behaviour (Stage 0 read-only cache): if the network fetch fails
+ * with a likely-offline error AND the row is present in the cache written
+ * by `listSavedPlaces`, we return the cached copy so the detail screen
+ * still renders. Cached data may be stale; mutations remain blocked.
+ */
 export async function getSavedPlace(id: string): Promise<SavedPlaceWithPlace | null> {
   if (isDemoMode()) return await getDemoSavedPlace(id);
   if (isMapPreviewMode()) return await getDemoSavedPlace(id);
-  const { data, error } = await supabase
-    .from('saved_places')
-    .select('*, place:places(*)')
-    .eq('id', id)
-    .maybeSingle();
+  try {
+    const { data, error } = await supabase
+      .from('saved_places')
+      .select('*, place:places(*)')
+      .eq('id', id)
+      .maybeSingle();
 
-  if (error) {
-    console.warn('[savedPlacesService] get failed', error.message);
-    throw new Error(error.message);
+    if (error) {
+      console.warn('[savedPlacesService] get failed', error.message);
+      // Wrap network-y errors so the cache-fallback branch below runs.
+      if (isLikelyOfflineError(error)) throw new Error(error.message);
+      throw new Error(error.message);
+    }
+    return (data as SavedPlaceWithPlace | null) ?? null;
+  } catch (err) {
+    if (!isLikelyOfflineError(err)) throw err;
+    const { data: sessionData } = await supabase.auth.getSession();
+    const sessionUserId = sessionData.session?.user?.id ?? null;
+    const cached = await readSavedPlaceFromCache(sessionUserId, id);
+    if (cached) {
+      console.log('[offline] using_cached_saved_places id=', id);
+      return cached;
+    }
+    throw err;
   }
-  return (data as SavedPlaceWithPlace | null) ?? null;
 }
 
 export type SavedPlacePatch = {
@@ -460,13 +493,34 @@ export type SavedPlacePatch = {
   notes?: string | null;
 };
 
+/**
+ * Convert a likely-offline error from a saved-place mutation into the
+ * typed `OfflineMutationError` the UI knows how to display. Re-throws
+ * any other error untouched.
+ *
+ * Action label is used both in the friendly message and the log line so
+ * we can confirm in support traces which surface tried to write while
+ * offline.
+ */
+function rethrowMutationError(action: string, err: unknown): never {
+  if (isLikelyOfflineError(err)) {
+    console.log(`[offline] network_action_blocked action=${action}`);
+    throw new OfflineMutationError();
+  }
+  throw err instanceof Error ? err : new Error(String(err));
+}
+
 export async function updateSavedPlace(id: string, patch: SavedPlacePatch): Promise<void> {
   if (isDemoMode()) return await updateDemoSavedPlace(id, patch);
   console.log('[savedPlacesService] update', id, patch);
-  const { error } = await supabase.from('saved_places').update(patch).eq('id', id);
-  if (error) {
-    console.warn('[savedPlacesService] update failed', error.message);
-    throw new Error(error.message);
+  try {
+    const { error } = await supabase.from('saved_places').update(patch).eq('id', id);
+    if (error) {
+      console.warn('[savedPlacesService] update failed', error.message);
+      rethrowMutationError('update', error);
+    }
+  } catch (err) {
+    rethrowMutationError('update', err);
   }
   // Toggling reminders / changing radius affects the geofence set.
   if (
@@ -481,10 +535,14 @@ export async function updateSavedPlace(id: string, patch: SavedPlacePatch): Prom
 export async function deleteSavedPlace(id: string): Promise<void> {
   if (isDemoMode()) return await deleteDemoSavedPlace(id);
   console.log('[savedPlacesService] delete', id);
-  const { error } = await supabase.from('saved_places').delete().eq('id', id);
-  if (error) {
-    console.warn('[savedPlacesService] delete failed', error.message);
-    throw new Error(error.message);
+  try {
+    const { error } = await supabase.from('saved_places').delete().eq('id', id);
+    if (error) {
+      console.warn('[savedPlacesService] delete failed', error.message);
+      rethrowMutationError('delete', error);
+    }
+  } catch (err) {
+    rethrowMutationError('delete', err);
   }
   triggerGeofenceResync();
 }
@@ -504,16 +562,20 @@ export async function deleteSavedPlace(id: string): Promise<void> {
 export async function markVisited(savedPlaceId: string): Promise<void> {
   if (isDemoMode()) return await markDemoVisited(savedPlaceId);
   const nowIso = new Date().toISOString();
-  const { error } = await supabase
-    .from('saved_places')
-    .update({
-      visited_at: nowIso,
-      notifications_enabled: false,
-    })
-    .eq('id', savedPlaceId);
-  if (error) {
-    console.warn('[savedPlacesService] markVisited failed', error.message);
-    throw new Error(error.message);
+  try {
+    const { error } = await supabase
+      .from('saved_places')
+      .update({
+        visited_at: nowIso,
+        notifications_enabled: false,
+      })
+      .eq('id', savedPlaceId);
+    if (error) {
+      console.warn('[savedPlacesService] markVisited failed', error.message);
+      rethrowMutationError('mark_visited', error);
+    }
+  } catch (err) {
+    rethrowMutationError('mark_visited', err);
   }
   triggerGeofenceResync();
 }
@@ -537,13 +599,17 @@ export async function markArchived(
   if (opts.exhausted) {
     patch.reminders_exhausted_at = nowIso;
   }
-  const { error } = await supabase
-    .from('saved_places')
-    .update(patch)
-    .eq('id', savedPlaceId);
-  if (error) {
-    console.warn('[savedPlacesService] markArchived failed', error.message);
-    throw new Error(error.message);
+  try {
+    const { error } = await supabase
+      .from('saved_places')
+      .update(patch)
+      .eq('id', savedPlaceId);
+    if (error) {
+      console.warn('[savedPlacesService] markArchived failed', error.message);
+      rethrowMutationError('mark_archived', error);
+    }
+  } catch (err) {
+    rethrowMutationError('mark_archived', err);
   }
   triggerGeofenceResync();
 }
@@ -555,16 +621,20 @@ export async function markArchived(
  */
 export async function unarchive(savedPlaceId: string): Promise<void> {
   if (isDemoMode()) return await unarchiveDemo(savedPlaceId);
-  const { error } = await supabase
-    .from('saved_places')
-    .update({
-      archived_at: null,
-      reminders_exhausted_at: null,
-    })
-    .eq('id', savedPlaceId);
-  if (error) {
-    console.warn('[savedPlacesService] unarchive failed', error.message);
-    throw new Error(error.message);
+  try {
+    const { error } = await supabase
+      .from('saved_places')
+      .update({
+        archived_at: null,
+        reminders_exhausted_at: null,
+      })
+      .eq('id', savedPlaceId);
+    if (error) {
+      console.warn('[savedPlacesService] unarchive failed', error.message);
+      rethrowMutationError('unarchive', error);
+    }
+  } catch (err) {
+    rethrowMutationError('unarchive', err);
   }
   triggerGeofenceResync();
 }

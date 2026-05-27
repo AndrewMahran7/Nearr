@@ -20,7 +20,7 @@ import {
 import * as Location from 'expo-location';
 import { useFocusEffect, useRouter } from 'expo-router';
 
-import { EmptyState, Input, SavedPlaceCard, Screen } from '@/components';
+import { EmptyState, Input, OfflineBanner, SavedPlaceCard, Screen } from '@/components';
 import { Radius, Spacing } from '@/constants';
 
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
@@ -86,7 +86,7 @@ export default function PlacesTab() {
   const router = useRouter();
   const { colors, typography } = useTheme();
   const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
-  const { data, loading, refreshing, error, refresh } = useSavedPlaces();
+  const { data, loading, refreshing, error, offline, lastSyncedAt, refresh } = useSavedPlaces();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [filter, setFilter] = useState('');
   const [activeFilter, setActiveFilter] = useState<PlacesFilter>('active');
@@ -259,8 +259,12 @@ export default function PlacesTab() {
       <Screen>
         <EmptyState
           variant="error"
-          title={'Couldn\u2019t load your places'}
-          body={error}
+          title={offline ? 'You\u2019re offline' : 'Couldn\u2019t load your places'}
+          body={
+            offline
+              ? 'Reconnect to the internet and pull to refresh \u2014 your saved places will appear here.'
+              : error
+          }
           actionTitle="Try again"
           onAction={refresh}
         />
@@ -379,6 +383,8 @@ export default function PlacesTab() {
             <Text style={[typography.body, styles.sub]}>
               Find places you wanted to try.
             </Text>
+
+            <OfflineBanner visible={offline} lastSyncedAt={lastSyncedAt} />
 
             {data.length > 0 ? (
               <>

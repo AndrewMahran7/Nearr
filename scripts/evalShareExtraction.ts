@@ -25,6 +25,11 @@ import { extractPlaceAI } from '../lib/aiExtractPlace';
 import { transcribeSocialVideo } from '../lib/transcription';
 import type { TranscriptionResult, TranscriptionSourceType } from '../lib/transcription';
 import { runExtractionPipeline } from '../lib/extractionPipeline';
+import {
+  pickBestVerifiedVenueProfile,
+  type InstagramProfileMetadata,
+} from '../lib/instagramProfileMetadata';
+import { shouldSearchPlaces } from '../lib/queryValidation';
 
 type Fixture = {
   name: string;
@@ -33,10 +38,14 @@ type Fixture = {
     description: string;
     url: string;
     sourceType: string;
+    posterHandle?: string;
+    profileMetadata?: InstagramProfileMetadata[];
     /** Optional pre-supplied transcript. When present, eval skips the provider call. */
     transcript?: string;
   };
   expectedQuery: string;
+  expectedNameSource?: string;
+  expectedSearchAllowed?: boolean;
   /**
    * Optional v2 assertion: whether the extraction pipeline should allow a
    * silent save without showing the user a chooser. When omitted the eval
@@ -56,6 +65,9 @@ type EvalRow = {
   aiQuery: string;
   aiConfidence: string;
   aiReason: string;
+  pipelineQuery: string;
+  pipelineNameSource: string;
+  searchAllowed: boolean;
   transcript: string | null;
   transcriptionStatus: string;
   transcriptionProvider: string;
@@ -230,6 +242,7 @@ async function main(): Promise<void> {
       description: fx.input.description,
       transcript: transcript ?? undefined,
       fallbackQuery: heuristic.query || undefined,
+      profileMetadata: fx.input.profileMetadata,
     });
 
     const placesTopResult = await placesLookup(ai.query || heuristic.query);
@@ -242,6 +255,17 @@ async function main(): Promise<void> {
       title: fx.input.title ?? null,
       description: fx.input.description ?? null,
       cleanedQuery: heuristic.query || null,
+      posterHandle: fx.input.posterHandle ?? null,
+      enrichments: fx.input.profileMetadata?.map((profile) => ({
+        handle: profile.handle,
+        classification: profile.classification,
+        category: profile.category,
+        displayName: profile.displayName,
+        extractedName: profile.extractedName,
+        extractedAddress: profile.extractedAddress,
+        extractedCity: profile.extractedCity,
+        confidence: profile.confidence,
+      })),
       transcript: transcript ?? null,
       ai: ai
         ? {
@@ -259,10 +283,39 @@ async function main(): Promise<void> {
         : null,
     });
 
+    const verifiedProfile = pickBestVerifiedVenueProfile(
+      fx.input.profileMetadata ?? [],
+      [fx.input.posterHandle],
+    );
+    const searchAllowed = shouldSearchPlaces(pipeline.query, {
+      title: fx.input.title ?? null,
+      description: fx.input.description ?? null,
+      transcript: transcript ?? null,
+      placeName: pipeline.placeName,
+      address: pipeline.address,
+      city: pipeline.city,
+      state: pipeline.state,
+      sourceContext: pipeline.sourceContext,
+      profileExtractedName: verifiedProfile?.extractedName ?? null,
+      profileExtractedAddress: verifiedProfile?.extractedAddress ?? null,
+      profileExtractedCity: verifiedProfile?.extractedCity ?? null,
+      accountIdentityOnly: false,
+      accountIdentitySource: pipeline.evidence.nameSource === 'verified_profile' ? 'verified_profile' : null,
+    });
+
     const heuristicMatch = softMatch(heuristic.query, fx.expectedQuery);
     const aiMatch = softMatch(ai.query, fx.expectedQuery);
-    // For "no place" fixtures (expectedQuery === ""), pass = both produced empty/low.
-    const queryPass = fx.expectedQuery === '' ? !heuristicMatch && !aiMatch : aiMatch || heuristicMatch;
+    const pipelineMatch = softMatch(pipeline.query, fx.expectedQuery);
+    const queryPass =
+      fx.expectedQuery === ''
+        ? heuristic.query.trim() === '' && ai.query.trim() === '' && pipeline.query.trim() === ''
+        : pipelineMatch || aiMatch || heuristicMatch;
+    const nameSourcePass =
+      fx.expectedNameSource == null || pipeline.evidence.nameSource === fx.expectedNameSource;
+    const searchAllowedPass =
+      typeof fx.expectedSearchAllowed === 'boolean'
+        ? searchAllowed === fx.expectedSearchAllowed
+        : true;
 
     // Auto-save assertion: only enforced when the fixture explicitly sets
     // expectedAutoSave. A wrong silent-save (false positive) or a missed
@@ -273,14 +326,25 @@ async function main(): Promise<void> {
         : null;
 
     const pass =
-      queryPass && (autoSaveAssertionPass === null || autoSaveAssertionPass === true);
+      queryPass &&
+      nameSourcePass &&
+      searchAllowedPass &&
+      (autoSaveAssertionPass === null || autoSaveAssertionPass === true);
     const aiBeatsHeuristic = aiMatch && !heuristicMatch;
 
     const notes: string[] = [];
     if (aiBeatsHeuristic) notes.push('AI BEATS HEURISTIC');
     if (!aiMatch && heuristicMatch) notes.push('heuristic better than AI');
-    if (!aiMatch && !heuristicMatch && fx.expectedQuery) notes.push('both missed');
-    if (fx.expectedQuery === '' && (heuristicMatch || aiMatch)) notes.push('false positive');
+    if (!pipelineMatch && !aiMatch && !heuristicMatch && fx.expectedQuery) notes.push('all missed');
+    if (fx.expectedQuery === '' && (!queryPass || heuristic.query.trim() !== '' || ai.query.trim() !== '' || pipeline.query.trim() !== '')) {
+      notes.push('false positive');
+    }
+    if (!nameSourcePass && fx.expectedNameSource) {
+      notes.push(`name-source mismatch: expected=${fx.expectedNameSource} actual=${pipeline.evidence.nameSource}`);
+    }
+    if (!searchAllowedPass && typeof fx.expectedSearchAllowed === 'boolean') {
+      notes.push(`search-allowed mismatch: expected=${fx.expectedSearchAllowed} actual=${searchAllowed}`);
+    }
     if (autoSaveAssertionPass === false) {
       notes.push(
         `auto-save mismatch: expected=${fx.expectedAutoSave} actual=${pipeline.autoSaveAllowed}` +
@@ -301,6 +365,9 @@ async function main(): Promise<void> {
       aiQuery: ai.query,
       aiConfidence: ai.confidence,
       aiReason: ai.reason,
+      pipelineQuery: pipeline.query,
+      pipelineNameSource: pipeline.evidence.nameSource,
+      searchAllowed,
       transcript: transcript,
       transcriptionStatus: transcriptionResult.status,
       transcriptionProvider: transcriptionResult.provider,

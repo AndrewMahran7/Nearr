@@ -54,15 +54,30 @@ export function getHowNearrWorksStorageKey(userId?: string | null) {
 }
 
 export async function hasSeenHowNearrWorks(userId?: string | null) {
+  // Fail-open: if AsyncStorage throws (corrupted store, unavailable on
+  // cold-start, simulator weirdness) we treat the user as "has NOT seen"
+  // so the onboarding modal still appears. Better to re-show instructions
+  // than to leave a first-run user stuck on an empty Home screen.
   const keys = userId
     ? [getHowNearrWorksStorageKey(userId), HOW_NEARR_WORKS_STORAGE_KEY]
     : [HOW_NEARR_WORKS_STORAGE_KEY];
-  const values = await AsyncStorage.multiGet(keys);
-  return values.some(([, value]) => value === 'true');
+  try {
+    const values = await AsyncStorage.multiGet(keys);
+    return values.some(([, value]) => value === 'true');
+  } catch (err) {
+    console.warn('[onboarding] instructions_fallback_shown (storage read failed)', err);
+    return false;
+  }
 }
 
 export async function markHowNearrWorksSeen(userId?: string | null) {
-  await AsyncStorage.setItem(getHowNearrWorksStorageKey(userId), 'true');
+  try {
+    await AsyncStorage.setItem(getHowNearrWorksStorageKey(userId), 'true');
+  } catch (err) {
+    // Non-fatal: the modal still dismisses in-memory. Worst case the user
+    // sees it again next launch — preferable to crashing the dismiss flow.
+    console.warn('[onboarding] failed to persist seen flag', err);
+  }
 }
 
 type Props = {

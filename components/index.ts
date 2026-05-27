@@ -7,6 +7,7 @@ export { HowNearrWorksModal } from './HowNearrWorksModal';
 export { Input } from './Input';
 export { LegalAgreementModal } from './LegalAgreementModal';
 export { MapFallbackList } from './MapFallbackList';
+export { OfflineBanner } from './OfflineBanner';
 export { Screen } from './Screen';
 export { SavedPlaceCard } from './SavedPlaceCard';
 export { SetupChecklist } from './SetupChecklist';

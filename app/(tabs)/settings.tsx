@@ -435,7 +435,8 @@ export default function SettingsScreen() {
         <Text style={styles.sectionLabel}>Appearance</Text>
         <Card style={styles.section}>
           <Text style={[typography.caption, styles.muted]}>
-            Choose how Nearr looks on this device.
+            Nearr is dark-mode only for now. Light mode is coming back in a
+            future update.
           </Text>
           <View style={styles.unitRow}>
             <ThemeOption

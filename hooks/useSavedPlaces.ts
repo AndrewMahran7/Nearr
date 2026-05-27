@@ -13,6 +13,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import { listSavedPlaces } from '@/services/savedPlacesService';
 import { useAuth } from '@/hooks/useAuth';
+import { logDebug } from '@/lib/logger';
+import {
+  isLikelyOfflineError,
+  readSavedPlacesCache,
+  writeSavedPlacesCache,
+} from '@/lib/savedPlacesCache';
 import type { SavedPlaceWithPlace } from '@/types';
 
 type State = {
@@ -20,6 +26,14 @@ type State = {
   loading: boolean;
   refreshing: boolean;
   error: string | null;
+  /**
+   * True when the visible list is being served from the local cache
+   * because the network fetch failed (offline or transient error).
+   * Cleared on the next successful fetch.
+   */
+  offline: boolean;
+  /** ISO timestamp of the cache write that produced `data`. Null when fresh. */
+  lastSyncedAt: string | null;
 };
 
 export function useSavedPlaces() {
@@ -34,6 +48,8 @@ export function useSavedPlaces() {
     loading: true,
     refreshing: false,
     error: null,
+    offline: false,
+    lastSyncedAt: null,
   });
 
   const fetch = useCallback(async (mode: 'initial' | 'refresh') => {
@@ -43,18 +59,49 @@ export function useSavedPlaces() {
       refreshing: mode === 'refresh',
       error: null,
     }));
-    console.log('[useSavedPlaces] querying, userId present=', !!userId);
+    logDebug('useSavedPlaces', 'querying', { hasUserId: !!userId, mode });
     try {
       const data = await listSavedPlaces();
-      console.log('[useSavedPlaces] query complete, count=', data.length);
-      setState({ data, loading: false, refreshing: false, error: null });
+      logDebug('useSavedPlaces', 'query complete', { count: data.length, mode });
+      setState({
+        data,
+        loading: false,
+        refreshing: false,
+        error: null,
+        offline: false,
+        lastSyncedAt: null,
+      });
+      // Best-effort: persist the freshest copy for the next cold start.
+      void writeSavedPlacesCache(userId, data);
     } catch (e: any) {
       console.warn('[useSavedPlaces] error', e?.message);
+      // Offline / transient-network fallback: serve the last good cache so
+      // the user can still see their saved places. We only swap to cached
+      // data on the FIRST failure (initial load) — pull-to-refresh keeps
+      // showing the current data but surfaces the offline banner.
+      const offlineLikely = isLikelyOfflineError(e);
+      const cached = offlineLikely ? await readSavedPlacesCache(userId) : null;
+      if (cached) {
+        console.log('[offline] using_cached_saved_places');
+        setState((s) => ({
+          ...s,
+          // Preserve current data on refresh; replace empty initial state.
+          data: s.data.length > 0 ? s.data : cached.data,
+          loading: false,
+          refreshing: false,
+          // Clear the raw error string — the offline banner is the UX.
+          error: null,
+          offline: true,
+          lastSyncedAt: cached.lastSyncedAt,
+        }));
+        return;
+      }
       setState((s) => ({
         ...s,
         loading: false,
         refreshing: false,
         error: e?.message ?? 'Could not load saved places.',
+        offline: offlineLikely,
       }));
     }
   }, [userId]);
@@ -65,13 +112,20 @@ export function useSavedPlaces() {
     // AsyncStorage (or before exchangeCodeForSession completes on a cold-start
     // magic-link), RLS returns [] silently, and the hook never re-fetches.
     if (authLoading) {
-      console.log('[useSavedPlaces] auth loading, deferring query');
+      logDebug('useSavedPlaces', 'auth loading, deferring query');
       return;
     }
     if (!userId) {
       // Signed out — clear the list immediately without a network call.
-      console.log('[useSavedPlaces] no user, clearing list');
-      setState({ data: [], loading: false, refreshing: false, error: null });
+      logDebug('useSavedPlaces', 'no user, clearing list');
+      setState({
+        data: [],
+        loading: false,
+        refreshing: false,
+        error: null,
+        offline: false,
+        lastSyncedAt: null,
+      });
       return;
     }
     void fetch('initial');

@@ -1,0 +1,318 @@
+category,url,inline_note_from_file,poster_handle,poster_display_name,title,description,title_length,description_length,description_truncated,detected_handles,metadata_extracted_address,metadata_city,metadata_state,backend_status,backend_candidate_name,backend_candidate_address,backend_candidate_place_id,backend_decision,safe_to_auto_save,confidence,evidence_used,warnings,places_queries,top_candidates,duplicate_url_count,duplicate_group_id,error_message,expected_place_name,expected_address,expected_decision,label_notes,label_status_initial
+Name + Address,https://www.instagram.com/p/DYpcd2ZBTsZ/,,,"2nd Floor Restaurant, Bar, Gallery, Nightclub","2nd Floor Restaurant, Bar, Gallery, Nightclub on Instagram: ""R&B Singalong Brunch in OC! Round up your crew and join us here at 2nd Floor to sing & dance your heart out to classic R&B favorites - plus bottomless mimosas & the best brunch! 🍳 🥂
+🗓️ Sunday, May 24th
+⏰ 11AM - 3PM
+📍 2nd Floor
+126 Main St
+Huntington Beach, CA 92648
+
+#huntingtonbeach #rbmusic #memorialdayweekend #wheretoeat #brunch","741 likes, 11 comments - 2nd_floor_hb on May 22, 2026: ""R&B Singalong Brunch in OC! Round up your crew and join us here at 2nd Floor to sing & dance your heart out to classic R&B favorites - plus bottomless mimosas & the best brunch! 🍳…",397,237,true,"ocfoodandview, 2nd_floor_hb",126 Main St,Huntington Beach,CA,extracted,2nd Floor,"126 Main St, Huntington Beach, CA 92648, USA",ChIJE5pV1UMh3YARIhsItpUt0K8,candidate_confirmation,false,high,places_strong_match; caption_explicit_address; places_address_verified,profile_media_http_429; agent_timeout_10000ms; timeout_recovery_query:2nd Floor 126 Main St Huntington Beach CA=>1; timeout_recovery_attempted_query:2nd Floor 126 Main St Huntington Beach CA=>1; timeout_recovery_address_verified:126 Main St|Huntington Beach; agent_timeout_recovered_with_places; profile_media_http_429; agent_timeout_10000ms; agent_timeout_recovered_with_places,"searchPlaces status=ok note=query=""2nd Floor 126 Main St Huntington Beach CA"" count=1","2nd Floor | 126 Main St, Huntington Beach, CA 92648, USA | score=1.00 | placeId=ChIJE5pV1UMh3YARIhsItpUt0K8",1,0,,2nd Floor,"126 Main St, Huntington Beach, CA 92648",candidate_confirmation,Exact venue + full address in caption/title. safe_save acceptable if real-Gemini path completes and no ambiguity.,pass
+Name + Address,https://www.instagram.com/p/C-BEtdnyGdR/,,,MAD YOLKS,"MAD YOLKS on Instagram: ""One bite and you’ll be hooked 🍳🤤
+-
+All sandwiches are topped with chives and made with our signature brioche buns that is baked FRESH daily onsite✨
+
+✔️ Gluten-free buns are available!
+🥚s from @glaumeggranch 
+-
+📍Mad Yolks
+1411 Pacific Ave, Santa Cruz, CA 
+-
+#breakfastsandwich #santacruz #santacruzeats #santacruzfood #breakfastspot #brunch #downtownsantacruz #supportlocal #localproduce #breakfastlover #brunchlife #eggsandwich","167 likes, 1 comments - mad_yolks on July 29, 2024: ""One bite and you’ll be hooked 🍳🤤
+-
+All sandwiches are topped with chives and made with our signature brioche buns that is baked FRESH daily onsite✨
+
+✔️ Gluten-free buns are available…",456,238,true,"glaumeggranch, downtownsantacruz",1411 Pacific Ave,Santa Cruz,CA,extracted,Mad Yolks,"1411 Pacific Ave, Santa Cruz, CA 95060, USA",ChIJa-286P5BjoARx03hogk54cw,candidate_confirmation,false,high,profile_blocked; places_weak_match; caption_explicit_address; places_address_verified,profile_glaumeggranch_http_429; agent_timeout_10000ms; timeout_recovery_query:Glaumeggranch 1411 Pacific Ave Santa Cruz CA=>2; timeout_recovery_attempted_query:Glaumeggranch 1411 Pacific Ave Santa Cruz CA=>2; timeout_recovery_address_verified:1411 Pacific Ave|Santa Cruz; agent_timeout_recovered_with_places; profile_glaumeggranch_http_429; agent_timeout_10000ms; agent_timeout_recovered_with_places,"searchPlaces status=ok note=query=""Glaumeggranch 1411 Pacific Ave Santa Cruz CA"" count=2","Mad Yolks | 1411 Pacific Ave, Santa Cruz, CA 95060, USA | score=0.40 | placeId=ChIJa-286P5BjoARx03hogk54cw || Glaum Egg Ranch | 3100 Valencia Rd, Aptos, CA 95003, USA | score=0.00 | placeId=ChIJg22OlFEWjoARb2YWx9cximM",1,0,,Mad Yolks,"1411 Pacific Ave, Santa Cruz, CA",candidate_confirmation,Exact venue + address. Current backend finds correct place but query uses Glaum Egg Ranch first; should prefer caption venue/poster venue over egg supplier tag.,pass
+Name + Address,https://www.instagram.com/p/DV_bi8LiaIz/,,,Tanika Patel Gonzalez,"Tanika Patel Gonzalez on Instagram: ""The crispy tacos are still my TOP to this day, such a iconic spot in santa cruz right by the wharf, what’s your fave at Las Palmas taco bar? 
+
+55 front street santa cruz #santacruzeats","861 likes, 64 comments - eatwithtanika on March 17, 2026: ""The crispy tacos are still my TOP to this day, such a iconic spot in santa cruz right by the wharf, what’s your fave at Las Palmas taco bar? 
+
+55 front street santa cruz #santacr…",221,238,true,"eatwithtanika, barb3113",55 front street,,,extracted,55 Front St W,"55 Front St W, Toronto, ON M5J 0G3, Canada",ChIJZxXgjyzL1IkR6iOvHqkydQ0,candidate_confirmation,false,high,profile_blocked; places_weak_match; caption_explicit_address; places_address_verified,profile_media_http_429; agent_timeout_10000ms; timeout_recovery_query:55 front street=>1; timeout_recovery_attempted_query:55 front street=>1; agent_timeout_recovered_with_places; profile_media_http_429; agent_timeout_10000ms; agent_timeout_recovered_with_places,"searchPlaces status=ok note=query=""55 front street"" count=1","55 Front St W | 55 Front St W, Toronto, ON M5J 0G3, Canada | score=0.70 | placeId=ChIJZxXgjyzL1IkR6iOvHqkydQ0",2,1,,Las Palmas Taco Bar,"55 Front St, Santa Cruz, CA",candidate_confirmation,Caption has venue name and address context but city/state not structured; current Toronto result is wrong. Need city/hashtag/location context handling.,review
+Name + Address,https://www.instagram.com/p/DWUI9fvDCck/,,,DOUBLE MEAT PLEASE  •  ᴅᴍᴘ,"DOUBLE MEAT PLEASE  •  ᴅᴍᴘ on Instagram: ""Seabright deli is one of the best sandwich spots.
+
+I had friends visiting from the city and wanted to take them to one of my personal favorite spots.
+
+This mom and pop shop is about quality. They smoke their chicken and brisket (sadly the brisket sandwiches were sold out) and I’m in love with their new york style pastrami.
+
+We got 4 sandwiches which were similar but also different and big favorites.
+
+We grabbed the yatch club
+Their smoked chicken, bacon, chedder, and their sun dried tomato aioli. 
+
+The beach bum
+New York pastrami, sauerkraut, and their house made thousand island with Swiss cheese on their rye.
+
+The Surfer
+Their house smoked chicken, bbq sauce, pickled onions, cheddar, and sun dried tomato aioli.
+
+The Seabright.
+Not shown, bc it was devoted instantly.
+Pastrami, pickles, Swiss cheese, and the best coriander mustard aioli ever.
+
+Check out @seabrightdeli and get some of the best sandwiches from some of the best people.
+
+📍415 Seabright Ave
+⏳Tuesday- Sunday. 11am-3:45pm
+
+#doublemeatplease 
+#diningwithdaniel","344 likes, 17 comments - doublemeatplease on March 25, 2026: ""Seabright deli is one of the best sandwich spots.
+
+I had friends visiting from the city and wanted to take them to one of my personal favorite spots.
+
+This mom and pop shop is…",1076,238,true,"seabrightdeli, danielj.west",415 Seabright Ave,,,extracted,Seabright Deli,"415 Seabright Ave, Santa Cruz, CA 95062, USA",ChIJnRX-2FJrjoARoeQkm8tJ08E,candidate_confirmation,false,high,profile_blocked; places_weak_match; caption_explicit_address; places_address_verified,profile_seabrightdeli_http_429; agent_timeout_10000ms; timeout_recovery_query:Seabrightdeli 415 Seabright Ave=>1; timeout_recovery_attempted_query:Seabrightdeli 415 Seabright Ave=>1; timeout_recovery_address_verified:415 Seabright Ave|; agent_timeout_recovered_with_places; profile_seabrightdeli_http_429; agent_timeout_10000ms; agent_timeout_recovered_with_places,"searchPlaces status=ok note=query=""Seabrightdeli 415 Seabright Ave"" count=1","Seabright Deli | 415 Seabright Ave, Santa Cruz, CA 95062, USA | score=0.30 | placeId=ChIJnRX-2FJrjoARoeQkm8tJ08E",1,0,,Seabright Deli,"415 Seabright Ave, Santa Cruz, CA",candidate_confirmation,Exact venue + address. Should not return generic address card.,pass
+Name + Address,https://www.instagram.com/p/C2QKOHuP6qG/,,,MAD YOLKS,"MAD YOLKS on Instagram: ""Who doesn’t love breakfast all day? 😋🍳
+
+~ unique breakfast sandwiches 
+~ refreshing matcha lattes 
+~ breakfast specialty items
+~ coffee and hot teas 
+
+Mad Yolks is committed to using fresh, locally sourced ingredients and preparing food from scratch, we make our sauces in-house, bake our buns daily, and use cage-free organic eggs from a local egg farm - @glaumeggranch 🥚
+
+Get yolked soon!🍳
+
+📍Mad Yolks
+1411 Pacific Ave, Santa Cruz, CA 
+
+#brunch #breakfast #eggsandwiches #matchalatte #coffee #santacruzbucketlist #santacruz #thingstodoinsantacruz","4,549 likes, 18 comments - mad_yolks on January 18, 2024: ""Who doesn’t love breakfast all day? 😋🍳
+
+~ unique breakfast sandwiches 
+~ refreshing matcha lattes 
+~ breakfast specialty items
+~ coffee and hot teas 
+
+Mad Yolks is committed to…",578,238,true,"glaumeggranch, mad_yolks",1411 Pacific Ave,Santa Cruz,CA,extracted,Mad Yolks,"1411 Pacific Ave, Santa Cruz, CA 95060, USA",ChIJa-286P5BjoARx03hogk54cw,candidate_confirmation,false,high,profile_blocked; places_weak_match; caption_explicit_address; places_address_verified,profile_glaumeggranch_http_429; agent_timeout_10000ms; timeout_recovery_query:Glaumeggranch 1411 Pacific Ave Santa Cruz CA=>2; timeout_recovery_attempted_query:Glaumeggranch 1411 Pacific Ave Santa Cruz CA=>2; timeout_recovery_address_verified:1411 Pacific Ave|Santa Cruz; agent_timeout_recovered_with_places; profile_glaumeggranch_http_429; agent_timeout_10000ms; agent_timeout_recovered_with_places,"searchPlaces status=ok note=query=""Glaumeggranch 1411 Pacific Ave Santa Cruz CA"" count=2","Mad Yolks | 1411 Pacific Ave, Santa Cruz, CA 95060, USA | score=0.40 | placeId=ChIJa-286P5BjoARx03hogk54cw || Glaum Egg Ranch | 3100 Valencia Rd, Aptos, CA 95003, USA | score=0.00 | placeId=ChIJg22OlFEWjoARb2YWx9cximM",1,0,,Mad Yolks,"1411 Pacific Ave, Santa Cruz, CA",candidate_confirmation,Exact venue + address. Should prefer Mad Yolks over Glaum Egg Ranch tag.,pass
+@ + Address,https://www.instagram.com/p/DYlLg3coKFw/,,,OC Food | Christine☀️,"OC Food | Christine☀️ on Instagram: ""Giant BYO Burritos & Stacked Bowls 🌯 @baqba.official is hands down better than Chipotle for the freshness, flavor, and portions! They grill up the proteins fresh and make the tortillas by hand right in-front of you! Bookmark Baqba for your next burrito craving! 🔥 
+
+Montclair:
+📍4288 Holt Blvd
+Unit J
+Montclair, CA  91763
+
+Rialto:
+📍1165 Renaissance Pkwy
+Ste 410
+Rialto, CA  92376
+
+#chipotle #mexicanfood #insane #burrito #massive","142 likes, 5 comments - ocfoodandview on May 20, 2026: ""Giant BYO Burritos & Stacked Bowls 🌯 @baqba.official is hands down better than Chipotle for the freshness, flavor, and portions! They grill up the proteins fresh and make the torti…",469,238,true,"baqba.official, ocfoodandview",4288 Holt Blvd,Montclair,CA,extracted,Baqba Mexican Grill,"4288 Holt Blvd unit J, Montclair, CA 91763, USA",ChIJoV_1bwAzw4ARgnSzpaTeQLQ,candidate_confirmation,false,high,places_strong_match; caption_explicit_address; places_address_verified,profile_baqba.official_http_429; agent_timeout_10000ms; timeout_recovery_query:Baqba 4288 Holt Blvd Montclair CA=>1; timeout_recovery_attempted_query:Baqba 4288 Holt Blvd Montclair CA=>1; timeout_recovery_address_verified:4288 Holt Blvd|Montclair; agent_timeout_recovered_with_places; profile_baqba.official_http_429; agent_timeout_10000ms; agent_timeout_recovered_with_places,"searchPlaces status=ok note=query=""Baqba 4288 Holt Blvd Montclair CA"" count=1","Baqba Mexican Grill | 4288 Holt Blvd unit J, Montclair, CA 91763, USA | score=1.00 | placeId=ChIJoV_1bwAzw4ARgnSzpaTeQLQ",1,0,,Baqba Mexican Grill,"4288 Holt Blvd Unit J, Montclair, CA 91763",candidate_confirmation,Post lists multiple Baqba locations; expected first/addressed Montclair candidate or multi-location candidate confirmation.,pass
+@ + Address,https://www.instagram.com/p/DYidHK4PuVf/,,,OC Food | Christine☀️,"OC Food | Christine☀️ on Instagram: ""BBQ Pork Wonton Nachos!? 🔥 @famousdaves just dropped these tasty new nachos: Golden wonton chips stacked with Georgia-chopped pork, cabbage, Korean Sweet Heat Sauce, jalapeno-pickled red onions, and finished with green onions. I was skeptical of this one at first, but I tried it and it’s bomb! 🤤 Avail for a limited time!
+
+📍300 S Pine Ave
+Long Beach, CA  90802
+
+#nachos #bbq #howitsmade #inthekitchen #wonton","91 likes, 7 comments - ocfoodandview on May 19, 2026: ""BBQ Pork Wonton Nachos!? 🔥 @famousdaves just dropped these tasty new nachos: Golden wonton chips stacked with Georgia-chopped pork, cabbage, Korean Sweet Heat Sauce, jalapeno-pickle…",449,238,true,"famousdaves, famousdaves_california",300 S Pine Ave,Long Beach,CA,extracted,Famous Dave's Bar-B-Que,"300 S Pine Ave, Long Beach, CA 90802, USA",ChIJo0h2qBYx3YAR1HWWVGbjUFI,candidate_confirmation,false,high,profile_blocked; places_weak_match; caption_explicit_address; places_address_verified,profile_famousdaves_http_429; agent_timeout_10000ms; timeout_recovery_query:Famousdaves 300 S Pine Ave Long Beach CA=>1; timeout_recovery_attempted_query:Famousdaves 300 S Pine Ave Long Beach CA=>1; timeout_recovery_address_verified:300 S Pine Ave|Long Beach; agent_timeout_recovered_with_places; profile_famousdaves_http_429; agent_timeout_10000ms; agent_timeout_recovered_with_places,"searchPlaces status=ok note=query=""Famousdaves 300 S Pine Ave Long Beach CA"" count=1","Famous Dave's Bar-B-Que | 300 S Pine Ave, Long Beach, CA 90802, USA | score=0.40 | placeId=ChIJo0h2qBYx3YAR1HWWVGbjUFI",1,0,,Famous Dave's Bar-B-Que,"300 S Pine Ave, Long Beach, CA 90802",candidate_confirmation,Venue-like handle + full address. Correct candidate confirmation.,pass
+@ + Address,https://www.instagram.com/p/DYfr81GhvTS/,,,OC Food | Christine☀️,"OC Food | Christine☀️ on Instagram: ""Hands down the best breakfast deal in OC 🥞 @loadedcafe is known for classic American comfort food with a Mexican twist! 🍳 They’ve got creative dishes like churro-stuff French toast, giant concha & coffee, asada chilaquiles torta, concha milkshakes, and sooo much more! 
+
+$5.75 Secret Menu Breakfast: 2 pancakes, 2 eggs any style, and 2 bacon strips or sausage! This is not on the menu, so you gotta show them this post to get the deal 💰
+
+I went to the location in Orange, but Loaded Cafe also has locations in Placentia, Santa Ana, Long Beach and others in LA county too! Bookmark @loadedcafe for this insane breakfast deal and plenty of creative & unique breakfast dishes! 
+
+📍 1834 N Tustin St
+Orange, CA  92865
+
+#breakfastdeal #pancakes #eggs #orangecounty #fooddeals","2,123 likes, 33 comments - ocfoodandview on May 18, 2026: ""Hands down the best breakfast deal in OC 🥞 @loadedcafe is known for classic American comfort food with a Mexican twist! 🍳 They’ve got creative dishes like churro-stuff French t…",810,238,true,"loadedcafe, ocfoodandview",1834 N Tustin St,Orange,CA,extracted,Loaded Cafe - Orange,"1834 N Tustin St, Orange, CA 92865, USA",ChIJG1xM7EHX3IARfRat2N2mU84,candidate_confirmation,false,high,profile_blocked; places_weak_match; caption_explicit_address; places_address_verified,profile_loadedcafe_http_429; agent_timeout_10000ms; timeout_recovery_query:Loadedcafe 1834 N Tustin St Orange CA=>1; timeout_recovery_attempted_query:Loadedcafe 1834 N Tustin St Orange CA=>1; timeout_recovery_address_verified:1834 N Tustin St|Orange; agent_timeout_recovered_with_places; profile_loadedcafe_http_429; agent_timeout_10000ms; agent_timeout_recovered_with_places,"searchPlaces status=ok note=query=""Loadedcafe 1834 N Tustin St Orange CA"" count=1","Loaded Cafe - Orange | 1834 N Tustin St, Orange, CA 92865, USA | score=0.40 | placeId=ChIJG1xM7EHX3IARfRat2N2mU84",1,0,,Loaded Cafe - Orange,"1834 N Tustin St, Orange, CA 92865",candidate_confirmation,Venue-like handle + full address. Correct candidate confirmation.,pass
+@ + Address,https://www.instagram.com/p/DYVn771vefW/,,,OC Food | Christine☀️,"OC Food | Christine☀️ on Instagram: ""Pho Restaurant with live jazz 🎶We recently went to @phobamboorestaurant in City of Industry for a free jazz concert by @sgvjazz with the @sgvsymphony 🎼 It was such a fun and unique dinner experience! 
+
+We enjoyed incredible Vietnamese food while listening to live jazz, and the pho was seriously amazing with rich, flavorful broth and a huge, tender rib bone! 🍲 family-owned spot has  plenty of comforting dishes on the menu! Don’t sleep on the appetizers too! The staff are SO friendly and welcoming 🤗 
+
+We really enjoyed the music and atmosphere! SGV Symphony is all about bringing live music into the community and performing jazz music inspired by film, video games, and pop culture all across SoCal and creating experiences that connect music and community! 
+
+Check out the @sgvjazz page for upcoming live concerts, and follow @phobamboorestaurant for incredible Vietnamese food! 🍲 
+
+📍 18209 Gale Ave
+City Of Industry, CA 91748
+
+#jazznight #pho #vietnamesefood #familyowned #jazzmusic","162 likes, 4 comments - ocfoodandview on May 14, 2026: ""Pho Restaurant with live jazz 🎶We recently went to @phobamboorestaurant in City of Industry for a free jazz concert by @sgvjazz with the @sgvsymphony 🎼 It was such a fun and uniqu…",1032,238,true,"phobamboorestaurant, sgvjazz",18209 Gale Ave,City Of Industry,CA,extracted,Pho Bamboo Vietnamese Restaurant,"18209 Gale Ave, City of Industry, CA 91748, USA",ChIJ2R9lbmYqw4ARNY62k_90y4Y,candidate_confirmation,false,high,profile_blocked; places_weak_match; caption_explicit_address; places_address_verified,profile_phobamboorestaurant_http_429; agent_timeout_10000ms; timeout_recovery_query:Phobamboorestaurant 18209 Gale Ave City Of Industry CA=>1; timeout_recovery_attempted_query:Phobamboorestaurant 18209 Gale Ave City Of Industry CA=>1; timeout_recovery_address_verified:18209 Gale Ave|City Of Industry; agent_timeout_recovered_with_places; profile_phobamboorestaurant_http_429; agent_timeout_10000ms; agent_timeout_recovered_with_places,"searchPlaces status=ok note=query=""Phobamboorestaurant 18209 Gale Ave City Of Industry CA"" count=1","Pho Bamboo Vietnamese Restaurant | 18209 Gale Ave, City of Industry, CA 91748, USA | score=0.40 | placeId=ChIJ2R9lbmYqw4ARNY62k_90y4Y",1,0,,Pho Bamboo Vietnamese Restaurant,"18209 Gale Ave, City of Industry, CA 91748",candidate_confirmation,Venue-like handle + full address. Correct candidate confirmation.,pass
+@ + Address,https://www.instagram.com/p/DYGvkJ0oDjA/,,,OC Food | Christine☀️,"OC Food | Christine☀️ on Instagram: ""Iconic Cantina in Newport Beach🍹If you’ve been to Newport, then you already know about @bajasharkeeznb 🌮 This fun cantina is know for massive buckets and fish bowl drinks, but they’ve also got a great lineup of food! Their tender, flavorful birria items are delicious and I tried the whole lineup:
+
+Birria Items: 
+-Slow Braised Birria Flautas
+-Cheesy Birria Quesadilla 
+-Birria Crusty Queso Tacos
+-Birria Beef Burrito
+
+📍114 McFadden Pl
+Newport Beach, CA  92663
+
+#iconic #wheretoeat #newportbeach #staple #foodreview","1,327 likes, 15 comments - ocfoodandview on May 8, 2026: ""Iconic Cantina in Newport Beach🍹If you’ve been to Newport, then you already know about @bajasharkeeznb 🌮 This fun cantina is know for massive buckets and fish bowl drinks, but t…",555,238,true,"bajasharkeeznb, ocfoodandview",114 McFadden Pl,Newport Beach,CA,extracted,,,,manual_fallback,false,low,profile_blocked; places_no_match,profile_bajasharkeeznb_http_429; agent_timeout_10000ms; timeout_recovery_query:Bajasharkeez 114 McFadden Pl Newport Beach CA=>1; timeout_recovery_attempted_query:Bajasharkeez 114 McFadden Pl Newport Beach CA=>1; timeout_recovery_query:Bajasharkeez 114 McFadden Pl Newport Beach=>1; timeout_recovery_attempted_query:Bajasharkeez 114 McFadden Pl Newport Beach=>1; timeout_recovery_query:Bajasharkeez 114 McFadden Pl=>1; timeout_recovery_attempted_query:Bajasharkeez 114 McFadden Pl=>1; timeout_recovery_query:Media 114 McFadden Pl Newport Beach CA=>1; timeout_recovery_attempted_query:Media 114 McFadden Pl Newport Beach CA=>1; timeout_recovery_query:Media 114 McFadden Pl Newport Beach=>4; timeout_recovery_attempted_query:Media 114 McFadden Pl Newport Beach=>4; timeout_recovery_query:Media 114 McFadden Pl=>0; timeout_recovery_attempted_query:Media 114 McFadden Pl=>0; timeout_recovery_query:114 McFadden Pl Newport Beach CA=>1; timeout_recovery_attempted_query:114 McFadden Pl Newport Beach CA=>1; timeout_recovery_query:114 McFadden Pl Newport Beach=>1; timeout_recovery_attempted_query:114 McFadden Pl Newport Beach=>1; timeout_recovery_query:114 McFadden Pl=>0; timeout_recovery_attempted_query:114 McFadden Pl=>0; timeout_recovery_no_safe_query; profile_bajasharkeeznb_http_429; agent_timeout_10000ms,,,1,0,,Baja Sharkeez,"114 McFadden Pl, Newport Beach, CA 92663",candidate_confirmation,Venue-like handle + full address. Current manual fallback is wrong; handle normalization likely strips nb/region poorly or fails matching.,review
+@ + Address,https://www.instagram.com/p/DV9RcvwAQ0P/,,,CUZZOEATS-The “No Sabo” Punjabi🇲🇽👳🏽‍♂️,"CUZZOEATS-The “No Sabo” Punjabi🇲🇽👳🏽‍♂️ on Instagram: ""📍Seabright Deli
+415 Seabright Ave
+Santa Cruz, CA
+
+I can literally say this is the best sandwich I have ever tried.  The Cove from @seabrightdeli is a must try, so damn good I’m already planning my next trip back just so I can come get this sandwich again.  Great customer service, and they get your food out quickly and with a smile.  CUZZO APPROVED!!","6,031 likes, 208 comments - cuzzoeats on March 16, 2026: ""📍Seabright Deli
+415 Seabright Ave
+Santa Cruz, CA
+
+I can literally say this is the best sandwich I have ever tried.  The Cove from @seabrightdeli is a must try, so damn good I’m a…",410,238,true,,415 Seabright Ave,Santa Cruz,CA,extracted,415 Seabright Ave,"415 Seabright Ave, Santa Cruz, CA 95062, USA",ChIJbbLAzqRqjoARTmg24wbc9h8,manual_fallback,false,high,caption_explicit_address; caption_explicit_venue; profile_blocked; transcript_unsupported; places_weak_match,"address_detected:415 Seabright Ave; places_attempt:415 Seabright Ave, Santa Cruz, CA=>1; places_final_query:415 Seabright Ave, Santa Cruz, CA; model_latency_ms=4941; profile_seabrightdeli_http_429","searchPlaces status=ok note=query=""415 Seabright Ave, Santa Cruz, CA"" count=1",415 Seabright Ave | score=1.00 | placeId=415 Seabright Ave,1,0,,Seabright Deli,"415 Seabright Ave, Santa Cruz, CA",candidate_confirmation,Explicit venue + address. Current generic address card/manual fallback is wrong.,pass
+@ + Address,https://www.instagram.com/p/DWZNJZ-EthD/,,,Fiona Beata,"Fiona Beata on Instagram: ""This AWARD WINNING barbecue spot might just be the best in the Bay Area👀 With slow smoked meats & daily live music, @aptosstbbq is the heart of the Santa Cruz community.
+
+From amazing brisket to their next level burnt ends, this is a must-try spot for anyone in the SF Bay🔥 (did I mention thy have 25 local beers on tap?)
+
+📍8059 Aptos St
+Aptos, CA  95003
+
+Everything I tried:
+• Tri-tip with Cornbread & Coleslaw
+• Burnt Ends & Brisket Combo
+• Thicc Bird Hazy IPA - Ghostwood
+• Corned Beef Special with Mac & Cheese
+• Fresh Garlic Bread
+• Sincere Dry Apple Cider
+• Bread Pudding with Vanilla Ice Cream
+• Barebottle Hefe-Moon Bay Hefeweizen 
+
+#bayareabbq #sanjosefoodie #barbeque #sanfranciscocoffee #bayareafoodie","351 likes, 146 comments - fiona.beata on March 27, 2026: ""This AWARD WINNING barbecue spot might just be the best in the Bay Area👀 With slow smoked meats & daily live music, @aptosstbbq is the heart of the Santa Cruz community.
+
+From am…",742,238,true,"aptosstbbq, californiaslatest",8059 Aptos St,,CA,extracted,Aptos St. BBQ,"8059 Aptos St, Aptos, CA 95003, USA",ChIJPxBh-XgWjoARZlz1iflbMsE,candidate_confirmation,false,high,profile_blocked; places_weak_match; caption_explicit_address; places_address_verified,profile_aptosstbbq_http_429; agent_timeout_10000ms; timeout_recovery_query:Aptosstbbq 8059 Aptos St=>1; timeout_recovery_attempted_query:Aptosstbbq 8059 Aptos St=>1; timeout_recovery_address_verified:8059 Aptos St|; agent_timeout_recovered_with_places; profile_aptosstbbq_http_429; agent_timeout_10000ms; agent_timeout_recovered_with_places,"searchPlaces status=ok note=query=""Aptosstbbq 8059 Aptos St"" count=1","Aptos St. BBQ | 8059 Aptos St, Aptos, CA 95003, USA | score=0.30 | placeId=ChIJPxBh-XgWjoARZlz1iflbMsE",1,0,,Aptos St. BBQ,"8059 Aptos St, Aptos, CA 95003",candidate_confirmation,Venue-like handle + address; city implied by street/caption. Correct candidate confirmation.,pass
+Name or @ Only,https://www.instagram.com/p/DYPweEqPtWy/,,,OC Food | Christine☀️,"OC Food | Christine☀️ on Instagram: ""Summer is almost here and @panerabread is stepping up their drink game and rolling out some fruity and refreshing summer drinks! #PaneraPartner I went to my local Panera to check out this adorable drink cart to try out the new Cherry Lime Fresca and it’s giving cherry limeade energy but even more crisp and refreshing! 🍒The fan-favorite Strawberry Basil Lemonade Fresca is also back and it literally tastes like summer in a cup! 🍓 It just doesn’t get better than pairing these tasty summer drinks with your favorite Panera bites! Please do not sleep on these new drinks and the fun part is The Panera Beverage Tour is rolling into cities across the nation and your Panera just might be next! 🛻 
+
+New Refreshing Summer Drinks:
+🍒 Cherry Lime Fresca is a refreshing blend of cherry and lime flavors infused with tart cherry pieces
+
+🍓 Strawberry Basil Lemonade Fresca is Refreshing Agave
+Lemonade with strawberry puree fruit blend, infused with fresh strawberries and Basil","48 likes, 12 comments - ocfoodandview on May 12, 2026: ""Summer is almost here and @panerabread is stepping up their drink game and rolling out some fruity and refreshing summer drinks! #PaneraPartner I went to my local Panera to check ou…",1012,238,true,"panerabread, ocfoodandview",,,,extracted,Panera Bread,"100 Woods Rd, Valhalla, NY 10595, USA",ChIJHzo3mD6_wokRpF5kv4mrfYo,candidate_confirmation,false,high,caption_explicit_venue; profile_blocked; transcript_unsupported; places_weak_match,"places_attempt:OC Food Christine& ;& ; Summer is almost here and is stepping up their drink gam=>0; places_attempt:48 likes, 12 comments - ocfoodandview on May 12, 2026: Summer is almost here and=>0; places_attempt:Panera Bread=>8; places_final_query:Panera Bread; model_latency_ms=7391; profile_panerabread_http_429","searchPlaces status=ok note=query=""OC Food Christine& ;& ; Summer is almost here and is steppin…"" count=0 || searchPlaces status=ok note=query=""48 likes, 12 comments - ocfoodandview on May 12, 2026: Summe…"" count=0 || searchPlaces status=ok note=query=""Panera Bread"" count=8","Panera Bread | 100 Woods Rd, Valhalla, NY 10595, USA | score=0.60 | placeId=ChIJHzo3mD6_wokRpF5kv4mrfYo || Panera Bread | 20920 West Roosevelt St, Buckeye, AZ 85326, USA | score=0.60 | placeId=ChIJgTpV419JK4cRyCV7STHbz4w || Panera Bread | 375 E Bell Rd Pad D, Phoenix, AZ 85022, USA | score=0.60 | placeId=ChIJ-3CP5T5uK4cRTpRzsZ7iIm4 || Panera Bread | 2400 S Rancho Dr Suite 180, Las Vegas, NV 89102, USA | score=0.60 | placeId=ChIJg8ocf4DAyIARJmiAGg3-WLw || Panera Bread | 887 S N County Blvd Suites A-B, Pleasant Grove, UT 84062, USA | score=0.60 | placeId=ChIJBc7o6vuDTYcRbWDrpggvzhQ",1,0,,,,manual_fallback,Panera campaign/local Panera with no address or city-specific place. Do not choose random Panera.,review_fail
+Name or @ Only,https://www.instagram.com/p/DVUMt3DkmnK/,,,GRAND-O THE SNACK SENSEI,"GRAND-O THE SNACK SENSEI on Instagram: ""TOP THREE SANDWICH SHOPS FOR ME. IF I EVER PUT YOU ON ITS WITH THIS SPOT RIGHT HERE. LOWKEY WANNA GATE KEEP THEM. 
+ 
+Seabright Deli In Santa Cruz @seabrightdeli The Best Of The Best. House Made Sauces Are Endless, Fresh Smoked Meats Daily, Generous Stacked Sandwiches With Crazy Flavor Combinations, Local Desserts, It Don’t Stop! 
+ 
+ 
+#santacruz #californiafood #california #sandwich","9,340 likes, 234 comments - thesnacksensei on February 28, 2026: ""TOP THREE SANDWICH SHOPS FOR ME. IF I EVER PUT YOU ON ITS WITH THIS SPOT RIGHT HERE. LOWKEY WANNA GATE KEEP THEM. 
+ 
+Seabright Deli In Santa Cruz @seabrightdeli The Best O…",424,238,true,"seabrightdeli, thesnacksensei",,,,extracted,,,,manual_fallback,false,low,profile_blocked; places_no_match,profile_seabrightdeli_http_429; agent_timeout_10000ms; timeout_recovery_no_safe_query; profile_seabrightdeli_http_429; agent_timeout_10000ms,,,1,0,,Seabright Deli,"Santa Cruz, CA",candidate_confirmation,Name + city + handle only. Candidate confirmation acceptable; no safe_save.,review
+Name or @ Only,https://www.instagram.com/p/CuIjn7kgPSe/,,,Santa Cruz Bucket List,"Santa Cruz Bucket List on Instagram: ""Bucket List worthy Pizza in Santa Cruz County! Add all of these new, hidden gem, and noteworthy pizza spots to your #santacruzbucketlist. Expanding the list from great classic pizza spots like @pizzamyheart and @woodstockscruz, this list of pizza spots features pizza creations that are buzzing right now! Whether you’re a #santacruzlocal or a visitor, definitely add these spots to your list:
+
+1.) @venus_pie_trap: phenomenal New-haven style pizza pies and dessert pies! A true unique pie you have to try is the clam pizza! 
+2.) @the_pizza_series: perfect Detroit style pizzas! Cheesy, crisp crust and decadent stacked toppings. The Sweet Heat is out of this world with a spicy Calabrian chili honey
+3.) @bookiespizza: inside @rusticales, awesome unique flavor combos on Detroit style pizzas.
+4.) @buzzopizza: classic Italian style woodfired pizzas with simple yet flavorful ingredients
+5.) @sliceprojectpizza: thin New York style sliced and cheesy Detroit styles made with homemade sauces that will leave you craving more! 
+
+Check out my blog on @visitsantacruz’s website for full details: https://www.santacruz.org/blog/buzzworthy-pizza-in-santa-cruz-county/ #santacruz #santacruzcalifornia","4,907 likes, 51 comments - santacruzbucketlist on June 30, 2023: ""Bucket List worthy Pizza in Santa Cruz County! Add all of these new, hidden gem, and noteworthy pizza spots to your #santacruzbucketlist. Expanding the list from great cla…",1231,238,true,"pizzamyheart, woodstockscruz",,,,extracted,,,,manual_fallback,false,low,profile_blocked; places_no_match,profile_the_pizza_series_http_429; agent_timeout_10000ms; timeout_recovery_query:Bookies Pizza New York=>1; timeout_recovery_attempted_query:Bookies Pizza New York=>1; timeout_recovery_query:Buzzo Pizza New York=>1; timeout_recovery_attempted_query:Buzzo Pizza New York=>1; timeout_recovery_query:Sliceproject Pizza New York=>1; timeout_recovery_attempted_query:Sliceproject Pizza New York=>1; timeout_recovery_no_safe_query; profile_the_pizza_series_http_429; agent_timeout_10000ms,,,1,0,,,,manual_fallback,Multi-place pizza list. Expected multi-place support later; for now do not pick one place silently.,pass
+Name or @ Only,https://www.instagram.com/p/DTI2vG0jreQ/,,,DOUBLE MEAT PLEASE  •  ᴅᴍᴘ,"DOUBLE MEAT PLEASE  •  ᴅᴍᴘ on Instagram: ""2025 DMP Picks
+
+What an incredible year filled with so many unforgettable meals! From birria sushi to biscuits and gravy breakfast burritos, mac wellingtons, and smash burgers topped with pastrami….This year was delicious.
+
+Check out the video to see some of our favorite bites, and don’t forget to stay tuned for our next series and highlights here on DMP!
+
+Mega loaded chicken fries @hot_birds831 
+Smashed burgers @the_pressed_patty 
+Salted caramel marshmallow bars @square.cakes 
+Chicken and waffles @thegrilleatdelaveaga 
+Smash burger @bubbs_burgers 
+Ribeye steak @fullsteamdumpling 
+Philly burrito @tortillashack1 
+Breakfast pizza @girasolpizza 
+The point dog @daniobakeshop  @pointsidemeatshop 
+Short rib sandwich @deathbox_sc 
+The bees knees and lemon pep @sleightofhandpizza 
+Pastrami sandwich @pastramimami.sc 
+Mac Wellington @foodtalk_santacruz 
+Fried green tomato burger @trestles_capitola 
+Pastrami smash burgers @the_emerald_mallard  @s.c.bread_boy 
+Biscuits and gravy Breakfast burrito @busybeescafecatering 
+Jefferey’s burger @johnnysharborside 
+Poke bar @newleafcmarket 
+Fried chicken sandwich @sudasc 
+Potato pizza with sausage @buzzopizza 
+Pecan pumpkin pancakes @busybeescafecatering 
+Birria sushi @tacoselchuy 
+Smash burger @bubbs_burgers 
+Prosciutto and ricotta pizza @cavalletta.restaurant 
+
+#doublemeatplease
+#diningwithdaniel
+#foodbeast
+#santacruzeats
+#santacruzfoods
+santacruzrestaurants
+bestof2024
+sandwiches
+smashburgers
+santacruzeats","3,022 likes, 75 comments - doublemeatplease on January 5, 2026: ""2025 DMP Picks
+
+What an incredible year filled with so many unforgettable meals! From birria sushi to biscuits and gravy breakfast burritos, mac wellingtons, and smash burg…",1503,238,true,"hot_birds831, the_pressed_patty",,,,extracted,,,,manual_fallback,false,low,generic_content; profile_blocked; transcript_unsupported; places_no_match,"places_attempt:DOUBLE MEAT PLEASE & ; & ;& ;& ; 2025 DMP Picks What an incredible year filled w=>0; places_attempt:3,022 likes, 75 comments - doublemeatplease on January 5, 2026: 2025 DMP Picks W=>0; places_final_query:none; model_latency_ms=8378; profile_bubbs_burgers_http_429","searchPlaces status=ok note=query=""DOUBLE MEAT PLEASE & ; & ;& ;& ; 2025 DMP Picks What an incr…"" count=0 || searchPlaces status=ok note=query=""3,022 likes, 75 comments - doublemeatplease on January 5, 20…"" count=0",,1,0,,,,manual_fallback,Large multi-place roundup. Expected multi-place support later; for now manual fallback/no single save.,pass
+Name or @ Only,https://www.instagram.com/p/C1c6FT0SwKm/,,,Lookout Santa Cruz,"Lookout Santa Cruz on Instagram: ""Who holds the title for best burger in Santa Cruz? 🍔Lookout food and drink correspondent Lily Belli hit the streets to find out. From cheffy restaurant burgers to paper-wrapped fast food, here are the local burgers that rose to the top. 🍔 #5 from @woodennickel_wv 🍔 #4 @bellygoatburger 🍔 #3 @eastendgastropub 🍔 #2 @firefly_tavern 🍔 #1 @oswaldrestaurant","2,691 likes, 249 comments - lookoutsantacruz on December 29, 2023: ""Who holds the title for best burger in Santa Cruz? 🍔Lookout food and drink correspondent Lily Belli hit the streets to find out. From cheffy restaurant burgers to paper…",392,238,true,"woodennickel_wv, bellygoatburger",,,,extracted,Oswald Restaurant,"121 Soquel Ave, Santa Cruz, CA 95060, USA",ChIJox1WsidAjoARrp3iii4suo8,candidate_confirmation,false,high,profile_blocked; places_weak_match,profile_bellygoatburger_http_429; agent_timeout_10000ms; timeout_recovery_query:Oswald Restaurant=>1; timeout_recovery_attempted_query:Oswald Restaurant=>1; timeout_recovery_used_handle_query; agent_timeout_recovered_with_places; profile_bellygoatburger_http_429; agent_timeout_10000ms; agent_timeout_recovered_with_places,"searchPlaces status=ok note=query=""Oswald Restaurant"" count=1","Oswald Restaurant | 121 Soquel Ave, Santa Cruz, CA 95060, USA | score=0.60 | placeId=ChIJox1WsidAjoARrp3iii4suo8",1,0,,,,manual_fallback,Top 5 burger list. Do not pick Oswald/#1 as a single saved place unless multi-place selection exists.,review_fail
+Name or @ Only,https://www.instagram.com/p/CmwyLcshhwy/,,,Santa Cruz Bucket List,"Santa Cruz Bucket List on Instagram: ""Rainy days call for warm tasty food like the ramen birria from @tacoselchuytruck! This perfect fusion of two classical dishes, ramen noodle soup and the long stewed rich birria is a marriage made in food Heaven that needs to be on your food bucket list! Have you tried this Santa Cruz bucket list food item yet?","45K likes, 270 comments - santacruzbucketlist on December 29, 2022: ""Rainy days call for warm tasty food like the ramen birria from @tacoselchuytruck! This perfect fusion of two classical dishes, ramen noodle soup and the long stewed ric…",349,238,true,"tacoselchuytruck, santacruzbucketlist",,,,extracted,,,,manual_fallback,false,low,profile_blocked; places_no_match,profile_tacoselchuytruck_http_429; agent_timeout_10000ms; timeout_recovery_no_safe_query; profile_tacoselchuytruck_http_429; agent_timeout_10000ms,,,1,0,,Tacos El Chuy Truck,"Santa Cruz, CA",candidate_confirmation,"Single venue handle/name only with city context. Candidate confirmation, not auto-save.",review
+Name or @ Only,https://www.instagram.com/p/DSYfkivkiOA/,,,K R I S T I N A,"K R I S T I N A on Instagram: ""Buche Super Burrito from Taqueria Los Pericos🔥
+
+📍 @taquerialospericossocial | Santa Cruz, CA
+
+First time trying buche years ago was from here and it’s still my favorite place to get buche at. The burrito is huge and always hits!
+
+Where is your favorite spot for burritos in the Bay Area?I’ve decided my 2026 goal is to eat more burritos!🌯 
+
+#superburrito #santacruzeats #bayareaeats","187 likes, 11 comments - kristinasee.eats on December 17, 2025: ""Buche Super Burrito from Taqueria Los Pericos🔥
+
+📍 @taquerialospericossocial | Santa Cruz, CA
+
+First time trying buche years ago was from here and it’s still my favorite p…",416,238,true,"taquerialospericossocial, kristinasee.eats",,,,extracted,,,,manual_fallback,false,low,profile_blocked; places_no_match,profile_taquerialospericossocial_http_429; agent_timeout_10000ms; timeout_recovery_no_safe_query; profile_taquerialospericossocial_http_429; agent_timeout_10000ms,,,1,0,,Taqueria Los Pericos,"Santa Cruz, CA",candidate_confirmation,"Name/handle + city context. Candidate confirmation, not auto-save.",review
+Name or @ Only,https://www.instagram.com/p/DOXJtDlgcoi/,,,TARAN THE FOOD GUY,"TARAN THE FOOD GUY on Instagram: ""Burrito on the beach!? Can’t go wrong. POINT MARKET AND CAFE, Santa Cruz, CA📍 One of the freshest burritos I’ve had, and on the beach. Amazing vibes #bayarea #norcal #foodies #burrito #santacruz","87 likes, 2 comments - taranexploro on September 8, 2025: ""Burrito on the beach!? Can’t go wrong. POINT MARKET AND CAFE, Santa Cruz, CA📍 One of the freshest burritos I’ve had, and on the beach. Amazing vibes #bayarea #norcal #foodies #b…",229,238,true,"taranexploro, anthony_flordia_lasvegas",,,,extracted,,,,manual_fallback,false,low,profile_blocked; places_no_match,profile_media_http_429; agent_timeout_10000ms; timeout_recovery_no_safe_query; profile_media_http_429; agent_timeout_10000ms,,,1,0,,Point Market & Cafe,"Santa Cruz, CA",candidate_confirmation,"Explicit venue name + city, no address. Candidate confirmation.",review
+Name or @ Only,https://www.instagram.com/p/DMV8LZ4hUoG/,,,BEST BAY AREA FOOD,"BEST BAY AREA FOOD on Instagram: ""Easily the best sandwich spot in Santa Cruz, next time you’re here you have to hit up @seabrightdeli 🥪✨
+
+#sandwich #brisket #deli
+#santacruz #bayareafood","305 likes, 30 comments - bestbayareafood on July 20, 2025: ""Easily the best sandwich spot in Santa Cruz, next time you’re here you have to hit up @seabrightdeli 🥪✨
+
+#sandwich #brisket #deli
+#santacruz #bayareafood"".",188,216,true,"seabrightdeli, bestbayareafood",,,,extracted,,,,manual_fallback,false,low,profile_blocked; places_no_match,profile_seabrightdeli_http_429; agent_timeout_10000ms; timeout_recovery_no_safe_query; profile_seabrightdeli_http_429; agent_timeout_10000ms,,,1,0,,Seabright Deli,"Santa Cruz, CA",candidate_confirmation,Venue handle + city context only. Candidate confirmation.,review
+Address Only,https://www.instagram.com/p/DYYfWR9oeYS/,,,OC Food | Christine☀️,"OC Food | Christine☀️ on Instagram: ""New Sunday Farmers Market in Costa Mesa! The Mesa Verde Farmers Market takes place every Sunday from 10AM-2PM! @farmhabitmesaverde got fresh produce, artisan goods, skincare, live music and so much good stuff! 
+
+💰 After you go to the market, go grab lunch at @delinerds and show them your haul and get 10% off your order! 
+🥗Deli Nerds has salads, bowls, sliders all scratch-made using the highest quality, farm-fresh ingredients! 
+🍹 They’re pouring up new summer cocktails! (I got a mocktail version lol but they’ve got plenty of choices!)
+
+Mesa Verde Farmers Market
+🗓️ Every Sunday 
+⏰ 10AM - 2PM
+🚗 Free parking on-site
+📍1525 Mesa Verde Dr E
+Costa Mesa, CA  92626
+
+#farmersmarket #healthyfood #costamesa","3,164 likes, 45 comments - ocfoodandview on May 15, 2026: ""New Sunday Farmers Market in Costa Mesa! The Mesa Verde Farmers Market takes place every Sunday from 10AM-2PM! @farmhabitmesaverde got fresh produce, artisan goods, skincare, liv…",746,238,true,"farmhabitmesaverde, delinerds",1525 Mesa Verde Dr,E Costa Mesa,CA,extracted,Verde Media,"1342 N Main St Suite 6, Ann Arbor, MI 48104, USA",ChIJWa1IEzmvPIgRbsaDxeD5R88,candidate_confirmation,false,high,profile_blocked; places_weak_match; caption_explicit_address; places_address_verified,profile_farmhabitmesaverde_http_429; agent_timeout_10000ms; timeout_recovery_query:Farmhabitmesaverde 1525 Mesa Verde Dr E Costa Mesa CA=>5; timeout_recovery_attempted_query:Farmhabitmesaverde 1525 Mesa Verde Dr E Costa Mesa CA=>5; timeout_recovery_query:Farmhabitmesaverde 1525 Mesa Verde Dr E Costa Mesa=>4; timeout_recovery_attempted_query:Farmhabitmesaverde 1525 Mesa Verde Dr E Costa Mesa=>4; timeout_recovery_query:Farmhabitmesaverde 1525 Mesa Verde Dr=>1; timeout_recovery_attempted_query:Farmhabitmesaverde 1525 Mesa Verde Dr=>1; timeout_recovery_query:Delinerds 1525 Mesa Verde Dr E Costa Mesa CA=>1; timeout_recovery_attempted_query:Delinerds 1525 Mesa Verde Dr E Costa Mesa CA=>1; timeout_recovery_query:Delinerds 1525 Mesa Verde Dr E Costa Mesa=>1; timeout_recovery_attempted_query:Delinerds 1525 Mesa Verde Dr E Costa Mesa=>1; timeout_recovery_query:Delinerds 1525 Mesa Verde Dr=>1; timeout_recovery_attempted_query:Delinerds 1525 Mesa Verde Dr=>1; timeout_recovery_query:Media 1525 Mesa Verde Dr E Costa Mesa CA=>2; timeout_recovery_attempted_query:Media 1525 Mesa Verde Dr E Costa Mesa CA=>2; timeout_recovery_query:Media 1525 Mesa Verde Dr E Costa Mesa=>5; timeout_recovery_attempted_query:Media 1525 Mesa Verde Dr E Costa Mesa=>5; timeout_recovery_query:Media 1525 Mesa Verde Dr=>7; timeout_recovery_attempted_query:Media 1525 Mesa Verde Dr=>7; agent_timeout_recovered_with_places; profile_farmhabitmesaverde_http_429; agent_timeout_10000ms; agent_timeout_recovered_with_places,"searchPlaces status=ok note=query=""Farmhabitmesaverde 1525 Mesa Verde Dr E Costa Mesa CA"" count=5 || searchPlaces status=ok note=query=""Farmhabitmesaverde 1525 Mesa Verde Dr E Costa Mesa"" count=4 || searchPlaces status=ok note=query=""Farmhabitmesaverde 1525 Mesa Verde Dr"" count=1 || searchPlaces status=ok note=query=""Delinerds 1525 Mesa Verde Dr E Costa Mesa CA"" count=1 || searchPlaces status=ok note=query=""Delinerds 1525 Mesa Verde Dr E Costa Mesa"" count=1 || searchPlaces status=ok note=query=""Delinerds 1525 Mesa Verde Dr"" count=1 || searchPlaces status=ok note=query=""Media 1525 Mesa Verde Dr E Costa Mesa CA"" count=2 || searchPlaces status=ok note=query=""Media 1525 Mesa Verde Dr E Costa Mesa"" count=5 || searchPlaces status=ok note=query=""Media 1525 Mesa Verde Dr"" count=7","Verde Media | 1342 N Main St Suite 6, Ann Arbor, MI 48104, USA | score=0.70 | placeId=ChIJWa1IEzmvPIgRbsaDxeD5R88 || Verde Media | Metro Detroit Digital Marketing & Creative Agency | 22757 Woodward Ave #210, Ferndale, MI 48220, USA | score=0.70 | placeId=ChIJxdHw5hbaJIgR_UqRCoL8slk || New England Public Media | 44 Hampden St, Springfield, MA 01103, USA | score=0.70 | placeId=ChIJGYRPh63n5okRTNJNjPvolX4",1,0,,Mesa Verde Farmers Market,"1525 Mesa Verde Dr E, Costa Mesa, CA 92626",candidate_confirmation,Address + event/market name. Current Verde Media result is wrong; parser split 'E' into city and Places queries over-trust handle tokens.,review
+Address Only,https://www.instagram.com/p/DYS8NLyh4Bq/,,,OC Food | Christine☀️,"OC Food | Christine☀️ on Instagram: ""Exotic Sausage Festival at @biergartenhb in Old World Village in Huntington Beach 🌭 Enjoy 7 exotic sausages you’ve probably never tried before (limited daily): Alligator, Elk, Venison, Duck, Rattlesnake, Rabbit + more! Stay for the fun vibes, authentic German food, live music and festivities! 🥨 
+
+🗓️ 16-17 & May 23-24 (Memorial
+Day Weekend)
+⏰ Sat 12-5PM, Sun 12-5PM
+Memorial Day Saturday extended: 12-9PM
+🤗 All ages welcome
+🎟️ FREE entry with online registration
+🚗 Free parking on site
+🤳🏼Reserve your table or grab free tickets:
+OldWorldHB.com/wurstfest
+📍 7561 Center Ave
+Huntington Beach, CA  92647
+
+#germanfood #bratwurst #foodfestival #huntingtonbeach #orangecountyfood","2,132 likes, 42 comments - ocfoodandview on May 13, 2026: ""Exotic Sausage Festival at @biergartenhb in Old World Village in Huntington Beach 🌭 Enjoy 7 exotic sausages you’ve probably never tried before (limited daily): Alligator, Elk, V…",719,238,true,"biergartenhb, surfcityusa",7561 Center Ave,Huntington Beach,CA,extracted,Old World Biergarten Festival Hall & Concert Venue,"7561 Center Ave #49, Huntington Beach, CA 92647, USA",ChIJqb8cF4An3YARVwk2L94xIj0,candidate_confirmation,false,high,places_strong_match; caption_explicit_address; places_address_verified,profile_biergartenhb_http_429; agent_timeout_10000ms; timeout_recovery_query:Biergarten 7561 Center Ave Huntington Beach CA=>2; timeout_recovery_attempted_query:Biergarten 7561 Center Ave Huntington Beach CA=>2; timeout_recovery_address_verified:7561 Center Ave|Huntington Beach; agent_timeout_recovered_with_places; profile_biergartenhb_http_429; agent_timeout_10000ms; agent_timeout_recovered_with_places,"searchPlaces status=ok note=query=""Biergarten 7561 Center Ave Huntington Beach CA"" count=2","Old World Biergarten Festival Hall & Concert Venue | 7561 Center Ave #49, Huntington Beach, CA 92647, USA | score=1.00 | placeId=ChIJqb8cF4An3YARVwk2L94xIj0 || Old World Restaurant & Biergarten | 7561 Center Ave #49, Huntington Beach, CA 92647, USA | score=1.00 | placeId=ChIJ5cuORWom3YARPTjxELrS3ng",1,0,,Old World Biergarten Festival Hall & Concert Venue,"7561 Center Ave #49, Huntington Beach, CA 92647",candidate_confirmation,Two plausible same-address candidates. Candidate confirmation should show Old World Biergarten/Restaurant options.,pass
+Address Only,https://www.instagram.com/p/DYOcSIkorkN/,,,OC Food | Christine☀️,"OC Food | Christine☀️ on Instagram: ""OC Greek fest is back in Anaheim! 🇬🇷 Experience a taste of Greece right in OC at @ocgreekfest this weekend! This fest celebrates the best of authentic Greek food, culture, dancing, drinks and music! It’s family-friendly and there’s even a marketplace and a Kids Zone! 
+
+🎟️ $5 admission & get BOGO when you purchase online with code OCFOODVIEW26 
+
+🗓️ May 15 - 17th
+⏰ Fri: 5PM-10PM
+Sat: 12PM-10PM
+Sun: 12PM-9PM
+
+📍 405 N Dale Ave, Anaheim, CA 92801
+
+#authentic #greekfood #foodfestival #anaheim #gyros","235 likes, 15 comments - ocfoodandview on May 11, 2026: ""OC Greek fest is back in Anaheim! 🇬🇷 Experience a taste of Greece right in OC at @ocgreekfest this weekend! This fest celebrates the best of authentic Greek food, culture, dancin…",540,238,true,"ocgreekfest, greekfoodfestivals",405 N Dale Ave,Anaheim,CA,extracted,OC Greek Fest,"405 N Dale Ave, Anaheim, CA 92801, USA",ChIJn6VtLt8p3YAR0Dbnl88T7dA,candidate_confirmation,false,high,profile_blocked; places_weak_match; caption_explicit_address; places_address_verified,profile_ocgreekfest_http_429; agent_timeout_10000ms; timeout_recovery_query:Ocgreekfest 405 N Dale Ave Anaheim CA=>1; timeout_recovery_attempted_query:Ocgreekfest 405 N Dale Ave Anaheim CA=>1; timeout_recovery_address_verified:405 N Dale Ave|Anaheim; agent_timeout_recovered_with_places; profile_ocgreekfest_http_429; agent_timeout_10000ms; agent_timeout_recovered_with_places,"searchPlaces status=ok note=query=""Ocgreekfest 405 N Dale Ave Anaheim CA"" count=1","OC Greek Fest | 405 N Dale Ave, Anaheim, CA 92801, USA | score=0.40 | placeId=ChIJn6VtLt8p3YAR0Dbnl88T7dA",1,0,,OC Greek Fest,"405 N Dale Ave, Anaheim, CA 92801",candidate_confirmation,Event/festival venue with full address. Candidate confirmation.,pass
+Restaurant Post / Nothing,https://www.instagram.com/p/DYbLVMBp_dY/,,,@blkearthseaspirits,"@blkearthseaspirits on Instagram: ""Introducing…Girl Dinner 🍸
+
+$26 Classic Girl Dinner: Caesar Salad, Fries & a Dirty Martini 🍟 
+$36 Steakhouse-Style with filet mignon bites topped with blue cheese sauce 🥩 
+
+Round up your gal pals and head on over for girl dinner! 
+
+#girldinner #caesarsalad #huntingtonbeach #dirtymartini","254 likes, 16 comments - blkearthseaspirits on May 16, 2026: ""Introducing…Girl Dinner 🍸
+
+$26 Classic Girl Dinner: Caesar Salad, Fries & a Dirty Martini 🍟 
+$36 Steakhouse-Style with filet mignon bites topped with blue cheese sauce 🥩…",324,235,true,"blkearthseaspirits, ocfoodandview",,,,extracted,,,,manual_fallback,false,low,profile_blocked; places_no_match,profile_blkearthseaspirits_http_429; agent_timeout_10000ms; timeout_recovery_no_safe_query; profile_blkearthseaspirits_http_429; agent_timeout_10000ms,,,1,0,,BLK Earth Sea Spirits,"Huntington Beach, CA",candidate_confirmation,Restaurant account/poster display name + city hashtag but no address. Candidate confirmation acceptable; no safe_save.,review
+Restaurant Post / Nothing,https://www.instagram.com/p/CwRQwIEI7GJ/,,,MobbyFood 🍔🌮🍕,"MobbyFood 🍔🌮🍕 on Instagram: ""The Best Tacos in Santa Cruz 🌮","1,000 likes, 20 comments - mobbyf00d on August 22, 2023: ""The Best Tacos in Santa Cruz 🌮"".",63,91,true,"tacoselchuy, mobbyf00d",,,,extracted,,,,manual_fallback,false,low,profile_blocked; places_no_match,profile_media_http_429; agent_timeout_10000ms; timeout_recovery_no_safe_query; profile_media_http_429; agent_timeout_10000ms,,,1,0,,,,manual_fallback,No explicit venue in visible title/description; 'best tacos' is too generic. Do not trust hidden/video-only tag.,pass
+Restaurant Post / Nothing,https://www.instagram.com/p/DV_bi8LiaIz/,,,Tanika Patel Gonzalez,"Tanika Patel Gonzalez on Instagram: ""The crispy tacos are still my TOP to this day, such a iconic spot in santa cruz right by the wharf, what’s your fave at Las Palmas taco bar? 
+
+55 front street santa cruz #santacruzeats","861 likes, 64 comments - eatwithtanika on March 17, 2026: ""The crispy tacos are still my TOP to this day, such a iconic spot in santa cruz right by the wharf, what’s your fave at Las Palmas taco bar? 
+
+55 front street santa cruz #santacr…",221,238,true,"eatwithtanika, barb3113",55 front street,,,extracted,55 Front St W,"55 Front St W, Toronto, ON M5J 0G3, Canada",ChIJZxXgjyzL1IkR6iOvHqkydQ0,candidate_confirmation,false,high,profile_blocked; places_weak_match; caption_explicit_address; places_address_verified,profile_media_http_429; agent_timeout_10000ms; timeout_recovery_query:55 front street=>1; timeout_recovery_attempted_query:55 front street=>1; agent_timeout_recovered_with_places; profile_media_http_429; agent_timeout_10000ms; agent_timeout_recovered_with_places,"searchPlaces status=ok note=query=""55 front street"" count=1","55 Front St W | 55 Front St W, Toronto, ON M5J 0G3, Canada | score=0.70 | placeId=ChIJZxXgjyzL1IkR6iOvHqkydQ0",2,1,,Las Palmas Taco Bar,"55 Front St, Santa Cruz, CA",candidate_confirmation,Duplicate of row 3; file category is likely wrong. Current Toronto result is wrong.,review
+Restaurant Post / Nothing,https://www.instagram.com/p/DYx8S0PPy6b/,,,Chocolate the Restaurant,"Chocolate the Restaurant on Instagram: ""Come and get it!
+
+#organicfood #downtownfun #downtownsantacruz #visitsantacruz","164 likes, 3 comments - chocolatetherestaurant on May 25, 2026: ""Come and get it!
+
+#organicfood #downtownfun #downtownsantacruz #visitsantacruz"".",118,145,true,"chocolatetherestaurant, dan19590313",,,,extracted,,,,manual_fallback,false,low,profile_blocked; places_no_match,profile_media_http_429; agent_timeout_10000ms; timeout_recovery_query:Chocolate the Restaurant=>2; timeout_recovery_attempted_query:Chocolate the Restaurant=>2; timeout_recovery_no_safe_query; profile_media_http_429; agent_timeout_10000ms,,,1,0,,Chocolate the Restaurant,"Santa Cruz, CA",candidate_confirmation,"Official restaurant poster display + Santa Cruz hashtags, but no address. Candidate confirmation acceptable; no safe_save.",review

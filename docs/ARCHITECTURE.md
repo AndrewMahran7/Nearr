@@ -58,31 +58,42 @@ This path is not limited to `__DEV__`; the email gate is the product gate.
 
 1. User pastes a URL or arrives on [app/share.tsx](../app/share.tsx) with `?url=`.
 2. `parseShare()` extracts platform/source metadata.
-3. The extraction pipeline combines local heuristics plus structured AI evidence when available.
-4. Evidence priority is address-first, then explicit place name, then corroborated handle/poster evidence.
-5. Poster identity is classified as restaurant vs influencer vs unknown so creator accounts are not treated as venue truth by default.
-6. `@` handles are treated as evidence, not truth.
-7. `searchPlaces()` runs with post/location bias.
-8. Address-like and multi-location results are re-ranked or resolved.
-9. App either:
-   - auto-saves a confident result, or
-   - shows a candidate picker, or
-   - falls back to manual search input
-10. Save success routes to focused map with `savedPlaceId`.
+3. The host calls the Edge Function `process-share-link` in `extract` mode. The Edge Function runs the **backend agent** ([lib/shareAgent/agent.ts](../lib/shareAgent/agent.ts)) and attaches a structured `agent` block to the response.
+4. The host trusts the agent block:
+   - `userFacingDecision === 'auto_save'` AND `safeToAutoSave === true` → silent save the agent's `resolvedPlace` (Stage 3).
+   - `userFacingDecision === 'candidate_confirmation'` → show picker pre-loaded with agent candidates.
+   - `userFacingDecision === 'manual_fallback'` → show manual search input.
+5. **Legacy fallback path** — if the Edge Function is unreachable or the agent could not produce a useful response (e.g. missing `GEMINI_API_KEY`), the host runs the legacy heuristic + AI + ranker pipeline (`extractPlaceQueryFromShareMetadata` → `extractPlaceAI` → `runExtractionPipeline` → `searchPlaces`). This path is kept ONLY for resilience; do not extend it.
+6. Save success routes to focused map with `savedPlaceId`.
 
-### Extraction v2 behavior
+### Backend agent (authoritative path)
 
-Current extraction behavior is intentionally conservative:
+The agent lives in [lib/shareAgent/](../lib/shareAgent/) and is the source of truth for both candidate selection and auto-save:
 
-- address evidence outranks social-handle evidence
-- exact restaurant-name verification goes through Places
-- influencer posts can still produce a confident save when the restaurant is corroborated elsewhere in the content
-- weak or conflicting evidence falls back to candidate selection rather than silent save
+- `agent.ts` orchestrates Gemini + tool calls (`fetchPostMetadata`, `detectHandles`, `fetchProfileBio`, `searchPlaces`, `compareCandidateToEvidence`). Transcript fetching is stubbed (returns `transcript_unsupported`).
+- `safety.ts` is a pure deterministic gate. Auto-save requires ALL of: agent decision = `auto_save`, confidence = `high`, ≥1 strong evidence key, Places strong-match (≥0.75), no candidate ambiguity, no name/address mismatch, resolved place from this run, and none of `profile_blocked` / `generic_content` / handle-only / display-name-only.
+- `userFacing.ts` builds the JSON-safe block consumed by the host app and iOS share extension. It forwards `auto_save` only when the safety gate cleared it.
 
-Not currently built:
+The Edge Function ([supabase/functions/process-share-link/index.ts](../supabase/functions/process-share-link/index.ts)) runs the agent first in BOTH `save` mode (silent-saves on its behalf when the gate clears) and `extract` mode (attaches the block for the host to interpret), then falls through to the legacy pipeline.
 
-- audio transcription fallback in runtime
-- tagged-account profile inspection beyond the immediate extracted metadata
+### Stage 4 cleanup status
+
+The legacy heuristic pipeline is being retired in stages. Current state:
+
+| Module | Status | Notes |
+|---|---|---|
+| `lib/shareAgent/**` | Authoritative | New code lives here. |
+| `lib/shareParser.ts` | Keep | Still used for metadata fetching. |
+| `lib/shareExtractionBackend.ts` | Keep | Host bridge to Edge Function. |
+| `lib/queryValidation.ts` | Deprecated, in use | Used by legacy fallback path on host + Edge. Logic is duplicated inside the Edge Function (Deno cannot import from `lib/`). Remove when agent becomes mandatory. |
+| `lib/placeExtractor.ts` | Deprecated, in use | Host fallback only. |
+| `lib/extractionPipeline.ts` | Deprecated, in use | Host fallback + eval fixtures. |
+| `lib/aiExtractPlace.ts` | Deprecated, in use | Host + Edge fallback. `isHighConfidence` removed (Stage 4). |
+| Edge Function `pipelineAllowsAutoSave`, `classifyQueryStrength` | Deprecated, in use | Run only when agent fails. |
+| Eval `scripts/share-agent-behavior-fixtures.json` | Active | Behavior-based assertions: `expectedSafetyDecision`, `expectedUserFacingDecision`, `expectedPlaceNameContains`, `forbiddenPlaceNameContains`, `mustCallTool`, `mustNotCallTool`, `expectedAutoSaveAllowed`. Avoid asserting exact query strings. |
+| Eval `scripts/share-extraction-fixtures.json` | Legacy | Asserts the legacy heuristic pipeline. Kept for the fallback-path baseline (31/48 + 18/18 auto-save assertions). Will be removed with the legacy modules. |
+
+Removal of the deprecated modules above is gated on (a) `GEMINI_API_KEY` being a hard requirement in production, and (b) the agent fixtures running with a real key in CI.
 
 ### Android share intent
 

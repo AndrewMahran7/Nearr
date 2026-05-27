@@ -1,5 +1,20 @@
+import { isGenericContentQuery, looksLikeVenueNameCandidate } from './queryValidation';
+import {
+  buildVerifiedProfileQuery,
+  isVerifiedVenueProfile,
+  pickBestVerifiedVenueProfile,
+  type InstagramProfileMetadata,
+} from './instagramProfileMetadata';
+
+declare const process: { env: Record<string, string | undefined> };
+
 /**
  * AI-based place extraction layer (server-side / Node only).
+ *
+ * @deprecated STAGE 4 — superseded by lib/shareAgent/agent.ts, which
+ * runs the same Gemini call (plus tool-use) inside a deterministic
+ * safety gate. This module remains ONLY as the host-app/Edge fallback
+ * when the agent is unavailable. Do NOT add new callers.
  *
  * Purpose:
  *   Given messy social media metadata (TikTok / Instagram / generic OG tags),
@@ -38,6 +53,7 @@ export type AIExtractInput = {
    * transcripts come from a server-side provider (see lib/transcription).
    */
   transcript?: string;
+  profileMetadata?: InstagramProfileMetadata[];
 };
 
 export type AIExtractConfidence = 'high' | 'medium' | 'low';
@@ -75,6 +91,21 @@ const LOG = '[aiExtractPlace]';
  * on the actual venue.
  */
 function buildPrompt(input: AIExtractInput): string {
+  const profileBlock = (input.profileMetadata ?? []).map((profile) => {
+    const parts = [
+      `@${profile.handle}`,
+      `classification=${profile.classification}`,
+      `confidence=${profile.confidence}`,
+    ];
+    if (profile.displayName) parts.push(`displayName="${profile.displayName.replace(/"/g, "'")}"`);
+    if (profile.category) parts.push(`category="${profile.category.replace(/"/g, "'")}"`);
+    if (profile.bio) parts.push(`bio="${profile.bio.replace(/"/g, "'")}"`);
+    if (profile.extractedName) parts.push(`extractedName="${profile.extractedName.replace(/"/g, "'")}"`);
+    if (profile.extractedAddress) parts.push(`extractedAddress="${profile.extractedAddress.replace(/"/g, "'")}"`);
+    if (profile.extractedCity) parts.push(`extractedCity="${profile.extractedCity.replace(/"/g, "'")}"`);
+    if (profile.website) parts.push(`website="${profile.website.replace(/"/g, "'")}"`);
+    return parts.join(' ');
+  }).join('\n');
   const lines = [
     'You are a place-extraction assistant for a maps app called Nearr.',
     'Identify the PRIMARY real-world restaurant or place that the post is about.',
@@ -95,6 +126,8 @@ function buildPrompt(input: AIExtractInput): string {
     '    - the poster account looks like the restaurant itself (display name + bio match), OR',
     '    - the caption text near the handle names the venue (e.g. "@villastacos Villa\'s Tacos was no joke"), OR',
     '    - the bio classifies as a real business with an address or city.',
+    '  If profileMetadata contains a restaurant_or_business with extractedName and extractedAddress/extractedCity,',
+    '  treat that as strong venue evidence and prefer it over influencer handles.',
     '  Examples of handles you must NOT silently turn into restaurant names without corroboration:',
     '    @marysdiner, @nycfoodking, @madyolkskitchen, @joespizzanyc',
     '',
@@ -109,6 +142,12 @@ function buildPrompt(input: AIExtractInput): string {
     'ADDRESS RULE:',
     '  If an address exists, it is the strongest signal. Return it in the address field.',
     '  The query MUST include the address. The candidate must be at/near that address — never override an address with device location.',
+    '',
+    'PROFILE METADATA RULES:',
+    '  If a tagged or collabed account is restaurant_or_business and has extractedName plus extractedAddress/extractedCity,',
+    '  prefer that restaurant/business over a food creator or influencer account.',
+    '  Never output a raw handle as the query.',
+    '  Display name alone is not enough for silent save.',
     '',
     'POSTER TYPE:',
     '  posterType="restaurant" only when the poster account itself is a single physical venue (display name + caption tone match a real restaurant).',
@@ -154,6 +193,7 @@ function buildPrompt(input: AIExtractInput): string {
     `description: ${input.description ?? ''}`,
     `transcript: ${input.transcript ?? ''}`,
     `fallbackQuery: ${input.fallbackQuery ?? ''}`,
+    `profileMetadata:\n${profileBlock || '(none)'}`,
   ];
   return lines.join('\n');
 }
@@ -200,18 +240,41 @@ function buildFallback(
   input: AIExtractInput,
   reason: string,
 ): AIExtractResult {
+  const verifiedProfile = pickBestVerifiedVenueProfile(input.profileMetadata);
+  const verifiedProfileQuery = buildVerifiedProfileQuery(verifiedProfile);
   // When Gemini is unavailable, try the transcript heuristic first — a
   // spoken "we're at X" is usually a stronger signal than a noisy caption.
   const fromTranscript = extractVenueFromTranscript(input.transcript);
   const query =
+    verifiedProfileQuery ||
     (fromTranscript && fromTranscript.trim()) ||
     (input.fallbackQuery && input.fallbackQuery.trim()) ||
     (input.title && input.title.trim()) ||
     '';
+  const safeQuery = verifiedProfileQuery
+    ? verifiedProfileQuery
+    : query && !isGenericContentQuery(query) && looksLikeVenueNameCandidate(query)
+      ? query
+      : '';
   return {
-    query,
-    confidence: fromTranscript ? 'medium' : 'low',
-    reason: fromTranscript ? `${reason}; used transcript heuristic` : reason,
+    query: safeQuery,
+    confidence: verifiedProfileQuery
+      ? (verifiedProfile?.extractedAddress ? 'high' : 'medium')
+      : fromTranscript && safeQuery
+        ? 'medium'
+        : 'low',
+    reason: verifiedProfileQuery
+      ? `${reason}; used verified profile metadata`
+      : fromTranscript
+      ? `${reason}; used transcript heuristic`
+      : safeQuery
+        ? reason
+        : `${reason}; rejected generic fallback query`,
+    placeName: verifiedProfile?.extractedName ?? (fromTranscript && safeQuery ? fromTranscript : null),
+    address: verifiedProfile?.extractedAddress ?? null,
+    city: verifiedProfile?.extractedCity ?? null,
+    state: null,
+    needsUserConfirmation: verifiedProfile ? !verifiedProfile.extractedAddress : undefined,
   };
 }
 
@@ -275,6 +338,19 @@ function coerceResult(parsed: unknown): AIExtractResult | null {
     query = [placeName, address ?? city, state].filter(Boolean).join(' ').trim();
   }
   if (!query && !placeName) return null;
+
+  if (query && !placeName && !address && !city && !state && isGenericContentQuery(query)) {
+    return {
+      query: '',
+      confidence: 'low',
+      reason: 'generic query rejected',
+      placeName: null,
+      address: null,
+      city: null,
+      state: null,
+      needsUserConfirmation: true,
+    };
+  }
 
   const confRaw = typeof obj.confidence === 'string' ? obj.confidence.toLowerCase() : '';
   const confidence: AIExtractConfidence =
@@ -371,16 +447,17 @@ export async function extractPlaceAI(
     return buildFallback(input, 'Gemini JSON missing required fields');
   }
 
+  if (
+    result.query &&
+    !result.placeName &&
+    isGenericContentQuery(result.query) &&
+    isVerifiedVenueProfile(pickBestVerifiedVenueProfile(input.profileMetadata))
+  ) {
+    return buildFallback(input, 'Gemini preferred generic query over verified profile metadata');
+  }
+
   console.log(
     `${LOG} success query="${result.query}" confidence=${result.confidence}`,
   );
   return result;
-}
-
-/**
- * Convenience predicate for callers that only want to act on confident
- * results (e.g. auto-create a saved place vs. show a confirmation prompt).
- */
-export function isHighConfidence(result: AIExtractResult): boolean {
-  return result.confidence === 'high';
 }

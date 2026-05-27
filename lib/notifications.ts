@@ -51,6 +51,7 @@ import * as TaskManager from 'expo-task-manager';
 import { Platform } from 'react-native';
 
 import { isDemoMode } from './demoMode';
+import { isDebugLoggingEnabled, logDebug, logInfo } from './logger';
 import { isMapPreviewMode } from './mapPreview';
 import { supabase } from './supabase';
 import {
@@ -354,7 +355,7 @@ export const NOTIFY_CATEGORY_FINAL = 'NEARR_NEARBY_FINAL';
 
 // Foreground display config. Without this, notifications can be silently
 // suppressed when the app is in the foreground on iOS.
-console.log('[NOTIFICATIONS_INIT] setting notification handler');
+logDebug('NOTIFICATIONS_INIT', 'setting notification handler');
 try {
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
@@ -384,7 +385,7 @@ export async function ensureNotificationPermission(): Promise<boolean> {
     },
   });
   const ok = req.status === 'granted';
-  console.log('[notifications] permission =', ok);
+  logDebug('notifications', 'permission', { granted: ok });
   return ok;
 }
 
@@ -434,7 +435,7 @@ export async function ensureBackgroundLocationPermission(): Promise<boolean> {
  */
 export async function startProximityWatch(): Promise<void> {
   if (isDemoMode()) {
-    console.log('[notifications] demo mode — skipping background watch');
+    logDebug('notifications', 'demo mode, skipping background watch');
     return;
   }
   const ok = await ensureBackgroundLocationPermission();
@@ -444,7 +445,7 @@ export async function startProximityWatch(): Promise<void> {
   }
   const status = await startLocationUpdatesTask();
   if (status === 'started' || status === 'already_started') {
-    console.log('[notifications] proximity watch started');
+    logDebug('notifications', 'proximity watch started', { status });
     return;
   }
   console.warn('[notifications] proximity watch skipped — native Android foreground service config missing or start rejected');
@@ -495,7 +496,7 @@ export async function stopProximityWatch(): Promise<void> {
   const started = await Location.hasStartedLocationUpdatesAsync(LOCATION_TASK);
   if (started) {
     await Location.stopLocationUpdatesAsync(LOCATION_TASK);
-    console.log('[notifications] proximity watch stopped');
+    logDebug('notifications', 'proximity watch stopped');
   }
 }
 
@@ -508,13 +509,11 @@ export async function syncProximityWatch(): Promise<'started' | 'stopped' | 'ski
   // pile work onto the JS thread and contributed to a native event
   // dispatcher backlog observed during idle on Android.
   if (proximityWatchSyncInFlight) {
-    if (__DEV__) {
-      console.log('[perf] proximity_sync_skipped reason=already_running');
-    }
+    logDebug('perf', 'proximity_sync_skipped', { reason: 'already_running' });
     return proximityWatchSyncInFlight;
   }
   proximityWatchSyncInFlight = (async () => {
-    if (__DEV__) console.log('[perf] proximity_sync_start');
+    logDebug('perf', 'proximity_sync_start');
     try {
       return await runSyncProximityWatch();
     } finally {
@@ -625,7 +624,7 @@ export async function registerNotificationCategories(): Promise<void> {
         options: { opensAppToForeground: true },
       },
     ]);
-    console.log('[notifications] categories registered');
+    logDebug('notifications', 'categories registered');
   } catch (e) {
     console.warn('[notifications] registerNotificationCategories failed (non-fatal)', e);
   }
@@ -652,7 +651,7 @@ export async function handleNotificationAction(
     if (error) {
       console.warn('[notifications] reset_count update failed', error.message);
     } else {
-      console.log(`[notifications] NOTIFICATION_COUNT_RESET savedPlaceId=${savedPlaceId}`);
+      logInfo('notifications', `NOTIFICATION_COUNT_RESET savedPlaceId=${savedPlaceId}`);
     }
     return;
   }
@@ -661,14 +660,14 @@ export async function handleNotificationAction(
     // TODO(notification-actions): open external maps directions to this place.
     // Fetch the place row (lat/lng/google_maps_url) via supabase and call
     // buildExternalMapsUrl from lib/externalMaps.ts, then Linking.openURL.
-    console.log(`[notifications] TODO action=going savedPlaceId=${savedPlaceId} placeId=${placeId ?? 'unknown'}`);
+    logDebug('notifications', `TODO action=going savedPlaceId=${savedPlaceId} placeId=${placeId ?? 'unknown'}`);
     return;
   }
 
   if (actionIdentifier === 'reduce_radius') {
     // TODO(notification-actions): navigate to place/[id] settings.
     // Requires router.push — pass a callback or navigate from the calling component.
-    console.log(`[notifications] TODO action=reduce_radius savedPlaceId=${savedPlaceId}`);
+    logDebug('notifications', `TODO action=reduce_radius savedPlaceId=${savedPlaceId}`);
     return;
   }
 }
@@ -802,15 +801,15 @@ export async function checkProximity(
   const profile = (profileData as Profile | null) ?? null;
 
   if (profile && !profile.notifications_enabled) {
-    console.log('[checkProximity] master notifications off, skipping');
+    logDebug('checkProximity', 'master notifications off, skipping');
     return;
   }
   if (profile && !profile.nearby_notifications_enabled) {
-    console.log('[checkProximity] nearby notifications off, skipping');
+    logDebug('checkProximity', 'nearby notifications off, skipping');
     return;
   }
   if (inQuietHours(profile)) {
-    console.log('[checkProximity] inside quiet hours, skipping');
+    logDebug('checkProximity', 'inside quiet hours, skipping');
     return;
   }
 
@@ -833,7 +832,15 @@ export async function checkProximity(
   // --- evaluate ---
   const here: LatLng = { latitude, longitude };
   const now = Date.now();
-  for (const identity of groupSavedPlacesByIdentity(saved, here)) {
+  const identities = groupSavedPlacesByIdentity(saved, here);
+  const summary = {
+    checked: identities.length,
+    inside: 0,
+    notified: 0,
+    skippedCooldown: 0,
+    skippedOutside: 0,
+  };
+  for (const identity of identities) {
     const s = identity.representative;
     const radius = effectiveRadiusMeters(s, profile);
     const dist = distanceMeters(here, {
@@ -848,11 +855,11 @@ export async function checkProximity(
     insideStateMap.set(identity.key, isCurrentlyInside);
 
     if (!isCurrentlyInside) {
-      console.log(
-        `[checkProximity] NOTIFICATION_SKIPPED_OUTSIDE place=${label} dist=${Math.round(dist)}m radius=${Math.round(radius)}m`,
-      );
+      summary.skippedOutside += 1;
       continue;
     }
+
+    summary.inside += 1;
 
     if (wasInside === undefined) {
       // First check this session — establish baseline; never notify on cold-start.
@@ -860,17 +867,19 @@ export async function checkProximity(
     }
 
     if (wasInside === true) {
-      console.log(`[checkProximity] NOTIFICATION_SKIPPED_ALREADY_INSIDE place=${label}`);
       continue;
     }
 
     // wasInside === false → outside→inside transition. Run cooldown + settings checks.
     const decision = decideProximity(here, s, profile, now);
     if (decision.kind === 'skip') {
-      // decideProximity will re-check range (redundantly) and then check cooldown/settings.
-      console.log(
-        `[checkProximity] NOTIFICATION_TRIGGERED place=${label} skipped_reason=${decision.reason}`,
-      );
+      if (decision.reason.includes('cooldown') || decision.reason.includes('count')) {
+        summary.skippedCooldown += 1;
+      }
+      logDebug('checkProximity', 'skipped after transition', {
+        place: label,
+        reason: decision.reason,
+      });
       continue;
     }
 
@@ -882,13 +891,14 @@ export async function checkProximity(
       now,
     });
     if (overlapGroup.allSavedPlaceIds.length === 0) {
-      console.log(`[checkProximity] NOTIFICATION_SKIPPED place=${label} reason=no_eligible_overlap_group`);
+      summary.skippedCooldown += 1;
+      logDebug('checkProximity', 'skipped overlap group', { place: label });
       continue;
     }
 
     const groupMemLast = lastAlertAtGroupMem.get(overlapGroup.key) ?? 0;
     if (now - groupMemLast < ALERT_COOLDOWN_MS) {
-      console.log(`[checkProximity] NOTIFICATION_SKIPPED_GROUP_COOLDOWN place=${label}`);
+      summary.skippedCooldown += 1;
       continue;
     }
 
@@ -896,7 +906,7 @@ export async function checkProximity(
       overlapGroup.identities.flatMap((groupIdentity) => groupIdentity.members),
     );
     if (groupDbLast > 0 && now - groupDbLast < ALERT_COOLDOWN_MS) {
-      console.log(`[checkProximity] NOTIFICATION_SKIPPED_GROUP_DB_COOLDOWN place=${label}`);
+      summary.skippedCooldown += 1;
       continue;
     }
 
@@ -912,6 +922,14 @@ export async function checkProximity(
     );
     lastAlertAtMem.set(s.id, now);
     lastAlertAtGroupMem.set(overlapGroup.key, now);
+    summary.notified += 1;
+  }
+
+  const summaryMessage = `summary checked=${summary.checked} inside=${summary.inside} notified=${summary.notified} skippedCooldown=${summary.skippedCooldown} skippedOutside=${summary.skippedOutside}`;
+  if (summary.notified > 0) {
+    logInfo('checkProximity', summaryMessage);
+  } else if (isDebugLoggingEnabled()) {
+    logDebug('checkProximity', summaryMessage);
   }
 }
 
@@ -1091,8 +1109,9 @@ async function fireNotification(
   const label = preferredLabel ?? notificationPrimaryLabel(saved);
   const defaultCopy = buildNearbyCopy(label);
 
-  console.log(
-    `[notifications] NOTIFICATION_TRIGGERED place=${label} dist=${Math.round(distance)}m count=${count} category=${categoryIdentifier}`,
+  logInfo(
+    'notifications',
+    `NOTIFICATION_TRIGGERED place=${label} dist=${Math.round(distance)}m count=${count} category=${categoryIdentifier}`,
   );
 
   const title = copyOverride?.title ?? defaultCopy.title;
@@ -1109,7 +1128,7 @@ async function fireNotification(
       },
       trigger: null, // fire immediately
     });
-    console.log(`[notifications] NOTIFICATION_SENT_SUCCESS place=${label}`);
+    logInfo('notifications', `NOTIFICATION_SENT_SUCCESS place=${label}`);
   } catch (e) {
     console.warn(`[notifications] NOTIFICATION_SEND_FAILED place=${label}`, e);
     // Don't update DB if the notification itself didn't go out.
@@ -1132,8 +1151,9 @@ async function fireNotification(
       console.warn('[notifications] saved_places update failed', upErr.message);
     }
   }
-  console.log(
-    `[notifications] NOTIFICATION_COUNT_INCREMENTED place=${label} group_size=${groupedSavedPlaceIds.length}`,
+  logInfo(
+    'notifications',
+    `NOTIFICATION_COUNT_INCREMENTED place=${label} group_size=${groupedSavedPlaceIds.length}`,
   );
 
   // 2b. Bump reminder_opportunity_count atomically for every grouped row.
@@ -1244,9 +1264,7 @@ export async function checkProximityOnce(): Promise<CheckProximityOnceResult> {
   // explicit Settings flow when the user enables nearby alerts.
   const perm = await Location.getForegroundPermissionsAsync();
   if (perm.status !== 'granted') {
-    if (__DEV__) {
-      console.debug('[notifications] one-shot skipped: permission not granted');
-    }
+    logDebug('notifications', 'one-shot skipped: permission not granted');
     return { ok: false, reason: 'permission_denied' };
   }
 
@@ -1256,9 +1274,7 @@ export async function checkProximityOnce(): Promise<CheckProximityOnceResult> {
   try {
     const enabled = await Location.hasServicesEnabledAsync();
     if (!enabled) {
-      if (__DEV__) {
-        console.debug('[notifications] one-shot skipped: location services disabled');
-      }
+      logDebug('notifications', 'one-shot skipped: location services disabled');
       return { ok: false, reason: 'location_services_disabled' };
     }
   } catch {
@@ -1275,12 +1291,11 @@ export async function checkProximityOnce(): Promise<CheckProximityOnceResult> {
     return { ok: true };
   } catch (e) {
     if (isExpectedLocationUnavailableError(e)) {
-      if (__DEV__) {
-        console.debug(
-          '[notifications] one-shot skipped: location unavailable',
-          e instanceof Error ? e.message : e,
-        );
-      }
+      logDebug(
+        'notifications',
+        'one-shot skipped: location unavailable',
+        e instanceof Error ? e.message : e,
+      );
       return { ok: false, reason: 'location_unavailable', error: e };
     }
     console.warn('[notifications] one-shot check failed', e);
@@ -1301,7 +1316,7 @@ export async function checkProximityOnce(): Promise<CheckProximityOnceResult> {
 
 try {
   if (!TaskManager.isTaskDefined(LOCATION_TASK)) {
-    console.log('[NOTIFICATIONS_INIT] registering background location task');
+    logDebug('NOTIFICATIONS_INIT', 'registering background location task');
     TaskManager.defineTask(LOCATION_TASK, async ({ data, error }) => {
       if (error) {
         console.warn('[locationTask] error', error.message);

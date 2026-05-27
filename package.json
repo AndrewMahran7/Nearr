@@ -14,7 +14,9 @@
     "test:address-match": "ts-node -P scripts/tsconfig.json scripts/testAddressMatch.ts",
     "test:safety-description-only": "ts-node -P scripts/tsconfig.json scripts/testSafetyDescriptionOnly.ts",
     "test:recovery-hints": "ts-node -P scripts/tsconfig.json scripts/testRecoveryHints.ts",
-    "test:share-remote": "ts-node -P scripts/tsconfig.json scripts/testProcessShareLinkRemote.ts"
+    "test:share-remote": "ts-node -P scripts/tsconfig.json scripts/testProcessShareLinkRemote.ts",
+    "export:share-gold-labels": "ts-node -P scripts/tsconfig.json scripts/exportShareGoldLabels.ts",
+    "eval:share-gold": "ts-node -P scripts/tsconfig.json scripts/evalShareGold.ts"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "1.23.1",

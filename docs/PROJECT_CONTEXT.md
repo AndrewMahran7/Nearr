@@ -33,15 +33,16 @@ Current shipping loop:
 
 ### Shipping now
 
-#### 1. Restaurant extraction v2
+#### 1. Restaurant extraction v3 (agent-driven)
 
-- Extraction is evidence-based rather than handle-first.
-- Caption and description evidence wins first.
-- If a specific address is present, extraction treats it as the strongest signal.
-- If a restaurant name is found, the app tries to verify the exact place through Places.
-- `@` handles are treated as supporting evidence, not truth.
-- Poster identity distinguishes restaurant vs influencer vs unknown.
-- Weak or conflicting evidence falls back to candidate selection instead of silent save.
+- The backend agent (`lib/shareAgent/agent.ts`) is the source of truth for both candidate selection and silent-save.
+- A deterministic safety gate (`lib/shareAgent/safety.ts`) clears auto-save only when ALL of: agent confidence high, ≥1 strong evidence key (caption_explicit_venue, caption_explicit_address, profile_bio_address/name/city, transcript_venue), Places strong-match (≥0.75), no candidate ambiguity, no name/address mismatch, resolved place from this run, and none of `profile_blocked` / `generic_content` / handle-only / display-name-only.
+- Otherwise the app shows a candidate picker (with agent-ranked candidates) or manual fallback.
+- The legacy heuristic + AI + ranker pipeline (`lib/placeExtractor`, `lib/extractionPipeline`, `lib/aiExtractPlace`, `lib/queryValidation`) is retained ONLY as the host/Edge fallback when the agent is unavailable. It is deprecated in code; do not extend it. See [docs/ARCHITECTURE.md](./ARCHITECTURE.md) "Stage 4 cleanup status".
+- Known extraction issues, future work, and cleanup/removal notes are tracked in [docs/EXTRACTION_BACKLOG.md](./EXTRACTION_BACKLOG.md).
+- First-run / onboarding flow, fallback behaviour, and the manual QA checklist for new-user setup live in [docs/ONBOARDING_FLOW.md](./ONBOARDING_FLOW.md).
+- UI color tokens, theme locking, and the visual QA checklist live in [docs/UI_THEME_NOTES.md](./UI_THEME_NOTES.md).
+- Read-only offline saved-places cache, blocked-mutation behaviour, and the QA checklist live in [docs/OFFLINE_SAVED_PLACES.md](./OFFLINE_SAVED_PLACES.md).
 
 #### 2. Grouped nearby notifications
 

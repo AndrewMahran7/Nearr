@@ -16,6 +16,7 @@ import { getLocationStatus } from '@/components/SetupChecklist';
 import { handleAuthDeepLink } from '@/lib/authDeepLink';
 import { clearDevAuth } from '@/lib/devAuth';
 import { trackEvent } from '@/lib/analytics';
+import { logDebug, logInfo } from '@/lib/logger';
 import { LEGAL_ACCEPTANCE_REQUIRED, LEGAL_VERSION } from '@/constants';
 import {
   checkProximityOnce,
@@ -33,7 +34,7 @@ import { syncGeofencesForSavedPlaces } from '@/lib/geofencing';
 import { Colors } from '@/constants';
 import { ThemeProvider, useTheme } from '@/lib/theme';
 
-console.log('[APP_START] _layout module loaded');
+logInfo('APP_START', '_layout module loaded');
 
 // ---------------------------------------------------------------------------
 // Crash-safe Error Boundary — catches render exceptions that would otherwise
@@ -126,13 +127,34 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     }
 
     void (async () => {
-      const seen = await hasSeenHowNearrWorks(session.user.id);
-      if (cancelled || seen) return;
-      setHowNearrWorksVisible(true);
-      void trackEvent('how_nearr_works_shown', {
-        entry_point: 'first_sign_in',
-        user_id: session.user.id,
-      });
+      let seen = false;
+      let storageFailed = false;
+      try {
+        seen = await hasSeenHowNearrWorks(session.user.id);
+      } catch (err) {
+        // Defence in depth — hasSeenHowNearrWorks already swallows storage
+        // errors, but if a future refactor lets one escape we still want
+        // first-run instructions to appear instead of silently no-op'ing.
+        storageFailed = true;
+        console.warn('[onboarding] hasSeenHowNearrWorks threw', err);
+      }
+      if (cancelled) return;
+
+      if (!seen) {
+        // Stage 0 telemetry — helps distinguish "user dismissed" from
+        // "first launch never showed the modal" in support reports.
+        console.log(
+          storageFailed
+            ? '[onboarding] instructions_fallback_shown'
+            : '[onboarding] first_run_detected',
+        );
+        console.log('[onboarding] instructions_shown');
+        setHowNearrWorksVisible(true);
+        void trackEvent('how_nearr_works_shown', {
+          entry_point: storageFailed ? 'storage_fallback' : 'first_sign_in',
+          user_id: session.user.id,
+        });
+      }
     })();
 
     return () => {
@@ -151,7 +173,18 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     }
 
     void (async () => {
-      const status = await getLegalAcceptanceStatus(session.user.id);
+      let status: Awaited<ReturnType<typeof getLegalAcceptanceStatus>> = null;
+      try {
+        status = await getLegalAcceptanceStatus(session.user.id);
+      } catch (err) {
+        // Network/RLS error here used to leave the legal modal hidden but
+        // also gated the HowNearr modal indefinitely if the effect deps
+        // shifted. Fail-open: assume accepted so the rest of onboarding
+        // can proceed. Logged so we can spot it in support traces.
+        console.warn('[onboarding] getLegalAcceptanceStatus failed, failing open', err);
+        if (!cancelled) setLegalAgreementVisible(false);
+        return;
+      }
       if (cancelled) return;
       setLegalAgreementVisible(!status?.acceptedCurrentVersion);
     })();
@@ -174,6 +207,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
         },
       );
     }
+    console.log('[onboarding] dismissed', action);
     setHowNearrWorksVisible(false);
   }
 
@@ -237,18 +271,16 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (loading) return;
     const inAuth = segments[0] === '(auth)';
-    if (__DEV__) {
-      console.log('[AuthGate] decide', {
-        hasSession: !!session,
-        inAuth,
-        segments: segments.join('/'),
-      });
-    }
+    logDebug('AuthGate', 'decide', {
+      hasSession: !!session,
+      inAuth,
+      segments: segments.join('/'),
+    });
     if (!session && !inAuth) {
-      if (__DEV__) console.log('[AuthGate] -> /(auth)/sign-in');
+      logDebug('AuthGate', '-> /(auth)/sign-in');
       router.replace('/(auth)/sign-in');
     } else if (session && inAuth) {
-      if (__DEV__) console.log('[AuthGate] -> /(tabs)/home');
+      logDebug('AuthGate', '-> /(tabs)/home');
       router.replace('/(tabs)/home');
     }
   }, [session, loading, segments, router]);
@@ -345,7 +377,7 @@ function RootLayoutContent() {
     // Cold-start: app launched by tapping the link.
     ExpoLinking.getInitialURL().then(async (url) => {
       if (!url) return;
-      console.log('[deeplink] received URL =', url.replace(/[?#].*$/, ''));
+      logDebug('deeplink', 'received URL', url.replace(/[?#].*$/, ''));
       const handled = await handleAuthDeepLink(url);
       // Fallback: if onAuthStateChange didn't trigger a navigation, push
       // the user to home explicitly so the sign-in screen doesn't stay visible.
@@ -355,7 +387,7 @@ function RootLayoutContent() {
     });
     // Warm-start: app already open (e.g. tapping link while app is in background).
     const sub = ExpoLinking.addEventListener('url', async ({ url }) => {
-      console.log('[deeplink] received URL =', url.replace(/[?#].*$/, ''));
+      logDebug('deeplink', 'received URL', url.replace(/[?#].*$/, ''));
       const handled = await handleAuthDeepLink(url);
       if (handled) {
         router.replace('/(tabs)/home');

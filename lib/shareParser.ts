@@ -36,6 +36,8 @@ const USER_AGENT =
   'Mozilla/5.0 (compatible; NearrBot/1.0; +https://nearr.app)';
 
 const FETCH_TIMEOUT_MS = 8000;
+const SOCIAL_TAG_RE = /#[^\s#@]+/g;
+const SOCIAL_MENTION_RE = /@[^\s#@]+/g;
 
 // ---------------------------------------------------------------------------
 // Public API
@@ -180,8 +182,8 @@ function buildQuery(title: string | null, description: string | null): string | 
   if (!candidate) return null;
   let q = candidate
     // Hashtags and @mentions are pure noise for a place search.
-    .replace(/#[\p{L}\p{N}_]+/gu, ' ')
-    .replace(/@[\p{L}\p{N}_.]+/gu, ' ')
+    .replace(SOCIAL_TAG_RE, ' ')
+    .replace(SOCIAL_MENTION_RE, ' ')
     // URLs leaked into captions.
     .replace(/https?:\/\/\S+/g, ' ')
     // Social platform boilerplate.
@@ -189,15 +191,11 @@ function buildQuery(title: string | null, description: string | null): string | 
     .replace(/\s+on TikTok\b.*$/i, ' ')
     .replace(/\bReel by\b/gi, ' ')
     .replace(/\bPhoto by\b/gi, ' ')
-    // Strip emoji / pictographs / symbols. Place names are letters+digits.
-    .replace(
-      /[\p{Extended_Pictographic}\p{Emoji_Presentation}\p{So}\p{Sk}]/gu,
-      ' ',
-    )
     // Surrounding quotes.
     .replace(/["\u201C\u201D'`]+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
+  q = stripEmojiLikeChars(q);
   if (q.length > 120) q = q.slice(0, 120).trim();
   return q || null;
 }
@@ -240,6 +238,27 @@ function decodeHtml(s: string): string {
       .replace(/&#39;/g, "'")
       .replace(/&#x27;/g, "'")
       .replace(/&nbsp;/g, ' ')
+  );
+}
+
+function stripEmojiLikeChars(value: string): string {
+  let out = '';
+  for (const char of value) {
+    const codePoint = char.codePointAt(0);
+    if (codePoint == null || !isEmojiLikeCodePoint(codePoint)) {
+      out += char;
+      continue;
+    }
+    out += ' ';
+  }
+  return out;
+}
+
+function isEmojiLikeCodePoint(codePoint: number): boolean {
+  return (
+    (codePoint >= 0x1f000 && codePoint <= 0x1faff) ||
+    (codePoint >= 0x2600 && codePoint <= 0x27bf) ||
+    (codePoint >= 0x2300 && codePoint <= 0x23ff)
   );
 }
 

@@ -1,0 +1,320 @@
+[
+  {
+    "name": "manasiri-caption-explicit-venue",
+    "input": {
+      "url": "https://www.instagram.com/p/MANASIRI_explicit_venue/",
+      "platform": "instagram",
+      "title": "Manasiri (@manasirinyc) on Instagram: Northern Thai dinner at Manasiri",
+      "description": "Manasiri — 99 MacDougal St, New York, NY. Khao soi, larb, papaya salad. #thaifood #nyc",
+      "detectedHandles": {
+        "posterHandle": "manasirinyc",
+        "taggedHandles": [],
+        "allHandles": ["manasirinyc"]
+      },
+      "profileBios": []
+    },
+    "expectedSafetyDecision": "auto_save",
+    "expectedEvidenceContains": ["caption_explicit_venue", "caption_explicit_address"],
+    "expectedUserFacingDecision": "auto_save",
+    "expectedSafeToAutoSave": true,
+    "expectedPlaceNameContains": ["manasiri"],
+    "mustCallTool": ["searchPlaces"],
+    "_comment": "Caption explicitly names the venue + address. Stage 3 — agent's safety gate clears auto_save when Places returns a strong, unambiguous match."
+  },
+  {
+    "name": "old-fishermans-grotto-tagged-handle-profile-fetch-success",
+    "input": {
+      "url": "https://www.instagram.com/p/OFG_profile_ok/",
+      "platform": "instagram",
+      "title": "Joe Huang (@therealjoehuang) on Instagram: dinner at the Wharf",
+      "description": "Collab with @oldfishermansgrotto. Seafood Perfection Since 1950.",
+      "detectedHandles": {
+        "posterHandle": "therealjoehuang",
+        "taggedHandles": ["oldfishermansgrotto"],
+        "allHandles": ["therealjoehuang", "oldfishermansgrotto"]
+      },
+      "profileBios": [
+        {
+          "status": "ok",
+          "handle": "therealjoehuang",
+          "platform": "instagram",
+          "displayName": "Joe Huang",
+          "category": null,
+          "bio": "Food creator and storyteller.",
+          "website": null
+        },
+        {
+          "status": "ok",
+          "handle": "oldfishermansgrotto",
+          "platform": "instagram",
+          "displayName": "Old Fisherman's Grotto",
+          "category": "Restaurant",
+          "bio": "Seafood Perfection Since 1950. 39 Fisherman's Wharf, Monterey CA.",
+          "website": "https://oldfishermansgrotto.com"
+        }
+      ]
+    },
+    "expectedSafetyDecision": "auto_save",
+    "expectedEvidenceContains": ["profile_bio_address"],
+    "expectedUserFacingDecision": "auto_save",
+    "expectedSafeToAutoSave": true,
+    "expectedPlaceNameContains": ["old fisherman"],
+    "forbiddenPlaceNameContains": ["joe huang"],
+    "mustCallTool": ["searchPlaces"],
+    "_comment": "Tagged restaurant profile with address in bio resolves to Old Fisherman's Grotto. Stage 3 — safety gate clears auto_save when bio name+address verified and Places strong-matches."
+  },
+  {
+    "name": "old-fishermans-grotto-profile-fetch-blocked",
+    "input": {
+      "url": "https://www.instagram.com/p/OFG_profile_blocked/",
+      "platform": "instagram",
+      "title": "Joe Huang (@therealjoehuang) on Instagram",
+      "description": "Quick visit @oldfishermansgrotto",
+      "detectedHandles": {
+        "posterHandle": "therealjoehuang",
+        "taggedHandles": ["oldfishermansgrotto"],
+        "allHandles": ["therealjoehuang", "oldfishermansgrotto"]
+      },
+      "profileBios": [
+        {
+          "status": "blocked",
+          "handle": "oldfishermansgrotto",
+          "platform": "instagram",
+          "displayName": null,
+          "category": null,
+          "bio": null,
+          "website": null,
+          "note": "login_wall"
+        }
+      ]
+    },
+    "expectedSafetyDecision": "manual_fallback",
+    "expectedEvidenceContains": ["profile_blocked"],
+    "expectedSafeToAutoSave": false,
+    "expectedUserFacingDecision": "manual_fallback",
+    "expectMustNotAutoSave": true,
+    "_comment": "When profile fetch is blocked, agent must surface manual_fallback to the host app — never silent save."
+  },
+  {
+    "name": "generic-food-content-manual-fallback",
+    "input": {
+      "url": "https://www.tiktok.com/@foodtok/video/9000000001",
+      "platform": "tiktok",
+      "title": "best tacos ever",
+      "description": "this spot was fire #fyp #tacos",
+      "detectedHandles": { "posterHandle": null, "taggedHandles": [], "allHandles": [] },
+      "profileBios": []
+    },
+    "expectedSafetyDecision": "manual_fallback",
+    "expectedEvidenceContains": ["generic_content"],
+    "expectedSafeToAutoSave": false,
+    "expectedUserFacingDecision": "manual_fallback",
+    "expectMustNotAutoSave": true,
+    "mustNotCallTool": ["searchPlaces"],
+    "_comment": "Pure category language with no venue/address. Must fall back to manual in the host app and must not waste a Places call."
+  },
+  {
+    "name": "influencer-title-wrapper-not-a-venue",
+    "input": {
+      "url": "https://www.tiktok.com/@saraheatsla/video/9000000002",
+      "platform": "tiktok",
+      "title": "Sarah Eats LA on TikTok: you HAVE to try this taco spot",
+      "description": "@guerrilla_tacos slaps. Downtown LA vibes only.",
+      "detectedHandles": {
+        "posterHandle": "saraheatsla",
+        "taggedHandles": ["guerrilla_tacos"],
+        "allHandles": ["saraheatsla", "guerrilla_tacos"]
+      },
+      "profileBios": []
+    },
+    "expectedSafetyDecision": "candidate_confirmation",
+    "expectedSafeToAutoSave": false,
+    "expectedUserFacingDecision": "candidate_confirmation",
+    "expectMustNotAutoSave": true,
+    "_comment": "Influencer wrapper title; @guerrilla_tacos is a candidate but with no profile bio fetched the host app must show the picker — not auto-save."
+  },
+  {
+    "name": "bad-places-match-rejected",
+    "input": {
+      "url": "https://www.instagram.com/p/badmatch01/",
+      "platform": "instagram",
+      "title": "Mad Yolks (@madyolksla) on Instagram: brunch in LA",
+      "description": "Hash browns, omelet, the works.",
+      "detectedHandles": {
+        "posterHandle": "madyolksla",
+        "taggedHandles": [],
+        "allHandles": ["madyolksla"]
+      },
+      "profileBios": [
+        {
+          "status": "ok",
+          "handle": "madyolksla",
+          "platform": "instagram",
+          "displayName": "Mad Yolks",
+          "category": null,
+          "bio": "Sunday brunch experience.",
+          "website": null
+        }
+      ],
+      "prefetchedPlaces": [
+        {
+          "googlePlaceId": "fake_unrelated_diner",
+          "name": "Cheezys Diner",
+          "formattedAddress": "100 Random Ave, Los Angeles, CA",
+          "types": ["restaurant"]
+        }
+      ]
+    },
+    "expectedSafetyDecision": "manual_fallback",
+    "expectedSafeToAutoSave": false,
+    "expectedUserFacingDecision": "manual_fallback",
+    "expectMustNotAutoSave": true,
+    "_comment": "Places returned an unrelated business. Agent must surface manual_fallback to the host app rather than show a wrong candidate."
+  },
+  {
+    "name": "address-first-strongest",
+    "input": {
+      "url": "https://www.instagram.com/reel/Caddr_first/",
+      "platform": "instagram",
+      "title": "Joe's Pizza, 7 Carmine St, New York, NY 10014",
+      "description": "best slice ever",
+      "detectedHandles": { "posterHandle": null, "taggedHandles": [], "allHandles": [] },
+      "profileBios": []
+    },
+    "expectedSafetyDecision": "auto_save",
+    "expectedEvidenceContains": ["caption_explicit_address"],
+    "expectedUserFacingDecision": "auto_save",
+    "expectedSafeToAutoSave": true,
+    "_comment": "Address-first signal in caption. Stage 3 — safety gate clears auto_save when Places strong-matches the explicit address."
+  },
+  {
+    "name": "youtube-generic-title-no-venue",
+    "input": {
+      "url": "https://www.youtube.com/watch?v=9000000003",
+      "platform": "youtube",
+      "title": "I Tried The Best Smashburger In New York",
+      "description": "Full food review",
+      "detectedHandles": { "posterHandle": null, "taggedHandles": [], "allHandles": [] },
+      "profileBios": []
+    },
+    "expectedSafetyDecision": "manual_fallback",
+    "expectedEvidenceContains": ["generic_content"],
+    "expectedSafeToAutoSave": false,
+    "expectedUserFacingDecision": "manual_fallback",
+    "expectMustNotAutoSave": true,
+    "_comment": "Review title with no venue identity. Must surface manual_fallback in host app."
+  },
+  {
+    "name": "transcript-unsupported",
+    "input": {
+      "url": "https://www.tiktok.com/@anyone/video/9000000004",
+      "platform": "tiktok",
+      "title": "vibes only",
+      "description": "no caption details",
+      "detectedHandles": { "posterHandle": "anyone", "taggedHandles": [], "allHandles": ["anyone"] },
+      "profileBios": []
+    },
+    "expectedSafetyDecision": "manual_fallback",
+    "expectedEvidenceContains": ["transcript_unsupported"],
+    "expectedSafeToAutoSave": false,
+    "expectedUserFacingDecision": "manual_fallback",
+    "expectMustNotAutoSave": true,
+    "_comment": "Transcript stays stubbed in Stage 2. Agent must record transcript_unsupported and surface manual_fallback."
+  },
+  {
+    "name": "twitter-short-post-no-venue",
+    "input": {
+      "url": "https://x.com/example/status/9000000005",
+      "platform": "twitter",
+      "title": "this coffee shop is insane, you need to try it",
+      "description": "",
+      "detectedHandles": { "posterHandle": null, "taggedHandles": [], "allHandles": [] },
+      "profileBios": []
+    },
+    "expectedSafetyDecision": "manual_fallback",
+    "expectedEvidenceContains": ["generic_content"],
+    "expectedSafeToAutoSave": false,
+    "expectedUserFacingDecision": "manual_fallback",
+    "expectMustNotAutoSave": true,
+    "_comment": "Generic Twitter/X post without a venue name. Host app must surface manual_fallback."
+  },
+  {
+    "name": "stage3-ambiguous-candidates-no-autosave",
+    "input": {
+      "url": "https://www.instagram.com/p/AMBIG_two_starbucks/",
+      "platform": "instagram",
+      "title": "Starbucks in Manhattan",
+      "description": "Starbucks coffee — somewhere in Manhattan, NY.",
+      "detectedHandles": { "posterHandle": null, "taggedHandles": [], "allHandles": [] },
+      "profileBios": [],
+      "prefetchedPlaces": [
+        {
+          "googlePlaceId": "starbucks_a",
+          "name": "Starbucks",
+          "formattedAddress": "1 Times Sq, New York, NY 10036",
+          "types": ["cafe", "restaurant"]
+        },
+        {
+          "googlePlaceId": "starbucks_b",
+          "name": "Starbucks",
+          "formattedAddress": "200 W 34th St, New York, NY 10001",
+          "types": ["cafe", "restaurant"]
+        }
+      ]
+    },
+    "expectedSafetyDecision": "candidate_confirmation",
+    "expectedSafeToAutoSave": false,
+    "expectedUserFacingDecision": "candidate_confirmation",
+    "expectMustNotAutoSave": true,
+    "_comment": "Two near-identically-scored Places candidates. Stage 3 — ambiguity must block auto_save and surface the picker."
+  },
+  {
+    "name": "stage3-name-mismatch-no-autosave",
+    "input": {
+      "url": "https://www.instagram.com/p/NAME_MISMATCH/",
+      "platform": "instagram",
+      "title": "Joe's Pizza in Greenwich Village",
+      "description": "Joe's Pizza, 7 Carmine St, New York, NY 10014",
+      "detectedHandles": { "posterHandle": null, "taggedHandles": [], "allHandles": [] },
+      "profileBios": [],
+      "prefetchedPlaces": [
+        {
+          "googlePlaceId": "wrong_pizzeria",
+          "name": "Best Pizza",
+          "formattedAddress": "7 Carmine St, New York, NY 10014",
+          "types": ["restaurant"]
+        }
+      ]
+    },
+    "expectedSafetyDecision": "candidate_confirmation",
+    "expectedSafeToAutoSave": false,
+    "expectedUserFacingDecision": "candidate_confirmation",
+    "expectMustNotAutoSave": true,
+    "_comment": "Caption clearly says Joe's Pizza but Places returned an unrelated pizzeria at the same address. Stage 3 — name mismatch must block auto_save."
+  },
+  {
+    "name": "stage3-address-mismatch-no-autosave",
+    "input": {
+      "url": "https://www.instagram.com/p/ADDR_MISMATCH/",
+      "platform": "instagram",
+      "title": "Joe's Pizza, 7 Carmine St, New York, NY 10014",
+      "description": "best slice ever",
+      "detectedHandles": { "posterHandle": null, "taggedHandles": [], "allHandles": [] },
+      "profileBios": [],
+      "prefetchedPlaces": [
+        {
+          "googlePlaceId": "joes_far_away",
+          "name": "Joe's Pizza",
+          "formattedAddress": "9999 Sunset Blvd, Los Angeles, CA 90069",
+          "types": ["restaurant"]
+        }
+      ]
+    },
+    "expectedSafetyDecision": "candidate_confirmation",
+    "expectedSafeToAutoSave": false,
+    "expectedUserFacingDecision": "candidate_confirmation",
+    "expectMustNotAutoSave": true,
+    "_comment": "Caption pins a specific NYC street address but Places returned a same-name location in LA. Stage 3 — address mismatch must block auto_save."
+  }
+]
+

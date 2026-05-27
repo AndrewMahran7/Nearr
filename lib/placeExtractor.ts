@@ -1,6 +1,15 @@
 /**
  * Place query extractor.
  *
+ * @deprecated STAGE 4 — this module is part of the LEGACY heuristic
+ * extraction pipeline. The new backend agent (lib/shareAgent/agent.ts)
+ * is now the source of truth for venue selection. This module remains
+ * ONLY as the host-app fallback when the agent fails (e.g. no
+ * GEMINI_API_KEY, network timeout, server unavailable). Do NOT add new
+ * callers. Slated for removal in a future stage once the agent is
+ * mandatory and a thin manual-search-only fallback replaces this code
+ * path. See docs/ARCHITECTURE.md "Stage 4 cleanup" for the plan.
+ *
  * Given the public OG/Twitter/title metadata we pulled from a shared link
  * (TikTok, Instagram, generic), produce ONE concise query string that has
  * the best chance of matching a real venue in Google Places text search.
@@ -33,6 +42,11 @@
  */
 
 import type { ShareSource } from './shareParser';
+import {
+  classifyExtractedQuery,
+  isGenericContentQuery,
+  looksLikeVenueNameCandidate,
+} from './queryValidation';
 
 export type PlaceExtractionInput = {
   source: ShareSource;
@@ -92,9 +106,16 @@ const HANDLE_SPLIT_TOKENS: string[] = [
   'koreatown', 'chinatown', 'downtown', 'hollywood', 'beverly', 'hills',
 ];
 
+const LATIN_LETTER_CLASS = 'A-Za-z\\u00C0-\\u024F\\u1E00-\\u1EFF';
+const LATIN_NAME_CHAR_CLASS = `${LATIN_LETTER_CLASS}.'\\u2019-`;
+const CAPITALIZED_WORD_RE = `[A-Z][${LATIN_NAME_CHAR_CLASS}]+`;
+const HASHTAG_RE = /#[^\s#@]+/g;
+const PIN_MARKER_RE = /[📍📌]/g;
+const TITLE_POSSESSIVE_RE = new RegExp(`^[A-Z][${LATIN_NAME_CHAR_CLASS}]+'s\\s`);
+
 // Trailing ", City Name" pattern. Up to 4 capitalized words.
 const CITY_HINT_RE =
-  /,\s*([A-Z][\p{L}.'\u2019-]+(?:\s+[A-Z][\p{L}.'\u2019-]+){0,3})\s*$/u;
+  new RegExp(`,\\s*(${CAPITALIZED_WORD_RE}(?:\\s+${CAPITALIZED_WORD_RE}){0,3})\\s*$`);
 
 // "X on Instagram", "X on TikTok", "(@user) on Instagram" -- the creator
 // boilerplate that poisons naive title extraction.
@@ -104,14 +125,14 @@ const CREATOR_BOILERPLATE_RE =
 // Location-pin / map emojis. Users very often put one immediately before
 // the venue name in a caption.
 const LOCATION_EMOJI_RE =
-  /[\u{1F4CD}\u{1F4CC}\u{1F5FA}\u{1F30D}\u{1F30E}\u{1F30F}]/u;
+  /[📍📌🗺🌍🌎🌏]/;
 
 // @handles -- letters, digits, dots, underscores.
 const HANDLE_RE = /@([A-Za-z0-9._]+)/g;
 const ADDRESS_RE =
-  /\b\d{1,5}\s+[A-Za-z][\w'.\- ]{1,40}?\s+(?:st|street|ave|avenue|blvd|boulevard|rd|road|dr|drive|way|ln|lane|ct|court|pl|place|hwy|highway)\b/i;
+  /\b\d{1,5}\s+[A-Za-z][\w'.\- ]{1,50}?\s+(?:st|street|ave|avenue|blvd|boulevard|rd|road|dr|drive|way|ln|lane|ct|court|pl|place|hwy|highway|wharf)\b/i;
 const CITY_STATE_RE =
-  /\b([A-Z][\p{L}.'\u2019-]+(?:\s+[A-Z][\p{L}.'\u2019-]+){0,3}),\s*([A-Z]{2})\b/u;
+  new RegExp(`\\b(${CAPITALIZED_WORD_RE}(?:\\s+${CAPITALIZED_WORD_RE}){0,3}),\\s*([A-Z]{2})\\b`);
 const GENERIC_WEAK_PREFIX_RE =
   /^(?:my|our|this|that|best|favorite|hidden gem|vibes|going|follow|check out|come with|come to|run don'?t walk|guys run|need to go|you need to go|you have to try|having fun)\b/i;
 const GENERIC_WEAK_QUERY_RE =
@@ -208,7 +229,11 @@ export function extractPlaceQueryFromShareMetadata(
       confidence: 'low',
       reason: 'pin-location-only',
     };
-  } else if (cleanedQuery) {
+  } else if (
+    cleanedQuery &&
+    looksLikeVenueNameCandidate(cleanedQuery) &&
+    !isGenericContentQuery(cleanedQuery)
+  ) {
     chosen = {
       value: cleanedQuery,
       confidence: 'low',
@@ -226,6 +251,19 @@ export function extractPlaceQueryFromShareMetadata(
   query = collapseWhitespace(query);
   if (query.length > 120) query = query.slice(0, 120).trim();
   if (!query) return null;
+  if (
+    classifyExtractedQuery(query, {
+      city,
+      sourceContext: city,
+      accountIdentityOnly:
+        chosen.reason === 'account-display-name' ||
+        chosen.reason === 'account-handle' ||
+        chosen.reason === 'profile-url-handle',
+      accountIdentitySource: chosen.reason,
+    }) === 'generic_content'
+  ) {
+    return null;
+  }
 
   void source;
   return { query, confidence: chosen.confidence, reason: chosen.reason };
@@ -283,7 +321,13 @@ export function classifyPlaceQueryStrength(params: {
   const businessLike = looksLikeBusinessQuery(query) || isLikelyBusinessIdentity(query);
   const confidence = params.confidence ?? null;
   const reason = params.extractionReason ?? '';
-  const generic = isGenericWeakQuery(query);
+  const generic =
+    isGenericWeakQuery(query) ||
+    classifyExtractedQuery(query, {
+      sourceContext: params.sourceContextText,
+      accountIdentityOnly: params.accountIdentityUsed,
+      accountIdentitySource: params.accountIdentityUsed ? reason : null,
+    }) === 'generic_content';
 
   if (generic && !businessLike) return 'weak';
   if (businessLike && hasContext) return 'strong';
@@ -388,7 +432,7 @@ function pickAfterLocationPin(s: string): string | null {
   // Skip the emoji itself (1-2 code units) and grab a window.
   const tail = s.slice(idx + 2, idx + 2 + 120).split(/[\n\r]/)[0];
   const cleaned = tail
-    .replace(/#[\p{L}\p{N}_]+/gu, ' ')
+    .replace(HASHTAG_RE, ' ')
     .replace(/["\u201C\u201D'`]+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
@@ -527,7 +571,7 @@ function pickTitleCasedPhrase(titleStripped: string | null): string | null {
   const hasKeyword = PLACE_KEYWORDS.some((kw) => lower.includes(kw));
   // "Jack's Dining Room" without any food keyword -> probably the creator.
   const looksLikeCreator =
-    /^[A-Z][\p{L}.'\u2019-]+'s\s/u.test(candidate) && !hasKeyword;
+    TITLE_POSSESSIVE_RE.test(candidate) && !hasKeyword;
   if (looksLikeCreator) return null;
 
   const first = candidate.split(/[.\u2014\-:|\u2022]/)[0].trim();
@@ -588,7 +632,7 @@ export function looksLikeLocationOnly(s: string): boolean {
   if (!s) return false;
   const cleaned = s
     .toLowerCase()
-    .replace(/[\u{1F4CD}\u{1F4CC}]/gu, '')
+    .replace(PIN_MARKER_RE, '')
     .replace(/[.,]+$/g, '')
     .trim();
   if (!cleaned) return false;

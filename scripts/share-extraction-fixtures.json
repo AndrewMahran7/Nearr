@@ -405,5 +405,190 @@
     "expectedQuery": "Joe's Pizza New York",
     "expectedAutoSave": true,
     "_comment": "Even if the device is in CA, this share's NY address must drive the silent-save target. Pipeline-level: autoSaveAllowed=true with name+address present. Runtime: verifyPlaceAtAddress geocodes 7 Carmine St → NYC rooftop → Places nearby search at that point → Joe's Pizza within 150m → silent save. Device location must NEVER override this."
+  },
+  {
+    "name": "generic-content-instagram-account-display-name-no-random-candidates",
+    "input": {
+      "title": "stuffin grilled cheeses with smashburgers",
+      "description": "513,100 views, 1,100 comments - No Good Burger Joint NY (@nogoodburgerjointny) on Instagram: \"Open daily for smashburgers and fries\"",
+      "url": "https://www.instagram.com/reel/DNT_wptv1K9/",
+      "sourceType": "instagram"
+    },
+    "expectedQuery": "No Good Burger Joint NY",
+    "expectedAutoSave": false,
+    "_comment": "Generic reel text must not be searched as a Places query. Only the account display name may survive as medium-confidence identity evidence, and only if downstream candidates meaningfully name-match it. Random category matches like Cheezys must not survive."
+  },
+  {
+    "name": "generic-content-tiktok-no-venue-evidence",
+    "input": {
+      "title": "best tacos in LA",
+      "description": "this spot was fire",
+      "url": "https://www.tiktok.com/@foodtok/video/7500000001",
+      "sourceType": "tiktok"
+    },
+    "expectedQuery": "",
+    "expectedAutoSave": false,
+    "_comment": "Generic food-category phrasing with no venue or address must not reach Places."
+  },
+  {
+    "name": "generic-content-youtube-title-no-venue-evidence",
+    "input": {
+      "title": "I Tried The Best Smashburger In New York",
+      "description": "Full food review",
+      "url": "https://www.youtube.com/watch?v=7500000002",
+      "sourceType": "youtube"
+    },
+    "expectedQuery": "",
+    "expectedAutoSave": false,
+    "_comment": "A review title is not a venue identity. No search unless a real venue or address is extracted."
+  },
+  {
+    "name": "generic-content-twitter-post-no-venue-evidence",
+    "input": {
+      "title": "this coffee shop is insane, you need to try it",
+      "description": "",
+      "url": "https://x.com/example/status/7500000003",
+      "sourceType": "twitter"
+    },
+    "expectedQuery": "",
+    "expectedAutoSave": false,
+    "_comment": "A generic recommendation post without a venue name or address must fall back instead of surfacing random coffee shops."
+  },
+  {
+    "name": "real-venue-title-old-fishermans-grotto",
+    "input": {
+      "title": "Old Fisherman's Grotto",
+      "description": "Monterey, CA",
+      "url": "https://example.com/old-fishermans-grotto",
+      "sourceType": "link"
+    },
+    "expectedQuery": "Old Fisherman's Grotto Monterey",
+    "_comment": "A real venue title plus city context should still be allowed through the search path."
+  },
+  {
+    "name": "address-first-monterey-wharf-still-strongest",
+    "input": {
+      "title": "39 Fishermans Wharf, Monterey, CA",
+      "description": "Old Fisherman's Grotto",
+      "url": "https://example.com/fishermans-wharf-monterey",
+      "sourceType": "link"
+    },
+    "expectedQuery": "39 Fishermans Wharf Monterey",
+    "expectedAutoSave": true,
+    "_comment": "Address-first path remains the strongest signal and should not regress while generic-query gating is tightened."
+  },
+  {
+    "name": "instagram-profile-enrichment-old-fishermans-grotto",
+    "input": {
+      "title": "Joe Huang (@therealjoehuang) on Instagram: @oldfishermansgrotto has been serving the Wharf since 1950",
+      "description": "Collab post with @oldfishermansgrotto. Seafood Perfection Since 1950.",
+      "url": "https://www.instagram.com/p/DLfvZunSKRp/",
+      "sourceType": "instagram",
+      "posterHandle": "therealjoehuang",
+      "profileMetadata": [
+        {
+          "handle": "therealjoehuang",
+          "classification": "food_creator",
+          "displayName": "Joe Huang",
+          "category": "Digital creator",
+          "bio": "Food creator and storyteller.",
+          "confidence": "high",
+          "reasons": ["category_creator"]
+        },
+        {
+          "handle": "oldfishermansgrotto",
+          "classification": "restaurant_or_business",
+          "displayName": "Old Fisherman's Grotto",
+          "category": "Restaurant",
+          "bio": "Seafood Perfection Since 1950. 39 Fisherman's Wharf, Monterey CA. oldfishermansgrotto.com",
+          "website": "https://oldfishermansgrotto.com",
+          "extractedName": "Old Fisherman's Grotto",
+          "extractedAddress": "39 Fisherman's Wharf",
+          "extractedCity": "Monterey, CA",
+          "confidence": "high",
+          "reasons": ["bio_address", "bio_city_state", "category_business"]
+        }
+      ]
+    },
+    "expectedQuery": "Old Fisherman's Grotto 39 Fisherman's Wharf",
+    "expectedNameSource": "verified_profile",
+    "expectedSearchAllowed": true,
+    "expectedAutoSave": true,
+    "_comment": "Tagged restaurant profile enrichment should produce a verified-profile query and allow the existing conservative address-backed auto-save gate."
+  },
+  {
+    "name": "instagram-influencer-plus-restaurant-tag-prefers-restaurant",
+    "input": {
+      "title": "Joe Huang (@therealjoehuang) on Instagram: Monterey seafood night",
+      "description": "Dinner with @oldfishermansgrotto on the Wharf.",
+      "url": "https://www.instagram.com/p/DLfvZunSKRp/",
+      "sourceType": "instagram",
+      "posterHandle": "therealjoehuang",
+      "profileMetadata": [
+        {
+          "handle": "therealjoehuang",
+          "classification": "food_creator",
+          "displayName": "Joe Huang",
+          "category": "Digital creator",
+          "bio": "Food creator and storyteller.",
+          "confidence": "high",
+          "reasons": ["category_creator"]
+        },
+        {
+          "handle": "oldfishermansgrotto",
+          "classification": "restaurant_or_business",
+          "displayName": "Old Fisherman's Grotto",
+          "category": "Restaurant",
+          "bio": "Seafood Perfection Since 1950. 39 Fisherman's Wharf, Monterey CA",
+          "extractedName": "Old Fisherman's Grotto",
+          "extractedAddress": "39 Fisherman's Wharf",
+          "extractedCity": "Monterey, CA",
+          "confidence": "high",
+          "reasons": ["bio_address", "bio_city_state", "category_business"]
+        }
+      ]
+    },
+    "expectedQuery": "Old Fisherman's Grotto 39 Fisherman's Wharf",
+    "expectedNameSource": "verified_profile",
+    "expectedSearchAllowed": true,
+    "expectedAutoSave": true,
+    "_comment": "When the poster is an influencer and a tagged profile is a verified restaurant, the restaurant profile must win."
+  },
+  {
+    "name": "instagram-handle-only-still-blocked",
+    "input": {
+      "title": "Going here soon",
+      "description": "check out @oldfishermansgrotto tonight",
+      "url": "https://www.instagram.com/p/DLfvZunSKRp/",
+      "sourceType": "instagram",
+      "posterHandle": "therealjoehuang",
+      "profileMetadata": [
+        {
+          "handle": "oldfishermansgrotto",
+          "classification": "unrelated_or_unknown",
+          "displayName": "Old Fisherman's Grotto",
+          "category": "Restaurant",
+          "confidence": "low",
+          "reasons": ["no_bio_evidence"]
+        }
+      ]
+    },
+    "expectedQuery": "",
+    "expectedSearchAllowed": false,
+    "expectedAutoSave": false,
+    "_comment": "A handle or unverified profile display name without bio/address evidence must not become a Places query."
+  },
+  {
+    "name": "generic-platform-no-profile-evidence-still-blocked",
+    "input": {
+      "title": "best seafood spot ever",
+      "description": "this place was fire",
+      "url": "https://www.tiktok.com/@foodtok/video/7600000001",
+      "sourceType": "tiktok"
+    },
+    "expectedQuery": "",
+    "expectedSearchAllowed": false,
+    "expectedAutoSave": false,
+    "_comment": "Generic social content with no profile evidence must still be blocked from Places search."
   }
 ]

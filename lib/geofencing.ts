@@ -31,6 +31,7 @@ import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
 
 import { isDemoMode } from './demoMode';
+import { logDebug, logInfo } from './logger';
 import { isMapPreviewMode } from './mapPreview';
 import { supabase } from './supabase';
 import { distanceMeters } from './geo';
@@ -93,9 +94,7 @@ function clampRegionRadius(meters: number): number {
 
 try {
   if (!TaskManager.isTaskDefined(NEARR_GEOFENCE_TASK)) {
-    if (__DEV__) {
-      console.log('[GEOFENCE_INIT] registering geofence task');
-    }
+    logDebug('GEOFENCE_INIT', 'registering geofence task');
     TaskManager.defineTask(NEARR_GEOFENCE_TASK, async ({ data, error }) => {
       if (error) {
         console.warn('[geofence] task error', error.message);
@@ -114,20 +113,16 @@ try {
       if (!savedPlaceId) return;
 
       if (eventType === Location.GeofencingEventType.Enter) {
-        if (__DEV__) {
-          console.log(`[geofence] GEOFENCE_ENTER savedPlaceId=${savedPlaceId}`);
-        }
+        logDebug('geofence', `GEOFENCE_ENTER savedPlaceId=${savedPlaceId}`);
         try {
           const result = await maybeNotifyForSavedPlace(savedPlaceId, 'geofence_enter', {
             latitude: region.latitude,
             longitude: region.longitude,
           });
-          if (__DEV__) {
-            if (result.sent) {
-              console.log(`[geofence] GEOFENCE_NOTIFY_SENT savedPlaceId=${savedPlaceId}`);
-            } else {
-              console.log(`[geofence] GEOFENCE_NOTIFY_SKIPPED reason=${result.reason}`);
-            }
+          if (result.sent) {
+            logInfo('geofence', `GEOFENCE_NOTIFY_SENT savedPlaceId=${savedPlaceId}`);
+          } else {
+            logDebug('geofence', `GEOFENCE_NOTIFY_SKIPPED reason=${result.reason}`);
           }
         } catch (e) {
           console.warn('[geofence] notify failed (non-fatal)', e);
@@ -136,9 +131,7 @@ try {
       }
 
       if (eventType === Location.GeofencingEventType.Exit) {
-        if (__DEV__) {
-          console.log(`[geofence] GEOFENCE_EXIT savedPlaceId=${savedPlaceId}`);
-        }
+        logDebug('geofence', `GEOFENCE_EXIT savedPlaceId=${savedPlaceId}`);
         // No notification on exit — and never log user coordinates.
         return;
       }
@@ -170,15 +163,10 @@ export async function stopNearrGeofencing(): Promise<void> {
     const has = await Location.hasStartedGeofencingAsync(NEARR_GEOFENCE_TASK);
     if (has) {
       await Location.stopGeofencingAsync(NEARR_GEOFENCE_TASK);
-      if (__DEV__) console.log('[geofence] stopped');
+      logDebug('geofence', 'stopped');
     }
   } catch (e) {
-    if (__DEV__) {
-      console.log(
-        '[geofence] stop skipped',
-        e instanceof Error ? e.message : String(e),
-      );
-    }
+    logDebug('geofence', 'stop skipped', e instanceof Error ? e.message : String(e));
   }
   // Reset signature so the next sync forces a fresh registration.
   lastRegionsSignature = null;
@@ -216,7 +204,7 @@ export async function getGeofenceStatus(): Promise<{
  */
 export async function syncGeofencesForSavedPlaces(): Promise<GeofenceSyncStatus> {
   if (geofenceSyncInFlight) {
-    if (__DEV__) console.log('[perf] geofence_sync_skipped reason=already_running');
+    logDebug('perf', 'geofence_sync_skipped', { reason: 'already_running' });
     return geofenceSyncInFlight;
   }
   geofenceSyncInFlight = (async () => {
@@ -234,7 +222,7 @@ async function runSyncGeofencesForSavedPlaces(): Promise<GeofenceSyncStatus> {
     return { state: 'skipped', reason: 'demo_or_preview' };
   }
 
-  if (__DEV__) console.log('[geofence] GEOFENCE_SYNC_START');
+  logDebug('geofence', 'GEOFENCE_SYNC_START');
 
   // --- auth ---------------------------------------------------------------
   const { data: userRes, error: userErr } = await supabase.auth.getUser();
@@ -251,11 +239,10 @@ async function runSyncGeofencesForSavedPlaces(): Promise<GeofenceSyncStatus> {
   ]);
   if (notif !== 'granted' || bg.status !== 'granted') {
     await stopNearrGeofencing();
-    if (__DEV__) {
-      console.log(
-        `[geofence] GEOFENCE_SYNC_DONE eligible=0 registered=0 reason=permissions notif=${notif} bg=${bg.status}`,
-      );
-    }
+    logInfo(
+      'geofence',
+      `GEOFENCE_SYNC_DONE eligible=0 registered=0 reason=permissions notif=${notif} bg=${bg.status}`,
+    );
     return { state: 'stopped', reason: 'permissions_missing' };
   }
 
@@ -268,9 +255,7 @@ async function runSyncGeofencesForSavedPlaces(): Promise<GeofenceSyncStatus> {
   const profile = (profileRow as Profile | null) ?? null;
   if (profile && (!profile.notifications_enabled || !profile.nearby_notifications_enabled)) {
     await stopNearrGeofencing();
-    if (__DEV__) {
-      console.log('[geofence] GEOFENCE_SYNC_DONE eligible=0 registered=0 reason=master_or_nearby_off');
-    }
+    logInfo('geofence', 'GEOFENCE_SYNC_DONE eligible=0 registered=0 reason=master_or_nearby_off');
     return { state: 'stopped', reason: 'master_or_nearby_off' };
   }
 
@@ -298,9 +283,7 @@ async function runSyncGeofencesForSavedPlaces(): Promise<GeofenceSyncStatus> {
 
   if (eligible.length === 0) {
     await stopNearrGeofencing();
-    if (__DEV__) {
-      console.log('[geofence] GEOFENCE_SYNC_DONE eligible=0 registered=0');
-    }
+    logInfo('geofence', 'GEOFENCE_SYNC_DONE eligible=0 registered=0');
     return { state: 'stopped', reason: 'no_eligible' };
   }
 
@@ -354,11 +337,10 @@ async function runSyncGeofencesForSavedPlaces(): Promise<GeofenceSyncStatus> {
     .sort()
     .join(';');
   if (signature === lastRegionsSignature) {
-    if (__DEV__) {
-      console.log(
-        `[geofence] GEOFENCE_SYNC_DONE eligible=${eligible.length} registered=${regions.length} skipped=${skipped} reason=unchanged`,
-      );
-    }
+    logInfo(
+      'geofence',
+      `GEOFENCE_SYNC_DONE eligible=${eligible.length} registered=${regions.length} skipped=${skipped} reason=unchanged`,
+    );
     return {
       state: 'started',
       eligible: eligible.length,
@@ -370,11 +352,10 @@ async function runSyncGeofencesForSavedPlaces(): Promise<GeofenceSyncStatus> {
   try {
     await Location.startGeofencingAsync(NEARR_GEOFENCE_TASK, regions);
     lastRegionsSignature = signature;
-    if (__DEV__) {
-      console.log(
-        `[geofence] GEOFENCE_SYNC_DONE eligible=${eligible.length} registered=${regions.length} skipped=${skipped}`,
-      );
-    }
+    logInfo(
+      'geofence',
+      `GEOFENCE_SYNC_DONE eligible=${eligible.length} registered=${regions.length} skipped=${skipped}`,
+    );
     return {
       state: 'started',
       eligible: eligible.length,
@@ -395,8 +376,6 @@ async function runSyncGeofencesForSavedPlaces(): Promise<GeofenceSyncStatus> {
 export function triggerGeofenceResync(): void {
   // eslint-disable-next-line @typescript-eslint/no-floating-promises
   syncGeofencesForSavedPlaces().catch((e) => {
-    if (__DEV__) {
-      console.log('[geofence] triggerGeofenceResync swallowed error', e);
-    }
+    logDebug('geofence', 'triggerGeofenceResync swallowed error', e);
   });
 }

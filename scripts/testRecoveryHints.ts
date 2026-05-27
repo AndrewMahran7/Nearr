@@ -12,10 +12,17 @@
 
 import {
   derivePlaceNameHintFromHandle,
+  compactNameMatches,
+  extractCaptionVenueHints,
+  extractCityStateContext,
   extractMallContextLabel,
+  extractStateFromFormattedAddress,
   extractVenueHandleCandidates,
   isGenericAddressCard,
   isMallContextHandle,
+  isWrongLocationCandidate,
+  looksLikeRoundupPost,
+  normalizeCompactName,
 } from '../lib/shareAgent/recoveryHints';
 import type { DetectedHandles } from '../lib/shareAgent/tools';
 import type { LikelyAddress } from '../lib/shareAgent/queryCleaner';
@@ -339,6 +346,473 @@ function planAddressQueries(args: {
     !queries.some((q) => /^Southcoastplaza /.test(q)),
   );
 }
+
+// ---------------------------------------------------------------------------
+// Patch 1 — address-free recovery helpers
+// ---------------------------------------------------------------------------
+// extractCityStateContext
+check(
+  'extractCityStateContext: "Santa Cruz, CA" → Santa Cruz / CA',
+  JSON.stringify(extractCityStateContext('caption blah Santa Cruz, CA more text')) ===
+    JSON.stringify({ city: 'Santa Cruz', state: 'CA' }),
+);
+check(
+  'extractCityStateContext: "in Newport Beach" prose → Newport Beach / CA',
+  JSON.stringify(extractCityStateContext('Iconic Cantina in Newport Beach 🍹')) ===
+    JSON.stringify({ city: 'Newport Beach', state: 'CA' }),
+);
+check(
+  'extractCityStateContext: #santacruz hashtag → Santa Cruz / CA',
+  JSON.stringify(extractCityStateContext('great burger #foodie #santacruz #bayarea')) ===
+    JSON.stringify({ city: 'Santa Cruz', state: 'CA' }),
+);
+check(
+  'extractCityStateContext: #downtownsantacruz hashtag → Santa Cruz / CA',
+  JSON.stringify(extractCityStateContext('#organicfood #downtownsantacruz #visitsantacruz')) ===
+    JSON.stringify({ city: 'Santa Cruz', state: 'CA' }),
+);
+check(
+  'extractCityStateContext: unknown city → null',
+  extractCityStateContext('Some random text in Wabash, IL with no known cities') === null,
+);
+check(
+  'extractCityStateContext: empty → null',
+  extractCityStateContext('') === null && extractCityStateContext(null) === null,
+);
+
+// looksLikeRoundupPost
+check(
+  'looksLikeRoundupPost: "top 5 burgers" → true',
+  looksLikeRoundupPost('Top 5 burgers in Santa Cruz!') === true,
+);
+check(
+  'looksLikeRoundupPost: "#5 from @woodennickel_wv" → true',
+  looksLikeRoundupPost(
+    'Who holds the title for best burger in Santa Cruz? #5 from @woodennickel_wv',
+  ) === true,
+);
+check(
+  'looksLikeRoundupPost: "best burger" alone → false (single venue context)',
+  looksLikeRoundupPost('Easily the best sandwich spot in Santa Cruz') === false,
+);
+check(
+  'looksLikeRoundupPost: 3+ tagged handles ALONE → false (Patch 5: not enough signal)',
+  looksLikeRoundupPost('caption', {
+    posterHandle: 'roundupposter',
+    taggedHandles: ['placeone', 'placetwo', 'placethree'],
+    allHandles: ['roundupposter', 'placeone', 'placetwo', 'placethree'],
+  } as DetectedHandles) === false,
+);
+check(
+  'looksLikeRoundupPost: 3+ tagged handles + list language → true',
+  looksLikeRoundupPost('Top 5 spots this month!', {
+    posterHandle: 'roundupposter',
+    taggedHandles: ['placeone', 'placetwo', 'placethree'],
+    allHandles: ['roundupposter', 'placeone', 'placetwo', 'placethree'],
+  } as DetectedHandles) === true,
+);
+check(
+  'looksLikeRoundupPost: 1 tagged handle → false',
+  looksLikeRoundupPost('caption', {
+    posterHandle: 'someposter',
+    taggedHandles: ['singleplace'],
+    allHandles: ['someposter', 'singleplace'],
+  } as DetectedHandles) === false,
+);
+
+// Patch 5 additions: single-place posts with collaborator tags must NOT
+// be classified as roundup.
+check(
+  'looksLikeRoundupPost: "2nd Floor 126 Main St Huntington Beach" + collab tags → false',
+  looksLikeRoundupPost(
+    '📍 2nd Floor, 126 Main St, Huntington Beach, CA — best happy hour',
+    {
+      posterHandle: 'foodie',
+      taggedHandles: ['somesupplier', 'somecollab', 'someguest'],
+      allHandles: ['foodie', 'somesupplier', 'somecollab', 'someguest'],
+    } as DetectedHandles,
+  ) === false,
+);
+check(
+  'looksLikeRoundupPost: "Seabright Deli 415 Seabright Ave Santa Cruz" + tags → false',
+  looksLikeRoundupPost(
+    'Seabright Deli, 415 Seabright Ave, Santa Cruz, CA - hands down the best sando',
+    {
+      posterHandle: 'foodie',
+      taggedHandles: ['supplier', 'eggcollab', 'breadguy'],
+      allHandles: ['foodie', 'supplier', 'eggcollab', 'breadguy'],
+    } as DetectedHandles,
+  ) === false,
+);
+check(
+  'looksLikeRoundupPost: "Top 5 burger spots" → true',
+  looksLikeRoundupPost('Top 5 burger spots in Newport Beach') === true,
+);
+check(
+  'looksLikeRoundupPost: "list of our favorite pizza places" → true',
+  looksLikeRoundupPost('A list of our favorite pizza places in LA') === true,
+);
+check(
+  'looksLikeRoundupPost: "our picks for sushi" → true',
+  looksLikeRoundupPost('Our picks for the best sushi this year') === true,
+);
+check(
+  'looksLikeRoundupPost: 5 numbered list items → true',
+  looksLikeRoundupPost('1. Foo\n2. Bar\n3. Baz\n4. Qux\n5. Quux') === true,
+);
+check(
+  'looksLikeRoundupPost: list keyword on a single-place post with full address → false',
+  looksLikeRoundupPost(
+    '📍 Mad Yolks, 1411 Pacific Ave, Santa Cruz — the best brunch in town',
+  ) === false,
+);
+// Patch 5b: idiomatic "round up your crew" must NOT trigger.
+check(
+  'looksLikeRoundupPost: idiomatic "Round up your crew" → false',
+  looksLikeRoundupPost(
+    'Round up your crew and join us here at 2nd Floor for brunch',
+  ) === false,
+);
+check(
+  'looksLikeRoundupPost: "roundup" (one word) still → true',
+  looksLikeRoundupPost('Our annual best sushi roundup is here') === true,
+);
+check(
+  'looksLikeRoundupPost: "round-up" (hyphen) still → true',
+  looksLikeRoundupPost('Pizza round-up: every spot in town') === true,
+);
+
+// extractCaptionVenueHints
+{
+  const hints = extractCaptionVenueHints(
+    'Seabright Deli In Santa Cruz @seabrightdeli the best',
+  );
+  check(
+    'extractCaptionVenueHints: "Seabright Deli In Santa Cruz" → ["Seabright Deli"]',
+    hints.includes('Seabright Deli'),
+    `got=${JSON.stringify(hints)}`,
+  );
+}
+{
+  const hints = extractCaptionVenueHints(
+    'Burrito on the beach!? POINT MARKET AND CAFE, Santa Cruz, CA📍 one of the freshest',
+  );
+  check(
+    'extractCaptionVenueHints: "POINT MARKET AND CAFE, Santa Cruz, CA" → ["POINT MARKET AND CAFE"]',
+    hints.some((h) => /point market and cafe/i.test(h)),
+    `got=${JSON.stringify(hints)}`,
+  );
+}
+{
+  const hints = extractCaptionVenueHints(
+    '📍Seabright Deli\n415 Seabright Ave\nSanta Cruz, CA',
+  );
+  check(
+    'extractCaptionVenueHints: "📍Seabright Deli" pin → ["Seabright Deli"]',
+    hints.includes('Seabright Deli'),
+    `got=${JSON.stringify(hints)}`,
+  );
+}
+{
+  const hints = extractCaptionVenueHints('no caps no patterns here');
+  check(
+    'extractCaptionVenueHints: no patterns → []',
+    hints.length === 0,
+    `got=${JSON.stringify(hints)}`,
+  );
+}
+// Patch 6 follow-up: descriptor/time stoplist.
+{
+  const hints = extractCaptionVenueHints('Easily the best sandwich spot in Santa Cruz');
+  check(
+    'extractCaptionVenueHints: descriptor first-word "Easily ..." → []',
+    hints.length === 0,
+    `got=${JSON.stringify(hints)}`,
+  );
+}
+{
+  const hints = extractCaptionVenueHints('Open daily 11AM - 3PM 📍 ');
+  check(
+    'extractCaptionVenueHints: "11AM - 3PM 📍" time fragment → []',
+    hints.length === 0,
+    `got=${JSON.stringify(hints)}`,
+  );
+}
+{
+  const hints = extractCaptionVenueHints('The Best Place In Town in Santa Cruz');
+  check(
+    'extractCaptionVenueHints: "The Best ..." descriptor → []',
+    hints.length === 0,
+    `got=${JSON.stringify(hints)}`,
+  );
+}
+
+// normalizeCompactName
+check(
+  'normalizeCompactName: "Seabright Deli" → "seabrightdeli"',
+  normalizeCompactName('Seabright Deli') === 'seabrightdeli',
+);
+check(
+  'normalizeCompactName: "Point Market & Cafe" → "pointmarketcafe"',
+  normalizeCompactName('Point Market & Cafe') === 'pointmarketcafe',
+);
+check(
+  'normalizeCompactName: accents stripped',
+  normalizeCompactName('Café Olé') === 'cafeole',
+);
+
+// Integration-style check: the 6 required scenarios from the brief.
+// We assert the helpers compose into the inputs the backend orchestrator
+// will use to construct queries. Actual Places calls aren't made here.
+function buildAddressFreeInputs(text: string, handles: DetectedHandles): {
+  cityState: ReturnType<typeof extractCityStateContext>;
+  hints: string[];
+  isRoundup: boolean;
+} {
+  return {
+    cityState: extractCityStateContext(text),
+    hints: [
+      ...extractCaptionVenueHints(text),
+      ...extractVenueHandleCandidates(handles)
+        .map(derivePlaceNameHintFromHandle)
+        .filter((v): v is string => !!v),
+    ],
+    isRoundup: looksLikeRoundupPost(text, handles),
+  };
+}
+
+{
+  // 1. Seabright Deli + Santa Cruz, no street address.
+  const r = buildAddressFreeInputs(
+    'Seabright Deli In Santa Cruz @seabrightdeli #santacruz',
+    {
+      posterHandle: 'thesnacksensei',
+      taggedHandles: ['seabrightdeli'],
+      allHandles: ['thesnacksensei', 'seabrightdeli'],
+    } as DetectedHandles,
+  );
+  check(
+    'scenario: Seabright Deli — produces venue hint + Santa Cruz city',
+    !r.isRoundup &&
+      r.cityState?.city === 'Santa Cruz' &&
+      r.cityState?.state === 'CA' &&
+      r.hints.some((h) => /seabright/i.test(h)),
+    `got=${JSON.stringify(r)}`,
+  );
+}
+{
+  // 2. Tacos El Chuy Truck via tagged handle + #santacruz.
+  const r = buildAddressFreeInputs(
+    'Rainy days call for warm tasty food like ramen birria from @tacoselchuytruck #santacruz',
+    {
+      posterHandle: 'santacruzbucketlist',
+      taggedHandles: ['tacoselchuytruck'],
+      allHandles: ['santacruzbucketlist', 'tacoselchuytruck'],
+    } as DetectedHandles,
+  );
+  check(
+    'scenario: Tacos El Chuy Truck — handle becomes venue hint, city detected',
+    !r.isRoundup &&
+      r.cityState?.city === 'Santa Cruz' &&
+      r.hints.some((h) => /tacoselchuytruck|tacos el chuy/i.test(h)),
+    `got=${JSON.stringify(r)}`,
+  );
+}
+{
+  // 3. Taqueria Los Pericos with explicit "📍 @handle | Santa Cruz, CA".
+  const r = buildAddressFreeInputs(
+    'Buche Super Burrito from Taqueria Los Pericos 📍 @taquerialospericossocial | Santa Cruz, CA',
+    {
+      posterHandle: 'kristinasee.eats',
+      taggedHandles: ['taquerialospericossocial'],
+      allHandles: ['kristinasee.eats', 'taquerialospericossocial'],
+    } as DetectedHandles,
+  );
+  check(
+    'scenario: Taqueria Los Pericos — caption hint + explicit city',
+    !r.isRoundup &&
+      r.cityState?.city === 'Santa Cruz' &&
+      r.cityState?.state === 'CA' &&
+      r.hints.some((h) => /taqueria los pericos|taquerialospericos/i.test(h)),
+    `got=${JSON.stringify(r)}`,
+  );
+}
+{
+  // 4. Point Market & Cafe — caption "Name, City, CA" form.
+  const r = buildAddressFreeInputs(
+    'Burrito on the beach!? POINT MARKET AND CAFE, Santa Cruz, CA📍 One of the freshest #santacruz',
+    {
+      posterHandle: 'taranexploro',
+      taggedHandles: [],
+      allHandles: ['taranexploro'],
+    } as DetectedHandles,
+  );
+  check(
+    'scenario: Point Market & Cafe — caption "Name, City, CA" pattern produces hint',
+    !r.isRoundup &&
+      r.cityState?.city === 'Santa Cruz' &&
+      r.hints.some((h) => /point market and cafe/i.test(h)),
+    `got=${JSON.stringify(r)}`,
+  );
+}
+{
+  // 5. Chocolate the Restaurant — only handle + Santa Cruz hashtags.
+  const r = buildAddressFreeInputs(
+    'Come and get it! #organicfood #downtownfun #downtownsantacruz #visitsantacruz',
+    {
+      posterHandle: 'chocolatetherestaurant',
+      taggedHandles: [],
+      allHandles: ['chocolatetherestaurant'],
+    } as DetectedHandles,
+  );
+  check(
+    'scenario: Chocolate the Restaurant — hashtag city + poster-as-venue (when address-free path adds title hint)',
+    !r.isRoundup &&
+      r.cityState?.city === 'Santa Cruz' &&
+      r.cityState?.state === 'CA',
+    `got=${JSON.stringify(r)}`,
+  );
+}
+{
+  // 6. Top-5 burger list — MUST be flagged as roundup.
+  const r = buildAddressFreeInputs(
+    'Who holds the title for best burger in Santa Cruz? Top 5 burgers. #5 from @woodennickel_wv #4 from @bellygoatburger',
+    {
+      posterHandle: 'lookoutsantacruz',
+      taggedHandles: ['woodennickel_wv', 'bellygoatburger'],
+      allHandles: ['lookoutsantacruz', 'woodennickel_wv', 'bellygoatburger'],
+    } as DetectedHandles,
+  );
+  check(
+    'scenario: Top 5 burgers — flagged as roundup, address-free branch must skip',
+    r.isRoundup === true,
+    `got=${JSON.stringify(r)}`,
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Patch 2 — compactNameMatches: compact handle ↔ spaced canonical name
+// ---------------------------------------------------------------------------
+check(
+  'compactNameMatches: bajasharkeeznb ↔ Baja Sharkeez (region suffix)',
+  compactNameMatches('bajasharkeeznb', 'Baja Sharkeez'),
+);
+check(
+  'compactNameMatches: taquerialospericossocial ↔ Taqueria Los Pericos (social suffix)',
+  compactNameMatches('taquerialospericossocial', 'Taqueria Los Pericos'),
+);
+check(
+  'compactNameMatches: paradisedynasty ↔ Paradise Dynasty (direct compact)',
+  compactNameMatches('paradisedynasty', 'Paradise Dynasty'),
+);
+check(
+  'compactNameMatches: kenosrestaurant ↔ Keno\'s Restaurant (possessive)',
+  compactNameMatches('kenosrestaurant', "Keno's Restaurant"),
+);
+check(
+  'compactNameMatches: famousdaves ↔ Famous Dave\'s Bar-B-Que',
+  compactNameMatches('famousdaves', "Famous Dave's Bar-B-Que"),
+);
+check(
+  'compactNameMatches: loadedcafe ↔ Loaded Cafe - Orange',
+  compactNameMatches('loadedcafe', 'Loaded Cafe - Orange'),
+);
+check(
+  'compactNameMatches: phobamboorestaurant ↔ Pho Bamboo Vietnamese Restaurant (generic strip)',
+  compactNameMatches('phobamboorestaurant', 'Pho Bamboo Vietnamese Restaurant'),
+);
+check(
+  'compactNameMatches: aptosstbbq ↔ Aptos St. BBQ (punctuation stripped)',
+  compactNameMatches('aptosstbbq', 'Aptos St. BBQ'),
+);
+// Patch 3: connector words (and/the/of) collapse so `&` ↔ `and` resolves.
+check(
+  'compactNameMatches: pointmarketandcafe ↔ Point Market & Cafe (and ↔ &)',
+  compactNameMatches('pointmarketandcafe', 'Point Market & Cafe'),
+);
+check(
+  'compactNameMatches: POINT MARKET AND CAFE ↔ Point Market & Cafe',
+  compactNameMatches('POINT MARKET AND CAFE', 'Point Market & Cafe'),
+);
+check(
+  'compactNameMatches: house of pies ↔ houseofpies',
+  compactNameMatches('House of Pies', 'houseofpies'),
+);
+check(
+  'compactNameMatches: Sandwich Spot NOT mangled by "and" stripping',
+  compactNameMatches('Sandwich Spot', 'Sandwich Spot'),
+);
+check(
+  'compactNameMatches: Sandwich Spot ↔ unrelated → false',
+  !compactNameMatches('Sandwich Spot', 'Panda Express'),
+);
+// Negative tests — must NOT match unrelated venues.
+check(
+  'compactNameMatches: bajasharkeeznb ↔ Sushi Spot → false',
+  !compactNameMatches('bajasharkeeznb', 'Sushi Spot'),
+);
+check(
+  'compactNameMatches: paradisedynasty ↔ Panda Express → false',
+  !compactNameMatches('paradisedynasty', 'Panda Express'),
+);
+check(
+  'compactNameMatches: empty inputs → false',
+  !compactNameMatches('', 'Baja Sharkeez') && !compactNameMatches('paradisedynasty', ''),
+);
+check(
+  'compactNameMatches: short stub inputs → false',
+  !compactNameMatches('abc', 'Baja Sharkeez'),
+);
+// Symmetry sanity.
+check(
+  'compactNameMatches: symmetric for Baja Sharkeez',
+  compactNameMatches('Baja Sharkeez', 'bajasharkeeznb') ===
+    compactNameMatches('bajasharkeeznb', 'Baja Sharkeez'),
+);
+
+// ---------------------------------------------------------------------------
+// 2026-05-27 — Patch 8/9 wrong-location guard
+// ---------------------------------------------------------------------------
+check(
+  'extractStateFromFormattedAddress: "...Costa Mesa, CA 92626, USA" → CA',
+  extractStateFromFormattedAddress('1525 Mesa Verde Dr E, Costa Mesa, CA 92626, USA') === 'CA',
+);
+check(
+  'extractStateFromFormattedAddress: "...Ferndale, MI 48220, USA" → MI',
+  extractStateFromFormattedAddress('22757 Woodward Ave #210, Ferndale, MI 48220, USA') === 'MI',
+);
+check(
+  'extractStateFromFormattedAddress: Toronto address → null',
+  extractStateFromFormattedAddress('55 Front St W, Toronto, ON M5J 0G3, Canada') === null,
+);
+check(
+  'extractStateFromFormattedAddress: null input → null',
+  extractStateFromFormattedAddress(null) === null,
+);
+check(
+  'isWrongLocationCandidate: Toronto candidate, expected CA → true',
+  isWrongLocationCandidate('55 Front St W, Toronto, ON M5J 0G3, Canada', 'CA') === true,
+);
+check(
+  'isWrongLocationCandidate: Michigan candidate, expected CA → true',
+  isWrongLocationCandidate('22757 Woodward Ave, Ferndale, MI 48220, USA', 'CA') === true,
+);
+check(
+  'isWrongLocationCandidate: CA candidate, expected CA → false',
+  isWrongLocationCandidate('126 Main St, Huntington Beach, CA 92648, USA', 'CA') === false,
+);
+check(
+  'isWrongLocationCandidate: expectedState null → false (do not block)',
+  isWrongLocationCandidate('55 Front St W, Toronto, ON M5J 0G3, Canada', null) === false,
+);
+check(
+  'isWrongLocationCandidate: candidate address null → false',
+  isWrongLocationCandidate(null, 'CA') === false,
+);
+check(
+  'isWrongLocationCandidate: NY candidate, expected NY → false',
+  isWrongLocationCandidate('123 Main St, Brooklyn, NY 11201, USA', 'NY') === false,
+);
 
 console.log('');
 if (failures > 0) {

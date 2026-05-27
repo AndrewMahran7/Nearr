@@ -78,6 +78,16 @@ import {
 } from '@/services/placesService';
 import { listSavedPlaces, saveSavedPlace } from '@/services/savedPlacesService';
 import { trackEvent } from '@/lib/analytics';
+import { logDebug, logInfo } from '@/lib/logger';
+import { classifyExtractedQuery, shouldSearchPlaces } from '@/lib/queryValidation';
+import {
+  extractShareOnServer,
+  getProcessShareLinkDiagnostics,
+  getVerifiedProfileEvidence,
+  isProcessShareLinkConfigured,
+  type ExtractShareOnServerResult,
+} from '@/lib/shareExtractionBackend';
+import { getAppBuildDiagnostics } from '@/lib/shareEnvDiagnostics';
 import * as Location from 'expo-location';
 
 type Phase =
@@ -124,6 +134,220 @@ function safeHostname(url: string | null | undefined): string | null {
   }
 }
 
+function isInvalidRegexError(err: unknown): boolean {
+  const message = String((err as Error)?.message ?? err ?? '').toLowerCase();
+  return (
+    message.includes('invalid regexp') ||
+    message.includes('invalid regular expression') ||
+    message.includes('invalid escape')
+  );
+}
+
+const SHARE_DEBUG_TEXT_MAX = 160;
+
+type ShareDebugRuntimePath =
+  | 'client_only'
+  | 'edge_function'
+  | 'ios_extension'
+  | 'android_host_app'
+  | 'unknown';
+
+type ShareDebugProfile = {
+  handle: string;
+  fetched: boolean | null;
+  blocked: boolean | null;
+  reason: string | null;
+  classification: string | null;
+  displayName: string | null;
+  extractedName: string | null;
+  extractedAddress: string | null;
+  extractedCity: string | null;
+};
+
+type ShareDebugTimelineEntry = {
+  marker: string;
+  detail: string;
+};
+
+type ShareDebugState = {
+  runtimePath: ShareDebugRuntimePath;
+  edgeFunctionConfigured: boolean;
+  // 2026-05-26: TestFlight diagnostics — these MUST stay populated even
+  // in release builds; the panel is no longer __DEV__-gated, because
+  // the bug we are debugging only reproduces on signed builds.
+  backendConfigSource: string | null;
+  backendUrlHost: string | null;
+  extractionPathAttempted: 'edge_function' | 'legacy_client' | 'extension_handoff' | null;
+  didCallProcessShareLink: boolean | null;
+  fallbackReason: string | null;
+  serverReturnedNull: boolean | null;
+  legacyExtractionUsed: boolean | null;
+  appVersion: string | null;
+  appBuildNumber: string | null;
+  backendHttpStatus: number | null;
+  backendKeys: string[];
+  backendStatus: string | null;
+  backendReason: string | null;
+  backendParseFailureReason: string | null;
+  usedClientFallback: boolean | null;
+  metadataTitle: string | null;
+  metadataDescription: string | null;
+  handlesDetected: string[];
+  profileEnrichmentAttempted: boolean;
+  profileResults: ShareDebugProfile[];
+  profileMetadataCountForAi: number;
+  profileMetadataHandlesForAi: string[];
+  aiInputProfileMetadata: string;
+  aiQuery: string | null;
+  aiPlaceName: string | null;
+  aiAddress: string | null;
+  aiConfidence: string | null;
+  aiNeedsUserConfirmation: boolean | null;
+  chosenQuery: string | null;
+  querySource: string | null;
+  queryConfidence: string | null;
+  accountIdentityUsed: boolean;
+  verifiedProfileSelected: boolean;
+  queryGateAllowed: boolean | null;
+  queryGateReason: string | null;
+  placesCandidateNames: string[];
+  finalStatus: string | null;
+  finalReason: string | null;
+  agent: {
+    runId: string;
+    promptVersion: string;
+    modelUsed: string;
+    userFacingDecision: string;
+    agentDecision: string;
+    safetyDecision: string;
+    downgradedFromAutoSave: boolean;
+    safeToAutoSave: boolean;
+    confidence: string;
+    reasoning: string;
+    evidenceUsed: string[];
+    rejectionReasons: string[];
+    toolsUsed: string[];
+    toolCalls: Array<{ tool: string; status: string; note: string | null; latencyMs: number | null }>;
+    candidates: Array<{ googlePlaceId: string; name: string; matchScore: number; rationale: string }>;
+    latencyMs: number | null;
+    warnings: string[];
+  } | null;
+  timeline: ShareDebugTimelineEntry[];
+};
+
+function createInitialShareDebugState(): ShareDebugState {
+  const diag = getProcessShareLinkDiagnostics();
+  const app = getAppBuildDiagnostics();
+  return {
+    runtimePath: 'unknown',
+    edgeFunctionConfigured: isProcessShareLinkConfigured(),
+    backendConfigSource: diag.configSource,
+    backendUrlHost: diag.urlHost,
+    extractionPathAttempted: null,
+    didCallProcessShareLink: null,
+    fallbackReason: null,
+    serverReturnedNull: null,
+    legacyExtractionUsed: null,
+    appVersion: app.version,
+    appBuildNumber: app.buildNumber,
+    backendHttpStatus: null,
+    backendKeys: [],
+    backendStatus: null,
+    backendReason: null,
+    backendParseFailureReason: null,
+    usedClientFallback: null,
+    metadataTitle: null,
+    metadataDescription: null,
+    handlesDetected: [],
+    profileEnrichmentAttempted: false,
+    profileResults: [],
+    profileMetadataCountForAi: 0,
+    profileMetadataHandlesForAi: [],
+    aiInputProfileMetadata: '[]',
+    aiQuery: null,
+    aiPlaceName: null,
+    aiAddress: null,
+    aiConfidence: null,
+    aiNeedsUserConfirmation: null,
+    chosenQuery: null,
+    querySource: null,
+    queryConfidence: null,
+    accountIdentityUsed: false,
+    verifiedProfileSelected: false,
+    queryGateAllowed: null,
+    queryGateReason: null,
+    placesCandidateNames: [],
+    finalStatus: null,
+    finalReason: null,
+    agent: null,
+    timeline: [],
+  };
+}
+
+function truncateShareDebugText(value: string | null | undefined, max = SHARE_DEBUG_TEXT_MAX): string | null {
+  if (!value) return null;
+  const collapsed = value.replace(/\s+/g, ' ').trim();
+  if (!collapsed) return null;
+  return collapsed.length > max ? `${collapsed.slice(0, max)}...` : collapsed;
+}
+
+function sanitizeShareDebugUrl(url: string | null | undefined): string | null {
+  if (!url) return null;
+  try {
+    const parsed = new URL(url);
+    return `${parsed.origin}${parsed.pathname}`;
+  } catch {
+    return truncateShareDebugText(url);
+  }
+}
+
+function detectShareDebugSource(url: string | null | undefined): ShareSource {
+  const raw = (url ?? '').toLowerCase();
+  if (raw.includes('instagram.com')) return 'instagram';
+  if (raw.includes('tiktok.com')) return 'tiktok';
+  return 'link';
+}
+
+function detectShareDebugHandles(...inputs: Array<string | null | undefined>): string[] {
+  const handles = new Set<string>();
+  const handleRe = /@([A-Za-z0-9._]{2,30})/g;
+  const urlRe = /instagram\.com\/([A-Za-z0-9._]{2,30})\//gi;
+  for (const input of inputs) {
+    if (!input) continue;
+    let match: RegExpExecArray | null;
+    while ((match = handleRe.exec(input)) !== null) {
+      handles.add(match[1].toLowerCase());
+    }
+    while ((match = urlRe.exec(input)) !== null) {
+      const candidate = match[1].toLowerCase();
+      if (!['p', 'reel', 'reels', 'tv', 'stories', 'explore'].includes(candidate)) {
+        handles.add(candidate);
+      }
+    }
+  }
+  return [...handles];
+}
+
+function formatShareDebugData(data?: Record<string, unknown>): string {
+  if (!data) return '';
+  const parts = Object.entries(data)
+    .filter(([, value]) => value !== undefined)
+    .map(([key, value]) => {
+      if (Array.isArray(value)) return `${key}=${JSON.stringify(value)}`;
+      if (value && typeof value === 'object') return `${key}=${JSON.stringify(value)}`;
+      return `${key}=${String(value)}`;
+    });
+  return parts.join(' ');
+}
+
+function buildProfileDebugReason(profile: {
+  blocked?: boolean;
+  reasons?: string[];
+}): string | null {
+  if (profile.blocked) return (profile.reasons ?? []).join(',') || 'blocked';
+  return (profile.reasons ?? [])[0] ?? null;
+}
+
 export default function ShareScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ url?: string }>();
@@ -139,6 +363,50 @@ export default function ShareScreen() {
   // Dev-only debug toggle: lets us inspect what we extracted without ever
   // surfacing it to normal users.
   const [showDebug, setShowDebug] = useState(false);
+  const [debugState, setDebugState] = useState<ShareDebugState>(() => createInitialShareDebugState());
+
+  function pushShareDebug(
+    marker: string,
+    data?: Record<string, unknown>,
+    patch?: Partial<ShareDebugState>,
+  ) {
+    const detail = formatShareDebugData(data);
+    if (__DEV__) {
+      console.log(detail ? `${marker} ${detail}` : marker);
+    }
+    setDebugState((prev) => ({
+      ...prev,
+      ...patch,
+      timeline: [...prev.timeline, { marker, detail }],
+    }));
+  }
+
+  function pushShareDebugEvent(marker: string, data?: Record<string, unknown>) {
+    let patch: Partial<ShareDebugState> | undefined;
+    if (marker === '[share-debug] BACKEND_RESPONSE_SUMMARY') {
+      patch = {
+        backendHttpStatus: typeof data?.httpStatus === 'number' ? data.httpStatus : null,
+        backendKeys: Array.isArray(data?.keys)
+          ? data.keys.filter((key): key is string => typeof key === 'string')
+          : [],
+        backendStatus: typeof data?.status === 'string' ? data.status : null,
+        backendReason: typeof data?.reason === 'string' ? data.reason : null,
+      };
+    }
+    if (marker === '[share-debug] BACKEND_PAYLOAD_UNEXPECTED') {
+      patch = {
+        ...(patch ?? {}),
+        backendHttpStatus: typeof data?.httpStatus === 'number' ? data.httpStatus : null,
+        backendKeys: Array.isArray(data?.keys)
+          ? data.keys.filter((key): key is string => typeof key === 'string')
+          : [],
+        backendStatus: typeof data?.status === 'string' ? data.status : null,
+        backendReason: typeof data?.reason === 'string' ? data.reason : null,
+        backendParseFailureReason: 'unexpected_backend_payload',
+      };
+    }
+    pushShareDebug(marker, data, patch);
+  }
 
   // Best-effort user location, captured once on mount. Used as a
   // soft bias for Google Places when the post itself doesn't supply
@@ -158,11 +426,9 @@ export default function ShareScreen() {
           lat: last.coords.latitude,
           lng: last.coords.longitude,
         };
-        if (__DEV__) {
-          console.debug('[share] user location available for bias');
-        }
+        logDebug('share', 'user location available for bias');
       } catch (err) {
-        if (__DEV__) console.debug('[share] user location lookup skipped', err);
+        logDebug('share', 'user location lookup skipped', err);
       }
     })();
     return () => {
@@ -186,9 +452,7 @@ export default function ShareScreen() {
     if (!incoming || !isLikelyUrl(incoming)) return;
     if (lastProcessedUrlRef.current === incoming) return;
     lastProcessedUrlRef.current = incoming;
-    if (__DEV__) {
-      console.log('[share] auto-running from incoming url param', incoming);
-    }
+    logDebug('share', 'auto-running from incoming url param', incoming);
     // Cold/warm start from share extension (or deep link with ?url=...).
     void trackEvent('share_received', {
       flow: Platform.OS === 'ios' ? 'ios_share' : 'android_share',
@@ -213,13 +477,52 @@ export default function ShareScreen() {
       return;
     }
 
+    const runtimePath: ShareDebugRuntimePath = Platform.OS === 'android'
+      ? 'android_host_app'
+      : params.url && isLikelyUrl(trimmed)
+        ? 'ios_extension'
+        : 'client_only';
+    // 2026-05-26: single-line entry log so we can quickly see in adb /
+    // metro which path served the share and whether the host app even
+    // attempted the Edge Function.
+    try {
+      const safeHost = safeHostname(trimmed) ?? '(none)';
+      console.log(
+        `[share] entry_path=${runtimePath} source_url=${safeHost} using_edge_function=${isProcessShareLinkConfigured()}`,
+      );
+    } catch {
+      // logging must never throw
+    }
+    setDebugState({
+      ...createInitialShareDebugState(),
+      runtimePath,
+      edgeFunctionConfigured: isProcessShareLinkConfigured(),
+      extractionPathAttempted: isProcessShareLinkConfigured() ? 'edge_function' : 'legacy_client',
+    });
+    pushShareDebug('[share-debug] FLOW_START', {
+      source: detectShareDebugSource(trimmed),
+      url: sanitizeShareDebugUrl(trimmed),
+    });
+    pushShareDebug('[share-debug] RUNTIME_PATH', { path: runtimePath }, { runtimePath });
+    pushShareDebug(
+      '[share-debug] EDGE_FUNCTION_CONFIGURED',
+      { value: isProcessShareLinkConfigured() },
+      { edgeFunctionConfigured: isProcessShareLinkConfigured() },
+    );
+
+    setUrl(trimmed);
+
     // Reset prior attempt state.
     setCandidates([]);
     setFailMessage(null);
     setAiExtraction(null);
+    const execute = async () => {
 
     // ---- 1. parse ------------------------------------------------------
     setPhase('parsing');
+    pushShareDebug('[share-debug] METADATA_FETCH_START', {
+      url: sanitizeShareDebugUrl(trimmed),
+    });
     void trackEvent('share_parse_started', { url_host: safeHostname(trimmed) });
     let parsedResult: ParsedShare;
     try {
@@ -248,6 +551,40 @@ export default function ShareScreen() {
     }
     setParsed(parsedResult);
     setUrl(parsedResult.url);
+    pushShareDebug(
+      '[share-debug] METADATA_FETCH_RESULT',
+      {
+        title: truncateShareDebugText(parsedResult.title),
+        description: truncateShareDebugText(parsedResult.description),
+      },
+      {
+        metadataTitle: truncateShareDebugText(parsedResult.title),
+        metadataDescription: truncateShareDebugText(parsedResult.description),
+      },
+    );
+
+    const detectedHandles = detectShareDebugHandles(
+      parsedResult.title,
+      parsedResult.description,
+      parsedResult.url,
+    );
+    pushShareDebug(
+      '[share-debug] HANDLES_DETECTED',
+      { handles: detectedHandles },
+      { handlesDetected: detectedHandles },
+    );
+    const profileEnrichmentAvailable =
+      parsedResult.source === 'instagram' && isProcessShareLinkConfigured();
+    pushShareDebug(
+      '[share-debug] PROFILE_ENRICHMENT_AVAILABLE',
+      { value: profileEnrichmentAvailable },
+      { profileEnrichmentAttempted: profileEnrichmentAvailable },
+    );
+    if (parsedResult.source === 'instagram') {
+      pushShareDebug('[share-debug] PROFILE_ENRICHMENT_REQUESTED', {
+        handles: detectedHandles,
+      });
+    }
 
     // ---- 2. extract a likely place query (AI-style heuristic) ---------
     // The raw `suggestedQuery` from parseShare is just a cleaned caption.
@@ -271,7 +608,266 @@ export default function ShareScreen() {
       cleanedQuery: parsedResult.suggestedQuery,
     });
     setExtraction(extracted);
-    console.log('[share] heuristic extraction', extracted);
+    logDebug('share', 'heuristic extraction', extracted);
+
+    let serverExtraction = null;
+    let serverExtractionError: unknown = null;
+    const backendOutcomeRef: { current: ExtractShareOnServerResult | null } = { current: null };
+    try {
+      serverExtraction = await extractShareOnServer(parsedResult.url, {
+        onDebugEvent: (marker, data) => {
+          pushShareDebugEvent(marker, data);
+        },
+        onOutcome: (outcome) => {
+          backendOutcomeRef.current = outcome;
+        },
+      });
+      if (serverExtraction) {
+        logDebug('share', 'server extraction', {
+          query: serverExtraction.query,
+          querySource: serverExtraction.querySource,
+          searchAllowed: serverExtraction.searchAllowed,
+          posterHandle: serverExtraction.posterHandle,
+          profileCount: serverExtraction.profileMetadata.length,
+        });
+        setDebugState((prev) => ({
+          ...prev,
+          usedClientFallback: false,
+          backendParseFailureReason: null,
+        }));
+      }
+    } catch (err) {
+      serverExtractionError = err;
+      logDebug('share', 'server extraction unavailable', err);
+      serverExtraction = null;
+    }
+    // 2026-05-26: snapshot the structured backend outcome (configured /
+    // did-call / http-status / failure-reason) onto the debug state so
+    // the visible TestFlight diagnostics panel shows exactly which path
+    // the request took and why it failed (if it did).
+    {
+      const outcome = backendOutcomeRef.current;
+      const didCall = outcome?.didCallEdgeFunction ?? null;
+      const failureReason = outcome?.failureReason ?? null;
+      const httpStatus = outcome?.httpStatus ?? null;
+      const serverNull = outcome ? outcome.extraction === null : null;
+      setDebugState((prev) => ({
+        ...prev,
+        didCallProcessShareLink: didCall,
+        fallbackReason: failureReason ?? prev.fallbackReason,
+        serverReturnedNull: serverNull,
+        backendHttpStatus: httpStatus ?? prev.backendHttpStatus,
+      }));
+    }
+    // 2026-05-26: explicit one-line log when we drop to the legacy heuristic
+    // path so it's trivial to grep `[share-mobile-debug] fallback_to_legacy`
+    // in metro/adb/Console.app and correlate with missing
+    // process-share-link Edge Function logs in Supabase.
+    if (!serverExtraction) {
+      const reason = !isProcessShareLinkConfigured()
+        ? 'backend_not_configured'
+        : serverExtractionError
+          ? (serverExtractionError instanceof Error
+              ? serverExtractionError.name
+              : 'request_failed')
+          : 'no_extraction';
+      console.log(
+        `[share-mobile-debug] fallback_to_legacy reason=${reason} entry_path=${runtimePath}`,
+      );
+      setDebugState((prev) => ({
+        ...prev,
+        legacyExtractionUsed: true,
+        extractionPathAttempted: 'legacy_client',
+        fallbackReason: prev.fallbackReason ?? reason,
+      }));
+    } else {
+      setDebugState((prev) => ({
+        ...prev,
+        legacyExtractionUsed: false,
+      }));
+    }
+    const profileResults = (serverExtraction?.profileMetadata ?? []).map((profile) => ({
+      handle: profile.handle,
+      fetched: profile.fetched ?? null,
+      blocked: profile.blocked ?? null,
+      reason: buildProfileDebugReason(profile),
+      classification: profile.classification ?? null,
+      displayName: truncateShareDebugText(profile.displayName),
+      extractedName: truncateShareDebugText(profile.extractedName),
+      extractedAddress: truncateShareDebugText(profile.extractedAddress),
+      extractedCity: truncateShareDebugText(profile.extractedCity),
+    }));
+    setDebugState((prev) => ({
+      ...prev,
+      profileResults,
+    }));
+    for (const profile of serverExtraction?.profileMetadata ?? []) {
+      pushShareDebug('[share-debug] PROFILE_FETCH_RESULT', {
+        handle: profile.handle,
+        fetched: profile.fetched ?? false,
+        blocked: profile.blocked ?? false,
+        reason: buildProfileDebugReason(profile),
+      });
+      pushShareDebug('[share-debug] PROFILE_PARSE_RESULT', {
+        handle: profile.handle,
+        displayName: truncateShareDebugText(profile.displayName) ?? 'null',
+        category: truncateShareDebugText(profile.category) ?? 'null',
+        extractedName: truncateShareDebugText(profile.extractedName) ?? 'null',
+        extractedAddress: truncateShareDebugText(profile.extractedAddress) ?? 'null',
+        extractedCity: truncateShareDebugText(profile.extractedCity) ?? 'null',
+        classification: profile.classification,
+      });
+    }
+    const verifiedProfileEvidence = getVerifiedProfileEvidence(serverExtraction);
+
+    // ---- 2a. STAGE 3 — agent-driven decision (auto-save included) ---
+    // The new backend agent (when configured with GEMINI_API_KEY) returns
+    // a structured `agent` block on the extraction payload. When present,
+    // we let it drive the FINAL outcome — including silent auto-save —
+    // INSTEAD of running the legacy heuristic + Places + ranker pipeline.
+    //
+    // HARD RULES (also enforced server-side in lib/shareAgent/safety
+    // and lib/shareAgent/userFacing — defense-in-depth):
+    //   1. Auto-save runs ONLY when BOTH `userFacingDecision === 'auto_save'`
+    //      AND `safeToAutoSave === true`. Either being false means we
+    //      MUST NOT silent-save.
+    //   2. Auto-save also requires a non-null resolvedPlace with a
+    //      googlePlaceId from a Places search performed in this run.
+    //   3. If the agent could not produce a useful response we fall
+    //      through to the legacy pipeline — preserves Stage-0 behavior.
+    //   4. UI for candidate / manual paths stays visually identical.
+    const agentBlock = serverExtraction?.agent ?? null;
+    if (agentBlock) {
+      setDebugState((prev) => ({
+        ...prev,
+        agent: {
+          runId: (agentBlock as any).runId ?? '∅',
+          promptVersion: agentBlock.promptVersion,
+          modelUsed: agentBlock.modelUsed,
+          userFacingDecision: agentBlock.userFacingDecision,
+          agentDecision: agentBlock.agentDecision,
+          safetyDecision: agentBlock.safetyDecision,
+          downgradedFromAutoSave: agentBlock.downgradedFromAutoSave,
+          safeToAutoSave: agentBlock.safeToAutoSave,
+          confidence: agentBlock.confidence,
+          reasoning: agentBlock.reasoning,
+          evidenceUsed: agentBlock.evidenceUsed,
+          rejectionReasons: agentBlock.rejectionReasons,
+          toolsUsed: agentBlock.toolsUsed,
+          toolCalls: Array.isArray((agentBlock as any).toolCalls)
+            ? (agentBlock as any).toolCalls.map((t: any) => ({
+                tool: String(t.tool ?? ''),
+                status: String(t.status ?? ''),
+                note: typeof t.note === 'string' ? t.note : null,
+                latencyMs: typeof t.latencyMs === 'number' ? t.latencyMs : null,
+              }))
+            : [],
+          candidates: agentBlock.candidates.map((c) => ({
+            googlePlaceId: c.googlePlaceId,
+            name: c.name,
+            matchScore: c.matchScore,
+            rationale: c.rationale,
+          })),
+          latencyMs: agentBlock.latencyMs,
+          warnings: agentBlock.warnings,
+        },
+      }));
+      pushShareDebug('[share-debug] AGENT_DECISION', {
+        userFacingDecision: agentBlock.userFacingDecision,
+        agentDecision: agentBlock.agentDecision,
+        safetyDecision: agentBlock.safetyDecision,
+        downgradedFromAutoSave: agentBlock.downgradedFromAutoSave,
+        candidateCount: agentBlock.candidates.length,
+        confidence: agentBlock.confidence,
+      });
+      logDebug('share-agent', 'agent block present', {
+        userFacingDecision: agentBlock.userFacingDecision,
+        candidates: agentBlock.candidates.length,
+      });
+
+      const agentCandidates: PlaceCandidate[] = agentBlock.candidates
+        .filter(
+          (c) =>
+            !!c.googlePlaceId &&
+            typeof c.latitude === 'number' &&
+            typeof c.longitude === 'number',
+        )
+        .map((c) => ({
+          googlePlaceId: c.googlePlaceId,
+          name: c.name,
+          formattedAddress: c.formattedAddress ?? null,
+          latitude: c.latitude as number,
+          longitude: c.longitude as number,
+          category: (c.types ?? [])[0] ?? null,
+          googleMapsUrl: null,
+          rawTypes: c.types ?? [],
+        }));
+
+      // STAGE 3 — trust the safety-gated decision. Auto-save is a
+      // first-class outcome when both `userFacingDecision === 'auto_save'`
+      // AND `safeToAutoSave === true`.
+      const decision = agentBlock.userFacingDecision;
+
+      if (
+        decision === 'auto_save' &&
+        agentBlock.safeToAutoSave === true &&
+        agentCandidates.length > 0
+      ) {
+        const top = agentCandidates[0];
+        setDebugState((prev) => ({
+          ...prev,
+          finalStatus: 'agent_auto_save',
+          finalReason: null,
+          placesCandidateNames: agentCandidates.map((c) => c.name),
+        }));
+        pushShareDebug('[share-debug] FINAL_RESULT', {
+          status: 'agent_auto_save',
+          reason: null,
+          place: top.name,
+        });
+        await saveCandidate(top, parsedResult.url, parsedResult.source);
+        return;
+      }
+
+      if (decision === 'candidate_confirmation' && agentCandidates.length > 0) {
+        setCandidates(agentCandidates);
+        setPhase('choose');
+        setDebugState((prev) => ({
+          ...prev,
+          finalStatus: 'agent_candidate_confirmation',
+          finalReason: agentBlock.downgradedFromAutoSave ? 'downgraded_from_auto_save' : null,
+          placesCandidateNames: agentCandidates.map((c) => c.name),
+        }));
+        pushShareDebug('[share-debug] FINAL_RESULT', {
+          status: 'agent_candidate_confirmation',
+          reason: null,
+        });
+        return;
+      }
+
+      if (decision === 'manual_fallback') {
+        setFailMessage(FAIL_NO_QUERY);
+        setManualQuery(serverExtraction?.query ?? extracted?.query ?? '');
+        setPhase('failed');
+        setDebugState((prev) => ({
+          ...prev,
+          finalStatus: 'agent_manual_fallback',
+          finalReason: agentBlock.rejectionReasons[0] ?? null,
+        }));
+        pushShareDebug('[share-debug] FINAL_RESULT', {
+          status: 'agent_manual_fallback',
+          reason: agentBlock.rejectionReasons[0] ?? null,
+        });
+        return;
+      }
+
+      // decision === 'failed' or candidate_confirmation with no usable
+      // candidates — fall through to the legacy pipeline below.
+      logDebug('share-agent', 'agent decision unusable, falling through', {
+        decision,
+        candidateCount: agentCandidates.length,
+      });
+    }
 
     // ---- 2b. AI enhancement (best-effort, never blocks) ---------------
     // extractPlaceAI is guaranteed never to throw and falls back to a
@@ -280,23 +876,98 @@ export default function ShareScreen() {
     // RN this is a fast no-op; only server / EAS-with-secret builds will
     // actually hit Gemini. UI must never block on AI failure.
     let ai: AIExtractResult | null = null;
-    try {
-      ai = await extractPlaceAI({
-        sourceType: parsedResult.source,
-        url: parsedResult.url,
-        title: parsedResult.title ?? undefined,
-        description: parsedResult.description ?? undefined,
-        fallbackQuery: extracted?.query,
+    if (!serverExtraction) {
+      pushShareDebug(
+        '[share-debug] PROFILE_METADATA_FOR_AI',
+        { count: 0, handles: [] },
+        {
+          profileMetadataCountForAi: 0,
+          profileMetadataHandlesForAi: [],
+          aiInputProfileMetadata: '[]',
+          usedClientFallback: true,
+        },
+      );
+      pushShareDebug('[share-debug] AI_INPUT_PROFILE_METADATA', {
+        profileMetadata: '[]',
       });
-      setAiExtraction(ai);
-      console.log('[share] ai extraction', {
-        query: ai.query,
-        confidence: ai.confidence,
+      try {
+        ai = await extractPlaceAI({
+          sourceType: parsedResult.source,
+          url: parsedResult.url,
+          title: parsedResult.title ?? undefined,
+          description: parsedResult.description ?? undefined,
+          fallbackQuery: extracted?.query,
+        });
+        setAiExtraction(ai);
+        logDebug('share', 'ai extraction', {
+          query: ai.query,
+          confidence: ai.confidence,
+        });
+        pushShareDebug(
+          '[share-debug] AI_OUTPUT',
+          {
+            query: truncateShareDebugText(ai.query),
+            placeName: truncateShareDebugText(ai.placeName),
+            address: truncateShareDebugText(ai.address),
+            confidence: ai.confidence,
+            needsUserConfirmation: ai.needsUserConfirmation ?? false,
+          },
+          {
+            aiQuery: truncateShareDebugText(ai.query),
+            aiPlaceName: truncateShareDebugText(ai.placeName),
+            aiAddress: truncateShareDebugText(ai.address),
+            aiConfidence: ai.confidence,
+            aiNeedsUserConfirmation: ai.needsUserConfirmation ?? null,
+          },
+        );
+      } catch (err) {
+        // extractPlaceAI is no-throw, but be defensive anyway.
+        console.warn('[share] ai extraction threw (ignored)', (err as Error)?.message);
+        ai = null;
+      }
+    } else {
+      const profileHandlesForAi = serverExtraction.profileMetadata.map((profile) => profile.handle);
+      const aiInputProfileMetadata = JSON.stringify(
+        serverExtraction.profileMetadata.map((profile) => ({
+          handle: profile.handle,
+          classification: profile.classification,
+          displayName: truncateShareDebugText(profile.displayName),
+          extractedName: truncateShareDebugText(profile.extractedName),
+          extractedAddress: truncateShareDebugText(profile.extractedAddress),
+          extractedCity: truncateShareDebugText(profile.extractedCity),
+        })),
+      );
+      pushShareDebug(
+        '[share-debug] PROFILE_METADATA_FOR_AI',
+        { count: profileHandlesForAi.length, handles: profileHandlesForAi },
+        {
+          profileMetadataCountForAi: profileHandlesForAi.length,
+          profileMetadataHandlesForAi: profileHandlesForAi,
+          aiInputProfileMetadata,
+          usedClientFallback: false,
+        },
+      );
+      pushShareDebug('[share-debug] AI_INPUT_PROFILE_METADATA', {
+        profileMetadata: aiInputProfileMetadata,
       });
-    } catch (err) {
-      // extractPlaceAI is no-throw, but be defensive anyway.
-      console.warn('[share] ai extraction threw (ignored)', (err as Error)?.message);
-      ai = null;
+      pushShareDebug(
+        '[share-debug] AI_OUTPUT',
+        {
+          query: truncateShareDebugText(serverExtraction.query),
+          placeName: truncateShareDebugText(serverExtraction.placeName),
+          address: truncateShareDebugText(serverExtraction.address),
+          confidence: serverExtraction.confidence,
+          needsUserConfirmation: !serverExtraction.searchAllowed,
+        },
+        {
+          aiQuery: truncateShareDebugText(serverExtraction.query),
+          aiPlaceName: truncateShareDebugText(serverExtraction.placeName),
+          aiAddress: truncateShareDebugText(serverExtraction.address),
+          aiConfidence: serverExtraction.confidence,
+          aiNeedsUserConfirmation: !serverExtraction.searchAllowed,
+        },
+      );
+      setAiExtraction(null);
     }
 
     // ---- 2c. decide which query to use --------------------------------
@@ -310,7 +981,14 @@ export default function ShareScreen() {
     let chosenConfidence: 'high' | 'medium' | 'low' = 'low';
     let chosenReason: string | null = null;
     let accountIdentityUsed = false;
-    if (ai && ai.confidence === 'high' && ai.query) {
+    if (serverExtraction) {
+      chosenQuery = serverExtraction.query || null;
+      chosenConfidence = serverExtraction.confidence;
+      chosenReason = serverExtraction.querySource === 'none' ? null : serverExtraction.querySource;
+      accountIdentityUsed =
+        serverExtraction.querySource === 'account_display_name' ||
+        serverExtraction.querySource === 'account_handle';
+    } else if (ai && ai.confidence === 'high' && ai.query) {
       chosenQuery = ai.query;
       chosenConfidence = 'high';
       chosenReason = 'ai-high';
@@ -341,32 +1019,53 @@ export default function ShareScreen() {
       chosenReason = 'suggested-query';
     }
 
-    if (__DEV__) {
-      console.debug('[share] flow chose query', {
-        chosenQuery,
-        chosenConfidence,
-        chosenReason,
-        heuristic: extracted?.query,
-        ai: ai?.query,
-      });
-    }
-
+    logDebug('share', 'flow chose query', {
+      chosenQuery,
+      chosenConfidence,
+      chosenReason,
+      heuristic: extracted?.query,
+      ai: ai?.query,
+    });
     const preliminaryStrength = classifyPlaceQueryStrength({
       query: chosenQuery,
       extractionReason: chosenReason,
       confidence: chosenConfidence,
       accountIdentityUsed: false,
     });
-    if (accountIdentity?.query && preliminaryStrength === 'weak') {
+    if (!serverExtraction && accountIdentity?.query && preliminaryStrength === 'weak') {
       chosenQuery = accountIdentity.query;
       chosenConfidence = accountIdentity.confidence;
       chosenReason = accountIdentity.reason;
       accountIdentityUsed = true;
     }
+    pushShareDebug(
+      '[share-debug] QUERY_SELECTION',
+      {
+        chosenQuery: truncateShareDebugText(chosenQuery),
+        source: chosenReason ?? 'none',
+        confidence: chosenConfidence,
+        accountIdentityUsed,
+        verifiedProfile: !!verifiedProfileEvidence,
+      },
+      {
+        chosenQuery: truncateShareDebugText(chosenQuery),
+        querySource: chosenReason,
+        queryConfidence: chosenConfidence,
+        accountIdentityUsed,
+        verifiedProfileSelected: !!verifiedProfileEvidence,
+      },
+    );
 
     if (!chosenQuery) {
       // We couldn't synthesize ANY query at all -- only here do we fall
       // back to manual search.
+      pushShareDebug('[share-debug] FINAL_RESULT', {
+        status: 'failed_requires_app',
+        reason: 'no_query',
+      }, {
+        finalStatus: 'failed_requires_app',
+        finalReason: 'no_query',
+      });
       setFailMessage(FAIL_NO_QUERY);
       setManualQuery('');
       setPhase('failed');
@@ -381,6 +1080,7 @@ export default function ShareScreen() {
     // for the actual business search and the anchor for franchise
     // ranking.
     const contextText =
+      serverExtraction?.sourceContext ??
       extractLocationContext(
         [parsedResult.title, parsedResult.description]
           .filter(Boolean)
@@ -393,12 +1093,10 @@ export default function ShareScreen() {
       } catch {
         contextLatLng = null;
       }
-      if (__DEV__) {
-        console.debug('[share] location context', {
-          contextText,
-          resolved: !!contextLatLng,
-        });
-      }
+      logDebug('share', 'location context', {
+        contextText,
+        resolved: !!contextLatLng,
+      });
     }
 
     const queryStrength = classifyPlaceQueryStrength({
@@ -408,10 +1106,10 @@ export default function ShareScreen() {
       sourceContextText: contextText,
       accountIdentityUsed,
     });
-    console.log(`[share-extract] query_strength=${queryStrength}`);
-    console.log(`[share-extract] account_identity_used=${accountIdentityUsed}`);
+    logDebug('share-extract', `query_strength=${queryStrength}`);
+    logDebug('share-extract', `account_identity_used=${accountIdentityUsed}`);
     if (accountIdentity?.query) {
-      console.log(`[share-rank] account_query=${accountIdentity.query}`);
+      logDebug('share-rank', `account_query=${accountIdentity.query}`);
     }
 
     // ---- 3b. Evidence-based extraction pipeline (v2) ------------------
@@ -430,34 +1128,110 @@ export default function ShareScreen() {
       title: parsedResult.title,
       description: parsedResult.description,
       cleanedQuery: parsedResult.suggestedQuery,
-      ai: ai
+      posterHandle: serverExtraction?.posterHandle ?? undefined,
+      enrichments: serverExtraction?.profileMetadata.map((profile) => ({
+        handle: profile.handle,
+        classification: profile.classification,
+        category: profile.category,
+        displayName: profile.displayName,
+        extractedName: profile.extractedName,
+        extractedAddress: profile.extractedAddress,
+        extractedCity: profile.extractedCity,
+        confidence: profile.confidence,
+      })),
+      ai: serverExtraction
         ? {
-            query: ai.query,
-            placeName: ai.placeName ?? null,
-            address: ai.address ?? null,
-            city: ai.city ?? null,
-            state: ai.state ?? null,
-            posterType: ai.posterType,
-            taggedAccounts: ai.taggedAccounts,
-            confidence: ai.confidence,
-            reason: ai.reason,
-            needsUserConfirmation: ai.needsUserConfirmation,
+            query: serverExtraction.query,
+            placeName: serverExtraction.placeName,
+            address: serverExtraction.address,
+            city: serverExtraction.city,
+            state: serverExtraction.state,
+            posterType: serverExtraction.posterType,
+            taggedAccounts: serverExtraction.taggedAccounts,
+            confidence: serverExtraction.confidence,
+            reason: serverExtraction.querySource,
+            needsUserConfirmation: !serverExtraction.searchAllowed,
           }
-        : null,
+        : ai
+          ? {
+              query: ai.query,
+              placeName: ai.placeName ?? null,
+              address: ai.address ?? null,
+              city: ai.city ?? null,
+              state: ai.state ?? null,
+              posterType: ai.posterType,
+              taggedAccounts: ai.taggedAccounts,
+              confidence: ai.confidence,
+              reason: ai.reason,
+              needsUserConfirmation: ai.needsUserConfirmation,
+            }
+          : null,
     });
-    console.log(
-      `[share-extract] evidence=${JSON.stringify(extractionResult.evidence)}`,
-    );
-    console.log(`[share-extract] poster_type=${extractionResult.posterType}`);
-    console.log(`[share-extract] address_found=${!!extractionResult.address}`);
-    console.log(`[share-extract] handle_used=${extractionResult.evidence.handleUsed}`);
-    console.log(
-      `[share-rank] auto_save_allowed=${extractionResult.autoSaveAllowed}`,
-    );
+    logDebug('share-extract', `evidence=${JSON.stringify(extractionResult.evidence)}`);
+    logDebug('share-extract', `poster_type=${extractionResult.posterType}`);
+    logDebug('share-extract', `address_found=${!!extractionResult.address}`);
+    logDebug('share-extract', `handle_used=${extractionResult.evidence.handleUsed}`);
+    logDebug('share-rank', `auto_save_allowed=${extractionResult.autoSaveAllowed}`);
     if (!extractionResult.autoSaveAllowed && extractionResult.needsConfirmationReason) {
-      console.log(
-        `[share-rank] auto_save_blocked_reason=${extractionResult.needsConfirmationReason}`,
-      );
+      logDebug('share-rank', `auto_save_blocked_reason=${extractionResult.needsConfirmationReason}`);
+    }
+
+    const queryKind = classifyExtractedQuery(chosenQuery, {
+      title: parsedResult.title,
+      description: parsedResult.description,
+      placeName: extractionResult.placeName,
+      address: extractionResult.address,
+      city: extractionResult.city,
+      state: extractionResult.state,
+      sourceContext: extractionResult.sourceContext,
+      transcript: null,
+      ai,
+      profileExtractedName: verifiedProfileEvidence?.extractedName ?? null,
+      profileExtractedAddress: verifiedProfileEvidence?.extractedAddress ?? null,
+      profileExtractedCity: verifiedProfileEvidence?.extractedCity ?? null,
+      accountIdentityOnly: accountIdentityUsed,
+      accountIdentitySource: accountIdentityUsed ? chosenReason : null,
+    });
+    logDebug('share-extract', `query_kind=${queryKind}`);
+    const queryGateAllowed = shouldSearchPlaces(chosenQuery, {
+      title: parsedResult.title,
+      description: parsedResult.description,
+      placeName: extractionResult.placeName,
+      address: extractionResult.address,
+      city: extractionResult.city,
+      state: extractionResult.state,
+      sourceContext: extractionResult.sourceContext,
+      transcript: null,
+      ai,
+      profileExtractedName: verifiedProfileEvidence?.extractedName ?? null,
+      profileExtractedAddress: verifiedProfileEvidence?.extractedAddress ?? null,
+      profileExtractedCity: verifiedProfileEvidence?.extractedCity ?? null,
+      accountIdentityOnly: accountIdentityUsed,
+      accountIdentitySource: accountIdentityUsed ? chosenReason : null,
+    });
+    const queryGateReason = queryGateAllowed
+      ? null
+      : (queryKind === 'empty' ? 'no_query' : 'generic_query_no_place_evidence');
+    pushShareDebug(
+      '[share-debug] QUERY_GATE',
+      { allowed: queryGateAllowed, reason: queryGateReason ?? 'passed' },
+      { queryGateAllowed, queryGateReason },
+    );
+    if (!queryGateAllowed) {
+      logInfo('share-rank', 'auto_save_blocked_reason=generic_query_no_place_evidence');
+      setDebugState((prev) => ({
+        ...prev,
+        finalStatus: 'failed_requires_app',
+        finalReason: queryGateReason,
+      }));
+      pushShareDebug('[share-debug] FINAL_RESULT', {
+        status: 'failed_requires_app',
+        reason: queryGateReason,
+      });
+      setFailMessage(FAIL_NO_QUERY);
+      setManualQuery('');
+      setPhase('failed');
+      return;
     }
 
     // ---- 3c. Address-first verification gate --------------------------
@@ -469,18 +1243,14 @@ export default function ShareScreen() {
     // before silently saving.
     let addressContextLatLng: LocationBias | null = contextLatLng;
     if (extractionResult.address) {
-      console.log(`[share-geocode] address_found=${extractionResult.address}`);
+      logDebug('share-geocode', `address_found=${extractionResult.address}`);
       const verification = await verifyPlaceAtAddress(
         extractionResult.address,
         extractionResult.placeName,
       );
-      console.log(
-        `[share-geocode] geocode_success=${verification.geocoded !== null}`,
-      );
+      logDebug('share-geocode', `geocode_success=${verification.geocoded !== null}`);
       if (verification.status === 'verified') {
-        console.log(
-          `[share-geocode] candidate_distance_m=${Math.round(verification.distanceMeters)} verified=true`,
-        );
+        logDebug('share-geocode', `candidate_distance_m=${Math.round(verification.distanceMeters)} verified=true`);
         await saveCandidate(
           verification.candidate,
           parsedResult.url,
@@ -489,15 +1259,13 @@ export default function ShareScreen() {
         return;
       }
       if (verification.status === 'ambiguous') {
-        console.log(
-          '[share-geocode] verified=false ambiguous_after_address_verify',
-        );
+        logInfo('share-geocode', 'verified=false ambiguous_after_address_verify');
         setCandidates(verification.candidates);
         setPhase('choose');
         return;
       }
       // status === 'failed'
-      console.log(
+      console.warn(
         `[share-geocode] verified=false address_verification_failed_reason=${verification.reason}`,
       );
       // If we got a real geocode but no business matched, prefer the
@@ -521,10 +1289,32 @@ export default function ShareScreen() {
       {
         chosenReason,
         accountIdentityUsed,
+        requiredNameHint:
+          serverExtraction?.requiredNameHint ??
+          verifiedProfileEvidence?.extractedName ??
+          extractionResult.placeName,
       },
       { contextText, contextLatLng: addressContextLatLng },
       extractionResult,
     );
+    };
+
+    try {
+      await execute();
+    } catch (err) {
+      const message = (err as Error)?.message ?? FAIL_GENERIC;
+      if (isInvalidRegexError(err)) {
+        console.warn('[share] regex/parsing failed', message);
+      } else {
+        console.warn('[share] extraction failed', message);
+      }
+      console.warn('[share] save flow failed', message);
+      setFailMessage(FAIL_GENERIC);
+      setPhase('failed');
+      Alert.alert("Couldn't save link", FAIL_GENERIC);
+    } finally {
+      logDebug('share', 'save flow finished');
+    }
   }
 
   async function runSearchAndMaybeSave(
@@ -536,7 +1326,8 @@ export default function ShareScreen() {
     queryEvidence: {
       chosenReason: string | null;
       accountIdentityUsed: boolean;
-    } = { chosenReason: null, accountIdentityUsed: false },
+      requiredNameHint?: string | null;
+    } = { chosenReason: null, accountIdentityUsed: false, requiredNameHint: null },
     locationCtx: {
       contextText: string | null;
       contextLatLng: LocationBias | null;
@@ -547,17 +1338,14 @@ export default function ShareScreen() {
     // Bias priority: explicit post context > user device location > none.
     const bias: LocationBias | undefined =
       locationCtx.contextLatLng ?? userLatLngRef.current ?? undefined;
-    console.log(
-      `[share-rank] source_context=${locationCtx.contextText ?? 'none'}`,
-    );
-    console.log(
-      `[share-rank] context_bias_used=${!!locationCtx.contextLatLng}`,
-    );
-    console.log(
-      `[share-rank] device_bias_used=${!locationCtx.contextLatLng && !!userLatLngRef.current}`,
-    );
+    logDebug('share-rank', `source_context=${locationCtx.contextText ?? 'none'}`);
+    logDebug('share-rank', `context_bias_used=${!!locationCtx.contextLatLng}`);
+    logDebug('share-rank', `device_bias_used=${!locationCtx.contextLatLng && !!userLatLngRef.current}`);
     let results: PlaceCandidate[] = [];
     try {
+      pushShareDebug('[share-debug] PLACES_SEARCH_START', {
+        query: truncateShareDebugText(query),
+      });
       results = await searchPlaces(query, bias);
     } catch (err) {
       const msg =
@@ -578,10 +1366,25 @@ export default function ShareScreen() {
       setFailMessage(msg);
       setManualQuery(query);
       setPhase('failed');
+      pushShareDebug('[share-debug] FINAL_RESULT', {
+        status: 'open_app',
+        reason: err instanceof PlacesError ? err.code : 'places_threw',
+      }, {
+        finalStatus: 'open_app',
+        finalReason: err instanceof PlacesError ? err.code : 'places_threw',
+      });
       return;
     }
 
-    console.log('[share] places results', { query, count: results.length });
+    logDebug('share', 'places results', { query, count: results.length });
+    pushShareDebug(
+      '[share-debug] PLACES_SEARCH_RESULT',
+      {
+        count: results.length,
+        names: results.slice(0, 5).map((result) => result.name),
+      },
+      { placesCandidateNames: results.slice(0, 5).map((result) => result.name) },
+    );
 
     if (results.length === 0) {
       void trackEvent('save_failed', {
@@ -598,6 +1401,13 @@ export default function ShareScreen() {
       setFailMessage(FAIL_NO_RESULTS);
       setManualQuery(query);
       setPhase('failed');
+      pushShareDebug('[share-debug] FINAL_RESULT', {
+        status: 'failed_requires_app',
+        reason: 'no_results',
+      }, {
+        finalStatus: 'failed_requires_app',
+        finalReason: 'no_results',
+      });
       return;
     }
 
@@ -653,7 +1463,7 @@ export default function ShareScreen() {
     // candidate list is the safest UX.
     const isMultiLocation = isLikelyMultiLocationPlace(query, localityRanked);
     const rankingContext = {
-      extractedBusinessName: query,
+      extractedBusinessName: queryEvidence.requiredNameHint ?? extractionResult?.placeName ?? query,
       contextLatLng: locationCtx.contextLatLng ?? undefined,
       contextText: locationCtx.contextText ?? undefined,
       userLatLng: locationCtx.contextLatLng ? undefined : userLatLngRef.current ?? undefined,
@@ -664,13 +1474,14 @@ export default function ShareScreen() {
     const finalResults = rankedResults.filter((candidate) => {
       const rejection = getShareCandidateRejectionReason(candidate, rankingContext);
       if (rejection) {
-        console.log(`[share-rank] rejected_candidate_reason=${rejection}`);
+        logDebug('share-rank', `rejected_candidate_reason=${rejection}`);
         return false;
       }
       return true;
     });
 
     if (finalResults.length === 0) {
+      logInfo('share-rank', 'auto_save_blocked_reason=no_trusted_candidates');
       void trackEvent('save_failed', {
         source_type: sourceType,
         flow:
@@ -679,27 +1490,32 @@ export default function ShareScreen() {
             : 'paste_link',
         query,
         candidate_count: 0,
-        error_code: 'all_candidates_rejected',
+        error_code: 'no_trusted_candidates',
         confidence: chosenConfidence,
       });
       setFailMessage(FAIL_NO_RESULTS);
       setManualQuery(query);
       setPhase('failed');
+      pushShareDebug('[share-debug] FINAL_RESULT', {
+        status: 'failed_requires_app',
+        reason: 'no_trusted_candidates',
+      }, {
+        finalStatus: 'failed_requires_app',
+        finalReason: 'no_trusted_candidates',
+      });
       return;
     }
-    if (__DEV__) {
-      console.debug('[places] franchise resolution', {
-        query,
-        isMultiLocation,
-        contextText: locationCtx.contextText,
-        hasContextLatLng: !!locationCtx.contextLatLng,
-        hasUserLatLng: !!userLatLngRef.current,
-        chosen: finalResults[0]?.name ?? null,
-        candidateCount: finalResults.length,
-      });
-    }
+    logDebug('places', 'franchise resolution', {
+      query,
+      isMultiLocation,
+      contextText: locationCtx.contextText,
+      hasContextLatLng: !!locationCtx.contextLatLng,
+      hasUserLatLng: !!userLatLngRef.current,
+      chosen: finalResults[0]?.name ?? null,
+      candidateCount: finalResults.length,
+    });
 
-    console.log('[share-rank] candidates', finalResults.slice(0, 5).map((candidate) => ({
+    logDebug('share-rank', 'candidates', finalResults.slice(0, 5).map((candidate) => ({
       name: candidate.name,
       address: candidate.formattedAddress ?? null,
       googlePlaceId: candidate.googlePlaceId ?? null,
@@ -707,7 +1523,10 @@ export default function ShareScreen() {
 
     const hasSourceContext = !!locationCtx.contextLatLng;
     const strongMatchCandidates = finalResults.filter((candidate) =>
-      hasStrongNameMatch(candidate, query),
+      hasStrongNameMatch(
+        candidate,
+        queryEvidence.requiredNameHint ?? extractionResult?.placeName ?? query,
+      ),
     );
     const accountIdentityOnly =
       queryEvidence.accountIdentityUsed ||
@@ -716,10 +1535,12 @@ export default function ShareScreen() {
     const explicitSourceBusinessSignal = hasExplicitSourceBusinessSignal(
       queryEvidence.chosenReason,
     );
+    const nameMatchTarget =
+      queryEvidence.requiredNameHint ?? extractionResult?.placeName ?? query;
     const topHasStrongAutoSaveEvidence = (candidate: PlaceCandidate): boolean =>
       explicitAddressSignal ||
-      (hasSourceContext && hasStrongNameMatch(candidate, query)) ||
-      (explicitSourceBusinessSignal && hasStrongNameMatch(candidate, query));
+      (hasSourceContext && hasStrongNameMatch(candidate, nameMatchTarget)) ||
+      (explicitSourceBusinessSignal && hasStrongNameMatch(candidate, nameMatchTarget));
 
     // Pipeline gate (v2). The evidence-based pipeline is authoritative for
     // the silent-save decision. If it says "do not auto-save", we always
@@ -729,27 +1550,50 @@ export default function ShareScreen() {
       extractionResult !== null && extractionResult.autoSaveAllowed === false;
     if (pipelineBlocksAutoSave) {
       const reason = extractionResult?.needsConfirmationReason ?? 'pipeline_blocked';
-      console.log(`[share-rank] auto_save_blocked_reason=${reason}`);
+      logInfo('share-rank', `auto_save_blocked_reason=${reason}`);
       if (strongMatchCandidates.length > 0) {
         setCandidates(strongMatchCandidates.slice(0, 5));
       } else {
         setCandidates(finalResults.slice(0, 5));
       }
       setPhase('choose');
+      pushShareDebug('[share-debug] FINAL_RESULT', {
+        status: 'ambiguous',
+        reason,
+      }, {
+        finalStatus: 'ambiguous',
+        finalReason: reason,
+        placesCandidateNames: finalResults.slice(0, 5).map((candidate) => candidate.name),
+      });
       return;
     }
 
     if (queryStrength === 'weak') {
-      console.log('[share-rank] auto_save_blocked_reason=weak_query');
+      logInfo('share-rank', 'auto_save_blocked_reason=weak_query');
       if (strongMatchCandidates.length > 0) {
-        console.log('[share-rank] auto_save_blocked_reason=needs_user_confirmation');
+        logInfo('share-rank', 'auto_save_blocked_reason=needs_user_confirmation');
         setCandidates(strongMatchCandidates.slice(0, 5));
         setPhase('choose');
+        pushShareDebug('[share-debug] FINAL_RESULT', {
+          status: 'ambiguous',
+          reason: 'weak_query',
+        }, {
+          finalStatus: 'ambiguous',
+          finalReason: 'weak_query',
+          placesCandidateNames: strongMatchCandidates.slice(0, 5).map((candidate) => candidate.name),
+        });
         return;
       }
       setFailMessage(FAIL_NO_RESULTS);
       setManualQuery(query);
       setPhase('failed');
+      pushShareDebug('[share-debug] FINAL_RESULT', {
+        status: 'failed_requires_app',
+        reason: 'weak_query',
+      }, {
+        finalStatus: 'failed_requires_app',
+        finalReason: 'weak_query',
+      });
       return;
     }
 
@@ -764,53 +1608,81 @@ export default function ShareScreen() {
       // candidate as a single-row picker so the user can confirm or open
       // manual search instead of silently saving the neighborhood.
       if (queryHasBusinessToken && isLocalityLikePlace(only)) {
-        if (__DEV__) {
-          console.debug('[share] flow', {
-            extractedQuery: query,
-            placesCount: results.length,
-            topCandidate: results[0]?.name,
-            addressLike: isAddressLikePlace(results[0]),
-            resolvedCandidate: only.name,
-            candidatesShown: 1,
-            reason: 'single-locality-needs-confirmation',
-          });
-        }
-        setCandidates(finalResults);
-        setPhase('choose');
-        return;
-      }
-      if (!hasMeaningfulNameMatch(only, query)) {
-        console.log('[share-rank] rejected_candidate_reason=name_mismatch');
-        setFailMessage(FAIL_NO_RESULTS);
-        setManualQuery(query);
-        setPhase('failed');
-        return;
-      }
-      if (accountIdentityOnly && !hasSourceContext) {
-        console.log('[share-rank] auto_save_blocked_reason=account_identity_not_enough');
-        setCandidates(strongMatchCandidates.length > 0 ? strongMatchCandidates.slice(0, 5) : finalResults);
-        setPhase('choose');
-        return;
-      }
-      if (!topHasStrongAutoSaveEvidence(only)) {
-        console.log(
-          `[share-rank] auto_save_blocked_reason=${hasSourceContext ? 'needs_user_confirmation' : 'no_source_context_name_not_strong'}`,
-        );
-        setCandidates(strongMatchCandidates.length > 0 ? strongMatchCandidates.slice(0, 5) : finalResults);
-        setPhase('choose');
-        return;
-      }
-      if (__DEV__) {
-        console.debug('[share] flow', {
+        logDebug('share', 'flow', {
           extractedQuery: query,
           placesCount: results.length,
           topCandidate: results[0]?.name,
           addressLike: isAddressLikePlace(results[0]),
           resolvedCandidate: only.name,
-          candidatesShown: 0,
-          reason: 'single-result-auto-save',
+          candidatesShown: 1,
+          reason: 'single-locality-needs-confirmation',
         });
+        setCandidates(finalResults);
+        setPhase('choose');
+        pushShareDebug('[share-debug] FINAL_RESULT', {
+          status: 'ambiguous',
+          reason: 'single_locality_needs_confirmation',
+        }, {
+          finalStatus: 'ambiguous',
+          finalReason: 'single_locality_needs_confirmation',
+          placesCandidateNames: finalResults.map((candidate) => candidate.name),
+        });
+        return;
       }
+      if (!hasMeaningfulNameMatch(only, nameMatchTarget)) {
+        logInfo('share-rank', 'rejected_candidate_reason=name_mismatch');
+        setFailMessage(FAIL_NO_RESULTS);
+        setManualQuery(query);
+        setPhase('failed');
+        pushShareDebug('[share-debug] FINAL_RESULT', {
+          status: 'failed_requires_app',
+          reason: 'name_mismatch',
+        }, {
+          finalStatus: 'failed_requires_app',
+          finalReason: 'name_mismatch',
+        });
+        return;
+      }
+      if (accountIdentityOnly && !hasSourceContext) {
+        logInfo('share-rank', 'auto_save_blocked_reason=account_identity_not_enough');
+        setCandidates(strongMatchCandidates.length > 0 ? strongMatchCandidates.slice(0, 5) : finalResults);
+        setPhase('choose');
+        pushShareDebug('[share-debug] FINAL_RESULT', {
+          status: 'ambiguous',
+          reason: 'account_identity_not_enough',
+        }, {
+          finalStatus: 'ambiguous',
+          finalReason: 'account_identity_not_enough',
+          placesCandidateNames: (strongMatchCandidates.length > 0 ? strongMatchCandidates.slice(0, 5) : finalResults).map((candidate) => candidate.name),
+        });
+        return;
+      }
+      if (!topHasStrongAutoSaveEvidence(only)) {
+        logInfo(
+          'share-rank',
+          `auto_save_blocked_reason=${hasSourceContext ? 'needs_user_confirmation' : 'no_source_context_name_not_strong'}`,
+        );
+        setCandidates(strongMatchCandidates.length > 0 ? strongMatchCandidates.slice(0, 5) : finalResults);
+        setPhase('choose');
+        pushShareDebug('[share-debug] FINAL_RESULT', {
+          status: 'ambiguous',
+          reason: hasSourceContext ? 'needs_user_confirmation' : 'no_source_context_name_not_strong',
+        }, {
+          finalStatus: 'ambiguous',
+          finalReason: hasSourceContext ? 'needs_user_confirmation' : 'no_source_context_name_not_strong',
+          placesCandidateNames: (strongMatchCandidates.length > 0 ? strongMatchCandidates.slice(0, 5) : finalResults).map((candidate) => candidate.name),
+        });
+        return;
+      }
+      logDebug('share', 'flow', {
+        extractedQuery: query,
+        placesCount: results.length,
+        topCandidate: results[0]?.name,
+        addressLike: isAddressLikePlace(results[0]),
+        resolvedCandidate: only.name,
+        candidatesShown: 0,
+        reason: 'single-result-auto-save',
+      });
       await saveCandidate(only, sourceUrl, sourceType);
       return;
     }
@@ -825,21 +1697,19 @@ export default function ShareScreen() {
       finalResults.length > 1 &&
       !isAddressLikePlace(finalResults[0]) &&
       !isLocalityLikePlace(finalResults[0]) &&
-      hasMeaningfulNameMatch(finalResults[0], query) &&
+      hasMeaningfulNameMatch(finalResults[0], nameMatchTarget) &&
       topHasStrongAutoSaveEvidence(finalResults[0]) &&
       !accountIdentityOnly
     ) {
-      if (__DEV__) {
-        console.debug('[share] flow', {
-          extractedQuery: query,
-          placesCount: results.length,
-          topCandidate: results[0]?.name,
-          addressLike: isAddressLikePlace(results[0]),
-          resolvedCandidate: finalResults[0].name,
-          candidatesShown: 0,
-          reason: 'high-confidence-auto-save',
-        });
-      }
+      logDebug('share', 'flow', {
+        extractedQuery: query,
+        placesCount: results.length,
+        topCandidate: results[0]?.name,
+        addressLike: isAddressLikePlace(results[0]),
+        resolvedCandidate: finalResults[0].name,
+        candidatesShown: 0,
+        reason: 'high-confidence-auto-save',
+      });
       await saveCandidate(finalResults[0], sourceUrl, sourceType);
       return;
     }
@@ -854,20 +1724,18 @@ export default function ShareScreen() {
       finalResults.length > 0 &&
       !isLocalityLikePlace(finalResults[0]) &&
       !isAddressLikePlace(finalResults[0]) &&
-      hasMeaningfulNameMatch(finalResults[0], query) &&
+      hasMeaningfulNameMatch(finalResults[0], nameMatchTarget) &&
       topHasStrongAutoSaveEvidence(finalResults[0]) &&
       !accountIdentityOnly
     ) {
-      if (__DEV__) {
-        console.debug('[share] flow', {
-          extractedQuery: query,
-          placesCount: results.length,
-          topCandidate: results[0]?.name,
-          resolvedCandidate: finalResults[0].name,
-          candidatesShown: 0,
-          reason: 'franchise-closest-branch-auto-save',
-        });
-      }
+      logDebug('share', 'flow', {
+        extractedQuery: query,
+        placesCount: results.length,
+        topCandidate: results[0]?.name,
+        resolvedCandidate: finalResults[0].name,
+        candidatesShown: 0,
+        reason: 'franchise-closest-branch-auto-save',
+      });
       await saveCandidate(finalResults[0], sourceUrl, sourceType);
       return;
     }
@@ -875,23 +1743,29 @@ export default function ShareScreen() {
     // Multiple candidates → let the user pick. NEVER fall through to the
     // manual-search card when we have real results.
     if (accountIdentityOnly && !hasSourceContext) {
-      console.log('[share-rank] auto_save_blocked_reason=account_identity_not_enough');
+      logInfo('share-rank', 'auto_save_blocked_reason=account_identity_not_enough');
     } else {
-      console.log('[share-rank] auto_save_blocked_reason=needs_user_confirmation');
+      logInfo('share-rank', 'auto_save_blocked_reason=needs_user_confirmation');
     }
-    if (__DEV__) {
-      console.debug('[share] flow', {
-        extractedQuery: query,
-        placesCount: results.length,
-        topCandidate: results[0]?.name,
-        addressLike: isAddressLikePlace(results[0]),
-        resolvedCandidate: finalResults[0]?.name,
-        candidatesShown: finalResults.length,
-        reason: 'show-candidates',
-      });
-    }
+    logDebug('share', 'flow', {
+      extractedQuery: query,
+      placesCount: results.length,
+      topCandidate: results[0]?.name,
+      addressLike: isAddressLikePlace(results[0]),
+      resolvedCandidate: finalResults[0]?.name,
+      candidatesShown: finalResults.length,
+      reason: 'show-candidates',
+    });
     setCandidates(finalResults);
     setPhase('choose');
+    pushShareDebug('[share-debug] FINAL_RESULT', {
+      status: 'ambiguous',
+      reason: accountIdentityOnly && !hasSourceContext ? 'account_identity_not_enough' : 'needs_user_confirmation',
+    }, {
+      finalStatus: 'ambiguous',
+      finalReason: accountIdentityOnly && !hasSourceContext ? 'account_identity_not_enough' : 'needs_user_confirmation',
+      placesCandidateNames: finalResults.map((candidate) => candidate.name),
+    });
   }
 
   async function saveCandidate(
@@ -948,6 +1822,13 @@ export default function ShareScreen() {
           }
         }
       }
+      pushShareDebug('[share-debug] FINAL_RESULT', {
+        status: 'saved',
+        reason: result.status === 'duplicate' ? 'duplicate' : 'saved',
+      }, {
+        finalStatus: 'saved',
+        finalReason: result.status === 'duplicate' ? 'duplicate' : 'saved',
+      });
       void trackEvent('save_success', {
         source_type: sourceType,
         flow,
@@ -984,6 +1865,15 @@ export default function ShareScreen() {
       Alert.alert("Couldn't save", msg);
       // Stay on the choose/failed screen so the user can try again.
       setPhase(candidates.length > 0 ? 'choose' : 'failed');
+      pushShareDebug('[share-debug] FINAL_RESULT', {
+        status: 'failed_requires_app',
+        reason: 'save_threw',
+      }, {
+        finalStatus: 'failed_requires_app',
+        finalReason: 'save_threw',
+      });
+    } finally {
+      logDebug('share', 'save flow finished');
     }
   }
 
@@ -1021,15 +1911,12 @@ export default function ShareScreen() {
   // ---- DEBUG ---------------------------------------------------------
   // Top-level render trace. Helped catch the blank-body regression caused
   // by Screen padded={false} collapsing the wrapper to height 0.
-  if (__DEV__) {
-    // eslint-disable-next-line no-console
-    console.log('[share] render', {
-      url,
-      phase,
-      candidates: candidates.length,
-      failMessage,
-    });
-  }
+  logDebug('share', 'render', {
+    url,
+    phase,
+    candidates: candidates.length,
+    failMessage,
+  });
 
   return (
     <Screen>
@@ -1185,6 +2072,73 @@ export default function ShareScreen() {
             </Card>
           ) : null}
 
+          {/* ---- TestFlight diagnostics (always visible) ---------- */}
+          {/*
+           * 2026-05-26: always-on panel that proves on screen which
+           * runtime path the share flow took and — when the
+           * `process-share-link` Edge Function was NOT reached — the
+           * structured reason. Intentionally NOT gated on `__DEV__` so
+           * TestFlight testers can take a screenshot.
+           */}
+          {parsed ? (
+            <View style={styles.section}>
+              <Card style={styles.debugCard}>
+                <Text style={[Typography.caption, styles.muted]}>
+                  share runtime diagnostics
+                </Text>
+                <Text style={[Typography.caption, { marginTop: Spacing.xs }]}>
+                  app: {debugState.appVersion ?? '∅'}
+                  {debugState.appBuildNumber ? ` (${debugState.appBuildNumber})` : ''}
+                </Text>
+                <Text style={[Typography.caption, { marginTop: Spacing.xs }]}>
+                  backend configured: {debugState.edgeFunctionConfigured ? 'yes' : 'no'}
+                  {debugState.backendConfigSource
+                    ? ` (source=${debugState.backendConfigSource})`
+                    : ''}
+                </Text>
+                <Text style={[Typography.caption, { marginTop: Spacing.xs }]}>
+                  backend url host: {debugState.backendUrlHost ?? '∅'}
+                </Text>
+                <Text style={[Typography.caption, { marginTop: Spacing.xs }]}>
+                  runtime path: {debugState.runtimePath}
+                </Text>
+                <Text style={[Typography.caption, { marginTop: Spacing.xs }]}>
+                  extraction path attempted: {debugState.extractionPathAttempted ?? '∅'}
+                </Text>
+                <Text style={[Typography.caption, { marginTop: Spacing.xs }]}>
+                  did call process-share-link:{' '}
+                  {debugState.didCallProcessShareLink == null
+                    ? '∅'
+                    : debugState.didCallProcessShareLink
+                      ? 'yes'
+                      : 'no'}
+                </Text>
+                <Text style={[Typography.caption, { marginTop: Spacing.xs }]}>
+                  http status: {debugState.backendHttpStatus ?? '∅'}
+                </Text>
+                <Text style={[Typography.caption, { marginTop: Spacing.xs }]}>
+                  fallback reason: {debugState.fallbackReason ?? '∅'}
+                </Text>
+                <Text style={[Typography.caption, { marginTop: Spacing.xs }]}>
+                  server returned null:{' '}
+                  {debugState.serverReturnedNull == null
+                    ? '∅'
+                    : debugState.serverReturnedNull
+                      ? 'yes'
+                      : 'no'}
+                </Text>
+                <Text style={[Typography.caption, { marginTop: Spacing.xs }]}>
+                  legacy extraction used:{' '}
+                  {debugState.legacyExtractionUsed == null
+                    ? '∅'
+                    : debugState.legacyExtractionUsed
+                      ? 'yes'
+                      : 'no'}
+                </Text>
+              </Card>
+            </View>
+          ) : null}
+
           {/* ---- Dev-only debug toggle ------------------------------ */}
           {__DEV__ && parsed ? (
             <View style={styles.section}>
@@ -1202,32 +2156,71 @@ export default function ShareScreen() {
                   <Text style={[Typography.caption, styles.muted]}>
                     {PLATFORM_LABELS[parsed.source]}
                   </Text>
-                  <Text style={[Typography.caption, { marginTop: Spacing.xs }]}>
-                    title: {parsed.title ?? '∅'}
-                  </Text>
-                  <Text style={[Typography.caption, { marginTop: Spacing.xs }]}>
-                    cleaned: {parsed.suggestedQuery ?? '∅'}
-                  </Text>
-                  <Text style={[Typography.caption, { marginTop: Spacing.xs }]}>
-                    heuristic: {extraction?.query ?? '∅'}{' '}
-                    {extraction
-                      ? `(${extraction.confidence}${
-                          extraction.reason ? ', ' + extraction.reason : ''
-                        })`
-                      : ''}
-                  </Text>
-                  <Text style={[Typography.caption, { marginTop: Spacing.xs }]}>
-                    ai: {aiExtraction?.query ?? '∅'}{' '}
-                    {aiExtraction ? `(${aiExtraction.confidence})` : ''}
-                  </Text>
-                  {parsed.description ? (
-                    <Text
-                      style={[Typography.caption, { marginTop: Spacing.xs }]}
-                      numberOfLines={4}
-                    >
-                      desc: {parsed.description}
-                    </Text>
-                  ) : null}
+                  <Text style={[Typography.caption, { marginTop: Spacing.xs }]}>runtime: {debugState.runtimePath}</Text>
+                  <Text style={[Typography.caption, { marginTop: Spacing.xs }]}>edge configured: {debugState.edgeFunctionConfigured ? 'yes' : 'no'}</Text>
+                  <Text style={[Typography.caption, { marginTop: Spacing.xs }]}>backend HTTP: {debugState.backendHttpStatus ?? '∅'}</Text>
+                  <Text style={[Typography.caption, { marginTop: Spacing.xs }]}>backend keys: {debugState.backendKeys.length > 0 ? debugState.backendKeys.join(', ') : '∅'}</Text>
+                  <Text style={[Typography.caption, { marginTop: Spacing.xs }]}>backend status: {debugState.backendStatus ?? '∅'}</Text>
+                  <Text style={[Typography.caption, { marginTop: Spacing.xs }]}>backend reason: {debugState.backendReason ?? '∅'}</Text>
+                  <Text style={[Typography.caption, { marginTop: Spacing.xs }]}>parse failure: {debugState.backendParseFailureReason ?? '∅'}</Text>
+                  <Text style={[Typography.caption, { marginTop: Spacing.xs }]}>client fallback used: {debugState.usedClientFallback == null ? '∅' : debugState.usedClientFallback ? 'yes' : 'no'}</Text>
+                  <Text style={[Typography.caption, { marginTop: Spacing.xs }]}>title: {debugState.metadataTitle ?? '∅'}</Text>
+                  <Text style={[Typography.caption, { marginTop: Spacing.xs }]}>description: {debugState.metadataDescription ?? '∅'}</Text>
+                  <Text style={[Typography.caption, { marginTop: Spacing.xs }]}>handles: {debugState.handlesDetected.length > 0 ? debugState.handlesDetected.join(', ') : '∅'}</Text>
+                  <Text style={[Typography.caption, { marginTop: Spacing.xs }]}>profile enrichment attempted: {debugState.profileEnrichmentAttempted ? 'yes' : 'no'}</Text>
+                  <Text style={[Typography.caption, { marginTop: Spacing.xs }]}>profile metadata for AI: {debugState.profileMetadataCountForAi} [{debugState.profileMetadataHandlesForAi.join(', ')}]</Text>
+                  <Text style={[Typography.caption, { marginTop: Spacing.xs }]}>heuristic: {extraction?.query ?? '∅'} {extraction ? `(${extraction.confidence}${extraction.reason ? ', ' + extraction.reason : ''})` : ''}</Text>
+                  <Text style={[Typography.caption, { marginTop: Spacing.xs }]}>ai query: {debugState.aiQuery ?? '∅'}</Text>
+                  <Text style={[Typography.caption, { marginTop: Spacing.xs }]}>chosen query: {debugState.chosenQuery ?? '∅'}</Text>
+                  <Text style={[Typography.caption, { marginTop: Spacing.xs }]}>query source: {debugState.querySource ?? '∅'}</Text>
+                  <Text style={[Typography.caption, { marginTop: Spacing.xs }]}>query gate: {debugState.queryGateAllowed == null ? '∅' : debugState.queryGateAllowed ? 'allowed' : `blocked (${debugState.queryGateReason ?? 'unknown'})`}</Text>
+                  <Text style={[Typography.caption, { marginTop: Spacing.xs }]}>places: {debugState.placesCandidateNames.length > 0 ? debugState.placesCandidateNames.join(', ') : '∅'}</Text>
+                  <Text style={[Typography.caption, { marginTop: Spacing.xs }]}>final: {debugState.finalStatus ?? '∅'} {debugState.finalReason ? `(${debugState.finalReason})` : ''}</Text>
+                  <Text style={[Typography.caption, { marginTop: Spacing.sm }]}>agent:</Text>
+                  {debugState.agent ? (
+                    <>
+                      <Text style={[Typography.caption, { marginTop: Spacing.xs }]}>  runId: {debugState.agent.runId}</Text>
+                      <Text style={[Typography.caption, { marginTop: Spacing.xs }]}>  prompt: {debugState.agent.promptVersion} model: {debugState.agent.modelUsed}</Text>
+                      <Text style={[Typography.caption, { marginTop: Spacing.xs }]}>  surface: {debugState.agent.userFacingDecision}{debugState.agent.downgradedFromAutoSave ? ' (downgraded from auto_save)' : ''}</Text>
+                      <Text style={[Typography.caption, { marginTop: Spacing.xs }]}>  agent={debugState.agent.agentDecision} safety={debugState.agent.safetyDecision} confidence={debugState.agent.confidence} latencyMs={debugState.agent.latencyMs ?? '∅'}</Text>
+                      <Text style={[Typography.caption, { marginTop: Spacing.xs }]}>  safeToAutoSave: {debugState.agent.safeToAutoSave ? 'yes' : 'no'} {debugState.agent.agentDecision === 'auto_save' && debugState.agent.safetyDecision !== 'auto_save' ? '(blocked by safety gate)' : ''}</Text>
+                      <Text style={[Typography.caption, { marginTop: Spacing.xs }]}>  tools: {debugState.agent.toolsUsed.join(', ') || '∅'}</Text>
+                      {debugState.agent.toolCalls.length > 0 ? (
+                        <>
+                          <Text style={[Typography.caption, { marginTop: Spacing.xs }]}>  tool calls:</Text>
+                          {debugState.agent.toolCalls.map((tc, i) => (
+                            <Text key={`${tc.tool}-${i}`} style={[Typography.caption, { marginTop: Spacing.xs }]}>    [{tc.status}] {tc.tool}{tc.latencyMs != null ? ` ${tc.latencyMs}ms` : ''}{tc.note ? ` — ${tc.note}` : ''}</Text>
+                          ))}
+                          {(() => {
+                            const blocked = debugState.agent!.toolCalls.filter((t) => t.status === 'blocked');
+                            return blocked.length > 0 ? (
+                              <Text style={[Typography.caption, { marginTop: Spacing.xs }]}>  blocked/rate-limited: {blocked.map((b) => `${b.tool}${b.note ? `(${b.note})` : ''}`).join(', ')}</Text>
+                            ) : null;
+                          })()}
+                        </>
+                      ) : null}
+                      <Text style={[Typography.caption, { marginTop: Spacing.xs }]}>  evidence: {debugState.agent.evidenceUsed.join(', ') || '∅'}</Text>
+                      <Text style={[Typography.caption, { marginTop: Spacing.xs }]}>  rejections: {debugState.agent.rejectionReasons.join(', ') || '∅'}</Text>
+                      <Text style={[Typography.caption, { marginTop: Spacing.xs }]}>  warnings: {debugState.agent.warnings.join(', ') || '∅'}</Text>
+                      <Text style={[Typography.caption, { marginTop: Spacing.xs }]}>  reasoning: {debugState.agent.reasoning || '∅'}</Text>
+                      <Text style={[Typography.caption, { marginTop: Spacing.xs }]}>  candidates ({debugState.agent.candidates.length}):</Text>
+                      {debugState.agent.candidates.map((c) => (
+                        <Text key={c.googlePlaceId} style={[Typography.caption, { marginTop: Spacing.xs }]}>    [{(c.matchScore ?? 0).toFixed(2)}] {c.name} — {c.rationale || '∅'}</Text>
+                      ))}
+                    </>
+                  ) : (
+                    <Text style={[Typography.caption, { marginTop: Spacing.xs }]}>  ∅ (no agent block; legacy pipeline)</Text>
+                  )}
+                  <Text style={[Typography.caption, { marginTop: Spacing.sm }]}>profiles:</Text>
+                  {debugState.profileResults.length > 0 ? debugState.profileResults.map((profile) => (
+                    <Text key={profile.handle} style={[Typography.caption, { marginTop: Spacing.xs }]}>@{profile.handle} fetched={String(profile.fetched)} blocked={String(profile.blocked)} classification={profile.classification ?? '∅'} displayName={profile.displayName ?? '∅'} extractedName={profile.extractedName ?? '∅'} extractedAddress={profile.extractedAddress ?? '∅'} extractedCity={profile.extractedCity ?? '∅'} reason={profile.reason ?? '∅'}</Text>
+                  )) : (
+                    <Text style={[Typography.caption, { marginTop: Spacing.xs }]}>∅</Text>
+                  )}
+                  <Text style={[Typography.caption, { marginTop: Spacing.sm }]}>timeline:</Text>
+                  {debugState.timeline.map((entry, index) => (
+                    <Text key={`${entry.marker}-${index}`} style={[Typography.caption, { marginTop: Spacing.xs }]}>{entry.marker} {entry.detail}</Text>
+                  ))}
                 </Card>
               ) : null}
             </View>

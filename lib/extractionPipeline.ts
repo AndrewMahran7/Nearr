@@ -1,5 +1,14 @@
+import { isGenericContentQuery } from './queryValidation';
+
 /**
  * Evidence-based extraction pipeline (v2).
+ *
+ * @deprecated STAGE 4 — this is part of the LEGACY pipeline. The
+ * authoritative auto-save / candidate decision is now made by the
+ * backend agent (lib/shareAgent/agent.ts) gated by lib/shareAgent/safety.ts.
+ * This module remains ONLY as the host-app and eval-script fallback
+ * when the agent is unavailable. Do NOT add new callers. Slated for
+ * removal once the agent is mandatory.
  *
  * Single source of truth for the silent-save decision used by both:
  *   - the host app (app/share.tsx)
@@ -97,6 +106,7 @@ export type ProfileEnrichment = {
     | 'repost_page'
     | 'personal_account'
     | 'unrelated_or_unknown';
+  category?: string;
   displayName?: string;
   extractedName?: string;
   extractedAddress?: string;
@@ -182,18 +192,26 @@ const CREATOR_KEYWORDS: readonly string[] = [
   'hungry', 'munchies', 'tasting',
 ];
 
+const LATIN_LETTER_CLASS = 'A-Za-z\\u00C0-\\u024F\\u1E00-\\u1EFF';
+const LATIN_NAME_CHAR_CLASS = `${LATIN_LETTER_CLASS}'\\u2019-`;
+const CAPITALIZED_WORD_RE = `[A-Z][${LATIN_NAME_CHAR_CLASS}]+`;
+const CAPITALIZED_PHRASE_RE = `${CAPITALIZED_WORD_RE}(?:\\s+${CAPITALIZED_WORD_RE}){0,4}`;
+const HASHTAG_RE = /#[^\s#@]+/g;
+const PIN_MARKER_RE = /[📍📌]/g;
+const NAME_START_RE = new RegExp(`^[A-Z][${LATIN_LETTER_CLASS}'-]+`);
+
 // Address: "<#> <street> <suffix>". Conservative.
 const ADDRESS_RE =
-  /\b(\d{1,5})\s+([A-Za-z][\w'.\- ]{1,40}?\s+(?:st|street|ave|avenue|blvd|boulevard|rd|road|dr|drive|way|ln|lane|ct|court|pl|place|hwy|highway))\b\.?/i;
+  /\b(\d{1,5})\s+([A-Za-z][\w'.\- ]{1,50}?\s+(?:st|street|ave|avenue|blvd|boulevard|rd|road|dr|drive|way|ln|lane|ct|court|pl|place|hwy|highway|wharf))\b\.?/i;
 
 // Address with optional city + state + zip after.
 const ADDRESS_WITH_CITY_RE =
-  /\b\d{1,5}\s+[A-Za-z][\w'.\- ]{1,40}?\s+(?:st|street|ave|avenue|blvd|boulevard|rd|road|dr|drive|way|ln|lane|ct|court|pl|place|hwy|highway)\b[^\n,;]*?(?:,\s*[A-Za-z.'\- ]+)?(?:,\s*([A-Z]{2}))?(?:\s+\d{5})?/i;
+  /\b\d{1,5}\s+[A-Za-z][\w'.\- ]{1,50}?\s+(?:st|street|ave|avenue|blvd|boulevard|rd|road|dr|drive|way|ln|lane|ct|court|pl|place|hwy|highway|wharf)\b[^\n,;]*?(?:,\s*[A-Za-z.'\- ]+)?(?:,?\s*([A-Z]{2}))?(?:\s+\d{5})?/i;
 
 const CITY_STATE_RE =
-  /\b([A-Z][\p{L}.'\u2019-]+(?:\s+[A-Z][\p{L}.'\u2019-]+){0,3}),\s*([A-Z]{2})\b/u;
+  new RegExp(`\\b(${CAPITALIZED_WORD_RE}(?:\\s+${CAPITALIZED_WORD_RE}){0,3}),\\s*([A-Z]{2})\\b`);
 
-const PIN_EMOJI_RE = /[\u{1F4CD}\u{1F4CC}]/u;
+const PIN_EMOJI_RE = /[📍📌]/;
 
 const HANDLE_RE = /@([A-Za-z0-9._]{2,30})/g;
 
@@ -267,6 +285,7 @@ export function runExtractionPipeline(
   const posterEnrichment = input.posterHandle
     ? enrichments.find((e) => e.handle.toLowerCase() === input.posterHandle?.toLowerCase())
     : undefined;
+  let chosenProfileEnrichment = posterEnrichment;
 
   const posterDisplayName = posterEnrichment?.displayName ?? null;
 
@@ -301,6 +320,29 @@ export function runExtractionPipeline(
   let handleReason = '';
   let confidence: ExtractionConfidence = 'low';
   let chosenQuery = '';
+  const aiMatchedVerifiedProfile = ai?.placeName
+    ? enrichments.find(
+        (entry) =>
+          entry.classification === 'restaurant_or_business' &&
+          entry.extractedName?.toLowerCase() === ai.placeName?.toLowerCase() &&
+          (entry.extractedAddress || entry.extractedCity),
+      )
+    : undefined;
+
+  if (aiMatchedVerifiedProfile) {
+    chosenProfileEnrichment = aiMatchedVerifiedProfile;
+    nameSource = 'verified_profile';
+    handleUsed = true;
+    handleReason =
+      aiMatchedVerifiedProfile.handle.toLowerCase() === (input.posterHandle ?? '').toLowerCase()
+        ? 'poster_bio_verified'
+        : 'tagged_bio_verified';
+    address = address ?? aiMatchedVerifiedProfile.extractedAddress ?? null;
+    city = city ?? aiMatchedVerifiedProfile.extractedCity ?? null;
+    if (locationSource === 'unknown' && aiMatchedVerifiedProfile.extractedCity) {
+      locationSource = 'profile_bio';
+    }
+  }
 
   // --- Address path (highest) ---
   if (!address && captionAddress) {
@@ -357,9 +399,15 @@ export function runExtractionPipeline(
     );
     if (taggedRestaurant) {
       placeName = taggedRestaurant.extractedName!;
+      address = address ?? taggedRestaurant.extractedAddress ?? null;
+      city = city ?? taggedRestaurant.extractedCity ?? null;
+      if (locationSource === 'unknown' && taggedRestaurant.extractedCity) {
+        locationSource = 'profile_bio';
+      }
       nameSource = 'verified_profile';
       handleUsed = true;
       handleReason = 'tagged_bio_verified';
+      chosenProfileEnrichment = taggedRestaurant;
     }
   }
 
@@ -388,9 +436,9 @@ export function runExtractionPipeline(
   // Verified profile bio identity: high if address present, medium otherwise.
   if (
     nameSource === 'verified_profile' &&
-    (posterEnrichment?.extractedAddress || posterEnrichment?.extractedCity)
+    (chosenProfileEnrichment?.extractedAddress || chosenProfileEnrichment?.extractedCity)
   ) {
-    confidence = posterEnrichment?.extractedAddress ? 'high' : 'medium';
+    confidence = chosenProfileEnrichment?.extractedAddress ? 'high' : 'medium';
   }
   // AI confidence overrides downward only (never upgrade past evidence).
   if (ai?.confidence === 'low' && confidence === 'medium') confidence = 'low';
@@ -416,7 +464,7 @@ export function runExtractionPipeline(
     nameSource,
     handleUsed,
     chosenQuery,
-    posterEnrichment,
+    posterEnrichment: chosenProfileEnrichment,
     captionBlob,
   });
 
@@ -471,6 +519,9 @@ function decideAutoSave(params: {
   } = params;
 
   if (!chosenQuery) return { allowed: false, reason: 'no_signal' };
+  if (isGenericContentQuery(chosenQuery) && !address && nameSource !== 'verified_profile') {
+    return { allowed: false, reason: 'weak_query' };
+  }
   if (isGenericWeakQuery(chosenQuery) && !placeName && !address) {
     return { allowed: false, reason: 'weak_query' };
   }
@@ -479,8 +530,10 @@ function decideAutoSave(params: {
   // If the only signal is poster-derived, block.
   if (posterType === 'influencer') {
     if (
-      nameSource === 'verified_profile' ||
-      (handleUsed && nameSource !== 'caption_explicit' && nameSource !== 'address_resolved')
+      (handleUsed &&
+        nameSource !== 'verified_profile' &&
+        nameSource !== 'caption_explicit' &&
+        nameSource !== 'address_resolved')
     ) {
       return { allowed: false, reason: 'poster_is_influencer' };
     }
@@ -532,8 +585,7 @@ function decideAutoSave(params: {
     nameSource === 'verified_profile' &&
     posterEnrichment &&
     posterEnrichment.classification === 'restaurant_or_business' &&
-    (posterEnrichment.extractedAddress || posterEnrichment.extractedCity) &&
-    posterType !== 'influencer'
+    (posterEnrichment.extractedAddress || posterEnrichment.extractedCity)
   ) {
     return { allowed: true, reason: null };
   }
@@ -623,7 +675,7 @@ function detectPinText(
   if (idx < 0) return null;
   const tail = text.slice(idx + 2, idx + 200).split(/[\n\r]/)[0];
   const cleaned = tail
-    .replace(/#[\p{L}\p{N}_]+/gu, ' ')
+    .replace(HASHTAG_RE, ' ')
     .replace(/["\u201C\u201D'`]+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
@@ -649,7 +701,7 @@ function detectPinText(
     }
   }
   // Single phrase that is name-like.
-  if (containsBusinessKeyword(stop) || /^[A-Z][\p{L}'\-]+/u.test(stop)) {
+  if (containsBusinessKeyword(stop) || NAME_START_RE.test(stop)) {
     return { locationHint: null, placeNameHint: stop };
   }
   return { locationHint: stop, placeNameHint: null };
@@ -666,13 +718,13 @@ function detectExplicitPlaceName(text: string): string | null {
 
   // Pattern 1: "<Capitalized words> in <City>"
   const inCity = stripped.match(
-    /\b([A-Z][\p{L}'\u2019\-]+(?:\s+[A-Z][\p{L}'\u2019\-]+){0,4})\s+in\s+[A-Z][\p{L}'\u2019\-]+/u,
+    new RegExp(`\\b(${CAPITALIZED_PHRASE_RE})\\s+in\\s+[A-Z][${LATIN_NAME_CHAR_CLASS}]+`),
   );
   if (inCity?.[1] && !isLocationName(inCity[1])) return inCity[1].trim();
 
   // Pattern 2: "<Capitalized words> + comma + city/state"
   const beforeComma = stripped.match(
-    /\b([A-Z][\p{L}'\u2019\-]+(?:\s+[A-Z][\p{L}'\u2019\-]+){0,4})\s*,\s*([A-Z][\p{L}'\u2019\-]+|[A-Z]{2})\b/u,
+    new RegExp(`\\b(${CAPITALIZED_PHRASE_RE})\\s*,\\s*([A-Z][${LATIN_NAME_CHAR_CLASS}]+|[A-Z]{2})\\b`),
   );
   if (beforeComma?.[1] && !isLocationName(beforeComma[1])) {
     return beforeComma[1].trim();
@@ -680,7 +732,7 @@ function detectExplicitPlaceName(text: string): string | null {
 
   // Pattern 3: "went to <Name>" / "at <Name>" / "<Name> was"
   const verbName = stripped.match(
-    /\b(?:went to|at|tried|visited)\s+([A-Z][\p{L}'\u2019\-]+(?:\s+[A-Z][\p{L}'\u2019\-]+){0,4})/u,
+    new RegExp(`\\b(?:went to|at|tried|visited)\\s+(${CAPITALIZED_PHRASE_RE})`),
   );
   if (verbName?.[1] && !isLocationName(verbName[1])) return verbName[1].trim();
 
@@ -690,8 +742,8 @@ function detectExplicitPlaceName(text: string): string | null {
     if (!lower.includes(kw)) continue;
     // Window around keyword: capture up to 3 capitalized words before it.
     const re = new RegExp(
-      `\\b((?:[A-Z][\\p{L}'\\u2019-]+\\s+){0,3}[A-Z]?[\\p{L}'\\u2019-]*${kw}[A-Z]?[\\p{L}'\\u2019-]*)`,
-      'iu',
+      `\\b((?:[A-Z][${LATIN_NAME_CHAR_CLASS}]+\\s+){0,3}[A-Z]?[${LATIN_NAME_CHAR_CLASS}]*${escapeRegExp(kw)}[A-Z]?[${LATIN_NAME_CHAR_CLASS}]*)`,
+      'i',
     );
     const m = stripped.match(re);
     if (m?.[1]) {
@@ -725,7 +777,7 @@ function detectNameNearHandle(
   if (!text) return null;
   // "@handle Name Was"
   const after = text.match(
-    /@([A-Za-z0-9._]{2,30})\s+([A-Z][\p{L}'\u2019\-]+(?:\s+[A-Z][\p{L}'\u2019\-]+){0,4})/u,
+    new RegExp(`@([A-Za-z0-9._]{2,30})\\s+(${CAPITALIZED_PHRASE_RE})`),
   );
   if (after) {
     const handle = after[1];
@@ -740,7 +792,7 @@ function detectNameNearHandle(
   }
   // "<Name> @handle"
   const before = text.match(
-    /\b([A-Z][\p{L}'\u2019\-]+(?:\s+[A-Z][\p{L}'\u2019\-]+){1,4})\s+@([A-Za-z0-9._]{2,30})/u,
+    new RegExp(`\\b(${CAPITALIZED_WORD_RE}(?:\\s+${CAPITALIZED_WORD_RE}){1,4})\\s+@([A-Za-z0-9._]{2,30})`),
   );
   if (before) {
     const handle = before[2];
@@ -864,7 +916,7 @@ const US_STATE_RE =
 
 export function looksLikeLocationOnly(s: string): boolean {
   if (!s) return false;
-  const cleaned = s.toLowerCase().replace(/[\u{1F4CD}\u{1F4CC}]/gu, '').replace(/[.,]+$/g, '').trim();
+  const cleaned = s.toLowerCase().replace(PIN_MARKER_RE, '').replace(/[.,]+$/g, '').trim();
   if (!cleaned) return false;
   const parts = cleaned.split(/\s*,\s*/).filter(Boolean);
   if (parts.length >= 2) {
@@ -878,6 +930,10 @@ export function looksLikeLocationOnly(s: string): boolean {
   }
   if (LOCATION_ONLY_HINTS.has(cleaned)) return true;
   return false;
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 /** True if the text is likely just a location name (city/neighborhood/state). */

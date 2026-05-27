@@ -47,6 +47,11 @@ Optional dev flags:
 
 - `EXPO_PUBLIC_DEMO_MODE`
 - `EXPO_PUBLIC_MAP_PREVIEW_MODE`
+- `EXPO_PUBLIC_DEBUG_LOGS`
+
+`EXPO_PUBLIC_DEBUG_LOGS=false` is the default. Set it to `true` for verbose
+local debugging logs in development builds, then restart Metro so Expo picks
+up the updated public env.
 
 Optional native per-platform overrides read by [app.config.js](../app.config.js):
 
@@ -58,7 +63,7 @@ Optional native per-platform overrides read by [app.config.js](../app.config.js)
 For `process-share-link`:
 
 - `GOOGLE_PLACES_KEY` required
-- `GEMINI_API_KEY` optional
+- `GEMINI_API_KEY` recommended (drives the backend agent — `lib/shareAgent`). When missing, the Edge Function falls back to the deprecated legacy heuristic + AI pipeline. The agent is the only path that can cleanly silent-save under the Stage 3 safety gate; the legacy path is kept for resilience but is being retired.
 
 Provided by Supabase runtime when deployed:
 

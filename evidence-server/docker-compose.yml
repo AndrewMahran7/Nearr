@@ -1,0 +1,14 @@
+services:
+  evidence-server:
+    build: .
+    image: nearr/evidence-server:latest
+    container_name: nearr-evidence-server
+    env_file: .env
+    ports:
+      - "${PORT:-8088}:8088"
+    volumes:
+      - evidence_data:/data
+    restart: unless-stopped
+
+volumes:
+  evidence_data:

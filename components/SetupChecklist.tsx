@@ -98,6 +98,12 @@ export function SetupChecklist() {
   }, [refresh]);
 
   useEffect(() => {
+    // One-shot per mount — helps confirm in support traces that the
+    // checklist is actually rendering on a given device.
+    console.log('[onboarding] setup_checklist_shown');
+  }, []);
+
+  useEffect(() => {
     const sub = AppState.addEventListener('change', (state) => {
       if (state === 'active') void refresh();
     });

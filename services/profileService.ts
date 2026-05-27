@@ -7,6 +7,7 @@
 
 import { supabase } from '@/lib/supabase';
 import { isDemoMode } from '@/lib/demoMode';
+import { logDebug } from '@/lib/logger';
 import { LEGAL_VERSION } from '@/constants';
 import { getDemoProfile, updateDemoProfile } from '@/services/demo';
 import type { Profile, RadiusUnit } from '@/types';
@@ -27,7 +28,7 @@ export async function getProfile(): Promise<Profile | null> {
     return null;
   }
   const userId = userRes.user?.id;
-  console.log('[profileService] getProfile start, userId present=', !!userId);
+  logDebug('profileService', 'getProfile start', { hasUserId: !!userId });
   if (!userId) return null;
 
   const { data, error } = await supabase
@@ -45,7 +46,7 @@ export async function getProfile(): Promise<Profile | null> {
     );
     return null;
   }
-  console.log('[profileService] getProfile done, rowFound=', !!data);
+  logDebug('profileService', 'getProfile done', { rowFound: !!data });
 
   if (data) return data as Profile;
 
@@ -65,7 +66,7 @@ export async function getProfile(): Promise<Profile | null> {
     // 23505 = unique_violation: another process inserted the row between our
     // select and our insert (race condition). Re-select to get the new row.
     if ((insertErr as any).code === '23505') {
-      console.log('[profileService] insert race on recovery, re-selecting');
+      logDebug('profileService', 'insert race on recovery, re-selecting');
       const { data: raced, error: raceErr } = await supabase
         .from('profiles')
         .select('*')
@@ -89,7 +90,7 @@ export async function getProfile(): Promise<Profile | null> {
     );
     return null;
   }
-  console.log('[profileService] profile recovered successfully');
+  logDebug('profileService', 'profile recovered successfully');
   return recovered as Profile;
 }
 
@@ -110,7 +111,7 @@ export type ProfilePatch = {
 /** Patch the current user's profile row. Throws on auth or DB errors. */
 export async function updateProfile(patch: ProfilePatch): Promise<Profile> {
   if (isDemoMode()) return await updateDemoProfile(patch);
-  console.log('[profileService] update', patch);
+  logDebug('profileService', 'update', patch);
   const { data: userRes, error: userErr } = await supabase.auth.getUser();
   if (userErr) throw new Error(`Not signed in: ${userErr.message}`);
   const userId = userRes.user?.id;

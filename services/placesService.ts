@@ -82,6 +82,17 @@ function resolveApiKey(): string {
 }
 
 const BASE = 'https://maps.googleapis.com/maps/api/place';
+const LATIN_LETTER_CLASS = 'A-Za-z\\u00C0-\\u024F\\u1E00-\\u1EFF';
+const LATIN_NAME_CHAR_CLASS = `${LATIN_LETTER_CLASS}.'\\u2019-`;
+const CAPITALIZED_WORD_RE = `[A-Z][${LATIN_NAME_CHAR_CLASS}]+`;
+const LOCATION_PIN_RE = /[📍📌]/;
+const HASHTAG_RE = /#[^\s#@]+/g;
+const CITY_STATE_CONTEXT_RE = new RegExp(
+  `\\b(${CAPITALIZED_WORD_RE}(?:\\s+${CAPITALIZED_WORD_RE}){0,3}),\\s*([A-Z]{2})\\b`,
+);
+const TRAILING_CONTEXT_RE = new RegExp(
+  `,\\s*(${CAPITALIZED_WORD_RE}(?:[\\s,]+${CAPITALIZED_WORD_RE}){0,4})\\s*[.!?]?\\s*$`,
+);
 
 // Fields requested in `details`. Cost-aware (Place Details is billed by field).
 const DETAILS_FIELDS = [
@@ -691,11 +702,11 @@ export function extractLocationContext(text: string | null | undefined): string 
   if (!text) return null;
   const cleanedText = text.replace(/\s+/g, ' ').trim();
 
-  const pinIdx = text.search(/[\u{1F4CD}\u{1F4CC}]/u);
+  const pinIdx = text.search(LOCATION_PIN_RE);
   if (pinIdx >= 0) {
     const tail = text.slice(pinIdx + 2, pinIdx + 200).split(/[\n\r]/)[0];
     const cleaned = tail
-      .replace(/#[\p{L}\p{N}_]+/gu, ' ')
+      .replace(HASHTAG_RE, ' ')
       .replace(/["\u201C\u201D'`]+/g, ' ')
       .replace(/\s+/g, ' ')
       .trim();
@@ -712,14 +723,10 @@ export function extractLocationContext(text: string | null | undefined): string 
   );
   if (addressMatch?.[0]) return normalizeLocationContext(addressMatch[0]);
 
-  const cityState = cleanedText.match(
-    /\b([A-Z][\p{L}.'\u2019-]+(?:\s+[A-Z][\p{L}.'\u2019-]+){0,3}),\s*([A-Z]{2})\b/u,
-  );
+  const cityState = cleanedText.match(CITY_STATE_CONTEXT_RE);
   if (cityState?.[0]) return normalizeLocationContext(cityState[0]);
 
-  const trailing = text.match(
-    /,\s*([A-Z][\p{L}.'\u2019-]+(?:[\s,]+[A-Z][\p{L}.'\u2019-]+){0,4})\s*[.!?]?\s*$/u,
-  );
+  const trailing = text.match(TRAILING_CONTEXT_RE);
   if (trailing && trailing[1]) return normalizeLocationContext(trailing[1]);
 
   for (const alias of LOCATION_CONTEXT_ALIASES) {
