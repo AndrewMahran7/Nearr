@@ -13,6 +13,7 @@
     "eval:share-agent-shadow": "ts-node --project scripts/tsconfig.json scripts/evalShareAgentShadow.ts",
     "test:address-match": "ts-node -P scripts/tsconfig.json scripts/testAddressMatch.ts",
     "test:safety-description-only": "ts-node -P scripts/tsconfig.json scripts/testSafetyDescriptionOnly.ts",
+    "test:recovery-hints": "ts-node -P scripts/tsconfig.json scripts/testRecoveryHints.ts",
     "test:share-remote": "ts-node -P scripts/tsconfig.json scripts/testProcessShareLinkRemote.ts"
   },
   "dependencies": {

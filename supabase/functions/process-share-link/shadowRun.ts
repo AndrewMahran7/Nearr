@@ -37,6 +37,13 @@ import {
   type ProfileBioResult,
 } from '../../../lib/shareAgent/index.ts';
 import { extractLikelyAddress, type LikelyAddress } from '../../../lib/shareAgent/queryCleaner.ts';
+import {
+  derivePlaceNameHintFromHandle,
+  extractMallContextLabel,
+  extractVenueHandleCandidates,
+  isGenericAddressCard,
+  isMallContextHandle,
+} from '../../../lib/shareAgent/recoveryHints.ts';
 
 const MAX_PROFILE_FETCHES = 2;
 const DEFAULT_AGENT_BUDGET_MS = 12_000;
@@ -406,6 +413,15 @@ function buildTitleVenueRecoveryQueries(args: {
   return out;
 }
 
+// 2026-05-26: venue-handle heuristics for caption-address recovery live
+// in lib/shareAgent/recoveryHints.ts so they can be shared and unit
+// tested. See that module for full rationale. We import:
+//   - derivePlaceNameHintFromHandle: @paradisedynasty_usa → "Paradise Dynasty"
+//   - isMallContextHandle: @southcoastplaza → true
+//   - extractVenueHandleCandidates: tagged-only, no poster, no mall
+//   - extractMallContextLabel: humanized mall name (extra context only)
+//   - isGenericAddressCard: detect Google's "<num> <street>" card
+
 function buildTimeoutRecoveryQueries(args: {
   title: string | null;
   description: string | null;
@@ -454,31 +470,88 @@ function buildTimeoutRecoveryQueries(args: {
       ? firstPhrase.replace(TITLE_VENUE_CUE, '').replace(/\s+/g, ' ').trim()
       : null;
     const placeNameHint = brandOnly || firstPhrase || null;
-    const addressQueries: string[] = [];
-    // 2026-05-26: venue+address FIRST (most-specific). Falling back to
-    // bare address still happens below but only after the brand+address
-    // combo has had a chance to surface the real business listing
-    // instead of Google's generic "<number> <street>" address card.
-    if (placeNameHint && captionAddress.city && captionAddress.state) {
-      addressQueries.push(`${placeNameHint} ${captionAddress.raw} ${captionAddress.city} ${captionAddress.state}`);
+
+    // 2026-05-26: collect venue-name hints in priority order:
+    //   1. tagged venue-like handles (NOT poster, NOT mall context)
+    //   2. title-derived brand (e.g. `2nd Floor` from
+    //      `2nd Floor Restaurant ... on Instagram:`)
+    // Each hint produces an ordered set of venue+address queries before
+    // we fall back to the bare address. The mall-context label (if any
+    // — e.g. `South Coast Plaza` from `@southcoastplaza`) is appended
+    // as an extra location query per venue hint.
+    const venueHandleHints = extractVenueHandleCandidates(args.handles)
+      .map((handle) => ({
+        handle,
+        name: derivePlaceNameHintFromHandle(handle),
+      }))
+      .filter((entry): entry is { handle: string; name: string } => !!entry.name);
+    const mallContextLabel = extractMallContextLabel(args.handles);
+    const venueHints: Array<{ name: string; source: 'handle' | 'title' }> = [];
+    const seenVenueNames = new Set<string>();
+    const pushVenueHint = (name: string | null, source: 'handle' | 'title') => {
+      if (!name) return;
+      const key = name.toLowerCase();
+      if (seenVenueNames.has(key)) return;
+      seenVenueNames.add(key);
+      venueHints.push({ name, source });
+    };
+    for (const entry of venueHandleHints) pushVenueHint(entry.name, 'handle');
+    pushVenueHint(placeNameHint, 'title');
+
+    const addressQueries: Array<{ q: string; matchName: string }> = [];
+    // 2026-05-26: VENUE + ADDRESS first. Each venue hint gets the most
+    // specific (with state) → least specific (bare address) ordering,
+    // and the mall-context label (e.g. South Coast Plaza) is tried as
+    // an alternate locator after the address+city variants.
+    for (const hint of venueHints) {
+      if (captionAddress.city && captionAddress.state) {
+        addressQueries.push({
+          q: `${hint.name} ${captionAddress.raw} ${captionAddress.city} ${captionAddress.state}`,
+          matchName: hint.name,
+        });
+      }
+      if (captionAddress.city) {
+        addressQueries.push({
+          q: `${hint.name} ${captionAddress.raw} ${captionAddress.city}`,
+          matchName: hint.name,
+        });
+      }
+      addressQueries.push({ q: `${hint.name} ${captionAddress.raw}`, matchName: hint.name });
+      if (mallContextLabel && captionAddress.city && captionAddress.state) {
+        addressQueries.push({
+          q: `${hint.name} ${mallContextLabel} ${captionAddress.city} ${captionAddress.state}`,
+          matchName: hint.name,
+        });
+      } else if (mallContextLabel && captionAddress.city) {
+        addressQueries.push({
+          q: `${hint.name} ${mallContextLabel} ${captionAddress.city}`,
+          matchName: hint.name,
+        });
+      } else if (mallContextLabel) {
+        addressQueries.push({ q: `${hint.name} ${mallContextLabel}`, matchName: hint.name });
+      }
     }
-    if (placeNameHint && captionAddress.city) {
-      addressQueries.push(`${placeNameHint} ${captionAddress.raw} ${captionAddress.city}`);
-    }
-    if (placeNameHint) {
-      addressQueries.push(`${placeNameHint} ${captionAddress.raw}`);
-    }
+    // Bare address LAST. Google will return the generic address card
+    // here, which we detect and demote at the comparator stage so it
+    // never beats a real business match from a venue+address query.
+    const bareMatchName = placeNameHint ?? captionAddress.raw;
     if (captionAddress.city && captionAddress.state) {
-      addressQueries.push(`${captionAddress.raw} ${captionAddress.city} ${captionAddress.state}`);
+      addressQueries.push({
+        q: `${captionAddress.raw} ${captionAddress.city} ${captionAddress.state}`,
+        matchName: bareMatchName,
+      });
     }
     if (captionAddress.city) {
-      addressQueries.push(`${captionAddress.raw} ${captionAddress.city}`);
+      addressQueries.push({
+        q: `${captionAddress.raw} ${captionAddress.city}`,
+        matchName: bareMatchName,
+      });
     }
-    addressQueries.push(captionAddress.raw);
-    for (const q of addressQueries) {
+    addressQueries.push({ q: captionAddress.raw, matchName: bareMatchName });
+    for (const entry of addressQueries) {
       const candidate: RecoveryQuery = {
-        query: q,
-        matchName: placeNameHint ?? captionAddress.raw,
+        query: entry.q,
+        matchName: entry.matchName,
         city: captionAddress.city,
         source: 'address',
         handle: args.handles.posterHandle,
@@ -496,7 +569,10 @@ function buildTimeoutRecoveryQueries(args: {
             city: captionAddress.city,
             state: captionAddress.state,
             placeNameHint,
-            query: q,
+            venueHints: venueHints.map((hintEntry) => hintEntry.name),
+            mallContextLabel,
+            matchName: entry.matchName,
+            query: entry.q,
           })}`,
         );
       } catch {
@@ -800,6 +876,16 @@ async function buildDeterministicTimeoutFallback(args: {
   let attempts = 0;
   let scored: Array<{ candidate: any; score: number; rationale: string }> = [];
   let selectedQuery: RecoveryQuery | null = null;
+  // 2026-05-26: when an address-source query returns Google's generic
+  // "<number> <street>" address card we don't break the loop on it;
+  // we remember it here as a last-resort fallback and let the loop
+  // keep trying venue-handle / title queries. If nothing better wins,
+  // we use this with `places_generic_address_card` evidence and the
+  // weak-match score so safety doesn't treat it as a perfect business
+  // match.
+  let genericFallback:
+    | { query: RecoveryQuery; scored: Array<{ candidate: any; score: number; rationale: string }> }
+    | null = null;
 
   for (const query of recovery.queries) {
     const places = await searchPlaces(query.query, args.googlePlacesKey);
@@ -885,10 +971,14 @@ async function buildDeterministicTimeoutFallback(args: {
     // `candidate_confirmation`. The safety gate (safety.ts) still has
     // the final say on whether auto-save fires, and timeout recovery
     // never proposes `auto_save` regardless of this match.
+    //
+    // 2026-05-26 (collab/venue-handle pass): when the top candidate is
+    // Google's generic "<number> <street>" address card, do NOT
+    // short-circuit on it. Save it as a generic fallback and continue
+    // to the next query so a venue-handle query has a chance to surface
+    // the actual business at that address before we settle for the
+    // bare address card.
     if (query.source === 'address') {
-      const expectedAddr = query.matchName.toLowerCase().includes(' ')
-        ? null // matchName might be placeName hint, not address
-        : null;
       // Re-derive the raw street from the caption via the same regex.
       const captionAddress = extractLikelyAddress(
         [args.title, args.description].filter(Boolean).join(' '),
@@ -899,7 +989,8 @@ async function buildDeterministicTimeoutFallback(args: {
         const wantedCity = (captionAddress.city ?? '').toLowerCase();
         const addressMatched = !!wantedStreet && candidateAddr.includes(wantedStreet);
         const cityMatched = !wantedCity || candidateAddr.includes(wantedCity);
-        if (addressMatched && cityMatched) {
+        const generic = isGenericAddressCard(scored[0].candidate, captionAddress);
+        if (addressMatched && cityMatched && !generic) {
           warnings.push(
             `timeout_recovery_address_verified:${captionAddress.raw}|${captionAddress.city ?? ''}`,
           );
@@ -917,6 +1008,31 @@ async function buildDeterministicTimeoutFallback(args: {
           selectedQuery = query;
           break;
         }
+        if (addressMatched && cityMatched && generic) {
+          // Remember the generic fallback (first one wins) but keep
+          // trying other queries — a venue-handle or title-prefix
+          // query may still surface the real business.
+          if (!genericFallback) {
+            genericFallback = { query, scored };
+            warnings.push(
+              `timeout_recovery_generic_address_card:${captionAddress.raw}|${
+                scored[0].candidate?.name ?? ''
+              }`,
+            );
+            try {
+              console.log(
+                `[timeout-recovery] generic_address_card query=${JSON.stringify(query.query)} ` +
+                  `candidate=${JSON.stringify({
+                    name: scored[0].candidate?.name ?? null,
+                    address: scored[0].candidate?.formattedAddress ?? null,
+                  })}`,
+              );
+            } catch {
+              // logging must never throw
+            }
+          }
+          continue;
+        }
       }
     }
 
@@ -926,16 +1042,42 @@ async function buildDeterministicTimeoutFallback(args: {
     }
   }
 
+  // 2026-05-26: nothing won the loop on score AND no address_verified
+  // break fired. If we did see a generic address card earlier, fall
+  // back to it now as candidate_confirmation with weak-match evidence.
+  // This is strictly better than manual_fallback (we DO have a
+  // Google-verified address) but never claims it's a business match.
+  let usedGenericFallback = false;
+  if (!selectedQuery && genericFallback) {
+    selectedQuery = genericFallback.query;
+    scored = genericFallback.scored;
+    usedGenericFallback = true;
+    try {
+      console.log(
+        `[timeout-recovery] using_generic_address_card_fallback query=${JSON.stringify(
+          selectedQuery.query,
+        )} candidate=${JSON.stringify({
+          name: scored[0]?.candidate?.name ?? null,
+          address: scored[0]?.candidate?.formattedAddress ?? null,
+        })}`,
+      );
+    } catch {
+      // logging must never throw
+    }
+  }
+
   const best = scored[0] ?? null;
   const runnerUp = scored[1] ?? null;
   // Address-source queries that were verified by a literal address
   // match against Places (`address_verified` log above) bypass the
   // generic 0.6 score floor because the verification is deterministic
   // rather than fuzzy. Auto-save is still blocked by safety.ts and we
-  // still set `candidate_confirmation`.
+  // still set `candidate_confirmation`. Generic-address-card fallbacks
+  // are NOT treated as address-verified for evidence purposes (see
+  // evidenceUsed below).
   const addressVerified =
-    !!selectedQuery && selectedQuery.source === 'address' && !!best;
-  if (!best || !selectedQuery || (!addressVerified && best.score < TIMEOUT_RECOVERY_MIN_SCORE)) {
+    !!selectedQuery && selectedQuery.source === 'address' && !!best && !usedGenericFallback;
+  if (!best || !selectedQuery || (!addressVerified && !usedGenericFallback && best.score < TIMEOUT_RECOVERY_MIN_SCORE)) {
     try {
       console.log(
         `[timeout-recovery] decision=manual_fallback reason=${
@@ -969,13 +1111,24 @@ async function buildDeterministicTimeoutFallback(args: {
     // (name-only, handle-only, address-only-without-name-match), where
     // the rate-limit really does reduce our confidence.
     ...(addressVerified && best.score >= 0.75 ? [] : ['profile_blocked']),
-    best.score >= 0.75 ? 'places_strong_match' : 'places_weak_match',
+    // 2026-05-26: generic-address-card fallback is intentionally NOT
+    // treated as a strong Places match even if the comparator score
+    // happens to clear 0.75 (the comparator can score "3333 Bristol
+    // St" → "3333 Bristol St, Costa Mesa" at 1.00 by literal name
+    // overlap). Downgrade to weak so the safety gate / UI doesn't
+    // pretend this is a confirmed business listing.
+    usedGenericFallback
+      ? 'places_weak_match'
+      : best.score >= 0.75
+      ? 'places_strong_match'
+      : 'places_weak_match',
     // 2026-05-26: surface deterministic caption-address evidence when
     // the winning recovery query came from the address-first path.
     // Does NOT loosen safety: the gate still requires the agent
     // decision to be `auto_save` (it isn't here — we set
     // `candidate_confirmation`) and a `high` confidence Gemini run.
     ...(selectedQuery.source === 'address' ? ['caption_explicit_address'] : []),
+    ...(usedGenericFallback ? ['places_generic_address_card'] : []),
     ...(addressVerified ? ['places_address_verified'] : []),
   ];
   try {
