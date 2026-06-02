@@ -96,31 +96,23 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     void AsyncStorage.setItem(THEME_PREFERENCE_KEY, preference);
   }, []);
 
-  // Stage 0 stabilization: lock the resolved theme to `dark` regardless of
-  // user preference or system color scheme.
+  // 2026-05-27 — Light mode re-enabled. The resolved theme now honors
+  // the user's `themePreference` again: `system` follows the OS color
+  // scheme, `light` forces `LightColors`, `dark` forces `DarkColors`.
   //
-  // Why: several screens (sign-in, share, add-place, map, auth-callback)
-  // import the static `Colors` constant directly, which is the dark-only
-  // palette. When the OS was in light mode, `Screen`'s themed background
-  // became cream while hardcoded `Colors.text = '#FFFFFF'` text rendered
-  // white-on-cream and was unreadable (the "Save places once..." bug).
-  //
-  // Nearr's product identity is dark-only (see docs/UI_THEME_NOTES.md).
-  // We keep the `themePreference` state + setter so the Settings UI does
-  // not need to change, but the resolved theme is always `dark` until a
-  // proper light theme is built and every screen is audited for hardcoded
-  // colors. Re-enable system/light by removing the override below and
-  // restoring the original conditional.
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const _systemAwareTheme: ResolvedTheme =
+  // Historical note (kept for context): screens that import the static
+  // `Colors` constant directly will still render with the dark palette
+  // regardless of the resolved theme — those screens should migrate to
+  // `useTheme().colors` if they look off in light mode. See
+  // docs/UI_THEME_NOTES.md.
+  const resolvedTheme: ResolvedTheme =
     themePreference === 'system'
       ? systemColorScheme === 'light'
         ? 'light'
         : 'dark'
       : themePreference;
-  const resolvedTheme: ResolvedTheme = 'dark';
 
-  const colors = (resolvedTheme as ResolvedTheme) === 'light' ? LightColors : DarkColors;
+  const colors = resolvedTheme === 'light' ? LightColors : DarkColors;
   const typography = useMemo(() => createTypography(colors), [colors]);
 
   const value = useMemo(

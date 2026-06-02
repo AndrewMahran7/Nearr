@@ -779,6 +779,14 @@ export default function ShareScreen() {
         downgradedFromAutoSave: agentBlock.downgradedFromAutoSave,
         candidateCount: agentBlock.candidates.length,
         confidence: agentBlock.confidence,
+        resolvedPlaceName: (agentBlock as any).resolvedPlace?.name ?? null,
+        firstCandidateName: agentBlock.candidates[0]?.name ?? null,
+        firstCandidateAddress:
+          (agentBlock.candidates[0] as any)?.formattedAddress ?? null,
+        firstCandidatePlaceId: agentBlock.candidates[0]?.googlePlaceId ?? null,
+        cleanSearchQuery: serverExtraction?.query ?? null,
+        extractionPlaceName: serverExtraction?.placeName ?? null,
+        extractionAddress: serverExtraction?.address ?? null,
       });
       logDebug('share-agent', 'agent block present', {
         userFacingDecision: agentBlock.userFacingDecision,
@@ -829,7 +837,10 @@ export default function ShareScreen() {
         return;
       }
 
-      if (decision === 'candidate_confirmation' && agentCandidates.length > 0) {
+      if (
+        (decision === 'candidate_confirmation' || decision === ('candidate_picker' as any)) &&
+        agentCandidates.length > 0
+      ) {
         setCandidates(agentCandidates);
         setPhase('choose');
         setDebugState((prev) => ({
@@ -845,9 +856,50 @@ export default function ShareScreen() {
         return;
       }
 
+      // 2026-05-27 — defense-in-depth: if the agent returned ANY usable
+      // candidates but the decision string is something we don't model
+      // (e.g. future 'candidate_picker'-only variants), surface them
+      // anyway instead of dropping to legacy + "No place found".
+      if (agentCandidates.length > 0 && decision !== 'manual_fallback' && decision !== 'auto_save') {
+        setCandidates(agentCandidates);
+        setPhase('choose');
+        setDebugState((prev) => ({
+          ...prev,
+          finalStatus: 'agent_candidate_confirmation',
+          finalReason: `unknown_decision_${decision}`,
+          placesCandidateNames: agentCandidates.map((c) => c.name),
+        }));
+        pushShareDebug('[share-debug] FINAL_RESULT', {
+          status: 'agent_candidate_confirmation',
+          reason: `unknown_decision_${decision}`,
+        });
+        return;
+      }
+
       if (decision === 'manual_fallback') {
         setFailMessage(FAIL_NO_QUERY);
-        setManualQuery(serverExtraction?.query ?? extracted?.query ?? '');
+        // 2026-05-27 — prefer a name-led query over a raw street address
+        // for the manual search input. Pre-filling "126 Main St,
+        // Huntington Beach, CA" is useless to a user trying to find
+        // "2nd Floor"; pre-filling "2nd Floor Huntington Beach"
+        // actually lets them tap once and find the place.
+        const fallbackParts: string[] = [];
+        const sePlace = serverExtraction?.placeName;
+        const seCity = serverExtraction?.city;
+        const seState = serverExtraction?.state;
+        const seAddr = serverExtraction?.address;
+        if (sePlace) fallbackParts.push(sePlace);
+        if (seCity) fallbackParts.push(seCity);
+        else if (seAddr && !sePlace) fallbackParts.push(seAddr);
+        if (seState && fallbackParts.length > 0 && !fallbackParts.join(' ').includes(seState)) {
+          fallbackParts.push(seState);
+        }
+        const fallbackQuery =
+          fallbackParts.join(' ').trim() ||
+          serverExtraction?.query ||
+          extracted?.query ||
+          '';
+        setManualQuery(fallbackQuery);
         setPhase('failed');
         setDebugState((prev) => ({
           ...prev,
@@ -1981,7 +2033,9 @@ export default function ShareScreen() {
           {phase === 'choose' && candidates.length > 0 ? (
             <View style={styles.section}>
               <Text style={[Typography.label, styles.muted]}>
-                We found a few matches. Pick the right one:
+                {candidates.length === 1
+                  ? 'We found this place. Confirm it?'
+                  : 'We found a few matches. Pick the right one:'}
               </Text>
               <View style={{ height: Spacing.sm }} />
               {candidates.map((c) => (

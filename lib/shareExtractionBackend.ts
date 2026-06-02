@@ -218,10 +218,36 @@ function coerceBackendExtraction(payload: unknown): BackendExtractionPayload | n
   if (!isRecord(payload)) return null;
   const nested = isRecord(payload.extraction) ? payload.extraction : null;
   const candidate = nested ?? payload;
-  if (typeof candidate.query !== 'string' || typeof candidate.querySource !== 'string') {
-    return null;
+  // 2026-05-27 — looser shape check. The refactored backend always
+  // returns an `extraction` object, but a manual_fallback response
+  // can legitimately have `query === ''` and `placeName === null`
+  // (no candidates found). Treating that as `server_returned_null`
+  // pushes the host app back into the legacy client pipeline even
+  // though the server already made a definitive decision. Accept
+  // anything that has the `agent` block OR any one of the
+  // legacy-identifying fields.
+  const hasAgent = isRecord((candidate as any).agent);
+  const hasLegacyShape =
+    typeof (candidate as any).query === 'string' ||
+    typeof (candidate as any).placeName === 'string' ||
+    typeof (candidate as any).source === 'string';
+  if (!hasAgent && !hasLegacyShape) return null;
+  // Defensively backfill optional fields the host app downstream
+  // touches with non-null assumptions (e.g.
+  // `serverExtraction.profileMetadata.length` in app/share.tsx).
+  const rec = candidate as Record<string, any>;
+  if (!Array.isArray(rec.profileMetadata)) rec.profileMetadata = [];
+  if (!Array.isArray(rec.taggedAccounts)) rec.taggedAccounts = [];
+  if (!Array.isArray(rec.handlesDetected)) rec.handlesDetected = [];
+  if (typeof rec.query !== 'string') rec.query = '';
+  if (typeof rec.querySource !== 'string') rec.querySource = 'none';
+  if (typeof rec.queryKind !== 'string') rec.queryKind = 'unknown';
+  if (typeof rec.searchAllowed !== 'boolean') rec.searchAllowed = false;
+  if (rec.blockedReason === undefined) rec.blockedReason = null;
+  if (rec.posterType !== 'restaurant' && rec.posterType !== 'influencer') {
+    rec.posterType = 'unknown';
   }
-  return candidate as unknown as BackendExtractionPayload;
+  return rec as unknown as BackendExtractionPayload;
 }
 
 export async function extractShareOnServer(
@@ -361,6 +387,29 @@ export async function extractShareOnServer(
       reason: summary.reason,
     });
     const extraction = coerceBackendExtraction(json);
+    // 2026-05-27 — extra signals for the on-device diagnostics panel.
+    // These are the exact fields a tester needs to see to know
+    // WHY the parser rejected (or accepted) a backend response.
+    {
+      const root = isRecord(json) ? json : {};
+      const extractionRoot = isRecord(root.extraction) ? root.extraction : null;
+      const agentRoot = extractionRoot && isRecord(extractionRoot.agent)
+        ? extractionRoot.agent
+        : null;
+      const candidatesArr = agentRoot && Array.isArray((agentRoot as any).candidates)
+        ? (agentRoot as any).candidates
+        : Array.isArray((root as any).candidates)
+          ? (root as any).candidates
+          : [];
+      emitShareDebug(options?.onDebugEvent, '[share-debug] BACKEND_PARSE_SIGNALS', {
+        hasExtraction: !!extractionRoot,
+        hasAgent: !!agentRoot,
+        hasResolvedPlace: !!(agentRoot && (agentRoot as any).resolvedPlace),
+        candidateCount: candidatesArr.length,
+        userFacingDecision: agentRoot ? (agentRoot as any).userFacingDecision ?? null : null,
+        parserAccepted: !!extraction,
+      });
+    }
     if (summary.status !== 'extracted' || !extraction) {
       emitShareDebug(options?.onDebugEvent, '[share-debug] BACKEND_PAYLOAD_UNEXPECTED', {
         status: summary.status,

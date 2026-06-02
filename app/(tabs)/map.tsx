@@ -21,7 +21,7 @@
  * V1 deliberately omits filters, clustering, and tile/style customization.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState, type ComponentRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, memo, type ComponentRef } from 'react';
 import {
   Animated,
   Linking,
@@ -205,6 +205,133 @@ const PREVIEW_INITIAL_REGION: Region = {
   latitudeDelta: 0.08,
   longitudeDelta: 0.08,
 };
+
+// ---------------------------------------------------------------------------
+// PlaceMarker
+//
+// 2026-05-27 Android OOM fix.
+//
+// Symptom: java.lang.OutOfMemoryError in
+//   com.google.android.gms.maps.model.Marker.setIcon
+//   ← com.rnmaps.maps.MapMarker.updateMarkerIcon
+//   ← com.rnmaps.maps.ViewChangesTracker.update
+//
+// Cause: react-native-maps' `ViewChangesTracker` polls every custom
+// <Marker> view on Android (default `tracksViewChanges={true}`),
+// re-rasterizing its React children into a Bitmap on each tick.
+// With N saved-place markers this allocates N bitmaps per poll,
+// quickly exhausting the GC heap.
+//
+// Fix: render the custom child views ONCE, then flip
+// `tracksViewChanges` to `false` after a single frame. The marker
+// bitmap is then frozen on the GPU and no further allocations occur.
+// We never mutate the marker children after mount (opacity is a
+// native-side prop, not part of the rasterized bitmap), so this is
+// safe. iOS is unaffected by the OOM but the same pattern is harmless
+// there and avoids unnecessary work.
+//
+// Memoized on the few inputs that can actually change so a selection /
+// theme update doesn't churn all N markers.
+type PlaceMarkerProps = {
+  place: SavedPlaceWithPlace;
+  markerRefs: React.MutableRefObject<Record<string, ComponentRef<typeof Marker> | null>>;
+  onPress: (place: SavedPlaceWithPlace) => void;
+};
+
+const PlaceMarker = memo(function PlaceMarker({
+  place: p,
+  markerRefs,
+  onPress,
+}: PlaceMarkerProps) {
+  const [tracksViewChanges, setTracksViewChanges] = useState(true);
+  useEffect(() => {
+    // Stop tracking on the next frame — gives the native side one
+    // chance to rasterize the custom child View, then locks the
+    // bitmap. See block comment above for the OOM context.
+    const id = setTimeout(() => setTracksViewChanges(false), 0);
+    return () => clearTimeout(id);
+  }, []);
+  const handlePress = useCallback(
+    (e: { stopPropagation?: () => void }) => {
+      e.stopPropagation?.();
+      onPress(p);
+    },
+    [onPress, p],
+  );
+  return (
+    <Marker
+      identifier={p.id}
+      opacity={p.archived_at || p.visited_at ? 0.45 : 1}
+      ref={(ref) => {
+        markerRefs.current[p.id] = ref;
+      }}
+      coordinate={{
+        latitude: p.place.latitude,
+        longitude: p.place.longitude,
+      }}
+      // Custom marker views default to bottom-center anchoring, which
+      // would offset our pin upward from the geographic coordinate and
+      // visually push it off-center inside the radius circle. Anchor
+      // (and iOS centerOffset) at the marker's middle so the pin sits
+      // exactly on the coordinate that the Circle is centered on.
+      anchor={{ x: 0.5, y: 0.5 }}
+      centerOffset={{ x: 0, y: 0 }}
+      tracksViewChanges={tracksViewChanges}
+      onPress={handlePress}
+    >
+      {/* "Home base" pin: a soft halo around a solid dot reinforces
+          that this is the center of the zone, not just a pin drop.
+          Static (no animation) to keep V1 light. */}
+      <View style={MARKER_STYLES.wrap}>
+        <View style={MARKER_STYLES.halo} />
+        <View style={MARKER_STYLES.core} />
+        <View style={MARKER_STYLES.dot} />
+      </View>
+    </Marker>
+  );
+}, (prev, next) =>
+  prev.place.id === next.place.id &&
+  prev.place.archived_at === next.place.archived_at &&
+  prev.place.visited_at === next.place.visited_at &&
+  prev.place.place.latitude === next.place.place.latitude &&
+  prev.place.place.longitude === next.place.place.longitude &&
+  prev.onPress === next.onPress,
+);
+
+// Static — does NOT change with theme. Using fixed colors here keeps
+// the marker bitmap identity stable across light/dark switches so the
+// memoized PlaceMarker doesn't have to re-rasterize on theme change
+// (which would re-arm the OOM path).
+const MARKER_STYLES = StyleSheet.create({
+  wrap: {
+    width: 28,
+    height: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  halo: {
+    position: 'absolute',
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255, 106, 26, 0.18)',
+  },
+  core: {
+    position: 'absolute',
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: 'rgba(255, 106, 26, 0.35)',
+  },
+  dot: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: '#FF6A1A',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
+});
 
 export default function MapScreen() {
   const router = useRouter();
@@ -584,6 +711,22 @@ export default function MapScreen() {
     }
   }
 
+  // Stable identity so PlaceMarker memoization survives parent re-renders
+  // (selection, theme, etc.). Without this, every render would pass a
+  // fresh inline closure and re-arm the Android view-tracking path that
+  // produced the OutOfMemoryError on the GMS Marker.setIcon side.
+  const handleMarkerPress = useCallback((p: SavedPlaceWithPlace) => {
+    void trackEvent('place_marker_tapped', {
+      saved_place_id: p.id,
+      google_place_id: p.place.google_place_id ?? null,
+    });
+    selectPlace(p);
+    // selectPlace and trackEvent are stable enough in practice (defined
+    // in the component body); we intentionally exclude them from deps
+    // to keep the callback identity stable for the whole session.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const previewPanResponder = useMemo(
     () =>
       PanResponder.create({
@@ -706,42 +849,12 @@ export default function MapScreen() {
           )
         ))}
         {validPlaces.map((p) => (
-          <Marker
+          <PlaceMarker
             key={p.id}
-            identifier={p.id}
-            opacity={p.archived_at || p.visited_at ? 0.45 : 1}
-            ref={(ref) => {
-              markerRefs.current[p.id] = ref;
-            }}
-            coordinate={{
-              latitude: p.place.latitude,
-              longitude: p.place.longitude,
-            }}
-            // Custom marker views default to bottom-center anchoring, which
-            // would offset our pin upward from the geographic coordinate and
-            // visually push it off-center inside the radius circle. Anchor
-            // (and iOS centerOffset) at the marker's middle so the pin sits
-            // exactly on the coordinate that the Circle is centered on.
-            anchor={{ x: 0.5, y: 0.5 }}
-            centerOffset={{ x: 0, y: 0 }}
-            onPress={(e) => {
-              e.stopPropagation?.();
-              void trackEvent('place_marker_tapped', {
-                saved_place_id: p.id,
-                google_place_id: p.place.google_place_id ?? null,
-              });
-              selectPlace(p);
-            }}
-          >
-            {/* "Home base" pin: a soft halo around a solid dot reinforces
-                that this is the center of the zone, not just a pin drop.
-                Static (no animation) to keep V1 light. */}
-            <View style={styles.markerWrap}>
-              <View style={styles.markerHalo} />
-              <View style={styles.markerCore} />
-              <View style={styles.markerDot} />
-            </View>
-          </Marker>
+            place={p}
+            markerRefs={markerRefs}
+            onPress={handleMarkerPress}
+          />
         ))}
       </MapView>
 
@@ -871,13 +984,97 @@ export default function MapScreen() {
           style={styles.viewAllBtn}
           onPress={() => {
             if (!mapRef.current) return;
+            if (validPlaces.length === 0) return;
             const coords = allZoneBoundingCoords(validPlaces, profile);
             if (coords.length === 0) return;
             try {
-              mapRef.current.fitToCoordinates(coords, {
-                edgePadding: { top: 100, right: 100, bottom: 180, left: 100 },
-                animated: true,
-              });
+              // Camera center uses the average of saved-place coordinates
+              // (center of mass) so a single distant outlier doesn't drag
+              // the camera into empty space between clusters. The zoom
+              // (latitude/longitudeDelta) is still derived from the full
+              // bounding box of every zone so all places remain visible.
+              let sumLat = 0;
+              let sumLng = 0;
+              for (const p of validPlaces) {
+                sumLat += p.place.latitude;
+                sumLng += p.place.longitude;
+              }
+              const centerLat = sumLat / validPlaces.length;
+              const centerLng = sumLng / validPlaces.length;
+
+              let minLat = coords[0].latitude;
+              let maxLat = coords[0].latitude;
+              let minLng = coords[0].longitude;
+              let maxLng = coords[0].longitude;
+              for (const c of coords) {
+                if (c.latitude < minLat) minLat = c.latitude;
+                if (c.latitude > maxLat) maxLat = c.latitude;
+                if (c.longitude < minLng) minLng = c.longitude;
+                if (c.longitude > maxLng) maxLng = c.longitude;
+              }
+
+              // Extreme-spread guard: for globally distant points,
+              // center-of-mass framing can hide places off-screen or
+              // misframe across the antimeridian. Fall back to
+              // react-native-maps' built-in fitToCoordinates which is
+              // safer for very large spans.
+              const latSpan = maxLat - minLat;
+              const lngSpan = maxLng - minLng;
+              // Date-line heuristic: sort place longitudes and look for a
+              // gap > 180° between consecutive values (including wrap).
+              // Such a gap means the shorter arc between points crosses
+              // the antimeridian (e.g. one place at -179, another at +179).
+              const lngsSorted = validPlaces
+                .map((p) => p.place.longitude)
+                .sort((a, b) => a - b);
+              let maxLngGap = 0;
+              for (let i = 1; i < lngsSorted.length; i++) {
+                const gap = lngsSorted[i] - lngsSorted[i - 1];
+                if (gap > maxLngGap) maxLngGap = gap;
+              }
+              if (lngsSorted.length > 1) {
+                const wrapGap =
+                  360 - (lngsSorted[lngsSorted.length - 1] - lngsSorted[0]);
+                if (wrapGap > maxLngGap) maxLngGap = wrapGap;
+              }
+              const crossesDateLine = maxLngGap > 180;
+
+              if (latSpan > 45 || lngSpan > 90 || crossesDateLine) {
+                mapRef.current.fitToCoordinates(coords, {
+                  edgePadding: {
+                    top: 100,
+                    right: 100,
+                    bottom: 180,
+                    left: 100,
+                  },
+                  animated: true,
+                });
+                return;
+              }
+
+              // Because the center of mass may sit off-center within the
+              // bounding box, expand the deltas to whichever side is
+              // farther from center so the far edge still fits on screen.
+              // Then pad ~25% for visual breathing room (mirrors the
+              // edgePadding behavior of the previous fitToCoordinates call).
+              const latDelta =
+                Math.max(maxLat - centerLat, centerLat - minLat) * 2;
+              const lngDelta =
+                Math.max(maxLng - centerLng, centerLng - minLng) * 2;
+              const PAD = 1.25;
+              const MIN_DELTA = 0.01; // single-place default zoom floor
+              const latitudeDelta = Math.max(latDelta * PAD, MIN_DELTA);
+              const longitudeDelta = Math.max(lngDelta * PAD, MIN_DELTA);
+
+              mapRef.current.animateToRegion(
+                {
+                  latitude: centerLat,
+                  longitude: centerLng,
+                  latitudeDelta,
+                  longitudeDelta,
+                },
+                400,
+              );
             } catch (e) {
               if (__DEV__) console.debug('[map] viewAll skipped', e);
             }

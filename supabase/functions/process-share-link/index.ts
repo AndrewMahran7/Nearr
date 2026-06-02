@@ -142,6 +142,7 @@ serve(async (req) => {
   const extraction = buildExtractionPayload({
     url,
     platform,
+    source,
     title,
     description,
     evidence,
@@ -232,6 +233,7 @@ serve(async (req) => {
 function buildExtractionPayload(args: {
   url: string;
   platform: string;
+  source: string;
   title: string | null;
   description: string | null;
   evidence: ReturnType<typeof extractEvidence>;
@@ -255,19 +257,71 @@ function buildExtractionPayload(args: {
       ) ?? null
     : null;
 
+  // 2026-05-27 — backward-compat fields required by the React Native
+  // host parser (`lib/shareExtractionBackend.ts.coerceBackendExtraction`)
+  // and `app/share.tsx`. The new resolver does not produce a single
+  // "query" string with a categorical source the way the legacy
+  // pipeline did, so we synthesize the shape from evidence + the
+  // cleaned search query that was actually issued to Places.
+  const placeNameHint = evidence.venueNameHints[0] ?? null;
+  const addressHint = evidence.address?.raw ?? null;
+  const posterHandle = evidence.handles.posterHandle ?? null;
+  const taggedAccounts = evidence.handles.taggedHandles ?? [];
+  const handlesDetected = [
+    posterHandle,
+    ...taggedAccounts,
+  ].filter((h): h is string => !!h);
+  const query = result.cleanSearchQuery
+    ?? placeNameHint
+    ?? addressHint
+    ?? '';
+  let querySource: string;
+  if (result.cleanSearchQuery && addressHint && result.cleanSearchQuery.includes(addressHint)) {
+    querySource = 'address';
+  } else if (placeNameHint) {
+    querySource = 'caption_venue_hint';
+  } else if (posterHandle) {
+    querySource = 'account_handle';
+  } else if (addressHint) {
+    querySource = 'address';
+  } else {
+    querySource = 'none';
+  }
+  const queryKind = addressHint
+    ? 'address'
+    : placeNameHint
+      ? 'venue_name'
+      : posterHandle
+        ? 'handle'
+        : 'unknown';
+  const searchAllowed = query.length > 0 && !evidence.isRoundup;
+  const blockedReason = evidence.isRoundup ? 'roundup_post' : null;
+
   return {
-    source: args.platform,
+    source: args.source,
     url: args.url,
     title: args.title,
     description: args.description,
-    query: result.cleanSearchQuery ?? null,
+    handlesDetected,
+    query,
+    querySource,
+    queryKind,
+    searchAllowed,
+    blockedReason,
     confidence: result.confidence,
-    placeName: evidence.venueNameHints[0] ?? null,
-    address: evidence.address?.raw ?? null,
+    placeName: placeNameHint,
+    address: addressHint,
     city: evidence.cityState?.city ?? evidence.address?.city ?? null,
     state: evidence.cityState?.state ?? evidence.address?.state ?? null,
-    posterHandle: evidence.handles.posterHandle,
-    taggedAccounts: evidence.handles.taggedHandles,
+    sourceContext: evidence.cityState
+      ? `${evidence.cityState.city}, ${evidence.cityState.state}`
+      : null,
+    posterHandle,
+    posterType: 'unknown' as const,
+    taggedAccounts,
+    profileMetadata: [],
+    requiredNameHint: placeNameHint,
+    verifiedProfileQuery: null,
     isRoundup: evidence.isRoundup,
     evidenceKeys: evidence.keys,
     warnings: result.warnings,

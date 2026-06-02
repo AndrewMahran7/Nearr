@@ -466,7 +466,7 @@
     "evidence_used": "caption_city_state; caption_venue_hint; venue_handle_tagged",
     "warnings": "",
     "places_queries": "",
-    "top_candidates": "Taqueria Los Pericos | 139 Water St, Santa Cruz, CA 95060, USA | score=0.95 | placeId=ChIJERL3niVAjoARl8XPdDVqQ8U || Taqueria Los Pericos | 36 Rancho Del Mar, Aptos, CA 95003, USA | score=0.92 | placeId=ChIJNQrDGMoVjoARCgbmwaxkKio || Taqueria Los Pericos | 531 Corralitos Rd, Watsonville, CA 95076, USA | score=0.88 | placeId=ChIJ1bjCz94ZjoARwyeEI-zmqFM || Los Pericos Market | 21400 E Cliff Dr, Santa Cruz, CA 95062, USA | score=0.70 | placeId=ChIJ6WYi9UUVjoARe8_GFSMLsLU",
+    "top_candidates": "Taqueria Los Pericos | 139 Water St, Santa Cruz, CA 95060, USA | score=0.95 | placeId=ChIJERL3niVAjoARl8XPdDVqQ8U || Taqueria Los Pericos | 36 Rancho Del Mar, Aptos, CA 95003, USA | score=0.92 | placeId=ChIJNQrDGMoVjoARCgbmwaxkKio || Los Pericos Market | 21400 E Cliff Dr, Santa Cruz, CA 95062, USA | score=0.70 | placeId=ChIJ6WYi9UUVjoARe8_GFSMLsLU",
     "error_message": "",
     "decision_pass": false,
     "place_pass": false,
