@@ -6,6 +6,7 @@
 
 export {
   extractLikelyAddress,
+  extractLikelyAddresses,
   cleanPlacesSeed,
   type LikelyAddress,
 } from '../../../../lib/shareAgent/queryCleaner.ts';

@@ -96,6 +96,7 @@ type Phase =
   | 'searching' // calling Google Places
   | 'saving' // upserting place + saved_places
   | 'choose' // multiple candidates, user must pick
+  | 'multi-choose' // ≥2 distinct places resolved, user multi-selects
   | 'failed'; // parse/search failed → manual search
 
 const PLATFORM_LABELS: Record<ShareSource, string> = {
@@ -358,6 +359,12 @@ export default function ShareScreen() {
   const [extraction, setExtraction] = useState<PlaceExtraction | null>(null);
   const [aiExtraction, setAiExtraction] = useState<AIExtractResult | null>(null);
   const [candidates, setCandidates] = useState<PlaceCandidate[]>([]);
+  // For 'multi-choose': IDs of candidates the user has selected to save.
+  // Default selection is intentionally EMPTY — users must opt in to each
+  // place. See docs/ARCHITECTURE.md "never silently auto-save multiple".
+  const [multiSelectedIds, setMultiSelectedIds] = useState<Set<string>>(
+    () => new Set<string>(),
+  );
   const [failMessage, setFailMessage] = useState<string | null>(null);
   const [manualQuery, setManualQuery] = useState('');
   // Dev-only debug toggle: lets us inspect what we extracted without ever
@@ -856,6 +863,34 @@ export default function ShareScreen() {
         return;
       }
 
+      if (
+        decision === ('multi_candidate_confirmation' as any) &&
+        agentCandidates.length >= 2
+      ) {
+        // Dedupe by googlePlaceId defensively in case the backend
+        // ever surfaces duplicates. Order from backend is preserved.
+        const seen = new Set<string>();
+        const deduped = agentCandidates.filter((c) => {
+          if (!c.googlePlaceId || seen.has(c.googlePlaceId)) return false;
+          seen.add(c.googlePlaceId);
+          return true;
+        });
+        const capped = deduped.slice(0, 10);
+        setCandidates(capped);
+        setMultiSelectedIds(new Set<string>());
+        setPhase('multi-choose');
+        setDebugState((prev) => ({
+          ...prev,
+          finalStatus: 'agent_multi_candidate_confirmation',
+          finalReason: null,
+          placesCandidateNames: capped.map((c) => c.name),
+        }));
+        pushShareDebug('[share-multi] CANDIDATES_PRESENTED', {
+          candidate_count: agentCandidates.length,
+          deduped_count: capped.length,
+        });
+        return;
+      }
       // 2026-05-27 — defense-in-depth: if the agent returned ANY usable
       // candidates but the decision string is something we don't model
       // (e.g. future 'candidate_picker'-only variants), surface them
@@ -1929,6 +1964,133 @@ export default function ShareScreen() {
     }
   }
 
+  /**
+   * Batch-save N candidates the user selected from the multi-place
+   * picker. Uses Promise.allSettled so a single failure can't crash
+   * the screen or block the other saves. Surfaces a summary alert,
+   * tracks each outcome, and on full success navigates to the map.
+   * On partial/total failure, stays on the picker so the user can
+   * retry the leftovers.
+   */
+  async function saveSelectedCandidates(
+    selected: PlaceCandidate[],
+    sourceUrl: string | null,
+    sourceType: ShareSource,
+  ) {
+    if (selected.length === 0) return;
+    setPhase('saving');
+    const flow =
+      params.url && isLikelyUrl(params.url) ? 'share_extension' : 'paste_link';
+    void trackEvent('save_started', {
+      source_type: sourceType,
+      flow,
+      candidate_count: selected.length,
+      multi_select: true,
+    });
+    const settled = await Promise.allSettled(
+      selected.map((c) =>
+        saveSavedPlace({
+          candidate: c,
+          radiusValue: null,
+          radiusUnit: null,
+          sourceType,
+          sourceUrl,
+        }),
+      ),
+    );
+    const saved: Array<{
+      candidate: PlaceCandidate;
+      savedPlaceId: string | null;
+      duplicate: boolean;
+    }> = [];
+    const failed: Array<{ candidate: PlaceCandidate; message: string }> = [];
+    settled.forEach((res, idx) => {
+      const cand = selected[idx];
+      if (res.status === 'fulfilled') {
+        const r = res.value;
+        saved.push({
+          candidate: cand,
+          savedPlaceId: r.savedPlaceId ?? null,
+          duplicate: r.status === 'duplicate',
+        });
+        void trackEvent('save_success', {
+          source_type: sourceType,
+          flow,
+          google_place_id: cand.googlePlaceId ?? null,
+          saved_place_id: r.savedPlaceId,
+          duplicate: r.status === 'duplicate',
+          multi_select: true,
+        });
+      } else {
+        const msg = (res.reason as Error)?.message ?? 'Could not save place.';
+        failed.push({ candidate: cand, message: msg });
+        void trackEvent('save_failed', {
+          source_type: sourceType,
+          flow,
+          google_place_id: cand.googlePlaceId ?? null,
+          error_code: 'save_threw',
+          multi_select: true,
+        });
+      }
+    });
+    pushShareDebug('[share-multi] BATCH_SAVE_RESULT', {
+      selected_count: selected.length,
+      save_success_count: saved.length,
+      save_failure_count: failed.length,
+    });
+    if (failed.length === 0) {
+      const dupCount = saved.filter((s) => s.duplicate).length;
+      const newCount = saved.length - dupCount;
+      const title = newCount > 0 ? 'Saved to your map' : 'Already saved';
+      const body =
+        newCount === 0
+          ? `${saved.length} place${saved.length === 1 ? '' : 's'} already on your map.`
+          : dupCount === 0
+            ? `${newCount} place${newCount === 1 ? '' : 's'} added.`
+            : `${newCount} added, ${dupCount} already saved.`;
+      Alert.alert(title, body);
+      const firstSavedId =
+        saved.find((s) => !s.duplicate && s.savedPlaceId)?.savedPlaceId ??
+        saved.find((s) => s.savedPlaceId)?.savedPlaceId ??
+        null;
+      try {
+        if (firstSavedId) {
+          router.replace({
+            pathname: '/(tabs)/map',
+            params: { savedPlaceId: firstSavedId },
+          });
+        } else {
+          router.replace('/(tabs)/map');
+        }
+      } catch (navErr) {
+        console.warn(
+          '[share] navigation failed',
+          (navErr as Error)?.message ?? navErr,
+        );
+      }
+      return;
+    }
+    // Partial or total failure: tell the user what happened and stay
+    // on the picker so they can retry the unsaved ones.
+    const failedNames = failed.map((f) => f.candidate.name).join(', ');
+    if (saved.length === 0) {
+      Alert.alert("Couldn't save", `Failed to save: ${failedNames}.`);
+    } else {
+      Alert.alert(
+        'Some places saved',
+        `Saved ${saved.length} of ${selected.length}. Couldn't save: ${failedNames}.`,
+      );
+    }
+    const savedIds = new Set(saved.map((s) => s.candidate.googlePlaceId));
+    setCandidates((prev) => prev.filter((c) => !savedIds.has(c.googlePlaceId)));
+    setMultiSelectedIds((prev) => {
+      const next = new Set<string>();
+      for (const id of prev) if (!savedIds.has(id)) next.add(id);
+      return next;
+    });
+    setPhase('multi-choose');
+  }
+
   // ---------------------------------------------------------------------
   // Manual fallback search
   // ---------------------------------------------------------------------
@@ -2082,6 +2244,143 @@ export default function ShareScreen() {
               <Pressable
                 onPress={() => {
                   setCandidates([]);
+                  setFailMessage(null);
+                  setManualQuery(extraction?.query ?? aiExtraction?.query ?? '');
+                  setPhase('failed');
+                }}
+                hitSlop={8}
+                style={styles.manualLink}
+              >
+                <Text style={[Typography.caption, styles.manualLinkText]}>
+                  None of these — search manually
+                </Text>
+              </Pressable>
+            </View>
+          ) : null}
+
+          {/* ---- Multi-choose: ≥2 distinct places, user multi-selects --- */}
+          {phase === 'multi-choose' && candidates.length > 0 ? (
+            <View style={styles.section}>
+              <Text style={[Typography.label, styles.muted]}>
+                We found {candidates.length} places in this post. Choose which to
+                save.
+              </Text>
+              <View style={{ height: Spacing.sm }} />
+              <View style={styles.multiActions}>
+                <Pressable
+                  hitSlop={8}
+                  onPress={() => {
+                    const all = new Set<string>(
+                      candidates.map((c) => c.googlePlaceId).filter(Boolean) as string[],
+                    );
+                    setMultiSelectedIds(all);
+                  }}
+                >
+                  <Text style={[Typography.caption, styles.manualLinkText]}>
+                    Select all
+                  </Text>
+                </Pressable>
+                <Pressable
+                  hitSlop={8}
+                  onPress={() => setMultiSelectedIds(new Set<string>())}
+                >
+                  <Text style={[Typography.caption, styles.manualLinkText]}>
+                    Clear
+                  </Text>
+                </Pressable>
+              </View>
+              <View style={{ height: Spacing.sm }} />
+              {candidates.map((c, idx) => {
+                const id = c.googlePlaceId;
+                const checked = !!id && multiSelectedIds.has(id);
+                return (
+                  <Pressable
+                    key={id || `multi-${idx}`}
+                    onPress={() => {
+                      if (!id) return;
+                      setMultiSelectedIds((prev) => {
+                        const next = new Set<string>(prev);
+                        if (next.has(id)) next.delete(id);
+                        else next.add(id);
+                        return next;
+                      });
+                    }}
+                    style={({ pressed }) => [
+                      styles.candidate,
+                      checked && styles.candidateChecked,
+                      pressed && styles.candidatePressed,
+                    ]}
+                  >
+                    <View style={styles.multiRow}>
+                      <View
+                        style={[
+                          styles.checkbox,
+                          checked && styles.checkboxChecked,
+                        ]}
+                      >
+                        {checked ? (
+                          <Text style={styles.checkboxMark}>✓</Text>
+                        ) : null}
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={Typography.bodyStrong} numberOfLines={1}>
+                          {c.name}
+                        </Text>
+                        {c.formattedAddress ? (
+                          <Text
+                            style={[Typography.caption, styles.muted]}
+                            numberOfLines={2}
+                          >
+                            {c.formattedAddress}
+                          </Text>
+                        ) : null}
+                        {c.category ? (
+                          <Text
+                            style={[
+                              Typography.caption,
+                              styles.muted,
+                              { marginTop: 2 },
+                            ]}
+                            numberOfLines={1}
+                          >
+                            {c.category}
+                          </Text>
+                        ) : null}
+                      </View>
+                    </View>
+                  </Pressable>
+                );
+              })}
+              <View style={{ height: Spacing.md }} />
+              <Button
+                title={
+                  multiSelectedIds.size === 0
+                    ? 'Select at least one'
+                    : `Save selected (${multiSelectedIds.size})`
+                }
+                disabled={multiSelectedIds.size === 0 || busy}
+                onPress={() => {
+                  const selected = candidates.filter(
+                    (c) => c.googlePlaceId && multiSelectedIds.has(c.googlePlaceId),
+                  );
+                  if (selected.length === 0) return;
+                  void trackEvent('share_multi_candidate_save_clicked', {
+                    source_type: parsed?.source ?? 'link',
+                    candidate_count: candidates.length,
+                    selected_count: selected.length,
+                  });
+                  void saveSelectedCandidates(
+                    selected,
+                    parsed?.url ?? null,
+                    parsed?.source ?? 'link',
+                  );
+                }}
+                loading={busy}
+              />
+              <Pressable
+                onPress={() => {
+                  setCandidates([]);
+                  setMultiSelectedIds(new Set<string>());
                   setFailMessage(null);
                   setManualQuery(extraction?.query ?? aiExtraction?.query ?? '');
                   setPhase('failed');
@@ -2368,6 +2667,41 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.sm,
   },
   candidatePressed: { opacity: 0.7 },
+  candidateChecked: {
+    borderColor: Colors.primary,
+    borderWidth: 1,
+  },
+
+  multiActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  multiRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 4,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: Colors.border,
+    backgroundColor: Colors.surface,
+    marginRight: Spacing.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 2,
+  },
+  checkboxChecked: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
+  checkboxMark: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '700',
+    lineHeight: 16,
+  },
 
   debugToggle: { alignSelf: 'flex-start', paddingVertical: Spacing.xs },
   debugCard: { marginTop: Spacing.xs },

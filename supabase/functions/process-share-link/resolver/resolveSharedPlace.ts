@@ -46,6 +46,111 @@ export async function resolveSharedPlace(args: {
   const diagnostics: Record<string, unknown> = {};
   const evidenceUsed = [...evidence.keys];
 
+  // ---- 0. Multi-address verification -----------------------------
+  // When the caption contains ≥2 distinct US street addresses, try
+  // to verify each independently. If two or more resolve to real
+  // Places, surface them as a multi-candidate confirmation — never
+  // auto-save.
+  if (evidence.addresses.length >= 2) {
+    const placeNameHint =
+      evidence.venueNameHints[0] ??
+      evidence.handles.posterNameHint ??
+      null;
+    const fallbackCity = evidence.cityState?.city ?? null;
+    const fallbackState = evidence.cityState?.state ?? null;
+    const multiResolved: ResolvedCandidate[] = [];
+    const seenIds = new Set<string>();
+    const seenAddrs = new Set<string>();
+    const perAddress: Array<{
+      query: string;
+      status: string;
+      candidateCount: number;
+    }> = [];
+    for (const addr of evidence.addresses) {
+      const city = addr.city ?? fallbackCity;
+      const state = addr.state ?? fallbackState;
+      const addrStr = [addr.raw, city, state].filter(Boolean).join(', ');
+      let status = 'failed';
+      let added = 0;
+      try {
+        const ver = await verifyPlaceAtAddressServer(
+          addrStr,
+          placeNameHint,
+          env.googlePlacesKey,
+        );
+        status = ver.status;
+        const verifiedList =
+          ver.status === 'verified'
+            ? [ver.candidate]
+            : ver.status === 'ambiguous'
+            ? ver.candidates
+            : [];
+        for (const cand of verifiedList) {
+          const idKey = cand.googlePlaceId ?? '';
+          const addrKey = normalizeAddrKey(cand.formattedAddress ?? '');
+          if (idKey && seenIds.has(idKey)) continue;
+          if (!idKey && addrKey && seenAddrs.has(addrKey)) continue;
+          if (idKey) seenIds.add(idKey);
+          if (addrKey) seenAddrs.add(addrKey);
+          const resolved = toResolvedCandidate(
+            {
+              candidate: cand,
+              score: ver.status === 'verified' ? 45 : 35,
+              reasons: [
+                ver.status === 'verified'
+                  ? 'address_verified_multi'
+                  : 'address_verified_multi_ambiguous',
+              ],
+              rejected: false,
+              rejectionReason: null,
+            },
+            [...evidenceUsed, 'address_verified', 'caption_multiple_addresses'],
+          );
+          multiResolved.push(resolved);
+          added += 1;
+          if (multiResolved.length >= 10) break;
+        }
+      } catch (err) {
+        warnings.push('multi_address_verify_threw');
+        diagnostics.multiVerifyError = (err as Error)?.message;
+      }
+      perAddress.push({ query: addrStr, status, candidateCount: added });
+      if (multiResolved.length >= 10) break;
+    }
+    timings.mark('multi_address_verify');
+    diagnostics.multiAddressVerification = {
+      addressCount: evidence.addresses.length,
+      perAddress,
+      resolvedCount: multiResolved.length,
+    };
+    // Only fire the multi-candidate path when ≥2 distinct real-world
+    // places resolved. One match → fall through to the normal
+    // single-address path so safety + verification flags apply.
+    if (multiResolved.length >= 2) {
+      logShareDebug('resolver:multi_address_resolved', {
+        addressCount: evidence.addresses.length,
+        candidateCount: multiResolved.length,
+      });
+      return finalize(
+        {
+          decision: 'multi_candidate_confirmation',
+          primaryCandidate: multiResolved[0],
+          candidates: multiResolved,
+          safeToAutoSave: false,
+          confidence: 'medium',
+          reasons: ['multi_address_resolved'],
+        },
+        {
+          cleanSearchQuery: perAddress.map((p) => p.query).join(' | '),
+          warnings,
+          diagnostics,
+          evidenceUsed,
+          timings,
+        },
+      );
+    }
+  }
+
   // ---- 1. Address-first verification -----------------------------
   if (evidence.address) {
     const placeName =
@@ -241,7 +346,14 @@ export async function resolveSharedPlace(args: {
 }
 
 function finalize(
-  decision: ReturnType<typeof decide>,
+  decision: ReturnType<typeof decide> | {
+    decision: ResolverResult['decision'];
+    primaryCandidate?: ResolvedCandidate;
+    candidates: ResolvedCandidate[];
+    safeToAutoSave: boolean;
+    confidence: ResolverResult['confidence'];
+    reasons: string[];
+  },
   ctx: {
     cleanSearchQuery?: string;
     warnings: string[];
@@ -265,4 +377,17 @@ function finalize(
       timings: ctx.timings.toJSON(),
     },
   };
+}
+
+// Normalize a Google `formatted_address` for dedupe-by-address.
+// Lowercase, strip trailing ", USA"/", United States", collapse
+// whitespace + punctuation. Conservative — only used as a fallback
+// when googlePlaceId is missing.
+function normalizeAddrKey(addr: string): string {
+  if (!addr) return '';
+  return String(addr)
+    .toLowerCase()
+    .replace(/,\s*(usa|united states)\s*$/i, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
 }

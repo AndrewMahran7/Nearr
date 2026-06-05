@@ -29,6 +29,7 @@ import type {
 export type UserFacingDecision =
   | 'auto_save' // safety gate passed; caller MAY silent-save resolvedPlace
   | 'candidate_confirmation' // show picker
+  | 'multi_candidate_confirmation' // show multi-select picker for ≥2 distinct places
   | 'manual_fallback' // show manual search
   | 'failed'; // agent could not produce useful evidence
 

@@ -202,6 +202,7 @@ serve(async (req) => {
 
     case 'candidate_picker':
     case 'candidate_confirmation':
+    case 'multi_candidate_confirmation':
       return statusAmbiguous({
         candidates: result.candidates,
         primaryCandidate: result.primaryCandidate,

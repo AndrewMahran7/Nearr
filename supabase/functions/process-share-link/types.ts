@@ -14,6 +14,11 @@ export type ResolverDecision =
   | 'auto_save'
   | 'candidate_confirmation'
   | 'candidate_picker'
+  // Multiple DISTINCT real-world places resolved from the same post
+  // (e.g. caption lists two restaurants with separate addresses, or
+  // a brand with multiple locations). Host app shows multi-select UI;
+  // never auto-saves.
+  | 'multi_candidate_confirmation'
   | 'manual_fallback'
   | 'failed';
 

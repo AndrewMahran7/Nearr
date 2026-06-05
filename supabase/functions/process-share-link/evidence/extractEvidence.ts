@@ -4,7 +4,11 @@
 // already-extracted handles. This is the single artifact the
 // resolver consumes — it never re-parses captions directly.
 
-import { extractLikelyAddress, type LikelyAddress } from './addressExtraction.ts';
+import {
+  extractLikelyAddress,
+  extractLikelyAddresses,
+  type LikelyAddress,
+} from './addressExtraction.ts';
 import {
   extractCaptionVenueHints,
   derivePlaceNameHintFromHandle,
@@ -20,8 +24,14 @@ export type Evidence = {
   rawDescription: string | null;
   /** Combined title + description, normalized whitespace. */
   captionText: string;
-  /** Deterministic US street address pulled from the caption. */
+  /** Deterministic US street address pulled from the caption.
+   *  Kept for back-compat with single-place callers; equals
+   *  `addresses[0] ?? null`. */
   address: LikelyAddress | null;
+  /** ALL deterministic US street addresses pulled from the caption,
+   *  in order of appearance, deduped by normalized raw text. Capped
+   *  at 10. Empty when no address is detected. */
+  addresses: LikelyAddress[];
   /** City/state anchor from caption hashtags or prose. */
   cityState: { city: string; state: string } | null;
   /** Conservative venue name hints from caption ("📍 X", "X, City"). */
@@ -47,7 +57,8 @@ export function extractEvidence(args: {
     .replace(/\s+/g, ' ')
     .trim();
 
-  const address = extractLikelyAddress(captionText);
+  const addresses = extractLikelyAddresses(captionText, 10);
+  const address = addresses[0] ?? null;
   // City/state extraction is greedy ("new york" substring matches
   // even in "new york style pastrami"). Re-validate that the literal
   // appears with a structural delimiter (comma, hashtag, "in/at",
@@ -85,6 +96,7 @@ export function extractEvidence(args: {
 
   const keys: string[] = [];
   if (address) keys.push('caption_explicit_address');
+  if (addresses.length >= 2) keys.push('caption_multiple_addresses');
   if (cityState) keys.push('caption_city_state');
   if (venueNameHints.length > 0) keys.push('caption_venue_hint');
   if (args.handles.posterHandle) keys.push('poster_handle_present');
@@ -98,6 +110,7 @@ export function extractEvidence(args: {
     rawDescription: args.description,
     captionText,
     address,
+    addresses,
     cityState,
     venueNameHints,
     handles: args.handles,

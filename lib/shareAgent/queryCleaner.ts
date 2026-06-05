@@ -89,34 +89,59 @@ const STATE_RE = /\b([A-Z]{2})\b/;
 export function extractLikelyAddress(
   input: string | null | undefined,
 ): LikelyAddress | null {
-  if (!input) return null;
-  const text = String(input).replace(/\s+/g, ' ');
-  const m = text.match(STREET_ADDRESS_RE);
-  if (!m) return null;
-  const rawAddress = m[1].trim();
+  const all = extractLikelyAddresses(input, 1);
+  return all.length > 0 ? all[0] : null;
+}
 
-  // Look for ", City" or ", City, ST" appearing AFTER the address match.
-  const tail = text.slice((m.index ?? 0) + m[0].length, (m.index ?? 0) + m[0].length + 80);
-  let city: string | null = null;
-  let state: string | null = null;
-  const cityMatch = tail.match(/^\s*,?\s*([A-Z][A-Za-z\.\- ]{1,40}?)(?:\s*,\s*([A-Z]{2})\b|\s*$|[\.,;\n])/);
-  if (cityMatch) {
-    city = cityMatch[1].trim().replace(/[\s,]+$/, '') || null;
-    state = (cityMatch[2] ?? null) as string | null;
-  }
-  if (!state) {
-    const stateM = tail.match(STATE_RE);
-    if (stateM) state = stateM[1];
-  }
-  // Reject obvious city false-positives that are just words happening to
-  // be capitalized in mid-sentence ("Best Tacos", "Open Daily").
-  if (city) {
-    const lc = city.toLowerCase();
-    if (/^(best|new|open|fresh|amazing|good|great|happy|the|a|an)$/.test(lc.split(' ')[0])) {
-      city = null;
+/**
+ * Extract up to `max` distinct likely US street addresses from arbitrary
+ * social text. Returns [] if no convincing address is found.
+ *
+ * Two addresses are considered the same when their normalized `raw`
+ * (lowercased + collapsed whitespace) match. The order returned is the
+ * order they appear in the source text.
+ */
+export function extractLikelyAddresses(
+  input: string | null | undefined,
+  max = 10,
+): LikelyAddress[] {
+  if (!input) return [];
+  const text = String(input).replace(/\s+/g, ' ');
+  // Global, case-insensitive scan so we don't stop at the first match.
+  const globalRe = new RegExp(STREET_ADDRESS_RE.source, 'gi');
+  const out: LikelyAddress[] = [];
+  const seen = new Set<string>();
+  let m: RegExpExecArray | null;
+  while ((m = globalRe.exec(text)) !== null && out.length < max) {
+    const rawAddress = (m[1] ?? '').trim();
+    if (!rawAddress) continue;
+    const key = rawAddress.toLowerCase().replace(/\s+/g, ' ');
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const matchEnd = (m.index ?? 0) + m[0].length;
+    const tail = text.slice(matchEnd, matchEnd + 80);
+    let city: string | null = null;
+    let state: string | null = null;
+    const cityMatch = tail.match(
+      /^\s*,?\s*([A-Z][A-Za-z\.\- ]{1,40}?)(?:\s*,\s*([A-Z]{2})\b|\s*$|[\.,;\n])/,
+    );
+    if (cityMatch) {
+      city = cityMatch[1].trim().replace(/[\s,]+$/, '') || null;
+      state = (cityMatch[2] ?? null) as string | null;
     }
+    if (!state) {
+      const stateM = tail.match(STATE_RE);
+      if (stateM) state = stateM[1];
+    }
+    if (city) {
+      const lc = city.toLowerCase();
+      if (/^(best|new|open|fresh|amazing|good|great|happy|the|a|an)$/.test(lc.split(' ')[0])) {
+        city = null;
+      }
+    }
+    out.push({ raw: rawAddress, city, state });
   }
-  return { raw: rawAddress, city, state };
+  return out;
 }
 
 /**
