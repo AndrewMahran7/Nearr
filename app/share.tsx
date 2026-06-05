@@ -88,6 +88,11 @@ import {
   type ExtractShareOnServerResult,
 } from '@/lib/shareExtractionBackend';
 import { getAppBuildDiagnostics } from '@/lib/shareEnvDiagnostics';
+import {
+  MANUAL_FALLBACK_MESSAGE,
+  deriveManualFallbackQuery,
+  filterRenderableCandidates,
+} from '@/lib/shareAgent/manualFallback';
 import * as Location from 'expo-location';
 
 type Phase =
@@ -107,7 +112,8 @@ const PLATFORM_LABELS: Record<ShareSource, string> = {
 
 // Friendly copy for the failed states. We deliberately do NOT echo back the
 // raw OG title/description here — that's what the previous UX did wrong.
-const FAIL_NO_QUERY = "We couldn't identify a place from this link.";
+// The primary "couldn't identify" copy now lives in MANUAL_FALLBACK_MESSAGE
+// (lib/shareAgent/manualFallback.ts) and is applied via enterManualFallback.
 const FAIL_NO_RESULTS = 'No place found. Try searching by name.';
 const FAIL_GENERIC = "We couldn't identify a place from this link.";
 
@@ -800,10 +806,16 @@ export default function ShareScreen() {
         candidates: agentBlock.candidates.length,
       });
 
-      const agentCandidates: PlaceCandidate[] = agentBlock.candidates
+      const rawAgentCandidates = Array.isArray(agentBlock.candidates)
+        ? agentBlock.candidates
+        : [];
+      const agentCandidates: PlaceCandidate[] = rawAgentCandidates
         .filter(
           (c) =>
+            !!c &&
             !!c.googlePlaceId &&
+            typeof c.name === 'string' &&
+            c.name.trim() !== '' &&
             typeof c.latitude === 'number' &&
             typeof c.longitude === 'number',
         )
@@ -817,6 +829,18 @@ export default function ShareScreen() {
           googleMapsUrl: null,
           rawTypes: c.types ?? [],
         }));
+
+      // Defensive: count candidates the backend proposed but that are
+      // unusable (missing id/name/coords). If a candidate-bearing decision
+      // ends up with ZERO valid candidates we route to manual fallback
+      // rather than rendering an empty/half-broken picker.
+      const invalidAgentCandidateCount =
+        rawAgentCandidates.length - agentCandidates.length;
+      if (invalidAgentCandidateCount > 0) {
+        console.log(
+          `[share-fallback] invalid_candidate_count=${invalidAgentCandidateCount}`,
+        );
+      }
 
       // STAGE 3 — trust the safety-gated decision. Auto-save is a
       // first-class outcome when both `userFacingDecision === 'auto_save'`
@@ -912,38 +936,58 @@ export default function ShareScreen() {
       }
 
       if (decision === 'manual_fallback') {
-        setFailMessage(FAIL_NO_QUERY);
-        // 2026-05-27 — prefer a name-led query over a raw street address
-        // for the manual search input. Pre-filling "126 Main St,
-        // Huntington Beach, CA" is useless to a user trying to find
-        // "2nd Floor"; pre-filling "2nd Floor Huntington Beach"
-        // actually lets them tap once and find the place.
-        const fallbackParts: string[] = [];
-        const sePlace = serverExtraction?.placeName;
-        const seCity = serverExtraction?.city;
-        const seState = serverExtraction?.state;
-        const seAddr = serverExtraction?.address;
-        if (sePlace) fallbackParts.push(sePlace);
-        if (seCity) fallbackParts.push(seCity);
-        else if (seAddr && !sePlace) fallbackParts.push(seAddr);
-        if (seState && fallbackParts.length > 0 && !fallbackParts.join(' ').includes(seState)) {
-          fallbackParts.push(seState);
-        }
-        const fallbackQuery =
-          fallbackParts.join(' ').trim() ||
-          serverExtraction?.query ||
-          extracted?.query ||
-          '';
-        setManualQuery(fallbackQuery);
-        setPhase('failed');
-        setDebugState((prev) => ({
-          ...prev,
-          finalStatus: 'agent_manual_fallback',
-          finalReason: agentBlock.rejectionReasons[0] ?? null,
-        }));
+        // 2026-06-04 — manual_fallback is the automatic recovery state, not
+        // an error. Prefer a name-led query over a raw street address so the
+        // user can tap once and find the venue (e.g. "2nd Floor Huntington
+        // Beach" rather than "126 Main St, Huntington Beach, CA").
+        const fallbackQuery = deriveManualFallbackQuery({
+          placeName: serverExtraction?.placeName ?? null,
+          city: serverExtraction?.city ?? null,
+          state: serverExtraction?.state ?? null,
+          address: serverExtraction?.address ?? null,
+          query: serverExtraction?.query ?? extracted?.query ?? null,
+        });
+        enterManualFallback({
+          reason: agentBlock.rejectionReasons[0] ?? 'agent_manual_fallback',
+          originalUrl: parsedResult.url,
+          suggestedQuery: fallbackQuery,
+          backendStatus: agentBlock.userFacingDecision,
+          invalidCandidateCount: invalidAgentCandidateCount,
+        });
         pushShareDebug('[share-debug] FINAL_RESULT', {
           status: 'agent_manual_fallback',
           reason: agentBlock.rejectionReasons[0] ?? null,
+        });
+        return;
+      }
+
+      // 2026-06-04 — a candidate-bearing decision that ended up with ZERO
+      // valid candidates (malformed/partial backend response) is recovered
+      // into manual search instead of falling through to a confusing
+      // "No place found" legacy result.
+      if (
+        (decision === 'candidate_confirmation' ||
+          decision === ('multi_candidate_confirmation' as any) ||
+          decision === ('candidate_picker' as any)) &&
+        agentCandidates.length === 0 &&
+        invalidAgentCandidateCount > 0
+      ) {
+        enterManualFallback({
+          reason: 'malformed_candidates',
+          originalUrl: parsedResult.url,
+          suggestedQuery: deriveManualFallbackQuery({
+            placeName: serverExtraction?.placeName ?? null,
+            city: serverExtraction?.city ?? null,
+            state: serverExtraction?.state ?? null,
+            address: serverExtraction?.address ?? null,
+            query: serverExtraction?.query ?? extracted?.query ?? null,
+          }),
+          backendStatus: decision,
+          invalidCandidateCount: invalidAgentCandidateCount,
+        });
+        pushShareDebug('[share-debug] FINAL_RESULT', {
+          status: 'agent_manual_fallback',
+          reason: 'malformed_candidates',
         });
         return;
       }
@@ -1153,9 +1197,7 @@ export default function ShareScreen() {
         finalStatus: 'failed_requires_app',
         finalReason: 'no_query',
       });
-      setFailMessage(FAIL_NO_QUERY);
-      setManualQuery('');
-      setPhase('failed');
+      enterManualFallback({ reason: 'no_query', originalUrl: parsedResult.url });
       return;
     }
 
@@ -1315,9 +1357,10 @@ export default function ShareScreen() {
         status: 'failed_requires_app',
         reason: queryGateReason,
       });
-      setFailMessage(FAIL_NO_QUERY);
-      setManualQuery('');
-      setPhase('failed');
+      enterManualFallback({
+        reason: queryGateReason ?? 'generic_query_no_place_evidence',
+        originalUrl: parsedResult.url,
+      });
       return;
     }
 
@@ -1389,16 +1432,19 @@ export default function ShareScreen() {
     try {
       await execute();
     } catch (err) {
+      // 2026-06-04 — An unexpected throw anywhere inside the share flow is
+      // an EXPECTED product state, not a crash. Recover into manual search
+      // instead of showing a blocking "Couldn't save link" alert or letting
+      // the error escape to the root AppErrorBoundary.
       const message = (err as Error)?.message ?? FAIL_GENERIC;
+      const reason = isInvalidRegexError(err) ? 'invalid_regex' : 'share_flow_threw';
       if (isInvalidRegexError(err)) {
         console.warn('[share] regex/parsing failed', message);
       } else {
         console.warn('[share] extraction failed', message);
       }
-      console.warn('[share] save flow failed', message);
-      setFailMessage(FAIL_GENERIC);
-      setPhase('failed');
-      Alert.alert("Couldn't save link", FAIL_GENERIC);
+      console.log(`[share-fallback] root_error_prevented reason=${reason}`);
+      enterManualFallback({ reason, originalUrl: trimmed });
     } finally {
       logDebug('share', 'save flow finished');
     }
@@ -2092,6 +2138,59 @@ export default function ShareScreen() {
   }
 
   // ---------------------------------------------------------------------
+  // Manual fallback (the automatic recovery state)
+  // ---------------------------------------------------------------------
+  /**
+   * Centralized transition into the existing manual Google-Places search
+   * flow. A failed/ambiguous extraction is a NORMAL product state, so this
+   * NEVER shows a blocking alert and NEVER reaches the root error boundary.
+   *
+   * It preserves the original social URL + source metadata (held in `parsed`
+   * / `url` state and consumed by `runManualSearch`), clears any invalid
+   * candidate state, optionally prefills a safe name-led query (never
+   * auto-submitted), and logs the fallback reason. Nothing is ever saved
+   * here — the user must search and pick a place.
+   */
+  function enterManualFallback(opts: {
+    reason: string;
+    originalUrl?: string | null;
+    suggestedQuery?: string | null;
+    backendStatus?: string | null;
+    invalidCandidateCount?: number;
+  }) {
+    const originalUrl = opts.originalUrl ?? parsed?.url ?? (url.trim() || null);
+    const suggested = (opts.suggestedQuery ?? '').replace(/\s+/g, ' ').trim();
+
+    // Clear invalid/auto candidate state — manual search starts clean. We
+    // deliberately do NOT clear `parsed` (original URL + source platform).
+    setCandidates([]);
+    setMultiSelectedIds(new Set<string>());
+    setFailMessage(MANUAL_FALLBACK_MESSAGE);
+    // Prefill a safe query but NEVER auto-submit it.
+    setManualQuery(suggested);
+    setPhase('failed');
+    setDebugState((prev) => ({
+      ...prev,
+      finalStatus: prev.finalStatus ?? 'manual_fallback',
+      finalReason: opts.reason,
+    }));
+
+    // Concise, non-spammy diagnostics. We log presence booleans only — never
+    // the raw URL, tokens, or payloads.
+    console.log(`[share-fallback] entered reason=${opts.reason}`);
+    console.log(`[share-fallback] original_url_present=${!!originalUrl}`);
+    console.log(`[share-fallback] suggested_query_present=${!!suggested}`);
+    if (typeof opts.invalidCandidateCount === 'number') {
+      console.log(
+        `[share-fallback] invalid_candidate_count=${opts.invalidCandidateCount}`,
+      );
+    }
+    if (opts.backendStatus) {
+      console.log(`[share-fallback] backend_status=${opts.backendStatus}`);
+    }
+  }
+
+  // ---------------------------------------------------------------------
   // Manual fallback search
   // ---------------------------------------------------------------------
   async function runManualSearch() {
@@ -2131,6 +2230,13 @@ export default function ShareScreen() {
     candidates: candidates.length,
     failMessage,
   });
+
+  // Render-time defense: only ever map over candidates that are safe to
+  // render (non-empty googlePlaceId + name). A malformed/partial candidate
+  // can no longer throw during render and reach the root AppErrorBoundary —
+  // it is silently skipped. (Empty/invalid candidate arrays are routed to
+  // manual fallback at the decision layer; this is the last line of defense.)
+  const renderableCandidates = filterRenderableCandidates(candidates).valid;
 
   return (
     <Screen>
@@ -2192,22 +2298,22 @@ export default function ShareScreen() {
           ) : null}
 
           {/* ---- Choose state: compact candidates list -------------- */}
-          {phase === 'choose' && candidates.length > 0 ? (
+          {phase === 'choose' && renderableCandidates.length > 0 ? (
             <View style={styles.section}>
               <Text style={[Typography.label, styles.muted]}>
-                {candidates.length === 1
+                {renderableCandidates.length === 1
                   ? 'We found this place. Confirm it?'
                   : 'We found a few matches. Pick the right one:'}
               </Text>
               <View style={{ height: Spacing.sm }} />
-              {candidates.map((c) => (
+              {renderableCandidates.map((c) => (
                 <Pressable
                   key={c.googlePlaceId}
                   onPress={() => {
                     void trackEvent('share_candidate_selected', {
                       source_type: parsed?.source ?? 'link',
                       google_place_id: c.googlePlaceId ?? null,
-                      candidate_count: candidates.length,
+                      candidate_count: renderableCandidates.length,
                     });
                     saveCandidate(
                       c,
@@ -2259,10 +2365,10 @@ export default function ShareScreen() {
           ) : null}
 
           {/* ---- Multi-choose: ≥2 distinct places, user multi-selects --- */}
-          {phase === 'multi-choose' && candidates.length > 0 ? (
+          {phase === 'multi-choose' && renderableCandidates.length > 0 ? (
             <View style={styles.section}>
               <Text style={[Typography.label, styles.muted]}>
-                We found {candidates.length} places in this post. Choose which to
+                We found {renderableCandidates.length} places in this post. Choose which to
                 save.
               </Text>
               <View style={{ height: Spacing.sm }} />
@@ -2271,7 +2377,7 @@ export default function ShareScreen() {
                   hitSlop={8}
                   onPress={() => {
                     const all = new Set<string>(
-                      candidates.map((c) => c.googlePlaceId).filter(Boolean) as string[],
+                      renderableCandidates.map((c) => c.googlePlaceId).filter(Boolean) as string[],
                     );
                     setMultiSelectedIds(all);
                   }}
@@ -2290,7 +2396,7 @@ export default function ShareScreen() {
                 </Pressable>
               </View>
               <View style={{ height: Spacing.sm }} />
-              {candidates.map((c, idx) => {
+              {renderableCandidates.map((c, idx) => {
                 const id = c.googlePlaceId;
                 const checked = !!id && multiSelectedIds.has(id);
                 return (
@@ -2360,13 +2466,13 @@ export default function ShareScreen() {
                 }
                 disabled={multiSelectedIds.size === 0 || busy}
                 onPress={() => {
-                  const selected = candidates.filter(
+                  const selected = renderableCandidates.filter(
                     (c) => c.googlePlaceId && multiSelectedIds.has(c.googlePlaceId),
                   );
                   if (selected.length === 0) return;
                   void trackEvent('share_multi_candidate_save_clicked', {
                     source_type: parsed?.source ?? 'link',
-                    candidate_count: candidates.length,
+                    candidate_count: renderableCandidates.length,
                     selected_count: selected.length,
                   });
                   void saveSelectedCandidates(
@@ -2398,7 +2504,7 @@ export default function ShareScreen() {
           {/* ---- Failed state: friendly message + manual search ----- */}
           {phase === 'failed' ? (
             <Card style={styles.section}>
-              <Text style={Typography.heading}>Hmm</Text>
+              <Text style={Typography.heading}>Search for this place</Text>
               <Text
                 style={[
                   Typography.body,
@@ -2406,7 +2512,7 @@ export default function ShareScreen() {
                   { marginTop: Spacing.xs },
                 ]}
               >
-                {failMessage ?? FAIL_GENERIC}
+                {failMessage ?? MANUAL_FALLBACK_MESSAGE}
               </Text>
               <View style={{ height: Spacing.md }} />
               <Input

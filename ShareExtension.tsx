@@ -301,6 +301,11 @@ function handOffToHostApp(url: string, reason?: string) {
   const path = reason
     ? `share?url=${encoded}&ext_reason=${encodeURIComponent(reason)}`
     : `share?url=${encoded}`;
+  // 2026-06-04 — manual-fallback handoff. The host app immediately shows
+  // its manual search UI with the original URL attached; the extension
+  // never renders a terminal "couldn't save" state. Log presence only,
+  // never the raw URL/token.
+  console.log(`[share-fallback] handoff_to_host=true reason=${reason ?? 'open_app'}`);
   console.log('[shareExtension] opening host app at', path);
   try {
     openHostApp(path);

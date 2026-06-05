@@ -14,6 +14,7 @@
     "test:address-match": "ts-node -P scripts/tsconfig.json scripts/testAddressMatch.ts",
     "test:safety-description-only": "ts-node -P scripts/tsconfig.json scripts/testSafetyDescriptionOnly.ts",
     "test:recovery-hints": "ts-node -P scripts/tsconfig.json scripts/testRecoveryHints.ts",
+    "test:manual-fallback": "ts-node -P scripts/tsconfig.json scripts/testManualFallback.ts",
     "test:multi-address": "ts-node -P scripts/tsconfig.json scripts/testMultiAddressExtraction.ts",
     "test:share-remote": "ts-node -P scripts/tsconfig.json scripts/testProcessShareLinkRemote.ts",
     "export:share-gold-labels": "ts-node -P scripts/tsconfig.json scripts/exportShareGoldLabels.ts",
