@@ -280,8 +280,8 @@ function AuthGate({ children }: { children: React.ReactNode }) {
       logDebug('AuthGate', '-> /(auth)/sign-in');
       router.replace('/(auth)/sign-in');
     } else if (session && inAuth) {
-      logDebug('AuthGate', '-> /(tabs)/home');
-      router.replace('/(tabs)/home');
+      logDebug('AuthGate', '-> /(tabs)/map');
+      router.replace('/(tabs)/map');
     }
   }, [session, loading, segments, router]);
 
@@ -380,9 +380,9 @@ function RootLayoutContent() {
       logDebug('deeplink', 'received URL', url.replace(/[?#].*$/, ''));
       const handled = await handleAuthDeepLink(url);
       // Fallback: if onAuthStateChange didn't trigger a navigation, push
-      // the user to home explicitly so the sign-in screen doesn't stay visible.
+      // the user to the map explicitly so the sign-in screen doesn't stay visible.
       if (handled) {
-        router.replace('/(tabs)/home');
+        router.replace('/(tabs)/map');
       }
     });
     // Warm-start: app already open (e.g. tapping link while app is in background).
@@ -390,7 +390,7 @@ function RootLayoutContent() {
       logDebug('deeplink', 'received URL', url.replace(/[?#].*$/, ''));
       const handled = await handleAuthDeepLink(url);
       if (handled) {
-        router.replace('/(tabs)/home');
+        router.replace('/(tabs)/map');
       }
     });
     return () => sub.remove();

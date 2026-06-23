@@ -24,18 +24,22 @@
 import { useCallback, useEffect, useMemo, useRef, useState, memo, type ComponentRef } from 'react';
 import {
   Animated,
+  Alert,
   Linking,
   PanResponder,
   Platform,
   Pressable,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import MapView, { Circle, Marker, PROVIDER_GOOGLE, Region } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Clipboard from 'expo-clipboard';
 
 // iOS uses the default provider (Apple Maps) — the Google Maps iOS SDK
 // requires the `AirGoogleMaps` Xcode subproject, which we don't link in
@@ -68,16 +72,35 @@ const DARK_MAP_STYLE = [
 ];
 
 import { Button, Card, DemoModeBanner, MapFallbackList } from '@/components';
+import {
+  FloatingMapActions,
+  MapBottomSheet,
+  MapFilterChips,
+  MapPlaceSearchDropdown,
+  MapSnackbar,
+  MapTopSearchBar,
+  getSheetPartialHeight,
+  type MapFilter,
+  type SheetSnap,
+} from '@/components/map';
 import { Colors, Radius, Spacing, Typography } from '@/constants';
+import { useNearbyPlaces } from '@/hooks/useNearbyPlaces';
+import { useRecentPlaces } from '@/hooks/useRecentPlaces';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
 import { isDemoMode } from '@/lib/demoMode';
 import { isMapPreviewMode } from '@/lib/mapPreview';
 import { openExternalMaps as openInExternalMaps } from '@/lib/externalMaps';
 import { trackEvent } from '@/lib/analytics';
+import { isLikelyUrl } from '@/lib/shareParser';
 import { distanceMeters, milesToMeters, minutesToMeters } from '@/lib/geo';
 import { useTheme } from '@/lib/theme';
 import { getDemoSeededSavedPlacesSync } from '@/services/demo';
 import { getProfile } from '@/services/profileService';
+import {
+  deleteSavedPlace,
+  saveSavedPlace,
+} from '@/services/savedPlacesService';
+import type { PlaceCandidate } from '@/services/placesService';
 import type { Profile, SavedPlaceWithPlace } from '@/types';
 
 function formatDistanceAway(meters: number): string {
@@ -114,6 +137,12 @@ function selectedIconName(saved: SavedPlaceWithPlace): React.ComponentProps<type
 // Default radius used when neither the saved place nor the profile specify one.
 // Matches the V1 default surfaced in add-place.tsx.
 const DEFAULT_RADIUS_MILES = 1;
+
+// Vertical space reserved by the floating search bar (50) + filter chips (40)
+// plus their gaps, measured from the top of the map area. Other top-anchored
+// overlays (View All, empty/preview pills) sit below this, and the bottom
+// sheet's expanded top is clamped under it so the two never collide.
+const TOP_CHROME_CLEARANCE = Spacing.md + 50 + Spacing.sm + 40 + Spacing.sm;
 
 /**
  * Effective radius (in meters) for a saved place, used to render a Life360-
@@ -336,7 +365,16 @@ const MARKER_STYLES = StyleSheet.create({
 export default function MapScreen() {
   const router = useRouter();
   const { colors, typography, resolvedTheme } = useTheme();
-  const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
+  // Map header is hidden (map-first) so the screen owns the top safe area.
+  // Floor the inset so devices that report ~0 (older Android without a
+  // translucent status bar / notch) still keep the search bar clear of the
+  // status bar instead of hugging the very top edge.
+  const insets = useSafeAreaInsets();
+  const safeTopInset = Math.max(insets.top, Spacing.xl);
+  const styles = useMemo(
+    () => createStyles(colors, typography, safeTopInset),
+    [colors, typography, safeTopInset],
+  );
   // Optional deep-link param: when present, the map should center on this
   // saved place and open its preview card. Set by "Show on map" actions on
   // the place detail screen and saved-place cards. We track the last id we
@@ -348,7 +386,7 @@ export default function MapScreen() {
   const savedPlaceId = Array.isArray(rawSavedPlaceId)
     ? rawSavedPlaceId[0]
     : rawSavedPlaceId;
-  const { data: liveData, loading: liveLoading, refresh } = useSavedPlaces();
+  const { data: liveData, loading: liveLoading, revalidate } = useSavedPlaces();
   const mapRef = useRef<MapView | null>(null);
   const markerRefs = useRef<Record<string, ComponentRef<typeof Marker> | null>>({});
   const demo = isDemoMode();
@@ -399,6 +437,58 @@ export default function MapScreen() {
   const [selected, setSelected] = useState<SavedPlaceWithPlace | null>(null);
   const [mapReady, setMapReady] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
+  // Map-first chrome: which filter chip is active. Phase 1 keeps this as UI
+  // state only — the Phase 2 bottom sheet will consume it to pick a list.
+  const [selectedMapFilter, setSelectedMapFilter] = useState<MapFilter>('nearby');
+  // Bumped on chip tap so a minimized sheet re-opens to its partial snap.
+  const [sheetOpenSignal, setSheetOpenSignal] = useState(0);
+  const handleSelectMapFilter = useCallback((next: MapFilter) => {
+    setSelectedMapFilter(next);
+    setSheetOpenSignal((n) => n + 1);
+  }, []);
+  // In-app search overlay (replaces the old native Alert on the search bar).
+  const [searchVisible, setSearchVisible] = useState(false);
+  // Post-save "Saved to your map" snackbar with optional Undo.
+  const [snackbar, setSnackbar] = useState<{
+    message: string;
+    undoId: string | null;
+  } | null>(null);
+  const [savingPlace, setSavingPlace] = useState(false);
+  // Bumped to ask the sheet to minimize (map-level "View All").
+  const [sheetMinimizeSignal, setSheetMinimizeSignal] = useState(0);
+  // Current sheet snap + animated lift so the floating actions follow the
+  // sheet's top edge instead of floating at a fixed height.
+  const [sheetSnap, setSheetSnap] = useState<SheetSnap>('partial');
+  // Initialized to 0; the sheet reports its real partial height on mount via
+  // onSnapChange, which animates this to the correct lift immediately.
+  const actionsLift = useRef(new Animated.Value(0)).current;
+  const handleSheetSnapChange = useCallback(
+    (snap: SheetSnap, visibleHeight: number) => {
+      setSheetSnap(snap);
+      Animated.timing(actionsLift, {
+        toValue: visibleHeight,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    },
+    [actionsLift],
+  );
+
+  // Bottom-sheet data. `useNearbyPlaces` is check-only here (never prompts) so
+  // it doesn't fight the map's own permission flow. Recent/saved come from the
+  // already-coordinate-valid list so every sheet row is focusable on the map.
+  // We measure the real map-area height (excludes header + tab bar) via
+  // onLayout so the sheet's expanded height never clips behind the top chrome;
+  // windowHeight is only a first-paint fallback.
+  const { height: windowHeight } = useWindowDimensions();
+  const [mapAreaHeight, setMapAreaHeight] = useState(0);
+  const availableHeight = mapAreaHeight || windowHeight;
+  const sheetPartialHeight = useMemo(
+    () => getSheetPartialHeight(availableHeight),
+    [availableHeight],
+  );
+  const { nearbyPlaces } = useNearbyPlaces(data, { limit: 5 });
+  const recentPlaces = useRecentPlaces(validPlaces, 5);
   const previewTranslateY = useRef(new Animated.Value(0)).current;
   const didFitRef = useRef(false);
   // Set to true when the user pans or zooms the map so auto-centering
@@ -501,11 +591,14 @@ export default function MapScreen() {
   }, [demo, mapPreview]);
 
   // ---- re-fetch on focus -------------------------------------------------
+  // Stale-while-revalidate: hydrates instantly from the shared cache and only
+  // hits the network if the data is stale — so the map never visibly resets
+  // when returning to this tab.
   useFocusEffect(
     useCallback(() => {
-      void refresh();
+      void revalidate();
       void trackEvent('map_opened', {});
-    }, [refresh]),
+    }, [revalidate]),
   );
 
   // ---- load profile (for default radius fallback) -----------------------
@@ -774,11 +867,147 @@ export default function MapScreen() {
     dismissSelectedPlace();
   }, [dismissSelectedPlace]);
 
+  // Paste-link button: read the clipboard and, if it holds a URL, hand it to
+  // the existing /share flow (which accepts an initial `url` param). Otherwise
+  // nudge the user to copy a link first. No new save system is introduced.
+  const handlePasteLink = useCallback(async () => {
+    let text = '';
+    try {
+      text = (await Clipboard.getStringAsync())?.trim() ?? '';
+    } catch (e) {
+      if (__DEV__) console.debug('[map] clipboard read failed', e);
+    }
+    if (text && isLikelyUrl(text)) {
+      router.push({ pathname: '/share', params: { url: text } });
+      return;
+    }
+    Alert.alert(
+      'No link copied',
+      'Copy a TikTok, Instagram, or place link first, then tap to save it.',
+    );
+  }, [router]);
+
+  // Direct-save a real-world place chosen from the map search dropdown. Saves
+  // immediately using the profile DEFAULT radius (radiusValue/Unit = null), so
+  // the user never sees the add-place radius picker. On success we revalidate
+  // the cache, focus the new place, and show an Undo snackbar.
+  const handleSavePlaceCandidate = useCallback(
+    async (place: PlaceCandidate) => {
+      if (savingPlace) return;
+      setSearchVisible(false);
+      setSavingPlace(true);
+      try {
+        const result = await saveSavedPlace({
+          candidate: place,
+          radiusValue: null,
+          radiusUnit: null,
+          sourceType: 'manual',
+        });
+        await revalidate();
+        if (result.status === 'duplicate') {
+          const existing =
+            result.savedPlaceId != null
+              ? validPlaces.find((p) => p.id === result.savedPlaceId)
+              : undefined;
+          if (existing) selectPlace(existing);
+          setSnackbar({ message: 'Already on your map', undoId: null });
+          return;
+        }
+        selectPlace(result.saved);
+        setSnackbar({ message: 'Saved to your map', undoId: result.savedPlaceId });
+        void trackEvent('save_success', {
+          source_type: 'manual',
+          flow: 'map_search',
+          google_place_id: place.googlePlaceId ?? null,
+          saved_place_id: result.savedPlaceId,
+          duplicate: false,
+        });
+      } catch (e: any) {
+        console.warn('[map] direct save failed', e?.message);
+        Alert.alert('Could not save', e?.message ?? 'Please try again.');
+      } finally {
+        setSavingPlace(false);
+      }
+    },
+    [revalidate, savingPlace, validPlaces],
+  );
+
+  // Undo a just-saved place: delete it, clear selection, revalidate.
+  const handleUndoSave = useCallback(
+    async (savedPlaceId: string) => {
+      setSnackbar(null);
+      try {
+        dismissSelectedPlace({ restoreRegion: false });
+        await deleteSavedPlace(savedPlaceId);
+        await revalidate();
+      } catch (e: any) {
+        console.warn('[map] undo save failed', e?.message);
+        Alert.alert('Could not undo', e?.message ?? 'Please try again.');
+      }
+    },
+    [dismissSelectedPlace, revalidate],
+  );
+
+  // Custom recenter button. Prefers an existing GPS fix; otherwise does a
+  // best-effort fetch that mirrors the initial-location effect (permission
+  // check + timeout race) so it can never wedge the UI.
+  const recenterOnUser = useCallback(async () => {
+    if (userRegion) {
+      try {
+        mapRef.current?.animateToRegion(userRegion, 400);
+      } catch (e) {
+        if (__DEV__) console.debug('[map] recenter skipped', e);
+      }
+      return;
+    }
+    try {
+      const perm = await Location.getForegroundPermissionsAsync();
+      let status = perm.status;
+      if (status !== 'granted') {
+        const req = await Location.requestForegroundPermissionsAsync();
+        status = req.status;
+      }
+      if (status !== 'granted') {
+        setPermission('denied');
+        return;
+      }
+      const loc = await Promise.race<
+        Location.LocationObject | { __timeout: true }
+      >([
+        Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        }),
+        new Promise<{ __timeout: true }>((resolve) =>
+          setTimeout(() => resolve({ __timeout: true }), LOCATION_TIMEOUT_MS),
+        ),
+      ]);
+      if ('__timeout' in loc) {
+        setPermission('unavailable');
+        return;
+      }
+      const region: Region = {
+        latitude: loc.coords.latitude,
+        longitude: loc.coords.longitude,
+        latitudeDelta: 0.03,
+        longitudeDelta: 0.03,
+      };
+      setUserRegion(region);
+      setPermission('granted');
+      try {
+        mapRef.current?.animateToRegion(region, 400);
+      } catch (e) {
+        if (__DEV__) console.debug('[map] recenter animate skipped', e);
+      }
+    } catch (e) {
+      if (__DEV__) console.debug('[map] recenter failed', e);
+    }
+  }, [userRegion]);
+
   // -----------------------------------------------------------------------
   if (demo) {
     return (
       <View style={styles.container}>
-        <View style={{ padding: Spacing.lg, paddingBottom: 0 }}>
+        <View style={{ padding: Spacing.lg, paddingTop: safeTopInset + Spacing.lg, paddingBottom: 0 }}>
           <DemoModeBanner />
         </View>
         <MapFallbackList
@@ -798,7 +1027,10 @@ export default function MapScreen() {
 
   // -----------------------------------------------------------------------
   return (
-    <View style={styles.container}>
+    <View
+      style={styles.container}
+      onLayout={(e) => setMapAreaHeight(e.nativeEvent.layout.height)}
+    >
       {/* MapView ALWAYS mounts. Empty / loading / no-GPS states render as
           non-blocking overlays on top of the map — never as replacements
           for it. This is what makes the screen feel alive instead of a
@@ -977,6 +1209,17 @@ export default function MapScreen() {
         </Animated.View>
       ) : null}
 
+      {/* Map-first top chrome: floating search bar + filter chips. Rendered
+          as a box-none overlay so only the bar/chips capture touches and the
+          rest of the map stays pannable underneath. Hidden while the search
+          dropdown is open so there is only ever ONE visible search input. */}
+      {searchVisible ? null : (
+        <View style={styles.topChrome} pointerEvents="box-none">
+          <MapTopSearchBar onPress={() => setSearchVisible(true)} />
+          <MapFilterChips value={selectedMapFilter} onChange={handleSelectMapFilter} />
+        </View>
+      )}
+
       {/* "View All" pill — fits all saved-place zones on demand. Only shown
           when there are places to frame and we're not in preview mode. */}
       {validPlaces.length > 0 && !mapPreview ? (
@@ -985,6 +1228,9 @@ export default function MapScreen() {
           onPress={() => {
             if (!mapRef.current) return;
             if (validPlaces.length === 0) return;
+            // Map-level "View All" = see every saved place on the map, so
+            // minimize the sheet out of the way.
+            setSheetMinimizeSignal((n) => n + 1);
             const coords = allZoneBoundingCoords(validPlaces, profile);
             if (coords.length === 0) return;
             try {
@@ -1085,17 +1331,63 @@ export default function MapScreen() {
         </Pressable>
       ) : null}
 
-      {/* FAB → Save Place. Hidden while a preview card is showing so the
-          two don't overlap on small screens. */}
-      {selected ? null : (
-        <Pressable
-          style={styles.fab}
-          onPress={() => router.push('/add-place')}
-          accessibilityLabel="Save a place"
-        >
-          <Text style={styles.fabText}>+</Text>
-        </Pressable>
+      {/* Floating right-side actions: recenter + orange paste-link. Hidden
+          while a preview card is showing or the sheet is full so they never
+          overlap. They follow the sheet's top edge via `actionsLift`. */}
+      {selected || sheetSnap === 'full' ? null : (
+        <FloatingMapActions
+          onRecenter={recenterOnUser}
+          onPasteLink={handlePasteLink}
+          liftY={actionsLift}
+        />
       )}
+
+      {/* Map-first bottom sheet. Hidden while a place is selected so the
+          existing selected-place preview card (rendered above) is the single
+          bottom surface — the smallest safe way to avoid overlap this phase. */}
+      {selected ? null : (
+        <MapBottomSheet
+          mode={selectedMapFilter}
+          loading={liveLoading}
+          nearbyPlaces={nearbyPlaces}
+          recentPlaces={recentPlaces}
+          savedPlaces={validPlaces}
+          partialHeight={sheetPartialHeight}
+          availableHeight={availableHeight}
+          topInset={safeTopInset + TOP_CHROME_CLEARANCE + Spacing.md}
+          openSignal={sheetOpenSignal}
+          minimizeSignal={sheetMinimizeSignal}
+          onSnapChange={handleSheetSnapChange}
+          onRequestSavedMode={() => setSelectedMapFilter('saved')}
+          onSelectPlace={selectPlace}
+          onGetDirections={openExternalMaps}
+          onSaveFromLink={() => router.push('/share')}
+          onSearchManually={() => router.push('/add-place')}
+        />
+      )}
+
+      {/* Compact place-search dropdown — searches REAL places (Google Places
+          via usePlacesSearch), not saved places. Tapping a result direct-saves
+          it to the map with the default radius (no add-place screens). */}
+      <MapPlaceSearchDropdown
+        visible={searchVisible}
+        topInset={safeTopInset + Spacing.md}
+        onClose={() => setSearchVisible(false)}
+        onPickPlace={handleSavePlaceCandidate}
+      />
+
+      {/* Post-save snackbar with Undo. After a direct save the selected-place
+          preview card is showing, so lift the snackbar above it. */}
+      <MapSnackbar
+        visible={!!snackbar}
+        message={snackbar?.message ?? ''}
+        bottomOffset={(selected ? 264 : Spacing.lg + 4) + insets.bottom}
+        actionLabel={snackbar?.undoId ? 'Undo' : undefined}
+        onAction={
+          snackbar?.undoId ? () => void handleUndoSave(snackbar.undoId as string) : undefined
+        }
+        onDismiss={() => setSnackbar(null)}
+      />
     </View>
   );
 }
@@ -1103,9 +1395,20 @@ export default function MapScreen() {
 function createStyles(
   colors: ReturnType<typeof useTheme>['colors'],
   typography: ReturnType<typeof useTheme>['typography'],
+  insetTop: number,
 ) {
+  // Top-anchored overlays clear the floating chrome (search bar + chips) AND
+  // the top safe area now that the Map header is hidden.
+  const pillTop = insetTop + TOP_CHROME_CLEARANCE;
   return StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
+
+  topChrome: {
+    position: 'absolute',
+    top: insetTop + Spacing.md,
+    left: Spacing.lg,
+    right: Spacing.lg,
+  },
 
   markerWrap: {
     width: 40,
@@ -1170,7 +1473,7 @@ function createStyles(
 
   previewBadge: {
     position: 'absolute',
-    top: Spacing.lg,
+    top: pillTop,
     alignSelf: 'center',
     flexDirection: 'row',
     alignItems: 'center',
@@ -1201,7 +1504,7 @@ function createStyles(
 
   emptyPill: {
     position: 'absolute',
-    top: Spacing.lg,
+    top: pillTop,
     alignSelf: 'center',
     paddingVertical: Spacing.xs,
     paddingHorizontal: Spacing.md,
@@ -1340,7 +1643,7 @@ function createStyles(
 
   viewAllBtn: {
     position: 'absolute',
-    top: Spacing.lg,
+    top: pillTop,
     right: Spacing.lg,
     paddingVertical: Spacing.xs,
     paddingHorizontal: Spacing.md,

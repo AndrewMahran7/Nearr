@@ -28,7 +28,6 @@ import {
   Text,
   View,
 } from 'react-native';
-import * as Location from 'expo-location';
 import { useFocusEffect, useRouter } from 'expo-router';
 
 import {
@@ -45,6 +44,7 @@ import {
 import { Radius, Spacing } from '@/constants';
 
 import { useAuth } from '@/hooks/useAuth';
+import { useRecentPlaces } from '@/hooks/useRecentPlaces';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
 import {
   ACTIVATION_TARGET,
@@ -53,7 +53,6 @@ import {
   isActivationIncomplete,
 } from '@/lib/activation';
 import { trackEvent } from '@/lib/analytics';
-import { distanceMeters, metersToMiles } from '@/lib/geo';
 import { useTheme } from '@/lib/theme';
 import { getProfile } from '@/services/profileService';
 import { deleteSavedPlace } from '@/services/savedPlacesService';
@@ -70,28 +69,15 @@ function formatCount(count: number): string {
   return `${count} saved place${count === 1 ? '' : 's'}`;
 }
 
-function formatNearbyDistance(meters: number): string {
-  const miles = metersToMiles(meters);
-  if (miles < 0.1) return 'Nearby now';
-  const rounded = miles >= 10 ? Math.round(miles) : Math.round(miles * 10) / 10;
-  return `${rounded} mi away`;
-}
-
-type NearbyPlace = {
-  saved: SavedPlaceWithPlace;
-  distance: number;
-};
-
 export default function Home() {
   const router = useRouter();
   const { user, isLocalUiSession } = useAuth();
   const { colors, typography } = useTheme();
   const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
-  const { data, loading, refreshing, error, offline, lastSyncedAt, refresh } = useSavedPlaces();
+  const { data, loading, refreshing, error, offline, lastSyncedAt, refresh, revalidate } = useSavedPlaces();
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [howNearrWorksVisible, setHowNearrWorksVisible] = useState(false);
-  const [currentLocation, setCurrentLocation] = useState<Location.LocationObjectCoords | null>(null);
   const activationSeenRef = useRef(false);
 
   const loadProfile = useCallback(async () => {
@@ -99,35 +85,16 @@ export default function Home() {
     setProfile(p);
   }, []);
 
-  const loadLocation = useCallback(async () => {
-    try {
-      const permission = await Location.getForegroundPermissionsAsync();
-      if (permission.status !== 'granted') {
-        setCurrentLocation(null);
-        return;
-      }
-
-      const position = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      });
-      setCurrentLocation(position.coords);
-    } catch {
-      setCurrentLocation(null);
-    }
-  }, []);
-
   useEffect(() => {
     void loadProfile();
-    void loadLocation();
-  }, [loadLocation, loadProfile]);
+  }, [loadProfile]);
 
   // Re-fetch list and profile whenever Home regains focus.
   useFocusEffect(
     useCallback(() => {
-      void refresh();
+      void revalidate();
       void loadProfile();
-      void loadLocation();
-    }, [refresh, loadLocation, loadProfile]),
+    }, [revalidate, loadProfile]),
   );
 
   async function handleDelete(id: string) {
@@ -139,7 +106,7 @@ export default function Home() {
     }
   }
 
-  const recentPlaces = useMemo(() => data.slice(0, 3), [data]);
+  const recentPlaces = useRecentPlaces(data, 3);
   const activationIncomplete = isActivationIncomplete(data.length);
   const activationProgress = getActivationProgressValue(data.length);
 
@@ -154,25 +121,6 @@ export default function Home() {
       surface: 'home',
     });
   }, [activationIncomplete, data.length, loading]);
-
-  const nearbyPlaces = useMemo<NearbyPlace[]>(() => {
-    if (!currentLocation) return [];
-
-    return data
-      .filter(
-        (saved) =>
-          Number.isFinite(saved.place?.latitude) && Number.isFinite(saved.place?.longitude),
-      )
-      .map((saved) => ({
-        saved,
-        distance: distanceMeters(
-          { latitude: currentLocation.latitude, longitude: currentLocation.longitude },
-          { latitude: saved.place.latitude, longitude: saved.place.longitude },
-        ),
-      }))
-      .sort((left, right) => left.distance - right.distance)
-      .slice(0, 3);
-  }, [currentLocation, data]);
 
   function renderSavedPlace(saved: SavedPlaceWithPlace, metaPrefix?: string | null) {
     return (
@@ -222,11 +170,6 @@ export default function Home() {
       </View>
     );
   }
-
-  const nearbyMeta = useMemo(
-    () => new Map(nearbyPlaces.map(({ saved, distance }) => [saved.id, formatNearbyDistance(distance)])),
-    [nearbyPlaces],
-  );
 
   if (loading && data.length === 0) {
     return (
@@ -387,16 +330,15 @@ export default function Home() {
           />
         ) : (
           <>
-            {nearbyPlaces.length > 0
-              ? renderSection(
-                  'Places near you',
-                  'Saved spots you can actually go to right now.',
-                  nearbyPlaces.map(({ saved }) => saved),
-                  'Open map',
-                  () => router.push('/(tabs)/map'),
-                  nearbyMeta,
-                )
-              : null}
+            <Card style={styles.ctaCard}>
+              <Text style={typography.heading}>Your map is ready</Text>
+              <Text style={[typography.body, styles.cardBody]}>
+                {formatCount(data.length)} on your map — nearby spots are ready when you are.
+              </Text>
+              <View style={styles.ctaActions}>
+                <Button title="Open map" onPress={() => router.push('/(tabs)/map')} />
+              </View>
+            </Card>
 
             {renderSection(
               'Recently saved',

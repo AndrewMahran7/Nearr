@@ -17,14 +17,13 @@ import {
   Text,
   View,
 } from 'react-native';
-import * as Location from 'expo-location';
 import { useFocusEffect, useRouter } from 'expo-router';
 
 import { EmptyState, Input, OfflineBanner, SavedPlaceCard, Screen } from '@/components';
 import { Radius, Spacing } from '@/constants';
 
+import { useNearbyPlaces } from '@/hooks/useNearbyPlaces';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
-import { distanceMeters } from '@/lib/geo';
 import { useTheme } from '@/lib/theme';
 import { trackEvent } from '@/lib/analytics';
 import { getProfile } from '@/services/profileService';
@@ -40,13 +39,6 @@ type PlacesFilter =
   | 'instagram'
   | 'tiktok'
   | 'reminders-on';
-
-type NearbyItem = {
-  saved: SavedPlaceWithPlace;
-  distance: number;
-};
-
-type LocationState = 'idle' | 'available' | 'unavailable';
 
 function isRecent(createdAt: string): boolean {
   const created = new Date(createdAt).getTime();
@@ -86,73 +78,33 @@ export default function PlacesTab() {
   const router = useRouter();
   const { colors, typography } = useTheme();
   const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
-  const { data, loading, refreshing, error, offline, lastSyncedAt, refresh } = useSavedPlaces();
+  const { data, loading, refreshing, error, offline, lastSyncedAt, refresh, revalidate } = useSavedPlaces();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [filter, setFilter] = useState('');
   const [activeFilter, setActiveFilter] = useState<PlacesFilter>('active');
-  const [currentLocation, setCurrentLocation] = useState<Location.LocationObjectCoords | null>(null);
-  const [locationState, setLocationState] = useState<LocationState>('idle');
-
-  const loadNearbyLocation = useCallback(async () => {
-    try {
-      const permission = await Location.getForegroundPermissionsAsync();
-      let status = permission.status;
-      if (status !== 'granted') {
-        const requested = await Location.requestForegroundPermissionsAsync();
-        status = requested.status;
-      }
-
-      if (status !== 'granted') {
-        setCurrentLocation(null);
-        setLocationState('unavailable');
-        return;
-      }
-
-      const position = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      });
-      setCurrentLocation(position.coords);
-      setLocationState('available');
-    } catch {
-      setCurrentLocation(null);
-      setLocationState('unavailable');
-    }
-  }, []);
 
   const activeData = useMemo(
     () => data.filter((s) => !s.archived_at && !s.visited_at),
     [data],
   );
 
-  const nearbyItems = useMemo<NearbyItem[]>(() => {
-    if (!currentLocation) return [];
-    return activeData
-      .filter(
-        (saved) =>
-          Number.isFinite(saved.place?.latitude) && Number.isFinite(saved.place?.longitude),
-      )
-      .map((saved) => ({
-        saved,
-        distance: distanceMeters(
-          { latitude: currentLocation.latitude, longitude: currentLocation.longitude },
-          { latitude: saved.place.latitude, longitude: saved.place.longitude },
-        ),
-      }))
-      .sort((left, right) => left.distance - right.distance);
-  }, [currentLocation, activeData]);
+  const { nearbyPlaces, locationState, refreshLocation } = useNearbyPlaces(activeData, {
+    enabled: activeFilter === 'nearby',
+    requestPermission: true,
+  });
 
   const counts = useMemo(
     () => ({
       active: activeData.length,
       recent: activeData.filter((saved) => isRecent(saved.created_at)).length,
-      nearby: nearbyItems.length,
+      nearby: nearbyPlaces.length,
       visited: data.filter((saved) => !!saved.visited_at).length,
       archived: data.filter((saved) => !!saved.archived_at && !saved.visited_at).length,
       instagram: activeData.filter((saved) => matchesSource(saved, 'instagram')).length,
       tiktok: activeData.filter((saved) => matchesSource(saved, 'tiktok')).length,
       remindersOn: activeData.filter((saved) => saved.notifications_enabled).length,
     }),
-    [activeData, data, nearbyItems],
+    [activeData, data, nearbyPlaces],
   );
 
   // Client-side filter — case-insensitive match across place name and
@@ -168,7 +120,7 @@ export default function PlacesTab() {
           new Date(right.created_at).getTime() - new Date(left.created_at).getTime(),
       );
     } else if (activeFilter === 'nearby') {
-      base = nearbyItems.map(({ saved }) => saved);
+      base = nearbyPlaces;
     } else if (activeFilter === 'visited') {
       base = data
         .filter((saved) => !!saved.visited_at)
@@ -199,17 +151,11 @@ export default function PlacesTab() {
       const addr = s.place?.formatted_address?.toLowerCase() ?? '';
       return name.includes(q) || addr.includes(q);
     });
-  }, [activeData, activeFilter, data, filter, nearbyItems]);
+  }, [activeData, activeFilter, data, filter, nearbyPlaces]);
 
   const loadProfile = useCallback(async () => {
     setProfile(await getProfile());
   }, []);
-
-  useEffect(() => {
-    if (activeFilter !== 'nearby') return;
-    if (locationState === 'available' || locationState === 'unavailable') return;
-    void loadNearbyLocation();
-  }, [activeFilter, loadNearbyLocation, locationState]);
 
   useEffect(() => {
     void loadProfile();
@@ -217,12 +163,12 @@ export default function PlacesTab() {
 
   useFocusEffect(
     useCallback(() => {
-      void refresh();
+      void revalidate();
       void loadProfile();
       if (activeFilter === 'nearby') {
-        setLocationState('idle');
+        void refreshLocation();
       }
-    }, [activeFilter, refresh, loadProfile]),
+    }, [activeFilter, revalidate, refreshLocation, loadProfile]),
   );
 
   async function handleDelete(id: string) {
@@ -275,7 +221,7 @@ export default function PlacesTab() {
   function setFilterAndResetLocation(next: PlacesFilter) {
     setActiveFilter(next);
     if (next === 'nearby') {
-      setLocationState('idle');
+      void refreshLocation();
     }
     if (next === 'visited') {
       void trackEvent('visited_filter_viewed');
@@ -299,7 +245,7 @@ export default function PlacesTab() {
       );
     }
 
-    if (activeFilter === 'nearby' && locationState !== 'available') {
+    if (activeFilter === 'nearby' && locationState !== 'ready') {
       return (
         <EmptyState
           framed={false}
@@ -307,8 +253,7 @@ export default function PlacesTab() {
           body="Nearr uses your location to show which saved places are nearby."
           actionTitle="Try again"
           onAction={() => {
-            setLocationState('idle');
-            void loadNearbyLocation();
+            void refreshLocation();
           }}
           secondaryTitle="Clear filter"
           onSecondary={() => setFilterAndResetLocation('active')}

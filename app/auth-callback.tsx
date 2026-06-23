@@ -36,7 +36,7 @@ export default function AuthCallbackScreen() {
       console.log('[auth-callback] exchange_success=true');
       console.log('[auth-callback] session_present=true');
     }
-    router.replace('/(tabs)/home');
+    router.replace('/(tabs)/map');
   }, [router, session]);
 
   useEffect(() => {

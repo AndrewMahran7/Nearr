@@ -12,8 +12,9 @@
  *   - 'miles'    : numeric override in miles.
  *   - 'minutes'  : numeric override in minutes (drive-time).
  *
- * On success: replace the route with /(tabs)/home so the user sees their
- * feed (and won't accidentally pop back to the search list).
+ * On success: replace the route with /(tabs)/map (focused on the new place
+ * via savedPlaceId) so the user sees it on their map and won't accidentally
+ * pop back to the search list.
  *
  * Duplicates are non-fatal: we show a friendly alert and still navigate.
  */
