@@ -38,7 +38,23 @@ export type DecisionOutput = {
 const STRONG_SCORE = 0.78;
 const MEDIUM_SCORE = 0.55;
 const LOW_SCORE = 0.15;
+// Below this normalized score, a single candidate must carry a real place
+// signal (name/state/address match) to be shown as a confirmation. Chosen
+// above the observed platform-noise band (0.16–0.22) and below the legitimate
+// name-match band. Does not affect auto-save (address-verified path only).
+const CONFIRM_FLOOR = 0.35;
 const PICKER_BAND = 0.08;
+
+// Evidence keys that count as a "meaningful" place signal for the purpose
+// of confirming a non-address text-search candidate. A bare poster handle /
+// poster name / city context is intentionally excluded — those never
+// license confirming a candidate that has no name match.
+const MEANINGFUL_EVIDENCE_KEYS = new Set<string>([
+  'caption_venue_hint',
+  'caption_explicit_address',
+  'caption_multiple_addresses',
+  'venue_handle_tagged',
+]);
 
 export function decide(input: DecisionInput): DecisionOutput {
   const { evidence, candidates, addressVerified } = input;
@@ -111,6 +127,35 @@ export function decide(input: DecisionInput): DecisionOutput {
   const genericCard = primary.reasons.includes('generic_address_card');
   const lead = second ? primary.confidenceScore - second.confidenceScore : 1;
 
+  // Meaningful-evidence gate (2026-07-02): a non-address text-search
+  // candidate may only be CONFIRMED when the caption carried at least one
+  // real place signal — an explicit venue hint, a street address, or a
+  // tagged venue handle — OR the candidate's name actually matches a
+  // caption-derived name hint. Casual caption prose ("pretty cool spot!!
+  // glad i stopped by") produces neither, so it must route to manual
+  // fallback even though Google happily returns unrelated businesses.
+  // This does NOT touch auto-save (that path requires address verification).
+  const hasMeaningfulEvidence = evidence.keys.some((k) =>
+    MEANINGFUL_EVIDENCE_KEYS.has(k),
+  );
+  const hasNameMatch = primary.reasons.some(
+    (r) =>
+      r === 'compact_name_match' ||
+      r === 'strong_name_match' ||
+      r === 'meaningful_name_match',
+  );
+  if (!hasMeaningfulEvidence && !hasNameMatch) {
+    reasons.push('manual_fallback_no_explicit_place_evidence');
+    return {
+      decision: 'manual_fallback',
+      confidence: 'low',
+      safeToAutoSave: false,
+      primaryCandidate: primary,
+      candidates,
+      reasons,
+    };
+  }
+
   // Two plausible candidates within the picker band: picker.
   if (second && lead < PICKER_BAND && second.confidenceScore >= MEDIUM_SCORE) {
     reasons.push('multiple_plausible_candidates');
@@ -129,6 +174,36 @@ export function decide(input: DecisionInput): DecisionOutput {
   // SOMETHING when we have a non-generic candidate" rather than
   // bouncing the user out to the host app. Manual_fallback is
   // reserved for truly empty or rejected results.
+  //
+  // Candidate-confirmation FLOOR (2026-07-02): refuse to surface a
+  // confirmation for an extremely-low-score candidate that has NO
+  // real place signal — no address match, no state/city match, and no
+  // name match. This stops arbitrary low-score Google results (e.g. a
+  // stray business returned by a noisy caption query) from being
+  // presented as "the place". This does NOT touch auto-save (the
+  // non-address path never auto-saves) — it only tightens confirmation.
+  const hasRealMatch = primary.reasons.some(
+    (r) =>
+      r === 'compact_name_match' ||
+      r === 'strong_name_match' ||
+      r === 'meaningful_name_match' ||
+      r === 'state_match' ||
+      r === 'address_verified' ||
+      r === 'address_verified_multi' ||
+      r === 'address_verified_multi_ambiguous',
+  );
+  if (primary.confidenceScore < CONFIRM_FLOOR && !hasRealMatch) {
+    reasons.push('below_confirmation_floor');
+    return {
+      decision: 'manual_fallback',
+      confidence: 'low',
+      safeToAutoSave: false,
+      primaryCandidate: primary,
+      candidates,
+      reasons,
+    };
+  }
+
   if (primary.confidenceScore >= LOW_SCORE && !genericCard) {
     const conf: Confidence =
       primary.confidenceScore >= STRONG_SCORE

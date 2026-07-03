@@ -47,6 +47,11 @@ import { useAuth } from '@/hooks/useAuth';
 import { useRecentPlaces } from '@/hooks/useRecentPlaces';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
 import {
+  getSavedPlacesCacheSnapshot,
+  removeSavedPlaceFromCache,
+  restoreSavedPlacesCache,
+} from '@/hooks/useSavedPlaces';
+import {
   ACTIVATION_TARGET,
   getActivationProgressLabel,
   getActivationProgressValue,
@@ -98,10 +103,15 @@ export default function Home() {
   );
 
   async function handleDelete(id: string) {
+    // Optimistic: remove from the shared cache so the card vanishes here and
+    // the marker vanishes on the Map immediately. Roll back if the delete
+    // fails so the UI never lies about what's saved.
+    const snapshot = getSavedPlacesCacheSnapshot();
+    removeSavedPlaceFromCache(id);
     try {
       await deleteSavedPlace(id);
-      await refresh();
     } catch (e: any) {
+      restoreSavedPlacesCache(snapshot);
       Alert.alert('Could not remove', e?.message ?? 'Unknown error.');
     }
   }

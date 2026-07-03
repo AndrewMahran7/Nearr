@@ -89,6 +89,7 @@ type AgentBlock = {
   rejectionReasons?: string[];
   warnings?: string[];
   resolvedPlace?: ResolvedPlace | null;
+  diagnostics?: GeminiDiagnostics | (Record<string, unknown> & { queryPlan?: string[] }) | null;
 };
 
 type GeminiDiagnostics = {
@@ -692,6 +693,10 @@ function printResponseReport(url: string, httpStatus: number, latencyMs: number,
   console.log(`agent confidence: ${agent?.confidence ?? '(none)'}`);
   console.log(`agent reasoning: ${truncate(agent?.reasoning ?? '', 400) || '(none)'}`);
   console.log(`evidence used: ${formatList(agent?.evidenceUsed ?? [], '(none)')}`);
+  const queryPlan = (agent?.diagnostics as { queryPlan?: string[] } | undefined)?.queryPlan;
+  if (Array.isArray(queryPlan)) {
+    console.log(`places query plan (${queryPlan.length}): ${formatList(queryPlan, '(none)')}`);
+  }
   console.log('gemini diagnostics:');
   for (const line of summarizeGeminiDiagnostics(agent?.geminiDiagnostics)) {
     console.log(`- ${line}`);

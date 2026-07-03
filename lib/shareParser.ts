@@ -11,6 +11,7 @@
  */
 
 import { isDemoMode } from './demoMode';
+import { normalizeShareUrl } from './shareAgent/tiktokUrl';
 
 export type ShareSource = 'tiktok' | 'instagram' | 'link';
 
@@ -56,8 +57,19 @@ export function isLikelyUrl(s: string): boolean {
 }
 
 export async function parseShare(rawUrl: string): Promise<ParsedShare> {
-  const url = rawUrl.trim();
+  // Normalize first: lowercase host + strip share-sheet tracking params so
+  // the URL we fetch + persist is the clean canonical form. Never throws;
+  // falls back to the trimmed input for non-URL text.
+  const normalized = normalizeShareUrl(rawUrl);
+  const url = normalized.url || rawUrl.trim();
   const source = detectSource(url);
+
+  if (normalized.platform === 'tiktok') {
+    console.log(
+      `[tiktok-share] raw_input_present=${!!rawUrl} ` +
+        `is_short_link=${normalized.isShortLink} normalized=${normalized.wasModified}`,
+    );
+  }
 
   console.log('[shareParser] parsing', { url, source });
 

@@ -229,6 +229,26 @@ export async function resolveSharedPlace(args: {
   const plan = buildQueryPlan(evidence);
   diagnostics.queryPlan = plan.queries;
   if (plan.queries.length === 0) {
+    // No explicit place evidence (no address / venue hint / venue handle)
+    // AND nothing but casual caption prose to search → do NOT query random
+    // Places. This is a normal, safe manual-fallback outcome.
+    if (!plan.hasExplicitPlaceEvidence) {
+      warnings.push('generic_caption_query_blocked');
+      warnings.push('manual_fallback_no_explicit_place_evidence');
+      logShareDebug('resolver:no_explicit_place_evidence', {
+        platform: evidence.platform,
+      });
+      return {
+        decision: 'manual_fallback',
+        candidates: [],
+        safeToAutoSave: false,
+        confidence: 'low',
+        evidenceUsed,
+        warnings,
+        diagnostics,
+        failureReason: 'manual_fallback_no_explicit_place_evidence',
+      };
+    }
     return {
       decision: 'failed',
       candidates: [],
@@ -304,12 +324,29 @@ export async function resolveSharedPlace(args: {
 
   // ---- 3. Score + rank + decide ---------------------------------
   const scored = scoreCandidates(candidates, evidence, plan.placeNameHint, bias);
+
+  // Surface platform-noise rejections (TikTok "TikTok Inc." etc.) so they
+  // are visible in remote diagnostics and can flip the outcome to manual.
+  const noiseRejected = scored.filter(
+    (s) => s.rejected && s.rejectionReason === 'platform_noise',
+  );
+  for (const s of noiseRejected) {
+    warnings.push(`platform_noise_candidate_rejected:${s.candidate.name}`);
+  }
+
   const ranked = scored
     .filter((s) => !s.rejected)
     .sort((a, b) => b.score - a.score);
   if (ranked.length === 0) {
     const rejectedCount = scored.length - ranked.length;
     diagnostics.rejectedCount = rejectedCount;
+    // If EVERY candidate was platform noise, say so explicitly and punt to
+    // manual fallback — never surface a TikTok/company card as a place.
+    const allNoise =
+      noiseRejected.length > 0 && noiseRejected.length === scored.length;
+    if (allNoise) {
+      warnings.push('all_candidates_rejected_as_platform_noise');
+    }
     return {
       decision: 'manual_fallback',
       candidates: [],
@@ -319,7 +356,9 @@ export async function resolveSharedPlace(args: {
       evidenceUsed,
       warnings,
       diagnostics,
-      failureReason: 'wrong_location_only',
+      failureReason: allNoise
+        ? 'all_candidates_rejected_as_platform_noise'
+        : 'wrong_location_only',
     };
   }
 

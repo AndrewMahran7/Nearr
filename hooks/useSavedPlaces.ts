@@ -61,6 +61,32 @@ type MemoryEntry = {
 let memoryCache: MemoryEntry | null = null;
 let inflight: { userId: string; promise: Promise<SavedPlaceWithPlace[]> } | null = null;
 
+// Mounted hook instances register here so a cache mutation (optimistic
+// delete/undo) from ANY screen pushes the new list to ALL screens at once,
+// instead of only the screen that triggered it. Without this, a place removed
+// on the detail screen would linger on the already-mounted Map until it
+// refetched — the exact stale-marker bug we are fixing.
+type CacheSubscriber = () => void;
+const subscribers = new Set<CacheSubscriber>();
+
+function notifySubscribers(): void {
+  subscribers.forEach((fn) => {
+    try {
+      fn();
+    } catch {
+      // A subscriber throwing must never break the cache write or other
+      // subscribers.
+    }
+  });
+}
+
+// Single choke point for assigning the shared cache: every write notifies
+// subscribers so cross-screen updates are automatic.
+function setMemoryCache(entry: MemoryEntry | null): void {
+  memoryCache = entry;
+  notifySubscribers();
+}
+
 function getMemory(userId: string | null): MemoryEntry | null {
   if (!userId) return null;
   if (memoryCache && memoryCache.userId === userId) return memoryCache;
@@ -111,6 +137,24 @@ export function useSavedPlaces() {
     };
   }, []);
 
+  // Subscribe to shared-cache mutations so an optimistic delete/undo performed
+  // on any screen updates this instance immediately. Re-subscribes when the
+  // user changes so a stale closure never writes another user's data.
+  useEffect(() => {
+    const onCacheChange = () => {
+      if (!mountedRef.current) return;
+      const mem = getMemory(userId);
+      if (!mem) return;
+      setState((s) =>
+        s.data === mem.data ? s : { ...s, data: mem.data, loading: false },
+      );
+    };
+    subscribers.add(onCacheChange);
+    return () => {
+      subscribers.delete(onCacheChange);
+    };
+  }, [userId]);
+
   const fetch = useCallback(
     async (mode: FetchMode) => {
       if (!userId) return;
@@ -124,7 +168,7 @@ export function useSavedPlaces() {
       try {
         const data = await runListSavedPlaces(userId);
         logDebug('useSavedPlaces', 'query complete', { count: data.length, mode });
-        memoryCache = { userId, data, fetchedAt: Date.now() };
+        setMemoryCache({ userId, data, fetchedAt: Date.now() });
         if (mountedRef.current) {
           setState({
             data,
@@ -197,8 +241,7 @@ export function useSavedPlaces() {
       // Signed out — clear the list and shared cache without a network call.
       logDebug('useSavedPlaces', 'no user, clearing list');
       memoryCache = null;
-      inflight = null;
-      setState({
+      inflight = null;      setState({
         data: [],
         loading: false,
         refreshing: false,
@@ -239,4 +282,58 @@ export function useSavedPlaces() {
   }, [userId, fetch]);
 
   return { ...state, refresh, revalidate };
+}
+
+// ---- shared cache mutation API --------------------------------------------
+// Lets delete/undo flows update the in-memory + persisted cache and push the
+// new list to every mounted hook instance synchronously, so a removed place
+// disappears from all screens immediately (no app restart, no refetch wait).
+// Mutations operate on the single active-user cache entry; they no-op safely
+// when there is no cache yet (e.g. signed out, or before the first fetch).
+
+/**
+ * Snapshot the current cached list so a failed mutation can roll back to the
+ * exact prior state. Returns null when there is no cache.
+ */
+export function getSavedPlacesCacheSnapshot(): SavedPlaceWithPlace[] | null {
+  return memoryCache ? memoryCache.data : null;
+}
+
+/**
+ * Apply a pure updater to the cached saved-places list. Updates the in-memory
+ * cache, persists to AsyncStorage, and notifies every mounted hook instance.
+ * No-op when there is no cache or the updater returns the same array.
+ */
+export function updateSavedPlacesCache(
+  updater: (prev: SavedPlaceWithPlace[]) => SavedPlaceWithPlace[],
+): void {
+  if (!memoryCache) return;
+  const { userId } = memoryCache;
+  const prev = memoryCache.data;
+  const next = updater(prev);
+  if (next === prev) return;
+  setMemoryCache({ ...memoryCache, data: next });
+  // Persist so the change survives a cold start (the original stale-after-
+  // restart symptom came from the offline cache still holding the old list).
+  void writeSavedPlacesCache(userId, next);
+}
+
+/**
+ * Optimistically remove a saved place from the shared cache. Safe to call for
+ * an id that is already gone — it simply no-ops and never throws.
+ */
+export function removeSavedPlaceFromCache(savedPlaceId: string): void {
+  updateSavedPlacesCache((prev) => {
+    const next = prev.filter((row) => row.id !== savedPlaceId);
+    return next.length === prev.length ? prev : next;
+  });
+}
+
+/**
+ * Restore a previously captured snapshot (rollback after a failed mutation).
+ * Pass the value returned by `getSavedPlacesCacheSnapshot()`.
+ */
+export function restoreSavedPlacesCache(snapshot: SavedPlaceWithPlace[] | null): void {
+  if (!snapshot) return;
+  updateSavedPlacesCache(() => snapshot);
 }

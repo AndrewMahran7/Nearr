@@ -27,6 +27,7 @@ import {
 } from '../places/locationGuards.ts';
 import { isGenericAddressCard } from '../places/genericAddressCard.ts';
 import { compactNameMatches } from '../../../../lib/shareAgent/recoveryHints.ts';
+import { isPlatformNoiseName } from '../../../../lib/shareAgent/platformNoise.ts';
 
 export type ScoredCandidate = {
   candidate: PlacesCandidate;
@@ -50,6 +51,21 @@ export function scoreCandidates(
   return candidates.map((candidate) => {
     const reasons: string[] = [];
     let score = 0;
+
+    // Platform-noise hard veto (TikTok only). Generic TikTok metadata can
+    // make Places return the platform/company itself ("TikTok Inc.",
+    // "Tiktok Verification", "… TikTok Marketing Agency"). Never a real
+    // saved place for a TikTok post — drop it before any scoring so it can
+    // neither win nor pad the candidate list.
+    if (isPlatformNoiseName(candidate.name, evidence.platform)) {
+      return {
+        candidate,
+        score: REJECT_SCORE,
+        reasons: [...reasons, 'platform_noise_rejected'],
+        rejected: true,
+        rejectionReason: 'platform_noise',
+      };
+    }
 
     // Type-based base.
     if (candidate.types?.some((t) => BUSINESS_LIKE.has(t))) {

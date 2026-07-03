@@ -37,6 +37,11 @@ import {
   getSavedPlace,
   updateSavedPlace,
 } from '@/services/savedPlacesService';
+import {
+  getSavedPlacesCacheSnapshot,
+  removeSavedPlaceFromCache,
+  restoreSavedPlacesCache,
+} from '@/hooks/useSavedPlaces';
 import { trackEvent } from '@/lib/analytics';
 import { useTheme } from '@/lib/theme';
 import type { Profile, RadiusUnit, SavedPlaceWithPlace } from '@/types';
@@ -257,10 +262,16 @@ export default function PlaceDetail() {
           style: 'destructive',
           onPress: async () => {
             setDeleting(true);
+            // Snapshot first so a failed delete can be rolled back, then
+            // optimistically remove from the shared cache so the marker
+            // disappears from the already-mounted Map the instant we pop back.
+            const snapshot = getSavedPlacesCacheSnapshot();
+            removeSavedPlaceFromCache(saved.id);
             try {
               await deleteSavedPlace(saved.id);
               router.back();
             } catch (e: any) {
+              restoreSavedPlacesCache(snapshot);
               Alert.alert('Delete failed', e?.message ?? 'Unknown error.');
             } finally {
               setDeleting(false);

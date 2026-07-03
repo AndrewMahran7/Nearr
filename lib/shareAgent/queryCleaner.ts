@@ -32,6 +32,48 @@ const URL_RE = /\bhttps?:\/\/\S+/gi;
 // Strip pictographs / emoji but keep letters, digits, basic punctuation.
 const EMOJI_RE = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{1F000}-\u{1F2FF}\uFE0F]/gu;
 
+// Casual / sentiment caption phrases that are NOT place names. Used to keep
+// prose like "pretty cool spot!! glad i stopped by" from being sent to Google
+// Places as a query seed. Conservative and only ever applied to the caption-
+// PROSE fallback seed — never to an explicit venue/address query.
+const CASUAL_CAPTION_RE = new RegExp(
+  [
+    'pretty cool',
+    'cool spot',
+    'glad i',
+    'stopped by',
+    "i'?ll def",
+    'be back',
+    'bigger menu',
+    'so good',
+    'highly recommend',
+    'must try',
+    'need to try',
+    'you have to',
+    'go check',
+    'this place',
+    'this spot',
+    'the vibe',
+    '10\\s*/\\s*10',
+    'obsessed',
+    'slightly bigger',
+    'love this',
+    'loved this',
+    'came (?:here|thru|through)',
+    'wish they had',
+  ].join('|'),
+  'i',
+);
+
+/**
+ * True when a caption seed reads as casual sentiment prose rather than a
+ * place name ("pretty cool spot!! glad i stopped by"). Pure + conservative.
+ */
+export function isCasualCaptionSeed(seed: string | null | undefined): boolean {
+  if (!seed) return false;
+  return CASUAL_CAPTION_RE.test(seed);
+}
+
 /**
  * Clean a social-media caption / title for use as a Google Places query.
  * Strips handles, hashtags, URLs, emoji, common wrapper phrases, then
@@ -43,6 +85,11 @@ export function cleanPlacesSeed(input: string | null | undefined, maxLen = 80): 
   if (!input) return '';
   let s = String(input);
   for (const re of SOCIAL_WRAPPER_PATTERNS) s = s.replace(re, ' ');
+  // Platform boilerplate that social sites use as og:title/description and
+  // which otherwise leaks into Google Places (e.g. TikTok's "TikTok - Make
+  // Your Day" makes Places return "TikTok Inc."). Never a real place query.
+  s = s.replace(/\btik\s*tok\b\s*[-–—|:]*\s*make your day\b/gi, ' ');
+  s = s.replace(/\bmake your day\b/gi, ' ');
   s = s.replace(URL_RE, ' ');
   s = s.replace(HANDLE_RE, ' ');
   s = s.replace(HASHTAG_RE, ' ');
@@ -161,6 +208,14 @@ export function buildCleanPlacesQueries(args: {
   city?: string | null;
   /** Profile display name to try last as a weak fallback. */
   profileDisplayName?: string | null;
+  /**
+   * When false, do NOT fall back to raw caption prose (cleaned title /
+   * description) as a Places query seed. Set false by callers that have no
+   * explicit place evidence (no address / venue hint / venue handle) so a
+   * casual caption never queries random businesses. Defaults to true to keep
+   * the in-app agent behavior unchanged.
+   */
+  allowGenericCaptionSeed?: boolean;
   max?: number;
 }): string[] {
   const max = args.max ?? 5;
@@ -202,17 +257,38 @@ export function buildCleanPlacesQueries(args: {
   // 2. Explicit name + city.
   if (args.placeName && args.city) push(`${args.placeName} ${args.city}`);
   if (args.placeName) push(args.placeName);
+  // "&" ↔ "and" variant so "NOVA Kitchen & Bar" also tries "NOVA Kitchen
+  // and Bar" (Google usually normalizes this, but the extra seed is cheap
+  // and improves recall for ampersand venue names).
+  if (args.placeName && /\s*&\s*/.test(args.placeName)) {
+    const andName = args.placeName.replace(/\s*&\s*/g, ' and ');
+    if (args.city) push(`${andName} ${args.city}`);
+    push(andName);
+  }
 
   // 3. Cleaned title (caption text with social noise stripped).
+  //    Skipped entirely when the caller has no explicit place evidence, or
+  //    when the text reads as casual sentiment prose — either way it would
+  //    only query random Places.
+  const allowGenericSeed = args.allowGenericCaptionSeed !== false;
   const cleanedTitle = cleanPlacesSeed(args.title);
-  if (cleanedTitle && cleanedTitle.split(/\s+/).length >= 2) push(cleanedTitle);
+  if (
+    allowGenericSeed &&
+    cleanedTitle &&
+    cleanedTitle.split(/\s+/).length >= 2 &&
+    !isCasualCaptionSeed(cleanedTitle)
+  ) {
+    push(cleanedTitle);
+  }
 
-  // 4. Cleaned description fallback.
+  // 4. Cleaned description fallback (same guards as the title seed).
   const cleanedDesc = cleanPlacesSeed(args.description);
   if (
+    allowGenericSeed &&
     cleanedDesc &&
     cleanedDesc.toLowerCase() !== cleanedTitle.toLowerCase() &&
-    cleanedDesc.split(/\s+/).length >= 2
+    cleanedDesc.split(/\s+/).length >= 2 &&
+    !isCasualCaptionSeed(cleanedDesc)
   ) {
     push(cleanedDesc);
   }

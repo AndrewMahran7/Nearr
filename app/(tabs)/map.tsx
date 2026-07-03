@@ -29,6 +29,7 @@ import {
   PanResponder,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   useWindowDimensions,
@@ -79,6 +80,7 @@ import {
   MapPlaceSearchDropdown,
   MapSnackbar,
   MapTopSearchBar,
+  SelectedPlaceDetails,
   getSheetPartialHeight,
   type MapFilter,
   type SheetSnap,
@@ -87,6 +89,11 @@ import { Colors, Radius, Spacing, Typography } from '@/constants';
 import { useNearbyPlaces } from '@/hooks/useNearbyPlaces';
 import { useRecentPlaces } from '@/hooks/useRecentPlaces';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
+import {
+  getSavedPlacesCacheSnapshot,
+  removeSavedPlaceFromCache,
+  restoreSavedPlacesCache,
+} from '@/hooks/useSavedPlaces';
 import { isDemoMode } from '@/lib/demoMode';
 import { isMapPreviewMode } from '@/lib/mapPreview';
 import { openExternalMaps as openInExternalMaps } from '@/lib/externalMaps';
@@ -386,7 +393,7 @@ export default function MapScreen() {
   const savedPlaceId = Array.isArray(rawSavedPlaceId)
     ? rawSavedPlaceId[0]
     : rawSavedPlaceId;
-  const { data: liveData, loading: liveLoading, revalidate } = useSavedPlaces();
+  const { data: liveData, loading: liveLoading, refresh, revalidate } = useSavedPlaces();
   const mapRef = useRef<MapView | null>(null);
   const markerRefs = useRef<Record<string, ComponentRef<typeof Marker> | null>>({});
   const demo = isDemoMode();
@@ -490,6 +497,13 @@ export default function MapScreen() {
   const { nearbyPlaces } = useNearbyPlaces(data, { limit: 5 });
   const recentPlaces = useRecentPlaces(validPlaces, 5);
   const previewTranslateY = useRef(new Animated.Value(0)).current;
+  // Selected-place sheet: collapsed (preview) vs expanded (inline details).
+  // Reset to collapsed whenever a new place is selected or the sheet is
+  // dismissed. The pan responder reads the current value via a ref so it
+  // never has to be recreated when the sheet toggles.
+  const [previewExpanded, setPreviewExpanded] = useState(false);
+  const previewExpandedRef = useRef(false);
+  previewExpandedRef.current = previewExpanded;
   const didFitRef = useRef(false);
   // Set to true when the user pans or zooms the map so auto-centering
   // effects don't override the user's chosen viewport.
@@ -753,6 +767,8 @@ export default function MapScreen() {
       previewTranslateY.stopAnimation();
       previewTranslateY.setValue(0);
       setSelected(null);
+      setPreviewExpanded(false);
+      if (__DEV__) console.log('[map-sheet] dismissed');
 
       if (options?.restoreRegion === false) {
         previousRegionRef.current = null;
@@ -797,6 +813,9 @@ export default function MapScreen() {
   function selectPlace(item: SavedPlaceWithPlace) {
     previousRegionRef.current = lastRegionRef.current;
     setSelected(item);
+    // Always (re)open a newly selected marker in the collapsed preview state.
+    setPreviewExpanded(false);
+    previewTranslateY.setValue(0);
     try {
       focusZone(item);
     } catch (err) {
@@ -825,22 +844,53 @@ export default function MapScreen() {
       PanResponder.create({
         onMoveShouldSetPanResponder: (_, gestureState) =>
           !!selected &&
-          gestureState.dy > 6 &&
+          Math.abs(gestureState.dy) > 6 &&
           Math.abs(gestureState.dy) > Math.abs(gestureState.dx),
         onPanResponderMove: (_, gestureState) => {
-          previewTranslateY.setValue(Math.max(0, gestureState.dy));
+          if (previewExpandedRef.current) {
+            // Expanded: only downward drag matters (collapse); clamp upward.
+            previewTranslateY.setValue(Math.max(0, gestureState.dy));
+          } else {
+            // Collapsed: downward drag tracks toward dismissal; give a small
+            // upward peek to signal the sheet can expand.
+            previewTranslateY.setValue(
+              gestureState.dy > 0 ? gestureState.dy : Math.max(-48, gestureState.dy),
+            );
+          }
         },
         onPanResponderRelease: (_, gestureState) => {
-          if (gestureState.dy > 80 && Math.abs(gestureState.dy) > Math.abs(gestureState.dx)) {
-            dismissSelectedPlace();
+          const vertical =
+            Math.abs(gestureState.dy) > Math.abs(gestureState.dx);
+          const springBack = () =>
+            Animated.spring(previewTranslateY, {
+              toValue: 0,
+              useNativeDriver: true,
+              bounciness: 6,
+            }).start();
+
+          if (previewExpandedRef.current) {
+            // From expanded, a small downward drag collapses back to preview;
+            // it never dismisses in a single gesture.
+            if (vertical && gestureState.dy > 60) {
+              setPreviewExpanded(false);
+              if (__DEV__) console.log('[map-sheet] collapsed');
+            }
+            springBack();
             return;
           }
 
-          Animated.spring(previewTranslateY, {
-            toValue: 0,
-            useNativeDriver: true,
-            bounciness: 6,
-          }).start();
+          // Collapsed: upward drag expands, larger downward drag dismisses.
+          if (vertical && gestureState.dy < -40) {
+            setPreviewExpanded(true);
+            if (__DEV__) console.log('[map-sheet] expanded');
+            springBack();
+            return;
+          }
+          if (vertical && gestureState.dy > 80) {
+            dismissSelectedPlace();
+            return;
+          }
+          springBack();
         },
         onPanResponderTerminate: () => {
           Animated.spring(previewTranslateY, {
@@ -903,7 +953,11 @@ export default function MapScreen() {
           radiusUnit: null,
           sourceType: 'manual',
         });
-        await revalidate();
+        // Force a refetch so the newly saved place is in the shared cache and
+        // its marker renders immediately (a stale-while-revalidate would skip
+        // the network within the freshness window and the marker wouldn't
+        // appear until later).
+        await refresh();
         if (result.status === 'duplicate') {
           const existing =
             result.savedPlaceId != null
@@ -929,23 +983,29 @@ export default function MapScreen() {
         setSavingPlace(false);
       }
     },
-    [revalidate, savingPlace, validPlaces],
+    [refresh, savingPlace, validPlaces],
   );
 
-  // Undo a just-saved place: delete it, clear selection, revalidate.
+  // Undo a just-saved place: optimistically remove it from the shared cache
+  // (marker disappears on every screen at once), clear the selection if it is
+  // the undone place, then delete server-side. Roll back on failure.
   const handleUndoSave = useCallback(
     async (savedPlaceId: string) => {
       setSnackbar(null);
+      const snapshot = getSavedPlacesCacheSnapshot();
       try {
-        dismissSelectedPlace({ restoreRegion: false });
+        if (selected?.id === savedPlaceId) {
+          dismissSelectedPlace({ restoreRegion: false });
+        }
+        removeSavedPlaceFromCache(savedPlaceId);
         await deleteSavedPlace(savedPlaceId);
-        await revalidate();
       } catch (e: any) {
         console.warn('[map] undo save failed', e?.message);
+        restoreSavedPlacesCache(snapshot);
         Alert.alert('Could not undo', e?.message ?? 'Please try again.');
       }
     },
-    [dismissSelectedPlace, revalidate],
+    [dismissSelectedPlace, selected],
   );
 
   // Custom recenter button. Prefers an existing GPS fix; otherwise does a
@@ -1138,73 +1198,102 @@ export default function MapScreen() {
         <Animated.View
           style={[styles.previewWrap, { transform: [{ translateY: previewTranslateY }] }]}
           pointerEvents="box-none"
-          {...previewPanResponder.panHandlers}
         >
           <Card style={styles.previewCard}>
-            <View style={styles.previewHandleWrap}>
-              <View style={styles.previewHandle} />
-            </View>
-            <View style={styles.previewTopRow}>
-              <View style={styles.previewThumb}>
-                <Feather
-                  name={selectedIconName(selected)}
-                  size={18}
-                  color={colors.accent}
-                />
+            {/* Drag region: handle + header. The pan responder lives here
+                (not on the whole card) so the expanded body ScrollView can
+                scroll without fighting the collapse/dismiss gesture. */}
+            <View {...previewPanResponder.panHandlers}>
+              <View style={styles.previewHandleWrap}>
+                <View style={styles.previewHandle} />
               </View>
-              <View style={styles.previewCopy}>
-                <View style={styles.previewHeader}>
-                  <Text style={typography.heading} numberOfLines={1}>
-                    {selected.place.name}
-                  </Text>
-                  <Pressable
-                    onPress={() => dismissSelectedPlace()}
-                    hitSlop={12}
-                    style={styles.closeBtn}
-                  >
-                    <Text style={styles.closeText}>×</Text>
-                  </Pressable>
+              <View style={styles.previewTopRow}>
+                <View style={styles.previewThumb}>
+                  <Feather
+                    name={selectedIconName(selected)}
+                    size={18}
+                    color={colors.accent}
+                  />
                 </View>
-                {selected.place.formatted_address ? (
-                  <Text style={[typography.caption, styles.previewAddress]} numberOfLines={1}>
-                    {selected.place.formatted_address}
-                  </Text>
-                ) : null}
-                <View style={styles.previewMetaRow}>
-                  {selectedDistance != null ? (
-                    <Text style={[typography.caption, styles.previewMetaText]}>
-                      {formatDistanceAway(selectedDistance)}
+                <View style={styles.previewCopy}>
+                  <View style={styles.previewHeader}>
+                    <Text style={typography.heading} numberOfLines={1}>
+                      {selected.place.name}
+                    </Text>
+                    <Pressable
+                      onPress={() => dismissSelectedPlace()}
+                      hitSlop={12}
+                      style={styles.closeBtn}
+                    >
+                      <Text style={styles.closeText}>×</Text>
+                    </Pressable>
+                  </View>
+                  {selected.place.formatted_address ? (
+                    <Text style={[typography.caption, styles.previewAddress]} numberOfLines={1}>
+                      {selected.place.formatted_address}
                     </Text>
                   ) : null}
-                  {selectedMeta(selected) ? (
-                    <View style={styles.metaPill}>
-                      <Text style={styles.metaPillText} numberOfLines={1}>
-                        {selectedMeta(selected)}
+                  <View style={styles.previewMetaRow}>
+                    {selectedDistance != null ? (
+                      <Text style={[typography.caption, styles.previewMetaText]}>
+                        {formatDistanceAway(selectedDistance)}
                       </Text>
-                    </View>
-                  ) : null}
+                    ) : null}
+                    {selectedMeta(selected) ? (
+                      <View style={styles.metaPill}>
+                        <Text style={styles.metaPillText} numberOfLines={1}>
+                          {selectedMeta(selected)}
+                        </Text>
+                      </View>
+                    ) : null}
+                  </View>
                 </View>
               </View>
             </View>
-            <View style={styles.previewActions}>
-              <Button
-                title="Get directions"
-                onPress={() => openExternalMaps(selected)}
-                style={styles.previewPrimaryAction}
-              />
-            </View>
-            <Pressable
-              onPress={() => {
-                const id = selected.id;
-                dismissSelectedPlace({ restoreRegion: false });
-                router.push(`/place/${id}`);
-              }}
-              hitSlop={10}
-              style={styles.previewSecondaryRow}
-            >
-              <Text style={styles.previewSecondaryText}>Details</Text>
-              <Feather name="chevron-right" size={16} color={colors.textSecondary} />
-            </Pressable>
+
+            {previewExpanded ? (
+              // Expanded: the full editable details (reminder / radius / note /
+              // remove) moved off /place/[id]. Bounded + scrollable so a long
+              // note never pushes the sheet past the top of the map.
+              <ScrollView
+                style={{ maxHeight: Math.min(windowHeight * 0.5, 460) }}
+                contentContainerStyle={styles.previewScrollContent}
+                keyboardShouldPersistTaps="handled"
+                nestedScrollEnabled
+                showsVerticalScrollIndicator={false}
+              >
+                <SelectedPlaceDetails
+                  saved={selected}
+                  profile={profile}
+                  onGetDirections={() => openExternalMaps(selected)}
+                  onRequestDismiss={() => dismissSelectedPlace({ restoreRegion: false })}
+                  onSaved={(updated) => setSelected(updated)}
+                />
+              </ScrollView>
+            ) : (
+              // Collapsed: quick directions + an explicit expander (in addition
+              // to the slide-up gesture) so there's always a tap affordance.
+              <>
+                <View style={styles.previewActions}>
+                  <Button
+                    title="Get directions"
+                    onPress={() => openExternalMaps(selected)}
+                    style={styles.previewPrimaryAction}
+                  />
+                </View>
+                <Pressable
+                  onPress={() => {
+                    setPreviewExpanded(true);
+                    if (__DEV__) console.log('[map-sheet] expanded');
+                  }}
+                  hitSlop={10}
+                  style={styles.previewSecondaryRow}
+                >
+                  <Text style={styles.previewSecondaryText}>Swipe up for details</Text>
+                  <Feather name="chevron-up" size={16} color={colors.textSecondary} />
+                </Pressable>
+              </>
+            )}
           </Card>
         </Animated.View>
       ) : null}
@@ -1624,6 +1713,10 @@ function createStyles(
   },
   previewActions: {
     marginTop: Spacing.md,
+  },
+  previewScrollContent: {
+    paddingTop: Spacing.md,
+    paddingBottom: Spacing.sm,
   },
   previewPrimaryAction: {
     width: '100%',

@@ -19,7 +19,7 @@
  * V1 scope: no clustering, no caption editing, no in-screen map preview.
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -30,10 +30,11 @@ import {
   Text,
   View,
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 
 import { Button, Card, Input, Screen } from '@/components';
-import { Colors, Radius, Spacing, Typography } from '@/constants';
+import { Radius, Spacing } from '@/constants';
+import { useTheme } from '@/lib/theme';
 import { getActivationSaveFeedback } from '@/lib/activation';
 import {
   isLikelyUrl,
@@ -357,7 +358,15 @@ function buildProfileDebugReason(profile: {
 
 export default function ShareScreen() {
   const router = useRouter();
+  const navigation = useNavigation();
   const params = useLocalSearchParams<{ url?: string }>();
+
+  // Themed tokens. `typography` is aliased to `Typography` so every existing
+  // `Typography.*` reference in this screen resolves to the *resolved-theme*
+  // text colors (readable in light AND dark mode) instead of the static
+  // dark-only palette. See docs/UI_THEME_NOTES.md.
+  const { colors, typography: Typography } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   const [url, setUrl] = useState(params.url ?? '');
   const [phase, setPhase] = useState<Phase>('idle');
@@ -451,6 +460,63 @@ export default function ShareScreen() {
 
   const busy =
     phase === 'parsing' || phase === 'searching' || phase === 'saving';
+
+  // Keep the latest phase readable from navigation listeners without
+  // re-subscribing on every phase change.
+  const phaseRef = useRef(phase);
+  phaseRef.current = phase;
+
+  // Safe modal dismissal. Prefer a normal back (pops this modal off the
+  // stack); if there is nothing to go back to (e.g. cold-start via a share
+  // intent / iOS share-extension handoff where `share` is the first route),
+  // fall back to Home so the user is never trapped on a dead-end screen.
+  const safeClose = useCallback(() => {
+    // Never tear the screen down mid-write — a save takes a moment and
+    // leaving now would abort the in-flight upsert. The post-save
+    // navigation uses router.replace (a REPLACE action) which is NOT a
+    // user dismissal and is unaffected by this guard.
+    if (phaseRef.current === 'saving') {
+      Alert.alert('Saving…', 'Please wait for the save to finish.');
+      return;
+    }
+    if (navigation.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)/home');
+    }
+  }, [navigation, router]);
+
+  // Explicit Close affordance in the modal header. This is the guaranteed,
+  // cross-platform exit (Android modals have no swipe-to-dismiss gesture),
+  // and it complements the iOS swipe-down gesture (gestureEnabled).
+  useEffect(() => {
+    navigation.setOptions({
+      headerLeft: () => (
+        <Pressable onPress={safeClose} hitSlop={12} style={styles.headerClose}>
+          <Text style={[Typography.body, styles.headerCloseText]}>Close</Text>
+        </Pressable>
+      ),
+    });
+  }, [navigation, safeClose, styles.headerClose, styles.headerCloseText, Typography.body]);
+
+  // Block ONLY user-initiated dismissal (swipe-down / hardware back / Close)
+  // while a save is actively writing, so we never abort an in-flight upsert
+  // or leave the map in a half-saved state. Programmatic post-save
+  // navigation (router.replace → REPLACE action) is intentionally allowed.
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('beforeRemove', (event) => {
+      const actionType = (event as { data?: { action?: { type?: string } } })
+        .data?.action?.type;
+      if (phaseRef.current === 'saving' && actionType === 'GO_BACK') {
+        event.preventDefault();
+        Alert.alert(
+          'Saving…',
+          'Please wait for the save to finish before leaving.',
+        );
+      }
+    });
+    return unsubscribe;
+  }, [navigation]);
 
   // Auto-run when arriving with a URL (cold-start deep link, share intent,
   // or a new deep link delivered while this screen is already mounted).
@@ -2747,77 +2813,85 @@ function placesErrorMessage(err: PlacesError): string {
 }
 
 // ---------------------------------------------------------------------------
-const styles = StyleSheet.create({
-  fill: { flex: 1 },
-  scrollContent: {
-    flexGrow: 1,
-    paddingBottom: Spacing.xl + Spacing.lg,
-  },
-  headerTitle: { marginBottom: Spacing.xs },
-  headerBody: { marginBottom: Spacing.lg },
-  hint: {
-    textAlign: 'center',
-    marginTop: Spacing.lg,
-    paddingHorizontal: Spacing.md,
-  },
-  section: { marginTop: Spacing.lg },
-  muted: { color: Colors.textMuted },
+function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
+  return StyleSheet.create({
+    fill: { flex: 1 },
+    scrollContent: {
+      flexGrow: 1,
+      paddingBottom: Spacing.xl + Spacing.lg,
+    },
+    headerTitle: { marginBottom: Spacing.xs },
+    headerBody: { marginBottom: Spacing.lg },
+    hint: {
+      textAlign: 'center',
+      marginTop: Spacing.lg,
+      paddingHorizontal: Spacing.md,
+    },
+    section: { marginTop: Spacing.lg },
+    muted: { color: colors.textMuted },
 
-  candidate: {
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.md,
-    borderRadius: Radius.md,
-    backgroundColor: Colors.surface,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: Colors.border,
-    marginBottom: Spacing.sm,
-  },
-  candidatePressed: { opacity: 0.7 },
-  candidateChecked: {
-    borderColor: Colors.primary,
-    borderWidth: 1,
-  },
+    headerClose: {
+      paddingVertical: Spacing.xs,
+      paddingRight: Spacing.md,
+    },
+    headerCloseText: { color: colors.primary },
 
-  multiActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  multiRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-  checkbox: {
-    width: 22,
-    height: 22,
-    borderRadius: 4,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: Colors.border,
-    backgroundColor: Colors.surface,
-    marginRight: Spacing.sm,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 2,
-  },
-  checkboxChecked: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
-  },
-  checkboxMark: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '700',
-    lineHeight: 16,
-  },
+    candidate: {
+      paddingVertical: Spacing.md,
+      paddingHorizontal: Spacing.md,
+      borderRadius: Radius.md,
+      backgroundColor: colors.surface,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.border,
+      marginBottom: Spacing.sm,
+    },
+    candidatePressed: { opacity: 0.7 },
+    candidateChecked: {
+      borderColor: colors.primary,
+      borderWidth: 1,
+    },
 
-  debugToggle: { alignSelf: 'flex-start', paddingVertical: Spacing.xs },
-  debugCard: { marginTop: Spacing.xs },
-  manualLink: {
-    alignSelf: 'center',
-    paddingVertical: Spacing.sm,
-    marginTop: Spacing.xs,
-  },
-  manualLinkText: {
-    color: Colors.textMuted,
-    textDecorationLine: 'underline',
-  },
-});
+    multiActions: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+    },
+    multiRow: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+    },
+    checkbox: {
+      width: 22,
+      height: 22,
+      borderRadius: 4,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.border,
+      backgroundColor: colors.surface,
+      marginRight: Spacing.sm,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginTop: 2,
+    },
+    checkboxChecked: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    checkboxMark: {
+      color: colors.textInverse,
+      fontSize: 14,
+      fontWeight: '700',
+      lineHeight: 16,
+    },
+
+    debugToggle: { alignSelf: 'flex-start', paddingVertical: Spacing.xs },
+    debugCard: { marginTop: Spacing.xs },
+    manualLink: {
+      alignSelf: 'center',
+      paddingVertical: Spacing.sm,
+      marginTop: Spacing.xs,
+    },
+    manualLinkText: {
+      color: colors.textMuted,
+      textDecorationLine: 'underline',
+    },
+  });
+}

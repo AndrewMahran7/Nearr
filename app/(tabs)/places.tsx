@@ -24,6 +24,11 @@ import { Radius, Spacing } from '@/constants';
 
 import { useNearbyPlaces } from '@/hooks/useNearbyPlaces';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
+import {
+  getSavedPlacesCacheSnapshot,
+  removeSavedPlaceFromCache,
+  restoreSavedPlacesCache,
+} from '@/hooks/useSavedPlaces';
 import { useTheme } from '@/lib/theme';
 import { trackEvent } from '@/lib/analytics';
 import { getProfile } from '@/services/profileService';
@@ -172,10 +177,14 @@ export default function PlacesTab() {
   );
 
   async function handleDelete(id: string) {
+    // Optimistic remove from the shared cache (instant across all screens),
+    // roll back on failure.
+    const snapshot = getSavedPlacesCacheSnapshot();
+    removeSavedPlaceFromCache(id);
     try {
       await deleteSavedPlace(id);
-      await refresh();
     } catch (e: any) {
+      restoreSavedPlacesCache(snapshot);
       Alert.alert('Could not remove', e?.message ?? 'Unknown error.');
     }
   }

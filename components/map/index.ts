@@ -12,3 +12,4 @@ export { CompactPlaceRow } from './CompactPlaceRow';
 export { MapSheetFilterChips, type SheetListFilter } from './MapSheetFilterChips';
 export { MapPlaceSearchDropdown } from './MapPlaceSearchDropdown';
 export { MapSnackbar } from './MapSnackbar';
+export { SelectedPlaceDetails } from './SelectedPlaceDetails';

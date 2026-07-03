@@ -40,6 +40,7 @@ import { extractEvidence } from './evidence/extractEvidence.ts';
 import { resolveSharedPlace } from './resolver/resolveSharedPlace.ts';
 import { saveForUser } from './save.ts';
 import { persistResolverRun } from './shadowRun.ts';
+import { normalizeShareUrl } from '../../../lib/shareAgent/tiktokUrl.ts';
 
 // ---------------------------------------------------------------------------
 
@@ -85,21 +86,48 @@ serve(async (req) => {
   const { userId, userClient } = auth;
 
   // ---- Fetch metadata -------------------------------------------
-  const platform = detectPlatform(url);
-  const meta = await fetchPostMetadata(url);
+  // Normalize first: lowercase host + strip share-sheet tracking params
+  // (`_r`, `_t`, `is_from_webapp`, `sender_device`, …). Short links
+  // (vm./vt.tiktok.com) are redirect-resolved to canonical inside
+  // fetchPostMetadata (via `res.url`).
+  const normalizedInput = normalizeShareUrl(url);
+  const requestUrl = normalizedInput.url || url;
+  const platform = detectPlatform(requestUrl);
+  if (platform === 'tiktok') {
+    logShareDebug('tiktok-share:input', {
+      rawInputPresent: !!url,
+      isShortLink: normalizedInput.isShortLink,
+      normalized: normalizedInput.wasModified,
+    });
+  }
+  const meta = await fetchPostMetadata(requestUrl, platform);
   if (!meta.ok) {
     logShareDebug('metadata:failed', { reason: meta.reason });
+    if (platform === 'tiktok') {
+      logShareDebug('tiktok-share:metadata_failed', { reason: meta.reason });
+    }
     return statusFailedRequiresApp({
       reason: 'metadata_failed',
       diagnostics: { metadataError: meta.error },
     });
   }
   const { title, description, html } = meta.metadata;
+  // Post-redirect canonical URL — persisted as the source URL so short
+  // links are stored in their stable `@user/video/<id>` form.
+  const canonicalUrl = meta.resolvedUrl || requestUrl;
   logShareDebug('metadata:fetched', {
     platform,
     titleLen: title?.length ?? 0,
     descLen: description?.length ?? 0,
   });
+  if (platform === 'tiktok') {
+    logShareDebug('tiktok-share:metadata', {
+      redirectFollowed: canonicalUrl !== requestUrl,
+      metadataTitleLen: title?.length ?? 0,
+      metadataDescLen: description?.length ?? 0,
+      usedOEmbed: meta.usedTikTokOEmbed,
+    });
+  }
 
   // ---- Build evidence -------------------------------------------
   const handles = extractHandles({ platform, title, description, html });
@@ -110,6 +138,11 @@ serve(async (req) => {
     venueHintCount: evidence.venueNameHints.length,
     isRoundup: evidence.isRoundup,
   });
+  if (platform === 'tiktok') {
+    logShareDebug('tiktok-share:evidence', {
+      evidenceAddressCount: evidence.addresses?.length ?? (evidence.address ? 1 : 0),
+    });
+  }
 
   // ---- Resolve --------------------------------------------------
   const result = await resolveSharedPlace({ evidence, env });
@@ -119,13 +152,16 @@ serve(async (req) => {
     candidates: result.candidates.length,
     warnings: result.warnings,
   });
+  if (platform === 'tiktok') {
+    logShareDebug('tiktok-share:decision', { decision: result.decision });
+  }
 
   // Fire-and-forget diagnostics persistence. Failure is logged
   // under [agent-shadow] but never blocks the response.
   try {
     const latencyMs = Date.now() - startedAt;
     const persist = persistResolverRun({
-      userId, url, platform, result, latencyMs,
+      userId, url: canonicalUrl, platform, result, latencyMs,
     });
     // @ts-ignore — EdgeRuntime is a Deno Deploy global.
     if (typeof EdgeRuntime !== 'undefined' && EdgeRuntime?.waitUntil) {
@@ -140,7 +176,7 @@ serve(async (req) => {
 
   const source = legacySourceFor(platform);
   const extraction = buildExtractionPayload({
-    url,
+    url: canonicalUrl,
     platform,
     source,
     title,
@@ -180,7 +216,7 @@ serve(async (req) => {
           client: userClient,
           userId,
           candidate: result.primaryCandidate,
-          sourceUrl: url,
+          sourceUrl: canonicalUrl,
           source,
         });
         return statusSaved({

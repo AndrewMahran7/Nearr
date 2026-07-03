@@ -76,5 +76,7 @@ export type ResolverResult = {
     | 'no_candidates'
     | 'metadata_failed'
     | 'wrong_location_only'
+    | 'all_candidates_rejected_as_platform_noise'
+    | 'manual_fallback_no_explicit_place_evidence'
     | 'roundup_post';
 };

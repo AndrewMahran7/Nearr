@@ -465,7 +465,15 @@ function RootLayoutContent() {
               />
               <Stack.Screen
                 name="share"
-                options={{ presentation: 'modal', headerShown: true, title: 'Save from link' }}
+                options={{
+                  presentation: 'modal',
+                  headerShown: true,
+                  title: 'Save from link',
+                  // iOS: allow swipe-down to dismiss the modal. Android has no
+                  // swipe gesture for native-stack modals, so the screen also
+                  // renders an explicit "Close" header button (see app/share.tsx).
+                  gestureEnabled: true,
+                }}
               />
               <Stack.Screen name="legal/terms" options={{ headerShown: true, title: 'Terms of Service' }} />
               <Stack.Screen name="legal/privacy" options={{ headerShown: true, title: 'Privacy Policy' }} />
