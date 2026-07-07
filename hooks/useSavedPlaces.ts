@@ -337,3 +337,21 @@ export function restoreSavedPlacesCache(snapshot: SavedPlaceWithPlace[] | null):
   if (!snapshot) return;
   updateSavedPlacesCache(() => snapshot);
 }
+
+/**
+ * Insert (or replace) a saved place in the shared cache, newest-first. Used
+ * right after a successful save so the map's `savedPlaceId` focus can find the
+ * freshly-saved place immediately, before any network revalidation.
+ *
+ * No-op when there is no cache yet (memoryCache null) — in that case the map's
+ * own initial fetch will include the place (it is already committed remotely).
+ */
+export function upsertSavedPlaceIntoCache(saved: SavedPlaceWithPlace): void {
+  updateSavedPlacesCache((prev) => {
+    const idx = prev.findIndex((row) => row.id === saved.id);
+    if (idx === -1) return [saved, ...prev];
+    const next = prev.slice();
+    next[idx] = saved;
+    return next;
+  });
+}

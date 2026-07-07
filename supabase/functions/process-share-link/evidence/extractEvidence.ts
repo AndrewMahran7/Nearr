@@ -16,6 +16,7 @@ import {
 import { extractCityStateContext } from '../places/locationGuards.ts';
 import { looksLikeRoundupPost } from './roundupDetection.ts';
 import type { ExtractedHandles } from './handleExtraction.ts';
+import type { TaggedLocationSignal } from './taggedLocation.ts';
 import type { SourcePlatform } from '../types.ts';
 
 export type Evidence = {
@@ -40,6 +41,11 @@ export type Evidence = {
   handles: ExtractedHandles;
   /** True for "top N" / list / roundup posts. */
   isRoundup: boolean;
+  /** First-class platform-tagged location (YouTube recordingDetails, TikTok
+   *  POI, IG location tag). Null unless a provider supplied one. Highest-
+   *  priority evidence source in the resolver, but still verified against
+   *  Google Places before any candidate is surfaced. */
+  taggedLocation: TaggedLocationSignal | null;
   /** Atomic evidence keys (subset of EvidenceKey from
    *  lib/shareAgent/types.ts) for the safety / decision policy. */
   keys: string[];
@@ -50,6 +56,8 @@ export function extractEvidence(args: {
   title: string | null;
   description: string | null;
   handles: ExtractedHandles;
+  /** Optional structured tagged-location signal from the platform. */
+  taggedLocation?: TaggedLocationSignal | null;
 }): Evidence {
   const captionText = [args.title, args.description]
     .filter(Boolean)
@@ -104,6 +112,9 @@ export function extractEvidence(args: {
   if (args.handles.posterNameHint) keys.push('poster_name_hint');
   if (isRoundup) keys.push('roundup_post');
 
+  const taggedLocation = args.taggedLocation ?? null;
+  if (taggedLocation) keys.push('tagged_location');
+
   return {
     platform: args.platform,
     rawTitle: args.title,
@@ -115,6 +126,7 @@ export function extractEvidence(args: {
     venueNameHints,
     handles: args.handles,
     isRoundup,
+    taggedLocation,
     keys,
   };
 }

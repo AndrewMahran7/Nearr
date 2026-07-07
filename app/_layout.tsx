@@ -6,11 +6,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as ExpoLinking from 'expo-linking';
 import { useAuth } from '@/hooks/useAuth';
-import {
-  HowNearrWorksModal,
-  hasSeenHowNearrWorks,
-  markHowNearrWorksSeen,
-} from '@/components/HowNearrWorksModal';
+import { isOnboardingPreviewActive } from '@/lib/onboarding';
 import { LegalAgreementModal, SetupReminderModal } from '@/components';
 import { getLocationStatus } from '@/components/SetupChecklist';
 import { handleAuthDeepLink } from '@/lib/authDeepLink';
@@ -98,7 +94,10 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   const { session, loading, isDevSession } = useAuth();
   const segments = useSegments();
   const router = useRouter();
-  const [howNearrWorksVisible, setHowNearrWorksVisible] = useState(false);
+  const inOnboarding = segments[0] === '(onboarding)';
+  // Suppress the setup reminder while the (pre-auth) onboarding intro is shown
+  // — e.g. a signed-in dev preview — so permission prompts don't collide.
+  const suppressSetupReminder = inOnboarding;
   const [setupReminderVisible, setSetupReminderVisible] = useState(false);
   const [needsNotifications, setNeedsNotifications] = useState(false);
   const [needsLocation, setNeedsLocation] = useState(false);
@@ -115,52 +114,6 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     // Intentionally keyed on user id only — an access-token refresh on the
     // same user must not re-fire this event.
   }, [session?.user.id, isDevSession]);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    if (!session || isDevSession || legalAgreementVisible) {
-      setHowNearrWorksVisible(false);
-      return () => {
-        cancelled = true;
-      };
-    }
-
-    void (async () => {
-      let seen = false;
-      let storageFailed = false;
-      try {
-        seen = await hasSeenHowNearrWorks(session.user.id);
-      } catch (err) {
-        // Defence in depth — hasSeenHowNearrWorks already swallows storage
-        // errors, but if a future refactor lets one escape we still want
-        // first-run instructions to appear instead of silently no-op'ing.
-        storageFailed = true;
-        console.warn('[onboarding] hasSeenHowNearrWorks threw', err);
-      }
-      if (cancelled) return;
-
-      if (!seen) {
-        // Stage 0 telemetry — helps distinguish "user dismissed" from
-        // "first launch never showed the modal" in support reports.
-        console.log(
-          storageFailed
-            ? '[onboarding] instructions_fallback_shown'
-            : '[onboarding] first_run_detected',
-        );
-        console.log('[onboarding] instructions_shown');
-        setHowNearrWorksVisible(true);
-        void trackEvent('how_nearr_works_shown', {
-          entry_point: storageFailed ? 'storage_fallback' : 'first_sign_in',
-          user_id: session.user.id,
-        });
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [session, session?.user.id, isDevSession, legalAgreementVisible]);
 
   useEffect(() => {
     let cancelled = false;
@@ -194,23 +147,6 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     };
   }, [session, session?.user.id, isDevSession]);
 
-  async function handleHowNearrWorks(action: 'completed' | 'skipped') {
-    if (session && !isDevSession) {
-      await markHowNearrWorksSeen(session.user.id);
-      void trackEvent(
-        action === 'completed'
-          ? 'how_nearr_works_completed'
-          : 'how_nearr_works_skipped',
-        {
-          entry_point: 'first_sign_in',
-          user_id: session.user.id,
-        },
-      );
-    }
-    console.log('[onboarding] dismissed', action);
-    setHowNearrWorksVisible(false);
-  }
-
   const refreshSetupReminder = useCallback(async (force = false) => {
     if (!session || isDevSession) {
       setSetupReminderVisible(false);
@@ -219,7 +155,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
       return;
     }
     if (LEGAL_ACCEPTANCE_REQUIRED && legalAgreementVisible) return;
-    if (howNearrWorksVisible) return;
+    if (suppressSetupReminder) return;
     if (setupReminderDismissedThisSession && !force) return;
 
     const [notificationStatus, locationStatus] = await Promise.all([
@@ -233,7 +169,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     setNeedsNotifications(missingNotifications);
     setNeedsLocation(missingLocation);
     setSetupReminderVisible(missingNotifications || missingLocation);
-  }, [howNearrWorksVisible, isDevSession, legalAgreementVisible, session, setupReminderDismissedThisSession]);
+  }, [suppressSetupReminder, isDevSession, legalAgreementVisible, session, setupReminderDismissedThisSession]);
 
   async function handleAcceptLegal() {
     if (!session) return;
@@ -274,16 +210,32 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     logDebug('AuthGate', 'decide', {
       hasSession: !!session,
       inAuth,
+      inOnboarding,
+      isDevSession,
       segments: segments.join('/'),
     });
-    if (!session && !inAuth) {
-      logDebug('AuthGate', '-> /(auth)/sign-in');
-      router.replace('/(auth)/sign-in');
-    } else if (session && inAuth) {
+
+    // Logged out: onboarding is the PUBLIC landing. Allow the auth and
+    // onboarding groups; send everything else into the intro flow.
+    if (!session) {
+      if (!inAuth && !inOnboarding) {
+        logDebug('AuthGate', '-> /(onboarding)');
+        router.replace('/(onboarding)');
+      }
+      return;
+    }
+
+    // Signed in: onboarding is NOT a gate. Pull the user out of the auth and
+    // onboarding groups into the app — EXCEPT a deliberate dev preview
+    // (Settings button, dev builds only). Normal app routes (map, /share,
+    // savedPlaceId focus, place detail) are left untouched.
+    const previewingOnboarding =
+      __DEV__ && inOnboarding && isOnboardingPreviewActive();
+    if ((inAuth || inOnboarding) && !previewingOnboarding) {
       logDebug('AuthGate', '-> /(tabs)/map');
       router.replace('/(tabs)/map');
     }
-  }, [session, loading, segments, router]);
+  }, [session, loading, segments, router, isDevSession, inOnboarding]);
 
   // Run a one-shot proximity check on sign-in and on app foreground. The
   // background task does the heavy lifting; this just makes sure we react
@@ -320,21 +272,16 @@ function AuthGate({ children }: { children: React.ReactNode }) {
       setSetupReminderDismissedThisSession(false);
       return;
     }
-    if (howNearrWorksVisible) {
+    if (suppressSetupReminder) {
       setSetupReminderVisible(false);
       return;
     }
     void refreshSetupReminder();
-  }, [session, isDevSession, howNearrWorksVisible, refreshSetupReminder]);
+  }, [session, isDevSession, suppressSetupReminder, refreshSetupReminder]);
 
   return (
     <>
       {children}
-      <HowNearrWorksModal
-        visible={howNearrWorksVisible}
-        onPrimary={() => void handleHowNearrWorks('completed')}
-        onSecondary={() => void handleHowNearrWorks('skipped')}
-      />
       <LegalAgreementModal
         visible={LEGAL_ACCEPTANCE_REQUIRED && legalAgreementVisible}
         onViewTerms={() => router.push('/legal/terms')}
@@ -343,7 +290,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
         agreeing={acceptingLegal}
       />
       <SetupReminderModal
-        visible={setupReminderVisible && !howNearrWorksVisible && !legalAgreementVisible}
+        visible={setupReminderVisible && !suppressSetupReminder && !legalAgreementVisible}
         needs={{ notifications: needsNotifications, location: needsLocation }}
         onEnableNotifications={() => void handleEnableNotifications()}
         onOpenLocationSettings={() => void handleOpenLocationSettings()}
@@ -457,6 +404,7 @@ function RootLayoutContent() {
               }}
             >
               <Stack.Screen name="(auth)" />
+              <Stack.Screen name="(onboarding)" />
               <Stack.Screen name="(tabs)" />
               <Stack.Screen name="auth-callback" />
               <Stack.Screen
@@ -474,6 +422,10 @@ function RootLayoutContent() {
                   // renders an explicit "Close" header button (see app/share.tsx).
                   gestureEnabled: true,
                 }}
+              />
+              <Stack.Screen
+                name="feedback"
+                options={{ presentation: 'modal', headerShown: true, title: 'Send feedback' }}
               />
               <Stack.Screen name="legal/terms" options={{ headerShown: true, title: 'Terms of Service' }} />
               <Stack.Screen name="legal/privacy" options={{ headerShown: true, title: 'Privacy Policy' }} />

@@ -696,8 +696,11 @@ export default function MapScreen() {
     if (validPlaces.length === 0) return; // wait for data to arrive
     const target = validPlaces.find((p) => p.id === savedPlaceId);
     if (!target) {
-      // Unknown id (e.g. deleted on another device). Mark as handled so we
-      // don't keep scanning, but don't move the camera.
+      // Not in the current list. If saved places are still loading, WAIT — a
+      // freshly-saved place (or a cold-cache deep link) may not have hydrated
+      // yet. Only give up (mark handled) once loading has settled, so we never
+      // refocus-loop on a genuinely-absent id (e.g. deleted on another device).
+      if (liveLoading) return;
       handledTargetIdRef.current = savedPlaceId;
       if (__DEV__) console.log('[map] target id not found', savedPlaceId);
       return;
@@ -709,7 +712,7 @@ export default function MapScreen() {
     } catch (err) {
       console.warn('[map] focus failed', (err as Error)?.message ?? err);
     }
-  }, [savedPlaceId, mapReady, validPlaces, profile]);
+  }, [savedPlaceId, mapReady, validPlaces, profile, liveLoading]);
 
   // ---- DEBUG ------------------------------------------------------------
   // Temporary verbose logs requested while diagnosing the "spinner forever"
@@ -1387,19 +1390,33 @@ export default function MapScreen() {
                 return;
               }
 
-              // Because the center of mass may sit off-center within the
-              // bounding box, expand the deltas to whichever side is
-              // farther from center so the far edge still fits on screen.
-              // Then pad ~25% for visual breathing room (mirrors the
-              // edgePadding behavior of the previous fitToCoordinates call).
-              const latDelta =
-                Math.max(maxLat - centerLat, centerLat - minLat) * 2;
-              const lngDelta =
-                Math.max(maxLng - centerLng, centerLng - minLng) * 2;
-              const PAD = 1.25;
-              const MIN_DELTA = 0.01; // single-place default zoom floor
-              const latitudeDelta = Math.max(latDelta * PAD, MIN_DELTA);
-              const longitudeDelta = Math.max(lngDelta * PAD, MIN_DELTA);
+              // Cluster-focused zoom: size the viewport from the SPREAD of
+              // saved-place coordinates around the centroid (standard
+              // deviation) instead of the single farthest point. A lone
+              // distant outlier therefore can't force an extreme zoom-out —
+              // the main cluster stays usable and the outlier may sit just
+              // off-screen (the intended "center of balance" behavior). The
+              // extreme-spread guard above still handles globe-scale spans.
+              let varLat = 0;
+              let varLng = 0;
+              for (const p of validPlaces) {
+                varLat += (p.place.latitude - centerLat) ** 2;
+                varLng += (p.place.longitude - centerLng) ** 2;
+              }
+              const stdLat = Math.sqrt(varLat / validPlaces.length);
+              const stdLng = Math.sqrt(varLng / validPlaces.length);
+              // Half-span in std-devs; ~2σ frames the bulk of a cluster.
+              const SPREAD_SIGMAS = 2;
+              const PAD = 1.3;
+              const MIN_DELTA = 0.02; // single-place / tight-cluster floor
+              const latitudeDelta = Math.max(
+                stdLat * SPREAD_SIGMAS * 2 * PAD,
+                MIN_DELTA,
+              );
+              const longitudeDelta = Math.max(
+                stdLng * SPREAD_SIGMAS * 2 * PAD,
+                MIN_DELTA,
+              );
 
               mapRef.current.animateToRegion(
                 {

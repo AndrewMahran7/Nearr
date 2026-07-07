@@ -78,6 +78,7 @@ import {
   type PlaceCandidate,
 } from '@/services/placesService';
 import { listSavedPlaces, saveSavedPlace } from '@/services/savedPlacesService';
+import { upsertSavedPlaceIntoCache } from '@/hooks/useSavedPlaces';
 import { trackEvent } from '@/lib/analytics';
 import { logDebug, logInfo } from '@/lib/logger';
 import { classifyExtractedQuery, shouldSearchPlaces } from '@/lib/queryValidation';
@@ -2035,6 +2036,11 @@ export default function ShareScreen() {
         saved_place_id: result.savedPlaceId,
         duplicate: result.status === 'duplicate',
       });
+      // Seed the shared cache so the map's savedPlaceId focus finds the newly
+      // saved place immediately (before any network revalidation).
+      if (result.status === 'saved') {
+        upsertSavedPlaceIntoCache(result.saved);
+      }
       if (!result.savedPlaceId) {
         console.warn('[save-flow] saved place id missing; opening map without focus');
         try {
@@ -2120,6 +2126,8 @@ export default function ShareScreen() {
       const cand = selected[idx];
       if (res.status === 'fulfilled') {
         const r = res.value;
+        // Seed the shared cache so the map can focus the first saved place.
+        if (r.status === 'saved') upsertSavedPlaceIntoCache(r.saved);
         saved.push({
           candidate: cand,
           savedPlaceId: r.savedPlaceId ?? null,
@@ -2597,15 +2605,15 @@ export default function ShareScreen() {
             </Card>
           ) : null}
 
-          {/* ---- TestFlight diagnostics (always visible) ---------- */}
+          {/* ---- Runtime diagnostics (dev only) ------------------- */}
           {/*
-           * 2026-05-26: always-on panel that proves on screen which
-           * runtime path the share flow took and — when the
-           * `process-share-link` Edge Function was NOT reached — the
-           * structured reason. Intentionally NOT gated on `__DEV__` so
-           * TestFlight testers can take a screenshot.
+           * On-screen panel that proves which runtime path the share flow
+           * took and — when the `process-share-link` Edge Function was NOT
+           * reached — the structured reason. Gated on `__DEV__` so production
+           * users never see raw diagnostics; the info stays available in dev
+           * builds for debugging.
            */}
-          {parsed ? (
+          {__DEV__ && parsed ? (
             <View style={styles.section}>
               <Card style={styles.debugCard}>
                 <Text style={[Typography.caption, styles.muted]}>

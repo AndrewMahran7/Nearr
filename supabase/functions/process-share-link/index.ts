@@ -37,6 +37,7 @@ import { detectPlatform, legacySourceFor } from './platform/detectPlatform.ts';
 import { fetchPostMetadata } from './metadata/fetchMetadata.ts';
 import { extractHandles } from './evidence/handleExtraction.ts';
 import { extractEvidence } from './evidence/extractEvidence.ts';
+import { extractTaggedLocation } from './evidence/taggedLocation.ts';
 import { resolveSharedPlace } from './resolver/resolveSharedPlace.ts';
 import { saveForUser } from './save.ts';
 import { persistResolverRun } from './shadowRun.ts';
@@ -131,12 +132,31 @@ serve(async (req) => {
 
   // ---- Build evidence -------------------------------------------
   const handles = extractHandles({ platform, title, description, html });
-  const evidence = extractEvidence({ platform, title, description, handles });
+  // First-class tagged-location evidence (YouTube recordingDetails, TikTok
+  // POI, IG location tag). Currently always null — the interface boundary is
+  // ready but no provider is wired yet (see evidence/taggedLocation.ts), so
+  // this is behavior-preserving. When present it becomes the resolver's
+  // highest-priority, Places-verified evidence source.
+  const taggedLocation = extractTaggedLocation({
+    platform,
+    html,
+    resolvedUrl: canonicalUrl,
+    title,
+    description,
+  });
+  const evidence = extractEvidence({
+    platform,
+    title,
+    description,
+    handles,
+    taggedLocation,
+  });
   logShareDebug('evidence:built', {
     keys: evidence.keys,
     hasAddress: !!evidence.address,
     venueHintCount: evidence.venueNameHints.length,
     isRoundup: evidence.isRoundup,
+    hasTaggedLocation: !!evidence.taggedLocation,
   });
   if (platform === 'tiktok') {
     logShareDebug('tiktok-share:evidence', {
@@ -146,11 +166,26 @@ serve(async (req) => {
 
   // ---- Resolve --------------------------------------------------
   const result = await resolveSharedPlace({ evidence, env });
+  // Which evidence source produced the result — the resolver records
+  // `evidenceSourceWon` for the tagged-location path; otherwise infer from the
+  // evidence the caption pipeline used. Purely diagnostic.
+  const evidenceSourceWon =
+    (result.diagnostics?.evidenceSourceWon as string | undefined) ??
+    (evidence.taggedLocation
+      ? 'tagged_location'
+      : evidence.address
+      ? 'caption_explicit_address'
+      : evidence.venueNameHints.length > 0
+      ? 'caption_venue_hint'
+      : evidence.handles.venueHandles.length > 0
+      ? 'venue_handle_tagged'
+      : 'caption_text');
   logShareDebug('resolver:result', {
     decision: result.decision,
     confidence: result.confidence,
     candidates: result.candidates.length,
     warnings: result.warnings,
+    evidenceSourceWon,
   });
   if (platform === 'tiktok') {
     logShareDebug('tiktok-share:decision', { decision: result.decision });

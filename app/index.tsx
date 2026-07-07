@@ -1,8 +1,15 @@
 import { Redirect } from 'expo-router';
 
+import { useAuth } from '@/hooks/useAuth';
+
 export default function Index() {
-  // AuthGate handles routing. This is just a placeholder.
-  // Map-first: the app lands on the Map tab. (Rollback: point this back to
-  // '/(tabs)/home'.)
+  // Initial-entry decision. Onboarding is now the PUBLIC pre-auth landing:
+  // logged-out users see the intro first; signed-in users go to the map.
+  // AuthGate remains the ongoing guard. (Rollback: point the signed-in
+  // destination back to '/(tabs)/home'.)
+  const { session, loading } = useAuth();
+
+  if (loading) return null;
+  if (!session) return <Redirect href="/(onboarding)" />;
   return <Redirect href="/(tabs)/map" />;
 }

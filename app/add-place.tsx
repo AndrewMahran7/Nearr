@@ -37,6 +37,7 @@ import { Colors, Radius, Spacing, Typography } from '@/constants';
 import { getActivationSaveFeedback } from '@/lib/activation';
 
 import { usePlacesSearch } from '@/hooks/usePlacesSearch';
+import { upsertSavedPlaceIntoCache } from '@/hooks/useSavedPlaces';
 import { getProfile } from '@/services/profileService';
 import { listSavedPlaces, saveSavedPlace } from '@/services/savedPlacesService';
 import { trackEvent } from '@/lib/analytics';
@@ -265,6 +266,11 @@ export default function SavePlace() {
         saved_place_id: result.savedPlaceId,
         duplicate: result.status === 'duplicate',
       });
+      // Seed the shared cache so the map's savedPlaceId focus finds the newly
+      // saved place immediately (before any network revalidation).
+      if (result.status === 'saved') {
+        upsertSavedPlaceIntoCache(result.saved);
+      }
       if (!result.savedPlaceId) {
         console.warn('[save-flow] saved place id missing; opening map without focus');
         router.replace('/(tabs)/map');

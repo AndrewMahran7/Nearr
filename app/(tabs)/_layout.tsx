@@ -17,13 +17,13 @@ export default function TabsLayout() {
         headerTintColor: colors.text,
         headerShadowVisible: false,
         tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textMuted,
+        // Use the lighter secondary text color for inactive tabs so the
+        // labels/icons stay readable on the dark tab bar (textMuted was too
+        // dim → the black-on-black look). Active stays orange.
+        tabBarInactiveTintColor: colors.textSecondary,
         tabBarStyle: {
           backgroundColor: colors.surface,
           borderTopColor: colors.border,
-        },
-        tabBarLabelStyle: {
-          color: undefined,
         },
       }}
     >

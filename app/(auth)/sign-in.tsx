@@ -6,12 +6,15 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   ScrollView,
   TouchableWithoutFeedback,
   Keyboard,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Screen, Input, Button } from '@/components';
+import { Feather } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Input, Button } from '@/components';
 import { Colors, Spacing, Typography } from '@/constants';
 import { sendMagicLink, signInWithPassword } from '@/services/auth';
 import { isSupabaseConfigured } from '@/lib/supabase';
@@ -73,8 +76,29 @@ export default function SignIn() {
     console.log('[auth] test-account password sign-in OK');
   }
 
+  // Back to the (pre-auth) onboarding intro. Prefer a normal back when there's
+  // history (e.g. arrived via a push from onboarding); otherwise fall back to
+  // the onboarding route so the user is never stranded.
+  function goBack() {
+    if (router.canGoBack()) router.back();
+    else router.replace('/(onboarding)');
+  }
+
   return (
-    <Screen>
+    // Auth uses a FIXED dark palette (static `Colors`), independent of the
+    // user's light/dark theme. Relying on the themed `Screen` background
+    // (cream in light mode) while the text uses the dark palette's white
+    // produced white-on-cream; forcing a dark background fixes the contrast.
+    <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
+      <Pressable
+        onPress={goBack}
+        hitSlop={12}
+        style={styles.backButton}
+        accessibilityRole="button"
+        accessibilityLabel="Back to intro"
+      >
+        <Feather name="chevron-left" size={26} color={Colors.text} />
+      </Pressable>
       {/* KeyboardAvoidingView lifts content when the iOS software keyboard
           appears. ScrollView ensures the button stays reachable on small
           screens. TouchableWithoutFeedback lets tapping the background
@@ -168,7 +192,7 @@ export default function SignIn() {
           </ScrollView>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
-    </Screen>
+    </SafeAreaView>
   );
 }
 
@@ -182,6 +206,17 @@ function Bullet({ text }: { text: string }) {
 }
 
 const styles = StyleSheet.create({
+  // Fixed dark auth background so the static dark-palette text always has
+  // proper contrast, regardless of the user's light/dark theme.
+  safe: { flex: 1, backgroundColor: Colors.bg, padding: Spacing.lg },
+  // Top-left back control returning to the onboarding intro.
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    marginBottom: Spacing.sm,
+  },
   // flex: 1 on the KAV fills the Screen's padded View.
   keyboardView: { flex: 1 },
   // flexGrow: 1 lets the ScrollView content expand to at least the full

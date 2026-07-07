@@ -34,6 +34,10 @@ import {
 } from '../places/googlePlaces.ts';
 import { Timings, logShareDebug } from '../diagnostics/logger.ts';
 
+// Score gap below which two tagged-location candidates are treated as an
+// ambiguous picker rather than a single confirmation.
+const TAGGED_PICKER_BAND = 8;
+
 export async function resolveSharedPlace(args: {
   evidence: Evidence;
   env: Env;
@@ -45,6 +49,43 @@ export async function resolveSharedPlace(args: {
   const warnings: string[] = [];
   const diagnostics: Record<string, unknown> = {};
   const evidenceUsed = [...evidence.keys];
+
+  // ---- 0. Tagged-location evidence (highest priority) ------------
+  // A platform-tagged place/location (YouTube recordingDetails, TikTok POI,
+  // IG location tag) is the strongest signal we can get. We STILL verify it
+  // against Google Places and NEVER auto-save on the tag alone — Places can
+  // land on the wrong nearby unit. Dormant until a provider is wired
+  // (`extractTaggedLocation` returns null today), so this preserves current
+  // behavior.
+  if (evidence.taggedLocation) {
+    logShareDebug('tagged-location:present', {
+      platform: evidence.taggedLocation.sourcePlatform,
+      confidence: evidence.taggedLocation.confidence,
+      hasName: !!evidence.taggedLocation.placeName,
+      hasAddress: !!evidence.taggedLocation.address,
+      hasCoords:
+        Number.isFinite(evidence.taggedLocation.latitude) &&
+        Number.isFinite(evidence.taggedLocation.longitude),
+      hasExternalId: !!evidence.taggedLocation.externalPlaceId,
+    });
+    const taggedResult = await resolveFromTaggedLocation({
+      evidence,
+      env,
+      warnings,
+      diagnostics,
+    });
+    if (taggedResult) {
+      logShareDebug('resolver:evidence_source', {
+        source: 'tagged_location',
+        decision: taggedResult.decision,
+        candidates: taggedResult.candidates.length,
+      });
+      return taggedResult;
+    }
+    // Tag present but unverifiable → fall through to the normal
+    // caption/address pipeline (do not fail on account of a bad tag).
+    warnings.push('tagged_location_fell_through_to_caption');
+  }
 
   // ---- 0. Multi-address verification -----------------------------
   // When the caption contains ≥2 distinct US street addresses, try
@@ -429,4 +470,84 @@ function normalizeAddrKey(addr: string): string {
     .replace(/,\s*(usa|united states)\s*$/i, '')
     .replace(/[^a-z0-9]+/g, ' ')
     .trim();
+}
+
+// Resolve a place from a first-class tagged-location signal. The tag is the
+// highest-priority evidence source, but it is NOT trusted blindly:
+//   - we build the strongest possible Places query from the tag's
+//     name/address/rawText and bias the search to the tag's coordinates,
+//   - we score the returned Places candidates against the full evidence,
+//   - we NEVER auto-save (safeToAutoSave stays false) — a tag can still point
+//     at the wrong nearby unit, so the user confirms in one tap,
+//   - multiple close candidates surface a picker (preserve confirmation).
+// Returns null when the tag cannot be verified against Places, so the caller
+// falls back to the normal caption/address pipeline.
+async function resolveFromTaggedLocation(args: {
+  evidence: Evidence;
+  env: Env;
+  warnings: string[];
+  diagnostics: Record<string, unknown>;
+}): Promise<ResolverResult | null> {
+  const { evidence, env, warnings, diagnostics } = args;
+  const tag = evidence.taggedLocation;
+  if (!tag) return null;
+
+  const query = [tag.placeName, tag.address, tag.rawText]
+    .filter(Boolean)
+    .join(', ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const bias =
+    Number.isFinite(tag.latitude) && Number.isFinite(tag.longitude)
+      ? { lat: tag.latitude as number, lng: tag.longitude as number }
+      : null;
+
+  // A tag with no usable query text AND no coordinates can't be verified.
+  if (!query && !bias) {
+    warnings.push('tagged_location_no_verifiable_fields');
+    return null;
+  }
+
+  const search = await searchPlaces(
+    query || (tag.placeName ?? ''),
+    env.googlePlacesKey,
+    bias ?? undefined,
+  );
+  if (!search.ok || search.results.length === 0) {
+    warnings.push('tagged_location_places_no_match');
+    return null;
+  }
+
+  const scored = scoreCandidates(search.results, evidence, tag.placeName ?? null, bias)
+    .filter((c) => !c.rejected)
+    .sort((a, b) => b.score - a.score);
+  if (scored.length === 0) {
+    warnings.push('tagged_location_all_candidates_rejected');
+    return null;
+  }
+
+  // `tagged_location_verified` marks that a real Google Place backs the tag.
+  const taggedKeys = ['tagged_location', 'tagged_location_verified'];
+  const resolved = scored.map((s) => toResolvedCandidate(s, taggedKeys));
+  const primary = resolved[0];
+  const ambiguous =
+    scored.length > 1 && scored[0].score - scored[1].score < TAGGED_PICKER_BAND;
+
+  diagnostics.evidenceSourceWon = 'tagged_location';
+  diagnostics.taggedLocationQuery = query || null;
+  diagnostics.taggedLocationConfidence = tag.confidence;
+
+  return {
+    decision: ambiguous ? 'candidate_picker' : 'candidate_confirmation',
+    primaryCandidate: primary,
+    candidates: resolved,
+    cleanSearchQuery: query || undefined,
+    // Never auto-save on a tag alone — Places verification is not proof the
+    // unit is exactly right. The user confirms in one tap.
+    safeToAutoSave: false,
+    confidence: 'high',
+    evidenceUsed: [...evidence.keys, ...taggedKeys],
+    warnings,
+    diagnostics,
+  };
 }

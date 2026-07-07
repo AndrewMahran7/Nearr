@@ -21,6 +21,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Linking,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -37,6 +38,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { trackEvent } from '@/lib/analytics';
 import { disableDevAuth } from '@/lib/devAuth';
 import { isDemoMode } from '@/lib/demoMode';
+import { setOnboardingPreview } from '@/lib/onboarding';
 import { LEGAL_ACCEPTANCE_REQUIRED, LEGAL_VERSION } from '@/constants';
 import { getProfile, getLegalAcceptanceStatus, updateProfile } from '@/services/profileService';
 import { signOut } from '@/services/auth';
@@ -52,6 +54,17 @@ import {
   syncGeofencesForSavedPlaces,
 } from '@/lib/geofencing';
 import { useTheme } from '@/lib/theme';
+
+// TODO(app-store): set to Nearr's numeric App Store app ID once the app is
+// live (e.g. '1234567890'). Until then "Leave a review" shows a friendly
+// "coming soon" alert instead of opening a broken/fake listing. Do NOT
+// hardcode a placeholder ID.
+const APP_STORE_APP_ID: string | null = null;
+
+/** Deep link that opens the write-review sheet for a live App Store app. */
+function appStoreReviewUrl(appId: string): string {
+  return `itms-apps://itunes.apple.com/app/id${appId}?action=write-review`;
+}
 import type { Profile, RadiusUnit } from '@/types';
 
 // ---------------------------------------------------------------------------
@@ -372,6 +385,39 @@ export default function SettingsScreen() {
     await sendTestNotification();
   }
 
+  // Dev/QA only: open the pre-auth onboarding intro as a preview. Sets the
+  // in-memory preview flag so AuthGate keeps a signed-in session on the
+  // onboarding route instead of redirecting to the map. Does NOT reset any
+  // production onboarding state.
+  function handleTestOnboarding() {
+    setOnboardingPreview(true);
+    router.push('/(onboarding)?preview=1');
+  }
+
+  // Open the App Store review flow. Public App Store rating — distinct from
+  // the private in-app "Send feedback" flow. Until Nearr is live (no App Store
+  // ID yet) this shows a friendly "coming soon" alert; never crashes.
+  async function handleLeaveReview() {
+    if (!APP_STORE_APP_ID) {
+      Alert.alert(
+        'Coming soon',
+        'Reviews will be available after Nearr is live on the App Store.',
+      );
+      return;
+    }
+    const deepLink = appStoreReviewUrl(APP_STORE_APP_ID);
+    const webUrl = `https://apps.apple.com/app/id${APP_STORE_APP_ID}?action=write-review`;
+    try {
+      const canOpen = await Linking.canOpenURL(deepLink);
+      await Linking.openURL(canOpen ? deepLink : webUrl);
+    } catch {
+      Alert.alert(
+        'Could not open the App Store',
+        'Please try again from the App Store app.',
+      );
+    }
+  }
+
   function formatAcceptedAt(value: string | null): string | null {
     if (!value) return null;
     const date = new Date(value);
@@ -571,6 +617,31 @@ export default function SettingsScreen() {
             </View>
             <Text style={[typography.bodyStrong, styles.helpChevron]}>›</Text>
           </Pressable>
+          <View style={styles.divider} />
+          <Pressable
+            style={styles.helpRow}
+            onPress={() =>
+              router.push({ pathname: '/feedback', params: { from: '/(tabs)/settings' } })
+            }
+          >
+            <View style={styles.helpCopy}>
+              <Text style={typography.bodyStrong}>Send feedback</Text>
+              <Text style={[typography.caption, styles.muted, styles.helpBody]}>
+                Tell me what&apos;s confusing, broken, or missing.
+              </Text>
+            </View>
+            <Text style={[typography.bodyStrong, styles.helpChevron]}>›</Text>
+          </Pressable>
+          <View style={styles.divider} />
+          <Pressable style={styles.helpRow} onPress={() => void handleLeaveReview()}>
+            <View style={styles.helpCopy}>
+              <Text style={typography.bodyStrong}>Leave a review</Text>
+              <Text style={[typography.caption, styles.muted, styles.helpBody]}>
+                Enjoying Nearr? A quick review helps a lot.
+              </Text>
+            </View>
+            <Text style={[typography.bodyStrong, styles.helpChevron]}>›</Text>
+          </Pressable>
         </Card>
 
         <View style={{ height: Spacing.xxl }} />
@@ -596,17 +667,21 @@ export default function SettingsScreen() {
             <Text style={[typography.bodyStrong, styles.helpChevron]}>›</Text>
           </Pressable>
           <View style={{ height: Spacing.xs }} />
-          <Text style={[typography.caption, styles.muted]}>
-            Legal acceptance required now: {LEGAL_ACCEPTANCE_REQUIRED ? 'Yes' : 'No'}
-          </Text>
-          <Text style={[typography.caption, styles.muted]}>
-            Current legal version: {LEGAL_VERSION}
-          </Text>
-          {legalAcceptedVersion ? (
-            <Text style={[typography.caption, styles.muted]}>
-              Accepted version: {legalAcceptedVersion}
-              {formatAcceptedAt(legalAcceptedAt) ? ` on ${formatAcceptedAt(legalAcceptedAt)}` : ''}
-            </Text>
+          {__DEV__ ? (
+            <>
+              <Text style={[typography.caption, styles.muted]}>
+                Legal acceptance required now: {LEGAL_ACCEPTANCE_REQUIRED ? 'Yes' : 'No'}
+              </Text>
+              <Text style={[typography.caption, styles.muted]}>
+                Current legal version: {LEGAL_VERSION}
+              </Text>
+              {legalAcceptedVersion ? (
+                <Text style={[typography.caption, styles.muted]}>
+                  Accepted version: {legalAcceptedVersion}
+                  {formatAcceptedAt(legalAcceptedAt) ? ` on ${formatAcceptedAt(legalAcceptedAt)}` : ''}
+                </Text>
+              ) : null}
+            </>
           ) : null}
         </Card>
 
@@ -615,18 +690,32 @@ export default function SettingsScreen() {
         <Text style={styles.sectionLabel}>Setup Nearr</Text>
         <SetupChecklist />
 
-        <View style={{ height: Spacing.xxl }} />
-        <Text style={styles.sectionLabel}>Testing</Text>
-        <Card style={styles.section}>
-          <Text style={[typography.caption, styles.muted]}>
-            Beta only. Use this to confirm nearby reminders can appear on this device.
-          </Text>
-          <Button
-            title="Send test notification"
-            variant="secondary"
-            onPress={() => void handleSendTestNotification()}
-          />
-        </Card>
+        {/* --- Testing (dev/debug builds only) ------------------------ */}
+        {__DEV__ ? (
+          <>
+            <View style={{ height: Spacing.xxl }} />
+            <Text style={styles.sectionLabel}>Testing</Text>
+            <Card style={styles.section}>
+              <Text style={[typography.caption, styles.muted]}>
+                Dev/debug only. Hidden in production builds.
+              </Text>
+              <Button
+                title="Send test notification"
+                variant="secondary"
+                onPress={() => void handleSendTestNotification()}
+              />
+              <View style={{ height: Spacing.sm }} />
+              <Button
+                title="Preview onboarding"
+                variant="ghost"
+                onPress={handleTestOnboarding}
+              />
+              <Text style={[typography.caption, styles.muted]}>
+                Opens the pre-auth onboarding intro flow.
+              </Text>
+            </Card>
+          </>
+        ) : null}
 
         {/* --- Account ------------------------------------------------- */}
         <View style={{ height: Spacing.xxl }} />
