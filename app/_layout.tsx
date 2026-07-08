@@ -250,6 +250,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     // fallback. Failure is non-fatal — geofencing only works on real
     // devices and only with Always location + notification permission.
     void syncGeofencesForSavedPlaces();
+    logInfo('notification-dedupe', 'listener_registered name=app_state_proximity_sync');
     const sub = AppState.addEventListener('change', (state) => {
       if (state === 'active') {
         setSetupReminderDismissedThisSession(false);
@@ -261,7 +262,10 @@ function AuthGate({ children }: { children: React.ReactNode }) {
         setSetupReminderDismissedThisSession(false);
       }
     });
-    return () => sub.remove();
+    return () => {
+      logInfo('notification-dedupe', 'listener_cleanup name=app_state_proximity_sync');
+      sub.remove();
+    };
   }, [session, isDevSession, refreshSetupReminder]);
 
   useEffect(() => {
@@ -383,8 +387,12 @@ function RootLayoutContent() {
       .catch(() => undefined);
 
     // Warm-start: app already open.
+    logInfo('notification-dedupe', 'listener_registered name=notification_response');
     const sub = Notifications.addNotificationResponseReceivedListener(routeFromResponse);
-    return () => sub.remove();
+    return () => {
+      logInfo('notification-dedupe', 'listener_cleanup name=notification_response');
+      sub.remove();
+    };
   }, [router]);
 
   return (

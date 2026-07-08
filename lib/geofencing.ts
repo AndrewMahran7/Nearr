@@ -274,12 +274,25 @@ async function runSyncGeofencesForSavedPlaces(): Promise<GeofenceSyncStatus> {
     return { state: 'skipped', reason: 'fetch_failed' };
   }
 
-  const eligible = ((savedRows ?? []) as SavedPlaceWithPlace[]).filter(
+  const eligibleRaw = ((savedRows ?? []) as SavedPlaceWithPlace[]).filter(
     (s) =>
       s.place &&
       Number.isFinite(s.place.latitude) &&
       Number.isFinite(s.place.longitude),
   );
+  const eligibleBySavedPlaceId = new Map<string, SavedPlaceWithPlace>();
+  for (const row of eligibleRaw) {
+    if (!eligibleBySavedPlaceId.has(row.id)) {
+      eligibleBySavedPlaceId.set(row.id, row);
+    }
+  }
+  const eligible = Array.from(eligibleBySavedPlaceId.values());
+  if (eligibleRaw.length !== eligible.length) {
+    logInfo(
+      'notification-dedupe',
+      `geofence_saved_place_deduped removed=${eligibleRaw.length - eligible.length}`,
+    );
+  }
 
   if (eligible.length === 0) {
     await stopNearrGeofencing();

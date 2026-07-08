@@ -20,8 +20,9 @@
     "test:manual-fallback": "ts-node -P scripts/tsconfig.json scripts/testManualFallback.ts",
     "test:multi-address": "ts-node -P scripts/tsconfig.json scripts/testMultiAddressExtraction.ts",
     "test:address-first": "ts-node -P scripts/tsconfig.json scripts/testAddressFirst.ts",
+    "test:notification-dedupe": "ts-node -P scripts/tsconfig.json scripts/testPlaceNotificationDedupe.ts",
     "test:share-remote": "ts-node -P scripts/tsconfig.json scripts/testProcessShareLinkRemote.ts",
-    "test:prebuild": "npm run typecheck && npm run test:address-first && npm run test:address-match && npm run test:multi-address && npm run test:recovery-hints && npm run test:safety-description-only && npm run test:generic-caption-guard && npm run test:platform-noise && npm run test:manual-fallback && npm run test:tiktok-url",
+    "test:prebuild": "npm run typecheck && npm run test:address-first && npm run test:address-match && npm run test:multi-address && npm run test:recovery-hints && npm run test:safety-description-only && npm run test:generic-caption-guard && npm run test:platform-noise && npm run test:manual-fallback && npm run test:tiktok-url && npm run test:notification-dedupe",
     "export:share-gold-labels": "ts-node -P scripts/tsconfig.json scripts/exportShareGoldLabels.ts",
     "eval:share-gold": "ts-node -P scripts/tsconfig.json scripts/evalShareGold.ts"
   },

@@ -49,10 +49,16 @@ import * as Location from 'expo-location';
 import * as Notifications from 'expo-notifications';
 import * as TaskManager from 'expo-task-manager';
 import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { isDemoMode } from './demoMode';
 import { isDebugLoggingEnabled, logDebug, logInfo } from './logger';
 import { isMapPreviewMode } from './mapPreview';
+import {
+  createPlaceNotificationDedupeGate,
+  PLACE_NOTIFICATION_DEDUPE_WINDOW_MS,
+  type PlaceNotificationGateResult,
+} from './placeNotificationDedupe';
 import { supabase } from './supabase';
 import {
   distanceMeters,
@@ -96,6 +102,8 @@ const lastAlertAtGroupMem = new Map<string, number>();
  * cooldowns, so this only needs to track the current run.
  */
 const insideStateMap = new Map<string, boolean>();
+
+const placeNotificationDedupeGate = createPlaceNotificationDedupeGate(AsyncStorage);
 
 const ADDRESS_LABEL_RE = /^\s*\d{1,6}\s+\S+/i;
 const STREET_SUFFIX_RE =
@@ -784,6 +792,7 @@ export function decideProximity(
 export async function checkProximity(
   latitude: number,
   longitude: number,
+  triggerType: NotifyReason = 'background_location',
 ): Promise<void> {
   // --- auth ---
   const { data: userRes, error: userErr } = await supabase.auth.getUser();
@@ -912,14 +921,21 @@ export async function checkProximity(
 
     const copy = buildGroupNotificationCopy(overlapGroup.labels);
 
-    await fireNotification(
+    const sendResult = await sendPlaceReminderNotificationOnce({
       userId,
-      overlapGroup.representative,
-      decision.distanceMeters,
-      copy,
-      overlapGroup.members,
-      overlapGroup.labels[0] ?? label,
-    );
+      saved: overlapGroup.representative,
+      distance: decision.distanceMeters,
+      triggerType,
+      copyOverride: copy,
+      groupedSavedPlaces: overlapGroup.members,
+      preferredLabel: overlapGroup.labels[0] ?? label,
+    });
+    if (sendResult.status !== 'sent') {
+      if (sendResult.status === 'skipped_duplicate') {
+        summary.skippedCooldown += 1;
+      }
+      continue;
+    }
     lastAlertAtMem.set(s.id, now);
     lastAlertAtGroupMem.set(overlapGroup.key, now);
     summary.notified += 1;
@@ -960,8 +976,138 @@ export type MaybeNotifyResult =
         | 'cooldown_mem'
         | 'cooldown_db'
         | 'count_limit'
+        | 'skipped_duplicate'
+        | 'skipped_disabled'
+        | 'dedupe_failed'
         | 'send_failed';
     };
+
+type PlaceReminderSendResult =
+  | { status: 'sent' }
+  | { status: 'skipped_duplicate'; savedPlaceId: string; ageMs: number }
+  | { status: 'skipped_disabled'; reason: 'missing_saved_place_id' }
+  | { status: 'failed'; reason: 'dedupe_failed' | 'send_failed' };
+
+async function shouldSendPlaceNotification(params: {
+  savedPlaceId: string | undefined;
+  triggerType: NotifyReason;
+  now: number;
+  cooldownMs?: number;
+}): Promise<PlaceNotificationGateResult> {
+  const { savedPlaceId, triggerType, now, cooldownMs } = params;
+  const id = savedPlaceId?.trim() ?? '';
+  logInfo(
+    'notification-dedupe',
+    `check saved_place_id=${id || 'missing'} trigger=${triggerType}`,
+  );
+
+  const result = await placeNotificationDedupeGate.checkAndRecord({
+    savedPlaceId,
+    triggerType,
+    now,
+    cooldownMs: cooldownMs ?? PLACE_NOTIFICATION_DEDUPE_WINDOW_MS,
+  });
+
+  if (result.status === 'skipped_duplicate') {
+    logInfo(
+      'notification-dedupe',
+      `skipped_duplicate saved_place_id=${result.savedPlaceId} trigger=${result.triggerType} age_ms=${result.ageMs}`,
+    );
+  } else if (result.status === 'skipped_disabled') {
+    logInfo('notification-dedupe', `missing_saved_place_id trigger=${result.triggerType}`);
+  } else if (result.status === 'failed') {
+    console.warn(
+      `[notification-dedupe] failed saved_place_id=${result.savedPlaceId ?? 'unknown'} trigger=${result.triggerType} reason=${result.reason}`,
+    );
+  }
+
+  return result;
+}
+
+async function rollbackPlaceNotificationReservations(
+  savedPlaceIds: string[],
+  triggerType: NotifyReason,
+): Promise<void> {
+  for (const savedPlaceId of savedPlaceIds) {
+    if (!savedPlaceId) continue;
+    await placeNotificationDedupeGate.rollback(savedPlaceId, triggerType);
+  }
+}
+
+async function sendPlaceReminderNotificationOnce(params: {
+  userId: string;
+  saved: SavedPlaceWithPlace;
+  distance: number;
+  triggerType: NotifyReason;
+  copyOverride?: { title: string; body: string };
+  groupedSavedPlaces?: SavedPlaceWithPlace[];
+  preferredLabel?: string;
+}): Promise<PlaceReminderSendResult> {
+  const {
+    userId,
+    saved,
+    distance,
+    triggerType,
+    copyOverride,
+    groupedSavedPlaces = [saved],
+    preferredLabel,
+  } = params;
+  const now = Date.now();
+  const uniqueSavedPlaceIds = Array.from(
+    new Set(groupedSavedPlaces.map((grouped) => grouped.id).filter((id) => !!id)),
+  );
+  const reservedIds: string[] = [];
+
+  for (const savedPlaceId of uniqueSavedPlaceIds) {
+    const gate = await shouldSendPlaceNotification({
+      savedPlaceId,
+      triggerType,
+      now,
+    });
+
+    if (gate.status === 'allow') {
+      reservedIds.push(savedPlaceId);
+      continue;
+    }
+
+    await rollbackPlaceNotificationReservations(reservedIds, triggerType);
+
+    if (gate.status === 'skipped_duplicate') {
+      return {
+        status: 'skipped_duplicate',
+        savedPlaceId: gate.savedPlaceId,
+        ageMs: gate.ageMs,
+      };
+    }
+    if (gate.status === 'skipped_disabled') {
+      return { status: 'skipped_disabled', reason: gate.reason };
+    }
+    return { status: 'failed', reason: 'dedupe_failed' };
+  }
+
+  const sent = await fireNotification(
+    userId,
+    saved,
+    distance,
+    copyOverride,
+    groupedSavedPlaces,
+    preferredLabel,
+  );
+
+  if (!sent) {
+    await rollbackPlaceNotificationReservations(reservedIds, triggerType);
+    return { status: 'failed', reason: 'send_failed' };
+  }
+
+  for (const savedPlaceId of uniqueSavedPlaceIds) {
+    logInfo(
+      'notification-dedupe',
+      `sent saved_place_id=${savedPlaceId} trigger=${triggerType}`,
+    );
+  }
+
+  return { status: 'sent' };
+}
 
 /**
  * Eligibility check + send for a single saved place, identified by id.
@@ -1073,14 +1219,29 @@ export async function maybeNotifyForSavedPlace(
     const radius = effectiveRadiusMeters(overlapGroup.representative, profile);
     const copyOverride = buildGroupNotificationCopy(overlapGroup.labels);
 
-    await fireNotification(
+    const sendResult = await sendPlaceReminderNotificationOnce({
       userId,
-      overlapGroup.representative,
-      radius,
+      saved: overlapGroup.representative,
+      distance: radius,
+      triggerType: reason,
       copyOverride,
-      overlapGroup.members,
-      overlapGroup.labels[0] ?? notificationPrimaryLabel(overlapGroup.representative),
-    );
+      groupedSavedPlaces: overlapGroup.members,
+      preferredLabel:
+        overlapGroup.labels[0] ?? notificationPrimaryLabel(overlapGroup.representative),
+    });
+    if (sendResult.status === 'skipped_duplicate') {
+      return { sent: false, reason: 'skipped_duplicate' };
+    }
+    if (sendResult.status === 'skipped_disabled') {
+      return { sent: false, reason: 'skipped_disabled' };
+    }
+    if (sendResult.status === 'failed') {
+      return {
+        sent: false,
+        reason: sendResult.reason === 'dedupe_failed' ? 'dedupe_failed' : 'send_failed',
+      };
+    }
+
     lastAlertAtMem.set(overlapGroup.representative.id, now);
     lastAlertAtGroupMem.set(overlapGroup.key, now);
     return { sent: true };
@@ -1101,7 +1262,7 @@ async function fireNotification(
   copyOverride?: { title: string; body: string },
   groupedSavedPlaces: SavedPlaceWithPlace[] = [saved],
   preferredLabel?: string,
-): Promise<void> {
+): Promise<boolean> {
   const groupedSavedPlaceIds = groupedSavedPlaces.map((grouped) => grouped.id);
   const count = Math.max(...groupedSavedPlaces.map((grouped) => grouped.notification_count ?? 0));
   // Notification 3 (count already at 2) uses the "Give me 3 more chances" category.
@@ -1132,7 +1293,7 @@ async function fireNotification(
   } catch (e) {
     console.warn(`[notifications] NOTIFICATION_SEND_FAILED place=${label}`, e);
     // Don't update DB if the notification itself didn't go out.
-    return;
+    return false;
   }
 
   // 2. Bump last_notified_at and increment notification_count for all
@@ -1182,6 +1343,8 @@ async function fireNotification(
   if (evErr) {
     console.warn('[notifications] event insert failed', evErr.message);
   }
+
+  return true;
 }
 
 // ---------------------------------------------------------------------------
@@ -1287,7 +1450,7 @@ export async function checkProximityOnce(): Promise<CheckProximityOnceResult> {
     const loc = await Location.getCurrentPositionAsync({
       accuracy: Location.Accuracy.Balanced,
     });
-    await checkProximity(loc.coords.latitude, loc.coords.longitude);
+    await checkProximity(loc.coords.latitude, loc.coords.longitude, 'foreground_check');
     return { ok: true };
   } catch (e) {
     if (isExpectedLocationUnavailableError(e)) {
@@ -1327,7 +1490,7 @@ try {
       const last = locs?.[locs.length - 1];
       if (!last) return;
       try {
-        await checkProximity(last.coords.latitude, last.coords.longitude);
+        await checkProximity(last.coords.latitude, last.coords.longitude, 'background_location');
       } catch (e) {
         console.warn('[locationTask] checkProximity failed', e);
       }
