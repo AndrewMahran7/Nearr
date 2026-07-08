@@ -20,6 +20,7 @@ import {
   extractVenueHandleCandidates,
   isGenericAddressCard,
   isMallContextHandle,
+  isNoiseHandle,
   isWrongLocationCandidate,
   looksLikeRoundupPost,
   normalizeCompactName,
@@ -812,6 +813,83 @@ check(
 check(
   'isWrongLocationCandidate: NY candidate, expected NY → false',
   isWrongLocationCandidate('123 Main St, Brooklyn, NY 11201, USA', 'NY') === false,
+);
+
+// ---------------------------------------------------------------------------
+// Regression: Instagram Reel CxdY35frOrf — caption venue BEFORE address,
+// separated by an em dash + pin. Must extract "Brooklyn City Pizzeria &
+// Market" and must NOT let poster/platform noise (Media/Foodie) become the
+// venue. See scripts/shareRegressionFixtures.ts.
+// ---------------------------------------------------------------------------
+const BROOKLYN_CAPTION =
+  '🌃Brooklyn City Pizzeria & Market — 📍30012 Crown Valley Pkwy suite I, Laguna Niguel, CA 92677';
+const BROOKLYN_TITLE =
+  'Andrewtrung Le | Foodie 🙂 on Instagram: "🌃Brooklyn City Pizzeria & Market — 📍30012 Crown Valley Pkwy suite I, Laguna Niguel, CA 92677 — 🎻Pepperoni Pizza"';
+const BROOKLYN_DESC =
+  '44 likes, 10 comments - mr.les.munchies on September 21, 2023: "🌃Brooklyn City Pizzeria & Market — 📍30012 Crown Valley Pkwy suite I, Laguna Niguel, CA 92677 —"';
+
+check(
+  'A. caption venue-before-pin → "Brooklyn City Pizzeria & Market"',
+  extractCaptionVenueHints(BROOKLYN_CAPTION).includes('Brooklyn City Pizzeria & Market'),
+  `got=${JSON.stringify(extractCaptionVenueHints(BROOKLYN_CAPTION))}`,
+);
+check(
+  'B. IG title form → includes Brooklyn venue, excludes Foodie/Media/Instagram',
+  (() => {
+    const hints = extractCaptionVenueHints(BROOKLYN_TITLE);
+    return (
+      hints.includes('Brooklyn City Pizzeria & Market') &&
+      !hints.includes('Foodie') &&
+      !hints.includes('Media') &&
+      !hints.includes('Instagram')
+    );
+  })(),
+  `got=${JSON.stringify(extractCaptionVenueHints(BROOKLYN_TITLE))}`,
+);
+check(
+  'B2. IG title form → Brooklyn venue ranks FIRST (used as placeNameHint)',
+  extractCaptionVenueHints(BROOKLYN_TITLE)[0] === 'Brooklyn City Pizzeria & Market',
+  `got=${JSON.stringify(extractCaptionVenueHints(BROOKLYN_TITLE))}`,
+);
+check(
+  'C. IG description form → includes Brooklyn venue',
+  extractCaptionVenueHints(BROOKLYN_DESC).includes('Brooklyn City Pizzeria & Market'),
+  `got=${JSON.stringify(extractCaptionVenueHints(BROOKLYN_DESC))}`,
+);
+check(
+  'D. generic IG metadata → no Media/Instagram/Foodie/Reel venue hints',
+  (() => {
+    const generic =
+      'Andrewtrung Le | Foodie 🙂 on Instagram: "check out this reel #foodie #reels"';
+    const hints = extractCaptionVenueHints(generic);
+    return (
+      !hints.includes('Media') &&
+      !hints.includes('Instagram') &&
+      !hints.includes('Foodie') &&
+      !hints.includes('Reel')
+    );
+  })(),
+);
+
+// isNoiseHandle: reject platform/CSS/poster noise, keep real venue handles.
+check('isNoiseHandle: media (from @media CSS) → true', isNoiseHandle('media') === true);
+check('isNoiseHandle: @media → true (strips @)', isNoiseHandle('@media') === true);
+check('isNoiseHandle: instagram → true', isNoiseHandle('instagram') === true);
+check('isNoiseHandle: foodie → true', isNoiseHandle('foodie') === true);
+check('isNoiseHandle: reel/reels → true', isNoiseHandle('reel') === true && isNoiseHandle('reels') === true);
+check('isNoiseHandle: media_kitchen → false (substring not matched)', isNoiseHandle('media_kitchen') === false);
+check('isNoiseHandle: null/empty → false', isNoiseHandle(null) === false && isNoiseHandle('') === false);
+// E. Known-good handles are NOT rejected and still derive their venue names.
+check('E. isNoiseHandle: 2nd_floor_hb → false', isNoiseHandle('2nd_floor_hb') === false);
+check('E. isNoiseHandle: paradisedynasty_usa → false', isNoiseHandle('paradisedynasty_usa') === false);
+check('E. isNoiseHandle: kenos → false', isNoiseHandle('kenos') === false);
+check(
+  'E. 2nd_floor_hb still → "2nd Floor"',
+  derivePlaceNameHintFromHandle('2nd_floor_hb') === '2nd Floor',
+);
+check(
+  'E. paradisedynasty_usa still → "Paradisedynasty"',
+  derivePlaceNameHintFromHandle('paradisedynasty_usa') === 'Paradisedynasty',
 );
 
 console.log('');

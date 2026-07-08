@@ -7,6 +7,7 @@
 import { detectHandles } from '../../../../lib/shareAgent/tools.ts';
 import {
   isMallContextHandle,
+  isNoiseHandle,
   derivePlaceNameHintFromHandle,
 } from '../../../../lib/shareAgent/recoveryHints.ts';
 import type { SourcePlatform } from '../types.ts';
@@ -33,9 +34,16 @@ export function extractHandles(args: {
   const platformArg: 'instagram' | 'tiktok' =
     args.platform === 'tiktok' ? 'tiktok' : 'instagram';
   const { result } = detectHandles(text || null, args.html, platformArg);
-  const tagged = (result.taggedHandles ?? []).filter(Boolean);
+  // Drop platform / page-internal noise handles (e.g. `@media` leaking from
+  // Instagram's inline CSS) so they never become a poster-name venue query.
+  const tagged = (result.taggedHandles ?? [])
+    .filter(Boolean)
+    .filter((h) => !isNoiseHandle(h));
   const venue = tagged.filter((h) => !isMallContextHandle(h));
-  const posterHandle = result.posterHandle ?? null;
+  const posterHandle =
+    result.posterHandle && !isNoiseHandle(result.posterHandle)
+      ? result.posterHandle
+      : null;
   const posterNameHint = posterHandle
     ? derivePlaceNameHintFromHandle(posterHandle)
     : null;

@@ -20,15 +20,24 @@ export type QueryPlan = {
 };
 
 export function buildQueryPlan(evidence: Evidence): QueryPlan {
-  // Pick the strongest name hint we have: caption venue hint > venue
-  // handle > poster name hint.
-  const placeNameHint =
+  // Venue name = caption-derived hint > tagged venue handle. The poster
+  // handle / poster display name is a SEPARATE, weaker signal.
+  const venueName =
+    evidence.address?.venue ??
     evidence.venueNameHints[0] ??
     (evidence.handles.venueHandles[0]
       ? humanize(evidence.handles.venueHandles[0])
       : null) ??
-    evidence.handles.posterNameHint ??
     null;
+
+  // Address evidence is stronger than the poster. When a street address is
+  // present we NEVER prepend the poster handle/name to a Places query — only
+  // the caption-derived venue may qualify the address. The poster name is
+  // only allowed as a weak fallback when there is no address at all (this
+  // preserves the pre-existing no-address behavior).
+  const placeNameHint = evidence.address
+    ? venueName
+    : venueName ?? evidence.handles.posterNameHint ?? null;
 
   // Explicit place evidence = something that actually anchors a place
   // (a street address, a caption venue hint like "📍 X" / "X, City", or a

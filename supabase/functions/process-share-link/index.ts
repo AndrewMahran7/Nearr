@@ -158,6 +158,22 @@ serve(async (req) => {
     isRoundup: evidence.isRoundup,
     hasTaggedLocation: !!evidence.taggedLocation,
   });
+  // Address-first extraction audit (no secrets — lengths + parsed fields
+  // only). Lets the remote tester show exactly what the address path saw.
+  logShareDebug('address-first:audit', {
+    metadata_title_len: (title ?? '').length,
+    metadata_description_len: (description ?? '').length,
+    address_count: evidence.addresses.length,
+    addresses: evidence.addresses.map((a) => ({
+      street: a.raw,
+      city: a.city,
+      state: a.state,
+      zip: a.zip ?? null,
+      paired_venue: a.venue ?? null,
+    })),
+    city_state: evidence.cityState,
+    venue_hints: evidence.venueNameHints,
+  });
   if (platform === 'tiktok') {
     logShareDebug('tiktok-share:evidence', {
       evidenceAddressCount: evidence.addresses?.length ?? (evidence.address ? 1 : 0),

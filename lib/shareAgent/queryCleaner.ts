@@ -105,12 +105,22 @@ export function cleanPlacesSeed(input: string | null | undefined, maxLen = 80): 
 }
 
 export type LikelyAddress = {
-  /** Raw matched address text, normalized for whitespace. */
+  /** Raw matched address text, normalized for whitespace. Includes a
+   *  suite / unit token when one immediately follows the street. */
   raw: string;
-  /** Best-effort city extracted from a "<address>, <city>" suffix. */
+  /** Best-effort city extracted from a "<address>, <city>" suffix OR a
+   *  "<city>, <address>" prefix ("📍 Downey, 8502 Telegraph Rd."). */
   city: string | null;
-  /** Best-effort state extracted from a "..., <city>, <ST>" suffix. */
+  /** Best-effort two-letter US state ("CA"). Full state names in the
+   *  source ("California") are normalized to their abbreviation. */
   state: string | null;
+  /** Best-effort 5-digit US ZIP code trailing the address, if present. */
+  zip?: string | null;
+  /** Venue name paired to this address, when a name-shaped phrase sits
+   *  immediately before it in the caption. Populated by the evidence
+   *  layer (extractEvidence), not by the extractor itself — the raw
+   *  extractor leaves this null. */
+  venue?: string | null;
 };
 
 // Conservative US street-address regex. Requires a leading number, a
@@ -120,14 +130,53 @@ export type LikelyAddress = {
 // recognized suffix simply won't trigger the address-first path; they
 // still flow through the normal name-based extraction.
 const STREET_SUFFIXES =
-  '(?:street|st|avenue|ave|av|road|rd|boulevard|blvd|drive|dr|lane|ln|way|wy|court|ct|place|pl|terrace|ter|highway|hwy|parkway|pkwy|circle|cir|plaza|plz|square|sq|alley|aly|broadway)';
-const STREET_ADDRESS_RE = new RegExp(
-  // number  +  1-5 word street name  +  suffix  +  optional unit
-  `\\b(\\d{1,6}(?:\\-\\d+)?\\s+[A-Za-z0-9'\\.]+(?:\\s+[A-Za-z0-9'\\.]+){0,4}\\s+${STREET_SUFFIXES})\\b(?:\\.|,|\\s+(?:suite|ste|apt|unit|#)\\s*[A-Za-z0-9\\-]+)?`,
-  'i',
-);
+  '(?:street|st|avenue|ave|av|road|rd|boulevard|blvd|drive|dr|lane|ln|way|wy|court|ct|place|pl|terrace|ter|highway|hwy|parkway|pkwy|circle|cir|plaza|plz|square|sq|alley|aly|broadway|road|route|rte|trail|trl|loop|walk|row|path|pike|expressway|expy|freeway|fwy)';
+// Optional unit / suite token that may trail the street portion. Captured
+// INTO the raw address so "379 W Central Ave Ste A" keeps its suite.
+const UNIT_SUFFIX =
+  `(?:\\s*(?:,|\\.)?\\s*(?:suite|ste|apt|apartment|unit|bldg|building|fl|floor|rm|room|#)\\.?\\s*[A-Za-z0-9\\-]+)?`;
+// "Suffix-last" US form: number + 1-5 word street name + street suffix.
+// e.g. "30012 Crown Valley Pkwy", "126 Main St", "8502 Telegraph Rd".
+const STREET_SUFFIX_FORM =
+  `\\d{1,6}(?:\\-\\d+)?\\s+[A-Za-z0-9'\\.]+(?:\\s+[A-Za-z0-9'\\.]+){0,4}\\s+${STREET_SUFFIXES}`;
+// "Type-first" form used by Spanish / French street naming common in CA/TX/
+// FL/LA ("31872 Paseo Adelanto", "123 Calle Real", "45 Via Lido"). The type
+// keyword is matched case-INSENSITIVELY but the following street name MUST be
+// Title-cased so casual prose ("order 5 via fedex", "3 camino tacos") does not
+// trigger. Kept as a separate case-sensitive pass (see extractLikelyAddresses).
+const STREET_TYPE_PREFIXES =
+  '(?:Paseo|Camino|Calle|Avenida|Via|Rue|Plaza|Carrera|Cami[nñ]o)';
+const STREET_PREFIX_FORM =
+  `\\d{1,6}(?:\\-\\d+)?\\s+${STREET_TYPE_PREFIXES}\\s+[A-Z][A-Za-z'\\.]+(?:\\s+[A-Z][A-Za-z'\\.]+){0,3}`;
+
+const STREET_SUFFIX_RE = new RegExp(`\\b(${STREET_SUFFIX_FORM})\\b${UNIT_SUFFIX}`, 'gi');
+// Case-SENSITIVE (no 'i' flag) so the Title-cased street-name requirement is
+// enforced — this is what keeps false positives low for the type-first form.
+const STREET_PREFIX_RE = new RegExp(`\\b(${STREET_PREFIX_FORM})\\b${UNIT_SUFFIX}`, 'g');
 
 const STATE_RE = /\b([A-Z]{2})\b/;
+const ZIP_RE = /\b(\d{5})(?:-\d{4})?\b/;
+
+// Full US state names → USPS abbreviation. Used to normalize captions that
+// spell the state out ("San Juan Capistrano, California 92675").
+const STATE_NAME_TO_ABBR: Record<string, string> = {
+  alabama: 'AL', alaska: 'AK', arizona: 'AZ', arkansas: 'AR', california: 'CA',
+  colorado: 'CO', connecticut: 'CT', delaware: 'DE', florida: 'FL', georgia: 'GA',
+  hawaii: 'HI', idaho: 'ID', illinois: 'IL', indiana: 'IN', iowa: 'IA',
+  kansas: 'KS', kentucky: 'KY', louisiana: 'LA', maine: 'ME', maryland: 'MD',
+  massachusetts: 'MA', michigan: 'MI', minnesota: 'MN', mississippi: 'MS',
+  missouri: 'MO', montana: 'MT', nebraska: 'NE', nevada: 'NV',
+  'new hampshire': 'NH', 'new jersey': 'NJ', 'new mexico': 'NM',
+  'new york': 'NY', 'north carolina': 'NC', 'north dakota': 'ND', ohio: 'OH',
+  oklahoma: 'OK', oregon: 'OR', pennsylvania: 'PA', 'rhode island': 'RI',
+  'south carolina': 'SC', 'south dakota': 'SD', tennessee: 'TN', texas: 'TX',
+  utah: 'UT', vermont: 'VT', virginia: 'VA', washington: 'WA',
+  'west virginia': 'WV', wisconsin: 'WI', wyoming: 'WY',
+};
+const STATE_ABBRS = new Set(Object.values(STATE_NAME_TO_ABBR).concat('DC'));
+
+const CITY_FIRST_WORD_STOP =
+  /^(best|new|open|fresh|amazing|good|great|happy|the|a|an|top|our|my|your|this|that|suite|ste|unit|apt|apartment|bldg|building|floor|fl|room|rm)$/;
 
 /**
  * Try to extract a likely US street address from arbitrary social text.
@@ -154,41 +203,118 @@ export function extractLikelyAddresses(
 ): LikelyAddress[] {
   if (!input) return [];
   const text = String(input).replace(/\s+/g, ' ');
-  // Global, case-insensitive scan so we don't stop at the first match.
-  const globalRe = new RegExp(STREET_ADDRESS_RE.source, 'gi');
+
+  // Collect raw matches from BOTH the suffix-last and type-first passes,
+  // tagged with their position so we can return them in source order and
+  // dedupe overlaps deterministically.
+  type RawHit = { raw: string; index: number; end: number };
+  const hits: RawHit[] = [];
+  for (const re of [STREET_SUFFIX_RE, STREET_PREFIX_RE]) {
+    re.lastIndex = 0;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(text)) !== null) {
+      const captured = (m[1] ?? '').trim();
+      if (!captured) continue;
+      // The full match (m[0]) includes any trailing unit token; keep it in
+      // `raw` so "379 W Central Ave Ste A" preserves its suite.
+      const raw = m[0].trim().replace(/[\s,]+$/, '');
+      hits.push({ raw, index: m.index ?? 0, end: (m.index ?? 0) + m[0].length });
+    }
+  }
+  hits.sort((a, b) => a.index - b.index);
+
   const out: LikelyAddress[] = [];
   const seen = new Set<string>();
-  let m: RegExpExecArray | null;
-  while ((m = globalRe.exec(text)) !== null && out.length < max) {
-    const rawAddress = (m[1] ?? '').trim();
-    if (!rawAddress) continue;
-    const key = rawAddress.toLowerCase().replace(/\s+/g, ' ');
+  const takenSpans: Array<[number, number]> = [];
+  for (const hit of hits) {
+    if (out.length >= max) break;
+    // Skip a hit that overlaps a span we already emitted (the two passes can
+    // both match the same street).
+    if (takenSpans.some(([s, e]) => hit.index < e && hit.end > s)) continue;
+    const key = streetKey(hit.raw);
     if (seen.has(key)) continue;
     seen.add(key);
-    const matchEnd = (m.index ?? 0) + m[0].length;
-    const tail = text.slice(matchEnd, matchEnd + 80);
+    takenSpans.push([hit.index, hit.end]);
+
+    const tail = text.slice(hit.end, hit.end + 80);
+    const head = text.slice(Math.max(0, hit.index - 48), hit.index);
+
     let city: string | null = null;
     let state: string | null = null;
+    let zip: string | null = null;
+
+    // 1. Trailing "<address>, <city>, <ST> <zip>" form.
     const cityMatch = tail.match(
-      /^\s*,?\s*([A-Z][A-Za-z\.\- ]{1,40}?)(?:\s*,\s*([A-Z]{2})\b|\s*$|[\.,;\n])/,
+      /^\s*,?\s*([A-Z][A-Za-z\.\- ]{1,40}?)(?:\s*,\s*([A-Za-z]{2,})\b|\s*$|[\.,;\n])/,
     );
     if (cityMatch) {
-      city = cityMatch[1].trim().replace(/[\s,]+$/, '') || null;
-      state = (cityMatch[2] ?? null) as string | null;
+      city = cleanCity(cityMatch[1]);
+      state = normalizeState(cityMatch[2] ?? null);
     }
+    // 2. Full state name anywhere in the tail ("..., California 92675").
+    if (!state) {
+      const fullState = matchFullStateName(tail);
+      if (fullState) state = fullState;
+    }
+    // 3. Two-letter state token in the tail.
     if (!state) {
       const stateM = tail.match(STATE_RE);
-      if (stateM) state = stateM[1];
+      if (stateM && STATE_ABBRS.has(stateM[1].toUpperCase())) state = stateM[1].toUpperCase();
     }
-    if (city) {
-      const lc = city.toLowerCase();
-      if (/^(best|new|open|fresh|amazing|good|great|happy|the|a|an)$/.test(lc.split(' ')[0])) {
-        city = null;
-      }
+    // 4. Leading "<city>, <address>" form ("📍 Downey, 8502 Telegraph Rd.").
+    //    Restricted to a city that is directly prefixed by a pin / bullet
+    //    marker so a venue-before-address ("Joe's, 123 Main St") is NOT
+    //    mistaken for a city. Only used when the trailing parse found no city.
+    if (!city) {
+      const leadCity = head.match(/(?:📍|•|·|\|)\s*([A-Z][A-Za-z.'\- ]{1,40}?)\s*,\s*$/u);
+      if (leadCity) city = cleanCity(leadCity[1]);
     }
-    out.push({ raw: rawAddress, city, state });
+    // 5. ZIP anywhere in the tail (independent of city/state parsing).
+    const zipM = tail.match(ZIP_RE);
+    if (zipM) zip = zipM[1];
+
+    out.push({ raw: hit.raw, city, state, zip, venue: null });
   }
   return out;
+}
+
+/** Normalized dedupe key for a street address (lowercase, drop unit,
+ *  collapse whitespace). */
+function streetKey(raw: string): string {
+  return raw
+    .toLowerCase()
+    .replace(/\b(?:suite|ste|apt|apartment|unit|bldg|building|fl|floor|rm|room|#)\.?\s*[a-z0-9\-]+\s*$/i, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+/** Trim + reject a city candidate whose first word is filler / a descriptor. */
+function cleanCity(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const city = value.trim().replace(/[\s,]+$/, '');
+  if (!city) return null;
+  const first = city.toLowerCase().split(' ')[0];
+  if (CITY_FIRST_WORD_STOP.test(first)) return null;
+  return city;
+}
+
+/** Normalize a captured state token (abbr or full name) to a USPS abbr. */
+function normalizeState(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const v = value.trim();
+  if (/^[A-Za-z]{2}$/.test(v) && STATE_ABBRS.has(v.toUpperCase())) return v.toUpperCase();
+  const full = STATE_NAME_TO_ABBR[v.toLowerCase()];
+  return full ?? null;
+}
+
+/** Find a full state name ("California", "New York") in text → abbr. */
+function matchFullStateName(text: string): string | null {
+  const lower = text.toLowerCase();
+  for (const [name, abbr] of Object.entries(STATE_NAME_TO_ABBR)) {
+    const re = new RegExp(`\\b${name.replace(/\s+/g, '\\s+')}\\b`, 'i');
+    if (re.test(lower)) return abbr;
+  }
+  return null;
 }
 
 /**

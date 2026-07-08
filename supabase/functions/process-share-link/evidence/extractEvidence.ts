@@ -93,6 +93,13 @@ export function extractEvidence(args: {
     const pre = extractNameBeforeAddress(captionText, address.raw);
     if (pre && !isKnownCityName(pre)) venueNameHints.push(pre);
   }
+
+  // Pair the nearest preceding venue name to each extracted address so the
+  // resolver can build a "<venue> <address>" query per address (multi-address
+  // captions like Tacos Don Goyo list several venue/address pairs). Pure and
+  // deterministic — position-based, never uses poster handle/name.
+  pairVenuesToAddresses(captionText, addresses, venueNameHints);
+
   const isRoundup = looksLikeRoundupPost(captionText, {
     posterHandle: args.handles.posterHandle ?? '',
     taggedHandles: args.handles.taggedHandles,
@@ -222,4 +229,68 @@ const KNOWN_CITY_NAMES = new Set(
 
 function isKnownCityName(phrase: string): boolean {
   return KNOWN_CITY_NAMES.has(phrase.trim().toLowerCase());
+}
+
+// Generic / non-venue phrases that must never be paired to an address as a
+// venue name even if they slipped through the venue-hint extractor.
+const GENERIC_VENUE_PHRASES = new Set(
+  [
+    'foodie', 'foodies', 'instagram', 'tiktok', 'youtube', 'media',
+    'reel', 'reels', 'video', 'best spots', 'best spot', 'come with me',
+    'this place', 'this place is awesome', 'this spot', 'pretty cool spot',
+    'pretty cool', 'must try', 'check this out', 'link in bio', 'new spot',
+    'my favorite', 'our favorite', 'the best', 'so good',
+  ].map((s) => s.toLowerCase()),
+);
+
+function isGenericVenuePhrase(phrase: string): boolean {
+  const p = phrase.trim().toLowerCase();
+  if (GENERIC_VENUE_PHRASES.has(p)) return true;
+  // Single filler words that read as sentiment, not a name.
+  if (/^(foodie|media|reel|reels|video|instagram|tiktok|youtube)$/.test(p)) return true;
+  return false;
+}
+
+// For each address, attach the venue-name hint that appears CLOSEST BEFORE it
+// in the caption (position-based). Falls back to the single global hint only
+// when there is exactly one address and one hint. Never pairs a generic /
+// city / non-venue phrase. Mutates `addresses[i].venue` in place.
+function pairVenuesToAddresses(
+  caption: string,
+  addresses: LikelyAddress[],
+  venueHints: string[],
+): void {
+  if (addresses.length === 0) return;
+  const usableHints = venueHints.filter(
+    (h) => h && !isGenericVenuePhrase(h) && !isKnownCityName(h),
+  );
+  if (usableHints.length === 0) return;
+
+  // Precompute the first position of each hint in the caption.
+  const hintPos = usableHints.map((h) => ({
+    name: h,
+    pos: caption.toLowerCase().indexOf(h.toLowerCase()),
+  }));
+
+  for (const addr of addresses) {
+    const addrPos = caption.toLowerCase().indexOf(addr.raw.toLowerCase());
+    if (addrPos < 0) {
+      // Address text not locatable (rare) — pair the only hint if unambiguous.
+      if (usableHints.length === 1 && addresses.length === 1) addr.venue = usableHints[0];
+      continue;
+    }
+    // Nearest hint strictly before the address.
+    let best: { name: string; pos: number } | null = null;
+    for (const h of hintPos) {
+      if (h.pos < 0 || h.pos >= addrPos) continue;
+      if (!best || h.pos > best.pos) best = h;
+    }
+    if (best) {
+      addr.venue = best.name;
+    } else if (usableHints.length === 1 && addresses.length === 1) {
+      // Single hint, single address: pair even if the hint sits after the
+      // address (e.g. "📍 2nd Floor 126 Main St" where the pin/name leads).
+      addr.venue = usableHints[0];
+    }
+  }
 }

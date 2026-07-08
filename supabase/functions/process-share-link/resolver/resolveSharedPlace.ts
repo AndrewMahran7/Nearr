@@ -50,6 +50,28 @@ export async function resolveSharedPlace(args: {
   const diagnostics: Record<string, unknown> = {};
   const evidenceUsed = [...evidence.keys];
 
+  // Address-first prefill: when the caption carries a literal street address
+  // we ALWAYS want the manual-fallback search box pre-populated with
+  // "<paired venue> <street> <city> <state>" so the user never retypes the
+  // address from the video. Computed once; used by every manual-fallback exit
+  // below when `evidence.address` is set. Venue is caption-derived ONLY —
+  // never the poster handle/name.
+  const primaryAddr = evidence.address;
+  const addressPrefillVenue =
+    primaryAddr?.venue ?? evidence.venueNameHints[0] ?? null;
+  const addressPrefillQuery = primaryAddr
+    ? [
+        addressPrefillVenue,
+        primaryAddr.raw,
+        primaryAddr.city ?? evidence.cityState?.city ?? null,
+        primaryAddr.state ?? evidence.cityState?.state ?? null,
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+    : null;
+
   // ---- 0. Tagged-location evidence (highest priority) ------------
   // A platform-tagged place/location (YouTube recordingDetails, TikTok POI,
   // IG location tag) is the strongest signal we can get. We STILL verify it
@@ -93,10 +115,10 @@ export async function resolveSharedPlace(args: {
   // Places, surface them as a multi-candidate confirmation — never
   // auto-save.
   if (evidence.addresses.length >= 2) {
-    const placeNameHint =
-      evidence.venueNameHints[0] ??
-      evidence.handles.posterNameHint ??
-      null;
+    // Venue name hint is caption-derived ONLY. Poster handle / poster display
+    // name are NEVER prepended to an address query (address evidence is
+    // stronger than the poster).
+    const globalVenueHint = evidence.venueNameHints[0] ?? null;
     const fallbackCity = evidence.cityState?.city ?? null;
     const fallbackState = evidence.cityState?.state ?? null;
     const multiResolved: ResolvedCandidate[] = [];
@@ -111,14 +133,34 @@ export async function resolveSharedPlace(args: {
       const city = addr.city ?? fallbackCity;
       const state = addr.state ?? fallbackState;
       const addrStr = [addr.raw, city, state].filter(Boolean).join(', ');
+      // Per-address paired venue first, then the single global caption hint.
+      const pairedVenue = addr.venue ?? globalVenueHint;
+      logShareDebug('address-first', {
+        stage: 'multi',
+        extracted_address: addr.raw,
+        paired_venue: pairedVenue,
+        city,
+        state,
+        zip: addr.zip ?? null,
+      });
       let status = 'failed';
       let added = 0;
       try {
-        const ver = await verifyPlaceAtAddressServer(
+        // Prefer the real business at/near the address. Try the paired-venue
+        // verify first; if the (possibly weak) venue name does not match a
+        // business at the address, retry BARE so we still surface the real
+        // business sitting at the extracted address.
+        let ver = await verifyPlaceAtAddressServer(
           addrStr,
-          placeNameHint,
+          pairedVenue,
           env.googlePlacesKey,
         );
+        if (
+          pairedVenue &&
+          (ver.status === 'failed' && (ver as any).reason === 'name_mismatch')
+        ) {
+          ver = await verifyPlaceAtAddressServer(addrStr, null, env.googlePlacesKey);
+        }
         status = ver.status;
         const verifiedList =
           ver.status === 'verified'
@@ -194,10 +236,11 @@ export async function resolveSharedPlace(args: {
 
   // ---- 1. Address-first verification -----------------------------
   if (evidence.address) {
+    // Venue name is caption-derived ONLY (paired venue > global caption
+    // hint). The poster handle / poster display name are NEVER used to
+    // qualify an address — address evidence is stronger than the poster.
     const placeName =
-      evidence.venueNameHints[0] ??
-      evidence.handles.posterNameHint ??
-      null;
+      evidence.address.venue ?? evidence.venueNameHints[0] ?? null;
     // Address-extractor sometimes returns city/state inline, but
     // often only the street portion. Augment with the cityState
     // anchor so Google can geocode the address — without a city,
@@ -209,17 +252,59 @@ export async function resolveSharedPlace(args: {
       .filter(Boolean)
       .join(', ');
 
+    logShareDebug('address-first', {
+      stage: 'single',
+      extracted_address: evidence.address.raw,
+      paired_venue: placeName,
+      city,
+      state,
+      zip: evidence.address.zip ?? null,
+      verification_ran: true,
+      verification_query: addrStr,
+    });
+
     try {
-      const verification = await verifyPlaceAtAddressServer(
+      // Prefer the real business at/near the address. Verify with the paired
+      // venue first; if that (possibly weak) name does not match a business
+      // sitting at the address, retry BARE so the real business at the address
+      // still surfaces rather than falling through to weaker heuristics.
+      let verification = await verifyPlaceAtAddressServer(
         addrStr,
         placeName,
         env.googlePlacesKey,
       );
+      if (
+        placeName &&
+        verification.status === 'failed' &&
+        (verification as any).reason === 'name_mismatch'
+      ) {
+        warnings.push('address_verify_name_mismatch_retry_bare');
+        verification = await verifyPlaceAtAddressServer(
+          addrStr,
+          null,
+          env.googlePlacesKey,
+        );
+      }
       timings.mark('address_verify');
       diagnostics.addressVerification = {
         status: verification.status,
         reason: (verification as any).reason ?? null,
       };
+      const verifyResultCount =
+        verification.status === 'verified'
+          ? 1
+          : verification.status === 'ambiguous'
+          ? verification.candidates.length
+          : 0;
+      logShareDebug('address-first', {
+        stage: 'single',
+        verification_status: verification.status,
+        verification_result_count: verifyResultCount,
+        selected_candidate:
+          verification.status === 'verified'
+            ? verification.candidate.name
+            : null,
+      });
       if (verification.status === 'verified') {
         const resolved = toResolvedCandidate(
           { candidate: verification.candidate, score: 50, reasons: ['address_verified'], rejected: false, rejectionReason: null },
@@ -258,8 +343,11 @@ export async function resolveSharedPlace(args: {
           timings,
         });
       }
-      // Fall through to text-search ladder.
-      warnings.push(`address_verify_${verification.reason}`);
+      // Verification found no business at the address. Fall through to the
+      // address-anchored text-search ladder (venue+address, then bare
+      // address). If THAT also fails to yield a real business the resolver
+      // exits via manual_fallback with the address prefilled (see below).
+      warnings.push(`address_verify_${(verification as any).reason}`);
     } catch (err) {
       warnings.push('address_verify_threw');
       diagnostics.addressVerifyError = (err as Error)?.message;
@@ -350,12 +438,23 @@ export async function resolveSharedPlace(args: {
   diagnostics.searchAttempts = plan.queries.indexOf(lastQuery ?? '') + 1;
 
   if (candidates.length === 0) {
+    // Address present but neither verification nor the address-anchored text
+    // ladder found a business → manual fallback with the address prefilled.
+    if (evidence.address) {
+      warnings.push('address_present_but_no_verified_business');
+      logShareDebug('address-first', {
+        stage: 'single',
+        fallback_reason: 'address_present_but_no_verified_business',
+        selected_candidate: null,
+      });
+    }
     return {
       decision: 'manual_fallback',
       candidates: [],
       safeToAutoSave: false,
       confidence: 'low',
-      cleanSearchQuery: lastQuery ?? undefined,
+      cleanSearchQuery:
+        (evidence.address ? addressPrefillQuery : null) ?? lastQuery ?? undefined,
       evidenceUsed,
       warnings,
       diagnostics,
@@ -388,12 +487,16 @@ export async function resolveSharedPlace(args: {
     if (allNoise) {
       warnings.push('all_candidates_rejected_as_platform_noise');
     }
+    if (evidence.address) {
+      warnings.push('address_present_but_no_verified_business');
+    }
     return {
       decision: 'manual_fallback',
       candidates: [],
       safeToAutoSave: false,
       confidence: 'low',
-      cleanSearchQuery: lastQuery ?? undefined,
+      cleanSearchQuery:
+        (evidence.address ? addressPrefillQuery : null) ?? lastQuery ?? undefined,
       evidenceUsed,
       warnings,
       diagnostics,
@@ -408,6 +511,17 @@ export async function resolveSharedPlace(args: {
   );
   const decision = decide({ evidence, candidates: resolved, addressVerified: false });
 
+  // When an address was present but the text-search candidate is only good
+  // enough for manual fallback, prefill the search box with the address so the
+  // user never retypes it, and flag the situation explicitly.
+  const addressAwareQuery =
+    evidence.address && decision.decision === 'manual_fallback'
+      ? addressPrefillQuery ?? lastQuery ?? undefined
+      : lastQuery ?? undefined;
+  if (evidence.address && decision.decision === 'manual_fallback') {
+    warnings.push('address_present_but_no_verified_business');
+  }
+
   logShareDebug('resolver:done', {
     decision: decision.decision,
     confidence: decision.confidence,
@@ -417,7 +531,7 @@ export async function resolveSharedPlace(args: {
   });
 
   return finalize(decision, {
-    cleanSearchQuery: lastQuery ?? undefined,
+    cleanSearchQuery: addressAwareQuery,
     warnings,
     diagnostics,
     evidenceUsed,

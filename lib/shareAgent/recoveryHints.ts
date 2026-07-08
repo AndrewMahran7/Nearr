@@ -686,6 +686,18 @@ export function extractCaptionVenueHints(
   const pinAhead = text.matchAll(/📍\s*([A-Z][^\n@,📍]{2,60})/gu);
   for (const m of pinAhead) push(m[1]);
 
+  // Pattern 1b: <Name> <sep> 📍<address> — the venue name precedes the pin
+  // but is separated by an em/en dash, hyphen, pipe, or bullet
+  // ("🌃Brooklyn City Pizzeria & Market — 📍30012 Crown Valley Pkwy…"). The
+  // name char class deliberately EXCLUDES the em/en dash so the capture stops
+  // at the venue and the separator class consumes the dash. Pin-anchored, so
+  // it's high confidence and ranks above the weaker "<Name>, <City>" patterns
+  // below.
+  const pinAfterSep = text.matchAll(
+    /([A-Z][A-Z0-9a-z'&\.\- ]{2,60}?)\s*[—–|•·-]+\s*📍/gu,
+  );
+  for (const m of pinAfterSep) push(m[1]);
+
   // Pattern 2: <Name>, <Known City>, ST  (allow trailing pin emoji).
   for (const [cityRe, , state] of KNOWN_CITY_STATE_LITERALS) {
     const pattern = new RegExp(
@@ -709,5 +721,46 @@ export function extractCaptionVenueHints(
   for (const m of pinBehind) push(m[1]);
 
   return out;
+}
+
+/**
+ * Platform / page-internal / poster-descriptor words that are NEVER a real
+ * venue handle. `@media` in particular leaks in from Instagram's inline CSS
+ * (`@media screen …`) and would otherwise become a poster handle → the bogus
+ * "Media" venue query. Exact, lowercased match only, so genuine handles that
+ * merely CONTAIN one of these (e.g. `media_kitchen`) are unaffected.
+ */
+const HANDLE_NOISE_WORDS = new Set<string>([
+  'media',
+  'instagram',
+  'instagramreels',
+  'reel',
+  'reels',
+  'story',
+  'stories',
+  'explore',
+  'accounts',
+  'direct',
+  'tiktok',
+  'youtube',
+  'foodie',
+  'likes',
+  'comments',
+  'makeyourday',
+  'www',
+  'http',
+  'https',
+]);
+
+/**
+ * True when a handle is platform / page-internal / poster-descriptor noise
+ * (e.g. `@media` from inline CSS, `@instagram`, `@reel`) and must NOT be used
+ * as a venue name or poster-name hint. Leading `@` is ignored; match is exact
+ * on the lowercased handle so real venue handles are never rejected.
+ */
+export function isNoiseHandle(handle: string | null | undefined): boolean {
+  if (!handle) return false;
+  const normalized = handle.trim().toLowerCase().replace(/^@/, '');
+  return HANDLE_NOISE_WORDS.has(normalized);
 }
 
