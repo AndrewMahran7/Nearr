@@ -17,6 +17,8 @@
  */
 
 export type ShareRegressionFixture = {
+  /** Stable identifier for reporting. */
+  id: string;
   /** Share URL to send to process-share-link. */
   url: string;
   platform: 'instagram' | 'tiktok' | 'youtube' | 'link';
@@ -31,11 +33,25 @@ export type ShareRegressionFixture = {
   expectedAddressIncludes?: string[];
   /** Candidate names that must NEVER appear (poster/platform noise). */
   mustNotIncludeCandidateNames?: string[];
+  /** Optional explicit assertion for the final safe-to-auto-save flag. */
+  expectedSafeToAutoSave?: boolean;
   notes?: string;
 };
 
 export const SHARE_REGRESSION_FIXTURES: ShareRegressionFixture[] = [
   {
+    id: 'instagram-capones-cucina-reel',
+    url: 'https://www.instagram.com/reel/DUWyZkfgbT4/?igsh=NTc4MTIwNjQ2YQ==',
+    platform: 'instagram',
+    acceptedDecisions: ['candidate_confirmation', 'auto_save'],
+    expectedCandidateNameIncludes: ['Capone'],
+    expectedAddressIncludes: ['19688 Beach Blvd', 'Huntington Beach'],
+    expectedSafeToAutoSave: false,
+    mustNotIncludeCandidateNames: ['19688 Beach Blvd', 'Instagram', 'Media', 'Foodie'],
+    notes: 'Handle + literal address. Must not pair street fragment Beach Blvd as venue.',
+  },
+  {
+    id: 'instagram-brooklyn-city-pizzeria-reel',
     url: 'https://www.instagram.com/reel/CxdY35frOrf/?igsh=NTc4MTIwNjQ2YQ==',
     platform: 'instagram',
     acceptedDecisions: ['candidate_confirmation', 'auto_save'],
@@ -48,6 +64,7 @@ export const SHARE_REGRESSION_FIXTURES: ShareRegressionFixture[] = [
 
   // ---- Known-good anchors (must not regress) ------------------------------
   {
+    id: 'instagram-2nd-floor-post',
     url: 'https://www.instagram.com/p/DYpcd2ZBTsZ/',
     platform: 'instagram',
     acceptedDecisions: ['candidate_confirmation', 'auto_save'],
@@ -56,6 +73,7 @@ export const SHARE_REGRESSION_FIXTURES: ShareRegressionFixture[] = [
     notes: 'Known-good: 2nd Floor, Huntington Beach.',
   },
   {
+    id: 'instagram-paradise-dynasty-post',
     url: 'https://www.instagram.com/p/DX77lghIHeG/',
     platform: 'instagram',
     acceptedDecisions: ['candidate_confirmation', 'auto_save'],

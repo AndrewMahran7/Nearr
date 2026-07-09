@@ -683,7 +683,9 @@ export function extractCaptionVenueHints(
   };
 
   // Pattern 1: 📍 <Name> until newline / @ / end-of-line.
-  const pinAhead = text.matchAll(/📍\s*([A-Z][^\n@,📍]{2,60})/gu);
+  // Also allow ordinal-led names like "2nd Floor" while still rejecting
+  // numeric street addresses ("19688 Beach Blvd" has no ordinal token).
+  const pinAhead = text.matchAll(/📍\s*((?:[A-Z]|\d{1,2}(?:st|nd|rd|th)\b)[^\n@,📍]{2,60})/giu);
   for (const m of pinAhead) push(m[1]);
 
   // Pattern 1b: <Name> <sep> 📍<address> — the venue name precedes the pin

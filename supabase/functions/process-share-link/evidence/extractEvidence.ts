@@ -76,7 +76,8 @@ export function extractEvidence(args: {
     ? cityStateRaw
     : null;
   const venueNameHints = extractCaptionVenueHints(captionText)
-    .filter((h) => !isKnownCityName(h));
+    .filter((h) => !isKnownCityName(h))
+    .filter((h) => !looksLikeStreetFragmentVenueHint(h, addresses));
   // Hint priority (high precision first):
   //   1. extractCaptionVenueHints  (📍 / "Name, City" patterns)
   //      with known-city false positives filtered out.
@@ -91,14 +92,20 @@ export function extractEvidence(args: {
   }
   if (address && venueNameHints.length === 0) {
     const pre = extractNameBeforeAddress(captionText, address.raw);
-    if (pre && !isKnownCityName(pre)) venueNameHints.push(pre);
+    if (
+      pre &&
+      !isKnownCityName(pre) &&
+      !looksLikeStreetFragmentVenueHint(pre, addresses)
+    ) {
+      venueNameHints.push(pre);
+    }
   }
 
   // Pair the nearest preceding venue name to each extracted address so the
   // resolver can build a "<venue> <address>" query per address (multi-address
   // captions like Tacos Don Goyo list several venue/address pairs). Pure and
   // deterministic — position-based, never uses poster handle/name.
-  pairVenuesToAddresses(captionText, addresses, venueNameHints);
+  pairVenuesToAddresses(captionText, addresses, venueNameHints, args.handles);
 
   const isRoundup = looksLikeRoundupPost(captionText, {
     posterHandle: args.handles.posterHandle ?? '',
@@ -174,6 +181,9 @@ function extractNameBeforeAddress(
     const w = words[i];
     if (/^[A-Z][A-Za-z0-9'&\.\-]*$/.test(w)) {
       cap.unshift(w);
+    } else if (/^\d{1,2}(?:st|nd|rd|th)$/i.test(w) && cap.length > 0) {
+      // Allow ordinal prefix + TitleCase venue names ("2nd Floor").
+      cap.unshift(w);
     } else {
       break;
     }
@@ -231,6 +241,72 @@ function isKnownCityName(phrase: string): boolean {
   return KNOWN_CITY_NAMES.has(phrase.trim().toLowerCase());
 }
 
+const STREET_SUFFIX_TOKENS = new Set(
+  [
+    'st',
+    'street',
+    'ave',
+    'avenue',
+    'blvd',
+    'boulevard',
+    'rd',
+    'road',
+    'pkwy',
+    'parkway',
+    'dr',
+    'drive',
+    'ln',
+    'lane',
+    'way',
+    'hwy',
+    'highway',
+  ],
+);
+
+const STREET_BIZ_WORD_RE =
+  /\b(cafe|restaurant|kitchen|market|grill|bar|pizza|pizzeria|taqueria|deli|bakery|bistro|house|kbbq|bbq|ramen|sushi|eatery|cucina|korean|mexican|italian|thai|pho|coffee|brew|pub|cantina|kebab)\b/i;
+
+function normalizeAlphaNum(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+function stripAddressPrefix(addressRaw: string): string {
+  return normalizeAlphaNum(addressRaw)
+    .replace(/^\d{1,6}(?:\s*\-\s*\d+)?\s+/, '')
+    .replace(/\b(?:suite|ste|apt|apartment|unit|bldg|building|fl|floor|rm|room|#)\b.*$/i, '')
+    .trim();
+}
+
+function looksLikeStreetFragmentVenueHint(hint: string, addresses: LikelyAddress[]): boolean {
+  const hintNorm = normalizeAlphaNum(hint);
+  if (!hintNorm) return true;
+  const hintTokens = hintNorm.split(' ').filter(Boolean);
+  if (hintTokens.length === 0) return true;
+
+  const hintEndsWithStreetSuffix = STREET_SUFFIX_TOKENS.has(
+    hintTokens[hintTokens.length - 1],
+  );
+  const hasBusinessWord = STREET_BIZ_WORD_RE.test(hintNorm);
+  if (hintEndsWithStreetSuffix && !hasBusinessWord) {
+    return true;
+  }
+
+  for (const addr of addresses) {
+    const addrStreet = stripAddressPrefix(addr.raw);
+    if (!addrStreet) continue;
+    if (hintNorm === addrStreet) return true;
+    if (addrStreet.includes(hintNorm)) {
+      // If the hint is fully inside the street text and does not look
+      // business-like, treat it as an address fragment (e.g. Beach Blvd).
+      if (!hasBusinessWord || hintNorm.length >= Math.max(6, Math.floor(addrStreet.length * 0.45))) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
 // Generic / non-venue phrases that must never be paired to an address as a
 // venue name even if they slipped through the venue-hint extractor.
 const GENERIC_VENUE_PHRASES = new Set(
@@ -259,21 +335,60 @@ function pairVenuesToAddresses(
   caption: string,
   addresses: LikelyAddress[],
   venueHints: string[],
+  handles: ExtractedHandles,
 ): void {
   if (addresses.length === 0) return;
   const usableHints = venueHints.filter(
-    (h) => h && !isGenericVenuePhrase(h) && !isKnownCityName(h),
+    (h) =>
+      h &&
+      !isGenericVenuePhrase(h) &&
+      !isKnownCityName(h) &&
+      !looksLikeStreetFragmentVenueHint(h, addresses),
   );
-  if (usableHints.length === 0) return;
+
+  const handleHints = handles.venueHandles
+    .map((handle) => {
+      const derived = derivePlaceNameHintFromHandle(handle);
+      if (!derived) return null;
+      return {
+        handle,
+        name: derived,
+      };
+    })
+    .filter(
+      (row): row is { handle: string; name: string } =>
+        !!row &&
+        !isGenericVenuePhrase(row.name) &&
+        !isKnownCityName(row.name) &&
+        !looksLikeStreetFragmentVenueHint(row.name, addresses),
+    );
+
+  if (usableHints.length === 0 && handleHints.length === 0) return;
+
+  const captionLower = caption.toLowerCase();
 
   // Precompute the first position of each hint in the caption.
   const hintPos = usableHints.map((h) => ({
     name: h,
-    pos: caption.toLowerCase().indexOf(h.toLowerCase()),
+    pos: captionLower.indexOf(h.toLowerCase()),
   }));
 
   for (const addr of addresses) {
-    const addrPos = caption.toLowerCase().indexOf(addr.raw.toLowerCase());
+    const addrPos = captionLower.indexOf(addr.raw.toLowerCase());
+
+    // Preferred pairing: tagged venue handle immediately before the address,
+    // e.g. "@capones_cucina - 19688 Beach Blvd ...".
+    const adjacentHandle = findAdjacentVenueHandleName(
+      caption,
+      captionLower,
+      addrPos,
+      handleHints,
+    );
+    if (adjacentHandle) {
+      addr.venue = adjacentHandle;
+      continue;
+    }
+
     if (addrPos < 0) {
       // Address text not locatable (rare) — pair the only hint if unambiguous.
       if (usableHints.length === 1 && addresses.length === 1) addr.venue = usableHints[0];
@@ -293,4 +408,35 @@ function pairVenuesToAddresses(
       addr.venue = usableHints[0];
     }
   }
+}
+
+function findAdjacentVenueHandleName(
+  caption: string,
+  captionLower: string,
+  addrPos: number,
+  handleHints: Array<{ handle: string; name: string }>,
+): string | null {
+  if (addrPos < 0 || handleHints.length === 0) return null;
+
+  let best: { name: string; gap: number } | null = null;
+  for (const item of handleHints) {
+    const token = `@${item.handle.toLowerCase()}`;
+    if (!token || token === '@') continue;
+    let fromIndex = 0;
+    while (fromIndex < addrPos) {
+      const idx = captionLower.indexOf(token, fromIndex);
+      if (idx < 0 || idx >= addrPos) break;
+      const end = idx + token.length;
+      const between = caption.slice(end, addrPos);
+      const gap = addrPos - end;
+      const separatorOnly = /^[\s\-–—|:,.•·()]*$/.test(between);
+      if (gap <= 64 && separatorOnly) {
+        if (!best || gap < best.gap) {
+          best = { name: item.name, gap };
+        }
+      }
+      fromIndex = idx + 1;
+    }
+  }
+  return best?.name ?? null;
 }

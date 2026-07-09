@@ -357,22 +357,44 @@ function RootLayoutContent() {
       const data = (notification.request.content.data ?? {}) as Record<string, unknown>;
       const savedPlaceId = data.savedPlaceId as string | undefined;
       const placeId = data.placeId as string | undefined;
+      const nearbyCountRaw = data.nearbyCount;
+      const groupedSavedPlaceIds = Array.isArray(data.groupedSavedPlaceIds)
+        ? data.groupedSavedPlaceIds
+        : [];
+      const nearbyCountFromArray = groupedSavedPlaceIds.length;
+      const nearbyCount =
+        typeof nearbyCountRaw === 'number' && Number.isFinite(nearbyCountRaw)
+          ? Math.max(1, Math.floor(nearbyCountRaw))
+          : nearbyCountFromArray > 0
+            ? nearbyCountFromArray
+            : undefined;
 
       // Action-button taps keep their existing handler (reset_count, going,
-      // reduce_radius, next_time). Default tap (just opened the notification)
-      // routes the user into the opportunity flow.
+      // reduce_radius, next_time). Default tap routes nearby reminders into
+      // the map with the relevant saved place selected.
       const isDefaultTap =
         !actionIdentifier ||
         actionIdentifier === Notifications.DEFAULT_ACTION_IDENTIFIER;
+      const isNearbyReminderPayload =
+        !!placeId ||
+        typeof nearbyCountRaw === 'number' ||
+        nearbyCountFromArray > 0;
 
-      if (isDefaultTap && savedPlaceId) {
-        void trackEvent('opportunity_notification_opened', {
-          saved_place_id: savedPlaceId,
-        });
+      if (isDefaultTap && isNearbyReminderPayload && savedPlaceId) {
         router.push({
-          pathname: '/opportunity/[id]',
-          params: { id: savedPlaceId },
+          pathname: '/(tabs)/map',
+          params: {
+            savedPlaceId,
+            reminderOpen: 'true',
+            reminderSource: 'nearby',
+            nearbyCount: nearbyCount ? String(nearbyCount) : undefined,
+          },
         });
+        return;
+      }
+
+      if (isDefaultTap && isNearbyReminderPayload) {
+        router.push('/(tabs)/map');
         return;
       }
 

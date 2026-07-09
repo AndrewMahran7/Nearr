@@ -105,6 +105,8 @@ import { getDemoSeededSavedPlacesSync } from '@/services/demo';
 import { getProfile } from '@/services/profileService';
 import {
   deleteSavedPlace,
+  markArchived,
+  markVisited,
   saveSavedPlace,
 } from '@/services/savedPlacesService';
 import type { PlaceCandidate } from '@/services/placesService';
@@ -218,6 +220,27 @@ function allZoneBoundingCoords(
 }
 
 type PermissionState = 'pending' | 'granted' | 'denied' | 'unavailable';
+type ReminderSource = 'nearby' | 'notification' | 'unknown';
+
+const MAX_REMINDER_OPPORTUNITIES = 3;
+
+function firstParam(value?: string | string[]): string | undefined {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function parseBoolParam(value?: string | string[]): boolean {
+  const raw = firstParam(value);
+  if (!raw) return false;
+  return raw === '1' || raw.toLowerCase() === 'true';
+}
+
+function parsePositiveIntParam(value?: string | string[]): number | null {
+  const raw = firstParam(value);
+  if (!raw) return null;
+  const n = Number.parseInt(raw, 10);
+  if (!Number.isFinite(n) || n <= 0) return null;
+  return n;
+}
 
 // How long we wait for `getCurrentPositionAsync` before giving up. Android
 // emulators without a mock location will otherwise hang this call forever,
@@ -387,12 +410,27 @@ export default function MapScreen() {
   // the place detail screen and saved-place cards. We track the last id we
   // already handled in `handledTargetIdRef` so we don't re-animate every
   // render or fight the user's panning.
-  const { savedPlaceId: rawSavedPlaceId } = useLocalSearchParams<{
+  const {
+    savedPlaceId: rawSavedPlaceId,
+    reminderOpen: rawReminderOpen,
+    reminderSource: rawReminderSource,
+    nearbyCount: rawNearbyCount,
+  } = useLocalSearchParams<{
     savedPlaceId?: string | string[];
+    reminderOpen?: string | string[];
+    reminderSource?: string | string[];
+    nearbyCount?: string | string[];
   }>();
-  const savedPlaceId = Array.isArray(rawSavedPlaceId)
-    ? rawSavedPlaceId[0]
-    : rawSavedPlaceId;
+  const savedPlaceId = firstParam(rawSavedPlaceId);
+  const reminderOpen = parseBoolParam(rawReminderOpen);
+  const reminderSourceRaw = firstParam(rawReminderSource);
+  const reminderSource: ReminderSource =
+    reminderSourceRaw === 'nearby'
+      ? 'nearby'
+      : reminderSourceRaw === 'notification'
+        ? 'notification'
+        : 'unknown';
+  const nearbyCount = parsePositiveIntParam(rawNearbyCount);
   const { data: liveData, loading: liveLoading, refresh, revalidate } = useSavedPlaces();
   const mapRef = useRef<MapView | null>(null);
   const markerRefs = useRef<Record<string, ComponentRef<typeof Marker> | null>>({});
@@ -463,6 +501,8 @@ export default function MapScreen() {
   const [savingPlace, setSavingPlace] = useState(false);
   // Bumped to ask the sheet to minimize (map-level "View All").
   const [sheetMinimizeSignal, setSheetMinimizeSignal] = useState(0);
+  const [reminderContextSavedPlaceId, setReminderContextSavedPlaceId] = useState<string | null>(null);
+  const [reminderActionBusy, setReminderActionBusy] = useState(false);
   // Current sheet snap + animated lift so the floating actions follow the
   // sheet's top edge instead of floating at a fixed height.
   const [sheetSnap, setSheetSnap] = useState<SheetSnap>('partial');
@@ -504,6 +544,7 @@ export default function MapScreen() {
   const [previewExpanded, setPreviewExpanded] = useState(false);
   const previewExpandedRef = useRef(false);
   previewExpandedRef.current = previewExpanded;
+  const hideTopSelectionControls = !!selected && previewExpanded;
   const didFitRef = useRef(false);
   // Set to true when the user pans or zooms the map so auto-centering
   // effects don't override the user's chosen viewport.
@@ -512,6 +553,8 @@ export default function MapScreen() {
   // implicitly when the param changes to a new id so coming back to the
   // same place from a different card still triggers the focus animation.
   const handledTargetIdRef = useRef<string | null>(null);
+  const handledReminderAnalyticsRef = useRef<string | null>(null);
+  const shownMissingReminderRef = useRef<string | null>(null);
   const previousRegionRef = useRef<Region | null>(null);
   const lastRegionRef = useRef<Region | null>(null);
 
@@ -690,6 +733,18 @@ export default function MapScreen() {
   // If the id doesn't match anything, we silently fall back to the normal
   // map behavior.
   useEffect(() => {
+    if (!reminderOpen || !savedPlaceId) return;
+    const signature = `${savedPlaceId}:${reminderSource}:${nearbyCount ?? 1}`;
+    if (handledReminderAnalyticsRef.current === signature) return;
+    handledReminderAnalyticsRef.current = signature;
+    void trackEvent('nearby_reminder_opened_map', {
+      saved_place_id: savedPlaceId,
+      source: 'notification',
+      nearby_count: nearbyCount ?? 1,
+    });
+  }, [nearbyCount, reminderOpen, reminderSource, savedPlaceId]);
+
+  useEffect(() => {
     if (!mapReady) return;
     if (!savedPlaceId) return;
     if (handledTargetIdRef.current === savedPlaceId) return;
@@ -702,17 +757,28 @@ export default function MapScreen() {
       // refocus-loop on a genuinely-absent id (e.g. deleted on another device).
       if (liveLoading) return;
       handledTargetIdRef.current = savedPlaceId;
+      if (reminderOpen && shownMissingReminderRef.current !== savedPlaceId) {
+        shownMissingReminderRef.current = savedPlaceId;
+        setReminderContextSavedPlaceId(null);
+        setSnackbar({
+          message: 'Could not find that saved place. Showing your map.',
+          undoId: null,
+        });
+      }
       if (__DEV__) console.log('[map] target id not found', savedPlaceId);
       return;
     }
     handledTargetIdRef.current = savedPlaceId;
+    if (reminderOpen) {
+      setReminderContextSavedPlaceId(target.id);
+    }
     didFitRef.current = true;
     try {
       selectPlace(target);
     } catch (err) {
       console.warn('[map] focus failed', (err as Error)?.message ?? err);
     }
-  }, [savedPlaceId, mapReady, validPlaces, profile, liveLoading]);
+  }, [savedPlaceId, mapReady, validPlaces, profile, liveLoading, reminderOpen]);
 
   // ---- DEBUG ------------------------------------------------------------
   // Temporary verbose logs requested while diagnosing the "spinner forever"
@@ -745,11 +811,14 @@ export default function MapScreen() {
   }
 
   // -----------------------------------------------------------------------
-  function openExternalMaps(item: SavedPlaceWithPlace) {
+  function openExternalMaps(
+    item: SavedPlaceWithPlace,
+    surface: 'map_preview_card' | 'nearby_reminder' = 'map_preview_card',
+  ) {
     void trackEvent('open_in_maps_tapped', {
       saved_place_id: item.id,
       google_place_id: item.place.google_place_id ?? null,
-      surface: 'map_preview_card',
+      surface,
     });
     void openInExternalMaps(item.place);
   }
@@ -841,6 +910,78 @@ export default function MapScreen() {
     // to keep the callback identity stable for the whole session.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const handleNearbyReminderGetDirections = useCallback(() => {
+    if (!selected) return;
+    void trackEvent('nearby_reminder_get_directions_tapped', {
+      saved_place_id: selected.id,
+      source: 'notification',
+    });
+    openExternalMaps(selected, 'nearby_reminder');
+  }, [selected]);
+
+  const handleNearbyReminderVisited = useCallback(async () => {
+    if (!selected || reminderActionBusy) return;
+    setReminderActionBusy(true);
+    const snapshot = getSavedPlacesCacheSnapshot();
+    try {
+      await markVisited(selected.id);
+      removeSavedPlaceFromCache(selected.id);
+      setReminderContextSavedPlaceId(null);
+      dismissSelectedPlace({ restoreRegion: false });
+      setSnackbar({ message: 'Marked as visited', undoId: null });
+      void trackEvent('nearby_reminder_mark_visited_tapped', {
+        saved_place_id: selected.id,
+        source: 'notification',
+      });
+      void trackEvent('place_marked_visited', { saved_place_id: selected.id });
+    } catch (e: any) {
+      restoreSavedPlacesCache(snapshot);
+      Alert.alert('Could not mark visited', e?.message ?? 'Unknown error.');
+    } finally {
+      setReminderActionBusy(false);
+    }
+  }, [dismissSelectedPlace, reminderActionBusy, selected]);
+
+  const handleNearbyReminderDismiss = useCallback(async () => {
+    if (!selected || reminderActionBusy) return;
+    setReminderActionBusy(true);
+    const shouldArchive = (selected.reminder_opportunity_count ?? 0) >= MAX_REMINDER_OPPORTUNITIES;
+    const snapshot = getSavedPlacesCacheSnapshot();
+    try {
+      if (shouldArchive) {
+        await markArchived(selected.id, { exhausted: true });
+        removeSavedPlaceFromCache(selected.id);
+        setSnackbar({ message: 'Reminder archived for this place', undoId: null });
+      }
+      setReminderContextSavedPlaceId(null);
+      dismissSelectedPlace();
+      void trackEvent('nearby_reminder_dismissed', {
+        saved_place_id: selected.id,
+        source: 'notification',
+      });
+      if (shouldArchive) {
+        void trackEvent('opportunity_archived_after_3', {
+          saved_place_id: selected.id,
+        });
+      }
+    } catch (e: any) {
+      restoreSavedPlacesCache(snapshot);
+      Alert.alert('Could not update reminder', e?.message ?? 'Unknown error.');
+    } finally {
+      setReminderActionBusy(false);
+    }
+  }, [dismissSelectedPlace, reminderActionBusy, selected]);
+
+  const isNearbyReminderSelection =
+    !!selected && reminderContextSavedPlaceId === selected.id;
+
+  useEffect(() => {
+    if (!selected || !reminderContextSavedPlaceId) return;
+    if (selected.id !== reminderContextSavedPlaceId) {
+      setReminderContextSavedPlaceId(null);
+    }
+  }, [reminderContextSavedPlaceId, selected]);
 
   const previewPanResponder = useMemo(
     () =>
@@ -1259,7 +1400,7 @@ export default function MapScreen() {
               // remove) moved off /place/[id]. Bounded + scrollable so a long
               // note never pushes the sheet past the top of the map.
               <ScrollView
-                style={{ maxHeight: Math.min(windowHeight * 0.5, 460) }}
+                style={{ maxHeight: Math.min(windowHeight * 0.66, 580) }}
                 contentContainerStyle={styles.previewScrollContent}
                 keyboardShouldPersistTaps="handled"
                 nestedScrollEnabled
@@ -1277,13 +1418,61 @@ export default function MapScreen() {
               // Collapsed: quick directions + an explicit expander (in addition
               // to the slide-up gesture) so there's always a tap affordance.
               <>
+                {isNearbyReminderSelection ? (
+                  <View style={styles.reminderContextWrap}>
+                    <View style={styles.reminderBadge}>
+                      <Text style={styles.reminderBadgeText}>Nearby reminder</Text>
+                    </View>
+                    <Text style={[typography.caption, styles.reminderCopy]}>
+                      You saved this place and you&apos;re nearby.
+                    </Text>
+                    {nearbyCount && nearbyCount > 1 ? (
+                      <Text style={[typography.caption, styles.reminderNearbyCount]}>
+                        {nearbyCount} saved places nearby
+                      </Text>
+                    ) : null}
+                  </View>
+                ) : null}
                 <View style={styles.previewActions}>
                   <Button
                     title="Get directions"
-                    onPress={() => openExternalMaps(selected)}
+                    onPress={() => {
+                      if (isNearbyReminderSelection) {
+                        handleNearbyReminderGetDirections();
+                        return;
+                      }
+                      openExternalMaps(selected);
+                    }}
+                    loading={reminderActionBusy}
                     style={styles.previewPrimaryAction}
                   />
                 </View>
+                {isNearbyReminderSelection ? (
+                  <View style={styles.reminderSecondaryActions}>
+                    <Button
+                      title="I went here"
+                      variant="secondary"
+                      onPress={() => void handleNearbyReminderVisited()}
+                      loading={reminderActionBusy}
+                    />
+                    <Button
+                      title="Maybe next time"
+                      variant="ghost"
+                      onPress={() => void handleNearbyReminderDismiss()}
+                      loading={reminderActionBusy}
+                    />
+                    <Pressable
+                      onPress={() => {
+                        setPreviewExpanded(true);
+                        if (__DEV__) console.log('[map-sheet] expanded for reminder settings');
+                      }}
+                      hitSlop={10}
+                      style={styles.reminderAdjustRow}
+                    >
+                      <Text style={styles.reminderAdjustText}>Adjust reminder radius</Text>
+                    </Pressable>
+                  </View>
+                ) : null}
                 <Pressable
                   onPress={() => {
                     setPreviewExpanded(true);
@@ -1292,7 +1481,9 @@ export default function MapScreen() {
                   hitSlop={10}
                   style={styles.previewSecondaryRow}
                 >
-                  <Text style={styles.previewSecondaryText}>Swipe up for details</Text>
+                  <Text style={styles.previewSecondaryText}>
+                    {isNearbyReminderSelection ? 'Swipe up for details and reminder settings' : 'Swipe up for details'}
+                  </Text>
                   <Feather name="chevron-up" size={16} color={colors.textSecondary} />
                 </Pressable>
               </>
@@ -1308,13 +1499,15 @@ export default function MapScreen() {
       {searchVisible ? null : (
         <View style={styles.topChrome} pointerEvents="box-none">
           <MapTopSearchBar onPress={() => setSearchVisible(true)} />
-          <MapFilterChips value={selectedMapFilter} onChange={handleSelectMapFilter} />
+          {!hideTopSelectionControls ? (
+            <MapFilterChips value={selectedMapFilter} onChange={handleSelectMapFilter} />
+          ) : null}
         </View>
       )}
 
       {/* "View All" pill — fits all saved-place zones on demand. Only shown
           when there are places to frame and we're not in preview mode. */}
-      {validPlaces.length > 0 && !mapPreview ? (
+      {validPlaces.length > 0 && !mapPreview && !hideTopSelectionControls ? (
         <Pressable
           style={styles.viewAllBtn}
           onPress={() => {
@@ -1731,12 +1924,49 @@ function createStyles(
   previewActions: {
     marginTop: Spacing.md,
   },
+  reminderContextWrap: {
+    marginTop: Spacing.md,
+    gap: Spacing.xs,
+  },
+  reminderBadge: {
+    alignSelf: 'flex-start',
+    paddingVertical: 4,
+    paddingHorizontal: Spacing.sm,
+    borderRadius: Radius.pill,
+    backgroundColor: 'rgba(255,106,26,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,106,26,0.3)',
+  },
+  reminderBadgeText: {
+    ...typography.caption,
+    color: colors.accent,
+    fontWeight: '700',
+  },
+  reminderCopy: {
+    color: colors.text,
+  },
+  reminderNearbyCount: {
+    color: colors.textSecondary,
+  },
   previewScrollContent: {
     paddingTop: Spacing.md,
-    paddingBottom: Spacing.sm,
+    paddingBottom: Spacing.xxl,
   },
   previewPrimaryAction: {
     width: '100%',
+  },
+  reminderSecondaryActions: {
+    marginTop: Spacing.sm,
+    gap: Spacing.sm,
+  },
+  reminderAdjustRow: {
+    alignSelf: 'flex-start',
+    paddingVertical: Spacing.xs,
+  },
+  reminderAdjustText: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    textDecorationLine: 'underline',
   },
   previewSecondaryRow: {
     flexDirection: 'row',

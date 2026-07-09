@@ -41,12 +41,29 @@ import { extractTaggedLocation } from './evidence/taggedLocation.ts';
 import { resolveSharedPlace } from './resolver/resolveSharedPlace.ts';
 import { saveForUser } from './save.ts';
 import { persistResolverRun } from './shadowRun.ts';
+import {
+  assessShareFailureLogging,
+  recordShareExtractionFailure,
+  type WireStatus,
+} from './failureLogging.ts';
 import { normalizeShareUrl } from '../../../lib/shareAgent/tiktokUrl.ts';
 
 // ---------------------------------------------------------------------------
 
 serve(async (req) => {
   const startedAt = Date.now();
+  const requestId = req.headers.get('x-request-id')?.trim() || crypto.randomUUID();
+  const appVersion =
+    req.headers.get('x-nearr-app-version')?.trim() ||
+    req.headers.get('x-app-version')?.trim() ||
+    null;
+  const backendVersion = 'process-share-link-v2';
+  const logAllExtractions =
+    (Deno.env.get('LOG_ALL_SHARE_EXTRACTIONS') ?? '').trim().toLowerCase() ===
+    'true';
+  const returnFailureLogId =
+    (Deno.env.get('RETURN_FAILURE_LOG_ID') ?? '').trim().toLowerCase() ===
+    'true';
   if (req.method === 'OPTIONS') return preflight();
 
   const parsed = await parseRequest(req);
@@ -235,7 +252,72 @@ serve(async (req) => {
     evidence,
     result,
   });
-  const diagnostics = result.diagnostics;
+  const wireStatus: WireStatus =
+    mode !== 'save'
+      ? 'extracted'
+      : mapDecisionToWireStatus(result.decision, result.safeToAutoSave);
+  const failureAssessment = assessShareFailureLogging({
+    wireStatus,
+    result,
+    evidence,
+    logAllExtractions,
+  });
+
+  let failureLogId: string | null = null;
+  if (failureAssessment.shouldLog) {
+    const persistFailure = recordShareExtractionFailure({
+      adminClient: userClient,
+      userId,
+      originalUrl: url,
+      canonicalUrl,
+      platform,
+      wireStatus,
+      result,
+      extraction: {
+        title,
+        description,
+        query: result.cleanSearchQuery,
+      },
+      evidence,
+      requestId,
+      appVersion,
+      backendVersion,
+      logAllExtractions,
+    });
+
+    if (returnFailureLogId) {
+      const logged = await persistFailure;
+      failureLogId = logged.id;
+    } else {
+      try {
+        // @ts-ignore — EdgeRuntime is a Deno Deploy global.
+        if (typeof EdgeRuntime !== 'undefined' && EdgeRuntime?.waitUntil) {
+          // @ts-ignore
+          EdgeRuntime.waitUntil(persistFailure);
+        } else {
+          persistFailure.catch(() => undefined);
+        }
+      } catch {
+        persistFailure.catch(() => undefined);
+      }
+    }
+  }
+
+  const diagnostics = {
+    ...(result.diagnostics ?? {}),
+    requestId,
+    appVersion,
+    backendVersion,
+    failureLog: {
+      shouldLog: failureAssessment.shouldLog,
+      failureClass: failureAssessment.failureClass,
+      triggerReasons: failureAssessment.triggerReasons,
+      addressPresent: failureAssessment.addressPresent,
+      candidateCount: failureAssessment.candidateCount,
+      queryCount: failureAssessment.queryCount,
+      failureLogId,
+    },
+  };
 
   // ---- Extract-mode contract ------------------------------------
   // Per legacy contract: in extract mode the wire-level `status` is
@@ -429,4 +511,23 @@ function buildExtractionPayload(args: {
     },
     finalCandidates: agentCandidates,
   };
+}
+
+function mapDecisionToWireStatus(
+  decision: string,
+  safeToAutoSave: boolean,
+): WireStatus {
+  switch (decision) {
+    case 'auto_save':
+      return safeToAutoSave ? 'saved' : 'extracted';
+    case 'candidate_picker':
+    case 'candidate_confirmation':
+    case 'multi_candidate_confirmation':
+      return 'ambiguous';
+    case 'manual_fallback':
+      return 'open_app';
+    case 'failed':
+    default:
+      return 'failed_requires_app';
+  }
 }

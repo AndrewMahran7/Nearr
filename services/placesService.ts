@@ -37,6 +37,20 @@ export type PlaceCandidate = {
   rawTypes?: string[];
 };
 
+export type PlaceRichDetails = {
+  googlePlaceId: string;
+  name: string;
+  formattedAddress: string | null;
+  latitude: number;
+  longitude: number;
+  category: string | null;
+  googleMapsUrl: string | null;
+  websiteUrl: string | null;
+  formattedPhoneNumber: string | null;
+  internationalPhoneNumber: string | null;
+  photoUrls: string[];
+};
+
 export type LocationBias = { lat: number; lng: number };
 
 export type PlacesErrorCode =
@@ -104,6 +118,19 @@ const DETAILS_FIELDS = [
   'url',
 ].join(',');
 
+const RICH_DETAILS_FIELDS = [
+  'place_id',
+  'name',
+  'formatted_address',
+  'geometry/location',
+  'types',
+  'url',
+  'website',
+  'formatted_phone_number',
+  'international_phone_number',
+  'photos',
+].join(',');
+
 // ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
@@ -163,6 +190,91 @@ export async function getPlaceDetails(placeId: string): Promise<PlaceCandidate> 
   assertOk(json, false);
 
   return toCandidateFromDetails(json.result);
+}
+
+/**
+ * Enriched details for optional map-sheet UI extras (photos / call / website).
+ * This is intentionally separate from `getPlaceDetails` so existing flows keep
+ * their current field footprint and behavior.
+ */
+export async function getPlaceRichDetails(
+  placeId: string,
+  options?: { maxPhotos?: number; maxPhotoWidth?: number },
+): Promise<PlaceRichDetails> {
+  if (isDemoMode() || isMapPreviewMode()) {
+    const demo = await getDemoPlaceDetails(placeId);
+    return {
+      googlePlaceId: demo.googlePlaceId,
+      name: demo.name,
+      formattedAddress: demo.formattedAddress,
+      latitude: demo.latitude,
+      longitude: demo.longitude,
+      category: demo.category,
+      googleMapsUrl: demo.googleMapsUrl,
+      websiteUrl: null,
+      formattedPhoneNumber: null,
+      internationalPhoneNumber: null,
+      photoUrls: [],
+    };
+  }
+  if (!placeId) throw new PlacesError('INVALID_REQUEST', 'placeId is required');
+
+  const key = resolveApiKey();
+  if (!key) throw new PlacesError('MISSING_API_KEY', 'Google Maps API key not configured.');
+
+  const params = new URLSearchParams({
+    place_id: placeId,
+    key,
+    fields: RICH_DETAILS_FIELDS,
+  });
+  const url = `${BASE}/details/json?${params.toString()}`;
+  console.log('[placesService] rich-details', placeId);
+
+  const json = await safeFetch(url);
+  if (json.status === 'NOT_FOUND' || !json.result) {
+    throw new PlacesError('NOT_FOUND', 'Place not found.');
+  }
+  assertOk(json, false);
+
+  const result = json.result;
+  const maxPhotos = Math.max(1, Math.min(options?.maxPhotos ?? 5, 5));
+  const maxPhotoWidth = Math.max(240, Math.min(options?.maxPhotoWidth ?? 1200, 1200));
+  const photoUrls = Array.isArray(result.photos)
+    ? result.photos
+        .map((p: any) => {
+          const photoRef =
+            typeof p?.photo_reference === 'string' && p.photo_reference.trim()
+              ? p.photo_reference.trim()
+              : null;
+          if (!photoRef) return null;
+          return buildPlacePhotoUrl(photoRef, key, maxPhotoWidth);
+        })
+        .filter((v: string | null): v is string => !!v)
+        .slice(0, maxPhotos)
+    : [];
+
+  return {
+    googlePlaceId: result.place_id,
+    name: result.name,
+    formattedAddress: result.formatted_address ?? null,
+    latitude: result.geometry?.location?.lat,
+    longitude: result.geometry?.location?.lng,
+    category: pickCategory(result.types),
+    googleMapsUrl: typeof result.url === 'string' && result.url.length > 0 ? result.url : null,
+    websiteUrl:
+      typeof result.website === 'string' && result.website.trim()
+        ? result.website.trim()
+        : null,
+    formattedPhoneNumber:
+      typeof result.formatted_phone_number === 'string' && result.formatted_phone_number.trim()
+        ? result.formatted_phone_number.trim()
+        : null,
+    internationalPhoneNumber:
+      typeof result.international_phone_number === 'string' && result.international_phone_number.trim()
+        ? result.international_phone_number.trim()
+        : null,
+    photoUrls,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -241,6 +353,15 @@ function pickCategory(types?: string[]): string | null {
   const skip = new Set(['point_of_interest', 'establishment', 'food']);
   const first = types.find((t) => !skip.has(t)) ?? types[0];
   return first ? first.replace(/_/g, ' ') : null;
+}
+
+function buildPlacePhotoUrl(photoReference: string, apiKey: string, maxWidth: number): string {
+  const params = new URLSearchParams({
+    maxwidth: String(maxWidth),
+    photo_reference: photoReference,
+    key: apiKey,
+  });
+  return `${BASE}/photo?${params.toString()}`;
 }
 
 // ---------------------------------------------------------------------------

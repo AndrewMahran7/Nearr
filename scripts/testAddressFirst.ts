@@ -15,6 +15,7 @@ import {
   extractLikelyAddresses,
 } from '../lib/shareAgent/queryCleaner';
 import { extractCaptionVenueHints } from '../lib/shareAgent/recoveryHints';
+import { extractEvidence } from '../supabase/functions/process-share-link/evidence/extractEvidence';
 
 let failures = 0;
 function check(name: string, condition: boolean, detail?: string): void {
@@ -27,58 +28,123 @@ function check(name: string, condition: boolean, detail?: string): void {
 }
 
 // ---------------------------------------------------------------------------
-// A. Brooklyn City Pizzeria — venue before pin + suite + full ", CA 92677".
+// A. Capone's Cucina — tagged handle immediately before literal address.
+// ---------------------------------------------------------------------------
+{
+  const caption =
+    '@capones_cucina - 19688 Beach Blvd, Huntington Beach, California 92648';
+  const a = extractLikelyAddress(caption);
+  check('A1: address extracted', !!a, JSON.stringify(a));
+  check('A2: street includes 19688 Beach Blvd',
+    !!a && a.raw.toLowerCase().includes('19688 beach blvd'), a?.raw);
+  check('A3: city Huntington Beach',
+    (a?.city ?? '').toLowerCase() === 'huntington beach', a?.city ?? '');
+  check('A4: state CA', a?.state === 'CA', a?.state ?? '');
+  check('A5: zip 92648', a?.zip === '92648', a?.zip ?? '');
+
+  const ev = extractEvidence({
+    platform: 'instagram',
+    title: caption,
+    description: null,
+    handles: {
+      posterHandle: 'ocfeed',
+      taggedHandles: ['capones_cucina'],
+      venueHandles: ['capones_cucina'],
+      posterNameHint: 'Ocfeed',
+    },
+  });
+  check('A6: paired venue uses handle-derived name (Capones Cucina)',
+    ev.address?.venue === 'Capones Cucina', ev.address?.venue ?? 'null');
+  check('A7: paired venue is NOT Beach Blvd',
+    (ev.address?.venue ?? '').toLowerCase() !== 'beach blvd', ev.address?.venue ?? 'null');
+}
+
+// ---------------------------------------------------------------------------
+// B. Brooklyn City Pizzeria — venue before pin + suite + full ", CA 92677".
 // ---------------------------------------------------------------------------
 {
   const caption =
     '🌃Brooklyn City Pizzeria & Market — 📍30012 Crown Valley Pkwy suite I, Laguna Niguel, CA 92677';
   const a = extractLikelyAddress(caption);
-  check('A1: address extracted', !!a, JSON.stringify(a));
-  check('A2: street includes 30012 Crown Valley Pkwy',
+  check('B1: address extracted', !!a, JSON.stringify(a));
+  check('B2: street includes 30012 Crown Valley Pkwy',
     !!a && a.raw.toLowerCase().includes('30012 crown valley pkwy'), a?.raw);
-  check('A3: suite preserved in raw',
+  check('B3: suite preserved in raw',
     !!a && /suite\s*i/i.test(a.raw), a?.raw);
-  check('A4: city Laguna Niguel',
+  check('B4: city Laguna Niguel',
     (a?.city ?? '').toLowerCase() === 'laguna niguel', a?.city ?? '');
-  check('A5: state CA', a?.state === 'CA', a?.state ?? '');
-  check('A6: zip 92677', a?.zip === '92677', a?.zip ?? '');
+  check('B5: state CA', a?.state === 'CA', a?.state ?? '');
+  check('B6: zip 92677', a?.zip === '92677', a?.zip ?? '');
   const venues = extractCaptionVenueHints(caption);
-  check('A7: venue paired (Brooklyn City Pizzeria)',
+  check('B7: venue paired (Brooklyn City Pizzeria)',
     venues.some((v) => v.toLowerCase().includes('brooklyn city pizzeria')),
     venues.join(' | '));
+
+  const ev = extractEvidence({
+    platform: 'instagram',
+    title: caption,
+    description: null,
+    handles: {
+      posterHandle: 'ocfeed',
+      taggedHandles: [],
+      venueHandles: [],
+      posterNameHint: 'Ocfeed',
+    },
+  });
+  check('B8: paired venue remains Brooklyn City Pizzeria & Market',
+    (ev.address?.venue ?? '').toLowerCase().includes('brooklyn city pizzeria'),
+    ev.address?.venue ?? 'null');
+  check('B9: paired venue is NOT Crown Valley Pkwy',
+    (ev.address?.venue ?? '').toLowerCase() !== 'crown valley pkwy', ev.address?.venue ?? 'null');
 }
 
 // ---------------------------------------------------------------------------
-// B. Capo Leisure — type-first street (Paseo) + full state name "California".
+// C. Capo Leisure — type-first street (Paseo) + full state name "California".
 // ---------------------------------------------------------------------------
 {
   const caption =
     '@capoleisure - 31872 Paseo Adelanto, San Juan Capistrano, California 92675';
   const a = extractLikelyAddress(caption);
-  check('B1: type-first address extracted (Paseo Adelanto)',
+  check('C1: type-first address extracted (Paseo Adelanto)',
     !!a && a.raw.toLowerCase().includes('31872 paseo adelanto'), a?.raw);
-  check('B2: city San Juan Capistrano',
+  check('C2: city San Juan Capistrano',
     (a?.city ?? '').toLowerCase() === 'san juan capistrano', a?.city ?? '');
-  check('B3: full state name normalized to CA', a?.state === 'CA', a?.state ?? '');
-  check('B4: zip 92675', a?.zip === '92675', a?.zip ?? '');
+  check('C3: full state name normalized to CA', a?.state === 'CA', a?.state ?? '');
+  check('C4: zip 92675', a?.zip === '92675', a?.zip ?? '');
 }
 
 // ---------------------------------------------------------------------------
-// C. 2nd Floor — pin + venue + address on one line (no comma before city).
+// D. 2nd Floor — pin + venue + address on one line (no comma before city).
 // ---------------------------------------------------------------------------
 {
-  const caption = '📍 2nd Floor 126 Main St Huntington Beach, CA 92648';
+  const caption = '📍 2nd Floor\n126 Main St\nHuntington Beach, CA 92648';
   const a = extractLikelyAddress(caption);
-  check('C1: address extracted (126 Main St)',
+  check('D1: address extracted (126 Main St)',
     !!a && a.raw.toLowerCase().includes('126 main st'), a?.raw);
-  check('C2: city Huntington Beach',
+  check('D2: city Huntington Beach',
     (a?.city ?? '').toLowerCase() === 'huntington beach', a?.city ?? '');
-  check('C3: state CA', a?.state === 'CA', a?.state ?? '');
-  check('C4: zip 92648', a?.zip === '92648', a?.zip ?? '');
+  check('D3: state CA', a?.state === 'CA', a?.state ?? '');
+  check('D4: zip 92648', a?.zip === '92648', a?.zip ?? '');
+
+  const ev = extractEvidence({
+    platform: 'instagram',
+    title: caption,
+    description: null,
+    handles: {
+      posterHandle: 'ocfeed',
+      taggedHandles: [],
+      venueHandles: [],
+      posterNameHint: 'Ocfeed',
+    },
+  });
+  check('D5: paired venue is 2nd Floor',
+    ev.address?.venue === '2nd Floor', ev.address?.venue ?? 'null');
+  check('D6: paired venue is NOT Main St',
+    (ev.address?.venue ?? '').toLowerCase() !== 'main st', ev.address?.venue ?? 'null');
 }
 
 // ---------------------------------------------------------------------------
-// D. Tacos Don Goyo — multi-address with city BEFORE each address.
+// E. Tacos Don Goyo — multi-address with city BEFORE each address.
 // ---------------------------------------------------------------------------
 {
   const caption = [
@@ -88,22 +154,43 @@ function check(name: string, condition: boolean, detail?: string): void {
     '📍 City of Industry, 17200 Railroad St',
   ].join('\n');
   const out = extractLikelyAddresses(caption);
-  check('D1: three addresses extracted', out.length === 3,
+  check('E1: three addresses extracted', out.length === 3,
     `got ${out.length}: ${out.map((x) => x.raw).join(' | ')}`);
-  check('D2: Telegraph Rd present',
+  check('E2: Telegraph Rd present',
     out.some((x) => x.raw.toLowerCase().includes('8502 telegraph rd')),
     out.map((x) => x.raw).join(' | '));
-  check('D3: W Central Ave + suite present',
+  check('E3: W Central Ave + suite present',
     out.some((x) => /379 w central ave/i.test(x.raw) && /ste\s*a/i.test(x.raw)),
     out.map((x) => x.raw).join(' | '));
-  check('D4: Railroad St present',
+  check('E4: Railroad St present',
     out.some((x) => x.raw.toLowerCase().includes('17200 railroad st')),
     out.map((x) => x.raw).join(' | '));
   const cities = out.map((x) => (x.city ?? '').toLowerCase());
-  check('D5: city Downey preserved', cities.includes('downey'), cities.join(' | '));
-  check('D6: city Brea preserved', cities.includes('brea'), cities.join(' | '));
-  check('D7: city City of Industry preserved',
+  check('E5: city Downey preserved', cities.includes('downey'), cities.join(' | '));
+  check('E6: city Brea preserved', cities.includes('brea'), cities.join(' | '));
+  check('E7: city City of Industry preserved',
     cities.includes('city of industry'), cities.join(' | '));
+
+  const ev = extractEvidence({
+    platform: 'instagram',
+    title: caption,
+    description: null,
+    handles: {
+      posterHandle: 'tacosdongoyo',
+      taggedHandles: ['tacosdongoyo'],
+      venueHandles: [],
+      posterNameHint: 'Tacosdongoyo',
+    },
+  });
+  check('E8: pairing does not become Telegraph Rd',
+    !ev.addresses.some((x) => (x.venue ?? '').toLowerCase() === 'telegraph rd'),
+    ev.addresses.map((x) => `${x.raw}=>${x.venue ?? '(null)'}`).join(' | '));
+  check('E9: pairing does not become Central Ave',
+    !ev.addresses.some((x) => (x.venue ?? '').toLowerCase() === 'central ave'),
+    ev.addresses.map((x) => `${x.raw}=>${x.venue ?? '(null)'}`).join(' | '));
+  check('E10: pairing does not become Railroad St',
+    !ev.addresses.some((x) => (x.venue ?? '').toLowerCase() === 'railroad st'),
+    ev.addresses.map((x) => `${x.raw}=>${x.venue ?? '(null)'}`).join(' | '));
 }
 
 // ---------------------------------------------------------------------------

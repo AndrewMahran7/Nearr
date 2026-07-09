@@ -16,9 +16,12 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
+  Image,
   Linking,
   Pressable,
+  ScrollView,
   StyleSheet,
   Switch,
   Text,
@@ -37,7 +40,41 @@ import {
   restoreSavedPlacesCache,
   updateSavedPlacesCache,
 } from '@/hooks/useSavedPlaces';
+import { getPlaceRichDetails, type PlaceRichDetails } from '@/services/placesService';
 import type { Profile, RadiusUnit, SavedPlaceWithPlace } from '@/types';
+
+const richDetailsCache = new Map<string, PlaceRichDetails | null>();
+const richDetailsInFlight = new Map<string, Promise<PlaceRichDetails | null>>();
+
+async function fetchRichDetailsCached(
+  googlePlaceId: string,
+): Promise<PlaceRichDetails | null> {
+  const cached = richDetailsCache.get(googlePlaceId);
+  if (cached !== undefined) return cached;
+
+  const inflight = richDetailsInFlight.get(googlePlaceId);
+  if (inflight) return inflight;
+
+  const promise = getPlaceRichDetails(googlePlaceId, { maxPhotos: 5, maxPhotoWidth: 1000 })
+    .then((details) => {
+      richDetailsCache.set(googlePlaceId, details);
+      return details;
+    })
+    .catch((err) => {
+      console.debug('[map] rich details unavailable', {
+        googlePlaceId,
+        message: err instanceof Error ? err.message : String(err),
+      });
+      richDetailsCache.set(googlePlaceId, null);
+      return null;
+    })
+    .finally(() => {
+      richDetailsInFlight.delete(googlePlaceId);
+    });
+
+  richDetailsInFlight.set(googlePlaceId, promise);
+  return promise;
+}
 
 type RadiusMode = 'default' | 'miles' | 'minutes';
 
@@ -59,29 +96,42 @@ function formatUnit(value: number, unit: RadiusUnit): string {
   return `${value} ${noun}`;
 }
 
-function sourceDisplay(saved: SavedPlaceWithPlace): string | null {
-  switch (saved.source_type) {
-    case 'instagram':
-      return 'Saved from Instagram';
-    case 'tiktok':
-      return 'Saved from TikTok';
-    case 'link':
-      return 'Saved from a link';
-    default:
-      return null;
-  }
-}
-
 function sourceActionLabel(saved: SavedPlaceWithPlace): string {
   switch (saved.source_type) {
     case 'tiktok':
-      return 'Open TikTok video';
+      return 'Open TikTok';
     case 'instagram':
-      return 'Open Instagram post';
+      return 'Open Instagram';
     case 'link':
-      return 'Open original link';
+      return 'Open link';
     default:
-      return 'View original post';
+      return 'Open original';
+  }
+}
+
+function sanitizePhoneForTel(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  const hasPlusPrefix = trimmed.startsWith('+');
+  const digits = trimmed.replace(/\D/g, '');
+  if (digits.length < 6) return null;
+  return `${hasPlusPrefix ? '+' : ''}${digits}`;
+}
+
+function normalizeWebsiteUrl(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  try {
+    const hasScheme = /^[a-z][a-z0-9+.-]*:/i.test(trimmed);
+    const candidate = hasScheme ? trimmed : `https://${trimmed}`;
+    const parsed = new URL(candidate);
+    if (!parsed.hostname) return null;
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null;
+    return parsed.toString();
+  } catch {
+    return null;
   }
 }
 
@@ -122,6 +172,14 @@ export function SelectedPlaceDetails({
   const [reminderSettingsExpanded, setReminderSettingsExpanded] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [richDetails, setRichDetails] = useState<PlaceRichDetails | null>(null);
+  const [detailsLoading, setDetailsLoading] = useState(false);
+  const [failedPhotoUrls, setFailedPhotoUrls] = useState<Record<string, true>>({});
+
+  const googlePlaceId =
+    saved.place.google_place_id && saved.place.google_place_id.trim()
+      ? saved.place.google_place_id.trim()
+      : null;
 
   // Re-seed the editable state whenever a DIFFERENT place is selected. Keyed
   // on id so switching markers never shows the previous place's edits.
@@ -142,6 +200,31 @@ export function SelectedPlaceDetails({
     setReminderSettingsExpanded(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [saved.id]);
+
+  useEffect(() => {
+    let canceled = false;
+    setFailedPhotoUrls({});
+    if (!googlePlaceId) {
+      setRichDetails(null);
+      setDetailsLoading(false);
+      return () => {
+        canceled = true;
+      };
+    }
+
+    setDetailsLoading(true);
+    void fetchRichDetailsCached(googlePlaceId)
+      .then((details) => {
+        if (!canceled) setRichDetails(details);
+      })
+      .finally(() => {
+        if (!canceled) setDetailsLoading(false);
+      });
+
+    return () => {
+      canceled = true;
+    };
+  }, [googlePlaceId]);
 
   const radiusHelperText = useMemo(() => {
     if (mode === 'default') {
@@ -182,26 +265,79 @@ export function SelectedPlaceDetails({
     return saved.radius_unit !== 'minutes' || saved.radius_value !== parsed;
   }, [milesText, minutesText, mode, notes, notifyOn, saved]);
 
-  const sourceLabel = sourceDisplay(saved);
   // Only offer the "open original" affordance when a non-empty source URL is
   // actually stored (share/paste flows). Manual saves have none → no button.
   const sourceUrl =
     saved.source_url && saved.source_url.trim() ? saved.source_url.trim() : null;
 
-  async function openSource() {
-    if (!sourceUrl) return;
+  const photoUrls = useMemo(() => {
+    if (!richDetails?.photoUrls?.length) return [];
+    return richDetails.photoUrls.filter((url) => !failedPhotoUrls[url]).slice(0, 5);
+  }, [failedPhotoUrls, richDetails?.photoUrls]);
+
+  const phoneRaw =
+    richDetails?.internationalPhoneNumber ??
+    richDetails?.formattedPhoneNumber ??
+    null;
+  const callablePhone = sanitizePhoneForTel(phoneRaw);
+  const websiteUrl = normalizeWebsiteUrl(richDetails?.websiteUrl ?? null);
+
+  async function openExternalUrl(args: {
+    rawUrl: string | null;
+    label: string;
+    messageWhenUnavailable: string;
+  }) {
+    const raw = args.rawUrl?.trim();
+    if (!raw) return;
     try {
-      const canOpen = await Linking.canOpenURL(sourceUrl);
+      const canOpen = await Linking.canOpenURL(raw);
       if (!canOpen) {
         Alert.alert(
-          "Couldn't open link",
-          'No app is available to open the original post.',
+          `Couldn't open ${args.label.toLowerCase()}`,
+          args.messageWhenUnavailable,
         );
         return;
       }
-      await Linking.openURL(sourceUrl);
+      await Linking.openURL(raw);
     } catch {
-      Alert.alert("Couldn't open link", 'The original post link could not be opened.');
+      Alert.alert(
+        `Couldn't open ${args.label.toLowerCase()}`,
+        `The ${args.label.toLowerCase()} could not be opened.`,
+      );
+    }
+  }
+
+  async function openSource() {
+    await openExternalUrl({
+      rawUrl: sourceUrl,
+      label: sourceActionLabel(saved),
+      messageWhenUnavailable: 'No app is available to open this source link.',
+    });
+  }
+
+  async function openWebsite() {
+    await openExternalUrl({
+      rawUrl: websiteUrl,
+      label: 'Website',
+      messageWhenUnavailable: 'No browser is available to open this website.',
+    });
+  }
+
+  async function callPlace() {
+    if (!callablePhone) return;
+    const telUrl = `tel:${callablePhone}`;
+    try {
+      const canOpen = await Linking.canOpenURL(telUrl);
+      if (!canOpen) {
+        Alert.alert(
+          "Couldn't place call",
+          'Calling is not available on this device.',
+        );
+        return;
+      }
+      await Linking.openURL(telUrl);
+    } catch {
+      Alert.alert("Couldn't place call", 'The phone number could not be dialed.');
     }
   }
 
@@ -294,27 +430,71 @@ export function SelectedPlaceDetails({
 
   return (
     <View style={styles.wrap}>
-      <Button title="Get directions" onPress={onGetDirections} />
-
-      {sourceUrl ? (
-        <Pressable
-          onPress={openSource}
-          style={({ pressed }) => [styles.sourceRow, pressed && styles.pressed]}
-          hitSlop={8}
+      {detailsLoading ? (
+        <View style={styles.photoLoadingWrap}>
+          <ActivityIndicator size="small" color={colors.accent} />
+          <Text style={[typography.caption, styles.muted]}>Loading photos…</Text>
+        </View>
+      ) : photoUrls.length > 0 ? (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.photoStripContent}
+          style={styles.photoStrip}
+          nestedScrollEnabled
         >
-          <View style={{ flex: 1 }}>
-            {sourceLabel ? (
-              <Text style={[typography.caption, styles.muted]} numberOfLines={1}>
-                {sourceLabel}
-              </Text>
-            ) : null}
-            <Text style={[typography.bodyStrong, styles.linkText]} numberOfLines={1}>
-              {sourceActionLabel(saved)}
-            </Text>
-          </View>
-          <Feather name="arrow-up-right" size={18} color={colors.accent} />
-        </Pressable>
+          {photoUrls.map((url) => (
+            <Image
+              key={url}
+              source={{ uri: url }}
+              style={styles.photoTile}
+              resizeMode="cover"
+              onError={() => {
+                setFailedPhotoUrls((prev) => ({ ...prev, [url]: true }));
+              }}
+            />
+          ))}
+        </ScrollView>
       ) : null}
+
+      <View style={styles.quickActionsRow}>
+        <ActionPill
+          label="Directions"
+          icon="navigation"
+          onPress={onGetDirections}
+          styles={styles}
+        />
+        {callablePhone ? (
+          <ActionPill
+            label="Call"
+            icon="phone"
+            onPress={() => {
+              void callPlace();
+            }}
+            styles={styles}
+          />
+        ) : null}
+        {websiteUrl ? (
+          <ActionPill
+            label="Website"
+            icon="globe"
+            onPress={() => {
+              void openWebsite();
+            }}
+            styles={styles}
+          />
+        ) : null}
+        {sourceUrl ? (
+          <ActionPill
+            label={sourceActionLabel(saved)}
+            icon="arrow-up-right"
+            onPress={() => {
+              void openSource();
+            }}
+            styles={styles}
+          />
+        ) : null}
+      </View>
 
       <Card style={styles.sectionCard}>
         <View style={styles.rowBetween}>
@@ -403,6 +583,28 @@ export function SelectedPlaceDetails({
   );
 }
 
+function ActionPill({
+  label,
+  icon,
+  onPress,
+  styles,
+}: {
+  label: string;
+  icon: keyof typeof Feather.glyphMap;
+  onPress: () => void;
+  styles: ReturnType<typeof createStyles>;
+}) {
+  const { colors, typography } = useTheme();
+  return (
+    <Pressable onPress={onPress} style={({ pressed }) => [styles.actionPill, pressed && styles.pressed]}>
+      <Feather name={icon} size={16} color={colors.accent} />
+      <Text style={[typography.caption, styles.actionPillText]} numberOfLines={1}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
 function RadiusOption({
   label,
   active,
@@ -434,13 +636,47 @@ function createStyles(
     wrap: { gap: Spacing.md },
     muted: { color: colors.textMuted },
     pressed: { opacity: 0.6 },
-    sourceRow: {
+    photoLoadingWrap: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: Spacing.sm,
-      paddingVertical: Spacing.xs,
+      gap: Spacing.xs,
+      minHeight: 28,
     },
-    linkText: { color: colors.accent },
+    photoStrip: { maxHeight: 124 },
+    photoStripContent: { gap: Spacing.sm, paddingRight: Spacing.sm },
+    photoTile: {
+      width: 160,
+      height: 112,
+      borderRadius: Radius.md,
+      backgroundColor: colors.surfaceElevated,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    quickActionsRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'space-between',
+      gap: Spacing.sm,
+      marginTop: Spacing.xs,
+    },
+    actionPill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.xs,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surface,
+      borderRadius: Radius.pill,
+      paddingHorizontal: Spacing.md,
+      paddingVertical: Spacing.sm,
+      minHeight: 44,
+      width: '48.5%',
+    },
+    actionPillText: {
+      color: colors.text,
+      fontWeight: '700',
+      fontSize: 13,
+    },
     sectionCard: { padding: Spacing.md, gap: Spacing.sm },
     rowBetween: {
       flexDirection: 'row',

@@ -48,20 +48,54 @@ export function buildQueryPlan(evidence: Evidence): QueryPlan {
     evidence.venueNameHints.length > 0 ||
     evidence.handles.venueHandles.length > 0;
 
-  const queries = buildCleanPlacesQueries({
-    title: evidence.rawTitle,
-    description: evidence.rawDescription,
-    address: evidence.address,
-    placeName: placeNameHint,
-    city: evidence.cityState?.city ?? evidence.address?.city ?? null,
-    profileDisplayName: null,
-    // Only allow casual caption prose as a seed when an explicit place
-    // signal is present to anchor it.
-    allowGenericCaptionSeed: hasExplicitPlaceEvidence,
-    max: 6,
-  });
+  const queries: string[] = [];
+  const push = (q: string | null | undefined) => {
+    if (!q) return;
+    const trimmed = q.trim();
+    if (!trimmed) return;
+    if (queries.some((existing) => existing.toLowerCase() === trimmed.toLowerCase())) return;
+    queries.push(trimmed);
+  };
+
+  const nameVariants = expandPlaceNameVariants(placeNameHint);
+  const cityHint = evidence.cityState?.city ?? evidence.address?.city ?? null;
+  const namesToTry = nameVariants.length > 0 ? nameVariants : [null];
+  for (const nameVariant of namesToTry) {
+    const subQueries = buildCleanPlacesQueries({
+      title: evidence.rawTitle,
+      description: evidence.rawDescription,
+      address: evidence.address,
+      placeName: nameVariant,
+      city: cityHint,
+      profileDisplayName: null,
+      // Only allow casual caption prose as a seed when an explicit place
+      // signal is present to anchor it.
+      allowGenericCaptionSeed: hasExplicitPlaceEvidence,
+      max: 6,
+    });
+    for (const q of subQueries) push(q);
+  }
 
   return { queries, placeNameHint, hasExplicitPlaceEvidence };
+}
+
+function expandPlaceNameVariants(placeName: string | null): string[] {
+  if (!placeName) return [];
+  const base = placeName.trim();
+  if (!base) return [];
+  const variants = [base];
+  if (base.includes("'")) return variants;
+  const words = base.split(/\s+/).filter(Boolean);
+  if (words.length < 1) return variants;
+  const first = words[0];
+  if (/^[A-Za-z]+s$/i.test(first) && first.length >= 5) {
+    const possessiveFirst = `${first.slice(0, -1)}'s`;
+    const alt = [possessiveFirst, ...words.slice(1)].join(' ');
+    if (!variants.some((v) => v.toLowerCase() === alt.toLowerCase())) {
+      variants.push(alt);
+    }
+  }
+  return variants;
 }
 
 function humanize(handle: string): string {

@@ -1284,7 +1284,12 @@ async function fireNotification(
       content: {
         title,
         body,
-        data: { savedPlaceId: saved.id, placeId: saved.place.id },
+        data: {
+          savedPlaceId: saved.id,
+          placeId: saved.place.id,
+          nearbyCount: groupedSavedPlaceIds.length,
+          groupedSavedPlaceIds,
+        },
         categoryIdentifier,
       },
       trigger: null, // fire immediately
