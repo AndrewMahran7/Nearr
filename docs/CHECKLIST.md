@@ -1,29 +1,52 @@
-# 🧭 NEARR — VERSION GATE SYSTEM (FEATURE ↔ METRIC LINKED)
+# 🧭 NEARR — VERSION GATE SYSTEM  
+## Feature ↔ Metric Linked Roadmap
+
+**Last updated:** 2026-07-10  
+**Current stage:** Stage 0  
+**Current launch mode:** Quiet production release, not broad public launch
+
+---
 
 ## 🚨 MASTER RULE
 
-You do NOT build the next version until ALL metrics are hit.
+You do **not** build the next version until the current stage metrics are hit.
 
-Every feature MUST directly improve a tracked metric.
+Every feature must either:
+
+1. Improve a tracked metric
+2. Reduce a meaningful product, legal, reliability, or distribution risk
+3. Make the core save → map → action loop easier to understand
 
 Deadlines do not unlock stages. Metrics unlock stages.
 
-If a deadline passes and metrics are not hit, metrics still win.
+If a deadline passes and metrics are not hit, the stage does **not** unlock.
 
-Valuation estimates in this document are rough, traction-dependent, and not guaranteed.
+Valuation estimates in this document are rough, traction-dependent, and not guaranteed. Estimated valuation means: if metrics are real, retention is healthy, and growth is believable.
 
-Estimated valuation means: if metrics are real, retention is healthy, and growth is believable.
+---
 
-## FEATURE MATURITY DEFINITIONS
+## 🧱 FEATURE MATURITY DEFINITIONS
 
-- Built: code exists, but it may still be rough, beta-only, unreliable, or not central to the user promise.
-- Beta-tested: tested with real users or real devices enough to expose the obvious failures.
-- Productized: reliable enough to be part of the core UX promise.
-- Metric-unlocked: proven to improve the current stage metric enough to justify more investment.
+A feature being built early does **not** mean Nearr has unlocked the stage that feature belongs to.
 
-Built does not equal unlocked.
+- **Built:** Code exists. It may still be rough, untested, dev-only, unreliable, or not central to the user promise.
+- **Real-device tested:** Tested on real iOS/Android devices enough to expose obvious failures.
+- **Production-visible:** Available in the production app, but not necessarily proven.
+- **Productized:** Reliable enough to be part of the core UX promise.
+- **Metric-unlocked:** Proven to improve the stage metric enough to justify more investment.
 
-## PRODUCT EXPERIENCE RULE
+**Built does not equal unlocked.**
+
+Examples:
+- Reminder infrastructure existing in Stage 0 does not mean Stage 3 habit loop is unlocked.
+- Feedback form existing in Stage 0 does not mean retention is solved.
+- App Store release does not mean public launch has happened.
+- Competition existing does not mean Nearr has product-market fit.
+- Creator interest does not mean creator distribution is repeatable.
+
+---
+
+## 🧭 PRODUCT EXPERIENCE RULE
 
 The product experience section describes what the app should feel like at a stage.
 
@@ -31,817 +54,1066 @@ It does not unlock the stage by itself.
 
 The app must still hit the required metrics before moving forward.
 
-## CURRENT BUILD REALITY
+---
 
-- Core save loop: magic-link auth, `dev@nearr.test` password login in all builds, save from link/share/manual, source URL saving, saved places, place detail, and save -> focused map via `savedPlaceId`.
-- Map/place management: saved-place list, map pins and radius zones, focused show-on-map flows, dismissible selected-place bottom card, directions, notes, original-post viewing, and place filters.
-- Reminder infrastructure: reminder toggle, distance settings, notification setup, test notification, foreground/background proximity checks, geofencing, and setup reminder UI. Built for beta testing, not yet proven as a retention engine.
-- Auth/legal/ops: file-backed auth-callback route, account/profile recovery, legal scaffolding present but disabled for beta, website/landing-page planning.
-- UI/onboarding: dark/orange refresh, How Nearr Works onboarding, activation progress card, settings checklist, crash/performance cleanup.
+## 🧠 CURRENT STRATEGIC REALITY
 
-## ROADMAP DRIFT RULE
+Nearr is no longer operating in an imaginary market.
 
-If a feature is built early, it must still be assigned to the stage metric it is supposed to improve. Early implementation does not move the company to that stage.
+There is visible market validation for the broad need:
 
-Examples:
-- Geofencing built in Stage 0 does not mean Stage 3 is unlocked.
-- Legal scaffolding built in Stage 0 does not mean public launch readiness.
-- Places filters built in Stage 0 do not mean decision-layer behavior exists.
-- Dark UI built in Stage 0 does not mean retention is solved.
+- People want to save places from social media.
+- Multiple apps are already attacking some version of this behavior.
+- Competitors include broad save/organize apps, travel/place map apps, and social-video-to-place apps.
+- Known competitor examples include Albo, Mio, Mapstr, Doko, Places, Found, Nomiq, and similar “save places” tools.
 
-## 2026-05-03 PRODUCT STATUS UPDATE
+This is good and bad.
 
-### Current product vision
+### Good
 
-Nearr is a memory-to-action app for real-world places.
+- The problem is real.
+- Users already understand saving things from online content.
+- Creators already create real-world intent.
+- Food and travel content are natural acquisition wedges.
 
-Core loop:
+### Bad
 
-- See a place online
-- Want to try it
-- Save it
-- Nearr remembers it
-- Nearr reminds you when you are nearby
-- You open the saved place on the map and decide what to do next
-
-The product should not feel like a generic map app. It should feel like: “I saw this place online, Nearr helped me remember it at the right moment, and now I can actually go.”
-
-### Product rules
-
-- Wrong silent saves are worse than asking the user to choose.
-- Nearr should not ask for confirmation constantly.
-- Auto-save when evidence is strong.
-- Ask only when evidence is weak or conflicting.
-- Regular users should never pay and should never see traditional ads.
-- Later monetization should come from creators, restaurants, and businesses that benefit from real-world intent and attribution.
-
-### Shipping now
-
-- Restaurant extraction v2: evidence-based extraction, address-first bias, exact-name verification through Places, careful poster identity reading, and candidate-picker fallback when evidence is weak.
-- `@` handles are treated as evidence, not truth. Influencer vs restaurant distinction is part of the extraction decision.
-- Nearby reminders group overlapping saved-place zones into one notification instead of sending separate alerts.
-
-### Partial or still needing validation
-
-- Native iOS share-extension silent save still needs real-device verification in the current environment.
-- Background reminder reliability and geofencing still need real-device validation; do not treat simulator or Expo Go behavior as proof.
-
-### Future, not built yet
-
-- Nearby opportunity screen after notification tap
-- Visited completion state
-- Archived state after missed opportunities
-- Archive / Visited filters in Places
-
-### Future ideas to log, not build yet
-
-- Adaptive ellipse/blob zones for overlapping saved places
-- More advanced cluster geometry beyond simple circle intersection
-- Audio transcription fallback for restaurant names
-- Tagged-account profile inspection
-- Restaurant / creator attribution dashboard
-- Archived / visited map visibility controls
-- Social maps
-- Creator dashboards
-- Restaurant campaign reports
-- Monetization through restaurants, creators, and businesses, not regular users
+- Nearr is not early to the broad “save places” category.
+- “Save places from TikTok/Instagram” is not unique by itself.
+- Nearr cannot win by being a worse broad save-anything app.
+- Nearr must win by being more focused, faster, and better at the place-action loop.
 
 ---
 
-# 🔥 STAGE 0 — FOUNDATION (v1 BETA)
+## 🎯 CURRENT POSITIONING
 
-**Target deadline:** May 2026  
-**Estimated valuation:** $0-$250K if metrics are real and retention is healthy  
-**Valuation logic:** Prototype/beta value only. Not fundable at meaningful terms unless there is unusual user pull.
+Nearr should not position itself as a generic organizer.
+
+Nearr’s wedge is:
+
+> **Save food spots and real-world places from social media, see them on your map, and remember them when you’re nearby.**
+
+The early niche should be food first.
+
+Food is the right first wedge because:
+
+- Food creators already generate high-intent recommendations.
+- Users frequently save restaurant videos and forget them.
+- The action is concrete: go eat there.
+- The value of a nearby reminder is obvious.
+- Creator partnerships can eventually produce a distribution loop.
+
+Nearr can expand later, but the first domination goal is:
+
+> **Become the best app for saving restaurants from TikTok, Instagram, YouTube Shorts, and links.**
+
+---
+
+## 🧩 CORE LOOP
+
+Nearr’s core loop:
+
+1. See a place online
+2. Want to try it
+3. Share/paste/save it to Nearr
+4. Nearr finds the place
+5. User confirms if needed
+6. Place is saved
+7. Map opens to the saved place
+8. User remembers it later
+9. Nearr resurfaces it nearby
+10. User opens directions or visits
+
+The product should feel like:
+
+> “I saw this place online, Nearr helped me remember it, and now I can actually go.”
+
+---
+
+## 🧪 CURRENT BUILD REALITY
+
+Some features have already been built even though Nearr is still Stage 0. These features remain assigned to the metrics they are supposed to improve.
+
+### Built or mostly built
+
+#### Auth + Entry
+- Magic-link auth
+- Dev/test login
+- Auth callback route
+- Pre-auth onboarding / public intro flow
+- Sign-in contrast cleanup
+- Sign-in back navigation to onboarding
+
+#### Save + Extraction
+- Save from link/share
+- Manual/paste link flow
+- Candidate confirmation
+- Source URL saving
+- Original post/source opening
+- Save success can route/focus the saved place on the map
+- Known working example videos exist for Instagram, TikTok, and YouTube
+
+#### Map + Place View
+- Map view
+- Search
+- Nearby / Recent / Saved chips
+- Saved-place list
+- Place bottom card
+- Expanded place details
+- Directions button
+- Notes field
+- Saved-from-source label
+- Remove from saved
+- View All
+- Selected place persistence when returning from Settings has been scoped as production polish
+
+#### Reminders
+- Notification permission flow
+- Location/Always Location setup
+- Nearby reminder toggle
+- Distance settings
+- Test notification
+- Foreground/background proximity checks
+- Geofencing infrastructure
+- Setup checklist
+
+This is infrastructure. It does **not** mean the habit loop is proven.
+
+#### Feedback / Trust / Production Polish
+- In-app feedback entry point
+- Legal links
+- Review row planned or added
+- Runtime diagnostics hidden or gated for production
+- Testing section gated for development
+- App Store screenshot planning
+- Quiet production release plan
+
+#### Onboarding / Education
+- Pre-auth onboarding intro
+- Share Favorites explanation
+- Share-to-Nearr explanation
+- Nearby reminders explanation
+- First-save challenge/actions
+- Tutorial video plan for Instagram/TikTok/YouTube
+
+---
+
+## 🚫 CURRENT PRODUCT RISKS
+
+These are the risks that matter before broad growth.
+
+### 1. First-save reliability risk
+If a user shares a link and Nearr fails, saves the wrong place, or does not focus the saved place on the map, the app loses trust immediately.
+
+### 2. Understanding risk
+Users must understand the app before signing up. Pre-auth onboarding reduces this risk, but the App Store page and first save still have to make the loop obvious.
+
+### 3. Competition risk
+Competitors are ahead in polish and breadth. Nearr must be narrower and better at food/place action.
+
+### 4. Permission trust risk
+Location and notification permissions must be asked at the right time with clear copy. Do not ask too early.
+
+### 5. Creator distribution risk
+Creators may like the idea, but that does not mean they will promote it. The creator loop must be proven manually.
+
+### 6. Quiet production risk
+Going to production removes TestFlight friction, but it also makes the first impression more permanent.
+
+---
+
+## 🚦 LAUNCH MODE DEFINITIONS
+
+### Development build
+Used by the founder for testing.
+
+### Quiet production release
+The app is live on the App Store, but not broadly marketed.
+
+Purpose:
+- Remove TestFlight friction
+- Give creators and users a real App Store link
+- Test onboarding and save loop with real users
+- Collect feedback
+- Avoid “launch day” pressure
+
+This is still treated like a beta internally.
+
+### Public launch
+The app is actively marketed through creator posts, social content, press, Product Hunt, paid marketing, or broad public announcements.
+
+Nearr is **not ready for public launch** until Stage 0 acceptance is met and first-save reliability is strong.
+
+---
+
+## 🧲 COMPETITION RULE
+
+Competition is market validation, not proof that Nearr will win.
+
+Do not respond to competitors by adding every feature they have.
+
+Competitors being broad means Nearr should get sharper:
+
+- Albo saves everything.
+- Mio saves travel/places.
+- Map/list apps organize places.
+- Nearr should save food spots and places from social media and get users to actually go.
+
+Nearr’s early advantage must be:
+
+1. Better food-specific positioning
+2. Faster save-to-map flow
+3. Better post-save focus
+4. Nearby reminder/action loop
+5. Creator attribution later
+
+---
+
+## 🧑‍🍳 FOOD-FIRST RULE
+
+Until Stage 2 metrics are hit, Nearr should act like a food-first app in positioning, screenshots, examples, and creator outreach.
+
+This does not mean the app cannot save hikes, hotels, bars, cafes, or other places.
+
+It means the growth wedge should be food.
+
+Reason:
+Food content has the strongest combination of:
+- creator supply
+- user intent
+- repeat behavior
+- local action
+- restaurant/business monetization potential
+
+---
+
+## 📣 CREATOR STRATEGY REALITY
+
+Creator distribution is promising but not guaranteed.
+
+Do not assume:
+- 10% of a creator’s followers will download
+- a large account will post for free
+- creator interest equals repeatable growth
+
+A more realistic early funnel:
+
+- 100 creators contacted
+- 20–30 reply
+- 10–15 try it
+- 3–5 like it
+- 1–2 post
+- 200–1,000 downloads
+- 50–300 first saves
+- 10–75 retained users
+
+Creator strategy should start with:
+- micro and mid-size food creators
+- direct feedback requests
+- permission before using creator content publicly
+- “help followers remember the places you post” pitch
+
+Future creator value:
+- save counts
+- directions taps
+- follower intent
+- creator maps
+- restaurant attribution
+
+Do not build creator dashboards until creator demand and user saving behavior are proven.
+
+---
+
+## 💸 MONETIZATION RULE
+
+Regular users should not pay and should not see traditional ads.
+
+Long-term monetization should come from:
+- creators
+- restaurants
+- local businesses
+- attribution
+- promoted intent surfaces
+- campaign reporting
+- creator/business tools
+
+Do not add a consumer paywall during early stages. It adds friction and weakens the user network before the core behavior is proven.
+
+---
+
+# 🔥 STAGE 0 — FOUNDATION / QUIET PRODUCTION
+
+**Current status:** Active  
+**Launch mode:** Development build → quiet production  
+**Estimated valuation:** $0–$250K if metrics are real and retention is healthy  
+**Valuation logic:** Prototype/early app value only. Not fundable at meaningful terms unless there is unusual user pull.
+
+---
 
 ## 🎯 Goal
-User can save a place → see it → understand it
+
+User can understand Nearr, save a real place, see it on the map, and know what to do next.
+
+---
 
 ## 🧭 Product Experience
 
-Nearr should feel understandable. A new user should know what the app does within 30 seconds. They should be able to save a place, see it on the map, open details, and understand why it saved. The app can still feel beta, but it should not feel broken.
+Nearr should feel understandable within 30 seconds.
 
-Main feeling: “Oh, I get it. This saves places I want to try.”
+A new user should know:
 
-## 💸 Expected Monthly Spend
+- Nearr saves places from social media
+- The place goes onto a map
+- Nearby reminders help later
+- They can share/paste links to save
+- After saving, the map opens to the place
 
-**Expected monthly spend:** $50-$300/month
+Main feeling:
 
-**Normal costs:**
-- AI tools: $20-$100
-- Supabase/hosting: $0-$50
-- Resend/email: $0-$20
-- domain: $10-$30/year
-- website/domain/static hosting: $0-$50/month
-- Apple Developer: $99/year
-- Google Maps/Places: low or free-tier unless usage spikes
-- marketing: $0-$100
-- legal: $0-$500 one-time using templates or basic review
+> “Oh, I get it. This saves restaurants and places I want to try.”
+
+---
+
+## 🎯 Stage 0 Positioning
+
+Stage 0 should be food-first.
+
+The public/App Store pitch should be:
+
+> **Save food spots from social media. See them on your map. Remember them nearby.**
+
+Avoid broad/investor language like:
+- memory-to-action layer
+- place-intent graph
+- social evidence extraction
+- AI-powered local intent
+
+Those belong in strategy docs, not App Store copy.
+
+---
 
 ## 📊 REQUIRED METRICS
 
-- Downloads ≥ 30  
-- WAU ≥ 15  
-- WAU / Downloads ≥ 40%  
+### Distribution / Activation
+- Downloads ≥ 30
+- WAU ≥ 15
+- WAU / downloads ≥ 40%
 
-- Avg saves per user ≥ 3  
-- Save success rate ≥ 70%  
-- Wrong saves ≤ 20%  
+### Core Save Loop
+- First-save attempt rate ≥ 50% of signed-in users
+- First-save success rate ≥ 70%
+- Avg saves per user ≥ 3
+- Wrong saves ≤ 20%
+- Post-save map focus success ≥ 90%
 
-- Crash rate < 5%  
+### Reliability
+- Crash rate < 5%
+- Share/paste flow does not hang indefinitely
+- Auth callback works reliably
+
+### Understanding
 - Understanding ≥ 70%
+- At least 7/10 users can explain Nearr after onboarding without help
+- At least 7/10 users know how to save a place after seeing onboarding
 
 ---
 
-## 🧱 FEATURES UNLOCKED
+## 🧱 FEATURES ALLOWED / UNLOCKED
 
-### Auth + Entry
-- Magic-link auth + SMTP reliability
-- Dev/test password login
-- Auth callback works with no unmatched-route failure
+### Pre-auth Education
+- Public onboarding before sign-up
+- App Store screenshots
+- Tutorial videos for Instagram/TikTok/YouTube save flows
+- Sign-in back button to onboarding
 
-👉 Drives:
-- Save start rate
-- Understanding
-- Crash rate
-
----
-
-### Capture + Save
-- Save from link
-- Manual save
-- Native/share entry works, with iOS silent-save still requiring real-device verification
-- Basic extraction
-- Candidate selection
-- Saved places persist correctly
-- Save success focuses the saved place on Map
-
-👉 Drives:
-- Save success rate
-- Saves per user
+Drives:
+- understanding
+- sign-up conversion
+- first-save attempt rate
 
 ---
 
-### Map + View
-- Map loads correctly
-- Pins display correctly
-- Place detail is understandable
-- Original post/source can be opened
+### Save + Map Loop
+- Save from link/share
+- Manual paste
+- Candidate confirmation
+- Save success routes to focused map
+- Original post/source URL saved
+- Open original post
+- Directions button
 
-👉 Drives:
-- Map load success
-- User understanding
-
----
-
-### UX Basics
-- Loading states
-- Clear confirmation
-- Error handling
-- How Nearr Works onboarding
-- Basic settings and setup checklist
-- Crash/performance fixes
-- Basic reminder infrastructure testing, but not as the core metric
-
-👉 Drives:
-- Understanding %
-- Save success rate
+Drives:
+- first-save success
+- saves/user
+- user trust
 
 ---
 
-## ✅ STAGE 0 BETA ACCEPTANCE
+### Production Trust
+- Feedback form
+- Leave a review row
+- Terms/Privacy links
+- Hide dev/testing UI in production
+- Hide runtime diagnostics in production
+- Clean tab bar contrast
+- No obvious debug copy
 
-- Magic link works reliably.
-- No unmatched-route auth callback failure.
-- Save flow works end-to-end from link/share.
-- Wrong saves stay under the stage threshold.
-- Map and place details are understandable.
-- App does not crash while idle during normal beta use.
+Drives:
+- trust
+- feedback collection
+- production readiness
 
 ---
 
-## 🚫 LOCKED FEATURES
-- Social  
-- Notification-driven habit loop  
-- Visited/photos  
-- Recommendations  
+### Basic Reminder Setup
+- Notification setup
+- Location setup
+- Nearby reminder explanation
+- Test reminders in dev
+
+Allowed, but Stage 0 does not require reminder habit loop to work.
+
+Drives:
+- future retention
+- setup readiness
+
+---
+
+## ✅ STAGE 0 ACCEPTANCE
+
+Nearr can move past Stage 0 only when:
+
+- App is stable enough for quiet production.
+- Pre-auth onboarding clearly explains the app.
+- Sign-in works.
+- Save from link/share works on real devices.
+- Known-working Instagram/TikTok/YouTube examples save successfully.
+- Save success opens the map to the saved place.
+- Wrong saves remain under threshold.
+- Runtime diagnostics/testing UI are hidden in production.
+- Feedback path exists.
+- App Store page communicates the food/place wedge clearly.
+
+---
+
+## 🚫 LOCKED IN STAGE 0
+
+Do not build these as product investments yet:
+
+- Social feed
+- Public profiles
+- Creator dashboards
+- Restaurant dashboards
+- Recommendations
+- Group maps
+- Visit/photo social layer
+- Monetization
+- Paid marketing
+- Broad category expansion beyond places
 
 ---
 
 # ⚡ STAGE 1 — CORE LOOP
 
-**Target deadline:** June 15, 2026  
-**Estimated valuation:** $250K-$750K if metrics are real and retention is healthy  
-**Valuation logic:** Early proof of value, but still fragile without repeat usage and real reopen behavior.
+**Estimated valuation:** $250K–$750K if metrics are real and retention is healthy  
+**Valuation logic:** Early proof of value, but fragile without repeat usage and real reopen behavior.
+
+---
 
 ## 🎯 Goal
-User saves → remembers → sees value
+
+User saves, remembers, and reopens.
+
+---
 
 ## 🧭 Product Experience
 
-Nearr should feel useful after a few saves. The user should be able to reopen the app and remember why they saved each place. Original post and source recall should feel obvious. Place details should feel human, not like database rows.
+Nearr should feel useful after a few saves.
 
-Main feeling: “I’m glad I saved this.”
+Main feeling:
 
-## 💸 Expected Monthly Spend
+> “I’m glad I saved this.”
 
-**Expected monthly spend:** $100-$500/month
+The user should be able to:
+- reopen the app
+- understand why they saved each place
+- open the original post
+- see context
+- choose a saved spot again later
 
-**Normal costs:**
-- AI tools: $20-$120
-- Supabase/hosting: $0-$80
-- email/auth delivery: $0-$30
-- website/domain/static hosting: $0-$100/month
-- Apple Developer and domain amortization: low fixed cost
-- Google Maps/Places: low, but monitor usage
-- analytics/crash tooling: $0-$50
-- lightweight user research or testing incentives: $0-$150
-- legal/company: usually still minimal if remaining in closed beta
+---
 
 ## 📊 REQUIRED METRICS
 
-- Downloads ≥ 75  
-- WAU ≥ 25  
-- 3-day retention ≥ 25%  
-
-- Avg saves per user ≥ 4  
-- Reopen rate ≥ 40%  
+- Downloads ≥ 75
+- WAU ≥ 25
+- 3-day retention ≥ 25%
+- Avg saves per user ≥ 4
+- Reopen rate ≥ 40%
 - Map success ≥ 95%
+- Second-save rate ≥ 25%
+- Post-save map focus success ≥ 95%
 
 ---
 
-## 🧱 FEATURES UNLOCKED
+## 🧱 FEATURES ALLOWED / UNLOCKED
 
 ### Save → Recall Loop
-- “Open original video”
-- Better place detail view
-- Stronger source recall and context
+- Better saved-place detail
+- Source recall
+- Original post preview/opening
+- Notes
+- Better empty states
+- “Recently saved” list polish
 
-👉 Drives:
-- Reopen rate
-- Retention
-
----
-
-### UI System
-- Clean colors + layout
-- Cleaner detail pages
-- Less confusion in the save → map → detail flow
-
-👉 Drives:
-- Retention
-- User clarity
+Drives:
+- reopen rate
+- retention
+- second saves
 
 ---
 
-### Extraction Improvements
-- Better parsing logic
-- Improved save accuracy
-- Better user understanding of what got saved
+### Food-first Polish
+- Stronger food examples
+- App Store preview polish
+- Known creator/video examples
+- Copy focused on restaurants and food spots
 
-👉 Drives:
-- Save success rate
-
----
-
-### Reminder Positioning
-- Reminder infrastructure may be present for beta testing.
-- Stage 1 success is still save → remember → reopen, not full habit automation.
-
-👉 Drives:
-- Product clarity
-- Correct roadmap focus
+Drives:
+- conversion
+- understanding
+- creator relevance
 
 ---
 
-## 🚫 LOCKED FEATURES
-- Notification-driven habit loop  
-- Social  
-- Visited/photos  
+### Feedback Loop
+- In-app feedback
+- Failed-save report path
+- Private complaints before public bad reviews
+
+Drives:
+- bug discovery
+- trust
+- product learning
+
+---
+
+## 🚫 LOCKED IN STAGE 1
+
+- Full notification-driven habit loop as a success claim
+- Social
+- Creator dashboards
+- Restaurant monetization
+- Recommendations
 
 ---
 
 # 🚀 STAGE 2 — FRICTION REMOVAL
 
-**Target deadline:** August 1, 2026  
-**Estimated valuation:** $750K-$2M if metrics are real and retention is healthy  
+**Estimated valuation:** $750K–$2M if metrics are real and retention is healthy  
 **Valuation logic:** Stronger if share-driven saving is clearly working, but still pre-habit and not yet a durable network.
 
+---
+
 ## 🎯 Goal
-Saving becomes effortless
+
+Saving becomes effortless.
+
+---
 
 ## 🧭 Product Experience
 
-Saving should feel fast and natural. Sharing or pasting a link should rarely require thinking. If extraction is uncertain, the app should help the user choose quickly. Wrong saves and failed saves should feel rare.
+Saving should feel fast and natural.
 
-Main feeling: “Saving to Nearr is effortless.”
+Main feeling:
 
-## 💸 Expected Monthly Spend
+> “Saving to Nearr is effortless.”
 
-**Expected monthly spend:** $250-$1,000/month
-
-**Normal costs:**
-- AI tools: $40-$150
-- Supabase/hosting: $25-$150
-- email/SMTP: $10-$50
-- website/domain/static hosting: $0-$100/month
-- Google Maps/Places: $25-$200 depending on save volume
-- analytics/crash reporting: $0-$100
-- transcription if used: $0-$250
-- design/assets/testing incentives: $0-$150
-- public launch website design/assets if needed: $100-$500 one-time
-- contractor or implementation help if needed: $0-$500
+---
 
 ## 📊 REQUIRED METRICS
 
-- Downloads ≥ 200  
-- WAU ≥ 75  
-
-- Share saves ≥ 50%  
-- Save success ≥ 80%  
-- Time to save ≤ 5s  
-
-- Saves/user ≥ 5  
-
----
-
-## 🧱 FEATURES UNLOCKED
-
-### Share Flow
-- Native share improvements
-- Faster parsing
-- Save in under 5 seconds becomes the bar
-
-👉 Drives:
-- Share %
-- Saves/user
+- Downloads ≥ 200
+- WAU ≥ 75
+- Share saves ≥ 50%
+- Save success ≥ 80%
+- Time to save ≤ 5 seconds when evidence is strong
+- Saves/user ≥ 5
+- Wrong saves ≤ 15%
 
 ---
 
-### Performance
-- Faster UI
-- Reduced loading time
-- Faster save completion from app open to saved place
+## 🧱 FEATURES ALLOWED / UNLOCKED
 
-👉 Drives:
-- Save completion rate
+### Share Flow Hardening
+- Faster share processing
+- Better native share handling
+- Better share favorites education
+- Better loading/progress state
+
+Drives:
+- share saves
+- save completion
 
 ---
 
 ### Extraction Stack
-- Harden extraction stack
-- Fallback parsing
-- Source parsing reliability
-- Fewer wrong saves
+- Platform-specific evidence sources
+- Tagged-location support when available
+- Caption/description extraction
+- Transcript/OCR fallback if practical
+- Candidate ranking
+- Low-confidence confirmation
 
-👉 Drives:
-- Save success %
-- Wrong saves
+Drives:
+- save success
+- wrong-save reduction
 
 ---
 
 ### Reliability
 - Retry system
-- Fewer failed saves
+- Timeout handling
+- Clear failed-save recovery
+- Manual search fallback
 
-👉 Drives:
-- Save success %
+Drives:
+- trust
+- save success
 
 ---
 
-## 🚫 LOCKED FEATURES
-- Notification-driven habit loop  
-- Social  
-- Visited/photos  
+## 🚫 LOCKED IN STAGE 2
+
+- Social feed
+- Creator dashboards
+- Paid acquisition at scale
+- Broad category expansion
 
 ---
 
 # 🔥 STAGE 3 — HABIT LOOP
 
-**Target deadline:** September 15, 2026  
-**Estimated valuation:** $2M-$5M if metrics are real and retention is healthy  
+**Estimated valuation:** $2M–$5M if metrics are real and retention is healthy  
 **Valuation logic:** First stage where investor interest becomes more credible if user pull is obvious and users come back on their own.
 
+---
+
 ## 🎯 Goal
-Productize reminders and completion loop
+
+Productize reminders and completion loop.
+
+---
 
 ## 🧭 Product Experience
 
-Nearr should start bringing users back without them manually remembering. Nearby reminders should feel timely and useful, not spammy. Users should start completing the loop by visiting places. The app should make saved vs visited feel satisfying.
+Nearr should bring users back without them manually remembering.
 
-Main feeling: “Nearr reminded me at the right moment.”
+Main feeling:
 
-## 💸 Expected Monthly Spend
+> “Nearr reminded me at the right moment.”
 
-**Expected monthly spend:** $500-$2,500/month
-
-**Normal costs:**
-- AI tools: $50-$200
-- Supabase/hosting: $50-$300
-- email/notification infrastructure: $20-$100
-- Google Maps/Places: $50-$300
-- analytics/crash tooling: $20-$150
-- transcription or other AI processing: $50-$400
-- design/content/community ops: $0-$300
-- paid testing or small-scale growth experiments: $0-$500
-- company formation/legal may be $500-$2,000 one-time if not done yet
+---
 
 ## 📊 REQUIRED METRICS
 
-- Downloads ≥ 500  
-- WAU ≥ 150  
-- WAU / Downloads ≥ 30%  
-
-- 3-day retention ≥ 35%  
-- 7-day retention ≥ 20%  
-
-- % open without sharing ≥ 30%  
-- Action rate ≥ 10–15%  
+- Downloads ≥ 500
+- WAU ≥ 150
+- WAU / downloads ≥ 30%
+- 3-day retention ≥ 35%
+- 7-day retention ≥ 20%
+- % open without sharing ≥ 30%
+- Action rate ≥ 10–15%
 - Notification CTR ≥ 15%
-
-Basic reminder infrastructure may exist earlier for testing, but Stage 3 is where it becomes a metric-owned product loop.
-
-Reminder infrastructure may be built earlier, but Stage 3 requires evidence that reminders create return behavior.
 
 ---
 
-## 🧱 FEATURES UNLOCKED
+## 🧱 FEATURES ALLOWED / UNLOCKED
 
 ### Notification-Driven Habit Loop
 - “You’re near X”
-- “You saved this recently”
-- Real-device reminder reliability on real iPhones
-- Notification quality, timing, and copy
-- Meaningful notification CTR and reopen behavior
+- grouped nearby reminders
+- real-device reminder reliability
+- notification copy/timing
+- tap notification → useful nearby opportunity screen
 
-👉 Drives:
-- WAU
-- Retention
-- Notification CTR
-
----
-
-## 🆕 COMPLETION LOOP
-
-### “Mark as Visited”
-- Timestamp stored
-- Completion action after reminder
-
-👉 Drives:
-- Retention
-- Habit formation
-- Action rate
+Drives:
+- retention
+- reopen behavior
+- action rate
 
 ---
 
-### Photo Capture
+### Completion Loop
+- Mark as visited
+- Timestamp
 - Optional photo
+- Saved vs visited state
 
-👉 Drives:
-- Emotional attachment
-- Return usage
-
----
-
-### Visual Progress
-- Visited vs saved
-
-👉 Drives:
-- Repeat engagement
+Drives:
+- emotional attachment
+- repeat engagement
+- action tracking
 
 ---
 
-## 🚫 LOCKED FEATURES
-- Decision layer  
-- Social posts  
-- Feed  
-- Followers  
+## 🚫 LOCKED IN STAGE 3
+
+- Social feed
+- Public profiles
+- Creator dashboards
+- Restaurant dashboards
 
 ---
 
 # 🌍 STAGE 4 — DECISION LAYER
 
-**Target deadline:** December 31, 2026  
-**Estimated valuation:** $5M-$12M if metrics are real and retention is healthy  
-**Valuation logic:** Nearr starts to look like a real decision product, not just a save utility, especially if WAD behavior is real.
-
-## 🎯 Goal
-User uses Nearr to decide where to go
-
-## 🧭 Product Experience
-
-Nearr should help users decide where to go now. Map, filters, ranking, and nearby context should feel like decision tools. The app should shift from “things I saved” to “what should I do?” Getting directions should become a core action.
-
-Main feeling: “Nearr helps me choose.”
-
-## 💸 Expected Monthly Spend
-
-**Expected monthly spend:** $1,500-$7,500/month
-
-**Normal costs:**
-- AI tools and developer tooling: $100-$400
-- backend/hosting/database: $150-$1,000
-- email and lifecycle messaging: $25-$150
-- Google Maps/Places: $150-$1,000
-- analytics/crash/reporting stack: $50-$300
-- transcription/ML services if active: $100-$1,000
-- design/assets/content production: $100-$750
-- legal/company/accounting: $100-$1,000
-- contractors/freelancers: $0-$3,000
-- marketing tests and ambassadors: $250-$2,000
-
-## 📊 REQUIRED METRICS
-
-- Downloads ≥ 2,000  
-- WAU ≥ 500  
-
-- Sessions/week ≥ 2  
-- Non-share sessions ≥ 40%  
-- Session time ≥ 60–90s  
-
-Basic map, filters, and search can exist earlier. Stage 4 is when they become decision tools.
+**Estimated valuation:** $5M–$12M if metrics are real and retention is healthy  
+**Valuation logic:** Nearr starts to look like a decision product, not just a save utility, if Weekly Active Decider behavior is real.
 
 ---
 
-## 🧱 FEATURES UNLOCKED
+## 🎯 Goal
+
+User uses Nearr to decide where to go.
+
+---
+
+## 🧭 Product Experience
+
+Nearr shifts from “things I saved” to “what should I do?”
+
+Main feeling:
+
+> “Nearr helps me choose.”
+
+---
+
+## 📊 REQUIRED METRICS
+
+- Downloads ≥ 2,000
+- WAU ≥ 500
+- Sessions/week ≥ 2
+- Non-share sessions ≥ 40%
+- Session time ≥ 60–90s
+- Direction/action rate ≥ 15%
+- Weekly Active Deciders tracked and growing
+
+---
+
+## 🧱 FEATURES ALLOWED / UNLOCKED
 
 ### Decision UI
-- “Near me”
+- Nearby decision screen
 - Filters
 - Ranking
-- Map/search/filtering used to choose where to go now
-
-👉 Drives:
-- Session time
-- Decision rate
-
----
-
-### Action Layer
-- “Go here”
-- Open directions
-- Start navigation becomes the north-star behavior
-
-👉 Drives:
-- Weekly Active Deciders (WAD)
-
----
-
-### Core Metric Unlock
-
-**WAD (Weekly Active Deciders)**  
-Users who:
-- tap “go”
-- open maps
-- start navigation
-
-👉 This becomes your NORTH STAR
-
----
-
-## 🚫 LOCKED FEATURES
-- Social feed  
-- Public sharing  
-
----
-
-# 🧩 STAGE 5 — EXPANSION
-
-**Target deadline:** June 30, 2027  
-**Estimated valuation:** $10M-$25M if metrics are real and retention is healthy  
-**Valuation logic:** Expansion is valuable only if the core loop stays clean while new categories widen usage without adding confusion.
-
-## 🎯 Goal
-More use cases without confusion
-
-## 🧭 Product Experience
-
-Nearr should work beyond restaurants without becoming confusing. Activities, stores, events, and other places should fit naturally. Food should still work well. The product should feel broader but not bloated.
-
-Main feeling: “I can save anything I want to do later.”
-
-## 💸 Expected Monthly Spend
-
-**Expected monthly spend:** $5,000-$20,000/month
-
-**Normal costs:**
-- engineering and AI tools: $150-$700
-- backend/database/hosting: $300-$2,500
-- email/lifecycle tooling: $50-$250
-- Google Maps/Places and related APIs: $300-$2,500
-- analytics/crash/data tooling: $100-$600
-- design/content/assets: $250-$1,500
-- legal/accounting/compliance: $250-$2,000
-- contractors/freelancers: $1,000-$8,000
-- marketing, creators, ambassadors: $1,000-$8,000
-
-## 📊 REQUIRED METRICS
-
-- Downloads ≥ 10,000  
-- WAU ≥ 2,000  
-
-- Non-food saves ≥ 20%  
-- Retention stable  
-
----
-
-## 🧱 FEATURES UNLOCKED
-
-Expansion only matters if the food loop stays stable.
-
-### Categories
-- Activities
-- Events
-- Stores
-
-👉 Drives:
-- Saves/user
-- WAU
-
----
-
-### Search + Discovery
-- Global search
-
-👉 Drives:
-- Session depth
-
----
-
-## 🚫 LOCKED FEATURES
-- Social feed  
-
----
-
-# 🧑‍🤝‍🧑 STAGE 6 — SOCIAL
-
-**Target deadline:** December 31, 2027  
-**Estimated valuation:** $25M-$75M if metrics are real and retention is healthy  
-**Valuation logic:** Social can re-rate the company fast, but only if influence, viewing, and follow behavior are authentic rather than superficial.
-
-## 🎯 Goal
-People influence each other
-
-## 🧭 Product Experience
-
-Social should feel like useful influence, not a feed for its own sake. Users should discover places through friends, creators, or shared maps. Profiles and following should make the app more useful, not more distracting. Private saved-place behavior must still remain strong.
-
-Main feeling: “People I trust help me find places.”
-
-## 💸 Expected Monthly Spend
-
-**Expected monthly spend:** $15,000-$75,000/month
-
-**Normal costs:**
-- product and AI tooling: $250-$1,000
-- backend/infrastructure/database: $1,000-$8,000
-- messaging/email/notification systems: $100-$800
-- maps/places APIs: $1,000-$10,000
-- analytics/data/crash tooling: $250-$1,500
-- trust, moderation, and support operations: $500-$5,000
-- design/content/community: $500-$4,000
-- legal/privacy/accounting: $500-$5,000
-- contractors or hires: $5,000-$30,000
-- paid growth, creators, partnerships: $5,000-$40,000
-
-## 📊 REQUIRED METRICS
-
-- Downloads ≥ 50,000  
-- WAU ≥ 10,000  
-
-- Following ≥ 25%  
-- Social viewing ≥ 30%  
-
----
-
-## 🧱 FEATURES UNLOCKED
-
-Social only matters if private saved-place behavior is already strong.
-
-### Profiles
-- Public maps
-
-👉 Drives:
-- Social engagement
-
----
-
-### Following
-- Friends/influencers
-
-👉 Drives:
-- Retention
-
----
-
-### Shared Maps
-- Group planning
-
-👉 Drives:
-- WAU
-
----
-
-### Photo Socialization
-- Visited photos visible
-
-👉 Drives:
-- Content creation
-
----
-
-# 🧠 STAGE 7 — INTELLIGENCE
-
-**Target deadline:** June 30, 2028  
-**Estimated valuation:** $75M-$250M+ if metrics are real and retention is healthy  
-**Valuation logic:** This only matters if recommendations consistently drive action. Without that, AI story alone is worth very little.
-
-## 🎯 Goal
-Nearr predicts what you should do
-
-## 🧭 Product Experience
-
-Nearr should feel predictive. The app should recommend what to do based on intent, context, history, and location. Recommendations should drive real actions, not just clicks. AI should feel invisible and useful, not gimmicky.
-
-Main feeling: “Nearr knows what I’d probably want to do.”
-
-## 💸 Expected Monthly Spend
-
-**Expected monthly spend:** $50,000+/month
-
-**Normal costs:**
-- AI/ML/model usage and tooling: $2,000+
-- infrastructure/database/backend: $5,000+
-- maps/places and third-party APIs: $3,000+
-- analytics/data platform/crash/reporting: $1,000+
-- privacy/security/compliance: $1,000+
-- legal/accounting: $1,000+
-- team, contractors, and recruiting: major cost center
-- growth and partnerships: major cost center
-
-## 📊 REQUIRED METRICS
-
-- Downloads ≥ 200,000  
-- WAU ≥ 50,000  
-
-- Recommendation CTR ≥ 20%  
-- Action rate ≥ 15%
-
----
-
-## 🧱 FEATURES UNLOCKED
-
-AI only matters if recommendations drive real actions, not just clicks.
-
-### AI Recommendations
-- Personalized suggestions
-
-👉 Drives:
+- Best saved spots around me
+- Distance/time context
+
+Drives:
+- session time
+- action rate
 - WAD
 
 ---
 
-### Intent Graph
-- Predict behavior
+### Action Layer
+- Open directions
+- Go here
+- Start navigation
+- Maybe reservation/order links later
 
-👉 Drives:
-- Retention
+Drives:
+- Weekly Active Deciders
 
 ---
 
-# 🚨 FINAL RULES
+## NORTH STAR BEGINS
 
-## 1. ALL metrics must pass
+**WAD — Weekly Active Deciders**
 
-## 2. If metrics fail
-DO NOT BUILD FEATURES  
-Fix the stage
+Users who:
+- open directions
+- tap go
+- start navigation
+- make a saved-place decision
 
-## 3. Deadlines do not unlock stages
-Metrics unlock stages.
+---
 
-## 4. Valuation estimates are conditional
-Valuation estimates assume real users, clean retention, and believable growth. Vanity downloads do not count.
+## 🚫 LOCKED IN STAGE 4
 
-## 5. Core metric progression
+- Social feed
+- Public sharing as a major investment
+- Restaurant monetization unless inbound demand exists
 
-- Stage 0–2 → Saves
-- Stage 3 → Retention
-- Stage 4+ → **WAD (Decisions)**
+---
 
-## 6. Spend rules
+# 🧩 STAGE 5 — FOOD NICHE DOMINATION
 
-- Expenses should scale with validated usage, not ambition.
-- Spending more than the normal range before hitting stage metrics is a warning sign unless there is a specific bottleneck.
-- Metrics unlock stages. Spending does not unlock stages.
-- Deadlines do not unlock stages.
-- Raising money should happen only when money accelerates a validated loop.
+**Estimated valuation:** $10M–$25M if metrics are real and retention is healthy  
+**Valuation logic:** Valuable if Nearr becomes strongly associated with saving food spots and shows repeat creator/user behavior.
 
-## 7. Roadmap drift rule
+---
 
-- Early implementation does not unlock a stage.
-- Built infrastructure still belongs to the stage metric it is meant to improve.
-- Do not let code already written fool you into claiming product maturity you have not earned.
+## 🎯 Goal
+
+Own the food-video-to-place-save wedge.
+
+---
+
+## 🧭 Product Experience
+
+Nearr should feel like the default app for food places seen online.
+
+Main feeling:
+
+> “When I see a restaurant video, I save it to Nearr.”
+
+---
+
+## 📊 REQUIRED METRICS
+
+- Downloads ≥ 10,000
+- WAU ≥ 2,000
+- Food saves remain majority of saves
+- 1,000+ users with 3+ food saves
+- Creator-sourced installs measurable
+- At least 10 creators have tested Nearr
+- At least 3 creators have shared or seriously considered sharing Nearr
+
+---
+
+## 🧱 FEATURES ALLOWED / UNLOCKED
+
+### Creator-Facing Lightweight Tools
+Only if creator demand exists.
+
+- Creator attribution tracking
+- Creator save counts
+- Creator map preview
+- Shareable creator map concept tests
+
+Drives:
+- creator acquisition
+- creator retention
+- distribution loop
+
+---
+
+### Food-Specific Product Polish
+- Better restaurant detail
+- cuisine/category filters
+- best nearby food spots
+- source creator context
+- “places I’ve been meaning to try”
+
+Drives:
+- retention
+- WAD
+- saves/user
+
+---
+
+## 🚫 LOCKED IN STAGE 5
+
+- Broad social feed
+- Full restaurant ad marketplace
+- Complex business dashboards
+- Non-food expansion unless food retention remains strong
+
+---
+
+# 🧑‍🤝‍🧑 STAGE 6 — SOCIAL / CREATOR MAPS
+
+**Estimated valuation:** $25M–$75M if metrics are real and retention is healthy  
+**Valuation logic:** Social can re-rate the company quickly, but only if influence, viewing, and follow behavior are authentic rather than superficial.
+
+---
+
+## 🎯 Goal
+
+People influence each other’s real-world place decisions.
+
+---
+
+## 🧭 Product Experience
+
+Social should feel like useful influence, not a feed for its own sake.
+
+Main feeling:
+
+> “People I trust help me find places.”
+
+---
+
+## 📊 REQUIRED METRICS
+
+- Downloads ≥ 50,000
+- WAU ≥ 10,000
+- Following ≥ 25%
+- Social viewing ≥ 30%
+- Creator-sourced activation is measurable
+- Shared maps drive saves
+
+---
+
+## 🧱 FEATURES ALLOWED / UNLOCKED
+
+### Profiles
+- public maps
+- creator maps
+- saved-place collections
+
+Drives:
+- social engagement
+- distribution
+
+---
+
+### Following
+- friends
+- influencers
+- food creators
+
+Drives:
+- retention
+- discovery
+
+---
+
+### Shared Maps
+- creator map
+- group planning
+- trip maps
+
+Drives:
+- WAU
+- saves/user
+
+---
+
+## 🚫 LOCKED IN STAGE 6
+
+- Heavy feed investment unless profiles/maps are already working
+- Fake social engagement
+- Vanity follower features with no save/action behavior
+
+---
+
+# 🧠 STAGE 7 — INTELLIGENCE / ATTRIBUTION
+
+**Estimated valuation:** $75M–$250M+ if metrics are real and retention is healthy  
+**Valuation logic:** AI/data story only matters if recommendations and attribution consistently drive action.
+
+---
+
+## 🎯 Goal
+
+Nearr predicts and proves real-world intent.
+
+---
+
+## 🧭 Product Experience
+
+Nearr should feel predictive and useful.
+
+Main feeling:
+
+> “Nearr knows what I’d probably want to do.”
+
+---
+
+## 📊 REQUIRED METRICS
+
+- Downloads ≥ 200,000
+- WAU ≥ 50,000
+- Recommendation CTR ≥ 20%
+- Action rate ≥ 15%
+- Creator attribution used by creators/businesses
+- Restaurant/business interest is inbound or repeatable
+
+---
+
+## 🧱 FEATURES ALLOWED / UNLOCKED
+
+### AI Recommendations
+- Personalized suggestions
+- “Go now” recommendations
+- intent-aware ranking
+
+Drives:
+- WAD
+- retention
+
+---
+
+### Intent Graph
+- social post → place → save → reminder → directions/visit
+- creator influence
+- restaurant demand signals
+
+Drives:
+- business value
+- acquisition interest
+
+---
+
+### Business / Restaurant Layer
+Only if user and creator loops are already real.
+
+- restaurant demand reports
+- creator campaign attribution
+- promoted map surfaces
+- save-to-visit analytics
+
+Drives:
+- monetization
+- strategic value
+
+---
+
+# 📈 CORE METRIC PROGRESSION
+
+- Stage 0–2: **Saves**
+- Stage 3: **Retention**
+- Stage 4+: **WAD / Decisions**
+- Stage 5+: **Food niche dominance**
+- Stage 6+: **Creator/social distribution**
+- Stage 7+: **Intent attribution**
+
+---
+
+# 💸 SPEND RULES
+
+Expenses should scale with validated usage, not ambition.
+
+Spending more than the normal range before hitting stage metrics is a warning sign unless there is a specific bottleneck.
+
+## Stage 0 expected monthly spend
+$50–$300/month
+
+## Stage 1 expected monthly spend
+$100–$500/month
+
+## Stage 2 expected monthly spend
+$250–$1,000/month
+
+## Stage 3 expected monthly spend
+$500–$2,500/month
+
+## Stage 4 expected monthly spend
+$1,500–$7,500/month
+
+## Stage 5 expected monthly spend
+$5,000–$20,000/month
+
+## Stage 6 expected monthly spend
+$15,000–$75,000/month
+
+## Stage 7 expected monthly spend
+$50,000+/month
+
+Do not raise just to build features. Raise when money clearly accelerates a validated loop.
 
 ---
 
@@ -849,40 +1121,7 @@ Valuation estimates assume real users, clean retention, and believable growth. V
 
 The website supports trust and conversion. It does not prove product-market fit.
 
-## Timing
-
-- Create a simple website soon after closed beta starts.
-- The website is for credibility, explanation, beta signups, legal/support pages later, and eventual public-launch support.
-- The website must support the mobile app loop, not distract from it.
-
-## Core rule
-
-- The website should NOT delay the beta.
-- If the app is not stable, fix the app first.
-- Do not spend more than one evening on the first version.
-
-## Closed beta website requirements
-
-- One-page landing page
-- Clear headline
-- Join beta CTA
-- Contact/support email
-- Basic privacy and terms links if available
-
-How it works should explain Nearr in 10 seconds:
-1. See a place online
-2. Share it to Nearr
-3. See it on your map
-4. Get reminded nearby
-5. Go try it
-
-Suggested first headline:
-“Save places from Instagram and TikTok. Remember them when you’re nearby.”
-
-Suggested CTA:
-“Join the beta”
-
-## Public launch website requirements
+## Quiet production website requirements
 
 - Landing page
 - App Store link
@@ -893,57 +1132,71 @@ Suggested CTA:
 - Short FAQ
 - Screenshots or demo video
 
-## Fundraising / press website requirements
+## Suggested headline
 
-- Strong product positioning
-- Clean visuals and screenshots
-- Metrics or traction if public
-- Founder/contact info
-- Press kit optional later
+> Save food spots from social media. Remember them when you’re nearby.
 
-## Do NOT build yet
+## How it works
 
-- Login/dashboard
-- Blog
+1. See a restaurant online
+2. Share it to Nearr
+3. Nearr finds the place
+4. See it on your map
+5. Get reminded nearby
+6. Go try it
+
+## Do not build yet
+
+- web app
+- dashboards
+- blog
 - SEO content farm
-- Complex CMS
-- Fake testimonials
-- Web version of the app
-- Recommendation pages
-- Anything that distracts from mobile app usage
-
----
-
-# 💸 FUNDING GUIDANCE
-
-- Self-fund through Stages 0-2 unless costs become painful.
-- Consider angels/pre-seed around Stage 3 if retention and user pull are real.
+- fake testimonials
+- restaurant pages
+- creator analytics pages
 
 ---
 
 # ⚖️ BUSINESS / LEGAL GATE SYSTEM
 
-Closed beta can happen before incorporation.
+Quiet production should ideally happen with basic legal readiness.
 
-Public launch should ideally happen after incorporation if Nearr is intended to be a venture-backed startup.
+Company formation is recommended before public launch if Nearr is intended to be venture-backed.
 
-Company formation protects the project. It does not prove product-market fit.
-
-## Required legal/product readiness before public launch
+## Required before public launch
 
 - Terms of Service
 - Privacy Policy
-- beta disclaimer while the product is still unstable
-- account deletion/contact process
-- data/privacy review for location, notifications, accounts, saved links, source URLs, and diagnostics
-- permission copy that does not promise reminder delivery or extraction accuracy
-- Legal scaffolding and in-app acceptance flows can be built before public launch.
-- Beta should not force production legal acceptance unless there is a specific risk reason.
+- Support/contact
+- Account deletion/contact process
+- Data/privacy review for:
+  - location
+  - notifications
+  - accounts
+  - saved links
+  - source URLs
+  - diagnostics
+  - feedback
+- Permission copy that does not promise guaranteed reminder delivery
+- Claims that do not promise guaranteed extraction accuracy
+- No implication of affiliation with Instagram, TikTok, YouTube, restaurants, or creators
 
-## Company Formation Stage
+## Creator/content caution
+
+Do not use creator videos in public onboarding or App Store screenshots without permission.
+
+It is okay to use public examples internally for testing, but public marketing should either:
+- use your own recorded content
+- use permissioned creator content
+- use generic/demo content
+
+---
+
+# 🏢 COMPANY FORMATION GATE
 
 Form the company before:
-- public App Store launch
+
+- broad public launch
 - revenue collection
 - partnerships
 - paid marketing at scale
@@ -951,31 +1204,41 @@ Form the company before:
 - raising money
 
 Recommended structure:
-- Delaware C-Corp if pursuing the venture-backed startup path
-- LLC only if intentionally staying small, cash-flow oriented, or self-funded
+- Delaware C-Corp if pursuing venture path
+- LLC only if intentionally staying small/cash-flow oriented
 
-## Founder / team legal basics
-
-- Founder IP assignment should be explicit
-- Use signed contractor, advisor, and cofounder agreements
-- Do not promise equity casually in messages or calls
-- If there are cofounders, set vesting and paperwork early
-- If founder stock is issued, 83(b) usually must be filed within 30 days; consult a lawyer or accountant
-
-## Brand / risk basics
-
-- Do a basic trademark and domain search before public launch
-- Consider a formal trademark later if traction warrants it
-- Review app claims so Nearr does not promise guaranteed reminders, guaranteed extraction accuracy, or affiliation with third-party platforms or restaurants
-- VC becomes more realistic around Stage 4+ when Nearr has decision behavior/WAD, not just saves.
-- Do not raise just to build features. Raise when money clearly accelerates a validated loop.
+Founder basics:
+- IP assignment
+- contractor/advisor agreements
+- cofounder equity paperwork if needed
+- vesting if cofounders join
+- 83(b) filing if founder stock is issued
 
 ---
 
-# 🎯 EARLY SUCCESS
+# 🎯 EARLY SUCCESS DEFINITION
 
-If you cannot hit:
-- 50 downloads  
-- 25 WAU  
+If Nearr cannot hit:
 
-You have a PRODUCT problem.
+- 50 downloads
+- 25 WAU
+- 20 users with at least one save
+- 10 users with at least three saves
+- 5 users who reopen without being asked
+
+Then Nearr has a product/positioning problem, not a scale problem.
+
+---
+
+# 🚨 FINAL RULES
+
+1. Metrics unlock stages.
+2. Deadlines do not unlock stages.
+3. Built features do not unlock stages.
+4. Spending does not unlock stages.
+5. Competition validates the problem but does not validate Nearr.
+6. Creator interest is not distribution until it produces activated users.
+7. Do not broaden before the food/place loop works.
+8. Do not monetize regular users early.
+9. Do not copy competitor breadth.
+10. Make one save feel magical before chasing scale.
