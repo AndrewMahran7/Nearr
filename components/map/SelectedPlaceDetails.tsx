@@ -14,17 +14,21 @@
  * still available as a deep-link / fallback.
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  FlatList,
   Image,
   Linking,
+  Modal,
+  PanResponder,
   Pressable,
   ScrollView,
   StyleSheet,
   Switch,
   Text,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
@@ -45,6 +49,7 @@ import type { Profile, RadiusUnit, SavedPlaceWithPlace } from '@/types';
 
 const richDetailsCache = new Map<string, PlaceRichDetails | null>();
 const richDetailsInFlight = new Map<string, Promise<PlaceRichDetails | null>>();
+const GALLERY_CARD_GAP = 18;
 
 async function fetchRichDetailsCached(
   googlePlaceId: string,
@@ -155,6 +160,7 @@ export function SelectedPlaceDetails({
 }: Props) {
   const { colors, typography } = useTheme();
   const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
+  const { width: viewportWidth, height: viewportHeight } = useWindowDimensions();
 
   const [notifyOn, setNotifyOn] = useState(saved.notifications_enabled);
   const [mode, setMode] = useState<RadiusMode>(modeFromSaved(saved));
@@ -175,6 +181,11 @@ export function SelectedPlaceDetails({
   const [richDetails, setRichDetails] = useState<PlaceRichDetails | null>(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [failedPhotoUrls, setFailedPhotoUrls] = useState<Record<string, true>>({});
+  const [galleryOpen, setGalleryOpen] = useState(false);
+  const [galleryIndex, setGalleryIndex] = useState(0);
+  const [galleryOpenSeed, setGalleryOpenSeed] = useState(0);
+  const galleryStartYRef = useRef(0);
+  const galleryListRef = useRef<FlatList<string> | null>(null);
 
   const googlePlaceId =
     saved.place.google_place_id && saved.place.google_place_id.trim()
@@ -274,6 +285,33 @@ export function SelectedPlaceDetails({
     if (!richDetails?.photoUrls?.length) return [];
     return richDetails.photoUrls.filter((url) => !failedPhotoUrls[url]).slice(0, 5);
   }, [failedPhotoUrls, richDetails?.photoUrls]);
+
+  const safeGalleryIndex = useMemo(() => {
+    if (photoUrls.length === 0) return 0;
+    return Math.max(0, Math.min(galleryIndex, photoUrls.length - 1));
+  }, [galleryIndex, photoUrls.length]);
+
+  const galleryListKey = useMemo(
+    () => `gallery-${galleryOpenSeed}-${photoUrls.length}`,
+    [galleryOpenSeed, photoUrls.length],
+  );
+
+  const galleryCardWidth = useMemo(
+    () => Math.max(220, Math.round(viewportWidth * 0.76)),
+    [viewportWidth],
+  );
+  const galleryCardHeight = useMemo(
+    () => Math.max(220, Math.round(viewportHeight * 0.54)),
+    [viewportHeight],
+  );
+  const gallerySideSpacing = useMemo(
+    () => Math.max(0, Math.round((viewportWidth - galleryCardWidth) / 2)),
+    [galleryCardWidth, viewportWidth],
+  );
+  const gallerySnapInterval = useMemo(
+    () => galleryCardWidth + GALLERY_CARD_GAP,
+    [galleryCardWidth],
+  );
 
   const phoneRaw =
     richDetails?.internationalPhoneNumber ??
@@ -397,6 +435,53 @@ export function SelectedPlaceDetails({
     }
   }
 
+  function openGalleryAt(index: number) {
+    if (photoUrls.length === 0) return;
+    const nextIndex = Math.max(0, Math.min(index, photoUrls.length - 1));
+    setGalleryIndex(nextIndex);
+    setGalleryOpenSeed((s) => s + 1);
+    setGalleryOpen(true);
+  }
+
+  function closeGallery() {
+    setGalleryOpen(false);
+  }
+
+  useEffect(() => {
+    if (!galleryOpen || photoUrls.length === 0) return;
+    const targetIndex = Math.max(0, Math.min(galleryIndex, photoUrls.length - 1));
+    const frameId = requestAnimationFrame(() => {
+      galleryListRef.current?.scrollToOffset({
+        offset: targetIndex * gallerySnapInterval,
+        animated: false,
+      });
+    });
+    return () => cancelAnimationFrame(frameId);
+  }, [galleryOpen, galleryIndex, gallerySnapInterval, photoUrls.length]);
+
+  const galleryPanResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => false,
+        onMoveShouldSetPanResponder: (_evt, gestureState) => {
+          const { dx, dy } = gestureState;
+          if (dy <= 8) return false;
+          return Math.abs(dy) > Math.abs(dx) * 1.2;
+        },
+        onPanResponderGrant: (_evt, gestureState) => {
+          galleryStartYRef.current = gestureState.moveY;
+        },
+        onPanResponderRelease: (_evt, gestureState) => {
+          const movedDown = gestureState.moveY - galleryStartYRef.current;
+          if (movedDown > 90 && Math.abs(gestureState.dy) > Math.abs(gestureState.dx) * 1.2) {
+            closeGallery();
+          }
+        },
+        onPanResponderTerminate: () => undefined,
+      }),
+    [],
+  );
+
   function confirmDelete() {
     Alert.alert(
       'Remove place?',
@@ -443,18 +528,123 @@ export function SelectedPlaceDetails({
           style={styles.photoStrip}
           nestedScrollEnabled
         >
-          {photoUrls.map((url) => (
-            <Image
+          {photoUrls.map((url, index) => (
+            <Pressable
               key={url}
-              source={{ uri: url }}
-              style={styles.photoTile}
-              resizeMode="cover"
-              onError={() => {
-                setFailedPhotoUrls((prev) => ({ ...prev, [url]: true }));
-              }}
-            />
+              onPress={() => openGalleryAt(index)}
+              style={({ pressed }) => [styles.photoTilePressable, pressed && styles.pressed]}
+              hitSlop={4}
+            >
+              <Image
+                source={{ uri: url }}
+                style={styles.photoTile}
+                resizeMode="cover"
+                onError={() => {
+                  setFailedPhotoUrls((prev) => ({ ...prev, [url]: true }));
+                }}
+              />
+            </Pressable>
           ))}
         </ScrollView>
+      ) : null}
+
+      {photoUrls.length > 0 ? (
+        <Modal
+          visible={galleryOpen}
+          animationType="fade"
+          transparent
+          onRequestClose={closeGallery}
+          statusBarTranslucent
+        >
+          <View style={styles.galleryBackdrop}>
+            <View style={styles.galleryCounterWrap}>
+              <View style={styles.galleryCounterPill}>
+                <Text style={styles.galleryCounterText}>
+                  {safeGalleryIndex + 1} / {photoUrls.length}
+                </Text>
+              </View>
+            </View>
+
+            <Pressable style={styles.galleryCloseButton} onPress={closeGallery} hitSlop={12}>
+              <Feather name="x" size={22} color="#FFFFFF" />
+            </Pressable>
+
+            <View style={styles.galleryCarouselArea} {...galleryPanResponder.panHandlers}>
+              <FlatList
+                ref={galleryListRef}
+                key={galleryListKey}
+                data={photoUrls}
+                horizontal
+                snapToInterval={gallerySnapInterval}
+                snapToAlignment="start"
+                decelerationRate="fast"
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ paddingHorizontal: gallerySideSpacing }}
+                initialScrollIndex={safeGalleryIndex}
+                getItemLayout={(_data, index) => ({
+                  length: gallerySnapInterval,
+                  offset: gallerySnapInterval * index,
+                  index,
+                })}
+                onScrollToIndexFailed={(info) => {
+                  const safeIndex = Math.max(0, Math.min(info.index, photoUrls.length - 1));
+                  setGalleryIndex(safeIndex);
+                  requestAnimationFrame(() => {
+                    galleryListRef.current?.scrollToOffset({
+                      offset: safeIndex * gallerySnapInterval,
+                      animated: false,
+                    });
+                  });
+                }}
+                onMomentumScrollEnd={(event) => {
+                  const next = Math.round(
+                    event.nativeEvent.contentOffset.x / Math.max(gallerySnapInterval, 1),
+                  );
+                  setGalleryIndex(Math.max(0, Math.min(next, photoUrls.length - 1)));
+                }}
+                keyExtractor={(url) => `gallery-${url}`}
+                renderItem={({ item, index }) => (
+                  <View
+                    style={[
+                      styles.galleryItem,
+                      index === safeGalleryIndex
+                        ? styles.galleryPhotoShellActive
+                        : styles.galleryPhotoShellInactive,
+                      {
+                        width: galleryCardWidth,
+                        marginRight: index === photoUrls.length - 1 ? 0 : GALLERY_CARD_GAP,
+                      },
+                    ]}
+                  >
+                    <View
+                      style={[
+                        styles.galleryPhotoShell,
+                        { width: galleryCardWidth, height: galleryCardHeight },
+                      ]}
+                    >
+                      <Image
+                        source={{ uri: item }}
+                        style={styles.galleryImage}
+                        resizeMode="cover"
+                      />
+                    </View>
+                  </View>
+                )}
+              />
+            </View>
+
+            <View style={styles.galleryDots}>
+              {photoUrls.map((url, index) => (
+                <View
+                  key={`dot-${url}`}
+                  style={[styles.galleryDot, index === safeGalleryIndex && styles.galleryDotActive]}
+                />
+              ))}
+            </View>
+
+            <Text style={styles.galleryHint}>↓ Swipe down to close</Text>
+          </View>
+        </Modal>
       ) : null}
 
       <View style={styles.quickActionsRow}>
@@ -644,6 +834,10 @@ function createStyles(
     },
     photoStrip: { maxHeight: 124 },
     photoStripContent: { gap: Spacing.sm, paddingRight: Spacing.sm },
+    photoTilePressable: {
+      borderRadius: Radius.md,
+      overflow: 'hidden',
+    },
     photoTile: {
       width: 160,
       height: 112,
@@ -651,6 +845,110 @@ function createStyles(
       backgroundColor: colors.surfaceElevated,
       borderWidth: 1,
       borderColor: colors.border,
+    },
+    galleryBackdrop: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.96)',
+    },
+    galleryCloseButton: {
+      position: 'absolute',
+      top: 52,
+      right: 22,
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: 'rgba(255,255,255,0.16)',
+      zIndex: 6,
+    },
+    galleryCounterWrap: {
+      position: 'absolute',
+      top: 58,
+      left: 0,
+      right: 0,
+      alignItems: 'center',
+      zIndex: 5,
+    },
+    galleryCounterPill: {
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: 999,
+      backgroundColor: 'rgba(0,0,0,0.65)',
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.18)',
+    },
+    galleryCounterText: {
+      ...typography.caption,
+      color: '#FFFFFF',
+      fontWeight: '700',
+    },
+    galleryCarouselArea: {
+      flex: 1,
+      justifyContent: 'center',
+      zIndex: 2,
+      paddingTop: 64,
+      paddingBottom: 118,
+    },
+    galleryItem: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: Spacing.md,
+    },
+    galleryPhotoShell: {
+      borderRadius: 18,
+      overflow: 'hidden',
+      backgroundColor: 'transparent',
+    },
+    galleryPhotoShellActive: {
+      opacity: 1,
+      transform: [{ scale: 1 }],
+    },
+    galleryPhotoShellInactive: {
+      opacity: 0.45,
+      transform: [{ scale: 0.92 }],
+    },
+    galleryImage: {
+      width: '100%',
+      height: '100%',
+      borderRadius: 18,
+      shadowColor: '#000000',
+      shadowOpacity: 0.26,
+      shadowRadius: 12,
+      shadowOffset: { width: 0, height: 6 },
+      elevation: 6,
+    },
+    galleryDots: {
+      position: 'absolute',
+      bottom: 82,
+      left: 0,
+      right: 0,
+      flexDirection: 'row',
+      justifyContent: 'center',
+      gap: 8,
+      zIndex: 4,
+    },
+    galleryDot: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+      backgroundColor: 'rgba(255,255,255,0.35)',
+    },
+    galleryDotActive: {
+      width: 7,
+      height: 7,
+      borderRadius: 3.5,
+      backgroundColor: '#FFFFFF',
+    },
+    galleryHint: {
+      position: 'absolute',
+      bottom: 48,
+      left: 0,
+      right: 0,
+      zIndex: 4,
+      ...typography.caption,
+      textAlign: 'center',
+      color: 'rgba(255,255,255,0.65)',
     },
     quickActionsRow: {
       flexDirection: 'row',

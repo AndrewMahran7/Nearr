@@ -544,7 +544,7 @@ export default function MapScreen() {
   const [previewExpanded, setPreviewExpanded] = useState(false);
   const previewExpandedRef = useRef(false);
   previewExpandedRef.current = previewExpanded;
-  const hideTopSelectionControls = !!selected && previewExpanded;
+  const shouldShowMapControls = !selected || !previewExpanded;
   const didFitRef = useRef(false);
   // Set to true when the user pans or zooms the map so auto-centering
   // effects don't override the user's chosen viewport.
@@ -1496,18 +1496,16 @@ export default function MapScreen() {
           as a box-none overlay so only the bar/chips capture touches and the
           rest of the map stays pannable underneath. Hidden while the search
           dropdown is open so there is only ever ONE visible search input. */}
-      {searchVisible ? null : (
+      {!searchVisible && shouldShowMapControls ? (
         <View style={styles.topChrome} pointerEvents="box-none">
           <MapTopSearchBar onPress={() => setSearchVisible(true)} />
-          {!hideTopSelectionControls ? (
-            <MapFilterChips value={selectedMapFilter} onChange={handleSelectMapFilter} />
-          ) : null}
+          <MapFilterChips value={selectedMapFilter} onChange={handleSelectMapFilter} />
         </View>
-      )}
+      ) : null}
 
       {/* "View All" pill — fits all saved-place zones on demand. Only shown
           when there are places to frame and we're not in preview mode. */}
-      {validPlaces.length > 0 && !mapPreview && !hideTopSelectionControls ? (
+      {validPlaces.length > 0 && !mapPreview && shouldShowMapControls ? (
         <Pressable
           style={styles.viewAllBtn}
           onPress={() => {
@@ -1950,7 +1948,7 @@ function createStyles(
   },
   previewScrollContent: {
     paddingTop: Spacing.md,
-    paddingBottom: Spacing.xxl,
+    paddingBottom: Spacing.xs,
   },
   previewPrimaryAction: {
     width: '100%',
