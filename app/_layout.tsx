@@ -1,4 +1,4 @@
-import { Component, useCallback, useEffect, useState } from 'react';
+import { Component, useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, Linking, StyleSheet, Text, View } from 'react-native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -7,15 +7,17 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as ExpoLinking from 'expo-linking';
 import { useAuth } from '@/hooks/useAuth';
 import { isOnboardingPreviewActive } from '@/lib/onboarding';
-import { getOnboardingStatus } from '@/lib/onboarding';
 import { LegalAgreementModal, SetupReminderModal } from '@/components';
 import { getLocationStatus } from '@/components/SetupChecklist';
 import { handleAuthDeepLink, parseAuthCallbackUrl } from '@/lib/authDeepLink';
-import { routeAfterAuthenticatedUser } from '@/lib/authDeepLinkCore';
+import { AuthLinkStatusContext } from '@/lib/authLinkStatus';
+import {
+  createAuthLinkDuplicateGuard,
+  type AuthLinkStatus,
+} from '@/lib/authDeepLinkCore';
 import { clearDevAuth } from '@/lib/devAuth';
 import { trackEvent } from '@/lib/analytics';
 import { logDebug, logInfo } from '@/lib/logger';
-import { supabase } from '@/lib/supabase';
 import { LEGAL_ACCEPTANCE_REQUIRED, LEGAL_VERSION } from '@/constants';
 import {
   checkProximityOnce,
@@ -105,9 +107,16 @@ function AuthGate({
   const router = useRouter();
   const inOnboarding = segments[0] === '(onboarding)';
   const inAuthCallback = segments[0] === 'auth-callback';
-  // Suppress the setup reminder while the (pre-auth) onboarding intro is shown
-  // — e.g. a signed-in dev preview — so permission prompts don't collide.
-  const suppressSetupReminder = inOnboarding;
+  const inTabs = segments[0] === '(tabs)';
+  // Only surface the setup reminder once the user has fully landed in the app
+  // (on the tabs route) AND no magic-link exchange is still in flight. This
+  // keeps the transparent modal from ever being presented over the
+  // auth-callback / auth / onboarding routes or during the post-login
+  // navigation transition — on iOS, presenting a modal mid-transition can
+  // leave an invisible modal that swallows every touch. Reaching the tabs
+  // route with a real session already implies auth + the pre-auth onboarding
+  // intro are complete.
+  const suppressSetupReminder = !inTabs || authLinkPending;
   const [setupReminderVisible, setSetupReminderVisible] = useState(false);
   const [needsNotifications, setNeedsNotifications] = useState(false);
   const [needsLocation, setNeedsLocation] = useState(false);
@@ -341,41 +350,70 @@ export default function RootLayout() {
 function RootLayoutContent() {
   const router = useRouter();
   const { colors, resolvedTheme } = useTheme();
-  const [authLinkPending, setAuthLinkPending] = useState(false);
+  // Terminal-state model for magic-link handling. `idle` before any link,
+  // `processing` during the exchange, then a STICKY `succeeded`/`failed` that a
+  // late-mounting auth-callback screen can always read — this closes the
+  // warm-link race where a transient boolean could flip back to false before
+  // the screen's effects observed it.
+  const [authLinkStatus, setAuthLinkStatus] = useState<AuthLinkStatus>('idle');
+  const authLinkStatusRef = useRef<AuthLinkStatus>('idle');
+  const publishAuthLinkStatus = useCallback((next: AuthLinkStatus) => {
+    authLinkStatusRef.current = next;
+    setAuthLinkStatus(next);
+  }, []);
+  // Pre-filter duplicate auth links at the layout boundary so repeated URL
+  // events cannot restart processing or flap status.
+  const incomingAuthLinkGuardRef = useRef(createAuthLinkDuplicateGuard());
+  // Monotonic run id: only the latest incoming auth-link attempt is allowed to
+  // publish a terminal status. This prevents overlapping runs from older links
+  // clobbering a newer attempt's state.
+  const authLinkRunIdRef = useRef(0);
+  // Routing/modal gating only care about the in-flight state.
+  const authLinkPending = authLinkStatus === 'processing';
 
-  const routeAfterAuthLink = useCallback(async () => {
-    const { data } = await supabase.auth.getSession();
-    const userId = data.session?.user?.id;
-    if (!userId) {
-      console.warn('[auth-link] failed reason=session_not_found_after_auth');
-      router.replace('/(auth)/sign-in');
-      return;
-    }
-
-    const onboardingStatus = await getOnboardingStatus(userId);
-    const route = routeAfterAuthenticatedUser(onboardingStatus);
-    console.log(
-      `[auth-link] route_after_auth onboarding_complete=${onboardingStatus === 'complete'} route=${route}`,
-    );
-    router.replace(route);
-  }, [router]);
-
+  // Single responsibility: exchange the magic-link URL for a session and
+  // publish the terminal status. Navigation is owned SOLELY by the
+  // auth-callback screen (success -> app; failed -> sign-in), so login has
+  // exactly ONE navigation authority and no competing router.replace calls.
   const processIncomingUrl = useCallback(async (url: string) => {
     const preview = parseAuthCallbackUrl(url);
     if (!preview.matches) return;
 
-    setAuthLinkPending(true);
+    if (incomingAuthLinkGuardRef.current.shouldIgnore(url, preview.params)) {
+      console.log('[auth-link] layout_ignored_duplicate=true');
+      return;
+    }
+
+    const previousStatus = authLinkStatusRef.current;
+    const runId = authLinkRunIdRef.current + 1;
+    authLinkRunIdRef.current = runId;
+
+    // Reset to `processing` for every fresh/warm link so a repeated link
+    // resolves against its own outcome instead of a stale terminal state.
+    publishAuthLinkStatus('processing');
     try {
       const result = await handleAuthDeepLink(url);
+      // Ignore stale completions from superseded runs.
+      if (authLinkRunIdRef.current !== runId) return;
+
       if (result.sessionEstablished) {
-        await routeAfterAuthLink();
-      } else if (result.failed) {
-        router.replace('/(auth)/sign-in');
+        publishAuthLinkStatus('succeeded');
+        return;
       }
-    } finally {
-      setAuthLinkPending(false);
+
+      if (result.failed) {
+        publishAuthLinkStatus('failed');
+        return;
+      }
+
+      // Defensive fallback: ignored/non-auth responses should never strand the
+      // callback route on `processing`. Restore the previous stable status.
+      publishAuthLinkStatus(previousStatus);
+    } catch {
+      if (authLinkRunIdRef.current !== runId) return;
+      publishAuthLinkStatus('failed');
     }
-  }, [routeAfterAuthLink, router]);
+  }, [publishAuthLinkStatus]);
 
   // One-shot wipe of any leftover Local UI Mode flag. Old installs may have
   // ``nearr.devAuthEnabled=1`` persisted from before the UI entry point was
@@ -474,6 +512,7 @@ function RootLayoutContent() {
     <AppErrorBoundary>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <SafeAreaProvider>
+          <AuthLinkStatusContext.Provider value={authLinkStatus}>
           <AuthGate authLinkPending={authLinkPending}>
             <Stack
               screenOptions={{
@@ -515,6 +554,7 @@ function RootLayoutContent() {
               <Stack.Screen name="place/[id]" options={{ headerShown: true, title: 'Place' }} />
             </Stack>
           </AuthGate>
+          </AuthLinkStatusContext.Provider>
           <StatusBar style={resolvedTheme === 'dark' ? 'light' : 'dark'} />
         </SafeAreaProvider>
       </GestureHandlerRootView>

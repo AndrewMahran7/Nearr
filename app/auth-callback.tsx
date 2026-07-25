@@ -8,16 +8,33 @@ import { Colors, Spacing, Typography } from '@/constants';
 import { useAuth } from '@/hooks/useAuth';
 import { parseAuthCallbackUrl } from '@/lib/authDeepLink';
 import { getOnboardingStatus } from '@/lib/onboarding';
-import { routeAfterAuthenticatedUser } from '@/lib/authDeepLinkCore';
+import {
+  decideAuthCallbackNavigation,
+  routeAfterAuthenticatedUser,
+} from '@/lib/authDeepLinkCore';
+import { useAuthLinkStatus } from '@/lib/authLinkStatus';
 
-const AUTH_CALLBACK_TIMEOUT_MS = 5000;
+// Last-resort safety net ONLY. Primary resolution is the sticky terminal
+// auth-link status (`succeeded`/`failed`) plus session presence, which is
+// deterministic regardless of mount ordering. This timer exists solely so a
+// pathological state — the exchange promise hanging on a dead network, or the
+// screen somehow reached with no processing at all — can never strand the user
+// on the button-less "Signing you in..." view. It is NOT what handles
+// expired/invalid/warm links; those resolve immediately via `failed`.
+const AUTH_CALLBACK_SAFETY_MS = 10000;
 
 export default function AuthCallbackScreen() {
   const router = useRouter();
   const { session } = useAuth();
+  const status = useAuthLinkStatus();
+  const hasNavigated = useRef(false);
   const hasLoggedOpen = useRef(false);
   const hasLoggedOutcome = useRef(false);
-  const hasNavigated = useRef(false);
+  // Latest session, for the safety-net timer (which reads it at fire time).
+  const sessionRef = useRef(session);
+  sessionRef.current = session;
+
+  const decision = decideAuthCallbackNavigation({ status, hasSession: !!session });
 
   useEffect(() => {
     if (hasLoggedOpen.current) return;
@@ -25,45 +42,63 @@ export default function AuthCallbackScreen() {
     console.log('[auth-callback] opened');
 
     void ExpoLinking.getInitialURL().then((url) => {
-      const parsed = url ? parseAuthCallbackUrl(url) : { matches: false, params: {} as Record<string, string> };
+      const parsed = url
+        ? parseAuthCallbackUrl(url)
+        : { matches: false, params: {} as Record<string, string> };
       console.log('[auth-callback] has_code=' + Boolean(parsed.params.code));
     });
   }, []);
 
+  // Single navigation authority. Resolves the moment the pure decision leaves
+  // `wait` — i.e. as soon as a session exists, or the status becomes a terminal
+  // `succeeded`/`failed`. Because the status is sticky, this is correct no
+  // matter when this screen mounted relative to the exchange.
   useEffect(() => {
-    if (!session || hasNavigated.current) return;
+    if (hasNavigated.current || decision === 'wait') return;
     hasNavigated.current = true;
-    void (async () => {
-      const onboardingStatus = await getOnboardingStatus(session.user.id);
-      const route = routeAfterAuthenticatedUser(onboardingStatus);
-      if (!hasLoggedOutcome.current) {
-        hasLoggedOutcome.current = true;
-        console.log('[auth-callback] exchange_success=true');
-        console.log('[auth-callback] session_present=true');
-        console.log(
-          `[auth-link] route_after_auth onboarding_complete=${onboardingStatus === 'complete'} route=${route}`,
-        );
-      }
-      router.replace(route);
-    })();
-  }, [router, session]);
 
+    if (decision === 'navigate_app') {
+      void (async () => {
+        const current = sessionRef.current;
+        let route: '/(onboarding)' | '/(tabs)/map' = '/(tabs)/map';
+        if (current) {
+          const onboardingStatus = await getOnboardingStatus(current.user.id);
+          route = routeAfterAuthenticatedUser(onboardingStatus);
+        }
+        if (!hasLoggedOutcome.current) {
+          hasLoggedOutcome.current = true;
+          console.log('[auth-callback] exchange_success=true');
+          console.log('[auth-callback] session_present=' + Boolean(current));
+        }
+        router.replace(route);
+      })();
+      return;
+    }
+
+    // decision === 'navigate_sign_in'
+    if (!hasLoggedOutcome.current) {
+      hasLoggedOutcome.current = true;
+      console.log('[auth-callback] exchange_success=false');
+      console.log('[auth-callback] session_present=false');
+    }
+    router.replace('/(auth)/sign-in');
+  }, [decision, router]);
+
+  // Last-resort safety net (see AUTH_CALLBACK_SAFETY_MS). Cleared on unmount,
+  // which happens as soon as the primary resolution navigates away.
   useEffect(() => {
-    if (session) return;
-
-    const timeout = setTimeout(() => {
-      if (hasNavigated.current || session) return;
+    const timer = setTimeout(() => {
+      if (hasNavigated.current) return;
       hasNavigated.current = true;
-      if (!hasLoggedOutcome.current) {
-        hasLoggedOutcome.current = true;
-        console.log('[auth-callback] exchange_success=false');
-        console.log('[auth-callback] session_present=false');
-      }
-      router.replace('/(auth)/sign-in');
-    }, AUTH_CALLBACK_TIMEOUT_MS);
-
-    return () => clearTimeout(timeout);
-  }, [router, session]);
+      const current = sessionRef.current;
+      console.warn(
+        '[auth-callback] safety_fallback fired resolved_by=' +
+          (current ? 'session' : 'no_session'),
+      );
+      router.replace(current ? '/(tabs)/map' : '/(auth)/sign-in');
+    }, AUTH_CALLBACK_SAFETY_MS);
+    return () => clearTimeout(timer);
+  }, [router]);
 
   return (
     <Screen>

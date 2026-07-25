@@ -121,3 +121,44 @@ export function decideAuthResolutionRoute(args: {
   if (!args.hasSession) return args.signedOutRoute;
   return routeAfterAuthenticatedUser(args.onboardingStatus);
 }
+
+/**
+ * Terminal-state model for magic-link handling, owned by the root layout and
+ * published to the auth-callback screen.
+ *
+ *   - `idle`       — no auth link has been handled yet.
+ *   - `processing` — an exchange is in flight.
+ *   - `succeeded`  — the exchange established a session.
+ *   - `failed`     — the exchange finished without a session (expired/invalid
+ *                    /duplicate-without-session).
+ *
+ * `succeeded`/`failed` are STICKY (they persist until the next link resets the
+ * state to `processing`). This is what makes the callback screen robust to
+ * mount ordering: a screen that mounts AFTER a fast warm-link failure still
+ * reads `failed` and resolves, instead of missing a transient boolean.
+ */
+export type AuthLinkStatus = 'idle' | 'processing' | 'succeeded' | 'failed';
+
+export type AuthCallbackDecision = 'wait' | 'navigate_app' | 'navigate_sign_in';
+
+/**
+ * Pure resolver for what the auth-callback screen should do, given the current
+ * terminal status and whether a session is present. Deterministic and
+ * independent of React effect ordering, so it can be exhaustively unit-tested.
+ *
+ *   - A present session (or a `succeeded` status) → go into the app.
+ *   - A `failed` status with no session → go to sign-in.
+ *   - Otherwise (`idle`/`processing`, no session) → keep waiting.
+ *
+ * A present session always wins over `failed`, so a duplicate link that was
+ * labelled `failed` but whose original attempt already signed the user in
+ * still routes into the app rather than bouncing to sign-in.
+ */
+export function decideAuthCallbackNavigation(args: {
+  status: AuthLinkStatus;
+  hasSession: boolean;
+}): AuthCallbackDecision {
+  if (args.hasSession || args.status === 'succeeded') return 'navigate_app';
+  if (args.status === 'failed') return 'navigate_sign_in';
+  return 'wait';
+}
