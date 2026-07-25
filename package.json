@@ -14,6 +14,7 @@
     "test:address-match": "ts-node -P scripts/tsconfig.json scripts/testAddressMatch.ts",
     "test:safety-description-only": "ts-node -P scripts/tsconfig.json scripts/testSafetyDescriptionOnly.ts",
     "test:recovery-hints": "ts-node -P scripts/tsconfig.json scripts/testRecoveryHints.ts",
+    "test:auth-deeplink": "ts-node -P scripts/tsconfig.json scripts/testAuthDeepLink.ts",
     "test:tiktok-url": "ts-node -P scripts/tsconfig.json scripts/testTiktokUrl.ts",
     "test:platform-noise": "ts-node -P scripts/tsconfig.json scripts/testPlatformNoise.ts",
     "test:generic-caption-guard": "ts-node -P scripts/tsconfig.json scripts/testGenericCaptionGuard.ts",

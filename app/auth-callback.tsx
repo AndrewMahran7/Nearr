@@ -7,6 +7,8 @@ import { Screen } from '@/components';
 import { Colors, Spacing, Typography } from '@/constants';
 import { useAuth } from '@/hooks/useAuth';
 import { parseAuthCallbackUrl } from '@/lib/authDeepLink';
+import { getOnboardingStatus } from '@/lib/onboarding';
+import { routeAfterAuthenticatedUser } from '@/lib/authDeepLinkCore';
 
 const AUTH_CALLBACK_TIMEOUT_MS = 5000;
 
@@ -31,12 +33,19 @@ export default function AuthCallbackScreen() {
   useEffect(() => {
     if (!session || hasNavigated.current) return;
     hasNavigated.current = true;
-    if (!hasLoggedOutcome.current) {
-      hasLoggedOutcome.current = true;
-      console.log('[auth-callback] exchange_success=true');
-      console.log('[auth-callback] session_present=true');
-    }
-    router.replace('/(tabs)/map');
+    void (async () => {
+      const onboardingStatus = await getOnboardingStatus(session.user.id);
+      const route = routeAfterAuthenticatedUser(onboardingStatus);
+      if (!hasLoggedOutcome.current) {
+        hasLoggedOutcome.current = true;
+        console.log('[auth-callback] exchange_success=true');
+        console.log('[auth-callback] session_present=true');
+        console.log(
+          `[auth-link] route_after_auth onboarding_complete=${onboardingStatus === 'complete'} route=${route}`,
+        );
+      }
+      router.replace(route);
+    })();
   }, [router, session]);
 
   useEffect(() => {
@@ -50,7 +59,7 @@ export default function AuthCallbackScreen() {
         console.log('[auth-callback] exchange_success=false');
         console.log('[auth-callback] session_present=false');
       }
-      router.replace('/sign-in');
+      router.replace('/(auth)/sign-in');
     }, AUTH_CALLBACK_TIMEOUT_MS);
 
     return () => clearTimeout(timeout);

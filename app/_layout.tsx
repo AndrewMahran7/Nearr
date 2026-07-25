@@ -7,12 +7,15 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as ExpoLinking from 'expo-linking';
 import { useAuth } from '@/hooks/useAuth';
 import { isOnboardingPreviewActive } from '@/lib/onboarding';
+import { getOnboardingStatus } from '@/lib/onboarding';
 import { LegalAgreementModal, SetupReminderModal } from '@/components';
 import { getLocationStatus } from '@/components/SetupChecklist';
-import { handleAuthDeepLink } from '@/lib/authDeepLink';
+import { handleAuthDeepLink, parseAuthCallbackUrl } from '@/lib/authDeepLink';
+import { routeAfterAuthenticatedUser } from '@/lib/authDeepLinkCore';
 import { clearDevAuth } from '@/lib/devAuth';
 import { trackEvent } from '@/lib/analytics';
 import { logDebug, logInfo } from '@/lib/logger';
+import { supabase } from '@/lib/supabase';
 import { LEGAL_ACCEPTANCE_REQUIRED, LEGAL_VERSION } from '@/constants';
 import {
   checkProximityOnce,
@@ -90,11 +93,18 @@ const errorStyles = StyleSheet.create({
   detail: { fontSize: 12, color: Colors.textMuted, textAlign: 'center' },
 });
 
-function AuthGate({ children }: { children: React.ReactNode }) {
+function AuthGate({
+  children,
+  authLinkPending,
+}: {
+  children: React.ReactNode;
+  authLinkPending: boolean;
+}) {
   const { session, loading, isDevSession } = useAuth();
   const segments = useSegments();
   const router = useRouter();
   const inOnboarding = segments[0] === '(onboarding)';
+  const inAuthCallback = segments[0] === 'auth-callback';
   // Suppress the setup reminder while the (pre-auth) onboarding intro is shown
   // — e.g. a signed-in dev preview — so permission prompts don't collide.
   const suppressSetupReminder = inOnboarding;
@@ -211,6 +221,8 @@ function AuthGate({ children }: { children: React.ReactNode }) {
       hasSession: !!session,
       inAuth,
       inOnboarding,
+      inAuthCallback,
+      authLinkPending,
       isDevSession,
       segments: segments.join('/'),
     });
@@ -218,6 +230,11 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     // Logged out: onboarding is the PUBLIC landing. Allow the auth and
     // onboarding groups; send everything else into the intro flow.
     if (!session) {
+      // Critical: when a magic-link callback is being processed, keep the
+      // callback route in place so auth exchange can finish deterministically.
+      if (authLinkPending || inAuthCallback) {
+        return;
+      }
       if (!inAuth && !inOnboarding) {
         logDebug('AuthGate', '-> /(onboarding)');
         router.replace('/(onboarding)');
@@ -235,7 +252,16 @@ function AuthGate({ children }: { children: React.ReactNode }) {
       logDebug('AuthGate', '-> /(tabs)/map');
       router.replace('/(tabs)/map');
     }
-  }, [session, loading, segments, router, isDevSession, inOnboarding]);
+  }, [
+    session,
+    loading,
+    segments,
+    router,
+    isDevSession,
+    inOnboarding,
+    inAuthCallback,
+    authLinkPending,
+  ]);
 
   // Run a one-shot proximity check on sign-in and on app foreground. The
   // background task does the heavy lifting; this just makes sure we react
@@ -315,6 +341,41 @@ export default function RootLayout() {
 function RootLayoutContent() {
   const router = useRouter();
   const { colors, resolvedTheme } = useTheme();
+  const [authLinkPending, setAuthLinkPending] = useState(false);
+
+  const routeAfterAuthLink = useCallback(async () => {
+    const { data } = await supabase.auth.getSession();
+    const userId = data.session?.user?.id;
+    if (!userId) {
+      console.warn('[auth-link] failed reason=session_not_found_after_auth');
+      router.replace('/(auth)/sign-in');
+      return;
+    }
+
+    const onboardingStatus = await getOnboardingStatus(userId);
+    const route = routeAfterAuthenticatedUser(onboardingStatus);
+    console.log(
+      `[auth-link] route_after_auth onboarding_complete=${onboardingStatus === 'complete'} route=${route}`,
+    );
+    router.replace(route);
+  }, [router]);
+
+  const processIncomingUrl = useCallback(async (url: string) => {
+    const preview = parseAuthCallbackUrl(url);
+    if (!preview.matches) return;
+
+    setAuthLinkPending(true);
+    try {
+      const result = await handleAuthDeepLink(url);
+      if (result.sessionEstablished) {
+        await routeAfterAuthLink();
+      } else if (result.failed) {
+        router.replace('/(auth)/sign-in');
+      }
+    } finally {
+      setAuthLinkPending(false);
+    }
+  }, [routeAfterAuthLink, router]);
 
   // One-shot wipe of any leftover Local UI Mode flag. Old installs may have
   // ``nearr.devAuthEnabled=1`` persisted from before the UI entry point was
@@ -329,23 +390,15 @@ function RootLayoutContent() {
     ExpoLinking.getInitialURL().then(async (url) => {
       if (!url) return;
       logDebug('deeplink', 'received URL', url.replace(/[?#].*$/, ''));
-      const handled = await handleAuthDeepLink(url);
-      // Fallback: if onAuthStateChange didn't trigger a navigation, push
-      // the user to the map explicitly so the sign-in screen doesn't stay visible.
-      if (handled) {
-        router.replace('/(tabs)/map');
-      }
+      await processIncomingUrl(url);
     });
     // Warm-start: app already open (e.g. tapping link while app is in background).
     const sub = ExpoLinking.addEventListener('url', async ({ url }) => {
       logDebug('deeplink', 'received URL', url.replace(/[?#].*$/, ''));
-      const handled = await handleAuthDeepLink(url);
-      if (handled) {
-        router.replace('/(tabs)/map');
-      }
+      await processIncomingUrl(url);
     });
     return () => sub.remove();
-  }, [router]);
+  }, [processIncomingUrl]);
 
   // Register notification action categories once per launch, and handle
   // action taps (e.g. "Give me 3 more chances" resets notification_count).
@@ -421,7 +474,7 @@ function RootLayoutContent() {
     <AppErrorBoundary>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <SafeAreaProvider>
-          <AuthGate>
+          <AuthGate authLinkPending={authLinkPending}>
             <Stack
               screenOptions={{
                 headerShown: false,

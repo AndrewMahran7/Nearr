@@ -1,47 +1,33 @@
-import * as Linking from 'expo-linking';
 import { supabase } from './supabase';
+import {
+  createAuthLinkDuplicateGuard,
+  parseAuthCallbackUrl as parseAuthCallbackUrlCore,
+} from './authDeepLinkCore';
 
-function extractStringParam(value: string | string[] | undefined): string | undefined {
-  if (Array.isArray(value)) return value[0];
-  return value;
-}
+const duplicateAuthLinkGuard = createAuthLinkDuplicateGuard();
 
-function isAuthCallbackUrl(parsed: Linking.ParsedURL): boolean {
-  const segments = [parsed.hostname ?? '', parsed.path ?? '']
-    .flatMap((value) => value.split('/'))
-    .map((value) => value.trim())
-    .filter(Boolean)
-    .filter((value) => value !== '--');
-
-  return segments.includes('auth-callback');
-}
+export type AuthDeepLinkResult = {
+  handled: boolean;
+  sessionEstablished: boolean;
+  ignored: boolean;
+  failed: boolean;
+  reason:
+    | 'non_auth_link'
+    | 'duplicate'
+    | 'missing_auth_params'
+    | 'set_session_error'
+    | 'exchange_code_error'
+    | 'session_not_found_after_auth'
+    | 'session_established'
+    | 'unexpected_error';
+};
 
 export function parseAuthCallbackUrl(url: string): {
   matches: boolean;
   params: Record<string, string>;
 } {
-  const parsed = Linking.parse(url);
-  const params: Record<string, string> = {};
-
-  Object.entries(parsed.queryParams ?? {}).forEach(([key, value]) => {
-    const stringValue = extractStringParam(value);
-    if (stringValue != null) {
-      params[key] = stringValue;
-    }
-  });
-
-  const fragmentIndex = url.indexOf('#');
-  if (fragmentIndex >= 0) {
-    const fragmentParams = new URLSearchParams(url.slice(fragmentIndex + 1));
-    fragmentParams.forEach((value, key) => {
-      params[key] = value;
-    });
-  }
-
-  return {
-    matches: isAuthCallbackUrl(parsed),
-    params,
-  };
+  const parsed = parseAuthCallbackUrlCore(url);
+  return { matches: parsed.matches, params: parsed.params };
 }
 
 /**
@@ -51,53 +37,115 @@ export function parseAuthCallbackUrl(url: string): {
  *   - Expo hosted:    exp://.../--/auth-callback?code=...
  *   - PKCE flow:      nearr://auth-callback?code=...
  */
-export async function handleAuthDeepLink(url: string): Promise<boolean> {
-  // Log only the scheme+host+path — never log tokens or codes.
-  console.log('[authDeepLink] handling URL', url.replace(/[?#].*$/, ''));
-
-  const { matches, params } = parseAuthCallbackUrl(url);
-  console.log('[authDeepLink] callback detected', matches);
-  if (!matches) return false;
-
+export async function handleAuthDeepLink(url: string): Promise<AuthDeepLinkResult> {
+  const parsed = parseAuthCallbackUrlCore(url);
   console.log(
-    '[authDeepLink] params found: hasAccessToken=', !!params.access_token,
-    'hasRefreshToken=', !!params.refresh_token,
-    'hasCode=', !!params.code,
+    `[auth-link] received has_code=${parsed.hasCode} has_tokens=${parsed.hasTokens} path=${parsed.safePath}`,
   );
 
-  if (params.access_token && params.refresh_token) {
-    const { error } = await supabase.auth.setSession({
-      access_token: params.access_token,
-      refresh_token: params.refresh_token,
-    });
-    if (error) {
-      console.warn('[authDeepLink] setSession fail', error.message);
-      return false;
-    }
-    console.log('[authDeepLink] setSession success');
-    const { data: check1 } = await supabase.auth.getSession();
-    console.log(
-      '[authDeepLink] post-auth: sessionExists=', !!check1.session,
-      'userIdExists=', !!check1.session?.user?.id,
-    );
-    return true;
+  if (!parsed.matches) {
+    return {
+      handled: false,
+      sessionEstablished: false,
+      ignored: true,
+      failed: false,
+      reason: 'non_auth_link',
+    };
   }
 
-  if (params.code) {
-    const { error } = await supabase.auth.exchangeCodeForSession(params.code);
-    if (error) {
-      console.warn('[authDeepLink] exchangeCodeForSession fail', error.message);
-      return false;
-    }
-    console.log('[authDeepLink] exchangeCodeForSession success');
-    const { data: check2 } = await supabase.auth.getSession();
-    console.log(
-      '[authDeepLink] post-auth: sessionExists=', !!check2.session,
-      'userIdExists=', !!check2.session?.user?.id,
-    );
-    return true;
+  if (duplicateAuthLinkGuard.shouldIgnore(url, parsed.params)) {
+    console.log('[auth-link] ignored_duplicate=true');
+    return {
+      handled: false,
+      sessionEstablished: false,
+      ignored: true,
+      failed: false,
+      reason: 'duplicate',
+    };
   }
 
-  console.warn('[authDeepLink] callback received but no tokens or code found');
-  return false;
+  try {
+    if (parsed.params.access_token && parsed.params.refresh_token) {
+      const { error } = await supabase.auth.setSession({
+        access_token: parsed.params.access_token,
+        refresh_token: parsed.params.refresh_token,
+      });
+      const success = !error;
+      console.log(`[auth-link] set_session success=${success}`);
+      if (error) {
+        console.warn('[auth-link] failed reason=set_session_error');
+        return {
+          handled: true,
+          sessionEstablished: false,
+          ignored: false,
+          failed: true,
+          reason: 'set_session_error',
+        };
+      }
+
+      const { data } = await supabase.auth.getSession();
+      const sessionEstablished = !!data.session;
+      if (!sessionEstablished) {
+        console.warn('[auth-link] failed reason=session_not_found_after_auth');
+      }
+      return {
+        handled: true,
+        sessionEstablished,
+        ignored: false,
+        failed: !sessionEstablished,
+        reason: sessionEstablished
+          ? 'session_established'
+          : 'session_not_found_after_auth',
+      };
+    }
+
+    if (parsed.params.code) {
+      const { error } = await supabase.auth.exchangeCodeForSession(parsed.params.code);
+      const success = !error;
+      console.log(`[auth-link] exchanged_code_for_session success=${success}`);
+      if (error) {
+        console.warn('[auth-link] failed reason=exchange_code_error');
+        return {
+          handled: true,
+          sessionEstablished: false,
+          ignored: false,
+          failed: true,
+          reason: 'exchange_code_error',
+        };
+      }
+
+      const { data } = await supabase.auth.getSession();
+      const sessionEstablished = !!data.session;
+      if (!sessionEstablished) {
+        console.warn('[auth-link] failed reason=session_not_found_after_auth');
+      }
+      return {
+        handled: true,
+        sessionEstablished,
+        ignored: false,
+        failed: !sessionEstablished,
+        reason: sessionEstablished
+          ? 'session_established'
+          : 'session_not_found_after_auth',
+      };
+    }
+
+    console.warn('[auth-link] failed reason=missing_auth_params');
+    return {
+      handled: true,
+      sessionEstablished: false,
+      ignored: false,
+      failed: true,
+      reason: 'missing_auth_params',
+    };
+  } catch {
+    console.warn('[auth-link] failed reason=unexpected_error');
+    return {
+      handled: true,
+      sessionEstablished: false,
+      ignored: false,
+      failed: true,
+      reason: 'unexpected_error',
+    };
+  }
 }

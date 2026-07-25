@@ -1,6 +1,6 @@
 # Nearr — Manual Testing Checklist
 
-> Last updated: 2026-05-03
+> Last updated: 2026-07-25
 > Source of truth: current codebase
 
 This is the current beta checklist. Use it before TestFlight or Play Internal builds. Because this is a docs-only update, treat every item below as a manual or device verification task.
@@ -19,11 +19,24 @@ This is the current beta checklist. Use it before TestFlight or Play Internal bu
 - [ ] Sign-in screen loads normally
 - [ ] Magic link arrives and opens the app on `/auth-callback`
 - [ ] Auth callback no longer shows an Expo Router unmatched-route screen
-- [ ] Successful auth lands on Home
+- [ ] Successful auth lands on Map
 - [ ] App restart keeps the session
 - [ ] Sign out returns to the sign-in screen
 - [ ] Typing `dev@nearr.test` switches the UI into password-login mode
 - [ ] Correct password signs in successfully in the current build
+
+### Login-link regression checklist
+
+- [ ] Fresh install (no session): open app, complete pre-auth intro, open sign-in screen
+- [ ] Tap magic link while app is fully closed
+- [ ] App opens, session is established, and user lands authenticated (no onboarding restart loop)
+- [ ] Kill app and reopen; user remains signed in and does not re-enter onboarding unexpectedly
+- [ ] Tap another valid magic link while app is already open
+- [ ] Link is handled once (no duplicate processing loop) and user stays on the authenticated route
+- [ ] Existing user with previously completed onboarding is not sent through onboarding again after tapping a magic link
+- [ ] New user who is authenticated but genuinely incomplete on onboarding is routed to onboarding after auth
+- [ ] Log out and confirm the app returns to signed-out flow as intended
+- [ ] Open an expired or invalid magic link and confirm a friendly signed-out fallback (no onboarding loop)
 
 ## 2. Save flows
 

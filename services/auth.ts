@@ -5,7 +5,10 @@ export async function sendMagicLink(email: string) {
   // Linking.createURL builds the right scheme for prod (`nearr://`)
   // and Expo Go dev (`exp://...`). Add both to Supabase redirect allow-list.
   const redirectTo = Linking.createURL('auth-callback');
-  console.log('[auth] magic link redirect URL =', redirectTo);
+  const redirectScheme = redirectTo.split(':')[0] || 'unknown';
+  console.log(
+    `[auth] magic_link_redirect_configured scheme=${redirectScheme} path=auth-callback`,
+  );
   return supabase.auth.signInWithOtp({
     email: email.trim(),
     options: { emailRedirectTo: redirectTo },
