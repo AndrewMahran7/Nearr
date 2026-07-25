@@ -16,6 +16,8 @@
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Nearr uses your location in the background to notify you when you are near saved places.",
         "UIBackgroundModes": [
           "location",
+          "fetch",
+          "location",
           "fetch"
         ],
         "ITSAppUsesNonExemptEncryption": false
@@ -28,6 +30,18 @@
         "backgroundColor": "#FFFFFF"
       },
       "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_LOCATION",
+        "POST_NOTIFICATIONS",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_BACKGROUND_LOCATION",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_LOCATION",
+        "android.permission.POST_NOTIFICATIONS",
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
         "ACCESS_BACKGROUND_LOCATION",
@@ -83,8 +97,13 @@
         "expo-share-extension",
         {
           "activationRules": [
-            { "type": "url", "max": 1 },
-            { "type": "text" }
+            {
+              "type": "url",
+              "max": 1
+            },
+            {
+              "type": "text"
+            }
           ],
           "excludedPackages": [
             "expo-dev-client",
@@ -105,6 +124,12 @@
       "eas": {
         "projectId": "2ec7a08a-2078-4232-a244-c9d16fb75ffe"
       }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/2ec7a08a-2078-4232-a244-c9d16fb75ffe"
     }
   }
 }
