@@ -18,7 +18,7 @@
 
 import Constants from 'expo-constants';
 
-import { resolveBooleanFlag } from '@/lib/featureFlagsCore';
+import { resolveBooleanFlag } from './featureFlagsCore';
 
 function trim(value: unknown): string {
   return typeof value === 'string' ? value.trim() : '';
