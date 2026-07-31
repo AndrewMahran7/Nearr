@@ -36,6 +36,12 @@ import {
   buildCompletedNotification,
   buildNeedsHelpNotification,
 } from './decisionMapping.ts';
+import { shouldRunMediaFallback } from './mediaFallback.ts';
+import {
+  parseMediaEvidence,
+  renderMediaEvidenceCaption,
+  summarizeMediaEvidence,
+} from './mediaEvidence.ts';
 
 const CORS_HEADERS: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
@@ -162,6 +168,307 @@ async function handleProcessingError(admin: any, job: any, err: unknown): Promis
   }
 }
 
+// ---------------------------------------------------------------------------
+// Phase 2 — media fallback (durable video analysis). Everything here is gated
+// behind the SERVER-ONLY `MEDIA_FALLBACK_ENABLED` flag. When it is off, none of
+// this code path runs (no extra DB calls) and the Phase 1 metadata behavior is
+// byte-identical.
+// ---------------------------------------------------------------------------
+function readMediaFlags(): {
+  mediaFallbackEnabled: boolean;
+  instagramResolverEnabled: boolean;
+} {
+  const on = (k: string) => (Deno.env.get(k) ?? '').trim().toLowerCase() === 'true';
+  return {
+    mediaFallbackEnabled: on('MEDIA_FALLBACK_ENABLED'),
+    instagramResolverEnabled: on('INSTAGRAM_MEDIA_RESOLVER_ENABLED'),
+  };
+}
+
+// How long to "park" a parent job while its media task is analyzed. The parent
+// stays `processing_metadata` (shown as "Processing") with this lease so the
+// metadata claim never steals it mid-analysis. If the media worker never
+// finalizes within the lease, the EXISTING metadata claim reclaims the job and
+// (because a media task now exists) falls through to needs_help — so a parent
+// can never get stuck, even during a rollback that stops the media worker.
+function readParentLeaseSeconds(): number {
+  const raw = Number(Deno.env.get('MEDIA_PARENT_LEASE_SECONDS'));
+  return Number.isFinite(raw) && raw >= 60 ? raw : 1200; // default 20 min
+}
+
+async function mediaTaskExistsFor(admin: any, jobId: string): Promise<boolean> {
+  const { data } = await admin
+    .from('share_media_tasks')
+    .select('id')
+    .eq('share_job_id', jobId)
+    .maybeSingle();
+  return !!data;
+}
+
+// Enqueue exactly one media task and PARK the parent (see readParentLeaseSeconds).
+// No needs_help notification is sent yet — the media worker decides the outcome.
+async function enqueueMediaTask(
+  admin: any,
+  job: any,
+  platform: string,
+  canonicalUrl: string,
+  sourceUrl: string,
+): Promise<void> {
+  const { error: insErr } = await admin.from('share_media_tasks').insert({
+    share_job_id: job.id,
+    user_id: job.user_id,
+    source_url: sourceUrl,
+    canonical_url: canonicalUrl,
+    platform,
+    status: 'queued',
+    progress_stage: 'queued',
+  });
+  // A concurrent insert (unique share_job_id) is fine — one task per job.
+  if (insErr && !/duplicate key|unique|23505/i.test(insErr.message ?? '')) {
+    throw new Error(`enqueue_media_task_failed: ${insErr.message}`);
+  }
+  const leaseUntil = new Date(Date.now() + readParentLeaseSeconds() * 1000).toISOString();
+  await admin
+    .from('share_jobs')
+    .update({ progress_stage: 'checking_video', locked_until: leaseUntil })
+    .eq('id', job.id)
+    .eq('status', 'processing_metadata');
+}
+
+async function markMediaTask(
+  admin: any,
+  taskId: string,
+  status: string,
+  patch: Record<string, unknown>,
+): Promise<void> {
+  await admin.from('share_media_tasks').update({ status, ...patch }).eq('id', taskId);
+}
+
+function boundedJson(value: unknown, max = 8000): unknown {
+  try {
+    const s = JSON.stringify(value);
+    if (!s) return null;
+    if (s.length <= max) return value;
+    return { truncated: true, preview: s.slice(0, max) };
+  } catch {
+    return null;
+  }
+}
+
+// Append a service-role-only diagnostics row. Never stores media URLs, signed
+// URLs, secrets, or raw bytes; caller passes only sanitized summaries.
+async function insertMediaRun(
+  admin: any,
+  task: any,
+  job: any,
+  body: any,
+  evidenceSummary: unknown,
+): Promise<void> {
+  try {
+    const d = body?.diagnostics && typeof body.diagnostics === 'object' ? body.diagnostics : {};
+    const int = (v: unknown) => (Number.isFinite(v) ? Number(v) : null);
+    await admin.from('share_media_runs').insert({
+      share_media_task_id: task.id,
+      share_job_id: job.id,
+      user_id: job.user_id,
+      platform: task.platform,
+      resolver_name: typeof d.resolverName === 'string' ? d.resolverName : null,
+      model_provider: typeof d.modelProvider === 'string' ? d.modelProvider : null,
+      transcription_provider: typeof d.transcriptionProvider === 'string' ? d.transcriptionProvider : null,
+      duration_ms: int(d.durationMs),
+      media_duration_seconds: int(d.mediaDurationSeconds),
+      frame_count: int(d.frameCount),
+      transcript_segment_count: int(d.transcriptSegmentCount),
+      ocr_segment_count: int(d.ocrSegmentCount),
+      evidence: boundedJson(evidenceSummary),
+      model_output: boundedJson(d.modelOutput ?? null),
+      warnings: Array.isArray(d.warnings) ? d.warnings.slice(0, 24) : [],
+      errors: Array.isArray(d.errors) ? d.errors.slice(0, 24) : [],
+    });
+  } catch (err) {
+    console.log(`[media-task] diagnostics_insert_failed task_id=${task.id} msg=${truncate((err as Error)?.message)}`);
+  }
+}
+
+// Move a parent job to a safe needs_help(manual) state (media analysis produced
+// no usable evidence). Reuses the Phase 1 terminal-transition + push machinery.
+async function finalizeParentManual(admin: any, job: any): Promise<void> {
+  await finalize(
+    admin,
+    job,
+    {
+      status: 'needs_help',
+      decision: 'manual_fallback',
+      needs_help_reason: 'manual_search',
+      suggested_query: null,
+      progress_stage: 'manual',
+    },
+    buildNeedsHelpNotification({ mode: 'manual', jobId: job.id }),
+  );
+}
+
+// Media worker callback. Converts proposed evidence into the SAME deterministic
+// resolver + safeToAutoSave + save path used by the metadata flow. The video
+// model never picks a Place ID, never decides safeToAutoSave, and never saves.
+// Idempotent: terminal tasks / already-terminal parents are safe no-ops.
+async function finalizeMediaTask(admin: any, env: any, body: any): Promise<Response> {
+  const taskId = typeof body.taskId === 'string' ? body.taskId : '';
+  if (!taskId) return json({ error: 'missing_task_id' }, 400);
+
+  const { data: task } = await admin
+    .from('share_media_tasks').select('*').eq('id', taskId).maybeSingle();
+  if (!task) return json({ error: 'task_not_found' }, 404);
+
+  const TERMINAL = ['completed', 'needs_help', 'failed', 'cancelled'];
+  if (TERMINAL.includes(task.status)) {
+    return json({ ok: true, idempotent: true, taskStatus: task.status });
+  }
+
+  const { data: job } = await admin
+    .from('share_jobs').select('*').eq('id', task.share_job_id).maybeSingle();
+  if (!job) {
+    await markMediaTask(admin, taskId, 'failed', { failure_code: 'parent_job_missing', completed_at: nowIso() });
+    return json({ error: 'parent_job_missing' }, 404);
+  }
+
+  // Parent already terminal (e.g. reclaimed to needs_help after the lease):
+  // idempotent no-op so a late finalize can never double-save.
+  if (job.status !== 'processing_metadata') {
+    await markMediaTask(admin, taskId, 'completed', { progress_stage: 'cleanup', completed_at: nowIso() });
+    return json({ ok: true, parentAlreadyTerminal: true, jobStatus: job.status });
+  }
+
+  const outcome = typeof body.outcome === 'string' ? body.outcome : 'evidence';
+  const parsed = outcome === 'evidence'
+    ? parseMediaEvidence(body.evidence)
+    : ({ ok: false, error: outcome } as const);
+  const evidenceSummary = parsed.ok ? summarizeMediaEvidence(parsed.value) : { reason: outcome };
+  await insertMediaRun(admin, task, job, body, evidenceSummary);
+
+  // Non-evidence outcome (media unavailable / permanent failure) → safe manual.
+  if (!parsed.ok) {
+    await finalizeParentManual(admin, job);
+    await markMediaTask(admin, taskId, outcome === 'unavailable' ? 'needs_help' : 'failed', {
+      failure_code: outcome === 'evidence' ? 'insufficient_evidence' : outcome,
+      progress_stage: 'cleanup',
+      completed_at: nowIso(),
+    });
+    console.log(`[media-task] finalize route=manual task_id=${taskId} outcome=${outcome}`);
+    return json({ ok: true, route: 'manual', outcome });
+  }
+
+  const rendered = renderMediaEvidenceCaption(parsed.value);
+  if (rendered.renderedPlaces === 0) {
+    await finalizeParentManual(admin, job);
+    await markMediaTask(admin, taskId, 'needs_help', { failure_code: 'insufficient_evidence', progress_stage: 'cleanup', completed_at: nowIso() });
+    console.log(`[media-task] finalize route=manual task_id=${taskId} reason=insufficient_evidence`);
+    return json({ ok: true, route: 'manual', reason: 'insufficient_evidence' });
+  }
+
+  // ---- Reuse the EXISTING deterministic resolver + safety + save ----------
+  const emptyHandles = { posterHandle: null, taggedHandles: [], venueHandles: [], posterNameHint: null };
+  const mediaEvidence = extractEvidence({
+    platform: task.platform,
+    title: rendered.title,
+    description: rendered.description,
+    handles: emptyHandles,
+    taggedLocation: null,
+  });
+  const result = await resolveSharedPlace({ evidence: mediaEvidence, env });
+  const extractionPayload = {
+    platform: task.platform,
+    via: 'media',
+    confidence: result.confidence,
+    cleanSearchQuery: result.cleanSearchQuery ?? null,
+    evidenceUsed: result.evidenceUsed,
+    warnings: result.warnings,
+  };
+  const plan = planFromResolverDecision({
+    decision: result.decision,
+    safeToAutoSave: result.safeToAutoSave,
+    hasPrimaryCandidate: !!result.primaryCandidate,
+    candidateCount: result.candidates.length,
+    cleanSearchQuery: result.cleanSearchQuery,
+    failureReason: result.failureReason,
+  });
+  const canonicalUrl = task.canonical_url || task.source_url;
+
+  if (plan.route === 'auto_save') {
+    const candidate = result.primaryCandidate;
+    const source = legacySourceFor(task.platform);
+    const saved = await saveForUser({
+      client: admin,
+      userId: job.user_id,
+      candidate,
+      sourceUrl: canonicalUrl,
+      source,
+    });
+    await finalize(
+      admin,
+      job,
+      {
+        status: 'completed',
+        decision: 'auto_save',
+        saved_place_id: saved.savedPlaceId,
+        canonical_url: canonicalUrl,
+        source_platform: task.platform,
+        extraction_payload: { ...extractionPayload, savedPlaceName: candidate.name },
+        progress_stage: 'completed',
+        completed_at: nowIso(),
+      },
+      buildCompletedNotification({
+        placeName: candidate.name,
+        platform: task.platform,
+        jobId: job.id,
+        savedPlaceId: saved.savedPlaceId,
+      }),
+    );
+    await markMediaTask(admin, taskId, 'completed', { resolver_name: 'media', progress_stage: 'cleanup', completed_at: nowIso() });
+    console.log(`[media-task] finalize route=auto_save task_id=${taskId} job_id=${job.id}`);
+    return json({ ok: true, route: 'auto_save' });
+  }
+
+  // needs_help (single / multi / manual) — identical mapping to metadata path.
+  const candidatePayload = { candidates: result.candidates.slice(0, 10).map(safeCandidate) };
+  const decisionForRow =
+    plan.mode === 'manual'
+      ? 'manual_fallback'
+      : result.decision === 'multi_candidate_confirmation'
+      ? 'multi_candidate_confirmation'
+      : result.decision === 'candidate_picker'
+      ? 'candidate_picker'
+      : 'candidate_confirmation';
+  const note =
+    plan.mode === 'manual'
+      ? buildNeedsHelpNotification({ mode: 'manual', jobId: job.id })
+      : plan.mode === 'multi'
+      ? buildNeedsHelpNotification({ mode: 'multi', jobId: job.id, candidateCount: result.candidates.length })
+      : buildNeedsHelpNotification({
+          mode: 'single',
+          jobId: job.id,
+          candidateName: result.candidates[0]?.name ?? result.primaryCandidate?.name ?? null,
+        });
+  await finalize(
+    admin,
+    job,
+    {
+      status: 'needs_help',
+      decision: decisionForRow,
+      needs_help_reason: plan.needsHelpReason,
+      suggested_query: plan.suggestedQuery,
+      candidate_payload: candidatePayload,
+      canonical_url: canonicalUrl,
+      source_platform: task.platform,
+      extraction_payload: extractionPayload,
+      progress_stage: plan.mode,
+    },
+    note,
+  );
+  await markMediaTask(admin, taskId, 'completed', { resolver_name: 'media', progress_stage: 'cleanup', completed_at: nowIso() });
+  console.log(`[media-task] finalize route=needs_help mode=${plan.mode} task_id=${taskId} job_id=${job.id}`);
+  return json({ ok: true, route: 'needs_help', mode: plan.mode });
+}
+
 async function processOne(admin: any, env: any, job: any): Promise<void> {
   const rawUrl = job.canonical_url || job.source_url;
   const normalized = normalizeShareUrl(rawUrl);
@@ -251,6 +558,40 @@ async function processOne(admin: any, env: any, job: any): Promise<void> {
       }),
     );
     return;
+  }
+
+  // ---- Phase 2: media fallback (durable video analysis) ----------
+  // Only when the server-only MEDIA_FALLBACK_ENABLED flag is on. When off this
+  // whole block is skipped (no extra DB calls) and the needs_help path below is
+  // byte-identical to Phase 1.
+  const mediaFlags = readMediaFlags();
+  if (mediaFlags.mediaFallbackEnabled) {
+    const mediaTaskExists = await mediaTaskExistsFor(admin, job.id);
+    const trigger = shouldRunMediaFallback(
+      {
+        decision: result.decision,
+        safeToAutoSave: result.safeToAutoSave,
+        hasPrimaryCandidate: !!result.primaryCandidate,
+        candidateCount: result.candidates.length,
+        evidenceUsed: result.evidenceUsed,
+        warnings: result.warnings,
+        addressesCount: evidence.addresses.length,
+        failureReason: result.failureReason ?? null,
+      },
+      {
+        platform,
+        mediaFallbackEnabled: mediaFlags.mediaFallbackEnabled,
+        instagramResolverEnabled: mediaFlags.instagramResolverEnabled,
+        mediaTaskExists,
+        jobStatus: 'processing_metadata',
+      },
+    );
+    if (trigger.run) {
+      await enqueueMediaTask(admin, job, platform, canonicalUrl, requestUrl);
+      console.log(`[share-job] media_fallback_enqueued job_id=${job.id} reason=${trigger.reason}`);
+      return;
+    }
+    console.log(`[share-job] media_fallback_skipped job_id=${job.id} reason=${trigger.reason}`);
   }
 
   // needs_help (single / multi / manual)
@@ -458,17 +799,29 @@ serve(async (req) => {
   }
   const env = envCheck.env;
 
-  let body: { limit?: number } = {};
+  let body: any = {};
   try {
     body = await req.json();
   } catch {
     body = {};
   }
-  const limit = Math.min(Math.max(Number(body.limit) || 5, 1), 25);
 
   const admin = createClient(env.supabaseUrl, env.serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
+
+  // Phase 2: media-worker callback — finalize a media task through the EXISTING
+  // resolver + safeToAutoSave + save path. Same service-role auth as the sweep.
+  if (body && body.mode === 'finalize_media_task') {
+    try {
+      return await finalizeMediaTask(admin, env, body);
+    } catch (err) {
+      console.log(`[media-task] finalize_error msg=${truncate((err as Error)?.message)}`);
+      return json({ error: 'media_finalize_failed' }, 500);
+    }
+  }
+
+  const limit = Math.min(Math.max(Number(body.limit) || 5, 1), 25);
 
   const { data: claimed, error: claimErr } = await admin.rpc('claim_share_jobs', {
     p_limit: limit,
