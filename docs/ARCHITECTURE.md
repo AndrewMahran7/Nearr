@@ -40,6 +40,59 @@ This document describes the current data and control flow for auth, save flows, 
 
 This path is not limited to `__DEV__`; the email gate is the product gate.
 
+## Account deletion
+
+Permanent, in-app account deletion satisfies Apple App Review Guideline
+5.1.1(v). There is no deactivation / soft-delete path — this is a hard
+delete of the Supabase Auth user and the user's owned data.
+
+### Flow
+
+1. Settings → ACCOUNT → **Delete account** ([app/(tabs)/settings.tsx](../app/(tabs)/settings.tsx)).
+2. Two deliberate native confirmations (first "Delete your account?" →
+   Continue, then "Permanently delete account?" → "Delete my account").
+   Copy is centralized in [lib/accountDeletionCore.ts](../lib/accountDeletionCore.ts).
+3. [services/accountService.ts](../services/accountService.ts) `deleteAccount()`
+   reads the current session access token and calls the Edge Function via
+   `supabase.functions.invoke('delete-account', { Authorization: Bearer … })`.
+   A module-level single-flight guard coalesces rapid taps / racing calls
+   into one request, and Sign out is disabled while a deletion is in flight.
+4. The Edge Function ([supabase/functions/delete-account/index.ts](../supabase/functions/delete-account/index.ts)):
+   - requires a Bearer token; rejects missing/invalid auth with `401`;
+   - accepts only `POST` (plus `OPTIONS` for CORS);
+   - authenticates the caller with a **service-role admin client** via
+     `auth.getUser(token)` and derives the user id **only** from the token.
+     Any `userId`/`email` in the body is ignored (and logged as forged);
+   - deletes user-owned rows whose FK is `ON DELETE SET NULL` — `analytics_events`,
+     `feedback`, `share_agent_runs`, `share_extraction_failures` — before
+     removing the auth user;
+   - hard-deletes the auth user via `auth.admin.deleteUser(userId)`, which
+     cascades `profiles`, `saved_places`, and `notification_events`;
+   - returns `{ ok: true }` only when every required step succeeded; on any
+     failure it returns a safe error and does **not** delete the auth user.
+     Never logs tokens, the service-role secret, or emails.
+5. On confirmed success only, `cleanupAfterAccountDeletion(userId)` performs
+   best-effort local teardown (stop geofences + background location, cancel/
+   dismiss local notifications, clear the saved-place cache, onboarding
+   completion, setup/share-favorites flag, notification dedupe store, then
+   `signOut()`), and the app resets to the pre-auth `/(onboarding)` entry.
+6. On failure the user stays signed in, no local data is cleared, the button
+   restores from its loading state, and a retryable error is shown
+   ("We couldn't delete your account. Please try again.").
+
+### Data ownership
+
+- **Deleted by cascade** (verified `ON DELETE CASCADE` in migrations):
+  `profiles`, `saved_places`, `notification_events`.
+- **Deleted explicitly** (FK is `ON DELETE SET NULL`, so cascade alone would
+  orphan user-linked rows): `analytics_events`, `feedback`,
+  `share_agent_runs`, `share_extraction_failures`.
+- **Intentionally kept**: canonical `places` rows are shared across users and
+  are never deleted here. There are no Supabase Storage objects owned by users.
+
+No SQL migration is required — the existing cascade rules plus the explicit
+service-role deletes fully cover user-owned data.
+
 ## Save flows
 
 ### Manual save

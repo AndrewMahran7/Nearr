@@ -609,9 +609,9 @@ export function looksLikeRoundupPost(
   // --- handle-count signal: only when paired with list language --
   if (handles) {
     const tagged = (handles.taggedHandles ?? []).filter(
-      (handle) => !!handle && !isMallContextHandle(handle),
+      (handle: string) => !!handle && !isMallContextHandle(handle),
     );
-    const unique = Array.from(new Set(tagged.map((h) => h.toLowerCase())));
+    const unique = Array.from(new Set(tagged.map((h: string) => h.toLowerCase())));
     // 3+ venue-like handles ALONE are not enough — collab/supplier
     // tags are common on single-place posts. We require coincident
     // soft list language. (Hard signals already returned above.)

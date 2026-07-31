@@ -67,6 +67,15 @@ module.exports = ({ config }) => {
       // var was not inlined at build time (EAS builds without
       // `eas env:create EXPO_PUBLIC_PROCESS_SHARE_LINK_URL ...`).
       processShareLinkUrl: process.env.EXPO_PUBLIC_PROCESS_SHARE_LINK_URL || '',
+      // 2026-07-31: async share-jobs feature flag + create-share-job endpoint.
+      // Default OFF. When disabled the app keeps the existing synchronous
+      // share flow untouched. Read via lib/featureFlags.ts (process.env first,
+      // this extra fallback second). Same inlining caveat as above: EAS builds
+      // need `eas env:create EXPO_PUBLIC_ASYNC_SHARE_JOBS_ENABLED true` (and the
+      // create-share-job URL) or the flag stays off at runtime.
+      asyncShareJobsEnabled:
+        process.env.EXPO_PUBLIC_ASYNC_SHARE_JOBS_ENABLED || '',
+      createShareJobUrl: process.env.EXPO_PUBLIC_CREATE_SHARE_JOB_URL || '',
     },
   };
 };

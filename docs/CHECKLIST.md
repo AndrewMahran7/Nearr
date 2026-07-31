@@ -183,6 +183,7 @@ This is infrastructure. It does **not** mean the habit loop is proven.
 - In-app feedback entry point
 - Legal links
 - Review row planned or added
+- In-app account deletion (Apple App Review Guideline 5.1.1(v)) — Settings → Account → Delete account; permanent server-side hard delete via the `delete-account` Edge Function, two-step confirmation, production-visible (no dev/reviewer gating). See [ARCHITECTURE.md](ARCHITECTURE.md) and [DATABASE.md](DATABASE.md).
 - Runtime diagnostics hidden or gated for production
 - Testing section gated for development
 - App Store screenshot planning

@@ -33,8 +33,10 @@ import {
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 
 import { Button, Card, Input, Screen } from '@/components';
+import { ShareJobHandoff } from '@/components/ShareJobHandoff';
 import { Radius, Spacing } from '@/constants';
 import { useTheme } from '@/lib/theme';
+import { isAsyncShareJobsEnabled } from '@/lib/featureFlags';
 import { getActivationSaveFeedback } from '@/lib/activation';
 import {
   isLikelyUrl,
@@ -358,6 +360,19 @@ function buildProfileDebugReason(profile: {
 }
 
 export default function ShareScreen() {
+  const params = useLocalSearchParams<{ url?: string }>();
+  // Async rollout: when the flag is on and a URL arrived (Android share
+  // intent, iOS signed-out/network handoff, or in-app paste-link), create a
+  // durable job and dismiss instead of running synchronous extraction. Falls
+  // back to the legacy synchronous screen otherwise (incl. the no-url manual
+  // paste case).
+  if (isAsyncShareJobsEnabled() && params.url && isLikelyUrl(params.url)) {
+    return <ShareJobHandoff url={params.url} />;
+  }
+  return <LegacyShareScreen />;
+}
+
+function LegacyShareScreen() {
   const router = useRouter();
   const navigation = useNavigation();
   const params = useLocalSearchParams<{ url?: string }>();

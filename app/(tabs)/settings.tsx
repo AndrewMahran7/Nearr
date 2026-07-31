@@ -42,6 +42,15 @@ import { setOnboardingPreview } from '@/lib/onboarding';
 import { LEGAL_ACCEPTANCE_REQUIRED, LEGAL_VERSION } from '@/constants';
 import { getProfile, getLegalAcceptanceStatus, updateProfile } from '@/services/profileService';
 import { signOut } from '@/services/auth';
+import {
+  cleanupAfterAccountDeletion,
+  deleteAccount,
+} from '@/services/accountService';
+import {
+  DELETE_ACCOUNT_FAILURE_MESSAGE,
+  DELETE_ACCOUNT_FINAL_CONFIRM,
+  DELETE_ACCOUNT_FIRST_CONFIRM,
+} from '@/lib/accountDeletionCore';
 import { resetAllDemoData, simulateDemoNearbyNotification } from '@/services/demo';
 import {
   ensureNotificationPermission,
@@ -89,7 +98,7 @@ function isValidHhmm(s: string): boolean {
 
 export default function SettingsScreen() {
   const router = useRouter();
-  const { isDevSession, isLocalUiSession } = useAuth();
+  const { user, isDevSession, isLocalUiSession } = useAuth();
   const { colors, typography, themePreference, setThemePreference } = useTheme();
   const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
 
@@ -109,6 +118,7 @@ export default function SettingsScreen() {
   const [howNearrWorksVisible, setHowNearrWorksVisible] = useState(false);
   const [legalAcceptedVersion, setLegalAcceptedVersion] = useState<string | null>(null);
   const [legalAcceptedAt, setLegalAcceptedAt] = useState<string | null>(null);
+  const [deletingAccount, setDeletingAccount] = useState(false);
 
   const hasUnsavedChanges = useMemo(() => {
     if (!profile) return false;
@@ -286,6 +296,8 @@ export default function SettingsScreen() {
   // Sign out
   // ---------------------------------------------------------------------
   function handleSignOut() {
+    // Never let Sign out race an in-flight account deletion.
+    if (deletingAccount) return;
     Alert.alert('Sign out?', 'You can sign back in any time with a magic link.', [
       { text: 'Cancel', style: 'cancel' },
       {
@@ -323,6 +335,75 @@ export default function SettingsScreen() {
   async function handleExitDevMode() {
     await disableDevAuth();
     router.replace('/(auth)/sign-in');
+  }
+
+  // ---------------------------------------------------------------------
+  // Delete account (Apple App Review Guideline 5.1.1(v))
+  //
+  // Two deliberate confirmations, then a single server-side hard delete.
+  // The button appears in ALL builds (no dev/reviewer gating). Local
+  // cleanup + navigation to the pre-auth flow happen ONLY after the
+  // server confirms deletion; on failure the user stays signed in.
+  // ---------------------------------------------------------------------
+  function handleDeleteAccount() {
+    if (deletingAccount) return;
+    Alert.alert(
+      DELETE_ACCOUNT_FIRST_CONFIRM.title,
+      DELETE_ACCOUNT_FIRST_CONFIRM.body,
+      [
+        { text: DELETE_ACCOUNT_FIRST_CONFIRM.cancelLabel, style: 'cancel' },
+        {
+          text: DELETE_ACCOUNT_FIRST_CONFIRM.continueLabel,
+          style: 'destructive',
+          onPress: promptFinalDeleteAccount,
+        },
+      ],
+      { cancelable: true },
+    );
+  }
+
+  function promptFinalDeleteAccount() {
+    if (deletingAccount) return;
+    Alert.alert(
+      DELETE_ACCOUNT_FINAL_CONFIRM.title,
+      DELETE_ACCOUNT_FINAL_CONFIRM.body,
+      [
+        { text: DELETE_ACCOUNT_FINAL_CONFIRM.cancelLabel, style: 'cancel' },
+        {
+          text: DELETE_ACCOUNT_FINAL_CONFIRM.confirmLabel,
+          style: 'destructive',
+          onPress: () => void runAccountDeletion(),
+        },
+      ],
+      { cancelable: true },
+    );
+  }
+
+  async function runAccountDeletion() {
+    if (deletingAccount) return;
+    setDeletingAccount(true);
+    console.log('[account] deletion requested');
+    const deletedUserId = user?.id ?? null;
+    try {
+      const result = await deleteAccount();
+      if (!result.ok) {
+        // Keep the user signed in; do NOT clear local data. Restore the
+        // button and let them retry.
+        console.warn('[account] deletion failed', result.reason);
+        setDeletingAccount(false);
+        Alert.alert('Delete failed', result.message);
+        return;
+      }
+      // Server confirmed the hard delete. Tear down local state, then send
+      // the (now signed-out) user back to the pre-auth entry point.
+      console.log('[account] deletion confirmed, cleaning up');
+      await cleanupAfterAccountDeletion(deletedUserId);
+      router.replace('/(onboarding)');
+    } catch (e: any) {
+      console.warn('[account] deletion threw', e?.message ?? e);
+      setDeletingAccount(false);
+      Alert.alert('Delete failed', DELETE_ACCOUNT_FAILURE_MESSAGE);
+    }
   }
 
   // ---------------------------------------------------------------------
@@ -731,7 +812,31 @@ export default function SettingsScreen() {
             title="Sign out"
             variant="secondary"
             onPress={handleSignOut}
+            disabled={deletingAccount}
           />
+          <View style={styles.divider} />
+          <Pressable
+            style={styles.deleteRow}
+            onPress={handleDeleteAccount}
+            disabled={deletingAccount}
+            accessibilityRole="button"
+            accessibilityLabel="Delete account"
+            accessibilityState={{ disabled: deletingAccount, busy: deletingAccount }}
+          >
+            <View style={styles.helpCopy}>
+              <Text style={[typography.bodyStrong, styles.deleteTitle]}>
+                Delete account
+              </Text>
+              <Text style={[typography.caption, styles.deleteSubtitle]}>
+                Permanently delete your account and saved data.
+              </Text>
+            </View>
+            {deletingAccount ? (
+              <ActivityIndicator color={colors.danger} />
+            ) : (
+              <Text style={[typography.bodyStrong, styles.deleteChevron]}>›</Text>
+            )}
+          </Pressable>
         </Card>
 
         {demo ? (
@@ -900,6 +1005,21 @@ function createStyles(
     },
     helpChevron: {
       color: colors.textMuted,
+      marginLeft: Spacing.md,
+    },
+    deleteRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    deleteTitle: {
+      color: colors.danger,
+    },
+    deleteSubtitle: {
+      color: colors.textSecondary,
+      marginTop: 2,
+    },
+    deleteChevron: {
+      color: colors.danger,
       marginLeft: Spacing.md,
     },
 

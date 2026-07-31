@@ -11,6 +11,7 @@ web-build/
 !transcription-service/.env.example
 # Convention for archiving rotated keys locally.
 .env_old
+expo-config.json
 
 *.log
 .DS_Store

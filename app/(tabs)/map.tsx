@@ -81,6 +81,7 @@ import {
   MapSnackbar,
   MapTopSearchBar,
   SelectedPlaceDetails,
+  ShareQueueButton,
   getSheetPartialHeight,
   type MapFilter,
   type SheetSnap,
@@ -98,6 +99,7 @@ import { isDemoMode } from '@/lib/demoMode';
 import { isMapPreviewMode } from '@/lib/mapPreview';
 import { openExternalMaps as openInExternalMaps } from '@/lib/externalMaps';
 import { trackEvent } from '@/lib/analytics';
+import { isAsyncShareJobsEnabled } from '@/lib/featureFlags';
 import { isLikelyUrl } from '@/lib/shareParser';
 import { distanceMeters, milesToMeters, minutesToMeters } from '@/lib/geo';
 import { useTheme } from '@/lib/theme';
@@ -147,11 +149,11 @@ function selectedIconName(saved: SavedPlaceWithPlace): React.ComponentProps<type
 // Matches the V1 default surfaced in add-place.tsx.
 const DEFAULT_RADIUS_MILES = 1;
 
-// Vertical space reserved by the floating search bar (50) + filter chips (40)
-// plus their gaps, measured from the top of the map area. Other top-anchored
-// overlays (View All, empty/preview pills) sit below this, and the bottom
-// sheet's expanded top is clamped under it so the two never collide.
-const TOP_CHROME_CLEARANCE = Spacing.md + 50 + Spacing.sm + 40 + Spacing.sm;
+// Vertical space reserved by the floating search bar + filter chips from the
+// top of the map area. When async share-jobs are enabled we add one more row
+// for the Queue pill so View All / preview pills never overlap it.
+const TOP_CHROME_BASE_CLEARANCE = Spacing.md + 50 + Spacing.sm + 40 + Spacing.sm;
+const QUEUE_PILL_CLEARANCE = 18 + Spacing.sm + 8;
 
 /**
  * Effective radius (in meters) for a saved place, used to render a Life360-
@@ -395,6 +397,9 @@ const MARKER_STYLES = StyleSheet.create({
 export default function MapScreen() {
   const router = useRouter();
   const { colors, typography, resolvedTheme } = useTheme();
+  const asyncShareUiEnabled = isAsyncShareJobsEnabled();
+  const topChromeClearance =
+    TOP_CHROME_BASE_CLEARANCE + (asyncShareUiEnabled ? QUEUE_PILL_CLEARANCE : 0);
   // Map header is hidden (map-first) so the screen owns the top safe area.
   // Floor the inset so devices that report ~0 (older Android without a
   // translucent status bar / notch) still keep the search bar clear of the
@@ -402,8 +407,8 @@ export default function MapScreen() {
   const insets = useSafeAreaInsets();
   const safeTopInset = Math.max(insets.top, Spacing.xl);
   const styles = useMemo(
-    () => createStyles(colors, typography, safeTopInset),
-    [colors, typography, safeTopInset],
+    () => createStyles(colors, typography, safeTopInset, topChromeClearance),
+    [colors, typography, safeTopInset, topChromeClearance],
   );
   // Optional deep-link param: when present, the map should center on this
   // saved place and open its preview card. Set by "Show on map" actions on
@@ -1500,6 +1505,7 @@ export default function MapScreen() {
         <View style={styles.topChrome} pointerEvents="box-none">
           <MapTopSearchBar onPress={() => setSearchVisible(true)} />
           <MapFilterChips value={selectedMapFilter} onChange={handleSelectMapFilter} />
+          <ShareQueueButton />
         </View>
       ) : null}
 
@@ -1651,7 +1657,7 @@ export default function MapScreen() {
           savedPlaces={validPlaces}
           partialHeight={sheetPartialHeight}
           availableHeight={availableHeight}
-          topInset={safeTopInset + TOP_CHROME_CLEARANCE + Spacing.md}
+          topInset={safeTopInset + topChromeClearance + Spacing.md}
           openSignal={sheetOpenSignal}
           minimizeSignal={sheetMinimizeSignal}
           onSnapChange={handleSheetSnapChange}
@@ -1693,10 +1699,11 @@ function createStyles(
   colors: ReturnType<typeof useTheme>['colors'],
   typography: ReturnType<typeof useTheme>['typography'],
   insetTop: number,
+  topChromeClearance: number,
 ) {
   // Top-anchored overlays clear the floating chrome (search bar + chips) AND
   // the top safe area now that the Map header is hidden.
-  const pillTop = insetTop + TOP_CHROME_CLEARANCE;
+  const pillTop = insetTop + topChromeClearance;
   return StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
 

@@ -1,6 +1,6 @@
 # Nearr — Database Schema
 
-> Last updated: 2026-05-03
+> Last updated: 2026-07-30
 > Source of truth: `supabase/migrations/`
 
 Do not use `supabase/schema.sql` as the canonical schema. The migration files under `supabase/migrations/` are the source of truth.
@@ -12,6 +12,13 @@ Do not use `supabase/schema.sql` as the canonical schema. The migration files un
 - `20260501000001_notification_count.sql`
 - `20260502000001_legal_acceptance.sql`
 - `20260503000001_opportunity_archive.sql`
+- `20260504000001_share_agent_runs.sql`
+- `20260706000001_feedback.sql`
+- `20260708000001_share_extraction_failures.sql`
+- `20260731000001_share_jobs.sql`
+- `20260731000002_user_push_tokens.sql`
+- `20260731000003_share_jobs_worker.sql`
+- `20260731000004_share_jobs_notifications.sql`
 
 ## Schema overview
 
@@ -24,6 +31,11 @@ places
        └─ notification_events
 
 analytics_events
+feedback
+share_agent_runs            (service-role only)
+share_extraction_failures   (service-role only)
+share_jobs                  (async share queue; owner RLS + service-role worker)
+user_push_tokens            (Expo push tokens; owner RLS)
 ```
 
 ## `profiles`
@@ -170,6 +182,189 @@ Purpose:
 - lightweight product analytics
 - append-only inserts from the client via `lib/analytics.ts`
 
+## `feedback`
+
+Added in `20260706000001_feedback.sql`. In-app, founder-led product
+feedback (Settings → "Send feedback").
+
+Columns:
+
+- `id uuid primary key default gen_random_uuid()`
+- `user_id uuid null references auth.users(id) on delete set null`
+- `email text null`
+- `category text not null`
+- `message text not null`
+- `metadata jsonb not null default '{}'::jsonb`
+- `status text not null default 'new'`
+- `created_at timestamptz not null default now()`
+
+Indexes:
+
+- `feedback_created_idx`
+- `feedback_status_created_idx`
+- `feedback_category_created_idx`
+- `feedback_user_created_idx`
+
+Purpose:
+
+- Append-only from the client. Authenticated users may INSERT feedback
+  attributed to themselves only (`user_id = auth.uid()`); anonymous
+  (`user_id null`) inserts are not permitted.
+- Only the service role can read/triage feedback — there are no client
+  SELECT/UPDATE/DELETE policies.
+- `metadata` is free-form JSONB (snake_case keys; never store auth tokens
+  or personal-token URLs).
+
+## `share_agent_runs`
+
+Added in `20260504000001_share_agent_runs.sql`. Shadow-mode persistence
+for the new share-extraction AI agent (Stage 1 of the rebuild). The agent
+runs alongside the existing pipeline; its result is persisted here for
+offline comparison and does NOT affect user-facing behavior in this stage.
+
+Columns:
+
+- `id uuid primary key default gen_random_uuid()`
+- `user_id uuid null references auth.users(id) on delete set null`
+- `url text not null`
+- `platform text not null`
+- `prompt_version text not null`
+- `model_used text not null`
+- `agent_decision text not null`
+- `safety_decision text not null`
+- `safe_to_auto_save boolean not null default false`
+- `confidence text not null`
+- `reasoning text null`
+- `tool_calls jsonb not null default '[]'::jsonb`
+- `candidates jsonb not null default '[]'::jsonb`
+- `evidence_used jsonb not null default '[]'::jsonb`
+- `latency_ms integer null`
+- `errors jsonb not null default '[]'::jsonb`
+- `raw_response jsonb null`
+- `created_at timestamptz not null default now()`
+
+Indexes:
+
+- `share_agent_runs_created_idx`
+- `share_agent_runs_decision_idx`
+- `share_agent_runs_platform_idx`
+
+Purpose:
+
+- Service-role write-only debugging traces. Contains reasoning text that
+  may include caption/bio excerpts, so it must never be exposed to clients.
+- Inserted by the `process-share-link` Edge Function via the service-role
+  client (which bypasses RLS).
+
+## `share_extraction_failures`
+
+Added in `20260708000001_share_extraction_failures.sql`. LLM-friendly
+extraction miss diagnostics — one structured row per debug-worthy
+extraction attempt (manual fallback, failed/open_app paths, suspicious
+confirmations, etc.).
+
+Columns:
+
+- `id uuid primary key default gen_random_uuid()`
+- `created_at timestamptz not null default now()`
+- `user_id uuid null references auth.users(id) on delete set null`
+- `original_url text not null`
+- `canonical_url text null`
+- `platform text null`
+- `status text null`
+- `user_facing_decision text null`
+- `safe_to_auto_save boolean null`
+- `confidence text null`
+- `failure_class text null`
+- `failure_reason text null`
+- `selected_candidate_name text null`
+- `selected_candidate_address text null`
+- `selected_candidate_place_id text null`
+- `selected_candidate_score numeric null`
+- `address_present boolean not null default false`
+- `address_count integer not null default 0`
+- `candidate_count integer not null default 0`
+- `query_count integer not null default 0`
+- `title_preview text null`
+- `description_preview text null`
+- `suggested_query text null`
+- `evidence jsonb not null default '{}'::jsonb`
+- `query_plan jsonb not null default '[]'::jsonb`
+- `candidates jsonb not null default '[]'::jsonb`
+- `warnings jsonb not null default '[]'::jsonb`
+- `diagnostics jsonb not null default '{}'::jsonb`
+- `llm_summary jsonb not null default '{}'::jsonb`
+- `app_version text null`
+- `backend_version text null`
+- `request_id text null`
+
+Indexes:
+
+- `share_extraction_failures_created_idx`
+- `share_extraction_failures_platform_idx`
+- `share_extraction_failures_decision_idx`
+- `share_extraction_failures_failure_class_idx`
+- `share_extraction_failures_address_present_idx`
+- `share_extraction_failures_user_idx`
+
+Purpose:
+
+- Developer/debug only. Client roles have NO access (deny-all policy).
+- Inserted by the `process-share-link` Edge Function via the service-role
+  client.
+
+## `share_jobs`
+
+Added in `20260731000001_share_jobs.sql`. Durable queue for the async
+share-to-app flow (source of truth). See [ASYNC_SHARE_JOBS.md](./ASYNC_SHARE_JOBS.md)
+for the full flow.
+
+Key columns: `user_id`, `source_url`, `canonical_url`, `source_platform`,
+`status` (`queued|processing_metadata|completed|needs_help|failed|cancelled`),
+`decision`, `saved_place_id` (FK -> `saved_places` **ON DELETE SET NULL**),
+`candidate_payload`/`extraction_payload` (jsonb), `suggested_query`,
+`needs_help_reason`, `failure_reason`, `idempotency_key`, `attempts`,
+`max_attempts`, `locked_until`, `last_error`,
+`notification_status` (`pending|sending|submitted|retryable_failed|permanently_failed`),
+`notification_attempts`, `notification_last_attempt_at`,
+`notification_next_attempt_at`, `notification_ticket_ids`,
+`notification_error_code`, `notification_submitted_at`,
+`notification_payload`, `notification_receipts_checked_at`,
+`created_at`, `updated_at`, `completed_at`.
+
+Notes:
+
+- Owner-only RLS. Jobs are created by the authenticated `create-share-job`
+  Edge Function (service role) — there is no anonymous/orphan path.
+- Idempotency: unique `(user_id, idempotency_key)` and unique
+  short-window same-URL dedupe via
+  `create_share_job_for_user(..., p_dedupe_window_seconds)`.
+- `claim_share_jobs(p_limit, p_lock_seconds)` — `SECURITY DEFINER`, service-role
+  only, `FOR UPDATE SKIP LOCKED` claim + stale-lease reclaim.
+- Added to the `supabase_realtime` publication for live queue updates.
+
+## `user_push_tokens`
+
+Added in `20260731000002_user_push_tokens.sql`. Expo push tokens for
+server-sent share-job notifications (distinct from local place reminders).
+
+Columns: `user_id`, `token` (unique), `platform`, `device_id`, `enabled`,
+`last_seen_at`, `created_at`, `updated_at`.
+
+Notes:
+
+- Owner-only RLS. The worker reads tokens via the service role.
+- `register_push_token(token, platform, device_id)` — `SECURITY DEFINER` RPC
+  that reassigns a device token to the current user (last-writer-wins).
+- Invalid tokens (`DeviceNotRegistered`) are set `enabled = false` by the worker.
+
+## Worker wiring
+
+`20260731000003_share_jobs_worker.sql` adds `invoke_process_share_jobs()`
+(pg_net call to the worker), a per-minute `pg_cron` sweep, and an AFTER-INSERT
+trigger. All defensive: no-ops until the operator enables `pg_net`/`pg_cron`
+and sets the Vault secrets (see [ASYNC_SHARE_JOBS.md](./ASYNC_SHARE_JOBS.md)).
+
 ## Row-level security
 
 RLS is enabled on:
@@ -179,6 +374,11 @@ RLS is enabled on:
 - `saved_places`
 - `notification_events`
 - `analytics_events`
+- `feedback`
+- `share_agent_runs`
+- `share_extraction_failures`
+- `share_jobs`
+- `user_push_tokens`
 
 Current policy model:
 
@@ -187,6 +387,11 @@ Current policy model:
 - `saved_places`: owner-only read/write/delete
 - `notification_events`: owner-only read/insert
 - `analytics_events`: insert allowed for authenticated and anonymous clients under controlled rules, no client read path
+- `feedback`: authenticated insert-own only (`user_id = auth.uid()`), no client read path; service-role read/triage
+- `share_agent_runs`: deny-all for client roles; service-role only
+- `share_extraction_failures`: deny-all for client roles; service-role only
+- `share_jobs`: owner-only read/insert/update/delete; worker uses service role
+- `user_push_tokens`: owner-only read/insert/update/delete; worker reads via service role
 
 ## Triggers and helper functions
 
@@ -195,6 +400,33 @@ Current policy model:
 - `profiles_set_updated_at`
 - `saved_places_set_updated_at`
 - `on_auth_user_created`
+
+## Account deletion (Apple 5.1.1(v))
+
+Permanent account deletion is performed by the `delete-account` Edge
+Function ([supabase/functions/delete-account/index.ts](../supabase/functions/delete-account/index.ts))
+using a service-role admin client. The user id is derived only from the
+caller's verified access token. Confirmed foreign-key behavior per table:
+
+| Table | FK to `auth.users` | On user delete | How it is removed |
+| --- | --- | --- | --- |
+| `profiles` | `id` | `ON DELETE CASCADE` | Cascade |
+| `saved_places` | `user_id` | `ON DELETE CASCADE` | Cascade |
+| `notification_events` | `user_id` (+ `saved_place_id` → `saved_places` cascade) | `ON DELETE CASCADE` | Cascade |
+| `analytics_events` | `user_id` | `ON DELETE SET NULL` | **Explicit delete** before auth-user removal |
+| `feedback` | `user_id` | `ON DELETE SET NULL` | **Explicit delete** before auth-user removal |
+| `share_agent_runs` | `user_id` | `ON DELETE SET NULL` | **Explicit delete** before auth-user removal |
+| `share_extraction_failures` | `user_id` | `ON DELETE SET NULL` | **Explicit delete** before auth-user removal |
+| `places` | — (shared) | n/a | **Never deleted** (shared across users) |
+
+Deletion order: explicit `SET NULL` tables first, then
+`auth.admin.deleteUser(userId)` triggers the cascades. The function returns
+success only when every step succeeds; a failed step aborts before the auth
+user is removed (no partial "success"). There are no user-owned Supabase
+Storage objects.
+
+**No migration is required** for account deletion — the existing cascade
+rules plus the service-role explicit deletes cover all user-owned data.
 
 ## Current code assumptions that matter
 

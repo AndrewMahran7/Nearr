@@ -17,6 +17,10 @@ import {
 } from '@/lib/authDeepLinkCore';
 import { clearDevAuth } from '@/lib/devAuth';
 import { trackEvent } from '@/lib/analytics';
+import {
+  deactivatePushTokenForCurrentUser,
+  registerPushTokenForCurrentUser,
+} from '@/lib/pushTokens';
 import { logDebug, logInfo } from '@/lib/logger';
 import { LEGAL_ACCEPTANCE_REQUIRED, LEGAL_VERSION } from '@/constants';
 import {
@@ -123,6 +127,7 @@ function AuthGate({
   const [setupReminderDismissedThisSession, setSetupReminderDismissedThisSession] = useState(false);
   const [legalAgreementVisible, setLegalAgreementVisible] = useState(false);
   const [acceptingLegal, setAcceptingLegal] = useState(false);
+  const previousUserIdRef = useRef<string | null>(null);
 
   // Fire `session_started` once per real Supabase session (id changes when
   // the user signs in, signs out + back in, or the JWT identity changes).
@@ -133,6 +138,15 @@ function AuthGate({
     // Intentionally keyed on user id only — an access-token refresh on the
     // same user must not re-fire this event.
   }, [session?.user.id, isDevSession]);
+
+  useEffect(() => {
+    const prev = previousUserIdRef.current;
+    const next = session?.user.id ?? null;
+    if (prev && prev !== next) {
+      void deactivatePushTokenForCurrentUser();
+    }
+    previousUserIdRef.current = next;
+  }, [session?.user.id]);
 
   useEffect(() => {
     let cancelled = false;
@@ -281,6 +295,9 @@ function AuthGate({
     if (!session || isDevSession) return;
     void syncProximityWatch();
     void checkProximityOnce();
+    // Register this device's Expo push token for server-sent share-job
+    // notifications. No-op unless the async flag is on + permission granted.
+    void registerPushTokenForCurrentUser();
     // Register OS-level geofences alongside the background-location
     // fallback. Failure is non-fatal — geofencing only works on real
     // devices and only with Always location + notification permission.
@@ -291,6 +308,7 @@ function AuthGate({
         setSetupReminderDismissedThisSession(false);
         void syncProximityWatch();
         void checkProximityOnce();
+        void registerPushTokenForCurrentUser();
         void syncGeofencesForSavedPlaces();
         void refreshSetupReminder();
       } else if (state === 'background' || state === 'inactive') {
@@ -368,6 +386,7 @@ function RootLayoutContent() {
   // publish a terminal status. This prevents overlapping runs from older links
   // clobbering a newer attempt's state.
   const authLinkRunIdRef = useRef(0);
+  const lastNotificationResponseKeyRef = useRef<string | null>(null);
   // Routing/modal gating only care about the in-flight state.
   const authLinkPending = authLinkStatus === 'processing';
 
@@ -444,6 +463,13 @@ function RootLayoutContent() {
     void registerNotificationCategories();
 
     function routeFromResponse(response: Notifications.NotificationResponse) {
+      const notificationId = response.notification.request.identifier;
+      const responseKey = `${response.actionIdentifier ?? 'default'}:${notificationId}`;
+      if (lastNotificationResponseKeyRef.current === responseKey) {
+        return;
+      }
+      lastNotificationResponseKeyRef.current = responseKey;
+
       const { actionIdentifier, notification } = response;
       const data = (notification.request.content.data ?? {}) as Record<string, unknown>;
       const savedPlaceId = data.savedPlaceId as string | undefined;
@@ -470,6 +496,27 @@ function RootLayoutContent() {
         !!placeId ||
         typeof nearbyCountRaw === 'number' ||
         nearbyCountFromArray > 0;
+
+      // Async share-job notifications route to the specific place/job — NOT
+      // to the generic map. Tap type is carried in `data.type`.
+      const notifType = typeof data.type === 'string' ? data.type : undefined;
+      if (isDefaultTap && notifType === 'share_job_completed') {
+        const sp = typeof data.savedPlaceId === 'string' ? data.savedPlaceId : undefined;
+        router.push({
+          pathname: '/(tabs)/map',
+          params: sp ? { savedPlaceId: sp } : {},
+        });
+        return;
+      }
+      if (isDefaultTap && notifType === 'share_job_needs_help') {
+        const jid = typeof data.jobId === 'string' ? data.jobId : undefined;
+        if (jid) {
+          router.push({ pathname: '/share-jobs/[jobId]', params: { jobId: jid } });
+        } else {
+          router.push('/share-jobs');
+        }
+        return;
+      }
 
       if (isDefaultTap && isNearbyReminderPayload && savedPlaceId) {
         router.push({
@@ -548,6 +595,14 @@ function RootLayoutContent() {
               <Stack.Screen
                 name="feedback"
                 options={{ presentation: 'modal', headerShown: true, title: 'Send feedback' }}
+              />
+              <Stack.Screen
+                name="share-jobs/index"
+                options={{ headerShown: true, title: 'Share queue' }}
+              />
+              <Stack.Screen
+                name="share-jobs/[jobId]"
+                options={{ headerShown: true, title: 'Finish saving' }}
               />
               <Stack.Screen name="legal/terms" options={{ headerShown: true, title: 'Terms of Service' }} />
               <Stack.Screen name="legal/privacy" options={{ headerShown: true, title: 'Privacy Policy' }} />

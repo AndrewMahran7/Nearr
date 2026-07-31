@@ -37,7 +37,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { close, openHostApp, type InitialProps } from 'expo-share-extension';
 
 import { sharedAuth } from './lib/sharedAuth';
@@ -45,6 +45,8 @@ import {
   hostFromUrl,
   resolveProcessShareLinkUrl,
 } from './lib/shareEnvDiagnostics';
+import { isAsyncShareJobsEnabled, resolveCreateShareJobUrl } from './lib/featureFlags';
+import { createShareJob } from './lib/shareJobClient';
 
 // 2026-05-26: single resolver covers process.env, expoConfig.extra,
 // manifest.extra and manifest2.extra so a missing inline at build
@@ -332,6 +334,15 @@ type UiState =
   | { kind: 'error'; message: string };
 
 export default function ShareExtension(props: InitialProps) {
+  // Feature-flagged: async submit-and-dismiss (new) vs the legacy synchronous
+  // handoff (unchanged). Default OFF keeps the proven flow until rollout.
+  if (isAsyncShareJobsEnabled()) {
+    return <AsyncShareExtension {...props} />;
+  }
+  return <LegacyShareExtension {...props} />;
+}
+
+function LegacyShareExtension(props: InitialProps) {
   // Guard against React 18 strict-mode double-invocation: only fire the
   // host-app handoff once per extension instantiation.
   const handledRef = useRef(false);
@@ -449,6 +460,151 @@ export default function ShareExtension(props: InitialProps) {
   );
 }
 
+// ---------------------------------------------------------------------------
+// Async share flow (feature-flagged). The extension ONLY validates the URL,
+// creates a durable job via `create-share-job`, and dismisses. It NEVER waits
+// for extraction, NEVER downloads media, and NEVER opens the host app after a
+// successful submission.
+// ---------------------------------------------------------------------------
+
+type AsyncUi =
+  | { kind: 'submitting' }
+  | { kind: 'accepted'; duplicate: boolean }
+  | { kind: 'signed_out' }
+  | { kind: 'network_failure' };
+
+function AsyncShareExtension(props: InitialProps) {
+  const handledRef = useRef(false);
+  // Stable per-instantiation idempotency key: rapid duplicate shares of the
+  // same URL still dedupe server-side (active-url unique index).
+  const requestIdRef = useRef(
+    `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`,
+  );
+  const [ui, setUi] = useState<AsyncUi>({ kind: 'submitting' });
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const submit = async () => {
+    const url = pickSharedUrl(props);
+    if (!url) {
+      console.log('[share-extension] no url found in shared payload, closing');
+      close();
+      return;
+    }
+    const endpoint = resolveCreateShareJobUrl();
+    const token = sharedAuth.getToken();
+    // No valid session → do NOT create an orphan job. Hand off to the host so
+    // the user can sign in.
+    if (!token) {
+      console.log('[share-extension] job_accepted=false reason=signed_out');
+      setUi({ kind: 'signed_out' });
+      return;
+    }
+    if (!endpoint) {
+      console.log('[share-extension] job_accepted=false reason=no_endpoint');
+      setUi({ kind: 'network_failure' });
+      return;
+    }
+    setUi({ kind: 'submitting' });
+    const result = await createShareJob({
+      endpoint,
+      url,
+      accessToken: token,
+      clientRequestId: requestIdRef.current,
+    });
+    if (result.ok) {
+      console.log(`[share-extension] job_accepted=true duplicate=${result.duplicate}`);
+      setUi({ kind: 'accepted', duplicate: result.duplicate });
+      closeTimerRef.current = setTimeout(() => {
+        console.log('[share-extension] dismissed_after_accept=true');
+        close();
+      }, 1400);
+    } else if (result.reason === 'unauthorized' || result.reason === 'missing_auth') {
+      console.log('[share-extension] job_accepted=false reason=unauthorized');
+      setUi({ kind: 'signed_out' });
+    } else {
+      // Never claim the job was queued if the server did not accept it.
+      console.log(`[share-extension] job_accepted=false reason=${result.reason}`);
+      setUi({ kind: 'network_failure' });
+    }
+  };
+
+  useEffect(() => {
+    if (handledRef.current) return;
+    handledRef.current = true;
+    void submit();
+    return () => {
+      if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const openHost = (reason: string) => {
+    const url = pickSharedUrl(props);
+    if (url) {
+      const encoded = encodeURIComponent(url);
+      try {
+        openHostApp(`share?url=${encoded}&ext_reason=${encodeURIComponent(reason)}`);
+      } catch (err) {
+        console.warn('[share-extension] openHostApp failed', err);
+      }
+    }
+    close();
+  };
+
+  if (ui.kind === 'accepted') {
+    return (
+      <View style={asyncStyles.container}>
+        <View style={asyncStyles.brandDot}>
+          <Text style={asyncStyles.check}>✓</Text>
+        </View>
+        <Text style={asyncStyles.title}>Added to your queue</Text>
+        <Text style={asyncStyles.subtle}>{"We'll notify you when it's ready."}</Text>
+        <Pressable style={asyncStyles.secondaryBtn} onPress={() => close()}>
+          <Text style={asyncStyles.secondaryText}>Done</Text>
+        </Pressable>
+      </View>
+    );
+  }
+  if (ui.kind === 'signed_out') {
+    return (
+      <View style={asyncStyles.container}>
+        <Text style={asyncStyles.title}>Open Nearr to sign in</Text>
+        <Text style={asyncStyles.subtle}>{'Sign in once so Nearr can save places you share.'}</Text>
+        <Pressable style={asyncStyles.primaryBtn} onPress={() => openHost('signed_out')}>
+          <Text style={asyncStyles.primaryText}>Open Nearr</Text>
+        </Pressable>
+      </View>
+    );
+  }
+  if (ui.kind === 'network_failure') {
+    return (
+      <View style={asyncStyles.container}>
+        <Text style={asyncStyles.title}>{"Couldn't reach Nearr"}</Text>
+        <Text style={asyncStyles.subtle}>{'Check your connection and try again.'}</Text>
+        <Pressable style={asyncStyles.primaryBtn} onPress={() => void submit()}>
+          <Text style={asyncStyles.primaryText}>Retry</Text>
+        </Pressable>
+        <Pressable style={asyncStyles.secondaryBtn} onPress={() => openHost('network_failure')}>
+          <Text style={asyncStyles.secondaryText}>Open Nearr instead</Text>
+        </Pressable>
+      </View>
+    );
+  }
+  return (
+    <View style={asyncStyles.container}>
+      <ActivityIndicator color={NEARR_ORANGE} />
+      <Text style={asyncStyles.title}>Saving to Nearr</Text>
+      <Text style={asyncStyles.subtle}>{'Finding the place from this post…'}</Text>
+      <Text style={asyncStyles.subtleSmall}>
+        {"You can close this and keep scrolling. We'll notify you when it's ready."}
+      </Text>
+      <Pressable style={asyncStyles.secondaryBtn} onPress={() => close()}>
+        <Text style={asyncStyles.secondaryText}>Close</Text>
+      </Pressable>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -483,4 +639,114 @@ const styles = StyleSheet.create({
     color: '#333',
     marginTop: 2,
   },
+  title: {
+    marginTop: 10,
+    fontSize: 17,
+    fontWeight: '600',
+    color: '#111',
+    textAlign: 'center',
+  },
+  subtle: {
+    marginTop: 4,
+    fontSize: 14,
+    color: '#444',
+    textAlign: 'center',
+  },
+  subtleSmall: {
+    marginTop: 6,
+    fontSize: 12,
+    color: '#777',
+    textAlign: 'center',
+    paddingHorizontal: 12,
+  },
+  primaryBtn: {
+    marginTop: 14,
+    backgroundColor: '#D85C16',
+    paddingVertical: 10,
+    paddingHorizontal: 22,
+    borderRadius: 999,
+  },
+  primaryText: { color: '#fff', fontSize: 15, fontWeight: '600' },
+  secondaryBtn: {
+    marginTop: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 18,
+  },
+  secondaryText: { color: '#D85C16', fontSize: 14, fontWeight: '600' },
+});
+
+// ---------------------------------------------------------------------------
+// Async share-extension styles — matches the Nearr dark map UI (near-black
+// surface, white type, orange accent). Kept SEPARATE from the legacy `styles`
+// above so the flag-off (legacy) extension appearance is unchanged.
+// ---------------------------------------------------------------------------
+const NEARR_ORANGE = '#FF6B00';
+const NEARR_BG = '#0B0B0D';
+const NEARR_SURFACE = '#1C1C20';
+const NEARR_BORDER = '#2A2A30';
+
+const asyncStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+    backgroundColor: NEARR_BG,
+  },
+  brandDot: {
+    width: 56,
+    height: 56,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,107,0,0.14)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,107,0,0.3)',
+    marginBottom: 4,
+  },
+  check: {
+    fontSize: 30,
+    lineHeight: 34,
+    color: NEARR_ORANGE,
+    fontWeight: '700',
+  },
+  title: {
+    marginTop: 12,
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    textAlign: 'center',
+  },
+  subtle: {
+    marginTop: 6,
+    fontSize: 14,
+    color: '#A1A1AA',
+    textAlign: 'center',
+  },
+  subtleSmall: {
+    marginTop: 8,
+    fontSize: 12,
+    color: '#71717A',
+    textAlign: 'center',
+    paddingHorizontal: 16,
+    lineHeight: 17,
+  },
+  primaryBtn: {
+    marginTop: 18,
+    backgroundColor: NEARR_ORANGE,
+    paddingVertical: 12,
+    paddingHorizontal: 26,
+    borderRadius: 999,
+  },
+  primaryText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
+  secondaryBtn: {
+    marginTop: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 999,
+    backgroundColor: NEARR_SURFACE,
+    borderWidth: 1,
+    borderColor: NEARR_BORDER,
+  },
+  secondaryText: { color: '#FFFFFF', fontSize: 14, fontWeight: '600' },
 });

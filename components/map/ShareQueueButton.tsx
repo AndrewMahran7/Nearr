@@ -1,0 +1,82 @@
+/**
+ * components/map/ShareQueueButton.tsx
+ *
+ * Compact entry point to the async share-job queue, shown on the map's top
+ * chrome. Self-contained + flag-gated: renders NOTHING when the async
+ * share-jobs feature flag is off, so it has zero footprint in the default
+ * (synchronous) experience. Shows a needs_help badge count when > 0.
+ */
+import { useMemo } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Feather } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+
+import { Radius, Spacing } from '@/constants';
+import { useTheme } from '@/lib/theme';
+import { isAsyncShareJobsEnabled } from '@/lib/featureFlags';
+import { useNeedsHelpCount } from '@/hooks/useShareJobs';
+
+export function ShareQueueButton() {
+  const router = useRouter();
+  const { colors, typography } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const needsHelp = useNeedsHelpCount();
+
+  if (!isAsyncShareJobsEnabled()) return null;
+
+  return (
+    <Pressable
+      onPress={() => router.push('/share-jobs')}
+      style={({ pressed }) => [styles.pill, pressed ? styles.pressed : null]}
+      accessibilityRole="button"
+      accessibilityLabel={
+        needsHelp > 0 ? `Share queue, ${needsHelp} need your help` : 'Share queue'
+      }
+      hitSlop={8}
+    >
+      <Feather name="inbox" size={15} color={colors.text} />
+      <Text style={[typography.caption, styles.label]}>Queue</Text>
+      {needsHelp > 0 ? (
+        <View style={styles.badge}>
+          <Text style={styles.badgeText}>{needsHelp}</Text>
+        </View>
+      ) : null}
+    </Pressable>
+  );
+}
+
+function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
+  return StyleSheet.create({
+    pill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      alignSelf: 'flex-start',
+      marginTop: Spacing.sm,
+      paddingVertical: Spacing.xs,
+      paddingHorizontal: Spacing.md,
+      borderRadius: Radius.pill,
+      backgroundColor: colors.surfaceElevated,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.border,
+      shadowColor: '#000',
+      shadowOpacity: 0.2,
+      shadowRadius: 10,
+      shadowOffset: { width: 0, height: 2 },
+      elevation: 2,
+    },
+    pressed: { opacity: 0.85 },
+    label: { color: colors.text, fontWeight: '600' },
+    badge: {
+      minWidth: 18,
+      height: 18,
+      borderRadius: 9,
+      paddingHorizontal: 5,
+      marginLeft: 2,
+      backgroundColor: colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    badgeText: { color: colors.textInverse, fontSize: 11, fontWeight: '700' },
+  });
+}
