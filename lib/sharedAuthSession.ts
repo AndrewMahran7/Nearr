@@ -90,3 +90,42 @@ export function evaluateSharedSession(
   if (expiresAtMs - skewSeconds * 1000 <= nowMs) return 'expired';
   return 'valid';
 }
+
+/**
+ * What the iOS Share Extension should do given the bridged token AND the App
+ * Group bootstrap marker (`sharedAuthInitialized`, set by the host on its first
+ * completed getSession()). Splitting "absent" by the marker lets the extension
+ * distinguish a first-install-before-launch device ("finish setup") from a
+ * genuinely signed-out user ("sign in").
+ *
+ *   - 'submit'          — valid token; create the job.
+ *   - 'needs_setup'     — no token AND host never initialized the bridge:
+ *                          "Open Nearr once to finish setup".
+ *   - 'signed_out'      — no token but bridge WAS initialized (host ran while
+ *                          signed out): "Open Nearr to sign in".
+ *   - 'session_expired' — token present but expired/malformed: recover via host.
+ */
+export type ExtensionAuthAction = 'submit' | 'needs_setup' | 'signed_out' | 'session_expired';
+
+export function selectExtensionAuthAction(args: {
+  token: string | null | undefined;
+  initialized: boolean;
+  nowMs?: number;
+  skewSeconds?: number;
+}): ExtensionAuthAction {
+  const state = evaluateSharedSession(
+    args.token,
+    args.nowMs ?? Date.now(),
+    args.skewSeconds ?? 30,
+  );
+  switch (state) {
+    case 'valid':
+      return 'submit';
+    case 'expired':
+    case 'malformed':
+      return 'session_expired';
+    case 'absent':
+    default:
+      return args.initialized ? 'signed_out' : 'needs_setup';
+  }
+}

@@ -9,7 +9,11 @@
  *   npx ts-node -P scripts/tsconfig.json scripts/testSharedAuthSession.ts
  */
 
-import { decodeJwtClaims, evaluateSharedSession } from '../lib/sharedAuthSession';
+import {
+  decodeJwtClaims,
+  evaluateSharedSession,
+  selectExtensionAuthAction,
+} from '../lib/sharedAuthSession';
 
 let failures = 0;
 function check(name: string, condition: boolean, detail?: string): void {
@@ -82,6 +86,43 @@ check(
 check(
   'valid: just past the skew window',
   evaluateSharedSession(makeToken({ sub: 'u', exp: nowSec + 31 }), NOW, 30) === 'valid',
+);
+
+// ---- selectExtensionAuthAction (every state) --------------------------------
+const validToken = makeToken({ sub: 'u', exp: nowSec + 3600 });
+const expiredToken = makeToken({ sub: 'u', exp: nowSec - 10 });
+
+check(
+  'action: valid + initialized => submit',
+  selectExtensionAuthAction({ token: validToken, initialized: true, nowMs: NOW }) === 'submit',
+);
+check(
+  'action: valid + NOT initialized => submit (valid wins)',
+  selectExtensionAuthAction({ token: validToken, initialized: false, nowMs: NOW }) === 'submit',
+);
+check(
+  'action: absent + NOT initialized => needs_setup',
+  selectExtensionAuthAction({ token: null, initialized: false, nowMs: NOW }) === 'needs_setup',
+);
+check(
+  'action: absent + initialized => signed_out',
+  selectExtensionAuthAction({ token: null, initialized: true, nowMs: NOW }) === 'signed_out',
+);
+check(
+  'action: empty token + initialized => signed_out',
+  selectExtensionAuthAction({ token: '   ', initialized: true, nowMs: NOW }) === 'signed_out',
+);
+check(
+  'action: expired => session_expired (regardless of init true)',
+  selectExtensionAuthAction({ token: expiredToken, initialized: true, nowMs: NOW }) === 'session_expired',
+);
+check(
+  'action: expired => session_expired (regardless of init false)',
+  selectExtensionAuthAction({ token: expiredToken, initialized: false, nowMs: NOW }) === 'session_expired',
+);
+check(
+  'action: malformed => session_expired',
+  selectExtensionAuthAction({ token: 'garbage', initialized: true, nowMs: NOW }) === 'session_expired',
 );
 
 if (failures > 0) {

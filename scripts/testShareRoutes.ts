@@ -10,7 +10,14 @@
  *   npx ts-node -P scripts/tsconfig.json scripts/testShareRoutes.ts
  */
 
-import { SHARE_JOBS_ROUTE, SHARE_JOBS_DEEPLINK_PATH } from '../lib/shareRoutes';
+import {
+  SHARE_JOBS_ROUTE,
+  SHARE_JOBS_DEEPLINK_PATH,
+  SHARE_JOBS_DEEP_LINK,
+  HOST_APP_SCHEME,
+  buildHostDeepLink,
+  deepLinkPathname,
+} from '../lib/shareRoutes';
 
 let failures = 0;
 function check(name: string, condition: boolean, detail?: string): void {
@@ -35,10 +42,46 @@ check(
   SHARE_JOBS_DEEPLINK_PATH === SHARE_JOBS_ROUTE.replace(/^\/+/, ''),
 );
 
-// Full deep link the extension effectively opens (scheme + path).
+// ---- Structural deep-link form (matches native openHostApp) -----------------
+// Native ShareExtensionViewController builds URLComponents with host="" and a
+// slash-prefixed path, i.e. `nearr:///share-jobs` (EMPTY host), NOT
+// `nearr://share-jobs` (which would treat "share-jobs" as the host).
+check('scheme is nearr', HOST_APP_SCHEME === 'nearr');
 check(
-  'full deep link resolves to nearr://share-jobs',
-  `nearr://${SHARE_JOBS_DEEPLINK_PATH}` === 'nearr://share-jobs',
+  'buildHostDeepLink yields empty-host form nearr:///share-jobs',
+  buildHostDeepLink('share-jobs') === 'nearr:///share-jobs',
+);
+check('exported SHARE_JOBS_DEEP_LINK is nearr:///share-jobs', SHARE_JOBS_DEEP_LINK === 'nearr:///share-jobs');
+check(
+  'buildHostDeepLink tolerates a leading slash too',
+  buildHostDeepLink('/share-jobs') === 'nearr:///share-jobs',
+);
+
+// ---- The generated URL resolves to the Expo Router pathname /share-jobs ------
+check(
+  'empty-host form resolves to /share-jobs',
+  deepLinkPathname('nearr:///share-jobs') === '/share-jobs',
+);
+check(
+  'host form also resolves to /share-jobs',
+  deepLinkPathname('nearr://share-jobs') === '/share-jobs',
+);
+check(
+  'generated deep link parses back to the route',
+  deepLinkPathname(SHARE_JOBS_DEEP_LINK) === SHARE_JOBS_ROUTE,
+);
+check(
+  'trailing slash tolerated',
+  deepLinkPathname('nearr:///share-jobs/') === '/share-jobs',
+);
+check(
+  'non-scheme string => null',
+  deepLinkPathname('share-jobs') === null,
+);
+// The auth callback deep link must NOT be mistaken for the queue route.
+check(
+  'auth-callback link parses to its own path (not /share-jobs)',
+  deepLinkPathname('nearr://auth-callback#access_token=x') === '/auth-callback',
 );
 
 if (failures > 0) {

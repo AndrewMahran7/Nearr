@@ -7,6 +7,8 @@
  *   - getToken(): string | null
  *   - setToken(token: string | null): boolean
  *   - clearToken(): boolean
+ *   - setInitialized(): boolean
+ *   - isInitialized(): boolean
  *   - getAppGroup(): string | null
  *
  * On Android (or if the native module isn't linked yet because the user
@@ -20,6 +22,8 @@ type NativeShape = {
   getToken: () => string | null;
   setToken: (token: string | null) => boolean;
   clearToken: () => boolean;
+  setInitialized: () => boolean;
+  isInitialized: () => boolean;
   getAppGroup: () => string | null;
 };
 
@@ -53,6 +57,22 @@ export function clearToken(): boolean {
   }
 }
 
+export function setInitialized(): boolean {
+  try {
+    return Native?.setInitialized() ?? false;
+  } catch {
+    return false;
+  }
+}
+
+export function isInitialized(): boolean {
+  try {
+    return Native?.isInitialized() ?? false;
+  } catch {
+    return false;
+  }
+}
+
 export function getAppGroup(): string | null {
   try {
     return Native?.getAppGroup() ?? null;
@@ -66,5 +86,7 @@ export default {
   getToken,
   setToken,
   clearToken,
+  setInitialized,
+  isInitialized,
   getAppGroup,
 };

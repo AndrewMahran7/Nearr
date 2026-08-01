@@ -62,6 +62,23 @@ export const sharedAuth = {
     return ok;
   },
 
+  /**
+   * Mark the App Group bridge as initialized. The host calls this after its
+   * first completed getSession() check (even signed out) so the extension can
+   * distinguish "first install, host never launched" from "signed out". Only
+   * ever sets the marker; sign-out (clearToken) never clears it.
+   */
+  setInitialized(): boolean {
+    if (!PLATFORM_OK) return false;
+    return nativeSharedAuth.setInitialized();
+  },
+
+  /** True once the host app has run its first getSession() check. */
+  isInitialized(): boolean {
+    if (!PLATFORM_OK) return false;
+    return nativeSharedAuth.isInitialized();
+  },
+
   /** Returns the App Group identifier read from Info.plist (debug only). */
   getAppGroup(): string | null {
     if (!PLATFORM_OK) return null;

@@ -94,6 +94,16 @@ supabase.auth.getSession().then(({ data }) => {
     console.log('[supabase] cold-start session backfill, present=', !!token);
   }
   sharedAuth.setToken(token);
+  // Mark the App Group bridge initialized AFTER the first completed
+  // getSession() — even when signed out. This lets the Share Extension tell
+  // "first install, host never launched" (needs setup) apart from a genuine
+  // signed-out state. Never reset on sign-out (setToken(null) clears only the
+  // token; the marker persists).
+  sharedAuth.setInitialized();
 }).catch((err) => {
   console.warn('[supabase] cold-start session backfill failed', err);
+  // Still mark initialized: the host DID run and complete its auth check; a
+  // transient getSession() error must not strand the extension on "finish
+  // setup" forever.
+  sharedAuth.setInitialized();
 });

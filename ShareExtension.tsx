@@ -47,7 +47,7 @@ import {
 } from './lib/shareEnvDiagnostics';
 import { isAsyncShareJobsEnabled, resolveCreateShareJobUrl } from './lib/featureFlags';
 import { createShareJob } from './lib/shareJobClient';
-import { evaluateSharedSession } from './lib/sharedAuthSession';
+import { selectExtensionAuthAction } from './lib/sharedAuthSession';
 import { SHARE_JOBS_DEEPLINK_PATH } from './lib/shareRoutes';
 
 // 2026-05-26: single resolver covers process.env, expoConfig.extra,
@@ -472,6 +472,7 @@ function LegacyShareExtension(props: InitialProps) {
 type AsyncUi =
   | { kind: 'submitting' }
   | { kind: 'accepted'; duplicate: boolean }
+  | { kind: 'needs_setup' }
   | { kind: 'signed_out' }
   | { kind: 'session_expired' }
   | { kind: 'network_failure' };
@@ -495,23 +496,28 @@ function AsyncShareExtension(props: InitialProps) {
     }
     const endpoint = resolveCreateShareJobUrl();
     const token = sharedAuth.getToken();
-    // Absent token → host app not signed in (or not launched once since
-    // install). Nothing to bridge yet.
-    if (!token) {
-      console.log('[share-extension] job_accepted=false reason=signed_out');
-      setUi({ kind: 'signed_out' });
+    // Decide from the bridged token AND the App Group bootstrap marker. This
+    // never trusts mere token presence (an expired token must not be
+    // submitted) and distinguishes "first install, host never launched"
+    // (needs setup) from a genuine signed-out state.
+    const action = selectExtensionAuthAction({
+      token,
+      initialized: sharedAuth.isInitialized(),
+    });
+    if (action !== 'submit') {
+      console.log(`[share-extension] job_accepted=false reason=${action}`);
+      setUi(
+        action === 'needs_setup'
+          ? { kind: 'needs_setup' }
+          : action === 'signed_out'
+          ? { kind: 'signed_out' }
+          : { kind: 'session_expired' },
+      );
       return;
     }
-    // Classify the bridged access token WITHOUT trusting mere presence. An
-    // expired / malformed token must never be submitted (it would 401) and
-    // must not bounce the user through an "Open Nearr to sign in" loop.
-    const sessionState = evaluateSharedSession(token);
-    if (sessionState !== 'valid') {
-      // Present but expired/malformed. The extension can't refresh (no refresh
-      // token is bridged), so recover via the host app, which holds the live
-      // session and completes the save. NOT a submit, NOT a sign-in loop.
-      console.log(`[share-extension] job_accepted=false reason=session_${sessionState}`);
-      setUi({ kind: 'session_expired' });
+    if (!token) {
+      // Unreachable when action==='submit' (kept for the type narrower).
+      setUi({ kind: 'signed_out' });
       return;
     }
     if (!endpoint) {
@@ -591,6 +597,19 @@ function AsyncShareExtension(props: InitialProps) {
         </Pressable>
         <Pressable style={asyncStyles.secondaryBtn} onPress={() => close()}>
           <Text style={asyncStyles.secondaryText}>Done</Text>
+        </Pressable>
+      </View>
+    );
+  }
+  if (ui.kind === 'needs_setup') {
+    return (
+      <View style={asyncStyles.container}>
+        <Text style={asyncStyles.title}>Open Nearr once to finish setup</Text>
+        <Text style={asyncStyles.subtle}>
+          {'Open Nearr once so it can connect sharing. After that, sharing works without opening the app.'}
+        </Text>
+        <Pressable style={asyncStyles.primaryBtn} onPress={() => openHost('needs_setup')}>
+          <Text style={asyncStyles.primaryText}>Open Nearr</Text>
         </Pressable>
       </View>
     );

@@ -17,6 +17,7 @@ import {
 } from '@/lib/authDeepLinkCore';
 import { clearDevAuth } from '@/lib/devAuth';
 import { trackEvent } from '@/lib/analytics';
+import { sanitizeErrorText, sanitizeStack } from '@/lib/sanitizeError';
 import {
   deactivatePushTokenForCurrentUser,
   registerPushTokenForCurrentUser,
@@ -58,14 +59,17 @@ class AppErrorBoundary extends Component<
   }
 
   static getDerivedStateFromError(error: unknown): ErrorBoundaryState {
-    const message =
-      error instanceof Error ? error.message : String(error ?? 'Unknown error');
+    const message = sanitizeErrorText(error);
     console.error('[APP_ERROR_BOUNDARY] caught render error:', message);
     return { hasError: true, message };
   }
 
   componentDidCatch(error: unknown, info: { componentStack?: string }) {
-    console.error('[APP_ERROR_BOUNDARY] componentDidCatch', error, info?.componentStack);
+    // Sanitized so production/device logs never contain tokens, URL
+    // credentials, or user private data — while still capturing enough to
+    // diagnose the next physical-device crash.
+    console.error('[APP_ERROR_BOUNDARY] componentDidCatch', sanitizeErrorText(error));
+    console.error('[APP_ERROR_BOUNDARY] stack', sanitizeStack(info?.componentStack));
   }
 
   render() {
