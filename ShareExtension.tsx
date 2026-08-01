@@ -47,6 +47,8 @@ import {
 } from './lib/shareEnvDiagnostics';
 import { isAsyncShareJobsEnabled, resolveCreateShareJobUrl } from './lib/featureFlags';
 import { createShareJob } from './lib/shareJobClient';
+import { evaluateSharedSession } from './lib/sharedAuthSession';
+import { SHARE_JOBS_DEEPLINK_PATH } from './lib/shareRoutes';
 
 // 2026-05-26: single resolver covers process.env, expoConfig.extra,
 // manifest.extra and manifest2.extra so a missing inline at build
@@ -471,6 +473,7 @@ type AsyncUi =
   | { kind: 'submitting' }
   | { kind: 'accepted'; duplicate: boolean }
   | { kind: 'signed_out' }
+  | { kind: 'session_expired' }
   | { kind: 'network_failure' };
 
 function AsyncShareExtension(props: InitialProps) {
@@ -492,11 +495,23 @@ function AsyncShareExtension(props: InitialProps) {
     }
     const endpoint = resolveCreateShareJobUrl();
     const token = sharedAuth.getToken();
-    // No valid session → do NOT create an orphan job. Hand off to the host so
-    // the user can sign in.
+    // Absent token → host app not signed in (or not launched once since
+    // install). Nothing to bridge yet.
     if (!token) {
       console.log('[share-extension] job_accepted=false reason=signed_out');
       setUi({ kind: 'signed_out' });
+      return;
+    }
+    // Classify the bridged access token WITHOUT trusting mere presence. An
+    // expired / malformed token must never be submitted (it would 401) and
+    // must not bounce the user through an "Open Nearr to sign in" loop.
+    const sessionState = evaluateSharedSession(token);
+    if (sessionState !== 'valid') {
+      // Present but expired/malformed. The extension can't refresh (no refresh
+      // token is bridged), so recover via the host app, which holds the live
+      // session and completes the save. NOT a submit, NOT a sign-in loop.
+      console.log(`[share-extension] job_accepted=false reason=session_${sessionState}`);
+      setUi({ kind: 'session_expired' });
       return;
     }
     if (!endpoint) {
@@ -513,14 +528,15 @@ function AsyncShareExtension(props: InitialProps) {
     });
     if (result.ok) {
       console.log(`[share-extension] job_accepted=true duplicate=${result.duplicate}`);
+      // Keep the success screen up so the user can choose Done (stay in
+      // Instagram) or View queue (open the host app). The durable job is
+      // already persisted server-side, so no auto-dismiss is needed.
       setUi({ kind: 'accepted', duplicate: result.duplicate });
-      closeTimerRef.current = setTimeout(() => {
-        console.log('[share-extension] dismissed_after_accept=true');
-        close();
-      }, 1400);
     } else if (result.reason === 'unauthorized' || result.reason === 'missing_auth') {
+      // Server rejected the token we thought was valid (revoked / clock skew).
+      // Recover through the host rather than looping on sign-in.
       console.log('[share-extension] job_accepted=false reason=unauthorized');
-      setUi({ kind: 'signed_out' });
+      setUi({ kind: 'session_expired' });
     } else {
       // Never claim the job was queued if the server did not accept it.
       console.log(`[share-extension] job_accepted=false reason=${result.reason}`);
@@ -551,6 +567,17 @@ function AsyncShareExtension(props: InitialProps) {
     close();
   };
 
+  // Open the host app straight to the in-app queue. The path is DERIVED from
+  // the real Expo Router route (see lib/shareRoutes.ts), never guessed.
+  const openHostQueue = () => {
+    try {
+      openHostApp(SHARE_JOBS_DEEPLINK_PATH);
+    } catch (err) {
+      console.warn('[share-extension] openHostApp(queue) failed', err);
+    }
+    close();
+  };
+
   if (ui.kind === 'accepted') {
     return (
       <View style={asyncStyles.container}>
@@ -559,6 +586,9 @@ function AsyncShareExtension(props: InitialProps) {
         </View>
         <Text style={asyncStyles.title}>Added to your queue</Text>
         <Text style={asyncStyles.subtle}>{"We'll notify you when it's ready."}</Text>
+        <Pressable style={asyncStyles.primaryBtn} onPress={openHostQueue}>
+          <Text style={asyncStyles.primaryText}>View queue</Text>
+        </Pressable>
         <Pressable style={asyncStyles.secondaryBtn} onPress={() => close()}>
           <Text style={asyncStyles.secondaryText}>Done</Text>
         </Pressable>
@@ -571,6 +601,19 @@ function AsyncShareExtension(props: InitialProps) {
         <Text style={asyncStyles.title}>Open Nearr to sign in</Text>
         <Text style={asyncStyles.subtle}>{'Sign in once so Nearr can save places you share.'}</Text>
         <Pressable style={asyncStyles.primaryBtn} onPress={() => openHost('signed_out')}>
+          <Text style={asyncStyles.primaryText}>Open Nearr</Text>
+        </Pressable>
+      </View>
+    );
+  }
+  if (ui.kind === 'session_expired') {
+    return (
+      <View style={asyncStyles.container}>
+        <Text style={asyncStyles.title}>Open Nearr to finish saving</Text>
+        <Text style={asyncStyles.subtle}>
+          {'Your session needs a refresh. Open Nearr and we\u2019ll save this post.'}
+        </Text>
+        <Pressable style={asyncStyles.primaryBtn} onPress={() => openHost('session_expired')}>
           <Text style={asyncStyles.primaryText}>Open Nearr</Text>
         </Pressable>
       </View>

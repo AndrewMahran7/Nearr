@@ -59,7 +59,7 @@ function sectionize(jobs: ShareJob[]): ShareJobSections {
 }
 
 export function useShareJobs() {
-  const { session, isDevSession } = useAuth();
+  const { session, isDevSession, loading: authLoading } = useAuth();
   const userId = session?.user.id ?? null;
   const enabled = isAsyncShareJobsEnabled() && !!userId && !isDevSession && !isDemoMode();
 
@@ -174,6 +174,9 @@ export function useShareJobs() {
     refresh,
     needsHelpCount: sections.needsHelp.length,
     enabled,
+    // True while the Supabase session is still being restored (cold start).
+    // The queue screen shows a spinner instead of the "queue is off" state.
+    authLoading,
   };
 }
 
