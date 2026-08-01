@@ -349,6 +349,18 @@ Important status distinction:
 - the function code is present in-repo
 - deployment and secrets are external environment work
 
+## Media fallback (Phase 2)
+
+When the metadata resolver cannot verify a place for a supported platform
+(Instagram first), the async worker enqueues one `share_media_tasks` row instead
+of going straight to `needs_help`. A separate containerized service
+([services/media-worker](../services/media-worker)) retrieves the public video
+temporarily, extracts spoken + visible place evidence, and **proposes** it back
+to the EXISTING deterministic resolver + `safeToAutoSave` gate — there is no
+parallel resolver and auto-save is never loosened. All behind server-only flags
+that default OFF (`MEDIA_FALLBACK_ENABLED`, `INSTAGRAM_MEDIA_RESOLVER_ENABLED`,
+`NATIVE_VIDEO_ANALYSIS_ENABLED`). Full detail: [MEDIA_FALLBACK.md](./MEDIA_FALLBACK.md).
+
 ## Real-device constraints
 
 - Background location does not work in Expo Go.

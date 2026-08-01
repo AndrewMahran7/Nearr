@@ -262,4 +262,4 @@ Manual / device (map to task acceptance list):
 - **Access-token freshness:** the extension uses the App Group access token; if the host app hasn't refreshed recently the token can be expired → the extension shows "Open Nearr to sign in". Same limitation as the current sync flow.
 - **pg_cron latency:** the sweep runs at 1-minute granularity; the AFTER-INSERT trigger provides near-instant pickup when pg_net is configured.
 - **Account-switch push:** handled by `register_push_token` (last-writer-wins). A device only ever delivers to the signed-in user.
-- **No video download** — deferred to a later phase; unresolved video-only posts fall through to `needs_help` (manual), never a wrong save.
+- **Video analysis (Phase 2):** unresolved video-only posts fall through to `needs_help` (manual) here in Phase 1. Phase 2 adds an optional durable media-analysis fallback (Instagram first, behind server-only flags that default OFF) that proposes evidence back through this same resolver + `safeToAutoSave` gate — never a wrong save. See [MEDIA_FALLBACK.md](./MEDIA_FALLBACK.md).

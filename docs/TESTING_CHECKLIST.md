@@ -14,6 +14,25 @@ This is the current beta checklist. Use it before TestFlight or Play Internal bu
 - [ ] `EXPO_PUBLIC_DEMO_MODE` and `EXPO_PUBLIC_MAP_PREVIEW_MODE` are off for production-flow testing
 - [ ] If testing silent iOS extension save: `EXPO_PUBLIC_PROCESS_SHARE_LINK_URL` points to a deployed function and the host app is signed in
 
+## 0.9 Media fallback (Phase 2 — server-only flags, default OFF)
+
+With all media flags OFF (default), verify Phase 1 is unchanged:
+
+- [ ] Metadata-only shares behave exactly as before (no media task created)
+- [ ] `select count(*) from share_media_tasks` stays 0
+- [ ] No new server calls / no mobile UI changes
+
+With `MEDIA_FALLBACK_ENABLED` + `INSTAGRAM_MEDIA_RESOLVER_ENABLED` on (dev only):
+
+- [ ] A public Instagram post that fails metadata resolution enqueues ONE media task and the queue shows "Checking the video…"
+- [ ] Verified video evidence → parent completes/saves OR needs_help (never a wrong silent save)
+- [ ] Private/unavailable/too-long/corrupt media → safe `needs_help(manual)`
+- [ ] Media worker `GET /health` and `GET /ready` respond; `/ready` lists ffmpeg/ffprobe/yt-dlp/Supabase without leaking secrets
+- [ ] Temp files are deleted after each job (success and failure)
+- [ ] Rollback: setting `MEDIA_FALLBACK_ENABLED=false` + unscheduling the media cron leaves Phase 1 working
+
+Automated (see [MEDIA_FALLBACK.md](./MEDIA_FALLBACK.md) test matrix): `npm run test:media-fallback`, `npm run test:media-evidence` (in `test:prebuild`); the media-tasks RLS + durability SQL suites; and `services/media-worker` `npm test`.
+
 ## 1. Auth
 
 - [ ] Sign-in screen loads normally

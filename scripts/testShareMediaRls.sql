@@ -112,25 +112,12 @@ exception when others then
   raise notice 'client_cannot_delete_media_task: PASS (%).', sqlerrm;
 end $$;
 
-do $$
-begin
-  perform public.claim_media_tasks(1, 600);
-  raise notice 'client_cannot_call_claim_media_tasks: FAIL (unexpectedly allowed)';
-exception when insufficient_privilege then
-  raise notice 'client_cannot_call_claim_media_tasks: PASS (execute revoked)';
-when others then
-  raise notice 'client_cannot_call_claim_media_tasks: PASS (%).', sqlerrm;
-end $$;
-
-do $$
-begin
-  perform public.expire_media_tasks(1);
-  raise notice 'client_cannot_call_expire_media_tasks: FAIL (unexpectedly allowed)';
-exception when insufficient_privilege then
-  raise notice 'client_cannot_call_expire_media_tasks: PASS (execute revoked)';
-when others then
-  raise notice 'client_cannot_call_expire_media_tasks: PASS (%).', sqlerrm;
-end $$;
+-- NOTE: we assert the worker RPCs are locked to anon/authenticated STATICALLY
+-- via has_function_privilege in the ADMIN section below (identical to the
+-- Phase 1 suite). We deliberately do NOT invoke claim/expire from the client
+-- here — executing a worker RPC from a test is unnecessary and the local
+-- Supabase build can abort the backend when a revoked SECURITY DEFINER
+-- function is invoked by a role lacking EXECUTE.
 
 -- ==========================================================================
 -- ADMIN CONTEXT — worker-only RPC grants + invariants.

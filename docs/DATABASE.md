@@ -19,6 +19,9 @@ Do not use `supabase/schema.sql` as the canonical schema. The migration files un
 - `20260731000002_user_push_tokens.sql`
 - `20260731000003_share_jobs_worker.sql`
 - `20260731000004_share_jobs_notifications.sql`
+- `20260731000005_lock_worker_rpc_grants.sql`
+- `20260801000001_share_media_tasks.sql` (Phase 2)
+- `20260801000002_share_media_worker.sql` (Phase 2)
 
 ## Schema overview
 
@@ -36,6 +39,8 @@ share_agent_runs            (service-role only)
 share_extraction_failures   (service-role only)
 share_jobs                  (async share queue; owner RLS + service-role worker)
 user_push_tokens            (Expo push tokens; owner RLS)
+share_media_tasks           (Phase 2 video-analysis queue; SERVICE-ROLE ONLY)
+share_media_runs            (Phase 2 media diagnostics; SERVICE-ROLE ONLY)
 ```
 
 ## `profiles`
@@ -357,6 +362,27 @@ Notes:
 - `register_push_token(token, platform, device_id)` — `SECURITY DEFINER` RPC
   that reassigns a device token to the current user (last-writer-wins).
 - Invalid tokens (`DeviceNotRegistered`) are set `enabled = false` by the worker.
+
+## `share_media_tasks` / `share_media_runs` (Phase 2)
+
+Added in `20260801000001_share_media_tasks.sql`. The durable video-analysis
+fallback queue + diagnostics. **Both are SERVICE-ROLE ONLY** — RLS enabled with
+NO client policies and `anon`/`authenticated` revoked, so the mobile client can
+never read or write them. The parent `share_jobs` row stays the user-facing
+source of truth. See [MEDIA_FALLBACK.md](./MEDIA_FALLBACK.md).
+
+- `share_media_tasks`: one task per share job (`share_job_id` unique, FK
+  `ON DELETE CASCADE`); a BEFORE trigger enforces `user_id` = parent job owner.
+  Worker bookkeeping (`attempts`, `max_attempts`, `locked_at`, `locked_until`)
+  plus size-bounded diagnostics-lite columns. No raw media bytes are stored.
+- `claim_media_tasks(p_limit, p_lock_seconds)` — `SECURITY DEFINER`,
+  service-role only, `FOR UPDATE SKIP LOCKED` + stale-lease reclaim + bounded
+  attempts; terminal tasks are never reclaimed.
+- `expire_media_tasks(p_limit)` — backstop reaper that fails exhausted tasks.
+- `20260801000002_share_media_worker.sql` adds `invoke_process_media_tasks()`
+  (pg_net wake-up sending the dedicated `SHARE_MEDIA_WORKER_SECRET`, NOT the
+  service-role key), a per-minute `pg_cron` sweep, and an AFTER-INSERT trigger.
+  All defensive no-ops until the operator sets the Vault secrets.
 
 ## Worker wiring
 
