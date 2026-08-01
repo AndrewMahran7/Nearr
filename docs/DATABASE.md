@@ -1,9 +1,25 @@
 # Nearr — Database Schema
 
-> Last updated: 2026-07-30
+> Last updated: 2026-08-01
 > Source of truth: `supabase/migrations/`
 
 Do not use `supabase/schema.sql` as the canonical schema. The migration files under `supabase/migrations/` are the source of truth.
+
+## Supabase CLI version (local dev + CI)
+
+**Pinned/minimum Supabase CLI: `2.111.0`** (validated on 2026-08-01). Use one
+consistent version for `supabase start` / `supabase db reset` / `supabase db
+lint` locally and in CI — do **not** mix a globally installed CLI with a
+different `npx supabase` version.
+
+Newer CLI versions reduced the schema default privileges so a freshly created
+table grants only `REFERENCES/TRIGGER/TRUNCATE` (not `SELECT/INSERT/UPDATE/
+DELETE`) to `anon`/`authenticated`/`service_role`. Nearr's migrations therefore
+declare **every** required table + function privilege EXPLICITLY (see
+`20260801000004_explicit_privileges.sql`), so a clean database behaves
+identically regardless of the CLI's default privileges. A change in CLI defaults
+can no longer silently drop `authenticated`'s reads or `service_role`'s worker
+access.
 
 ## Migration inventory
 
@@ -23,6 +39,7 @@ Do not use `supabase/schema.sql` as the canonical schema. The migration files un
 - `20260801000001_share_media_tasks.sql` (Phase 2)
 - `20260801000002_share_media_worker.sql` (Phase 2)
 - `20260801000003_share_media_task_recovery.sql` (Phase 2 — bounded recovery + retry backoff + cancellation)
+- `20260801000004_explicit_privileges.sql` (Phase 1+2 — CLI-independent explicit table/function grants)
 
 ## Schema overview
 
@@ -432,6 +449,45 @@ Current policy model:
 - `share_extraction_failures`: deny-all for client roles; service-role only
 - `share_jobs`: owner-only read/insert/update/delete; worker uses service role
 - `user_push_tokens`: owner-only read/insert/update/delete; worker reads via service role
+
+## Table & function privileges (explicit)
+
+RLS is the row-level boundary; these are the table/function GRANTs it sits on
+top of, declared explicitly in `20260801000004_explicit_privileges.sql` so they
+do not depend on the Supabase CLI's default privileges. Asserted by
+`scripts/testDatabasePrivileges.sql`.
+
+| table | `authenticated` | `anon` | `service_role` |
+| --- | --- | --- | --- |
+| profiles | SELECT, INSERT, UPDATE | — | full DML |
+| places | SELECT, INSERT | — | full DML |
+| saved_places | SELECT, INSERT, UPDATE, DELETE | — | full DML |
+| notification_events | SELECT, INSERT | — | full DML |
+| user_push_tokens | SELECT, INSERT, UPDATE, DELETE | — | full DML |
+| share_jobs | SELECT, DELETE (never INSERT/UPDATE) | — | full DML |
+| share_media_tasks | — | — | full DML |
+| share_media_runs | — | — | full DML |
+
+- `authenticated` gets exactly the DML each table's RLS policies allow; it never
+  gets direct INSERT/UPDATE on `share_jobs` (those go through the
+  resolve/cancel/retry RPCs), any access to the media tables, or TRUNCATE.
+- `anon` has no privileges on any of these tables (Nearr requires an
+  authenticated session). Because every role holds PUBLIC's privileges, an
+  empty `anon` also proves PUBLIC is empty.
+- `service_role` (trusted backend; bypasses RLS but still needs table GRANTs for
+  direct DML) has full DML on all eight tables.
+
+Function EXECUTE:
+
+- Owner-facing RPCs — `authenticated` only: `resolve_share_job`,
+  `cancel_share_job`, `retry_share_job`, `register_push_token`,
+  `bump_reminder_opportunity_count`.
+- Worker-only RPCs — `service_role` only (revoked from PUBLIC/anon/authenticated):
+  `claim_share_jobs`, `create_share_job_for_user`,
+  `claim_share_job_notifications`, `claim_share_job_receipts`,
+  `invoke_process_share_jobs`, `claim_media_tasks`, `expire_media_tasks`,
+  `requeue_media_task`, `claim_stranded_media_parents`,
+  `invoke_process_media_tasks`.
 
 ## Triggers and helper functions
 

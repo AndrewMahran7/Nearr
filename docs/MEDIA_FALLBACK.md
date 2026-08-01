@@ -336,6 +336,7 @@ sections in the two Phase 2 migrations.
 | DB RLS | `scripts/testShareMediaRls.sql` | client no access, worker RPC locked, invariants |
 | DB durability | `scripts/testShareMediaDurability.sql` | claim, stale reclaim, attempts, terminal, expire |
 | DB recovery | `scripts/testShareMediaRecovery.sql` | requeue backoff, cancel cascade, stranded-parent claim |
+| DB privileges | `scripts/testDatabasePrivileges.sql` | explicit per-role table + RPC grants (CLI-independent) |
 | Worker unit | `services/media-worker/tests/*.test.ts` | SSRF, schema, frame select/dedup, errors, auth, backoff, IG URL guard |
 | Worker integration | `tests/integration/pipeline.test.ts` | ffprobe/frames/dedup/limits/cleanup on synthetic media |
 | Worker e2e (opt-in) | `tests/integration/e2e.test.ts` | queue→claim→ffmpeg→finalize→save/needs_help, replay, mismatch, cancel |
