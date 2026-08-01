@@ -16,7 +16,8 @@ Newer CLI versions reduced the schema default privileges so a freshly created
 table grants only `REFERENCES/TRIGGER/TRUNCATE` (not `SELECT/INSERT/UPDATE/
 DELETE`) to `anon`/`authenticated`/`service_role`. Nearr's migrations therefore
 declare **every** required table + function privilege EXPLICITLY (see
-`20260801000004_explicit_privileges.sql`), so a clean database behaves
+`20260801000004_explicit_privileges.sql` and
+`20260801000005_aux_privileges.sql`), so a clean database behaves
 identically regardless of the CLI's default privileges. A change in CLI defaults
 can no longer silently drop `authenticated`'s reads or `service_role`'s worker
 access.
@@ -40,6 +41,7 @@ access.
 - `20260801000002_share_media_worker.sql` (Phase 2)
 - `20260801000003_share_media_task_recovery.sql` (Phase 2 — bounded recovery + retry backoff + cancellation)
 - `20260801000004_explicit_privileges.sql` (Phase 1+2 — CLI-independent explicit table/function grants)
+- `20260801000005_aux_privileges.sql` (Phase 1+2 — explicit grants for analytics_events/feedback/share_agent_runs/share_extraction_failures + trigger-function locks)
 
 ## Schema overview
 
@@ -453,9 +455,11 @@ Current policy model:
 ## Table & function privileges (explicit)
 
 RLS is the row-level boundary; these are the table/function GRANTs it sits on
-top of, declared explicitly in `20260801000004_explicit_privileges.sql` so they
-do not depend on the Supabase CLI's default privileges. Asserted by
-`scripts/testDatabasePrivileges.sql`.
+top of, declared explicitly in `20260801000004_explicit_privileges.sql` and
+`20260801000005_aux_privileges.sql` so they do not depend on the Supabase CLI's
+default privileges. Every public table + function is covered; the completeness
+gate in `scripts/testDatabasePrivileges.sql` fails if a new application object
+is added without declared privilege expectations.
 
 | table | `authenticated` | `anon` | `service_role` |
 | --- | --- | --- | --- |
@@ -467,15 +471,24 @@ do not depend on the Supabase CLI's default privileges. Asserted by
 | share_jobs | SELECT, DELETE (never INSERT/UPDATE) | — | full DML |
 | share_media_tasks | — | — | full DML |
 | share_media_runs | — | — | full DML |
+| analytics_events | INSERT | INSERT | full DML |
+| feedback | INSERT | — | full DML |
+| share_agent_runs | — | — | full DML |
+| share_extraction_failures | — | — | full DML |
 
 - `authenticated` gets exactly the DML each table's RLS policies allow; it never
   gets direct INSERT/UPDATE on `share_jobs` (those go through the
   resolve/cancel/retry RPCs), any access to the media tables, or TRUNCATE.
 - `anon` has no privileges on any of these tables (Nearr requires an
-  authenticated session). Because every role holds PUBLIC's privileges, an
-  empty `anon` also proves PUBLIC is empty.
+  authenticated session) **except** `analytics_events` INSERT (pre-sign-in
+  telemetry). Because every role holds PUBLIC's privileges, an otherwise-empty
+  `anon` also proves PUBLIC is empty.
 - `service_role` (trusted backend; bypasses RLS but still needs table GRANTs for
-  direct DML) has full DML on all eight tables.
+  direct DML) has full DML on all twelve tables.
+- Trigger/helper functions (`set_updated_at`, `handle_new_user`,
+  `share_jobs_after_insert_kick`, `share_jobs_cascade_cancel_media`,
+  `share_media_tasks_after_insert_kick`, `share_media_tasks_enforce_owner`) are
+  system-invoked only — EXECUTE revoked from PUBLIC/anon/authenticated.
 
 Function EXECUTE:
 
