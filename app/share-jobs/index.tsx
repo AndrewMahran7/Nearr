@@ -111,7 +111,7 @@ export default function ShareJobsQueueScreen() {
   const router = useRouter();
   const { colors, typography } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const { sections, loading, refreshing, refresh, enabled } = useShareJobs();
+  const { sections, loading, refreshing, refresh, enabled, authLoading } = useShareJobs();
 
   const isEmpty =
     sections.processing.length === 0 &&
@@ -189,6 +189,18 @@ export default function ShareJobsQueueScreen() {
   }
 
   if (!enabled) {
+    // Cold-start deep link (e.g. the extension's "View queue"): the session is
+    // still restoring. Show a spinner instead of the misleading "off" state so
+    // we never render a wrong terminal state before auth settles.
+    if (authLoading) {
+      return (
+        <Screen>
+          <View style={styles.loadingWrap}>
+            <ActivityIndicator color={colors.primary} />
+          </View>
+        </Screen>
+      );
+    }
     return (
       <Screen>
         <EmptyState
