@@ -55,7 +55,7 @@ flowchart TD
 stateDiagram-v2
   [*] --> queued: metadata worker enqueues
   queued --> processing: claim_media_tasks()
-  processing --> queued: retryable error (attempts < max)
+  processing --> queued: retryable error (attempts < max, backoff)
   processing --> completed: finalize (evidence verified)
   processing --> needs_help: finalize (manual — media unusable)
   processing --> failed: permanent failure / retries exhausted
@@ -68,11 +68,40 @@ stateDiagram-v2
 
 The **parent `share_jobs` row is the user-facing source of truth**. While a
 media task runs, the parent stays `processing_metadata` (shown as "Processing")
-with a far-future lease (`MEDIA_PARENT_LEASE_SECONDS`, default 20 min). If the
-media worker never finalizes, the **existing metadata claim reclaims the parent
-after the lease expires** and (because a media task now exists) routes it to
-`needs_help` — so a parent can never get stuck, even during a rollback that
-stops the media worker.
+with **no lease** (`locked_until = NULL`), so the metadata claim never silently
+re-processes it. A parent is only ever moved off `processing_metadata` by an
+explicit media finalize or by the **bounded recovery sweep** below — so a parent
+can never get stuck, even during a rollback that stops the media worker.
+
+### Parent recovery, retries & cancellation
+
+Recovery is **explicit and bounded** (migration
+[`20260801000003`](../supabase/migrations/20260801000003_share_media_task_recovery.sql)),
+not a far-future lease:
+
+- **Retry backoff.** A retryable media error re-queues the task through
+  `requeue_media_task(taskId, backoffSeconds, failureCode)`, which sets
+  `status = queued` and `next_attempt_at = now() + backoff` **without**
+  incrementing `attempts` (attempts increment only on claim). `claim_media_tasks`
+  skips any task whose `next_attempt_at` is in the future, so retries are paced
+  by `computeBackoffSeconds`: **30 → 60 → 120 → 240 → 480 → 900 s** (capped,
+  `MEDIA_RETRY_BASE_SECONDS` / `MEDIA_RETRY_MAX_SECONDS`). `requeue_media_task`
+  is a no-op on a terminal task.
+- **Exhaustion.** `expire_media_tasks(staleSeconds)` marks tasks that have hit
+  `max_attempts` (or are stale-processing past their lease) as `failed`.
+- **Stranded-parent sweep.** Each `process-share-jobs` cycle calls
+  `recoverStrandedMediaJobs`: `expire_media_tasks` then
+  `claim_stranded_media_parents`, which returns parents still in
+  `processing_metadata` whose media task is `failed`/`cancelled`
+  (`FOR UPDATE SKIP LOCKED`). Each is finalized to a safe `needs_help(manual)`
+  with a single durable notification reservation. This sweep queries only the
+  media tables and is a **no-op when no media tasks exist**, so Phase 1
+  behavior is unchanged when the flags are off.
+- **Cancellation cascade.** When a parent `share_jobs` row becomes `cancelled`,
+  the `share_jobs_cancel_cascade_media` trigger cancels its in-flight media task;
+  `claim_media_tasks` also refuses to claim a task whose parent is no longer
+  `processing_metadata`. A late finalize for a cancelled parent is ignored
+  (idempotent — see below), so a cancelled job is never resurrected or saved.
 
 ## Fallback trigger (`shouldRunMediaFallback`)
 
@@ -113,10 +142,12 @@ Structured error codes (never carry secrets/cookies/auth in detail):
 [InstagramMediaResolver.ts](../services/media-worker/src/resolvers/InstagramMediaResolver.ts)
 — **public posts only**. No login, no user credentials, no copied cookies, no
 private/challenge/CAPTCHA bypass, no proxy rotation, no anti-bot evasion, no
-long-lived browser profile. Method: `yt-dlp -j` (metadata only) to obtain a
-direct progressive CDN URL + duration, then our own SSRF-guarded, size-capped
-download. If Instagram's markup changes and extraction fails → `provider_changed`
-and a safe `needs_help(manual)` — never a fabricated result.
+long-lived browser profile. Before any `yt-dlp` spawn, the shared source URL is
+validated to be **HTTPS with an Instagram host** (otherwise `unsupported_url`).
+Method: `yt-dlp -j` (metadata only) to obtain a direct progressive CDN URL +
+duration, then our own SSRF-guarded, size-capped download. If Instagram's markup
+changes and extraction fails → `provider_changed` and a safe `needs_help(manual)`
+— never a fabricated result.
 
 > The linked MIT project `riad-azz/instagram-video-downloader` was inspected but
 > **not used**: it is a Next.js educational frontend that defers its downloader
@@ -173,15 +204,43 @@ Places against a real business before anything can auto-save.
 ## Deterministic verification path
 
 `media evidence → renderMediaEvidenceCaption → extractEvidence →
-resolveSharedPlace → planFromResolverDecision → (saveForUser | needs_help)` —
-byte-identical to the metadata path. `safeToAutoSave` is never loosened.
+resolveSharedPlace → planFromResolverDecision → (saveForUser | needs_help)` — the
+same deterministic pipeline as the metadata path. `safeToAutoSave` is never
+loosened.
+
+On top of `safeToAutoSave`, media-derived evidence must clear an **additional
+auto-save gate**, `mediaEvidenceAutoSaveEligible`
+([mediaEvidence.ts](../supabase/functions/process-share-jobs/mediaEvidence.ts)):
+the resolved primary place must be single-intent, at/above the confidence
+threshold (`DEFAULT_MEDIA_AUTOSAVE_MIN_CONFIDENCE = 0.7`), and carry an explicit
+street address **both** in its address field **and** in ≥1 explicit evidence
+item. If a resolver `auto_save` decision does not clear this gate, the finalizer
+**downgrades it to `needs_help`**. The gate is strictly additive — it can only
+turn an auto-save into a confirmation, never the reverse.
 
 | finalize outcome | parent result |
 | --- | --- |
-| verified auto-save (safe) | `completed` + saved + push |
+| verified auto-save (safe) **and** passes media auto-save gate | `completed` + saved + push |
+| verified auto-save but fails media auto-save gate | downgraded to `needs_help` |
 | candidate confirmation / multi / manual | `needs_help` |
 | media unavailable / permanent failure | `needs_help(manual)` |
-| retryable failure | media task requeued (parent stays processing) |
+| retryable failure | media task requeued with backoff (parent stays processing) |
+
+### Finalize callback: authentication & idempotency
+
+The worker hands evidence back by POSTing `{ mode: 'finalize_media_task',
+taskId, evidence, outcome, diagnostics }` to `process-share-jobs` with the
+**service-role bearer** (never the worker secret, which only guards the worker's
+own inbound endpoint). The finalizer:
+
+- **Authenticates** the caller as service-role before doing anything.
+- **Derives the parent from `task.share_job_id`** (the DB foreign key) — it
+  never trusts a job id supplied in the request body, so a caller cannot
+  redirect a finalize at another user's job.
+- Is **idempotent**: if the task is already terminal, or the parent is no longer
+  `processing_metadata`, the callback is a no-op (no duplicate save, no second
+  notification). Replays and races collapse to a single outcome
+  ([mediaFinalizePlan.ts](../supabase/functions/process-share-jobs/mediaFinalizePlan.ts)).
 
 ## Model prompt versioning
 
@@ -216,7 +275,7 @@ npm run dev
 Database (from repo root, local Supabase running):
 
 ```bash
-supabase db reset            # applies the two Phase 2 migrations
+supabase db reset            # applies the three Phase 2 migrations
 supabase db lint
 # RLS + durability suites (auth.users seeded by scripts/seedTestUsers.sql):
 docker cp scripts/seedTestUsers.sql supabase_db_Nearr:/tmp/seed.sql
@@ -259,8 +318,9 @@ Fastest (server-only, no client build):
 1. Set `MEDIA_FALLBACK_ENABLED=false` (no new media tasks; `shouldRunMediaFallback`
    returns false → zero new DB calls).
 2. `select cron.unschedule('process-media-tasks-sweep');` and/or stop the worker.
-3. Leave durable media-task rows intact. Parked parents are rescued to
-   `needs_help` by the existing metadata claim once their lease expires.
+3. Leave durable media-task rows intact. If the worker is stopped, the next
+   `process-share-jobs` recovery sweep expires the exhausted tasks and finalizes
+   their parked parents to `needs_help` — no lease expiry required.
 
 Phase 1 never depends on media-worker availability. Full teardown = the DOWN
 sections in the two Phase 2 migrations.
@@ -271,10 +331,14 @@ sections in the two Phase 2 migrations.
 | --- | --- | --- |
 | Trigger | `scripts/testMediaFallbackTrigger.ts` | flags off, every trigger/non-trigger |
 | Adapter | `scripts/testMediaEvidenceAdapter.ts` | schema, fabrication guard, roles |
+| Finalize plan | `scripts/testMediaFinalizePlan.ts` | pre/post-resolve routing, terminal + parent-terminal idempotency |
+| Adversarial evidence | `scripts/testMediaAdversarialEvidence.ts` | auto-save gate rejects inferred/passing/creator/dish/city/low-conf/multi/coords |
 | DB RLS | `scripts/testShareMediaRls.sql` | client no access, worker RPC locked, invariants |
 | DB durability | `scripts/testShareMediaDurability.sql` | claim, stale reclaim, attempts, terminal, expire |
-| Worker unit | `services/media-worker/tests/*.test.ts` | SSRF, schema, frame select/dedup, errors, auth |
+| DB recovery | `scripts/testShareMediaRecovery.sql` | requeue backoff, cancel cascade, stranded-parent claim |
+| Worker unit | `services/media-worker/tests/*.test.ts` | SSRF, schema, frame select/dedup, errors, auth, backoff, IG URL guard |
 | Worker integration | `tests/integration/pipeline.test.ts` | ffprobe/frames/dedup/limits/cleanup on synthetic media |
+| Worker e2e (opt-in) | `tests/integration/e2e.test.ts` | queue→claim→ffmpeg→finalize→save/needs_help, replay, mismatch, cancel |
 | Live (opt-in) | `test:*-live` | real IG retrieval, worker endpoints, native model |
 
 ## Known platform fragility

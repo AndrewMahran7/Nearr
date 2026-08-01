@@ -3,7 +3,9 @@
 # Nearr media worker. Containerizes ffmpeg + ffprobe + yt-dlp so the long-running
 # media analysis runs OUTSIDE the mobile app and Supabase Edge Functions.
 
-FROM node:20-slim AS system
+# Node 22 (LTS): @supabase/supabase-js's realtime client requires a native
+# global WebSocket, which only exists from Node 22 onward.
+FROM node:22-slim AS system
 RUN apt-get update \
   && apt-get install -y --no-install-recommends ffmpeg python3 ca-certificates curl tini \
   && rm -rf /var/lib/apt/lists/*

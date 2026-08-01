@@ -32,6 +32,8 @@ function testCfg(over: Partial<WorkerConfig> = {}): WorkerConfig {
     maxConcurrency: 1,
     claimBatchSize: 2,
     claimLockSeconds: 600,
+    retryBaseSeconds: 30,
+    retryMaxSeconds: 900,
     maxDurationSeconds: 180,
     maxDownloadBytes: 150 * 1024 * 1024,
     downloadTimeoutMs: 60_000,

@@ -146,6 +146,22 @@ begin
     then raise notice 'expire_media_tasks_auth_locked: FAIL';
     else raise notice 'expire_media_tasks_auth_locked: PASS';
   end if;
+  if has_function_privilege('anon', 'public.requeue_media_task(uuid,integer,text)', 'execute')
+    then raise notice 'requeue_media_task_anon_locked: FAIL';
+    else raise notice 'requeue_media_task_anon_locked: PASS';
+  end if;
+  if has_function_privilege('authenticated', 'public.requeue_media_task(uuid,integer,text)', 'execute')
+    then raise notice 'requeue_media_task_auth_locked: FAIL';
+    else raise notice 'requeue_media_task_auth_locked: PASS';
+  end if;
+  if has_function_privilege('anon', 'public.claim_stranded_media_parents(integer)', 'execute')
+    then raise notice 'claim_stranded_anon_locked: FAIL';
+    else raise notice 'claim_stranded_anon_locked: PASS';
+  end if;
+  if has_function_privilege('authenticated', 'public.claim_stranded_media_parents(integer)', 'execute')
+    then raise notice 'claim_stranded_auth_locked: FAIL';
+    else raise notice 'claim_stranded_auth_locked: PASS';
+  end if;
 end $$;
 
 -- One media task per share job (unique share_job_id).

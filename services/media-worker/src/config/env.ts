@@ -57,6 +57,10 @@ export type WorkerConfig = {
   claimBatchSize: number;
   claimLockSeconds: number;
 
+  // ---- Retry backoff (bounded exponential; see util/backoff.ts) ----
+  retryBaseSeconds: number; // 30s first backoff step
+  retryMaxSeconds: number; // 900s cap
+
   // ---- Media limits (why each default was chosen — see README) ----
   maxDurationSeconds: number; // 180s: short-form social video; longer = likely not a place clip
   maxDownloadBytes: number; // 150MB: generous for <=180s 1080p, bounds disk + egress
@@ -120,6 +124,9 @@ export function loadConfig(): WorkerConfig {
     maxConcurrency: int('MEDIA_WORKER_MAX_CONCURRENCY', 1, 1),
     claimBatchSize: int('MEDIA_WORKER_CLAIM_BATCH', 2, 1),
     claimLockSeconds: int('MEDIA_WORKER_CLAIM_LOCK_SECONDS', 600, 60),
+
+    retryBaseSeconds: int('MEDIA_RETRY_BASE_SECONDS', 30, 1),
+    retryMaxSeconds: int('MEDIA_RETRY_MAX_SECONDS', 900, 1),
 
     maxDurationSeconds: int('MEDIA_MAX_DURATION_SECONDS', 180, 1),
     maxDownloadBytes: int('MEDIA_MAX_DOWNLOAD_BYTES', 150 * MB, MB),

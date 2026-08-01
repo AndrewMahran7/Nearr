@@ -22,6 +22,7 @@ Do not use `supabase/schema.sql` as the canonical schema. The migration files un
 - `20260731000005_lock_worker_rpc_grants.sql`
 - `20260801000001_share_media_tasks.sql` (Phase 2)
 - `20260801000002_share_media_worker.sql` (Phase 2)
+- `20260801000003_share_media_task_recovery.sql` (Phase 2 — bounded recovery + retry backoff + cancellation)
 
 ## Schema overview
 
@@ -373,16 +374,29 @@ source of truth. See [MEDIA_FALLBACK.md](./MEDIA_FALLBACK.md).
 
 - `share_media_tasks`: one task per share job (`share_job_id` unique, FK
   `ON DELETE CASCADE`); a BEFORE trigger enforces `user_id` = parent job owner.
-  Worker bookkeeping (`attempts`, `max_attempts`, `locked_at`, `locked_until`)
-  plus size-bounded diagnostics-lite columns. No raw media bytes are stored.
+  Worker bookkeeping (`attempts`, `max_attempts`, `locked_at`, `locked_until`,
+  `next_attempt_at`) plus size-bounded diagnostics-lite columns. No raw media
+  bytes are stored.
 - `claim_media_tasks(p_limit, p_lock_seconds)` — `SECURITY DEFINER`,
   service-role only, `FOR UPDATE SKIP LOCKED` + stale-lease reclaim + bounded
-  attempts; terminal tasks are never reclaimed.
+  attempts; also skips tasks whose `next_attempt_at` is in the future and any
+  task whose parent job is no longer `processing_metadata`; terminal tasks are
+  never reclaimed.
 - `expire_media_tasks(p_limit)` — backstop reaper that fails exhausted tasks.
 - `20260801000002_share_media_worker.sql` adds `invoke_process_media_tasks()`
   (pg_net wake-up sending the dedicated `SHARE_MEDIA_WORKER_SECRET`, NOT the
   service-role key), a per-minute `pg_cron` sweep, and an AFTER-INSERT trigger.
   All defensive no-ops until the operator sets the Vault secrets.
+- `20260801000003_share_media_task_recovery.sql` (forward, idempotent) adds
+  bounded recovery: the `next_attempt_at` column + retry gate above;
+  `requeue_media_task(p_task_id, p_backoff_seconds, p_failure_code)` (re-queues
+  with backoff **without** incrementing `attempts`; no-op on terminal tasks);
+  `claim_stranded_media_parents(p_limit)` (returns `processing_metadata` parents
+  whose media task is `failed`/`cancelled`, `FOR UPDATE SKIP LOCKED`, for the
+  worker's stranded-parent sweep); and a `share_jobs_cancel_cascade_media`
+  AFTER-UPDATE trigger that cancels a media task when its parent is cancelled.
+  All new functions are `SECURITY DEFINER`, service-role only (execute revoked
+  from `public`/`anon`/`authenticated`).
 
 ## Worker wiring
 

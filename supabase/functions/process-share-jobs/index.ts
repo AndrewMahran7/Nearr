@@ -41,7 +41,9 @@ import {
   parseMediaEvidence,
   renderMediaEvidenceCaption,
   summarizeMediaEvidence,
+  mediaEvidenceAutoSaveEligible,
 } from './mediaEvidence.ts';
+import { authorizeServiceRoleBearer, planPreResolve, planPostResolve } from './mediaFinalizePlan.ts';
 
 const CORS_HEADERS: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
@@ -185,17 +187,6 @@ function readMediaFlags(): {
   };
 }
 
-// How long to "park" a parent job while its media task is analyzed. The parent
-// stays `processing_metadata` (shown as "Processing") with this lease so the
-// metadata claim never steals it mid-analysis. If the media worker never
-// finalizes within the lease, the EXISTING metadata claim reclaims the job and
-// (because a media task now exists) falls through to needs_help — so a parent
-// can never get stuck, even during a rollback that stops the media worker.
-function readParentLeaseSeconds(): number {
-  const raw = Number(Deno.env.get('MEDIA_PARENT_LEASE_SECONDS'));
-  return Number.isFinite(raw) && raw >= 60 ? raw : 1200; // default 20 min
-}
-
 async function mediaTaskExistsFor(admin: any, jobId: string): Promise<boolean> {
   const { data } = await admin
     .from('share_media_tasks')
@@ -205,8 +196,8 @@ async function mediaTaskExistsFor(admin: any, jobId: string): Promise<boolean> {
   return !!data;
 }
 
-// Enqueue exactly one media task and PARK the parent (see readParentLeaseSeconds).
-// No needs_help notification is sent yet — the media worker decides the outcome.
+// Enqueue exactly one media task and PARK the parent. No needs_help
+// notification is sent yet — the media worker (or the recovery sweep) decides.
 async function enqueueMediaTask(
   admin: any,
   job: any,
@@ -227,10 +218,13 @@ async function enqueueMediaTask(
   if (insErr && !/duplicate key|unique|23505/i.test(insErr.message ?? '')) {
     throw new Error(`enqueue_media_task_failed: ${insErr.message}`);
   }
-  const leaseUntil = new Date(Date.now() + readParentLeaseSeconds() * 1000).toISOString();
+  // Park the parent WITHOUT a lease. claim_share_jobs only reclaims a
+  // processing_metadata row when locked_until IS NOT NULL and in the past, so a
+  // NULL lease means the metadata claim NEVER steals it. Bounded recovery is
+  // handled explicitly by recoverStrandedMediaJobs(), not by lease expiry.
   await admin
     .from('share_jobs')
-    .update({ progress_stage: 'checking_video', locked_until: leaseUntil })
+    .update({ progress_stage: 'checking_video', locked_until: null })
     .eq('id', job.id)
     .eq('status', 'processing_metadata');
 }
@@ -307,10 +301,41 @@ async function finalizeParentManual(admin: any, job: any): Promise<void> {
   );
 }
 
+// Explicit, bounded recovery for parents whose media task can no longer make
+// progress. Runs every worker cycle (defensive try/catch). Replaces the removed
+// far-future-lease rescue: a parent parked in processing_metadata is finalized
+// to needs_help(manual) as soon as its media task becomes terminal-failed /
+// cancelled (worker crashed, exhausted retries, or a rollback stopped it). Safe
+// no-op when there are no media tasks (flags off), so Phase 1 is unaffected.
+async function recoverStrandedMediaJobs(admin: any): Promise<void> {
+  try {
+    // 1. Reap tasks that exhausted their retry budget → failed.
+    await admin.rpc('expire_media_tasks', { p_limit: 25 });
+    // 2. Finalize parents still parked despite a terminal-failed/cancelled task.
+    const { data: parents, error } = await admin.rpc('claim_stranded_media_parents', { p_limit: 25 });
+    if (error) {
+      console.log(`[media-task] recovery_claim_error msg=${truncate(error.message)}`);
+      return;
+    }
+    for (const job of Array.isArray(parents) ? parents : []) {
+      await finalizeParentManual(admin, job);
+      console.log(`[media-task] recovered_stranded_parent job_id=${job.id}`);
+    }
+  } catch (err) {
+    console.log(`[media-task] recovery_sweep_error msg=${truncate((err as Error)?.message)}`);
+  }
+}
+
 // Media worker callback. Converts proposed evidence into the SAME deterministic
 // resolver + safeToAutoSave + save path used by the metadata flow. The video
 // model never picks a Place ID, never decides safeToAutoSave, and never saves.
-// Idempotent: terminal tasks / already-terminal parents are safe no-ops.
+// ALL routing decisions come from the pure mediaFinalizePlan module.
+//
+// Idempotency (mission): a terminal task (duplicate / replayed callback) and any
+// parent that already left processing_metadata (cancelled elsewhere, finalized
+// by a prior callback or the recovery sweep) are safe no-ops — a replay after a
+// save or a needs_help can never revive or double-finalize the job. The parent
+// is ALWAYS derived from the task's FK, never trusted from the callback body.
 async function finalizeMediaTask(admin: any, env: any, body: any): Promise<Response> {
   const taskId = typeof body.taskId === 'string' ? body.taskId : '';
   if (!taskId) return json({ error: 'missing_task_id' }, 400);
@@ -319,53 +344,60 @@ async function finalizeMediaTask(admin: any, env: any, body: any): Promise<Respo
     .from('share_media_tasks').select('*').eq('id', taskId).maybeSingle();
   if (!task) return json({ error: 'task_not_found' }, 404);
 
-  const TERMINAL = ['completed', 'needs_help', 'failed', 'cancelled'];
-  if (TERMINAL.includes(task.status)) {
-    return json({ ok: true, idempotent: true, taskStatus: task.status });
-  }
-
-  const { data: job } = await admin
-    .from('share_jobs').select('*').eq('id', task.share_job_id).maybeSingle();
-  if (!job) {
-    await markMediaTask(admin, taskId, 'failed', { failure_code: 'parent_job_missing', completed_at: nowIso() });
-    return json({ error: 'parent_job_missing' }, 404);
-  }
-
-  // Parent already terminal (e.g. reclaimed to needs_help after the lease):
-  // idempotent no-op so a late finalize can never double-save.
-  if (job.status !== 'processing_metadata') {
-    await markMediaTask(admin, taskId, 'completed', { progress_stage: 'cleanup', completed_at: nowIso() });
-    return json({ ok: true, parentAlreadyTerminal: true, jobStatus: job.status });
-  }
+  // Parent derived from the task's FK (never from the body).
+  const { data: job } = task.share_job_id
+    ? await admin.from('share_jobs').select('*').eq('id', task.share_job_id).maybeSingle()
+    : { data: null };
 
   const outcome = typeof body.outcome === 'string' ? body.outcome : 'evidence';
   const parsed = outcome === 'evidence'
     ? parseMediaEvidence(body.evidence)
     : ({ ok: false, error: outcome } as const);
+  const rendered = parsed.ok
+    ? renderMediaEvidenceCaption(parsed.value)
+    : { title: '', description: '', renderedPlaces: 0 };
+
+  const pre = planPreResolve({
+    taskStatus: task.status,
+    parentStatus: job?.status ?? 'missing',
+    outcome,
+    evidenceParseOk: parsed.ok,
+    renderedPlaces: rendered.renderedPlaces,
+  });
+
+  // Terminal task → idempotent no-op (duplicate / replayed callback).
+  if (pre.action === 'idempotent_task_terminal') {
+    return json({ ok: true, idempotent: true, taskStatus: pre.taskStatus });
+  }
+
+  if (!job) {
+    await markMediaTask(admin, taskId, 'failed', { failure_code: 'parent_job_missing', completed_at: nowIso() });
+    return json({ error: 'parent_job_missing' }, 404);
+  }
+
+  // Diagnostics for every actionable callback.
   const evidenceSummary = parsed.ok ? summarizeMediaEvidence(parsed.value) : { reason: outcome };
   await insertMediaRun(admin, task, job, body, evidenceSummary);
 
-  // Non-evidence outcome (media unavailable / permanent failure) → safe manual.
-  if (!parsed.ok) {
+  // Parent already terminal → mark task done, never revive the parent.
+  if (pre.action === 'parent_already_terminal') {
+    await markMediaTask(admin, taskId, 'completed', { progress_stage: 'cleanup', completed_at: nowIso() });
+    return json({ ok: true, parentAlreadyTerminal: true, jobStatus: job.status });
+  }
+
+  // Media unusable / parse failure / no explicit places → safe manual fallback.
+  if (pre.action === 'manual_fallback') {
     await finalizeParentManual(admin, job);
-    await markMediaTask(admin, taskId, outcome === 'unavailable' ? 'needs_help' : 'failed', {
-      failure_code: outcome === 'evidence' ? 'insufficient_evidence' : outcome,
+    await markMediaTask(admin, taskId, pre.taskTerminalStatus, {
+      failure_code: pre.failureCode,
       progress_stage: 'cleanup',
       completed_at: nowIso(),
     });
-    console.log(`[media-task] finalize route=manual task_id=${taskId} outcome=${outcome}`);
-    return json({ ok: true, route: 'manual', outcome });
+    console.log(`[media-task] finalize route=manual task_id=${taskId} reason=${pre.failureCode}`);
+    return json({ ok: true, route: 'manual', reason: pre.failureCode });
   }
 
-  const rendered = renderMediaEvidenceCaption(parsed.value);
-  if (rendered.renderedPlaces === 0) {
-    await finalizeParentManual(admin, job);
-    await markMediaTask(admin, taskId, 'needs_help', { failure_code: 'insufficient_evidence', progress_stage: 'cleanup', completed_at: nowIso() });
-    console.log(`[media-task] finalize route=manual task_id=${taskId} reason=insufficient_evidence`);
-    return json({ ok: true, route: 'manual', reason: 'insufficient_evidence' });
-  }
-
-  // ---- Reuse the EXISTING deterministic resolver + safety + save ----------
+  // pre.action === 'resolve' — reuse the EXISTING deterministic resolver.
   const emptyHandles = { posterHandle: null, taggedHandles: [], venueHandles: [], posterNameHint: null };
   const mediaEvidence = extractEvidence({
     platform: task.platform,
@@ -393,7 +425,15 @@ async function finalizeMediaTask(admin: any, env: any, body: any): Promise<Respo
   });
   const canonicalUrl = task.canonical_url || task.source_url;
 
-  if (plan.route === 'auto_save') {
+  // Post-resolve routing + the EXTRA media auto-save gate (never loosens
+  // safeToAutoSave; can only downgrade a resolver auto_save to a confirmation).
+  const post = planPostResolve({
+    route: plan.route === 'auto_save' ? 'auto_save' : 'needs_help',
+    needsHelpMode: plan.route === 'needs_help' ? plan.mode : 'manual',
+    autoSaveEligible: plan.route === 'auto_save' && mediaEvidenceAutoSaveEligible(parsed.value),
+  });
+
+  if (post.action === 'auto_save') {
     const candidate = result.primaryCandidate;
     const source = legacySourceFor(task.platform);
     const saved = await saveForUser({
@@ -428,20 +468,28 @@ async function finalizeMediaTask(admin: any, env: any, body: any): Promise<Respo
     return json({ ok: true, route: 'auto_save' });
   }
 
-  // needs_help (single / multi / manual) — identical mapping to metadata path.
+  // needs_help (single / multi / manual). `post.mode` accounts for a downgrade
+  // from a resolver auto_save that failed the media evidence eligibility gate.
+  const mode = post.mode;
   const candidatePayload = { candidates: result.candidates.slice(0, 10).map(safeCandidate) };
   const decisionForRow =
-    plan.mode === 'manual'
+    mode === 'manual'
       ? 'manual_fallback'
       : result.decision === 'multi_candidate_confirmation'
       ? 'multi_candidate_confirmation'
       : result.decision === 'candidate_picker'
       ? 'candidate_picker'
       : 'candidate_confirmation';
+  const needsHelpReason = post.downgraded
+    ? 'media_autosave_ineligible'
+    : plan.route === 'needs_help'
+    ? plan.needsHelpReason
+    : 'candidate_confirmation';
+  const suggestedQuery = plan.route === 'needs_help' ? plan.suggestedQuery : (result.cleanSearchQuery ?? null);
   const note =
-    plan.mode === 'manual'
+    mode === 'manual'
       ? buildNeedsHelpNotification({ mode: 'manual', jobId: job.id })
-      : plan.mode === 'multi'
+      : mode === 'multi'
       ? buildNeedsHelpNotification({ mode: 'multi', jobId: job.id, candidateCount: result.candidates.length })
       : buildNeedsHelpNotification({
           mode: 'single',
@@ -454,19 +502,19 @@ async function finalizeMediaTask(admin: any, env: any, body: any): Promise<Respo
     {
       status: 'needs_help',
       decision: decisionForRow,
-      needs_help_reason: plan.needsHelpReason,
-      suggested_query: plan.suggestedQuery,
+      needs_help_reason: needsHelpReason,
+      suggested_query: suggestedQuery,
       candidate_payload: candidatePayload,
       canonical_url: canonicalUrl,
       source_platform: task.platform,
       extraction_payload: extractionPayload,
-      progress_stage: plan.mode,
+      progress_stage: mode,
     },
     note,
   );
   await markMediaTask(admin, taskId, 'completed', { resolver_name: 'media', progress_stage: 'cleanup', completed_at: nowIso() });
-  console.log(`[media-task] finalize route=needs_help mode=${plan.mode} task_id=${taskId} job_id=${job.id}`);
-  return json({ ok: true, route: 'needs_help', mode: plan.mode });
+  console.log(`[media-task] finalize route=needs_help mode=${mode} downgraded=${post.downgraded} task_id=${taskId} job_id=${job.id}`);
+  return json({ ok: true, route: 'needs_help', mode });
 }
 
 async function processOne(admin: any, env: any, job: any): Promise<void> {
@@ -785,10 +833,7 @@ serve(async (req) => {
   // ---- Worker auth: bearer must equal the service-role key -------
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
   const headerAuth = req.headers.get('authorization') ?? '';
-  const bearer = headerAuth.toLowerCase().startsWith('bearer ')
-    ? headerAuth.slice(7).trim()
-    : '';
-  if (!serviceRoleKey || bearer !== serviceRoleKey) {
+  if (!authorizeServiceRoleBearer(headerAuth, serviceRoleKey)) {
     return json({ error: 'unauthorized' }, 401);
   }
 
@@ -847,6 +892,7 @@ serve(async (req) => {
 
   await processPendingNotifications(admin, limit);
   await processNotificationReceipts(admin, limit);
+  await recoverStrandedMediaJobs(admin);
 
   return json({ claimed: jobs.length, processed });
 });

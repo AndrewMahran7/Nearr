@@ -99,7 +99,25 @@ export class InstagramMediaResolver implements MediaResolver {
 
   async resolve(input: ResolveInput): Promise<ResolvedMedia> {
     const warnings: string[] = [];
-    const url = input.canonicalUrl || input.sourceUrl;
+    const rawUrl = input.canonicalUrl || input.sourceUrl;
+
+    // Validate the SOURCE url before it ever reaches yt-dlp (defense in depth;
+    // supports() also gates but the resolver never trusts an unvalidated URL):
+    // HTTPS only + an Instagram host only. Public posts only — no login.
+    let parsed: URL;
+    try {
+      parsed = new URL(rawUrl);
+    } catch {
+      throw new MediaError('unsupported_url', 'bad_source_url');
+    }
+    if (parsed.protocol !== 'https:') {
+      throw new MediaError('unsupported_url', 'non_https_source');
+    }
+    const srcHost = parsed.hostname.toLowerCase();
+    if (srcHost !== 'instagram.com' && !srcHost.endsWith('.instagram.com')) {
+      throw new MediaError('unsupported_url', 'non_instagram_host');
+    }
+    const url = parsed.toString();
 
     // 1) Metadata only (NO download). --no-cache-dir keeps zero persistent
     //    state; the whole run is confined to the isolated job temp dir.

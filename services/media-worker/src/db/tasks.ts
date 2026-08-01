@@ -69,17 +69,30 @@ export async function setTaskStatus(
   await client.from('share_media_tasks').update({ status, ...patch }).eq('id', taskId);
 }
 
-/** Requeue for retry. Sets status back to 'queued' with the lease cleared so
- *  the next media sweep re-claims it (the per-minute cron provides spacing). */
+/** Requeue for retry with a bounded backoff (atomic via requeue_media_task).
+ *  The claim RPC skips tasks whose next_attempt_at is still in the future, so
+ *  pg_cron never hot-loops on a failing task. Attempts are NOT incremented here
+ *  (that happens exactly once per claim). */
 export async function requeueTask(
   client: SupabaseClient,
   taskId: string,
+  backoffSeconds: number,
   failureCode: string,
 ): Promise<void> {
-  await client
-    .from('share_media_tasks')
-    .update({ status: 'queued', locked_until: null, failure_code: failureCode })
-    .eq('id', taskId);
+  const { error } = await client.rpc('requeue_media_task', {
+    p_task_id: taskId,
+    p_backoff_seconds: backoffSeconds,
+    p_failure_code: failureCode,
+  });
+  if (error) {
+    log.warn('requeue_failed', { taskId, msg: error.message });
+    // Best-effort fallback so a transient RPC error can't strand the task in
+    // 'processing' (it becomes reclaimable once its lease expires).
+    await client
+      .from('share_media_tasks')
+      .update({ status: 'queued', locked_until: null, failure_code: failureCode })
+      .eq('id', taskId);
+  }
 }
 
 /** Best-effort cleanup of tasks that exhausted their retry budget. */

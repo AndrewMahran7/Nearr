@@ -12,6 +12,7 @@ import { MediaError, isMediaError, type MediaTask } from '../types/media.js';
 import { createJobTemp } from '../util/tempDir.js';
 import { sha256File } from '../util/hash.js';
 import { log } from '../util/logger.js';
+import { computeBackoffSeconds } from '../util/backoff.js';
 import { selectResolver, type MediaResolver } from '../resolvers/MediaResolver.js';
 import { inspectMedia } from './inspectMedia.js';
 import { normalizeMedia } from './normalizeMedia.js';
@@ -180,9 +181,10 @@ async function handleTaskError(
     return;
   }
 
-  // Retryable + budget remains → requeue (per-minute sweep re-claims).
+  // Retryable + budget remains → requeue with a bounded exponential backoff.
   if (task.attempts < task.max_attempts) {
-    await requeueTask(client, task.id, media.code);
+    const backoff = computeBackoffSeconds(task.attempts, cfg.retryBaseSeconds, cfg.retryMaxSeconds);
+    await requeueTask(client, task.id, backoff, media.code);
     return;
   }
 

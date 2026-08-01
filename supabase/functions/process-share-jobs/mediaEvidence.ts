@@ -196,6 +196,28 @@ export type RenderedCaption = {
 };
 
 /**
+ * The SINGLE source of truth for "which places may influence the outcome":
+ * explicit-evidence, non-passing places in render order (primary first).
+ * Secondary places are included only when the model flagged multiple
+ * intentional places. Inferred-only places and passing mentions are always
+ * dropped here — before anything reaches the resolver or the auto-save gate.
+ */
+export function selectRenderablePlaces(
+  evidence: MediaPlaceEvidence,
+): PlaceCandidateEvidence[] {
+  if (evidence.insufficientEvidence) return [];
+  return evidence.places
+    .filter(hasExplicitEvidence)
+    .filter((p) => p.role !== 'passing_mention')
+    .filter((p) => p.role === 'primary' || evidence.multipleIntentionalPlaces)
+    .sort((a, b) => {
+      const r = ROLE_ORDER[a.role] - ROLE_ORDER[b.role];
+      if (r !== 0) return r;
+      return b.confidence - a.confidence;
+    });
+}
+
+/**
  * Render structured evidence into a synthetic post caption for
  * `extractEvidence`. Only explicit-evidence places are included; passing
  * mentions are always excluded; secondary places are included only when the
@@ -206,20 +228,7 @@ export type RenderedCaption = {
 export function renderMediaEvidenceCaption(
   evidence: MediaPlaceEvidence,
 ): RenderedCaption {
-  if (evidence.insufficientEvidence) {
-    return { title: '', description: '', renderedPlaces: 0 };
-  }
-
-  const renderable = evidence.places
-    .filter(hasExplicitEvidence)
-    .filter((p) => p.role !== 'passing_mention')
-    .filter((p) => p.role === 'primary' || evidence.multipleIntentionalPlaces)
-    .sort((a, b) => {
-      const r = ROLE_ORDER[a.role] - ROLE_ORDER[b.role];
-      if (r !== 0) return r;
-      return b.confidence - a.confidence;
-    });
-
+  const renderable = selectRenderablePlaces(evidence);
   if (renderable.length === 0) {
     return { title: '', description: '', renderedPlaces: 0 };
   }
@@ -231,12 +240,53 @@ export function renderMediaEvidenceCaption(
       .join(', '),
   );
 
-  const primary = renderable[0];
+  const primary = renderable[0]!;
   return {
     title: primary.name,
     description: lines.join('\n'),
     renderedPlaces: renderable.length,
   };
+}
+
+// A street-address pattern (number + street type, incl. Spanish/French types
+// the resolver already understands). Media auto-save requires a concretely
+// shown/spoken street address — a name-only or city-only mention is never
+// enough for a SILENT save (it can still become needs_help for confirmation).
+const ADDRESS_LIKE_RE =
+  /\b\d{1,6}\s+[^,]*\b(st|street|ave|avenue|blvd|boulevard|rd|road|dr|drive|ln|lane|way|hwy|highway|pkwy|parkway|ct|court|ter|terrace|pl|place|cir|circle|plaza|sq|square|paseo|camino|calle|avenida|via|rue)\b/i;
+
+export const DEFAULT_MEDIA_AUTOSAVE_MIN_CONFIDENCE = 0.7;
+
+/**
+ * Whether media evidence is strong enough to permit a SILENT auto-save. This is
+ * an EXTRA gate ON TOP OF the resolver's `safeToAutoSave` — it can only make
+ * media auto-save STRICTER, never looser. Because a video is a less reliable
+ * source than an owner-written caption, we additionally require the primary
+ * place to carry an EXPLICIT street address at high model confidence, and we
+ * never silent-save multi-intentional content. Model coordinates and Place IDs
+ * are never trusted (the schema has no Place ID; coordinates are dropped).
+ *
+ * Adversarial inputs (inferred-only, passing mentions, creator handles, dish /
+ * product / cuisine names, city-as-context, low-confidence text) all fail this
+ * gate because none of them carry an explicit high-confidence street address.
+ */
+export function mediaEvidenceAutoSaveEligible(
+  evidence: MediaPlaceEvidence,
+  minConfidence: number = DEFAULT_MEDIA_AUTOSAVE_MIN_CONFIDENCE,
+): boolean {
+  if (evidence.insufficientEvidence) return false;
+  // Multiple intentional places are inherently a confirmation case.
+  if (evidence.multipleIntentionalPlaces) return false;
+
+  const primary = selectRenderablePlaces(evidence)[0];
+  if (!primary) return false;
+  if (!(primary.confidence >= minConfidence)) return false;
+
+  // Require an EXPLICIT street address: both a populated address field AND an
+  // explicit-evidence item that actually shows/speaks a street address.
+  const addressInField = !!primary.address && ADDRESS_LIKE_RE.test(primary.address);
+  const addressInExplicit = primary.explicitEvidence.some((e) => ADDRESS_LIKE_RE.test(e.value));
+  return addressInField && addressInExplicit;
 }
 
 /** Small, size-bounded summary for diagnostics logging (no raw evidence). */
