@@ -18,7 +18,10 @@
 
 import { Platform } from 'react-native';
 
-import nativeSharedAuth from '../modules/nearr-shared-auth';
+import nativeSharedAuth, { type SharedAuthNativeStatus } from '../modules/nearr-shared-auth';
+
+/** Non-secret diagnostic snapshot of the App Group auth bridge. */
+export type SharedAuthStatus = SharedAuthNativeStatus;
 
 const PLATFORM_OK = Platform.OS === 'ios';
 
@@ -83,6 +86,17 @@ export const sharedAuth = {
   getAppGroup(): string | null {
     if (!PLATFORM_OK) return null;
     return nativeSharedAuth.getAppGroup();
+  },
+
+  /**
+   * Non-secret diagnostic snapshot of the App Group bridge. Returns null on
+   * non-iOS / when the native module isn't linked. NEVER returns the token.
+   * Used by lib/supabase.ts to verify the host token write reached the shared
+   * container, and can be surfaced in a dev "Copy diagnostic" action.
+   */
+  getStatus(): SharedAuthStatus | null {
+    if (!PLATFORM_OK) return null;
+    return nativeSharedAuth.getStatus();
   },
 };
 

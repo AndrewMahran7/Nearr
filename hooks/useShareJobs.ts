@@ -19,6 +19,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 import { isAsyncShareJobsEnabled } from '@/lib/featureFlags';
 import { isDemoMode } from '@/lib/demoMode';
+import { dedupeJobsById } from '@/lib/shareJobsDedupe';
 import { listShareJobs, type ShareJob } from '@/services/shareJobsService';
 
 const ACTIVE_STATUSES: ShareJob['status'][] = ['queued', 'processing_metadata'];
@@ -104,7 +105,10 @@ export function useShareJobs() {
       try {
         const data = await listShareJobs();
         if (!mountedRef.current) return;
-        setJobs(data);
+        // Defensive dedupe by stable job id: the DB is the source of truth, but
+        // a realtime insert landing during the initial fetch, duplicate events,
+        // or an accidental duplicate row must never render the same job twice.
+        setJobs(dedupeJobsById(data));
         setError(null);
       } catch (err) {
         if (!mountedRef.current) return;

@@ -360,14 +360,20 @@ function buildProfileDebugReason(profile: {
 }
 
 export default function ShareScreen() {
-  const params = useLocalSearchParams<{ url?: string }>();
+  const params = useLocalSearchParams<{ url?: string; sid?: string }>();
   // Async rollout: when the flag is on and a URL arrived (Android share
   // intent, iOS signed-out/network handoff, or in-app paste-link), create a
   // durable job and dismiss instead of running synchronous extraction. Falls
   // back to the legacy synchronous screen otherwise (incl. the no-url manual
-  // paste case).
+  // paste case). `sid` (when present) is the stable submission id propagated
+  // from the share extension so cold/warm re-delivery dedupes to one job.
   if (isAsyncShareJobsEnabled() && params.url && isLikelyUrl(params.url)) {
-    return <ShareJobHandoff url={params.url} />;
+    return (
+      <ShareJobHandoff
+        url={params.url}
+        submissionId={typeof params.sid === 'string' ? params.sid : undefined}
+      />
+    );
   }
   return <LegacyShareScreen />;
 }

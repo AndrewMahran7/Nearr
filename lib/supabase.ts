@@ -4,6 +4,11 @@ import { createClient } from '@supabase/supabase-js';
 import Constants from 'expo-constants';
 
 import { sharedAuth } from './sharedAuth';
+import {
+  initialSharedAuthSyncState,
+  reduceSharedTokenWrite,
+  type SharedAuthTrigger,
+} from './sharedAuthSync';
 
 // Prefer EXPO_PUBLIC_* (inlined at build time by Expo). Fall back to
 // app.json `extra` so we keep working with prebuilt configs.
@@ -70,36 +75,72 @@ export const supabase = createClient(
 //
 // On every auth state change (sign-in, refresh, sign-out) push the access
 // token into the App Group's shared UserDefaults so the iOS Share
-// Extension can read it on launch and call `process-share-link` with a
+// Extension can read it on launch and call `create-share-job` with a
 // valid Bearer token. Refresh token is intentionally NOT shared — only
 // the short-lived access token.
 //
-// Safe no-op on Android, in Expo Go, or before the user runs
-// `expo prebuild --clean` (the native module is optional).
+// ORDERING SAFETY: writes go through the PURE reduceSharedTokenWrite reducer
+// (lib/sharedAuthSync.ts) with a single module-scoped state so a late/stale/
+// out-of-order tokenless INITIAL_SESSION can NEVER clear a valid token that the
+// cold-start restore already wrote. Only an explicit SIGNED_OUT clears it. This
+// fixes the extension seeing `initialized=true` but `token=absent`
+// ("Open Nearr to sign in") while the host app is actually signed in.
 //
-// Also runs once on import to backfill any session that was restored
-// from AsyncStorage at app start.
-supabase.auth.onAuthStateChange((event, session) => {
-  const token = session?.access_token ?? null;
-  if (__DEV__) {
-    console.log('[supabase] auth event', event, 'tokenPresent=', !!token);
+// Safe no-op on Android, in Expo Go, or before the native module is linked.
+
+let sharedAuthSyncState = initialSharedAuthSyncState();
+
+function syncSharedToken(trigger: SharedAuthTrigger, token: string | null): void {
+  const sessionHasToken = typeof token === 'string' && token.length > 0;
+  const { action, next } = reduceSharedTokenWrite(sharedAuthSyncState, {
+    trigger,
+    sessionHasToken,
+  });
+  sharedAuthSyncState = next;
+  if (action === 'write') {
+    sharedAuth.setToken(token);
+  } else if (action === 'clear') {
+    sharedAuth.setToken(null);
   }
-  sharedAuth.setToken(token);
+  // action === 'ignore' → leave the shared token untouched (ordering guard).
+  if (__DEV__) {
+    console.log(
+      '[supabase] shared-token sync trigger=' + trigger +
+        ' hasToken=' + sessionHasToken + ' action=' + action,
+    );
+  }
+}
+
+supabase.auth.onAuthStateChange((event, session) => {
+  syncSharedToken(event as SharedAuthTrigger, session?.access_token ?? null);
 });
 
-// Backfill the persisted session on cold start.
+// Backfill the persisted session on cold start. This is the AUTHORITATIVE
+// startup restore: it writes the current valid token (or clears if genuinely
+// signed out), marks the bridge initialized, and verifies the write by reading
+// back the NON-SECRET status (never the token itself).
 supabase.auth.getSession().then(({ data }) => {
-  const token = data.session?.access_token ?? null;
-  if (__DEV__) {
-    console.log('[supabase] cold-start session backfill, present=', !!token);
-  }
-  sharedAuth.setToken(token);
+  syncSharedToken('STARTUP_RESTORE', data.session?.access_token ?? null);
   // Mark the App Group bridge initialized AFTER the first completed
   // getSession() — even when signed out. This lets the Share Extension tell
   // "first install, host never launched" (needs setup) apart from a genuine
-  // signed-out state. Never reset on sign-out (setToken(null) clears only the
-  // token; the marker persists).
+  // signed-out state. Never reset on sign-out.
   sharedAuth.setInitialized();
+  // Verify the write reached the shared container (non-secret readback).
+  const status = sharedAuth.getStatus();
+  if (status && !status.tokenPresent && data.session?.access_token) {
+    console.warn(
+      '[supabase] shared-auth readback MISMATCH: host has a session but the' +
+        ' App Group token is absent (appGroupAccessible=' +
+        status.appGroupAccessible + ' errorCode=' + (status.errorCode ?? 'none') + ')',
+    );
+  } else if (__DEV__ && status) {
+    console.log(
+      '[supabase] shared-auth readback appGroupAccessible=' + status.appGroupAccessible +
+        ' initialized=' + status.initialized + ' tokenPresent=' + status.tokenPresent +
+        ' tokenStructurallyValid=' + status.tokenStructurallyValid,
+    );
+  }
 }).catch((err) => {
   console.warn('[supabase] cold-start session backfill failed', err);
   // Still mark initialized: the host DID run and complete its auth check; a

@@ -39,6 +39,9 @@ import { trackEvent } from '@/lib/analytics';
 import { disableDevAuth } from '@/lib/devAuth';
 import { isDemoMode } from '@/lib/demoMode';
 import { setOnboardingPreview } from '@/lib/onboarding';
+import * as Clipboard from 'expo-clipboard';
+import { getRecentDiagnostics, formatDiagnosticForCopy } from '@/lib/deviceDiagnostics';
+import { sharedAuth } from '@/lib/sharedAuth';
 import { LEGAL_ACCEPTANCE_REQUIRED, LEGAL_VERSION } from '@/constants';
 import { getProfile, getLegalAcceptanceStatus, updateProfile } from '@/services/profileService';
 import { signOut } from '@/services/auth';
@@ -470,6 +473,36 @@ export default function SettingsScreen() {
   // in-memory preview flag so AuthGate keeps a signed-in session on the
   // onboarding route instead of redirecting to the map. Does NOT reset any
   // production onboarding state.
+  async function handleCopyDiagnostic() {
+    try {
+      const recent = await getRecentDiagnostics();
+      const status = sharedAuth.getStatus();
+      const parts: string[] = [];
+      parts.push(
+        status
+          ? 'Shared-auth: appGroupAccessible=' + status.appGroupAccessible +
+              ' initialized=' + status.initialized +
+              ' tokenPresent=' + status.tokenPresent +
+              ' tokenStructurallyValid=' + status.tokenStructurallyValid +
+              ' writerTarget=' + (status.writerTarget ?? 'null') +
+              ' errorCode=' + (status.errorCode ?? 'none')
+          : 'Shared-auth: native module unavailable (non-iOS or not linked)',
+      );
+      parts.push(
+        recent.length === 0
+          ? 'No recent diagnostics recorded.'
+          : formatDiagnosticForCopy(recent[0]),
+      );
+      await Clipboard.setStringAsync(parts.join('\n\n'));
+      Alert.alert(
+        'Diagnostic copied',
+        'Paste it into a bug report. No tokens or private URLs are included.',
+      );
+    } catch (err) {
+      Alert.alert('Could not copy', (err as Error)?.message ?? 'Please try again.');
+    }
+  }
+
   function handleTestOnboarding() {
     setOnboardingPreview(true);
     router.push('/(onboarding)?preview=1');
@@ -793,6 +826,15 @@ export default function SettingsScreen() {
               />
               <Text style={[typography.caption, styles.muted]}>
                 Opens the pre-auth onboarding intro flow.
+              </Text>
+              <View style={{ height: Spacing.sm }} />
+              <Button
+                title="Copy diagnostic"
+                variant="ghost"
+                onPress={() => void handleCopyDiagnostic()}
+              />
+              <Text style={[typography.caption, styles.muted]}>
+                Copies the last sanitized crash + App Group auth status (no tokens/URLs).
               </Text>
             </Card>
           </>

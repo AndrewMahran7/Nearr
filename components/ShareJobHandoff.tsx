@@ -17,9 +17,8 @@ import { useRouter } from 'expo-router';
 import { Button, Screen } from '@/components';
 import { Spacing } from '@/constants';
 import { useTheme } from '@/lib/theme';
-import { supabase } from '@/lib/supabase';
-import { resolveCreateShareJobUrl } from '@/lib/featureFlags';
-import { createShareJob } from '@/lib/shareJobClient';
+import { resolveSubmissionId } from '@/lib/shareSubmission';
+import { hostShareSubmitter } from '@/lib/hostShareSubmit';
 import { logDebug } from '@/lib/logger';
 
 type UiState =
@@ -28,44 +27,42 @@ type UiState =
   | { kind: 'signed_out' }
   | { kind: 'error' };
 
-export function ShareJobHandoff({ url }: { url: string }) {
+export function ShareJobHandoff({ url, submissionId }: { url: string; submissionId?: string }) {
   const router = useRouter();
   const { colors, typography } = useTheme();
   const [ui, setUi] = useState<UiState>({ kind: 'submitting' });
   const handledRef = useRef(false);
-  const requestIdRef = useRef(
-    `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`,
+  // ONE stable submission id for this share action. Prefer an id propagated from
+  // the extension/deep link (?sid=), else derive a deterministic (remount- and
+  // cold/warm-stable) id from the URL. This is what makes a single share create
+  // at most one job even when the handoff remounts or both deep-link listeners
+  // process the same URL.
+  const submissionIdRef = useRef(
+    resolveSubmissionId({ url, fromDeepLink: submissionId ?? null }),
   );
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const submit = async () => {
-    const endpoint = resolveCreateShareJobUrl();
-    const { data } = await supabase.auth.getSession();
-    const token = data.session?.access_token ?? '';
-    if (!token) {
-      setUi({ kind: 'signed_out' });
-      return;
-    }
-    if (!endpoint) {
-      logDebug('share-job', 'handoff no endpoint');
-      setUi({ kind: 'error' });
-      return;
-    }
-    setUi({ kind: 'submitting' });
-    const result = await createShareJob({
-      endpoint,
-      url,
-      accessToken: token,
-      clientRequestId: requestIdRef.current,
-    });
-    if (result.ok) {
-      console.log(`[share-extension] job_accepted=true duplicate=${result.duplicate}`);
-      setUi({ kind: 'accepted', duplicate: result.duplicate });
-      closeTimerRef.current = setTimeout(() => router.replace('/(tabs)/map'), 1600);
-    } else if (result.reason === 'unauthorized' || result.reason === 'missing_auth') {
-      setUi({ kind: 'signed_out' });
-    } else {
-      console.log(`[share-extension] job_accepted=false reason=${result.reason}`);
+    try {
+      setUi({ kind: 'submitting' });
+      const result = await hostShareSubmitter.submit({
+        url,
+        submissionId: submissionIdRef.current,
+      });
+      if (result.ok) {
+        console.log(`[share-job] job_accepted=true duplicate=${!!result.duplicate}`);
+        setUi({ kind: 'accepted', duplicate: !!result.duplicate });
+        closeTimerRef.current = setTimeout(() => router.replace('/(tabs)/map'), 1600);
+      } else if (result.reason === 'unauthorized' || result.reason === 'missing_auth') {
+        setUi({ kind: 'signed_out' });
+      } else {
+        console.log(`[share-job] job_accepted=false reason=${result.reason}`);
+        setUi({ kind: 'error' });
+      }
+    } catch (err) {
+      // A duplicate-share / transient exception must degrade to a recoverable
+      // error state — never bubble to the global "Something went wrong" boundary.
+      logDebug('share-job', 'handoff submit threw', (err as Error)?.message ?? String(err));
       setUi({ kind: 'error' });
     }
   };

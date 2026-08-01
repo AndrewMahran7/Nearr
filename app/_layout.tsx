@@ -18,6 +18,7 @@ import {
 import { clearDevAuth } from '@/lib/devAuth';
 import { trackEvent } from '@/lib/analytics';
 import { sanitizeErrorText, sanitizeStack } from '@/lib/sanitizeError';
+import { recordDiagnostic } from '@/lib/deviceDiagnostics';
 import {
   deactivatePushTokenForCurrentUser,
   registerPushTokenForCurrentUser,
@@ -70,6 +71,13 @@ class AppErrorBoundary extends Component<
     // diagnose the next physical-device crash.
     console.error('[APP_ERROR_BOUNDARY] componentDidCatch', sanitizeErrorText(error));
     console.error('[APP_ERROR_BOUNDARY] stack', sanitizeStack(info?.componentStack));
+    // Persist a sanitized diagnostic (surfaced via Settings → Copy diagnostic).
+    void recordDiagnostic({
+      errorCode: 'app_error_boundary',
+      route: 'global',
+      error,
+      componentStack: info?.componentStack ?? null,
+    });
   }
 
   render() {

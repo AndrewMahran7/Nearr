@@ -37,6 +37,10 @@ public class NearrSharedAuthModule: Module {
   // completed getSession() check (even when signed out) so the extension can
   // tell "first install, host never launched" apart from "signed out".
   private static let INITIALIZED_KEY = "shared_auth_initialized"
+  // Non-secret diagnostics: when the last token write happened (epoch ms) and
+  // which target performed it (host vs extension). NEVER the token itself.
+  private static let LAST_SYNC_KEY = "shared_auth_last_sync_at"
+  private static let WRITER_KEY = "shared_auth_writer_target"
 
   public func definition() -> ModuleDefinition {
     Name("NearrSharedAuth")
@@ -52,6 +56,9 @@ public class NearrSharedAuthModule: Module {
       } else {
         defaults.removeObject(forKey: Self.TOKEN_KEY)
       }
+      // Record non-secret sync metadata for the diagnostic API.
+      defaults.set(Date().timeIntervalSince1970 * 1000.0, forKey: Self.LAST_SYNC_KEY)
+      defaults.set(Self.writerTarget(), forKey: Self.WRITER_KEY)
       return true
     }
 
@@ -76,6 +83,12 @@ public class NearrSharedAuthModule: Module {
 
     Function("getAppGroup") { () -> String? in
       return Self.appGroupIdentifier()
+    }
+
+    // Non-secret diagnostic snapshot for reporting App Group / token health
+    // WITHOUT ever returning or logging the token itself.
+    Function("getStatus") { () -> [String: Any] in
+      return Self.status()
     }
   }
 
@@ -102,5 +115,63 @@ public class NearrSharedAuthModule: Module {
       return nil
     }
     return defaults
+  }
+
+  /// host vs extension: extensions bundle as `*.appex`.
+  private static func writerTarget() -> String {
+    return Bundle.main.bundleURL.pathExtension == "appex" ? "extension" : "host"
+  }
+
+  /// Non-secret status snapshot. Numeric/optional fields use NSNull() (=> null
+  /// in JS). NEVER includes the token value.
+  private static func status() -> [String: Any] {
+    guard let defaults = defaults() else {
+      return [
+        "appGroupAccessible": false,
+        "initialized": false,
+        "tokenPresent": false,
+        "tokenStructurallyValid": false,
+        "tokenExpiresAt": NSNull(),
+        "lastSyncAt": NSNull(),
+        "writerTarget": NSNull(),
+        "errorCode": "app_group_unavailable",
+      ]
+    }
+    let token = defaults.string(forKey: TOKEN_KEY)
+    let hasToken = (token?.isEmpty == false)
+    let decoded: (valid: Bool, expMs: Double?) = hasToken ? decodeJwt(token!) : (false, nil)
+    let lastSync = defaults.object(forKey: LAST_SYNC_KEY) as? Double
+    let writer = defaults.string(forKey: WRITER_KEY)
+    return [
+      "appGroupAccessible": true,
+      "initialized": defaults.bool(forKey: INITIALIZED_KEY),
+      "tokenPresent": hasToken,
+      "tokenStructurallyValid": decoded.valid,
+      "tokenExpiresAt": decoded.expMs.map { $0 as Any } ?? NSNull(),
+      "lastSyncAt": lastSync.map { $0 as Any } ?? NSNull(),
+      "writerTarget": writer.map { $0 as Any } ?? NSNull(),
+      "errorCode": NSNull(),
+    ]
+  }
+
+  /// Decode a JWT's `exp` WITHOUT verifying the signature and WITHOUT exposing
+  /// any other claim. Returns whether it is a structurally valid 3-part JWT and
+  /// its expiry in epoch milliseconds (nil when absent).
+  private static func decodeJwt(_ token: String) -> (valid: Bool, expMs: Double?) {
+    let parts = token.split(separator: ".", omittingEmptySubsequences: false)
+    guard parts.count == 3 else { return (false, nil) }
+    var b64 = String(parts[1])
+      .replacingOccurrences(of: "-", with: "+")
+      .replacingOccurrences(of: "_", with: "/")
+    while b64.count % 4 != 0 { b64 += "=" }
+    guard
+      let data = Data(base64Encoded: b64),
+      let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+    else {
+      return (false, nil)
+    }
+    if let exp = obj["exp"] as? Double { return (true, exp * 1000.0) }
+    if let expInt = obj["exp"] as? Int { return (true, Double(expInt) * 1000.0) }
+    return (true, nil)
   }
 }

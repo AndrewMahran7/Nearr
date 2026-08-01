@@ -12,6 +12,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Colors, Spacing, Radius } from '@/constants';
 import { sanitizeErrorText, sanitizeStack } from '@/lib/sanitizeError';
+import { recordDiagnostic } from '@/lib/deviceDiagnostics';
 
 type Props = {
   children: ReactNode;
@@ -41,6 +42,14 @@ export class ErrorBoundary extends Component<Props, State> {
     console.error(
       `[ROUTE_ERROR_BOUNDARY:${this.props.name}] stack ${sanitizeStack(info?.componentStack)}`,
     );
+    // Persist a sanitized diagnostic so the next TestFlight failure is reportable
+    // without macOS Console (surfaced via a dev "Copy diagnostic" action).
+    void recordDiagnostic({
+      errorCode: `route_boundary:${this.props.name}`,
+      route: this.props.name,
+      error,
+      componentStack: info?.componentStack ?? null,
+    });
   }
 
   private reset = () => this.setState({ hasError: false, message: '' });

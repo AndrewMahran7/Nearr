@@ -49,6 +49,7 @@ import { isAsyncShareJobsEnabled, resolveCreateShareJobUrl } from './lib/feature
 import { createShareJob } from './lib/shareJobClient';
 import { selectExtensionAuthAction } from './lib/sharedAuthSession';
 import { SHARE_JOBS_DEEPLINK_PATH } from './lib/shareRoutes';
+import { appendSubmissionId, mintSubmissionId } from './lib/shareSubmission';
 
 // 2026-05-26: single resolver covers process.env, expoConfig.extra,
 // manifest.extra and manifest2.extra so a missing inline at build
@@ -479,11 +480,10 @@ type AsyncUi =
 
 function AsyncShareExtension(props: InitialProps) {
   const handledRef = useRef(false);
-  // Stable per-instantiation idempotency key: rapid duplicate shares of the
-  // same URL still dedupe server-side (active-url unique index).
-  const requestIdRef = useRef(
-    `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`,
-  );
+  // ONE stable submission id for THIS share action. Used as the idempotency key
+  // for create-share-job AND propagated to the host fallback deep link (?sid=)
+  // so the extension, the host, and any retry all resolve to a single job.
+  const submissionIdRef = useRef(mintSubmissionId());
   const [ui, setUi] = useState<AsyncUi>({ kind: 'submitting' });
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -530,7 +530,7 @@ function AsyncShareExtension(props: InitialProps) {
       endpoint,
       url,
       accessToken: token,
-      clientRequestId: requestIdRef.current,
+      clientRequestId: submissionIdRef.current,
     });
     if (result.ok) {
       console.log(`[share-extension] job_accepted=true duplicate=${result.duplicate}`);
@@ -564,8 +564,14 @@ function AsyncShareExtension(props: InitialProps) {
     const url = pickSharedUrl(props);
     if (url) {
       const encoded = encodeURIComponent(url);
+      // Propagate the SAME submission id so the host reuses it and cold/warm
+      // deep-link re-delivery on the host dedupes to a single job.
+      const path = appendSubmissionId(
+        `share?url=${encoded}&ext_reason=${encodeURIComponent(reason)}`,
+        submissionIdRef.current,
+      );
       try {
-        openHostApp(`share?url=${encoded}&ext_reason=${encodeURIComponent(reason)}`);
+        openHostApp(path);
       } catch (err) {
         console.warn('[share-extension] openHostApp failed', err);
       }

@@ -25,6 +25,19 @@ type NativeShape = {
   setInitialized: () => boolean;
   isInitialized: () => boolean;
   getAppGroup: () => string | null;
+  getStatus: () => SharedAuthNativeStatus;
+};
+
+/** Non-secret diagnostic snapshot from the App Group container. */
+export type SharedAuthNativeStatus = {
+  appGroupAccessible: boolean;
+  initialized: boolean;
+  tokenPresent: boolean;
+  tokenStructurallyValid: boolean;
+  tokenExpiresAt: number | null;
+  lastSyncAt: number | null;
+  writerTarget: string | null;
+  errorCode: string | null;
 };
 
 const Native = requireOptionalNativeModule<NativeShape>('NearrSharedAuth');
@@ -81,6 +94,14 @@ export function getAppGroup(): string | null {
   }
 }
 
+export function getStatus(): SharedAuthNativeStatus | null {
+  try {
+    return Native?.getStatus() ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export default {
   isAvailable,
   getToken,
@@ -89,4 +110,5 @@ export default {
   setInitialized,
   isInitialized,
   getAppGroup,
+  getStatus,
 };
