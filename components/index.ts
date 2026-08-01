@@ -3,6 +3,7 @@ export { Card } from './Card';
 export { DemoModeBanner } from './DemoModeBanner';
 export { DevModeBanner } from './DevModeBanner';
 export { EmptyState } from './EmptyState';
+export { ErrorBoundary } from './ErrorBoundary';
 export { HowNearrWorksModal } from './HowNearrWorksModal';
 export { Input } from './Input';
 export { LegalAgreementModal } from './LegalAgreementModal';

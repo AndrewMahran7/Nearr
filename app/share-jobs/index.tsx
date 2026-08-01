@@ -19,7 +19,7 @@ import {
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
-import { EmptyState, Screen } from '@/components';
+import { EmptyState, ErrorBoundary, Screen } from '@/components';
 import { Radius, Spacing } from '@/constants';
 import { useTheme } from '@/lib/theme';
 import { useShareJobs } from '@/hooks/useShareJobs';
@@ -64,6 +64,7 @@ function hostOf(url: string | null | undefined): string {
 
 function relativeTime(iso: string): string {
   const then = new Date(iso).getTime();
+  if (!Number.isFinite(then)) return '';
   const diff = Date.now() - then;
   const m = Math.round(diff / 60000);
   if (m < 1) return 'just now';
@@ -79,7 +80,8 @@ function jobTitle(job: ShareJob): string {
     const name = (job.extraction_payload as { savedPlaceName?: string } | null)?.savedPlaceName;
     return name || 'Saved place';
   }
-  const first = job.candidate_payload?.candidates?.[0]?.name;
+  const candidates = job.candidate_payload?.candidates;
+  const first = Array.isArray(candidates) ? candidates[0]?.name : undefined;
   if (job.status === 'needs_help') {
     if (job.needs_help_reason === 'multiple_candidates') return 'Multiple places found';
     if (first) return first;
@@ -107,7 +109,7 @@ function jobSubtitle(job: ShareJob): string {
   }
 }
 
-export default function ShareJobsQueueScreen() {
+function ShareJobsQueueScreen() {
   const router = useRouter();
   const { colors, typography } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -303,4 +305,19 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       backgroundColor: colors.primary,
     },
   });
+}
+
+// Route-level error boundary so a single malformed job row (or any unexpected
+// render error) shows a friendly retry + a SANITIZED log line, instead of
+// dropping the whole app to the generic global boundary.
+export default function ShareJobsQueueRoute() {
+  return (
+    <ErrorBoundary
+      name="share-jobs"
+      fallbackTitle="Couldn't open your queue"
+      fallbackBody="Something went wrong loading the queue. Try again."
+    >
+      <ShareJobsQueueScreen />
+    </ErrorBoundary>
+  );
 }
