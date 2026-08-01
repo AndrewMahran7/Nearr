@@ -349,6 +349,28 @@ Important status distinction:
 - the function code is present in-repo
 - deployment and secrets are external environment work
 
+## Media fallback (Phase 2)
+
+When the metadata resolver cannot verify a place for a supported platform
+(Instagram first), the async worker enqueues one `share_media_tasks` row instead
+of going straight to `needs_help`. A separate containerized service
+([services/media-worker](../services/media-worker)) retrieves the public video
+temporarily, extracts spoken + visible place evidence, and **proposes** it back
+to the EXISTING deterministic resolver + `safeToAutoSave` gate — there is no
+parallel resolver and auto-save is never loosened. All behind server-only flags
+that default OFF (`MEDIA_FALLBACK_ENABLED`, `INSTAGRAM_MEDIA_RESOLVER_ENABLED`,
+`NATIVE_VIDEO_ANALYSIS_ENABLED`). Full detail: [MEDIA_FALLBACK.md](./MEDIA_FALLBACK.md).
+
+Durability is explicit and bounded: while a media task runs the parent stays
+`processing_metadata` with no lease; retryable errors re-queue with bounded
+exponential backoff (30→900 s) via `requeue_media_task`; and each worker cycle
+runs a stranded-parent sweep (`expire_media_tasks` + `claim_stranded_media_parents`)
+that finalizes any parent whose task failed/cancelled to a safe `needs_help`.
+The finalize callback is service-role authenticated, derives the parent from the
+task's foreign key (never the request body), and is idempotent on replays. The
+sweep touches only the media tables, so Phase 1 behavior is unchanged when the
+flags are off.
+
 ## Real-device constraints
 
 - Background location does not work in Expo Go.

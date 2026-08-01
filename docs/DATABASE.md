@@ -1,9 +1,26 @@
 # Nearr — Database Schema
 
-> Last updated: 2026-07-30
+> Last updated: 2026-08-01
 > Source of truth: `supabase/migrations/`
 
 Do not use `supabase/schema.sql` as the canonical schema. The migration files under `supabase/migrations/` are the source of truth.
+
+## Supabase CLI version (local dev + CI)
+
+**Pinned/minimum Supabase CLI: `2.111.0`** (validated on 2026-08-01). Use one
+consistent version for `supabase start` / `supabase db reset` / `supabase db
+lint` locally and in CI — do **not** mix a globally installed CLI with a
+different `npx supabase` version.
+
+Newer CLI versions reduced the schema default privileges so a freshly created
+table grants only `REFERENCES/TRIGGER/TRUNCATE` (not `SELECT/INSERT/UPDATE/
+DELETE`) to `anon`/`authenticated`/`service_role`. Nearr's migrations therefore
+declare **every** required table + function privilege EXPLICITLY (see
+`20260801000004_explicit_privileges.sql` and
+`20260801000005_aux_privileges.sql`), so a clean database behaves
+identically regardless of the CLI's default privileges. A change in CLI defaults
+can no longer silently drop `authenticated`'s reads or `service_role`'s worker
+access.
 
 ## Migration inventory
 
@@ -19,6 +36,12 @@ Do not use `supabase/schema.sql` as the canonical schema. The migration files un
 - `20260731000002_user_push_tokens.sql`
 - `20260731000003_share_jobs_worker.sql`
 - `20260731000004_share_jobs_notifications.sql`
+- `20260731000005_lock_worker_rpc_grants.sql`
+- `20260801000001_share_media_tasks.sql` (Phase 2)
+- `20260801000002_share_media_worker.sql` (Phase 2)
+- `20260801000003_share_media_task_recovery.sql` (Phase 2 — bounded recovery + retry backoff + cancellation)
+- `20260801000004_explicit_privileges.sql` (Phase 1+2 — CLI-independent explicit table/function grants)
+- `20260801000005_aux_privileges.sql` (Phase 1+2 — explicit grants for analytics_events/feedback/share_agent_runs/share_extraction_failures + trigger-function locks)
 
 ## Schema overview
 
@@ -36,6 +59,8 @@ share_agent_runs            (service-role only)
 share_extraction_failures   (service-role only)
 share_jobs                  (async share queue; owner RLS + service-role worker)
 user_push_tokens            (Expo push tokens; owner RLS)
+share_media_tasks           (Phase 2 video-analysis queue; SERVICE-ROLE ONLY)
+share_media_runs            (Phase 2 media diagnostics; SERVICE-ROLE ONLY)
 ```
 
 ## `profiles`
@@ -358,6 +383,40 @@ Notes:
   that reassigns a device token to the current user (last-writer-wins).
 - Invalid tokens (`DeviceNotRegistered`) are set `enabled = false` by the worker.
 
+## `share_media_tasks` / `share_media_runs` (Phase 2)
+
+Added in `20260801000001_share_media_tasks.sql`. The durable video-analysis
+fallback queue + diagnostics. **Both are SERVICE-ROLE ONLY** — RLS enabled with
+NO client policies and `anon`/`authenticated` revoked, so the mobile client can
+never read or write them. The parent `share_jobs` row stays the user-facing
+source of truth. See [MEDIA_FALLBACK.md](./MEDIA_FALLBACK.md).
+
+- `share_media_tasks`: one task per share job (`share_job_id` unique, FK
+  `ON DELETE CASCADE`); a BEFORE trigger enforces `user_id` = parent job owner.
+  Worker bookkeeping (`attempts`, `max_attempts`, `locked_at`, `locked_until`,
+  `next_attempt_at`) plus size-bounded diagnostics-lite columns. No raw media
+  bytes are stored.
+- `claim_media_tasks(p_limit, p_lock_seconds)` — `SECURITY DEFINER`,
+  service-role only, `FOR UPDATE SKIP LOCKED` + stale-lease reclaim + bounded
+  attempts; also skips tasks whose `next_attempt_at` is in the future and any
+  task whose parent job is no longer `processing_metadata`; terminal tasks are
+  never reclaimed.
+- `expire_media_tasks(p_limit)` — backstop reaper that fails exhausted tasks.
+- `20260801000002_share_media_worker.sql` adds `invoke_process_media_tasks()`
+  (pg_net wake-up sending the dedicated `SHARE_MEDIA_WORKER_SECRET`, NOT the
+  service-role key), a per-minute `pg_cron` sweep, and an AFTER-INSERT trigger.
+  All defensive no-ops until the operator sets the Vault secrets.
+- `20260801000003_share_media_task_recovery.sql` (forward, idempotent) adds
+  bounded recovery: the `next_attempt_at` column + retry gate above;
+  `requeue_media_task(p_task_id, p_backoff_seconds, p_failure_code)` (re-queues
+  with backoff **without** incrementing `attempts`; no-op on terminal tasks);
+  `claim_stranded_media_parents(p_limit)` (returns `processing_metadata` parents
+  whose media task is `failed`/`cancelled`, `FOR UPDATE SKIP LOCKED`, for the
+  worker's stranded-parent sweep); and a `share_jobs_cancel_cascade_media`
+  AFTER-UPDATE trigger that cancels a media task when its parent is cancelled.
+  All new functions are `SECURITY DEFINER`, service-role only (execute revoked
+  from `public`/`anon`/`authenticated`).
+
 ## Worker wiring
 
 `20260731000003_share_jobs_worker.sql` adds `invoke_process_share_jobs()`
@@ -392,6 +451,56 @@ Current policy model:
 - `share_extraction_failures`: deny-all for client roles; service-role only
 - `share_jobs`: owner-only read/insert/update/delete; worker uses service role
 - `user_push_tokens`: owner-only read/insert/update/delete; worker reads via service role
+
+## Table & function privileges (explicit)
+
+RLS is the row-level boundary; these are the table/function GRANTs it sits on
+top of, declared explicitly in `20260801000004_explicit_privileges.sql` and
+`20260801000005_aux_privileges.sql` so they do not depend on the Supabase CLI's
+default privileges. Every public table + function is covered; the completeness
+gate in `scripts/testDatabasePrivileges.sql` fails if a new application object
+is added without declared privilege expectations.
+
+| table | `authenticated` | `anon` | `service_role` |
+| --- | --- | --- | --- |
+| profiles | SELECT, INSERT, UPDATE | — | full DML |
+| places | SELECT, INSERT | — | full DML |
+| saved_places | SELECT, INSERT, UPDATE, DELETE | — | full DML |
+| notification_events | SELECT, INSERT | — | full DML |
+| user_push_tokens | SELECT, INSERT, UPDATE, DELETE | — | full DML |
+| share_jobs | SELECT, DELETE (never INSERT/UPDATE) | — | full DML |
+| share_media_tasks | — | — | full DML |
+| share_media_runs | — | — | full DML |
+| analytics_events | INSERT | INSERT | full DML |
+| feedback | INSERT | — | full DML |
+| share_agent_runs | — | — | full DML |
+| share_extraction_failures | — | — | full DML |
+
+- `authenticated` gets exactly the DML each table's RLS policies allow; it never
+  gets direct INSERT/UPDATE on `share_jobs` (those go through the
+  resolve/cancel/retry RPCs), any access to the media tables, or TRUNCATE.
+- `anon` has no privileges on any of these tables (Nearr requires an
+  authenticated session) **except** `analytics_events` INSERT (pre-sign-in
+  telemetry). Because every role holds PUBLIC's privileges, an otherwise-empty
+  `anon` also proves PUBLIC is empty.
+- `service_role` (trusted backend; bypasses RLS but still needs table GRANTs for
+  direct DML) has full DML on all twelve tables.
+- Trigger/helper functions (`set_updated_at`, `handle_new_user`,
+  `share_jobs_after_insert_kick`, `share_jobs_cascade_cancel_media`,
+  `share_media_tasks_after_insert_kick`, `share_media_tasks_enforce_owner`) are
+  system-invoked only — EXECUTE revoked from PUBLIC/anon/authenticated.
+
+Function EXECUTE:
+
+- Owner-facing RPCs — `authenticated` only: `resolve_share_job`,
+  `cancel_share_job`, `retry_share_job`, `register_push_token`,
+  `bump_reminder_opportunity_count`.
+- Worker-only RPCs — `service_role` only (revoked from PUBLIC/anon/authenticated):
+  `claim_share_jobs`, `create_share_job_for_user`,
+  `claim_share_job_notifications`, `claim_share_job_receipts`,
+  `invoke_process_share_jobs`, `claim_media_tasks`, `expire_media_tasks`,
+  `requeue_media_task`, `claim_stranded_media_parents`,
+  `invoke_process_media_tasks`.
 
 ## Triggers and helper functions
 

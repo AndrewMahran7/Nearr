@@ -1,0 +1,46 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { InstagramMediaResolver } from '../src/resolvers/InstagramMediaResolver.js';
+import { isMediaError } from '../src/types/media.js';
+import type { WorkerConfig } from '../src/config/env.js';
+
+function resolver(enabled = true) {
+  return new InstagramMediaResolver({ instagramResolverEnabled: enabled } as unknown as WorkerConfig);
+}
+
+test('supports(): public Instagram host + flag only', () => {
+  const r = resolver(true);
+  assert.equal(r.supports({ platform: 'instagram', url: new URL('https://www.instagram.com/reel/abc/') }), true);
+  assert.equal(r.supports({ platform: 'instagram', url: new URL('https://instagram.com/p/abc/') }), true);
+  assert.equal(r.supports({ platform: 'tiktok', url: new URL('https://www.tiktok.com/@x/video/1') }), false);
+  assert.equal(r.supports({ platform: 'instagram', url: new URL('https://evil.com/p/abc/') }), false);
+});
+
+test('supports(): flag OFF => never supports', () => {
+  const r = resolver(false);
+  assert.equal(r.supports({ platform: 'instagram', url: new URL('https://www.instagram.com/reel/abc/') }), false);
+});
+
+test('resolve(): rejects non-HTTPS source before yt-dlp', async () => {
+  const r = resolver(true);
+  await assert.rejects(
+    () => r.resolve({ jobId: 'j', sourceUrl: 'http://www.instagram.com/reel/abc/', workDir: '/tmp/none', signal: new AbortController().signal }),
+    (e) => isMediaError(e) && e.code === 'unsupported_url',
+  );
+});
+
+test('resolve(): rejects non-Instagram host before yt-dlp', async () => {
+  const r = resolver(true);
+  await assert.rejects(
+    () => r.resolve({ jobId: 'j', sourceUrl: 'https://evil.com/reel/abc/', workDir: '/tmp/none', signal: new AbortController().signal }),
+    (e) => isMediaError(e) && e.code === 'unsupported_url',
+  );
+});
+
+test('resolve(): rejects a malformed URL before yt-dlp', async () => {
+  const r = resolver(true);
+  await assert.rejects(
+    () => r.resolve({ jobId: 'j', sourceUrl: 'not a url', workDir: '/tmp/none', signal: new AbortController().signal }),
+    (e) => isMediaError(e) && e.code === 'unsupported_url',
+  );
+});
