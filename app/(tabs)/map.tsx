@@ -25,6 +25,8 @@ import { useCallback, useEffect, useMemo, useRef, useState, memo, type Component
 import {
   Animated,
   Alert,
+  AppState,
+  type AppStateStatus,
   Linking,
   PanResponder,
   Platform,
@@ -98,6 +100,17 @@ import {
 import { isDemoMode } from '@/lib/demoMode';
 import { isMapPreviewMode } from '@/lib/mapPreview';
 import { openExternalMaps as openInExternalMaps } from '@/lib/externalMaps';
+import {
+  shouldAcceptSample,
+  shouldWatchLocation,
+  canStartWatch,
+  nextFollowMode,
+  shouldFollowCamera,
+  LIVE_LOCATION_TIME_INTERVAL_MS,
+  LIVE_LOCATION_DISTANCE_INTERVAL_M,
+  LIVE_LOCATION_FOLLOW_ANIMATION_MS,
+  type LocationSample,
+} from '@/lib/liveLocation';
 import { trackEvent } from '@/lib/analytics';
 import { isAsyncShareJobsEnabled } from '@/lib/featureFlags';
 import { isLikelyUrl } from '@/lib/shareParser';
@@ -484,6 +497,14 @@ export default function MapScreen() {
   const [permission, setPermission] = useState<PermissionState>('pending');
   const [userRegion, setUserRegion] = useState<Region | null>(null);
   const [currentLocationLoading, setCurrentLocationLoading] = useState(false);
+  // Follow mode: when ON, the camera glides to keep the live user location
+  // centered. Enabled by tapping the recenter button; disabled the moment the
+  // user manually pans/zooms the map (they've taken over navigation). The
+  // user dot keeps updating regardless of this flag. Starts ON so the map
+  // opens in a "here I am" state, then yields to the user on first gesture.
+  const [followMode, setFollowMode] = useState(true);
+  const followModeRef = useRef(true);
+  followModeRef.current = followMode;
   const [selected, setSelected] = useState<SavedPlaceWithPlace | null>(null);
   const [mapReady, setMapReady] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -562,6 +583,16 @@ export default function MapScreen() {
   const shownMissingReminderRef = useRef<string | null>(null);
   const previousRegionRef = useRef<Region | null>(null);
   const lastRegionRef = useRef<Region | null>(null);
+
+  // ---- live foreground location tracking --------------------------------
+  // A single `watchPositionAsync` subscription, its last-accepted reading (for
+  // stale/out-of-order rejection), and the lifecycle inputs (app foreground +
+  // screen focus) that gate whether it should be running. See lib/liveLocation.ts
+  // for the pure decision logic.
+  const watchSubRef = useRef<Location.LocationSubscription | null>(null);
+  const lastSampleRef = useRef<LocationSample | null>(null);
+  const [appActive, setAppActive] = useState(AppState.currentState === 'active');
+  const [screenFocused, setScreenFocused] = useState(false);
 
   // ---- permission + initial location ------------------------------------
   // IMPORTANT: this effect must NEVER block map rendering. The map should be
@@ -652,16 +683,126 @@ export default function MapScreen() {
     };
   }, [demo, mapPreview]);
 
+  // ---- live foreground location subscription ----------------------------
+  // Keeps the user dot (and follow-mode camera) tracking the real device
+  // location while the map is visible and the app is foregrounded. Exactly one
+  // subscription is ever active; it is torn down on blur, background, or
+  // permission loss and a fresh one is started when we return to the
+  // foreground. Stale / out-of-order / invalid readings are dropped via
+  // lib/liveLocation.ts. We deliberately do NOT request background location and
+  // never track while the app is closed.
+  useEffect(() => {
+    if (demo || mapPreview) return;
+
+    const shouldWatch = shouldWatchLocation({
+      isFocused: screenFocused,
+      appActive,
+      permissionGranted: permission === 'granted',
+    });
+
+    if (!shouldWatch) {
+      // Not eligible to track right now — make sure any existing subscription
+      // is removed (covers blur, background, and permission loss).
+      if (watchSubRef.current) {
+        watchSubRef.current.remove();
+        watchSubRef.current = null;
+      }
+      return;
+    }
+
+    // Already have a live subscription — never create a duplicate.
+    if (!canStartWatch(!!watchSubRef.current)) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const subscription = await Location.watchPositionAsync(
+          {
+            accuracy: Location.Accuracy.High,
+            timeInterval: LIVE_LOCATION_TIME_INTERVAL_MS,
+            distanceInterval: LIVE_LOCATION_DISTANCE_INTERVAL_M,
+          },
+          (loc) => {
+            const sample: LocationSample = {
+              latitude: loc.coords.latitude,
+              longitude: loc.coords.longitude,
+              timestamp: loc.timestamp,
+            };
+            // Reject stale / out-of-order / invalid readings.
+            if (!shouldAcceptSample(lastSampleRef.current, sample)) return;
+            lastSampleRef.current = sample;
+            // The marker/dot always reflects the latest accepted reading.
+            setUserRegion((prev) => ({
+              latitude: sample.latitude,
+              longitude: sample.longitude,
+              latitudeDelta: prev?.latitudeDelta ?? 0.03,
+              longitudeDelta: prev?.longitudeDelta ?? 0.03,
+            }));
+            // Only the camera is gated on follow mode. Use animateCamera so we
+            // preserve the user's current zoom instead of snapping to a fixed
+            // delta.
+            if (shouldFollowCamera(followModeRef.current, true)) {
+              try {
+                mapRef.current?.animateCamera(
+                  { center: { latitude: sample.latitude, longitude: sample.longitude } },
+                  { duration: LIVE_LOCATION_FOLLOW_ANIMATION_MS },
+                );
+              } catch (err) {
+                if (__DEV__) console.debug('[map] follow animate skipped', err);
+              }
+            }
+          },
+        );
+        if (cancelled) {
+          // Unmounted / gate flipped while we awaited — drop it immediately.
+          subscription.remove();
+          return;
+        }
+        watchSubRef.current = subscription;
+      } catch (err) {
+        // watchPositionAsync can throw on emulators / when the provider is
+        // unavailable. Degrade gracefully — never crash the map.
+        if (__DEV__) console.debug('[map] watchPositionAsync failed', err);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      if (watchSubRef.current) {
+        watchSubRef.current.remove();
+        watchSubRef.current = null;
+      }
+    };
+  }, [demo, mapPreview, screenFocused, appActive, permission]);
+
   // ---- re-fetch on focus -------------------------------------------------
   // Stale-while-revalidate: hydrates instantly from the shared cache and only
   // hits the network if the data is stale — so the map never visibly resets
   // when returning to this tab.
   useFocusEffect(
     useCallback(() => {
+      setScreenFocused(true);
       void revalidate();
       void trackEvent('map_opened', {});
+      return () => {
+        // Blur (tab switch / navigate away): the watch effect below reads
+        // this and tears down the subscription so we never track a screen the
+        // user isn't looking at.
+        setScreenFocused(false);
+      };
     }, [revalidate]),
   );
+
+  // ---- app foreground/background listener --------------------------------
+  // Drives the live-location watch lifecycle together with screen focus. When
+  // the app goes to the background we stop tracking; when it returns to the
+  // foreground the watch effect restarts a fresh subscription.
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state: AppStateStatus) => {
+      setAppActive(state === 'active');
+    });
+    return () => sub.remove();
+  }, []);
 
   // ---- load profile (for default radius fallback) -----------------------
   // Best-effort. If this fails or returns null we just fall back to 1 mile
@@ -889,6 +1030,13 @@ export default function MapScreen() {
 
   function selectPlace(item: SavedPlaceWithPlace) {
     previousRegionRef.current = lastRegionRef.current;
+    // Selecting a place is manual navigation to a specific spot — stop the
+    // follow camera so it doesn't yank back to the user's live location while
+    // they're examining this place. The user dot keeps updating; tapping the
+    // recenter button re-enables follow. Set the ref directly for immediate
+    // effect in any in-flight watch callback.
+    followModeRef.current = false;
+    setFollowMode(false);
     setSelected(item);
     // Always (re)open a newly selected marker in the collapsed preview state.
     setPreviewExpanded(false);
@@ -1057,6 +1205,11 @@ export default function MapScreen() {
   // is set instead of recreating closures or re-writing the ref.
   const handlePanDrag = useCallback(() => {
     if (!hasUserMovedRef.current) hasUserMovedRef.current = true;
+    // Manual pan/zoom hands navigation back to the user — stop the camera from
+    // chasing new location readings. The user dot keeps updating regardless.
+    if (followModeRef.current) {
+      setFollowMode((cur) => nextFollowMode(cur, 'user-gesture'));
+    }
   }, []);
   const handleRegionChangeComplete = useCallback((region: Region) => {
     lastRegionRef.current = region;
@@ -1159,8 +1312,10 @@ export default function MapScreen() {
 
   // Custom recenter button. Prefers an existing GPS fix; otherwise does a
   // best-effort fetch that mirrors the initial-location effect (permission
-  // check + timeout race) so it can never wedge the UI.
+  // check + timeout race) so it can never wedge the UI. Always (re)enables
+  // follow mode so the camera tracks the live location again.
   const recenterOnUser = useCallback(async () => {
+    setFollowMode((cur) => nextFollowMode(cur, 'recenter'));
     if (userRegion) {
       try {
         mapRef.current?.animateToRegion(userRegion, 400);

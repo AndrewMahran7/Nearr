@@ -34,6 +34,8 @@
     "test:shared-auth-sync": "ts-node -P scripts/tsconfig.json scripts/testSharedAuthSync.ts",
     "test:share-submission": "ts-node -P scripts/tsconfig.json scripts/testShareSubmission.ts",
     "test:share-jobs-dedupe": "ts-node -P scripts/tsconfig.json scripts/testShareJobsDedupe.ts",
+    "test:live-location": "ts-node -P scripts/tsconfig.json scripts/testLiveLocation.ts",
+    "test:place-share": "ts-node -P scripts/tsconfig.json scripts/testPlaceShare.ts",
     "test:media-fallback": "ts-node -P scripts/tsconfig.json scripts/testMediaFallbackTrigger.ts",
     "test:media-evidence": "ts-node -P scripts/tsconfig.json scripts/testMediaEvidenceAdapter.ts",
     "test:media-finalize": "ts-node -P scripts/tsconfig.json scripts/testMediaFinalizePlan.ts",
@@ -42,7 +44,7 @@
     "test:share-regression": "ts-node -P scripts/tsconfig.json scripts/testShareRegression.ts",
     "failures:list": "ts-node -P scripts/tsconfig.json scripts/listShareExtractionFailures.ts",
     "failures:export": "ts-node -P scripts/tsconfig.json scripts/listShareExtractionFailures.ts --jsonl",
-    "test:prebuild": "npm run typecheck && npm run test:address-first && npm run test:address-match && npm run test:multi-address && npm run test:recovery-hints && npm run test:safety-description-only && npm run test:generic-caption-guard && npm run test:platform-noise && npm run test:manual-fallback && npm run test:tiktok-url && npm run test:notification-dedupe && npm run test:account && npm run test:share-job-mapping && npm run test:share-job-routing && npm run test:share-url-validation && npm run test:feature-flags && npm run test:shared-auth-session && npm run test:share-routes && npm run test:sanitize-error && npm run test:shared-auth-sync && npm run test:share-submission && npm run test:share-jobs-dedupe && npm run test:media-fallback && npm run test:media-evidence && npm run test:media-finalize && npm run test:media-adversarial",
+    "test:prebuild": "npm run typecheck && npm run test:address-first && npm run test:address-match && npm run test:multi-address && npm run test:recovery-hints && npm run test:safety-description-only && npm run test:generic-caption-guard && npm run test:platform-noise && npm run test:manual-fallback && npm run test:tiktok-url && npm run test:notification-dedupe && npm run test:account && npm run test:share-job-mapping && npm run test:share-job-routing && npm run test:share-url-validation && npm run test:feature-flags && npm run test:shared-auth-session && npm run test:share-routes && npm run test:sanitize-error && npm run test:shared-auth-sync && npm run test:share-submission && npm run test:share-jobs-dedupe && npm run test:live-location && npm run test:place-share && npm run test:media-fallback && npm run test:media-evidence && npm run test:media-finalize && npm run test:media-adversarial",
     "export:share-gold-labels": "ts-node -P scripts/tsconfig.json scripts/exportShareGoldLabels.ts",
     "eval:share-gold": "ts-node -P scripts/tsconfig.json scripts/evalShareGold.ts"
   },

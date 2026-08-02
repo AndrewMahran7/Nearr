@@ -25,6 +25,7 @@ import {
   PanResponder,
   Pressable,
   ScrollView,
+  Share,
   StyleSheet,
   Switch,
   Text,
@@ -37,6 +38,7 @@ import { Button, Card, Input } from '@/components';
 import { Radius, Spacing } from '@/constants';
 import { useTheme } from '@/lib/theme';
 import { trackEvent } from '@/lib/analytics';
+import { buildPlaceShareContent } from '@/lib/placeShare';
 import { deleteSavedPlace, updateSavedPlace } from '@/services/savedPlacesService';
 import {
   getSavedPlacesCacheSnapshot,
@@ -379,6 +381,37 @@ export function SelectedPlaceDetails({
     }
   }
 
+  // Ordinary place sharing via the native Share sheet. Shares only the public
+  // identity of the place — name, address, and a public Google Maps link — and
+  // deliberately NOT a `nearr://` deep link (Nearr has no universal-link infra
+  // yet, so such a link wouldn't be reliably clickable). No private fields
+  // (notes, reminder settings, ids, source URL) are ever included; the payload
+  // is built by the pure lib/placeShare.ts helper.
+  async function sharePlace() {
+    const content = buildPlaceShareContent({
+      name: saved.place.name,
+      formatted_address: saved.place.formatted_address,
+      google_place_id: saved.place.google_place_id,
+      google_maps_url: saved.place.google_maps_url,
+      latitude: saved.place.latitude,
+      longitude: saved.place.longitude,
+    });
+    void trackEvent('place_shared', {
+      saved_place_id: saved.id,
+      google_place_id: saved.place.google_place_id ?? null,
+      has_url: !!content.url,
+    });
+    try {
+      await Share.share(
+        { message: content.message, title: content.title },
+        { subject: content.title },
+      );
+    } catch (err) {
+      // User cancellation on Android rejects the promise — treat as a no-op.
+      if (__DEV__) console.debug('[map] share place dismissed', err);
+    }
+  }
+
   async function handleSave() {
     let radiusValue: number | null = null;
     let radiusUnit: RadiusUnit | null = null;
@@ -684,6 +717,14 @@ export function SelectedPlaceDetails({
             styles={styles}
           />
         ) : null}
+        <ActionPill
+          label="Share"
+          icon="share"
+          onPress={() => {
+            void sharePlace();
+          }}
+          styles={styles}
+        />
       </View>
 
       <Card style={styles.sectionCard}>
