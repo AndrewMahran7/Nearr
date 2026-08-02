@@ -35,11 +35,21 @@ function main(): void {
   }
 
   const ctx: ServerContext = { cfg, deps };
-  startServer(ctx);
+  const server = startServer(ctx);
 
+  // Graceful shutdown for the container (Railway sends SIGTERM, then SIGKILL
+  // after its drain window). Stop accepting new connections, then exit.
+  // In-flight work is safe to abandon: temp storage is ephemeral and the queue
+  // reclaims any stale lease, so a redeploy never strands or double-processes a
+  // task. The bounded timer guarantees we exit well inside the drain window
+  // instead of waiting on a long-running job.
+  let shuttingDown = false;
   const shutdown = (signal: string) => {
+    if (shuttingDown) return;
+    shuttingDown = true;
     log.info('shutdown', { signal });
-    process.exit(0);
+    server.close(() => process.exit(0));
+    setTimeout(() => process.exit(0), 5000).unref();
   };
   process.on('SIGTERM', () => shutdown('SIGTERM'));
   process.on('SIGINT', () => shutdown('SIGINT'));
