@@ -40,6 +40,39 @@ export function authorizeServiceRoleBearer(
   return bearer === serviceRoleKey;
 }
 
+// ---------------------------------------------------------------------------
+// Dedicated scheduler-secret authorization. The private per-minute worker
+// endpoint is authenticated by a high-entropy shared secret that is
+// INDEPENDENT of the Supabase service-role key — so a service-role key
+// rotation can never silently break the scheduler again (the exact failure
+// this replaces). The secret travels in the `x-nearr-worker-secret` header
+// (never Authorization, so there is no gateway-JWT coupling) and is compared
+// in constant time. Fail-closed: an unset expected secret or an empty
+// presented value never authorizes. Pure + Node-testable.
+// ---------------------------------------------------------------------------
+
+export function constantTimeEqual(a: string, b: string): boolean {
+  if (typeof a !== 'string' || typeof b !== 'string') return false;
+  // Accumulate all differences without short-circuiting. The length XOR makes
+  // a length mismatch always fail; the loop runs over the longer string so the
+  // comparison time does not reveal the position of the first difference.
+  const len = a.length > b.length ? a.length : b.length;
+  let diff = a.length ^ b.length;
+  for (let i = 0; i < len; i += 1) {
+    diff |= (a.charCodeAt(i) | 0) ^ (b.charCodeAt(i) | 0);
+  }
+  return diff === 0;
+}
+
+export function authorizeWorkerSecret(
+  presentedSecret: string | null | undefined,
+  expectedSecret: string | null | undefined,
+): boolean {
+  if (!expectedSecret) return false; // fail closed: no configured secret
+  if (!presentedSecret) return false;
+  return constantTimeEqual(presentedSecret, expectedSecret);
+}
+
 const TERMINAL_TASK_STATUSES: ReadonlySet<string> = new Set([
   'completed',
   'needs_help',

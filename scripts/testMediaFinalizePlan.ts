@@ -14,6 +14,8 @@
 
 import {
   authorizeServiceRoleBearer,
+  authorizeWorkerSecret,
+  constantTimeEqual,
   extractBearerToken,
   planPreResolve,
   planPostResolve,
@@ -121,6 +123,26 @@ for (const mode of ['single', 'multi', 'manual'] as const) {
   check('extractBearerToken parses token', extractBearerToken(`Bearer ${KEY}`) === KEY);
   check('extractBearerToken trims token', extractBearerToken('Bearer   spaced  ') === 'spaced');
   check('extractBearerToken non-bearer => empty', extractBearerToken('Basic xyz') === '');
+}
+
+// ---- Dedicated scheduler-secret authentication (constant-time) -------------
+// The private worker endpoint's PRIMARY auth. Independent of the service-role
+// key so a key rotation cannot break the scheduler. These fail if the check is
+// ever weakened (prefix/superstring accept, empty-secret accept, length slip).
+{
+  const SECRET = 'wrk_9f3c1e7a5b2d4c8e6f0a1b2c3d4e5f60718293a4b5c6d7e8f9';
+  check('worker: exact secret authorizes', authorizeWorkerSecret(SECRET, SECRET) === true);
+  check('worker: wrong secret rejected', authorizeWorkerSecret('wrong', SECRET) === false);
+  check('worker: prefix rejected', authorizeWorkerSecret(SECRET.slice(0, -1), SECRET) === false);
+  check('worker: superstring rejected', authorizeWorkerSecret(`${SECRET}x`, SECRET) === false);
+  check('worker: empty presented rejected', authorizeWorkerSecret('', SECRET) === false);
+  check('worker: null presented rejected', authorizeWorkerSecret(null, SECRET) === false);
+  check('worker: empty expected fails closed', authorizeWorkerSecret(SECRET, '') === false);
+  check('worker: null expected fails closed', authorizeWorkerSecret(SECRET, null) === false);
+  check('ct: equal strings match', constantTimeEqual(SECRET, SECRET) === true);
+  check('ct: different-length mismatch', constantTimeEqual('abc', 'abcd') === false);
+  check('ct: same-length one-char diff mismatch', constantTimeEqual('abcd', 'abce') === false);
+  check('ct: both empty match', constantTimeEqual('', '') === true);
 }
 
 console.log(failures === 0 ? '\nALL MEDIA FINALIZE PLAN TESTS PASSED' : `\n${failures} FAILURE(S)`);

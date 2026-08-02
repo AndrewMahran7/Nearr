@@ -123,7 +123,15 @@ renders `ShareJobHandoff` (create job + confirm + dismiss). This is the Android
 ### Worker — `supabase/functions/process-share-jobs`
 
 Invoked by the pg_cron sweep (durability) and the AFTER-INSERT pg_net trigger
-(low latency). Auth = bearer must equal the service-role key. Steps:
+(low latency). Auth = a dedicated high-entropy scheduler secret sent in the
+`x-nearr-worker-secret` header and compared in constant time against the
+`SHARE_JOBS_WORKER_SECRET` function env. This is independent of the Supabase
+service-role key, so a service-role key rotation can never silently break the
+scheduler (the exact failure this replaced — see migration
+`20260731000006_share_jobs_worker_secret.sql`). The service-role key as an
+`Authorization` bearer is still accepted as a manual/admin fallback. The
+endpoint is deployed with `--no-verify-jwt` (a private scheduler URL) so the
+dedicated secret is the sole gate and is validated before any work. Steps:
 `claim_share_jobs()` → for each job: `normalizeShareUrl` → `fetchPostMetadata` →
 `extractHandles/extractEvidence/extractTaggedLocation` → `resolveSharedPlace` →
 map decision → (`saveForUser` for auto_save) → terminal transition. In the same
@@ -183,13 +191,42 @@ Also needed at runtime:
 create extension if not exists pg_net;
 create extension if not exists pg_cron;
 
--- 2. Worker endpoint + service key (Vault preferred):
+-- 2. Worker endpoint (Vault preferred):
 select vault.create_secret('https://<REF>.supabase.co/functions/v1', 'share_jobs_worker_edge_base_url');
+
+-- 3. Dedicated scheduler secret (PRIMARY auth). Set the SAME value in BOTH the
+--    Vault secret and the function env. Never commit it; never EXPO_PUBLIC it.
+--    a) generate: openssl rand -hex 48   (or in SQL: encode(gen_random_bytes(48),'hex'))
+--    b) Vault:
+select vault.create_secret('<WORKER_SECRET>', 'share_jobs_worker_secret');
+--    c) function env:
+--       supabase secrets set SHARE_JOBS_WORKER_SECRET='<WORKER_SECRET>' --project-ref <REF>
+
+-- 4. (Optional, back-compat) legacy service-role bearer:
 select vault.create_secret('<SERVICE_ROLE_KEY>', 'share_jobs_worker_service_key');
--- (Fallback without Vault — less secure:)
--- alter database postgres set app.settings.share_jobs_edge_base_url = 'https://<REF>.supabase.co/functions/v1';
--- alter database postgres set app.settings.share_jobs_service_key   = '<SERVICE_ROLE_KEY>';
 ```
+
+### Worker secret rotation
+
+The scheduler secret is independent of the service-role key and rotates on its
+own schedule. To rotate (a brief mismatch only causes retried 401s — the durable
+queue + cron sweep recover with no data loss once both sides match again):
+
+```sql
+-- 1. New value:  openssl rand -hex 48
+-- 2. Vault:
+select vault.update_secret(
+  (select id from vault.secrets where name = 'share_jobs_worker_secret'),
+  '<NEW_SECRET>');
+-- 3. Function env (same value):
+--    supabase secrets set SHARE_JOBS_WORKER_SECRET='<NEW_SECRET>' --project-ref <REF>
+-- 4. Verify a 2xx:
+select public.invoke_process_share_jobs();
+select status_code, timed_out from net._http_response order by created desc limit 1;
+```
+
+Keep the service-role key (`SUPABASE_SERVICE_ROLE_KEY`) for database
+administration only — it is no longer required for the scheduler to authenticate.
 
 If pg_cron was enabled *after* the migration ran, (re-)schedule the sweep:
 
@@ -208,7 +245,10 @@ queue and the queue still works; nothing dispatches yet.
 1. `supabase db push` (applies the 4 migrations).
 2. Enable `pg_net` + `pg_cron` (if not auto-enabled), then set the two Vault secrets.
 3. `supabase functions deploy create-share-job`
-4. `supabase functions deploy process-share-jobs`
+4. `supabase functions deploy process-share-jobs --no-verify-jwt` (private
+   scheduler endpoint — the dedicated worker secret is the gate; **always pass
+   `--no-verify-jwt` on redeploys** or the platform re-enables JWT verification
+   and pg_net calls are rejected at the gateway).
 5. Confirm the `process-share-jobs-sweep` cron job exists (`select * from cron.job;`).
 6. Upload an **APNs key** to EAS credentials (iOS push) if not already present.
 7. Set EAS env for the rollout build:

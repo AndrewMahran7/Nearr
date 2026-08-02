@@ -18,7 +18,7 @@
 // @ts-nocheck — Deno runtime.
 
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
+import { createClient } from 'npm:@supabase/supabase-js@2.45.0';
 
 import { readEnv, validateEnv } from '../process-share-link/env.ts';
 import { detectPlatform, legacySourceFor } from '../process-share-link/platform/detectPlatform.ts';
@@ -43,7 +43,7 @@ import {
   summarizeMediaEvidence,
   mediaEvidenceAutoSaveEligible,
 } from './mediaEvidence.ts';
-import { authorizeServiceRoleBearer, planPreResolve, planPostResolve } from './mediaFinalizePlan.ts';
+import { authorizeServiceRoleBearer, authorizeWorkerSecret, planPreResolve, planPostResolve } from './mediaFinalizePlan.ts';
 
 const CORS_HEADERS: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
@@ -830,10 +830,21 @@ serve(async (req) => {
     return json({ error: 'method_not_allowed' }, 405);
   }
 
-  // ---- Worker auth: bearer must equal the service-role key -------
+  // ---- Worker auth --------------------------------------------------------
+  // Primary: a dedicated, high-entropy scheduler secret in the
+  // `x-nearr-worker-secret` header (decoupled from the rotating service-role
+  // key). Fallback: the service-role key as a bearer, kept ONLY for manual /
+  // admin invocation. Both are constant-time compared and fail closed. This
+  // endpoint is deployed with verify_jwt disabled (a private scheduler URL),
+  // so this dedicated-secret check is the sole gate and runs before any work.
+  const workerSecret = Deno.env.get('SHARE_JOBS_WORKER_SECRET') ?? '';
+  const presentedWorkerSecret = req.headers.get('x-nearr-worker-secret') ?? '';
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
   const headerAuth = req.headers.get('authorization') ?? '';
-  if (!authorizeServiceRoleBearer(headerAuth, serviceRoleKey)) {
+  const authorized =
+    authorizeWorkerSecret(presentedWorkerSecret, workerSecret) ||
+    authorizeServiceRoleBearer(headerAuth, serviceRoleKey);
+  if (!authorized) {
     return json({ error: 'unauthorized' }, 401);
   }
 
@@ -892,7 +903,11 @@ serve(async (req) => {
 
   await processPendingNotifications(admin, limit);
   await processNotificationReceipts(admin, limit);
-  await recoverStrandedMediaJobs(admin);
+  // Media recovery only runs when Phase 2 media fallback is enabled; otherwise
+  // its Phase 2 RPCs are absent and this stays a no-op (Phase 1 sweep clean).
+  if (readMediaFlags().mediaFallbackEnabled) {
+    await recoverStrandedMediaJobs(admin);
+  }
 
   return json({ claimed: jobs.length, processed });
 });
