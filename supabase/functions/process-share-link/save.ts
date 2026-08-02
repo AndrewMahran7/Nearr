@@ -152,6 +152,10 @@ async function patchExistingSavedPlaceForUser(
 export type SaveResult = {
   savedPlaceId: string;
   placeId: string;
+  /** True when the place was ALREADY in the user's saved places (reused an
+   *  existing row via source_url match, place-dedupe, or a unique-violation
+   *  recovery) rather than inserting a new saved_places row. */
+  reused: boolean;
 };
 
 export async function saveForUser(args: {
@@ -177,6 +181,7 @@ export async function saveForUser(args: {
     return {
       savedPlaceId: existingForUser.id,
       placeId: existingForUser.place.id,
+      reused: true,
     };
   }
 
@@ -254,7 +259,7 @@ export async function saveForUser(args: {
         await patchExistingSavedPlaceForUser(
           client, existingSaved.id, source, sourceUrl, autoNote,
         );
-        return { savedPlaceId: existingSaved.id, placeId: placeId! };
+        return { savedPlaceId: existingSaved.id, placeId: placeId!, reused: true };
       }
     }
     throw new Error(`saved_places insert: ${savedErr.message}`);

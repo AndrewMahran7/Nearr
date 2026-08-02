@@ -13,6 +13,7 @@ import { supabase } from '@/lib/supabase';
 import { isDemoMode } from '@/lib/demoMode';
 import { isMapPreviewMode } from '@/lib/mapPreview';
 import { logDebug } from '@/lib/logger';
+import { QUEUE_VISIBLE_STATUSES } from '@/lib/shareJobRouting';
 
 export type ShareJobStatus =
   | 'queued'
@@ -76,13 +77,18 @@ export type ShareJob = {
 const JOB_COLUMNS =
   'id, user_id, source_url, canonical_url, source_platform, status, progress_stage, decision, saved_place_id, candidate_payload, extraction_payload, suggested_query, needs_help_reason, failure_reason, notification_status, notification_attempts, notification_last_attempt_at, notification_ticket_ids, notification_error_code, notification_submitted_at, created_at, updated_at, completed_at';
 
-/** List the current user's non-cancelled jobs, newest first. */
+/** List the current user's active/actionable jobs, newest first.
+ *
+ * The queue is the source of truth for WORK IN PROGRESS: only jobs that are
+ * still processing, awaiting the user, or a recoverable failure are returned.
+ * Terminal outcomes (completed / already-saved, cancelled) are excluded at the
+ * query so a resolved job disappears from the queue immediately. */
 export async function listShareJobs(limit = 100): Promise<ShareJob[]> {
   if (isDemoMode() || isMapPreviewMode()) return [];
   const { data, error } = await supabase
     .from('share_jobs')
     .select(JOB_COLUMNS)
-    .neq('status', 'cancelled')
+    .in('status', QUEUE_VISIBLE_STATUSES as unknown as string[])
     .order('created_at', { ascending: false })
     .limit(limit);
   if (error) {

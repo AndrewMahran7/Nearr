@@ -20,6 +20,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { isAsyncShareJobsEnabled } from '@/lib/featureFlags';
 import { isDemoMode } from '@/lib/demoMode';
 import { dedupeJobsById } from '@/lib/shareJobsDedupe';
+import { filterQueueVisible } from '@/lib/shareJobRouting';
 import { listShareJobs, type ShareJob } from '@/services/shareJobsService';
 
 const ACTIVE_STATUSES: ShareJob['status'][] = ['queued', 'processing_metadata'];
@@ -28,14 +29,12 @@ const POLL_MS = 6_000;
 export type ShareJobSections = {
   processing: ShareJob[];
   needsHelp: ShareJob[];
-  recentlyFound: ShareJob[];
   failed: ShareJob[];
 };
 
 function sectionize(jobs: ShareJob[]): ShareJobSections {
   const processing: ShareJob[] = [];
   const needsHelp: ShareJob[] = [];
-  const recentlyFound: ShareJob[] = [];
   const failed: ShareJob[] = [];
   for (const job of jobs) {
     switch (job.status) {
@@ -46,17 +45,15 @@ function sectionize(jobs: ShareJob[]): ShareJobSections {
       case 'needs_help':
         needsHelp.push(job);
         break;
-      case 'completed':
-        recentlyFound.push(job);
-        break;
       case 'failed':
         failed.push(job);
         break;
       default:
+        // completed / cancelled / unknown are terminal — never shown here.
         break;
     }
   }
-  return { processing, needsHelp, recentlyFound: recentlyFound.slice(0, 20), failed };
+  return { processing, needsHelp, failed };
 }
 
 export function useShareJobs() {
@@ -105,10 +102,11 @@ export function useShareJobs() {
       try {
         const data = await listShareJobs();
         if (!mountedRef.current) return;
-        // Defensive dedupe by stable job id: the DB is the source of truth, but
-        // a realtime insert landing during the initial fetch, duplicate events,
-        // or an accidental duplicate row must never render the same job twice.
-        setJobs(dedupeJobsById(data));
+        // Defensive dedupe + visibility filter by stable job id: the DB query
+        // already excludes terminal jobs, but a realtime insert landing during
+        // the initial fetch, a duplicate event, or a delayed event for a job
+        // that has since resolved must never render a resolved/terminal card.
+        setJobs(filterQueueVisible(dedupeJobsById(data)));
         setError(null);
       } catch (err) {
         if (!mountedRef.current) return;

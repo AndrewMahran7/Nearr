@@ -19,6 +19,7 @@ import { clearDevAuth } from '@/lib/devAuth';
 import { trackEvent } from '@/lib/analytics';
 import { sanitizeErrorText, sanitizeStack } from '@/lib/sanitizeError';
 import { recordDiagnostic } from '@/lib/deviceDiagnostics';
+import { routeShareJobNotification } from '@/lib/shareJobRouting';
 import {
   deactivatePushTokenForCurrentUser,
   registerPushTokenForCurrentUser,
@@ -475,6 +476,7 @@ function RootLayoutContent() {
     void registerNotificationCategories();
 
     function routeFromResponse(response: Notifications.NotificationResponse) {
+      try {
       const notificationId = response.notification.request.identifier;
       const responseKey = `${response.actionIdentifier ?? 'default'}:${notificationId}`;
       if (lastNotificationResponseKeyRef.current === responseKey) {
@@ -509,25 +511,33 @@ function RootLayoutContent() {
         typeof nearbyCountRaw === 'number' ||
         nearbyCountFromArray > 0;
 
-      // Async share-job notifications route to the specific place/job — NOT
-      // to the generic map. Tap type is carried in `data.type`.
-      const notifType = typeof data.type === 'string' ? data.type : undefined;
-      if (isDefaultTap && notifType === 'share_job_completed') {
-        const sp = typeof data.savedPlaceId === 'string' ? data.savedPlaceId : undefined;
-        router.push({
-          pathname: '/(tabs)/map',
-          params: sp ? { savedPlaceId: sp } : {},
-        });
-        return;
-      }
-      if (isDefaultTap && notifType === 'share_job_needs_help') {
-        const jid = typeof data.jobId === 'string' ? data.jobId : undefined;
-        if (jid) {
-          router.push({ pathname: '/share-jobs/[jobId]', params: { jobId: jid } });
-        } else {
-          router.push('/share-jobs');
+      // Async share-job notifications route by OUTCOME through one typed, pure
+      // function (never throws): completed / already-saved → the existing saved
+      // place; needs_help → the queue item (the detail route itself redirects
+      // safely if that job has since become terminal). Old payloads without an
+      // `outcome` field still route correctly by `data.type`.
+      if (isDefaultTap) {
+        const sjRoute = routeShareJobNotification(data);
+        if (sjRoute) {
+          switch (sjRoute.kind) {
+            case 'saved_place':
+              router.push({
+                pathname: '/(tabs)/map',
+                params: { savedPlaceId: sjRoute.savedPlaceId },
+              });
+              break;
+            case 'queue_item':
+              router.push({ pathname: '/share-jobs/[jobId]', params: { jobId: sjRoute.jobId } });
+              break;
+            case 'queue_root':
+              router.push('/share-jobs');
+              break;
+            case 'map':
+              router.push('/(tabs)/map');
+              break;
+          }
+          return;
         }
-        return;
       }
 
       if (isDefaultTap && isNearbyReminderPayload && savedPlaceId) {
@@ -549,6 +559,21 @@ function RootLayoutContent() {
       }
 
       void handleNotificationAction(actionIdentifier, savedPlaceId, placeId);
+      } catch (err) {
+        // A malformed payload or a navigation failure must NEVER reach the
+        // global error boundary. Record a sanitized diagnostic and fall back to
+        // the map instead of crashing the app.
+        void recordDiagnostic({
+          errorCode: 'notification_route_failed',
+          route: 'notification',
+          error: err,
+        });
+        try {
+          router.push('/(tabs)/map');
+        } catch {
+          // give up silently — never rethrow from a notification handler
+        }
+      }
     }
 
     // Cold-start: app was launched by tapping a notification.

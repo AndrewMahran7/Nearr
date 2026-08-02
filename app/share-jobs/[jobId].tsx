@@ -22,9 +22,10 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
-import { Button, Input, Screen } from '@/components';
+import { Button, ErrorBoundary, Input, Screen } from '@/components';
 import { Radius, Spacing } from '@/constants';
 import { useTheme } from '@/lib/theme';
+import { classifyShareJobDetail } from '@/lib/shareJobRouting';
 import { usePlacesSearch } from '@/hooks/usePlacesSearch';
 import { upsertSavedPlaceIntoCache } from '@/hooks/useSavedPlaces';
 import { saveSavedPlace } from '@/services/savedPlacesService';
@@ -86,7 +87,7 @@ function normalizeShareJobCandidates(input: unknown): ShareJobCandidate[] {
     .filter((row) => row.googlePlaceId.length > 0 && row.name.length > 0);
 }
 
-export default function ShareJobDetailScreen() {
+function ShareJobDetailScreen() {
   const router = useRouter();
   const { jobId } = useLocalSearchParams<{ jobId: string }>();
   const { colors, typography } = useTheme();
@@ -142,7 +143,9 @@ export default function ShareJobDetailScreen() {
     }
   }
 
-  async function persistCandidate(candidate: PlaceCandidate): Promise<string | null> {
+  async function persistCandidate(
+    candidate: PlaceCandidate,
+  ): Promise<{ savedPlaceId: string | null; duplicate: boolean }> {
     const result = await saveSavedPlace({
       candidate,
       radiusValue: null,
@@ -152,9 +155,31 @@ export default function ShareJobDetailScreen() {
     });
     if (result.status === 'saved') {
       upsertSavedPlaceIntoCache(result.saved);
-      return result.savedPlaceId;
+      return { savedPlaceId: result.savedPlaceId, duplicate: false };
     }
-    return result.savedPlaceId ?? null;
+    // Already in the user's saved places — reuse the existing row. NEVER a
+    // duplicate insert and NEVER surfaced as an error.
+    return { savedPlaceId: result.savedPlaceId ?? null, duplicate: true };
+  }
+
+  // Resolve the job to the saved place. For an already-saved place whose exact
+  // row id could not be recovered (rare), just open the map — the place IS in
+  // Nearr, so "already saved" is never treated as a failure.
+  async function resolveJobWith(
+    jobId: string,
+    savedPlaceId: string | null,
+    duplicate: boolean,
+  ): Promise<void> {
+    if (savedPlaceId) {
+      await markShareJobResolved(jobId, savedPlaceId);
+      goToMap(savedPlaceId);
+      return;
+    }
+    if (duplicate) {
+      goToMap(null);
+      return;
+    }
+    throw new Error('Save succeeded but did not return an id. Please retry.');
   }
 
   async function handleSaveStored(candidate: ShareJobCandidate) {
@@ -165,12 +190,8 @@ export default function ShareJobDetailScreen() {
     }
     setBusy(true);
     try {
-      const savedId = await persistCandidate(toPlaceCandidate(candidate));
-      if (!savedId) {
-        throw new Error('Save succeeded but did not return an id. Please retry.');
-      }
-      await markShareJobResolved(job.id, savedId);
-      goToMap(savedId);
+      const { savedPlaceId, duplicate } = await persistCandidate(toPlaceCandidate(candidate));
+      await resolveJobWith(job.id, savedPlaceId, duplicate);
     } catch (err) {
       Alert.alert('Could not save', err instanceof Error ? err.message : 'Please try again.');
     } finally {
@@ -182,12 +203,8 @@ export default function ShareJobDetailScreen() {
     if (!job || busy) return;
     setBusy(true);
     try {
-      const savedId = await persistCandidate(candidate);
-      if (!savedId) {
-        throw new Error('Save succeeded but did not return an id. Please retry.');
-      }
-      await markShareJobResolved(job.id, savedId);
-      goToMap(savedId);
+      const { savedPlaceId, duplicate } = await persistCandidate(candidate);
+      await resolveJobWith(job.id, savedPlaceId, duplicate);
     } catch (err) {
       Alert.alert('Could not save', err instanceof Error ? err.message : 'Please try again.');
     } finally {
@@ -204,15 +221,13 @@ export default function ShareJobDetailScreen() {
     setBusy(true);
     try {
       let firstSavedId: string | null = null;
+      let anyDuplicate = false;
       for (const c of chosen) {
-        const savedId = await persistCandidate(toPlaceCandidate(c));
-        if (!firstSavedId) firstSavedId = savedId;
+        const { savedPlaceId, duplicate } = await persistCandidate(toPlaceCandidate(c));
+        if (!firstSavedId && savedPlaceId) firstSavedId = savedPlaceId;
+        if (duplicate) anyDuplicate = true;
       }
-      if (!firstSavedId) {
-        throw new Error('No selected place could be saved.');
-      }
-      await markShareJobResolved(job.id, firstSavedId);
-      goToMap(firstSavedId);
+      await resolveJobWith(job.id, firstSavedId, anyDuplicate);
     } catch (err) {
       Alert.alert('Could not save', err instanceof Error ? err.message : 'Please try again.');
     } finally {
@@ -250,6 +265,11 @@ export default function ShareJobDetailScreen() {
     } else {
       router.replace('/(tabs)/map');
     }
+  }
+
+  function backToQueue() {
+    if (router.canGoBack()) router.back();
+    else router.replace('/share-jobs');
   }
 
   function toggleSelect(id: string) {
@@ -319,24 +339,45 @@ export default function ShareJobDetailScreen() {
       <Screen>
         <View style={styles.centered}>
           <Text style={[typography.body, styles.help]}>This job is no longer available.</Text>
-          <Button title="Back to queue" onPress={() => router.back()} style={{ marginTop: Spacing.lg }} />
+          <Button title="Back to queue" onPress={backToQueue} style={{ marginTop: Spacing.lg }} />
         </View>
       </Screen>
     );
   }
 
-  // Completed — offer to open on the map.
-  if (job.status === 'completed') {
+  const detailMode = classifyShareJobDetail(job);
+
+  // Terminal success (incl. already-saved) — offer the saved place. NEVER render
+  // candidate/save controls for a job that is already resolved.
+  if (detailMode === 'completed') {
+    const alreadySaved =
+      (job.extraction_payload as { alreadySaved?: boolean } | null)?.alreadySaved === true;
     const name = (job.extraction_payload as { savedPlaceName?: string } | null)?.savedPlaceName;
     return (
       <Screen>
         <Text style={[typography.heading, styles.title]}>{name || 'Saved to your map'}</Text>
-        <Text style={[typography.body, styles.help]}>This place is on your map.</Text>
+        <Text style={[typography.body, styles.help]}>
+          {alreadySaved ? 'This place is already in Nearr.' : 'This place is on your map.'}
+        </Text>
         <Button
           title="View on map"
           onPress={() => goToMap(job.saved_place_id)}
           style={{ marginTop: Spacing.lg }}
         />
+      </Screen>
+    );
+  }
+
+  // Terminal dismissed (cancelled / unknown terminal) — safe, control-free view.
+  if (detailMode === 'dismissed') {
+    return (
+      <Screen>
+        <View style={styles.centered}>
+          <Text style={[typography.body, styles.help]}>
+            This item is no longer in your queue.
+          </Text>
+          <Button title="Back to queue" onPress={backToQueue} style={{ marginTop: Spacing.lg }} />
+        </View>
       </Screen>
     );
   }
@@ -506,4 +547,19 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
     removeBtn: { paddingVertical: Spacing.md, marginTop: Spacing.sm },
     removeText: { color: colors.danger },
   });
+}
+
+// Route-level error boundary so a stale / malformed / terminal job can never
+// drop the whole app to the global "Something went wrong" boundary — it shows a
+// contained retry + a sanitized diagnostic instead (matches the queue screen).
+export default function ShareJobDetailRoute() {
+  return (
+    <ErrorBoundary
+      name="share-job-detail"
+      fallbackTitle="Couldn't open this item"
+      fallbackBody="Something went wrong opening this queue item. Try again."
+    >
+      <ShareJobDetailScreen />
+    </ErrorBoundary>
+  );
 }

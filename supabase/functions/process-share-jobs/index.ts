@@ -594,7 +594,11 @@ async function processOne(admin: any, env: any, job: any): Promise<void> {
         saved_place_id: saved.savedPlaceId,
         canonical_url: canonicalUrl,
         source_platform: platform,
-        extraction_payload: { ...extractionPayload, savedPlaceName: candidate.name },
+        extraction_payload: {
+          ...extractionPayload,
+          savedPlaceName: candidate.name,
+          alreadySaved: saved.reused,
+        },
         progress_stage: 'completed',
         completed_at: nowIso(),
       },
@@ -603,6 +607,7 @@ async function processOne(admin: any, env: any, job: any): Promise<void> {
         platform,
         jobId: job.id,
         savedPlaceId: saved.savedPlaceId,
+        alreadySaved: saved.reused,
       }),
     );
     return;

@@ -133,14 +133,30 @@ export function buildCompletedNotification(args: {
   platform: string | null | undefined;
   jobId: string;
   savedPlaceId: string;
+  alreadySaved?: boolean;
 }): JobNotification {
   const label = platformLabel(args.platform);
   const from = label === 'shared' ? 'your shared post' : `your ${label} post`;
+  // Already-saved is an explicit, non-error terminal outcome. It routes to the
+  // EXISTING saved place (same `savedPlaceId`), never to a queue item.
+  if (args.alreadySaved) {
+    return {
+      title: 'Already saved',
+      body: `${args.placeName} is already in Nearr.`,
+      data: {
+        type: 'share_job_completed',
+        outcome: 'already_saved',
+        jobId: args.jobId,
+        savedPlaceId: args.savedPlaceId,
+      },
+    };
+  }
   return {
     title: `Found ${args.placeName}`,
     body: `Saved from ${from}.`,
     data: {
       type: 'share_job_completed',
+      outcome: 'completed',
       jobId: args.jobId,
       savedPlaceId: args.savedPlaceId,
     },

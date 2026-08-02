@@ -18,6 +18,7 @@ import {
   buildNeedsHelpNotification,
   platformLabel,
 } from '../supabase/functions/process-share-jobs/decisionMapping';
+import { routeShareJobNotification } from '../lib/shareJobRouting';
 
 let failures = 0;
 function check(name: string, condition: boolean, detail?: string): void {
@@ -154,6 +155,40 @@ function check(name: string, condition: boolean, detail?: string): void {
       n.data.jobId === 'job-1' &&
       n.data.savedPlaceId === 'sp-1',
     JSON.stringify(n.data),
+  );
+  check('completed data outcome=completed', n.data.outcome === 'completed', JSON.stringify(n.data));
+  check(
+    'completed notification routes to the saved place',
+    JSON.stringify(routeShareJobNotification(n.data)) ===
+      JSON.stringify({ kind: 'saved_place', savedPlaceId: 'sp-1' }),
+    JSON.stringify(routeShareJobNotification(n.data)),
+  );
+}
+
+{
+  // Already-saved: explicit, non-error terminal outcome that REUSES the
+  // existing saved place and routes there (usable existing saved-place target,
+  // idempotent on replay).
+  const n = buildCompletedNotification({
+    placeName: 'NOVA Kitchen',
+    platform: 'tiktok',
+    jobId: 'job-5',
+    savedPlaceId: 'sp-existing',
+    alreadySaved: true,
+  });
+  check('already-saved title', n.title === 'Already saved', n.title);
+  check('already-saved body', n.body === 'NOVA Kitchen is already in Nearr.', n.body);
+  check('already-saved outcome=already_saved', n.data.outcome === 'already_saved', JSON.stringify(n.data));
+  check('already-saved carries existing savedPlaceId', n.data.savedPlaceId === 'sp-existing', JSON.stringify(n.data));
+  const route = routeShareJobNotification(n.data);
+  check(
+    'already-saved notification routes to existing saved place',
+    JSON.stringify(route) === JSON.stringify({ kind: 'saved_place', savedPlaceId: 'sp-existing' }),
+    JSON.stringify(route),
+  );
+  check(
+    'already-saved replay is idempotent',
+    JSON.stringify(routeShareJobNotification(n.data)) === JSON.stringify(route),
   );
 }
 

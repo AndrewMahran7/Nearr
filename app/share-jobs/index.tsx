@@ -25,6 +25,7 @@ import { EmptyState, ErrorBoundary, Screen } from '@/components';
 import { Radius, Spacing } from '@/constants';
 import { useTheme } from '@/lib/theme';
 import { useShareJobs } from '@/hooks/useShareJobs';
+import { routeShareJobCard } from '@/lib/shareJobRouting';
 import { cancelShareJob, type ShareJob } from '@/services/shareJobsService';
 
 // A processing job older than this is very likely stuck (the worker never
@@ -134,7 +135,6 @@ function ShareJobsQueueScreen() {
   const isEmpty =
     sections.processing.length === 0 &&
     sections.needsHelp.length === 0 &&
-    sections.recentlyFound.length === 0 &&
     sections.failed.length === 0;
 
   async function removeFromQueue(job: ShareJob) {
@@ -180,15 +180,29 @@ function ShareJobsQueueScreen() {
   }
 
   function openJob(job: ShareJob) {
-    if (job.status === 'completed' && job.saved_place_id) {
-      router.push({ pathname: '/(tabs)/map', params: { savedPlaceId: job.saved_place_id } });
-      return;
-    }
+    // Processing jobs aren't actionable; a stalled one gets an honest escape hatch.
     if (job.status === 'queued' || job.status === 'processing_metadata') {
       if (isStalledProcessing(job)) openStalledActions(job);
       return;
     }
-    router.push({ pathname: '/share-jobs/[jobId]', params: { jobId: job.id } });
+    // Everything else routes by OUTCOME (never assume the card is actionable):
+    // a completed/already-saved job opens its saved place; an actionable job
+    // opens the detail route; a terminal/unknown job is a safe no-op.
+    const route = routeShareJobCard(job);
+    switch (route.kind) {
+      case 'saved_place':
+        router.push({ pathname: '/(tabs)/map', params: { savedPlaceId: route.savedPlaceId } });
+        break;
+      case 'queue_item':
+        router.push({ pathname: '/share-jobs/[jobId]', params: { jobId: route.jobId } });
+        break;
+      case 'map':
+        router.push('/(tabs)/map');
+        break;
+      case 'queue_root':
+      default:
+        break; // already on the queue
+    }
   }
 
   function renderRow(job: ShareJob) {
@@ -302,7 +316,6 @@ function ShareJobsQueueScreen() {
           <>
             {renderSection('Needs your help', sections.needsHelp, true)}
             {renderSection('Processing', sections.processing)}
-            {renderSection('Recently found', sections.recentlyFound)}
             {renderSection("Couldn't finish", sections.failed)}
           </>
         )}
