@@ -476,8 +476,25 @@ export default function SettingsScreen() {
   async function handleCopyDiagnostic() {
     try {
       const recent = await getRecentDiagnostics();
+      // Non-secret App Group round-trip using ONLY existing native functions:
+      // the host writes the `initialized` marker and reads it back through
+      // getStatus(). A true host<->extension shared container yields
+      // nativeModuleAvailable=true, appGroupAccessible=true and
+      // hostRoundTripSucceeded=true. If the module is not linked (the
+      // "finish setup" root cause) nativeModuleAvailable is false and every
+      // field below is the safe default. NEVER exposes the token.
+      const nativeModuleAvailable = sharedAuth.isAvailable();
+      const appGroupIdentifier = sharedAuth.getAppGroup();
+      const wroteMarker = sharedAuth.setInitialized();
       const status = sharedAuth.getStatus();
+      const hostRoundTripSucceeded =
+        !!status && status.appGroupAccessible === true && wroteMarker && status.initialized === true;
       const parts: string[] = [];
+      parts.push(
+        'Shared-auth: nativeModuleAvailable=' + nativeModuleAvailable +
+          ' appGroupIdentifier=' + (appGroupIdentifier ?? 'null') +
+          ' hostRoundTripSucceeded=' + hostRoundTripSucceeded,
+      );
       parts.push(
         status
           ? 'Shared-auth: appGroupAccessible=' + status.appGroupAccessible +

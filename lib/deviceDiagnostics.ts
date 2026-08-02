@@ -27,6 +27,9 @@ export type DeviceDiagnostic = {
   platform: string;
   osVersion: string | null;
   timestamp: string; // ISO
+  jobId?: string | null; // current share-job id when safe to include
+  httpStatus?: number | null; // response HTTP status when the failure was a request
+  responseErrorCode?: string | null; // server-provided error code / reason
 };
 
 function appBuild(): { version: string | null; buildNumber: string | null } {
@@ -48,6 +51,9 @@ export async function recordDiagnostic(input: {
   route?: string | null;
   error: unknown;
   componentStack?: string | null;
+  jobId?: string | null;
+  httpStatus?: number | null;
+  responseErrorCode?: string | null;
 }): Promise<void> {
   try {
     const { version, buildNumber } = appBuild();
@@ -67,6 +73,11 @@ export async function recordDiagnostic(input: {
       osVersion:
         Platform.Version != null ? String(Platform.Version).slice(0, 24) : null,
       timestamp: new Date().toISOString(),
+      jobId: input.jobId ? String(input.jobId).slice(0, 64) : null,
+      httpStatus: typeof input.httpStatus === 'number' ? input.httpStatus : null,
+      responseErrorCode: input.responseErrorCode
+        ? String(input.responseErrorCode).slice(0, 60)
+        : null,
     };
     const existing = await getRecentDiagnostics();
     const next = [record, ...existing].slice(0, MAX_RECORDS);
@@ -108,6 +119,9 @@ export function formatDiagnosticForCopy(d: DeviceDiagnostic): string {
     `code=${d.errorCode}`,
     `route=${d.route ?? 'unknown'}`,
     `app=${d.appVersion ?? '?'} build=${d.buildNumber ?? '?'} ${d.platform} ${d.osVersion ?? ''}`.trim(),
+    d.jobId ? `jobId=${d.jobId}` : '',
+    d.httpStatus != null ? `httpStatus=${d.httpStatus}` : '',
+    d.responseErrorCode ? `responseErrorCode=${d.responseErrorCode}` : '',
     `msg=${d.message}`,
     d.stack ? `stack=${d.stack}` : '',
   ]

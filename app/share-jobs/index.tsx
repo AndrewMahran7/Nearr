@@ -6,9 +6,11 @@
  * Reachable from the map/home entry point; also the deep-link target for
  * `share_job_needs_help` notifications routes to the per-job detail screen.
  */
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
+  Linking,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -23,7 +25,20 @@ import { EmptyState, ErrorBoundary, Screen } from '@/components';
 import { Radius, Spacing } from '@/constants';
 import { useTheme } from '@/lib/theme';
 import { useShareJobs } from '@/hooks/useShareJobs';
-import type { ShareJob } from '@/services/shareJobsService';
+import { cancelShareJob, type ShareJob } from '@/services/shareJobsService';
+
+// A processing job older than this is very likely stuck (the worker never
+// claimed it). We surface an honest "taking longer than expected" state with a
+// safe escape hatch instead of an eternal spinner — WITHOUT pretending the job
+// is progressing.
+const STALE_PROCESSING_MS = 3 * 60 * 1000;
+
+function isStalledProcessing(job: ShareJob): boolean {
+  if (job.status !== 'queued' && job.status !== 'processing_metadata') return false;
+  const created = new Date(job.created_at).getTime();
+  if (!Number.isFinite(created)) return false;
+  return Date.now() - created > STALE_PROCESSING_MS;
+}
 
 function platformLabel(p: string | null | undefined): string {
   switch ((p ?? '').toLowerCase()) {
@@ -90,11 +105,11 @@ function jobTitle(job: ShareJob): string {
   return platformLabel(job.source_platform) + ' post';
 }
 
-function jobSubtitle(job: ShareJob): string {
+function jobSubtitle(job: ShareJob, stalled = false): string {
   switch (job.status) {
     case 'queued':
     case 'processing_metadata':
-      return 'Finding the place from this post…';
+      return stalled ? 'Taking longer than expected — tap for options' : 'Finding the place from this post…';
     case 'needs_help':
       if (job.needs_help_reason === 'multiple_candidates') return 'Choose which ones to save';
       if (job.needs_help_reason === 'manual_search' || job.needs_help_reason === 'metadata_unavailable')
@@ -114,6 +129,7 @@ function ShareJobsQueueScreen() {
   const { colors, typography } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { sections, loading, refreshing, refresh, enabled, authLoading } = useShareJobs();
+  const [actingId, setActingId] = useState<string | null>(null);
 
   const isEmpty =
     sections.processing.length === 0 &&
@@ -121,26 +137,73 @@ function ShareJobsQueueScreen() {
     sections.recentlyFound.length === 0 &&
     sections.failed.length === 0;
 
+  async function removeFromQueue(job: ShareJob) {
+    if (actingId) return;
+    setActingId(job.id);
+    try {
+      await cancelShareJob(job.id);
+    } catch {
+      Alert.alert('Could not remove', 'Please try again in a moment.');
+    } finally {
+      setActingId(null);
+      refresh();
+    }
+  }
+
+  // Honest escape hatch for a job the backend has not advanced. We never
+  // pretend the job is progressing; we let the user open the original post or
+  // remove it from the queue.
+  function openStalledActions(job: ShareJob) {
+    const original = job.canonical_url ?? job.source_url;
+    const buttons: Parameters<typeof Alert.alert>[2] = [];
+    if (original) {
+      buttons.push({
+        text: 'Open original post',
+        onPress: () => {
+          Linking.openURL(original).catch(() => {
+            Alert.alert('Could not open link');
+          });
+        },
+      });
+    }
+    buttons.push({
+      text: 'Remove from queue',
+      style: 'destructive',
+      onPress: () => void removeFromQueue(job),
+    });
+    buttons.push({ text: 'Keep waiting', style: 'cancel' });
+    Alert.alert(
+      'Taking longer than expected',
+      "This one hasn't finished yet. You can open the original post or remove it from your queue.",
+      buttons,
+    );
+  }
+
   function openJob(job: ShareJob) {
     if (job.status === 'completed' && job.saved_place_id) {
       router.push({ pathname: '/(tabs)/map', params: { savedPlaceId: job.saved_place_id } });
       return;
     }
-    if (job.status === 'queued' || job.status === 'processing_metadata') return;
+    if (job.status === 'queued' || job.status === 'processing_metadata') {
+      if (isStalledProcessing(job)) openStalledActions(job);
+      return;
+    }
     router.push({ pathname: '/share-jobs/[jobId]', params: { jobId: job.id } });
   }
 
   function renderRow(job: ShareJob) {
     const processing = job.status === 'queued' || job.status === 'processing_metadata';
+    const stalled = processing && isStalledProcessing(job);
+    const busy = actingId === job.id;
     const host = hostOf(job.canonical_url ?? job.source_url);
     return (
       <Pressable
         key={job.id}
         onPress={() => openJob(job)}
-        disabled={processing}
+        disabled={(processing && !stalled) || busy}
         style={({ pressed }) => [
           styles.row,
-          pressed && !processing ? styles.rowPressed : null,
+          pressed && (!processing || stalled) ? styles.rowPressed : null,
         ]}
         accessibilityRole="button"
       >
@@ -152,7 +215,7 @@ function ShareJobsQueueScreen() {
             {jobTitle(job)}
           </Text>
           <Text style={[typography.caption, styles.rowSubtitle]} numberOfLines={1}>
-            {jobSubtitle(job)}
+            {jobSubtitle(job, stalled)}
           </Text>
           {host ? (
             <Text style={[typography.caption, styles.rowMeta]} numberOfLines={1}>
@@ -160,7 +223,11 @@ function ShareJobsQueueScreen() {
             </Text>
           ) : null}
         </View>
-        {processing ? (
+        {busy ? (
+          <ActivityIndicator color={colors.primary} />
+        ) : stalled ? (
+          <Feather name="alert-circle" size={18} color={colors.textMuted} />
+        ) : processing ? (
           <ActivityIndicator color={colors.primary} />
         ) : job.status === 'needs_help' ? (
           <View style={styles.badgeDot} />

@@ -20,6 +20,7 @@ import { useTheme } from '@/lib/theme';
 import { resolveSubmissionId } from '@/lib/shareSubmission';
 import { hostShareSubmitter } from '@/lib/hostShareSubmit';
 import { logDebug } from '@/lib/logger';
+import { recordDiagnostic } from '@/lib/deviceDiagnostics';
 
 type UiState =
   | { kind: 'submitting' }
@@ -57,12 +58,25 @@ export function ShareJobHandoff({ url, submissionId }: { url: string; submission
         setUi({ kind: 'signed_out' });
       } else {
         console.log(`[share-job] job_accepted=false reason=${result.reason}`);
+        void recordDiagnostic({
+          errorCode: `share_handoff_${result.reason}`,
+          route: '/share',
+          error: `share handoff failed: ${result.reason}`,
+          jobId: submissionIdRef.current,
+          responseErrorCode: result.reason,
+        });
         setUi({ kind: 'error' });
       }
     } catch (err) {
       // A duplicate-share / transient exception must degrade to a recoverable
       // error state — never bubble to the global "Something went wrong" boundary.
       logDebug('share-job', 'handoff submit threw', (err as Error)?.message ?? String(err));
+      void recordDiagnostic({
+        errorCode: 'share_handoff_exception',
+        route: '/share',
+        error: err,
+        jobId: submissionIdRef.current,
+      });
       setUi({ kind: 'error' });
     }
   };
