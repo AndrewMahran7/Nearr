@@ -11,5 +11,6 @@ export { MapFallbackList } from './MapFallbackList';
 export { OfflineBanner } from './OfflineBanner';
 export { Screen } from './Screen';
 export { SavedPlaceCard } from './SavedPlaceCard';
+export { ShareJobsHeader } from './ShareJobsHeader';
 export { SetupChecklist } from './SetupChecklist';
 export { SetupReminderModal } from './SetupReminderModal';

@@ -14,20 +14,29 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Linking,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
-import { Button, ErrorBoundary, Input, Screen } from '@/components';
+import { Button, ErrorBoundary, Input, Screen, ShareJobsHeader } from '@/components';
 import { Radius, Spacing } from '@/constants';
 import { useTheme } from '@/lib/theme';
+import { trackEvent } from '@/lib/analytics';
 import { classifyShareJobDetail } from '@/lib/shareJobRouting';
+import { planOpenOriginal, validateSourceUrl } from '@/lib/openOriginalPost';
+import {
+  backTarget,
+  findSavedPlaceIdByGooglePlaceId,
+  normalizeShareJobCandidates,
+} from '@/lib/shareJobsUi';
 import { usePlacesSearch } from '@/hooks/usePlacesSearch';
-import { upsertSavedPlaceIntoCache } from '@/hooks/useSavedPlaces';
+import { getSavedPlacesCacheSnapshot, upsertSavedPlaceIntoCache } from '@/hooks/useSavedPlaces';
 import { saveSavedPlace } from '@/services/savedPlacesService';
 import type { PlaceCandidate } from '@/services/placesService';
 import {
@@ -40,6 +49,20 @@ import {
   type ShareJobCandidate,
 } from '@/services/shareJobsService';
 import type { SourceType } from '@/types';
+
+/** Human platform label for the "Suggested from …" source-context row. */
+function platformNoun(platform: string | null | undefined): string {
+  switch ((platform ?? '').toLowerCase()) {
+    case 'instagram':
+      return 'an Instagram post';
+    case 'tiktok':
+      return 'a TikTok video';
+    case 'youtube':
+      return 'a YouTube video';
+    default:
+      return 'a shared link';
+  }
+}
 
 function sourceTypeFor(platform: string | null | undefined): SourceType {
   switch ((platform ?? '').toLowerCase()) {
@@ -69,24 +92,6 @@ function toPlaceCandidate(c: ShareJobCandidate): PlaceCandidate {
   };
 }
 
-function normalizeShareJobCandidates(input: unknown): ShareJobCandidate[] {
-  if (!Array.isArray(input)) return [];
-  return input
-    .filter((row): row is Record<string, unknown> => !!row && typeof row === 'object')
-    .map((row) => ({
-      googlePlaceId: typeof row.googlePlaceId === 'string' ? row.googlePlaceId : '',
-      name: typeof row.name === 'string' ? row.name : '',
-      formattedAddress: typeof row.formattedAddress === 'string' ? row.formattedAddress : null,
-      latitude: typeof row.latitude === 'number' ? row.latitude : null,
-      longitude: typeof row.longitude === 'number' ? row.longitude : null,
-      types: Array.isArray(row.types)
-        ? row.types.filter((v): v is string => typeof v === 'string')
-        : [],
-      matchScore: typeof row.matchScore === 'number' ? row.matchScore : null,
-    }))
-    .filter((row) => row.googlePlaceId.length > 0 && row.name.length > 0);
-}
-
 function ShareJobDetailScreen() {
   const router = useRouter();
   const { jobId } = useLocalSearchParams<{ jobId: string }>();
@@ -98,6 +103,12 @@ function ShareJobDetailScreen() {
   const [busy, setBusy] = useState(false);
   const [manualQuery, setManualQuery] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  // The alternative-place search is a SECONDARY action — collapsed by default
+  // for single-candidate jobs, revealed on demand. Manual-only jobs start
+  // expanded because search is their primary action.
+  const [searchExpanded, setSearchExpanded] = useState(false);
+  // Inline, non-blocking notice if the original post can no longer be opened.
+  const [openMsg, setOpenMsg] = useState<string | null>(null);
   const seededQueryRef = useRef(false);
 
   const { results, loading: searching, search } = usePlacesSearch();
@@ -133,15 +144,6 @@ function ShareJobDetailScreen() {
   const platform = job?.source_platform ?? null;
   const sourceUrl = job?.canonical_url ?? job?.source_url ?? null;
   const candidates = normalizeShareJobCandidates(job?.candidate_payload?.candidates);
-
-  function sourceHost(url: string | null): string | null {
-    if (!url) return null;
-    try {
-      return new URL(url).host.replace(/^www\./, '');
-    } catch {
-      return null;
-    }
-  }
 
   async function persistCandidate(
     candidate: PlaceCandidate,
@@ -259,12 +261,57 @@ function ShareJobDetailScreen() {
     }
   }
 
+  // Open the original post in the source app (via https universal link → native
+  // app when installed, otherwise the browser). Validates the untrusted source
+  // URL against the HTTPS platform allow-list first, NEVER resolves/cancels/
+  // removes the job, and shows a small inline notice on failure.
+  async function openOriginalPost() {
+    const plan = planOpenOriginal(sourceUrl);
+    if (plan.kind !== 'open') {
+      setOpenMsg("This post can't be opened anymore.");
+      return;
+    }
+    setOpenMsg(null);
+    void trackEvent('share_job_original_post_opened', {
+      job_id: job?.id ?? null,
+      platform,
+      host: plan.host,
+    });
+    try {
+      await Linking.openURL(plan.url);
+    } catch {
+      setOpenMsg("Couldn't open the original post.");
+    }
+  }
+
+  // Lightweight confirmation before a destructive remove.
+  function confirmRemove() {
+    Alert.alert('Remove this save?', undefined, [
+      { text: 'Keep it', style: 'cancel' },
+      { text: 'Remove', style: 'destructive', onPress: () => void handleRemove() },
+    ]);
+  }
+
   function goToMap(savedPlaceId: string | null) {
     if (savedPlaceId) {
       router.replace({ pathname: '/(tabs)/map', params: { savedPlaceId } });
     } else {
       router.replace('/(tabs)/map');
     }
+  }
+
+  // The proposed place is already on the user's map. Resolve the job to that
+  // existing saved place (no duplicate save) and open it. Resolving failures
+  // are non-fatal — we still show the place.
+  async function viewAlreadySaved(savedPlaceId: string) {
+    if (job) {
+      try {
+        await markShareJobResolved(job.id, savedPlaceId);
+      } catch {
+        // Non-fatal: the place is saved regardless.
+      }
+    }
+    goToMap(savedPlaceId);
   }
 
   function backToQueue() {
@@ -281,16 +328,24 @@ function ShareJobDetailScreen() {
     });
   }
 
-  function renderManualSearch(prefillNote?: string) {
+  function renderManualSearch(opts?: { note?: string; onCancel?: () => void }) {
     return (
       <View style={styles.section}>
-        {prefillNote ? (
-          <Text style={[typography.body, styles.help]}>{prefillNote}</Text>
+        <View style={styles.searchHeaderRow}>
+          <Text style={[typography.label, styles.searchLabel]}>Search for a place</Text>
+          {opts?.onCancel ? (
+            <Pressable onPress={opts.onCancel} hitSlop={8} accessibilityRole="button">
+              <Text style={styles.cancelLink}>Cancel</Text>
+            </Pressable>
+          ) : null}
+        </View>
+        {opts?.note ? (
+          <Text style={[typography.caption, styles.help]}>{opts.note}</Text>
         ) : null}
         <View style={styles.searchRow}>
           <View style={styles.flex}>
             <Input
-              placeholder="Search for the place"
+              placeholder="Name or address"
               value={manualQuery}
               onChangeText={setManualQuery}
               onSubmitEditing={() => void search(manualQuery)}
@@ -308,25 +363,63 @@ function ShareJobDetailScreen() {
             key={c.googlePlaceId}
             onPress={() => void handleSaveManual(c)}
             disabled={busy}
+            accessibilityRole="button"
+            accessibilityLabel={`Save ${c.name}`}
             style={({ pressed }) => [styles.candidate, pressed ? styles.candidatePressed : null]}
           >
-            <Text style={[typography.body, styles.candidateName]} numberOfLines={1}>
-              {c.name}
-            </Text>
-            {c.formattedAddress ? (
-              <Text style={[typography.caption, styles.candidateAddr]} numberOfLines={1}>
-                {c.formattedAddress}
+            <View style={styles.candidateIcon}>
+              <Feather name="map-pin" size={16} color={colors.accent} />
+            </View>
+            <View style={styles.flex}>
+              <Text style={[typography.bodyStrong, styles.candidateName]} numberOfLines={1}>
+                {c.name}
               </Text>
-            ) : null}
+              {c.formattedAddress ? (
+                <Text style={[typography.caption, styles.candidateAddr]} numberOfLines={2}>
+                  {c.formattedAddress}
+                </Text>
+              ) : null}
+            </View>
           </Pressable>
         ))}
       </View>
     );
   }
 
+  // Shared bottom actions: open the original post (below the alternative
+  // search), then a restrained destructive remove.
+  function renderJobFooter() {
+    const canOpenSource = validateSourceUrl(sourceUrl).ok;
+    return (
+      <View style={styles.footer}>
+        {canOpenSource ? (
+          <Pressable
+            onPress={() => void openOriginalPost()}
+            style={({ pressed }) => [styles.openBtn, pressed ? styles.openBtnPressed : null]}
+            accessibilityRole="button"
+            accessibilityLabel={`Open ${platformNoun(platform)}`}
+          >
+            <Feather name="external-link" size={16} color={colors.textSecondary} />
+            <Text style={styles.openText}>Open original post</Text>
+          </Pressable>
+        ) : null}
+        {openMsg ? <Text style={styles.openMsg}>{openMsg}</Text> : null}
+        <Pressable
+          onPress={confirmRemove}
+          style={styles.removeBtn}
+          accessibilityRole="button"
+          accessibilityLabel="Remove from queue"
+        >
+          <Text style={[typography.caption, styles.removeText]}>Remove from queue</Text>
+        </Pressable>
+      </View>
+    );
+  }
+
   if (loading) {
     return (
-      <Screen>
+      <Screen padded={false}>
+        <ShareJobsHeader title="Confirm place" onBack={backToQueue} backLabel="Back to queue" />
         <View style={styles.centered}>
           <ActivityIndicator color={colors.primary} />
         </View>
@@ -336,7 +429,8 @@ function ShareJobDetailScreen() {
 
   if (!job) {
     return (
-      <Screen>
+      <Screen padded={false}>
+        <ShareJobsHeader title="Confirm place" onBack={backToQueue} backLabel="Back to queue" />
         <View style={styles.centered}>
           <Text style={[typography.body, styles.help]}>This job is no longer available.</Text>
           <Button title="Back to queue" onPress={backToQueue} style={{ marginTop: Spacing.lg }} />
@@ -354,16 +448,22 @@ function ShareJobDetailScreen() {
       (job.extraction_payload as { alreadySaved?: boolean } | null)?.alreadySaved === true;
     const name = (job.extraction_payload as { savedPlaceName?: string } | null)?.savedPlaceName;
     return (
-      <Screen>
-        <Text style={[typography.heading, styles.title]}>{name || 'Saved to your map'}</Text>
-        <Text style={[typography.body, styles.help]}>
-          {alreadySaved ? 'This place is already in Nearr.' : 'This place is on your map.'}
-        </Text>
-        <Button
-          title="View on map"
-          onPress={() => goToMap(job.saved_place_id)}
-          style={{ marginTop: Spacing.lg }}
-        />
+      <Screen padded={false}>
+        <ShareJobsHeader title="Confirm place" onBack={backToQueue} backLabel="Back to queue" />
+        <View style={styles.centered}>
+          <View style={styles.savedBadge}>
+            <Feather name="check" size={26} color={colors.primary} />
+          </View>
+          <Text style={[typography.heading, styles.centeredTitle]}>{name || 'Saved to your map'}</Text>
+          <Text style={[typography.body, styles.help, { textAlign: 'center' }]}>
+            {alreadySaved ? 'Already on your map.' : 'This place is on your map.'}
+          </Text>
+          <Button
+            title="View place"
+            onPress={() => goToMap(job.saved_place_id)}
+            style={styles.centeredPrimary}
+          />
+        </View>
       </Screen>
     );
   }
@@ -371,7 +471,8 @@ function ShareJobDetailScreen() {
   // Terminal dismissed (cancelled / unknown terminal) — safe, control-free view.
   if (detailMode === 'dismissed') {
     return (
-      <Screen>
+      <Screen padded={false}>
+        <ShareJobsHeader title="Confirm place" onBack={backToQueue} backLabel="Back to queue" />
         <View style={styles.centered}>
           <Text style={[typography.body, styles.help]}>
             This item is no longer in your queue.
@@ -388,34 +489,48 @@ function ShareJobDetailScreen() {
     job.decision === 'manual_fallback' ||
     candidates.length === 0;
   const single = candidates[0];
+  const alreadySavedId = single
+    ? findSavedPlaceIdByGooglePlaceId(single.googlePlaceId, getSavedPlacesCacheSnapshot())
+    : null;
+
+  const sourceIcon: React.ComponentProps<typeof Feather>['name'] =
+    platform === 'instagram'
+      ? 'instagram'
+      : platform === 'tiktok'
+        ? 'video'
+        : platform === 'youtube'
+          ? 'youtube'
+          : 'link';
 
   return (
     <Screen padded={false}>
+      <ShareJobsHeader title="Confirm place" onBack={backToQueue} backLabel="Back to queue" />
       <ScrollView
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
         showsVerticalScrollIndicator={false}
       >
-        {sourceHost(sourceUrl) ? (
-          <View style={styles.sourceRow}>
-            <Text style={[typography.caption, styles.sourceText]} numberOfLines={1}>
-              From {sourceHost(sourceUrl)}
-            </Text>
-          </View>
-        ) : null}
+        <View style={styles.sourceRow}>
+          <Feather name={sourceIcon} size={14} color={colors.textSecondary} />
+          <Text style={[typography.caption, styles.sourceText]} numberOfLines={1}>
+            Suggested from {platformNoun(platform)}
+          </Text>
+        </View>
+
         {isProcessing ? (
           <View style={styles.section}>
-            <ActivityIndicator color={colors.primary} />
-            <Text style={[typography.body, styles.help, { marginTop: Spacing.md }]}>
-              Finding the place from this post…
-            </Text>
+            <View style={styles.processingRow}>
+              <ActivityIndicator color={colors.primary} />
+              <Text style={[typography.body, styles.help, { marginBottom: 0 }]}>
+                Finding the place from this post…
+              </Text>
+            </View>
           </View>
         ) : isMulti ? (
           <View style={styles.section}>
-            <Text style={[typography.heading, styles.title]}>
-              We found {candidates.length} places
-            </Text>
-            <Text style={[typography.body, styles.help]}>Choose which ones to save.</Text>
+            <Text style={[typography.title, styles.title]}>We found {candidates.length} places</Text>
+            <Text style={[typography.caption, styles.help]}>Choose which ones to save.</Text>
             {candidates.map((c) => {
               const id = c.googlePlaceId;
               const checked = !!id && selectedIds.has(id);
@@ -423,20 +538,26 @@ function ShareJobDetailScreen() {
                 <Pressable
                   key={id}
                   onPress={() => id && toggleSelect(id)}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked }}
+                  accessibilityLabel={c.name}
                   style={({ pressed }) => [styles.candidate, pressed ? styles.candidatePressed : null]}
                 >
+                  <View style={styles.candidateIcon}>
+                    <Feather name="map-pin" size={16} color={colors.accent} />
+                  </View>
                   <View style={styles.flex}>
-                    <Text style={[typography.body, styles.candidateName]} numberOfLines={1}>
+                    <Text style={[typography.bodyStrong, styles.candidateName]} numberOfLines={1}>
                       {c.name}
                     </Text>
                     {c.formattedAddress ? (
-                      <Text style={[typography.caption, styles.candidateAddr]} numberOfLines={1}>
+                      <Text style={[typography.caption, styles.candidateAddr]} numberOfLines={2}>
                         {c.formattedAddress}
                       </Text>
                     ) : null}
                   </View>
                   <View style={[styles.checkbox, checked ? styles.checkboxOn : null]}>
-                    {checked ? <Text style={styles.checkboxMark}>✓</Text> : null}
+                    {checked ? <Feather name="check" size={14} color={colors.textInverse} /> : null}
                   </View>
                 </Pressable>
               );
@@ -445,51 +566,96 @@ function ShareJobDetailScreen() {
               title={selectedIds.size === 0 ? 'Select places to save' : `Save selected (${selectedIds.size})`}
               onPress={() => void handleSaveSelected()}
               disabled={selectedIds.size === 0 || busy}
-              style={{ marginTop: Spacing.md }}
+              loading={busy}
+              style={styles.primaryBtn}
             />
-            <View style={styles.divider} />
-            {renderManualSearch('Not what you meant? Search instead.')}
+            {searchExpanded ? (
+              renderManualSearch({ onCancel: () => setSearchExpanded(false) })
+            ) : (
+              <Button
+                title="Search for another place"
+                variant="secondary"
+                onPress={() => setSearchExpanded(true)}
+                style={styles.secondaryBtn}
+              />
+            )}
           </View>
         ) : isManual ? (
-          renderManualSearch(
-            job.status === 'failed'
-              ? "We couldn't find this automatically. Search for it and we'll keep the original post attached."
-              : 'Search for the place from this post.',
-          )
+          <View style={styles.section}>
+            <Text style={[typography.title, styles.title]}>Search for this place</Text>
+            <Text style={[typography.caption, styles.help]}>
+              {job.status === 'failed'
+                ? "We couldn't find it automatically. Search for it and we'll keep the original post attached."
+                : 'Search for the place from this post.'}
+            </Text>
+            {job.status === 'failed' && !job.saved_place_id ? (
+              <Button
+                title="Try automatically again"
+                variant="secondary"
+                onPress={() => void handleRetry()}
+                style={styles.secondaryBtn}
+              />
+            ) : null}
+            {renderManualSearch()}
+          </View>
         ) : (
           <View style={styles.section}>
-            <Text style={[typography.heading, styles.title]}>Is this the place?</Text>
-            {single ? (
-              <View style={styles.candidate}>
-                <View style={styles.flex}>
-                  <Text style={[typography.body, styles.candidateName]}>{single.name}</Text>
-                  {single.formattedAddress ? (
-                    <Text style={[typography.caption, styles.candidateAddr]}>
-                      {single.formattedAddress}
-                    </Text>
-                  ) : null}
-                </View>
+            <View style={styles.candidateCard}>
+              <View style={styles.candidateCardIcon}>
+                <Feather name="map-pin" size={22} color={colors.accent} />
               </View>
-            ) : null}
-            <Button
-              title="Save this place"
-              onPress={() => single && void handleSaveStored(single)}
-              disabled={busy || !single}
-              style={{ marginTop: Spacing.md }}
-            />
-            <View style={styles.divider} />
-            {renderManualSearch('Not it? Search for the right place.')}
+              <View style={styles.flex}>
+                <Text style={[typography.heading, styles.candidateCardName]} numberOfLines={2}>
+                  {single?.name ?? 'This place'}
+                </Text>
+                {single?.formattedAddress ? (
+                  <Text style={[typography.body, styles.candidateCardAddr]} numberOfLines={2}>
+                    {single.formattedAddress}
+                  </Text>
+                ) : null}
+                <Text style={styles.suggestedLabel}>
+                  {alreadySavedId ? 'Already on your map' : 'Suggested place'}
+                </Text>
+              </View>
+            </View>
+
+            {alreadySavedId ? (
+              <Button
+                title="View place"
+                variant="secondary"
+                onPress={() => void viewAlreadySaved(alreadySavedId)}
+                style={styles.primaryBtn}
+              />
+            ) : (
+              <Button
+                title="Save to my map"
+                onPress={() => single && void handleSaveStored(single)}
+                disabled={busy || !single}
+                loading={busy}
+                style={styles.primaryBtn}
+              />
+            )}
+
+            {searchExpanded ? (
+              renderManualSearch({
+                note: 'Search for the exact place and save it instead.',
+                onCancel: () => setSearchExpanded(false),
+              })
+            ) : (
+              <Button
+                title="Search for another place"
+                variant="secondary"
+                onPress={() => {
+                  if (!manualQuery) setManualQuery(job.suggested_query || single?.name || '');
+                  setSearchExpanded(true);
+                }}
+                style={styles.secondaryBtn}
+              />
+            )}
           </View>
         )}
 
-        <View style={styles.footer}>
-          {job.status === 'failed' && !job.saved_place_id ? (
-            <Button title="Retry" variant="secondary" onPress={() => void handleRetry()} />
-          ) : null}
-          <Pressable onPress={() => void handleRemove()} style={styles.removeBtn}>
-            <Text style={[typography.body, styles.removeText]}>Remove from queue</Text>
-          </Pressable>
-        </View>
+        {renderJobFooter()}
       </ScrollView>
     </Screen>
   );
@@ -497,28 +663,86 @@ function ShareJobDetailScreen() {
 
 function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
   return StyleSheet.create({
-    content: { padding: Spacing.lg, paddingBottom: Spacing.xl },
+    content: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.sm, paddingBottom: Spacing.xxl },
     centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing.lg },
+    centeredTitle: { color: colors.text, textAlign: 'center', marginTop: Spacing.md },
+    centeredPrimary: { marginTop: Spacing.lg, minHeight: 56, alignSelf: 'stretch' },
+    savedBadge: {
+      width: 60,
+      height: 60,
+      borderRadius: 20,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: 'rgba(255,106,26,0.14)',
+      borderWidth: 1,
+      borderColor: 'rgba(255,106,26,0.3)',
+    },
     sourceRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.xs,
       alignSelf: 'flex-start',
-      paddingVertical: 4,
+      paddingVertical: 6,
       paddingHorizontal: Spacing.md,
       borderRadius: Radius.pill,
-      backgroundColor: colors.surfaceElevated,
+      backgroundColor: colors.surface,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: colors.border,
-      marginBottom: Spacing.md,
+      marginBottom: Spacing.lg,
     },
     sourceText: { color: colors.textSecondary },
     flex: { flex: 1 },
     section: { marginBottom: Spacing.lg },
     title: { color: colors.text, marginBottom: Spacing.xs },
     help: { color: colors.textSecondary, marginBottom: Spacing.md },
+    processingRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
+    // Polished single-candidate "Suggested place" card.
+    candidateCard: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: Spacing.md,
+      backgroundColor: colors.surface,
+      borderRadius: Radius.lg,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.border,
+      padding: Spacing.lg,
+    },
+    candidateCardIcon: {
+      width: 48,
+      height: 48,
+      borderRadius: 14,
+      backgroundColor: colors.bg,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    candidateCardName: { color: colors.text },
+    candidateCardAddr: { color: colors.textSecondary, marginTop: 4 },
+    suggestedLabel: {
+      color: colors.accent,
+      fontSize: 12,
+      fontWeight: '700',
+      textTransform: 'uppercase',
+      letterSpacing: 0.4,
+      marginTop: Spacing.sm,
+    },
+    primaryBtn: { marginTop: Spacing.lg, minHeight: 56 },
+    secondaryBtn: { marginTop: Spacing.md, minHeight: 52 },
+    searchHeaderRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: Spacing.sm,
+    },
+    searchLabel: { color: colors.textSecondary },
+    cancelLink: { color: colors.accent, fontSize: 14, fontWeight: '600' },
     searchRow: { flexDirection: 'row', alignItems: 'center' },
     searchBtn: { marginLeft: Spacing.sm },
     candidate: {
       flexDirection: 'row',
       alignItems: 'center',
+      gap: Spacing.md,
       backgroundColor: colors.surface,
       borderRadius: Radius.md,
       borderWidth: StyleSheet.hairlineWidth,
@@ -528,7 +752,17 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       marginTop: Spacing.sm,
     },
     candidatePressed: { backgroundColor: colors.surfaceElevated },
-    candidateName: { color: colors.text, fontWeight: '600' },
+    candidateIcon: {
+      width: 36,
+      height: 36,
+      borderRadius: 10,
+      backgroundColor: colors.bg,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    candidateName: { color: colors.text },
     candidateAddr: { color: colors.textMuted, marginTop: 2 },
     checkbox: {
       width: 24,
@@ -541,11 +775,26 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       marginLeft: Spacing.sm,
     },
     checkboxOn: { backgroundColor: colors.primary, borderColor: colors.primary },
-    checkboxMark: { color: colors.textInverse, fontSize: 14, fontWeight: '700' },
-    divider: { height: StyleSheet.hairlineWidth, backgroundColor: colors.border, marginVertical: Spacing.lg },
-    footer: { marginTop: Spacing.sm, alignItems: 'center' },
-    removeBtn: { paddingVertical: Spacing.md, marginTop: Spacing.sm },
-    removeText: { color: colors.danger },
+    // Bottom actions: open original (secondary) then a restrained destructive
+    // remove.
+    footer: { marginTop: Spacing.md, alignItems: 'center' },
+    openBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: Spacing.sm,
+      alignSelf: 'stretch',
+      minHeight: 48,
+      borderRadius: Radius.md,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.border,
+      backgroundColor: colors.surface,
+    },
+    openBtnPressed: { backgroundColor: colors.surfaceElevated },
+    openText: { color: colors.textSecondary, fontSize: 15, fontWeight: '600' },
+    openMsg: { color: colors.textMuted, fontSize: 13, marginTop: Spacing.sm, textAlign: 'center' },
+    removeBtn: { paddingVertical: Spacing.md, marginTop: Spacing.md, minHeight: 44, justifyContent: 'center' },
+    removeText: { color: colors.danger, fontWeight: '600' },
   });
 }
 

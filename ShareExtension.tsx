@@ -478,6 +478,20 @@ type AsyncUi =
   | { kind: 'session_expired' }
   | { kind: 'network_failure' };
 
+/**
+ * Compact bottom-sheet chrome shared by every async extension state. The
+ * backdrop anchors a content-sized card to the bottom of the extension window
+ * (Instagram stays visible behind it where the OS supports it), so the sheet
+ * never fills the whole display or leaves a giant empty region.
+ */
+function AsyncSheet({ children }: { children: React.ReactNode }) {
+  return (
+    <View style={asyncStyles.backdrop}>
+      <View style={asyncStyles.sheet}>{children}</View>
+    </View>
+  );
+}
+
 function AsyncShareExtension(props: InitialProps) {
   const handledRef = useRef(false);
   // ONE stable submission id for THIS share action. Used as the idempotency key
@@ -592,84 +606,124 @@ function AsyncShareExtension(props: InitialProps) {
 
   if (ui.kind === 'accepted') {
     return (
-      <View style={asyncStyles.container}>
+      <AsyncSheet>
         <View style={asyncStyles.brandDot}>
           <Text style={asyncStyles.check}>✓</Text>
         </View>
         <Text style={asyncStyles.title}>Added to your queue</Text>
         <Text style={asyncStyles.subtle}>{"We'll notify you when it's ready."}</Text>
-        <Pressable style={asyncStyles.primaryBtn} onPress={openHostQueue}>
+        <Pressable
+          style={asyncStyles.primaryBtn}
+          onPress={openHostQueue}
+          accessibilityRole="button"
+          accessibilityLabel="View queue in Nearr"
+        >
           <Text style={asyncStyles.primaryText}>View queue</Text>
         </Pressable>
-        <Pressable style={asyncStyles.secondaryBtn} onPress={() => close()}>
+        <Pressable
+          style={asyncStyles.secondaryBtn}
+          onPress={() => close()}
+          accessibilityRole="button"
+          accessibilityLabel="Done, return to Instagram"
+        >
           <Text style={asyncStyles.secondaryText}>Done</Text>
         </Pressable>
-      </View>
+      </AsyncSheet>
     );
   }
   if (ui.kind === 'needs_setup') {
     return (
-      <View style={asyncStyles.container}>
+      <AsyncSheet>
         <Text style={asyncStyles.title}>Open Nearr once to finish setup</Text>
         <Text style={asyncStyles.subtle}>
           {'Open Nearr once so it can connect sharing. After that, sharing works without opening the app.'}
         </Text>
-        <Pressable style={asyncStyles.primaryBtn} onPress={() => openHost('needs_setup')}>
+        <Pressable
+          style={asyncStyles.primaryBtn}
+          onPress={() => openHost('needs_setup')}
+          accessibilityRole="button"
+          accessibilityLabel="Open Nearr"
+        >
           <Text style={asyncStyles.primaryText}>Open Nearr</Text>
         </Pressable>
-      </View>
+      </AsyncSheet>
     );
   }
   if (ui.kind === 'signed_out') {
     return (
-      <View style={asyncStyles.container}>
+      <AsyncSheet>
         <Text style={asyncStyles.title}>Open Nearr to sign in</Text>
         <Text style={asyncStyles.subtle}>{'Sign in once so Nearr can save places you share.'}</Text>
-        <Pressable style={asyncStyles.primaryBtn} onPress={() => openHost('signed_out')}>
+        <Pressable
+          style={asyncStyles.primaryBtn}
+          onPress={() => openHost('signed_out')}
+          accessibilityRole="button"
+          accessibilityLabel="Open Nearr"
+        >
           <Text style={asyncStyles.primaryText}>Open Nearr</Text>
         </Pressable>
-      </View>
+      </AsyncSheet>
     );
   }
   if (ui.kind === 'session_expired') {
     return (
-      <View style={asyncStyles.container}>
+      <AsyncSheet>
         <Text style={asyncStyles.title}>Open Nearr to finish saving</Text>
         <Text style={asyncStyles.subtle}>
           {'Your session needs a refresh. Open Nearr and we\u2019ll save this post.'}
         </Text>
-        <Pressable style={asyncStyles.primaryBtn} onPress={() => openHost('session_expired')}>
+        <Pressable
+          style={asyncStyles.primaryBtn}
+          onPress={() => openHost('session_expired')}
+          accessibilityRole="button"
+          accessibilityLabel="Open Nearr"
+        >
           <Text style={asyncStyles.primaryText}>Open Nearr</Text>
         </Pressable>
-      </View>
+      </AsyncSheet>
     );
   }
   if (ui.kind === 'network_failure') {
     return (
-      <View style={asyncStyles.container}>
+      <AsyncSheet>
         <Text style={asyncStyles.title}>{"Couldn't reach Nearr"}</Text>
         <Text style={asyncStyles.subtle}>{'Check your connection and try again.'}</Text>
-        <Pressable style={asyncStyles.primaryBtn} onPress={() => void submit()}>
+        <Pressable
+          style={asyncStyles.primaryBtn}
+          onPress={() => void submit()}
+          accessibilityRole="button"
+          accessibilityLabel="Retry"
+        >
           <Text style={asyncStyles.primaryText}>Retry</Text>
         </Pressable>
-        <Pressable style={asyncStyles.secondaryBtn} onPress={() => openHost('network_failure')}>
+        <Pressable
+          style={asyncStyles.secondaryBtn}
+          onPress={() => openHost('network_failure')}
+          accessibilityRole="button"
+          accessibilityLabel="Open Nearr instead"
+        >
           <Text style={asyncStyles.secondaryText}>Open Nearr instead</Text>
         </Pressable>
-      </View>
+      </AsyncSheet>
     );
   }
   return (
-    <View style={asyncStyles.container}>
+    <AsyncSheet>
       <ActivityIndicator color={NEARR_ORANGE} />
       <Text style={asyncStyles.title}>Saving to Nearr</Text>
       <Text style={asyncStyles.subtle}>{'Finding the place from this post…'}</Text>
       <Text style={asyncStyles.subtleSmall}>
         {"You can close this and keep scrolling. We'll notify you when it's ready."}
       </Text>
-      <Pressable style={asyncStyles.secondaryBtn} onPress={() => close()}>
+      <Pressable
+        style={asyncStyles.secondaryBtn}
+        onPress={() => close()}
+        accessibilityRole="button"
+        accessibilityLabel="Close"
+      >
         <Text style={asyncStyles.secondaryText}>Close</Text>
       </Pressable>
-    </View>
+    </AsyncSheet>
   );
 }
 
@@ -749,37 +803,50 @@ const styles = StyleSheet.create({
 // above so the flag-off (legacy) extension appearance is unchanged.
 // ---------------------------------------------------------------------------
 const NEARR_ORANGE = '#FF6B00';
-const NEARR_BG = '#0B0B0D';
 const NEARR_SURFACE = '#1C1C20';
 const NEARR_BORDER = '#2A2A30';
 
 const asyncStyles = StyleSheet.create({
-  container: {
+  // Dim backdrop that anchors the sheet to the bottom of the extension window.
+  // Where the OS keeps the host app visible behind the extension, this dims it;
+  // otherwise it just darkens the window above the card.
+  backdrop: {
     flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.35)',
+  },
+  // Content-sized card — never stretched to fill the window, so there's no
+  // giant empty region. ~28px top corners, safe-area-aware bottom padding.
+  sheet: {
+    backgroundColor: NEARR_SURFACE,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderColor: NEARR_BORDER,
+    paddingHorizontal: 24,
+    paddingTop: 22,
+    paddingBottom: 30,
     alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-    backgroundColor: NEARR_BG,
   },
   brandDot: {
-    width: 56,
-    height: 56,
-    borderRadius: 20,
+    width: 52,
+    height: 52,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'rgba(255,107,0,0.14)',
     borderWidth: 1,
     borderColor: 'rgba(255,107,0,0.3)',
-    marginBottom: 4,
+    marginBottom: 12,
   },
   check: {
-    fontSize: 30,
-    lineHeight: 34,
+    fontSize: 26,
+    lineHeight: 30,
     color: NEARR_ORANGE,
     fontWeight: '700',
   },
   title: {
-    marginTop: 12,
+    marginTop: 4,
     fontSize: 18,
     fontWeight: '700',
     color: '#FFFFFF',
@@ -790,31 +857,36 @@ const asyncStyles = StyleSheet.create({
     fontSize: 14,
     color: '#A1A1AA',
     textAlign: 'center',
+    lineHeight: 19,
   },
   subtleSmall: {
     marginTop: 8,
     fontSize: 12,
     color: '#71717A',
     textAlign: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: 8,
     lineHeight: 17,
   },
+  // Prominent but not excessively tall (~52px), full-width.
   primaryBtn: {
     marginTop: 18,
+    alignSelf: 'stretch',
+    minHeight: 52,
     backgroundColor: NEARR_ORANGE,
-    paddingVertical: 12,
-    paddingHorizontal: 26,
-    borderRadius: 999,
-  },
-  primaryText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
-  secondaryBtn: {
-    marginTop: 12,
-    paddingVertical: 10,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingHorizontal: 20,
-    borderRadius: 999,
-    backgroundColor: NEARR_SURFACE,
-    borderWidth: 1,
-    borderColor: NEARR_BORDER,
   },
-  secondaryText: { color: '#FFFFFF', fontSize: 14, fontWeight: '600' },
+  primaryText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
+  // Text button (e.g. "Done") — always visible under the primary action.
+  secondaryBtn: {
+    marginTop: 4,
+    alignSelf: 'stretch',
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+  },
+  secondaryText: { color: '#A1A1AA', fontSize: 15, fontWeight: '600' },
 });

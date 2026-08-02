@@ -21,11 +21,18 @@ import {
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
-import { EmptyState, ErrorBoundary, Screen } from '@/components';
+import { EmptyState, ErrorBoundary, Screen, ShareJobsHeader } from '@/components';
 import { Radius, Spacing } from '@/constants';
 import { useTheme } from '@/lib/theme';
 import { useShareJobs } from '@/hooks/useShareJobs';
 import { routeShareJobCard } from '@/lib/shareJobRouting';
+import {
+  actionableCount,
+  actionableJobs,
+  backTarget,
+  isQueueEmpty,
+  processingJobs,
+} from '@/lib/shareJobsUi';
 import { cancelShareJob, type ShareJob } from '@/services/shareJobsService';
 
 // A processing job older than this is very likely stuck (the worker never
@@ -110,32 +117,49 @@ function jobSubtitle(job: ShareJob, stalled = false): string {
   switch (job.status) {
     case 'queued':
     case 'processing_metadata':
-      return stalled ? 'Taking longer than expected — tap for options' : 'Finding the place from this post…';
+      return stalled ? 'Taking longer than expected' : 'Finding the place from this post…';
     case 'needs_help':
       if (job.needs_help_reason === 'multiple_candidates') return 'Choose which ones to save';
       if (job.needs_help_reason === 'manual_search' || job.needs_help_reason === 'metadata_unavailable')
         return 'Tap to search for it';
-      return 'Tap to confirm the place';
-    case 'completed':
-      return `Found · ${platformLabel(job.source_platform)}`;
+      return 'Confirm this place';
     case 'failed':
-      return "We couldn't finish this one — tap to search";
+      return "Couldn't find it — tap to search";
     default:
       return '';
   }
+}
+
+/** Show the raw domain only when the icon can't communicate the source — i.e.
+ *  for generic links. For Instagram/TikTok/YouTube the platform icon already
+ *  says it, so we drop the noisy "instagram.com" repetition. */
+function shouldShowHost(job: ShareJob): boolean {
+  return !['instagram', 'tiktok', 'youtube'].includes((job.source_platform ?? '').toLowerCase());
 }
 
 function ShareJobsQueueScreen() {
   const router = useRouter();
   const { colors, typography } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const { sections, loading, refreshing, refresh, enabled, authLoading } = useShareJobs();
+  const { jobs, loading, refreshing, refresh, enabled, authLoading } = useShareJobs();
   const [actingId, setActingId] = useState<string | null>(null);
 
-  const isEmpty =
-    sections.processing.length === 0 &&
-    sections.needsHelp.length === 0 &&
-    sections.failed.length === 0;
+  // Presentation grouping (visibility already filtered upstream by the hook):
+  // needs_help + failed are both actionable → one "Needs your help" section;
+  // queued/processing_metadata → "Processing". Terminal jobs never appear.
+  const actionable = useMemo(() => actionableJobs(jobs), [jobs]);
+  const processing = useMemo(() => processingJobs(jobs), [jobs]);
+  const count = actionableCount(jobs);
+  const empty = isQueueEmpty(jobs);
+
+  // Never leave the user trapped: go back if there's a Nearr route to return
+  // to, otherwise fall back to the map (cold deep-link entry from the
+  // extension's "View queue" has no previous route).
+  function goBack() {
+    const target = backTarget(router.canGoBack(), '/(tabs)/map');
+    if (target.kind === 'back') router.back();
+    else router.replace(target.route);
+  }
 
   async function removeFromQueue(job: ShareJob) {
     if (actingId) return;
@@ -206,96 +230,107 @@ function ShareJobsQueueScreen() {
   }
 
   function renderRow(job: ShareJob) {
-    const processing = job.status === 'queued' || job.status === 'processing_metadata';
-    const stalled = processing && isStalledProcessing(job);
+    const isProcessing = job.status === 'queued' || job.status === 'processing_metadata';
+    const stalled = isProcessing && isStalledProcessing(job);
     const busy = actingId === job.id;
-    const host = hostOf(job.canonical_url ?? job.source_url);
+    const actionableRow = !isProcessing || stalled;
+    const subtitle = jobSubtitle(job, stalled);
     return (
       <Pressable
-        key={job.id}
         onPress={() => openJob(job)}
-        disabled={(processing && !stalled) || busy}
-        style={({ pressed }) => [
-          styles.row,
-          pressed && (!processing || stalled) ? styles.rowPressed : null,
-        ]}
+        disabled={!actionableRow || busy}
+        style={({ pressed }) => [styles.row, pressed && actionableRow ? styles.rowPressed : null]}
         accessibilityRole="button"
+        accessibilityLabel={`${jobTitle(job)}. ${subtitle}`}
       >
         <View style={styles.iconTile}>
-          <Feather name={jobIcon(job)} size={16} color={colors.accent} />
+          <Feather name={jobIcon(job)} size={18} color={colors.accent} />
         </View>
         <View style={styles.rowMain}>
-          <Text style={[typography.body, styles.rowTitle]} numberOfLines={1}>
+          <Text style={[typography.bodyStrong, styles.rowTitle]} numberOfLines={1}>
             {jobTitle(job)}
           </Text>
           <Text style={[typography.caption, styles.rowSubtitle]} numberOfLines={1}>
-            {jobSubtitle(job, stalled)}
+            {subtitle}
           </Text>
-          {host ? (
-            <Text style={[typography.caption, styles.rowMeta]} numberOfLines={1}>
-              {host} · {relativeTime(job.created_at)}
-            </Text>
-          ) : null}
+          <Text style={[typography.caption, styles.rowMeta]} numberOfLines={1}>
+            {shouldShowHost(job)
+              ? `${hostOf(job.canonical_url ?? job.source_url)} · ${relativeTime(job.created_at)}`.replace(/^ · /, '')
+              : relativeTime(job.created_at)}
+          </Text>
         </View>
         {busy ? (
           <ActivityIndicator color={colors.primary} />
         ) : stalled ? (
-          <Feather name="alert-circle" size={18} color={colors.textMuted} />
-        ) : processing ? (
+          <Feather name="alert-circle" size={20} color={colors.textMuted} />
+        ) : isProcessing ? (
           <ActivityIndicator color={colors.primary} />
-        ) : job.status === 'needs_help' ? (
-          <View style={styles.badgeDot} />
         ) : (
-          <Feather name="chevron-right" size={18} color={colors.textMuted} />
+          <Feather
+            name="chevron-right"
+            size={20}
+            color={job.status === 'needs_help' ? colors.primary : colors.textMuted}
+          />
         )}
       </Pressable>
     );
   }
 
-  function renderSection(title: string, jobs: ShareJob[], badge = false) {
-    if (jobs.length === 0) return null;
+  function renderSection(title: string, sectionJobs: ShareJob[], badge = false) {
+    if (sectionJobs.length === 0) return null;
     return (
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={[typography.label, styles.sectionTitle]}>{title}</Text>
           {badge ? (
             <View style={styles.countBadge}>
-              <Text style={styles.countBadgeText}>{jobs.length}</Text>
+              <Text style={styles.countBadgeText}>{sectionJobs.length}</Text>
             </View>
           ) : (
-            <Text style={[typography.caption, styles.sectionCount]}>{jobs.length}</Text>
+            <Text style={[typography.caption, styles.sectionCount]}>{sectionJobs.length}</Text>
           )}
         </View>
-        <View style={styles.card}>{jobs.map(renderRow)}</View>
+        <View style={styles.card}>
+          {sectionJobs.map((job, i) => (
+            <View key={job.id}>
+              {i > 0 ? <View style={styles.separator} /> : null}
+              {renderRow(job)}
+            </View>
+          ))}
+        </View>
       </View>
     );
   }
 
+  // The header is rendered in EVERY state so the back control is always
+  // available — even while auth restores, when the flag is off, or when empty.
+  const header = (
+    <ShareJobsHeader title="Share queue" onBack={goBack} backLabel="Back to map" count={count} />
+  );
+
   if (!enabled) {
-    // Cold-start deep link (e.g. the extension's "View queue"): the session is
-    // still restoring. Show a spinner instead of the misleading "off" state so
-    // we never render a wrong terminal state before auth settles.
-    if (authLoading) {
-      return (
-        <Screen>
+    return (
+      <Screen padded={false}>
+        {header}
+        {authLoading ? (
           <View style={styles.loadingWrap}>
             <ActivityIndicator color={colors.primary} />
           </View>
-        </Screen>
-      );
-    }
-    return (
-      <Screen>
-        <EmptyState
-          title="Share queue is off"
-          body="Shared links open directly for now."
-        />
+        ) : (
+          <View style={styles.stateWrap}>
+            <EmptyState
+              title="Share queue is off"
+              body="Shared links open directly for now."
+            />
+          </View>
+        )}
       </Screen>
     );
   }
 
   return (
     <Screen padded={false}>
+      {header}
       <ScrollView
         contentContainerStyle={styles.content}
         refreshControl={
@@ -303,20 +338,21 @@ function ShareJobsQueueScreen() {
         }
         showsVerticalScrollIndicator={false}
       >
-        {loading && isEmpty ? (
+        {loading && empty ? (
           <View style={styles.loadingWrap}>
             <ActivityIndicator color={colors.primary} />
           </View>
-        ) : isEmpty ? (
-          <EmptyState
-            title="Nothing in your queue"
-            body="Share an Instagram or TikTok post to Nearr and it'll show up here while we find the place."
-          />
+        ) : empty ? (
+          <View style={styles.stateWrap}>
+            <EmptyState
+              title="Your queue is clear"
+              body="Places you share to Nearr will appear here while they're being processed."
+            />
+          </View>
         ) : (
           <>
-            {renderSection('Needs your help', sections.needsHelp, true)}
-            {renderSection('Processing', sections.processing)}
-            {renderSection("Couldn't finish", sections.failed)}
+            {renderSection('Needs your help', actionable, true)}
+            {renderSection('Processing', processing)}
           </>
         )}
       </ScrollView>
@@ -326,8 +362,9 @@ function ShareJobsQueueScreen() {
 
 function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
   return StyleSheet.create({
-    content: { padding: Spacing.lg, paddingBottom: Spacing.xl },
+    content: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.sm, paddingBottom: Spacing.xl },
     loadingWrap: { paddingTop: Spacing.xl * 2, alignItems: 'center' },
+    stateWrap: { paddingTop: Spacing.xl, paddingHorizontal: Spacing.lg },
     section: { marginBottom: Spacing.lg },
     sectionHeader: {
       flexDirection: 'row',
@@ -358,15 +395,19 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       flexDirection: 'row',
       alignItems: 'center',
       gap: Spacing.md,
-      paddingVertical: Spacing.md,
+      minHeight: 76,
+      paddingVertical: Spacing.md + 2,
       paddingHorizontal: Spacing.md,
-      borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: colors.border,
     },
     rowPressed: { backgroundColor: colors.surfaceElevated },
+    separator: {
+      height: StyleSheet.hairlineWidth,
+      backgroundColor: colors.border,
+      marginLeft: 40 + Spacing.md * 2,
+    },
     iconTile: {
-      width: 38,
-      height: 38,
+      width: 40,
+      height: 40,
       borderRadius: 12,
       backgroundColor: colors.bg,
       borderWidth: 1,
@@ -375,15 +416,9 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       justifyContent: 'center',
     },
     rowMain: { flex: 1, marginRight: Spacing.sm },
-    rowTitle: { color: colors.text, fontWeight: '600' },
+    rowTitle: { color: colors.text },
     rowSubtitle: { color: colors.textSecondary, marginTop: 2 },
     rowMeta: { color: colors.textMuted, marginTop: 2 },
-    badgeDot: {
-      width: 10,
-      height: 10,
-      borderRadius: 5,
-      backgroundColor: colors.primary,
-    },
   });
 }
 

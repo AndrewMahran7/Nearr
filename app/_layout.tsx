@@ -635,11 +635,11 @@ function RootLayoutContent() {
               />
               <Stack.Screen
                 name="share-jobs/index"
-                options={{ headerShown: true, title: 'Share queue' }}
+                options={{ headerShown: false, title: 'Share queue' }}
               />
               <Stack.Screen
                 name="share-jobs/[jobId]"
-                options={{ headerShown: true, title: 'Finish saving' }}
+                options={{ headerShown: false, title: 'Finish saving' }}
               />
               <Stack.Screen name="legal/terms" options={{ headerShown: true, title: 'Terms of Service' }} />
               <Stack.Screen name="legal/privacy" options={{ headerShown: true, title: 'Privacy Policy' }} />
