@@ -1,13 +1,21 @@
-import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { useEffect, useRef } from 'react';
+import {
+  AccessibilityInfo,
+  Animated,
+  Easing,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
 import { Spacing } from '@/constants';
-import { InstagramReelMock } from '../demo';
+import { InstagramReelMock, NearrAppIcon } from '../demo';
 import { OnboardingColors, OnboardingRadius } from '../theme';
 import { ScreenHeading } from './ScreenHeading';
 
-// Orb footprint for the vertical transformation stack.
-const ORB = 76;
+const ORB = 70;
 
 /**
  * Screen 1 of 5 — Value proposition.
@@ -18,13 +26,70 @@ const ORB = 76;
  */
 export function ValuePropScreen() {
   const { width } = useWindowDimensions();
+  const reelEntrance = useRef(new Animated.Value(0)).current;
+  const transformPulse = useRef(new Animated.Value(0)).current;
+  const pinEntrance = useRef(new Animated.Value(0)).current;
 
-  // Vertical transformation stack: each node uses most of the available width
-  // (clamped) so the hero reads ~50% larger than the old side-by-side row
-  // while staying responsive and clip-safe on small screens.
-  const available = width - Spacing.xl * 2;
-  const nodeWidth = Math.min(available, 176);
-  const mapTileHeight = Math.round(nodeWidth * 0.5);
+  const compositionWidth = Math.min(300, width - Spacing.lg * 2);
+  const reelWidth = Math.round(compositionWidth * 0.58);
+  const mapWidth = Math.round(compositionWidth * 0.62);
+  const mapTileHeight = Math.round(mapWidth * 0.47);
+
+  useEffect(() => {
+    let cancelled = false;
+    void AccessibilityInfo.isReduceMotionEnabled().then((reduceMotion) => {
+      if (cancelled) return;
+      if (reduceMotion) {
+        reelEntrance.setValue(1);
+        transformPulse.setValue(1);
+        pinEntrance.setValue(1);
+        return;
+      }
+
+      Animated.sequence([
+        Animated.timing(reelEntrance, {
+          toValue: 1,
+          duration: 280,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.sequence([
+          Animated.timing(transformPulse, {
+            toValue: 1,
+            duration: 300,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: true,
+          }),
+          Animated.timing(transformPulse, {
+            toValue: 0.82,
+            duration: 140,
+            useNativeDriver: true,
+          }),
+          Animated.spring(transformPulse, {
+            toValue: 1,
+            friction: 5,
+            tension: 90,
+            useNativeDriver: true,
+          }),
+        ]),
+        Animated.spring(pinEntrance, {
+          toValue: 1,
+          friction: 6,
+          tension: 90,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pinEntrance, reelEntrance, transformPulse]);
+
+  const reelTranslate = reelEntrance.interpolate({ inputRange: [0, 1], outputRange: [-10, 0] });
+  const pulseScale = transformPulse.interpolate({ inputRange: [0, 1], outputRange: [0.82, 1] });
+  const pinTranslate = pinEntrance.interpolate({ inputRange: [0, 1], outputRange: [-14, 0] });
+  const pinScale = pinEntrance.interpolate({ inputRange: [0, 0.7, 1], outputRange: [0.3, 1.15, 1] });
 
   return (
     <View style={styles.container}>
@@ -33,44 +98,65 @@ export function ValuePropScreen() {
         subtext="Share a restaurant, hike, hotel, or coffee shop from Instagram or TikTok. Nearr finds the place and saves it for later."
       />
 
-      <View style={styles.hero}>
-        <InstagramReelMock width={nodeWidth} compact />
+      <View style={[styles.hero, { width: compositionWidth }]}>
+        <Animated.View
+          style={[
+            styles.reelNode,
+            { opacity: reelEntrance, transform: [{ translateY: reelTranslate }] },
+          ]}
+        >
+          <InstagramReelMock width={reelWidth} compact />
+        </Animated.View>
 
-        <View style={styles.arrow}>
-          <Feather name="chevron-down" size={20} color={OnboardingColors.orange} />
-        </View>
+        <Animated.View
+          style={[
+            styles.path,
+            { opacity: transformPulse, transform: [{ rotate: '-8deg' }, { scale: pulseScale }] },
+          ]}
+        />
 
-        <NearrOrb />
+        <Animated.View
+          style={[styles.orbOuter, { opacity: transformPulse, transform: [{ scale: pulseScale }] }]}
+        >
+          <NearrAppIcon size={54} />
+        </Animated.View>
 
-        <View style={styles.arrow}>
-          <Feather name="chevron-down" size={20} color={OnboardingColors.orange} />
-        </View>
-
-        <MapPinCard width={nodeWidth} tileHeight={mapTileHeight} />
-      </View>
-    </View>
-  );
-}
-
-/** Brand mark node: an orange orb with the Nearr pin. */
-function NearrOrb() {
-  return (
-    <View style={styles.orbOuter}>
-      <View style={styles.orbInner}>
-        <Feather name="map-pin" size={28} color={OnboardingColors.onOrange} />
+        <MapPinCard
+          width={mapWidth}
+          tileHeight={mapTileHeight}
+          pinOpacity={pinEntrance}
+          pinTranslate={pinTranslate}
+          pinScale={pinScale}
+        />
       </View>
     </View>
   );
 }
 
 /** Right node: a compact saved-place card with a mini map + pin. */
-function MapPinCard({ width, tileHeight }: { width: number; tileHeight: number }) {
+function MapPinCard({
+  width,
+  tileHeight,
+  pinOpacity,
+  pinTranslate,
+  pinScale,
+}: {
+  width: number;
+  tileHeight: number;
+  pinOpacity: Animated.Value;
+  pinTranslate: Animated.AnimatedInterpolation<string | number>;
+  pinScale: Animated.AnimatedInterpolation<string | number>;
+}) {
   return (
     <View style={[styles.mapCard, { width }]}>
       <View style={[styles.mapTile, { height: tileHeight }]}>
         <View style={styles.mapRoadA} />
         <View style={styles.mapRoadB} />
-        <Feather name="map-pin" size={22} color={OnboardingColors.orange} />
+        <Animated.View
+          style={{ opacity: pinOpacity, transform: [{ translateY: pinTranslate }, { scale: pinScale }] }}
+        >
+          <Feather name="map-pin" size={28} color={OnboardingColors.orange} />
+        </Animated.View>
       </View>
       <View style={styles.mapInfo}>
         <Text style={styles.mapName} numberOfLines={1}>
@@ -89,35 +175,50 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   hero: {
-    alignItems: 'center',
+    position: 'relative',
+    alignSelf: 'center',
+    height: 282,
     marginTop: 8,
   },
-  arrow: {
-    paddingVertical: 6,
-    alignItems: 'center',
+  reelNode: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    zIndex: 1,
+  },
+  path: {
+    position: 'absolute',
+    left: '34%',
+    top: 104,
+    width: '50%',
+    height: 102,
+    borderRightWidth: 2,
+    borderBottomWidth: 2,
+    borderColor: 'rgba(255, 107, 0, 0.58)',
+    borderRadius: 72,
   },
   orbOuter: {
+    position: 'absolute',
+    left: '38%',
+    top: 112,
     width: ORB,
     height: ORB,
     borderRadius: ORB / 2,
     backgroundColor: 'rgba(255, 107, 0, 0.16)',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  orbInner: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: OnboardingColors.orange,
-    alignItems: 'center',
-    justifyContent: 'center',
+    zIndex: 3,
   },
   mapCard: {
+    position: 'absolute',
+    right: 0,
+    bottom: 0,
     borderRadius: OnboardingRadius.card,
     borderWidth: 1,
     borderColor: OnboardingColors.border,
     backgroundColor: OnboardingColors.card,
     overflow: 'hidden',
+    zIndex: 2,
   },
   mapTile: {
     backgroundColor: '#0E0E11',

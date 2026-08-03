@@ -56,7 +56,7 @@ export function ChooseNearrScreen({ onNearrTap }: Props) {
     <View style={styles.container}>
       <ScreenHeading
         headline="Choose Nearr from the Share Sheet"
-        subtext="Open the share options and tap Nearr to send the post over."
+        subtext="Now tap Nearr in the iOS Share Sheet."
       />
 
       <Animated.View style={[styles.demo, { transform: [{ translateY }], opacity }]}>

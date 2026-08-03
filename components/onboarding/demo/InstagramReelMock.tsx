@@ -91,14 +91,15 @@ export function InstagramReelMock({
         </View>
       </View>
 
-      {/* Caption */}
-      <View style={[styles.caption, compact && styles.captionCompact]}>
-        <Text style={styles.captionText} numberOfLines={2}>
-          <Text style={styles.captionHandle}>kaitpark </Text>
-          Perfect flat white and the best oat latte in Tokyo
-        </Text>
-        {!compact ? <Text style={styles.comments}>View all 58 comments</Text> : null}
-      </View>
+      {!compact ? (
+        <View style={styles.caption}>
+          <Text style={styles.captionText} numberOfLines={2}>
+            <Text style={styles.captionHandle}>kaitpark </Text>
+            Perfect flat white and the best oat latte in Tokyo
+          </Text>
+          <Text style={styles.comments}>View all 58 comments</Text>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -138,7 +139,7 @@ function RailAction({
   return (
     <View style={styles.railAction}>
       <Feather name={icon} size={compact ? 18 : 24} color={OnboardingColors.text} />
-      <Text style={[styles.railLabel, compact && styles.railLabelCompact]}>{label}</Text>
+      {!compact ? <Text style={styles.railLabel}>{label}</Text> : null}
     </View>
   );
 }
@@ -229,7 +230,7 @@ function ShareAction({
             style={styles.shareTarget}
             accessibilityRole="button"
             accessibilityLabel="Share this post to Nearr"
-            accessibilityHint="Advances the tutorial to the next step"
+            accessibilityHint="Opens a simulated Instagram sharing panel"
           >
             {content}
           </Pressable>
@@ -237,7 +238,7 @@ function ShareAction({
       ) : (
         content
       )}
-      <Text style={[styles.railLabel, compact && styles.railLabelCompact]}>1,404</Text>
+      {!compact ? <Text style={styles.railLabel}>1,404</Text> : null}
     </View>
   );
 }
@@ -369,9 +370,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
   },
-  railLabelCompact: {
-    fontSize: 9,
-  },
   shareTargetWrap: {
     alignItems: 'center',
   },
@@ -414,9 +412,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
     gap: 3,
-  },
-  captionCompact: {
-    paddingVertical: 8,
   },
   captionText: {
     color: OnboardingColors.text,

@@ -117,6 +117,12 @@ export default function OnboardingScreen() {
     if (busyRef.current) return;
     void trackEvent('onboarding_share_demo_tapped', screenProps(1));
     hapticSelection();
+  };
+
+  const handleShareToTap = () => {
+    if (busyRef.current) return;
+    void trackEvent('onboarding_share_to_demo_tapped', screenProps(1));
+    hapticSelection();
     advance();
   };
 
@@ -187,7 +193,7 @@ export default function OnboardingScreen() {
       case 0:
         return <ValuePropScreen />;
       case 1:
-        return <TapShareScreen onShareTap={handleShareTap} />;
+        return <TapShareScreen onShareTap={handleShareTap} onShareToTap={handleShareToTap} />;
       case 2:
         return <ChooseNearrScreen onNearrTap={handleNearrTap} />;
       case 3:

@@ -104,7 +104,8 @@ export default function ActivateScreen() {
         </View>
         <Text style={styles.tipText}>
           <Text style={styles.tipLead}>Tip: </Text>
-          After your first save, add Nearr to your share favorites for one-tap saving.
+          Don't see Nearr? Swipe through the apps or tap More. After your first save, add Nearr
+          to your share favorites for one-tap saving.
         </Text>
       </View>
     </OnboardingScreenShell>
