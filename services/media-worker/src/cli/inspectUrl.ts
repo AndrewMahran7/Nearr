@@ -26,13 +26,17 @@
 // (retrieval failed / providers not configured); 1 bad usage / unexpected.
 
 import { spawn } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import { writeFile, mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { loadConfig } from '../config/env.js';
+import { loadEnvFiles } from '../config/loadEnvFiles.js';
 import { InstagramMediaResolver } from '../resolvers/InstagramMediaResolver.js';
-import { selectResolver } from '../resolvers/MediaResolver.js';
+import type { MediaResolver } from '../resolvers/MediaResolver.js';
+import { HttpMediaFetchResolver, isHttpFetchProviderConfigured } from '../resolvers/HttpMediaFetchResolver.js';
+import { classifyRetrievalError, shouldTryFallback, type RetrievalClassification } from '../resolvers/retrievalPolicy.js';
 import { selectTranscriptionProvider } from '../providers/transcription.js';
 import { selectModelProvider } from '../providers/model.js';
 import { selectOcrProvider, deduplicateOcrSegments } from '../providers/ocr.js';
@@ -45,7 +49,12 @@ import { createJobTemp } from '../util/tempDir.js';
 import { sanitizeUrlForLog } from '../security/ssrf.js';
 import { isMediaError, MediaError, type ResolvedMedia } from '../types/media.js';
 import type { MediaPlaceEvidence, PlaceCandidateEvidence, EvidenceItem } from '../types/evidence.js';
-import { parseInspectArgs, buildProviderChecklist, type ProviderChecklist } from './inspectSupport.js';
+import {
+  parseInspectArgs,
+  buildProviderChecklist,
+  buildReadinessLines,
+  type ProviderChecklist,
+} from './inspectSupport.js';
 import { prepareLocalFile } from './localFile.js';
 
 function safeHost(raw: string): string | null {
@@ -56,11 +65,16 @@ function safeHost(raw: string): string | null {
   }
 }
 
-function classifyRetrieval(code: string): string {
-  if (code === 'authentication_required' || code === 'private_or_unavailable') {
-    return 'anonymous_public_retrieval_failed';
+/** Sanitized yt-dlp readiness probe (version string is not a secret). */
+function checkYtDlp(ytDlpPath: string): { ready: boolean; version: string | null } {
+  try {
+    const v = execFileSync(ytDlpPath, ['--version'], { timeout: 8000, stdio: ['ignore', 'pipe', 'ignore'] })
+      .toString()
+      .trim();
+    return { ready: v.length > 0, version: v || null };
+  } catch {
+    return { ready: false, version: null };
   }
-  return code;
 }
 
 function boundedText(s: string, max = 200): string {
@@ -120,6 +134,80 @@ function analyzeNameDrivenMultiPlace(evidence: MediaPlaceEvidence) {
       'iterates evidence.addresses and verifies each by street address. Places named ' +
       'without an explicit street address are not fanned out to per-name Places searches, ' +
       'so they are lost from a multi result.',
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Content + verification breakdown for the report (separates the required
+// channels: spoken vs visible vs address vs inferred vs verified vs lost).
+// ---------------------------------------------------------------------------
+
+function evidenceItemsBySource(evidence: MediaPlaceEvidence, sources: string[]) {
+  const out: { place: string; timestampSeconds: number | null; value: string }[] = [];
+  for (const p of evidence.places) {
+    for (const e of p.explicitEvidence) {
+      if (sources.includes(e.source)) {
+        out.push({ place: boundedText(p.name, 80), timestampSeconds: e.timestampSeconds, value: boundedText(e.value) });
+      }
+    }
+  }
+  return out;
+}
+
+function buildContentBreakdown(evidence: MediaPlaceEvidence) {
+  const explicit = evidence.places.filter((p) => p.explicitEvidence.length > 0 && p.role !== 'passing_mention');
+  return {
+    spokenPlaceMentions: evidenceItemsBySource(evidence, ['speech']),
+    visiblePlaceMentions: evidenceItemsBySource(evidence, ['visible_text', 'frame', 'caption']),
+    explicitAddresses: evidence.places.flatMap((p) =>
+      p.explicitEvidence
+        .filter((e) => REPORT_ADDRESS_RE.test(e.value))
+        .map((e) => ({ place: boundedText(p.name, 80), value: boundedText(e.value) })),
+    ),
+    inferredGeographicContext: evidence.places
+      .filter((p) => p.city || p.region || p.country)
+      .map((p) => ({ place: boundedText(p.name, 80), city: p.city, region: p.region, country: p.country })),
+    proposedVenueNames: explicit.map((p) => boundedText(p.name, 80)),
+    distinctProposedPlaces: explicit.length,
+  };
+}
+
+type VerificationOutcome = { ran: boolean; skippedReason?: string; result?: unknown };
+
+function buildVerificationBreakdown(v: VerificationOutcome, evidence: MediaPlaceEvidence) {
+  const nameDriven = analyzeNameDrivenMultiPlace(evidence);
+  if (!v.ran || !v.result || typeof v.result !== 'object' || (v.result as { ok?: boolean }).ok !== true) {
+    return {
+      ran: false,
+      skippedReason: v.skippedReason ?? (v.result as { reason?: string } | undefined)?.reason ?? 'not_run',
+      verifiedCanonicalPlaces: [],
+      ambiguousCandidates: 0,
+      rejectedCandidates: 'not_surfaced_by_resolver_result',
+      placesLostByAddressOnlyResolver: nameDriven.lostForLackOfAddress,
+    };
+  }
+  const r = v.result as {
+    decision?: string;
+    safeToAutoSave?: boolean;
+    confidence?: string;
+    candidateCount?: number;
+    candidates?: { name: string | null; formattedAddress: string | null; googlePlaceId: string | null; matchScore: number | null }[];
+  };
+  const ambiguous = r.decision === 'multi_candidate_confirmation' || r.decision === 'candidate_picker';
+  return {
+    ran: true,
+    decision: r.decision ?? null,
+    safeToAutoSave: r.safeToAutoSave === true, // reported as-is; never weakened
+    confidence: r.confidence ?? null,
+    verifiedCanonicalPlaces: (r.candidates ?? []).map((c) => ({
+      name: c.name,
+      address: c.formattedAddress,
+      googlePlaceId: c.googlePlaceId,
+      matchScore: c.matchScore,
+    })),
+    ambiguousCandidates: ambiguous ? (r.candidates ?? []).length : 0,
+    rejectedCandidates: 'not_surfaced_by_resolver_result',
+    placesLostByAddressOnlyResolver: nameDriven.lostForLackOfAddress,
   };
 }
 
@@ -272,6 +360,7 @@ async function analyzeMedia(args: {
   steps.evidence = {
     provider: analysis.provider,
     promptVersion: analysis.promptVersion,
+    modelRawPreview: analysis.modelRawPreview ?? null,
     multipleIntentionalPlaces: analysis.evidence.multipleIntentionalPlaces,
     insufficientEvidence: analysis.evidence.insufficientEvidence,
     warnings: analysis.evidence.warnings,
@@ -281,10 +370,14 @@ async function analyzeMedia(args: {
     distinctProposedPlaces: explicitPlaces.filter((p) => p.role !== 'passing_mention').length,
   };
   report.nameDrivenMultiPlace = analyzeNameDrivenMultiPlace(analysis.evidence);
+  report.contentBreakdown = buildContentBreakdown(analysis.evidence);
+  report.transcriptionRan = checklist.transcriptionReady;
+  report.visualAnalysisRan = true;
 
   // Deterministic resolver + Google Places verification (real modules, no save).
   const verification = await runVerification(analysis.evidence, workDir);
   steps.verification = verification;
+  report.verification = buildVerificationBreakdown(verification, analysis.evidence);
 
   report.genuineContentTest = true;
   report.result = analysis.evidence.insufficientEvidence
@@ -304,7 +397,10 @@ async function main(): Promise<number> {
     console.error(parsed.message);
     return 1;
   }
-  const out = parsed.out;
+  // Auto-load server-side provider config from local .env files (deterministic
+  // precedence; existing process vars win). No manual key entry per session.
+  const envLoad = loadEnvFiles();
+  const repoRoot = envLoad.repoRoot;
 
   // --url mode enables the IG resolver for THIS process only (never a hosted
   // flag, never persisted). --file mode needs no resolver flag.
@@ -315,10 +411,37 @@ async function main(): Promise<number> {
     model: selectModelProvider(cfg),
     ocr: selectOcrProvider(cfg),
   };
-  const checklist = buildProviderChecklist(cfg, (name) => {
+  const hasEnv = (name: string) => {
     const v = process.env[name];
     return typeof v === 'string' && v.trim().length > 0;
-  });
+  };
+  const checklist = buildProviderChecklist(cfg, hasEnv);
+
+  // Retrieval readiness: direct yt-dlp + optional configured fallback provider.
+  const yt = checkYtDlp(cfg.ytDlpPath);
+  const fallbackConfigured = isHttpFetchProviderConfigured(cfg);
+  const retrievalName = fallbackConfigured ? 'yt-dlp + http-fallback' : 'yt-dlp';
+  const readinessLines = buildReadinessLines(checklist, { name: retrievalName, ready: yt.ready || fallbackConfigured });
+
+  // A single command writes a sanitized report even without --out.
+  const out =
+    parsed.out ??
+    path.join(repoRoot, '.tmp', 'phase2-reel-test', `media-inspect-${parsed.mode}-${Date.now()}.json`);
+
+  // Sanitized readiness summary (NEVER values).
+  for (const line of readinessLines) console.log(`[media:inspect] ${line}`);
+  if (yt.version) console.log(`[media:inspect] yt-dlp version: ${yt.version}`);
+  if (checklist.missingRequired.length > 0) {
+    console.log('[media:inspect] MISSING required configuration:');
+    for (const m of checklist.missingRequired) {
+      console.log(`  - ${m.capability}: set one of ${m.envVars.join(' | ')}`);
+    }
+    console.log(
+      `  checked env files: ${envLoad.checked
+        .map((c) => `${path.basename(path.dirname(c.path))}/${path.basename(c.path)}[${c.exists ? 'found' : 'absent'}]`)
+        .join(', ')}`,
+    );
+  }
 
   const report: Record<string, unknown> = {
     generatedAt: new Date().toISOString(),
@@ -332,6 +455,15 @@ async function main(): Promise<number> {
     },
     providers: { transcription: providers.transcription.name, model: providers.model.name, ocr: providers.ocr.name },
     providerChecklist: checklist,
+    envAutoLoad: {
+      checkedFiles: envLoad.checked.map((c) => ({
+        file: `${path.basename(path.dirname(c.path))}/${path.basename(c.path)}`,
+        exists: c.exists,
+        loadedKeys: c.loadedKeys,
+      })),
+    },
+    readiness: readinessLines,
+    retrieval: { direct: 'yt-dlp', ytDlpVersion: yt.version, fallbackProviderConfigured: fallbackConfigured },
     limits: {
       maxDurationSeconds: cfg.maxDurationSeconds,
       maxDownloadBytes: cfg.maxDownloadBytes,
@@ -351,35 +483,50 @@ async function main(): Promise<number> {
     // Acquire media (network download OR local-file copy).
     let media: ResolvedMedia;
     if (parsed.mode === 'url') {
-      const resolvers = [new InstagramMediaResolver(cfg)];
       let parsedUrl: URL;
       try {
         parsedUrl = new URL(parsed.url);
       } catch {
         throw new MediaError('unsupported_url', 'bad_url');
       }
-      const resolver = selectResolver(resolvers, { platform: 'instagram', url: parsedUrl });
-      if (!resolver) throw new MediaError('unsupported_platform', 'instagram');
-      steps.resolver = { name: resolver.name, urlSanitized: sanitizeUrlForLog(parsedUrl.toString()) };
-      try {
-        media = await resolver.resolve({ jobId: 'inspect', sourceUrl: parsed.url, workDir: jt.dir, signal: controller.signal });
-      } catch (err) {
-        const code = isMediaError(err) ? err.code : 'unknown_error';
-        steps.retrieve = {
-          ok: false,
-          code,
-          detail: isMediaError(err) ? err.detail : undefined,
-          classification: classifyRetrieval(code),
-        };
-        report.result = classifyRetrieval(code);
+      // Ordered providers: direct yt-dlp first, then a configured public-media
+      // fallback provider. Both go through the same SSRF/limits/cleanup path.
+      const ordered: MediaResolver[] = [new InstagramMediaResolver(cfg)];
+      if (isHttpFetchProviderConfigured(cfg)) ordered.push(new HttpMediaFetchResolver(cfg));
+      const supporting = ordered.filter((r) => r.supports({ platform: 'instagram', url: parsedUrl }));
+      if (supporting.length === 0) throw new MediaError('unsupported_platform', 'instagram');
+
+      const attempts: { provider: string; ok: boolean; code?: string; classification?: RetrievalClassification }[] = [];
+      let acquired: ResolvedMedia | null = null;
+      for (const r of supporting) {
+        try {
+          acquired = await r.resolve({ jobId: 'inspect', sourceUrl: parsed.url, workDir: jt.dir, signal: controller.signal });
+          attempts.push({ provider: r.name, ok: true });
+          break;
+        } catch (err) {
+          const code = isMediaError(err) ? err.code : 'unknown_error';
+          const detail = isMediaError(err) ? err.detail : undefined;
+          const classification = classifyRetrievalError(code, detail);
+          attempts.push({ provider: r.name, ok: false, code, classification });
+          if (!shouldTryFallback(classification)) break; // don't fall back on unsupported/oversized/too-long
+        }
+      }
+      steps.retrieveAttempts = attempts;
+      if (!acquired) {
+        const last = attempts[attempts.length - 1];
+        const classification = last?.classification ?? 'transient_retrieval_failure';
+        steps.retrieve = { ok: false, classification, attempts };
+        report.result = classification;
         return 2;
       }
+      media = acquired;
     } else {
       steps.resolver = { name: 'local-file' };
       media = await prepareLocalFile(cfg, parsed.file, jt.dir);
     }
     steps.retrieve = {
       ok: true,
+      classification: parsed.mode === 'url' ? 'retrieved_publicly' : 'local_file',
       source: media.source,
       canonicalUrlSanitized: sanitizeUrlForLog(media.canonicalUrl),
       sizeBytes: media.sizeBytes,

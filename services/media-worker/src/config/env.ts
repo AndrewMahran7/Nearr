@@ -82,6 +82,16 @@ export type WorkerConfig = {
   geminiModel: string;
   ocrProvider: string; // 'noop' | 'model' (default model when a model is configured, else noop)
 
+  // ---- Fallback public-media retrieval provider (optional; env-configured) ----
+  // A production-grade external public-media fetch service used ONLY when the
+  // direct yt-dlp provider can't retrieve public content. Credentials come from
+  // env — never hardcoded, never sent to the app. See docs/MEDIA_FALLBACK.md.
+  mediaFetchProviderUrl: string;
+  mediaFetchProviderApiKey: string;
+  mediaFetchProviderAuthHeader: string; // header name for the key (default authorization)
+  mediaFetchProviderUrlParam: string; // query param carrying the source URL (default url)
+  mediaFetchProviderResultPath: string; // dot-path to the direct media URL in the JSON response
+
   // ---- External binaries (overridable for local dev) ----
   ytDlpPath: string;
   ffmpegPath: string;
@@ -143,8 +153,16 @@ export function loadConfig(): WorkerConfig {
     transcriptionModel: str('MEDIA_TRANSCRIPTION_MODEL', 'whisper-1'),
     analysisProvider: analysisProvider.toLowerCase(),
     geminiApiKey,
-    geminiModel: str('GEMINI_MODEL', 'gemini-1.5-flash'),
+    // `-latest` alias so a retired pinned model (e.g. the old gemini-1.5-flash)
+    // never 404s the analysis. Override with GEMINI_MODEL for a pinned version.
+    geminiModel: str('GEMINI_MODEL', 'gemini-flash-latest'),
     ocrProvider: str('MEDIA_OCR_PROVIDER', geminiApiKey ? 'model' : 'noop').toLowerCase(),
+
+    mediaFetchProviderUrl: str('MEDIA_FETCH_PROVIDER_URL'),
+    mediaFetchProviderApiKey: str('MEDIA_FETCH_PROVIDER_API_KEY'),
+    mediaFetchProviderAuthHeader: str('MEDIA_FETCH_PROVIDER_AUTH_HEADER', 'authorization'),
+    mediaFetchProviderUrlParam: str('MEDIA_FETCH_PROVIDER_URL_PARAM', 'url'),
+    mediaFetchProviderResultPath: str('MEDIA_FETCH_PROVIDER_RESULT_PATH', 'url'),
 
     ytDlpPath: str('YT_DLP_PATH', 'yt-dlp'),
     ffmpegPath: str('FFMPEG_PATH', 'ffmpeg'),

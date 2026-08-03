@@ -9,6 +9,7 @@
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
     "postinstall": "patch-package",
+    "media:inspect": "npm --prefix services/media-worker run media:inspect --",
     "eval:share-extraction": "ts-node --project scripts/tsconfig.json scripts/evalShareExtraction.ts",
     "eval:share-agent-shadow": "ts-node --project scripts/tsconfig.json scripts/evalShareAgentShadow.ts",
     "test:address-match": "ts-node -P scripts/tsconfig.json scripts/testAddressMatch.ts",

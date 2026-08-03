@@ -100,7 +100,12 @@ test('checklist: noop providers => NOT a genuine content test', () => {
   const cfg = fakeCfg({ transcriptionProvider: 'noop', analysisProvider: 'heuristic' });
   const cl = buildProviderChecklist(cfg, () => false);
   assert.equal(cl.genuineContentTest, false);
-  assert.ok(cl.blockers.length >= 2);
+  assert.ok(cl.blockers.length >= 1);
+  // Visual analysis is the required capability and must be reported missing.
+  assert.deepEqual(
+    cl.missingRequired.map((m) => m.capability),
+    ['visual_analysis'],
+  );
   // Reports env var NAMES, not values.
   const transcription = cl.capabilities.find((c) => c.capability === 'transcription')!;
   assert.ok(transcription.envVars.some((v) => v.includes('MEDIA_TRANSCRIPTION_API_KEY')));

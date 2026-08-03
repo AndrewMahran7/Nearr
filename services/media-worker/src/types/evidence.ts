@@ -69,11 +69,51 @@ export function hasExplicitEvidence(p: PlaceCandidateEvidence): boolean {
   return p.explicitEvidence.length > 0;
 }
 
+const VALID_EVIDENCE_SOURCES = new Set(['caption', 'speech', 'visible_text', 'frame']);
+
+/** Keep only well-formed evidence items ({ source, value }), dropping anything
+ *  else. Multimodal models sometimes emit `inferredEvidence` as bare strings or
+ *  malformed objects — dropping those must NOT reject the whole payload (the
+ *  place's valid EXPLICIT evidence has to survive). Never expands what counts as
+ *  explicit evidence, so the downstream safeToAutoSave gate is unaffected. */
+function coerceEvidenceItems(v: unknown): unknown[] {
+  if (!Array.isArray(v)) return [];
+  return v.filter(
+    (x) =>
+      !!x &&
+      typeof x === 'object' &&
+      typeof (x as { value?: unknown }).value === 'string' &&
+      VALID_EVIDENCE_SOURCES.has((x as { source?: unknown }).source as string),
+  );
+}
+
+/** Normalize a raw model payload so a single malformed evidence item can't
+ *  invalidate the whole response. Coerces the two evidence arrays on each place;
+ *  everything else is left for Zod to validate strictly. */
+function normalizeRawEvidence(raw: unknown): unknown {
+  if (!raw || typeof raw !== 'object') return raw;
+  const r = raw as Record<string, unknown>;
+  if (!Array.isArray(r.places)) return raw;
+  return {
+    ...r,
+    places: r.places.map((p) => {
+      if (!p || typeof p !== 'object') return p;
+      const pl = p as Record<string, unknown>;
+      return {
+        ...pl,
+        explicitEvidence: coerceEvidenceItems(pl.explicitEvidence),
+        inferredEvidence: coerceEvidenceItems(pl.inferredEvidence),
+      };
+    }),
+  };
+}
+
 /** Parse unknown model output into validated evidence. Never throws — on
  *  failure returns empty/insufficient evidence with a warning so the pipeline
- *  degrades to a safe manual fallback. */
+ *  degrades to a safe manual fallback. Malformed individual evidence items are
+ *  dropped (not fatal); structural errors still degrade safely. */
 export function safeParseEvidence(raw: unknown): MediaPlaceEvidence {
-  const result = MediaPlaceEvidence.safeParse(raw);
+  const result = MediaPlaceEvidence.safeParse(normalizeRawEvidence(raw));
   if (result.success) return result.data;
   return emptyEvidence(['evidence_schema_invalid']);
 }

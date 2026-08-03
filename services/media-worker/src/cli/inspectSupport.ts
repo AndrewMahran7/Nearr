@@ -140,11 +140,19 @@ export type ProviderCapability = {
 
 export type ProviderChecklist = {
   capabilities: ProviderCapability[];
-  /** True only when BOTH transcription AND the visual model are real (not
-   *  noop/heuristic) — the two the mission says gate a genuine content test. */
-  genuineContentTest: boolean;
-  /** True when the deterministic resolver's Google Places verification can run. */
+  transcriptionReady: boolean;
+  visualReady: boolean;
   placesVerificationConfigured: boolean;
+  ocrReady: boolean;
+  /**
+   * A genuine multimodal CONTENT test can run when the visual model is real
+   * (Gemini reads the frames directly). Transcription is additive (adds spoken
+   * mentions) but not required, since the multimodal model already extracts
+   * on-screen place names from frames.
+   */
+  genuineContentTest: boolean;
+  /** REQUIRED capabilities that are still missing, with the exact env var names. */
+  missingRequired: { capability: string; envVars: string[] }[];
   /** Human-readable reasons a genuine test can't run yet (empty when ready). */
   blockers: string[];
 };
@@ -158,26 +166,27 @@ export function buildProviderChecklist(
   const transcriptionReal = cfg.transcriptionProvider !== 'noop';
   const visualReal = cfg.analysisProvider === 'gemini' && hasEnv('GEMINI_API_KEY');
   const placesConfigured = hasEnv('GOOGLE_PLACES_KEY');
+  const ocrReal = cfg.ocrProvider !== 'noop';
 
   const capabilities: ProviderCapability[] = [
     {
       capability: 'transcription',
       provider: cfg.transcriptionProvider,
       configured: transcriptionReal,
-      required: true,
+      required: false, // additive: adds SPOKEN mentions; visual model still runs without it
       envVars: ['MEDIA_TRANSCRIPTION_PROVIDER (e.g. "openai")', 'MEDIA_TRANSCRIPTION_API_KEY', 'MEDIA_TRANSCRIPTION_MODEL (optional)'],
     },
     {
       capability: 'visual_analysis',
       provider: cfg.analysisProvider,
       configured: visualReal,
-      required: true,
-      envVars: ['MEDIA_ANALYSIS_PROVIDER=gemini (or set GEMINI_API_KEY)', 'GEMINI_API_KEY', 'GEMINI_MODEL (optional)'],
+      required: true, // the multimodal model IS the genuine content test
+      envVars: ['GEMINI_API_KEY', 'MEDIA_ANALYSIS_PROVIDER=gemini (auto when GEMINI_API_KEY is set)', 'GEMINI_MODEL (optional)'],
     },
     {
       capability: 'ocr',
       provider: cfg.ocrProvider,
-      configured: cfg.ocrProvider !== 'noop',
+      configured: ocrReal,
       required: false,
       envVars: ['MEDIA_OCR_PROVIDER (optional; default noop — the visual model reads frames)'],
     },
@@ -190,14 +199,38 @@ export function buildProviderChecklist(
     },
   ];
 
+  const missingRequired = capabilities
+    .filter((c) => c.required && !c.configured)
+    .map((c) => ({ capability: c.capability, envVars: c.envVars }));
+
   const blockers: string[] = [];
-  if (!transcriptionReal) blockers.push('transcription provider is noop (set MEDIA_TRANSCRIPTION_PROVIDER + MEDIA_TRANSCRIPTION_API_KEY)');
-  if (!visualReal) blockers.push('visual model is heuristic/noop (set GEMINI_API_KEY, MEDIA_ANALYSIS_PROVIDER=gemini)');
+  if (!visualReal) blockers.push('visual model is heuristic/noop — set GEMINI_API_KEY (MEDIA_ANALYSIS_PROVIDER=gemini is automatic)');
 
   return {
     capabilities,
-    genuineContentTest: transcriptionReal && visualReal,
+    transcriptionReady: transcriptionReal,
+    visualReady: visualReal,
     placesVerificationConfigured: placesConfigured,
+    ocrReady: ocrReal,
+    genuineContentTest: visualReal,
+    missingRequired,
     blockers,
   };
+}
+
+/** Sanitized one-line readiness summary (NEVER values). `retrievalReady` /
+ *  `retrievalName` come from the CLI (yt-dlp availability + fallback provider). */
+export function buildReadinessLines(
+  checklist: ProviderChecklist,
+  retrieval: { name: string; ready: boolean },
+): string[] {
+  const t = checklist.capabilities.find((c) => c.capability === 'transcription')!;
+  const v = checklist.capabilities.find((c) => c.capability === 'visual_analysis')!;
+  const state = (ok: boolean) => (ok ? 'ready' : 'not configured');
+  return [
+    `media retrieval: ${retrieval.name} / ${state(retrieval.ready)}`,
+    `transcription: ${t.provider} / ${checklist.transcriptionReady ? 'ready' : 'not configured (spoken mentions will be skipped)'}`,
+    `visual analysis: ${v.provider} / ${state(checklist.visualReady)}`,
+    `places verification: ${state(checklist.placesVerificationConfigured)}`,
+  ];
 }
