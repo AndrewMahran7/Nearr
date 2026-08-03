@@ -31,6 +31,7 @@ export type ShareJobCandidatePayload = {
   version: 2;
   candidates: ShareJobResultCandidate[];
   mentionSlots: ShareJobMentionSlot[];
+  savedPlaceIds?: string[];
 };
 
 function text(value: unknown): string | null {
@@ -117,6 +118,22 @@ export function buildShareJobCandidatePayload(candidates: unknown, mentionResult
 export function mentionCount(payload: unknown): number {
   if (!payload || typeof payload !== 'object') return 0;
   return normalizeMentionSlots((payload as Record<string, unknown>).mentionSlots).length;
+}
+
+export function savedPlaceIdsFromPayload(payload: unknown): string[] {
+  if (!payload || typeof payload !== 'object') return [];
+  const values = (payload as Record<string, unknown>).savedPlaceIds;
+  if (!Array.isArray(values)) return [];
+  const seen = new Set<string>();
+  const ids: string[] = [];
+  for (const value of values) {
+    const id = typeof value === 'string' ? value.trim() : '';
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    ids.push(id);
+    if (ids.length === 50) break;
+  }
+  return ids;
 }
 
 export function preselectedCandidateIds(

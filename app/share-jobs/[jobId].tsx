@@ -47,6 +47,7 @@ import {
   preselectedCandidateIds,
   removeSuccessfulSelections,
   saveSelectedLabel,
+  savedPlaceIdsFromPayload,
   selectCandidateWithinMention,
   selectedUnsavedCandidates,
   type ShareJobMentionSlot,
@@ -236,6 +237,7 @@ function ShareJobDetailScreen() {
   const mentionSlots = normalizeMentionSlots(
     (job?.candidate_payload as { mentionSlots?: unknown } | null)?.mentionSlots,
   );
+  const automaticallySavedPlaceIds = savedPlaceIdsFromPayload(job?.candidate_payload);
   const savedSnapshot = getSavedPlacesCacheSnapshot();
   const alreadySavedGoogleIds = new Set(
     (savedSnapshot ?? [])
@@ -755,10 +757,12 @@ function ShareJobDetailScreen() {
           <Button
             title={PHASE_1_COPY.viewOnMap}
             onPress={() =>
-              openExistingPlace({
-                savedPlaceId: job.saved_place_id,
-                source: 'share_job_completed',
-              })
+              automaticallySavedPlaceIds.length > 1
+                ? openNewlySavedPlaces(automaticallySavedPlaceIds)
+                : openExistingPlace({
+                    savedPlaceId: automaticallySavedPlaceIds[0] ?? job.saved_place_id,
+                    source: 'share_job_completed',
+                  })
             }
             style={styles.centeredPrimary}
           />
@@ -822,6 +826,15 @@ function ShareJobDetailScreen() {
             {platformName(platform)} · From the original post
           </Text>
         </View>
+
+        {automaticallySavedPlaceIds.length > 0 ? (
+          <Button
+            title={`View ${automaticallySavedPlaceIds.length} saved ${automaticallySavedPlaceIds.length === 1 ? 'place' : 'places'}`}
+            variant="secondary"
+            onPress={() => openNewlySavedPlaces(automaticallySavedPlaceIds)}
+            style={styles.secondaryBtn}
+          />
+        ) : null}
 
         {isProcessing ? (
           <View style={styles.section}>

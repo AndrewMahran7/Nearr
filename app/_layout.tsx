@@ -32,6 +32,7 @@ import {
   setLastNotificationId,
 } from '@/lib/diagnosticContext';
 import { routeShareJobNotification } from '@/lib/shareJobRouting';
+import { createMapGroupFocusRequest } from '@/lib/mapGroupFocus';
 import { resolveOpenSavedPlaceRoute } from '@/lib/openSavedPlace';
 import {
   deactivatePushTokenForCurrentUser,
@@ -673,6 +674,18 @@ function RootLayoutContent() {
             result: sjRoute.kind,
           });
           switch (sjRoute.kind) {
+            case 'saved_group': {
+              const request = createMapGroupFocusRequest({
+                savedPlaceIds: sjRoute.savedPlaceIds,
+                source: 'share_job_saved',
+              });
+              router.push(
+                request
+                  ? { pathname: '/(tabs)/map', params: { mapGroupId: request.id, placeSource: request.source } }
+                  : '/(tabs)/map',
+              );
+              break;
+            }
             case 'saved_place':
               // Open the EXISTING saved place through the one validated contract
               // (resolves by saved_places.id, falls back to google_place_id).

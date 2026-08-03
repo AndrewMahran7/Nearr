@@ -118,12 +118,18 @@ export type ShareJobNotificationType = 'share_job_completed' | 'share_job_needs_
 
 export type ShareJobRoute =
   | { kind: 'saved_place'; savedPlaceId: string; googlePlaceId?: string }
+  | { kind: 'saved_group'; savedPlaceIds: string[] }
   | { kind: 'queue_item'; jobId: string }
   | { kind: 'queue_root' }
   | { kind: 'map' };
 
 function str(v: unknown): string | undefined {
   return typeof v === 'string' && v.length > 0 ? v : undefined;
+}
+
+function ids(v: unknown): string[] {
+  if (!Array.isArray(v)) return [];
+  return [...new Set(v.map(str).filter((id): id is string => !!id))].slice(0, 50);
 }
 
 /**
@@ -149,11 +155,13 @@ export function routeShareJobNotification(
 
   const jobId = str(data?.jobId);
   const savedPlaceId = str(data?.savedPlaceId);
+  const savedPlaceIds = ids(data?.savedPlaceIds);
   const googlePlaceId = str(data?.googlePlaceId);
   const outcome = str(data?.outcome);
 
   // Terminal success (incl. already-saved) → the saved place, not the queue.
   if (type === 'share_job_completed' || outcome === 'completed' || outcome === 'already_saved') {
+    if (savedPlaceIds.length > 1) return { kind: 'saved_group', savedPlaceIds };
     if (savedPlaceId) {
       // `googlePlaceId` (when the server includes it) is a stable fallback so
       // the map can still open the existing place if the saved_places row id

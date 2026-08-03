@@ -176,6 +176,24 @@ check(
 );
 check('non-share-job (nearby reminder) payload => null (falls through)', routeShareJobNotification({ placeId: 'p1', savedPlaceId: 'sp', nearbyCount: 2 }) === null);
 check('empty payload => null', routeShareJobNotification({}) === null);
+check(
+  'completed multi-save notification => saved group',
+  eq(routeShareJobNotification({
+    type: 'share_job_completed',
+    outcome: 'completed',
+    savedPlaceId: 'sp1',
+    savedPlaceIds: ['sp1', 'sp2', 'sp2'],
+  }), { kind: 'saved_group', savedPlaceIds: ['sp1', 'sp2'] }),
+);
+check(
+  'mixed notification => unresolved job, not saved group',
+  eq(routeShareJobNotification({
+    type: 'share_job_needs_help',
+    outcome: 'mixed',
+    jobId: 'j-mixed',
+    savedPlaceIds: ['sp1', 'sp2'],
+  }), { kind: 'queue_item', jobId: 'j-mixed' }),
+);
 check('null payload => null', routeShareJobNotification(null) === null);
 check('undefined payload => null', routeShareJobNotification(undefined) === null);
 check(
