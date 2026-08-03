@@ -49,9 +49,11 @@ type Props = {
 
 export function ShareSheetMock({ width, onNearrPress, style }: Props) {
   const innerWidth = Math.max(200, width - H_PADDING * 2);
-  const slot = innerWidth / 5;
-  const iconSize = Math.max(40, Math.min(54, Math.round(slot - 6)));
-  const nearrSize = Math.max(34, Math.min(52, Math.round(slot - 12)));
+  const recipientSlot = innerWidth / 5;
+  const appSlot = innerWidth / 4;
+  const recipientSize = Math.max(40, Math.min(54, Math.round(recipientSlot - 6)));
+  const appIconSize = Math.max(46, Math.min(56, Math.round(appSlot - 12)));
+  const nearrSize = Math.max(38, Math.min(52, Math.round(appSlot - 18)));
 
   return (
     <View style={[styles.sheet, { width }, style]} accessibilityLabel="Example iOS share sheet">
@@ -79,11 +81,11 @@ export function ShareSheetMock({ width, onNearrPress, style }: Props) {
       {/* Recipients row — fictional placeholders only */}
       <View style={styles.row}>
         {RECIPIENTS.map((r) => (
-          <View key={r.name} style={[styles.tile, { width: slot }]}>
+          <View key={r.name} style={[styles.tile, { width: recipientSlot }]}>
             <View
               style={[
                 styles.avatar,
-                { width: iconSize, height: iconSize, borderRadius: iconSize / 2, backgroundColor: r.color },
+                { width: recipientSize, height: recipientSize, borderRadius: recipientSize / 2, backgroundColor: r.color },
               ]}
             >
               <Text style={styles.avatarInitial}>{r.name[0]}</Text>
@@ -96,12 +98,12 @@ export function ShareSheetMock({ width, onNearrPress, style }: Props) {
             </Text>
           </View>
         ))}
-        <View style={[styles.tile, { width: slot }]}>
+        <View style={[styles.tile, { width: recipientSlot }]}>
           <View
             style={[
               styles.avatar,
               styles.moreAvatar,
-              { width: iconSize, height: iconSize, borderRadius: iconSize / 2 },
+              { width: recipientSize, height: recipientSize, borderRadius: recipientSize / 2 },
             ]}
           >
             <Feather name="more-horizontal" size={20} color="#3C3C43" />
@@ -112,17 +114,17 @@ export function ShareSheetMock({ width, onNearrPress, style }: Props) {
 
       <View style={styles.divider} />
 
-      {/* App row — AirDrop / Messages / Mail / Nearr (tappable) / Notes */}
+      {/* App row — Nearr is the only tappable target. */}
       <View style={styles.row}>
         {APP_TILES.map((t) => (
-          <View key={t.key} style={[styles.tile, { width: slot }]}>
+          <View key={t.key} style={[styles.tile, { width: appSlot }]}>
             <View
               style={[
                 styles.appIcon,
-                { width: iconSize, height: iconSize, borderRadius: Math.round(iconSize * 0.26), backgroundColor: t.bg },
+                { width: appIconSize, height: appIconSize, borderRadius: Math.round(appIconSize * 0.26), backgroundColor: t.bg },
               ]}
             >
-              <Feather name={t.icon} size={Math.round(iconSize * 0.44)} color={t.tint} />
+              <Feather name={t.icon} size={Math.round(appIconSize * 0.44)} color={t.tint} />
             </View>
             <Text style={styles.tileLabel} numberOfLines={1}>
               {t.label}
@@ -130,21 +132,7 @@ export function ShareSheetMock({ width, onNearrPress, style }: Props) {
           </View>
         ))}
 
-        <NearrTile slot={slot} nearrSize={nearrSize} onPress={onNearrPress} />
-
-        <View style={[styles.tile, { width: slot }]}>
-          <View
-            style={[
-              styles.appIcon,
-              { width: iconSize, height: iconSize, borderRadius: Math.round(iconSize * 0.26), backgroundColor: '#FED74B' },
-            ]}
-          >
-            <Feather name="file-text" size={Math.round(iconSize * 0.44)} color="#8A6D00" />
-          </View>
-          <Text style={styles.tileLabel} numberOfLines={1}>
-            Notes
-          </Text>
-        </View>
+        <NearrTile slot={appSlot} nearrSize={nearrSize} onPress={onNearrPress} />
       </View>
 
       <View style={styles.divider} />
@@ -156,7 +144,7 @@ export function ShareSheetMock({ width, onNearrPress, style }: Props) {
   );
 }
 
-/** The Nearr tile — a real ≥44×44 accessible tap target with a "Tap Nearr" callout. */
+/** The Nearr tile — a real ≥44×44 accessible tap target with an orange focus ring. */
 function NearrTile({
   slot,
   nearrSize,
@@ -181,11 +169,6 @@ function NearrTile({
 
   return (
     <View style={[styles.tile, { width: slot }]}>
-      <View style={styles.nearrCallout} pointerEvents="none">
-        <Text style={styles.nearrCalloutText} numberOfLines={1}>
-          Tap Nearr
-        </Text>
-      </View>
       <Pressable
         onPress={onPress ? handlePress : undefined}
         disabled={!onPress}
@@ -331,20 +314,6 @@ const styles = StyleSheet.create({
     minHeight: 44,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  nearrCallout: {
-    position: 'absolute',
-    top: -28,
-    backgroundColor: OnboardingColors.orange,
-    borderRadius: 8,
-    paddingHorizontal: 9,
-    paddingVertical: 4,
-    zIndex: 2,
-  },
-  nearrCalloutText: {
-    color: OnboardingColors.onOrange,
-    fontSize: 11,
-    fontWeight: '800',
   },
   actionRow: {
     flexDirection: 'row',

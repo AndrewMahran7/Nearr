@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import {
+  AccessibilityInfo,
   Animated,
   Easing,
   Image,
@@ -166,24 +167,32 @@ function ShareAction({
 
   useEffect(() => {
     if (!interactive) return;
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulse, {
-          toValue: 1,
-          duration: 900,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulse, {
-          toValue: 0,
-          duration: 900,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-      ]),
-    );
-    loop.start();
-    return () => loop.stop();
+    let cancelled = false;
+    let loop: Animated.CompositeAnimation | null = null;
+    void AccessibilityInfo.isReduceMotionEnabled().then((reduceMotion) => {
+      if (cancelled || reduceMotion) return;
+      loop = Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulse, {
+            toValue: 1,
+            duration: 900,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulse, {
+            toValue: 0,
+            duration: 900,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+        ]),
+      );
+      loop.start();
+    });
+    return () => {
+      cancelled = true;
+      loop?.stop();
+    };
   }, [interactive, pulse]);
 
   const handlePress = () => {
@@ -217,13 +226,6 @@ function ShareAction({
     <View style={styles.railAction}>
       {interactive ? (
         <View style={styles.shareTargetWrap}>
-          {highlighted ? (
-            <View style={styles.shareCallout}>
-              <Text style={styles.shareCalloutText} numberOfLines={1}>
-                Tap Share
-              </Text>
-            </View>
-          ) : null}
           <Pressable
             onPress={handlePress}
             hitSlop={10}
@@ -238,7 +240,11 @@ function ShareAction({
       ) : (
         content
       )}
-      {!compact ? <Text style={styles.railLabel}>1,404</Text> : null}
+      {!compact ? (
+        <Text style={[styles.railLabel, highlighted && styles.shareRailLabel]}>
+          {highlighted ? 'Share' : '1,404'}
+        </Text>
+      ) : null}
     </View>
   );
 }
@@ -370,6 +376,9 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
   },
+  shareRailLabel: {
+    color: OnboardingColors.orange,
+  },
   shareTargetWrap: {
     alignItems: 'center',
   },
@@ -385,28 +394,6 @@ const styles = StyleSheet.create({
     borderWidth: 2.5,
     borderColor: OnboardingColors.orange,
     backgroundColor: 'rgba(255, 107, 0, 0.14)',
-  },
-  shareCallout: {
-    // Explicit width so the pill is NOT constrained by its narrow (44px) rail
-    // parent. With only a `right` inset and no width, Yoga capped the pill's
-    // width at (parentWidth - right) = 44 - 34 = ~10px, which truncated
-    // "Tap Share" to "Ta..." on Android. A fixed width removes that cap while
-    // keeping the pill above-left of the icon and inside the reel card.
-    position: 'absolute',
-    bottom: 46,
-    right: 34,
-    width: 100,
-    alignItems: 'center',
-    backgroundColor: OnboardingColors.orange,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
-  shareCalloutText: {
-    color: OnboardingColors.onOrange,
-    fontSize: 12,
-    fontWeight: '800',
-    flexShrink: 0,
   },
   caption: {
     paddingHorizontal: 12,

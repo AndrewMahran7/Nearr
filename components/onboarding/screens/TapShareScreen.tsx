@@ -35,6 +35,7 @@ export function TapShareScreen({ onShareTap, onShareToTap }: Props) {
   const { width } = useWindowDimensions();
   const reelWidth = Math.min(300, width - Spacing.xl * 2);
   const panelSlide = useRef(new Animated.Value(1)).current;
+  const actionPulse = useRef(new Animated.Value(0)).current;
   const reduceMotionRef = useRef(false);
   const shareToFiredRef = useRef(false);
   const [panelOpen, setPanelOpen] = useState(false);
@@ -44,6 +45,36 @@ export function TapShareScreen({ onShareTap, onShareToTap }: Props) {
       reduceMotionRef.current = enabled;
     });
   }, []);
+
+  useEffect(() => {
+    if (!panelOpen) return;
+    let cancelled = false;
+    let loop: Animated.CompositeAnimation | null = null;
+    void AccessibilityInfo.isReduceMotionEnabled().then((reduceMotion) => {
+      if (cancelled || reduceMotion) return;
+      loop = Animated.loop(
+        Animated.sequence([
+          Animated.timing(actionPulse, {
+            toValue: 1,
+            duration: 850,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+          Animated.timing(actionPulse, {
+            toValue: 0,
+            duration: 850,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+        ]),
+      );
+      loop.start();
+    });
+    return () => {
+      cancelled = true;
+      loop?.stop();
+    };
+  }, [actionPulse, panelOpen]);
 
   const handleShare = () => {
     if (panelOpen) return;
@@ -80,6 +111,8 @@ export function TapShareScreen({ onShareTap, onShareToTap }: Props) {
   };
 
   const panelTranslateY = panelSlide.interpolate({ inputRange: [0, 1], outputRange: [0, 250] });
+  const actionScale = actionPulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.05] });
+  const actionGlow = actionPulse.interpolate({ inputRange: [0, 1], outputRange: [0.55, 1] });
 
   return (
     <View style={styles.container}>
@@ -98,7 +131,13 @@ export function TapShareScreen({ onShareTap, onShareToTap }: Props) {
             accessibilityLabel="Simulated Instagram sharing panel"
           >
             <View style={styles.grabber} />
-            <Text style={styles.panelTitle}>Share</Text>
+            <View style={styles.searchRow}>
+              <Feather name="search" size={17} color={stylesTokens.panelMuted} />
+              <Text style={styles.searchText}>Search</Text>
+              <View style={styles.peopleButton}>
+                <Feather name="user-plus" size={16} color={stylesTokens.panelText} />
+              </View>
+            </View>
 
             <View style={styles.recipients} accessibilityLabel="Example recipients">
               {RECIPIENTS.map((name, index) => (
@@ -111,28 +150,57 @@ export function TapShareScreen({ onShareTap, onShareToTap }: Props) {
               ))}
             </View>
 
-            <View style={styles.shareToCallout} pointerEvents="none">
-              <Text style={styles.shareToCalloutText}>Tap Share to…</Text>
+            <View style={styles.panelDivider} />
+            <View style={styles.actionsRow}>
+              <ActionItem icon="plus-circle" label="Add to story" />
+              <Animated.View
+                style={{ opacity: actionGlow, transform: [{ scale: actionScale }] }}
+              >
+                <Pressable
+                  onPress={handleShareTo}
+                  style={({ pressed }) => [styles.shareToTarget, pressed && styles.shareToPressed]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Share to…"
+                  accessibilityHint="Opens the simulated iOS Share Sheet and advances the tutorial"
+                >
+                  <View style={[styles.actionIcon, styles.shareToIcon]}>
+                    <Feather name="share" size={21} color={stylesTokens.panelText} />
+                  </View>
+                  <Text style={styles.shareToText} numberOfLines={1}>Share to…</Text>
+                </Pressable>
+              </Animated.View>
+              <ActionItem icon="link" label="Copy link" />
             </View>
-            <Pressable
-              onPress={handleShareTo}
-              style={({ pressed }) => [styles.shareToTarget, pressed && styles.shareToPressed]}
-              accessibilityRole="button"
-              accessibilityLabel="Share to…"
-              accessibilityHint="Opens the simulated iOS Share Sheet and advances the tutorial"
-            >
-              <View style={styles.shareToIcon}>
-                <Feather name="share" size={19} color={OnboardingColors.onOrange} />
-              </View>
-              <Text style={styles.shareToText}>Share to…</Text>
-              <Feather name="chevron-right" size={20} color={OnboardingColors.text} />
-            </Pressable>
           </Animated.View>
         ) : null}
       </View>
     </View>
   );
 }
+
+function ActionItem({
+  icon,
+  label,
+}: {
+  icon: keyof typeof Feather.glyphMap;
+  label: string;
+}) {
+  return (
+    <View style={styles.actionItem} accessibilityElementsHidden>
+      <View style={styles.actionIcon}>
+        <Feather name={icon} size={21} color={stylesTokens.panelText} />
+      </View>
+      <Text style={styles.actionLabel} numberOfLines={1}>{label}</Text>
+    </View>
+  );
+}
+
+const stylesTokens = {
+  panel: '#171C1F',
+  panelRaised: '#252C31',
+  panelText: '#F7F7F8',
+  panelMuted: '#A8ADB2',
+} as const;
 
 const styles = StyleSheet.create({
   container: {
@@ -151,16 +219,16 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    minHeight: 226,
-    paddingHorizontal: 14,
-    paddingTop: 8,
-    paddingBottom: 14,
+    minHeight: 270,
+    paddingHorizontal: 12,
+    paddingTop: 9,
+    paddingBottom: 12,
     borderTopLeftRadius: 22,
     borderTopRightRadius: 22,
     borderWidth: 1,
     borderBottomWidth: 0,
-    borderColor: '#D5D5D9',
-    backgroundColor: '#F7F7F8',
+    borderColor: '#343B40',
+    backgroundColor: stylesTokens.panel,
     zIndex: 5,
     elevation: 8,
   },
@@ -169,30 +237,45 @@ const styles = StyleSheet.create({
     width: 36,
     height: 4,
     borderRadius: 999,
-    backgroundColor: '#C4C4C7',
+    backgroundColor: '#8E959B',
+    marginBottom: 12,
   },
-  panelTitle: {
-    color: '#161618',
-    fontSize: 16,
-    fontWeight: '800',
-    textAlign: 'center',
-    marginTop: 7,
+  searchRow: {
+    minHeight: 44,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingLeft: 12,
+    borderRadius: 14,
+    backgroundColor: stylesTokens.panelRaised,
+  },
+  searchText: {
+    flex: 1,
+    color: stylesTokens.panelMuted,
+    fontSize: 15,
+  },
+  peopleButton: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderLeftWidth: 1,
+    borderLeftColor: '#343B40',
   },
   recipients: {
     flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 22,
-    marginTop: 10,
-    marginBottom: 10,
+    justifyContent: 'space-around',
+    marginTop: 12,
+    marginBottom: 12,
   },
   recipient: {
     alignItems: 'center',
-    width: 44,
+    width: 58,
   },
   avatar: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#6F8FD8',
@@ -206,55 +289,57 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   recipientName: {
-    color: '#3C3C43',
-    fontSize: 10,
-    marginTop: 3,
+    color: stylesTokens.panelText,
+    fontSize: 11,
+    marginTop: 5,
   },
-  shareToCallout: {
-    alignSelf: 'flex-end',
-    width: 126,
-    minHeight: 30,
-    marginBottom: 4,
-    paddingHorizontal: 9,
+  panelDivider: {
+    height: 1,
+    backgroundColor: '#343B40',
+  },
+  actionsRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-around',
+    paddingTop: 10,
+  },
+  actionItem: {
+    width: 76,
+    minHeight: 72,
+    alignItems: 'center',
+  },
+  actionIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 8,
-    backgroundColor: OnboardingColors.orange,
-    zIndex: 2,
+    backgroundColor: stylesTokens.panelRaised,
   },
-  shareToCalloutText: {
-    color: OnboardingColors.onOrange,
+  actionLabel: {
+    color: stylesTokens.panelText,
     fontSize: 11,
-    fontWeight: '800',
+    marginTop: 5,
     flexShrink: 0,
   },
   shareToTarget: {
-    minHeight: 52,
-    paddingHorizontal: 12,
-    flexDirection: 'row',
+    width: 76,
+    minHeight: 72,
     alignItems: 'center',
-    gap: 10,
-    borderWidth: 2,
-    borderColor: OnboardingColors.orange,
-    borderRadius: 12,
-    backgroundColor: '#FFFFFF',
   },
   shareToPressed: {
     opacity: 0.72,
   },
   shareToIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: OnboardingColors.orange,
+    borderWidth: 2.5,
+    borderColor: OnboardingColors.orange,
+    backgroundColor: '#2B241F',
   },
   shareToText: {
-    flex: 1,
-    color: '#161618',
-    fontSize: 15,
+    color: OnboardingColors.orange,
+    fontSize: 11,
     fontWeight: '800',
+    marginTop: 5,
     flexShrink: 0,
   },
 });

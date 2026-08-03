@@ -133,6 +133,23 @@ export default function OnboardingScreen() {
     advance();
   };
 
+  const handleNearrHelpOpened = () => {
+    void trackEvent('onboarding_nearr_help_opened', screenProps(2));
+  };
+
+  const handleNearrHelpStepViewed = (helpStep: number) => {
+    void trackEvent('onboarding_nearr_help_step_viewed', {
+      ...screenProps(2),
+      help_step: helpStep,
+      help_step_number: helpStep + 1,
+      help_total_steps: 3,
+    });
+  };
+
+  const handleNearrHelpClosed = () => {
+    void trackEvent('onboarding_nearr_help_closed', screenProps(2));
+  };
+
   const handleSaveTap = () => {
     if (busyRef.current) return;
     void trackEvent('onboarding_demo_save_tapped', screenProps(3));
@@ -195,7 +212,14 @@ export default function OnboardingScreen() {
       case 1:
         return <TapShareScreen onShareTap={handleShareTap} onShareToTap={handleShareToTap} />;
       case 2:
-        return <ChooseNearrScreen onNearrTap={handleNearrTap} />;
+        return (
+          <ChooseNearrScreen
+            onNearrTap={handleNearrTap}
+            onHelpOpened={handleNearrHelpOpened}
+            onHelpStepViewed={handleNearrHelpStepViewed}
+            onHelpClosed={handleNearrHelpClosed}
+          />
+        );
       case 3:
         return <FindingSavingScreen onSave={handleSaveTap} />;
       case 4:
