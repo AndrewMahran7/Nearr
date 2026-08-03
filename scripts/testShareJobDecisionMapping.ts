@@ -15,6 +15,7 @@
 import {
   planFromResolverDecision,
   buildCompletedNotification,
+  buildMediaResultNotification,
   buildNeedsHelpNotification,
   platformLabel,
 } from '../supabase/functions/process-share-jobs/decisionMapping';
@@ -55,10 +56,32 @@ function check(name: string, condition: boolean, detail?: string): void {
   check(
     'auto_save WITHOUT safe gate => needs_help (never silent save)',
     plan.route === 'needs_help',
+
     JSON.stringify(plan),
   );
 }
 
+  // ---- Media Notification Tests -------------------------------------------
+  {
+    const n = buildMediaResultNotification({
+      jobId: 'job-multi',
+      createdSavedPlaceIds: ['sp1', 'sp2'],
+      alreadySavedPlaceIds: ['sp3'],
+      reviewCount: 0,
+    });
+    check('media multi notification counts only new saves', n.title === 'Saved 2 places to your map');
+    check('media multi notification preserves all successful ids', JSON.stringify(n.data.savedPlaceIds) === JSON.stringify(['sp1', 'sp2', 'sp3']));
+  }
+  {
+    const n = buildMediaResultNotification({
+      jobId: 'job-mixed',
+      createdSavedPlaceIds: ['sp1'],
+      alreadySavedPlaceIds: ['sp2'],
+      reviewCount: 2,
+    });
+    check('media mixed notification has honest counts', n.title === 'Saved 1 place. 2 need your review.');
+    check('media mixed notification routes to review', n.data.type === 'share_job_needs_help' && n.data.jobId === 'job-mixed');
+  }
 // 6. candidate_confirmation => needs_help single.
 {
   const plan = planFromResolverDecision({

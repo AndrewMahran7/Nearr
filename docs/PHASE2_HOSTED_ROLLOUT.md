@@ -2,11 +2,11 @@
 
 ## Current verdict
 
-**Hosted deployment is blocked at Railway secret provisioning.** On 2026-08-01,
-the five reviewed Phase 2 migrations were applied to the linked Supabase project
-and verified. Both media tables have RLS enabled and no client policies; worker
-RPC execution is service-role-only; both cron jobs are active; Phase 1 RPCs are
-still present; and both media tables are empty.
+**Hosted infrastructure is ready for a one-user canary.** On 2026-08-03, the
+Railway development worker reported healthy and ready with all required
+providers configured, concurrency `1`, and all media flags disabled. The new
+per-place result ledger migration remains forward-only and must pass the release
+gate before the updated worker and finalizer are deployed.
 
 Provider retries are now bounded, jittered, `Retry-After` aware, and covered by
 deterministic tests. Partial transcript/OCR evidence survives a transient Gemini
@@ -14,14 +14,13 @@ failure, while a complete Google Places outage is retried instead of being
 misclassified as no-match.
 
 Railway development is linked to project `Nearr Phase 2 Dev`, service
-`media-worker`. Its existing deployment is not the current code and has none of
-the required application variables. Do not deploy the worker, configure Vault,
-deploy Edge Functions, or send hosted traffic until all required variables are
-provisioned and the current worker returns `/ready` HTTP 200. Production has no
-service instance.
+`media-worker`. It is the only worker target for this canary; no production
+Railway service is used.
 
 Keep `MEDIA_FALLBACK_ENABLED`, `INSTAGRAM_MEDIA_RESOLVER_ENABLED`, and
 `NATIVE_VIDEO_ANALYSIS_ENABLED` set to `false` throughout infrastructure setup.
+Keep Edge secrets `MEDIA_AUTO_SAVE_ENABLED=false` and both exact-user canary
+IDs absent until their respective rollout steps.
 No client or EAS build is required to disable or roll back Phase 2.
 
 ## Release gate
@@ -202,12 +201,10 @@ Complete these gates in order. Stop at the first failure.
    log the authenticated empty-queue invocation. Confirm a normal metadata-only
    share still follows Phase 1 and creates no `share_media_tasks` row.
 
-9. Only after gates 1-8 pass, deploy the reviewed Edge Functions. Preserve their
-   authentication settings: `process-share-link` verifies JWTs and
+9. Only after gates 1-8 pass, deploy the changed Edge Function.
    `process-share-jobs` uses the existing dedicated Phase 1 worker-secret check.
 
    ```powershell
-   npx supabase functions deploy process-share-link
    npx supabase functions deploy process-share-jobs --no-verify-jwt
    ```
 
@@ -221,7 +218,7 @@ user `<INTERNAL_USER_ID>` and the known public media-poor test URL
 `https://www.instagram.com/p/DYbLVMBp_dY/`. Confirm immediately before use that
 it is still public and appropriate for the test.
 
-1. Keep all three global Supabase flags `false`. Set server-only
+1. Keep all global media flags and `MEDIA_AUTO_SAVE_ENABLED` false. Set server-only
    `PHASE2_CANARY_USER_ID=<INTERNAL_USER_ID>` under the Supabase project's Edge
    Function secrets/environment settings. The value must be one exact UUID;
    invalid values enable nothing. Deploy the reviewed `process-share-jobs` code
@@ -239,10 +236,10 @@ it is still public and appropriate for the test.
    Invoke-RestMethod -Method Post -Uri 'https://<PROJECT_REF>.supabase.co/functions/v1/create-share-job' -Headers @{ Authorization = 'Bearer <INTERNAL_USER_ACCESS_TOKEN>' } -ContentType 'application/json' -Body $body
    ```
 
-4. As soon as exactly one `share_media_tasks` row exists, remove
-   `PHASE2_CANARY_USER_ID` and redeploy `process-share-jobs`. The durable task
-   may finish; no second user or job remains allowlisted. Do not submit another
-   share.
+4. Verify one non-auto-save Phase 2 result first. Only then set
+   `MEDIA_AUTO_SAVE_ENABLED=true` and
+   `MEDIA_AUTO_SAVE_CANARY_USER_ID=<INTERNAL_USER_ID>`. Both controls must match
+   for an automatic save; either one disables automatic saving immediately.
 5. Track only `<SHARE_JOB_ID>` and verify bounded attempts and stage changes:
 
    ```sql
@@ -284,20 +281,23 @@ it is still public and appropriate for the test.
    ```
 
 6. Confirm exactly one media task, one notification reservation on the parent,
-   no duplicate `place_id`, and no more saves than the user explicitly confirms.
+   no duplicate `place_id`, and no automatic save unless every deterministic
+   gate requirement is recorded in `share_job_place_results`.
    Remove the resolved/completed job through the normal mobile queue action; do
    not delete database rows manually.
-7. Accept only one of these outcomes: deterministic verified result presented
-   for confirmation, safe `needs_help`, or bounded retry followed by safe
-   `needs_help`. Reject any silent model-generated save, duplicate save,
-   stranded parent, leaked media URL, or unbounded retry.
+7. Accept only one of these outcomes: deterministic verified auto-save under the
+   exact-user gate, deterministic result presented for confirmation, safe
+   `needs_help`, or bounded retry followed by safe `needs_help`. Reject any save
+   based on model confidence alone, duplicate save, stranded parent, leaked
+   media URL, or unbounded retry.
 8. Confirm worker logs show temp cleanup after success, failure, cancellation,
    or timeout and contain no source URL query, token, media bytes, or raw model
    response. Verify no files remain under the configured temp root.
-9. Return both Railway worker flags to `false`, remove
-   `PHASE2_CANARY_USER_ID`, redeploy both services, and require `/ready` HTTP
-   200 with the redacted flag summary showing all flags false. Keep durable
-   diagnostic rows until the audit is complete.
+9. To roll back, return both Railway worker flags to `false`, set
+   `MEDIA_AUTO_SAVE_ENABLED=false`, remove both exact-user IDs, redeploy the
+   worker and `process-share-jobs`, and require `/ready` HTTP 200 with the
+   redacted worker flags false. Keep durable diagnostic rows until the audit is
+   complete.
 
 ## Mobile five-place audit
 

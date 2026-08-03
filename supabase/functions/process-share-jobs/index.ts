@@ -36,6 +36,7 @@ import { submitPushToUser, checkExpoReceipts, type TicketRef } from './push.ts';
 import {
   planFromResolverDecision,
   buildCompletedNotification,
+  buildMediaResultNotification,
   buildNeedsHelpNotification,
 } from './decisionMapping.ts';
 import { effectiveMediaFlags, mediaInfrastructureEnabled, shouldRunMediaFallback } from './mediaFallback.ts';
@@ -46,6 +47,7 @@ import {
   mediaEvidenceAutoSaveEligible,
 } from './mediaEvidence.ts';
 import { buildVenueMentions } from './mediaMentions.ts';
+import { evaluateMediaAutoSave, mediaAutoSaveAuthorized, MEDIA_AUTO_SAVE_RULE_VERSION } from './mediaAutoSaveGate.ts';
 import { authorizeServiceRoleBearer, authorizeWorkerSecret, planPreResolve, planPostResolve } from './mediaFinalizePlan.ts';
 
 const CORS_HEADERS: Record<string, string> = {
@@ -183,13 +185,28 @@ function readMediaFlags(): {
   mediaFallbackEnabled: boolean;
   instagramResolverEnabled: boolean;
   canaryUserId: string | null;
+  autoSaveEnabled: boolean;
+  autoSaveCanaryUserId: string | null;
 } {
   const on = (k: string) => (Deno.env.get(k) ?? '').trim().toLowerCase() === 'true';
   return {
     mediaFallbackEnabled: on('MEDIA_FALLBACK_ENABLED'),
     instagramResolverEnabled: on('INSTAGRAM_MEDIA_RESOLVER_ENABLED'),
     canaryUserId: (Deno.env.get('PHASE2_CANARY_USER_ID') ?? '').trim() || null,
+    autoSaveEnabled: on('MEDIA_AUTO_SAVE_ENABLED'),
+    autoSaveCanaryUserId: (Deno.env.get('MEDIA_AUTO_SAVE_CANARY_USER_ID') ?? '').trim() || null,
   };
+}
+
+function mediaAutoSaveEnabledForUser(
+  flags: ReturnType<typeof readMediaFlags>,
+  userId: string,
+): boolean {
+  return mediaAutoSaveAuthorized({
+    enabled: flags.autoSaveEnabled,
+    canaryUserId: flags.autoSaveCanaryUserId,
+    userId,
+  });
 }
 
 async function mediaTaskExistsFor(admin: any, jobId: string): Promise<boolean> {
@@ -262,11 +279,11 @@ async function insertMediaRun(
   job: any,
   body: any,
   evidenceSummary: unknown,
-): Promise<void> {
+): Promise<string | null> {
   try {
     const d = body?.diagnostics && typeof body.diagnostics === 'object' ? body.diagnostics : {};
     const int = (v: unknown) => (Number.isFinite(v) ? Number(v) : null);
-    await admin.from('share_media_runs').insert({
+    const { data, error } = await admin.from('share_media_runs').insert({
       share_media_task_id: task.id,
       share_job_id: job.id,
       user_id: job.user_id,
@@ -283,10 +300,43 @@ async function insertMediaRun(
       model_output: boundedJson(d.modelOutput ?? null),
       warnings: Array.isArray(d.warnings) ? d.warnings.slice(0, 24) : [],
       errors: Array.isArray(d.errors) ? d.errors.slice(0, 24) : [],
-    });
+    }).select('id').single();
+    if (error) throw error;
+    return typeof data?.id === 'string' ? data.id : null;
   } catch (err) {
     console.log(`[media-task] diagnostics_insert_failed task_id=${task.id} msg=${truncate((err as Error)?.message)}`);
+    return null;
   }
+}
+
+async function persistBlockedPlaceResult(
+  admin: any,
+  args: {
+    job: any;
+    task: any;
+    mediaRunId: string | null;
+    mentionResult: any;
+    outcome: 'candidate_confirmation' | 'manual_fallback' | 'failed';
+    confidenceScore: number | null;
+    reasonCodes: string[];
+  },
+): Promise<void> {
+  const candidate = args.mentionResult.candidates?.[0] ?? null;
+  const { error } = await admin.from('share_job_place_results').upsert({
+    share_job_id: args.job.id,
+    share_media_task_id: args.task.id,
+    share_media_run_id: args.mediaRunId,
+    user_id: args.job.user_id,
+    logical_result_id: args.mentionResult.mentionId,
+    google_place_id: candidate?.googlePlaceId ?? null,
+    outcome: args.outcome,
+    origin: 'automatic',
+    confidence_score: args.confidenceScore,
+    rule_version: MEDIA_AUTO_SAVE_RULE_VERSION,
+    reason_codes: args.reasonCodes,
+    finalized_at: nowIso(),
+  }, { onConflict: 'share_job_id,logical_result_id' });
+  if (error) throw new Error(`place_result_upsert_failed: ${error.message}`);
 }
 
 // Move a parent job to a safe needs_help(manual) state (media analysis produced
@@ -382,7 +432,7 @@ async function finalizeMediaTask(admin: any, env: any, body: any): Promise<Respo
 
   // Diagnostics for every actionable callback.
   const evidenceSummary = parsed.ok ? summarizeMediaEvidence(parsed.value) : { reason: outcome };
-  await insertMediaRun(admin, task, job, body, evidenceSummary);
+  const mediaRunId = await insertMediaRun(admin, task, job, body, evidenceSummary);
 
   // Parent already terminal → mark task done, never revive the parent.
   if (pre.action === 'parent_already_terminal') {
@@ -446,6 +496,179 @@ async function finalizeMediaTask(admin: any, env: any, body: any): Promise<Respo
       { 'Retry-After': String(retryAfter) },
     );
   }
+  const canonicalUrl = task.canonical_url || task.source_url;
+
+  // Name-driven media results have stable logical mention IDs, so they can be
+  // finalized independently. Address-only legacy media results continue below
+  // through the existing post-level confirmation path.
+  if (mentionResults.length > 0) {
+    const configuredFlags = readMediaFlags();
+    const autoSaveAuthorized = mediaAutoSaveEnabledForUser(configuredFlags, job.user_id);
+    const mentionById = new Map(mediaMentions.mentions.map((mention: any) => [mention.id, mention]));
+    const createdSavedPlaceIds: string[] = [];
+    const alreadySavedPlaceIds: string[] = [];
+    const unresolvedResults: any[] = [];
+    const perPlaceSummary: Array<Record<string, unknown>> = [];
+    const source = legacySourceFor(task.platform);
+
+    for (const mentionResult of mentionResults) {
+      const mention = mentionById.get(mentionResult.mentionId);
+      const gate = mention
+        ? evaluateMediaAutoSave({ mention, result: mentionResult, allResults: mentionResults })
+        : {
+            eligible: false,
+            confidenceScore: null,
+            ruleVersion: MEDIA_AUTO_SAVE_RULE_VERSION,
+            reasonCodes: ['mention_evidence_missing'],
+          };
+      const blockingReasons = [...gate.reasonCodes];
+      if (gate.eligible && !autoSaveAuthorized) blockingReasons.push('auto_save_disabled_or_user_not_allowlisted');
+      if (gate.eligible && !mediaRunId) blockingReasons.push('media_run_audit_missing');
+      const mayAutoSave = gate.eligible && autoSaveAuthorized && !!mediaRunId;
+      const candidate = mentionResult.candidates?.[0] ?? null;
+
+      if (mayAutoSave) {
+        const { data: savedRows, error: saveError } = await admin.rpc(
+          'auto_save_share_job_place_result',
+          {
+            p_share_job_id: job.id,
+            p_share_media_task_id: task.id,
+            p_share_media_run_id: mediaRunId,
+            p_logical_result_id: mentionResult.mentionId,
+            p_google_place_id: candidate.googlePlaceId,
+            p_name: candidate.name,
+            p_formatted_address: candidate.formattedAddress,
+            p_latitude: candidate.latitude,
+            p_longitude: candidate.longitude,
+            p_category: mention?.category ?? candidate.types?.[0] ?? null,
+            p_source_type: source,
+            p_source_url: canonicalUrl,
+            p_confidence_score: gate.confidenceScore,
+            p_rule_version: gate.ruleVersion,
+            p_reason_codes: gate.reasonCodes,
+          },
+        );
+        if (saveError) throw new Error(`media_auto_save_failed: ${saveError.message}`);
+        const saved = Array.isArray(savedRows) ? savedRows[0] : savedRows;
+        if (!saved?.saved_place_id) throw new Error('media_auto_save_missing_saved_place_id');
+        if (saved.reused) alreadySavedPlaceIds.push(saved.saved_place_id);
+        else createdSavedPlaceIds.push(saved.saved_place_id);
+        perPlaceSummary.push({
+          logicalResultId: mentionResult.mentionId,
+          outcome: saved.reused ? 'already_saved' : 'auto_saved',
+          savedPlaceId: saved.saved_place_id,
+          confidenceScore: gate.confidenceScore,
+          ruleVersion: gate.ruleVersion,
+          reasonCodes: gate.reasonCodes,
+        });
+        continue;
+      }
+
+      const blockedOutcome =
+        mentionResult.outcome === 'provider_error'
+          ? 'failed'
+          : mentionResult.outcome === 'no_match' || mentionResult.outcome === 'rejected_insufficient_evidence'
+          ? 'manual_fallback'
+          : 'candidate_confirmation';
+      await persistBlockedPlaceResult(admin, {
+        job,
+        task,
+        mediaRunId,
+        mentionResult,
+        outcome: blockedOutcome,
+        confidenceScore: gate.confidenceScore,
+        reasonCodes: blockingReasons,
+      });
+      unresolvedResults.push(mentionResult);
+      perPlaceSummary.push({
+        logicalResultId: mentionResult.mentionId,
+        outcome: blockedOutcome,
+        confidenceScore: gate.confidenceScore,
+        ruleVersion: gate.ruleVersion,
+        reasonCodes: blockingReasons,
+      });
+    }
+
+    const allSavedPlaceIds = [...new Set([...createdSavedPlaceIds, ...alreadySavedPlaceIds])];
+    const unresolvedCandidateIds = new Set(
+      unresolvedResults.flatMap((mention: any) =>
+        Array.isArray(mention.candidates)
+          ? mention.candidates.map((candidate: any) => candidate.googlePlaceId)
+          : [],
+      ),
+    );
+    const candidatePayload = buildShareJobCandidatePayload(
+      result.candidates.filter((candidate: any) => unresolvedCandidateIds.has(candidate.googlePlaceId)).map(safeCandidate),
+      unresolvedResults.map((mention: any) => ({
+        mentionId: mention.mentionId,
+        displayName: mention.displayName,
+        primaryVenueName: mention.primaryVenueName ?? null,
+        hostVenueName: mention.hostVenueName ?? null,
+        relationshipType: mention.relationshipType ?? null,
+        outcome: mention.outcome,
+        candidates: Array.isArray(mention.candidates) ? mention.candidates.map(safeCandidate) : [],
+      })),
+    );
+    candidatePayload.savedPlaceIds = allSavedPlaceIds;
+    const mediaResultSummary = {
+      createdCount: createdSavedPlaceIds.length,
+      alreadySavedCount: alreadySavedPlaceIds.length,
+      reviewCount: unresolvedResults.length,
+      savedPlaceIds: allSavedPlaceIds,
+      results: perPlaceSummary,
+    };
+    const notification = buildMediaResultNotification({
+      jobId: job.id,
+      createdSavedPlaceIds,
+      alreadySavedPlaceIds,
+      reviewCount: unresolvedResults.length,
+    });
+
+    if (unresolvedResults.length === 0) {
+      await finalize(
+        admin,
+        job,
+        {
+          status: 'completed',
+          decision: 'auto_save',
+          saved_place_id: allSavedPlaceIds[0] ?? null,
+          candidate_payload: candidatePayload,
+          canonical_url: canonicalUrl,
+          source_platform: task.platform,
+          extraction_payload: { platform: task.platform, via: 'media', mediaResultSummary },
+          progress_stage: 'completed',
+          completed_at: nowIso(),
+        },
+        notification,
+      );
+      await markMediaTask(admin, taskId, 'completed', { resolver_name: 'media', progress_stage: 'cleanup', completed_at: nowIso() });
+      return json({ ok: true, route: 'auto_save', ...mediaResultSummary });
+    }
+
+    const unresolvedWithCandidates = unresolvedResults.filter(
+      (mention: any) => Array.isArray(mention.candidates) && mention.candidates.length > 0,
+    ).length;
+    await finalize(
+      admin,
+      job,
+      {
+        status: 'needs_help',
+        decision: unresolvedResults.length > 1 ? 'multi_candidate_confirmation' : 'candidate_confirmation',
+        saved_place_id: allSavedPlaceIds[0] ?? null,
+        needs_help_reason: allSavedPlaceIds.length > 0 ? 'media_partial_review' : 'media_review_required',
+        suggested_query: unresolvedResults.map((mention: any) => mention.displayName).filter(Boolean).join(' | ') || null,
+        candidate_payload: candidatePayload,
+        canonical_url: canonicalUrl,
+        source_platform: task.platform,
+        extraction_payload: { platform: task.platform, via: 'media', mediaResultSummary },
+        progress_stage: unresolvedWithCandidates > 0 ? 'multi' : 'manual',
+      },
+      notification,
+    );
+    await markMediaTask(admin, taskId, 'completed', { resolver_name: 'media', progress_stage: 'cleanup', completed_at: nowIso() });
+    return json({ ok: true, route: 'needs_help', mode: 'mixed', ...mediaResultSummary });
+  }
+
   const extractionPayload = {
     platform: task.platform,
     via: 'media',
@@ -462,8 +685,6 @@ async function finalizeMediaTask(admin: any, env: any, body: any): Promise<Respo
     cleanSearchQuery: result.cleanSearchQuery,
     failureReason: result.failureReason,
   });
-  const canonicalUrl = task.canonical_url || task.source_url;
-
   // Post-resolve routing + the EXTRA media auto-save gate (never loosens
   // safeToAutoSave; can only downgrade a resolver auto_save to a confirmation).
   const post = planPostResolve({

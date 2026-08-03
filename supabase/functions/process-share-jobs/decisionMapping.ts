@@ -168,6 +168,63 @@ export function buildCompletedNotification(args: {
   };
 }
 
+export function buildMediaResultNotification(args: {
+  jobId: string;
+  createdSavedPlaceIds: string[];
+  alreadySavedPlaceIds: string[];
+  reviewCount: number;
+}): JobNotification {
+  const created = [...new Set(args.createdSavedPlaceIds.filter(Boolean))];
+  const existing = [...new Set(args.alreadySavedPlaceIds.filter(Boolean))];
+  const allSaved = [...new Set([...created, ...existing])];
+  const reviewCount = Math.max(0, Math.floor(args.reviewCount));
+  const savedCount = created.length;
+  const savedCopy = `${savedCount} ${savedCount === 1 ? 'place' : 'places'}`;
+  const reviewCopy = `${reviewCount} ${reviewCount === 1 ? 'needs' : 'need'} your review.`;
+
+  if (reviewCount > 0) {
+    return {
+      title: savedCount > 0 ? `Saved ${savedCopy}. ${reviewCopy}` : 'We need your help',
+      body: savedCount > 0 ? 'Tap to review the remaining places.' : 'Tap to identify the unresolved places.',
+      data: {
+        type: 'share_job_needs_help',
+        outcome: 'mixed',
+        jobId: args.jobId,
+        savedPlaceIds: allSaved,
+        createdSavedPlaceIds: created,
+        reviewCount,
+      },
+    };
+  }
+
+  if (savedCount > 0) {
+    return {
+      title: `Saved ${savedCopy} to your map`,
+      body: savedCount > 1 ? 'Tap to view them together.' : 'Tap to view it on your map.',
+      data: {
+        type: 'share_job_completed',
+        outcome: 'completed',
+        jobId: args.jobId,
+        savedPlaceId: allSaved[0],
+        savedPlaceIds: allSaved,
+        createdSavedPlaceIds: created,
+      },
+    };
+  }
+
+  return {
+    title: existing.length === 1 ? 'Already saved' : 'Places already saved',
+    body: existing.length === 1 ? 'This place is already in Nearr.' : 'These places are already in Nearr.',
+    data: {
+      type: 'share_job_completed',
+      outcome: 'already_saved',
+      jobId: args.jobId,
+      savedPlaceId: allSaved[0],
+      savedPlaceIds: allSaved,
+    },
+  };
+}
+
 export function buildNeedsHelpNotification(args: {
   mode: NeedsHelpMode;
   jobId: string;

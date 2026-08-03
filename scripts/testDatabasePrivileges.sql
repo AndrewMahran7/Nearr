@@ -50,7 +50,7 @@ do $$
 declare
   declared text[] := array[
     'analytics_events','feedback','notification_events','places','profiles',
-    'saved_places','share_agent_runs','share_extraction_failures','share_jobs',
+    'saved_places','share_agent_runs','share_extraction_failures','share_job_place_results','share_jobs',
     'share_media_runs','share_media_tasks','user_push_tokens'
   ];
   undeclared text;
@@ -76,7 +76,7 @@ end $$;
 do $$
 declare
   declared text[] := array[
-    'bump_reminder_opportunity_count','cancel_share_job','claim_media_tasks',
+    'auto_save_share_job_place_result','bump_reminder_opportunity_count','cancel_share_job','claim_media_tasks',
     'claim_share_job_notifications','claim_share_job_receipts','claim_share_jobs',
     'claim_stranded_media_parents','create_share_job_for_user','expire_media_tasks',
     'handle_new_user','invoke_process_media_tasks','invoke_process_share_jobs',
@@ -170,6 +170,12 @@ select pg_temp._t(not pg_temp._tbl('authenticated','public.feedback','SELECT'), 
 select pg_temp._t(not pg_temp._tbl('authenticated','public.feedback','UPDATE'), 'authenticated NO UPDATE feedback');
 select pg_temp._t(not pg_temp._tbl('authenticated','public.feedback','DELETE'), 'authenticated NO DELETE feedback');
 
+-- share_job_place_results: owner-readable audit, worker-managed writes.
+select pg_temp._t(pg_temp._tbl('authenticated','public.share_job_place_results','SELECT'), 'authenticated SELECT share_job_place_results');
+select pg_temp._t(not pg_temp._tbl('authenticated','public.share_job_place_results','INSERT'), 'authenticated NO INSERT share_job_place_results');
+select pg_temp._t(not pg_temp._tbl('authenticated','public.share_job_place_results','UPDATE'), 'authenticated NO UPDATE share_job_place_results');
+select pg_temp._t(not pg_temp._tbl('authenticated','public.share_job_place_results','DELETE'), 'authenticated NO DELETE share_job_place_results');
+
 -- =====================================================================
 -- 2. authenticated does NOT have direct worker-managed writes
 -- =====================================================================
@@ -204,7 +210,7 @@ begin
   foreach t in array array[
     'public.profiles','public.places','public.saved_places','public.notification_events',
     'public.share_jobs','public.user_push_tokens','public.share_media_tasks','public.share_media_runs',
-    'public.feedback','public.share_agent_runs','public.share_extraction_failures'
+    'public.share_job_place_results','public.feedback','public.share_agent_runs','public.share_extraction_failures'
   ] loop
     foreach p in array array['SELECT','INSERT','UPDATE','DELETE','TRUNCATE'] loop
       if has_table_privilege('anon', t, p) then
@@ -232,7 +238,8 @@ begin
     'public.expire_media_tasks(integer)',
     'public.requeue_media_task(uuid, integer, text)',
     'public.claim_stranded_media_parents(integer)',
-    'public.invoke_process_media_tasks()'
+    'public.invoke_process_media_tasks()',
+    'public.auto_save_share_job_place_result(uuid, uuid, uuid, text, text, text, text, numeric, numeric, text, text, text, numeric, text, jsonb)'
   ] loop
     if has_function_privilege('anon', fn, 'EXECUTE') then
       raise exception 'FAIL anon must NOT execute worker RPC %', fn;
@@ -244,7 +251,7 @@ begin
       raise exception 'FAIL service_role must execute worker RPC %', fn;
     end if;
   end loop;
-  raise notice 'PASS worker RPCs: anon+authenticated denied, service_role granted (10 fns)';
+  raise notice 'PASS worker RPCs: anon+authenticated denied, service_role granted (11 fns)';
 end $$;
 
 -- =====================================================================
@@ -307,7 +314,7 @@ begin
   foreach t in array array[
     'public.profiles','public.places','public.saved_places','public.notification_events',
     'public.share_jobs','public.user_push_tokens','public.share_media_tasks','public.share_media_runs',
-    'public.analytics_events','public.feedback','public.share_agent_runs','public.share_extraction_failures'
+    'public.share_job_place_results','public.analytics_events','public.feedback','public.share_agent_runs','public.share_extraction_failures'
   ] loop
     foreach p in array array['SELECT','INSERT','UPDATE','DELETE'] loop
       if not has_table_privilege('service_role', t, p) then
@@ -315,7 +322,7 @@ begin
       end if;
     end loop;
   end loop;
-  raise notice 'PASS service_role has SELECT/INSERT/UPDATE/DELETE on all 12 app tables';
+  raise notice 'PASS service_role has SELECT/INSERT/UPDATE/DELETE on all 13 app tables';
 end $$;
 
 select 'ALL DATABASE PRIVILEGE ASSERTIONS PASSED' as result;
