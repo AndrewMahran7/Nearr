@@ -510,9 +510,6 @@ async function finalizeMediaTask(admin: any, env: any, body: any): Promise<Respo
   // needs_help (single / multi / manual). `post.mode` accounts for a downgrade
   // from a resolver auto_save that failed the media evidence eligibility gate.
   const mode = post.mode;
-  const mentionResults = Array.isArray(result.diagnostics?.mentionResults)
-    ? result.diagnostics.mentionResults
-    : [];
   const candidatePayload = buildShareJobCandidatePayload(
     result.candidates.slice(0, 10).map(safeCandidate),
     mentionResults.map((mention: any) => ({
@@ -882,6 +879,11 @@ async function processNotificationReceipts(admin: any, limit = 25): Promise<void
   }
 }
 
+const standaloneTestPort = Number(Deno.env.get('NEARR_EDGE_TEST_PORT') ?? '');
+const standaloneServeOptions = Number.isInteger(standaloneTestPort) && standaloneTestPort > 0
+  ? { port: standaloneTestPort }
+  : undefined;
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: CORS_HEADERS });
@@ -970,4 +972,4 @@ serve(async (req) => {
   }
 
   return json({ claimed: jobs.length, processed });
-});
+}, standaloneServeOptions);
