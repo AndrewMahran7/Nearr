@@ -824,7 +824,7 @@ const asyncStyles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderColor: NEARR_BORDER,
     paddingHorizontal: 24,
-    paddingTop: 22,
+    paddingTop: 26,
     paddingBottom: 30,
     alignItems: 'center',
   },
@@ -867,11 +867,11 @@ const asyncStyles = StyleSheet.create({
     paddingHorizontal: 8,
     lineHeight: 17,
   },
-  // Prominent but not excessively tall (~52px), full-width.
+  // Prominent, 56px tall, full-width primary action.
   primaryBtn: {
-    marginTop: 18,
+    marginTop: 24,
     alignSelf: 'stretch',
-    minHeight: 52,
+    minHeight: 56,
     backgroundColor: NEARR_ORANGE,
     borderRadius: 16,
     alignItems: 'center',
@@ -879,9 +879,10 @@ const asyncStyles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   primaryText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
-  // Text button (e.g. "Done") — always visible under the primary action.
+  // Text button (e.g. "Done") — always visible directly below the primary
+  // action (~14px separation).
   secondaryBtn: {
-    marginTop: 4,
+    marginTop: 14,
     alignSelf: 'stretch',
     minHeight: 44,
     alignItems: 'center',

@@ -19,6 +19,7 @@ import {
   actionableJobs,
   processingJobs,
   actionableCount,
+  actionableSectionHeading,
   isQueueEmpty,
   backTarget,
   normalizeShareJobCandidates,
@@ -142,6 +143,12 @@ check('finds saved id by google place id', findSavedPlaceIdByGooglePlaceId('gpB'
 check('returns null when not saved', findSavedPlaceIdByGooglePlaceId('gpZ', savedList) === null);
 check('returns null for missing place id', findSavedPlaceIdByGooglePlaceId(null, savedList) === null);
 check('returns null for missing saved list', findSavedPlaceIdByGooglePlaceId('gpA', null) === null);
+
+// ---- friendly section heading (singular / plural) --------------------------
+check('singular heading for 1', actionableSectionHeading(1) === 'One place needs a quick check');
+check('singular heading for 0 (defensive)', actionableSectionHeading(0) === 'One place needs a quick check');
+check('plural heading for 3', actionableSectionHeading(3) === '3 places need a quick check');
+check('plural heading avoids system vocabulary', !/needs_help|candidate|terminal/i.test(actionableSectionHeading(5)));
 
 if (failures > 0) {
   console.error(`\n${failures} share-jobs-ui test(s) FAILED`);

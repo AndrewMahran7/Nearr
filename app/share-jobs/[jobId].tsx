@@ -37,6 +37,8 @@ import {
 } from '@/lib/shareJobsUi';
 import { usePlacesSearch } from '@/hooks/usePlacesSearch';
 import { getSavedPlacesCacheSnapshot, upsertSavedPlaceIntoCache } from '@/hooks/useSavedPlaces';
+import { recordBreadcrumb } from '@/lib/breadcrumbs';
+import { setCurrentShareJobId } from '@/lib/diagnosticContext';
 import { saveSavedPlace } from '@/services/savedPlacesService';
 import type { PlaceCandidate } from '@/services/placesService';
 import {
@@ -118,6 +120,12 @@ function ShareJobDetailScreen() {
     try {
       const j = await getShareJob(jobId);
       setJob(j);
+      if (j) {
+        recordBreadcrumb('candidate_loaded', {
+          jobId,
+          result: j.status ?? null,
+        });
+      }
       if (j && !seededQueryRef.current && j.suggested_query) {
         setManualQuery(j.suggested_query);
         seededQueryRef.current = true;
@@ -132,6 +140,14 @@ function ShareJobDetailScreen() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Track the current share-job id + queue-opened breadcrumb for diagnostics.
+  useEffect(() => {
+    if (!jobId) return;
+    setCurrentShareJobId(jobId);
+    recordBreadcrumb('queue_item_opened', { jobId });
+    return () => setCurrentShareJobId(null);
+  }, [jobId]);
 
   // Poll while the job is still processing so the detail updates live.
   const isProcessing = job?.status === 'queued' || job?.status === 'processing_metadata';
@@ -148,6 +164,7 @@ function ShareJobDetailScreen() {
   async function persistCandidate(
     candidate: PlaceCandidate,
   ): Promise<{ savedPlaceId: string | null; duplicate: boolean }> {
+    recordBreadcrumb('save_started', { jobId: job?.id ?? null });
     const result = await saveSavedPlace({
       candidate,
       radiusValue: null,
@@ -157,10 +174,20 @@ function ShareJobDetailScreen() {
     });
     if (result.status === 'saved') {
       upsertSavedPlaceIntoCache(result.saved);
+      recordBreadcrumb('save_response', {
+        jobId: job?.id ?? null,
+        savedPlaceId: result.savedPlaceId,
+        result: 'saved',
+      });
       return { savedPlaceId: result.savedPlaceId, duplicate: false };
     }
     // Already in the user's saved places — reuse the existing row. NEVER a
     // duplicate insert and NEVER surfaced as an error.
+    recordBreadcrumb('already_saved_response', {
+      jobId: job?.id ?? null,
+      savedPlaceId: result.savedPlaceId ?? null,
+      result: 'duplicate',
+    });
     return { savedPlaceId: result.savedPlaceId ?? null, duplicate: true };
   }
 
@@ -600,6 +627,14 @@ function ShareJobDetailScreen() {
           </View>
         ) : (
           <View style={styles.section}>
+            <Text style={[typography.title, styles.title]}>
+              {alreadySavedId ? 'This place is already on your map' : 'I found a likely match'}
+            </Text>
+            <Text style={[typography.caption, styles.help]}>
+              {alreadySavedId
+                ? 'You saved this one before.'
+                : 'Is this the place from the post?'}
+            </Text>
             <View style={styles.candidateCard}>
               <View style={styles.candidateCardIcon}>
                 <Feather name="map-pin" size={22} color={colors.accent} />
@@ -613,9 +648,6 @@ function ShareJobDetailScreen() {
                     {single.formattedAddress}
                   </Text>
                 ) : null}
-                <Text style={styles.suggestedLabel}>
-                  {alreadySavedId ? 'Already on your map' : 'Suggested place'}
-                </Text>
               </View>
             </View>
 
@@ -643,7 +675,7 @@ function ShareJobDetailScreen() {
               })
             ) : (
               <Button
-                title="Search for another place"
+                title="Not the right place? Search again"
                 variant="secondary"
                 onPress={() => {
                   if (!manualQuery) setManualQuery(job.suggested_query || single?.name || '');

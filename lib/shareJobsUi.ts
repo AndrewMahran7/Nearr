@@ -40,6 +40,17 @@ export function isQueueEmpty(jobs: { status: string }[]): boolean {
   return actionableJobs(jobs).length === 0 && processingJobs(jobs).length === 0;
 }
 
+/**
+ * Friendly, non-technical heading for the actionable section — singular/plural
+ * aware. Avoids system vocabulary ("needs_help", "candidate"). Example:
+ *   1 → "One place needs a quick check"
+ *   3 → "3 places need a quick check"
+ */
+export function actionableSectionHeading(count: number): string {
+  if (count <= 1) return 'One place needs a quick check';
+  return `${count} places need a quick check`;
+}
+
 // ---------------------------------------------------------------------------
 // Back-navigation fallback. A queue/confirmation screen reached via a cold
 // deep link (the extension's "View queue", a notification) has no previous

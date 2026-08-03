@@ -29,6 +29,7 @@ import { routeShareJobCard } from '@/lib/shareJobRouting';
 import {
   actionableCount,
   actionableJobs,
+  actionableSectionHeading,
   backTarget,
   isQueueEmpty,
   processingJobs,
@@ -106,9 +107,9 @@ function jobTitle(job: ShareJob): string {
   const candidates = job.candidate_payload?.candidates;
   const first = Array.isArray(candidates) ? candidates[0]?.name : undefined;
   if (job.status === 'needs_help') {
-    if (job.needs_help_reason === 'multiple_candidates') return 'Multiple places found';
-    if (first) return first;
-    return 'Help find this place';
+    if (job.needs_help_reason === 'multiple_candidates') return 'I found a few places';
+    if (first) return `I found ${first}`;
+    return 'Help me find this place';
   }
   return platformLabel(job.source_platform) + ' post';
 }
@@ -276,19 +277,15 @@ function ShareJobsQueueScreen() {
     );
   }
 
-  function renderSection(title: string, sectionJobs: ShareJob[], badge = false) {
+  function renderSection(title: string, sectionJobs: ShareJob[], showCount = false) {
     if (sectionJobs.length === 0) return null;
     return (
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={[typography.label, styles.sectionTitle]}>{title}</Text>
-          {badge ? (
-            <View style={styles.countBadge}>
-              <Text style={styles.countBadgeText}>{sectionJobs.length}</Text>
-            </View>
-          ) : (
+          {showCount ? (
             <Text style={[typography.caption, styles.sectionCount]}>{sectionJobs.length}</Text>
-          )}
+          ) : null}
         </View>
         <View style={styles.card}>
           {sectionJobs.map((job, i) => (
@@ -305,7 +302,7 @@ function ShareJobsQueueScreen() {
   // The header is rendered in EVERY state so the back control is always
   // available — even while auth restores, when the flag is off, or when empty.
   const header = (
-    <ShareJobsHeader title="Share queue" onBack={goBack} backLabel="Back to map" count={count} />
+    <ShareJobsHeader title="Share queue" onBack={goBack} backLabel="Back to map" />
   );
 
   if (!enabled) {
@@ -351,8 +348,8 @@ function ShareJobsQueueScreen() {
           </View>
         ) : (
           <>
-            {renderSection('Needs your help', actionable, true)}
-            {renderSection('Processing', processing)}
+            {renderSection(actionableSectionHeading(count), actionable)}
+            {renderSection('Still finding these', processing)}
           </>
         )}
       </ScrollView>
