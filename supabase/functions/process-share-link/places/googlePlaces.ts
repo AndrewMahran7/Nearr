@@ -28,7 +28,7 @@ export type PlacesCandidate = {
 
 export type SearchPlacesResult =
   | { ok: true; results: PlacesCandidate[] }
-  | { ok: false; reason: 'http_error' | 'api_error'; status?: string; error?: string };
+  | { ok: false; reason: 'http_error' | 'api_error'; status?: string; error?: string; retryAfterSeconds?: number };
 
 const PLACES_BASE =
   'https://maps.googleapis.com/maps/api/place/textsearch/json';
@@ -37,6 +37,16 @@ const GEOCODE_BASE =
 
 export const ADDRESS_VERIFY_RADIUS_M = 150;
 export const GEOCODE_TIMEOUT_MS = 4_000;
+export const PLACES_SEARCH_TIMEOUT_MS = 6_000;
+
+function parseRetryAfter(value: string | null): number | undefined {
+  if (!value) return undefined;
+  const seconds = Number(value);
+  if (Number.isFinite(seconds) && seconds >= 0) return Math.min(900, Math.ceil(seconds));
+  const dateMs = Date.parse(value);
+  if (!Number.isFinite(dateMs)) return undefined;
+  return Math.min(900, Math.max(0, Math.ceil((dateMs - Date.now()) / 1000)));
+}
 
 export async function searchPlaces(
   query: string,
@@ -49,14 +59,24 @@ export async function searchPlaces(
     params.set('radius', '50000');
   }
   let json: any;
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), PLACES_SEARCH_TIMEOUT_MS);
   try {
-    const res = await fetch(`${PLACES_BASE}?${params}`);
+    const res = await fetch(`${PLACES_BASE}?${params}`, { signal: ctrl.signal });
     if (!res.ok) {
-      return { ok: false, reason: 'http_error', error: `HTTP ${res.status}` };
+      return {
+        ok: false,
+        reason: 'http_error',
+        status: String(res.status),
+        error: `HTTP ${res.status}`,
+        retryAfterSeconds: parseRetryAfter(res.headers.get('retry-after')),
+      };
     }
     json = await res.json();
   } catch (err) {
-    return { ok: false, reason: 'http_error', error: (err as Error)?.message };
+    return { ok: false, reason: 'http_error', error: ctrl.signal.aborted ? 'timeout' : (err as Error)?.message };
+  } finally {
+    clearTimeout(timer);
   }
   const status = json?.status as string;
   if (status !== 'OK' && status !== 'ZERO_RESULTS') {

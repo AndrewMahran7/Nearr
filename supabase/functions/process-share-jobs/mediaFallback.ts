@@ -58,6 +58,31 @@ export type MediaFallbackResult = {
   reason: string;
 };
 
+export type MediaFlagState = {
+  mediaFallbackEnabled: boolean;
+  instagramResolverEnabled: boolean;
+  canaryUserId: string | null;
+};
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+export function effectiveMediaFlags(
+  flags: MediaFlagState,
+  jobUserId: string | null | undefined,
+): { mediaFallbackEnabled: boolean; instagramResolverEnabled: boolean; canary: boolean } {
+  const canaryUserId = flags.canaryUserId?.trim() ?? '';
+  const canary = UUID_RE.test(canaryUserId) && canaryUserId === (jobUserId ?? '').trim();
+  return {
+    mediaFallbackEnabled: flags.mediaFallbackEnabled || canary,
+    instagramResolverEnabled: flags.instagramResolverEnabled || canary,
+    canary,
+  };
+}
+
+export function mediaInfrastructureEnabled(flags: MediaFlagState): boolean {
+  return flags.mediaFallbackEnabled || UUID_RE.test(flags.canaryUserId?.trim() ?? '');
+}
+
 // Evidence keys that make a single candidate strong enough that spending video
 // analysis on it adds no value (a deterministic street-address match).
 const STRONG_ADDRESS_EVIDENCE = new Set<string>([

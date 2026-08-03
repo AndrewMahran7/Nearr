@@ -14,6 +14,8 @@ export type MediaErrorCode =
   | 'redirect_limit'
   | 'download_timeout'
   | 'download_failed'
+  | 'provider_rate_limited'
+  | 'provider_unavailable'
   | 'file_too_large'
   | 'duration_too_long'
   | 'invalid_media'
@@ -25,6 +27,8 @@ export type MediaErrorCode =
 const RETRYABLE_CODES: ReadonlySet<MediaErrorCode> = new Set<MediaErrorCode>([
   'download_timeout',
   'download_failed',
+  'provider_rate_limited',
+  'provider_unavailable',
   'provider_changed', // markup changed transiently; a retry may recover
 ]);
 
@@ -46,12 +50,14 @@ export class MediaError extends Error {
   readonly code: MediaErrorCode;
   /** Sanitized, secret-free detail safe to log/persist. */
   readonly detail?: string;
+  readonly retryAfterSeconds?: number;
 
-  constructor(code: MediaErrorCode, detail?: string) {
+  constructor(code: MediaErrorCode, detail?: string, retryAfterSeconds?: number) {
     super(`${code}${detail ? `: ${detail}` : ''}`);
     this.name = 'MediaError';
     this.code = code;
     this.detail = detail;
+    this.retryAfterSeconds = retryAfterSeconds;
   }
 
   get retryable(): boolean {

@@ -79,14 +79,17 @@ Recovery is **explicit and bounded** (migration
 [`20260801000003`](../supabase/migrations/20260801000003_share_media_task_recovery.sql)),
 not a far-future lease:
 
-- **Retry backoff.** A retryable media error re-queues the task through
+- **Retry backoff.** Only errors explicitly classified as retryable re-queue the
+  task through
   `requeue_media_task(taskId, backoffSeconds, failureCode)`, which sets
   `status = queued` and `next_attempt_at = now() + backoff` **without**
   incrementing `attempts` (attempts increment only on claim). `claim_media_tasks`
   skips any task whose `next_attempt_at` is in the future, so retries are paced
-  by `computeBackoffSeconds`: **30 → 60 → 120 → 240 → 480 → 900 s** (capped,
-  `MEDIA_RETRY_BASE_SECONDS` / `MEDIA_RETRY_MAX_SECONDS`). `requeue_media_task`
-  is a no-op on a terminal task.
+  by exponential backoff plus 0-20% jitter. A valid provider `Retry-After`
+  becomes the minimum delay; the final delay is capped by
+  `MEDIA_RETRY_MAX_SECONDS`. Authentication-required, private, invalid,
+  oversized, overlong, and cancelled media never retry. `requeue_media_task` is
+  a no-op on a terminal task.
 - **Exhaustion.** `expire_media_tasks(staleSeconds)` marks tasks that have hit
   `max_attempts` (or are stale-processing past their lease) as `failed`.
 - **Stranded-parent sweep.** Each `process-share-jobs` cycle calls
@@ -118,6 +121,12 @@ addresses); or the failure is unrelated to missing media evidence
 generic caption blocked all queries; resolver `failed` (recoverable); a weak
 single `candidate_confirmation`/`candidate_picker` that is **not**
 address-verified; or an `auto_save` that failed the safety gate.
+
+For one controlled hosted canary, `PHASE2_CANARY_USER_ID` may be set to one
+exact UUID. It derives effective fallback/Instagram flags only for that job
+owner while global flags stay false. Invalid UUIDs enable nothing, other users
+remain Phase 1-only, and the media recovery sweep remains active while the
+allowlist exists.
 
 ## Media resolver interface
 
@@ -225,6 +234,14 @@ turn an auto-save into a confirmation, never the reverse.
 | candidate confirmation / multi / manual | `needs_help` |
 | media unavailable / permanent failure | `needs_help(manual)` |
 | retryable failure | media task requeued with backoff (parent stays processing) |
+
+Gemini 429/5xx failures preserve usable transcript/OCR through deterministic
+heuristic evidence (`gemini+heuristic`). Without usable partial evidence they
+raise a retryable provider failure and honor bounded `Retry-After`. OpenAI
+transcription failure remains non-fatal so visual evidence can continue. If all
+eligible Google Places mention lookups fail at the provider layer, the finalizer
+returns a retryable 503; partial success, real no-match, and request-budget
+exhaustion continue through normal safe finalization.
 
 ### Finalize callback: authentication & idempotency
 

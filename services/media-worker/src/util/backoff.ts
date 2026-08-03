@@ -21,3 +21,29 @@ export function computeBackoffSeconds(
   const raw = base * 2 ** exp;
   return Math.min(cap, raw);
 }
+
+export function computeRetryDelaySeconds(
+  attempts: number,
+  baseSeconds = 30,
+  maxSeconds = 900,
+  retryAfterSeconds?: number,
+  random = Math.random,
+): number {
+  const cap = Math.max(1, Math.floor(maxSeconds));
+  const exponential = computeBackoffSeconds(attempts, baseSeconds, cap);
+  const jitter = Math.max(0, Math.min(1, random())) * 0.2;
+  const jittered = Math.min(cap, Math.ceil(exponential * (1 + jitter)));
+  const retryAfter = Number.isFinite(retryAfterSeconds)
+    ? Math.max(0, Math.floor(retryAfterSeconds!))
+    : 0;
+  return Math.min(cap, Math.max(jittered, retryAfter));
+}
+
+export function parseRetryAfterSeconds(value: string | null, nowMs = Date.now()): number | undefined {
+  if (!value) return undefined;
+  const seconds = Number(value);
+  if (Number.isFinite(seconds) && seconds >= 0) return Math.ceil(seconds);
+  const dateMs = Date.parse(value);
+  if (!Number.isFinite(dateMs)) return undefined;
+  return Math.max(0, Math.ceil((dateMs - nowMs) / 1000));
+}

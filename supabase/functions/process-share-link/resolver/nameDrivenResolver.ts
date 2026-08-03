@@ -85,6 +85,7 @@ export type MentionResult = {
   hostVenueName?: string;
   relationshipType?: string;
   providerError?: string;
+  providerRetryAfterSeconds?: number;
 };
 
 export type NameDrivenResult = {
@@ -98,6 +99,24 @@ export type NameDrivenResult = {
   rejectedCount: number;
   requestCount: number;
 };
+
+/** Retry only a complete provider outage. Partial candidates and real
+ * no-match outcomes remain actionable; request-budget exhaustion is local and
+ * deterministic, so retrying it would repeat the same work. */
+export function isRetryableNameDrivenProviderFailure(result: NameDrivenResult): boolean {
+  if (result.aggregateCandidates.length > 0 || result.providerErrorCount === 0) return false;
+  const attempted = result.mentionResults.filter(
+    (mention) => mention.outcome !== 'rejected_insufficient_evidence',
+  );
+  return (
+    attempted.length > 0 &&
+    attempted.every(
+      (mention) =>
+        mention.outcome === 'provider_error' &&
+        mention.providerError !== 'request_limit_reached',
+    )
+  );
+}
 
 /**
  * Map an aggregate name-driven result to a resolver decision. PURE — no I/O.
@@ -459,7 +478,17 @@ export async function resolveVenueMentions(args: {
     }
 
     if (!result.ok) {
-      mentionResults.push({ mentionId: mention.id, displayName: mention.displayName, outcome: 'provider_error', query, candidates: [], scoring: [], providerError: result.reason, ...relFields });
+      mentionResults.push({
+        mentionId: mention.id,
+        displayName: mention.displayName,
+        outcome: 'provider_error',
+        query,
+        candidates: [],
+        scoring: [],
+        providerError: result.reason,
+        providerRetryAfterSeconds: result.retryAfterSeconds,
+        ...relFields,
+      });
       continue;
     }
 

@@ -1,6 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { heuristicEvidence, type AnalyzeInput } from '../src/providers/model.js';
+import { heuristicEvidence, selectModelProvider, type AnalyzeInput } from '../src/providers/model.js';
+import { loadConfig } from '../src/config/env.js';
+import { isMediaError } from '../src/types/media.js';
 import { deduplicateOcrSegments } from '../src/providers/ocr.js';
 import type { OcrSegment, TranscriptSegment } from '../src/types/media.js';
 
@@ -50,4 +52,44 @@ test('deduplicateOcrSegments collapses repeated adjacent text', () => {
   ];
   const out = deduplicateOcrSegments(segs);
   assert.equal(out.length, 2);
+});
+
+test('Gemini 429 retains usable transcript evidence', async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = (async () => new Response('', { status: 429, headers: { 'retry-after': '45' } })) as typeof fetch;
+  try {
+    const provider = selectModelProvider({
+      ...loadConfig(),
+      analysisProvider: 'gemini',
+      geminiApiKey: 'test-key',
+      maxSelectedFrames: 0,
+    });
+    const output = await provider.analyze(analyzeInput({
+      transcript: [{ startSeconds: 0, endSeconds: 2, text: "We're at Capones Cucina" }],
+    }));
+    assert.equal(output.provider, 'gemini+heuristic');
+    assert.equal(output.evidence.places[0]?.name, 'Capones Cucina');
+    assert.ok(output.evidence.warnings.includes('gemini_http_429'));
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('Gemini 429 without partial evidence is retryable and honors Retry-After', async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = (async () => new Response('', { status: 429, headers: { 'retry-after': '45' } })) as typeof fetch;
+  try {
+    const provider = selectModelProvider({
+      ...loadConfig(),
+      analysisProvider: 'gemini',
+      geminiApiKey: 'test-key',
+      maxSelectedFrames: 0,
+    });
+    await assert.rejects(
+      () => provider.analyze(analyzeInput()),
+      (error: unknown) => isMediaError(error) && error.code === 'provider_rate_limited' && error.retryAfterSeconds === 45,
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });

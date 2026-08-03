@@ -21,6 +21,8 @@ import {
   buildUserContext,
 } from '../prompts/placeEvidencePrompt.js';
 import { log } from '../util/logger.js';
+import { MediaError } from '../types/media.js';
+import { parseRetryAfterSeconds } from '../util/backoff.js';
 
 export type AnalyzeInput = {
   platform: string;
@@ -175,7 +177,23 @@ class GeminiModel implements ModelProvider {
         signal: input.signal,
       });
       if (!res.ok) {
-        return { provider: this.name, promptVersion: PROMPT_VERSION, evidence: emptyEvidence([`gemini_http_${res.status}`]) };
+        const warning = `gemini_http_${res.status}`;
+        const fallback = heuristicEvidence(input);
+        if (!fallback.insufficientEvidence && fallback.places.length > 0) {
+          return {
+            provider: `${this.name}+heuristic`,
+            promptVersion: PROMPT_VERSION,
+            evidence: { ...fallback, warnings: [...fallback.warnings, warning] },
+          };
+        }
+        if (res.status === 429 || res.status >= 500) {
+          throw new MediaError(
+            res.status === 429 ? 'provider_rate_limited' : 'provider_unavailable',
+            warning,
+            parseRetryAfterSeconds(res.headers.get('retry-after')),
+          );
+        }
+        return { provider: this.name, promptVersion: PROMPT_VERSION, evidence: emptyEvidence([warning]) };
       }
       const json = (await res.json()) as {
         candidates?: { content?: { parts?: { text?: string }[] } }[];
@@ -194,8 +212,18 @@ class GeminiModel implements ModelProvider {
         modelRawPreview: text.slice(0, 500),
       };
     } catch (err) {
+      if (err instanceof MediaError) throw err;
+      if (input.signal.aborted) throw new MediaError('download_timeout', 'gemini_timeout');
       log.warn('gemini_error', { model: this.cfg.geminiModel });
-      return { provider: this.name, promptVersion: PROMPT_VERSION, evidence: emptyEvidence(['gemini_exception']) };
+      const fallback = heuristicEvidence(input);
+      if (!fallback.insufficientEvidence && fallback.places.length > 0) {
+        return {
+          provider: `${this.name}+heuristic`,
+          promptVersion: PROMPT_VERSION,
+          evidence: { ...fallback, warnings: [...fallback.warnings, 'gemini_exception'] },
+        };
+      }
+      throw new MediaError('provider_unavailable', 'gemini_exception');
     }
   }
 }

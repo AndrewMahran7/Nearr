@@ -12,7 +12,7 @@ import { MediaError, isMediaError, type MediaTask } from '../types/media.js';
 import { createJobTemp } from '../util/tempDir.js';
 import { sha256File } from '../util/hash.js';
 import { log } from '../util/logger.js';
-import { computeBackoffSeconds } from '../util/backoff.js';
+import { computeRetryDelaySeconds } from '../util/backoff.js';
 import { selectResolver, type MediaResolver } from '../resolvers/MediaResolver.js';
 import { inspectMedia } from './inspectMedia.js';
 import { normalizeMedia } from './normalizeMedia.js';
@@ -34,6 +34,34 @@ export type TaskDeps = {
   model: ModelProvider;
   ocr: OcrProvider;
 };
+
+export type TaskFailurePlan =
+  | { action: 'requeue'; delaySeconds: number }
+  | { action: 'finalize'; outcome: 'unavailable' | 'failed' };
+
+export function planTaskFailure(
+  media: MediaError,
+  task: Pick<MediaTask, 'attempts' | 'max_attempts'>,
+  cfg: Pick<WorkerConfig, 'retryBaseSeconds' | 'retryMaxSeconds'>,
+  random = Math.random,
+): TaskFailurePlan {
+  if (media.manualFallback || !media.retryable) {
+    return { action: 'finalize', outcome: 'unavailable' };
+  }
+  if (task.attempts >= task.max_attempts) {
+    return { action: 'finalize', outcome: 'failed' };
+  }
+  return {
+    action: 'requeue',
+    delaySeconds: computeRetryDelaySeconds(
+      task.attempts,
+      cfg.retryBaseSeconds,
+      cfg.retryMaxSeconds,
+      media.retryAfterSeconds,
+      random,
+    ),
+  };
+}
 
 export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<void> {
   const { cfg, client } = deps;
@@ -137,7 +165,14 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
       diagnostics,
       signal: controller.signal,
     });
-    if (!fin.ok) throw new MediaError('download_failed', `finalize_http_${fin.status}`);
+    if (!fin.ok) {
+      const transient = fin.status === 429 || fin.status >= 500;
+      throw new MediaError(
+        transient ? (fin.status === 429 ? 'provider_rate_limited' : 'provider_unavailable') : 'download_failed',
+        `finalize_http_${fin.status}`,
+        fin.retryAfterSeconds,
+      );
+    }
     log.info('task_finalized', {
       taskId: task.id,
       jobId: task.share_job_id,
@@ -175,21 +210,12 @@ async function handleTaskError(
     max: task.max_attempts,
   });
 
-  // Terminal (cannot be fixed by retry) → parent needs_help(manual).
-  if (media.manualFallback) {
-    await safeFinalize(cfg, client, task, 'unavailable', diagnostics, media.code);
+  const plan = planTaskFailure(media, task, cfg);
+  if (plan.action === 'requeue') {
+    await requeueTask(client, task.id, plan.delaySeconds, media.code);
     return;
   }
-
-  // Retryable + budget remains → requeue with a bounded exponential backoff.
-  if (task.attempts < task.max_attempts) {
-    const backoff = computeBackoffSeconds(task.attempts, cfg.retryBaseSeconds, cfg.retryMaxSeconds);
-    await requeueTask(client, task.id, backoff, media.code);
-    return;
-  }
-
-  // Retry budget exhausted → parent needs_help(manual).
-  await safeFinalize(cfg, client, task, 'failed', diagnostics, media.code);
+  await safeFinalize(cfg, client, task, plan.outcome, diagnostics, media.code);
 }
 
 // Finalize with a FRESH signal (the job-timeout controller may already be

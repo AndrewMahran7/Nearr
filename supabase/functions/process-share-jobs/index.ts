@@ -27,6 +27,7 @@ import { extractHandles } from '../process-share-link/evidence/handleExtraction.
 import { extractEvidence } from '../process-share-link/evidence/extractEvidence.ts';
 import { extractTaggedLocation } from '../process-share-link/evidence/taggedLocation.ts';
 import { resolveSharedPlace } from '../process-share-link/resolver/resolveSharedPlace.ts';
+import { isRetryableNameDrivenProviderFailure } from '../process-share-link/resolver/nameDrivenResolver.ts';
 import { saveForUser } from '../process-share-link/save.ts';
 import { normalizeShareUrl } from '../../../lib/shareAgent/tiktokUrl.ts';
 import { buildShareJobCandidatePayload } from '../../../lib/shareJobResult.ts';
@@ -37,7 +38,7 @@ import {
   buildCompletedNotification,
   buildNeedsHelpNotification,
 } from './decisionMapping.ts';
-import { shouldRunMediaFallback } from './mediaFallback.ts';
+import { effectiveMediaFlags, mediaInfrastructureEnabled, shouldRunMediaFallback } from './mediaFallback.ts';
 import {
   parseMediaEvidence,
   renderMediaEvidenceCaption,
@@ -53,10 +54,10 @@ const CORS_HEADERS: Record<string, string> = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
-function json(payload: unknown, status = 200): Response {
+function json(payload: unknown, status = 200, extraHeaders: Record<string, string> = {}): Response {
   return new Response(JSON.stringify(payload), {
     status,
-    headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+    headers: { ...CORS_HEADERS, 'Content-Type': 'application/json', ...extraHeaders },
   });
 }
 
@@ -181,11 +182,13 @@ async function handleProcessingError(admin: any, job: any, err: unknown): Promis
 function readMediaFlags(): {
   mediaFallbackEnabled: boolean;
   instagramResolverEnabled: boolean;
+  canaryUserId: string | null;
 } {
   const on = (k: string) => (Deno.env.get(k) ?? '').trim().toLowerCase() === 'true';
   return {
     mediaFallbackEnabled: on('MEDIA_FALLBACK_ENABLED'),
     instagramResolverEnabled: on('INSTAGRAM_MEDIA_RESOLVER_ENABLED'),
+    canaryUserId: (Deno.env.get('PHASE2_CANARY_USER_ID') ?? '').trim() || null,
   };
 }
 
@@ -420,6 +423,29 @@ async function finalizeMediaTask(admin: any, env: any, body: any): Promise<Respo
     geoContext: mediaMentions.geoContext,
     relationships: mediaMentions.relationships,
   });
+  const mentionResults = Array.isArray(result.diagnostics?.mentionResults)
+    ? result.diagnostics.mentionResults
+    : [];
+  const nameDrivenResult = {
+    mentionResults,
+    aggregateCandidates: result.candidates ?? [],
+    providerErrorCount: mentionResults.filter((mention: any) => mention?.outcome === 'provider_error').length,
+  } as any;
+  if (isRetryableNameDrivenProviderFailure(nameDrivenResult)) {
+    const retryAfter = Math.min(
+      900,
+      Math.max(
+        30,
+        ...mentionResults.map((mention: any) => Number(mention?.providerRetryAfterSeconds) || 0),
+      ),
+    );
+    console.warn(`[media-task] places provider unavailable task_id=${taskId}`);
+    return json(
+      { error: 'places_provider_unavailable', retryable: true },
+      503,
+      { 'Retry-After': String(retryAfter) },
+    );
+  }
   const extractionPayload = {
     platform: task.platform,
     via: 'media',
@@ -645,7 +671,8 @@ async function processOne(admin: any, env: any, job: any): Promise<void> {
   // Only when the server-only MEDIA_FALLBACK_ENABLED flag is on. When off this
   // whole block is skipped (no extra DB calls) and the needs_help path below is
   // byte-identical to Phase 1.
-  const mediaFlags = readMediaFlags();
+  const configuredMediaFlags = readMediaFlags();
+  const mediaFlags = effectiveMediaFlags(configuredMediaFlags, job.user_id);
   if (mediaFlags.mediaFallbackEnabled) {
     const mediaTaskExists = await mediaTaskExistsFor(admin, job.id);
     const trigger = shouldRunMediaFallback(
@@ -938,7 +965,7 @@ serve(async (req) => {
   await processNotificationReceipts(admin, limit);
   // Media recovery only runs when Phase 2 media fallback is enabled; otherwise
   // its Phase 2 RPCs are absent and this stays a no-op (Phase 1 sweep clean).
-  if (readMediaFlags().mediaFallbackEnabled) {
+  if (mediaInfrastructureEnabled(readMediaFlags())) {
     await recoverStrandedMediaJobs(admin);
   }
 

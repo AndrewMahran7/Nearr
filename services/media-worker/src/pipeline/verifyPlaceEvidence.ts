@@ -24,6 +24,7 @@ export type FinalizeResponse = {
   ok: boolean;
   status: number;
   route?: string;
+  retryAfterSeconds?: number;
 };
 
 export async function verifyPlaceEvidence(
@@ -53,5 +54,9 @@ export async function verifyPlaceEvidence(
   } catch {
     /* ignore body parse errors */
   }
-  return { ok: res.ok, status: res.status, route };
+  const retryAfter = res.headers.get('retry-after');
+  const retryAfterSeconds = retryAfter && /^\d+$/.test(retryAfter)
+    ? Number(retryAfter)
+    : undefined;
+  return { ok: res.ok, status: res.status, route, retryAfterSeconds };
 }

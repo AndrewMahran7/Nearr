@@ -22,6 +22,7 @@ import {
   normalizeStateToAbbr,
   normalizeRawScore,
   isHostOnlyCandidate,
+  isRetryableNameDrivenProviderFailure,
   type ScoredMentionCandidate,
   type NameDrivenResult,
 } from '../supabase/functions/process-share-link/resolver/nameDrivenResolver';
@@ -161,6 +162,36 @@ check('multi no candidates => manual_fallback', nameDrivenDecision(ndResult({ ag
 check('decision mapping never auto-saves (any case)', [true, false].every((s) => nameDrivenDecision(ndResult({ aggregateCandidates: [rc('a')], verifiedCount: 1 }), s).safeToAutoSave === false));
 check('host-only candidate is detected', isHostOnlyCandidate('Brewery X', { primaryVenueName: 'X Eats', hostVenueName: 'Brewery X' }));
 check('primary candidate is not host-only', !isHostOnlyCandidate('X Eats', { primaryVenueName: 'X Eats', hostVenueName: 'Brewery X' }));
+check('all Places provider errors are retryable', isRetryableNameDrivenProviderFailure(ndResult({
+  mentionResults: [
+    { mentionId: 'm1', displayName: 'A', outcome: 'provider_error', query: 'A', candidates: [], scoring: [], providerError: 'http_error' },
+    { mentionId: 'm2', displayName: 'B', outcome: 'provider_error', query: 'B', candidates: [], scoring: [], providerError: 'api_error' },
+  ],
+  providerErrorCount: 2,
+})));
+check('partial Places success is not retried', !isRetryableNameDrivenProviderFailure(ndResult({
+  mentionResults: [
+    { mentionId: 'm1', displayName: 'A', outcome: 'verified_single', query: 'A', candidates: [rc('a')], scoring: [] },
+    { mentionId: 'm2', displayName: 'B', outcome: 'provider_error', query: 'B', candidates: [], scoring: [], providerError: 'http_error' },
+  ],
+  aggregateCandidates: [rc('a')],
+  verifiedCount: 1,
+  providerErrorCount: 1,
+})));
+check('real no-match is not a provider retry', !isRetryableNameDrivenProviderFailure(ndResult({
+  mentionResults: [
+    { mentionId: 'm1', displayName: 'A', outcome: 'no_match', query: 'A', candidates: [], scoring: [] },
+    { mentionId: 'm2', displayName: 'B', outcome: 'provider_error', query: 'B', candidates: [], scoring: [], providerError: 'http_error' },
+  ],
+  noMatchCount: 1,
+  providerErrorCount: 1,
+})));
+check('request-limit exhaustion is not retried', !isRetryableNameDrivenProviderFailure(ndResult({
+  mentionResults: [
+    { mentionId: 'm1', displayName: 'A', outcome: 'provider_error', query: 'A', candidates: [], scoring: [], providerError: 'request_limit_reached' },
+  ],
+  providerErrorCount: 1,
+})));
 
 
 // ---------------------------------------------------------------------------

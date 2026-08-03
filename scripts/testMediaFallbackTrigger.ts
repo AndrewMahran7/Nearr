@@ -15,6 +15,8 @@
 import {
   shouldRunMediaFallback,
   isSupportedMediaPlatform,
+  effectiveMediaFlags,
+  mediaInfrastructureEnabled,
   type MediaFallbackInput,
   type MediaFallbackContext,
 } from '../supabase/functions/process-share-jobs/mediaFallback';
@@ -54,6 +56,32 @@ function input(over: Partial<MediaFallbackInput> = {}): MediaFallbackInput {
     ...over,
   };
 }
+
+const canaryUser = '11111111-1111-4111-8111-111111111111';
+{
+  const flags = effectiveMediaFlags(
+    { mediaFallbackEnabled: false, instagramResolverEnabled: false, canaryUserId: canaryUser },
+    canaryUser,
+  );
+  check('matching canary user enables only its effective flags', flags.mediaFallbackEnabled && flags.instagramResolverEnabled && flags.canary);
+}
+{
+  const flags = effectiveMediaFlags(
+    { mediaFallbackEnabled: false, instagramResolverEnabled: false, canaryUserId: canaryUser },
+    '22222222-2222-4222-8222-222222222222',
+  );
+  check('different user stays Phase 1-only', !flags.mediaFallbackEnabled && !flags.instagramResolverEnabled && !flags.canary);
+}
+check('invalid canary id cannot enable infrastructure', !mediaInfrastructureEnabled({
+  mediaFallbackEnabled: false,
+  instagramResolverEnabled: false,
+  canaryUserId: 'not-a-uuid',
+}));
+check('valid canary id keeps bounded recovery active', mediaInfrastructureEnabled({
+  mediaFallbackEnabled: false,
+  instagramResolverEnabled: false,
+  canaryUserId: canaryUser,
+}));
 
 // ---- Flags default OFF => Phase 1 unchanged --------------------------------
 

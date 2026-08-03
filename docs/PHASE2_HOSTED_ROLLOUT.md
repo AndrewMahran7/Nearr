@@ -2,20 +2,23 @@
 
 ## Current verdict
 
-**Do not enable hosted Phase 2 traffic yet.** The code and local mobile flow are
-ready for review, but the hosted media infrastructure is not installed or
-verified:
+**Hosted deployment is blocked at Railway secret provisioning.** On 2026-08-01,
+the five reviewed Phase 2 migrations were applied to the linked Supabase project
+and verified. Both media tables have RLS enabled and no client policies; worker
+RPC execution is service-role-only; both cron jobs are active; Phase 1 RPCs are
+still present; and both media tables are empty.
 
-- migrations `20260801000001` through `20260801000005` are local-only;
-- `share_media_tasks`, its claim/requeue/recovery RPCs, the media Vault entries,
-  and `process-media-tasks-sweep` are absent remotely;
-- the Railway project is not linked, so deployment configuration, logs, and a
-  hosted `/ready` response are unverified;
-- the updated Edge Functions are not deployed;
-- Gemini 429/5xx responses currently become unavailable evidence instead of a
-  bounded task retry. OpenAI transcription failure is non-fatal so visual
-  evidence can still succeed, but the inverse partial-evidence path needs an
-  explicit product decision or implementation before traffic is enabled.
+Provider retries are now bounded, jittered, `Retry-After` aware, and covered by
+deterministic tests. Partial transcript/OCR evidence survives a transient Gemini
+failure, while a complete Google Places outage is retried instead of being
+misclassified as no-match.
+
+Railway development is linked to project `Nearr Phase 2 Dev`, service
+`media-worker`. Its existing deployment is not the current code and has none of
+the required application variables. Do not deploy the worker, configure Vault,
+deploy Edge Functions, or send hosted traffic until all required variables are
+provisioned and the current worker returns `/ready` HTTP 200. Production has no
+service instance.
 
 Keep `MEDIA_FALLBACK_ENABLED`, `INSTAGRAM_MEDIA_RESOLVER_ENABLED`, and
 `NATIVE_VIDEO_ANALYSIS_ENABLED` set to `false` throughout infrastructure setup.
@@ -56,14 +59,15 @@ Complete these gates in order. Stop at the first failure.
    docker exec supabase_db_Nearr psql -U postgres -d postgres -f /tmp/privileges.sql
    ```
 
-3. Preview the hosted migration plan and confirm it contains only these files:
+3. Confirm the hosted migration history. These versions are already applied and
+   the dry-run must report the linked database is up to date:
 
    ```powershell
    npx supabase migration list --linked
    npx supabase db push --linked --dry-run
    ```
 
-   Expected pending versions:
+   Applied versions:
 
    ```text
    20260801000001_share_media_tasks.sql
@@ -73,32 +77,42 @@ Complete these gates in order. Stop at the first failure.
    20260801000005_aux_privileges.sql
    ```
 
-4. Apply the migrations, still with every Phase 2 flag off:
+   Confirm no Edge deployment is currently in progress. Both reviewed functions
+   are deliberately redeployed only at gate 9.
 
-   ```powershell
-   npx supabase db push --linked
+4. Verify the post-migration state read-only. Both rows must report RLS, no
+    client policies may exist, both crons must be active, and both tables must be
+    empty before deployment:
+
+    ```sql
+    select c.relname, c.relrowsecurity
+    from pg_class c join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'public'
+       and c.relname in ('share_media_tasks', 'share_media_runs');
+
+    select count(*) from pg_policies
+    where schemaname = 'public'
+       and tablename in ('share_media_tasks', 'share_media_runs');
+
+    select jobname, active from cron.job
+    where jobname in ('process-share-jobs-sweep', 'process-media-tasks-sweep');
+
+    select (select count(*) from public.share_media_tasks) as tasks,
+               (select count(*) from public.share_media_runs) as runs;
    ```
 
-5. Deploy the two reviewed Edge Functions. Preserve their existing authentication
-   settings: `process-share-link` verifies JWTs and `process-share-jobs` uses the
-   existing dedicated worker-secret check.
+5. Link and review the existing Railway development target. Do not use the
+   production environment for the canary:
 
    ```powershell
-   npx supabase functions deploy process-share-link
-   npx supabase functions deploy process-share-jobs --no-verify-jwt
-   ```
-
-6. Link the intended Railway project, review the target, configure variable
-   **names** in Railway, and deploy `services/media-worker/Dockerfile`:
-
-   ```powershell
-   railway login
-   railway link
+   railway link --project 4037a3b5-d66f-409e-b734-56c22c244e3e --environment development --service media-worker
    railway status
-   railway up services/media-worker --path-as-root --service <MEDIA_WORKER_SERVICE> --environment <ENVIRONMENT>
    ```
 
-   Required production variable names:
+   Provision the required worker variables. Enter secrets interactively with
+   `railway variable set NAME --stdin --skip-deploys` or use the Railway
+   dashboard. Never pass secrets as command arguments or store them in the
+   repository. Set all flags explicitly to `false` before deployment:
 
    ```text
    SHARE_MEDIA_WORKER_SECRET
@@ -107,29 +121,49 @@ Complete these gates in order. Stop at the first failure.
    SHARE_JOBS_FINALIZE_URL
    MEDIA_TRANSCRIPTION_PROVIDER=openai
    MEDIA_TRANSCRIPTION_API_KEY
+   MEDIA_TRANSCRIPTION_MODEL
    MEDIA_ANALYSIS_PROVIDER=gemini
    GEMINI_API_KEY
    GEMINI_MODEL
+   MEDIA_WORKER_MAX_CONCURRENCY=1
+   MEDIA_WORKER_CLAIM_BATCH=2
+   MEDIA_WORKER_CLAIM_LOCK_SECONDS=600
+   MEDIA_RETRY_BASE_SECONDS=30
+   MEDIA_RETRY_MAX_SECONDS=900
+   MEDIA_MAX_DURATION_SECONDS=180
+   MEDIA_MAX_DOWNLOAD_BYTES=157286400
+   MEDIA_DOWNLOAD_TIMEOUT_MS=60000
+   MEDIA_JOB_TIMEOUT_MS=480000
+   MEDIA_MAX_SELECTED_FRAMES=24
+   PORT=8080
    MEDIA_FALLBACK_ENABLED=false
    INSTAGRAM_MEDIA_RESOLVER_ENABLED=false
    NATIVE_VIDEO_ANALYSIS_ENABLED=false
    ```
 
+   Optional authenticated retrieval variables are `MEDIA_FETCH_PROVIDER_URL`,
+   `MEDIA_FETCH_PROVIDER_API_KEY`, `MEDIA_FETCH_PROVIDER_AUTH_HEADER`,
+   `MEDIA_FETCH_PROVIDER_URL_PARAM`, and `MEDIA_FETCH_PROVIDER_RESULT_PATH`.
+   Do not reuse `SHARE_JOBS_WORKER_SECRET` as `SHARE_MEDIA_WORKER_SECRET`.
+
    Pin `GEMINI_MODEL` before the canary. Do not use the moving
    `gemini-flash-latest` alias for a controlled cost/behavior comparison.
 
-7. Confirm the hosted worker is alive and honestly ready:
+6. Deploy current code only after every required variable is present, then
+   confirm the hosted worker is alive and honestly ready:
 
    ```powershell
-   curl.exe -fsS https://<WORKER_HOST>/health
-   curl.exe -fsS https://<WORKER_HOST>/ready
-   railway logs
+   railway up services/media-worker --path-as-root --service media-worker --environment development
+   railway deployment list --service media-worker --environment development
+   curl.exe -fsS https://media-worker-development.up.railway.app/health
+   curl.exe -fsS https://media-worker-development.up.railway.app/ready
+   railway logs --service media-worker --environment development --lines 100
    ```
 
    `/health` and `/ready` must both return HTTP 200. Logs must contain no source
    URL query strings, tokens, media bytes, or raw model responses.
 
-8. Store the worker endpoint and the same dedicated invocation secret in Vault.
+7. Store the worker endpoint and the same dedicated invocation secret in Vault.
    Enter values directly in the Supabase SQL editor or another secret-safe
    channel; do not put them in shell history or this repository.
 
@@ -138,7 +172,7 @@ Complete these gates in order. Stop at the first failure.
    select vault.create_secret('<SHARE_MEDIA_WORKER_SECRET>', 'share_media_worker_secret');
    ```
 
-9. Smoke-test infrastructure while all flags remain off:
+8. Smoke-test infrastructure while all flags remain off:
 
    ```sql
    select to_regclass('public.share_media_tasks') as media_tasks,
@@ -168,23 +202,52 @@ Complete these gates in order. Stop at the first failure.
    log the authenticated empty-queue invocation. Confirm a normal metadata-only
    share still follows Phase 1 and creates no `share_media_tasks` row.
 
+9. Only after gates 1-8 pass, deploy the reviewed Edge Functions. Preserve their
+   authentication settings: `process-share-link` verifies JWTs and
+   `process-share-jobs` uses the existing dedicated Phase 1 worker-secret check.
+
+   ```powershell
+   npx supabase functions deploy process-share-link
+   npx supabase functions deploy process-share-jobs --no-verify-jwt
+   ```
+
+   Repeat the Phase 1 metadata-only smoke test with all global Phase 2 flags
+   false. Stop on any authentication, notification, queue, or save regression.
+
 ## One-task canary
 
-Do this only after the release gate is green and provider retry behavior has
-been accepted or fixed. Use one internal account and one known public Instagram
-reel. Keep `NATIVE_VIDEO_ANALYSIS_ENABLED=false` until the final step.
+**Prepared only; do not execute during infrastructure readiness.** Use internal
+user `<INTERNAL_USER_ID>` and the known public media-poor test URL
+`https://www.instagram.com/p/DYbLVMBp_dY/`. Confirm immediately before use that
+it is still public and appropriate for the test.
 
-1. Set `MEDIA_FALLBACK_ENABLED=true` and
-   `INSTAGRAM_MEDIA_RESOLVER_ENABLED=true` in both `process-share-jobs` and the
-   media worker. Leave `NATIVE_VIDEO_ANALYSIS_ENABLED=false`.
-2. Restart/redeploy only those services and require `/ready` HTTP 200.
-3. Submit exactly one internal share that requires media fallback.
-4. Immediately set `MEDIA_FALLBACK_ENABLED=false` again. The durable task may
-   finish, but no second task can be created.
-5. Track only that job and task:
+1. Keep all three global Supabase flags `false`. Set server-only
+   `PHASE2_CANARY_USER_ID=<INTERNAL_USER_ID>` under the Supabase project's Edge
+   Function secrets/environment settings. The value must be one exact UUID;
+   invalid values enable nothing. Deploy the reviewed `process-share-jobs` code
+   only after the release gate is green.
+2. In Railway development only, set `MEDIA_FALLBACK_ENABLED=true` and
+   `INSTAGRAM_MEDIA_RESOLVER_ENABLED=true`; leave
+   `NATIVE_VIDEO_ANALYSIS_ENABLED=false`. Redeploy and require `/ready` HTTP
+   200. This lets the private worker process an allowlisted task; task creation
+   remains restricted to the exact Edge canary user.
+3. Record the internal user's current saved-place count. Then, using that user's
+   access token, create exactly one job and capture `jobId`:
+
+   ```powershell
+   $body = @{ url = 'https://www.instagram.com/p/DYbLVMBp_dY/'; clientRequestId = 'phase2-controlled-canary-001' } | ConvertTo-Json
+   Invoke-RestMethod -Method Post -Uri 'https://<PROJECT_REF>.supabase.co/functions/v1/create-share-job' -Headers @{ Authorization = 'Bearer <INTERNAL_USER_ACCESS_TOKEN>' } -ContentType 'application/json' -Body $body
+   ```
+
+4. As soon as exactly one `share_media_tasks` row exists, remove
+   `PHASE2_CANARY_USER_ID` and redeploy `process-share-jobs`. The durable task
+   may finish; no second user or job remains allowlisted. Do not submit another
+   share.
+5. Track only `<SHARE_JOB_ID>` and verify bounded attempts and stage changes:
 
    ```sql
-   select id, status, progress_stage, result_type, error_code,
+      select id, status, progress_stage, decision, saved_place_id,
+         needs_help_reason, failure_reason, last_error,
           created_at, updated_at, completed_at
    from public.share_jobs
    where id = '<SHARE_JOB_ID>';
@@ -203,15 +266,38 @@ reel. Keep `NATIVE_VIDEO_ANALYSIS_ENABLED=false` until the final step.
    from public.share_media_runs
    where share_job_id = '<SHARE_JOB_ID>'
    order by created_at;
+
+   select status, decision, progress_stage, saved_place_id,
+          candidate_payload->>'version' as payload_version,
+          coalesce(jsonb_array_length(candidate_payload->'mentionSlots'), 0)
+            as mention_slot_count,
+          notification_status, notification_attempts,
+          notification_submitted_at, notification_error_code
+   from public.share_jobs
+   where id = '<SHARE_JOB_ID>';
+
+   select place_id, count(*)
+   from public.saved_places
+   where user_id = '<INTERNAL_USER_ID>'
+   group by place_id
+   having count(*) > 1;
    ```
 
-6. Accept only one of these outcomes: deterministic verified result presented
+6. Confirm exactly one media task, one notification reservation on the parent,
+   no duplicate `place_id`, and no more saves than the user explicitly confirms.
+   Remove the resolved/completed job through the normal mobile queue action; do
+   not delete database rows manually.
+7. Accept only one of these outcomes: deterministic verified result presented
    for confirmation, safe `needs_help`, or bounded retry followed by safe
    `needs_help`. Reject any silent model-generated save, duplicate save,
    stranded parent, leaked media URL, or unbounded retry.
-7. After the canary, delete any local temp artifacts and verify the hosted
-   worker temp directory has no retained media. Do not delete durable diagnostic
-   rows until the audit is complete.
+8. Confirm worker logs show temp cleanup after success, failure, cancellation,
+   or timeout and contain no source URL query, token, media bytes, or raw model
+   response. Verify no files remain under the configured temp root.
+9. Return both Railway worker flags to `false`, remove
+   `PHASE2_CANARY_USER_ID`, redeploy both services, and require `/ready` HTTP
+   200 with the redacted flag summary showing all flags false. Keep durable
+   diagnostic rows until the audit is complete.
 
 ## Mobile five-place audit
 
@@ -236,6 +322,13 @@ Open `/share-jobs/phase2-five-pizza-preview` on a physical device. Verify:
 - successful saves remain saved if another selection fails, and retry keeps
   only failed selections pending.
 
+No new native build is required when a compatible development client is already
+installed. The main-app JavaScript changes are EAS Update-capable for a matching
+runtime, but this fixture is deliberately unreachable in production because of
+its `__DEV__` guard. If no compatible development client exists, a development
+build would be required later. Do not create an EAS build or publish an EAS
+Update as part of this rollout.
+
 ## Approximate per-task cost
 
 This is an **engineering estimate, not a billing quote**. At the hard 180-second
@@ -253,8 +346,8 @@ and variable Google Places SKU make a more exact pre-canary number misleading.
 
 ## Immediate rollback
 
-1. Set all three flags to `false` in `process-share-jobs` and Railway, then
-   redeploy/restart those services.
+1. Set all three flags to `false`, remove `PHASE2_CANARY_USER_ID`, and redeploy
+   `process-share-jobs` plus Railway. Verify the worker's redacted flag summary.
 2. Stop dispatch and the worker:
 
    ```sql
@@ -262,7 +355,7 @@ and variable Google Places SKU make a more exact pre-canary number misleading.
    ```
 
    ```powershell
-   railway down --service <MEDIA_WORKER_SERVICE> --environment <ENVIRONMENT> --yes
+   railway down --service media-worker --environment development --yes
    ```
 
 3. Leave Phase 1's `process-share-jobs-sweep` active. Do not modify its Vault
@@ -279,6 +372,19 @@ and variable Google Places SKU make a more exact pre-canary number misleading.
    order by sj.updated_at;
    ```
 
-5. Keep additive tables and diagnostics for investigation. Use migration DOWN
+5. If the new Edge source regresses Phase 1, deploy the known pre-readiness
+   source from `e5a18ce` through a temporary worktree. Do not reset or alter the
+   active checkout:
+
+   ```powershell
+   git worktree add ..\Nearr-edge-rollback e5a18ced4110f638acbfb3fefa77c1de36162ed3
+   Push-Location ..\Nearr-edge-rollback
+   npx supabase functions deploy process-share-link
+   npx supabase functions deploy process-share-jobs --no-verify-jwt
+   Pop-Location
+   git worktree remove ..\Nearr-edge-rollback
+   ```
+
+6. Keep additive tables and diagnostics for investigation. Use migration DOWN
    sections only for a separately reviewed full teardown; immediate rollback
    does not require dropping data or changing the Phase 1 app/auth bridge.
