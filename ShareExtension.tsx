@@ -37,7 +37,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 import { close, openHostApp, type InitialProps } from 'expo-share-extension';
 
 import { sharedAuth } from './lib/sharedAuth';
@@ -50,6 +50,7 @@ import { createShareJob } from './lib/shareJobClient';
 import { selectExtensionAuthAction } from './lib/sharedAuthSession';
 import { SHARE_JOBS_DEEPLINK_PATH } from './lib/shareRoutes';
 import { appendSubmissionId, mintSubmissionId } from './lib/shareSubmission';
+import { SHARE_EXTENSION_SUCCESS_LAYOUT } from './lib/sharePhase1Ui';
 
 // 2026-05-26: single resolver covers process.env, expoConfig.extra,
 // manifest.extra and manifest2.extra so a missing inline at build
@@ -487,7 +488,7 @@ type AsyncUi =
 function AsyncSheet({ children }: { children: React.ReactNode }) {
   return (
     <View style={asyncStyles.backdrop}>
-      <View style={asyncStyles.sheet}>{children}</View>
+      <SafeAreaView style={asyncStyles.sheet}>{children}</SafeAreaView>
     </View>
   );
 }
@@ -498,6 +499,7 @@ function AsyncShareExtension(props: InitialProps) {
   // for create-share-job AND propagated to the host fallback deep link (?sid=)
   // so the extension, the host, and any retry all resolve to a single job.
   const submissionIdRef = useRef(mintSubmissionId());
+  const hostOpenedRef = useRef(false);
   const [ui, setUi] = useState<AsyncUi>({ kind: 'submitting' });
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -575,6 +577,8 @@ function AsyncShareExtension(props: InitialProps) {
   }, []);
 
   const openHost = (reason: string) => {
+    if (hostOpenedRef.current) return;
+    hostOpenedRef.current = true;
     const url = pickSharedUrl(props);
     if (url) {
       const encoded = encodeURIComponent(url);
@@ -596,6 +600,8 @@ function AsyncShareExtension(props: InitialProps) {
   // Open the host app straight to the in-app queue. The path is DERIVED from
   // the real Expo Router route (see lib/shareRoutes.ts), never guessed.
   const openHostQueue = () => {
+    if (hostOpenedRef.current) return;
+    hostOpenedRef.current = true;
     try {
       openHostApp(SHARE_JOBS_DEEPLINK_PATH);
     } catch (err) {
@@ -611,7 +617,7 @@ function AsyncShareExtension(props: InitialProps) {
           <Text style={asyncStyles.check}>✓</Text>
         </View>
         <Text style={asyncStyles.title}>Added to your queue</Text>
-        <Text style={asyncStyles.subtle}>{"We'll notify you when it's ready."}</Text>
+        <Text style={asyncStyles.subtle}>{"I’ll let you know when it’s ready."}</Text>
         <Pressable
           style={asyncStyles.primaryBtn}
           onPress={openHostQueue}
@@ -819,25 +825,25 @@ const asyncStyles = StyleSheet.create({
   // giant empty region. ~28px top corners, safe-area-aware bottom padding.
   sheet: {
     backgroundColor: NEARR_SURFACE,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
+    borderTopLeftRadius: SHARE_EXTENSION_SUCCESS_LAYOUT.cornerRadius,
+    borderTopRightRadius: SHARE_EXTENSION_SUCCESS_LAYOUT.cornerRadius,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderColor: NEARR_BORDER,
-    paddingHorizontal: 24,
-    paddingTop: 26,
-    paddingBottom: 30,
+    paddingHorizontal: SHARE_EXTENSION_SUCCESS_LAYOUT.horizontalPadding,
+    paddingTop: SHARE_EXTENSION_SUCCESS_LAYOUT.topPadding,
+    paddingBottom: 28,
     alignItems: 'center',
   },
   brandDot: {
-    width: 52,
-    height: 52,
-    borderRadius: 18,
+    width: SHARE_EXTENSION_SUCCESS_LAYOUT.iconSize,
+    height: SHARE_EXTENSION_SUCCESS_LAYOUT.iconSize,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'rgba(255,107,0,0.14)',
     borderWidth: 1,
     borderColor: 'rgba(255,107,0,0.3)',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   check: {
     fontSize: 26,
@@ -869,11 +875,11 @@ const asyncStyles = StyleSheet.create({
   },
   // Prominent, 56px tall, full-width primary action.
   primaryBtn: {
-    marginTop: 24,
+    marginTop: 22,
     alignSelf: 'stretch',
-    minHeight: 56,
+    minHeight: SHARE_EXTENSION_SUCCESS_LAYOUT.primaryHeight,
     backgroundColor: NEARR_ORANGE,
-    borderRadius: 16,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 20,
@@ -882,9 +888,9 @@ const asyncStyles = StyleSheet.create({
   // Text button (e.g. "Done") — always visible directly below the primary
   // action (~14px separation).
   secondaryBtn: {
-    marginTop: 14,
+    marginTop: 4,
     alignSelf: 'stretch',
-    minHeight: 44,
+    minHeight: SHARE_EXTENSION_SUCCESS_LAYOUT.secondaryHeight,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 20,

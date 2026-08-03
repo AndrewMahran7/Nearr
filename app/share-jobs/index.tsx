@@ -21,7 +21,7 @@ import {
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
-import { EmptyState, ErrorBoundary, Screen, ShareJobsHeader } from '@/components';
+import { ErrorBoundary, Screen, ShareJobsHeader } from '@/components';
 import { Radius, Spacing } from '@/constants';
 import { useTheme } from '@/lib/theme';
 import { useShareJobs } from '@/hooks/useShareJobs';
@@ -29,11 +29,11 @@ import { routeShareJobCard } from '@/lib/shareJobRouting';
 import {
   actionableCount,
   actionableJobs,
-  actionableSectionHeading,
   backTarget,
   isQueueEmpty,
   processingJobs,
 } from '@/lib/shareJobsUi';
+import { PHASE_1_COPY, processingMessage, queueIntro, splitPlaceAddress } from '@/lib/sharePhase1Ui';
 import { cancelShareJob, type ShareJob } from '@/services/shareJobsService';
 
 // A processing job older than this is very likely stuck (the worker never
@@ -107,9 +107,9 @@ function jobTitle(job: ShareJob): string {
   const candidates = job.candidate_payload?.candidates;
   const first = Array.isArray(candidates) ? candidates[0]?.name : undefined;
   if (job.status === 'needs_help') {
-    if (job.needs_help_reason === 'multiple_candidates') return 'I found a few places';
-    if (first) return `I found ${first}`;
-    return 'Help me find this place';
+    if (job.needs_help_reason === 'multiple_candidates') return 'A few possible places';
+    if (first) return first;
+    return 'Place from your post';
   }
   return platformLabel(job.source_platform) + ' post';
 }
@@ -118,12 +118,12 @@ function jobSubtitle(job: ShareJob, stalled = false): string {
   switch (job.status) {
     case 'queued':
     case 'processing_metadata':
-      return stalled ? 'Taking longer than expected' : 'Finding the place from this post…';
+      return processingMessage(job.status, stalled ? STALE_PROCESSING_MS + 1 : 0);
     case 'needs_help':
       if (job.needs_help_reason === 'multiple_candidates') return 'Choose which ones to save';
       if (job.needs_help_reason === 'manual_search' || job.needs_help_reason === 'metadata_unavailable')
         return 'Tap to search for it';
-      return 'Confirm this place';
+      return 'Does this look right?';
     case 'failed':
       return "Couldn't find it — tap to search";
     default:
@@ -236,6 +236,10 @@ function ShareJobsQueueScreen() {
     const busy = actingId === job.id;
     const actionableRow = !isProcessing || stalled;
     const subtitle = jobSubtitle(job, stalled);
+    const firstCandidate = Array.isArray(job.candidate_payload?.candidates)
+      ? job.candidate_payload?.candidates[0]
+      : null;
+    const locality = splitPlaceAddress(firstCandidate?.formattedAddress).locality;
     return (
       <Pressable
         onPress={() => openJob(job)}
@@ -248,17 +252,20 @@ function ShareJobsQueueScreen() {
           <Feather name={jobIcon(job)} size={18} color={colors.accent} />
         </View>
         <View style={styles.rowMain}>
-          <Text style={[typography.bodyStrong, styles.rowTitle]} numberOfLines={1}>
+          <Text style={[typography.bodyStrong, styles.rowTitle]} numberOfLines={2}>
             {jobTitle(job)}
           </Text>
-          <Text style={[typography.caption, styles.rowSubtitle]} numberOfLines={1}>
-            {subtitle}
-          </Text>
-          <Text style={[typography.caption, styles.rowMeta]} numberOfLines={1}>
-            {shouldShowHost(job)
-              ? `${hostOf(job.canonical_url ?? job.source_url)} · ${relativeTime(job.created_at)}`.replace(/^ · /, '')
-              : relativeTime(job.created_at)}
-          </Text>
+          {locality ? (
+            <Text style={[typography.caption, styles.rowLocality]} numberOfLines={1}>{locality}</Text>
+          ) : null}
+          <View style={styles.rowDetail}>
+            <Text style={[typography.caption, styles.rowSubtitle]} numberOfLines={1}>{subtitle}</Text>
+            <Text style={[typography.caption, styles.rowMeta]} numberOfLines={1}>
+              {shouldShowHost(job)
+                ? `${hostOf(job.canonical_url ?? job.source_url)} · ${relativeTime(job.created_at)}`.replace(/^ · /, '')
+                : relativeTime(job.created_at)}
+            </Text>
+          </View>
         </View>
         {busy ? (
           <ActivityIndicator color={colors.primary} />
@@ -277,15 +284,12 @@ function ShareJobsQueueScreen() {
     );
   }
 
-  function renderSection(title: string, sectionJobs: ShareJob[], showCount = false) {
+  function renderSection(title: string, sectionJobs: ShareJob[]) {
     if (sectionJobs.length === 0) return null;
     return (
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={[typography.label, styles.sectionTitle]}>{title}</Text>
-          {showCount ? (
-            <Text style={[typography.caption, styles.sectionCount]}>{sectionJobs.length}</Text>
-          ) : null}
         </View>
         <View style={styles.card}>
           {sectionJobs.map((job, i) => (
@@ -302,7 +306,7 @@ function ShareJobsQueueScreen() {
   // The header is rendered in EVERY state so the back control is always
   // available — even while auth restores, when the flag is off, or when empty.
   const header = (
-    <ShareJobsHeader title="Share queue" onBack={goBack} backLabel="Back to map" />
+    <ShareJobsHeader title="Your queue" onBack={goBack} backLabel="Back to map" />
   );
 
   if (!enabled) {
@@ -315,10 +319,8 @@ function ShareJobsQueueScreen() {
           </View>
         ) : (
           <View style={styles.stateWrap}>
-            <EmptyState
-              title="Share queue is off"
-              body="Shared links open directly for now."
-            />
+            <Text style={[typography.heading, styles.emptyTitle]}>Sharing is unavailable</Text>
+            <Text style={[typography.body, styles.emptyBody]}>Shared links open directly for now.</Text>
           </View>
         )}
       </Screen>
@@ -330,6 +332,7 @@ function ShareJobsQueueScreen() {
       {header}
       <ScrollView
         contentContainerStyle={styles.content}
+        contentInsetAdjustmentBehavior="automatic"
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.primary} />
         }
@@ -340,16 +343,18 @@ function ShareJobsQueueScreen() {
             <ActivityIndicator color={colors.primary} />
           </View>
         ) : empty ? (
-          <View style={styles.stateWrap}>
-            <EmptyState
-              title="Your queue is clear"
-              body="Places you share to Nearr will appear here while they're being processed."
-            />
+          <View style={styles.emptyState}>
+            <View style={styles.emptyIcon}><Feather name="check" size={24} color={colors.primary} /></View>
+            <Text style={[typography.heading, styles.emptyTitle]}>{PHASE_1_COPY.emptyTitle}</Text>
+            <Text style={[typography.body, styles.emptyBody]}>{PHASE_1_COPY.emptyBody}</Text>
           </View>
         ) : (
           <>
-            {renderSection(actionableSectionHeading(count), actionable)}
-            {renderSection('Still finding these', processing)}
+            {actionable.length > 0 ? (
+              <Text style={[typography.body, styles.intro]}>{queueIntro(count)}</Text>
+            ) : null}
+            {renderSection('Ready for you', actionable)}
+            {renderSection(`Working on ${processing.length} ${processing.length === 1 ? 'place' : 'places'}`, processing)}
           </>
         )}
       </ScrollView>
@@ -359,18 +364,18 @@ function ShareJobsQueueScreen() {
 
 function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
   return StyleSheet.create({
-    content: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.sm, paddingBottom: Spacing.xl },
+    content: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.sm, paddingBottom: Spacing.xxl },
     loadingWrap: { paddingTop: Spacing.xl * 2, alignItems: 'center' },
     stateWrap: { paddingTop: Spacing.xl, paddingHorizontal: Spacing.lg },
-    section: { marginBottom: Spacing.lg },
+    intro: { color: colors.textSecondary, lineHeight: 22, marginBottom: Spacing.xl },
+    section: { marginBottom: Spacing.xl },
     sectionHeader: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
       marginBottom: Spacing.sm,
     },
-    sectionTitle: { color: colors.textSecondary },
-    sectionCount: { color: colors.textMuted },
+    sectionTitle: { color: colors.text, fontWeight: '700' },
     countBadge: {
       minWidth: 22,
       height: 22,
@@ -392,9 +397,9 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       flexDirection: 'row',
       alignItems: 'center',
       gap: Spacing.md,
-      minHeight: 76,
-      paddingVertical: Spacing.md + 2,
-      paddingHorizontal: Spacing.md,
+      minHeight: 92,
+      paddingVertical: Spacing.lg,
+      paddingHorizontal: Spacing.lg,
     },
     rowPressed: { backgroundColor: colors.surfaceElevated },
     separator: {
@@ -412,10 +417,26 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       alignItems: 'center',
       justifyContent: 'center',
     },
-    rowMain: { flex: 1, marginRight: Spacing.sm },
+    rowMain: { flex: 1, minWidth: 0, marginRight: Spacing.xs },
     rowTitle: { color: colors.text },
-    rowSubtitle: { color: colors.textSecondary, marginTop: 2 },
-    rowMeta: { color: colors.textMuted, marginTop: 2 },
+    rowLocality: { color: colors.textSecondary, marginTop: 2 },
+    rowDetail: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginTop: 5 },
+    rowSubtitle: { color: colors.textSecondary, flexShrink: 1 },
+    rowMeta: { color: colors.textMuted, marginLeft: 'auto' },
+    emptyState: { alignItems: 'center', paddingHorizontal: Spacing.xl, paddingTop: 72 },
+    emptyIcon: {
+      width: 52,
+      height: 52,
+      borderRadius: 18,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.surface,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.border,
+      marginBottom: Spacing.lg,
+    },
+    emptyTitle: { color: colors.text, textAlign: 'center' },
+    emptyBody: { color: colors.textSecondary, textAlign: 'center', lineHeight: 22, marginTop: Spacing.sm },
   });
 }
 

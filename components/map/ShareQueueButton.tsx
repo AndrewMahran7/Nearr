@@ -32,9 +32,9 @@ export function ShareQueueButton() {
       accessibilityLabel={
         needsHelp > 0 ? `Share queue, ${needsHelp} need your help` : 'Share queue'
       }
-      hitSlop={8}
+      hitSlop={6}
     >
-      <Feather name="inbox" size={15} color={colors.text} />
+      <Feather name="inbox" size={17} color={colors.text} />
       <Text style={[typography.caption, styles.label]}>Queue</Text>
       {needsHelp > 0 ? (
         <View style={styles.badge}>
@@ -53,8 +53,8 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       gap: 6,
       alignSelf: 'flex-start',
       marginTop: Spacing.sm,
-      paddingVertical: Spacing.xs,
-      paddingHorizontal: Spacing.md,
+      minHeight: 44,
+      paddingHorizontal: Spacing.md + 2,
       borderRadius: Radius.pill,
       backgroundColor: colors.surfaceElevated,
       borderWidth: StyleSheet.hairlineWidth,
@@ -65,7 +65,7 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       shadowOffset: { width: 0, height: 2 },
       elevation: 2,
     },
-    pressed: { opacity: 0.85 },
+    pressed: { opacity: 0.78, transform: [{ scale: 0.98 }] },
     label: { color: colors.text, fontWeight: '600' },
     badge: {
       minWidth: 18,

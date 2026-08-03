@@ -139,17 +139,17 @@ class AppErrorBoundary extends Component<
     if (this.state.hasError) {
       return (
         <View style={errorStyles.container}>
-          <Text style={errorStyles.title}>Something went wrong</Text>
+          <Text style={errorStyles.title}>Nearr hit a snag</Text>
           <Text style={errorStyles.body}>
-            The app hit an unexpected error. You can head back to your map and keep going.
+            Your saved places are safe. Head back to your map and try again.
           </Text>
           <Pressable
             style={errorStyles.primaryButton}
             onPress={this.handleReturnToMap}
             accessibilityRole="button"
-            accessibilityLabel="Return to map"
+            accessibilityLabel="Back to map"
           >
-            <Text style={errorStyles.primaryButtonText}>Return to map</Text>
+            <Text style={errorStyles.primaryButtonText}>Back to map</Text>
           </Pressable>
           <Pressable
             style={errorStyles.secondaryButton}

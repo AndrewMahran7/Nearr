@@ -1,0 +1,48 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
+const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
+const extension = read('ShareExtension.tsx');
+const queue = read('app/share-jobs/index.tsx');
+const detail = read('app/share-jobs/[jobId].tsx');
+const error = read('app/_layout.tsx');
+const mapEntry = read('components/map/ShareQueueButton.tsx');
+
+assert.match(extension, /SHARE_EXTENSION_SUCCESS_LAYOUT\.primaryHeight/);
+assert.match(extension, />View queue</);
+assert.match(extension, />Done</);
+assert.doesNotMatch(extension.slice(extension.indexOf("ui.kind === 'accepted'"), extension.indexOf("ui.kind === 'needs_setup'")), /ScrollView/);
+assert.match(extension, /openHostApp\(SHARE_JOBS_DEEPLINK_PATH\)/);
+assert.match(extension, /hostOpenedRef\.current/, 'View queue is once-latched');
+assert.match(extension, /SafeAreaView style=\{asyncStyles\.sheet\}/);
+
+assert.match(queue, /title="Your queue"/);
+assert.equal((queue.match(/queueIntro\(count\)/g) ?? []).length, 1, 'queue count appears once');
+assert.match(queue, /splitPlaceAddress/);
+assert.match(queue, /Ready for you/);
+assert.match(queue, /Working on/);
+assert.match(queue, /PHASE_1_COPY\.emptyTitle/);
+assert.match(queue, /numberOfLines=\{2\}[\s\S]*?jobTitle/);
+
+assert.match(detail, /PHASE_1_COPY\.suggestedHeading/);
+assert.match(detail, /PHASE_1_COPY\.alreadySavedHeading/);
+assert.match(detail, /PHASE_1_COPY\.viewOnMap/);
+assert.match(detail, /useState\(false\)/, 'alternative search starts collapsed');
+assert.match(detail, /PHASE_1_COPY\.alternativeAction/);
+assert.match(detail, /LayoutAnimation\.Presets\.easeInEaseOut/);
+assert.match(detail, /automaticallyAdjustKeyboardInsets/);
+assert.match(detail, /View original post/);
+assert.match(detail, /PHASE_1_COPY\.removeMessage/);
+assert.match(detail, /numberOfLines=\{2\}[\s\S]*?single\?\.name/);
+const completedBranch = detail.slice(detail.indexOf("detailMode === 'completed'"), detail.indexOf("detailMode === 'dismissed'"));
+assert.doesNotMatch(completedBranch, /renderJobFooter|Remove this save/, 'terminal saved state has no removal action');
+
+assert.match(error, /Nearr hit a snag/);
+assert.match(error, /Your saved places are safe/);
+assert.match(error, /Diagnostic copied/);
+assert.match(error, /Copy diagnostic/);
+assert.match(mapEntry, /needsHelp > 0 \?/);
+assert.match(mapEntry, /minHeight: 44/);
+
+console.log('PASS Phase 1 render contracts');
