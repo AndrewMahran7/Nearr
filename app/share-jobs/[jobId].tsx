@@ -39,6 +39,7 @@ import { usePlacesSearch } from '@/hooks/usePlacesSearch';
 import { getSavedPlacesCacheSnapshot, upsertSavedPlaceIntoCache } from '@/hooks/useSavedPlaces';
 import { recordBreadcrumb } from '@/lib/breadcrumbs';
 import { setCurrentShareJobId } from '@/lib/diagnosticContext';
+import { createOnceLatch } from '@/lib/onceLatch';
 import { saveSavedPlace } from '@/services/savedPlacesService';
 import type { PlaceCandidate } from '@/services/placesService';
 import {
@@ -112,6 +113,23 @@ function ShareJobDetailScreen() {
   // Inline, non-blocking notice if the original post can no longer be opened.
   const [openMsg, setOpenMsg] = useState<string | null>(null);
   const seededQueryRef = useRef(false);
+  // SYNCHRONOUS re-entrancy guard for the terminal save+resolve+navigate. The
+  // `busy` state above drives the UI spinner, but state updates are async: two
+  // taps fired in the same tick both read `busy === false` and would each run a
+  // full save + navigation. This ref flips synchronously so the second tap is
+  // dropped immediately. Also guarantees "navigate exactly once".
+  const resolvingRef = useRef(false);
+  const navigateOnceRef = useRef(createOnceLatch());
+  // Ignore async completions (setState / navigation) after the screen unmounts
+  // — a realtime/poll update or a late save response must never touch an
+  // unmounted tree or fire a second navigation.
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   const { results, loading: searching, search } = usePlacesSearch();
 
@@ -119,6 +137,7 @@ function ShareJobDetailScreen() {
     if (!jobId) return;
     try {
       const j = await getShareJob(jobId);
+      if (!mountedRef.current) return;
       setJob(j);
       if (j) {
         recordBreadcrumb('candidate_loaded', {
@@ -133,7 +152,7 @@ function ShareJobDetailScreen() {
     } catch {
       // leave prior job
     } finally {
-      setLoading(false);
+      if (mountedRef.current) setLoading(false);
     }
   }, [jobId]);
 
@@ -212,42 +231,47 @@ function ShareJobDetailScreen() {
   }
 
   async function handleSaveStored(candidate: ShareJobCandidate) {
-    if (!job || busy) return;
+    if (!job || resolvingRef.current) return;
     if (!candidate.googlePlaceId || !hasCoords(candidate)) {
       Alert.alert('Search for it', 'Use the search below to pick the exact place.');
       return;
     }
-    setBusy(true);
+    resolvingRef.current = true;
+    if (mountedRef.current) setBusy(true);
     try {
       const { savedPlaceId, duplicate } = await persistCandidate(toPlaceCandidate(candidate));
       await resolveJobWith(job.id, savedPlaceId, duplicate);
     } catch (err) {
       Alert.alert('Could not save', err instanceof Error ? err.message : 'Please try again.');
     } finally {
-      setBusy(false);
+      resolvingRef.current = false;
+      if (mountedRef.current) setBusy(false);
     }
   }
 
   async function handleSaveManual(candidate: PlaceCandidate) {
-    if (!job || busy) return;
-    setBusy(true);
+    if (!job || resolvingRef.current) return;
+    resolvingRef.current = true;
+    if (mountedRef.current) setBusy(true);
     try {
       const { savedPlaceId, duplicate } = await persistCandidate(candidate);
       await resolveJobWith(job.id, savedPlaceId, duplicate);
     } catch (err) {
       Alert.alert('Could not save', err instanceof Error ? err.message : 'Please try again.');
     } finally {
-      setBusy(false);
+      resolvingRef.current = false;
+      if (mountedRef.current) setBusy(false);
     }
   }
 
   async function handleSaveSelected() {
-    if (!job || busy) return;
+    if (!job || resolvingRef.current) return;
     const chosen = candidates.filter(
       (c) => c.googlePlaceId && selectedIds.has(c.googlePlaceId) && hasCoords(c),
     );
     if (chosen.length === 0) return;
-    setBusy(true);
+    resolvingRef.current = true;
+    if (mountedRef.current) setBusy(true);
     try {
       let firstSavedId: string | null = null;
       let anyDuplicate = false;
@@ -260,7 +284,8 @@ function ShareJobDetailScreen() {
     } catch (err) {
       Alert.alert('Could not save', err instanceof Error ? err.message : 'Please try again.');
     } finally {
-      setBusy(false);
+      resolvingRef.current = false;
+      if (mountedRef.current) setBusy(false);
     }
   }
 
@@ -320,6 +345,11 @@ function ShareJobDetailScreen() {
   }
 
   function goToMap(savedPlaceId: string | null) {
+    // Navigate exactly once. A double-tap, a late realtime/poll update, or a
+    // retried save must never fire a second router.replace (which can leave a
+    // half-torn screen stack behind the map and surface as an intermittent
+    // crash on return).
+    if (!navigateOnceRef.current.acquire()) return;
     if (savedPlaceId) {
       router.replace({ pathname: '/(tabs)/map', params: { savedPlaceId } });
     } else {
@@ -331,6 +361,8 @@ function ShareJobDetailScreen() {
   // existing saved place (no duplicate save) and open it. Resolving failures
   // are non-fatal — we still show the place.
   async function viewAlreadySaved(savedPlaceId: string) {
+    if (resolvingRef.current) return;
+    resolvingRef.current = true;
     if (job) {
       try {
         await markShareJobResolved(job.id, savedPlaceId);
