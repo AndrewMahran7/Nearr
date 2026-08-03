@@ -37,7 +37,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 import { close, openHostApp, type InitialProps } from 'expo-share-extension';
 
 import { sharedAuth } from './lib/sharedAuth';
@@ -485,12 +485,35 @@ type AsyncUi =
  * (Instagram stays visible behind it where the OS supports it), so the sheet
  * never fills the whole display or leaves a giant empty region.
  */
-function AsyncSheet({ children }: { children: React.ReactNode }) {
+function AsyncSheet({
+  children,
+  onClose,
+}: {
+  children: React.ReactNode;
+  onClose: () => void;
+}) {
   return (
     <View style={asyncStyles.backdrop}>
-      <SafeAreaView style={asyncStyles.sheet}>{children}</SafeAreaView>
+      <SafeAreaView style={asyncStyles.sheet}>
+        <View style={asyncStyles.dragIndicator} />
+        <Pressable
+          onPress={onClose}
+          style={({ pressed }) => [asyncStyles.closeBtn, pressed ? asyncStyles.closeBtnPressed : null]}
+          accessibilityRole="button"
+          accessibilityLabel="Close"
+          hitSlop={8}
+        >
+          <Text style={asyncStyles.closeIcon}>×</Text>
+        </Pressable>
+        {children}
+      </SafeAreaView>
     </View>
   );
+}
+
+function SharedPreview({ uri }: { uri?: string | null }) {
+  if (!uri) return null;
+  return <Image source={{ uri }} style={asyncStyles.previewImage} resizeMode="cover" />;
 }
 
 function AsyncShareExtension(props: InitialProps) {
@@ -502,6 +525,7 @@ function AsyncShareExtension(props: InitialProps) {
   const hostOpenedRef = useRef(false);
   const [ui, setUi] = useState<AsyncUi>({ kind: 'submitting' });
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sharedImageUri = props.images?.find((value) => !!value) ?? null;
 
   const submit = async () => {
     const url = pickSharedUrl(props);
@@ -612,34 +636,36 @@ function AsyncShareExtension(props: InitialProps) {
 
   if (ui.kind === 'accepted') {
     return (
-      <AsyncSheet>
+      <AsyncSheet onClose={close}>
+        <SharedPreview uri={sharedImageUri} />
         <View style={asyncStyles.brandDot}>
           <Text style={asyncStyles.check}>✓</Text>
         </View>
-        <Text style={asyncStyles.title}>Added to your queue</Text>
-        <Text style={asyncStyles.subtle}>{"I’ll let you know when it’s ready."}</Text>
+        <Text style={asyncStyles.title}>Sent to Nearr</Text>
+        <Text style={asyncStyles.subtle}>{"We’ll let you know if this place needs a quick check."}</Text>
         <Pressable
           style={asyncStyles.primaryBtn}
-          onPress={openHostQueue}
+          onPress={close}
           accessibilityRole="button"
-          accessibilityLabel="View queue in Nearr"
+          accessibilityLabel="Done"
         >
-          <Text style={asyncStyles.primaryText}>View queue</Text>
+          <Text style={asyncStyles.primaryText}>Done</Text>
         </Pressable>
         <Pressable
           style={asyncStyles.secondaryBtn}
-          onPress={() => close()}
+          onPress={openHostQueue}
           accessibilityRole="button"
-          accessibilityLabel="Done, return to Instagram"
+          accessibilityLabel="Open Nearr"
         >
-          <Text style={asyncStyles.secondaryText}>Done</Text>
+          <Text style={asyncStyles.secondaryText}>Open Nearr</Text>
         </Pressable>
       </AsyncSheet>
     );
   }
   if (ui.kind === 'needs_setup') {
     return (
-      <AsyncSheet>
+      <AsyncSheet onClose={close}>
+        <SharedPreview uri={sharedImageUri} />
         <Text style={asyncStyles.title}>Open Nearr once to finish setup</Text>
         <Text style={asyncStyles.subtle}>
           {'Open Nearr once so it can connect sharing. After that, sharing works without opening the app.'}
@@ -657,7 +683,8 @@ function AsyncShareExtension(props: InitialProps) {
   }
   if (ui.kind === 'signed_out') {
     return (
-      <AsyncSheet>
+      <AsyncSheet onClose={close}>
+        <SharedPreview uri={sharedImageUri} />
         <Text style={asyncStyles.title}>Open Nearr to sign in</Text>
         <Text style={asyncStyles.subtle}>{'Sign in once so Nearr can save places you share.'}</Text>
         <Pressable
@@ -673,7 +700,8 @@ function AsyncShareExtension(props: InitialProps) {
   }
   if (ui.kind === 'session_expired') {
     return (
-      <AsyncSheet>
+      <AsyncSheet onClose={close}>
+        <SharedPreview uri={sharedImageUri} />
         <Text style={asyncStyles.title}>Open Nearr to finish saving</Text>
         <Text style={asyncStyles.subtle}>
           {'Your session needs a refresh. Open Nearr and we\u2019ll save this post.'}
@@ -691,7 +719,8 @@ function AsyncShareExtension(props: InitialProps) {
   }
   if (ui.kind === 'network_failure') {
     return (
-      <AsyncSheet>
+      <AsyncSheet onClose={close}>
+        <SharedPreview uri={sharedImageUri} />
         <Text style={asyncStyles.title}>{"Couldn't reach Nearr"}</Text>
         <Text style={asyncStyles.subtle}>{'Check your connection and try again.'}</Text>
         <Pressable
@@ -714,7 +743,8 @@ function AsyncShareExtension(props: InitialProps) {
     );
   }
   return (
-    <AsyncSheet>
+    <AsyncSheet onClose={close}>
+      <SharedPreview uri={sharedImageUri} />
       <ActivityIndicator color={NEARR_ORANGE} />
       <Text style={asyncStyles.title}>Saving to Nearr</Text>
       <Text style={asyncStyles.subtle}>{'Finding the place from this post…'}</Text>
@@ -830,9 +860,42 @@ const asyncStyles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderColor: NEARR_BORDER,
     paddingHorizontal: SHARE_EXTENSION_SUCCESS_LAYOUT.horizontalPadding,
-    paddingTop: SHARE_EXTENSION_SUCCESS_LAYOUT.topPadding,
+    paddingTop: SHARE_EXTENSION_SUCCESS_LAYOUT.topPadding + 14,
     paddingBottom: 28,
     alignItems: 'center',
+  },
+  dragIndicator: {
+    position: 'absolute',
+    top: 8,
+    width: 38,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#52525B',
+  },
+  closeBtn: {
+    position: 'absolute',
+    top: 14,
+    right: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#2A2A30',
+  },
+  closeBtnPressed: { opacity: 0.7 },
+  closeIcon: {
+    color: '#FFFFFF',
+    fontSize: 24,
+    lineHeight: 27,
+    fontWeight: '400',
+  },
+  previewImage: {
+    width: 104,
+    height: 104,
+    borderRadius: 16,
+    marginBottom: 14,
+    backgroundColor: '#2A2A30',
   },
   brandDot: {
     width: SHARE_EXTENSION_SUCCESS_LAYOUT.iconSize,

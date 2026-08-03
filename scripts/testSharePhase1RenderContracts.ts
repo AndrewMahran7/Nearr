@@ -8,14 +8,23 @@ const queue = read('app/share-jobs/index.tsx');
 const detail = read('app/share-jobs/[jobId].tsx');
 const error = read('app/_layout.tsx');
 const mapEntry = read('components/map/ShareQueueButton.tsx');
+const placeImage = read('components/PlaceImage.tsx');
+const shareJobsSheet = read('components/ShareJobsSheet.tsx');
 
 assert.match(extension, /SHARE_EXTENSION_SUCCESS_LAYOUT\.primaryHeight/);
-assert.match(extension, />View queue</);
+assert.match(extension, /Sent to Nearr/);
 assert.match(extension, />Done</);
+assert.match(extension, />Open Nearr</);
+assert.ok(
+	extension.indexOf('<Text style={asyncStyles.primaryText}>Done</Text>') <
+		extension.indexOf('<Text style={asyncStyles.secondaryText}>Open Nearr</Text>'),
+	'Done is the primary accepted-state action',
+);
+assert.match(extension, /SharedPreview uri=\{sharedImageUri\}/);
 assert.doesNotMatch(extension.slice(extension.indexOf("ui.kind === 'accepted'"), extension.indexOf("ui.kind === 'needs_setup'")), /ScrollView/);
 assert.match(extension, /openHostApp\(SHARE_JOBS_DEEPLINK_PATH\)/);
-assert.match(extension, /hostOpenedRef\.current/, 'View queue is once-latched');
-assert.match(extension, /SafeAreaView style=\{asyncStyles\.sheet\}/);
+assert.match(extension, /hostOpenedRef\.current/, 'Open Nearr is once-latched');
+assert.match(extension, /<AsyncSheet onClose=\{close\}>/);
 
 assert.match(queue, /title="Your queue"/);
 assert.equal((queue.match(/queueIntro\(count\)/g) ?? []).length, 1, 'queue count appears once');
@@ -24,6 +33,9 @@ assert.match(queue, /Ready for you/);
 assert.match(queue, /Working on/);
 assert.match(queue, /PHASE_1_COPY\.emptyTitle/);
 assert.match(queue, /numberOfLines=\{2\}[\s\S]*?jobTitle/);
+assert.match(queue, /<PlaceImage/);
+assert.match(queue, /size=\{empty \? 'compact' : 'queue'\}/);
+assert.match(queue, /icon="close"/);
 
 assert.match(detail, /PHASE_1_COPY\.suggestedHeading/);
 assert.match(detail, /PHASE_1_COPY\.alreadySavedHeading/);
@@ -35,6 +47,8 @@ assert.match(detail, /automaticallyAdjustKeyboardInsets/);
 assert.match(detail, /View original post/);
 assert.match(detail, /PHASE_1_COPY\.removeMessage/);
 assert.match(detail, /numberOfLines=\{2\}[\s\S]*?single\?\.name/);
+assert.match(detail, /<PlaceImage/);
+assert.match(detail, /<ShareJobsSheet onDismiss=\{backToQueue\} size="detail">/);
 const completedBranch = detail.slice(detail.indexOf("detailMode === 'completed'"), detail.indexOf("detailMode === 'dismissed'"));
 assert.doesNotMatch(completedBranch, /renderJobFooter|Remove this save/, 'terminal saved state has no removal action');
 
@@ -44,5 +58,14 @@ assert.match(error, /Diagnostic copied/);
 assert.match(error, /Copy diagnostic/);
 assert.match(mapEntry, /needsHelp > 0 \?/);
 assert.match(mapEntry, /minHeight: 44/);
+assert.match(error, /presentation: 'transparentModal'/);
+assert.match(error, /contentStyle: \{ backgroundColor: 'transparent' \}/);
+assert.match(placeImage, /getCachedPlaceRichDetails/);
+assert.match(placeImage, /selectPlaceImageUri/);
+assert.match(placeImage, /accessibilityLabel/);
+assert.match(shareJobsSheet, /dragIndicator/);
+assert.match(shareJobsSheet, /height: '46%'/);
+assert.match(shareJobsSheet, /height: '76%'/);
+assert.match(shareJobsSheet, /height: '92%'/);
 
 console.log('PASS Phase 1 render contracts');

@@ -114,7 +114,11 @@ import {
 import { trackEvent } from '@/lib/analytics';
 import { recordBreadcrumb } from '@/lib/breadcrumbs';
 import { setLocationWatcherState } from '@/lib/diagnosticContext';
-import { findSavedPlaceForOpen, isOpenExistingPlaceSource } from '@/lib/openSavedPlace';
+import {
+  findSavedPlaceForOpen,
+  isOpenExistingPlaceSource,
+  openSavedPlaceMessage,
+} from '@/lib/openSavedPlace';
 import { isAsyncShareJobsEnabled } from '@/lib/featureFlags';
 import { isLikelyUrl } from '@/lib/shareParser';
 import { distanceMeters, milesToMeters, minutesToMeters } from '@/lib/geo';
@@ -972,6 +976,10 @@ export default function MapScreen() {
     didFitRef.current = true;
     try {
       selectPlace(target);
+      const successMessage = openSavedPlaceMessage(placeSource);
+      if (successMessage) {
+        setSnackbar({ message: successMessage, undoId: null });
+      }
     } catch (err) {
       console.warn('[map] focus failed', (err as Error)?.message ?? err);
     }

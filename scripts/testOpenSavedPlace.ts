@@ -20,6 +20,7 @@ import { routeShareJobNotification } from '../lib/shareJobRouting';
 import {
   findSavedPlaceForOpen,
   isOpenExistingPlaceSource,
+  openSavedPlaceMessage,
   resolveOpenSavedPlaceRoute,
   validId,
 } from '../lib/openSavedPlace';
@@ -86,6 +87,9 @@ check('share_job_already_saved is an open-existing source', isOpenExistingPlaceS
 check('notification is an open-existing source', isOpenExistingPlaceSource('notification'));
 check('reminder-ish source is NOT', !isOpenExistingPlaceSource('nearby'));
 check('undefined source is NOT', !isOpenExistingPlaceSource(undefined));
+check('already-saved source gets completion feedback', openSavedPlaceMessage('share_job_already_saved') === 'Already on your map');
+check('new share save gets completion feedback', openSavedPlaceMessage('share_job_saved') === 'Saved to your map');
+check('notification does not show duplicate feedback', openSavedPlaceMessage('notification') === null);
 
 // --- DECISIVE end-to-end: already-saved notification opens the place --------
 function openFromAlreadySavedNotification(

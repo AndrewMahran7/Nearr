@@ -76,6 +76,14 @@ export function isOpenExistingPlaceSource(source: string | null | undefined): bo
   );
 }
 
+export function openSavedPlaceMessage(source: string | null | undefined): string | null {
+  if (source === 'share_job_already_saved') return 'Already on your map';
+  if (source === 'share_job_saved' || source === 'share_job_completed') {
+    return 'Saved to your map';
+  }
+  return null;
+}
+
 /** Minimal shape the map needs to resolve a saved place for opening. */
 type ResolvableSavedPlace = {
   id: string;

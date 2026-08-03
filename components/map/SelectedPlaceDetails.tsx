@@ -46,42 +46,11 @@ import {
   restoreSavedPlacesCache,
   updateSavedPlacesCache,
 } from '@/hooks/useSavedPlaces';
-import { getPlaceRichDetails, type PlaceRichDetails } from '@/services/placesService';
+import { getCachedPlaceRichDetails } from '@/lib/placeRichDetailsCache';
+import type { PlaceRichDetails } from '@/services/placesService';
 import type { Profile, RadiusUnit, SavedPlaceWithPlace } from '@/types';
 
-const richDetailsCache = new Map<string, PlaceRichDetails | null>();
-const richDetailsInFlight = new Map<string, Promise<PlaceRichDetails | null>>();
 const GALLERY_CARD_GAP = 18;
-
-async function fetchRichDetailsCached(
-  googlePlaceId: string,
-): Promise<PlaceRichDetails | null> {
-  const cached = richDetailsCache.get(googlePlaceId);
-  if (cached !== undefined) return cached;
-
-  const inflight = richDetailsInFlight.get(googlePlaceId);
-  if (inflight) return inflight;
-
-  const promise = getPlaceRichDetails(googlePlaceId, { maxPhotos: 5, maxPhotoWidth: 1000 })
-    .then((details) => {
-      richDetailsCache.set(googlePlaceId, details);
-      return details;
-    })
-    .catch((err) => {
-      console.debug('[map] rich details unavailable', {
-        googlePlaceId,
-        message: err instanceof Error ? err.message : String(err),
-      });
-      richDetailsCache.set(googlePlaceId, null);
-      return null;
-    })
-    .finally(() => {
-      richDetailsInFlight.delete(googlePlaceId);
-    });
-
-  richDetailsInFlight.set(googlePlaceId, promise);
-  return promise;
-}
 
 type RadiusMode = 'default' | 'miles' | 'minutes';
 
@@ -226,7 +195,7 @@ export function SelectedPlaceDetails({
     }
 
     setDetailsLoading(true);
-    void fetchRichDetailsCached(googlePlaceId)
+    void getCachedPlaceRichDetails(googlePlaceId)
       .then((details) => {
         if (!canceled) setRichDetails(details);
       })

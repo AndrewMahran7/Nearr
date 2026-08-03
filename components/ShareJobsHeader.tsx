@@ -22,11 +22,18 @@ type Props = {
   onBack: () => void;
   /** Accessibility label for the back control (e.g. "Back to map"). */
   backLabel?: string;
+  icon?: 'back' | 'close';
   /** Optional small actionable-count badge shown on the right. */
   count?: number;
 };
 
-export function ShareJobsHeader({ title, onBack, backLabel = 'Back', count }: Props) {
+export function ShareJobsHeader({
+  title,
+  onBack,
+  backLabel = 'Back',
+  icon = 'back',
+  count,
+}: Props) {
   const { colors, typography } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const showBadge = typeof count === 'number' && count > 0;
@@ -40,7 +47,7 @@ export function ShareJobsHeader({ title, onBack, backLabel = 'Back', count }: Pr
         accessibilityLabel={backLabel}
         hitSlop={8}
       >
-        <Feather name="chevron-left" size={24} color={colors.text} />
+        <Feather name={icon === 'close' ? 'x' : 'chevron-left'} size={24} color={colors.text} />
       </Pressable>
       <Text style={[typography.title, styles.title]} numberOfLines={1}>
         {title}

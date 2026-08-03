@@ -799,11 +799,23 @@ function RootLayoutContent() {
               />
               <Stack.Screen
                 name="share-jobs/index"
-                options={{ headerShown: false, title: 'Share queue' }}
+                options={{
+                  headerShown: false,
+                  title: 'Share queue',
+                  presentation: 'transparentModal',
+                  animation: 'slide_from_bottom',
+                  contentStyle: { backgroundColor: 'transparent' },
+                }}
               />
               <Stack.Screen
                 name="share-jobs/[jobId]"
-                options={{ headerShown: false, title: 'Finish saving' }}
+                options={{
+                  headerShown: false,
+                  title: 'Finish saving',
+                  presentation: 'transparentModal',
+                  animation: 'slide_from_bottom',
+                  contentStyle: { backgroundColor: 'transparent' },
+                }}
               />
               <Stack.Screen name="legal/terms" options={{ headerShown: true, title: 'Terms of Service' }} />
               <Stack.Screen name="legal/privacy" options={{ headerShown: true, title: 'Privacy Policy' }} />

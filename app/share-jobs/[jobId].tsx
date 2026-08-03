@@ -25,7 +25,9 @@ import {
 import { Feather } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
-import { Button, ErrorBoundary, Input, Screen, ShareJobsHeader } from '@/components';
+import { Button, ErrorBoundary, Input, ShareJobsHeader } from '@/components';
+import { PlaceImage } from '@/components/PlaceImage';
+import { ShareJobsSheet } from '@/components/ShareJobsSheet';
 import { Radius, Spacing } from '@/constants';
 import { useTheme } from '@/lib/theme';
 import { trackEvent } from '@/lib/analytics';
@@ -556,9 +558,12 @@ function ShareJobDetailScreen() {
             accessibilityLabel={`Save ${c.name}`}
             style={({ pressed }) => [styles.candidate, pressed ? styles.candidatePressed : null]}
           >
-            <View style={styles.candidateIcon}>
-              <Feather name="map-pin" size={16} color={colors.accent} />
-            </View>
+            <PlaceImage
+              googlePlaceId={c.googlePlaceId}
+              size={52}
+              borderRadius={10}
+              accessibilityLabel={`Photo of ${c.name}`}
+            />
             <View style={styles.flex}>
               <Text style={[typography.bodyStrong, styles.candidateName]} numberOfLines={1}>
                 {c.name}
@@ -608,24 +613,24 @@ function ShareJobDetailScreen() {
 
   if (loading) {
     return (
-      <Screen padded={false}>
+      <ShareJobsSheet onDismiss={backToQueue} size="detail">
         <ShareJobsHeader title={PHASE_1_COPY.detailTitle} onBack={backToQueue} backLabel="Back to queue" />
         <View style={styles.centered}>
           <ActivityIndicator color={colors.primary} />
         </View>
-      </Screen>
+      </ShareJobsSheet>
     );
   }
 
   if (!job) {
     return (
-      <Screen padded={false}>
+      <ShareJobsSheet onDismiss={backToQueue} size="detail">
         <ShareJobsHeader title={PHASE_1_COPY.detailTitle} onBack={backToQueue} backLabel="Back to queue" />
         <View style={styles.centered}>
           <Text style={[typography.body, styles.help]}>This save is no longer available.</Text>
           <Button title="Back to queue" onPress={backToQueue} style={{ marginTop: Spacing.lg }} />
         </View>
-      </Screen>
+      </ShareJobsSheet>
     );
   }
 
@@ -638,7 +643,7 @@ function ShareJobDetailScreen() {
       (job.extraction_payload as { alreadySaved?: boolean } | null)?.alreadySaved === true;
     const name = (job.extraction_payload as { savedPlaceName?: string } | null)?.savedPlaceName;
     return (
-      <Screen padded={false}>
+      <ShareJobsSheet onDismiss={backToQueue} size="detail">
         <ShareJobsHeader title={PHASE_1_COPY.detailTitle} onBack={backToQueue} backLabel="Back to queue" />
         <View style={styles.centered}>
           <View style={styles.savedBadge}>
@@ -651,9 +656,12 @@ function ShareJobDetailScreen() {
             {alreadySaved ? PHASE_1_COPY.alreadySavedBody : 'This place is ready on your map.'}
           </Text>
           <View style={[styles.candidateCard, styles.completedCard]}>
-            <View style={styles.candidateCardIcon}>
-              <Feather name="map-pin" size={22} color={colors.accent} />
-            </View>
+            <PlaceImage
+              googlePlaceId={job.candidate_payload?.candidates?.[0]?.googlePlaceId}
+              size={72}
+              borderRadius={12}
+              accessibilityLabel={name ? `Photo of ${name}` : undefined}
+            />
             <Text style={[typography.heading, styles.completedPlaceName]} numberOfLines={2}>
               {name || 'Saved place'}
             </Text>
@@ -669,14 +677,14 @@ function ShareJobDetailScreen() {
             style={styles.centeredPrimary}
           />
         </View>
-      </Screen>
+      </ShareJobsSheet>
     );
   }
 
   // Terminal dismissed (cancelled / unknown terminal) — safe, control-free view.
   if (detailMode === 'dismissed') {
     return (
-      <Screen padded={false}>
+      <ShareJobsSheet onDismiss={backToQueue} size="detail">
         <ShareJobsHeader title={PHASE_1_COPY.detailTitle} onBack={backToQueue} backLabel="Back to queue" />
         <View style={styles.centered}>
           <Text style={[typography.body, styles.help]}>
@@ -684,7 +692,7 @@ function ShareJobDetailScreen() {
           </Text>
           <Button title="Back to queue" onPress={backToQueue} style={{ marginTop: Spacing.lg }} />
         </View>
-      </Screen>
+      </ShareJobsSheet>
     );
   }
 
@@ -712,7 +720,7 @@ function ShareJobDetailScreen() {
           : 'link';
 
   return (
-    <Screen padded={false}>
+    <ShareJobsSheet onDismiss={backToQueue} size="detail">
       <ShareJobsHeader title={PHASE_1_COPY.detailTitle} onBack={backToQueue} backLabel="Back to queue" />
       <ScrollView
         contentContainerStyle={styles.content}
@@ -810,9 +818,12 @@ function ShareJobDetailScreen() {
                             pressed ? styles.candidatePressed : null,
                           ]}
                         >
-                          <View style={styles.candidateIcon}>
-                            <Feather name={savedPlaceId ? 'check-circle' : 'map-pin'} size={16} color={colors.accent} />
-                          </View>
+                          <PlaceImage
+                            googlePlaceId={candidate.googlePlaceId}
+                            size={52}
+                            borderRadius={10}
+                            accessibilityLabel={`Photo of ${candidate.name}`}
+                          />
                           <View style={styles.flex}>
                             <Text style={[typography.bodyStrong, styles.candidateName]}>{candidate.name}</Text>
                             {candidate.formattedAddress ? (
@@ -848,6 +859,12 @@ function ShareJobDetailScreen() {
                       accessibilityState={{ checked }}
                       style={({ pressed }) => [styles.candidate, pressed ? styles.candidatePressed : null]}
                     >
+                      <PlaceImage
+                        googlePlaceId={candidate.googlePlaceId}
+                        size={52}
+                        borderRadius={10}
+                        accessibilityLabel={`Photo of ${candidate.name}`}
+                      />
                       <View style={styles.flex}>
                         <Text style={[typography.bodyStrong, styles.candidateName]}>{candidate.name}</Text>
                         {candidate.formattedAddress ? (
@@ -907,9 +924,12 @@ function ShareJobDetailScreen() {
                 : PHASE_1_COPY.suggestedBody}
             </Text>
             <View style={styles.candidateCard}>
-              <View style={styles.candidateCardIcon}>
-                <Feather name="map-pin" size={22} color={colors.accent} />
-              </View>
+              <PlaceImage
+                googlePlaceId={single?.googlePlaceId}
+                size={88}
+                borderRadius={12}
+                accessibilityLabel={single?.name ? `Photo of ${single.name}` : undefined}
+              />
               <View style={styles.flex}>
                 <Text style={[typography.heading, styles.candidateCardName]} numberOfLines={2}>
                   {single?.name ?? 'This place'}
@@ -961,7 +981,7 @@ function ShareJobDetailScreen() {
 
         {renderJobFooter()}
       </ScrollView>
-    </Screen>
+    </ShareJobsSheet>
   );
 }
 
@@ -1008,16 +1028,6 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       borderColor: colors.border,
       padding: Spacing.lg,
     },
-    candidateCardIcon: {
-      width: 48,
-      height: 48,
-      borderRadius: 14,
-      backgroundColor: colors.bg,
-      borderWidth: 1,
-      borderColor: colors.border,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
     candidateCardName: { color: colors.text },
     candidateCardLocality: { color: colors.textSecondary, marginTop: 5 },
     candidateCardAddr: { color: colors.textMuted, marginTop: 3, lineHeight: 18 },
@@ -1061,16 +1071,6 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
     },
     candidatePressed: { backgroundColor: colors.surfaceElevated },
     candidateSelected: { borderColor: colors.primary },
-    candidateIcon: {
-      width: 36,
-      height: 36,
-      borderRadius: 10,
-      backgroundColor: colors.bg,
-      borderWidth: 1,
-      borderColor: colors.border,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
     candidateName: { color: colors.text },
     candidateAddr: { color: colors.textMuted, marginTop: 2 },
     checkbox: {

@@ -21,7 +21,9 @@ import {
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
-import { ErrorBoundary, Screen, ShareJobsHeader } from '@/components';
+import { ErrorBoundary, ShareJobsHeader } from '@/components';
+import { PlaceImage } from '@/components/PlaceImage';
+import { ShareJobsSheet } from '@/components/ShareJobsSheet';
 import { Radius, Spacing } from '@/constants';
 import { useTheme } from '@/lib/theme';
 import { useShareJobs } from '@/hooks/useShareJobs';
@@ -248,9 +250,12 @@ function ShareJobsQueueScreen() {
         accessibilityRole="button"
         accessibilityLabel={`${jobTitle(job)}. ${subtitle}`}
       >
-        <View style={styles.iconTile}>
-          <Feather name={jobIcon(job)} size={18} color={colors.accent} />
-        </View>
+        <PlaceImage
+          googlePlaceId={firstCandidate?.googlePlaceId}
+          size={64}
+          borderRadius={12}
+          accessibilityLabel={firstCandidate?.name ? `Photo of ${firstCandidate.name}` : undefined}
+        />
         <View style={styles.rowMain}>
           <Text style={[typography.bodyStrong, styles.rowTitle]} numberOfLines={2}>
             {jobTitle(job)}
@@ -306,12 +311,12 @@ function ShareJobsQueueScreen() {
   // The header is rendered in EVERY state so the back control is always
   // available — even while auth restores, when the flag is off, or when empty.
   const header = (
-    <ShareJobsHeader title="Your queue" onBack={goBack} backLabel="Back to map" />
+    <ShareJobsHeader title="Your queue" onBack={goBack} backLabel="Close queue" icon="close" />
   );
 
   if (!enabled) {
     return (
-      <Screen padded={false}>
+      <ShareJobsSheet onDismiss={goBack} size="compact">
         {header}
         {authLoading ? (
           <View style={styles.loadingWrap}>
@@ -323,12 +328,12 @@ function ShareJobsQueueScreen() {
             <Text style={[typography.body, styles.emptyBody]}>Shared links open directly for now.</Text>
           </View>
         )}
-      </Screen>
+      </ShareJobsSheet>
     );
   }
 
   return (
-    <Screen padded={false}>
+    <ShareJobsSheet onDismiss={goBack} size={empty ? 'compact' : 'queue'}>
       {header}
       <ScrollView
         contentContainerStyle={styles.content}
@@ -358,7 +363,7 @@ function ShareJobsQueueScreen() {
           </>
         )}
       </ScrollView>
-    </Screen>
+    </ShareJobsSheet>
   );
 }
 
@@ -397,7 +402,7 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       flexDirection: 'row',
       alignItems: 'center',
       gap: Spacing.md,
-      minHeight: 92,
+      minHeight: 104,
       paddingVertical: Spacing.lg,
       paddingHorizontal: Spacing.lg,
     },
@@ -406,16 +411,6 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       height: StyleSheet.hairlineWidth,
       backgroundColor: colors.border,
       marginLeft: 40 + Spacing.md * 2,
-    },
-    iconTile: {
-      width: 40,
-      height: 40,
-      borderRadius: 12,
-      backgroundColor: colors.bg,
-      borderWidth: 1,
-      borderColor: colors.border,
-      alignItems: 'center',
-      justifyContent: 'center',
     },
     rowMain: { flex: 1, minWidth: 0, marginRight: Spacing.xs },
     rowTitle: { color: colors.text },
