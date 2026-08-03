@@ -22,6 +22,7 @@ import { isAsyncShareJobsEnabled } from '@/lib/featureFlags';
 import { isDemoMode } from '@/lib/demoMode';
 import { dedupeJobsById } from '@/lib/shareJobsDedupe';
 import { filterQueueVisible } from '@/lib/shareJobRouting';
+import { createShareJobsRealtimeSubscription } from '@/lib/shareJobsRealtime';
 import { listShareJobs, type ShareJob } from '@/services/shareJobsService';
 
 const ACTIVE_STATUSES: ShareJob['status'][] = ['queued', 'processing_metadata'];
@@ -141,20 +142,26 @@ export function useShareJobs() {
   // Realtime subscription (RLS-scoped to this user).
   useEffect(() => {
     if (!isScreenActive || !userId) return;
-    const channel = supabase
-      .channel(`share_jobs:${userId}`)
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'share_jobs', filter: `user_id=eq.${userId}` },
-        () => {
-          recordBreadcrumb('queue_realtime_event');
-          void load('background');
-        },
-      )
-      .subscribe();
-    return () => {
-      void supabase.removeChannel(channel);
-    };
+    return createShareJobsRealtimeSubscription({
+      client: supabase,
+      scope: 'share_jobs',
+      userId,
+      onInvalidate: () => {
+        recordBreadcrumb('queue_realtime_event');
+        void load('background');
+      },
+      onStatus: (status) => {
+        recordBreadcrumb('queue_realtime_event', { result: `queue_${status.toLowerCase()}` });
+      },
+      onError: (realtimeError) => {
+        recordBreadcrumb('queue_realtime_event', {
+          result: 'queue_subscription_failed',
+          errorName: realtimeError instanceof Error ? realtimeError.name : 'Error',
+          errorMessage:
+            realtimeError instanceof Error ? realtimeError.message : String(realtimeError),
+        });
+      },
+    });
   }, [isScreenActive, userId, load]);
 
   const sections = useMemo(() => sectionize(jobs), [jobs]);
@@ -194,9 +201,12 @@ export function useNeedsHelpCount(): number {
   const userId = session?.user.id ?? null;
   const enabled = isAsyncShareJobsEnabled() && !!userId && !isDevSession && !isDemoMode();
   const [count, setCount] = useState(0);
+  const activeUserRef = useRef(userId);
+  activeUserRef.current = userId;
 
   const load = useCallback(async () => {
-    if (!enabled) {
+    const requestedUserId = userId;
+    if (!enabled || !requestedUserId) {
       setCount(0);
       return;
     }
@@ -204,12 +214,23 @@ export function useNeedsHelpCount(): number {
       const { count: c } = await supabase
         .from('share_jobs')
         .select('id', { count: 'exact', head: true })
-        .eq('status', 'needs_help');
+        .eq('user_id', requestedUserId)
+        .in('status', ['needs_help', 'failed']);
+      if (activeUserRef.current !== requestedUserId) return;
       setCount(c ?? 0);
-    } catch {
-      // leave prior count
+    } catch (error) {
+      recordBreadcrumb('queue_realtime_event', {
+        result: 'badge_count_failed',
+        errorName: error instanceof Error ? error.name : 'Error',
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
     }
-  }, [enabled]);
+  }, [enabled, userId]);
+
+  useEffect(() => {
+    if (!enabled) setCount(0);
+    else void load();
+  }, [enabled, userId, load]);
 
   useFocusEffect(
     useCallback(() => {
@@ -218,18 +239,30 @@ export function useNeedsHelpCount(): number {
   );
 
   useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'active') void load();
+    });
+    return () => subscription.remove();
+  }, [load]);
+
+  useEffect(() => {
     if (!enabled || !userId) return;
-    const channel = supabase
-      .channel(`share_jobs_badge:${userId}`)
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'share_jobs', filter: `user_id=eq.${userId}` },
-        () => void load(),
-      )
-      .subscribe();
-    return () => {
-      void supabase.removeChannel(channel);
-    };
+    return createShareJobsRealtimeSubscription({
+      client: supabase,
+      scope: 'share_jobs_badge',
+      userId,
+      onInvalidate: () => void load(),
+      onStatus: (status) => {
+        recordBreadcrumb('queue_realtime_event', { result: `badge_${status.toLowerCase()}` });
+      },
+      onError: (error) => {
+        recordBreadcrumb('queue_realtime_event', {
+          result: 'badge_subscription_failed',
+          errorName: error instanceof Error ? error.name : 'Error',
+          errorMessage: error instanceof Error ? error.message : String(error),
+        });
+      },
+    });
   }, [enabled, userId, load]);
 
   return enabled ? count : 0;

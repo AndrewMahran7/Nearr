@@ -57,13 +57,13 @@ export function isTerminalHiddenStatus(status: string | null | undefined): boole
 }
 
 /**
- * The map/home badge counts ONLY jobs explicitly waiting for the user to make a
- * decision (needs_help). Per the visibility policy it never counts completed,
- * accepted, denied, cancelled, already-saved, or permanently-terminal failures,
- * so the badge and the queue's "Needs your help" section always agree.
+ * The map/home badge counts visible jobs that need a user action: a decision
+ * (needs_help) or a recoverable failure that can be resolved by manual search.
+ * Completed, accepted, denied, cancelled, already-saved, and processing jobs
+ * never count, so the badge and the queue's actionable section agree.
  */
 export function badgeCountsStatus(status: string | null | undefined): boolean {
-  return (status ?? '') === 'needs_help';
+  return status === 'needs_help' || status === 'failed';
 }
 
 /** Defensive client filter: drop any terminal/unknown job, keyed by nothing but

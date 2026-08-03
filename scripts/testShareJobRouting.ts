@@ -82,11 +82,14 @@ check('badge does NOT count completed', !badgeCountsStatus('completed'));
 check('badge does NOT count accepted (completed)', !badgeCountsStatus('completed'));
 check('badge does NOT count cancelled', !badgeCountsStatus('cancelled'));
 check('badge does NOT count processing', !badgeCountsStatus('processing_metadata'));
-check('badge does NOT count permanently-terminal failed', !badgeCountsStatus('failed'));
+check('badge counts recoverable failed jobs', badgeCountsStatus('failed'));
 {
   const badge = mixed.filter((j) => badgeCountsStatus(j.status)).length;
   const visibleNeedsHelp = filterQueueVisible(mixed).filter((j) => j.status === 'needs_help').length;
-  check('queue badge equals visible actionable jobs', badge === visibleNeedsHelp && badge === 1);
+  const visibleActionable = filterQueueVisible(mixed).filter(
+    (j) => j.status === 'needs_help' || j.status === 'failed',
+  ).length;
+  check('queue badge equals visible actionable jobs', badge === visibleActionable && badge === 2);
 }
 
 // ---- Detail-route classification (stale deep-link safety) ------------------
