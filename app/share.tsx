@@ -38,6 +38,13 @@ import { Radius, Spacing } from '@/constants';
 import { useTheme } from '@/lib/theme';
 import { isAsyncShareJobsEnabled } from '@/lib/featureFlags';
 import { getActivationSaveFeedback } from '@/lib/activation';
+import { createMapGroupFocusRequest } from '@/lib/mapGroupFocus';
+import {
+  multiPlaceTitle,
+  planShareSaveCompletion,
+  saveSelectedLabel,
+  type SharePlaceSaveOutcome,
+} from '@/lib/shareJobResult';
 import {
   isLikelyUrl,
   parseShare,
@@ -2143,6 +2150,7 @@ function LegacyShareScreen() {
       duplicate: boolean;
     }> = [];
     const failed: Array<{ candidate: PlaceCandidate; message: string }> = [];
+    const outcomes: SharePlaceSaveOutcome[] = [];
     settled.forEach((res, idx) => {
       const cand = selected[idx];
       if (res.status === 'fulfilled') {
@@ -2153,6 +2161,12 @@ function LegacyShareScreen() {
           candidate: cand,
           savedPlaceId: r.savedPlaceId ?? null,
           duplicate: r.status === 'duplicate',
+        });
+        outcomes.push({
+          logicalPlaceId: cand.googlePlaceId,
+          candidateId: cand.googlePlaceId,
+          status: r.status === 'duplicate' ? 'duplicate' : 'saved',
+          savedPlaceId: r.savedPlaceId ?? null,
         });
         void trackEvent('save_success', {
           source_type: sourceType,
@@ -2165,6 +2179,12 @@ function LegacyShareScreen() {
       } else {
         const msg = (res.reason as Error)?.message ?? 'Could not save place.';
         failed.push({ candidate: cand, message: msg });
+        outcomes.push({
+          logicalPlaceId: cand.googlePlaceId,
+          candidateId: cand.googlePlaceId,
+          status: 'failed',
+          savedPlaceId: null,
+        });
         void trackEvent('save_failed', {
           source_type: sourceType,
           flow,
@@ -2179,6 +2199,27 @@ function LegacyShareScreen() {
       save_success_count: saved.length,
       save_failure_count: failed.length,
     });
+    const completion = planShareSaveCompletion(outcomes);
+    const openNewlySaved = () => {
+      if (completion.createdSavedPlaceIds.length === 0) return;
+      if (completion.createdSavedPlaceIds.length === 1) {
+        router.replace({
+          pathname: '/(tabs)/map',
+          params: { savedPlaceId: completion.createdSavedPlaceIds[0] },
+        });
+        return;
+      }
+      const request = createMapGroupFocusRequest({
+        savedPlaceIds: completion.createdSavedPlaceIds,
+        source: 'share_saved',
+        failedCount: completion.failedCandidateIds.length,
+      });
+      if (!request) return;
+      router.replace({
+        pathname: '/(tabs)/map',
+        params: { mapGroupId: request.id, placeSource: request.source },
+      });
+    };
     if (failed.length === 0) {
       const dupCount = saved.filter((s) => s.duplicate).length;
       const newCount = saved.length - dupCount;
@@ -2190,15 +2231,13 @@ function LegacyShareScreen() {
             ? `${newCount} place${newCount === 1 ? '' : 's'} added.`
             : `${newCount} added, ${dupCount} already saved.`;
       Alert.alert(title, body);
-      const firstSavedId =
-        saved.find((s) => !s.duplicate && s.savedPlaceId)?.savedPlaceId ??
-        saved.find((s) => s.savedPlaceId)?.savedPlaceId ??
-        null;
       try {
-        if (firstSavedId) {
+        if (completion.createdSavedPlaceIds.length > 0) {
+          openNewlySaved();
+        } else if (completion.duplicateSavedPlaceIds[0]) {
           router.replace({
             pathname: '/(tabs)/map',
-            params: { savedPlaceId: firstSavedId },
+            params: { savedPlaceId: completion.duplicateSavedPlaceIds[0] },
           });
         } else {
           router.replace('/(tabs)/map');
@@ -2220,6 +2259,12 @@ function LegacyShareScreen() {
       Alert.alert(
         'Some places saved',
         `Saved ${saved.length} of ${selected.length}. Couldn't save: ${failedNames}.`,
+        completion.createdSavedPlaceIds.length > 0
+          ? [
+              { text: 'Try remaining', style: 'cancel' },
+              { text: 'View saved', onPress: openNewlySaved },
+            ]
+          : undefined,
       );
     }
     const savedIds = new Set(saved.map((s) => s.candidate.googlePlaceId));
@@ -2463,8 +2508,7 @@ function LegacyShareScreen() {
           {phase === 'multi-choose' && renderableCandidates.length > 0 ? (
             <View style={styles.section}>
               <Text style={[Typography.label, styles.muted]}>
-                We found {renderableCandidates.length} places in this post. Choose which to
-                save.
+                {multiPlaceTitle(renderableCandidates.length)} in this post. Choose which to save.
               </Text>
               <View style={{ height: Spacing.sm }} />
               <View style={styles.multiActions}>
@@ -2557,7 +2601,7 @@ function LegacyShareScreen() {
                 title={
                   multiSelectedIds.size === 0
                     ? 'Select at least one'
-                    : `Save selected (${multiSelectedIds.size})`
+                    : saveSelectedLabel(multiSelectedIds.size)
                 }
                 disabled={multiSelectedIds.size === 0 || busy}
                 onPress={() => {

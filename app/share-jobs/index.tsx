@@ -28,6 +28,9 @@ import { Radius, Spacing } from '@/constants';
 import { useTheme } from '@/lib/theme';
 import { useShareJobs } from '@/hooks/useShareJobs';
 import { routeShareJobCard } from '@/lib/shareJobRouting';
+import { createMapGroupFocusRequest } from '@/lib/mapGroupFocus';
+import { PHASE2_PREVIEW_FIXTURES } from '@/lib/phase2Preview';
+import { getSavedPlacesCacheSnapshot } from '@/hooks/useSavedPlaces';
 import {
   actionableCount,
   actionableJobs,
@@ -232,6 +235,23 @@ function ShareJobsQueueScreen() {
     }
   }
 
+  function openMapGroupPreview() {
+    const savedPlaceIds = (getSavedPlacesCacheSnapshot() ?? [])
+      .slice(0, 8)
+      .map((place) => place.id);
+    if (savedPlaceIds.length < 2) {
+      Alert.alert('Add two saved places first', 'The group map preview uses your current local cache and never writes data.');
+      return;
+    }
+    const request = createMapGroupFocusRequest({
+      savedPlaceIds,
+      source: 'development_preview',
+      failedCount: 2,
+    });
+    if (!request) return;
+    router.push({ pathname: '/(tabs)/map', params: { mapGroupId: request.id } });
+  }
+
   function renderRow(job: ShareJob) {
     const isProcessing = job.status === 'queued' || job.status === 'processing_metadata';
     const stalled = isProcessing && isStalledProcessing(job);
@@ -362,6 +382,26 @@ function ShareJobsQueueScreen() {
             {renderSection(`Working on ${processing.length} ${processing.length === 1 ? 'place' : 'places'}`, processing)}
           </>
         )}
+        {__DEV__ ? (
+          <View style={styles.previewSection}>
+            <Text style={[typography.label, styles.sectionTitle]}>Development previews</Text>
+            <Text style={[typography.caption, styles.previewHelp]}>Read-only fixtures. No save mutations run.</Text>
+            <View style={styles.previewActions}>
+              {PHASE2_PREVIEW_FIXTURES.map((fixture) => (
+                <Pressable
+                  key={fixture.id}
+                  onPress={() => router.push({ pathname: '/share-jobs/[jobId]', params: { jobId: fixture.id } })}
+                  style={styles.previewButton}
+                >
+                  <Text style={styles.previewButtonText}>{fixture.label}</Text>
+                </Pressable>
+              ))}
+              <Pressable onPress={openMapGroupPreview} style={styles.previewButton}>
+                <Text style={styles.previewButtonText}>Current group map</Text>
+              </Pressable>
+            </View>
+          </View>
+        ) : null}
       </ScrollView>
     </ShareJobsSheet>
   );
@@ -374,6 +414,19 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
     stateWrap: { paddingTop: Spacing.xl, paddingHorizontal: Spacing.lg },
     intro: { color: colors.textSecondary, lineHeight: 22, marginBottom: Spacing.xl },
     section: { marginBottom: Spacing.xl },
+    previewSection: { marginTop: Spacing.lg, marginBottom: Spacing.xl },
+    previewHelp: { color: colors.textSecondary, marginTop: 4, marginBottom: Spacing.md },
+    previewActions: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
+    previewButton: {
+      minHeight: 38,
+      justifyContent: 'center',
+      paddingHorizontal: Spacing.md,
+      borderRadius: Radius.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surface,
+    },
+    previewButtonText: { color: colors.textSecondary, fontSize: 13, fontWeight: '600' },
     sectionHeader: {
       flexDirection: 'row',
       alignItems: 'center',

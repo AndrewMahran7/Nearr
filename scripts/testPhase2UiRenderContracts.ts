@@ -21,7 +21,7 @@ assert.match(detail, /selectedUnsavedCandidates/);
 assert.match(detail, /Promise\.allSettled/);
 assert.match(detail, /removeSuccessfulSelections/);
 assert.match(detail, /resolvingRef\.current/);
-assert.match(detail, /__DEV__ && jobId === PHASE2_FIVE_PIZZA_PREVIEW_ID/);
+assert.match(detail, /__DEV__ && isPhase2PreviewId\(jobId\)/);
 assert.match(detail, /automaticallyAdjustKeyboardInsets/);
 assert.match(detail, /minHeight: 44/);
 

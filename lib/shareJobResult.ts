@@ -126,7 +126,9 @@ export function preselectedCandidateIds(
   const selected = new Set<string>();
   for (const slot of slots) {
     if (slot.outcome !== 'verified_single' || slot.candidates.length !== 1) continue;
-    const id = slot.candidates[0]!.googlePlaceId;
+    const candidate = slot.candidates[0]!;
+    if (!Number.isFinite(candidate.latitude) || !Number.isFinite(candidate.longitude)) continue;
+    const id = candidate.googlePlaceId;
     if (!alreadySavedPlaceIds.has(id)) selected.add(id);
   }
   return selected;
@@ -176,4 +178,62 @@ export function removeSuccessfulSelections(
   const next = new Set(selected);
   for (const id of successfulIds) next.delete(id);
   return next;
+}
+
+export type SharePlaceSaveOutcome = {
+  logicalPlaceId: string;
+  candidateId: string;
+  status: 'saved' | 'duplicate' | 'failed';
+  savedPlaceId: string | null;
+};
+
+export type ShareSaveCompletionPlan = {
+  createdSavedPlaceIds: string[];
+  duplicateSavedPlaceIds: string[];
+  successfulCandidateIds: string[];
+  failedCandidateIds: string[];
+  destination: 'none' | 'single' | 'group';
+};
+
+function uniqueNonEmpty(values: Iterable<string | null | undefined>): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const value of values) {
+    const id = typeof value === 'string' ? value.trim() : '';
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    result.push(id);
+  }
+  return result;
+}
+
+export function planShareSaveCompletion(
+  outcomes: readonly SharePlaceSaveOutcome[],
+): ShareSaveCompletionPlan {
+  const createdSavedPlaceIds = uniqueNonEmpty(
+    outcomes.filter((outcome) => outcome.status === 'saved').map((outcome) => outcome.savedPlaceId),
+  );
+  const duplicateSavedPlaceIds = uniqueNonEmpty(
+    outcomes.filter((outcome) => outcome.status === 'duplicate').map((outcome) => outcome.savedPlaceId),
+  );
+  const successfulCandidateIds = uniqueNonEmpty(
+    outcomes
+      .filter((outcome) => outcome.status !== 'failed')
+      .map((outcome) => outcome.candidateId),
+  );
+  const failedCandidateIds = uniqueNonEmpty(
+    outcomes.filter((outcome) => outcome.status === 'failed').map((outcome) => outcome.candidateId),
+  );
+  return {
+    createdSavedPlaceIds,
+    duplicateSavedPlaceIds,
+    successfulCandidateIds,
+    failedCandidateIds,
+    destination:
+      createdSavedPlaceIds.length > 1
+        ? 'group'
+        : createdSavedPlaceIds.length === 1
+          ? 'single'
+          : 'none',
+  };
 }

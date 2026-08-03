@@ -39,17 +39,20 @@ import {
   normalizeShareJobCandidates,
 } from '@/lib/shareJobsUi';
 import { PHASE_1_COPY, splitPlaceAddress } from '@/lib/sharePhase1Ui';
-import { buildFivePizzaPreviewJob, PHASE2_FIVE_PIZZA_PREVIEW_ID } from '@/lib/phase2Preview';
+import { buildPhase2PreviewJob, isPhase2PreviewId } from '@/lib/phase2Preview';
 import {
   multiPlaceTitle,
   normalizeMentionSlots,
+  planShareSaveCompletion,
   preselectedCandidateIds,
   removeSuccessfulSelections,
   saveSelectedLabel,
   selectCandidateWithinMention,
   selectedUnsavedCandidates,
   type ShareJobMentionSlot,
+  type SharePlaceSaveOutcome,
 } from '@/lib/shareJobResult';
+import { createMapGroupFocusRequest } from '@/lib/mapGroupFocus';
 import { usePlacesSearch } from '@/hooks/usePlacesSearch';
 import { getSavedPlacesCacheSnapshot, upsertSavedPlaceIntoCache } from '@/hooks/useSavedPlaces';
 import { recordBreadcrumb } from '@/lib/breadcrumbs';
@@ -172,8 +175,9 @@ function ShareJobDetailScreen() {
       const previewSaved = getSavedPlacesCacheSnapshot()?.find(
         (saved) => saved.place?.google_place_id,
       );
-      const j = __DEV__ && jobId === PHASE2_FIVE_PIZZA_PREVIEW_ID
-        ? buildFivePizzaPreviewJob(
+      const j = __DEV__ && isPhase2PreviewId(jobId)
+        ? buildPhase2PreviewJob(
+            jobId,
             previewSaved?.place?.google_place_id
               ? {
                   googlePlaceId: previewSaved.place.google_place_id,
@@ -248,6 +252,9 @@ function ShareJobDetailScreen() {
   async function persistCandidate(
     candidate: PlaceCandidate,
   ): Promise<{ savedPlaceId: string | null; duplicate: boolean }> {
+    if (__DEV__ && isPhase2PreviewId(job?.id)) {
+      throw new Error('This development preview is read-only.');
+    }
     recordBreadcrumb('save_started', { jobId: job?.id ?? null });
     const result = await saveSavedPlace({
       candidate,
@@ -293,6 +300,31 @@ function ShareJobDetailScreen() {
       return;
     }
     throw new Error('Save succeeded but did not return an id. Please retry.');
+  }
+
+  function openNewlySavedPlaces(savedPlaceIds: string[], failedCount = 0) {
+    if (savedPlaceIds.length === 0 || !navigateOnceRef.current.acquire()) return;
+    recordBreadcrumb('actual_navigation', {
+      savedPlaceId: savedPlaceIds[0] ?? null,
+      result: savedPlaceIds.length === 1 ? 'open_saved_place:share_job_saved' : 'open_saved_group',
+    });
+    if (savedPlaceIds.length === 1) {
+      router.replace(resolveOpenSavedPlaceRoute({
+        savedPlaceId: savedPlaceIds[0],
+        source: 'share_job_saved',
+      }));
+      return;
+    }
+    const request = createMapGroupFocusRequest({
+      savedPlaceIds,
+      source: 'share_job_saved',
+      failedCount,
+    });
+    if (!request) return;
+    router.replace({
+      pathname: '/(tabs)/map',
+      params: { mapGroupId: request.id, placeSource: request.source },
+    });
   }
 
   async function handleSaveStored(candidate: ShareJobCandidate) {
@@ -345,14 +377,22 @@ function ShareJobDetailScreen() {
     if (mountedRef.current) setBusy(true);
     try {
       const settled = await Promise.allSettled(
-        chosen.map(async (candidate) => ({
-          candidate,
-          ...(await persistCandidate(toPlaceCandidate(candidate))),
-        })),
+        chosen.map(async (candidate) => {
+          const result = await persistCandidate(toPlaceCandidate(candidate));
+          const slot = mentionSlots.find((mention) =>
+            mention.candidates.some((entry) => entry.googlePlaceId === candidate.googlePlaceId),
+          );
+          return {
+            candidate,
+            logicalPlaceId: slot?.mentionId ?? candidate.googlePlaceId,
+            ...result,
+          };
+        }),
       );
       const succeeded = settled
         .filter((result): result is PromiseFulfilledResult<{
           candidate: ShareJobCandidate;
+          logicalPlaceId: string;
           savedPlaceId: string | null;
           duplicate: boolean;
         }> => result.status === 'fulfilled')
@@ -361,19 +401,63 @@ function ShareJobDetailScreen() {
         .map((result, index) => ({ result, candidate: chosen[index]! }))
         .filter((entry) => entry.result.status === 'rejected');
 
+      const outcomes: SharePlaceSaveOutcome[] = [
+        ...succeeded.map((entry) => ({
+          logicalPlaceId: entry.logicalPlaceId,
+          candidateId: entry.candidate.googlePlaceId,
+          status: entry.duplicate ? 'duplicate' as const : 'saved' as const,
+          savedPlaceId: entry.savedPlaceId,
+        })),
+        ...failed.map((entry) => ({
+          logicalPlaceId:
+            mentionSlots.find((mention) =>
+              mention.candidates.some(
+                (candidate) => candidate.googlePlaceId === entry.candidate.googlePlaceId,
+              ),
+            )?.mentionId ?? entry.candidate.googlePlaceId,
+          candidateId: entry.candidate.googlePlaceId,
+          status: 'failed' as const,
+          savedPlaceId: null,
+        })),
+      ];
+      const completion = planShareSaveCompletion(outcomes);
+
       if (failed.length > 0) {
         setSelectedIds((current) =>
-          removeSuccessfulSelections(current, succeeded.map((entry) => entry.candidate.googlePlaceId)),
+          removeSuccessfulSelections(current, completion.successfulCandidateIds),
         );
         const failedNames = failed.map((entry) => entry.candidate.name).join(', ');
+        const createdCount = completion.createdSavedPlaceIds.length;
         Alert.alert(
-          succeeded.length > 0 ? `Saved ${succeeded.length} of ${chosen.length}` : 'Could not save these places',
+          createdCount > 0 ? `Saved ${createdCount} of ${chosen.length}` : 'Could not save these places',
           `Please try again for: ${failedNames}`,
+          createdCount > 0
+            ? [
+                { text: 'Try remaining', style: 'cancel' },
+                {
+                  text: 'View saved',
+                  onPress: () => openNewlySavedPlaces(
+                    completion.createdSavedPlaceIds,
+                    completion.failedCandidateIds.length,
+                  ),
+                },
+              ]
+            : undefined,
         );
         return;
       }
-      const firstSavedId = succeeded.find((entry) => entry.savedPlaceId)?.savedPlaceId ?? null;
-      await resolveJobWith(job.id, firstSavedId, succeeded.some((entry) => entry.duplicate));
+      const resolutionId =
+        completion.createdSavedPlaceIds[0] ?? completion.duplicateSavedPlaceIds[0] ?? null;
+      if (resolutionId) await markShareJobResolved(job.id, resolutionId);
+      if (completion.createdSavedPlaceIds.length > 0) {
+        openNewlySavedPlaces(completion.createdSavedPlaceIds);
+      } else if (resolutionId) {
+        openExistingPlace({ savedPlaceId: resolutionId, source: 'share_job_saved' });
+      } else if (succeeded.some((entry) => entry.duplicate)) {
+        openExistingPlace({ source: 'share_job_saved' });
+      } else {
+        throw new Error('Save succeeded but did not return an id. Please retry.');
+      }
     } catch (err) {
       Alert.alert('Could not save', err instanceof Error ? err.message : 'Please try again.');
     } finally {
@@ -474,12 +558,14 @@ function ShareJobDetailScreen() {
   async function viewAlreadySaved(savedPlaceId: string, googlePlaceId?: string | null) {
     if (resolvingRef.current) return;
     resolvingRef.current = true;
-    if (job) {
-      try {
+    try {
+      if (job) {
         await markShareJobResolved(job.id, savedPlaceId);
-      } catch {
-        // Non-fatal: the place is saved regardless.
       }
+    } catch {
+      // Non-fatal: the place is saved regardless.
+    } finally {
+      resolvingRef.current = false;
     }
     openExistingPlace({ savedPlaceId, googlePlaceId, source: 'share_job_already_saved' });
   }

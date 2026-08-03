@@ -12,5 +12,6 @@ export { CompactPlaceRow } from './CompactPlaceRow';
 export { MapSheetFilterChips, type SheetListFilter } from './MapSheetFilterChips';
 export { MapPlaceSearchDropdown } from './MapPlaceSearchDropdown';
 export { MapSnackbar } from './MapSnackbar';
+export { MapGroupSelector } from './MapGroupSelector';
 export { SelectedPlaceDetails } from './SelectedPlaceDetails';
 export { ShareQueueButton } from './ShareQueueButton';

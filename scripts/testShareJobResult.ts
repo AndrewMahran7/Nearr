@@ -10,7 +10,11 @@ import {
   removeSuccessfulSelections,
   saveSelectedLabel,
 } from '../lib/shareJobResult';
-import { buildFivePizzaPreviewJob } from '../lib/phase2Preview';
+import {
+  buildFivePizzaPreviewJob,
+  buildPhase2PreviewJob,
+  PHASE2_PREVIEW_FIXTURES,
+} from '../lib/phase2Preview';
 
 const candidate = (id: string, name = id) => ({
   googlePlaceId: id,
@@ -71,5 +75,20 @@ assert.equal(mentionCount(preview.candidate_payload), 5, 'five-pizza preview has
 const previewSlots = normalizeMentionSlots((preview.candidate_payload as { mentionSlots: unknown }).mentionSlots);
 assert.equal(previewSlots.filter((slot) => slot.displayName === 'X Eats at Brewery X').length, 1);
 assert.equal(previewSlots.find((slot) => slot.hostVenueName === 'Brewery X')?.outcome, 'ambiguous_candidates');
+
+for (const expectedCount of [0, 1, 2, 8]) {
+  const fixture = buildPhase2PreviewJob(`phase2-preview-${expectedCount}`);
+  assert.equal(mentionCount(fixture.candidate_payload), expectedCount);
+  assert.equal(multiPlaceTitle(expectedCount), `I found ${expectedCount} ${expectedCount === 1 ? 'place' : 'places'}`);
+}
+assert.equal(PHASE2_PREVIEW_FIXTURES.length, 9);
+const missingSlots = normalizeMentionSlots(
+  (buildPhase2PreviewJob('phase2-preview-missing').candidate_payload as { mentionSlots: unknown }).mentionSlots,
+);
+assert.equal(preselectedCandidateIds(missingSlots).size, 2, 'missing-coordinate place is visible but not selected');
+const overlapSlots = normalizeMentionSlots(
+  (buildPhase2PreviewJob('phase2-preview-overlap').candidate_payload as { mentionSlots: unknown }).mentionSlots,
+);
+assert.equal(overlapSlots.length, 3, 'overlapping coordinates remain independently accessible');
 
 console.log('PASS share-job mention result contract');

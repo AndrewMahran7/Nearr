@@ -79,6 +79,7 @@ import {
   FloatingMapActions,
   MapBottomSheet,
   MapFilterChips,
+  MapGroupSelector,
   MapPlaceSearchDropdown,
   MapSnackbar,
   MapTopSearchBar,
@@ -99,6 +100,13 @@ import {
 } from '@/hooks/useSavedPlaces';
 import { isDemoMode } from '@/lib/demoMode';
 import { isMapPreviewMode } from '@/lib/mapPreview';
+import {
+  clearMapGroupFocusRequest,
+  decideMapGroupFit,
+  getMapGroupFocusRequest,
+  mapGroupEdgePadding,
+  resolveMapGroupPlaces,
+} from '@/lib/mapGroupFocus';
 import { openExternalMaps as openInExternalMaps } from '@/lib/externalMaps';
 import {
   shouldAcceptSample,
@@ -317,12 +325,16 @@ type PlaceMarkerProps = {
   place: SavedPlaceWithPlace;
   markerRefs: React.MutableRefObject<Record<string, ComponentRef<typeof Marker> | null>>;
   onPress: (place: SavedPlaceWithPlace) => void;
+  dimmed: boolean;
+  selected: boolean;
 };
 
 const PlaceMarker = memo(function PlaceMarker({
   place: p,
   markerRefs,
   onPress,
+  dimmed,
+  selected,
 }: PlaceMarkerProps) {
   const [tracksViewChanges, setTracksViewChanges] = useState(true);
   useEffect(() => {
@@ -342,7 +354,8 @@ const PlaceMarker = memo(function PlaceMarker({
   return (
     <Marker
       identifier={p.id}
-      opacity={p.archived_at || p.visited_at ? 0.45 : 1}
+      opacity={dimmed ? 0.22 : p.archived_at || p.visited_at ? 0.45 : 1}
+      zIndex={selected ? 30 : dimmed ? 1 : 20}
       ref={(ref) => {
         markerRefs.current[p.id] = ref;
       }}
@@ -376,6 +389,8 @@ const PlaceMarker = memo(function PlaceMarker({
   prev.place.visited_at === next.place.visited_at &&
   prev.place.place.latitude === next.place.place.latitude &&
   prev.place.place.longitude === next.place.place.longitude &&
+  prev.dimmed === next.dimmed &&
+  prev.selected === next.selected &&
   prev.onPress === next.onPress,
 );
 
@@ -442,6 +457,7 @@ export default function MapScreen() {
     reminderOpen: rawReminderOpen,
     reminderSource: rawReminderSource,
     nearbyCount: rawNearbyCount,
+    mapGroupId: rawMapGroupId,
   } = useLocalSearchParams<{
     savedPlaceId?: string | string[];
     savedPlaceGoogleId?: string | string[];
@@ -449,6 +465,7 @@ export default function MapScreen() {
     reminderOpen?: string | string[];
     reminderSource?: string | string[];
     nearbyCount?: string | string[];
+    mapGroupId?: string | string[];
   }>();
   const savedPlaceId = firstParam(rawSavedPlaceId);
   const savedPlaceGoogleId = firstParam(rawSavedPlaceGoogleId);
@@ -462,6 +479,7 @@ export default function MapScreen() {
         ? 'notification'
         : 'unknown';
   const nearbyCount = parsePositiveIntParam(rawNearbyCount);
+  const mapGroupId = firstParam(rawMapGroupId);
   const { data: liveData, loading: liveLoading, refresh, revalidate } = useSavedPlaces();
   const mapRef = useRef<MapView | null>(null);
   const markerRefs = useRef<Record<string, ComponentRef<typeof Marker> | null>>({});
@@ -480,6 +498,18 @@ export default function MapScreen() {
   // In Map Preview Mode the saved-places list is the synchronous seed; alias
   // for clarity in the debug logs and marker map below.
   const places = data;
+  const mapGroupRequest = useMemo(
+    () => getMapGroupFocusRequest(mapGroupId),
+    [mapGroupId],
+  );
+  const resolvedMapGroup = useMemo(
+    () => resolveMapGroupPlaces(places, mapGroupRequest?.savedPlaceIds ?? []),
+    [mapGroupRequest, places],
+  );
+  const mapGroupCoordinateIds = useMemo(
+    () => new Set(resolvedMapGroup.coordinatePlaces.map((place) => place.id)),
+    [resolvedMapGroup.coordinatePlaces],
+  );
 
   // Skip any saved place whose coordinates are missing or non-finite. Maps
   // crashes hard on NaN, so we filter once at the top of render.
@@ -568,6 +598,7 @@ export default function MapScreen() {
   // windowHeight is only a first-paint fallback.
   const { height: windowHeight } = useWindowDimensions();
   const [mapAreaHeight, setMapAreaHeight] = useState(0);
+  const [mapGroupSelectorHeight, setMapGroupSelectorHeight] = useState(0);
   const availableHeight = mapAreaHeight || windowHeight;
   const sheetPartialHeight = useMemo(
     () => getSheetPartialHeight(availableHeight),
@@ -592,6 +623,7 @@ export default function MapScreen() {
   // implicitly when the param changes to a new id so coming back to the
   // same place from a different card still triggers the focus animation.
   const handledTargetIdRef = useRef<string | null>(null);
+  const handledMapGroupIdRef = useRef<string | null>(null);
   const handledReminderAnalyticsRef = useRef<string | null>(null);
   const shownMissingReminderRef = useRef<string | null>(null);
   const previousRegionRef = useRef<Region | null>(null);
@@ -985,6 +1017,46 @@ export default function MapScreen() {
     }
   }, [savedPlaceId, savedPlaceGoogleId, placeSource, mapReady, validPlaces, profile, liveLoading, reminderOpen]);
 
+  useEffect(() => {
+    if (!mapGroupId) return;
+    setPreviewExpanded(false);
+    previewTranslateY.setValue(0);
+  }, [mapGroupId, previewTranslateY]);
+
+  useEffect(() => {
+    const decision = decideMapGroupFit({
+      requestId: mapGroupId,
+      handledRequestId: handledMapGroupIdRef.current,
+      mapReady,
+      layoutHeight: mapAreaHeight,
+      waitingForPlaces:
+        (!!mapGroupRequest && liveLoading && resolvedMapGroup.missingIds.length > 0) ||
+        (!!mapGroupRequest && resolvedMapGroup.places.length > 0 && mapGroupSelectorHeight <= 0),
+    });
+    if (decision !== 'fit' || !mapGroupId) return;
+    if (!mapGroupRequest) {
+      handledMapGroupIdRef.current = mapGroupId;
+      setSnackbar({ message: 'Showing your saved places.', undoId: null });
+      return;
+    }
+    handledMapGroupIdRef.current = mapGroupId;
+    fitCurrentMapGroup();
+    if (mapGroupRequest.failedCount > 0) {
+      setSnackbar({
+        message: `${mapGroupRequest.failedCount} place${mapGroupRequest.failedCount === 1 ? '' : 's'} still need attention.`,
+        undoId: null,
+      });
+    } else if (resolvedMapGroup.missingCoordinateIds.length > 0) {
+      setSnackbar({
+        message: `${resolvedMapGroup.missingCoordinateIds.length} saved place${resolvedMapGroup.missingCoordinateIds.length === 1 ? '' : 's'} has no map location.`,
+        undoId: null,
+      });
+    }
+    // Camera fitting is intentionally once per request id. Subsequent data,
+    // selection, and pan updates must not take control away from the user.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [liveLoading, mapAreaHeight, mapGroupId, mapGroupRequest, mapGroupSelectorHeight, mapReady, resolvedMapGroup]);
+
   // ---- DEBUG ------------------------------------------------------------
   // Temporary verbose logs requested while diagnosing the "spinner forever"
   // bug. Throttled to fire only when one of the watched fields actually
@@ -1085,6 +1157,58 @@ export default function MapScreen() {
     } catch (e) {
       if (__DEV__) console.debug('[map] focusZone skipped', e);
     }
+  }
+
+  function fitCurrentMapGroup() {
+    const coordinatePlaces = resolvedMapGroup.coordinatePlaces;
+    if (!mapRef.current || coordinatePlaces.length === 0) {
+      setSnackbar({ message: 'These places do not have map locations yet.', undoId: null });
+      return;
+    }
+    didFitRef.current = true;
+    followModeRef.current = false;
+    setFollowMode(false);
+    if (coordinatePlaces.length === 1) {
+      selectPlace(coordinatePlaces[0]!);
+      return;
+    }
+    if (selected) {
+      previewTranslateY.setValue(0);
+      setSelected(null);
+      setPreviewExpanded(false);
+      previousRegionRef.current = null;
+    }
+    try {
+      mapRef.current.fitToCoordinates(
+        coordinatePlaces.map((place) => ({
+          latitude: place.place.latitude,
+          longitude: place.place.longitude,
+        })),
+        {
+          edgePadding: mapGroupEdgePadding({
+            topChromeHeight: safeTopInset + topChromeClearance,
+            bottomOverlayHeight: mapGroupSelectorHeight + insets.bottom,
+          }),
+          animated: true,
+        },
+      );
+    } catch (e) {
+      if (__DEV__) console.debug('[map] group fit skipped', e);
+    }
+  }
+
+  function selectMapGroupPlace(item: SavedPlaceWithPlace) {
+    if (!mapGroupCoordinateIds.has(item.id)) {
+      setSnackbar({ message: `${item.place.name} does not have a map location yet.`, undoId: null });
+      return;
+    }
+    selectPlace(item);
+  }
+
+  function closeMapGroup() {
+    if (mapGroupId) clearMapGroupFocusRequest(mapGroupId);
+    if (selected) dismissSelectedPlace({ restoreRegion: false });
+    router.replace('/(tabs)/map');
   }
 
   function selectPlace(item: SavedPlaceWithPlace) {
@@ -1492,12 +1616,16 @@ export default function MapScreen() {
               strokeColor={
                 selected?.id === p.id
                   ? 'rgba(255,106,26,0.52)'
+                  : mapGroupRequest && !mapGroupCoordinateIds.has(p.id)
+                    ? 'rgba(255,106,26,0.035)'
                   : 'rgba(255,106,26,0.14)'
               }
               strokeWidth={selected?.id === p.id ? 2 : 1}
               fillColor={
                 selected?.id === p.id
                   ? 'rgba(255,106,26,0.12)'
+                  : mapGroupRequest && !mapGroupCoordinateIds.has(p.id)
+                    ? 'rgba(255,106,26,0.012)'
                   : 'rgba(255,106,26,0.035)'
               }
             />
@@ -1509,6 +1637,8 @@ export default function MapScreen() {
             place={p}
             markerRefs={markerRefs}
             onPress={handleMarkerPress}
+            dimmed={!!mapGroupRequest && !mapGroupCoordinateIds.has(p.id)}
+            selected={selected?.id === p.id}
           />
         ))}
       </MapView>
@@ -1711,6 +1841,26 @@ export default function MapScreen() {
         </Animated.View>
       ) : null}
 
+      {mapGroupRequest && resolvedMapGroup.places.length > 0 && !previewExpanded ? (
+        <View
+          style={[
+            styles.mapGroupWrap,
+            { bottom: (selected ? 248 : Spacing.lg) + insets.bottom },
+          ]}
+          onLayout={(event) => setMapGroupSelectorHeight(event.nativeEvent.layout.height)}
+        >
+          <MapGroupSelector
+            places={resolvedMapGroup.places}
+            selectedId={selected?.id ?? null}
+            missingCoordinateIds={new Set(resolvedMapGroup.missingCoordinateIds)}
+            failedCount={mapGroupRequest.failedCount}
+            onSelect={selectMapGroupPlace}
+            onViewAll={fitCurrentMapGroup}
+            onClose={closeMapGroup}
+          />
+        </View>
+      ) : null}
+
       {/* Map-first top chrome: floating search bar + filter chips. Rendered
           as a box-none overlay so only the bar/chips capture touches and the
           rest of the map stays pannable underneath. Hidden while the search
@@ -1862,7 +2012,7 @@ export default function MapScreen() {
       {/* Map-first bottom sheet. Hidden while a place is selected so the
           existing selected-place preview card (rendered above) is the single
           bottom surface — the smallest safe way to avoid overlap this phase. */}
-      {selected ? null : (
+      {selected || mapGroupRequest ? null : (
         <MapBottomSheet
           mode={selectedMapFilter}
           loading={liveLoading}
@@ -1898,7 +2048,13 @@ export default function MapScreen() {
       <MapSnackbar
         visible={!!snackbar}
         message={snackbar?.message ?? ''}
-        bottomOffset={(selected ? 264 : Spacing.lg + 4) + insets.bottom}
+        bottomOffset={
+          (selected
+            ? 264
+            : mapGroupRequest
+              ? mapGroupSelectorHeight + Spacing.xl
+              : Spacing.lg + 4) + insets.bottom
+        }
         actionLabel={snackbar?.undoId ? 'Undo' : undefined}
         onAction={
           snackbar?.undoId ? () => void handleUndoSave(snackbar.undoId as string) : undefined
@@ -1926,6 +2082,12 @@ function createStyles(
     top: insetTop + Spacing.md,
     left: Spacing.lg,
     right: Spacing.lg,
+  },
+
+  mapGroupWrap: {
+    position: 'absolute',
+    left: Spacing.md,
+    right: Spacing.md,
   },
 
   markerWrap: {
