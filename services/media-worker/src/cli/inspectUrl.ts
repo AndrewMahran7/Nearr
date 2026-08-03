@@ -130,12 +130,12 @@ function analyzeNameDrivenMultiPlace(evidence: MediaPlaceEvidence) {
     lostForLackOfAddress: withoutAddress.map((p) => boundedText(p.name, 80)),
     multipleIntentionalPlaces: evidence.multipleIntentionalPlaces,
     note:
-      'Name-driven multi-place verification IS implemented: when ≥2 eligible explicit ' +
-      'venue NAMES are present (and there arent ≥2 street addresses), each name is ' +
-      'individually searched + scored against Google Places and surfaced as a ' +
-      'multi_candidate_confirmation. The address-driven multi path still handles captions ' +
-      'that carry ≥2 explicit street addresses. withExplicitStreetAddress counts places the ' +
-      'ADDRESS path alone could verify; the rest are now covered by the NAME path.',
+      'Name-driven verification runs for ONE OR MORE eligible explicit venue names ' +
+      '(no ≥2-name minimum). Each name is individually searched + scored against ' +
+      'Google Places and surfaced as a candidate_confirmation (single) or ' +
+      'multi_candidate_confirmation (multiple/ambiguous). The address-driven multi path ' +
+      'still handles captions with ≥2 explicit street addresses. withExplicitStreetAddress ' +
+      'counts places the ADDRESS path alone could verify; the rest are covered by the NAME path.',
   };
 }
 
@@ -182,9 +182,10 @@ function buildVerificationBreakdown(v: VerificationOutcome, evidence: MediaPlace
     return {
       ran: false,
       skippedReason: v.skippedReason ?? (v.result as { reason?: string } | undefined)?.reason ?? 'not_run',
+      resolverPath: null,
       verifiedCanonicalPlaces: [],
       ambiguousCandidates: 0,
-      rejectedCandidates: 'not_surfaced_by_resolver_result',
+      rejectedCandidates: [],
       placesLostByAddressOnlyResolver: nameDriven.lostForLackOfAddress,
     };
   }
@@ -196,7 +197,9 @@ function buildVerificationBreakdown(v: VerificationOutcome, evidence: MediaPlace
     candidates?: { name: string | null; formattedAddress: string | null; googlePlaceId: string | null; matchScore: number | null }[];
     mentionCount?: number;
     geoContext?: { city: string | null; region: string | null; country: string | null };
+    resolverPath?: string | null;
     nameDriven?: unknown;
+    rejectedCandidates?: { mentionId: string | null; name: string | null; reason: string | null }[];
     mentionResults?: {
       mentionId: string | null;
       displayName: string | null;
@@ -212,6 +215,7 @@ function buildVerificationBreakdown(v: VerificationOutcome, evidence: MediaPlace
   return {
     ran: true,
     decision: r.decision ?? null,
+    resolverPath: r.resolverPath ?? null,
     safeToAutoSave: r.safeToAutoSave === true, // reported as-is; never weakened
     confidence: r.confidence ?? null,
     geoContext: r.geoContext ?? null,
@@ -238,8 +242,13 @@ function buildVerificationBreakdown(v: VerificationOutcome, evidence: MediaPlace
       matchScore: c.matchScore,
     })),
     ambiguousCandidates: ambiguous ? (r.candidates ?? []).length : 0,
-    rejectedCandidates: 'not_surfaced_by_resolver_result',
-    placesLostByAddressOnlyResolver: nameDriven.lostForLackOfAddress,
+    // Actual rejected candidates surfaced by the resolver (name + reason), not
+    // a placeholder string.
+    rejectedCandidates: Array.isArray(r.rejectedCandidates) ? r.rejectedCandidates : [],
+    // Names that name-driven verification could NOT resolve to a canonical
+    // place (genuinely lost). Verified/ambiguous names are recovered, so they
+    // are NOT listed here.
+    placesLostByAddressOnlyResolver: noMatchSlots.map((m) => m.displayName).filter(Boolean),
   };
 }
 

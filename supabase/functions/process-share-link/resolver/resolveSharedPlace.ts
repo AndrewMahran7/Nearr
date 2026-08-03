@@ -26,7 +26,7 @@ import type {
 import { buildQueryPlan } from './queryBuilder.ts';
 import { scoreCandidates, toResolvedCandidate } from './placeScoring.ts';
 import { decide } from './decisionPolicy.ts';
-import { resolveVenueMentions } from './nameDrivenResolver.ts';
+import { resolveVenueMentions, nameDrivenDecision } from './nameDrivenResolver.ts';
 import type {
   VenueMention,
   MediaGeoContext,
@@ -86,6 +86,89 @@ export async function resolveSharedPlace(args: {
         .replace(/\s+/g, ' ')
         .trim()
     : null;
+
+  // Shared name-driven resolution used by BOTH the multi-name path (≥2 names,
+  // step 0.5) and the single-name path (exactly one name, step 1.5). Runs the
+  // SAME deterministic per-mention Google Places verifier (resolveVenueMentions)
+  // for one or many mentions; the only difference is how the aggregate maps to a
+  // decision. NEVER auto-saves (safeToAutoSave hard-coded false). Declared as a
+  // hoisted inner function so it can close over evidence/env/warnings/etc.
+  async function runNameDrivenResolution(isSingle: boolean): Promise<ResolverResult> {
+    const nameDriven = await resolveVenueMentions({
+      mentions,
+      geoContext,
+      env,
+      platform: evidence.platform,
+    });
+    diagnostics.nameDrivenMultiPlace = {
+      mode: isSingle ? 'single' : 'multi',
+      mentionCount: mentions.length,
+      verified: nameDriven.verifiedCount,
+      ambiguous: nameDriven.ambiguousCount,
+      noMatch: nameDriven.noMatchCount,
+      providerError: nameDriven.providerErrorCount,
+      requestCount: nameDriven.requestCount,
+      mentions: nameDriven.mentionResults.map((m) => ({
+        mentionId: m.mentionId,
+        displayName: m.displayName,
+        outcome: m.outcome,
+        candidateCount: m.candidates.length,
+      })),
+    };
+    // Preserve the full per-mention structure (per-slot UI + diagnostics).
+    diagnostics.mentionResults = nameDriven.mentionResults;
+    diagnostics.resolverPath = isSingle ? 'name_driven_single' : 'name_driven_multi';
+    logShareDebug('resolver:name_driven', {
+      mode: isSingle ? 'single' : 'multi',
+      mentionCount: mentions.length,
+      verified: nameDriven.verifiedCount,
+      ambiguous: nameDriven.ambiguousCount,
+      noMatch: nameDriven.noMatchCount,
+      aggregate: nameDriven.aggregateCandidates.length,
+    });
+
+    if (nameDriven.aggregateCandidates.length >= 1) {
+      const cands = nameDriven.aggregateCandidates;
+      // Decision mapping (pure, unit-tested). safeToAutoSave is ALWAYS false.
+      const mapped = nameDrivenDecision(nameDriven, isSingle);
+      return finalize(
+        {
+          decision: mapped.decision,
+          primaryCandidate: cands[0],
+          candidates: cands,
+          safeToAutoSave: false,
+          confidence: mapped.confidence,
+          reasons: [mapped.reason],
+        },
+        {
+          cleanSearchQuery: mentions.map((m) => m.displayName).join(' | '),
+          warnings,
+          diagnostics,
+          evidenceUsed: [
+            ...evidenceUsed,
+            'media_name_mention',
+            isSingle ? 'name_driven_single' : 'name_driven_multi',
+          ],
+          timings,
+        },
+      );
+    }
+    // No mention verified to a canonical place → manual fallback with the venue
+    // NAME prefilled so the user can search by hand. The extracted name +
+    // geographic evidence are preserved (never fabricated, never discarded).
+    warnings.push('name_driven_no_verified_places');
+    return {
+      decision: 'manual_fallback',
+      candidates: [],
+      safeToAutoSave: false,
+      confidence: 'low',
+      cleanSearchQuery: mentions[0]?.displayName ?? undefined,
+      evidenceUsed: [...evidenceUsed, 'media_name_mention'],
+      warnings,
+      diagnostics,
+      failureReason: 'no_candidates',
+    };
+  }
 
   // ---- 0. Tagged-location evidence (highest priority) ------------
   // A platform-tagged place/location (YouTube recordingDetails, TikTok POI,
@@ -225,6 +308,7 @@ export async function resolveSharedPlace(args: {
     // places resolved. One match → fall through to the normal
     // single-address path so safety + verification flags apply.
     if (multiResolved.length >= 2) {
+      diagnostics.resolverPath = 'explicit_address';
       logShareDebug('resolver:multi_address_resolved', {
         addressCount: evidence.addresses.length,
         candidateCount: multiResolved.length,
@@ -249,80 +333,13 @@ export async function resolveSharedPlace(args: {
     }
   }
 
-  // ---- 0.5 Name-driven multi-place verification ------------------
-  // Media evidence often carries ≥2 explicit venue NAMES with no street
-  // address (a "top 5 pizza" reel). The address paths above can't help those.
-  // Verify each eligible name independently against Google Places and surface
-  // the aggregate as a multi-select confirmation. NEVER auto-saves. Only fires
-  // when there aren't ≥2 addresses already driving the (stronger) address path.
+  // ---- 0.5 Name-driven MULTI-place verification ------------------
+  // ≥2 explicit venue NAMES with no ≥2-address driver (a "top 5 pizza" reel).
+  // Verify each name independently and surface a multi-select confirmation.
+  // Single-name evidence is handled AFTER the address-first path (step 1.5) so a
+  // real street address always takes precedence over a name search.
   if (mentions.length >= 2 && evidence.addresses.length < 2) {
-    const nameDriven = await resolveVenueMentions({
-      mentions,
-      geoContext,
-      env,
-      platform: evidence.platform,
-    });
-    diagnostics.nameDrivenMultiPlace = {
-      mentionCount: mentions.length,
-      verified: nameDriven.verifiedCount,
-      ambiguous: nameDriven.ambiguousCount,
-      noMatch: nameDriven.noMatchCount,
-      providerError: nameDriven.providerErrorCount,
-      requestCount: nameDriven.requestCount,
-      mentions: nameDriven.mentionResults.map((m) => ({
-        mentionId: m.mentionId,
-        displayName: m.displayName,
-        outcome: m.outcome,
-        candidateCount: m.candidates.length,
-      })),
-    };
-    // Preserve the full per-mention structure for a future per-slot UI.
-    diagnostics.mentionResults = nameDriven.mentionResults;
-    logShareDebug('resolver:name_driven', {
-      mentionCount: mentions.length,
-      verified: nameDriven.verifiedCount,
-      ambiguous: nameDriven.ambiguousCount,
-      noMatch: nameDriven.noMatchCount,
-      aggregate: nameDriven.aggregateCandidates.length,
-    });
-
-    if (nameDriven.aggregateCandidates.length >= 1) {
-      // ≥1 verified/ambiguous canonical place → multi-select confirmation.
-      // safeToAutoSave hard-coded false (bypasses decide()); a name-only match
-      // is never silently saved.
-      const evUsed = [...evidenceUsed, 'media_name_mention', 'name_driven_multi'];
-      return finalize(
-        {
-          decision: 'multi_candidate_confirmation',
-          primaryCandidate: nameDriven.aggregateCandidates[0],
-          candidates: nameDriven.aggregateCandidates,
-          safeToAutoSave: false,
-          confidence: nameDriven.verifiedCount >= 1 ? 'medium' : 'low',
-          reasons: ['name_driven_multi_resolved'],
-        },
-        {
-          cleanSearchQuery: mentions.map((m) => m.displayName).join(' | '),
-          warnings,
-          diagnostics,
-          evidenceUsed: evUsed,
-          timings,
-        },
-      );
-    }
-    // No mention verified to a canonical place → manual fallback with the first
-    // mention prefilled so the user can search by hand. Never fabricated.
-    warnings.push('name_driven_no_verified_places');
-    return {
-      decision: 'manual_fallback',
-      candidates: [],
-      safeToAutoSave: false,
-      confidence: 'low',
-      cleanSearchQuery: mentions[0]?.displayName ?? undefined,
-      evidenceUsed: [...evidenceUsed, 'media_name_mention'],
-      warnings,
-      diagnostics,
-      failureReason: 'no_candidates',
-    };
+    return await runNameDrivenResolution(false);
   }
 
   // ---- 1. Address-first verification -----------------------------
@@ -397,6 +414,7 @@ export async function resolveSharedPlace(args: {
             : null,
       });
       if (verification.status === 'verified') {
+        diagnostics.resolverPath = 'explicit_address';
         const resolved = toResolvedCandidate(
           { candidate: verification.candidate, score: 50, reasons: ['address_verified'], rejected: false, rejectionReason: null },
           [...evidenceUsed, 'address_verified'],
@@ -415,6 +433,7 @@ export async function resolveSharedPlace(args: {
         });
       }
       if (verification.status === 'ambiguous') {
+        diagnostics.resolverPath = 'explicit_address';
         const resolved = verification.candidates.map((c) =>
           toResolvedCandidate(
             { candidate: c, score: 40, reasons: ['address_verified_ambiguous'], rejected: false, rejectionReason: null },
@@ -445,9 +464,20 @@ export async function resolveSharedPlace(args: {
     }
   }
 
+  // ---- 1.5 Name-driven SINGLE-place verification -----------------
+  // Exactly one explicit venue NAME and no verified street address above → run
+  // the SAME deterministic name-driven verifier for that single name (city /
+  // region context ranks + disambiguates). Reaches here only for MEDIA evidence
+  // (ordinary link shares carry no `mentions`, so they fall through to the
+  // legacy text-search ladder unchanged). NEVER auto-saves.
+  if (mentions.length >= 1 && evidence.addresses.length < 2) {
+    return await runNameDrivenResolution(true);
+  }
+
   // ---- 2. Text-search ladder -------------------------------------
   const plan = buildQueryPlan(evidence);
   diagnostics.queryPlan = plan.queries;
+  diagnostics.resolverPath = 'manual_fallback';
   if (plan.queries.length === 0) {
     // No explicit place evidence (no address / venue hint / venue handle)
     // AND nothing but casual caption prose to search → do NOT query random
@@ -601,6 +631,8 @@ export async function resolveSharedPlace(args: {
     toResolvedCandidate(s, evidenceUsed),
   );
   const decision = decide({ evidence, candidates: resolved, addressVerified: false });
+  diagnostics.resolverPath =
+    decision.decision === 'manual_fallback' ? 'manual_fallback' : 'legacy_single';
 
   // When an address was present but the text-search candidate is only good
   // enough for manual fallback, prefill the search box with the address so the

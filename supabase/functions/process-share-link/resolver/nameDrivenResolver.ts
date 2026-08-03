@@ -93,6 +93,41 @@ export type NameDrivenResult = {
   requestCount: number;
 };
 
+/**
+ * Map an aggregate name-driven result to a resolver decision. PURE — no I/O.
+ * `safeToAutoSave` is ALWAYS false: a name-only match is never silently saved.
+ *   • no canonical candidate            → manual_fallback (name preserved)
+ *   • multi (≥2 mentions)               → multi_candidate_confirmation
+ *   • single verified                   → candidate_confirmation (one canonical)
+ *   • single ambiguous, ≥2 candidates   → multi_candidate_confirmation (pick one)
+ *   • single ambiguous, exactly 1 cand  → candidate_confirmation (user confirms)
+ */
+export function nameDrivenDecision(
+  result: NameDrivenResult,
+  isSingle: boolean,
+): {
+  decision: 'multi_candidate_confirmation' | 'candidate_confirmation' | 'manual_fallback';
+  confidence: 'low' | 'medium' | 'high';
+  reason: string;
+  safeToAutoSave: false;
+} {
+  const cands = result.aggregateCandidates.length;
+  if (cands === 0) {
+    return { decision: 'manual_fallback', confidence: 'low', reason: 'name_driven_no_verified_places', safeToAutoSave: false };
+  }
+  const verified = result.verifiedCount >= 1;
+  if (!isSingle) {
+    return { decision: 'multi_candidate_confirmation', confidence: verified ? 'medium' : 'low', reason: 'name_driven_multi_resolved', safeToAutoSave: false };
+  }
+  if (verified) {
+    return { decision: 'candidate_confirmation', confidence: 'high', reason: 'name_driven_single_verified', safeToAutoSave: false };
+  }
+  if (cands >= 2) {
+    return { decision: 'multi_candidate_confirmation', confidence: 'medium', reason: 'name_driven_single_ambiguous', safeToAutoSave: false };
+  }
+  return { decision: 'candidate_confirmation', confidence: 'low', reason: 'name_driven_single_ambiguous', safeToAutoSave: false };
+}
+
 // ---- Tunable thresholds (normalized 0..1) ---------------------------------
 export const ACCEPT_SCORE = 0.62; // verified_single needs to clearly exceed this
 export const PLAUSIBLE_FLOOR = 0.4; // below this a candidate is not surfaced

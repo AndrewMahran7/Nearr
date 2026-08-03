@@ -73,6 +73,22 @@ try {
     ? result.diagnostics.mentionResults
     : [];
 
+  // Surface the actual rejected candidates (name + reason) so diagnostics never
+  // say "not_surfaced_by_resolver_result".
+  const rejectedCandidates: { mentionId: string | null; name: string | null; reason: string | null }[] = [];
+  for (const m of mentionResults) {
+    const scoring = Array.isArray(m?.scoring) ? m.scoring : [];
+    for (const s of scoring) {
+      if (s?.rejected) {
+        rejectedCandidates.push({
+          mentionId: m?.mentionId ?? null,
+          name: typeof s?.name === 'string' ? s.name : null,
+          reason: typeof s?.rejectionReason === 'string' ? s.rejectionReason : null,
+        });
+      }
+    }
+  }
+
   out({
     ok: true,
     renderedPlaces: rendered.renderedPlaces,
@@ -81,11 +97,13 @@ try {
     safeToAutoSave: result?.safeToAutoSave === true,
     confidence: result?.confidence ?? null,
     cleanSearchQuery: result?.cleanSearchQuery ?? null,
+    resolverPath: result?.diagnostics?.resolverPath ?? null,
     evidenceUsed: Array.isArray(result?.evidenceUsed) ? result.evidenceUsed.slice(0, 24) : [],
-    // Name-driven multi-place mention slots (sanitized).
+    // Name-driven mention slots (sanitized). Populated for one OR many names.
     mentionCount: built.mentions.length,
     geoContext: built.geoContext,
     nameDriven: result?.diagnostics?.nameDrivenMultiPlace ?? null,
+    rejectedCandidates: rejectedCandidates.slice(0, 20),
     mentionResults: mentionResults.slice(0, 12).map((m: any) => ({
       mentionId: m?.mentionId ?? null,
       displayName: typeof m?.displayName === 'string' ? m.displayName : null,

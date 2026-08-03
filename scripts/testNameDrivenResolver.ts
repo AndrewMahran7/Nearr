@@ -18,9 +18,11 @@ import {
   scoreMentionCandidate,
   classifyMention,
   resolveVenueMentions,
+  nameDrivenDecision,
   normalizeStateToAbbr,
   normalizeRawScore,
   type ScoredMentionCandidate,
+  type NameDrivenResult,
 } from '../supabase/functions/process-share-link/resolver/nameDrivenResolver';
 import {
   distinctiveTokensOf,
@@ -129,6 +131,34 @@ check('classify verified_single (clear winner)', classifyMention([scored('A', 57
 check('classify ambiguous (two close)', classifyMention([scored('A', 55, ['strong_name_match', 'distinctive_token_match']), scored('B', 54, ['strong_name_match', 'distinctive_token_match'])]).outcome === 'ambiguous_candidates');
 check('classify no_match (business only, no name evidence)', classifyMention([scored('A', 25, ['business_type'])]).outcome === 'no_match');
 check('classify no_match (empty)', classifyMention([]).outcome === 'no_match');
+
+// ---- nameDrivenDecision (single vs multi mapping) -------------------------
+function ndResult(over: Partial<NameDrivenResult>): NameDrivenResult {
+  return {
+    mentionResults: [],
+    aggregateCandidates: [],
+    verifiedCount: 0,
+    ambiguousCount: 0,
+    noMatchCount: 0,
+    providerErrorCount: 0,
+    rejectedCount: 0,
+    requestCount: 0,
+    ...over,
+  };
+}
+const rc = (id: string) => ({ googlePlaceId: id, name: id, formattedAddress: '', confidenceScore: 0.7, evidence: [], reasons: [] }) as any;
+{
+  const d = nameDrivenDecision(ndResult({ aggregateCandidates: [rc('a')], verifiedCount: 1 }), true);
+  check('single verified => candidate_confirmation', d.decision === 'candidate_confirmation' && d.confidence === 'high');
+  check('single verified never auto-saves', d.safeToAutoSave === false);
+}
+check('single ambiguous >=2 => multi_candidate_confirmation', nameDrivenDecision(ndResult({ aggregateCandidates: [rc('a'), rc('b')], verifiedCount: 0, ambiguousCount: 1 }), true).decision === 'multi_candidate_confirmation');
+check('single ambiguous 1 cand => candidate_confirmation (low)', (() => { const d = nameDrivenDecision(ndResult({ aggregateCandidates: [rc('a')], ambiguousCount: 1 }), true); return d.decision === 'candidate_confirmation' && d.confidence === 'low'; })());
+check('single no candidates => manual_fallback', nameDrivenDecision(ndResult({ aggregateCandidates: [] }), true).decision === 'manual_fallback');
+check('multi verified => multi_candidate_confirmation', nameDrivenDecision(ndResult({ aggregateCandidates: [rc('a'), rc('b')], verifiedCount: 1 }), false).decision === 'multi_candidate_confirmation');
+check('multi no candidates => manual_fallback', nameDrivenDecision(ndResult({ aggregateCandidates: [] }), false).decision === 'manual_fallback');
+check('decision mapping never auto-saves (any case)', [true, false].every((s) => nameDrivenDecision(ndResult({ aggregateCandidates: [rc('a')], verifiedCount: 1 }), s).safeToAutoSave === false));
+
 
 // ---------------------------------------------------------------------------
 // Orchestration (mocked Places)
@@ -304,6 +334,80 @@ const geo: MediaGeoContext = { city: null, region: 'California', country: 'Unite
       deps: { search: fixedSearch({ 'Parlor Woodfire': [cand('Parlor Woodfire')] }), geocode: noGeocode },
     });
     check('no safeToAutoSave leaks from resolver', !('safeToAutoSave' in (r as any)));
+  }
+
+  // ---- single-mention end-to-end scenarios (task §3) ----------------------
+  // one explicit name + city context => verified single
+  {
+    const r = await resolveVenueMentions({
+      mentions: mentions("Hermon's"),
+      geoContext: { city: 'Los Angeles', region: 'California', country: 'United States' },
+      env,
+      platform: 'instagram',
+      deps: {
+        search: fixedSearch({ "Hermon's": [cand("Hermon's", { googlePlaceId: 'hermons', formattedAddress: '5800 Monterey Rd, Los Angeles, CA 90042' })] }),
+        geocode: async () => ({ lat: 34.05, lng: -118.24 }),
+      },
+    });
+    check('single name + city context => verified_single', r.mentionResults[0]!.outcome === 'verified_single');
+    check('single verified aggregate has 1 canonical', r.aggregateCandidates.length === 1 && r.aggregateCandidates[0]!.googlePlaceId === 'hermons');
+  }
+
+  // one explicit name with punctuation/apostrophe => verified
+  {
+    const r = await resolveVenueMentions({
+      mentions: mentions("Lunita's Pizza"),
+      geoContext: geo,
+      env,
+      platform: 'instagram',
+      deps: { search: fixedSearch({ "Lunita's Pizza": [cand('Lunitas Pizza', { googlePlaceId: 'lun' })] }), geocode: noGeocode },
+    });
+    check('apostrophe name => resolves', r.mentionResults[0]!.outcome === 'verified_single' || r.mentionResults[0]!.outcome === 'ambiguous_candidates');
+    check('apostrophe name aggregate populated', r.aggregateCandidates.length === 1);
+  }
+
+  // one explicit name, conflicting geographic context => wrong-state rejected => no_match
+  {
+    const r = await resolveVenueMentions({
+      mentions: mentions('Twin Dragon'),
+      geoContext: { city: null, region: 'California', country: 'United States' },
+      env,
+      platform: 'instagram',
+      deps: {
+        search: fixedSearch({ 'Twin Dragon': [cand('Twin Dragon', { googlePlaceId: 'td', formattedAddress: '9 Main St, Austin, TX 78701' })] }),
+        geocode: noGeocode,
+      },
+    });
+    check('conflicting geo (TX vs CA) => no_match', r.mentionResults[0]!.outcome === 'no_match');
+    check('conflicting geo preserves name, no canonical', r.aggregateCandidates.length === 0);
+  }
+
+  // single-name Place ID dedup (one mention, duplicate ids in results)
+  {
+    const r = await resolveVenueMentions({
+      mentions: mentions('Ry Poke Shack'),
+      geoContext: geo,
+      env,
+      platform: 'instagram',
+      deps: {
+        search: async (): Promise<SearchPlacesResult> => ({ ok: true, results: [cand('Ry Poke Shack', { googlePlaceId: 'DUP' }), cand('Ry Poke Shack', { googlePlaceId: 'DUP' })] }),
+        geocode: noGeocode,
+      },
+    });
+    check('single-name dedup by Place ID', r.aggregateCandidates.length === 1);
+  }
+
+  // single-name provider timeout => provider_error (retryable, not permanent no_match)
+  {
+    const r = await resolveVenueMentions({
+      mentions: mentions('dPlace'),
+      geoContext: geo,
+      env,
+      platform: 'instagram',
+      deps: { search: (async () => { throw new Error('timeout'); }) as any, geocode: noGeocode },
+    });
+    check('single-name timeout => provider_error (not no_match)', r.mentionResults[0]!.outcome === 'provider_error');
+    check('provider_error is not a permanent lost place', r.noMatchCount === 0);
   }
 
   if (failures > 0) {
