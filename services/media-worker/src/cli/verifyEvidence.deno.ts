@@ -20,6 +20,7 @@
 // @ts-nocheck — Deno runtime + Deno-side resolver types.
 
 import { renderMediaEvidenceCaption } from '../../../../supabase/functions/process-share-jobs/mediaEvidence.ts';
+import { buildVenueMentions } from '../../../../supabase/functions/process-share-jobs/mediaMentions.ts';
 import { extractEvidence } from '../../../../supabase/functions/process-share-link/evidence/extractEvidence.ts';
 import { resolveSharedPlace } from '../../../../supabase/functions/process-share-link/resolver/resolveSharedPlace.ts';
 import { readEnv } from '../../../../supabase/functions/process-share-link/env.ts';
@@ -59,7 +60,18 @@ try {
     handles: emptyHandles,
     taggedLocation: null,
   });
-  const result: any = await resolveSharedPlace({ evidence: mediaEvidence, env });
+  // Structured explicit venue-name mentions → name-driven multi-place path.
+  const built = buildVenueMentions(evidence as any);
+  const result: any = await resolveSharedPlace({
+    evidence: mediaEvidence,
+    env,
+    mentions: built.mentions,
+    geoContext: built.geoContext,
+  });
+
+  const mentionResults = Array.isArray(result?.diagnostics?.mentionResults)
+    ? result.diagnostics.mentionResults
+    : [];
 
   out({
     ok: true,
@@ -70,12 +82,28 @@ try {
     confidence: result?.confidence ?? null,
     cleanSearchQuery: result?.cleanSearchQuery ?? null,
     evidenceUsed: Array.isArray(result?.evidenceUsed) ? result.evidenceUsed.slice(0, 24) : [],
+    // Name-driven multi-place mention slots (sanitized).
+    mentionCount: built.mentions.length,
+    geoContext: built.geoContext,
+    nameDriven: result?.diagnostics?.nameDrivenMultiPlace ?? null,
+    mentionResults: mentionResults.slice(0, 12).map((m: any) => ({
+      mentionId: m?.mentionId ?? null,
+      displayName: typeof m?.displayName === 'string' ? m.displayName : null,
+      outcome: m?.outcome ?? null,
+      candidates: (Array.isArray(m?.candidates) ? m.candidates : []).slice(0, 5).map((c: any) => ({
+        name: typeof c?.name === 'string' ? c.name : null,
+        formattedAddress: typeof c?.formattedAddress === 'string' ? c.formattedAddress : null,
+        googlePlaceId: typeof c?.googlePlaceId === 'string' ? c.googlePlaceId : null,
+        confidenceScore: typeof c?.confidenceScore === 'number' ? c.confidenceScore : null,
+      })),
+    })),
     candidateCount: Array.isArray(result?.candidates) ? result.candidates.length : 0,
     candidates: (Array.isArray(result?.candidates) ? result.candidates : []).slice(0, 10).map((c: any) => ({
       name: typeof c?.name === 'string' ? c.name : null,
       formattedAddress: typeof c?.formattedAddress === 'string' ? c.formattedAddress : null,
       googlePlaceId: typeof c?.googlePlaceId === 'string' ? c.googlePlaceId : null,
       matchScore: typeof c?.matchScore === 'number' ? c.matchScore : null,
+      confidenceScore: typeof c?.confidenceScore === 'number' ? c.confidenceScore : null,
     })),
   });
 } catch (err) {

@@ -21,6 +21,9 @@ export type PlacesCandidate = {
   latitude?: number;
   longitude?: number;
   types?: string[];
+  /** Google `business_status` (OPERATIONAL | CLOSED_TEMPORARILY |
+   *  CLOSED_PERMANENTLY). Used to demote permanently-closed candidates. */
+  businessStatus?: string;
 };
 
 export type SearchPlacesResult =
@@ -71,6 +74,7 @@ export async function searchPlaces(
     latitude: r.geometry?.location?.lat,
     longitude: r.geometry?.location?.lng,
     types: Array.isArray(r.types) ? r.types : undefined,
+    businessStatus: typeof r.business_status === 'string' ? r.business_status : undefined,
   }));
   return { ok: true, results };
 }

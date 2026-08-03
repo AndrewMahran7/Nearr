@@ -43,6 +43,7 @@ import {
   summarizeMediaEvidence,
   mediaEvidenceAutoSaveEligible,
 } from './mediaEvidence.ts';
+import { buildVenueMentions } from './mediaMentions.ts';
 import { authorizeServiceRoleBearer, authorizeWorkerSecret, planPreResolve, planPostResolve } from './mediaFinalizePlan.ts';
 
 const CORS_HEADERS: Record<string, string> = {
@@ -406,7 +407,17 @@ async function finalizeMediaTask(admin: any, env: any, body: any): Promise<Respo
     handles: emptyHandles,
     taggedLocation: null,
   });
-  const result = await resolveSharedPlace({ evidence: mediaEvidence, env });
+  // Structured explicit venue-name mentions enable the name-driven multi-place
+  // path (e.g. a "top 5 pizza" reel with names but no street addresses).
+  const mediaMentions = parsed.ok
+    ? buildVenueMentions(parsed.value)
+    : { mentions: [], geoContext: { city: null, region: null, country: null } };
+  const result = await resolveSharedPlace({
+    evidence: mediaEvidence,
+    env,
+    mentions: mediaMentions.mentions,
+    geoContext: mediaMentions.geoContext,
+  });
   const extractionPayload = {
     platform: task.platform,
     via: 'media',

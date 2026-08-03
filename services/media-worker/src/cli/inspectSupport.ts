@@ -157,13 +157,32 @@ export type ProviderChecklist = {
   blockers: string[];
 };
 
+/** Whether the configured transcription provider is actually usable. A bare
+ *  provider NAME is not enough: openai needs a key; self_hosted needs a real
+ *  https endpoint URL and a non-placeholder key. */
+export function isTranscriptionConfigured(cfg: WorkerConfig): boolean {
+  const PLACEHOLDERS = new Set(['api_key', 'your_api_key', 'changeme', '']);
+  switch (cfg.transcriptionProvider) {
+    case 'openai':
+      return !!(cfg.transcriptionApiKey && cfg.transcriptionApiKey.trim());
+    case 'self_hosted':
+      return (
+        !!cfg.selfHostedTranscriptionUrl &&
+        /^https?:\/\//i.test(cfg.selfHostedTranscriptionUrl) &&
+        !PLACEHOLDERS.has((cfg.selfHostedTranscriptionApiKey || '').trim().toLowerCase())
+      );
+    default:
+      return false;
+  }
+}
+
 /** `hasEnv` is injected (defaults to process.env presence) so this is testable
  *  without touching the real environment and never reads a VALUE. */
 export function buildProviderChecklist(
   cfg: WorkerConfig,
   hasEnv: (name: string) => boolean,
 ): ProviderChecklist {
-  const transcriptionReal = cfg.transcriptionProvider !== 'noop';
+  const transcriptionReal = isTranscriptionConfigured(cfg);
   const visualReal = cfg.analysisProvider === 'gemini' && hasEnv('GEMINI_API_KEY');
   const placesConfigured = hasEnv('GOOGLE_PLACES_KEY');
   const ocrReal = cfg.ocrProvider !== 'noop';
@@ -174,7 +193,10 @@ export function buildProviderChecklist(
       provider: cfg.transcriptionProvider,
       configured: transcriptionReal,
       required: false, // additive: adds SPOKEN mentions; visual model still runs without it
-      envVars: ['MEDIA_TRANSCRIPTION_PROVIDER (e.g. "openai")', 'MEDIA_TRANSCRIPTION_API_KEY', 'MEDIA_TRANSCRIPTION_MODEL (optional)'],
+      envVars: [
+        'MEDIA_TRANSCRIPTION_PROVIDER (openai) + MEDIA_TRANSCRIPTION_API_KEY',
+        'or TRANSCRIPTION_PROVIDER=self_hosted + SELF_HOSTED_TRANSCRIPTION_URL + TRANSCRIPTION_SERVICE_API_KEY',
+      ],
     },
     {
       capability: 'visual_analysis',

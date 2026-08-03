@@ -74,9 +74,14 @@ export type WorkerConfig = {
   allowedMediaHosts: string[];
 
   // ---- Providers ----
-  transcriptionProvider: string; // 'noop' | 'openai' | ... (default noop)
+  transcriptionProvider: string; // 'noop' | 'openai' | 'self_hosted' (default noop)
   transcriptionApiKey: string;
   transcriptionModel: string;
+  /** URL-based self-hosted transcription endpoint (evidence-server FastAPI).
+   *  Bridged from the existing root SELF_HOSTED_TRANSCRIPTION_URL. */
+  selfHostedTranscriptionUrl: string;
+  /** API key for the self-hosted endpoint (root TRANSCRIPTION_SERVICE_API_KEY). */
+  selfHostedTranscriptionApiKey: string;
   analysisProvider: string; // 'heuristic' | 'gemini' (default heuristic)
   geminiApiKey: string;
   geminiModel: string;
@@ -119,6 +124,18 @@ export function loadConfig(): WorkerConfig {
   const geminiApiKey = str('GEMINI_API_KEY');
   const analysisProvider = str('MEDIA_ANALYSIS_PROVIDER', geminiApiKey ? 'gemini' : 'heuristic');
 
+  // Transcription provider bridge. Prefer the worker-native
+  // MEDIA_TRANSCRIPTION_PROVIDER; otherwise interpret the EXISTING app-level
+  // TRANSCRIPTION_PROVIDER (self_hosted → URL-based FastAPI; placeholder → noop;
+  // soscripted contract is unknown here → noop, never faked).
+  const rootTranscriptionProvider = str('TRANSCRIPTION_PROVIDER').toLowerCase();
+  const transcriptionProvider = (
+    str('MEDIA_TRANSCRIPTION_PROVIDER') ||
+    (rootTranscriptionProvider === 'self_hosted'
+      ? 'self_hosted'
+      : 'noop')
+  ).toLowerCase();
+
   return Object.freeze({
     port: int('PORT', 8090, 1),
     workerSecret: str('SHARE_MEDIA_WORKER_SECRET'),
@@ -148,9 +165,11 @@ export function loadConfig(): WorkerConfig {
 
     allowedMediaHosts: list('MEDIA_ALLOWED_HOSTS', DEFAULT_ALLOWED_HOSTS),
 
-    transcriptionProvider: str('MEDIA_TRANSCRIPTION_PROVIDER', 'noop').toLowerCase(),
+    transcriptionProvider,
     transcriptionApiKey: str('MEDIA_TRANSCRIPTION_API_KEY'),
     transcriptionModel: str('MEDIA_TRANSCRIPTION_MODEL', 'whisper-1'),
+    selfHostedTranscriptionUrl: str('SELF_HOSTED_TRANSCRIPTION_URL'),
+    selfHostedTranscriptionApiKey: str('TRANSCRIPTION_SERVICE_API_KEY'),
     analysisProvider: analysisProvider.toLowerCase(),
     geminiApiKey,
     // `-latest` alias so a retired pinned model (e.g. the old gemini-1.5-flash)

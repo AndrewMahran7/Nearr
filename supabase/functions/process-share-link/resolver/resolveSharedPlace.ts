@@ -26,6 +26,11 @@ import type {
 import { buildQueryPlan } from './queryBuilder.ts';
 import { scoreCandidates, toResolvedCandidate } from './placeScoring.ts';
 import { decide } from './decisionPolicy.ts';
+import { resolveVenueMentions } from './nameDrivenResolver.ts';
+import type {
+  VenueMention,
+  MediaGeoContext,
+} from '../../process-share-jobs/mediaMentions.ts';
 import {
   searchPlaces,
   verifyPlaceAtAddressServer,
@@ -43,8 +48,18 @@ export async function resolveSharedPlace(args: {
   env: Env;
   /** Optional caller-supplied search bias (rare). */
   bias?: SearchBias | null;
+  /** Structured explicit venue-name mentions from media evidence. When ≥2 are
+   *  present (and there aren't ≥2 street addresses driving the address-multi
+   *  path), each is individually verified against Google Places and surfaced as
+   *  a `multi_candidate_confirmation`. Empty/absent for ordinary link shares. */
+  mentions?: VenueMention[] | null;
+  /** Aggregate geo context that accompanies `mentions`. */
+  geoContext?: MediaGeoContext | null;
 }): Promise<ResolverResult> {
   const { evidence, env } = args;
+  const mentions = args.mentions ?? [];
+  const geoContext: MediaGeoContext =
+    args.geoContext ?? { city: null, region: null, country: null };
   const timings = new Timings();
   const warnings: string[] = [];
   const diagnostics: Record<string, unknown> = {};
@@ -232,6 +247,82 @@ export async function resolveSharedPlace(args: {
         },
       );
     }
+  }
+
+  // ---- 0.5 Name-driven multi-place verification ------------------
+  // Media evidence often carries ≥2 explicit venue NAMES with no street
+  // address (a "top 5 pizza" reel). The address paths above can't help those.
+  // Verify each eligible name independently against Google Places and surface
+  // the aggregate as a multi-select confirmation. NEVER auto-saves. Only fires
+  // when there aren't ≥2 addresses already driving the (stronger) address path.
+  if (mentions.length >= 2 && evidence.addresses.length < 2) {
+    const nameDriven = await resolveVenueMentions({
+      mentions,
+      geoContext,
+      env,
+      platform: evidence.platform,
+    });
+    diagnostics.nameDrivenMultiPlace = {
+      mentionCount: mentions.length,
+      verified: nameDriven.verifiedCount,
+      ambiguous: nameDriven.ambiguousCount,
+      noMatch: nameDriven.noMatchCount,
+      providerError: nameDriven.providerErrorCount,
+      requestCount: nameDriven.requestCount,
+      mentions: nameDriven.mentionResults.map((m) => ({
+        mentionId: m.mentionId,
+        displayName: m.displayName,
+        outcome: m.outcome,
+        candidateCount: m.candidates.length,
+      })),
+    };
+    // Preserve the full per-mention structure for a future per-slot UI.
+    diagnostics.mentionResults = nameDriven.mentionResults;
+    logShareDebug('resolver:name_driven', {
+      mentionCount: mentions.length,
+      verified: nameDriven.verifiedCount,
+      ambiguous: nameDriven.ambiguousCount,
+      noMatch: nameDriven.noMatchCount,
+      aggregate: nameDriven.aggregateCandidates.length,
+    });
+
+    if (nameDriven.aggregateCandidates.length >= 1) {
+      // ≥1 verified/ambiguous canonical place → multi-select confirmation.
+      // safeToAutoSave hard-coded false (bypasses decide()); a name-only match
+      // is never silently saved.
+      const evUsed = [...evidenceUsed, 'media_name_mention', 'name_driven_multi'];
+      return finalize(
+        {
+          decision: 'multi_candidate_confirmation',
+          primaryCandidate: nameDriven.aggregateCandidates[0],
+          candidates: nameDriven.aggregateCandidates,
+          safeToAutoSave: false,
+          confidence: nameDriven.verifiedCount >= 1 ? 'medium' : 'low',
+          reasons: ['name_driven_multi_resolved'],
+        },
+        {
+          cleanSearchQuery: mentions.map((m) => m.displayName).join(' | '),
+          warnings,
+          diagnostics,
+          evidenceUsed: evUsed,
+          timings,
+        },
+      );
+    }
+    // No mention verified to a canonical place → manual fallback with the first
+    // mention prefilled so the user can search by hand. Never fabricated.
+    warnings.push('name_driven_no_verified_places');
+    return {
+      decision: 'manual_fallback',
+      candidates: [],
+      safeToAutoSave: false,
+      confidence: 'low',
+      cleanSearchQuery: mentions[0]?.displayName ?? undefined,
+      evidenceUsed: [...evidenceUsed, 'media_name_mention'],
+      warnings,
+      diagnostics,
+      failureReason: 'no_candidates',
+    };
   }
 
   // ---- 1. Address-first verification -----------------------------

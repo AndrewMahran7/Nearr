@@ -45,6 +45,8 @@ function testCfg(over: Partial<WorkerConfig> = {}): WorkerConfig {
     transcriptionProvider: 'noop',
     transcriptionApiKey: '',
     transcriptionModel: 'whisper-1',
+    selfHostedTranscriptionUrl: '',
+    selfHostedTranscriptionApiKey: '',
     analysisProvider: 'heuristic',
     geminiApiKey: '',
     geminiModel: 'gemini-1.5-flash',

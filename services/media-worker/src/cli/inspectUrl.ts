@@ -130,10 +130,12 @@ function analyzeNameDrivenMultiPlace(evidence: MediaPlaceEvidence) {
     lostForLackOfAddress: withoutAddress.map((p) => boundedText(p.name, 80)),
     multipleIntentionalPlaces: evidence.multipleIntentionalPlaces,
     note:
-      'The current resolver multi_candidate_confirmation path is ADDRESS-DRIVEN: it ' +
-      'iterates evidence.addresses and verifies each by street address. Places named ' +
-      'without an explicit street address are not fanned out to per-name Places searches, ' +
-      'so they are lost from a multi result.',
+      'Name-driven multi-place verification IS implemented: when ≥2 eligible explicit ' +
+      'venue NAMES are present (and there arent ≥2 street addresses), each name is ' +
+      'individually searched + scored against Google Places and surfaced as a ' +
+      'multi_candidate_confirmation. The address-driven multi path still handles captions ' +
+      'that carry ≥2 explicit street addresses. withExplicitStreetAddress counts places the ' +
+      'ADDRESS path alone could verify; the rest are now covered by the NAME path.',
   };
 }
 
@@ -192,13 +194,43 @@ function buildVerificationBreakdown(v: VerificationOutcome, evidence: MediaPlace
     confidence?: string;
     candidateCount?: number;
     candidates?: { name: string | null; formattedAddress: string | null; googlePlaceId: string | null; matchScore: number | null }[];
+    mentionCount?: number;
+    geoContext?: { city: string | null; region: string | null; country: string | null };
+    nameDriven?: unknown;
+    mentionResults?: {
+      mentionId: string | null;
+      displayName: string | null;
+      outcome: string | null;
+      candidates: { name: string | null; formattedAddress: string | null; googlePlaceId: string | null; confidenceScore: number | null }[];
+    }[];
   };
   const ambiguous = r.decision === 'multi_candidate_confirmation' || r.decision === 'candidate_picker';
+  const mentionResults = Array.isArray(r.mentionResults) ? r.mentionResults : [];
+  const verifiedSlots = mentionResults.filter((m) => m.outcome === 'verified_single');
+  const ambiguousSlots = mentionResults.filter((m) => m.outcome === 'ambiguous_candidates');
+  const noMatchSlots = mentionResults.filter((m) => m.outcome === 'no_match');
   return {
     ran: true,
     decision: r.decision ?? null,
     safeToAutoSave: r.safeToAutoSave === true, // reported as-is; never weakened
     confidence: r.confidence ?? null,
+    geoContext: r.geoContext ?? null,
+    // Per-mention slots (name-driven multi-place). Each explicit name gets one
+    // slot with its own verification outcome + candidates.
+    mentionSlots: mentionResults.map((m) => ({
+      mentionId: m.mentionId,
+      name: m.displayName,
+      outcome: m.outcome,
+      candidates: (Array.isArray(m.candidates) ? m.candidates : []).map((c) => ({
+        name: c.name,
+        address: c.formattedAddress,
+        googlePlaceId: c.googlePlaceId,
+        confidenceScore: c.confidenceScore,
+      })),
+    })),
+    verifiedMentionCount: verifiedSlots.length,
+    ambiguousMentionCount: ambiguousSlots.length,
+    noMatchMentionCount: noMatchSlots.length,
     verifiedCanonicalPlaces: (r.candidates ?? []).map((c) => ({
       name: c.name,
       address: c.formattedAddress,
@@ -323,9 +355,16 @@ async function analyzeMedia(args: {
     return 2;
   }
 
-  // Audio -> transcription.
+  // Audio -> transcription. URL-based providers (self_hosted) receive the
+  // public source URL; audio-file providers (openai) use the extracted audio.
   const audioPath = await extractAudio(cfg, playable, probe, workDir, signal);
-  const transcript = await providers.transcription.transcribe({ audioPath, hasAudio: probe.hasAudio, signal });
+  const transcript = await providers.transcription.transcribe({
+    audioPath,
+    hasAudio: probe.hasAudio,
+    signal,
+    sourceUrl: media.canonicalUrl,
+    platform: 'instagram',
+  });
   steps.transcript = {
     provider: transcript.provider,
     status: transcript.status,
@@ -371,7 +410,17 @@ async function analyzeMedia(args: {
   };
   report.nameDrivenMultiPlace = analyzeNameDrivenMultiPlace(analysis.evidence);
   report.contentBreakdown = buildContentBreakdown(analysis.evidence);
-  report.transcriptionRan = checklist.transcriptionReady;
+  // Honest transcription reporting — reflects what ACTUALLY ran, not just the
+  // configured capability. A URL-based self-hosted service that isn't
+  // configured (or has no source URL) reports its exact reason here.
+  report.transcription = {
+    provider: transcript.provider,
+    status: transcript.status,
+    reason: transcript.reason ?? null,
+    ran: transcript.status === 'success',
+    segmentCount: transcript.segments.length,
+  };
+  report.transcriptionRan = transcript.status === 'success';
   report.visualAnalysisRan = true;
 
   // Deterministic resolver + Google Places verification (real modules, no save).
