@@ -32,6 +32,7 @@ import {
   setLastNotificationId,
 } from '@/lib/diagnosticContext';
 import { routeShareJobNotification } from '@/lib/shareJobRouting';
+import { resolveOpenSavedPlaceRoute } from '@/lib/openSavedPlace';
 import {
   deactivatePushTokenForCurrentUser,
   registerPushTokenForCurrentUser,
@@ -673,10 +674,15 @@ function RootLayoutContent() {
           });
           switch (sjRoute.kind) {
             case 'saved_place':
-              router.push({
-                pathname: '/(tabs)/map',
-                params: { savedPlaceId: sjRoute.savedPlaceId },
-              });
+              // Open the EXISTING saved place through the one validated contract
+              // (resolves by saved_places.id, falls back to google_place_id).
+              router.push(
+                resolveOpenSavedPlaceRoute({
+                  savedPlaceId: sjRoute.savedPlaceId,
+                  googlePlaceId: sjRoute.googlePlaceId,
+                  source: 'notification',
+                }),
+              );
               break;
             case 'queue_item':
               router.push({ pathname: '/share-jobs/[jobId]', params: { jobId: sjRoute.jobId } });

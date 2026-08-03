@@ -40,6 +40,10 @@ import { getSavedPlacesCacheSnapshot, upsertSavedPlaceIntoCache } from '@/hooks/
 import { recordBreadcrumb } from '@/lib/breadcrumbs';
 import { setCurrentShareJobId } from '@/lib/diagnosticContext';
 import { createOnceLatch } from '@/lib/onceLatch';
+import {
+  resolveOpenSavedPlaceRoute,
+  type OpenSavedPlaceSource,
+} from '@/lib/openSavedPlace';
 import { saveSavedPlace } from '@/services/savedPlacesService';
 import type { PlaceCandidate } from '@/services/placesService';
 import {
@@ -220,11 +224,11 @@ function ShareJobDetailScreen() {
   ): Promise<void> {
     if (savedPlaceId) {
       await markShareJobResolved(jobId, savedPlaceId);
-      goToMap(savedPlaceId);
+      openExistingPlace({ savedPlaceId, source: 'share_job_saved' });
       return;
     }
     if (duplicate) {
-      goToMap(null);
+      openExistingPlace({ source: 'share_job_saved' });
       return;
     }
     throw new Error('Save succeeded but did not return an id. Please retry.');
@@ -344,23 +348,30 @@ function ShareJobDetailScreen() {
     ]);
   }
 
-  function goToMap(savedPlaceId: string | null) {
-    // Navigate exactly once. A double-tap, a late realtime/poll update, or a
-    // retried save must never fire a second router.replace (which can leave a
-    // half-torn screen stack behind the map and surface as an intermittent
-    // crash on return).
+  // ONE canonical way to open an EXISTING saved place on the map. Validates the
+  // identifiers (lib/openSavedPlace), records a sanitized breadcrumb, and
+  // navigates AT MOST ONCE (the once-latch). Resolving by saved_places.id first
+  // and google_place_id second is what makes "View place" reliably open the
+  // place that is actually on the user's map — even when the share job is
+  // already terminal / removed from the queue, and without any candidate data.
+  function openExistingPlace(args: {
+    savedPlaceId?: string | null;
+    googlePlaceId?: string | null;
+    source: OpenSavedPlaceSource;
+  }) {
     if (!navigateOnceRef.current.acquire()) return;
-    if (savedPlaceId) {
-      router.replace({ pathname: '/(tabs)/map', params: { savedPlaceId } });
-    } else {
-      router.replace('/(tabs)/map');
-    }
+    recordBreadcrumb('actual_navigation', {
+      savedPlaceId: args.savedPlaceId ?? null,
+      result: `open_saved_place:${args.source}`,
+    });
+    router.replace(resolveOpenSavedPlaceRoute(args));
   }
 
   // The proposed place is already on the user's map. Resolve the job to that
   // existing saved place (no duplicate save) and open it. Resolving failures
-  // are non-fatal — we still show the place.
-  async function viewAlreadySaved(savedPlaceId: string) {
+  // are non-fatal — we still open the place (the destination never depends on
+  // the job staying active).
+  async function viewAlreadySaved(savedPlaceId: string, googlePlaceId?: string | null) {
     if (resolvingRef.current) return;
     resolvingRef.current = true;
     if (job) {
@@ -370,7 +381,7 @@ function ShareJobDetailScreen() {
         // Non-fatal: the place is saved regardless.
       }
     }
-    goToMap(savedPlaceId);
+    openExistingPlace({ savedPlaceId, googlePlaceId, source: 'share_job_already_saved' });
   }
 
   function backToQueue() {
@@ -519,7 +530,12 @@ function ShareJobDetailScreen() {
           </Text>
           <Button
             title="View place"
-            onPress={() => goToMap(job.saved_place_id)}
+            onPress={() =>
+              openExistingPlace({
+                savedPlaceId: job.saved_place_id,
+                source: 'share_job_completed',
+              })
+            }
             style={styles.centeredPrimary}
           />
         </View>
@@ -687,7 +703,7 @@ function ShareJobDetailScreen() {
               <Button
                 title="View place"
                 variant="secondary"
-                onPress={() => void viewAlreadySaved(alreadySavedId)}
+                onPress={() => void viewAlreadySaved(alreadySavedId, single?.googlePlaceId)}
                 style={styles.primaryBtn}
               />
             ) : (

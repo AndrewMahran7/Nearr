@@ -114,6 +114,7 @@ import {
 import { trackEvent } from '@/lib/analytics';
 import { recordBreadcrumb } from '@/lib/breadcrumbs';
 import { setLocationWatcherState } from '@/lib/diagnosticContext';
+import { findSavedPlaceForOpen, isOpenExistingPlaceSource } from '@/lib/openSavedPlace';
 import { isAsyncShareJobsEnabled } from '@/lib/featureFlags';
 import { isLikelyUrl } from '@/lib/shareParser';
 import { distanceMeters, milesToMeters, minutesToMeters } from '@/lib/geo';
@@ -432,16 +433,22 @@ export default function MapScreen() {
   // render or fight the user's panning.
   const {
     savedPlaceId: rawSavedPlaceId,
+    savedPlaceGoogleId: rawSavedPlaceGoogleId,
+    placeSource: rawPlaceSource,
     reminderOpen: rawReminderOpen,
     reminderSource: rawReminderSource,
     nearbyCount: rawNearbyCount,
   } = useLocalSearchParams<{
     savedPlaceId?: string | string[];
+    savedPlaceGoogleId?: string | string[];
+    placeSource?: string | string[];
     reminderOpen?: string | string[];
     reminderSource?: string | string[];
     nearbyCount?: string | string[];
   }>();
   const savedPlaceId = firstParam(rawSavedPlaceId);
+  const savedPlaceGoogleId = firstParam(rawSavedPlaceGoogleId);
+  const placeSource = firstParam(rawPlaceSource);
   const reminderOpen = parseBoolParam(rawReminderOpen);
   const reminderSourceRaw = firstParam(rawReminderSource);
   const reminderSource: ReminderSource =
@@ -910,29 +917,55 @@ export default function MapScreen() {
 
   useEffect(() => {
     if (!mapReady) return;
-    if (!savedPlaceId) return;
-    if (handledTargetIdRef.current === savedPlaceId) return;
+    // A "View place" / already-saved / notification open provides a
+    // saved_places id and, when available, the canonical google_place_id as a
+    // fallback. Handle whichever is present.
+    const focusKey = savedPlaceId || savedPlaceGoogleId;
+    if (!focusKey) return;
+    if (handledTargetIdRef.current === focusKey) return;
     if (validPlaces.length === 0) return; // wait for data to arrive
-    const target = validPlaces.find((p) => p.id === savedPlaceId);
+    // Resolve by saved_places.id FIRST, then by the stable google_place_id.
+    // This is what makes "View place" reliably open the existing place even
+    // when the exact saved_places id can't be matched (deleted-then-re-saved,
+    // or a stale id) — one tested resolver (lib/openSavedPlace).
+    const target = findSavedPlaceForOpen(validPlaces, {
+      savedPlaceId,
+      googlePlaceId: savedPlaceGoogleId,
+    });
     if (!target) {
       // Not in the current list. If saved places are still loading, WAIT — a
       // freshly-saved place (or a cold-cache deep link) may not have hydrated
       // yet. Only give up (mark handled) once loading has settled, so we never
       // refocus-loop on a genuinely-absent id (e.g. deleted on another device).
       if (liveLoading) return;
-      handledTargetIdRef.current = savedPlaceId;
-      if (reminderOpen && shownMissingReminderRef.current !== savedPlaceId) {
-        shownMissingReminderRef.current = savedPlaceId;
+      handledTargetIdRef.current = focusKey;
+      if (reminderOpen && shownMissingReminderRef.current !== focusKey) {
+        shownMissingReminderRef.current = focusKey;
         setReminderContextSavedPlaceId(null);
         setSnackbar({
           message: 'Could not find that saved place. Showing your map.',
           undoId: null,
         });
+      } else if (
+        isOpenExistingPlaceSource(placeSource) &&
+        shownMissingReminderRef.current !== focusKey
+      ) {
+        // An already-saved / notification open whose place no longer exists.
+        // Recover locally with a friendly message — never the error boundary.
+        shownMissingReminderRef.current = focusKey;
+        setSnackbar({
+          message: 'This place is no longer available.',
+          undoId: null,
+        });
       }
-      if (__DEV__) console.log('[map] target id not found', savedPlaceId);
+      recordBreadcrumb('saved_places_fetch_completed', {
+        savedPlaceId: savedPlaceId ?? null,
+        result: 'open_target_not_found',
+      });
+      if (__DEV__) console.log('[map] target id not found', focusKey);
       return;
     }
-    handledTargetIdRef.current = savedPlaceId;
+    handledTargetIdRef.current = focusKey;
     if (reminderOpen) {
       setReminderContextSavedPlaceId(target.id);
     }
@@ -942,7 +975,7 @@ export default function MapScreen() {
     } catch (err) {
       console.warn('[map] focus failed', (err as Error)?.message ?? err);
     }
-  }, [savedPlaceId, mapReady, validPlaces, profile, liveLoading, reminderOpen]);
+  }, [savedPlaceId, savedPlaceGoogleId, placeSource, mapReady, validPlaces, profile, liveLoading, reminderOpen]);
 
   // ---- DEBUG ------------------------------------------------------------
   // Temporary verbose logs requested while diagnosing the "spinner forever"

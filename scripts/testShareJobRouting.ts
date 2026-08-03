@@ -121,6 +121,26 @@ check(
   ),
 );
 check(
+  'already-saved notification carries the google_place_id fallback when present',
+  eq(
+    routeShareJobNotification({
+      type: 'share_job_completed',
+      outcome: 'already_saved',
+      savedPlaceId: 'sp2',
+      googlePlaceId: 'gp2',
+      jobId: 'j1',
+    }),
+    { kind: 'saved_place', savedPlaceId: 'sp2', googlePlaceId: 'gp2' },
+  ),
+);
+check(
+  'old already-saved payload without googlePlaceId routes byte-identically',
+  eq(
+    routeShareJobNotification({ type: 'share_job_completed', outcome: 'already_saved', savedPlaceId: 'sp2' }),
+    { kind: 'saved_place', savedPlaceId: 'sp2' },
+  ),
+);
+check(
   'completed without saved place falls back to map',
   eq(routeShareJobNotification({ type: 'share_job_completed', jobId: 'j1' }), { kind: 'map' }),
 );

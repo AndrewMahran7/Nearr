@@ -117,7 +117,7 @@ export function classifyShareJobDetail(
 export type ShareJobNotificationType = 'share_job_completed' | 'share_job_needs_help';
 
 export type ShareJobRoute =
-  | { kind: 'saved_place'; savedPlaceId: string }
+  | { kind: 'saved_place'; savedPlaceId: string; googlePlaceId?: string }
   | { kind: 'queue_item'; jobId: string }
   | { kind: 'queue_root' }
   | { kind: 'map' };
@@ -149,11 +149,20 @@ export function routeShareJobNotification(
 
   const jobId = str(data?.jobId);
   const savedPlaceId = str(data?.savedPlaceId);
+  const googlePlaceId = str(data?.googlePlaceId);
   const outcome = str(data?.outcome);
 
   // Terminal success (incl. already-saved) → the saved place, not the queue.
   if (type === 'share_job_completed' || outcome === 'completed' || outcome === 'already_saved') {
-    if (savedPlaceId) return { kind: 'saved_place', savedPlaceId };
+    if (savedPlaceId) {
+      // `googlePlaceId` (when the server includes it) is a stable fallback so
+      // the map can still open the existing place if the saved_places row id
+      // can't be resolved. Omitted from the route object when absent so older
+      // payloads route byte-identically.
+      return googlePlaceId
+        ? { kind: 'saved_place', savedPlaceId, googlePlaceId }
+        : { kind: 'saved_place', savedPlaceId };
+    }
     return { kind: 'map' };
   }
 

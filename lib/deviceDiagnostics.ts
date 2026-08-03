@@ -10,11 +10,50 @@
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
+import * as Updates from 'expo-updates';
 import { Platform } from 'react-native';
 
 import { sanitizeErrorText, sanitizeStack } from './sanitizeError';
 import { getBreadcrumbs, renderBreadcrumbs } from './breadcrumbs';
 import { getDiagnosticContext } from './diagnosticContext';
+
+/**
+ * Read the OTA-update runtime classification (expo-updates). Every field is
+ * defensively read — in Expo Go / dev clients these are null and the getters
+ * can throw, so this must NEVER throw. Explains the "installed 1.1.38 vs update
+ * runtime 1.1.42" class of confusion: `runtime` is the update-compatibility key
+ * (from runtimeVersion.policy=appVersion), `embedded=true` means the JS shipped
+ * inside the native binary is running (no OTA applied), and `updateId`/`channel`
+ * identify which published update is live.
+ */
+export function getUpdateInfo(): {
+  runtimeVersion: string | null;
+  updateId: string | null;
+  channel: string | null;
+  embedded: boolean | null;
+  emergencyLaunch: boolean | null;
+} {
+  try {
+    return {
+      runtimeVersion:
+        typeof Updates.runtimeVersion === 'string' ? Updates.runtimeVersion : null,
+      updateId: typeof Updates.updateId === 'string' ? Updates.updateId : null,
+      channel: typeof Updates.channel === 'string' ? Updates.channel : null,
+      embedded:
+        typeof Updates.isEmbeddedLaunch === 'boolean' ? Updates.isEmbeddedLaunch : null,
+      emergencyLaunch:
+        typeof Updates.isEmergencyLaunch === 'boolean' ? Updates.isEmergencyLaunch : null,
+    };
+  } catch {
+    return {
+      runtimeVersion: null,
+      updateId: null,
+      channel: null,
+      embedded: null,
+      emergencyLaunch: null,
+    };
+  }
+}
 
 const KEY = 'nearr:device-diagnostics:v1';
 const MAX_RECORDS = 8;
@@ -125,6 +164,22 @@ export function buildErrorDiagnostic(input: {
   error: unknown;
   componentStack?: string | null;
 }): string {
+  // One line summarising the running JS: visible version, embedded runtime,
+  // live update id + channel, and whether the embedded (in-binary) JS is
+  // running (no OTA applied).
+  const updateInfoLine = (visibleVersion: string | null): string => {
+    const u = getUpdateInfo();
+    return [
+      `update: visibleVersion=${visibleVersion ?? '?'}`,
+      `runtime=${u.runtimeVersion ?? '?'}`,
+      `updateId=${u.updateId ?? 'embedded'}`,
+      `channel=${u.channel ?? '?'}`,
+      `embedded=${u.embedded == null ? '?' : u.embedded}`,
+      u.emergencyLaunch ? 'emergencyLaunch=true' : '',
+    ]
+      .filter(Boolean)
+      .join(' ');
+  };
   const { version, buildNumber } = appBuild();
   const runtimeVersion =
     (Constants.expoConfig as { runtimeVersion?: unknown } | null)?.runtimeVersion;
@@ -149,6 +204,7 @@ export function buildErrorDiagnostic(input: {
     `app=${version ?? '?'} build=${buildNumber ?? '?'} runtime=${
       typeof runtimeVersion === 'string' ? runtimeVersion : '?'
     } ${Platform.OS} ${Platform.Version ?? ''}`.trim(),
+    updateInfoLine(version),
     '--- breadcrumbs (oldest→newest) ---',
     renderBreadcrumbs(),
     '--- stack ---',

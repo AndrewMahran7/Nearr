@@ -618,6 +618,7 @@ async function processOne(admin: any, env: any, job: any): Promise<void> {
         platform,
         jobId: job.id,
         savedPlaceId: saved.savedPlaceId,
+        googlePlaceId: candidate.googlePlaceId,
         alreadySaved: saved.reused,
       }),
     );

@@ -133,12 +133,15 @@ export function buildCompletedNotification(args: {
   platform: string | null | undefined;
   jobId: string;
   savedPlaceId: string;
+  googlePlaceId?: string | null;
   alreadySaved?: boolean;
 }): JobNotification {
   const label = platformLabel(args.platform);
   const from = label === 'shared' ? 'your shared post' : `your ${label} post`;
   // Already-saved is an explicit, non-error terminal outcome. It routes to the
-  // EXISTING saved place (same `savedPlaceId`), never to a queue item.
+  // EXISTING saved place (same `savedPlaceId`), never to a queue item. The
+  // canonical `googlePlaceId` is included as a stable fallback so the client can
+  // still open the existing place if the saved_places row id can't be matched.
   if (args.alreadySaved) {
     return {
       title: 'Already saved',
@@ -148,6 +151,7 @@ export function buildCompletedNotification(args: {
         outcome: 'already_saved',
         jobId: args.jobId,
         savedPlaceId: args.savedPlaceId,
+        ...(args.googlePlaceId ? { googlePlaceId: args.googlePlaceId } : {}),
       },
     };
   }
@@ -159,6 +163,7 @@ export function buildCompletedNotification(args: {
       outcome: 'completed',
       jobId: args.jobId,
       savedPlaceId: args.savedPlaceId,
+      ...(args.googlePlaceId ? { googlePlaceId: args.googlePlaceId } : {}),
     },
   };
 }
