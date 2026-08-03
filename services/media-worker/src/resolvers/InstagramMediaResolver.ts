@@ -42,10 +42,18 @@ type YtFormat = {
 
 type YtInfo = {
   duration?: number;
+  title?: string;
+  description?: string;
   ext?: string;
   url?: string;
   formats?: YtFormat[];
 };
+
+function boundedMetadata(value: unknown, max: number): string | null {
+  if (typeof value !== 'string') return null;
+  const normalized = value.replace(/\s+/g, ' ').trim();
+  return normalized ? normalized.slice(0, max) : null;
+}
 
 function classifyYtError(stderr: string): MediaError {
   const s = stderr.toLowerCase();
@@ -175,6 +183,8 @@ export class InstagramMediaResolver implements MediaResolver {
         mimeType: dl.contentType?.split(';')[0]?.trim() || 'video/mp4',
         sizeBytes: dl.bytes,
         durationSeconds: Number.isFinite(duration) ? duration : undefined,
+        metadataTitle: boundedMetadata(info.title, 500),
+        metadataDescription: boundedMetadata(info.description, 4000),
         source: 'instagram/yt-dlp-direct',
         warnings,
       };
@@ -224,6 +234,8 @@ export class InstagramMediaResolver implements MediaResolver {
       mimeType: 'video/mp4',
       sizeBytes: s.size,
       durationSeconds: Number.isFinite(duration) ? duration : undefined,
+      metadataTitle: boundedMetadata(info.title, 500),
+      metadataDescription: boundedMetadata(info.description, 4000),
       source: 'instagram/yt-dlp-merged',
       warnings,
     };

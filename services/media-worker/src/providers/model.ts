@@ -48,6 +48,39 @@ export interface ModelProvider {
   analyze(input: AnalyzeInput): Promise<AnalyzeOutput>;
 }
 
+function groundingText(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+export function groundClaimedEvidence(
+  evidence: MediaPlaceEvidence,
+  input: Pick<AnalyzeInput, 'transcript' | 'metadataTitle' | 'metadataDescription'>,
+): MediaPlaceEvidence {
+  const speech = groundingText(input.transcript.map((segment) => segment.text).join(' '));
+  const caption = groundingText([input.metadataTitle, input.metadataDescription].filter(Boolean).join(' '));
+  let dropped = 0;
+  const places = evidence.places.map((place) => ({
+    ...place,
+    explicitEvidence: place.explicitEvidence.filter((item) => {
+      if (item.source !== 'speech' && item.source !== 'caption') return true;
+      const claim = groundingText(item.value);
+      const source = item.source === 'speech' ? speech : caption;
+      const grounded = claim.length >= 3 && source.includes(claim);
+      if (!grounded) dropped += 1;
+      return grounded;
+    }),
+  }));
+  return {
+    ...evidence,
+    places,
+    insufficientEvidence:
+      evidence.insufficientEvidence || places.every((place) => place.explicitEvidence.length === 0),
+    warnings: dropped > 0
+      ? [...evidence.warnings, 'ungrounded_explicit_evidence_dropped']
+      : evidence.warnings,
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Deterministic heuristic (default). Surfaces explicit spoken / visible strings
 // as evidence; the downstream resolver does the real Places verification.
@@ -157,6 +190,7 @@ class GeminiModel implements ModelProvider {
     for (const frame of input.frames.slice(0, this.cfg.maxSelectedFrames)) {
       try {
         const bytes = await readFile(frame.path);
+        parts.push({ text: `frame_timestamp_seconds: ${frame.timestampSeconds.toFixed(3)}` });
         parts.push({ inlineData: { mimeType: 'image/jpeg', data: bytes.toString('base64') } });
       } catch {
         /* skip unreadable frame */
@@ -205,10 +239,11 @@ class GeminiModel implements ModelProvider {
       } catch {
         return { provider: this.name, promptVersion: PROMPT_VERSION, evidence: emptyEvidence(['gemini_json_parse_failed']), modelRawPreview: text.slice(0, 500) };
       }
+      const evidence = groundClaimedEvidence(safeParseEvidence(parsed), input);
       return {
         provider: this.name,
         promptVersion: PROMPT_VERSION,
-        evidence: safeParseEvidence(parsed),
+        evidence,
         modelRawPreview: text.slice(0, 500),
       };
     } catch (err) {

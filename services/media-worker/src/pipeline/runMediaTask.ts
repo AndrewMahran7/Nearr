@@ -144,6 +144,8 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
       transcript: transcript.segments,
       ocr,
       frames,
+      metadataTitle: media.metadataTitle,
+      metadataDescription: media.metadataDescription,
       signal: controller.signal,
     });
     diagnostics.modelProvider = analysis.provider;

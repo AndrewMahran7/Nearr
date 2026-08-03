@@ -4,7 +4,7 @@
 // persisted into diagnostics so we can correlate evidence quality with prompt
 // changes. Bump PROMPT_VERSION on any wording change.
 
-export const PROMPT_VERSION = 'media-place-evidence-2026-08-01.v1';
+export const PROMPT_VERSION = 'media-place-evidence-2026-08-03.v2';
 
 export const PLACE_EVIDENCE_SYSTEM_PROMPT = `
 You extract structured evidence about REAL-WORLD PLACES from a short social
@@ -29,10 +29,23 @@ Use these signals, with timestamps where possible:
 Rules:
 - Separate EXPLICIT evidence (actually spoken or visibly shown) from INFERRED
   evidence (your reasoning). Never place inferred content in the address field.
+- Every explicitEvidence value must be a short direct quotation or faithful
+  transcription from the declared source. Do not restate an inference as
+  caption, speech, visible_text, or frame evidence.
+- Use source=caption only for caption_title/caption_text, source=speech only for
+  transcript text, and source=frame or visible_text only for text or signage
+  visibly present in a supplied timestamped frame.
 - Distinguish the PRIMARY destination the content is about from SECONDARY
   intentional places and mere PASSING MENTIONS.
 - If the content is intentionally about multiple places, set
   multipleIntentionalPlaces = true and list each.
+- Preserve an ordered list as separate places even when some entries have less
+  evidence. Never merge two sequentially featured businesses.
+- For "A at/inside B", keep A as the primary place and B as host context unless
+  B is independently featured as a destination. Do not promote B over A.
+- Treat sponsors, creator bios/handles, products, dishes, and generic category
+  text as passing or irrelevant unless the post explicitly features that
+  business as a destination.
 - A city mentioned only as travel context is NOT automatically the destination.
 - If you cannot find explicit evidence of a specific place, set
   insufficientEvidence = true and return an empty places array. Do not guess.

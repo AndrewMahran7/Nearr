@@ -54,6 +54,7 @@ function mention(name: string, geo: Partial<MediaGeoContext> = {}): VenueMention
     distinctiveTokens: distinctiveTokensOf(name),
     category: 'Pizza Restaurant',
     sources: ['visible_text'],
+    nameEvidenceSources: ['visible_text'],
     timestamps: [1],
     mentionCount: 1,
     repeated: false,

@@ -81,6 +81,9 @@ export type ResolvedMedia = {
   mimeType: string;
   sizeBytes: number;
   durationSeconds?: number;
+  /** Bounded public-post metadata used transiently as caption evidence. */
+  metadataTitle?: string | null;
+  metadataDescription?: string | null;
   /** Human label of the retrieval source (e.g. "instagram/yt-dlp"). */
   source: string;
   warnings: string[];

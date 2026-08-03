@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { heuristicEvidence, selectModelProvider, type AnalyzeInput } from '../src/providers/model.js';
+import { groundClaimedEvidence, heuristicEvidence, selectModelProvider, type AnalyzeInput } from '../src/providers/model.js';
+import type { MediaPlaceEvidence } from '../src/types/evidence.js';
 import { loadConfig } from '../src/config/env.js';
 import { isMediaError } from '../src/types/media.js';
 import { deduplicateOcrSegments } from '../src/providers/ocr.js';
@@ -52,6 +53,49 @@ test('deduplicateOcrSegments collapses repeated adjacent text', () => {
   ];
   const out = deduplicateOcrSegments(segs);
   assert.equal(out.length, 2);
+});
+
+test('groundClaimedEvidence keeps quoted caption/speech and drops fabricated claims', () => {
+  const evidence: MediaPlaceEvidence = {
+    places: [{
+      name: 'Capones Cucina', category: null, address: null, city: null, region: null,
+      country: null, coordinates: null, role: 'primary', confidence: 0.99,
+      explicitEvidence: [
+        { source: 'caption', value: 'Capones Cucina', timestampSeconds: null },
+        { source: 'speech', value: 'welcome to Capones Cucina', timestampSeconds: 1 },
+        { source: 'speech', value: 'Fabricated Cafe', timestampSeconds: 2 },
+        { source: 'frame', value: 'CAPONES CUCINA', timestampSeconds: 3 },
+      ],
+      inferredEvidence: [],
+    }],
+    multipleIntentionalPlaces: false,
+    insufficientEvidence: false,
+    warnings: [],
+  };
+  const grounded = groundClaimedEvidence(evidence, {
+    metadataTitle: 'Dinner at Capones Cucina',
+    metadataDescription: null,
+    transcript: [{ startSeconds: 0, endSeconds: 2, text: 'Welcome to Capones Cucina' }],
+  });
+  assert.deepEqual(grounded.places[0]!.explicitEvidence.map((item) => item.source), ['caption', 'speech', 'frame']);
+  assert.ok(grounded.warnings.includes('ungrounded_explicit_evidence_dropped'));
+});
+
+test('groundClaimedEvidence marks inferred-only result insufficient', () => {
+  const evidence: MediaPlaceEvidence = {
+    places: [{
+      name: 'Fabricated Cafe', category: null, address: null, city: null, region: null,
+      country: null, coordinates: null, role: 'primary', confidence: 1,
+      explicitEvidence: [{ source: 'caption', value: 'Fabricated Cafe', timestampSeconds: null }],
+      inferredEvidence: [],
+    }],
+    multipleIntentionalPlaces: false,
+    insufficientEvidence: false,
+    warnings: [],
+  };
+  const grounded = groundClaimedEvidence(evidence, { metadataTitle: null, metadataDescription: null, transcript: [] });
+  assert.equal(grounded.insufficientEvidence, true);
+  assert.equal(grounded.places[0]!.explicitEvidence.length, 0);
 });
 
 test('Gemini 429 retains usable transcript evidence', async () => {

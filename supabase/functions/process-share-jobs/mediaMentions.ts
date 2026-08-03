@@ -62,6 +62,9 @@ export type VenueMention = {
   category: string | null;
   /** Evidence sources that referenced this name (deduped). */
   sources: PlaceEvidenceSource[];
+  /** Sources whose explicit evidence text supports the venue's distinctive
+   *  name tokens. Address/category-only evidence is deliberately excluded. */
+  nameEvidenceSources: PlaceEvidenceSource[];
   /** Distinct evidence timestamps (seconds), ascending. */
   timestamps: number[];
   /** How many explicit evidence items referenced this name (repetition signal). */
@@ -407,15 +410,24 @@ export function buildVenueMentions(evidence: MediaPlaceEvidence): BuildMentionsR
 
   const mentions: VenueMention[] = liveGroups.slice(0, MAX_MENTIONS).map((g, i) => {
     const sources = new Set<PlaceEvidenceSource>();
+    const nameEvidenceSources = new Set<PlaceEvidenceSource>();
     const timestamps = new Set<number>();
     let mentionCount = 0;
     let bestConfidence = 0;
     let category: string | null = null;
     for (const p of g.places) {
+      const nameTokens = distinctiveTokensOf(g.primaryName ?? p.name)
+        .map((token) => token.replace(/[^a-z0-9]/g, ''))
+        .filter(Boolean);
       bestConfidence = Math.max(bestConfidence, p.confidence);
       if (!category && p.category) category = p.category;
       for (const e of p.explicitEvidence) {
         sources.add(e.source);
+        const phrase = normalizePhrase(e.value).replace(/[^a-z0-9 ]/g, ' ');
+        const phraseTokens = new Set(phrase.split(/\s+/).filter(Boolean));
+        if (nameTokens.length > 0 && nameTokens.every((token) => phraseTokens.has(token))) {
+          nameEvidenceSources.add(e.source);
+        }
         if (typeof e.timestampSeconds === 'number' && Number.isFinite(e.timestampSeconds)) {
           timestamps.add(e.timestampSeconds);
         }
@@ -442,6 +454,7 @@ export function buildVenueMentions(evidence: MediaPlaceEvidence): BuildMentionsR
       distinctiveTokens,
       category,
       sources: srcList,
+      nameEvidenceSources: [...nameEvidenceSources],
       timestamps: ts,
       mentionCount,
       repeated,
