@@ -21,8 +21,8 @@
  *   - Mutating the safety decision (safety.ts owns that).
  */
 
-import type { DetectedHandles } from './tools';
-import type { LikelyAddress } from './queryCleaner';
+import type { DetectedHandles } from './tools.ts';
+import type { LikelyAddress } from './queryCleaner.ts';
 
 /** Tokens that are not part of the venue name and should be stripped
  *  from the trailing edge of a handle before producing a place-name

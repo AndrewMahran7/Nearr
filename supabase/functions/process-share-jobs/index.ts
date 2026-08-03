@@ -29,6 +29,7 @@ import { extractTaggedLocation } from '../process-share-link/evidence/taggedLoca
 import { resolveSharedPlace } from '../process-share-link/resolver/resolveSharedPlace.ts';
 import { saveForUser } from '../process-share-link/save.ts';
 import { normalizeShareUrl } from '../../../lib/shareAgent/tiktokUrl.ts';
+import { buildShareJobCandidatePayload } from '../../../lib/shareJobResult.ts';
 
 import { submitPushToUser, checkExpoReceipts, type TicketRef } from './push.ts';
 import {
@@ -483,7 +484,21 @@ async function finalizeMediaTask(admin: any, env: any, body: any): Promise<Respo
   // needs_help (single / multi / manual). `post.mode` accounts for a downgrade
   // from a resolver auto_save that failed the media evidence eligibility gate.
   const mode = post.mode;
-  const candidatePayload = { candidates: result.candidates.slice(0, 10).map(safeCandidate) };
+  const mentionResults = Array.isArray(result.diagnostics?.mentionResults)
+    ? result.diagnostics.mentionResults
+    : [];
+  const candidatePayload = buildShareJobCandidatePayload(
+    result.candidates.slice(0, 10).map(safeCandidate),
+    mentionResults.map((mention: any) => ({
+      mentionId: mention.mentionId,
+      displayName: mention.displayName,
+      primaryVenueName: mention.primaryVenueName ?? null,
+      hostVenueName: mention.hostVenueName ?? null,
+      relationshipType: mention.relationshipType ?? null,
+      outcome: mention.outcome,
+      candidates: Array.isArray(mention.candidates) ? mention.candidates.map(safeCandidate) : [],
+    })),
+  );
   const decisionForRow =
     mode === 'manual'
       ? 'manual_fallback'

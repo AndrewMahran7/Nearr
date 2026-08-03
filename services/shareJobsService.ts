@@ -14,6 +14,10 @@ import { isDemoMode } from '@/lib/demoMode';
 import { isMapPreviewMode } from '@/lib/mapPreview';
 import { logDebug } from '@/lib/logger';
 import { QUEUE_VISIBLE_STATUSES } from '@/lib/shareJobRouting';
+import type {
+  ShareJobCandidatePayload,
+  ShareJobResultCandidate,
+} from '@/lib/shareJobResult';
 
 export type ShareJobStatus =
   | 'queued'
@@ -32,15 +36,7 @@ export type ShareJobDecision =
   | 'failed'
   | null;
 
-export type ShareJobCandidate = {
-  googlePlaceId: string;
-  name: string;
-  formattedAddress: string | null;
-  latitude: number | null;
-  longitude: number | null;
-  types: string[];
-  matchScore: number | null;
-};
+export type ShareJobCandidate = ShareJobResultCandidate;
 
 export type ShareJob = {
   id: string;
@@ -52,7 +48,7 @@ export type ShareJob = {
   progress_stage: string | null;
   decision: ShareJobDecision;
   saved_place_id: string | null;
-  candidate_payload: { candidates: ShareJobCandidate[] } | null;
+  candidate_payload: ShareJobCandidatePayload | { candidates: ShareJobCandidate[] } | null;
   extraction_payload: Record<string, unknown> | null;
   suggested_query: string | null;
   needs_help_reason: string | null;

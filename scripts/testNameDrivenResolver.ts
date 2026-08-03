@@ -21,6 +21,7 @@ import {
   nameDrivenDecision,
   normalizeStateToAbbr,
   normalizeRawScore,
+  isHostOnlyCandidate,
   type ScoredMentionCandidate,
   type NameDrivenResult,
 } from '../supabase/functions/process-share-link/resolver/nameDrivenResolver';
@@ -158,6 +159,8 @@ check('single no candidates => manual_fallback', nameDrivenDecision(ndResult({ a
 check('multi verified => multi_candidate_confirmation', nameDrivenDecision(ndResult({ aggregateCandidates: [rc('a'), rc('b')], verifiedCount: 1 }), false).decision === 'multi_candidate_confirmation');
 check('multi no candidates => manual_fallback', nameDrivenDecision(ndResult({ aggregateCandidates: [] }), false).decision === 'manual_fallback');
 check('decision mapping never auto-saves (any case)', [true, false].every((s) => nameDrivenDecision(ndResult({ aggregateCandidates: [rc('a')], verifiedCount: 1 }), s).safeToAutoSave === false));
+check('host-only candidate is detected', isHostOnlyCandidate('Brewery X', { primaryVenueName: 'X Eats', hostVenueName: 'Brewery X' }));
+check('primary candidate is not host-only', !isHostOnlyCandidate('X Eats', { primaryVenueName: 'X Eats', hostVenueName: 'Brewery X' }));
 
 
 // ---------------------------------------------------------------------------

@@ -307,6 +307,18 @@ function hasNameEvidence(reasons: string[]): boolean {
   );
 }
 
+/** A host can narrow the search but cannot prove the primary venue identity. */
+export function isHostOnlyCandidate(
+  candidateName: string,
+  mention: Pick<VenueMention, 'primaryVenueName' | 'hostVenueName'>,
+): boolean {
+  if (!mention.primaryVenueName || !mention.hostVenueName) return false;
+  return (
+    compactNameMatches(candidateName, mention.hostVenueName) &&
+    !compactNameMatches(candidateName, mention.primaryVenueName)
+  );
+}
+
 /**
  * Classify a mention from its scored candidates. PURE.
  *   • verified_single: one candidate with real name evidence that clearly
@@ -452,7 +464,14 @@ export async function resolveVenueMentions(args: {
     }
 
     const scored = result.results.map((c) => scoreMentionCandidate(c, mention, { expectedState, bias, platform }));
-    const { outcome, ranked } = classifyMention(scored);
+    const classified = classifyMention(scored);
+    const ranked = classified.ranked;
+    const outcome =
+      classified.outcome === 'verified_single' &&
+      ranked[0] &&
+      isHostOnlyCandidate(ranked[0].candidate.name, mention)
+        ? 'ambiguous_candidates'
+        : classified.outcome;
     const kept =
       outcome === 'verified_single'
         ? ranked.slice(0, 1)

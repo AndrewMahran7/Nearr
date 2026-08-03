@@ -202,6 +202,10 @@ export function validateConfig(cfg: WorkerConfig): ConfigValidation {
   if (!cfg.supabaseUrl) missing.push('SUPABASE_URL');
   if (!cfg.supabaseServiceRoleKey) missing.push('SUPABASE_SERVICE_ROLE_KEY');
   if (!cfg.finalizeUrl) missing.push('SHARE_JOBS_FINALIZE_URL');
+  if (cfg.transcriptionProvider !== 'openai') missing.push('MEDIA_TRANSCRIPTION_PROVIDER=openai');
+  if (!cfg.transcriptionApiKey) missing.push('MEDIA_TRANSCRIPTION_API_KEY');
+  if (cfg.analysisProvider !== 'gemini') missing.push('MEDIA_ANALYSIS_PROVIDER=gemini');
+  if (!cfg.geminiApiKey) missing.push('GEMINI_API_KEY');
   return missing.length ? { ok: false, missing } : { ok: true };
 }
 

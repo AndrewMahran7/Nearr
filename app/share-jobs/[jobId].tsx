@@ -37,6 +37,17 @@ import {
   normalizeShareJobCandidates,
 } from '@/lib/shareJobsUi';
 import { PHASE_1_COPY, splitPlaceAddress } from '@/lib/sharePhase1Ui';
+import { buildFivePizzaPreviewJob, PHASE2_FIVE_PIZZA_PREVIEW_ID } from '@/lib/phase2Preview';
+import {
+  multiPlaceTitle,
+  normalizeMentionSlots,
+  preselectedCandidateIds,
+  removeSuccessfulSelections,
+  saveSelectedLabel,
+  selectCandidateWithinMention,
+  selectedUnsavedCandidates,
+  type ShareJobMentionSlot,
+} from '@/lib/shareJobResult';
 import { usePlacesSearch } from '@/hooks/usePlacesSearch';
 import { getSavedPlacesCacheSnapshot, upsertSavedPlaceIntoCache } from '@/hooks/useSavedPlaces';
 import { recordBreadcrumb } from '@/lib/breadcrumbs';
@@ -132,6 +143,7 @@ function ShareJobDetailScreen() {
   // Inline, non-blocking notice if the original post can no longer be opened.
   const [openMsg, setOpenMsg] = useState<string | null>(null);
   const seededQueryRef = useRef(false);
+  const seededSelectionRef = useRef(false);
   // SYNCHRONOUS re-entrancy guard for the terminal save+resolve+navigate. The
   // `busy` state above drives the UI spinner, but state updates are async: two
   // taps fired in the same tick both read `busy === false` and would each run a
@@ -155,7 +167,24 @@ function ShareJobDetailScreen() {
   const load = useCallback(async () => {
     if (!jobId) return;
     try {
-      const j = await getShareJob(jobId);
+      const previewSaved = getSavedPlacesCacheSnapshot()?.find(
+        (saved) => saved.place?.google_place_id,
+      );
+      const j = __DEV__ && jobId === PHASE2_FIVE_PIZZA_PREVIEW_ID
+        ? buildFivePizzaPreviewJob(
+            previewSaved?.place?.google_place_id
+              ? {
+                  googlePlaceId: previewSaved.place.google_place_id,
+                  name: previewSaved.place.name,
+                  formattedAddress: previewSaved.place.formatted_address,
+                  latitude: previewSaved.place.latitude,
+                  longitude: previewSaved.place.longitude,
+                  types: [],
+                  matchScore: 1,
+                }
+              : null,
+          )
+        : await getShareJob(jobId);
       if (!mountedRef.current) return;
       setJob(j);
       if (j) {
@@ -198,6 +227,21 @@ function ShareJobDetailScreen() {
   const platform = job?.source_platform ?? null;
   const sourceUrl = job?.canonical_url ?? job?.source_url ?? null;
   const candidates = normalizeShareJobCandidates(job?.candidate_payload?.candidates);
+  const mentionSlots = normalizeMentionSlots(
+    (job?.candidate_payload as { mentionSlots?: unknown } | null)?.mentionSlots,
+  );
+  const savedSnapshot = getSavedPlacesCacheSnapshot();
+  const alreadySavedGoogleIds = new Set(
+    (savedSnapshot ?? [])
+      .map((saved) => saved.place?.google_place_id)
+      .filter((id): id is string => typeof id === 'string' && id.length > 0),
+  );
+
+  useEffect(() => {
+    if (seededSelectionRef.current || mentionSlots.length === 0) return;
+    seededSelectionRef.current = true;
+    setSelectedIds(preselectedCandidateIds(mentionSlots, alreadySavedGoogleIds));
+  }, [mentionSlots, alreadySavedGoogleIds]);
 
   async function persistCandidate(
     candidate: PlaceCandidate,
@@ -285,21 +329,49 @@ function ShareJobDetailScreen() {
 
   async function handleSaveSelected() {
     if (!job || resolvingRef.current) return;
-    const chosen = candidates.filter(
-      (c) => c.googlePlaceId && selectedIds.has(c.googlePlaceId) && hasCoords(c),
+    const slotCandidates = selectedUnsavedCandidates(
+      mentionSlots,
+      selectedIds,
+      alreadySavedGoogleIds,
+    );
+    const chosen = (mentionSlots.length > 0 ? slotCandidates : candidates).filter(
+      (candidate) =>
+        candidate.googlePlaceId && selectedIds.has(candidate.googlePlaceId) && hasCoords(candidate),
     );
     if (chosen.length === 0) return;
     resolvingRef.current = true;
     if (mountedRef.current) setBusy(true);
     try {
-      let firstSavedId: string | null = null;
-      let anyDuplicate = false;
-      for (const c of chosen) {
-        const { savedPlaceId, duplicate } = await persistCandidate(toPlaceCandidate(c));
-        if (!firstSavedId && savedPlaceId) firstSavedId = savedPlaceId;
-        if (duplicate) anyDuplicate = true;
+      const settled = await Promise.allSettled(
+        chosen.map(async (candidate) => ({
+          candidate,
+          ...(await persistCandidate(toPlaceCandidate(candidate))),
+        })),
+      );
+      const succeeded = settled
+        .filter((result): result is PromiseFulfilledResult<{
+          candidate: ShareJobCandidate;
+          savedPlaceId: string | null;
+          duplicate: boolean;
+        }> => result.status === 'fulfilled')
+        .map((result) => result.value);
+      const failed = settled
+        .map((result, index) => ({ result, candidate: chosen[index]! }))
+        .filter((entry) => entry.result.status === 'rejected');
+
+      if (failed.length > 0) {
+        setSelectedIds((current) =>
+          removeSuccessfulSelections(current, succeeded.map((entry) => entry.candidate.googlePlaceId)),
+        );
+        const failedNames = failed.map((entry) => entry.candidate.name).join(', ');
+        Alert.alert(
+          succeeded.length > 0 ? `Saved ${succeeded.length} of ${chosen.length}` : 'Could not save these places',
+          `Please try again for: ${failedNames}`,
+        );
+        return;
       }
-      await resolveJobWith(job.id, firstSavedId, anyDuplicate);
+      const firstSavedId = succeeded.find((entry) => entry.savedPlaceId)?.savedPlaceId ?? null;
+      await resolveJobWith(job.id, firstSavedId, succeeded.some((entry) => entry.duplicate));
     } catch (err) {
       Alert.alert('Could not save', err instanceof Error ? err.message : 'Please try again.');
     } finally {
@@ -422,6 +494,27 @@ function ShareJobDetailScreen() {
       else next.add(id);
       return next;
     });
+  }
+
+  function toggleMentionCandidate(slot: ShareJobMentionSlot, candidateId: string) {
+    setSelectedIds((current) =>
+      slot.outcome === 'ambiguous_candidates'
+        ? selectCandidateWithinMention(current, slot, candidateId)
+        : toggleCandidate(current, candidateId),
+    );
+  }
+
+  function toggleCandidate(current: ReadonlySet<string>, candidateId: string): Set<string> {
+    const next = new Set(current);
+    if (next.has(candidateId)) next.delete(candidateId);
+    else next.add(candidateId);
+    return next;
+  }
+
+  function searchForMention(slot: ShareJobMentionSlot) {
+    setManualQuery(slot.primaryVenueName ?? slot.displayName);
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setSearchExpanded(true);
   }
 
   function renderManualSearch(opts?: { note?: string; onCancel?: () => void }) {
@@ -596,6 +689,9 @@ function ShareJobDetailScreen() {
   }
 
   const isMulti = job.decision === 'multi_candidate_confirmation';
+  const selectedPendingCount = mentionSlots.length > 0
+    ? selectedUnsavedCandidates(mentionSlots, selectedIds, alreadySavedGoogleIds).filter(hasCoords).length
+    : candidates.filter((candidate) => selectedIds.has(candidate.googlePlaceId) && hasCoords(candidate)).length;
   const isManual =
     job.status === 'failed' ||
     job.decision === 'manual_fallback' ||
@@ -644,43 +740,130 @@ function ShareJobDetailScreen() {
           </View>
         ) : isMulti ? (
           <View style={styles.section}>
-            <Text style={[typography.title, styles.title]}>We found {candidates.length} places</Text>
-            <Text style={[typography.caption, styles.help]}>Choose which ones to save.</Text>
-            {candidates.map((c) => {
-              const id = c.googlePlaceId;
-              const checked = !!id && selectedIds.has(id);
-              return (
-                <Pressable
-                  key={id}
-                  onPress={() => id && toggleSelect(id)}
-                  accessibilityRole="checkbox"
-                  accessibilityState={{ checked }}
-                  accessibilityLabel={c.name}
-                  style={({ pressed }) => [styles.candidate, pressed ? styles.candidatePressed : null]}
-                >
-                  <View style={styles.candidateIcon}>
-                    <Feather name="map-pin" size={16} color={colors.accent} />
-                  </View>
-                  <View style={styles.flex}>
-                    <Text style={[typography.bodyStrong, styles.candidateName]} numberOfLines={1}>
-                      {c.name}
-                    </Text>
-                    {c.formattedAddress ? (
-                      <Text style={[typography.caption, styles.candidateAddr]} numberOfLines={2}>
-                        {c.formattedAddress}
+            <Text style={[typography.title, styles.title]}>
+              {multiPlaceTitle(mentionSlots.length || candidates.length)}
+            </Text>
+            <Text style={[typography.body, styles.help]}>Choose which ones you want to save.</Text>
+            {mentionSlots.length > 0
+              ? mentionSlots.map((slot) => (
+                  <View key={slot.mentionId} style={styles.mentionCard}>
+                    <Text style={[typography.heading, styles.mentionName]}>{slot.displayName}</Text>
+                    {slot.hostVenueName ? (
+                      <Text style={[typography.caption, styles.relationshipText]}>
+                        {slot.primaryVenueName} is featured at {slot.hostVenueName}. Confirm the exact place below.
                       </Text>
                     ) : null}
+                    {slot.outcome === 'ambiguous_candidates' ? (
+                      <Text style={[typography.caption, styles.helpCompact]}>
+                        I found a few possible locations for this one.
+                      </Text>
+                    ) : null}
+                    {slot.outcome === 'no_match' || slot.outcome === 'rejected_insufficient_evidence' ? (
+                      <View style={styles.unmatchedBlock}>
+                        <Text style={[typography.caption, styles.helpCompact]}>
+                          I found the name, but I need your help locating it.
+                        </Text>
+                        <Pressable
+                          onPress={() => searchForMention(slot)}
+                          accessibilityRole="button"
+                          style={styles.inlineAction}
+                        >
+                          <Feather name="search" size={16} color={colors.accent} />
+                          <Text style={styles.inlineActionText}>Search for this place</Text>
+                        </Pressable>
+                      </View>
+                    ) : slot.outcome === 'provider_error' ? (
+                      <View style={styles.unmatchedBlock}>
+                        <Text style={[typography.caption, styles.helpCompact]}>
+                          I couldn't verify this one right now. It may be a temporary issue.
+                        </Text>
+                        <Pressable
+                          onPress={() => searchForMention(slot)}
+                          accessibilityRole="button"
+                          style={styles.inlineAction}
+                        >
+                          <Feather name="search" size={16} color={colors.accent} />
+                          <Text style={styles.inlineActionText}>Search for this place</Text>
+                        </Pressable>
+                      </View>
+                    ) : null}
+                    {slot.candidates.map((candidate) => {
+                      const checked = selectedIds.has(candidate.googlePlaceId);
+                      const savedPlaceId = findSavedPlaceIdByGooglePlaceId(
+                        candidate.googlePlaceId,
+                        savedSnapshot,
+                      );
+                      return (
+                        <Pressable
+                          key={candidate.googlePlaceId}
+                          onPress={() =>
+                            savedPlaceId
+                              ? void viewAlreadySaved(savedPlaceId, candidate.googlePlaceId)
+                              : toggleMentionCandidate(slot, candidate.googlePlaceId)
+                          }
+                          accessibilityRole={savedPlaceId ? 'button' : 'checkbox'}
+                          accessibilityState={savedPlaceId ? undefined : { checked }}
+                          accessibilityLabel={savedPlaceId ? `View ${candidate.name}` : candidate.name}
+                          style={({ pressed }) => [
+                            styles.candidate,
+                            checked ? styles.candidateSelected : null,
+                            pressed ? styles.candidatePressed : null,
+                          ]}
+                        >
+                          <View style={styles.candidateIcon}>
+                            <Feather name={savedPlaceId ? 'check-circle' : 'map-pin'} size={16} color={colors.accent} />
+                          </View>
+                          <View style={styles.flex}>
+                            <Text style={[typography.bodyStrong, styles.candidateName]}>{candidate.name}</Text>
+                            {candidate.formattedAddress ? (
+                              <Text style={[typography.caption, styles.candidateAddr]}>
+                                {candidate.formattedAddress}
+                              </Text>
+                            ) : null}
+                            {savedPlaceId ? (
+                              <Text style={[typography.caption, styles.savedText]}>Already on your map · View place</Text>
+                            ) : slot.outcome === 'verified_single' ? (
+                              <Text style={[typography.caption, styles.bestMatchText]}>Best match</Text>
+                            ) : null}
+                          </View>
+                          {!savedPlaceId ? (
+                            <View style={[styles.checkbox, checked ? styles.checkboxOn : null]}>
+                              {checked ? <Feather name="check" size={14} color={colors.textInverse} /> : null}
+                            </View>
+                          ) : (
+                            <Feather name="chevron-right" size={18} color={colors.textMuted} />
+                          )}
+                        </Pressable>
+                      );
+                    })}
                   </View>
-                  <View style={[styles.checkbox, checked ? styles.checkboxOn : null]}>
-                    {checked ? <Feather name="check" size={14} color={colors.textInverse} /> : null}
-                  </View>
-                </Pressable>
-              );
-            })}
+                ))
+              : candidates.map((candidate) => {
+                  const checked = selectedIds.has(candidate.googlePlaceId);
+                  return (
+                    <Pressable
+                      key={candidate.googlePlaceId}
+                      onPress={() => toggleSelect(candidate.googlePlaceId)}
+                      accessibilityRole="checkbox"
+                      accessibilityState={{ checked }}
+                      style={({ pressed }) => [styles.candidate, pressed ? styles.candidatePressed : null]}
+                    >
+                      <View style={styles.flex}>
+                        <Text style={[typography.bodyStrong, styles.candidateName]}>{candidate.name}</Text>
+                        {candidate.formattedAddress ? (
+                          <Text style={[typography.caption, styles.candidateAddr]}>{candidate.formattedAddress}</Text>
+                        ) : null}
+                      </View>
+                      <View style={[styles.checkbox, checked ? styles.checkboxOn : null]}>
+                        {checked ? <Feather name="check" size={14} color={colors.textInverse} /> : null}
+                      </View>
+                    </Pressable>
+                  );
+                })}
             <Button
-              title={selectedIds.size === 0 ? 'Select places to save' : `Save selected (${selectedIds.size})`}
+              title={saveSelectedLabel(selectedPendingCount)}
               onPress={() => void handleSaveSelected()}
-              disabled={selectedIds.size === 0 || busy}
+              disabled={selectedPendingCount === 0 || busy}
               loading={busy}
               style={styles.primaryBtn}
             />
@@ -877,6 +1060,7 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       marginTop: Spacing.sm,
     },
     candidatePressed: { backgroundColor: colors.surfaceElevated },
+    candidateSelected: { borderColor: colors.primary },
     candidateIcon: {
       width: 36,
       height: 36,
@@ -900,6 +1084,28 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       marginLeft: Spacing.sm,
     },
     checkboxOn: { backgroundColor: colors.primary, borderColor: colors.primary },
+    mentionCard: {
+      backgroundColor: colors.surface,
+      borderRadius: Radius.lg,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.border,
+      padding: Spacing.md,
+      marginTop: Spacing.md,
+    },
+    mentionName: { color: colors.text },
+    relationshipText: { color: colors.textSecondary, marginTop: Spacing.xs, lineHeight: 18 },
+    helpCompact: { color: colors.textSecondary, marginTop: Spacing.sm, lineHeight: 18 },
+    unmatchedBlock: { marginTop: Spacing.xs },
+    inlineAction: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.sm,
+      minHeight: 44,
+      alignSelf: 'flex-start',
+    },
+    inlineActionText: { color: colors.accent, fontSize: 14, fontWeight: '700' },
+    savedText: { color: colors.accent, marginTop: Spacing.xs },
+    bestMatchText: { color: colors.textSecondary, marginTop: Spacing.xs },
     // Bottom actions: open original (secondary) then a restrained destructive
     // remove.
     footer: { marginTop: Spacing.md, alignItems: 'center' },

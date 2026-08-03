@@ -291,6 +291,11 @@ docker exec supabase_db_Nearr sh -c "psql -U postgres -d postgres -q \
 
 ## Deployment runbook (provider-neutral)
 
+For the exact hosted release gates, smoke queries, one-task canary, physical
+device audit, cost bound, and immediate rollback commands, use
+[`PHASE2_HOSTED_ROLLOUT.md`](./PHASE2_HOSTED_ROLLOUT.md). The summary below is
+architecture context only.
+
 1. Commit + review Phase 2.
 2. Apply the migration to development (`supabase db push`).
 3. Configure media-worker secrets (`SHARE_MEDIA_WORKER_SECRET`, Supabase URL +
