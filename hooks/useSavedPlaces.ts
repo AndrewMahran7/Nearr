@@ -23,6 +23,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { listSavedPlaces } from '@/services/savedPlacesService';
 import { useAuth } from '@/hooks/useAuth';
 import { logDebug } from '@/lib/logger';
+import { recordBreadcrumb } from '@/lib/breadcrumbs';
 import {
   isLikelyOfflineError,
   readSavedPlacesCache,
@@ -165,9 +166,11 @@ export function useSavedPlaces() {
         error: null,
       }));
       logDebug('useSavedPlaces', 'querying', { hasUserId: !!userId, mode });
+      recordBreadcrumb('saved_places_fetch_started', { result: mode });
       try {
         const data = await runListSavedPlaces(userId);
         logDebug('useSavedPlaces', 'query complete', { count: data.length, mode });
+        recordBreadcrumb('saved_places_fetch_completed', { result: mode });
         setMemoryCache({ userId, data, fetchedAt: Date.now() });
         if (mountedRef.current) {
           setState({
@@ -183,6 +186,7 @@ export function useSavedPlaces() {
         void writeSavedPlacesCache(userId, data);
       } catch (e: any) {
         console.warn('[useSavedPlaces] error', e?.message);
+        recordBreadcrumb('saved_places_fetch_failed', { result: mode });
         const offlineLikely = isLikelyOfflineError(e);
         // Background revalidation must never disrupt the visible list: keep
         // showing the cached/in-memory data, just flag offline quietly.

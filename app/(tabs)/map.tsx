@@ -112,6 +112,8 @@ import {
   type LocationSample,
 } from '@/lib/liveLocation';
 import { trackEvent } from '@/lib/analytics';
+import { recordBreadcrumb } from '@/lib/breadcrumbs';
+import { setLocationWatcherState } from '@/lib/diagnosticContext';
 import { isAsyncShareJobsEnabled } from '@/lib/featureFlags';
 import { isLikelyUrl } from '@/lib/shareParser';
 import { distanceMeters, milesToMeters, minutesToMeters } from '@/lib/geo';
@@ -706,6 +708,8 @@ export default function MapScreen() {
       if (watchSubRef.current) {
         watchSubRef.current.remove();
         watchSubRef.current = null;
+        setLocationWatcherState('stopped');
+        recordBreadcrumb('location_watcher_stopped', { result: 'gate_closed' });
       }
       return;
     }
@@ -729,8 +733,12 @@ export default function MapScreen() {
               timestamp: loc.timestamp,
             };
             // Reject stale / out-of-order / invalid readings.
-            if (!shouldAcceptSample(lastSampleRef.current, sample)) return;
+            if (!shouldAcceptSample(lastSampleRef.current, sample)) {
+              recordBreadcrumb('location_reading_rejected', { result: 'stale_or_invalid' });
+              return;
+            }
             lastSampleRef.current = sample;
+            recordBreadcrumb('location_reading_accepted');
             // The marker/dot always reflects the latest accepted reading.
             setUserRegion((prev) => ({
               latitude: sample.latitude,
@@ -759,6 +767,8 @@ export default function MapScreen() {
           return;
         }
         watchSubRef.current = subscription;
+        setLocationWatcherState('watching');
+        recordBreadcrumb('location_watcher_started');
       } catch (err) {
         // watchPositionAsync can throw on emulators / when the provider is
         // unavailable. Degrade gracefully — never crash the map.
@@ -771,9 +781,17 @@ export default function MapScreen() {
       if (watchSubRef.current) {
         watchSubRef.current.remove();
         watchSubRef.current = null;
+        setLocationWatcherState('stopped');
+        recordBreadcrumb('location_watcher_stopped', { result: 'cleanup' });
       }
     };
   }, [demo, mapPreview, screenFocused, appActive, permission]);
+
+  // ---- mount / unmount breadcrumbs --------------------------------------
+  useEffect(() => {
+    recordBreadcrumb('map_mounted');
+    return () => recordBreadcrumb('map_unmounted');
+  }, []);
 
   // ---- re-fetch on focus -------------------------------------------------
   // Stale-while-revalidate: hydrates instantly from the shared cache and only

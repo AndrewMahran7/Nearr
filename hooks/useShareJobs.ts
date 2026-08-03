@@ -17,6 +17,7 @@ import { AppState, type AppStateStatus } from 'react-native';
 
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
+import { recordBreadcrumb } from '@/lib/breadcrumbs';
 import { isAsyncShareJobsEnabled } from '@/lib/featureFlags';
 import { isDemoMode } from '@/lib/demoMode';
 import { dedupeJobsById } from '@/lib/shareJobsDedupe';
@@ -146,6 +147,7 @@ export function useShareJobs() {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'share_jobs', filter: `user_id=eq.${userId}` },
         () => {
+          recordBreadcrumb('queue_realtime_event');
           void load('background');
         },
       )

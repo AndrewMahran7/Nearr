@@ -1,9 +1,10 @@
 import { Component, useCallback, useEffect, useRef, useState } from 'react';
-import { AppState, Linking, StyleSheet, Text, View } from 'react-native';
+import { AppState, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import * as Clipboard from 'expo-clipboard';
 import * as ExpoLinking from 'expo-linking';
 import { useAuth } from '@/hooks/useAuth';
 import { isOnboardingPreviewActive } from '@/lib/onboarding';
@@ -18,7 +19,18 @@ import {
 import { clearDevAuth } from '@/lib/devAuth';
 import { trackEvent } from '@/lib/analytics';
 import { sanitizeErrorText, sanitizeStack } from '@/lib/sanitizeError';
-import { recordDiagnostic } from '@/lib/deviceDiagnostics';
+import { buildErrorDiagnostic, recordDiagnostic } from '@/lib/deviceDiagnostics';
+import {
+  hydrateBreadcrumbs,
+  recordBreadcrumb,
+} from '@/lib/breadcrumbs';
+import {
+  classifyInitialUrl,
+  setDiagnosticAppState,
+  setDiagnosticRoute,
+  setInitialUrlClassification,
+  setLastNotificationId,
+} from '@/lib/diagnosticContext';
 import { routeShareJobNotification } from '@/lib/shareJobRouting';
 import {
   deactivatePushTokenForCurrentUser,
@@ -49,18 +61,23 @@ logInfo('APP_START', '_layout module loaded');
 // produce a blank screen in production. Shows a minimal recovery UI instead.
 // ---------------------------------------------------------------------------
 
-type ErrorBoundaryState = { hasError: boolean; message: string };
+type ErrorBoundaryState = {
+  hasError: boolean;
+  message: string;
+  diagnostic: string;
+  copied: boolean;
+};
 
 class AppErrorBoundary extends Component<
-  { children: React.ReactNode },
+  { children: React.ReactNode; onReturnToMap: () => void },
   ErrorBoundaryState
 > {
-  constructor(props: { children: React.ReactNode }) {
+  constructor(props: { children: React.ReactNode; onReturnToMap: () => void }) {
     super(props);
-    this.state = { hasError: false, message: '' };
+    this.state = { hasError: false, message: '', diagnostic: '', copied: false };
   }
 
-  static getDerivedStateFromError(error: unknown): ErrorBoundaryState {
+  static getDerivedStateFromError(error: unknown): Partial<ErrorBoundaryState> {
     const message = sanitizeErrorText(error);
     console.error('[APP_ERROR_BOUNDARY] caught render error:', message);
     return { hasError: true, message };
@@ -72,7 +89,23 @@ class AppErrorBoundary extends Component<
     // diagnose the next physical-device crash.
     console.error('[APP_ERROR_BOUNDARY] componentDidCatch', sanitizeErrorText(error));
     console.error('[APP_ERROR_BOUNDARY] stack', sanitizeStack(info?.componentStack));
-    // Persist a sanitized diagnostic (surfaced via Settings → Copy diagnostic).
+    recordBreadcrumb('error_boundary_triggered', {
+      errorName: error instanceof Error ? error.name : typeof error,
+      errorMessage: sanitizeErrorText(error),
+    });
+    // Assemble the full copy-diagnostic block ONCE, now, while the pre-crash
+    // context + breadcrumb trail are still intact.
+    let diagnostic = '';
+    try {
+      diagnostic = buildErrorDiagnostic({
+        error,
+        componentStack: info?.componentStack ?? null,
+      });
+    } catch {
+      diagnostic = sanitizeErrorText(error);
+    }
+    this.setState({ diagnostic });
+    // Persist a sanitized diagnostic (also surfaced via Settings → Copy diagnostic).
     void recordDiagnostic({
       errorCode: 'app_error_boundary',
       route: 'global',
@@ -81,14 +114,60 @@ class AppErrorBoundary extends Component<
     });
   }
 
+  private reset = () =>
+    this.setState({ hasError: false, message: '', diagnostic: '', copied: false });
+
+  private handleReturnToMap = () => {
+    // Reset the boundary FIRST so the broken subtree is unmounted, then ask the
+    // owner to navigate to a known-good route. Never leaves the broken tree up.
+    this.reset();
+    try {
+      this.props.onReturnToMap();
+    } catch {
+      // navigation failure must not re-crash the boundary
+    }
+  };
+
+  private handleCopyDiagnostic = () => {
+    void Clipboard.setStringAsync(this.state.diagnostic || this.state.message)
+      .then(() => this.setState({ copied: true }))
+      .catch(() => undefined);
+  };
+
   render() {
     if (this.state.hasError) {
       return (
         <View style={errorStyles.container}>
           <Text style={errorStyles.title}>Something went wrong</Text>
           <Text style={errorStyles.body}>
-            The app encountered an unexpected error. Please force-quit and reopen.
+            The app hit an unexpected error. You can head back to your map and keep going.
           </Text>
+          <Pressable
+            style={errorStyles.primaryButton}
+            onPress={this.handleReturnToMap}
+            accessibilityRole="button"
+            accessibilityLabel="Return to map"
+          >
+            <Text style={errorStyles.primaryButtonText}>Return to map</Text>
+          </Pressable>
+          <Pressable
+            style={errorStyles.secondaryButton}
+            onPress={this.reset}
+            accessibilityRole="button"
+            accessibilityLabel="Try again"
+          >
+            <Text style={errorStyles.secondaryButtonText}>Try again</Text>
+          </Pressable>
+          <Pressable
+            style={errorStyles.tertiaryButton}
+            onPress={this.handleCopyDiagnostic}
+            accessibilityRole="button"
+            accessibilityLabel="Copy diagnostic"
+          >
+            <Text style={errorStyles.tertiaryButtonText}>
+              {this.state.copied ? 'Diagnostic copied' : 'Copy diagnostic'}
+            </Text>
+          </Pressable>
           {__DEV__ && (
             <Text style={errorStyles.detail}>{this.state.message}</Text>
           )}
@@ -108,8 +187,41 @@ const errorStyles = StyleSheet.create({
     backgroundColor: Colors.bg,
   },
   title: { fontSize: 20, fontWeight: '600', marginBottom: 12, color: Colors.text },
-  body: { fontSize: 15, textAlign: 'center', color: Colors.textSecondary, marginBottom: 16 },
-  detail: { fontSize: 12, color: Colors.textMuted, textAlign: 'center' },
+  body: {
+    fontSize: 15,
+    textAlign: 'center',
+    color: Colors.textSecondary,
+    marginBottom: 24,
+    lineHeight: 21,
+  },
+  primaryButton: {
+    minHeight: 48,
+    justifyContent: 'center',
+    alignSelf: 'stretch',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 14,
+    backgroundColor: Colors.primary,
+    marginBottom: 12,
+  },
+  primaryButtonText: { color: Colors.textInverse, fontWeight: '700', fontSize: 16 },
+  secondaryButton: {
+    minHeight: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 10,
+    marginBottom: 4,
+  },
+  secondaryButtonText: { color: Colors.text, fontWeight: '600', fontSize: 15 },
+  tertiaryButton: {
+    minHeight: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 10,
+  },
+  tertiaryButtonText: { color: Colors.textMuted, fontWeight: '500', fontSize: 14 },
+  detail: { fontSize: 12, color: Colors.textMuted, textAlign: 'center', marginTop: 16 },
 });
 
 function AuthGate({
@@ -380,6 +492,7 @@ export default function RootLayout() {
 
 function RootLayoutContent() {
   const router = useRouter();
+  const segments = useSegments();
   const { colors, resolvedTheme } = useTheme();
   // Terminal-state model for magic-link handling. `idle` before any link,
   // `processing` during the exchange, then a STICKY `succeeded`/`failed` that a
@@ -454,16 +567,45 @@ function RootLayoutContent() {
     void clearDevAuth();
   }, []);
 
+  // App launch: hydrate the persisted breadcrumb trail (so a crash that
+  // restarted the app still yields the pre-crash trail), then record launch +
+  // root-layout-ready. Also mirror AppState into the diagnostic context and
+  // breadcrumbs for the "Copy diagnostic" export.
+  useEffect(() => {
+    void hydrateBreadcrumbs().then(() => {
+      recordBreadcrumb('app_launch', { appState: AppState.currentState });
+      recordBreadcrumb('root_layout_ready');
+    });
+    setDiagnosticAppState(AppState.currentState);
+    const sub = AppState.addEventListener('change', (state) => {
+      setDiagnosticAppState(state);
+      recordBreadcrumb('appstate_change', { appState: state });
+    });
+    return () => sub.remove();
+  }, []);
+
+  // Keep the diagnostic route + a route breadcrumb in sync with navigation.
+  useEffect(() => {
+    const route = `/${segments.join('/')}`;
+    setDiagnosticRoute(route);
+    recordBreadcrumb('actual_navigation', { route });
+  }, [segments]);
+
   // Handle deep links (magic-link callback + share-incoming).
   useEffect(() => {
     // Cold-start: app launched by tapping the link.
     ExpoLinking.getInitialURL().then(async (url) => {
       if (!url) return;
+      setInitialUrlClassification(classifyInitialUrl(url));
+      recordBreadcrumb('initial_url_received', {
+        result: classifyInitialUrl(url),
+      });
       logDebug('deeplink', 'received URL', url.replace(/[?#].*$/, ''));
       await processIncomingUrl(url);
     });
     // Warm-start: app already open (e.g. tapping link while app is in background).
     const sub = ExpoLinking.addEventListener('url', async ({ url }) => {
+      recordBreadcrumb('warm_url_received', { result: classifyInitialUrl(url) });
       logDebug('deeplink', 'received URL', url.replace(/[?#].*$/, ''));
       await processIncomingUrl(url);
     });
@@ -479,10 +621,16 @@ function RootLayoutContent() {
       try {
       const notificationId = response.notification.request.identifier;
       const responseKey = `${response.actionIdentifier ?? 'default'}:${notificationId}`;
+      recordBreadcrumb('notification_tapped', { notificationId });
       if (lastNotificationResponseKeyRef.current === responseKey) {
+        recordBreadcrumb('notification_dedupe', {
+          notificationId,
+          result: 'duplicate_ignored',
+        });
         return;
       }
       lastNotificationResponseKeyRef.current = responseKey;
+      setLastNotificationId(notificationId);
 
       const { actionIdentifier, notification } = response;
       const data = (notification.request.content.data ?? {}) as Record<string, unknown>;
@@ -519,6 +667,10 @@ function RootLayoutContent() {
       if (isDefaultTap) {
         const sjRoute = routeShareJobNotification(data);
         if (sjRoute) {
+          recordBreadcrumb('intended_route', {
+            notificationId,
+            result: sjRoute.kind,
+          });
           switch (sjRoute.kind) {
             case 'saved_place':
               router.push({
@@ -563,6 +715,11 @@ function RootLayoutContent() {
         // A malformed payload or a navigation failure must NEVER reach the
         // global error boundary. Record a sanitized diagnostic and fall back to
         // the map instead of crashing the app.
+        recordBreadcrumb('error_boundary_triggered', {
+          route: 'notification',
+          errorName: err instanceof Error ? err.name : typeof err,
+          errorMessage: sanitizeErrorText(err),
+        });
         void recordDiagnostic({
           errorCode: 'notification_route_failed',
           route: 'notification',
@@ -593,7 +750,7 @@ function RootLayoutContent() {
   }, [router]);
 
   return (
-    <AppErrorBoundary>
+    <AppErrorBoundary onReturnToMap={() => router.replace('/(tabs)/map')}>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <SafeAreaProvider>
           <AuthLinkStatusContext.Provider value={authLinkStatus}>
@@ -613,6 +770,7 @@ function RootLayoutContent() {
               <Stack.Screen name="(onboarding)" />
               <Stack.Screen name="(tabs)" />
               <Stack.Screen name="auth-callback" />
+              <Stack.Screen name="activate" />
               <Stack.Screen
                 name="add-place"
                 options={{ presentation: 'modal', headerShown: true, title: 'Save place' }}

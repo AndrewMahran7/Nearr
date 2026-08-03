@@ -13,6 +13,8 @@ import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
 import { sanitizeErrorText, sanitizeStack } from './sanitizeError';
+import { getBreadcrumbs, renderBreadcrumbs } from './breadcrumbs';
+import { getDiagnosticContext } from './diagnosticContext';
 
 const KEY = 'nearr:device-diagnostics:v1';
 const MAX_RECORDS = 8;
@@ -109,6 +111,53 @@ export async function clearDiagnostics(): Promise<void> {
   } catch {
     // ignore
   }
+}
+
+/**
+ * Assemble a full, SANITIZED diagnostic block for the global error boundary's
+ * "Copy diagnostic" action. Combines the caught error, current app context
+ * (route, initial-URL classification, last notification id, current share-job
+ * id, AppState, location-watcher state), the recent breadcrumb trail, and the
+ * app version/build/runtime. Never includes tokens, signed URLs, or private
+ * content. Pure/synchronous — safe to call while rendering the boundary.
+ */
+export function buildErrorDiagnostic(input: {
+  error: unknown;
+  componentStack?: string | null;
+}): string {
+  const { version, buildNumber } = appBuild();
+  const runtimeVersion =
+    (Constants.expoConfig as { runtimeVersion?: unknown } | null)?.runtimeVersion;
+  const ctx = getDiagnosticContext();
+  const errName =
+    input.error instanceof Error ? input.error.name : typeof input.error;
+  const stackSource =
+    input.componentStack ??
+    (input.error instanceof Error ? input.error.stack ?? null : null);
+
+  const lines: string[] = [
+    'Nearr crash diagnostic',
+    `time=${new Date().toISOString()}`,
+    `errorName=${errName}`,
+    `message=${sanitizeErrorText(input.error).slice(0, 300)}`,
+    `route=${ctx.route ?? 'unknown'}`,
+    `initialUrl=${ctx.initialUrlClassification}`,
+    `lastNotificationId=${ctx.lastNotificationId ?? 'none'}`,
+    `shareJobId=${ctx.currentShareJobId ?? 'none'}`,
+    `appState=${ctx.appState}`,
+    `locationWatcher=${ctx.locationWatcherState}`,
+    `app=${version ?? '?'} build=${buildNumber ?? '?'} runtime=${
+      typeof runtimeVersion === 'string' ? runtimeVersion : '?'
+    } ${Platform.OS} ${Platform.Version ?? ''}`.trim(),
+    '--- breadcrumbs (oldest→newest) ---',
+    renderBreadcrumbs(),
+    '--- stack ---',
+    stackSource ? sanitizeStack(stackSource, 1600) : '(no stack)',
+  ];
+  // Reference getBreadcrumbs so the trail is captured even if renderBreadcrumbs
+  // is later changed; keeps the two in sync during refactors.
+  void getBreadcrumbs;
+  return lines.join('\n');
 }
 
 /** One-block, copy/paste-friendly rendering of a diagnostic (no secrets). */
