@@ -10,16 +10,53 @@
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
-import * as Updates from 'expo-updates';
 import { Platform } from 'react-native';
 
 import { sanitizeErrorText, sanitizeStack } from './sanitizeError';
 import { getBreadcrumbs, renderBreadcrumbs } from './breadcrumbs';
 import { getDiagnosticContext } from './diagnosticContext';
 
+type ExpoUpdatesModule = {
+  runtimeVersion?: unknown;
+  updateId?: unknown;
+  channel?: unknown;
+  isEmbeddedLaunch?: unknown;
+  isEmergencyLaunch?: unknown;
+};
+
+// Resolve expo-updates LAZILY and OPTIONALLY.
+//
+// The ExpoUpdates *native* module is not present in some dev clients, and
+// evaluating the `expo-updates` JS module throws "Cannot find native module
+// 'ExpoUpdates'". A top-level `import` therefore crashes app startup. We instead
+// require it on demand (only when a diagnostic is built, never at startup),
+// exactly once, wrapped so it can NEVER throw and never logs. `undefined` = not
+// yet resolved; `null` = resolved-but-unavailable.
+let cachedUpdatesModule: ExpoUpdatesModule | null | undefined;
+
+function resolveUpdatesModule(): ExpoUpdatesModule | null {
+  if (cachedUpdatesModule !== undefined) return cachedUpdatesModule;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    cachedUpdatesModule = require('expo-updates') as ExpoUpdatesModule;
+  } catch {
+    cachedUpdatesModule = null;
+  }
+  return cachedUpdatesModule;
+}
+
+const EMPTY_UPDATE_INFO = {
+  runtimeVersion: null,
+  updateId: null,
+  channel: null,
+  embedded: null,
+  emergencyLaunch: null,
+} as const;
+
 /**
  * Read the OTA-update runtime classification (expo-updates). Every field is
- * defensively read — in Expo Go / dev clients these are null and the getters
+ * defensively read — in Expo Go / dev clients (including dev clients built
+ * WITHOUT the ExpoUpdates native module) these are null and the module/getters
  * can throw, so this must NEVER throw. Explains the "installed 1.1.38 vs update
  * runtime 1.1.42" class of confusion: `runtime` is the update-compatibility key
  * (from runtimeVersion.policy=appVersion), `embedded=true` means the JS shipped
@@ -33,6 +70,8 @@ export function getUpdateInfo(): {
   embedded: boolean | null;
   emergencyLaunch: boolean | null;
 } {
+  const Updates = resolveUpdatesModule();
+  if (!Updates) return { ...EMPTY_UPDATE_INFO };
   try {
     return {
       runtimeVersion:
@@ -45,13 +84,7 @@ export function getUpdateInfo(): {
         typeof Updates.isEmergencyLaunch === 'boolean' ? Updates.isEmergencyLaunch : null,
     };
   } catch {
-    return {
-      runtimeVersion: null,
-      updateId: null,
-      channel: null,
-      embedded: null,
-      emergencyLaunch: null,
-    };
+    return { ...EMPTY_UPDATE_INFO };
   }
 }
 

@@ -135,7 +135,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   map: {
-    height: 210,
+    height: 260,
     backgroundColor: '#0E0E11',
     alignItems: 'center',
     justifyContent: 'center',

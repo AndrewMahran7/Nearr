@@ -389,9 +389,16 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 107, 0, 0.14)',
   },
   shareCallout: {
+    // Explicit width so the pill is NOT constrained by its narrow (44px) rail
+    // parent. With only a `right` inset and no width, Yoga capped the pill's
+    // width at (parentWidth - right) = 44 - 34 = ~10px, which truncated
+    // "Tap Share" to "Ta..." on Android. A fixed width removes that cap while
+    // keeping the pill above-left of the icon and inside the reel card.
     position: 'absolute',
-    right: 50,
-    top: 8,
+    bottom: 46,
+    right: 34,
+    width: 100,
+    alignItems: 'center',
     backgroundColor: OnboardingColors.orange,
     borderRadius: 8,
     paddingHorizontal: 10,
@@ -401,6 +408,7 @@ const styles = StyleSheet.create({
     color: OnboardingColors.onOrange,
     fontSize: 12,
     fontWeight: '800',
+    flexShrink: 0,
   },
   caption: {
     paddingHorizontal: 12,

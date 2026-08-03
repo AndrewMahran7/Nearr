@@ -334,7 +334,7 @@ const styles = StyleSheet.create({
   },
   nearrCallout: {
     position: 'absolute',
-    top: -18,
+    top: -28,
     backgroundColor: OnboardingColors.orange,
     borderRadius: 8,
     paddingHorizontal: 9,

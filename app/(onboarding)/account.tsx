@@ -90,11 +90,6 @@ export default function EmailAuthScreen() {
         onBack={() =>
           router.canGoBack() ? router.back() : router.replace('/(onboarding)')
         }
-        footer={
-          <Text style={styles.note}>
-            New to Nearr? Your account will be created automatically.
-          </Text>
-        }
       >
         <View style={styles.brand}>
           <View style={styles.glow} />
@@ -147,10 +142,12 @@ export default function EmailAuthScreen() {
               loading={sending}
             />
 
-            <View style={styles.passwordless}>
-              <Feather name="shield" size={13} color={OnboardingColors.textMuted} />
-              <Text style={styles.passwordlessText}>
-                No password — we email you a secure one-tap link.
+            <View style={styles.notes}>
+              <Text style={styles.noteText}>
+                No password. We'll email you a secure sign-in link.
+              </Text>
+              <Text style={styles.noteText}>
+                New to Nearr? Your account will be created automatically.
               </Text>
             </View>
           </View>
@@ -213,15 +210,15 @@ const styles = StyleSheet.create({
     color: OnboardingColors.text,
     fontSize: 16,
   },
-  passwordless: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+  notes: {
     gap: 6,
+    marginTop: 2,
   },
-  passwordlessText: {
+  noteText: {
     color: OnboardingColors.textMuted,
     fontSize: 13,
+    lineHeight: 18,
+    textAlign: 'center',
   },
   sentCard: {
     marginTop: 28,
@@ -251,11 +248,6 @@ const styles = StyleSheet.create({
     color: OnboardingColors.textMuted,
     fontSize: 14,
     lineHeight: 20,
-    textAlign: 'center',
-  },
-  note: {
-    color: OnboardingColors.textMuted,
-    fontSize: 13,
     textAlign: 'center',
   },
 });

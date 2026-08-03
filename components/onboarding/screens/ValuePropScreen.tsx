@@ -6,9 +6,8 @@ import { InstagramReelMock } from '../demo';
 import { OnboardingColors, OnboardingRadius } from '../theme';
 import { ScreenHeading } from './ScreenHeading';
 
-// Center orb + arrow footprint reserved between the two side nodes.
-const ORB = 62;
-const ARROW = 20;
+// Orb footprint for the vertical transformation stack.
+const ORB = 76;
 
 /**
  * Screen 1 of 5 — Value proposition.
@@ -20,12 +19,12 @@ const ARROW = 20;
 export function ValuePropScreen() {
   const { width } = useWindowDimensions();
 
+  // Vertical transformation stack: each node uses most of the available width
+  // (clamped) so the hero reads ~50% larger than the old side-by-side row
+  // while staying responsive and clip-safe on small screens.
   const available = width - Spacing.xl * 2;
-  const nodeWidth = Math.max(
-    82,
-    Math.min(140, Math.floor((available - (ORB + ARROW * 2) - 8) / 2)),
-  );
-  const mapTileHeight = Math.round(nodeWidth * 0.8);
+  const nodeWidth = Math.min(available, 176);
+  const mapTileHeight = Math.round(nodeWidth * 0.5);
 
   return (
     <View style={styles.container}>
@@ -38,13 +37,13 @@ export function ValuePropScreen() {
         <InstagramReelMock width={nodeWidth} compact />
 
         <View style={styles.arrow}>
-          <Feather name="chevrons-right" size={18} color={OnboardingColors.orange} />
+          <Feather name="chevron-down" size={20} color={OnboardingColors.orange} />
         </View>
 
         <NearrOrb />
 
         <View style={styles.arrow}>
-          <Feather name="chevrons-right" size={18} color={OnboardingColors.orange} />
+          <Feather name="chevron-down" size={20} color={OnboardingColors.orange} />
         </View>
 
         <MapPinCard width={nodeWidth} tileHeight={mapTileHeight} />
@@ -58,7 +57,7 @@ function NearrOrb() {
   return (
     <View style={styles.orbOuter}>
       <View style={styles.orbInner}>
-        <Feather name="map-pin" size={24} color={OnboardingColors.onOrange} />
+        <Feather name="map-pin" size={28} color={OnboardingColors.onOrange} />
       </View>
     </View>
   );
@@ -90,13 +89,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   hero: {
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 12,
+    marginTop: 8,
   },
   arrow: {
-    width: ARROW,
+    paddingVertical: 6,
     alignItems: 'center',
   },
   orbOuter: {
@@ -108,9 +105,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   orbInner: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: OnboardingColors.orange,
     alignItems: 'center',
     justifyContent: 'center',

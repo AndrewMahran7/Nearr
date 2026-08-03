@@ -19,7 +19,7 @@ import {
 // Five interactive demonstration screens. The first is a value-prop intro
 // advanced by a CTA; screens 2–4 advance only when the user performs the
 // taught action (tap Share, tap Nearr, tap Save); the last advances via the
-// "Save your own place" CTA. Every screen carries the "N of 5" progress.
+// "Save your first place" CTA. Every screen carries the "N of 5" progress.
 const TOTAL_STEPS = 5;
 const LAST_STEP = TOTAL_STEPS - 1;
 
@@ -175,7 +175,7 @@ export default function OnboardingScreen() {
     }
     if (isLast) {
       return (
-        <OnboardingPrimaryButton title="Save your own place" onPress={handleSaveYourOwnPlace} />
+        <OnboardingPrimaryButton title="Save your first place" onPress={handleSaveYourOwnPlace} />
       );
     }
     // Screens 2–4 advance through in-screen interaction; no footer button.

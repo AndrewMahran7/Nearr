@@ -158,7 +158,7 @@ export function FindingSavingCard({ playKey = 0, onSave, style }: Props) {
                 Allpress Espresso
               </Text>
               <Text style={styles.placeMeta} numberOfLines={1}>
-                Coffee shop · Tokyo, Japan
+                Coffee shop · Tokyo
               </Text>
             </View>
 
