@@ -30,6 +30,7 @@ import { resolveVenueMentions, nameDrivenDecision } from './nameDrivenResolver.t
 import type {
   VenueMention,
   MediaGeoContext,
+  VenueRelationshipDiagnostic,
 } from '../../process-share-jobs/mediaMentions.ts';
 import {
   searchPlaces,
@@ -55,11 +56,14 @@ export async function resolveSharedPlace(args: {
   mentions?: VenueMention[] | null;
   /** Aggregate geo context that accompanies `mentions`. */
   geoContext?: MediaGeoContext | null;
+  /** Detected venue↔host relationships (diagnostics only). */
+  relationships?: VenueRelationshipDiagnostic[] | null;
 }): Promise<ResolverResult> {
   const { evidence, env } = args;
   const mentions = args.mentions ?? [];
   const geoContext: MediaGeoContext =
     args.geoContext ?? { city: null, region: null, country: null };
+  const venueRelationships = args.relationships ?? [];
   const timings = new Timings();
   const warnings: string[] = [];
   const diagnostics: Record<string, unknown> = {};
@@ -117,6 +121,7 @@ export async function resolveSharedPlace(args: {
     };
     // Preserve the full per-mention structure (per-slot UI + diagnostics).
     diagnostics.mentionResults = nameDriven.mentionResults;
+    diagnostics.venueRelationships = venueRelationships;
     diagnostics.resolverPath = isSingle ? 'name_driven_single' : 'name_driven_multi';
     logShareDebug('resolver:name_driven', {
       mode: isSingle ? 'single' : 'multi',

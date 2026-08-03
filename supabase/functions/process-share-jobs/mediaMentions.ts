@@ -38,11 +38,21 @@ export type MediaGeoContext = {
   country: string | null;
 };
 
+/** How a venue relates to its host location (evidence-derived). */
+export type VenueRelationshipType = 'located_at' | 'inside' | 'hosted_by' | 'popup_at';
+
+export type SupportingEvidenceItem = {
+  source: PlaceEvidenceSource;
+  value: string;
+  timestampSeconds: number | null;
+};
+
 /** A single eligible, normalized venue-name mention ready for a Places search. */
 export type VenueMention = {
   /** Stable per-task id: m1, m2, … (assigned in group order). */
   id: string;
-  /** Original display name (trimmed) — what the user sees. */
+  /** Original display name (trimmed) — what the user sees. For a venue-in-host
+   *  relationship this is the combined "Primary at Host" label. */
   displayName: string;
   /** Normalized name for matching/grouping (preserves & ' . in initials). */
   normalizedName: string;
@@ -62,12 +72,36 @@ export type VenueMention = {
   confidence: number;
   /** Per-mention geographic context from THIS place's explicit fields. */
   geo: MediaGeoContext;
+  /** The saveable business name (set only for a venue-in-host relationship). */
+  primaryVenueName?: string;
+  /** The host location a `primaryVenueName` operates inside/at (context only). */
+  hostVenueName?: string;
+  /** Relationship kind when a host was folded in. */
+  relationshipType?: VenueRelationshipType;
+  /** Host evidence retained as context (not a separate searchable venue). */
+  supportingEvidence?: SupportingEvidenceItem[];
+};
+
+/** Sanitized diagnostic for a detected venue↔host relationship. */
+export type VenueRelationshipDiagnostic = {
+  primaryVenueName: string;
+  hostVenueName: string;
+  relationshipType: VenueRelationshipType;
+  /** The original evidence phrase that established the relationship. */
+  phrase: string;
+  /** Distinct evidence timestamps grouped into the merged mention. */
+  timestamps: number[];
+  /** Whether the host was ALSO featured independently (→ kept separate). */
+  hostIndependentlyFeatured: boolean;
+  groupingReason: string;
 };
 
 export type BuildMentionsResult = {
   mentions: VenueMention[];
   /** Aggregate geo context (most common explicit city/region/country). */
   geoContext: MediaGeoContext;
+  /** Detected venue↔host relationships (merged or kept-separate). */
+  relationships: VenueRelationshipDiagnostic[];
   /** Diagnostics — counts of what was dropped and why (no raw text). */
   droppedInferredOnly: number;
   droppedIneligibleName: number;
@@ -184,12 +218,80 @@ function aggregateGeo(places: PlaceCandidateEvidence[]): MediaGeoContext {
 }
 
 // ---------------------------------------------------------------------------
-// Build mentions
+// Venue↔host relationship detection ("X Eats @ / at / inside Brewery X")
 // ---------------------------------------------------------------------------
 
-function hasExplicit(p: PlaceCandidateEvidence): boolean {
-  return p.explicitEvidence.length > 0;
+// Connectors that establish "primary <connector> host". Longest first so
+// "located at" wins over "at". `@` is normalized to "at" beforehand. `by`/`and`
+// are deliberately excluded (too generic to imply operating-inside).
+const RELATIONSHIP_CONNECTORS: ReadonlyArray<[string, VenueRelationshipType]> = [
+  ['located at', 'located_at'],
+  ['located inside', 'inside'],
+  ['located in', 'inside'],
+  ['pop up at', 'popup_at'],
+  ['popup at', 'popup_at'],
+  ['hosted by', 'hosted_by'],
+  ['hosted at', 'hosted_by'],
+  ['inside of', 'inside'],
+  ['inside', 'inside'],
+  ['at', 'located_at'],
+  ['in', 'inside'],
+];
+
+/** Phrase normalization for relationship detection: keeps venue-name characters
+ *  but converts "@" to " at " so "A @ B" reads like "A at B". */
+export function normalizePhrase(text: string): string {
+  return text
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/@/g, ' at ')
+    .replace(/[^a-z0-9&'.\- ]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
+
+function escapeRe(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/** Detect an explicit "<primary> <connector> <host>" phrase where BOTH sides are
+ *  the given extracted venue names. Returns the relationship type + the matching
+ *  phrase, or null. Requiring both extracted names on either side of a connector
+ *  is what keeps this from merging merely co-located / same-city venues. */
+export function detectRelationshipPhrase(
+  primaryNorm: string,
+  hostNorm: string,
+  phrases: string[],
+): { type: VenueRelationshipType; phrase: string } | null {
+  if (!primaryNorm || !hostNorm || primaryNorm === hostNorm) return null;
+  const a = escapeRe(primaryNorm);
+  const b = escapeRe(hostNorm);
+  for (const [conn, type] of RELATIONSHIP_CONNECTORS) {
+    const connRe = conn.replace(/ /g, '\\s+');
+    // primary, ≤2 filler words, connector, ≤2 filler words, host — all in ONE phrase.
+    const re = new RegExp(`\\b${a}\\b(?:\\s+\\S+){0,2}?\\s+${connRe}\\s+(?:\\S+\\s+){0,2}?${b}\\b`);
+    for (const phrase of phrases) {
+      if (re.test(phrase)) return { type, phrase };
+    }
+  }
+  return null;
+}
+
+/** A host is "independently featured" (→ NOT merged) when it carries an explicit
+ *  evidence phrase that is NOT merely a fragment of the relationship phrase —
+ *  i.e. the video recommends the host as its own place to save. */
+function hostIndependentlyFeatured(
+  hostValues: string[],
+  relationshipPhrase: string,
+): boolean {
+  return hostValues.some((v) => {
+    const n = normalizePhrase(v);
+    return n.length > 0 && !relationshipPhrase.includes(n);
+  });
+}
+
+
 
 /**
  * Group the eligible places into mentions, merging repeated references to the
@@ -201,6 +303,7 @@ export function buildVenueMentions(evidence: MediaPlaceEvidence): BuildMentionsR
   const empty: BuildMentionsResult = {
     mentions: [],
     geoContext: { city: null, region: null, country: null },
+    relationships: [],
     droppedInferredOnly: 0,
     droppedIneligibleName: 0,
     droppedPassingMention: 0,
@@ -213,7 +316,7 @@ export function buildVenueMentions(evidence: MediaPlaceEvidence): BuildMentionsR
 
   const eligible: PlaceCandidateEvidence[] = [];
   for (const p of evidence.places) {
-    if (!hasExplicit(p)) {
+    if (p.explicitEvidence.length === 0) {
       droppedInferredOnly += 1;
       continue;
     }
@@ -234,6 +337,10 @@ export function buildVenueMentions(evidence: MediaPlaceEvidence): BuildMentionsR
     normalizedName: string;
     region: string | null;
     places: PlaceCandidateEvidence[];
+    primaryName?: string;
+    hostName?: string;
+    relationshipType?: VenueRelationshipType;
+    hostPlaces?: PlaceCandidateEvidence[];
   };
   const groups: Group[] = [];
   const indexByKey = new Map<string, number>();
@@ -250,7 +357,55 @@ export function buildVenueMentions(evidence: MediaPlaceEvidence): BuildMentionsR
     }
   }
 
-  const mentions: VenueMention[] = groups.slice(0, MAX_MENTIONS).map((g, i) => {
+  // ---- Venue↔host relationship merge -----------------------------------
+  // Fold a host location into its primary venue when an explicit phrase
+  // ("A at/@/inside/located at B") links two extracted names AND the host is
+  // not independently featured. The host is kept as CONTEXT, never a separate
+  // searchable mention — so "X Eats @ Brewery X" is one slot, not two.
+  const allPhrases = eligible
+    .flatMap((p) => p.explicitEvidence.map((e) => normalizePhrase(e.value)))
+    .filter(Boolean);
+  const relationships: VenueRelationshipDiagnostic[] = [];
+  const mergedHost = new Set<number>();
+  for (let ai = 0; ai < groups.length; ai++) {
+    if (mergedHost.has(ai) || groups[ai]!.hostName) continue;
+    for (let bi = 0; bi < groups.length; bi++) {
+      if (ai === bi || mergedHost.has(bi) || groups[ai]!.hostName) continue;
+      const rel = detectRelationshipPhrase(groups[ai]!.normalizedName, groups[bi]!.normalizedName, allPhrases);
+      if (!rel) continue;
+      const hostValues = groups[bi]!.places.flatMap((p) => p.explicitEvidence.map((e) => e.value));
+      const independent = hostIndependentlyFeatured(hostValues, rel.phrase);
+      const groupedTs = new Set<number>();
+      for (const g of [groups[ai]!, groups[bi]!]) {
+        for (const p of g.places) {
+          for (const e of p.explicitEvidence) {
+            if (typeof e.timestampSeconds === 'number' && Number.isFinite(e.timestampSeconds)) groupedTs.add(e.timestampSeconds);
+          }
+        }
+      }
+      relationships.push({
+        primaryVenueName: groups[ai]!.displayName,
+        hostVenueName: groups[bi]!.displayName,
+        relationshipType: rel.type,
+        phrase: rel.phrase,
+        timestamps: [...groupedTs].sort((x, y) => x - y),
+        hostIndependentlyFeatured: independent,
+        groupingReason: independent
+          ? 'host_independently_featured_kept_separate'
+          : 'explicit_relationship_phrase',
+      });
+      if (independent) continue; // keep both — the host is its own place to save
+      groups[ai]!.primaryName = groups[ai]!.displayName;
+      groups[ai]!.hostName = groups[bi]!.displayName;
+      groups[ai]!.relationshipType = rel.type;
+      groups[ai]!.hostPlaces = groups[bi]!.places;
+      groups[ai]!.displayName = `${groups[ai]!.displayName} at ${groups[bi]!.displayName}`;
+      mergedHost.add(bi);
+    }
+  }
+  const liveGroups = groups.filter((_, i) => !mergedHost.has(i));
+
+  const mentions: VenueMention[] = liveGroups.slice(0, MAX_MENTIONS).map((g, i) => {
     const sources = new Set<PlaceEvidenceSource>();
     const timestamps = new Set<number>();
     let mentionCount = 0;
@@ -267,14 +422,24 @@ export function buildVenueMentions(evidence: MediaPlaceEvidence): BuildMentionsR
         mentionCount += 1;
       }
     }
+    // Host timestamps join the grouped set (context) but NOT the token set.
+    for (const p of g.hostPlaces ?? []) {
+      for (const e of p.explicitEvidence) {
+        if (typeof e.timestampSeconds === 'number' && Number.isFinite(e.timestampSeconds)) timestamps.add(e.timestampSeconds);
+      }
+    }
     const ts = [...timestamps].sort((a, b) => a - b);
     const srcList = [...sources];
     const repeated = srcList.length >= 2 || ts.length >= 2 || mentionCount >= 2;
-    return {
+    const hasHost = !!g.hostName;
+    const distinctiveTokens = hasHost
+      ? [...new Set([...distinctiveTokensOf(g.primaryName!), ...distinctiveTokensOf(g.hostName!)])]
+      : distinctiveTokensOf(g.displayName);
+    const mention: VenueMention = {
       id: `m${i + 1}`,
       displayName: g.displayName,
       normalizedName: g.normalizedName,
-      distinctiveTokens: distinctiveTokensOf(g.displayName),
+      distinctiveTokens,
       category,
       sources: srcList,
       timestamps: ts,
@@ -283,11 +448,21 @@ export function buildVenueMentions(evidence: MediaPlaceEvidence): BuildMentionsR
       confidence: bestConfidence,
       geo: placeGeo(g.places[0]!),
     };
+    if (hasHost) {
+      mention.primaryVenueName = g.primaryName;
+      mention.hostVenueName = g.hostName;
+      mention.relationshipType = g.relationshipType;
+      mention.supportingEvidence = (g.hostPlaces ?? [])
+        .flatMap((p) => p.explicitEvidence.map((e) => ({ source: e.source, value: e.value.slice(0, 200), timestampSeconds: e.timestampSeconds })))
+        .slice(0, 8);
+    }
+    return mention;
   });
 
   return {
     mentions,
     geoContext: aggregateGeo(eligible),
+    relationships,
     droppedInferredOnly,
     droppedIneligibleName,
     droppedPassingMention,

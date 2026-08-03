@@ -74,10 +74,16 @@ export type MentionResult = {
   mentionId: string;
   displayName: string;
   outcome: MentionOutcome;
+  /** The Google Places text query issued for this mention (diagnostics). */
+  query: string;
   /** Preserved candidates (verified → 1; ambiguous → top N). */
   candidates: ResolvedCandidate[];
   /** Per-candidate deterministic scoring explanation (diagnostics). */
   scoring: MentionScoreExplanation[];
+  /** Venue-in-host relationship context (present only for a merged mention). */
+  primaryVenueName?: string;
+  hostVenueName?: string;
+  relationshipType?: string;
   providerError?: string;
 };
 
@@ -358,8 +364,15 @@ export type NameDrivenDeps = {
 
 function buildMentionQuery(mention: VenueMention, geo: MediaGeoContext): string {
   // Name + bounded geo + a light category hint. Geo/category are RANKING
-  // hints only — the name is the anchor.
-  const parts = [mention.displayName];
+  // hints only — the name is the anchor. For a venue-in-host relationship,
+  // search the PRIMARY venue with the HOST as bounded context ("X Eats Brewery
+  // X") rather than the "X Eats at Brewery X" label.
+  const parts: string[] = [];
+  if (mention.hostVenueName && mention.primaryVenueName) {
+    parts.push(mention.primaryVenueName, mention.hostVenueName);
+  } else {
+    parts.push(mention.displayName);
+  }
   const city = mention.geo.city ?? geo.city;
   const region = mention.geo.region ?? geo.region;
   if (city) parts.push(city);
@@ -404,21 +417,24 @@ export async function resolveVenueMentions(args: {
 
   const mentionResults: MentionResult[] = [];
   for (const mention of mentions) {
+    const query = buildMentionQuery(mention, geoContext);
+    const relFields = mention.hostVenueName
+      ? { primaryVenueName: mention.primaryVenueName, hostVenueName: mention.hostVenueName, relationshipType: mention.relationshipType }
+      : {};
     // Defensive: a mention with no distinctive token should never have been
     // built, but never search one if it slips through.
     if (mention.distinctiveTokens.length === 0) {
-      mentionResults.push({ mentionId: mention.id, displayName: mention.displayName, outcome: 'rejected_insufficient_evidence', candidates: [], scoring: [] });
+      mentionResults.push({ mentionId: mention.id, displayName: mention.displayName, outcome: 'rejected_insufficient_evidence', query, candidates: [], scoring: [], ...relFields });
       continue;
     }
 
-    const query = buildMentionQuery(mention, geoContext);
     let result: SearchPlacesResult;
     const cached = cache.get(query);
     if (cached) {
       result = cached;
     } else if (requestCount >= globalLimit) {
       // Budget exhausted — treat remaining mentions as provider_error (bounded).
-      mentionResults.push({ mentionId: mention.id, displayName: mention.displayName, outcome: 'provider_error', candidates: [], scoring: [], providerError: 'request_limit_reached' });
+      mentionResults.push({ mentionId: mention.id, displayName: mention.displayName, outcome: 'provider_error', query, candidates: [], scoring: [], providerError: 'request_limit_reached', ...relFields });
       continue;
     } else {
       requestCount += 1;
@@ -431,7 +447,7 @@ export async function resolveVenueMentions(args: {
     }
 
     if (!result.ok) {
-      mentionResults.push({ mentionId: mention.id, displayName: mention.displayName, outcome: 'provider_error', candidates: [], scoring: [], providerError: result.reason });
+      mentionResults.push({ mentionId: mention.id, displayName: mention.displayName, outcome: 'provider_error', query, candidates: [], scoring: [], providerError: result.reason, ...relFields });
       continue;
     }
 
@@ -453,8 +469,10 @@ export async function resolveVenueMentions(args: {
       mentionId: mention.id,
       displayName: mention.displayName,
       outcome,
+      query,
       candidates,
       scoring: scored.map(toExplanation).slice(0, 8),
+      ...relFields,
     });
   }
 

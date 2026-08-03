@@ -411,12 +411,13 @@ async function finalizeMediaTask(admin: any, env: any, body: any): Promise<Respo
   // path (e.g. a "top 5 pizza" reel with names but no street addresses).
   const mediaMentions = parsed.ok
     ? buildVenueMentions(parsed.value)
-    : { mentions: [], geoContext: { city: null, region: null, country: null } };
+    : { mentions: [], geoContext: { city: null, region: null, country: null }, relationships: [] };
   const result = await resolveSharedPlace({
     evidence: mediaEvidence,
     env,
     mentions: mediaMentions.mentions,
     geoContext: mediaMentions.geoContext,
+    relationships: mediaMentions.relationships,
   });
   const extractionPayload = {
     platform: task.platform,

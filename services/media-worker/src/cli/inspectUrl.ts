@@ -199,11 +199,24 @@ function buildVerificationBreakdown(v: VerificationOutcome, evidence: MediaPlace
     geoContext?: { city: string | null; region: string | null; country: string | null };
     resolverPath?: string | null;
     nameDriven?: unknown;
+    relationships?: {
+      primaryVenueName: string;
+      hostVenueName: string;
+      relationshipType: string;
+      phrase: string;
+      timestamps: number[];
+      hostIndependentlyFeatured: boolean;
+      groupingReason: string;
+    }[];
     rejectedCandidates?: { mentionId: string | null; name: string | null; reason: string | null }[];
     mentionResults?: {
       mentionId: string | null;
       displayName: string | null;
       outcome: string | null;
+      query?: string | null;
+      primaryVenueName?: string | null;
+      hostVenueName?: string | null;
+      relationshipType?: string | null;
       candidates: { name: string | null; formattedAddress: string | null; googlePlaceId: string | null; confidenceScore: number | null }[];
     }[];
   };
@@ -219,12 +232,21 @@ function buildVerificationBreakdown(v: VerificationOutcome, evidence: MediaPlace
     safeToAutoSave: r.safeToAutoSave === true, // reported as-is; never weakened
     confidence: r.confidence ?? null,
     geoContext: r.geoContext ?? null,
+    // Detected venue↔host relationships (X Eats @ Brewery X → one slot).
+    venueRelationships: Array.isArray(r.relationships) ? r.relationships : [],
+    // Google Places queries issued, one per mention slot.
+    googleQueries: mentionResults.map((m) => m.query ?? null).filter(Boolean),
+    mentionSlotCount: mentionResults.length,
     // Per-mention slots (name-driven multi-place). Each explicit name gets one
     // slot with its own verification outcome + candidates.
     mentionSlots: mentionResults.map((m) => ({
       mentionId: m.mentionId,
       name: m.displayName,
       outcome: m.outcome,
+      query: m.query ?? null,
+      primaryVenueName: m.primaryVenueName ?? null,
+      hostVenueName: m.hostVenueName ?? null,
+      relationshipType: m.relationshipType ?? null,
       candidates: (Array.isArray(m.candidates) ? m.candidates : []).map((c) => ({
         name: c.name,
         address: c.formattedAddress,

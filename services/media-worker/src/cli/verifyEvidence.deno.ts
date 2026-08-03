@@ -67,6 +67,7 @@ try {
     env,
     mentions: built.mentions,
     geoContext: built.geoContext,
+    relationships: built.relationships,
   });
 
   const mentionResults = Array.isArray(result?.diagnostics?.mentionResults)
@@ -103,11 +104,17 @@ try {
     mentionCount: built.mentions.length,
     geoContext: built.geoContext,
     nameDriven: result?.diagnostics?.nameDrivenMultiPlace ?? null,
+    // Detected venue↔host relationships (X Eats @ Brewery X → one slot).
+    relationships: built.relationships,
     rejectedCandidates: rejectedCandidates.slice(0, 20),
     mentionResults: mentionResults.slice(0, 12).map((m: any) => ({
       mentionId: m?.mentionId ?? null,
       displayName: typeof m?.displayName === 'string' ? m.displayName : null,
       outcome: m?.outcome ?? null,
+      query: typeof m?.query === 'string' ? m.query : null,
+      primaryVenueName: typeof m?.primaryVenueName === 'string' ? m.primaryVenueName : null,
+      hostVenueName: typeof m?.hostVenueName === 'string' ? m.hostVenueName : null,
+      relationshipType: typeof m?.relationshipType === 'string' ? m.relationshipType : null,
       candidates: (Array.isArray(m?.candidates) ? m.candidates : []).slice(0, 5).map((c: any) => ({
         name: typeof c?.name === 'string' ? c.name : null,
         formattedAddress: typeof c?.formattedAddress === 'string' ? c.formattedAddress : null,

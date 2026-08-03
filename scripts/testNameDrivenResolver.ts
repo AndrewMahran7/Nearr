@@ -410,6 +410,32 @@ const geo: MediaGeoContext = { city: null, region: 'California', country: 'Unite
     check('provider_error is not a permanent lost place', r.noMatchCount === 0);
   }
 
+  // merged venue-in-host mention: combined query (primary + host), resolves to
+  // the host business, relationship context retained (never silently replaced).
+  {
+    const m: VenueMention = {
+      ...mention('X Eats at Brewery X', { region: 'California' }),
+      primaryVenueName: 'X Eats',
+      hostVenueName: 'Brewery X',
+      relationshipType: 'located_at',
+    };
+    let captured = '';
+    const r = await resolveVenueMentions({
+      mentions: [m],
+      geoContext: { city: 'Anaheim', region: 'California', country: 'United States' },
+      env,
+      platform: 'instagram',
+      deps: {
+        search: async (q: string): Promise<SearchPlacesResult> => { captured = q; return { ok: true, results: [cand('Brewery X', { googlePlaceId: 'bx', formattedAddress: '3191 E La Palma Ave, Anaheim, CA' })] }; },
+        geocode: async () => ({ lat: 33.8, lng: -117.9 }),
+      },
+    });
+    check('merged query includes primary + host (not the "at" label)', captured.includes('X Eats') && captured.includes('Brewery X') && !captured.includes(' at '));
+    check('merged mention resolves (not manual)', r.mentionResults[0]!.outcome === 'verified_single' || r.mentionResults[0]!.outcome === 'ambiguous_candidates');
+    check('merged mentionResult keeps relationship context', r.mentionResults[0]!.primaryVenueName === 'X Eats' && r.mentionResults[0]!.hostVenueName === 'Brewery X');
+    check('merged mention is a single aggregate slot', r.aggregateCandidates.length === 1 && r.aggregateCandidates[0]!.googlePlaceId === 'bx');
+  }
+
   if (failures > 0) {
     console.error(`\n${failures} name-driven resolver assertion(s) failed`);
     process.exit(1);

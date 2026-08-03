@@ -19,6 +19,8 @@ import {
   isEligibleVenueName,
   normalizeVenueName,
   distinctiveTokensOf,
+  normalizePhrase,
+  detectRelationshipPhrase,
 } from '../supabase/functions/process-share-jobs/mediaMentions';
 import type {
   MediaPlaceEvidence,
@@ -160,6 +162,84 @@ check('distinctiveTokensOf keeps brand', distinctiveTokensOf('Parlor Woodfire').
 
 // ---- insufficient evidence => no mentions ---------------------------------
 check('insufficientEvidence => no mentions', buildVenueMentions(evidence([place()], { insufficientEvidence: true })).mentions.length === 0);
+
+// ---- venue↔host relationship grouping (§2-6) ------------------------------
+check('normalizePhrase converts @ to at', normalizePhrase('X Eats @ Brewery X') === 'x eats at brewery x');
+check('detectRelationshipPhrase finds "at"', detectRelationshipPhrase('x eats', 'brewery x', ['x eats located at brewery x'])?.type === 'located_at');
+check('detectRelationshipPhrase finds @ (normalized)', detectRelationshipPhrase('x eats', 'brewery x', [normalizePhrase('X Eats @ Brewery X')])?.type === 'located_at');
+check('detectRelationshipPhrase: no connector => null', detectRelationshipPhrase('x eats', 'brewery x', ['x eats and brewery x are both good']) === null);
+
+function xEatsBreweryX(hostEvidenceValue: string, phrase: string) {
+  return evidence([
+    place({ name: 'X Eats', city: 'Anaheim', explicitEvidence: [ev('speech', phrase, 32)] }),
+    place({ name: 'Brewery X', city: 'Anaheim', role: 'secondary', confidence: 0.9, explicitEvidence: [ev('visible_text', hostEvidenceValue, 32)] }),
+  ]);
+}
+
+{
+  const r = buildVenueMentions(xEatsBreweryX('Brewery X', 'Out in Anaheim are the pizzas from X Eats located at Brewery X.'));
+  check('"X Eats located at Brewery X" => one mention', r.mentions.length === 1, `got ${r.mentions.length}`);
+  const m = r.mentions[0]!;
+  check('merged displayName is "X Eats at Brewery X"', m.displayName === 'X Eats at Brewery X');
+  check('merged primaryVenueName', m.primaryVenueName === 'X Eats');
+  check('merged hostVenueName', m.hostVenueName === 'Brewery X');
+  check('merged relationshipType located_at', m.relationshipType === 'located_at');
+  check('host retained as supportingEvidence', (m.supportingEvidence ?? []).some((e) => e.value === 'Brewery X'));
+  check('merged distinctiveTokens include host+primary', m.distinctiveTokens.includes('brewery') && m.distinctiveTokens.includes('x'));
+  check('relationship diagnostic recorded', r.relationships.length === 1 && r.relationships[0]!.hostIndependentlyFeatured === false);
+}
+
+{
+  const r = buildVenueMentions(xEatsBreweryX('Brewery X', 'Out in Anaheim are the pizzas from X Eats @ Brewery X.'));
+  check('"X Eats @ Brewery X" => one mention', r.mentions.length === 1, `got ${r.mentions.length}`);
+}
+
+// host independently featured elsewhere => stays a separate mention
+{
+  const r = buildVenueMentions(
+    evidence([
+      place({ name: 'X Eats', city: 'Anaheim', explicitEvidence: [ev('speech', 'the pizzas from X Eats located at Brewery X', 32)] }),
+      place({ name: 'Brewery X', city: 'Anaheim', explicitEvidence: [ev('speech', 'located at Brewery X', 32), ev('speech', 'Brewery X is also a must-visit brewery on its own', 50)] }),
+    ]),
+  );
+  check('independently-featured host stays separate', r.mentions.length === 2, `got ${r.mentions.length}`);
+  check('relationship marked hostIndependentlyFeatured', r.relationships.some((x) => x.hostIndependentlyFeatured === true));
+}
+
+// two unrelated consecutive / same-city venues do NOT merge
+{
+  const r = buildVenueMentions(
+    evidence([
+      place({ name: "Joe's Woodfire", city: 'Los Angeles', explicitEvidence: [ev('speech', "First up is Joe's Woodfire in Los Angeles", 5)] }),
+      place({ name: "Mary's Bistro", city: 'Los Angeles', explicitEvidence: [ev('speech', "Next is Mary's Bistro in Los Angeles", 12)] }),
+    ]),
+  );
+  check('two unrelated same-city venues stay separate', r.mentions.length === 2);
+  check('no relationship recorded for unrelated venues', r.relationships.length === 0);
+}
+
+// five-pizza fixture => exactly five mention slots (X Eats@Brewery X merged)
+{
+  const r = buildVenueMentions(
+    evidence([
+      place({ name: 'Parlor Woodfire Kitchen', city: 'San Clemente', explicitEvidence: [ev('speech', 'First in San Clemente is Parlor Woodfire Kitchen', 6)] }),
+      place({ name: 'B&C Pizzas', city: 'Laguna Niguel', explicitEvidence: [ev('speech', 'in Laguna Niguel is one of my favorites B&C Pizzas', 11)] }),
+      place({ name: "Lunita's Pizza", city: 'San Juan Capistrano', explicitEvidence: [ev('speech', "in San Juan Capistrano is Lunita's Pizza", 21)] }),
+      place({ name: 'X Eats', city: 'Anaheim', explicitEvidence: [ev('speech', 'Out in Anaheim are the pizzas from X Eats located at Brewery X', 32)] }),
+      place({ name: 'Brewery X', city: 'Anaheim', role: 'secondary', confidence: 0.9, explicitEvidence: [ev('speech', 'located at Brewery X', 32)] }),
+      place({ name: 'Patrini Pizza', city: 'Los Alamitos', explicitEvidence: [ev('speech', 'in Los Alamitos is Patrini Pizza', 44)] }),
+    ], { multipleIntentionalPlaces: true }),
+  );
+  check('five-pizza fixture => exactly 5 mention slots', r.mentions.length === 5, `got ${r.mentions.length}: ${r.mentions.map((m) => m.displayName).join(' | ')}`);
+  check('one merged X Eats at Brewery X slot', r.mentions.some((m) => m.displayName === 'X Eats at Brewery X'));
+  check('no standalone Brewery X slot', !r.mentions.some((m) => m.displayName === 'Brewery X'));
+}
+
+// single-place fixture unchanged (no relationship)
+{
+  const r = buildVenueMentions(evidence([place({ name: 'dPlace Steak', city: 'Fullerton', explicitEvidence: [ev('speech', 'dPlace in Fullerton', 3)] })]));
+  check('single name => one mention, no relationship', r.mentions.length === 1 && r.relationships.length === 0 && !r.mentions[0]!.hostVenueName);
+}
 
 if (failures > 0) {
   console.error(`\n${failures} media-mentions assertion(s) failed`);
