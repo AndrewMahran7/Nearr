@@ -6,5 +6,5 @@
     "noEmit": false
   },
   "include": ["src/**/*.ts"],
-  "exclude": ["tests", "dist", "node_modules"]
+  "exclude": ["tests", "dist", "node_modules", "src/**/*.deno.ts"]
 }

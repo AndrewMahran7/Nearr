@@ -17,5 +17,5 @@
     "sourceMap": true
   },
   "include": ["src/**/*.ts", "tests/**/*.ts"],
-  "exclude": ["dist", "node_modules"]
+  "exclude": ["dist", "node_modules", "src/**/*.deno.ts"]
 }
