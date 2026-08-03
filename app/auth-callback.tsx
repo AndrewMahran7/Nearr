@@ -6,6 +6,7 @@ import * as ExpoLinking from 'expo-linking';
 import { Screen } from '@/components';
 import { Colors, Spacing, Typography } from '@/constants';
 import { useAuth } from '@/hooks/useAuth';
+import { trackEvent } from '@/lib/analytics';
 import { parseAuthCallbackUrl } from '@/lib/authDeepLink';
 import { getOnboardingStatus } from '@/lib/onboarding';
 import {
@@ -60,10 +61,13 @@ export default function AuthCallbackScreen() {
     if (decision === 'navigate_app') {
       void (async () => {
         const current = sessionRef.current;
-        let route: '/(onboarding)' | '/(tabs)/map' = '/(tabs)/map';
+        let route: '/activate' | '/(tabs)/map' = '/(tabs)/map';
         if (current) {
           const onboardingStatus = await getOnboardingStatus(current.user.id);
           route = routeAfterAuthenticatedUser(onboardingStatus);
+          void trackEvent('onboarding_auth_completed', {
+            destination: route === '/activate' ? 'activate' : 'map',
+          });
         }
         if (!hasLoggedOutcome.current) {
           hasLoggedOutcome.current = true;

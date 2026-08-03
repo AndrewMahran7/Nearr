@@ -185,3 +185,31 @@ export async function resetOnboarding(userId: string): Promise<void> {
     console.warn('[onboarding] reset_failed', err);
   }
 }
+
+// ---------------------------------------------------------------------------
+// Pre-auth demo completion (distinct from account/first-save).
+//
+// The interactive demonstration runs BEFORE any account exists, so it is
+// tracked with a single global (per-install) flag rather than a per-user key.
+// Finishing the demo is not the same as authenticating, and neither is the
+// same as saving a first place.
+// ---------------------------------------------------------------------------
+const DEMO_COMPLETED_KEY = 'nearr:onboarding:demo_completed:v1';
+
+/** Record that the pre-auth demo was completed on this install. Best-effort. */
+export async function markDemoCompleted(): Promise<void> {
+  try {
+    await AsyncStorage.setItem(DEMO_COMPLETED_KEY, 'true');
+  } catch (err) {
+    console.warn('[onboarding] mark_demo_completed_failed', err);
+  }
+}
+
+/** Whether the pre-auth demo was completed on this install. Fail-open false. */
+export async function isDemoCompleted(): Promise<boolean> {
+  try {
+    return (await AsyncStorage.getItem(DEMO_COMPLETED_KEY)) === 'true';
+  } catch {
+    return false;
+  }
+}

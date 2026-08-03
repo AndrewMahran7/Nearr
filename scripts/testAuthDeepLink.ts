@@ -77,8 +77,8 @@ function run() {
       onboardingStatus: 'required',
       signedOutRoute: '/(onboarding)',
     }),
-    '/(onboarding)',
-    'session + onboarding required should route to onboarding',
+    '/activate',
+    'session + onboarding required should route to the activation screen',
   );
 
   assert.equal(

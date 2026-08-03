@@ -109,15 +109,18 @@ export function createAuthLinkDuplicateGuard(windowMs = 12_000) {
 
 export function routeAfterAuthenticatedUser(
   onboardingStatus: OnboardingStatus,
-): '/(onboarding)' | '/(tabs)/map' {
-  return onboardingStatus === 'required' ? '/(onboarding)' : '/(tabs)/map';
+): '/activate' | '/(tabs)/map' {
+  // A user with no saved places yet ('required') lands on the post-account
+  // activation screen ("Save your first place"); an established user goes
+  // straight to the map.
+  return onboardingStatus === 'required' ? '/activate' : '/(tabs)/map';
 }
 
 export function decideAuthResolutionRoute(args: {
   hasSession: boolean;
   onboardingStatus: OnboardingStatus;
   signedOutRoute: '/(onboarding)' | '/(auth)/sign-in';
-}): '/(onboarding)' | '/(tabs)/map' | '/(auth)/sign-in' {
+}): '/activate' | '/(tabs)/map' | '/(onboarding)' | '/(auth)/sign-in' {
   if (!args.hasSession) return args.signedOutRoute;
   return routeAfterAuthenticatedUser(args.onboardingStatus);
 }

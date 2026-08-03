@@ -1,206 +1,200 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'expo-router';
 
-import { useAuth } from '@/hooks/useAuth';
 import { trackEvent } from '@/lib/analytics';
-import { setOnboardingPreview } from '@/lib/onboarding';
+import { hapticImpact, hapticSelection, hapticSuccess } from '@/lib/haptics';
+import { markDemoCompleted, setOnboardingPreview } from '@/lib/onboarding';
 import {
   OnboardingPrimaryButton,
   OnboardingScreenShell,
-  OnboardingSecondaryButton,
 } from '@/components/onboarding';
 import {
-  FirstSaveScreen,
-  HowToSaveScreen,
-  NearbyRemindersScreen,
-  ShareFavoritesScreen,
-  WelcomeScreen,
+  ChooseNearrScreen,
+  FindingSavingScreen,
+  MapResultScreen,
+  TapShareScreen,
+  ValuePropScreen,
 } from '@/components/onboarding/screens';
 
-// Linear 5-step flow. Welcome (step 0) has no progress bar and no back
-// button; the remaining four screens share a 4-segment progress indicator.
+// Five interactive demonstration screens. The first is a value-prop intro
+// advanced by a CTA; screens 2–4 advance only when the user performs the
+// taught action (tap Share, tap Nearr, tap Save); the last advances via the
+// "Save your own place" CTA. Every screen carries the "N of 5" progress.
 const TOTAL_STEPS = 5;
-const STEPS_AFTER_WELCOME = TOTAL_STEPS - 1;
 const LAST_STEP = TOTAL_STEPS - 1;
 
-// Stable, PII-free step names for analytics. Index-aligned with the flow.
-const STEP_NAMES = [
-  'welcome',
-  'share_favorites',
-  'how_to_save',
-  'nearby_reminders',
-  'first_save',
+const SCREEN_NAMES = [
+  'value_prop',
+  'tap_share',
+  'choose_nearr',
+  'finding_saving',
+  'map_result',
 ] as const;
 
-function onboardingStepProps(index: number) {
+// Small delay so the in-screen tap animation is visible before the transition.
+const ADVANCE_DELAY_MS = 300;
+
+function screenProps(index: number) {
   return {
-    step_index: index,
-    step_name: STEP_NAMES[index] ?? 'unknown',
-    total_steps: TOTAL_STEPS,
+    screen: SCREEN_NAMES[index] ?? 'unknown',
+    screen_index: index,
+    total_screens: TOTAL_STEPS,
   };
 }
 
 /**
- * Pre-auth onboarding / intro flow.
+ * Pre-auth interactive onboarding.
  *
- * This is the PUBLIC first-run experience shown BEFORE sign-in. It does not
- * require a session and does NOT gate the app:
- *   - A logged-out user walks the intro and leaves via sign-in.
- *   - A signed-in user previewing from Settings (dev only) leaves to the map.
- *
- * Notification permission is intentionally NOT requested here — it happens
- * after sign-up / later in setup.
+ * A hands-on practice run of the Nearr loop (tap Share → tap Nearr → watch it
+ * resolve → tap Save → see the pin) shown BEFORE the user creates an account.
+ * Finishing routes to the single email auth screen; it does not sign the user
+ * in and does not count as a first save. No location/notification permission
+ * is requested here.
  */
 export default function OnboardingScreen() {
   const router = useRouter();
-  const { session } = useAuth();
-  const signedIn = !!session;
   const [step, setStep] = useState(0);
 
   const isWelcome = step === 0;
   const isLast = step === LAST_STEP;
 
-  // Fire `onboarding_started` exactly once when the flow mounts.
+  // `onboarding_demo_started` once on mount.
   const startedRef = useRef(false);
   useEffect(() => {
     if (startedRef.current) return;
     startedRef.current = true;
-    void trackEvent('onboarding_started', onboardingStepProps(0));
+    void trackEvent('onboarding_demo_started', screenProps(0));
   }, []);
 
-  // Clear any dev-only onboarding preview request when leaving the flow, so a
-  // dev/demo session isn't kept on onboarding after the preview ends.
+  // Clear any dev-only onboarding preview request when leaving the flow.
   useEffect(() => {
     return () => setOnboardingPreview(false);
   }, []);
 
-  // Fire `onboarding_screen_viewed` once per step. The seen-set dedupes
-  // re-renders and back-and-forth navigation so each screen counts once.
+  // `onboarding_screen_viewed` once per screen.
   const viewedRef = useRef<Set<number>>(new Set());
   useEffect(() => {
     if (viewedRef.current.has(step)) return;
     viewedRef.current.add(step);
-    void trackEvent('onboarding_screen_viewed', onboardingStepProps(step));
-    if (step === 1) {
-      void trackEvent('onboarding_share_favorites_viewed', onboardingStepProps(step));
-    }
-    if (step === 2) {
-      void trackEvent('onboarding_share_tutorial_viewed', onboardingStepProps(step));
-    }
+    void trackEvent('onboarding_screen_viewed', screenProps(step));
   }, [step]);
 
-  const goNext = () => setStep((s) => Math.min(s + 1, LAST_STEP));
-  const goBack = () => setStep((s) => Math.max(s - 1, 0));
+  // Guard against accidental double navigation from rapid taps. Reset whenever
+  // the step changes (so back navigation re-enables interaction), and cancel
+  // any pending advance so a fast tap-then-back can't bounce the user forward.
+  const busyRef = useRef(false);
+  const advanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    busyRef.current = false;
+    return () => {
+      if (advanceTimerRef.current) {
+        clearTimeout(advanceTimerRef.current);
+        advanceTimerRef.current = null;
+      }
+    };
+  }, [step]);
 
-  // Where the intro ends: sign-in for logged-out users, or back to the map for
-  // a signed-in dev preview. Guarded against double navigation.
-  const leavingRef = useRef(false);
-  const leaveOnboarding = () => {
-    if (leavingRef.current) return;
-    leavingRef.current = true;
-    if (signedIn) router.replace('/(tabs)/map');
-    else router.replace('/(auth)/sign-in');
+  const advance = () => {
+    if (busyRef.current) return;
+    busyRef.current = true;
+    advanceTimerRef.current = setTimeout(
+      () => setStep((s) => Math.min(s + 1, LAST_STEP)),
+      ADVANCE_DELAY_MS,
+    );
   };
 
-  // Final-screen actions. Pre-auth they all funnel to sign-in (you need an
-  // account to save); a signed-in preview funnels back to the map. Each fires
-  // the target + completion analytics first. Opening Instagram/TikTok does not
-  // save anything — the user finds a place and shares it to Nearr.
-  const runFirstSaveAction = (
-    target: 'instagram' | 'tiktok' | 'paste_link' | 'start_saving',
-  ) => {
-    void trackEvent('onboarding_first_save_cta_tapped', {
-      ...onboardingStepProps(LAST_STEP),
-      target,
-    });
-    void trackEvent('onboarding_completed', {
-      ...onboardingStepProps(LAST_STEP),
-      completed_via: target,
-    });
-    leaveOnboarding();
-  };
-
-  const handlePrimary = () => {
-    if (isLast) {
-      runFirstSaveAction('start_saving');
-      return;
+  const goBack = () => {
+    if (advanceTimerRef.current) {
+      clearTimeout(advanceTimerRef.current);
+      advanceTimerRef.current = null;
     }
-    // Nearby Reminders (step 3) no longer requests notification permission
-    // pre-auth — it just advances. Permission is requested after sign-up.
-    void trackEvent('onboarding_continue_tapped', onboardingStepProps(step));
-    goNext();
+    void trackEvent('onboarding_back_tapped', screenProps(step));
+    setStep((s) => Math.max(s - 1, 0));
   };
 
-  const handleSkip = () => {
-    void trackEvent('onboarding_skip_tapped', onboardingStepProps(step));
-    if (step === 3) {
-      void trackEvent('onboarding_reminders_skipped', {
-        ...onboardingStepProps(step),
-        reason: 'skipped',
-      });
-    }
-    goNext();
+  // Interactive advance handlers (screens 2–4).
+  const handleShareTap = () => {
+    if (busyRef.current) return;
+    void trackEvent('onboarding_share_demo_tapped', screenProps(1));
+    hapticSelection();
+    advance();
   };
 
-  // Welcome secondary: existing account → sign-in.
-  const goSignIn = () => router.push('/(auth)/sign-in');
+  const handleNearrTap = () => {
+    if (busyRef.current) return;
+    void trackEvent('onboarding_nearr_demo_tapped', screenProps(2));
+    hapticSelection();
+    advance();
+  };
+
+  const handleSaveTap = () => {
+    if (busyRef.current) return;
+    void trackEvent('onboarding_demo_save_tapped', screenProps(3));
+    hapticImpact();
+    advance();
+  };
+
+  // Screen 5 pin animation (once) — analytics only, no advance.
+  const pinShownRef = useRef(false);
+  const handlePinShown = () => {
+    if (pinShownRef.current) return;
+    pinShownRef.current = true;
+    void trackEvent('onboarding_demo_pin_shown', screenProps(4));
+    hapticSuccess();
+  };
+
+  // Value-prop CTA → next screen.
+  const handleSeeHowItWorks = () => {
+    void trackEvent('onboarding_continue_tapped', screenProps(step));
+    advance();
+  };
+
+  // Final CTA → single email auth screen. Guarded against double navigation.
+  const finishingRef = useRef(false);
+  const handleSaveYourOwnPlace = () => {
+    if (finishingRef.current) return;
+    finishingRef.current = true;
+    void markDemoCompleted();
+    void trackEvent('onboarding_demo_completed', screenProps(LAST_STEP));
+    router.push('/(onboarding)/account');
+  };
 
   return (
     <OnboardingScreenShell
       onBack={isWelcome ? undefined : goBack}
-      progress={isWelcome ? undefined : { total: STEPS_AFTER_WELCOME, current: step - 1 }}
+      progress={{ total: TOTAL_STEPS, current: step }}
       footer={renderFooter()}
     >
       {renderBody()}
     </OnboardingScreenShell>
   );
 
+  function renderFooter() {
+    if (isWelcome) {
+      return <OnboardingPrimaryButton title="See how it works" onPress={handleSeeHowItWorks} />;
+    }
+    if (isLast) {
+      return (
+        <OnboardingPrimaryButton title="Save your own place" onPress={handleSaveYourOwnPlace} />
+      );
+    }
+    // Screens 2–4 advance through in-screen interaction; no footer button.
+    return null;
+  }
+
   function renderBody() {
     switch (step) {
       case 0:
-        return <WelcomeScreen />;
+        return <ValuePropScreen />;
       case 1:
-        return <ShareFavoritesScreen />;
+        return <TapShareScreen onShareTap={handleShareTap} />;
       case 2:
-        return <HowToSaveScreen />;
+        return <ChooseNearrScreen onNearrTap={handleNearrTap} />;
       case 3:
-        return <NearbyRemindersScreen />;
+        return <FindingSavingScreen onSave={handleSaveTap} />;
       case 4:
       default:
-        return (
-          <FirstSaveScreen
-            onOpenInstagram={() => runFirstSaveAction('instagram')}
-            onOpenTikTok={() => runFirstSaveAction('tiktok')}
-            onPasteLink={() => runFirstSaveAction('paste_link')}
-          />
-        );
+        return <MapResultScreen onPinShown={handlePinShown} />;
     }
   }
-
-  function renderFooter() {
-    const primaryLabel = PRIMARY_LABELS[step];
-    return (
-      <>
-        <OnboardingPrimaryButton title={primaryLabel} onPress={handlePrimary} />
-        {step === 0 ? (
-          <OnboardingSecondaryButton
-            title="Already have an account? Sign in"
-            emphasis
-            onPress={goSignIn}
-          />
-        ) : null}
-        {step === 1 || step === 3 ? (
-          <OnboardingSecondaryButton title="Skip for now" onPress={handleSkip} />
-        ) : null}
-      </>
-    );
-  }
 }
-
-const PRIMARY_LABELS = [
-  'Get Started',
-  'Continue',
-  'Got it',
-  'Continue',
-  'Start saving',
-] as const;
