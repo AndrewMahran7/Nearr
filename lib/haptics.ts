@@ -1,37 +1,44 @@
-import * as Haptics from 'expo-haptics';
+import { Platform, Vibration } from 'react-native';
 
 /**
- * Thin, crash-safe wrappers around expo-haptics.
+ * Thin, crash-safe "haptic-ish" feedback helpers.
  *
- * Haptics are a "nice to have" affordance: every call is fire-and-forget and
- * wrapped so a platform without a haptics engine (web, some Android devices,
- * or a build where the native module is unavailable) simply does nothing
- * instead of throwing. Never await these.
+ * Implemented with React Native built-ins ONLY — there is intentionally no
+ * native haptics dependency (expo-haptics was removed so onboarding can be
+ * tested without a native rebuild). These are a "nice to have" affordance:
+ * every call is fire-and-forget and wrapped so it can never throw.
+ *
+ * Behaviour:
+ *   - Android: a very brief `Vibration.vibrate` tick.
+ *   - iOS (and web/other): safe no-op — a plain `Vibration` call on iOS is a
+ *     long buzz, which is worse than nothing here, so we skip it until a real
+ *     haptics engine is wired back in.
+ *
+ * The exported function names/signatures are unchanged so no caller needs to
+ * change. Never await these.
  */
+
+/** Very brief Android vibration tick; no-op elsewhere. Never throws. */
+function briefVibrate(durationMs: number): void {
+  if (Platform.OS !== 'android') return;
+  try {
+    Vibration.vibrate(durationMs);
+  } catch {
+    // never throw — feedback is optional
+  }
+}
 
 /** Light selection tick — for tapping a demo target. */
 export function hapticSelection(): void {
-  try {
-    void Haptics.selectionAsync();
-  } catch {
-    // no-op where unsupported
-  }
+  briefVibrate(8);
 }
 
 /** Light impact — for a committed action like "Save". */
 export function hapticImpact(): void {
-  try {
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-  } catch {
-    // no-op where unsupported
-  }
+  briefVibrate(12);
 }
 
 /** Success notification — for a completed save / pin drop. */
 export function hapticSuccess(): void {
-  try {
-    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-  } catch {
-    // no-op where unsupported
-  }
+  briefVibrate(18);
 }
