@@ -136,6 +136,13 @@ configured `MEDIA_AUTO_SAVE_CANARY_USER_ID` restricts it to that exact user,
 while an absent canary ID authorizes every authenticated job owner. These are
 server-only controls and require no mobile build to change.
 
+`MEDIA_AUTO_SAVE_THRESHOLD=0.70` configures the production media auto-save
+gate. The value is a deterministic gate score, not a claimed 70% statistical
+probability. Meeting it never bypasses the gate's hard blockers: provider
+identity and valid coordinates, unique candidate and logical result, resolved
+branch and location evidence, non-host intent, authenticated ownership, and
+successful provider/finalization processing must still pass independently.
+
 ## Media resolver interface
 
 Platform-neutral ([MediaResolver.ts](../services/media-worker/src/resolvers/MediaResolver.ts)):

@@ -82,8 +82,9 @@ check('auto-save authorization rejects another user', !mediaAutoSaveAuthorized({
 check('auto-save authorization is global without a canary restriction', mediaAutoSaveAuthorized({ enabled: true, canaryUserId: null, userId: 'user-a' }));
 check('auto-save authorization obeys kill switch', !mediaAutoSaveAuthorized({ enabled: false, canaryUserId: 'user-a', userId: 'user-a' }));
 check('global auto-save authorization obeys kill switch', !mediaAutoSaveAuthorized({ enabled: false, canaryUserId: null, userId: 'user-a' }));
-check('default threshold is 0.84', DEFAULT_MEDIA_AUTO_SAVE_THRESHOLD === 0.84 && MEDIA_AUTO_SAVE_MIN_SCORE === 0.84);
-check('absent threshold uses valid default', resolveMediaAutoSaveThreshold(undefined).value === 0.84 && resolveMediaAutoSaveThreshold(undefined).valid);
+check('default gate threshold is 0.70', DEFAULT_MEDIA_AUTO_SAVE_THRESHOLD === 0.70 && MEDIA_AUTO_SAVE_MIN_SCORE === 0.70);
+check('absent threshold uses valid default', resolveMediaAutoSaveThreshold(undefined).value === 0.70 && resolveMediaAutoSaveThreshold(undefined).valid);
+check('configured production threshold accepts 0.70', resolveMediaAutoSaveThreshold('0.70').value === 0.70);
 check('configured threshold accepts inclusive zero', resolveMediaAutoSaveThreshold('0').value === 0);
 check('configured threshold accepts inclusive one', resolveMediaAutoSaveThreshold('1').value === 1);
 check('configured threshold rejects below zero', !resolveMediaAutoSaveThreshold('-0.01').valid);
@@ -117,21 +118,51 @@ check('configured threshold rejects non-number', !resolveMediaAutoSaveThreshold(
 }
 {
   const r = result();
-  r.scoring[0]!.normalizedScore = 0.8399;
-  check('score immediately below 0.84 rejected', !decide(mention(), r, [r]).eligible);
+  r.scoring[0]!.normalizedScore = 0.69;
+  check('gate score 0.69 does not auto-save', !decide(mention(), r, [r]).eligible);
 }
 {
   const r = result();
-  r.scoring[0]!.normalizedScore = 0.8401;
-  check('score immediately above 0.84 accepted', decide(mention(), r, [r]).eligible);
+  r.scoring[0]!.normalizedScore = 0.70;
+  check('gate score 0.70 auto-saves when all requirements pass', decide(mention(), r, [r]).eligible);
+}
+{
+  const r = result();
+  r.scoring[0]!.normalizedScore = 0.71;
+  check('gate score 0.71 auto-saves when all requirements pass', decide(mention(), r, [r]).eligible);
+}
+{
+  const r = result();
+  r.scoring[0]!.normalizedScore = 0.95;
+  r.candidates.push({ ...r.candidates[0]!, googlePlaceId: 'google-competitor' });
+  check('gate score 0.95 with a competing candidate remains blocked', !decide(mention(), r, [r]).eligible);
+}
+{
+  const r = result({ outcome: 'ambiguous_candidates' });
+  r.scoring[0]!.normalizedScore = 0.95;
+  check('gate score 0.95 with branch ambiguity remains blocked', !decide(mention(), r, [r]).eligible);
 }
 check('single name-evidence channel rejected', !decide(mention({ nameEvidenceSources: ['speech'] })).eligible);
 check('model confidence is diagnostic only', decide(mention({ confidence: 0.01 })).eligible);
-check('host relationship rejected', !decide(mention({ hostVenueName: 'Brewery X', relationshipType: 'located_at' })).eligible);
 {
   const r = result();
+  r.scoring[0]!.normalizedScore = 0.95;
+  check(
+    'gate score 0.95 with host-only confusion remains blocked',
+    !decide(mention({ hostVenueName: 'Brewery X', relationshipType: 'located_at' }), r, [r]).eligible,
+  );
+}
+{
+  const r = result();
+  r.scoring[0]!.normalizedScore = 0.95;
   r.candidates[0]!.latitude = undefined;
-  check('missing provider coordinates rejected', !decide(mention(), r, [r]).eligible);
+  check('gate score 0.95 without valid coordinates remains blocked', !decide(mention(), r, [r]).eligible);
+}
+{
+  const r = result();
+  r.scoring[0]!.normalizedScore = 0.95;
+  r.candidates[0]!.googlePlaceId = '';
+  check('gate score 0.95 without a provider Place ID remains blocked', !decide(mention(), r, [r]).eligible);
 }
 {
   const r = result();

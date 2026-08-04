@@ -1,8 +1,8 @@
 import type { MentionResult } from '../process-share-link/resolver/nameDrivenResolver.ts';
 import type { VenueMention } from './mediaMentions.ts';
 
-export const MEDIA_AUTO_SAVE_RULE_VERSION = 'media-autosave-2026-08-03.v2';
-export const DEFAULT_MEDIA_AUTO_SAVE_THRESHOLD = 0.84;
+export const MEDIA_AUTO_SAVE_RULE_VERSION = 'media-autosave-2026-08-04.v3';
+export const DEFAULT_MEDIA_AUTO_SAVE_THRESHOLD = 0.70;
 export const MEDIA_AUTO_SAVE_MIN_SCORE = DEFAULT_MEDIA_AUTO_SAVE_THRESHOLD;
 
 export type MediaAutoSaveThreshold = {
