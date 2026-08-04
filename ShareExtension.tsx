@@ -37,7 +37,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Image, Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 import { close, openHostApp, type InitialProps } from 'expo-share-extension';
 
 import { sharedAuth } from './lib/sharedAuth';
@@ -511,11 +511,6 @@ function AsyncSheet({
   );
 }
 
-function SharedPreview({ uri }: { uri?: string | null }) {
-  if (!uri) return null;
-  return <Image source={{ uri }} style={asyncStyles.previewImage} resizeMode="cover" />;
-}
-
 function AsyncShareExtension(props: InitialProps) {
   const handledRef = useRef(false);
   // ONE stable submission id for THIS share action. Used as the idempotency key
@@ -525,7 +520,6 @@ function AsyncShareExtension(props: InitialProps) {
   const hostOpenedRef = useRef(false);
   const [ui, setUi] = useState<AsyncUi>({ kind: 'submitting' });
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const sharedImageUri = props.images?.find((value) => !!value) ?? null;
 
   const submit = async () => {
     const url = pickSharedUrl(props);
@@ -637,7 +631,6 @@ function AsyncShareExtension(props: InitialProps) {
   if (ui.kind === 'accepted') {
     return (
       <AsyncSheet onClose={close}>
-        <SharedPreview uri={sharedImageUri} />
         <View style={asyncStyles.brandDot}>
           <Text style={asyncStyles.check}>✓</Text>
         </View>
@@ -665,7 +658,6 @@ function AsyncShareExtension(props: InitialProps) {
   if (ui.kind === 'needs_setup') {
     return (
       <AsyncSheet onClose={close}>
-        <SharedPreview uri={sharedImageUri} />
         <Text style={asyncStyles.title}>Open Nearr once to finish setup</Text>
         <Text style={asyncStyles.subtle}>
           {'Open Nearr once so it can connect sharing. After that, sharing works without opening the app.'}
@@ -684,7 +676,6 @@ function AsyncShareExtension(props: InitialProps) {
   if (ui.kind === 'signed_out') {
     return (
       <AsyncSheet onClose={close}>
-        <SharedPreview uri={sharedImageUri} />
         <Text style={asyncStyles.title}>Open Nearr to sign in</Text>
         <Text style={asyncStyles.subtle}>{'Sign in once so Nearr can save places you share.'}</Text>
         <Pressable
@@ -701,7 +692,6 @@ function AsyncShareExtension(props: InitialProps) {
   if (ui.kind === 'session_expired') {
     return (
       <AsyncSheet onClose={close}>
-        <SharedPreview uri={sharedImageUri} />
         <Text style={asyncStyles.title}>Open Nearr to finish saving</Text>
         <Text style={asyncStyles.subtle}>
           {'Your session needs a refresh. Open Nearr and we\u2019ll save this post.'}
@@ -720,7 +710,6 @@ function AsyncShareExtension(props: InitialProps) {
   if (ui.kind === 'network_failure') {
     return (
       <AsyncSheet onClose={close}>
-        <SharedPreview uri={sharedImageUri} />
         <Text style={asyncStyles.title}>{"Couldn't reach Nearr"}</Text>
         <Text style={asyncStyles.subtle}>{'Check your connection and try again.'}</Text>
         <Pressable
@@ -744,7 +733,6 @@ function AsyncShareExtension(props: InitialProps) {
   }
   return (
     <AsyncSheet onClose={close}>
-      <SharedPreview uri={sharedImageUri} />
       <ActivityIndicator color={NEARR_ORANGE} />
       <Text style={asyncStyles.title}>Saving to Nearr</Text>
       <Text style={asyncStyles.subtle}>{'Finding the place from this post…'}</Text>
@@ -849,20 +837,22 @@ const asyncStyles = StyleSheet.create({
   backdrop: {
     flex: 1,
     justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.35)',
+    backgroundColor: 'transparent',
   },
   // Content-sized card — never stretched to fill the window, so there's no
   // giant empty region. ~28px top corners, safe-area-aware bottom padding.
   sheet: {
+    height: '100%',
     backgroundColor: NEARR_SURFACE,
     borderTopLeftRadius: SHARE_EXTENSION_SUCCESS_LAYOUT.cornerRadius,
     borderTopRightRadius: SHARE_EXTENSION_SUCCESS_LAYOUT.cornerRadius,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderColor: NEARR_BORDER,
     paddingHorizontal: SHARE_EXTENSION_SUCCESS_LAYOUT.horizontalPadding,
-    paddingTop: SHARE_EXTENSION_SUCCESS_LAYOUT.topPadding + 14,
-    paddingBottom: 28,
+    paddingTop: 18,
+    paddingBottom: 8,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   dragIndicator: {
     position: 'absolute',
@@ -890,27 +880,20 @@ const asyncStyles = StyleSheet.create({
     lineHeight: 27,
     fontWeight: '400',
   },
-  previewImage: {
-    width: 104,
-    height: 104,
-    borderRadius: 16,
-    marginBottom: 14,
-    backgroundColor: '#2A2A30',
-  },
   brandDot: {
-    width: SHARE_EXTENSION_SUCCESS_LAYOUT.iconSize,
-    height: SHARE_EXTENSION_SUCCESS_LAYOUT.iconSize,
-    borderRadius: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'rgba(255,107,0,0.14)',
     borderWidth: 1,
     borderColor: 'rgba(255,107,0,0.3)',
-    marginBottom: 10,
+    marginBottom: 4,
   },
   check: {
-    fontSize: 26,
-    lineHeight: 30,
+    fontSize: 21,
+    lineHeight: 24,
     color: NEARR_ORANGE,
     fontWeight: '700',
   },
@@ -938,9 +921,9 @@ const asyncStyles = StyleSheet.create({
   },
   // Prominent, 56px tall, full-width primary action.
   primaryBtn: {
-    marginTop: 22,
+    marginTop: 10,
     alignSelf: 'stretch',
-    minHeight: SHARE_EXTENSION_SUCCESS_LAYOUT.primaryHeight,
+    minHeight: 48,
     backgroundColor: NEARR_ORANGE,
     borderRadius: 14,
     alignItems: 'center',
@@ -951,9 +934,9 @@ const asyncStyles = StyleSheet.create({
   // Text button (e.g. "Done") — always visible directly below the primary
   // action (~14px separation).
   secondaryBtn: {
-    marginTop: 4,
+    marginTop: 0,
     alignSelf: 'stretch',
-    minHeight: SHARE_EXTENSION_SUCCESS_LAYOUT.secondaryHeight,
+    minHeight: 36,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 20,

@@ -123,6 +123,13 @@ export type ShareJobRoute =
   | { kind: 'queue_root' }
   | { kind: 'map' };
 
+/** A newly opened queue item replaces the current route only when another
+ * share-job detail is already presented. Queue -> detail must still push so
+ * Back returns to the queue. */
+export function shouldReplaceShareJobDetail(pathname: string | null | undefined): boolean {
+  return /^\/share-jobs\/[^/]+\/?$/.test(pathname ?? '');
+}
+
 function str(v: unknown): string | undefined {
   return typeof v === 'string' && v.length > 0 ? v : undefined;
 }

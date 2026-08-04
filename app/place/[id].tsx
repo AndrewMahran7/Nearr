@@ -41,7 +41,10 @@ import {
   getSavedPlacesCacheSnapshot,
   removeSavedPlaceFromCache,
   restoreSavedPlacesCache,
+  updateSavedPlacesCache,
 } from '@/hooks/useSavedPlaces';
+import { applySavedPlaceEdit } from '@/lib/savedPlaceEdits';
+import { initialSavedPlaceNote } from '@/lib/placeNote';
 import { trackEvent } from '@/lib/analytics';
 import { useTheme } from '@/lib/theme';
 import type { Profile, RadiusUnit, SavedPlaceWithPlace } from '@/types';
@@ -144,7 +147,11 @@ export default function PlaceDetail() {
         if (s.radius_unit === 'minutes' && s.radius_value != null) {
           setMinutesText(String(s.radius_value));
         }
-        setNotes(s.notes ?? '');
+        setNotes(initialSavedPlaceNote({
+          notes: s.notes,
+          sourceType: s.source_type,
+          category: s.place.category,
+        }));
         setReminderSettingsExpanded(false);
       }
       setProfile(p);
@@ -236,12 +243,17 @@ export default function PlaceDetail() {
 
     setSaving(true);
     try {
-      await updateSavedPlace(saved.id, {
+      const patch = {
         radius_value: radiusValue,
         radius_unit: radiusUnit,
         notifications_enabled: notifyOn,
         notes: notes.trim() ? notes.trim() : null,
-      });
+      };
+      await updateSavedPlace(saved.id, patch);
+      const updated = applySavedPlaceEdit(saved, patch);
+      updateSavedPlacesCache((current) =>
+        current.map((row) => (row.id === saved.id ? updated : row)),
+      );
       router.back();
     } catch (e: any) {
       Alert.alert('Save failed', e?.message ?? 'Unknown error.');

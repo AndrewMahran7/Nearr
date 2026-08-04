@@ -23,6 +23,7 @@ This is not disabled anymore, but it is also not something the docs should descr
 - config entry: [app.json](../app.json)
 - JS entry: [index.share.js](../index.share.js)
 - root component: [ShareExtension.tsx](../ShareExtension.tsx)
+- native controller: `expo-share-extension` patched by [patches/expo-share-extension+1.10.7.patch](../patches/expo-share-extension+1.10.7.patch)
 - auth bridge: [modules/nearr-shared-auth](../modules/nearr-shared-auth)
 - host-app publisher of the access token: [lib/supabase.ts](../lib/supabase.ts)
 - server-side processor: [supabase/functions/process-share-link/index.ts](../supabase/functions/process-share-link/index.ts)
@@ -68,9 +69,30 @@ Required:
 - `nearr-shared-auth` linked in the native build
 - user signed in to the host app at least once so the access token can be bridged
 
+## Compact presentation
+
+The active native controller is supplied by `expo-share-extension`, not the legacy
+controller under `native/share-extension/`. Nearr patches that controller during
+`npm install` so the hosting view is transparent and the React root stays anchored
+to the bottom at 190–240pt plus the device safe area. The React async states fit
+inside that frame and draw the rounded Nearr sheet.
+
+iOS still owns the extension host and transition. The app can make its visible
+content compact, but cannot guarantee that every source app or iOS version exposes
+the underlying source UI in exactly the same way.
+
+Physical-device checks required for a release build:
+
+- small iPhone and large iPhone
+- light and dark source apps
+- Instagram, TikTok, Safari, and Photos share sheets
+- submitting, accepted, setup, signed-out, expired-session, and network-error states
+- close, Done, Open Nearr, retry, and swipe dismissal
+
 ## Known blockers / unknowns
 
 - Silent save is still unverified end-to-end in the current checkout unless a real-device test proves otherwise.
+- Compact native presentation requires a fresh iOS build and physical-device review; Windows cannot verify the system extension frame.
 - A missing or stale App Group token should degrade to host-app fallback, not strand the user.
 - Environment setup and deployment matter as much as code here.
 

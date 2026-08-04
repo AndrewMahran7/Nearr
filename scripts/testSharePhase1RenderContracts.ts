@@ -11,7 +11,8 @@ const mapEntry = read('components/map/ShareQueueButton.tsx');
 const placeImage = read('components/PlaceImage.tsx');
 const shareJobsSheet = read('components/ShareJobsSheet.tsx');
 
-assert.match(extension, /SHARE_EXTENSION_SUCCESS_LAYOUT\.primaryHeight/);
+assert.match(extension, /height: '100%'/);
+assert.match(extension, /backgroundColor: 'transparent'/);
 assert.match(extension, /Sent to Nearr/);
 assert.match(extension, />Done</);
 assert.match(extension, />Open Nearr</);
@@ -20,7 +21,7 @@ assert.ok(
 		extension.indexOf('<Text style={asyncStyles.secondaryText}>Open Nearr</Text>'),
 	'Done is the primary accepted-state action',
 );
-assert.match(extension, /SharedPreview uri=\{sharedImageUri\}/);
+assert.doesNotMatch(extension, /SharedPreview|previewImage/);
 assert.doesNotMatch(extension.slice(extension.indexOf("ui.kind === 'accepted'"), extension.indexOf("ui.kind === 'needs_setup'")), /ScrollView/);
 assert.match(extension, /openHostApp\(SHARE_JOBS_DEEPLINK_PATH\)/);
 assert.match(extension, /hostOpenedRef\.current/, 'Open Nearr is once-latched');

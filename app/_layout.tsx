@@ -1,6 +1,6 @@
 import { Component, useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
-import { Stack, useRouter, useSegments } from 'expo-router';
+import { Stack, usePathname, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -31,7 +31,10 @@ import {
   setInitialUrlClassification,
   setLastNotificationId,
 } from '@/lib/diagnosticContext';
-import { routeShareJobNotification } from '@/lib/shareJobRouting';
+import {
+  routeShareJobNotification,
+  shouldReplaceShareJobDetail,
+} from '@/lib/shareJobRouting';
 import { createMapGroupFocusRequest } from '@/lib/mapGroupFocus';
 import { resolveOpenSavedPlaceRoute } from '@/lib/openSavedPlace';
 import {
@@ -494,6 +497,7 @@ export default function RootLayout() {
 
 function RootLayoutContent() {
   const router = useRouter();
+  const pathname = usePathname();
   const segments = useSegments();
   const { colors, resolvedTheme } = useTheme();
   // Terminal-state model for magic-link handling. `idle` before any link,
@@ -698,7 +702,11 @@ function RootLayoutContent() {
               );
               break;
             case 'queue_item':
-              router.push({ pathname: '/share-jobs/[jobId]', params: { jobId: sjRoute.jobId } });
+              if (shouldReplaceShareJobDetail(pathname)) {
+                router.replace({ pathname: '/share-jobs/[jobId]', params: { jobId: sjRoute.jobId } });
+              } else {
+                router.push({ pathname: '/share-jobs/[jobId]', params: { jobId: sjRoute.jobId } });
+              }
               break;
             case 'queue_root':
               router.push('/share-jobs');

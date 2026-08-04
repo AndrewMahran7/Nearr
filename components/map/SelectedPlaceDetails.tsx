@@ -38,6 +38,8 @@ import { Button, Card, Input } from '@/components';
 import { Radius, Spacing } from '@/constants';
 import { useTheme } from '@/lib/theme';
 import { trackEvent } from '@/lib/analytics';
+import { applySavedPlaceEdit } from '@/lib/savedPlaceEdits';
+import { initialSavedPlaceNote } from '@/lib/placeNote';
 import { buildPlaceShareContent } from '@/lib/placeShare';
 import { deleteSavedPlace, updateSavedPlace } from '@/services/savedPlacesService';
 import {
@@ -145,7 +147,11 @@ export function SelectedPlaceDetails({
       ? String(saved.radius_value)
       : '10',
   );
-  const [notes, setNotes] = useState(saved.notes ?? '');
+  const [notes, setNotes] = useState(() => initialSavedPlaceNote({
+    notes: saved.notes,
+    sourceType: saved.source_type,
+    category: saved.place.category,
+  }));
   const [reminderSettingsExpanded, setReminderSettingsExpanded] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -178,7 +184,11 @@ export function SelectedPlaceDetails({
         ? String(saved.radius_value)
         : '10',
     );
-    setNotes(saved.notes ?? '');
+    setNotes(initialSavedPlaceNote({
+      notes: saved.notes,
+      sourceType: saved.source_type,
+      category: saved.place.category,
+    }));
     setReminderSettingsExpanded(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [saved.id]);
@@ -413,13 +423,12 @@ export function SelectedPlaceDetails({
       });
       // Push the new values into the shared cache so the map markers/list and
       // the sheet header stay consistent without a network refetch.
-      const updated: SavedPlaceWithPlace = {
-        ...saved,
+      const updated = applySavedPlaceEdit(saved, {
         radius_value: radiusValue,
         radius_unit: radiusUnit,
         notifications_enabled: notifyOn,
         notes: nextNotes,
-      };
+      });
       updateSavedPlacesCache((prev) =>
         prev.map((row) => (row.id === saved.id ? updated : row)),
       );
@@ -752,7 +761,7 @@ export function SelectedPlaceDetails({
       </Card>
 
       <Card style={styles.sectionCard}>
-        <Text style={[typography.bodyStrong, { marginBottom: Spacing.sm }]}>Your note</Text>
+        <Text style={[typography.bodyStrong, { marginBottom: Spacing.sm }]}>Note</Text>
         <Input
           value={notes}
           onChangeText={setNotes}

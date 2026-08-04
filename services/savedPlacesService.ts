@@ -23,6 +23,7 @@ import { logDebug } from '@/lib/logger';
 import { isMapPreviewMode } from '@/lib/mapPreview';
 import { triggerGeofenceResync } from '@/lib/geofencing';
 import { distanceMeters } from '@/lib/geo';
+import { deriveSuggestedPlaceNote } from '@/lib/placeNote';
 import {
   isLikelyOfflineError,
   OfflineMutationError,
@@ -343,7 +344,10 @@ export async function saveSavedPlace(
     radius_unit: radiusUnit,
     source_type: input.sourceType ?? 'manual',
     source_url: input.sourceUrl ?? null,
-    notes: input.notes ?? null,
+    notes: input.notes ?? deriveSuggestedPlaceNote({
+      sourceType: input.sourceType,
+      category: candidate.category,
+    }),
   };
 
   console.debug('[savedPlacesService] saving user place', {

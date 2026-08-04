@@ -19,6 +19,7 @@ import {
   classifyShareJobDetail,
   routeShareJobNotification,
   routeShareJobCard,
+  shouldReplaceShareJobDetail,
   type ShareJobRoute,
 } from '../lib/shareJobRouting';
 
@@ -196,6 +197,13 @@ check(
 );
 check('null payload => null', routeShareJobNotification(null) === null);
 check('undefined payload => null', routeShareJobNotification(undefined) === null);
+
+// ---- Detail replacement policy --------------------------------------------
+check('queue root pushes a detail so Back returns to queue', !shouldReplaceShareJobDetail('/share-jobs'));
+check('map pushes the first detail', !shouldReplaceShareJobDetail('/(tabs)/map'));
+check('detail A is replaced when detail B opens', shouldReplaceShareJobDetail('/share-jobs/job-a'));
+check('detail path with trailing slash is replaced', shouldReplaceShareJobDetail('/share-jobs/job-a/'));
+check('nested/non-detail routes are not replaced', !shouldReplaceShareJobDetail('/share-jobs/job-a/history'));
 check(
   'duplicate notification handling is idempotent (pure: same input => same route)',
   eq(
