@@ -93,6 +93,22 @@ check('normalizeStateToAbbr null on unknown', normalizeStateToAbbr('Nowhere') ==
   check('reasons include state_match', s.reasons.includes('state_match'));
 }
 {
+  const s = scoreMentionCandidate(cand("Capone's Italian Cucina"), mention("Capone's Italian Cucina"), {
+    expectedState: null,
+    bias: null,
+    platform: 'instagram',
+  });
+  check('apostrophe brand keeps distinctive token match', s.reasons.includes('distinctive_token_match'));
+}
+{
+  const s = scoreMentionCandidate(cand('B+C Pizza'), mention('B&C Pizzas'), {
+    expectedState: null,
+    bias: null,
+    platform: 'instagram',
+  });
+  check('ampersand variant keeps distinctive token match', s.reasons.includes('distinctive_token_match'));
+}
+{
   // Generic-only "match": candidate shares only the generic word "pizza".
   const s = scoreMentionCandidate(cand('Downtown Pizza', { types: ['restaurant', 'food'] }), mention('Lunita Pizza'), {
     expectedState: null,
@@ -386,6 +402,22 @@ const geo: MediaGeoContext = { city: null, region: 'California', country: 'Unite
     });
     check('single name + city context => verified_single', r.mentionResults[0]!.outcome === 'verified_single');
     check('single verified aggregate has 1 canonical', r.aggregateCandidates.length === 1 && r.aggregateCandidates[0]!.googlePlaceId === 'hermons');
+  }
+
+  // city-only model context inherits the canonical state from Google geocoding
+  {
+    const r = await resolveVenueMentions({
+      mentions: mentions("Capone's Italian Cucina"),
+      geoContext: { city: 'Huntington Beach', region: null, country: null },
+      env,
+      platform: 'instagram',
+      deps: {
+        search: fixedSearch({ "Capone's Italian Cucina": [cand("Capone's Italian Cucina", { formattedAddress: '19688 Beach Blvd, Huntington Beach, CA 92648', latitude: 33.66, longitude: -117.99 })] }),
+        geocode: async () => ({ lat: 33.66, lng: -117.99, region: 'CA' }),
+      },
+    });
+    check('city-only context uses geocoded state', r.mentionResults[0]!.scoring[0]!.reasons.includes('state_match'));
+    check('city-only context keeps nearby verification', r.mentionResults[0]!.scoring[0]!.reasons.includes('distance_nearby'));
   }
 
   // one explicit name with punctuation/apostrophe => verified

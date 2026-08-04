@@ -118,8 +118,23 @@ check('distinctiveTokensOf keeps brand', distinctiveTokensOf('Parlor Woodfire').
   check('repeated visual+audio => one grouped mention', r.mentions.length === 1, `got ${r.mentions.length}`);
   const m = r.mentions[0]!;
   check('grouped mention combines sources', m.sources.includes('visible_text') && m.sources.includes('speech'));
+  check('grouped mention records both name evidence sources', m.nameEvidenceSources.includes('visible_text') && m.nameEvidenceSources.includes('speech'));
   check('grouped mention marked repeated', m.repeated === true);
   check('grouped mention keeps both timestamps', m.timestamps.length === 2 && m.timestamps[0] === 2 && m.timestamps[1] === 10);
+}
+
+// ---- punctuation-bearing brand names retain channel evidence -------------
+{
+  const r = buildVenueMentions(
+    evidence([
+      place({ name: "Capone's Italian Cucina", explicitEvidence: [ev('speech', "Capone's has been a staple", 1), ev('frame', 'CAPONES ITALIAN CUCINA', 2)] }),
+      place({ name: 'B&C Pizzas', explicitEvidence: [ev('speech', 'B&C Pizzas is a favorite', 3), ev('frame', 'B+C PIZZAS', 4)] }),
+    ]),
+  );
+  check('apostrophe brand keeps speech name evidence', r.mentions[0]!.nameEvidenceSources.includes('speech'));
+  check('apostrophe variant keeps frame name evidence', r.mentions[0]!.nameEvidenceSources.includes('frame'));
+  check('ampersand brand keeps speech name evidence', r.mentions[1]!.nameEvidenceSources.includes('speech'));
+  check('ampersand variant keeps frame name evidence', r.mentions[1]!.nameEvidenceSources.includes('frame'));
 }
 
 // ---- distinct chain locations stay separate -------------------------------

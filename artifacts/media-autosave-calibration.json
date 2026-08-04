@@ -545,5 +545,135 @@
         ]
       }
     ]
+  },
+  "productionDerivedCalibration": {
+    "sanitizedFromRealPipelineRuns": true,
+    "statisticalPrecisionDemonstrated": false,
+    "eligibleDenominator": 1,
+    "contractMismatches": 0,
+    "controls": [
+      {
+        "fixtureId": "restaurant-post-nothing",
+        "expectedLabel": "manual recovery required",
+        "observedOutcome": "insufficient_evidence"
+      },
+      {
+        "fixtureId": "invalid-shortcode",
+        "expectedLabel": "invalid/unavailable",
+        "observedOutcome": "private_or_login_required"
+      }
+    ],
+    "missingRequiredCoverage": [
+      "caption_plus_provider",
+      "wrong_branch_labeled",
+      "already_saved_live_write"
+    ],
+    "scenarios": [
+      {
+        "fixtureId": "capones",
+        "logicalPlace": "Capone's Italian Cucina",
+        "expectedLabel": "eligible for automatic saving",
+        "expectedEligible": true,
+        "actualEligible": true,
+        "passed": true,
+        "confidenceScore": 0.9903,
+        "reasonCodes": [
+          "all_deterministic_checks_passed"
+        ]
+      },
+      {
+        "fixtureId": "dypc",
+        "logicalPlace": "2nd Floor Gallery Bar & Grill",
+        "expectedLabel": "confirmation required",
+        "expectedEligible": false,
+        "actualEligible": false,
+        "passed": true,
+        "confidenceScore": 0.9923,
+        "reasonCodes": [
+          "independent_name_evidence_missing"
+        ]
+      },
+      {
+        "fixtureId": "brooklyn",
+        "logicalPlace": "Brooklyn City Pizzeria & Market",
+        "expectedLabel": "confirmation required",
+        "expectedEligible": false,
+        "actualEligible": false,
+        "passed": true,
+        "confidenceScore": 0.9945,
+        "reasonCodes": [
+          "state_match_missing",
+          "city_proximity_missing"
+        ]
+      },
+      {
+        "fixtureId": "pizza-parlor",
+        "logicalPlace": "Parlor Woodfire Kitchen",
+        "expectedLabel": "confirmation required",
+        "expectedEligible": false,
+        "actualEligible": false,
+        "passed": true,
+        "confidenceScore": 0.7802,
+        "reasonCodes": [
+          "score_below_threshold",
+          "city_proximity_missing"
+        ]
+      },
+      {
+        "fixtureId": "pizza-bc",
+        "logicalPlace": "B&C Pizzas",
+        "expectedLabel": "confirmation required",
+        "expectedEligible": false,
+        "actualEligible": false,
+        "passed": true,
+        "confidenceScore": 0.8369,
+        "reasonCodes": [
+          "score_below_threshold"
+        ]
+      },
+      {
+        "fixtureId": "pizza-lunitas",
+        "logicalPlace": "Lunita's Pizza",
+        "expectedLabel": "confirmation required",
+        "expectedEligible": false,
+        "actualEligible": false,
+        "passed": true,
+        "confidenceScore": 0.4833,
+        "reasonCodes": [
+          "not_verified_single",
+          "score_below_threshold",
+          "city_proximity_missing"
+        ]
+      },
+      {
+        "fixtureId": "pizza-x-eats",
+        "logicalPlace": "X Eats at Brewery X",
+        "expectedLabel": "confirmation required",
+        "expectedEligible": false,
+        "actualEligible": false,
+        "passed": true,
+        "confidenceScore": 0.9849,
+        "reasonCodes": [
+          "not_verified_single",
+          "candidate_not_unique_within_result",
+          "host_relationship_requires_confirmation"
+        ]
+      },
+      {
+        "fixtureId": "pizza-patrini",
+        "logicalPlace": "Patrini Pizza",
+        "expectedLabel": "confirmation required",
+        "expectedEligible": false,
+        "actualEligible": false,
+        "passed": true,
+        "confidenceScore": 0.6111,
+        "reasonCodes": [
+          "not_verified_single",
+          "score_below_threshold",
+          "strong_name_match_missing",
+          "distinctive_name_match_missing"
+        ]
+      }
+    ]
   }
 }

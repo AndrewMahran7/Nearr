@@ -21,6 +21,11 @@ type GoldRow = {
 };
 
 type AuditCategory = 'dataset_limitation' | 'pipeline_failure';
+type ProductionLabel =
+  | 'eligible for automatic saving'
+  | 'confirmation required'
+  | 'manual recovery required'
+  | 'invalid/unavailable';
 
 const MISSING_GATE_FIELDS = [
   'provider_coordinates',
@@ -137,6 +142,72 @@ function productionScenarios(): Array<{
   ];
 }
 
+function productionDerivedScenarios(): Array<{
+  fixtureId: string;
+  logicalPlace: string;
+  expectedLabel: ProductionLabel;
+  input: MediaAutoSaveGateInput;
+}> {
+  const observed = (args: {
+    fixtureId: string;
+    logicalPlace: string;
+    expectedLabel: ProductionLabel;
+    sources: VenueMention['nameEvidenceSources'];
+    repeated?: boolean;
+    outcome?: MentionResult['outcome'];
+    score?: number | null;
+    scoreReasons?: string[];
+    candidateName?: string;
+    candidateCount?: number;
+    hostVenueName?: string;
+    relationshipType?: string;
+  }) => {
+    const result = productionResult({
+      mentionId: args.fixtureId,
+      displayName: args.logicalPlace,
+      outcome: args.outcome ?? 'verified_single',
+    });
+    result.candidates[0]!.name = args.candidateName ?? args.logicalPlace;
+    result.scoring[0]!.name = result.candidates[0]!.name;
+    if (args.score === null || args.candidateCount === 0) {
+      result.candidates = [];
+      result.scoring = [];
+    } else {
+      result.scoring[0]!.normalizedScore = args.score ?? 0.99;
+      if (args.scoreReasons) result.scoring[0]!.reasons = args.scoreReasons;
+      if ((args.candidateCount ?? 1) > 1) {
+        result.candidates.push({ ...result.candidates[0]!, googlePlaceId: `${args.fixtureId}-alternate` });
+      }
+    }
+    const mention = productionMention({
+      id: args.fixtureId,
+      displayName: args.logicalPlace,
+      normalizedName: args.logicalPlace.toLowerCase(),
+      nameEvidenceSources: args.sources,
+      repeated: args.repeated ?? true,
+      hostVenueName: args.hostVenueName,
+      relationshipType: args.relationshipType as any,
+    });
+    return {
+      fixtureId: args.fixtureId,
+      logicalPlace: args.logicalPlace,
+      expectedLabel: args.expectedLabel,
+      input: { mention, result, allResults: [result] },
+    };
+  };
+  const completeReasons = ['business_type', 'compact_name_match', 'distinctive_token_match', 'state_match', 'distance_nearby'];
+  return [
+    observed({ fixtureId: 'capones', logicalPlace: "Capone's Italian Cucina", expectedLabel: 'eligible for automatic saving', sources: ['speech', 'frame'], score: 0.9903, scoreReasons: completeReasons }),
+    observed({ fixtureId: 'dypc', logicalPlace: '2nd Floor Gallery Bar & Grill', expectedLabel: 'confirmation required', sources: ['visible_text'], score: 0.9923, scoreReasons: completeReasons, candidateName: '2nd Floor' }),
+    observed({ fixtureId: 'brooklyn', logicalPlace: 'Brooklyn City Pizzeria & Market', expectedLabel: 'confirmation required', sources: ['speech', 'frame'], score: 0.9945, scoreReasons: completeReasons.filter((reason) => reason !== 'state_match' && reason !== 'distance_nearby') }),
+    observed({ fixtureId: 'pizza-parlor', logicalPlace: 'Parlor Woodfire Kitchen', expectedLabel: 'confirmation required', sources: ['speech', 'frame'], score: 0.7802, scoreReasons: completeReasons.filter((reason) => reason !== 'distance_nearby') }),
+    observed({ fixtureId: 'pizza-bc', logicalPlace: 'B&C Pizzas', expectedLabel: 'confirmation required', sources: ['speech', 'frame'], score: 0.8369, scoreReasons: completeReasons }),
+    observed({ fixtureId: 'pizza-lunitas', logicalPlace: "Lunita's Pizza", expectedLabel: 'confirmation required', sources: ['speech', 'frame'], outcome: 'ambiguous_candidates', score: 0.4833, scoreReasons: completeReasons.filter((reason) => reason !== 'distance_nearby') }),
+    observed({ fixtureId: 'pizza-x-eats', logicalPlace: 'X Eats at Brewery X', expectedLabel: 'confirmation required', sources: ['speech', 'frame'], outcome: 'ambiguous_candidates', score: 0.9849, scoreReasons: completeReasons, candidateCount: 2, candidateName: 'Brewery X', hostVenueName: 'Brewery X', relationshipType: 'located_at' }),
+    observed({ fixtureId: 'pizza-patrini', logicalPlace: 'Patrini Pizza', expectedLabel: 'confirmation required', sources: ['speech', 'frame'], outcome: 'ambiguous_candidates', score: 0.6111, scoreReasons: ['business_type', 'state_match', 'distance_nearby'] }),
+  ];
+}
+
 async function main(): Promise<void> {
   const root = path.resolve(__dirname, '..');
   const inputPath = path.join(root, 'artifacts', 'share-gold-results.json');
@@ -184,6 +255,21 @@ async function main(): Promise<void> {
     };
   });
   const gateBugs = scenarioAudit.filter((scenario) => !scenario.passed).length;
+  const productionDerivedAudit = productionDerivedScenarios().map((scenario) => {
+    const decision = evaluateMediaAutoSave(scenario.input);
+    const expectedEligible = scenario.expectedLabel === 'eligible for automatic saving';
+    return {
+      fixtureId: scenario.fixtureId,
+      logicalPlace: scenario.logicalPlace,
+      expectedLabel: scenario.expectedLabel,
+      expectedEligible,
+      actualEligible: decision.eligible,
+      passed: decision.eligible === expectedEligible,
+      confidenceScore: decision.confidenceScore,
+      reasonCodes: decision.reasonCodes,
+    };
+  });
+  const productionDerivedMismatches = productionDerivedAudit.filter((scenario) => !scenario.passed).length;
 
   const audit = {
     generatedBy: 'npm run eval:media-autosave',
@@ -201,6 +287,18 @@ async function main(): Promise<void> {
       precisionEvidence: false,
       gateBugs,
       scenarios: scenarioAudit,
+    },
+    productionDerivedCalibration: {
+      sanitizedFromRealPipelineRuns: true,
+      statisticalPrecisionDemonstrated: false,
+      eligibleDenominator: productionDerivedAudit.filter((scenario) => scenario.actualEligible).length,
+      contractMismatches: productionDerivedMismatches,
+      controls: [
+        { fixtureId: 'restaurant-post-nothing', expectedLabel: 'manual recovery required', observedOutcome: 'insufficient_evidence' },
+        { fixtureId: 'invalid-shortcode', expectedLabel: 'invalid/unavailable', observedOutcome: 'private_or_login_required' },
+      ],
+      missingRequiredCoverage: ['caption_plus_provider', 'wrong_branch_labeled', 'already_saved_live_write'],
+      scenarios: productionDerivedAudit,
     },
   };
 
@@ -232,16 +330,23 @@ async function main(): Promise<void> {
     `- Host-only false auto-save: not measurable (host relationship is not labeled in this artifact)\n` +
     `- Duplicate insertion rate: measured separately by \`scripts/testShareJobPlaceResults.sql\` (expected 0%)\n` +
     `- Cross-user errors: measured separately by RLS/ownership SQL tests (expected 0)\n\n` +
+    `## Production-Derived Calibration\n\n` +
+    `- Real logical-place observations: ${productionDerivedAudit.length}\n` +
+    `- Eligible observations: ${productionDerivedAudit.filter((scenario) => scenario.actualEligible).length}\n` +
+    `- Expected-label mismatches: ${productionDerivedMismatches}\n` +
+    `- Controls: insufficient evidence and private/unavailable both remained conservative\n` +
+    `- Required coverage still missing: caption-plus-provider, labeled wrong branch, and authenticated already-saved live write\n` +
+    `- Statistical precision: not demonstrated (one eligible observation is not a launch-quality denominator)\n\n` +
     `## Rollout Decision\n\n` +
-    `The stored gold artifact predates per-place Phase 2 gate diagnostics and cannot demonstrate the required 98% auto-save precision. Production-shaped scenarios prove that the current rule can admit a fully verified case while rejecting low-score, single-channel, host-related, and duplicate-canonical cases without lowering the 0.92 threshold. They are behavioral contracts, not statistical calibration. Keep automatic saving disabled globally until labeled production outcomes contain the full gate diagnostics, provide a non-zero eligible denominator, and demonstrate at least 98% precision.\n`;
+    `The production-derived matrix proves that the unchanged rule can admit one exceptionally clear real result while conservatively rejecting seven uncertain logical places. It does not establish 98% precision or authenticated write-path idempotency. Keep automatic saving disabled globally until the missing production labels and authenticated save/retry ownership checks pass.\n`;
 
   await writeFile(outputPath, report, 'utf8');
   await writeFile(auditPath, `${JSON.stringify(audit, null, 2)}\n`, 'utf8');
   console.log(`Wrote ${path.relative(root, outputPath)}`);
   console.log(`Wrote ${path.relative(root, auditPath)}`);
-  console.log(`rows=${rows.length} gate_evaluable=0 gate_scenario_bugs=${gateBugs}`);
+  console.log(`rows=${rows.length} gate_evaluable=0 gate_scenario_bugs=${gateBugs} production_contract_mismatches=${productionDerivedMismatches}`);
 
-  if (gateBugs > 0) process.exitCode = 1;
+  if (gateBugs > 0 || productionDerivedMismatches > 0) process.exitCode = 1;
 }
 
 main().catch((error) => {

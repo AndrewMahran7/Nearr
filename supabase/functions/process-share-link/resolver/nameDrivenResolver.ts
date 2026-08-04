@@ -264,8 +264,16 @@ export function scoreMentionCandidate(
 
   // Distinctive-token overlap — the strongest guard that this is really the
   // named venue and not a generic-term coincidence.
-  const candNorm = normalizeName(candidate.name);
-  const candTokens = new Set(candNorm.split(' ').filter(Boolean));
+  const candTokens = new Set(
+    candidate.name
+      .toLowerCase()
+      .normalize('NFKD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/\+/g, '&')
+      .split(/[\s\-]+/)
+      .map((token) => token.replace(/[^a-z0-9]/g, ''))
+      .filter(Boolean),
+  );
   let distinctiveHits = 0;
   for (const tok of mention.distinctiveTokens) {
     const bare = tok.replace(/[^a-z0-9]/g, '');
@@ -388,7 +396,7 @@ function toExplanation(s: ScoredMentionCandidate): MentionScoreExplanation {
 
 export type NameDrivenDeps = {
   search?: (query: string, key: string, bias?: { lat: number; lng: number }) => Promise<SearchPlacesResult>;
-  geocode?: (text: string, key: string) => Promise<{ lat: number; lng: number } | null>;
+  geocode?: (text: string, key: string) => Promise<{ lat: number; lng: number; region?: string } | null>;
   /** Max total Places text searches across all mentions. */
   globalRequestLimit?: number;
 };
@@ -428,7 +436,7 @@ export async function resolveVenueMentions(args: {
   const geocode = args.deps?.geocode ?? geocodeContextText;
   const globalLimit = args.deps?.globalRequestLimit ?? DEFAULT_GLOBAL_REQUEST_LIMIT;
 
-  const expectedState = normalizeStateToAbbr(geoContext.region);
+  let expectedState = normalizeStateToAbbr(geoContext.region);
 
   // One optional coordinate bias, only when a CITY is explicitly present
   // (a state-only context is too broad to bias by coordinates — we rely on
@@ -437,6 +445,7 @@ export async function resolveVenueMentions(args: {
   if (geoContext.city) {
     try {
       bias = await geocode(`${geoContext.city}, ${geoContext.region ?? ''}`.trim(), env.googlePlacesKey);
+      if (!expectedState) expectedState = normalizeStateToAbbr(bias?.region ?? null);
     } catch {
       bias = null;
     }

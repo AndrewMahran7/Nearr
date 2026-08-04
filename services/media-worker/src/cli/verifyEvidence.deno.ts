@@ -21,6 +21,7 @@
 
 import { renderMediaEvidenceCaption } from '../../../../supabase/functions/process-share-jobs/mediaEvidence.ts';
 import { buildVenueMentions } from '../../../../supabase/functions/process-share-jobs/mediaMentions.ts';
+import { evaluateMediaAutoSave } from '../../../../supabase/functions/process-share-jobs/mediaAutoSaveGate.ts';
 import { extractEvidence } from '../../../../supabase/functions/process-share-link/evidence/extractEvidence.ts';
 import { resolveSharedPlace } from '../../../../supabase/functions/process-share-link/resolver/resolveSharedPlace.ts';
 import { readEnv } from '../../../../supabase/functions/process-share-link/env.ts';
@@ -73,6 +74,7 @@ try {
   const mentionResults = Array.isArray(result?.diagnostics?.mentionResults)
     ? result.diagnostics.mentionResults
     : [];
+  const mentionById = new Map(built.mentions.map((mention: any) => [mention.id, mention]));
 
   // Surface the actual rejected candidates (name + reason) so diagnostics never
   // say "not_surfaced_by_resolver_result".
@@ -119,8 +121,23 @@ try {
         name: typeof c?.name === 'string' ? c.name : null,
         formattedAddress: typeof c?.formattedAddress === 'string' ? c.formattedAddress : null,
         googlePlaceId: typeof c?.googlePlaceId === 'string' ? c.googlePlaceId : null,
+        hasValidCoordinates:
+          Number.isFinite(c?.latitude) && c.latitude >= -90 && c.latitude <= 90 &&
+          Number.isFinite(c?.longitude) && c.longitude >= -180 && c.longitude <= 180,
         confidenceScore: typeof c?.confidenceScore === 'number' ? c.confidenceScore : null,
       })),
+      gate: (() => {
+        const mention: any = mentionById.get(m?.mentionId);
+        if (!mention) return { eligible: false, confidenceScore: null, reasonCodes: ['mention_evidence_missing'] };
+        const gate = evaluateMediaAutoSave({ mention, result: m, allResults: mentionResults });
+        return {
+          eligible: gate.eligible,
+          confidenceScore: gate.confidenceScore,
+          reasonCodes: gate.reasonCodes,
+          nameEvidenceSources: mention.nameEvidenceSources,
+          repeated: mention.repeated,
+        };
+      })(),
     })),
     candidateCount: Array.isArray(result?.candidates) ? result.candidates.length : 0,
     candidates: (Array.isArray(result?.candidates) ? result.candidates : []).slice(0, 10).map((c: any) => ({

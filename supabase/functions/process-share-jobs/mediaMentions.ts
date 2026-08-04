@@ -129,7 +129,7 @@ const GENERIC_TOKENS: ReadonlySet<string> = new Set([
   'noodle', 'noodles', 'pho', 'thai', 'chinese', 'italian', 'mexican', 'indian',
   'korean', 'japanese', 'vietnamese', 'greek', 'mediterranean', 'seafood',
   'steakhouse', 'steak', 'chicken', 'wings', 'brunch', 'breakfast', 'lunch',
-  'dinner', 'dessert', 'desserts', 'bakeshop', 'creamery', 'bistro', 'diner',
+  'dinner', 'dessert', 'desserts', 'bakeshop', 'creamery', 'bistro', 'diner', 'cucina',
   'food', 'foods', 'eats', 'cuisine', 'best', 'good', 'great', 'top',
 ]);
 
@@ -249,6 +249,7 @@ export function normalizePhrase(text: string): string {
     .normalize('NFKD')
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/@/g, ' at ')
+    .replace(/\+/g, '&')
     .replace(/[^a-z0-9&'.\- ]+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
@@ -455,8 +456,12 @@ export function buildVenueMentions(evidence: MediaPlaceEvidence): BuildMentionsR
       if (!category && p.category) category = p.category;
       for (const e of p.explicitEvidence) {
         sources.add(e.source);
-        const phrase = normalizePhrase(e.value).replace(/[^a-z0-9 ]/g, ' ');
-        const phraseTokens = new Set(phrase.split(/\s+/).filter(Boolean));
+        const phraseTokens = new Set(
+          normalizePhrase(e.value)
+            .split(/[\s\-]+/)
+            .map((token) => token.replace(/[^a-z0-9]/g, ''))
+            .filter(Boolean),
+        );
         if (nameTokens.length > 0 && nameTokens.every((token) => phraseTokens.has(token))) {
           nameEvidenceSources.add(e.source);
         }

@@ -13,6 +13,7 @@ import {
   isAddressLikeTypes,
   isLocalityLikeTypes,
 } from './placeNormalization.ts';
+import { extractStateFromFormattedAddress } from './locationGuards.ts';
 
 export type PlacesCandidate = {
   googlePlaceId: string;
@@ -152,7 +153,7 @@ export async function geocodeAddressServer(
 export async function geocodeContextText(
   contextText: string,
   key: string,
-): Promise<SearchBias | null> {
+): Promise<(SearchBias & { region?: string }) | null> {
   const trimmed = contextText.trim();
   if (!trimmed) return null;
   const params = new URLSearchParams({ query: trimmed, key });
@@ -172,7 +173,8 @@ export async function geocodeContextText(
   const lat = first?.geometry?.location?.lat;
   const lng = first?.geometry?.location?.lng;
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
-  return { lat, lng };
+  const region = extractStateFromFormattedAddress(first?.formatted_address ?? null);
+  return { lat, lng, ...(region ? { region } : {}) };
 }
 
 export type AddressVerification =
