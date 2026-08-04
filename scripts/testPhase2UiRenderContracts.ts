@@ -8,7 +8,7 @@ const finalizer = readFileSync(join(process.cwd(), 'supabase/functions/process-s
 assert.match(finalizer, /buildShareJobCandidatePayload/);
 assert.match(finalizer, /mentionResults\.map/);
 assert.match(detail, /mentionSlots\.map/);
-assert.match(detail, /multiPlaceTitle\(mentionSlots\.length \|\| candidates\.length\)/);
+assert.match(detail, /multiPlaceTitle\(effectiveMentionSlots\.length \|\| candidates\.length\)/);
 assert.match(detail, /Choose which ones you want to save\./);
 assert.match(detail, /is featured at/);
 assert.match(detail, /I found a few possible locations for this one\./);

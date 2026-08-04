@@ -51,8 +51,14 @@ import {
   selectCandidateWithinMention,
   selectedUnsavedCandidates,
   type ShareJobMentionSlot,
+  type ShareJobResultCandidate,
   type SharePlaceSaveOutcome,
 } from '@/lib/shareJobResult';
+import {
+  claimInitialQuickCheckSearch,
+  quickCheckSearchKey,
+  selectedQuickCheckCandidate,
+} from '@/lib/quickCheckResolution';
 import { createMapGroupFocusRequest } from '@/lib/mapGroupFocus';
 import { usePlacesSearch } from '@/hooks/usePlacesSearch';
 import { getSavedPlacesCacheSnapshot, upsertSavedPlaceIntoCache } from '@/hooks/useSavedPlaces';
@@ -64,7 +70,7 @@ import {
   type OpenSavedPlaceSource,
 } from '@/lib/openSavedPlace';
 import { saveSavedPlace } from '@/services/savedPlacesService';
-import type { PlaceCandidate } from '@/services/placesService';
+import { searchPlaces, type PlaceCandidate } from '@/services/placesService';
 import {
   cancelShareJob,
   deleteShareJob,
@@ -136,6 +142,26 @@ function toPlaceCandidate(c: ShareJobCandidate): PlaceCandidate {
   };
 }
 
+function toResultCandidate(candidate: PlaceCandidate): ShareJobResultCandidate {
+  return {
+    googlePlaceId: candidate.googlePlaceId,
+    name: candidate.name,
+    formattedAddress: candidate.formattedAddress,
+    latitude: candidate.latitude,
+    longitude: candidate.longitude,
+    types: candidate.rawTypes ?? [],
+    primaryType: candidate.primaryType,
+    primaryTypeDisplayName: candidate.primaryTypeDisplayName,
+    googleMapsTypeLabel: candidate.googleMapsTypeLabel,
+    shortFormattedAddress: candidate.shortFormattedAddress,
+    businessStatus: candidate.businessStatus,
+    matchScore: null,
+  };
+}
+
+type SearchPhase = 'idle' | 'searching' | 'results' | 'empty' | 'error';
+type MentionSearch = { phase: SearchPhase; candidates: ShareJobResultCandidate[] };
+
 function ShareJobDetailScreen() {
   const router = useRouter();
   const { jobId } = useLocalSearchParams<{ jobId: string }>();
@@ -146,6 +172,9 @@ function ShareJobDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [manualQuery, setManualQuery] = useState('');
+  const [manualSearchPhase, setManualSearchPhase] = useState<SearchPhase>('idle');
+  const [manualSelected, setManualSelected] = useState<PlaceCandidate | null>(null);
+  const [mentionSearches, setMentionSearches] = useState<Record<string, MentionSearch>>({});
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   // The alternative-place search is a SECONDARY action — collapsed by default
   // for single-candidate jobs, revealed on demand. Manual-only jobs start
@@ -154,6 +183,7 @@ function ShareJobDetailScreen() {
   // Inline, non-blocking notice if the original post can no longer be opened.
   const [openMsg, setOpenMsg] = useState<string | null>(null);
   const seededQueryRef = useRef(false);
+  const manualQueryEditedRef = useRef(false);
   const seededSelectionRef = useRef(false);
   // SYNCHRONOUS re-entrancy guard for the terminal save+resolve+navigate. The
   // `busy` state above drives the UI spinner, but state updates are async: two
@@ -166,6 +196,7 @@ function ShareJobDetailScreen() {
   // — a realtime/poll update or a late save response must never touch an
   // unmounted tree or fire a second navigation.
   const mountedRef = useRef(true);
+  const manualRequestRef = useRef(0);
   useEffect(() => {
     mountedRef.current = true;
     return () => {
@@ -173,7 +204,28 @@ function ShareJobDetailScreen() {
     };
   }, []);
 
-  const { results, loading: searching, search } = usePlacesSearch();
+  const { results, loading: searching, error: searchError, search, reset: resetSearch } = usePlacesSearch();
+
+  const runManualSearch = useCallback(async (query: string) => {
+    const trimmed = query.trim();
+    if (!trimmed) return;
+    const requestId = ++manualRequestRef.current;
+    setManualSelected(null);
+    setManualSearchPhase('searching');
+    const found = await search(trimmed);
+    if (!mountedRef.current || requestId !== manualRequestRef.current) return;
+    setManualSelected(selectedQuickCheckCandidate(trimmed, found));
+    setManualSearchPhase(found.length > 0 ? 'results' : 'empty');
+  }, [search]);
+
+  function changeManualQuery(value: string) {
+    manualRequestRef.current += 1;
+    manualQueryEditedRef.current = true;
+    setManualQuery(value);
+    setManualSelected(null);
+    setManualSearchPhase('idle');
+    resetSearch();
+  }
 
   const load = useCallback(async () => {
     if (!jobId) return;
@@ -206,6 +258,7 @@ function ShareJobDetailScreen() {
         });
       }
       if (j && !seededQueryRef.current && j.suggested_query) {
+        manualQueryEditedRef.current = false;
         setManualQuery(j.suggested_query);
         seededQueryRef.current = true;
       }
@@ -242,6 +295,19 @@ function ShareJobDetailScreen() {
   const mentionSlots = normalizeMentionSlots(
     (job?.candidate_payload as { mentionSlots?: unknown } | null)?.mentionSlots,
   );
+  const effectiveMentionSlots = useMemo(
+    () => mentionSlots.map((slot) => {
+      if (slot.candidates.length > 0) return slot;
+      const recovered = mentionSearches[slot.mentionId];
+      if (!recovered?.candidates.length) return slot;
+      return {
+        ...slot,
+        outcome: recovered.candidates.length === 1 ? 'verified_single' as const : 'ambiguous_candidates' as const,
+        candidates: recovered.candidates,
+      };
+    }),
+    [mentionSearches, mentionSlots],
+  );
   const automaticallySavedPlaceIds = savedPlaceIdsFromPayload(job?.candidate_payload);
   const savedSnapshot = getSavedPlacesCacheSnapshot();
   const alreadySavedGoogleIds = new Set(
@@ -251,10 +317,69 @@ function ShareJobDetailScreen() {
   );
 
   useEffect(() => {
-    if (seededSelectionRef.current || mentionSlots.length === 0) return;
+    if (seededSelectionRef.current || effectiveMentionSlots.length === 0) return;
     seededSelectionRef.current = true;
-    setSelectedIds(preselectedCandidateIds(mentionSlots, alreadySavedGoogleIds));
-  }, [mentionSlots, alreadySavedGoogleIds]);
+    setSelectedIds(preselectedCandidateIds(effectiveMentionSlots, alreadySavedGoogleIds));
+  }, [effectiveMentionSlots, alreadySavedGoogleIds]);
+
+  useEffect(() => {
+    if (
+      !job ||
+      !jobId ||
+      candidates.length > 0 ||
+      job.decision === 'multi_candidate_confirmation'
+    ) return;
+    const query = manualQuery.trim();
+    if (!query || manualQueryEditedRef.current) return;
+    const key = quickCheckSearchKey(jobId, 'manual', query);
+    if (!claimInitialQuickCheckSearch(key)) return;
+    void runManualSearch(query);
+  }, [candidates.length, job, jobId, manualQuery, runManualSearch]);
+
+  useEffect(() => {
+    if (!job || !jobId || job.decision !== 'multi_candidate_confirmation') return;
+    const unresolved = mentionSlots.filter((slot) => slot.candidates.length === 0);
+    for (const slot of unresolved) {
+      const query = (slot.primaryVenueName ?? slot.displayName).trim();
+      const key = quickCheckSearchKey(jobId, slot.mentionId, query);
+      if (!query || !claimInitialQuickCheckSearch(key)) continue;
+      setMentionSearches((current) => ({
+        ...current,
+        [slot.mentionId]: { phase: 'searching', candidates: [] },
+      }));
+      void searchPlaces(query).then((found) => {
+        if (!mountedRef.current) return;
+        const candidates = found.map(toResultCandidate);
+        setMentionSearches((current) => ({
+          ...current,
+          [slot.mentionId]: {
+            phase: candidates.length > 0 ? 'results' : 'empty',
+            candidates,
+          },
+        }));
+        const selected = selectedQuickCheckCandidate(query, candidates);
+        if (selected) {
+          setSelectedIds((current) => new Set(current).add(selected.googlePlaceId));
+        }
+      }).catch(() => {
+        if (!mountedRef.current) return;
+        setMentionSearches((current) => ({
+          ...current,
+          [slot.mentionId]: { phase: 'error', candidates: [] },
+        }));
+      });
+    }
+  }, [job, jobId, mentionSlots]);
+
+  useEffect(() => {
+    if (
+      searchError &&
+      !searching &&
+      (manualSearchPhase === 'searching' || manualSearchPhase === 'empty')
+    ) {
+      setManualSearchPhase('error');
+    }
+  }, [manualSearchPhase, searchError, searching]);
 
   async function persistCandidate(
     candidate: PlaceCandidate,
@@ -371,11 +496,11 @@ function ShareJobDetailScreen() {
   async function handleSaveSelected() {
     if (!job || resolvingRef.current) return;
     const slotCandidates = selectedUnsavedCandidates(
-      mentionSlots,
+      effectiveMentionSlots,
       selectedIds,
       alreadySavedGoogleIds,
     );
-    const chosen = (mentionSlots.length > 0 ? slotCandidates : candidates).filter(
+    const chosen = (effectiveMentionSlots.length > 0 ? slotCandidates : candidates).filter(
       (candidate) =>
         candidate.googlePlaceId && selectedIds.has(candidate.googlePlaceId) && hasCoords(candidate),
     );
@@ -386,7 +511,7 @@ function ShareJobDetailScreen() {
       const settled = await Promise.allSettled(
         chosen.map(async (candidate) => {
           const result = await persistCandidate(toPlaceCandidate(candidate));
-          const slot = mentionSlots.find((mention) =>
+          const slot = effectiveMentionSlots.find((mention) =>
             mention.candidates.some((entry) => entry.googlePlaceId === candidate.googlePlaceId),
           );
           return {
@@ -417,7 +542,7 @@ function ShareJobDetailScreen() {
         })),
         ...failed.map((entry) => ({
           logicalPlaceId:
-            mentionSlots.find((mention) =>
+            effectiveMentionSlots.find((mention) =>
               mention.candidates.some(
                 (candidate) => candidate.googlePlaceId === entry.candidate.googlePlaceId,
               ),
@@ -607,12 +732,21 @@ function ShareJobDetailScreen() {
   }
 
   function searchForMention(slot: ShareJobMentionSlot) {
+    manualQueryEditedRef.current = true;
     setManualQuery(slot.primaryVenueName ?? slot.displayName);
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setSearchExpanded(true);
   }
 
   function renderManualSearch(opts?: { note?: string; onCancel?: () => void }) {
+    const checkingKnownQuery = manualSearchPhase === 'idle' &&
+      Boolean(manualQuery.trim()) &&
+      !manualQueryEditedRef.current &&
+      !searchExpanded;
+    const showSearchAction = manualSearchPhase === 'empty' || manualSearchPhase === 'error' || (
+      manualSearchPhase === 'idle' && !checkingKnownQuery
+    );
+    const selected = manualSelected;
     return (
       <View style={[styles.section, styles.searchSection]}>
         <View style={styles.searchHeaderRow}>
@@ -631,25 +765,38 @@ function ShareJobDetailScreen() {
             <Input
               placeholder="Name or address"
               value={manualQuery}
-              onChangeText={setManualQuery}
-              onSubmitEditing={() => void search(manualQuery)}
+              onChangeText={changeManualQuery}
+              onSubmitEditing={() => void runManualSearch(manualQuery)}
               returnKeyType="search"
               autoCorrect={false}
             />
           </View>
-          <Button title="Search" onPress={() => void search(manualQuery)} style={styles.searchBtn} />
+          {showSearchAction ? (
+            <Button title={manualSearchPhase === 'error' ? 'Retry' : 'Search'} onPress={() => void runManualSearch(manualQuery)} style={styles.searchBtn} />
+          ) : null}
         </View>
-        {searching ? (
-          <ActivityIndicator color={colors.primary} style={{ marginTop: Spacing.md }} />
+        {searching || manualSearchPhase === 'searching' || checkingKnownQuery ? (
+          <View style={styles.processingRow}>
+            <ActivityIndicator color={colors.primary} />
+            <Text style={[typography.caption, styles.helpCompact]}>Searching for {manualQuery.trim()}…</Text>
+          </View>
+        ) : null}
+        {manualSearchPhase === 'error' ? (
+          <Text style={[typography.caption, styles.help]}>We couldn't check right now. Your search is ready to retry.</Text>
         ) : null}
         {results.map((c) => (
           <Pressable
             key={c.googlePlaceId}
-            onPress={() => void handleSaveManual(c)}
+            onPress={() => setManualSelected(c)}
             disabled={busy}
             accessibilityRole="button"
-            accessibilityLabel={`Save ${c.name}`}
-            style={({ pressed }) => [styles.candidate, pressed ? styles.candidatePressed : null]}
+            accessibilityLabel={`Select ${c.name}`}
+            accessibilityState={{ selected: selected?.googlePlaceId === c.googlePlaceId }}
+            style={({ pressed }) => [
+              styles.candidate,
+              selected?.googlePlaceId === c.googlePlaceId ? styles.candidateSelected : null,
+              pressed ? styles.candidatePressed : null,
+            ]}
           >
             <PlaceImage
               googlePlaceId={c.googlePlaceId}
@@ -669,6 +816,15 @@ function ShareJobDetailScreen() {
             </View>
           </Pressable>
         ))}
+        {selected ? (
+          <Button
+            title="Save place"
+            onPress={() => void handleSaveManual(selected)}
+            disabled={busy}
+            loading={busy}
+            style={styles.primaryBtn}
+          />
+        ) : null}
       </View>
     );
   }
@@ -792,8 +948,8 @@ function ShareJobDetailScreen() {
   }
 
   const isMulti = job.decision === 'multi_candidate_confirmation';
-  const selectedPendingCount = mentionSlots.length > 0
-    ? selectedUnsavedCandidates(mentionSlots, selectedIds, alreadySavedGoogleIds).filter(hasCoords).length
+  const selectedPendingCount = effectiveMentionSlots.length > 0
+    ? selectedUnsavedCandidates(effectiveMentionSlots, selectedIds, alreadySavedGoogleIds).filter(hasCoords).length
     : candidates.filter((candidate) => selectedIds.has(candidate.googlePlaceId) && hasCoords(candidate)).length;
   const isManual =
     job.status === 'failed' ||
@@ -853,11 +1009,11 @@ function ShareJobDetailScreen() {
         ) : isMulti ? (
           <View style={styles.section}>
             <Text style={[typography.title, styles.title]}>
-              {multiPlaceTitle(mentionSlots.length || candidates.length)}
+              {multiPlaceTitle(effectiveMentionSlots.length || candidates.length)}
             </Text>
             <Text style={[typography.body, styles.help]}>Choose which ones you want to save.</Text>
-            {mentionSlots.length > 0
-              ? mentionSlots.map((slot) => (
+            {effectiveMentionSlots.length > 0
+              ? effectiveMentionSlots.map((slot) => (
                   <View key={slot.mentionId} style={styles.mentionCard}>
                     <Text style={[typography.heading, styles.mentionName]}>{slot.displayName}</Text>
                     {slot.hostVenueName ? (
@@ -870,7 +1026,14 @@ function ShareJobDetailScreen() {
                         I found a few possible locations for this one.
                       </Text>
                     ) : null}
-                    {slot.outcome === 'no_match' || slot.outcome === 'rejected_insufficient_evidence' ? (
+                    {mentionSearches[slot.mentionId]?.phase === 'searching' ? (
+                      <View style={styles.processingRow}>
+                        <ActivityIndicator color={colors.primary} />
+                        <Text style={[typography.caption, styles.helpCompact]}>
+                          Searching for {(slot.primaryVenueName ?? slot.displayName).trim()}…
+                        </Text>
+                      </View>
+                    ) : slot.outcome === 'no_match' || slot.outcome === 'rejected_insufficient_evidence' ? (
                       <View style={styles.unmatchedBlock}>
                         <Text style={[typography.caption, styles.helpCompact]}>
                           I found the name, but I need your help locating it.
@@ -1001,9 +1164,19 @@ function ShareJobDetailScreen() {
           </View>
         ) : isManual ? (
           <View style={styles.section}>
-            <Text style={[typography.title, styles.title]}>Search for this place</Text>
+            <Text style={[typography.title, styles.title]}>
+              {manualSearchPhase === 'searching' || (manualSearchPhase === 'idle' && manualQuery.trim())
+                ? 'Checking this place'
+                : results.length === 1 && manualSelected
+                  ? 'Is this the place?'
+                  : results.length > 1
+                    ? 'Which place is it?'
+                    : 'Search for this place'}
+            </Text>
             <Text style={[typography.caption, styles.help]}>
-              {job.status === 'failed'
+              {manualSearchPhase === 'searching' || (manualSearchPhase === 'idle' && manualQuery.trim())
+                ? 'We found a possible name. We’re looking for the right place.'
+                : job.status === 'failed'
                 ? "We couldn't find it automatically. Search for it and we'll keep the original post attached."
                 : 'Search for the place from this post.'}
             </Text>
