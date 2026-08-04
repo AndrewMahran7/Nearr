@@ -35,6 +35,11 @@ export type PlaceCandidate = {
    * share flow can resolve to a nearby establishment.
    */
   rawTypes?: string[];
+  primaryType?: string | null;
+  primaryTypeDisplayName?: string | null;
+  googleMapsTypeLabel?: string | null;
+  shortFormattedAddress?: string | null;
+  businessStatus?: string | null;
 };
 
 export type PlaceRichDetails = {
@@ -329,6 +334,11 @@ function toCandidateFromTextSearch(r: any): PlaceCandidate {
     category: pickCategory(r.types),
     googleMapsUrl: null,
     rawTypes: Array.isArray(r.types) ? r.types : undefined,
+    primaryType: Array.isArray(r.types) ? r.types[0] ?? null : null,
+    primaryTypeDisplayName: pickCategory(r.types),
+    googleMapsTypeLabel: pickCategory(r.types),
+    shortFormattedAddress: null,
+    businessStatus: typeof r.business_status === 'string' ? r.business_status : null,
   };
 }
 
@@ -344,6 +354,11 @@ function toCandidateFromDetails(r: any): PlaceCandidate {
     // use it when present; never synthesise the broken `place_id:` form.
     googleMapsUrl: typeof r.url === 'string' && r.url.length > 0 ? r.url : null,
     rawTypes: Array.isArray(r.types) ? r.types : undefined,
+    primaryType: Array.isArray(r.types) ? r.types[0] ?? null : null,
+    primaryTypeDisplayName: pickCategory(r.types),
+    googleMapsTypeLabel: pickCategory(r.types),
+    shortFormattedAddress: null,
+    businessStatus: typeof r.business_status === 'string' ? r.business_status : null,
   };
 }
 

@@ -23,7 +23,12 @@ import { isDemoMode } from '@/lib/demoMode';
 import { dedupeJobsById } from '@/lib/shareJobsDedupe';
 import { filterQueueVisible } from '@/lib/shareJobRouting';
 import { createShareJobsRealtimeSubscription } from '@/lib/shareJobsRealtime';
-import { listShareJobs, type ShareJob } from '@/services/shareJobsService';
+import {
+  listRecentAutoSaves,
+  listShareJobs,
+  type RecentAutoSave,
+  type ShareJob,
+} from '@/services/shareJobsService';
 
 const ACTIVE_STATUSES: ShareJob['status'][] = ['queued', 'processing_metadata'];
 const POLL_MS = 6_000;
@@ -64,6 +69,7 @@ export function useShareJobs() {
   const enabled = isAsyncShareJobsEnabled() && !!userId && !isDevSession && !isDemoMode();
 
   const [jobs, setJobs] = useState<ShareJob[]>([]);
+  const [recentAutoSaves, setRecentAutoSaves] = useState<RecentAutoSave[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -83,6 +89,7 @@ export function useShareJobs() {
   // account before the RLS-scoped reload lands.
   useEffect(() => {
     setJobs([]);
+    setRecentAutoSaves([]);
     setError(null);
   }, [userId]);
 
@@ -97,18 +104,20 @@ export function useShareJobs() {
     async (mode: 'initial' | 'refresh' | 'background') => {
       if (!enabled) {
         setJobs([]);
+        setRecentAutoSaves([]);
         return;
       }
       if (mode === 'initial') setLoading(true);
       if (mode === 'refresh') setRefreshing(true);
       try {
-        const data = await listShareJobs();
+        const [data, recent] = await Promise.all([listShareJobs(), listRecentAutoSaves()]);
         if (!mountedRef.current) return;
         // Defensive dedupe + visibility filter by stable job id: the DB query
         // already excludes terminal jobs, but a realtime insert landing during
         // the initial fetch, a duplicate event, or a delayed event for a job
         // that has since resolved must never render a resolved/terminal card.
         setJobs(filterQueueVisible(dedupeJobsById(data)));
+        setRecentAutoSaves(recent);
         setError(null);
       } catch (err) {
         if (!mountedRef.current) return;
@@ -178,6 +187,7 @@ export function useShareJobs() {
 
   return {
     jobs,
+    recentAutoSaves,
     sections,
     loading,
     refreshing,

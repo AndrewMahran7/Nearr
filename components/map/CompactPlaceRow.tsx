@@ -14,6 +14,7 @@ import { Feather } from '@expo/vector-icons';
 import { Radius, Spacing } from '@/constants';
 import { useTheme } from '@/lib/theme';
 import type { SavedPlaceWithPlace } from '@/types';
+import { CATEGORY_LABELS, savedPlaceCategory } from '@/lib/placeCategory';
 
 type Props = {
   place: SavedPlaceWithPlace;
@@ -64,13 +65,11 @@ export function CompactPlaceRow({ place, status, onPress }: Props) {
           </Text>
         ) : null}
       </View>
-      {place.place.category ? (
-        <View style={styles.categoryChip}>
-          <Text style={styles.categoryChipText} numberOfLines={1}>
-            {place.place.category}
-          </Text>
-        </View>
-      ) : null}
+      <View style={styles.categoryChip}>
+        <Text style={styles.categoryChipText} numberOfLines={1}>
+          {CATEGORY_LABELS[savedPlaceCategory(place)]}
+        </Text>
+      </View>
       <Feather name="chevron-right" size={18} color={colors.textMuted} />
     </Pressable>
   );

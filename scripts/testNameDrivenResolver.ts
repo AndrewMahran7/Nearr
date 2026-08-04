@@ -15,6 +15,7 @@
  */
 
 import {
+    mergePlacesCandidates,
   scoreMentionCandidate,
   classifyMention,
   resolveVenueMentions,
@@ -71,6 +72,8 @@ function cand(name: string, over: Partial<PlacesCandidate> = {}): PlacesCandidat
     latitude: over.latitude,
     longitude: over.longitude,
     types: over.types ?? ['restaurant', 'food', 'point_of_interest'],
+    primaryType: over.primaryType,
+    primaryTypeDisplayName: over.primaryTypeDisplayName,
     businessStatus: over.businessStatus,
   };
 }
@@ -140,6 +143,42 @@ check('normalizeStateToAbbr null on unknown', normalizeStateToAbbr('Nowhere') ==
     platform: 'tiktok',
   });
   check('platform noise rejected', s.rejected === true && s.rejectionReason === 'platform_noise');
+}
+
+for (const fixture of [
+  { label: 'hotel', name: 'Ace Hotel', category: 'hotel', primaryType: 'hotel' },
+  { label: 'park', name: 'Griffith Park', category: 'park', primaryType: 'park' },
+  { label: 'trail', name: 'Runyon Canyon Trail', category: 'hiking_trail', primaryType: 'hiking_area' },
+  { label: 'beach', name: 'El Matador Beach', category: 'beach', primaryType: 'beach' },
+  { label: 'museum', name: 'Getty Museum', category: 'museum', primaryType: 'art_museum' },
+  { label: 'attraction', name: 'Space Needle', category: 'attraction', primaryType: 'tourist_attraction' },
+  { label: 'store', name: 'Grand Central Market', category: 'shopping', primaryType: 'market' },
+  { label: 'fitness', name: 'Gold Gym Venice', category: 'fitness', primaryType: 'gym' },
+  { label: 'wellness', name: 'Burke Williams Spa', category: 'wellness', primaryType: 'spa' },
+  { label: 'transit', name: 'Union Station', category: 'transportation', primaryType: 'train_station' },
+  { label: 'education', name: 'Powell Library', category: 'education', primaryType: 'library' },
+] as const) {
+  const m = { ...mention(fixture.name, { region: 'California' }), category: fixture.category };
+  const s = scoreMentionCandidate(
+    cand(fixture.name, { primaryType: fixture.primaryType, types: [fixture.primaryType] }),
+    m,
+    { expectedState: 'CA', bias: null, platform: 'instagram' },
+  );
+  check(`${fixture.label} category is a soft positive signal`, s.reasons.includes('expected_category_match') && !s.rejected);
+}
+
+{
+  const neutralCorrect = cand('Ace Hotel', { googlePlaceId: 'neutral-correct', primaryType: 'hotel' });
+  const biasedWrong = cand('Ace Hardware', { googlePlaceId: 'biased-wrong', primaryType: 'store' });
+  const merged = mergePlacesCandidates([neutralCorrect], [biasedWrong, neutralCorrect]);
+  check('category-biased merge preserves neutral candidate', merged.length === 2 && merged[0]?.googlePlaceId === 'neutral-correct');
+}
+
+{
+  const hotelMention = { ...mention('Ace Hotel', { region: 'California' }), category: 'hotel' };
+  const downtown = scoreMentionCandidate(cand('Ace Hotel', { googlePlaceId: 'ace-downtown', primaryType: 'hotel' }), hotelMention, { expectedState: 'CA', bias: null, platform: 'instagram' });
+  const westside = scoreMentionCandidate(cand('Ace Hotel', { googlePlaceId: 'ace-westside', primaryType: 'hotel' }), hotelMention, { expectedState: 'CA', bias: null, platform: 'instagram' });
+  check('same-name hotel branches remain ambiguous', classifyMention([downtown, westside]).outcome === 'ambiguous_candidates');
 }
 
 // ---- classifyMention ------------------------------------------------------

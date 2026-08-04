@@ -81,7 +81,8 @@ declare
     'claim_stranded_media_parents','create_share_job_for_user','expire_media_tasks',
     'handle_new_user','invoke_process_media_tasks','invoke_process_share_jobs',
     'register_push_token','requeue_media_task','resolve_share_job','retry_share_job',
-    'set_updated_at','share_jobs_after_insert_kick','share_jobs_cascade_cancel_media',
+    'set_saved_place_category','undo_auto_saved_place',
+    'preserve_share_result_original_saved_place','set_updated_at','share_jobs_after_insert_kick','share_jobs_cascade_cancel_media',
     'share_media_tasks_after_insert_kick','share_media_tasks_enforce_owner'
   ];
   undeclared text;
@@ -266,7 +267,9 @@ begin
     'public.cancel_share_job(uuid)',
     'public.retry_share_job(uuid)',
     'public.register_push_token(text, text, text)',
-    'public.bump_reminder_opportunity_count(uuid[])'
+    'public.bump_reminder_opportunity_count(uuid[])',
+    'public.undo_auto_saved_place(uuid, text, uuid)',
+    'public.set_saved_place_category(uuid, text)'
   ] loop
     if not has_function_privilege('authenticated', fn, 'EXECUTE') then
       raise exception 'FAIL authenticated must execute owner RPC %', fn;
@@ -275,7 +278,7 @@ begin
       raise exception 'FAIL anon must NOT execute owner RPC %', fn;
     end if;
   end loop;
-  raise notice 'PASS owner RPCs: authenticated granted, anon denied (5 fns)';
+  raise notice 'PASS owner RPCs: authenticated granted, anon denied (7 fns)';
 end $$;
 
 -- =====================================================================
@@ -287,6 +290,7 @@ declare
 begin
   foreach fn in array array[
     'public.set_updated_at()',
+    'public.preserve_share_result_original_saved_place()',
     'public.handle_new_user()',
     'public.share_jobs_after_insert_kick()',
     'public.share_jobs_cascade_cancel_media()',
@@ -300,7 +304,7 @@ begin
       raise exception 'FAIL authenticated must NOT execute trigger fn %', fn;
     end if;
   end loop;
-  raise notice 'PASS trigger/helper functions not client-executable (6 fns)';
+  raise notice 'PASS trigger/helper functions not client-executable (7 fns)';
 end $$;
 
 -- =====================================================================

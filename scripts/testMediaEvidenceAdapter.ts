@@ -35,6 +35,8 @@ function place(over: Partial<PlaceCandidateEvidence> = {}): PlaceCandidateEviden
   return {
     name: 'Capones Cucina',
     category: 'restaurant',
+    categoryConfidence: 0.95,
+    categoryEvidenceTags: ['provider_signage'],
     address: '19688 Beach Blvd',
     city: 'Huntington Beach',
     region: 'CA',

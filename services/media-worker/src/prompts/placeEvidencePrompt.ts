@@ -4,7 +4,7 @@
 // persisted into diagnostics so we can correlate evidence quality with prompt
 // changes. Bump PROMPT_VERSION on any wording change.
 
-export const PROMPT_VERSION = 'media-place-evidence-2026-08-03.v2';
+export const PROMPT_VERSION = 'media-place-evidence-2026-08-03.v3';
 
 export const PLACE_EVIDENCE_SYSTEM_PROMPT = `
 You extract structured evidence about REAL-WORLD PLACES from a short social
@@ -49,6 +49,13 @@ Rules:
 - A city mentioned only as travel context is NOT automatically the destination.
 - If you cannot find explicit evidence of a specific place, set
   insufficientEvidence = true and return an empty places array. Do not guess.
+- category must be null or exactly one Nearr category: restaurant, cafe,
+  bakery, bar, hotel, park, hiking_trail, beach, scenic_spot, attraction,
+  museum, shopping, entertainment, nightlife, fitness, wellness,
+  transportation, education, service, other.
+- categoryConfidence is confidence in the category only. categoryEvidenceTags
+  contains short signal labels such as "trail_sign" or "spoken_beach". Do not
+  provide chain-of-thought, hidden reasoning, or prose explanations.
 
 Output STRICT JSON ONLY (no prose, no markdown) matching this shape:
 {
@@ -56,6 +63,8 @@ Output STRICT JSON ONLY (no prose, no markdown) matching this shape:
     {
       "name": "",
       "category": "",
+      "categoryConfidence": 0.0,
+      "categoryEvidenceTags": [],
       "address": "",
       "city": "",
       "region": "",

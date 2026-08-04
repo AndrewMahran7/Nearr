@@ -41,6 +41,7 @@ import {
   unarchiveDemo,
 } from '@/services/demo';
 import { isAddressLikePlace, type PlaceCandidate } from '@/services/placesService';
+import { resolvePlaceCategory, type CategoryResolution } from '@/lib/placeCategory';
 import type {
   PlaceRow,
   RadiusUnit,
@@ -172,6 +173,24 @@ async function patchExistingSavedPlace(
   }
 }
 
+async function patchSavedPlaceCategory(
+  savedPlaceId: string,
+  resolution: CategoryResolution,
+): Promise<void> {
+  const { error } = await supabase
+    .from('saved_places')
+    .update({
+      category: resolution.category,
+      category_source: resolution.source,
+      category_confidence: resolution.confidence,
+      category_model_version: resolution.modelVersion,
+      categorized_at: new Date().toISOString(),
+    })
+    .eq('id', savedPlaceId)
+    .eq('category_user_overridden', false);
+  if (error) console.warn('[savedPlacesService] category update failed', error.message);
+}
+
 async function findExistingSavedPlaceForUser(
   userId: string,
   candidate: PlaceCandidate,
@@ -214,6 +233,10 @@ export async function saveSavedPlace(
 ): Promise<SaveSavedPlaceResult> {
   if (isDemoMode()) return await saveDemoSavedPlace(input);
   const { candidate, radiusValue, radiusUnit } = input;
+  const categoryResolution = resolvePlaceCategory({
+    googlePrimaryType: candidate.primaryType,
+    googleTypes: candidate.rawTypes,
+  });
 
   logDebug('savedPlacesService', 'saving', {
     googlePlaceId: candidate.googlePlaceId,
@@ -240,6 +263,7 @@ export async function saveSavedPlace(
       placeId: existingForUser.place.id,
     });
     await patchExistingSavedPlace(existingForUser.id, input);
+    await patchSavedPlaceCategory(existingForUser.id, categoryResolution);
     return {
       status: 'duplicate',
       place: existingForUser.place,
@@ -299,6 +323,11 @@ export async function saveSavedPlace(
       longitude: candidate.longitude,
       category: candidate.category,
       google_maps_url: candidate.googleMapsUrl,
+      short_formatted_address: candidate.shortFormattedAddress ?? null,
+      google_primary_type: candidate.primaryType ?? null,
+      google_types: candidate.rawTypes ?? null,
+      google_type_label: candidate.googleMapsTypeLabel ?? candidate.primaryTypeDisplayName ?? null,
+      business_status: candidate.businessStatus ?? null,
     };
 
     console.debug('[savedPlacesService] inserting new place', {
@@ -348,6 +377,12 @@ export async function saveSavedPlace(
       sourceType: input.sourceType,
       category: candidate.category,
     }),
+    category: categoryResolution.category,
+    category_source: categoryResolution.source,
+    category_confidence: categoryResolution.confidence,
+    category_model_version: categoryResolution.modelVersion,
+    category_user_overridden: false,
+    categorized_at: new Date().toISOString(),
   };
 
   console.debug('[savedPlacesService] saving user place', {
@@ -388,6 +423,7 @@ export async function saveSavedPlace(
 
       if (existingSaved?.id) {
         await patchExistingSavedPlace(existingSaved.id, input);
+        await patchSavedPlaceCategory(existingSaved.id, categoryResolution);
       }
 
       return {
@@ -496,6 +532,18 @@ export type SavedPlacePatch = {
   notifications_enabled?: boolean;
   notes?: string | null;
 };
+
+export async function setSavedPlaceCategory(
+  savedPlaceId: string,
+  category: import('@/lib/placeCategory').NearrCategory,
+): Promise<void> {
+  const { data, error } = await supabase.rpc('set_saved_place_category', {
+    p_saved_place_id: savedPlaceId,
+    p_category: category,
+  });
+  if (error) rethrowMutationError('update category', error);
+  if (data !== true) throw new Error('This saved place is no longer available.');
+}
 
 /**
  * Convert a likely-offline error from a saved-place mutation into the

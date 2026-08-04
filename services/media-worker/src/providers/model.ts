@@ -132,6 +132,8 @@ export function heuristicEvidence(input: AnalyzeInput): MediaPlaceEvidence {
   const place: PlaceCandidateEvidence = {
     name: name?.value ?? address?.value ?? 'Unknown place',
     category: null,
+    categoryConfidence: 0,
+    categoryEvidenceTags: [],
     address: address?.value ?? null,
     city: null,
     region: null,

@@ -26,6 +26,14 @@ export const BUSINESS_LIKE: ReadonlySet<string> = new Set([
   'museum', 'art_gallery', 'movie_theater', 'night_club',
   'tourist_attraction', 'amusement_park', 'park', 'stadium',
   'liquor_store', 'pharmacy', 'pet_store',
+  'hotel', 'motel', 'resort_hotel', 'hostel', 'inn',
+  'city_park', 'state_park', 'national_park', 'dog_park',
+  'hiking_area', 'hiking_trail', 'trail_head', 'beach', 'scenic_spot',
+  'observation_deck', 'cultural_landmark', 'historical_landmark', 'monument',
+  'campground', 'theater', 'performing_arts_theater', 'fitness_center',
+  'sports_activity_location', 'wellness_center', 'yoga_studio',
+  'airport', 'bus_station', 'train_station', 'transit_station', 'subway_station',
+  'ferry_terminal', 'university', 'college', 'school', 'library',
 ]);
 
 export function isAddressLikeTypes(types?: string[]): boolean {

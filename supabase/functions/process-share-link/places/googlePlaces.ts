@@ -22,6 +22,12 @@ export type PlacesCandidate = {
   latitude?: number;
   longitude?: number;
   types?: string[];
+  shortFormattedAddress?: string;
+  primaryType?: string;
+  primaryTypeDisplayName?: string;
+  googleMapsTypeLabel?: string;
+  containingPlaces?: Array<{ id?: string; name?: string }>;
+  photos?: Array<{ name?: string }>;
   /** Google `business_status` (OPERATIONAL | CLOSED_TEMPORARILY |
    *  CLOSED_PERMANENTLY). Used to demote permanently-closed candidates. */
   businessStatus?: string;
@@ -31,10 +37,23 @@ export type SearchPlacesResult =
   | { ok: true; results: PlacesCandidate[] }
   | { ok: false; reason: 'http_error' | 'api_error'; status?: string; error?: string; retryAfterSeconds?: number };
 
-const PLACES_BASE =
-  'https://maps.googleapis.com/maps/api/place/textsearch/json';
+const PLACES_BASE = 'https://maps.googleapis.com/maps/api/place/textsearch/json';
+const PLACES_V1_SEARCH = 'https://places.googleapis.com/v1/places:searchText';
 const GEOCODE_BASE =
   'https://maps.googleapis.com/maps/api/geocode/json';
+
+export const PLACES_SEARCH_FIELD_MASK = [
+  'places.id',
+  'places.displayName',
+  'places.formattedAddress',
+  'places.shortFormattedAddress',
+  'places.location',
+  'places.primaryType',
+  'places.primaryTypeDisplayName',
+  'places.types',
+  'places.businessStatus',
+  'places.photos',
+].join(',');
 
 export const ADDRESS_VERIFY_RADIUS_M = 150;
 export const GEOCODE_TIMEOUT_MS = 4_000;
@@ -54,16 +73,26 @@ export async function searchPlaces(
   key: string,
   bias?: SearchBias,
 ): Promise<SearchPlacesResult> {
-  const params = new URLSearchParams({ query, key });
+  const body: Record<string, unknown> = { textQuery: query, maxResultCount: 8 };
   if (bias) {
-    params.set('location', `${bias.lat},${bias.lng}`);
-    params.set('radius', '50000');
+    body.locationBias = {
+      circle: { center: { latitude: bias.lat, longitude: bias.lng }, radius: 50_000 },
+    };
   }
   let json: any;
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), PLACES_SEARCH_TIMEOUT_MS);
   try {
-    const res = await fetch(`${PLACES_BASE}?${params}`, { signal: ctrl.signal });
+    const res = await fetch(PLACES_V1_SEARCH, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': key,
+        'X-Goog-FieldMask': PLACES_SEARCH_FIELD_MASK,
+      },
+      body: JSON.stringify(body),
+      signal: ctrl.signal,
+    });
     if (!res.ok) {
       return {
         ok: false,
@@ -79,25 +108,29 @@ export async function searchPlaces(
   } finally {
     clearTimeout(timer);
   }
-  const status = json?.status as string;
-  if (status !== 'OK' && status !== 'ZERO_RESULTS') {
-    return {
-      ok: false,
-      reason: 'api_error',
-      status,
-      error: json?.error_message ?? status,
-    };
-  }
-  const results: PlacesCandidate[] = (json.results ?? []).slice(0, 8).map((r: any) => ({
-    googlePlaceId: r.place_id,
-    name: r.name,
-    formattedAddress: r.formatted_address ?? undefined,
-    latitude: r.geometry?.location?.lat,
-    longitude: r.geometry?.location?.lng,
-    types: Array.isArray(r.types) ? r.types : undefined,
-    businessStatus: typeof r.business_status === 'string' ? r.business_status : undefined,
-  }));
+  const results: PlacesCandidate[] = (json.places ?? []).slice(0, 8).map(mapPlacesV1Candidate);
   return { ok: true, results };
+}
+
+export function mapPlacesV1Candidate(r: any): PlacesCandidate {
+  const typeLabel = typeof r?.primaryTypeDisplayName?.text === 'string'
+    ? r.primaryTypeDisplayName.text
+    : undefined;
+  return {
+    googlePlaceId: r.id,
+    name: r.displayName?.text ?? '',
+    formattedAddress: r.formattedAddress ?? undefined,
+    shortFormattedAddress: r.shortFormattedAddress ?? undefined,
+    latitude: r.location?.latitude,
+    longitude: r.location?.longitude,
+    primaryType: typeof r.primaryType === 'string' ? r.primaryType : undefined,
+    primaryTypeDisplayName: typeLabel,
+    googleMapsTypeLabel: typeLabel,
+    types: Array.isArray(r.types) ? r.types : undefined,
+    businessStatus: typeof r.businessStatus === 'string' ? r.businessStatus : undefined,
+    containingPlaces: Array.isArray(r.containingPlaces) ? r.containingPlaces : undefined,
+    photos: Array.isArray(r.photos) ? r.photos : undefined,
+  };
 }
 
 export type GeocodedAddress = {
@@ -156,24 +189,13 @@ export async function geocodeContextText(
 ): Promise<(SearchBias & { region?: string }) | null> {
   const trimmed = contextText.trim();
   if (!trimmed) return null;
-  const params = new URLSearchParams({ query: trimmed, key });
-  let json: any;
-  try {
-    const res = await fetch(`${PLACES_BASE}?${params}`);
-    if (!res.ok) return null;
-    json = await res.json();
-  } catch {
-    return null;
-  }
-  const status = json?.status as string;
-  if (status !== 'OK' && status !== 'ZERO_RESULTS') return null;
-  const raw = Array.isArray(json.results) ? json.results : [];
-  if (raw.length === 0) return null;
-  const first = raw[0];
-  const lat = first?.geometry?.location?.lat;
-  const lng = first?.geometry?.location?.lng;
+  const result = await searchPlaces(trimmed, key);
+  if (!result.ok || result.results.length === 0) return null;
+  const first = result.results[0];
+  const lat = first.latitude;
+  const lng = first.longitude;
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
-  const region = extractStateFromFormattedAddress(first?.formatted_address ?? null);
+  const region = extractStateFromFormattedAddress(first.formattedAddress ?? null);
   return { lat, lng, ...(region ? { region } : {}) };
 }
 

@@ -31,6 +31,7 @@ import { isRetryableNameDrivenProviderFailure } from '../process-share-link/reso
 import { saveForUser } from '../process-share-link/save.ts';
 import { normalizeShareUrl } from '../../../lib/shareAgent/tiktokUrl.ts';
 import { buildShareJobCandidatePayload } from '../../../lib/shareJobResult.ts';
+import { isNearrCategory, resolvePlaceCategory } from '../../../lib/placeCategory.ts';
 
 import { submitPushToUser, checkExpoReceipts, type TicketRef } from './push.ts';
 import {
@@ -47,7 +48,7 @@ import {
   mediaEvidenceAutoSaveEligible,
 } from './mediaEvidence.ts';
 import { buildVenueMentions } from './mediaMentions.ts';
-import { evaluateMediaAutoSave, mediaAutoSaveAuthorized, MEDIA_AUTO_SAVE_RULE_VERSION } from './mediaAutoSaveGate.ts';
+import { evaluateMediaAutoSave, mediaAutoSaveAuthorized, MEDIA_AUTO_SAVE_RULE_VERSION, resolveMediaAutoSaveThreshold } from './mediaAutoSaveGate.ts';
 import { authorizeServiceRoleBearer, authorizeWorkerSecret, planPreResolve, planPostResolve } from './mediaFinalizePlan.ts';
 
 const CORS_HEADERS: Record<string, string> = {
@@ -89,6 +90,11 @@ function safeCandidate(c: any) {
     latitude: typeof c.latitude === 'number' ? c.latitude : null,
     longitude: typeof c.longitude === 'number' ? c.longitude : null,
     types: Array.isArray(c.types) ? c.types.slice(0, 8) : [],
+    primaryType: typeof c.primaryType === 'string' ? c.primaryType : null,
+    primaryTypeDisplayName: typeof c.primaryTypeDisplayName === 'string' ? c.primaryTypeDisplayName : null,
+    googleMapsTypeLabel: typeof c.googleMapsTypeLabel === 'string' ? c.googleMapsTypeLabel : null,
+    shortFormattedAddress: typeof c.shortFormattedAddress === 'string' ? c.shortFormattedAddress : null,
+    businessStatus: typeof c.businessStatus === 'string' ? c.businessStatus : null,
     matchScore: typeof c.confidenceScore === 'number' ? c.confidenceScore : null,
   };
 }
@@ -187,14 +193,19 @@ function readMediaFlags(): {
   canaryUserId: string | null;
   autoSaveEnabled: boolean;
   autoSaveCanaryUserId: string | null;
+  autoSaveThreshold: number;
+  autoSaveThresholdValid: boolean;
 } {
   const on = (k: string) => (Deno.env.get(k) ?? '').trim().toLowerCase() === 'true';
+  const threshold = resolveMediaAutoSaveThreshold(Deno.env.get('MEDIA_AUTO_SAVE_THRESHOLD'));
   return {
     mediaFallbackEnabled: on('MEDIA_FALLBACK_ENABLED'),
     instagramResolverEnabled: on('INSTAGRAM_MEDIA_RESOLVER_ENABLED'),
     canaryUserId: (Deno.env.get('PHASE2_CANARY_USER_ID') ?? '').trim() || null,
     autoSaveEnabled: on('MEDIA_AUTO_SAVE_ENABLED'),
     autoSaveCanaryUserId: (Deno.env.get('MEDIA_AUTO_SAVE_CANARY_USER_ID') ?? '').trim() || null,
+    autoSaveThreshold: threshold.value,
+    autoSaveThresholdValid: threshold.valid,
   };
 }
 
@@ -202,6 +213,7 @@ function mediaAutoSaveEnabledForUser(
   flags: ReturnType<typeof readMediaFlags>,
   userId: string,
 ): boolean {
+  if (!flags.autoSaveThresholdValid) return false;
   return mediaAutoSaveAuthorized({
     enabled: flags.autoSaveEnabled,
     canaryUserId: flags.autoSaveCanaryUserId,
@@ -514,7 +526,10 @@ async function finalizeMediaTask(admin: any, env: any, body: any): Promise<Respo
     for (const mentionResult of mentionResults) {
       const mention = mentionById.get(mentionResult.mentionId);
       const gate = mention
-        ? evaluateMediaAutoSave({ mention, result: mentionResult, allResults: mentionResults })
+        ? evaluateMediaAutoSave(
+            { mention, result: mentionResult, allResults: mentionResults },
+            configuredFlags.autoSaveThreshold,
+          )
         : {
             eligible: false,
             confidenceScore: null,
@@ -528,6 +543,20 @@ async function finalizeMediaTask(admin: any, env: any, body: any): Promise<Respo
       const candidate = mentionResult.candidates?.[0] ?? null;
 
       if (mayAutoSave) {
+        const categoryResolution = resolvePlaceCategory({
+          googlePrimaryType: candidate.primaryType,
+          googleTypes: candidate.types,
+          ai: isNearrCategory(mention?.category)
+            ? {
+                category: mention.category,
+                confidence: typeof mention.categoryConfidence === 'number' ? mention.categoryConfidence : 0,
+                modelVersion: 'media-evidence-category.v1',
+                evidenceTags: mention.categoryEvidenceTags?.length
+                  ? mention.categoryEvidenceTags
+                  : ['structured_media_category'],
+              }
+            : null,
+        });
         const { data: savedRows, error: saveError } = await admin.rpc(
           'auto_save_share_job_place_result',
           {
@@ -540,7 +569,7 @@ async function finalizeMediaTask(admin: any, env: any, body: any): Promise<Respo
             p_formatted_address: candidate.formattedAddress,
             p_latitude: candidate.latitude,
             p_longitude: candidate.longitude,
-            p_category: mention?.category ?? candidate.types?.[0] ?? null,
+            p_category: categoryResolution.category,
             p_source_type: source,
             p_source_url: canonicalUrl,
             p_confidence_score: gate.confidenceScore,
@@ -551,6 +580,27 @@ async function finalizeMediaTask(admin: any, env: any, body: any): Promise<Respo
         if (saveError) throw new Error(`media_auto_save_failed: ${saveError.message}`);
         const saved = Array.isArray(savedRows) ? savedRows[0] : savedRows;
         if (!saved?.saved_place_id) throw new Error('media_auto_save_missing_saved_place_id');
+        const { error: categoryError } = await admin
+          .from('saved_places')
+          .update({
+            category: categoryResolution.category,
+            category_source: categoryResolution.source,
+            category_confidence: categoryResolution.confidence,
+            category_model_version: categoryResolution.modelVersion,
+            category_user_overridden: false,
+            categorized_at: nowIso(),
+          })
+          .eq('id', saved.saved_place_id)
+          .eq('user_id', job.user_id)
+          .eq('category_user_overridden', false);
+        if (categoryError) throw new Error(`media_category_save_failed: ${categoryError.message}`);
+        await admin.from('places').update({
+          short_formatted_address: candidate.shortFormattedAddress ?? null,
+          google_primary_type: candidate.primaryType ?? null,
+          google_types: candidate.types ?? null,
+          google_type_label: candidate.googleMapsTypeLabel ?? candidate.primaryTypeDisplayName ?? null,
+          business_status: candidate.businessStatus ?? null,
+        }).eq('id', saved.place_id);
         if (saved.reused) alreadySavedPlaceIds.push(saved.saved_place_id);
         else createdSavedPlaceIds.push(saved.saved_place_id);
         perPlaceSummary.push({
@@ -1192,5 +1242,14 @@ serve(async (req) => {
     await recoverStrandedMediaJobs(admin);
   }
 
-  return json({ claimed: jobs.length, processed });
+  const flags = readMediaFlags();
+  return json({
+    claimed: jobs.length,
+    processed,
+    mediaAutoSave: {
+      threshold: flags.autoSaveThreshold,
+      thresholdValid: flags.autoSaveThresholdValid,
+      ruleVersion: MEDIA_AUTO_SAVE_RULE_VERSION,
+    },
+  });
 }, standaloneServeOptions);

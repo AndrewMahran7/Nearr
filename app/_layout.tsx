@@ -58,6 +58,7 @@ import '@/lib/geofencing'; // registers geofence task
 import { syncGeofencesForSavedPlaces } from '@/lib/geofencing';
 import { Colors } from '@/constants';
 import { ThemeProvider, useTheme } from '@/lib/theme';
+import { AutoSaveUndoToast } from '@/components/AutoSaveUndoToast';
 
 logInfo('APP_START', '_layout module loaded');
 
@@ -469,6 +470,7 @@ function AuthGate({
   return (
     <>
       {children}
+      <AutoSaveUndoToast />
       <LegalAgreementModal
         visible={LEGAL_ACCEPTANCE_REQUIRED && legalAgreementVisible}
         onViewTerms={() => router.push('/legal/terms')}

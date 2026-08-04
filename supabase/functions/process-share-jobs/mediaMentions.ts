@@ -60,6 +60,8 @@ export type VenueMention = {
   distinctiveTokens: string[];
   /** Model category hint (e.g. "Pizza Restaurant") — ranking hint ONLY. */
   category: string | null;
+  categoryConfidence?: number;
+  categoryEvidenceTags?: string[];
   /** Evidence sources that referenced this name (deduped). */
   sources: PlaceEvidenceSource[];
   /** Sources whose explicit evidence text supports the venue's distinctive
@@ -131,6 +133,10 @@ const GENERIC_TOKENS: ReadonlySet<string> = new Set([
   'steakhouse', 'steak', 'chicken', 'wings', 'brunch', 'breakfast', 'lunch',
   'dinner', 'dessert', 'desserts', 'bakeshop', 'creamery', 'bistro', 'diner', 'cucina',
   'food', 'foods', 'eats', 'cuisine', 'best', 'good', 'great', 'top',
+  // Generic non-food place categories. A real name such as "Griffith Park"
+  // retains its distinctive token; a bare "the hiking trail" does not.
+  'park', 'trail', 'hiking', 'beach', 'hotel', 'resort', 'museum', 'landmark',
+  'attraction', 'gym', 'fitness', 'spa', 'wellness', 'airport', 'station',
 ]);
 
 // Vague deictic phrases and platform CTA text that must never become a mention.
@@ -448,12 +454,18 @@ export function buildVenueMentions(evidence: MediaPlaceEvidence): BuildMentionsR
     let mentionCount = 0;
     let bestConfidence = 0;
     let category: string | null = null;
+    let categoryConfidence = 0;
+    let categoryEvidenceTags: string[] = [];
     for (const p of g.places) {
       const nameTokens = distinctiveTokensOf(g.primaryName ?? p.name)
         .map((token) => token.replace(/[^a-z0-9]/g, ''))
         .filter(Boolean);
       bestConfidence = Math.max(bestConfidence, p.confidence);
-      if (!category && p.category) category = p.category;
+      if (p.category && (p.categoryConfidence ?? 0) >= categoryConfidence) {
+        category = p.category;
+        categoryConfidence = p.categoryConfidence ?? 0;
+        categoryEvidenceTags = p.categoryEvidenceTags ?? [];
+      }
       for (const e of p.explicitEvidence) {
         sources.add(e.source);
         const phraseTokens = new Set(
@@ -490,6 +502,8 @@ export function buildVenueMentions(evidence: MediaPlaceEvidence): BuildMentionsR
       normalizedName: g.normalizedName,
       distinctiveTokens,
       category,
+      categoryConfidence,
+      categoryEvidenceTags,
       sources: srcList,
       nameEvidenceSources: [...nameEvidenceSources],
       timestamps: ts,

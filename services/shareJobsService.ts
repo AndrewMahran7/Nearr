@@ -18,6 +18,7 @@ import type {
   ShareJobCandidatePayload,
   ShareJobResultCandidate,
 } from '@/lib/shareJobResult';
+import type { SavedPlaceWithPlace } from '@/types';
 
 export type ShareJobStatus =
   | 'queued'
@@ -70,6 +71,23 @@ export type ShareJob = {
   completed_at: string | null;
 };
 
+export type RecentAutoSave = {
+  resultId: string;
+  savedPlaceId: string;
+  finalizedAt: string;
+  confidenceScore: number | null;
+  savedPlace: SavedPlaceWithPlace;
+};
+
+export type UndoAutoSaveResult = {
+  undone: boolean;
+  alreadyUndone: boolean;
+  shareJobId: string;
+  removedSavedPlaceId: string;
+  replacementSavedPlaceId: string | null;
+  undoneAt: string;
+};
+
 const JOB_COLUMNS =
   'id, user_id, source_url, canonical_url, source_platform, status, progress_stage, decision, saved_place_id, candidate_payload, extraction_payload, suggested_query, needs_help_reason, failure_reason, notification_status, notification_attempts, notification_last_attempt_at, notification_ticket_ids, notification_error_code, notification_submitted_at, created_at, updated_at, completed_at';
 
@@ -92,6 +110,74 @@ export async function listShareJobs(limit = 100): Promise<ShareJob[]> {
     throw new Error(error.message);
   }
   return (data ?? []) as ShareJob[];
+}
+
+const RECENT_AUTO_SAVE_COLUMNS =
+  'id, saved_place_id, finalized_at, confidence_score, saved_place:saved_places!share_job_place_results_saved_place_id_fkey(*, place:places(*))';
+
+function normalizeRecentAutoSave(row: any): RecentAutoSave | null {
+  const savedPlace = Array.isArray(row?.saved_place) ? row.saved_place[0] : row?.saved_place;
+  if (!row?.id || !row?.saved_place_id || !row?.finalized_at || !savedPlace?.place) return null;
+  return {
+    resultId: row.id,
+    savedPlaceId: row.saved_place_id,
+    finalizedAt: row.finalized_at,
+    confidenceScore: typeof row.confidence_score === 'number' ? row.confidence_score : null,
+    savedPlace: savedPlace as SavedPlaceWithPlace,
+  };
+}
+
+/** Newly-created automatic saves only. Reused existing places are excluded. */
+export async function listRecentAutoSaves(limit = 20): Promise<RecentAutoSave[]> {
+  if (isDemoMode() || isMapPreviewMode()) return [];
+  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const { data, error } = await supabase
+    .from('share_job_place_results')
+    .select(RECENT_AUTO_SAVE_COLUMNS)
+    .eq('origin', 'automatic')
+    .eq('outcome', 'auto_saved')
+    .gte('finalized_at', since)
+    .order('finalized_at', { ascending: false })
+    .limit(limit);
+  if (error) throw new Error(error.message);
+  return (data ?? []).map(normalizeRecentAutoSave).filter((row): row is RecentAutoSave => !!row);
+}
+
+export async function getRecentAutoSave(resultId: string): Promise<RecentAutoSave | null> {
+  if (isDemoMode() || isMapPreviewMode()) return null;
+  const { data, error } = await supabase
+    .from('share_job_place_results')
+    .select(RECENT_AUTO_SAVE_COLUMNS)
+    .eq('id', resultId)
+    .eq('origin', 'automatic')
+    .eq('outcome', 'auto_saved')
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return normalizeRecentAutoSave(data);
+}
+
+export async function undoAutoSavedPlace(
+  savedPlaceId: string,
+  replacementSavedPlaceId: string | null = null,
+): Promise<UndoAutoSaveResult> {
+  if (isDemoMode() || isMapPreviewMode()) throw new Error('Undo is unavailable in preview mode.');
+  const action = replacementSavedPlaceId ? 'corrected' : 'removed';
+  const { data, error } = await supabase.rpc('undo_auto_saved_place', {
+    p_saved_place_id: savedPlaceId,
+    p_action: action,
+    p_replacement_saved_place_id: replacementSavedPlaceId,
+  });
+  if (error) throw new Error(error.message);
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row) throw new Error('Undo did not return a result.');
+  return {
+    undone: row.undone === true,
+    alreadyUndone: row.already_undone === true,
+    shareJobId: row.share_job_id,
+    removedSavedPlaceId: row.removed_saved_place_id,
+    replacementSavedPlaceId: row.replacement_saved_place_id ?? null,
+    undoneAt: row.undone_at,
+  };
 }
 
 /** Fetch a single job by id (RLS scopes to owner). */

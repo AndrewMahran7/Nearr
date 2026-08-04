@@ -30,7 +30,14 @@ import { useShareJobs } from '@/hooks/useShareJobs';
 import { routeShareJobCard } from '@/lib/shareJobRouting';
 import { createMapGroupFocusRequest } from '@/lib/mapGroupFocus';
 import { PHASE2_PREVIEW_FIXTURES } from '@/lib/phase2Preview';
-import { getSavedPlacesCacheSnapshot } from '@/hooks/useSavedPlaces';
+import {
+  getSavedPlacesCacheSnapshot,
+  removeSavedPlaceFromCache,
+  restoreSavedPlacesCache,
+} from '@/hooks/useSavedPlaces';
+import { trackEvent } from '@/lib/analytics';
+import { autoSaveUndoElapsedBucket } from '@/lib/autoSaveUndo';
+import { CATEGORY_LABELS, displayCategory } from '@/lib/placeCategory';
 import {
   actionableCount,
   actionableJobs,
@@ -39,7 +46,12 @@ import {
   processingJobs,
 } from '@/lib/shareJobsUi';
 import { PHASE_1_COPY, processingMessage, queueIntro, splitPlaceAddress } from '@/lib/sharePhase1Ui';
-import { cancelShareJob, type ShareJob } from '@/services/shareJobsService';
+import {
+  cancelShareJob,
+  undoAutoSavedPlace,
+  type RecentAutoSave,
+  type ShareJob,
+} from '@/services/shareJobsService';
 
 // A processing job older than this is very likely stuck (the worker never
 // claimed it). We surface an honest "taking longer than expected" state with a
@@ -147,7 +159,7 @@ function ShareJobsQueueScreen() {
   const router = useRouter();
   const { colors, typography } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const { jobs, loading, refreshing, refresh, enabled, authLoading } = useShareJobs();
+  const { jobs, recentAutoSaves, loading, refreshing, refresh, enabled, authLoading } = useShareJobs();
   const [actingId, setActingId] = useState<string | null>(null);
 
   // Presentation grouping (visibility already filtered upstream by the hook):
@@ -157,6 +169,7 @@ function ShareJobsQueueScreen() {
   const processing = useMemo(() => processingJobs(jobs), [jobs]);
   const count = actionableCount(jobs);
   const empty = isQueueEmpty(jobs);
+  const hasContent = !empty || recentAutoSaves.length > 0;
 
   // Never leave the user trapped: go back if there's a Nearr route to return
   // to, otherwise fall back to the map (cold deep-link entry from the
@@ -178,6 +191,85 @@ function ShareJobsQueueScreen() {
       setActingId(null);
       refresh();
     }
+  }
+
+  async function undoRecent(item: RecentAutoSave) {
+    if (actingId) return;
+    setActingId(item.savedPlaceId);
+    const snapshot = getSavedPlacesCacheSnapshot();
+    removeSavedPlaceFromCache(item.savedPlaceId);
+    try {
+      await undoAutoSavedPlace(item.savedPlaceId);
+      void trackEvent('auto_save_undone', {
+        surface: 'share_queue',
+        elapsed_bucket: autoSaveUndoElapsedBucket(item.finalizedAt),
+        category: item.savedPlace.category ?? 'other',
+      });
+    } catch (error) {
+      restoreSavedPlacesCache(snapshot);
+      Alert.alert('Could not undo', error instanceof Error ? error.message : 'Please try again.');
+    } finally {
+      setActingId(null);
+      await refresh();
+    }
+  }
+
+  async function undoAllRecent() {
+    if (actingId || recentAutoSaves.length === 0) return;
+    setActingId('all-auto-saves');
+    let undone = 0;
+    for (const item of recentAutoSaves) {
+      try {
+        await undoAutoSavedPlace(item.savedPlaceId);
+        removeSavedPlaceFromCache(item.savedPlaceId);
+        undone += 1;
+        void trackEvent('auto_save_undone', {
+          surface: 'share_queue_undo_all',
+          elapsed_bucket: autoSaveUndoElapsedBucket(item.finalizedAt),
+          category: item.savedPlace.category ?? 'other',
+        });
+      } catch {
+        // Continue so one concurrent/stale row cannot block the remaining exact IDs.
+      }
+    }
+    setActingId(null);
+    await refresh();
+    if (undone !== recentAutoSaves.length) {
+      Alert.alert('Some places could not be undone', `${undone} of ${recentAutoSaves.length} were removed.`);
+    }
+  }
+
+  function renderRecentAutoSave(item: RecentAutoSave) {
+    const busy = actingId === item.savedPlaceId || actingId === 'all-auto-saves';
+    const category = CATEGORY_LABELS[displayCategory(item.savedPlace.category)];
+    return (
+      <Pressable
+        onPress={() => router.push({ pathname: '/(tabs)/map', params: { savedPlaceId: item.savedPlaceId } })}
+        disabled={busy}
+        style={({ pressed }) => [styles.row, pressed ? styles.rowPressed : null]}
+        accessibilityRole="button"
+        accessibilityLabel={`Open ${item.savedPlace.place.name}`}
+      >
+        <PlaceImage googlePlaceId={item.savedPlace.place.google_place_id} size={64} borderRadius={12} />
+        <View style={styles.rowMain}>
+          <Text style={[typography.bodyStrong, styles.rowTitle]} numberOfLines={2}>{item.savedPlace.place.name}</Text>
+          <View style={styles.autoSaveMeta}>
+            <Text style={styles.categoryBadge}>{category}</Text>
+            <Text style={[typography.caption, styles.rowMeta]}>{relativeTime(item.finalizedAt)}</Text>
+          </View>
+        </View>
+        <Pressable
+          onPress={() => void undoRecent(item)}
+          disabled={busy}
+          hitSlop={8}
+          style={styles.undoButton}
+          accessibilityRole="button"
+          accessibilityLabel={`Undo saving ${item.savedPlace.place.name}`}
+        >
+          {busy ? <ActivityIndicator color={colors.primary} /> : <Feather name="rotate-ccw" size={19} color={colors.primary} />}
+        </Pressable>
+      </Pressable>
+    );
   }
 
   // Honest escape hatch for a job the backend has not advanced. We never
@@ -353,7 +445,7 @@ function ShareJobsQueueScreen() {
   }
 
   return (
-    <ShareJobsSheet onDismiss={goBack} size={empty ? 'compact' : 'queue'}>
+    <ShareJobsSheet onDismiss={goBack} size={hasContent ? 'queue' : 'compact'}>
       {header}
       <ScrollView
         contentContainerStyle={styles.content}
@@ -363,11 +455,11 @@ function ShareJobsQueueScreen() {
         }
         showsVerticalScrollIndicator={false}
       >
-        {loading && empty ? (
+        {loading && !hasContent ? (
           <View style={styles.loadingWrap}>
             <ActivityIndicator color={colors.primary} />
           </View>
-        ) : empty ? (
+        ) : !hasContent ? (
           <View style={styles.emptyState}>
             <View style={styles.emptyIcon}><Feather name="check" size={24} color={colors.primary} /></View>
             <Text style={[typography.heading, styles.emptyTitle]}>{PHASE_1_COPY.emptyTitle}</Text>
@@ -382,6 +474,29 @@ function ShareJobsQueueScreen() {
             {renderSection(`Working on ${processing.length} ${processing.length === 1 ? 'place' : 'places'}`, processing)}
           </>
         )}
+        {recentAutoSaves.length > 0 ? (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={[typography.label, styles.sectionTitle]}>Saved automatically</Text>
+              <Pressable
+                onPress={() => void undoAllRecent()}
+                disabled={!!actingId}
+                accessibilityRole="button"
+                accessibilityLabel="Undo all automatic saves"
+              >
+                <Text style={styles.undoAllText}>Undo all</Text>
+              </Pressable>
+            </View>
+            <View style={styles.card}>
+              {recentAutoSaves.map((item, index) => (
+                <View key={item.resultId}>
+                  {index > 0 ? <View style={styles.separator} /> : null}
+                  {renderRecentAutoSave(item)}
+                </View>
+              ))}
+            </View>
+          </View>
+        ) : null}
         {__DEV__ ? (
           <View style={styles.previewSection}>
             <Text style={[typography.label, styles.sectionTitle]}>Development previews</Text>
@@ -471,6 +586,18 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
     rowDetail: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginTop: 5 },
     rowSubtitle: { color: colors.textSecondary, flexShrink: 1 },
     rowMeta: { color: colors.textMuted, marginLeft: 'auto' },
+    autoSaveMeta: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginTop: Spacing.xs },
+    categoryBadge: {
+      color: colors.textSecondary,
+      backgroundColor: colors.surfaceElevated,
+      borderRadius: Radius.sm,
+      paddingHorizontal: Spacing.sm,
+      paddingVertical: 3,
+      fontSize: 12,
+      fontWeight: '600',
+    },
+    undoButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+    undoAllText: { color: colors.primary, fontSize: 14, fontWeight: '700' },
     emptyState: { alignItems: 'center', paddingHorizontal: Spacing.xl, paddingTop: 72 },
     emptyIcon: {
       width: 52,

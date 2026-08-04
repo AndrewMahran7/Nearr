@@ -14,6 +14,7 @@ import { Card } from './Card';
 import { Radius, Spacing } from '@/constants';
 import { useTheme } from '@/lib/theme';
 import type { Profile, SavedPlaceWithPlace } from '@/types';
+import { CATEGORY_LABELS, savedPlaceCategory } from '@/lib/placeCategory';
 
 type Props = {
   saved: SavedPlaceWithPlace;
@@ -68,7 +69,7 @@ export function SavedPlaceCard({
   const isArchived = !!saved.archived_at && !isVisited;
   const remindersLabel =
     !isVisited && !isArchived && saved.notifications_enabled ? 'Reminder on' : null;
-  const meta = [metaPrefix, source, remindersLabel].filter(Boolean).join(' · ');
+  const meta = [CATEGORY_LABELS[savedPlaceCategory(saved)], metaPrefix, source, remindersLabel].filter(Boolean).join(' · ');
 
   function confirmDelete() {
     Alert.alert(

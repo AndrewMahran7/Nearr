@@ -1,4 +1,6 @@
-// Normalized types matching supabase/migrations/20260426000001_init_schema.sql.
+// Normalized types matching the forward-only Supabase schema.
+
+import type { CategorySource, NearrCategory } from '@/lib/placeCategory';
 
 export type RadiusUnit = 'miles' | 'minutes';
 
@@ -29,6 +31,12 @@ export type PlaceRow = {
   latitude: number;
   longitude: number;
   category: string | null;
+  short_formatted_address?: string | null;
+  google_primary_type?: string | null;
+  google_types?: string[] | null;
+  google_type_label?: string | null;
+  containing_places?: unknown | null;
+  business_status?: string | null;
   google_maps_url: string | null;
   created_at: string;
 };
@@ -58,6 +66,12 @@ export type SavedPlace = {
   visited_at: string | null;
   /** Set when archive happened because reminders were exhausted (3/3 declined). */
   reminders_exhausted_at: string | null;
+  category?: NearrCategory | null;
+  category_source?: CategorySource | null;
+  category_confidence?: number | null;
+  category_model_version?: string | null;
+  category_user_overridden?: boolean;
+  categorized_at?: string | null;
   created_at: string;
   updated_at: string;
 };

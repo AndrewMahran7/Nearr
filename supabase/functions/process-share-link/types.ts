@@ -32,6 +32,11 @@ export type ResolvedCandidate = {
   latitude?: number;
   longitude?: number;
   types?: string[];
+  shortFormattedAddress?: string;
+  primaryType?: string;
+  primaryTypeDisplayName?: string;
+  googleMapsTypeLabel?: string;
+  businessStatus?: string;
   /** 0..1 — deterministic ranker's score (higher == better). */
   confidenceScore: number;
   /** Atomic evidence keys that contributed to this candidate. */

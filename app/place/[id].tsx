@@ -29,6 +29,7 @@ import { Feather } from '@expo/vector-icons';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 
 import { Button, Card, Input, Screen } from '@/components';
+import { PlaceCategoryPicker } from '@/components/PlaceCategoryPicker';
 import { Radius, Spacing } from '@/constants';
 
 import { getProfile } from '@/services/profileService';
@@ -36,6 +37,7 @@ import {
   deleteSavedPlace,
   getSavedPlace,
   updateSavedPlace,
+  setSavedPlaceCategory,
 } from '@/services/savedPlacesService';
 import {
   getSavedPlacesCacheSnapshot,
@@ -46,6 +48,7 @@ import {
 import { applySavedPlaceEdit } from '@/lib/savedPlaceEdits';
 import { initialSavedPlaceNote } from '@/lib/placeNote';
 import { trackEvent } from '@/lib/analytics';
+import { savedPlaceCategory, type NearrCategory } from '@/lib/placeCategory';
 import { useTheme } from '@/lib/theme';
 import type { Profile, RadiusUnit, SavedPlaceWithPlace } from '@/types';
 
@@ -122,6 +125,8 @@ export default function PlaceDetail() {
   const [minutesText, setMinutesText] = useState('10');
   const [notes, setNotes] = useState('');
   const [reminderSettingsExpanded, setReminderSettingsExpanded] = useState(false);
+  const [category, setCategory] = useState<NearrCategory>('other');
+  const [categorySaving, setCategorySaving] = useState(false);
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -152,6 +157,7 @@ export default function PlaceDetail() {
           sourceType: s.source_type,
           category: s.place.category,
         }));
+        setCategory(savedPlaceCategory(s));
         setReminderSettingsExpanded(false);
       }
       setProfile(p);
@@ -262,6 +268,32 @@ export default function PlaceDetail() {
     }
   }
 
+  async function handleCategoryChange(next: NearrCategory) {
+    if (!saved || categorySaving || next === category) return;
+    const previous = category;
+    setCategory(next);
+    setCategorySaving(true);
+    try {
+      await setSavedPlaceCategory(saved.id, next);
+      const updated: SavedPlaceWithPlace = {
+        ...saved,
+        category: next,
+        category_source: 'user',
+        category_confidence: 1,
+        category_user_overridden: true,
+        categorized_at: new Date().toISOString(),
+      };
+      setSaved(updated);
+      updateSavedPlacesCache((current) => current.map((row) => row.id === saved.id ? updated : row));
+      void trackEvent('saved_place_category_corrected', { category: next, surface: 'place_detail' });
+    } catch (error) {
+      setCategory(previous);
+      Alert.alert('Could not update category', error instanceof Error ? error.message : 'Please try again.');
+    } finally {
+      setCategorySaving(false);
+    }
+  }
+
   function confirmDelete() {
     if (!saved) return;
     Alert.alert(
@@ -333,11 +365,9 @@ export default function PlaceDetail() {
           {place.formatted_address ? (
             <Text style={[typography.body, styles.muted]}>{place.formatted_address}</Text>
           ) : null}
-          {place.category ? (
-            <Text style={[typography.caption, styles.metaText]}>
-              {place.category}
-            </Text>
-          ) : null}
+          <View style={{ marginTop: Spacing.md }}>
+            <PlaceCategoryPicker value={category} onChange={(next) => void handleCategoryChange(next)} disabled={categorySaving} />
+          </View>
           {sourceText ? (
             <View style={styles.sourceRow}>
               {sourceLabel ? (

@@ -17,6 +17,22 @@
 //
 // No Deno globals, no I/O — unit-tested from Node (scripts/testMediaEvidenceAdapter.ts).
 
+type NearrCategory =
+  | 'restaurant' | 'cafe' | 'bakery' | 'bar' | 'hotel' | 'park'
+  | 'hiking_trail' | 'beach' | 'scenic_spot' | 'attraction' | 'museum'
+  | 'shopping' | 'entertainment' | 'nightlife' | 'fitness' | 'wellness'
+  | 'transportation' | 'education' | 'service' | 'other';
+
+const NEARR_CATEGORY_SET = new Set<string>([
+  'restaurant', 'cafe', 'bakery', 'bar', 'hotel', 'park', 'hiking_trail',
+  'beach', 'scenic_spot', 'attraction', 'museum', 'shopping', 'entertainment',
+  'nightlife', 'fitness', 'wellness', 'transportation', 'education', 'service', 'other',
+]);
+
+function isNearrCategory(value: unknown): value is NearrCategory {
+  return typeof value === 'string' && NEARR_CATEGORY_SET.has(value);
+}
+
 export type PlaceEvidenceSource = 'caption' | 'speech' | 'visible_text' | 'frame';
 
 export type PlaceEvidenceItem = {
@@ -29,7 +45,9 @@ export type PlaceRole = 'primary' | 'secondary' | 'passing_mention';
 
 export type PlaceCandidateEvidence = {
   name: string;
-  category: string | null;
+  category: NearrCategory | null;
+  categoryConfidence?: number;
+  categoryEvidenceTags?: string[];
   address: string | null;
   city: string | null;
   region: string | null;
@@ -124,7 +142,11 @@ function parsePlace(raw: unknown): PlaceCandidateEvidence | null {
 
   return {
     name,
-    category: str(r.category),
+    category: isNearrCategory(r.category) ? r.category : null,
+    categoryConfidence: Math.max(0, Math.min(1, num(r.categoryConfidence) ?? 0)),
+    categoryEvidenceTags: Array.isArray(r.categoryEvidenceTags)
+      ? r.categoryEvidenceTags.map((tag) => str(tag, 80)).filter((tag): tag is string => !!tag).slice(0, 8)
+      : [],
     address: str(r.address),
     city: str(r.city),
     region: str(r.region),
@@ -257,6 +279,20 @@ const ADDRESS_LIKE_RE =
 
 export const DEFAULT_MEDIA_AUTOSAVE_MIN_CONFIDENCE = 0.7;
 
+const NATURAL_PLACE_CATEGORIES = new Set<NearrCategory>([
+  'park', 'hiking_trail', 'beach', 'scenic_spot', 'attraction',
+]);
+
+function normalizedEvidenceText(value: string): string {
+  return value.toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ');
+}
+
+function explicitGeoGrounding(primary: PlaceCandidateEvidence): boolean {
+  if (!primary.city || !primary.region) return false;
+  const explicit = primary.explicitEvidence.map((item) => normalizedEvidenceText(item.value)).join(' ');
+  return explicit.includes(normalizedEvidenceText(primary.city)) && explicit.includes(normalizedEvidenceText(primary.region));
+}
+
 /**
  * Whether media evidence is strong enough to permit a SILENT auto-save. This is
  * an EXTRA gate ON TOP OF the resolver's `safeToAutoSave` — it can only make
@@ -282,11 +318,14 @@ export function mediaEvidenceAutoSaveEligible(
   if (!primary) return false;
   if (!(primary.confidence >= minConfidence)) return false;
 
-  // Require an EXPLICIT street address: both a populated address field AND an
-  // explicit-evidence item that actually shows/speaks a street address.
+  // Built destinations require an explicit street address. Recognized natural
+  // destinations may instead use explicit city+region grounding; the downstream
+  // resolver still independently requires unique provider identity, coordinates,
+  // state agreement, city proximity, and strong repeated name evidence.
   const addressInField = !!primary.address && ADDRESS_LIKE_RE.test(primary.address);
   const addressInExplicit = primary.explicitEvidence.some((e) => ADDRESS_LIKE_RE.test(e.value));
-  return addressInField && addressInExplicit;
+  if (addressInField && addressInExplicit) return true;
+  return !!primary.category && NATURAL_PLACE_CATEGORIES.has(primary.category) && explicitGeoGrounding(primary);
 }
 
 /** Small, size-bounded summary for diagnostics logging (no raw evidence). */

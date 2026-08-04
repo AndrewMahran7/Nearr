@@ -35,13 +35,15 @@ import {
 import { Feather } from '@expo/vector-icons';
 
 import { Button, Card, Input } from '@/components';
+import { PlaceCategoryPicker } from '@/components/PlaceCategoryPicker';
 import { Radius, Spacing } from '@/constants';
 import { useTheme } from '@/lib/theme';
 import { trackEvent } from '@/lib/analytics';
 import { applySavedPlaceEdit } from '@/lib/savedPlaceEdits';
 import { initialSavedPlaceNote } from '@/lib/placeNote';
 import { buildPlaceShareContent } from '@/lib/placeShare';
-import { deleteSavedPlace, updateSavedPlace } from '@/services/savedPlacesService';
+import { deleteSavedPlace, setSavedPlaceCategory, updateSavedPlace } from '@/services/savedPlacesService';
+import { savedPlaceCategory, type NearrCategory } from '@/lib/placeCategory';
 import {
   getSavedPlacesCacheSnapshot,
   removeSavedPlaceFromCache,
@@ -161,6 +163,8 @@ export function SelectedPlaceDetails({
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [galleryIndex, setGalleryIndex] = useState(0);
   const [galleryOpenSeed, setGalleryOpenSeed] = useState(0);
+  const [category, setCategory] = useState<NearrCategory>(() => savedPlaceCategory(saved));
+  const [categorySaving, setCategorySaving] = useState(false);
   const galleryStartYRef = useRef(0);
   const galleryListRef = useRef<FlatList<string> | null>(null);
 
@@ -190,8 +194,35 @@ export function SelectedPlaceDetails({
       category: saved.place.category,
     }));
     setReminderSettingsExpanded(false);
+    setCategory(savedPlaceCategory(saved));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [saved.id]);
+
+  async function handleCategoryChange(next: NearrCategory) {
+    if (categorySaving || next === category) return;
+    const previous = category;
+    setCategory(next);
+    setCategorySaving(true);
+    try {
+      await setSavedPlaceCategory(saved.id, next);
+      const updated: SavedPlaceWithPlace = {
+        ...saved,
+        category: next,
+        category_source: 'user',
+        category_confidence: 1,
+        category_user_overridden: true,
+        categorized_at: new Date().toISOString(),
+      };
+      updateSavedPlacesCache((current) => current.map((row) => row.id === saved.id ? updated : row));
+      onSaved?.(updated);
+      void trackEvent('saved_place_category_corrected', { category: next, surface: 'map_details' });
+    } catch (error) {
+      setCategory(previous);
+      Alert.alert('Could not update category', error instanceof Error ? error.message : 'Please try again.');
+    } finally {
+      setCategorySaving(false);
+    }
+  }
 
   useEffect(() => {
     let canceled = false;
@@ -704,6 +735,10 @@ export function SelectedPlaceDetails({
           styles={styles}
         />
       </View>
+
+      <Card style={styles.sectionCard}>
+        <PlaceCategoryPicker value={category} onChange={(next) => void handleCategoryChange(next)} disabled={categorySaving} />
+      </Card>
 
       <Card style={styles.sectionCard}>
         <View style={styles.rowBetween}>

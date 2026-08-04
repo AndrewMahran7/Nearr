@@ -108,6 +108,8 @@ const STRONG_EVIDENCE: MediaPlaceEvidence = {
     {
       name: 'Capones Cucina',
       category: 'restaurant',
+      categoryConfidence: 0.9,
+      categoryEvidenceTags: ['test_fixture'],
       address: '19688 Beach Blvd',
       city: 'Huntington Beach',
       region: 'CA',
@@ -142,6 +144,8 @@ const WEAK_CONFIDENCE_EVIDENCE: MediaPlaceEvidence = {
     {
       name: 'Capones Cucina',
       category: 'restaurant',
+      categoryConfidence: 0.9,
+      categoryEvidenceTags: ['test_fixture'],
       address: '19688 Beach Blvd',
       city: 'Huntington Beach',
       region: 'CA',

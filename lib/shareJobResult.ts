@@ -7,6 +7,11 @@ export type ShareJobResultCandidate = {
   latitude: number | null;
   longitude: number | null;
   types: string[];
+  primaryType?: string | null;
+  primaryTypeDisplayName?: string | null;
+  googleMapsTypeLabel?: string | null;
+  shortFormattedAddress?: string | null;
+  businessStatus?: string | null;
   matchScore: number | null;
 };
 
@@ -53,6 +58,11 @@ export function normalizeResultCandidate(input: unknown): ShareJobResultCandidat
     types: Array.isArray(row.types)
       ? row.types.filter((value): value is string => typeof value === 'string').slice(0, 8)
       : [],
+    primaryType: text(row.primaryType),
+    primaryTypeDisplayName: text(row.primaryTypeDisplayName),
+    googleMapsTypeLabel: text(row.googleMapsTypeLabel),
+    shortFormattedAddress: text(row.shortFormattedAddress),
+    businessStatus: text(row.businessStatus),
     matchScore: typeof row.matchScore === 'number' && Number.isFinite(row.matchScore)
       ? row.matchScore
       : typeof row.confidenceScore === 'number' && Number.isFinite(row.confidenceScore)

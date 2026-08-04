@@ -96,7 +96,7 @@ check('distinctiveTokensOf keeps brand', distinctiveTokensOf('Parlor Woodfire').
   const r = buildVenueMentions(
     evidence(
       names.map((n) =>
-        place({ name: n, category: 'Pizza Restaurant', region: 'California', explicitEvidence: [ev('visible_text', n, 3)] }),
+        place({ name: n, category: 'restaurant', region: 'California', explicitEvidence: [ev('visible_text', n, 3)] }),
       ),
       { multipleIntentionalPlaces: true },
     ),

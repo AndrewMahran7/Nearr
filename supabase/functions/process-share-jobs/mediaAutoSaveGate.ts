@@ -1,8 +1,29 @@
 import type { MentionResult } from '../process-share-link/resolver/nameDrivenResolver.ts';
 import type { VenueMention } from './mediaMentions.ts';
 
-export const MEDIA_AUTO_SAVE_RULE_VERSION = 'media-autosave-2026-08-03.v1';
-export const MEDIA_AUTO_SAVE_MIN_SCORE = 0.92;
+export const MEDIA_AUTO_SAVE_RULE_VERSION = 'media-autosave-2026-08-03.v2';
+export const DEFAULT_MEDIA_AUTO_SAVE_THRESHOLD = 0.84;
+export const MEDIA_AUTO_SAVE_MIN_SCORE = DEFAULT_MEDIA_AUTO_SAVE_THRESHOLD;
+
+export type MediaAutoSaveThreshold = {
+  value: number;
+  valid: boolean;
+  source: 'default' | 'environment';
+};
+
+export function resolveMediaAutoSaveThreshold(
+  raw: string | null | undefined,
+): MediaAutoSaveThreshold {
+  const configured = raw?.trim();
+  if (!configured) {
+    return { value: DEFAULT_MEDIA_AUTO_SAVE_THRESHOLD, valid: true, source: 'default' };
+  }
+  const parsed = Number(configured);
+  if (!Number.isFinite(parsed) || parsed < 0 || parsed > 1) {
+    return { value: DEFAULT_MEDIA_AUTO_SAVE_THRESHOLD, valid: false, source: 'environment' };
+  }
+  return { value: parsed, valid: true, source: 'environment' };
+}
 
 export type MediaAutoSaveGateInput = {
   mention: VenueMention;
@@ -52,6 +73,7 @@ function duplicateCanonicalCount(placeId: string, results: MentionResult[]): num
 
 export function evaluateMediaAutoSave(
   input: MediaAutoSaveGateInput,
+  minScore: number = DEFAULT_MEDIA_AUTO_SAVE_THRESHOLD,
 ): MediaAutoSaveGateDecision {
   const reasons: string[] = [];
   const candidate = input.result.candidates[0];
@@ -71,7 +93,7 @@ export function evaluateMediaAutoSave(
   if (!candidate?.formattedAddress?.trim()) reasons.push('missing_formatted_address');
   if (!validCoordinates(candidate)) reasons.push('invalid_provider_coordinates');
   if (!score) reasons.push('missing_score_explanation');
-  if (!score || score.normalizedScore < MEDIA_AUTO_SAVE_MIN_SCORE) reasons.push('score_below_threshold');
+  if (!score || score.normalizedScore < minScore) reasons.push('score_below_threshold');
   if (!scoreReasons.has('business_type')) reasons.push('business_type_not_verified');
   if (!scoreReasons.has('compact_name_match') && !scoreReasons.has('strong_name_match')) {
     reasons.push('strong_name_match_missing');

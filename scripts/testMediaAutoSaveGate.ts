@@ -1,8 +1,10 @@
 import {
   evaluateMediaAutoSave,
   mediaAutoSaveAuthorized,
+  DEFAULT_MEDIA_AUTO_SAVE_THRESHOLD,
   MEDIA_AUTO_SAVE_MIN_SCORE,
   MEDIA_AUTO_SAVE_RULE_VERSION,
+  resolveMediaAutoSaveThreshold,
 } from '../supabase/functions/process-share-jobs/mediaAutoSaveGate';
 import type { MentionResult } from '../supabase/functions/process-share-link/resolver/nameDrivenResolver';
 import type { VenueMention } from '../supabase/functions/process-share-jobs/mediaMentions';
@@ -80,6 +82,13 @@ check('auto-save authorization rejects another user', !mediaAutoSaveAuthorized({
 check('auto-save authorization is global without a canary restriction', mediaAutoSaveAuthorized({ enabled: true, canaryUserId: null, userId: 'user-a' }));
 check('auto-save authorization obeys kill switch', !mediaAutoSaveAuthorized({ enabled: false, canaryUserId: 'user-a', userId: 'user-a' }));
 check('global auto-save authorization obeys kill switch', !mediaAutoSaveAuthorized({ enabled: false, canaryUserId: null, userId: 'user-a' }));
+check('default threshold is 0.84', DEFAULT_MEDIA_AUTO_SAVE_THRESHOLD === 0.84 && MEDIA_AUTO_SAVE_MIN_SCORE === 0.84);
+check('absent threshold uses valid default', resolveMediaAutoSaveThreshold(undefined).value === 0.84 && resolveMediaAutoSaveThreshold(undefined).valid);
+check('configured threshold accepts inclusive zero', resolveMediaAutoSaveThreshold('0').value === 0);
+check('configured threshold accepts inclusive one', resolveMediaAutoSaveThreshold('1').value === 1);
+check('configured threshold rejects below zero', !resolveMediaAutoSaveThreshold('-0.01').valid);
+check('configured threshold rejects above one', !resolveMediaAutoSaveThreshold('1.01').valid);
+check('configured threshold rejects non-number', !resolveMediaAutoSaveThreshold('conservative').valid);
 
 {
   const d = decide();
@@ -88,13 +97,33 @@ check('global auto-save authorization obeys kill switch', !mediaAutoSaveAuthoriz
   check('gate returns deterministic score', d.confidenceScore === 0.97);
 }
 {
+  const naturalMention = mention({
+    displayName: 'Griffith Park',
+    normalizedName: 'griffith park',
+    distinctiveTokens: ['griffith'],
+    category: 'park',
+    geo: { city: 'Los Angeles', region: 'California', country: 'United States' },
+  });
+  const naturalResult = result();
+  naturalResult.candidates[0]!.name = 'Griffith Park';
+  naturalResult.candidates[0]!.formattedAddress = 'Los Angeles, CA 90027';
+  naturalResult.candidates[0]!.types = ['park', 'tourist_attraction'];
+  naturalResult.scoring[0]!.name = 'Griffith Park';
+  check('provider-verified natural place needs no street address', decide(naturalMention, naturalResult, [naturalResult]).eligible);
+}
+{
   const r = result({ outcome: 'ambiguous_candidates' });
   check('ambiguous result rejected', !decide(mention(), r, [r]).eligible);
 }
 {
   const r = result();
-  r.scoring[0]!.normalizedScore = MEDIA_AUTO_SAVE_MIN_SCORE - 0.01;
-  check('score below strict threshold rejected', !decide(mention(), r, [r]).eligible);
+  r.scoring[0]!.normalizedScore = 0.8399;
+  check('score immediately below 0.84 rejected', !decide(mention(), r, [r]).eligible);
+}
+{
+  const r = result();
+  r.scoring[0]!.normalizedScore = 0.8401;
+  check('score immediately above 0.84 accepted', decide(mention(), r, [r]).eligible);
 }
 check('single name-evidence channel rejected', !decide(mention({ nameEvidenceSources: ['speech'] })).eligible);
 check('model confidence is diagnostic only', decide(mention({ confidence: 0.01 })).eligible);

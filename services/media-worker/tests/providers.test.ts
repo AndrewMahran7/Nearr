@@ -58,7 +58,7 @@ test('deduplicateOcrSegments collapses repeated adjacent text', () => {
 test('groundClaimedEvidence keeps quoted caption/speech and drops fabricated claims', () => {
   const evidence: MediaPlaceEvidence = {
     places: [{
-      name: 'Capones Cucina', category: null, address: null, city: null, region: null,
+      name: 'Capones Cucina', category: null, categoryConfidence: 0, categoryEvidenceTags: [], address: null, city: null, region: null,
       country: null, coordinates: null, role: 'primary', confidence: 0.99,
       explicitEvidence: [
         { source: 'caption', value: 'Capones Cucina', timestampSeconds: null },
@@ -84,7 +84,7 @@ test('groundClaimedEvidence keeps quoted caption/speech and drops fabricated cla
 test('groundClaimedEvidence marks inferred-only result insufficient', () => {
   const evidence: MediaPlaceEvidence = {
     places: [{
-      name: 'Fabricated Cafe', category: null, address: null, city: null, region: null,
+      name: 'Fabricated Cafe', category: null, categoryConfidence: 0, categoryEvidenceTags: [], address: null, city: null, region: null,
       country: null, coordinates: null, role: 'primary', confidence: 1,
       explicitEvidence: [{ source: 'caption', value: 'Fabricated Cafe', timestampSeconds: null }],
       inferredEvidence: [],

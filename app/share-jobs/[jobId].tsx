@@ -128,6 +128,11 @@ function toPlaceCandidate(c: ShareJobCandidate): PlaceCandidate {
     category: null,
     googleMapsUrl: null,
     rawTypes: c.types,
+    primaryType: c.primaryType,
+    primaryTypeDisplayName: c.primaryTypeDisplayName,
+    googleMapsTypeLabel: c.googleMapsTypeLabel,
+    shortFormattedAddress: c.shortFormattedAddress,
+    businessStatus: c.businessStatus,
   };
 }
 

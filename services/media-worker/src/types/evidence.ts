@@ -25,9 +25,17 @@ export const EvidenceItem = z.object({
 });
 export type EvidenceItem = z.infer<typeof EvidenceItem>;
 
+export const NearrCategory = z.enum([
+  'restaurant', 'cafe', 'bakery', 'bar', 'hotel', 'park', 'hiking_trail',
+  'beach', 'scenic_spot', 'attraction', 'museum', 'shopping', 'entertainment',
+  'nightlife', 'fitness', 'wellness', 'transportation', 'education', 'service', 'other',
+]);
+
 export const PlaceCandidateEvidence = z.object({
   name: z.string().min(1).max(200),
-  category: z.string().max(120).nullable().default(null),
+  category: NearrCategory.nullable().default(null),
+  categoryConfidence: z.number().min(0).max(1).default(0),
+  categoryEvidenceTags: z.array(z.string().min(1).max(80)).max(8).default([]),
   address: z.string().max(300).nullable().default(null),
   city: z.string().max(120).nullable().default(null),
   region: z.string().max(120).nullable().default(null),

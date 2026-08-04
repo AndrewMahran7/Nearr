@@ -19,7 +19,15 @@ export type SheetListFilter =
   | 'nearby'
   | 'recent'
   | 'reminders'
-  | 'visited';
+  | 'visited'
+  | 'food'
+  | 'cafes'
+  | 'hotels'
+  | 'outdoors'
+  | 'attractions'
+  | 'shopping'
+  | 'fitness_wellness'
+  | 'other';
 
 const FILTERS: ReadonlyArray<{ value: SheetListFilter; label: string }> = [
   { value: 'all', label: 'All' },
@@ -27,6 +35,14 @@ const FILTERS: ReadonlyArray<{ value: SheetListFilter; label: string }> = [
   { value: 'recent', label: 'Recent' },
   { value: 'reminders', label: 'Reminders' },
   { value: 'visited', label: 'Visited' },
+  { value: 'food', label: 'Food' },
+  { value: 'cafes', label: 'Cafes' },
+  { value: 'hotels', label: 'Hotels' },
+  { value: 'outdoors', label: 'Outdoors' },
+  { value: 'attractions', label: 'Attractions' },
+  { value: 'shopping', label: 'Shopping' },
+  { value: 'fitness_wellness', label: 'Fitness & wellness' },
+  { value: 'other', label: 'Other' },
 ];
 
 type Props = {

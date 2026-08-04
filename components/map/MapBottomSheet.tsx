@@ -34,6 +34,12 @@ import { metersToMiles } from '@/lib/geo';
 import { useTheme } from '@/lib/theme';
 import type { NearbyPlace } from '@/hooks/useNearbyPlaces';
 import type { SavedPlaceWithPlace } from '@/types';
+import {
+  CATEGORY_LABELS,
+  categoryMatchesFilter,
+  isCategoryFilterGroup,
+  savedPlaceCategory,
+} from '@/lib/placeCategory';
 
 import { CompactPlaceRow } from './CompactPlaceRow';
 import { MapSheetFilterChips, type SheetListFilter } from './MapSheetFilterChips';
@@ -96,7 +102,7 @@ function isRecent(createdAt: string): boolean {
 function matchesQuery(place: SavedPlaceWithPlace, q: string): boolean {
   const name = place.place?.name?.toLowerCase() ?? '';
   const addr = place.place?.formatted_address?.toLowerCase() ?? '';
-  const category = place.place?.category?.toLowerCase() ?? '';
+  const category = CATEGORY_LABELS[savedPlaceCategory(place)].toLowerCase();
   const sourceType = place.source_type?.toLowerCase() ?? '';
   const sourceUrl = place.source_url?.toLowerCase() ?? '';
   return (
@@ -307,6 +313,14 @@ export function MapBottomSheet({
       recent: savedPlaces.filter((p) => isRecent(p.created_at)).length,
       reminders: savedPlaces.filter((p) => p.notifications_enabled).length,
       visited: savedPlaces.filter((p) => !!p.visited_at).length,
+      food: savedPlaces.filter((p) => categoryMatchesFilter(savedPlaceCategory(p), 'food')).length,
+      cafes: savedPlaces.filter((p) => categoryMatchesFilter(savedPlaceCategory(p), 'cafes')).length,
+      hotels: savedPlaces.filter((p) => categoryMatchesFilter(savedPlaceCategory(p), 'hotels')).length,
+      outdoors: savedPlaces.filter((p) => categoryMatchesFilter(savedPlaceCategory(p), 'outdoors')).length,
+      attractions: savedPlaces.filter((p) => categoryMatchesFilter(savedPlaceCategory(p), 'attractions')).length,
+      shopping: savedPlaces.filter((p) => categoryMatchesFilter(savedPlaceCategory(p), 'shopping')).length,
+      fitness_wellness: savedPlaces.filter((p) => categoryMatchesFilter(savedPlaceCategory(p), 'fitness_wellness')).length,
+      other: savedPlaces.filter((p) => categoryMatchesFilter(savedPlaceCategory(p), 'other')).length,
     }),
     [savedPlaces, nearbyPlaces],
   );
@@ -329,6 +343,10 @@ export function MapBottomSheet({
         .map((place) => ({ place }));
     } else if (listFilter === 'visited') {
       base = savedPlaces.filter((p) => !!p.visited_at).map((place) => ({ place }));
+    } else if (isCategoryFilterGroup(listFilter)) {
+      base = savedPlaces
+        .filter((place) => categoryMatchesFilter(savedPlaceCategory(place), listFilter))
+        .map((place) => ({ place }));
     } else {
       base = savedPlaces.map((place) => ({ place }));
     }

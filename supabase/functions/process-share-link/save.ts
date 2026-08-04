@@ -15,6 +15,7 @@ import {
   isAddressLikeTypes,
   pickCategory,
 } from './places/placeNormalization.ts';
+import { resolvePlaceCategory } from '../../../lib/placeCategory.ts';
 
 export const SAVE_DEDUPE_DISTANCE_M = 40;
 
@@ -167,6 +168,10 @@ export async function saveForUser(args: {
   autoNote?: string | null;
 }): Promise<SaveResult> {
   const { client, userId, candidate, sourceUrl, source, autoNote } = args;
+  const categoryResolution = resolvePlaceCategory({
+    googlePrimaryType: candidate.primaryType,
+    googleTypes: candidate.types,
+  });
 
   const existingForUser = await findExistingSavedPlaceForUser(
     client, userId, candidate, sourceUrl,
@@ -178,6 +183,13 @@ export async function saveForUser(args: {
     await patchExistingSavedPlaceForUser(
       client, existingForUser.id, source, sourceUrl, autoNote,
     );
+    await client.from('saved_places').update({
+      category: categoryResolution.category,
+      category_source: categoryResolution.source,
+      category_confidence: categoryResolution.confidence,
+      category_model_version: categoryResolution.modelVersion,
+      categorized_at: new Date().toISOString(),
+    }).eq('id', existingForUser.id).eq('category_user_overridden', false);
     return {
       savedPlaceId: existingForUser.id,
       placeId: existingForUser.place.id,
@@ -211,6 +223,11 @@ export async function saveForUser(args: {
       longitude: candidate.longitude,
       category: pickCategory(candidate.types),
       google_maps_url: null,
+      short_formatted_address: candidate.shortFormattedAddress ?? null,
+      google_primary_type: candidate.primaryType ?? null,
+      google_types: candidate.types ?? null,
+      google_type_label: candidate.googleMapsTypeLabel ?? candidate.primaryTypeDisplayName ?? null,
+      business_status: candidate.businessStatus ?? null,
     };
     const { data: inserted, error: insertErr } = await client
       .from('places')
@@ -241,6 +258,12 @@ export async function saveForUser(args: {
     source_type: source,
     source_url: sourceUrl,
     notes: autoNote ?? null,
+    category: categoryResolution.category,
+    category_source: categoryResolution.source,
+    category_confidence: categoryResolution.confidence,
+    category_model_version: categoryResolution.modelVersion,
+    category_user_overridden: false,
+    categorized_at: new Date().toISOString(),
   };
   const { data: saved, error: savedErr } = await client
     .from('saved_places')

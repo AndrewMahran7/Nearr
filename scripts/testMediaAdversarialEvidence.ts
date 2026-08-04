@@ -37,6 +37,8 @@ function place(over: Partial<PlaceCandidateEvidence> = {}): PlaceCandidateEviden
   return {
     name: 'Some Place',
     category: null,
+    categoryConfidence: 0,
+    categoryEvidenceTags: [],
     address: null,
     city: null,
     region: null,
@@ -67,6 +69,33 @@ const strongAddressPlace = place({
 
 // ---- POSITIVE control ------------------------------------------------------
 check('explicit high-confidence street address => eligible', mediaEvidenceAutoSaveEligible(evidence([strongAddressPlace])) === true);
+
+check(
+  'natural place with explicit city and region => eligible without street address',
+  mediaEvidenceAutoSaveEligible(evidence([place({
+    name: 'Griffith Park',
+    category: 'park',
+    categoryConfidence: 0.98,
+    city: 'Los Angeles',
+    region: 'California',
+    explicitEvidence: [
+      ev('speech', 'We are visiting Griffith Park in Los Angeles, California'),
+      ev('visible_text', 'GRIFFITH PARK'),
+    ],
+  })])),
+);
+
+check(
+  'natural place without explicit city and region => NOT eligible',
+  !mediaEvidenceAutoSaveEligible(evidence([place({
+    name: 'Mystery Trail',
+    category: 'hiking_trail',
+    categoryConfidence: 0.9,
+    city: 'Boulder',
+    region: 'Colorado',
+    explicitEvidence: [ev('visible_text', 'MYSTERY TRAIL')],
+  })])),
+);
 
 // ---- Adversarial: none of these may be eligible ----------------------------
 

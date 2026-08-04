@@ -35,7 +35,10 @@ assert.match(queue, /Working on/);
 assert.match(queue, /PHASE_1_COPY\.emptyTitle/);
 assert.match(queue, /numberOfLines=\{2\}[\s\S]*?jobTitle/);
 assert.match(queue, /<PlaceImage/);
-assert.match(queue, /size=\{empty \? 'compact' : 'queue'\}/);
+assert.match(queue, /size=\{hasContent \? 'queue' : 'compact'\}/);
+assert.match(queue, /Saved automatically/);
+assert.match(queue, /Undo all/);
+assert.match(queue, /undoAutoSavedPlace/);
 assert.match(queue, /icon="close"/);
 
 assert.match(detail, /PHASE_1_COPY\.suggestedHeading/);

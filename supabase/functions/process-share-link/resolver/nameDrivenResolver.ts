@@ -52,6 +52,7 @@ import {
 } from '../places/locationGuards.ts';
 import { compactNameMatches } from '../../../../lib/shareAgent/recoveryHints.ts';
 import { isPlatformNoiseName } from '../../../../lib/shareAgent/platformNoise.ts';
+import { isNearrCategory, mapGoogleType } from '../../../../lib/placeCategory.ts';
 
 export type MentionOutcome =
   | 'verified_single'
@@ -76,6 +77,7 @@ export type MentionResult = {
   outcome: MentionOutcome;
   /** The Google Places text query issued for this mention (diagnostics). */
   query: string;
+  categoryBiasedQuery?: string;
   /** Preserved candidates (verified → 1; ambiguous → top N). */
   candidates: ResolvedCandidate[];
   /** Per-candidate deterministic scoring explanation (diagnostics). */
@@ -204,6 +206,33 @@ export type ScoredMentionCandidate = {
   rejectionReason: string | null;
 };
 
+function expectedMentionCategory(mention: VenueMention): ReturnType<typeof mapGoogleType> {
+  if (isNearrCategory(mention.category)) return mention.category;
+  return mapGoogleType(mention.category);
+}
+
+function candidateNearrCategory(candidate: PlacesCandidate): ReturnType<typeof mapGoogleType> {
+  const primary = mapGoogleType(candidate.primaryType);
+  if (primary) return primary;
+  for (const type of candidate.types ?? []) {
+    const mapped = mapGoogleType(type);
+    if (mapped) return mapped;
+  }
+  return null;
+}
+
+export function mergePlacesCandidates(
+  neutral: PlacesCandidate[],
+  categoryBiased: PlacesCandidate[],
+): PlacesCandidate[] {
+  const merged = new Map<string, PlacesCandidate>();
+  for (const candidate of [...neutral, ...categoryBiased]) {
+    if (!candidate.googlePlaceId || merged.has(candidate.googlePlaceId)) continue;
+    merged.set(candidate.googlePlaceId, candidate);
+  }
+  return [...merged.values()];
+}
+
 /**
  * Score ONE Places candidate against a mention. Deterministic — no network, no
  * randomness. Combines name similarity, distinctive-token overlap, business
@@ -242,6 +271,16 @@ export function scoreMentionCandidate(
   if (isLocalityLikeTypes(candidate.types)) {
     score -= 50;
     reasons.push('locality_like_type_penalty');
+  }
+
+  const expectedCategory = expectedMentionCategory(mention);
+  const resolvedCategory = candidateNearrCategory(candidate);
+  if (expectedCategory && resolvedCategory === expectedCategory) {
+    score += 8;
+    reasons.push('expected_category_match');
+  } else if (expectedCategory && resolvedCategory && resolvedCategory !== expectedCategory) {
+    score -= 2;
+    reasons.push('expected_category_mismatch_soft');
   }
 
   // Name match against the mention display name.
@@ -501,8 +540,29 @@ export async function resolveVenueMentions(args: {
       continue;
     }
 
-    const scored = result.results.map((c) => scoreMentionCandidate(c, mention, { expectedState, bias, platform }));
-    const classified = classifyMention(scored);
+    let candidatesToScore = result.results;
+    let scored = candidatesToScore.map((c) => scoreMentionCandidate(c, mention, { expectedState, bias, platform }));
+    let classified = classifyMention(scored);
+    let categoryBiasedQuery: string | undefined;
+    const categoryHint = expectedMentionCategory(mention);
+    if (classified.outcome !== 'verified_single' && categoryHint) {
+      categoryBiasedQuery = `${query} ${categoryHint.replace(/_/g, ' ')}`.replace(/\s+/g, ' ').trim();
+      let biased = cache.get(categoryBiasedQuery);
+      if (!biased && requestCount < globalLimit) {
+        requestCount += 1;
+        try {
+          biased = await search(categoryBiasedQuery, env.googlePlacesKey, bias ?? undefined);
+        } catch (err) {
+          biased = { ok: false, reason: 'http_error', error: (err as Error)?.message };
+        }
+        cache.set(categoryBiasedQuery, biased);
+      }
+      if (biased?.ok) {
+        candidatesToScore = mergePlacesCandidates(candidatesToScore, biased.results);
+        scored = candidatesToScore.map((c) => scoreMentionCandidate(c, mention, { expectedState, bias, platform }));
+        classified = classifyMention(scored);
+      }
+    }
     const ranked = classified.ranked;
     const outcome =
       classified.outcome === 'verified_single' &&
@@ -527,6 +587,7 @@ export async function resolveVenueMentions(args: {
       displayName: mention.displayName,
       outcome,
       query,
+      categoryBiasedQuery,
       candidates,
       scoring: scored.map(toExplanation).slice(0, 8),
       ...relFields,
