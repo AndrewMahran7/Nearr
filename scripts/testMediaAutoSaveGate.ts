@@ -77,8 +77,9 @@ function decide(m = mention(), r = result(), all = [r]) {
 
 check('auto-save authorization requires exact canary user', mediaAutoSaveAuthorized({ enabled: true, canaryUserId: 'user-a', userId: 'user-a' }));
 check('auto-save authorization rejects another user', !mediaAutoSaveAuthorized({ enabled: true, canaryUserId: 'user-a', userId: 'user-b' }));
-check('auto-save authorization rejects missing allowlist', !mediaAutoSaveAuthorized({ enabled: true, canaryUserId: null, userId: 'user-a' }));
+check('auto-save authorization is global without a canary restriction', mediaAutoSaveAuthorized({ enabled: true, canaryUserId: null, userId: 'user-a' }));
 check('auto-save authorization obeys kill switch', !mediaAutoSaveAuthorized({ enabled: false, canaryUserId: 'user-a', userId: 'user-a' }));
+check('global auto-save authorization obeys kill switch', !mediaAutoSaveAuthorized({ enabled: false, canaryUserId: null, userId: 'user-a' }));
 
 {
   const d = decide();

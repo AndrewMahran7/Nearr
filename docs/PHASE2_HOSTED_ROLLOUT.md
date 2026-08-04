@@ -299,6 +299,29 @@ it is still public and appropriate for the test.
    redacted worker flags false. Keep durable diagnostic rows until the audit is
    complete.
 
+## Global configuration
+
+Use the same server controls after the one-user release gates pass:
+
+- Global analysis: set Edge secrets `MEDIA_FALLBACK_ENABLED=true` and
+   `INSTAGRAM_MEDIA_RESOLVER_ENABLED=true`, and remove
+   `PHASE2_CANARY_USER_ID`.
+- Global auto-save: set `MEDIA_AUTO_SAVE_ENABLED=true` and remove
+   `MEDIA_AUTO_SAVE_CANARY_USER_ID`.
+- Auto-save off, analysis on: set `MEDIA_AUTO_SAVE_ENABLED=false`; no redeploy
+   or mobile build is required for the secret update.
+- Phase 2 off: set Edge secrets `MEDIA_FALLBACK_ENABLED=false` and
+   `INSTAGRAM_MEDIA_RESOLVER_ENABLED=false`, remove `PHASE2_CANARY_USER_ID`, and
+   leave the Phase 1 worker/sweep active.
+- Instagram retrieval off: set Edge and Railway
+   `INSTAGRAM_MEDIA_RESOLVER_ENABLED=false`.
+- Native analysis off: set Railway `NATIVE_VIDEO_ANALYSIS_ENABLED=false`.
+- Pause processing: set Railway `MEDIA_WORKER_MAX_CONCURRENCY=1`, then disable
+   the media sweep or stop the Railway service only after in-flight work drains.
+
+None of these rollback actions requires an app build, App Store release,
+database rollback, or deletion of user data.
+
 ## Mobile five-place audit
 
 The development fixture is compiled only under `__DEV__`; it cannot create a

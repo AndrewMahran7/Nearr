@@ -128,6 +128,14 @@ owner while global flags stay false. Invalid UUIDs enable nothing, other users
 remain Phase 1-only, and the media recovery sweep remains active while the
 allowlist exists.
 
+For global analysis, set `MEDIA_FALLBACK_ENABLED=true` and
+`INSTAGRAM_MEDIA_RESOLVER_ENABLED=true`, then remove
+`PHASE2_CANARY_USER_ID`. Automatic saving remains independent:
+`MEDIA_AUTO_SAVE_ENABLED=false` disables it for everyone; when true, a
+configured `MEDIA_AUTO_SAVE_CANARY_USER_ID` restricts it to that exact user,
+while an absent canary ID authorizes every authenticated job owner. These are
+server-only controls and require no mobile build to change.
+
 ## Media resolver interface
 
 Platform-neutral ([MediaResolver.ts](../services/media-worker/src/resolvers/MediaResolver.ts)):

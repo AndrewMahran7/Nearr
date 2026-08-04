@@ -22,7 +22,8 @@ export function mediaAutoSaveAuthorized(args: {
   canaryUserId: string | null;
   userId: string;
 }): boolean {
-  return args.enabled && !!args.canaryUserId && args.canaryUserId === args.userId;
+  if (!args.enabled) return false;
+  return !args.canaryUserId || args.canaryUserId === args.userId;
 }
 
 function validCoordinates(candidate: any): boolean {
