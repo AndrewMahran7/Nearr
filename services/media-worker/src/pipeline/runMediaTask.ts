@@ -19,7 +19,11 @@ import { normalizeMedia } from './normalizeMedia.js';
 import { extractAudio } from './extractAudio.js';
 import { extractFrames } from './extractFrames.js';
 import { deduplicateFrames } from './deduplicateFrames.js';
-import { verifyPlaceEvidence, type FinalizeOutcome } from './verifyPlaceEvidence.js';
+import {
+  verifyPlaceEvidence,
+  type FinalizeOutcome,
+  type FinalizeResponse,
+} from './verifyPlaceEvidence.js';
 import { cleanupMedia } from './cleanupMedia.js';
 import { setProgress, setTaskStatus, requeueTask } from '../db/tasks.js';
 import type { TranscriptionProvider } from '../providers/transcription.js';
@@ -45,6 +49,9 @@ export function planTaskFailure(
   cfg: Pick<WorkerConfig, 'retryBaseSeconds' | 'retryMaxSeconds'>,
   random = Math.random,
 ): TaskFailurePlan {
+  if (media.code === 'finalizer_unavailable') {
+    return { action: 'finalize', outcome: 'failed' };
+  }
   if (media.manualFallback || !media.retryable) {
     return { action: 'finalize', outcome: 'unavailable' };
   }
@@ -61,6 +68,41 @@ export function planTaskFailure(
       random,
     ),
   };
+}
+
+type FinalizeAttempt = () => Promise<FinalizeResponse>;
+type Wait = (milliseconds: number) => Promise<void>;
+
+const wait: Wait = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
+
+export async function finalizeWithRetry(
+  attempt: FinalizeAttempt,
+  waitForRetry: Wait = wait,
+  maxAttempts = 3,
+): Promise<FinalizeResponse> {
+  for (let attemptNumber = 1; attemptNumber <= maxAttempts; attemptNumber += 1) {
+    try {
+      const response = await attempt();
+      const transient = response.status === 429 || response.status >= 500;
+      if (response.ok || !transient) return response;
+      if (attemptNumber === maxAttempts) {
+        throw new MediaError(
+          'finalizer_unavailable',
+          `verifying_place:finalize_http_${response.status}`,
+          response.retryAfterSeconds,
+        );
+      }
+      const delaySeconds = Math.min(response.retryAfterSeconds ?? 2 ** (attemptNumber - 1), 5);
+      await waitForRetry(delaySeconds * 1000);
+    } catch (error) {
+      if (isMediaError(error)) throw error;
+      if (attemptNumber === maxAttempts) {
+        throw new MediaError('finalizer_unavailable', 'verifying_place:finalize_transport_error');
+      }
+      await waitForRetry(Math.min(2 ** (attemptNumber - 1), 5) * 1000);
+    }
+  }
+  throw new MediaError('finalizer_unavailable', 'verifying_place:finalize_retry_exhausted');
 }
 
 export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<void> {
@@ -160,18 +202,19 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
     await setProgress(client, task, 'verifying_place');
     const hasEvidence = !analysis.evidence.insufficientEvidence && analysis.evidence.places.length > 0;
     const outcome: FinalizeOutcome = hasEvidence ? 'evidence' : 'insufficient_evidence';
-    const fin = await verifyPlaceEvidence(cfg, {
-      taskId: task.id,
-      outcome,
-      evidence: hasEvidence ? analysis.evidence : undefined,
-      diagnostics,
-      signal: controller.signal,
-    });
+    const fin = await finalizeWithRetry(() =>
+      verifyPlaceEvidence(cfg, {
+        taskId: task.id,
+        outcome,
+        evidence: hasEvidence ? analysis.evidence : undefined,
+        diagnostics,
+        signal: controller.signal,
+      }),
+    );
     if (!fin.ok) {
-      const transient = fin.status === 429 || fin.status >= 500;
       throw new MediaError(
-        transient ? (fin.status === 429 ? 'provider_rate_limited' : 'provider_unavailable') : 'download_failed',
-        `finalize_http_${fin.status}`,
+        'download_failed',
+        `verifying_place:finalize_http_${fin.status}`,
         fin.retryAfterSeconds,
       );
     }

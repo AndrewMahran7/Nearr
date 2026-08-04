@@ -16,6 +16,7 @@ export type MediaErrorCode =
   | 'download_failed'
   | 'provider_rate_limited'
   | 'provider_unavailable'
+  | 'finalizer_unavailable'
   | 'file_too_large'
   | 'duration_too_long'
   | 'invalid_media'
