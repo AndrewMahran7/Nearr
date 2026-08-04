@@ -294,6 +294,29 @@ function hostIndependentlyFeatured(
   });
 }
 
+function relationshipPhrases(places: PlaceCandidateEvidence[]): string[] {
+  const phrases: string[] = [];
+  const fragmentsByMoment = new Map<string, string[]>();
+  for (const place of places) {
+    for (const item of place.explicitEvidence) {
+      const phrase = normalizePhrase(item.value);
+      if (!phrase) continue;
+      phrases.push(phrase);
+      if (typeof item.timestampSeconds !== 'number' || !Number.isFinite(item.timestampSeconds)) {
+        continue;
+      }
+      const key = `${item.source}:${item.timestampSeconds}`;
+      const fragments = fragmentsByMoment.get(key) ?? [];
+      fragments.push(phrase);
+      fragmentsByMoment.set(key, fragments);
+    }
+  }
+  for (const fragments of fragmentsByMoment.values()) {
+    if (fragments.length > 1) phrases.push(fragments.join(' '));
+  }
+  return phrases;
+}
+
 
 
 /**
@@ -365,9 +388,7 @@ export function buildVenueMentions(evidence: MediaPlaceEvidence): BuildMentionsR
   // ("A at/@/inside/located at B") links two extracted names AND the host is
   // not independently featured. The host is kept as CONTEXT, never a separate
   // searchable mention — so "X Eats @ Brewery X" is one slot, not two.
-  const allPhrases = eligible
-    .flatMap((p) => p.explicitEvidence.map((e) => normalizePhrase(e.value)))
-    .filter(Boolean);
+  const allPhrases = relationshipPhrases(eligible);
   const relationships: VenueRelationshipDiagnostic[] = [];
   const mergedHost = new Set<number>();
   for (let ai = 0; ai < groups.length; ai++) {
