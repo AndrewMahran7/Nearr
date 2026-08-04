@@ -73,8 +73,7 @@ function classifyYtError(stderr: string): MediaError {
 }
 
 /** Prefer a single progressive (audio+video) https URL we can fetch ourselves. */
-function pickProgressiveUrl(info: YtInfo): string | null {
-  if (typeof info.url === 'string' && /^https:/i.test(info.url)) return info.url;
+export function pickProgressiveUrl(info: YtInfo): string | null {
   const formats = Array.isArray(info.formats) ? info.formats : [];
   const progressive = formats.filter(
     (f) =>

@@ -159,7 +159,7 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
     // 7. Verify through Nearr's EXISTING resolver + safeToAutoSave + save path.
     await setProgress(client, task, 'verifying_place');
     const hasEvidence = !analysis.evidence.insufficientEvidence && analysis.evidence.places.length > 0;
-    const outcome: FinalizeOutcome = hasEvidence ? 'evidence' : 'unavailable';
+    const outcome: FinalizeOutcome = hasEvidence ? 'evidence' : 'insufficient_evidence';
     const fin = await verifyPlaceEvidence(cfg, {
       taskId: task.id,
       outcome,

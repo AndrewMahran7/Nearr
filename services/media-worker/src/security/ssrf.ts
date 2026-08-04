@@ -235,11 +235,11 @@ export async function safeDownloadToFile(opts: {
   }
 }
 
-/** Host + path only (drops query string that may carry CDN tokens). */
+/** Origin only. CDN paths and query strings may both carry opaque locators. */
 export function sanitizeUrlForLog(raw: string): string {
   try {
     const u = new URL(raw);
-    return `${u.protocol}//${u.hostname}${u.pathname}`;
+    return u.origin;
   } catch {
     return '[unparseable-url]';
   }

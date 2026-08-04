@@ -12,7 +12,7 @@
 // no-op — so duplicate callbacks and replays after save/needs_help cannot
 // revive or double-finalize a job.
 
-export type FinalizeOutcome = 'evidence' | 'unavailable' | 'failed';
+export type FinalizeOutcome = 'evidence' | 'insufficient_evidence' | 'unavailable' | 'failed';
 
 // ---------------------------------------------------------------------------
 // Request authorization. The media-worker calls the finalize endpoint with the
@@ -125,12 +125,18 @@ export function planPreResolve(input: PreResolveInput): PreResolvePlan {
     return { action: 'parent_already_terminal' };
   }
 
-  // Media could not be analyzed.
+  // Media retrieval/analysis failed before producing a usable result.
   if (input.outcome === 'unavailable') {
     return { action: 'manual_fallback', failureCode: 'media_unavailable', taskTerminalStatus: 'needs_help' };
   }
   if (input.outcome === 'failed') {
     return { action: 'manual_fallback', failureCode: 'media_failed', taskTerminalStatus: 'failed' };
+  }
+
+  // Retrieval and analysis completed, but no place evidence survived the
+  // deterministic evidence gate. Keep this distinct from media availability.
+  if (input.outcome === 'insufficient_evidence') {
+    return { action: 'manual_fallback', failureCode: 'insufficient_evidence', taskTerminalStatus: 'needs_help' };
   }
 
   // outcome === 'evidence'

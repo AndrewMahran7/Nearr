@@ -63,6 +63,15 @@ for (const s of ['cancelled', 'completed', 'needs_help', 'failed']) {
   check('outcome unavailable => manual_fallback needs_help', p.action === 'manual_fallback' && (p as any).taskTerminalStatus === 'needs_help');
 }
 {
+  const p = pre({ outcome: 'insufficient_evidence' });
+  check(
+    'retrieved media with no place evidence => insufficient_evidence',
+    p.action === 'manual_fallback' &&
+      (p as any).failureCode === 'insufficient_evidence' &&
+      (p as any).taskTerminalStatus === 'needs_help',
+  );
+}
+{
   const p = pre({ outcome: 'failed' });
   check('outcome failed => manual_fallback failed', p.action === 'manual_fallback' && (p as any).taskTerminalStatus === 'failed');
 }

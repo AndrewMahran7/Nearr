@@ -1,0 +1,549 @@
+{
+  "generatedBy": "npm run eval:media-autosave",
+  "ruleVersion": "media-autosave-2026-08-03.v1",
+  "threshold": 0.92,
+  "legacyDataset": {
+    "rows": 28,
+    "gateEvaluableRows": 0,
+    "legacySafeFieldEligible": 0,
+    "categoryCounts": {
+      "dataset_limitation": 13,
+      "pipeline_failure": 15
+    },
+    "fixtures": [
+      {
+        "fixtureId": "gold-01",
+        "sourceCategory": "Name + Address",
+        "expectedDecision": "candidate_confirmation",
+        "actualDecision": "candidate_picker",
+        "placeCorrect": true,
+        "auditCategory": "dataset_limitation",
+        "gateEvaluable": false,
+        "missingGateFields": [
+          "provider_coordinates",
+          "per_candidate_score",
+          "score_reason_codes",
+          "media_name_evidence_channels",
+          "media_name_repetition",
+          "host_relationship"
+        ]
+      },
+      {
+        "fixtureId": "gold-02",
+        "sourceCategory": "Name + Address",
+        "expectedDecision": "candidate_confirmation",
+        "actualDecision": "candidate_confirmation",
+        "placeCorrect": true,
+        "auditCategory": "dataset_limitation",
+        "gateEvaluable": false,
+        "missingGateFields": [
+          "provider_coordinates",
+          "per_candidate_score",
+          "score_reason_codes",
+          "media_name_evidence_channels",
+          "media_name_repetition",
+          "host_relationship"
+        ]
+      },
+      {
+        "fixtureId": "gold-03",
+        "sourceCategory": "Name + Address",
+        "expectedDecision": "candidate_confirmation",
+        "actualDecision": "candidate_confirmation",
+        "placeCorrect": true,
+        "auditCategory": "dataset_limitation",
+        "gateEvaluable": false,
+        "missingGateFields": [
+          "provider_coordinates",
+          "per_candidate_score",
+          "score_reason_codes",
+          "media_name_evidence_channels",
+          "media_name_repetition",
+          "host_relationship"
+        ]
+      },
+      {
+        "fixtureId": "gold-04",
+        "sourceCategory": "Name + Address",
+        "expectedDecision": "candidate_confirmation",
+        "actualDecision": "candidate_confirmation",
+        "placeCorrect": true,
+        "auditCategory": "dataset_limitation",
+        "gateEvaluable": false,
+        "missingGateFields": [
+          "provider_coordinates",
+          "per_candidate_score",
+          "score_reason_codes",
+          "media_name_evidence_channels",
+          "media_name_repetition",
+          "host_relationship"
+        ]
+      },
+      {
+        "fixtureId": "gold-05",
+        "sourceCategory": "Name + Address",
+        "expectedDecision": "candidate_confirmation",
+        "actualDecision": "candidate_confirmation",
+        "placeCorrect": true,
+        "auditCategory": "dataset_limitation",
+        "gateEvaluable": false,
+        "missingGateFields": [
+          "provider_coordinates",
+          "per_candidate_score",
+          "score_reason_codes",
+          "media_name_evidence_channels",
+          "media_name_repetition",
+          "host_relationship"
+        ]
+      },
+      {
+        "fixtureId": "gold-06",
+        "sourceCategory": "@ + Address",
+        "expectedDecision": "candidate_confirmation",
+        "actualDecision": "candidate_confirmation",
+        "placeCorrect": true,
+        "auditCategory": "dataset_limitation",
+        "gateEvaluable": false,
+        "missingGateFields": [
+          "provider_coordinates",
+          "per_candidate_score",
+          "score_reason_codes",
+          "media_name_evidence_channels",
+          "media_name_repetition",
+          "host_relationship"
+        ]
+      },
+      {
+        "fixtureId": "gold-07",
+        "sourceCategory": "@ + Address",
+        "expectedDecision": "candidate_confirmation",
+        "actualDecision": "candidate_confirmation",
+        "placeCorrect": true,
+        "auditCategory": "dataset_limitation",
+        "gateEvaluable": false,
+        "missingGateFields": [
+          "provider_coordinates",
+          "per_candidate_score",
+          "score_reason_codes",
+          "media_name_evidence_channels",
+          "media_name_repetition",
+          "host_relationship"
+        ]
+      },
+      {
+        "fixtureId": "gold-08",
+        "sourceCategory": "@ + Address",
+        "expectedDecision": "candidate_confirmation",
+        "actualDecision": "candidate_confirmation",
+        "placeCorrect": true,
+        "auditCategory": "dataset_limitation",
+        "gateEvaluable": false,
+        "missingGateFields": [
+          "provider_coordinates",
+          "per_candidate_score",
+          "score_reason_codes",
+          "media_name_evidence_channels",
+          "media_name_repetition",
+          "host_relationship"
+        ]
+      },
+      {
+        "fixtureId": "gold-09",
+        "sourceCategory": "@ + Address",
+        "expectedDecision": "candidate_confirmation",
+        "actualDecision": "candidate_confirmation",
+        "placeCorrect": true,
+        "auditCategory": "dataset_limitation",
+        "gateEvaluable": false,
+        "missingGateFields": [
+          "provider_coordinates",
+          "per_candidate_score",
+          "score_reason_codes",
+          "media_name_evidence_channels",
+          "media_name_repetition",
+          "host_relationship"
+        ]
+      },
+      {
+        "fixtureId": "gold-10",
+        "sourceCategory": "@ + Address",
+        "expectedDecision": "candidate_confirmation",
+        "actualDecision": "candidate_confirmation",
+        "placeCorrect": false,
+        "auditCategory": "pipeline_failure",
+        "gateEvaluable": false,
+        "missingGateFields": [
+          "provider_coordinates",
+          "per_candidate_score",
+          "score_reason_codes",
+          "media_name_evidence_channels",
+          "media_name_repetition",
+          "host_relationship"
+        ]
+      },
+      {
+        "fixtureId": "gold-11",
+        "sourceCategory": "@ + Address",
+        "expectedDecision": "candidate_confirmation",
+        "actualDecision": "candidate_confirmation",
+        "placeCorrect": true,
+        "auditCategory": "dataset_limitation",
+        "gateEvaluable": false,
+        "missingGateFields": [
+          "provider_coordinates",
+          "per_candidate_score",
+          "score_reason_codes",
+          "media_name_evidence_channels",
+          "media_name_repetition",
+          "host_relationship"
+        ]
+      },
+      {
+        "fixtureId": "gold-12",
+        "sourceCategory": "@ + Address",
+        "expectedDecision": "candidate_confirmation",
+        "actualDecision": "candidate_confirmation",
+        "placeCorrect": true,
+        "auditCategory": "dataset_limitation",
+        "gateEvaluable": false,
+        "missingGateFields": [
+          "provider_coordinates",
+          "per_candidate_score",
+          "score_reason_codes",
+          "media_name_evidence_channels",
+          "media_name_repetition",
+          "host_relationship"
+        ]
+      },
+      {
+        "fixtureId": "gold-13",
+        "sourceCategory": "Name or @ Only",
+        "expectedDecision": "manual_fallback",
+        "actualDecision": "candidate_picker",
+        "placeCorrect": false,
+        "auditCategory": "pipeline_failure",
+        "gateEvaluable": false,
+        "missingGateFields": [
+          "provider_coordinates",
+          "per_candidate_score",
+          "score_reason_codes",
+          "media_name_evidence_channels",
+          "media_name_repetition",
+          "host_relationship"
+        ]
+      },
+      {
+        "fixtureId": "gold-14",
+        "sourceCategory": "Name or @ Only",
+        "expectedDecision": "candidate_confirmation",
+        "actualDecision": "candidate_confirmation",
+        "placeCorrect": false,
+        "auditCategory": "pipeline_failure",
+        "gateEvaluable": false,
+        "missingGateFields": [
+          "provider_coordinates",
+          "per_candidate_score",
+          "score_reason_codes",
+          "media_name_evidence_channels",
+          "media_name_repetition",
+          "host_relationship"
+        ]
+      },
+      {
+        "fixtureId": "gold-15",
+        "sourceCategory": "Name or @ Only",
+        "expectedDecision": "manual_fallback",
+        "actualDecision": "manual_fallback",
+        "placeCorrect": false,
+        "auditCategory": "pipeline_failure",
+        "gateEvaluable": false,
+        "missingGateFields": [
+          "provider_coordinates",
+          "per_candidate_score",
+          "score_reason_codes",
+          "media_name_evidence_channels",
+          "media_name_repetition",
+          "host_relationship"
+        ]
+      },
+      {
+        "fixtureId": "gold-16",
+        "sourceCategory": "Name or @ Only",
+        "expectedDecision": "manual_fallback",
+        "actualDecision": "candidate_confirmation",
+        "placeCorrect": false,
+        "auditCategory": "pipeline_failure",
+        "gateEvaluable": false,
+        "missingGateFields": [
+          "provider_coordinates",
+          "per_candidate_score",
+          "score_reason_codes",
+          "media_name_evidence_channels",
+          "media_name_repetition",
+          "host_relationship"
+        ]
+      },
+      {
+        "fixtureId": "gold-17",
+        "sourceCategory": "Name or @ Only",
+        "expectedDecision": "manual_fallback",
+        "actualDecision": "manual_fallback",
+        "placeCorrect": false,
+        "auditCategory": "pipeline_failure",
+        "gateEvaluable": false,
+        "missingGateFields": [
+          "provider_coordinates",
+          "per_candidate_score",
+          "score_reason_codes",
+          "media_name_evidence_channels",
+          "media_name_repetition",
+          "host_relationship"
+        ]
+      },
+      {
+        "fixtureId": "gold-18",
+        "sourceCategory": "Name or @ Only",
+        "expectedDecision": "candidate_confirmation",
+        "actualDecision": "candidate_confirmation",
+        "placeCorrect": false,
+        "auditCategory": "pipeline_failure",
+        "gateEvaluable": false,
+        "missingGateFields": [
+          "provider_coordinates",
+          "per_candidate_score",
+          "score_reason_codes",
+          "media_name_evidence_channels",
+          "media_name_repetition",
+          "host_relationship"
+        ]
+      },
+      {
+        "fixtureId": "gold-19",
+        "sourceCategory": "Name or @ Only",
+        "expectedDecision": "candidate_confirmation",
+        "actualDecision": "candidate_picker",
+        "placeCorrect": false,
+        "auditCategory": "pipeline_failure",
+        "gateEvaluable": false,
+        "missingGateFields": [
+          "provider_coordinates",
+          "per_candidate_score",
+          "score_reason_codes",
+          "media_name_evidence_channels",
+          "media_name_repetition",
+          "host_relationship"
+        ]
+      },
+      {
+        "fixtureId": "gold-20",
+        "sourceCategory": "Name or @ Only",
+        "expectedDecision": "candidate_confirmation",
+        "actualDecision": "candidate_picker",
+        "placeCorrect": false,
+        "auditCategory": "pipeline_failure",
+        "gateEvaluable": false,
+        "missingGateFields": [
+          "provider_coordinates",
+          "per_candidate_score",
+          "score_reason_codes",
+          "media_name_evidence_channels",
+          "media_name_repetition",
+          "host_relationship"
+        ]
+      },
+      {
+        "fixtureId": "gold-21",
+        "sourceCategory": "Name or @ Only",
+        "expectedDecision": "candidate_confirmation",
+        "actualDecision": "candidate_confirmation",
+        "placeCorrect": false,
+        "auditCategory": "pipeline_failure",
+        "gateEvaluable": false,
+        "missingGateFields": [
+          "provider_coordinates",
+          "per_candidate_score",
+          "score_reason_codes",
+          "media_name_evidence_channels",
+          "media_name_repetition",
+          "host_relationship"
+        ]
+      },
+      {
+        "fixtureId": "gold-22",
+        "sourceCategory": "Address Only",
+        "expectedDecision": "candidate_confirmation",
+        "actualDecision": "candidate_confirmation",
+        "placeCorrect": false,
+        "auditCategory": "pipeline_failure",
+        "gateEvaluable": false,
+        "missingGateFields": [
+          "provider_coordinates",
+          "per_candidate_score",
+          "score_reason_codes",
+          "media_name_evidence_channels",
+          "media_name_repetition",
+          "host_relationship"
+        ]
+      },
+      {
+        "fixtureId": "gold-23",
+        "sourceCategory": "Address Only",
+        "expectedDecision": "candidate_confirmation",
+        "actualDecision": "candidate_confirmation",
+        "placeCorrect": false,
+        "auditCategory": "pipeline_failure",
+        "gateEvaluable": false,
+        "missingGateFields": [
+          "provider_coordinates",
+          "per_candidate_score",
+          "score_reason_codes",
+          "media_name_evidence_channels",
+          "media_name_repetition",
+          "host_relationship"
+        ]
+      },
+      {
+        "fixtureId": "gold-24",
+        "sourceCategory": "Address Only",
+        "expectedDecision": "candidate_confirmation",
+        "actualDecision": "candidate_confirmation",
+        "placeCorrect": true,
+        "auditCategory": "dataset_limitation",
+        "gateEvaluable": false,
+        "missingGateFields": [
+          "provider_coordinates",
+          "per_candidate_score",
+          "score_reason_codes",
+          "media_name_evidence_channels",
+          "media_name_repetition",
+          "host_relationship"
+        ]
+      },
+      {
+        "fixtureId": "gold-25",
+        "sourceCategory": "Restaurant Post / Nothing",
+        "expectedDecision": "candidate_confirmation",
+        "actualDecision": "candidate_confirmation",
+        "placeCorrect": false,
+        "auditCategory": "pipeline_failure",
+        "gateEvaluable": false,
+        "missingGateFields": [
+          "provider_coordinates",
+          "per_candidate_score",
+          "score_reason_codes",
+          "media_name_evidence_channels",
+          "media_name_repetition",
+          "host_relationship"
+        ]
+      },
+      {
+        "fixtureId": "gold-26",
+        "sourceCategory": "Restaurant Post / Nothing",
+        "expectedDecision": "manual_fallback",
+        "actualDecision": "candidate_picker",
+        "placeCorrect": false,
+        "auditCategory": "pipeline_failure",
+        "gateEvaluable": false,
+        "missingGateFields": [
+          "provider_coordinates",
+          "per_candidate_score",
+          "score_reason_codes",
+          "media_name_evidence_channels",
+          "media_name_repetition",
+          "host_relationship"
+        ]
+      },
+      {
+        "fixtureId": "gold-27",
+        "sourceCategory": "Restaurant Post / Nothing",
+        "expectedDecision": "candidate_confirmation",
+        "actualDecision": "candidate_confirmation",
+        "placeCorrect": true,
+        "auditCategory": "dataset_limitation",
+        "gateEvaluable": false,
+        "missingGateFields": [
+          "provider_coordinates",
+          "per_candidate_score",
+          "score_reason_codes",
+          "media_name_evidence_channels",
+          "media_name_repetition",
+          "host_relationship"
+        ]
+      },
+      {
+        "fixtureId": "gold-28",
+        "sourceCategory": "Restaurant Post / Nothing",
+        "expectedDecision": "candidate_confirmation",
+        "actualDecision": "candidate_confirmation",
+        "placeCorrect": false,
+        "auditCategory": "pipeline_failure",
+        "gateEvaluable": false,
+        "missingGateFields": [
+          "provider_coordinates",
+          "per_candidate_score",
+          "score_reason_codes",
+          "media_name_evidence_channels",
+          "media_name_repetition",
+          "host_relationship"
+        ]
+      }
+    ]
+  },
+  "productionShapedGateScenarios": {
+    "syntheticBehaviorChecksOnly": true,
+    "precisionEvidence": false,
+    "gateBugs": 0,
+    "scenarios": [
+      {
+        "scenarioId": "verified_two_channel_repeated_place",
+        "expectedEligible": true,
+        "actualEligible": true,
+        "passed": true,
+        "confidenceScore": 0.97,
+        "reasonCodes": [
+          "all_deterministic_checks_passed"
+        ]
+      },
+      {
+        "scenarioId": "score_below_threshold",
+        "expectedEligible": false,
+        "actualEligible": false,
+        "passed": true,
+        "confidenceScore": 0.91,
+        "reasonCodes": [
+          "score_below_threshold"
+        ]
+      },
+      {
+        "scenarioId": "single_name_evidence_channel",
+        "expectedEligible": false,
+        "actualEligible": false,
+        "passed": true,
+        "confidenceScore": 0.97,
+        "reasonCodes": [
+          "independent_name_evidence_missing"
+        ]
+      },
+      {
+        "scenarioId": "venue_inside_host",
+        "expectedEligible": false,
+        "actualEligible": false,
+        "passed": true,
+        "confidenceScore": 0.97,
+        "reasonCodes": [
+          "host_relationship_requires_confirmation"
+        ]
+      },
+      {
+        "scenarioId": "duplicate_canonical_place_across_slots",
+        "expectedEligible": false,
+        "actualEligible": false,
+        "passed": true,
+        "confidenceScore": 0.97,
+        "reasonCodes": [
+          "canonical_place_not_unique_across_results"
+        ]
+      }
+    ]
+  }
+}

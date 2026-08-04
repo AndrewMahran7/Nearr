@@ -1,6 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { InstagramMediaResolver } from '../src/resolvers/InstagramMediaResolver.js';
+import {
+  InstagramMediaResolver,
+  pickProgressiveUrl,
+} from '../src/resolvers/InstagramMediaResolver.js';
 import { isMediaError } from '../src/types/media.js';
 import type { WorkerConfig } from '../src/config/env.js';
 
@@ -19,6 +22,48 @@ test('supports(): public Instagram host + flag only', () => {
 test('supports(): flag OFF => never supports', () => {
   const r = resolver(false);
   assert.equal(r.supports({ platform: 'instagram', url: new URL('https://www.instagram.com/reel/abc/') }), false);
+});
+
+test('pickProgressiveUrl ignores an unverified top-level video URL', () => {
+  assert.equal(
+    pickProgressiveUrl({
+      url: 'https://cdninstagram.com/video-only.mp4',
+      formats: [
+        {
+          url: 'https://cdninstagram.com/video-only.mp4',
+          protocol: 'https',
+          vcodec: 'h264',
+          acodec: 'none',
+          height: 1080,
+        },
+      ],
+    }),
+    null,
+  );
+});
+
+test('pickProgressiveUrl chooses the highest audio+video HTTPS format', () => {
+  assert.equal(
+    pickProgressiveUrl({
+      formats: [
+        {
+          url: 'https://cdninstagram.com/progressive-720.mp4',
+          protocol: 'https',
+          vcodec: 'h264',
+          acodec: 'aac',
+          height: 720,
+        },
+        {
+          url: 'https://cdninstagram.com/progressive-1080.mp4',
+          protocol: 'https',
+          vcodec: 'h264',
+          acodec: 'aac',
+          height: 1080,
+        },
+      ],
+    }),
+    'https://cdninstagram.com/progressive-1080.mp4',
+  );
 });
 
 test('resolve(): rejects non-HTTPS source before yt-dlp', async () => {

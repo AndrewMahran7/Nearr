@@ -82,10 +82,10 @@ test('assertUrlSafe allows a public, allowlisted, resolvable host', async () => 
   assert.equal(u.hostname, 'scontent.cdninstagram.com');
 });
 
-test('sanitizeUrlForLog strips query tokens', () => {
+test('sanitizeUrlForLog keeps only the origin', () => {
   assert.equal(
     sanitizeUrlForLog('https://scontent.cdninstagram.com/v/abc.mp4?efg=SECRET&oh=TOKEN'),
-    'https://scontent.cdninstagram.com/v/abc.mp4',
+    'https://scontent.cdninstagram.com',
   );
   assert.equal(sanitizeUrlForLog('not a url'), '[unparseable-url]');
 });

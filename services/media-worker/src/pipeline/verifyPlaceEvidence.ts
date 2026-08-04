@@ -10,7 +10,7 @@
 import type { WorkerConfig } from '../config/env.js';
 import type { MediaPlaceEvidence } from '../types/evidence.js';
 
-export type FinalizeOutcome = 'evidence' | 'unavailable' | 'failed';
+export type FinalizeOutcome = 'evidence' | 'insufficient_evidence' | 'unavailable' | 'failed';
 
 export type FinalizeArgs = {
   taskId: string;
