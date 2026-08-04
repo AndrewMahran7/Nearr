@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {
+  mapPlacesLegacyCandidate,
   mapPlacesV1Candidate,
   PLACES_SEARCH_FIELD_MASK,
 } from '../supabase/functions/process-share-link/places/googlePlaces';
@@ -28,4 +29,19 @@ assert.equal(mapped.googleMapsTypeLabel, 'Hotel');
 assert.deepEqual(mapped.types, ['hotel', 'lodging']);
 assert.equal(mapped.latitude, 34);
 
-console.log('PASS Google Places v1 field contract');
+const legacyMapped = mapPlacesLegacyCandidate({
+  place_id: 'google-observatory',
+  name: 'Griffith Observatory',
+  formatted_address: '2800 E Observatory Rd, Los Angeles, CA',
+  geometry: { location: { lat: 34.1184, lng: -118.3004 } },
+  types: ['tourist_attraction', 'museum'],
+  business_status: 'OPERATIONAL',
+  photos: [{ photo_reference: 'legacy-photo-reference' }],
+});
+assert.equal(legacyMapped.googlePlaceId, 'google-observatory');
+assert.equal(legacyMapped.primaryType, 'tourist_attraction');
+assert.deepEqual(legacyMapped.types, ['tourist_attraction', 'museum']);
+assert.equal(legacyMapped.businessStatus, 'OPERATIONAL');
+assert.equal(legacyMapped.photos?.[0]?.name, 'legacy-photo-reference');
+
+console.log('PASS Google Places v1 and compatibility field contracts');

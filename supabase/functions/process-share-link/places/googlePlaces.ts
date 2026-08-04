@@ -94,6 +94,13 @@ export async function searchPlaces(
       signal: ctrl.signal,
     });
     if (!res.ok) {
+      const errorJson = await res.clone().json().catch(() => null);
+      const serviceBlocked = errorJson?.error?.details?.some(
+        (detail: any) => detail?.reason === 'API_KEY_SERVICE_BLOCKED',
+      );
+      if (res.status === 403 && serviceBlocked) {
+        return searchPlacesLegacy(query, key, bias, ctrl.signal);
+      }
       return {
         ok: false,
         reason: 'http_error',
@@ -110,6 +117,37 @@ export async function searchPlaces(
   }
   const results: PlacesCandidate[] = (json.places ?? []).slice(0, 8).map(mapPlacesV1Candidate);
   return { ok: true, results };
+}
+
+async function searchPlacesLegacy(
+  query: string,
+  key: string,
+  bias: SearchBias | undefined,
+  signal: AbortSignal,
+): Promise<SearchPlacesResult> {
+  const params = new URLSearchParams({ query, key });
+  if (bias) {
+    params.set('location', `${bias.lat},${bias.lng}`);
+    params.set('radius', '50000');
+  }
+  const res = await fetch(`${PLACES_BASE}?${params}`, { signal });
+  if (!res.ok) {
+    return {
+      ok: false,
+      reason: 'http_error',
+      status: String(res.status),
+      error: `HTTP ${res.status}`,
+      retryAfterSeconds: parseRetryAfter(res.headers.get('retry-after')),
+    };
+  }
+  const json = await res.json();
+  if (json?.status !== 'OK' && json?.status !== 'ZERO_RESULTS') {
+    return { ok: false, reason: 'api_error', status: json?.status };
+  }
+  return {
+    ok: true,
+    results: (json.results ?? []).slice(0, 8).map(mapPlacesLegacyCandidate),
+  };
 }
 
 export function mapPlacesV1Candidate(r: any): PlacesCandidate {
@@ -130,6 +168,25 @@ export function mapPlacesV1Candidate(r: any): PlacesCandidate {
     businessStatus: typeof r.businessStatus === 'string' ? r.businessStatus : undefined,
     containingPlaces: Array.isArray(r.containingPlaces) ? r.containingPlaces : undefined,
     photos: Array.isArray(r.photos) ? r.photos : undefined,
+  };
+}
+
+export function mapPlacesLegacyCandidate(r: any): PlacesCandidate {
+  const primaryType = Array.isArray(r?.types) && typeof r.types[0] === 'string'
+    ? r.types[0]
+    : undefined;
+  return {
+    googlePlaceId: r.place_id,
+    name: r.name ?? '',
+    formattedAddress: r.formatted_address ?? undefined,
+    latitude: r.geometry?.location?.lat,
+    longitude: r.geometry?.location?.lng,
+    primaryType,
+    types: Array.isArray(r.types) ? r.types : undefined,
+    businessStatus: typeof r.business_status === 'string' ? r.business_status : undefined,
+    photos: Array.isArray(r.photos)
+      ? r.photos.map((photo: any) => ({ name: photo?.photo_reference })).filter((photo: any) => photo.name)
+      : undefined,
   };
 }
 
