@@ -296,7 +296,12 @@ function hostIndependentlyFeatured(
 
 function relationshipPhrases(places: PlaceCandidateEvidence[]): string[] {
   const phrases: string[] = [];
-  const fragmentsByMoment = new Map<string, string[]>();
+  const fragmentsBySource = new Map<PlaceEvidenceSource, Array<{
+    phrase: string;
+    timestampSeconds: number;
+    order: number;
+  }>>();
+  let order = 0;
   for (const place of places) {
     for (const item of place.explicitEvidence) {
       const phrase = normalizePhrase(item.value);
@@ -305,14 +310,20 @@ function relationshipPhrases(places: PlaceCandidateEvidence[]): string[] {
       if (typeof item.timestampSeconds !== 'number' || !Number.isFinite(item.timestampSeconds)) {
         continue;
       }
-      const key = `${item.source}:${item.timestampSeconds}`;
-      const fragments = fragmentsByMoment.get(key) ?? [];
-      fragments.push(phrase);
-      fragmentsByMoment.set(key, fragments);
+      const fragments = fragmentsBySource.get(item.source) ?? [];
+      fragments.push({ phrase, timestampSeconds: item.timestampSeconds, order: order++ });
+      fragmentsBySource.set(item.source, fragments);
     }
   }
-  for (const fragments of fragmentsByMoment.values()) {
-    if (fragments.length > 1) phrases.push(fragments.join(' '));
+  for (const fragments of fragmentsBySource.values()) {
+    fragments.sort((a, b) => a.timestampSeconds - b.timestampSeconds || a.order - b.order);
+    for (let index = 0; index < fragments.length - 1; index += 1) {
+      const current = fragments[index]!;
+      const next = fragments[index + 1]!;
+      if (next.timestampSeconds - current.timestampSeconds <= 1) {
+        phrases.push(`${current.phrase} ${next.phrase}`);
+      }
+    }
   }
   return phrases;
 }

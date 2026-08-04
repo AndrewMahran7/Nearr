@@ -197,12 +197,22 @@ function xEatsBreweryX(hostEvidenceValue: string, phrase: string) {
 {
   const r = buildVenueMentions(
     evidence([
-      place({ name: 'X Eats', city: 'Anaheim', explicitEvidence: [ev('speech', 'Out in Anaheim are the pizzas from X Eats', 32.1)] }),
-      place({ name: 'Brewery X', city: 'Anaheim', role: 'secondary', confidence: 0.9, explicitEvidence: [ev('speech', 'located at Brewery X.', 32.1)] }),
+      place({ name: 'X Eats', city: 'Anaheim', explicitEvidence: [ev('speech', 'Out in Anaheim are the pizzas from X Eats', 34)] }),
+      place({ name: 'Brewery X', city: 'Anaheim', role: 'secondary', confidence: 0.9, explicitEvidence: [ev('speech', 'located at Brewery X.', 35)] }),
     ]),
   );
-  check('same-moment split relationship => one mention', r.mentions.length === 1, `got ${r.mentions.length}`);
-  check('same-moment split relationship groups host', r.mentions[0]!.displayName === 'X Eats at Brewery X');
+  check('adjacent split relationship => one mention', r.mentions.length === 1, `got ${r.mentions.length}`);
+  check('adjacent split relationship groups host', r.mentions[0]!.displayName === 'X Eats at Brewery X');
+}
+
+{
+  const r = buildVenueMentions(
+    evidence([
+      place({ name: 'X Eats', city: 'Anaheim', explicitEvidence: [ev('speech', 'The pizzas from X Eats', 34)] }),
+      place({ name: 'Brewery X', city: 'Anaheim', role: 'secondary', confidence: 0.9, explicitEvidence: [ev('speech', 'located at Brewery X.', 36)] }),
+    ]),
+  );
+  check('split relationship outside one-second window stays separate', r.mentions.length === 2);
 }
 
 // host independently featured elsewhere => stays a separate mention
