@@ -1,156 +1,178 @@
-/**
- * SwipeableRow — horizontal swipe actions for queue rows.
- *
- * Implemented with the RN core `Animated` + `PanResponder` already used by
- * MapBottomSheet, so this adds no gesture dependency.
- *
- * Accessibility: swipe is NEVER the only way to act. Every enabled action is
- * also published as an `accessibilityAction`, so VoiceOver/TalkBack users get
- * the same operations from the rotor, and callers additionally render visible
- * buttons in the row body.
- */
-import { useMemo, useRef } from 'react';
+/** Native-feeling horizontal actions for queue rows. */
+import {
+  cloneElement,
+  isValidElement,
+  useEffect,
+  useMemo,
+  useRef,
+  type ReactElement,
+} from 'react';
 import {
   Animated,
-  PanResponder,
+  Pressable,
   StyleSheet,
   Text,
-  View,
   type AccessibilityActionEvent,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import Swipeable from 'react-native-gesture-handler/Swipeable';
+import { useReducedMotion } from 'react-native-reanimated';
 
 import { Spacing } from '@/constants';
-import { useTheme } from '@/lib/theme';
+import { hapticSelection } from '@/lib/haptics';
+import type { QueueSwipeCoordinator } from '@/lib/queueSwipeCoordinator';
 import {
-  QUEUE_SWIPE_THRESHOLD,
-  swipeActionFor,
+  QUEUE_ACTION_WIDTH,
+  QUEUE_SWIPE_OPEN_THRESHOLD,
   type QueueSwipeAction,
   type QueueSwipeAvailability,
 } from '@/lib/queueInbox';
+import { useTheme } from '@/lib/theme';
 
 type Props = {
+  rowId: string;
   children: React.ReactNode;
   availability: QueueSwipeAvailability;
   onAction: (action: QueueSwipeAction) => void;
-  /** Labels surfaced to assistive technology for each enabled action. */
   actions: { name: QueueSwipeAction; label: string }[];
+  coordinator: QueueSwipeCoordinator;
   accessibilityLabel?: string;
   disabled?: boolean;
 };
 
-const MAX_TRAVEL = 132;
+type AccessibleChildProps = {
+  accessibilityLabel?: string;
+  accessibilityActions?: { name: string; label?: string }[];
+  onAccessibilityAction?: (event: AccessibilityActionEvent) => void;
+};
 
 export function SwipeableRow({
+  rowId,
   children,
   availability,
   onAction,
   actions,
+  coordinator,
   accessibilityLabel,
   disabled = false,
 }: Props) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const translateX = useRef(new Animated.Value(0)).current;
-  const dxRef = useRef(0);
+  const swipeableRef = useRef<Swipeable | null>(null);
+  const reduceMotion = useReducedMotion();
 
-  const settle = (toValue: number) => {
-    Animated.spring(translateX, {
-      toValue,
-      useNativeDriver: true,
-      bounciness: 0,
-      speed: 18,
-    }).start();
-  };
+  useEffect(() => () => coordinator.unregister(rowId), [coordinator, rowId]);
 
-  const panResponder = useMemo(
-    () =>
-      PanResponder.create({
-        onMoveShouldSetPanResponder: (_evt, g) => {
-          if (disabled) return false;
-          // Only claim clearly horizontal gestures so the list keeps scrolling.
-          return Math.abs(g.dx) > 12 && Math.abs(g.dx) > Math.abs(g.dy) * 1.6;
-        },
-        onPanResponderMove: (_evt, g) => {
-          const allowed =
-            g.dx > 0 ? (availability.save ? g.dx : 0) : availability.dismiss ? g.dx : 0;
-          const clamped = Math.max(-MAX_TRAVEL, Math.min(MAX_TRAVEL, allowed));
-          dxRef.current = clamped;
-          translateX.setValue(clamped);
-        },
-        onPanResponderRelease: () => {
-          const action = swipeActionFor(dxRef.current, availability);
-          dxRef.current = 0;
-          settle(0);
-          if (action) onAction(action);
-        },
-        onPanResponderTerminate: () => {
-          dxRef.current = 0;
-          settle(0);
-        },
-      }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [availability.save, availability.dismiss, disabled, onAction],
-  );
+  function closeRow() {
+    if (reduceMotion) swipeableRef.current?.reset();
+    else swipeableRef.current?.close();
+  }
 
-  const saveOpacity = translateX.interpolate({
-    inputRange: [0, QUEUE_SWIPE_THRESHOLD],
-    outputRange: [0, 1],
-    extrapolate: 'clamp',
-  });
-  const dismissOpacity = translateX.interpolate({
-    inputRange: [-QUEUE_SWIPE_THRESHOLD, 0],
-    outputRange: [1, 0],
-    extrapolate: 'clamp',
-  });
+  function runAction(action: QueueSwipeAction) {
+    coordinator.closed(rowId);
+    closeRow();
+    onAction(action);
+  }
 
   function handleAccessibilityAction(event: AccessibilityActionEvent) {
     const name = event.nativeEvent.actionName as QueueSwipeAction;
-    if (actions.some((action) => action.name === name)) onAction(name);
+    if (actions.some((action) => action.name === name)) runAction(name);
   }
 
+  function renderAction(
+    action: QueueSwipeAction,
+    progress: Animated.AnimatedInterpolation<number>,
+  ) {
+    const isSave = action === 'save';
+    const opacity = progress.interpolate({
+      inputRange: [0, 0.45, 1],
+      outputRange: [0, 0.7, 1],
+      extrapolate: 'clamp',
+    });
+    const scale = progress.interpolate({
+      inputRange: [0, 1],
+      outputRange: [0.86, 1],
+      extrapolate: 'clamp',
+    });
+    return (
+      <Pressable
+        onPress={() => runAction(action)}
+        style={[
+          styles.action,
+          isSave ? styles.saveAction : styles.removeAction,
+        ]}
+        accessibilityRole="button"
+        accessibilityLabel={isSave ? 'Save to my map' : 'Remove from queue'}
+      >
+        <Animated.View style={[styles.actionContent, { opacity, transform: [{ scale }] }]}>
+          <Feather
+            name={isSave ? 'bookmark' : 'trash-2'}
+            size={19}
+            color={colors.textInverse}
+          />
+          <Text style={styles.actionText}>{isSave ? 'Save' : 'Remove'}</Text>
+        </Animated.View>
+      </Pressable>
+    );
+  }
+
+  const accessibilityProps: AccessibleChildProps = {
+    accessibilityLabel,
+    accessibilityActions: actions.map((action) => ({
+      name: action.name,
+      label: action.label,
+    })),
+    onAccessibilityAction: handleAccessibilityAction,
+  };
+  const accessibleChild = isValidElement(children)
+    ? cloneElement(children as ReactElement<AccessibleChildProps>, accessibilityProps)
+    : children;
+
   return (
-    <View
-      style={styles.wrap}
-      accessible={false}
-      accessibilityLabel={accessibilityLabel}
-      accessibilityActions={actions.map((action) => ({
-        name: action.name,
-        label: action.label,
-      }))}
-      onAccessibilityAction={handleAccessibilityAction}
+    <Swipeable
+      ref={swipeableRef}
+      enabled={!disabled}
+      friction={1.65}
+      leftThreshold={QUEUE_SWIPE_OPEN_THRESHOLD}
+      rightThreshold={QUEUE_SWIPE_OPEN_THRESHOLD}
+      dragOffsetFromLeftEdge={18}
+      dragOffsetFromRightEdge={18}
+      overshootLeft={false}
+      overshootRight={false}
+      useNativeAnimations
+      containerStyle={styles.container}
+      childrenContainerStyle={styles.rowSurface}
+      renderLeftActions={availability.save ? (progress) => renderAction('save', progress) : undefined}
+      renderRightActions={availability.dismiss ? (progress) => renderAction('dismiss', progress) : undefined}
+      onSwipeableWillOpen={() => {
+        coordinator.open(rowId, closeRow);
+        hapticSelection();
+      }}
+      onSwipeableClose={() => coordinator.closed(rowId)}
     >
-      {availability.save ? (
-        <Animated.View style={[styles.behind, styles.behindLeft, { opacity: saveOpacity }]}>
-          <Feather name="check" size={18} color={colors.textInverse} />
-          <Text style={styles.behindText}>Save</Text>
-        </Animated.View>
-      ) : null}
-      {availability.dismiss ? (
-        <Animated.View style={[styles.behind, styles.behindRight, { opacity: dismissOpacity }]}>
-          <Text style={styles.behindText}>Remove</Text>
-          <Feather name="x" size={18} color={colors.textInverse} />
-        </Animated.View>
-      ) : null}
-      <Animated.View style={{ transform: [{ translateX }] }} {...panResponder.panHandlers}>
-        {children}
-      </Animated.View>
-    </View>
+      {accessibleChild}
+    </Swipeable>
   );
 }
 
 function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
   return StyleSheet.create({
-    wrap: { overflow: 'hidden' },
-    behind: {
-      ...StyleSheet.absoluteFillObject,
-      flexDirection: 'row',
+    container: { overflow: 'hidden' },
+    rowSurface: { backgroundColor: colors.surface },
+    action: {
+      width: QUEUE_ACTION_WIDTH,
       alignItems: 'center',
-      gap: Spacing.xs,
-      paddingHorizontal: Spacing.lg,
+      justifyContent: 'center',
     },
-    behindLeft: { justifyContent: 'flex-start', backgroundColor: colors.primary },
-    behindRight: { justifyContent: 'flex-end', backgroundColor: colors.danger },
-    behindText: { color: colors.textInverse, fontWeight: '700', fontSize: 13 },
+    saveAction: { backgroundColor: colors.primary },
+    removeAction: { backgroundColor: colors.danger },
+    actionContent: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: Spacing.xs,
+      minWidth: 64,
+      minHeight: 64,
+    },
+    actionText: { color: colors.textInverse, fontWeight: '700', fontSize: 12 },
   });
 }

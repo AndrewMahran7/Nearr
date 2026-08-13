@@ -29,6 +29,11 @@ export type QueueRow = {
   status: QueueRowStatus | string;
   /** True when the row already has a resolved provider candidate to save. */
   hasResolvedCandidate?: boolean;
+  /** True only when the single candidate has a provider id and coordinates. */
+  candidateIsPersistable?: boolean;
+  candidateCount?: number;
+  decision?: string | null;
+  needsHelpReason?: string | null;
   /** Set when this row's place is already on the user's map. */
   savedPlaceId?: string | null;
 };
@@ -140,7 +145,14 @@ export type QueueSwipeAvailability = {
   /** Swipe left → remove the row from the queue (never the saved place). */
   dismiss: boolean;
   /** Why save is unavailable, for the accessible action list. */
-  saveBlockedReason: 'processing' | 'no_candidate' | 'already_saved' | null;
+  saveBlockedReason:
+    | 'processing'
+    | 'no_candidate'
+    | 'ambiguous'
+    | 'manual_fallback'
+    | 'failed'
+    | 'already_saved'
+    | null;
 };
 
 /**
@@ -156,7 +168,33 @@ export function queueSwipeAvailability(row: QueueRow): QueueSwipeAvailability {
   if (row.savedPlaceId) {
     return { save: false, dismiss: true, saveBlockedReason: 'already_saved' };
   }
-  if (!row.hasResolvedCandidate) {
+  if (row.status === 'completed') {
+    return { save: false, dismiss: true, saveBlockedReason: 'already_saved' };
+  }
+  if (row.status === 'failed') {
+    return { save: false, dismiss: true, saveBlockedReason: 'failed' };
+  }
+  if (
+    row.decision === 'manual_fallback' ||
+    row.needsHelpReason === 'manual_search' ||
+    row.needsHelpReason === 'metadata_unavailable'
+  ) {
+    return { save: false, dismiss: true, saveBlockedReason: 'manual_fallback' };
+  }
+  if (
+    row.decision === 'multi_candidate_confirmation' ||
+    row.decision === 'candidate_picker' ||
+    row.needsHelpReason === 'multiple_candidates' ||
+    (row.candidateCount ?? 0) > 1
+  ) {
+    return { save: false, dismiss: true, saveBlockedReason: 'ambiguous' };
+  }
+  if (
+    row.status !== 'needs_help' ||
+    row.decision !== 'candidate_confirmation' ||
+    !row.hasResolvedCandidate ||
+    !row.candidateIsPersistable
+  ) {
     return { save: false, dismiss: true, saveBlockedReason: 'no_candidate' };
   }
   return { save: true, dismiss: true, saveBlockedReason: null };
@@ -173,8 +211,11 @@ export function queueAccessibilityActions(
   return actions;
 }
 
-/** Horizontal travel (px) required before a swipe commits. */
-export const QUEUE_SWIPE_THRESHOLD = 88;
+/** Width of the native action panel and release threshold used by Swipeable. */
+export const QUEUE_ACTION_WIDTH = 88;
+export const QUEUE_SWIPE_OPEN_THRESHOLD = 52;
+/** Retained for policy tests and backwards-compatible callers. */
+export const QUEUE_SWIPE_THRESHOLD = QUEUE_SWIPE_OPEN_THRESHOLD;
 
 export function swipeActionFor(
   dx: number,
@@ -193,4 +234,12 @@ export const QUEUE_EMPTY_COPY = {
 /** True once no section has any row — the genuine empty state. */
 export function isInboxEmpty(rows: readonly QueueRow[]): boolean {
   return buildQueueSections(rows).length === 0;
+}
+
+/** Persisted dismissal always wins over fetch/realtime payloads. */
+export function filterDismissedQueueRows<T extends { id: string }>(
+  rows: readonly T[],
+  dismissedIds: ReadonlySet<string>,
+): T[] {
+  return rows.filter((row) => !dismissedIds.has(row.id));
 }

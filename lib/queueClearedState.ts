@@ -1,21 +1,11 @@
-/**
- * lib/queueClearedState.ts
- *
- * Local, per-user record of which COMPLETED queue entries the user has cleared
- * from their inbox.
- *
- * This is deliberately a client-side acknowledgement rather than a delete:
- *   - saved places are never touched
- *   - share_job_place_results rows are never mutated
- *   - active/unresolved jobs are never affected
- * Clearing only hides rows the user has already finished with, so the operation
- * is safe, reversible server-side, and idempotent.
- */
+/** Per-user persisted acknowledgements for queue-only visibility. */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const KEY_PREFIX = 'nearr:queueCleared:v1:';
 const DISMISSED_KEY_PREFIX = 'nearr:queueDismissed:v1:';
 const MAX_IDS = 400;
+
+export type QueueIdStorage = Pick<typeof AsyncStorage, 'getItem' | 'setItem'>;
 
 function keyFor(userId: string): string {
   return `${KEY_PREFIX}${userId}`;
@@ -30,61 +20,86 @@ function parseIds(raw: string | null): string[] {
   try {
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter((v): v is string => typeof v === 'string' && v.length > 0);
+    return parsed.filter((value): value is string => typeof value === 'string' && value.length > 0);
   } catch {
     return [];
   }
 }
 
-export async function readClearedQueueIds(userId: string | null): Promise<Set<string>> {
+export async function readClearedQueueIds(
+  userId: string | null,
+  storage: QueueIdStorage = AsyncStorage,
+): Promise<Set<string>> {
   if (!userId) return new Set();
   try {
-    return new Set(parseIds(await AsyncStorage.getItem(keyFor(userId))));
+    return new Set(parseIds(await storage.getItem(keyFor(userId))));
   } catch {
     return new Set();
   }
 }
 
-/** Merge newly cleared ids. Idempotent: re-clearing the same ids is a no-op. */
+/** Merge completed-result ids in one idempotent storage write. */
 export async function addClearedQueueIds(
   userId: string | null,
   ids: readonly string[],
+  storage: QueueIdStorage = AsyncStorage,
 ): Promise<Set<string>> {
-  const existing = await readClearedQueueIds(userId);
-  if (!userId || ids.length === 0) return existing;
+  const existing = await readClearedQueueIds(userId, storage);
+  if (ids.length === 0) return existing;
+  if (!userId) throw new Error('Queue acknowledgement requires a signed-in user.');
   for (const id of ids) if (id) existing.add(id);
-  // Bound growth; the newest ids are the ones that still matter for hiding.
   const bounded = [...existing].slice(-MAX_IDS);
-  try {
-    await AsyncStorage.setItem(keyFor(userId), JSON.stringify(bounded));
-  } catch {
-    // A failed write only means the row reappears next launch — never fatal.
-  }
+  await storage.setItem(keyFor(userId), JSON.stringify(bounded));
   return new Set(bounded);
 }
 
-/** Local-only inbox dismissal. It never calls the backend or cancels work. */
-export async function readDismissedQueueIds(userId: string | null): Promise<Set<string>> {
+export async function readDismissedQueueIds(
+  userId: string | null,
+  storage: QueueIdStorage = AsyncStorage,
+): Promise<Set<string>> {
   if (!userId) return new Set();
   try {
-    return new Set(parseIds(await AsyncStorage.getItem(dismissedKeyFor(userId))));
+    return new Set(parseIds(await storage.getItem(dismissedKeyFor(userId))));
   } catch {
     return new Set();
   }
 }
 
+/** Local inbox dismissal only; never cancels or deletes backend work. */
 export async function addDismissedQueueIds(
   userId: string | null,
   ids: readonly string[],
+  storage: QueueIdStorage = AsyncStorage,
 ): Promise<Set<string>> {
-  const existing = await readDismissedQueueIds(userId);
-  if (!userId || ids.length === 0) return existing;
+  const existing = await readDismissedQueueIds(userId, storage);
+  if (ids.length === 0) return existing;
+  if (!userId) throw new Error('Queue dismissal requires a signed-in user.');
   for (const id of ids) if (id) existing.add(id);
   const bounded = [...existing].slice(-MAX_IDS);
-  try {
-    await AsyncStorage.setItem(dismissedKeyFor(userId), JSON.stringify(bounded));
-  } catch {
-    // A failed write only means the active row reappears next launch.
-  }
+  await storage.setItem(dismissedKeyFor(userId), JSON.stringify(bounded));
   return new Set(bounded);
+}
+
+/**
+ * Hide immediately, commit once, and restore the exact previous state when
+ * persistence fails. This keeps fetch/realtime/restart behavior consistent.
+ */
+export async function persistQueueIdsOptimistically(args: {
+  current: ReadonlySet<string>;
+  ids: readonly string[];
+  apply: (next: Set<string>) => void;
+  persist: (ids: readonly string[]) => Promise<Set<string>>;
+}): Promise<Set<string>> {
+  const previous = new Set(args.current);
+  const optimistic = new Set(previous);
+  for (const id of args.ids) if (id) optimistic.add(id);
+  args.apply(optimistic);
+  try {
+    const committed = await args.persist(args.ids);
+    args.apply(committed);
+    return committed;
+  } catch (error) {
+    args.apply(previous);
+    throw error;
+  }
 }

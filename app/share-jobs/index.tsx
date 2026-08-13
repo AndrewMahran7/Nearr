@@ -6,7 +6,7 @@
  * Reachable from the map/home entry point; also the deep-link target for
  * `share_job_needs_help` notifications routes to the per-job detail screen.
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -35,6 +35,7 @@ import { PHASE2_PREVIEW_FIXTURES } from '@/lib/phase2Preview';
 import {
   QUEUE_EMPTY_COPY,
   clearCompletedLabel,
+  filterDismissedQueueRows,
   queueAccessibilityActions,
   queueSwipeAvailability,
   type QueueRow,
@@ -43,9 +44,11 @@ import {
 import {
   addClearedQueueIds,
   addDismissedQueueIds,
+  persistQueueIdsOptimistically,
   readClearedQueueIds,
   readDismissedQueueIds,
 } from '@/lib/queueClearedState';
+import { createQueueSwipeCoordinator } from '@/lib/queueSwipeCoordinator';
 import {
   getSavedPlacesCacheSnapshot,
   removeSavedPlaceFromCache,
@@ -62,8 +65,12 @@ import {
   processingJobs,
 } from '@/lib/shareJobsUi';
 import { PHASE_1_COPY, processingMessage, queueIntro, splitPlaceAddress } from '@/lib/sharePhase1Ui';
+import { hapticSuccess } from '@/lib/haptics';
 import {
-  cancelShareJob,
+  isPersistableShareJobCandidate,
+  saveResolvedQueueCandidate,
+} from '@/services/shareJobCandidateSave';
+import {
   undoAutoSavedPlace,
   type RecentAutoSave,
   type ShareJob,
@@ -181,6 +188,10 @@ function ShareJobsQueueScreen() {
   const [actingId, setActingId] = useState<string | null>(null);
   const [clearedIds, setClearedIds] = useState<Set<string>>(new Set());
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
+  const [resolvedIds, setResolvedIds] = useState<Set<string>>(new Set());
+  const swipeCoordinatorRef = useRef(createQueueSwipeCoordinator());
+  const actionLocksRef = useRef(new Set<string>());
+  const swipeCoordinator = swipeCoordinatorRef.current;
 
   // Locally acknowledged completed rows stay hidden across launches. This never
   // deletes a saved place or mutates a job.
@@ -201,8 +212,8 @@ function ShareJobsQueueScreen() {
   // needs_help + failed are both actionable → one "Needs you" section;
   // queued/processing_metadata → "Working". Terminal jobs never appear.
   const visibleJobs = useMemo(
-    () => jobs.filter((job) => !dismissedIds.has(job.id)),
-    [dismissedIds, jobs],
+    () => filterDismissedQueueRows(jobs, new Set([...dismissedIds, ...resolvedIds])),
+    [dismissedIds, jobs, resolvedIds],
   );
   const actionable = useMemo(() => actionableJobs(visibleJobs), [visibleJobs]);
   const processing = useMemo(() => processingJobs(visibleJobs), [visibleJobs]);
@@ -216,12 +227,23 @@ function ShareJobsQueueScreen() {
   const clearableCount = completedRows.length;
 
   async function clearCompleted() {
-    if (actingId || clearableCount === 0) return;
+    const lock = 'clear-completed';
+    if (actionLocksRef.current.size > 0 || clearableCount === 0) return;
+    actionLocksRef.current.add(lock);
+    swipeCoordinator.closeActive();
     setActingId('clear-completed');
+    const ids = completedRows.map((item) => item.resultId);
     try {
-      const ids = completedRows.map((item) => item.resultId);
-      setClearedIds(await addClearedQueueIds(userId, ids));
+      await persistQueueIdsOptimistically({
+        current: clearedIds,
+        ids,
+        apply: setClearedIds,
+        persist: (nextIds) => addClearedQueueIds(userId, nextIds),
+      });
+    } catch {
+      Alert.alert('Could not clear completed items', 'Please try again in a moment.');
     } finally {
+      actionLocksRef.current.delete(lock);
       setActingId(null);
     }
   }
@@ -229,29 +251,23 @@ function ShareJobsQueueScreen() {
   /** Swipe/accessibility model for an actionable or processing job row. */
   function queueRowFor(job: ShareJob): QueueRow {
     const candidates = job.candidate_payload?.candidates;
+    const candidateCount = Array.isArray(candidates) ? candidates.length : 0;
+    const candidate = Array.isArray(candidates) && candidates.length === 1 ? candidates[0] : null;
     return {
       id: job.id,
       status: job.status,
-      hasResolvedCandidate: Array.isArray(candidates) && candidates.length === 1,
+      hasResolvedCandidate: candidateCount === 1,
+      candidateIsPersistable: isPersistableShareJobCandidate(candidate),
+      candidateCount,
+      decision: job.decision,
+      needsHelpReason: job.needs_help_reason,
       savedPlaceId: job.saved_place_id ?? null,
     };
   }
 
   function handleRowAction(job: ShareJob, action: QueueSwipeAction) {
-    if (action === 'dismiss') {
-      // Active jobs are dismissed locally only; backend processing continues.
-      if (job.status === 'queued' || job.status === 'processing_metadata') {
-        void addDismissedQueueIds(userId, [job.id]).then(setDismissedIds);
-      } else {
-        // Actionable rows can be explicitly removed from the queue via the
-        // existing cancel/delete mutation.
-        void removeFromQueue(job);
-      }
-      return;
-    }
-    // Saving requires the full confirm path so ownership, dedupe, and map focus
-    // all run exactly as they do from Quick check.
-    openJob(job);
+    if (action === 'dismiss') void dismissJob(job);
+    else void saveJob(job);
   }
 
   // Never leave the user trapped: go back if there's a Nearr route to return
@@ -263,21 +279,72 @@ function ShareJobsQueueScreen() {
     else router.replace(target.route);
   }
 
-  async function removeFromQueue(job: ShareJob) {
-    if (actingId) return;
+  async function dismissJob(job: ShareJob) {
+    const lock = `dismiss:${job.id}`;
+    if (actionLocksRef.current.size > 0) return;
+    actionLocksRef.current.add(lock);
     setActingId(job.id);
     try {
-      await cancelShareJob(job.id);
+      await persistQueueIdsOptimistically({
+        current: dismissedIds,
+        ids: [job.id],
+        apply: setDismissedIds,
+        persist: (ids) => addDismissedQueueIds(userId, ids),
+      });
     } catch {
       Alert.alert('Could not remove', 'Please try again in a moment.');
     } finally {
+      actionLocksRef.current.delete(lock);
       setActingId(null);
-      refresh();
+    }
+  }
+
+  async function saveJob(job: ShareJob) {
+    const row = queueRowFor(job);
+    const candidates = job.candidate_payload?.candidates;
+    const candidate = Array.isArray(candidates) && candidates.length === 1 ? candidates[0] : null;
+    if (!queueSwipeAvailability(row).save || !isPersistableShareJobCandidate(candidate)) return;
+    const lock = `save:${job.id}`;
+    if (actionLocksRef.current.size > 0) return;
+    actionLocksRef.current.add(lock);
+    setActingId(job.id);
+    try {
+      await saveResolvedQueueCandidate(job, candidate);
+      setResolvedIds((current) => new Set(current).add(job.id));
+      hapticSuccess();
+      await refresh();
+    } catch (error) {
+      Alert.alert('Could not save', error instanceof Error ? error.message : 'Please try again.');
+    } finally {
+      actionLocksRef.current.delete(lock);
+      setActingId(null);
+    }
+  }
+
+  async function dismissCompleted(item: RecentAutoSave) {
+    const lock = `completed:${item.resultId}`;
+    if (actionLocksRef.current.size > 0) return;
+    actionLocksRef.current.add(lock);
+    setActingId(lock);
+    try {
+      await persistQueueIdsOptimistically({
+        current: clearedIds,
+        ids: [item.resultId],
+        apply: setClearedIds,
+        persist: (ids) => addClearedQueueIds(userId, ids),
+      });
+    } catch {
+      Alert.alert('Could not remove', 'Please try again in a moment.');
+    } finally {
+      actionLocksRef.current.delete(lock);
+      setActingId(null);
     }
   }
 
   async function undoRecent(item: RecentAutoSave) {
-    if (actingId) return;
+    const lock = `undo:${item.savedPlaceId}`;
+    if (actionLocksRef.current.size > 0) return;
+    actionLocksRef.current.add(lock);
     setActingId(item.savedPlaceId);
     const snapshot = getSavedPlacesCacheSnapshot();
     removeSavedPlaceFromCache(item.savedPlaceId);
@@ -292,13 +359,17 @@ function ShareJobsQueueScreen() {
       restoreSavedPlacesCache(snapshot);
       Alert.alert('Could not undo', error instanceof Error ? error.message : 'Please try again.');
     } finally {
+      actionLocksRef.current.delete(lock);
       setActingId(null);
       await refresh();
     }
   }
 
   function renderRecentAutoSave(item: RecentAutoSave) {
-    const busy = actingId === item.savedPlaceId || actingId === 'all-auto-saves';
+    const busy =
+      actingId === item.savedPlaceId ||
+      actingId === `completed:${item.resultId}` ||
+      actingId === 'clear-completed';
     const category = CATEGORY_LABELS[displayCategory(item.savedPlace.category)];
     return (
       <Pressable
@@ -349,7 +420,7 @@ function ShareJobsQueueScreen() {
     buttons.push({
       text: 'Remove from queue',
       style: 'destructive',
-      onPress: () => void removeFromQueue(job),
+      onPress: () => void dismissJob(job),
     });
     buttons.push({ text: 'Keep waiting', style: 'cancel' });
     Alert.alert(
@@ -360,6 +431,7 @@ function ShareJobsQueueScreen() {
   }
 
   function openJob(job: ShareJob) {
+    swipeCoordinator.closeActive();
     // Processing jobs aren't actionable; a stalled one gets an honest escape hatch.
     if (job.status === 'queued' || job.status === 'processing_metadata') {
       if (isStalledProcessing(job)) openStalledActions(job);
@@ -474,9 +546,11 @@ function ShareJobsQueueScreen() {
               <View key={job.id}>
                 {i > 0 ? <View style={styles.separator} /> : null}
                 <SwipeableRow
+                  rowId={`job:${job.id}`}
                   availability={availability}
                   actions={queueAccessibilityActions(row)}
                   onAction={(action) => handleRowAction(job, action)}
+                  coordinator={swipeCoordinator}
                   disabled={actingId === job.id}
                   accessibilityLabel={jobTitle(job)}
                 >
@@ -524,6 +598,7 @@ function ShareJobsQueueScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.primary} />
         }
         showsVerticalScrollIndicator={false}
+        onScrollBeginDrag={() => swipeCoordinator.closeActive()}
       >
         {loading && !hasContent ? (
           <View style={styles.loadingWrap}>
@@ -540,8 +615,8 @@ function ShareJobsQueueScreen() {
             {actionable.length > 0 ? (
               <Text style={[typography.body, styles.intro]}>{queueIntro(count)}</Text>
             ) : null}
-            {renderSection('Needs you', actionable)}
             {renderSection('Working', processing)}
+            {renderSection('Needs you', actionable)}
           </>
         )}
         {completedRows.length > 0 ? (
@@ -552,6 +627,7 @@ function ShareJobsQueueScreen() {
                 onPress={() => void clearCompleted()}
                 disabled={!!actingId}
                 hitSlop={8}
+                style={styles.clearCompletedButton}
                 accessibilityRole="button"
                 accessibilityLabel={clearCompletedLabel(clearableCount)}
               >
@@ -562,7 +638,21 @@ function ShareJobsQueueScreen() {
               {completedRows.map((item, index) => (
                 <View key={item.resultId}>
                   {index > 0 ? <View style={styles.separator} /> : null}
-                  {renderRecentAutoSave(item)}
+                  <SwipeableRow
+                    rowId={`completed:${item.resultId}`}
+                    availability={{ save: false, dismiss: true, saveBlockedReason: 'already_saved' }}
+                    actions={[{ name: 'dismiss', label: 'Remove from queue' }]}
+                    onAction={() => void dismissCompleted(item)}
+                    coordinator={swipeCoordinator}
+                    disabled={
+                      actingId === item.savedPlaceId ||
+                      actingId === `completed:${item.resultId}` ||
+                      actingId === 'clear-completed'
+                    }
+                    accessibilityLabel={`${item.savedPlace.place.name}. Recently completed`}
+                  >
+                    {renderRecentAutoSave(item)}
+                  </SwipeableRow>
                 </View>
               ))}
             </View>
@@ -669,7 +759,13 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
     },
     undoButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
     undoAllText: { color: colors.primary, fontSize: 14, fontWeight: '700' },
-    emptyState: { alignItems: 'center', paddingHorizontal: Spacing.xl, paddingTop: 72 },
+    clearCompletedButton: {
+      minHeight: 44,
+      justifyContent: 'center',
+      paddingHorizontal: Spacing.sm,
+      marginRight: -Spacing.sm,
+    },
+    emptyState: { alignItems: 'center', paddingHorizontal: Spacing.xl, paddingTop: Spacing.xl },
     emptyIcon: {
       width: 52,
       height: 52,

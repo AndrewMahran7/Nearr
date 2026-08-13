@@ -65,7 +65,7 @@ import {
   type SaveCompletionNavigation,
 } from '@/lib/saveCompletionNavigation';
 import { usePlacesSearch } from '@/hooks/usePlacesSearch';
-import { getSavedPlacesCacheSnapshot, upsertSavedPlaceIntoCache } from '@/hooks/useSavedPlaces';
+import { getSavedPlacesCacheSnapshot } from '@/hooks/useSavedPlaces';
 import { recordBreadcrumb } from '@/lib/breadcrumbs';
 import { setCurrentShareJobId } from '@/lib/diagnosticContext';
 import { createOnceLatch } from '@/lib/onceLatch';
@@ -73,8 +73,11 @@ import {
   resolveOpenSavedPlaceRoute,
   type OpenSavedPlaceSource,
 } from '@/lib/openSavedPlace';
-import { saveSavedPlace } from '@/services/savedPlacesService';
 import { searchPlaces, type PlaceCandidate } from '@/services/placesService';
+import {
+  persistShareJobCandidate,
+  shareJobCandidateToPlaceCandidate,
+} from '@/services/shareJobCandidateSave';
 import {
   cancelShareJob,
   deleteShareJob,
@@ -84,7 +87,6 @@ import {
   type ShareJob,
   type ShareJobCandidate,
 } from '@/services/shareJobsService';
-import type { SourceType } from '@/types';
 
 /** Human platform label for the "Suggested from …" source-context row. */
 function platformNoun(platform: string | null | undefined): string {
@@ -113,37 +115,8 @@ function platformName(platform: string | null | undefined): string {
   }
 }
 
-function sourceTypeFor(platform: string | null | undefined): SourceType {
-  switch ((platform ?? '').toLowerCase()) {
-    case 'instagram':
-      return 'instagram';
-    case 'tiktok':
-      return 'tiktok';
-    default:
-      return 'link';
-  }
-}
-
 function hasCoords(c: ShareJobCandidate): boolean {
   return Number.isFinite(c.latitude) && Number.isFinite(c.longitude);
-}
-
-function toPlaceCandidate(c: ShareJobCandidate): PlaceCandidate {
-  return {
-    googlePlaceId: c.googlePlaceId,
-    name: c.name,
-    formattedAddress: c.formattedAddress,
-    latitude: c.latitude as number,
-    longitude: c.longitude as number,
-    category: null,
-    googleMapsUrl: null,
-    rawTypes: c.types,
-    primaryType: c.primaryType,
-    primaryTypeDisplayName: c.primaryTypeDisplayName,
-    googleMapsTypeLabel: c.googleMapsTypeLabel,
-    shortFormattedAddress: c.shortFormattedAddress,
-    businessStatus: c.businessStatus,
-  };
 }
 
 function toResultCandidate(candidate: PlaceCandidate): ShareJobResultCandidate {
@@ -391,31 +364,12 @@ function ShareJobDetailScreen() {
     if (__DEV__ && isPhase2PreviewId(job?.id)) {
       throw new Error('This development preview is read-only.');
     }
-    recordBreadcrumb('save_started', { jobId: job?.id ?? null });
-    const result = await saveSavedPlace({
+    return persistShareJobCandidate({
       candidate,
-      radiusValue: null,
-      radiusUnit: null,
-      sourceType: sourceTypeFor(platform),
+      jobId: job?.id ?? null,
+      platform,
       sourceUrl,
     });
-    if (result.status === 'saved') {
-      upsertSavedPlaceIntoCache(result.saved);
-      recordBreadcrumb('save_response', {
-        jobId: job?.id ?? null,
-        savedPlaceId: result.savedPlaceId,
-        result: 'saved',
-      });
-      return { savedPlaceId: result.savedPlaceId, duplicate: false };
-    }
-    // Already in the user's saved places — reuse the existing row. NEVER a
-    // duplicate insert and NEVER surfaced as an error.
-    recordBreadcrumb('already_saved_response', {
-      jobId: job?.id ?? null,
-      savedPlaceId: result.savedPlaceId ?? null,
-      result: 'duplicate',
-    });
-    return { savedPlaceId: result.savedPlaceId ?? null, duplicate: true };
   }
 
   // Resolve the job to the saved place. For an already-saved place whose exact
@@ -493,7 +447,9 @@ function ShareJobDetailScreen() {
     resolvingRef.current = true;
     if (mountedRef.current) setBusy(true);
     try {
-      const { savedPlaceId, duplicate } = await persistCandidate(toPlaceCandidate(candidate));
+      const { savedPlaceId, duplicate } = await persistCandidate(
+        shareJobCandidateToPlaceCandidate(candidate),
+      );
       await resolveJobWith(job.id, savedPlaceId, duplicate);
     } catch (err) {
       Alert.alert('Could not save', err instanceof Error ? err.message : 'Please try again.');
@@ -535,7 +491,7 @@ function ShareJobDetailScreen() {
     try {
       const settled = await Promise.allSettled(
         chosen.map(async (candidate) => {
-          const result = await persistCandidate(toPlaceCandidate(candidate));
+          const result = await persistCandidate(shareJobCandidateToPlaceCandidate(candidate));
           const slot = effectiveMentionSlots.find((mention) =>
             mention.candidates.some((entry) => entry.googlePlaceId === candidate.googlePlaceId),
           );
