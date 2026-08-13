@@ -562,6 +562,7 @@ async function finalizeMediaTask(admin: any, env: any, body: any): Promise<Respo
     const createdSavedPlaceIds: string[] = [];
     const alreadySavedPlaceIds: string[] = [];
     const unresolvedResults: any[] = [];
+    const savedResultByMentionId = new Map<string, { savedPlaceId: string; saveState: 'auto_saved' | 'already_saved' }>();
     const perPlaceSummary: Array<Record<string, unknown>> = [];
     const source = legacySourceFor(task.platform);
 
@@ -660,6 +661,10 @@ async function finalizeMediaTask(admin: any, env: any, body: any): Promise<Respo
         }).eq('id', saved.place_id);
         if (saved.reused) alreadySavedPlaceIds.push(saved.saved_place_id);
         else createdSavedPlaceIds.push(saved.saved_place_id);
+        savedResultByMentionId.set(mentionResult.mentionId, {
+          savedPlaceId: saved.saved_place_id,
+          saveState: saved.reused ? 'already_saved' : 'auto_saved',
+        });
         perPlaceSummary.push({
           logicalResultId: mentionResult.mentionId,
           outcome: saved.reused ? 'already_saved' : 'auto_saved',
@@ -711,14 +716,20 @@ async function finalizeMediaTask(admin: any, env: any, body: any): Promise<Respo
           candidate,
           noteForAggregateCandidate(candidate.googlePlaceId, unresolvedResults, aiNoteByMentionId),
         )),
-      unresolvedResults.map((mention: any) => ({
+      mentionResults.map((mention: any) => ({
         mentionId: mention.mentionId,
         displayName: mention.displayName,
+        contextLabel: (() => {
+          const sourceMention = mentionById.get(mention.mentionId);
+          return [sourceMention?.geo?.city, sourceMention?.geo?.region].filter(Boolean).join(', ') || null;
+        })(),
         primaryVenueName: mention.primaryVenueName ?? null,
         hostVenueName: mention.hostVenueName ?? null,
         relationshipType: mention.relationshipType ?? null,
         outcome: mention.outcome,
         aiNote: aiNoteByMentionId.get(mention.mentionId) ?? null,
+        saveState: savedResultByMentionId.get(mention.mentionId)?.saveState ?? 'pending',
+        savedPlaceId: savedResultByMentionId.get(mention.mentionId)?.savedPlaceId ?? null,
         candidates: Array.isArray(mention.candidates)
           ? mention.candidates.map((candidate: any) =>
               safeCandidate(candidate, aiNoteByMentionId.get(mention.mentionId) ?? null))
@@ -855,6 +866,10 @@ async function finalizeMediaTask(admin: any, env: any, body: any): Promise<Respo
     mentionResults.map((mention: any) => ({
       mentionId: mention.mentionId,
       displayName: mention.displayName,
+      contextLabel: (() => {
+        const sourceMention = mediaMentions.mentions.find((item: any) => item.id === mention.mentionId);
+        return [sourceMention?.geo?.city, sourceMention?.geo?.region].filter(Boolean).join(', ') || null;
+      })(),
       primaryVenueName: mention.primaryVenueName ?? null,
       hostVenueName: mention.hostVenueName ?? null,
       relationshipType: mention.relationshipType ?? null,

@@ -51,9 +51,9 @@ assert.ok(!secondChoice.has('p2a') && secondChoice.has('p2b'), 'one choice per a
 assert.ok(secondChoice.has('p1') && secondChoice.has('p5'), 'other mentions remain selected');
 assert.equal(selectedUnsavedCandidates(slots, secondChoice, new Set(['p3'])).length, 3);
 assert.equal(multiPlaceTitle(5), 'I found 5 places');
-assert.equal(saveSelectedLabel(1), 'Save 1 place');
-assert.equal(saveSelectedLabel(3), 'Save 3 places');
-assert.equal(saveSelectedLabel(0), 'Save selected places');
+assert.equal(saveSelectedLabel(1), 'Save selected (1)');
+assert.equal(saveSelectedLabel(3), 'Save selected (3)');
+assert.equal(saveSelectedLabel(0), 'Save selected (0)');
 assert.deepEqual([...removeSuccessfulSelections(secondChoice, ['p1', 'p2b'])], ['p5']);
 
 const relationship = normalizeMentionSlots([{

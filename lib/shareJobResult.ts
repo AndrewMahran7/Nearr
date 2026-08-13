@@ -27,12 +27,15 @@ export type ShareJobMentionOutcome =
 export type ShareJobMentionSlot = {
   mentionId: string;
   displayName: string;
+  contextLabel?: string | null;
   primaryVenueName: string | null;
   hostVenueName: string | null;
   relationshipType: string | null;
   outcome: ShareJobMentionOutcome;
   candidates: ShareJobResultCandidate[];
   aiNote?: string | null;
+  saveState?: 'pending' | 'auto_saved' | 'already_saved';
+  savedPlaceId?: string | null;
 };
 
 export type ShareJobCandidatePayload = {
@@ -111,12 +114,17 @@ export function normalizeMentionSlots(input: unknown): ShareJobMentionSlot[] {
     slots.push({
       mentionId,
       displayName,
+      contextLabel: text(row.contextLabel),
       primaryVenueName: text(row.primaryVenueName),
       hostVenueName: text(row.hostVenueName),
       relationshipType: text(row.relationshipType),
       outcome,
       candidates: normalizeResultCandidates(row.candidates).slice(0, 5),
       aiNote: text(row.aiNote),
+      saveState: row.saveState === 'auto_saved' || row.saveState === 'already_saved'
+        ? row.saveState
+        : 'pending',
+      savedPlaceId: text(row.savedPlaceId),
     });
   }
   return slots;
@@ -218,9 +226,7 @@ export function multiPlaceTitle(slotCount: number): string {
 }
 
 export function saveSelectedLabel(count: number): string {
-  if (count === 1) return 'Save 1 place';
-  if (count > 1) return `Save ${count} places`;
-  return 'Save selected places';
+  return `Save selected (${Math.max(0, Math.floor(count))})`;
 }
 
 export function removeSuccessfulSelections(

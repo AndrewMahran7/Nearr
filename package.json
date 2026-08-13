@@ -94,6 +94,7 @@
     "test:note-editor": "ts-node -P scripts/tsconfig.json scripts/testNoteEditor.ts",
     "test:ai-note-integration": "ts-node -P scripts/tsconfig.json scripts/testAiNoteIntegrationContracts.ts",
     "test:multi-place-batch": "ts-node -P scripts/tsconfig.json scripts/testMultiPlaceBatch.ts",
+    "test:multi-place-review": "ts-node -P scripts/tsconfig.json scripts/testMultiPlaceReviewContracts.ts",
     "test:saved-browse": "ts-node -P scripts/tsconfig.json scripts/testSavedPlacesBrowse.ts"
   },
   "dependencies": {
