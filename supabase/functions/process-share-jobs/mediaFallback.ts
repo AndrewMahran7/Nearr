@@ -199,3 +199,28 @@ export function shouldRunMediaFallback(
 
   return { run: false, reason: 'no_trigger' };
 }
+
+/**
+ * Successful place resolution and source enrichment are independent. A
+ * supported social post therefore gets one media task even when metadata has
+ * already completed the user-facing save. The queue's unique share_job_id is
+ * the final concurrency guard; this pure decision keeps scheduling explicit
+ * and testable.
+ */
+export function shouldRunPostSaveEnrichment(
+  ctx: MediaFallbackContext,
+): MediaFallbackResult {
+  if (!ctx.mediaFallbackEnabled) {
+    return { run: false, reason: 'media_enrichment_disabled' };
+  }
+  if (!isSupportedMediaPlatform(ctx)) {
+    return { run: false, reason: 'unsupported_platform' };
+  }
+  if (ctx.mediaTaskExists) {
+    return { run: false, reason: 'media_task_exists' };
+  }
+  if (ctx.jobStatus !== 'completed') {
+    return { run: false, reason: 'saved_job_not_completed' };
+  }
+  return { run: true, reason: 'post_save_enrichment' };
+}

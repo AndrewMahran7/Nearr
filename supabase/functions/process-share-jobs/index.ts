@@ -41,7 +41,12 @@ import {
   buildMediaResultNotification,
   buildNeedsHelpNotification,
 } from './decisionMapping.ts';
-import { effectiveMediaFlags, mediaInfrastructureEnabled, shouldRunMediaFallback } from './mediaFallback.ts';
+import {
+  effectiveMediaFlags,
+  mediaInfrastructureEnabled,
+  shouldRunMediaFallback,
+  shouldRunPostSaveEnrichment,
+} from './mediaFallback.ts';
 import {
   parseMediaEvidence,
   renderMediaEvidenceCaption,
@@ -290,6 +295,7 @@ async function enqueueMediaTask(
   platform: string,
   canonicalUrl: string,
   sourceUrl: string,
+  options: { parkParent?: boolean } = {},
 ): Promise<void> {
   const { error: insErr } = await admin.from('share_media_tasks').insert({
     share_job_id: job.id,
@@ -308,11 +314,13 @@ async function enqueueMediaTask(
   // processing_metadata row when locked_until IS NOT NULL and in the past, so a
   // NULL lease means the metadata claim NEVER steals it. Bounded recovery is
   // handled explicitly by recoverStrandedMediaJobs(), not by lease expiry.
-  await admin
-    .from('share_jobs')
-    .update({ progress_stage: 'checking_video', locked_until: null })
-    .eq('id', job.id)
-    .eq('status', 'processing_metadata');
+  if (options.parkParent !== false) {
+    await admin
+      .from('share_jobs')
+      .update({ progress_stage: 'checking_video', locked_until: null })
+      .eq('id', job.id)
+      .eq('status', 'processing_metadata');
+  }
 }
 
 async function markMediaTask(
@@ -403,6 +411,196 @@ async function persistBlockedPlaceResult(
   if (error) throw new Error(`place_result_upsert_failed: ${error.message}`);
 }
 
+const POST_SAVE_ENRICHMENT_RULE_VERSION = 'post-save-enrichment.v1';
+
+/**
+ * Enrich a metadata-auto-saved row without invoking any save/upsert path.
+ * Provider identity is the join key: a fuzzy name match is never sufficient.
+ * Other logical places are recorded independently for audit/review, but this
+ * supplemental callback cannot reopen the completed parent or create places.
+ */
+async function finalizePostSaveEnrichment(
+  admin: any,
+  args: {
+    job: any;
+    task: any;
+    taskId: string;
+    mediaRunId: string | null;
+    result: any;
+    mentionResults: any[];
+    aiNoteByMentionId: Map<string, string | null>;
+    parsed: any;
+  },
+): Promise<Response> {
+  const { job, task, taskId, mediaRunId, result, mentionResults, aiNoteByMentionId, parsed } = args;
+  const { data: saved, error: savedError } = await admin
+    .from('saved_places')
+    .select('id,user_id,place_id,notes,ai_note,place:places(id,google_place_id,name)')
+    .eq('id', job.saved_place_id)
+    .eq('user_id', job.user_id)
+    .maybeSingle();
+  if (savedError) throw new Error(`post_save_target_lookup_failed: ${savedError.message}`);
+  const targetPlace = Array.isArray(saved?.place) ? saved.place[0] : saved?.place;
+  const targetProviderId = targetPlace?.google_place_id ?? null;
+  if (!saved?.id || !saved?.place_id || !targetProviderId) {
+    await markMediaTask(admin, taskId, 'failed', {
+      failure_code: 'post_save_target_missing_provider',
+      progress_stage: 'cleanup',
+      completed_at: nowIso(),
+    });
+    console.log(JSON.stringify({
+      event: 'media_identity_disagreement',
+      jobId: job.id,
+      taskId,
+      savedPlaceId: job.saved_place_id,
+      savedProviderId: targetProviderId,
+      mediaProviderIds: [],
+      action: 'withhold_note',
+      reason: 'authoritative_target_missing',
+    }));
+    return json({ ok: true, route: 'post_save_enrichment', enriched: false, reason: 'target_missing' });
+  }
+
+  const matches = mentionResults.filter((mention: any) =>
+    Array.isArray(mention.candidates) &&
+    mention.candidates.some((candidate: any) => candidate.googlePlaceId === targetProviderId)
+  );
+  const aggregateCandidate = Array.isArray(result?.candidates)
+    ? result.candidates.find((candidate: any) => candidate.googlePlaceId === targetProviderId)
+    : null;
+  const mediaProviderIds = [...new Set([
+    ...(result?.candidates ?? []).map((candidate: any) => candidate.googlePlaceId),
+    ...mentionResults.flatMap((mention: any) =>
+      (mention.candidates ?? []).map((candidate: any) => candidate.googlePlaceId)),
+  ].filter(Boolean))];
+
+  let matchedMention: any | null = matches.length === 1 ? matches[0] : null;
+  let logicalResultId = matchedMention?.mentionId ?? 'post-save-primary';
+  let aiNote = matchedMention ? (aiNoteByMentionId.get(matchedMention.mentionId) ?? null) : null;
+  let identityMatched = !!matchedMention;
+
+  // Legacy address-only resolver results do not expose mentionResults. They
+  // may still enrich when their one exact provider candidate matches; scope
+  // the cue by normalized place name, never by fuzzy provider identity.
+  if (!identityMatched && mentionResults.length === 0 && aggregateCandidate) {
+    identityMatched = true;
+    const matchingEvidencePlace = parsed?.ok
+      ? parsed.value.places.find(
+          (place: any) => normalizeVenueName(place.name ?? '') === normalizeVenueName(aggregateCandidate.name ?? ''),
+        )
+      : null;
+    aiNote = matchingEvidencePlace
+      ? generateAiPlaceNote({
+          placeName: aggregateCandidate.name,
+          proposedNote: matchingEvidencePlace.memoryCue,
+          evidence: matchingEvidencePlace.memoryCueEvidence ?? [],
+        })
+      : null;
+  }
+
+  if (!identityMatched || matches.length > 1) {
+    console.log(JSON.stringify({
+      event: 'media_identity_disagreement',
+      jobId: job.id,
+      taskId,
+      savedPlaceId: saved.id,
+      savedProviderId: targetProviderId,
+      mediaProviderIds,
+      matchingMentionCount: matches.length,
+      action: 'preserve_saved_identity_and_withhold_note',
+    }));
+    aiNote = null;
+  }
+
+  for (const mentionResult of mentionResults) {
+    if (matchedMention && mentionResult.mentionId === matchedMention.mentionId) continue;
+    const blockedOutcome = mentionResult.outcome === 'provider_error'
+      ? 'failed'
+      : mentionResult.outcome === 'no_match' || mentionResult.outcome === 'rejected_insufficient_evidence'
+      ? 'manual_fallback'
+      : 'candidate_confirmation';
+    await persistBlockedPlaceResult(admin, {
+      job,
+      task,
+      mediaRunId,
+      mentionResult,
+      outcome: blockedOutcome,
+      confidenceScore: typeof mentionResult.confidenceScore === 'number' ? mentionResult.confidenceScore : null,
+      reasonCodes: [
+        matchedMention ? 'post_save_secondary_logical_place' : 'post_save_identity_disagreement',
+      ],
+    });
+  }
+
+  let aiNoteSave: 'stored' | 'skipped' | 'failed' = 'skipped';
+  if (aiNote && !(saved.ai_note ?? '').trim()) {
+    aiNoteSave = await persistAiNoteSupplementally(aiNote, async (note) => {
+      let update = admin
+        .from('saved_places')
+        .update({ ai_note: note })
+        .eq('id', saved.id)
+        .eq('user_id', job.user_id);
+      update = saved.ai_note == null
+        ? update.is('ai_note', null)
+        : update.eq('ai_note', saved.ai_note);
+      const { error } = await update;
+      if (error) throw error;
+    });
+    if (aiNoteSave === 'failed') {
+      console.warn(`[media-task] supplemental ai note save failed task_id=${taskId}`);
+    }
+  }
+
+  // Publish the authoritative per-place completion only after the note write.
+  // share_job_place_results is already in Supabase Realtime, so this becomes
+  // the app's cache-refresh signal without a saved_places publication change.
+  if (identityMatched) {
+    const candidate = matchedMention
+      ? matchedMention.candidates.find((entry: any) => entry.googlePlaceId === targetProviderId)
+      : aggregateCandidate;
+    const { error: resultError } = await admin.from('share_job_place_results').upsert({
+      share_job_id: job.id,
+      share_media_task_id: task.id,
+      share_media_run_id: mediaRunId,
+      user_id: job.user_id,
+      logical_result_id: logicalResultId,
+      google_place_id: targetProviderId,
+      place_id: saved.place_id,
+      saved_place_id: saved.id,
+      outcome: 'already_saved',
+      origin: 'automatic',
+      confidence_score: typeof candidate?.confidenceScore === 'number' ? candidate.confidenceScore : null,
+      rule_version: POST_SAVE_ENRICHMENT_RULE_VERSION,
+      reason_codes: [aiNote ? 'ai_note_grounded' : 'no_useful_memory_cue'],
+      finalized_at: nowIso(),
+    }, { onConflict: 'share_job_id,logical_result_id' });
+    if (resultError) throw new Error(`post_save_result_upsert_failed: ${resultError.message}`);
+  }
+
+  await markMediaTask(admin, taskId, 'completed', {
+    resolver_name: 'media-post-save-enrichment',
+    progress_stage: 'cleanup',
+    completed_at: nowIso(),
+  });
+  console.log(JSON.stringify({
+    event: 'post_save_enrichment_completed',
+    jobId: job.id,
+    taskId,
+    savedPlaceId: saved.id,
+    providerId: targetProviderId,
+    identityMatched,
+    noteStatus: aiNoteSave,
+    userNotePreserved: true,
+  }));
+  return json({
+    ok: true,
+    route: 'post_save_enrichment',
+    enriched: aiNoteSave === 'stored',
+    identityMatched,
+    savedPlaceId: saved.id,
+  });
+}
+
 // Move a parent job to a safe needs_help(manual) state (media analysis produced
 // no usable evidence). Reuses the Phase 1 terminal-transition + push machinery.
 async function finalizeParentManual(admin: any, job: any): Promise<void> {
@@ -450,11 +648,10 @@ async function recoverStrandedMediaJobs(admin: any): Promise<void> {
 // model never picks a Place ID, never decides safeToAutoSave, and never saves.
 // ALL routing decisions come from the pure mediaFinalizePlan module.
 //
-// Idempotency (mission): a terminal task (duplicate / replayed callback) and any
-// parent that already left processing_metadata (cancelled elsewhere, finalized
-// by a prior callback or the recovery sweep) are safe no-ops — a replay after a
-// save or a needs_help can never revive or double-finalize the job. The parent
-// is ALWAYS derived from the task's FK, never trusted from the callback body.
+// Idempotency: a terminal task is always a no-op. A completed parent with an
+// authoritative saved_place_id may receive supplemental enrichment; every
+// other parent outside processing_metadata remains immutable. The parent is
+// ALWAYS derived from the task's FK, never trusted from the callback body.
 async function finalizeMediaTask(
   admin: any,
   env: any,
@@ -498,6 +695,7 @@ async function finalizeMediaTask(
   const pre = planPreResolve({
     taskStatus: task.status,
     parentStatus: job?.status ?? 'missing',
+    parentSavedPlaceId: job?.saved_place_id ?? null,
     outcome,
     evidenceParseOk: parsed.ok,
     renderedPlaces: rendered.renderedPlaces,
@@ -528,15 +726,15 @@ async function finalizeMediaTask(
 
   // Media unusable / parse failure / no explicit places → safe manual fallback.
   if (pre.action === 'manual_fallback') {
-    await finalizeParentManual(admin, job);
+    if (!pre.supplemental) await finalizeParentManual(admin, job);
     await markMediaTask(admin, taskId, pre.taskTerminalStatus, {
       failure_code: pre.failureCode,
       progress_stage: 'cleanup',
       completed_at: nowIso(),
     });
-    console.log(`[media-task] finalize route=manual task_id=${taskId} reason=${pre.failureCode}`);
-    logFinalStatus('manual', 'permanent_processing_error');
-    return json({ ok: true, route: 'manual', reason: pre.failureCode });
+    console.log(`[media-task] finalize route=${pre.supplemental ? 'post_save_failed' : 'manual'} task_id=${taskId} reason=${pre.failureCode}`);
+    logFinalStatus(pre.supplemental ? 'post_save_enrichment_failed' : 'manual', 'permanent_processing_error');
+    return json({ ok: true, route: pre.supplemental ? 'post_save_enrichment' : 'manual', enriched: false, reason: pre.failureCode });
   }
 
   // pre.action === 'resolve' — reuse the EXISTING deterministic resolver.
@@ -611,7 +809,7 @@ async function finalizeMediaTask(
       );
     }
 
-    await finalizeParentManual(admin, job);
+    if (pre.mode !== 'enrich_saved_place') await finalizeParentManual(admin, job);
     await markMediaTask(admin, taskId, 'failed', {
       failure_code: 'places_provider_unavailable_exhausted',
       progress_stage: 'cleanup',
@@ -626,6 +824,19 @@ async function finalizeMediaTask(
     });
   }
   const canonicalUrl = task.canonical_url || task.source_url;
+
+  if (pre.mode === 'enrich_saved_place') {
+    return await finalizePostSaveEnrichment(admin, {
+      job,
+      task,
+      taskId,
+      mediaRunId,
+      result,
+      mentionResults,
+      aiNoteByMentionId,
+      parsed,
+    });
+  }
 
   // Name-driven media results have stable logical mention IDs, so they can be
   // finalized independently. Address-only legacy media results continue below
@@ -1059,8 +1270,8 @@ async function processOne(admin: any, env: any, job: any): Promise<void> {
   const evidence = extractEvidence({ platform, title, description, handles, taggedLocation });
   const result = await resolveSharedPlace({ evidence, env });
 
-  // A metadata-only result may never create a media task, so enforce the same
-  // user-facing single-option invariant before it can be routed to Quick Check.
+  // Enforce the user-facing single-option invariant before routing. Media
+  // enrichment is scheduled separately after a successful save.
   const metadataAutoSave = evaluateMetadataAutoSave({ result, evidence });
   console.log(formatMetadataAutoSaveDecisionLog({ jobId: job.id, decision: metadataAutoSave }));
 
@@ -1122,6 +1333,28 @@ async function processOne(admin: any, env: any, job: any): Promise<void> {
         alreadySaved: saved.reused,
       }),
     );
+
+    // Save completion is user-facing and terminal. Source enrichment is a
+    // separate durable concern: schedule it only after the save is committed,
+    // and never move the parent back out of `completed`.
+    const configuredFlags = readMediaFlags();
+    const effectiveFlags = effectiveMediaFlags(configuredFlags, job.user_id);
+    const mediaTaskExists = await mediaTaskExistsFor(admin, job.id);
+    const enrichment = shouldRunPostSaveEnrichment(
+      {
+        platform,
+        mediaFallbackEnabled: effectiveFlags.mediaFallbackEnabled,
+        instagramResolverEnabled: effectiveFlags.instagramResolverEnabled,
+        mediaTaskExists,
+        jobStatus: 'completed',
+      },
+    );
+    console.log(
+      `[share-job] post_save_enrichment job_id=${job.id} run=${enrichment.run} reason=${enrichment.reason}`,
+    );
+    if (enrichment.run) {
+      await enqueueMediaTask(admin, job, platform, canonicalUrl, requestUrl, { parkParent: false });
+    }
     return;
   }
 

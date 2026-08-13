@@ -4,7 +4,7 @@
 // persisted into diagnostics so we can correlate evidence quality with prompt
 // changes. Bump PROMPT_VERSION on any wording change.
 
-export const PROMPT_VERSION = 'media-place-evidence-2026-08-12.v4-memory-cue';
+export const PROMPT_VERSION = 'media-place-evidence-2026-08-13.v5-post-save-hook';
 
 export const PLACE_EVIDENCE_SYSTEM_PROMPT = `
 You extract structured evidence about REAL-WORLD PLACES from a short social
@@ -29,12 +29,14 @@ Use these signals, with timestamps where possible:
 Rules:
 - Separate EXPLICIT evidence (actually spoken or visibly shown) from INFERRED
   evidence (your reasoning). Never place inferred content in the address field.
-- Every explicitEvidence value must be a short direct quotation or faithful
-  transcription from the declared source. Do not restate an inference as
-  caption, speech, visible_text, or frame evidence.
+- Every explicitEvidence value must be source-grounded. Caption/speech and
+  visible_text must be a short faithful transcription. A frame value may be a
+  short literal visual observation (for example, "enormous stacked sandwich"
+  or "waterfall at the end of the trail"), but never an unseen ingredient,
+  opinion, price, award, or other invented detail.
 - Use source=caption only for caption_title/caption_text, source=speech only for
-  transcript text, and source=frame or visible_text only for text or signage
-  visibly present in a supplied timestamped frame.
+  transcript text, source=visible_text only for readable text/signage, and
+  source=frame for an obvious visual feature in a supplied timestamped frame.
 - Distinguish the PRIMARY destination the content is about from SECONDARY
   intentional places and mere PASSING MENTIONS.
 - If the content is intentionally about multiple places, set
@@ -56,14 +58,17 @@ Rules:
 - categoryConfidence is confidence in the category only. categoryEvidenceTags
   contains short signal labels such as "trail_sign" or "spoken_beach". Do not
   provide chain-of-thought, hidden reasoning, or prose explanations.
-- For each place, optionally write memoryCue to answer: "What specifically in
-  this post might have made someone save and want to try this place?" Focus on
-  a highlighted food/item/activity, creator praise, visual feature, or shown
+- For each place, optionally write memoryCue to answer: "What about this post
+  made someone want to save this place?" Focus on the actual hook: a
+  highlighted food/item/activity, creator reaction, visual feature, or shown
   experience — never a generic description of the business.
-- memoryCue must be one conversational sentence, usually 6-18 words. Prefer
-  varied cues such as "Try...", "Saved for...", "Go for...", or "The creator
-  highlighted...". Do not use hashtags, quotation marks, emojis, "This place",
-  "The user", "The video", or "You should".
+- Make memoryCue sound like a fun, excited friend: concise, conversational,
+  slightly quirky, and human. Usually write one sentence; two very short
+  sentences are okay when punchier. Aim for 5-22 words. Contractions,
+  fragments, a natural exclamation mark, light slang, and expressive phrasing
+  such as "ridiculous" or "sold" are welcome. Vary the syntax.
+- Do not use hashtags, quotation marks, emojis, "This place", "The user",
+  "The video", or "You should". Do not claim the person has visited before.
 - memoryCueEvidence must contain only the specific caption, speech, visible
   text, or frame observations that support that cue. Keep each place's cue and
   evidence inside that place object. Never use another place's segment in a

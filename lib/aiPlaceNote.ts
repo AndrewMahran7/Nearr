@@ -20,8 +20,8 @@ export type AiPlaceNoteInput = {
   evidence: readonly AiPlaceNoteEvidence[];
 };
 
-const MIN_WORDS = 6;
-const MAX_WORDS = 18;
+const MIN_WORDS = 5;
+const MAX_WORDS = 22;
 const VALID_SOURCES = new Set<AiPlaceNoteEvidenceSource>([
   'caption',
   'speech',
@@ -30,16 +30,26 @@ const VALID_SOURCES = new Set<AiPlaceNoteEvidenceSource>([
 ]);
 const BANNED_OPENING = /^(?:this place|the user|the video|you should)\b/i;
 const GENERIC_DESCRIPTION = /\b(?:great place|must[- ]visit|popular (?:restaurant|cafe|hotel|destination)|delicious food|scenic (?:destination|spot)|luxury hotel|worth checking out)\b/i;
-const HASHTAG_QUOTE_OR_EMOJI = /[#"'\u2018\u2019\u201c\u201d]|[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}]/u;
+const HASHTAG_QUOTE_OR_EMOJI = /[#"\u201c\u201d]|[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}]/u;
+const GENERIC_HOOK_WORDS = new Set([
+  'attraction', 'bar', 'beach', 'business', 'cafe', 'coffee', 'destination',
+  'deli', 'food', 'hotel', 'museum', 'park', 'place', 'restaurant', 'shop',
+  'spot', 'store', 'trail', 'venue', 'view', 'american', 'chinese', 'french',
+  'indian', 'italian', 'japanese', 'mediterranean', 'mexican', 'thai',
+]);
 
 // Words that may legitimately be added to turn evidence into a conversational
 // memory cue. All remaining content words must appear in the supplied evidence.
 const STYLE_WORDS = new Set([
-  'a', 'about', 'an', 'and', 'as', 'at', 'by', 'creator', 'down', 'for', 'from',
-  'go', 'highlight', 'highlighted', 'in', 'inside', 'it', 'known', 'of', 'on',
-  'or', 'ordered', 'post', 'save', 'saved', 'see', 'show', 'showed', 'shown',
-  'the', 'their', 'them', 'they', 'this', 'to', 'try', 'up', 'walked', 'was',
-  'were', 'with',
+  'a', 'about', 'absolutely', 'actually', 'after', 'an', 'and', 'as', 'at',
+  'by', 'creator', 'criminally', 'dangerously', 'down', 'for', 'from', 'go',
+  'going', 'good', 'gotta', 'have', 'highlight', 'highlighted', 'i', 'in', 'insane',
+  'im', 'inside', 'it', 'its', 'just', 'kind', 'known', 'looks', 'me', 'need',
+  'of', 'okay', 'on', 'or', 'ordered', 'plus', 'post', 'ridiculous', 'save',
+  'saved', 'see', 'show',
+  'showed', 'shown', 'sold', 'so', 'the', 'their', 'them', 'they', 'this', 'to',
+  'that', 'thats', 'theres', 'totally', 'try', 'up', 'walked', 'want', 'was',
+  'were', 'with', 'worth', 'yeah',
 ]);
 
 function words(value: string): string[] {
@@ -87,7 +97,9 @@ export function generateAiPlaceNote(input: AiPlaceNoteInput): string | null {
   if (HASHTAG_QUOTE_OR_EMOJI.test(proposed)) return null;
 
   const withoutFinalPunctuation = proposed.replace(/[.!?]+$/, '').trim();
-  if (!withoutFinalPunctuation || /[.!?]\s+\S/.test(withoutFinalPunctuation)) return null;
+  if (!withoutFinalPunctuation) return null;
+  const sentenceCount = proposed.split(/[.!?]+/).map((part) => part.trim()).filter(Boolean).length;
+  if (sentenceCount > 2) return null;
   const noteWords = words(withoutFinalPunctuation);
   if (noteWords.length < MIN_WORDS || noteWords.length > MAX_WORDS) return null;
 
@@ -103,7 +115,13 @@ export function generateAiPlaceNote(input: AiPlaceNoteInput): string | null {
     return null;
   }
 
-  return `${withoutFinalPunctuation}.`;
+  // A provider name or generic category alone does not explain why the post
+  // was compelling. Require at least one grounded hook detail (an item,
+  // activity, concrete visual feature, time, etc.) beyond the place identity.
+  const hookTokens = substantive.filter((value) => !GENERIC_HOOK_WORDS.has(value));
+  if (hookTokens.length === 0) return null;
+
+  return /[.!?]$/.test(proposed) ? proposed : `${proposed}.`;
 }
 
 export function preserveUserNote(

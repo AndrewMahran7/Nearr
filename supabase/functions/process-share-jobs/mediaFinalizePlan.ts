@@ -7,10 +7,9 @@
 // call; ALL routing decisions live here so they can be tested directly against
 // the cases the mission enumerates (terminal task, already-terminal parent,
 // malformed evidence, insufficient evidence, safe auto-save, confirmation,
-// manual fallback, retryable/permanent failure). Idempotency is guaranteed by
-// treating any terminal task and any non-`processing_metadata` parent as a
-// no-op — so duplicate callbacks and replays after save/needs_help cannot
-// revive or double-finalize a job.
+// manual fallback, retryable/permanent failure). A completed parent with an
+// authoritative saved_place_id may be enriched without being reopened; other
+// terminal parents and all terminal tasks remain no-ops.
 
 export type FinalizeOutcome = 'evidence' | 'insufficient_evidence' | 'unavailable' | 'failed';
 
@@ -101,6 +100,8 @@ export type PreResolveInput = {
   evidenceParseOk: boolean;
   /** How many explicit-evidence places rendered (0 → nothing verifiable). */
   renderedPlaces: number;
+  /** Authoritative saved_places link on a completed metadata-auto-save job. */
+  parentSavedPlaceId?: string | null;
 };
 
 export type PreResolvePlan =
@@ -110,8 +111,9 @@ export type PreResolvePlan =
       action: 'manual_fallback';
       failureCode: string;
       taskTerminalStatus: 'needs_help' | 'failed';
+      supplemental: boolean;
     }
-  | { action: 'resolve' };
+  | { action: 'resolve'; mode: 'finish_parent' | 'enrich_saved_place' };
 
 export function planPreResolve(input: PreResolveInput): PreResolvePlan {
   // A terminal task (incl. a duplicate/replayed callback) is a safe no-op.
@@ -119,35 +121,40 @@ export function planPreResolve(input: PreResolveInput): PreResolvePlan {
     return { action: 'idempotent_task_terminal', taskStatus: input.taskStatus };
   }
 
-  // The parent already left processing (cancelled elsewhere, or finalized by a
-  // prior callback / the recovery sweep). Never revive it.
-  if (input.parentStatus !== 'processing_metadata') {
+  // A completed metadata save is deliberately allowed to continue through
+  // media analysis. It remains terminal/user-complete; only the linked saved
+  // place may receive supplemental source context.
+  const enrichSavedPlace =
+    input.parentStatus === 'completed' && !!input.parentSavedPlaceId;
+
+  // Other terminal parents remain immutable.
+  if (input.parentStatus !== 'processing_metadata' && !enrichSavedPlace) {
     return { action: 'parent_already_terminal' };
   }
 
   // Media retrieval/analysis failed before producing a usable result.
   if (input.outcome === 'unavailable') {
-    return { action: 'manual_fallback', failureCode: 'media_unavailable', taskTerminalStatus: 'needs_help' };
+    return { action: 'manual_fallback', failureCode: 'media_unavailable', taskTerminalStatus: 'needs_help', supplemental: enrichSavedPlace };
   }
   if (input.outcome === 'failed') {
-    return { action: 'manual_fallback', failureCode: 'media_failed', taskTerminalStatus: 'failed' };
+    return { action: 'manual_fallback', failureCode: 'media_failed', taskTerminalStatus: 'failed', supplemental: enrichSavedPlace };
   }
 
   // Retrieval and analysis completed, but no place evidence survived the
   // deterministic evidence gate. Keep this distinct from media availability.
   if (input.outcome === 'insufficient_evidence') {
-    return { action: 'manual_fallback', failureCode: 'insufficient_evidence', taskTerminalStatus: 'needs_help' };
+    return { action: 'manual_fallback', failureCode: 'insufficient_evidence', taskTerminalStatus: 'needs_help', supplemental: enrichSavedPlace };
   }
 
   // outcome === 'evidence'
   if (!input.evidenceParseOk) {
-    return { action: 'manual_fallback', failureCode: 'evidence_parse_failed', taskTerminalStatus: 'needs_help' };
+    return { action: 'manual_fallback', failureCode: 'evidence_parse_failed', taskTerminalStatus: 'needs_help', supplemental: enrichSavedPlace };
   }
   if (input.renderedPlaces === 0) {
-    return { action: 'manual_fallback', failureCode: 'insufficient_evidence', taskTerminalStatus: 'needs_help' };
+    return { action: 'manual_fallback', failureCode: 'insufficient_evidence', taskTerminalStatus: 'needs_help', supplemental: enrichSavedPlace };
   }
 
-  return { action: 'resolve' };
+  return { action: 'resolve', mode: enrichSavedPlace ? 'enrich_saved_place' : 'finish_parent' };
 }
 
 // ---------------------------------------------------------------------------

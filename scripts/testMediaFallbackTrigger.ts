@@ -14,6 +14,7 @@
 
 import {
   shouldRunMediaFallback,
+  shouldRunPostSaveEnrichment,
   isSupportedMediaPlatform,
   effectiveMediaFlags,
   mediaInfrastructureEnabled,
@@ -216,6 +217,24 @@ for (const platform of ['tiktok', 'facebook', 'youtube', 'twitter', 'genericWeb'
     ctx(),
   );
   check('auto-save guard precedes any positive trigger', !r.run);
+}
+
+// ---- Post-save enrichment is independent from fallback --------------------
+{
+  const r = shouldRunPostSaveEnrichment(ctx({ jobStatus: 'completed' }));
+  check('completed metadata auto-save => post-save enrichment runs', r.run && r.reason === 'post_save_enrichment');
+}
+{
+  const r = shouldRunPostSaveEnrichment(ctx({ jobStatus: 'completed', mediaTaskExists: true }));
+  check('post-save retry cannot duplicate media task', !r.run && r.reason === 'media_task_exists');
+}
+{
+  const r = shouldRunPostSaveEnrichment(ctx({ jobStatus: 'processing_metadata' }));
+  check('post-save task waits for user-facing completion', !r.run && r.reason === 'saved_job_not_completed');
+}
+{
+  const r = shouldRunPostSaveEnrichment(ctx({ jobStatus: 'completed', platform: 'tiktok' }));
+  check('unsupported source does not create enrichment task', !r.run && r.reason === 'unsupported_platform');
 }
 
 // ---------------------------------------------------------------------------

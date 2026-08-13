@@ -550,6 +550,14 @@ export default function MapScreen() {
   const followModeRef = useRef(true);
   followModeRef.current = followMode;
   const [selected, setSelected] = useState<SavedPlaceWithPlace | null>(null);
+
+  // Keep an already-open detail sheet attached to the live cached row. Media
+  // enrichment updates ai_note asynchronously after the initial save.
+  useEffect(() => {
+    if (!selected) return;
+    const live = validPlaces.find((place) => place.id === selected.id);
+    if (live && live !== selected) setSelected(live);
+  }, [selected, validPlaces]);
   const [mapReady, setMapReady] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
   // Map-first chrome: which filter chip is active. Phase 1 keeps this as UI

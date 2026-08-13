@@ -24,6 +24,7 @@ import { listSavedPlaces } from '@/services/savedPlacesService';
 import { useAuth } from '@/hooks/useAuth';
 import { logDebug } from '@/lib/logger';
 import { recordBreadcrumb } from '@/lib/breadcrumbs';
+import { supabase } from '@/lib/supabase';
 import {
   isLikelyOfflineError,
   readSavedPlacesCache,
@@ -231,6 +232,32 @@ export function useSavedPlaces() {
     },
     [userId],
   );
+
+  // AI-note enrichment lands after the save has already completed. The
+  // already-published per-place ledger emits only after the ai_note write, so
+  // refresh the shared cache when that authoritative completion arrives.
+  useEffect(() => {
+    if (!userId) return;
+    const channel = supabase
+      .channel(`saved-place-enrichment:${userId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'share_job_place_results',
+          filter: `user_id=eq.${userId}`,
+        },
+        (payload) => {
+          const row = payload.new as { saved_place_id?: string | null };
+          if (row.saved_place_id) void fetch('background');
+        },
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [fetch, userId]);
 
   useEffect(() => {
     // Wait until auth has finished initialising before touching Supabase.

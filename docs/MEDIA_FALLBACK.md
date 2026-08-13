@@ -6,12 +6,11 @@
 > Phase 1 (metadata-first async share jobs) is unchanged and remains the
 > user-facing source of truth.
 
-Phase 2 adds a **durable, private video-analysis fallback** for share jobs whose
-metadata evidence was insufficient. When the Phase 1 resolver cannot verify a
-place from caption/metadata, the worker enqueues one media task; a separate
-containerized service retrieves the public video **temporarily**, extracts
-spoken + visible place evidence, and hands that evidence back to Nearr's
-**existing deterministic resolver + `safeToAutoSave` gate**.
+Phase 2 adds durable, private video analysis for supported social shares. It
+serves two independent outcomes: unresolved metadata jobs may wait on it as a
+fallback, while successful metadata auto-saves complete immediately and queue
+it as supplemental post-save enrichment. The latter updates only the existing
+saved place's `ai_note` after an exact provider-identity match.
 
 ## Core product rule
 
@@ -28,6 +27,7 @@ flowchart TD
   A[share_jobs row: processing_metadata] --> B[process-share-jobs worker]
   B --> C{metadata resolver decision}
   C -->|auto_save + safeToAutoSave| D[save + completed + push]
+  D -->|supported social source| E
   C -->|insufficient evidence AND shouldRunMediaFallback| E[enqueue share_media_tasks\npark parent: checking_video]
   C -->|otherwise| F[needs_help]
   E -.pg_net wake-up + pg_cron.-> G[media-worker container]
@@ -37,7 +37,8 @@ flowchart TD
   J --> K[analyze -> PROPOSE place evidence]
   K --> L[POST finalize -> process-share-jobs]
   L --> M[extractEvidence -> resolveSharedPlace -> safeToAutoSave]
-  M -->|auto_save| D
+  M -->|fallback auto_save| D
+  M -->|completed parent + exact provider ID| N[update existing ai_note only]
   M -->|confirm / multi / manual| F
 ```
 
@@ -66,12 +67,12 @@ stateDiagram-v2
   cancelled --> [*]
 ```
 
-The **parent `share_jobs` row is the user-facing source of truth**. While a
-media task runs, the parent stays `processing_metadata` (shown as "Processing")
-with **no lease** (`locked_until = NULL`), so the metadata claim never silently
-re-processes it. A parent is only ever moved off `processing_metadata` by an
-explicit media finalize or by the **bounded recovery sweep** below — so a parent
-can never get stuck, even during a rollback that stops the media worker.
+The **parent `share_jobs` row is the user-facing source of truth**. A fallback
+task parks it in `processing_metadata`. A post-save enrichment task leaves it
+terminal `completed`; media failure cannot undo the save or send another review
+notification. `claim_media_tasks` accepts that terminal shape only when
+`saved_place_id` is non-null. The unique `share_media_tasks.share_job_id`
+constraint still permits exactly one task per share job.
 
 ### Parent recovery, retries & cancellation
 
@@ -111,7 +112,7 @@ not a far-future lease:
 Pure, unit-tested ([mediaFallback.ts](../supabase/functions/process-share-jobs/mediaFallback.ts),
 [testMediaFallbackTrigger.ts](../scripts/testMediaFallbackTrigger.ts)).
 
-**Never runs** when: any Phase 2 flag is off; platform is not Instagram (or the
+Fallback **never runs** when: any Phase 2 flag is off; platform is not Instagram (or the
 IG resolver flag is off); the job is terminal/cancelled; a media task already
 exists; metadata safely auto-saved; multi-place already resolved (or ≥2 explicit
 addresses); or the failure is unrelated to missing media evidence
@@ -121,6 +122,13 @@ addresses); or the failure is unrelated to missing media evidence
 generic caption blocked all queries; resolver `failed` (recoverable); a weak
 single `candidate_confirmation`/`candidate_picker` that is **not**
 address-verified; or an `auto_save` that failed the safety gate.
+
+`shouldRunPostSaveEnrichment` is separate: after a supported metadata auto-save
+is committed and the parent is `completed`, it queues the one task even though
+`shouldRunMediaFallback` correctly says no fallback is needed. Finalization
+loads `share_jobs.saved_place_id`, joins its provider ID, and writes `ai_note`
+only for one exact matching logical result. Disagreement is logged and the note
+is withheld; no save/provider mutation path is invoked.
 
 For one controlled hosted canary, `PHASE2_CANARY_USER_ID` may be set to one
 exact UUID. It derives effective fallback/Instagram flags only for that job
@@ -269,9 +277,10 @@ own inbound endpoint). The finalizer:
 - **Derives the parent from `task.share_job_id`** (the DB foreign key) — it
   never trusts a job id supplied in the request body, so a caller cannot
   redirect a finalize at another user's job.
-- Is **idempotent**: if the task is already terminal, or the parent is no longer
-  `processing_metadata`, the callback is a no-op (no duplicate save, no second
-  notification). Replays and races collapse to a single outcome
+- Is **idempotent**: a terminal task is always a no-op. A completed parent with
+  `saved_place_id` can only enrich that row; all other terminal parents are
+  ignored. No post-save path can create a save or second notification. Replays
+  and races collapse to a single outcome
   ([mediaFinalizePlan.ts](../supabase/functions/process-share-jobs/mediaFinalizePlan.ts)).
 
 ## Model prompt versioning

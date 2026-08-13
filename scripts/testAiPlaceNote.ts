@@ -30,6 +30,53 @@ assert.equal(
   null,
   'generic provider/category metadata alone cannot create a note',
 );
+
+const santaFeVisual = generateAiPlaceNote({
+  placeName: 'Santa Fe Importers Seal Beach',
+  proposedNote: 'That stacked Italian sandwich looks absolutely ridiculous. Need it.',
+  evidence: [{ source: 'frame', timestampSeconds: 8, value: 'stacked Italian sandwich' }],
+});
+assert.equal(
+  santaFeVisual,
+  'That stacked Italian sandwich looks absolutely ridiculous. Need it.',
+  'visual-only evidence can support a lively two-beat note',
+);
+assert.equal(
+  generateAiPlaceNote({
+    placeName: 'Santa Fe Importers Seal Beach',
+    proposedNote: 'That stacked mortadella sandwich looks absolutely ridiculous. Need it.',
+    evidence: [{ source: 'frame', timestampSeconds: 8, value: 'stacked Italian sandwich' }],
+  }),
+  null,
+  'an unsupported ingredient is rejected',
+);
+assert.equal(
+  generateAiPlaceNote({
+    placeName: 'Santa Fe Importers Seal Beach',
+    proposedNote: 'That Italian deli looks absolutely ridiculous. Need it.',
+    evidence: [{ source: 'caption', value: 'Santa Fe Importers Italian Deli' }],
+  }),
+  null,
+  'provider identity/category alone does not become a reason to save',
+);
+assert.equal(
+  generateAiPlaceNote({
+    placeName: 'Juniper Coffee',
+    proposedNote: "That strawberry matcha looks dangerously good. I'm going.",
+    evidence: [{ source: 'caption', value: 'Come try our strawberry matcha' }],
+  }),
+  "That strawberry matcha looks dangerously good. I'm going.",
+  'caption-only evidence allows contractions and conversational style',
+);
+assert.equal(
+  generateAiPlaceNote({
+    placeName: 'Falls Trail',
+    proposedNote: 'That waterfall payoff looks so worth the hike!',
+    evidence: [{ source: 'speech', value: 'the waterfall payoff is worth the hike' }],
+  }),
+  'That waterfall payoff looks so worth the hike!',
+  'transcript-only evidence can keep natural punctuation',
+);
 assert.equal(
   generateAiPlaceNote({
     placeName: 'Some Place',

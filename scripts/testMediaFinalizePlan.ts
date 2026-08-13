@@ -56,6 +56,29 @@ for (const s of ['cancelled', 'completed', 'needs_help', 'failed']) {
   const p = pre({ parentStatus: s });
   check(`parent ${s} => parent_already_terminal`, p.action === 'parent_already_terminal', JSON.stringify(p));
 }
+{
+  const p = pre({
+    parentStatus: 'completed',
+    parentSavedPlaceId: 'b7fd50fc-42ec-4043-a98f-d2dc8185d619',
+  });
+  check(
+    'completed metadata save with authoritative savedPlaceId => enrich existing place',
+    p.action === 'resolve' && p.mode === 'enrich_saved_place',
+    JSON.stringify(p),
+  );
+}
+{
+  const p = pre({
+    parentStatus: 'completed',
+    parentSavedPlaceId: 'b7fd50fc-42ec-4043-a98f-d2dc8185d619',
+    outcome: 'failed',
+  });
+  check(
+    'post-save media failure is supplemental',
+    p.action === 'manual_fallback' && p.supplemental === true,
+    JSON.stringify(p),
+  );
+}
 
 // ---- Worker outcomes -------------------------------------------------------
 {
