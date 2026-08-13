@@ -2,38 +2,17 @@ import assert from 'node:assert/strict';
 
 import {
   SHARE_COMPLETION_COPY,
-  SHARE_COMPLETION_SHEET,
+  SHARE_COMPLETION_LAYOUT,
   acceptedBody,
   canDismiss,
-  occupiesFullScreen,
-  shareCompletionMaxHeight,
   shareCompletionMotion,
 } from '../lib/shareCompletionUi';
 
-// ---- compact completion state ---------------------------------------------
-// The production bug: the sheet rendered at height:100%. The ceiling must keep
-// it to roughly half the window on every common device height.
-for (const windowHeight of [667, 812, 844, 932, 1024]) {
-  const max = shareCompletionMaxHeight(windowHeight);
-  assert.ok(max > 0, 'sheet always has a positive height');
-  assert.ok(
-    !occupiesFullScreen(max, windowHeight),
-    `sheet must not fill the screen at ${windowHeight}pt`,
-  );
-  assert.ok(max < windowHeight * 0.6, 'sheet stays compact');
-}
-assert.ok(shareCompletionMaxHeight(0) > 0, 'unknown window height still yields a usable sheet');
-assert.ok(shareCompletionMaxHeight(Number.NaN) > 0, 'NaN window height is safe');
-
-// The old full-screen layout is detected as the regression it was.
-assert.equal(occupiesFullScreen(844, 844), true);
-assert.equal(occupiesFullScreen(400, 844), false);
-
 // Safe areas / tap targets survive.
-assert.ok(SHARE_COMPLETION_SHEET.primaryHeight >= 44, 'Done is a full tap target');
-assert.ok(SHARE_COMPLETION_SHEET.secondaryHeight >= 40, 'Open Nearr stays tappable');
-assert.ok(SHARE_COMPLETION_SHEET.bottomPadding > 0, 'bottom inset padding is reserved');
-assert.ok(SHARE_COMPLETION_SHEET.markSize >= 40, 'confirmation mark is visible');
+assert.ok(SHARE_COMPLETION_LAYOUT.primaryHeight >= 44, 'Done is a full tap target');
+assert.ok(SHARE_COMPLETION_LAYOUT.secondaryHeight >= 44, 'Open Nearr is a full tap target');
+assert.ok(SHARE_COMPLETION_LAYOUT.horizontalPadding >= 16, 'small phones retain side padding');
+assert.ok(SHARE_COMPLETION_LAYOUT.markSize >= 40, 'confirmation mark is visible');
 
 // ---- Done / Open Nearr copy ------------------------------------------------
 assert.equal(SHARE_COMPLETION_COPY.primary, 'Done');
@@ -62,4 +41,4 @@ assert.ok(normal.durationMs > 0 && normal.durationMs <= 400, 'motion stays short
 assert.ok(normal.fromScale < 1, 'mark scales in');
 assert.ok(normal.fromOpacity < 1, 'content fades in');
 
-console.log('PASS share completion sheet layout, copy, dismissal, and Reduce Motion');
+console.log('PASS share completion surface layout, copy, dismissal, and Reduce Motion');

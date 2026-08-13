@@ -1,54 +1,25 @@
 /**
  * lib/shareCompletionUi.ts
  *
- * PURE layout + motion policy for the share-extension completion sheet.
+ * PURE layout + motion policy for the share-extension completion surface.
  *
- * Why this exists: the extension previously rendered its card at `height:100%`,
- * so a four-line success message occupied the entire display with a large dead
- * region (see the production screenshot). The sheet must instead be a compact,
- * content-sized bottom sheet, and its confirmation motion must degrade to a
- * static frame when the OS reports Reduce Motion.
+ * The native controller requests a compact host height, and React fills the
+ * bounds iOS actually grants. Motion must degrade to a static final frame when
+ * the OS reports Reduce Motion.
  *
  * No React Native imports and no I/O so it is unit-testable from ts-node.
  */
 
 export type ShareCompletionState = 'submitting' | 'accepted' | 'recoverable';
 
-/**
- * Compact bottom-sheet metrics. `maxHeightRatio` is the hard ceiling applied to
- * the extension window: the sheet is content-sized, but may never grow past
- * this fraction of the screen even with Dynamic Type at its largest.
- */
-export const SHARE_COMPLETION_SHEET = {
-  cornerRadius: 28,
+/** Completion-surface metrics shared by the React view and focused tests. */
+export const SHARE_COMPLETION_LAYOUT = {
   horizontalPadding: 22,
-  topPadding: 20,
-  /** Extra bottom padding added on top of the device safe-area inset. */
-  bottomPadding: 10,
-  /** Never taller than this share of the extension window. */
-  maxHeightRatio: 0.52,
   /** Diameter of the animated confirmation mark. */
   markSize: 56,
-  primaryHeight: 50,
-  secondaryHeight: 40,
+  primaryHeight: 52,
+  secondaryHeight: 48,
 } as const;
-
-/**
- * Resolve the sheet's max pixel height for a given window. Always returns a
- * positive number so a zero/unknown window height can never collapse the sheet.
- */
-export function shareCompletionMaxHeight(windowHeight: number): number {
-  if (!Number.isFinite(windowHeight) || windowHeight <= 0) return 360;
-  return Math.round(windowHeight * SHARE_COMPLETION_SHEET.maxHeightRatio);
-}
-
-/** True when the sheet would occupy essentially the whole screen (the bug). */
-export function occupiesFullScreen(sheetHeight: number, windowHeight: number): boolean {
-  if (!Number.isFinite(sheetHeight) || !Number.isFinite(windowHeight) || windowHeight <= 0) {
-    return false;
-  }
-  return sheetHeight / windowHeight > 0.8;
-}
 
 export type ShareCompletionMotion = {
   /** Whether to run the entrance/pulse animation at all. */
@@ -81,6 +52,10 @@ export const SHARE_COMPLETION_COPY = {
   duplicateBody: "You already shared this one — we're still on it.",
   primary: 'Done',
   secondary: 'Open Nearr',
+  failureTitle: "Couldn't send this to Nearr",
+  failureBody: 'Check your connection and try again.',
+  retry: 'Try again',
+  cancel: 'Cancel',
 } as const;
 
 /** Body copy for the accepted state; a duplicate submission is stated honestly. */

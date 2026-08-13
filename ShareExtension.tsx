@@ -38,16 +38,16 @@
 
 import { useEffect, useRef, useState } from 'react';
 import {
-  AccessibilityInfo,
   ActivityIndicator,
   Animated,
   Pressable,
   SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
-  useWindowDimensions,
   View,
 } from 'react-native';
+import { useReducedMotion } from 'react-native-reanimated';
 import { close, openHostApp, type InitialProps } from 'expo-share-extension';
 
 import { sharedAuth } from './lib/sharedAuth';
@@ -61,12 +61,16 @@ import { selectExtensionAuthAction } from './lib/sharedAuthSession';
 import { SHARE_JOBS_DEEPLINK_PATH } from './lib/shareRoutes';
 import { appendSubmissionId, mintSubmissionId } from './lib/shareSubmission';
 import {
-  SHARE_COMPLETION_COPY,
-  SHARE_COMPLETION_SHEET,
-  acceptedBody,
-  shareCompletionMaxHeight,
+  SHARE_COMPLETION_LAYOUT,
   shareCompletionMotion,
 } from './lib/shareCompletionUi';
+import {
+  completionView,
+  createCompletionActions,
+  createSubmissionGate,
+  type CompletionActions,
+  type SubmissionGate,
+} from './lib/shareExtensionCompletion';
 
 // 2026-05-26: single resolver covers process.env, expoConfig.extra,
 // manifest.extra and manifest2.extra so a missing inline at build
@@ -496,43 +500,45 @@ type AsyncUi =
   | { kind: 'network_failure' };
 
 /**
- * Compact bottom-sheet chrome shared by every async extension state. The
- * backdrop anchors a content-sized card to the bottom of the extension window
- * (Instagram stays visible behind it where the OS supports it), so the sheet
- * never fills the whole display or leaves a giant empty region.
+ * Cohesive root surface shared by every async extension state. The native
+ * controller asks iOS for a compact height, while this surface intentionally
+ * fills whatever bounds the extension host actually grants. That avoids a
+ * small React card floating at the bottom of an unrelated empty controller.
  */
-function AsyncSheet({
+function AsyncSurface({
   children,
   onClose,
+  showClose = true,
 }: {
   children: React.ReactNode;
   onClose: () => void;
+  showClose?: boolean;
 }) {
-  const { height: windowHeight } = useWindowDimensions();
   return (
-    <View style={asyncStyles.backdrop}>
-      <Pressable
-        style={StyleSheet.absoluteFill}
-        onPress={onClose}
-        accessibilityRole="button"
-        accessibilityLabel="Dismiss"
-      />
-      <SafeAreaView
-        style={[asyncStyles.sheet, { maxHeight: shareCompletionMaxHeight(windowHeight) }]}
-      >
-        <View style={asyncStyles.dragIndicator} />
+    <SafeAreaView style={asyncStyles.surface}>
+      {showClose ? (
         <Pressable
           onPress={onClose}
-          style={({ pressed }) => [asyncStyles.closeBtn, pressed ? asyncStyles.closeBtnPressed : null]}
+          style={({ pressed }) => [
+            asyncStyles.closeBtn,
+            pressed ? asyncStyles.closeBtnPressed : null,
+          ]}
           accessibilityRole="button"
-          accessibilityLabel="Close"
+          accessibilityLabel="Cancel"
           hitSlop={8}
         >
           <Text style={asyncStyles.closeIcon}>×</Text>
         </Pressable>
-        {children}
-      </SafeAreaView>
-    </View>
+      ) : null}
+      <ScrollView
+        style={asyncStyles.scroll}
+        contentContainerStyle={asyncStyles.contentContainer}
+        alwaysBounceVertical={false}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={asyncStyles.content}>{children}</View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -541,20 +547,8 @@ function AsyncSheet({
  * final frame immediately when Reduce Motion is enabled.
  */
 function SavedMark() {
-  const [reduceMotion, setReduceMotion] = useState(false);
-  const progress = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    let active = true;
-    void AccessibilityInfo.isReduceMotionEnabled()
-      .then((enabled) => {
-        if (active) setReduceMotion(!!enabled);
-      })
-      .catch(() => undefined);
-    return () => {
-      active = false;
-    };
-  }, []);
+  const reduceMotion = useReducedMotion();
+  const progress = useRef(new Animated.Value(reduceMotion ? 1 : 0)).current;
 
   useEffect(() => {
     const motion = shareCompletionMotion(reduceMotion);
@@ -562,6 +556,7 @@ function SavedMark() {
       progress.setValue(1);
       return;
     }
+    progress.setValue(0);
     const animation = Animated.timing(progress, {
       toValue: 1,
       duration: motion.durationMs,
@@ -580,15 +575,34 @@ function SavedMark() {
     inputRange: [0, 1],
     outputRange: [motion.fromOpacity, 1],
   });
+  const pulseOpacity = progress.interpolate({
+    inputRange: [0, 0.55, 1],
+    outputRange: [0, 0.22, 0],
+  });
+  const pulseScale = progress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.72, 1.3],
+  });
 
   return (
     <Animated.View
-      style={[asyncStyles.brandDot, { opacity, transform: [{ scale }] }]}
+      style={asyncStyles.markWrap}
       accessible
       accessibilityRole="image"
-      accessibilityLabel="Saved"
+      accessibilityLabel="Sent to Nearr"
     >
-      <Text style={asyncStyles.check}>✓</Text>
+      {!reduceMotion ? (
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            asyncStyles.markPulse,
+            { opacity: pulseOpacity, transform: [{ scale: pulseScale }] },
+          ]}
+        />
+      ) : null}
+      <Animated.View style={[asyncStyles.brandDot, { opacity, transform: [{ scale }] }]}>
+        <Text style={asyncStyles.check}>✓</Text>
+      </Animated.View>
     </Animated.View>
   );
 }
@@ -599,9 +613,13 @@ function AsyncShareExtension(props: InitialProps) {
   // for create-share-job AND propagated to the host fallback deep link (?sid=)
   // so the extension, the host, and any retry all resolve to a single job.
   const submissionIdRef = useRef(mintSubmissionId());
-  const hostOpenedRef = useRef(false);
   const [ui, setUi] = useState<AsyncUi>({ kind: 'submitting' });
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const completionActionsRef = useRef<CompletionActions | null>(null);
+  const submissionGateRef = useRef<SubmissionGate<void> | null>(null);
+  if (!completionActionsRef.current) {
+    completionActionsRef.current = createCompletionActions({ close, openHostApp });
+  }
 
   const submit = async () => {
     const url = pickSharedUrl(props);
@@ -666,10 +684,17 @@ function AsyncShareExtension(props: InitialProps) {
     }
   };
 
+  const submitOnce = () => {
+    if (!submissionGateRef.current) {
+      submissionGateRef.current = createSubmissionGate(submit);
+    }
+    return submissionGateRef.current.run();
+  };
+
   useEffect(() => {
     if (handledRef.current) return;
     handledRef.current = true;
-    void submit();
+    void submitOnce();
     return () => {
       if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
     };
@@ -677,8 +702,6 @@ function AsyncShareExtension(props: InitialProps) {
   }, []);
 
   const openHost = (reason: string) => {
-    if (hostOpenedRef.current) return;
-    hostOpenedRef.current = true;
     const url = pickSharedUrl(props);
     if (url) {
       const encoded = encodeURIComponent(url);
@@ -689,55 +712,61 @@ function AsyncShareExtension(props: InitialProps) {
         submissionIdRef.current,
       );
       try {
-        openHostApp(path);
+        completionActionsRef.current?.openNearr(path);
       } catch (err) {
         console.warn('[share-extension] openHostApp failed', err);
       }
     }
-    close();
   };
 
   // Open the host app straight to the in-app queue. The path is DERIVED from
   // the real Expo Router route (see lib/shareRoutes.ts), never guessed.
   const openHostQueue = () => {
-    if (hostOpenedRef.current) return;
-    hostOpenedRef.current = true;
     try {
-      openHostApp(SHARE_JOBS_DEEPLINK_PATH);
+      completionActionsRef.current?.openNearr(SHARE_JOBS_DEEPLINK_PATH);
     } catch (err) {
       console.warn('[share-extension] openHostApp(queue) failed', err);
     }
-    close();
   };
 
+  const finish = () => completionActionsRef.current?.done();
+
   if (ui.kind === 'accepted') {
+    const view = completionView({ kind: 'accepted', duplicate: ui.duplicate });
     return (
-      <AsyncSheet onClose={close}>
+      <AsyncSurface onClose={finish} showClose={false}>
         <SavedMark />
-        <Text style={asyncStyles.title}>{SHARE_COMPLETION_COPY.acceptedTitle}</Text>
-        <Text style={asyncStyles.subtle}>{acceptedBody(ui.duplicate)}</Text>
+        <Text style={asyncStyles.eyebrow}>NEARR</Text>
+        <Text style={asyncStyles.title}>{view.title}</Text>
+        <Text style={asyncStyles.subtle}>{view.body}</Text>
         <Pressable
-          style={asyncStyles.primaryBtn}
-          onPress={close}
+          style={({ pressed }) => [
+            asyncStyles.primaryBtn,
+            pressed ? asyncStyles.primaryBtnPressed : null,
+          ]}
+          onPress={finish}
           accessibilityRole="button"
-          accessibilityLabel={SHARE_COMPLETION_COPY.primary}
+          accessibilityLabel={view.primary}
         >
-          <Text style={asyncStyles.primaryText}>{SHARE_COMPLETION_COPY.primary}</Text>
+          <Text style={asyncStyles.primaryText}>{view.primary}</Text>
         </Pressable>
         <Pressable
-          style={asyncStyles.secondaryBtn}
+          style={({ pressed }) => [
+            asyncStyles.secondaryBtn,
+            pressed ? asyncStyles.secondaryBtnPressed : null,
+          ]}
           onPress={openHostQueue}
           accessibilityRole="button"
-          accessibilityLabel={SHARE_COMPLETION_COPY.secondary}
+          accessibilityLabel={view.secondary ?? undefined}
         >
-          <Text style={asyncStyles.secondaryText}>{SHARE_COMPLETION_COPY.secondary}</Text>
+          <Text style={asyncStyles.secondaryText}>{view.secondary}</Text>
         </Pressable>
-      </AsyncSheet>
+      </AsyncSurface>
     );
   }
   if (ui.kind === 'needs_setup') {
     return (
-      <AsyncSheet onClose={close}>
+      <AsyncSurface onClose={finish}>
         <Text style={asyncStyles.title}>Open Nearr once to finish setup</Text>
         <Text style={asyncStyles.subtle}>
           {'Open Nearr once so it can connect sharing. After that, sharing works without opening the app.'}
@@ -750,12 +779,12 @@ function AsyncShareExtension(props: InitialProps) {
         >
           <Text style={asyncStyles.primaryText}>Open Nearr</Text>
         </Pressable>
-      </AsyncSheet>
+      </AsyncSurface>
     );
   }
   if (ui.kind === 'signed_out') {
     return (
-      <AsyncSheet onClose={close}>
+      <AsyncSurface onClose={finish}>
         <Text style={asyncStyles.title}>Open Nearr to sign in</Text>
         <Text style={asyncStyles.subtle}>{'Sign in once so Nearr can save places you share.'}</Text>
         <Pressable
@@ -766,12 +795,12 @@ function AsyncShareExtension(props: InitialProps) {
         >
           <Text style={asyncStyles.primaryText}>Open Nearr</Text>
         </Pressable>
-      </AsyncSheet>
+      </AsyncSurface>
     );
   }
   if (ui.kind === 'session_expired') {
     return (
-      <AsyncSheet onClose={close}>
+      <AsyncSurface onClose={finish}>
         <Text style={asyncStyles.title}>Open Nearr to finish saving</Text>
         <Text style={asyncStyles.subtle}>
           {'Your session needs a refresh. Open Nearr and we\u2019ll save this post.'}
@@ -784,50 +813,49 @@ function AsyncShareExtension(props: InitialProps) {
         >
           <Text style={asyncStyles.primaryText}>Open Nearr</Text>
         </Pressable>
-      </AsyncSheet>
+      </AsyncSurface>
     );
   }
   if (ui.kind === 'network_failure') {
+    const view = completionView({ kind: 'submission_failure' });
     return (
-      <AsyncSheet onClose={close}>
-        <Text style={asyncStyles.title}>{"Couldn't reach Nearr"}</Text>
-        <Text style={asyncStyles.subtle}>{'Check your connection and try again.'}</Text>
+      <AsyncSurface onClose={finish} showClose={false}>
+        <Text style={asyncStyles.title}>{view.title}</Text>
+        <Text style={asyncStyles.subtle}>{view.body}</Text>
         <Pressable
           style={asyncStyles.primaryBtn}
-          onPress={() => void submit()}
+          onPress={() => void submitOnce()}
           accessibilityRole="button"
-          accessibilityLabel="Retry"
+          accessibilityLabel={view.primary}
         >
-          <Text style={asyncStyles.primaryText}>Retry</Text>
+          <Text style={asyncStyles.primaryText}>{view.primary}</Text>
         </Pressable>
         <Pressable
           style={asyncStyles.secondaryBtn}
-          onPress={() => openHost('network_failure')}
+          onPress={finish}
           accessibilityRole="button"
-          accessibilityLabel="Open Nearr instead"
+          accessibilityLabel={view.secondary ?? undefined}
         >
-          <Text style={asyncStyles.secondaryText}>Open Nearr instead</Text>
+          <Text style={asyncStyles.secondaryText}>{view.secondary}</Text>
         </Pressable>
-      </AsyncSheet>
+      </AsyncSurface>
     );
   }
+  const submittingView = completionView({ kind: 'submitting' });
   return (
-    <AsyncSheet onClose={close}>
+    <AsyncSurface onClose={finish} showClose={false}>
       <ActivityIndicator color={NEARR_ORANGE} />
-      <Text style={asyncStyles.title}>Saving to Nearr</Text>
-      <Text style={asyncStyles.subtle}>{'Finding the place from this post…'}</Text>
-      <Text style={asyncStyles.subtleSmall}>
-        {"You can close this and keep scrolling. We'll notify you when it's ready."}
-      </Text>
+      <Text style={asyncStyles.title}>{submittingView.title}</Text>
+      <Text style={asyncStyles.subtle}>{submittingView.body}</Text>
       <Pressable
         style={asyncStyles.secondaryBtn}
-        onPress={() => close()}
+        onPress={finish}
         accessibilityRole="button"
-        accessibilityLabel="Close"
+        accessibilityLabel={submittingView.primary}
       >
-        <Text style={asyncStyles.secondaryText}>Close</Text>
+        <Text style={asyncStyles.secondaryText}>{submittingView.primary}</Text>
       </Pressable>
-    </AsyncSheet>
+    </AsyncSurface>
   );
 }
 
@@ -907,50 +935,37 @@ const styles = StyleSheet.create({
 // above so the flag-off (legacy) extension appearance is unchanged.
 // ---------------------------------------------------------------------------
 const NEARR_ORANGE = '#FF6B00';
-const NEARR_SURFACE = '#1C1C20';
-const NEARR_BORDER = '#2A2A30';
+const NEARR_SURFACE = '#0D0D0F';
 
 const asyncStyles = StyleSheet.create({
-  // Dim backdrop that anchors the sheet to the bottom of the extension window.
-  // Where the OS keeps the host app visible behind the extension, this dims it;
-  // otherwise it just darkens the window above the card.
-  backdrop: {
+  surface: {
     flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.45)',
-  },
-  // Content-sized card anchored to the bottom. It must NEVER stretch to fill
-  // the window (the old `height:'100%'` produced the large dead region seen in
-  // production); `maxHeight` is applied by AsyncSheet from the window height.
-  sheet: {
     backgroundColor: NEARR_SURFACE,
-    borderTopLeftRadius: SHARE_COMPLETION_SHEET.cornerRadius,
-    borderTopRightRadius: SHARE_COMPLETION_SHEET.cornerRadius,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderColor: NEARR_BORDER,
-    paddingHorizontal: SHARE_COMPLETION_SHEET.horizontalPadding,
-    paddingTop: SHARE_COMPLETION_SHEET.topPadding,
-    paddingBottom: SHARE_COMPLETION_SHEET.bottomPadding,
-    alignItems: 'center',
   },
-  dragIndicator: {
-    position: 'absolute',
-    top: 8,
-    width: 38,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#52525B',
+  scroll: { flex: 1 },
+  contentContainer: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingHorizontal: SHARE_COMPLETION_LAYOUT.horizontalPadding,
+    paddingVertical: 20,
+  },
+  content: {
+    width: '100%',
+    maxWidth: 420,
+    alignSelf: 'center',
+    alignItems: 'center',
   },
   closeBtn: {
     position: 'absolute',
-    top: 14,
+    zIndex: 2,
+    top: 10,
     right: 16,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#2A2A30',
+    backgroundColor: '#242428',
   },
   closeBtnPressed: { opacity: 0.7 },
   closeIcon: {
@@ -959,17 +974,28 @@ const asyncStyles = StyleSheet.create({
     lineHeight: 27,
     fontWeight: '400',
   },
+  markWrap: {
+    width: SHARE_COMPLETION_LAYOUT.markSize + 20,
+    height: SHARE_COMPLETION_LAYOUT.markSize + 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  markPulse: {
+    position: 'absolute',
+    width: SHARE_COMPLETION_LAYOUT.markSize + 12,
+    height: SHARE_COMPLETION_LAYOUT.markSize + 12,
+    borderRadius: (SHARE_COMPLETION_LAYOUT.markSize + 12) / 2,
+    backgroundColor: NEARR_ORANGE,
+  },
   brandDot: {
-    width: SHARE_COMPLETION_SHEET.markSize,
-    height: SHARE_COMPLETION_SHEET.markSize,
-    borderRadius: SHARE_COMPLETION_SHEET.markSize / 3,
+    width: SHARE_COMPLETION_LAYOUT.markSize,
+    height: SHARE_COMPLETION_LAYOUT.markSize,
+    borderRadius: SHARE_COMPLETION_LAYOUT.markSize / 2,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'rgba(255,107,0,0.14)',
     borderWidth: 1,
     borderColor: 'rgba(255,107,0,0.3)',
-    marginTop: 6,
-    marginBottom: 6,
   },
   check: {
     fontSize: 28,
@@ -977,49 +1003,56 @@ const asyncStyles = StyleSheet.create({
     color: NEARR_ORANGE,
     fontWeight: '700',
   },
+  eyebrow: {
+    marginTop: 1,
+    color: NEARR_ORANGE,
+    fontSize: 11,
+    lineHeight: 15,
+    fontWeight: '800',
+    letterSpacing: 2.2,
+  },
   title: {
-    marginTop: 4,
-    fontSize: 18,
-    fontWeight: '700',
+    marginTop: 5,
+    fontSize: 22,
+    lineHeight: 27,
+    fontWeight: '800',
     color: '#FFFFFF',
     textAlign: 'center',
   },
   subtle: {
     marginTop: 6,
-    fontSize: 14,
-    color: '#A1A1AA',
+    fontSize: 15,
+    color: '#B7B7BE',
     textAlign: 'center',
-    lineHeight: 19,
-  },
-  subtleSmall: {
-    marginTop: 8,
-    fontSize: 12,
-    color: '#71717A',
-    textAlign: 'center',
-    paddingHorizontal: 8,
-    lineHeight: 17,
+    lineHeight: 21,
+    maxWidth: 330,
   },
   // Prominent, 56px tall, full-width primary action.
   primaryBtn: {
-    marginTop: 14,
+    marginTop: 18,
     alignSelf: 'stretch',
-    minHeight: SHARE_COMPLETION_SHEET.primaryHeight,
+    minHeight: SHARE_COMPLETION_LAYOUT.primaryHeight,
     backgroundColor: NEARR_ORANGE,
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 20,
   },
+  primaryBtnPressed: {
+    opacity: 0.86,
+    transform: [{ scale: 0.99 }],
+  },
   primaryText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
   // Text button (e.g. "Open Nearr") — always visible directly below the primary
   // action.
   secondaryBtn: {
-    marginTop: 2,
+    marginTop: 3,
     alignSelf: 'stretch',
-    minHeight: SHARE_COMPLETION_SHEET.secondaryHeight,
+    minHeight: SHARE_COMPLETION_LAYOUT.secondaryHeight,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 20,
   },
-  secondaryText: { color: '#A1A1AA', fontSize: 15, fontWeight: '600' },
+  secondaryBtnPressed: { opacity: 0.62 },
+  secondaryText: { color: '#D1D1D6', fontSize: 15, fontWeight: '600' },
 });

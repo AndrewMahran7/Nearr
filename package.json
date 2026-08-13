@@ -64,6 +64,7 @@
     "test:share-phase1-ui": "ts-node -P scripts/tsconfig.json scripts/testSharePhase1Ui.ts",
     "test:share-phase1-render": "ts-node -P scripts/tsconfig.json scripts/testSharePhase1RenderContracts.ts",
     "test:share-extension-compact": "ts-node -P scripts/tsconfig.json scripts/testShareExtensionCompact.ts",
+    "test:share-extension-completion": "ts-node -P scripts/tsconfig.json scripts/testShareExtensionCompletion.ts",
     "test:media-fallback": "ts-node -P scripts/tsconfig.json scripts/testMediaFallbackTrigger.ts",
     "test:media-evidence": "ts-node -P scripts/tsconfig.json scripts/testMediaEvidenceAdapter.ts",
     "test:media-finalize": "ts-node -P scripts/tsconfig.json scripts/testMediaFinalizePlan.ts",

@@ -12,20 +12,14 @@ const placeImage = read('components/PlaceImage.tsx');
 const shareJobsSheet = read('components/ShareJobsSheet.tsx');
 
 assert.doesNotMatch(extension, /height: '100%'/);
-assert.match(extension, /backgroundColor: 'rgba\(0,0,0,0\.45\)'/);
-assert.match(extension, /Sent to Nearr/);
-assert.match(extension, />Done</);
-assert.match(extension, />Open Nearr</);
-assert.ok(
-	extension.indexOf('<Text style={asyncStyles.primaryText}>Done</Text>') <
-		extension.indexOf('<Text style={asyncStyles.secondaryText}>Open Nearr</Text>'),
-	'Done is the primary accepted-state action',
-);
+assert.match(extension, /backgroundColor: NEARR_SURFACE/);
+assert.match(extension, /completionView\(\{ kind: 'accepted'/);
+assert.match(extension, /<Text style={asyncStyles\.primaryText}>\{view\.primary\}<\/Text>/);
+assert.match(extension, /<Text style={asyncStyles\.secondaryText}>\{view\.secondary\}<\/Text>/);
 assert.doesNotMatch(extension, /SharedPreview|previewImage/);
-assert.doesNotMatch(extension.slice(extension.indexOf("ui.kind === 'accepted'"), extension.indexOf("ui.kind === 'needs_setup'")), /ScrollView/);
-assert.match(extension, /openHostApp\(SHARE_JOBS_DEEPLINK_PATH\)/);
-assert.match(extension, /hostOpenedRef\.current/, 'Open Nearr is once-latched');
-assert.match(extension, /<AsyncSheet onClose=\{close\}>/);
+assert.match(extension, /completionActionsRef\.current\?\.openNearr\(SHARE_JOBS_DEEPLINK_PATH\)/);
+assert.match(extension, /createCompletionActions/, 'Done and Open Nearr are once-latched');
+assert.match(extension, /<AsyncSurface onClose=\{finish\} showClose=\{false\}>/);
 
 assert.match(queue, /title="Your queue"/);
 assert.equal((queue.match(/queueIntro\(count\)/g) ?? []).length, 1, 'queue count appears once');
