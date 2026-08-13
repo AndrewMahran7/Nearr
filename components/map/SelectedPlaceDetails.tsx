@@ -20,7 +20,6 @@ import {
   Alert,
   FlatList,
   Image,
-  KeyboardAvoidingView,
   Linking,
   Modal,
   PanResponder,
@@ -30,7 +29,6 @@ import {
   StyleSheet,
   Switch,
   Text,
-  Platform,
   useWindowDimensions,
   View,
 } from 'react-native';
@@ -39,11 +37,18 @@ import { Feather } from '@expo/vector-icons';
 import { Button, Card, Input } from '@/components';
 import { PlaceCategoryPicker } from '@/components/PlaceCategoryPicker';
 import { WrongPlaceSheet } from '@/components/map/WrongPlaceSheet';
+import { NoteEditorModal } from '@/components/map/NoteEditorModal';
 import { Radius, Spacing } from '@/constants';
 import { useTheme } from '@/lib/theme';
 import { useAuth } from '@/hooks/useAuth';
 import { trackEvent } from '@/lib/analytics';
 import { applySavedPlaceEdit } from '@/lib/savedPlaceEdits';
+import {
+  cancelNoteEditor,
+  commitNoteEditor,
+  openNoteEditor,
+  type NoteEditorState,
+} from '@/lib/noteEditor';
 import { buildPlaceShareContent } from '@/lib/placeShare';
 import { deleteSavedPlace, setSavedPlaceCategory, updateSavedPlace } from '@/services/savedPlacesService';
 import { savedPlaceCategory, type NearrCategory } from '@/lib/placeCategory';
@@ -156,7 +161,10 @@ export function SelectedPlaceDetails({
       : '10',
   );
   const [notes, setNotes] = useState(() => saved.notes ?? '');
-  const [noteEditing, setNoteEditing] = useState(false);
+  const [noteEditor, setNoteEditor] = useState<NoteEditorState>(() => ({
+    ...openNoteEditor(saved.notes),
+    open: false,
+  }));
   const [reminderSettingsExpanded, setReminderSettingsExpanded] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -193,7 +201,7 @@ export function SelectedPlaceDetails({
         : '10',
     );
     setNotes(saved.notes ?? '');
-    setNoteEditing(false);
+    setNoteEditor({ ...openNoteEditor(saved.notes), open: false });
     setReminderSettingsExpanded(false);
     setCategory(savedPlaceCategory(saved));
     setWrongPlaceOpen(false);
@@ -281,10 +289,7 @@ export function SelectedPlaceDetails({
   }, [milesText, minutesText, mode, profile]);
 
   const dirty = useMemo(() => {
-    const nextNotes = notes.trim() ? notes.trim() : null;
-    const savedNotes = saved.notes ?? null;
     if (notifyOn !== saved.notifications_enabled) return true;
-    if (nextNotes !== savedNotes) return true;
     if (mode === 'default') {
       return saved.radius_unit !== null || saved.radius_value !== null;
     }
@@ -296,7 +301,7 @@ export function SelectedPlaceDetails({
     const parsed = Number.parseInt(minutesText, 10);
     if (!Number.isFinite(parsed) || parsed <= 0) return true;
     return saved.radius_unit !== 'minutes' || saved.radius_value !== parsed;
-  }, [milesText, minutesText, mode, notes, notifyOn, saved]);
+  }, [milesText, minutesText, mode, notifyOn, saved]);
 
   // Only offer the "open original" affordance when a non-empty source URL is
   // actually stored (share/paste flows). Manual saves have none → no button.
@@ -456,14 +461,12 @@ export function SelectedPlaceDetails({
       radiusUnit = 'minutes';
     }
 
-    const nextNotes = notes.trim() ? notes.trim() : null;
     setSaving(true);
     try {
       await updateSavedPlace(saved.id, {
         radius_value: radiusValue,
         radius_unit: radiusUnit,
         notifications_enabled: notifyOn,
-        notes: nextNotes,
       });
       // Push the new values into the shared cache so the map markers/list and
       // the sheet header stay consistent without a network refetch.
@@ -471,7 +474,6 @@ export function SelectedPlaceDetails({
         radius_value: radiusValue,
         radius_unit: radiusUnit,
         notifications_enabled: notifyOn,
-        notes: nextNotes,
       });
       updateSavedPlacesCache((prev) =>
         prev.map((row) => (row.id === saved.id ? updated : row)),
@@ -488,6 +490,21 @@ export function SelectedPlaceDetails({
     } finally {
       setSaving(false);
     }
+  }
+
+  function beginNoteEdit(useAiSuggestion = false) {
+    setNoteEditor(openNoteEditor(notes, saved.ai_note, useAiSuggestion));
+  }
+
+  async function saveNote(nextNotes: string | null) {
+    await updateSavedPlace(saved.id, { notes: nextNotes });
+    const updated = applySavedPlaceEdit(saved, { notes: nextNotes });
+    updateSavedPlacesCache((current) =>
+      current.map((row) => (row.id === saved.id ? updated : row)),
+    );
+    setNotes(nextNotes ?? '');
+    setNoteEditor((current) => commitNoteEditor({ ...current, draft: nextNotes ?? '' }).state);
+    onSaved?.(updated);
   }
 
   function openGalleryAt(index: number) {
@@ -808,59 +825,56 @@ export function SelectedPlaceDetails({
         ) : null}
       </Card>
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 24 : 0}
-      >
-        <Card style={styles.sectionCard}>
-          <View style={styles.rowBetween}>
-            <Text style={typography.bodyStrong}>Your note</Text>
-            {!noteEditing ? (
-              <Pressable onPress={() => setNoteEditing(true)} hitSlop={10} accessibilityRole="button">
-                <Text style={styles.changeLink}>Edit</Text>
+      <Card style={styles.sectionCard}>
+        <View style={styles.rowBetween}>
+          <Text style={typography.bodyStrong}>Your note</Text>
+          {notes.trim() ? (
+            <Pressable onPress={() => beginNoteEdit()} hitSlop={10} accessibilityRole="button">
+              <Text style={styles.changeLink}>Edit note</Text>
+            </Pressable>
+          ) : null}
+        </View>
+        {notes.trim() ? (
+          <Text style={[typography.body, styles.noteText]}>{notes.trim()}</Text>
+        ) : (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Add a note"
+            hitSlop={8}
+            onPress={() => beginNoteEdit()}
+            style={styles.addNoteAction}
+          >
+            <Text style={styles.changeLink}>Add a note</Text>
+          </Pressable>
+        )}
+        {saved.ai_note?.trim() ? (
+          <View style={styles.aiNoteWrap}>
+            <Text style={[typography.caption, styles.aiNoteLabel]}>From the post</Text>
+            <Text style={[typography.body, styles.aiNoteText]}>{saved.ai_note.trim()}</Text>
+            {!notes.trim() ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Use the post suggestion as my note"
+                hitSlop={8}
+                onPress={() => beginNoteEdit(true)}
+                style={styles.useAsNoteAction}
+              >
+                <Text style={styles.changeLink}>Use as my note</Text>
               </Pressable>
             ) : null}
           </View>
-          {noteEditing ? (
-            <>
-              <Input
-                value={notes}
-                onChangeText={setNotes}
-                placeholder="What should you remember about this place?"
-                multiline
-                autoFocus
-                style={styles.notesInput}
-              />
-              <Button
-                title="Done"
-                variant="secondary"
-                onPress={() => setNoteEditing(false)}
-                style={styles.noteDoneBtn}
-              />
-            </>
-          ) : (
-            <Text style={[typography.body, styles.noteText]}>
-              {notes.trim() || 'Add a note for yourself.'}
-            </Text>
-          )}
-          {saved.ai_note?.trim() ? (
-            <View style={styles.aiNoteWrap}>
-              <Text style={[typography.caption, styles.aiNoteLabel]}>Suggested from the post</Text>
-              <Text style={[typography.caption, styles.aiNoteText]}>{saved.ai_note}</Text>
-            </View>
-          ) : null}
-        </Card>
-
-        {dirty ? (
-          <Button
-            title="Save changes"
-            variant="secondary"
-            onPress={handleSave}
-            loading={saving}
-            style={styles.saveBtn}
-          />
         ) : null}
-      </KeyboardAvoidingView>
+      </Card>
+
+      {dirty ? (
+        <Button
+          title="Save changes"
+          variant="secondary"
+          onPress={handleSave}
+          loading={saving}
+          style={styles.saveBtn}
+        />
+      ) : null}
 
       <Button
         title="Wrong place?"
@@ -889,6 +903,13 @@ export function SelectedPlaceDetails({
           onCorrected?.(updated);
           setWrongPlaceOpen(false);
         }}
+      />
+      <NoteEditorModal
+        visible={noteEditor.open}
+        initialValue={noteEditor.draft}
+        aiNote={saved.ai_note}
+        onClose={() => setNoteEditor((current) => cancelNoteEditor(current))}
+        onSave={saveNote}
       />
     </View>
   );
@@ -1142,9 +1163,8 @@ function createStyles(
       fontWeight: '700',
     },
     numberInput: { marginTop: Spacing.xs },
-    notesInput: { minHeight: 72, textAlignVertical: 'top' },
     noteText: { color: colors.textSecondary, marginTop: Spacing.sm, lineHeight: 22 },
-    noteDoneBtn: { marginTop: Spacing.sm },
+    addNoteAction: { alignSelf: 'flex-start', marginTop: Spacing.sm, paddingVertical: Spacing.xs },
     aiNoteWrap: {
       marginTop: Spacing.md,
       paddingTop: Spacing.md,
@@ -1152,7 +1172,8 @@ function createStyles(
       borderTopColor: colors.border,
     },
     aiNoteLabel: { color: colors.textMuted, marginBottom: Spacing.xs },
-    aiNoteText: { color: colors.textSecondary, lineHeight: 19 },
+    aiNoteText: { color: colors.textSecondary, lineHeight: 22 },
+    useAsNoteAction: { alignSelf: 'flex-start', marginTop: Spacing.sm, paddingVertical: Spacing.xs },
     saveBtn: { width: '100%' },
     correctionBtn: { marginTop: Spacing.sm },
     deleteBtn: { marginTop: -Spacing.xs },

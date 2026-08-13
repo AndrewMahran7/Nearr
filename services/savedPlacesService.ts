@@ -23,7 +23,6 @@ import { logDebug } from '@/lib/logger';
 import { isMapPreviewMode } from '@/lib/mapPreview';
 import { triggerGeofenceResync } from '@/lib/geofencing';
 import { distanceMeters } from '@/lib/geo';
-import { deriveSuggestedPlaceNote } from '@/lib/placeNote';
 import {
   isLikelyOfflineError,
   OfflineMutationError,
@@ -156,22 +155,34 @@ async function patchExistingSavedPlace(
   if (input.sourceType !== undefined) patch.source_type = input.sourceType;
   if (input.sourceUrl !== undefined) patch.source_url = input.sourceUrl;
   if (input.notes !== undefined) patch.notes = input.notes;
-  if (input.aiNote !== undefined) patch.ai_note = input.aiNote;
   if (input.radiusValue !== null || input.radiusUnit !== null) {
     patch.radius_value = input.radiusValue;
     patch.radius_unit = input.radiusUnit;
   }
-  if (Object.keys(patch).length === 0) return;
+  if (Object.keys(patch).length > 0) {
+    const { error } = await supabase
+      .from('saved_places')
+      .update(patch)
+      .eq('id', savedPlaceId);
+    if (error) {
+      console.warn(
+        '[savedPlacesService] existing saved_place update failed (non-fatal)',
+        error.message,
+      );
+    }
+  }
 
-  const { error } = await supabase
-    .from('saved_places')
-    .update(patch)
-    .eq('id', savedPlaceId);
-  if (error) {
-    console.warn(
-      '[savedPlacesService] existing saved_place update failed (non-fatal)',
-      error.message,
-    );
+  // A re-save may fill a missing source cue, but never replaces a cue already
+  // associated with the existing save (which may have come from another post).
+  if (input.aiNote?.trim()) {
+    const { error } = await supabase
+      .from('saved_places')
+      .update({ ai_note: input.aiNote.trim() })
+      .eq('id', savedPlaceId)
+      .is('ai_note', null);
+    if (error) {
+      console.warn('[savedPlacesService] existing ai_note update failed (non-fatal)', error.message);
+    }
   }
 }
 
@@ -375,10 +386,9 @@ export async function saveSavedPlace(
     radius_unit: radiusUnit,
     source_type: input.sourceType ?? 'manual',
     source_url: input.sourceUrl ?? null,
-    notes: input.notes ?? deriveSuggestedPlaceNote({
-      sourceType: input.sourceType,
-      category: candidate.category,
-    }),
+    // User notes are authored only. Source-derived memory cues belong in
+    // `ai_note`, never in the field presented as the user's own writing.
+    notes: input.notes ?? null,
     ai_note: input.aiNote ?? null,
     category: categoryResolution.category,
     category_source: categoryResolution.source,

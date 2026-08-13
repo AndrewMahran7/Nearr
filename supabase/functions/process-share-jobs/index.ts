@@ -32,7 +32,7 @@ import { saveForUser } from '../process-share-link/save.ts';
 import { normalizeShareUrl } from '../../../lib/shareAgent/tiktokUrl.ts';
 import { buildShareJobCandidatePayload } from '../../../lib/shareJobResult.ts';
 import { isNearrCategory, resolvePlaceCategory } from '../../../lib/placeCategory.ts';
-import { generateAiPlaceNote } from '../../../lib/aiPlaceNote.ts';
+import { generateAiPlaceNote, persistAiNoteSupplementally } from '../../../lib/aiPlaceNote.ts';
 
 import { submitPushToUser, checkExpoReceipts, type TicketRef } from './push.ts';
 import {
@@ -48,7 +48,7 @@ import {
   summarizeMediaEvidence,
   mediaEvidenceAutoSaveEligible,
 } from './mediaEvidence.ts';
-import { buildVenueMentions } from './mediaMentions.ts';
+import { buildVenueMentions, normalizeVenueName } from './mediaMentions.ts';
 import { evaluateMediaAutoSave, mediaAutoSaveAuthorized, MEDIA_AUTO_SAVE_RULE_VERSION, resolveMediaAutoSaveThreshold } from './mediaAutoSaveGate.ts';
 import { authorizeServiceRoleBearer, authorizeWorkerSecret, planPreResolve, planPostResolve } from './mediaFinalizePlan.ts';
 
@@ -83,7 +83,7 @@ function truncate(s: string | null | undefined, max = 300): string {
   return s.length > max ? `${s.slice(0, max)}…` : s;
 }
 
-function safeCandidate(c: any) {
+function safeCandidate(c: any, aiNote: string | null = null) {
   return {
     googlePlaceId: c.googlePlaceId,
     name: c.name,
@@ -97,7 +97,42 @@ function safeCandidate(c: any) {
     shortFormattedAddress: typeof c.shortFormattedAddress === 'string' ? c.shortFormattedAddress : null,
     businessStatus: typeof c.businessStatus === 'string' ? c.businessStatus : null,
     matchScore: typeof c.confidenceScore === 'number' ? c.confidenceScore : null,
+    aiNote,
   };
+}
+
+function noteForLogicalMention(parsed: any, mention: any): string | null {
+  if (!parsed?.ok || !mention) return null;
+  const logicalName = mention.primaryVenueName ?? mention.displayName ?? '';
+  const normalizedName = mention.normalizedName ?? normalizeVenueName(logicalName);
+  const scopedPlaces = parsed.value.places.filter(
+    (place: any) => normalizeVenueName(place.name ?? '') === normalizedName,
+  );
+  for (const place of scopedPlaces) {
+    const note = generateAiPlaceNote({
+      placeName: logicalName,
+      proposedNote: place.memoryCue,
+      evidence: place.memoryCueEvidence ?? [],
+    });
+    if (note) return note;
+  }
+  return null;
+}
+
+function noteForAggregateCandidate(
+  candidateId: string,
+  mentionResults: any[],
+  notesByMentionId: Map<string, string | null>,
+): string | null {
+  const scopedNotes: string[] = [];
+  for (const mention of mentionResults) {
+    if (!mention.candidates?.some((candidate: any) => candidate.googlePlaceId === candidateId)) continue;
+    const note = notesByMentionId.get(mention.mentionId);
+    if (note) scopedNotes.push(note);
+  }
+  // The aggregate candidate loses logical mention boundaries. Attach a cue
+  // only when exactly one mention owns it; slot candidates keep their cue.
+  return scopedNotes.length === 1 ? scopedNotes[0]! : null;
 }
 
 // ---------------------------------------------------------------------------
@@ -489,6 +524,12 @@ async function finalizeMediaTask(admin: any, env: any, body: any): Promise<Respo
   const mentionResults = Array.isArray(result.diagnostics?.mentionResults)
     ? result.diagnostics.mentionResults
     : [];
+  const aiNoteByMentionId = new Map(
+    mediaMentions.mentions.map((mention: any) => [
+      mention.id,
+      noteForLogicalMention(parsed, mention),
+    ]),
+  );
   const nameDrivenResult = {
     mentionResults,
     aggregateCandidates: result.candidates ?? [],
@@ -526,6 +567,7 @@ async function finalizeMediaTask(admin: any, env: any, body: any): Promise<Respo
 
     for (const mentionResult of mentionResults) {
       const mention = mentionById.get(mentionResult.mentionId);
+      const aiNote = aiNoteByMentionId.get(mentionResult.mentionId) ?? null;
       const gate = mention
         ? evaluateMediaAutoSave(
             { mention, result: mentionResult, allResults: mentionResults },
@@ -581,24 +623,19 @@ async function finalizeMediaTask(admin: any, env: any, body: any): Promise<Respo
         if (saveError) throw new Error(`media_auto_save_failed: ${saveError.message}`);
         const saved = Array.isArray(savedRows) ? savedRows[0] : savedRows;
         if (!saved?.saved_place_id) throw new Error('media_auto_save_missing_saved_place_id');
-        const evidencePlace = parsed.ok
-          ? parsed.value.places.find((place: any) =>
-              place.name?.trim().toLowerCase() === mentionResult.displayName?.trim().toLowerCase(),
-            )
-          : null;
-        const aiNote = generateAiPlaceNote({
-          placeName: candidate.name,
-          category: categoryResolution.category,
-          evidence: evidencePlace?.explicitEvidence?.map((item: any) => item.value) ?? [],
-        });
         if (aiNote) {
-          const { error: aiNoteError } = await admin
-            .from('saved_places')
-            .update({ ai_note: aiNote })
-            .eq('id', saved.saved_place_id)
-            .eq('user_id', job.user_id)
-            .is('ai_note', null);
-          if (aiNoteError) throw new Error(`media_ai_note_save_failed: ${aiNoteError.message}`);
+          const aiNoteSave = await persistAiNoteSupplementally(aiNote, async (note) => {
+            const { error } = await admin
+              .from('saved_places')
+              .update({ ai_note: note })
+              .eq('id', saved.saved_place_id)
+              .eq('user_id', job.user_id)
+              .is('ai_note', null);
+            if (error) throw error;
+          });
+          if (aiNoteSave === 'failed') {
+            console.warn(`[media-task] supplemental ai note save failed task_id=${taskId}`);
+          }
         }
         const { error: categoryError } = await admin
           .from('saved_places')
@@ -668,7 +705,12 @@ async function finalizeMediaTask(admin: any, env: any, body: any): Promise<Respo
       ),
     );
     const candidatePayload = buildShareJobCandidatePayload(
-      result.candidates.filter((candidate: any) => unresolvedCandidateIds.has(candidate.googlePlaceId)).map(safeCandidate),
+      result.candidates
+        .filter((candidate: any) => unresolvedCandidateIds.has(candidate.googlePlaceId))
+        .map((candidate: any) => safeCandidate(
+          candidate,
+          noteForAggregateCandidate(candidate.googlePlaceId, unresolvedResults, aiNoteByMentionId),
+        )),
       unresolvedResults.map((mention: any) => ({
         mentionId: mention.mentionId,
         displayName: mention.displayName,
@@ -676,7 +718,11 @@ async function finalizeMediaTask(admin: any, env: any, body: any): Promise<Respo
         hostVenueName: mention.hostVenueName ?? null,
         relationshipType: mention.relationshipType ?? null,
         outcome: mention.outcome,
-        candidates: Array.isArray(mention.candidates) ? mention.candidates.map(safeCandidate) : [],
+        aiNote: aiNoteByMentionId.get(mention.mentionId) ?? null,
+        candidates: Array.isArray(mention.candidates)
+          ? mention.candidates.map((candidate: any) =>
+              safeCandidate(candidate, aiNoteByMentionId.get(mention.mentionId) ?? null))
+          : [],
       })),
     );
     candidatePayload.savedPlaceIds = allSavedPlaceIds;
@@ -802,7 +848,10 @@ async function finalizeMediaTask(admin: any, env: any, body: any): Promise<Respo
   // from a resolver auto_save that failed the media evidence eligibility gate.
   const mode = post.mode;
   const candidatePayload = buildShareJobCandidatePayload(
-    result.candidates.slice(0, 10).map(safeCandidate),
+    result.candidates.slice(0, 10).map((candidate: any) => safeCandidate(
+      candidate,
+      noteForAggregateCandidate(candidate.googlePlaceId, mentionResults, aiNoteByMentionId),
+    )),
     mentionResults.map((mention: any) => ({
       mentionId: mention.mentionId,
       displayName: mention.displayName,
@@ -810,7 +859,11 @@ async function finalizeMediaTask(admin: any, env: any, body: any): Promise<Respo
       hostVenueName: mention.hostVenueName ?? null,
       relationshipType: mention.relationshipType ?? null,
       outcome: mention.outcome,
-      candidates: Array.isArray(mention.candidates) ? mention.candidates.map(safeCandidate) : [],
+      aiNote: aiNoteByMentionId.get(mention.mentionId) ?? null,
+      candidates: Array.isArray(mention.candidates)
+        ? mention.candidates.map((candidate: any) =>
+            safeCandidate(candidate, aiNoteByMentionId.get(mention.mentionId) ?? null))
+        : [],
     })),
   );
   const decisionForRow =

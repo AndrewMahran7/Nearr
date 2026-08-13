@@ -74,6 +74,7 @@ export async function persistShareJobCandidate(
     jobId: string | null;
     platform: string | null | undefined;
     sourceUrl: string | null;
+    aiNote?: string | null;
   },
   dependencies: Pick<ShareJobCandidateSaveDependencies, 'save' | 'cache'> = productionDependencies,
 ): Promise<{ savedPlaceId: string | null; duplicate: boolean }> {
@@ -84,6 +85,7 @@ export async function persistShareJobCandidate(
     radiusUnit: null,
     sourceType: shareJobSourceType(args.platform),
     sourceUrl: args.sourceUrl,
+    aiNote: args.aiNote ?? undefined,
   });
   if (result.status === 'saved') {
     dependencies.cache(result.saved);
@@ -116,6 +118,7 @@ export async function saveResolvedQueueCandidate(
         jobId: job.id,
         platform: job.source_platform,
         sourceUrl: job.canonical_url ?? job.source_url,
+        aiNote: candidate.aiNote ?? null,
       },
       dependencies,
     ),

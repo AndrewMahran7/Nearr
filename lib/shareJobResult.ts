@@ -13,6 +13,8 @@ export type ShareJobResultCandidate = {
   shortFormattedAddress?: string | null;
   businessStatus?: string | null;
   matchScore: number | null;
+  /** Source-grounded cue already generated for this logical result. */
+  aiNote?: string | null;
 };
 
 export type ShareJobMentionOutcome =
@@ -30,6 +32,7 @@ export type ShareJobMentionSlot = {
   relationshipType: string | null;
   outcome: ShareJobMentionOutcome;
   candidates: ShareJobResultCandidate[];
+  aiNote?: string | null;
 };
 
 export type ShareJobCandidatePayload = {
@@ -68,6 +71,7 @@ export function normalizeResultCandidate(input: unknown): ShareJobResultCandidat
       : typeof row.confidenceScore === 'number' && Number.isFinite(row.confidenceScore)
         ? row.confidenceScore
         : null,
+    aiNote: text(row.aiNote),
   };
 }
 
@@ -112,6 +116,7 @@ export function normalizeMentionSlots(input: unknown): ShareJobMentionSlot[] {
       relationshipType: text(row.relationshipType),
       outcome,
       candidates: normalizeResultCandidates(row.candidates).slice(0, 5),
+      aiNote: text(row.aiNote),
     });
   }
   return slots;

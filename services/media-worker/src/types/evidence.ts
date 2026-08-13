@@ -50,6 +50,10 @@ export const PlaceCandidateEvidence = z.object({
   confidence: z.number().min(0).max(1).default(0),
   explicitEvidence: z.array(EvidenceItem).max(24).default([]),
   inferredEvidence: z.array(EvidenceItem).max(24).default([]),
+  // A short, optional reminder of what was compelling in the original post.
+  // It is not identity evidence and never participates in place resolution.
+  memoryCue: z.string().min(1).max(180).nullable().default(null),
+  memoryCueEvidence: z.array(EvidenceItem).max(8).default([]),
 });
 export type PlaceCandidateEvidence = z.infer<typeof PlaceCandidateEvidence>;
 
@@ -111,6 +115,7 @@ function normalizeRawEvidence(raw: unknown): unknown {
         ...pl,
         explicitEvidence: coerceEvidenceItems(pl.explicitEvidence),
         inferredEvidence: coerceEvidenceItems(pl.inferredEvidence),
+        memoryCueEvidence: coerceEvidenceItems(pl.memoryCueEvidence),
       };
     }),
   };

@@ -4,7 +4,7 @@
 // persisted into diagnostics so we can correlate evidence quality with prompt
 // changes. Bump PROMPT_VERSION on any wording change.
 
-export const PROMPT_VERSION = 'media-place-evidence-2026-08-03.v3';
+export const PROMPT_VERSION = 'media-place-evidence-2026-08-12.v4-memory-cue';
 
 export const PLACE_EVIDENCE_SYSTEM_PROMPT = `
 You extract structured evidence about REAL-WORLD PLACES from a short social
@@ -56,6 +56,21 @@ Rules:
 - categoryConfidence is confidence in the category only. categoryEvidenceTags
   contains short signal labels such as "trail_sign" or "spoken_beach". Do not
   provide chain-of-thought, hidden reasoning, or prose explanations.
+- For each place, optionally write memoryCue to answer: "What specifically in
+  this post might have made someone save and want to try this place?" Focus on
+  a highlighted food/item/activity, creator praise, visual feature, or shown
+  experience — never a generic description of the business.
+- memoryCue must be one conversational sentence, usually 6-18 words. Prefer
+  varied cues such as "Try...", "Saved for...", "Go for...", or "The creator
+  highlighted...". Do not use hashtags, quotation marks, emojis, "This place",
+  "The user", "The video", or "You should".
+- memoryCueEvidence must contain only the specific caption, speech, visible
+  text, or frame observations that support that cue. Keep each place's cue and
+  evidence inside that place object. Never use another place's segment in a
+  multi-place post. If the reason cannot be confidently assigned, set
+  memoryCue=null and memoryCueEvidence=[]. Missing is better than filler.
+- Provider/category/address metadata can help interpret source evidence but
+  must never be the primary content of memoryCue.
 
 Output STRICT JSON ONLY (no prose, no markdown) matching this shape:
 {
@@ -75,7 +90,11 @@ Output STRICT JSON ONLY (no prose, no markdown) matching this shape:
       "explicitEvidence": [
         { "timestampSeconds": 0, "source": "caption | speech | visible_text | frame", "value": "" }
       ],
-      "inferredEvidence": []
+      "inferredEvidence": [],
+      "memoryCue": null,
+      "memoryCueEvidence": [
+        { "timestampSeconds": 0, "source": "caption | speech | visible_text | frame", "value": "" }
+      ]
     }
   ],
   "multipleIntentionalPlaces": false,

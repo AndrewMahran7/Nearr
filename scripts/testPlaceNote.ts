@@ -5,9 +5,7 @@ import { deriveSuggestedPlaceNote, initialSavedPlaceNote } from '../lib/placeNot
 const categories = ['cafe', 'bakery', 'bar', 'restaurant', 'museum', 'park', 'store', null];
 for (const category of categories) {
   const note = deriveSuggestedPlaceNote({ sourceType: 'instagram', category });
-  assert.ok(note, `shared ${category ?? 'generic'} place gets a suggestion`);
-  const wordCount = note.split(/\s+/).length;
-  assert.ok(wordCount >= 3 && wordCount <= 10, `${category ?? 'generic'} note is 3-10 words`);
+  assert.equal(note, null, `provider/category metadata does not create a ${category ?? 'generic'} note`);
 }
 
 assert.equal(
@@ -26,8 +24,8 @@ assert.equal(
 );
 assert.equal(
   initialSavedPlaceNote({ notes: '', sourceType: 'link', category: 'museum' }),
-  'See what caught your eye here',
-  'empty shared notes receive an editable suggestion',
+  '',
+  'empty shared notes stay empty instead of impersonating user writing',
 );
 
 console.log('PASS place-note derivation');

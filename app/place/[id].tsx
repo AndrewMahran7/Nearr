@@ -30,6 +30,7 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 
 import { Button, Card, Input, Screen } from '@/components';
 import { PlaceCategoryPicker } from '@/components/PlaceCategoryPicker';
+import { NoteEditorModal } from '@/components/map/NoteEditorModal';
 import { Radius, Spacing } from '@/constants';
 
 import { getProfile } from '@/services/profileService';
@@ -46,7 +47,12 @@ import {
   updateSavedPlacesCache,
 } from '@/hooks/useSavedPlaces';
 import { applySavedPlaceEdit } from '@/lib/savedPlaceEdits';
-import { initialSavedPlaceNote } from '@/lib/placeNote';
+import {
+  cancelNoteEditor,
+  commitNoteEditor,
+  openNoteEditor,
+  type NoteEditorState,
+} from '@/lib/noteEditor';
 import { trackEvent } from '@/lib/analytics';
 import { savedPlaceCategory, type NearrCategory } from '@/lib/placeCategory';
 import { useTheme } from '@/lib/theme';
@@ -124,6 +130,10 @@ export default function PlaceDetail() {
   const [milesText, setMilesText] = useState('1');
   const [minutesText, setMinutesText] = useState('10');
   const [notes, setNotes] = useState('');
+  const [noteEditor, setNoteEditor] = useState<NoteEditorState>(() => ({
+    ...openNoteEditor(null),
+    open: false,
+  }));
   const [reminderSettingsExpanded, setReminderSettingsExpanded] = useState(false);
   const [category, setCategory] = useState<NearrCategory>('other');
   const [categorySaving, setCategorySaving] = useState(false);
@@ -152,11 +162,8 @@ export default function PlaceDetail() {
         if (s.radius_unit === 'minutes' && s.radius_value != null) {
           setMinutesText(String(s.radius_value));
         }
-        setNotes(initialSavedPlaceNote({
-          notes: s.notes,
-          sourceType: s.source_type,
-          category: s.place.category,
-        }));
+        setNotes(s.notes ?? '');
+        setNoteEditor({ ...openNoteEditor(s.notes), open: false });
         setCategory(savedPlaceCategory(s));
         setReminderSettingsExpanded(false);
       }
@@ -177,11 +184,7 @@ export default function PlaceDetail() {
   const dirty = useMemo(() => {
     if (!saved) return false;
 
-    const nextNotes = notes.trim() ? notes.trim() : null;
-    const savedNotes = saved.notes ?? null;
-
     if (notifyOn !== saved.notifications_enabled) return true;
-    if (nextNotes !== savedNotes) return true;
 
     if (mode === 'default') {
       return saved.radius_unit !== null || saved.radius_value !== null;
@@ -196,7 +199,7 @@ export default function PlaceDetail() {
     const parsedMinutes = Number.parseInt(minutesText, 10);
     if (!Number.isFinite(parsedMinutes) || parsedMinutes <= 0) return true;
     return saved.radius_unit !== 'minutes' || saved.radius_value !== parsedMinutes;
-  }, [milesText, minutesText, mode, notes, notifyOn, saved]);
+  }, [milesText, minutesText, mode, notifyOn, saved]);
 
   const radiusHelperText = useMemo(() => {
     if (mode === 'default') {
@@ -253,7 +256,6 @@ export default function PlaceDetail() {
         radius_value: radiusValue,
         radius_unit: radiusUnit,
         notifications_enabled: notifyOn,
-        notes: notes.trim() ? notes.trim() : null,
       };
       await updateSavedPlace(saved.id, patch);
       const updated = applySavedPlaceEdit(saved, patch);
@@ -266,6 +268,22 @@ export default function PlaceDetail() {
     } finally {
       setSaving(false);
     }
+  }
+
+  function beginNoteEdit(useAiSuggestion = false) {
+    setNoteEditor(openNoteEditor(notes, saved?.ai_note, useAiSuggestion));
+  }
+
+  async function saveNote(nextNotes: string | null) {
+    if (!saved) return;
+    await updateSavedPlace(saved.id, { notes: nextNotes });
+    const updated = applySavedPlaceEdit(saved, { notes: nextNotes });
+    setSaved(updated);
+    setNotes(nextNotes ?? '');
+    setNoteEditor((current) => commitNoteEditor({ ...current, draft: nextNotes ?? '' }).state);
+    updateSavedPlacesCache((current) =>
+      current.map((row) => (row.id === saved.id ? updated : row)),
+    );
   }
 
   async function handleCategoryChange(next: NearrCategory) {
@@ -478,14 +496,32 @@ export default function PlaceDetail() {
         <View style={{ height: Spacing.md }} />
 
         <Card style={styles.sectionCard}>
-          <Text style={[typography.bodyStrong, { marginBottom: Spacing.sm }]}>Your note</Text>
-          <Input
-            value={notes}
-            onChangeText={setNotes}
-            placeholder="What should you remember about this place?"
-            multiline
-            style={styles.notesInput}
-          />
+          <View style={styles.rowBetween}>
+            <Text style={typography.bodyStrong}>Your note</Text>
+            {notes.trim() ? (
+              <Pressable accessibilityRole="button" hitSlop={10} onPress={() => beginNoteEdit()}>
+                <Text style={styles.noteAction}>Edit note</Text>
+              </Pressable>
+            ) : null}
+          </View>
+          {notes.trim() ? (
+            <Text style={[typography.body, styles.noteText]}>{notes.trim()}</Text>
+          ) : (
+            <Pressable accessibilityRole="button" onPress={() => beginNoteEdit()} style={styles.addNoteAction}>
+              <Text style={styles.noteAction}>Add a note</Text>
+            </Pressable>
+          )}
+          {saved.ai_note?.trim() ? (
+            <View style={styles.aiNoteWrap}>
+              <Text style={[typography.caption, styles.aiNoteLabel]}>From the post</Text>
+              <Text style={[typography.body, styles.aiNoteText]}>{saved.ai_note.trim()}</Text>
+              {!notes.trim() ? (
+                <Pressable accessibilityRole="button" onPress={() => beginNoteEdit(true)} style={styles.useAsNoteAction}>
+                  <Text style={styles.noteAction}>Use as my note</Text>
+                </Pressable>
+              ) : null}
+            </View>
+          ) : null}
         </Card>
 
         {dirty ? (
@@ -508,6 +544,13 @@ export default function PlaceDetail() {
           style={styles.deleteBtn}
         />
       </ScrollView>
+      <NoteEditorModal
+        visible={noteEditor.open}
+        initialValue={noteEditor.draft}
+        aiNote={saved.ai_note}
+        onClose={() => setNoteEditor((current) => cancelNoteEditor(current))}
+        onSave={saveNote}
+      />
     </Screen>
   );
 }
@@ -624,7 +667,18 @@ function createStyles(
       borderColor: colors.primary,
     },
     numberInput: { marginBottom: Spacing.sm },
-    notesInput: { minHeight: 60, textAlignVertical: 'top' },
+    noteAction: { ...typography.bodyStrong, color: colors.accent },
+    noteText: { color: colors.textSecondary, marginTop: Spacing.sm, lineHeight: 22 },
+    addNoteAction: { alignSelf: 'flex-start', marginTop: Spacing.sm, paddingVertical: Spacing.xs },
+    aiNoteWrap: {
+      marginTop: Spacing.md,
+      paddingTop: Spacing.md,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: colors.border,
+    },
+    aiNoteLabel: { color: colors.textMuted, marginBottom: Spacing.xs },
+    aiNoteText: { color: colors.textSecondary, lineHeight: 22 },
+    useAsNoteAction: { alignSelf: 'flex-start', marginTop: Spacing.sm, paddingVertical: Spacing.xs },
     deleteBtn: { borderWidth: 0 },
   });
 }

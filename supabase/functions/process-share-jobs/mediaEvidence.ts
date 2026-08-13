@@ -57,6 +57,8 @@ export type PlaceCandidateEvidence = {
   confidence: number;
   explicitEvidence: PlaceEvidenceItem[];
   inferredEvidence: PlaceEvidenceItem[];
+  memoryCue?: string | null;
+  memoryCueEvidence?: PlaceEvidenceItem[];
 };
 
 export type MediaPlaceEvidence = {
@@ -135,6 +137,12 @@ function parsePlace(raw: unknown): PlaceCandidateEvidence | null {
         .map(parseEvidenceItem)
         .filter((x): x is PlaceEvidenceItem => x !== null)
     : [];
+  const memoryCueEvidence = Array.isArray(r.memoryCueEvidence)
+    ? r.memoryCueEvidence
+        .slice(0, 8)
+        .map(parseEvidenceItem)
+        .filter((x): x is PlaceEvidenceItem => x !== null)
+    : [];
 
   let confidence = num(r.confidence) ?? 0;
   if (confidence < 0) confidence = 0;
@@ -158,6 +166,8 @@ function parsePlace(raw: unknown): PlaceCandidateEvidence | null {
     confidence,
     explicitEvidence: explicit,
     inferredEvidence: inferred,
+    memoryCue: memoryCueEvidence.length > 0 ? str(r.memoryCue, 180) : null,
+    memoryCueEvidence,
   };
 }
 

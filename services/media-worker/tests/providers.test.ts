@@ -67,6 +67,8 @@ test('groundClaimedEvidence keeps quoted caption/speech and drops fabricated cla
         { source: 'frame', value: 'CAPONES CUCINA', timestampSeconds: 3 },
       ],
       inferredEvidence: [],
+      memoryCue: null,
+      memoryCueEvidence: [],
     }],
     multipleIntentionalPlaces: false,
     insufficientEvidence: false,
@@ -88,6 +90,8 @@ test('groundClaimedEvidence marks inferred-only result insufficient', () => {
       country: null, coordinates: null, role: 'primary', confidence: 1,
       explicitEvidence: [{ source: 'caption', value: 'Fabricated Cafe', timestampSeconds: null }],
       inferredEvidence: [],
+      memoryCue: null,
+      memoryCueEvidence: [],
     }],
     multipleIntentionalPlaces: false,
     insufficientEvidence: false,
@@ -96,6 +100,29 @@ test('groundClaimedEvidence marks inferred-only result insufficient', () => {
   const grounded = groundClaimedEvidence(evidence, { metadataTitle: null, metadataDescription: null, transcript: [] });
   assert.equal(grounded.insufficientEvidence, true);
   assert.equal(grounded.places[0]!.explicitEvidence.length, 0);
+});
+
+test('groundClaimedEvidence drops an unsupported memory cue source', () => {
+  const evidence: MediaPlaceEvidence = {
+    places: [{
+      name: 'Matcha House', category: 'cafe', categoryConfidence: 0.9, categoryEvidenceTags: [], address: null,
+      city: null, region: null, country: null, coordinates: null, role: 'primary', confidence: 0.9,
+      explicitEvidence: [{ source: 'caption', value: 'Matcha House', timestampSeconds: null }],
+      inferredEvidence: [],
+      memoryCue: 'Try the lobster roll and caviar flight they showed',
+      memoryCueEvidence: [{ source: 'speech', value: 'lobster roll and caviar flight', timestampSeconds: 3 }],
+    }],
+    multipleIntentionalPlaces: false,
+    insufficientEvidence: false,
+    warnings: [],
+  };
+  const grounded = groundClaimedEvidence(evidence, {
+    metadataTitle: 'Matcha House',
+    metadataDescription: null,
+    transcript: [{ startSeconds: 0, endSeconds: 2, text: 'Try the matcha flight' }],
+  });
+  assert.equal(grounded.places[0]!.memoryCue, null);
+  assert.deepEqual(grounded.places[0]!.memoryCueEvidence, []);
 });
 
 test('Gemini 429 retains usable transcript evidence', async () => {

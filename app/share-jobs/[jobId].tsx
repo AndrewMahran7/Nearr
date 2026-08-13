@@ -361,6 +361,7 @@ function ShareJobDetailScreen() {
 
   async function persistCandidate(
     candidate: PlaceCandidate,
+    aiNote: string | null = null,
   ): Promise<{ savedPlaceId: string | null; duplicate: boolean }> {
     if (__DEV__ && isPhase2PreviewId(job?.id)) {
       throw new Error('This development preview is read-only.');
@@ -370,6 +371,7 @@ function ShareJobDetailScreen() {
       jobId: job?.id ?? null,
       platform,
       sourceUrl,
+      aiNote,
     });
   }
 
@@ -446,6 +448,7 @@ function ShareJobDetailScreen() {
     try {
       const { savedPlaceId, duplicate } = await persistCandidate(
         shareJobCandidateToPlaceCandidate(candidate),
+        candidate.aiNote ?? null,
       );
       await resolveJobWith(job.id, savedPlaceId, duplicate);
     } catch (err) {
@@ -488,9 +491,12 @@ function ShareJobDetailScreen() {
     try {
       const settled = await Promise.allSettled(
         chosen.map(async (candidate) => {
-          const result = await persistCandidate(shareJobCandidateToPlaceCandidate(candidate));
           const slot = effectiveMentionSlots.find((mention) =>
             mention.candidates.some((entry) => entry.googlePlaceId === candidate.googlePlaceId),
+          );
+          const result = await persistCandidate(
+            shareJobCandidateToPlaceCandidate(candidate),
+            slot?.aiNote ?? candidate.aiNote ?? null,
           );
           return {
             candidate,

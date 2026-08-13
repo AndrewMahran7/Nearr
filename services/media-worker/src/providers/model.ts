@@ -54,22 +54,42 @@ function groundingText(value: string): string {
 
 export function groundClaimedEvidence(
   evidence: MediaPlaceEvidence,
-  input: Pick<AnalyzeInput, 'transcript' | 'metadataTitle' | 'metadataDescription'>,
+  input: Pick<AnalyzeInput, 'transcript' | 'metadataTitle' | 'metadataDescription'> & {
+    ocr?: AnalyzeInput['ocr'];
+  },
 ): MediaPlaceEvidence {
   const speech = groundingText(input.transcript.map((segment) => segment.text).join(' '));
   const caption = groundingText([input.metadataTitle, input.metadataDescription].filter(Boolean).join(' '));
+  const visibleText = groundingText((input.ocr ?? []).map((segment) => segment.text).join(' '));
   let dropped = 0;
-  const places = evidence.places.map((place) => ({
-    ...place,
-    explicitEvidence: place.explicitEvidence.filter((item) => {
-      if (item.source !== 'speech' && item.source !== 'caption') return true;
+  const groundedItems = (
+    items: PlaceCandidateEvidence['explicitEvidence'],
+    validateVisibleText: boolean,
+  ) =>
+    items.filter((item) => {
+      // Preserve the resolver's existing explicit-evidence behavior. The new
+      // cue path is stricter for OCR because it is supplemental and may safely
+      // disappear without changing extraction or save eligibility.
+      if (item.source === 'frame' || (item.source === 'visible_text' && !validateVisibleText)) return true;
       const claim = groundingText(item.value);
-      const source = item.source === 'speech' ? speech : caption;
+      const source = item.source === 'speech'
+        ? speech
+        : item.source === 'caption'
+          ? caption
+          : visibleText;
       const grounded = claim.length >= 3 && source.includes(claim);
       if (!grounded) dropped += 1;
       return grounded;
-    }),
-  }));
+    });
+  const places = evidence.places.map((place) => {
+    const memoryCueEvidence = groundedItems(place.memoryCueEvidence, true);
+    return {
+      ...place,
+      explicitEvidence: groundedItems(place.explicitEvidence, false),
+      memoryCue: memoryCueEvidence.length > 0 ? place.memoryCue : null,
+      memoryCueEvidence,
+    };
+  });
   return {
     ...evidence,
     places,
@@ -143,6 +163,8 @@ export function heuristicEvidence(input: AnalyzeInput): MediaPlaceEvidence {
     confidence: name && address ? 0.6 : 0.4,
     explicitEvidence: explicit,
     inferredEvidence: [],
+    memoryCue: null,
+    memoryCueEvidence: [],
   };
 
   return {

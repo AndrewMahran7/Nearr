@@ -78,6 +78,7 @@ export type NormalizedCandidate = {
   longitude: number | null;
   types: string[];
   matchScore: number | null;
+  aiNote: string | null;
 };
 
 export function normalizeShareJobCandidates(input: unknown): NormalizedCandidate[] {
@@ -94,6 +95,7 @@ export function normalizeShareJobCandidates(input: unknown): NormalizedCandidate
         ? row.types.filter((v): v is string => typeof v === 'string')
         : [],
       matchScore: typeof row.matchScore === 'number' ? row.matchScore : null,
+      aiNote: typeof row.aiNote === 'string' && row.aiNote.trim() ? row.aiNote.trim() : null,
     }))
     .filter((row) => row.googlePlaceId.length > 0 && row.name.length > 0);
 }
