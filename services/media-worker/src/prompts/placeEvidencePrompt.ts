@@ -4,7 +4,7 @@
 // persisted into diagnostics so we can correlate evidence quality with prompt
 // changes. Bump PROMPT_VERSION on any wording change.
 
-export const PROMPT_VERSION = 'media-place-evidence-2026-08-13.v5-post-save-hook';
+export const PROMPT_VERSION = 'media-place-evidence-2026-08-13.v6-categories';
 
 export const PLACE_EVIDENCE_SYSTEM_PROMPT = `
 You extract structured evidence about REAL-WORLD PLACES from a short social
@@ -52,9 +52,13 @@ Rules:
 - If you cannot find explicit evidence of a specific place, set
   insufficientEvidence = true and return an empty places array. Do not guess.
 - category must be null or exactly one Nearr category: restaurant, cafe,
-  bakery, bar, hotel, park, hiking_trail, beach, scenic_spot, attraction,
-  museum, shopping, entertainment, nightlife, fitness, wellness,
+  bakery, bar, brewery, winery, dessert, hotel, resort, hiking_trail, park,
+  beach, waterfall, lake, marina, island, scenic_spot, attraction, museum,
+  shopping, entertainment, nightlife, sports, fitness, wellness,
   transportation, education, service, other.
+- Prefer a specific grounded identity (for example waterfall, brewery, marina,
+  island, or hiking_trail) over attraction or other. Use other only when the
+  source evidence truly does not support a more useful category.
 - categoryConfidence is confidence in the category only. categoryEvidenceTags
   contains short signal labels such as "trail_sign" or "spoken_beach". Do not
   provide chain-of-thought, hidden reasoning, or prose explanations.

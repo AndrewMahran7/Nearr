@@ -19,7 +19,8 @@ export const LOCALITY_LIKE: ReadonlySet<string> = new Set([
 ]);
 
 export const BUSINESS_LIKE: ReadonlySet<string> = new Set([
-  'restaurant', 'cafe', 'bar', 'bakery', 'food', 'meal_takeaway',
+  'restaurant', 'cafe', 'bar', 'bakery', 'brewery', 'brewpub', 'winery',
+  'vineyard', 'dessert_shop', 'ice_cream_shop', 'candy_store', 'food', 'meal_takeaway',
   'meal_delivery', 'store', 'shopping_mall', 'clothing_store',
   'book_store', 'grocery_or_supermarket', 'supermarket',
   'convenience_store', 'gym', 'spa', 'beauty_salon', 'lodging',
@@ -28,10 +29,11 @@ export const BUSINESS_LIKE: ReadonlySet<string> = new Set([
   'liquor_store', 'pharmacy', 'pet_store',
   'hotel', 'motel', 'resort_hotel', 'hostel', 'inn',
   'city_park', 'state_park', 'national_park', 'dog_park',
-  'hiking_area', 'hiking_trail', 'trail_head', 'beach', 'scenic_spot',
+  'hiking_area', 'hiking_trail', 'trailhead', 'trail_head', 'beach', 'waterfall',
+  'lake', 'marina', 'island', 'nature_preserve', 'mountain_peak', 'scenic_spot',
   'observation_deck', 'cultural_landmark', 'historical_landmark', 'monument',
   'campground', 'theater', 'performing_arts_theater', 'fitness_center',
-  'sports_activity_location', 'wellness_center', 'yoga_studio',
+  'sports_activity_location', 'sports_complex', 'sports_club', 'wellness_center', 'yoga_studio',
   'airport', 'bus_station', 'train_station', 'transit_station', 'subway_station',
   'ferry_terminal', 'university', 'college', 'school', 'library',
 ]);

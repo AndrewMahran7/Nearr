@@ -334,7 +334,8 @@ function toCandidateFromTextSearch(r: any): PlaceCandidate {
     category: pickCategory(r.types),
     googleMapsUrl: null,
     rawTypes: Array.isArray(r.types) ? r.types : undefined,
-    primaryType: Array.isArray(r.types) ? r.types[0] ?? null : null,
+    // Legacy Places does not expose the Places API (New) primaryType field.
+    primaryType: null,
     primaryTypeDisplayName: pickCategory(r.types),
     googleMapsTypeLabel: pickCategory(r.types),
     shortFormattedAddress: null,
@@ -354,7 +355,7 @@ function toCandidateFromDetails(r: any): PlaceCandidate {
     // use it when present; never synthesise the broken `place_id:` form.
     googleMapsUrl: typeof r.url === 'string' && r.url.length > 0 ? r.url : null,
     rawTypes: Array.isArray(r.types) ? r.types : undefined,
-    primaryType: Array.isArray(r.types) ? r.types[0] ?? null : null,
+    primaryType: null,
     primaryTypeDisplayName: pickCategory(r.types),
     googleMapsTypeLabel: pickCategory(r.types),
     shortFormattedAddress: null,
@@ -412,13 +413,16 @@ const ADDRESS_LIKE_TYPES = new Set<string>([
 ]);
 
 const BUSINESS_LIKE_TYPES = new Set<string>([
-  'restaurant', 'cafe', 'bar', 'bakery', 'food', 'meal_takeaway',
+  'restaurant', 'cafe', 'bar', 'bakery', 'brewery', 'brewpub', 'winery',
+  'vineyard', 'dessert_shop', 'ice_cream_shop', 'candy_store', 'food', 'meal_takeaway',
   'meal_delivery', 'store', 'shopping_mall', 'clothing_store', 'book_store',
   'grocery_or_supermarket', 'supermarket', 'convenience_store', 'shoe_store',
   'jewelry_store', 'florist', 'department_store', 'electronics_store',
-  'gym', 'spa', 'beauty_salon', 'hair_care', 'lodging', 'museum',
+  'gym', 'spa', 'beauty_salon', 'hair_care', 'lodging', 'hotel', 'resort_hotel', 'museum',
   'art_gallery', 'movie_theater', 'night_club', 'tourist_attraction',
-  'amusement_park', 'park', 'stadium', 'liquor_store', 'pharmacy',
+  'amusement_park', 'park', 'hiking_area', 'hiking_trail', 'trailhead', 'trail_head',
+  'beach', 'waterfall', 'lake', 'marina', 'island', 'nature_preserve', 'mountain_peak',
+  'scenic_spot', 'stadium', 'sports_complex', 'liquor_store', 'pharmacy',
   'pet_store', 'hardware_store', 'home_goods_store',
 ]);
 

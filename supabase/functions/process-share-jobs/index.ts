@@ -891,6 +891,7 @@ async function finalizeMediaTask(
 
       if (mayAutoSave) {
         const categoryResolution = resolvePlaceCategory({
+          placeName: candidate.name,
           googlePrimaryType: candidate.primaryType,
           googleTypes: candidate.types,
           ai: isNearrCategory(mention?.category)

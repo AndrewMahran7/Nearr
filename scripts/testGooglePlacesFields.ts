@@ -40,7 +40,7 @@ const legacyMapped = mapPlacesLegacyCandidate({
   photos: [{ photo_reference: 'legacy-photo-reference' }],
 });
 assert.equal(legacyMapped.googlePlaceId, 'google-observatory');
-assert.equal(legacyMapped.primaryType, 'tourist_attraction');
+assert.equal(legacyMapped.primaryType, undefined, 'legacy types must not masquerade as Places API (New) primaryType');
 assert.deepEqual(legacyMapped.types, ['tourist_attraction', 'museum']);
 assert.equal(legacyMapped.businessStatus, 'OPERATIONAL');
 assert.equal(legacyMapped.photos?.[0]?.name, 'legacy-photo-reference');

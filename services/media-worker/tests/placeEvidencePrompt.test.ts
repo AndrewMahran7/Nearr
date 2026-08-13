@@ -7,7 +7,10 @@ import {
 } from '../src/prompts/placeEvidencePrompt.js';
 
 test('post-save hook prompt is lively, concise, grounded, and visual-aware', () => {
-  assert.equal(PROMPT_VERSION, 'media-place-evidence-2026-08-13.v5-post-save-hook');
+  assert.equal(PROMPT_VERSION, 'media-place-evidence-2026-08-13.v6-categories');
+  assert.match(PLACE_EVIDENCE_SYSTEM_PROMPT, /brewery, winery, dessert/);
+  assert.match(PLACE_EVIDENCE_SYSTEM_PROMPT, /waterfall, lake, marina, island/);
+  assert.match(PLACE_EVIDENCE_SYSTEM_PROMPT, /Use other only when/i);
   assert.match(PLACE_EVIDENCE_SYSTEM_PROMPT, /fun, excited friend/i);
   assert.match(PLACE_EVIDENCE_SYSTEM_PROMPT, /5-22 words/);
   assert.match(PLACE_EVIDENCE_SYSTEM_PROMPT, /two very short\s+sentences/);

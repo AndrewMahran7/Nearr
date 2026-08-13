@@ -18,15 +18,18 @@
 // No Deno globals, no I/O — unit-tested from Node (scripts/testMediaEvidenceAdapter.ts).
 
 type NearrCategory =
-  | 'restaurant' | 'cafe' | 'bakery' | 'bar' | 'hotel' | 'park'
-  | 'hiking_trail' | 'beach' | 'scenic_spot' | 'attraction' | 'museum'
-  | 'shopping' | 'entertainment' | 'nightlife' | 'fitness' | 'wellness'
-  | 'transportation' | 'education' | 'service' | 'other';
+  | 'restaurant' | 'cafe' | 'bakery' | 'bar' | 'brewery' | 'winery' | 'dessert'
+  | 'hotel' | 'resort' | 'hiking_trail' | 'park' | 'beach' | 'waterfall'
+  | 'lake' | 'marina' | 'island' | 'scenic_spot' | 'attraction' | 'museum'
+  | 'shopping' | 'entertainment' | 'nightlife' | 'sports' | 'fitness'
+  | 'wellness' | 'transportation' | 'education' | 'service' | 'other';
 
 const NEARR_CATEGORY_SET = new Set<string>([
-  'restaurant', 'cafe', 'bakery', 'bar', 'hotel', 'park', 'hiking_trail',
-  'beach', 'scenic_spot', 'attraction', 'museum', 'shopping', 'entertainment',
-  'nightlife', 'fitness', 'wellness', 'transportation', 'education', 'service', 'other',
+  'restaurant', 'cafe', 'bakery', 'bar', 'brewery', 'winery', 'dessert',
+  'hotel', 'resort', 'hiking_trail', 'park', 'beach', 'waterfall', 'lake',
+  'marina', 'island', 'scenic_spot', 'attraction', 'museum', 'shopping',
+  'entertainment', 'nightlife', 'sports', 'fitness', 'wellness',
+  'transportation', 'education', 'service', 'other',
 ]);
 
 function isNearrCategory(value: unknown): value is NearrCategory {
@@ -290,7 +293,8 @@ const ADDRESS_LIKE_RE =
 export const DEFAULT_MEDIA_AUTOSAVE_MIN_CONFIDENCE = 0.7;
 
 const NATURAL_PLACE_CATEGORIES = new Set<NearrCategory>([
-  'park', 'hiking_trail', 'beach', 'scenic_spot', 'attraction',
+  'park', 'hiking_trail', 'beach', 'waterfall', 'lake', 'marina', 'island',
+  'scenic_spot', 'attraction',
 ]);
 
 function normalizedEvidenceText(value: string): string {

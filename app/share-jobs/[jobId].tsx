@@ -831,6 +831,7 @@ function ShareJobDetailScreen() {
   function batchCandidateMeta(candidate: ShareJobResultCandidate, row: MultiPlaceBatchRow): string {
     const address = splitPlaceAddress(candidate.formattedAddress);
     const category = resolvePlaceCategory({
+      placeName: candidate.name,
       googlePrimaryType: candidate.primaryType,
       googleTypes: candidate.types,
     }).category;

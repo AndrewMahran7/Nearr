@@ -247,6 +247,7 @@ export async function saveSavedPlace(
   if (isDemoMode()) return await saveDemoSavedPlace(input);
   const { candidate, radiusValue, radiusUnit } = input;
   const categoryResolution = resolvePlaceCategory({
+    placeName: candidate.name,
     googlePrimaryType: candidate.primaryType,
     googleTypes: candidate.rawTypes,
   });
@@ -547,18 +548,6 @@ export type SavedPlacePatch = {
   ai_note?: string | null;
 };
 
-export async function setSavedPlaceCategory(
-  savedPlaceId: string,
-  category: import('@/lib/placeCategory').NearrCategory,
-): Promise<void> {
-  const { data, error } = await supabase.rpc('set_saved_place_category', {
-    p_saved_place_id: savedPlaceId,
-    p_category: category,
-  });
-  if (error) rethrowMutationError('update category', error);
-  if (data !== true) throw new Error('This saved place is no longer available.');
-}
-
 /**
  * Resolve the shared `places` row for a candidate, reusing the existing row
  * whenever the canonical google_place_id is already known. `places` is a shared
@@ -631,6 +620,7 @@ export async function correctSavedPlace(args: {
   }
   const placeRow = await resolvePlaceRowForCandidate(args.replacement);
   const categoryResolution = resolvePlaceCategory({
+    placeName: args.replacement.name,
     googlePrimaryType: args.replacement.primaryType,
     googleTypes: args.replacement.rawTypes,
   });

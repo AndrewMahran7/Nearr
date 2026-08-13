@@ -172,16 +172,15 @@ export function mapPlacesV1Candidate(r: any): PlacesCandidate {
 }
 
 export function mapPlacesLegacyCandidate(r: any): PlacesCandidate {
-  const primaryType = Array.isArray(r?.types) && typeof r.types[0] === 'string'
-    ? r.types[0]
-    : undefined;
   return {
     googlePlaceId: r.place_id,
     name: r.name ?? '',
     formattedAddress: r.formatted_address ?? undefined,
     latitude: r.geometry?.location?.lat,
     longitude: r.geometry?.location?.lng,
-    primaryType,
+    // Legacy Places exposes only an unordered `types` array. Do not pretend
+    // its first entry is the Places API (New) `primaryType` contract.
+    primaryType: undefined,
     types: Array.isArray(r.types) ? r.types : undefined,
     businessStatus: typeof r.business_status === 'string' ? r.business_status : undefined,
     photos: Array.isArray(r.photos)

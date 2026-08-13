@@ -26,9 +26,11 @@ export const EvidenceItem = z.object({
 export type EvidenceItem = z.infer<typeof EvidenceItem>;
 
 export const NearrCategory = z.enum([
-  'restaurant', 'cafe', 'bakery', 'bar', 'hotel', 'park', 'hiking_trail',
-  'beach', 'scenic_spot', 'attraction', 'museum', 'shopping', 'entertainment',
-  'nightlife', 'fitness', 'wellness', 'transportation', 'education', 'service', 'other',
+  'restaurant', 'cafe', 'bakery', 'bar', 'brewery', 'winery', 'dessert',
+  'hotel', 'resort', 'hiking_trail', 'park', 'beach', 'waterfall', 'lake',
+  'marina', 'island', 'scenic_spot', 'attraction', 'museum', 'shopping',
+  'entertainment', 'nightlife', 'sports', 'fitness', 'wellness',
+  'transportation', 'education', 'service', 'other',
 ]);
 
 export const PlaceCandidateEvidence = z.object({

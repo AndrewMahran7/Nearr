@@ -169,6 +169,7 @@ export async function saveForUser(args: {
 }): Promise<SaveResult> {
   const { client, userId, candidate, sourceUrl, source, autoNote } = args;
   const categoryResolution = resolvePlaceCategory({
+    placeName: candidate.name,
     googlePrimaryType: candidate.primaryType,
     googleTypes: candidate.types,
   });
@@ -282,6 +283,13 @@ export async function saveForUser(args: {
         await patchExistingSavedPlaceForUser(
           client, existingSaved.id, source, sourceUrl, autoNote,
         );
+        await client.from('saved_places').update({
+          category: categoryResolution.category,
+          category_source: categoryResolution.source,
+          category_confidence: categoryResolution.confidence,
+          category_model_version: categoryResolution.modelVersion,
+          categorized_at: new Date().toISOString(),
+        }).eq('id', existingSaved.id).eq('category_user_overridden', false);
         return { savedPlaceId: existingSaved.id, placeId: placeId!, reused: true };
       }
     }
