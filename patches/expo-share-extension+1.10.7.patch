@@ -1,8 +1,9 @@
 diff --git a/node_modules/expo-share-extension/plugin/swift/ShareExtensionViewController.swift b/node_modules/expo-share-extension/plugin/swift/ShareExtensionViewController.swift
-index aafbbb1..63351fb 100644
+index aafbbb1..4534e97 100644
 --- a/node_modules/expo-share-extension/plugin/swift/ShareExtensionViewController.swift
 +++ b/node_modules/expo-share-extension/plugin/swift/ShareExtensionViewController.swift
-@@ -18,0 +19,19 @@ class ShareExtensionViewController: UIViewController {
+@@ -17,2 +17,39 @@ class ShareExtensionViewController: UIViewController {
+   private weak var rootView: RCTRootView?
 +  private var observerTokens: [NSObjectProtocol] = []
 +  private var isFinishing = false
 +  private var hasOpenedHost = false
@@ -22,11 +23,6 @@ index aafbbb1..63351fb 100644
 +    blue: 15.0 / 255.0,
 +    alpha: 1
 +  )
-@@ -21,0 +41,3 @@ class ShareExtensionViewController: UIViewController {
-+    view.backgroundColor = extensionBackground
-+    view.isOpaque = true
-+    applyCompactPreferredContentSize()
-@@ -31,0 +54,10 @@ class ShareExtensionViewController: UIViewController {
 +
 +  override func viewWillAppear(_ animated: Bool) {
 +    super.viewWillAppear(animated)
@@ -37,12 +33,34 @@ index aafbbb1..63351fb 100644
 +    super.viewDidLayoutSubviews()
 +    applyCompactPreferredContentSize()
 +  }
-@@ -39,0 +72,2 @@ class ShareExtensionViewController: UIViewController {
++
++  private func applyCompactPreferredContentSize() {
++    let width = view.bounds.width > 0 ? view.bounds.width : UIScreen.main.bounds.width
++    let target = CGSize(width: width, height: compactPresentationHeight)
++    if preferredContentSize != target {
++      preferredContentSize = target
++    }
++  }
+   private let loadingIndicator = UIActivityIndicatorView(style: .large)
+@@ -20,3 +57,6 @@ class ShareExtensionViewController: UIViewController {
+   override func viewDidLoad() {
+     super.viewDidLoad()
++    view.backgroundColor = extensionBackground
++    view.isOpaque = true
++    applyCompactPreferredContentSize()
+     setupLoadingIndicator()
+@@ -39,3 +79,5 @@ class ShareExtensionViewController: UIViewController {
+   func close() {
 +    guard !isFinishing else { return }
 +    isFinishing = true
-@@ -45,0 +80 @@ class ShareExtensionViewController: UIViewController {
+     self.extensionContext?.completeRequest(returningItems: [], completionHandler: nil)
+     // we need to clean up when the view is closed via the close() method in react native
+@@ -45,2 +87,3 @@ class ShareExtensionViewController: UIViewController {
+   private func setupLoadingIndicator() {
 +    loadingIndicator.color = UIColor(red: 1, green: 107.0 / 255.0, blue: 0, alpha: 1)
-@@ -63 +98,6 @@ class ShareExtensionViewController: UIViewController {
+     view.addSubview(loadingIndicator)
+@@ -62,3 +105,8 @@ class ShareExtensionViewController: UIViewController {
+   private func openHostApp(path: String?) {
 -    guard let scheme = Bundle.main.object(forInfoDictionaryKey: "HostAppScheme") as? String else { return }
 +    guard !hasOpenedHost, !isFinishing else { return }
 +    hasOpenedHost = true
@@ -50,28 +68,41 @@ index aafbbb1..63351fb 100644
 +      self.close()
 +      return
 +    }
-@@ -88 +128,4 @@ class ShareExtensionViewController: UIViewController {
+     var urlComponents = URLComponents()
+@@ -88,3 +136,6 @@ class ShareExtensionViewController: UIViewController {
 -    guard let url = urlComponents.url else { return }
 +    guard let url = urlComponents.url else {
 +      self.close()
 +      return
 +    }
-@@ -131 +174 @@ class ShareExtensionViewController: UIViewController {
+     openURL(url)
+     self.close()
+@@ -130,3 +181,3 @@ class ShareExtensionViewController: UIViewController {
+   private func setupNotificationCenterObserver() {
 -    NotificationCenter.default.addObserver(forName: NSNotification.Name("close"), object: nil, queue: nil) { [weak self] _ in
 +    let closeToken = NotificationCenter.default.addObserver(forName: NSNotification.Name("close"), object: nil, queue: nil) { [weak self] _ in
-@@ -137 +180 @@ class ShareExtensionViewController: UIViewController {
+       DispatchQueue.main.async {
+@@ -137,2 +188,2 @@ class ShareExtensionViewController: UIViewController {
 -    NotificationCenter.default.addObserver(forName: NSNotification.Name("openHostApp"), object: nil, queue: nil) { [weak self] notification in
 +    let openToken = NotificationCenter.default.addObserver(forName: NSNotification.Name("openHostApp"), object: nil, queue: nil) { [weak self] notification in
-@@ -145,0 +189 @@ class ShareExtensionViewController: UIViewController {
+       DispatchQueue.main.async {
+@@ -145,2 +196,3 @@ class ShareExtensionViewController: UIViewController {
+     }
 +    observerTokens = [closeToken, openToken]
-@@ -148,0 +193,2 @@ class ShareExtensionViewController: UIViewController {
+   }
+@@ -148,2 +200,4 @@ class ShareExtensionViewController: UIViewController {
+   private func cleanupAfterClose() {
 +    guard !didCleanUp else { return }
 +    didCleanUp = true
-@@ -153 +199,2 @@ class ShareExtensionViewController: UIViewController {
+     rootView?.removeFromSuperview()
+@@ -152,3 +206,4 @@ class ShareExtensionViewController: UIViewController {
+     ShareExtensionViewController.sharedBridge = nil
 -    NotificationCenter.default.removeObserver(self)
 +    observerTokens.forEach { NotificationCenter.default.removeObserver($0) }
 +    observerTokens.removeAll()
-@@ -157,16 +204,3 @@ class ShareExtensionViewController: UIViewController {
+   }
+@@ -156,19 +211,13 @@ class ShareExtensionViewController: UIViewController {
+   private func configureRootView(_ rootView: RCTRootView, withBackgroundColorDict dict: [String: CGFloat]?, withHeight: CGFloat?) {
 -    rootView.backgroundColor = backgroundColor(from: dict)
 -    let y: CGFloat
 -    if let withHeight = withHeight {
@@ -91,7 +122,7 @@ index aafbbb1..63351fb 100644
 +    rootView.backgroundColor = .clear
 +    rootView.isOpaque = false
 +    rootView.translatesAutoresizingMaskIntoConstraints = false
-@@ -173,0 +208,15 @@ class ShareExtensionViewController: UIViewController {
+     self.view.addSubview(rootView)
 +    NSLayoutConstraint.activate([
 +      rootView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
 +      rootView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
@@ -99,11 +130,4 @@ index aafbbb1..63351fb 100644
 +      rootView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
 +    ])
 +    applyCompactPreferredContentSize()
-+  }
-+
-+  private func applyCompactPreferredContentSize() {
-+    let width = view.bounds.width > 0 ? view.bounds.width : UIScreen.main.bounds.width
-+    let target = CGSize(width: width, height: compactPresentationHeight)
-+    if preferredContentSize != target {
-+      preferredContentSize = target
-+    }
+   }
