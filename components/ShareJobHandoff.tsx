@@ -124,7 +124,7 @@ export function ShareJobHandoff({ url, submissionId }: { url: string; submission
             {'Sign in so Nearr can find and save places you share.'}
           </Text>
           <View style={{ height: Spacing.lg }} />
-          <Button title="Sign in" onPress={() => router.replace('/(auth)/sign-in')} />
+          <Button title="Sign in" onPress={() => router.replace('/(onboarding)/account')} />
         </View>
       </Screen>
     );

@@ -5,6 +5,13 @@ export type AuthLinkParseResult = {
   params: Record<string, string>;
   hasCode: boolean;
   hasTokens: boolean;
+  /**
+   * True when Supabase labelled the link `type=recovery`. A recovery link
+   * still establishes a real session, so this flag is what stops the callback
+   * screen from running normal save-aware login routing and sends the user to
+   * the reset-password screen instead.
+   */
+  isRecovery: boolean;
   safePath: string;
 };
 
@@ -57,6 +64,7 @@ export function parseAuthCallbackUrl(url: string): AuthLinkParseResult {
       params: {},
       hasCode: false,
       hasTokens: false,
+      isRecovery: false,
       safePath: 'invalid-url',
     };
   }
@@ -67,14 +75,16 @@ export function parseAuthCallbackUrl(url: string): AuthLinkParseResult {
 
   const hasCode = Boolean(params.code);
   const hasTokens = Boolean(params.access_token && params.refresh_token);
-  const hasMagicLinkType = (params.type ?? '').toLowerCase() === 'magiclink';
+  const linkType = (params.type ?? '').toLowerCase();
+  const hasMagicLinkType = linkType === 'magiclink';
+  const isRecovery = linkType === 'recovery';
 
   const segments = splitSegments(parsed);
   const hasCallbackSegment = segments.includes('auth-callback');
 
   const scheme = parsed.protocol.replace(':', '').toLowerCase();
   const isKnownAuthScheme = AUTH_SCHEMES.has(scheme);
-  const hasAuthPayload = hasCode || hasTokens || hasMagicLinkType;
+  const hasAuthPayload = hasCode || hasTokens || hasMagicLinkType || isRecovery;
 
   const safePath = `${parsed.protocol}//${parsed.host}${parsed.pathname}`;
   const matches = hasCallbackSegment || (isKnownAuthScheme && hasAuthPayload);
@@ -84,6 +94,7 @@ export function parseAuthCallbackUrl(url: string): AuthLinkParseResult {
     params,
     hasCode,
     hasTokens,
+    isRecovery,
     safePath,
   };
 }
@@ -119,8 +130,8 @@ export function routeAfterAuthenticatedUser(
 export function decideAuthResolutionRoute(args: {
   hasSession: boolean;
   onboardingStatus: OnboardingStatus;
-  signedOutRoute: '/(onboarding)' | '/(auth)/sign-in';
-}): '/activate' | '/(tabs)/map' | '/(onboarding)' | '/(auth)/sign-in' {
+  signedOutRoute: '/(onboarding)' | '/(onboarding)/account' | '/(auth)/sign-in';
+}): '/activate' | '/(tabs)/map' | '/(onboarding)' | '/(onboarding)/account' | '/(auth)/sign-in' {
   if (!args.hasSession) return args.signedOutRoute;
   return routeAfterAuthenticatedUser(args.onboardingStatus);
 }
@@ -132,23 +143,39 @@ export function decideAuthResolutionRoute(args: {
  *   - `idle`       — no auth link has been handled yet.
  *   - `processing` — an exchange is in flight.
  *   - `succeeded`  — the exchange established a session.
+ *   - `recovery`   — the exchange established a session from a password
+ *                    RECOVERY link. A session exists, but the user must land
+ *                    on the reset-password screen instead of the app.
  *   - `failed`     — the exchange finished without a session (expired/invalid
  *                    /duplicate-without-session).
  *
- * `succeeded`/`failed` are STICKY (they persist until the next link resets the
- * state to `processing`). This is what makes the callback screen robust to
- * mount ordering: a screen that mounts AFTER a fast warm-link failure still
- * reads `failed` and resolves, instead of missing a transient boolean.
+ * `succeeded`/`recovery`/`failed` are STICKY (they persist until the next link
+ * resets the state to `processing`). This is what makes the callback screen
+ * robust to mount ordering: a screen that mounts AFTER a fast warm-link
+ * failure still reads `failed` and resolves, instead of missing a transient
+ * boolean.
  */
-export type AuthLinkStatus = 'idle' | 'processing' | 'succeeded' | 'failed';
+export type AuthLinkStatus =
+  | 'idle'
+  | 'processing'
+  | 'succeeded'
+  | 'recovery'
+  | 'failed';
 
-export type AuthCallbackDecision = 'wait' | 'navigate_app' | 'navigate_sign_in';
+export type AuthCallbackDecision =
+  | 'wait'
+  | 'navigate_app'
+  | 'navigate_reset_password'
+  | 'navigate_sign_in';
 
 /**
  * Pure resolver for what the auth-callback screen should do, given the current
  * terminal status and whether a session is present. Deterministic and
  * independent of React effect ordering, so it can be exhaustively unit-tested.
  *
+ *   - A `recovery` status → go to the reset-password screen. This OUTRANKS a
+ *     present session, because a recovery link legitimately signs the user in
+ *     and running the normal save-aware routing would skip the reset.
  *   - A present session (or a `succeeded` status) → go into the app.
  *   - A `failed` status with no session → go to sign-in.
  *   - Otherwise (`idle`/`processing`, no session) → keep waiting.
@@ -161,6 +188,7 @@ export function decideAuthCallbackNavigation(args: {
   status: AuthLinkStatus;
   hasSession: boolean;
 }): AuthCallbackDecision {
+  if (args.status === 'recovery') return 'navigate_reset_password';
   if (args.hasSession || args.status === 'succeeded') return 'navigate_app';
   if (args.status === 'failed') return 'navigate_sign_in';
   return 'wait';

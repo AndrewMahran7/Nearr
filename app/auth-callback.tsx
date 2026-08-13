@@ -8,11 +8,8 @@ import { Colors, Spacing, Typography } from '@/constants';
 import { useAuth } from '@/hooks/useAuth';
 import { trackEvent } from '@/lib/analytics';
 import { parseAuthCallbackUrl } from '@/lib/authDeepLink';
-import { getOnboardingStatus } from '@/lib/onboarding';
-import {
-  decideAuthCallbackNavigation,
-  routeAfterAuthenticatedUser,
-} from '@/lib/authDeepLinkCore';
+import { resolvePostAuthRoute } from '@/lib/postAuthRouting';
+import { decideAuthCallbackNavigation } from '@/lib/authDeepLinkCore';
 import { useAuthLinkStatus } from '@/lib/authLinkStatus';
 
 // Last-resort safety net ONLY. Primary resolution is the sticky terminal
@@ -58,13 +55,23 @@ export default function AuthCallbackScreen() {
     if (hasNavigated.current || decision === 'wait') return;
     hasNavigated.current = true;
 
+    if (decision === 'navigate_reset_password') {
+      // Password recovery: a session exists, but running the normal save-aware
+      // routing here would silently skip the reset the user asked for.
+      if (!hasLoggedOutcome.current) {
+        hasLoggedOutcome.current = true;
+        console.log('[auth-callback] exchange_success=true type=recovery');
+      }
+      router.replace('/reset-password');
+      return;
+    }
+
     if (decision === 'navigate_app') {
       void (async () => {
         const current = sessionRef.current;
         let route: '/activate' | '/(tabs)/map' = '/(tabs)/map';
         if (current) {
-          const onboardingStatus = await getOnboardingStatus(current.user.id);
-          route = routeAfterAuthenticatedUser(onboardingStatus);
+          route = await resolvePostAuthRoute(current.user.id);
           void trackEvent('onboarding_auth_completed', {
             destination: route === '/activate' ? 'activate' : 'map',
           });
@@ -85,7 +92,7 @@ export default function AuthCallbackScreen() {
       console.log('[auth-callback] exchange_success=false');
       console.log('[auth-callback] session_present=false');
     }
-    router.replace('/(auth)/sign-in');
+    router.replace('/(onboarding)/account');
   }, [decision, router]);
 
   // Last-resort safety net (see AUTH_CALLBACK_SAFETY_MS). Cleared on unmount,
@@ -99,7 +106,7 @@ export default function AuthCallbackScreen() {
         '[auth-callback] safety_fallback fired resolved_by=' +
           (current ? 'session' : 'no_session'),
       );
-      router.replace(current ? '/(tabs)/map' : '/(auth)/sign-in');
+      router.replace(current ? '/(tabs)/map' : '/(onboarding)/account');
     }, AUTH_CALLBACK_SAFETY_MS);
     return () => clearTimeout(timer);
   }, [router]);

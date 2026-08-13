@@ -17,6 +17,7 @@ import {
   type AuthLinkStatus,
 } from '@/lib/authDeepLinkCore';
 import { clearDevAuth } from '@/lib/devAuth';
+import { isPostAuthRoutingPending } from '@/lib/postAuthRouting';
 import { trackEvent } from '@/lib/analytics';
 import { sanitizeErrorText, sanitizeStack } from '@/lib/sanitizeError';
 import { buildErrorDiagnostic, recordDiagnostic } from '@/lib/deviceDiagnostics';
@@ -242,6 +243,7 @@ function AuthGate({
   const router = useRouter();
   const inOnboarding = segments[0] === '(onboarding)';
   const inAuthCallback = segments[0] === 'auth-callback';
+  const inResetPassword = segments[0] === 'reset-password';
   const inTabs = segments[0] === '(tabs)';
   // Only surface the setup reminder once the user has fully landed in the app
   // (on the tabs route) AND no magic-link exchange is still in flight. This
@@ -389,6 +391,9 @@ function AuthGate({
       if (authLinkPending || inAuthCallback) {
         return;
       }
+      // A recovery link whose session has already lapsed must be able to say so
+      // on the reset screen rather than being bounced back to the intro.
+      if (inResetPassword) return;
       if (!inAuth && !inOnboarding) {
         logDebug('AuthGate', '-> /(onboarding)');
         router.replace('/(onboarding)');
@@ -402,7 +407,10 @@ function AuthGate({
     // savedPlaceId focus, place detail) are left untouched.
     const previewingOnboarding =
       __DEV__ && inOnboarding && isOnboardingPreviewActive();
-    if ((inAuth || inOnboarding) && !previewingOnboarding) {
+    // While a screen-initiated sign-in (Apple / Google / password) is still
+    // resolving its save-aware destination, leave routing to that resolver —
+    // otherwise a brand-new user flashes past the first-save activation step.
+    if ((inAuth || inOnboarding) && !previewingOnboarding && !isPostAuthRoutingPending()) {
       logDebug('AuthGate', '-> /(tabs)/map');
       router.replace('/(tabs)/map');
     }
@@ -414,6 +422,7 @@ function AuthGate({
     isDevSession,
     inOnboarding,
     inAuthCallback,
+    inResetPassword,
     authLinkPending,
   ]);
 
@@ -550,7 +559,9 @@ function RootLayoutContent() {
       if (authLinkRunIdRef.current !== runId) return;
 
       if (result.sessionEstablished) {
-        publishAuthLinkStatus('succeeded');
+        // A recovery link DOES create a session, but the user must land on the
+        // reset-password screen rather than the normal save-aware destination.
+        publishAuthLinkStatus(result.isRecovery ? 'recovery' : 'succeeded');
         return;
       }
 
@@ -799,6 +810,7 @@ function RootLayoutContent() {
               <Stack.Screen name="(onboarding)" />
               <Stack.Screen name="(tabs)" />
               <Stack.Screen name="auth-callback" />
+              <Stack.Screen name="reset-password" />
               <Stack.Screen name="activate" />
               <Stack.Screen
                 name="add-place"

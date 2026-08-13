@@ -11,6 +11,8 @@ export type AuthDeepLinkResult = {
   sessionEstablished: boolean;
   ignored: boolean;
   failed: boolean;
+  /** The link was a `type=recovery` password-reset link. */
+  isRecovery: boolean;
   reason:
     | 'non_auth_link'
     | 'duplicate'
@@ -21,6 +23,20 @@ export type AuthDeepLinkResult = {
     | 'session_established'
     | 'unexpected_error';
 };
+
+/**
+ * Where the URL came from.
+ *
+ *   - `deep_link`   — an OS URL event (cold or warm start). Subject to the
+ *                     duplicate guard, because the OS can deliver the same
+ *                     link repeatedly.
+ *   - `oauth_result` — the redirect URL handed back by
+ *                      `WebBrowser.openAuthSessionAsync`. We are the
+ *                      authoritative consumer of that URL, so the guard is
+ *                      only used to RECORD the identity (suppressing a
+ *                      follow-up OS event) and never to skip the exchange.
+ */
+export type AuthDeepLinkSource = 'deep_link' | 'oauth_result';
 
 export function parseAuthCallbackUrl(url: string): {
   matches: boolean;
@@ -36,11 +52,18 @@ export function parseAuthCallbackUrl(url: string): {
  *   - Triple slash:   nearr:///auth-callback#access_token=...&refresh_token=...
  *   - Expo hosted:    exp://.../--/auth-callback?code=...
  *   - PKCE flow:      nearr://auth-callback?code=...
+ *
+ * The same pipeline serves magic link, Google OAuth and password recovery, so
+ * every provider establishes its session through exactly one code path.
  */
-export async function handleAuthDeepLink(url: string): Promise<AuthDeepLinkResult> {
+export async function handleAuthDeepLink(
+  url: string,
+  options: { source?: AuthDeepLinkSource } = {},
+): Promise<AuthDeepLinkResult> {
+  const source = options.source ?? 'deep_link';
   const parsed = parseAuthCallbackUrlCore(url);
   console.log(
-    `[auth-link] received has_code=${parsed.hasCode} has_tokens=${parsed.hasTokens} path=${parsed.safePath}`,
+    `[auth-link] received source=${source} has_code=${parsed.hasCode} has_tokens=${parsed.hasTokens} recovery=${parsed.isRecovery} path=${parsed.safePath}`,
   );
 
   if (!parsed.matches) {
@@ -49,17 +72,20 @@ export async function handleAuthDeepLink(url: string): Promise<AuthDeepLinkResul
       sessionEstablished: false,
       ignored: true,
       failed: false,
+      isRecovery: false,
       reason: 'non_auth_link',
     };
   }
 
-  if (duplicateAuthLinkGuard.shouldIgnore(url, parsed.params)) {
+  const isDuplicate = duplicateAuthLinkGuard.shouldIgnore(url, parsed.params);
+  if (isDuplicate && source === 'deep_link') {
     console.log('[auth-link] ignored_duplicate=true');
     return {
       handled: false,
       sessionEstablished: false,
       ignored: true,
       failed: false,
+      isRecovery: parsed.isRecovery,
       reason: 'duplicate',
     };
   }
@@ -79,6 +105,7 @@ export async function handleAuthDeepLink(url: string): Promise<AuthDeepLinkResul
           sessionEstablished: false,
           ignored: false,
           failed: true,
+          isRecovery: parsed.isRecovery,
           reason: 'set_session_error',
         };
       }
@@ -93,6 +120,7 @@ export async function handleAuthDeepLink(url: string): Promise<AuthDeepLinkResul
         sessionEstablished,
         ignored: false,
         failed: !sessionEstablished,
+        isRecovery: parsed.isRecovery,
         reason: sessionEstablished
           ? 'session_established'
           : 'session_not_found_after_auth',
@@ -110,6 +138,7 @@ export async function handleAuthDeepLink(url: string): Promise<AuthDeepLinkResul
           sessionEstablished: false,
           ignored: false,
           failed: true,
+          isRecovery: parsed.isRecovery,
           reason: 'exchange_code_error',
         };
       }
@@ -124,6 +153,7 @@ export async function handleAuthDeepLink(url: string): Promise<AuthDeepLinkResul
         sessionEstablished,
         ignored: false,
         failed: !sessionEstablished,
+        isRecovery: parsed.isRecovery,
         reason: sessionEstablished
           ? 'session_established'
           : 'session_not_found_after_auth',
@@ -136,6 +166,7 @@ export async function handleAuthDeepLink(url: string): Promise<AuthDeepLinkResul
       sessionEstablished: false,
       ignored: false,
       failed: true,
+      isRecovery: parsed.isRecovery,
       reason: 'missing_auth_params',
     };
   } catch {
@@ -145,6 +176,7 @@ export async function handleAuthDeepLink(url: string): Promise<AuthDeepLinkResul
       sessionEstablished: false,
       ignored: false,
       failed: true,
+      isRecovery: parsed.isRecovery,
       reason: 'unexpected_error',
     };
   }

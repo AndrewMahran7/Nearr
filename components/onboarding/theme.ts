@@ -24,6 +24,8 @@ export const OnboardingColors = {
   textMuted: '#888888',
   /** Orange accent + primary CTA. */
   orange: '#FF6B00',
+  /** Inline validation / failure text. */
+  error: '#FF7A7A',
   /** Dark text used on top of the orange CTA. */
   onOrange: '#080808',
   /** Muted segment for the progress indicator. */

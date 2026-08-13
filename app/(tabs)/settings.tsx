@@ -324,8 +324,8 @@ export default function SettingsScreen() {
             } else {
               console.log('[signOut] step 3: supabase signOut OK');
             }
-            console.log('[signOut] step 4: routing to /(auth)/sign-in');
-            router.replace('/(auth)/sign-in');
+            console.log('[signOut] step 4: routing to /(onboarding)/account');
+            router.replace('/(onboarding)/account');
           } catch (e: any) {
             console.warn('[signOut] failed', e);
             Alert.alert('Sign out failed', e?.message ?? 'Unknown error.');
@@ -337,7 +337,7 @@ export default function SettingsScreen() {
 
   async function handleExitDevMode() {
     await disableDevAuth();
-    router.replace('/(auth)/sign-in');
+    router.replace('/(onboarding)/account');
   }
 
   // ---------------------------------------------------------------------
