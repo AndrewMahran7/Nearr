@@ -1,15 +1,8 @@
-/**
- * Places tab — pure list view of the user's saved places.
- *
- * Uses the same data source as Home but without the dashboard header. Useful
- * when the user just wants to scan their saved list.
- */
-
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
+  Linking,
   Modal,
   Pressable,
   RefreshControl,
@@ -21,644 +14,493 @@ import {
 import { Feather } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 
-import { EmptyState, Input, OfflineBanner, SavedPlaceCard, Screen } from '@/components';
+import { EmptyState, Input, OfflineBanner, SavedPlaceBrowseCard, Screen } from '@/components';
 import { Radius, Spacing } from '@/constants';
-
 import { useNearbyPlaces } from '@/hooks/useNearbyPlaces';
+import { useSavedPlaces } from '@/hooks/useSavedPlaces';
 import {
-  getSavedPlacesCacheSnapshot,
-  removeSavedPlaceFromCache,
-  restoreSavedPlacesCache,
-  useSavedPlaces,
-} from '@/hooks/useSavedPlaces';
+  SAVED_CATEGORY_FILTERS,
+  browseFilterCount,
+  buildSavedPlacesBrowseResults,
+  currentSavedPlaces,
+  type SavedBrowseFilters,
+  type SavedBrowseSort,
+  type SavedCategoryFilter,
+} from '@/lib/savedPlacesBrowse';
 import { useTheme } from '@/lib/theme';
-import { trackEvent } from '@/lib/analytics';
-import { getProfile } from '@/services/profileService';
-import { deleteSavedPlace, unarchive } from '@/services/savedPlacesService';
-import type { Profile, SavedPlaceWithPlace } from '@/types';
-import { CATEGORY_FILTER_GROUPS, type CategoryFilterGroup } from '@/lib/placeCategory';
-import { browseFilterCount, filterSavedPlaces } from '@/lib/savedPlacesBrowse';
 
-type PlacesFilter =
-  | 'active'
-  | 'recent'
-  | 'nearby'
-  | 'visited'
-  | 'archived'
-  | 'instagram'
-  | 'tiktok'
-  | 'reminders-on';
-
-function isRecent(createdAt: string): boolean {
-  const created = new Date(createdAt).getTime();
-  if (Number.isNaN(created)) return false;
-  return Date.now() - created <= 14 * 24 * 60 * 60 * 1000;
-}
-
-function matchesSource(saved: SavedPlaceWithPlace, source: 'instagram' | 'tiktok'): boolean {
-  const sourceType = saved.source_type?.toLowerCase();
-  const sourceUrl = saved.source_url?.toLowerCase() ?? '';
-  return sourceType === source || sourceUrl.includes(`${source}.com`);
-}
-
-function filterLabel(filter: PlacesFilter): string {
-  switch (filter) {
-    case 'recent':
-      return 'recent';
-    case 'nearby':
-      return 'nearby saved places';
-    case 'visited':
-      return 'visited';
-    case 'archived':
-      return 'archived';
-    case 'instagram':
-      return 'Instagram';
-    case 'tiktok':
-      return 'TikTok';
-    case 'reminders-on':
-      return 'reminders on';
-    default:
-      return 'active';
-  }
-}
+const EMPTY_FILTERS: SavedBrowseFilters = { categories: [], hasVideo: false };
 
 export default function PlacesTab() {
   const router = useRouter();
   const { colors, typography } = useTheme();
-  const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { data, loading, refreshing, error, offline, lastSyncedAt, refresh, revalidate } = useSavedPlaces();
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [filter, setFilter] = useState('');
-  const [activeFilter, setActiveFilter] = useState<PlacesFilter>('recent');
-  const [categoryFilter, setCategoryFilter] = useState<CategoryFilterGroup | null>(null);
-  const [hasVideo, setHasVideo] = useState(false);
+  const [query, setQuery] = useState('');
+  const [sort, setSort] = useState<SavedBrowseSort>('recent');
+  const [filters, setFilters] = useState<SavedBrowseFilters>(EMPTY_FILTERS);
+  const [draftFilters, setDraftFilters] = useState<SavedBrowseFilters>(EMPTY_FILTERS);
+  const [sortOpen, setSortOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [locationNotice, setLocationNotice] = useState(false);
 
-  const activeData = useMemo(
-    () => data.filter((s) => !s.archived_at && !s.visited_at),
-    [data],
-  );
-
-  const { nearbyPlaces, locationState, refreshLocation } = useNearbyPlaces(activeData, {
-    enabled: activeFilter === 'nearby',
-    requestPermission: true,
+  const currentPlaces = useMemo(() => currentSavedPlaces(data), [data]);
+  const {
+    nearbyPlaces,
+    locationState,
+    refreshLocation,
+    requestLocationPermission,
+  } = useNearbyPlaces(currentPlaces, {
+    enabled: sort === 'nearby',
+    requestPermission: false,
   });
 
-  const counts = useMemo(
-    () => ({
-      active: activeData.length,
-      recent: activeData.filter((saved) => isRecent(saved.created_at)).length,
-      nearby: nearbyPlaces.length,
-      visited: data.filter((saved) => !!saved.visited_at).length,
-      archived: data.filter((saved) => !!saved.archived_at && !saved.visited_at).length,
-      instagram: activeData.filter((saved) => matchesSource(saved, 'instagram')).length,
-      tiktok: activeData.filter((saved) => matchesSource(saved, 'tiktok')).length,
-      remindersOn: activeData.filter((saved) => saved.notifications_enabled).length,
+  const results = useMemo(
+    () => buildSavedPlacesBrowseResults({
+      places: data,
+      nearbyPlaces,
+      nearbyReady: locationState === 'ready',
+      query,
+      filters,
+      sort,
     }),
-    [activeData, data, nearbyPlaces],
+    [data, filters, locationState, nearbyPlaces, query, sort],
   );
-
-  // Client-side filter — case-insensitive match across place name and
-  // address. List is small (V1 = personal saves), so doing this in JS is
-  // simpler than re-querying Supabase and feels instant while typing.
-  const filteredData = useMemo(() => {
-    const q = filter.trim().toLowerCase();
-    let base: SavedPlaceWithPlace[] = activeData;
-
-    if (activeFilter === 'recent') {
-      base = [...activeData].sort(
-        (left, right) =>
-          new Date(right.created_at).getTime() - new Date(left.created_at).getTime(),
-      );
-    } else if (activeFilter === 'nearby') {
-      base = nearbyPlaces;
-    } else if (activeFilter === 'visited') {
-      base = data
-        .filter((saved) => !!saved.visited_at)
-        .sort(
-          (left, right) =>
-            new Date(right.visited_at ?? right.updated_at).getTime() -
-            new Date(left.visited_at ?? left.updated_at).getTime(),
-        );
-    } else if (activeFilter === 'archived') {
-      base = data
-        .filter((saved) => !!saved.archived_at && !saved.visited_at)
-        .sort(
-          (left, right) =>
-            new Date(right.archived_at ?? right.updated_at).getTime() -
-            new Date(left.archived_at ?? left.updated_at).getTime(),
-        );
-    } else if (activeFilter === 'instagram') {
-      base = activeData.filter((saved) => matchesSource(saved, 'instagram'));
-    } else if (activeFilter === 'tiktok') {
-      base = activeData.filter((saved) => matchesSource(saved, 'tiktok'));
-    } else if (activeFilter === 'reminders-on') {
-      base = activeData.filter((saved) => saved.notifications_enabled);
-    }
-
-    const scoped = filterSavedPlaces(base, { category: categoryFilter, hasVideo });
-    if (!q) return scoped;
-    return scoped.filter((s) => {
-      const name = s.place?.name?.toLowerCase() ?? '';
-      const addr = s.place?.formatted_address?.toLowerCase() ?? '';
-      return name.includes(q) || addr.includes(q);
-    });
-  }, [activeData, activeFilter, categoryFilter, data, filter, hasVideo, nearbyPlaces]);
-
-  const loadProfile = useCallback(async () => {
-    setProfile(await getProfile());
-  }, []);
+  const filterCount = browseFilterCount(filters);
+  const openPlace = useCallback((savedPlaceId: string) => {
+    router.push(`/place/${savedPlaceId}`);
+  }, [router]);
 
   useEffect(() => {
-    void loadProfile();
-  }, [loadProfile]);
+    if (
+      sort === 'nearby' &&
+      (locationState === 'permission_denied' || locationState === 'unavailable' || locationState === 'error')
+    ) {
+      setSort('recent');
+      setLocationNotice(true);
+    }
+  }, [locationState, sort]);
 
   useFocusEffect(
     useCallback(() => {
       void revalidate();
-      void loadProfile();
-      if (activeFilter === 'nearby') {
-        void refreshLocation();
-      }
-    }, [activeFilter, revalidate, refreshLocation, loadProfile]),
+      if (sort === 'nearby') void refreshLocation();
+    }, [refreshLocation, revalidate, sort]),
   );
 
-  async function handleDelete(id: string) {
-    // Optimistic remove from the shared cache (instant across all screens),
-    // roll back on failure.
-    const snapshot = getSavedPlacesCacheSnapshot();
-    removeSavedPlaceFromCache(id);
-    try {
-      await deleteSavedPlace(id);
-    } catch (e: any) {
-      restoreSavedPlacesCache(snapshot);
-      Alert.alert('Could not remove', e?.message ?? 'Unknown error.');
+  async function chooseNearby() {
+    setSortOpen(false);
+    const ready = await requestLocationPermission();
+    if (ready) {
+      setSort('nearby');
+      setLocationNotice(false);
+    } else {
+      setSort('recent');
+      setLocationNotice(true);
     }
   }
 
-  async function handleRestore(id: string) {
-    try {
-      await unarchive(id);
-      void trackEvent('archived_place_restored', { saved_place_id: id });
-      await refresh();
-    } catch (e: any) {
-      Alert.alert('Could not restore', e?.message ?? 'Unknown error.');
-    }
+  function openFilters() {
+    setDraftFilters({ categories: [...filters.categories], hasVideo: filters.hasVideo });
+    setFiltersOpen(true);
   }
 
-  if (loading && data.length === 0) {
-    return (
-      <Screen>
-        <View style={styles.center}>
-          <ActivityIndicator />
-        </View>
-      </Screen>
-    );
+  function toggleDraftCategory(id: SavedCategoryFilter) {
+    setDraftFilters((current) => ({
+      ...current,
+      categories: current.categories.includes(id)
+        ? current.categories.filter((value) => value !== id)
+        : [...current.categories, id],
+    }));
   }
 
-  if (error && data.length === 0) {
-    return (
-      <Screen>
-        <EmptyState
-          variant="error"
-          title={offline ? 'You\u2019re offline' : 'Couldn\u2019t load your places'}
-          body={
-            offline
-              ? 'Reconnect to the internet and pull to refresh \u2014 your saved places will appear here.'
-              : error
-          }
-          actionTitle="Try again"
-          onAction={refresh}
-        />
-      </Screen>
-    );
-  }
-
-  function setFilterAndResetLocation(next: PlacesFilter) {
-    setActiveFilter(next);
-    if (next === 'nearby') {
-      void refreshLocation();
-    }
-    if (next === 'visited') {
-      void trackEvent('visited_filter_viewed');
-    } else if (next === 'archived') {
-      void trackEvent('archived_filter_viewed');
-    }
+  function clearFilters() {
+    setFilters(EMPTY_FILTERS);
+    setDraftFilters(EMPTY_FILTERS);
   }
 
   function renderEmptyState() {
-    if (filter.trim()) {
+    if (loading && data.length === 0) {
+      return (
+        <View style={styles.loadingState} accessibilityLiveRegion="polite">
+          <ActivityIndicator color={colors.primary} />
+          <Text style={[typography.body, styles.emptyBody]}>Loading saved places…</Text>
+        </View>
+      );
+    }
+    if (error && data.length === 0) {
+      return (
+        <EmptyState
+          framed={false}
+          variant="error"
+          title={offline ? 'You’re offline' : 'Couldn’t load your places'}
+          body={offline ? 'Reconnect and try again. Your saved places will appear here.' : error}
+          actionTitle="Try again"
+          onAction={refresh}
+        />
+      );
+    }
+    if (currentPlaces.length === 0) {
+      return (
+        <EmptyState
+          framed={false}
+          title="No saved places yet"
+          body="Share places to Nearr and they’ll show up here."
+          actionTitle="Add a place"
+          onAction={() => router.push('/add-place')}
+        />
+      );
+    }
+    if (query.trim()) {
       return (
         <EmptyState
           framed={false}
           title="No matches"
-          body={`No ${filterLabel(activeFilter)} saves match “${filter.trim()}”.`}
+          body="Try another search."
           actionTitle="Clear search"
-          onAction={() => setFilter('')}
-          secondaryTitle="Clear filter"
-          onSecondary={() => setFilterAndResetLocation('active')}
+          onAction={() => setQuery('')}
         />
       );
     }
-
-    if (activeFilter === 'nearby' && locationState !== 'ready') {
+    if (filterCount > 0) {
       return (
         <EmptyState
           framed={false}
-          title="Turn on location to see saved places near you"
-          body="Nearr uses your location to show which saved places are nearby."
-          actionTitle="Try again"
-          onAction={() => {
-            void refreshLocation();
-          }}
-          secondaryTitle="Clear filter"
-          onSecondary={() => setFilterAndResetLocation('active')}
+          title="Nothing matches these filters"
+          body="Clear filters to see all your saved places."
+          actionTitle="Clear filters"
+          onAction={clearFilters}
         />
       );
     }
-
-    if (activeFilter !== 'active') {
-      const title =
-        activeFilter === 'instagram'
-          ? 'No Instagram saves yet'
-          : activeFilter === 'tiktok'
-            ? 'No TikTok saves yet'
-            : activeFilter === 'reminders-on'
-              ? 'No reminders on yet'
-              : activeFilter === 'recent'
-                ? 'No recent saves yet'
-                : activeFilter === 'visited'
-                  ? 'No visited places yet'
-                  : activeFilter === 'archived'
-                    ? 'Nothing archived yet'
-                    : 'No nearby saved places yet';
-      const body =
-        activeFilter === 'recent'
-          ? 'You have not saved any new places recently.'
-          : activeFilter === 'nearby'
-            ? 'Nothing you saved looks close enough to go right now.'
-            : activeFilter === 'reminders-on'
-              ? 'Turn on a nearby reminder for a place and it will show up here.'
-              : activeFilter === 'visited'
-                ? 'Mark a place visited from the nearby reminder and it will show up here.'
-                : activeFilter === 'archived'
-                  ? 'Archived places live here. Restore one to start getting reminders again.'
-                  : `No ${filterLabel(activeFilter)} yet.`;
-
-      return (
-        <EmptyState
-          framed={false}
-          title={title}
-          body={body}
-          actionTitle="Show active places"
-          onAction={() => setFilterAndResetLocation('active')}
-        />
-      );
-    }
-
-    return (
-      <EmptyState
-        framed={false}
-        title="No places yet"
-        body="Save your first spot, or paste a link from TikTok or Instagram."
-        actionTitle="Save a place"
-        onAction={() => router.push('/add-place')}
-        secondaryTitle="Save from a link"
-        onSecondary={() => router.push('/share')}
-      />
-    );
+    return null;
   }
+
+  const listHeader = (
+    <View style={styles.header}>
+      <View style={styles.titleRow}>
+        <View style={styles.titleCopy}>
+          <Text accessibilityRole="header" style={[typography.title, styles.title]}>Saved Places</Text>
+          {currentPlaces.length > 0 ? (
+            <Text style={[typography.caption, styles.savedCount]}>
+              {currentPlaces.length} {currentPlaces.length === 1 ? 'place' : 'places'}
+            </Text>
+          ) : null}
+        </View>
+        <Pressable
+          onPress={() => router.push('/add-place')}
+          accessibilityRole="button"
+          accessibilityLabel="Add a place"
+          hitSlop={8}
+          style={({ pressed }) => [styles.addButton, pressed && styles.controlPressed]}
+        >
+          <Feather name="plus" size={22} color={colors.textInverse} />
+        </Pressable>
+      </View>
+
+      <OfflineBanner visible={offline} lastSyncedAt={lastSyncedAt} />
+
+      <View style={styles.searchWrap}>
+        <Feather name="search" size={19} color={colors.textMuted} style={styles.searchIcon} />
+        <Input
+          value={query}
+          onChangeText={setQuery}
+          placeholder="Search saved places"
+          accessibilityLabel="Search saved places"
+          autoCapitalize="none"
+          autoCorrect={false}
+          clearButtonMode="while-editing"
+          returnKeyType="search"
+          style={styles.searchInput}
+        />
+      </View>
+
+      <View style={styles.controlsRow}>
+        <Pressable
+          onPress={() => setSortOpen(true)}
+          accessibilityRole="button"
+          accessibilityLabel={`Sort saved places. Current sort: ${sort === 'nearby' ? 'Nearby' : 'Recently saved'}`}
+          style={({ pressed }) => [
+            styles.controlButton,
+            sort === 'nearby' && styles.controlButtonActive,
+            pressed && styles.controlPressed,
+          ]}
+        >
+          <Feather name="arrow-up" size={17} color={sort === 'nearby' ? colors.accent : colors.textSecondary} />
+          <Text style={[typography.label, styles.controlLabel]}>
+            {sort === 'nearby' ? 'Sort: Nearby' : 'Sort'}
+          </Text>
+          <Feather name="chevron-down" size={16} color={colors.textMuted} />
+        </Pressable>
+        <Pressable
+          onPress={openFilters}
+          accessibilityRole="button"
+          accessibilityLabel={`Filter saved places${filterCount ? `, ${filterCount} active` : ''}`}
+          style={({ pressed }) => [
+            styles.controlButton,
+            filterCount > 0 && styles.controlButtonActive,
+            pressed && styles.controlPressed,
+          ]}
+        >
+          <Feather name="sliders" size={17} color={filterCount > 0 ? colors.accent : colors.textSecondary} />
+          <Text style={[typography.label, styles.controlLabel]}>
+            {filterCount > 0 ? `Filter (${filterCount})` : 'Filter'}
+          </Text>
+        </Pressable>
+      </View>
+
+      {locationNotice ? (
+        <View style={styles.locationNotice} accessibilityLiveRegion="polite">
+          <Feather name="map-pin" size={18} color={colors.accent} />
+          <View style={styles.locationNoticeCopy}>
+            <Text style={[typography.label, styles.locationNoticeTitle]}>Location is needed for Nearby</Text>
+            <Text style={[typography.caption, styles.locationNoticeBody]}>Recently saved remains selected until location is available.</Text>
+          </View>
+          <Pressable
+            onPress={() => void Linking.openSettings()}
+            accessibilityRole="button"
+            style={styles.settingsButton}
+          >
+            <Text style={styles.settingsText}>Settings</Text>
+          </Pressable>
+        </View>
+      ) : null}
+    </View>
+  );
 
   return (
     <Screen padded={false}>
       <FlatList
-        data={filteredData}
-        keyExtractor={(s) => s.id}
-        contentContainerStyle={
-          filteredData.length === 0 ? styles.emptyContent : styles.listContent
-        }
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}
-        ListHeaderComponent={
-          <View style={styles.header}>
-            <Text style={[typography.title, styles.title]}>Places</Text>
-            <Text style={[typography.body, styles.sub]}>
-              Find places you wanted to try.
-            </Text>
-
-            <OfflineBanner visible={offline} lastSyncedAt={lastSyncedAt} />
-
-            {data.length > 0 ? (
-              <>
-                <View style={styles.searchWrap}>
-                  <Input
-                    value={filter}
-                    onChangeText={setFilter}
-                    placeholder="Search saved places"
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    clearButtonMode="while-editing"
-                  />
-                </View>
-
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.filterRow}
-                  style={styles.filterScroll}
-                >
-                  <FilterChip
-                    label="Recent"
-                    active={activeFilter === 'recent'}
-                    onPress={() => setFilterAndResetLocation('recent')}
-                    colors={colors}
-                    typography={typography}
-                  />
-                  <FilterChip
-                    label="Nearby"
-                    active={activeFilter === 'nearby'}
-                    onPress={() => setFilterAndResetLocation('nearby')}
-                    colors={colors}
-                    typography={typography}
-                  />
-                  <Pressable
-                    onPress={() => setFiltersOpen(true)}
-                    style={styles.filterButton}
-                    accessibilityRole="button"
-                    accessibilityLabel="Filters"
-                  >
-                    <Feather name="sliders" size={16} color={colors.text} />
-                    <Text style={[typography.label, styles.filterButtonText]}>Filters</Text>
-                    {browseFilterCount({ category: categoryFilter, hasVideo }) > 0 ? (
-                      <Text style={[typography.caption, styles.filterCount]}>
-                        {browseFilterCount({ category: categoryFilter, hasVideo })}
-                      </Text>
-                    ) : null}
-                  </Pressable>
-                </ScrollView>
-              </>
-            ) : null}
-          </View>
-        }
+        data={results}
+        keyExtractor={(saved) => saved.id}
         renderItem={({ item }) => (
-          <SavedPlaceCard
-            saved={item}
-            profile={profile}
-            onPress={() => router.push(`/place/${item.id}`)}
-            onDelete={() => handleDelete(item.id)}
-            onShowOnMap={() =>
-              router.push({
-                pathname: '/(tabs)/map',
-                params: { savedPlaceId: item.id },
-              })
-            }
-            onRestore={
-              activeFilter === 'archived' && item.archived_at
-                ? () => handleRestore(item.id)
-                : undefined
-            }
-          />
+          <SavedPlaceBrowseCard saved={item} onPress={openPlace} />
         )}
+        ListHeaderComponent={listHeader}
         ListEmptyComponent={renderEmptyState()}
+        contentContainerStyle={results.length === 0 ? styles.emptyContent : styles.listContent}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.primary} />}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        showsVerticalScrollIndicator={false}
+        initialNumToRender={8}
+        maxToRenderPerBatch={8}
+        updateCellsBatchingPeriod={50}
+        windowSize={7}
       />
-      <Modal
-        visible={filtersOpen}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setFiltersOpen(false)}
-      >
-        <View style={styles.filterModalBackdrop}>
-          <Pressable
-            style={StyleSheet.absoluteFill}
-            onPress={() => setFiltersOpen(false)}
-            accessibilityRole="button"
-            accessibilityLabel="Close filters"
+
+      <Modal visible={sortOpen} transparent animationType="slide" onRequestClose={() => setSortOpen(false)}>
+        <SheetBackdrop label="Close sort" onClose={() => setSortOpen(false)} styles={styles}>
+          <View style={styles.sheetHandle} />
+          <View style={styles.sheetHeader}>
+            <Text style={[typography.heading, styles.sheetTitle]}>Sort saved places</Text>
+            <Pressable onPress={() => setSortOpen(false)} hitSlop={10} accessibilityRole="button" accessibilityLabel="Close sort">
+              <Feather name="x" size={22} color={colors.textSecondary} />
+            </Pressable>
+          </View>
+          <SortOption
+            label="Recently saved"
+            detail="Newest saves first"
+            selected={sort === 'recent'}
+            onPress={() => { setSort('recent'); setLocationNotice(false); setSortOpen(false); }}
           />
-          <View style={styles.filterModal}>
-            <View style={styles.modalHeader}>
-              <Text style={[typography.heading, styles.modalTitle]}>Filters</Text>
-              <Pressable
-                onPress={() => setFiltersOpen(false)}
-                hitSlop={10}
-                accessibilityRole="button"
-                accessibilityLabel="Close filters"
-              >
-                <Feather name="x" size={22} color={colors.textSecondary} />
-              </Pressable>
-            </View>
-            <Text style={[typography.label, styles.filterHeading]}>Category</Text>
+          <SortOption
+            label="Nearby"
+            detail="Nearest places first"
+            selected={sort === 'nearby'}
+            onPress={() => void chooseNearby()}
+          />
+        </SheetBackdrop>
+      </Modal>
+
+      <Modal visible={filtersOpen} transparent animationType="slide" onRequestClose={() => setFiltersOpen(false)}>
+        <SheetBackdrop label="Close filters" onClose={() => setFiltersOpen(false)} styles={styles}>
+          <View style={styles.sheetHandle} />
+          <View style={styles.sheetHeader}>
+            <Text style={[typography.heading, styles.sheetTitle]}>Filter saved places</Text>
+            <Pressable onPress={() => setFiltersOpen(false)} hitSlop={10} accessibilityRole="button" accessibilityLabel="Close filters">
+              <Feather name="x" size={22} color={colors.textSecondary} />
+            </Pressable>
+          </View>
+          <ScrollView style={styles.filterScroll} showsVerticalScrollIndicator={false}>
+            <Text style={[typography.label, styles.sectionLabel]}>Category</Text>
             <View style={styles.categoryGrid}>
-              {(
-                Object.keys(CATEGORY_FILTER_GROUPS) as CategoryFilterGroup[]
-              ).filter((group) => group !== 'all').map((group) => {
-                const active = categoryFilter === group;
-                const label = group === 'fitness_wellness'
-                  ? 'Fitness & Wellness'
-                  : group.charAt(0).toUpperCase() + group.slice(1);
+              {SAVED_CATEGORY_FILTERS.map((item) => {
+                const selected = draftFilters.categories.includes(item.id);
                 return (
                   <Pressable
-                    key={group}
-                    onPress={() => setCategoryFilter(active ? null : group)}
-                    style={[styles.categoryOption, active && styles.categoryOptionActive]}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: active }}
+                    key={item.id}
+                    onPress={() => toggleDraftCategory(item.id)}
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: selected }}
+                    style={[styles.categoryOption, selected && styles.categoryOptionSelected]}
                   >
-                    <Text style={[typography.caption, { color: active ? colors.textInverse : colors.text }]}>
-                      {label}
+                    <Text style={[typography.caption, styles.categoryOptionText, selected && styles.categoryOptionTextSelected]}>
+                      {item.label}
                     </Text>
                   </Pressable>
                 );
               })}
             </View>
-            <Text style={[typography.label, styles.filterHeading]}>Source</Text>
+            <Text style={[typography.label, styles.sectionLabel]}>Source</Text>
             <Pressable
-              onPress={() => setHasVideo((current) => !current)}
-              style={styles.videoFilterRow}
+              onPress={() => setDraftFilters((current) => ({ ...current, hasVideo: !current.hasVideo }))}
               accessibilityRole="checkbox"
-              accessibilityState={{ checked: hasVideo }}
+              accessibilityState={{ checked: draftFilters.hasVideo }}
+              style={styles.videoOption}
             >
-              <Feather name="video" size={18} color={colors.accent} />
-              <Text style={[typography.body, styles.videoFilterText]}>Has video</Text>
-              <View style={[styles.checkbox, hasVideo && styles.checkboxActive]}>
-                {hasVideo ? <Feather name="check" size={14} color={colors.textInverse} /> : null}
+              <View style={styles.videoOptionIcon}><Feather name="play" size={16} color={colors.accent} /></View>
+              <View style={styles.videoOptionCopy}>
+                <Text style={[typography.bodyStrong, styles.videoOptionTitle]}>Has original video</Text>
+                <Text style={[typography.caption, styles.videoOptionBody]}>Instagram, TikTok, YouTube, or another supported social post</Text>
+              </View>
+              <View style={[styles.checkbox, draftFilters.hasVideo && styles.checkboxSelected]}>
+                {draftFilters.hasVideo ? <Feather name="check" size={15} color={colors.textInverse} /> : null}
               </View>
             </Pressable>
-            <View style={styles.modalActions}>
-              <Pressable
-                onPress={() => {
-                  setCategoryFilter(null);
-                  setHasVideo(false);
-                }}
-                accessibilityRole="button"
-              >
-                <Text style={styles.clearFilterText}>Clear</Text>
-              </Pressable>
-              <Pressable
-                onPress={() => setFiltersOpen(false)}
-                style={styles.applyFilterButton}
-                accessibilityRole="button"
-              >
-                <Text style={styles.applyFilterText}>Apply</Text>
-              </Pressable>
-            </View>
+          </ScrollView>
+          <View style={styles.sheetActions}>
+            <Pressable
+              onPress={() => setDraftFilters(EMPTY_FILTERS)}
+              accessibilityRole="button"
+              style={styles.clearButton}
+            >
+              <Text style={styles.clearText}>Clear</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => { setFilters(draftFilters); setFiltersOpen(false); }}
+              accessibilityRole="button"
+              style={styles.applyButton}
+            >
+              <Text style={styles.applyText}>Apply</Text>
+            </Pressable>
           </View>
-        </View>
+        </SheetBackdrop>
       </Modal>
     </Screen>
   );
+
+  function SortOption({ label, detail, selected, onPress }: {
+    label: string;
+    detail: string;
+    selected: boolean;
+    onPress: () => void;
+  }) {
+    return (
+      <Pressable
+        onPress={onPress}
+        accessibilityRole="radio"
+        accessibilityState={{ selected }}
+        style={styles.sortOption}
+      >
+        <View style={styles.sortOptionCopy}>
+          <Text style={[typography.bodyStrong, styles.sortOptionTitle]}>{label}</Text>
+          <Text style={[typography.caption, styles.sortOptionDetail]}>{detail}</Text>
+        </View>
+        <View style={[styles.radio, selected && styles.radioSelected]}>
+          {selected ? <View style={styles.radioDot} /> : null}
+        </View>
+      </Pressable>
+    );
+  }
 }
 
-function createStyles(
-  colors: ReturnType<typeof useTheme>['colors'],
-  typography: ReturnType<typeof useTheme>['typography'],
-) {
-  return StyleSheet.create({
-    header: {
-      paddingHorizontal: Spacing.lg,
-      paddingTop: Spacing.lg,
-      paddingBottom: Spacing.sm,
-    },
-    title: {
-      ...typography.title,
-      color: colors.text,
-    },
-    sub: {
-      color: colors.textSecondary,
-      marginTop: Spacing.xs,
-    },
-    searchWrap: {
-      marginTop: Spacing.lg,
-    },
-    filterScroll: {
-      marginHorizontal: -Spacing.lg,
-    },
-    filterRow: {
-      gap: Spacing.sm,
-      marginTop: Spacing.md,
-      marginBottom: Spacing.sm,
-      paddingHorizontal: Spacing.lg,
-    },
-    filterButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: Spacing.xs,
-      paddingHorizontal: Spacing.md,
-      paddingVertical: Spacing.sm,
-      borderRadius: Radius.pill,
-      borderWidth: 1,
-      borderColor: colors.border,
-      backgroundColor: colors.surfaceElevated,
-    },
-    filterButtonText: { color: colors.text },
-    filterCount: { color: colors.primary, fontWeight: '700' },
-    filterModalBackdrop: {
-      flex: 1,
-      justifyContent: 'flex-end',
-      backgroundColor: colors.modalBackdrop,
-    },
-    filterModal: {
-      backgroundColor: colors.bg,
-      borderTopLeftRadius: Radius.lg,
-      borderTopRightRadius: Radius.lg,
-      padding: Spacing.lg,
-      paddingBottom: Spacing.xl,
-    },
-    modalHeader: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-    },
-    modalTitle: { color: colors.text },
-    filterHeading: { color: colors.textSecondary, marginTop: Spacing.lg, marginBottom: Spacing.sm },
-    categoryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
-    categoryOption: {
-      paddingHorizontal: Spacing.md,
-      paddingVertical: Spacing.sm,
-      borderRadius: Radius.pill,
-      borderWidth: 1,
-      borderColor: colors.border,
-      backgroundColor: colors.surfaceElevated,
-    },
-    categoryOptionActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-    videoFilterRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: Spacing.md,
-      paddingVertical: Spacing.sm,
-    },
-    videoFilterText: { color: colors.text, flex: 1 },
-    checkbox: {
-      width: 24,
-      height: 24,
-      borderRadius: 7,
-      borderWidth: 1,
-      borderColor: colors.border,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    checkboxActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-    modalActions: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginTop: Spacing.lg,
-    },
-    clearFilterText: { color: colors.textSecondary, fontWeight: '700' },
-    applyFilterButton: {
-      minWidth: 110,
-      alignItems: 'center',
-      paddingVertical: Spacing.sm,
-      paddingHorizontal: Spacing.lg,
-      borderRadius: Radius.md,
-      backgroundColor: colors.primary,
-    },
-    applyFilterText: { color: colors.textInverse, fontWeight: '700' },
-    listContent: { padding: Spacing.lg, paddingBottom: Spacing.xxl },
-    emptyContent: { flexGrow: 1, justifyContent: 'center', padding: Spacing.lg },
-    center: { paddingVertical: Spacing.xxl, alignItems: 'center' },
-  });
-}
-
-function FilterChip({
-  label,
-  active,
-  onPress,
-  colors,
-  typography,
-}: {
+function SheetBackdrop({ label, onClose, styles, children }: {
   label: string;
-  active: boolean;
-  onPress: () => void;
-  colors: ReturnType<typeof useTheme>['colors'];
-  typography: ReturnType<typeof useTheme>['typography'];
+  onClose: () => void;
+  styles: ReturnType<typeof createStyles>;
+  children: React.ReactNode;
 }) {
   return (
-    <Pressable
-      onPress={onPress}
-      style={[
-        stylesChip.base,
-        { borderColor: active ? colors.primary : colors.border },
-        active
-          ? { backgroundColor: colors.primary }
-          : { backgroundColor: colors.surfaceElevated },
-      ]}
-    >
-      <Text
-        style={[
-          typography.label,
-          { color: active ? colors.textInverse : colors.text },
-        ]}
-      >
-        {label}
-      </Text>
-    </Pressable>
+    <View style={styles.modalBackdrop}>
+      <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityRole="button" accessibilityLabel={label} />
+      <View style={styles.sheet}>{children}</View>
+    </View>
   );
 }
 
-const stylesChip = StyleSheet.create({
-  base: {
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    borderRadius: Radius.pill,
-    borderWidth: 1,
-  },
-});
+function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
+  return StyleSheet.create({
+    header: { paddingTop: Spacing.lg, paddingBottom: Spacing.md },
+    titleRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: Spacing.lg },
+    titleCopy: { flex: 1 },
+    title: { color: colors.text, fontSize: 28, lineHeight: 34, letterSpacing: -0.4 },
+    savedCount: { color: colors.textMuted, marginTop: 2 },
+    addButton: {
+      width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center',
+      backgroundColor: colors.primary,
+    },
+    searchWrap: { marginHorizontal: Spacing.lg, marginTop: Spacing.lg, justifyContent: 'center' },
+    searchIcon: { position: 'absolute', left: Spacing.md, zIndex: 1 },
+    searchInput: { minHeight: 52, paddingLeft: 42, backgroundColor: colors.surface, borderColor: colors.border },
+    controlsRow: { flexDirection: 'row', gap: Spacing.sm, paddingHorizontal: Spacing.lg, marginTop: Spacing.md },
+    controlButton: {
+      minHeight: 46, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7,
+      paddingHorizontal: Spacing.md, borderRadius: Radius.md, borderWidth: 1,
+      borderColor: colors.border, backgroundColor: colors.surface,
+    },
+    controlButtonActive: { borderColor: 'rgba(255,106,26,0.65)', backgroundColor: 'rgba(255,106,26,0.08)' },
+    controlPressed: { opacity: 0.72 },
+    controlLabel: { color: colors.text },
+    locationNotice: {
+      minHeight: 68, flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
+      marginHorizontal: Spacing.lg, marginTop: Spacing.md, padding: Spacing.md,
+      borderRadius: Radius.md, backgroundColor: colors.surface, borderWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.border,
+    },
+    locationNoticeCopy: { flex: 1 },
+    locationNoticeTitle: { color: colors.text },
+    locationNoticeBody: { color: colors.textSecondary, marginTop: 2, lineHeight: 17 },
+    settingsButton: { minHeight: 44, justifyContent: 'center', paddingHorizontal: Spacing.xs },
+    settingsText: { color: colors.accent, fontWeight: '700', fontSize: 13 },
+    listContent: { paddingHorizontal: Spacing.lg, paddingBottom: Spacing.xxl },
+    emptyContent: { flexGrow: 1, paddingHorizontal: Spacing.lg, paddingBottom: Spacing.xxl },
+    loadingState: { minHeight: 220, alignItems: 'center', justifyContent: 'center', gap: Spacing.md },
+    emptyBody: { color: colors.textSecondary },
+    modalBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: colors.modalBackdrop },
+    sheet: {
+      maxHeight: '88%', paddingHorizontal: Spacing.lg, paddingTop: Spacing.sm, paddingBottom: Spacing.xl,
+      borderTopLeftRadius: Radius.lg, borderTopRightRadius: Radius.lg,
+      backgroundColor: colors.bg, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border,
+    },
+    sheetHandle: { width: 38, height: 4, borderRadius: 2, backgroundColor: colors.border, alignSelf: 'center', marginBottom: Spacing.md },
+    sheetHeader: { minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    sheetTitle: { color: colors.text },
+    sortOption: {
+      minHeight: 68, flexDirection: 'row', alignItems: 'center', borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: colors.border,
+    },
+    sortOptionCopy: { flex: 1 },
+    sortOptionTitle: { color: colors.text },
+    sortOptionDetail: { color: colors.textSecondary, marginTop: 2 },
+    radio: { width: 24, height: 24, borderRadius: 12, borderWidth: 1.5, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
+    radioSelected: { borderColor: colors.primary },
+    radioDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: colors.primary },
+    sectionLabel: { color: colors.textSecondary, marginTop: Spacing.lg, marginBottom: Spacing.sm },
+    filterScroll: { flexShrink: 1 },
+    categoryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
+    categoryOption: {
+      minHeight: 44, justifyContent: 'center', paddingHorizontal: Spacing.md, borderRadius: Radius.pill,
+      borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface,
+    },
+    categoryOptionSelected: { borderColor: colors.primary, backgroundColor: colors.primary },
+    categoryOptionText: { color: colors.text },
+    categoryOptionTextSelected: { color: colors.textInverse, fontWeight: '700' },
+    videoOption: {
+      minHeight: 72, flexDirection: 'row', alignItems: 'center', gap: Spacing.md,
+      paddingVertical: Spacing.sm, borderTopWidth: StyleSheet.hairlineWidth, borderBottomWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.border,
+    },
+    videoOptionIcon: { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,106,26,0.12)' },
+    videoOptionCopy: { flex: 1 },
+    videoOptionTitle: { color: colors.text },
+    videoOptionBody: { color: colors.textSecondary, marginTop: 2, lineHeight: 17 },
+    checkbox: { width: 26, height: 26, borderRadius: 7, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
+    checkboxSelected: { borderColor: colors.primary, backgroundColor: colors.primary },
+    sheetActions: { minHeight: 58, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: Spacing.lg },
+    clearButton: { minHeight: 44, justifyContent: 'center', paddingHorizontal: Spacing.sm },
+    clearText: { color: colors.textSecondary, fontWeight: '700', fontSize: 15 },
+    applyButton: { minWidth: 136, minHeight: 50, alignItems: 'center', justifyContent: 'center', borderRadius: Radius.md, backgroundColor: colors.primary },
+    applyText: { color: colors.textInverse, fontSize: 16, fontWeight: '700' },
+  });
+}

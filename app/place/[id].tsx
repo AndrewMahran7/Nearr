@@ -29,7 +29,6 @@ import { Feather } from '@expo/vector-icons';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 
 import { Button, Card, Input, Screen } from '@/components';
-import { PlaceCategoryPicker } from '@/components/PlaceCategoryPicker';
 import { NoteEditorModal } from '@/components/map/NoteEditorModal';
 import { Radius, Spacing } from '@/constants';
 
@@ -38,7 +37,6 @@ import {
   deleteSavedPlace,
   getSavedPlace,
   updateSavedPlace,
-  setSavedPlaceCategory,
 } from '@/services/savedPlacesService';
 import {
   getSavedPlacesCacheSnapshot,
@@ -54,7 +52,7 @@ import {
   type NoteEditorState,
 } from '@/lib/noteEditor';
 import { trackEvent } from '@/lib/analytics';
-import { savedPlaceCategory, type NearrCategory } from '@/lib/placeCategory';
+import { CATEGORY_LABELS, savedPlaceCategory } from '@/lib/placeCategory';
 import { useTheme } from '@/lib/theme';
 import type { Profile, RadiusUnit, SavedPlaceWithPlace } from '@/types';
 
@@ -135,8 +133,6 @@ export default function PlaceDetail() {
     open: false,
   }));
   const [reminderSettingsExpanded, setReminderSettingsExpanded] = useState(false);
-  const [category, setCategory] = useState<NearrCategory>('other');
-  const [categorySaving, setCategorySaving] = useState(false);
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -164,7 +160,6 @@ export default function PlaceDetail() {
         }
         setNotes(s.notes ?? '');
         setNoteEditor({ ...openNoteEditor(s.notes), open: false });
-        setCategory(savedPlaceCategory(s));
         setReminderSettingsExpanded(false);
       }
       setProfile(p);
@@ -286,32 +281,6 @@ export default function PlaceDetail() {
     );
   }
 
-  async function handleCategoryChange(next: NearrCategory) {
-    if (!saved || categorySaving || next === category) return;
-    const previous = category;
-    setCategory(next);
-    setCategorySaving(true);
-    try {
-      await setSavedPlaceCategory(saved.id, next);
-      const updated: SavedPlaceWithPlace = {
-        ...saved,
-        category: next,
-        category_source: 'user',
-        category_confidence: 1,
-        category_user_overridden: true,
-        categorized_at: new Date().toISOString(),
-      };
-      setSaved(updated);
-      updateSavedPlacesCache((current) => current.map((row) => row.id === saved.id ? updated : row));
-      void trackEvent('saved_place_category_corrected', { category: next, surface: 'place_detail' });
-    } catch (error) {
-      setCategory(previous);
-      Alert.alert('Could not update category', error instanceof Error ? error.message : 'Please try again.');
-    } finally {
-      setCategorySaving(false);
-    }
-  }
-
   function confirmDelete() {
     if (!saved) return;
     Alert.alert(
@@ -383,8 +352,8 @@ export default function PlaceDetail() {
           {place.formatted_address ? (
             <Text style={[typography.body, styles.muted]}>{place.formatted_address}</Text>
           ) : null}
-          <View style={{ marginTop: Spacing.md }}>
-            <PlaceCategoryPicker value={category} onChange={(next) => void handleCategoryChange(next)} disabled={categorySaving} />
+          <View style={styles.automaticCategory}>
+            <Text style={styles.automaticCategoryText}>{CATEGORY_LABELS[savedPlaceCategory(saved)]}</Text>
           </View>
           {sourceText ? (
             <View style={styles.sourceRow}>
@@ -592,6 +561,17 @@ function createStyles(
     center: { paddingVertical: Spacing.xxl, alignItems: 'center' },
     heroCard: { marginBottom: Spacing.md, backgroundColor: colors.surfaceElevated },
     sectionCard: { backgroundColor: colors.surfaceElevated },
+    automaticCategory: {
+      alignSelf: 'flex-start',
+      marginTop: Spacing.md,
+      paddingHorizontal: Spacing.sm,
+      paddingVertical: Spacing.xs,
+      borderRadius: Radius.pill,
+      backgroundColor: colors.surface,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.border,
+    },
+    automaticCategoryText: { ...typography.label, color: colors.textSecondary },
     muted: { color: colors.textSecondary },
     metaText: { color: colors.textMuted, marginTop: 2 },
     sourceRow: { marginTop: Spacing.md },

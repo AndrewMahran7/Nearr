@@ -95,7 +95,8 @@
     "test:ai-note-integration": "ts-node -P scripts/tsconfig.json scripts/testAiNoteIntegrationContracts.ts",
     "test:multi-place-batch": "ts-node -P scripts/tsconfig.json scripts/testMultiPlaceBatch.ts",
     "test:multi-place-review": "ts-node -P scripts/tsconfig.json scripts/testMultiPlaceReviewContracts.ts",
-    "test:saved-browse": "ts-node -P scripts/tsconfig.json scripts/testSavedPlacesBrowse.ts"
+    "test:saved-browse": "ts-node -P scripts/tsconfig.json scripts/testSavedPlacesBrowse.ts",
+    "test:saved-browse-contracts": "ts-node -P scripts/tsconfig.json scripts/testSavedPlacesBrowseContracts.ts"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "1.23.1",

@@ -94,6 +94,7 @@ export function PlaceImage({
           resizeMode="cover"
           onError={() => setFailedUris((current) => ({ ...current, [resolvedUri]: true }))}
           accessibilityLabel={accessibilityLabel}
+          accessible={Boolean(accessibilityLabel)}
         />
       ) : loading ? (
         <ActivityIndicator size="small" color={colors.primary} />

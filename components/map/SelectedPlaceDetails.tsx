@@ -35,7 +35,6 @@ import {
 import { Feather } from '@expo/vector-icons';
 
 import { Button, Card, Input } from '@/components';
-import { PlaceCategoryPicker } from '@/components/PlaceCategoryPicker';
 import { WrongPlaceSheet } from '@/components/map/WrongPlaceSheet';
 import { NoteEditorModal } from '@/components/map/NoteEditorModal';
 import { Radius, Spacing } from '@/constants';
@@ -50,8 +49,8 @@ import {
   type NoteEditorState,
 } from '@/lib/noteEditor';
 import { buildSavedPlaceShareContent } from '@/lib/placeShare';
-import { deleteSavedPlace, setSavedPlaceCategory, updateSavedPlace } from '@/services/savedPlacesService';
-import { savedPlaceCategory, type NearrCategory } from '@/lib/placeCategory';
+import { deleteSavedPlace, updateSavedPlace } from '@/services/savedPlacesService';
+import { CATEGORY_LABELS, savedPlaceCategory } from '@/lib/placeCategory';
 import {
   getSavedPlacesCacheSnapshot,
   removeSavedPlaceFromCache,
@@ -174,8 +173,6 @@ export function SelectedPlaceDetails({
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [galleryIndex, setGalleryIndex] = useState(0);
   const [galleryOpenSeed, setGalleryOpenSeed] = useState(0);
-  const [category, setCategory] = useState<NearrCategory>(() => savedPlaceCategory(saved));
-  const [categorySaving, setCategorySaving] = useState(false);
   const [wrongPlaceOpen, setWrongPlaceOpen] = useState(false);
   const galleryStartYRef = useRef(0);
   const galleryListRef = useRef<FlatList<string> | null>(null);
@@ -203,7 +200,6 @@ export function SelectedPlaceDetails({
     setNotes(saved.notes ?? '');
     setNoteEditor({ ...openNoteEditor(saved.notes), open: false });
     setReminderSettingsExpanded(false);
-    setCategory(savedPlaceCategory(saved));
     setWrongPlaceOpen(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [saved.id]);
@@ -211,36 +207,9 @@ export function SelectedPlaceDetails({
   // Provider correction intentionally keeps saved.id stable. Re-seed the
   // provider-derived presentation when that association changes in place.
   useEffect(() => {
-    setCategory(savedPlaceCategory(saved));
     setRichDetails(null);
     setFailedPhotoUrls({});
   }, [saved.place.google_place_id, saved]);
-
-  async function handleCategoryChange(next: NearrCategory) {
-    if (categorySaving || next === category) return;
-    const previous = category;
-    setCategory(next);
-    setCategorySaving(true);
-    try {
-      await setSavedPlaceCategory(saved.id, next);
-      const updated: SavedPlaceWithPlace = {
-        ...saved,
-        category: next,
-        category_source: 'user',
-        category_confidence: 1,
-        category_user_overridden: true,
-        categorized_at: new Date().toISOString(),
-      };
-      updateSavedPlacesCache((current) => current.map((row) => row.id === saved.id ? updated : row));
-      onSaved?.(updated);
-      void trackEvent('saved_place_category_corrected', { category: next, surface: 'map_details' });
-    } catch (error) {
-      setCategory(previous);
-      Alert.alert('Could not update category', error instanceof Error ? error.message : 'Please try again.');
-    } finally {
-      setCategorySaving(false);
-    }
-  }
 
   useEffect(() => {
     let canceled = false;
@@ -761,7 +730,10 @@ export function SelectedPlaceDetails({
       </View>
 
       <Card style={styles.sectionCard}>
-        <PlaceCategoryPicker value={category} onChange={(next) => void handleCategoryChange(next)} disabled={categorySaving} />
+        <View style={styles.categoryRow}>
+          <Text style={typography.bodyStrong}>Category</Text>
+          <Text style={styles.categoryValue}>{CATEGORY_LABELS[savedPlaceCategory(saved)]}</Text>
+        </View>
       </Card>
 
       <Card style={styles.sectionCard}>
@@ -1112,6 +1084,14 @@ function createStyles(
       fontSize: 13,
     },
     sectionCard: { padding: Spacing.md, gap: Spacing.sm },
+    categoryRow: {
+      minHeight: 44,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: Spacing.md,
+    },
+    categoryValue: { ...typography.body, color: colors.textSecondary },
     rowBetween: {
       flexDirection: 'row',
       alignItems: 'center',

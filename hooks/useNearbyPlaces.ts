@@ -54,6 +54,7 @@ export type UseNearbyPlacesResult = {
   locationState: NearbyLocationState;
   error: string | null;
   refreshLocation: () => Promise<void>;
+  requestLocationPermission: () => Promise<boolean>;
 };
 
 export function useNearbyPlaces(
@@ -77,44 +78,50 @@ export function useNearbyPlaces(
     };
   }, []);
 
-  const loadLocation = useCallback(async () => {
-    if (!mountedRef.current) return;
+  const loadLocation = useCallback(async (forcePermissionRequest = false): Promise<boolean> => {
+    if (!mountedRef.current) return false;
     setLocationState('loading');
     setError(null);
     try {
       const existing = await Location.getForegroundPermissionsAsync();
       let status = existing.status;
-      if (status !== 'granted' && requestPermission) {
+      if (status !== 'granted' && (requestPermission || forcePermissionRequest)) {
         const requested = await Location.requestForegroundPermissionsAsync();
         status = requested.status;
       }
 
       if (status !== 'granted') {
-        if (!mountedRef.current) return;
+        if (!mountedRef.current) return false;
         setLocation(null);
         setLocationState('permission_denied');
-        return;
+        return false;
       }
 
       const position = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.Balanced,
       });
-      if (!mountedRef.current) return;
+      if (!mountedRef.current) return false;
       setLocation({
         latitude: position.coords.latitude,
         longitude: position.coords.longitude,
       });
       setLocationState('ready');
+      return true;
     } catch (e) {
-      if (!mountedRef.current) return;
+      if (!mountedRef.current) return false;
       setLocation(null);
       setLocationState('unavailable');
       setError(e instanceof Error ? e.message : String(e));
+      return false;
     }
   }, [requestPermission]);
 
   const refreshLocation = useCallback(async () => {
     await loadLocation();
+  }, [loadLocation]);
+
+  const requestLocationPermission = useCallback(async () => {
+    return await loadLocation(true);
   }, [loadLocation]);
 
   // Auto-load once when enabled and we haven't resolved location yet. Re-entry
@@ -147,5 +154,5 @@ export function useNearbyPlaces(
     return typeof limit === 'number' ? withDistance.slice(0, limit) : withDistance;
   }, [location, places, limit]);
 
-  return { location, nearbyPlaces, locationState, error, refreshLocation };
+  return { location, nearbyPlaces, locationState, error, refreshLocation, requestLocationPermission };
 }
