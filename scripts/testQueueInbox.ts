@@ -9,6 +9,8 @@ import {
   clearCompletedLabel,
   clearableRowIds,
   filterDismissedQueueRows,
+  normalizeActiveQueueRows,
+  activeQueueCount,
   isInboxEmpty,
   queueAccessibilityActions,
   queueSwipeAvailability,
@@ -177,5 +179,30 @@ assert.deepEqual(
   ['n1'],
   'a dismissed active or completed id cannot be resurrected by a fresh payload',
 );
+
+// ---- exact physical badge/sheet parity regression -------------------------
+const historical = Array.from({ length: 40 }, (_, index): QueueRow => ({
+  id: `historical-${index + 1}`,
+  status: 'needs_help',
+}));
+const currentSantaFe: QueueRow = {
+  ...needsHelp,
+  id: 'santa-fe-current',
+};
+const dismissedHistorical = new Set(historical.map((row) => row.id));
+const screenshotRows = normalizeActiveQueueRows(
+  [...historical, currentSantaFe, currentSantaFe],
+  dismissedHistorical,
+);
+assert.deepEqual(screenshotRows.map((row) => row.id), ['santa-fe-current']);
+assert.equal(activeQueueCount([...historical, currentSantaFe], dismissedHistorical), 1);
+assert.equal(buildQueueSections(screenshotRows).flatMap((section) => section.rows).length, 1);
+
+const afterSantaFeSaved = normalizeActiveQueueRows(
+  [...historical, { ...currentSantaFe, status: 'completed', savedPlaceId: 'saved-santa-fe' }],
+  dismissedHistorical,
+);
+assert.equal(activeQueueCount(afterSantaFeSaved), 0, 'saved transition removes the badge immediately');
+assert.deepEqual(afterSantaFeSaved, [], 'saved transition removes the Needs-you row');
 
 console.log('PASS queue inbox sections, clear completed, swipe policy, accessibility, empty state');

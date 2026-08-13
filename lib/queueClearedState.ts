@@ -5,6 +5,15 @@ const KEY_PREFIX = 'nearr:queueCleared:v1:';
 const DISMISSED_KEY_PREFIX = 'nearr:queueDismissed:v1:';
 const MAX_IDS = 400;
 
+type DismissalListener = (userId: string, ids: Set<string>) => void;
+const dismissalListeners = new Set<DismissalListener>();
+
+/** Keeps simultaneously mounted queue consumers in sync after local removal. */
+export function subscribeQueueDismissals(listener: DismissalListener): () => void {
+  dismissalListeners.add(listener);
+  return () => dismissalListeners.delete(listener);
+}
+
 export type QueueIdStorage = Pick<typeof AsyncStorage, 'getItem' | 'setItem'>;
 
 function keyFor(userId: string): string {
@@ -77,7 +86,9 @@ export async function addDismissedQueueIds(
   for (const id of ids) if (id) existing.add(id);
   const bounded = [...existing].slice(-MAX_IDS);
   await storage.setItem(dismissedKeyFor(userId), JSON.stringify(bounded));
-  return new Set(bounded);
+  const committed = new Set(bounded);
+  for (const listener of dismissalListeners) listener(userId, new Set(committed));
+  return committed;
 }
 
 /**

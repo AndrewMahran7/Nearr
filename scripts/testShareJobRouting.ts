@@ -77,20 +77,17 @@ check('terminal realtime event removes an existing queue card', !afterTransition
 const afterDelayedInsert = filterQueueVisible([...visible, { id: 'c', status: 'completed' }]);
 check('delayed insert cannot re-add a terminal card', !afterDelayedInsert.some((j) => j.id === 'c'));
 
-// ---- Badge = visible actionable (needs_help) jobs --------------------------
+// ---- Badge = every visible current queue job -------------------------------
 check('badge counts needs_help', badgeCountsStatus('needs_help'));
 check('badge does NOT count completed', !badgeCountsStatus('completed'));
 check('badge does NOT count accepted (completed)', !badgeCountsStatus('completed'));
 check('badge does NOT count cancelled', !badgeCountsStatus('cancelled'));
-check('badge does NOT count processing', !badgeCountsStatus('processing_metadata'));
+check('badge counts processing as current queue work', badgeCountsStatus('processing_metadata'));
 check('badge counts recoverable failed jobs', badgeCountsStatus('failed'));
 {
   const badge = mixed.filter((j) => badgeCountsStatus(j.status)).length;
-  const visibleNeedsHelp = filterQueueVisible(mixed).filter((j) => j.status === 'needs_help').length;
-  const visibleActionable = filterQueueVisible(mixed).filter(
-    (j) => j.status === 'needs_help' || j.status === 'failed',
-  ).length;
-  check('queue badge equals visible actionable jobs', badge === visibleActionable && badge === 2);
+  const visibleCurrent = filterQueueVisible(mixed).length;
+  check('queue badge equals all visible current jobs', badge === visibleCurrent && badge === 4);
 }
 
 // ---- Detail-route classification (stale deep-link safety) ------------------

@@ -14,13 +14,13 @@ import { useRouter } from 'expo-router';
 import { Radius, Spacing } from '@/constants';
 import { useTheme } from '@/lib/theme';
 import { isAsyncShareJobsEnabled } from '@/lib/featureFlags';
-import { useNeedsHelpCount } from '@/hooks/useShareJobs';
+import { useActiveQueueCount } from '@/hooks/useShareJobs';
 
 export function ShareQueueButton() {
   const router = useRouter();
   const { colors, typography } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const needsHelp = useNeedsHelpCount();
+  const queueCount = useActiveQueueCount();
 
   if (!isAsyncShareJobsEnabled()) return null;
 
@@ -30,15 +30,15 @@ export function ShareQueueButton() {
       style={({ pressed }) => [styles.pill, pressed ? styles.pressed : null]}
       accessibilityRole="button"
       accessibilityLabel={
-        needsHelp > 0 ? `Share queue, ${needsHelp} need your help` : 'Share queue'
+        queueCount > 0 ? `Share queue, ${queueCount} current items` : 'Share queue'
       }
       hitSlop={6}
     >
       <Feather name="inbox" size={17} color={colors.text} />
       <Text style={[typography.caption, styles.label]}>Queue</Text>
-      {needsHelp > 0 ? (
+      {queueCount > 0 ? (
         <View style={styles.badge}>
-          <Text style={styles.badgeText}>{needsHelp}</Text>
+          <Text style={styles.badgeText}>{queueCount}</Text>
         </View>
       ) : null}
     </Pressable>

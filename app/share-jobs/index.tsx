@@ -34,6 +34,7 @@ import { createMapGroupFocusRequest } from '@/lib/mapGroupFocus';
 import { PHASE2_PREVIEW_FIXTURES } from '@/lib/phase2Preview';
 import {
   QUEUE_EMPTY_COPY,
+  activeQueueCount,
   clearCompletedLabel,
   filterDismissedQueueRows,
   queueAccessibilityActions,
@@ -63,7 +64,6 @@ import { trackEvent } from '@/lib/analytics';
 import { autoSaveUndoElapsedBucket } from '@/lib/autoSaveUndo';
 import { CATEGORY_LABELS, displayCategory } from '@/lib/placeCategory';
 import {
-  actionableCount,
   actionableJobs,
   backTarget,
   isQueueEmpty,
@@ -226,7 +226,7 @@ function ShareJobsQueueScreen() {
     () => recentAutoSaves.filter((item) => !clearedIds.has(item.resultId)),
     [recentAutoSaves, clearedIds],
   );
-  const count = actionableCount(visibleJobs);
+  const count = activeQueueCount(visibleJobs);
   const empty = isQueueEmpty(visibleJobs);
   const hasContent = !empty || completedRows.length > 0;
   const clearableCount = completedRows.length;

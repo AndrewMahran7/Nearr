@@ -6,6 +6,7 @@ import {
   persistQueueIdsOptimistically,
   readClearedQueueIds,
   readDismissedQueueIds,
+  subscribeQueueDismissals,
   type QueueIdStorage,
 } from '../lib/queueClearedState';
 import { filterDismissedQueueRows } from '../lib/queueInbox';
@@ -28,7 +29,17 @@ class MemoryStorage implements QueueIdStorage {
 
 async function main() {
   const storage = new MemoryStorage();
+  const dismissalEvents: Array<{ userId: string; ids: string[] }> = [];
+  const unsubscribe = subscribeQueueDismissals((userId, ids) => {
+    dismissalEvents.push({ userId, ids: [...ids] });
+  });
   await addDismissedQueueIds('user-a', ['active-1'], storage);
+  assert.deepEqual(
+    dismissalEvents,
+    [{ userId: 'user-a', ids: ['active-1'] }],
+    'a dismissal immediately invalidates every mounted queue consumer',
+  );
+  unsubscribe();
   const afterRestart = await readDismissedQueueIds('user-a', storage);
   assert.deepEqual([...afterRestart], ['active-1'], 'dismissal survives a fresh read/restart');
   assert.deepEqual(

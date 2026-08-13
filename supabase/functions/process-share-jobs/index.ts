@@ -57,6 +57,11 @@ import {
   MEDIA_AUTO_SAVE_RULE_VERSION,
   resolveMediaAutoSaveThreshold,
 } from './mediaAutoSaveGate.ts';
+import {
+  METADATA_AUTO_SAVE_RULE_VERSION,
+  evaluateMetadataAutoSave,
+  formatMetadataAutoSaveDecisionLog,
+} from './metadataAutoSaveGate.ts';
 import { authorizeServiceRoleBearer, authorizeWorkerSecret, planPreResolve, planPostResolve } from './mediaFinalizePlan.ts';
 import {
   classifyFinalizeException,
@@ -1054,25 +1059,35 @@ async function processOne(admin: any, env: any, job: any): Promise<void> {
   const evidence = extractEvidence({ platform, title, description, handles, taggedLocation });
   const result = await resolveSharedPlace({ evidence, env });
 
+  // A metadata-only result may never create a media task, so enforce the same
+  // user-facing single-option invariant before it can be routed to Quick Check.
+  const metadataAutoSave = evaluateMetadataAutoSave({ result, evidence });
+  console.log(formatMetadataAutoSaveDecisionLog({ jobId: job.id, decision: metadataAutoSave }));
+
   const extractionPayload = {
     platform,
     confidence: result.confidence,
     cleanSearchQuery: result.cleanSearchQuery ?? null,
     evidenceUsed: result.evidenceUsed,
     warnings: result.warnings,
+    autoSaveDecision: metadataAutoSave,
   };
 
   const plan = planFromResolverDecision({
-    decision: result.decision,
-    safeToAutoSave: result.safeToAutoSave,
-    hasPrimaryCandidate: !!result.primaryCandidate,
+    decision: metadataAutoSave.eligible ? 'auto_save' : result.decision,
+    safeToAutoSave: metadataAutoSave.eligible || result.safeToAutoSave,
+    hasPrimaryCandidate: metadataAutoSave.eligible || !!result.primaryCandidate,
     candidateCount: result.candidates.length,
     cleanSearchQuery: result.cleanSearchQuery,
     failureReason: result.failureReason,
   });
 
   if (plan.route === 'auto_save') {
-    const candidate = result.primaryCandidate;
+    const candidate = metadataAutoSave.selectedProviderId
+      ? result.candidates.find(
+          (entry: any) => entry.googlePlaceId === metadataAutoSave.selectedProviderId,
+        ) ?? result.primaryCandidate
+      : result.primaryCandidate;
     const source = legacySourceFor(platform);
     const saved = await saveForUser({
       client: admin,
@@ -1466,6 +1481,9 @@ serve(async (req) => {
       threshold: flags.autoSaveThreshold,
       thresholdValid: flags.autoSaveThresholdValid,
       ruleVersion: MEDIA_AUTO_SAVE_RULE_VERSION,
+    },
+    metadataAutoSave: {
+      ruleVersion: METADATA_AUTO_SAVE_RULE_VERSION,
     },
   });
 }, standaloneServeOptions);

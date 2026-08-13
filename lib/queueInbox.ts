@@ -243,3 +243,51 @@ export function filterDismissedQueueRows<T extends { id: string }>(
 ): T[] {
   return rows.filter((row) => !dismissedIds.has(row.id));
 }
+
+// ---------------------------------------------------------------------------
+// Authoritative active queue model
+// ---------------------------------------------------------------------------
+
+type ActiveQueueInput = QueueRow & { updated_at?: unknown };
+
+function timestamp(value: unknown): number {
+  return typeof value === 'string' ? Date.parse(value) : Number.NaN;
+}
+
+/**
+ * The single normalized dataset used by both the Queue sheet and its Map
+ * badge. It removes malformed/duplicate/terminal rows and applies persisted
+ * dismissal before either surface counts or renders anything.
+ */
+export function normalizeActiveQueueRows<T extends ActiveQueueInput>(
+  rows: readonly T[] | null | undefined,
+  dismissedIds: ReadonlySet<string> = new Set(),
+): T[] {
+  if (!Array.isArray(rows)) return [];
+  const byId = new Map<string, T>();
+  const order: string[] = [];
+  for (const row of rows) {
+    const id = typeof row?.id === 'string' ? row.id.trim() : '';
+    if (!id || dismissedIds.has(id) || (!isProcessingRow(row) && !isNeedsYouRow(row))) continue;
+    const existing = byId.get(id);
+    if (!existing) {
+      byId.set(id, row);
+      order.push(id);
+      continue;
+    }
+    const existingTime = timestamp(existing.updated_at);
+    const incomingTime = timestamp(row.updated_at);
+    if (!Number.isFinite(existingTime) || !Number.isFinite(incomingTime) || incomingTime >= existingTime) {
+      byId.set(id, row);
+    }
+  }
+  return order.map((id) => byId.get(id)!);
+}
+
+/** Working + Needs-you rows in the authoritative normalized model. */
+export function activeQueueCount<T extends ActiveQueueInput>(
+  rows: readonly T[] | null | undefined,
+  dismissedIds: ReadonlySet<string> = new Set(),
+): number {
+  return normalizeActiveQueueRows(rows, dismissedIds).length;
+}

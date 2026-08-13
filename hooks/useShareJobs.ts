@@ -22,6 +22,8 @@ import { isAsyncShareJobsEnabled } from '@/lib/featureFlags';
 import { isDemoMode } from '@/lib/demoMode';
 import { dedupeJobsById } from '@/lib/shareJobsDedupe';
 import { filterQueueVisible } from '@/lib/shareJobRouting';
+import { normalizeActiveQueueRows } from '@/lib/queueInbox';
+import { readDismissedQueueIds, subscribeQueueDismissals } from '@/lib/queueClearedState';
 import { createShareJobsRealtimeSubscription } from '@/lib/shareJobsRealtime';
 import {
   listRecentAutoSaves,
@@ -30,7 +32,6 @@ import {
   type ShareJob,
 } from '@/services/shareJobsService';
 
-const ACTIVE_STATUSES: ShareJob['status'][] = ['queued', 'processing_metadata'];
 const POLL_MS = 6_000;
 
 export type ShareJobSections = {
@@ -69,6 +70,7 @@ export function useShareJobs() {
   const enabled = isAsyncShareJobsEnabled() && !!userId && !isDevSession && !isDemoMode();
 
   const [jobs, setJobs] = useState<ShareJob[]>([]);
+  const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
   const [recentAutoSaves, setRecentAutoSaves] = useState<RecentAutoSave[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -76,6 +78,8 @@ export function useShareJobs() {
   const [isFocused, setIsFocused] = useState(false);
   const [appState, setAppState] = useState<AppStateStatus>(AppState.currentState);
   const mountedRef = useRef(true);
+  const activeUserRef = useRef(userId);
+  activeUserRef.current = userId;
 
   useEffect(() => {
     mountedRef.current = true;
@@ -89,6 +93,7 @@ export function useShareJobs() {
   // account before the RLS-scoped reload lands.
   useEffect(() => {
     setJobs([]);
+    setDismissedIds(new Set());
     setRecentAutoSaves([]);
     setError(null);
   }, [userId]);
@@ -102,6 +107,7 @@ export function useShareJobs() {
 
   const load = useCallback(
     async (mode: 'initial' | 'refresh' | 'background') => {
+      const requestedUserId = userId;
       if (!enabled) {
         setJobs([]);
         setRecentAutoSaves([]);
@@ -110,13 +116,18 @@ export function useShareJobs() {
       if (mode === 'initial') setLoading(true);
       if (mode === 'refresh') setRefreshing(true);
       try {
-        const [data, recent] = await Promise.all([listShareJobs(), listRecentAutoSaves()]);
-        if (!mountedRef.current) return;
+        const [data, recent, dismissed] = await Promise.all([
+          listShareJobs(),
+          listRecentAutoSaves(),
+          readDismissedQueueIds(requestedUserId),
+        ]);
+        if (!mountedRef.current || requestedUserId !== activeUserRef.current) return;
         // Defensive dedupe + visibility filter by stable job id: the DB query
         // already excludes terminal jobs, but a realtime insert landing during
         // the initial fetch, a duplicate event, or a delayed event for a job
         // that has since resolved must never render a resolved/terminal card.
         setJobs(filterQueueVisible(dedupeJobsById(data)));
+        setDismissedIds(dismissed);
         setRecentAutoSaves(recent);
         setError(null);
       } catch (err) {
@@ -128,7 +139,7 @@ export function useShareJobs() {
         if (mode === 'refresh') setRefreshing(false);
       }
     },
-    [enabled],
+    [enabled, userId],
   );
 
   // Initial fetch + refetch when the screen regains focus.
@@ -173,8 +184,16 @@ export function useShareJobs() {
     });
   }, [isScreenActive, userId, load]);
 
-  const sections = useMemo(() => sectionize(jobs), [jobs]);
-  const hasActive = sections.processing.length > 0;
+  const visibleJobs = useMemo(
+    () => normalizeActiveQueueRows(jobs, dismissedIds),
+    [dismissedIds, jobs],
+  );
+  const visibleSections = useMemo(() => sectionize(visibleJobs), [visibleJobs]);
+  const hasActive = visibleSections.processing.length > 0;
+
+  useEffect(() => subscribeQueueDismissals((changedUserId, ids) => {
+    if (changedUserId === userId) setDismissedIds(ids);
+  }), [userId]);
 
   // Poll while any job is still processing (realtime fallback).
   useEffect(() => {
@@ -186,14 +205,15 @@ export function useShareJobs() {
   const refresh = useCallback(() => load('refresh'), [load]);
 
   return {
-    jobs,
+    jobs: visibleJobs,
     recentAutoSaves,
-    sections,
+    sections: visibleSections,
     loading,
     refreshing,
     error,
     refresh,
-    needsHelpCount: sections.needsHelp.length,
+    needsHelpCount: visibleSections.needsHelp.length,
+    activeQueueCount: visibleJobs.length,
     enabled,
     // True while the Supabase session is still being restored (cold start).
     // The queue screen shows a spinner instead of the "queue is off" state.
@@ -202,78 +222,10 @@ export function useShareJobs() {
 }
 
 /**
- * Minimal needs_help badge count for the map/home entry point. Does a single
- * count query on focus and subscribes to realtime bumps. Does NOT badge
- * ordinary processing jobs.
+ * Map/home badge count from the exact normalized model used by the Queue
+ * sheet. This includes Working + Needs-you and respects persisted dismissal.
  */
-export function useNeedsHelpCount(): number {
-  const { session, isDevSession } = useAuth();
-  const userId = session?.user.id ?? null;
-  const enabled = isAsyncShareJobsEnabled() && !!userId && !isDevSession && !isDemoMode();
-  const [count, setCount] = useState(0);
-  const activeUserRef = useRef(userId);
-  activeUserRef.current = userId;
-
-  const load = useCallback(async () => {
-    const requestedUserId = userId;
-    if (!enabled || !requestedUserId) {
-      setCount(0);
-      return;
-    }
-    try {
-      const { count: c } = await supabase
-        .from('share_jobs')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', requestedUserId)
-        .in('status', ['needs_help', 'failed']);
-      if (activeUserRef.current !== requestedUserId) return;
-      setCount(c ?? 0);
-    } catch (error) {
-      recordBreadcrumb('queue_realtime_event', {
-        result: 'badge_count_failed',
-        errorName: error instanceof Error ? error.name : 'Error',
-        errorMessage: error instanceof Error ? error.message : String(error),
-      });
-    }
-  }, [enabled, userId]);
-
-  useEffect(() => {
-    if (!enabled) setCount(0);
-    else void load();
-  }, [enabled, userId, load]);
-
-  useFocusEffect(
-    useCallback(() => {
-      void load();
-    }, [load]),
-  );
-
-  useEffect(() => {
-    const subscription = AppState.addEventListener('change', (nextState) => {
-      if (nextState === 'active') void load();
-    });
-    return () => subscription.remove();
-  }, [load]);
-
-  useEffect(() => {
-    if (!enabled || !userId) return;
-    return createShareJobsRealtimeSubscription({
-      client: supabase,
-      scope: 'share_jobs_badge',
-      userId,
-      onInvalidate: () => void load(),
-      onStatus: (status) => {
-        recordBreadcrumb('queue_realtime_event', { result: `badge_${status.toLowerCase()}` });
-      },
-      onError: (error) => {
-        recordBreadcrumb('queue_realtime_event', {
-          result: 'badge_subscription_failed',
-          errorName: error instanceof Error ? error.name : 'Error',
-          errorMessage: error instanceof Error ? error.message : String(error),
-        });
-      },
-    });
-  }, [enabled, userId, load]);
-
-  return enabled ? count : 0;
+export function useActiveQueueCount(): number {
+  const { activeQueueCount, enabled } = useShareJobs();
+  return enabled ? activeQueueCount : 0;
 }
