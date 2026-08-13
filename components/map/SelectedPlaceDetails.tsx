@@ -49,7 +49,7 @@ import {
   openNoteEditor,
   type NoteEditorState,
 } from '@/lib/noteEditor';
-import { buildPlaceShareContent } from '@/lib/placeShare';
+import { buildSavedPlaceShareContent } from '@/lib/placeShare';
 import { deleteSavedPlace, setSavedPlaceCategory, updateSavedPlace } from '@/services/savedPlacesService';
 import { savedPlaceCategory, type NearrCategory } from '@/lib/placeCategory';
 import {
@@ -406,32 +406,26 @@ export function SelectedPlaceDetails({
     }
   }
 
-  // Sharing prefers the ORIGINAL social post the place came from — that is why
-  // the place is on the user's map at all — and only falls back to the public
-  // Google Maps link when no durable social source exists. Temporary media and
+  // Sharing prefers the ORIGINAL public source the place came from — especially
+  // its social post — and only falls back to Google Maps when none is usable.
+  // Temporary media, internal endpoints, and
   // signed URLs are rejected by lib/placeShare.ts. No private fields (notes,
   // reminder settings, ids) are ever included.
   async function sharePlace() {
-    const content = buildPlaceShareContent(
-      {
-        name: saved.place.name,
-        formatted_address: saved.place.formatted_address,
-        google_place_id: saved.place.google_place_id,
-        google_maps_url: saved.place.google_maps_url,
-        latitude: saved.place.latitude,
-        longitude: saved.place.longitude,
-      },
-      { source_type: saved.source_type, source_url: saved.source_url },
-    );
+    const content = buildSavedPlaceShareContent(saved);
     void trackEvent('place_shared', {
       saved_place_id: saved.id,
       google_place_id: saved.place.google_place_id ?? null,
       has_url: !!content.url,
       share_kind: content.kind,
     });
+    if (!content.url) {
+      Alert.alert("Couldn't share this place", 'No public source or map link is available.');
+      return;
+    }
     try {
       await Share.share(
-        { message: content.message, title: content.title },
+        { message: content.message, title: content.title, url: content.url },
         { subject: content.title },
       );
     } catch (err) {

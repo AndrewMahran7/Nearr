@@ -1,29 +1,14 @@
 /**
- * lib/placeShare.ts
+ * Authoritative saved-place share-target resolution.
  *
- * Pure builder for the *ordinary* place-sharing payload used by the native
- * Share sheet on the saved-place details panel.
- *
- * IMPORTANT: this is plain place sharing — the place name, address, and a
- * public Google Maps link — NOT a Nearr deep link. Nearr currently has no
- * universal-link / associated-domain infrastructure, so a `nearr://` link would
- * not be reliably clickable inside messaging apps. Until that infrastructure
- * exists we deliberately do not ship a Nearr link (see the "Save to Nearr"
- * design in the change report). This keeps the feature honest: it shares a
- * place the way any maps app would.
- *
- * The payload intentionally excludes every private field — notes, reminder
- * settings, user id, saved_place row id, source URL, and analytics. Only the
- * public identity of the place (name + address) plus a public Google Maps link
- * (which may include the public `google_place_id`) is shared.
- *
- * PURE — the only import is the pure Google Maps URL builder — so it is unit
- * testable from ts-node.
+ * A saved place's original public source is the valuable payload. Provider
+ * maps are only a fallback. This module is pure and deliberately accepts only
+ * the public fields needed by the native share sheet.
  */
 
 import { buildExternalMapsUrl } from './externalMapsUrl';
+import { normalizeShareUrl } from './shareAgent/tiktokUrl';
 
-/** The public place fields that are safe to share. */
 export type ShareablePlace = {
   name?: string | null;
   formatted_address?: string | null;
@@ -33,129 +18,201 @@ export type ShareablePlace = {
   longitude?: number | null;
 };
 
-/** Where the place originally came from, when Nearr saved it from social content. */
-export type ShareSourceContext = {
+export type SavedPlaceShareContext = {
   source_type?: string | null;
   source_url?: string | null;
+  place: ShareablePlace;
 };
 
-export type ShareTarget = {
-  kind: 'original_post' | 'provider';
+export type SavedPlaceShareTarget = {
+  kind: 'original_post' | 'original_source' | 'provider' | 'unavailable';
   url: string | null;
-  platform: 'instagram' | 'tiktok' | 'link' | null;
+  platform: 'instagram' | 'tiktok' | 'youtube' | 'twitter' | 'link' | null;
 };
 
-/**
- * Hosts that serve TEMPORARY media (CDN clips, signed object URLs). Nearr must
- * never share these: they expire, they can carry credentials, and they are not
- * the post the user actually saved.
- */
-const TRANSIENT_MEDIA_HOST = /(^|\.)(cdninstagram\.com|fbcdn\.net|tiktokcdn\.com|tiktokcdn-us\.com|googleusercontent\.com|storage\.googleapis\.com)$/i;
-const TRANSIENT_MEDIA_HOST_PREFIX = /^v\d+[-\w]*\.tiktok\.com$/i;
-/** Query keys that indicate a signed / credentialed URL. */
-const SIGNED_QUERY_KEY = /^(signature|x-goog-signature|x-amz-signature|token|access_token|sig|policy|expires)$/i;
+export type SavedPlaceShareContent = SavedPlaceShareTarget & {
+  title: string;
+  message: string;
+};
 
-/**
- * True when a stored source URL is a safe, durable, public post link.
- * Rejects non-https, transient CDN hosts, signed URLs, and storage object paths.
- */
-export function isShareableSourceUrl(raw: string | null | undefined): boolean {
+const BLOCKED_HOST_SUFFIXES = [
+  'cdninstagram.com',
+  'fbcdn.net',
+  'tiktokcdn.com',
+  'tiktokcdn-us.com',
+  'tiktokv.com',
+  'byteoversea.com',
+  'ibytedtos.com',
+  'muscdn.com',
+  'googleusercontent.com',
+  'storage.googleapis.com',
+  'firebasestorage.googleapis.com',
+  'amazonaws.com',
+  'blob.core.windows.net',
+  'cloudfront.net',
+  'r2.dev',
+  'supabase.co',
+  'supabase.in',
+  'railway.app',
+  'workers.dev',
+] as const;
+
+const SECRET_QUERY_KEY = /(^|[-_])(access[-_]?token|auth|authorization|credential|exp|expires|expiry|jwt|key|policy|secret|session|signature|signed|sig|token)([-_]|$)/i;
+const INTERNAL_PATH = /^\/(api|functions\/v1|rest\/v1|storage\/v1)(\/|$)/i;
+const TEMPORARY_MEDIA_PATH = /\.(m3u8|m4a|m4v|mov|mp3|mp4|webm)(?:$|\/)/i;
+
+function isHostOrSubdomain(host: string, domain: string): boolean {
+  return host === domain || host.endsWith(`.${domain}`);
+}
+
+function isPrivateIpv4(host: string): boolean {
+  const match = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(host);
+  if (!match) return false;
+  const values = match.slice(1).map(Number);
+  if (values.some((value) => value < 0 || value > 255)) return true;
+  const a = values[0] ?? -1;
+  const b = values[1] ?? -1;
+  return a === 0 || a === 10 || a === 127 || a >= 224 ||
+    (a === 169 && b === 254) ||
+    (a === 172 && b >= 16 && b <= 31) ||
+    (a === 192 && b === 168);
+}
+
+function parseSafePublicUrl(raw: string | null | undefined): URL | null {
   const trimmed = (raw ?? '').trim();
-  if (!trimmed) return false;
+  if (!trimmed) return null;
   let parsed: URL;
   try {
     parsed = new URL(trimmed);
   } catch {
-    return false;
+    return null;
   }
-  if (parsed.protocol !== 'https:') return false;
-  const host = parsed.hostname.toLowerCase();
-  if (TRANSIENT_MEDIA_HOST.test(host) || TRANSIENT_MEDIA_HOST_PREFIX.test(host)) return false;
-  if (/\/storage\/v1\/object\//i.test(parsed.pathname)) return false;
-  if (/\.(mp4|m3u8|mov|webm)$/i.test(parsed.pathname)) return false;
+  if (parsed.protocol !== 'https:' || parsed.username || parsed.password) return null;
+  const host = parsed.hostname.toLowerCase().replace(/^\[|\]$/g, '');
+  if (
+    !host ||
+    host === 'localhost' ||
+    host.endsWith('.localhost') ||
+    host.endsWith('.local') ||
+    host.endsWith('.internal') ||
+    host.includes(':') ||
+    isPrivateIpv4(host) ||
+    BLOCKED_HOST_SUFFIXES.some((domain) => isHostOrSubdomain(host, domain)) ||
+    /^(api|worker|media-worker|backend|internal)\./i.test(host)
+  ) return null;
+  if (INTERNAL_PATH.test(parsed.pathname) || TEMPORARY_MEDIA_PATH.test(parsed.pathname)) return null;
   for (const key of parsed.searchParams.keys()) {
-    if (SIGNED_QUERY_KEY.test(key)) return false;
+    if (SECRET_QUERY_KEY.test(key) && !/^igsh(id)?$/i.test(key)) return null;
+    if (/^x-(amz|goog)-/i.test(key)) return null;
   }
-  return true;
+  if (/(access[-_]?token|authorization|credential|secret|signature)=/i.test(parsed.hash)) return null;
+  return parsed;
 }
 
-function platformOf(sourceType: string | null | undefined): ShareTarget['platform'] {
-  switch ((sourceType ?? '').toLowerCase()) {
-    case 'instagram':
-      return 'instagram';
-    case 'tiktok':
-      return 'tiktok';
-    case 'link':
-      return 'link';
-    default:
-      return null;
+type SocialPlatform = Exclude<SavedPlaceShareTarget['platform'], 'link' | null>;
+
+function socialPlatform(parsed: URL): SocialPlatform | 'invalid_social' | null {
+  const host = parsed.hostname.toLowerCase();
+  const path = parsed.pathname;
+
+  if (isHostOrSubdomain(host, 'instagram.com')) {
+    return /^\/(p|reel|reels|tv)\/[^/]+\/?$/i.test(path) ? 'instagram' : 'invalid_social';
   }
+  if (isHostOrSubdomain(host, 'tiktok.com')) {
+    const durable = /^\/@[^/]+\/video\/\d+\/?$/i.test(path);
+    const short = host === 'vm.tiktok.com' || host === 'vt.tiktok.com' || /^\/t\/[^/]+\/?$/i.test(path);
+    return durable || short ? 'tiktok' : 'invalid_social';
+  }
+  if (isHostOrSubdomain(host, 'youtube.com')) {
+    const durable = (/^\/watch\/?$/i.test(path) && !!parsed.searchParams.get('v')) ||
+      /^\/(shorts|live)\/[^/]+\/?$/i.test(path);
+    return durable ? 'youtube' : 'invalid_social';
+  }
+  if (host === 'youtu.be') {
+    return /^\/[^/]+\/?$/i.test(path) ? 'youtube' : 'invalid_social';
+  }
+  if (isHostOrSubdomain(host, 'twitter.com') || isHostOrSubdomain(host, 'x.com')) {
+    return /^\/[^/]+\/status\/\d+\/?$/i.test(path) ? 'twitter' : 'invalid_social';
+  }
+  return null;
 }
 
-/**
- * Decide what a share action should actually send.
- *
- * Nearr exists because the place came from social content, so the ORIGINAL post
- * is the priority. The public provider (Google Maps) URL is only a fallback for
- * places that have no original social source.
- */
-export function resolveShareTarget(
-  place: ShareablePlace,
-  source?: ShareSourceContext | null,
-): ShareTarget {
-  const sourceUrl = (source?.source_url ?? '').trim();
-  if (isShareableSourceUrl(sourceUrl)) {
-    return {
-      kind: 'original_post',
-      url: sourceUrl,
-      platform: platformOf(source?.source_type) ?? 'link',
-    };
+function normalizeOriginalSource(raw: string | null | undefined): {
+  url: string;
+  platform: SavedPlaceShareTarget['platform'];
+  social: boolean;
+} | null {
+  const safe = parseSafePublicUrl(raw);
+  if (!safe) return null;
+  const social = socialPlatform(safe);
+  if (social === 'invalid_social') return null;
+
+  const normalized = normalizeShareUrl(safe.toString()).url;
+  const parsed = parseSafePublicUrl(normalized);
+  if (!parsed) return null;
+  parsed.hash = '';
+
+  if (social === 'instagram' || social === 'tiktok' || social === 'twitter') {
+    parsed.search = '';
+  } else if (social === 'youtube') {
+    const videoId = parsed.searchParams.get('v');
+    const start = parsed.searchParams.get('t') ?? parsed.searchParams.get('start');
+    parsed.search = '';
+    if (videoId) parsed.searchParams.set('v', videoId);
+    if (start) parsed.searchParams.set('t', start);
   }
+
   return {
-    kind: 'provider',
-    url: buildExternalMapsUrl({
-      name: place.name ?? null,
-      formatted_address: place.formatted_address ?? null,
-      google_place_id: place.google_place_id ?? null,
-      google_maps_url: place.google_maps_url ?? null,
-      latitude: place.latitude ?? null,
-      longitude: place.longitude ?? null,
-    }),
-    platform: null,
+    url: parsed.toString(),
+    platform: social ?? 'link',
+    social: social !== null,
   };
 }
 
-export type PlaceShareContent = {
-  /** Dialog title (Android share sheet). */
-  title: string;
-  /** The shared text: name, address (if any), and the resolved link (if any). */
-  message: string;
-  /** The resolved public URL, or null if one couldn't be built. */
-  url: string | null;
-  /** Which link the payload actually carries. */
-  kind: ShareTarget['kind'];
-};
+function validProviderUrl(raw: string | null | undefined): string | null {
+  const parsed = parseSafePublicUrl(raw);
+  if (!parsed) return null;
+  const host = parsed.hostname.toLowerCase();
+  const valid =
+    host === 'maps.google.com' ||
+    (isHostOrSubdomain(host, 'google.com') && /^\/maps(?:\/|$)/i.test(parsed.pathname)) ||
+    (host === 'maps.app.goo.gl') ||
+    (host === 'goo.gl' && /^\/maps(?:\/|$)/i.test(parsed.pathname));
+  return valid ? parsed.toString() : null;
+}
 
-/**
- * Build the place-share content. Never throws; always returns a usable,
- * private-field-free payload that prefers the original social post.
- */
-export function buildPlaceShareContent(
-  place: ShareablePlace,
-  source?: ShareSourceContext | null,
-): PlaceShareContent {
-  const name = (place.name ?? '').trim() || 'A place';
-  const address = (place.formatted_address ?? '').trim();
-  const target = resolveShareTarget(place, source);
+/** Resolve the one public URL the native saved-place Share action may send. */
+export function getSavedPlaceShareTarget(savedPlace: SavedPlaceShareContext): SavedPlaceShareTarget {
+  const original = normalizeOriginalSource(savedPlace.source_url);
+  if (original) {
+    return {
+      kind: original.social ? 'original_post' : 'original_source',
+      url: original.url,
+      platform: original.platform,
+    };
+  }
 
-  const lines = [name];
-  if (address) lines.push(address);
-  if (target.url) lines.push(target.url);
+  const place = savedPlace.place;
+  const provider = buildExternalMapsUrl({
+    name: place.name ?? null,
+    formatted_address: place.formatted_address ?? null,
+    google_place_id: place.google_place_id ?? null,
+    google_maps_url: validProviderUrl(place.google_maps_url),
+    latitude: place.latitude ?? null,
+    longitude: place.longitude ?? null,
+  });
+  const safeProvider = validProviderUrl(provider);
+  if (safeProvider) return { kind: 'provider', url: safeProvider, platform: null };
+  return { kind: 'unavailable', url: null, platform: null };
+}
 
+/** Minimal, private-field-free native share payload. */
+export function buildSavedPlaceShareContent(savedPlace: SavedPlaceShareContext): SavedPlaceShareContent {
+  const title = (savedPlace.place.name ?? '').trim() || 'A place';
+  const target = getSavedPlaceShareTarget(savedPlace);
   return {
-    title: name,
-    message: lines.join('\n'),
-    url: target.url,
-    kind: target.kind,
+    ...target,
+    title,
+    message: target.url ? `${title}\n${target.url}` : title,
   };
 }
