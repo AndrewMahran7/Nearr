@@ -28,21 +28,15 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Button, Input } from '@/components';
+import { Button } from '@/components';
 import { Radius, Spacing } from '@/constants';
 import { metersToMiles } from '@/lib/geo';
 import { useTheme } from '@/lib/theme';
-import type { NearbyPlace } from '@/hooks/useNearbyPlaces';
+import type { NearbyLocationState, NearbyPlace } from '@/hooks/useNearbyPlaces';
 import type { SavedPlaceWithPlace } from '@/types';
-import {
-  CATEGORY_LABELS,
-  categoryMatchesFilter,
-  isCategoryFilterGroup,
-  savedPlaceCategory,
-} from '@/lib/placeCategory';
 
 import { CompactPlaceRow } from './CompactPlaceRow';
-import { MapSheetFilterChips, type SheetListFilter } from './MapSheetFilterChips';
+import { MemoizedSavedPlacesLibrary } from './SavedPlacesLibrary';
 import { NearbyNowCard } from './NearbyNowCard';
 
 export type MapSheetMode = 'nearby' | 'recent' | 'saved';
@@ -51,6 +45,7 @@ type Props = {
   mode: MapSheetMode;
   loading: boolean;
   nearbyPlaces: NearbyPlace[];
+  locationState: NearbyLocationState;
   recentPlaces: SavedPlaceWithPlace[];
   savedPlaces: SavedPlaceWithPlace[];
   /** Visible height of the sheet in its collapsed/partial snap. */
@@ -81,6 +76,7 @@ type Props = {
   onGetDirections: (place: SavedPlaceWithPlace) => void;
   onSaveFromLink: () => void;
   onSearchManually: () => void;
+  requestLocationPermission: () => Promise<boolean>;
 };
 
 /** Compute the collapsed/partial visible height for a given area height. */
@@ -90,39 +86,6 @@ export function getSheetPartialHeight(areaHeight: number): number {
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
-}
-
-function isRecent(createdAt: string): boolean {
-  const created = new Date(createdAt).getTime();
-  if (Number.isNaN(created)) return false;
-  const fourteenDaysMs = 14 * 24 * 60 * 60 * 1000;
-  return Date.now() - created <= fourteenDaysMs;
-}
-
-function matchesQuery(place: SavedPlaceWithPlace, q: string): boolean {
-  const name = place.place?.name?.toLowerCase() ?? '';
-  const addr = place.place?.formatted_address?.toLowerCase() ?? '';
-  const category = CATEGORY_LABELS[savedPlaceCategory(place)].toLowerCase();
-  const sourceType = place.source_type?.toLowerCase() ?? '';
-  const sourceUrl = place.source_url?.toLowerCase() ?? '';
-  return (
-    name.includes(q) ||
-    addr.includes(q) ||
-    category.includes(q) ||
-    sourceType.includes(q) ||
-    sourceUrl.includes(q)
-  );
-}
-
-function listRowStatus(
-  place: SavedPlaceWithPlace,
-  distanceMeters?: number,
-): string {
-  if (typeof distanceMeters === 'number') return distanceLabel(distanceMeters);
-  if (place.visited_at) return 'Visited';
-  if (place.notifications_enabled) return 'Reminder on';
-  if (isRecent(place.created_at)) return 'Saved recently';
-  return 'Saved';
 }
 
 function distanceLabel(meters: number): string {
@@ -154,6 +117,7 @@ export function MapBottomSheet({
   mode,
   loading,
   nearbyPlaces,
+  locationState,
   recentPlaces,
   savedPlaces,
   partialHeight,
@@ -167,6 +131,7 @@ export function MapBottomSheet({
   onGetDirections,
   onSaveFromLink,
   onSearchManually,
+  requestLocationPermission,
 }: Props) {
   const { colors, typography } = useTheme();
   const insets = useSafeAreaInsets();
@@ -234,7 +199,8 @@ export function MapBottomSheet({
   // back to partial so the new content is visible. No-op if already open.
   useEffect(() => {
     if (openSignal === undefined) return;
-    if (snapRef.current === 'minimized') snapTo('partial');
+    if (mode === 'saved') snapTo('full');
+    else if (snapRef.current === 'minimized') snapTo('partial');
     // Only react to openSignal changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [openSignal]);
@@ -295,66 +261,7 @@ export function MapBottomSheet({
 
   const hasPlaces = savedPlaces.length > 0;
 
-  // ----- expanded "lightweight Places" surface -----------------------------
-  const [searchQuery, setSearchQuery] = useState('');
-  const [listFilter, setListFilter] = useState<SheetListFilter>('all');
-
-  // Seed the expanded list filter from the active top-of-map mode so opening
-  // the sheet feels continuous (Nearby chip → Nearby list, etc.). User edits
-  // within the same mode persist until the mode changes again.
-  useEffect(() => {
-    setListFilter(mode === 'nearby' ? 'nearby' : mode === 'recent' ? 'recent' : 'all');
-  }, [mode]);
-
-  const listCounts = useMemo(
-    () => ({
-      all: savedPlaces.length,
-      nearby: nearbyPlaces.length,
-      recent: savedPlaces.filter((p) => isRecent(p.created_at)).length,
-      reminders: savedPlaces.filter((p) => p.notifications_enabled).length,
-      visited: savedPlaces.filter((p) => !!p.visited_at).length,
-      food: savedPlaces.filter((p) => categoryMatchesFilter(savedPlaceCategory(p), 'food')).length,
-      cafes: savedPlaces.filter((p) => categoryMatchesFilter(savedPlaceCategory(p), 'cafes')).length,
-      hotels: savedPlaces.filter((p) => categoryMatchesFilter(savedPlaceCategory(p), 'hotels')).length,
-      outdoors: savedPlaces.filter((p) => categoryMatchesFilter(savedPlaceCategory(p), 'outdoors')).length,
-      attractions: savedPlaces.filter((p) => categoryMatchesFilter(savedPlaceCategory(p), 'attractions')).length,
-      shopping: savedPlaces.filter((p) => categoryMatchesFilter(savedPlaceCategory(p), 'shopping')).length,
-      fitness_wellness: savedPlaces.filter((p) => categoryMatchesFilter(savedPlaceCategory(p), 'fitness_wellness')).length,
-      other: savedPlaces.filter((p) => categoryMatchesFilter(savedPlaceCategory(p), 'other')).length,
-    }),
-    [savedPlaces, nearbyPlaces],
-  );
-
-  const expandedRows = useMemo(() => {
-    if (!hasPlaces) return [];
-    let base: { place: SavedPlaceWithPlace; distanceMeters?: number }[];
-    if (listFilter === 'nearby') {
-      base = nearbyPlaces.map((p) => ({ place: p, distanceMeters: p.distanceMeters }));
-    } else if (listFilter === 'recent') {
-      base = [...savedPlaces]
-        .sort(
-          (a, b) =>
-            new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-        )
-        .map((place) => ({ place }));
-    } else if (listFilter === 'reminders') {
-      base = savedPlaces
-        .filter((p) => p.notifications_enabled)
-        .map((place) => ({ place }));
-    } else if (listFilter === 'visited') {
-      base = savedPlaces.filter((p) => !!p.visited_at).map((place) => ({ place }));
-    } else if (isCategoryFilterGroup(listFilter)) {
-      base = savedPlaces
-        .filter((place) => categoryMatchesFilter(savedPlaceCategory(place), listFilter))
-        .map((place) => ({ place }));
-    } else {
-      base = savedPlaces.map((place) => ({ place }));
-    }
-    const q = searchQuery.trim().toLowerCase();
-    if (!q) return base;
-    return base.filter(({ place }) => matchesQuery(place, q));
-  }, [hasPlaces, listFilter, nearbyPlaces, savedPlaces, searchQuery]);
-
+  // ----- expanded Saved Places library -------------------------------------
   const handleOpenList = useCallback(() => {
     onRequestSavedMode();
     snapTo('full');
@@ -397,9 +304,10 @@ export function MapBottomSheet({
     }
 
     // mode === 'nearby'
-    const featured = nearbyPlaces[0] ?? null;
-    const restNearby = nearbyPlaces.slice(1);
-    const shown = new Set<string>(nearbyPlaces.map((p) => p.id));
+    const compactNearby = nearbyPlaces.slice(0, 5);
+    const featured = compactNearby[0] ?? null;
+    const restNearby = compactNearby.slice(1);
+    const shown = new Set<string>(compactNearby.map((p) => p.id));
     const recent = recentPlaces.filter((p) => !shown.has(p.id));
     return {
       featured,
@@ -437,9 +345,16 @@ export function MapBottomSheet({
           <View style={styles.handle} />
         </Pressable>
         <View style={styles.headerRow}>
-          <Text style={typography.heading}>
-            {expanded ? 'Saved places' : modeTitle(mode)}
-          </Text>
+          <View>
+            <Text accessibilityRole="header" style={typography.heading}>
+              {expanded ? 'Saved Places' : modeTitle(mode)}
+            </Text>
+            {expanded ? (
+              <Text style={[typography.caption, styles.savedCount]}>
+                {savedPlaces.length} {savedPlaces.length === 1 ? 'place' : 'places'}
+              </Text>
+            ) : null}
+          </View>
           {hasPlaces && !expanded ? (
             <Pressable
               onPress={handleOpenList}
@@ -453,15 +368,27 @@ export function MapBottomSheet({
         </View>
       </View>
 
-      <ScrollView
-        style={styles.body}
-        contentContainerStyle={[
-          styles.bodyContent,
-          { paddingBottom: insets.bottom + Spacing.xl },
-        ]}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      >
+      {expanded ? (
+        <MemoizedSavedPlacesLibrary
+          savedPlaces={savedPlaces}
+          nearbyPlaces={nearbyPlaces}
+          locationState={locationState}
+          loading={loading}
+          requestLocationPermission={requestLocationPermission}
+          onSelectPlace={onSelectPlace}
+          onSaveFromLink={onSaveFromLink}
+          onSearchManually={onSearchManually}
+        />
+      ) : (
+        <ScrollView
+          style={styles.body}
+          contentContainerStyle={[
+            styles.bodyContent,
+            { paddingBottom: insets.bottom + Spacing.xl },
+          ]}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
         {!hasPlaces ? (
           loading ? (
             <View style={styles.empty}>
@@ -484,60 +411,6 @@ export function MapBottomSheet({
               />
             </View>
           )
-        ) : expanded ? (
-          <>
-            <View style={styles.searchWrap}>
-              <Input
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-                placeholder="Search saved places"
-                autoCapitalize="none"
-                autoCorrect={false}
-                clearButtonMode="while-editing"
-                returnKeyType="search"
-              />
-            </View>
-            <MapSheetFilterChips
-              value={listFilter}
-              onChange={setListFilter}
-              counts={listCounts}
-            />
-            {expandedRows.length > 0 ? (
-              <View style={styles.rows}>
-                {expandedRows.map(({ place, distanceMeters }) => (
-                  <CompactPlaceRow
-                    key={place.id}
-                    place={place}
-                    status={listRowStatus(place, distanceMeters)}
-                    onPress={() => onSelectPlace(place)}
-                  />
-                ))}
-              </View>
-            ) : searchQuery.trim() ? (
-              <View style={styles.noResults}>
-                <Text style={typography.bodyStrong}>No saved places found</Text>
-                <Text style={[typography.caption, styles.noResultsBody]}>
-                  Try a different search or add a new place.
-                </Text>
-                <Button
-                  title="Search manually"
-                  variant="secondary"
-                  onPress={onSearchManually}
-                  style={styles.noResultsAction}
-                />
-              </View>
-            ) : listFilter === 'nearby' ? (
-              <View style={styles.noResults}>
-                <Text style={[typography.caption, styles.noResultsBody]}>
-                  Nearby places will appear once location is available.
-                </Text>
-              </View>
-            ) : (
-              <View style={styles.noResults}>
-                <Text style={typography.bodyStrong}>No places in this filter</Text>
-              </View>
-            )}
-          </>
         ) : content ? (
           <>
             {content.featured ? (
@@ -587,7 +460,8 @@ export function MapBottomSheet({
             ) : null}
           </>
         ) : null}
-      </ScrollView>
+        </ScrollView>
+      )}
     </Animated.View>
   );
 }
@@ -639,6 +513,10 @@ function createStyles(
       color: colors.primary,
       fontWeight: '600',
     },
+    savedCount: {
+      color: colors.textMuted,
+      marginTop: 2,
+    },
     body: {
       flex: 1,
     },
@@ -673,23 +551,6 @@ function createStyles(
     emptySecondary: {
       width: '100%',
       marginTop: Spacing.sm,
-    },
-    searchWrap: {
-      marginTop: Spacing.xs,
-      marginBottom: Spacing.sm,
-    },
-    noResults: {
-      paddingTop: Spacing.xl,
-      alignItems: 'center',
-    },
-    noResultsBody: {
-      color: colors.textMuted,
-      marginTop: Spacing.xs,
-      textAlign: 'center',
-      paddingHorizontal: Spacing.lg,
-    },
-    noResultsAction: {
-      marginTop: Spacing.md,
     },
   });
 }

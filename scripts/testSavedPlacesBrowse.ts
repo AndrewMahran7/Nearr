@@ -5,7 +5,7 @@ import {
   buildSavedPlacesBrowseResults,
   filterSavedPlaces,
   formatBrowseDistance,
-  hasOriginalVideo,
+  hasOriginalPost,
   savedPlaceNotePreview,
   searchSavedPlaces,
   sortSavedPlaces,
@@ -49,7 +49,7 @@ const hotel = place({ id: 'Lake Hotel', createdAt: '2026-08-05T00:00:00Z', categ
 const mapsLink = place({ id: 'Maps Link', createdAt: '2026-08-04T00:00:00Z', category: 'restaurant', sourceType: 'link', sourceUrl: 'https://maps.google.com/?cid=123' });
 const archived = place({ id: 'Archived', createdAt: '2026-08-11T00:00:00Z', category: 'park', archived: true });
 const all = [restaurant, cafe, hotel, archived];
-const none: SavedBrowseFilters = { categories: [], hasVideo: false };
+const none: SavedBrowseFilters = { categories: [], hasOriginalPost: false };
 
 // Default Recent and cache updates.
 assert.deepEqual(sortSavedPlaces([restaurant, cafe, hotel], 'recent').map((p) => p.id), ['New Cafe', 'Lake Hotel', 'Older Restaurant']);
@@ -70,13 +70,13 @@ assert.deepEqual(
 );
 
 // Filters compose and clear.
-assert.deepEqual(filterSavedPlaces(all, { categories: ['restaurants'], hasVideo: false }).map((p) => p.id), ['Older Restaurant']);
-assert.equal(hasOriginalVideo(cafe), true);
-assert.equal(hasOriginalVideo(hotel), true, 'supported YouTube source counts');
-assert.equal(hasOriginalVideo(mapsLink), false, 'Google Maps URL is not an original video');
-assert.equal(hasOriginalVideo(restaurant), false);
-assert.deepEqual(filterSavedPlaces(all, { categories: ['cafes'], hasVideo: true }).map((p) => p.id), ['New Cafe']);
-assert.equal(browseFilterCount({ categories: ['cafes', 'hotels'], hasVideo: true }), 3);
+assert.deepEqual(filterSavedPlaces(all, { categories: ['restaurant'], hasOriginalPost: false }).map((p) => p.id), ['Older Restaurant']);
+assert.equal(hasOriginalPost(cafe), true);
+assert.equal(hasOriginalPost(hotel), true, 'supported YouTube source counts');
+assert.equal(hasOriginalPost(mapsLink), false, 'Google Maps URL is not an original post');
+assert.equal(hasOriginalPost(restaurant), false);
+assert.deepEqual(filterSavedPlaces(all, { categories: ['cafe'], hasOriginalPost: true }).map((p) => p.id), ['New Cafe']);
+assert.equal(browseFilterCount({ categories: ['cafe', 'hotel'], hasOriginalPost: true }), 3);
 assert.deepEqual(filterSavedPlaces(all, none), all, 'Clear filters restores input');
 
 // Search: name, locality, automatic category, notes, casing, clear, and composition.
@@ -85,7 +85,7 @@ assert.deepEqual(searchSavedPlaces(all, 'ANAHEIM').map((p) => p.id), all.map((p)
 assert.deepEqual(searchSavedPlaces(all, 'Cafe').map((p) => p.id), ['New Cafe']);
 assert.deepEqual(searchSavedPlaces(all, 'BIRRIA').map((p) => p.id), ['Older Restaurant']);
 assert.deepEqual(searchSavedPlaces(all, '  '), all);
-assert.deepEqual(buildSavedPlacesBrowseResults({ places: all, query: 'cafe', filters: { categories: ['cafes'], hasVideo: true }, sort: 'nearby', nearbyPlaces: nearby, nearbyReady: true }).map((p) => p.id), ['New Cafe']);
+assert.deepEqual(buildSavedPlacesBrowseResults({ places: all, query: 'cafe', filters: { categories: ['cafe'], hasOriginalPost: true }, sort: 'nearby', nearbyPlaces: nearby, nearbyReady: true }).map((p) => p.id), ['New Cafe']);
 
 // Automatic presentation never exposes raw provider types.
 assert.equal(savedPlaceCategory(cafe), 'cafe');
@@ -94,6 +94,13 @@ assert.notEqual(CATEGORY_LABELS[savedPlaceCategory(cafe)], 'coffee_shop');
 assert.deepEqual(savedPlaceNotePreview(restaurant), { text: 'Order the birria', kind: 'user' });
 assert.deepEqual(savedPlaceNotePreview(hotel), { text: 'Quiet rooms by the lake', kind: 'post' });
 assert.equal(savedPlaceNotePreview(cafe), null);
+const enrichedCafe = { ...cafe, ai_note: 'Order the cardamom latte' };
+assert.deepEqual(savedPlaceNotePreview(enrichedCafe), { text: 'Order the cardamom latte', kind: 'post' });
+assert.deepEqual(
+  buildSavedPlacesBrowseResults({ places: [enrichedCafe, restaurant], query: '', filters: none, sort: 'recent' }).map((p) => p.id),
+  ['New Cafe', 'Older Restaurant'],
+  'AI-note realtime enrichment updates content without changing stable row identity/order',
+);
 assert.equal(formatBrowseDistance(400), '0.2 mi');
 assert.equal(formatBrowseDistance(32_187), '20 mi');
 assert.equal(formatBrowseDistance(undefined), null);

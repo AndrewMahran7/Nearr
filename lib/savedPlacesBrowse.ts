@@ -1,33 +1,21 @@
-import { CATEGORY_LABELS, savedPlaceCategory, type NearrCategory } from './placeCategory';
+import {
+  CATEGORY_BROWSE_SECTIONS,
+  CATEGORY_LABELS,
+  savedPlaceCategory,
+  type NearrCategory,
+} from './placeCategory';
 import { getSavedPlaceShareTarget } from './placeShare';
 import { splitPlaceAddress } from './sharePhase1Ui';
 import type { SavedPlaceWithPlace } from '@/types';
 
 export type SavedBrowseSort = 'recent' | 'nearby';
 
-export const SAVED_CATEGORY_FILTERS = [
-  { id: 'restaurants', label: 'Restaurants', categories: ['restaurant'] },
-  { id: 'cafes', label: 'Cafes', categories: ['cafe'] },
-  { id: 'bakeries', label: 'Bakeries', categories: ['bakery', 'dessert'] },
-  { id: 'bars_nightlife', label: 'Bars & Nightlife', categories: ['bar', 'brewery', 'winery', 'nightlife'] },
-  { id: 'hotels', label: 'Hotels', categories: ['hotel', 'resort'] },
-  { id: 'outdoors', label: 'Outdoors', categories: ['hiking_trail', 'park', 'beach', 'waterfall', 'lake', 'marina', 'island', 'scenic_spot'] },
-  { id: 'attractions', label: 'Attractions', categories: ['attraction', 'museum', 'sports'] },
-  { id: 'shopping', label: 'Shopping', categories: ['shopping'] },
-  { id: 'fitness_wellness', label: 'Fitness & Wellness', categories: ['fitness', 'wellness'] },
-  { id: 'entertainment', label: 'Entertainment', categories: ['entertainment'] },
-  { id: 'other', label: 'Other', categories: ['transportation', 'education', 'service', 'other'] },
-] as const satisfies readonly {
-  id: string;
-  label: string;
-  categories: readonly NearrCategory[];
-}[];
-
-export type SavedCategoryFilter = (typeof SAVED_CATEGORY_FILTERS)[number]['id'];
+export const SAVED_CATEGORY_FILTER_SECTIONS = CATEGORY_BROWSE_SECTIONS;
+export type SavedCategoryFilter = NearrCategory;
 
 export type SavedBrowseFilters = {
   categories: readonly SavedCategoryFilter[];
-  hasVideo: boolean;
+  hasOriginalPost: boolean;
 };
 
 export type SavedBrowsePlace = SavedPlaceWithPlace & { distanceMeters?: number };
@@ -43,24 +31,21 @@ export function currentSavedPlaces(
   });
 }
 
-function filterDefinition(id: SavedCategoryFilter) {
-  return SAVED_CATEGORY_FILTERS.find((item) => item.id === id);
-}
-
-export function hasOriginalVideo(saved: SavedPlaceWithPlace): boolean {
+export function hasOriginalPost(saved: SavedPlaceWithPlace): boolean {
   return getSavedPlaceShareTarget(saved).kind === 'original_post';
 }
+
+/** @deprecated Use the product-language accurate `hasOriginalPost`. */
+export const hasOriginalVideo = hasOriginalPost;
 
 export function filterSavedPlaces(
   places: readonly SavedPlaceWithPlace[],
   filters: SavedBrowseFilters,
 ): SavedPlaceWithPlace[] {
-  const selectedCategories = new Set<NearrCategory>(
-    filters.categories.flatMap((id) => [...(filterDefinition(id)?.categories ?? [])]),
-  );
+  const selectedCategories = new Set<NearrCategory>(filters.categories);
   return places.filter((place) => {
     if (selectedCategories.size > 0 && !selectedCategories.has(savedPlaceCategory(place))) return false;
-    if (filters.hasVideo && !hasOriginalVideo(place)) return false;
+    if (filters.hasOriginalPost && !hasOriginalPost(place)) return false;
     return true;
   });
 }
@@ -108,7 +93,7 @@ export function sortSavedPlaces(
 }
 
 export function browseFilterCount(filters: SavedBrowseFilters): number {
-  return filters.categories.length + Number(filters.hasVideo);
+  return filters.categories.length + Number(filters.hasOriginalPost);
 }
 
 export function savedPlaceNotePreview(saved: SavedPlaceWithPlace): {

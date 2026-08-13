@@ -9,7 +9,7 @@ export {
 } from './MapBottomSheet';
 export { NearbyNowCard } from './NearbyNowCard';
 export { CompactPlaceRow } from './CompactPlaceRow';
-export { MapSheetFilterChips, type SheetListFilter } from './MapSheetFilterChips';
+export { SavedPlacesLibrary } from './SavedPlacesLibrary';
 export { MapPlaceSearchDropdown } from './MapPlaceSearchDropdown';
 export { MapSnackbar } from './MapSnackbar';
 export { MapGroupSelector } from './MapGroupSelector';

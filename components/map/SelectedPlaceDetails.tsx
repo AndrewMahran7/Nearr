@@ -10,8 +10,8 @@
  * (`updateSavedPlace` / `deleteSavedPlace` + `updateSavedPlacesCache` /
  * `removeSavedPlaceFromCache` / snapshot-restore) — no duplicated Supabase
  * calls, and offline mutations keep surfacing the friendly
- * `OfflineMutationError` message. The `/place/[id]` route is untouched and
- * still available as a deep-link / fallback.
+ * `OfflineMutationError` message. The `/place/[id]` compatibility route now
+ * redirects here so this remains the single presentation owner.
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -24,7 +24,6 @@ import {
   Modal,
   PanResponder,
   Pressable,
-  ScrollView,
   Share,
   StyleSheet,
   Switch,
@@ -33,8 +32,9 @@ import {
   View,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Button, Card, Input } from '@/components';
+import { Button, Input } from '@/components';
 import { WrongPlaceSheet } from '@/components/map/WrongPlaceSheet';
 import { NoteEditorModal } from '@/components/map/NoteEditorModal';
 import { Radius, Spacing } from '@/constants';
@@ -49,6 +49,8 @@ import {
   type NoteEditorState,
 } from '@/lib/noteEditor';
 import { buildSavedPlaceShareContent } from '@/lib/placeShare';
+import { reminderStatusLabel } from '@/lib/placeDetailUi';
+import { splitPlaceAddress } from '@/lib/sharePhase1Ui';
 import { deleteSavedPlace, updateSavedPlace } from '@/services/savedPlacesService';
 import { CATEGORY_LABELS, savedPlaceCategory } from '@/lib/placeCategory';
 import {
@@ -96,32 +98,6 @@ function sourceActionLabel(saved: SavedPlaceWithPlace): string {
   }
 }
 
-function sanitizePhoneForTel(raw: string | null | undefined): string | null {
-  if (!raw) return null;
-  const trimmed = raw.trim();
-  if (!trimmed) return null;
-  const hasPlusPrefix = trimmed.startsWith('+');
-  const digits = trimmed.replace(/\D/g, '');
-  if (digits.length < 6) return null;
-  return `${hasPlusPrefix ? '+' : ''}${digits}`;
-}
-
-function normalizeWebsiteUrl(raw: string | null | undefined): string | null {
-  if (!raw) return null;
-  const trimmed = raw.trim();
-  if (!trimmed) return null;
-  try {
-    const hasScheme = /^[a-z][a-z0-9+.-]*:/i.test(trimmed);
-    const candidate = hasScheme ? trimmed : `https://${trimmed}`;
-    const parsed = new URL(candidate);
-    if (!parsed.hostname) return null;
-    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null;
-    return parsed.toString();
-  } catch {
-    return null;
-  }
-}
-
 type Props = {
   saved: SavedPlaceWithPlace;
   profile: Profile | null;
@@ -145,6 +121,7 @@ export function SelectedPlaceDetails({
   const { colors, typography } = useTheme();
   const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
   const { width: viewportWidth, height: viewportHeight } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const { session } = useAuth();
 
   const [notifyOn, setNotifyOn] = useState(saved.notifications_enabled);
@@ -209,7 +186,7 @@ export function SelectedPlaceDetails({
   useEffect(() => {
     setRichDetails(null);
     setFailedPhotoUrls({});
-  }, [saved.place.google_place_id, saved]);
+  }, [saved.place.google_place_id]);
 
   useEffect(() => {
     let canceled = false;
@@ -309,12 +286,18 @@ export function SelectedPlaceDetails({
     [galleryCardWidth],
   );
 
-  const phoneRaw =
-    richDetails?.internationalPhoneNumber ??
-    richDetails?.formattedPhoneNumber ??
-    null;
-  const callablePhone = sanitizePhoneForTel(phoneRaw);
-  const websiteUrl = normalizeWebsiteUrl(richDetails?.websiteUrl ?? null);
+  const locality = splitPlaceAddress(saved.place.formatted_address).locality;
+  const categoryLabel = CATEGORY_LABELS[savedPlaceCategory(saved)];
+  const reminderStatus = useMemo(
+    () => reminderStatusLabel({
+      enabled: notifyOn,
+      mode,
+      profile,
+      milesText,
+      minutesText,
+    }),
+    [milesText, minutesText, mode, notifyOn, profile],
+  );
 
   async function openExternalUrl(args: {
     rawUrl: string | null;
@@ -347,32 +330,6 @@ export function SelectedPlaceDetails({
       label: sourceActionLabel(saved),
       messageWhenUnavailable: 'No app is available to open this source link.',
     });
-  }
-
-  async function openWebsite() {
-    await openExternalUrl({
-      rawUrl: websiteUrl,
-      label: 'Website',
-      messageWhenUnavailable: 'No browser is available to open this website.',
-    });
-  }
-
-  async function callPlace() {
-    if (!callablePhone) return;
-    const telUrl = `tel:${callablePhone}`;
-    try {
-      const canOpen = await Linking.canOpenURL(telUrl);
-      if (!canOpen) {
-        Alert.alert(
-          "Couldn't place call",
-          'Calling is not available on this device.',
-        );
-        return;
-      }
-      await Linking.openURL(telUrl);
-    } catch {
-      Alert.alert("Couldn't place call", 'The phone number could not be dialed.');
-    }
   }
 
   // Sharing prefers the ORIGINAL public source the place came from — especially
@@ -550,38 +507,46 @@ export function SelectedPlaceDetails({
 
   return (
     <View style={styles.wrap}>
-      {detailsLoading ? (
-        <View style={styles.photoLoadingWrap}>
-          <ActivityIndicator size="small" color={colors.accent} />
-          <Text style={[typography.caption, styles.muted]}>Loading photos…</Text>
+      <Pressable
+        disabled={photoUrls.length === 0}
+        onPress={() => openGalleryAt(0)}
+        accessibilityRole={photoUrls.length > 0 ? 'button' : undefined}
+        accessibilityLabel={photoUrls.length > 0 ? `View photos of ${saved.place.name}` : undefined}
+        style={({ pressed }) => [styles.hero, pressed && styles.pressed]}
+      >
+        {photoUrls[0] ? (
+          <Image
+            source={{ uri: photoUrls[0] }}
+            style={styles.heroImage}
+            resizeMode="cover"
+            onError={() => setFailedPhotoUrls((prev) => ({ ...prev, [photoUrls[0]!]: true }))}
+          />
+        ) : (
+          <View style={styles.heroFallback}>
+            {detailsLoading ? (
+              <ActivityIndicator size="small" color={colors.accent} />
+            ) : (
+              <Feather name="map-pin" size={34} color={colors.accent} />
+            )}
+          </View>
+        )}
+        {photoUrls.length > 1 ? (
+          <View style={styles.photoCountPill}>
+            <Feather name="image" size={13} color="#FFFFFF" />
+            <Text style={styles.photoCountText}>{photoUrls.length}</Text>
+          </View>
+        ) : null}
+      </Pressable>
+
+      <View style={styles.identity}>
+        <Text accessibilityRole="header" style={styles.placeName}>{saved.place.name}</Text>
+        {locality ? <Text style={[typography.body, styles.locality]}>{locality}</Text> : null}
+        <View style={styles.metadataRow}>
+          <View style={styles.categoryPill}>
+            <Text style={styles.categoryPillText}>{categoryLabel}</Text>
+          </View>
         </View>
-      ) : photoUrls.length > 0 ? (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.photoStripContent}
-          style={styles.photoStrip}
-          nestedScrollEnabled
-        >
-          {photoUrls.map((url, index) => (
-            <Pressable
-              key={url}
-              onPress={() => openGalleryAt(index)}
-              style={({ pressed }) => [styles.photoTilePressable, pressed && styles.pressed]}
-              hitSlop={4}
-            >
-              <Image
-                source={{ uri: url }}
-                style={styles.photoTile}
-                resizeMode="cover"
-                onError={() => {
-                  setFailedPhotoUrls((prev) => ({ ...prev, [url]: true }));
-                }}
-              />
-            </Pressable>
-          ))}
-        </ScrollView>
-      ) : null}
+      </View>
 
       {photoUrls.length > 0 ? (
         <Modal
@@ -592,7 +557,7 @@ export function SelectedPlaceDetails({
           statusBarTranslucent
         >
           <View style={styles.galleryBackdrop}>
-            <View style={styles.galleryCounterWrap}>
+            <View style={[styles.galleryCounterWrap, { top: insets.top + Spacing.md }]}>
               <View style={styles.galleryCounterPill}>
                 <Text style={styles.galleryCounterText}>
                   {safeGalleryIndex + 1} / {photoUrls.length}
@@ -600,7 +565,12 @@ export function SelectedPlaceDetails({
               </View>
             </View>
 
-            <Pressable style={styles.galleryCloseButton} onPress={closeGallery} hitSlop={12}>
+            <Pressable
+              style={[styles.galleryCloseButton, { top: insets.top + Spacing.sm }]}
+              onPress={closeGallery}
+              accessibilityRole="button"
+              accessibilityLabel="Close photo gallery"
+            >
               <Feather name="x" size={22} color="#FFFFFF" />
             </Pressable>
 
@@ -689,36 +659,6 @@ export function SelectedPlaceDetails({
           onPress={onGetDirections}
           styles={styles}
         />
-        {callablePhone ? (
-          <ActionPill
-            label="Call"
-            icon="phone"
-            onPress={() => {
-              void callPlace();
-            }}
-            styles={styles}
-          />
-        ) : null}
-        {websiteUrl ? (
-          <ActionPill
-            label="Website"
-            icon="globe"
-            onPress={() => {
-              void openWebsite();
-            }}
-            styles={styles}
-          />
-        ) : null}
-        {sourceUrl ? (
-          <ActionPill
-            label={sourceActionLabel(saved)}
-            icon="arrow-up-right"
-            onPress={() => {
-              void openSource();
-            }}
-            styles={styles}
-          />
-        ) : null}
         <ActionPill
           label="Share"
           icon="share"
@@ -727,40 +667,93 @@ export function SelectedPlaceDetails({
           }}
           styles={styles}
         />
+        {sourceUrl ? (
+          <ActionPill
+            label="Open original"
+            icon="arrow-up-right"
+            onPress={() => {
+              void openSource();
+            }}
+            styles={styles}
+          />
+        ) : null}
       </View>
 
-      <Card style={styles.sectionCard}>
-        <View style={styles.categoryRow}>
-          <Text style={typography.bodyStrong}>Category</Text>
-          <Text style={styles.categoryValue}>{CATEGORY_LABELS[savedPlaceCategory(saved)]}</Text>
-        </View>
-      </Card>
-
-      <Card style={styles.sectionCard}>
+      <View style={styles.personalSection}>
         <View style={styles.rowBetween}>
-          <View style={{ flex: 1 }}>
-            <Text style={typography.bodyStrong}>Nearby reminder</Text>
-            <Text style={[typography.caption, styles.muted, styles.sectionCopy]}>
-              {notifyOn
-                ? 'Nearr will remind you when you’re nearby.'
-                : 'Turn this on to be reminded when you’re nearby.'}
-            </Text>
-          </View>
-          <Switch value={notifyOn} onValueChange={setNotifyOn} />
-        </View>
-
-        <View style={styles.reminderSummaryRow}>
-          <Text style={[typography.caption, styles.helperText, { flex: 1 }]}>
-            {notifyOn ? radiusHelperText : 'Nearby reminder is off'}
-          </Text>
-          {notifyOn ? (
-            <Pressable onPress={() => setReminderSettingsExpanded((v) => !v)} hitSlop={12}>
-              <Text style={styles.changeLink}>
-                {reminderSettingsExpanded ? 'Hide' : 'Change'}
-              </Text>
+          <Text style={styles.sectionTitle}>Your note</Text>
+          {notes.trim() ? (
+            <Pressable
+              onPress={() => beginNoteEdit()}
+              accessibilityRole="button"
+              accessibilityLabel="Edit your note"
+              style={styles.textAction}
+            >
+              <Text style={styles.changeLink}>Edit</Text>
             </Pressable>
           ) : null}
         </View>
+        {notes.trim() ? (
+          <Text style={[typography.body, styles.noteText]} numberOfLines={4}>{notes.trim()}</Text>
+        ) : (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Add a note"
+            onPress={() => beginNoteEdit()}
+            style={styles.emptyNoteAction}
+          >
+            <Feather name="plus" size={17} color={colors.accent} />
+            <Text style={styles.changeLink}>Add a note</Text>
+          </Pressable>
+        )}
+      </View>
+
+      {saved.ai_note?.trim() ? (
+        <View style={styles.postSection} accessibilityLiveRegion="polite">
+          <View style={styles.postHeadingRow}>
+            <Feather name="play" size={14} color={colors.accent} />
+            <Text style={styles.sectionTitle}>From the post</Text>
+          </View>
+          <Text style={[typography.body, styles.aiNoteText]}>{saved.ai_note.trim()}</Text>
+          {!notes.trim() ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Use the post suggestion as my note"
+              onPress={() => beginNoteEdit(true)}
+              style={styles.textAction}
+            >
+              <Text style={styles.changeLink}>Use as my note</Text>
+            </Pressable>
+          ) : null}
+        </View>
+      ) : null}
+
+      <View style={styles.reminderCard}>
+        <View style={styles.rowBetween}>
+          <View style={styles.reminderIdentity}>
+            <View style={styles.reminderIcon}>
+              <Feather name="bell" size={17} color={notifyOn ? colors.accent : colors.textMuted} />
+            </View>
+            <View>
+              <Text style={typography.bodyStrong}>Nearby reminder</Text>
+              <Text style={[typography.caption, styles.reminderStatus]}>{reminderStatus}</Text>
+            </View>
+          </View>
+          <Switch value={notifyOn} onValueChange={setNotifyOn} accessibilityLabel="Nearby reminder" />
+        </View>
+
+        {notifyOn ? (
+          <Pressable
+            onPress={() => setReminderSettingsExpanded((value) => !value)}
+            accessibilityRole="button"
+            accessibilityState={{ expanded: reminderSettingsExpanded }}
+            style={styles.reminderChange}
+          >
+            <Text style={styles.changeLink}>
+              {reminderSettingsExpanded ? 'Done' : 'Change distance'}
+            </Text>
+          </Pressable>
+        ) : null}
 
         {notifyOn && reminderSettingsExpanded ? (
           <View style={styles.advancedWrap}>
@@ -787,50 +780,10 @@ export function SelectedPlaceDetails({
                 style={styles.numberInput}
               />
             ) : null}
+            <Text style={[typography.caption, styles.helperText]}>{radiusHelperText}</Text>
           </View>
         ) : null}
-      </Card>
-
-      <Card style={styles.sectionCard}>
-        <View style={styles.rowBetween}>
-          <Text style={typography.bodyStrong}>Your note</Text>
-          {notes.trim() ? (
-            <Pressable onPress={() => beginNoteEdit()} hitSlop={10} accessibilityRole="button">
-              <Text style={styles.changeLink}>Edit note</Text>
-            </Pressable>
-          ) : null}
-        </View>
-        {notes.trim() ? (
-          <Text style={[typography.body, styles.noteText]}>{notes.trim()}</Text>
-        ) : (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Add a note"
-            hitSlop={8}
-            onPress={() => beginNoteEdit()}
-            style={styles.addNoteAction}
-          >
-            <Text style={styles.changeLink}>Add a note</Text>
-          </Pressable>
-        )}
-        {saved.ai_note?.trim() ? (
-          <View style={styles.aiNoteWrap}>
-            <Text style={[typography.caption, styles.aiNoteLabel]}>From the post</Text>
-            <Text style={[typography.body, styles.aiNoteText]}>{saved.ai_note.trim()}</Text>
-            {!notes.trim() ? (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Use the post suggestion as my note"
-                hitSlop={8}
-                onPress={() => beginNoteEdit(true)}
-                style={styles.useAsNoteAction}
-              >
-                <Text style={styles.changeLink}>Use as my note</Text>
-              </Pressable>
-            ) : null}
-          </View>
-        ) : null}
-      </Card>
+      </View>
 
       {dirty ? (
         <Button
@@ -894,7 +847,12 @@ function ActionPill({
 }) {
   const { colors, typography } = useTheme();
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [styles.actionPill, pressed && styles.pressed]}>
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      style={({ pressed }) => [styles.actionPill, pressed && styles.pressed]}
+    >
       <Feather name={icon} size={16} color={colors.accent} />
       <Text style={[typography.caption, styles.actionPillText]} numberOfLines={1}>
         {label}
@@ -931,36 +889,55 @@ function createStyles(
   typography: ReturnType<typeof useTheme>['typography'],
 ) {
   return StyleSheet.create({
-    wrap: { gap: Spacing.md },
-    muted: { color: colors.textMuted },
+    wrap: { gap: Spacing.lg },
     pressed: { opacity: 0.6 },
-    photoLoadingWrap: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: Spacing.xs,
-      minHeight: 28,
-    },
-    photoStrip: { maxHeight: 124 },
-    photoStripContent: { gap: Spacing.sm, paddingRight: Spacing.sm },
-    photoTilePressable: {
-      borderRadius: Radius.md,
+    hero: {
+      height: 188,
+      borderRadius: Radius.lg,
       overflow: 'hidden',
+      backgroundColor: colors.surface,
     },
-    photoTile: {
-      width: 160,
-      height: 112,
-      borderRadius: Radius.md,
+    heroImage: { width: '100%', height: '100%' },
+    heroFallback: {
+      width: '100%',
+      height: '100%',
+      alignItems: 'center',
+      justifyContent: 'center',
       backgroundColor: colors.surfaceElevated,
-      borderWidth: 1,
+      borderWidth: StyleSheet.hairlineWidth,
       borderColor: colors.border,
     },
+    photoCountPill: {
+      position: 'absolute',
+      right: Spacing.sm,
+      bottom: Spacing.sm,
+      minHeight: 30,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 5,
+      paddingHorizontal: 10,
+      borderRadius: Radius.pill,
+      backgroundColor: 'rgba(0,0,0,0.68)',
+    },
+    photoCountText: { ...typography.caption, color: '#FFFFFF', fontWeight: '700' },
+    identity: { gap: 4 },
+    placeName: { ...typography.title, color: colors.text, fontSize: 24, lineHeight: 29 },
+    locality: { color: colors.textSecondary },
+    metadataRow: { flexDirection: 'row', marginTop: Spacing.xs },
+    categoryPill: {
+      alignSelf: 'flex-start',
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      borderRadius: Radius.pill,
+      backgroundColor: 'rgba(255,106,26,0.12)',
+    },
+    categoryPillText: { ...typography.caption, color: colors.accent, fontWeight: '700' },
     galleryBackdrop: {
       flex: 1,
       backgroundColor: 'rgba(0,0,0,0.96)',
     },
     galleryCloseButton: {
       position: 'absolute',
-      top: 52,
       right: 22,
       width: 44,
       height: 44,
@@ -972,7 +949,6 @@ function createStyles(
     },
     galleryCounterWrap: {
       position: 'absolute',
-      top: 58,
       left: 0,
       right: 0,
       alignItems: 'center',
@@ -1060,57 +1036,80 @@ function createStyles(
     },
     quickActionsRow: {
       flexDirection: 'row',
-      flexWrap: 'wrap',
-      justifyContent: 'space-between',
       gap: Spacing.sm,
-      marginTop: Spacing.xs,
     },
     actionPill: {
+      flex: 1,
+      minWidth: 0,
+      minHeight: 52,
       flexDirection: 'row',
       alignItems: 'center',
+      justifyContent: 'center',
       gap: Spacing.xs,
-      borderWidth: 1,
+      borderWidth: StyleSheet.hairlineWidth,
       borderColor: colors.border,
       backgroundColor: colors.surface,
-      borderRadius: Radius.pill,
-      paddingHorizontal: Spacing.md,
-      paddingVertical: Spacing.sm,
-      minHeight: 44,
-      width: '48.5%',
+      borderRadius: Radius.md,
+      paddingHorizontal: Spacing.sm,
     },
     actionPillText: {
       color: colors.text,
       fontWeight: '700',
-      fontSize: 13,
+      fontSize: 12,
     },
-    sectionCard: { padding: Spacing.md, gap: Spacing.sm },
-    categoryRow: {
+    sectionTitle: { ...typography.bodyStrong, color: colors.text },
+    personalSection: { gap: Spacing.sm, paddingTop: Spacing.xs },
+    postSection: {
+      gap: Spacing.sm,
+      padding: Spacing.md,
+      borderRadius: Radius.md,
+      backgroundColor: colors.surface,
+    },
+    postHeadingRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+    textAction: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center' },
+    emptyNoteAction: {
+      alignSelf: 'flex-start',
       minHeight: 44,
       flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'space-between',
-      gap: Spacing.md,
+      gap: Spacing.xs,
     },
-    categoryValue: { ...typography.body, color: colors.textSecondary },
+    reminderCard: {
+      padding: Spacing.md,
+      gap: Spacing.sm,
+      borderRadius: Radius.md,
+      backgroundColor: colors.surface,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.border,
+    },
+    reminderIdentity: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+    reminderIcon: {
+      width: 38,
+      height: 38,
+      borderRadius: 12,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.surfaceElevated,
+    },
+    reminderStatus: { color: colors.textSecondary, marginTop: 2 },
+    reminderChange: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center' },
     rowBetween: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
       gap: Spacing.md,
     },
-    sectionCopy: { marginTop: 2 },
-    reminderSummaryRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      gap: Spacing.sm,
-    },
     helperText: { color: colors.textSecondary },
     changeLink: {
       ...typography.bodyStrong,
       color: colors.accent,
     },
-    advancedWrap: { gap: Spacing.sm, marginTop: Spacing.xs },
+    advancedWrap: {
+      gap: Spacing.sm,
+      paddingTop: Spacing.sm,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: colors.border,
+    },
     radiusGroup: {
       flexDirection: 'row',
       gap: Spacing.sm,
@@ -1137,17 +1136,8 @@ function createStyles(
       fontWeight: '700',
     },
     numberInput: { marginTop: Spacing.xs },
-    noteText: { color: colors.textSecondary, marginTop: Spacing.sm, lineHeight: 22 },
-    addNoteAction: { alignSelf: 'flex-start', marginTop: Spacing.sm, paddingVertical: Spacing.xs },
-    aiNoteWrap: {
-      marginTop: Spacing.md,
-      paddingTop: Spacing.md,
-      borderTopWidth: StyleSheet.hairlineWidth,
-      borderTopColor: colors.border,
-    },
-    aiNoteLabel: { color: colors.textMuted, marginBottom: Spacing.xs },
+    noteText: { color: colors.textSecondary, lineHeight: 22 },
     aiNoteText: { color: colors.textSecondary, lineHeight: 22 },
-    useAsNoteAction: { alignSelf: 'flex-start', marginTop: Spacing.sm, paddingVertical: Spacing.xs },
     saveBtn: { width: '100%' },
     correctionBtn: { marginTop: Spacing.sm },
     deleteBtn: { marginTop: -Spacing.xs },

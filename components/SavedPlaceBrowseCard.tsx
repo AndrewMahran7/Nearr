@@ -6,7 +6,7 @@ import { PlaceImage } from './PlaceImage';
 import { Radius, Spacing } from '@/constants';
 import {
   formatBrowseDistance,
-  hasOriginalVideo,
+  hasOriginalPost,
   savedPlaceNotePreview,
 } from '@/lib/savedPlacesBrowse';
 import { CATEGORY_LABELS, savedPlaceCategory } from '@/lib/placeCategory';
@@ -16,7 +16,7 @@ import type { SavedPlaceWithPlace } from '@/types';
 
 type Props = {
   saved: SavedPlaceWithPlace & { distanceMeters?: number };
-  onPress: (savedPlaceId: string) => void;
+  onPress: (saved: SavedPlaceWithPlace) => void;
 };
 
 function savedDate(value: string): string | null {
@@ -32,7 +32,7 @@ function SavedPlaceBrowseCardView({ saved, onPress }: Props) {
   const locality = splitPlaceAddress(saved.place.formatted_address).locality;
   const distance = formatBrowseDistance(saved.distanceMeters);
   const note = savedPlaceNotePreview(saved);
-  const hasSource = hasOriginalVideo(saved);
+  const hasSource = hasOriginalPost(saved);
   const date = savedDate(saved.created_at);
   const label = [
     saved.place.name,
@@ -45,7 +45,7 @@ function SavedPlaceBrowseCardView({ saved, onPress }: Props) {
 
   return (
     <Pressable
-      onPress={() => onPress(saved.id)}
+      onPress={() => onPress(saved)}
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityHint="Opens saved place details"
@@ -54,7 +54,7 @@ function SavedPlaceBrowseCardView({ saved, onPress }: Props) {
       <View style={styles.imageWrap}>
         <PlaceImage
           googlePlaceId={saved.place.google_place_id}
-          size={116}
+          size={124}
           borderRadius={Radius.md}
           style={styles.image}
         />
@@ -79,7 +79,7 @@ function SavedPlaceBrowseCardView({ saved, onPress }: Props) {
               size={13}
               color={note.kind === 'user' ? colors.textSecondary : colors.accent}
             />
-            <Text style={[typography.caption, styles.note]} numberOfLines={2}>{note.text}</Text>
+            <Text style={[typography.caption, styles.note]} numberOfLines={1}>{note.text}</Text>
           </View>
         ) : null}
         <View style={styles.footer}>
@@ -101,7 +101,7 @@ export const SavedPlaceBrowseCard = memo(SavedPlaceBrowseCardView);
 function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
   return StyleSheet.create({
     card: {
-      minHeight: 140,
+      height: 148,
       flexDirection: 'row',
       gap: Spacing.md,
       padding: Spacing.md,
@@ -112,7 +112,7 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       backgroundColor: colors.surface,
     },
     pressed: { opacity: 0.78, transform: [{ scale: 0.995 }] },
-    imageWrap: { width: 116, height: 116 },
+    imageWrap: { width: 124, height: 124 },
     image: { borderWidth: 0 },
     sourceBadge: {
       position: 'absolute',

@@ -327,6 +327,41 @@ export const CATEGORY_LABELS: Readonly<Record<NearrCategory, string>> = {
   transportation: 'Transportation', education: 'Education', service: 'Service', other: 'Other',
 };
 
+/**
+ * Consumer-facing grouping for category pickers. The values are the canonical
+ * Nearr categories above (never raw Google types), and every category appears
+ * exactly once so browse surfaces cannot drift from the classification model.
+ */
+export const CATEGORY_BROWSE_SECTIONS = [
+  {
+    id: 'food_drink',
+    label: 'Food & drink',
+    categories: ['restaurant', 'cafe', 'bakery', 'bar', 'brewery', 'winery', 'dessert'],
+  },
+  { id: 'stays', label: 'Stays', categories: ['hotel', 'resort'] },
+  {
+    id: 'outdoors',
+    label: 'Outdoors',
+    categories: ['hiking_trail', 'park', 'beach', 'waterfall', 'lake', 'marina', 'island', 'scenic_spot'],
+  },
+  {
+    id: 'things_to_do',
+    label: 'Things to do',
+    categories: ['attraction', 'museum', 'entertainment', 'nightlife', 'sports'],
+  },
+  { id: 'shopping', label: 'Shopping', categories: ['shopping'] },
+  { id: 'fitness_wellness', label: 'Fitness & wellness', categories: ['fitness', 'wellness'] },
+  {
+    id: 'other',
+    label: 'Other',
+    categories: ['transportation', 'education', 'service', 'other'],
+  },
+] as const satisfies readonly {
+  id: string;
+  label: string;
+  categories: readonly NearrCategory[];
+}[];
+
 export const CATEGORY_FILTER_GROUPS = {
   all: NEARR_CATEGORIES,
   food: ['restaurant', 'bakery', 'bar', 'brewery', 'winery', 'dessert'] as const,

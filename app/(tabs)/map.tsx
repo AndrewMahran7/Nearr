@@ -613,7 +613,7 @@ export default function MapScreen() {
     () => getSheetPartialHeight(availableHeight),
     [availableHeight],
   );
-  const { nearbyPlaces } = useNearbyPlaces(data, { limit: 5 });
+  const { nearbyPlaces, locationState, requestLocationPermission } = useNearbyPlaces(data);
   const recentPlaces = useRecentPlaces(validPlaces, 5);
   const previewTranslateY = useRef(new Animated.Value(0)).current;
   // Selected-place sheet: collapsed (preview) vs expanded (inline details).
@@ -1725,6 +1725,18 @@ export default function MapScreen() {
               <View style={styles.previewHandleWrap}>
                 <View style={styles.previewHandle} />
               </View>
+              {previewExpanded ? (
+                <View style={styles.expandedDetailHeader}>
+                  <Pressable
+                    onPress={() => dismissSelectedPlace()}
+                    accessibilityRole="button"
+                    accessibilityLabel="Close place details"
+                    style={({ pressed }) => [styles.closeBtn, pressed && styles.controlPressed]}
+                  >
+                    <Feather name="x" size={22} color={colors.textSecondary} />
+                  </Pressable>
+                </View>
+              ) : (
               <View style={styles.previewTopRow}>
                 <View style={styles.previewThumb}>
                   <Feather
@@ -1735,15 +1747,16 @@ export default function MapScreen() {
                 </View>
                 <View style={styles.previewCopy}>
                   <View style={styles.previewHeader}>
-                    <Text style={typography.heading} numberOfLines={1}>
+                    <Text style={[typography.heading, styles.previewTitle]} numberOfLines={1}>
                       {selected.place.name}
                     </Text>
                     <Pressable
                       onPress={() => dismissSelectedPlace()}
-                      hitSlop={12}
-                      style={styles.closeBtn}
+                      accessibilityRole="button"
+                      accessibilityLabel="Close place preview"
+                      style={({ pressed }) => [styles.closeBtn, pressed && styles.controlPressed]}
                     >
-                      <Text style={styles.closeText}>×</Text>
+                      <Feather name="x" size={22} color={colors.textSecondary} />
                     </Pressable>
                   </View>
                   {selected.place.formatted_address ? (
@@ -1767,6 +1780,7 @@ export default function MapScreen() {
                   </View>
                 </View>
               </View>
+              )}
             </View>
 
             {previewExpanded ? (
@@ -1774,7 +1788,12 @@ export default function MapScreen() {
               // remove) moved off /place/[id]. Bounded + scrollable so a long
               // note never pushes the sheet past the top of the map.
               <ScrollView
-                style={{ maxHeight: Math.min(windowHeight * 0.66, 580) }}
+                style={{
+                  maxHeight: Math.max(
+                    360,
+                    windowHeight - insets.top - insets.bottom - 138,
+                  ),
+                }}
                 contentContainerStyle={styles.previewScrollContent}
                 keyboardShouldPersistTaps="handled"
                 nestedScrollEnabled
@@ -2043,6 +2062,7 @@ export default function MapScreen() {
           mode={selectedMapFilter}
           loading={liveLoading}
           nearbyPlaces={nearbyPlaces}
+          locationState={locationState}
           recentPlaces={recentPlaces}
           savedPlaces={validPlaces}
           partialHeight={sheetPartialHeight}
@@ -2056,6 +2076,7 @@ export default function MapScreen() {
           onGetDirections={openExternalMaps}
           onSaveFromLink={() => router.push('/share')}
           onSearchManually={() => router.push('/add-place')}
+          requestLocationPermission={requestLocationPermission}
         />
       )}
 
@@ -2286,6 +2307,16 @@ function createStyles(
     justifyContent: 'space-between',
     gap: Spacing.sm,
   },
+  previewTitle: {
+    flex: 1,
+    minWidth: 0,
+  },
+  expandedDetailHeader: {
+    minHeight: 44,
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+  },
   previewAddress: {
     color: colors.textSecondary,
     marginTop: 2,
@@ -2313,21 +2344,16 @@ function createStyles(
     color: colors.textSecondary,
   },
   closeBtn: {
-    width: 28,
-    height: 28,
+    width: 44,
+    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 14,
+    borderRadius: 22,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
   },
-  closeText: {
-    fontSize: 22,
-    lineHeight: 22,
-    color: colors.textMuted,
-    fontWeight: '600',
-  },
+  controlPressed: { opacity: 0.7 },
   previewActions: {
     marginTop: Spacing.md,
   },

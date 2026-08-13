@@ -39,18 +39,6 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="places"
-        options={{
-          title: 'Places',
-          // Hidden from the tab bar (map-first) but kept as a reachable route
-          // for rollback / deep links. Set href back to default to restore it.
-          href: null,
-          tabBarIcon: ({ color, size }) => (
-            <Feather name="bookmark" color={color} size={size} />
-          ),
-        }}
-      />
-      <Tabs.Screen
         name="home"
         options={{
           title: 'Home',
