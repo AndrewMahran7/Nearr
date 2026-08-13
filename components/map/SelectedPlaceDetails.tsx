@@ -20,6 +20,7 @@ import {
   Alert,
   FlatList,
   Image,
+  KeyboardAvoidingView,
   Linking,
   Modal,
   PanResponder,
@@ -29,6 +30,7 @@ import {
   StyleSheet,
   Switch,
   Text,
+  Platform,
   useWindowDimensions,
   View,
 } from 'react-native';
@@ -36,11 +38,12 @@ import { Feather } from '@expo/vector-icons';
 
 import { Button, Card, Input } from '@/components';
 import { PlaceCategoryPicker } from '@/components/PlaceCategoryPicker';
+import { WrongPlaceSheet } from '@/components/map/WrongPlaceSheet';
 import { Radius, Spacing } from '@/constants';
 import { useTheme } from '@/lib/theme';
+import { useAuth } from '@/hooks/useAuth';
 import { trackEvent } from '@/lib/analytics';
 import { applySavedPlaceEdit } from '@/lib/savedPlaceEdits';
-import { initialSavedPlaceNote } from '@/lib/placeNote';
 import { buildPlaceShareContent } from '@/lib/placeShare';
 import { deleteSavedPlace, setSavedPlaceCategory, updateSavedPlace } from '@/services/savedPlacesService';
 import { savedPlaceCategory, type NearrCategory } from '@/lib/placeCategory';
@@ -136,6 +139,7 @@ export function SelectedPlaceDetails({
   const { colors, typography } = useTheme();
   const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
   const { width: viewportWidth, height: viewportHeight } = useWindowDimensions();
+  const { session } = useAuth();
 
   const [notifyOn, setNotifyOn] = useState(saved.notifications_enabled);
   const [mode, setMode] = useState<RadiusMode>(modeFromSaved(saved));
@@ -149,11 +153,8 @@ export function SelectedPlaceDetails({
       ? String(saved.radius_value)
       : '10',
   );
-  const [notes, setNotes] = useState(() => initialSavedPlaceNote({
-    notes: saved.notes,
-    sourceType: saved.source_type,
-    category: saved.place.category,
-  }));
+  const [notes, setNotes] = useState(() => saved.notes ?? '');
+  const [noteEditing, setNoteEditing] = useState(false);
   const [reminderSettingsExpanded, setReminderSettingsExpanded] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -165,6 +166,7 @@ export function SelectedPlaceDetails({
   const [galleryOpenSeed, setGalleryOpenSeed] = useState(0);
   const [category, setCategory] = useState<NearrCategory>(() => savedPlaceCategory(saved));
   const [categorySaving, setCategorySaving] = useState(false);
+  const [wrongPlaceOpen, setWrongPlaceOpen] = useState(false);
   const galleryStartYRef = useRef(0);
   const galleryListRef = useRef<FlatList<string> | null>(null);
 
@@ -188,13 +190,11 @@ export function SelectedPlaceDetails({
         ? String(saved.radius_value)
         : '10',
     );
-    setNotes(initialSavedPlaceNote({
-      notes: saved.notes,
-      sourceType: saved.source_type,
-      category: saved.place.category,
-    }));
+    setNotes(saved.notes ?? '');
+    setNoteEditing(false);
     setReminderSettingsExpanded(false);
     setCategory(savedPlaceCategory(saved));
+    setWrongPlaceOpen(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [saved.id]);
 
@@ -391,25 +391,28 @@ export function SelectedPlaceDetails({
     }
   }
 
-  // Ordinary place sharing via the native Share sheet. Shares only the public
-  // identity of the place — name, address, and a public Google Maps link — and
-  // deliberately NOT a `nearr://` deep link (Nearr has no universal-link infra
-  // yet, so such a link wouldn't be reliably clickable). No private fields
-  // (notes, reminder settings, ids, source URL) are ever included; the payload
-  // is built by the pure lib/placeShare.ts helper.
+  // Sharing prefers the ORIGINAL social post the place came from — that is why
+  // the place is on the user's map at all — and only falls back to the public
+  // Google Maps link when no durable social source exists. Temporary media and
+  // signed URLs are rejected by lib/placeShare.ts. No private fields (notes,
+  // reminder settings, ids) are ever included.
   async function sharePlace() {
-    const content = buildPlaceShareContent({
-      name: saved.place.name,
-      formatted_address: saved.place.formatted_address,
-      google_place_id: saved.place.google_place_id,
-      google_maps_url: saved.place.google_maps_url,
-      latitude: saved.place.latitude,
-      longitude: saved.place.longitude,
-    });
+    const content = buildPlaceShareContent(
+      {
+        name: saved.place.name,
+        formatted_address: saved.place.formatted_address,
+        google_place_id: saved.place.google_place_id,
+        google_maps_url: saved.place.google_maps_url,
+        latitude: saved.place.latitude,
+        longitude: saved.place.longitude,
+      },
+      { source_type: saved.source_type, source_url: saved.source_url },
+    );
     void trackEvent('place_shared', {
       saved_place_id: saved.id,
       google_place_id: saved.place.google_place_id ?? null,
       has_url: !!content.url,
+      share_kind: content.kind,
     });
     try {
       await Share.share(
@@ -795,26 +798,66 @@ export function SelectedPlaceDetails({
         ) : null}
       </Card>
 
-      <Card style={styles.sectionCard}>
-        <Text style={[typography.bodyStrong, { marginBottom: Spacing.sm }]}>Note</Text>
-        <Input
-          value={notes}
-          onChangeText={setNotes}
-          placeholder="What should you remember about this place?"
-          multiline
-          style={styles.notesInput}
-        />
-      </Card>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 24 : 0}
+      >
+        <Card style={styles.sectionCard}>
+          <View style={styles.rowBetween}>
+            <Text style={typography.bodyStrong}>Your note</Text>
+            {!noteEditing ? (
+              <Pressable onPress={() => setNoteEditing(true)} hitSlop={10} accessibilityRole="button">
+                <Text style={styles.changeLink}>Edit</Text>
+              </Pressable>
+            ) : null}
+          </View>
+          {noteEditing ? (
+            <>
+              <Input
+                value={notes}
+                onChangeText={setNotes}
+                placeholder="What should you remember about this place?"
+                multiline
+                autoFocus
+                style={styles.notesInput}
+              />
+              <Button
+                title="Done"
+                variant="secondary"
+                onPress={() => setNoteEditing(false)}
+                style={styles.noteDoneBtn}
+              />
+            </>
+          ) : (
+            <Text style={[typography.body, styles.noteText]}>
+              {notes.trim() || 'Add a note for yourself.'}
+            </Text>
+          )}
+          {saved.ai_note?.trim() ? (
+            <View style={styles.aiNoteWrap}>
+              <Text style={[typography.caption, styles.aiNoteLabel]}>Suggested from the post</Text>
+              <Text style={[typography.caption, styles.aiNoteText]}>{saved.ai_note}</Text>
+            </View>
+          ) : null}
+        </Card>
 
-      {dirty ? (
-        <Button
-          title="Save changes"
-          variant="secondary"
-          onPress={handleSave}
-          loading={saving}
-          style={styles.saveBtn}
-        />
-      ) : null}
+        {dirty ? (
+          <Button
+            title="Save changes"
+            variant="secondary"
+            onPress={handleSave}
+            loading={saving}
+            style={styles.saveBtn}
+          />
+        ) : null}
+      </KeyboardAvoidingView>
+
+      <Button
+        title="Wrong place?"
+        variant="ghost"
+        onPress={() => setWrongPlaceOpen(true)}
+        style={styles.correctionBtn}
+      />
 
       <Button
         title="Remove from saved"
@@ -822,6 +865,18 @@ export function SelectedPlaceDetails({
         onPress={confirmDelete}
         loading={deleting}
         style={styles.deleteBtn}
+      />
+
+      <WrongPlaceSheet
+        visible={wrongPlaceOpen}
+        saved={saved}
+        actingUserId={session?.user?.id ?? null}
+        extractedName={saved.place.name}
+        onClose={() => setWrongPlaceOpen(false)}
+        onCorrected={(updated) => {
+          onSaved?.(updated);
+          setWrongPlaceOpen(false);
+        }}
       />
     </View>
   );
@@ -1076,7 +1131,18 @@ function createStyles(
     },
     numberInput: { marginTop: Spacing.xs },
     notesInput: { minHeight: 72, textAlignVertical: 'top' },
+    noteText: { color: colors.textSecondary, marginTop: Spacing.sm, lineHeight: 22 },
+    noteDoneBtn: { marginTop: Spacing.sm },
+    aiNoteWrap: {
+      marginTop: Spacing.md,
+      paddingTop: Spacing.md,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: colors.border,
+    },
+    aiNoteLabel: { color: colors.textMuted, marginBottom: Spacing.xs },
+    aiNoteText: { color: colors.textSecondary, lineHeight: 19 },
     saveBtn: { width: '100%' },
+    correctionBtn: { marginTop: Spacing.sm },
     deleteBtn: { marginTop: -Spacing.xs },
   });
 }

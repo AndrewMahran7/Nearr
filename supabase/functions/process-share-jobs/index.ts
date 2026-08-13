@@ -32,6 +32,7 @@ import { saveForUser } from '../process-share-link/save.ts';
 import { normalizeShareUrl } from '../../../lib/shareAgent/tiktokUrl.ts';
 import { buildShareJobCandidatePayload } from '../../../lib/shareJobResult.ts';
 import { isNearrCategory, resolvePlaceCategory } from '../../../lib/placeCategory.ts';
+import { generateAiPlaceNote } from '../../../lib/aiPlaceNote.ts';
 
 import { submitPushToUser, checkExpoReceipts, type TicketRef } from './push.ts';
 import {
@@ -580,6 +581,25 @@ async function finalizeMediaTask(admin: any, env: any, body: any): Promise<Respo
         if (saveError) throw new Error(`media_auto_save_failed: ${saveError.message}`);
         const saved = Array.isArray(savedRows) ? savedRows[0] : savedRows;
         if (!saved?.saved_place_id) throw new Error('media_auto_save_missing_saved_place_id');
+        const evidencePlace = parsed.ok
+          ? parsed.value.places.find((place: any) =>
+              place.name?.trim().toLowerCase() === mentionResult.displayName?.trim().toLowerCase(),
+            )
+          : null;
+        const aiNote = generateAiPlaceNote({
+          placeName: candidate.name,
+          category: categoryResolution.category,
+          evidence: evidencePlace?.explicitEvidence?.map((item: any) => item.value) ?? [],
+        });
+        if (aiNote) {
+          const { error: aiNoteError } = await admin
+            .from('saved_places')
+            .update({ ai_note: aiNote })
+            .eq('id', saved.saved_place_id)
+            .eq('user_id', job.user_id)
+            .is('ai_note', null);
+          if (aiNoteError) throw new Error(`media_ai_note_save_failed: ${aiNoteError.message}`);
+        }
         const { error: categoryError } = await admin
           .from('saved_places')
           .update({

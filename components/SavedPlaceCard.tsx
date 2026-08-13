@@ -15,6 +15,7 @@ import { Radius, Spacing } from '@/constants';
 import { useTheme } from '@/lib/theme';
 import type { Profile, SavedPlaceWithPlace } from '@/types';
 import { CATEGORY_LABELS, savedPlaceCategory } from '@/lib/placeCategory';
+import { splitPlaceAddress } from '@/lib/sharePhase1Ui';
 
 type Props = {
   saved: SavedPlaceWithPlace;
@@ -65,6 +66,7 @@ export function SavedPlaceCard({
   const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
   const place = saved.place;
   const source = sourceLabel(saved);
+  const locality = splitPlaceAddress(place.formatted_address).locality;
   const isVisited = !!saved.visited_at;
   const isArchived = !!saved.archived_at && !isVisited;
   const remindersLabel =
@@ -109,16 +111,19 @@ export function SavedPlaceCard({
             ) : null}
           </View>
 
-          {place.formatted_address ? (
+          {locality ? (
             <Text style={[typography.caption, styles.muted]} numberOfLines={2}>
-              {place.formatted_address}
+              {locality}
             </Text>
           ) : null}
 
           {meta ? (
-            <Text style={[typography.caption, styles.metaText]} numberOfLines={2}>
-              {meta}
-            </Text>
+            <View style={styles.metaRow}>
+              <Text style={[typography.caption, styles.metaText]} numberOfLines={1}>
+                {meta}
+              </Text>
+              {source ? <Feather name="video" size={14} color={colors.accent} /> : null}
+            </View>
           ) : null}
         </View>
       </Pressable>
@@ -216,7 +221,9 @@ function createStyles(
       color: colors.textMuted,
       marginTop: Spacing.xs,
       lineHeight: 18,
+      flex: 1,
     },
+    metaRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
     actionRow: {
       flexDirection: 'row',
       gap: Spacing.sm,

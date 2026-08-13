@@ -58,6 +58,7 @@ export type SaveSavedPlaceInput = {
   sourceType?: SourceType;
   sourceUrl?: string | null;
   notes?: string | null;
+  aiNote?: string | null;
 };
 
 export type SaveSavedPlaceResult =
@@ -155,6 +156,7 @@ async function patchExistingSavedPlace(
   if (input.sourceType !== undefined) patch.source_type = input.sourceType;
   if (input.sourceUrl !== undefined) patch.source_url = input.sourceUrl;
   if (input.notes !== undefined) patch.notes = input.notes;
+  if (input.aiNote !== undefined) patch.ai_note = input.aiNote;
   if (input.radiusValue !== null || input.radiusUnit !== null) {
     patch.radius_value = input.radiusValue;
     patch.radius_unit = input.radiusUnit;
@@ -377,6 +379,7 @@ export async function saveSavedPlace(
       sourceType: input.sourceType,
       category: candidate.category,
     }),
+    ai_note: input.aiNote ?? null,
     category: categoryResolution.category,
     category_source: categoryResolution.source,
     category_confidence: categoryResolution.confidence,
@@ -531,6 +534,7 @@ export type SavedPlacePatch = {
   radius_unit?: RadiusUnit | null;
   notifications_enabled?: boolean;
   notes?: string | null;
+  ai_note?: string | null;
 };
 
 export async function setSavedPlaceCategory(
@@ -543,6 +547,117 @@ export async function setSavedPlaceCategory(
   });
   if (error) rethrowMutationError('update category', error);
   if (data !== true) throw new Error('This saved place is no longer available.');
+}
+
+/**
+ * Resolve the shared `places` row for a candidate, reusing the existing row
+ * whenever the canonical google_place_id is already known. `places` is a shared
+ * dedupe-by-google_place_id table, so we only ever SELECT or INSERT.
+ */
+async function resolvePlaceRowForCandidate(candidate: PlaceCandidate): Promise<PlaceRow> {
+  if (candidate.googlePlaceId) {
+    const { data: existing, error } = await supabase
+      .from('places')
+      .select('*')
+      .eq('google_place_id', candidate.googlePlaceId)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (existing) return existing as PlaceRow;
+  }
+
+  const { data: inserted, error: insertErr } = await supabase
+    .from('places')
+    .insert({
+      google_place_id: candidate.googlePlaceId,
+      name: candidate.name,
+      formatted_address: candidate.formattedAddress,
+      latitude: candidate.latitude,
+      longitude: candidate.longitude,
+      category: candidate.category,
+      google_maps_url: candidate.googleMapsUrl,
+      short_formatted_address: candidate.shortFormattedAddress ?? null,
+      google_primary_type: candidate.primaryType ?? null,
+      google_types: candidate.rawTypes ?? null,
+      google_type_label: candidate.googleMapsTypeLabel ?? candidate.primaryTypeDisplayName ?? null,
+      business_status: candidate.businessStatus ?? null,
+    })
+    .select()
+    .single();
+
+  if (inserted) return inserted as PlaceRow;
+  // Race: another client inserted the same google_place_id — re-select.
+  if ((insertErr as { code?: string } | null)?.code === '23505' && candidate.googlePlaceId) {
+    const { data: raced } = await supabase
+      .from('places')
+      .select('*')
+      .eq('google_place_id', candidate.googlePlaceId)
+      .maybeSingle();
+    if (raced) return raced as PlaceRow;
+  }
+  throw new Error(insertErr?.message ?? 'Could not resolve place.');
+}
+
+/**
+ * Re-point an EXISTING saved place at the correct provider result after Nearr
+ * saved the wrong one.
+ *
+ * Updates the row in place — it never inserts a second saved_places row — and
+ * preserves the user's note plus the original social-post context. RLS scopes
+ * the update to the owner. The category is recomputed from the new provider
+ * types unless the user had explicitly overridden it.
+ */
+export async function correctSavedPlace(args: {
+  savedPlaceId: string;
+  replacement: PlaceCandidate;
+  /** Preserved verbatim; pass the current note so it is never lost. */
+  userNote: string | null;
+}): Promise<SavedPlaceWithPlace> {
+  if (isDemoMode() || isMapPreviewMode()) {
+    throw new Error('Corrections are unavailable in preview mode.');
+  }
+  const placeRow = await resolvePlaceRowForCandidate(args.replacement);
+  const categoryResolution = resolvePlaceCategory({
+    googlePrimaryType: args.replacement.primaryType,
+    googleTypes: args.replacement.rawTypes,
+  });
+
+  try {
+    const { data, error } = await supabase
+      .from('saved_places')
+      .update({
+        place_id: placeRow.id,
+        notes: args.userNote,
+        category: categoryResolution.category,
+        category_source: categoryResolution.source,
+        category_confidence: categoryResolution.confidence,
+        category_model_version: categoryResolution.modelVersion,
+        categorized_at: new Date().toISOString(),
+      })
+      .eq('id', args.savedPlaceId)
+      // Never clobber a category the user chose by hand.
+      .eq('category_user_overridden', false)
+      .select('*, place:places(*)')
+      .maybeSingle();
+    if (error) rethrowMutationError('correct place', error);
+    if (data) {
+      triggerGeofenceResync();
+      return data as SavedPlaceWithPlace;
+    }
+  } catch (err) {
+    rethrowMutationError('correct place', err);
+  }
+
+  // The user had overridden the category: repeat without touching it.
+  const { data: retained, error: retainedErr } = await supabase
+    .from('saved_places')
+    .update({ place_id: placeRow.id, notes: args.userNote })
+    .eq('id', args.savedPlaceId)
+    .select('*, place:places(*)')
+    .maybeSingle();
+  if (retainedErr) rethrowMutationError('correct place', retainedErr);
+  if (!retained) throw new Error('This saved place is no longer available.');
+  triggerGeofenceResync();
+  return retained as SavedPlaceWithPlace;
 }
 
 /**

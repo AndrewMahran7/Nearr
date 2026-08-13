@@ -188,6 +188,26 @@ export function selectedUnsavedCandidates(
   return [...byId.values()];
 }
 
+/**
+ * Merge an inline search result into one logical mention without replacing the
+ * surrounding batch. This is the persistence boundary for multi-place review:
+ * resolving m2 must not discard m1, m3, or any later logical slot.
+ */
+export function mergeMentionSearchResults(
+  slots: readonly ShareJobMentionSlot[],
+  mentionId: string,
+  candidates: readonly ShareJobResultCandidate[],
+): ShareJobMentionSlot[] {
+  return slots.map((slot) => {
+    if (slot.mentionId !== mentionId) return slot;
+    return {
+      ...slot,
+      outcome: candidates.length > 0 ? 'ambiguous_candidates' : 'no_match',
+      candidates: normalizeResultCandidates(candidates),
+    };
+  });
+}
+
 export function multiPlaceTitle(slotCount: number): string {
   return `I found ${slotCount} ${slotCount === 1 ? 'place' : 'places'}`;
 }

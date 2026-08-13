@@ -6,7 +6,7 @@
  * Reachable from the map/home entry point; also the deep-link target for
  * `share_job_needs_help` notifications routes to the per-job detail screen.
  */
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -24,12 +24,28 @@ import { useRouter } from 'expo-router';
 import { ErrorBoundary, ShareJobsHeader } from '@/components';
 import { PlaceImage } from '@/components/PlaceImage';
 import { ShareJobsSheet } from '@/components/ShareJobsSheet';
+import { SwipeableRow } from '@/components/SwipeableRow';
 import { Radius, Spacing } from '@/constants';
 import { useTheme } from '@/lib/theme';
+import { useAuth } from '@/hooks/useAuth';
 import { useShareJobs } from '@/hooks/useShareJobs';
 import { routeShareJobCard } from '@/lib/shareJobRouting';
 import { createMapGroupFocusRequest } from '@/lib/mapGroupFocus';
 import { PHASE2_PREVIEW_FIXTURES } from '@/lib/phase2Preview';
+import {
+  QUEUE_EMPTY_COPY,
+  clearCompletedLabel,
+  queueAccessibilityActions,
+  queueSwipeAvailability,
+  type QueueRow,
+  type QueueSwipeAction,
+} from '@/lib/queueInbox';
+import {
+  addClearedQueueIds,
+  addDismissedQueueIds,
+  readClearedQueueIds,
+  readDismissedQueueIds,
+} from '@/lib/queueClearedState';
 import {
   getSavedPlacesCacheSnapshot,
   removeSavedPlaceFromCache,
@@ -160,16 +176,83 @@ function ShareJobsQueueScreen() {
   const { colors, typography } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { jobs, recentAutoSaves, loading, refreshing, refresh, enabled, authLoading } = useShareJobs();
+  const { session } = useAuth();
+  const userId = session?.user?.id ?? null;
   const [actingId, setActingId] = useState<string | null>(null);
+  const [clearedIds, setClearedIds] = useState<Set<string>>(new Set());
+  const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
+
+  // Locally acknowledged completed rows stay hidden across launches. This never
+  // deletes a saved place or mutates a job.
+  useEffect(() => {
+    let active = true;
+    void Promise.all([readClearedQueueIds(userId), readDismissedQueueIds(userId)]).then(([cleared, dismissed]) => {
+      if (active) {
+        setClearedIds(cleared);
+        setDismissedIds(dismissed);
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [userId]);
 
   // Presentation grouping (visibility already filtered upstream by the hook):
-  // needs_help + failed are both actionable → one "Needs your help" section;
-  // queued/processing_metadata → "Processing". Terminal jobs never appear.
-  const actionable = useMemo(() => actionableJobs(jobs), [jobs]);
-  const processing = useMemo(() => processingJobs(jobs), [jobs]);
-  const count = actionableCount(jobs);
-  const empty = isQueueEmpty(jobs);
-  const hasContent = !empty || recentAutoSaves.length > 0;
+  // needs_help + failed are both actionable → one "Needs you" section;
+  // queued/processing_metadata → "Working". Terminal jobs never appear.
+  const visibleJobs = useMemo(
+    () => jobs.filter((job) => !dismissedIds.has(job.id)),
+    [dismissedIds, jobs],
+  );
+  const actionable = useMemo(() => actionableJobs(visibleJobs), [visibleJobs]);
+  const processing = useMemo(() => processingJobs(visibleJobs), [visibleJobs]);
+  const completedRows = useMemo(
+    () => recentAutoSaves.filter((item) => !clearedIds.has(item.resultId)),
+    [recentAutoSaves, clearedIds],
+  );
+  const count = actionableCount(visibleJobs);
+  const empty = isQueueEmpty(visibleJobs);
+  const hasContent = !empty || completedRows.length > 0;
+  const clearableCount = completedRows.length;
+
+  async function clearCompleted() {
+    if (actingId || clearableCount === 0) return;
+    setActingId('clear-completed');
+    try {
+      const ids = completedRows.map((item) => item.resultId);
+      setClearedIds(await addClearedQueueIds(userId, ids));
+    } finally {
+      setActingId(null);
+    }
+  }
+
+  /** Swipe/accessibility model for an actionable or processing job row. */
+  function queueRowFor(job: ShareJob): QueueRow {
+    const candidates = job.candidate_payload?.candidates;
+    return {
+      id: job.id,
+      status: job.status,
+      hasResolvedCandidate: Array.isArray(candidates) && candidates.length === 1,
+      savedPlaceId: job.saved_place_id ?? null,
+    };
+  }
+
+  function handleRowAction(job: ShareJob, action: QueueSwipeAction) {
+    if (action === 'dismiss') {
+      // Active jobs are dismissed locally only; backend processing continues.
+      if (job.status === 'queued' || job.status === 'processing_metadata') {
+        void addDismissedQueueIds(userId, [job.id]).then(setDismissedIds);
+      } else {
+        // Actionable rows can be explicitly removed from the queue via the
+        // existing cancel/delete mutation.
+        void removeFromQueue(job);
+      }
+      return;
+    }
+    // Saving requires the full confirm path so ownership, dedupe, and map focus
+    // all run exactly as they do from Quick check.
+    openJob(job);
+  }
 
   // Never leave the user trapped: go back if there's a Nearr route to return
   // to, otherwise fall back to the map (cold deep-link entry from the
@@ -211,31 +294,6 @@ function ShareJobsQueueScreen() {
     } finally {
       setActingId(null);
       await refresh();
-    }
-  }
-
-  async function undoAllRecent() {
-    if (actingId || recentAutoSaves.length === 0) return;
-    setActingId('all-auto-saves');
-    let undone = 0;
-    for (const item of recentAutoSaves) {
-      try {
-        await undoAutoSavedPlace(item.savedPlaceId);
-        removeSavedPlaceFromCache(item.savedPlaceId);
-        undone += 1;
-        void trackEvent('auto_save_undone', {
-          surface: 'share_queue_undo_all',
-          elapsed_bucket: autoSaveUndoElapsedBucket(item.finalizedAt),
-          category: item.savedPlace.category ?? 'other',
-        });
-      } catch {
-        // Continue so one concurrent/stale row cannot block the remaining exact IDs.
-      }
-    }
-    setActingId(null);
-    await refresh();
-    if (undone !== recentAutoSaves.length) {
-      Alert.alert('Some places could not be undone', `${undone} of ${recentAutoSaves.length} were removed.`);
     }
   }
 
@@ -409,12 +467,24 @@ function ShareJobsQueueScreen() {
           <Text style={[typography.label, styles.sectionTitle]}>{title}</Text>
         </View>
         <View style={styles.card}>
-          {sectionJobs.map((job, i) => (
-            <View key={job.id}>
-              {i > 0 ? <View style={styles.separator} /> : null}
-              {renderRow(job)}
-            </View>
-          ))}
+          {sectionJobs.map((job, i) => {
+            const row = queueRowFor(job);
+            const availability = queueSwipeAvailability(row);
+            return (
+              <View key={job.id}>
+                {i > 0 ? <View style={styles.separator} /> : null}
+                <SwipeableRow
+                  availability={availability}
+                  actions={queueAccessibilityActions(row)}
+                  onAction={(action) => handleRowAction(job, action)}
+                  disabled={actingId === job.id}
+                  accessibilityLabel={jobTitle(job)}
+                >
+                  {renderRow(job)}
+                </SwipeableRow>
+              </View>
+            );
+          })}
         </View>
       </View>
     );
@@ -461,34 +531,35 @@ function ShareJobsQueueScreen() {
           </View>
         ) : !hasContent ? (
           <View style={styles.emptyState}>
-            <View style={styles.emptyIcon}><Feather name="check" size={24} color={colors.primary} /></View>
-            <Text style={[typography.heading, styles.emptyTitle]}>{PHASE_1_COPY.emptyTitle}</Text>
-            <Text style={[typography.body, styles.emptyBody]}>{PHASE_1_COPY.emptyBody}</Text>
+            <View style={styles.emptyIcon}><Feather name="inbox" size={22} color={colors.primary} /></View>
+            <Text style={[typography.heading, styles.emptyTitle]}>{QUEUE_EMPTY_COPY.title}</Text>
+            <Text style={[typography.body, styles.emptyBody]}>{QUEUE_EMPTY_COPY.body}</Text>
           </View>
         ) : (
           <>
             {actionable.length > 0 ? (
               <Text style={[typography.body, styles.intro]}>{queueIntro(count)}</Text>
             ) : null}
-            {renderSection('Ready for you', actionable)}
-            {renderSection(`Working on ${processing.length} ${processing.length === 1 ? 'place' : 'places'}`, processing)}
+            {renderSection('Needs you', actionable)}
+            {renderSection('Working', processing)}
           </>
         )}
-        {recentAutoSaves.length > 0 ? (
+        {completedRows.length > 0 ? (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={[typography.label, styles.sectionTitle]}>Saved automatically</Text>
+              <Text style={[typography.label, styles.sectionTitle]}>Recently completed</Text>
               <Pressable
-                onPress={() => void undoAllRecent()}
+                onPress={() => void clearCompleted()}
                 disabled={!!actingId}
+                hitSlop={8}
                 accessibilityRole="button"
-                accessibilityLabel="Undo all automatic saves"
+                accessibilityLabel={clearCompletedLabel(clearableCount)}
               >
-                <Text style={styles.undoAllText}>Undo all</Text>
+                <Text style={styles.undoAllText}>Clear completed</Text>
               </Pressable>
             </View>
             <View style={styles.card}>
-              {recentAutoSaves.map((item, index) => (
+              {completedRows.map((item, index) => (
                 <View key={item.resultId}>
                   {index > 0 ? <View style={styles.separator} /> : null}
                   {renderRecentAutoSave(item)}

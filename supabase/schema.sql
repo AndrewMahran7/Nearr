@@ -15,6 +15,7 @@ create table if not exists public.places (
   latitude double precision not null,
   longitude double precision not null,
   notes text,
+  ai_note text,
   source_url text,
   source_type text check (source_type in ('manual','tiktok','instagram','link')),
   radius_miles double precision,

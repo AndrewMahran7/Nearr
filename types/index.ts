@@ -48,6 +48,7 @@ export type SavedPlace = {
   radius_value: number | null;
   radius_unit: RadiusUnit | null;
   notes: string | null;
+  ai_note?: string | null;
   source_type: SourceType | null;
   source_url: string | null;
   notifications_enabled: boolean;

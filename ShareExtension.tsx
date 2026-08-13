@@ -37,7 +37,17 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import {
+  AccessibilityInfo,
+  ActivityIndicator,
+  Animated,
+  Pressable,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 import { close, openHostApp, type InitialProps } from 'expo-share-extension';
 
 import { sharedAuth } from './lib/sharedAuth';
@@ -50,7 +60,13 @@ import { createShareJob } from './lib/shareJobClient';
 import { selectExtensionAuthAction } from './lib/sharedAuthSession';
 import { SHARE_JOBS_DEEPLINK_PATH } from './lib/shareRoutes';
 import { appendSubmissionId, mintSubmissionId } from './lib/shareSubmission';
-import { SHARE_EXTENSION_SUCCESS_LAYOUT } from './lib/sharePhase1Ui';
+import {
+  SHARE_COMPLETION_COPY,
+  SHARE_COMPLETION_SHEET,
+  acceptedBody,
+  shareCompletionMaxHeight,
+  shareCompletionMotion,
+} from './lib/shareCompletionUi';
 
 // 2026-05-26: single resolver covers process.env, expoConfig.extra,
 // manifest.extra and manifest2.extra so a missing inline at build
@@ -492,9 +508,18 @@ function AsyncSheet({
   children: React.ReactNode;
   onClose: () => void;
 }) {
+  const { height: windowHeight } = useWindowDimensions();
   return (
     <View style={asyncStyles.backdrop}>
-      <SafeAreaView style={asyncStyles.sheet}>
+      <Pressable
+        style={StyleSheet.absoluteFill}
+        onPress={onClose}
+        accessibilityRole="button"
+        accessibilityLabel="Dismiss"
+      />
+      <SafeAreaView
+        style={[asyncStyles.sheet, { maxHeight: shareCompletionMaxHeight(windowHeight) }]}
+      >
         <View style={asyncStyles.dragIndicator} />
         <Pressable
           onPress={onClose}
@@ -508,6 +533,63 @@ function AsyncSheet({
         {children}
       </SafeAreaView>
     </View>
+  );
+}
+
+/**
+ * Nearr confirmation mark. Scales + fades in once on mount, and renders in its
+ * final frame immediately when Reduce Motion is enabled.
+ */
+function SavedMark() {
+  const [reduceMotion, setReduceMotion] = useState(false);
+  const progress = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    let active = true;
+    void AccessibilityInfo.isReduceMotionEnabled()
+      .then((enabled) => {
+        if (active) setReduceMotion(!!enabled);
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const motion = shareCompletionMotion(reduceMotion);
+    if (!motion.animate) {
+      progress.setValue(1);
+      return;
+    }
+    const animation = Animated.timing(progress, {
+      toValue: 1,
+      duration: motion.durationMs,
+      useNativeDriver: true,
+    });
+    animation.start();
+    return () => animation.stop();
+  }, [progress, reduceMotion]);
+
+  const motion = shareCompletionMotion(reduceMotion);
+  const scale = progress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [motion.fromScale, 1],
+  });
+  const opacity = progress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [motion.fromOpacity, 1],
+  });
+
+  return (
+    <Animated.View
+      style={[asyncStyles.brandDot, { opacity, transform: [{ scale }] }]}
+      accessible
+      accessibilityRole="image"
+      accessibilityLabel="Saved"
+    >
+      <Text style={asyncStyles.check}>✓</Text>
+    </Animated.View>
   );
 }
 
@@ -631,26 +713,24 @@ function AsyncShareExtension(props: InitialProps) {
   if (ui.kind === 'accepted') {
     return (
       <AsyncSheet onClose={close}>
-        <View style={asyncStyles.brandDot}>
-          <Text style={asyncStyles.check}>✓</Text>
-        </View>
-        <Text style={asyncStyles.title}>Sent to Nearr</Text>
-        <Text style={asyncStyles.subtle}>{"We’ll let you know if this place needs a quick check."}</Text>
+        <SavedMark />
+        <Text style={asyncStyles.title}>{SHARE_COMPLETION_COPY.acceptedTitle}</Text>
+        <Text style={asyncStyles.subtle}>{acceptedBody(ui.duplicate)}</Text>
         <Pressable
           style={asyncStyles.primaryBtn}
           onPress={close}
           accessibilityRole="button"
-          accessibilityLabel="Done"
+          accessibilityLabel={SHARE_COMPLETION_COPY.primary}
         >
-          <Text style={asyncStyles.primaryText}>Done</Text>
+          <Text style={asyncStyles.primaryText}>{SHARE_COMPLETION_COPY.primary}</Text>
         </Pressable>
         <Pressable
           style={asyncStyles.secondaryBtn}
           onPress={openHostQueue}
           accessibilityRole="button"
-          accessibilityLabel="Open Nearr"
+          accessibilityLabel={SHARE_COMPLETION_COPY.secondary}
         >
-          <Text style={asyncStyles.secondaryText}>Open Nearr</Text>
+          <Text style={asyncStyles.secondaryText}>{SHARE_COMPLETION_COPY.secondary}</Text>
         </Pressable>
       </AsyncSheet>
     );
@@ -837,22 +917,21 @@ const asyncStyles = StyleSheet.create({
   backdrop: {
     flex: 1,
     justifyContent: 'flex-end',
-    backgroundColor: 'transparent',
+    backgroundColor: 'rgba(0,0,0,0.45)',
   },
-  // Content-sized card — never stretched to fill the window, so there's no
-  // giant empty region. ~28px top corners, safe-area-aware bottom padding.
+  // Content-sized card anchored to the bottom. It must NEVER stretch to fill
+  // the window (the old `height:'100%'` produced the large dead region seen in
+  // production); `maxHeight` is applied by AsyncSheet from the window height.
   sheet: {
-    height: '100%',
     backgroundColor: NEARR_SURFACE,
-    borderTopLeftRadius: SHARE_EXTENSION_SUCCESS_LAYOUT.cornerRadius,
-    borderTopRightRadius: SHARE_EXTENSION_SUCCESS_LAYOUT.cornerRadius,
+    borderTopLeftRadius: SHARE_COMPLETION_SHEET.cornerRadius,
+    borderTopRightRadius: SHARE_COMPLETION_SHEET.cornerRadius,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderColor: NEARR_BORDER,
-    paddingHorizontal: SHARE_EXTENSION_SUCCESS_LAYOUT.horizontalPadding,
-    paddingTop: 18,
-    paddingBottom: 8,
+    paddingHorizontal: SHARE_COMPLETION_SHEET.horizontalPadding,
+    paddingTop: SHARE_COMPLETION_SHEET.topPadding,
+    paddingBottom: SHARE_COMPLETION_SHEET.bottomPadding,
     alignItems: 'center',
-    justifyContent: 'center',
   },
   dragIndicator: {
     position: 'absolute',
@@ -881,19 +960,20 @@ const asyncStyles = StyleSheet.create({
     fontWeight: '400',
   },
   brandDot: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
+    width: SHARE_COMPLETION_SHEET.markSize,
+    height: SHARE_COMPLETION_SHEET.markSize,
+    borderRadius: SHARE_COMPLETION_SHEET.markSize / 3,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'rgba(255,107,0,0.14)',
     borderWidth: 1,
     borderColor: 'rgba(255,107,0,0.3)',
-    marginBottom: 4,
+    marginTop: 6,
+    marginBottom: 6,
   },
   check: {
-    fontSize: 21,
-    lineHeight: 24,
+    fontSize: 28,
+    lineHeight: 32,
     color: NEARR_ORANGE,
     fontWeight: '700',
   },
@@ -921,9 +1001,9 @@ const asyncStyles = StyleSheet.create({
   },
   // Prominent, 56px tall, full-width primary action.
   primaryBtn: {
-    marginTop: 10,
+    marginTop: 14,
     alignSelf: 'stretch',
-    minHeight: 48,
+    minHeight: SHARE_COMPLETION_SHEET.primaryHeight,
     backgroundColor: NEARR_ORANGE,
     borderRadius: 14,
     alignItems: 'center',
@@ -931,12 +1011,12 @@ const asyncStyles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   primaryText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
-  // Text button (e.g. "Done") — always visible directly below the primary
-  // action (~14px separation).
+  // Text button (e.g. "Open Nearr") — always visible directly below the primary
+  // action.
   secondaryBtn: {
-    marginTop: 0,
+    marginTop: 2,
     alignSelf: 'stretch',
-    minHeight: 36,
+    minHeight: SHARE_COMPLETION_SHEET.secondaryHeight,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 20,

@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Modal,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -17,23 +18,26 @@ import {
   Text,
   View,
 } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 
 import { EmptyState, Input, OfflineBanner, SavedPlaceCard, Screen } from '@/components';
 import { Radius, Spacing } from '@/constants';
 
 import { useNearbyPlaces } from '@/hooks/useNearbyPlaces';
-import { useSavedPlaces } from '@/hooks/useSavedPlaces';
 import {
   getSavedPlacesCacheSnapshot,
   removeSavedPlaceFromCache,
   restoreSavedPlacesCache,
+  useSavedPlaces,
 } from '@/hooks/useSavedPlaces';
 import { useTheme } from '@/lib/theme';
 import { trackEvent } from '@/lib/analytics';
 import { getProfile } from '@/services/profileService';
 import { deleteSavedPlace, unarchive } from '@/services/savedPlacesService';
 import type { Profile, SavedPlaceWithPlace } from '@/types';
+import { CATEGORY_FILTER_GROUPS, type CategoryFilterGroup } from '@/lib/placeCategory';
+import { browseFilterCount, filterSavedPlaces } from '@/lib/savedPlacesBrowse';
 
 type PlacesFilter =
   | 'active'
@@ -48,8 +52,7 @@ type PlacesFilter =
 function isRecent(createdAt: string): boolean {
   const created = new Date(createdAt).getTime();
   if (Number.isNaN(created)) return false;
-  const fourteenDaysMs = 14 * 24 * 60 * 60 * 1000;
-  return Date.now() - created <= fourteenDaysMs;
+  return Date.now() - created <= 14 * 24 * 60 * 60 * 1000;
 }
 
 function matchesSource(saved: SavedPlaceWithPlace, source: 'instagram' | 'tiktok'): boolean {
@@ -86,7 +89,10 @@ export default function PlacesTab() {
   const { data, loading, refreshing, error, offline, lastSyncedAt, refresh, revalidate } = useSavedPlaces();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [filter, setFilter] = useState('');
-  const [activeFilter, setActiveFilter] = useState<PlacesFilter>('active');
+  const [activeFilter, setActiveFilter] = useState<PlacesFilter>('recent');
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilterGroup | null>(null);
+  const [hasVideo, setHasVideo] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const activeData = useMemo(
     () => data.filter((s) => !s.archived_at && !s.visited_at),
@@ -150,13 +156,14 @@ export default function PlacesTab() {
       base = activeData.filter((saved) => saved.notifications_enabled);
     }
 
-    if (!q) return base;
-    return base.filter((s) => {
+    const scoped = filterSavedPlaces(base, { category: categoryFilter, hasVideo });
+    if (!q) return scoped;
+    return scoped.filter((s) => {
       const name = s.place?.name?.toLowerCase() ?? '';
       const addr = s.place?.formatted_address?.toLowerCase() ?? '';
       return name.includes(q) || addr.includes(q);
     });
-  }, [activeData, activeFilter, data, filter, nearbyPlaces]);
+  }, [activeData, activeFilter, categoryFilter, data, filter, hasVideo, nearbyPlaces]);
 
   const loadProfile = useCallback(async () => {
     setProfile(await getProfile());
@@ -360,61 +367,33 @@ export default function PlacesTab() {
                   style={styles.filterScroll}
                 >
                   <FilterChip
-                    label={`Active${counts.active ? ` ${counts.active}` : ''}`}
-                    active={activeFilter === 'active'}
-                    onPress={() => setFilterAndResetLocation('active')}
-                    colors={colors}
-                    typography={typography}
-                  />
-                  <FilterChip
-                    label={`Recent${counts.recent ? ` ${counts.recent}` : ''}`}
+                    label="Recent"
                     active={activeFilter === 'recent'}
                     onPress={() => setFilterAndResetLocation('recent')}
                     colors={colors}
                     typography={typography}
                   />
                   <FilterChip
-                    label={`Nearby${counts.nearby ? ` ${counts.nearby}` : ''}`}
+                    label="Nearby"
                     active={activeFilter === 'nearby'}
                     onPress={() => setFilterAndResetLocation('nearby')}
                     colors={colors}
                     typography={typography}
                   />
-                  <FilterChip
-                    label={`Visited${counts.visited ? ` ${counts.visited}` : ''}`}
-                    active={activeFilter === 'visited'}
-                    onPress={() => setFilterAndResetLocation('visited')}
-                    colors={colors}
-                    typography={typography}
-                  />
-                  <FilterChip
-                    label={`Archived${counts.archived ? ` ${counts.archived}` : ''}`}
-                    active={activeFilter === 'archived'}
-                    onPress={() => setFilterAndResetLocation('archived')}
-                    colors={colors}
-                    typography={typography}
-                  />
-                  <FilterChip
-                    label={`Instagram${counts.instagram ? ` ${counts.instagram}` : ''}`}
-                    active={activeFilter === 'instagram'}
-                    onPress={() => setFilterAndResetLocation('instagram')}
-                    colors={colors}
-                    typography={typography}
-                  />
-                  <FilterChip
-                    label={`TikTok${counts.tiktok ? ` ${counts.tiktok}` : ''}`}
-                    active={activeFilter === 'tiktok'}
-                    onPress={() => setFilterAndResetLocation('tiktok')}
-                    colors={colors}
-                    typography={typography}
-                  />
-                  <FilterChip
-                    label={`Reminders on${counts.remindersOn ? ` ${counts.remindersOn}` : ''}`}
-                    active={activeFilter === 'reminders-on'}
-                    onPress={() => setFilterAndResetLocation('reminders-on')}
-                    colors={colors}
-                    typography={typography}
-                  />
+                  <Pressable
+                    onPress={() => setFiltersOpen(true)}
+                    style={styles.filterButton}
+                    accessibilityRole="button"
+                    accessibilityLabel="Filters"
+                  >
+                    <Feather name="sliders" size={16} color={colors.text} />
+                    <Text style={[typography.label, styles.filterButtonText]}>Filters</Text>
+                    {browseFilterCount({ category: categoryFilter, hasVideo }) > 0 ? (
+                      <Text style={[typography.caption, styles.filterCount]}>
+                        {browseFilterCount({ category: categoryFilter, hasVideo })}
+                      </Text>
+                    ) : null}
+                  </Pressable>
                 </ScrollView>
               </>
             ) : null}
@@ -441,6 +420,89 @@ export default function PlacesTab() {
         )}
         ListEmptyComponent={renderEmptyState()}
       />
+      <Modal
+        visible={filtersOpen}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setFiltersOpen(false)}
+      >
+        <View style={styles.filterModalBackdrop}>
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={() => setFiltersOpen(false)}
+            accessibilityRole="button"
+            accessibilityLabel="Close filters"
+          />
+          <View style={styles.filterModal}>
+            <View style={styles.modalHeader}>
+              <Text style={[typography.heading, styles.modalTitle]}>Filters</Text>
+              <Pressable
+                onPress={() => setFiltersOpen(false)}
+                hitSlop={10}
+                accessibilityRole="button"
+                accessibilityLabel="Close filters"
+              >
+                <Feather name="x" size={22} color={colors.textSecondary} />
+              </Pressable>
+            </View>
+            <Text style={[typography.label, styles.filterHeading]}>Category</Text>
+            <View style={styles.categoryGrid}>
+              {(
+                Object.keys(CATEGORY_FILTER_GROUPS) as CategoryFilterGroup[]
+              ).filter((group) => group !== 'all').map((group) => {
+                const active = categoryFilter === group;
+                const label = group === 'fitness_wellness'
+                  ? 'Fitness & Wellness'
+                  : group.charAt(0).toUpperCase() + group.slice(1);
+                return (
+                  <Pressable
+                    key={group}
+                    onPress={() => setCategoryFilter(active ? null : group)}
+                    style={[styles.categoryOption, active && styles.categoryOptionActive]}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: active }}
+                  >
+                    <Text style={[typography.caption, { color: active ? colors.textInverse : colors.text }]}>
+                      {label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+            <Text style={[typography.label, styles.filterHeading]}>Source</Text>
+            <Pressable
+              onPress={() => setHasVideo((current) => !current)}
+              style={styles.videoFilterRow}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: hasVideo }}
+            >
+              <Feather name="video" size={18} color={colors.accent} />
+              <Text style={[typography.body, styles.videoFilterText]}>Has video</Text>
+              <View style={[styles.checkbox, hasVideo && styles.checkboxActive]}>
+                {hasVideo ? <Feather name="check" size={14} color={colors.textInverse} /> : null}
+              </View>
+            </Pressable>
+            <View style={styles.modalActions}>
+              <Pressable
+                onPress={() => {
+                  setCategoryFilter(null);
+                  setHasVideo(false);
+                }}
+                accessibilityRole="button"
+              >
+                <Text style={styles.clearFilterText}>Clear</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => setFiltersOpen(false)}
+                style={styles.applyFilterButton}
+                accessibilityRole="button"
+              >
+                <Text style={styles.applyFilterText}>Apply</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </Screen>
   );
 }
@@ -475,6 +537,81 @@ function createStyles(
       marginBottom: Spacing.sm,
       paddingHorizontal: Spacing.lg,
     },
+    filterButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.xs,
+      paddingHorizontal: Spacing.md,
+      paddingVertical: Spacing.sm,
+      borderRadius: Radius.pill,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surfaceElevated,
+    },
+    filterButtonText: { color: colors.text },
+    filterCount: { color: colors.primary, fontWeight: '700' },
+    filterModalBackdrop: {
+      flex: 1,
+      justifyContent: 'flex-end',
+      backgroundColor: colors.modalBackdrop,
+    },
+    filterModal: {
+      backgroundColor: colors.bg,
+      borderTopLeftRadius: Radius.lg,
+      borderTopRightRadius: Radius.lg,
+      padding: Spacing.lg,
+      paddingBottom: Spacing.xl,
+    },
+    modalHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    modalTitle: { color: colors.text },
+    filterHeading: { color: colors.textSecondary, marginTop: Spacing.lg, marginBottom: Spacing.sm },
+    categoryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
+    categoryOption: {
+      paddingHorizontal: Spacing.md,
+      paddingVertical: Spacing.sm,
+      borderRadius: Radius.pill,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surfaceElevated,
+    },
+    categoryOptionActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+    videoFilterRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.md,
+      paddingVertical: Spacing.sm,
+    },
+    videoFilterText: { color: colors.text, flex: 1 },
+    checkbox: {
+      width: 24,
+      height: 24,
+      borderRadius: 7,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    checkboxActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+    modalActions: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginTop: Spacing.lg,
+    },
+    clearFilterText: { color: colors.textSecondary, fontWeight: '700' },
+    applyFilterButton: {
+      minWidth: 110,
+      alignItems: 'center',
+      paddingVertical: Spacing.sm,
+      paddingHorizontal: Spacing.lg,
+      borderRadius: Radius.md,
+      backgroundColor: colors.primary,
+    },
+    applyFilterText: { color: colors.textInverse, fontWeight: '700' },
     listContent: { padding: Spacing.lg, paddingBottom: Spacing.xxl },
     emptyContent: { flexGrow: 1, justifyContent: 'center', padding: Spacing.lg },
     center: { paddingVertical: Spacing.xxl, alignItems: 'center' },

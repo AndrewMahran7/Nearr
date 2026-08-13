@@ -33,38 +33,129 @@ export type ShareablePlace = {
   longitude?: number | null;
 };
 
-export type PlaceShareContent = {
-  /** Dialog title (Android share sheet). */
-  title: string;
-  /** The shared text: name, address (if any), and the Maps link (if any). */
-  message: string;
-  /** The public Google Maps URL, or null if one couldn't be built. */
+/** Where the place originally came from, when Nearr saved it from social content. */
+export type ShareSourceContext = {
+  source_type?: string | null;
+  source_url?: string | null;
+};
+
+export type ShareTarget = {
+  kind: 'original_post' | 'provider';
   url: string | null;
+  platform: 'instagram' | 'tiktok' | 'link' | null;
 };
 
 /**
- * Build the ordinary place-share content. Never throws; always returns a
- * usable, private-field-free payload.
+ * Hosts that serve TEMPORARY media (CDN clips, signed object URLs). Nearr must
+ * never share these: they expire, they can carry credentials, and they are not
+ * the post the user actually saved.
  */
-export function buildPlaceShareContent(place: ShareablePlace): PlaceShareContent {
+const TRANSIENT_MEDIA_HOST = /(^|\.)(cdninstagram\.com|fbcdn\.net|tiktokcdn\.com|tiktokcdn-us\.com|googleusercontent\.com|storage\.googleapis\.com)$/i;
+const TRANSIENT_MEDIA_HOST_PREFIX = /^v\d+[-\w]*\.tiktok\.com$/i;
+/** Query keys that indicate a signed / credentialed URL. */
+const SIGNED_QUERY_KEY = /^(signature|x-goog-signature|x-amz-signature|token|access_token|sig|policy|expires)$/i;
+
+/**
+ * True when a stored source URL is a safe, durable, public post link.
+ * Rejects non-https, transient CDN hosts, signed URLs, and storage object paths.
+ */
+export function isShareableSourceUrl(raw: string | null | undefined): boolean {
+  const trimmed = (raw ?? '').trim();
+  if (!trimmed) return false;
+  let parsed: URL;
+  try {
+    parsed = new URL(trimmed);
+  } catch {
+    return false;
+  }
+  if (parsed.protocol !== 'https:') return false;
+  const host = parsed.hostname.toLowerCase();
+  if (TRANSIENT_MEDIA_HOST.test(host) || TRANSIENT_MEDIA_HOST_PREFIX.test(host)) return false;
+  if (/\/storage\/v1\/object\//i.test(parsed.pathname)) return false;
+  if (/\.(mp4|m3u8|mov|webm)$/i.test(parsed.pathname)) return false;
+  for (const key of parsed.searchParams.keys()) {
+    if (SIGNED_QUERY_KEY.test(key)) return false;
+  }
+  return true;
+}
+
+function platformOf(sourceType: string | null | undefined): ShareTarget['platform'] {
+  switch ((sourceType ?? '').toLowerCase()) {
+    case 'instagram':
+      return 'instagram';
+    case 'tiktok':
+      return 'tiktok';
+    case 'link':
+      return 'link';
+    default:
+      return null;
+  }
+}
+
+/**
+ * Decide what a share action should actually send.
+ *
+ * Nearr exists because the place came from social content, so the ORIGINAL post
+ * is the priority. The public provider (Google Maps) URL is only a fallback for
+ * places that have no original social source.
+ */
+export function resolveShareTarget(
+  place: ShareablePlace,
+  source?: ShareSourceContext | null,
+): ShareTarget {
+  const sourceUrl = (source?.source_url ?? '').trim();
+  if (isShareableSourceUrl(sourceUrl)) {
+    return {
+      kind: 'original_post',
+      url: sourceUrl,
+      platform: platformOf(source?.source_type) ?? 'link',
+    };
+  }
+  return {
+    kind: 'provider',
+    url: buildExternalMapsUrl({
+      name: place.name ?? null,
+      formatted_address: place.formatted_address ?? null,
+      google_place_id: place.google_place_id ?? null,
+      google_maps_url: place.google_maps_url ?? null,
+      latitude: place.latitude ?? null,
+      longitude: place.longitude ?? null,
+    }),
+    platform: null,
+  };
+}
+
+export type PlaceShareContent = {
+  /** Dialog title (Android share sheet). */
+  title: string;
+  /** The shared text: name, address (if any), and the resolved link (if any). */
+  message: string;
+  /** The resolved public URL, or null if one couldn't be built. */
+  url: string | null;
+  /** Which link the payload actually carries. */
+  kind: ShareTarget['kind'];
+};
+
+/**
+ * Build the place-share content. Never throws; always returns a usable,
+ * private-field-free payload that prefers the original social post.
+ */
+export function buildPlaceShareContent(
+  place: ShareablePlace,
+  source?: ShareSourceContext | null,
+): PlaceShareContent {
   const name = (place.name ?? '').trim() || 'A place';
   const address = (place.formatted_address ?? '').trim();
-  const url = buildExternalMapsUrl({
-    name: place.name ?? null,
-    formatted_address: place.formatted_address ?? null,
-    google_place_id: place.google_place_id ?? null,
-    google_maps_url: place.google_maps_url ?? null,
-    latitude: place.latitude ?? null,
-    longitude: place.longitude ?? null,
-  });
+  const target = resolveShareTarget(place, source);
 
   const lines = [name];
   if (address) lines.push(address);
-  if (url) lines.push(url);
+  if (target.url) lines.push(target.url);
 
   return {
     title: name,
     message: lines.join('\n'),
-    url,
+    url: target.url,
+    kind: target.kind,
   };
 }

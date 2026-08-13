@@ -60,6 +60,10 @@ import {
   selectedQuickCheckCandidate,
 } from '@/lib/quickCheckResolution';
 import { createMapGroupFocusRequest } from '@/lib/mapGroupFocus';
+import {
+  planSaveCompletionNavigation,
+  type SaveCompletionNavigation,
+} from '@/lib/saveCompletionNavigation';
 import { usePlacesSearch } from '@/hooks/usePlacesSearch';
 import { getSavedPlacesCacheSnapshot, upsertSavedPlaceIntoCache } from '@/hooks/useSavedPlaces';
 import { recordBreadcrumb } from '@/lib/breadcrumbs';
@@ -440,23 +444,44 @@ function ShareJobDetailScreen() {
       savedPlaceId: savedPlaceIds[0] ?? null,
       result: savedPlaceIds.length === 1 ? 'open_saved_place:share_job_saved' : 'open_saved_group',
     });
-    if (savedPlaceIds.length === 1) {
-      router.replace(resolveOpenSavedPlaceRoute({
-        savedPlaceId: savedPlaceIds[0],
-        source: 'share_job_saved',
-      }));
-      return;
-    }
-    const request = createMapGroupFocusRequest({
-      savedPlaceIds,
-      source: 'share_job_saved',
+    // A grouped fit is only requested when there is genuinely more than one new
+    // place; the planner falls back to single focus if the request can't be made.
+    const request =
+      savedPlaceIds.length > 1
+        ? createMapGroupFocusRequest({
+            savedPlaceIds,
+            source: 'share_job_saved',
+            failedCount,
+          })
+        : null;
+    const plan = planSaveCompletionNavigation({
+      createdSavedPlaceIds: savedPlaceIds,
+      canDismiss: router.canDismiss(),
+      mapGroupId: request?.id ?? null,
       failedCount,
     });
-    if (!request) return;
-    router.replace({
-      pathname: '/(tabs)/map',
-      params: { mapGroupId: request.id, placeSource: request.source },
-    });
+    runSaveCompletionPlan(plan);
+  }
+
+  /**
+   * Execute a navigation plan. `dismissAll` tears down the whole share-jobs
+   * modal stack (queue + detail) so nothing is left covering the map.
+   */
+  function runSaveCompletionPlan(plan: SaveCompletionNavigation) {
+    for (const step of plan.steps) {
+      if (step.kind === 'dismissAll') {
+        try {
+          router.dismissAll();
+        } catch {
+          // Nothing to dismiss (cold deep-link entry) — the replace still runs.
+        }
+        continue;
+      }
+      router.replace({
+        pathname: step.pathname as '/(tabs)/map',
+        params: step.params,
+      });
+    }
   }
 
   async function handleSaveStored(candidate: ShareJobCandidate) {
@@ -680,6 +705,14 @@ function ShareJobDetailScreen() {
       savedPlaceId: args.savedPlaceId ?? null,
       result: `open_saved_place:${args.source}`,
     });
+    // Tear down the queue + detail modals first so the map is never covered.
+    if (router.canDismiss()) {
+      try {
+        router.dismissAll();
+      } catch {
+        // Cold deep-link entry: nothing to dismiss.
+      }
+    }
     router.replace(resolveOpenSavedPlaceRoute(args));
   }
 
