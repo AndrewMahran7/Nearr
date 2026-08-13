@@ -37,6 +37,7 @@ import {
   shouldReplaceShareJobDetail,
 } from '@/lib/shareJobRouting';
 import { createMapGroupFocusRequest } from '@/lib/mapGroupFocus';
+import { claimSaveCompletionSignal } from '@/lib/saveCompletionNavigation';
 import { resolveOpenSavedPlaceRoute } from '@/lib/openSavedPlace';
 import {
   deactivatePushTokenForCurrentUser,
@@ -704,6 +705,13 @@ function RootLayoutContent() {
               break;
             }
             case 'saved_place':
+              if (!claimSaveCompletionSignal([sjRoute.savedPlaceId])) {
+                recordBreadcrumb('notification_dedupe', {
+                  notificationId,
+                  result: 'save_completion_already_navigated',
+                });
+                break;
+              }
               // Open the EXISTING saved place through the one validated contract
               // (resolves by saved_places.id, falls back to google_place_id).
               router.push(

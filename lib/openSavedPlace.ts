@@ -84,6 +84,11 @@ export function openSavedPlaceMessage(source: string | null | undefined): string
   return null;
 }
 
+/** Manual save completion opens full details; passive notification opens do not. */
+export function shouldExpandSavedPlaceDetails(source: string | null | undefined): boolean {
+  return source === 'share_job_saved' || source === 'share_job_already_saved';
+}
+
 /** Minimal shape the map needs to resolve a saved place for opening. */
 type ResolvableSavedPlace = {
   id: string;

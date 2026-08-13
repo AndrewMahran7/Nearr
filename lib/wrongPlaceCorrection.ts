@@ -35,11 +35,17 @@ export type CorrectionContext = {
   currentGooglePlaceId: string | null;
   /** The user's own note, which a correction must never discard. */
   userNote: string | null;
+  aiNote?: string | null;
   /** Original social post the place came from. */
   sourceType: string | null;
   sourceUrl: string | null;
   /** Gate rule version that produced the original (wrong) association. */
   ruleVersion: string | null;
+  previousCategory?: string | null;
+  notificationsEnabled?: boolean;
+  radiusValue?: number | null;
+  radiusUnit?: string | null;
+  createdAt?: string | null;
 };
 
 export type CorrectionRejection =
@@ -48,8 +54,10 @@ export type CorrectionRejection =
   | 'invalid_replacement';
 
 export type CorrectionFeedback = {
+  savedPlaceId: string;
   originalGooglePlaceId: string | null;
   correctedGooglePlaceId: string;
+  previousCategory: string | null;
   ruleVersion: string | null;
   correctedAt: string;
 };
@@ -64,8 +72,13 @@ export type CorrectionPlan =
       /** Preserved verbatim. */
       preserved: {
         userNote: string | null;
+        aiNote: string | null;
         sourceType: string | null;
         sourceUrl: string | null;
+        notificationsEnabled: boolean | null;
+        radiusValue: number | null;
+        radiusUnit: string | null;
+        createdAt: string | null;
       };
       feedback: CorrectionFeedback;
       /** Caches that must be invalidated so the marker moves immediately. */
@@ -108,12 +121,19 @@ export function planWrongPlaceCorrection(
     replacement,
     preserved: {
       userNote: context.userNote,
+      aiNote: context.aiNote ?? null,
       sourceType: context.sourceType,
       sourceUrl: context.sourceUrl,
+      notificationsEnabled: context.notificationsEnabled ?? null,
+      radiusValue: context.radiusValue ?? null,
+      radiusUnit: context.radiusUnit ?? null,
+      createdAt: context.createdAt ?? null,
     },
     feedback: {
+      savedPlaceId: context.savedPlaceId,
       originalGooglePlaceId: context.currentGooglePlaceId,
       correctedGooglePlaceId: replacement.googlePlaceId,
+      previousCategory: context.previousCategory ?? null,
       ruleVersion: context.ruleVersion,
       correctedAt: now.toISOString(),
     },
@@ -155,4 +175,36 @@ export function correctionInitialQuery(args: {
   if (!base) return '';
   const locality = (args.locality ?? '').trim();
   return locality ? `${base} ${locality}` : base;
+}
+
+export type CorrectionResultMode = 'strong_single' | 'multiple' | 'empty';
+
+function normalizedWords(value: string): string[] {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().split(/\s+/).filter(Boolean);
+}
+
+export function correctionResultMode(
+  query: string,
+  results: readonly CorrectionPlace[],
+): CorrectionResultMode {
+  if (results.length === 0) return 'empty';
+  if (results.length !== 1) return 'multiple';
+  const queryWords = normalizedWords(query);
+  const nameWords = new Set(normalizedWords(results[0]!.name));
+  const meaningful = queryWords.filter((word) => word.length >= 3);
+  const overlap = meaningful.filter((word) => nameWords.has(word)).length;
+  return meaningful.length > 0 && overlap / meaningful.length >= 0.5
+    ? 'strong_single'
+    : 'multiple';
+}
+
+export function reconcileCorrectedSavedPlaces<T extends { id: string }>(
+  rows: readonly T[],
+  updated: T,
+  mergedSavedPlaceId: string | null,
+): T[] {
+  const remaining = rows.filter(
+    (row) => row.id !== updated.id && (!mergedSavedPlaceId || row.id !== mergedSavedPlaceId),
+  );
+  return [updated, ...remaining];
 }

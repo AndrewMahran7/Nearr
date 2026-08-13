@@ -22,6 +22,7 @@ import {
   isOpenExistingPlaceSource,
   openSavedPlaceMessage,
   resolveOpenSavedPlaceRoute,
+  shouldExpandSavedPlaceDetails,
   validId,
 } from '../lib/openSavedPlace';
 
@@ -90,6 +91,9 @@ check('undefined source is NOT', !isOpenExistingPlaceSource(undefined));
 check('already-saved source gets completion feedback', openSavedPlaceMessage('share_job_already_saved') === 'Already on your map');
 check('new share save gets completion feedback', openSavedPlaceMessage('share_job_saved') === 'Saved to your map');
 check('notification does not show duplicate feedback', openSavedPlaceMessage('notification') === null);
+check('manual save opens full details', shouldExpandSavedPlaceDetails('share_job_saved'));
+check('already-saved confirmation opens full details', shouldExpandSavedPlaceDetails('share_job_already_saved'));
+check('notification leaves details collapsed', !shouldExpandSavedPlaceDetails('notification'));
 
 // --- DECISIVE end-to-end: already-saved notification opens the place --------
 function openFromAlreadySavedNotification(

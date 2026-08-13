@@ -2,8 +2,11 @@ import assert from 'node:assert/strict';
 
 import {
   clearsQueueOverlay,
+  claimSaveCompletionSignal,
+  executeSaveCompletionNavigation,
   navigationStepCount,
   planSaveCompletionNavigation,
+  resetSaveCompletionSignalsForTests,
 } from '../lib/saveCompletionNavigation';
 
 // ---- manual save closes the queue -----------------------------------------
@@ -80,10 +83,38 @@ for (const canDismiss of [true, false]) {
     canDismiss: true,
     mapGroupId: null,
   });
-  assert.equal(plan.destination, 'single');
+  assert.equal(plan.destination, 'group');
   assert.equal(plan.steps[0]?.kind, 'dismissAll');
   assert.equal(navigationStepCount(plan), 1);
+  const nav = plan.steps.find((step) => step.kind === 'replace');
+  assert.ok(nav && nav.kind === 'replace');
+  assert.equal(nav.params.savedPlaceId, undefined, 'multi-save never focuses an arbitrary place');
 }
+
+// ---- shared executor preserves order and navigates once -------------------
+{
+  const calls: string[] = [];
+  const plan = planSaveCompletionNavigation({ createdSavedPlaceIds: ['sp-1'], canDismiss: true });
+  executeSaveCompletionNavigation(plan, {
+    dismissAll: () => calls.push('dismissAll'),
+    replace: (destination) => calls.push(`replace:${destination.params.savedPlaceId}`),
+  });
+  assert.deepEqual(calls, ['dismissAll', 'replace:sp-1']);
+
+  const duplicateCalls: string[] = [];
+  executeSaveCompletionNavigation(plan, {
+    dismissAll: () => duplicateCalls.push('dismissAll'),
+    replace: () => duplicateCalls.push('replace'),
+  }, false);
+  assert.deepEqual(duplicateCalls, ['dismissAll'], 'duplicate signal still clears a stale modal');
+}
+
+// ---- save/realtime/notification duplicate signals navigate once -----------
+resetSaveCompletionSignalsForTests();
+assert.equal(claimSaveCompletionSignal(['sp-1'], 1_000), true);
+assert.equal(claimSaveCompletionSignal(['sp-1'], 1_100), false, 'duplicate completion is rejected');
+assert.equal(claimSaveCompletionSignal(['sp-1'], 9_001), true, 'a later deliberate open is allowed');
+assert.equal(claimSaveCompletionSignal([], 9_002), false);
 
 // ---- already saved returns to the existing place, never a duplicate --------
 {
@@ -97,6 +128,20 @@ for (const canDismiss of [true, false]) {
   assert.ok(nav && nav.kind === 'replace');
   assert.equal(nav.params.savedPlaceId, 'sp-existing');
   assert.equal(nav.params.placeSource, 'share_job_already_saved');
+}
+
+// A mixed new + existing multi-save still uses group focus.
+{
+  const plan = planSaveCompletionNavigation({
+    createdSavedPlaceIds: ['sp-new'],
+    duplicateSavedPlaceIds: ['sp-existing'],
+    canDismiss: true,
+    mapGroupId: 'group-mixed',
+  });
+  assert.equal(plan.destination, 'group');
+  const nav = plan.steps.find((step) => step.kind === 'replace');
+  assert.ok(nav && nav.kind === 'replace' && nav.params.mapGroupId === 'group-mixed');
+  assert.equal(nav && nav.kind === 'replace' ? nav.params.savedPlaceId : undefined, undefined);
 }
 
 // ---- nothing saved: keep the user where they are ---------------------------

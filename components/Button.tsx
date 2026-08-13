@@ -10,15 +10,19 @@ type Props = {
   loading?: boolean;
   disabled?: boolean;
   style?: ViewStyle;
+  accessibilityLabel?: string;
 };
 
-export function Button({ title, onPress, variant = 'primary', loading, disabled, style }: Props) {
+export function Button({ title, onPress, variant = 'primary', loading, disabled, style, accessibilityLabel }: Props) {
   const { colors, typography } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const isPrimary = variant === 'primary';
   const isSecondary = variant === 'secondary';
   return (
     <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? title}
+      accessibilityState={{ disabled: !!(disabled || loading), busy: !!loading }}
       onPress={onPress}
       disabled={disabled || loading}
       style={[

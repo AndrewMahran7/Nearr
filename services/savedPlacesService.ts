@@ -609,9 +609,13 @@ async function resolvePlaceRowForCandidate(candidate: PlaceCandidate): Promise<P
 export async function correctSavedPlace(args: {
   savedPlaceId: string;
   replacement: PlaceCandidate;
-  /** Preserved verbatim; pass the current note so it is never lost. */
-  userNote: string | null;
-}): Promise<SavedPlaceWithPlace> {
+}): Promise<{
+  saved: SavedPlaceWithPlace;
+  mergedSavedPlaceId: string | null;
+  sourceJobId: string | null;
+  sourceResultId: string | null;
+  sourceRuleVersion: string | null;
+}> {
   if (isDemoMode() || isMapPreviewMode()) {
     throw new Error('Corrections are unavailable in preview mode.');
   }
@@ -621,43 +625,45 @@ export async function correctSavedPlace(args: {
     googleTypes: args.replacement.rawTypes,
   });
 
-  try {
-    const { data, error } = await supabase
-      .from('saved_places')
-      .update({
-        place_id: placeRow.id,
-        notes: args.userNote,
-        category: categoryResolution.category,
-        category_source: categoryResolution.source,
-        category_confidence: categoryResolution.confidence,
-        category_model_version: categoryResolution.modelVersion,
-        categorized_at: new Date().toISOString(),
-      })
-      .eq('id', args.savedPlaceId)
-      // Never clobber a category the user chose by hand.
-      .eq('category_user_overridden', false)
-      .select('*, place:places(*)')
-      .maybeSingle();
-    if (error) rethrowMutationError('correct place', error);
-    if (data) {
-      triggerGeofenceResync();
-      return data as SavedPlaceWithPlace;
-    }
-  } catch (err) {
-    rethrowMutationError('correct place', err);
+  const { data: correctionRows, error: correctionError } = await supabase.rpc(
+    'correct_saved_place_provider',
+    {
+      p_saved_place_id: args.savedPlaceId,
+      p_place_id: placeRow.id,
+      p_corrected_google_place_id: args.replacement.googlePlaceId,
+      p_category: categoryResolution.category,
+      p_category_source: categoryResolution.source,
+      p_category_confidence: categoryResolution.confidence,
+      p_category_model_version: categoryResolution.modelVersion,
+    },
+  );
+  if (correctionError) rethrowMutationError('correct place', correctionError);
+  const correction = (Array.isArray(correctionRows) ? correctionRows[0] : correctionRows) as {
+    saved_place_id?: string;
+    merged_saved_place_id?: string | null;
+    source_job_id?: string | null;
+    source_result_id?: string | null;
+    source_rule_version?: string | null;
+  } | null;
+  if (!correction?.saved_place_id) {
+    throw new Error('The correction did not complete. Please retry.');
   }
-
-  // The user had overridden the category: repeat without touching it.
+  const retainedId = correction.saved_place_id;
   const { data: retained, error: retainedErr } = await supabase
     .from('saved_places')
-    .update({ place_id: placeRow.id, notes: args.userNote })
-    .eq('id', args.savedPlaceId)
     .select('*, place:places(*)')
+    .eq('id', retainedId)
     .maybeSingle();
   if (retainedErr) rethrowMutationError('correct place', retainedErr);
   if (!retained) throw new Error('This saved place is no longer available.');
   triggerGeofenceResync();
-  return retained as SavedPlaceWithPlace;
+  return {
+    saved: retained as SavedPlaceWithPlace,
+    mergedSavedPlaceId: correction?.merged_saved_place_id ?? null,
+    sourceJobId: correction?.source_job_id ?? null,
+    sourceResultId: correction?.source_result_id ?? null,
+    sourceRuleVersion: correction?.source_rule_version ?? null,
+  };
 }
 
 /**

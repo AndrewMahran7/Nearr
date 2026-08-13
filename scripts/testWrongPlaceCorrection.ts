@@ -4,7 +4,9 @@ import {
   CORRECTION_COPY,
   correctionInitialQuery,
   correctionRejectionMessage,
+  correctionResultMode,
   planWrongPlaceCorrection,
+  reconcileCorrectedSavedPlaces,
   type CorrectionContext,
   type CorrectionPlace,
 } from '../lib/wrongPlaceCorrection';
@@ -19,6 +21,12 @@ const context: CorrectionContext = {
   sourceType: 'instagram',
   sourceUrl: 'https://www.instagram.com/reel/ABC/',
   ruleVersion: 'media-autosave-2026-08-04.v3',
+  aiNote: 'Featured in the original video',
+  previousCategory: 'restaurant',
+  notificationsEnabled: true,
+  radiusValue: 2,
+  radiusUnit: 'miles',
+  createdAt: '2026-08-01T00:00:00.000Z',
 };
 
 const replacement: CorrectionPlace = {
@@ -52,8 +60,12 @@ const plan = planWrongPlaceCorrection(context, replacement, at);
 assert.equal(plan.ok, true);
 if (plan.ok) {
   assert.equal(plan.preserved.userNote, 'Get the birria burrito', 'the note survives');
+  assert.equal(plan.preserved.aiNote, 'Featured in the original video', 'the AI source note survives');
   assert.equal(plan.preserved.sourceType, 'instagram');
   assert.equal(plan.preserved.sourceUrl, 'https://www.instagram.com/reel/ABC/');
+  assert.equal(plan.preserved.notificationsEnabled, true, 'reminder state survives');
+  assert.equal(plan.preserved.radiusValue, 2, 'reminder radius survives');
+  assert.equal(plan.preserved.createdAt, '2026-08-01T00:00:00.000Z', 'saved timestamp survives');
 
   // ---- provider ID changes -------------------------------------------------
   assert.equal(plan.replacement.googlePlaceId, 'gp-right');
@@ -74,8 +86,10 @@ if (plan.ok) {
 
   // ---- feedback is product data, not hidden reasoning ----------------------
   assert.deepEqual(plan.feedback, {
+    savedPlaceId: 'sp-1',
     originalGooglePlaceId: 'gp-wrong',
     correctedGooglePlaceId: 'gp-right',
+    previousCategory: 'restaurant',
     ruleVersion: 'media-autosave-2026-08-04.v3',
     correctedAt: '2026-08-12T17:00:00.000Z',
   });
@@ -112,6 +126,22 @@ assert.equal(
   'falls back to the saved name',
 );
 assert.equal(correctionInitialQuery({}), '', 'no context means no automatic search');
+
+// ---- correction result presentation --------------------------------------
+assert.equal(correctionResultMode('Los de Juarez', [replacement]), 'strong_single');
+assert.equal(correctionResultMode('Los de Juarez', [replacement, { ...replacement, googlePlaceId: 'gp-2' }]), 'multiple');
+assert.equal(correctionResultMode('Unrelated query', [replacement]), 'multiple');
+assert.equal(correctionResultMode('Los de Juarez', []), 'empty');
+
+// ---- cache replacement removes old/duplicate markers ----------------------
+assert.deepEqual(
+  reconcileCorrectedSavedPlaces(
+    [{ id: 'sp-1', value: 'wrong' }, { id: 'sp-existing', value: 'duplicate' }, { id: 'keep', value: 'keep' }],
+    { id: 'sp-1', value: 'corrected' },
+    'sp-existing',
+  ),
+  [{ id: 'sp-1', value: 'corrected' }, { id: 'keep', value: 'keep' }],
+);
 
 // The action must not compete with the primary place actions.
 assert.equal(CORRECTION_COPY.action, 'Wrong place?');

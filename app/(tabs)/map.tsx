@@ -126,6 +126,7 @@ import {
   findSavedPlaceForOpen,
   isOpenExistingPlaceSource,
   openSavedPlaceMessage,
+  shouldExpandSavedPlaceDetails,
 } from '@/lib/openSavedPlace';
 import { isAsyncShareJobsEnabled } from '@/lib/featureFlags';
 import { isLikelyUrl } from '@/lib/shareParser';
@@ -1008,6 +1009,9 @@ export default function MapScreen() {
     didFitRef.current = true;
     try {
       selectPlace(target);
+      if (shouldExpandSavedPlaceDetails(placeSource)) {
+        setPreviewExpanded(true);
+      }
       const successMessage = openSavedPlaceMessage(placeSource);
       if (successMessage) {
         setSnackbar({ message: successMessage, undoId: null });
@@ -1228,6 +1232,19 @@ export default function MapScreen() {
       focusZone(item);
     } catch (err) {
       console.warn('[map] focus failed', (err as Error)?.message ?? err);
+    }
+  }
+
+  function focusCorrectedPlace(item: SavedPlaceWithPlace) {
+    followModeRef.current = false;
+    setFollowMode(false);
+    setSelected(item);
+    setPreviewExpanded(true);
+    previewTranslateY.setValue(0);
+    try {
+      focusZone(item);
+    } catch (err) {
+      console.warn('[map] corrected-place focus failed', (err as Error)?.message ?? err);
     }
   }
 
@@ -1761,6 +1778,7 @@ export default function MapScreen() {
                   onGetDirections={() => openExternalMaps(selected)}
                   onRequestDismiss={() => dismissSelectedPlace({ restoreRegion: false })}
                   onSaved={(updated) => setSelected(updated)}
+                  onCorrected={focusCorrectedPlace}
                 />
               </ScrollView>
             ) : (

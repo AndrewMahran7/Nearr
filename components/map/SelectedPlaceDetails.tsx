@@ -127,6 +127,7 @@ type Props = {
   onRequestDismiss: () => void;
   /** Called after a successful save so the map can refresh its `selected`. */
   onSaved?: (updated: SavedPlaceWithPlace) => void;
+  onCorrected?: (updated: SavedPlaceWithPlace) => void;
 };
 
 export function SelectedPlaceDetails({
@@ -135,6 +136,7 @@ export function SelectedPlaceDetails({
   onGetDirections,
   onRequestDismiss,
   onSaved,
+  onCorrected,
 }: Props) {
   const { colors, typography } = useTheme();
   const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
@@ -197,6 +199,14 @@ export function SelectedPlaceDetails({
     setWrongPlaceOpen(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [saved.id]);
+
+  // Provider correction intentionally keeps saved.id stable. Re-seed the
+  // provider-derived presentation when that association changes in place.
+  useEffect(() => {
+    setCategory(savedPlaceCategory(saved));
+    setRichDetails(null);
+    setFailedPhotoUrls({});
+  }, [saved.place.google_place_id, saved]);
 
   async function handleCategoryChange(next: NearrCategory) {
     if (categorySaving || next === category) return;
@@ -854,6 +864,7 @@ export function SelectedPlaceDetails({
 
       <Button
         title="Wrong place?"
+        accessibilityLabel="Wrong place? Correct this saved place"
         variant="ghost"
         onPress={() => setWrongPlaceOpen(true)}
         style={styles.correctionBtn}
@@ -875,6 +886,7 @@ export function SelectedPlaceDetails({
         onClose={() => setWrongPlaceOpen(false)}
         onCorrected={(updated) => {
           onSaved?.(updated);
+          onCorrected?.(updated);
           setWrongPlaceOpen(false);
         }}
       />

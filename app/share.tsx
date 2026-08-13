@@ -40,6 +40,12 @@ import { isAsyncShareJobsEnabled } from '@/lib/featureFlags';
 import { getActivationSaveFeedback } from '@/lib/activation';
 import { createMapGroupFocusRequest } from '@/lib/mapGroupFocus';
 import {
+  claimSaveCompletionSignal,
+  executeSaveCompletionNavigation,
+  planSaveCompletionNavigation,
+} from '@/lib/saveCompletionNavigation';
+import { createOnceLatch } from '@/lib/onceLatch';
+import {
   multiPlaceTitle,
   planShareSaveCompletion,
   saveSelectedLabel,
@@ -389,6 +395,7 @@ function LegacyShareScreen() {
   const router = useRouter();
   const navigation = useNavigation();
   const params = useLocalSearchParams<{ url?: string }>();
+  const completionOnceRef = useRef(createOnceLatch());
 
   // Themed tokens. `typography` is aliased to `Typography` so every existing
   // `Typography.*` reference in this screen resolves to the *resolved-theme*
@@ -1996,6 +2003,33 @@ function LegacyShareScreen() {
     });
   }
 
+  function completeManualSave(
+    createdSavedPlaceIds: string[],
+    duplicateSavedPlaceIds: string[],
+    failedCount = 0,
+  ) {
+    const completionIds = [...new Set([...createdSavedPlaceIds, ...duplicateSavedPlaceIds])];
+    if (completionIds.length === 0 || !completionOnceRef.current.acquire()) return;
+    const request = completionIds.length > 1
+      ? createMapGroupFocusRequest({
+          savedPlaceIds: completionIds,
+          source: 'share_saved',
+          failedCount,
+        })
+      : null;
+    executeSaveCompletionNavigation(
+      planSaveCompletionNavigation({
+        createdSavedPlaceIds,
+        duplicateSavedPlaceIds,
+        canDismiss: router.canDismiss(),
+        mapGroupId: request?.id ?? null,
+        failedCount,
+      }),
+      router,
+      claimSaveCompletionSignal(completionIds),
+    );
+  }
+
   async function saveCandidate(
     candidate: PlaceCandidate,
     sourceUrl: string | null,
@@ -2070,19 +2104,13 @@ function LegacyShareScreen() {
         upsertSavedPlaceIntoCache(result.saved);
       }
       if (!result.savedPlaceId) {
-        console.warn('[save-flow] saved place id missing; opening map without focus');
-        try {
-          router.replace('/(tabs)/map');
-        } catch (navErr) {
-          console.warn('[share] navigation failed', (navErr as Error)?.message ?? navErr);
-        }
-        return;
+        throw new Error('Save succeeded but did not return an id. Please retry.');
       }
       try {
-        router.replace({
-          pathname: '/(tabs)/map',
-          params: { savedPlaceId: result.savedPlaceId },
-        });
+        completeManualSave(
+          result.status === 'saved' ? [result.savedPlaceId] : [],
+          result.status === 'duplicate' ? [result.savedPlaceId] : [],
+        );
       } catch (navErr) {
         console.warn('[share] navigation failed', (navErr as Error)?.message ?? navErr);
       }
@@ -2200,26 +2228,11 @@ function LegacyShareScreen() {
       save_failure_count: failed.length,
     });
     const completion = planShareSaveCompletion(outcomes);
-    const openNewlySaved = () => {
-      if (completion.createdSavedPlaceIds.length === 0) return;
-      if (completion.createdSavedPlaceIds.length === 1) {
-        router.replace({
-          pathname: '/(tabs)/map',
-          params: { savedPlaceId: completion.createdSavedPlaceIds[0] },
-        });
-        return;
-      }
-      const request = createMapGroupFocusRequest({
-        savedPlaceIds: completion.createdSavedPlaceIds,
-        source: 'share_saved',
-        failedCount: completion.failedCandidateIds.length,
-      });
-      if (!request) return;
-      router.replace({
-        pathname: '/(tabs)/map',
-        params: { mapGroupId: request.id, placeSource: request.source },
-      });
-    };
+    const openSuccessfulPlaces = () => completeManualSave(
+      completion.createdSavedPlaceIds,
+      completion.duplicateSavedPlaceIds,
+      completion.failedCandidateIds.length,
+    );
     if (failed.length === 0) {
       const dupCount = saved.filter((s) => s.duplicate).length;
       const newCount = saved.length - dupCount;
@@ -2232,16 +2245,7 @@ function LegacyShareScreen() {
             : `${newCount} added, ${dupCount} already saved.`;
       Alert.alert(title, body);
       try {
-        if (completion.createdSavedPlaceIds.length > 0) {
-          openNewlySaved();
-        } else if (completion.duplicateSavedPlaceIds[0]) {
-          router.replace({
-            pathname: '/(tabs)/map',
-            params: { savedPlaceId: completion.duplicateSavedPlaceIds[0] },
-          });
-        } else {
-          router.replace('/(tabs)/map');
-        }
+        openSuccessfulPlaces();
       } catch (navErr) {
         console.warn(
           '[share] navigation failed',
@@ -2259,10 +2263,10 @@ function LegacyShareScreen() {
       Alert.alert(
         'Some places saved',
         `Saved ${saved.length} of ${selected.length}. Couldn't save: ${failedNames}.`,
-        completion.createdSavedPlaceIds.length > 0
+        completion.createdSavedPlaceIds.length + completion.duplicateSavedPlaceIds.length > 0
           ? [
               { text: 'Try remaining', style: 'cancel' },
-              { text: 'View saved', onPress: openNewlySaved },
+              { text: 'View saved', onPress: openSuccessfulPlaces },
             ]
           : undefined,
       );

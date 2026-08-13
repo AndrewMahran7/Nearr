@@ -61,8 +61,9 @@ import {
 } from '@/lib/quickCheckResolution';
 import { createMapGroupFocusRequest } from '@/lib/mapGroupFocus';
 import {
+  claimSaveCompletionSignal,
+  executeSaveCompletionNavigation,
   planSaveCompletionNavigation,
-  type SaveCompletionNavigation,
 } from '@/lib/saveCompletionNavigation';
 import { usePlacesSearch } from '@/hooks/usePlacesSearch';
 import { getSavedPlacesCacheSnapshot } from '@/hooks/useSavedPlaces';
@@ -382,7 +383,10 @@ function ShareJobDetailScreen() {
   ): Promise<void> {
     if (savedPlaceId) {
       await markShareJobResolved(jobId, savedPlaceId);
-      openExistingPlace({ savedPlaceId, source: 'share_job_saved' });
+      completeManualSave(
+        duplicate ? [] : [savedPlaceId],
+        duplicate ? [savedPlaceId] : [],
+      );
       return;
     }
     if (duplicate) {
@@ -393,49 +397,42 @@ function ShareJobDetailScreen() {
   }
 
   function openNewlySavedPlaces(savedPlaceIds: string[], failedCount = 0) {
-    if (savedPlaceIds.length === 0 || !navigateOnceRef.current.acquire()) return;
+    completeManualSave(savedPlaceIds, [], failedCount);
+  }
+
+  function completeManualSave(
+    createdSavedPlaceIds: string[],
+    duplicateSavedPlaceIds: string[],
+    failedCount = 0,
+  ) {
+    const completionIds = [...createdSavedPlaceIds, ...duplicateSavedPlaceIds];
+    if (
+      completionIds.length === 0 ||
+      !navigateOnceRef.current.acquire()
+    ) return;
+    const shouldNavigate = claimSaveCompletionSignal(completionIds);
     recordBreadcrumb('actual_navigation', {
-      savedPlaceId: savedPlaceIds[0] ?? null,
-      result: savedPlaceIds.length === 1 ? 'open_saved_place:share_job_saved' : 'open_saved_group',
+      savedPlaceId: completionIds[0] ?? null,
+      result: createdSavedPlaceIds.length > 1 ? 'open_saved_group' : 'open_saved_place:share_job_saved',
     });
     // A grouped fit is only requested when there is genuinely more than one new
     // place; the planner falls back to single focus if the request can't be made.
     const request =
-      savedPlaceIds.length > 1
+      completionIds.length > 1
         ? createMapGroupFocusRequest({
-            savedPlaceIds,
+            savedPlaceIds: completionIds,
             source: 'share_job_saved',
             failedCount,
           })
         : null;
     const plan = planSaveCompletionNavigation({
-      createdSavedPlaceIds: savedPlaceIds,
+      createdSavedPlaceIds,
+      duplicateSavedPlaceIds,
       canDismiss: router.canDismiss(),
       mapGroupId: request?.id ?? null,
       failedCount,
     });
-    runSaveCompletionPlan(plan);
-  }
-
-  /**
-   * Execute a navigation plan. `dismissAll` tears down the whole share-jobs
-   * modal stack (queue + detail) so nothing is left covering the map.
-   */
-  function runSaveCompletionPlan(plan: SaveCompletionNavigation) {
-    for (const step of plan.steps) {
-      if (step.kind === 'dismissAll') {
-        try {
-          router.dismissAll();
-        } catch {
-          // Nothing to dismiss (cold deep-link entry) — the replace still runs.
-        }
-        continue;
-      }
-      router.replace({
-        pathname: step.pathname as '/(tabs)/map',
-        params: step.params,
-      });
-    }
+    executeSaveCompletionNavigation(plan, router, shouldNavigate);
   }
 
   async function handleSaveStored(candidate: ShareJobCandidate) {
@@ -549,8 +546,9 @@ function ShareJobDetailScreen() {
                 { text: 'Try remaining', style: 'cancel' },
                 {
                   text: 'View saved',
-                  onPress: () => openNewlySavedPlaces(
+                  onPress: () => completeManualSave(
                     completion.createdSavedPlaceIds,
+                    completion.duplicateSavedPlaceIds,
                     completion.failedCandidateIds.length,
                   ),
                 },
@@ -562,10 +560,11 @@ function ShareJobDetailScreen() {
       const resolutionId =
         completion.createdSavedPlaceIds[0] ?? completion.duplicateSavedPlaceIds[0] ?? null;
       if (resolutionId) await markShareJobResolved(job.id, resolutionId);
-      if (completion.createdSavedPlaceIds.length > 0) {
-        openNewlySavedPlaces(completion.createdSavedPlaceIds);
-      } else if (resolutionId) {
-        openExistingPlace({ savedPlaceId: resolutionId, source: 'share_job_saved' });
+      if (resolutionId) {
+        completeManualSave(
+          completion.createdSavedPlaceIds,
+          completion.duplicateSavedPlaceIds,
+        );
       } else if (succeeded.some((entry) => entry.duplicate)) {
         openExistingPlace({ source: 'share_job_saved' });
       } else {

@@ -36,6 +36,14 @@ export type SaveCompletionNavigation = {
   destination: 'single' | 'group' | 'existing' | 'none';
 };
 
+export type SaveCompletionRouter = {
+  dismissAll: () => void;
+  replace: (destination: { pathname: string; params: Record<string, string> }) => void;
+};
+
+const COMPLETION_SIGNAL_TTL_MS = 8_000;
+const recentCompletionSignals = new Map<string, number>();
+
 function clean(ids: readonly string[] | undefined): string[] {
   const seen = new Set<string>();
   const out: string[] = [];
@@ -60,20 +68,23 @@ export function planSaveCompletionNavigation(
   input: SaveCompletionInput,
 ): SaveCompletionNavigation {
   const created = clean(input.createdSavedPlaceIds);
-  const duplicates = clean(input.duplicateSavedPlaceIds);
+  const createdSet = new Set(created);
+  const duplicates = clean(input.duplicateSavedPlaceIds).filter((id) => !createdSet.has(id));
+  const successful = [...created, ...duplicates];
   const steps: SaveCompletionStep[] = [];
   if (input.canDismiss) steps.push({ kind: 'dismissAll' });
 
-  if (created.length > 1) {
+  if (successful.length > 1) {
     if (!input.mapGroupId) {
-      // Without a group request we still must not leave the queue up; focus the
-      // first saved place rather than emitting an unusable group route.
+      // Never pretend a multi-save is a single save. A caller should normally
+      // provide a group request; this defensive fallback opens the map without
+      // selecting an arbitrary place.
       steps.push({
         kind: 'replace',
         pathname: '/(tabs)/map',
-        params: { savedPlaceId: created[0]!, placeSource: 'share_job_saved' },
+        params: { placeSource: 'share_job_saved' },
       });
-      return { steps, destination: 'single' };
+      return { steps, destination: 'group' };
     }
     const params: Record<string, string> = {
       mapGroupId: input.mapGroupId,
@@ -86,7 +97,7 @@ export function planSaveCompletionNavigation(
     return { steps, destination: 'group' };
   }
 
-  if (created.length === 1) {
+  if (successful.length === 1 && created.length === 1) {
     steps.push({
       kind: 'replace',
       pathname: '/(tabs)/map',
@@ -95,7 +106,7 @@ export function planSaveCompletionNavigation(
     return { steps, destination: 'single' };
   }
 
-  if (duplicates.length > 0) {
+  if (successful.length === 1 && duplicates.length === 1) {
     steps.push({
       kind: 'replace',
       pathname: '/(tabs)/map',
@@ -106,6 +117,50 @@ export function planSaveCompletionNavigation(
 
   // Nothing was saved: do not navigate, and do not tear down the user's context.
   return { steps: [], destination: 'none' };
+}
+
+/** Execute the planner's ordered modal teardown + one map replacement. */
+export function executeSaveCompletionNavigation(
+  plan: SaveCompletionNavigation,
+  router: SaveCompletionRouter,
+  navigate = true,
+): void {
+  for (const step of plan.steps) {
+    if (step.kind === 'dismissAll') {
+      try {
+        router.dismissAll();
+      } catch {
+        // Cold entry: no modal exists, so the following replacement still runs.
+      }
+    } else if (navigate) {
+      router.replace({ pathname: step.pathname, params: step.params });
+    }
+  }
+}
+
+/**
+ * Cross-surface guard for a save mutation, Realtime event, and notification
+ * response racing to open the same place. A later deliberate open remains
+ * possible after the short completion window.
+ */
+export function claimSaveCompletionSignal(
+  savedPlaceIds: readonly string[],
+  now = Date.now(),
+): boolean {
+  const ids = clean(savedPlaceIds).sort();
+  if (ids.length === 0) return false;
+  for (const [key, claimedAt] of recentCompletionSignals) {
+    if (now - claimedAt > COMPLETION_SIGNAL_TTL_MS) recentCompletionSignals.delete(key);
+  }
+  const key = ids.join(':');
+  const previous = recentCompletionSignals.get(key);
+  if (previous != null && now - previous <= COMPLETION_SIGNAL_TTL_MS) return false;
+  recentCompletionSignals.set(key, now);
+  return true;
+}
+
+export function resetSaveCompletionSignalsForTests(): void {
+  recentCompletionSignals.clear();
 }
 
 /** True when the plan leaves no modal covering the map. */

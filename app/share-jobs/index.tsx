@@ -50,6 +50,11 @@ import {
 } from '@/lib/queueClearedState';
 import { createQueueSwipeCoordinator } from '@/lib/queueSwipeCoordinator';
 import {
+  claimSaveCompletionSignal,
+  executeSaveCompletionNavigation,
+  planSaveCompletionNavigation,
+} from '@/lib/saveCompletionNavigation';
+import {
   getSavedPlacesCacheSnapshot,
   removeSavedPlaceFromCache,
   restoreSavedPlacesCache,
@@ -309,10 +314,19 @@ function ShareJobsQueueScreen() {
     actionLocksRef.current.add(lock);
     setActingId(job.id);
     try {
-      await saveResolvedQueueCandidate(job, candidate);
+      const result = await saveResolvedQueueCandidate(job, candidate);
       setResolvedIds((current) => new Set(current).add(job.id));
       hapticSuccess();
-      await refresh();
+      const shouldNavigate = claimSaveCompletionSignal([result.savedPlaceId]);
+      executeSaveCompletionNavigation(
+        planSaveCompletionNavigation({
+          createdSavedPlaceIds: result.duplicate ? [] : [result.savedPlaceId],
+          duplicateSavedPlaceIds: result.duplicate ? [result.savedPlaceId] : [],
+          canDismiss: router.canDismiss(),
+        }),
+        router,
+        shouldNavigate,
+      );
     } catch (error) {
       Alert.alert('Could not save', error instanceof Error ? error.message : 'Please try again.');
     } finally {
