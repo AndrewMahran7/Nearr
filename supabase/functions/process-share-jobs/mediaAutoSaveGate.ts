@@ -1,7 +1,7 @@
 import type { MentionResult } from '../process-share-link/resolver/nameDrivenResolver.ts';
 import type { VenueMention } from './mediaMentions.ts';
 
-export const MEDIA_AUTO_SAVE_RULE_VERSION = 'media-autosave-2026-08-04.v3';
+export const MEDIA_AUTO_SAVE_RULE_VERSION = 'media-autosave-2026-08-13.v4';
 export const DEFAULT_MEDIA_AUTO_SAVE_THRESHOLD = 0.70;
 export const MEDIA_AUTO_SAVE_MIN_SCORE = DEFAULT_MEDIA_AUTO_SAVE_THRESHOLD;
 
@@ -58,6 +58,35 @@ function validCoordinates(candidate: any): boolean {
   );
 }
 
+// Google does not label natural destinations as businesses. A verified beach,
+// park, trail, or natural feature must not fail the type gate solely because
+// the provider also returns generic `establishment` / `point_of_interest`
+// types. Generic types alone still fail, and every other safety gate remains.
+const NATURAL_DESTINATION_PROVIDER_TYPES = new Set([
+  'natural_feature',
+  'park',
+  'city_park',
+  'state_park',
+  'national_park',
+  'hiking_area',
+  'hiking_trail',
+  'trail_head',
+  'beach',
+  'scenic_spot',
+  'scenic_viewpoint',
+]);
+
+function naturalDestinationTypeVerified(candidate: any): boolean {
+  const types = [
+    candidate?.primaryType,
+    ...(Array.isArray(candidate?.types) ? candidate.types : []),
+  ];
+  return types.some((value) =>
+    typeof value === 'string' &&
+    NATURAL_DESTINATION_PROVIDER_TYPES.has(value.trim().toLowerCase().replace(/[\s-]+/g, '_'))
+  );
+}
+
 function evidenceChannel(source: string): 'speech' | 'visual' | 'caption' | null {
   if (source === 'speech') return 'speech';
   if (source === 'visible_text' || source === 'frame') return 'visual';
@@ -94,7 +123,9 @@ export function evaluateMediaAutoSave(
   if (!validCoordinates(candidate)) reasons.push('invalid_provider_coordinates');
   if (!score) reasons.push('missing_score_explanation');
   if (!score || score.normalizedScore < minScore) reasons.push('score_below_threshold');
-  if (!scoreReasons.has('business_type')) reasons.push('business_type_not_verified');
+  if (!scoreReasons.has('business_type') && !naturalDestinationTypeVerified(candidate)) {
+    reasons.push('business_type_not_verified');
+  }
   if (!scoreReasons.has('compact_name_match') && !scoreReasons.has('strong_name_match')) {
     reasons.push('strong_name_match_missing');
   }

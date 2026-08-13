@@ -110,7 +110,45 @@ check('configured threshold rejects non-number', !resolveMediaAutoSaveThreshold(
   naturalResult.candidates[0]!.formattedAddress = 'Los Angeles, CA 90027';
   naturalResult.candidates[0]!.types = ['park', 'tourist_attraction'];
   naturalResult.scoring[0]!.name = 'Griffith Park';
+  naturalResult.scoring[0]!.reasons = naturalResult.scoring[0]!.reasons.filter(
+    (reason) => reason !== 'business_type',
+  );
   check('provider-verified natural place needs no street address', decide(naturalMention, naturalResult, [naturalResult]).eligible);
+}
+{
+  const woodsCoveMention = mention({
+    displayName: 'Woods Cove',
+    normalizedName: 'woods cove',
+    distinctiveTokens: ['woods', 'cove'],
+    category: 'beach',
+    geo: { city: 'Laguna Beach', region: 'California', country: 'United States' },
+  });
+  const woodsCoveResult = result();
+  woodsCoveResult.candidates[0]!.name = 'Woods Cove';
+  woodsCoveResult.candidates[0]!.formattedAddress = 'Woods Cove, Laguna Beach, CA 92651';
+  woodsCoveResult.candidates[0]!.primaryType = 'establishment';
+  woodsCoveResult.candidates[0]!.types = ['establishment', 'natural_feature'];
+  woodsCoveResult.scoring[0]!.name = 'Woods Cove';
+  woodsCoveResult.scoring[0]!.reasons = woodsCoveResult.scoring[0]!.reasons.filter(
+    (reason) => reason !== 'business_type',
+  );
+  check(
+    'natural_feature provider typing satisfies the type gate without a business marker',
+    decide(woodsCoveMention, woodsCoveResult, [woodsCoveResult]).eligible,
+  );
+}
+{
+  const genericResult = result();
+  genericResult.candidates[0]!.primaryType = 'establishment';
+  genericResult.candidates[0]!.types = ['establishment', 'point_of_interest'];
+  genericResult.scoring[0]!.reasons = genericResult.scoring[0]!.reasons.filter(
+    (reason) => reason !== 'business_type',
+  );
+  const decision = decide(mention(), genericResult, [genericResult]);
+  check(
+    'generic establishment and point_of_interest types still fail type verification',
+    !decision.eligible && decision.reasonCodes.includes('business_type_not_verified'),
+  );
 }
 {
   const r = result({ outcome: 'ambiguous_candidates' });
@@ -190,6 +228,20 @@ check('model confidence is diagnostic only', decide(mention({ confidence: 0.01 }
   const all = [eligible, ambiguous];
   check('mixed post keeps eligible slot independent', decide(mention(), eligible, all).eligible);
   check('mixed post keeps ambiguous slot for review', !decide(mention({ id: 'm2' }), ambiguous, all).eligible);
+}
+{
+  const eligible = result();
+  const hiddenInvalidAlternative = result({
+    mentionId: 'm2',
+    displayName: 'Invalid extraction',
+    outcome: 'no_match',
+    candidates: [],
+    scoring: [],
+  });
+  check(
+    'hidden invalid alternatives do not reject one valid verified candidate',
+    decide(mention(), eligible, [eligible, hiddenInvalidAlternative]).eligible,
+  );
 }
 
 console.log(failures === 0 ? '\nALL MEDIA AUTO-SAVE GATE TESTS PASSED' : `\n${failures} FAILURE(S)`);
