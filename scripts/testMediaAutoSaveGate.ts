@@ -1,11 +1,14 @@
 import {
   evaluateMediaAutoSave,
+  formatMediaAutoSaveDecisionLog,
   mediaAutoSaveAuthorized,
+  mediaReviewDecision,
   DEFAULT_MEDIA_AUTO_SAVE_THRESHOLD,
   MEDIA_AUTO_SAVE_MIN_SCORE,
   MEDIA_AUTO_SAVE_RULE_VERSION,
   resolveMediaAutoSaveThreshold,
 } from '../supabase/functions/process-share-jobs/mediaAutoSaveGate';
+import { buildMediaResultNotification } from '../supabase/functions/process-share-jobs/decisionMapping';
 import type { MentionResult } from '../supabase/functions/process-share-link/resolver/nameDrivenResolver';
 import type { VenueMention } from '../supabase/functions/process-share-jobs/mediaMentions';
 
@@ -96,7 +99,7 @@ check('configured threshold rejects non-number', !resolveMediaAutoSaveThreshold(
   check('one distinctive transcript mention with a strong provider match is eligible', d.eligible);
   check('gate emits versioned rule', d.ruleVersion === MEDIA_AUTO_SAVE_RULE_VERSION);
   check('gate returns deterministic score', d.confidenceScore === 0.97);
-  check('gate explains the successful evidence pattern', d.reasonCodes.includes('single_match_with_location_support'));
+  check('gate explains the successful decision', d.reasonCodes.includes('single_plausible_candidate'));
 }
 {
   const naturalMention = mention({
@@ -181,12 +184,23 @@ check('configured threshold rejects non-number', !resolveMediaAutoSaveThreshold(
 }
 {
   const r = result({ outcome: 'ambiguous_candidates' });
-  check('ambiguous result rejected', !decide(mention(), r, [r]).eligible);
+  check('one plausible candidate auto-saves despite the old ambiguous outcome', decide(mention(), r, [r]).eligible);
 }
 {
   const r = result();
   r.scoring[0]!.normalizedScore = 0.69;
-  check('gate score 0.69 does not auto-save', !decide(mention(), r, [r]).eligible);
+  check('one plausible candidate at 0.69 auto-saves', decide(mention(), r, [r]).eligible);
+}
+{
+  const r = result();
+  r.scoring[0]!.normalizedScore = 0.68;
+  check('one clearly matched candidate below the old threshold auto-saves', decide(mention(), r, [r]).eligible);
+}
+{
+  const r = result({ outcome: 'ambiguous_candidates' });
+  r.scoring[0]!.normalizedScore = 0.39;
+  const d = decide(mention(), r, [r]);
+  check('candidate below the resolver plausibility floor stays in review', !d.eligible && d.reasonCodes.includes('no_plausible_candidate'));
 }
 {
   const r = result();
@@ -201,11 +215,21 @@ check('configured threshold rejects non-number', !resolveMediaAutoSaveThreshold(
 {
   const r = result();
   r.scoring[0]!.normalizedScore = 0.95;
-  r.candidates.push({ ...r.candidates[0]!, googlePlaceId: 'google-competitor', name: 'Unrelated Cafe' });
+  r.candidates.push({
+    ...r.candidates[0]!,
+    googlePlaceId: 'google-competitor',
+    name: 'Woodfire Parlor East',
+  });
+  r.scoring.push({
+    ...r.scoring[0]!,
+    googlePlaceId: 'google-competitor',
+    name: 'Woodfire Parlor East',
+    normalizedScore: 0.91,
+  });
   const d = decide(mention(), r, [r]);
   check(
     'gate score 0.95 with a competing candidate remains blocked',
-    !d.eligible && d.reasonCodes.includes('competing_candidates'),
+    !d.eligible && d.reasonCodes.includes('multiple_plausible_candidates'),
   );
 }
 {
@@ -233,6 +257,30 @@ for (const source of ['speech', 'visible_text', 'caption'] as const) {
   check(`one ${source} name channel is sufficient`, d.eligible);
 }
 {
+  const d = decide(mention({ sources: [], nameEvidenceSources: [], repeated: false }));
+  check('missing transcript, OCR, caption, and frame channels is not a veto', d.eligible);
+}
+{
+  const r = result();
+  r.scoring[0]!.reasons = r.scoring[0]!.reasons.filter(
+    (reason) => reason !== 'business_type' && reason !== 'distinctive_token_match',
+  );
+  check('positive provider taxonomy and distinctive markers are not vetoes', decide(mention(), r, [r]).eligible);
+}
+{
+  const m = mention({
+    displayName: "Webb's Grainworks",
+    normalizedName: "webb's grainworks",
+    distinctiveTokens: ["webb's", 'grainworks'],
+  });
+  const r = result({ outcome: 'ambiguous_candidates' });
+  r.candidates[0]!.name = "Webb's | Distillery & Brewery";
+  r.scoring[0]!.name = r.candidates[0]!.name;
+  r.scoring[0]!.normalizedScore = 0.68;
+  r.scoring[0]!.reasons = ['meaningful_name_match', 'distinctive_token_match'];
+  check('one weaker but semantically plausible candidate auto-saves', decide(m, r, [r]).eligible);
+}
+{
   const m = mention({
     category: 'park',
     sources: ['frame'],
@@ -243,7 +291,7 @@ for (const source of ['speech', 'visible_text', 'caption'] as const) {
   r.scoring[0]!.reasons.push('expected_category_match');
   const d = decide(m, r, [r]);
   check('one grounded frame identity is sufficient', d.eligible);
-  check('visual identity receives a specific success reason', d.reasonCodes.includes('visual_landmark_single_match'));
+  check('visual evidence is not a separate veto or reason', d.reasonCodes.includes('single_plausible_candidate'));
 }
 check('model confidence is diagnostic only', decide(mention({ confidence: 0.01 })).eligible);
 {
@@ -261,13 +309,15 @@ check('model confidence is diagnostic only', decide(mention({ confidence: 0.01 }
   const r = result();
   r.scoring[0]!.normalizedScore = 0.95;
   r.candidates[0]!.latitude = undefined;
-  check('gate score 0.95 without valid coordinates remains blocked', !decide(mention(), r, [r]).eligible);
+  const d = decide(mention(), r, [r]);
+  check('gate score 0.95 without valid coordinates remains blocked', !d.eligible && d.reasonCodes.includes('provider_identity_invalid'));
 }
 {
   const r = result();
   r.scoring[0]!.normalizedScore = 0.95;
   r.candidates[0]!.googlePlaceId = '';
-  check('gate score 0.95 without a provider Place ID remains blocked', !decide(mention(), r, [r]).eligible);
+  const d = decide(mention(), r, [r]);
+  check('gate score 0.95 without a provider Place ID remains blocked', !d.eligible && d.reasonCodes.includes('provider_identity_invalid'));
 }
 {
   const r = result();
@@ -326,7 +376,7 @@ check('model confidence is diagnostic only', decide(mention({ confidence: 0.01 }
   );
   check(
     'weak generic name with insufficient identity support stays in review',
-    !d.eligible && d.reasonCodes.includes('insufficient_identity_evidence'),
+    !d.eligible && d.reasonCodes.includes('no_plausible_candidate'),
   );
 }
 {
@@ -342,8 +392,62 @@ check('model confidence is diagnostic only', decide(mention({ confidence: 0.01 }
   const d = decide(broadMention, broadResult, [broadResult]);
   check(
     'one-token broad geography expanded into a provider name stays in review',
-    !d.eligible && d.reasonCodes.includes('insufficient_identity_evidence'),
+    !d.eligible && d.reasonCodes.includes('no_plausible_candidate'),
   );
+}
+{
+  const unrelatedMention = mention({
+    displayName: 'Paradise Falls',
+    normalizedName: 'paradise falls',
+    distinctiveTokens: ['paradise', 'falls'],
+    category: 'hiking_trail',
+  });
+  const unrelatedResult = result({ outcome: 'ambiguous_candidates' });
+  unrelatedResult.candidates[0]!.name = 'Paradise Dental Group';
+  unrelatedResult.scoring[0]!.name = 'Paradise Dental Group';
+  unrelatedResult.scoring[0]!.normalizedScore = 0.82;
+  unrelatedResult.scoring[0]!.reasons = [
+    'meaningful_name_match',
+    'distinctive_token_match',
+    'expected_category_mismatch_soft',
+  ];
+  const d = decide(unrelatedMention, unrelatedResult, [unrelatedResult]);
+  check('obviously unrelated provider entity stays in review', !d.eligible && d.reasonCodes.includes('no_plausible_candidate'));
+}
+{
+  const routeMention = mention({
+    displayName: 'Table Rock',
+    normalizedName: 'table rock',
+    distinctiveTokens: ['table', 'rock'],
+  });
+  const routeResult = result({ outcome: 'ambiguous_candidates' });
+  routeResult.candidates[0]!.name = 'Table Rock Drive';
+  routeResult.candidates[0]!.types = ['route'];
+  routeResult.scoring[0]!.name = 'Table Rock Drive';
+  routeResult.scoring[0]!.normalizedScore = 0.71;
+  routeResult.scoring[0]!.reasons = ['strong_name_match', 'distinctive_token_match'];
+  const d = decide(routeMention, routeResult, [routeResult]);
+  check('address-like provider entity is not a plausible saved place', !d.eligible && d.reasonCodes.includes('no_plausible_candidate'));
+}
+{
+  const trailMention = mention({
+    displayName: 'June Lake Loop Trail',
+    normalizedName: 'june lake loop trail',
+    distinctiveTokens: ['june', 'lake', 'loop'],
+    category: 'hiking_trail',
+  });
+  const trailResult = result({ outcome: 'ambiguous_candidates' });
+  trailResult.candidates[0]!.name = 'Reversed Peak Loop Trail';
+  trailResult.scoring[0]!.name = 'Reversed Peak Loop Trail';
+  trailResult.scoring[0]!.normalizedScore = 0.86;
+  trailResult.scoring[0]!.reasons = ['meaningful_name_match', 'distinctive_token_match'];
+  const d = decide(trailMention, trailResult, [trailResult]);
+  check('shared generic loop/trail wording cannot make an unrelated trail plausible', !d.eligible && d.reasonCodes.includes('no_plausible_candidate'));
+}
+{
+  const noResult = result({ outcome: 'no_match', candidates: [], scoring: [] });
+  const d = decide(mention(), noResult, [noResult]);
+  check('zero plausible candidates stays in review', !d.eligible && d.reasonCodes.includes('no_plausible_candidate'));
 }
 {
   const exactBrandMention = mention({
@@ -388,6 +492,57 @@ check('model confidence is diagnostic only', decide(mention({ confidence: 0.01 }
     'one meaningful candidate plus a rejected garbage alternative auto-saves',
     decide(mention(), eligible, [eligible]).eligible,
   );
+}
+{
+  const first = result();
+  const second = result({
+    mentionId: 'm2',
+    displayName: 'Second Place',
+    candidates: [{ ...result().candidates[0]!, googlePlaceId: 'google-second', name: 'Second Place' } as any],
+    scoring: [{
+      ...result().scoring[0]!,
+      googlePlaceId: 'google-second',
+      name: 'Second Place',
+    }],
+  });
+  const all = [first, second];
+  check('two logical places auto-save independently', decide(mention(), first, all).eligible && decide(mention({ id: 'm2', displayName: 'Second Place', normalizedName: 'second place', distinctiveTokens: ['second'] }), second, all).eligible);
+}
+{
+  const one = result();
+  check('one unresolved result with one option uses single review', mediaReviewDecision([one]) === 'candidate_confirmation');
+  const branch = result();
+  branch.candidates.push({ ...branch.candidates[0]!, googlePlaceId: 'branch-2' });
+  check('one logical result with two options uses multi review', mediaReviewDecision([branch]) === 'multi_candidate_confirmation');
+  check('multiple unresolved logical results use multi review', mediaReviewDecision([one, branch]) === 'multi_candidate_confirmation');
+}
+{
+  const d = decide();
+  const notification = buildMediaResultNotification({
+    jobId: 'job-single-plausible',
+    createdSavedPlaceIds: d.eligible ? ['saved-1'] : [],
+    alreadySavedPlaceIds: [],
+    reviewCount: d.eligible ? 0 : 1,
+  });
+  check('one-candidate auto-save cannot generate unresolved notification', notification.data.type === 'share_job_completed');
+}
+{
+  const d = decide();
+  const line = formatMediaAutoSaveDecisionLog({
+    jobId: 'job-1',
+    logicalPlaceId: 'm1',
+    decision: d,
+    finalDecision: 'auto_save',
+    finalReasonCodes: d.reasonCodes,
+  });
+  for (const field of [
+    'job_id=', 'logical_place_id=', 'raw_candidate_count=', 'plausible_candidate_count=',
+    'selected_provider_id=', 'selected_score=', 'rejection_reasons=',
+    'explicit_conflict_flags=', 'final_decision=', 'decision_reason=',
+  ]) {
+    check(`decision log includes ${field}`, line.includes(field));
+  }
+  check('decision log excludes transcripts and candidate names', !line.includes('Parlor Woodfire'));
 }
 
 console.log(failures === 0 ? '\nALL MEDIA AUTO-SAVE GATE TESTS PASSED' : `\n${failures} FAILURE(S)`);

@@ -1,7 +1,18 @@
-import type { MentionResult } from '../process-share-link/resolver/nameDrivenResolver.ts';
+import {
+  PLAUSIBLE_FLOOR,
+  type MentionResult,
+} from '../process-share-link/resolver/nameDrivenResolver.ts';
+import {
+  isAddressLikeTypes,
+  isLocalityLikeTypes,
+} from '../process-share-link/places/placeNormalization.ts';
 import type { VenueMention } from './mediaMentions.ts';
 
-export const MEDIA_AUTO_SAVE_RULE_VERSION = 'media-autosave-2026-08-13.v5';
+export const MEDIA_AUTO_SAVE_RULE_VERSION = 'media-autosave-2026-08-13.v6';
+
+// Retained for configuration compatibility and diagnostics. The v6 decision
+// does not apply this value as a second confirmation threshold: the resolver's
+// existing PLAUSIBLE_FLOOR defines the minimum meaningful candidate score.
 export const DEFAULT_MEDIA_AUTO_SAVE_THRESHOLD = 0.70;
 export const MEDIA_AUTO_SAVE_MIN_SCORE = DEFAULT_MEDIA_AUTO_SAVE_THRESHOLD;
 
@@ -36,6 +47,11 @@ export type MediaAutoSaveGateDecision = {
   confidenceScore: number | null;
   ruleVersion: string;
   reasonCodes: string[];
+  rawCandidateCount: number;
+  plausibleCandidateCount: number;
+  selectedProviderId: string | null;
+  candidateRejectionReasons: string[];
+  explicitConflictFlags: string[];
 };
 
 export function mediaAutoSaveAuthorized(args: {
@@ -58,6 +74,12 @@ function validCoordinates(candidate: any): boolean {
   );
 }
 
+function validProviderIdentity(candidate: any): boolean {
+  return !!candidate?.googlePlaceId &&
+    !!candidate?.formattedAddress?.trim() &&
+    validCoordinates(candidate);
+}
+
 function normalizedName(value: unknown): string {
   return typeof value === 'string'
     ? value
@@ -70,6 +92,20 @@ function normalizedName(value: unknown): string {
     : '';
 }
 
+function nameTokens(value: unknown): string[] {
+  return normalizedName(value).split(' ').filter((token) => token.length >= 2);
+}
+
+// These words describe a kind of place rather than its identifying brand or
+// proper name. They are used only to reject obvious semantic mismatches; they
+// never create a positive evidence requirement.
+const PLACE_KIND_TOKENS = new Set([
+  'bar', 'beach', 'bridge', 'brewery', 'cafe', 'cathedral', 'church', 'coffee',
+  'cove', 'dental', 'distillery', 'falls', 'hotel', 'island', 'lake', 'loop', 'marina',
+  'museum', 'park', 'peak', 'restaurant', 'resort', 'river', 'road', 'school',
+  'spa', 'store', 'trail', 'waterfall',
+]);
+
 function hasLocationConflict(scoreReasons: Set<string>): boolean {
   return (
     scoreReasons.has('wrong_location_rejected') ||
@@ -79,40 +115,102 @@ function hasLocationConflict(scoreReasons: Set<string>): boolean {
   );
 }
 
-function evidenceSufficiencyReason(
+function hasPlausibleIdentity(
   mention: VenueMention,
   candidate: any,
   scoreReasons: Set<string>,
-): 'strong_named_single_match' | 'single_match_with_location_support' | 'visual_landmark_single_match' | null {
-  const hasExplicitNameEvidence = mention.nameEvidenceSources.length > 0;
-  const hasStrongProviderNameMatch =
+): boolean {
+  const strong =
     scoreReasons.has('compact_name_match') || scoreReasons.has('strong_name_match');
-  const hasDistinctiveProviderNameMatch = scoreReasons.has('distinctive_token_match');
-  if (!hasExplicitNameEvidence || !hasStrongProviderNameMatch || !hasDistinctiveProviderNameMatch) {
-    return null;
-  }
+  const anyIdentity =
+    strong ||
+    scoreReasons.has('meaningful_name_match') ||
+    scoreReasons.has('distinctive_token_match');
+  if (!anyIdentity) return false;
 
-  // A one-token mention expanded into a longer provider name is a common broad
-  // geography/generic-name failure (for example, a country resolving to a
-  // museum or road containing that country name). Keep it in review. Exact
-  // one-word brands remain eligible, and multi-token landmarks may tolerate
-  // harmless provider naming differences such as "Lower Corlieu Falls" versus
-  // "Corlieu Falls".
+  const mentionName = normalizedName(mention.displayName);
+  const candidateName = normalizedName(candidate?.name);
+  if (!mentionName || !candidateName) return false;
+
+  // A broad one-token mention resolving to a longer entity merely containing
+  // that token is not a plausible identity (for example, "Mangystau" resolving
+  // to a museum). Exact one-word brands remain plausible.
+  if (mention.distinctiveTokens.length === 1 && mentionName !== candidateName) {
+    return false;
+  }
+  if (strong) return true;
+
+  // For weaker name relationships, require a shared proper-name token. Shared
+  // place-kind words alone ("Peak", "Bridge") cannot make an unrelated result
+  // plausible. A directly conflicting kind ("Falls" versus "Dental") also
+  // rejects the candidate. This is an unrelated-result filter, not a positive
+  // taxonomy requirement.
+  const mentionTokens = nameTokens(mention.displayName);
+  const candidateTokens = new Set(nameTokens(candidate?.name));
+  const sharedSpecific = mentionTokens.some(
+    (token) => !PLACE_KIND_TOKENS.has(token) && candidateTokens.has(token),
+  );
+  if (!sharedSpecific) return false;
+
+  const mentionKinds = mentionTokens.filter((token) => PLACE_KIND_TOKENS.has(token));
+  const candidateKinds = new Set(
+    [...candidateTokens].filter((token) => PLACE_KIND_TOKENS.has(token)),
+  );
   if (
-    mention.distinctiveTokens.length === 1 &&
-    normalizedName(mention.displayName) !== normalizedName(candidate?.name)
+    mentionKinds.length > 0 &&
+    candidateKinds.size > 0 &&
+    !mentionKinds.some((token) => candidateKinds.has(token))
   ) {
-    return null;
+    return false;
+  }
+  return true;
+}
+
+type PlausibleCandidate = {
+  candidate: any;
+  score: MentionResult['scoring'][number];
+};
+
+function assessCandidate(
+  mention: VenueMention,
+  result: MentionResult,
+  candidate: any,
+): { plausible: PlausibleCandidate | null; rejectionReasons: string[]; conflictFlags: string[] } {
+  const rejectionReasons: string[] = [];
+  const conflictFlags: string[] = [];
+  const score = result.scoring.find(
+    (entry) => entry.googlePlaceId === candidate?.googlePlaceId && !entry.rejected,
+  );
+  const scoreReasons = new Set(score?.reasons ?? []);
+
+  if (!validProviderIdentity(candidate)) {
+    rejectionReasons.push('provider_identity_invalid');
+  }
+  if (isAddressLikeTypes(candidate?.types) || isLocalityLikeTypes(candidate?.types)) {
+    rejectionReasons.push('provider_entity_not_saveable');
+  }
+  if (!score) rejectionReasons.push('score_explanation_missing');
+  else if (score.normalizedScore < PLAUSIBLE_FLOOR) rejectionReasons.push('below_plausible_floor');
+  if (hasLocationConflict(scoreReasons)) {
+    rejectionReasons.push('location_conflict');
+    conflictFlags.push('location_conflict');
+  }
+  if (
+    scoreReasons.has('permanently_closed') ||
+    candidate?.businessStatus === 'CLOSED_PERMANENTLY'
+  ) {
+    rejectionReasons.push('permanently_closed');
+    conflictFlags.push('permanently_closed');
+  }
+  if (!hasPlausibleIdentity(mention, candidate, scoreReasons)) {
+    rejectionReasons.push('obviously_unrelated');
   }
 
-  const hasLocationSupport =
-    scoreReasons.has('state_match') || scoreReasons.has('distance_nearby');
-  const hasVisualIdentity =
-    mention.nameEvidenceSources.includes('frame') &&
-    (scoreReasons.has('expected_category_match') || hasLocationSupport);
-  if (hasVisualIdentity) return 'visual_landmark_single_match';
-  if (hasLocationSupport) return 'single_match_with_location_support';
-  return 'strong_named_single_match';
+  return {
+    plausible: rejectionReasons.length === 0 && score ? { candidate, score } : null,
+    rejectionReasons,
+    conflictFlags,
+  };
 }
 
 function duplicateCanonicalCount(placeId: string, results: MentionResult[]): number {
@@ -121,10 +219,12 @@ function duplicateCanonicalCount(placeId: string, results: MentionResult[]): num
   ).length;
 }
 
-function providerAmbiguityReason(
-  result: MentionResult,
-): 'branch_ambiguity' | 'competing_candidates' {
-  const names = result.candidates.map((candidate) => normalizedName(candidate.name)).filter(Boolean);
+function ambiguityReason(
+  candidates: PlausibleCandidate[],
+): 'branch_ambiguity' | 'multiple_plausible_candidates' {
+  const names = candidates
+    .map(({ candidate }) => normalizedName(candidate.name))
+    .filter(Boolean);
   for (let left = 0; left < names.length; left += 1) {
     for (let right = left + 1; right < names.length; right += 1) {
       const a = names[left]!;
@@ -132,52 +232,102 @@ function providerAmbiguityReason(
       if (a === b || a.includes(b) || b.includes(a)) return 'branch_ambiguity';
     }
   }
-  return 'competing_candidates';
+  return 'multiple_plausible_candidates';
+}
+
+export function mediaReviewDecision(
+  unresolvedResults: Array<Pick<MentionResult, 'candidates'>>,
+): 'candidate_confirmation' | 'multi_candidate_confirmation' {
+  return unresolvedResults.length > 1 ||
+      unresolvedResults.some((result) => result.candidates.length > 1)
+    ? 'multi_candidate_confirmation'
+    : 'candidate_confirmation';
 }
 
 export function evaluateMediaAutoSave(
   input: MediaAutoSaveGateInput,
-  minScore: number = DEFAULT_MEDIA_AUTO_SAVE_THRESHOLD,
 ): MediaAutoSaveGateDecision {
-  const reasons: string[] = [];
-  const candidate = input.result.candidates[0];
-  const score = input.result.scoring.find(
-    (entry) => entry.googlePlaceId === candidate?.googlePlaceId && !entry.rejected,
-  );
-  const scoreReasons = new Set(score?.reasons ?? []);
-  const evidenceReason = evidenceSufficiencyReason(input.mention, candidate, scoreReasons);
+  const rawCandidateCount = input.result.scoring.length;
+  const candidateRejectionReasons = input.result.scoring
+    .filter((score) => score.rejected)
+    .map((score) => score.rejectionReason || 'provider_rejected');
+  const explicitConflictFlags: string[] = [];
+  const plausibleByProviderId = new Map<string, PlausibleCandidate>();
 
-  if (input.result.outcome !== 'verified_single' || input.result.candidates.length !== 1) {
-    reasons.push(
-      input.result.candidates.length > 1
-        ? providerAmbiguityReason(input.result)
-        : 'provider_result_not_verified',
-    );
+  for (const candidate of input.result.candidates) {
+    const assessed = assessCandidate(input.mention, input.result, candidate);
+    candidateRejectionReasons.push(...assessed.rejectionReasons);
+    explicitConflictFlags.push(...assessed.conflictFlags);
+    if (assessed.plausible && !plausibleByProviderId.has(candidate.googlePlaceId)) {
+      plausibleByProviderId.set(candidate.googlePlaceId, assessed.plausible);
+    }
   }
-  if (!candidate?.googlePlaceId) reasons.push('missing_provider_identity');
-  if (!candidate?.formattedAddress?.trim()) reasons.push('missing_formatted_address');
-  if (!validCoordinates(candidate)) reasons.push('invalid_provider_coordinates');
-  if (!score) reasons.push('missing_score_explanation');
-  if (!score || score.normalizedScore < minScore) reasons.push('below_threshold');
-  if (hasLocationConflict(scoreReasons)) reasons.push('location_conflict');
-  if (scoreReasons.has('permanently_closed') || candidate?.businessStatus === 'CLOSED_PERMANENTLY') {
-    reasons.push('permanently_closed');
-  }
-  if (!evidenceReason) reasons.push('insufficient_identity_evidence');
+
+  const plausible = [...plausibleByProviderId.values()];
+  let reasonCode: string;
   if (input.mention.hostVenueName || input.mention.relationshipType) {
-    reasons.push('host_relationship');
-  }
-  if (
-    candidate?.googlePlaceId &&
-    duplicateCanonicalCount(candidate.googlePlaceId, input.allResults) !== 1
-  ) {
-    reasons.push('canonical_place_ambiguity');
+    reasonCode = 'host_relationship';
+    explicitConflictFlags.push('host_relationship');
+  } else if (plausible.length === 0) {
+    if (explicitConflictFlags.includes('location_conflict')) reasonCode = 'location_conflict';
+    else if (
+      input.result.candidates.length > 0 &&
+      input.result.candidates.every((candidate) => !validProviderIdentity(candidate))
+    ) {
+      reasonCode = 'provider_identity_invalid';
+    } else reasonCode = 'no_plausible_candidate';
+  } else if (plausible.length > 1) {
+    reasonCode = ambiguityReason(plausible);
+    explicitConflictFlags.push(reasonCode);
+  } else {
+    const selected = plausible[0]!;
+    if (duplicateCanonicalCount(selected.candidate.googlePlaceId, input.allResults) !== 1) {
+      reasonCode = 'canonical_place_ambiguity';
+      explicitConflictFlags.push('canonical_place_ambiguity');
+    } else {
+      reasonCode = 'single_plausible_candidate';
+    }
   }
 
+  const selected = plausible.length === 1 ? plausible[0]! : null;
   return {
-    eligible: reasons.length === 0,
-    confidenceScore: score?.normalizedScore ?? null,
+    eligible: reasonCode === 'single_plausible_candidate',
+    confidenceScore: selected?.score.normalizedScore ?? null,
     ruleVersion: MEDIA_AUTO_SAVE_RULE_VERSION,
-    reasonCodes: reasons.length === 0 ? [evidenceReason!] : [...new Set(reasons)],
+    reasonCodes: [reasonCode],
+    rawCandidateCount,
+    plausibleCandidateCount: plausible.length,
+    selectedProviderId: selected?.candidate.googlePlaceId ?? null,
+    candidateRejectionReasons: [...new Set(candidateRejectionReasons)],
+    explicitConflictFlags: [...new Set(explicitConflictFlags)],
   };
+}
+
+function safeLogValue(value: string | null | undefined): string {
+  return (value ?? 'none').replace(/[^a-zA-Z0-9:._-]/g, '_').slice(0, 180);
+}
+
+export function formatMediaAutoSaveDecisionLog(args: {
+  jobId: string;
+  logicalPlaceId: string;
+  decision: MediaAutoSaveGateDecision;
+  finalDecision: 'auto_save' | 'review';
+  finalReasonCodes: string[];
+}): string {
+  const selectedScore = args.decision.confidenceScore == null
+    ? 'none'
+    : args.decision.confidenceScore.toFixed(4);
+  return [
+    '[media-autosave]',
+    `job_id=${safeLogValue(args.jobId)}`,
+    `logical_place_id=${safeLogValue(args.logicalPlaceId)}`,
+    `raw_candidate_count=${args.decision.rawCandidateCount}`,
+    `plausible_candidate_count=${args.decision.plausibleCandidateCount}`,
+    `selected_provider_id=${safeLogValue(args.decision.selectedProviderId)}`,
+    `selected_score=${selectedScore}`,
+    `rejection_reasons=${safeLogValue(args.decision.candidateRejectionReasons.join(','))}`,
+    `explicit_conflict_flags=${safeLogValue(args.decision.explicitConflictFlags.join(','))}`,
+    `final_decision=${args.finalDecision}`,
+    `decision_reason=${safeLogValue(args.finalReasonCodes.join(','))}`,
+  ].join(' ');
 }

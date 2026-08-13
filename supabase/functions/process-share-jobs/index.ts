@@ -49,7 +49,14 @@ import {
   mediaEvidenceAutoSaveEligible,
 } from './mediaEvidence.ts';
 import { buildVenueMentions, normalizeVenueName } from './mediaMentions.ts';
-import { evaluateMediaAutoSave, mediaAutoSaveAuthorized, MEDIA_AUTO_SAVE_RULE_VERSION, resolveMediaAutoSaveThreshold } from './mediaAutoSaveGate.ts';
+import {
+  evaluateMediaAutoSave,
+  formatMediaAutoSaveDecisionLog,
+  mediaAutoSaveAuthorized,
+  mediaReviewDecision,
+  MEDIA_AUTO_SAVE_RULE_VERSION,
+  resolveMediaAutoSaveThreshold,
+} from './mediaAutoSaveGate.ts';
 import { authorizeServiceRoleBearer, authorizeWorkerSecret, planPreResolve, planPostResolve } from './mediaFinalizePlan.ts';
 
 const CORS_HEADERS: Record<string, string> = {
@@ -249,7 +256,6 @@ function mediaAutoSaveEnabledForUser(
   flags: ReturnType<typeof readMediaFlags>,
   userId: string,
 ): boolean {
-  if (!flags.autoSaveThresholdValid) return false;
   return mediaAutoSaveAuthorized({
     enabled: flags.autoSaveEnabled,
     canaryUserId: flags.autoSaveCanaryUserId,
@@ -572,19 +578,36 @@ async function finalizeMediaTask(admin: any, env: any, body: any): Promise<Respo
       const gate = mention
         ? evaluateMediaAutoSave(
             { mention, result: mentionResult, allResults: mentionResults },
-            configuredFlags.autoSaveThreshold,
           )
         : {
             eligible: false,
             confidenceScore: null,
             ruleVersion: MEDIA_AUTO_SAVE_RULE_VERSION,
             reasonCodes: ['mention_evidence_missing'],
+            rawCandidateCount: Array.isArray(mentionResult.scoring)
+              ? mentionResult.scoring.length
+              : 0,
+            plausibleCandidateCount: 0,
+            selectedProviderId: null,
+            candidateRejectionReasons: ['mention_evidence_missing'],
+            explicitConflictFlags: [],
           };
       const blockingReasons = [...gate.reasonCodes];
       if (gate.eligible && !autoSaveAuthorized) blockingReasons.push('auto_save_disabled_or_user_not_allowlisted');
       if (gate.eligible && !mediaRunId) blockingReasons.push('media_run_audit_missing');
       const mayAutoSave = gate.eligible && autoSaveAuthorized && !!mediaRunId;
-      const candidate = mentionResult.candidates?.[0] ?? null;
+      const candidate = gate.selectedProviderId
+        ? mentionResult.candidates?.find(
+            (entry: any) => entry.googlePlaceId === gate.selectedProviderId,
+          ) ?? null
+        : null;
+      console.log(formatMediaAutoSaveDecisionLog({
+        jobId: job.id,
+        logicalPlaceId: mentionResult.mentionId,
+        decision: gate,
+        finalDecision: mayAutoSave ? 'auto_save' : 'review',
+        finalReasonCodes: blockingReasons,
+      }));
 
       if (mayAutoSave) {
         const categoryResolution = resolvePlaceCategory({
@@ -780,7 +803,7 @@ async function finalizeMediaTask(admin: any, env: any, body: any): Promise<Respo
       job,
       {
         status: 'needs_help',
-        decision: unresolvedResults.length > 1 ? 'multi_candidate_confirmation' : 'candidate_confirmation',
+        decision: mediaReviewDecision(unresolvedResults),
         saved_place_id: allSavedPlaceIds[0] ?? null,
         needs_help_reason: allSavedPlaceIds.length > 0 ? 'media_partial_review' : 'media_review_required',
         suggested_query: unresolvedResults.map((mention: any) => mention.displayName).filter(Boolean).join(' | ') || null,
