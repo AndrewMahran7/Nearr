@@ -1162,6 +1162,12 @@ async function processOne(admin: any, env: any, job: any): Promise<void> {
 
   // needs_help (single / multi / manual)
   const candidatePayload = { candidates: result.candidates.slice(0, 10).map(safeCandidate) };
+  const metadataReviewReason =
+    metadataAutoSave.plausibleCandidateCount === 1 && metadataAutoSave.explicitConflictFlags.length > 0
+      ? `metadata_${metadataAutoSave.explicitConflictFlags[0]}`
+      : metadataAutoSave.plausibleCandidateCount === 0 && metadataAutoSave.candidateRejectionReasons.length > 0
+      ? `metadata_${metadataAutoSave.candidateRejectionReasons[0]}`
+      : plan.needsHelpReason;
   const decisionForRow =
     plan.mode === 'manual'
       ? 'manual_fallback'
@@ -1192,7 +1198,7 @@ async function processOne(admin: any, env: any, job: any): Promise<void> {
     {
       status: 'needs_help',
       decision: decisionForRow,
-      needs_help_reason: plan.needsHelpReason,
+      needs_help_reason: metadataReviewReason,
       suggested_query: plan.suggestedQuery,
       candidate_payload: candidatePayload,
       canonical_url: canonicalUrl,

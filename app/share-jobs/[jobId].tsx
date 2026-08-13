@@ -39,6 +39,7 @@ import {
   backTarget,
   findSavedPlaceIdByGooglePlaceId,
   normalizeShareJobCandidates,
+  quickCheckReviewCopy,
 } from '@/lib/shareJobsUi';
 import { PHASE_1_COPY, splitPlaceAddress } from '@/lib/sharePhase1Ui';
 import { buildPhase2PreviewJob, isPhase2PreviewId } from '@/lib/phase2Preview';
@@ -313,6 +314,10 @@ function ShareJobDetailScreen() {
     }));
   }, [candidates, mentionSlots]);
   const automaticallySavedPlaceIds = savedPlaceIdsFromPayload(job?.candidate_payload);
+  const singleReviewCopy = quickCheckReviewCopy(job?.needs_help_reason, {
+    title: PHASE_1_COPY.suggestedHeading,
+    body: PHASE_1_COPY.suggestedBody,
+  });
   const savedSnapshot = useMemo(
     () => savedPlaces.length > 0 ? savedPlaces : getSavedPlacesCacheSnapshot() ?? [],
     [savedPlaces],
@@ -1316,12 +1321,12 @@ function ShareJobDetailScreen() {
         ) : (
           <View style={styles.section}>
             <Text style={[typography.title, styles.title]}>
-              {alreadySavedId ? PHASE_1_COPY.alreadySavedHeading : PHASE_1_COPY.suggestedHeading}
+              {alreadySavedId ? PHASE_1_COPY.alreadySavedHeading : singleReviewCopy.title}
             </Text>
             <Text style={[typography.caption, styles.help]}>
               {alreadySavedId
                 ? PHASE_1_COPY.alreadySavedBody
-                : PHASE_1_COPY.suggestedBody}
+                : singleReviewCopy.body}
             </Text>
             <View style={styles.candidateCard}>
               <PlaceImage

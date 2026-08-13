@@ -51,6 +51,39 @@ export function actionableSectionHeading(count: number): string {
   return `${count} places need a quick check`;
 }
 
+export type QuickCheckReviewCopy = { title: string; body: string };
+
+/** Never describe a known backend contradiction as an unqualified likely match. */
+export function quickCheckReviewCopy(
+  needsHelpReason: string | null | undefined,
+  fallback: QuickCheckReviewCopy,
+): QuickCheckReviewCopy {
+  switch (needsHelpReason) {
+    case 'metadata_location_conflict':
+      return {
+        title: 'This match needs a closer check',
+        body: "The provider address conflicts with the address in the post. Confirm it before saving.",
+      };
+    case 'metadata_provider_permanently_closed':
+      return {
+        title: 'This place may be closed',
+        body: 'The provider marks this place permanently closed. Confirm it before saving.',
+      };
+    case 'metadata_provider_coordinates_invalid':
+    case 'metadata_provider_id_missing':
+    case 'metadata_provider_name_missing':
+    case 'metadata_provider_address_missing':
+    case 'metadata_provider_identity_invalid':
+    case 'metadata_provider_clearly_unrelated':
+      return {
+        title: 'This match needs a closer check',
+        body: 'The provider result is incomplete or may not identify the place from the post.',
+      };
+    default:
+      return fallback;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Back-navigation fallback. A queue/confirmation screen reached via a cold
 // deep link (the extension's "View queue", a notification) has no previous

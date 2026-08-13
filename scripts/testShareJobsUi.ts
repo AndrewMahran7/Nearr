@@ -24,6 +24,7 @@ import {
   backTarget,
   normalizeShareJobCandidates,
   findSavedPlaceIdByGooglePlaceId,
+  quickCheckReviewCopy,
 } from '../lib/shareJobsUi';
 
 let failures = 0;
@@ -143,6 +144,21 @@ check('finds saved id by google place id', findSavedPlaceIdByGooglePlaceId('gpB'
 check('returns null when not saved', findSavedPlaceIdByGooglePlaceId('gpZ', savedList) === null);
 check('returns null for missing place id', findSavedPlaceIdByGooglePlaceId(null, savedList) === null);
 check('returns null for missing saved list', findSavedPlaceIdByGooglePlaceId('gpA', null) === null);
+
+// ---- one-candidate review copy must expose concrete blockers ---------------
+const fallbackReviewCopy = { title: 'I found a likely match', body: 'Is this the place from the post?' };
+check(
+  'ordinary review keeps likely-match copy',
+  quickCheckReviewCopy('candidate_confirmation', fallbackReviewCopy).title === fallbackReviewCopy.title,
+);
+check(
+  'location conflict never claims an unqualified likely match',
+  quickCheckReviewCopy('metadata_location_conflict', fallbackReviewCopy).title === 'This match needs a closer check',
+);
+check(
+  'permanent closure is explained explicitly',
+  quickCheckReviewCopy('metadata_provider_permanently_closed', fallbackReviewCopy).title === 'This place may be closed',
+);
 
 // ---- friendly section heading (singular / plural) --------------------------
 check('singular heading for 1', actionableSectionHeading(1) === 'One place needs a quick check');
