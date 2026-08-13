@@ -58,6 +58,11 @@ import {
   resolveMediaAutoSaveThreshold,
 } from './mediaAutoSaveGate.ts';
 import { authorizeServiceRoleBearer, authorizeWorkerSecret, planPreResolve, planPostResolve } from './mediaFinalizePlan.ts';
+import {
+  classifyFinalizeException,
+  formatFinalizeReliabilityLog,
+  planProviderUnavailable,
+} from './mediaFinalizeReliability.ts';
 
 const CORS_HEADERS: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
@@ -445,7 +450,12 @@ async function recoverStrandedMediaJobs(admin: any): Promise<void> {
 // by a prior callback or the recovery sweep) are safe no-ops — a replay after a
 // save or a needs_help can never revive or double-finalize the job. The parent
 // is ALWAYS derived from the task's FK, never trusted from the callback body.
-async function finalizeMediaTask(admin: any, env: any, body: any): Promise<Response> {
+async function finalizeMediaTask(
+  admin: any,
+  env: any,
+  body: any,
+  invocation: { id: string; startedAt: number },
+): Promise<Response> {
   const taskId = typeof body.taskId === 'string' ? body.taskId : '';
   if (!taskId) return json({ error: 'missing_task_id' }, 400);
 
@@ -457,6 +467,20 @@ async function finalizeMediaTask(admin: any, env: any, body: any): Promise<Respo
   const { data: job } = task.share_job_id
     ? await admin.from('share_jobs').select('*').eq('id', task.share_job_id).maybeSingle()
     : { data: null };
+
+  const logFinalStatus = (finalStatus: string, errorClass: string | null = null) => {
+    console.log(formatFinalizeReliabilityLog({
+      invocationId: invocation.id,
+      jobId: job?.id ?? task.share_job_id ?? 'missing',
+      taskId,
+      operation: 'finalize_media_task',
+      attempt: Number(task.attempts) || 0,
+      claimState: String(task.status ?? 'unknown'),
+      elapsedMs: Date.now() - invocation.startedAt,
+      finalStatus,
+      errorClass,
+    }));
+  };
 
   const outcome = typeof body.outcome === 'string' ? body.outcome : 'evidence';
   const parsed = outcome === 'evidence'
@@ -476,11 +500,13 @@ async function finalizeMediaTask(admin: any, env: any, body: any): Promise<Respo
 
   // Terminal task → idempotent no-op (duplicate / replayed callback).
   if (pre.action === 'idempotent_task_terminal') {
+    logFinalStatus('idempotent_task_terminal');
     return json({ ok: true, idempotent: true, taskStatus: pre.taskStatus });
   }
 
   if (!job) {
     await markMediaTask(admin, taskId, 'failed', { failure_code: 'parent_job_missing', completed_at: nowIso() });
+    logFinalStatus('parent_job_missing', 'permanent_processing_error');
     return json({ error: 'parent_job_missing' }, 404);
   }
 
@@ -491,6 +517,7 @@ async function finalizeMediaTask(admin: any, env: any, body: any): Promise<Respo
   // Parent already terminal → mark task done, never revive the parent.
   if (pre.action === 'parent_already_terminal') {
     await markMediaTask(admin, taskId, 'completed', { progress_stage: 'cleanup', completed_at: nowIso() });
+    logFinalStatus('parent_already_terminal');
     return json({ ok: true, parentAlreadyTerminal: true, jobStatus: job.status });
   }
 
@@ -503,6 +530,7 @@ async function finalizeMediaTask(admin: any, env: any, body: any): Promise<Respo
       completed_at: nowIso(),
     });
     console.log(`[media-task] finalize route=manual task_id=${taskId} reason=${pre.failureCode}`);
+    logFinalStatus('manual', 'permanent_processing_error');
     return json({ ok: true, route: 'manual', reason: pre.failureCode });
   }
 
@@ -542,19 +570,55 @@ async function finalizeMediaTask(admin: any, env: any, body: any): Promise<Respo
     providerErrorCount: mentionResults.filter((mention: any) => mention?.outcome === 'provider_error').length,
   } as any;
   if (isRetryableNameDrivenProviderFailure(nameDrivenResult)) {
-    const retryAfter = Math.min(
-      900,
-      Math.max(
-        30,
-        ...mentionResults.map((mention: any) => Number(mention?.providerRetryAfterSeconds) || 0),
-      ),
-    );
-    console.warn(`[media-task] places provider unavailable task_id=${taskId}`);
-    return json(
-      { error: 'places_provider_unavailable', retryable: true },
-      503,
-      { 'Retry-After': String(retryAfter) },
-    );
+    const retryPlan = planProviderUnavailable({
+      attempts: Number(task.attempts) || 1,
+      maxAttempts: Number(task.max_attempts) || 3,
+      failures: mentionResults,
+    });
+    if (retryPlan.action === 'requeue') {
+      const { data: requeued, error: requeueError } = await admin.rpc('requeue_media_task', {
+        p_task_id: taskId,
+        p_backoff_seconds: retryPlan.delaySeconds,
+        p_failure_code: 'places_provider_unavailable',
+      });
+      if (requeueError) throw new Error(`media_retry_schedule_failed: ${requeueError.message}`);
+      if (!requeued) {
+        const { data: current } = await admin
+          .from('share_media_tasks').select('status').eq('id', taskId).maybeSingle();
+        logFinalStatus('retry_schedule_conflict', 'claim_conflict');
+        return json({
+          ok: true,
+          idempotent: true,
+          taskStatus: current?.status ?? 'unknown',
+        });
+      }
+      logFinalStatus('retry_scheduled', retryPlan.errorClass);
+      return json(
+        {
+          ok: true,
+          accepted: true,
+          route: 'retry_scheduled',
+          errorClass: retryPlan.errorClass,
+          retryAfterSeconds: retryPlan.delaySeconds,
+        },
+        retryPlan.responseStatus,
+        { 'Retry-After': String(retryPlan.delaySeconds) },
+      );
+    }
+
+    await finalizeParentManual(admin, job);
+    await markMediaTask(admin, taskId, 'failed', {
+      failure_code: 'places_provider_unavailable_exhausted',
+      progress_stage: 'cleanup',
+      completed_at: nowIso(),
+    });
+    logFinalStatus('retry_exhausted', retryPlan.errorClass);
+    return json({
+      ok: true,
+      route: 'manual',
+      reason: 'places_provider_unavailable_exhausted',
+      errorClass: retryPlan.errorClass,
+    });
   }
   const canonicalUrl = task.canonical_url || task.source_url;
 
@@ -1313,10 +1377,51 @@ serve(async (req) => {
   // Phase 2: media-worker callback — finalize a media task through the EXISTING
   // resolver + safeToAutoSave + save path. Same service-role auth as the sweep.
   if (body && body.mode === 'finalize_media_task') {
+    const invocation = {
+      id: req.headers.get('x-request-id') || crypto.randomUUID(),
+      startedAt: Date.now(),
+    };
+    console.log(JSON.stringify({
+      marker: 'phase2_reliability',
+      invocationId: invocation.id,
+      jobId: null,
+      taskId: typeof body.taskId === 'string' ? body.taskId : null,
+      operation: 'finalize_media_task',
+      attempt: null,
+      claimState: 'unknown',
+      elapsedMs: 0,
+      finalStatus: 'started',
+      errorClass: null,
+    }));
     try {
-      return await finalizeMediaTask(admin, env, body);
+      const response = await finalizeMediaTask(admin, env, body, invocation);
+      console.log(JSON.stringify({
+        marker: 'phase2_reliability',
+        invocationId: invocation.id,
+        jobId: null,
+        taskId: typeof body.taskId === 'string' ? body.taskId : null,
+        operation: 'finalize_media_task',
+        attempt: null,
+        claimState: 'unknown',
+        elapsedMs: Date.now() - invocation.startedAt,
+        finalStatus: 'http_complete',
+        httpStatus: response.status,
+        errorClass: null,
+      }));
+      return response;
     } catch (err) {
-      console.log(`[media-task] finalize_error msg=${truncate((err as Error)?.message)}`);
+      console.log(JSON.stringify({
+        marker: 'phase2_reliability',
+        invocationId: invocation.id,
+        jobId: null,
+        taskId: typeof body.taskId === 'string' ? body.taskId : null,
+        operation: 'finalize_media_task',
+        attempt: null,
+        claimState: 'unknown',
+        elapsedMs: Date.now() - invocation.startedAt,
+        finalStatus: 'failed',
+        errorClass: classifyFinalizeException(err),
+      }));
       return json({ error: 'media_finalize_failed' }, 500);
     }
   }

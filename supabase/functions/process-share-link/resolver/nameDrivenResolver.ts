@@ -87,6 +87,7 @@ export type MentionResult = {
   hostVenueName?: string;
   relationshipType?: string;
   providerError?: string;
+  providerStatus?: string;
   providerRetryAfterSeconds?: number;
 };
 
@@ -534,6 +535,7 @@ export async function resolveVenueMentions(args: {
         candidates: [],
         scoring: [],
         providerError: result.reason,
+        providerStatus: result.status,
         providerRetryAfterSeconds: result.retryAfterSeconds,
         ...relFields,
       });

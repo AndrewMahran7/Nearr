@@ -329,6 +329,7 @@ const geo: MediaGeoContext = { city: null, region: 'California', country: 'Unite
       deps: { search: search as any, geocode: noGeocode },
     });
     check('one provider_error preserved', r.mentionResults.find((m) => m.displayName === 'Boom Woodfire')!.outcome === 'provider_error');
+    check('provider status preserved for reliability classification', r.mentionResults.find((m) => m.displayName === 'Boom Woodfire')!.providerStatus === 'OVER_QUERY_LIMIT');
     check('other mention still verified', r.mentionResults.find((m) => m.displayName === 'Parlor Woodfire')!.outcome === 'verified_single');
     check('failed mention does NOT discard verified', r.verifiedCount === 1);
   }
