@@ -500,10 +500,9 @@ type AsyncUi =
   | { kind: 'network_failure' };
 
 /**
- * Cohesive root surface shared by every async extension state. The native
- * controller asks iOS for a compact height, while this surface intentionally
- * fills whatever bounds the extension host actually grants. That avoids a
- * small React card floating at the bottom of an unrelated empty controller.
+ * Cohesive content root shared by every async extension state. Native owns the
+ * compact dark surface and clips this transparent React root to that surface;
+ * the share host remains visible through the rest of its controller bounds.
  */
 function AsyncSurface({
   children,
@@ -869,7 +868,7 @@ const styles = StyleSheet.create({
   label: {
     marginTop: 12,
     fontSize: 16,
-    color: '#111',
+    color: '#FFFFFF',
   },
   checkmark: {
     fontSize: 40,
@@ -878,38 +877,38 @@ const styles = StyleSheet.create({
   diagPanel: {
     marginTop: 16,
     padding: 8,
-    backgroundColor: '#f4f4f4',
+    backgroundColor: '#242428',
     borderRadius: 6,
     alignSelf: 'stretch',
   },
   diagTitle: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#444',
+    color: '#D1D1D6',
     marginBottom: 4,
   },
   diagLine: {
     fontSize: 11,
-    color: '#333',
+    color: '#B7B7BE',
     marginTop: 2,
   },
   title: {
     marginTop: 10,
     fontSize: 17,
     fontWeight: '600',
-    color: '#111',
+    color: '#FFFFFF',
     textAlign: 'center',
   },
   subtle: {
     marginTop: 4,
     fontSize: 14,
-    color: '#444',
+    color: '#B7B7BE',
     textAlign: 'center',
   },
   subtleSmall: {
     marginTop: 6,
     fontSize: 12,
-    color: '#777',
+    color: '#8E8E93',
     textAlign: 'center',
     paddingHorizontal: 12,
   },
@@ -935,12 +934,11 @@ const styles = StyleSheet.create({
 // above so the flag-off (legacy) extension appearance is unchanged.
 // ---------------------------------------------------------------------------
 const NEARR_ORANGE = '#FF6B00';
-const NEARR_SURFACE = '#0D0D0F';
 
 const asyncStyles = StyleSheet.create({
   surface: {
     flex: 1,
-    backgroundColor: NEARR_SURFACE,
+    backgroundColor: 'transparent',
   },
   scroll: { flex: 1 },
   contentContainer: {

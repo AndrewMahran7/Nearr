@@ -12,7 +12,7 @@ const placeImage = read('components/PlaceImage.tsx');
 const shareJobsSheet = read('components/ShareJobsSheet.tsx');
 
 assert.doesNotMatch(extension, /height: '100%'/);
-assert.match(extension, /backgroundColor: NEARR_SURFACE/);
+assert.match(extension, /backgroundColor: 'transparent'/);
 assert.match(extension, /completionView\(\{ kind: 'accepted'/);
 assert.match(extension, /<Text style={asyncStyles\.primaryText}>\{view\.primary\}<\/Text>/);
 assert.match(extension, /<Text style={asyncStyles\.secondaryText}>\{view\.secondary\}<\/Text>/);

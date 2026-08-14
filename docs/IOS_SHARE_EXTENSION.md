@@ -72,10 +72,19 @@ Required:
 ## Compact presentation
 
 The active native controller is supplied by `expo-share-extension`, not the legacy
-controller under `native/share-extension/`. Nearr patches that controller during
-`npm install` so the hosting view is transparent and the React root stays anchored
-to the bottom at 190–240pt plus the device safe area. The React async states fit
-inside that frame and draw the rounded Nearr sheet.
+`ShareViewController.swift` scaffold under `native/share-extension/`. After the
+package creates the extension target, `withCompactShareExtension` copies Nearr's
+authoritative `ShareExtensionViewController.swift` into it. The generated controller
+is the principal class for `com.apple.share-services`; there is no storyboard and
+no Nearr-owned modal or sheet presentation controller.
+
+The share host owns that controller's outer presentation. Nearr requests the
+configured 360pt `preferredContentSize`, but does not rely on the host honoring the
+request. The principal view is transparent and non-opaque, while a native dark
+surface is constrained to the bottom at 360pt (420pt for accessibility Dynamic
+Type, or the available height when smaller). The loading indicator and transparent
+React root are both constrained inside that surface. This keeps the visible Nearr
+UI compact without painting the host-sized controller black.
 
 iOS still owns the extension host and transition. The app can make its visible
 content compact, but cannot guarantee that every source app or iOS version exposes
@@ -98,4 +107,6 @@ Physical-device checks required for a release build:
 
 ## Legacy scaffold note
 
-There is old native share-extension scaffold code under `native/share-extension/`. Treat it as legacy/dead scaffolding, not the active implementation path.
+`native/share-extension/ShareViewController.swift` and its adjacent scaffold plist
+remain legacy/dead. `ShareExtensionViewController.swift` is the authoritative
+controller copied by the active compact-presentation config plugin.
