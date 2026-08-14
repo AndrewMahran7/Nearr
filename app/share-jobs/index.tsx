@@ -150,9 +150,10 @@ function jobTitle(job: ShareJob): string {
     return name || 'Saved place';
   }
   const candidates = job.candidate_payload?.candidates;
+  const candidateCount = Array.isArray(candidates) ? candidates.length : 0;
   const first = Array.isArray(candidates) ? candidates[0]?.name : undefined;
   if (job.status === 'needs_help') {
-    if (job.needs_help_reason === 'multiple_candidates') return 'A few possible places';
+    if (candidateCount > 1) return `${candidateCount} possible places`;
     if (first) return first;
     return 'Place from your post';
   }
@@ -165,7 +166,9 @@ function jobSubtitle(job: ShareJob, stalled = false): string {
     case 'processing_metadata':
       return processingMessage(job.status, stalled ? STALE_PROCESSING_MS + 1 : 0);
     case 'needs_help':
-      if (job.needs_help_reason === 'multiple_candidates') return 'Choose which ones to save';
+      if (Array.isArray(job.candidate_payload?.candidates) && job.candidate_payload.candidates.length > 1) {
+        return 'Pick the one you meant';
+      }
       if (job.needs_help_reason === 'manual_search' || job.needs_help_reason === 'metadata_unavailable')
         return 'Tap to search for it';
       return 'Does this look right?';

@@ -112,6 +112,20 @@ function check(name: string, condition: boolean, detail?: string): void {
   );
 }
 
+{
+  const plan = planFromResolverDecision({
+    decision: 'candidate_picker',
+    safeToAutoSave: false,
+    hasPrimaryCandidate: true,
+    candidateCount: 3,
+  });
+  check(
+    'candidate_picker => one-intended-place picker',
+    plan.route === 'needs_help' && plan.mode === 'picker',
+    JSON.stringify(plan),
+  );
+}
+
 // 8. manual_fallback => needs_help manual with suggested query preserved.
 {
   const plan = planFromResolverDecision({
@@ -217,8 +231,8 @@ function check(name: string, condition: boolean, detail?: string): void {
 
 {
   const n = buildNeedsHelpNotification({ mode: 'single', jobId: 'job-2', candidateName: 'NOVA Kitchen & Bar' });
-  check('needs_help single title', n.title === 'Is this NOVA Kitchen & Bar?', n.title);
-  check('needs_help single body', n.body === 'Tap to confirm the place.', n.body);
+  check('needs_help single title', n.title === 'We think we found it', n.title);
+  check('needs_help single body', n.body === 'Give us a quick check before we save it.', n.body);
   check(
     'needs_help data type + jobId',
     n.data.type === 'share_job_needs_help' && n.data.jobId === 'job-2',
@@ -227,14 +241,15 @@ function check(name: string, condition: boolean, detail?: string): void {
 }
 
 {
-  const n = buildNeedsHelpNotification({ mode: 'multi', jobId: 'job-3', candidateCount: 3 });
-  check('needs_help multi title', n.title === 'We found 3 possible locations', n.title);
+  const n = buildNeedsHelpNotification({ mode: 'picker', jobId: 'job-3', candidateCount: 3 });
+  check('needs_help picker title', n.title === 'We found 3 possible places', n.title);
+  check('needs_help picker body', n.body === 'Pick the one you meant and we’ll save it.', n.body);
 }
 
 {
   const n = buildNeedsHelpNotification({ mode: 'manual', jobId: 'job-4' });
-  check('needs_help manual title', n.title === 'We need help finding this place', n.title);
-  check('needs_help manual body', n.body === 'Tap to search for it.', n.body);
+  check('needs_help manual title', n.title === 'We couldn’t quite find this one', n.title);
+  check('needs_help manual body', n.body === 'Help us track down the place.', n.body);
 }
 
 check('platformLabel instagram', platformLabel('instagram') === 'Instagram');

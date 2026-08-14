@@ -35,10 +35,30 @@ export type ShareRegressionFixture = {
   mustNotIncludeCandidateNames?: string[];
   /** Optional explicit assertion for the final safe-to-auto-save flag. */
   expectedSafeToAutoSave?: boolean;
+  /** Optional exact raw resolver contract for ambiguity regressions. */
+  expectedRawCandidateCount?: number;
+  expectedProviderIds?: string[];
   notes?: string;
 };
 
 export const SHARE_REGRESSION_FIXTURES: ShareRegressionFixture[] = [
+  {
+    id: 'instagram-hellfire-bay-ambiguity-job-8aa61cd0',
+    url: 'https://www.instagram.com/reel/DYq7Q3Lza0G/',
+    platform: 'instagram',
+    acceptedDecisions: ['candidate_picker'],
+    expectedCandidateNameIncludes: ['Hellfire Bay'],
+    expectedAddressIncludes: ['Australia'],
+    expectedSafeToAutoSave: false,
+    expectedRawCandidateCount: 3,
+    expectedProviderIds: [
+      'ChIJ-93O_bZkWyoRWSPSBABfQR0',
+      'ChIJyTWPMFJlWyoRwSpcv4JumBo',
+      'ChIJ8Y8T77BkWyoRF-6wbPoGMJY',
+    ],
+    notes:
+      'Production job 8aa61cd0-92da-4a00-87bf-03a8f2c07ed1: worker plausibility removes Little Hellfire Bay by exact caption identity and preserves both Hellfire Bay provider rows for the picker.',
+  },
   {
     id: 'instagram-capones-cucina-reel',
     url: 'https://www.instagram.com/reel/DUWyZkfgbT4/?igsh=NTc4MTIwNjQ2YQ==',

@@ -7,7 +7,7 @@
 
 import { addressesMatch } from '../../../lib/shareAgent/tools.ts';
 
-export const METADATA_AUTO_SAVE_RULE_VERSION = 'metadata-autosave-2026-08-13.v1';
+export const METADATA_AUTO_SAVE_RULE_VERSION = 'metadata-autosave-2026-08-13.v2';
 
 type Candidate = {
   googlePlaceId?: unknown;
@@ -29,6 +29,12 @@ type MetadataEvidence = {
   isRoundup?: unknown;
   address?: { raw?: unknown } | null;
   addresses?: unknown;
+  venueNameHints?: unknown;
+};
+
+export type MetadataCandidateRejection = {
+  providerId: string | null;
+  reason: string;
 };
 
 export type MetadataAutoSaveDecision = {
@@ -38,6 +44,8 @@ export type MetadataAutoSaveDecision = {
   plausibleCandidateCount: number;
   selectedProviderId: string | null;
   confidenceScore: number | null;
+  plausibleProviderIds: string[];
+  rejectedCandidates: MetadataCandidateRejection[];
   reasonCodes: string[];
   candidateRejectionReasons: string[];
   explicitConflictFlags: string[];
@@ -45,6 +53,17 @@ export type MetadataAutoSaveDecision = {
 
 function text(value: unknown): string {
   return typeof value === 'string' ? value.trim() : '';
+}
+
+function normalizedName(value: unknown): string {
+  return text(value)
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/&/g, ' and ')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+    .replace(/\s+/g, ' ');
 }
 
 function finiteInRange(value: unknown, min: number, max: number): boolean {
@@ -76,14 +95,39 @@ export function evaluateMetadataAutoSave(input: {
     ? input.result.candidates.filter((candidate): candidate is Candidate => !!candidate && typeof candidate === 'object')
     : [];
   const candidateRejectionReasons: string[] = [];
+  const rejectedCandidates: MetadataCandidateRejection[] = [];
   const plausibleByProviderId = new Map<string, Candidate>();
   for (const candidate of raw) {
     const rejection = candidateRejectionReason(candidate);
     if (rejection) {
       candidateRejectionReasons.push(rejection);
+      rejectedCandidates.push({ providerId: text(candidate.googlePlaceId) || null, reason: rejection });
       continue;
     }
     plausibleByProviderId.set(text(candidate.googlePlaceId), candidate);
+  }
+
+  // A pin-style caption venue hint is explicit identity evidence. When at
+  // least one provider result exactly matches it, candidates with a different
+  // name are contradictions rather than extra choices. This intentionally
+  // does not use score thresholds or substring matching: "Hellfire Bay" and
+  // "Little Hellfire Bay" are distinct identities, while two provider rows
+  // both named "Hellfire Bay" remain ambiguous until stronger evidence can
+  // distinguish them.
+  const hintNames = Array.isArray(input.evidence.venueNameHints)
+    ? input.evidence.venueNameHints.map(normalizedName).filter(Boolean)
+    : [];
+  const validCandidates = [...plausibleByProviderId.values()];
+  const hasExactCaptionName = hintNames.length > 0 && validCandidates.some(
+    (candidate) => hintNames.includes(normalizedName(candidate.name)),
+  );
+  if (hasExactCaptionName) {
+    for (const [providerId, candidate] of plausibleByProviderId) {
+      if (hintNames.includes(normalizedName(candidate.name))) continue;
+      plausibleByProviderId.delete(providerId);
+      candidateRejectionReasons.push('explicit_name_conflict');
+      rejectedCandidates.push({ providerId, reason: 'explicit_name_conflict' });
+    }
   }
 
   const plausible = [...plausibleByProviderId.values()];
@@ -104,11 +148,6 @@ export function evaluateMetadataAutoSave(input: {
     explicitConflictFlags.push('location_conflict');
   }
 
-  const resolverDecision = text(input.result.decision);
-  if (resolverDecision !== 'candidate_confirmation') {
-    explicitConflictFlags.push(`resolver_${resolverDecision || 'decision_missing'}`);
-  }
-
   let reasonCode: string;
   if (explicitConflictFlags.length > 0) reasonCode = explicitConflictFlags[0]!;
   else if (plausible.length === 0) reasonCode = candidateRejectionReasons[0] ?? 'no_plausible_candidate';
@@ -121,6 +160,8 @@ export function evaluateMetadataAutoSave(input: {
     rawCandidateCount: raw.length,
     plausibleCandidateCount: plausible.length,
     selectedProviderId: selected ? text(selected.googlePlaceId) : null,
+    plausibleProviderIds: plausible.map((candidate) => text(candidate.googlePlaceId)),
+    rejectedCandidates,
     confidenceScore:
       selected && typeof selected.confidenceScore === 'number' && Number.isFinite(selected.confidenceScore)
         ? selected.confidenceScore

@@ -73,6 +73,12 @@ import {
   formatFinalizeReliabilityLog,
   planProviderUnavailable,
 } from './mediaFinalizeReliability.ts';
+import {
+  buildCandidateReviewSnapshot,
+  decisionForPlausibleCandidates,
+  mediaFailureReview,
+  persistedCandidateCount,
+} from './ambiguityReview.ts';
 
 const CORS_HEADERS: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
@@ -119,6 +125,8 @@ function safeCandidate(c: any, aiNote: string | null = null) {
     shortFormattedAddress: typeof c.shortFormattedAddress === 'string' ? c.shortFormattedAddress : null,
     businessStatus: typeof c.businessStatus === 'string' ? c.businessStatus : null,
     matchScore: typeof c.confidenceScore === 'number' ? c.confidenceScore : null,
+    evidence: Array.isArray(c.evidence) ? c.evidence.filter((value: unknown) => typeof value === 'string').slice(0, 12) : [],
+    reasons: Array.isArray(c.reasons) ? c.reasons.filter((value: unknown) => typeof value === 'string').slice(0, 12) : [],
     aiNote,
   };
 }
@@ -295,8 +303,19 @@ async function enqueueMediaTask(
   platform: string,
   canonicalUrl: string,
   sourceUrl: string,
-  options: { parkParent?: boolean } = {},
+  options: { parkParent?: boolean; parkPatch?: Record<string, unknown> } = {},
 ): Promise<void> {
+  // Persist the best metadata review contract before the media task can run.
+  // A failed media lookup may enrich this state, but must never erase known
+  // candidates and strand the user in blank manual search.
+  if (options.parkParent !== false && options.parkPatch) {
+    const { error: parkSnapshotError } = await admin
+      .from('share_jobs')
+      .update({ ...options.parkPatch, progress_stage: 'checking_video' })
+      .eq('id', job.id)
+      .eq('status', 'processing_metadata');
+    if (parkSnapshotError) throw new Error(`park_media_review_failed: ${parkSnapshotError.message}`);
+  }
   const { error: insErr } = await admin.from('share_media_tasks').insert({
     share_job_id: job.id,
     user_id: job.user_id,
@@ -601,20 +620,29 @@ async function finalizePostSaveEnrichment(
   });
 }
 
-// Move a parent job to a safe needs_help(manual) state (media analysis produced
-// no usable evidence). Reuses the Phase 1 terminal-transition + push machinery.
+// Move a parent job to its best safe needs_help state after unusable media.
+// The persisted metadata snapshot wins; manual search is used only when that
+// snapshot truly has zero candidates.
 async function finalizeParentManual(admin: any, job: any): Promise<void> {
+  const candidateCount = persistedCandidateCount(job?.candidate_payload);
+  const fallback = mediaFailureReview(job?.candidate_payload);
+  const mode = fallback.mode === 'auto' ? 'single' : fallback.mode;
   await finalize(
     admin,
     job,
     {
       status: 'needs_help',
-      decision: 'manual_fallback',
-      needs_help_reason: 'manual_search',
-      suggested_query: null,
-      progress_stage: 'manual',
+      decision: fallback.decision,
+      needs_help_reason: candidateCount > 0 ? 'media_unavailable_candidates_preserved' : 'manual_search',
+      ...(candidateCount === 0 ? { suggested_query: null } : {}),
+      progress_stage: mode,
     },
-    buildNeedsHelpNotification({ mode: 'manual', jobId: job.id }),
+    buildNeedsHelpNotification({
+      mode,
+      jobId: job.id,
+      candidateCount,
+      candidateName: candidateCount === 1 ? job?.candidate_payload?.candidates?.[0]?.name ?? null : null,
+    }),
   );
 }
 
@@ -1188,6 +1216,8 @@ async function finalizeMediaTask(
   const decisionForRow =
     mode === 'manual'
       ? 'manual_fallback'
+      : mode === 'picker'
+      ? 'candidate_picker'
       : result.decision === 'multi_candidate_confirmation'
       ? 'multi_candidate_confirmation'
       : result.decision === 'candidate_picker'
@@ -1202,6 +1232,8 @@ async function finalizeMediaTask(
   const note =
     mode === 'manual'
       ? buildNeedsHelpNotification({ mode: 'manual', jobId: job.id })
+      : mode === 'picker'
+      ? buildNeedsHelpNotification({ mode: 'picker', jobId: job.id, candidateCount: result.candidates.length })
       : mode === 'multi'
       ? buildNeedsHelpNotification({ mode: 'multi', jobId: job.id, candidateCount: result.candidates.length })
       : buildNeedsHelpNotification({
@@ -1276,6 +1308,21 @@ async function processOne(admin: any, env: any, job: any): Promise<void> {
   const metadataAutoSave = evaluateMetadataAutoSave({ result, evidence });
   console.log(formatMetadataAutoSaveDecisionLog({ jobId: job.id, decision: metadataAutoSave }));
 
+  const plausibleProviderIds = new Set(metadataAutoSave.plausibleProviderIds);
+  const plausibleCandidates = result.candidates.filter((candidate: any) =>
+    plausibleProviderIds.has(candidate.googlePlaceId)
+  );
+  const hasConcreteBlocker = metadataAutoSave.explicitConflictFlags.length > 0;
+  const countDecision = decisionForPlausibleCandidates(plausibleCandidates.length, hasConcreteBlocker);
+  const effectiveDecision = countDecision.decision;
+  const metadataResult = {
+    ...result,
+    decision: effectiveDecision,
+    candidates: plausibleCandidates,
+    primaryCandidate: plausibleCandidates[0],
+    safeToAutoSave: effectiveDecision === 'auto_save',
+  };
+
   const extractionPayload = {
     platform,
     confidence: result.confidence,
@@ -1283,23 +1330,25 @@ async function processOne(admin: any, env: any, job: any): Promise<void> {
     evidenceUsed: result.evidenceUsed,
     warnings: result.warnings,
     autoSaveDecision: metadataAutoSave,
+    rawResolverCandidates: result.candidates.slice(0, 10).map(safeCandidate),
+    plausibleCandidates: plausibleCandidates.slice(0, 10).map(safeCandidate),
   };
 
   const plan = planFromResolverDecision({
-    decision: metadataAutoSave.eligible ? 'auto_save' : result.decision,
-    safeToAutoSave: metadataAutoSave.eligible || result.safeToAutoSave,
-    hasPrimaryCandidate: metadataAutoSave.eligible || !!result.primaryCandidate,
-    candidateCount: result.candidates.length,
-    cleanSearchQuery: result.cleanSearchQuery,
-    failureReason: result.failureReason,
+    decision: metadataResult.decision,
+    safeToAutoSave: metadataResult.safeToAutoSave,
+    hasPrimaryCandidate: !!metadataResult.primaryCandidate,
+    candidateCount: metadataResult.candidates.length,
+    cleanSearchQuery: metadataResult.cleanSearchQuery,
+    failureReason: metadataResult.failureReason,
   });
 
   if (plan.route === 'auto_save') {
     const candidate = metadataAutoSave.selectedProviderId
       ? result.candidates.find(
           (entry: any) => entry.googlePlaceId === metadataAutoSave.selectedProviderId,
-        ) ?? result.primaryCandidate
-      : result.primaryCandidate;
+        ) ?? metadataResult.primaryCandidate
+      : metadataResult.primaryCandidate;
     const source = legacySourceFor(platform);
     const saved = await saveForUser({
       client: admin,
@@ -1369,12 +1418,12 @@ async function processOne(admin: any, env: any, job: any): Promise<void> {
     const mediaTaskExists = await mediaTaskExistsFor(admin, job.id);
     const trigger = shouldRunMediaFallback(
       {
-        decision: result.decision,
-        safeToAutoSave: result.safeToAutoSave,
-        hasPrimaryCandidate: !!result.primaryCandidate,
-        candidateCount: result.candidates.length,
-        evidenceUsed: result.evidenceUsed,
-        warnings: result.warnings,
+        decision: metadataResult.decision,
+        safeToAutoSave: metadataResult.safeToAutoSave,
+        hasPrimaryCandidate: !!metadataResult.primaryCandidate,
+        candidateCount: metadataResult.candidates.length,
+        evidenceUsed: metadataResult.evidenceUsed,
+        warnings: metadataResult.warnings,
         addressesCount: evidence.addresses.length,
         failureReason: result.failureReason ?? null,
       },
@@ -1387,7 +1436,20 @@ async function processOne(admin: any, env: any, job: any): Promise<void> {
       },
     );
     if (trigger.run) {
-      await enqueueMediaTask(admin, job, platform, canonicalUrl, requestUrl);
+      const parkedCandidatePayload = buildCandidateReviewSnapshot(
+        metadataResult.candidates.map(safeCandidate),
+      );
+      await enqueueMediaTask(admin, job, platform, canonicalUrl, requestUrl, {
+        parkPatch: {
+          decision: metadataResult.decision,
+          needs_help_reason: metadataResult.candidates.length > 1 ? 'multiple_candidates' : 'candidate_confirmation',
+          suggested_query: plan.route === 'needs_help' ? plan.suggestedQuery : metadataResult.cleanSearchQuery ?? null,
+          candidate_payload: parkedCandidatePayload,
+          extraction_payload: extractionPayload,
+          canonical_url: canonicalUrl,
+          source_platform: platform,
+        },
+      });
       console.log(`[share-job] media_fallback_enqueued job_id=${job.id} reason=${trigger.reason}`);
       return;
     }
@@ -1395,7 +1457,7 @@ async function processOne(admin: any, env: any, job: any): Promise<void> {
   }
 
   // needs_help (single / multi / manual)
-  const candidatePayload = { candidates: result.candidates.slice(0, 10).map(safeCandidate) };
+  const candidatePayload = buildCandidateReviewSnapshot(metadataResult.candidates.map(safeCandidate));
   const metadataReviewReason =
     metadataAutoSave.plausibleCandidateCount === 1 && metadataAutoSave.explicitConflictFlags.length > 0
       ? `metadata_${metadataAutoSave.explicitConflictFlags[0]}`
@@ -1405,25 +1467,31 @@ async function processOne(admin: any, env: any, job: any): Promise<void> {
   const decisionForRow =
     plan.mode === 'manual'
       ? 'manual_fallback'
-      : result.decision === 'multi_candidate_confirmation'
+      : metadataResult.decision === 'multi_candidate_confirmation'
       ? 'multi_candidate_confirmation'
-      : result.decision === 'candidate_picker'
+      : metadataResult.decision === 'candidate_picker'
       ? 'candidate_picker'
       : 'candidate_confirmation';
 
   const note =
     plan.mode === 'manual'
       ? buildNeedsHelpNotification({ mode: 'manual', jobId: job.id })
+      : plan.mode === 'picker'
+      ? buildNeedsHelpNotification({
+          mode: 'picker',
+          jobId: job.id,
+          candidateCount: metadataResult.candidates.length,
+        })
       : plan.mode === 'multi'
       ? buildNeedsHelpNotification({
           mode: 'multi',
           jobId: job.id,
-          candidateCount: result.candidates.length,
+          candidateCount: metadataResult.candidates.length,
         })
       : buildNeedsHelpNotification({
           mode: 'single',
           jobId: job.id,
-          candidateName: result.candidates[0]?.name ?? result.primaryCandidate?.name ?? null,
+          candidateName: metadataResult.candidates[0]?.name ?? metadataResult.primaryCandidate?.name ?? null,
         });
 
   await finalize(

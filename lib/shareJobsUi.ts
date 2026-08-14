@@ -115,21 +115,38 @@ export type NormalizedCandidate = {
 };
 
 export function normalizeShareJobCandidates(input: unknown): NormalizedCandidate[] {
-  if (!Array.isArray(input)) return [];
-  return input
+  const rows = Array.isArray(input)
+    ? input
+    : input && typeof input === 'object'
+    ? (() => {
+        const payload = input as Record<string, unknown>;
+        if (Array.isArray(payload.candidates)) return payload.candidates;
+        if (Array.isArray(payload.options)) return payload.options;
+        if (payload.candidate && typeof payload.candidate === 'object') return [payload.candidate];
+        return [];
+      })()
+    : [];
+  return rows
     .filter((row): row is Record<string, unknown> => !!row && typeof row === 'object')
-    .map((row) => ({
-      googlePlaceId: typeof row.googlePlaceId === 'string' ? row.googlePlaceId : '',
-      name: typeof row.name === 'string' ? row.name : '',
-      formattedAddress: typeof row.formattedAddress === 'string' ? row.formattedAddress : null,
-      latitude: typeof row.latitude === 'number' ? row.latitude : null,
-      longitude: typeof row.longitude === 'number' ? row.longitude : null,
-      types: Array.isArray(row.types)
-        ? row.types.filter((v): v is string => typeof v === 'string')
-        : [],
-      matchScore: typeof row.matchScore === 'number' ? row.matchScore : null,
-      aiNote: typeof row.aiNote === 'string' && row.aiNote.trim() ? row.aiNote.trim() : null,
-    }))
+    .map((row) => {
+      const providerId = row.googlePlaceId ?? row.google_place_id ?? row.placeId ?? row.providerId;
+      const displayName = row.name ?? row.displayName;
+      const address = row.formattedAddress ?? row.formatted_address ?? row.address;
+      const latitude = row.latitude ?? row.lat;
+      const longitude = row.longitude ?? row.lng;
+      return {
+        googlePlaceId: typeof providerId === 'string' ? providerId.trim() : '',
+        name: typeof displayName === 'string' ? displayName.trim() : '',
+        formattedAddress: typeof address === 'string' && address.trim() ? address.trim() : null,
+        latitude: typeof latitude === 'number' ? latitude : null,
+        longitude: typeof longitude === 'number' ? longitude : null,
+        types: Array.isArray(row.types)
+          ? row.types.filter((v): v is string => typeof v === 'string')
+          : [],
+        matchScore: typeof row.matchScore === 'number' ? row.matchScore : null,
+        aiNote: typeof row.aiNote === 'string' && row.aiNote.trim() ? row.aiNote.trim() : null,
+      };
+    })
     .filter((row) => row.googlePlaceId.length > 0 && row.name.length > 0);
 }
 

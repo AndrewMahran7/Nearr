@@ -93,7 +93,7 @@ import {
   resolveOpenSavedPlaceRoute,
   type OpenSavedPlaceSource,
 } from '@/lib/openSavedPlace';
-import { searchPlaces, type PlaceCandidate } from '@/services/placesService';
+import { getPlaceDetails, searchPlaces, type PlaceCandidate } from '@/services/placesService';
 import {
   persistShareJobCandidate,
   shareJobCandidateToPlaceCandidate,
@@ -288,7 +288,7 @@ function ShareJobDetailScreen() {
   const platform = job?.source_platform ?? null;
   const sourceUrl = job?.canonical_url ?? job?.source_url ?? null;
   const candidates = useMemo(
-    () => normalizeShareJobCandidates(job?.candidate_payload?.candidates),
+    () => normalizeShareJobCandidates(job?.candidate_payload),
     [job?.candidate_payload],
   );
   const mentionSlots = useMemo(
@@ -442,15 +442,21 @@ function ShareJobDetailScreen() {
 
   async function handleSaveStored(candidate: ShareJobCandidate) {
     if (!job || resolvingRef.current) return;
-    if (!candidate.googlePlaceId || !hasCoords(candidate)) {
+    if (!candidate.googlePlaceId) {
       Alert.alert('Search for it', 'Use the search below to pick the exact place.');
       return;
     }
     resolvingRef.current = true;
     if (mountedRef.current) setBusy(true);
     try {
+      // Older persisted payloads may omit coordinates or optional presentation
+      // fields. The provider identity is authoritative, so hydrate that exact
+      // Place ID instead of discarding the candidate or running a fuzzy search.
+      const placeCandidate = hasCoords(candidate)
+        ? shareJobCandidateToPlaceCandidate(candidate)
+        : await getPlaceDetails(candidate.googlePlaceId);
       const { savedPlaceId, duplicate } = await persistCandidate(
-        shareJobCandidateToPlaceCandidate(candidate),
+        placeCandidate,
         candidate.aiNote ?? null,
       );
       await resolveJobWith(job.id, savedPlaceId, duplicate);
@@ -1149,6 +1155,7 @@ function ShareJobDetailScreen() {
   }
 
   const isMulti = job.decision === 'multi_candidate_confirmation';
+  const isCandidatePicker = !isMulti && candidates.length > 1;
   const selectedPendingCount = batch ? selectedBatchTargets(batch).length : 0;
   const isManual =
     job.status === 'failed' ||
@@ -1251,6 +1258,80 @@ function ShareJobDetailScreen() {
             </View>
           </KeyboardAvoidingView>
         )}
+      </ShareJobsSheet>
+    );
+  }
+
+  if (isCandidatePicker) {
+    return (
+      <ShareJobsSheet onDismiss={backToQueue} size="detail">
+        <ShareJobsHeader title={PHASE_1_COPY.detailTitle} onBack={backToQueue} backLabel="Back to queue" />
+        <ScrollView
+          contentContainerStyle={styles.content}
+          contentInsetAdjustmentBehavior="automatic"
+          automaticallyAdjustKeyboardInsets
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.sourceRow}>
+            <Feather name={sourceIcon} size={14} color={colors.textSecondary} />
+            <Text style={[typography.caption, styles.sourceText]} numberOfLines={1}>
+              {platformName(platform)} · From the original post
+            </Text>
+          </View>
+          <Text style={[typography.title, styles.title]}>{`We found ${candidates.length} possible places`}</Text>
+          <Text style={[typography.body, styles.help]}>Which one did you mean?</Text>
+          <View style={styles.section}>
+            {candidates.map((candidate) => {
+              const address = splitPlaceAddress(candidate.formattedAddress);
+              const category = resolvePlaceCategory({
+                placeName: candidate.name,
+                googleTypes: candidate.types,
+              }).category;
+              const meta = [address.locality, CATEGORY_LABELS[category]].filter(Boolean).join(' · ');
+              return (
+                <Pressable
+                  key={candidate.googlePlaceId}
+                  onPress={() => void handleSaveStored(candidate)}
+                  disabled={busy}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Save ${candidate.name}${candidate.formattedAddress ? `, ${candidate.formattedAddress}` : ''}`}
+                  style={({ pressed }) => [styles.candidate, pressed && styles.candidatePressed]}
+                >
+                  <PlaceImage
+                    googlePlaceId={candidate.googlePlaceId}
+                    size={58}
+                    borderRadius={11}
+                    accessibilityLabel={`Photo of ${candidate.name}`}
+                  />
+                  <View style={styles.flex}>
+                    <Text style={[typography.bodyStrong, styles.candidateName]} numberOfLines={2}>{candidate.name}</Text>
+                    {meta ? <Text style={[typography.caption, styles.candidateAddr]} numberOfLines={1}>{meta}</Text> : null}
+                    {candidate.formattedAddress ? (
+                      <Text style={[typography.caption, styles.candidateAddr]} numberOfLines={2}>{candidate.formattedAddress}</Text>
+                    ) : null}
+                  </View>
+                  <Feather name="chevron-right" size={18} color={colors.textMuted} />
+                </Pressable>
+              );
+            })}
+          </View>
+          {searchExpanded ? (
+            renderManualSearch({
+              note: 'Search for the exact place and save it instead.',
+              onCancel: hideSearch,
+            })
+          ) : (
+            <Button
+              title="None of these"
+              variant="secondary"
+              onPress={revealSearch}
+              style={styles.secondaryBtn}
+            />
+          )}
+          {renderJobFooter()}
+        </ScrollView>
       </ShareJobsSheet>
     );
   }

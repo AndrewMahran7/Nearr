@@ -17,7 +17,7 @@ export type ResolverDecision =
   | 'manual_fallback'
   | 'failed';
 
-export type NeedsHelpMode = 'single' | 'multi' | 'manual';
+export type NeedsHelpMode = 'single' | 'picker' | 'multi' | 'manual';
 
 export type JobPlan =
   | { route: 'auto_save' }
@@ -62,17 +62,24 @@ export function planFromResolverDecision(input: PlanInput): JobPlan {
       // Defensive: auto_save without the safety gate must never silently save.
       return {
         route: 'needs_help',
-        mode: hasCandidates ? 'single' : 'manual',
+        mode: input.candidateCount > 1 ? 'picker' : hasCandidates ? 'single' : 'manual',
         needsHelpReason: 'candidate_confirmation',
         suggestedQuery: query(input.cleanSearchQuery),
       };
 
     case 'candidate_confirmation':
+      return {
+        route: 'needs_help',
+        mode: input.candidateCount > 1 ? 'picker' : hasCandidates ? 'single' : 'manual',
+        needsHelpReason: 'candidate_confirmation',
+        suggestedQuery: query(input.cleanSearchQuery),
+      };
+
     case 'candidate_picker':
       return {
         route: 'needs_help',
-        mode: hasCandidates ? 'single' : 'manual',
-        needsHelpReason: 'candidate_confirmation',
+        mode: input.candidateCount > 1 ? 'picker' : hasCandidates ? 'single' : 'manual',
+        needsHelpReason: input.candidateCount > 1 ? 'multiple_candidates' : 'candidate_confirmation',
         suggestedQuery: query(input.cleanSearchQuery),
       };
 
@@ -87,8 +94,8 @@ export function planFromResolverDecision(input: PlanInput): JobPlan {
     case 'manual_fallback':
       return {
         route: 'needs_help',
-        mode: 'manual',
-        needsHelpReason: 'manual_search',
+        mode: input.candidateCount > 1 ? 'picker' : hasCandidates ? 'single' : 'manual',
+        needsHelpReason: hasCandidates ? 'candidate_confirmation' : 'manual_search',
         suggestedQuery: query(input.cleanSearchQuery),
       };
 
@@ -96,8 +103,8 @@ export function planFromResolverDecision(input: PlanInput): JobPlan {
     default:
       return {
         route: 'needs_help',
-        mode: 'manual',
-        needsHelpReason: query(input.failureReason) ?? 'manual_search',
+        mode: input.candidateCount > 1 ? 'picker' : hasCandidates ? 'single' : 'manual',
+        needsHelpReason: hasCandidates ? 'candidate_confirmation' : query(input.failureReason) ?? 'manual_search',
         suggestedQuery: query(input.cleanSearchQuery),
       };
   }
@@ -231,12 +238,23 @@ export function buildNeedsHelpNotification(args: {
   candidateName?: string | null;
   candidateCount?: number;
 }): JobNotification {
-  const data = { type: 'share_job_needs_help', jobId: args.jobId };
+  const data = {
+    type: 'share_job_needs_help',
+    jobId: args.jobId,
+    reviewMode: args.mode === 'picker' ? 'candidate_picker' : args.mode,
+    ...(args.candidateCount ? { candidateCount: args.candidateCount } : {}),
+  };
   switch (args.mode) {
     case 'single':
       return {
-        title: args.candidateName ? `Is this ${args.candidateName}?` : 'Is this the right place?',
-        body: 'Tap to confirm the place.',
+        title: 'We think we found it',
+        body: 'Give us a quick check before we save it.',
+        data,
+      };
+    case 'picker':
+      return {
+        title: `We found ${Math.max(Math.floor(args.candidateCount ?? 2), 2)} possible places`,
+        body: 'Pick the one you meant and we\u2019ll save it.',
         data,
       };
     case 'multi':
@@ -248,8 +266,8 @@ export function buildNeedsHelpNotification(args: {
     case 'manual':
     default:
       return {
-        title: 'We need help finding this place',
-        body: 'Tap to search for it.',
+        title: 'We couldn\u2019t quite find this one',
+        body: 'Help us track down the place.',
         data,
       };
   }

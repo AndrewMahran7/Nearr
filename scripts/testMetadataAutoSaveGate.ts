@@ -93,14 +93,6 @@ const cases: Array<[string, Parameters<typeof evaluateMetadataAutoSave>[0], stri
     },
     'provider_permanently_closed',
   ],
-  [
-    'manual resolver outcome',
-    {
-      result: { decision: 'manual_fallback', candidates: [santaFe] },
-      evidence: {},
-    },
-    'resolver_manual_fallback',
-  ],
 ];
 
 for (const [name, input, reason] of cases) {
@@ -111,5 +103,15 @@ for (const [name, input, reason] of cases) {
     `${name} must preserve its concrete blocker`,
   );
 }
+
+const resolverLabelCannotVetoSingleton = evaluateMetadataAutoSave({
+  result: { decision: 'manual_fallback', candidates: [santaFe] },
+  evidence: {},
+});
+assert.equal(
+  resolverLabelCannotVetoSingleton.eligible,
+  true,
+  'one plausible provider candidate auto-saves unless concrete evidence blocks it',
+);
 
 console.log('PASS exact Santa Fe metadata auto-save and explicit contradiction gates');
