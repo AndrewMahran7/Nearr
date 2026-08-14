@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { IOSConfig, withXcodeProject } = require('expo/config-plugins');
+const { IOSConfig, withFinalizedMod } = require('expo/config-plugins');
 
 const CONTROLLER_RELATIVE_PATH = path.join(
   'native',
@@ -30,11 +30,15 @@ function copyCompactController({ projectRoot, platformProjectRoot, targetName })
 }
 
 /**
- * Runs after expo-share-extension's Xcode mod and replaces the package's
- * controller with Nearr's authoritative, structurally tested implementation.
+ * Replaces the generated package controller with Nearr's authoritative,
+ * structurally tested implementation. A finalized mod is required here:
+ * withXcodeProject mods compose in reverse registration order, so a second
+ * Xcode mod registered after expo-share-extension runs before its target mod.
+ * Finalized mods run after every regular iOS mod and can safely access the
+ * generated extension directory without depending on plugin-list ordering.
  */
 function withCompactShareExtension(config) {
-  return withXcodeProject(config, (modConfig) => {
+  return withFinalizedMod(config, ['ios', (modConfig) => {
     const targetName = `${IOSConfig.XcodeUtils.sanitizedName(modConfig.name)}ShareExtension`;
     copyCompactController({
       projectRoot: modConfig.modRequest.projectRoot,
@@ -42,7 +46,7 @@ function withCompactShareExtension(config) {
       targetName,
     });
     return modConfig;
-  });
+  }]);
 }
 
 module.exports = withCompactShareExtension;

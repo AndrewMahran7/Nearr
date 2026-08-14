@@ -48,8 +48,16 @@ assert.match(enrichmentBody, /post_save_secondary_logical_place/,
 
 assert.match(hook, /table: 'share_job_place_results'/,
   'the already-published enrichment ledger drives Realtime updates');
-assert.match(hook, /row\.saved_place_id.*fetch\('background'\)/s,
+assert.match(hook, /saved_place_id.*onInvalidate.*fetch\('background'\)/s,
   'a completed linked enrichment refreshes the shared saved-place cache');
+// The subscription must go through the shared helper: this hook has several
+// concurrent consumers (home, map, share-job detail) and a per-user Realtime
+// topic made every extra consumer reuse an already-joined channel, which throws
+// out of the effect and takes the mounting screen to its error boundary.
+assert.match(hook, /createShareJobsRealtimeSubscription\(/,
+  'enrichment Realtime uses the per-lifecycle-topic subscription helper');
+assert.doesNotMatch(hook, /supabase\s*\n?\s*\.channel\(/,
+  'the hook never opens a raw shared-topic Realtime channel');
 assert.match(map, /live = validPlaces\.find\(\(place\) => place\.id === selected\.id\)/,
   'an open map detail sheet follows the asynchronously updated row');
 
