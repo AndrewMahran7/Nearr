@@ -57,7 +57,11 @@ assert.match(component, /onPress=\{\(\) => setDraft\(aiNote\.trim\(\)\)\}/, 'Use
 assert.match(component, />Use this</);
 assert.match(details, /setNotes\(nextNotes \?\? ''\)/, 'details refresh immediately');
 assert.match(details, /updateSavedPlacesCache/, 'the shared saved-place cache refreshes immediately');
-assert.match(details, />From the post</, 'AI note is labeled separately');
+// The source cue carries its own heading, distinct from "Your note", so the
+// two can never read as one field. (The sheet's label is asserted in
+// scripts/testSavedPlaceDetailUi.ts; here we only pin the separation.)
+assert.match(details, /styles\.sourceNoteLabel/, 'the source cue has its own labeled section');
+assert.match(details, />Your note</, 'the user note keeps a distinct heading');
 assert.match(details, />Use as my note</, 'AI text becomes user text only through an explicit action');
 
 console.log('PASS dedicated note editor state, persistence, cancellation, long-text, and keyboard contracts');
