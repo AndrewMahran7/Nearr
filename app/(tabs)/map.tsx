@@ -78,7 +78,7 @@ import { Button, Card, DemoModeBanner, MapFallbackList } from '@/components';
 import {
   FloatingMapActions,
   MapBottomSheet,
-  MapFilterChips,
+  MapCategoryFilterBar,
   MapGroupSelector,
   MapPlaceSearchDropdown,
   MapSnackbar,
@@ -86,10 +86,19 @@ import {
   SelectedPlaceDetails,
   ShareQueueButton,
   getSheetPartialHeight,
-  type MapFilter,
+  type MapSheetMode,
   type SheetSnap,
 } from '@/components/map';
 import { Colors, Radius, Spacing, Typography } from '@/constants';
+import {
+  MAP_FILTER_ALL,
+  filterPlacesForMap,
+  isMapFilterActive,
+  mapFilterEmptyMessage,
+  mapFilterOptions,
+  shouldRenderZoneCircle,
+  type MapVisibilityFilter,
+} from '@/lib/mapVisibility';
 import { useNearbyPlaces } from '@/hooks/useNearbyPlaces';
 import { useRecentPlaces } from '@/hooks/useRecentPlaces';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
@@ -560,15 +569,137 @@ export default function MapScreen() {
   }, [selected, validPlaces]);
   const [mapReady, setMapReady] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
-  // Map-first chrome: which filter chip is active. Phase 1 keeps this as UI
-  // state only — the Phase 2 bottom sheet will consume it to pick a list.
-  const [selectedMapFilter, setSelectedMapFilter] = useState<MapFilter>('nearby');
-  // Bumped on chip tap so a minimized sheet re-opens to its partial snap.
+  // Which list the bottom sheet shows. The old Nearby/Recent/Saved chips drove
+  // this from the map chrome; they never filtered the map and each duplicated
+  // something the sheet already offers (its default list already carries a
+  // "Recently saved" section, and its header already has "Open list"). The
+  // sheet now owns its own mode and the map chrome filters the map instead.
+  const [sheetMode, setSheetMode] = useState<MapSheetMode>('nearby');
+  // Bumped when something asks a minimized sheet to re-open to its partial snap.
   const [sheetOpenSignal, setSheetOpenSignal] = useState(0);
-  const handleSelectMapFilter = useCallback((next: MapFilter) => {
-    setSelectedMapFilter(next);
-    setSheetOpenSignal((n) => n + 1);
+  // Category visibility for MARKERS. Presentation only: it never mutates a
+  // saved place, re-queries, or touches reminder/geofence state. Defaults to
+  // All on every fresh session — the map is the user's whole collection unless
+  // they just chose otherwise.
+  const [mapCategoryFilter, setMapCategoryFilter] = useState<MapVisibilityFilter>(MAP_FILTER_ALL);
+
+  // Chips to offer, derived from what the user actually saved. Only groups
+  // with places appear, so a small collection shows two or three chips.
+  const mapFilterChoices = useMemo(() => mapFilterOptions(validPlaces), [validPlaces]);
+
+  // The markers that actually render. One memoized pass over an array the map
+  // already holds — no query, no refetch, no mutation. The selected place is
+  // pinned visible so a focused place is never hidden by an active filter.
+  const visiblePlaces = useMemo(
+    () => filterPlacesForMap(validPlaces, mapCategoryFilter, selected?.id ?? null),
+    [mapCategoryFilter, selected?.id, validPlaces],
+  );
+
+  // A filter whose group no longer has any places (last one deleted, or the
+  // collection changed underneath) silently returns to All rather than leaving
+  // the user on an empty map with no matching chip to un-press.
+  useEffect(() => {
+    if (mapCategoryFilter === MAP_FILTER_ALL) return;
+    if (mapFilterChoices.some((option) => option.id === mapCategoryFilter)) return;
+    setMapCategoryFilter(MAP_FILTER_ALL);
+  }, [mapCategoryFilter, mapFilterChoices]);
+
+  const handleSelectMapCategory = useCallback((next: MapVisibilityFilter) => {
+    setMapCategoryFilter(next);
+    // Deliberately does NOT move the camera: the user may be inspecting an
+    // area, and yanking the viewport on every chip tap is disorienting. The
+    // fit control on the same row is the explicit "reframe" action.
+    void trackEvent('map_filter_changed', { filter: next });
   }, []);
+
+  /**
+   * Frame every CURRENTLY VISIBLE place. This is the former "View All" pill,
+   * unchanged in behavior (fit the zones + get the sheet out of the way) —
+   * only its input narrowed from every saved place to the filtered set, so
+   * "fit" and "what's on screen" agree.
+   */
+  const fitVisiblePlaces = useCallback(() => {
+    if (!mapRef.current) return;
+    if (visiblePlaces.length === 0) return;
+    setSheetMinimizeSignal((n) => n + 1);
+    const coords = allZoneBoundingCoords(visiblePlaces, profile);
+    if (coords.length === 0) return;
+    try {
+      // Camera center uses the average of coordinates (center of mass) so a
+      // single distant outlier doesn't drag the camera into empty space
+      // between clusters. Zoom is still derived from the full bounding box.
+      let sumLat = 0;
+      let sumLng = 0;
+      for (const p of visiblePlaces) {
+        sumLat += p.place.latitude;
+        sumLng += p.place.longitude;
+      }
+      const centerLat = sumLat / visiblePlaces.length;
+      const centerLng = sumLng / visiblePlaces.length;
+
+      let minLat = coords[0].latitude;
+      let maxLat = coords[0].latitude;
+      let minLng = coords[0].longitude;
+      let maxLng = coords[0].longitude;
+      for (const c of coords) {
+        if (c.latitude < minLat) minLat = c.latitude;
+        if (c.latitude > maxLat) maxLat = c.latitude;
+        if (c.longitude < minLng) minLng = c.longitude;
+        if (c.longitude > maxLng) maxLng = c.longitude;
+      }
+
+      // Extreme-spread guard: for globally distant points, center-of-mass
+      // framing can hide places off-screen or misframe across the
+      // antimeridian. Fall back to fitToCoordinates for very large spans.
+      const latSpan = maxLat - minLat;
+      const lngSpan = maxLng - minLng;
+      const lngsSorted = visiblePlaces
+        .map((p) => p.place.longitude)
+        .sort((a, b) => a - b);
+      let maxLngGap = 0;
+      for (let i = 1; i < lngsSorted.length; i++) {
+        const gap = lngsSorted[i] - lngsSorted[i - 1];
+        if (gap > maxLngGap) maxLngGap = gap;
+      }
+      if (lngsSorted.length > 1) {
+        const wrapGap = 360 - (lngsSorted[lngsSorted.length - 1] - lngsSorted[0]);
+        if (wrapGap > maxLngGap) maxLngGap = wrapGap;
+      }
+      const crossesDateLine = maxLngGap > 180;
+
+      if (latSpan > 45 || lngSpan > 90 || crossesDateLine) {
+        mapRef.current.fitToCoordinates(coords, {
+          edgePadding: { top: 100, right: 100, bottom: 180, left: 100 },
+          animated: true,
+        });
+        return;
+      }
+
+      // Cluster-focused zoom: size the viewport from the SPREAD around the
+      // centroid (standard deviation) instead of the single farthest point,
+      // so one distant outlier can't force an extreme zoom-out.
+      let varLat = 0;
+      let varLng = 0;
+      for (const p of visiblePlaces) {
+        varLat += (p.place.latitude - centerLat) ** 2;
+        varLng += (p.place.longitude - centerLng) ** 2;
+      }
+      const stdLat = Math.sqrt(varLat / visiblePlaces.length);
+      const stdLng = Math.sqrt(varLng / visiblePlaces.length);
+      const SPREAD_SIGMAS = 2;
+      const PAD = 1.3;
+      const MIN_DELTA = 0.02; // single-place / tight-cluster floor
+      const latitudeDelta = Math.max(stdLat * SPREAD_SIGMAS * 2 * PAD, MIN_DELTA);
+      const longitudeDelta = Math.max(stdLng * SPREAD_SIGMAS * 2 * PAD, MIN_DELTA);
+
+      mapRef.current.animateToRegion(
+        { latitude: centerLat, longitude: centerLng, latitudeDelta, longitudeDelta },
+        400,
+      );
+    } catch (e) {
+      if (__DEV__) console.debug('[map] fit skipped', e);
+    }
+  }, [profile, visiblePlaces]);
   // In-app search overlay (replaces the old native Alert on the search bar).
   const [searchVisible, setSearchVisible] = useState(false);
   // Post-save "Saved to your map" snackbar with optional Undo.
@@ -1011,6 +1142,11 @@ export default function MapScreen() {
       return;
     }
     handledTargetIdRef.current = focusKey;
+    // A deep link is an explicit "show me THIS place" instruction, so an
+    // unrelated category filter left over from earlier is cleared rather than
+    // silently hiding everything around the target. (The selected place is
+    // pinned visible regardless; this also restores its surroundings.)
+    setMapCategoryFilter(MAP_FILTER_ALL);
     if (reminderOpen) {
       setReminderContextSavedPlaceId(target.id);
     }
@@ -1629,8 +1765,13 @@ export default function MapScreen() {
             reads clearly on satellite, dark, and light map tiles alike.
             Archived places are rendered without a radius circle to keep
             the active set visually quiet. */}
-        {validPlaces.map((p) => (
-          p.archived_at ? null : (
+        {visiblePlaces.map((p) => (
+          !shouldRenderZoneCircle({
+            isSelected: selected?.id === p.id,
+            hasSelection: !!selected,
+            isArchived: !!p.archived_at,
+            visibleCount: visiblePlaces.length,
+          }) ? null : (
             <Circle
               key={`circle-${p.id}`}
               center={{
@@ -1656,7 +1797,7 @@ export default function MapScreen() {
             />
           )
         ))}
-        {validPlaces.map((p) => (
+        {visiblePlaces.map((p) => (
           <PlaceMarker
             key={p.id}
             place={p}
@@ -1668,12 +1809,26 @@ export default function MapScreen() {
         ))}
       </MapView>
 
-      {/* Non-blocking empty/loading pill. The map keeps rendering underneath. */}
-      {validPlaces.length === 0 ? (
-        <View style={styles.emptyPill} pointerEvents="none">
+      {/* Non-blocking empty/loading pill. The map keeps rendering underneath.
+          A filter that matches nothing gets its own message plus a one-tap
+          way back to All, so an empty map never reads as a broken app. */}
+      {visiblePlaces.length === 0 ? (
+        <View style={styles.emptyPill} pointerEvents="box-none">
           <Text style={styles.emptyPillText}>
-            {liveLoading ? 'Loading places…' : 'No saved places yet'}
+            {liveLoading && validPlaces.length === 0
+              ? 'Loading places…'
+              : mapFilterEmptyMessage(mapCategoryFilter)}
           </Text>
+          {isMapFilterActive(mapCategoryFilter) ? (
+            <Pressable
+              onPress={() => handleSelectMapCategory(MAP_FILTER_ALL)}
+              accessibilityRole="button"
+              accessibilityLabel="Show all saved places"
+              style={styles.emptyPillAction}
+            >
+              <Text style={styles.emptyPillActionText}>Show all places</Text>
+            </Pressable>
+          ) : null}
         </View>
       ) : null}
 
@@ -1913,135 +2068,16 @@ export default function MapScreen() {
       {!searchVisible && shouldShowMapControls ? (
         <View style={styles.topChrome} pointerEvents="box-none">
           <MapTopSearchBar onPress={() => setSearchVisible(true)} />
-          <MapFilterChips value={selectedMapFilter} onChange={handleSelectMapFilter} />
+          <MapCategoryFilterBar
+            options={mapFilterChoices}
+            value={mapCategoryFilter}
+            onChange={handleSelectMapCategory}
+            onFitAll={visiblePlaces.length > 0 && !mapPreview ? fitVisiblePlaces : undefined}
+          />
           <ShareQueueButton />
         </View>
       ) : null}
 
-      {/* "View All" pill — fits all saved-place zones on demand. Only shown
-          when there are places to frame and we're not in preview mode. */}
-      {validPlaces.length > 0 && !mapPreview && shouldShowMapControls ? (
-        <Pressable
-          style={styles.viewAllBtn}
-          onPress={() => {
-            if (!mapRef.current) return;
-            if (validPlaces.length === 0) return;
-            // Map-level "View All" = see every saved place on the map, so
-            // minimize the sheet out of the way.
-            setSheetMinimizeSignal((n) => n + 1);
-            const coords = allZoneBoundingCoords(validPlaces, profile);
-            if (coords.length === 0) return;
-            try {
-              // Camera center uses the average of saved-place coordinates
-              // (center of mass) so a single distant outlier doesn't drag
-              // the camera into empty space between clusters. The zoom
-              // (latitude/longitudeDelta) is still derived from the full
-              // bounding box of every zone so all places remain visible.
-              let sumLat = 0;
-              let sumLng = 0;
-              for (const p of validPlaces) {
-                sumLat += p.place.latitude;
-                sumLng += p.place.longitude;
-              }
-              const centerLat = sumLat / validPlaces.length;
-              const centerLng = sumLng / validPlaces.length;
-
-              let minLat = coords[0].latitude;
-              let maxLat = coords[0].latitude;
-              let minLng = coords[0].longitude;
-              let maxLng = coords[0].longitude;
-              for (const c of coords) {
-                if (c.latitude < minLat) minLat = c.latitude;
-                if (c.latitude > maxLat) maxLat = c.latitude;
-                if (c.longitude < minLng) minLng = c.longitude;
-                if (c.longitude > maxLng) maxLng = c.longitude;
-              }
-
-              // Extreme-spread guard: for globally distant points,
-              // center-of-mass framing can hide places off-screen or
-              // misframe across the antimeridian. Fall back to
-              // react-native-maps' built-in fitToCoordinates which is
-              // safer for very large spans.
-              const latSpan = maxLat - minLat;
-              const lngSpan = maxLng - minLng;
-              // Date-line heuristic: sort place longitudes and look for a
-              // gap > 180° between consecutive values (including wrap).
-              // Such a gap means the shorter arc between points crosses
-              // the antimeridian (e.g. one place at -179, another at +179).
-              const lngsSorted = validPlaces
-                .map((p) => p.place.longitude)
-                .sort((a, b) => a - b);
-              let maxLngGap = 0;
-              for (let i = 1; i < lngsSorted.length; i++) {
-                const gap = lngsSorted[i] - lngsSorted[i - 1];
-                if (gap > maxLngGap) maxLngGap = gap;
-              }
-              if (lngsSorted.length > 1) {
-                const wrapGap =
-                  360 - (lngsSorted[lngsSorted.length - 1] - lngsSorted[0]);
-                if (wrapGap > maxLngGap) maxLngGap = wrapGap;
-              }
-              const crossesDateLine = maxLngGap > 180;
-
-              if (latSpan > 45 || lngSpan > 90 || crossesDateLine) {
-                mapRef.current.fitToCoordinates(coords, {
-                  edgePadding: {
-                    top: 100,
-                    right: 100,
-                    bottom: 180,
-                    left: 100,
-                  },
-                  animated: true,
-                });
-                return;
-              }
-
-              // Cluster-focused zoom: size the viewport from the SPREAD of
-              // saved-place coordinates around the centroid (standard
-              // deviation) instead of the single farthest point. A lone
-              // distant outlier therefore can't force an extreme zoom-out —
-              // the main cluster stays usable and the outlier may sit just
-              // off-screen (the intended "center of balance" behavior). The
-              // extreme-spread guard above still handles globe-scale spans.
-              let varLat = 0;
-              let varLng = 0;
-              for (const p of validPlaces) {
-                varLat += (p.place.latitude - centerLat) ** 2;
-                varLng += (p.place.longitude - centerLng) ** 2;
-              }
-              const stdLat = Math.sqrt(varLat / validPlaces.length);
-              const stdLng = Math.sqrt(varLng / validPlaces.length);
-              // Half-span in std-devs; ~2σ frames the bulk of a cluster.
-              const SPREAD_SIGMAS = 2;
-              const PAD = 1.3;
-              const MIN_DELTA = 0.02; // single-place / tight-cluster floor
-              const latitudeDelta = Math.max(
-                stdLat * SPREAD_SIGMAS * 2 * PAD,
-                MIN_DELTA,
-              );
-              const longitudeDelta = Math.max(
-                stdLng * SPREAD_SIGMAS * 2 * PAD,
-                MIN_DELTA,
-              );
-
-              mapRef.current.animateToRegion(
-                {
-                  latitude: centerLat,
-                  longitude: centerLng,
-                  latitudeDelta,
-                  longitudeDelta,
-                },
-                400,
-              );
-            } catch (e) {
-              if (__DEV__) console.debug('[map] viewAll skipped', e);
-            }
-          }}
-          accessibilityLabel="View all saved places"
-        >
-          <Text style={styles.viewAllText}>View All</Text>
-        </Pressable>
-      ) : null}
 
       {/* Floating right-side actions: recenter + orange paste-link. Hidden
           while a preview card is showing or the sheet is full so they never
@@ -2059,7 +2095,7 @@ export default function MapScreen() {
           bottom surface — the smallest safe way to avoid overlap this phase. */}
       {selected || mapGroupRequest ? null : (
         <MapBottomSheet
-          mode={selectedMapFilter}
+          mode={sheetMode}
           loading={liveLoading}
           nearbyPlaces={nearbyPlaces}
           locationState={locationState}
@@ -2071,7 +2107,7 @@ export default function MapScreen() {
           openSignal={sheetOpenSignal}
           minimizeSignal={sheetMinimizeSignal}
           onSnapChange={handleSheetSnapChange}
-          onRequestSavedMode={() => setSelectedMapFilter('saved')}
+          onRequestSavedMode={() => setSheetMode('saved')}
           onSelectPlace={selectPlace}
           onGetDirections={openExternalMaps}
           onSaveFromLink={() => router.push('/share')}
@@ -2248,6 +2284,18 @@ function createStyles(
   emptyPillText: {
     ...typography.caption,
     color: colors.text,
+    textAlign: 'center',
+  },
+  emptyPillAction: {
+    marginTop: Spacing.xs,
+    minHeight: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyPillActionText: {
+    ...typography.caption,
+    color: colors.accent,
+    fontWeight: '700',
   },
 
   previewWrap: {
@@ -2412,28 +2460,6 @@ function createStyles(
   previewSecondaryText: {
     ...typography.label,
     color: colors.textSecondary,
-  },
-
-  viewAllBtn: {
-    position: 'absolute',
-    top: pillTop,
-    right: Spacing.lg,
-    paddingVertical: Spacing.xs,
-    paddingHorizontal: Spacing.md,
-    borderRadius: Radius.pill,
-    backgroundColor: colors.surfaceElevated,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-  },
-  viewAllText: {
-    ...typography.caption,
-    color: colors.text,
-    fontWeight: '600',
   },
 
   fab: {

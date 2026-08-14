@@ -58,6 +58,7 @@
     "test:place-share": "ts-node -P scripts/tsconfig.json scripts/testPlaceShare.ts",
     "test:place-detail-ui": "ts-node -P scripts/tsconfig.json scripts/testSavedPlaceDetailUi.ts",
     "test:photo-carousel": "ts-node -P scripts/tsconfig.json scripts/testPhotoCarousel.ts",
+    "test:map-visibility": "ts-node -P scripts/tsconfig.json scripts/testMapVisibility.ts",
     "test:place-image": "ts-node -P scripts/tsconfig.json scripts/testPlaceImage.ts",
     "test:open-original-post": "ts-node -P scripts/tsconfig.json scripts/testOpenOriginalPost.ts",
     "test:share-jobs-ui": "ts-node -P scripts/tsconfig.json scripts/testShareJobsUi.ts",
