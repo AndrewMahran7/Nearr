@@ -18,6 +18,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Animated,
   FlatList,
   Image,
   Linking,
@@ -30,6 +31,8 @@ import {
   Text,
   useWindowDimensions,
   View,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -50,6 +53,7 @@ import {
 } from '@/lib/noteEditor';
 import { buildSavedPlaceShareContent } from '@/lib/placeShare';
 import { reminderStatusLabel, savedPlaceNarrative } from '@/lib/placeDetailUi';
+import { adjacentPrefetchTargets, pageIndexFromOffset } from '@/lib/photoCarousel';
 import { splitPlaceAddress } from '@/lib/sharePhase1Ui';
 import { deleteSavedPlace, updateSavedPlace } from '@/services/savedPlacesService';
 import { CATEGORY_LABELS, savedPlaceCategory } from '@/lib/placeCategory';
@@ -64,6 +68,9 @@ import type { PlaceRichDetails } from '@/services/placesService';
 import type { Profile, RadiusUnit, SavedPlaceWithPlace } from '@/types';
 
 const GALLERY_CARD_GAP = 18;
+/** Focus treatment for non-centered pages. Interpolated from scroll offset. */
+const GALLERY_INACTIVE_OPACITY = 0.45;
+const GALLERY_INACTIVE_SCALE = 0.92;
 
 type RadiusMode = 'default' | 'miles' | 'minutes';
 
@@ -166,6 +173,15 @@ export function SelectedPlaceDetails({
   const [wrongPlaceOpen, setWrongPlaceOpen] = useState(false);
   const galleryStartYRef = useRef(0);
   const galleryListRef = useRef<FlatList<string> | null>(null);
+  // Native-thread scroll position. Owns the focus dimming so the centered
+  // photo never waits on a JS re-render to look active.
+  const galleryScrollX = useRef(new Animated.Value(0)).current;
+  // Mirrors galleryIndex for effects that must NOT re-run as the index changes.
+  const galleryIndexRef = useRef(0);
+  galleryIndexRef.current = galleryIndex;
+  // Photos already handed to the image loader for this mounted sheet. Bounded
+  // by the place's photo list (max 5) and released when the sheet unmounts.
+  const prefetchedPhotoUrlsRef = useRef<Set<string>>(new Set());
 
   const googlePlaceId =
     saved.place.google_place_id && saved.place.google_place_id.trim()
@@ -297,6 +313,28 @@ export function SelectedPlaceDetails({
   const gallerySnapInterval = useMemo(
     () => galleryCardWidth + GALLERY_CARD_GAP,
     [galleryCardWidth],
+  );
+
+  // One native-driven scroll binding. The JS listener only advances the page
+  // counter/dots/prefetch window — the visible brightness never depends on it,
+  // and setState is skipped entirely while the page is unchanged.
+  const handleGalleryScroll = useMemo(
+    () =>
+      Animated.event(
+        [{ nativeEvent: { contentOffset: { x: galleryScrollX } } }],
+        {
+          useNativeDriver: true,
+          listener: (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+            const next = pageIndexFromOffset(
+              event.nativeEvent.contentOffset.x,
+              gallerySnapInterval,
+              photoUrls.length,
+            );
+            setGalleryIndex((current) => (current === next ? current : next));
+          },
+        },
+      ),
+    [galleryScrollX, gallerySnapInterval, photoUrls.length],
   );
 
   const locality = splitPlaceAddress(saved.place.formatted_address).locality;
@@ -452,6 +490,9 @@ export function SelectedPlaceDetails({
     if (photoUrls.length === 0) return;
     const nextIndex = Math.max(0, Math.min(index, photoUrls.length - 1));
     setGalleryIndex(nextIndex);
+    // Seed the animated offset so the opened page renders bright on its very
+    // first frame instead of fading up once the first scroll event lands.
+    galleryScrollX.setValue(nextIndex * gallerySnapInterval);
     setGalleryOpenSeed((s) => s + 1);
     setGalleryOpen(true);
   }
@@ -460,9 +501,12 @@ export function SelectedPlaceDetails({
     setGalleryOpen(false);
   }
 
+  // Restore the opened page's offset ONCE per open. This must not depend on
+  // `galleryIndex`: that now updates continuously while scrolling, and
+  // re-running scrollToOffset mid-gesture would fight the user's drag.
   useEffect(() => {
     if (!galleryOpen || photoUrls.length === 0) return;
-    const targetIndex = Math.max(0, Math.min(galleryIndex, photoUrls.length - 1));
+    const targetIndex = Math.max(0, Math.min(galleryIndexRef.current, photoUrls.length - 1));
     const frameId = requestAnimationFrame(() => {
       galleryListRef.current?.scrollToOffset({
         offset: targetIndex * gallerySnapInterval,
@@ -470,7 +514,23 @@ export function SelectedPlaceDetails({
       });
     });
     return () => cancelAnimationFrame(frameId);
-  }, [galleryOpen, galleryIndex, gallerySnapInterval, photoUrls.length]);
+  }, [galleryOpen, galleryOpenSeed, gallerySnapInterval, photoUrls.length]);
+
+  // Warm the neighbours of the centered photo while the gallery is open — the
+  // user has shown intent to browse. Bounded to one page each side, deduped
+  // per open sheet, and never runs for a single-photo place, so this cannot
+  // turn into background downloading of every saved place's gallery.
+  useEffect(() => {
+    if (!galleryOpen) return;
+    const targets = adjacentPrefetchTargets(photoUrls, galleryIndex);
+    for (const url of targets) {
+      if (prefetchedPhotoUrlsRef.current.has(url)) continue;
+      prefetchedPhotoUrlsRef.current.add(url);
+      // Fire-and-forget: a failed warm-up must never surface to the user, and
+      // the <Image> below still requests the photo normally.
+      void Image.prefetch(url).catch(() => undefined);
+    }
+  }, [galleryIndex, galleryOpen, photoUrls]);
 
   const galleryPanResponder = useMemo(
     () =>
@@ -611,7 +671,12 @@ export function SelectedPlaceDetails({
             </Pressable>
 
             <View style={styles.galleryCarouselArea} {...galleryPanResponder.panHandlers}>
-              <FlatList
+              {/* Focus dimming is driven by the NATIVE scroll offset, not by
+                  React state. The centered page reaches full opacity exactly
+                  as it centers — mid-drag, mid-momentum, and while the JS
+                  thread is busy. `galleryIndex` below only backs the counter,
+                  the dots, and the prefetch window. */}
+              <Animated.FlatList
                 ref={galleryListRef}
                 key={galleryListKey}
                 data={photoUrls}
@@ -622,12 +687,14 @@ export function SelectedPlaceDetails({
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={{ paddingHorizontal: gallerySideSpacing }}
                 initialScrollIndex={safeGalleryIndex}
-                getItemLayout={(_data, index) => ({
+                scrollEventThrottle={16}
+                onScroll={handleGalleryScroll}
+                getItemLayout={(_data: unknown, index: number) => ({
                   length: gallerySnapInterval,
                   offset: gallerySnapInterval * index,
                   index,
                 })}
-                onScrollToIndexFailed={(info) => {
+                onScrollToIndexFailed={(info: { index: number }) => {
                   const safeIndex = Math.max(0, Math.min(info.index, photoUrls.length - 1));
                   setGalleryIndex(safeIndex);
                   requestAnimationFrame(() => {
@@ -637,40 +704,51 @@ export function SelectedPlaceDetails({
                     });
                   });
                 }}
-                onMomentumScrollEnd={(event) => {
-                  const next = Math.round(
-                    event.nativeEvent.contentOffset.x / Math.max(gallerySnapInterval, 1),
-                  );
-                  setGalleryIndex(Math.max(0, Math.min(next, photoUrls.length - 1)));
-                }}
-                keyExtractor={(url) => `gallery-${url}`}
-                renderItem={({ item, index }) => (
-                  <View
-                    style={[
-                      styles.galleryItem,
-                      index === safeGalleryIndex
-                        ? styles.galleryPhotoShellActive
-                        : styles.galleryPhotoShellInactive,
-                      {
-                        width: galleryCardWidth,
-                        marginRight: index === photoUrls.length - 1 ? 0 : GALLERY_CARD_GAP,
-                      },
-                    ]}
-                  >
-                    <View
+                keyExtractor={(url: string) => `gallery-${url}`}
+                renderItem={({ item, index }: { item: string; index: number }) => {
+                  // Centered => 1; one page away in either direction => dimmed.
+                  const inputRange = [
+                    (index - 1) * gallerySnapInterval,
+                    index * gallerySnapInterval,
+                    (index + 1) * gallerySnapInterval,
+                  ];
+                  const opacity = galleryScrollX.interpolate({
+                    inputRange,
+                    outputRange: [GALLERY_INACTIVE_OPACITY, 1, GALLERY_INACTIVE_OPACITY],
+                    extrapolate: 'clamp',
+                  });
+                  const scale = galleryScrollX.interpolate({
+                    inputRange,
+                    outputRange: [GALLERY_INACTIVE_SCALE, 1, GALLERY_INACTIVE_SCALE],
+                    extrapolate: 'clamp',
+                  });
+                  return (
+                    <Animated.View
                       style={[
-                        styles.galleryPhotoShell,
-                        { width: galleryCardWidth, height: galleryCardHeight },
+                        styles.galleryItem,
+                        {
+                          opacity,
+                          transform: [{ scale }],
+                          width: galleryCardWidth,
+                          marginRight: index === photoUrls.length - 1 ? 0 : GALLERY_CARD_GAP,
+                        },
                       ]}
                     >
-                      <Image
-                        source={{ uri: item }}
-                        style={styles.galleryImage}
-                        resizeMode="cover"
-                      />
-                    </View>
-                  </View>
-                )}
+                      <View
+                        style={[
+                          styles.galleryPhotoShell,
+                          { width: galleryCardWidth, height: galleryCardHeight },
+                        ]}
+                      >
+                        <Image
+                          source={{ uri: item }}
+                          style={styles.galleryImage}
+                          resizeMode="cover"
+                        />
+                      </View>
+                    </Animated.View>
+                  );
+                }}
               />
             </View>
 
@@ -1097,14 +1175,6 @@ function createStyles(
       borderRadius: 18,
       overflow: 'hidden',
       backgroundColor: 'transparent',
-    },
-    galleryPhotoShellActive: {
-      opacity: 1,
-      transform: [{ scale: 1 }],
-    },
-    galleryPhotoShellInactive: {
-      opacity: 0.45,
-      transform: [{ scale: 0.92 }],
     },
     galleryImage: {
       width: '100%',
