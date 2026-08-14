@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 
 import {
   createShareJobsRealtimeSubscription,
+  type ShareJobsRealtimeChange,
   type ShareJobsRealtimeChannel,
   type ShareJobsRealtimeClient,
   type ShareJobsRealtimeStatus,
@@ -10,10 +11,14 @@ import {
 class MockChannel implements ShareJobsRealtimeChannel {
   subscribed = false;
   onCalls = 0;
-  eventHandler: (() => void) | null = null;
+  eventHandler: ((payload: ShareJobsRealtimeChange) => void) | null = null;
   statusHandler: ((status: ShareJobsRealtimeStatus, error?: Error) => void) | null = null;
 
-  on(_type: 'postgres_changes', _filter: object, callback: () => void): ShareJobsRealtimeChannel {
+  on(
+    _type: 'postgres_changes',
+    _filter: object,
+    callback: (payload: ShareJobsRealtimeChange) => void,
+  ): ShareJobsRealtimeChannel {
     if (this.subscribed) {
       throw new Error("cannot add `postgres_changes` callbacks for realtime:share_jobs_badge:user after `subscribe()`.");
     }
@@ -106,9 +111,9 @@ async function run(): Promise<void> {
   client.created[1].statusHandler?.('SUBSCRIBED');
   assert.equal(client.created[1].onCalls, 1, 'inactive to active recovery never reattaches callbacks');
 
-  client.created[1].eventHandler?.();
-  client.created[1].eventHandler?.();
-  client.created[1].eventHandler?.();
+  client.created[1].eventHandler?.({});
+  client.created[1].eventHandler?.({});
+  client.created[1].eventHandler?.({});
   await new Promise((resolve) => setTimeout(resolve, 5));
   assert.equal(invalidations, 1, 'repeated realtime events coalesce to one refresh');
   assert.equal(client.created.length, 2, 'events and rerenders do not create subscriptions');
@@ -122,7 +127,7 @@ async function run(): Promise<void> {
   assert.equal(client.created.length, 3, 'user change creates a fresh channel');
   disposeThird();
 
-  client.created[2].eventHandler?.();
+  client.created[2].eventHandler?.({});
   await new Promise((resolve) => setTimeout(resolve, 5));
   assert.equal(invalidations, 1, 'late events after cleanup are ignored');
 
@@ -130,6 +135,63 @@ async function run(): Promise<void> {
   const signedOutUserId: string | null = null;
   if (signedOutUserId) mount(signedOutUserId);
   assert.equal(client.created.length, 3, 'signed-out state creates no channel');
+
+  // Regression: two screens subscribing to the SAME scope AT THE SAME TIME.
+  // useSavedPlaces is mounted by the map and by the share-job detail route
+  // simultaneously. With a shared per-user topic the second mount received the
+  // already-joined channel and `.on()` threw out of its effect, which the
+  // detail route surfaced as "Couldn't open this item".
+  const concurrentClient = new CachingMockClient();
+  const concurrentErrors: unknown[] = [];
+  let enrichmentInvalidations = 0;
+  const mountEnrichment = () => createShareJobsRealtimeSubscription({
+    client: concurrentClient,
+    scope: 'saved_place_enrichment',
+    table: 'share_job_place_results',
+    userId: 'user',
+    coalesceMs: 0,
+    onInvalidate: () => { enrichmentInvalidations += 1; },
+    shouldInvalidate: (payload) => typeof payload?.new?.saved_place_id === 'string',
+    onError: (error) => concurrentErrors.push(error),
+  });
+
+  const disposeMapScreen = mountEnrichment();
+  const disposeDetailScreen = mountEnrichment();
+  assert.equal(concurrentErrors.length, 0, 'a second concurrent mount never throws');
+  assert.equal(concurrentClient.created.length, 2, 'each concurrent mount owns a channel');
+  assert.notEqual(
+    concurrentClient.created[0],
+    concurrentClient.created[1],
+    'concurrent mounts never share a subscribed channel instance',
+  );
+  assert.equal(
+    concurrentClient.created.every((channel) => channel.onCalls === 1),
+    true,
+    'no channel is ever bound twice',
+  );
+
+  // Irrelevant ledger rows must not trigger a refetch.
+  concurrentClient.created[1].eventHandler?.({ new: { saved_place_id: null } });
+  concurrentClient.created[1].eventHandler?.({});
+  await new Promise((resolve) => setTimeout(resolve, 5));
+  assert.equal(enrichmentInvalidations, 0, 'rows without a saved place are ignored');
+
+  concurrentClient.created[1].eventHandler?.({ new: { saved_place_id: 'saved-1' } });
+  await new Promise((resolve) => setTimeout(resolve, 5));
+  assert.equal(enrichmentInvalidations, 1, 'an enriched saved place refreshes the cache');
+
+  // Closing the detail route must not tear down the map's subscription.
+  disposeDetailScreen();
+  assert.deepEqual(
+    concurrentClient.removed.slice(-1),
+    [concurrentClient.created[1]],
+    'unmount removes only its own channel',
+  );
+  concurrentClient.created[0].eventHandler?.({ new: { saved_place_id: 'saved-2' } });
+  await new Promise((resolve) => setTimeout(resolve, 5));
+  assert.equal(enrichmentInvalidations, 2, 'the still-mounted screen keeps receiving updates');
+  disposeMapScreen();
+
   console.log('PASS share queue Realtime lifecycle regression');
 }
 

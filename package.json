@@ -41,6 +41,7 @@
     "test:share-worker-boot": "deno run --no-config --allow-run --allow-net scripts/testProcessShareJobsBoot.js",
     "test:share-job-mapping": "ts-node -P scripts/tsconfig.json scripts/testShareJobDecisionMapping.ts",
     "test:share-job-routing": "ts-node -P scripts/tsconfig.json scripts/testShareJobRouting.ts",
+    "test:share-job-detail-state": "ts-node -P scripts/tsconfig.json scripts/testShareJobDetailState.ts",
     "test:share-url-validation": "ts-node -P scripts/tsconfig.json scripts/testShareUrlValidation.ts",
     "test:feature-flags": "ts-node -P scripts/tsconfig.json scripts/testFeatureFlags.ts",
     "test:shared-auth-session": "ts-node -P scripts/tsconfig.json scripts/testSharedAuthSession.ts",

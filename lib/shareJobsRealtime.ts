@@ -4,10 +4,16 @@ export type ShareJobsRealtimeStatus =
   | 'CLOSED'
   | 'CHANNEL_ERROR';
 
+/** Tables this helper is allowed to watch. Every one is RLS-scoped by user_id. */
+export type ShareJobsRealtimeTable = 'share_jobs' | 'share_job_place_results';
+
+/** The only part of a postgres_changes payload callers may inspect. */
+export type ShareJobsRealtimeChange = { new?: Record<string, unknown> | null };
+
 type PostgresChangesFilter = {
   event: '*';
   schema: 'public';
-  table: 'share_jobs';
+  table: ShareJobsRealtimeTable;
   filter: string;
 };
 
@@ -15,7 +21,7 @@ export type ShareJobsRealtimeChannel = {
   on(
     type: 'postgres_changes',
     filter: PostgresChangesFilter,
-    callback: () => void,
+    callback: (payload: ShareJobsRealtimeChange) => void,
   ): ShareJobsRealtimeChannel;
   subscribe(callback?: (status: ShareJobsRealtimeStatus, error?: Error) => void): ShareJobsRealtimeChannel;
 };
@@ -27,9 +33,13 @@ export type ShareJobsRealtimeClient = {
 
 type SubscriptionOptions = {
   client: ShareJobsRealtimeClient;
-  scope: 'share_jobs' | 'share_jobs_badge';
+  scope: 'share_jobs' | 'share_jobs_badge' | 'saved_place_enrichment';
+  /** Defaults to `share_jobs` so existing callers are unchanged. */
+  table?: ShareJobsRealtimeTable;
   userId: string;
   onInvalidate: () => void;
+  /** Drop changes that can't affect the caller before any refetch is scheduled. */
+  shouldInvalidate?: (payload: ShareJobsRealtimeChange) => boolean;
   onStatus?: (status: ShareJobsRealtimeStatus, error?: Error) => void;
   onError?: (error: unknown) => void;
   coalesceMs?: number;
@@ -40,8 +50,10 @@ let lifecycleSequence = 0;
 export function createShareJobsRealtimeSubscription({
   client,
   scope,
+  table = 'share_jobs',
   userId,
   onInvalidate,
+  shouldInvalidate,
   onStatus,
   onError,
   coalesceMs = 120,
@@ -59,6 +71,12 @@ export function createShareJobsRealtimeSubscription({
   };
 
   try {
+    // The topic MUST be unique per subscription lifecycle. supabase-js returns
+    // the EXISTING channel instance for a duplicate topic, and binding a
+    // `postgres_changes` callback on an already joined/joining channel THROWS
+    // ("cannot add `postgres_changes` callbacks ... after `subscribe()`"). Two
+    // screens subscribing to the same scope at once would otherwise crash the
+    // second one into its route error boundary.
     const lifecycleId = `${Date.now().toString(36)}:${++lifecycleSequence}`;
     channel = client.channel(`${scope}:${userId}:${lifecycleId}`);
     channel.on(
@@ -66,10 +84,13 @@ export function createShareJobsRealtimeSubscription({
       {
         event: '*',
         schema: 'public',
-        table: 'share_jobs',
+        table,
         filter: `user_id=eq.${userId}`,
       },
-      invalidate,
+      (payload) => {
+        if (shouldInvalidate && !shouldInvalidate(payload)) return;
+        invalidate();
+      },
     );
     channel.subscribe((status, error) => {
       if (cancelled) return;
