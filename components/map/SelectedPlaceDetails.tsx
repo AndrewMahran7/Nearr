@@ -53,6 +53,7 @@ import {
 } from '@/lib/noteEditor';
 import { buildSavedPlaceShareContent } from '@/lib/placeShare';
 import { reminderStatusLabel, savedPlaceNarrative } from '@/lib/placeDetailUi';
+import { savedPlaceRemovalCopy } from '@/lib/savedPlaceRemoval';
 import { adjacentPrefetchTargets, pageIndexFromOffset } from '@/lib/photoCarousel';
 import { splitPlaceAddress } from '@/lib/sharePhase1Ui';
 import { deleteSavedPlace, updateSavedPlace } from '@/services/savedPlacesService';
@@ -556,13 +557,14 @@ export function SelectedPlaceDetails({
   );
 
   function confirmDelete() {
+    const copy = savedPlaceRemovalCopy(saved.place.name);
     Alert.alert(
-      'Remove place?',
-      `${saved.place.name} will be removed from your saved places.`,
+      copy.title,
+      copy.message,
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: copy.cancelLabel, style: 'cancel' },
         {
-          text: 'Remove',
+          text: copy.confirmLabel,
           style: 'destructive',
           onPress: async () => {
             setDeleting(true);

@@ -30,6 +30,11 @@ import { useTheme } from '@/lib/theme';
 import { useAuth } from '@/hooks/useAuth';
 import { useShareJobs } from '@/hooks/useShareJobs';
 import { routeShareJobCard } from '@/lib/shareJobRouting';
+import { resolveOpenSavedPlaceRoute } from '@/lib/openSavedPlace';
+import {
+  savedPlaceRemovalA11yLabel,
+  savedPlaceRemovalCopy,
+} from '@/lib/savedPlaceRemoval';
 import { createMapGroupFocusRequest } from '@/lib/mapGroupFocus';
 import { PHASE2_PREVIEW_FIXTURES } from '@/lib/phase2Preview';
 import {
@@ -281,6 +286,28 @@ function ShareJobsQueueScreen() {
   // Never leave the user trapped: go back if there's a Nearr route to return
   // to, otherwise fall back to the map (cold deep-link entry from the
   // extension's "View queue" has no previous route).
+  /**
+   * Follow a queue row to a place on the map.
+   *
+   * The queue is a presented modal, so a bare `router.push` left it sitting on
+   * top of the destination — and the X then popped the pushed route, taking
+   * the selection with it. Tearing the modal stack down FIRST and replacing
+   * makes this one navigation action: the queue closes, the place stays open,
+   * and closing the queue is no longer entangled with the selection.
+   *
+   * Same primitive the job-detail screen already uses for "View place".
+   */
+  function leaveQueueForMap(target: Parameters<typeof resolveOpenSavedPlaceRoute>[0]) {
+    if (router.canDismiss()) {
+      try {
+        router.dismissAll();
+      } catch {
+        // Cold deep-link entry: nothing presented to dismiss.
+      }
+    }
+    router.replace(resolveOpenSavedPlaceRoute(target));
+  }
+
   function goBack() {
     const target = backTarget(router.canGoBack(), '/(tabs)/map');
     if (target.kind === 'back') router.back();
@@ -358,6 +385,23 @@ function ShareJobsQueueScreen() {
     }
   }
 
+  /**
+   * Confirm before undoing an automatic save. The mutation removes the SAVED
+   * PLACE, not just the queue row, so it is gated by the same native
+   * confirmation the map's place detail uses, sharing one copy helper.
+   */
+  function confirmRemoveRecent(item: RecentAutoSave) {
+    const copy = savedPlaceRemovalCopy(item.savedPlace.place.name);
+    Alert.alert(copy.title, copy.message, [
+      { text: copy.cancelLabel, style: 'cancel' },
+      {
+        text: copy.confirmLabel,
+        style: 'destructive',
+        onPress: () => void undoRecent(item),
+      },
+    ]);
+  }
+
   async function undoRecent(item: RecentAutoSave) {
     const lock = `undo:${item.savedPlaceId}`;
     if (actionLocksRef.current.size > 0) return;
@@ -390,7 +434,9 @@ function ShareJobsQueueScreen() {
     const category = CATEGORY_LABELS[displayCategory(item.savedPlace.category)];
     return (
       <Pressable
-        onPress={() => router.push({ pathname: '/(tabs)/map', params: { savedPlaceId: item.savedPlaceId } })}
+        onPress={() =>
+          leaveQueueForMap({ savedPlaceId: item.savedPlaceId, source: 'share_job_completed' })
+        }
         disabled={busy}
         style={({ pressed }) => [styles.row, pressed ? styles.rowPressed : null]}
         accessibilityRole="button"
@@ -405,14 +451,21 @@ function ShareJobsQueueScreen() {
           </View>
         </View>
         <Pressable
-          onPress={() => void undoRecent(item)}
+          onPress={() => confirmRemoveRecent(item)}
           disabled={busy}
           hitSlop={8}
           style={styles.undoButton}
           accessibilityRole="button"
-          accessibilityLabel={`Undo saving ${item.savedPlace.place.name}`}
+          accessibilityLabel={savedPlaceRemovalA11yLabel(item.savedPlace.place.name)}
         >
-          {busy ? <ActivityIndicator color={colors.primary} /> : <Feather name="rotate-ccw" size={19} color={colors.primary} />}
+          {busy ? (
+            <ActivityIndicator color={colors.textMuted} />
+          ) : (
+            // This action DELETES the saved place. A refresh/undo arrow read as
+            // "retry"; a trash icon states the consequence. Muted rather than
+            // accent so it never competes with opening the place.
+            <Feather name="trash-2" size={19} color={colors.textMuted} />
+          )}
         </Pressable>
       </Pressable>
     );
@@ -460,13 +513,14 @@ function ShareJobsQueueScreen() {
     const route = routeShareJobCard(job);
     switch (route.kind) {
       case 'saved_place':
-        router.push({ pathname: '/(tabs)/map', params: { savedPlaceId: route.savedPlaceId } });
+        leaveQueueForMap({ savedPlaceId: route.savedPlaceId, source: 'share_job_completed' });
         break;
       case 'queue_item':
+        // Job detail pushes on purpose: Back must return to the queue.
         router.push({ pathname: '/share-jobs/[jobId]', params: { jobId: route.jobId } });
         break;
       case 'map':
-        router.push('/(tabs)/map');
+        leaveQueueForMap({ source: 'share_job_completed' });
         break;
       case 'queue_root':
       default:

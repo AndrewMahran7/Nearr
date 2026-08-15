@@ -189,6 +189,22 @@ export function routeShareJobNotification(
 }
 
 /**
+ * Whether following a route should tear the queue down.
+ *
+ * Anything that lands on the MAP is a destination: leaving the queue sheet
+ * sitting on top of the place the user just chose is the bug this fixes, and
+ * it also decouples "close the queue" from "lose my selection". A queue_item
+ * (job detail) deliberately does NOT dismiss — it pushes, so Back returns to
+ * the queue and the job detail stays reachable.
+ */
+export function shouldDismissQueueForRoute(
+  route: ShareJobRoute | null | undefined,
+): boolean {
+  if (!route) return false;
+  return route.kind === 'saved_place' || route.kind === 'saved_group' || route.kind === 'map';
+}
+
+/**
  * Decide where tapping a QUEUE CARD (a full job row) should go. Terminal
  * success → the saved place; dismissed / unknown → the queue root (no-op);
  * processing / actionable → the per-job detail route. NEVER throws.

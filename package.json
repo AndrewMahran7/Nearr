@@ -70,6 +70,7 @@
     "test:queue-swipe": "ts-node -P scripts/tsconfig.json scripts/testQueueSwipeCoordinator.ts",
     "test:queue-save": "ts-node -P scripts/tsconfig.json scripts/testQueueSaveResolution.ts",
     "test:queue-interactions": "ts-node -P scripts/tsconfig.json scripts/testQueueInteractionContracts.ts",
+    "test:queue-place-nav": "ts-node -P scripts/tsconfig.json scripts/testQueuePlaceNavigation.ts",
     "test:share-job-result": "ts-node -P scripts/tsconfig.json scripts/testShareJobResult.ts",
     "test:map-group-focus": "ts-node -P scripts/tsconfig.json scripts/testMapGroupFocus.ts",
     "test:phase2-ui-render": "ts-node -P scripts/tsconfig.json scripts/testPhase2UiRenderContracts.ts",
