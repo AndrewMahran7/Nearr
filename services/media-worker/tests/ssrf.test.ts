@@ -5,6 +5,7 @@ import {
   hostAllowed,
   assertUrlSafe,
   sanitizeUrlForLog,
+  sanitizeExtraHeaders,
 } from '../src/security/ssrf.js';
 import { MediaError } from '../src/types/media.js';
 
@@ -80,6 +81,35 @@ test('assertUrlSafe allows a public, allowlisted, resolvable host', async () => 
   const mock = async () => [{ address: '157.240.1.35' }];
   const u = await assertUrlSafe('https://scontent.cdninstagram.com/v', ['cdninstagram.com'], mock);
   assert.equal(u.hostname, 'scontent.cdninstagram.com');
+});
+
+test('sanitizeExtraHeaders forwards a plain referer', () => {
+  assert.deepEqual(sanitizeExtraHeaders({ referer: 'https://www.tiktok.com/' }), {
+    referer: 'https://www.tiktok.com/',
+  });
+});
+
+test('sanitizeExtraHeaders strips user-agent, accept, cookie, authorization, host', () => {
+  assert.deepEqual(
+    sanitizeExtraHeaders({
+      referer: 'https://www.tiktok.com/',
+      'user-agent': 'evil-spoofed-browser',
+      Accept: 'text/html',
+      Cookie: 'session=abc',
+      Authorization: 'Bearer stolen',
+      Host: 'attacker.example.com',
+    }),
+    { referer: 'https://www.tiktok.com/' },
+  );
+});
+
+test('sanitizeExtraHeaders is case-insensitive on the disallowed set', () => {
+  assert.deepEqual(sanitizeExtraHeaders({ 'User-Agent': 'x', COOKIE: 'y' }), {});
+});
+
+test('sanitizeExtraHeaders drops empty/non-string values and handles undefined input', () => {
+  assert.deepEqual(sanitizeExtraHeaders({ referer: '' }), {});
+  assert.deepEqual(sanitizeExtraHeaders(undefined), {});
 });
 
 test('sanitizeUrlForLog keeps only the origin', () => {

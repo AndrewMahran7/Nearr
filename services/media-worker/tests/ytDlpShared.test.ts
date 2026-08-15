@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   pickProgressiveUrl,
+  pickProgressiveHeaders,
   classifyYtError,
   boundedMetadata,
   requireHttpsHost,
@@ -57,6 +58,37 @@ test('pickProgressiveUrl: single-format fallback requires https + a real video c
 
 test('pickProgressiveUrl: no formats and no top-level url => null', () => {
   assert.equal(pickProgressiveUrl({}), null);
+});
+
+test('pickProgressiveHeaders: only referer is forwarded, never user-agent or other headers (verified live: TikTok CDN 403s without Referer)', () => {
+  const url = 'https://v16-webapp-prime.us.tiktok.com/abc.mp4';
+  const info = {
+    formats: [
+      {
+        url,
+        protocol: 'https',
+        vcodec: 'h264',
+        acodec: 'aac',
+        height: 720,
+        http_headers: { Referer: 'https://www.tiktok.com/', 'User-Agent': 'some-browser-ua', Cookie: 'session=x' },
+      },
+    ],
+  };
+  assert.deepEqual(pickProgressiveHeaders(info, url), { referer: 'https://www.tiktok.com/' });
+});
+
+test('pickProgressiveHeaders: falls back to top-level http_headers for single-format extractors', () => {
+  const url = 'https://bolt-gcdn.sc-cdn.net/y/abc123.mp4';
+  const info = { url, ext: 'mp4', http_headers: { Referer: 'https://www.snapchat.com/' } };
+  assert.deepEqual(pickProgressiveHeaders(info, url), { referer: 'https://www.snapchat.com/' });
+});
+
+test('pickProgressiveHeaders: no matching headers => undefined', () => {
+  assert.equal(pickProgressiveHeaders({}, 'https://cdn.example.com/v.mp4'), undefined);
+  assert.equal(
+    pickProgressiveHeaders({ formats: [{ url: 'https://cdn.example.com/v.mp4' }] }, 'https://cdn.example.com/v.mp4'),
+    undefined,
+  );
 });
 
 test('classifyYtError: maps common yt-dlp stderr vocabulary to structured codes', () => {

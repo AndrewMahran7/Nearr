@@ -30,6 +30,10 @@ export type YtFormat = {
   height?: number;
   protocol?: string;
   filesize?: number;
+  /** Per-format request headers yt-dlp's extractor determined the CDN
+   *  requires (e.g. a hotlink-protection Referer). Only forwarded via
+   *  `pickProgressiveHeaders` after whitelisting — see there for why. */
+  http_headers?: Record<string, string>;
 };
 
 export type YtInfo = {
@@ -43,6 +47,9 @@ export type YtInfo = {
   subtitles?: Record<string, YtSubtitleTrack[]>;
   /** Machine-generated captions, keyed by language code. */
   automatic_captions?: Record<string, YtSubtitleTrack[]>;
+  /** Top-level fallback for `YtFormat.http_headers` (single-format extractors,
+   *  e.g. Snapchat Spotlight, report headers here instead of per-format). */
+  http_headers?: Record<string, string>;
 };
 
 export function boundedMetadata(value: unknown, max: number): string | null {
@@ -103,6 +110,37 @@ export function pickProgressiveUrl(info: YtInfo): string | null {
     return info.url;
   }
   return null;
+}
+
+// Some CDNs (verified live: TikTok) reject a direct fetch with HTTP 403
+// unless the request carries the same Referer the browser/app would have
+// sent — ordinary hotlink protection, not anti-bot evasion. yt-dlp's own `-j`
+// probe already tells us this in `http_headers`. Forward ONLY `Referer`: it's
+// the one header that's purely "which page linked to this resource" (no
+// identity, no session, no credential), so honoring it is standard web
+// behavior. Never forward User-Agent (keep our own honest, self-identifying
+// UA — see DEFAULT_UA) or anything else (Cookie/Authorization/etc. must
+// never appear here per the mission's public-content-only constraint; public
+// posts never require them from yt-dlp in the first place).
+const FORWARDABLE_HEADER = 'referer';
+
+/** The subset of yt-dlp-reported headers safe to forward for `pickedUrl`
+ *  (matched against the SAME format entry `pickProgressiveUrl` selected, or
+ *  the top-level `http_headers` for single-format extractors). */
+export function pickProgressiveHeaders(
+  info: YtInfo,
+  pickedUrl: string,
+): Record<string, string> | undefined {
+  const formats = Array.isArray(info.formats) ? info.formats : [];
+  const matched = formats.find((f) => f.url === pickedUrl);
+  const source = matched?.http_headers ?? (info.url === pickedUrl ? info.http_headers : undefined);
+  if (!source || typeof source !== 'object') return undefined;
+  for (const [key, value] of Object.entries(source)) {
+    if (key.toLowerCase() === FORWARDABLE_HEADER && typeof value === 'string' && value) {
+      return { referer: value };
+    }
+  }
+  return undefined;
 }
 
 export async function findDownloadedFile(dir: string): Promise<string | null> {
@@ -210,6 +248,7 @@ export async function retrieveVideoFile(
       redirectLimit: cfg.redirectLimit,
       allowlist: cfg.allowedMediaHosts,
       signal: opts.signal,
+      extraHeaders: pickProgressiveHeaders(opts.info, directUrl),
     });
     return {
       path: destPath,

@@ -134,6 +134,23 @@ export type DownloadResult = {
   finalUrl: string;
 };
 
+// Headers a caller is never allowed to inject/override via `extraHeaders` —
+// identity (`user-agent`), content negotiation (`accept`), or anything
+// credential-shaped (`cookie`/`authorization`), plus `host` (fetch derives it
+// from the URL). Kept pure + exported so a regression that widened this set
+// fails a unit test rather than shipping silently.
+const DISALLOWED_HEADER_OVERRIDE = new Set(['user-agent', 'accept', 'cookie', 'authorization', 'host']);
+
+export function sanitizeExtraHeaders(extraHeaders: Record<string, string> | undefined): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [key, value] of Object.entries(extraHeaders ?? {})) {
+    if (!DISALLOWED_HEADER_OVERRIDE.has(key.toLowerCase()) && typeof value === 'string' && value) {
+      out[key] = value;
+    }
+  }
+  return out;
+}
+
 async function streamToFileCapped(
   body: ReadableStream<Uint8Array>,
   destPath: string,
@@ -172,6 +189,10 @@ export async function safeDownloadToFile(opts: {
   redirectLimit: number;
   allowlist: string[];
   signal?: AbortSignal;
+  /** Additional request headers (currently only `referer` is ever passed —
+   *  see ytDlpShared.pickProgressiveHeaders). Never lets a caller override
+   *  `user-agent` or inject `cookie`/`authorization`. */
+  extraHeaders?: Record<string, string>;
 }): Promise<DownloadResult> {
   const controller = new AbortController();
   const onAbort = () => controller.abort();
@@ -181,6 +202,8 @@ export async function safeDownloadToFile(opts: {
   }
   const timer = setTimeout(() => controller.abort(), opts.timeoutMs);
 
+  const safeExtraHeaders = sanitizeExtraHeaders(opts.extraHeaders);
+
   try {
     let current = await assertUrlSafe(opts.url, opts.allowlist);
     let hops = 0;
@@ -188,7 +211,7 @@ export async function safeDownloadToFile(opts: {
       const res = await fetch(current, {
         redirect: 'manual',
         signal: controller.signal,
-        headers: { 'user-agent': DEFAULT_UA, accept: '*/*' },
+        headers: { 'user-agent': DEFAULT_UA, accept: '*/*', ...safeExtraHeaders },
       });
 
       if (res.status >= 300 && res.status < 400) {
