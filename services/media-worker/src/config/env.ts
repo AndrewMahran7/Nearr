@@ -119,8 +119,7 @@ export type WorkerConfig = {
 // (`googlevideo.com`) + caption API (`youtube.com`), and Snapchat's Spotlight
 // CDN (`sc-cdn.net`) are all verified live during Phase 3 development. TikTok
 // hosts are included for when its extractor is reachable (own webpage/CDN
-// hosts are documented publicly; NOT independently live-verified from this
-// environment — see docs/MEDIA_FALLBACK.md).
+// hosts are documented publicly) — see docs/MEDIA_FALLBACK.md.
 const DEFAULT_ALLOWED_HOSTS = [
   // Instagram + Facebook (Meta) — one shared CDN family. `fb.watch`/
   // `facebook.com` themselves are never a download target (video bytes are
@@ -133,13 +132,20 @@ const DEFAULT_ALLOWED_HOSTS = [
   // endpoint (both verified live).
   'googlevideo.com',
   'youtube.com',
-  // TikTok — publicly documented CDN hosts. NOT independently live-verified
-  // from this environment (TikTok's anti-bot layer blocked automated
-  // probing here); see docs/MEDIA_FALLBACK.md.
+  // TikTok — publicly documented CDN hosts, PLUS `tiktok.com` itself. Added
+  // 2026-08-15: a live production sample (7 real TikTok shares) showed
+  // `ssrf_blocked`/`host_not_allowlisted` as the dominant media-acquisition
+  // failure (3 of 4 downloads that reached this gate) even though yt-dlp's
+  // own extractor succeeded. The worker deliberately never logs the blocked
+  // host (avoids leaking signed CDN URLs), but yt-dlp's TikTok extractor is
+  // publicly documented to serve progressive video from
+  // `<region>-webapp[-prime].tiktok.com`, a host none of the entries below
+  // cover — the most likely explanation and the smallest safe fix.
   'tiktokcdn.com',
   'tiktokcdn-us.com',
   'tiktokv.com',
   'tiktokv.us',
+  'tiktok.com',
   'muscdn.com',
   // Snapchat Spotlight CDN (verified live).
   'sc-cdn.net',
