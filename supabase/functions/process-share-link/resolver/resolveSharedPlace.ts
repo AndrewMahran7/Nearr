@@ -537,8 +537,16 @@ export async function resolveSharedPlace(args: {
     lastQuery = q;
     const r = await searchPlaces(q, env.googlePlacesKey, bias ?? undefined);
     if (!r.ok) {
+      // `places_http_error` / `places_api_error` are the transient markers the
+      // job retry classifier looks for. They must never be conflated with a
+      // successful search that returned zero results.
       warnings.push(`places_${r.reason}`);
-      diagnostics.placesError = { query: q, reason: r.reason, status: r.status };
+      diagnostics.placesError = {
+        query: q,
+        reason: r.reason,
+        status: r.status,
+        ...(r.retryAfterSeconds != null ? { retryAfterSeconds: r.retryAfterSeconds } : {}),
+      };
       // Hard failure on first attempt — bail.
       if (candidates.length === 0) {
         return {

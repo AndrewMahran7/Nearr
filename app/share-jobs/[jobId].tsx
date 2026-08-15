@@ -33,21 +33,17 @@ import { ShareJobsSheet } from '@/components/ShareJobsSheet';
 import { Radius, Spacing } from '@/constants';
 import { useTheme } from '@/lib/theme';
 import { trackEvent } from '@/lib/analytics';
-import { classifyShareJobDetail } from '@/lib/shareJobRouting';
+import { buildShareJobDetailState } from '@/lib/shareJobDetailState';
 import { planOpenOriginal, validateSourceUrl } from '@/lib/openOriginalPost';
-import {
-  backTarget,
-  findSavedPlaceIdByGooglePlaceId,
-  normalizeShareJobCandidates,
-  quickCheckReviewCopy,
-} from '@/lib/shareJobsUi';
+import { sanitizeErrorText } from '@/lib/sanitizeError';
+import { logDebug } from '@/lib/logger';
+import { alreadySavedActionCopy } from '@/lib/savedPlaceSourceMerge';
+import { normalizeShareUrl } from '@/lib/shareAgent/tiktokUrl';
 import { PHASE_1_COPY, splitPlaceAddress } from '@/lib/sharePhase1Ui';
 import { buildPhase2PreviewJob, isPhase2PreviewId } from '@/lib/phase2Preview';
 import {
-  normalizeMentionSlots,
   planShareSaveCompletion,
   saveSelectedLabel,
-  savedPlaceIdsFromPayload,
   type ShareJobResultCandidate,
   type SharePlaceSaveOutcome,
 } from '@/lib/shareJobResult';
@@ -97,6 +93,7 @@ import { getPlaceDetails, searchPlaces, type PlaceCandidate } from '@/services/p
 import {
   persistShareJobCandidate,
   shareJobCandidateToPlaceCandidate,
+  shareJobSourceType,
 } from '@/services/shareJobCandidateSave';
 import {
   cancelShareJob,
@@ -136,6 +133,9 @@ function platformName(platform: string | null | undefined): string {
   }
 }
 
+/** Reuse Nearr's existing share-URL normalization for "is this the same post?". */
+const shareUrlKey = (url: string): string => normalizeShareUrl(url).url;
+
 function hasCoords(c: ShareJobCandidate): boolean {
   return Number.isFinite(c.latitude) && Number.isFinite(c.longitude);
 }
@@ -158,14 +158,45 @@ function toResultCandidate(candidate: PlaceCandidate): ShareJobResultCandidate {
 }
 
 type SearchPhase = 'idle' | 'searching' | 'results' | 'empty' | 'error';
+
+/**
+ * Why a detail load did not produce a job. Recorded in the developer log and
+ * the breadcrumb trail so a repeat of the "couldn't open this item" report is
+ * diagnosable without a debugger. Low-cardinality tags only — never payloads.
+ */
+type DetailLoadFailure =
+  | 'invalid_route_id'
+  | 'not_found'
+  | 'authorization_failed'
+  | 'query_failed'
+  | 'unexpected';
+
+/** Classify a thrown load error WITHOUT retaining the raw message. */
+function classifyLoadFailure(error: unknown): DetailLoadFailure {
+  const message = error instanceof Error ? error.message : String(error ?? '');
+  if (/jwt|token|permission|denied|not authoriz|policy|row-level/i.test(message)) {
+    return 'authorization_failed';
+  }
+  if (/network|fetch|timeout|offline|connection/i.test(message)) return 'query_failed';
+  return 'unexpected';
+}
+
+/** A load failure the user can meaningfully retry (vs. a row that is gone). */
+function isRetryableLoadFailure(failure: DetailLoadFailure | null): boolean {
+  return failure === 'authorization_failed' || failure === 'query_failed' || failure === 'unexpected';
+}
 function ShareJobDetailScreen() {
   const router = useRouter();
   const { jobId } = useLocalSearchParams<{ jobId: string }>();
+  // Expo Router can hand back an array or an empty value for a route param —
+  // normalise ONCE so no downstream string call can throw on it.
+  const routeJobId = typeof jobId === 'string' ? jobId.trim() : '';
   const { colors, typography } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   const [job, setJob] = useState<ShareJob | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadFailure, setLoadFailure] = useState<DetailLoadFailure | null>(null);
   const [busy, setBusy] = useState(false);
   const [manualQuery, setManualQuery] = useState('');
   const [manualSearchPhase, setManualSearchPhase] = useState<SearchPhase>('idle');
@@ -224,14 +255,24 @@ function ShareJobDetailScreen() {
   }
 
   const load = useCallback(async () => {
-    if (!jobId) return;
+    // A bad id must resolve to an honest state, not an endless spinner.
+    const id = routeJobId;
+    if (!id) {
+      logDebug('share-job-detail', 'load_failed reason=invalid_route_id');
+      recordBreadcrumb('candidate_loaded', { result: 'load_failed:invalid_route_id' });
+      if (mountedRef.current) {
+        setLoadFailure('invalid_route_id');
+        setLoading(false);
+      }
+      return;
+    }
     try {
       const previewSaved = getSavedPlacesCacheSnapshot()?.find(
         (saved) => saved.place?.google_place_id,
       );
-      const j = __DEV__ && isPhase2PreviewId(jobId)
+      const j = __DEV__ && isPhase2PreviewId(id)
         ? buildPhase2PreviewJob(
-            jobId,
+            id,
             previewSaved?.place?.google_place_id
               ? {
                   googlePlaceId: previewSaved.place.google_place_id,
@@ -244,26 +285,36 @@ function ShareJobDetailScreen() {
                 }
               : null,
           )
-        : await getShareJob(jobId);
+        : await getShareJob(id);
       if (!mountedRef.current) return;
       setJob(j);
-      if (j) {
-        recordBreadcrumb('candidate_loaded', {
-          jobId,
-          result: j.status ?? null,
-        });
-      }
+      // A row the user can no longer read (deleted, or RLS-scoped away) comes
+      // back as null rather than an error — that is "not found", not a crash.
+      setLoadFailure(j ? null : 'not_found');
+      // `reason` names the payload interpretation that was chosen, so a future
+      // report distinguishes "job not found" from "payload had no candidates".
+      const outcome = j ? buildShareJobDetailState(j).reason : 'not_found';
+      logDebug('share-job-detail', `load_ok status=${j?.status ?? 'none'} state=${outcome}`);
+      recordBreadcrumb('candidate_loaded', { jobId: id, result: outcome });
       if (j && !seededQueryRef.current && j.suggested_query) {
         manualQueryEditedRef.current = false;
         setManualQuery(j.suggested_query);
         seededQueryRef.current = true;
       }
-    } catch {
-      // leave prior job
+    } catch (error) {
+      if (!mountedRef.current) return;
+      const failure = classifyLoadFailure(error);
+      // Sanitized: never logs tokens, signed URLs, or provider payloads.
+      logDebug(
+        'share-job-detail',
+        `load_failed reason=${failure} detail=${sanitizeErrorText(error)}`,
+      );
+      recordBreadcrumb('candidate_loaded', { jobId: id, result: `load_failed:${failure}` });
+      setLoadFailure(failure);
     } finally {
       if (mountedRef.current) setLoading(false);
     }
-  }, [jobId]);
+  }, [routeJobId]);
 
   useEffect(() => {
     void load();
@@ -271,13 +322,15 @@ function ShareJobDetailScreen() {
 
   // Track the current share-job id + queue-opened breadcrumb for diagnostics.
   useEffect(() => {
-    if (!jobId) return;
-    setCurrentShareJobId(jobId);
-    recordBreadcrumb('queue_item_opened', { jobId });
+    if (!routeJobId) return;
+    setCurrentShareJobId(routeJobId);
+    recordBreadcrumb('queue_item_opened', { jobId: routeJobId });
     return () => setCurrentShareJobId(null);
-  }, [jobId]);
+  }, [routeJobId]);
 
   // Poll while the job is still processing so the detail updates live.
+  // (Same set as detail.kind === 'processing'; kept status-based because this
+  // runs above the payload mapping.)
   const isProcessing = job?.status === 'queued' || job?.status === 'processing_metadata';
   useEffect(() => {
     if (!isProcessing) return;
@@ -287,16 +340,12 @@ function ShareJobDetailScreen() {
 
   const platform = job?.source_platform ?? null;
   const sourceUrl = job?.canonical_url ?? job?.source_url ?? null;
-  const candidates = useMemo(
-    () => normalizeShareJobCandidates(job?.candidate_payload),
-    [job?.candidate_payload],
-  );
-  const mentionSlots = useMemo(
-    () => normalizeMentionSlots(
-      (job?.candidate_payload as { mentionSlots?: unknown } | null)?.mentionSlots,
-    ),
-    [job?.candidate_payload],
-  );
+  // ONE payload-tolerant mapping from the persisted row to what this screen
+  // renders (lib/shareJobDetailState). Nothing below re-interprets
+  // candidate_payload, so a drifted/partial payload can never throw here.
+  const detail = useMemo(() => buildShareJobDetailState(job), [job]);
+  const candidates = detail.candidates;
+  const mentionSlots = detail.mentionSlots;
   const reviewSlots = useMemo(() => {
     if (mentionSlots.length > 0) return mentionSlots;
     return candidates.map((candidate) => ({
@@ -313,11 +362,7 @@ function ShareJobDetailScreen() {
       savedPlaceId: null,
     }));
   }, [candidates, mentionSlots]);
-  const automaticallySavedPlaceIds = savedPlaceIdsFromPayload(job?.candidate_payload);
-  const singleReviewCopy = quickCheckReviewCopy(job?.needs_help_reason, {
-    title: PHASE_1_COPY.suggestedHeading,
-    body: PHASE_1_COPY.suggestedBody,
-  });
+  const automaticallySavedPlaceIds = detail.savedPlaceIds;
   const savedSnapshot = useMemo(
     () => savedPlaces.length > 0 ? savedPlaces : getSavedPlacesCacheSnapshot() ?? [],
     [savedPlaces],
@@ -328,29 +373,28 @@ function ShareJobDetailScreen() {
       .map((saved) => [saved.place.google_place_id as string, saved.id]),
   ), [savedSnapshot]);
 
+  // Keyed off the mapped view, so a grouped job identified by its persisted
+  // slots (rather than by `decision`) still builds its batch instead of
+  // spinning forever behind the "Review places" header.
   useEffect(() => {
-    if (!job?.id || job.decision !== 'multi_candidate_confirmation') return;
+    if (!job?.id || detail.kind !== 'multi') return;
     setBatch((current) => reconcileMultiPlaceBatch({
       jobId: job.id,
       slots: reviewSlots,
       savedByGoogleId,
       previous: current,
     }));
-  }, [job?.decision, job?.id, reviewSlots, savedByGoogleId]);
+  }, [detail.kind, job?.id, reviewSlots, savedByGoogleId]);
 
+  // Seed the manual search only for a job that genuinely has nothing to offer.
   useEffect(() => {
-    if (
-      !job ||
-      !jobId ||
-      candidates.length > 0 ||
-      job.decision === 'multi_candidate_confirmation'
-    ) return;
+    if (!routeJobId || detail.kind !== 'manual') return;
     const query = manualQuery.trim();
     if (!query || manualQueryEditedRef.current) return;
-    const key = quickCheckSearchKey(jobId, 'manual', query);
+    const key = quickCheckSearchKey(routeJobId, 'manual', query);
     if (!claimInitialQuickCheckSearch(key)) return;
     void runManualSearch(query);
-  }, [candidates.length, job, jobId, manualQuery, runManualSearch]);
+  }, [detail.kind, routeJobId, manualQuery, runManualSearch]);
 
   useEffect(() => {
     if (
@@ -650,24 +694,10 @@ function ShareJobDetailScreen() {
     router.replace(resolveOpenSavedPlaceRoute(args));
   }
 
-  // The proposed place is already on the user's map. Resolve the job to that
-  // existing saved place (no duplicate save) and open it. Resolving failures
-  // are non-fatal — we still open the place (the destination never depends on
-  // the job staying active).
-  async function viewAlreadySaved(savedPlaceId: string, googlePlaceId?: string | null) {
-    if (resolvingRef.current) return;
-    resolvingRef.current = true;
-    try {
-      if (job) {
-        await markShareJobResolved(job.id, savedPlaceId);
-      }
-    } catch {
-      // Non-fatal: the place is saved regardless.
-    } finally {
-      resolvingRef.current = false;
-    }
-    openExistingPlace({ savedPlaceId, googlePlaceId, source: 'share_job_already_saved' });
-  }
+  // NOTE: there is deliberately no "already saved → just open it" shortcut.
+  // Skipping the save is what dropped the shared post's source context on the
+  // floor; `handleSaveStored` runs for both cases and enriches the existing
+  // row through the canonical save path.
 
   function backToQueue() {
     if (router.canGoBack()) router.back();
@@ -993,6 +1023,12 @@ function ShareJobDetailScreen() {
                 <Text style={[typography.caption, styles.savedText]}>Already saved</Text>
               ) : row.persistence === 'saved' ? (
                 <Text style={[typography.caption, styles.savedText]}>Saved</Text>
+              ) : row.savedPlaceId ? (
+                // Already on the map, but still selectable: saving attaches
+                // this post to that existing place rather than duplicating it.
+                <Text style={[typography.caption, styles.savedText]}>
+                  Already on your map · this post will be attached
+                </Text>
               ) : duplicateOwner ? (
                 <Text style={[typography.caption, styles.batchWarning]}>Same place selected above · excluded from count</Text>
               ) : null}
@@ -1078,26 +1114,44 @@ function ShareJobDetailScreen() {
     );
   }
 
+  // Only a row that truly disappeared or could not be read reaches this state.
+  // A transient failure keeps a retry available instead of dead-ending.
   if (!job) {
+    const retryable = isRetryableLoadFailure(loadFailure);
     return (
       <ShareJobsSheet onDismiss={backToQueue} size="detail">
         <ShareJobsHeader title={PHASE_1_COPY.detailTitle} onBack={backToQueue} backLabel="Back to queue" />
         <View style={styles.centered}>
-          <Text style={[typography.body, styles.help]}>This save is no longer available.</Text>
-          <Button title="Back to queue" onPress={backToQueue} style={{ marginTop: Spacing.lg }} />
+          <Text style={[typography.body, styles.help]}>
+            {retryable
+              ? "We couldn't open this one just now."
+              : 'This save is no longer available.'}
+          </Text>
+          {retryable ? (
+            <Button
+              title="Try again"
+              onPress={() => {
+                setLoading(true);
+                void load();
+              }}
+              style={{ marginTop: Spacing.lg }}
+            />
+          ) : null}
+          <Button
+            title="Back to queue"
+            variant={retryable ? 'secondary' : 'primary'}
+            onPress={backToQueue}
+            style={{ marginTop: Spacing.md }}
+          />
         </View>
       </ShareJobsSheet>
     );
   }
 
-  const detailMode = classifyShareJobDetail(job);
-
   // Terminal success (incl. already-saved) — offer the saved place. NEVER render
   // candidate/save controls for a job that is already resolved.
-  if (detailMode === 'completed') {
-    const alreadySaved =
-      (job.extraction_payload as { alreadySaved?: boolean } | null)?.alreadySaved === true;
-    const name = (job.extraction_payload as { savedPlaceName?: string } | null)?.savedPlaceName;
+  if (detail.kind === 'completed') {
+    const name = detail.savedPlaceName;
     return (
       <ShareJobsSheet onDismiss={backToQueue} size="detail">
         <ShareJobsHeader title={PHASE_1_COPY.detailTitle} onBack={backToQueue} backLabel="Back to queue" />
@@ -1105,15 +1159,13 @@ function ShareJobDetailScreen() {
           <View style={styles.savedBadge}>
             <Feather name="check" size={26} color={colors.primary} />
           </View>
-          <Text style={[typography.heading, styles.centeredTitle]}>
-            {alreadySaved ? PHASE_1_COPY.alreadySavedHeading : 'Saved to your map'}
-          </Text>
+          <Text style={[typography.heading, styles.centeredTitle]}>{detail.copy.title}</Text>
           <Text style={[typography.body, styles.help, { textAlign: 'center' }]}>
-            {alreadySaved ? PHASE_1_COPY.alreadySavedBody : 'This place is ready on your map.'}
+            {detail.copy.body}
           </Text>
           <View style={[styles.candidateCard, styles.completedCard]}>
             <PlaceImage
-              googlePlaceId={job.candidate_payload?.candidates?.[0]?.googlePlaceId}
+              googlePlaceId={detail.candidates[0]?.googlePlaceId}
               size={72}
               borderRadius={12}
               accessibilityLabel={name ? `Photo of ${name}` : undefined}
@@ -1128,7 +1180,7 @@ function ShareJobDetailScreen() {
               automaticallySavedPlaceIds.length > 1
                 ? openNewlySavedPlaces(automaticallySavedPlaceIds)
                 : openExistingPlace({
-                    savedPlaceId: automaticallySavedPlaceIds[0] ?? job.saved_place_id,
+                    savedPlaceId: automaticallySavedPlaceIds[0] ?? detail.savedPlaceId,
                     source: 'share_job_completed',
                   })
             }
@@ -1140,7 +1192,7 @@ function ShareJobDetailScreen() {
   }
 
   // Terminal dismissed (cancelled / unknown terminal) — safe, control-free view.
-  if (detailMode === 'dismissed') {
+  if (detail.kind === 'dismissed') {
     return (
       <ShareJobsSheet onDismiss={backToQueue} size="detail">
         <ShareJobsHeader title={PHASE_1_COPY.detailTitle} onBack={backToQueue} backLabel="Back to queue" />
@@ -1154,16 +1206,28 @@ function ShareJobDetailScreen() {
     );
   }
 
-  const isMulti = job.decision === 'multi_candidate_confirmation';
-  const isCandidatePicker = !isMulti && candidates.length > 1;
+  // Review style comes from the payload mapping, never from status/decision
+  // alone — a job whose media fallback failed still shows the candidates the
+  // metadata resolver already persisted.
+  const isMulti = detail.kind === 'multi';
+  const isCandidatePicker = detail.kind === 'picker';
+  const isManual = detail.kind === 'manual';
   const selectedPendingCount = batch ? selectedBatchTargets(batch).length : 0;
-  const isManual =
-    job.status === 'failed' ||
-    job.decision === 'manual_fallback' ||
-    candidates.length === 0;
   const single = candidates[0];
-  const alreadySavedId = single
-    ? findSavedPlaceIdByGooglePlaceId(single.googlePlaceId, getSavedPlacesCacheSnapshot())
+  // The user may already have this place (e.g. they saved it manually months
+  // ago). That is not a reason to skip the save — running it is how this
+  // post's source_url / ai_note reach that existing row. The copy just has to
+  // describe what will actually happen.
+  const alreadySaved = single?.googlePlaceId
+    ? savedSnapshot.find((row) => row.place?.google_place_id === single.googlePlaceId) ?? null
+    : null;
+  const alreadySavedId = alreadySaved?.id ?? null;
+  const alreadySavedCopy = alreadySaved
+    ? alreadySavedActionCopy(
+        alreadySaved,
+        { sourceUrl, sourceType: shareJobSourceType(platform), aiNote: single?.aiNote ?? null },
+        shareUrlKey,
+      )
     : null;
   const placeAddress = splitPlaceAddress(single?.formattedAddress);
 
@@ -1280,8 +1344,8 @@ function ShareJobDetailScreen() {
               {platformName(platform)} · From the original post
             </Text>
           </View>
-          <Text style={[typography.title, styles.title]}>{`We found ${candidates.length} possible places`}</Text>
-          <Text style={[typography.body, styles.help]}>Which one did you mean?</Text>
+          <Text style={[typography.title, styles.title]}>{detail.copy.title}</Text>
+          <Text style={[typography.body, styles.help]}>{detail.copy.body}</Text>
           <View style={styles.section}>
             {candidates.map((candidate) => {
               const address = splitPlaceAddress(candidate.formattedAddress);
@@ -1381,16 +1445,14 @@ function ShareJobDetailScreen() {
                   ? 'Is this the place?'
                   : results.length > 1
                     ? 'Which place is it?'
-                    : 'Search for this place'}
+                    : detail.copy.title}
             </Text>
             <Text style={[typography.caption, styles.help]}>
               {manualSearchPhase === 'searching' || (manualSearchPhase === 'idle' && manualQuery.trim())
                 ? 'We found a possible name. We’re looking for the right place.'
-                : job.status === 'failed'
-                ? "We couldn't find it automatically. Search for it and we'll keep the original post attached."
-                : 'Search for the place from this post.'}
+                : detail.copy.body}
             </Text>
-            {job.status === 'failed' && !job.saved_place_id ? (
+            {detail.canRetry ? (
               <Button
                 title="Try automatically again"
                 variant="secondary"
@@ -1403,12 +1465,10 @@ function ShareJobDetailScreen() {
         ) : (
           <View style={styles.section}>
             <Text style={[typography.title, styles.title]}>
-              {alreadySavedId ? PHASE_1_COPY.alreadySavedHeading : singleReviewCopy.title}
+              {alreadySavedId ? PHASE_1_COPY.alreadySavedHeading : detail.copy.title}
             </Text>
             <Text style={[typography.caption, styles.help]}>
-              {alreadySavedId
-                ? PHASE_1_COPY.alreadySavedBody
-                : singleReviewCopy.body}
+              {alreadySavedId ? PHASE_1_COPY.alreadySavedBody : detail.copy.body}
             </Text>
             <View style={styles.candidateCard}>
               <PlaceImage
@@ -1434,21 +1494,19 @@ function ShareJobDetailScreen() {
               </View>
             </View>
 
-            {alreadySavedId ? (
-              <Button
-                title={PHASE_1_COPY.viewOnMap}
-                onPress={() => void viewAlreadySaved(alreadySavedId, single?.googlePlaceId)}
-                style={styles.primaryBtn}
-              />
-            ) : (
-              <Button
-                title="Save to my map"
-                onPress={() => single && void handleSaveStored(single)}
-                disabled={busy || !single}
-                loading={busy}
-                style={styles.primaryBtn}
-              />
-            )}
+            {alreadySavedCopy?.note ? (
+              <Text style={[typography.caption, styles.help]}>{alreadySavedCopy.note}</Text>
+            ) : null}
+
+            {/* One action either way: the save path enriches an existing row
+                instead of creating a second one, so it is safe to always run. */}
+            <Button
+              title={alreadySavedCopy?.action ?? 'Save to my map'}
+              onPress={() => single && void handleSaveStored(single)}
+              disabled={busy || !single}
+              loading={busy}
+              style={styles.primaryBtn}
+            />
 
             {searchExpanded ? (
               renderManualSearch({

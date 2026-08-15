@@ -46,6 +46,14 @@ export type MediaFallbackContext = {
   mediaFallbackEnabled: boolean;
   /** INSTAGRAM_MEDIA_RESOLVER_ENABLED (default false). */
   instagramResolverEnabled: boolean;
+  /** TIKTOK_MEDIA_RESOLVER_ENABLED (default false). */
+  tiktokResolverEnabled?: boolean;
+  /** YOUTUBE_MEDIA_RESOLVER_ENABLED (default false). */
+  youtubeResolverEnabled?: boolean;
+  /** FACEBOOK_MEDIA_RESOLVER_ENABLED (default false). */
+  facebookResolverEnabled?: boolean;
+  /** SNAPCHAT_MEDIA_RESOLVER_ENABLED (default false). */
+  snapchatResolverEnabled?: boolean;
   /** True when a share_media_task already exists for this job. */
   mediaTaskExists: boolean;
   /** Parent share_jobs.status at decision time. */
@@ -61,6 +69,10 @@ export type MediaFallbackResult = {
 export type MediaFlagState = {
   mediaFallbackEnabled: boolean;
   instagramResolverEnabled: boolean;
+  tiktokResolverEnabled?: boolean;
+  youtubeResolverEnabled?: boolean;
+  facebookResolverEnabled?: boolean;
+  snapchatResolverEnabled?: boolean;
   canaryUserId: string | null;
 };
 
@@ -69,12 +81,24 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-
 export function effectiveMediaFlags(
   flags: MediaFlagState,
   jobUserId: string | null | undefined,
-): { mediaFallbackEnabled: boolean; instagramResolverEnabled: boolean; canary: boolean } {
+): {
+  mediaFallbackEnabled: boolean;
+  instagramResolverEnabled: boolean;
+  tiktokResolverEnabled: boolean;
+  youtubeResolverEnabled: boolean;
+  facebookResolverEnabled: boolean;
+  snapchatResolverEnabled: boolean;
+  canary: boolean;
+} {
   const canaryUserId = flags.canaryUserId?.trim() ?? '';
   const canary = UUID_RE.test(canaryUserId) && canaryUserId === (jobUserId ?? '').trim();
   return {
     mediaFallbackEnabled: flags.mediaFallbackEnabled || canary,
     instagramResolverEnabled: flags.instagramResolverEnabled || canary,
+    tiktokResolverEnabled: !!flags.tiktokResolverEnabled || canary,
+    youtubeResolverEnabled: !!flags.youtubeResolverEnabled || canary,
+    facebookResolverEnabled: !!flags.facebookResolverEnabled || canary,
+    snapchatResolverEnabled: !!flags.snapchatResolverEnabled || canary,
     canary,
   };
 }
@@ -101,8 +125,10 @@ const NON_MEDIA_FAILURES = new Set<string>([
 export function isSupportedMediaPlatform(ctx: MediaFallbackContext): boolean {
   const platform = (ctx.platform ?? '').toLowerCase();
   if (platform === 'instagram') return ctx.instagramResolverEnabled;
-  // TikTok / Facebook / YouTube media retrieval intentionally NOT implemented
-  // in Phase 2.
+  if (platform === 'tiktok') return !!ctx.tiktokResolverEnabled;
+  if (platform === 'youtube') return !!ctx.youtubeResolverEnabled;
+  if (platform === 'facebook') return !!ctx.facebookResolverEnabled;
+  if (platform === 'snapchat') return !!ctx.snapchatResolverEnabled;
   return false;
 }
 

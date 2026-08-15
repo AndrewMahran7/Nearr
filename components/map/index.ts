@@ -1,5 +1,5 @@
 export { MapTopSearchBar } from './MapTopSearchBar';
-export { MapFilterChips, type MapFilter } from './MapFilterChips';
+export { MapCategoryFilterBar } from './MapCategoryFilterBar';
 export { FloatingMapActions } from './FloatingMapActions';
 export {
   MapBottomSheet,

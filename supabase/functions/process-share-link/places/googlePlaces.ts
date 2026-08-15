@@ -14,6 +14,7 @@ import {
   isLocalityLikeTypes,
 } from './placeNormalization.ts';
 import { extractStateFromFormattedAddress } from './locationGuards.ts';
+import { isPlaceholderValue } from '../../../../lib/shareAgent/queryCleaner.ts';
 
 export type PlacesCandidate = {
   googlePlaceId: string;
@@ -115,8 +116,35 @@ export async function searchPlaces(
   } finally {
     clearTimeout(timer);
   }
-  const results: PlacesCandidate[] = (json.places ?? []).slice(0, 8).map(mapPlacesV1Candidate);
+  const results: PlacesCandidate[] = (json.places ?? [])
+    .slice(0, 8)
+    .map(mapPlacesV1Candidate)
+    .filter(isUsableCandidate);
   return { ok: true, results };
+}
+
+/**
+ * Reject a candidate at the EARLIEST point after the raw Google Places
+ * response is normalized — before it ever reaches the resolver, the
+ * candidate picker, or an auto-save decision. Google occasionally returns a
+ * placeholder/absent-value literal for `displayName`/`formattedAddress`
+ * itself (verified live: searching the garbage query "Null" — see
+ * evidence/handleExtraction.ts — returned two `natural_feature` results
+ * whose name AND formattedAddress both read literally `<Null>`). This is
+ * independent of, and in addition to, never ISSUING a placeholder query in
+ * the first place (lib/shareAgent/queryCleaner.ts `isPlaceholderValue` at
+ * the `buildCleanPlacesQueries` boundary) — defense in depth, since a
+ * placeholder result could in principle also come back for a legitimate
+ * query if Google's own data has a gap.
+ */
+function isUsableCandidate(c: PlacesCandidate): boolean {
+  if (isPlaceholderValue(c.name)) return false;
+  // A formattedAddress that STARTS with a placeholder token (e.g.
+  // "<Null>, South River, NM 87410, USA") is exactly as unusable as a
+  // placeholder name even when name itself happens to be fine.
+  const addressHead = (c.formattedAddress ?? '').split(',')[0];
+  if (addressHead && isPlaceholderValue(addressHead)) return false;
+  return true;
 }
 
 async function searchPlacesLegacy(
@@ -146,7 +174,10 @@ async function searchPlacesLegacy(
   }
   return {
     ok: true,
-    results: (json.results ?? []).slice(0, 8).map(mapPlacesLegacyCandidate),
+    results: (json.results ?? [])
+      .slice(0, 8)
+      .map(mapPlacesLegacyCandidate)
+      .filter(isUsableCandidate),
   };
 }
 
@@ -273,8 +304,14 @@ export type AddressVerification =
         | 'geocode_failed'
         | 'no_candidates_near_address'
         | 'name_mismatch'
-        | 'no_business_near_address';
+        | 'no_business_near_address'
+        // The provider call itself failed (transport, timeout, or a non-OK
+        // Google status). NOT a statement about whether a business exists —
+        // callers must treat this as retryable, never as a no-match.
+        | 'provider_error';
       geocoded: GeocodedAddress | null;
+      /** Present only for `provider_error`; drives backoff. */
+      retryAfterSeconds?: number;
     };
 
 /**
@@ -304,15 +341,26 @@ export async function verifyPlaceAtAddressServer(
   try {
     const res = await fetch(`${PLACES_BASE}?${params}`);
     if (!res.ok) {
-      return { status: 'failed', reason: 'no_business_near_address', geocoded };
+      // A 429/5xx says nothing about what is at this address.
+      return {
+        status: 'failed',
+        reason: 'provider_error',
+        geocoded,
+        ...(parseRetryAfter(res.headers.get('retry-after')) != null
+          ? { retryAfterSeconds: parseRetryAfter(res.headers.get('retry-after'))! }
+          : {}),
+      };
     }
     json = await res.json();
   } catch {
-    return { status: 'failed', reason: 'no_business_near_address', geocoded };
+    // Transport failure or timeout — same reasoning as above.
+    return { status: 'failed', reason: 'provider_error', geocoded };
   }
   const status: string = json?.status ?? 'UNKNOWN';
+  // ZERO_RESULTS is a real answer ("nothing there"). Any other non-OK status is
+  // a provider fault (OVER_QUERY_LIMIT, UNKNOWN_ERROR, …).
   if (status !== 'OK' && status !== 'ZERO_RESULTS') {
-    return { status: 'failed', reason: 'no_business_near_address', geocoded };
+    return { status: 'failed', reason: 'provider_error', geocoded };
   }
   const raw: any[] = Array.isArray(json.results) ? json.results : [];
   const all: PlacesCandidate[] = raw.map((r: any) => ({

@@ -42,7 +42,34 @@ export type FetchMetadataResult =
       /** True when the TikTok oEmbed fallback supplied the caption. */
       usedTikTokOEmbed: boolean;
     }
-  | { ok: false; reason: 'network_error' | 'http_error'; error?: string };
+  | { ok: false; reason: 'network_error' | 'http_error' | 'redirect_off_platform'; error?: string };
+
+// A share link's own redirect/deep-link machinery can bounce an
+// unauthenticated fetch completely OFF the source platform and onto an app
+// storefront (verified live: a TikTok SEO/keyword discovery short link
+// redirected, with no login, to `apps.apple.com/.../tiktok-videos-shop-live`
+// — Apple's own App Store listing for the TikTok app). That page's title/
+// description describe the APP, not the shared video, yet nothing before
+// this point would have caught it: the URL "resolved" successfully and
+// returned real HTML. Treating that HTML as post content produced a search
+// query for "App Store" and a picker full of random OR/WA electronics
+// retailers with zero relationship to the actual share. These hosts are
+// NEVER a legitimate content page for ANY platform, so metadata fetch fails
+// outright rather than extracting evidence from a storefront.
+const NON_CONTENT_REDIRECT_HOSTS = new Set([
+  'apps.apple.com',
+  'itunes.apple.com',
+  'play.google.com',
+]);
+
+function isNonContentRedirectHost(resolvedUrl: string): boolean {
+  try {
+    const host = new URL(resolvedUrl).hostname.toLowerCase();
+    return NON_CONTENT_REDIRECT_HOSTS.has(host);
+  } catch {
+    return false;
+  }
+}
 
 export async function fetchPostMetadata(
   url: string,
@@ -67,6 +94,10 @@ export async function fetchPostMetadata(
     // `res.url` is the FINAL url after redirect follow — this is how a
     // vm./vt.tiktok.com short link resolves to its canonical video URL.
     resolvedUrl = normalizeShareUrl(res.url || url).url || url;
+    if (res.ok && isNonContentRedirectHost(resolvedUrl)) {
+      clearTimeout(timer);
+      return { ok: false, reason: 'redirect_off_platform' };
+    }
     if (res.ok) {
       html = await res.text();
       title = cleanTitle(pickMeta(html, 'og:title') ?? pickTitle(html));

@@ -28,11 +28,25 @@ export function extractHandles(args: {
   html: string | null;
 }): ExtractedHandles {
   const text = [args.title, args.description].filter(Boolean).join('\n');
-  // detectHandles only supports 'instagram' | 'tiktok' (the
-  // shareAgent platform enum). For other platforms pass a neutral
-  // value that disables platform-specific shortcuts.
-  const platformArg: 'instagram' | 'tiktok' =
-    args.platform === 'tiktok' ? 'tiktok' : 'instagram';
+  // detectHandles's "exactly one @handle found anywhere on the page is the
+  // poster" shortcut is an INSTAGRAM-page-structure assumption (a lone
+  // handle on an IG post page reliably IS the poster). It must not silently
+  // apply to platforms whose raw HTML has a completely different shape —
+  // verified live: a YouTube Shorts page's minified JS config blob contains
+  // the literal substring `@.null` (from an internal `%.@.null,1000,2]`
+  // format string, nothing to do with any user), which this shortcut then
+  // promoted to a "poster handle" → "Null" venue query → literal `<Null>`
+  // candidates from Google Places. Only pass 'instagram' for actual
+  // Instagram posts; every other platform gets the neutral 'link' value,
+  // which disables the shortcut entirely.
+  const platformArg: 'instagram' | 'tiktok' | 'youtube' | 'link' =
+    args.platform === 'tiktok'
+      ? 'tiktok'
+      : args.platform === 'instagram'
+        ? 'instagram'
+        : args.platform === 'youtube'
+          ? 'youtube'
+          : 'link';
   const { result } = detectHandles(text || null, args.html, platformArg);
   // Drop platform / page-internal noise handles (e.g. `@media` leaking from
   // Instagram's inline CSS) so they never become a poster-name venue query.

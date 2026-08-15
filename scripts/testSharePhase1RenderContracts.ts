@@ -34,7 +34,9 @@ assert.match(queue, /Recently completed/);
 assert.match(queue, /Clear completed/);
 assert.match(queue, /icon="close"/);
 
-assert.match(detail, /PHASE_1_COPY\.suggestedHeading/);
+// The quick-check heading/body now come from the pure payload mapping
+// (lib/shareJobDetailState); see scripts/testShareJobDetailState.ts.
+assert.match(detail, /detail\.copy\.title/);
 assert.match(detail, /PHASE_1_COPY\.alreadySavedHeading/);
 assert.match(detail, /PHASE_1_COPY\.viewOnMap/);
 assert.match(detail, /useState\(false\)/, 'alternative search starts collapsed');

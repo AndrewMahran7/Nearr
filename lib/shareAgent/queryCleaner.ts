@@ -65,6 +65,30 @@ const CASUAL_CAPTION_RE = new RegExp(
   'i',
 );
 
+// Absent/placeholder-value literals a bug can accidentally stringify into a
+// query or a candidate field — `String(null)`, a missing JSON key rendered
+// as its own name, an empty value defaulted to a bracketed tag, etc.
+// Anchored (`^...$`) so it matches ONLY when the ENTIRE trimmed value is one
+// of these tokens — "Mammen & Null Lawyers LLC" and "None the Wiser Pub" are
+// real business names and must never be caught by this. This is the ONE
+// shared boundary for "is this an absent-value placeholder, not content,"
+// reused for query strings (buildCleanPlacesQueries below), Google Places
+// candidate names (googlePlaces.ts), and venue-name hints (extractEvidence.ts)
+// so the check can't drift out of sync between call sites the way the
+// now-unified platform-self-reference list previously did.
+const PLACEHOLDER_VALUE_RE = /^<?\s*(?:null|undefined|none|n\/?a|unknown|nan)\s*>?$/i;
+
+/** True when `value` is an absent-value placeholder (`null`, `<Null>`,
+ *  `undefined`, `N/A`, `unknown`, empty/whitespace, or JS `null`/`undefined`
+ *  itself) rather than real content. Never true for a value that merely
+ *  CONTAINS one of these words as part of a longer real name. */
+export function isPlaceholderValue(value: string | null | undefined): boolean {
+  if (value == null) return true;
+  const trimmed = String(value).trim();
+  if (!trimmed) return true;
+  return PLACEHOLDER_VALUE_RE.test(trimmed);
+}
+
 /**
  * True when a caption seed reads as casual sentiment prose rather than a
  * place name ("pretty cool spot!! glad i stopped by"). Pure + conservative.
@@ -350,6 +374,13 @@ export function buildCleanPlacesQueries(args: {
     if (!q) return;
     const t = q.trim();
     if (!t) return;
+    // A query that is ENTIRELY a placeholder token ("Null", "<Null>",
+    // "undefined", …) must never reach Google Places — it has no relationship
+    // to any real place and Places will happily return a plausible-looking
+    // business/feature for it (verified live: searching "Null" returns a real
+    // law firm with "Null" as a surname). A query that merely mentions one of
+    // these words as part of real content is unaffected.
+    if (isPlaceholderValue(t)) return;
     if (queries.find((existing) => existing.toLowerCase() === t.toLowerCase())) return;
     queries.push(t);
   };

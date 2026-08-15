@@ -18,6 +18,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Animated,
   FlatList,
   Image,
   Linking,
@@ -30,6 +31,8 @@ import {
   Text,
   useWindowDimensions,
   View,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -49,7 +52,9 @@ import {
   type NoteEditorState,
 } from '@/lib/noteEditor';
 import { buildSavedPlaceShareContent } from '@/lib/placeShare';
-import { reminderStatusLabel } from '@/lib/placeDetailUi';
+import { reminderStatusLabel, savedPlaceNarrative } from '@/lib/placeDetailUi';
+import { savedPlaceRemovalCopy } from '@/lib/savedPlaceRemoval';
+import { adjacentPrefetchTargets, pageIndexFromOffset } from '@/lib/photoCarousel';
 import { splitPlaceAddress } from '@/lib/sharePhase1Ui';
 import { deleteSavedPlace, updateSavedPlace } from '@/services/savedPlacesService';
 import { CATEGORY_LABELS, savedPlaceCategory } from '@/lib/placeCategory';
@@ -64,6 +69,9 @@ import type { PlaceRichDetails } from '@/services/placesService';
 import type { Profile, RadiusUnit, SavedPlaceWithPlace } from '@/types';
 
 const GALLERY_CARD_GAP = 18;
+/** Focus treatment for non-centered pages. Interpolated from scroll offset. */
+const GALLERY_INACTIVE_OPACITY = 0.45;
+const GALLERY_INACTIVE_SCALE = 0.92;
 
 type RadiusMode = 'default' | 'miles' | 'minutes';
 
@@ -88,13 +96,35 @@ function formatUnit(value: number, unit: RadiusUnit): string {
 function sourceActionLabel(saved: SavedPlaceWithPlace): string {
   switch (saved.source_type) {
     case 'tiktok':
-      return 'Open TikTok';
     case 'instagram':
-      return 'Open Instagram';
+    case 'youtube':
+    case 'facebook':
+    case 'snapchat':
+      return 'Watch post';
     case 'link':
       return 'Open link';
     default:
       return 'Open original';
+  }
+}
+
+/** Consumer-legible cue for where the save came from. Never shows a raw URL. */
+function sourceActionIcon(saved: SavedPlaceWithPlace): keyof typeof Feather.glyphMap {
+  switch (saved.source_type) {
+    case 'tiktok':
+      return 'video';
+    case 'instagram':
+      return 'instagram';
+    case 'youtube':
+      return 'youtube';
+    case 'facebook':
+      return 'facebook';
+    case 'snapchat':
+      return 'video';
+    case 'link':
+      return 'link';
+    default:
+      return 'arrow-up-right';
   }
 }
 
@@ -153,6 +183,15 @@ export function SelectedPlaceDetails({
   const [wrongPlaceOpen, setWrongPlaceOpen] = useState(false);
   const galleryStartYRef = useRef(0);
   const galleryListRef = useRef<FlatList<string> | null>(null);
+  // Native-thread scroll position. Owns the focus dimming so the centered
+  // photo never waits on a JS re-render to look active.
+  const galleryScrollX = useRef(new Animated.Value(0)).current;
+  // Mirrors galleryIndex for effects that must NOT re-run as the index changes.
+  const galleryIndexRef = useRef(0);
+  galleryIndexRef.current = galleryIndex;
+  // Photos already handed to the image loader for this mounted sheet. Bounded
+  // by the place's photo list (max 5) and released when the sheet unmounts.
+  const prefetchedPhotoUrlsRef = useRef<Set<string>>(new Set());
 
   const googlePlaceId =
     saved.place.google_place_id && saved.place.google_place_id.trim()
@@ -286,8 +325,38 @@ export function SelectedPlaceDetails({
     [galleryCardWidth],
   );
 
+  // One native-driven scroll binding. The JS listener only advances the page
+  // counter/dots/prefetch window — the visible brightness never depends on it,
+  // and setState is skipped entirely while the page is unchanged.
+  const handleGalleryScroll = useMemo(
+    () =>
+      Animated.event(
+        [{ nativeEvent: { contentOffset: { x: galleryScrollX } } }],
+        {
+          useNativeDriver: true,
+          listener: (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+            const next = pageIndexFromOffset(
+              event.nativeEvent.contentOffset.x,
+              gallerySnapInterval,
+              photoUrls.length,
+            );
+            setGalleryIndex((current) => (current === next ? current : next));
+          },
+        },
+      ),
+    [galleryScrollX, gallerySnapInterval, photoUrls.length],
+  );
+
   const locality = splitPlaceAddress(saved.place.formatted_address).locality;
   const categoryLabel = CATEGORY_LABELS[savedPlaceCategory(saved)];
+  // Persisted source cue (saved_places.ai_note) + the user's own note, kept
+  // strictly separate. Read from the live row every render (not captured into
+  // state) because enrichment can land well after the initial save — map.tsx
+  // re-points `selected` at the refreshed cached row when that happens.
+  const narrative = useMemo(
+    () => savedPlaceNarrative({ notes, ai_note: saved.ai_note }),
+    [notes, saved.ai_note],
+  );
   const reminderStatus = useMemo(
     () => reminderStatusLabel({
       enabled: notifyOn,
@@ -431,6 +500,9 @@ export function SelectedPlaceDetails({
     if (photoUrls.length === 0) return;
     const nextIndex = Math.max(0, Math.min(index, photoUrls.length - 1));
     setGalleryIndex(nextIndex);
+    // Seed the animated offset so the opened page renders bright on its very
+    // first frame instead of fading up once the first scroll event lands.
+    galleryScrollX.setValue(nextIndex * gallerySnapInterval);
     setGalleryOpenSeed((s) => s + 1);
     setGalleryOpen(true);
   }
@@ -439,9 +511,12 @@ export function SelectedPlaceDetails({
     setGalleryOpen(false);
   }
 
+  // Restore the opened page's offset ONCE per open. This must not depend on
+  // `galleryIndex`: that now updates continuously while scrolling, and
+  // re-running scrollToOffset mid-gesture would fight the user's drag.
   useEffect(() => {
     if (!galleryOpen || photoUrls.length === 0) return;
-    const targetIndex = Math.max(0, Math.min(galleryIndex, photoUrls.length - 1));
+    const targetIndex = Math.max(0, Math.min(galleryIndexRef.current, photoUrls.length - 1));
     const frameId = requestAnimationFrame(() => {
       galleryListRef.current?.scrollToOffset({
         offset: targetIndex * gallerySnapInterval,
@@ -449,7 +524,23 @@ export function SelectedPlaceDetails({
       });
     });
     return () => cancelAnimationFrame(frameId);
-  }, [galleryOpen, galleryIndex, gallerySnapInterval, photoUrls.length]);
+  }, [galleryOpen, galleryOpenSeed, gallerySnapInterval, photoUrls.length]);
+
+  // Warm the neighbours of the centered photo while the gallery is open — the
+  // user has shown intent to browse. Bounded to one page each side, deduped
+  // per open sheet, and never runs for a single-photo place, so this cannot
+  // turn into background downloading of every saved place's gallery.
+  useEffect(() => {
+    if (!galleryOpen) return;
+    const targets = adjacentPrefetchTargets(photoUrls, galleryIndex);
+    for (const url of targets) {
+      if (prefetchedPhotoUrlsRef.current.has(url)) continue;
+      prefetchedPhotoUrlsRef.current.add(url);
+      // Fire-and-forget: a failed warm-up must never surface to the user, and
+      // the <Image> below still requests the photo normally.
+      void Image.prefetch(url).catch(() => undefined);
+    }
+  }, [galleryIndex, galleryOpen, photoUrls]);
 
   const galleryPanResponder = useMemo(
     () =>
@@ -475,13 +566,14 @@ export function SelectedPlaceDetails({
   );
 
   function confirmDelete() {
+    const copy = savedPlaceRemovalCopy(saved.place.name);
     Alert.alert(
-      'Remove place?',
-      `${saved.place.name} will be removed from your saved places.`,
+      copy.title,
+      copy.message,
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: copy.cancelLabel, style: 'cancel' },
         {
-          text: 'Remove',
+          text: copy.confirmLabel,
           style: 'destructive',
           onPress: async () => {
             setDeleting(true);
@@ -507,12 +599,16 @@ export function SelectedPlaceDetails({
 
   return (
     <View style={styles.wrap}>
+      {/* Hero: the photo carries the page. Name + context sit ON the image
+          under a layered scrim so the first thing read is the place itself,
+          not a stack of equal-weight cards. The same geometry is used when
+          there is no photo, so the layout never jumps once photos resolve. */}
       <Pressable
         disabled={photoUrls.length === 0}
         onPress={() => openGalleryAt(0)}
         accessibilityRole={photoUrls.length > 0 ? 'button' : undefined}
         accessibilityLabel={photoUrls.length > 0 ? `View photos of ${saved.place.name}` : undefined}
-        style={({ pressed }) => [styles.hero, pressed && styles.pressed]}
+        style={({ pressed }) => [styles.hero, pressed && styles.heroPressed]}
       >
         {photoUrls[0] ? (
           <Image
@@ -530,23 +626,34 @@ export function SelectedPlaceDetails({
             )}
           </View>
         )}
+
+        {/* Stacked bands stand in for a gradient (no gradient dependency in
+            this project). Keeps the title legible over any photograph. */}
+        <View pointerEvents="none" style={styles.heroScrimSoft} />
+        <View pointerEvents="none" style={styles.heroScrimMid} />
+        <View pointerEvents="none" style={styles.heroScrimStrong} />
+
         {photoUrls.length > 1 ? (
           <View style={styles.photoCountPill}>
             <Feather name="image" size={13} color="#FFFFFF" />
             <Text style={styles.photoCountText}>{photoUrls.length}</Text>
           </View>
         ) : null}
-      </Pressable>
 
-      <View style={styles.identity}>
-        <Text accessibilityRole="header" style={styles.placeName}>{saved.place.name}</Text>
-        {locality ? <Text style={[typography.body, styles.locality]}>{locality}</Text> : null}
-        <View style={styles.metadataRow}>
-          <View style={styles.categoryPill}>
-            <Text style={styles.categoryPillText}>{categoryLabel}</Text>
+        <View pointerEvents="none" style={styles.heroCaption}>
+          <Text accessibilityRole="header" style={styles.placeName} numberOfLines={3}>
+            {saved.place.name}
+          </Text>
+          <View style={styles.heroMetaRow}>
+            <View style={styles.categoryPill}>
+              <Text style={styles.categoryPillText} numberOfLines={1}>{categoryLabel}</Text>
+            </View>
+            {locality ? (
+              <Text style={styles.heroLocality} numberOfLines={1}>{locality}</Text>
+            ) : null}
           </View>
         </View>
-      </View>
+      </Pressable>
 
       {photoUrls.length > 0 ? (
         <Modal
@@ -575,7 +682,12 @@ export function SelectedPlaceDetails({
             </Pressable>
 
             <View style={styles.galleryCarouselArea} {...galleryPanResponder.panHandlers}>
-              <FlatList
+              {/* Focus dimming is driven by the NATIVE scroll offset, not by
+                  React state. The centered page reaches full opacity exactly
+                  as it centers — mid-drag, mid-momentum, and while the JS
+                  thread is busy. `galleryIndex` below only backs the counter,
+                  the dots, and the prefetch window. */}
+              <Animated.FlatList
                 ref={galleryListRef}
                 key={galleryListKey}
                 data={photoUrls}
@@ -586,12 +698,14 @@ export function SelectedPlaceDetails({
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={{ paddingHorizontal: gallerySideSpacing }}
                 initialScrollIndex={safeGalleryIndex}
-                getItemLayout={(_data, index) => ({
+                scrollEventThrottle={16}
+                onScroll={handleGalleryScroll}
+                getItemLayout={(_data: unknown, index: number) => ({
                   length: gallerySnapInterval,
                   offset: gallerySnapInterval * index,
                   index,
                 })}
-                onScrollToIndexFailed={(info) => {
+                onScrollToIndexFailed={(info: { index: number }) => {
                   const safeIndex = Math.max(0, Math.min(info.index, photoUrls.length - 1));
                   setGalleryIndex(safeIndex);
                   requestAnimationFrame(() => {
@@ -601,40 +715,51 @@ export function SelectedPlaceDetails({
                     });
                   });
                 }}
-                onMomentumScrollEnd={(event) => {
-                  const next = Math.round(
-                    event.nativeEvent.contentOffset.x / Math.max(gallerySnapInterval, 1),
-                  );
-                  setGalleryIndex(Math.max(0, Math.min(next, photoUrls.length - 1)));
-                }}
-                keyExtractor={(url) => `gallery-${url}`}
-                renderItem={({ item, index }) => (
-                  <View
-                    style={[
-                      styles.galleryItem,
-                      index === safeGalleryIndex
-                        ? styles.galleryPhotoShellActive
-                        : styles.galleryPhotoShellInactive,
-                      {
-                        width: galleryCardWidth,
-                        marginRight: index === photoUrls.length - 1 ? 0 : GALLERY_CARD_GAP,
-                      },
-                    ]}
-                  >
-                    <View
+                keyExtractor={(url: string) => `gallery-${url}`}
+                renderItem={({ item, index }: { item: string; index: number }) => {
+                  // Centered => 1; one page away in either direction => dimmed.
+                  const inputRange = [
+                    (index - 1) * gallerySnapInterval,
+                    index * gallerySnapInterval,
+                    (index + 1) * gallerySnapInterval,
+                  ];
+                  const opacity = galleryScrollX.interpolate({
+                    inputRange,
+                    outputRange: [GALLERY_INACTIVE_OPACITY, 1, GALLERY_INACTIVE_OPACITY],
+                    extrapolate: 'clamp',
+                  });
+                  const scale = galleryScrollX.interpolate({
+                    inputRange,
+                    outputRange: [GALLERY_INACTIVE_SCALE, 1, GALLERY_INACTIVE_SCALE],
+                    extrapolate: 'clamp',
+                  });
+                  return (
+                    <Animated.View
                       style={[
-                        styles.galleryPhotoShell,
-                        { width: galleryCardWidth, height: galleryCardHeight },
+                        styles.galleryItem,
+                        {
+                          opacity,
+                          transform: [{ scale }],
+                          width: galleryCardWidth,
+                          marginRight: index === photoUrls.length - 1 ? 0 : GALLERY_CARD_GAP,
+                        },
                       ]}
                     >
-                      <Image
-                        source={{ uri: item }}
-                        style={styles.galleryImage}
-                        resizeMode="cover"
-                      />
-                    </View>
-                  </View>
-                )}
+                      <View
+                        style={[
+                          styles.galleryPhotoShell,
+                          { width: galleryCardWidth, height: galleryCardHeight },
+                        ]}
+                      >
+                        <Image
+                          source={{ uri: item }}
+                          style={styles.galleryImage}
+                          resizeMode="cover"
+                        />
+                      </View>
+                    </Animated.View>
+                  );
+                }}
               />
             </View>
 
@@ -652,37 +777,67 @@ export function SelectedPlaceDetails({
         </Modal>
       ) : null}
 
+      {/* Going there is the point of the page, so Directions is the only
+          filled action; everything else is a quiet companion. */}
       <View style={styles.quickActionsRow}>
-        <ActionPill
-          label="Directions"
-          icon="navigation"
+        <Pressable
           onPress={onGetDirections}
-          styles={styles}
-        />
-        <ActionPill
-          label="Share"
-          icon="share"
-          onPress={() => {
-            void sharePlace();
-          }}
-          styles={styles}
-        />
+          accessibilityRole="button"
+          accessibilityLabel={`Get directions to ${saved.place.name}`}
+          style={({ pressed }) => [styles.primaryAction, pressed && styles.pressed]}
+        >
+          <Feather name="navigation" size={17} color={colors.textInverse} />
+          <Text style={styles.primaryActionText}>Directions</Text>
+        </Pressable>
         {sourceUrl ? (
           <ActionPill
-            label="Open original"
-            icon="arrow-up-right"
+            label={sourceActionLabel(saved)}
+            a11yLabel={`${sourceActionLabel(saved)} for ${saved.place.name}`}
+            icon={sourceActionIcon(saved)}
             onPress={() => {
               void openSource();
             }}
             styles={styles}
           />
         ) : null}
+        <ActionPill
+          label="Share"
+          a11yLabel={`Share ${saved.place.name}`}
+          icon="share"
+          onPress={() => {
+            void sharePlace();
+          }}
+          styles={styles}
+        />
       </View>
 
-      <View style={styles.personalSection}>
-        <View style={styles.rowBetween}>
-          <Text style={styles.sectionTitle}>Your note</Text>
-          {notes.trim() ? (
+      {/* The emotional core: why this place looked worth saving. Rendered only
+          when a source cue was actually persisted — an empty state here would
+          read as broken rather than intentional. */}
+      {narrative.showSourceNote ? (
+        <View style={styles.sourceNoteCard} accessibilityLiveRegion="polite">
+          <View style={styles.sourceNoteAccent} />
+          <View style={styles.sourceNoteBody}>
+            <Text style={styles.sourceNoteLabel}>WHY YOU SAVED IT</Text>
+            <Text style={styles.sourceNoteText}>{narrative.sourceNote}</Text>
+            {narrative.canPromoteSourceNote ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Use this as my note"
+                onPress={() => beginNoteEdit(true)}
+                style={styles.textAction}
+              >
+                <Text style={styles.changeLink}>Use as my note</Text>
+              </Pressable>
+            ) : null}
+          </View>
+        </View>
+      ) : null}
+
+      {narrative.userNote ? (
+        <View style={styles.personalSection}>
+          <View style={styles.rowBetween}>
+            <Text style={styles.sectionTitle}>Your note</Text>
             <Pressable
               onPress={() => beginNoteEdit()}
               accessibilityRole="button"
@@ -691,69 +846,53 @@ export function SelectedPlaceDetails({
             >
               <Text style={styles.changeLink}>Edit</Text>
             </Pressable>
-          ) : null}
-        </View>
-        {notes.trim() ? (
-          <Text style={[typography.body, styles.noteText]} numberOfLines={4}>{notes.trim()}</Text>
-        ) : (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Add a note"
-            onPress={() => beginNoteEdit()}
-            style={styles.emptyNoteAction}
-          >
-            <Feather name="plus" size={17} color={colors.accent} />
-            <Text style={styles.changeLink}>Add a note</Text>
-          </Pressable>
-        )}
-      </View>
-
-      {saved.ai_note?.trim() ? (
-        <View style={styles.postSection} accessibilityLiveRegion="polite">
-          <View style={styles.postHeadingRow}>
-            <Feather name="play" size={14} color={colors.accent} />
-            <Text style={styles.sectionTitle}>From the post</Text>
           </View>
-          <Text style={[typography.body, styles.aiNoteText]}>{saved.ai_note.trim()}</Text>
-          {!notes.trim() ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Use the post suggestion as my note"
-              onPress={() => beginNoteEdit(true)}
-              style={styles.textAction}
-            >
-              <Text style={styles.changeLink}>Use as my note</Text>
-            </Pressable>
-          ) : null}
+          <Text style={[typography.body, styles.noteText]}>{narrative.userNote}</Text>
         </View>
-      ) : null}
+      ) : (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Add your own note"
+          onPress={() => beginNoteEdit()}
+          style={({ pressed }) => [styles.addNoteRow, pressed && styles.pressed]}
+        >
+          <Feather name="edit-3" size={16} color={colors.accent} />
+          <Text style={styles.changeLink}>Add your own note</Text>
+        </Pressable>
+      )}
 
+      {/* Compact by design: useful, but it must not outweigh the place. The
+          whole row toggles distance settings; the switch stays a separate
+          target so enabling/disabling is never an accidental expand. */}
       <View style={styles.reminderCard}>
-        <View style={styles.rowBetween}>
-          <View style={styles.reminderIdentity}>
-            <View style={styles.reminderIcon}>
-              <Feather name="bell" size={17} color={notifyOn ? colors.accent : colors.textMuted} />
-            </View>
-            <View>
-              <Text style={typography.bodyStrong}>Nearby reminder</Text>
-              <Text style={[typography.caption, styles.reminderStatus]}>{reminderStatus}</Text>
-            </View>
-          </View>
-          <Switch value={notifyOn} onValueChange={setNotifyOn} accessibilityLabel="Nearby reminder" />
-        </View>
-
-        {notifyOn ? (
+        <View style={styles.reminderRow}>
           <Pressable
-            onPress={() => setReminderSettingsExpanded((value) => !value)}
-            accessibilityRole="button"
+            onPress={() => {
+              if (notifyOn) setReminderSettingsExpanded((value) => !value);
+            }}
+            disabled={!notifyOn}
+            accessibilityRole={notifyOn ? 'button' : undefined}
+            accessibilityLabel={notifyOn ? `Nearby reminder, ${reminderStatus}. Change distance` : undefined}
             accessibilityState={{ expanded: reminderSettingsExpanded }}
-            style={styles.reminderChange}
+            style={({ pressed }) => [styles.reminderIdentity, pressed && notifyOn && styles.pressed]}
           >
-            <Text style={styles.changeLink}>
-              {reminderSettingsExpanded ? 'Done' : 'Change distance'}
-            </Text>
+            <Feather name="bell" size={16} color={notifyOn ? colors.accent : colors.textMuted} />
+            <Text style={styles.reminderTitle} numberOfLines={1}>Nearby reminder</Text>
+            <Text style={styles.reminderStatus} numberOfLines={1}>{reminderStatus}</Text>
+            {notifyOn ? (
+              <Feather
+                name={reminderSettingsExpanded ? 'chevron-up' : 'chevron-down'}
+                size={16}
+                color={colors.textMuted}
+              />
+            ) : null}
           </Pressable>
-        ) : null}
+          <Switch
+            value={notifyOn}
+            onValueChange={setNotifyOn}
+            accessibilityLabel="Nearby reminder"
+          />
+        </View>
 
         {notifyOn && reminderSettingsExpanded ? (
           <View style={styles.advancedWrap}>
@@ -795,21 +934,32 @@ export function SelectedPlaceDetails({
         />
       ) : null}
 
-      <Button
-        title="Wrong place?"
-        accessibilityLabel="Wrong place? Correct this saved place"
-        variant="ghost"
-        onPress={() => setWrongPlaceOpen(true)}
-        style={styles.correctionBtn}
-      />
-
-      <Button
-        title="Remove from saved"
-        variant="ghost"
-        onPress={confirmDelete}
-        loading={deleting}
-        style={styles.deleteBtn}
-      />
+      {/* Management actions stay reachable but never compete with the place
+          or with Directions. */}
+      <View style={styles.manageRow}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Wrong place? Correct this saved place"
+          onPress={() => setWrongPlaceOpen(true)}
+          style={({ pressed }) => [styles.manageAction, pressed && styles.pressed]}
+        >
+          <Text style={styles.manageText}>Wrong place?</Text>
+        </Pressable>
+        <View style={styles.manageDivider} />
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Remove ${saved.place.name} from saved places`}
+          onPress={confirmDelete}
+          disabled={deleting}
+          style={({ pressed }) => [styles.manageAction, pressed && styles.pressed]}
+        >
+          {deleting ? (
+            <ActivityIndicator size="small" color={colors.textMuted} />
+          ) : (
+            <Text style={styles.manageText}>Remove</Text>
+          )}
+        </Pressable>
+      </View>
 
       <WrongPlaceSheet
         visible={wrongPlaceOpen}
@@ -836,11 +986,13 @@ export function SelectedPlaceDetails({
 
 function ActionPill({
   label,
+  a11yLabel,
   icon,
   onPress,
   styles,
 }: {
   label: string;
+  a11yLabel?: string;
   icon: keyof typeof Feather.glyphMap;
   onPress: () => void;
   styles: ReturnType<typeof createStyles>;
@@ -850,7 +1002,7 @@ function ActionPill({
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={label}
+      accessibilityLabel={a11yLabel ?? label}
       style={({ pressed }) => [styles.actionPill, pressed && styles.pressed]}
     >
       <Feather name={icon} size={16} color={colors.accent} />
@@ -889,49 +1041,100 @@ function createStyles(
   typography: ReturnType<typeof useTheme>['typography'],
 ) {
   return StyleSheet.create({
-    wrap: { gap: Spacing.lg },
+    wrap: { gap: Spacing.md },
     pressed: { opacity: 0.6 },
     hero: {
-      height: 188,
+      height: 250,
       borderRadius: Radius.lg,
       overflow: 'hidden',
       backgroundColor: colors.surface,
+      justifyContent: 'flex-end',
     },
-    heroImage: { width: '100%', height: '100%' },
+    heroPressed: { opacity: 0.92 },
+    heroImage: { ...StyleSheet.absoluteFillObject, width: '100%', height: '100%' },
     heroFallback: {
-      width: '100%',
-      height: '100%',
+      ...StyleSheet.absoluteFillObject,
       alignItems: 'center',
       justifyContent: 'center',
       backgroundColor: colors.surfaceElevated,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: colors.border,
     },
+    // Three stacked bands approximate a bottom-up gradient without pulling in
+    // a gradient dependency. Tuned so white type stays legible on bright food
+    // photography as well as dark interiors.
+    heroScrimSoft: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      bottom: 0,
+      height: '62%',
+      backgroundColor: 'rgba(0,0,0,0.18)',
+    },
+    heroScrimMid: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      bottom: 0,
+      height: '40%',
+      backgroundColor: 'rgba(0,0,0,0.32)',
+    },
+    heroScrimStrong: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      bottom: 0,
+      height: '22%',
+      backgroundColor: 'rgba(0,0,0,0.45)',
+    },
     photoCountPill: {
       position: 'absolute',
-      right: Spacing.sm,
-      bottom: Spacing.sm,
+      right: Spacing.md,
+      top: Spacing.md,
       minHeight: 30,
       flexDirection: 'row',
       alignItems: 'center',
       gap: 5,
       paddingHorizontal: 10,
       borderRadius: Radius.pill,
-      backgroundColor: 'rgba(0,0,0,0.68)',
+      backgroundColor: 'rgba(0,0,0,0.55)',
     },
     photoCountText: { ...typography.caption, color: '#FFFFFF', fontWeight: '700' },
-    identity: { gap: 4 },
-    placeName: { ...typography.title, color: colors.text, fontSize: 24, lineHeight: 29 },
-    locality: { color: colors.textSecondary },
-    metadataRow: { flexDirection: 'row', marginTop: Spacing.xs },
+    heroCaption: {
+      paddingHorizontal: Spacing.lg,
+      paddingBottom: Spacing.lg,
+      gap: Spacing.sm,
+    },
+    placeName: {
+      ...typography.title,
+      color: '#FFFFFF',
+      fontSize: 27,
+      lineHeight: 32,
+      textShadowColor: 'rgba(0,0,0,0.45)',
+      textShadowOffset: { width: 0, height: 1 },
+      textShadowRadius: 6,
+    },
+    heroMetaRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.sm,
+    },
+    heroLocality: {
+      ...typography.caption,
+      flexShrink: 1,
+      color: 'rgba(255,255,255,0.86)',
+      textShadowColor: 'rgba(0,0,0,0.4)',
+      textShadowOffset: { width: 0, height: 1 },
+      textShadowRadius: 4,
+    },
     categoryPill: {
       alignSelf: 'flex-start',
       paddingHorizontal: 10,
       paddingVertical: 5,
       borderRadius: Radius.pill,
-      backgroundColor: 'rgba(255,106,26,0.12)',
+      backgroundColor: 'rgba(255,106,26,0.92)',
     },
-    categoryPillText: { ...typography.caption, color: colors.accent, fontWeight: '700' },
+    categoryPillText: { ...typography.caption, color: '#FFFFFF', fontWeight: '700' },
     galleryBackdrop: {
       flex: 1,
       backgroundColor: 'rgba(0,0,0,0.96)',
@@ -984,14 +1187,6 @@ function createStyles(
       overflow: 'hidden',
       backgroundColor: 'transparent',
     },
-    galleryPhotoShellActive: {
-      opacity: 1,
-      transform: [{ scale: 1 }],
-    },
-    galleryPhotoShellInactive: {
-      opacity: 0.45,
-      transform: [{ scale: 0.92 }],
-    },
     galleryImage: {
       width: '100%',
       height: '100%',
@@ -1038,6 +1233,23 @@ function createStyles(
       flexDirection: 'row',
       gap: Spacing.sm,
     },
+    primaryAction: {
+      flex: 1.25,
+      minWidth: 0,
+      minHeight: 52,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: Spacing.xs,
+      backgroundColor: colors.primary,
+      borderRadius: Radius.md,
+      paddingHorizontal: Spacing.sm,
+    },
+    primaryActionText: {
+      color: colors.textInverse,
+      fontWeight: '800',
+      fontSize: 14,
+    },
     actionPill: {
       flex: 1,
       minWidth: 0,
@@ -1058,41 +1270,74 @@ function createStyles(
       fontSize: 12,
     },
     sectionTitle: { ...typography.bodyStrong, color: colors.text },
-    personalSection: { gap: Spacing.sm, paddingTop: Spacing.xs },
-    postSection: {
-      gap: Spacing.sm,
-      padding: Spacing.md,
+    personalSection: { gap: Spacing.xs },
+    // The source cue reads as a quote from the post, not as another form row.
+    sourceNoteCard: {
+      flexDirection: 'row',
       borderRadius: Radius.md,
-      backgroundColor: colors.surface,
+      overflow: 'hidden',
+      backgroundColor: 'rgba(255,106,26,0.09)',
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: 'rgba(255,106,26,0.28)',
     },
-    postHeadingRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+    sourceNoteAccent: { width: 3, backgroundColor: colors.accent },
+    sourceNoteBody: {
+      flex: 1,
+      gap: 6,
+      paddingVertical: Spacing.md,
+      paddingHorizontal: Spacing.md,
+    },
+    sourceNoteLabel: {
+      ...typography.caption,
+      color: colors.accent,
+      fontWeight: '800',
+      letterSpacing: 0.7,
+      fontSize: 11,
+    },
+    sourceNoteText: {
+      ...typography.body,
+      color: colors.text,
+      lineHeight: 23,
+    },
     textAction: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center' },
-    emptyNoteAction: {
-      alignSelf: 'flex-start',
-      minHeight: 44,
+    addNoteRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: Spacing.xs,
+      gap: Spacing.sm,
+      minHeight: 48,
+      paddingHorizontal: Spacing.md,
+      borderRadius: Radius.md,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.border,
+      backgroundColor: colors.surface,
     },
     reminderCard: {
-      padding: Spacing.md,
-      gap: Spacing.sm,
       borderRadius: Radius.md,
       backgroundColor: colors.surface,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: colors.border,
+      paddingHorizontal: Spacing.md,
     },
-    reminderIdentity: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-    reminderIcon: {
-      width: 38,
-      height: 38,
-      borderRadius: 12,
+    reminderRow: {
+      flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: colors.surfaceElevated,
+      gap: Spacing.sm,
+      minHeight: 56,
     },
-    reminderStatus: { color: colors.textSecondary, marginTop: 2 },
-    reminderChange: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center' },
+    reminderIdentity: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.sm,
+      minHeight: 48,
+    },
+    reminderTitle: { ...typography.body, color: colors.text, flexShrink: 1 },
+    reminderStatus: {
+      ...typography.caption,
+      color: colors.textSecondary,
+      flexShrink: 1,
+      marginLeft: 'auto',
+    },
     rowBetween: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -1106,7 +1351,8 @@ function createStyles(
     },
     advancedWrap: {
       gap: Spacing.sm,
-      paddingTop: Spacing.sm,
+      paddingTop: Spacing.md,
+      paddingBottom: Spacing.md,
       borderTopWidth: StyleSheet.hairlineWidth,
       borderTopColor: colors.border,
     },
@@ -1137,9 +1383,25 @@ function createStyles(
     },
     numberInput: { marginTop: Spacing.xs },
     noteText: { color: colors.textSecondary, lineHeight: 22 },
-    aiNoteText: { color: colors.textSecondary, lineHeight: 22 },
     saveBtn: { width: '100%' },
-    correctionBtn: { marginTop: Spacing.sm },
-    deleteBtn: { marginTop: -Spacing.xs },
+    manageRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: Spacing.md,
+      paddingTop: Spacing.xs,
+    },
+    manageAction: {
+      minHeight: 44,
+      paddingHorizontal: Spacing.sm,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    manageText: { ...typography.caption, color: colors.textMuted, fontWeight: '600' },
+    manageDivider: {
+      width: StyleSheet.hairlineWidth,
+      height: 14,
+      backgroundColor: colors.border,
+    },
   });
 }

@@ -17,6 +17,7 @@ const authoritativeSwift = read('native/share-extension/ShareExtensionViewContro
 const infoPlistPlugin = read(
   'node_modules/expo-share-extension/plugin/build/withShareExtensionInfoPlist.js',
 );
+const compactPlugin = read('plugins/withCompactShareExtension.js');
 const appConfig = JSON.parse(read('app.json')) as {
   expo: { plugins: Array<string | [string, { height?: number }]> };
 };
@@ -184,8 +185,10 @@ const sharePluginIndex = appConfig.expo.plugins.indexOf(plugin);
 assert.equal(
   appConfig.expo.plugins[sharePluginIndex + 1],
   './plugins/withCompactShareExtension',
-  'controller override runs immediately after expo-share-extension creates the target',
+  'controller override stays adjacent to expo-share-extension in config',
 );
+assert.match(compactPlugin, /return withFinalizedMod\(config, \['ios'/);
+assert.doesNotMatch(compactPlugin, /return withXcodeProject\(/);
 assert.match(infoPlistPlugin, /NSExtensionPrincipalClass:/);
 assert.match(infoPlistPlugin, /ShareExtensionViewController/);
 assert.match(infoPlistPlugin, /NSExtensionPointIdentifier: "com\.apple\.share-services"/);

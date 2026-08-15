@@ -36,6 +36,11 @@ import { generateAiPlaceNote, persistAiNoteSupplementally } from '../../../lib/a
 
 import { submitPushToUser, checkExpoReceipts, type TicketRef } from './push.ts';
 import {
+  classifyResolverFailure,
+  formatResolverRetryLog,
+  planResolverRetry,
+} from './providerRetry.ts';
+import {
   planFromResolverDecision,
   buildCompletedNotification,
   buildMediaResultNotification,
@@ -256,6 +261,10 @@ async function handleProcessingError(admin: any, job: any, err: unknown): Promis
 function readMediaFlags(): {
   mediaFallbackEnabled: boolean;
   instagramResolverEnabled: boolean;
+  tiktokResolverEnabled: boolean;
+  youtubeResolverEnabled: boolean;
+  facebookResolverEnabled: boolean;
+  snapchatResolverEnabled: boolean;
   canaryUserId: string | null;
   autoSaveEnabled: boolean;
   autoSaveCanaryUserId: string | null;
@@ -267,6 +276,10 @@ function readMediaFlags(): {
   return {
     mediaFallbackEnabled: on('MEDIA_FALLBACK_ENABLED'),
     instagramResolverEnabled: on('INSTAGRAM_MEDIA_RESOLVER_ENABLED'),
+    tiktokResolverEnabled: on('TIKTOK_MEDIA_RESOLVER_ENABLED'),
+    youtubeResolverEnabled: on('YOUTUBE_MEDIA_RESOLVER_ENABLED'),
+    facebookResolverEnabled: on('FACEBOOK_MEDIA_RESOLVER_ENABLED'),
+    snapchatResolverEnabled: on('SNAPCHAT_MEDIA_RESOLVER_ENABLED'),
     canaryUserId: (Deno.env.get('PHASE2_CANARY_USER_ID') ?? '').trim() || null,
     autoSaveEnabled: on('MEDIA_AUTO_SAVE_ENABLED'),
     autoSaveCanaryUserId: (Deno.env.get('MEDIA_AUTO_SAVE_CANARY_USER_ID') ?? '').trim() || null,
@@ -554,11 +567,16 @@ async function finalizePostSaveEnrichment(
   let aiNoteSave: 'stored' | 'skipped' | 'failed' = 'skipped';
   if (aiNote && !(saved.ai_note ?? '').trim()) {
     aiNoteSave = await persistAiNoteSupplementally(aiNote, async (note) => {
+      // PROVENANCE: this job's metadata auto-save may have REUSED a saved place
+      // that already carried a different post, in which case the row does not
+      // represent this media — and a cue from it would caption the attached
+      // post with another post's words.
       let update = admin
         .from('saved_places')
         .update({ ai_note: note })
         .eq('id', saved.id)
-        .eq('user_id', job.user_id);
+        .eq('user_id', job.user_id)
+        .eq('source_url', task.canonical_url || task.source_url);
       update = saved.ai_note == null
         ? update.is('ai_note', null)
         : update.eq('ai_note', saved.ai_note);
@@ -958,11 +976,17 @@ async function finalizeMediaTask(
         if (!saved?.saved_place_id) throw new Error('media_auto_save_missing_saved_place_id');
         if (aiNote) {
           const aiNoteSave = await persistAiNoteSupplementally(aiNote, async (note) => {
+            // PROVENANCE: the cue describes THIS post, and the place page shows
+            // it beside whichever source is attached. `saved.reused` rows may
+            // already carry a different post (the RPC preserves it), and a
+            // racing job may have won the empty slot — so the note is written
+            // only while the row still names this exact source.
             const { error } = await admin
               .from('saved_places')
               .update({ ai_note: note })
               .eq('id', saved.saved_place_id)
               .eq('user_id', job.user_id)
+              .eq('source_url', canonicalUrl)
               .is('ai_note', null);
             if (error) throw error;
           });
@@ -1334,6 +1358,76 @@ async function processOne(admin: any, env: any, job: any): Promise<void> {
     plausibleCandidates: plausibleCandidates.slice(0, 10).map(safeCandidate),
   };
 
+  // ---- transient provider failure -> retry, don't blame the user ----------
+  // A Google Places 429/5xx/timeout previously fell straight through to
+  // needs_help(manual_search): the resolver RETURNS `failed/places_error`
+  // rather than throwing, so handleProcessingError's retry harness never saw
+  // it. Classify first, and when nothing usable was collected, park the job
+  // with a backoff instead of telling the user to find the place themselves.
+  // Candidates found on an EARLIER attempt count too: once the pipeline has
+  // produced usable candidates they must never be retried away, even if a
+  // later degraded attempt comes back empty.
+  const alreadyPersistedCandidates = persistedCandidateCount(job.candidate_payload);
+  const providerFailureClass = classifyResolverFailure({
+    decision: metadataResult.decision,
+    failureReason: metadataResult.failureReason,
+    candidateCount: Math.max(metadataResult.candidates.length, alreadyPersistedCandidates),
+    warnings: result.warnings,
+    retryAfterSeconds: (result.diagnostics as any)?.placesError?.retryAfterSeconds ?? null,
+  });
+  const jobAttempts = typeof job.attempts === 'number' ? job.attempts : 1;
+  const jobMaxAttempts = typeof job.max_attempts === 'number' ? job.max_attempts : 5;
+  const retryPlan = planResolverRetry({
+    failureClass: providerFailureClass,
+    attempts: jobAttempts,
+    maxAttempts: jobMaxAttempts,
+    retryAfterSeconds: (result.diagnostics as any)?.placesError?.retryAfterSeconds ?? null,
+  });
+  if (providerFailureClass === 'transient_provider') {
+    console.log(
+      formatResolverRetryLog({
+        jobId: job.id,
+        step: 'metadata_places',
+        failureClass: providerFailureClass,
+        failureCode: metadataResult.failureReason ?? null,
+        plan: retryPlan,
+        attempts: jobAttempts,
+        maxAttempts: jobMaxAttempts,
+      }),
+    );
+  }
+  if (retryPlan.action === 'retry') {
+    // Reuse the EXISTING lease: claim_share_jobs re-claims a
+    // processing_metadata row once locked_until passes, and already refuses
+    // once attempts >= max_attempts. No new retry system, no migration.
+    // The guard on status keeps a cancelled job cancelled.
+    const { data: parked } = await admin
+      .from('share_jobs')
+      .update({
+        locked_until: addSecondsIso(retryPlan.delaySeconds),
+        progress_stage: 'metadata',
+        last_error: `provider_retry:${metadataResult.failureReason ?? 'places_error'}`,
+        // Park whatever we already found so a degraded later attempt cannot
+        // erase it. Same mechanism the media path uses before falling back.
+        ...(metadataResult.candidates.length > 0
+          ? {
+              candidate_payload: buildCandidateReviewSnapshot(
+                metadataResult.candidates.map(safeCandidate),
+              ),
+            }
+          : {}),
+      })
+      .eq('id', job.id)
+      .eq('status', 'processing_metadata')
+      .select('id')
+      .maybeSingle();
+    if (parked) return;
+    // Status moved underneath us (cancelled/terminal) — fall through to the
+    // normal routing rather than resurrecting the job.
+    console.log(`[share-job] provider_retry_skipped job_id=${job.id} reason=status_changed`);
+    return;
+  }
+
   const plan = planFromResolverDecision({
     decision: metadataResult.decision,
     safeToAutoSave: metadataResult.safeToAutoSave,
@@ -1395,6 +1489,10 @@ async function processOne(admin: any, env: any, job: any): Promise<void> {
         platform,
         mediaFallbackEnabled: effectiveFlags.mediaFallbackEnabled,
         instagramResolverEnabled: effectiveFlags.instagramResolverEnabled,
+        tiktokResolverEnabled: effectiveFlags.tiktokResolverEnabled,
+        youtubeResolverEnabled: effectiveFlags.youtubeResolverEnabled,
+        facebookResolverEnabled: effectiveFlags.facebookResolverEnabled,
+        snapchatResolverEnabled: effectiveFlags.snapchatResolverEnabled,
         mediaTaskExists,
         jobStatus: 'completed',
       },
@@ -1431,6 +1529,10 @@ async function processOne(admin: any, env: any, job: any): Promise<void> {
         platform,
         mediaFallbackEnabled: mediaFlags.mediaFallbackEnabled,
         instagramResolverEnabled: mediaFlags.instagramResolverEnabled,
+        tiktokResolverEnabled: mediaFlags.tiktokResolverEnabled,
+        youtubeResolverEnabled: mediaFlags.youtubeResolverEnabled,
+        facebookResolverEnabled: mediaFlags.facebookResolverEnabled,
+        snapchatResolverEnabled: mediaFlags.snapchatResolverEnabled,
         mediaTaskExists,
         jobStatus: 'processing_metadata',
       },

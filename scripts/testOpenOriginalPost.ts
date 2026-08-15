@@ -37,6 +37,10 @@ check('tiktok short link is allowed', validateSourceUrl('https://vm.tiktok.com/Z
 check('youtube watch is allowed', validateSourceUrl('https://www.youtube.com/watch?v=abcdEFGhijk').ok);
 check('youtube short link is allowed', validateSourceUrl('https://youtu.be/abcdEFGhijk').ok);
 check('youtube shorts is allowed', validateSourceUrl('https://youtube.com/shorts/abcdEFGhijk').ok);
+check('facebook reel is allowed', validateSourceUrl('https://www.facebook.com/reel/1234567890123456/').ok);
+check('facebook videos is allowed', validateSourceUrl('https://www.facebook.com/SomePage/videos/1234567890123456/').ok);
+check('fb.watch is allowed', validateSourceUrl('https://fb.watch/abcDEF123/').ok);
+check('snapchat spotlight is allowed', validateSourceUrl('https://www.snapchat.com/spotlight/W7_abc123XYZ').ok);
 check('x.com is allowed', validateSourceUrl('https://x.com/user/status/123').ok);
 
 // ---- missing URL disables the action --------------------------------------

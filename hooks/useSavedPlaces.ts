@@ -25,6 +25,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { logDebug } from '@/lib/logger';
 import { recordBreadcrumb } from '@/lib/breadcrumbs';
 import { supabase } from '@/lib/supabase';
+import { createShareJobsRealtimeSubscription } from '@/lib/shareJobsRealtime';
 import {
   isLikelyOfflineError,
   readSavedPlacesCache,
@@ -236,27 +237,59 @@ export function useSavedPlaces() {
   // AI-note enrichment lands after the save has already completed. The
   // already-published per-place ledger emits only after the ai_note write, so
   // refresh the shared cache when that authoritative completion arrives.
+  //
+  // This goes through the shared subscription helper because THIS HOOK HAS
+  // MULTIPLE CONCURRENT CONSUMERS (home, map, and the share-job detail route).
+  // Subscribing with a per-user topic made every extra consumer reuse the
+  // already-joined channel instance, and binding a `postgres_changes` callback
+  // on a joined channel throws synchronously — inside an effect, that error
+  // reaches the nearest route error boundary. The helper gives each mount its
+  // own topic and swallows realtime failures into a log.
   useEffect(() => {
     if (!userId) return;
-    const channel = supabase
-      .channel(`saved-place-enrichment:${userId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'share_job_place_results',
-          filter: `user_id=eq.${userId}`,
-        },
-        (payload) => {
-          const row = payload.new as { saved_place_id?: string | null };
-          if (row.saved_place_id) void fetch('background');
-        },
-      )
-      .subscribe();
-    return () => {
-      void supabase.removeChannel(channel);
-    };
+    return createShareJobsRealtimeSubscription({
+      client: supabase,
+      scope: 'saved_place_enrichment',
+      table: 'share_job_place_results',
+      userId,
+      // Only a row that actually points at a saved place can change the list.
+      shouldInvalidate: (payload) => typeof payload?.new?.saved_place_id === 'string',
+      onInvalidate: () => {
+        void fetch('background');
+      },
+      onError: (error) => {
+        logDebug(
+          'saved-places',
+          `enrichment realtime unavailable: ${error instanceof Error ? error.message : 'unknown'}`,
+        );
+      },
+    });
+  }, [fetch, userId]);
+
+  // A share that resolves to a place the user ALREADY saved enriches that
+  // existing row (source_url / source_type / ai_note) without inserting one.
+  // The metadata auto-save path finalizes on `share_jobs` alone, so without
+  // this the newly attached post could sit behind the staleness window while
+  // the place page still shows no "Watch post". Same hardened helper, its own
+  // topic; a saved_place_id is what makes a job row relevant to this list.
+  useEffect(() => {
+    if (!userId) return;
+    return createShareJobsRealtimeSubscription({
+      client: supabase,
+      scope: 'saved_place_share_completion',
+      table: 'share_jobs',
+      userId,
+      shouldInvalidate: (payload) => typeof payload?.new?.saved_place_id === 'string',
+      onInvalidate: () => {
+        void fetch('background');
+      },
+      onError: (error) => {
+        logDebug(
+          'saved-places',
+          `share-job realtime unavailable: ${error instanceof Error ? error.message : 'unknown'}`,
+        );
+      },
+    });
   }, [fetch, userId]);
 
   useEffect(() => {

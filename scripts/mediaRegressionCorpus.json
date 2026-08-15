@@ -1,0 +1,112 @@
+{
+  "$schema": "Nearr cross-platform media regression corpus — see docs/MEDIA_REGRESSION_CORPUS.md",
+  "version": 1,
+  "lastUpdated": "2026-08-15",
+  "note": "STATUS: Phase 1 (honest, individually-verified subset, not the full 5-per-platform target). Each entry's `groundTruth` was established by independently reading the platform's own real title/description/caption/transcript text BEFORE running it through Nearr — never by accepting Nearr's own resolver output as truth. Instagram has zero entries: no public Instagram URL was independently verified during this pass; adding Instagram (and expanding every platform toward 5 diverse examples) is tracked as follow-up work in docs/MEDIA_REGRESSION_CORPUS.md rather than fabricated here. Do not add an entry without filling in `groundTruth.verifiedBy` with how the expected value was actually established.",
+  "entries": [
+    {
+      "id": "snapchat_airport_no_place_01",
+      "platform": "snapchat",
+      "url": "https://www.snapchat.com/@chrismagee3/spotlight/W7_EDlXWTBiXAEEniNoMPwAAYYmdnaHlpb3l5AZ-_qdtxAZ-_qF1-AAAAAQ",
+      "addedDate": "2026-08-15",
+      "groundTruth": {
+        "verifiedBy": "Fetched the live public og:description directly: \"A young man...walks through an airport parking lot pulling a silver suitcase...places his luggage inside [a black SUV]...\" — read in full before any Nearr run.",
+        "hasIdentifiablePlace": false,
+        "notes": "Airport parking lot scene, no business/venue named or shown. This is the exact case that regressed to auto-saving 'Snap Headquarters' (Snap Inc.'s real Santa Monica HQ) before the evidence-provenance fix."
+      },
+      "expected": {
+        "contentCategory": "other",
+        "geographyHints": [],
+        "forbiddenCandidates": ["Snap", "Snap Headquarters", "Snap Inc"],
+        "minDecision": "manual_fallback_or_no_candidates"
+      }
+    },
+    {
+      "id": "youtube_zoo_no_place_01",
+      "platform": "youtube",
+      "url": "https://www.youtube.com/watch?v=jNQXAC9IVRw",
+      "addedDate": "2026-08-15",
+      "groundTruth": {
+        "verifiedBy": "Fetched the real manual (owner-authored) WebVTT captions directly and read them in full: \"All right, so here we are, in front of the elephants...the cool thing about these guys is...really really long trunks...\"",
+        "hasIdentifiablePlace": false,
+        "notes": "Generic zoo elephant enclosure, no zoo name, city, or address spoken or shown. Also used as the live captions-first pipeline smoke test (unrelated to this regression pass)."
+      },
+      "expected": {
+        "contentCategory": "other",
+        "geographyHints": [],
+        "forbiddenCandidates": ["<Null>", "null", "undefined"],
+        "minDecision": "manual_fallback_or_no_candidates"
+      }
+    },
+    {
+      "id": "youtube_music_video_no_place_01",
+      "platform": "youtube",
+      "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "addedDate": "2026-08-15",
+      "groundTruth": {
+        "verifiedBy": "Fetched the real auto-generated captions directly and read the lyrics in full (\"We're no strangers to love...\").",
+        "hasIdentifiablePlace": false,
+        "notes": "Music video; lyrics carry no place evidence. Good negative control distinct from the airport/zoo cases (this one has substantial real transcript text, unlike those two, so it also tests that abundant unrelated transcript text does not get mined into a fake venue name)."
+      },
+      "expected": {
+        "contentCategory": "other",
+        "geographyHints": [],
+        "forbiddenCandidates": ["<Null>", "null", "undefined"],
+        "minDecision": "manual_fallback_or_no_candidates"
+      }
+    },
+    {
+      "id": "youtube_south_oc_pizza_roundup_01",
+      "platform": "youtube",
+      "url": "https://youtube.com/shorts/zGDjyXh7t-w",
+      "addedDate": "2026-08-15",
+      "groundTruth": {
+        "verifiedBy": "Fetched the real og:title (\"Trying and Ranking South OC's Top 5 Rated Pizza Spots\") and og:description (\"...South Orange County has a high concentration of really good pizza spots. We tried 5 of the top rated spots and ranked them...\") directly. The actual 5 restaurant names are spoken/shown IN THE VIDEO, not in the title/description text — NOT independently verified here (would require watching/transcribing the video itself), so this entry intentionally does NOT assert a specific correct place. It pins the NEGATIVE behavior only.",
+        "hasIdentifiablePlace": "unknown_without_video_evidence",
+        "notes": "THE production bug case: metadata-only extraction (no caption venue hint, roundup post) previously derived a search query literally reading \"Null\" from HTML noise and surfaced a law firm in Oregon plus two malformed <Null>-named natural-feature results in New Mexico. Getting the REAL 5 pizza places requires the video-evidence pipeline (transcript/frames), which is a separate, not-yet-enabled capability — this fixture only proves the metadata path no longer manufactures geographically-contradictory garbage."
+      },
+      "expected": {
+        "contentCategory": "food",
+        "geographyHints": ["Orange County", "CA"],
+        "forbiddenCandidates": ["<Null>", "null", "undefined", "Mammen & Null Lawyers LLC"],
+        "forbiddenRegions": ["OR", "NM", "WA"],
+        "minDecision": "manual_fallback_no_candidates_or_correct_ca_picker"
+      }
+    },
+    {
+      "id": "facebook_howto_no_place_01",
+      "platform": "facebook",
+      "url": "https://www.facebook.com/watch/?v=10153231379946729",
+      "addedDate": "2026-08-15",
+      "groundTruth": {
+        "verifiedBy": "Fetched real yt-dlp metadata directly: title \"How to Share With Just Friends\", description \"How to share with just friends.\" — Facebook's own product tutorial video.",
+        "hasIdentifiablePlace": false,
+        "notes": "Also used as the live Facebook acquisition smoke test in the prior cross-platform-expansion pass (download/frames verified working there); reused here as a metadata-path negative control."
+      },
+      "expected": {
+        "contentCategory": "other",
+        "geographyHints": [],
+        "forbiddenCandidates": ["Facebook", "Facebook Inc", "Meta", "<Null>", "null"],
+        "minDecision": "manual_fallback_or_no_candidates"
+      }
+    },
+    {
+      "id": "tiktok_pizza_discovery_content_unverified_01",
+      "platform": "tiktok",
+      "url": "https://www.tiktok.com/discover/best-pizza-in-orange-county",
+      "addedDate": "2026-08-15",
+      "groundTruth": {
+        "verifiedBy": "NOT independently verified — TikTok's anti-bot layer blocked both yt-dlp and the official oEmbed endpoint for automated access from the environment this corpus was built in (see docs/MEDIA_FALLBACK.md \"Known platform fragility\"). Only the URL's own keyword slug (\"best-pizza-in-orange-county\") is known, from the URL text itself, not from viewing the video.",
+        "hasIdentifiablePlace": "unverified",
+        "notes": "Kept in the corpus specifically because a real deep-link variant of this same content redirected an unauthenticated fetch to apps.apple.com (Apple's App Store listing for the TikTok app) in production, which is the bug this entry exists to guard against. Acquisition-stage only: do NOT use for resolution-stage gold-place assertions until content is independently verified (from a residential/mobile network, per the honesty requirement)."
+      },
+      "expected": {
+        "contentCategory": "unknown",
+        "geographyHints": [],
+        "forbiddenCandidates": ["<Null>", "null", "undefined", "Best Buy", "Staples", "MacTek", "Xfinity Store by Comcast", "The Mac Guy, LLC", "Locavore Market and Grocery - Operated by Central Oregon Locavore Non Profit"],
+        "forbiddenRegions": ["OR", "WA"],
+        "minDecision": "acquisition_stage_only"
+      }
+    }
+  ]
+}

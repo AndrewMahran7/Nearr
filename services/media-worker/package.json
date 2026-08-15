@@ -21,7 +21,8 @@
     "test:instagram-resolver-live": "node --import tsx --test \"tests/live/instagramResolver.live.test.ts\"",
     "test:native-video-live": "node --import tsx --test \"tests/live/nativeVideo.live.test.ts\"",
     "media:inspect": "node --import tsx src/cli/inspectUrl.ts",
-    "fixtures:generate": "node --import tsx tests/support/generateSyntheticMedia.ts"
+    "fixtures:generate": "node --import tsx tests/support/generateSyntheticMedia.ts",
+    "benchmark:concurrency": "node --import tsx tests/support/concurrencyBenchmark.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",

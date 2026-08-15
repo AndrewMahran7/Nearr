@@ -108,15 +108,15 @@ export function reconcileMultiPlaceBatch(args: {
       ? prior.selectedCandidateId
       : null;
     const selectedCandidateId = retainedCandidateId ?? initialCandidateId;
+    // A place the user already has on their map is still a valid save target:
+    // running the save is how this post's source_url / ai_note reach the
+    // EXISTING row. Only a save this job already performed (server saveState,
+    // or an outcome applied earlier in this session) is terminal.
     const localSavedPlaceId = selectedCandidateId ? savedByGoogleId[selectedCandidateId] ?? null : null;
     const savedPlaceId = prior?.savedPlaceId ?? serverSavedPlaceId ?? localSavedPlaceId;
     const persistence: BatchPersistence = prior && prior.persistence !== 'pending'
       ? prior.persistence
-      : serverPersistence !== 'pending'
-        ? serverPersistence
-        : localSavedPlaceId
-          ? 'already_saved'
-          : 'pending';
+      : serverPersistence;
     const candidate = candidates.find((item) => item.googlePlaceId === selectedCandidateId);
     const resolution = prior?.resolution === 'resolved' && candidate
       ? 'resolved'
@@ -185,7 +185,9 @@ export function chooseBatchCandidate(
 ): MultiPlaceBatch {
   const row = batch.rows[logicalPlaceId];
   if (!row) return batch;
-  const persistence: BatchPersistence = savedPlaceId ? 'already_saved' : 'pending';
+  // `savedPlaceId` here means "the user already has this place" — it is kept
+  // for display, but it must NOT block the save: the save is what attaches
+  // this post to that existing row.
   return {
     ...batch,
     feedback: null,
@@ -196,8 +198,8 @@ export function chooseBatchCandidate(
         candidates: mergeCandidates([candidate], row.candidates),
         selectedCandidateId: candidate.googlePlaceId,
         resolution: 'resolved',
-        selectedForSave: !savedPlaceId && validCandidate(candidate),
-        persistence,
+        selectedForSave: validCandidate(candidate),
+        persistence: 'pending',
         savedPlaceId,
         candidateSelectorExpanded: false,
         search: { ...row.search, phase: 'closed', error: null },

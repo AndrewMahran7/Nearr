@@ -47,11 +47,19 @@ export type ResolvedCandidate = {
 
 export type RequestMode = 'save' | 'extract' | 'extract_debug_slow' | 'debug_gemini';
 
-export type SourcePlatform = 'instagram' | 'tiktok' | 'youtube' | 'twitter' | 'genericWeb' | 'unknown';
+export type SourcePlatform =
+  | 'instagram'
+  | 'tiktok'
+  | 'youtube'
+  | 'facebook'
+  | 'snapchat'
+  | 'twitter'
+  | 'genericWeb'
+  | 'unknown';
 
 /** Internal-only mapping back to the wire-level `source` enum that
- *  existing clients expect. */
-export type LegacySource = 'instagram' | 'tiktok' | 'link';
+ *  existing clients expect (`saved_places.source_type`). */
+export type LegacySource = 'instagram' | 'tiktok' | 'youtube' | 'facebook' | 'snapchat' | 'link';
 
 export type SearchBias = { lat: number; lng: number };
 

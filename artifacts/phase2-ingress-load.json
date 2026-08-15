@@ -1,0 +1,140 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-14T04:02:49.923Z",
+  "levels": [
+    1,
+    5,
+    10,
+    25,
+    50,
+    100
+  ],
+  "results": [
+    {
+      "level": 1,
+      "attempted": 1,
+      "accepted": 1,
+      "rejected": 0,
+      "uniqueJobIds": 1,
+      "duplicates": 0,
+      "persisted": 1,
+      "terminal": 1,
+      "missingAcceptedWork": 0,
+      "statusCounts": {
+        "200": 1
+      },
+      "acknowledgementMs": {
+        "p50": 480,
+        "p95": 480,
+        "max": 480
+      },
+      "submissionWallMs": 684,
+      "terminalDrainMs": 235
+    },
+    {
+      "level": 5,
+      "attempted": 5,
+      "accepted": 5,
+      "rejected": 0,
+      "uniqueJobIds": 5,
+      "duplicates": 0,
+      "persisted": 5,
+      "terminal": 5,
+      "missingAcceptedWork": 0,
+      "statusCounts": {
+        "200": 5
+      },
+      "acknowledgementMs": {
+        "p50": 412,
+        "p95": 440,
+        "max": 442
+      },
+      "submissionWallMs": 533,
+      "terminalDrainMs": 1178
+    },
+    {
+      "level": 10,
+      "attempted": 10,
+      "accepted": 10,
+      "rejected": 0,
+      "uniqueJobIds": 10,
+      "duplicates": 0,
+      "persisted": 10,
+      "terminal": 10,
+      "missingAcceptedWork": 0,
+      "statusCounts": {
+        "200": 10
+      },
+      "acknowledgementMs": {
+        "p50": 368,
+        "p95": 447,
+        "max": 494
+      },
+      "submissionWallMs": 574,
+      "terminalDrainMs": 2369
+    },
+    {
+      "level": 25,
+      "attempted": 25,
+      "accepted": 25,
+      "rejected": 0,
+      "uniqueJobIds": 25,
+      "duplicates": 0,
+      "persisted": 25,
+      "terminal": 25,
+      "missingAcceptedWork": 0,
+      "statusCounts": {
+        "200": 25
+      },
+      "acknowledgementMs": {
+        "p50": 644,
+        "p95": 716,
+        "max": 718
+      },
+      "submissionWallMs": 824,
+      "terminalDrainMs": 2371
+    },
+    {
+      "level": 50,
+      "attempted": 50,
+      "accepted": 50,
+      "rejected": 0,
+      "uniqueJobIds": 50,
+      "duplicates": 0,
+      "persisted": 50,
+      "terminal": 50,
+      "missingAcceptedWork": 0,
+      "statusCounts": {
+        "200": 50
+      },
+      "acknowledgementMs": {
+        "p50": 1395,
+        "p95": 1460,
+        "max": 1641
+      },
+      "submissionWallMs": 1774,
+      "terminalDrainMs": 2382
+    },
+    {
+      "level": 100,
+      "attempted": 100,
+      "accepted": 100,
+      "rejected": 0,
+      "uniqueJobIds": 100,
+      "duplicates": 0,
+      "persisted": 100,
+      "terminal": 100,
+      "missingAcceptedWork": 0,
+      "statusCounts": {
+        "200": 100
+      },
+      "acknowledgementMs": {
+        "p50": 920,
+        "p95": 1011,
+        "max": 1073
+      },
+      "submissionWallMs": 1376,
+      "terminalDrainMs": 1949
+    }
+  ]
+}

@@ -235,6 +235,85 @@ export async function safeDownloadToFile(opts: {
   }
 }
 
+/**
+ * Same safety model as `safeDownloadToFile` (HTTPS-only, host-allowlisted,
+ * DNS-checked, redirect-limited, size-capped) but returns decoded TEXT instead
+ * of writing to a file. Used for small platform-supplied artifacts (caption/
+ * subtitle tracks) where writing a temp file would be unnecessary overhead.
+ * Kept as its own small function rather than sharing `safeDownloadToFile`'s
+ * internals — this is a security-sensitive path and duplication here is
+ * cheaper than the risk of a shared refactor changing either one's behavior.
+ */
+export async function safeFetchText(opts: {
+  url: string;
+  maxBytes: number;
+  timeoutMs: number;
+  redirectLimit: number;
+  allowlist: string[];
+  signal?: AbortSignal;
+}): Promise<{ text: string; contentType: string | null; finalUrl: string }> {
+  const controller = new AbortController();
+  const onAbort = () => controller.abort();
+  if (opts.signal) {
+    if (opts.signal.aborted) throw new MediaError('cancelled');
+    opts.signal.addEventListener('abort', onAbort, { once: true });
+  }
+  const timer = setTimeout(() => controller.abort(), opts.timeoutMs);
+
+  try {
+    let current = await assertUrlSafe(opts.url, opts.allowlist);
+    let hops = 0;
+    for (;;) {
+      const res = await fetch(current, {
+        redirect: 'manual',
+        signal: controller.signal,
+        headers: { 'user-agent': DEFAULT_UA, accept: 'text/vtt,application/x-subrip,text/plain,*/*' },
+      });
+
+      if (res.status >= 300 && res.status < 400) {
+        hops += 1;
+        if (hops > opts.redirectLimit) throw new MediaError('redirect_limit');
+        const loc = res.headers.get('location');
+        if (!loc) throw new MediaError('download_failed', 'redirect_without_location');
+        try {
+          await res.body?.cancel();
+        } catch {
+          /* ignore */
+        }
+        current = await assertUrlSafe(new URL(loc, current).toString(), opts.allowlist);
+        continue;
+      }
+
+      if (!res.ok) throw new MediaError('download_failed', `status_${res.status}`);
+      if (!res.body) throw new MediaError('download_failed', 'empty_body');
+
+      const declared = Number(res.headers.get('content-length'));
+      if (Number.isFinite(declared) && declared > opts.maxBytes) {
+        try {
+          await res.body.cancel();
+        } catch {
+          /* ignore */
+        }
+        throw new MediaError('file_too_large', `content_length_${declared}`);
+      }
+
+      const buf = Buffer.from(await res.arrayBuffer());
+      if (buf.byteLength > opts.maxBytes) throw new MediaError('file_too_large');
+      return { text: buf.toString('utf8'), contentType: res.headers.get('content-type'), finalUrl: current.toString() };
+    }
+  } catch (err) {
+    if (controller.signal.aborted) {
+      if (opts.signal?.aborted) throw new MediaError('cancelled');
+      throw new MediaError('download_timeout');
+    }
+    if (err instanceof MediaError) throw err;
+    throw new MediaError('download_failed', 'fetch_error');
+  } finally {
+    clearTimeout(timer);
+    if (opts.signal) opts.signal.removeEventListener('abort', onAbort);
+  }
+}
+
 /** Origin only. CDN paths and query strings may both carry opaque locators. */
 export function sanitizeUrlForLog(raw: string): string {
   try {

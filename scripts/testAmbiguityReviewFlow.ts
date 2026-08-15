@@ -12,6 +12,7 @@ import { buildNeedsHelpNotification, planFromResolverDecision } from '../supabas
 import { evaluateMetadataAutoSave } from '../supabase/functions/process-share-jobs/metadataAutoSaveGate';
 import { routeShareJobNotification } from '../lib/shareJobRouting';
 import { actionableCount, normalizeShareJobCandidates } from '../lib/shareJobsUi';
+import { buildShareJobDetailState } from '../lib/shareJobDetailState';
 import { SHARE_REGRESSION_FIXTURES } from './shareRegressionFixtures';
 
 const exactCandidates = [
@@ -108,9 +109,23 @@ assert.deepEqual(normalizeShareJobCandidates({ options: [{
 assert.equal(actionableCount([{ status: 'needs_help' }]), 1);
 assert.equal(actionableCount([{ status: 'completed' }]), 0);
 
+// The picker heading now comes from the pure payload mapping, so assert the
+// behaviour rather than the screen's source text.
+assert.equal(
+  buildShareJobDetailState({
+    status: 'needs_help',
+    decision: 'candidate_picker',
+    candidate_payload: {
+      candidates: [
+        { googlePlaceId: 'g1', name: 'B+C Pizza' },
+        { googlePlaceId: 'g2', name: 'B+C Pizza' },
+      ],
+    },
+  }).copy.title,
+  'We found 2 possible places',
+);
+
 const detailSource = fs.readFileSync(path.join(process.cwd(), 'app/share-jobs/[jobId].tsx'), 'utf8');
-assert.match(detailSource, /We found \$\{candidates\.length\} possible places/);
-assert.match(detailSource, /Which one did you mean\?/);
 assert.match(detailSource, /title="None of these"/);
 assert.match(detailSource, /onPress=\{\(\) => void handleSaveStored\(candidate\)\}/);
 assert.match(detailSource, /if \(!job \|\| resolvingRef\.current\) return;/, 'the existing once-latch guards candidate saves');

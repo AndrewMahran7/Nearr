@@ -42,6 +42,12 @@ function sourceLabel(saved: SavedPlaceWithPlace): string | null {
       return 'Saved from TikTok';
     case 'instagram':
       return 'Saved from Instagram';
+    case 'youtube':
+      return 'Saved from YouTube';
+    case 'facebook':
+      return 'Saved from Facebook';
+    case 'snapchat':
+      return 'Saved from Snapchat';
     case 'link':
       return 'Saved from a link';
     default:

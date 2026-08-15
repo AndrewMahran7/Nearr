@@ -2,6 +2,7 @@
 import { upsertSavedPlaceIntoCache } from '@/hooks/useSavedPlaces';
 import { recordBreadcrumb } from '@/lib/breadcrumbs';
 import { persistThenResolveQueueJob } from '@/lib/queueSaveResolution';
+import type { SavedPlaceEnrichmentPlan } from '@/lib/savedPlaceSourceMerge';
 import type { PlaceCandidate } from '@/services/placesService';
 import {
   saveSavedPlace,
@@ -68,6 +69,13 @@ export function shareJobCandidateToPlaceCandidate(candidate: ShareJobCandidate):
   };
 }
 
+export type ShareJobCandidateSaveOutcome = {
+  savedPlaceId: string | null;
+  duplicate: boolean;
+  /** Present when the place was already saved: what this post actually added. */
+  enrichment?: SavedPlaceEnrichmentPlan;
+};
+
 export async function persistShareJobCandidate(
   args: {
     candidate: PlaceCandidate;
@@ -77,7 +85,7 @@ export async function persistShareJobCandidate(
     aiNote?: string | null;
   },
   dependencies: Pick<ShareJobCandidateSaveDependencies, 'save' | 'cache'> = productionDependencies,
-): Promise<{ savedPlaceId: string | null; duplicate: boolean }> {
+): Promise<ShareJobCandidateSaveOutcome> {
   recordBreadcrumb('save_started', { jobId: args.jobId });
   const result = await dependencies.save({
     candidate: args.candidate,
@@ -96,12 +104,20 @@ export async function persistShareJobCandidate(
     });
     return { savedPlaceId: result.savedPlaceId, duplicate: false };
   }
+  // "Already saved" is an ENRICHED save, not a no-op: the existing row may have
+  // just gained this post's source_url / ai_note. Seed the cache from the
+  // re-read row so the place page shows the post without a restart.
+  if (result.saved) dependencies.cache(result.saved);
   recordBreadcrumb('already_saved_response', {
     jobId: args.jobId,
     savedPlaceId: result.savedPlaceId ?? null,
     result: 'duplicate',
   });
-  return { savedPlaceId: result.savedPlaceId ?? null, duplicate: true };
+  return {
+    savedPlaceId: result.savedPlaceId ?? null,
+    duplicate: true,
+    enrichment: result.enrichment,
+  };
 }
 
 /** Save once through the canonical mutation, then resolve the owned job. */

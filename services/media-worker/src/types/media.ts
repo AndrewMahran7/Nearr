@@ -88,6 +88,19 @@ export type ResolvedMedia = {
   /** Human label of the retrieval source (e.g. "instagram/yt-dlp"). */
   source: string;
   warnings: string[];
+  /**
+   * Platform-supplied captions/subtitles, ALREADY normalized into transcript
+   * segments, when the resolver could obtain them through the same legitimate
+   * public access used for the video itself (e.g. YouTube's caption tracks).
+   * When present and non-empty, the pipeline uses this as the transcript and
+   * skips paying for audio extraction + speech-to-text — see the transcript
+   * hierarchy in runMediaTask.ts. Never fabricated: absence means the platform
+   * exposed no usable captions for this post, not a failure.
+   */
+  captionsTranscript?: TranscriptSegment[];
+  /** Label for diagnostics, e.g. "youtube_captions" / "youtube_auto_captions". */
+  captionsSource?: string;
+  captionsLanguage?: string | null;
 };
 
 /** ffprobe-derived media facts. */

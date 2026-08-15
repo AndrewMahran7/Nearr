@@ -43,6 +43,10 @@ export type WorkerConfig = {
   // ---- Feature flags (all default OFF) ----
   mediaFallbackEnabled: boolean;
   instagramResolverEnabled: boolean;
+  tiktokResolverEnabled: boolean;
+  youtubeResolverEnabled: boolean;
+  facebookResolverEnabled: boolean;
+  snapchatResolverEnabled: boolean;
   nativeVideoAnalysisEnabled: boolean;
 
   // ---- Supabase (service-role, used INTERNALLY only) ----
@@ -106,11 +110,35 @@ export type WorkerConfig = {
   tempDir: string;
 };
 
-// Instagram public video is served from Meta CDNs. HTTPS-only, allowlisted.
+// Public video/caption CDNs for every wired platform. HTTPS-only, allowlisted.
+// Meta (Instagram + Facebook share the same CDN family), YouTube's video CDN
+// (`googlevideo.com`) + caption API (`youtube.com`), and Snapchat's Spotlight
+// CDN (`sc-cdn.net`) are all verified live during Phase 3 development. TikTok
+// hosts are included for when its extractor is reachable (own webpage/CDN
+// hosts are documented publicly; NOT independently live-verified from this
+// environment — see docs/MEDIA_FALLBACK.md).
 const DEFAULT_ALLOWED_HOSTS = [
+  // Instagram + Facebook (Meta) — one shared CDN family. `fb.watch`/
+  // `facebook.com` themselves are never a download target (video bytes are
+  // always served from `fbcdn.net`; verified live) so they're deliberately
+  // NOT added here — the allowlist stays scoped to actual CDN hosts.
   'cdninstagram.com',
   'fbcdn.net',
   'instagram.com',
+  // YouTube — video CDN + the `www.youtube.com/api/timedtext` caption
+  // endpoint (both verified live).
+  'googlevideo.com',
+  'youtube.com',
+  // TikTok — publicly documented CDN hosts. NOT independently live-verified
+  // from this environment (TikTok's anti-bot layer blocked automated
+  // probing here); see docs/MEDIA_FALLBACK.md.
+  'tiktokcdn.com',
+  'tiktokcdn-us.com',
+  'tiktokv.com',
+  'tiktokv.us',
+  'muscdn.com',
+  // Snapchat Spotlight CDN (verified live).
+  'sc-cdn.net',
 ];
 
 const MB = 1024 * 1024;
@@ -142,6 +170,10 @@ export function loadConfig(): WorkerConfig {
 
     mediaFallbackEnabled: bool('MEDIA_FALLBACK_ENABLED', false),
     instagramResolverEnabled: bool('INSTAGRAM_MEDIA_RESOLVER_ENABLED', false),
+    tiktokResolverEnabled: bool('TIKTOK_MEDIA_RESOLVER_ENABLED', false),
+    youtubeResolverEnabled: bool('YOUTUBE_MEDIA_RESOLVER_ENABLED', false),
+    facebookResolverEnabled: bool('FACEBOOK_MEDIA_RESOLVER_ENABLED', false),
+    snapchatResolverEnabled: bool('SNAPCHAT_MEDIA_RESOLVER_ENABLED', false),
     nativeVideoAnalysisEnabled: bool('NATIVE_VIDEO_ANALYSIS_ENABLED', false),
 
     supabaseUrl,
@@ -216,6 +248,10 @@ export function redactedConfigSummary(cfg: WorkerConfig): Record<string, unknown
     flags: {
       mediaFallbackEnabled: cfg.mediaFallbackEnabled,
       instagramResolverEnabled: cfg.instagramResolverEnabled,
+      tiktokResolverEnabled: cfg.tiktokResolverEnabled,
+      youtubeResolverEnabled: cfg.youtubeResolverEnabled,
+      facebookResolverEnabled: cfg.facebookResolverEnabled,
+      snapchatResolverEnabled: cfg.snapchatResolverEnabled,
       nativeVideoAnalysisEnabled: cfg.nativeVideoAnalysisEnabled,
     },
     limits: {

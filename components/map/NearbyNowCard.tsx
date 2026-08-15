@@ -32,6 +32,12 @@ function iconName(
       return 'instagram';
     case 'tiktok':
       return 'video';
+    case 'youtube':
+      return 'youtube';
+    case 'facebook':
+      return 'facebook';
+    case 'snapchat':
+      return 'video';
     default:
       return 'map-pin';
   }

@@ -21,27 +21,37 @@ assert.match(fallback, /<Redirect/);
 assert.match(fallback, /pathname: '\/\(tabs\)\/map'/);
 assert.match(fallback, /params: \{ savedPlaceId: id \}/);
 
-// Hero and identity are visual-first; category is compact and normalized.
+// Hero and identity are visual-first: the photo carries the page and the
+// name/context sit on it under a scrim. Category stays compact and normalized.
 assert.match(detail, /style=\{styles\.heroImage\}/);
-assert.match(detail, /hero: \{[\s\S]*height: 188/);
+assert.match(detail, /hero: \{[\s\S]*height: 250/, 'the hero dominates the first screenful');
+assert.match(detail, /styles\.heroScrimStrong/, 'title legibility over photography is deliberate');
+assert.match(detail, /styles\.heroCaption/, 'name + context are part of the hero, not a separate block');
 assert.match(detail, /splitPlaceAddress\(saved\.place\.formatted_address\)\.locality/);
 assert.match(detail, /CATEGORY_LABELS\[savedPlaceCategory\(saved\)\]/);
 assert.match(detail, /style=\{styles\.categoryPill\}/);
 assert.ok(!detail.includes('>Category</Text>'), 'Category must not be a standalone section');
 
-// Only the compact primary actions remain, preserving real handlers.
-for (const action of ['Directions', 'Share', 'Open original']) assert.ok(detail.includes(`label="${action}"`));
+// Going there is the single emphasized action; the rest stay quiet companions.
+assert.match(detail, /styles\.primaryAction/, 'Directions is the one filled action');
+assert.match(detail, />Directions</);
+assert.ok(detail.includes('label="Share"'));
+assert.match(detail, /label=\{sourceActionLabel\(saved\)\}/, 'source-post access is a first-class action');
 assert.match(detail, /buildSavedPlaceShareContent\(saved\)/);
 assert.match(detail, /void openSource\(\)/);
 assert.match(detail, /actionPill: \{[\s\S]*minHeight: 52/);
 
-// Personal context is separate, concise, and live from the saved row.
+// Personal context is separate, live from the saved row, and the source cue
+// leads because it answers "why did I save this?".
 assert.ok(detail.indexOf('Your note') < detail.indexOf('Nearby reminder'));
-assert.match(detail, /notes\.trim\(\) \? \([\s\S]*numberOfLines=\{4\}/);
-assert.match(detail, /accessibilityLabel="Add a note"/);
-assert.match(detail, /saved\.ai_note\?\.trim\(\)/);
+assert.ok(
+  detail.indexOf('narrative.showSourceNote') < detail.indexOf('narrative.userNote'),
+  'the source cue is the emotional lead, above the user note',
+);
+assert.match(detail, /accessibilityLabel="Add your own note"/);
+assert.match(detail, /savedPlaceNarrative\(\{ notes, ai_note: saved\.ai_note \}\)/);
 assert.match(detail, /accessibilityLiveRegion="polite"/);
-assert.match(detail, />From the post</);
+assert.match(detail, /styles\.sourceNoteLabel/);
 assert.match(detail, />Use as my note</);
 assert.match(detail, /<NoteEditorModal[\s\S]*aiNote=\{saved\.ai_note\}/);
 assert.doesNotMatch(detail, /\[saved\.place\.google_place_id, saved\]/, 'AI-note updates cannot reset photo/detail state');
@@ -54,9 +64,16 @@ assert.equal(reminderStatusLabel({ enabled: false, mode: 'default', profile: nul
 assert.equal(reminderStatusLabel({ enabled: true, mode: 'default', profile: { default_radius_value: 1, default_radius_unit: 'miles' }, milesText: '1', minutesText: '10' }), 'On · 1 mile');
 assert.equal(reminderStatusLabel({ enabled: true, mode: 'miles', profile: null, milesText: '2.5', minutesText: '10' }), 'On · 2.5 miles');
 
-// Correction/removal and note editor contracts remain accessible.
-assert.match(detail, /title="Wrong place\?"/);
-assert.match(detail, /title="Remove from saved"/);
+// Correction/removal stay reachable but visually secondary — they must never
+// compete with Directions or the content itself.
+assert.match(detail, /accessibilityLabel="Wrong place\? Correct this saved place"/);
+assert.match(detail, /Remove \${saved\.place\.name} from saved places/);
+assert.match(detail, /manageText: \{[\s\S]*color: colors\.textMuted/, 'management actions are low-emphasis');
+assert.match(detail, /manageAction: \{[\s\S]*minHeight: 44/, 'low emphasis never means small targets');
+assert.ok(
+  detail.indexOf('styles.manageRow') > detail.indexOf('styles.reminderCard'),
+  'management actions sit at the very bottom',
+);
 assert.match(editor, /useSafeAreaInsets/);
 assert.match(editor, /headerActionButton: \{ flex: 1, minHeight: 44/);
 assert.match(editor, /keyboardDismissMode=\{NOTE_EDITOR_BEHAVIOR\.keyboardDismissMode\}/);
