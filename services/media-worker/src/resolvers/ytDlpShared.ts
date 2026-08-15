@@ -239,18 +239,7 @@ export async function retrieveVideoFile(
   const directUrl = opts.skipDirectUrl ? null : pickProgressiveUrl(opts.info);
 
   if (directUrl) {
-    const forwardedHeaders = pickProgressiveHeaders(opts.info, directUrl);
-    // DIAGNOSTIC (2026-08-15, temporary): key NAMES only (never values) — tells
-    // us whether yt-dlp reports any http_headers at all for this extractor and
-    // whether our whitelist picked one up, without logging anything sensitive.
-    const matchedFormat = (opts.info.formats ?? []).find((f) => f.url === directUrl);
-    const reportedHeaderKeys = Object.keys(matchedFormat?.http_headers ?? opts.info.http_headers ?? {});
-    log.info(`${opts.sourceLabel}_resolve_direct`, {
-      jobId: opts.jobId,
-      url: sanitizeUrlForLog(directUrl),
-      reportedHeaderKeys,
-      forwardedReferer: !!forwardedHeaders?.referer,
-    });
+    log.info(`${opts.sourceLabel}_resolve_direct`, { jobId: opts.jobId, url: sanitizeUrlForLog(directUrl) });
     const dl = await safeDownloadToFile({
       url: directUrl,
       destPath,
@@ -259,7 +248,7 @@ export async function retrieveVideoFile(
       redirectLimit: cfg.redirectLimit,
       allowlist: cfg.allowedMediaHosts,
       signal: opts.signal,
-      extraHeaders: forwardedHeaders,
+      extraHeaders: pickProgressiveHeaders(opts.info, directUrl),
     });
     return {
       path: destPath,
