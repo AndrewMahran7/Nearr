@@ -28,6 +28,7 @@
     "test:address-first": "ts-node -P scripts/tsconfig.json scripts/testAddressFirst.ts",
     "test:failure-logging": "ts-node -P scripts/tsconfig.json scripts/testFailureLogging.ts",
     "test:notification-dedupe": "ts-node -P scripts/tsconfig.json scripts/testPlaceNotificationDedupe.ts",
+    "test:opportunity-ui": "ts-node -P scripts/tsconfig.json scripts/testOpportunityUi.ts",
     "test:saved-place-edits": "ts-node -P scripts/tsconfig.json scripts/testSavedPlaceEdits.ts",
     "test:place-note": "ts-node -P scripts/tsconfig.json scripts/testPlaceNote.ts",
     "test:place-category": "ts-node -P scripts/tsconfig.json scripts/testPlaceCategory.ts",
