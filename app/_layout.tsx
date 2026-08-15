@@ -37,6 +37,10 @@ import {
   shouldReplaceShareJobDetail,
 } from '@/lib/shareJobRouting';
 import { createMapGroupFocusRequest } from '@/lib/mapGroupFocus';
+import {
+  encodeGroupedSavedPlaceIds,
+  routeNearbyReminder,
+} from '@/lib/nearbyGroupRouting';
 import { claimSaveCompletionSignal } from '@/lib/saveCompletionNavigation';
 import { resolveOpenSavedPlaceRoute } from '@/lib/openSavedPlace';
 import {
@@ -740,17 +744,35 @@ function RootLayoutContent() {
         }
       }
 
-      if (isDefaultTap && isNearbyReminderPayload && savedPlaceId) {
-        router.push({
-          pathname: '/(tabs)/map',
-          params: {
-            savedPlaceId,
-            reminderOpen: 'true',
-            reminderSource: 'nearby',
-            nearbyCount: nearbyCount ? String(nearbyCount) : undefined,
-          },
-        });
-        return;
+      if (isDefaultTap && isNearbyReminderPayload) {
+        // The grouped payload already names every place the notification was
+        // about, so the tap can honour "you're near 4 saved places" instead of
+        // silently opening one of them. Never re-derived from current
+        // proximity: the group is what the user was told, minutes ago.
+        const nearbyRoute = routeNearbyReminder(data);
+        if (nearbyRoute.kind === 'group') {
+          recordBreadcrumb('intended_route', {
+            notificationId,
+            result: `nearby_group:${nearbyRoute.savedPlaceIds.length}`,
+          });
+          router.push({
+            pathname: '/opportunity/group',
+            params: { ids: encodeGroupedSavedPlaceIds(nearbyRoute.savedPlaceIds) },
+          });
+          return;
+        }
+        if (nearbyRoute.kind === 'single') {
+          router.push({
+            pathname: '/(tabs)/map',
+            params: {
+              savedPlaceId: nearbyRoute.savedPlaceId,
+              reminderOpen: 'true',
+              reminderSource: 'nearby',
+              nearbyCount: nearbyCount ? String(nearbyCount) : undefined,
+            },
+          });
+          return;
+        }
       }
 
       if (isDefaultTap && isNearbyReminderPayload) {
