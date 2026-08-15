@@ -47,6 +47,7 @@ import { isAddressLikePlace, type PlaceCandidate } from '@/services/placesServic
 import { resolvePlaceCategory, type CategoryResolution } from '@/lib/placeCategory';
 import {
   planSavedPlaceEnrichment,
+  type GuardedPatch,
   type SavedPlaceEnrichmentPlan,
 } from '@/lib/savedPlaceSourceMerge';
 import { normalizeShareUrl } from '@/lib/shareAgent/tiktokUrl';
@@ -98,6 +99,14 @@ type ExistingSavedPlaceLookupRow = ExistingSavedPlaceSource & {
 };
 
 const shareUrlKey = (url: string): string => normalizeShareUrl(url).url;
+
+/** The chainable subset of a PostgREST update builder used by the guarded
+ *  enrichment writes. Kept structural so it needs no supabase-js generics. */
+type PostgrestFilter = {
+  eq(column: string, value: unknown): PostgrestFilter;
+  is(column: string, value: null): PostgrestFilter;
+  then<T>(onfulfilled: (value: { error: { message: string } | null }) => T): PromiseLike<T>;
+};
 
 const DEDUPE_DISTANCE_M = 40;
 
@@ -180,9 +189,10 @@ function matchesExistingRealPlace(
  * the row's id, place_id, notes, reminder settings, visit/archive state,
  * opportunity count and created_at are all left exactly as they were.
  *
- * Both enrichment writes are guarded on the field still being empty, so two
- * share jobs racing on the same place converge on one attached source and a
- * retried job is a no-op rather than a rewrite.
+ * Every enrichment write carries the row state it was planned against, so two
+ * share jobs racing on the same place converge on ONE coherent source: the
+ * loser's type and note preconditions fail against the winner's row rather
+ * than describing the winner's post. A retried job is a no-op.
  */
 async function enrichExistingSavedPlace(
   existing: {
@@ -220,29 +230,43 @@ async function enrichExistingSavedPlace(
     shareUrlKey,
   );
 
-  if (plan.sourcePatch) {
-    const { error } = await supabase
+  // Each guarded patch becomes one conditional UPDATE. `expectSourceUrl` is
+  // the observed value, so a row whose source changed underneath us matches
+  // zero rows instead of gaining mixed provenance.
+  const applyGuarded = async (
+    guarded: GuardedPatch<Record<string, unknown>>,
+    label: string,
+    extra?: (query: PostgrestFilter) => PostgrestFilter,
+  ): Promise<void> => {
+    let query: PostgrestFilter = supabase
       .from('saved_places')
-      .update(plan.sourcePatch)
-      .eq('id', existing.id)
-      .is('source_url', null);
-    if (error) {
-      console.warn(
-        '[savedPlacesService] existing source attach failed (non-fatal)',
-        error.message,
-      );
+      .update(guarded.patch)
+      .eq('id', existing.id);
+    query = guarded.expectSourceUrl === null
+      ? query.is('source_url', null)
+      : query.eq('source_url', guarded.expectSourceUrl);
+    if (guarded.expectSourceType !== undefined) {
+      query = guarded.expectSourceType === null
+        ? query.is('source_type', null)
+        : query.eq('source_type', guarded.expectSourceType);
     }
+    if (extra) query = extra(query);
+    const { error } = await query;
+    if (error) {
+      console.warn(`[savedPlacesService] ${label} failed (non-fatal)`, error.message);
+    }
+  };
+
+  if (plan.sourcePatch) {
+    await applyGuarded(plan.sourcePatch, 'source attach');
+  }
+
+  if (plan.sourceTypePatch) {
+    await applyGuarded(plan.sourceTypePatch, 'source type backfill');
   }
 
   if (plan.aiNotePatch) {
-    const { error } = await supabase
-      .from('saved_places')
-      .update(plan.aiNotePatch)
-      .eq('id', existing.id)
-      .is('ai_note', null);
-    if (error) {
-      console.warn('[savedPlacesService] existing ai_note update failed (non-fatal)', error.message);
-    }
+    await applyGuarded(plan.aiNotePatch, 'ai_note attach', (query) => query.is('ai_note', null));
   }
 
   logDebug('savedPlacesService', 'enriched existing save', {

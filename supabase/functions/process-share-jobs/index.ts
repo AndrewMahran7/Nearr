@@ -559,11 +559,16 @@ async function finalizePostSaveEnrichment(
   let aiNoteSave: 'stored' | 'skipped' | 'failed' = 'skipped';
   if (aiNote && !(saved.ai_note ?? '').trim()) {
     aiNoteSave = await persistAiNoteSupplementally(aiNote, async (note) => {
+      // PROVENANCE: this job's metadata auto-save may have REUSED a saved place
+      // that already carried a different post, in which case the row does not
+      // represent this media — and a cue from it would caption the attached
+      // post with another post's words.
       let update = admin
         .from('saved_places')
         .update({ ai_note: note })
         .eq('id', saved.id)
-        .eq('user_id', job.user_id);
+        .eq('user_id', job.user_id)
+        .eq('source_url', task.canonical_url || task.source_url);
       update = saved.ai_note == null
         ? update.is('ai_note', null)
         : update.eq('ai_note', saved.ai_note);
@@ -963,11 +968,17 @@ async function finalizeMediaTask(
         if (!saved?.saved_place_id) throw new Error('media_auto_save_missing_saved_place_id');
         if (aiNote) {
           const aiNoteSave = await persistAiNoteSupplementally(aiNote, async (note) => {
+            // PROVENANCE: the cue describes THIS post, and the place page shows
+            // it beside whichever source is attached. `saved.reused` rows may
+            // already carry a different post (the RPC preserves it), and a
+            // racing job may have won the empty slot — so the note is written
+            // only while the row still names this exact source.
             const { error } = await admin
               .from('saved_places')
               .update({ ai_note: note })
               .eq('id', saved.saved_place_id)
               .eq('user_id', job.user_id)
+              .eq('source_url', canonicalUrl)
               .is('ai_note', null);
             if (error) throw error;
           });

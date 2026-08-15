@@ -145,15 +145,33 @@ begin
   else
     -- The user already saved this place (manually, or from an earlier post).
     -- Keep their row exactly as it is — id, place_id, notes, radius, reminder
-    -- settings, visit/archive state, counts, created_at — and attach this post
-    -- ONLY when no source is attached yet.
+    -- settings, visit/archive state, counts, created_at.
+    --
+    -- ONE conditional statement, because source_url + source_type are ONE
+    -- logical source identity. Writing them per-field could leave
+    -- `source_url = <Reel A>, source_type = 'tiktok'`, which names a post that
+    -- does not exist. The saved_places row is already locked FOR UPDATE above,
+    -- so this is atomic against other calls of this function.
+    --
+    --   * nothing attached yet   → attach the incoming pair together
+    --     ('manual' with no URL counts as nothing attached)
+    --   * SAME post already here → may complete its own missing type; legacy
+    --     rows stored a real URL beside `manual`/null
+    --   * DIFFERENT post         → the WHERE clause excludes the row entirely,
+    --     so neither half is touched
     v_reused := true;
-    update public.saved_places
-       set source_type = p_source_type,
-           source_url = p_source_url,
+    update public.saved_places sp
+       set source_url = case
+             when coalesce(trim(sp.source_url), '') = '' then p_source_url
+             else sp.source_url
+           end,
+           source_type = p_source_type,
            updated_at = now()
-     where id = v_saved_place_id
-       and coalesce(trim(source_url), '') = '';
+     where sp.id = v_saved_place_id
+       and (
+         coalesce(trim(sp.source_url), '') = ''
+         or (sp.source_url = p_source_url and coalesce(sp.source_type, 'manual') = 'manual')
+       );
   end if;
 
   insert into public.share_job_place_results (

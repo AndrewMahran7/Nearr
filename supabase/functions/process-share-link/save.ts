@@ -16,6 +16,10 @@ import {
   pickCategory,
 } from './places/placeNormalization.ts';
 import { resolvePlaceCategory } from '../../../lib/placeCategory.ts';
+import { planSavedPlaceEnrichment } from '../../../lib/savedPlaceSourceMerge.ts';
+import { normalizeShareUrl } from '../../../lib/shareAgent/tiktokUrl.ts';
+
+const shareUrlKey = (url: string): string => normalizeShareUrl(url).url;
 
 export const SAVE_DEDUPE_DISTANCE_M = 40;
 
@@ -31,6 +35,8 @@ function looksLikeAddressName(value: string | null | undefined): boolean {
 type ExistingSavedPlaceRow = {
   id: string;
   source_url: string | null;
+  source_type: string | null;
+  ai_note: string | null;
   place_id: string;
   place: {
     id: string;
@@ -108,7 +114,7 @@ async function findExistingSavedPlaceForUser(
   const { data, error } = await client
     .from('saved_places')
     .select(
-      'id, source_url, place_id, place:places(id, google_place_id, name, formatted_address, latitude, longitude)',
+      'id, source_url, source_type, ai_note, place_id, place:places(id, google_place_id, name, formatted_address, latitude, longitude)',
     )
     .eq('user_id', userId);
   if (error) {
@@ -127,44 +133,60 @@ async function findExistingSavedPlaceForUser(
 /**
  * Attach a resolved share's context to a saved place the user ALREADY has.
  *
- * Fill-if-empty, never destructive: `saved_places` is a single-source model,
- * so an existing post stays attached and a later, different post is preserved
- * rather than overwritten. `notes` is user-authored and is never written here —
- * generated cues belong in `ai_note`. Both writes are guarded on the column
- * still being empty, which makes concurrent jobs and retries converge.
+ * The POLICY is `lib/savedPlaceSourceMerge.ts` — the exact module the client
+ * uses, so the two never drift. `source_url` + `source_type` move as one
+ * identity, a different post is preserved whole, and an `ai_note` is stored
+ * only when this post is the one the saved place represents.
+ *
+ * Each write carries the row state it was planned against, so a concurrent job
+ * that won the empty source slot cannot then be described by this one's type
+ * or note. `notes` is user-authored and is never written here.
  */
 async function patchExistingSavedPlaceForUser(
   client: any,
-  savedPlaceId: string,
+  existing: {
+    id: string;
+    source_url?: string | null;
+    source_type?: string | null;
+    ai_note?: string | null;
+  },
   source: LegacySource,
   sourceUrl: string,
   autoNote?: string | null,
 ): Promise<void> {
-  const { error } = await client
-    .from('saved_places')
-    .update({ source_type: source, source_url: sourceUrl })
-    .eq('id', savedPlaceId)
-    .is('source_url', null);
-  if (error) {
-    console.log(
-      '[process-share-link] duplicate saved_place source attach failed',
-      error.message,
-    );
-  }
-  const note = typeof autoNote === 'string' ? autoNote.trim() : '';
-  if (note) {
-    const { error: noteError } = await client
+  const plan = planSavedPlaceEnrichment(
+    existing,
+    { sourceUrl, sourceType: source, aiNote: autoNote ?? null },
+    shareUrlKey,
+  );
+
+  const applyGuarded = async (guarded: any, label: string, noteGuard = false) => {
+    let query = client
       .from('saved_places')
-      .update({ ai_note: note })
-      .eq('id', savedPlaceId)
-      .is('ai_note', null);
-    if (noteError) {
-      console.log(
-        '[process-share-link] duplicate saved_place ai_note attach failed',
-        noteError.message,
-      );
+      .update(guarded.patch)
+      .eq('id', existing.id);
+    query = guarded.expectSourceUrl === null
+      ? query.is('source_url', null)
+      : query.eq('source_url', guarded.expectSourceUrl);
+    if (guarded.expectSourceType !== undefined) {
+      query = guarded.expectSourceType === null
+        ? query.is('source_type', null)
+        : query.eq('source_type', guarded.expectSourceType);
     }
-  }
+    if (noteGuard) query = query.is('ai_note', null);
+    const { error } = await query;
+    if (error) {
+      console.log(`[process-share-link] duplicate saved_place ${label} failed`, error.message);
+    }
+  };
+
+  if (plan.sourcePatch) await applyGuarded(plan.sourcePatch, 'source attach');
+  if (plan.sourceTypePatch) await applyGuarded(plan.sourceTypePatch, 'source type backfill');
+  if (plan.aiNotePatch) await applyGuarded(plan.aiNotePatch, 'ai_note attach', true);
+
+  console.log(
+    `[process-share-link] SAVE_ENRICHED savedPlaceId=${existing.id} source=${plan.source} aiNote=${plan.aiNote}`,
+  );
 }
 
 export type SaveResult = {
@@ -199,7 +221,7 @@ export async function saveForUser(args: {
       `[process-share-link] SAVE_DUPLICATE_SOURCE_URL_REUSED savedPlaceId=${existingForUser.id} placeId=${existingForUser.place.id}`,
     );
     await patchExistingSavedPlaceForUser(
-      client, existingForUser.id, source, sourceUrl, autoNote,
+      client, existingForUser, source, sourceUrl, autoNote,
     );
     await client.from('saved_places').update({
       category: categoryResolution.category,
@@ -294,13 +316,13 @@ export async function saveForUser(args: {
     if ((savedErr as any).code === '23505') {
       const { data: existingSaved } = await client
         .from('saved_places')
-        .select('id')
+        .select('id, source_url, source_type, ai_note')
         .eq('user_id', userId)
         .eq('place_id', placeId)
         .maybeSingle();
       if (existingSaved) {
         await patchExistingSavedPlaceForUser(
-          client, existingSaved.id, source, sourceUrl, autoNote,
+          client, existingSaved, source, sourceUrl, autoNote,
         );
         await client.from('saved_places').update({
           category: categoryResolution.category,

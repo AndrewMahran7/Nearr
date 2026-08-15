@@ -21,7 +21,13 @@ assert.match(quickCheck, /persistShareJobCandidate/);
 
 // Duplicate metadata saves must also be reclassified rather than retaining the
 // category written by an older resolver version.
-assert.match(metadata, /existingSaved\.id[\s\S]*category: categoryResolution\.category/);
+// (The enrichment call now takes the whole existing row, because the source
+// merge policy needs source_url/source_type/ai_note — so this pins the branch
+// itself: enrich, then reclassify, both scoped to that same row.)
+assert.match(
+  metadata,
+  /patchExistingSavedPlaceForUser\(\s*client, existingSaved,[\s\S]{0,400}category: categoryResolution\.category[\s\S]{0,400}\.eq\('id', existingSaved\.id\)/,
+);
 
 const provider = {
   placeName: 'Santa Cruz Mountain Brewing',
