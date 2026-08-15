@@ -54,10 +54,12 @@ Each entry:
 
 `groundTruth.verifiedBy` is required and must describe independent
 verification — reading the real og:title/description, real captions/
-transcript, or (for TikTok, where automated access is currently blocked from
-this environment) an honest `"unverified"` state with the reason. **Never**
-fill in `groundTruth` by running Nearr and copying its own answer. An entry
-whose `verifiedBy` just says "Nearr resolved it to X" should be rejected in
+transcript (for TikTok, a caption read from a web search result before ever
+running the URL through Nearr counts; TikTok's own extraction environment
+remains fragile enough that some entries may still need an honest
+`"unverified"` state with the reason instead). **Never** fill in
+`groundTruth` by running Nearr and copying its own answer. An entry whose
+`verifiedBy` just says "Nearr resolved it to X" should be rejected in
 review.
 
 ### Current status: honest Phase 1, not the 25-video target
@@ -65,25 +67,26 @@ review.
 The design target is ~5 per platform (25 total), diverse across evidence
 types (explicit speech, on-screen text only, caption-only, transcript city
 mention, list/roundup, hidden-location style, non-food, weak/no evidence).
-**What's actually in the corpus today is smaller** — 6 entries (2 Snapchat, 3
-YouTube, 1 Facebook, 1 TikTok acquisition-only, 0 Instagram) — because
-building the rest requires the same rigor already applied here: fetching a
-real public URL, reading its real content BEFORE running Nearr on it, and
-writing down how. That's genuinely slow to do by hand and wasn't rushed to
-hit a count. See "Expanding the corpus" below.
+**What's actually in the corpus today is smaller** — 8 entries (2 Snapchat, 3
+YouTube, 1 Facebook, 2 TikTok resolution-stage, 1 TikTok acquisition-only, 0
+Instagram) — because building the rest requires the same rigor already
+applied here: fetching a real public URL, reading its real content BEFORE
+running Nearr on it, and writing down how. That's genuinely slow to do by
+hand and wasn't rushed to hit a count. See "Expanding the corpus" below.
 
 **Instagram has zero entries.** No public Instagram URL was independently
 verified during this pass. Add one the same way as the others: find a real
 public reel/post, read its real caption, THEN add the entry.
 
-**TikTok has one acquisition-only entry.** TikTok's anti-bot layer blocked
-both `yt-dlp` and the official oEmbed endpoint from the environment this
-corpus was built in (same limitation documented in `docs/MEDIA_FALLBACK.md`).
-Its `groundTruth.hasIdentifiablePlace` is honestly `"unverified"`; it exists
-to guard the app-store-redirect bug (`forbiddenCandidates`), not to assert a
-correct place. Do not upgrade it to a resolution-stage gold case without
-first genuinely verifying the video's content (from a residential/mobile
-network, per the project's no-anti-bot-evasion constraint).
+**TikTok now has two resolution-stage entries**
+(`tiktok_coffee_shop_explicit_address_01`, `tiktok_nyc_restaurant_roundup_01`)
+verified live in production on 2026-08-15, once the media-worker was fixed
+to let `yt-dlp` download the picked CDN URL itself (`TikTokMediaResolver`'s
+`skipDirectUrl`) rather than re-fetching it directly — TikTok's CDN 403'd a
+direct fetch even with the correct `Referer` forwarded. The original
+acquisition-only entry (`tiktok_pizza_discovery_content_unverified_01`)
+stays as-is; it guards a different, still-relevant bug (the app-store
+redirect) and its content was never independently read.
 
 ## Expanding the corpus
 

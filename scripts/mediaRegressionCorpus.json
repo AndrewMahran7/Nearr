@@ -107,6 +107,42 @@
         "forbiddenRegions": ["OR", "WA"],
         "minDecision": "acquisition_stage_only"
       }
+    },
+    {
+      "id": "tiktok_coffee_shop_explicit_address_01",
+      "platform": "tiktok",
+      "url": "https://www.tiktok.com/@satexasfoodies/video/7433811014237326622",
+      "addedDate": "2026-08-15",
+      "groundTruth": {
+        "verifiedBy": "Read the video's own public caption text directly (via web search result snippet, before ever running it through Nearr): \"Hidden gem coffee shop in Northwest San Antonio, Texas located in the Palm Buddha plant nursery... Tuxedo Cat's Coffee 6075 Heath Rd, San Antonio, TX 78250\".",
+        "hasIdentifiablePlace": true,
+        "notes": "First TikTok URL to reach a genuinely correct auto_save in production during the 2026-08-15 TikTok media-acquisition pass -- proved live twice (jobs deb02498 and 4aaba923, both independently resolved to the identical correct place). Acquisition-stage note: TikTok's picked CDN URL (a <region>-webapp-prime.tiktok.com host) 403'd on a direct fetch even with the CDN's own reported Referer forwarded; only routing the download through yt-dlp's own bounded downloader (TikTokMediaResolver's skipDirectUrl) succeeded. Guards against that acquisition path regressing back to a silent no-op failure."
+      },
+      "expected": {
+        "contentCategory": "food",
+        "geographyHints": ["San Antonio", "TX"],
+        "forbiddenCandidates": ["<Null>", "null", "undefined"],
+        "forbiddenRegions": [],
+        "minDecision": "correct_auto_save_or_matching_picker"
+      }
+    },
+    {
+      "id": "tiktok_nyc_restaurant_roundup_01",
+      "platform": "tiktok",
+      "url": "https://www.tiktok.com/@theviplist/video/7285850230342290731",
+      "addedDate": "2026-08-15",
+      "groundTruth": {
+        "verifiedBy": "Read the video's own public caption text directly (via web search result snippet, before ever running it through Nearr): \"These 5 restaurants are actually worth the hype...go cry about it. #hype #nyc #viralfood #carbone #celebrity #top5 #guide\" -- an explicit 5-restaurant NYC list.",
+        "hasIdentifiablePlace": true,
+        "notes": "A genuine multi-place list (the same shape as youtube_south_oc_pizza_roundup_01 but for TikTok). Must never silently auto_save a single guessed restaurant out of the five named."
+      },
+      "expected": {
+        "contentCategory": "food",
+        "geographyHints": ["New York", "NY"],
+        "forbiddenCandidates": ["<Null>", "null", "undefined"],
+        "forbiddenRegions": [],
+        "minDecision": "multi_candidate_confirmation_or_manual_fallback"
+      }
     }
   ]
 }
