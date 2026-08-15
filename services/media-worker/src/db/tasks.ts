@@ -8,6 +8,17 @@ import type { WorkerConfig } from '../config/env.js';
 import type { MediaTask, ProgressStage } from '../types/media.js';
 import { log } from '../util/logger.js';
 
+/**
+ * Never lease more work than this process can start immediately. A lease is
+ * ownership, not prefetch: claiming beyond maxConcurrency hides queued work
+ * from other replicas and burns lease time before processing begins.
+ */
+export function effectiveClaimLimit(
+  cfg: Pick<WorkerConfig, 'claimBatchSize' | 'maxConcurrency'>,
+): number {
+  return Math.max(1, Math.min(cfg.claimBatchSize, cfg.maxConcurrency));
+}
+
 /** Simplified, user-facing parent progress copy keys (see docs/MEDIA_FALLBACK).
  *  The mobile client maps these to friendly strings; the worker never exposes
  *  ffmpeg/OCR/model internals to the client. */
@@ -35,7 +46,7 @@ export async function claimMediaTasks(
   cfg: WorkerConfig,
 ): Promise<MediaTask[]> {
   const { data, error } = await client.rpc('claim_media_tasks', {
-    p_limit: cfg.claimBatchSize,
+    p_limit: effectiveClaimLimit(cfg),
     p_lock_seconds: cfg.claimLockSeconds,
   });
   if (error) {

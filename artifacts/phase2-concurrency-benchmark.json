@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-14T04:05:09.033Z",
+  "fixture": "local synthetic 4s 320x568 H.264/AAC",
+  "results": [
+    {
+      "concurrency": 1,
+      "tasks": 8,
+      "failures": [],
+      "deterministicOutputs": true,
+      "peakActivePipelines": 1,
+      "wallMs": 14700,
+      "throughputTasksPerMinute": 32.65,
+      "taskLatencyMs": {
+        "p50": 1831,
+        "p95": 1970,
+        "max": 2003
+      },
+      "peakNodeRssBytes": 78917632,
+      "nodeCpuMs": 1204,
+      "tempBytes": 4003960,
+      "limitations": [
+        "Node RSS/CPU excludes ffmpeg child processes",
+        "no network, external provider, or database load"
+      ]
+    },
+    {
+      "concurrency": 2,
+      "tasks": 8,
+      "failures": [],
+      "deterministicOutputs": true,
+      "peakActivePipelines": 2,
+      "wallMs": 6841,
+      "throughputTasksPerMinute": 70.17,
+      "taskLatencyMs": {
+        "p50": 1663,
+        "p95": 1843,
+        "max": 1856
+      },
+      "peakNodeRssBytes": 73261056,
+      "nodeCpuMs": 1296,
+      "tempBytes": 4003960,
+      "limitations": [
+        "Node RSS/CPU excludes ffmpeg child processes",
+        "no network, external provider, or database load"
+      ]
+    },
+    {
+      "concurrency": 4,
+      "tasks": 8,
+      "failures": [],
+      "deterministicOutputs": true,
+      "peakActivePipelines": 4,
+      "wallMs": 3713,
+      "throughputTasksPerMinute": 129.28,
+      "taskLatencyMs": {
+        "p50": 1704,
+        "p95": 1956,
+        "max": 2013
+      },
+      "peakNodeRssBytes": 75317248,
+      "nodeCpuMs": 984,
+      "tempBytes": 4003960,
+      "limitations": [
+        "Node RSS/CPU excludes ffmpeg child processes",
+        "no network, external provider, or database load"
+      ]
+    }
+  ]
+}
