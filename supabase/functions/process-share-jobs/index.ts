@@ -1345,10 +1345,14 @@ async function processOne(admin: any, env: any, job: any): Promise<void> {
   // rather than throwing, so handleProcessingError's retry harness never saw
   // it. Classify first, and when nothing usable was collected, park the job
   // with a backoff instead of telling the user to find the place themselves.
+  // Candidates found on an EARLIER attempt count too: once the pipeline has
+  // produced usable candidates they must never be retried away, even if a
+  // later degraded attempt comes back empty.
+  const alreadyPersistedCandidates = persistedCandidateCount(job.candidate_payload);
   const providerFailureClass = classifyResolverFailure({
     decision: metadataResult.decision,
     failureReason: metadataResult.failureReason,
-    candidateCount: metadataResult.candidates.length,
+    candidateCount: Math.max(metadataResult.candidates.length, alreadyPersistedCandidates),
     warnings: result.warnings,
     retryAfterSeconds: (result.diagnostics as any)?.placesError?.retryAfterSeconds ?? null,
   });
@@ -1384,6 +1388,15 @@ async function processOne(admin: any, env: any, job: any): Promise<void> {
         locked_until: addSecondsIso(retryPlan.delaySeconds),
         progress_stage: 'metadata',
         last_error: `provider_retry:${metadataResult.failureReason ?? 'places_error'}`,
+        // Park whatever we already found so a degraded later attempt cannot
+        // erase it. Same mechanism the media path uses before falling back.
+        ...(metadataResult.candidates.length > 0
+          ? {
+              candidate_payload: buildCandidateReviewSnapshot(
+                metadataResult.candidates.map(safeCandidate),
+              ),
+            }
+          : {}),
       })
       .eq('id', job.id)
       .eq('status', 'processing_metadata')

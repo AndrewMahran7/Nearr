@@ -70,19 +70,67 @@ const retryOf = (outcome: Parameters<typeof classifyResolverFailure>[0]) =>
   }
 }
 
-// --- 13. Candidates already collected are never retried away ----------------
+// --- 13. Candidates + a real provider fault: preserve AND keep retrying -----
 {
-  // The exact regression that previously wiped metadata candidates: a later
-  // transient failure must not restart or discard an actionable job.
-  const withCandidates = {
+  // Address verification hit a provider fault, the resolver fell through to a
+  // plain search and produced 2 unverified candidates. Replaying the failed
+  // verification can still yield a verified single match, so the job is NOT
+  // finalized into a picker yet. Parking finalizes nothing, so the candidates
+  // are preserved either way.
+  const improvable = {
     decision: 'candidate_picker',
-    failureReason: 'places_error',
     candidateCount: 2,
-    warnings: ['places_http_error'],
+    warnings: ['address_verify_provider_error'],
   };
-  assert.equal(classifyResolverFailure(withCandidates), 'deterministic', 'candidates outrank a transient failure');
-  assert.equal(retryOf(withCandidates).action, 'degrade');
-  assert.equal(classifyResolverFailure({ failureReason: 'places_error', candidateCount: 1 }), 'deterministic');
+  assert.equal(
+    classifyResolverFailure(improvable),
+    'transient_provider',
+    'candidates do not suppress a retry that could still disambiguate them',
+  );
+  assert.equal(retryOf(improvable).action, 'retry');
+
+  // ...but a result that is ALREADY auto-savable is the best possible outcome.
+  // Retrying would only delay the save.
+  const best = {
+    decision: 'auto_save',
+    candidateCount: 1,
+    warnings: ['address_verify_provider_error'],
+  };
+  assert.equal(classifyResolverFailure(best), 'deterministic', 'never stall an auto-savable result');
+  assert.equal(retryOf(best).action, 'degrade');
+}
+
+// --- 3. Deterministic ambiguity must not trigger a pointless provider retry -
+{
+  // Two genuinely plausible places, every provider call succeeded. Replaying
+  // the identical successful request returns the identical two candidates.
+  const genuineAmbiguity = {
+    decision: 'candidate_picker',
+    candidateCount: 2,
+    warnings: ['address_present_but_no_verified_business'],
+  };
+  assert.equal(classifyResolverFailure(genuineAmbiguity), 'deterministic');
+  assert.equal(retryOf(genuineAmbiguity).action, 'degrade', 'no retry without an actual provider fault');
+  assert.equal(classifyResolverFailure({ decision: 'multi_candidate_confirmation', candidateCount: 3 }), 'deterministic');
+}
+
+// --- 4. Once candidates exist they are never retried away ------------------
+{
+  // index.ts floors candidateCount with persistedCandidateCount(job), so a
+  // degraded later attempt returning zero cannot restart the retry loop and
+  // lose what an earlier attempt already found.
+  const floored = Math.max(0, /* persisted */ 2);
+  assert.equal(
+    classifyResolverFailure({ failureReason: 'places_error', candidateCount: floored }),
+    'transient_provider',
+    'still retryable while attempts remain',
+  );
+  const spent = planResolverRetry({
+    failureClass: classifyResolverFailure({ failureReason: 'places_error', candidateCount: floored }),
+    attempts: 5,
+    maxAttempts: 5,
+  });
+  assert.equal(spent.action, 'degrade', 'exhaustion routes the preserved candidates to the picker');
 }
 
 // --- Unknown reasons default to asking the user, never to a retry loop ------
@@ -187,8 +235,53 @@ assert.ok(
 // guarded on the row still being in processing_metadata.
 assert.match(
   job,
-  /locked_until: addSecondsIso\(retryPlan\.delaySeconds\)[\s\S]{0,320}\.eq\('status', 'processing_metadata'\)/,
+  /locked_until: addSecondsIso\(retryPlan\.delaySeconds\)[\s\S]{0,900}\.eq\('status', 'processing_metadata'\)/,
   'a retry can never resurrect a cancelled or already-terminal job',
+);
+// Candidates found on an earlier attempt are parked on the row so a degraded
+// later attempt cannot erase them, and floor the classifier's candidate count.
+assert.match(job, /candidate_payload: buildCandidateReviewSnapshot\(/, 'park preserves candidates');
+assert.match(
+  job,
+  /Math\.max\(metadataResult\.candidates\.length, alreadyPersistedCandidates\)/,
+  'once candidates exist they are never retried away',
+);
+
+// --- Concern 2: the persisted lease is what actually gates the reclaim ------
+const claimSql = readFileSync(
+  join(process.cwd(), 'supabase/migrations/20260731000001_share_jobs.sql'),
+  'utf8',
+);
+// The park writes now + the CALCULATED delay, not a fixed generic lease.
+assert.match(
+  job,
+  /locked_until: addSecondsIso\(retryPlan\.delaySeconds\)/,
+  'locked_until is the calculated backoff, not a constant',
+);
+assert.doesNotMatch(
+  job,
+  /locked_until: addSecondsIso\((?:120|300|600)\)/,
+  'no generic multi-minute lease overrides the calculated delay',
+);
+// claim_share_jobs re-claims a processing_metadata row the moment its lease
+// expires, so a shorter locked_until genuinely pulls the retry earlier.
+assert.match(
+  claimSql,
+  /c\.status = 'processing_metadata' and c\.locked_until is not null and c\.locked_until < now\(\)/,
+  'an expired lease on a processing row is reclaimable',
+);
+// attempts advance on claim, and the claim refuses once the budget is spent.
+assert.match(claimSql, /attempts = sj\.attempts \+ 1/, 'attempts advance on every claim');
+assert.match(claimSql, /where c\.attempts < c\.max_attempts/, 'max attempts stops the reclaim');
+// The sweep cadence is the real quantization on the schedule.
+const workerSql = readFileSync(
+  join(process.cwd(), 'supabase/migrations/20260731000003_share_jobs_worker.sql'),
+  'utf8',
+);
+assert.match(
+  workerSql,
+  /'process-share-jobs-sweep',[\s\S]{0,40}'\* \* \* \* \*'/,
+  'sweep runs every minute — the real quantization on the retry schedule',
 );
 
 console.log('PASS provider failure classification, bounded retry, and metadata-path wiring');

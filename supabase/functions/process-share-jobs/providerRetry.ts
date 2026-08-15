@@ -35,6 +35,12 @@ const TRANSIENT_FAILURE_REASONS: ReadonlySet<string> = new Set([
 const TRANSIENT_WARNINGS: ReadonlySet<string> = new Set([
   'places_http_error',
   'places_api_error',
+  // Address verification hit a provider fault rather than concluding anything
+  // about the address. The resolver falls through to a plain text search, so
+  // the job can still end up WITH candidates that a successful verification
+  // would have improved (a verified business at the extracted address, scored
+  // far higher, and often collapsing an ambiguous pair to one).
+  'address_verify_provider_error',
 ]);
 
 /**
@@ -69,23 +75,36 @@ export type ResolverOutcome = {
 /**
  * Classify a resolver outcome.
  *
- * Candidates win over everything: if usable candidates were already collected,
- * the job is actionable NOW and must never be retried into oblivion — that is
- * the "later failure must not erase earlier evidence" rule.
+ * Candidates are NEVER destroyed by this decision — parking a job leaves the
+ * whole resolver result untouched and finalizes nothing. So the question is
+ * not "do we have candidates?" but "did a provider actually fault, and could
+ * replaying it still improve the answer?":
+ *
+ *   • provider faulted, result not yet auto-savable  → retry (candidates kept)
+ *   • provider faulted, already auto_save            → deterministic; that is
+ *       the best possible outcome, retrying only delays the save
+ *   • no provider fault (genuine ambiguity/no-match) → deterministic; replaying
+ *       the same successful call returns the same answer
  */
 export function classifyResolverFailure(outcome: ResolverOutcome | null | undefined): ResolverFailureClass {
   if (!outcome) return 'deterministic';
-  if ((outcome.candidateCount ?? 0) > 0) return 'deterministic';
 
   const reason = (outcome.failureReason ?? '').trim();
+  // An explicit deterministic reason means the provider answered successfully
+  // and the resolver concluded something real. That wins over a stale warning.
   if (reason && DETERMINISTIC_FAILURE_REASONS.has(reason)) return 'deterministic';
-  if (reason && TRANSIENT_FAILURE_REASONS.has(reason)) return 'transient_provider';
 
   const warnings = Array.isArray(outcome.warnings) ? outcome.warnings : [];
-  if (warnings.some((w) => typeof w === 'string' && TRANSIENT_WARNINGS.has(w))) {
-    return 'transient_provider';
+  const providerFaulted =
+    (!!reason && TRANSIENT_FAILURE_REASONS.has(reason)) ||
+    warnings.some((w) => typeof w === 'string' && TRANSIENT_WARNINGS.has(w));
+  if (!providerFaulted) return 'deterministic';
+
+  // Already the best result the pipeline can produce — save it, don't stall it.
+  if ((outcome.candidateCount ?? 0) > 0 && outcome.decision === 'auto_save') {
+    return 'deterministic';
   }
-  return 'deterministic';
+  return 'transient_provider';
 }
 
 // ---------------------------------------------------------------------------
