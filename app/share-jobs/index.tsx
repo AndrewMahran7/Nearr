@@ -64,6 +64,7 @@ import {
   getSavedPlacesCacheSnapshot,
   removeSavedPlaceFromCache,
   restoreSavedPlacesCache,
+  upsertSavedPlaceIntoCache,
 } from '@/hooks/useSavedPlaces';
 import { trackEvent } from '@/lib/analytics';
 import { autoSaveUndoElapsedBucket } from '@/lib/autoSaveUndo';
@@ -426,6 +427,22 @@ function ShareJobsQueueScreen() {
     }
   }
 
+  /**
+   * Follow a completed row to the exact place that row created.
+   *
+   * The queue already holds the full saved_places row it is rendering, so we
+   * seed the shared saved-places cache with it before navigating. The map's
+   * focus resolver then finds the exact `saved_places.id` on its very first
+   * pass — no network round-trip, no waiting on realtime, and no chance of the
+   * map concluding "this place is no longer available" just because its own
+   * cached list predates a save the worker made seconds ago. (The map still
+   * force-refetches once if the id is genuinely absent.)
+   */
+  function openCompletedSave(item: RecentAutoSave) {
+    upsertSavedPlaceIntoCache(item.savedPlace);
+    leaveQueueForMap({ savedPlaceId: item.savedPlaceId, source: 'share_job_completed' });
+  }
+
   function renderRecentAutoSave(item: RecentAutoSave) {
     const busy =
       actingId === item.savedPlaceId ||
@@ -434,9 +451,7 @@ function ShareJobsQueueScreen() {
     const category = CATEGORY_LABELS[displayCategory(item.savedPlace.category)];
     return (
       <Pressable
-        onPress={() =>
-          leaveQueueForMap({ savedPlaceId: item.savedPlaceId, source: 'share_job_completed' })
-        }
+        onPress={() => openCompletedSave(item)}
         disabled={busy}
         style={({ pressed }) => [styles.row, pressed ? styles.rowPressed : null]}
         accessibilityRole="button"

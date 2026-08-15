@@ -76,6 +76,7 @@
     "test:queue-save": "ts-node -P scripts/tsconfig.json scripts/testQueueSaveResolution.ts",
     "test:queue-interactions": "ts-node -P scripts/tsconfig.json scripts/testQueueInteractionContracts.ts",
     "test:queue-place-nav": "ts-node -P scripts/tsconfig.json scripts/testQueuePlaceNavigation.ts",
+    "test:queue-place-focus": "ts-node -P scripts/tsconfig.json scripts/testQueueSavedPlaceFocus.ts",
     "test:share-job-result": "ts-node -P scripts/tsconfig.json scripts/testShareJobResult.ts",
     "test:source-enrichment": "ts-node -P scripts/tsconfig.json scripts/testSavedPlaceSourceEnrichment.ts",
     "test:map-group-focus": "ts-node -P scripts/tsconfig.json scripts/testMapGroupFocus.ts",

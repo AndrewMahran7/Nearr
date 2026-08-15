@@ -138,9 +138,13 @@ import { trackEvent } from '@/lib/analytics';
 import { recordBreadcrumb } from '@/lib/breadcrumbs';
 import { setLocationWatcherState } from '@/lib/diagnosticContext';
 import {
+  decideSavedPlaceFocus,
   findSavedPlaceForOpen,
   isOpenExistingPlaceSource,
+  isOpenSavedPlaceRequestHandled,
+  markOpenSavedPlaceRequestHandled,
   openSavedPlaceMessage,
+  savedPlaceFocusKey,
   shouldExpandSavedPlaceDetails,
 } from '@/lib/openSavedPlace';
 import { isAsyncShareJobsEnabled } from '@/lib/featureFlags';
@@ -461,15 +465,17 @@ export default function MapScreen() {
     () => createStyles(colors, typography, safeTopInset, topChromeClearance),
     [colors, typography, safeTopInset, topChromeClearance],
   );
-  // Optional deep-link param: when present, the map should center on this
-  // saved place and open its preview card. Set by "Show on map" actions on
-  // the place detail screen and saved-place cards. We track the last id we
-  // already handled in `handledTargetIdRef` so we don't re-animate every
-  // render or fight the user's panning.
+  // Optional deep-link params: when present, the map should center on this
+  // saved place and open its preview card. Set by "Show on map" actions, the
+  // completed queue row, share-job completion, and notifications.
+  // `openRequestId` identifies ONE navigation intent — it is what gets
+  // consumed, so the same place can be opened again later, while a stale
+  // param cannot re-open a place the user has already closed.
   const {
     savedPlaceId: rawSavedPlaceId,
     savedPlaceGoogleId: rawSavedPlaceGoogleId,
     placeSource: rawPlaceSource,
+    openRequestId: rawOpenRequestId,
     reminderOpen: rawReminderOpen,
     reminderSource: rawReminderSource,
     nearbyCount: rawNearbyCount,
@@ -478,6 +484,7 @@ export default function MapScreen() {
     savedPlaceId?: string | string[];
     savedPlaceGoogleId?: string | string[];
     placeSource?: string | string[];
+    openRequestId?: string | string[];
     reminderOpen?: string | string[];
     reminderSource?: string | string[];
     nearbyCount?: string | string[];
@@ -486,6 +493,7 @@ export default function MapScreen() {
   const savedPlaceId = firstParam(rawSavedPlaceId);
   const savedPlaceGoogleId = firstParam(rawSavedPlaceGoogleId);
   const placeSource = firstParam(rawPlaceSource);
+  const openRequestId = firstParam(rawOpenRequestId);
   const reminderOpen = parseBoolParam(rawReminderOpen);
   const reminderSourceRaw = firstParam(rawReminderSource);
   const reminderSource: ReminderSource =
@@ -496,7 +504,13 @@ export default function MapScreen() {
         : 'unknown';
   const nearbyCount = parsePositiveIntParam(rawNearbyCount);
   const mapGroupId = firstParam(rawMapGroupId);
-  const { data: liveData, loading: liveLoading, refresh, revalidate } = useSavedPlaces();
+  const {
+    data: liveData,
+    loading: liveLoading,
+    refreshing: liveRefreshing,
+    refresh,
+    revalidate,
+  } = useSavedPlaces();
   const mapRef = useRef<MapView | null>(null);
   const markerRefs = useRef<Record<string, ComponentRef<typeof Marker> | null>>({});
   const demo = isDemoMode();
@@ -775,10 +789,19 @@ export default function MapScreen() {
   // Set to true when the user pans or zooms the map so auto-centering
   // effects don't override the user's chosen viewport.
   const hasUserMovedRef = useRef(false);
-  // Tracks which `savedPlaceId` deep-link we've already focused on. Reset
-  // implicitly when the param changes to a new id so coming back to the
-  // same place from a different card still triggers the focus animation.
+  // Legacy latch for navigations that carry a bare `savedPlaceId` and no
+  // single-use `openRequestId` (Home's "Show on map", /place/[id], add-place,
+  // cold deep links). Behaviour for those is unchanged: one focus per id per
+  // map mount. Navigations built by `resolveOpenSavedPlaceRoute` consume the
+  // module-level request ledger instead, which is what lets the SAME place be
+  // opened again from the queue later.
   const handledTargetIdRef = useRef<string | null>(null);
+  // The at-most-one forced refetch we're allowed per open request (see
+  // `decideSavedPlaceFocus`). `settled` flips when the fetch finishes so the
+  // "place is genuinely gone" verdict is never reached while it's in flight.
+  const focusRefreshRef = useRef<{ key: string; settled: boolean } | null>(null);
+  // Bumped when that refetch settles, purely to re-run the focus effect.
+  const [focusRefreshTick, setFocusRefreshTick] = useState(0);
   const handledMapGroupIdRef = useRef<string | null>(null);
   const handledReminderAnalyticsRef = useRef<string | null>(null);
   const shownMissingReminderRef = useRef<string | null>(null);
@@ -1108,50 +1131,95 @@ export default function MapScreen() {
   }, [nearbyCount, reminderOpen, reminderSource, savedPlaceId]);
 
   useEffect(() => {
-    if (!mapReady) return;
-    // A "View place" / already-saved / notification open provides a
-    // saved_places id and, when available, the canonical google_place_id as a
-    // fallback. Handle whichever is present.
-    const focusKey = savedPlaceId || savedPlaceGoogleId;
-    if (!focusKey) return;
-    if (handledTargetIdRef.current === focusKey) return;
-    if (validPlaces.length === 0) return; // wait for data to arrive
+    // A "View place" / completed-queue-row / already-saved / notification open
+    // provides a saved_places id and, when available, the canonical
+    // google_place_id as a fallback. `openRequestId` (minted per navigation)
+    // is what we actually consume, so the SAME place can be opened again later.
+    const requestKey = savedPlaceFocusKey({
+      openRequestId,
+      savedPlaceId,
+      googlePlaceId: savedPlaceGoogleId,
+    });
     // Resolve by saved_places.id FIRST, then by the stable google_place_id.
     // This is what makes "View place" reliably open the existing place even
     // when the exact saved_places id can't be matched (deleted-then-re-saved,
     // or a stale id) — one tested resolver (lib/openSavedPlace).
-    const target = findSavedPlaceForOpen(validPlaces, {
-      savedPlaceId,
-      googlePlaceId: savedPlaceGoogleId,
+    const target = requestKey
+      ? findSavedPlaceForOpen(validPlaces, {
+          savedPlaceId,
+          googlePlaceId: savedPlaceGoogleId,
+        })
+      : null;
+    const refreshState =
+      focusRefreshRef.current?.key === requestKey ? focusRefreshRef.current : null;
+    const decision = decideSavedPlaceFocus({
+      requestKey,
+      handled: openRequestId
+        ? isOpenSavedPlaceRequestHandled(openRequestId)
+        : handledTargetIdRef.current === requestKey,
+      mapReady,
+      found: !!target,
+      // A forced refetch reports through `refreshing`, not `loading`; both mean
+      // "the answer isn't in yet".
+      loading: liveLoading || liveRefreshing,
+      refreshRequested: !!refreshState,
+      refreshSettled: !!refreshState?.settled,
     });
-    if (!target) {
-      // Not in the current list. If saved places are still loading, WAIT — a
-      // freshly-saved place (or a cold-cache deep link) may not have hydrated
-      // yet. Only give up (mark handled) once loading has settled, so we never
-      // refocus-loop on a genuinely-absent id (e.g. deleted on another device).
-      if (liveLoading) return;
-      handledTargetIdRef.current = focusKey;
-      if (reminderOpen && shownMissingReminderRef.current !== focusKey) {
-        shownMissingReminderRef.current = focusKey;
+
+    if (decision === 'idle' || decision === 'wait') return;
+
+    // Explicit consumption: a request is answered exactly once, whether the
+    // answer was "here it is" or "it is gone". The module ledger outlives a map
+    // remount, so a stale param left in the route can never re-open the place.
+    const consumeRequest = () => {
+      handledTargetIdRef.current = requestKey;
+      markOpenSavedPlaceRequestHandled(openRequestId);
+    };
+
+    // The list we have does not contain the target. Ask for exactly ONE
+    // authoritative refetch before concluding anything: the map tab is
+    // long-lived and its cached list can predate a place the worker saved
+    // seconds ago. Bounded by `focusRefreshRef` — never a retry loop.
+    if (decision === 'refresh') {
+      if (!requestKey) return;
+      focusRefreshRef.current = { key: requestKey, settled: false };
+      void refresh().finally(() => {
+        if (focusRefreshRef.current?.key === requestKey) {
+          focusRefreshRef.current = { key: requestKey, settled: true };
+        }
+        setFocusRefreshTick((tick) => tick + 1);
+      });
+      return;
+    }
+
+    if (decision === 'missing') {
+      // Consumed: the request is answered ("it isn't there"), so it can never
+      // be retried on a later render or after a remount.
+      consumeRequest();
+      if (reminderOpen && shownMissingReminderRef.current !== requestKey) {
+        shownMissingReminderRef.current = requestKey;
         setReminderContextSavedPlaceId(null);
         showSnackbar('Could not find that saved place. Showing your map.', null);
       } else if (
         isOpenExistingPlaceSource(placeSource) &&
-        shownMissingReminderRef.current !== focusKey
+        shownMissingReminderRef.current !== requestKey
       ) {
-        // An already-saved / notification open whose place no longer exists.
-        // Recover locally with a friendly message — never the error boundary.
-        shownMissingReminderRef.current = focusKey;
+        // An already-saved / queue / notification open whose place no longer
+        // exists. Recover locally with a friendly message and NO selection —
+        // never a wrong place, never the error boundary.
+        shownMissingReminderRef.current = requestKey;
         showSnackbar('This place is no longer available.', null);
       }
       recordBreadcrumb('saved_places_fetch_completed', {
         savedPlaceId: savedPlaceId ?? null,
         result: 'open_target_not_found',
       });
-      if (__DEV__) console.log('[map] target id not found', focusKey);
+      if (__DEV__) console.log('[map] target id not found', requestKey);
       return;
     }
-    handledTargetIdRef.current = focusKey;
+
+    if (!target) return; // unreachable for 'focus'; keeps the deref honest
+    consumeRequest();
     // A deep link is an explicit "show me THIS place" instruction, so an
     // unrelated category filter left over from earlier is cleared rather than
     // silently hiding everything around the target. (The selected place is
@@ -1162,6 +1230,7 @@ export default function MapScreen() {
     }
     didFitRef.current = true;
     try {
+      // The SAME path a manual marker tap takes: camera to the place, card open.
       selectPlace(target);
       if (shouldExpandSavedPlaceDetails(placeSource)) {
         setPreviewExpanded(true);
@@ -1173,7 +1242,19 @@ export default function MapScreen() {
     } catch (err) {
       console.warn('[map] focus failed', (err as Error)?.message ?? err);
     }
-  }, [savedPlaceId, savedPlaceGoogleId, placeSource, mapReady, validPlaces, profile, liveLoading, reminderOpen]);
+  }, [
+    savedPlaceId,
+    savedPlaceGoogleId,
+    openRequestId,
+    placeSource,
+    mapReady,
+    validPlaces,
+    profile,
+    liveLoading,
+    liveRefreshing,
+    focusRefreshTick,
+    reminderOpen,
+  ]);
 
   useEffect(() => {
     if (!mapGroupId) return;

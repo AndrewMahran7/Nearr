@@ -16,9 +16,17 @@
  *   `google_place_id` (the stable identity of an already-saved place), so
  *   "View place" reliably opens the place that is actually on the user's map.
  *
- * PURE — no React Native / router imports, no I/O. Unit-tested from ts-node.
- * The screen supplies the router; this module only decides the validated route
- * and resolves the target row from a list.
+ * Why the request id exists (the "tap the same place twice" no-op):
+ *   The map latched the target by IDENTIFIER and kept that latch in a ref for
+ *   the life of the (long-lived, already-mounted) map tab. Opening place A a
+ *   second time therefore navigated with byte-identical params and was
+ *   swallowed by the latch — the queue closed, the map appeared, and nothing
+ *   was selected. Every navigation now mints a single-use `openRequestId`, so
+ *   the intent — not the place — is what gets consumed exactly once.
+ *
+ * No React Native / router imports and no I/O. Unit-tested from ts-node. The
+ * screen supplies the router; this module only decides the validated route,
+ * resolves the target row from a list, and owns the consumed-request ledger.
  */
 
 /** Where an "open existing place" navigation originated (breadcrumbs only). */
@@ -54,14 +62,116 @@ export function validId(value: unknown): string | null {
  * throws and ALWAYS returns a navigable target: a bare `/(tabs)/map` when no
  * usable identifier is present, so a malformed/backward-compatible payload can
  * never reach the global error boundary.
+ *
+ * Every call mints a fresh single-use `openRequestId`. That is what makes
+ * "open place A, close it, open place A again" work on an already-mounted map:
+ * the params always differ from the previous navigation (so the tab actually
+ * re-renders with a new target) and the map consumes the REQUEST rather than
+ * the place id.
  */
 export function resolveOpenSavedPlaceRoute(args: OpenSavedPlaceArgs): MapRouteTarget {
   const savedPlaceId = validId(args.savedPlaceId);
   const googlePlaceId = validId(args.googlePlaceId);
-  const params: Record<string, string> = { placeSource: args.source };
+  const params: Record<string, string> = {
+    placeSource: args.source,
+    openRequestId: nextOpenSavedPlaceRequestId(),
+  };
   if (savedPlaceId) params.savedPlaceId = savedPlaceId;
   if (googlePlaceId) params.savedPlaceGoogleId = googlePlaceId;
   return { pathname: '/(tabs)/map', params };
+}
+
+// ---------------------------------------------------------------------------
+// Single-use open requests: the navigation INTENT, tracked separately from the
+// place it points at.
+// ---------------------------------------------------------------------------
+
+let openRequestSequence = 0;
+
+/** Mint a unique id for one "open this saved place" navigation. */
+export function nextOpenSavedPlaceRequestId(): string {
+  openRequestSequence += 1;
+  return `open-${Date.now().toString(36)}-${openRequestSequence.toString(36)}`;
+}
+
+// Consumed requests live at MODULE level, not in a screen ref, so a stale
+// `openRequestId` left in the route params cannot re-open the place after the
+// map tab remounts. Bounded so a long session can never grow it without limit.
+const MAX_HANDLED_REQUESTS = 32;
+const handledOpenRequests = new Set<string>();
+
+export function isOpenSavedPlaceRequestHandled(key: string | null | undefined): boolean {
+  const id = validId(key);
+  return id ? handledOpenRequests.has(id) : false;
+}
+
+/** Mark a request consumed — the map calls this once it has focused the place
+ *  OR concluded the place genuinely no longer exists. Both are terminal. */
+export function markOpenSavedPlaceRequestHandled(key: string | null | undefined): void {
+  const id = validId(key);
+  if (!id) return;
+  handledOpenRequests.add(id);
+  while (handledOpenRequests.size > MAX_HANDLED_REQUESTS) {
+    const oldest = handledOpenRequests.values().next().value as string | undefined;
+    if (!oldest) break;
+    handledOpenRequests.delete(oldest);
+  }
+}
+
+/** Test-only reset. Never called from app code. */
+export function resetOpenSavedPlaceRequests(): void {
+  handledOpenRequests.clear();
+  openRequestSequence = 0;
+}
+
+/**
+ * The key the map latches on. The single-use request id when the navigation
+ * carries one; otherwise the identifier itself, which preserves the pre-existing
+ * behavior for cold-start deep links that only ever supply `savedPlaceId`.
+ */
+export function savedPlaceFocusKey(args: {
+  openRequestId?: string | null;
+  savedPlaceId?: string | null;
+  googlePlaceId?: string | null;
+}): string | null {
+  return (
+    validId(args.openRequestId) ?? validId(args.savedPlaceId) ?? validId(args.googlePlaceId)
+  );
+}
+
+/**
+ * What the map should do with the current focus target, as one PURE decision.
+ *
+ *   idle    — nothing requested, or this request is already consumed
+ *   wait    — the request stands; data (or the map itself) is not ready yet
+ *   refresh — the target is not in the loaded list; force ONE refetch
+ *   focus   — the exact saved place is available; select it
+ *   missing — refreshed and settled, and the place genuinely is not there
+ *
+ * `refresh` fires at most once per request (the caller passes back
+ * `refreshRequested`), so a deleted place can never produce a refetch loop.
+ */
+export type SavedPlaceFocusDecision = 'idle' | 'wait' | 'refresh' | 'focus' | 'missing';
+
+export function decideSavedPlaceFocus(args: {
+  requestKey: string | null;
+  handled: boolean;
+  mapReady: boolean;
+  found: boolean;
+  /** Saved places are being fetched right now (initial OR forced refresh). */
+  loading: boolean;
+  /** A refresh has already been asked for on behalf of THIS request. */
+  refreshRequested: boolean;
+  /** That refresh has finished (resolved or rejected). */
+  refreshSettled: boolean;
+}): SavedPlaceFocusDecision {
+  if (!args.requestKey || args.handled) return 'idle';
+  if (!args.mapReady) return 'wait';
+  if (args.found) return 'focus';
+  if (args.loading) return 'wait';
+  if (!args.refreshRequested) return 'refresh';
+  if (!args.refreshSettled) return 'wait';
+  return 'missing';
 }
 
 /** True when a `placeSource` route param came from opening an existing place
