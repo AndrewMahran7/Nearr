@@ -273,8 +273,14 @@ export type AddressVerification =
         | 'geocode_failed'
         | 'no_candidates_near_address'
         | 'name_mismatch'
-        | 'no_business_near_address';
+        | 'no_business_near_address'
+        // The provider call itself failed (transport, timeout, or a non-OK
+        // Google status). NOT a statement about whether a business exists —
+        // callers must treat this as retryable, never as a no-match.
+        | 'provider_error';
       geocoded: GeocodedAddress | null;
+      /** Present only for `provider_error`; drives backoff. */
+      retryAfterSeconds?: number;
     };
 
 /**
@@ -304,15 +310,26 @@ export async function verifyPlaceAtAddressServer(
   try {
     const res = await fetch(`${PLACES_BASE}?${params}`);
     if (!res.ok) {
-      return { status: 'failed', reason: 'no_business_near_address', geocoded };
+      // A 429/5xx says nothing about what is at this address.
+      return {
+        status: 'failed',
+        reason: 'provider_error',
+        geocoded,
+        ...(parseRetryAfter(res.headers.get('retry-after')) != null
+          ? { retryAfterSeconds: parseRetryAfter(res.headers.get('retry-after'))! }
+          : {}),
+      };
     }
     json = await res.json();
   } catch {
-    return { status: 'failed', reason: 'no_business_near_address', geocoded };
+    // Transport failure or timeout — same reasoning as above.
+    return { status: 'failed', reason: 'provider_error', geocoded };
   }
   const status: string = json?.status ?? 'UNKNOWN';
+  // ZERO_RESULTS is a real answer ("nothing there"). Any other non-OK status is
+  // a provider fault (OVER_QUERY_LIMIT, UNKNOWN_ERROR, …).
   if (status !== 'OK' && status !== 'ZERO_RESULTS') {
-    return { status: 'failed', reason: 'no_business_near_address', geocoded };
+    return { status: 'failed', reason: 'provider_error', geocoded };
   }
   const raw: any[] = Array.isArray(json.results) ? json.results : [];
   const all: PlacesCandidate[] = raw.map((r: any) => ({

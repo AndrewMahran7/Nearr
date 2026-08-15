@@ -56,6 +56,7 @@
     "test:share-jobs-realtime": "ts-node -P scripts/tsconfig.json scripts/testShareJobsRealtime.ts",
     "test:live-location": "ts-node -P scripts/tsconfig.json scripts/testLiveLocation.ts",
     "test:place-share": "ts-node -P scripts/tsconfig.json scripts/testPlaceShare.ts",
+    "test:provider-retry": "ts-node -P scripts/tsconfig.json scripts/testProviderRetry.ts",
     "test:place-detail-ui": "ts-node -P scripts/tsconfig.json scripts/testSavedPlaceDetailUi.ts",
     "test:photo-carousel": "ts-node -P scripts/tsconfig.json scripts/testPhotoCarousel.ts",
     "test:map-visibility": "ts-node -P scripts/tsconfig.json scripts/testMapVisibility.ts",

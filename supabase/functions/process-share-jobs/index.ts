@@ -36,6 +36,11 @@ import { generateAiPlaceNote, persistAiNoteSupplementally } from '../../../lib/a
 
 import { submitPushToUser, checkExpoReceipts, type TicketRef } from './push.ts';
 import {
+  classifyResolverFailure,
+  formatResolverRetryLog,
+  planResolverRetry,
+} from './providerRetry.ts';
+import {
   planFromResolverDecision,
   buildCompletedNotification,
   buildMediaResultNotification,
@@ -1333,6 +1338,63 @@ async function processOne(admin: any, env: any, job: any): Promise<void> {
     rawResolverCandidates: result.candidates.slice(0, 10).map(safeCandidate),
     plausibleCandidates: plausibleCandidates.slice(0, 10).map(safeCandidate),
   };
+
+  // ---- transient provider failure -> retry, don't blame the user ----------
+  // A Google Places 429/5xx/timeout previously fell straight through to
+  // needs_help(manual_search): the resolver RETURNS `failed/places_error`
+  // rather than throwing, so handleProcessingError's retry harness never saw
+  // it. Classify first, and when nothing usable was collected, park the job
+  // with a backoff instead of telling the user to find the place themselves.
+  const providerFailureClass = classifyResolverFailure({
+    decision: metadataResult.decision,
+    failureReason: metadataResult.failureReason,
+    candidateCount: metadataResult.candidates.length,
+    warnings: result.warnings,
+    retryAfterSeconds: (result.diagnostics as any)?.placesError?.retryAfterSeconds ?? null,
+  });
+  const jobAttempts = typeof job.attempts === 'number' ? job.attempts : 1;
+  const jobMaxAttempts = typeof job.max_attempts === 'number' ? job.max_attempts : 5;
+  const retryPlan = planResolverRetry({
+    failureClass: providerFailureClass,
+    attempts: jobAttempts,
+    maxAttempts: jobMaxAttempts,
+    retryAfterSeconds: (result.diagnostics as any)?.placesError?.retryAfterSeconds ?? null,
+  });
+  if (providerFailureClass === 'transient_provider') {
+    console.log(
+      formatResolverRetryLog({
+        jobId: job.id,
+        step: 'metadata_places',
+        failureClass: providerFailureClass,
+        failureCode: metadataResult.failureReason ?? null,
+        plan: retryPlan,
+        attempts: jobAttempts,
+        maxAttempts: jobMaxAttempts,
+      }),
+    );
+  }
+  if (retryPlan.action === 'retry') {
+    // Reuse the EXISTING lease: claim_share_jobs re-claims a
+    // processing_metadata row once locked_until passes, and already refuses
+    // once attempts >= max_attempts. No new retry system, no migration.
+    // The guard on status keeps a cancelled job cancelled.
+    const { data: parked } = await admin
+      .from('share_jobs')
+      .update({
+        locked_until: addSecondsIso(retryPlan.delaySeconds),
+        progress_stage: 'metadata',
+        last_error: `provider_retry:${metadataResult.failureReason ?? 'places_error'}`,
+      })
+      .eq('id', job.id)
+      .eq('status', 'processing_metadata')
+      .select('id')
+      .maybeSingle();
+    if (parked) return;
+    // Status moved underneath us (cancelled/terminal) — fall through to the
+    // normal routing rather than resurrecting the job.
+    console.log(`[share-job] provider_retry_skipped job_id=${job.id} reason=status_changed`);
+    return;
+  }
 
   const plan = planFromResolverDecision({
     decision: metadataResult.decision,
