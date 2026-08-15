@@ -99,6 +99,7 @@
     "eval:media-autosave": "ts-node -P scripts/tsconfig.json scripts/evalMediaAutoSave.ts",
     "test:place-share-source": "ts-node -P scripts/tsconfig.json scripts/testPlaceShareSource.ts",
     "test:save-navigation": "ts-node -P scripts/tsconfig.json scripts/testSaveCompletionNavigation.ts",
+    "test:transient-message": "ts-node -P scripts/tsconfig.json scripts/testTransientMessage.ts",
     "test:save-completion-contracts": "ts-node -P scripts/tsconfig.json scripts/testSaveCompletionContracts.ts",
     "test:wrong-place": "ts-node -P scripts/tsconfig.json scripts/testWrongPlaceCorrection.ts",
     "test:wrong-place-mutation": "ts-node -P scripts/tsconfig.json scripts/testWrongPlaceMutationContracts.ts",

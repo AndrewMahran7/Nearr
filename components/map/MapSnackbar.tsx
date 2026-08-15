@@ -11,6 +11,7 @@ import { Animated, Pressable, StyleSheet, Text } from 'react-native';
 
 import { Radius, Spacing } from '@/constants';
 import { useTheme } from '@/lib/theme';
+import { TRANSIENT_MESSAGE_MS } from '@/lib/transientMessage';
 
 type Props = {
   visible: boolean;
@@ -20,7 +21,13 @@ type Props = {
   actionLabel?: string;
   onAction?: () => void;
   onDismiss: () => void;
-  /** Auto-dismiss delay in ms. Default 4000. */
+  /**
+   * Identity of the CURRENT message. The auto-dismiss timer is keyed off this
+   * and nothing else, so a re-render cannot restart the countdown and two
+   * consecutive messages with identical text still each get a full life.
+   */
+  token?: string | number;
+  /** Auto-dismiss delay in ms. */
   durationMs?: number;
 };
 
@@ -31,11 +38,21 @@ export function MapSnackbar({
   actionLabel,
   onAction,
   onDismiss,
-  durationMs = 4000,
+  token,
+  durationMs = TRANSIENT_MESSAGE_MS,
 }: Props) {
   const { colors, typography } = useTheme();
   const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
   const anim = useRef(new Animated.Value(0)).current;
+
+  // `onDismiss` is almost always an inline arrow from the map, so its identity
+  // changes on every parent render. Holding it in a ref keeps it OUT of the
+  // timer effect's dependencies — previously each re-render cleared and
+  // restarted the countdown, and because the map re-renders constantly
+  // (location, camera, sheet animation, cache refreshes) the confirmation
+  // effectively never timed out.
+  const dismissRef = useRef(onDismiss);
+  dismissRef.current = onDismiss;
 
   useEffect(() => {
     if (!visible) return;
@@ -44,9 +61,11 @@ export function MapSnackbar({
       useNativeDriver: true,
       bounciness: 6,
     }).start();
-    const id = setTimeout(onDismiss, durationMs);
+    const id = setTimeout(() => dismissRef.current(), durationMs);
+    // Cleanup runs on unmount and whenever the token changes, so a previous
+    // message's timer can never dismiss the message that replaced it.
     return () => clearTimeout(id);
-  }, [visible, anim, onDismiss, durationMs]);
+  }, [visible, anim, token, durationMs]);
 
   useEffect(() => {
     if (visible) return;

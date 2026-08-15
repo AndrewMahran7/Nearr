@@ -91,6 +91,12 @@ import {
 } from '@/components/map';
 import { Colors, Radius, Spacing, Typography } from '@/constants';
 import {
+  isMeaningfulInteraction,
+  nextTransientMessage,
+  type InteractionSource,
+  type TransientMessage,
+} from '@/lib/transientMessage';
+import {
   MAP_FILTER_ALL,
   filterPlacesForMap,
   isMapFilterActive,
@@ -703,10 +709,20 @@ export default function MapScreen() {
   // In-app search overlay (replaces the old native Alert on the search bar).
   const [searchVisible, setSearchVisible] = useState(false);
   // Post-save "Saved to your map" snackbar with optional Undo.
-  const [snackbar, setSnackbar] = useState<{
-    message: string;
-    undoId: string | null;
-  } | null>(null);
+  const [snackbar, setSnackbar] = useState<TransientMessage | null>(null);
+  // One place that raises a transient confirmation. Each message gets its own
+  // identity so its timer belongs to it alone.
+  const showSnackbar = useCallback((message: string, undoId: string | null = null) => {
+    setSnackbar((current) => nextTransientMessage(current, message, undoId));
+  }, []);
+  // Any real user action retires the confirmation — it has already done its
+  // job. System activity (image loads, Realtime rows, layout, camera) is
+  // filtered out by isMeaningfulInteraction so the message is never eaten
+  // before it is seen. This NEVER touches `selected`: the place stays open.
+  const handleUserInteraction = useCallback((source: InteractionSource) => {
+    if (!isMeaningfulInteraction(source)) return;
+    setSnackbar((current) => (current ? null : current));
+  }, []);
   const [savingPlace, setSavingPlace] = useState(false);
   // Bumped to ask the sheet to minimize (map-level "View All").
   const [sheetMinimizeSignal, setSheetMinimizeSignal] = useState(0);
@@ -1118,10 +1134,7 @@ export default function MapScreen() {
       if (reminderOpen && shownMissingReminderRef.current !== focusKey) {
         shownMissingReminderRef.current = focusKey;
         setReminderContextSavedPlaceId(null);
-        setSnackbar({
-          message: 'Could not find that saved place. Showing your map.',
-          undoId: null,
-        });
+        showSnackbar('Could not find that saved place. Showing your map.', null);
       } else if (
         isOpenExistingPlaceSource(placeSource) &&
         shownMissingReminderRef.current !== focusKey
@@ -1129,10 +1142,7 @@ export default function MapScreen() {
         // An already-saved / notification open whose place no longer exists.
         // Recover locally with a friendly message — never the error boundary.
         shownMissingReminderRef.current = focusKey;
-        setSnackbar({
-          message: 'This place is no longer available.',
-          undoId: null,
-        });
+        showSnackbar('This place is no longer available.', null);
       }
       recordBreadcrumb('saved_places_fetch_completed', {
         savedPlaceId: savedPlaceId ?? null,
@@ -1158,7 +1168,7 @@ export default function MapScreen() {
       }
       const successMessage = openSavedPlaceMessage(placeSource);
       if (successMessage) {
-        setSnackbar({ message: successMessage, undoId: null });
+        showSnackbar(successMessage, null);
       }
     } catch (err) {
       console.warn('[map] focus failed', (err as Error)?.message ?? err);
@@ -1184,21 +1194,15 @@ export default function MapScreen() {
     if (decision !== 'fit' || !mapGroupId) return;
     if (!mapGroupRequest) {
       handledMapGroupIdRef.current = mapGroupId;
-      setSnackbar({ message: 'Showing your saved places.', undoId: null });
+      showSnackbar('Showing your saved places.', null);
       return;
     }
     handledMapGroupIdRef.current = mapGroupId;
     fitCurrentMapGroup();
     if (mapGroupRequest.failedCount > 0) {
-      setSnackbar({
-        message: `${mapGroupRequest.failedCount} place${mapGroupRequest.failedCount === 1 ? '' : 's'} still need attention.`,
-        undoId: null,
-      });
+      showSnackbar(`${mapGroupRequest.failedCount} place${mapGroupRequest.failedCount === 1 ? '' : 's'} still need attention.`, null);
     } else if (resolvedMapGroup.missingCoordinateIds.length > 0) {
-      setSnackbar({
-        message: `${resolvedMapGroup.missingCoordinateIds.length} saved place${resolvedMapGroup.missingCoordinateIds.length === 1 ? '' : 's'} has no map location.`,
-        undoId: null,
-      });
+      showSnackbar(`${resolvedMapGroup.missingCoordinateIds.length} saved place${resolvedMapGroup.missingCoordinateIds.length === 1 ? '' : 's'} has no map location.`, null);
     }
     // Camera fitting is intentionally once per request id. Subsequent data,
     // selection, and pan updates must not take control away from the user.
@@ -1259,6 +1263,9 @@ export default function MapScreen() {
   const dismissSelectedPlace = useCallback(
     (options?: { restoreRegion?: boolean }) => {
       if (!selected) return;
+      // Collapsing the place is itself a user action; the confirmation must
+      // not be left floating over the bare map.
+      handleUserInteraction('sheet_dismiss');
 
       markerRefs.current[selected.id]?.hideCallout?.();
       previewTranslateY.stopAnimation();
@@ -1310,7 +1317,7 @@ export default function MapScreen() {
   function fitCurrentMapGroup() {
     const coordinatePlaces = resolvedMapGroup.coordinatePlaces;
     if (!mapRef.current || coordinatePlaces.length === 0) {
-      setSnackbar({ message: 'These places do not have map locations yet.', undoId: null });
+      showSnackbar('These places do not have map locations yet.', null);
       return;
     }
     didFitRef.current = true;
@@ -1347,7 +1354,7 @@ export default function MapScreen() {
 
   function selectMapGroupPlace(item: SavedPlaceWithPlace) {
     if (!mapGroupCoordinateIds.has(item.id)) {
-      setSnackbar({ message: `${item.place.name} does not have a map location yet.`, undoId: null });
+      showSnackbar(`${item.place.name} does not have a map location yet.`, null);
       return;
     }
     selectPlace(item);
@@ -1397,6 +1404,7 @@ export default function MapScreen() {
   // fresh inline closure and re-arm the Android view-tracking path that
   // produced the OutOfMemoryError on the GMS Marker.setIcon side.
   const handleMarkerPress = useCallback((p: SavedPlaceWithPlace) => {
+    handleUserInteraction('marker_press');
     void trackEvent('place_marker_tapped', {
       saved_place_id: p.id,
       google_place_id: p.place.google_place_id ?? null,
@@ -1426,7 +1434,7 @@ export default function MapScreen() {
       removeSavedPlaceFromCache(selected.id);
       setReminderContextSavedPlaceId(null);
       dismissSelectedPlace({ restoreRegion: false });
-      setSnackbar({ message: 'Marked as visited', undoId: null });
+      showSnackbar('Marked as visited', null);
       void trackEvent('nearby_reminder_mark_visited_tapped', {
         saved_place_id: selected.id,
         source: 'notification',
@@ -1449,7 +1457,7 @@ export default function MapScreen() {
       if (shouldArchive) {
         await markArchived(selected.id, { exhausted: true });
         removeSavedPlaceFromCache(selected.id);
-        setSnackbar({ message: 'Reminder archived for this place', undoId: null });
+        showSnackbar('Reminder archived for this place', null);
       }
       setReminderContextSavedPlaceId(null);
       dismissSelectedPlace();
@@ -1610,11 +1618,11 @@ export default function MapScreen() {
               ? validPlaces.find((p) => p.id === result.savedPlaceId)
               : undefined;
           if (existing) selectPlace(existing);
-          setSnackbar({ message: 'Already on your map', undoId: null });
+          showSnackbar('Already on your map', null);
           return;
         }
         selectPlace(result.saved);
-        setSnackbar({ message: 'Saved to your map', undoId: result.savedPlaceId });
+        showSnackbar('Saved to your map', result.savedPlaceId);
         void trackEvent('save_success', {
           source_type: 'manual',
           flow: 'map_search',
@@ -1869,6 +1877,14 @@ export default function MapScreen() {
       {/* Preview card */}
       {selected ? (
         <Animated.View
+          onStartShouldSetResponderCapture={() => {
+            handleUserInteraction('press');
+            return false;
+          }}
+          onMoveShouldSetResponderCapture={() => {
+            handleUserInteraction('gesture');
+            return false;
+          }}
           style={[styles.previewWrap, { transform: [{ translateY: previewTranslateY }] }]}
           pointerEvents="box-none"
         >
@@ -1950,6 +1966,7 @@ export default function MapScreen() {
                   ),
                 }}
                 contentContainerStyle={styles.previewScrollContent}
+                onScrollBeginDrag={() => handleUserInteraction('scroll')}
                 keyboardShouldPersistTaps="handled"
                 nestedScrollEnabled
                 showsVerticalScrollIndicator={false}
@@ -2142,6 +2159,7 @@ export default function MapScreen() {
         onAction={
           snackbar?.undoId ? () => void handleUndoSave(snackbar.undoId as string) : undefined
         }
+        token={snackbar?.id}
         onDismiss={() => setSnackbar(null)}
       />
     </View>
