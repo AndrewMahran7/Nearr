@@ -103,16 +103,44 @@ check('valid canary id keeps bounded recovery active', mediaInfrastructureEnable
   check('both flags off => no run (default prod state)', !r.run);
 }
 
-// ---- Unsupported platforms -------------------------------------------------
+// ---- Unsupported platforms (their own resolver flag not set) ---------------
 
-for (const platform of ['tiktok', 'facebook', 'youtube', 'twitter', 'genericWeb', 'unknown']) {
+for (const platform of ['tiktok', 'facebook', 'youtube', 'snapchat', 'twitter', 'genericWeb', 'unknown']) {
   const r = shouldRunMediaFallback(input(), ctx({ platform }));
-  check(`platform ${platform} => no run (only Instagram in Phase 2)`, !r.run && r.reason === 'unsupported_platform');
+  check(`platform ${platform} => no run (its resolver flag is off)`, !r.run && r.reason === 'unsupported_platform');
 }
 {
   check('isSupportedMediaPlatform instagram+flag => true', isSupportedMediaPlatform(ctx()));
   check('isSupportedMediaPlatform instagram no-flag => false', !isSupportedMediaPlatform(ctx({ instagramResolverEnabled: false })));
-  check('isSupportedMediaPlatform tiktok => false', !isSupportedMediaPlatform(ctx({ platform: 'tiktok' })));
+  check('isSupportedMediaPlatform tiktok, flag off => false', !isSupportedMediaPlatform(ctx({ platform: 'tiktok' })));
+}
+
+// ---- Newly-wired platforms: RUN once their own flag is on ------------------
+
+{
+  const r = shouldRunMediaFallback(input(), ctx({ platform: 'tiktok', instagramResolverEnabled: false, tiktokResolverEnabled: true }));
+  check('tiktok + its flag on => RUN', r.run && r.reason === 'manual_fallback', JSON.stringify(r));
+  check('isSupportedMediaPlatform tiktok+flag => true', isSupportedMediaPlatform(ctx({ platform: 'tiktok', tiktokResolverEnabled: true })));
+}
+{
+  const r = shouldRunMediaFallback(input(), ctx({ platform: 'youtube', instagramResolverEnabled: false, youtubeResolverEnabled: true }));
+  check('youtube + its flag on => RUN', r.run && r.reason === 'manual_fallback', JSON.stringify(r));
+  check('isSupportedMediaPlatform youtube+flag => true', isSupportedMediaPlatform(ctx({ platform: 'youtube', youtubeResolverEnabled: true })));
+}
+{
+  const r = shouldRunMediaFallback(input(), ctx({ platform: 'facebook', instagramResolverEnabled: false, facebookResolverEnabled: true }));
+  check('facebook + its flag on => RUN', r.run && r.reason === 'manual_fallback', JSON.stringify(r));
+  check('isSupportedMediaPlatform facebook+flag => true', isSupportedMediaPlatform(ctx({ platform: 'facebook', facebookResolverEnabled: true })));
+}
+{
+  const r = shouldRunMediaFallback(input(), ctx({ platform: 'snapchat', instagramResolverEnabled: false, snapchatResolverEnabled: true }));
+  check('snapchat + its flag on => RUN', r.run && r.reason === 'manual_fallback', JSON.stringify(r));
+  check('isSupportedMediaPlatform snapchat+flag => true', isSupportedMediaPlatform(ctx({ platform: 'snapchat', snapchatResolverEnabled: true })));
+}
+{
+  // A platform-specific canary flag must not leak support to OTHER platforms.
+  const r = shouldRunMediaFallback(input(), ctx({ platform: 'facebook', instagramResolverEnabled: false, tiktokResolverEnabled: true }));
+  check('tiktok flag on does not enable facebook', !r.run && r.reason === 'unsupported_platform', JSON.stringify(r));
 }
 
 // ---- Non-trigger guards ----------------------------------------------------

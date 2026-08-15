@@ -21,6 +21,9 @@ export const ALLOWED_SOURCE_HOSTS = [
   'tiktok.com',
   'youtube.com',
   'youtu.be',
+  'facebook.com',
+  'fb.watch',
+  'snapchat.com',
   'twitter.com',
   'x.com',
 ] as const;

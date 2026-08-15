@@ -261,6 +261,10 @@ async function handleProcessingError(admin: any, job: any, err: unknown): Promis
 function readMediaFlags(): {
   mediaFallbackEnabled: boolean;
   instagramResolverEnabled: boolean;
+  tiktokResolverEnabled: boolean;
+  youtubeResolverEnabled: boolean;
+  facebookResolverEnabled: boolean;
+  snapchatResolverEnabled: boolean;
   canaryUserId: string | null;
   autoSaveEnabled: boolean;
   autoSaveCanaryUserId: string | null;
@@ -272,6 +276,10 @@ function readMediaFlags(): {
   return {
     mediaFallbackEnabled: on('MEDIA_FALLBACK_ENABLED'),
     instagramResolverEnabled: on('INSTAGRAM_MEDIA_RESOLVER_ENABLED'),
+    tiktokResolverEnabled: on('TIKTOK_MEDIA_RESOLVER_ENABLED'),
+    youtubeResolverEnabled: on('YOUTUBE_MEDIA_RESOLVER_ENABLED'),
+    facebookResolverEnabled: on('FACEBOOK_MEDIA_RESOLVER_ENABLED'),
+    snapchatResolverEnabled: on('SNAPCHAT_MEDIA_RESOLVER_ENABLED'),
     canaryUserId: (Deno.env.get('PHASE2_CANARY_USER_ID') ?? '').trim() || null,
     autoSaveEnabled: on('MEDIA_AUTO_SAVE_ENABLED'),
     autoSaveCanaryUserId: (Deno.env.get('MEDIA_AUTO_SAVE_CANARY_USER_ID') ?? '').trim() || null,
@@ -1481,6 +1489,10 @@ async function processOne(admin: any, env: any, job: any): Promise<void> {
         platform,
         mediaFallbackEnabled: effectiveFlags.mediaFallbackEnabled,
         instagramResolverEnabled: effectiveFlags.instagramResolverEnabled,
+        tiktokResolverEnabled: effectiveFlags.tiktokResolverEnabled,
+        youtubeResolverEnabled: effectiveFlags.youtubeResolverEnabled,
+        facebookResolverEnabled: effectiveFlags.facebookResolverEnabled,
+        snapchatResolverEnabled: effectiveFlags.snapchatResolverEnabled,
         mediaTaskExists,
         jobStatus: 'completed',
       },
@@ -1517,6 +1529,10 @@ async function processOne(admin: any, env: any, job: any): Promise<void> {
         platform,
         mediaFallbackEnabled: mediaFlags.mediaFallbackEnabled,
         instagramResolverEnabled: mediaFlags.instagramResolverEnabled,
+        tiktokResolverEnabled: mediaFlags.tiktokResolverEnabled,
+        youtubeResolverEnabled: mediaFlags.youtubeResolverEnabled,
+        facebookResolverEnabled: mediaFlags.facebookResolverEnabled,
+        snapchatResolverEnabled: mediaFlags.snapchatResolverEnabled,
         mediaTaskExists,
         jobStatus: 'processing_metadata',
       },

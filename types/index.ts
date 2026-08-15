@@ -4,7 +4,7 @@ import type { CategorySource, NearrCategory } from '@/lib/placeCategory';
 
 export type RadiusUnit = 'miles' | 'minutes';
 
-export type SourceType = 'manual' | 'tiktok' | 'instagram' | 'link';
+export type SourceType = 'manual' | 'tiktok' | 'instagram' | 'youtube' | 'facebook' | 'snapchat' | 'link';
 
 export type Profile = {
   id: string;

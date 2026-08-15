@@ -8,6 +8,10 @@
 import { loadConfig, validateConfig } from './config/env.js';
 import { createAdminClient } from './db/supabase.js';
 import { InstagramMediaResolver } from './resolvers/InstagramMediaResolver.js';
+import { TikTokMediaResolver } from './resolvers/TikTokMediaResolver.js';
+import { YouTubeMediaResolver } from './resolvers/YouTubeMediaResolver.js';
+import { FacebookMediaResolver } from './resolvers/FacebookMediaResolver.js';
+import { SnapchatMediaResolver } from './resolvers/SnapchatMediaResolver.js';
 import { selectTranscriptionProvider } from './providers/transcription.js';
 import { selectModelProvider } from './providers/model.js';
 import { selectOcrProvider } from './providers/ocr.js';
@@ -25,7 +29,13 @@ function main(): void {
     deps = {
       cfg,
       client,
-      resolvers: [new InstagramMediaResolver(cfg)],
+      resolvers: [
+        new InstagramMediaResolver(cfg),
+        new TikTokMediaResolver(cfg),
+        new YouTubeMediaResolver(cfg),
+        new FacebookMediaResolver(cfg),
+        new SnapchatMediaResolver(cfg),
+      ],
       transcription: selectTranscriptionProvider(cfg),
       model: selectModelProvider(cfg),
       ocr: selectOcrProvider(cfg),

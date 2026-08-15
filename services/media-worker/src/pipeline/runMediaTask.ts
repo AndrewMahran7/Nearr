@@ -8,7 +8,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { WorkerConfig } from '../config/env.js';
-import { MediaError, isMediaError, type MediaTask } from '../types/media.js';
+import { MediaError, isMediaError, type MediaTask, type TranscriptResult } from '../types/media.js';
 import { createJobTemp } from '../util/tempDir.js';
 import { sha256File } from '../util/hash.js';
 import { log } from '../util/logger.js';
@@ -154,15 +154,33 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
       .eq('id', task.id);
     const playable = await normalizeMedia(cfg, media.localFilePath, probe, jobTemp.dir, controller.signal);
 
-    // 3. Audio → transcription (non-fatal if it fails or there is no audio).
+    // 3. Transcript hierarchy: (1) platform captions when the resolver
+    //    already obtained them — skip paying for audio + speech-to-text
+    //    entirely; (2) otherwise extract audio and use the transcription
+    //    provider (non-fatal if it fails or there is no audio); (3) no usable
+    //    speech is a normal evidence-limited outcome, not a failure — visual
+    //    frames still carry the analysis forward.
     await setProgress(client, task, 'extracting_audio');
-    const audioPath = await extractAudio(cfg, playable, probe, jobTemp.dir, controller.signal);
-    await setProgress(client, task, 'transcribing_audio');
-    const transcript = await deps.transcription.transcribe({
-      audioPath,
-      hasAudio: probe.hasAudio,
-      signal: controller.signal,
-    });
+    let transcript: TranscriptResult;
+    if (media.captionsTranscript && media.captionsTranscript.length > 0) {
+      transcript = {
+        provider: media.captionsSource ?? 'platform_captions',
+        segments: media.captionsTranscript,
+        language: media.captionsLanguage ?? null,
+        status: 'success',
+      };
+      await setProgress(client, task, 'transcribing_audio');
+    } else {
+      const audioPath = await extractAudio(cfg, playable, probe, jobTemp.dir, controller.signal);
+      await setProgress(client, task, 'transcribing_audio');
+      transcript = await deps.transcription.transcribe({
+        audioPath,
+        hasAudio: probe.hasAudio,
+        signal: controller.signal,
+        sourceUrl: media.canonicalUrl,
+        platform: task.platform,
+      });
+    }
     diagnostics.transcriptionProvider = transcript.provider;
     diagnostics.transcriptSegmentCount = transcript.segments.length;
     if (transcript.status === 'failed') warnings.push('transcription_failed');

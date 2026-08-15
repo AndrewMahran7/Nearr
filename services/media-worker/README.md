@@ -1,4 +1,4 @@
-# Nearr Media Worker (Phase 2)
+# Nearr Media Worker (Phase 2+)
 
 A private, containerized service that provides the **durable video-analysis
 fallback** for Nearr's async share jobs. It is isolated from the Expo app and
@@ -13,9 +13,13 @@ from Supabase Edge Functions because it runs long jobs and needs `ffmpeg`,
 
 ```
 claim share_media_task
-  → retrieve public media (Instagram, yt-dlp) to an isolated temp dir
+  → retrieve public media (Instagram / TikTok / YouTube / Facebook /
+    Snapchat Spotlight — one MediaResolver per platform, all built on the
+    same shared yt-dlp core) to an isolated temp dir
   → ffprobe inspect + (rarely) normalize
-  → extract mono 16 kHz audio → transcribe (provider-neutral)
+  → transcript: platform captions (YouTube) if usable, else extract audio →
+    transcribe (provider-neutral); no usable speech is a normal, non-fatal
+    outcome — frames still carry the analysis forward
   → extract first/last/interval frames → perceptual-hash dedup
   → extract visible text (OCR provider; default noop)
   → analyze → PROPOSE structured, timestamped place evidence
@@ -23,6 +27,13 @@ claim share_media_task
     EXISTING deterministic resolver + safeToAutoSave + save path
   → delete all temp files (finally)
 ```
+
+Every resolver implements the same `MediaResolver` interface
+([`src/resolvers/MediaResolver.ts`](src/resolvers/MediaResolver.ts)) and shares
+one yt-dlp retrieval core
+([`src/resolvers/ytDlpShared.ts`](src/resolvers/ytDlpShared.ts)) — the rest of
+the pipeline (inspect, frames, transcript, analyze, finalize) never branches on
+platform.
 
 **The worker only proposes evidence.** It never picks a Google Place ID, never
 decides `safeToAutoSave`, and never writes a saved place. Nearr's deterministic
@@ -58,10 +69,13 @@ never accepted on `/v1/process-media-tasks`, never returned, never logged.
 | `MEDIA_MAX_SELECTED_FRAMES` | 24 | Enough visual coverage; caps multimodal cost. |
 | `MEDIA_REDIRECT_LIMIT` | 3 | Public CDNs rarely need more; shrinks SSRF surface. |
 | `MEDIA_WORKER_MAX_CONCURRENCY` | 1 | Start conservative; raise after load testing. |
+| `MEDIA_WORKER_CLAIM_BATCH` | 1 | Must not exceed immediately available concurrency; the worker also enforces this invariant. |
 
 All are environment-configurable. Outbound media fetches are **HTTPS-only**,
-**host-allowlisted** (Meta CDNs), and rejected if DNS resolves to loopback,
-private, link-local, unique-local, CGNAT, or cloud-metadata addresses.
+**host-allowlisted** (Meta CDNs, `googlevideo.com`/`youtube.com`, TikTok's CDN
+family, and Snapchat's `sc-cdn.net` — see `MEDIA_ALLOWED_HOSTS` in
+`.env.example`), and rejected if DNS resolves to loopback, private,
+link-local, unique-local, CGNAT, or cloud-metadata addresses.
 
 ## Local development
 
@@ -102,9 +116,23 @@ These are **not** part of the default `npm test` / repo prebuild.
 
 ## Known platform fragility
 
-- Instagram markup / CDN behavior can change without notice. On extraction
-  failure the resolver returns `provider_changed` and the parent job moves to a
-  safe `needs_help(manual)` state — it never fabricates a result.
+- Any platform's markup / CDN behavior can change without notice. On
+  extraction failure a resolver returns `provider_changed` and the parent job
+  moves to a safe `needs_help(manual)` state — it never fabricates a result.
 - Public-post retrieval can be rate-limited. Rate limits are treated as
   retryable; the parent is never wrongly failed.
-- TikTok / Facebook retrieval is intentionally **not** implemented in Phase 2.
+- **TikTok**: implemented on the same shared yt-dlp core as every other
+  platform and unit-tested, but live acquisition could **not** be verified from
+  the development sandbox this was built in — TikTok's anti-bot layer blocked
+  both yt-dlp and the official oEmbed endpoint for automated/datacenter
+  traffic. Per the public-content-only mission, no anti-bot evasion was
+  attempted. Verify from the actual Railway deployment (different IP
+  reputation) before enabling `TIKTOK_MEDIA_RESOLVER_ENABLED` broadly.
+- **YouTube**: uses yt-dlp's adaptive video+audio merge, not a single
+  progressive URL — verified live that YouTube's legacy single-file format
+  (id `18`) can 403 or resolve to an HLS manifest instead of raw bytes even
+  when yt-dlp's own metadata calls it `protocol: "https"`.
+- **Snapchat**: ONLY public Spotlight links (`snapchat.com/spotlight/...`) are
+  supported, verified live end-to-end (probe → direct CDN download → frames).
+  Stories, profiles, and any other Snapchat surface are never claimed as
+  supported by `SnapchatMediaResolver.supports()`.

@@ -37,7 +37,14 @@
  * grows a social-URL canonicalizer of its own.
  */
 
-export type SavedPlaceSourceType = 'manual' | 'tiktok' | 'instagram' | 'link';
+export type SavedPlaceSourceType =
+  | 'manual'
+  | 'tiktok'
+  | 'instagram'
+  | 'youtube'
+  | 'facebook'
+  | 'snapchat'
+  | 'link';
 
 /** The subset of an existing saved_places row this decision depends on. */
 export type SavedPlaceSourceState = {

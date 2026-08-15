@@ -14,6 +14,7 @@ import {
   isLocalityLikeTypes,
 } from './placeNormalization.ts';
 import { extractStateFromFormattedAddress } from './locationGuards.ts';
+import { isPlaceholderValue } from '../../../../lib/shareAgent/queryCleaner.ts';
 
 export type PlacesCandidate = {
   googlePlaceId: string;
@@ -115,8 +116,35 @@ export async function searchPlaces(
   } finally {
     clearTimeout(timer);
   }
-  const results: PlacesCandidate[] = (json.places ?? []).slice(0, 8).map(mapPlacesV1Candidate);
+  const results: PlacesCandidate[] = (json.places ?? [])
+    .slice(0, 8)
+    .map(mapPlacesV1Candidate)
+    .filter(isUsableCandidate);
   return { ok: true, results };
+}
+
+/**
+ * Reject a candidate at the EARLIEST point after the raw Google Places
+ * response is normalized — before it ever reaches the resolver, the
+ * candidate picker, or an auto-save decision. Google occasionally returns a
+ * placeholder/absent-value literal for `displayName`/`formattedAddress`
+ * itself (verified live: searching the garbage query "Null" — see
+ * evidence/handleExtraction.ts — returned two `natural_feature` results
+ * whose name AND formattedAddress both read literally `<Null>`). This is
+ * independent of, and in addition to, never ISSUING a placeholder query in
+ * the first place (lib/shareAgent/queryCleaner.ts `isPlaceholderValue` at
+ * the `buildCleanPlacesQueries` boundary) — defense in depth, since a
+ * placeholder result could in principle also come back for a legitimate
+ * query if Google's own data has a gap.
+ */
+function isUsableCandidate(c: PlacesCandidate): boolean {
+  if (isPlaceholderValue(c.name)) return false;
+  // A formattedAddress that STARTS with a placeholder token (e.g.
+  // "<Null>, South River, NM 87410, USA") is exactly as unusable as a
+  // placeholder name even when name itself happens to be fine.
+  const addressHead = (c.formattedAddress ?? '').split(',')[0];
+  if (addressHead && isPlaceholderValue(addressHead)) return false;
+  return true;
 }
 
 async function searchPlacesLegacy(
@@ -146,7 +174,10 @@ async function searchPlacesLegacy(
   }
   return {
     ok: true,
-    results: (json.results ?? []).slice(0, 8).map(mapPlacesLegacyCandidate),
+    results: (json.results ?? [])
+      .slice(0, 8)
+      .map(mapPlacesLegacyCandidate)
+      .filter(isUsableCandidate),
   };
 }
 

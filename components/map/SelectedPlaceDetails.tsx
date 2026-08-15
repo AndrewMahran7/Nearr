@@ -97,6 +97,9 @@ function sourceActionLabel(saved: SavedPlaceWithPlace): string {
   switch (saved.source_type) {
     case 'tiktok':
     case 'instagram':
+    case 'youtube':
+    case 'facebook':
+    case 'snapchat':
       return 'Watch post';
     case 'link':
       return 'Open link';
@@ -112,6 +115,12 @@ function sourceActionIcon(saved: SavedPlaceWithPlace): keyof typeof Feather.glyp
       return 'video';
     case 'instagram':
       return 'instagram';
+    case 'youtube':
+      return 'youtube';
+    case 'facebook':
+      return 'facebook';
+    case 'snapchat':
+      return 'video';
     case 'link':
       return 'link';
     default:

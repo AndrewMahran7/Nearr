@@ -391,6 +391,10 @@ export function compactNameMatches(
  *  surface them. */
 const KNOWN_CITY_STATE_LITERALS: ReadonlyArray<readonly [RegExp, string, string]> = [
   [/\bSanta\s+Cruz\b/i, 'Santa Cruz', 'CA'],
+  // Full county name only — NOT the bare "OC" abbreviation, which is far too
+  // common as unrelated social-media shorthand ("original content", etc.) to
+  // safely treat as a location signal.
+  [/\bOrange\s+County\b/i, 'Orange County', 'CA'],
   [/\bHuntington\s+Beach\b/i, 'Huntington Beach', 'CA'],
   [/\bNewport\s+Beach\b/i, 'Newport Beach', 'CA'],
   [/\bLong\s+Beach\b/i, 'Long Beach', 'CA'],
@@ -726,16 +730,59 @@ export function extractCaptionVenueHints(
 }
 
 /**
+ * Platform / product brand names. These are the SINGLE source of truth for
+ * "this string names the platform that hosted the post, not anything about
+ * the post's content" — reused everywhere a venue/poster-name candidate is
+ * synthesized from a bare handle or phrase (handle noise-filtering here,
+ * venue-name-phrase filtering in extractEvidence.ts). A platform's own
+ * self-referential branding (a Twitter Card `twitter:site` meta tag, an
+ * OG `site_name`, a product name like "Spotlight") is embedded on EVERY
+ * page that platform serves, regardless of that page's actual content —
+ * confirmed live: every `snapchat.com/spotlight/...` page carries
+ * `<meta property="twitter:site" content="@Snapchat"/>`, which fed straight
+ * into venue-name extraction and became a Google Places query for "Snapchat"
+ * (resolving to Snap Inc.'s real Santa Monica HQ) with zero relationship to
+ * the video's actual subject. Keeping this list in ONE place (instead of two
+ * independently-maintained lists that drifted out of sync — the original
+ * `HANDLE_NOISE_WORDS` below covered Instagram/TikTok/YouTube but was never
+ * updated for Facebook/Snapchat) is the structural fix: adding a platform
+ * later means updating this one set, not re-discovering the bug per platform.
+ */
+const PLATFORM_SELF_REFERENCE_WORDS = new Set<string>([
+  'instagram',
+  'instagramreels',
+  'tiktok',
+  'youtube',
+  'facebook',
+  'fb',
+  'snapchat',
+  'spotlight',
+  'twitter',
+  'x',
+  'meta',
+]);
+
+/** True when `value` (handle or phrase, `@`-prefix optional) names a
+ *  platform/product rather than anything about a specific post's content. */
+export function isPlatformSelfReference(value: string | null | undefined): boolean {
+  if (!value) return false;
+  const normalized = value.trim().toLowerCase().replace(/^@/, '');
+  return PLATFORM_SELF_REFERENCE_WORDS.has(normalized);
+}
+
+/**
  * Platform / page-internal / poster-descriptor words that are NEVER a real
  * venue handle. `@media` in particular leaks in from Instagram's inline CSS
  * (`@media screen …`) and would otherwise become a poster handle → the bogus
- * "Media" venue query. Exact, lowercased match only, so genuine handles that
- * merely CONTAIN one of these (e.g. `media_kitchen`) are unaffected.
+ * "Media" venue query. JSON-LD structured-data property names (`@type`,
+ * `@context`, `@id`, `@graph`, …) are schema.org vocabulary, never social
+ * handles, yet match the same `@word` pattern the handle scanner uses —
+ * verified live: a single Snapchat page's first 50KB contained 137 `@type`
+ * occurrences. Exact, lowercased match only, so genuine handles that merely
+ * CONTAIN one of these (e.g. `media_kitchen`) are unaffected.
  */
 const HANDLE_NOISE_WORDS = new Set<string>([
   'media',
-  'instagram',
-  'instagramreels',
   'reel',
   'reels',
   'story',
@@ -743,8 +790,6 @@ const HANDLE_NOISE_WORDS = new Set<string>([
   'explore',
   'accounts',
   'direct',
-  'tiktok',
-  'youtube',
   'foodie',
   'likes',
   'comments',
@@ -752,17 +797,42 @@ const HANDLE_NOISE_WORDS = new Set<string>([
   'www',
   'http',
   'https',
+  // Placeholder/absent-value literals — verified live: a YouTube page's
+  // minified JS config blob contains the literal substring `@.null`
+  // (an internal format string, e.g. `%.@.null,1000,2]`), which nothing
+  // downstream should ever treat as a person's or venue's name.
+  'null',
+  'undefined',
+  'none',
+  'nan',
+  // JSON-LD / schema.org structured-data keys — never real handles.
+  'type',
+  'context',
+  'id',
+  'graph',
+  'vocab',
+  'list',
+  'set',
+  'reverse',
+  'base',
+  'container',
 ]);
 
 /**
  * True when a handle is platform / page-internal / poster-descriptor noise
- * (e.g. `@media` from inline CSS, `@instagram`, `@reel`) and must NOT be used
- * as a venue name or poster-name hint. Leading `@` is ignored; match is exact
- * on the lowercased handle so real venue handles are never rejected.
+ * (e.g. `@media` from inline CSS, `@instagram`, `@reel`, `@type` from
+ * JSON-LD) and must NOT be used as a venue name or poster-name hint. Leading
+ * `@` is ignored; match is exact on the lowercased handle so real venue
+ * handles are never rejected.
  */
 export function isNoiseHandle(handle: string | null | undefined): boolean {
   if (!handle) return false;
-  const normalized = handle.trim().toLowerCase().replace(/^@/, '');
-  return HANDLE_NOISE_WORDS.has(normalized);
+  // Strip ALL leading/trailing punctuation, not just a leading `@` — the raw
+  // HANDLE_RE capture group can carry a leading `.` straight through (e.g.
+  // the literal `.null` captured from YouTube's own `@.null` config-blob
+  // noise), and a real social handle never legitimately starts or ends with
+  // punctuation, so this can't reject a genuine handle.
+  const normalized = handle.trim().toLowerCase().replace(/^[^a-z0-9]+/, '').replace(/[^a-z0-9]+$/, '');
+  return HANDLE_NOISE_WORDS.has(normalized) || PLATFORM_SELF_REFERENCE_WORDS.has(normalized);
 }
 

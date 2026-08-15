@@ -19,7 +19,14 @@
  * layer. This module only prepares/cleans URLs.
  */
 
-export type ShareUrlPlatform = 'tiktok' | 'instagram' | 'other' | 'unknown';
+export type ShareUrlPlatform =
+  | 'tiktok'
+  | 'instagram'
+  | 'youtube'
+  | 'facebook'
+  | 'snapchat'
+  | 'other'
+  | 'unknown';
 
 export type NormalizedShareUrl = {
   /** Cleaned URL (tracking stripped, host lowercased). Falls back to the
@@ -67,6 +74,9 @@ export function classifyShareUrlPlatform(host: string | null): ShareUrlPlatform 
   const h = host.toLowerCase();
   if (h.endsWith('tiktok.com')) return 'tiktok';
   if (h.endsWith('instagram.com')) return 'instagram';
+  if (h.endsWith('youtube.com') || h === 'youtu.be') return 'youtube';
+  if (h.endsWith('facebook.com') || h === 'fb.watch') return 'facebook';
+  if (h.endsWith('snapchat.com')) return 'snapchat';
   return 'other';
 }
 

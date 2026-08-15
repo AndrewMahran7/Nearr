@@ -1,10 +1,22 @@
-# Nearr — Media Fallback (Phase 2)
+# Nearr — Media Fallback (Phase 2+)
 
 > Status: implemented behind **server-only** flags, all default **OFF**
 > (`MEDIA_FALLBACK_ENABLED`, `INSTAGRAM_MEDIA_RESOLVER_ENABLED`,
-> `NATIVE_VIDEO_ANALYSIS_ENABLED`). Instagram public posts only.
+> `TIKTOK_MEDIA_RESOLVER_ENABLED`, `YOUTUBE_MEDIA_RESOLVER_ENABLED`,
+> `FACEBOOK_MEDIA_RESOLVER_ENABLED`, `SNAPCHAT_MEDIA_RESOLVER_ENABLED`,
+> `NATIVE_VIDEO_ANALYSIS_ENABLED`). Public posts only, one flag per platform.
 > Phase 1 (metadata-first async share jobs) is unchanged and remains the
 > user-facing source of truth.
+>
+> **Platform support matrix** (see the media-worker README's "Known platform
+> fragility" for detail and live-test evidence): Instagram, YouTube, and
+> Facebook are live-verified end-to-end (download + frames; YouTube also
+> captions). Snapchat is live-verified for **public Spotlight links only**
+> (`snapchat.com/spotlight/...` — no other Snapchat surface is supported).
+> TikTok is implemented and unit-tested on the same shared core but could not
+> be live-verified from the sandbox this was built in (TikTok's anti-bot layer
+> blocks datacenter traffic; no evasion was attempted per the public-content
+> mission) — verify from the real deployment before enabling it broadly.
 
 Phase 2 adds durable, private video analysis for supported social shares. It
 serves two independent outcomes: unresolved metadata jobs may wait on it as a
@@ -112,9 +124,11 @@ not a far-future lease:
 Pure, unit-tested ([mediaFallback.ts](../supabase/functions/process-share-jobs/mediaFallback.ts),
 [testMediaFallbackTrigger.ts](../scripts/testMediaFallbackTrigger.ts)).
 
-Fallback **never runs** when: any Phase 2 flag is off; platform is not Instagram (or the
-IG resolver flag is off); the job is terminal/cancelled; a media task already
-exists; metadata safely auto-saved; multi-place already resolved (or ≥2 explicit
+Fallback **never runs** when: any Phase 2 flag is off; the platform's OWN
+resolver flag is off (`isSupportedMediaPlatform` checks Instagram / TikTok /
+YouTube / Facebook / Snapchat independently — enabling one platform never
+enables another); the job is terminal/cancelled; a media task already exists;
+metadata safely auto-saved; multi-place already resolved (or ≥2 explicit
 addresses); or the failure is unrelated to missing media evidence
 (`places_error`, `roundup_post`).
 
@@ -169,22 +183,43 @@ Structured error codes (never carry secrets/cookies/auth in detail):
 `download_timeout`, `download_failed`, `file_too_large`, `duration_too_long`,
 `invalid_media`, `missing_video`, `ssrf_blocked`, `cancelled`.
 
-### Instagram resolver + limitations
+### Per-platform resolvers + limitations
 
-[InstagramMediaResolver.ts](../services/media-worker/src/resolvers/InstagramMediaResolver.ts)
-— **public posts only**. No login, no user credentials, no copied cookies, no
-private/challenge/CAPTCHA bypass, no proxy rotation, no anti-bot evasion, no
-long-lived browser profile. Before any `yt-dlp` spawn, the shared source URL is
-validated to be **HTTPS with an Instagram host** (otherwise `unsupported_url`).
-Method: `yt-dlp -j` (metadata only) to obtain a direct progressive CDN URL +
-duration, then our own SSRF-guarded, size-capped download. If Instagram's markup
-changes and extraction fails → `provider_changed` and a safe `needs_help(manual)`
-— never a fabricated result.
+Every resolver ([`services/media-worker/src/resolvers/`](../services/media-worker/src/resolvers/))
+is **public posts only** — no login, no user credentials, no copied cookies,
+no private/challenge/CAPTCHA bypass, no proxy rotation, no anti-bot evasion, no
+long-lived browser profile — and shares one retrieval core,
+[`ytDlpShared.ts`](../services/media-worker/src/resolvers/ytDlpShared.ts):
+`yt-dlp -j` (metadata only, no download) to obtain a direct CDN URL + duration,
+then the SAME SSRF-guarded, size-capped downloader fetches it; or, when no
+single fetchable URL exists, a bounded `yt-dlp` merge-download. Before any
+`yt-dlp` spawn, the source URL is validated to be **HTTPS with an allowed host
+for that platform** (otherwise `unsupported_url`). If a platform's markup
+changes and extraction fails → `provider_changed` and a safe
+`needs_help(manual)` — never a fabricated result.
 
-> The linked MIT project `riad-azz/instagram-video-downloader` was inspected but
-> **not used**: it is a Next.js educational frontend that defers its downloader
-> backend. `yt-dlp` is the proven retrieval method (also used by the repo's
-> `evidence-server` prototype).
+- **Instagram** ([InstagramMediaResolver.ts](../services/media-worker/src/resolvers/InstagramMediaResolver.ts)).
+  The linked MIT project `riad-azz/instagram-video-downloader` was inspected
+  but **not used**: it is a Next.js educational frontend that defers its
+  downloader backend. `yt-dlp` is the proven retrieval method.
+- **TikTok** ([TikTokMediaResolver.ts](../services/media-worker/src/resolvers/TikTokMediaResolver.ts)).
+  Accepts the canonical `@user/video/<id>` form and `vm.`/`vt.tiktok.com` short
+  links — yt-dlp follows the redirect itself during the metadata probe.
+- **YouTube** ([YouTubeMediaResolver.ts](../services/media-worker/src/resolvers/YouTubeMediaResolver.ts)).
+  `/watch?v=`, `/shorts/`, and `youtu.be` are all the same source type — no
+  separate Shorts backend. Captions-first: when `yt-dlp -j` exposes a caption
+  track (manual preferred, then auto-generated) in a preferred language, the
+  worker fetches + parses it itself (`src/util/subtitles.ts`) and skips audio
+  extraction + speech-to-text entirely. Video retrieval always uses yt-dlp's
+  adaptive video+audio merge rather than a single progressive URL — verified
+  live that YouTube's legacy progressive format can 403 or resolve to an HLS
+  manifest instead of raw bytes.
+- **Facebook** ([FacebookMediaResolver.ts](../services/media-worker/src/resolvers/FacebookMediaResolver.ts)).
+  `/reel/`, `/.../videos/`, and `fb.watch` (redirect-resolved by yt-dlp).
+- **Snapchat** ([SnapchatMediaResolver.ts](../services/media-worker/src/resolvers/SnapchatMediaResolver.ts)).
+  **Public Spotlight only** — `supports()` requires the `/spotlight/` path;
+  stories, profiles, and any other Snapchat surface are never matched, so they
+  fall straight to `unsupported_platform` rather than being handed to yt-dlp.
 
 ## Media security model
 
@@ -383,16 +418,25 @@ sections in the two Phase 2 migrations.
 | DB durability | `scripts/testShareMediaDurability.sql` | claim, stale reclaim, attempts, terminal, expire |
 | DB recovery | `scripts/testShareMediaRecovery.sql` | requeue backoff, cancel cascade, stranded-parent claim |
 | DB privileges | `scripts/testDatabasePrivileges.sql` | explicit per-role table + RPC grants (CLI-independent) |
-| Worker unit | `services/media-worker/tests/*.test.ts` | SSRF, schema, frame select/dedup, errors, auth, backoff, IG URL guard |
+| Worker unit | `services/media-worker/tests/*.test.ts` | SSRF, schema, frame select/dedup, errors, auth, backoff, per-platform URL guards, `pickProgressiveUrl` incl. HLS-manifest + single-format cases, subtitle/VTT parsing incl. rolling-caption merge |
+| Worker downloader contract | `tests/resolverSelection.test.ts` | every platform reaches the right (and only the right) `MediaResolver`; flags are independent |
+| Worker evidence contract | `tests/resolverEvidenceContract.test.ts` | Instagram/TikTok/YouTube/Facebook/Snapchat evidence all reach the same `AnalyzeInput` shape |
+| Worker transcript hierarchy | `tests/transcriptHierarchy.test.ts` | captions present → transcription provider never called; absent/empty → audio path runs |
 | Worker integration | `tests/integration/pipeline.test.ts` | ffprobe/frames/dedup/limits/cleanup on synthetic media |
 | Worker e2e (opt-in) | `tests/integration/e2e.test.ts` | queue→claim→ffmpeg→finalize→save/needs_help, replay, mismatch, cancel |
 | Live (opt-in) | `test:*-live` | real IG retrieval, worker endpoints, native model |
+| Platform URL classification | `scripts/testPlatformUrlClassification.ts` | `detectPlatform`/`legacySourceFor`/`classifyShareUrlPlatform` for all 5 platforms |
 
 ## Known platform fragility
 
-- Instagram markup / CDN behavior can change → `provider_changed` → safe manual
-  fallback (never a wrong save).
+- Any platform's markup / CDN behavior can change → `provider_changed` → safe
+  manual fallback (never a wrong save).
 - Public retrieval can be rate-limited (retryable; parent never wrongly failed).
 - DNS rebinding is only partially mitigated (host allowlist; no socket pinning)
   — same accepted limitation as Phase 1.
-- TikTok / Facebook retrieval is intentionally **not** implemented in Phase 2.
+- **TikTok**: implemented + unit-tested, not independently live-verified from
+  the sandbox this was built in (its anti-bot layer blocked both yt-dlp and the
+  official oEmbed endpoint for automated/datacenter traffic; no evasion was
+  attempted). Verify from the real deployment before broad rollout.
+- **Snapchat**: public Spotlight links only — the resolver's `supports()` gate
+  refuses every other Snapchat URL shape outright.

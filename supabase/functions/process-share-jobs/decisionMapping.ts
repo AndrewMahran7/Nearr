@@ -128,6 +128,10 @@ export function platformLabel(platform: string | null | undefined): string {
       return 'TikTok';
     case 'youtube':
       return 'YouTube';
+    case 'facebook':
+      return 'Facebook';
+    case 'snapchat':
+      return 'Snapchat';
     case 'twitter':
       return 'X';
     default:

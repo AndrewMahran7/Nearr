@@ -254,6 +254,9 @@ function check(name: string, condition: boolean, detail?: string): void {
 
 check('platformLabel instagram', platformLabel('instagram') === 'Instagram');
 check('platformLabel tiktok', platformLabel('tiktok') === 'TikTok');
+check('platformLabel youtube', platformLabel('youtube') === 'YouTube');
+check('platformLabel facebook', platformLabel('facebook') === 'Facebook');
+check('platformLabel snapchat', platformLabel('snapchat') === 'Snapchat');
 check('platformLabel unknown => shared', platformLabel('foo') === 'shared');
 
 // ---------------------------------------------------------------------------

@@ -13,6 +13,7 @@ import {
   extractCaptionVenueHints,
   derivePlaceNameHintFromHandle,
 } from './venueHints.ts';
+import { isPlatformSelfReference } from '../../../../lib/shareAgent/recoveryHints.ts';
 import { extractCityStateContext } from '../places/locationGuards.ts';
 import { looksLikeRoundupPost } from './roundupDetection.ts';
 import type { ExtractedHandles } from './handleExtraction.ts';
@@ -88,7 +89,22 @@ export function extractEvidence(args: {
   //      scans the words preceding the detected street address.
   if (venueNameHints.length === 0 && args.handles.venueHandles[0]) {
     const fromHandle = derivePlaceNameHintFromHandle(args.handles.venueHandles[0]);
-    if (fromHandle) venueNameHints.push(fromHandle);
+    // Same filtering the address-pairing path below already applies
+    // (isKnownCityName / looksLikeStreetFragmentVenueHint / generic-phrase) —
+    // a bare handle with no corroborating address or caption signal is the
+    // WEAKEST possible evidence, so it must clear the same bar, not a lower
+    // one. Closes the boundary that let a platform's own self-referential
+    // handle (e.g. `@Snapchat` from that page's own Twitter Card meta tag)
+    // become a venue-name query with nothing else to check it against.
+    if (
+      fromHandle &&
+      !isGenericVenuePhrase(fromHandle) &&
+      !isPlatformSelfReference(fromHandle) &&
+      !isKnownCityName(fromHandle) &&
+      !looksLikeStreetFragmentVenueHint(fromHandle, addresses)
+    ) {
+      venueNameHints.push(fromHandle);
+    }
   }
   if (address && venueNameHints.length === 0) {
     const pre = extractNameBeforeAddress(captionText, address.raw);
@@ -322,8 +338,9 @@ const GENERIC_VENUE_PHRASES = new Set(
 function isGenericVenuePhrase(phrase: string): boolean {
   const p = phrase.trim().toLowerCase();
   if (GENERIC_VENUE_PHRASES.has(p)) return true;
+  if (isPlatformSelfReference(p)) return true;
   // Single filler words that read as sentiment, not a name.
-  if (/^(foodie|media|reel|reels|video|instagram|tiktok|youtube)$/.test(p)) return true;
+  if (/^(foodie|media|reel|reels|video)$/.test(p)) return true;
   return false;
 }
 
