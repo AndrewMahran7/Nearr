@@ -13,8 +13,12 @@
  *   2. Insert a `saved_places` row tying that place to the current user
  *      with their chosen radius / source / notes. If the user already has
  *      this place saved (`unique(user_id, place_id)`, Postgres 23505), we
- *      gracefully update the existing row's source / notes / radius
- *      instead of crashing.
+ *      ENRICH the existing row instead of crashing or discarding the new
+ *      context: the same saved_places.id and place_id survive, and the
+ *      incoming post fills empty source/ai_note fields. See
+ *      `lib/savedPlaceSourceMerge.ts` for the merge policy — nothing that
+ *      carries user state (notes, reminders, visit/archive, counts) is ever
+ *      rewritten by an enrichment.
  */
 
 import { supabase } from '@/lib/supabase';
@@ -41,6 +45,11 @@ import {
 } from '@/services/demo';
 import { isAddressLikePlace, type PlaceCandidate } from '@/services/placesService';
 import { resolvePlaceCategory, type CategoryResolution } from '@/lib/placeCategory';
+import {
+  planSavedPlaceEnrichment,
+  type SavedPlaceEnrichmentPlan,
+} from '@/lib/savedPlaceSourceMerge';
+import { normalizeShareUrl } from '@/lib/shareAgent/tiktokUrl';
 import type {
   PlaceRow,
   RadiusUnit,
@@ -62,15 +71,33 @@ export type SaveSavedPlaceInput = {
 
 export type SaveSavedPlaceResult =
   | { status: 'saved'; saved: SavedPlaceWithPlace; savedPlaceId: string }
-  | { status: 'duplicate'; place: PlaceRow; savedPlaceId: string | null };
+  | {
+      status: 'duplicate';
+      place: PlaceRow;
+      savedPlaceId: string | null;
+      /** The existing row re-read AFTER enrichment, so callers can refresh the
+       *  cache with the newly attached source instead of showing stale data. */
+      saved?: SavedPlaceWithPlace | null;
+      /** What this share was actually able to add to the existing save. */
+      enrichment?: SavedPlaceEnrichmentPlan;
+    };
 
-type ExistingSavedPlaceLookup = Pick<SavedPlace, 'id' | 'source_url'> & {
+type ExistingSavedPlaceSource = {
+  id: string;
+  source_url: string | null;
+  source_type: SourceType | null;
+  ai_note: string | null;
+};
+
+type ExistingSavedPlaceLookup = ExistingSavedPlaceSource & {
   place: PlaceRow;
 };
 
-type ExistingSavedPlaceLookupRow = Pick<SavedPlace, 'id' | 'source_url'> & {
+type ExistingSavedPlaceLookupRow = ExistingSavedPlaceSource & {
   place: PlaceRow | PlaceRow[] | null;
 };
+
+const shareUrlKey = (url: string): string => normalizeShareUrl(url).url;
 
 const DEDUPE_DISTANCE_M = 40;
 
@@ -147,13 +174,28 @@ function matchesExistingRealPlace(
   return false;
 }
 
-async function patchExistingSavedPlace(
-  savedPlaceId: string,
+/**
+ * Enrich a saved place the user already owns. This is the ONLY write path for
+ * "the shared post resolved to something I already saved", and it is additive:
+ * the row's id, place_id, notes, reminder settings, visit/archive state,
+ * opportunity count and created_at are all left exactly as they were.
+ *
+ * Both enrichment writes are guarded on the field still being empty, so two
+ * share jobs racing on the same place converge on one attached source and a
+ * retried job is a no-op rather than a rewrite.
+ */
+async function enrichExistingSavedPlace(
+  existing: {
+    id: string;
+    source_url?: string | null;
+    source_type?: string | null;
+    ai_note?: string | null;
+  },
   input: SaveSavedPlaceInput,
-): Promise<void> {
+): Promise<SavedPlaceEnrichmentPlan> {
+  // Radius/notes are caller-supplied user configuration, not source context.
+  // No share path passes them; a manual re-save with an explicit radius does.
   const patch: Record<string, unknown> = {};
-  if (input.sourceType !== undefined) patch.source_type = input.sourceType;
-  if (input.sourceUrl !== undefined) patch.source_url = input.sourceUrl;
   if (input.notes !== undefined) patch.notes = input.notes;
   if (input.radiusValue !== null || input.radiusUnit !== null) {
     patch.radius_value = input.radiusValue;
@@ -163,7 +205,7 @@ async function patchExistingSavedPlace(
     const { error } = await supabase
       .from('saved_places')
       .update(patch)
-      .eq('id', savedPlaceId);
+      .eq('id', existing.id);
     if (error) {
       console.warn(
         '[savedPlacesService] existing saved_place update failed (non-fatal)',
@@ -172,17 +214,58 @@ async function patchExistingSavedPlace(
     }
   }
 
-  // A re-save may fill a missing source cue, but never replaces a cue already
-  // associated with the existing save (which may have come from another post).
-  if (input.aiNote?.trim()) {
+  const plan = planSavedPlaceEnrichment(
+    existing,
+    { sourceUrl: input.sourceUrl, sourceType: input.sourceType, aiNote: input.aiNote },
+    shareUrlKey,
+  );
+
+  if (plan.sourcePatch) {
     const { error } = await supabase
       .from('saved_places')
-      .update({ ai_note: input.aiNote.trim() })
-      .eq('id', savedPlaceId)
+      .update(plan.sourcePatch)
+      .eq('id', existing.id)
+      .is('source_url', null);
+    if (error) {
+      console.warn(
+        '[savedPlacesService] existing source attach failed (non-fatal)',
+        error.message,
+      );
+    }
+  }
+
+  if (plan.aiNotePatch) {
+    const { error } = await supabase
+      .from('saved_places')
+      .update(plan.aiNotePatch)
+      .eq('id', existing.id)
       .is('ai_note', null);
     if (error) {
       console.warn('[savedPlacesService] existing ai_note update failed (non-fatal)', error.message);
     }
+  }
+
+  logDebug('savedPlacesService', 'enriched existing save', {
+    savedPlaceId: existing.id,
+    source: plan.source,
+    aiNote: plan.aiNote,
+  });
+  return plan;
+}
+
+/** Re-read the enriched row for the cache. Never turns a successful
+ *  enrichment into a save failure — the write already committed. */
+async function readSavedPlaceAfterEnrichment(
+  savedPlaceId: string,
+): Promise<SavedPlaceWithPlace | null> {
+  try {
+    return await getSavedPlace(savedPlaceId);
+  } catch (err) {
+    console.warn(
+      '[savedPlacesService] enriched row re-read failed (non-fatal)',
+      (err as Error)?.message ?? err,
+    );
+    return null;
   }
 }
 
@@ -211,7 +294,7 @@ async function findExistingSavedPlaceForUser(
 ): Promise<ExistingSavedPlaceLookup | null> {
   const { data, error } = await supabase
     .from('saved_places')
-    .select('id, source_url, place:places(*)')
+    .select('id, source_url, source_type, ai_note, place:places(*)')
     .eq('user_id', userId);
 
   if (error) {
@@ -225,7 +308,9 @@ async function findExistingSavedPlaceForUser(
       if (!place) return null;
       return {
         id: row.id,
-        source_url: row.source_url,
+        source_url: row.source_url ?? null,
+        source_type: row.source_type ?? null,
+        ai_note: row.ai_note ?? null,
         place,
       } satisfies ExistingSavedPlaceLookup;
     })
@@ -276,12 +361,14 @@ export async function saveSavedPlace(
       savedPlaceId: existingForUser.id,
       placeId: existingForUser.place.id,
     });
-    await patchExistingSavedPlace(existingForUser.id, input);
+    const enrichment = await enrichExistingSavedPlace(existingForUser, input);
     await patchSavedPlaceCategory(existingForUser.id, categoryResolution);
     return {
       status: 'duplicate',
       place: existingForUser.place,
       savedPlaceId: existingForUser.id,
+      saved: await readSavedPlaceAfterEnrichment(existingForUser.id),
+      enrichment,
     };
   }
 
@@ -416,14 +503,14 @@ export async function saveSavedPlace(
     // so a re-save from a new link refreshes those fields, and return it
     // as a duplicate so the UI can show "Already saved".
     if ((savedErr as any).code === '23505') {
-      console.debug('[savedPlacesService] saved_places duplicate, updating existing', {
+      console.debug('[savedPlacesService] saved_places duplicate, enriching existing', {
         userId,
         placeId: placeRow.id,
       });
 
       const { data: existingSaved, error: existingSavedErr } = await supabase
         .from('saved_places')
-        .select('id')
+        .select('id, source_url, source_type, ai_note')
         .eq('user_id', userId)
         .eq('place_id', placeRow.id)
         .maybeSingle();
@@ -435,8 +522,9 @@ export async function saveSavedPlace(
         );
       }
 
+      let enrichment: SavedPlaceEnrichmentPlan | undefined;
       if (existingSaved?.id) {
-        await patchExistingSavedPlace(existingSaved.id, input);
+        enrichment = await enrichExistingSavedPlace(existingSaved, input);
         await patchSavedPlaceCategory(existingSaved.id, categoryResolution);
       }
 
@@ -444,6 +532,8 @@ export async function saveSavedPlace(
         status: 'duplicate',
         place: placeRow,
         savedPlaceId: existingSaved?.id ?? null,
+        saved: existingSaved?.id ? await readSavedPlaceAfterEnrichment(existingSaved.id) : null,
+        enrichment,
       };
     }
     console.warn('[savedPlacesService] saved_places insert failed', savedErr.message);

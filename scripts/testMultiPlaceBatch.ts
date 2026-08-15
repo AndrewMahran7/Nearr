@@ -106,7 +106,10 @@ for (const count of [0, 1, 2, 5, 8, 10]) {
   assert.equal(closeBatchSearch(resolved, 'logical-3').rows['logical-3']!.search.phase, 'closed');
 }
 
-// Already-saved and auto-saved rows retain ids, cannot toggle, and are excluded from N.
+// Rows THIS JOB already saved retain ids, cannot toggle, and are excluded from N.
+// A place the user saved earlier (by any means) is different: it stays a real
+// save target, because running the save is how the shared post's source_url /
+// ai_note reach that existing row.
 {
   const source = slots(3);
   source[2] = { ...source[2]!, saveState: 'auto_saved', savedPlaceId: 'saved-auto' };
@@ -115,12 +118,22 @@ for (const count of [0, 1, 2, 5, 8, 10]) {
     slots: source,
     savedByGoogleId: { p1: 'saved-existing' },
   });
-  assert.equal(batch.rows['logical-1']!.persistence, 'already_saved');
+  assert.equal(batch.rows['logical-1']!.persistence, 'pending', 'an earlier save is enrichable');
   assert.equal(batch.rows['logical-1']!.savedPlaceId, 'saved-existing');
+  assert.equal(batch.rows['logical-1']!.selectedForSave, true);
   assert.equal(batch.rows['logical-3']!.persistence, 'saved');
   assert.equal(batch.rows['logical-3']!.savedPlaceId, 'saved-auto');
-  assert.equal(selectedBatchTargets(batch).length, 0);
-  assert.equal(toggleBatchRow(batch, 'logical-1'), batch, 'already-saved rows are not new-save toggles');
+  assert.deepEqual(
+    selectedBatchTargets(batch).map((target) => target.logicalPlaceId),
+    ['logical-1'],
+    'this job\'s own save is terminal; the pre-existing save is enriched',
+  );
+  assert.notEqual(toggleBatchRow(batch, 'logical-1'), batch, 'the user can still deselect it');
+  assert.equal(
+    toggleBatchRow(batch, 'logical-3'),
+    batch,
+    'a row this job already saved is not a new-save toggle',
+  );
 }
 
 // Duplicate provider selections count and persist only once.

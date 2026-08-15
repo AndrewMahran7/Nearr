@@ -2100,7 +2100,9 @@ function LegacyShareScreen() {
       });
       // Seed the shared cache so the map's savedPlaceId focus finds the newly
       // saved place immediately (before any network revalidation).
-      if (result.status === 'saved') {
+      // A duplicate is an ENRICHED existing save, so its re-read row is seeded
+      // too — otherwise the newly attached post stays invisible until restart.
+      if (result.saved) {
         upsertSavedPlaceIntoCache(result.saved);
       }
       if (!result.savedPlaceId) {

@@ -33,7 +33,11 @@ export type ShareJobsRealtimeClient = {
 
 type SubscriptionOptions = {
   client: ShareJobsRealtimeClient;
-  scope: 'share_jobs' | 'share_jobs_badge' | 'saved_place_enrichment';
+  scope:
+    | 'share_jobs'
+    | 'share_jobs_badge'
+    | 'saved_place_enrichment'
+    | 'saved_place_share_completion';
   /** Defaults to `share_jobs` so existing callers are unchanged. */
   table?: ShareJobsRealtimeTable;
   userId: string;

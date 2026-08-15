@@ -37,7 +37,8 @@ import { buildShareJobDetailState } from '@/lib/shareJobDetailState';
 import { planOpenOriginal, validateSourceUrl } from '@/lib/openOriginalPost';
 import { sanitizeErrorText } from '@/lib/sanitizeError';
 import { logDebug } from '@/lib/logger';
-import { findSavedPlaceIdByGooglePlaceId } from '@/lib/shareJobsUi';
+import { alreadySavedActionCopy } from '@/lib/savedPlaceSourceMerge';
+import { normalizeShareUrl } from '@/lib/shareAgent/tiktokUrl';
 import { PHASE_1_COPY, splitPlaceAddress } from '@/lib/sharePhase1Ui';
 import { buildPhase2PreviewJob, isPhase2PreviewId } from '@/lib/phase2Preview';
 import {
@@ -92,6 +93,7 @@ import { getPlaceDetails, searchPlaces, type PlaceCandidate } from '@/services/p
 import {
   persistShareJobCandidate,
   shareJobCandidateToPlaceCandidate,
+  shareJobSourceType,
 } from '@/services/shareJobCandidateSave';
 import {
   cancelShareJob,
@@ -130,6 +132,9 @@ function platformName(platform: string | null | undefined): string {
       return 'Shared link';
   }
 }
+
+/** Reuse Nearr's existing share-URL normalization for "is this the same post?". */
+const shareUrlKey = (url: string): string => normalizeShareUrl(url).url;
 
 function hasCoords(c: ShareJobCandidate): boolean {
   return Number.isFinite(c.latitude) && Number.isFinite(c.longitude);
@@ -689,24 +694,10 @@ function ShareJobDetailScreen() {
     router.replace(resolveOpenSavedPlaceRoute(args));
   }
 
-  // The proposed place is already on the user's map. Resolve the job to that
-  // existing saved place (no duplicate save) and open it. Resolving failures
-  // are non-fatal — we still open the place (the destination never depends on
-  // the job staying active).
-  async function viewAlreadySaved(savedPlaceId: string, googlePlaceId?: string | null) {
-    if (resolvingRef.current) return;
-    resolvingRef.current = true;
-    try {
-      if (job) {
-        await markShareJobResolved(job.id, savedPlaceId);
-      }
-    } catch {
-      // Non-fatal: the place is saved regardless.
-    } finally {
-      resolvingRef.current = false;
-    }
-    openExistingPlace({ savedPlaceId, googlePlaceId, source: 'share_job_already_saved' });
-  }
+  // NOTE: there is deliberately no "already saved → just open it" shortcut.
+  // Skipping the save is what dropped the shared post's source context on the
+  // floor; `handleSaveStored` runs for both cases and enriches the existing
+  // row through the canonical save path.
 
   function backToQueue() {
     if (router.canGoBack()) router.back();
@@ -1032,6 +1023,12 @@ function ShareJobDetailScreen() {
                 <Text style={[typography.caption, styles.savedText]}>Already saved</Text>
               ) : row.persistence === 'saved' ? (
                 <Text style={[typography.caption, styles.savedText]}>Saved</Text>
+              ) : row.savedPlaceId ? (
+                // Already on the map, but still selectable: saving attaches
+                // this post to that existing place rather than duplicating it.
+                <Text style={[typography.caption, styles.savedText]}>
+                  Already on your map · this post will be attached
+                </Text>
               ) : duplicateOwner ? (
                 <Text style={[typography.caption, styles.batchWarning]}>Same place selected above · excluded from count</Text>
               ) : null}
@@ -1217,8 +1214,20 @@ function ShareJobDetailScreen() {
   const isManual = detail.kind === 'manual';
   const selectedPendingCount = batch ? selectedBatchTargets(batch).length : 0;
   const single = candidates[0];
-  const alreadySavedId = single
-    ? findSavedPlaceIdByGooglePlaceId(single.googlePlaceId, getSavedPlacesCacheSnapshot())
+  // The user may already have this place (e.g. they saved it manually months
+  // ago). That is not a reason to skip the save — running it is how this
+  // post's source_url / ai_note reach that existing row. The copy just has to
+  // describe what will actually happen.
+  const alreadySaved = single?.googlePlaceId
+    ? savedSnapshot.find((row) => row.place?.google_place_id === single.googlePlaceId) ?? null
+    : null;
+  const alreadySavedId = alreadySaved?.id ?? null;
+  const alreadySavedCopy = alreadySaved
+    ? alreadySavedActionCopy(
+        alreadySaved,
+        { sourceUrl, sourceType: shareJobSourceType(platform), aiNote: single?.aiNote ?? null },
+        shareUrlKey,
+      )
     : null;
   const placeAddress = splitPlaceAddress(single?.formattedAddress);
 
@@ -1485,21 +1494,19 @@ function ShareJobDetailScreen() {
               </View>
             </View>
 
-            {alreadySavedId ? (
-              <Button
-                title={PHASE_1_COPY.viewOnMap}
-                onPress={() => void viewAlreadySaved(alreadySavedId, single?.googlePlaceId)}
-                style={styles.primaryBtn}
-              />
-            ) : (
-              <Button
-                title="Save to my map"
-                onPress={() => single && void handleSaveStored(single)}
-                disabled={busy || !single}
-                loading={busy}
-                style={styles.primaryBtn}
-              />
-            )}
+            {alreadySavedCopy?.note ? (
+              <Text style={[typography.caption, styles.help]}>{alreadySavedCopy.note}</Text>
+            ) : null}
+
+            {/* One action either way: the save path enriches an existing row
+                instead of creating a second one, so it is safe to always run. */}
+            <Button
+              title={alreadySavedCopy?.action ?? 'Save to my map'}
+              onPress={() => single && void handleSaveStored(single)}
+              disabled={busy || !single}
+              loading={busy}
+              style={styles.primaryBtn}
+            />
 
             {searchExpanded ? (
               renderManualSearch({

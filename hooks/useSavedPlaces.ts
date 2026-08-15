@@ -266,6 +266,32 @@ export function useSavedPlaces() {
     });
   }, [fetch, userId]);
 
+  // A share that resolves to a place the user ALREADY saved enriches that
+  // existing row (source_url / source_type / ai_note) without inserting one.
+  // The metadata auto-save path finalizes on `share_jobs` alone, so without
+  // this the newly attached post could sit behind the staleness window while
+  // the place page still shows no "Watch post". Same hardened helper, its own
+  // topic; a saved_place_id is what makes a job row relevant to this list.
+  useEffect(() => {
+    if (!userId) return;
+    return createShareJobsRealtimeSubscription({
+      client: supabase,
+      scope: 'saved_place_share_completion',
+      table: 'share_jobs',
+      userId,
+      shouldInvalidate: (payload) => typeof payload?.new?.saved_place_id === 'string',
+      onInvalidate: () => {
+        void fetch('background');
+      },
+      onError: (error) => {
+        logDebug(
+          'saved-places',
+          `share-job realtime unavailable: ${error instanceof Error ? error.message : 'unknown'}`,
+        );
+      },
+    });
+  }, [fetch, userId]);
+
   useEffect(() => {
     // Wait until auth has finished initialising before touching Supabase.
     // Without this guard the query fires before the session is restored from

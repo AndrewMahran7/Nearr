@@ -124,6 +124,15 @@ async function findExistingSavedPlaceForUser(
   return rows.find((row) => isNearbySavedPlaceMatch(candidate, row)) ?? null;
 }
 
+/**
+ * Attach a resolved share's context to a saved place the user ALREADY has.
+ *
+ * Fill-if-empty, never destructive: `saved_places` is a single-source model,
+ * so an existing post stays attached and a later, different post is preserved
+ * rather than overwritten. `notes` is user-authored and is never written here —
+ * generated cues belong in `ai_note`. Both writes are guarded on the column
+ * still being empty, which makes concurrent jobs and retries converge.
+ */
 async function patchExistingSavedPlaceForUser(
   client: any,
   savedPlaceId: string,
@@ -131,22 +140,30 @@ async function patchExistingSavedPlaceForUser(
   sourceUrl: string,
   autoNote?: string | null,
 ): Promise<void> {
-  const patch: Record<string, unknown> = {
-    source_type: source,
-    source_url: sourceUrl,
-  };
-  if (autoNote !== undefined) {
-    patch.notes = autoNote ?? null;
-  }
   const { error } = await client
     .from('saved_places')
-    .update(patch)
-    .eq('id', savedPlaceId);
+    .update({ source_type: source, source_url: sourceUrl })
+    .eq('id', savedPlaceId)
+    .is('source_url', null);
   if (error) {
     console.log(
-      '[process-share-link] duplicate saved_place update failed',
+      '[process-share-link] duplicate saved_place source attach failed',
       error.message,
     );
+  }
+  const note = typeof autoNote === 'string' ? autoNote.trim() : '';
+  if (note) {
+    const { error: noteError } = await client
+      .from('saved_places')
+      .update({ ai_note: note })
+      .eq('id', savedPlaceId)
+      .is('ai_note', null);
+    if (noteError) {
+      console.log(
+        '[process-share-link] duplicate saved_place ai_note attach failed',
+        noteError.message,
+      );
+    }
   }
 }
 
@@ -258,7 +275,9 @@ export async function saveForUser(args: {
     radius_unit: null,
     source_type: source,
     source_url: sourceUrl,
-    notes: autoNote ?? null,
+    // Generated context lives in `ai_note`; `notes` stays user-authored.
+    notes: null,
+    ai_note: autoNote ?? null,
     category: categoryResolution.category,
     category_source: categoryResolution.source,
     category_confidence: categoryResolution.confidence,
