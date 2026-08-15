@@ -64,6 +64,14 @@ export class TikTokMediaResolver implements MediaResolver {
       workDir: input.workDir,
       signal: input.signal,
       sourceLabel: 'tiktok',
+      // Verified live (2026-08-15): fetching TikTok's picked progressive CDN
+      // URL ourselves consistently 403s, even after forwarding the Referer
+      // yt-dlp itself reports — the CDN evidently binds the URL to more of
+      // yt-dlp's own request context than one header. Rather than replicate
+      // that context (which risks sliding into fingerprint spoofing, out of
+      // scope per the mission), let yt-dlp's own bounded download handle it
+      // end-to-end, same fallback already used for YouTube's legacy format.
+      skipDirectUrl: true,
     });
 
     return {
