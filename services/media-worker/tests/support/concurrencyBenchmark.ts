@@ -20,6 +20,7 @@ function config(): WorkerConfig {
     instagramResolverEnabled: true, tiktokResolverEnabled: true, youtubeResolverEnabled: true,
     facebookResolverEnabled: true, snapchatResolverEnabled: true, nativeVideoAnalysisEnabled: true,
     supabaseUrl: 'http://localhost', supabaseServiceRoleKey: 'benchmark', finalizeUrl: 'http://localhost/finalize',
+    mediaFinalizeSecret: 'benchmark',
     maxConcurrency: 1, claimBatchSize: 1, claimLockSeconds: 600, retryBaseSeconds: 30, retryMaxSeconds: 900,
     maxDurationSeconds: 180, maxDownloadBytes: 150 * 1024 * 1024, downloadTimeoutMs: 60_000,
     jobTimeoutMs: 480_000, maxSelectedFrames: 24, frameIntervalSeconds: 1, redirectLimit: 3,

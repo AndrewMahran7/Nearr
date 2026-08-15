@@ -9,6 +9,7 @@ function config(over: Partial<WorkerConfig> = {}): WorkerConfig {
     supabaseUrl: 'https://example.supabase.co',
     supabaseServiceRoleKey: 'service-role',
     finalizeUrl: 'https://example.supabase.co/functions/v1/process-share-jobs',
+    mediaFinalizeSecret: 'finalize-secret',
     transcriptionProvider: 'openai',
     transcriptionApiKey: 'openai-key',
     analysisProvider: 'gemini',

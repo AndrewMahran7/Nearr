@@ -33,6 +33,7 @@ function testCfg(over: Partial<WorkerConfig> = {}): WorkerConfig {
     supabaseUrl: 'http://localhost',
     supabaseServiceRoleKey: 'k',
     finalizeUrl: 'http://localhost/f',
+    mediaFinalizeSecret: 'f',
     maxConcurrency: 1,
     claimBatchSize: 2,
     claimLockSeconds: 600,

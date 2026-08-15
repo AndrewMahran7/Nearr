@@ -72,7 +72,7 @@ import {
   evaluateMetadataAutoSave,
   formatMetadataAutoSaveDecisionLog,
 } from './metadataAutoSaveGate.ts';
-import { authorizeServiceRoleBearer, authorizeWorkerSecret, planPreResolve, planPostResolve } from './mediaFinalizePlan.ts';
+import { authorizeMediaFinalizeSecret, authorizeWorkerSecret, planPreResolve, planPostResolve } from './mediaFinalizePlan.ts';
 import {
   classifyFinalizeException,
   formatFinalizeReliabilityLog,
@@ -1766,17 +1766,20 @@ serve(async (req) => {
   // ---- Worker auth --------------------------------------------------------
   // Primary: a dedicated, high-entropy scheduler secret in the
   // `x-nearr-worker-secret` header (decoupled from the rotating service-role
-  // key). Fallback: the service-role key as a bearer, kept ONLY for manual /
-  // admin invocation. Both are constant-time compared and fail closed. This
-  // endpoint is deployed with verify_jwt disabled (a private scheduler URL),
-  // so this dedicated-secret check is the sole gate and runs before any work.
+  // key). Fallback: a SEPARATE dedicated `MEDIA_FINALIZE_SECRET` bearer, used
+  // ONLY by the media-worker's finalize callback (verifyPlaceEvidence) — also
+  // decoupled from the service-role key, so a key rotation can never silently
+  // break this callback again (the exact failure this replaced). Both are
+  // constant-time compared and fail closed. This endpoint is deployed with
+  // verify_jwt disabled (a private scheduler URL), so these dedicated-secret
+  // checks are the sole gate and run before any work.
   const workerSecret = Deno.env.get('SHARE_JOBS_WORKER_SECRET') ?? '';
   const presentedWorkerSecret = req.headers.get('x-nearr-worker-secret') ?? '';
-  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+  const mediaFinalizeSecret = Deno.env.get('MEDIA_FINALIZE_SECRET') ?? '';
   const headerAuth = req.headers.get('authorization') ?? '';
   const authorized =
     authorizeWorkerSecret(presentedWorkerSecret, workerSecret) ||
-    authorizeServiceRoleBearer(headerAuth, serviceRoleKey);
+    authorizeMediaFinalizeSecret(headerAuth, mediaFinalizeSecret);
   if (!authorized) {
     return json({ error: 'unauthorized' }, 401);
   }

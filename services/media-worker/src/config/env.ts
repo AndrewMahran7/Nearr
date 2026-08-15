@@ -55,6 +55,10 @@ export type WorkerConfig = {
   /** process-share-jobs finalize endpoint. Defaults to
    *  `${supabaseUrl}/functions/v1/process-share-jobs`. */
   finalizeUrl: string;
+  /** Dedicated bearer for the finalize callback (verifyPlaceEvidence). NOT the
+   *  service-role key — independent so a service-role rotation can never
+   *  silently break this callback. Required to start. */
+  mediaFinalizeSecret: string;
 
   // ---- Concurrency / claiming ----
   maxConcurrency: number;
@@ -179,6 +183,7 @@ export function loadConfig(): WorkerConfig {
     supabaseUrl,
     supabaseServiceRoleKey: str('SUPABASE_SERVICE_ROLE_KEY'),
     finalizeUrl,
+    mediaFinalizeSecret: str('MEDIA_FINALIZE_SECRET'),
 
     maxConcurrency: int('MEDIA_WORKER_MAX_CONCURRENCY', 1, 1),
     claimBatchSize: int('MEDIA_WORKER_CLAIM_BATCH', 2, 1),
@@ -234,6 +239,7 @@ export function validateConfig(cfg: WorkerConfig): ConfigValidation {
   if (!cfg.supabaseUrl) missing.push('SUPABASE_URL');
   if (!cfg.supabaseServiceRoleKey) missing.push('SUPABASE_SERVICE_ROLE_KEY');
   if (!cfg.finalizeUrl) missing.push('SHARE_JOBS_FINALIZE_URL');
+  if (!cfg.mediaFinalizeSecret) missing.push('MEDIA_FINALIZE_SECRET');
   if (cfg.transcriptionProvider !== 'openai') missing.push('MEDIA_TRANSCRIPTION_PROVIDER=openai');
   if (!cfg.transcriptionApiKey) missing.push('MEDIA_TRANSCRIPTION_API_KEY');
   if (cfg.analysisProvider !== 'gemini') missing.push('MEDIA_ANALYSIS_PROVIDER=gemini');
@@ -271,6 +277,7 @@ export function redactedConfigSummary(cfg: WorkerConfig): Record<string, unknown
     allowedMediaHosts: cfg.allowedMediaHosts,
     hasWorkerSecret: !!cfg.workerSecret,
     hasServiceRoleKey: !!cfg.supabaseServiceRoleKey,
+    hasMediaFinalizeSecret: !!cfg.mediaFinalizeSecret,
     hasGeminiKey: !!cfg.geminiApiKey,
   };
 }

@@ -55,8 +55,11 @@ safety gate decides — a wrong silent save is worse than asking the user.
 | GET | `/ready` | none | Config valid + ffmpeg/ffprobe/yt-dlp present + Supabase reachable. Never returns secrets. |
 | POST | `/v1/process-media-tasks` | `Bearer SHARE_MEDIA_WORKER_SECRET` | Claim + process a batch. |
 
-The service-role key is used **internally only** (DB + finalize call) and is
-never accepted on `/v1/process-media-tasks`, never returned, never logged.
+The service-role key is used **internally only** (DB access) and is never
+accepted on `/v1/process-media-tasks`, never returned, never logged. The
+finalize call to `process-share-jobs` is authenticated separately with a
+dedicated `MEDIA_FINALIZE_SECRET` bearer — independent of the service-role
+key, so a service-role rotation can never silently break it.
 
 ## Security limits (and why these defaults)
 

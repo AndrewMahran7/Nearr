@@ -4,8 +4,10 @@
 // the process-share-jobs finalize endpoint. The worker never verifies against
 // Google Places or decides safeToAutoSave itself — that stays in one place.
 //
-// The service-role key authenticates this server-to-server call. It is used
-// INTERNALLY only and is never logged, returned to clients, or sent via pg_net.
+// A dedicated MEDIA_FINALIZE_SECRET authenticates this server-to-server call —
+// NOT the Supabase service-role key, so a service-role rotation can never
+// silently break this callback. It is used INTERNALLY only and is never
+// logged, returned to clients, or sent via pg_net.
 
 import type { WorkerConfig } from '../config/env.js';
 import type { MediaPlaceEvidence } from '../types/evidence.js';
@@ -35,7 +37,7 @@ export async function verifyPlaceEvidence(
     method: 'POST',
     headers: {
       'content-type': 'application/json',
-      authorization: `Bearer ${cfg.supabaseServiceRoleKey}`,
+      authorization: `Bearer ${cfg.mediaFinalizeSecret}`,
     },
     body: JSON.stringify({
       mode: 'finalize_media_task',

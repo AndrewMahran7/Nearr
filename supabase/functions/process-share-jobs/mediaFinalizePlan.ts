@@ -14,12 +14,15 @@
 export type FinalizeOutcome = 'evidence' | 'insufficient_evidence' | 'unavailable' | 'failed';
 
 // ---------------------------------------------------------------------------
-// Request authorization. The media-worker calls the finalize endpoint with the
-// Supabase SERVICE-ROLE key as a bearer token (the worker holds it for its own
-// DB access); the worker's inbound-invocation secret is a SEPARATE credential
-// and is NOT accepted here. Kept pure + exact-match so it can be unit-tested
-// from Node and shared verbatim with the Deno request handler — a regression
-// that weakened it (prefix match, empty-key accept, case slip) fails the test.
+// Request authorization. The media-worker calls the finalize endpoint with a
+// DEDICATED `MEDIA_FINALIZE_SECRET` bearer token — a credential independent of
+// the Supabase service-role key, so a service-role rotation can never silently
+// break this callback (the exact failure that motivated splitting it out). The
+// worker's inbound-invocation secret (`SHARE_MEDIA_WORKER_SECRET`) is a
+// SEPARATE credential and is NOT accepted here. Constant-time compared,
+// fail-closed, kept pure + exact-match so it can be unit-tested from Node and
+// shared verbatim with the Deno request handler — a regression that weakened
+// it (prefix match, empty-secret accept, case slip) fails the test.
 // ---------------------------------------------------------------------------
 
 export function extractBearerToken(authorizationHeader: string | null | undefined): string {
@@ -28,15 +31,15 @@ export function extractBearerToken(authorizationHeader: string | null | undefine
   return header.slice(7).trim();
 }
 
-export function authorizeServiceRoleBearer(
+export function authorizeMediaFinalizeSecret(
   authorizationHeader: string | null | undefined,
-  serviceRoleKey: string | null | undefined,
+  mediaFinalizeSecret: string | null | undefined,
 ): boolean {
-  // An empty/absent expected key can never authorize (fail closed).
-  if (!serviceRoleKey) return false;
+  // An empty/absent expected secret can never authorize (fail closed).
+  if (!mediaFinalizeSecret) return false;
   const bearer = extractBearerToken(authorizationHeader);
   if (!bearer) return false;
-  return bearer === serviceRoleKey;
+  return constantTimeEqual(bearer, mediaFinalizeSecret);
 }
 
 // ---------------------------------------------------------------------------

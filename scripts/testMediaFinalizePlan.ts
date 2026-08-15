@@ -13,7 +13,7 @@
  */
 
 import {
-  authorizeServiceRoleBearer,
+  authorizeMediaFinalizeSecret,
   authorizeWorkerSecret,
   constantTimeEqual,
   extractBearerToken,
@@ -136,23 +136,25 @@ for (const mode of ['single', 'multi', 'manual'] as const) {
   check(`needs_help ${mode} passthrough`, p.action === 'needs_help' && p.mode === mode && p.downgraded === false);
 }
 
-// ---- Callback authentication (service-role bearer, EXACT match) ------------
+// ---- Callback authentication (dedicated MEDIA_FINALIZE_SECRET bearer) ------
 // The Deno request handler shares this exact function. These fail if production
-// auth is ever weakened (prefix match, empty-key accept, scheme slip).
+// auth is ever weakened (prefix match, empty-secret accept, scheme slip).
+// Independent of SUPABASE_SERVICE_ROLE_KEY so a service-role rotation can never
+// silently break this callback (the exact failure this replaced).
 {
-  const KEY = 'service-role-key-abc123';
-  check('auth: exact bearer authorizes', authorizeServiceRoleBearer(`Bearer ${KEY}`, KEY) === true);
-  check('auth: case-insensitive scheme authorizes', authorizeServiceRoleBearer(`bearer ${KEY}`, KEY) === true);
-  check('auth: wrong token rejected', authorizeServiceRoleBearer('Bearer wrong', KEY) === false);
-  check('auth: token prefix rejected', authorizeServiceRoleBearer(`Bearer ${KEY.slice(0, -1)}`, KEY) === false);
-  check('auth: token superstring rejected', authorizeServiceRoleBearer(`Bearer ${KEY}x`, KEY) === false);
-  check('auth: missing header rejected', authorizeServiceRoleBearer(null, KEY) === false);
-  check('auth: empty header rejected', authorizeServiceRoleBearer('', KEY) === false);
-  check('auth: non-bearer scheme rejected', authorizeServiceRoleBearer(`Basic ${KEY}`, KEY) === false);
-  check('auth: bearer without token rejected', authorizeServiceRoleBearer('Bearer ', KEY) === false);
-  check('auth: empty service key fails closed', authorizeServiceRoleBearer('Bearer anything', '') === false);
-  check('auth: raw token without scheme rejected', authorizeServiceRoleBearer(KEY, KEY) === false);
-  check('extractBearerToken parses token', extractBearerToken(`Bearer ${KEY}`) === KEY);
+  const SECRET = 'media-finalize-secret-abc123';
+  check('auth: correct secret authorizes', authorizeMediaFinalizeSecret(`Bearer ${SECRET}`, SECRET) === true);
+  check('auth: case-insensitive scheme authorizes', authorizeMediaFinalizeSecret(`bearer ${SECRET}`, SECRET) === true);
+  check('auth: wrong secret rejected', authorizeMediaFinalizeSecret('Bearer wrong', SECRET) === false);
+  check('auth: secret prefix rejected', authorizeMediaFinalizeSecret(`Bearer ${SECRET.slice(0, -1)}`, SECRET) === false);
+  check('auth: secret superstring rejected', authorizeMediaFinalizeSecret(`Bearer ${SECRET}x`, SECRET) === false);
+  check('auth: missing header rejected', authorizeMediaFinalizeSecret(null, SECRET) === false);
+  check('auth: empty header rejected', authorizeMediaFinalizeSecret('', SECRET) === false);
+  check('auth: non-bearer scheme rejected', authorizeMediaFinalizeSecret(`Basic ${SECRET}`, SECRET) === false);
+  check('auth: bearer without token rejected', authorizeMediaFinalizeSecret('Bearer ', SECRET) === false);
+  check('auth: empty expected secret fails closed', authorizeMediaFinalizeSecret('Bearer anything', '') === false);
+  check('auth: raw token without scheme rejected', authorizeMediaFinalizeSecret(SECRET, SECRET) === false);
+  check('extractBearerToken parses token', extractBearerToken(`Bearer ${SECRET}`) === SECRET);
   check('extractBearerToken trims token', extractBearerToken('Bearer   spaced  ') === 'spaced');
   check('extractBearerToken non-bearer => empty', extractBearerToken('Basic xyz') === '');
 }

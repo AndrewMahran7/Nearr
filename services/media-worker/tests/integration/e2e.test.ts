@@ -44,7 +44,7 @@ import { generateSyntheticMedia, ffmpegAvailable } from '../support/generateSynt
 // the (mocked, per mission) Google-Places + saveForUser + notification I/O. If
 // production auth, ownership, idempotency, or routing changes, this test changes.
 import {
-  authorizeServiceRoleBearer,
+  authorizeMediaFinalizeSecret,
   isTerminalTaskStatus,
   planPreResolve,
   planPostResolve,
@@ -219,7 +219,7 @@ async function saveForUserStub(
 
 function makeFinalizeServer(
   client: SupabaseClient,
-  serviceRoleKey: string,
+  mediaFinalizeSecret: string,
 ): Promise<{ url: string; close: () => Promise<void> }> {
   const server = http.createServer((req, res) => {
     void (async () => {
@@ -228,8 +228,8 @@ function makeFinalizeServer(
         res.end(JSON.stringify(o));
       };
 
-      // PRODUCTION request auth: bearer must equal the service-role key.
-      if (!authorizeServiceRoleBearer(req.headers['authorization'] ?? null, serviceRoleKey)) {
+      // PRODUCTION request auth: bearer must equal the dedicated finalize secret.
+      if (!authorizeMediaFinalizeSecret(req.headers['authorization'] ?? null, mediaFinalizeSecret)) {
         return reply({ error: 'unauthorized' }, 401);
       }
 
@@ -336,12 +336,13 @@ test('full synthetic queue -> finalizer path', { skip: !ENABLED }, async (t) => 
   const userIdB = '22222222-2222-4222-8222-222222222222'; // seeded by scripts/seedTestUsers.sql
   const work = await mkdtemp(path.join(tmpdir(), 'nearr-e2e-'));
   const media = await generateSyntheticMedia(work);
-  const finalizeSrv = await makeFinalizeServer(client, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+  const FINALIZE_SECRET = 'e2e-media-finalize-secret';
+  const finalizeSrv = await makeFinalizeServer(client, FINALIZE_SECRET);
 
-  // Server-to-server calls carry the service-role bearer, exactly as the worker
-  // does (verifyPlaceEvidence). Wrong/absent bearer must be rejected.
-  const SERVICE_BEARER = `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY!}`;
-  const finalizePost = (payload: Record<string, unknown>, authHeader: string | null = SERVICE_BEARER) =>
+  // Server-to-server calls carry the dedicated finalize-secret bearer, exactly
+  // as the worker does (verifyPlaceEvidence). Wrong/absent bearer must be rejected.
+  const FINALIZE_BEARER = `Bearer ${FINALIZE_SECRET}`;
+  const finalizePost = (payload: Record<string, unknown>, authHeader: string | null = FINALIZE_BEARER) =>
     fetch(finalizeSrv.url, {
       method: 'POST',
       headers: { 'content-type': 'application/json', ...(authHeader ? { authorization: authHeader } : {}) },
@@ -359,6 +360,7 @@ test('full synthetic queue -> finalizer path', { skip: !ENABLED }, async (t) => 
       finalizeUrl: finalizeSrv.url,
       supabaseUrl: process.env.SUPABASE_URL!,
       supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      mediaFinalizeSecret: FINALIZE_SECRET,
       tempDir: tempRoot,
       maxConcurrency: 1,
       claimBatchSize: 5,
