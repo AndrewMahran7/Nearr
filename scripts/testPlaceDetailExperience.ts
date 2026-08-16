@@ -36,23 +36,32 @@ assert.ok(!detail.includes('>Category</Text>'), 'Category must not be a standalo
 assert.match(detail, /styles\.primaryAction/, 'Directions is the one filled action');
 assert.match(detail, />Directions</);
 assert.ok(detail.includes('label="Share"'));
-assert.match(detail, /label=\{sourceActionLabel\(saved\)\}/, 'source-post access is a first-class action');
+// Source-post access is a first-class action. The label/brand now come from
+// the shared attribution resolver so Instagram and TikTok stay peers.
+assert.match(
+  detail,
+  /sourceAttribution\.actionLabel/,
+  'source-post access is a first-class action',
+);
 assert.match(detail, /buildSavedPlaceShareContent\(saved\)/);
 assert.match(detail, /void openSource\(\)/);
 assert.match(detail, /actionPill: \{[\s\S]*minHeight: 52/);
 
-// Personal context is separate, live from the saved row, and the source cue
-// leads because it answers "why did I save this?".
-assert.ok(detail.indexOf('Your note') < detail.indexOf('Nearby reminder'));
+// Personal context is live from the saved row and leads the page, because it
+// answers "why did I save this?" before anything operational. V2 presents it as
+// ONE surface (notes ?? ai_note) rather than a cue block plus a user block.
 assert.ok(
-  detail.indexOf('narrative.showSourceNote') < detail.indexOf('narrative.userNote'),
-  'the source cue is the emotional lead, above the user note',
+  detail.indexOf('WHY YOU SAVED IT') < detail.indexOf('Nearby reminder'),
+  'why-you-saved-it leads the reminder utility',
 );
-assert.match(detail, /accessibilityLabel="Add your own note"/);
-assert.match(detail, /savedPlaceNarrative\(\{ notes, ai_note: saved\.ai_note \}\)/);
+assert.ok(
+  detail.indexOf('WHY YOU SAVED IT') < detail.indexOf('SAVED FROM'),
+  'why you saved it comes before where you saved it from',
+);
+assert.match(detail, /accessibilityLabel="Add why you saved this place"/);
+assert.match(detail, /whySavedDisplay\(\{ notes, ai_note: saved\.ai_note \}\)/);
 assert.match(detail, /accessibilityLiveRegion="polite"/);
 assert.match(detail, /styles\.sourceNoteLabel/);
-assert.match(detail, />Use as my note</);
 assert.match(detail, /<NoteEditorModal[\s\S]*aiNote=\{saved\.ai_note\}/);
 assert.doesNotMatch(detail, /\[saved\.place\.google_place_id, saved\]/, 'AI-note updates cannot reset photo/detail state');
 

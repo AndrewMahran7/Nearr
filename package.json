@@ -123,7 +123,8 @@
     "test:multi-place-review": "ts-node -P scripts/tsconfig.json scripts/testMultiPlaceReviewContracts.ts",
     "test:saved-browse": "ts-node -P scripts/tsconfig.json scripts/testSavedPlacesBrowse.ts",
     "test:saved-browse-contracts": "ts-node -P scripts/tsconfig.json scripts/testSavedPlacesBrowseContracts.ts",
-    "test:place-detail": "ts-node -P scripts/tsconfig.json scripts/testPlaceDetailExperience.ts"
+    "test:place-detail": "ts-node -P scripts/tsconfig.json scripts/testPlaceDetailExperience.ts",
+    "test:place-detail-v2": "ts-node -P scripts/tsconfig.json scripts/testPlaceDetailV2.ts"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "1.23.1",

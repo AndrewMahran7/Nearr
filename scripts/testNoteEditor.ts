@@ -57,11 +57,22 @@ assert.match(component, /onPress=\{\(\) => setDraft\(aiNote\.trim\(\)\)\}/, 'Use
 assert.match(component, />Use this</);
 assert.match(details, /setNotes\(nextNotes \?\? ''\)/, 'details refresh immediately');
 assert.match(details, /updateSavedPlacesCache/, 'the shared saved-place cache refreshes immediately');
-// The source cue carries its own heading, distinct from "Your note", so the
-// two can never read as one field. (The sheet's label is asserted in
-// scripts/testSavedPlaceDetailUi.ts; here we only pin the separation.)
-assert.match(details, /styles\.sourceNoteLabel/, 'the source cue has its own labeled section');
-assert.match(details, />Your note</, 'the user note keeps a distinct heading');
-assert.match(details, />Use as my note</, 'AI text becomes user text only through an explicit action');
+// Place Detail V2 deliberately presents ONE "Why you saved it" surface, so the
+// separation is no longer VISUAL — it is a data guarantee. What must never
+// change: an edit writes `notes` and leaves `ai_note` provenance untouched, and
+// the editor is seeded from the cue only while the user has no note of their
+// own. (The display rule itself is unit-tested in scripts/testPlaceDetailV2.ts.)
+assert.match(details, /styles\.sourceNoteLabel/, 'the single surface has its own labeled section');
+assert.match(details, /whySaved\.seedFromSourceNote/, 'the editor seeds from the cue, once');
+assert.match(
+  details,
+  /updateSavedPlace\(saved\.id, \{ notes: nextNotes \}\)/,
+  'an edit persists into the user note field only',
+);
+{
+  const start = details.indexOf('async function saveNote(');
+  const body = details.slice(start, details.indexOf('\n  }', start));
+  assert.ok(!body.includes('ai_note'), 'ai_note provenance is never written or cleared by an edit');
+}
 
 console.log('PASS dedicated note editor state, persistence, cancellation, long-text, and keyboard contracts');

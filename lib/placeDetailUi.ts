@@ -41,6 +41,40 @@ export function savedPlaceNarrative(saved: {
   };
 }
 
+/**
+ * ONE user-facing surface: "Why you saved it".
+ *
+ * The two fields stay separate in the DATA (ai_note is provenance written by
+ * enrichment and must never be clobbered), but the user should experience a
+ * single concept, not an "AI note" block stacked on a "Your note" block:
+ *
+ *   displayValue = notes ?? ai_note
+ *   any user edit  → notes            (ai_note left exactly as it was)
+ *
+ * `seedFromSourceNote` tells the editor to open pre-filled with the AI cue —
+ * true only while the user has not written their own note yet, so editing feels
+ * like refining what is on screen rather than starting from a blank box.
+ */
+export type WhySavedDisplay = {
+  /** What to render. Null when there is neither a user note nor a cue. */
+  text: string | null;
+  /** Which field produced `text`. Null when empty. */
+  origin: 'user' | 'source' | null;
+  /** Open the editor seeded with the AI cue instead of an empty draft. */
+  seedFromSourceNote: boolean;
+};
+
+export function whySavedDisplay(saved: {
+  notes?: string | null;
+  ai_note?: string | null;
+}): WhySavedDisplay {
+  const userNote = trimmedOrNull(saved?.notes);
+  if (userNote) return { text: userNote, origin: 'user', seedFromSourceNote: false };
+  const sourceNote = trimmedOrNull(saved?.ai_note);
+  if (sourceNote) return { text: sourceNote, origin: 'source', seedFromSourceNote: true };
+  return { text: null, origin: null, seedFromSourceNote: false };
+}
+
 function formatUnit(value: number, unit: RadiusUnit): string {
   const noun = unit === 'miles'
     ? value === 1 ? 'mile' : 'miles'

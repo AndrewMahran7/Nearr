@@ -110,8 +110,11 @@ const sheet = readFileSync(
   'utf8',
 );
 
-assert.match(sheet, /savedPlaceNarrative\(/, 'the sheet derives its notes from the shared helper');
-assert.match(sheet, /narrative\.showSourceNote \?/, 'the cue section is gated on the helper');
+// Place Detail V2 presents ONE "Why you saved it" surface (notes ?? ai_note)
+// instead of an AI block stacked on a user block. The decision still lives in
+// the shared helper, so the display rule stays unit-testable.
+assert.match(sheet, /whySavedDisplay\(/, 'the sheet derives its notes from the shared helper');
+assert.match(sheet, /whySaved\.text \?/, 'the surface is gated on the helper');
 assert.match(sheet, /WHY YOU SAVED IT/, 'consumer-facing label for the source cue');
 // The label must never expose how the cue was produced.
 assert.doesNotMatch(

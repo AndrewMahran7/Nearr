@@ -34,7 +34,7 @@ import {
   type NativeScrollEvent,
   type NativeSyntheticEvent,
 } from 'react-native';
-import { Feather } from '@expo/vector-icons';
+import { Feather, Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button, Input } from '@/components';
@@ -52,9 +52,16 @@ import {
   type NoteEditorState,
 } from '@/lib/noteEditor';
 import { buildSavedPlaceShareContent } from '@/lib/placeShare';
-import { reminderStatusLabel, savedPlaceNarrative } from '@/lib/placeDetailUi';
+import { reminderStatusLabel, whySavedDisplay } from '@/lib/placeDetailUi';
 import { savedPlaceRemovalCopy } from '@/lib/savedPlaceRemoval';
-import { adjacentPrefetchTargets, pageIndexFromOffset } from '@/lib/photoCarousel';
+import {
+  adjacentPrefetchTargets,
+  galleryDragOffset,
+  pageIndexFromOffset,
+  shouldClaimGalleryDismiss,
+  shouldDismissGalleryOnRelease,
+} from '@/lib/photoCarousel';
+import { resolvePlaceSource } from '@/lib/placeSource';
 import { splitPlaceAddress } from '@/lib/sharePhase1Ui';
 import { deleteSavedPlace, updateSavedPlace } from '@/services/savedPlacesService';
 import { CATEGORY_LABELS, savedPlaceCategory } from '@/lib/placeCategory';
@@ -93,40 +100,8 @@ function formatUnit(value: number, unit: RadiusUnit): string {
   return `${value} ${noun}`;
 }
 
-function sourceActionLabel(saved: SavedPlaceWithPlace): string {
-  switch (saved.source_type) {
-    case 'tiktok':
-    case 'instagram':
-    case 'youtube':
-    case 'facebook':
-    case 'snapchat':
-      return 'Watch post';
-    case 'link':
-      return 'Open link';
-    default:
-      return 'Open original';
-  }
-}
-
-/** Consumer-legible cue for where the save came from. Never shows a raw URL. */
-function sourceActionIcon(saved: SavedPlaceWithPlace): keyof typeof Feather.glyphMap {
-  switch (saved.source_type) {
-    case 'tiktok':
-      return 'video';
-    case 'instagram':
-      return 'instagram';
-    case 'youtube':
-      return 'youtube';
-    case 'facebook':
-      return 'facebook';
-    case 'snapchat':
-      return 'video';
-    case 'link':
-      return 'link';
-    default:
-      return 'arrow-up-right';
-  }
-}
+// Platform label / brand mark / accessibility copy all come from ONE place now
+// (lib/placeSource.ts), so Instagram and TikTok can never drift apart again.
 
 type Props = {
   saved: SavedPlaceWithPlace;
@@ -181,8 +156,10 @@ export function SelectedPlaceDetails({
   const [galleryIndex, setGalleryIndex] = useState(0);
   const [galleryOpenSeed, setGalleryOpenSeed] = useState(0);
   const [wrongPlaceOpen, setWrongPlaceOpen] = useState(false);
-  const galleryStartYRef = useRef(0);
   const galleryListRef = useRef<FlatList<string> | null>(null);
+  // Interactive dismiss offset: the gallery follows the finger downward and
+  // either continues off-screen or springs back. Native-driven.
+  const galleryDragY = useRef(new Animated.Value(0)).current;
   // Native-thread scroll position. Owns the focus dimming so the centered
   // photo never waits on a JS re-render to look active.
   const galleryScrollX = useRef(new Animated.Value(0)).current;
@@ -292,6 +269,9 @@ export function SelectedPlaceDetails({
   // actually stored (share/paste flows). Manual saves have none → no button.
   const sourceUrl =
     saved.source_url && saved.source_url.trim() ? saved.source_url.trim() : null;
+  // Canonical `source_type` first, host only as a fallback. Null for manual
+  // saves, which render NO source affordance rather than a fake platform.
+  const sourceAttribution = useMemo(() => resolvePlaceSource(saved), [saved]);
 
   const photoUrls = useMemo(() => {
     if (!richDetails?.photoUrls?.length) return [];
@@ -353,8 +333,8 @@ export function SelectedPlaceDetails({
   // strictly separate. Read from the live row every render (not captured into
   // state) because enrichment can land well after the initial save — map.tsx
   // re-points `selected` at the refreshed cached row when that happens.
-  const narrative = useMemo(
-    () => savedPlaceNarrative({ notes, ai_note: saved.ai_note }),
+  const whySaved = useMemo(
+    () => whySavedDisplay({ notes, ai_note: saved.ai_note }),
     [notes, saved.ai_note],
   );
   const reminderStatus = useMemo(
@@ -396,7 +376,7 @@ export function SelectedPlaceDetails({
   async function openSource() {
     await openExternalUrl({
       rawUrl: sourceUrl,
-      label: sourceActionLabel(saved),
+      label: sourceAttribution?.actionLabel ?? 'Open original',
       messageWhenUnavailable: 'No app is available to open this source link.',
     });
   }
@@ -542,27 +522,66 @@ export function SelectedPlaceDetails({
     }
   }, [galleryIndex, galleryOpen, photoUrls]);
 
+  /**
+   * Swipe-down-to-dismiss.
+   *
+   * The previous version never fired. It used `onMoveShouldSetPanResponder` on
+   * the View WRAPPING the horizontal Animated.FlatList — but in React Native's
+   * responder negotiation the bubble phase runs from the touch target OUTWARD,
+   * so the ScrollView inside claimed the responder first and never gave it
+   * back. The wrapper's handler was simply never consulted, which is why
+   * "↓ Swipe down to close" was a promise the UI could not keep.
+   *
+   * The fix is to arbitrate in the CAPTURE phase (parent-first), which is the
+   * only point at which the dismiss layer can take a gesture the scroll view
+   * would otherwise own. The predicate is deliberately strict so horizontal
+   * paging keeps working: only a decisively downward drag is claimed, and the
+   * carousel keeps everything else.
+   */
   const galleryPanResponder = useMemo(
     () =>
       PanResponder.create({
-        onStartShouldSetPanResponder: () => false,
-        onMoveShouldSetPanResponder: (_evt, gestureState) => {
-          const { dx, dy } = gestureState;
-          if (dy <= 8) return false;
-          return Math.abs(dy) > Math.abs(dx) * 1.2;
+        // A tap must always reach the photo / close button underneath.
+        onStartShouldSetPanResponderCapture: () => false,
+        onMoveShouldSetPanResponderCapture: (_evt, gestureState) =>
+          shouldClaimGalleryDismiss(gestureState),
+        onPanResponderGrant: () => {
+          galleryDragY.setValue(0);
         },
-        onPanResponderGrant: (_evt, gestureState) => {
-          galleryStartYRef.current = gestureState.moveY;
+        onPanResponderMove: (_evt, gestureState) => {
+          // Downward-only: dragging back up settles at 0 rather than lifting
+          // the gallery off the top of the screen.
+          galleryDragY.setValue(galleryDragOffset(gestureState.dy));
         },
         onPanResponderRelease: (_evt, gestureState) => {
-          const movedDown = gestureState.moveY - galleryStartYRef.current;
-          if (movedDown > 90 && Math.abs(gestureState.dy) > Math.abs(gestureState.dx) * 1.2) {
-            closeGallery();
+          if (shouldDismissGalleryOnRelease(gestureState)) {
+            // Carry the motion off-screen instead of cutting to a fade, so the
+            // dismissal reads as the continuation of the user's own gesture.
+            Animated.timing(galleryDragY, {
+              toValue: viewportHeight,
+              duration: 180,
+              useNativeDriver: true,
+            }).start(() => {
+              closeGallery();
+              galleryDragY.setValue(0);
+            });
+            return;
           }
+          Animated.spring(galleryDragY, {
+            toValue: 0,
+            useNativeDriver: true,
+            bounciness: 4,
+          }).start();
         },
-        onPanResponderTerminate: () => undefined,
+        onPanResponderTerminate: () => {
+          Animated.spring(galleryDragY, {
+            toValue: 0,
+            useNativeDriver: true,
+            bounciness: 4,
+          }).start();
+        },
       }),
-    [],
+    [galleryDragY, viewportHeight],
   );
 
   function confirmDelete() {
@@ -663,7 +682,30 @@ export function SelectedPlaceDetails({
           onRequestClose={closeGallery}
           statusBarTranslucent
         >
-          <View style={styles.galleryBackdrop}>
+          {/* The pan handlers sit on the ROOT so a downward swipe anywhere in
+              the gallery dismisses it. Taps still reach the close button and
+              the carousel: the responder is only claimed on a decisively
+              downward drag (capture phase), never on touch-start. */}
+          <View style={styles.galleryRoot} {...galleryPanResponder.panHandlers}>
+            <Animated.View
+              pointerEvents="none"
+              style={[
+                styles.galleryBackdrop,
+                {
+                  opacity: galleryDragY.interpolate({
+                    inputRange: [0, Math.max(1, viewportHeight)],
+                    outputRange: [1, 0.35],
+                    extrapolate: 'clamp',
+                  }),
+                },
+              ]}
+            />
+            <Animated.View
+              style={[
+                styles.galleryContent,
+                { transform: [{ translateY: galleryDragY }] },
+              ]}
+            >
             <View style={[styles.galleryCounterWrap, { top: insets.top + Spacing.md }]}>
               <View style={styles.galleryCounterPill}>
                 <Text style={styles.galleryCounterText}>
@@ -681,7 +723,7 @@ export function SelectedPlaceDetails({
               <Feather name="x" size={22} color="#FFFFFF" />
             </Pressable>
 
-            <View style={styles.galleryCarouselArea} {...galleryPanResponder.panHandlers}>
+            <View style={styles.galleryCarouselArea}>
               {/* Focus dimming is driven by the NATIVE scroll offset, not by
                   React state. The centered page reaches full opacity exactly
                   as it centers — mid-drag, mid-momentum, and while the JS
@@ -773,6 +815,7 @@ export function SelectedPlaceDetails({
             </View>
 
             <Text style={styles.galleryHint}>↓ Swipe down to close</Text>
+            </Animated.View>
           </View>
         </Modal>
       ) : null}
@@ -789,16 +832,24 @@ export function SelectedPlaceDetails({
           <Feather name="navigation" size={17} color={colors.textInverse} />
           <Text style={styles.primaryActionText}>Directions</Text>
         </Pressable>
-        {sourceUrl ? (
-          <ActionPill
-            label={sourceActionLabel(saved)}
-            a11yLabel={`${sourceActionLabel(saved)} for ${saved.place.name}`}
-            icon={sourceActionIcon(saved)}
+        {sourceUrl && sourceAttribution ? (
+          <Pressable
             onPress={() => {
               void openSource();
             }}
-            styles={styles}
-          />
+            accessibilityRole="button"
+            accessibilityLabel={`${sourceAttribution.actionA11yLabel} for ${saved.place.name}`}
+            style={({ pressed }) => [styles.actionPill, pressed && styles.pressed]}
+          >
+            {/* Ionicons carries real brand marks for BOTH TikTok and Instagram,
+                so neither platform is reduced to a generic play/video glyph. */}
+            <Ionicons
+              name={sourceAttribution.brandIcon as React.ComponentProps<typeof Ionicons>['name']}
+              size={17}
+              color={colors.text}
+            />
+            <Text style={styles.actionPillText}>{sourceAttribution.actionLabel}</Text>
+          </Pressable>
         ) : null}
         <ActionPill
           label="Share"
@@ -811,55 +862,70 @@ export function SelectedPlaceDetails({
         />
       </View>
 
-      {/* The emotional core: why this place looked worth saving. Rendered only
-          when a source cue was actually persisted — an empty state here would
-          read as broken rather than intentional. */}
-      {narrative.showSourceNote ? (
+      {/* ONE surface, not an "AI note" card stacked on a "Your note" card.
+          What is shown is `notes ?? ai_note`; any edit writes to `notes` and
+          leaves `ai_note` provenance untouched (see lib/placeDetailUi). */}
+      {whySaved.text ? (
         <View style={styles.sourceNoteCard} accessibilityLiveRegion="polite">
           <View style={styles.sourceNoteAccent} />
           <View style={styles.sourceNoteBody}>
-            <Text style={styles.sourceNoteLabel}>WHY YOU SAVED IT</Text>
-            <Text style={styles.sourceNoteText}>{narrative.sourceNote}</Text>
-            {narrative.canPromoteSourceNote ? (
+            <View style={styles.rowBetween}>
+              <Text style={styles.sourceNoteLabel}>WHY YOU SAVED IT</Text>
               <Pressable
+                onPress={() => beginNoteEdit(whySaved.seedFromSourceNote)}
                 accessibilityRole="button"
-                accessibilityLabel="Use this as my note"
-                onPress={() => beginNoteEdit(true)}
+                accessibilityLabel="Edit why you saved this place"
+                hitSlop={8}
                 style={styles.textAction}
               >
-                <Text style={styles.changeLink}>Use as my note</Text>
+                <Text style={styles.changeLink}>Edit</Text>
               </Pressable>
-            ) : null}
+            </View>
+            <Text style={styles.sourceNoteText}>{whySaved.text}</Text>
           </View>
-        </View>
-      ) : null}
-
-      {narrative.userNote ? (
-        <View style={styles.personalSection}>
-          <View style={styles.rowBetween}>
-            <Text style={styles.sectionTitle}>Your note</Text>
-            <Pressable
-              onPress={() => beginNoteEdit()}
-              accessibilityRole="button"
-              accessibilityLabel="Edit your note"
-              style={styles.textAction}
-            >
-              <Text style={styles.changeLink}>Edit</Text>
-            </Pressable>
-          </View>
-          <Text style={[typography.body, styles.noteText]}>{narrative.userNote}</Text>
         </View>
       ) : (
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Add your own note"
+          accessibilityLabel="Add why you saved this place"
           onPress={() => beginNoteEdit()}
           style={({ pressed }) => [styles.addNoteRow, pressed && styles.pressed]}
         >
           <Feather name="edit-3" size={16} color={colors.accent} />
-          <Text style={styles.changeLink}>Add your own note</Text>
+          <Text style={styles.changeLink}>Why did you save this?</Text>
         </Pressable>
       )}
+
+      {/* Where it came from. Branded for BOTH TikTok and Instagram — same
+          shape, same weight, so neither reads as a second-class source.
+          Omitted entirely for manual saves rather than rendering a shell. */}
+      {sourceUrl && sourceAttribution ? (
+        <Pressable
+          onPress={() => {
+            void openSource();
+          }}
+          accessibilityRole="button"
+          accessibilityLabel={sourceAttribution.actionA11yLabel}
+          style={({ pressed }) => [styles.sourceCard, pressed && styles.pressed]}
+        >
+          <View style={styles.sourceCardLogo}>
+            <Ionicons
+              name={sourceAttribution.brandIcon as React.ComponentProps<typeof Ionicons>['name']}
+              size={20}
+              color={colors.text}
+            />
+          </View>
+          <View style={styles.sourceCardBody}>
+            <Text style={styles.sourceCardLabel}>SAVED FROM</Text>
+            <Text style={styles.sourceCardPlatform} numberOfLines={1}>
+              {sourceAttribution.platformName}
+            </Text>
+          </View>
+          {/* The logo is never the only cue for what tapping does. */}
+          <Text style={styles.sourceCardAction}>{sourceAttribution.actionLabel}</Text>
+          <Feather name="chevron-right" size={16} color={colors.textMuted} />
+        </Pressable>
+      ) : null}
 
       {/* Compact by design: useful, but it must not outweigh the place. The
           whole row toggles distance settings; the switch stays a separate
@@ -1135,9 +1201,56 @@ function createStyles(
       backgroundColor: 'rgba(255,106,26,0.92)',
     },
     categoryPillText: { ...typography.caption, color: '#FFFFFF', fontWeight: '700' },
-    galleryBackdrop: {
+    sourceCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.md,
+      marginTop: Spacing.md,
+      paddingVertical: Spacing.md,
+      paddingHorizontal: Spacing.md,
+      borderRadius: Radius.lg,
+      backgroundColor: colors.surface,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.border,
+      minHeight: 60,
+    },
+    sourceCardLogo: {
+      width: 38,
+      height: 38,
+      borderRadius: Radius.md,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.surfaceElevated,
+    },
+    sourceCardBody: { flex: 1, minWidth: 0 },
+    sourceCardLabel: {
+      ...typography.caption,
+      color: colors.textMuted,
+      fontSize: 10,
+      letterSpacing: 0.8,
+      fontWeight: '700',
+    },
+    sourceCardPlatform: {
+      ...typography.bodyStrong,
+      color: colors.text,
+      marginTop: 1,
+    },
+    sourceCardAction: {
+      ...typography.caption,
+      color: colors.accent,
+      fontWeight: '700',
+    },
+    galleryRoot: {
       flex: 1,
+    },
+    // Separated from the content layer so the backdrop can fade with the drag
+    // while the gallery itself translates.
+    galleryBackdrop: {
+      ...StyleSheet.absoluteFillObject,
       backgroundColor: 'rgba(0,0,0,0.96)',
+    },
+    galleryContent: {
+      flex: 1,
     },
     galleryCloseButton: {
       position: 'absolute',
