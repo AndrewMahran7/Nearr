@@ -223,6 +223,103 @@ const ROLE_ORDER: Record<PlaceRole, number> = {
   passing_mention: 2,
 };
 
+// A street-address pattern (number + street type, incl. Spanish/French types
+// the resolver already understands). Media auto-save requires a concretely
+// shown/spoken street address — a name-only or city-only mention is never
+// enough for a SILENT save (it can still become needs_help for confirmation).
+const ADDRESS_LIKE_RE =
+  /\b\d{1,6}\s+[^,]*\b(st|street|ave|avenue|blvd|boulevard|rd|road|dr|drive|ln|lane|way|hwy|highway|pkwy|parkway|ct|court|ter|terrace|pl|place|cir|circle|plaza|sq|square|paseo|camino|calle|avenida|via|rue)\b/i;
+
+/** Whether a piece of text concretely states a street address. */
+export function hasStreetAddressText(text: string | null | undefined): boolean {
+  return typeof text === 'string' && ADDRESS_LIKE_RE.test(text);
+}
+
+/** Case/accent/punctuation-insensitive fold for comparing place labels. */
+function foldLabel(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/** The administrative labels a place asserts about ITSELF, folded — each field
+ *  alone plus their natural compound forms ("Los Angeles, California"). */
+function selfAdministrativeLabels(place: PlaceCandidateEvidence): Set<string> {
+  const city = (place.city ?? '').trim();
+  const region = (place.region ?? '').trim();
+  const country = (place.country ?? '').trim();
+  const combos = [
+    [city], [region], [country],
+    [city, region], [city, country], [region, country], [city, region, country],
+  ];
+  const out = new Set<string>();
+  for (const combo of combos) {
+    const parts = combo.filter(Boolean);
+    if (parts.length === 0) continue;
+    const folded = foldLabel(parts.join(' '));
+    if (folded) out.add(folded);
+  }
+  return out;
+}
+
+/**
+ * Whether a model-proposed place IS the geographic context it sits in, rather
+ * than a destination inside it.
+ *
+ * This is the SOURCE-side counterpart to `isGeographicContextOnly(candidate)`,
+ * which classifies a Google result by its provider entity types. They answer
+ * different questions and neither replaces the other:
+ *
+ *   candidate side — "is this Google result merely an administrative entity?"
+ *   source side    — "did the post ever name a destination, or only a place-name
+ *                     that the post itself also gives as its own city/region?"
+ *
+ * The production wrong-save this prevents (job 1e234bae, Instagram DcBz1dhSoax):
+ * the model emitted `name: "Rio de Janeiro"` with `city: "Rio de Janeiro"` and
+ * `region: "Rio de Janeiro"`. The candidate guard correctly rejected Google's
+ * `locality` entity for Rio — and then the name-driven search matched
+ * "7 Mares - Passeio de Lancha Rio de Janeiro", a tour agency whose NAME merely
+ * contains the city, which is business-like, plausible, and was SILENTLY SAVED.
+ * A city mention is context; a company containing that city's name is not
+ * automatically what the user meant.
+ *
+ * The test is deliberately structural, not lexical. We do NOT ask "does this
+ * name look geographic" (no gazetteer, no geographic word list, no name
+ * blacklist) — we ask whether the place's own name is identical to an
+ * administrative label the SAME place reports for itself. That self-reference is
+ * first-party structured evidence, and it is what separates:
+ *
+ *   name "Rio de Janeiro"       + city "Rio de Janeiro"  -> context only
+ *   name "Copacabana Beach"     + city "Rio de Janeiro"  -> a real destination
+ *   name "California Pizza Kitchen" + region "California" -> a real destination
+ *   name "Los Angeles"          + city "Los Angeles"     -> context only
+ *   name "Los Angeles Cafe"     + city "Los Angeles"     -> a real destination
+ *
+ * PRECEDENCE. A concretely stated street address is stronger first-party
+ * evidence than the self-referential name, so it wins: a place that shows or
+ * speaks a street address is a specific location and keeps resolving normally,
+ * however the model labelled it. Note that `category` is deliberately NOT
+ * consulted — the model's category vocabulary has no city/locality/admin member
+ * to consult (see NEARR_CATEGORY_SET), and in the production case above it
+ * emitted `scenic_spot`, a category we must keep resolving for real parks,
+ * beaches and landmarks.
+ *
+ * A place naming a city with no city/region/country of its own is NOT caught
+ * here: that needs geographic knowledge this module deliberately does not have.
+ */
+export function isGeographicContextOnlySource(place: PlaceCandidateEvidence): boolean {
+  const name = foldLabel(place.name ?? '');
+  if (!name) return false;
+  if (!selfAdministrativeLabels(place).has(name)) return false;
+  if (hasStreetAddressText(place.address)) return false;
+  if (place.explicitEvidence.some((item) => hasStreetAddressText(item.value))) return false;
+  return true;
+}
+
 export type RenderedCaption = {
   title: string;
   description: string;
@@ -236,6 +333,13 @@ export type RenderedCaption = {
  * Secondary places are included only when the model flagged multiple
  * intentional places. Inferred-only places and passing mentions are always
  * dropped here — before anything reaches the resolver or the auto-save gate.
+ *
+ * Places that merely restate their own city/region/country are dropped here too
+ * (`isGeographicContextOnlySource`): they are context, never the destination, so
+ * they must not seed a name search that could match an unrelated business
+ * carrying the same place-name. They still contribute geographic context to
+ * their siblings — that happens in `buildVenueMentions`, which aggregates geo
+ * from them before excluding them as searchable mentions.
  */
 export function selectRenderablePlaces(
   evidence: MediaPlaceEvidence,
@@ -244,6 +348,7 @@ export function selectRenderablePlaces(
   return evidence.places
     .filter(hasExplicitEvidence)
     .filter((p) => p.role !== 'passing_mention')
+    .filter((p) => !isGeographicContextOnlySource(p))
     .filter((p) => p.role === 'primary' || evidence.multipleIntentionalPlaces)
     .sort((a, b) => {
       const r = ROLE_ORDER[a.role] - ROLE_ORDER[b.role];
@@ -282,13 +387,6 @@ export function renderMediaEvidenceCaption(
     renderedPlaces: renderable.length,
   };
 }
-
-// A street-address pattern (number + street type, incl. Spanish/French types
-// the resolver already understands). Media auto-save requires a concretely
-// shown/spoken street address — a name-only or city-only mention is never
-// enough for a SILENT save (it can still become needs_help for confirmation).
-const ADDRESS_LIKE_RE =
-  /\b\d{1,6}\s+[^,]*\b(st|street|ave|avenue|blvd|boulevard|rd|road|dr|drive|ln|lane|way|hwy|highway|pkwy|parkway|ct|court|ter|terrace|pl|place|cir|circle|plaza|sq|square|paseo|camino|calle|avenida|via|rue)\b/i;
 
 export const DEFAULT_MEDIA_AUTOSAVE_MIN_CONFIDENCE = 0.7;
 

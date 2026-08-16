@@ -17,15 +17,20 @@
 //     mention — they carry no distinctive token.
 //   • Geographic context is built ONLY from explicit city/region/country fields
 //     on the evidence. Nothing is inferred (never the user's location).
+//   • A place that only restates its OWN city/region/country is context, not a
+//     destination: it never becomes a searchable mention, so a city can never be
+//     laundered into an unrelated business carrying that city's name. It still
+//     contributes to `geoContext` for its siblings.
 //   • Distinct chain locations are kept separate (grouping never merges two
 //     mentions whose region differs).
 //
 // No I/O, no Deno globals — unit-tested from Node (scripts/testMediaMentions.ts).
 
-import type {
-  MediaPlaceEvidence,
-  PlaceCandidateEvidence,
-  PlaceEvidenceSource,
+import {
+  isGeographicContextOnlySource,
+  type MediaPlaceEvidence,
+  type PlaceCandidateEvidence,
+  type PlaceEvidenceSource,
 } from './mediaEvidence.ts';
 
 /** Bounds so a malformed / oversized payload can never fan out unbounded work. */
@@ -111,6 +116,9 @@ export type BuildMentionsResult = {
   droppedInferredOnly: number;
   droppedIneligibleName: number;
   droppedPassingMention: number;
+  /** Places that only restated their own city/region/country. They are NOT
+   *  searchable mentions, but they DO still feed `geoContext`. */
+  droppedGeographicContext: number;
 };
 
 // ---------------------------------------------------------------------------
@@ -351,6 +359,7 @@ export function buildVenueMentions(evidence: MediaPlaceEvidence): BuildMentionsR
     droppedInferredOnly: 0,
     droppedIneligibleName: 0,
     droppedPassingMention: 0,
+    droppedGeographicContext: 0,
   };
   if (!evidence || evidence.insufficientEvidence) return empty;
 
@@ -359,6 +368,11 @@ export function buildVenueMentions(evidence: MediaPlaceEvidence): BuildMentionsR
   let droppedPassingMention = 0;
 
   const eligible: PlaceCandidateEvidence[] = [];
+  // Places that name only their own city/region/country. They never become a
+  // searchable mention (a locality must not be laundered into a business that
+  // merely carries its name), but they remain CONTEXTUAL evidence and still
+  // scope the geo aggregate for their siblings.
+  const geographicContext: PlaceCandidateEvidence[] = [];
   for (const p of evidence.places) {
     if (p.explicitEvidence.length === 0) {
       droppedInferredOnly += 1;
@@ -366,6 +380,10 @@ export function buildVenueMentions(evidence: MediaPlaceEvidence): BuildMentionsR
     }
     if (p.role === 'passing_mention') {
       droppedPassingMention += 1;
+      continue;
+    }
+    if (isGeographicContextOnlySource(p)) {
+      geographicContext.push(p);
       continue;
     }
     if (!isEligibleVenueName(p.name)) {
@@ -525,10 +543,13 @@ export function buildVenueMentions(evidence: MediaPlaceEvidence): BuildMentionsR
 
   return {
     mentions,
-    geoContext: aggregateGeo(eligible),
+    // Context-only places are aggregated LAST so a real venue's own geo still
+    // wins a tie — they add scope, they never override a destination's fields.
+    geoContext: aggregateGeo([...eligible, ...geographicContext]),
     relationships,
     droppedInferredOnly,
     droppedIneligibleName,
     droppedPassingMention,
+    droppedGeographicContext: geographicContext.length,
   };
 }
