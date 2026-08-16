@@ -36,6 +36,7 @@ function makeEvidence(overrides: Partial<Evidence> = {}): Evidence {
     addresses: [],
     cityState: null,
     venueNameHints: [],
+    venueNameHintsFromHandle: [],
     handles: {
       posterHandle: null,
       taggedHandles: [],

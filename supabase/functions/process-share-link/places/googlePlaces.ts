@@ -10,6 +10,7 @@ import type { SearchBias } from '../types.ts';
 import {
   haversineMeters,
   hasStrongNameMatch,
+  hasStrongVenueHandleMatch,
   isGeographicContextOnly,
 } from './placeNormalization.ts';
 import { extractStateFromFormattedAddress } from './locationGuards.ts';
@@ -358,6 +359,14 @@ export async function verifyPlaceAtAddressServer(
   address: string,
   optionalPlaceName: string | null,
   key: string,
+  /**
+   * Where `optionalPlaceName` came from. `tagged_venue_handle` additionally
+   * permits handle-aware matching (see `hasStrongVenueHandleMatch`), because a
+   * compact owner-asserted handle is the same identity in a different
+   * alphabet, not a different business. Defaults to caption prose, so every
+   * existing caller keeps strict name matching unchanged.
+   */
+  nameSource: 'caption_text' | 'tagged_venue_handle' = 'caption_text',
 ): Promise<AddressVerification> {
   const geocoded = await geocodeAddressServer(address, key);
   if (!geocoded) {
@@ -434,7 +443,17 @@ export async function verifyPlaceAtAddressServer(
     // Never blindly take result 0 — the provider may return the shopping
     // centre, the building, and the specific business for one address. The
     // caption's venue name is what picks between them.
-    const matches = nearby.filter((c) => hasStrongNameMatch(c.name, placeName));
+    //
+    // Strict name matching is always tried FIRST and is never weakened. Only
+    // when the name is an owner-asserted @handle does the handle-aware rule
+    // additionally apply, so a human-readable venue name can never be
+    // downgraded and a compact handle is no longer judged as if it were prose.
+    const matches = nearby.filter(
+      (c) =>
+        hasStrongNameMatch(c.name, placeName) ||
+        (nameSource === 'tagged_venue_handle' &&
+          hasStrongVenueHandleMatch(c.name, placeName).matched),
+    );
     if (matches.length === 1) {
       return {
         status: 'verified',

@@ -31,6 +31,7 @@
     "test:address-first": "ts-node -P scripts/tsconfig.json scripts/testAddressFirst.ts",
     "test:address-verification": "ts-node -P scripts/tsconfig.json scripts/testAddressVerification.ts",
     "test:media-source-evidence": "ts-node -P scripts/tsconfig.json scripts/testMediaSourceEvidence.ts",
+    "test:venue-handle-match": "ts-node -P scripts/tsconfig.json scripts/testVenueHandleMatch.ts",
     "test:failure-logging": "ts-node -P scripts/tsconfig.json scripts/testFailureLogging.ts",
     "test:notification-dedupe": "ts-node -P scripts/tsconfig.json scripts/testPlaceNotificationDedupe.ts",
     "test:opportunity-ui": "ts-node -P scripts/tsconfig.json scripts/testOpportunityUi.ts",

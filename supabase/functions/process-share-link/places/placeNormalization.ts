@@ -185,6 +185,132 @@ export function hasStrongNameMatch(name: string, query: string): boolean {
   return overlap >= Math.min(3, qTokens.length);
 }
 
+// ---- Tagged-venue-handle matching ----------------------------------------
+//
+// A social handle is not a business name. It is the SAME identity written in a
+// different alphabet: spaces and punctuation removed, casing flattened, and a
+// brand suffix (commonly the founding year) sometimes appended. Meanwhile the
+// provider often appends a BRANCH to the business name.
+//
+//   handle     @santafeimporters1947
+//   candidate   Santa Fe Importers Seal Beach
+//
+// `hasStrongNameMatch` correctly rejects that pair: it is token-overlap based,
+// and the compact handle tokenizes to one token matching none of the
+// candidate's. Loosening it to bridge the gap would also equate "Santa Fe
+// Foodies" with "Santa Fe Importers", so this is deliberately a SEPARATE rule
+// that applies only to evidence already classified as a tagged venue handle --
+// never to caption prose, a poster/creator handle, or a model guess.
+//
+// SAFETY BOUNDARY. This is only ever reached from `verifyPlaceAtAddressServer`,
+// where every candidate has already been filtered to within
+// ADDRESS_VERIFY_RADIUS_M of the geocoded street address and screened for
+// geographic-context types. A handle therefore can never identify a business on
+// its own -- the explicit address has already constrained the universe to what
+// physically sits there.
+
+export type VenueHandleMatch = {
+  matched: boolean;
+  /** Explainable reason codes, in the repo's diagnostic style. */
+  reasons: string[];
+};
+
+/** Fold case and accents so "Café" and "Cafe" compare identically. Diacritics
+ *  must go BEFORE any split on non-alphanumerics, or a decomposed accent would
+ *  act as a separator and cut "café" into "caf" + "e". */
+function foldForHandle(value: string): string {
+  return value.toLowerCase().normalize('NFKD').replace(/\p{Diacritic}/gu, '');
+}
+
+/** Compact a string the way a handle is written: lowercase alphanumerics only. */
+function compactForHandle(value: string): string {
+  return foldForHandle(value).replace(/[^a-z0-9]+/g, '');
+}
+
+/** Candidate name -> compacted tokens, e.g. "85C Bakery" -> ["85c","bakery"]. */
+function compactTokens(value: string): string[] {
+  return foldForHandle(value).split(/[^a-z0-9]+/).filter(Boolean);
+}
+
+/**
+ * A trailing FOUR-DIGIT YEAR-LIKE suffix (18xx/19xx/20xx) -- the "since 1947"
+ * branding convention. Deliberately NOT a general digit strip: numerals carry
+ * real identity in business names (Studio 54, 7-Eleven, Area 15, 85C Bakery),
+ * and removing them would let a handle match the wrong brand. Anything that is
+ * not a plausible founding year stays part of the stem.
+ */
+const TRAILING_YEAR_RE = /^(.*?)((?:18|19|20)\d{2})$/;
+
+/** Minimum stem length before a PARTIAL (brand-prefix) match is allowed. */
+const MIN_PARTIAL_STEM_LENGTH = 8;
+
+/**
+ * Is `handle` strongly compatible with `candidateName` as the same business?
+ *
+ * The handle stem must align to a WHOLE-TOKEN prefix of the candidate name, so
+ * a partial word can never match ("santafeimport" is rejected). Beyond that:
+ *
+ *   - full coverage: the stem spells the entire candidate name. Accepted at any
+ *     length, which is what keeps short numeric brands working
+ *     (`@7eleven` <-> "7-Eleven").
+ *   - prefix coverage: the stem spells the candidate's leading tokens and the
+ *     provider appended a branch ("... Seal Beach"). Requires >=2 covered
+ *     tokens and >=8 characters, so a single generic leading token cannot claim
+ *     a brand: `@starbucks` does NOT match "Starbucks Reserve Roastery", and
+ *     `@santafe` does not match "Santa Fe Importers".
+ *
+ * The unmodified handle is tried FIRST so a genuine numeric brand matches on
+ * its own terms; only if that fails is a trailing year reconsidered.
+ */
+export function hasStrongVenueHandleMatch(
+  candidateName: string,
+  handle: string,
+): VenueHandleMatch {
+  const rawStem = compactForHandle((handle ?? '').replace(/^@/, ''));
+  const tokens = compactTokens(candidateName ?? '');
+  if (!rawStem || tokens.length === 0) return { matched: false, reasons: [] };
+
+  // Cumulative whole-token prefixes: "santa", "santafe", "santafeimporters", ...
+  const prefixes: string[] = [];
+  let acc = '';
+  for (const token of tokens) {
+    acc += token;
+    prefixes.push(acc);
+  }
+  const full = prefixes[prefixes.length - 1];
+
+  const attempt = (stem: string, extraReasons: string[]): VenueHandleMatch | null => {
+    const covered = prefixes.indexOf(stem);
+    if (covered < 0) return null;
+    const tokensCovered = covered + 1;
+    if (stem === full) {
+      return { matched: true, reasons: [...extraReasons, 'handle_spells_full_candidate_name'] };
+    }
+    if (tokensCovered >= 2 && stem.length >= MIN_PARTIAL_STEM_LENGTH) {
+      return {
+        matched: true,
+        reasons: [
+          ...extraReasons,
+          'handle_brand_stem_matches_candidate_prefix',
+          'candidate_branch_suffix_ignored',
+        ],
+      };
+    }
+    return null;
+  };
+
+  const direct = attempt(rawStem, []);
+  if (direct) return direct;
+
+  const year = rawStem.match(TRAILING_YEAR_RE);
+  if (year && year[1]) {
+    const withoutYear = attempt(year[1], ['trailing_year_suffix_ignored']);
+    if (withoutYear) return withoutYear;
+  }
+
+  return { matched: false, reasons: [] };
+}
+
 export function haversineMeters(
   lat1: number, lon1: number, lat2: number, lon2: number,
 ): number {

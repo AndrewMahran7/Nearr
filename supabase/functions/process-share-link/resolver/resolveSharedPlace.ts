@@ -257,6 +257,10 @@ export async function resolveSharedPlace(args: {
           addrStr,
           pairedVenue,
           env.googlePlacesKey,
+          (addr.venue ? addr.venueSource : globalVenueHint &&
+            evidence.venueNameHintsFromHandle.includes(globalVenueHint)
+            ? 'tagged_venue_handle'
+            : 'caption_text') ?? 'caption_text',
         );
         if (
           pairedVenue &&
@@ -354,6 +358,15 @@ export async function resolveSharedPlace(args: {
     // qualify an address — address evidence is stronger than the poster.
     const placeName =
       evidence.address.venue ?? evidence.venueNameHints[0] ?? null;
+    // Provenance must survive to the verifier: a compact owner-asserted handle
+    // ("santafeimporters1947") and caption prose ("Santa Fe Importers") are
+    // matched against the provider's business name by different rules.
+    const placeNameSource: 'caption_text' | 'tagged_venue_handle' =
+      (evidence.address.venue
+        ? evidence.address.venueSource
+        : placeName && evidence.venueNameHintsFromHandle.includes(placeName)
+        ? 'tagged_venue_handle'
+        : 'caption_text') ?? 'caption_text';
     // Address-extractor sometimes returns city/state inline, but
     // often only the street portion. Augment with the cityState
     // anchor so Google can geocode the address — without a city,
@@ -385,6 +398,7 @@ export async function resolveSharedPlace(args: {
         addrStr,
         placeName,
         env.googlePlacesKey,
+        placeNameSource,
       );
       if (
         placeName &&

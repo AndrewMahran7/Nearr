@@ -145,6 +145,12 @@ export type LikelyAddress = {
    *  layer (extractEvidence), not by the extractor itself — the raw
    *  extractor leaves this null. */
   venue?: string | null;
+  /** Where `venue` came from. `tagged_venue_handle` means it was derived from
+   *  an owner-asserted @handle rather than caption prose — the two have
+   *  different lexical structure ("@santafeimporters1947" vs "Santa Fe
+   *  Importers"), so address verification matches them with different rules.
+   *  Populated by extractEvidence alongside `venue`. */
+  venueSource?: 'caption_text' | 'tagged_venue_handle' | null;
 };
 
 // Conservative US street-address regex. Requires a leading number, a

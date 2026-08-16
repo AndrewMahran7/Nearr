@@ -38,6 +38,11 @@ export type Evidence = {
   cityState: { city: string; state: string } | null;
   /** Conservative venue name hints from caption ("📍 X", "X, City"). */
   venueNameHints: string[];
+  /** Subset of `venueNameHints` derived from an owner-asserted venue @handle
+   *  rather than caption prose. Carried so address verification can apply
+   *  handle-aware matching to exactly those, and normal name matching to
+   *  everything else. */
+  venueNameHintsFromHandle: string[];
   /** Poster + tagged handles. */
   handles: ExtractedHandles;
   /** True for "top N" / list / roundup posts. */
@@ -79,6 +84,9 @@ export function extractEvidence(args: {
   const venueNameHints = extractCaptionVenueHints(captionText)
     .filter((h) => !isKnownCityName(h))
     .filter((h) => !looksLikeStreetFragmentVenueHint(h, addresses));
+  // Hints traceable to an owner-asserted @handle. Kept as a parallel list so
+  // the existing `venueNameHints` contract and ordering are untouched.
+  const venueNameHintsFromHandle: string[] = [];
   // Hint priority (high precision first):
   //   1. extractCaptionVenueHints  (📍 / "Name, City" patterns)
   //      with known-city false positives filtered out.
@@ -104,6 +112,7 @@ export function extractEvidence(args: {
       !looksLikeStreetFragmentVenueHint(fromHandle, addresses)
     ) {
       venueNameHints.push(fromHandle);
+      venueNameHintsFromHandle.push(fromHandle);
     }
   }
   if (address && venueNameHints.length === 0) {
@@ -121,7 +130,13 @@ export function extractEvidence(args: {
   // resolver can build a "<venue> <address>" query per address (multi-address
   // captions like Tacos Don Goyo list several venue/address pairs). Pure and
   // deterministic — position-based, never uses poster handle/name.
-  pairVenuesToAddresses(captionText, addresses, venueNameHints, args.handles);
+  pairVenuesToAddresses(
+    captionText,
+    addresses,
+    venueNameHints,
+    args.handles,
+    venueNameHintsFromHandle,
+  );
 
   const isRoundup = looksLikeRoundupPost(captionText, {
     posterHandle: args.handles.posterHandle ?? '',
@@ -154,6 +169,7 @@ export function extractEvidence(args: {
     addresses,
     cityState,
     venueNameHints,
+    venueNameHintsFromHandle,
     handles: args.handles,
     isRoundup,
     taggedLocation,
@@ -353,6 +369,8 @@ function pairVenuesToAddresses(
   addresses: LikelyAddress[],
   venueHints: string[],
   handles: ExtractedHandles,
+  /** Hints known to be handle-derived; appended to as handles are paired. */
+  handleDerivedHints: string[],
 ): void {
   if (addresses.length === 0) return;
   const usableHints = venueHints.filter(
@@ -403,12 +421,27 @@ function pairVenuesToAddresses(
     );
     if (adjacentHandle) {
       addr.venue = adjacentHandle;
+      addr.venueSource = 'tagged_venue_handle';
+      if (!handleDerivedHints.includes(adjacentHandle)) {
+        handleDerivedHints.push(adjacentHandle);
+      }
       continue;
     }
 
+    // A caption hint can itself be handle-derived (the fallback above pushes
+    // `derivePlaceNameHintFromHandle` into venueNameHints when the caption
+    // offered no prose name), so attribute by looking the name up rather than
+    // assuming this branch means "caption prose".
+    const pair = (name: string) => {
+      addr.venue = name;
+      addr.venueSource = handleDerivedHints.includes(name)
+        ? 'tagged_venue_handle'
+        : 'caption_text';
+    };
+
     if (addrPos < 0) {
       // Address text not locatable (rare) — pair the only hint if unambiguous.
-      if (usableHints.length === 1 && addresses.length === 1) addr.venue = usableHints[0];
+      if (usableHints.length === 1 && addresses.length === 1) pair(usableHints[0]);
       continue;
     }
     // Nearest hint strictly before the address.
@@ -418,11 +451,11 @@ function pairVenuesToAddresses(
       if (!best || h.pos > best.pos) best = h;
     }
     if (best) {
-      addr.venue = best.name;
+      pair(best.name);
     } else if (usableHints.length === 1 && addresses.length === 1) {
       // Single hint, single address: pair even if the hint sits after the
       // address (e.g. "📍 2nd Floor 126 Main St" where the pin/name leads).
-      addr.venue = usableHints[0];
+      pair(usableHints[0]);
     }
   }
 }
