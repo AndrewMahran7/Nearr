@@ -36,11 +36,34 @@ import {
 /** Bounds so a malformed / oversized payload can never fan out unbounded work. */
 export const MAX_MENTIONS = 10;
 
+/**
+ * How well the post establishes ONE shared country for its destinations.
+ *
+ *   strong     — corroborated; may scope an ambiguous sibling's search
+ *   weak       — a single uncorroborated model field; context only, never applied
+ *   conflicted — the post spans several countries; nothing may be applied
+ *   none       — no country evidence at all
+ */
+export type SharedGeoContextStrength = 'strong' | 'weak' | 'conflicted' | 'none';
+
+/** What corroborated a strong shared country (diagnostics; closed vocabulary). */
+export type SharedGeoContextSource =
+  | 'multiple_places_agree'
+  | 'explicit_evidence_text'
+  | 'context_only_place';
+
 /** Bounded geographic context derived from explicit evidence only. */
 export type MediaGeoContext = {
   city: string | null;
   region: string | null;
   country: string | null;
+  /** Set only on the POST-LEVEL aggregate, never on a single mention's own geo.
+   *  Absent means "not assessed" and is treated as unusable by consumers. */
+  countryStrength?: SharedGeoContextStrength;
+  /** Present only when `countryStrength === 'strong'`. */
+  countrySource?: SharedGeoContextSource;
+  /** Distinct countries the post asserted (folded). Diagnostics + conflicts. */
+  countryCandidates?: string[];
 };
 
 /** How a venue relates to its host location (evidence-derived). */
@@ -211,6 +234,104 @@ function placeGeo(p: PlaceCandidateEvidence): MediaGeoContext {
     region: p.region ?? null,
     country: p.country ?? null,
   };
+}
+
+/** Fold a country label for comparison ("México" ~ "Mexico", "USA" ~ "usa").
+ *  Comparison only — the ORIGINAL Unicode string is what we carry forward. */
+function foldCountry(value: string): string {
+  // Reuses the module normalizer so accent handling has ONE definition here.
+  return normalizeVenueName(value).replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+/**
+ * Decide whether the post establishes ONE shared country firmly enough to scope
+ * an ambiguous sibling's search.
+ *
+ * The failure this addresses (production job 10ce36b5, an Instagram Nicaragua
+ * travel reel): the model DID emit `country: "Nicaragua"`, and `aggregateGeo`
+ * DID carry it — but neither the query builder nor the coordinate-bias geocode
+ * ever read it. The single reused bias geocoded a bare "Granada" and landed in
+ * SPAIN, which then pulled every sibling toward Spanish results.
+ *
+ * Deliberately conservative, because a wrong country is worse than no country:
+ *
+ *   - two or more places independently naming the same country       -> strong
+ *   - the country stated verbatim in a place's own explicit evidence
+ *     (caption / spoken / visible text)                              -> strong
+ *   - a CONTEXT-ONLY place naming it (the post said "Nicaragua" as a
+ *     place in its own right)                                        -> strong
+ *   - exactly one place quietly carrying a country field             -> weak
+ *   - two or more distinct countries anywhere                        -> conflicted
+ *
+ * `weak` and `conflicted` are never applied to sibling searches: a road-trip
+ * post spanning Spain and Portugal must not have either country forced onto the
+ * other's places, and one model field inferred from scenery must not either.
+ */
+export function establishSharedCountry(
+  places: PlaceCandidateEvidence[],
+  contextOnlyPlaces: PlaceCandidateEvidence[] = [],
+): Pick<MediaGeoContext, 'country' | 'countryStrength' | 'countrySource' | 'countryCandidates'> {
+  const all = [...places, ...contextOnlyPlaces];
+  const byFolded = new Map<string, { display: string; asserts: number }>();
+  for (const p of all) {
+    const raw = (p.country ?? '').trim();
+    if (!raw) continue;
+    const folded = foldCountry(raw);
+    if (!folded) continue;
+    const seen = byFolded.get(folded);
+    if (seen) seen.asserts += 1;
+    else byFolded.set(folded, { display: raw, asserts: 1 });
+  }
+
+  const candidates = [...byFolded.keys()].sort();
+  if (candidates.length === 0) {
+    return { country: null, countryStrength: 'none', countryCandidates: [] };
+  }
+  if (candidates.length > 1) {
+    // A multi-country post. Nothing shared can be safely applied.
+    return { country: null, countryStrength: 'conflicted', countryCandidates: candidates };
+  }
+
+  const only = candidates[0]!;
+  const entry = byFolded.get(only)!;
+
+  let source: SharedGeoContextSource | null = null;
+  if (entry.asserts >= 2) source = 'multiple_places_agree';
+  else if (contextOnlyPlaces.some((p) => foldCountry((p.country ?? '').trim()) === only)) {
+    source = 'context_only_place';
+  } else if (
+    all.some((p) =>
+      p.explicitEvidence.some((item) => foldCountry(item.value).includes(only)),
+    )
+  ) {
+    source = 'explicit_evidence_text';
+  }
+
+  return source
+    ? { country: entry.display, countryStrength: 'strong', countrySource: source, countryCandidates: candidates }
+    : { country: entry.display, countryStrength: 'weak', countryCandidates: candidates };
+}
+
+/**
+ * The post's shared-country verdict for a whole evidence payload.
+ *
+ * The SINGLE entry point, used both by `buildVenueMentions` (which acts on it)
+ * and by the run diagnostics (which record it), so the number written to
+ * `share_media_runs` can never disagree with the one the resolver used.
+ *
+ * Mirrors the same admissibility filters mentions use — a place must carry
+ * explicit evidence and must not be a passing mention — then splits context-only
+ * places out so their assertions can corroborate rather than merely count.
+ */
+export function sharedCountryForEvidence(
+  evidence: MediaPlaceEvidence,
+): Pick<MediaGeoContext, 'country' | 'countryStrength' | 'countrySource' | 'countryCandidates'> {
+  const usable = (evidence?.places ?? []).filter(
+    (p) => p.explicitEvidence.length > 0 && p.role !== 'passing_mention',
+  );
+  const contextOnly = usable.filter(isGeographicContextOnlySource);
+  const destinations = usable.filter((p) => !isGeographicContextOnlySource(p));
+  return establishSharedCountry(destinations, contextOnly);
 }
 
 /** Most common explicit city/region/country across the given places. */
@@ -545,7 +666,13 @@ export function buildVenueMentions(evidence: MediaPlaceEvidence): BuildMentionsR
     mentions,
     // Context-only places are aggregated LAST so a real venue's own geo still
     // wins a tie — they add scope, they never override a destination's fields.
-    geoContext: aggregateGeo([...eligible, ...geographicContext]),
+    // The shared COUNTRY is assessed separately: unlike city/region it is not a
+    // popularity vote but a provenance judgement, because it is the one field
+    // strong enough to scope an ambiguous sibling's search.
+    geoContext: {
+      ...aggregateGeo([...eligible, ...geographicContext]),
+      ...sharedCountryForEvidence(evidence),
+    },
     relationships,
     droppedInferredOnly,
     droppedIneligibleName,

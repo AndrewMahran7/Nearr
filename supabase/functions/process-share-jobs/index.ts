@@ -65,7 +65,7 @@ import {
   mergeMediaCaption,
   summarizeSourceMetadata,
 } from './mediaSourceMetadata.ts';
-import { buildVenueMentions, normalizeVenueName } from './mediaMentions.ts';
+import { buildVenueMentions, normalizeVenueName, sharedCountryForEvidence } from './mediaMentions.ts';
 import {
   evaluateMediaAutoSave,
   formatMediaAutoSaveDecisionLog,
@@ -777,7 +777,12 @@ async function finalizeMediaTask(
   const evidenceSummary = parsed.ok
     ? {
         ...summarizeMediaEvidence(parsed.value),
-        ...buildRecognitionFunnel(body?.diagnostics, parsed.value, rendered.renderedPlaces),
+        ...buildRecognitionFunnel(
+          body?.diagnostics,
+          parsed.value,
+          rendered.renderedPlaces,
+          sharedCountryForEvidence(parsed.value),
+        ),
       }
     : { reason: outcome, ...buildRecognitionFunnel(body?.diagnostics, null, 0) };
   const mediaRunId = await insertMediaRun(admin, task, job, body, evidenceSummary);

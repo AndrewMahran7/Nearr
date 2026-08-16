@@ -48,6 +48,14 @@ export type RecognitionFunnel = {
   sourceGeographicContextLabels?: string[];
   /** Places that survived every gate and reached the resolver. */
   destinationPlaces?: number;
+  /** How firmly the post established ONE shared country. */
+  sharedGeoCountryStrength?: string;
+  /** What corroborated it (only when strong). Closed vocabulary. */
+  sharedGeoCountrySource?: string;
+  /** How many distinct countries the post asserted. >1 means conflicted. */
+  sharedGeoCountryCandidates?: number;
+  /** Whether a strong shared country was available to scope sibling searches. */
+  sharedGeoCountryApplied?: boolean;
 };
 
 /**
@@ -66,6 +74,14 @@ export function buildRecognitionFunnel(
   diagnosticsBag: unknown,
   evidence: MediaPlaceEvidence | null,
   renderablePlaces: number,
+  /** The post-level geo aggregate, when mentions have already been built.
+   *  Only its bounded country VERDICT is recorded — never the country string
+   *  itself, keeping this row free of source content. */
+  geoContext?: {
+    countryStrength?: string;
+    countrySource?: string;
+    countryCandidates?: string[];
+  } | null,
 ): RecognitionFunnel {
   const d =
     diagnosticsBag && typeof diagnosticsBag === 'object'
@@ -98,6 +114,17 @@ export function buildRecognitionFunnel(
     out.destinationPlaces = Number.isInteger(renderablePlaces) && renderablePlaces >= 0
       ? renderablePlaces
       : 0;
+  }
+
+  if (geoContext && typeof geoContext.countryStrength === 'string') {
+    out.sharedGeoCountryStrength = geoContext.countryStrength;
+    out.sharedGeoCountryApplied = geoContext.countryStrength === 'strong';
+    if (typeof geoContext.countrySource === 'string') {
+      out.sharedGeoCountrySource = geoContext.countrySource;
+    }
+    if (Array.isArray(geoContext.countryCandidates)) {
+      out.sharedGeoCountryCandidates = geoContext.countryCandidates.length;
+    }
   }
   return out;
 }

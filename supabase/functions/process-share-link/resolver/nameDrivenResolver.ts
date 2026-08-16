@@ -471,7 +471,31 @@ function buildMentionQuery(mention: VenueMention, geo: MediaGeoContext): string 
   const region = mention.geo.region ?? geo.region;
   if (city) parts.push(city);
   if (region) parts.push(region);
+  const country = mentionQueryCountry(mention, geo);
+  if (country) parts.push(country);
   return parts.filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * Which country, if any, may scope this mention's search.
+ *
+ * PRECEDENCE. The mention's OWN country always wins — an explicit "Granada,
+ * Spain" keeps Spain even in a post that otherwise establishes Nicaragua, and a
+ * Costa Rican hotel is never dragged into a neighbouring country by its
+ * siblings. Only when a mention says nothing about its own country may the
+ * post-level shared country apply, and only when that shared country is STRONG.
+ *
+ * `weak` and `conflicted` shared context is deliberately unusable here: a
+ * Spain-and-Portugal road trip must not force either country onto the other's
+ * places, and one quietly inferred model field must not decide a search. When
+ * context is uncertain we keep today's behaviour and let the existing 0/1/2+
+ * policy ask, which is always better than confidently resolving the wrong country.
+ */
+function mentionQueryCountry(mention: VenueMention, geo: MediaGeoContext): string | null {
+  const own = (mention.geo.country ?? '').trim();
+  if (own) return own;
+  if (geo.countryStrength !== 'strong') return null;
+  return (geo.country ?? '').trim() || null;
 }
 
 /**
@@ -499,7 +523,18 @@ export async function resolveVenueMentions(args: {
   let bias: { lat: number; lng: number } | null = null;
   if (geoContext.city) {
     try {
-      bias = await geocode(`${geoContext.city}, ${geoContext.region ?? ''}`.trim(), env.googlePlacesKey);
+      // The country is included whenever the post stated one — no strength gate.
+      // This does not add a constraint, it DISAMBIGUATES one we already apply:
+      // a bare "Granada" geocoded to Granada, SPAIN and biased every sibling of
+      // a Nicaragua reel toward Spanish results (production job 10ce36b5).
+      // Naming the country makes an existing signal accurate rather than making
+      // it stronger — and a country we already trusted for city/region is not a
+      // new kind of trust.
+      const biasText = [geoContext.city, geoContext.region, geoContext.country]
+        .map((part) => (part ?? '').trim())
+        .filter(Boolean)
+        .join(', ');
+      bias = await geocode(biasText, env.googlePlacesKey);
       if (!expectedState) expectedState = normalizeStateToAbbr(bias?.region ?? null);
     } catch {
       bias = null;
