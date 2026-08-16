@@ -4,7 +4,7 @@
 // persisted into diagnostics so we can correlate evidence quality with prompt
 // changes. Bump PROMPT_VERSION on any wording change.
 
-export const PROMPT_VERSION = 'media-place-evidence-2026-08-13.v6-categories';
+export const PROMPT_VERSION = 'media-place-evidence-2026-08-16.v7-visible-text';
 
 export const PLACE_EVIDENCE_SYSTEM_PROMPT = `
 You extract structured evidence about REAL-WORLD PLACES from a short social
@@ -116,14 +116,36 @@ export function buildUserContext(input: {
   platform: string;
   transcriptText: string;
   ocrText: string;
+  /**
+   * Whether a SEPARATE OCR pass actually ran and produced `ocrText`.
+   *
+   * Defaults to false, because today no standalone OCR engine is configured:
+   * `ocr: "model"` (and `noop`) delegate reading to the multimodal analyze
+   * step, so `ocrText` is empty for the trivial reason that nothing looked yet.
+   * Rendering that as "(none)" told the model there was no visible text BEFORE
+   * it inspected the frames - an assertion about the very thing it was being
+   * asked to determine, at temperature 0. Verified in production
+   * (Instagram DcBz1dhSoax): a large, centred, legible sign was never reported.
+   *
+   * "No OCR pass ran" and "an OCR pass ran and found nothing" are different
+   * states. Only the latter may claim an absence.
+   */
+  ocrExtracted?: boolean;
   metadataTitle?: string | null;
   metadataDescription?: string | null;
 }): string {
   const parts: string[] = [`platform: ${input.platform}`];
   if (input.metadataTitle) parts.push(`caption_title: ${input.metadataTitle}`);
   if (input.metadataDescription) parts.push(`caption_text: ${input.metadataDescription}`);
+  // Transcription genuinely runs, so an empty transcript IS a real observation.
   parts.push(`transcript:\n${input.transcriptText || '(none)'}`);
-  parts.push(`visible_text:\n${input.ocrText || '(none)'}`);
+  parts.push(`visible_text:\n${visibleTextBlock(input.ocrText, input.ocrExtracted === true)}`);
   parts.push('Return ONLY the JSON object described above.');
   return parts.join('\n\n');
+}
+
+function visibleTextBlock(ocrText: string, ocrExtracted: boolean): string {
+  if (ocrText) return ocrText;
+  if (ocrExtracted) return '(none detected by OCR)';
+  return 'not separately extracted - read any visible text directly from the supplied frames';
 }

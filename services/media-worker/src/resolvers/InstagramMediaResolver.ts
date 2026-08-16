@@ -16,7 +16,7 @@
 //
 // The actual "probe â†’ pick a direct URL â†’ download it ourselves, or fall back
 // to a bounded yt-dlp merge" mechanics are shared with every other yt-dlp-backed
-// resolver (TikTok/YouTube/Facebook) via ytDlpShared.ts â€” this file only owns
+// resolver (TikTok/YouTube/Facebook) via ytDlpShared.ts — this file only owns
 // Instagram's own host gate and wiring.
 //
 // ATTRIBUTION: the general idea of resolving a public Instagram media URL was

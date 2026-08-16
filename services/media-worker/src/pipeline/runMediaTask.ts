@@ -203,6 +203,7 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
       canonicalUrl: media.canonicalUrl,
       transcript: transcript.segments,
       ocr,
+      ocrExtracted: deps.ocr.extractsVisibleText,
       frames,
       metadataTitle: media.metadataTitle,
       metadataDescription: media.metadataDescription,

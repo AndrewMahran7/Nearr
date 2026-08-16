@@ -29,6 +29,10 @@ export type AnalyzeInput = {
   canonicalUrl: string;
   transcript: TranscriptSegment[];
   ocr: OcrSegment[];
+  /** True only when a separate OCR pass actually ran (see OcrProvider
+   *  .extractsVisibleText). Absent/false means reading is delegated to this
+   *  model, so an empty `ocr` must NOT be presented as "no visible text". */
+  ocrExtracted?: boolean;
   frames: SelectedFrame[];
   metadataTitle?: string | null;
   metadataDescription?: string | null;
@@ -206,6 +210,7 @@ class GeminiModel implements ModelProvider {
       platform: input.platform,
       transcriptText,
       ocrText,
+      ocrExtracted: input.ocrExtracted === true,
       metadataTitle: input.metadataTitle,
       metadataDescription: input.metadataDescription,
     });

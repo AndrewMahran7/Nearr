@@ -18,11 +18,19 @@ export type OcrInput = {
 
 export interface OcrProvider {
   readonly name: string;
+  /**
+   * Whether this provider actually performs a text-extraction pass. False when
+   * reading frames is delegated to the multimodal analyze step, so an empty
+   * result means "nothing looked yet" rather than "there is no visible text".
+   * The prompt renders those two states differently — see buildUserContext.
+   */
+  readonly extractsVisibleText: boolean;
   extract(input: OcrInput): Promise<OcrSegment[]>;
 }
 
 class NoopOcr implements OcrProvider {
   readonly name = 'noop';
+  readonly extractsVisibleText = false;
   async extract(): Promise<OcrSegment[]> {
     return [];
   }
