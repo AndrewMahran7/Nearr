@@ -40,9 +40,24 @@ type Fixture = {
 };
 
 // ---------------------------------------------------------------------------
-// Corpus. Type metadata mirrors what Places API (New) actually returns for
-// these entity classes (`places.types` + `places.primaryType`, both already in
+// Corpus. Type metadata mirrors what the Places API actually returns for these
+// entity classes (`places.types` + `places.primaryType`, both already in
 // PLACES_SEARCH_FIELD_MASK).
+//
+// Live-verified 2026-08-15 against the real Places text search (read-only, no
+// jobs created). Observed type arrays:
+//   Los Angeles              [locality, political]
+//   Orange County            [administrative_area_level_2, political]
+//   California               [administrative_area_level_1, political]
+//   United States            [country, political]
+//   California Pizza Kitchen [bar, establishment, food, meal_delivery,
+//                             meal_takeaway, point_of_interest, restaurant, store]
+//   Orange County Mining Co  [establishment, food, point_of_interest, restaurant]
+//   Central Park             [establishment, park, point_of_interest, tourist_attraction]
+//   Yosemite National Park   [establishment, park, point_of_interest, tourist_attraction]
+//   Blue Cave (Montenegro)   [establishment, point_of_interest, tourist_attraction]
+//   Crystal Cove State Park  [campground, establishment, lodging, park,
+//                             point_of_interest, tourist_attraction]
 // ---------------------------------------------------------------------------
 
 /** Geographic CONTEXT — administrative / geocoding entities. */
@@ -258,10 +273,16 @@ for (const fx of DESTINATIONS) {
 
 // The decisive proof that this is TYPE semantics, not name matching: the same
 // display name flips outcome purely on its Google types.
+//
+// This pair is not hypothetical. Live text search for "Venice Beach California"
+// returns exactly ONE result: the NEIGHBORHOOD "Venice" [neighborhood,
+// political]. Before this rule that lone administrative row was the only
+// candidate and auto-saved as a place; now it is refused and the user is asked.
+// The beach itself — whenever Google returns it — stays fully eligible.
 {
-  const asCity = { name: 'Venice', types: ['neighborhood', 'political'] };
+  const asNeighborhood = { name: 'Venice', types: ['neighborhood', 'political'] };
   const asBeach = { name: 'Venice', types: ['beach', 'natural_feature'] };
-  assert.equal(isGeographicContextOnly(asCity), true);
+  assert.equal(isGeographicContextOnly(asNeighborhood), true);
   assert.equal(isGeographicContextOnly(asBeach), false);
 
   // And a candidate with NO geographic word in its name is still rejected when
