@@ -14,6 +14,8 @@ import {
   type PlaceCandidateEvidence,
   emptyEvidence,
   safeParseEvidence,
+  parseEvidenceWithDiagnostics,
+  type EvidenceParseDiagnostics,
 } from '../types/evidence.js';
 import {
   PLACE_EVIDENCE_SYSTEM_PROMPT,
@@ -45,6 +47,8 @@ export type AnalyzeOutput = {
   evidence: MediaPlaceEvidence;
   /** Size-bounded raw preview for diagnostics (never the full response). */
   modelRawPreview?: string;
+  /** Structured record of what schema validation kept vs dropped. */
+  parseDiagnostics?: EvidenceParseDiagnostics;
 };
 
 export interface ModelProvider {
@@ -268,12 +272,26 @@ class GeminiModel implements ModelProvider {
       } catch {
         return { provider: this.name, promptVersion: PROMPT_VERSION, evidence: emptyEvidence(['gemini_json_parse_failed']), modelRawPreview: text.slice(0, 500) };
       }
-      const evidence = groundClaimedEvidence(safeParseEvidence(parsed), input);
+      const { evidence: validated, diagnostics: parseDiag } = parseEvidenceWithDiagnostics(parsed);
+      const evidence = groundClaimedEvidence(validated, input);
+      // Bounded, structured record of what validation kept vs dropped. This is
+      // what makes a future schema regression diagnosable WITHOUT storing the
+      // full model response: paths and codes only, never model text.
+      if (parseDiag.rejected > 0 || parseDiag.topLevelInvalid) {
+        log.warn('evidence_validation_rejected', {
+          emitted: parseDiag.emitted,
+          accepted: parseDiag.accepted,
+          rejected: parseDiag.rejected,
+          topLevelInvalid: parseDiag.topLevelInvalid,
+          paths: parseDiag.rejectionPaths,
+        });
+      }
       return {
         provider: this.name,
         promptVersion: PROMPT_VERSION,
         evidence,
         modelRawPreview: text.slice(0, 500),
+        parseDiagnostics: parseDiag,
       };
     } catch (err) {
       if (err instanceof MediaError) throw err;

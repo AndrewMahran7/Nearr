@@ -123,12 +123,122 @@ function normalizeRawEvidence(raw: unknown): unknown {
   };
 }
 
-/** Parse unknown model output into validated evidence. Never throws — on
- *  failure returns empty/insufficient evidence with a warning so the pipeline
- *  degrades to a safe manual fallback. Malformed individual evidence items are
- *  dropped (not fatal); structural errors still degrade safely. */
+export type EvidenceParseDiagnostics = {
+  /** Places the model emitted (0 when the payload was structurally unusable). */
+  emitted: number;
+  /** Places that independently passed the FULL strict schema. */
+  accepted: number;
+  /** Places dropped because they individually failed validation. */
+  rejected: number;
+  /** Bounded `path:code` labels for the rejected places. Never model text. */
+  rejectionPaths: string[];
+  /** True when the payload was not even shaped like an evidence object. */
+  topLevelInvalid: boolean;
+};
+
+const MAX_REJECTION_PATHS = 8;
+
+/**
+ * Parse unknown model output into validated evidence, isolating faults at the
+ * PLACE level. Never throws.
+ *
+ * The failure this replaces: validation was all-or-nothing, so a single bad
+ * field anywhere collapsed the entire response to
+ * `emptyEvidence(['evidence_schema_invalid'])` — erasing every independently
+ * valid place and turning a good extraction into a manual fallback. Observed in
+ * production on the frozen 20-share cohort (jobs d4e64093 / e7dde60b /
+ * 1a5c9273), where the model had named real places and the parser discarded
+ * them wholesale.
+ *
+ * Salvage boundaries, deliberately narrow:
+ *   - top level unintelligible (not an object, `places` not an array) → hard
+ *     fail, exactly as before. Nothing can be trusted from that.
+ *   - one malformed place among valid siblings → drop only that place.
+ *   - every emitted place malformed → no survivors, safe insufficient result.
+ *
+ * This is NOT a loosening of the schema: each surviving place still passes the
+ * complete strict `PlaceCandidateEvidence` check. Malformed units are rejected,
+ * never coerced into looking valid.
+ */
+export function parseEvidenceWithDiagnostics(
+  raw: unknown,
+): { evidence: MediaPlaceEvidence; diagnostics: EvidenceParseDiagnostics } {
+  const base: EvidenceParseDiagnostics = {
+    emitted: 0, accepted: 0, rejected: 0, rejectionPaths: [], topLevelInvalid: false,
+  };
+
+  const normalized = normalizeRawEvidence(raw);
+  // Fast path: the whole payload is already valid.
+  const whole = MediaPlaceEvidence.safeParse(normalized);
+  if (whole.success) {
+    return {
+      evidence: whole.data,
+      diagnostics: { ...base, emitted: whole.data.places.length, accepted: whole.data.places.length },
+    };
+  }
+
+  // Structural gate. Anything that is not an object with a `places` array is
+  // unintelligible, and salvaging from it would be guesswork.
+  if (!normalized || typeof normalized !== 'object' || !Array.isArray((normalized as any).places)) {
+    return {
+      evidence: emptyEvidence(['evidence_schema_invalid']),
+      diagnostics: { ...base, topLevelInvalid: true },
+    };
+  }
+
+  const r = normalized as Record<string, unknown>;
+  const rawPlaces = r.places as unknown[];
+  const accepted: PlaceCandidateEvidence[] = [];
+  const rejectionPaths: string[] = [];
+
+  for (let i = 0; i < rawPlaces.length; i += 1) {
+    const one = PlaceCandidateEvidence.safeParse(rawPlaces[i]);
+    if (one.success) {
+      accepted.push(one.data);
+      continue;
+    }
+    for (const issue of one.error.issues) {
+      if (rejectionPaths.length >= MAX_REJECTION_PATHS) break;
+      // Bounded label only — path + code, never the offending value.
+      rejectionPaths.push(`places.${i}.${issue.path.join('.')}:${issue.code}`);
+    }
+  }
+
+  // Re-validate the envelope with only the surviving places, so top-level
+  // fields (warnings, flags) still go through the same strict schema.
+  const envelope = MediaPlaceEvidence.safeParse({ ...r, places: accepted });
+  const diagnostics: EvidenceParseDiagnostics = {
+    emitted: rawPlaces.length,
+    accepted: accepted.length,
+    rejected: rawPlaces.length - accepted.length,
+    rejectionPaths,
+    topLevelInvalid: false,
+  };
+
+  if (!envelope.success) {
+    // The places were fine but the envelope itself is malformed — still safe-fail.
+    return {
+      evidence: emptyEvidence(['evidence_schema_invalid']),
+      diagnostics: { ...diagnostics, accepted: 0, rejected: rawPlaces.length, topLevelInvalid: true },
+    };
+  }
+
+  const warnings = [...envelope.data.warnings];
+  if (diagnostics.rejected > 0) warnings.push('evidence_place_schema_invalid');
+  return {
+    evidence: {
+      ...envelope.data,
+      warnings: warnings.slice(0, 24),
+      // A surviving place is real evidence. Do NOT let a malformed sibling
+      // flip this to "insufficient" — but never override an empty result.
+      insufficientEvidence: accepted.length === 0 ? true : envelope.data.insufficientEvidence,
+    },
+    diagnostics,
+  };
+}
+
+/** Back-compatible wrapper. Prefer `parseEvidenceWithDiagnostics` when the
+ *  caller can record the accepted/rejected counts. */
 export function safeParseEvidence(raw: unknown): MediaPlaceEvidence {
-  const result = MediaPlaceEvidence.safeParse(normalizeRawEvidence(raw));
-  if (result.success) return result.data;
-  return emptyEvidence(['evidence_schema_invalid']);
+  return parseEvidenceWithDiagnostics(raw).evidence;
 }

@@ -212,6 +212,17 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
     diagnostics.modelProvider = analysis.provider;
     diagnostics.promptVersion = analysis.promptVersion;
     if (analysis.modelRawPreview) diagnostics.modelOutput = analysis.modelRawPreview;
+    // Structured validation outcome. Answers "did the model emit places, and
+    // did our own schema drop any?" from the persisted run alone — the question
+    // the 500-char raw preview could not answer during the cohort audit.
+    if (analysis.parseDiagnostics) {
+      diagnostics.modelPlacesEmitted = analysis.parseDiagnostics.emitted;
+      diagnostics.modelPlacesValid = analysis.parseDiagnostics.accepted;
+      diagnostics.modelPlacesRejected = analysis.parseDiagnostics.rejected;
+      if (analysis.parseDiagnostics.rejectionPaths.length > 0) {
+        diagnostics.evidenceRejectionPaths = analysis.parseDiagnostics.rejectionPaths;
+      }
+    }
     warnings.push(...analysis.evidence.warnings);
     diagnostics.durationMs = Date.now() - startedAt;
     diagnostics.warnings = warnings.slice(0, 24);
