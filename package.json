@@ -87,6 +87,7 @@
     "test:share-extension-compact": "ts-node -P scripts/tsconfig.json scripts/testShareExtensionCompact.ts",
     "test:share-extension-completion": "ts-node -P scripts/tsconfig.json scripts/testShareExtensionCompletion.ts",
     "test:media-fallback": "ts-node -P scripts/tsconfig.json scripts/testMediaFallbackTrigger.ts",
+    "test:metadata-failure-fallback": "ts-node -P scripts/tsconfig.json scripts/testMetadataFailureMediaFallback.ts",
     "test:media-evidence": "ts-node -P scripts/tsconfig.json scripts/testMediaEvidenceAdapter.ts",
     "test:media-finalize": "ts-node -P scripts/tsconfig.json scripts/testMediaFinalizePlan.ts",
     "test:post-save-enrichment": "ts-node -P scripts/tsconfig.json scripts/testPostSaveEnrichmentContracts.ts",

@@ -50,6 +50,7 @@ import {
   effectiveMediaFlags,
   mediaInfrastructureEnabled,
   shouldRunMediaFallback,
+  shouldRunMediaFallbackForMetadataFailure,
   shouldRunPostSaveEnrichment,
 } from './mediaFallback.ts';
 import {
@@ -1294,7 +1295,48 @@ async function processOne(admin: any, env: any, job: any): Promise<void> {
 
   const meta = await fetchPostMetadata(requestUrl, platform);
   if (!meta.ok) {
-    // Post metadata unavailable — the user can still search by hand.
+    // Metadata unavailable is NOT the same as "this place cannot be
+    // identified". It is the case where the video is the only evidence left,
+    // so try durable media fallback BEFORE giving up. Without this the job
+    // finalized to needs_help in ~1s, pushed "We couldn't quite find this
+    // one", and never inserted a share_media_tasks row.
+    const metaFailFlags = effectiveMediaFlags(readMediaFlags(), job.user_id);
+    if (metaFailFlags.mediaFallbackEnabled) {
+      const mediaTaskExists = await mediaTaskExistsFor(admin, job.id);
+      const trigger = shouldRunMediaFallbackForMetadataFailure({
+        platform,
+        mediaFallbackEnabled: metaFailFlags.mediaFallbackEnabled,
+        instagramResolverEnabled: metaFailFlags.instagramResolverEnabled,
+        tiktokResolverEnabled: metaFailFlags.tiktokResolverEnabled,
+        youtubeResolverEnabled: metaFailFlags.youtubeResolverEnabled,
+        facebookResolverEnabled: metaFailFlags.facebookResolverEnabled,
+        snapchatResolverEnabled: metaFailFlags.snapchatResolverEnabled,
+        mediaTaskExists,
+        jobStatus: 'processing_metadata',
+      });
+      console.log(
+        `[share-job] metadata_failed_media_fallback job_id=${job.id} platform=${platform} run=${trigger.run} reason=${trigger.reason}`,
+      );
+      if (trigger.run) {
+        // Park (never finalize) so no premature needs_help push is emitted.
+        // The job stays non-terminal at progress_stage=checking_video until
+        // the media task itself resolves or fails.
+        await enqueueMediaTask(admin, job, platform, requestUrl, requestUrl, {
+          parkPatch: {
+            decision: 'manual_fallback',
+            needs_help_reason: 'metadata_unavailable',
+            suggested_query: null,
+            candidate_payload: { candidates: [] },
+            extraction_payload: { platform, reason: 'metadata_failed' },
+            canonical_url: requestUrl,
+            source_platform: platform,
+          },
+        });
+        return;
+      }
+    }
+    // Media fallback unavailable for this platform/flag state — the user can
+    // still search by hand.
     await finalize(
       admin,
       job,

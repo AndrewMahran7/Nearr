@@ -133,6 +133,42 @@ export function isSupportedMediaPlatform(ctx: MediaFallbackContext): boolean {
 }
 
 /**
+ * Decide whether to enqueue a media-analysis task when post metadata could not
+ * be fetched AT ALL (`fetchPostMetadata` returned !ok).
+ *
+ * This is a different question from `shouldRunMediaFallback`: there is no
+ * metadata result to reason about, so none of the result-based guards (already
+ * auto-saved, multi-place intent, strong address evidence, non-media failure
+ * classes) can apply. Only the infrastructure gates do.
+ *
+ * Why it exists: metadata failure is NOT the same as place-identification
+ * failure. When a platform blocks the unauthenticated page fetch — which
+ * Instagram now does intermittently — the video itself may still carry the
+ * answer. Treating the metadata fetch as terminal sent the user straight to
+ * "We couldn't quite find this one" without ever downloading the video, and
+ * without inserting a `share_media_tasks` row.
+ */
+export function shouldRunMediaFallbackForMetadataFailure(
+  ctx: MediaFallbackContext,
+): MediaFallbackResult {
+  if (!ctx.mediaFallbackEnabled) {
+    return { run: false, reason: 'media_fallback_disabled' };
+  }
+  if (!isSupportedMediaPlatform(ctx)) {
+    return { run: false, reason: 'unsupported_platform' };
+  }
+  // Never touch a terminal / cancelled parent job.
+  if (ctx.jobStatus !== 'processing_metadata') {
+    return { run: false, reason: 'job_not_processing' };
+  }
+  // Idempotency — one media task per job.
+  if (ctx.mediaTaskExists) {
+    return { run: false, reason: 'media_task_exists' };
+  }
+  return { run: true, reason: 'metadata_unavailable_try_media' };
+}
+
+/**
  * Decide whether to enqueue a media-analysis task for a metadata result.
  *
  * The order matters: every "do not run" guard is checked before any positive
