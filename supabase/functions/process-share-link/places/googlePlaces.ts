@@ -10,8 +10,7 @@ import type { SearchBias } from '../types.ts';
 import {
   haversineMeters,
   hasStrongNameMatch,
-  isAddressLikeTypes,
-  isLocalityLikeTypes,
+  isGeographicContextOnly,
 } from './placeNormalization.ts';
 import { extractStateFromFormattedAddress } from './locationGuards.ts';
 import { isPlaceholderValue } from '../../../../lib/shareAgent/queryCleaner.ts';
@@ -286,17 +285,26 @@ export async function geocodeContextText(
   return { lat, lng, ...(region ? { region } : {}) };
 }
 
+/**
+ * Which rung of the verification ladder produced the answer. Recorded so a
+ * future failure report can tell "we never had a venue name to combine with
+ * the address" apart from "we did, and it still found nothing".
+ */
+export type AddressVerifyStrategy = 'venue_plus_address' | 'address_only';
+
 export type AddressVerification =
   | {
       status: 'verified';
       candidate: PlacesCandidate;
       geocoded: GeocodedAddress;
       distanceMeters: number;
+      strategy: AddressVerifyStrategy;
     }
   | {
       status: 'ambiguous';
       candidates: PlacesCandidate[];
       geocoded: GeocodedAddress;
+      strategy: AddressVerifyStrategy;
     }
   | {
       status: 'failed';
@@ -315,11 +323,36 @@ export type AddressVerification =
     };
 
 /**
- * Mirror of services/placesService.ts `verifyPlaceAtAddress`. Used
- * by the address-first resolver to confirm that an extracted street
- * address actually corresponds to a real business — and, when an
- * optional name is supplied, that the business at that address has
- * a strong name match.
+ * Confirm that an extracted street address corresponds to a real, visitable
+ * business — and, when an optional name is supplied, that the business at that
+ * address has a strong name match.
+ *
+ * PROVIDER PATH. This runs through `searchPlaces`, the SAME shared client the
+ * rest of the resolver uses (Places API (New) `places:searchText`, with the
+ * existing legacy fallback for a key that is only authorized for the old
+ * service). It previously issued its own direct call to the legacy
+ * `maps/api/place/textsearch` endpoint with no v1 attempt and no fallback,
+ * which made address verification — the single strongest evidence path — the
+ * only part of the pipeline that hard-depended on legacy Places being
+ * available. A key authorized for one generation but not the other broke
+ * verification while ordinary search kept working.
+ *
+ * QUERY LADDER. Google is asked the most specific question we can form first:
+ *
+ *   1. "<venue>, <formatted address>"  — when caption evidence gave us both
+ *   2. "<formatted address>"           — address alone
+ *
+ * Rung 1 matters because neither half works on its own. Verified live: the
+ * name alone is ambiguous across a chain, and the address alone comes back as
+ * the ADDRESS ITSELF — "30012 Crown Valley Pkwy # I" typed
+ * [street_address, subpremise] — which is correctly rejected below as
+ * geographic context, yielding no_business_near_address even though a real
+ * restaurant sits at that address. Combined, the same provider returns
+ * "Brooklyn City Pizzeria & Market" typed [restaurant, food, …].
+ *
+ * The first rung that yields a usable business wins; rung 2 is skipped. A rung
+ * that provider-faults does not end the ladder — the next rung still runs, and
+ * the fault is only reported if NO rung produced anything.
  */
 export async function verifyPlaceAtAddressServer(
   address: string,
@@ -330,83 +363,104 @@ export async function verifyPlaceAtAddressServer(
   if (!geocoded) {
     return { status: 'failed', reason: 'geocode_failed', geocoded: null };
   }
-  const query = (optionalPlaceName?.trim() || geocoded.formattedAddress || address).trim();
-  const params = new URLSearchParams({
-    query,
-    location: `${geocoded.latitude},${geocoded.longitude}`,
-    radius: '200',
-    key,
-  });
-  let json: any;
-  try {
-    const res = await fetch(`${PLACES_BASE}?${params}`);
+  const anchor = (geocoded.formattedAddress || address).trim();
+  const placeName = optionalPlaceName?.trim() ?? '';
+  const bias: SearchBias = { lat: geocoded.latitude, lng: geocoded.longitude };
+
+  const ladder: Array<{ query: string; strategy: AddressVerifyStrategy }> = [
+    ...(placeName
+      ? [{ query: `${placeName}, ${anchor}`, strategy: 'venue_plus_address' as const }]
+      : []),
+    { query: anchor, strategy: 'address_only' as const },
+  ];
+
+  let nearby: PlacesCandidate[] = [];
+  let strategy: AddressVerifyStrategy = ladder[0].strategy;
+  // Sticky across rungs: a fault on rung 1 must not be forgotten if rung 2
+  // simply finds nothing — "we could not ask" is not "there is nothing there".
+  let providerFault: { retryAfterSeconds?: number } | null = null;
+
+  for (const rung of ladder) {
+    const res = await searchPlaces(rung.query, key, bias);
     if (!res.ok) {
-      // A 429/5xx says nothing about what is at this address.
+      providerFault = {
+        ...(typeof res.retryAfterSeconds === 'number'
+          ? { retryAfterSeconds: res.retryAfterSeconds }
+          : {}),
+      };
+      continue;
+    }
+    const usable = res.results.filter((c) => {
+      if (!Number.isFinite(c.latitude) || !Number.isFinite(c.longitude)) return false;
+      // The semantic eligibility boundary: a street_address / premise /
+      // subpremise / locality row describes WHERE, not WHAT. Never let an
+      // address card become the destination. `isGeographicContextOnly` also
+      // reads `primaryType` — which the old hand-rolled legacy mapping in this
+      // function dropped entirely — and lets any recognised destination type
+      // (park, trailhead, beach, …) through untouched.
+      if (isGeographicContextOnly(c)) return false;
+      const d = haversineMeters(
+        geocoded.latitude, geocoded.longitude, c.latitude!, c.longitude!,
+      );
+      return d <= ADDRESS_VERIFY_RADIUS_M;
+    });
+    if (usable.length > 0) {
+      nearby = usable;
+      strategy = rung.strategy;
+      break;
+    }
+  }
+
+  if (nearby.length === 0) {
+    // Every rung faulted → retryable. Distinguishing this from "Google
+    // answered and there is no business here" is what keeps a provider outage
+    // out of the user's manual-search queue (see process-share-jobs/
+    // providerRetry.ts, which treats these two reasons oppositely).
+    if (providerFault) {
       return {
         status: 'failed',
         reason: 'provider_error',
         geocoded,
-        ...(parseRetryAfter(res.headers.get('retry-after')) != null
-          ? { retryAfterSeconds: parseRetryAfter(res.headers.get('retry-after'))! }
-          : {}),
+        ...providerFault,
       };
     }
-    json = await res.json();
-  } catch {
-    // Transport failure or timeout — same reasoning as above.
-    return { status: 'failed', reason: 'provider_error', geocoded };
-  }
-  const status: string = json?.status ?? 'UNKNOWN';
-  // ZERO_RESULTS is a real answer ("nothing there"). Any other non-OK status is
-  // a provider fault (OVER_QUERY_LIMIT, UNKNOWN_ERROR, …).
-  if (status !== 'OK' && status !== 'ZERO_RESULTS') {
-    return { status: 'failed', reason: 'provider_error', geocoded };
-  }
-  const raw: any[] = Array.isArray(json.results) ? json.results : [];
-  const all: PlacesCandidate[] = raw.map((r: any) => ({
-    googlePlaceId: r.place_id,
-    name: r.name,
-    formattedAddress: r.formatted_address ?? undefined,
-    latitude: r.geometry?.location?.lat,
-    longitude: r.geometry?.location?.lng,
-    types: Array.isArray(r.types) ? r.types : undefined,
-  }));
-
-  const nearby = all.filter((c) => {
-    if (!Number.isFinite(c.latitude) || !Number.isFinite(c.longitude)) return false;
-    if (isAddressLikeTypes(c.types)) return false;
-    if (isLocalityLikeTypes(c.types)) return false;
-    const d = haversineMeters(
-      geocoded.latitude, geocoded.longitude, c.latitude!, c.longitude!,
-    );
-    return d <= ADDRESS_VERIFY_RADIUS_M;
-  });
-
-  if (nearby.length === 0) {
     return { status: 'failed', reason: 'no_business_near_address', geocoded };
   }
 
-  if (optionalPlaceName && optionalPlaceName.trim()) {
-    const matches = nearby.filter((c) => hasStrongNameMatch(c.name, optionalPlaceName));
+  const distanceTo = (c: PlacesCandidate) =>
+    haversineMeters(geocoded.latitude, geocoded.longitude, c.latitude!, c.longitude!);
+
+  if (placeName) {
+    // Never blindly take result 0 — the provider may return the shopping
+    // centre, the building, and the specific business for one address. The
+    // caption's venue name is what picks between them.
+    const matches = nearby.filter((c) => hasStrongNameMatch(c.name, placeName));
     if (matches.length === 1) {
-      const distanceMeters = haversineMeters(
-        geocoded.latitude, geocoded.longitude,
-        matches[0].latitude!, matches[0].longitude!,
-      );
-      return { status: 'verified', candidate: matches[0], geocoded, distanceMeters };
+      return {
+        status: 'verified',
+        candidate: matches[0],
+        geocoded,
+        distanceMeters: distanceTo(matches[0]),
+        strategy,
+      };
     }
     if (matches.length > 1) {
-      return { status: 'ambiguous', candidates: matches.slice(0, 5), geocoded };
+      return { status: 'ambiguous', candidates: matches.slice(0, 5), geocoded, strategy };
     }
+    // Businesses exist here, but none is the one the caption named. The
+    // resolver retries bare (see resolveSharedPlace) so the real business at
+    // the address can still surface.
     return { status: 'failed', reason: 'name_mismatch', geocoded };
   }
 
   if (nearby.length === 1) {
-    const distanceMeters = haversineMeters(
-      geocoded.latitude, geocoded.longitude,
-      nearby[0].latitude!, nearby[0].longitude!,
-    );
-    return { status: 'verified', candidate: nearby[0], geocoded, distanceMeters };
+    return {
+      status: 'verified',
+      candidate: nearby[0],
+      geocoded,
+      distanceMeters: distanceTo(nearby[0]),
+      strategy,
+    };
   }
-  return { status: 'ambiguous', candidates: nearby.slice(0, 5), geocoded };
+  return { status: 'ambiguous', candidates: nearby.slice(0, 5), geocoded, strategy };
 }

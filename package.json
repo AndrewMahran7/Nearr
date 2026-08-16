@@ -29,6 +29,7 @@
     "test:manual-fallback": "ts-node -P scripts/tsconfig.json scripts/testManualFallback.ts",
     "test:multi-address": "ts-node -P scripts/tsconfig.json scripts/testMultiAddressExtraction.ts",
     "test:address-first": "ts-node -P scripts/tsconfig.json scripts/testAddressFirst.ts",
+    "test:address-verification": "ts-node -P scripts/tsconfig.json scripts/testAddressVerification.ts",
     "test:failure-logging": "ts-node -P scripts/tsconfig.json scripts/testFailureLogging.ts",
     "test:notification-dedupe": "ts-node -P scripts/tsconfig.json scripts/testPlaceNotificationDedupe.ts",
     "test:opportunity-ui": "ts-node -P scripts/tsconfig.json scripts/testOpportunityUi.ts",

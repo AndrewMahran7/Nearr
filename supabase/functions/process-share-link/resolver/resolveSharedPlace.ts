@@ -402,6 +402,12 @@ export async function resolveSharedPlace(args: {
       diagnostics.addressVerification = {
         status: verification.status,
         reason: (verification as any).reason ?? null,
+        // Which rung of the verify ladder answered: did we get to combine a
+        // caption venue name with the address, or was the address all we had?
+        // Distinguishes "no venue evidence to combine" from "combined and
+        // still nothing" in a failure report.
+        strategy: (verification as any).strategy ?? null,
+        venueHintPresent: !!placeName,
       };
       const verifyResultCount =
         verification.status === 'verified'

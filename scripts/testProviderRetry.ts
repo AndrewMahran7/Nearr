@@ -220,7 +220,32 @@ assert.doesNotMatch(
   'an HTTP failure is no longer reported as "no business near address"',
 );
 assert.match(places, /reason: 'provider_error'/, 'provider faults have their own reason');
-assert.match(places, /status !== 'OK' && status !== 'ZERO_RESULTS'/, 'ZERO_RESULTS stays a real answer');
+// A successful-but-empty provider answer is a RESULT, not a fault. This guard
+// now lives in the shared legacy client, which address verification reaches
+// through `searchPlaces` rather than by calling the endpoint itself.
+assert.match(
+  places,
+  /json\?\.status !== 'OK' && json\?\.status !== 'ZERO_RESULTS'/,
+  'ZERO_RESULTS stays a real answer',
+);
+// Address verification must route through the SHARED provider client (Places
+// API (New) first, legacy fallback) instead of issuing its own legacy-only
+// call. That asymmetry is what let a key authorized for one Places generation
+// break verification while ordinary search kept working.
+const verifyBody = places.slice(
+  places.indexOf('export async function verifyPlaceAtAddressServer'),
+);
+assert.ok(verifyBody.length > 0, 'verifyPlaceAtAddressServer is still present');
+assert.match(
+  verifyBody,
+  /await searchPlaces\(/,
+  'address verification goes through the shared Places client',
+);
+assert.doesNotMatch(
+  verifyBody,
+  /PLACES_BASE/,
+  'address verification no longer calls the legacy endpoint directly',
+);
 
 const job = readFileSync(
   join(process.cwd(), 'supabase/functions/process-share-jobs/index.ts'),
