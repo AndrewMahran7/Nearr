@@ -50,6 +50,76 @@ export function isLocalityLikeTypes(types?: string[]): boolean {
   return types.some((t) => LOCALITY_LIKE.has(t));
 }
 
+/**
+ * Whatever the caller has: a raw PlacesCandidate, a ResolvedCandidate, or a
+ * persisted candidate row read back from JSON. Fields are `unknown` on purpose
+ * — every caller in the pipeline hands us a slightly different shape, and the
+ * classifier validates rather than trusts.
+ */
+type TypedCandidate =
+  | { types?: unknown; primaryType?: unknown; [field: string]: unknown }
+  | null
+  | undefined;
+
+function candidateTypeSet(candidate: TypedCandidate): string[] {
+  const out: string[] = [];
+  const primary = candidate?.primaryType;
+  if (typeof primary === 'string' && primary) out.push(primary);
+  const types = candidate?.types;
+  if (Array.isArray(types)) {
+    for (const t of types) if (typeof t === 'string' && t) out.push(t);
+  }
+  return out;
+}
+
+/**
+ * True when a Google result describes WHERE something is rather than WHAT it
+ * is — a city, neighborhood, county, state, country, postal code, or a bare
+ * street-address/geocode row.
+ *
+ * This is the semantic candidate-validity boundary that keeps geographic
+ * CONTEXT from becoming the saved DESTINATION. The historical failure it
+ * prevents: weak evidence ("this place in Los Angeles is insane") produced a
+ * single `locality` result, which then satisfied the exactly-one-plausible-
+ * candidate auto-save rule and saved "Los Angeles" as a place.
+ *
+ * It is deliberately driven by Google's ENTITY TYPES, never by the words in a
+ * candidate's name:
+ *   - "California Pizza Kitchen" (restaurant)  -> false, a real destination
+ *   - "New York Bagel Cafe" (cafe)             -> false
+ *   - "Central Park" (park/tourist_attraction) -> false
+ *   - "Venice Beach" (beach/natural_feature)   -> false
+ *   - "Los Angeles" (locality/political)       -> TRUE, context only
+ *   - "Orange County" (admin_area_level_2)     -> TRUE
+ *
+ * Any recognised destination type wins outright, so a park/beach/trail/landmark
+ * is never filtered just because it is geographic in nature. An UNKNOWN or
+ * absent type set returns false: we only reject on positive evidence that the
+ * result is administrative, never on missing metadata (the legacy Places path
+ * and older persisted candidates can lack `primaryType`).
+ */
+export function isGeographicContextOnly(candidate: TypedCandidate): boolean {
+  return geographicContextTypeOf(candidate) !== null;
+}
+
+/**
+ * The specific administrative/geocoding type that made a candidate
+ * context-only, or null when it is a legitimate destination. Returned so the
+ * rejection is explainable in diagnostics without logging free-form text.
+ */
+export function geographicContextTypeOf(candidate: TypedCandidate): string | null {
+  const typeSet = candidateTypeSet(candidate);
+  if (typeSet.length === 0) return null;
+  // A real-world visitable entity is never "context only", even when its type
+  // set also carries political/geographic markers (national parks do).
+  if (typeSet.some((t) => BUSINESS_LIKE.has(t))) return null;
+  return (
+    typeSet.find((t) => LOCALITY_LIKE.has(t)) ??
+    typeSet.find((t) => ADDRESS_LIKE.has(t)) ??
+    null
+  );
+}
+
 export function pickCategory(types?: string[]): string | null {
   if (!types?.length) return null;
   const skip = new Set(['point_of_interest', 'establishment', 'food']);

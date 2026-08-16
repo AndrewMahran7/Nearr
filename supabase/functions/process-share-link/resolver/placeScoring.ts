@@ -20,6 +20,7 @@ import {
   BUSINESS_LIKE,
   isAddressLikeTypes,
   isLocalityLikeTypes,
+  geographicContextTypeOf,
 } from '../places/placeNormalization.ts';
 import {
   isWrongLocationCandidate,
@@ -64,6 +65,25 @@ export function scoreCandidates(
         reasons: [...reasons, 'platform_noise_rejected'],
         rejected: true,
         rejectionReason: 'platform_noise',
+      };
+    }
+
+    // Geographic-context hard veto. A city / county / state / country /
+    // neighborhood / postal code / bare geocode row answers WHERE, not WHAT —
+    // it is never the destination the user meant to save. This must be an
+    // ELIGIBILITY decision, not a score penalty: the old `-50` left the
+    // candidate in the ranked list, so a post with weak evidence could end up
+    // with a locality as the ONLY survivor and auto-save "Los Angeles".
+    // Driven purely by Google's entity types, so a business or park whose NAME
+    // is geographic ("California Pizza Kitchen", "Central Park") is unaffected.
+    const geographicType = geographicContextTypeOf(candidate);
+    if (geographicType) {
+      return {
+        candidate,
+        score: REJECT_SCORE,
+        reasons: [...reasons, `geographic_context_rejected:${geographicType}`],
+        rejected: true,
+        rejectionReason: 'geographic_context_only',
       };
     }
 

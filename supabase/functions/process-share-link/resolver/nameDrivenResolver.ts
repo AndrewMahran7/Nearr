@@ -45,6 +45,7 @@ import {
   BUSINESS_LIKE,
   isAddressLikeTypes,
   isLocalityLikeTypes,
+  geographicContextTypeOf,
 } from '../places/placeNormalization.ts';
 import {
   isWrongLocationCandidate,
@@ -258,6 +259,20 @@ export function scoreMentionCandidate(
   // Wrong-location hard veto (candidate sits in a different asserted state).
   if (opts.expectedState && isWrongLocationCandidate(candidate.formattedAddress ?? null, opts.expectedState)) {
     return { candidate, rawScore: REJECT_SCORE, reasons: ['wrong_location_rejected'], rejected: true, rejectionReason: 'wrong_location' };
+  }
+
+  // Geographic-context hard veto — same semantic boundary the metadata path
+  // uses. A mention that only resolves to a city/county/country is context,
+  // not a venue, and must never survive as the single verified place.
+  const geographicType = geographicContextTypeOf(candidate);
+  if (geographicType) {
+    return {
+      candidate,
+      rawScore: REJECT_SCORE,
+      reasons: [`geographic_context_rejected:${geographicType}`],
+      rejected: true,
+      rejectionReason: 'geographic_context_only',
+    };
   }
 
   // Type-based base.

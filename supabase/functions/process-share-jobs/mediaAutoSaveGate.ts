@@ -2,10 +2,7 @@ import {
   PLAUSIBLE_FLOOR,
   type MentionResult,
 } from '../process-share-link/resolver/nameDrivenResolver.ts';
-import {
-  isAddressLikeTypes,
-  isLocalityLikeTypes,
-} from '../process-share-link/places/placeNormalization.ts';
+import { isGeographicContextOnly } from '../process-share-link/places/placeNormalization.ts';
 import type { VenueMention } from './mediaMentions.ts';
 
 export const MEDIA_AUTO_SAVE_RULE_VERSION = 'media-autosave-2026-08-13.v6';
@@ -186,7 +183,11 @@ function assessCandidate(
   if (!validProviderIdentity(candidate)) {
     rejectionReasons.push('provider_identity_invalid');
   }
-  if (isAddressLikeTypes(candidate?.types) || isLocalityLikeTypes(candidate?.types)) {
+  // Same semantic boundary as the metadata gate, through the same helper:
+  // geographic context (city / county / country / postal code / bare geocode)
+  // is never the destination. Type-driven, so a park or a business with a
+  // geographic name stays eligible.
+  if (isGeographicContextOnly(candidate)) {
     rejectionReasons.push('provider_entity_not_saveable');
   }
   if (!score) rejectionReasons.push('score_explanation_missing');

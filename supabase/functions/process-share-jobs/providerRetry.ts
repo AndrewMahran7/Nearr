@@ -59,6 +59,9 @@ const DETERMINISTIC_FAILURE_REASONS: ReadonlySet<string> = new Set([
   'roundup_detected',
   'unsupported_platform',
   'manual_search',
+  // Google answered fine; every result was geographic context (a city /
+  // county / country), so there is nothing to retry.
+  'all_candidates_rejected_as_geographic_context',
 ]);
 
 export type ResolverFailureClass = 'transient_provider' | 'deterministic';

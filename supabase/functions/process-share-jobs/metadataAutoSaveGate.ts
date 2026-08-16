@@ -6,8 +6,9 @@
 // valid provider candidate and there is no explicit contradiction, save it.
 
 import { addressesMatch } from '../../../lib/shareAgent/tools.ts';
+import { geographicContextTypeOf } from '../process-share-link/places/placeNormalization.ts';
 
-export const METADATA_AUTO_SAVE_RULE_VERSION = 'metadata-autosave-2026-08-13.v2';
+export const METADATA_AUTO_SAVE_RULE_VERSION = 'metadata-autosave-2026-08-15.v3';
 
 type Candidate = {
   googlePlaceId?: unknown;
@@ -18,6 +19,10 @@ type Candidate = {
   businessStatus?: unknown;
   confidenceScore?: unknown;
   reasons?: unknown;
+  /** Google entity types. Present on every resolver candidate; used to tell a
+   *  destination apart from pure geographic context. */
+  types?: unknown;
+  primaryType?: unknown;
 };
 
 type MetadataResult = {
@@ -35,6 +40,10 @@ type MetadataEvidence = {
 export type MetadataCandidateRejection = {
   providerId: string | null;
   reason: string;
+  /** Bounded diagnostic marker. Present only for a geographic-context
+   *  rejection, naming the Google type that disqualified the candidate, so a
+   *  future wrong-save investigation is explainable without free-form logs. */
+  detail?: string;
 };
 
 export type MetadataAutoSaveDecision = {
@@ -70,20 +79,49 @@ function finiteInRange(value: unknown, min: number, max: number): boolean {
   return typeof value === 'number' && Number.isFinite(value) && value >= min && value <= max;
 }
 
-function candidateRejectionReason(candidate: Candidate): string | null {
-  if (!text(candidate.googlePlaceId)) return 'provider_id_missing';
-  if (!text(candidate.name)) return 'provider_name_missing';
-  if (!text(candidate.formattedAddress)) return 'provider_address_missing';
+type CandidateRejection = { reason: string; detail?: string };
+
+/**
+ * Whether a provider candidate is even the KIND of entity Nearr saves, before
+ * any question of how well it matches the evidence.
+ *
+ * `provider_entity_not_saveable` is the semantic boundary that stops geographic
+ * CONTEXT from becoming the saved DESTINATION. Without it, weak evidence that
+ * produced a single `locality` result ("Los Angeles") satisfied the
+ * exactly-one-plausible-candidate rule and auto-saved a city. The check is on
+ * Google's entity types only — a restaurant, park, beach, or landmark whose
+ * NAME reads geographic is untouched. Same helper, same reason code as the
+ * media gate, so both resolver paths agree.
+ */
+function candidateRejectionReason(candidate: Candidate): CandidateRejection | null {
+  if (!text(candidate.googlePlaceId)) return { reason: 'provider_id_missing' };
+  if (!text(candidate.name)) return { reason: 'provider_name_missing' };
+  if (!text(candidate.formattedAddress)) return { reason: 'provider_address_missing' };
   if (!finiteInRange(candidate.latitude, -90, 90) || !finiteInRange(candidate.longitude, -180, 180)) {
-    return 'provider_coordinates_invalid';
+    return { reason: 'provider_coordinates_invalid' };
   }
   if (text(candidate.businessStatus).toUpperCase() === 'CLOSED_PERMANENTLY') {
-    return 'provider_permanently_closed';
+    return { reason: 'provider_permanently_closed' };
+  }
+  const geographicType = geographicContextTypeOf(candidate);
+  if (geographicType) {
+    return {
+      reason: 'provider_entity_not_saveable',
+      detail: `candidate_rejected_geographic_context:${geographicType}`,
+    };
   }
   const reasons = Array.isArray(candidate.reasons) ? candidate.reasons : [];
-  if (reasons.includes('generic_address_card')) return 'provider_identity_invalid';
-  if (reasons.includes('wrong_location_rejected')) return 'location_conflict';
-  if (reasons.includes('platform_noise_rejected')) return 'provider_clearly_unrelated';
+  if (reasons.includes('generic_address_card')) return { reason: 'provider_identity_invalid' };
+  if (reasons.includes('wrong_location_rejected')) return { reason: 'location_conflict' };
+  if (reasons.includes('platform_noise_rejected')) return { reason: 'provider_clearly_unrelated' };
+  // A candidate persisted by an earlier attempt carries the resolver's own
+  // veto label; honour it even if its `types` were trimmed on the way in.
+  if (reasons.some((r) => typeof r === 'string' && r.startsWith('geographic_context_rejected'))) {
+    return {
+      reason: 'provider_entity_not_saveable',
+      detail: 'candidate_rejected_geographic_context:resolver_label',
+    };
+  }
   return null;
 }
 
@@ -100,8 +138,12 @@ export function evaluateMetadataAutoSave(input: {
   for (const candidate of raw) {
     const rejection = candidateRejectionReason(candidate);
     if (rejection) {
-      candidateRejectionReasons.push(rejection);
-      rejectedCandidates.push({ providerId: text(candidate.googlePlaceId) || null, reason: rejection });
+      candidateRejectionReasons.push(rejection.reason);
+      rejectedCandidates.push({
+        providerId: text(candidate.googlePlaceId) || null,
+        reason: rejection.reason,
+        ...(rejection.detail ? { detail: rejection.detail } : {}),
+      });
       continue;
     }
     plausibleByProviderId.set(text(candidate.googlePlaceId), candidate);

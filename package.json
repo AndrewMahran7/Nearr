@@ -95,6 +95,7 @@
     "test:media-mentions": "ts-node -P scripts/tsconfig.json scripts/testMediaMentions.ts",
     "test:media-autosave": "ts-node -P scripts/tsconfig.json scripts/testMediaAutoSaveGate.ts",
     "test:metadata-autosave": "ts-node -P scripts/tsconfig.json scripts/testMetadataAutoSaveGate.ts",
+    "test:geographic-context": "ts-node -P scripts/tsconfig.json scripts/testGeographicContextCandidates.ts",
     "test:ambiguity-review": "ts-node -P scripts/tsconfig.json scripts/testAmbiguityReviewFlow.ts",
     "test:name-driven": "ts-node -P scripts/tsconfig.json scripts/testNameDrivenResolver.ts",
     "test:onboarding-routing": "ts-node -P scripts/tsconfig.json scripts/testOnboardingRouting.ts",

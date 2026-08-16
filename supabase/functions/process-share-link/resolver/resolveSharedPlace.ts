@@ -608,12 +608,37 @@ export async function resolveSharedPlace(args: {
     warnings.push(`platform_noise_candidate_rejected:${s.candidate.name}`);
   }
 
+  // Geographic-context rejections are the difference between "we could not
+  // find the place" and "Google only gave us the city". Surface them so a
+  // manual-fallback outcome is explainable without re-running the job.
+  const geographicRejected = scored.filter(
+    (s) => s.rejected && s.rejectionReason === 'geographic_context_only',
+  );
+  if (geographicRejected.length > 0) {
+    diagnostics.geographicContextRejections = geographicRejected
+      .slice(0, 5)
+      .map((s) => ({
+        name: s.candidate.name,
+        type:
+          s.reasons.find((r) => r.startsWith('geographic_context_rejected'))?.split(':')[1] ??
+          null,
+      }));
+  }
+
   const ranked = scored
     .filter((s) => !s.rejected)
     .sort((a, b) => b.score - a.score);
   if (ranked.length === 0) {
     const rejectedCount = scored.length - ranked.length;
     diagnostics.rejectedCount = rejectedCount;
+    // Every result was geographic context (the "this place in Los Angeles is
+    // insane" shape). Manual fallback is the correct answer — we never invent
+    // a destination or re-query with looser terms to avoid it.
+    const allGeographic =
+      geographicRejected.length > 0 && geographicRejected.length === scored.length;
+    if (allGeographic) {
+      warnings.push('all_candidates_rejected_as_geographic_context');
+    }
     // If EVERY candidate was platform noise, say so explicitly and punt to
     // manual fallback — never surface a TikTok/company card as a place.
     const allNoise =
@@ -636,7 +661,9 @@ export async function resolveSharedPlace(args: {
       diagnostics,
       failureReason: allNoise
         ? 'all_candidates_rejected_as_platform_noise'
-        : 'wrong_location_only',
+        : allGeographic
+          ? 'all_candidates_rejected_as_geographic_context'
+          : 'wrong_location_only',
     };
   }
 
