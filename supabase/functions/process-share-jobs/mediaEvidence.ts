@@ -246,22 +246,39 @@ function foldLabel(value: string): string {
     .trim();
 }
 
+/** Which administrative label a place restated. Closed vocabulary — safe to
+ *  persist as a diagnostic, unlike the place's own free-form strings. */
+export type SourceGeographicContextReason =
+  | 'name_matches_city'
+  | 'name_matches_region'
+  | 'name_matches_country'
+  | 'name_matches_compound_admin_context';
+
 /** The administrative labels a place asserts about ITSELF, folded — each field
- *  alone plus their natural compound forms ("Los Angeles, California"). */
-function selfAdministrativeLabels(place: PlaceCandidateEvidence): Set<string> {
+ *  alone plus their natural compound forms ("Los Angeles, California"), each
+ *  paired with the reason code it would justify. Order is precedence order:
+ *  the narrowest single field wins over a compound. */
+function selfAdministrativeLabels(
+  place: PlaceCandidateEvidence,
+): Array<{ label: string; reason: SourceGeographicContextReason }> {
   const city = (place.city ?? '').trim();
   const region = (place.region ?? '').trim();
   const country = (place.country ?? '').trim();
-  const combos = [
-    [city], [region], [country],
-    [city, region], [city, country], [region, country], [city, region, country],
+  const combos: Array<{ parts: string[]; reason: SourceGeographicContextReason }> = [
+    { parts: [city], reason: 'name_matches_city' },
+    { parts: [region], reason: 'name_matches_region' },
+    { parts: [country], reason: 'name_matches_country' },
+    { parts: [city, region], reason: 'name_matches_compound_admin_context' },
+    { parts: [city, country], reason: 'name_matches_compound_admin_context' },
+    { parts: [region, country], reason: 'name_matches_compound_admin_context' },
+    { parts: [city, region, country], reason: 'name_matches_compound_admin_context' },
   ];
-  const out = new Set<string>();
+  const out: Array<{ label: string; reason: SourceGeographicContextReason }> = [];
   for (const combo of combos) {
-    const parts = combo.filter(Boolean);
+    const parts = combo.parts.filter(Boolean);
     if (parts.length === 0) continue;
     const folded = foldLabel(parts.join(' '));
-    if (folded) out.add(folded);
+    if (folded) out.push({ label: folded, reason: combo.reason });
   }
   return out;
 }
@@ -312,12 +329,64 @@ function selfAdministrativeLabels(place: PlaceCandidateEvidence): Set<string> {
  * here: that needs geographic knowledge this module deliberately does not have.
  */
 export function isGeographicContextOnlySource(place: PlaceCandidateEvidence): boolean {
+  return sourceGeographicContextReasonOf(place) !== null;
+}
+
+/**
+ * WHICH administrative label made a place context-only, or null when it is a
+ * real destination. Same decision as `isGeographicContextOnlySource` — that
+ * function is defined in terms of this one, so the two can never drift — but it
+ * returns the reason so a production run is explainable without persisting the
+ * place's own free-form strings.
+ *
+ * Mirrors the candidate-side pair `isGeographicContextOnly` /
+ * `geographicContextTypeOf` in placeNormalization.ts.
+ */
+export function sourceGeographicContextReasonOf(
+  place: PlaceCandidateEvidence,
+): SourceGeographicContextReason | null {
   const name = foldLabel(place.name ?? '');
-  if (!name) return false;
-  if (!selfAdministrativeLabels(place).has(name)) return false;
-  if (hasStreetAddressText(place.address)) return false;
-  if (place.explicitEvidence.some((item) => hasStreetAddressText(item.value))) return false;
-  return true;
+  if (!name) return null;
+  const matched = selfAdministrativeLabels(place).find((entry) => entry.label === name);
+  if (!matched) return null;
+  if (hasStreetAddressText(place.address)) return null;
+  if (place.explicitEvidence.some((item) => hasStreetAddressText(item.value))) return null;
+  return matched.reason;
+}
+
+/** Cap on persisted per-place diagnostic labels: one per place the payload can
+ *  carry at all (MAX_PLACES), so a single share can never emit more. */
+const MAX_CONTEXT_DIAGNOSTIC_LABELS = MAX_PLACES;
+
+export type SourceGeographicContextSummary = {
+  /** How many model places were classified as context rather than destinations. */
+  dropped: number;
+  /** Bounded `index:category:reason` labels. Closed vocabulary only — the
+   *  place index, its model category (or `none`), and the reason code. Never
+   *  the place's name, address, or any model prose. */
+  labels: string[];
+};
+
+/**
+ * Bounded, privacy-safe summary of which model places were suppressed as
+ * geographic context. Pure. Recomputes the SAME predicate the pipeline uses, so
+ * it is a description of the decision rather than a second opinion about it.
+ */
+export function summarizeSourceGeographicContext(
+  evidence: MediaPlaceEvidence,
+): SourceGeographicContextSummary {
+  const labels: string[] = [];
+  let dropped = 0;
+  const places = Array.isArray(evidence?.places) ? evidence.places : [];
+  for (let i = 0; i < places.length; i += 1) {
+    const reason = sourceGeographicContextReasonOf(places[i]!);
+    if (!reason) continue;
+    dropped += 1;
+    if (labels.length < MAX_CONTEXT_DIAGNOSTIC_LABELS) {
+      labels.push(`${i}:${places[i]!.category ?? 'none'}:${reason}`);
+    }
+  }
+  return { dropped, labels };
 }
 
 export type RenderedCaption = {

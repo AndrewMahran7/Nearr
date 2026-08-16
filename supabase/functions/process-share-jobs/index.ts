@@ -59,6 +59,7 @@ import {
   summarizeMediaEvidence,
   mediaEvidenceAutoSaveEligible,
 } from './mediaEvidence.ts';
+import { buildRecognitionFunnel } from './mediaRunDiagnostics.ts';
 import {
   parseMediaSourceMetadata,
   mergeMediaCaption,
@@ -765,8 +766,20 @@ async function finalizeMediaTask(
     return json({ error: 'parent_job_missing' }, 404);
   }
 
-  // Diagnostics for every actionable callback.
-  const evidenceSummary = parsed.ok ? summarizeMediaEvidence(parsed.value) : { reason: outcome };
+  // Diagnostics for every actionable callback. The summary carries the whole
+  // RECOGNITION FUNNEL — model places emitted, how many survived our schema,
+  // how many were suppressed as geographic context, and how many reached the
+  // resolver — so one persisted run explains an outcome without anyone needing
+  // an uncapped raw model response. (During the Rio audit the 500-char preview
+  // could not even enumerate the six emitted places.) The funnel's tail —
+  // per-slot candidates and decisions — is already persisted on the job itself
+  // in `candidate_payload.mentionSlots`.
+  const evidenceSummary = parsed.ok
+    ? {
+        ...summarizeMediaEvidence(parsed.value),
+        ...buildRecognitionFunnel(body?.diagnostics, parsed.value, rendered.renderedPlaces),
+      }
+    : { reason: outcome, ...buildRecognitionFunnel(body?.diagnostics, null, 0) };
   const mediaRunId = await insertMediaRun(admin, task, job, body, evidenceSummary);
 
   // Parent already terminal → mark task done, never revive the parent.
