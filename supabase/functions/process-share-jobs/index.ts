@@ -59,6 +59,11 @@ import {
   summarizeMediaEvidence,
   mediaEvidenceAutoSaveEligible,
 } from './mediaEvidence.ts';
+import {
+  parseMediaSourceMetadata,
+  mergeMediaCaption,
+  summarizeSourceMetadata,
+} from './mediaSourceMetadata.ts';
 import { buildVenueMentions, normalizeVenueName } from './mediaMentions.ts';
 import {
   evaluateMediaAutoSave,
@@ -785,14 +790,49 @@ async function finalizeMediaTask(
   }
 
   // pre.action === 'resolve' — reuse the EXISTING deterministic resolver.
-  const emptyHandles = { posterHandle: null, taggedHandles: [], venueHandles: [], posterNameHint: null };
+  //
+  // Source metadata the media resolver already fetched (post caption + the
+  // author's handle) is normalized through the SAME `extractHandles` /
+  // `extractEvidence` pipeline the ordinary metadata path uses — not a second
+  // parser. Previously this passed an empty handle set and the model-rendered
+  // caption only, so `venue_handle_tagged` could never be emitted from a media
+  // job and a post that named its venue in text degraded to an address-only
+  // guess. Absent/older payloads parse to null and behave exactly as before.
+  const sourceMetadata = parseMediaSourceMetadata(body.sourceMetadata);
+  const handles = sourceMetadata
+    ? extractHandles({
+        platform: task.platform,
+        title: sourceMetadata.title,
+        description: sourceMetadata.description,
+        html: null,
+        // Excludes the creator from the venue set AND suppresses the
+        // page-shaped "lone handle is the poster" shortcut, which would
+        // otherwise mislabel a caption's single TAGGED venue as the poster.
+        knownPosterHandle: sourceMetadata.creatorHandle,
+      })
+    : { posterHandle: null, taggedHandles: [], venueHandles: [], posterNameHint: null };
+  const mergedCaption = mergeMediaCaption(sourceMetadata, rendered);
   const mediaEvidence = extractEvidence({
     platform: task.platform,
-    title: rendered.title,
-    description: rendered.description,
-    handles: emptyHandles,
+    title: mergedCaption.title,
+    description: mergedCaption.description,
+    handles,
     taggedLocation: null,
   });
+  console.log(
+    `[media-task] source_evidence task_id=${taskId} ` +
+      Object.entries(
+        summarizeSourceMetadata({
+          source: sourceMetadata,
+          venueHandles: handles.venueHandles,
+          posterHandlePresent: !!handles.posterHandle,
+          venueNameHints: mediaEvidence.venueNameHints,
+          addressCount: mediaEvidence.addresses.length,
+        }),
+      )
+        .map(([k, v]) => `${k}=${v}`)
+        .join(' '),
+  );
   // Structured explicit venue-name mentions enable the name-driven multi-place
   // path (e.g. a "top 5 pizza" reel with names but no street addresses).
   const mediaMentions = parsed.ok

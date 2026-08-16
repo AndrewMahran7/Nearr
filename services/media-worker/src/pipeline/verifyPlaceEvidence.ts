@@ -14,10 +14,31 @@ import type { MediaPlaceEvidence } from '../types/evidence.js';
 
 export type FinalizeOutcome = 'evidence' | 'insufficient_evidence' | 'unavailable' | 'failed';
 
+/**
+ * Bounded PUBLIC post metadata the media resolver already obtained during
+ * retrieval (yt-dlp's `-j` probe). Forwarded so the resolver sees the SAME
+ * first-party identity evidence the ordinary metadata path would have had.
+ *
+ * Why this exists: when Instagram's own metadata endpoint fails, the job falls
+ * back to media — but the fallback used to hand the resolver ONLY the model's
+ * structured places, so a caption naming the venue (`@santafeimporters1947`)
+ * was used to prompt the model and then discarded. A post whose venue is named
+ * in text degraded into an address-only guess. No extra network request: this
+ * is metadata the download already fetched.
+ */
+export type MediaSourceMetadata = {
+  title?: string | null;
+  description?: string | null;
+  /** The post author's handle — sent so the resolver can EXCLUDE it, never to
+   *  be used as a venue name. */
+  creatorHandle?: string | null;
+};
+
 export type FinalizeArgs = {
   taskId: string;
   outcome: FinalizeOutcome;
   evidence?: MediaPlaceEvidence;
+  sourceMetadata?: MediaSourceMetadata;
   diagnostics?: Record<string, unknown>;
   signal: AbortSignal;
 };
@@ -44,6 +65,9 @@ export async function verifyPlaceEvidence(
       taskId: args.taskId,
       outcome: args.outcome,
       evidence: args.outcome === 'evidence' ? args.evidence : undefined,
+      // Sent on EVERY outcome, not just `evidence`. The caption can name a
+      // venue even when the model found no structured place at all.
+      sourceMetadata: args.sourceMetadata,
       diagnostics: args.diagnostics ?? {},
     }),
     signal: args.signal,

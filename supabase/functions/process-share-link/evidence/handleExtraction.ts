@@ -26,6 +26,22 @@ export function extractHandles(args: {
   title: string | null;
   description: string | null;
   html: string | null;
+  /**
+   * The post author's handle, when a source told us authoritatively (the media
+   * resolver reads it from the extractor's own metadata). Two effects, both
+   * about keeping the CREATOR out of the venue set:
+   *
+   *   1. It becomes `posterHandle`, so it is filtered out of `taggedHandles` /
+   *      `venueHandles` exactly like an og:title-derived poster would be.
+   *   2. It suppresses the "a lone @handle on an Instagram post IS the poster"
+   *      shortcut below. That shortcut reads a PAGE; a caption is a different
+   *      shape, and the single handle in one is typically the tagged VENUE.
+   *      Verified live on the Santa Fe reel: the caption's only handle is
+   *      `@santafeimporters1947` (the venue), while the creator is
+   *      `ocfoodandview` — the shortcut would have labelled the venue as the
+   *      poster and then dropped it from `venueHandles` entirely.
+   */
+  knownPosterHandle?: string | null;
 }): ExtractedHandles {
   const text = [args.title, args.description].filter(Boolean).join('\n');
   // detectHandles's "exactly one @handle found anywhere on the page is the
@@ -47,17 +63,28 @@ export function extractHandles(args: {
         : args.platform === 'youtube'
           ? 'youtube'
           : 'link';
-  const { result } = detectHandles(text || null, args.html, platformArg);
+  const known = normalizeKnownHandle(args.knownPosterHandle);
+  // With an authoritative poster, `detectHandles` must not apply its
+  // page-shaped single-handle shortcut — pass the neutral platform so every
+  // handle it finds stays a TAGGED handle, then attribute the poster below.
+  const { result } = detectHandles(
+    text || null,
+    args.html,
+    known ? 'link' : platformArg,
+  );
   // Drop platform / page-internal noise handles (e.g. `@media` leaking from
   // Instagram's inline CSS) so they never become a poster-name venue query.
+  const posterHandle =
+    known ??
+    (result.posterHandle && !isNoiseHandle(result.posterHandle)
+      ? result.posterHandle
+      : null);
   const tagged = (result.taggedHandles ?? [])
     .filter(Boolean)
-    .filter((h) => !isNoiseHandle(h));
+    .filter((h) => !isNoiseHandle(h))
+    // The creator is never the venue, even when they tag themselves.
+    .filter((h) => h !== posterHandle);
   const venue = tagged.filter((h) => !isMallContextHandle(h));
-  const posterHandle =
-    result.posterHandle && !isNoiseHandle(result.posterHandle)
-      ? result.posterHandle
-      : null;
   const posterNameHint = posterHandle
     ? derivePlaceNameHintFromHandle(posterHandle)
     : null;
@@ -67,4 +94,15 @@ export function extractHandles(args: {
     venueHandles: venue,
     posterNameHint,
   };
+}
+
+/** Accept only handle-shaped values, so a display name or numeric account id
+ *  can never be attributed as the poster's handle. */
+function normalizeKnownHandle(value: string | null | undefined): string | null {
+  if (typeof value !== 'string') return null;
+  const normalized = value.trim().toLowerCase().replace(/^@/, '');
+  if (!/^[a-z0-9._]{2,30}$/.test(normalized)) return null;
+  if (/^\d+$/.test(normalized)) return null;
+  if (isNoiseHandle(normalized)) return null;
+  return normalized;
 }

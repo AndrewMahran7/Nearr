@@ -85,6 +85,9 @@ export type ResolvedMedia = {
   /** Bounded public-post metadata used transiently as caption evidence. */
   metadataTitle?: string | null;
   metadataDescription?: string | null;
+  /** The post author's @handle, when the extractor exposed one. Forwarded to
+   *  the resolver so the CREATOR is never mistaken for a tagged venue. */
+  metadataCreatorHandle?: string | null;
   /** Human label of the retrieval source (e.g. "instagram/yt-dlp"). */
   source: string;
   warnings: string[];

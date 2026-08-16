@@ -50,7 +50,53 @@ export type YtInfo = {
   /** Top-level fallback for `YtFormat.http_headers` (single-format extractors,
    *  e.g. Snapchat Spotlight, report headers here instead of per-format). */
   http_headers?: Record<string, string>;
+  /** Poster/creator identity, as reported by the extractor. Which of these
+   *  actually holds the @handle differs per platform — verified live:
+   *  Instagram reports `channel: "ocfoodandview"` with a numeric
+   *  `uploader_id` and a display-name `uploader`, while TikTok reports the
+   *  username in `uploader`. `pickCreatorHandle` therefore selects by SHAPE,
+   *  not by field name. */
+  channel?: string;
+  uploader?: string;
+  uploader_id?: string;
+  creator?: string;
+  webpage_url?: string;
 };
+
+/** A social handle: no spaces, no punctuation beyond `.`/`_`, never all digits. */
+const HANDLE_SHAPE_RE = /^[a-z0-9._]{2,30}$/;
+
+function asHandle(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const normalized = value.trim().toLowerCase().replace(/^@/, '');
+  if (!HANDLE_SHAPE_RE.test(normalized)) return null;
+  // Instagram's `uploader_id` is a numeric account id, not a handle.
+  if (/^\d+$/.test(normalized)) return null;
+  return normalized;
+}
+
+/**
+ * The creator/uploader @handle for a post, or null when the extractor exposed
+ * none in a recognizable shape.
+ *
+ * This exists so the resolver can tell the CREATOR apart from a tagged VENUE.
+ * A food creator's own handle must never become a place candidate, and the
+ * only reliable way to exclude it is to know it explicitly — the caption
+ * itself usually does not repeat it.
+ *
+ * Selection is by shape across the fields different extractors use, then the
+ * `@handle` segment of the post URL as a last resort (TikTok and Instagram
+ * both put it there). Returning null is safe: the caller simply falls back to
+ * today's behavior.
+ */
+export function pickCreatorHandle(info: YtInfo, sourceUrl?: string): string | null {
+  for (const field of [info.channel, info.uploader_id, info.uploader, info.creator]) {
+    const handle = asHandle(field);
+    if (handle) return handle;
+  }
+  const fromUrl = (sourceUrl ?? info.webpage_url ?? '').match(/\/@([A-Za-z0-9._]{2,30})(?:[/?#]|$)/);
+  return fromUrl ? asHandle(fromUrl[1]) : null;
+}
 
 export function boundedMetadata(value: unknown, max: number): string | null {
   if (typeof value !== 'string') return null;

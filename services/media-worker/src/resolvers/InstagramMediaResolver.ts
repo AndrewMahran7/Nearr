@@ -1,4 +1,4 @@
-// services/media-worker/src/resolvers/InstagramMediaResolver.ts
+﻿// services/media-worker/src/resolvers/InstagramMediaResolver.ts
 //
 // Instagram PUBLIC post/reel media retrieval.
 //
@@ -14,9 +14,9 @@
 // the SSRF-guarded, size-capped downloader. If Instagram's markup changes and
 // extraction fails, we return `provider_changed` and never fabricate a result.
 //
-// The actual "probe → pick a direct URL → download it ourselves, or fall back
+// The actual "probe â†’ pick a direct URL â†’ download it ourselves, or fall back
 // to a bounded yt-dlp merge" mechanics are shared with every other yt-dlp-backed
-// resolver (TikTok/YouTube/Facebook) via ytDlpShared.ts — this file only owns
+// resolver (TikTok/YouTube/Facebook) via ytDlpShared.ts â€” this file only owns
 // Instagram's own host gate and wiring.
 //
 // ATTRIBUTION: the general idea of resolving a public Instagram media URL was
@@ -30,6 +30,7 @@ import { MediaError } from '../types/media.js';
 import type { WorkerConfig } from '../config/env.js';
 import {
   boundedMetadata,
+  pickCreatorHandle,
   enforceDurationLimit,
   probeWithYtDlp,
   requireHttpsHost,
@@ -78,6 +79,7 @@ export class InstagramMediaResolver implements MediaResolver {
       durationSeconds: duration,
       metadataTitle: boundedMetadata(info.title, 500),
       metadataDescription: boundedMetadata(info.description, 4000),
+      metadataCreatorHandle: pickCreatorHandle(info, url),
       source: file.source,
       warnings: file.warnings,
     };

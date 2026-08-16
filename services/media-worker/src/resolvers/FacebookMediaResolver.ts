@@ -1,13 +1,13 @@
-// services/media-worker/src/resolvers/FacebookMediaResolver.ts
+﻿// services/media-worker/src/resolvers/FacebookMediaResolver.ts
 //
 // Facebook PUBLIC Reel/video retrieval. Same public-only mission constraints
-// as Instagram — no login, no cookies, no private-content bypass. Built on
+// as Instagram â€” no login, no cookies, no private-content bypass. Built on
 // the shared yt-dlp core (ytDlpShared.ts); yt-dlp's `facebook` extractor
 // handles public `/reel/`, `/.../videos/`, and `fb.watch` redirect forms
 // without a bespoke HTML scraper.
 //
 // A private/friends-only/group-restricted video is NOT retrievable through
-// this path — yt-dlp reports it as login-required/unavailable and this
+// this path â€” yt-dlp reports it as login-required/unavailable and this
 // resolver surfaces the same `authentication_required` /
 // `private_or_unavailable` MediaError as every other platform, which routes
 // to a safe manual fallback. No bypass is attempted.
@@ -17,6 +17,7 @@ import type { ResolvedMedia } from '../types/media.js';
 import type { WorkerConfig } from '../config/env.js';
 import {
   boundedMetadata,
+  pickCreatorHandle,
   enforceDurationLimit,
   probeWithYtDlp,
   requireHttpsHost,
@@ -74,6 +75,7 @@ export class FacebookMediaResolver implements MediaResolver {
       durationSeconds: duration,
       metadataTitle: boundedMetadata(info.title, 500),
       metadataDescription: boundedMetadata(info.description, 4000),
+      metadataCreatorHandle: pickCreatorHandle(info, url),
       source: file.source,
       warnings: file.warnings,
     };

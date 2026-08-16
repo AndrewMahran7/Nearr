@@ -1,21 +1,21 @@
-// services/media-worker/src/resolvers/YouTubeMediaResolver.ts
+﻿// services/media-worker/src/resolvers/YouTubeMediaResolver.ts
 //
 // YouTube PUBLIC video retrieval (Shorts, youtu.be, and ordinary
-// /watch?v= URLs are all the same source type — see README for why we don't
+// /watch?v= URLs are all the same source type â€” see README for why we don't
 // special-case Shorts). Built on the shared yt-dlp core (ytDlpShared.ts).
 //
 // CAPTIONS-FIRST TRANSCRIPT: YouTube frequently publishes real (owner) or
 // auto-generated captions. When yt-dlp's metadata probe exposes a caption
 // track for a preferred language, we fetch + parse it ourselves (through the
 // SAME SSRF-guarded downloader used for video, capped much smaller) and hand
-// the pipeline a ready transcript — no speech-to-text spend. When no caption
+// the pipeline a ready transcript â€” no speech-to-text spend. When no caption
 // track exists, `captionsTranscript` is simply absent and the pipeline falls
 // through to its existing audio-extraction + transcription-provider path.
 // Never fabricated: a missing/empty caption track is a normal, non-fatal case.
 //
 // Long videos: `enforceDurationLimit` (shared) rejects anything over
 // MEDIA_MAX_DURATION_SECONDS with `duration_too_long` BEFORE any video bytes
-// are fetched — an ordinary long-form YouTube video never becomes a
+// are fetched â€” an ordinary long-form YouTube video never becomes a
 // multi-gigabyte download attempt.
 
 import type { MediaResolver, ResolveInput } from './MediaResolver.js';
@@ -26,6 +26,7 @@ import { parseVttToSegments, normalizeTranscriptSegments } from '../util/subtitl
 import { log } from '../util/logger.js';
 import {
   boundedMetadata,
+  pickCreatorHandle,
   enforceDurationLimit,
   probeWithYtDlp,
   requireHttpsHost,
@@ -48,12 +49,12 @@ function isYouTubeHost(hostname: string): boolean {
 }
 
 // Preference order when multiple caption languages are published. Falls
-// through to whatever the FIRST available language is rather than giving up —
+// through to whatever the FIRST available language is rather than giving up â€”
 // a non-English transcript still carries place evidence, and the model prompt
 // is language-agnostic.
 const PREFERRED_CAPTION_LANGS = ['en', 'en-US', 'en-GB', 'en-orig'];
 
-const CAPTIONS_MAX_BYTES = 2 * 1024 * 1024; // 2MB — captions are plain text, generous cap
+const CAPTIONS_MAX_BYTES = 2 * 1024 * 1024; // 2MB â€” captions are plain text, generous cap
 const CAPTIONS_FETCH_TIMEOUT_MS = 10_000;
 
 function pickCaptionTrack(
@@ -74,7 +75,7 @@ function pickCaptionTrack(
     // Prefer a DIRECT plain-text vtt track. yt-dlp sometimes ALSO lists a
     // `vtt`-labeled entry that is actually an HLS manifest pointer
     // (`protocol: 'm3u8_native'`, host `manifest.googlevideo.com`) rather than
-    // fetchable caption text — verified against a live YouTube response.
+    // fetchable caption text â€” verified against a live YouTube response.
     // Skip those; only a plain `timedtext` endpoint parses as WebVTT.
     const vtt = list.find(
       (t) => (t.ext ?? '').toLowerCase() === 'vtt' && t.protocol !== 'm3u8_native' && typeof t.url === 'string',
@@ -90,7 +91,7 @@ async function fetchCaptions(
   signal: AbortSignal,
   jobId: string,
 ): Promise<{ segments: TranscriptSegment[]; source: string; language: string } | null> {
-  // Manual (owner-authored) captions first — more reliable than auto-captions.
+  // Manual (owner-authored) captions first â€” more reliable than auto-captions.
   const manual = pickCaptionTrack(info.subtitles);
   const picked = manual ?? pickCaptionTrack(info.automatic_captions);
   if (!picked) return null;
@@ -112,7 +113,7 @@ async function fetchCaptions(
       language: picked.lang,
     };
   } catch (err) {
-    // Captions are a strict bonus — any failure here (network, SSRF gate,
+    // Captions are a strict bonus â€” any failure here (network, SSRF gate,
     // parse) just means the pipeline falls through to audio transcription.
     // Never let a captions hiccup fail the whole task.
     log.warn('youtube_captions_fetch_failed', { jobId, url: sanitizeUrlForLog(picked.track.url ?? '') });
@@ -139,8 +140,8 @@ export class YouTubeMediaResolver implements MediaResolver {
     const url = requireHttpsHost(rawUrl, isYouTubeHost);
 
     // `yt-dlp -j` already includes full `subtitles` / `automatic_captions`
-    // metadata (language → available track formats, incl. `vtt`) with no
-    // extra flags needed — verified against live YouTube responses.
+    // metadata (language â†’ available track formats, incl. `vtt`) with no
+    // extra flags needed â€” verified against live YouTube responses.
     const info = await probeWithYtDlp(this.cfg, url, { workDir: input.workDir, signal: input.signal });
     const duration = enforceDurationLimit(this.cfg, info);
 
@@ -154,7 +155,7 @@ export class YouTubeMediaResolver implements MediaResolver {
       signal: input.signal,
       sourceLabel: 'youtube',
       // Verified live: YouTube's legacy single-file progressive format (id
-      // `18`, capped at 360p) is unreliable — it can 403 or serve an HLS
+      // `18`, capped at 360p) is unreliable â€” it can 403 or serve an HLS
       // manifest instead of raw bytes even when yt-dlp's metadata calls it
       // `protocol: "https"`. Go straight to yt-dlp's adaptive video+audio
       // merge (its own recommended approach for YouTube), bounded by the same
@@ -172,6 +173,7 @@ export class YouTubeMediaResolver implements MediaResolver {
       durationSeconds: duration,
       metadataTitle: boundedMetadata(info.title, 500),
       metadataDescription: boundedMetadata(info.description, 4000),
+      metadataCreatorHandle: pickCreatorHandle(info, url),
       source: file.source,
       warnings: file.warnings,
       captionsTranscript: captions?.segments,

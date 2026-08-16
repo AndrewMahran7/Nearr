@@ -1,12 +1,12 @@
-// services/media-worker/src/resolvers/TikTokMediaResolver.ts
+﻿// services/media-worker/src/resolvers/TikTokMediaResolver.ts
 //
 // TikTok PUBLIC video retrieval. Same public-only mission constraints as
-// Instagram (see InstagramMediaResolver.ts) — no login, no cookies, no
+// Instagram (see InstagramMediaResolver.ts) â€” no login, no cookies, no
 // private-content bypass. Built on the shared yt-dlp core (ytDlpShared.ts).
 //
 // TikTok share links commonly arrive as short redirects (`vm.tiktok.com`,
 // `vt.tiktok.com`). We do NOT require the caller to have already resolved
-// those — yt-dlp follows the redirect itself during the metadata probe, same
+// those â€” yt-dlp follows the redirect itself during the metadata probe, same
 // as it does for the canonical `@user/video/<id>` form. The share pipeline
 // separately resolves + normalizes short links earlier (fetchPostMetadata /
 // normalizeShareUrl) so `Watch post` still opens the user's ORIGINAL link;
@@ -17,6 +17,7 @@ import type { ResolvedMedia } from '../types/media.js';
 import type { WorkerConfig } from '../config/env.js';
 import {
   boundedMetadata,
+  pickCreatorHandle,
   enforceDurationLimit,
   probeWithYtDlp,
   requireHttpsHost,
@@ -66,7 +67,7 @@ export class TikTokMediaResolver implements MediaResolver {
       sourceLabel: 'tiktok',
       // Verified live (2026-08-15): fetching TikTok's picked progressive CDN
       // URL ourselves consistently 403s, even after forwarding the Referer
-      // yt-dlp itself reports — the CDN evidently binds the URL to more of
+      // yt-dlp itself reports â€” the CDN evidently binds the URL to more of
       // yt-dlp's own request context than one header. Rather than replicate
       // that context (which risks sliding into fingerprint spoofing, out of
       // scope per the mission), let yt-dlp's own bounded download handle it
@@ -82,6 +83,7 @@ export class TikTokMediaResolver implements MediaResolver {
       durationSeconds: duration,
       metadataTitle: boundedMetadata(info.title, 500),
       metadataDescription: boundedMetadata(info.description, 4000),
+      metadataCreatorHandle: pickCreatorHandle(info, url),
       source: file.source,
       warnings: file.warnings,
     };

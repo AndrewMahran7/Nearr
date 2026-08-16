@@ -1,6 +1,6 @@
-// services/media-worker/src/resolvers/SnapchatMediaResolver.ts
+﻿// services/media-worker/src/resolvers/SnapchatMediaResolver.ts
 //
-// Snapchat PUBLIC Spotlight retrieval — and ONLY Spotlight. Verified live
+// Snapchat PUBLIC Spotlight retrieval â€” and ONLY Spotlight. Verified live
 // against a real, currently-public `snapchat.com/spotlight/<id>` share URL:
 // yt-dlp's `SnapchatSpotlight` extractor returns a single direct
 // `bolt-gcdn.sc-cdn.net` https URL (video+audio muxed, no login/cookies
@@ -9,7 +9,7 @@
 //
 // SCOPE, ON PURPOSE: `supports()` requires the `/spotlight/` path. Snapchat
 // Stories, Snap Maps, profile pages, and any friends-only/authenticated
-// content are NOT matched here at all — they fall straight to
+// content are NOT matched here at all â€” they fall straight to
 // `unsupported_platform` (a deterministic, non-retrying MediaError) rather
 // than being handed to yt-dlp and hoping for the best. This mirrors the
 // mission constraint precisely: public Spotlight only, never private Snaps,
@@ -21,6 +21,7 @@ import { MediaError } from '../types/media.js';
 import type { WorkerConfig } from '../config/env.js';
 import {
   boundedMetadata,
+  pickCreatorHandle,
   enforceDurationLimit,
   probeWithYtDlp,
   requireHttpsHost,
@@ -84,6 +85,7 @@ export class SnapchatMediaResolver implements MediaResolver {
       durationSeconds: duration,
       metadataTitle: boundedMetadata(info.title, 500),
       metadataDescription: boundedMetadata(info.description, 4000),
+      metadataCreatorHandle: pickCreatorHandle(info, url),
       source: file.source,
       warnings: file.warnings,
     };

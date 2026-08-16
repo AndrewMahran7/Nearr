@@ -225,6 +225,12 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
         taskId: task.id,
         outcome,
         evidence: hasEvidence ? analysis.evidence : undefined,
+        // Already fetched during retrieval — no additional round trip.
+        sourceMetadata: {
+          title: media.metadataTitle,
+          description: media.metadataDescription,
+          creatorHandle: media.metadataCreatorHandle,
+        },
         diagnostics,
         signal: controller.signal,
       }),

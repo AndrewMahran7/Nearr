@@ -1,4 +1,4 @@
-import { test } from 'node:test';
+﻿import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   pickProgressiveUrl,
@@ -6,6 +6,7 @@ import {
   classifyYtError,
   boundedMetadata,
   requireHttpsHost,
+  pickCreatorHandle,
 } from '../src/resolvers/ytDlpShared.js';
 import { isMediaError } from '../src/types/media.js';
 
@@ -112,4 +113,61 @@ test('requireHttpsHost: accepts only https + an allowed host, before any yt-dlp 
   assert.throws(() => requireHttpsHost('http://example.com/x', allow), (e: unknown) => isMediaError(e) && e.code === 'unsupported_url');
   assert.throws(() => requireHttpsHost('https://evil.com/x', allow), (e: unknown) => isMediaError(e) && e.code === 'unsupported_url');
   assert.throws(() => requireHttpsHost('not a url', allow), (e: unknown) => isMediaError(e) && e.code === 'unsupported_url');
+});
+
+// --- pickCreatorHandle -----------------------------------------------------
+// Field shapes below are the REAL `yt-dlp -j` output captured 2026-08-16
+// (read-only probes). Which field carries the @handle differs per extractor,
+// which is exactly why selection is by shape rather than by field name.
+
+test('pickCreatorHandle: Instagram reports the handle in `channel`', () => {
+  // Verified live for instagram.com/reel/Db60wxqvvOI: channel is the handle,
+  // uploader is a display name, uploader_id is a numeric account id.
+  assert.equal(
+    pickCreatorHandle({
+      channel: 'ocfoodandview',
+      uploader: 'OC Food | Christine',
+      uploader_id: '5366978089',
+    }),
+    'ocfoodandview',
+  );
+});
+
+test('pickCreatorHandle: falls through a display-name channel to `uploader`', () => {
+  // TikTok shape: nickname in channel, username in uploader.
+  assert.equal(
+    pickCreatorHandle({ channel: 'SA Texas Foodies', uploader: 'satexasfoodies' }),
+    'satexasfoodies',
+  );
+});
+
+test('pickCreatorHandle: never returns a numeric account id', () => {
+  assert.equal(pickCreatorHandle({ uploader_id: '5366978089' }), null);
+});
+
+test('pickCreatorHandle: never returns a display name', () => {
+  assert.equal(pickCreatorHandle({ channel: 'OC Food | Christine' }), null);
+});
+
+test('pickCreatorHandle: strips a leading @ and lowercases', () => {
+  assert.equal(pickCreatorHandle({ channel: '@OCFoodAndView' }), 'ocfoodandview');
+});
+
+test('pickCreatorHandle: falls back to the @handle in the post URL', () => {
+  assert.equal(
+    pickCreatorHandle({}, 'https://www.tiktok.com/@satexasfoodies/video/7433811014237326622'),
+    'satexasfoodies',
+  );
+});
+
+test('pickCreatorHandle: uses webpage_url when no explicit source url is given', () => {
+  assert.equal(
+    pickCreatorHandle({ webpage_url: 'https://www.tiktok.com/@atlbucketlist/video/123' }),
+    'atlbucketlist',
+  );
+});
+
+test('pickCreatorHandle: returns null when nothing identifies the creator', () => {
+  // Absence must be safe â€” the resolver simply keeps today's behavior.
+  assert.equal(pickCreatorHandle({}, 'https://www.instagram.com/reel/Db60wxqvvOI/'), null);
 });
