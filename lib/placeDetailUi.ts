@@ -75,6 +75,33 @@ export function whySavedDisplay(saved: {
   return { text: null, origin: null, seedFromSourceNote: false };
 }
 
+/**
+ * "Did you go yet?" — a saved place can be BOTH saved and visited.
+ *
+ * Visiting is not deleting. Marking a place visited records `visited_at` and
+ * stops the "you should go here" reminder, but the save itself stays in the
+ * user's collection and on their map. The older nearby-reminder flow removed
+ * the row from the shared cache after marking it visited, which made the place
+ * vanish from the map until the next refetch — that conflated "no longer an
+ * actionable nearby opportunity" with "no longer saved".
+ */
+export type VisitedDisplay = {
+  visited: boolean;
+  /** ISO timestamp, when known. */
+  visitedAt: string | null;
+  /** Prompt shown while the place is still unvisited. */
+  prompt: string;
+};
+
+export function visitedDisplay(saved: { visited_at?: string | null }): VisitedDisplay {
+  const visitedAt = trimmedOrNull(saved?.visited_at);
+  return {
+    visited: visitedAt !== null,
+    visitedAt,
+    prompt: 'DID YOU GO YET?',
+  };
+}
+
 function formatUnit(value: number, unit: RadiusUnit): string {
   const noun = unit === 'miles'
     ? value === 1 ? 'mile' : 'miles'

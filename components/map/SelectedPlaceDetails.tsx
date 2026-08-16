@@ -25,6 +25,7 @@ import {
   Modal,
   PanResponder,
   Pressable,
+  ScrollView,
   Share,
   StyleSheet,
   Switch,
@@ -52,7 +53,9 @@ import {
   type NoteEditorState,
 } from '@/lib/noteEditor';
 import { buildSavedPlaceShareContent } from '@/lib/placeShare';
-import { reminderStatusLabel, whySavedDisplay } from '@/lib/placeDetailUi';
+import { reminderStatusLabel, visitedDisplay, whySavedDisplay } from '@/lib/placeDetailUi';
+import { formatNearbyDistance, selectAlsoNearby } from '@/lib/alsoNearby';
+import { PlaceImage } from '@/components/PlaceImage';
 import { savedPlaceRemovalCopy } from '@/lib/savedPlaceRemoval';
 import {
   adjacentPrefetchTargets,
@@ -63,7 +66,7 @@ import {
 } from '@/lib/photoCarousel';
 import { resolvePlaceSource } from '@/lib/placeSource';
 import { splitPlaceAddress } from '@/lib/sharePhase1Ui';
-import { deleteSavedPlace, updateSavedPlace } from '@/services/savedPlacesService';
+import { deleteSavedPlace, markVisited, updateSavedPlace } from '@/services/savedPlacesService';
 import { CATEGORY_LABELS, savedPlaceCategory } from '@/lib/placeCategory';
 import {
   getSavedPlacesCacheSnapshot,
@@ -106,6 +109,10 @@ function formatUnit(value: number, unit: RadiusUnit): string {
 type Props = {
   saved: SavedPlaceWithPlace;
   profile: Profile | null;
+  /** The user's whole saved collection, for the "Also nearby" row. */
+  allSavedPlaces?: SavedPlaceWithPlace[];
+  /** Select another saved place by its exact row (map owns the selection). */
+  onSelectNearby?: (next: SavedPlaceWithPlace) => void;
   /** Open the platform maps app for this place (map screen owns this). */
   onGetDirections: () => void;
   /** Called after a successful delete so the map can dismiss the sheet. */
@@ -118,6 +125,8 @@ type Props = {
 export function SelectedPlaceDetails({
   saved,
   profile,
+  allSavedPlaces,
+  onSelectNearby,
   onGetDirections,
   onRequestDismiss,
   onSaved,
@@ -156,6 +165,15 @@ export function SelectedPlaceDetails({
   const [galleryIndex, setGalleryIndex] = useState(0);
   const [galleryOpenSeed, setGalleryOpenSeed] = useState(0);
   const [wrongPlaceOpen, setWrongPlaceOpen] = useState(false);
+  // Local mirror so "I went" flips the UI immediately; the row itself is
+  // updated in the shared cache (never removed) so the map keeps the marker.
+  const [visitedAt, setVisitedAt] = useState<string | null>(saved.visited_at ?? null);
+  const [visitBusy, setVisitBusy] = useState(false);
+  // Purely cosmetic acknowledgement of "Not yet" — no mutation, no persistence.
+  const [visitDeferred, setVisitDeferred] = useState(false);
+  useEffect(() => {
+    setVisitedAt(saved.visited_at ?? null);
+  }, [saved.id, saved.visited_at]);
   const galleryListRef = useRef<FlatList<string> | null>(null);
   // Interactive dismiss offset: the gallery follows the finger downward and
   // either continues off-screen or springs back. Native-driven.
@@ -336,6 +354,15 @@ export function SelectedPlaceDetails({
   const whySaved = useMemo(
     () => whySavedDisplay({ notes, ai_note: saved.ai_note }),
     [notes, saved.ai_note],
+  );
+  const visited = useMemo(
+    () => visitedDisplay({ visited_at: visitedAt }),
+    [visitedAt],
+  );
+  // The user's OWN saves near this one. Never a provider lookup.
+  const alsoNearby = useMemo(
+    () => selectAlsoNearby(saved, allSavedPlaces ?? []),
+    [allSavedPlaces, saved],
   );
   const reminderStatus = useMemo(
     () => reminderStatusLabel({
@@ -583,6 +610,47 @@ export function SelectedPlaceDetails({
       }),
     [galleryDragY, viewportHeight],
   );
+
+  /**
+   * "I went" — record the visit WITHOUT deleting the memory.
+   *
+   * `markVisited` stamps `visited_at` and turns reminders off, which is what
+   * stops future "you should go here" nudges. The saved place itself stays in
+   * the collection: the shared cache row is UPDATED, never removed, so the
+   * marker survives on the map and the detail sheet stays open on the same
+   * place. (The old nearby-reminder flow called `removeSavedPlaceFromCache`
+   * here, which made a visited place vanish from the map until the next
+   * refetch — the server never deleted anything.)
+   */
+  async function handleMarkVisited() {
+    if (visitBusy || visited.visited) return;
+    setVisitBusy(true);
+    const nowIso = new Date().toISOString();
+    const snapshot = getSavedPlacesCacheSnapshot();
+    setVisitedAt(nowIso);
+    // Built directly rather than through applySavedPlaceEdit: `visited_at` is
+    // a state stamp, not one of the user-editable fields that patch type owns.
+    const updated: SavedPlaceWithPlace = {
+      ...saved,
+      visited_at: nowIso,
+      notifications_enabled: false,
+    };
+    updateSavedPlacesCache((current) =>
+      current.map((row) => (row.id === saved.id ? updated : row)),
+    );
+    try {
+      await markVisited(saved.id);
+      setNotifyOn(false);
+      void trackEvent('place_marked_visited', { saved_place_id: saved.id });
+      onSaved?.(updated);
+    } catch (e: any) {
+      setVisitedAt(saved.visited_at ?? null);
+      restoreSavedPlacesCache(snapshot);
+      Alert.alert('Could not update', e?.message ?? 'Please try again.');
+    } finally {
+      setVisitBusy(false);
+    }
+  }
 
   function confirmDelete() {
     const copy = savedPlaceRemovalCopy(saved.place.name);
@@ -927,6 +995,80 @@ export function SelectedPlaceDetails({
         </Pressable>
       ) : null}
 
+      {/* Have I gone yet? A saved place can be BOTH saved and visited —
+          answering this never removes the place from the map. */}
+      {visited.visited ? (
+        <View style={styles.visitedRow}>
+          <Feather name="check-circle" size={16} color={colors.accent} />
+          <Text style={styles.visitedText}>You went here</Text>
+        </View>
+      ) : (
+        <View style={styles.visitSection}>
+          <Text style={styles.sectionLabel}>{visited.prompt}</Text>
+          <View style={styles.visitActions}>
+            <Pressable
+              onPress={() => void handleMarkVisited()}
+              disabled={visitBusy}
+              accessibilityRole="button"
+              accessibilityLabel={`Mark ${saved.place.name} as visited`}
+              style={({ pressed }) => [styles.visitPrimary, pressed && styles.pressed]}
+            >
+              {visitBusy ? (
+                <ActivityIndicator size="small" color={colors.textInverse} />
+              ) : (
+                <Text style={styles.visitPrimaryText}>I went</Text>
+              )}
+            </Pressable>
+            {/* Deliberately inert: "Not yet" is the status quo, never a
+                mutation and never destructive. */}
+            <Pressable
+              onPress={() => setVisitDeferred(true)}
+              accessibilityRole="button"
+              accessibilityLabel={`Not yet — keep ${saved.place.name} as a place to go`}
+              style={({ pressed }) => [styles.visitSecondary, pressed && styles.pressed]}
+            >
+              <Text style={styles.visitSecondaryText}>
+                {visitDeferred ? 'Still on your list' : 'Not yet'}
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      )}
+
+      {/* The user's OWN saves around this one — never Google discovery. */}
+      {alsoNearby.length > 0 ? (
+        <View style={styles.nearbySection}>
+          <Text style={styles.sectionLabel}>ALSO NEARBY</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.nearbyRow}
+          >
+            {alsoNearby.map((entry) => (
+              <Pressable
+                key={entry.saved.id}
+                onPress={() => onSelectNearby?.(entry.saved)}
+                accessibilityRole="button"
+                accessibilityLabel={`Open ${entry.saved.place.name}, ${formatNearbyDistance(entry.distanceMeters)} away`}
+                style={({ pressed }) => [styles.nearbyCard, pressed && styles.pressed]}
+              >
+                <PlaceImage
+                  googlePlaceId={entry.saved.place.google_place_id}
+                  size={132}
+                  borderRadius={Radius.md}
+                />
+                <Text style={styles.nearbyName} numberOfLines={2}>
+                  {entry.saved.place.name}
+                </Text>
+                <Text style={styles.nearbyDistance} numberOfLines={1}>
+                  {formatNearbyDistance(entry.distanceMeters)}
+                </Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+        </View>
+      ) : null}
+
       {/* Compact by design: useful, but it must not outweigh the place. The
           whole row toggles distance settings; the switch stays a separate
           target so enabling/disabling is never an accidental expand. */}
@@ -1201,6 +1343,69 @@ function createStyles(
       backgroundColor: 'rgba(255,106,26,0.92)',
     },
     categoryPillText: { ...typography.caption, color: '#FFFFFF', fontWeight: '700' },
+    // Shared small-caps section label. One typographic device for every
+    // section heading keeps the page structured without a border per block.
+    sectionLabel: {
+      ...typography.caption,
+      color: colors.textMuted,
+      fontSize: 10,
+      letterSpacing: 0.8,
+      fontWeight: '700',
+      marginBottom: Spacing.sm,
+    },
+    visitSection: { marginTop: Spacing.lg },
+    visitActions: { flexDirection: 'row', gap: Spacing.sm },
+    visitPrimary: {
+      flex: 1,
+      minHeight: 46,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: Radius.lg,
+      backgroundColor: colors.accent,
+    },
+    visitPrimaryText: {
+      ...typography.bodyStrong,
+      color: colors.textInverse,
+    },
+    visitSecondary: {
+      flex: 1,
+      minHeight: 46,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: Radius.lg,
+      backgroundColor: colors.surface,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.border,
+    },
+    visitSecondaryText: {
+      ...typography.bodyStrong,
+      color: colors.textSecondary,
+    },
+    visitedRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.sm,
+      marginTop: Spacing.lg,
+      minHeight: 44,
+    },
+    visitedText: {
+      ...typography.bodyStrong,
+      color: colors.text,
+    },
+    nearbySection: { marginTop: Spacing.xl },
+    nearbyRow: { gap: Spacing.md, paddingRight: Spacing.lg },
+    nearbyCard: { width: 132 },
+    nearbyName: {
+      ...typography.caption,
+      color: colors.text,
+      fontWeight: '600',
+      marginTop: Spacing.sm,
+    },
+    nearbyDistance: {
+      ...typography.caption,
+      color: colors.textMuted,
+      marginTop: 2,
+    },
     sourceCard: {
       flexDirection: 'row',
       alignItems: 'center',

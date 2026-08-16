@@ -112,6 +112,7 @@ import {
   getSavedPlacesCacheSnapshot,
   removeSavedPlaceFromCache,
   restoreSavedPlacesCache,
+  updateSavedPlacesCache,
 } from '@/hooks/useSavedPlaces';
 import { isDemoMode } from '@/lib/demoMode';
 import { isMapPreviewMode } from '@/lib/mapPreview';
@@ -1237,7 +1238,11 @@ export default function MapScreen() {
     try {
       // The SAME path a manual marker tap takes: camera to the place, card open.
       selectPlace(target);
-      if (shouldExpandSavedPlaceDetails(placeSource)) {
+      // A single nearby notification converges on the canonical Place Detail
+      // V2 rather than a notification-specific single-place UI: same screen the
+      // Map, Queue and Home all reach. Directions and "Did you go yet?" live
+      // there, so no capability is lost by dropping the bespoke reminder block.
+      if (shouldExpandSavedPlaceDetails(placeSource) || reminderOpen) {
         setPreviewExpanded(true);
       }
       const successMessage = openSavedPlaceMessage(placeSource);
@@ -1511,9 +1516,20 @@ export default function MapScreen() {
     const snapshot = getSavedPlacesCacheSnapshot();
     try {
       await markVisited(selected.id);
-      removeSavedPlaceFromCache(selected.id);
+      // Visiting is NOT deleting. `markVisited` stamps `visited_at` and turns
+      // reminders off (which is what stops future "go here" nudges), but the
+      // save stays in the collection and on the map — so the cached row is
+      // UPDATED, never removed. Removing it here made a visited place vanish
+      // from the map until the next refetch, even though the server had
+      // deleted nothing.
+      updateSavedPlacesCache((current) =>
+        current.map((row) =>
+          row.id === selected.id
+            ? { ...row, visited_at: new Date().toISOString(), notifications_enabled: false }
+            : row,
+        ),
+      );
       setReminderContextSavedPlaceId(null);
-      dismissSelectedPlace();
       showSnackbar('Marked as visited', null);
       void trackEvent('nearby_reminder_mark_visited_tapped', {
         saved_place_id: selected.id,
@@ -2054,6 +2070,15 @@ export default function MapScreen() {
                 <SelectedPlaceDetails
                   saved={selected}
                   profile={profile}
+                  allSavedPlaces={validPlaces}
+                  // "Also nearby" routes through the SAME selection path a
+                  // marker tap uses, by exact saved_places.id — so tapping a
+                  // nearby save lands on the identical Place Detail V2.
+                  onSelectNearby={(next) => {
+                    handleUserInteraction('marker_press');
+                    selectPlace(next);
+                    setPreviewExpanded(true);
+                  }}
                   onGetDirections={() => openExternalMaps(selected)}
                   onRequestDismiss={() => dismissSelectedPlace()}
                   onSaved={(updated) => setSelected(updated)}
@@ -2064,14 +2089,16 @@ export default function MapScreen() {
               // Collapsed: quick directions + an explicit expander (in addition
               // to the slide-up gesture) so there's always a tap affordance.
               <>
+                {/* A nearby-notification arrival is labelled, but it is NOT a
+                    separate single-place experience: the notification opens
+                    Place Detail V2 expanded, and "I went" / "Directions" live
+                    there. This badge is only reachable if the user collapses
+                    the sheet themselves. */}
                 {isNearbyReminderSelection ? (
                   <View style={styles.reminderContextWrap}>
                     <View style={styles.reminderBadge}>
                       <Text style={styles.reminderBadgeText}>Nearby reminder</Text>
                     </View>
-                    <Text style={[typography.caption, styles.reminderCopy]}>
-                      You saved this place and you&apos;re nearby.
-                    </Text>
                     {nearbyCount && nearbyCount > 1 ? (
                       <Text style={[typography.caption, styles.reminderNearbyCount]}>
                         {nearbyCount} saved places nearby
@@ -2089,35 +2116,25 @@ export default function MapScreen() {
                       }
                       openExternalMaps(selected);
                     }}
-                    loading={reminderActionBusy}
                     style={styles.previewPrimaryAction}
                   />
                 </View>
+                {/* Reminder LIFECYCLE, not place detail: declining the third
+                    opportunity archives the reminder (MAX_REMINDER_OPPORTUNITIES).
+                    "I went" moved into Place Detail V2, but this has no home
+                    there — V2's "Not yet" is deliberately inert — so it stays
+                    reachable here rather than being silently destroyed. */}
                 {isNearbyReminderSelection ? (
-                  <View style={styles.reminderSecondaryActions}>
-                    <Button
-                      title="I went here"
-                      variant="secondary"
-                      onPress={() => void handleNearbyReminderVisited()}
-                      loading={reminderActionBusy}
-                    />
-                    <Button
-                      title="Maybe next time"
-                      variant="ghost"
-                      onPress={() => void handleNearbyReminderDismiss()}
-                      loading={reminderActionBusy}
-                    />
-                    <Pressable
-                      onPress={() => {
-                        setPreviewExpanded(true);
-                        if (__DEV__) console.log('[map-sheet] expanded for reminder settings');
-                      }}
-                      hitSlop={10}
-                      style={styles.reminderAdjustRow}
-                    >
-                      <Text style={styles.reminderAdjustText}>Adjust reminder radius</Text>
-                    </Pressable>
-                  </View>
+                  <Pressable
+                    onPress={() => void handleNearbyReminderDismiss()}
+                    disabled={reminderActionBusy}
+                    hitSlop={10}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Not this time — stop reminding me about ${selected.place.name} for now`}
+                    style={styles.reminderAdjustRow}
+                  >
+                    <Text style={styles.reminderAdjustText}>Maybe next time</Text>
+                  </Pressable>
                 ) : null}
                 <Pressable
                   onPress={() => {
@@ -2127,9 +2144,7 @@ export default function MapScreen() {
                   hitSlop={10}
                   style={styles.previewSecondaryRow}
                 >
-                  <Text style={styles.previewSecondaryText}>
-                    {isNearbyReminderSelection ? 'Swipe up for details and reminder settings' : 'Swipe up for details'}
-                  </Text>
+                  <Text style={styles.previewSecondaryText}>Swipe up for details</Text>
                   <Feather name="chevron-up" size={16} color={colors.textSecondary} />
                 </Pressable>
               </>

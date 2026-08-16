@@ -140,56 +140,44 @@ const place = (patch: Record<string, unknown> = {}): SavedPlaceWithPlace =>
   }
 }
 
-// --- Screen wiring: behavior preserved, hierarchy changed -------------------
+// --- The single-place opportunity SCREEN is retired ------------------------
+// Nearr now has one canonical answer to "show me this saved place": the
+// map-owned Place Detail V2. `/opportunity/[id]` is kept only so ALREADY
+// DELIVERED notifications and old deep links still resolve — it redirects into
+// that one detail owner instead of maintaining a second presentation.
 const screen = readFileSync(join(process.cwd(), 'app/opportunity/[id].tsx'), 'utf8');
 
-// 1/2. Routing + directions untouched.
-assert.match(screen, /openExternalMaps\(\{/, 'uses the existing directions helper');
-assert.match(screen, /trackEvent\('opportunity_get_directions_tapped'/);
-// 6. Get directions is the single filled CTA.
-assert.match(screen, /styles\.primaryCta/);
-assert.match(screen, />Get directions</);
+assert.match(screen, /Redirect/, 'the legacy route redirects rather than rendering a screen');
+assert.match(screen, /resolveOpenSavedPlaceRoute/, 'through the one validated navigation contract');
+assert.match(screen, /savedPlaceId: savedPlaceId \?\? null/, 'by exact saved_places.id');
+assert.match(screen, /reminderOpen: 'true'/, 'and lands on the EXPANDED Place Detail V2');
 
-// 3/4. Visit decision maps onto the existing backend + analytics.
-assert.match(screen, /markVisited\(saved\.id\)/);
-assert.match(screen, /trackEvent\('opportunity_visited_tapped'/);
-assert.match(screen, /trackEvent\('place_marked_visited'/);
-assert.match(screen, />I went!</);
-assert.match(screen, />Not yet</);
-// Copy changed; the analytics event name is still semantically correct.
-assert.match(screen, /trackEvent\('opportunity_maybe_next_time_tapped'/, 'analytics not renamed for aesthetics');
-
-// 5. Archive-on-third preserved via the shared policy helper.
-assert.match(screen, /shouldArchiveOnDecline\(saved\.reminder_opportunity_count\)/);
-assert.match(screen, /markArchived\(saved\.id, \{ exhausted: true \}\)/);
-assert.match(screen, /trackEvent\('opportunity_archived_after_3'/);
-
-// 6. Reminder adjustment demoted but reachable, with its analytics intact.
-assert.match(screen, /trackEvent\('opportunity_adjust_radius_tapped'/);
-assert.match(screen, /styles\.reminderLink/, 'reminder settings is a low-emphasis footer link');
-assert.doesNotMatch(screen, /title="Adjust reminder radius"/, 'no longer a full-width button');
-assert.match(screen, /reminderLinkText: \{[\s\S]{0,120}color: colors\.textMuted/);
-
-// The old admin framing is gone.
-assert.doesNotMatch(screen, /Opportunity \{opportunityNumber\} of/, 'no "Opportunity N of 3" headline');
-assert.doesNotMatch(screen, /You&apos;re near \{saved\.place\.name\}/, 'the place leads, not the reminder');
-
-// 11. Missing photo still renders an intentional hero.
-assert.match(screen, /styles\.heroFallback/);
-assert.match(screen, /onError=\{\(\) => setHeroFailed\(true\)\}/);
-// Reuses the shared cached rich-details helper — no new Places request here.
-assert.match(screen, /getCachedPlaceRichDetails\(googlePlaceId\)/);
-
-// 14. Closing is purely a dismissal.
-{
-  const start = screen.indexOf('accessibilityLabel="Close"');
-  const around = screen.slice(Math.max(0, start - 320), start + 120);
-  assert.ok(around.includes('router.back()'), 'close just navigates back');
-  assert.ok(!/markArchived|markVisited|updateSavedPlace/.test(around), 'close never mutates the place');
+// No duplicated presentation or duplicated mutations may survive here.
+for (const duplicated of [
+  'markVisited',
+  'markArchived',
+  'openExternalMaps',
+  'getCachedPlaceRichDetails',
+  'updateSavedPlace',
+]) {
+  assert.ok(!screen.includes(duplicated), `${duplicated} must not be duplicated in the legacy route`);
 }
+assert.ok(screen.length < 2_000, 'the 599-line duplicate screen is gone');
 
-// Theme tokens, not hard-coded to one screenshot.
-assert.match(screen, /createStyles\(colors, typography\)/);
-assert.match(screen, /backgroundColor: colors\.bg/);
+// The capabilities it carried still exist — in the canonical owner.
+{
+  const detail = readFileSync(join(process.cwd(), 'components/map/SelectedPlaceDetails.tsx'), 'utf8');
+  assert.ok(detail.includes('onGetDirections'), 'directions preserved in Place Detail V2');
+  assert.ok(detail.includes('markVisited(saved.id)'), '"I went" preserved in Place Detail V2');
+  assert.ok(detail.includes('visited.prompt'), 'the did-you-go prompt lives there');
+
+  // Reminder LIFECYCLE (archive-on-third-decline) is not place detail, and V2's
+  // "Not yet" is deliberately inert — so it must stay reachable on the map.
+  const map = readFileSync(join(process.cwd(), 'app/(tabs)/map.tsx'), 'utf8');
+  assert.match(map, />= MAX_REMINDER_OPPORTUNITIES/, 'archive-on-third policy still applied');
+  assert.match(map, /markArchived\(selected\.id, \{ exhausted: true \}\)/, 'exhaustion still stamped');
+  assert.match(map, /handleNearbyReminderDismiss\(\)/, 'and still reachable from the UI');
+  assert.match(map, /trackEvent\('opportunity_archived_after_3'/, 'analytics preserved');
+}
 
 console.log('PASS nearby-opportunity copy, honest metadata, and preserved reminder semantics');

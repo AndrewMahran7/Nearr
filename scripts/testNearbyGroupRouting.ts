@@ -122,9 +122,20 @@ assert.doesNotMatch(
 assert.match(screenCode, /getSavedPlace\(id\)/);
 // 9. A place deleted since delivery is dropped, not fatal.
 assert.match(screenCode, /if \(result\.status !== 'fulfilled' \|\| !result\.value\?\.place\) continue;/);
-// 13/14. Cards enter the EXISTING single opportunity, pushed so Back returns.
-assert.match(screenCode, /router\.push\(\{ pathname: '\/opportunity\/\[id\]', params: \{ id: saved\.id \} \}\)/);
-assert.doesNotMatch(screenCode, /router\.replace\(\{ pathname: '\/opportunity\/\[id\]'/, 'never destroys group context');
+// 13/14. Cards enter the ONE canonical saved-place detail (Place Detail V2) by
+// exact saved_places.id, pushed so Back still returns to the group. The old
+// single-place opportunity screen is retired, so members no longer route there.
+assert.match(screenCode, /resolveOpenSavedPlaceRoute\(\{[\s\S]{0,120}savedPlaceId: saved\.id/);
+assert.match(screenCode, /router\.push\(\{[\s\S]{0,160}pathname: target\.pathname/);
+assert.doesNotMatch(screenCode, /pathname: '\/opportunity\/\[id\]'/, 'not into the retired screen');
+{
+  // Scoped to member selection: opening a member must PUSH so Back returns to
+  // the group. (Other handlers on this screen may legitimately replace.)
+  const start = screenCode.indexOf('function openPlace(');
+  const body = screenCode.slice(start, screenCode.indexOf('\n  }', start));
+  assert.ok(body.includes('router.push('), 'a member is pushed');
+  assert.ok(!body.includes('router.replace('), 'never destroys group context');
+}
 // 15/16. Visited state is per place and only reflected, never applied here.
 assert.match(screenCode, /const visited = !!saved\.visited_at/);
 // No save-selection semantics leak in from the extraction flow.

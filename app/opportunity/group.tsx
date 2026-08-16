@@ -44,6 +44,7 @@ import {
   opportunityNarrative,
 } from '@/lib/opportunityUi';
 import { useTheme } from '@/lib/theme';
+import { resolveOpenSavedPlaceRoute } from '@/lib/openSavedPlace';
 import { getSavedPlace } from '@/services/savedPlacesService';
 import type { SavedPlaceWithPlace } from '@/types';
 
@@ -93,8 +94,18 @@ export default function GroupedOpportunityScreen() {
 
   function openPlace(saved: SavedPlaceWithPlace) {
     void trackEvent('grouped_opportunity_place_tapped', { saved_place_id: saved.id });
-    // push (not replace) so Back returns to the group.
-    router.push({ pathname: '/opportunity/[id]', params: { id: saved.id } });
+    // The group stays a group — picking a member lands on the ONE canonical
+    // saved-place detail (Place Detail V2), by exact saved_places.id, through
+    // the same validated contract the Map/Queue/Home use. The minted
+    // `openRequestId` means picking the same member again later still works.
+    const target = resolveOpenSavedPlaceRoute({
+      savedPlaceId: saved.id,
+      source: 'notification',
+    });
+    router.push({
+      pathname: target.pathname,
+      params: { ...target.params, reminderOpen: 'true', reminderSource: 'notification' },
+    });
   }
 
   if (!places) {
