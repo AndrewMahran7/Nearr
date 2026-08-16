@@ -805,7 +805,12 @@ export default function MapScreen() {
   const handledMapGroupIdRef = useRef<string | null>(null);
   const handledReminderAnalyticsRef = useRef<string | null>(null);
   const shownMissingReminderRef = useRef<string | null>(null);
-  const previousRegionRef = useRef<Region | null>(null);
+  // The CURRENT VISIBLE REGION, kept deliberately separate from `userRegion`
+  // (the GPS fix) — the two are not interchangeable. This is a record of where
+  // the camera is, NOT a camera command: nothing may read it to move the map.
+  // It used to feed a "restore the pre-open viewport" animation on dismiss,
+  // which is exactly what yanked the camera back toward the user's location
+  // when a place was closed. Closing UI does not move the camera.
   const lastRegionRef = useRef<Region | null>(null);
 
   // ---- live foreground location tracking --------------------------------
@@ -1341,37 +1346,33 @@ export default function MapScreen() {
     );
   }, [selected, userRegion]);
 
-  const dismissSelectedPlace = useCallback(
-    (options?: { restoreRegion?: boolean }) => {
-      if (!selected) return;
-      // Collapsing the place is itself a user action; the confirmation must
-      // not be left floating over the bare map.
-      handleUserInteraction('sheet_dismiss');
+  /**
+   * Close the selected place. This NEVER moves the camera.
+   *
+   * It used to animate back to the viewport captured when the place was opened.
+   * That restore was the "map jumps back to my current location" bug: for every
+   * deep-link entry (queue row, notification, "Show on map") the captured
+   * viewport was wherever the camera happened to be BEFORE the focus — normally
+   * the user's own location — so closing the card threw the user across the
+   * state. It also silently discarded any panning done while the card was open.
+   *
+   * Camera ownership rule: closing UI is not a reason to move the map. The
+   * camera stays exactly where the user last left it, and only an explicit
+   * request (recenter, or a deliberate navigation to a place) moves it.
+   */
+  const dismissSelectedPlace = useCallback(() => {
+    if (!selected) return;
+    // Collapsing the place is itself a user action; the confirmation must
+    // not be left floating over the bare map.
+    handleUserInteraction('sheet_dismiss');
 
-      markerRefs.current[selected.id]?.hideCallout?.();
-      previewTranslateY.stopAnimation();
-      previewTranslateY.setValue(0);
-      setSelected(null);
-      setPreviewExpanded(false);
-      if (__DEV__) console.log('[map-sheet] dismissed');
-
-      if (options?.restoreRegion === false) {
-        previousRegionRef.current = null;
-        return;
-      }
-
-      const previousRegion = previousRegionRef.current;
-      previousRegionRef.current = null;
-      if (!previousRegion) return;
-
-      try {
-        mapRef.current?.animateToRegion(previousRegion, 250);
-      } catch (e) {
-        if (__DEV__) console.debug('[map] dismiss restore skipped', e);
-      }
-    },
-    [previewTranslateY, selected],
-  );
+    markerRefs.current[selected.id]?.hideCallout?.();
+    previewTranslateY.stopAnimation();
+    previewTranslateY.setValue(0);
+    setSelected(null);
+    setPreviewExpanded(false);
+    if (__DEV__) console.log('[map-sheet] dismissed');
+  }, [previewTranslateY, selected]);
 
   /**
    * Frame the map around a single saved place's zone (marker + radius
@@ -1412,7 +1413,6 @@ export default function MapScreen() {
       previewTranslateY.setValue(0);
       setSelected(null);
       setPreviewExpanded(false);
-      previousRegionRef.current = null;
     }
     try {
       mapRef.current.fitToCoordinates(
@@ -1443,12 +1443,11 @@ export default function MapScreen() {
 
   function closeMapGroup() {
     if (mapGroupId) clearMapGroupFocusRequest(mapGroupId);
-    if (selected) dismissSelectedPlace({ restoreRegion: false });
+    if (selected) dismissSelectedPlace();
     router.replace('/(tabs)/map');
   }
 
   function selectPlace(item: SavedPlaceWithPlace) {
-    previousRegionRef.current = lastRegionRef.current;
     // Selecting a place is manual navigation to a specific spot — stop the
     // follow camera so it doesn't yank back to the user's live location while
     // they're examining this place. The user dot keeps updating; tapping the
@@ -1514,7 +1513,7 @@ export default function MapScreen() {
       await markVisited(selected.id);
       removeSavedPlaceFromCache(selected.id);
       setReminderContextSavedPlaceId(null);
-      dismissSelectedPlace({ restoreRegion: false });
+      dismissSelectedPlace();
       showSnackbar('Marked as visited', null);
       void trackEvent('nearby_reminder_mark_visited_tapped', {
         saved_place_id: selected.id,
@@ -1730,7 +1729,7 @@ export default function MapScreen() {
       const snapshot = getSavedPlacesCacheSnapshot();
       try {
         if (selected?.id === savedPlaceId) {
-          dismissSelectedPlace({ restoreRegion: false });
+          dismissSelectedPlace();
         }
         removeSavedPlaceFromCache(savedPlaceId);
         await deleteSavedPlace(savedPlaceId);
@@ -2056,7 +2055,7 @@ export default function MapScreen() {
                   saved={selected}
                   profile={profile}
                   onGetDirections={() => openExternalMaps(selected)}
-                  onRequestDismiss={() => dismissSelectedPlace({ restoreRegion: false })}
+                  onRequestDismiss={() => dismissSelectedPlace()}
                   onSaved={(updated) => setSelected(updated)}
                   onCorrected={focusCorrectedPlace}
                 />
