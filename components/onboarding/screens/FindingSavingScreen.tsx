@@ -6,27 +6,27 @@ import { ScreenHeading } from './ScreenHeading';
 type Props = {
   /** Bump to replay the finding animation when the screen is (re)shown. */
   playKey?: number;
-  /** Called when the user taps Save on the revealed result card. */
-  onSave: () => void;
+  /** Fired once when the simulated auto-save reaches the saved state. */
+  onSaved: () => void;
 };
 
 /**
- * Screen 4 of 5 — Finding and saving (interactive).
+ * Screen 4 of 5 — Nearr finds the place and saves it (non-interactive).
  *
- * The scan → progress → found → result sequence runs automatically. The user
- * then taps the real Save action to proceed. Deterministic and local — it does
- * NOT call the extraction backend.
+ * The finding → found → saved sequence runs by itself: there is no Save button,
+ * because the real product saves a post with one clear place without asking.
+ * Deterministic and local — it does NOT call the extraction backend.
  */
-export function FindingSavingScreen({ playKey, onSave }: Props) {
+export function FindingSavingScreen({ playKey, onSaved }: Props) {
   return (
     <View style={styles.container}>
       <ScreenHeading
-        headline="Nearr finds the place for you"
-        subtext="We scan the post, identify the real location, and get it ready to save. Tap Save when it appears."
+        headline="Nearr finds the place"
+        subtext="We match the post to the real location. When there's one clear place, Nearr saves it to your map for you."
       />
 
       <View style={styles.demo}>
-        <FindingSavingCard playKey={playKey} onSave={onSave} />
+        <FindingSavingCard playKey={playKey} onSaved={onSaved} />
       </View>
     </View>
   );

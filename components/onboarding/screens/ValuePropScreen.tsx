@@ -162,8 +162,9 @@ function MapPinCard({
         <Text style={styles.mapName} numberOfLines={1}>
           Allpress Espresso
         </Text>
+        {/* City, never a distance — onboarding does not know where the user is. */}
         <Text style={styles.mapMeta} numberOfLines={1}>
-          Coffee shop · 0.3 mi
+          Coffee shop · Tokyo
         </Text>
       </View>
     </View>

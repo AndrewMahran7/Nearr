@@ -7,7 +7,10 @@ import { OnboardingColors, OnboardingRadius } from './theme';
 type Props = {
   /** Sample place name, e.g. "Blue Bottle Coffee". */
   name?: string;
-  /** Category / distance line, e.g. "Coffee shop · 0.3 mi away". */
+  /**
+   * Category / location line, e.g. "Coffee shop · Tokyo, Japan". Never a
+   * user-relative distance — onboarding has no idea where the user is.
+   */
   detail?: string;
   style?: ViewStyle;
 };
@@ -20,7 +23,7 @@ type Props = {
  */
 export function OnboardingSavedPlacePreview({
   name = 'Blue Bottle Coffee',
-  detail = 'Coffee shop · 0.3 mi away',
+  detail = 'Coffee shop · Tokyo, Japan',
   style,
 }: Props) {
   return (

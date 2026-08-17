@@ -211,10 +211,17 @@ function magicLinkPreserved() {
     /beginOperation\('magic_link'\)/,
     'magic link goes through the duplicate-submit guard',
   );
+  // The magic link still both signs in and creates accounts; the COPY no longer
+  // says so in developer language ("New users are created automatically").
   assert.match(
     account,
-    /New users are created\s*\n?\s*automatically/,
-    'copy keeps the combined sign-in/sign-up wording',
+    /We&apos;ll email you a secure sign-in link\. No password needed\./,
+    'magic-link copy is consumer-facing and states no password is needed',
+  );
+  assert.doesNotMatch(
+    account,
+    /New users are created/,
+    'internal account-provisioning wording must not reach the user',
   );
   assert.doesNotMatch(account, />Sign up</, 'no separate Sign up vs Sign in for the magic-link path');
 }

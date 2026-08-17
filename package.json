@@ -107,6 +107,7 @@
     "test:ambiguity-review": "ts-node -P scripts/tsconfig.json scripts/testAmbiguityReviewFlow.ts",
     "test:name-driven": "ts-node -P scripts/tsconfig.json scripts/testNameDrivenResolver.ts",
     "test:onboarding-routing": "ts-node -P scripts/tsconfig.json scripts/testOnboardingRouting.ts",
+    "test:onboarding-demo": "ts-node -P scripts/tsconfig.json scripts/testOnboardingDemoCopy.ts",
     "test:share-remote": "ts-node -P scripts/tsconfig.json scripts/testProcessShareLinkRemote.ts",
     "test:share-regression": "ts-node -P scripts/tsconfig.json scripts/testShareRegression.ts",
     "failures:list": "ts-node -P scripts/tsconfig.json scripts/listShareExtractionFailures.ts",

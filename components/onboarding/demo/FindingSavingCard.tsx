@@ -3,7 +3,6 @@ import {
   AccessibilityInfo,
   Animated,
   Easing,
-  Pressable,
   StyleSheet,
   Text,
   View,
@@ -16,45 +15,67 @@ import { OnboardingColors, OnboardingRadius } from '../theme';
 type Props = {
   /** Bump this key to replay the sequence (e.g. when the screen re-focuses). */
   playKey?: number;
-  /** Called when the user taps the (accessible) Save action on the result card. */
-  onSave?: () => void;
+  /** Fired once when the simulated auto-save reaches the saved state. */
+  onSaved?: () => void;
   style?: ViewStyle;
 };
 
-const FIND_DURATION = 1600;
+/** Stage of the simulated sequence: finding → found → saved. */
+type Stage = 'finding' | 'found' | 'saved';
+
+const FIND_DURATION = 1400;
 const REVEAL_DURATION = 380;
+/** Gap between "Found it" and "Saved to your map" — comprehension, not realism. */
+const SAVE_DELAY = 550;
 
 /**
- * Screen 4 — deterministic, native "finding and saving" demonstration.
+ * Screen 4 — deterministic, native "Nearr finds it and saves it" demonstration.
  *
- * The scan → progress → found → result sequence runs automatically on appear.
+ * The whole sequence runs by itself: finding → found → saved to your map. That
+ * mirrors the real product, where a post with one clear place is saved without
+ * the user tapping anything, so this card is deliberately NOT interactive — it
+ * has no Save button.
+ *
  * It does NOT call the extraction backend, make any network request, or save
- * anything real. Once the result is revealed the user must tap the real Save
- * action to proceed. Respects Reduce Motion by jumping to the resolved state.
+ * anything real. Respects Reduce Motion by jumping straight to the saved state.
  */
-export function FindingSavingCard({ playKey = 0, onSave, style }: Props) {
+export function FindingSavingCard({ playKey = 0, onSaved, style }: Props) {
   const progress = useRef(new Animated.Value(0)).current;
   const reveal = useRef(new Animated.Value(0)).current;
-  const saveScale = useRef(new Animated.Value(1)).current;
-  const [found, setFound] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const savedRef = useRef(false);
+  const savedReveal = useRef(new Animated.Value(0)).current;
+  const [stage, setStage] = useState<Stage>('finding');
 
+  // `onSaved` is analytics-only; it must never re-trigger the sequence.
+  const onSavedRef = useRef(onSaved);
+  useEffect(() => {
+    onSavedRef.current = onSaved;
+  }, [onSaved]);
+
+  // The sequence. Re-runs from the start on mount and whenever `playKey`
+  // changes, so a user who navigates back never finds it stuck at "saved".
   useEffect(() => {
     let cancelled = false;
+    let saveTimer: ReturnType<typeof setTimeout> | null = null;
     progress.setValue(0);
     reveal.setValue(0);
-    saveScale.setValue(1);
-    savedRef.current = false;
-    setFound(false);
-    setSaved(false);
+    savedReveal.setValue(0);
+    setStage('finding');
+
+    const settleOnSaved = () => {
+      if (cancelled) return;
+      setStage('saved');
+      onSavedRef.current?.();
+      AccessibilityInfo.announceForAccessibility('Saved to your map');
+    };
 
     void AccessibilityInfo.isReduceMotionEnabled().then((reduceMotion) => {
       if (cancelled) return;
       if (reduceMotion) {
+        // No motion: show the finished, fully-explained state immediately.
         progress.setValue(1);
         reveal.setValue(1);
-        setFound(true);
+        savedReveal.setValue(1);
+        settleOnSaved();
         return;
       }
       Animated.timing(progress, {
@@ -64,15 +85,23 @@ export function FindingSavingCard({ playKey = 0, onSave, style }: Props) {
         easing: Easing.inOut(Easing.cubic),
         useNativeDriver: false,
       }).start(({ finished }) => {
-        if (finished && !cancelled) setFound(true);
+        if (!finished || cancelled) return;
+        setStage('found');
+        AccessibilityInfo.announceForAccessibility('Found it');
+        saveTimer = setTimeout(settleOnSaved, SAVE_DELAY);
       });
     });
 
     return () => {
       cancelled = true;
+      if (saveTimer) clearTimeout(saveTimer);
     };
-  }, [playKey, progress, reveal, saveScale]);
+  }, [playKey, progress, reveal, savedReveal]);
 
+  const found = stage !== 'finding';
+  const saved = stage === 'saved';
+
+  // Reveal the result card once found, then the saved row once saved.
   useEffect(() => {
     if (!found) return;
     Animated.timing(reveal, {
@@ -83,16 +112,15 @@ export function FindingSavingCard({ playKey = 0, onSave, style }: Props) {
     }).start();
   }, [found, reveal]);
 
-  const handleSave = () => {
-    if (savedRef.current) return;
-    savedRef.current = true;
-    setSaved(true);
-    Animated.sequence([
-      Animated.timing(saveScale, { toValue: 0.9, duration: 90, useNativeDriver: true }),
-      Animated.spring(saveScale, { toValue: 1, friction: 4, tension: 120, useNativeDriver: true }),
-    ]).start();
-    onSave?.();
-  };
+  useEffect(() => {
+    if (!saved) return;
+    Animated.timing(savedReveal, {
+      toValue: 1,
+      duration: REVEAL_DURATION,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+  }, [saved, savedReveal]);
 
   const barWidth = progress.interpolate({
     inputRange: [0, 1],
@@ -101,6 +129,10 @@ export function FindingSavingCard({ playKey = 0, onSave, style }: Props) {
   const revealTranslate = reveal.interpolate({
     inputRange: [0, 1],
     outputRange: [10, 0],
+  });
+  const savedTranslate = savedReveal.interpolate({
+    inputRange: [0, 1],
+    outputRange: [8, 0],
   });
 
   return (
@@ -121,18 +153,29 @@ export function FindingSavingCard({ playKey = 0, onSave, style }: Props) {
 
       <View style={styles.divider} />
 
-      {/* Finding progress */}
+      {/*
+        Status. Every state is spelled out in text — never a bare colored
+        check — so it reads the same with a screen reader or no color vision.
+      */}
       <View style={styles.findingRow}>
-        <Feather name="star" size={18} color={OnboardingColors.orange} />
-        <Text style={styles.findingText}>
-          {found ? 'Scanned the post' : 'Finding the place...'}
-        </Text>
+        {found ? (
+          <View style={styles.check}>
+            <Feather name="check" size={13} color={OnboardingColors.orange} />
+          </View>
+        ) : (
+          <Feather name="star" size={18} color={OnboardingColors.orange} />
+        )}
+        <Text style={styles.findingText}>{found ? 'Found it' : 'Finding the place...'}</Text>
       </View>
-      <View style={styles.track}>
+      <View
+        style={styles.track}
+        accessibilityRole="progressbar"
+        accessibilityLabel={found ? 'Found it' : 'Finding the place'}
+      >
         <Animated.View style={[styles.fill, { width: barWidth }]} />
       </View>
 
-      {/* Result reveal */}
+      {/* Result reveal — informational only; there is nothing to tap. */}
       {found ? (
         <Animated.View
           style={[
@@ -140,13 +183,6 @@ export function FindingSavingCard({ playKey = 0, onSave, style }: Props) {
             { opacity: reveal, transform: [{ translateY: revealTranslate }] },
           ]}
         >
-          <View style={styles.foundHeader}>
-            <View style={styles.check}>
-              <Feather name="check" size={13} color={OnboardingColors.orange} />
-            </View>
-            <Text style={styles.foundTitle}>Found it</Text>
-          </View>
-
           <View style={styles.placeCard}>
             <View style={styles.miniMap}>
               <View style={styles.miniRoadA} />
@@ -158,29 +194,25 @@ export function FindingSavingCard({ playKey = 0, onSave, style }: Props) {
                 Allpress Espresso
               </Text>
               <Text style={styles.placeMeta} numberOfLines={1}>
-                Coffee shop · Tokyo
+                Coffee shop · Tokyo, Japan
               </Text>
             </View>
-
-            <Animated.View style={{ transform: [{ scale: saveScale }] }}>
-              <Pressable
-                onPress={handleSave}
-                disabled={saved}
-                style={[styles.saveButton, saved && styles.saveButtonDone]}
-                accessibilityRole="button"
-                accessibilityLabel={saved ? 'Saved Allpress Espresso' : 'Save Allpress Espresso'}
-                accessibilityState={{ disabled: saved }}
-                accessibilityHint="Saves this place and advances the tutorial"
-              >
-                <Feather
-                  name={saved ? 'check' : 'bookmark'}
-                  size={15}
-                  color={OnboardingColors.onOrange}
-                />
-                <Text style={styles.saveText}>{saved ? 'Saved' : 'Save'}</Text>
-              </Pressable>
-            </Animated.View>
           </View>
+
+          {saved ? (
+            <Animated.View
+              style={[
+                styles.savedRow,
+                { opacity: savedReveal, transform: [{ translateY: savedTranslate }] },
+              ]}
+              accessibilityLiveRegion="polite"
+            >
+              <View style={styles.check}>
+                <Feather name="check" size={13} color={OnboardingColors.orange} />
+              </View>
+              <Text style={styles.savedText}>Saved to your map</Text>
+            </Animated.View>
+          ) : null}
         </Animated.View>
       ) : null}
     </View>
@@ -250,6 +282,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   findingText: {
+    flex: 1,
     color: OnboardingColors.text,
     fontSize: 16,
     fontWeight: '700',
@@ -268,12 +301,6 @@ const styles = StyleSheet.create({
   foundWrap: {
     marginTop: 20,
   },
-  foundHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginBottom: 12,
-  },
   check: {
     width: 22,
     height: 22,
@@ -282,11 +309,6 @@ const styles = StyleSheet.create({
     borderColor: OnboardingColors.orange,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  foundTitle: {
-    color: OnboardingColors.text,
-    fontSize: 16,
-    fontWeight: '700',
   },
   placeCard: {
     flexDirection: 'row',
@@ -334,21 +356,16 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 2,
   },
-  saveButton: {
+  savedRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    minHeight: 44,
-    paddingHorizontal: 16,
-    borderRadius: 999,
-    backgroundColor: OnboardingColors.orange,
+    gap: 10,
+    marginTop: 16,
   },
-  saveButtonDone: {
-    backgroundColor: '#2E7D32',
-  },
-  saveText: {
-    color: OnboardingColors.onOrange,
-    fontSize: 14,
-    fontWeight: '800',
+  savedText: {
+    flex: 1,
+    color: OnboardingColors.text,
+    fontSize: 16,
+    fontWeight: '700',
   },
 });

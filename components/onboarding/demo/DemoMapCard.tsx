@@ -27,10 +27,14 @@ type Props = {
  *
  * This is deliberately NOT the real map: no Google Maps SDK, no location, no
  * permission. The "Remind me when nearby" row is illustrative only.
+ *
+ * The detail line names the example's own city rather than a distance: the
+ * onboarding has no idea where the user is, so any "0.3 mi away" claim about a
+ * Tokyo coffee shop would be visibly fabricated.
  */
 export function DemoMapCard({
   name = 'Allpress Espresso',
-  detail = 'Saved · 0.3 mi away',
+  detail = 'Saved · Tokyo, Japan',
   onPinShown,
   style,
 }: Props) {

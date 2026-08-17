@@ -471,9 +471,14 @@ export default function AccountAuthScreen() {
           <Text style={styles.wordmark}>Nearr</Text>
         </View>
 
-        <Text style={styles.headline}>Continue to Nearr</Text>
+        {/*
+          "Create your map" continues the promise made by the final onboarding
+          CTA. The subtext covers returning users, since every email path here
+          both signs in and creates an account.
+        */}
+        <Text style={styles.headline}>Create your map</Text>
         <Text style={styles.subtext}>
-          Save the places you find online and keep them on your map.
+          Sign in or create an account to start saving the places you find online.
         </Text>
 
         {signedIn ? (
@@ -530,8 +535,7 @@ export default function AccountAuthScreen() {
                   disabled={busy && activeOperation !== 'magic_link'}
                 />
                 <Text style={styles.noteText}>
-                  We&apos;ll email you a secure sign-in link. New users are created
-                  automatically.
+                  We&apos;ll email you a secure sign-in link. No password needed.
                 </Text>
                 <LinkButton
                   label="Use password instead"
