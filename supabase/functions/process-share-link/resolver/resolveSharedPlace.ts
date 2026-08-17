@@ -38,11 +38,75 @@ import {
   geocodeContextText,
   type PlacesCandidate,
 } from '../places/googlePlaces.ts';
+import {
+  geographicContextTypeOf,
+  normalizeName,
+} from '../places/placeNormalization.ts';
+import type { TaggedLocationGranularity } from '../evidence/taggedLocation.ts';
 import { Timings, logShareDebug } from '../diagnostics/logger.ts';
 
 // Score gap below which two tagged-location candidates are treated as an
 // ambiguous picker rather than a single confirmation.
 const TAGGED_PICKER_BAND = 8;
+
+/**
+ * The tag's coordinates as a search bias, or null when it carried none usable.
+ * Re-validated here rather than trusted: the extractor already rejects
+ * non-finite, out-of-range and (0,0) pairs, and this is the boundary where a
+ * bad pair would silently drag every search to the wrong hemisphere.
+ */
+export function taggedLocationBias(
+  tag: Evidence['taggedLocation'],
+): SearchBias | null {
+  const lat = tag?.latitude;
+  const lng = tag?.longitude;
+  if (typeof lat !== 'number' || typeof lng !== 'number') return null;
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  if (Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
+  if (lat === 0 && lng === 0) return null;
+  return { lat, lng };
+}
+
+/**
+ * What a creator's tag DENOTES, decided from the provider's entity types.
+ *
+ * The test is name IDENTITY, never token overlap. Overlap is what reopens the
+ * Rio wrong-save: a search for "Rio de Janeiro" returns both the locality and
+ * "7 Mares - Passeio de Lancha Rio de Janeiro", a tour agency whose name
+ * CONTAINS the city. Any overlap-based test counts that agency as "the tag",
+ * concludes a business was tagged, and hands it to scoring — precisely the
+ * candidate that was once silently saved. So a result speaks for the tag only
+ * when its name IS the tag's name, allowing for the administrative suffix
+ * Instagram appends ("Huntington Beach, California" -> "Huntington Beach").
+ *
+ * Among those, ONE administrative entity is enough to call the tag geographic.
+ * The asymmetry is deliberate: Google reporting a city by exactly this name is
+ * strong evidence about what the creator picked from Instagram's place index,
+ * while a business sharing the name refutes nothing. Being wrong in this
+ * direction costs a fall-through to the caption pipeline; being wrong in the
+ * other direction costs a wrong silent save.
+ *
+ * Returns 'unknown' when no result is the tag, which the caller treats like an
+ * exact place: ordinary scoring decides, with its own geographic-context
+ * rejection still in force.
+ */
+export function classifyTaggedLocation(
+  results: PlacesCandidate[],
+  tagName: string | null,
+): TaggedLocationGranularity {
+  const tag = normalizeName(tagName ?? '');
+  if (!tag) return 'unknown';
+  const isTheTag = (candidateName: string): boolean => {
+    const name = normalizeName(candidateName ?? '');
+    if (!name) return false;
+    return name === tag || tag.startsWith(`${name} `);
+  };
+  const speakForTag = results.filter((r) => isTheTag(r.name ?? ''));
+  if (speakForTag.length === 0) return 'unknown';
+  return speakForTag.some((r) => geographicContextTypeOf(r) !== null)
+    ? 'geographic_context'
+    : 'exact_place';
+}
 
 export async function resolveSharedPlace(args: {
   evidence: Evidence;
@@ -179,10 +243,16 @@ export async function resolveSharedPlace(args: {
   // A platform-tagged place/location (YouTube recordingDetails, TikTok POI,
   // IG location tag) is the strongest signal we can get. We STILL verify it
   // against Google Places and NEVER auto-save on the tag alone — Places can
-  // land on the wrong nearby unit. Dormant until a provider is wired
-  // (`extractTaggedLocation` returns null today), so this preserves current
-  // behavior.
+  // land on the wrong nearby unit.
+  //
+  // Highest priority applies to a tag that names an EXACT PLACE. A tag naming
+  // the surrounding city is demoted to context inside `resolveFromTaggedLocation`
+  // and returns here as a fall-through, so the post's own caption still decides
+  // what was actually shared.
   if (evidence.taggedLocation) {
+    diagnostics.sourceLocationTagPresent = true;
+    diagnostics.sourceLocationTagProvenance = evidence.taggedLocation.provenance ?? null;
+    diagnostics.sourceLocationCoordinatesPresent = !!taggedLocationBias(evidence.taggedLocation);
     logShareDebug('tagged-location:present', {
       platform: evidence.taggedLocation.sourcePlatform,
       confidence: evidence.taggedLocation.confidence,
@@ -207,9 +277,19 @@ export async function resolveSharedPlace(args: {
       });
       return taggedResult;
     }
-    // Tag present but unverifiable → fall through to the normal
-    // caption/address pipeline (do not fail on account of a bad tag).
+    // Tag present but not resolvable as the destination → fall through to the
+    // normal caption/address pipeline (do not fail on account of a bad tag).
+    //
+    // Two very different situations land here and diagnostics keep them apart.
+    // A geographic tag falling through is the DESIGNED path: the tag was
+    // context all along. An exact-place tag falling through means the creator's
+    // tag could not be verified, or disagrees with what the caption says — that
+    // is a genuine conflict, and it is recorded rather than resolved here. The
+    // caption pipeline runs normally and the existing 0/1/2+ decision policy
+    // decides the outcome, so a contradiction can never silently auto-save.
     warnings.push('tagged_location_fell_through_to_caption');
+    diagnostics.sourceLocationTagConflict =
+      diagnostics.sourceLocationTagGranularity === 'geographic_context' ? false : true;
   }
 
   // ---- 0. Multi-address verification -----------------------------
@@ -550,6 +630,17 @@ export async function resolveSharedPlace(args: {
       // ignore — bias is optional
     }
   }
+  // The creator's own location tag, LAST. It fills a hole rather than winning
+  // an argument: a caller-supplied bias and the caption's own city/state are
+  // both more specific to the place being searched for, so neither is ever
+  // overwritten here. Where they are absent — a caption that names a venue and
+  // no city at all — this is the difference between a worldwide text search and
+  // one anchored where the creator actually stood.
+  const tagBias = taggedLocationBias(evidence.taggedLocation);
+  if (!bias && tagBias) {
+    bias = tagBias;
+    diagnostics.sourceLocationTagApplied = 'search_bias';
+  }
 
   let lastQuery: string | null = null;
   let candidates: PlacesCandidate[] = [];
@@ -812,6 +903,27 @@ async function resolveFromTaggedLocation(args: {
   );
   if (!search.ok || search.results.length === 0) {
     warnings.push('tagged_location_places_no_match');
+    diagnostics.sourceLocationTagGranularity = 'unknown';
+    return null;
+  }
+
+  // ---- Granularity ------------------------------------------------------
+  // A creator tag can name an exact business ("Pho Bamboo") or the city the
+  // post was shot in ("Huntington Beach, California"). Both arrive here
+  // identically, and treating the second like the first is the Rio wrong-save:
+  // a search for a city name also returns businesses that merely CARRY that
+  // name, and one of them would be surfaced as the tagged place.
+  //
+  // The call is made from Google's entity types for the results that actually
+  // match the tag's name — the same structural test the candidate guard uses,
+  // never a gazetteer or a look at the words themselves.
+  const granularity = classifyTaggedLocation(search.results, tag.placeName ?? null);
+  diagnostics.sourceLocationTagGranularity = granularity;
+  if (granularity === 'geographic_context') {
+    // Context, not a destination. Fall through to the ordinary caption/address
+    // pipeline, which resolves what the post is actually ABOUT. The tag's
+    // coordinates still scope that search (see the bias selection above).
+    warnings.push('tagged_location_geographic_context_only');
     return null;
   }
 
@@ -833,6 +945,7 @@ async function resolveFromTaggedLocation(args: {
   diagnostics.evidenceSourceWon = 'tagged_location';
   diagnostics.taggedLocationQuery = query || null;
   diagnostics.taggedLocationConfidence = tag.confidence;
+  diagnostics.sourceLocationTagApplied = 'exact_place_verified';
 
   return {
     decision: ambiguous ? 'candidate_picker' : 'candidate_confirmation',
