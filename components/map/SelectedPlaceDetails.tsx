@@ -80,7 +80,12 @@ import {
   whySavedDisplay,
 } from '@/lib/placeDetailUi';
 import { describeTodayHours } from '@/lib/placeHours';
-import { formatNearbyDistance, selectAlsoNearby } from '@/lib/alsoNearby';
+import {
+  formatNearbyDistance,
+  savedPlaceDistanceMeters,
+  selectAlsoNearby,
+} from '@/lib/alsoNearby';
+import { selectSameSourcePlaces } from '@/lib/sameSourcePlaces';
 import { savedPlaceRemovalCopy } from '@/lib/savedPlaceRemoval';
 import {
   adjacentPrefetchTargets,
@@ -441,11 +446,59 @@ export function SelectedPlaceDetails({
     () => visitedDisplay({ visited_at: visitedAt }),
     [visitedAt],
   );
-  // The user's OWN saves near this one. Never a provider lookup.
-  const alsoNearby = useMemo(
-    () => selectAlsoNearby(saved, allSavedPlaces ?? []),
+  /**
+   * The user's other saves from the SAME post. A semantic relationship, so it
+   * is deliberately not distance-bounded: one Nicaragua reel can hold Granada,
+   * León and Ometepe, and they stay siblings however far apart they are.
+   * Empty for a manual save, and empty when nothing else came from the post —
+   * the section then renders nothing at all rather than an empty heading.
+   */
+  const sameSource = useMemo(
+    () => selectSameSourcePlaces(saved, allSavedPlaces ?? []),
     [allSavedPlaces, saved],
   );
+  const sameSourceIds = useMemo(
+    () => sameSource.map((entry) => entry.id),
+    [sameSource],
+  );
+
+  // The user's OWN saves near this one. Never a provider lookup.
+  //
+  // Same-post siblings are excluded so a place cannot appear under two
+  // headings at once, and the freed slots fill with the next eligible saves.
+  // `categoryOf` turns on the modest diversity preference — bounded by a ~2
+  // mile detour budget, so a nearer place always wins a real distance contest.
+  const alsoNearby = useMemo(
+    () =>
+      selectAlsoNearby(saved, allSavedPlaces ?? [], {
+        excludeIds: sameSourceIds,
+        categoryOf: savedPlaceCategory,
+      }),
+    [allSavedPlaces, saved, sameSourceIds],
+  );
+  // Same card shape as Also nearby, so the two rows read as one design system
+  // — the heading is what distinguishes "from this post" from "near this".
+  // Distance is shown when both places have coordinates, and omitted rather
+  // than faked when one of them does not.
+  const sameSourceEntries = useMemo(
+    () =>
+      sameSource.map((entry) => {
+        const meters = savedPlaceDistanceMeters(saved, entry);
+        const distance = meters === null ? null : formatNearbyDistance(meters);
+        return {
+          key: entry.id,
+          name: entry.place.name,
+          googlePlaceId: entry.place.google_place_id,
+          meta: distance,
+          a11yLabel: distance
+            ? `Open ${entry.place.name}, also saved from this post, ${distance} away`
+            : `Open ${entry.place.name}, also saved from this post`,
+          onPress: () => onSelectNearby?.(entry),
+        };
+      }),
+    [onSelectNearby, sameSource, saved],
+  );
+
   // Built once per selection rather than on every render, so scrolling the
   // sheet or toggling a switch never rebuilds the row's card list.
   const alsoNearbyEntries = useMemo(
@@ -1376,8 +1429,19 @@ export function SelectedPlaceDetails({
 
       {/* The user's OWN saves around this one — never Google discovery, and
           the same selection semantics as a marker tap (exact saved_places.id).
-          A future "From this video" row drops in immediately above this one as
-          a second <PlaceCardRow>. */}
+          Anything already listed under the same-post row above is excluded, so
+          the two sections never show the same card twice. */}
+      {/* The other destinations from the same post. Sits above Also nearby
+          because "the video I saved this from also showed me these" is a
+          stronger reason than "this happens to be close" — two different
+          relationships, two sections, never merged into one opaque score. */}
+      {sameSourceEntries.length > 0 && sourceAttribution ? (
+        <PlaceCardRow
+          title={sourceAttribution.siblingSectionTitle}
+          entries={sameSourceEntries}
+        />
+      ) : null}
+
       {alsoNearbyEntries.length > 0 ? (
         <PlaceCardRow
           title="Also nearby"

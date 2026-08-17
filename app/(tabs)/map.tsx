@@ -150,6 +150,7 @@ import {
 } from '@/lib/openSavedPlace';
 import { isLikelyUrl } from '@/lib/shareParser';
 import { distanceMeters, milesToMeters, minutesToMeters } from '@/lib/geo';
+import { savedPlacePinOpacity } from '@/lib/savedPlacePinState';
 import { useTheme } from '@/lib/theme';
 import { getDemoSeededSavedPlacesSync } from '@/services/demo';
 import { getProfile } from '@/services/profileService';
@@ -391,7 +392,10 @@ const PlaceMarker = memo(function PlaceMarker({
   return (
     <Marker
       identifier={p.id}
-      opacity={dimmed ? 0.22 : p.archived_at || p.visited_at ? 0.45 : 1}
+      // Derived, not historical: a visited place whose reminder is switched
+      // back on is live again, and its visit stays on the record. See
+      // lib/savedPlacePinState.ts.
+      opacity={savedPlacePinOpacity(p, dimmed)}
       zIndex={selected ? 30 : dimmed ? 1 : 20}
       ref={(ref) => {
         markerRefs.current[p.id] = ref;
@@ -424,6 +428,10 @@ const PlaceMarker = memo(function PlaceMarker({
   prev.place.id === next.place.id &&
   prev.place.archived_at === next.place.archived_at &&
   prev.place.visited_at === next.place.visited_at &&
+  // Part of the opacity input since the pin stopped being purely historical.
+  // Without it the marker would keep its old bitmap-adjacent props after a
+  // reminder toggle — the fix would be correct and invisible.
+  prev.place.notifications_enabled === next.place.notifications_enabled &&
   prev.place.place.latitude === next.place.place.latitude &&
   prev.place.place.longitude === next.place.place.longitude &&
   prev.dimmed === next.dimmed &&

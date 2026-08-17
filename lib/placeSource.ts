@@ -42,6 +42,12 @@ export type PlaceSourceAttribution = {
   sourceA11yLabel: string;
   /** Brand colour for the logo. Used sparingly — the mark only, never a fill. */
   brandColor: string;
+  /**
+   * Heading for the row of OTHER saved places that came from this same post.
+   * Video-first platforms say "video"; a generic link says "post", because
+   * calling an unknown web page a video would simply be untrue.
+   */
+  siblingSectionTitle: string;
 };
 
 const PLATFORMS: Record<PlaceSourcePlatform, Omit<PlaceSourceAttribution, 'platform'>> = {
@@ -53,6 +59,7 @@ const PLATFORMS: Record<PlaceSourcePlatform, Omit<PlaceSourceAttribution, 'platf
     actionA11yLabel: 'Watch original Instagram post',
     sourceA11yLabel: 'Instagram source',
     brandColor: '#E4405F',
+    siblingSectionTitle: 'From this video',
   },
   tiktok: {
     platformName: 'TikTok',
@@ -65,6 +72,7 @@ const PLATFORMS: Record<PlaceSourcePlatform, Omit<PlaceSourceAttribution, 'platf
     // text colour reads better than either cyan or magenta alone, so the
     // component uses this only where a tint is genuinely wanted.
     brandColor: '#000000',
+    siblingSectionTitle: 'From this video',
   },
   youtube: {
     platformName: 'YouTube',
@@ -74,6 +82,7 @@ const PLATFORMS: Record<PlaceSourcePlatform, Omit<PlaceSourceAttribution, 'platf
     actionA11yLabel: 'Watch original YouTube video',
     sourceA11yLabel: 'YouTube source',
     brandColor: '#FF0000',
+    siblingSectionTitle: 'From this video',
   },
   facebook: {
     platformName: 'Facebook',
@@ -83,6 +92,7 @@ const PLATFORMS: Record<PlaceSourcePlatform, Omit<PlaceSourceAttribution, 'platf
     actionA11yLabel: 'Watch original Facebook post',
     sourceA11yLabel: 'Facebook source',
     brandColor: '#1877F2',
+    siblingSectionTitle: 'From this video',
   },
   snapchat: {
     platformName: 'Snapchat',
@@ -92,6 +102,7 @@ const PLATFORMS: Record<PlaceSourcePlatform, Omit<PlaceSourceAttribution, 'platf
     actionA11yLabel: 'Watch original Snapchat post',
     sourceA11yLabel: 'Snapchat source',
     brandColor: '#FFFC00',
+    siblingSectionTitle: 'From this video',
   },
   link: {
     platformName: 'Link',
@@ -102,6 +113,7 @@ const PLATFORMS: Record<PlaceSourcePlatform, Omit<PlaceSourceAttribution, 'platf
     actionA11yLabel: 'Open original link',
     sourceA11yLabel: 'Link source',
     brandColor: '#8E8E93',
+    siblingSectionTitle: 'From this post',
   },
 };
 

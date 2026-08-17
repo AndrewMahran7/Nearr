@@ -135,7 +135,9 @@
     "test:place-detail-v2": "ts-node -P scripts/tsconfig.json scripts/testPlaceDetailV2.ts",
     "test:place-detail-convergence": "ts-node -P scripts/tsconfig.json scripts/testPlaceDetailConvergence.ts",
     "test:place-hours": "ts-node -P scripts/tsconfig.json scripts/testPlaceHours.ts",
-    "test:map-queue-entry": "ts-node -P scripts/tsconfig.json scripts/testMapQueueEntryPoint.ts"
+    "test:map-queue-entry": "ts-node -P scripts/tsconfig.json scripts/testMapQueueEntryPoint.ts",
+    "test:related-places": "ts-node -P scripts/tsconfig.json scripts/testRelatedPlaces.ts",
+    "test:pin-state": "ts-node -P scripts/tsconfig.json scripts/testSavedPlacePinState.ts"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "1.23.1",
