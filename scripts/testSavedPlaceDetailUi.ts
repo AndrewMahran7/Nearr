@@ -117,8 +117,12 @@ assert.match(sheet, /whySavedDisplay\(/, 'the sheet derives its notes from the s
 assert.match(sheet, /hasReason = !!whySaved\.text/, 'the surface is gated on the helper');
 // The heading names the ORIGIN of the save, and falls back to the user's own
 // note when there is no post to credit — one surface either way.
+// Three honest headings from one derivation: a reason from a post, a post with
+// no reason yet, and a manual save.
 assert.match(sheet, /'Saved because…'/, 'consumer-facing label for the source cue');
-assert.match(sheet, /savedBecauseLabel = sourceAttribution \? 'Saved because…' : 'Your note'/);
+assert.match(sheet, /const savedBecauseLabel = !sourceAttribution/);
+assert.match(sheet, /\? 'Your note'/, 'a manual save is the user’s own note');
+assert.match(sheet, /`Saved from \$\{sourceAttribution\.platformName\}`/);
 // The label must never expose how the cue was produced.
 assert.doesNotMatch(
   sheet,
@@ -130,7 +134,7 @@ assert.match(sheet, /reminderStatus/, 'compact reminder still surfaces its statu
 assert.match(
   sheet,
   /accessibilityLabel=\{`Nearby reminder for \$\{saved\.place\.name\}`\}/,
-  'the switch keeps a label, now naming the place it controls',
+  'the toggle keeps a label, naming the place it controls',
 );
 assert.match(sheet, /minHeight: 44/, 'management actions keep an accessible target');
 assert.match(sheet, /styles\.manageRow/, 'destructive actions live in the low-emphasis footer');

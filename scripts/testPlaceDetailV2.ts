@@ -285,14 +285,24 @@ import {
       `${gated} only renders when a real source URL is stored`,
     );
   }
-  // The attribution line is gated on attribution alone (a link source has no
-  // watch action but is still honestly credited).
+  // The platform is credited from resolved attribution, never hardcoded —
+  // either on its own line beside a reason, or folded into the heading when
+  // there is no reason yet (so the card never says "Instagram" twice).
   const attribution = detail.indexOf('styles.attributionRow');
   assert.ok(attribution > -1);
   assert.ok(
-    detail.slice(attribution - 400, attribution).includes('sourceAttribution ? ('),
+    detail.slice(attribution - 500, attribution).includes('sourceAttribution && hasReason ? ('),
     'the platform line needs attribution, not a hardcoded platform',
   );
+  assert.ok(
+    detail.includes('`Saved from ${sourceAttribution.platformName}`'),
+    'the no-reason heading states the fact we have, from the resolver',
+  );
+  assert.ok(
+    !detail.includes('Why did you save this?'),
+    'an unanswered question is no longer the centrepiece of the card',
+  );
+  assert.ok(detail.includes('Add a note'), 'writing one is offered as a quiet link');
 
   // Nearr does not persist the post's own thumbnail or the creator's handle,
   // so neither may be invented.
@@ -351,7 +361,8 @@ import {
   const detail = readFileSync(join(process.cwd(), 'components/map/SelectedPlaceDetails.tsx'), 'utf8');
   const row = readFileSync(join(process.cwd(), 'components/map/place/PlaceCardRow.tsx'), 'utf8');
 
-  assert.ok(detail.includes('<PlaceCardRow title="Also nearby"'), 'presented by the shared row');
+  assert.ok(detail.includes('title="Also nearby"'), 'presented by the shared row');
+  assert.ok(detail.includes('<PlaceCardRow'), 'via the reusable component');
   assert.ok(
     !/ALSO_NEARBY_MAX_METERS|maxMeters:|limit:/.test(detail),
     'the redesign did not quietly retune the distance/limit semantics',
@@ -391,17 +402,90 @@ import {
   assert.ok(theme.includes('accentSoft') && theme.includes('accentBorder'), 'light palette defines them');
 }
 
-// Small screens: the action row is allowed to reflow, never to clip.
+// Small screens: the action row fits at every supported width, with no
+// breakpoint and no truncation. The previous pass had a `viewportWidth < 390`
+// fallback and still shipped "Watch p…" on a 390pt iPhone, because 390 < 390
+// is false. The fix was to cut the fixed cost, not to move the threshold.
 {
   const detail = readFileSync(join(process.cwd(), 'components/map/SelectedPlaceDetails.tsx'), 'utf8');
-  assert.ok(detail.includes('const compactActionRow = viewportWidth < 390'), 'there is a breakpoint');
-  assert.equal(
-    detail.split('<Switch').length - 1,
-    1,
-    'one switch, rendered in whichever layout applies — never two out of sync',
+  const toggle = readFileSync(join(process.cwd(), 'components/map/place/ReminderToggle.tsx'), 'utf8');
+
+  assert.ok(
+    !detail.includes('compactActionRow'),
+    'no width breakpoint to get wrong by one point',
   );
-  assert.match(detail, /actionButtonText: \{[\s\S]*fontSize: 12/, 'labels stay readable');
-  assert.ok(detail.includes('numberOfLines={1}'), 'and truncate rather than reflow the row');
+  assert.ok(
+    !/<Switch\b/.test(detail),
+    'the fixed ~51pt system Switch is gone — it was the reason the row overflowed',
+  );
+  assert.ok(detail.includes('<ReminderToggle'), 'replaced by the compact toggle');
+  assert.match(toggle, /TRACK_WIDTH = 40/, 'which is 40pt, not 51');
+  assert.match(toggle, /accessibilityRole="switch"/, 'and still a switch to VoiceOver');
+  assert.match(toggle, /accessibilityState=\{\{ checked: value \}\}/);
+  assert.match(toggle, /hitSlop=\{10\}/, 'with a real touch target');
+  assert.ok(!/react-native-\w/.test(toggle), 'pure RN — no native dependency');
+
+  assert.match(detail, /actionButtonText: \{[\s\S]*fontSize: 11/, 'labels stay readable');
+  assert.ok(detail.includes('numberOfLines={1}'), 'and never wrap the row');
+
+  // The budget itself, at the three widths that matter. `Watch post` and
+  // `Directions` are ~61pt at 11pt semibold; anything under that truncates.
+  const SHEET_PADDING = 32; // Spacing.lg each side
+  const DIVIDER = 9; // hairline + Spacing.xs margins
+  const BELL_CLUSTER = 68; // bell + "1 mi" + chevron + padding
+  const TOGGLE = 40;
+  const WIDEST_LABEL = 61;
+  for (const width of [375, 390, 430]) {
+    const perAction = (width - SHEET_PADDING - DIVIDER - BELL_CLUSTER - TOGGLE) / 3;
+    assert.ok(
+      perAction >= WIDEST_LABEL + 8,
+      `${width}pt: ${perAction.toFixed(0)}pt per action clears "Watch post" (${WIDEST_LABEL}pt) with margin`,
+    );
+  }
+}
+
+// Also Nearby: three compact cards previewable, plus the See map affordance.
+{
+  const row = readFileSync(join(process.cwd(), 'components/map/place/PlaceCardRow.tsx'), 'utf8');
+  const cardWidth = Number(row.match(/CARD_WIDTH = (\d+)/)?.[1]);
+  const gap = Number(row.match(/row: \{ gap: (\d+)/)?.[1]);
+  assert.ok(Number.isFinite(cardWidth) && Number.isFinite(gap));
+  for (const width of [375, 390, 430]) {
+    const content = width - 32;
+    // Fractional: a partially-visible fourth card is the point of a strip.
+    const previewable = (content + gap) / (cardWidth + gap);
+    assert.ok(
+      previewable >= 2.9,
+      `${width}pt previews ${previewable.toFixed(1)} cards (was ~2.2 at 148pt wide)`,
+    );
+  }
+  assert.ok(cardWidth >= 100, 'but not so narrow that ordinary names become unreadable');
+  assert.ok(cardWidth <= 120, 'and not the oversized tile that only fit two');
+
+  const detail = readFileSync(join(process.cwd(), 'components/map/SelectedPlaceDetails.tsx'), 'utf8');
+  assert.ok(detail.includes("actionLabel={onSeeMap ? 'See map' : undefined}"), 'See map is offered');
+  assert.ok(row.includes('actionLabel') && row.includes('onAction'), 'the row supports a header action');
+  const map = readFileSync(join(process.cwd(), 'app/(tabs)/map.tsx'), 'utf8');
+  assert.ok(
+    map.includes('onSeeMap={() => setPreviewExpanded(false)}'),
+    'See map contracts the sheet — it does not dismiss the place or move the camera',
+  );
+  assert.ok(
+    !/onSeeMap=\{[^}]*(?:animateToRegion|fitToCoordinates|router\.(push|replace))/.test(map),
+    'and never builds a new route or drives the camera',
+  );
+}
+
+// Did you go yet: one horizontal band, not a stacked card.
+{
+  const detail = readFileSync(join(process.cwd(), 'components/map/SelectedPlaceDetails.tsx'), 'utf8');
+  assert.match(
+    detail,
+    /visitCard: \{[\s\S]{0,120}flexDirection: 'row'/,
+    'icon, copy and both answers share a line',
+  );
+  assert.ok(!detail.includes('styles.visitHeader'), 'the stacked header block is gone');
+  assert.match(detail, /visitPrimary: \{[\s\S]*minHeight: 36/, 'compact but tappable');
 }
 
 console.log('PASS place detail V2: one why-surface, TikTok/Instagram peers, working swipe-down, reference composition');

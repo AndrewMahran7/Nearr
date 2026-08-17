@@ -775,6 +775,20 @@ export default function MapScreen() {
     () => getSheetPartialHeight(availableHeight),
     [availableHeight],
   );
+  /**
+   * Expanded Place Detail height.
+   *
+   * The map is not decoration behind a modal — it is half the reason the sheet
+   * makes sense, and the selected marker has to stay on screen. 72% of the map
+   * area leaves ~210pt of live map on a 390×844 iPhone (vs ~65pt when the
+   * height was content-driven), which is roughly the proportion the reference
+   * composition uses. Clamped so a very short viewport still gets a usable
+   * sheet and a very tall one does not turn it into a full-screen page.
+   */
+  const expandedSheetHeight = useMemo(
+    () => Math.round(Math.min(Math.max(availableHeight * 0.72, 380), availableHeight - 150)),
+    [availableHeight],
+  );
   const { nearbyPlaces, locationState, requestLocationPermission } = useNearbyPlaces(data);
   const recentPlaces = useRecentPlaces(validPlaces, 5);
   const previewTranslateY = useRef(new Animated.Value(0)).current;
@@ -1992,26 +2006,40 @@ export default function MapScreen() {
           ]}
           pointerEvents="box-none"
         >
-          <Card style={[styles.previewCard, previewExpanded && styles.previewCardExpanded]}>
+          <Card
+            style={[
+              styles.previewCard,
+              previewExpanded && styles.previewCardExpanded,
+              previewExpanded && { height: expandedSheetHeight },
+            ]}
+          >
             {/* Drag region: handle + header. The pan responder lives here
                 (not on the whole card) so the expanded body ScrollView can
                 scroll without fighting the collapse/dismiss gesture. */}
             <View {...previewPanResponder.panHandlers}>
               <View style={styles.previewHandleWrap}>
                 <View style={styles.previewHandle} />
-              </View>
-              {previewExpanded ? (
-                <View style={styles.expandedDetailHeader}>
+                {/* Dragging down is the primary dismissal. This is the
+                    keyboard/VoiceOver equivalent, so it is small and sits ON
+                    the handle line instead of owning a 44pt band of its own —
+                    a 30pt mark plus hitSlop, not a button that outweighs the
+                    place. */}
+                {previewExpanded ? (
                   <Pressable
                     onPress={() => dismissSelectedPlace()}
                     accessibilityRole="button"
                     accessibilityLabel="Close place details"
-                    style={({ pressed }) => [styles.closeBtn, pressed && styles.controlPressed]}
+                    hitSlop={12}
+                    style={({ pressed }) => [
+                      styles.closeBtnFloating,
+                      pressed && styles.controlPressed,
+                    ]}
                   >
-                    <Feather name="x" size={22} color={colors.textSecondary} />
+                    <Feather name="x" size={17} color={colors.textSecondary} />
                   </Pressable>
-                </View>
-              ) : (
+                ) : null}
+              </View>
+              {previewExpanded ? null : (
               <View style={styles.previewTopRow}>
                 <View style={styles.previewThumb}>
                   <Feather
@@ -2063,12 +2091,11 @@ export default function MapScreen() {
               // remove) moved off /place/[id]. Bounded + scrollable so a long
               // note never pushes the sheet past the top of the map.
               <ScrollView
-                style={{
-                  // Fill the map area but stop short of the top chrome so the
-                  // map — and the selected marker — stay visible above the
-                  // sheet. `availableHeight` already excludes the tab bar.
-                  maxHeight: Math.max(360, availableHeight - safeTopInset - 96),
-                }}
+                // The card owns the height (see `expandedSheetHeight`); the
+                // body just fills what is left of it. Driving the height from
+                // content instead is what let the sheet grow until only a
+                // sliver of map survived.
+                style={styles.previewScroll}
                 contentContainerStyle={styles.previewScrollContent}
                 onScrollBeginDrag={() => handleUserInteraction('scroll')}
                 keyboardShouldPersistTaps="handled"
@@ -2088,6 +2115,11 @@ export default function MapScreen() {
                     setPreviewExpanded(true);
                   }}
                   onGetDirections={() => openExternalMaps(selected)}
+                  // "See map" collapses back to the preview card so the pins
+                  // are visible again. It is deliberately NOT a dismiss: the
+                  // place stays selected and its marker stays focused, and the
+                  // camera is not touched (79e5fba).
+                  onSeeMap={() => setPreviewExpanded(false)}
                   onRequestDismiss={() => dismissSelectedPlace()}
                   onSaved={(updated) => setSelected(updated)}
                   onCorrected={focusCorrectedPlace}
@@ -2194,6 +2226,31 @@ export default function MapScreen() {
             onChange={handleSelectMapCategory}
             onFitAll={visiblePlaces.length > 0 && !mapPreview ? fitVisiblePlaces : undefined}
           />
+        </View>
+      ) : null}
+
+      {/* The Queue is the user's INBOX, not map-selection chrome, so it is
+          deliberately NOT gated on `shouldShowMapControls`. It used to live
+          inside the block above and vanished with the search bar and filter
+          chips whenever the detail sheet was expanded — tolerable when that
+          sheet was a small floating card, but the expanded detail is now a
+          real surface people sit in, and pending shares became unreachable
+          without first closing the place. It keeps its exact previous position
+          (below the filter row, left-aligned) so nothing else moves, and it
+          still hides behind the search dropdown, which owns the whole screen.
+          Regression covered by scripts/testMapQueueEntryPoint.ts. */}
+      {!searchVisible ? (
+        <View
+          style={[
+            styles.queueChrome,
+            // Its usual slot sits under the filter row, which on a short phone
+            // (375×667) is below the expanded sheet's top edge. When the sheet
+            // is up, the search bar and chips are hidden anyway, so the pill
+            // takes that now-empty top row instead of floating over the sheet.
+            !shouldShowMapControls && styles.queueChromeRaised,
+          ]}
+          pointerEvents="box-none"
+        >
           <ShareQueueButton />
         </View>
       ) : null}
@@ -2285,6 +2342,24 @@ function createStyles(
     position: 'absolute',
     top: insetTop + Spacing.md,
     left: Spacing.lg,
+    right: Spacing.lg,
+  },
+
+  // Exactly where the Queue pill sat when it was the third child of
+  // `topChrome`: search bar (50) + gap + filter row (38). The pill supplies
+  // its own top margin, so this lands it pixel-identically to before while
+  // letting it outlive the selection-gated chrome above.
+  queueChrome: {
+    position: 'absolute',
+    top: insetTop + Spacing.md + 50 + Spacing.sm + 38,
+    left: Spacing.lg,
+  },
+  // Sheet-up placement: the top row, right-aligned so it reads as a floating
+  // map action rather than a headless search bar. `left: 'auto'` undoes the
+  // base rule's left anchor.
+  queueChromeRaised: {
+    top: insetTop,
+    left: 'auto',
     right: Spacing.lg,
   },
 
@@ -2446,15 +2521,19 @@ function createStyles(
   // is continuous with the bottom of the screen.
   previewCardExpanded: {
     borderRadius: 0,
-    borderTopLeftRadius: Radius.lg,
-    borderTopRightRadius: Radius.lg,
+    borderTopLeftRadius: 26,
+    borderTopRightRadius: 26,
     borderWidth: 0,
     borderTopWidth: StyleSheet.hairlineWidth,
     paddingHorizontal: Spacing.lg,
+    // Top padding is carried by the handle row; the body's own scroll padding
+    // clears the tab bar at the bottom.
+    paddingTop: 0,
     paddingBottom: 0,
   },
   previewHandleWrap: {
     alignItems: 'center',
+    justifyContent: 'center',
     marginTop: -2,
     marginBottom: Spacing.sm,
   },
@@ -2496,12 +2575,6 @@ function createStyles(
     flex: 1,
     minWidth: 0,
   },
-  expandedDetailHeader: {
-    minHeight: 44,
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-  },
   previewAddress: {
     color: colors.textSecondary,
     marginTop: 2,
@@ -2528,6 +2601,7 @@ function createStyles(
     ...typography.caption,
     color: colors.textSecondary,
   },
+  // Collapsed preview: a normal 44pt control in the header row.
   closeBtn: {
     width: 44,
     height: 44,
@@ -2536,6 +2610,20 @@ function createStyles(
     borderRadius: 22,
     backgroundColor: colors.surface,
     borderWidth: 1,
+    borderColor: colors.border,
+  },
+  // Expanded: overlaid on the handle line at 30pt so it never claims a band of
+  // its own. `hitSlop={12}` keeps the real target at 54pt.
+  closeBtnFloating: {
+    position: 'absolute',
+    right: 0,
+    width: 30,
+    height: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 15,
+    backgroundColor: colors.surface,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
   },
   controlPressed: { opacity: 0.7 },
@@ -2566,11 +2654,12 @@ function createStyles(
   reminderNearbyCount: {
     color: colors.textSecondary,
   },
+  previewScroll: { flex: 1 },
   previewScrollContent: {
-    paddingTop: Spacing.sm,
+    paddingTop: Spacing.xs,
     // The expanded sheet has no bottom padding of its own, so the last section
-    // clears the bottom edge from here.
-    paddingBottom: Spacing.xl,
+    // clears the tab bar from here rather than sliding under it.
+    paddingBottom: Spacing.xxl,
   },
   previewPrimaryAction: {
     width: '100%',

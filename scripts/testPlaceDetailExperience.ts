@@ -13,15 +13,46 @@ const fallback = read('app/place/[id].tsx');
 // The physical runtime is the selected-place branch owned by the map.
 assert.match(map, /selected \? \([\s\S]*previewExpanded[\s\S]*<SelectedPlaceDetails/);
 assert.match(map, /accessibilityLabel="Close place details"/);
-// The expanded sheet is bounded by the MAP AREA (which already excludes the
-// tab bar) and stops short of the top chrome, so the map — and the selected
-// marker — stay visible above it.
-assert.match(map, /maxHeight: Math\.max\(360, availableHeight - safeTopInset/);
-assert.match(map, /closeBtn: \{[\s\S]*width: 44,[\s\S]*height: 44/);
+// The expanded sheet takes a FIXED share of the map area rather than growing
+// with its content. Content-driven height is what let it swallow the screen
+// until only a sliver of map survived; the map has to stay a real part of the
+// composition, with the selected marker visible above the sheet.
+assert.match(map, /const expandedSheetHeight = useMemo\(/);
+assert.match(map, /availableHeight \* 0\.72/, 'the sheet keeps ~72% and leaves the rest to the map');
+assert.match(map, /availableHeight - 150/, 'and always leaves at least 150pt of map');
+assert.match(map, /previewExpanded && \{ height: expandedSheetHeight \}/);
+assert.match(map, /previewScroll: \{ flex: 1 \}/, 'the body fills the card, it does not define it');
+{
+  // A quarter of the map area at three real device heights, so a future edit
+  // that re-inflates the sheet fails here rather than on someone's phone.
+  const expanded = (available: number) =>
+    Math.round(Math.min(Math.max(available * 0.72, 380), available - 150));
+  for (const [device, mapArea] of [
+    ['iPhone SE', 584],
+    ['iPhone 14', 761],
+    ['iPhone 14 Pro Max', 849],
+  ] as const) {
+    const visibleMap = mapArea - expanded(mapArea);
+    assert.ok(visibleMap >= 150, `${device}: ${visibleMap}pt of map stays visible`);
+  }
+}
+
+// Dismissal is primarily the drag handle. The explicit close is a small mark
+// on the handle line, not a control with a 44pt band to itself.
+assert.match(map, /closeBtnFloating: \{[\s\S]*width: 30,[\s\S]*height: 30/);
+assert.match(map, /hitSlop=\{12\}/, 'small visually, still a 54pt target');
+assert.match(map, /accessibilityLabel="Close place details"/);
+assert.ok(
+  !map.includes('expandedDetailHeader'),
+  'the dedicated 44pt close row is gone',
+);
+
 // Expanded, the sheet meets the bottom edge with a rounded top only, so it
 // reads as part of the map rather than a floating page.
 assert.match(map, /previewWrapExpanded: \{[\s\S]*bottom: 0/);
-assert.match(map, /previewCardExpanded: \{[\s\S]*borderTopLeftRadius: Radius\.lg/);
+assert.match(map, /previewCardExpanded: \{[\s\S]*borderTopLeftRadius: 26/);
+// ...and its content clears the tab bar instead of sliding under it.
+assert.match(map, /previewScrollContent: \{[\s\S]*paddingBottom: Spacing\.xxl/);
 
 // Deep links and legacy callers converge on the same map-owned presentation.
 assert.match(fallback, /<Redirect/);
@@ -31,8 +62,23 @@ assert.match(fallback, /params: \{ savedPlaceId: id \}/);
 // Hero and identity are visual-first: the photo carries the page and the
 // name/context sit on it under a scrim. Category stays compact and normalized.
 assert.match(detail, /style=\{styles\.heroImage\}/);
-assert.match(detail, /hero: \{[\s\S]*height: 250/, 'the hero dominates the first screenful');
-assert.match(detail, /styles\.heroScrimStrong/, 'title legibility over photography is deliberate');
+// Cinematic, not boxy: the hero is a wide 1.9:1 band that bleeds past the
+// sheet's own padding, and its height follows the device width instead of
+// being a fixed slab that eats a small screen.
+assert.match(detail, /hero: \{[\s\S]*aspectRatio: 1\.9/, 'the hero is wide, not tall');
+assert.match(detail, /hero: \{[\s\S]*marginHorizontal: -Spacing\.sm/, 'it bleeds past the padding');
+assert.ok(!/hero: \{[\s\S]*height: 250/.test(detail), 'the fixed 250pt box is gone');
+// The scrim is a ramp, not three thick steps that printed seams across the
+// photo and turned the lower third into a black slab.
+assert.match(detail, /heroScrim6/, 'the ramp has fine steps');
+assert.ok(!detail.includes('heroScrimStrong'), 'the 0.45 slab band is gone');
+{
+  const band = detail.slice(detail.indexOf('const heroScrimBand'), detail.indexOf('type RadiusMode'));
+  const alpha = Number(band.match(/rgba\(0,0,0,([\d.]+)\)/)?.[1]);
+  assert.ok(alpha <= 0.1, `each band is a small step (${alpha})`);
+  assert.ok(alpha * 6 < 0.6, 'and six of them stay short of a solid black bottom');
+}
+assert.match(detail, /styles\.heroScrim1/, 'title legibility over photography is deliberate');
 assert.match(detail, /styles\.heroCaption/, 'name + context are part of the hero, not a separate block');
 assert.match(detail, /splitPlaceAddress\(saved\.place\.formatted_address\)\.locality/);
 assert.match(detail, /CATEGORY_LABELS\[categoryKey\]/);
@@ -66,7 +112,7 @@ assert.match(
 );
 assert.match(detail, /buildSavedPlaceShareContent\(saved\)/);
 assert.match(detail, /void openSource\(\)/);
-assert.match(detail, /actionButton: \{[\s\S]*minHeight: 56/, 'comfortable touch targets');
+assert.match(detail, /actionButton: \{[\s\S]*minHeight: 48/, 'comfortable touch targets');
 
 // Section order, top to bottom, exactly as the production reference lays it
 // out: action row → hero → today's hours → Saved because → Did you go yet? →

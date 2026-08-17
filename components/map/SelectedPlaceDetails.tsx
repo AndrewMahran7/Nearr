@@ -47,7 +47,6 @@ import {
   Pressable,
   Share,
   StyleSheet,
-  Switch,
   Text,
   useWindowDimensions,
   View,
@@ -61,6 +60,7 @@ import { Button, Input } from '@/components';
 import { WrongPlaceSheet } from '@/components/map/WrongPlaceSheet';
 import { NoteEditorModal } from '@/components/map/NoteEditorModal';
 import { PlaceCardRow } from '@/components/map/place/PlaceCardRow';
+import { ReminderToggle } from '@/components/map/place/ReminderToggle';
 import { Radius, Spacing } from '@/constants';
 import { useTheme } from '@/lib/theme';
 import { useAuth } from '@/hooks/useAuth';
@@ -146,6 +146,15 @@ const CATEGORY_ICONS: Record<NearrCategory, string> = {
   other: 'location-outline',
 };
 
+/** Shared geometry for one band of the hero's stacked-band scrim. */
+const heroScrimBand = {
+  position: 'absolute' as const,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  backgroundColor: 'rgba(0,0,0,0.09)',
+};
+
 type RadiusMode = 'default' | 'miles' | 'minutes';
 
 function modeFromSaved(s: SavedPlaceWithPlace): RadiusMode {
@@ -178,6 +187,12 @@ type Props = {
   onSelectNearby?: (next: SavedPlaceWithPlace) => void;
   /** Open the platform maps app for this place (map screen owns this). */
   onGetDirections: () => void;
+  /**
+   * Collapse back to the map with this place still selected. Used by "See map"
+   * on the Also nearby header — it is a contraction, not a dismissal, and it
+   * never moves the camera.
+   */
+  onSeeMap?: () => void;
   /** Called after a successful delete so the map can dismiss the sheet. */
   onRequestDismiss: () => void;
   /** Called after a successful save so the map can refresh its `selected`. */
@@ -191,6 +206,7 @@ export function SelectedPlaceDetails({
   allSavedPlaces,
   onSelectNearby,
   onGetDirections,
+  onSeeMap,
   onRequestDismiss,
   onSaved,
   onCorrected,
@@ -485,23 +501,37 @@ export function SelectedPlaceDetails({
 
   // ONE surface, headed by where it came from. A manual save has no post to
   // credit, so it is honestly labelled as the user's own note instead of
-  // wearing a "saved because" frame with nothing behind it.
-  const savedBecauseLabel = sourceAttribution ? 'Saved because…' : 'Your note';
+  // wearing a "saved because" frame with nothing behind it — and when there IS
+  // a post but no reason yet, the heading states the fact we actually have
+  // ("Saved from Instagram") rather than making an unanswered question the
+  // centrepiece of the card.
+  const savedBecauseLabel = !sourceAttribution
+    ? 'Your note'
+    : whySaved.text
+      ? 'Saved because…'
+      : `Saved from ${sourceAttribution.platformName}`;
   // Decided ONCE from the shared helper, so the heading's Edit affordance and
   // the body can never disagree about whether there is a note to show.
   const hasReason = !!whySaved.text;
 
   /**
-   * Directions + Watch post + Share + a bell + a switch only fit on one line
-   * once there is real width to spend. Measured against the widest labels at
-   * 12pt, a 375pt viewport (iPhone SE / mini) leaves ~59pt per action — enough
-   * to clip "Directions". Below the breakpoint the reminder moves to its own
-   * row rather than shrinking type or truncating a verb.
+   * The action row fits at every supported width WITHOUT a fallback layout.
+   *
+   * The previous pass used a `viewportWidth < 390` breakpoint and shipped
+   * "Watch p…" plus a switch hanging off the right edge — on a 390pt iPhone,
+   * where `390 < 390` is false and the inline layout ran anyway. Rather than
+   * move the breakpoint, the fixed cost came down: the 51pt system `Switch`
+   * became a 40pt `ReminderToggle`, the divider margins shrank, and the row
+   * gap went to zero (each action carries its own padding).
+   *
+   * Remaining budget for the three actions, after 9pt divider + ~68pt bell
+   * cluster + 40pt toggle:
+   *   375pt viewport → 343 content → ~75pt each
+   *   390pt          → 358         → ~80pt each
+   *   430pt          → 398         → ~93pt each
+   * The widest label, "Directions"/"Watch post" at 11pt semibold, measures
+   * ~61pt. There is real headroom at the narrowest size, not one spare point.
    */
-  const compactActionRow = viewportWidth < 390;
-
-  // ONE reminder control, placed either inline (wide) or on its own row
-  // (compact). Rendering it twice would mean two switches to keep in sync.
   const reminderCluster = (
     <>
       <Pressable
@@ -514,30 +544,21 @@ export function SelectedPlaceDetails({
           notifyOn ? `Nearby reminder, ${reminderStatus}. Change distance` : undefined
         }
         accessibilityState={{ expanded: reminderSettingsExpanded }}
-        style={({ pressed }) => [
-          styles.reminderControl,
-          compactActionRow && styles.reminderControlWide,
-          pressed && notifyOn && styles.pressed,
-        ]}
+        style={({ pressed }) => [styles.reminderControl, pressed && notifyOn && styles.pressed]}
       >
-        <Feather name="bell" size={17} color={notifyOn ? colors.accent : colors.textMuted} />
-        {compactActionRow ? (
-          <Text style={styles.reminderTitle} numberOfLines={1}>
-            Nearby reminder
-          </Text>
-        ) : null}
+        <Feather name="bell" size={16} color={notifyOn ? colors.accent : colors.textMuted} />
         <Text style={styles.reminderDistanceText} numberOfLines={1}>
-          {notifyOn ? (compactActionRow ? reminderStatus : reminderDistance) : 'Off'}
+          {notifyOn ? reminderDistance : 'Off'}
         </Text>
         {notifyOn ? (
           <Feather
             name={reminderSettingsExpanded ? 'chevron-down' : 'chevron-right'}
-            size={15}
+            size={13}
             color={colors.textMuted}
           />
         ) : null}
       </Pressable>
-      <Switch
+      <ReminderToggle
         value={notifyOn}
         onValueChange={setNotifyOn}
         accessibilityLabel={`Nearby reminder for ${saved.place.name}`}
@@ -881,7 +902,7 @@ export function SelectedPlaceDetails({
                 so neither platform is reduced to a generic play/video glyph. */}
             <Ionicons
               name={sourceAttribution.brandIcon as React.ComponentProps<typeof Ionicons>['name']}
-              size={21}
+              size={20}
               color={colors.text}
             />
             <Text style={styles.actionButtonText} numberOfLines={1}>
@@ -900,19 +921,9 @@ export function SelectedPlaceDetails({
           tint={colors.text}
         />
 
-        {compactActionRow ? null : (
-          <>
-            <View style={styles.actionDivider} />
-            {reminderCluster}
-          </>
-        )}
+        <View style={styles.actionDivider} />
+        {reminderCluster}
       </View>
-
-      {/* On a 375pt-class iPhone the four actions plus a switch cannot share a
-          line without truncating "Directions" / "Watch post", so the reminder
-          drops to its own full-width row instead of being clipped. Same
-          control, same behaviour, more room for its label. */}
-      {compactActionRow ? <View style={styles.reminderRow}>{reminderCluster}</View> : null}
 
       {/* Reminder distance settings — unchanged behaviour, just no longer a
           permanently-open card competing with the place itself. */}
@@ -984,10 +995,14 @@ export function SelectedPlaceDetails({
         )}
 
         {/* Stacked bands stand in for a gradient (no gradient dependency in
-            this project). Keeps the title legible over any photograph. */}
-        <View pointerEvents="none" style={styles.heroScrimSoft} />
-        <View pointerEvents="none" style={styles.heroScrimMid} />
-        <View pointerEvents="none" style={styles.heroScrimStrong} />
+            this project). Six thin steps instead of three thick ones, so the
+            ramp reads as a fade rather than as stripes across the photo. */}
+        <View pointerEvents="none" style={styles.heroScrim6} />
+        <View pointerEvents="none" style={styles.heroScrim5} />
+        <View pointerEvents="none" style={styles.heroScrim4} />
+        <View pointerEvents="none" style={styles.heroScrim3} />
+        <View pointerEvents="none" style={styles.heroScrim2} />
+        <View pointerEvents="none" style={styles.heroScrim1} />
 
         {photoUrls.length > 1 ? (
           <View style={styles.photoCountPill}>
@@ -1242,6 +1257,8 @@ export function SelectedPlaceDetails({
             {hasReason ? (
               <Text style={styles.reasonText}>{`“${whySaved.text}”`}</Text>
             ) : (
+              // No note and none was extracted. Nothing is invented; the offer
+              // to write one is a quiet link, not the headline.
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="Add why you saved this place"
@@ -1249,10 +1266,12 @@ export function SelectedPlaceDetails({
                 hitSlop={8}
                 style={styles.textAction}
               >
-                <Text style={styles.changeLink}>Why did you save this?</Text>
+                <Text style={styles.addNoteLink}>Add a note</Text>
               </Pressable>
             )}
-            {sourceAttribution ? (
+            {/* The platform is already in the heading when there is no reason,
+                so this line would just repeat it. */}
+            {sourceAttribution && hasReason ? (
               <View
                 style={styles.attributionRow}
                 accessible
@@ -1260,7 +1279,7 @@ export function SelectedPlaceDetails({
               >
                 <Ionicons
                   name={sourceAttribution.brandIcon as React.ComponentProps<typeof Ionicons>['name']}
-                  size={14}
+                  size={13}
                   color={colors.textSecondary}
                 />
                 <Text style={styles.attributionText} numberOfLines={1}>
@@ -1291,24 +1310,20 @@ export function SelectedPlaceDetails({
           answering this never removes the place from the map, and the answer
           persists, so reopening never asks again as if nothing happened. */}
       <View style={styles.visitCard}>
-        <View style={styles.visitHeader}>
-          <View style={styles.visitIcon}>
-            <Feather
-              name={visited.visited ? 'check-circle' : 'clipboard'}
-              size={17}
-              color={colors.accent}
-            />
-          </View>
-          <View style={styles.visitCopy}>
-            <Text style={styles.visitTitle}>
-              {visited.visited ? 'You went here' : visited.prompt}
-            </Text>
-            <Text style={styles.visitSupport}>
-              {visited.visited
-                ? 'It stays on your map; its nearby reminders are off.'
-                : visited.supportCopy}
-            </Text>
-          </View>
+        <View style={styles.visitIcon}>
+          <Feather
+            name={visited.visited ? 'check-circle' : 'clipboard'}
+            size={16}
+            color={colors.accent}
+          />
+        </View>
+        <View style={styles.visitCopy}>
+          <Text style={styles.visitTitle} numberOfLines={1}>
+            {visited.visited ? 'You went here' : visited.prompt}
+          </Text>
+          <Text style={styles.visitSupport} numberOfLines={2}>
+            {visited.visited ? 'Nearby reminders are paused.' : visited.supportCopy}
+          </Text>
         </View>
         {visited.visited ? null : (
           <View style={styles.visitActions}>
@@ -1333,8 +1348,8 @@ export function SelectedPlaceDetails({
               accessibilityLabel={`Not yet — keep ${saved.place.name} as a place to go`}
               style={({ pressed }) => [styles.visitSecondary, pressed && styles.pressed]}
             >
-              <Text style={styles.visitSecondaryText}>
-                {visitDeferred ? 'Still on your list' : 'Not yet'}
+              <Text style={styles.visitSecondaryText} numberOfLines={1}>
+                {visitDeferred ? 'Still listed' : 'Not yet'}
               </Text>
             </Pressable>
           </View>
@@ -1346,7 +1361,12 @@ export function SelectedPlaceDetails({
           A future "From this video" row drops in immediately above this one as
           a second <PlaceCardRow>. */}
       {alsoNearbyEntries.length > 0 ? (
-        <PlaceCardRow title="Also nearby" entries={alsoNearbyEntries} />
+        <PlaceCardRow
+          title="Also nearby"
+          entries={alsoNearbyEntries}
+          actionLabel={onSeeMap ? 'See map' : undefined}
+          onAction={onSeeMap}
+        />
       ) : null}
 
       {/* Management actions stay reachable but never compete with the place
@@ -1460,66 +1480,52 @@ function createStyles(
   return StyleSheet.create({
     // Hierarchy comes from spacing, typography and imagery — not from wrapping
     // every section in its own bordered box.
-    wrap: { gap: Spacing.lg },
+    // Density comes from tight, consistent section spacing — not from smaller
+    // type. One gap value for the whole page.
+    wrap: { gap: Spacing.md },
     pressed: { opacity: 0.6 },
 
     // ----- action row ------------------------------------------------------
+    // Zero row gap on purpose: each action carries its own padding, and those
+    // reclaimed points are what let "Watch post" render in full at 375pt.
     actionRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: Spacing.xs,
-      paddingBottom: Spacing.xs,
+      paddingBottom: 2,
     },
     actionButton: {
       flex: 1,
       minWidth: 0,
-      minHeight: 56,
+      minHeight: 48,
       alignItems: 'center',
       justifyContent: 'center',
-      gap: 5,
-      paddingHorizontal: 2,
+      gap: 4,
+      paddingHorizontal: 1,
     },
     actionButtonText: {
       ...typography.caption,
       color: colors.textSecondary,
-      fontSize: 12,
+      fontSize: 11,
       fontWeight: '600',
     },
     actionDivider: {
       width: StyleSheet.hairlineWidth,
-      height: 32,
+      height: 28,
       marginHorizontal: Spacing.xs,
       backgroundColor: colors.border,
-    },
-    // Compact-layout fallback: the reminder gets a line of its own.
-    reminderRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: Spacing.sm,
-      minHeight: 48,
-      paddingHorizontal: Spacing.md,
-      borderRadius: Radius.md,
-      backgroundColor: colors.surface,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: colors.border,
-      marginTop: -Spacing.sm,
     },
     reminderControl: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 5,
+      gap: 4,
       minHeight: 44,
       paddingHorizontal: Spacing.xs,
     },
-    reminderControlWide: { flex: 1, minWidth: 0 },
-    reminderTitle: { ...typography.body, flexShrink: 1, color: colors.text },
     reminderDistanceText: {
       ...typography.caption,
-      flexShrink: 1,
       color: colors.textSecondary,
       fontSize: 13,
       fontWeight: '600',
-      marginLeft: 'auto',
     },
     reminderSettings: {
       gap: Spacing.sm,
@@ -1530,9 +1536,15 @@ function createStyles(
       borderColor: colors.border,
     },
 
+    // ----- hero ------------------------------------------------------------
+    // Cinematic 1.9:1 rather than the old boxy 358×250 (1.43:1), and it bleeds
+    // past the sheet's own padding so the photo — not the margin — is what the
+    // eye lands on. Height follows width, so it stays proportional at every
+    // device size instead of being a fixed 250pt slab on a small screen.
     hero: {
-      height: 250,
-      borderRadius: Radius.lg,
+      marginHorizontal: -Spacing.sm,
+      aspectRatio: 1.9,
+      borderRadius: 18,
       overflow: 'hidden',
       backgroundColor: colors.surface,
       justifyContent: 'flex-end',
@@ -1547,33 +1559,22 @@ function createStyles(
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: colors.border,
     },
-    // Three stacked bands approximate a bottom-up gradient without pulling in
-    // a gradient dependency. Tuned so white type stays legible on bright food
-    // photography as well as dark interiors.
-    heroScrimSoft: {
-      position: 'absolute',
-      left: 0,
-      right: 0,
-      bottom: 0,
-      height: '62%',
-      backgroundColor: 'rgba(0,0,0,0.18)',
-    },
-    heroScrimMid: {
-      position: 'absolute',
-      left: 0,
-      right: 0,
-      bottom: 0,
-      height: '40%',
-      backgroundColor: 'rgba(0,0,0,0.32)',
-    },
-    heroScrimStrong: {
-      position: 'absolute',
-      left: 0,
-      right: 0,
-      bottom: 0,
-      height: '22%',
-      backgroundColor: 'rgba(0,0,0,0.45)',
-    },
+    // Stacked bands approximate a bottom-up gradient without pulling in a
+    // native gradient dependency.
+    //
+    // The previous version used three bands at 0.18 / 0.32 / 0.45, which
+    // compounded to ~0.69 over the bottom fifth and left two hard horizontal
+    // seams straight across the photo — clearly visible on device, and the
+    // reason the lower hero read as a black slab. This is six thin bands at
+    // 0.09 each: the same legibility floor (~0.54 behind the text) reached in
+    // steps small enough not to draw an edge, and it stops well short of the
+    // solid darkness the old ramp produced.
+    heroScrim6: { ...heroScrimBand, height: '58%' },
+    heroScrim5: { ...heroScrimBand, height: '48%' },
+    heroScrim4: { ...heroScrimBand, height: '39%' },
+    heroScrim3: { ...heroScrimBand, height: '30%' },
+    heroScrim2: { ...heroScrimBand, height: '21%' },
+    heroScrim1: { ...heroScrimBand, height: '12%' },
     photoCountPill: {
       position: 'absolute',
       right: Spacing.md,
@@ -1589,15 +1590,15 @@ function createStyles(
     photoCountText: { ...typography.caption, color: '#FFFFFF', fontWeight: '700' },
     heroCaption: {
       paddingHorizontal: Spacing.lg,
-      paddingBottom: Spacing.lg,
-      gap: 5,
+      paddingBottom: Spacing.md,
+      gap: 3,
     },
     placeName: {
       ...typography.title,
       color: '#FFFFFF',
-      fontSize: 28,
-      lineHeight: 33,
-      marginBottom: 3,
+      fontSize: 24,
+      lineHeight: 28,
+      marginBottom: 2,
       textShadowColor: 'rgba(0,0,0,0.45)',
       textShadowOffset: { width: 0, height: 1 },
       textShadowRadius: 6,
@@ -1605,12 +1606,12 @@ function createStyles(
     heroMetaRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 7,
+      gap: 6,
     },
     heroMetaText: {
       ...typography.caption,
       flexShrink: 1,
-      fontSize: 14,
+      fontSize: 13,
       fontWeight: '600',
       color: 'rgba(255,255,255,0.92)',
       textShadowColor: 'rgba(0,0,0,0.4)',
@@ -1619,33 +1620,35 @@ function createStyles(
     },
 
     // ----- today's hours ---------------------------------------------------
+    // One line, no card. It is a fact about the place, not a section.
     hoursRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 6,
-      minHeight: 20,
-      marginTop: -Spacing.sm,
+      gap: 5,
+      minHeight: 18,
+      marginTop: -2,
+      paddingHorizontal: 2,
     },
-    hoursLabel: { ...typography.caption, fontSize: 14, fontWeight: '700' },
+    hoursLabel: { ...typography.caption, fontSize: 13, fontWeight: '700' },
     hoursLabelOpen: { color: colors.success },
     hoursLabelClosed: { color: colors.textSecondary },
     hoursDetail: {
       ...typography.caption,
       flexShrink: 1,
-      fontSize: 14,
+      fontSize: 13,
       color: colors.textSecondary,
     },
     hoursSkeleton: {
       width: 150,
-      height: 12,
+      height: 11,
       borderRadius: Radius.pill,
       backgroundColor: colors.surfaceElevated,
     },
 
     // ----- saved because ---------------------------------------------------
     savedBecauseCard: {
-      gap: Spacing.md,
-      padding: Spacing.md,
+      gap: Spacing.sm,
+      padding: Spacing.md - 2,
       borderRadius: Radius.md,
       backgroundColor: colors.accentSoft,
       borderWidth: StyleSheet.hairlineWidth,
@@ -1654,23 +1657,24 @@ function createStyles(
     savedBecauseHeader: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 6,
+      gap: 5,
+      minHeight: 22,
     },
     savedBecauseTitle: {
       ...typography.bodyStrong,
       flex: 1,
       minWidth: 0,
-      fontSize: 15,
+      fontSize: 14,
       color: colors.accent,
     },
     savedBecauseBody: {
       flexDirection: 'row',
       alignItems: 'flex-start',
-      gap: Spacing.md,
+      gap: Spacing.sm + 2,
     },
     sourceTile: {
-      width: 88,
-      height: 88,
+      width: 64,
+      height: 64,
       borderRadius: Radius.sm,
       alignItems: 'center',
       justifyContent: 'center',
@@ -1680,26 +1684,28 @@ function createStyles(
     },
     sourcePlayBadge: {
       position: 'absolute',
-      right: 6,
-      bottom: 6,
-      width: 22,
-      height: 22,
-      borderRadius: 11,
+      right: 4,
+      bottom: 4,
+      width: 18,
+      height: 18,
+      borderRadius: 9,
       alignItems: 'center',
       justifyContent: 'center',
       backgroundColor: colors.accent,
     },
-    savedBecauseCopy: { flex: 1, minWidth: 0, gap: Spacing.sm },
+    savedBecauseCopy: { flex: 1, minWidth: 0, gap: 5 },
     reasonText: {
       ...typography.body,
       color: colors.text,
-      fontSize: 15,
-      lineHeight: 22,
+      fontSize: 14,
+      lineHeight: 20,
     },
-    attributionRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+    addNoteLink: { ...typography.bodyStrong, fontSize: 14, color: colors.accent },
+    attributionRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
     attributionText: {
       ...typography.caption,
       flexShrink: 1,
+      fontSize: 12,
       color: colors.textSecondary,
       fontWeight: '600',
     },
@@ -1708,66 +1714,71 @@ function createStyles(
       alignItems: 'center',
       justifyContent: 'center',
       gap: 6,
-      minHeight: 46,
-      borderRadius: Radius.md,
+      minHeight: 38,
+      borderRadius: Radius.sm,
       backgroundColor: colors.surface,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: colors.accentBorder,
     },
     watchButtonText: {
       ...typography.bodyStrong,
-      fontSize: 15,
+      fontSize: 14,
       color: colors.accent,
     },
 
     // ----- did you go yet? -------------------------------------------------
+    // One horizontal band: icon, copy, both answers. Previously a stacked card
+    // roughly twice this tall.
     visitCard: {
-      gap: Spacing.md,
-      padding: Spacing.md,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.sm + 2,
+      paddingVertical: Spacing.sm + 2,
+      paddingHorizontal: Spacing.md - 2,
       borderRadius: Radius.md,
       backgroundColor: colors.surface,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: colors.border,
     },
-    visitHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
     visitIcon: {
-      width: 40,
-      height: 40,
+      width: 32,
+      height: 32,
       borderRadius: Radius.sm,
       alignItems: 'center',
       justifyContent: 'center',
       backgroundColor: colors.accentSoft,
     },
-    visitCopy: { flex: 1, minWidth: 0, gap: 2 },
-    visitTitle: { ...typography.bodyStrong, fontSize: 16, color: colors.text },
+    visitCopy: { flex: 1, minWidth: 0, gap: 1 },
+    visitTitle: { ...typography.bodyStrong, fontSize: 14, color: colors.text },
     visitSupport: {
       ...typography.caption,
+      fontSize: 11,
       color: colors.textSecondary,
-      lineHeight: 18,
+      lineHeight: 15,
     },
-    visitActions: { flexDirection: 'row', gap: Spacing.sm },
+    visitActions: { flexDirection: 'row', gap: 6 },
     visitPrimary: {
-      flex: 1,
-      minHeight: 46,
+      minHeight: 36,
+      paddingHorizontal: Spacing.md,
       alignItems: 'center',
       justifyContent: 'center',
-      borderRadius: Radius.md,
+      borderRadius: Radius.pill,
       backgroundColor: colors.surfaceElevated,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: colors.border,
     },
-    visitPrimaryText: { ...typography.bodyStrong, color: colors.text },
+    visitPrimaryText: { ...typography.bodyStrong, fontSize: 14, color: colors.text },
     visitSecondary: {
-      flex: 1,
-      minHeight: 46,
+      minHeight: 36,
+      paddingHorizontal: Spacing.md - 2,
       alignItems: 'center',
       justifyContent: 'center',
-      borderRadius: Radius.md,
+      borderRadius: Radius.pill,
       backgroundColor: colors.surface,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: colors.accentBorder,
     },
-    visitSecondaryText: { ...typography.bodyStrong, color: colors.accent },
+    visitSecondaryText: { ...typography.bodyStrong, fontSize: 14, color: colors.accent },
     galleryRoot: {
       flex: 1,
     },

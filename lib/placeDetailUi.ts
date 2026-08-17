@@ -106,7 +106,10 @@ export function visitedDisplay(saved: { visited_at?: string | null }): VisitedDi
     visited: visitedAt !== null,
     visitedAt,
     prompt: 'Did you go yet?',
-    supportCopy: 'Saying yes keeps the place on your map and turns off its nearby reminders.',
+    // Exactly what `markVisited` does — stamps the visit and clears
+    // `notifications_enabled` — in five words, because this line sits beside
+    // the buttons rather than above them.
+    supportCopy: 'Marks it visited and pauses reminders.',
   };
 }
 
