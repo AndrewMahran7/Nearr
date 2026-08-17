@@ -19,25 +19,47 @@ import { useTheme } from '@/lib/theme';
 type Props = {
   onPress: () => void;
   placeholder?: string;
+  /**
+   * True when Nearr cannot reach its server. Place search is a Google Places
+   * lookup with no offline equivalent, so the entry point is disabled rather
+   * than opened into a dropdown that could only ever fail. Disabling HERE is
+   * what guarantees no remote search request is attempted offline.
+   */
+  offline?: boolean;
 };
+
+/** Copy shown in place of the normal prompt while offline. */
+export const OFFLINE_SEARCH_PLACEHOLDER = 'Search unavailable offline';
 
 export function MapTopSearchBar({
   onPress,
   placeholder = 'Search for a place',
+  offline = false,
 }: Props) {
   const { colors, typography } = useTheme();
   const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
+  const label = offline ? OFFLINE_SEARCH_PLACEHOLDER : placeholder;
 
   return (
     <Pressable
-      onPress={onPress}
+      onPress={offline ? undefined : onPress}
+      disabled={offline}
       accessibilityRole="search"
-      accessibilityLabel={placeholder}
-      style={({ pressed }) => [styles.bar, pressed && styles.barPressed]}
+      accessibilityLabel={label}
+      accessibilityState={{ disabled: offline }}
+      style={({ pressed }) => [
+        styles.bar,
+        pressed && !offline && styles.barPressed,
+        offline && styles.barOffline,
+      ]}
     >
-      <Feather name="search" size={18} color={colors.textSecondary} />
+      <Feather
+        name={offline ? 'wifi-off' : 'search'}
+        size={18}
+        color={colors.textSecondary}
+      />
       <Text style={styles.placeholder} numberOfLines={1}>
-        {placeholder}
+        {label}
       </Text>
     </Pressable>
   );
@@ -67,6 +89,9 @@ function createStyles(
     },
     barPressed: {
       borderColor: colors.primary,
+    },
+    barOffline: {
+      opacity: 0.6,
     },
     placeholder: {
       ...typography.body,

@@ -28,6 +28,7 @@ import {
   type AccountDeletionResult,
 } from '@/lib/accountDeletionCore';
 import { clearSavedPlacesCache } from '@/lib/savedPlacesCache';
+import { clearOfflineUserData } from '@/lib/offlineIdentity';
 import { resetOnboarding } from '@/lib/onboarding';
 import { getHowNearrWorksStorageKey } from '@/components/HowNearrWorksModal';
 import { PLACE_NOTIFICATION_DEDUPE_STORAGE_KEY } from '@/lib/placeNotificationDedupe';
@@ -163,6 +164,15 @@ export async function cleanupAfterAccountDeletion(
     await clearSavedPlacesCache(userId);
   } catch (err) {
     console.warn('[account] cleanup: clearSavedPlacesCache failed', err);
+  }
+
+  // Offline reminder snapshot + the identity pointer that unlocks the local
+  // caches. Without this a deleted account could still drive offline nearby
+  // reminders from data the server no longer has.
+  try {
+    await clearOfflineUserData(userId);
+  } catch (err) {
+    console.warn('[account] cleanup: clearOfflineUserData failed', err);
   }
 
   // Onboarding completion flag (scoped to the deleted user).

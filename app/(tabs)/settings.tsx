@@ -45,6 +45,7 @@ import { sharedAuth } from '@/lib/sharedAuth';
 import { LEGAL_ACCEPTANCE_REQUIRED, LEGAL_VERSION } from '@/constants';
 import { getProfile, getLegalAcceptanceStatus, updateProfile } from '@/services/profileService';
 import { signOut } from '@/services/auth';
+import { clearOfflineUserData } from '@/lib/offlineIdentity';
 import {
   cleanupAfterAccountDeletion,
   deleteAccount,
@@ -315,6 +316,17 @@ export default function SettingsScreen() {
             // so the OS isn't left tracking regions for a signed-out user.
             try {
               await stopNearrGeofencing();
+            } catch {
+              /* non-fatal */
+            }
+            // Explicit sign-out must also remove the offline copies of this
+            // account's data — the saved-places cache, the reminder snapshot,
+            // and the identity pointer that would unlock either of them.
+            // Without this the next launch could show a signed-out device the
+            // previous user's private saved places.
+            try {
+              await clearOfflineUserData(user?.id ?? null);
+              console.log('[signOut] step 2b: local offline data cleared');
             } catch {
               /* non-fatal */
             }

@@ -28,9 +28,33 @@
  * against future schema changes; bump it to invalidate every device.
  */
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
 import type { SavedPlaceWithPlace } from '@/types';
+
+/**
+ * The slice of AsyncStorage this module uses.
+ *
+ * Injectable and resolved LAZILY so the cache contract — above all, that a
+ * failed request never destroys a good cache — can be tested in a plain Node
+ * process. Production code never injects and always gets AsyncStorage.
+ */
+export type SavedPlacesCacheStore = {
+  getItem(key: string): Promise<string | null>;
+  multiSet(pairs: string[][]): Promise<void>;
+  multiRemove(keys: string[]): Promise<void>;
+};
+
+let injectedStore: SavedPlacesCacheStore | null = null;
+
+/** Test seam. Pass null to restore the real AsyncStorage-backed store. */
+export function setSavedPlacesCacheStore(store: SavedPlacesCacheStore | null): void {
+  injectedStore = store;
+}
+
+function store(): SavedPlacesCacheStore {
+  if (injectedStore) return injectedStore;
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  return require('@react-native-async-storage/async-storage').default as SavedPlacesCacheStore;
+}
 
 const CACHE_VERSION = 1 as const;
 const LIST_KEY_PREFIX = `nearr:savedPlaces:v${CACHE_VERSION}:`;
@@ -116,7 +140,7 @@ export async function writeSavedPlacesCache(
   const lastSyncedAt = new Date().toISOString();
   const envelope: Envelope = { version: CACHE_VERSION, lastSyncedAt, data };
   try {
-    await AsyncStorage.multiSet([
+    await store().multiSet([
       [listKey(userId), JSON.stringify(envelope)],
       [stampKey(userId), lastSyncedAt],
     ]);
@@ -135,7 +159,7 @@ export async function readSavedPlacesCache(
     return null;
   }
   try {
-    const raw = await AsyncStorage.getItem(listKey(userId));
+    const raw = await store().getItem(listKey(userId));
     if (!raw) {
       console.log('[offline] saved_places_cache_miss');
       return null;
@@ -177,7 +201,7 @@ export async function clearSavedPlacesCache(
 ): Promise<void> {
   if (!userId) return;
   try {
-    await AsyncStorage.multiRemove([listKey(userId), stampKey(userId)]);
+    await store().multiRemove([listKey(userId), stampKey(userId)]);
   } catch (err) {
     console.warn('[offline] saved_places_cache_clear_failed', err);
   }

@@ -536,6 +536,7 @@ export default function MapScreen() {
     data: liveData,
     loading: liveLoading,
     refreshing: liveRefreshing,
+    offline: liveOffline,
     refresh,
     revalidate,
   } = useSavedPlaces();
@@ -553,6 +554,8 @@ export default function MapScreen() {
     [mapPreview],
   );
   const data = mapPreview ? previewData : liveData;
+  // Demo and Map Preview render fixture data and are never 'offline'.
+  const offline = !mapPreview && !demo && liveOffline;
   // In Map Preview Mode the saved-places list is the synchronous seed; alias
   // for clarity in the debug logs and marker map below.
   const places = data;
@@ -2250,7 +2253,10 @@ export default function MapScreen() {
           dropdown is open so there is only ever ONE visible search input. */}
       {!searchVisible && shouldShowMapControls ? (
         <View style={styles.topChrome} pointerEvents="box-none">
-          <MapTopSearchBar onPress={() => setSearchVisible(true)} />
+          <MapTopSearchBar
+            onPress={() => setSearchVisible(true)}
+            offline={offline}
+          />
           <MapCategoryFilterBar
             options={mapFilterChoices}
             value={mapCategoryFilter}
@@ -2305,6 +2311,7 @@ export default function MapScreen() {
         <MapBottomSheet
           mode={sheetMode}
           loading={liveLoading}
+          offline={offline}
           nearbyPlaces={nearbyPlaces}
           locationState={locationState}
           recentPlaces={recentPlaces}

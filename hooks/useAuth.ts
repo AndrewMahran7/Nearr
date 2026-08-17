@@ -1,6 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
+import {
+  rememberAuthenticatedUser,
+  resolveOfflineIdentity,
+} from '@/lib/offlineIdentity';
 import { DEMO_USER, isDemoMode } from '@/lib/demoMode';
 import { logDebug, logError } from '@/lib/logger';
 import {
@@ -54,10 +58,44 @@ function makeFakeSession(id: string, email: string): Session {
   } as unknown as Session;
 }
 
+/**
+ * Build a read-only offline session for a previously authenticated user.
+ *
+ * Deliberately carries NO usable access token: this session unlocks the
+ * user-scoped local cache and nothing else. Any Supabase call made with it
+ * fails at the network or at RLS, so there is no privilege to escalate.
+ */
+function makeOfflineSession(userId: string): Session {
+  const user = {
+    id: userId,
+    email: null,
+    aud: 'authenticated',
+    role: 'authenticated',
+    app_metadata: {},
+    user_metadata: {},
+    created_at: new Date(0).toISOString(),
+  } as unknown as User;
+  return {
+    access_token: 'offline-no-token',
+    refresh_token: 'offline-no-token',
+    expires_in: 0,
+    expires_at: 0,
+    token_type: 'bearer',
+    user,
+  } as unknown as Session;
+}
+
 export function useAuth() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [devEnabled, setDevEnabled] = useState<boolean>(isDevAuthEnabled());
+  // True when `session` is the read-only offline reconstruction rather than a
+  // real server-issued session. Screens use this to stay read-only.
+  const [offlineAuth, setOfflineAuth] = useState(false);
+  // Mirror of `offlineAuth` readable from the auth-state-change closure, which
+  // is registered once and would otherwise capture the initial `false`.
+  const offlineAuthRef = useRef(false);
+  offlineAuthRef.current = offlineAuth;
 
   // Demo Mode is decided once per process from `EXPO_PUBLIC_DEMO_MODE`.
   // Demo Mode is the ONLY mode that bypasses auth (intentional, UX-only).
@@ -92,25 +130,70 @@ export function useAuth() {
       setLoading(false);
     }, AUTH_INIT_TIMEOUT_MS);
     Promise.all([supabase.auth.getSession(), loadDevAuth()]).then(
-      ([{ data }, dev]) => {
+      async ([{ data, error }, dev]) => {
         if (!mounted) return;
         clearTimeout(timeout);
         logDebug('useAuth', 'AUTH_INIT_SUCCESS', { hasSession: !!data.session });
-        setSession(data.session);
+        if (data.session) {
+          // A real session. Remember who it is so a later offline cold start
+          // can still open their cache.
+          void rememberAuthenticatedUser(data.session.user?.id);
+          setSession(data.session);
+          setOfflineAuth(false);
+        } else {
+          // No session. Distinguish "the auth server said no" (sign out) from
+          // "we could not reach the auth server" (offline read-only).
+          const decision = await resolveOfflineIdentity({ hasSession: false, error });
+          if (!mounted) return;
+          if (decision.kind === 'offline_readonly') {
+            logDebug('useAuth', 'AUTH_INIT_OFFLINE_READONLY');
+            console.log('[offline] auth_offline_readonly');
+            setSession(makeOfflineSession(decision.userId));
+            setOfflineAuth(true);
+          } else {
+            setSession(null);
+            setOfflineAuth(false);
+          }
+        }
         setDevEnabled(dev);
         setLoading(false);
       },
-    ).catch((err) => {
+    ).catch(async (err) => {
       if (!mounted) return;
       clearTimeout(timeout);
       logError('useAuth', 'AUTH_INIT_FAIL', err instanceof Error ? err.message : err);
-      // Fail safe: treat as signed-out so AuthGate can route to sign-in.
-      setSession(null);
+      // A thrown restore is the same condition as a returned error: fall back
+      // to read-only offline access only when it was a network failure.
+      const decision = await resolveOfflineIdentity({ hasSession: false, error: err });
+      if (!mounted) return;
+      if (decision.kind === 'offline_readonly') {
+        setSession(makeOfflineSession(decision.userId));
+        setOfflineAuth(true);
+      } else {
+        setSession(null);
+        setOfflineAuth(false);
+      }
       setLoading(false);
     });
     const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
       logDebug('useAuth', 'onAuthStateChange', { event, hasSession: !!s });
-      setSession(s);
+      if (s) {
+        // Connectivity returned and the token refreshed: the real session
+        // replaces any offline reconstruction.
+        void rememberAuthenticatedUser(s.user?.id);
+        setSession(s);
+        setOfflineAuth(false);
+        return;
+      }
+      // A tokenless event. SIGNED_OUT is authoritative and must drop the
+      // offline session too; other tokenless events (e.g. a late
+      // INITIAL_SESSION) must not evict a valid offline reconstruction.
+      if (event === 'SIGNED_OUT') {
+        setSession(null);
+        setOfflineAuth(false);
+        return;
+      }
+      setSession((prev) => (offlineAuthRef.current ? prev : s));
     });
     const unsubDev = subscribeDevAuth(setDevEnabled);
     return () => {
@@ -156,6 +239,12 @@ export function useAuth() {
     loading,
     user: effectiveSession?.user ?? null,
     isDevSession,
+    /**
+     * True when the session is the read-only offline reconstruction of a
+     * previously authenticated user. Screens must treat this as "signed in
+     * but cannot write" — never as a normal session.
+     */
+    isOfflineSession: offlineAuth,
     // True only when the legacy fake-local "Local UI Mode" is active.
     isLocalUiSession: localUiActive,
     isDemoSession: demo,

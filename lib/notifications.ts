@@ -66,7 +66,13 @@ import {
   minutesToMeters,
   type LatLng,
 } from './geo';
-import type { Profile, SavedPlaceWithPlace } from '@/types';
+import {
+  readActiveReminderSnapshot,
+  readReminderSnapshot,
+  recordLocalNotification,
+  type ReminderEligiblePlace as ReminderPlace,
+  type ReminderProfile,
+} from './reminderSnapshot';
 
 // ---------------------------------------------------------------------------
 // Constants & module state
@@ -119,7 +125,7 @@ function normalizeNotificationText(value: string | null | undefined): string {
     .trim();
 }
 
-function isAddressLikePlaceName(place: Pick<SavedPlaceWithPlace['place'], 'name' | 'formatted_address'>): boolean {
+function isAddressLikePlaceName(place: Pick<ReminderPlace['place'], 'name' | 'formatted_address'>): boolean {
   const name = (place.name ?? '').trim();
   if (!name) return true;
   if (
@@ -131,13 +137,13 @@ function isAddressLikePlaceName(place: Pick<SavedPlaceWithPlace['place'], 'name'
   return ADDRESS_LABEL_RE.test(name) && STREET_SUFFIX_RE.test(name);
 }
 
-function notificationPrimaryLabel(saved: SavedPlaceWithPlace): string {
+function notificationPrimaryLabel(saved: ReminderPlace): string {
   return isAddressLikePlaceName(saved.place)
     ? 'a saved place'
     : saved.place.name.trim();
 }
 
-function notificationDedupKey(saved: SavedPlaceWithPlace): string {
+function notificationDedupKey(saved: ReminderPlace): string {
   if (saved.place.google_place_id) {
     return `google:${saved.place.google_place_id}`;
   }
@@ -157,23 +163,23 @@ function notificationDedupKey(saved: SavedPlaceWithPlace): string {
 
 type NotificationIdentityGroup = {
   key: string;
-  representative: SavedPlaceWithPlace;
-  members: SavedPlaceWithPlace[];
+  representative: ReminderPlace;
+  members: ReminderPlace[];
 };
 
 type NotificationAreaGroup = {
   key: string;
-  representative: SavedPlaceWithPlace;
+  representative: ReminderPlace;
   identities: NotificationIdentityGroup[];
-  members: SavedPlaceWithPlace[];
+  members: ReminderPlace[];
   allSavedPlaceIds: string[];
   labels: string[];
 };
 
 function pickNotificationRepresentative(
-  group: SavedPlaceWithPlace[],
+  group: ReminderPlace[],
   here?: LatLng,
-): SavedPlaceWithPlace {
+): ReminderPlace {
   const sorted = [...group].sort((left, right) => {
     const leftAddressLike = isAddressLikePlaceName(left.place) ? 1 : 0;
     const rightAddressLike = isAddressLikePlaceName(right.place) ? 1 : 0;
@@ -203,7 +209,7 @@ function pickNotificationRepresentative(
   return sorted[0];
 }
 
-function latestGroupLastNotifiedAt(group: SavedPlaceWithPlace[]): number {
+function latestGroupLastNotifiedAt(group: ReminderPlace[]): number {
   let latest = 0;
   for (const saved of group) {
     if (!saved.last_notified_at) continue;
@@ -215,7 +221,7 @@ function latestGroupLastNotifiedAt(group: SavedPlaceWithPlace[]): number {
   return latest;
 }
 
-function maxGroupNotificationCount(group: SavedPlaceWithPlace[]): number {
+function maxGroupNotificationCount(group: ReminderPlace[]): number {
   let count = 0;
   for (const saved of group) {
     count = Math.max(count, saved.notification_count ?? 0);
@@ -259,10 +265,10 @@ function buildGroupNotificationCopy(labels: string[]): { title: string; body: st
 }
 
 function groupSavedPlacesByIdentity(
-  saved: SavedPlaceWithPlace[],
+  saved: ReminderPlace[],
   here?: LatLng,
 ): NotificationIdentityGroup[] {
-  const groups = new Map<string, SavedPlaceWithPlace[]>();
+  const groups = new Map<string, ReminderPlace[]>();
   for (const row of saved) {
     const key = notificationDedupKey(row);
     const existing = groups.get(key);
@@ -295,10 +301,10 @@ function getIdentityGroupCooldownReason(
 }
 
 function buildNotificationAreaGroup(params: {
-  triggered: SavedPlaceWithPlace;
-  allSaved: SavedPlaceWithPlace[];
+  triggered: ReminderPlace;
+  allSaved: ReminderPlace[];
   triggerPoint: LatLng;
-  profile: Profile | null;
+  profile: ReminderProfile | null;
   now: number;
 }): NotificationAreaGroup {
   const { triggered, allSaved, triggerPoint, profile, now } = params;
@@ -536,23 +542,27 @@ async function runSyncProximityWatch(): Promise<'started' | 'stopped' | 'skipped
 
   const started = await Location.hasStartedLocationUpdatesAsync(LOCATION_TASK);
 
-  const { data: userRes, error: userErr } = await supabase.auth.getUser();
-  if (userErr || !userRes.user) {
-    if (started) {
-      await stopProximityWatch();
-      return 'stopped';
-    }
+  // Identity and preferences, server first and durable snapshot second — the
+  // same rule the notify path uses.
+  //
+  // The tear-down below is the dangerous part. Before this, an unreachable
+  // auth server or a failed profile read looked exactly like "signed out" or
+  // "notifications disabled", and the watch was STOPPED. A user who lost
+  // signal would silently lose their background proximity watch and only get
+  // it back on a later successful foreground sync. A failed request must
+  // never disable a feature the user turned on.
+  const context = await loadReminderContext();
+  if (!context) {
+    // No server answer AND no local snapshot: we know nothing. Leave whatever
+    // is running exactly as it is.
     return 'skipped';
   }
 
-  const { data: profileData } = await supabase
-    .from('profiles')
-    .select('notifications_enabled, nearby_notifications_enabled')
-    .eq('id', userRes.user.id)
-    .maybeSingle();
-
-  const profile = profileData as Pick<Profile, 'notifications_enabled' | 'nearby_notifications_enabled'> | null;
-  if (!profile?.notifications_enabled || !profile.nearby_notifications_enabled) {
+  const profile = context.profile;
+  // Only an ANSWER (server or snapshot) may switch the watch off. A missing
+  // profile from the snapshot means "we never learned the preference", which
+  // is not the same as "the user turned it off".
+  if (profile && (!profile.notifications_enabled || !profile.nearby_notifications_enabled)) {
     if (started) {
       await stopProximityWatch();
       return 'stopped';
@@ -691,8 +701,8 @@ export async function handleNotificationAction(
  *   - otherwise fall back to 1 mile
  */
 export function effectiveRadiusMeters(
-  saved: SavedPlaceWithPlace,
-  profile: Profile | null,
+  saved: ReminderPlace,
+  profile: ReminderProfile | null,
 ): number {
   if (saved.radius_value != null && saved.radius_unit) {
     return saved.radius_unit === 'minutes'
@@ -715,7 +725,7 @@ export function effectiveRadiusMeters(
  *
  * Inputs are stored as Postgres `time` (`HH:MM` or `HH:MM:SS`).
  */
-export function inQuietHours(profile: Profile | null, now: Date = new Date()): boolean {
+export function inQuietHours(profile: ReminderProfile | null, now: Date = new Date()): boolean {
   if (!profile?.quiet_hours_enabled) return false;
   if (!profile.quiet_hours_start || !profile.quiet_hours_end) return false;
 
@@ -749,8 +759,8 @@ export type ProximityDecision =
 
 export function decideProximity(
   here: LatLng,
-  saved: SavedPlaceWithPlace,
-  profile: Profile | null,
+  saved: ReminderPlace,
+  profile: ReminderProfile | null,
   now: number,
 ): ProximityDecision {
   if (!saved.notifications_enabled) {
@@ -794,20 +804,12 @@ export async function checkProximity(
   longitude: number,
   triggerType: NotifyReason = 'background_location',
 ): Promise<void> {
-  // --- auth ---
-  const { data: userRes, error: userErr } = await supabase.auth.getUser();
-  if (userErr || !userRes.user) {
-    return; // signed out — nothing to do
+  // --- context (server first, durable snapshot when the server is gone) ---
+  const context = await loadReminderContext();
+  if (!context) {
+    return; // signed out with no local snapshot — nothing to do
   }
-  const userId = userRes.user.id;
-
-  // --- profile (master switches + quiet hours + default radius) ---
-  const { data: profileData } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', userId)
-    .maybeSingle();
-  const profile = (profileData as Profile | null) ?? null;
+  const { userId, profile } = context;
 
   if (profile && !profile.notifications_enabled) {
     logDebug('checkProximity', 'master notifications off, skipping');
@@ -823,19 +825,7 @@ export async function checkProximity(
   }
 
   // --- saved places (only those with notifications enabled, not visited, not archived) ---
-  const { data: savedRows, error: savedErr } = await supabase
-    .from('saved_places')
-    .select('*, place:places(*)')
-    .eq('user_id', userId)
-    .eq('notifications_enabled', true)
-    .is('archived_at', null)
-    .is('visited_at', null);
-
-  if (savedErr) {
-    console.warn('[checkProximity] saved_places fetch failed', savedErr.message);
-    return;
-  }
-  const saved = (savedRows ?? []) as SavedPlaceWithPlace[];
+  const saved = context.places;
   if (saved.length === 0) return;
 
   // --- evaluate ---
@@ -1036,11 +1026,11 @@ async function rollbackPlaceNotificationReservations(
 
 async function sendPlaceReminderNotificationOnce(params: {
   userId: string;
-  saved: SavedPlaceWithPlace;
+  saved: ReminderPlace;
   distance: number;
   triggerType: NotifyReason;
   copyOverride?: { title: string; body: string };
-  groupedSavedPlaces?: SavedPlaceWithPlace[];
+  groupedSavedPlaces?: ReminderPlace[];
   preferredLabel?: string;
 }): Promise<PlaceReminderSendResult> {
   const {
@@ -1109,6 +1099,127 @@ async function sendPlaceReminderNotificationOnce(params: {
   return { status: 'sent' };
 }
 
+// ---------------------------------------------------------------------------
+// Reminder context resolution (server first, durable snapshot as fallback)
+// ---------------------------------------------------------------------------
+
+/**
+ * Everything the notify decision needs, and where it came from.
+ *
+ * `source` exists so logs can tell an offline delivery apart from an online
+ * one during device validation. It never changes the decision itself — the
+ * rules are identical either way, which is precisely the point: there is ONE
+ * reminder engine, fed from two interchangeable data sources.
+ */
+type ReminderContext = {
+  userId: string;
+  profile: ReminderProfile | null;
+  /** All currently eligible places: notifications on, not archived, not visited. */
+  places: ReminderPlace[];
+  source: 'server' | 'snapshot';
+};
+
+/**
+ * How long the server is given to answer before we fall back to the snapshot.
+ *
+ * iOS hands a region-monitoring wake-up only a few seconds of background
+ * execution. A request that HANGS — captive portal, half-open socket, dead
+ * VPN — is worse than one that fails, because RN's fetch has no default
+ * timeout and would burn the entire window before the fallback ever ran. The
+ * user would get no notification despite having perfectly good local data.
+ * Six seconds is generous for a healthy network and still leaves room to read
+ * the snapshot and post the notification.
+ */
+const REMINDER_CONTEXT_TIMEOUT_MS = 6_000;
+
+/** Resolve to null if `work` has not settled within `ms`. */
+async function withTimeout<T>(work: Promise<T>, ms: number): Promise<T | null> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      work,
+      new Promise<null>((resolve) => {
+        timer = setTimeout(() => resolve(null), ms);
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
+/**
+ * Load the reminder context from Supabase.
+ *
+ * Returns null on ANY failure — signed out, network down, DNS, timeout, 5xx.
+ * The caller then falls back to the local snapshot. We deliberately do not
+ * distinguish failure modes here: from the reminder path's point of view,
+ * "the server did not answer" is one condition with one response.
+ */
+async function loadReminderContextFromServer(): Promise<ReminderContext | null> {
+  try {
+    const { data: userRes, error: userErr } = await supabase.auth.getUser();
+    if (userErr || !userRes.user) return null;
+    const userId = userRes.user.id;
+
+    const [savedResult, profileResult] = await Promise.all([
+      supabase
+        .from('saved_places')
+        .select('*, place:places(*)')
+        .eq('user_id', userId)
+        .eq('notifications_enabled', true)
+        .is('archived_at', null)
+        .is('visited_at', null),
+      supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
+    ]);
+
+    if (savedResult.error) return null;
+
+    return {
+      userId,
+      profile: (profileResult.data as ReminderProfile | null) ?? null,
+      places: (savedResult.data ?? []) as ReminderPlace[],
+      source: 'server',
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Resolve the reminder context, preferring authoritative server state and
+ * falling back to the last successfully synced snapshot.
+ *
+ * THIS IS THE FUNCTION THAT MAKES OFFLINE REMINDERS WORK. When the OS wakes
+ * the app for a region ENTER with no network, the server load fails in a few
+ * seconds and we answer from disk instead of dropping the event.
+ *
+ * The snapshot path never consults Supabase auth: identity comes from the
+ * active-user pointer written at the last successful sync, so a cold,
+ * OS-relaunched process with an expired access token still knows whose
+ * reminders it holds. Sign-out clears that pointer, so a logged-out account
+ * can no longer produce notifications.
+ */
+async function loadReminderContext(): Promise<ReminderContext | null> {
+  const server = await withTimeout(
+    loadReminderContextFromServer(),
+    REMINDER_CONTEXT_TIMEOUT_MS,
+  );
+  if (server) return server;
+
+  const snapshot = await readActiveReminderSnapshot();
+  if (!snapshot) return null;
+  logInfo(
+    'notifications',
+    `REMINDER_CONTEXT_OFFLINE source=snapshot places=${snapshot.places.length} syncedAt=${snapshot.syncedAt}`,
+  );
+  return {
+    userId: snapshot.userId,
+    profile: snapshot.profile,
+    places: snapshot.places,
+    source: 'snapshot',
+  };
+}
+
 /**
  * Eligibility check + send for a single saved place, identified by id.
  *
@@ -1135,37 +1246,18 @@ export async function maybeNotifyForSavedPlace(
   }
 
   try {
-    const { data: userRes, error: userErr } = await supabase.auth.getUser();
-    if (userErr || !userRes.user) return { sent: false, reason: 'no_user' };
-    const userId = userRes.user.id;
+    // Server first, durable snapshot second. Offline this is what keeps the
+    // OS wake-up from being wasted.
+    const context = await loadReminderContext();
+    if (!context) return { sent: false, reason: 'no_user' };
+    const { userId, profile } = context;
+    const allSaved = context.places;
 
-    const { data: savedRow } = await supabase
-      .from('saved_places')
-      .select('*, place:places(*)')
-      .eq('id', savedPlaceId)
-      .eq('user_id', userId)
-      .is('archived_at', null)
-      .is('visited_at', null)
-      .maybeSingle();
-    const saved = (savedRow as SavedPlaceWithPlace | null) ?? null;
+    // The eligible set already encodes "notifications on, not archived, not
+    // visited", so presence in it IS the per-place eligibility check.
+    const saved = allSaved.find((row) => row.id === savedPlaceId) ?? null;
     if (!saved || !saved.place) return { sent: false, reason: 'place_missing' };
     if (!saved.notifications_enabled) return { sent: false, reason: 'place_off' };
-
-    const { data: allSavedRows } = await supabase
-      .from('saved_places')
-      .select('*, place:places(*)')
-      .eq('user_id', userId)
-      .eq('notifications_enabled', true)
-      .is('archived_at', null)
-      .is('visited_at', null);
-    const allSaved = (allSavedRows ?? []) as SavedPlaceWithPlace[];
-
-    const { data: profileData } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .maybeSingle();
-    const profile = (profileData as Profile | null) ?? null;
 
     if (profile && !profile.notifications_enabled) {
       return { sent: false, reason: 'master_off' };
@@ -1257,10 +1349,10 @@ export async function maybeNotifyForSavedPlace(
 
 async function fireNotification(
   userId: string,
-  saved: SavedPlaceWithPlace,
+  saved: ReminderPlace,
   distance: number,
   copyOverride?: { title: string; body: string },
-  groupedSavedPlaces: SavedPlaceWithPlace[] = [saved],
+  groupedSavedPlaces: ReminderPlace[] = [saved],
   preferredLabel?: string,
 ): Promise<boolean> {
   const groupedSavedPlaceIds = groupedSavedPlaces.map((grouped) => grouped.id);
@@ -1301,52 +1393,71 @@ async function fireNotification(
     return false;
   }
 
-  // 2. Bump last_notified_at and increment notification_count for all
+  // 2. Record the delivery LOCALLY first.
+  //
+  // Ordering matters. The server writes below are what normally enforce the
+  // 12-hour cooldown and the 3-reminder lifetime cap, and offline they all
+  // fail. Writing the local ledger first means that even if every server
+  // write fails — and even if the process is killed immediately after — a
+  // restart still knows this place was just alerted and will not repeat it.
+  // Readers merge server and local state by MAX, so this can only ever
+  // suppress a duplicate, never manufacture an extra notification.
+  await recordLocalNotification(groupedSavedPlaceIds);
+
+  // 3. Bump last_notified_at and increment notification_count for all
   // included saved places in the group. This keeps the 3-reminder limit
   // aligned with what the user actually saw.
-  const nowIso = new Date().toISOString();
-  for (const grouped of groupedSavedPlaces) {
-    const { error: upErr } = await supabase
-      .from('saved_places')
-      .update({
-        last_notified_at: nowIso,
-        notification_count: (grouped.notification_count ?? 0) + 1,
-      })
-      .eq('id', grouped.id);
-    if (upErr) {
-      console.warn('[notifications] saved_places update failed', upErr.message);
+  //
+  // Every server write from here down is best-effort and wrapped: offline
+  // they will fail, and that must not undo a notification the user has
+  // already seen, nor throw out of a background task the OS woke.
+  try {
+    const nowIso = new Date().toISOString();
+    for (const grouped of groupedSavedPlaces) {
+      const { error: upErr } = await supabase
+        .from('saved_places')
+        .update({
+          last_notified_at: nowIso,
+          notification_count: (grouped.notification_count ?? 0) + 1,
+        })
+        .eq('id', grouped.id);
+      if (upErr) {
+        console.warn('[notifications] saved_places update failed', upErr.message);
+      }
     }
-  }
-  logInfo(
-    'notifications',
-    `NOTIFICATION_COUNT_INCREMENTED place=${label} group_size=${groupedSavedPlaceIds.length}`,
-  );
-
-  // 2b. Bump reminder_opportunity_count atomically for every grouped row.
-  // The RPC runs `where id = any($ids) and user_id = auth.uid()` so it's
-  // race-safe and RLS-safe. Failure is non-fatal: the user already saw
-  // the notification, and the next opportunity will catch up.
-  const { error: bumpErr } = await supabase.rpc('bump_reminder_opportunity_count', {
-    saved_place_ids: groupedSavedPlaceIds,
-  });
-  if (bumpErr) {
-    console.warn(
-      '[notifications] bump_reminder_opportunity_count failed (non-fatal)',
-      bumpErr.message,
+    logInfo(
+      'notifications',
+      `NOTIFICATION_COUNT_INCREMENTED place=${label} group_size=${groupedSavedPlaceIds.length}`,
     );
-  }
 
-  // 3. Append to notification_events (audit log, insert-only per RLS).
-  const { error: evErr } = await supabase.from('notification_events').insert(
-    groupedSavedPlaceIds.map((savedPlaceId) => ({
-      user_id: userId,
-      saved_place_id: savedPlaceId,
-      event_type: 'nearby',
-      distance_meters: distance,
-    })),
-  );
-  if (evErr) {
-    console.warn('[notifications] event insert failed', evErr.message);
+    // 3b. Bump reminder_opportunity_count atomically for every grouped row.
+    // The RPC runs `where id = any($ids) and user_id = auth.uid()` so it's
+    // race-safe and RLS-safe. Failure is non-fatal: the user already saw
+    // the notification, and the next opportunity will catch up.
+    const { error: bumpErr } = await supabase.rpc('bump_reminder_opportunity_count', {
+      saved_place_ids: groupedSavedPlaceIds,
+    });
+    if (bumpErr) {
+      console.warn(
+        '[notifications] bump_reminder_opportunity_count failed (non-fatal)',
+        bumpErr.message,
+      );
+    }
+
+    // 3c. Append to notification_events (audit log, insert-only per RLS).
+    const { error: evErr } = await supabase.from('notification_events').insert(
+      groupedSavedPlaceIds.map((savedPlaceId) => ({
+        user_id: userId,
+        saved_place_id: savedPlaceId,
+        event_type: 'nearby',
+        distance_meters: distance,
+      })),
+    );
+    if (evErr) {
+      console.warn('[notifications] event insert failed', evErr.message);
+    }
+  } catch (e) {
+    console.warn('[notifications] post-send server writes failed (offline?)', e);
   }
 
   return true;

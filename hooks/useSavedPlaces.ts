@@ -114,7 +114,7 @@ export function useSavedPlaces() {
   // Auth state — we need to know when loading finishes and who the user is
   // so we don't fire the query before the session is established (which would
   // return an empty RLS-filtered result and never re-fetch after sign-in).
-  const { session, loading: authLoading } = useAuth();
+  const { session, loading: authLoading, isOfflineSession } = useAuth();
   const userId = session?.user?.id ?? null;
 
   // Hydrate synchronously from the in-memory cache so a tab switch shows data
@@ -304,8 +304,12 @@ export function useSavedPlaces() {
     if (!userId) {
       // Signed out — clear the list and shared cache without a network call.
       logDebug('useSavedPlaces', 'no user, clearing list');
-      memoryCache = null;
-      inflight = null;      setState({
+      // Go through setMemoryCache so EVERY mounted screen drops the previous
+      // user's list at once. A direct assignment left other already-mounted
+      // screens rendering the signed-out user's places until they refetched.
+      setMemoryCache(null);
+      inflight = null;
+      setState({
         data: [],
         loading: false,
         refreshing: false,
@@ -325,7 +329,33 @@ export function useSavedPlaces() {
       }
       return;
     }
+
+    // Cold start with no in-memory copy. Paint the durable cache FIRST and
+    // fetch alongside it, rather than showing a spinner until the network
+    // either answers or times out. Offline that difference is the whole
+    // feature: the user sees their saved places immediately instead of
+    // watching a loader resolve into an empty state several seconds later.
+    let cancelled = false;
+    void (async () => {
+      const cached = await readSavedPlacesCache(userId);
+      if (cancelled || !cached || !mountedRef.current) return;
+      setState((s) => {
+        // The network may have already won the race. Never overwrite fresher
+        // data with the cache.
+        if (s.data.length > 0) return s;
+        return {
+          ...s,
+          data: cached.data,
+          loading: false,
+          lastSyncedAt: cached.lastSyncedAt,
+        };
+      });
+    })();
+
     void fetch('initial');
+    return () => {
+      cancelled = true;
+    };
   }, [authLoading, userId, fetch]);
 
   // Force a network refetch (pull-to-refresh, after a save/delete).
@@ -345,7 +375,15 @@ export function useSavedPlaces() {
     return fetch('background');
   }, [userId, fetch]);
 
-  return { ...state, refresh, revalidate };
+  // A read-only offline session means we already know the server is
+  // unreachable — surface that immediately rather than waiting for the first
+  // request to fail.
+  return {
+    ...state,
+    offline: state.offline || isOfflineSession,
+    refresh,
+    revalidate,
+  };
 }
 
 // ---- shared cache mutation API --------------------------------------------

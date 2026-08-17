@@ -15,14 +15,26 @@
  *   - `syncGeofencesForSavedPlaces()` (re)registers up to
  *     `MAX_GEOFENCE_REGIONS` regions for the highest-priority saved
  *     places. Calling it again replaces the active region set.
- *   - Region radius is clamped to a reliable range
- *     (`MIN_REGION_RADIUS_M` .. `MAX_REGION_RADIUS_M`) — the user's
- *     displayed setting is unchanged, only the registered geofence
- *     radius is clamped.
+ *   - Selection and radius clamping live in `lib/reminderSelection.ts` so
+ *     the online and offline paths provably apply the same rule. The
+ *     user's displayed radius is never modified — only the registered
+ *     region radius is clamped into the range iOS monitors reliably.
+ *
+ * Offline behaviour:
+ *   - A SUCCESSFUL sync writes `lib/reminderSnapshot.ts`, which is what a
+ *     later network-less wake-up reads.
+ *   - A FAILED server read never tears regions down. We only stop
+ *     monitoring when the server authoritatively says there is no user,
+ *     when permissions are missing, or when there is genuinely nothing
+ *     eligible. A dropped request leaves the existing regions alone.
  *
  * Platform notes:
- *   - iOS caps monitored regions at ~20 per app, so we cap at 20.
+ *   - Apple caps monitored regions at 20 per app; Android at 100. We use
+ *     20 on both.
  *   - Geofencing requires Always location + notification permission.
+ *   - iOS stops monitoring across a device reboot, so regions are
+ *     re-registered on the next foreground — which the snapshot makes
+ *     possible even with no network.
  *   - Cannot be tested in Expo Go or the iOS Simulator — must be a
  *     real device on a TestFlight / dev-client build.
  */
@@ -33,8 +45,18 @@ import * as TaskManager from 'expo-task-manager';
 import { isDemoMode } from './demoMode';
 import { logDebug, logInfo } from './logger';
 import { isMapPreviewMode } from './mapPreview';
+import { isLikelyOfflineError } from './savedPlacesCache';
 import { supabase } from './supabase';
-import { distanceMeters } from './geo';
+import {
+  clampRegionRadius,
+  MAX_MONITORED_REGIONS,
+  selectMonitoredPlaces,
+} from './reminderSelection';
+import {
+  readActiveReminderSnapshot,
+  writeReminderSnapshot,
+  type ReminderEligiblePlace,
+} from './reminderSnapshot';
 import {
   effectiveRadiusMeters,
   getNotificationPermissionState,
@@ -50,14 +72,13 @@ export const NEARR_GEOFENCE_TASK = 'NEARR_GEOFENCE_TASK';
 
 const REGION_PREFIX = 'nearr_saved_place:';
 
-/** iOS allows ~20 monitored regions per app. Stay under that. */
-export const MAX_GEOFENCE_REGIONS = 20;
-
-/** Geofences smaller than ~150m are unreliable on iOS in practice. */
-const MIN_REGION_RADIUS_M = 150;
-
-/** Avoid huge noisy regions that will fire from blocks away. */
-const MAX_REGION_RADIUS_M = 5000;
+/**
+ * Apple: "Core Location prevents any single app from monitoring more than 20
+ * conditions of any type simultaneously." Android allows 100. We use 20 on
+ * both. Re-exported from the pure selection policy so there is exactly one
+ * definition of the cap in the codebase.
+ */
+export const MAX_GEOFENCE_REGIONS = MAX_MONITORED_REGIONS;
 
 // Coalesces concurrent sync calls (AppState 'active', save/update/delete,
 // settings save can all fire within ms of each other). Without this guard
@@ -81,11 +102,6 @@ function parseSavedPlaceIdFromRegion(identifier: string | undefined): string | n
   if (!identifier || !identifier.startsWith(REGION_PREFIX)) return null;
   const id = identifier.slice(REGION_PREFIX.length);
   return id.length > 0 ? id : null;
-}
-
-function clampRegionRadius(meters: number): number {
-  if (!Number.isFinite(meters) || meters <= 0) return MIN_REGION_RADIUS_M;
-  return Math.max(MIN_REGION_RADIUS_M, Math.min(MAX_REGION_RADIUS_M, meters));
 }
 
 // ---------------------------------------------------------------------------
@@ -217,6 +233,73 @@ export async function syncGeofencesForSavedPlaces(): Promise<GeofenceSyncStatus>
   return geofenceSyncInFlight;
 }
 
+/**
+ * Resolve the places + profile to monitor.
+ *
+ * Server state is authoritative when reachable. When it is NOT reachable we
+ * fall back to the last successfully synced snapshot rather than tearing
+ * regions down — a phone in airplane mode must keep the geofences it already
+ * has, and a phone rebooted offline must be able to re-register them (iOS
+ * stops monitoring across a reboot, so re-registration is the only way the
+ * user keeps their reminders until they are back on the network).
+ *
+ * Returns null only when we genuinely know there is nobody to monitor for.
+ */
+async function resolveGeofenceInputs(): Promise<
+  | { kind: 'ready'; userId: string; profile: Profile | null; places: ReminderEligiblePlace[]; source: 'server' | 'snapshot' }
+  | { kind: 'no_user' }
+  | { kind: 'unavailable' }
+> {
+  try {
+    const { data: userRes, error: userErr } = await supabase.auth.getUser();
+    if (!userErr && userRes.user) {
+      const userId = userRes.user.id;
+      const [profileResult, savedResult] = await Promise.all([
+        supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
+        supabase
+          .from('saved_places')
+          .select('*, place:places(*)')
+          .eq('user_id', userId)
+          .eq('notifications_enabled', true)
+          .is('archived_at', null)
+          .is('visited_at', null)
+          .order('created_at', { ascending: false }),
+      ]);
+      if (!savedResult.error) {
+        const profile = (profileResult.data as Profile | null) ?? null;
+        const places = (savedResult.data ?? []) as SavedPlaceWithPlace[];
+        // Persist the authoritative answer for the next offline wake-up.
+        // Only a SUCCESSFUL fetch ever reaches this write.
+        await writeReminderSnapshot({ userId, profile, places });
+        return { kind: 'ready', userId, profile, places, source: 'server' };
+      }
+      console.warn('[geofence] saved_places fetch failed', savedResult.error.message);
+    } else if (userErr && isLikelyOfflineError(userErr)) {
+      // Fall through to the snapshot: an unreachable auth server tells us
+      // nothing about whether the user is signed in.
+    } else if (!userErr) {
+      // Server answered and said: nobody is signed in. Authoritative.
+      return { kind: 'no_user' };
+    }
+  } catch {
+    // Treat an exception exactly like an unreachable server.
+  }
+
+  const snapshot = await readActiveReminderSnapshot();
+  if (!snapshot) return { kind: 'unavailable' };
+  logInfo(
+    'geofence',
+    `GEOFENCE_INPUTS_OFFLINE source=snapshot places=${snapshot.places.length} syncedAt=${snapshot.syncedAt}`,
+  );
+  return {
+    kind: 'ready',
+    userId: snapshot.userId,
+    profile: snapshot.profile as Profile | null,
+    places: snapshot.places,
+    source: 'snapshot',
+  };
+}
+
 async function runSyncGeofencesForSavedPlaces(): Promise<GeofenceSyncStatus> {
   if (isDemoMode() || isMapPreviewMode()) {
     return { state: 'skipped', reason: 'demo_or_preview' };
@@ -224,15 +307,7 @@ async function runSyncGeofencesForSavedPlaces(): Promise<GeofenceSyncStatus> {
 
   logDebug('geofence', 'GEOFENCE_SYNC_START');
 
-  // --- auth ---------------------------------------------------------------
-  const { data: userRes, error: userErr } = await supabase.auth.getUser();
-  if (userErr || !userRes.user) {
-    await stopNearrGeofencing();
-    return { state: 'stopped', reason: 'no_user' };
-  }
-  const userId = userRes.user.id;
-
-  // --- permissions --------------------------------------------------------
+  // --- permissions (local checks — no network involved) -------------------
   const [notif, bg] = await Promise.all([
     getNotificationPermissionState(),
     Location.getBackgroundPermissionsAsync().catch(() => ({ status: 'denied' as const })),
@@ -246,63 +321,32 @@ async function runSyncGeofencesForSavedPlaces(): Promise<GeofenceSyncStatus> {
     return { state: 'stopped', reason: 'permissions_missing' };
   }
 
+  // --- inputs (server authoritative, snapshot fallback) -------------------
+  const inputs = await resolveGeofenceInputs();
+  if (inputs.kind === 'no_user') {
+    await stopNearrGeofencing();
+    return { state: 'stopped', reason: 'no_user' };
+  }
+  if (inputs.kind === 'unavailable') {
+    // We could not confirm anything. Leave the currently registered regions
+    // exactly as they are — stopping here would silently disable a user's
+    // reminders because their coffee shop's wifi dropped a request.
+    logInfo('geofence', 'GEOFENCE_SYNC_SKIPPED reason=inputs_unavailable regions_preserved');
+    return { state: 'skipped', reason: 'inputs_unavailable' };
+  }
+
+  const { profile, places } = inputs;
+
   // --- profile master switches -------------------------------------------
-  const { data: profileRow } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', userId)
-    .maybeSingle();
-  const profile = (profileRow as Profile | null) ?? null;
   if (profile && (!profile.notifications_enabled || !profile.nearby_notifications_enabled)) {
     await stopNearrGeofencing();
     logInfo('geofence', 'GEOFENCE_SYNC_DONE eligible=0 registered=0 reason=master_or_nearby_off');
     return { state: 'stopped', reason: 'master_or_nearby_off' };
   }
 
-  // --- saved places ------------------------------------------------------
-  const { data: savedRows, error: savedErr } = await supabase
-    .from('saved_places')
-    .select('*, place:places(*)')
-    .eq('user_id', userId)
-    .eq('notifications_enabled', true)
-    .is('archived_at', null)
-    .is('visited_at', null)
-    .order('created_at', { ascending: false });
-
-  if (savedErr) {
-    console.warn('[geofence] saved_places fetch failed', savedErr.message);
-    return { state: 'skipped', reason: 'fetch_failed' };
-  }
-
-  const eligibleRaw = ((savedRows ?? []) as SavedPlaceWithPlace[]).filter(
-    (s) =>
-      s.place &&
-      Number.isFinite(s.place.latitude) &&
-      Number.isFinite(s.place.longitude),
-  );
-  const eligibleBySavedPlaceId = new Map<string, SavedPlaceWithPlace>();
-  for (const row of eligibleRaw) {
-    if (!eligibleBySavedPlaceId.has(row.id)) {
-      eligibleBySavedPlaceId.set(row.id, row);
-    }
-  }
-  const eligible = Array.from(eligibleBySavedPlaceId.values());
-  if (eligibleRaw.length !== eligible.length) {
-    logInfo(
-      'notification-dedupe',
-      `geofence_saved_place_deduped removed=${eligibleRaw.length - eligible.length}`,
-    );
-  }
-
-  if (eligible.length === 0) {
-    await stopNearrGeofencing();
-    logInfo('geofence', 'GEOFENCE_SYNC_DONE eligible=0 registered=0');
-    return { state: 'stopped', reason: 'no_eligible' };
-  }
-
   // --- ranking -----------------------------------------------------------
-  // Use last-known location only (no prompt). If absent, keep DB order
-  // (most-recently saved first).
+  // Use last-known location only (never prompt, never force a GPS fix — this
+  // runs on every foreground and must not cost battery).
   let here: { latitude: number; longitude: number } | null = null;
   try {
     const fg = await Location.getForegroundPermissionsAsync();
@@ -313,21 +357,17 @@ async function runSyncGeofencesForSavedPlaces(): Promise<GeofenceSyncStatus> {
       }
     }
   } catch {
-    // ignore — fall back to DB order
+    // ignore — fall back to newest-first ordering
   }
 
-  let ranked = eligible.slice();
-  if (here) {
-    const h = here;
-    ranked.sort(
-      (a, b) =>
-        distanceMeters(h, { latitude: a.place.latitude, longitude: a.place.longitude }) -
-        distanceMeters(h, { latitude: b.place.latitude, longitude: b.place.longitude }),
-    );
-  }
+  const selection = selectMonitoredPlaces(places, here, MAX_GEOFENCE_REGIONS);
+  const { selected: top, eligible: eligibleCount, skipped } = selection;
 
-  const top = ranked.slice(0, MAX_GEOFENCE_REGIONS);
-  const skipped = eligible.length - top.length;
+  if (eligibleCount === 0) {
+    await stopNearrGeofencing();
+    logInfo('geofence', 'GEOFENCE_SYNC_DONE eligible=0 registered=0');
+    return { state: 'stopped', reason: 'no_eligible' };
+  }
 
   const regions: Location.LocationRegion[] = top.map((s) => ({
     identifier: regionIdFor(s.id),
@@ -352,11 +392,11 @@ async function runSyncGeofencesForSavedPlaces(): Promise<GeofenceSyncStatus> {
   if (signature === lastRegionsSignature) {
     logInfo(
       'geofence',
-      `GEOFENCE_SYNC_DONE eligible=${eligible.length} registered=${regions.length} skipped=${skipped} reason=unchanged`,
+      `GEOFENCE_SYNC_DONE eligible=${eligibleCount} registered=${regions.length} skipped=${skipped} reason=unchanged`,
     );
     return {
       state: 'started',
-      eligible: eligible.length,
+      eligible: eligibleCount,
       registered: regions.length,
       skipped,
     };
@@ -367,11 +407,11 @@ async function runSyncGeofencesForSavedPlaces(): Promise<GeofenceSyncStatus> {
     lastRegionsSignature = signature;
     logInfo(
       'geofence',
-      `GEOFENCE_SYNC_DONE eligible=${eligible.length} registered=${regions.length} skipped=${skipped}`,
+      `GEOFENCE_SYNC_DONE eligible=${eligibleCount} registered=${regions.length} skipped=${skipped}`,
     );
     return {
       state: 'started',
-      eligible: eligible.length,
+      eligible: eligibleCount,
       registered: regions.length,
       skipped,
     };

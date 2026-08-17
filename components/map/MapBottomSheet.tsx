@@ -77,6 +77,12 @@ type Props = {
   onSaveFromLink: () => void;
   onSearchManually: () => void;
   requestLocationPermission: () => Promise<boolean>;
+  /**
+   * True when the visible list is being served from the local cache because
+   * Nearr cannot reach its server. Surfaced as a quiet prefix on the count
+   * line, never as a blocking state.
+   */
+  offline?: boolean;
 };
 
 /** Compute the collapsed/partial visible height for a given area height. */
@@ -132,6 +138,7 @@ export function MapBottomSheet({
   onSaveFromLink,
   onSearchManually,
   requestLocationPermission,
+  offline = false,
 }: Props) {
   const { colors, typography } = useTheme();
   const insets = useSafeAreaInsets();
@@ -351,6 +358,11 @@ export function MapBottomSheet({
             </Text>
             {expanded ? (
               <Text style={[typography.caption, styles.savedCount]}>
+                {/* Offline is stated as a prefix on the existing count line
+                    rather than as its own banner. The message the user needs
+                    is "your saved places are still here", not "the app is
+                    broken", so it stays a quiet qualifier on real content. */}
+                {offline ? 'Offline · ' : ''}
                 {savedPlaces.length} {savedPlaces.length === 1 ? 'place' : 'places'}
               </Text>
             ) : null}
