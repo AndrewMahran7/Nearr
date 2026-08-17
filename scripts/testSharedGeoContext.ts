@@ -326,8 +326,8 @@ check(
   ),
 );
 check(
-  'reel: e98802f is unchanged — the three city mentions are still context',
-  nicaResolved.built.mentions.length === 1 && nicaResolved.built.droppedGeographicContext === 3,
+  'reel: task B admits the three cities as PEER geographic destinations',
+  nicaResolved.built.mentions.length === 4 && nicaResolved.built.peerGeographicDestinations === 3,
   nicaResolved.built.mentions.map((m) => m.displayName).join(' | '),
 );
 check('reel: no Spanish candidate is reachable at all', !JSON.stringify(nicaResolved.result.mentionResults).includes('Spain'));

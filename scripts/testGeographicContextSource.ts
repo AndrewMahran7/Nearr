@@ -134,21 +134,24 @@ const laundering: Array<[string, PlaceCandidateEvidence]> = [
   ['accent/case insensitive', place({ name: 'SÃO PAULO', city: 'São Paulo' })],
 ];
 
+// NOTE ON SCOPE (task B). A lone geographic place with no sibling sitting
+// inside it is now a PEER GEOGRAPHIC DESTINATION rather than a suppressed one —
+// Nearr supports saving a city the post is actually recommending. What must
+// never change is the laundering invariant itself: such a place resolves ONLY
+// through the geographic path, so a business carrying its name can never
+// substitute for it. Suppression as CONTEXT is now proven where it belongs, in
+// the container cases below and in testGeographicDestinations.ts.
 for (const [label, p] of laundering) {
-  check(`laundering blocked: ${label}`, isGeographicContextOnlySource(p));
+  check(`still classified geographic: ${label}`, isGeographicContextOnlySource(p));
   const mentions = buildVenueMentions(evidence([p]));
   check(
-    `laundering blocked: ${label} produces no searchable mention`,
-    mentions.mentions.length === 0,
-    JSON.stringify(mentions.mentions.map((m) => m.displayName)),
+    `laundering blocked: ${label} never becomes an ordinary venue mention`,
+    mentions.mentions.every((m) => m.resolutionMode === 'geographic'),
+    JSON.stringify(mentions.mentions.map((m) => `${m.displayName}:${m.resolutionMode}`)),
   );
   check(
-    `laundering blocked: ${label} renders no destination`,
-    selectRenderablePlaces(evidence([p])).length === 0,
-  );
-  check(
-    `laundering blocked: ${label} can never silently auto-save`,
-    mediaEvidenceAutoSaveEligible(evidence([p])) === false,
+    `laundering blocked: ${label} is counted as a peer, never a business`,
+    mentions.peerGeographicDestinations === mentions.mentions.length,
   );
 }
 
@@ -306,14 +309,19 @@ check(
 check('Rio reel: multi-place content is never silently auto-saved', mediaEvidenceAutoSaveEligible(rioReel) === false);
 
 // ---------------------------------------------------------------------------
-// 8. A post whose ONLY place is a locality yields nothing saveable (Part 8) —
-//    it may still become a manual/needs_help outcome upstream, never a save.
+// 8. A post whose ONLY place is a city. Task B made this a legitimate peer
+//    geographic destination — the product decision is that a city the post is
+//    actually recommending is saveable. It resolves on the geographic path, and
+//    the auto-save gate still refuses a locality candidate, so the outcome is a
+//    CONFIRMATION rather than a silent save (pinned in
+//    testGeographicDestinations.ts).
 // ---------------------------------------------------------------------------
 
 const cityOnly = evidence([rioCity]);
-check('city-only post: no mentions', buildVenueMentions(cityOnly).mentions.length === 0);
-check('city-only post: nothing renders', renderMediaEvidenceCaption(cityOnly).renderedPlaces === 0);
-check('city-only post: not auto-save eligible', mediaEvidenceAutoSaveEligible(cityOnly) === false);
+const cityOnlyMentions = buildVenueMentions(cityOnly);
+check('city-only post: becomes exactly one peer geographic destination', cityOnlyMentions.mentions.length === 1 && cityOnlyMentions.peerGeographicDestinations === 1);
+check('city-only post: it is a geographic mention, never a venue one', cityOnlyMentions.mentions[0]!.resolutionMode === 'geographic');
+check('city-only post: it renders as a destination', renderMediaEvidenceCaption(cityOnly).renderedPlaces === 1);
 check(
   'city-only post: geo context is still available to the caller',
   buildVenueMentions(cityOnly).geoContext.city === 'Rio de Janeiro',

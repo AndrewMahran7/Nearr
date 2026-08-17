@@ -56,6 +56,8 @@ export type RecognitionFunnel = {
   sharedGeoCountryCandidates?: number;
   /** Whether a strong shared country was available to scope sibling searches. */
   sharedGeoCountryApplied?: boolean;
+  /** Geographic places admitted as destinations in their own right (peer cities). */
+  peerGeographicDestinations?: number;
 };
 
 /**
@@ -110,6 +112,7 @@ export function buildRecognitionFunnel(
   if (evidence) {
     const geo = summarizeSourceGeographicContext(evidence);
     out.sourceGeographicContextDropped = geo.dropped;
+    out.peerGeographicDestinations = geo.peerDestinations;
     if (geo.labels.length > 0) out.sourceGeographicContextLabels = geo.labels;
     out.destinationPlaces = Number.isInteger(renderablePlaces) && renderablePlaces >= 0
       ? renderablePlaces

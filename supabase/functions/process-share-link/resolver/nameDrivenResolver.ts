@@ -246,7 +246,14 @@ export function mergePlacesCandidates(
 export function scoreMentionCandidate(
   candidate: PlacesCandidate,
   mention: VenueMention,
-  opts: { expectedState: string | null; bias: { lat: number; lng: number } | null; platform: string },
+  opts: {
+    expectedState: string | null;
+    bias: { lat: number; lng: number } | null;
+    platform: string;
+    /** Country the mention must sit in, when one is established. Used only by
+     *  the geographic path — ordinary venue scoring is unchanged. */
+    expectedCountry?: string | null;
+  },
 ): ScoredMentionCandidate {
   const reasons: string[] = [];
   let score = 0;
@@ -254,6 +261,14 @@ export function scoreMentionCandidate(
   // Platform-noise hard veto (e.g. "TikTok Inc." for a TikTok post).
   if (isPlatformNoiseName(candidate.name, opts.platform)) {
     return { candidate, rawScore: REJECT_SCORE, reasons: ['platform_noise_rejected'], rejected: true, rejectionReason: 'platform_noise' };
+  }
+
+  // A PEER GEOGRAPHIC DESTINATION (a city the post offers as a stop, not as the
+  // container its other destinations sit in) resolves on a separate path with
+  // the opposite admissibility rule. Kept entirely inside this branch so that
+  // ordinary venue scoring below is untouched.
+  if (mention.resolutionMode === 'geographic') {
+    return scoreGeographicMentionCandidate(candidate, mention, opts);
   }
 
   // Wrong-location hard veto (candidate sits in a different asserted state).
@@ -375,6 +390,99 @@ export function scoreMentionCandidate(
       score -= Math.min(30, km * 0.75);
       reasons.push('distance_nearby');
     }
+  }
+
+  return { candidate, rawScore: score, reasons, rejected: false, rejectionReason: null };
+}
+
+/** Fold a place/country label for comparison. Comparison only. */
+function foldGeoLabel(value: string): string {
+  // Reuses normalizeName so accent handling has ONE definition in this module.
+  return normalizeName(value).replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+/**
+ * Score a candidate for a PEER GEOGRAPHIC DESTINATION.
+ *
+ * This is the inverse of the ordinary rule and the reason task B is safe. In
+ * venue mode a locality is vetoed and a business is welcome; here a business is
+ * vetoed and only a geographic entity may satisfy the mention. That is what
+ * makes "a city can be a destination" incapable of reopening the closed P0:
+ *
+ *   Rio de Janeiro, if it were ever resolved as a city destination, could match
+ *   the Rio locality and NOTHING else. "7 Mares - Passeio de Lancha Rio de
+ *   Janeiro" is a tour_agency, so it is rejected outright here — it cannot be
+ *   substituted for the city no matter how well its name scores.
+ *
+ * A country consistency check is applied ONLY on this path, and only when a
+ * country is actually established (mention-specific first, then a STRONG shared
+ * country from task A). It is what keeps "Granada" inside Nicaragua rather than
+ * accepting the more globally prominent Granada, Spain, without relying on
+ * provider ordering. No general threshold is touched.
+ */
+function scoreGeographicMentionCandidate(
+  candidate: PlacesCandidate,
+  mention: VenueMention,
+  opts: { expectedCountry?: string | null; bias: { lat: number; lng: number } | null },
+): ScoredMentionCandidate {
+  // Only a geographic entity may satisfy a geographic mention. `isLocalityLike`
+  // already returns false when any business type is present, so an establishment
+  // whose name contains the city can never pass.
+  if (!isLocalityLikeTypes(candidate.types)) {
+    return {
+      candidate,
+      rawScore: REJECT_SCORE,
+      reasons: ['geographic_mention_requires_geographic_entity'],
+      rejected: true,
+      rejectionReason: 'not_a_geographic_entity',
+    };
+  }
+
+  // Country consistency — the ambiguity this whole path exists to resolve.
+  const expected = foldGeoLabel(opts.expectedCountry ?? '');
+  if (expected) {
+    const address = foldGeoLabel(candidate.formattedAddress ?? '');
+    if (address && !address.split(' ').join(' ').includes(expected)) {
+      return {
+        candidate,
+        rawScore: REJECT_SCORE,
+        reasons: [`geographic_country_mismatch`],
+        rejected: true,
+        rejectionReason: 'geographic_country_mismatch',
+      };
+    }
+  }
+
+  const reasons: string[] = ['geographic_entity'];
+  let score = 25;
+
+  const hint = mention.displayName;
+  if (compactNameMatches(candidate.name, hint)) {
+    score += 30;
+    reasons.push('compact_name_match');
+  } else if (hasStrongNameMatch(candidate.name, hint)) {
+    score += 24;
+    reasons.push('strong_name_match');
+  } else if (hasMeaningfulNameMatch(candidate.name, hint)) {
+    score += 10;
+    reasons.push('meaningful_name_match');
+  }
+  score += nameOverlapScore(candidate.name, hint) * 6;
+
+  const candTokens = new Set(foldGeoLabel(candidate.name).split(' ').filter(Boolean));
+  let distinctiveHits = 0;
+  for (const tok of mention.distinctiveTokens) {
+    const bare = tok.replace(/[^a-z0-9]/g, '');
+    if (bare && candTokens.has(bare)) distinctiveHits += 1;
+  }
+  if (distinctiveHits > 0) {
+    score += Math.min(24, distinctiveHits * 8);
+    reasons.push('distinctive_token_match');
+  }
+
+  if (expected) {
+    score += 15;
+    reasons.push('geographic_country_match');
   }
 
   return { candidate, rawScore: score, reasons, rejected: false, rejectionReason: null };
@@ -593,11 +701,13 @@ export async function resolveVenueMentions(args: {
     }
 
     let candidatesToScore = result.results;
-    let scored = candidatesToScore.map((c) => scoreMentionCandidate(c, mention, { expectedState, bias, platform }));
+    let scored = candidatesToScore.map((c) => scoreMentionCandidate(c, mention, { expectedState, bias, platform, expectedCountry: mentionQueryCountry(mention, geoContext) }));
     let classified = classifyMention(scored);
     let categoryBiasedQuery: string | undefined;
     const categoryHint = expectedMentionCategory(mention);
-    if (classified.outcome !== 'verified_single' && categoryHint) {
+    // A geographic mention is never category-biased: a venue category hint
+    // could only surface businesses, which the geographic path rejects anyway.
+    if (classified.outcome !== 'verified_single' && categoryHint && mention.resolutionMode !== 'geographic') {
       categoryBiasedQuery = `${query} ${categoryHint.replace(/_/g, ' ')}`.replace(/\s+/g, ' ').trim();
       let biased = cache.get(categoryBiasedQuery);
       if (!biased && requestCount < globalLimit) {
@@ -611,7 +721,7 @@ export async function resolveVenueMentions(args: {
       }
       if (biased?.ok) {
         candidatesToScore = mergePlacesCandidates(candidatesToScore, biased.results);
-        scored = candidatesToScore.map((c) => scoreMentionCandidate(c, mention, { expectedState, bias, platform }));
+        scored = candidatesToScore.map((c) => scoreMentionCandidate(c, mention, { expectedState, bias, platform, expectedCountry: mentionQueryCountry(mention, geoContext) }));
         classified = classifyMention(scored);
       }
     }

@@ -182,7 +182,7 @@ check('rio: schema rejected none', rioFunnel.modelPlacesRejected === 0);
 check('rio: exactly one suppressed as source geographic context', rioFunnel.sourceGeographicContextDropped === 1);
 check(
   'rio: the label names the index, the model category, and the reason',
-  JSON.stringify(rioFunnel.sourceGeographicContextLabels) === '["0:scenic_spot:name_matches_city"]',
+  JSON.stringify(rioFunnel.sourceGeographicContextLabels) === '["0:scenic_spot:name_matches_city:redundant_container"]',
   JSON.stringify(rioFunnel.sourceGeographicContextLabels),
 );
 check('rio: two legitimate destinations still reach the resolver', rioFunnel.destinationPlaces === 2);
@@ -253,7 +253,7 @@ const manyContext = evidence(
   Array.from({ length: 12 }, (_, i) => place({ name: `City ${i}`, city: `City ${i}`, category: 'other' })),
 );
 const manyFunnel = buildRecognitionFunnel({}, manyContext, 0);
-check('bounds: every context place is counted', manyFunnel.sourceGeographicContextDropped === 12);
+check('bounds: every geographic place is counted (as peers here - none contains another)', manyFunnel.peerGeographicDestinations === 12 && manyFunnel.sourceGeographicContextDropped === 0);
 check('bounds: context labels capped at 12', (manyFunnel.sourceGeographicContextLabels ?? []).length === 12);
 
 // ---------------------------------------------------------------------------
@@ -276,7 +276,7 @@ check('privacy: no transcript text in the funnel', !/555-0100|phone number/i.tes
 check('privacy: no country/region strings in the funnel', !/Brazil/i.test(privacy), privacy);
 check(
   'privacy: only closed-vocabulary labels survive',
-  /"0:scenic_spot:name_matches_city"/.test(privacy),
+  /"0:scenic_spot:name_matches_city:(redundant_container|peer_geographic_destination)"/.test(privacy),
   privacy,
 );
 

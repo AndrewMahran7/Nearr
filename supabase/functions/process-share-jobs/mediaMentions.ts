@@ -27,6 +27,7 @@
 // No I/O, no Deno globals — unit-tested from Node (scripts/testMediaMentions.ts).
 
 import {
+  classifyGeographicSourcePlace,
   isGeographicContextOnlySource,
   type MediaPlaceEvidence,
   type PlaceCandidateEvidence,
@@ -113,6 +114,16 @@ export type VenueMention = {
   relationshipType?: VenueRelationshipType;
   /** Host evidence retained as context (not a separate searchable venue). */
   supportingEvidence?: SupportingEvidenceItem[];
+  /**
+   * How this mention must be resolved.
+   *
+   *   undefined / 'venue' — ordinary business/venue matching (the default).
+   *   'geographic'        — the post offers this PLACE ITSELF as a destination
+   *                         (a peer city). It may only ever match a geographic
+   *                         provider entity; a business whose name merely
+   *                         contains the place name can never satisfy it.
+   */
+  resolutionMode?: 'venue' | 'geographic';
 };
 
 /** Sanitized diagnostic for a detected venue↔host relationship. */
@@ -139,9 +150,12 @@ export type BuildMentionsResult = {
   droppedInferredOnly: number;
   droppedIneligibleName: number;
   droppedPassingMention: number;
-  /** Places that only restated their own city/region/country. They are NOT
+  /** Redundant CONTAINER places — the post's destinations sit inside them. Not
    *  searchable mentions, but they DO still feed `geoContext`. */
   droppedGeographicContext: number;
+  /** Geographic places the post offers as destinations in their own right.
+   *  These DO become mentions, resolved through the geographic path. */
+  peerGeographicDestinations: number;
 };
 
 // ---------------------------------------------------------------------------
@@ -481,6 +495,7 @@ export function buildVenueMentions(evidence: MediaPlaceEvidence): BuildMentionsR
     droppedIneligibleName: 0,
     droppedPassingMention: 0,
     droppedGeographicContext: 0,
+    peerGeographicDestinations: 0,
   };
   if (!evidence || evidence.insufficientEvidence) return empty;
 
@@ -494,6 +509,8 @@ export function buildVenueMentions(evidence: MediaPlaceEvidence): BuildMentionsR
   // merely carries its name), but they remain CONTEXTUAL evidence and still
   // scope the geo aggregate for their siblings.
   const geographicContext: PlaceCandidateEvidence[] = [];
+  // Peer geographic destinations: mentions, but resolved geographically.
+  const peerGeographic = new Set<PlaceCandidateEvidence>();
   for (const p of evidence.places) {
     if (p.explicitEvidence.length === 0) {
       droppedInferredOnly += 1;
@@ -503,8 +520,20 @@ export function buildVenueMentions(evidence: MediaPlaceEvidence): BuildMentionsR
       droppedPassingMention += 1;
       continue;
     }
-    if (isGeographicContextOnlySource(p)) {
+    const geoRole = classifyGeographicSourcePlace(p, evidence.places);
+    if (geoRole === 'redundant_container') {
+      // The post's real destinations sit inside this place. Context only.
       geographicContext.push(p);
+      continue;
+    }
+    if (geoRole === 'peer_geographic_destination') {
+      // The post is recommending the place ITSELF. It becomes a mention, but a
+      // GEOGRAPHIC one — resolvable only to a geographic provider entity, never
+      // to a business that merely carries its name. `isEligibleVenueName` is
+      // deliberately NOT applied: that rule screens business names, and a city
+      // is not competing to be a business.
+      peerGeographic.add(p);
+      eligible.push(p);
       continue;
     }
     if (!isEligibleVenueName(p.name)) {
@@ -651,6 +680,11 @@ export function buildVenueMentions(evidence: MediaPlaceEvidence): BuildMentionsR
       confidence: bestConfidence,
       geo: placeGeo(g.places[0]!),
     };
+    // A group is geographic when every place in it is a peer geographic
+    // destination. Mixed groups stay ordinary venues — the stricter default.
+    if (g.places.length > 0 && g.places.every((pl) => peerGeographic.has(pl))) {
+      mention.resolutionMode = 'geographic';
+    }
     if (hasHost) {
       mention.primaryVenueName = g.primaryName;
       mention.hostVenueName = g.hostName;
@@ -678,5 +712,6 @@ export function buildVenueMentions(evidence: MediaPlaceEvidence): BuildMentionsR
     droppedIneligibleName,
     droppedPassingMention,
     droppedGeographicContext: geographicContext.length,
+    peerGeographicDestinations: peerGeographic.size,
   };
 }

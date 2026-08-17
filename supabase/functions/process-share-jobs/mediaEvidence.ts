@@ -354,13 +354,84 @@ export function sourceGeographicContextReasonOf(
   return matched.reason;
 }
 
+/**
+ * What ROLE a geographic source place is playing in its post.
+ *
+ *   redundant_container — the post's real destinations sit INSIDE it, so naming
+ *                         it again adds nothing. Context, never a destination.
+ *   peer_geographic_destination
+ *                       — it stands alongside the other destinations rather
+ *                         than containing them, so the post is recommending the
+ *                         place itself.
+ */
+export type GeographicSourceRole = 'redundant_container' | 'peer_geographic_destination';
+
+/**
+ * Decide which role a geographic source place is playing, or null when the place
+ * is not geographic context at all.
+ *
+ * `name === city` cannot make this call on its own — "Rio de Janeiro" and
+ * "Granada" both satisfy it. The distinguishing signal, proven against both
+ * production jobs, is whether the OTHER places say they are inside this one:
+ *
+ *   Rio reel (job e5825a93) — Copacabana Beach, Christ the Redeemer and
+ *   Sugarloaf Mountain Cable Car every one report `city: "Rio de Janeiro"`.
+ *   Rio is where the destinations are, not a destination. 3 contained siblings.
+ *
+ *   Nicaragua reel (job 10ce36b5) — Granada, San Juan del Sur and León each
+ *   report only their OWN name as their city, and Ometepe Island reports none.
+ *   Nothing sits inside Granada. 0 contained siblings, so the post is offering
+ *   the cities themselves as stops.
+ *
+ * Containment is counted only from places that are NOT themselves geographic
+ * context, so two peer cities can never mark each other as containers.
+ */
+export function classifyGeographicSourcePlace(
+  place: PlaceCandidateEvidence,
+  allPlaces: PlaceCandidateEvidence[],
+): GeographicSourceRole | null {
+  if (!isGeographicContextOnlySource(place)) return null;
+  const self = foldLabel(place.name ?? '');
+  if (!self) return null;
+  const contained = allPlaces.filter((other) => {
+    if (other === place) return false;
+    // A sibling that is itself only geographic context cannot establish
+    // containment — otherwise peer cities would suppress one another.
+    if (isGeographicContextOnlySource(other)) return false;
+    if (other.explicitEvidence.length === 0) return false;
+    if (other.role === 'passing_mention') return false;
+    return foldLabel(other.city ?? '') === self || foldLabel(other.region ?? '') === self;
+  });
+  return contained.length > 0 ? 'redundant_container' : 'peer_geographic_destination';
+}
+
+/** Whether a geographic source place must stay context (never a destination). */
+export function isRedundantGeographicContainer(
+  place: PlaceCandidateEvidence,
+  allPlaces: PlaceCandidateEvidence[],
+): boolean {
+  return classifyGeographicSourcePlace(place, allPlaces) === 'redundant_container';
+}
+
+/** Whether a geographic source place is offered as a destination in its own
+ *  right. Such a place resolves through the GEOGRAPHIC path only — it may never
+ *  be matched to a business that merely carries its name. */
+export function isPeerGeographicDestination(
+  place: PlaceCandidateEvidence,
+  allPlaces: PlaceCandidateEvidence[],
+): boolean {
+  return classifyGeographicSourcePlace(place, allPlaces) === 'peer_geographic_destination';
+}
+
 /** Cap on persisted per-place diagnostic labels: one per place the payload can
  *  carry at all (MAX_PLACES), so a single share can never emit more. */
 const MAX_CONTEXT_DIAGNOSTIC_LABELS = MAX_PLACES;
 
 export type SourceGeographicContextSummary = {
-  /** How many model places were classified as context rather than destinations. */
+  /** Redundant CONTAINER places suppressed (the post's destinations sit inside). */
   dropped: number;
+  /** Geographic places admitted as destinations in their own right. */
+  peerDestinations: number;
   /** Bounded `index:category:reason` labels. Closed vocabulary only — the
    *  place index, its model category (or `none`), and the reason code. Never
    *  the place's name, address, or any model prose. */
@@ -377,16 +448,20 @@ export function summarizeSourceGeographicContext(
 ): SourceGeographicContextSummary {
   const labels: string[] = [];
   let dropped = 0;
+  let peerDestinations = 0;
   const places = Array.isArray(evidence?.places) ? evidence.places : [];
   for (let i = 0; i < places.length; i += 1) {
     const reason = sourceGeographicContextReasonOf(places[i]!);
     if (!reason) continue;
-    dropped += 1;
+    const role = classifyGeographicSourcePlace(places[i]!, places);
+    if (role === 'peer_geographic_destination') peerDestinations += 1;
+    else dropped += 1;
     if (labels.length < MAX_CONTEXT_DIAGNOSTIC_LABELS) {
-      labels.push(`${i}:${places[i]!.category ?? 'none'}:${reason}`);
+      // index : model category : why it is geographic : the role it plays.
+      labels.push(`${i}:${places[i]!.category ?? 'none'}:${reason}:${role ?? 'unknown'}`);
     }
   }
-  return { dropped, labels };
+  return { dropped, peerDestinations, labels };
 }
 
 export type RenderedCaption = {
@@ -403,12 +478,17 @@ export type RenderedCaption = {
  * intentional places. Inferred-only places and passing mentions are always
  * dropped here — before anything reaches the resolver or the auto-save gate.
  *
- * Places that merely restate their own city/region/country are dropped here too
- * (`isGeographicContextOnlySource`): they are context, never the destination, so
- * they must not seed a name search that could match an unrelated business
- * carrying the same place-name. They still contribute geographic context to
- * their siblings — that happens in `buildVenueMentions`, which aggregates geo
- * from them before excluding them as searchable mentions.
+ * A place that merely restates its own city/region/country is dropped here ONLY
+ * when it is a REDUNDANT CONTAINER — when the post's other destinations report
+ * sitting inside it (Rio de Janeiro around Copacabana / Christ the Redeemer /
+ * Sugarloaf). Such a place is where the destinations are, not one of them, and
+ * must not seed a name search that could match an unrelated business carrying
+ * the same place-name. It still contributes geographic context to its siblings.
+ *
+ * A PEER geographic destination (Granada, León and San Juan del Sur, which
+ * contain none of their siblings) survives here and is resolved through the
+ * dedicated geographic path in `buildVenueMentions` — never through ordinary
+ * business matching.
  */
 export function selectRenderablePlaces(
   evidence: MediaPlaceEvidence,
@@ -417,7 +497,7 @@ export function selectRenderablePlaces(
   return evidence.places
     .filter(hasExplicitEvidence)
     .filter((p) => p.role !== 'passing_mention')
-    .filter((p) => !isGeographicContextOnlySource(p))
+    .filter((p) => !isRedundantGeographicContainer(p, evidence.places))
     .filter((p) => p.role === 'primary' || evidence.multipleIntentionalPlaces)
     .sort((a, b) => {
       const r = ROLE_ORDER[a.role] - ROLE_ORDER[b.role];
