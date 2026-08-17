@@ -201,6 +201,16 @@ function ndResult(over: Partial<NameDrivenResult>): NameDrivenResult {
     providerErrorCount: 0,
     rejectedCount: 0,
     requestCount: 0,
+    resolutionDiagnostics: {
+      attempts: 0,
+      verified: 0,
+      ambiguous: 0,
+      noMatch: 0,
+      providerError: 0,
+      insufficientEvidence: 0,
+      noMatchReasonCounts: {},
+      failureTraces: [],
+    },
     ...over,
   };
 }

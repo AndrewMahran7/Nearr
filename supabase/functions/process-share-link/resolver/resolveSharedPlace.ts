@@ -185,6 +185,12 @@ export async function resolveSharedPlace(args: {
     };
     // Preserve the full per-mention structure (per-slot UI + diagnostics).
     diagnostics.mentionResults = nameDriven.mentionResults;
+    // Bounded funnel for every mention that produced NO place. This is the half
+    // that used to die with the request: `mentionResults` is rich but carries
+    // candidate names and the raw query, so it is not persisted — which left a
+    // zero-suggestion job unable to say whether Google returned nothing or our
+    // own guards removed everything.
+    diagnostics.resolutionDiagnostics = nameDriven.resolutionDiagnostics;
     diagnostics.venueRelationships = venueRelationships;
     diagnostics.resolverPath = isSingle ? 'name_driven_single' : 'name_driven_multi';
     logShareDebug('resolver:name_driven', {

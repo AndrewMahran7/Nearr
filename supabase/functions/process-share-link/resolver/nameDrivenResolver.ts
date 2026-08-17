@@ -72,6 +72,119 @@ export type MentionScoreExplanation = {
   rejectionReason: string | null;
 };
 
+/**
+ * WHY a mention ended in `no_match`, as a closed vocabulary an audit can group
+ * by. Derived from the stages that actually exist in this file — never invented
+ * — so every value is reachable and each points at a different fix:
+ *
+ *   provider_empty        Google returned nothing. Our rules never ran.
+ *   candidate_invalid     Every result was vetoed as platform noise.
+ *   geographic_context_rejected
+ *                         Venue mode: every result was a city/county/country.
+ *   geographic_destination_type_rejected
+ *                         Geographic mode: every result was a business. This is
+ *                         the Rio/7-Mares guard doing its job.
+ *   distance_or_geo_rejected
+ *                         Every result sat in the wrong state or country.
+ *   all_candidates_rejected
+ *                         Several different guards each removed some results.
+ *   name_match_failed     Results survived the guards, but the best one carried
+ *                         no name evidence — it matched on type/state alone.
+ *   score_below_acceptance
+ *                         The best candidate DID match by name and still fell
+ *                         under PLAUSIBLE_FLOOR.
+ *
+ * The first six mean "nothing usable came back"; the last two mean "something
+ * came back and our scoring declined it". That split is the point.
+ */
+export type MentionNoMatchReason =
+  | 'provider_empty'
+  | 'candidate_invalid'
+  | 'geographic_context_rejected'
+  | 'geographic_destination_type_rejected'
+  | 'distance_or_geo_rejected'
+  | 'all_candidates_rejected'
+  | 'name_match_failed'
+  | 'score_below_acceptance';
+
+/** Hard-veto `rejectionReason` values → the no-match code they justify. Keyed
+ *  off the SAME strings the scorers emit, so a new veto that forgets to
+ *  register here degrades to `all_candidates_rejected` rather than lying. */
+const REJECTION_TO_NO_MATCH_REASON: Record<string, MentionNoMatchReason> = {
+  platform_noise: 'candidate_invalid',
+  wrong_location: 'distance_or_geo_rejected',
+  geographic_context_only: 'geographic_context_rejected',
+  not_a_geographic_entity: 'geographic_destination_type_rejected',
+  geographic_country_mismatch: 'distance_or_geo_rejected',
+};
+
+/** Highest provider result count we will persist. Search asks for 8 and a
+ *  category-biased second pass can merge in 8 more; 25 leaves headroom without
+ *  letting an unexpected provider change grow the row. */
+export const MAX_PERSISTED_PROVIDER_RESULTS = 25;
+/** Cap on persisted per-mention traces. Matches MAX_MENTIONS in
+ *  mediaMentions.ts — a post can never produce more mentions than that. */
+export const MAX_FAILURE_TRACES = 10;
+
+/**
+ * Bounded, queryable explanation of ONE mention that produced no place.
+ *
+ * Every field is an integer, boolean, or closed-vocabulary label. No candidate
+ * names, no addresses, no query text, no provider payload — the audit groups on
+ * these, it does not read them as prose.
+ */
+export type MentionFailureTrace = {
+  /** Stable per-task slot id (m1, m2, …). Not source text. */
+  mentionId: string;
+  resolutionMode: 'venue' | 'geographic';
+  outcome: MentionOutcome;
+  noMatchReason?: MentionNoMatchReason;
+  providerSearchStatus: 'ok' | 'empty' | 'error' | 'not_attempted';
+  /** Closed vocabulary from SearchPlacesResult (`http_error` / `api_error` /
+   *  `request_limit_reached`). Never the provider's raw error text. */
+  providerErrorKind?: string;
+  providerStatusCode?: string;
+  /** Distinct results the provider returned (both passes), capped. */
+  providerResultCount: number;
+  /** How many of those were actually scored. */
+  candidatesConsidered: number;
+  /** Whether the category-biased second search ran for this mention. */
+  categoryBiasedSearchUsed: boolean;
+  /** Tally of hard vetoes by their own `rejectionReason` string. */
+  rejectionCounts: Record<string, number>;
+  /** Candidates that survived every hard veto and were ranked. */
+  survivingCandidates: number;
+  /** Of the survivors, how many carried real name evidence. Name matching here
+   *  is predicate-based, so this is a count, not a similarity score. */
+  survivingWithNameEvidence: number;
+  /** Best surviving candidate, when one existed. Absent when all were vetoed. */
+  bestCandidateScore?: number;
+  bestCandidatePassedName?: boolean;
+  /** Provider type completeness — is missing type data costing us matches? */
+  candidatesWithPrimaryType: number;
+  candidatesWithTypesArray: number;
+  candidatesWithoutAnyType: number;
+  /** Structural facts about how the query was scoped. Never the query itself. */
+  queryHadCity: boolean;
+  queryHadRegion: boolean;
+  queryHadCountry: boolean;
+  countryFromMention: boolean;
+  sharedCountryApplied: boolean;
+  locationBiasApplied: boolean;
+};
+
+/** Aggregate counters so an audit can group 100 jobs without opening traces. */
+export type ResolutionDiagnostics = {
+  attempts: number;
+  verified: number;
+  ambiguous: number;
+  noMatch: number;
+  providerError: number;
+  insufficientEvidence: number;
+  noMatchReasonCounts: Record<string, number>;
+  failureTraces: MentionFailureTrace[];
+};
+
 export type MentionResult = {
   mentionId: string;
   displayName: string;
@@ -102,6 +215,9 @@ export type NameDrivenResult = {
   providerErrorCount: number;
   rejectedCount: number;
   requestCount: number;
+  /** Bounded, queryable explanation of every mention that produced no place.
+   *  Observability only — nothing downstream reads it to make a decision. */
+  resolutionDiagnostics: ResolutionDiagnostics;
 };
 
 /** Retry only a complete provider outage. Partial candidates and real
@@ -519,26 +635,133 @@ export function isHostOnlyCandidate(
 export function classifyMention(scored: ScoredMentionCandidate[]): {
   outcome: MentionOutcome;
   ranked: ScoredMentionCandidate[];
+  /** Why this ended in no_match. Null for every other outcome. Produced HERE,
+   *  by the function that makes the decision, so an audit can never read a
+   *  reason that disagrees with what the resolver actually did. */
+  noMatchReason: MentionNoMatchReason | null;
 } {
   const ranked = scored.filter((s) => !s.rejected).sort((a, b) => b.rawScore - a.rawScore);
-  if (ranked.length === 0) return { outcome: 'no_match', ranked: [] };
+  if (ranked.length === 0) {
+    return { outcome: 'no_match', ranked: [], noMatchReason: reasonForFullyRejected(scored) };
+  }
 
   const top = ranked[0]!;
   const topNorm = normalizeRawScore(top.rawScore);
   // A candidate that matched only on business-type / state (no name evidence)
-  // is NOT a verification of the named venue.
-  if (!hasNameEvidence(top.reasons) || topNorm < PLAUSIBLE_FLOOR) {
-    return { outcome: 'no_match', ranked };
+  // is NOT a verification of the named venue. Split into two branches purely so
+  // the two causes are distinguishable — both still return no_match, exactly as
+  // the single combined condition did.
+  if (!hasNameEvidence(top.reasons)) {
+    return { outcome: 'no_match', ranked, noMatchReason: 'name_match_failed' };
+  }
+  if (topNorm < PLAUSIBLE_FLOOR) {
+    return { outcome: 'no_match', ranked, noMatchReason: 'score_below_acceptance' };
   }
 
   const second = ranked[1];
   const clearLead = !second || topNorm - normalizeRawScore(second.rawScore) >= AMBIGUITY_MARGIN;
 
   if (topNorm >= ACCEPT_SCORE && clearLead) {
-    return { outcome: 'verified_single', ranked };
+    return { outcome: 'verified_single', ranked, noMatchReason: null };
   }
   // Plausible but not a clear single winner → user selects.
-  return { outcome: 'ambiguous_candidates', ranked };
+  return { outcome: 'ambiguous_candidates', ranked, noMatchReason: null };
+}
+
+/**
+ * Why a mention died when EVERY candidate was hard-vetoed.
+ *
+ * One dominant veto names itself, because that is the actionable case: "all
+ * eight results were localities" and "all eight were in the wrong country" call
+ * for different fixes. Mixed vetoes stay `all_candidates_rejected` — no single
+ * reason would be true — and `rejectionCounts` on the trace preserves the split.
+ */
+function reasonForFullyRejected(scored: ScoredMentionCandidate[]): MentionNoMatchReason {
+  if (scored.length === 0) return 'provider_empty';
+  const distinct = new Set(scored.map((s) => s.rejectionReason ?? 'unknown'));
+  if (distinct.size === 1) {
+    const only = [...distinct][0]!;
+    return REJECTION_TO_NO_MATCH_REASON[only] ?? 'all_candidates_rejected';
+  }
+  return 'all_candidates_rejected';
+}
+
+/**
+ * Build the bounded trace for one mention.
+ *
+ * PURE, and deliberately derivative: it is handed the SAME `scored` array the
+ * resolver classified and only counts what is already there. It re-runs no
+ * guard and re-decides nothing, which is what keeps diagnostics from drifting
+ * away from behavior as the scorers change.
+ *
+ * Note this reads the FULL scored array, not the 8-item `scoring` slice that
+ * `MentionResult` carries — otherwise every count would silently cap at 8.
+ */
+export function buildMentionFailureTrace(args: {
+  mentionId: string;
+  resolutionMode: 'venue' | 'geographic';
+  outcome: MentionOutcome;
+  noMatchReason: MentionNoMatchReason | null;
+  providerSearchStatus: MentionFailureTrace['providerSearchStatus'];
+  providerErrorKind?: string;
+  providerStatusCode?: string;
+  providerResultCount: number;
+  scored: ScoredMentionCandidate[];
+  ranked: ScoredMentionCandidate[];
+  categoryBiasedSearchUsed: boolean;
+  queryHadCity: boolean;
+  queryHadRegion: boolean;
+  queryHadCountry: boolean;
+  countryFromMention: boolean;
+  sharedCountryApplied: boolean;
+  locationBiasApplied: boolean;
+}): MentionFailureTrace {
+  const rejectionCounts: Record<string, number> = {};
+  let withPrimaryType = 0;
+  let withTypesArray = 0;
+  let withoutAnyType = 0;
+  for (const s of args.scored) {
+    if (s.rejected) {
+      const key = s.rejectionReason ?? 'unknown';
+      rejectionCounts[key] = (rejectionCounts[key] ?? 0) + 1;
+    }
+    const hasPrimary = typeof s.candidate.primaryType === 'string' && !!s.candidate.primaryType;
+    const hasTypes = Array.isArray(s.candidate.types) && s.candidate.types.length > 0;
+    if (hasPrimary) withPrimaryType += 1;
+    if (hasTypes) withTypesArray += 1;
+    if (!hasPrimary && !hasTypes) withoutAnyType += 1;
+  }
+
+  const best = args.ranked[0];
+  const trace: MentionFailureTrace = {
+    mentionId: args.mentionId,
+    resolutionMode: args.resolutionMode,
+    outcome: args.outcome,
+    providerSearchStatus: args.providerSearchStatus,
+    providerResultCount: Math.min(args.providerResultCount, MAX_PERSISTED_PROVIDER_RESULTS),
+    candidatesConsidered: Math.min(args.scored.length, MAX_PERSISTED_PROVIDER_RESULTS),
+    categoryBiasedSearchUsed: args.categoryBiasedSearchUsed,
+    rejectionCounts,
+    survivingCandidates: args.ranked.length,
+    survivingWithNameEvidence: args.ranked.filter((s) => hasNameEvidence(s.reasons)).length,
+    candidatesWithPrimaryType: withPrimaryType,
+    candidatesWithTypesArray: withTypesArray,
+    candidatesWithoutAnyType: withoutAnyType,
+    queryHadCity: args.queryHadCity,
+    queryHadRegion: args.queryHadRegion,
+    queryHadCountry: args.queryHadCountry,
+    countryFromMention: args.countryFromMention,
+    sharedCountryApplied: args.sharedCountryApplied,
+    locationBiasApplied: args.locationBiasApplied,
+  };
+  if (args.noMatchReason) trace.noMatchReason = args.noMatchReason;
+  if (args.providerErrorKind) trace.providerErrorKind = args.providerErrorKind;
+  if (args.providerStatusCode) trace.providerStatusCode = args.providerStatusCode;
+  if (best) {
+    trace.bestCandidateScore = Number(normalizeRawScore(best.rawScore).toFixed(4));
+    trace.bestCandidatePassedName = hasNameEvidence(best.reasons);
+  }
+  return trace;
 }
 
 function toExplanation(s: ScoredMentionCandidate): MentionScoreExplanation {
@@ -654,8 +877,38 @@ export async function resolveVenueMentions(args: {
   let requestCount = 0;
 
   const mentionResults: MentionResult[] = [];
+  const failureTraces: MentionFailureTrace[] = [];
+  // Observability must never be able to fail a share. A malformed provider
+  // entity that slipped past scoring costs us one trace, not the recognition.
+  const recordFailure = (
+    build: () => Parameters<typeof buildMentionFailureTrace>[0],
+  ): void => {
+    if (failureTraces.length >= MAX_FAILURE_TRACES) return;
+    try {
+      failureTraces.push(buildMentionFailureTrace(build()));
+    } catch {
+      // Non-critical by construction — drop this trace and carry on.
+    }
+  };
+
   for (const mention of mentions) {
     const query = buildMentionQuery(mention, geoContext);
+    // Structural facts about how this query was scoped, captured BEFORE the
+    // search so a failed mention still explains what context it had. These are
+    // booleans about the same inputs `buildMentionQuery` used — never the query.
+    const resolvedCountry = mentionQueryCountry(mention, geoContext);
+    const queryContext = {
+      resolutionMode: (mention.resolutionMode === 'geographic' ? 'geographic' : 'venue') as
+        | 'venue'
+        | 'geographic',
+      queryHadCity: !!(mention.geo.city ?? geoContext.city),
+      queryHadRegion: !!(mention.geo.region ?? geoContext.region),
+      queryHadCountry: !!resolvedCountry,
+      countryFromMention: !!(mention.geo.country ?? '').trim(),
+      sharedCountryApplied:
+        !(mention.geo.country ?? '').trim() && !!resolvedCountry,
+      locationBiasApplied: !!bias,
+    };
     const relFields = mention.hostVenueName
       ? { primaryVenueName: mention.primaryVenueName, hostVenueName: mention.hostVenueName, relationshipType: mention.relationshipType }
       : {};
@@ -663,6 +916,17 @@ export async function resolveVenueMentions(args: {
     // built, but never search one if it slips through.
     if (mention.distinctiveTokens.length === 0) {
       mentionResults.push({ mentionId: mention.id, displayName: mention.displayName, outcome: 'rejected_insufficient_evidence', query, candidates: [], scoring: [], ...relFields });
+      recordFailure(() => ({
+        mentionId: mention.id,
+        outcome: 'rejected_insufficient_evidence',
+        noMatchReason: null,
+        providerSearchStatus: 'not_attempted',
+        providerResultCount: 0,
+        scored: [],
+        ranked: [],
+        categoryBiasedSearchUsed: false,
+        ...queryContext,
+      }));
       continue;
     }
 
@@ -673,6 +937,20 @@ export async function resolveVenueMentions(args: {
     } else if (requestCount >= globalLimit) {
       // Budget exhausted — treat remaining mentions as provider_error (bounded).
       mentionResults.push({ mentionId: mention.id, displayName: mention.displayName, outcome: 'provider_error', query, candidates: [], scoring: [], providerError: 'request_limit_reached', ...relFields });
+      recordFailure(() => ({
+        mentionId: mention.id,
+        outcome: 'provider_error',
+        noMatchReason: null,
+        // The budget stopped us before Google was ever asked. Recording this as
+        // "not_attempted" keeps a local cost cap from reading like an outage.
+        providerSearchStatus: 'not_attempted',
+        providerErrorKind: 'request_limit_reached',
+        providerResultCount: 0,
+        scored: [],
+        ranked: [],
+        categoryBiasedSearchUsed: false,
+        ...queryContext,
+      }));
       continue;
     } else {
       requestCount += 1;
@@ -697,6 +975,21 @@ export async function resolveVenueMentions(args: {
         providerRetryAfterSeconds: result.retryAfterSeconds,
         ...relFields,
       });
+      recordFailure(() => ({
+        mentionId: mention.id,
+        outcome: 'provider_error',
+        noMatchReason: null,
+        // A real provider failure. Deliberately NOT collapsed into "returned
+        // nothing" — an outage and an empty result set need different fixes.
+        providerSearchStatus: 'error',
+        providerErrorKind: result.reason,
+        providerStatusCode: result.status,
+        providerResultCount: 0,
+        scored: [],
+        ranked: [],
+        categoryBiasedSearchUsed: false,
+        ...queryContext,
+      }));
       continue;
     }
 
@@ -754,6 +1047,22 @@ export async function resolveVenueMentions(args: {
       scoring: scored.map(toExplanation).slice(0, 8),
       ...relFields,
     });
+    // Only failures are traced. A resolved mention already explains itself
+    // through its candidates, and tracing every success would double the
+    // diagnostics payload of an ordinary share for no audit value.
+    if (outcome === 'no_match') {
+      recordFailure(() => ({
+        mentionId: mention.id,
+        outcome,
+        noMatchReason: classified.noMatchReason,
+        providerSearchStatus: candidatesToScore.length === 0 ? 'empty' : 'ok',
+        providerResultCount: candidatesToScore.length,
+        scored,
+        ranked,
+        categoryBiasedSearchUsed: !!categoryBiasedQuery,
+        ...queryContext,
+      }));
+    }
   }
 
   // Aggregate + dedupe by canonical Place ID (distinct locations stay distinct).
@@ -774,14 +1083,36 @@ export async function resolveVenueMentions(args: {
     if (aggregateCandidates.length >= MAX_AGGREGATE_CANDIDATES) break;
   }
 
+  const verifiedCount = mentionResults.filter((m) => m.outcome === 'verified_single').length;
+  const ambiguousCount = mentionResults.filter((m) => m.outcome === 'ambiguous_candidates').length;
+  const noMatchCount = mentionResults.filter((m) => m.outcome === 'no_match').length;
+  const providerErrorCount = mentionResults.filter((m) => m.outcome === 'provider_error').length;
+  const rejectedCount = mentionResults.filter((m) => m.outcome === 'rejected_insufficient_evidence').length;
+
+  const noMatchReasonCounts: Record<string, number> = {};
+  for (const trace of failureTraces) {
+    if (!trace.noMatchReason) continue;
+    noMatchReasonCounts[trace.noMatchReason] = (noMatchReasonCounts[trace.noMatchReason] ?? 0) + 1;
+  }
+
   return {
     mentionResults,
     aggregateCandidates,
-    verifiedCount: mentionResults.filter((m) => m.outcome === 'verified_single').length,
-    ambiguousCount: mentionResults.filter((m) => m.outcome === 'ambiguous_candidates').length,
-    noMatchCount: mentionResults.filter((m) => m.outcome === 'no_match').length,
-    providerErrorCount: mentionResults.filter((m) => m.outcome === 'provider_error').length,
-    rejectedCount: mentionResults.filter((m) => m.outcome === 'rejected_insufficient_evidence').length,
+    verifiedCount,
+    ambiguousCount,
+    noMatchCount,
+    providerErrorCount,
+    rejectedCount,
     requestCount,
+    resolutionDiagnostics: {
+      attempts: mentionResults.length,
+      verified: verifiedCount,
+      ambiguous: ambiguousCount,
+      noMatch: noMatchCount,
+      providerError: providerErrorCount,
+      insufficientEvidence: rejectedCount,
+      noMatchReasonCounts,
+      failureTraces,
+    },
   };
 }

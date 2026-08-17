@@ -866,6 +866,11 @@ async function finalizeMediaTask(
   const mentionResults = Array.isArray(result.diagnostics?.mentionResults)
     ? result.diagnostics.mentionResults
     : [];
+  // Bounded recognition-failure funnel, persisted on the job so a
+  // zero-suggestion outcome can be explained after the request is gone.
+  // `mentionResults` itself stays in memory: it carries candidate names and the
+  // raw Places query, neither of which belongs in stored diagnostics.
+  const resolutionDiagnostics = result.diagnostics?.resolutionDiagnostics ?? null;
   const aiNoteByMentionId = new Map(
     mediaMentions.mentions.map((mention: any) => [
       mention.id,
@@ -1177,7 +1182,7 @@ async function finalizeMediaTask(
           candidate_payload: candidatePayload,
           canonical_url: canonicalUrl,
           source_platform: task.platform,
-          extraction_payload: { platform: task.platform, via: 'media', mediaResultSummary },
+          extraction_payload: { platform: task.platform, via: 'media', mediaResultSummary, resolutionDiagnostics },
           progress_stage: 'completed',
           completed_at: nowIso(),
         },
@@ -1202,7 +1207,7 @@ async function finalizeMediaTask(
         candidate_payload: candidatePayload,
         canonical_url: canonicalUrl,
         source_platform: task.platform,
-        extraction_payload: { platform: task.platform, via: 'media', mediaResultSummary },
+        extraction_payload: { platform: task.platform, via: 'media', mediaResultSummary, resolutionDiagnostics },
         progress_stage: unresolvedWithCandidates > 0 ? 'multi' : 'manual',
       },
       notification,
@@ -1218,6 +1223,7 @@ async function finalizeMediaTask(
     cleanSearchQuery: result.cleanSearchQuery ?? null,
     evidenceUsed: result.evidenceUsed,
     warnings: result.warnings,
+    resolutionDiagnostics,
   };
   const plan = planFromResolverDecision({
     decision: result.decision,
@@ -1456,6 +1462,9 @@ async function processOne(admin: any, env: any, job: any): Promise<void> {
     autoSaveDecision: metadataAutoSave,
     rawResolverCandidates: result.candidates.slice(0, 10).map(safeCandidate),
     plausibleCandidates: plausibleCandidates.slice(0, 10).map(safeCandidate),
+    // Present only when the metadata path ran name-driven mention resolution;
+    // the address/query-ladder path produces no mentions and so no traces.
+    resolutionDiagnostics: (result.diagnostics as any)?.resolutionDiagnostics ?? null,
   };
 
   // ---- transient provider failure -> retry, don't blame the user ----------
