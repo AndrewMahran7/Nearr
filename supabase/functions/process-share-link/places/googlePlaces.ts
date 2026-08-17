@@ -34,9 +34,38 @@ export type PlacesCandidate = {
   businessStatus?: string;
 };
 
+/**
+ * Which Google Places surface actually served a search.
+ *
+ * `places_new` is the intended provider: it alone returns `primaryType`, which
+ * scoring and the geographic guards consume. `places_legacy` is resilience —
+ * it has no `primaryType` contract at all, so a search served there is a
+ * DEGRADED search, and a recognition failure on that path cannot be compared
+ * against one on the intended path.
+ */
+export type PlacesApiPath = 'places_new' | 'places_legacy';
+
+/** Why the New path was abandoned. Closed vocabulary — never a raw error. */
+export type PlacesFallbackReason = 'service_blocked';
+
 export type SearchPlacesResult =
-  | { ok: true; results: PlacesCandidate[] }
-  | { ok: false; reason: 'http_error' | 'api_error'; status?: string; error?: string; retryAfterSeconds?: number };
+  | {
+      ok: true;
+      results: PlacesCandidate[];
+      /** Which surface produced `results`. Absent only from older callers'
+       *  hand-built doubles, which callers already treat as unknown. */
+      apiPath?: PlacesApiPath;
+      fallbackReason?: PlacesFallbackReason;
+    }
+  | {
+      ok: false;
+      reason: 'http_error' | 'api_error';
+      status?: string;
+      error?: string;
+      retryAfterSeconds?: number;
+      apiPath?: PlacesApiPath;
+      fallbackReason?: PlacesFallbackReason;
+    };
 
 const PLACES_BASE = 'https://maps.googleapis.com/maps/api/place/textsearch/json';
 const PLACES_V1_SEARCH = 'https://places.googleapis.com/v1/places:searchText';
@@ -100,7 +129,17 @@ export async function searchPlaces(
         (detail: any) => detail?.reason === 'API_KEY_SERVICE_BLOCKED',
       );
       if (res.status === 403 && serviceBlocked) {
-        return searchPlacesLegacy(query, key, bias, ctrl.signal);
+        // A CONFIGURATION failure, not a transient one: the key is not allowed
+        // to call Places API (New), and no number of retries will change that.
+        // Falling back keeps users working, but it must never be silent —
+        // living on Legacy costs `primaryType`, which scoring and the
+        // geographic guards read. One bounded line, no key, no raw error body.
+        console.warn(
+          '[places] api_new_service_blocked falling_back=places_legacy ' +
+            'effect=primary_type_unavailable action=allow_places_api_new_on_server_key',
+        );
+        const legacy = await searchPlacesLegacy(query, key, bias, ctrl.signal);
+        return { ...legacy, apiPath: 'places_legacy', fallbackReason: 'service_blocked' };
       }
       return {
         ok: false,
@@ -108,11 +147,17 @@ export async function searchPlaces(
         status: String(res.status),
         error: `HTTP ${res.status}`,
         retryAfterSeconds: parseRetryAfter(res.headers.get('retry-after')),
+        apiPath: 'places_new',
       };
     }
     json = await res.json();
   } catch (err) {
-    return { ok: false, reason: 'http_error', error: ctrl.signal.aborted ? 'timeout' : (err as Error)?.message };
+    return {
+      ok: false,
+      reason: 'http_error',
+      error: ctrl.signal.aborted ? 'timeout' : (err as Error)?.message,
+      apiPath: 'places_new',
+    };
   } finally {
     clearTimeout(timer);
   }
@@ -120,7 +165,7 @@ export async function searchPlaces(
     .slice(0, 8)
     .map(mapPlacesV1Candidate)
     .filter(isUsableCandidate);
-  return { ok: true, results };
+  return { ok: true, results, apiPath: 'places_new' };
 }
 
 /**
@@ -293,7 +338,14 @@ export async function geocodeContextText(
  */
 export type AddressVerifyStrategy = 'venue_plus_address' | 'address_only';
 
-export type AddressVerification =
+export type AddressVerification = AddressVerificationOutcome & {
+  /** Which Places surface served the verification ladder. Observability only —
+   *  never read to make a decision. */
+  apiPath?: PlacesApiPath;
+  fallbackReason?: PlacesFallbackReason;
+};
+
+type AddressVerificationOutcome =
   | {
       status: 'verified';
       candidate: PlacesCandidate;
@@ -355,7 +407,28 @@ export type AddressVerification =
  * that provider-faults does not end the ladder — the next rung still runs, and
  * the fault is only reported if NO rung produced anything.
  */
+/**
+ * Public entry point. Runs the verification ladder, then stamps WHICH Places
+ * surface served it onto whatever the ladder returned.
+ *
+ * The stamping is done here, once, rather than at each of the ladder's exits:
+ * there are eight of them, and threading a diagnostic through every one is how
+ * a diagnostic ends up missing from exactly the branch you needed it on.
+ */
 export async function verifyPlaceAtAddressServer(
+  address: string,
+  optionalPlaceName: string | null,
+  key: string,
+  nameSource: 'caption_text' | 'tagged_venue_handle' = 'caption_text',
+): Promise<AddressVerification> {
+  const sink: ProviderPathSink = {};
+  const result = await verifyPlaceAtAddressLadder(address, optionalPlaceName, key, nameSource, sink);
+  return { ...result, ...sink } as AddressVerification;
+}
+
+type ProviderPathSink = { apiPath?: PlacesApiPath; fallbackReason?: PlacesFallbackReason };
+
+async function verifyPlaceAtAddressLadder(
   address: string,
   optionalPlaceName: string | null,
   key: string,
@@ -367,6 +440,7 @@ export async function verifyPlaceAtAddressServer(
    * existing caller keeps strict name matching unchanged.
    */
   nameSource: 'caption_text' | 'tagged_venue_handle' = 'caption_text',
+  sink: ProviderPathSink = {},
 ): Promise<AddressVerification> {
   const geocoded = await geocodeAddressServer(address, key);
   if (!geocoded) {
@@ -388,9 +462,18 @@ export async function verifyPlaceAtAddressServer(
   // Sticky across rungs: a fault on rung 1 must not be forgotten if rung 2
   // simply finds nothing — "we could not ask" is not "there is nothing there".
   let providerFault: { retryAfterSeconds?: number } | null = null;
-
   for (const rung of ladder) {
     const res = await searchPlaces(rung.query, key, bias);
+    // Which Places surface served this verification. Address-first is a major
+    // production path, so it has to be able to say whether it ran on the
+    // intended provider — a Legacy rung has no `primaryType`, and the
+    // `isGeographicContextOnly` filter below reads exactly that. Degraded wins.
+    if (res.apiPath === 'places_legacy') {
+      sink.apiPath = 'places_legacy';
+      sink.fallbackReason = res.fallbackReason;
+    } else if (res.apiPath && sink.apiPath !== 'places_legacy') {
+      sink.apiPath = res.apiPath;
+    }
     if (!res.ok) {
       providerFault = {
         ...(typeof res.retryAfterSeconds === 'number'

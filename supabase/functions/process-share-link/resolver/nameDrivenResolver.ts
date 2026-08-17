@@ -34,6 +34,8 @@ import {
   geocodeContextText,
   type PlacesCandidate,
   type SearchPlacesResult,
+  type PlacesApiPath,
+  type PlacesFallbackReason,
 } from '../places/googlePlaces.ts';
 import { toResolvedCandidate } from './placeScoring.ts';
 import {
@@ -144,6 +146,10 @@ export type MentionFailureTrace = {
    *  `request_limit_reached`). Never the provider's raw error text. */
   providerErrorKind?: string;
   providerStatusCode?: string;
+  /** Which Google Places surface served this mention. `places_legacy` means the
+   *  search ran WITHOUT `primaryType`, so a failure here is not comparable to
+   *  one on the intended path. */
+  providerApiPath?: PlacesApiPath;
   /** Distinct results the provider returned (both passes), capped. */
   providerResultCount: number;
   /** How many of those were actually scored. */
@@ -175,6 +181,12 @@ export type MentionFailureTrace = {
 
 /** Aggregate counters so an audit can group 100 jobs without opening traces. */
 export type ResolutionDiagnostics = {
+  /** Which Places surface served this task's searches. `places_legacy` here
+   *  means the WHOLE recognition ran degraded, without `primaryType` — the
+   *  100-failure audit must separate those from failures on the intended path. */
+  providerApiPath?: PlacesApiPath;
+  providerFallbackUsed?: boolean;
+  providerFallbackReason?: PlacesFallbackReason;
   attempts: number;
   verified: number;
   ambiguous: number;
@@ -709,6 +721,7 @@ export function buildMentionFailureTrace(args: {
   scored: ScoredMentionCandidate[];
   ranked: ScoredMentionCandidate[];
   categoryBiasedSearchUsed: boolean;
+  providerApiPath?: PlacesApiPath;
   queryHadCity: boolean;
   queryHadRegion: boolean;
   queryHadCountry: boolean;
@@ -754,6 +767,7 @@ export function buildMentionFailureTrace(args: {
     sharedCountryApplied: args.sharedCountryApplied,
     locationBiasApplied: args.locationBiasApplied,
   };
+  if (args.providerApiPath) trace.providerApiPath = args.providerApiPath;
   if (args.noMatchReason) trace.noMatchReason = args.noMatchReason;
   if (args.providerErrorKind) trace.providerErrorKind = args.providerErrorKind;
   if (args.providerStatusCode) trace.providerStatusCode = args.providerStatusCode;
@@ -875,6 +889,20 @@ export async function resolveVenueMentions(args: {
   // Per-task cache so identical queries aren't searched twice.
   const cache = new Map<string, SearchPlacesResult>();
   let requestCount = 0;
+  // Which Places surface actually served this task. Degraded wins: if ANY
+  // search fell back, the task's recognition was not run on the intended
+  // provider and the audit must be able to see that from one field.
+  let providerApiPath: PlacesApiPath | undefined;
+  let providerFallbackReason: PlacesFallbackReason | undefined;
+  const notePath = (r: SearchPlacesResult | undefined): void => {
+    if (!r?.apiPath) return;
+    if (r.apiPath === 'places_legacy') {
+      providerApiPath = 'places_legacy';
+      providerFallbackReason = r.fallbackReason;
+    } else if (providerApiPath !== 'places_legacy') {
+      providerApiPath = r.apiPath;
+    }
+  };
 
   const mentionResults: MentionResult[] = [];
   const failureTraces: MentionFailureTrace[] = [];
@@ -961,6 +989,7 @@ export async function resolveVenueMentions(args: {
       }
       cache.set(query, result);
     }
+    notePath(result);
 
     if (!result.ok) {
       mentionResults.push({
@@ -1012,6 +1041,7 @@ export async function resolveVenueMentions(args: {
         }
         cache.set(categoryBiasedQuery, biased);
       }
+      notePath(biased);
       if (biased?.ok) {
         candidatesToScore = mergePlacesCandidates(candidatesToScore, biased.results);
         scored = candidatesToScore.map((c) => scoreMentionCandidate(c, mention, { expectedState, bias, platform, expectedCountry: mentionQueryCountry(mention, geoContext) }));
@@ -1056,6 +1086,7 @@ export async function resolveVenueMentions(args: {
         outcome,
         noMatchReason: classified.noMatchReason,
         providerSearchStatus: candidatesToScore.length === 0 ? 'empty' : 'ok',
+        providerApiPath,
         providerResultCount: candidatesToScore.length,
         scored,
         ranked,
@@ -1105,6 +1136,9 @@ export async function resolveVenueMentions(args: {
     rejectedCount,
     requestCount,
     resolutionDiagnostics: {
+      providerApiPath,
+      providerFallbackUsed: providerApiPath === 'places_legacy',
+      providerFallbackReason,
       attempts: mentionResults.length,
       verified: verifiedCount,
       ambiguous: ambiguousCount,

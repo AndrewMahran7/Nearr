@@ -509,6 +509,13 @@ export async function resolveSharedPlace(args: {
         strategy: (verification as any).strategy ?? null,
         venueHintPresent: !!placeName,
       };
+      if (verification.apiPath && diagnostics.providerApiPath !== 'places_legacy') {
+        diagnostics.providerApiPath = verification.apiPath;
+        if (verification.apiPath === 'places_legacy') {
+          diagnostics.providerFallbackUsed = true;
+          diagnostics.providerFallbackReason = verification.fallbackReason;
+        }
+      }
       const verifyResultCount =
         verification.status === 'verified'
           ? 1
@@ -653,6 +660,16 @@ export async function resolveSharedPlace(args: {
   for (const q of plan.queries) {
     lastQuery = q;
     const r = await searchPlaces(q, env.googlePlacesKey, bias ?? undefined);
+    // Which Places surface served the caption/address ladder. Degraded wins:
+    // once any search has fallen back, this whole resolution ran without
+    // `primaryType` and must not be compared against an intended-path run.
+    if (r.apiPath && diagnostics.providerApiPath !== 'places_legacy') {
+      diagnostics.providerApiPath = r.apiPath;
+      if (r.apiPath === 'places_legacy') {
+        diagnostics.providerFallbackUsed = true;
+        diagnostics.providerFallbackReason = r.fallbackReason;
+      }
+    }
     if (!r.ok) {
       // `places_http_error` / `places_api_error` are the transient markers the
       // job retry classifier looks for. They must never be conflated with a
