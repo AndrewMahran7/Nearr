@@ -53,6 +53,13 @@ export type SharedGeoContextSource =
   | 'explicit_evidence_text'
   | 'context_only_place';
 
+/**
+ * What corroborated a strong shared CITY. Narrower than the country vocabulary
+ * on purpose — see `establishSharedCity` for why a city may not be established
+ * the same loose ways a country may.
+ */
+export type SharedCityContextSource = 'multiple_places_agree' | 'redundant_container';
+
 /** Bounded geographic context derived from explicit evidence only. */
 export type MediaGeoContext = {
   city: string | null;
@@ -65,6 +72,14 @@ export type MediaGeoContext = {
   countrySource?: SharedGeoContextSource;
   /** Distinct countries the post asserted (folded). Diagnostics + conflicts. */
   countryCandidates?: string[];
+  /** How firmly the post established ONE shared city. `city` above is populated
+   *  ONLY when this is `strong`; anything weaker leaves it null so it can never
+   *  be inherited by a sibling. Set on the post-level aggregate only. */
+  cityStrength?: SharedGeoContextStrength;
+  /** Present only when `cityStrength === 'strong'`. */
+  citySource?: SharedCityContextSource;
+  /** Same contract as `cityStrength`, for the region field. */
+  regionStrength?: SharedGeoContextStrength;
 };
 
 /** How a venue relates to its host location (evidence-derived). */
@@ -348,25 +363,122 @@ export function sharedCountryForEvidence(
   return establishSharedCountry(destinations, contextOnly);
 }
 
-/** Most common explicit city/region/country across the given places. */
-function aggregateGeo(places: PlaceCandidateEvidence[]): MediaGeoContext {
-  const pick = (key: 'city' | 'region' | 'country'): string | null => {
-    const counts = new Map<string, number>();
-    for (const p of places) {
-      const v = (p[key] ?? '').trim();
-      if (v) counts.set(v, (counts.get(v) ?? 0) + 1);
+/** Tally one geographic field across places, folded for comparison. */
+function tallyGeoField(
+  places: PlaceCandidateEvidence[],
+  key: 'city' | 'region',
+): Map<string, { display: string; asserts: number }> {
+  const byFolded = new Map<string, { display: string; asserts: number }>();
+  for (const place of places) {
+    const raw = (place[key] ?? '').trim();
+    if (!raw) continue;
+    const folded = foldCountry(raw);
+    if (!folded) continue;
+    const seen = byFolded.get(folded);
+    if (seen) seen.asserts += 1;
+    else byFolded.set(folded, { display: raw, asserts: 1 });
+  }
+  return byFolded;
+}
+
+/**
+ * Decide whether the post establishes ONE shared CITY firmly enough for a
+ * sibling with no city of its own to be searched inside it.
+ *
+ * This is the fix for a proven production bug. `Ometepe Island` carries no city,
+ * so it fell back to the post's aggregate city — which was simply the most
+ * common value across siblings, and in a four-stop Nicaragua itinerary that was
+ * `Granada`, a PEER destination 63 km away. Ometepe was then searched as
+ * "Ometepe Island Granada Nicaragua" and biased to Granada's coordinates,
+ * costing it the -60 distance penalty that put it under the floor. Nothing was
+ * wrong with the scoring; the geography handed to it was false.
+ *
+ * A country may be established loosely because it is a broad claim that is
+ * usually right. A city is a narrow claim: getting it wrong does not merely
+ * fail to help, it actively suppresses the correct result. So the bar is:
+ *
+ *   two or more places independently name the same city   -> strong
+ *   a REDUNDANT CONTAINER names it (the post's other
+ *   destinations sit inside it, e.g. Rio, Paris)          -> strong
+ *   exactly one place quietly carries a city              -> weak
+ *   two or more distinct cities anywhere                  -> conflicted
+ *
+ * Only `strong` populates `city`; everything else leaves it null rather than
+ * letting one sibling's locality masquerade as the post's.
+ *
+ * PEER GEOGRAPHIC DESTINATIONS ARE EXCLUDED FROM THE VOTE ENTIRELY. Granada,
+ * León and San Juan del Sur each report their own name as their city — that is
+ * their identity, not a claim to contain anything. A city can contain a
+ * restaurant; it cannot contain another peer city. This is the same
+ * container-vs-peer distinction the geographic-destination work already draws,
+ * applied to the question of what may be inherited.
+ *
+ * Deliberately NOT included: a city appearing in free-text explicit evidence.
+ * The country rule allows that, but for a city it would promote exactly the
+ * single-peer case this exists to prevent — one restaurant in Los Angeles whose
+ * caption says "Los Angeles" would start scoping every sibling.
+ */
+export function establishSharedCity(
+  places: PlaceCandidateEvidence[],
+  allPlaces: PlaceCandidateEvidence[],
+): Pick<MediaGeoContext, 'city' | 'cityStrength' | 'citySource'> {
+  const byFolded = new Map<string, { display: string; asserts: number; fromContainer: boolean }>();
+  for (const place of places) {
+    const role = classifyGeographicSourcePlace(place, allPlaces);
+    if (role === 'peer_geographic_destination') continue;
+    const raw = (place.city ?? '').trim();
+    if (!raw) continue;
+    const folded = foldCountry(raw);
+    if (!folded) continue;
+    const isContainer = role === 'redundant_container';
+    const seen = byFolded.get(folded);
+    if (seen) {
+      seen.asserts += 1;
+      seen.fromContainer = seen.fromContainer || isContainer;
+    } else {
+      byFolded.set(folded, { display: raw, asserts: 1, fromContainer: isContainer });
     }
-    let best: string | null = null;
-    let bestN = 0;
-    for (const [v, n] of counts) {
-      if (n > bestN) {
-        best = v;
-        bestN = n;
-      }
-    }
-    return best;
-  };
-  return { city: pick('city'), region: pick('region'), country: pick('country') };
+  }
+
+  const candidates = [...byFolded.keys()].sort();
+  if (candidates.length === 0) return { city: null, cityStrength: 'none' };
+  if (candidates.length > 1) return { city: null, cityStrength: 'conflicted' };
+
+  const entry = byFolded.get(candidates[0]!)!;
+  if (entry.asserts >= 2 || entry.fromContainer) {
+    return {
+      city: entry.display,
+      cityStrength: 'strong',
+      citySource: entry.fromContainer ? 'redundant_container' : 'multiple_places_agree',
+    };
+  }
+  // One quiet city field describes ITS OWN place, not the post.
+  return { city: null, cityStrength: 'weak' };
+}
+
+/**
+ * The same judgement for REGION, with one deliberate difference: peer
+ * destinations are NOT excluded.
+ *
+ * A region genuinely does contain several peer cities — Santa Fe and Taos both
+ * sitting in New Mexico is exactly what a shared region means, and dropping it
+ * would cost the state-match signal for no safety gain. A city containing
+ * another peer city is not a thing, which is why the city rule is stricter.
+ *
+ * Agreement is still required: two peers in different states leave the post
+ * with no shared region rather than borrowing whichever came first.
+ */
+export function establishSharedRegion(
+  places: PlaceCandidateEvidence[],
+): Pick<MediaGeoContext, 'region' | 'regionStrength'> {
+  const byFolded = tallyGeoField(places, 'region');
+  const candidates = [...byFolded.keys()].sort();
+  if (candidates.length === 0) return { region: null, regionStrength: 'none' };
+  if (candidates.length > 1) return { region: null, regionStrength: 'conflicted' };
+  const entry = byFolded.get(candidates[0]!)!;
+  return entry.asserts >= 2
+    ? { region: entry.display, regionStrength: 'strong' }
+    : { region: null, regionStrength: 'weak' };
 }
 
 // ---------------------------------------------------------------------------
@@ -703,8 +815,12 @@ export function buildVenueMentions(evidence: MediaPlaceEvidence): BuildMentionsR
     // The shared COUNTRY is assessed separately: unlike city/region it is not a
     // popularity vote but a provenance judgement, because it is the one field
     // strong enough to scope an ambiguous sibling's search.
+    // City, region and country are each a PROVENANCE judgement now, never a
+    // popularity vote. The vote is what let one peer destination's locality
+    // become every sibling's search context; see `establishSharedCity`.
     geoContext: {
-      ...aggregateGeo([...eligible, ...geographicContext]),
+      ...establishSharedCity([...eligible, ...geographicContext], evidence.places ?? []),
+      ...establishSharedRegion([...eligible, ...geographicContext]),
       ...sharedCountryForEvidence(evidence),
     },
     relationships,

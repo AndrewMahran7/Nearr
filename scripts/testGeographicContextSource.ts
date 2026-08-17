@@ -322,9 +322,20 @@ const cityOnlyMentions = buildVenueMentions(cityOnly);
 check('city-only post: becomes exactly one peer geographic destination', cityOnlyMentions.mentions.length === 1 && cityOnlyMentions.peerGeographicDestinations === 1);
 check('city-only post: it is a geographic mention, never a venue one', cityOnlyMentions.mentions[0]!.resolutionMode === 'geographic');
 check('city-only post: it renders as a destination', renderMediaEvidenceCaption(cityOnly).renderedPlaces === 1);
+// The city stays fully available where it belongs — on the mention's OWN geo,
+// which is what builds its query. What changed is the POST-LEVEL aggregate:
+// `geoContext.city` now means "a city siblings may be searched inside", and a
+// lone peer destination has no siblings and contains nothing, so it publishes
+// none. That is the same rule that stops Granada scoping Ometepe; a peer city
+// never scopes anyone, including in a post where it happens to be alone.
 check(
-  'city-only post: geo context is still available to the caller',
-  buildVenueMentions(cityOnly).geoContext.city === 'Rio de Janeiro',
+  'city-only post: the city is still available on the mention itself',
+  cityOnlyMentions.mentions[0]!.geo.city === 'Rio de Janeiro',
+);
+check(
+  'city-only post: a lone peer city is not published as shared context',
+  buildVenueMentions(cityOnly).geoContext.city === null &&
+    buildVenueMentions(cityOnly).geoContext.cityStrength === 'none',
 );
 
 // ---------------------------------------------------------------------------
