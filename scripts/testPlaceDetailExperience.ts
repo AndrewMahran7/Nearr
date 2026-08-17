@@ -18,22 +18,34 @@ assert.match(map, /accessibilityLabel="Close place details"/);
 // until only a sliver of map survived; the map has to stay a real part of the
 // composition, with the selected marker visible above the sheet.
 assert.match(map, /const expandedSheetHeight = useMemo\(/);
-assert.match(map, /availableHeight \* 0\.72/, 'the sheet keeps ~72% and leaves the rest to the map');
-assert.match(map, /availableHeight - 150/, 'and always leaves at least 150pt of map');
+assert.match(map, /availableHeight - expandedSheetMapPeek\(safeTopInset\)/);
 assert.match(map, /previewExpanded && \{ height: expandedSheetHeight \}/);
 assert.match(map, /previewScroll: \{ flex: 1 \}/, 'the body fills the card, it does not define it');
+// The peek is DERIVED from the raised Queue pill, not from a percentage, so
+// "the detail owns the screen" and "the Queue stays tappable" cannot drift
+// apart. An earlier pass reserved 72% for the sheet to keep a big map header;
+// the product decision is now the opposite.
+assert.match(map, /RAISED_QUEUE_PILL_HEIGHT = Spacing\.sm \+ 44/);
+assert.match(
+  map,
+  /function expandedSheetMapPeek\(safeTopInset: number\): number \{[\s\S]{0,160}safeTopInset \+ RAISED_QUEUE_PILL_HEIGHT \+ Spacing\.md/,
+);
 {
-  // A quarter of the map area at three real device heights, so a future edit
-  // that re-inflates the sheet fails here rather than on someone's phone.
-  const expanded = (available: number) =>
-    Math.round(Math.min(Math.max(available * 0.72, 380), available - 150));
-  for (const [device, mapArea] of [
-    ['iPhone SE', 584],
-    ['iPhone 14', 761],
-    ['iPhone 14 Pro Max', 849],
+  const peek = (safeTop: number) => safeTop + 8 + 44 + 12;
+  const expanded = (available: number, safeTop: number) =>
+    Math.max(380, Math.round(available - peek(safeTop)));
+  for (const [device, mapArea, safeTop] of [
+    ['iPhone SE', 584, 24],
+    ['iPhone 14', 761, 47],
+    ['iPhone 14 Pro Max', 849, 59],
   ] as const) {
-    const visibleMap = mapArea - expanded(mapArea);
-    assert.ok(visibleMap >= 150, `${device}: ${visibleMap}pt of map stays visible`);
+    const share = expanded(mapArea, safeTop) / mapArea;
+    assert.ok(share >= 0.84, `${device}: the sheet takes ${(share * 100).toFixed(0)}% of the map area`);
+    const visibleMap = mapArea - expanded(mapArea, safeTop);
+    assert.ok(
+      visibleMap > safeTop + 8 + 44,
+      `${device}: the ${visibleMap}pt strip still clears the raised Queue pill`,
+    );
   }
 }
 

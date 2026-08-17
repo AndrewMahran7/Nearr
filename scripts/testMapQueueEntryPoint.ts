@@ -3,17 +3,30 @@
  *
  * The Queue must be reachable from the map. Always.
  *
- * What went wrong: <ShareQueueButton /> was the third child of the map's
- * `topChrome` block, and that whole block is gated on `shouldShowMapControls`
- * (`!selected || !previewExpanded`) so the search bar and filter chips get out
- * of the way of an open place. The Queue rode along and vanished with them.
- * That was survivable while the expanded detail was a small floating card; once
- * it became a real sheet people sit in, pending shares were simply unreachable
- * without first closing the place — which is what the user hit.
+ * TWO separate bugs made it disappear, and the first fix only addressed the
+ * lesser one:
  *
- * These are render contracts, not behaviour tests: they read the source and
- * fail if the entry point is deleted, re-nested under the selection gate, or
- * quietly disconnected from the queue route.
+ *   1. Placement. <ShareQueueButton /> was the third child of the map's
+ *      `topChrome`, which is gated on `shouldShowMapControls` so the search bar
+ *      and chips clear an open place. The Queue rode along and vanished with
+ *      them whenever the detail sheet was up.
+ *
+ *   2. THE ACTUAL REASON IT WAS NEVER ON SCREEN. The component's own first line
+ *      was `if (!isAsyncShareJobsEnabled()) return null;`. That flag resolves
+ *      from `EXPO_PUBLIC_ASYNC_SHARE_JOBS_ENABLED` at BUNDLE time, falling back
+ *      to `extra.asyncShareJobsEnabled` — which app.config.js sets from the
+ *      same env var. Neither `.env` nor `.env.local` defines it, so any bundle
+ *      built from this checkout resolves it to FALSE and the component returned
+ *      null before layout ever ran. Repositioning an unmounted node changed
+ *      nothing, which is exactly why the first fix passed its tests and still
+ *      failed on the device.
+ *
+ * Visibility now follows `canReachShareQueue` (lib/shareQueueAccess.ts) — a
+ * property of the USER, not of the rollout. Section 2 below is the guard that
+ * would have caught bug 2.
+ *
+ * These are render/logic contracts, not runtime proof: they read the source and
+ * exercise the pure predicate. They cannot demonstrate physical visibility.
  *
  * Run:
  *   npx ts-node -P scripts/tsconfig.json scripts/testMapQueueEntryPoint.ts
@@ -23,6 +36,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { SHARE_JOBS_ROUTE } from '../lib/shareRoutes';
+import { canReachShareQueue } from '../lib/shareQueueAccess';
 
 const read = (p: string) => readFileSync(join(process.cwd(), p), 'utf8');
 
@@ -41,17 +55,70 @@ const button = read('components/map/ShareQueueButton.tsx');
   );
   assert.ok(button.includes('useActiveQueueCount'), 'the pending-count badge is intact');
   assert.ok(
-    button.includes('isAsyncShareJobsEnabled'),
-    'still flag-gated: zero footprint when async share jobs are off',
-  );
-  assert.ok(
     button.includes('accessibilityLabel'),
     'and it is still announced to VoiceOver',
   );
 }
 
 // ---------------------------------------------------------------------------
-// 2. THE REGRESSION: it must not be gated on the selected-place state
+// 2. THE REAL BUG: the button must not self-hide on a bundle-time rollout flag
+// ---------------------------------------------------------------------------
+{
+  // Not imported and not called. (Naming it in a comment explaining the bug is
+  // fine — that is the point of the comment.)
+  assert.ok(
+    !/from '@\/lib\/featureFlags'/.test(button),
+    'the Queue button must NOT import the rollout flag module',
+  );
+  assert.ok(
+    !/^\s*if \(!isAsyncShareJobsEnabled\(\)\) return null;/m.test(button),
+    'the Queue button must NOT self-hide on the async-share rollout flag — that ' +
+      'flag is inlined at bundle time and is why the button was never on screen',
+  );
+  assert.ok(button.includes('canReachShareQueue'), 'it follows user reachability instead');
+
+  // The predicate itself. A normal signed-in account always reaches its queue,
+  // whatever the rollout flag happens to be in this bundle.
+  const real = { signedIn: true, isDevSession: false, isDemoMode: false };
+  assert.equal(canReachShareQueue(real), true, 'a signed-in real account reaches the queue');
+  assert.equal(canReachShareQueue({ ...real, signedIn: false }), false, 'signed out cannot');
+  assert.equal(canReachShareQueue({ ...real, isDevSession: true }), false, 'dev session has no rows');
+  assert.equal(canReachShareQueue({ ...real, isDemoMode: true }), false, 'demo mode never fetches');
+
+  // Nothing in the reachability module may reach for the flag or the env.
+  const access = read('lib/shareQueueAccess.ts');
+  assert.ok(
+    !/^import /m.test(access),
+    'reachability is a pure user predicate with no imports at all',
+  );
+  const accessCode = access.slice(access.lastIndexOf('*/') + 2);
+  assert.ok(
+    !/isAsyncShareJobsEnabled|process\.env|Constants/.test(accessCode),
+    'and never consults a build-time constant',
+  );
+
+  // The hook that feeds the badge AND the queue screen uses the same predicate,
+  // so the entry point can never be offered when the screen behind it is dead,
+  // and can never vanish while there is still something to read.
+  const hook = read('hooks/useShareJobs.ts');
+  assert.ok(hook.includes('canReachShareQueue'), 'useShareJobs shares the predicate');
+  assert.ok(
+    !hook.includes('isAsyncShareJobsEnabled'),
+    'reading your own jobs is not gated on the rollout',
+  );
+
+  // ...but CREATING jobs still is. This fix must not have switched on the
+  // async share write path as a side effect.
+  for (const writePath of ['app/share.tsx', 'ShareExtension.tsx']) {
+    assert.ok(
+      read(writePath).includes('isAsyncShareJobsEnabled()'),
+      `${writePath} still gates the async share write path on the rollout flag`,
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 3. Placement: it must not be gated on the selected-place state
 // ---------------------------------------------------------------------------
 {
   // The Queue lives in its own overlay. Isolate the JSX conditional that
@@ -88,7 +155,7 @@ const button = read('components/map/ShareQueueButton.tsx');
 }
 
 // ---------------------------------------------------------------------------
-// 3. Position is preserved — this is a restoration, not a redesign
+// 4. Position is preserved — this is a restoration, not a redesign
 // ---------------------------------------------------------------------------
 {
   // Same coordinates it occupied as the third child of `topChrome`:
@@ -100,16 +167,21 @@ const button = read('components/map/ShareQueueButton.tsx');
   );
   // The clearance reserved for it is still accounted for, so nothing below
   // (View All / preview pills) creeps up underneath it.
-  assert.ok(map.includes('QUEUE_PILL_CLEARANCE'), 'its layout clearance is still reserved');
+  // Its row is reserved unconditionally now. Two different predicates deciding
+  // whether the same 34pt exists is how something else ends up sitting in it.
   assert.match(
     map,
-    /TOP_CHROME_BASE_CLEARANCE \+ \(asyncShareUiEnabled \? QUEUE_PILL_CLEARANCE : 0\)/,
-    'clearance still follows the feature flag',
+    /const topChromeClearance = TOP_CHROME_BASE_CLEARANCE \+ QUEUE_PILL_CLEARANCE;/,
+    'the clearance no longer follows a flag the pill does not follow either',
+  );
+  assert.ok(
+    !map.includes('asyncShareUiEnabled'),
+    'and the map no longer branches on the rollout flag at all',
   );
 }
 
 // ---------------------------------------------------------------------------
-// 4. Reachable, not merely rendered: it must never sit under the open sheet
+// 5. Reachable, not merely rendered: it must never sit under the open sheet
 // ---------------------------------------------------------------------------
 {
   assert.match(map, /queueChromeRaised: \{[\s\S]{0,140}top: insetTop,/, 'a sheet-up placement exists');
@@ -131,7 +203,7 @@ const button = read('components/map/ShareQueueButton.tsx');
     const safeTop = Math.max(device.inset, 24);
     const mapArea = device.height - TAB_BAR;
     const sheetTop =
-      mapArea - Math.round(Math.min(Math.max(mapArea * 0.72, 380), mapArea - 150));
+      mapArea - Math.max(380, Math.round(mapArea - (safeTop + PILL_MARGIN + PILL_HEIGHT + 12)));
 
     // Sheet up → raised placement, in the row the hidden search bar vacated.
     const raisedBottom = safeTop + PILL_MARGIN + PILL_HEIGHT;
@@ -147,7 +219,7 @@ const button = read('components/map/ShareQueueButton.tsx');
 }
 
 // ---------------------------------------------------------------------------
-// 5. The queue experience behind it is untouched
+// 6. The queue experience behind it is untouched
 // ---------------------------------------------------------------------------
 {
   const queueScreen = read('app/share-jobs/index.tsx');

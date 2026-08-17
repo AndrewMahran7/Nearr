@@ -1,10 +1,17 @@
 /**
  * components/map/ShareQueueButton.tsx
  *
- * Compact entry point to the async share-job queue, shown on the map's top
- * chrome. Self-contained + flag-gated: renders NOTHING when the async
- * share-jobs feature flag is off, so it has zero footprint in the default
- * (synchronous) experience. Shows a needs_help badge count when > 0.
+ * Compact entry point to the share-job queue, shown on the map's top chrome.
+ * Shows an active-queue badge count when > 0.
+ *
+ * Visibility follows `canReachShareQueue` — whether this user has a queue to
+ * open — and NOT `isAsyncShareJobsEnabled()`, which it used to. That flag is
+ * resolved from an env var at bundle time, so an OTA update published from a
+ * checkout without `EXPO_PUBLIC_ASYNC_SHARE_JOBS_ENABLED` set silently
+ * returned `null` here and took the user's inbox off the map entirely. The
+ * rollout flag still decides whether new shares BECOME jobs (app/share.tsx,
+ * ShareExtension.tsx); it has no business deciding whether the user can look
+ * at the ones they already have.
  */
 import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -13,16 +20,24 @@ import { useRouter } from 'expo-router';
 
 import { Radius, Spacing } from '@/constants';
 import { useTheme } from '@/lib/theme';
-import { isAsyncShareJobsEnabled } from '@/lib/featureFlags';
+import { useAuth } from '@/hooks/useAuth';
+import { isDemoMode } from '@/lib/demoMode';
+import { canReachShareQueue } from '@/lib/shareQueueAccess';
 import { useActiveQueueCount } from '@/hooks/useShareJobs';
 
 export function ShareQueueButton() {
   const router = useRouter();
   const { colors, typography } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const { session, isDevSession } = useAuth();
   const queueCount = useActiveQueueCount();
 
-  if (!isAsyncShareJobsEnabled()) return null;
+  const reachable = canReachShareQueue({
+    signedIn: !!session?.user?.id,
+    isDevSession,
+    isDemoMode: isDemoMode(),
+  });
+  if (!reachable) return null;
 
   return (
     <Pressable

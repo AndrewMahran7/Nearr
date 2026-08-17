@@ -18,8 +18,8 @@ import { AppState, type AppStateStatus } from 'react-native';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 import { recordBreadcrumb } from '@/lib/breadcrumbs';
-import { isAsyncShareJobsEnabled } from '@/lib/featureFlags';
 import { isDemoMode } from '@/lib/demoMode';
+import { canReachShareQueue } from '@/lib/shareQueueAccess';
 import { dedupeJobsById } from '@/lib/shareJobsDedupe';
 import { filterQueueVisible } from '@/lib/shareJobRouting';
 import { normalizeActiveQueueRows } from '@/lib/queueInbox';
@@ -67,7 +67,15 @@ function sectionize(jobs: ShareJob[]): ShareJobSections {
 export function useShareJobs() {
   const { session, isDevSession, loading: authLoading } = useAuth();
   const userId = session?.user.id ?? null;
-  const enabled = isAsyncShareJobsEnabled() && !!userId && !isDevSession && !isDemoMode();
+  // Reachability, NOT the async-share rollout flag. A signed-in account can
+  // always read its own jobs; when the flag is off there simply are none, and
+  // the queue screen's empty state says so. Reading is never the thing the
+  // rollout gates — creating jobs is (app/share.tsx, ShareExtension.tsx).
+  const enabled = canReachShareQueue({
+    signedIn: !!userId,
+    isDevSession,
+    isDemoMode: isDemoMode(),
+  });
 
   const [jobs, setJobs] = useState<ShareJob[]>([]);
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());

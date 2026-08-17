@@ -148,7 +148,6 @@ import {
   savedPlaceFocusKey,
   shouldExpandSavedPlaceDetails,
 } from '@/lib/openSavedPlace';
-import { isAsyncShareJobsEnabled } from '@/lib/featureFlags';
 import { isLikelyUrl } from '@/lib/shareParser';
 import { distanceMeters, milesToMeters, minutesToMeters } from '@/lib/geo';
 import { useTheme } from '@/lib/theme';
@@ -203,6 +202,23 @@ const DEFAULT_RADIUS_MILES = 1;
 // for the Queue pill so View All / preview pills never overlap it.
 const TOP_CHROME_BASE_CLEARANCE = Spacing.md + 50 + Spacing.sm + 40 + Spacing.sm;
 const QUEUE_PILL_CLEARANCE = 18 + Spacing.sm + 8;
+
+// The Queue pill as it sits while Place Detail is expanded: its own top margin
+// plus its minimum height.
+const RAISED_QUEUE_PILL_HEIGHT = Spacing.sm + 44;
+
+/**
+ * Map left visible above the expanded Place Detail sheet.
+ *
+ * Just the raised Queue pill's row plus a small gap — the detail owns the rest
+ * of the screen. Deriving it from the pill (rather than picking a percentage)
+ * is what keeps "the sheet is nearly full-screen" and "the Queue is always
+ * tappable" from being in tension: the peek cannot shrink below the one piece
+ * of chrome that has to survive it.
+ */
+function expandedSheetMapPeek(safeTopInset: number): number {
+  return safeTopInset + RAISED_QUEUE_PILL_HEIGHT + Spacing.md;
+}
 
 /**
  * Effective radius (in meters) for a saved place, used to render a Life360-
@@ -453,9 +469,12 @@ const MARKER_STYLES = StyleSheet.create({
 export default function MapScreen() {
   const router = useRouter();
   const { colors, typography, resolvedTheme } = useTheme();
-  const asyncShareUiEnabled = isAsyncShareJobsEnabled();
-  const topChromeClearance =
-    TOP_CHROME_BASE_CLEARANCE + (asyncShareUiEnabled ? QUEUE_PILL_CLEARANCE : 0);
+  // Reserve the Queue pill's row unconditionally. It used to follow
+  // `isAsyncShareJobsEnabled()`, but the pill itself no longer does (see
+  // lib/shareQueueAccess.ts), and two different predicates deciding whether the
+  // same 34pt exists is precisely how the row ends up with something else
+  // sitting in it. The cost of always reserving it is 34pt of top clearance.
+  const topChromeClearance = TOP_CHROME_BASE_CLEARANCE + QUEUE_PILL_CLEARANCE;
   // Map header is hidden (map-first) so the screen owns the top safe area.
   // Floor the inset so devices that report ~0 (older Android without a
   // translucent status bar / notch) still keep the search bar clear of the
@@ -778,16 +797,20 @@ export default function MapScreen() {
   /**
    * Expanded Place Detail height.
    *
-   * The map is not decoration behind a modal — it is half the reason the sheet
-   * makes sense, and the selected marker has to stay on screen. 72% of the map
-   * area leaves ~210pt of live map on a 390×844 iPhone (vs ~65pt when the
-   * height was content-driven), which is roughly the proportion the reference
-   * composition uses. Clamped so a very short viewport still gets a usable
-   * sheet and a very tall one does not turn it into a full-screen page.
+   * The detail is the screen once it is open. It keeps a strip of map at the
+   * top — enough to place the rounded edge against something, and enough for
+   * the Queue pill to sit in — but no more than that. An earlier pass reserved
+   * 72% for the sheet specifically to preserve a large map header; on device
+   * that read as a cramped card under a mostly-empty map, so the reservation
+   * is gone.
+   *
+   * The peek is measured from the top of the map AREA (tab bar already
+   * excluded), and it is what guarantees the raised Queue pill and the sheet
+   * never occupy the same points — see scripts/testMapQueueEntryPoint.ts.
    */
   const expandedSheetHeight = useMemo(
-    () => Math.round(Math.min(Math.max(availableHeight * 0.72, 380), availableHeight - 150)),
-    [availableHeight],
+    () => Math.max(380, Math.round(availableHeight - expandedSheetMapPeek(safeTopInset))),
+    [availableHeight, safeTopInset],
   );
   const { nearbyPlaces, locationState, requestLocationPermission } = useNearbyPlaces(data);
   const recentPlaces = useRecentPlaces(validPlaces, 5);

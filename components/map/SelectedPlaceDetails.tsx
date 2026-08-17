@@ -1290,20 +1290,11 @@ export function SelectedPlaceDetails({
           </View>
         </View>
 
-        {/* The logo is never the only cue for what tapping does. */}
-        {sourceUrl && sourceAttribution ? (
-          <Pressable
-            onPress={() => {
-              void openSource();
-            }}
-            accessibilityRole="button"
-            accessibilityLabel={sourceAttribution.actionA11yLabel}
-            style={({ pressed }) => [styles.watchButton, pressed && styles.pressed]}
-          >
-            <Feather name="play" size={14} color={colors.accent} />
-            <Text style={styles.watchButtonText}>{sourceAttribution.actionLabel}</Text>
-          </Pressable>
-        ) : null}
+        {/* No second "Watch post" button here. The action row at the top of
+            the sheet is the one guaranteed source-opening affordance; a
+            full-width CTA repeating it made this card the tallest thing on the
+            screen for no added capability. The tile above still opens the
+            post, and carries a play badge so that is not a secret. */}
       </View>
 
       {/* Have I gone yet? A saved place can be BOTH saved and visited —
@@ -1325,32 +1316,59 @@ export function SelectedPlaceDetails({
             {visited.visited ? 'Nearby reminders are paused.' : visited.supportCopy}
           </Text>
         </View>
-        {visited.visited ? null : (
+        {/* Thumbs, NOT a rating. Up means "I went", down means "not yet" —
+            never like/dislike, so there is no green/red and no negative
+            signal recorded anywhere. The labels carry the meaning the icons
+            alone would leave ambiguous. Both call exactly the handlers the
+            Yes / Not yet buttons did. */}
+        {visited.visited ? (
+          // Answered. The thumbs-up stays, selected, so reopening shows the
+          // answer rather than asking again — and it is not a button, because
+          // the current model has no "un-visit".
+          <View
+            style={[styles.thumbButton, styles.thumbButtonSelected]}
+            accessible
+            accessibilityLabel={`You went to ${saved.place.name}`}
+          >
+            <Feather name="thumbs-up" size={18} color={colors.accent} />
+          </View>
+        ) : (
           <View style={styles.visitActions}>
             <Pressable
               onPress={() => void handleMarkVisited()}
               disabled={visitBusy}
               accessibilityRole="button"
-              accessibilityLabel={`Yes, mark ${saved.place.name} as visited`}
-              style={({ pressed }) => [styles.visitPrimary, pressed && styles.pressed]}
+              accessibilityState={{ selected: false, busy: visitBusy }}
+              accessibilityLabel={`Yes, I went to ${saved.place.name}`}
+              accessibilityHint="Marks it visited and pauses its nearby reminders"
+              hitSlop={6}
+              style={({ pressed }) => [styles.thumbButton, pressed && styles.pressed]}
             >
               {visitBusy ? (
-                <ActivityIndicator size="small" color={colors.text} />
+                <ActivityIndicator size="small" color={colors.accent} />
               ) : (
-                <Text style={styles.visitPrimaryText}>Yes</Text>
+                <Feather name="thumbs-up" size={18} color={colors.textSecondary} />
               )}
             </Pressable>
-            {/* Deliberately inert: "Not yet" is the status quo, never a
+            {/* Deliberately inert: "not yet" is the status quo, never a
                 mutation and never destructive. */}
             <Pressable
               onPress={() => setVisitDeferred(true)}
               accessibilityRole="button"
-              accessibilityLabel={`Not yet — keep ${saved.place.name} as a place to go`}
-              style={({ pressed }) => [styles.visitSecondary, pressed && styles.pressed]}
+              accessibilityState={{ selected: visitDeferred }}
+              accessibilityLabel={`No, not yet — keep ${saved.place.name} as a place to go`}
+              hitSlop={6}
+              style={({ pressed }) => [
+                styles.thumbButton,
+                visitDeferred && styles.thumbButtonSelected,
+                pressed && styles.pressed,
+              ]}
             >
-              <Text style={styles.visitSecondaryText} numberOfLines={1}>
-                {visitDeferred ? 'Still listed' : 'Not yet'}
-              </Text>
+              <Feather
+                name="thumbs-down"
+                size={18}
+                color={visitDeferred ? colors.accent : colors.textSecondary}
+              />
             </Pressable>
           </View>
         )}
@@ -1709,23 +1727,6 @@ function createStyles(
       color: colors.textSecondary,
       fontWeight: '600',
     },
-    watchButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: 6,
-      minHeight: 38,
-      borderRadius: Radius.sm,
-      backgroundColor: colors.surface,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: colors.accentBorder,
-    },
-    watchButtonText: {
-      ...typography.bodyStrong,
-      fontSize: 14,
-      color: colors.accent,
-    },
-
     // ----- did you go yet? -------------------------------------------------
     // One horizontal band: icon, copy, both answers. Previously a stacked card
     // roughly twice this tall.
@@ -1757,9 +1758,12 @@ function createStyles(
       lineHeight: 15,
     },
     visitActions: { flexDirection: 'row', gap: 6 },
-    visitPrimary: {
-      minHeight: 36,
-      paddingHorizontal: Spacing.md,
+    // Square-ish icon targets: 36pt visible, 48pt with hitSlop. Neutral by
+    // default and accent when chosen — never red/green, because this is not a
+    // rating.
+    thumbButton: {
+      width: 36,
+      height: 36,
       alignItems: 'center',
       justifyContent: 'center',
       borderRadius: Radius.pill,
@@ -1767,18 +1771,10 @@ function createStyles(
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: colors.border,
     },
-    visitPrimaryText: { ...typography.bodyStrong, fontSize: 14, color: colors.text },
-    visitSecondary: {
-      minHeight: 36,
-      paddingHorizontal: Spacing.md - 2,
-      alignItems: 'center',
-      justifyContent: 'center',
-      borderRadius: Radius.pill,
-      backgroundColor: colors.surface,
-      borderWidth: StyleSheet.hairlineWidth,
+    thumbButtonSelected: {
+      backgroundColor: colors.accentSoft,
       borderColor: colors.accentBorder,
     },
-    visitSecondaryText: { ...typography.bodyStrong, fontSize: 14, color: colors.accent },
     galleryRoot: {
       flex: 1,
     },
