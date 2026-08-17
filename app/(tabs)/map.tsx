@@ -1981,10 +1981,18 @@ export default function MapScreen() {
             handleUserInteraction('gesture');
             return false;
           }}
-          style={[styles.previewWrap, { transform: [{ translateY: previewTranslateY }] }]}
+          style={[
+            styles.previewWrap,
+            // Expanded, the detail is the page: it spans the full width and
+            // meets the bottom edge so it reads as a sheet growing out of the
+            // map rather than a floating card. Collapsed, it stays the inset
+            // preview card. Camera behaviour is untouched by either.
+            previewExpanded && styles.previewWrapExpanded,
+            { transform: [{ translateY: previewTranslateY }] },
+          ]}
           pointerEvents="box-none"
         >
-          <Card style={styles.previewCard}>
+          <Card style={[styles.previewCard, previewExpanded && styles.previewCardExpanded]}>
             {/* Drag region: handle + header. The pan responder lives here
                 (not on the whole card) so the expanded body ScrollView can
                 scroll without fighting the collapse/dismiss gesture. */}
@@ -2056,10 +2064,10 @@ export default function MapScreen() {
               // note never pushes the sheet past the top of the map.
               <ScrollView
                 style={{
-                  maxHeight: Math.max(
-                    360,
-                    windowHeight - insets.top - insets.bottom - 138,
-                  ),
+                  // Fill the map area but stop short of the top chrome so the
+                  // map — and the selected marker — stay visible above the
+                  // sheet. `availableHeight` already excludes the tab bar.
+                  maxHeight: Math.max(360, availableHeight - safeTopInset - 96),
                 }}
                 contentContainerStyle={styles.previewScrollContent}
                 onScrollBeginDrag={() => handleUserInteraction('scroll')}
@@ -2417,6 +2425,11 @@ function createStyles(
     right: Spacing.lg,
     bottom: Spacing.lg,
   },
+  previewWrapExpanded: {
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
   previewCard: {
     backgroundColor: colors.surfaceElevated,
     borderRadius: Radius.lg,
@@ -2428,6 +2441,17 @@ function createStyles(
     shadowOffset: { width: 0, height: 10 },
     elevation: 8,
     padding: 14,
+  },
+  // Rounded top only, hairline top border, no side/bottom edges — the sheet
+  // is continuous with the bottom of the screen.
+  previewCardExpanded: {
+    borderRadius: 0,
+    borderTopLeftRadius: Radius.lg,
+    borderTopRightRadius: Radius.lg,
+    borderWidth: 0,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: Spacing.lg,
+    paddingBottom: 0,
   },
   previewHandleWrap: {
     alignItems: 'center',
@@ -2543,8 +2567,10 @@ function createStyles(
     color: colors.textSecondary,
   },
   previewScrollContent: {
-    paddingTop: Spacing.md,
-    paddingBottom: Spacing.xs,
+    paddingTop: Spacing.sm,
+    // The expanded sheet has no bottom padding of its own, so the last section
+    // clears the bottom edge from here.
+    paddingBottom: Spacing.xl,
   },
   previewPrimaryAction: {
     width: '100%',

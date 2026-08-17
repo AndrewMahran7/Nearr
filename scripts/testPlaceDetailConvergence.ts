@@ -126,11 +126,19 @@ const NO_COORDS: SP = { id: 'sp-nocoords', place: { name: 'Somewhere Unmapped', 
 // 3. Did you go yet? — visiting records a visit, it never deletes the save
 // ---------------------------------------------------------------------------
 {
-  assert.deepEqual(visitedDisplay({ visited_at: null }), {
-    visited: false,
-    visitedAt: null,
-    prompt: 'DID YOU GO YET?',
-  });
+  const unvisited = visitedDisplay({ visited_at: null });
+  assert.equal(unvisited.visited, false);
+  assert.equal(unvisited.visitedAt, null);
+  assert.equal(unvisited.prompt, 'Did you go yet?');
+  // The support copy must describe what answering ACTUALLY does. Nearr has no
+  // recommendation engine, so it may not promise personalization.
+  assert.ok(/reminders/i.test(unvisited.supportCopy), 'it names the real effect');
+  assert.doesNotMatch(
+    unvisited.supportCopy,
+    /personaliz|recommend|suggest|tailor/i,
+    'no promise of a recommendation system that does not exist',
+  );
+
   const v = visitedDisplay({ visited_at: '2026-08-15T10:00:00.000Z' });
   assert.equal(v.visited, true);
   assert.equal(v.visitedAt, '2026-08-15T10:00:00.000Z');

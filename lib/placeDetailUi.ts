@@ -91,6 +91,13 @@ export type VisitedDisplay = {
   visitedAt: string | null;
   /** Prompt shown while the place is still unvisited. */
   prompt: string;
+  /**
+   * What answering actually does. Kept truthful on purpose: Nearr has no
+   * recommendation engine to personalize, so the copy promises the one thing
+   * `markVisited` really changes — it stops the nearby nudges — instead of
+   * inventing a benefit the product does not deliver.
+   */
+  supportCopy: string;
 };
 
 export function visitedDisplay(saved: { visited_at?: string | null }): VisitedDisplay {
@@ -98,7 +105,8 @@ export function visitedDisplay(saved: { visited_at?: string | null }): VisitedDi
   return {
     visited: visitedAt !== null,
     visitedAt,
-    prompt: 'DID YOU GO YET?',
+    prompt: 'Did you go yet?',
+    supportCopy: 'Saying yes keeps the place on your map and turns off its nearby reminders.',
   };
 }
 
@@ -128,4 +136,31 @@ export function reminderStatusLabel(args: {
   return args.profile
     ? `On · ${formatUnit(args.profile.default_radius_value, args.profile.default_radius_unit)}`
     : 'On';
+}
+
+/**
+ * The distance shown INSIDE the compact action-row reminder control, next to
+ * the bell. Deliberately just the magnitude ("1 mi", "10 min") — the adjacent
+ * switch already says whether reminders are on, so repeating "On ·" there
+ * would be noise. Falls back to the profile default, and finally to a plain
+ * dash when there is genuinely no number to show.
+ */
+export function reminderDistanceLabel(args: {
+  mode: ReminderDisplayMode;
+  profile: Pick<Profile, 'default_radius_value' | 'default_radius_unit'> | null;
+  milesText: string;
+  minutesText: string;
+}): string {
+  if (args.mode === 'miles') {
+    const value = Number.parseFloat(args.milesText);
+    return Number.isFinite(value) && value > 0 ? `${value} mi` : 'Distance';
+  }
+  if (args.mode === 'minutes') {
+    const value = Number.parseInt(args.minutesText, 10);
+    return Number.isFinite(value) && value > 0 ? `${value} min` : 'Time';
+  }
+  if (!args.profile) return 'Default';
+  return args.profile.default_radius_unit === 'minutes'
+    ? `${args.profile.default_radius_value} min`
+    : `${args.profile.default_radius_value} mi`;
 }

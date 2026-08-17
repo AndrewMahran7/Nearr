@@ -62,12 +62,23 @@ import {
   assert.ok(!body.includes('ai_note'), 'an edit never writes or clears ai_note');
 
   // And exactly one visible "why" surface — not an AI block plus a user block.
-  assert.ok(detail.includes('WHY YOU SAVED IT'), 'the single surface is present');
-  assert.ok(!detail.includes('>Your note<'), 'no separate "Your note" section remains');
+  // The heading is derived once (source → "Saved because…", manual save →
+  // "Your note") and rendered from that single variable, so a second section
+  // cannot reappear by accident.
+  assert.ok(detail.includes("'Saved because…'"), 'the single surface is present');
   assert.equal(
-    detail.split('WHY YOU SAVED IT').length - 1,
+    detail.split('savedBecauseLabel').length - 1,
+    2,
+    'the heading is computed once and rendered once',
+  );
+  assert.equal(
+    detail.split('const hasReason = !!whySaved.text').length - 1,
     1,
-    'the label appears exactly once',
+    'exactly one place decides whether there is a note to show',
+  );
+  assert.ok(
+    !detail.includes('sourceNoteCard') && !detail.includes('sourceCardLabel'),
+    'the old cue-card + saved-from-card pair is gone',
   );
 }
 
@@ -255,4 +266,142 @@ import {
   assert.ok(detail.includes('snapToInterval={gallerySnapInterval}'), 'paging preserved');
 }
 
-console.log('PASS place detail V2: one why-surface, TikTok/Instagram peers, working swipe-down');
+// ---------------------------------------------------------------------------
+// 4. The production visual target: Saved because, Did you go yet, Also nearby
+// ---------------------------------------------------------------------------
+
+// "Saved because…" degrades honestly. No source ⇒ no watch action, no platform
+// row, and no empty creator/avatar shell — just the user's own note.
+{
+  const detail = readFileSync(join(process.cwd(), 'components/map/SelectedPlaceDetails.tsx'), 'utf8');
+
+  // Every source-bearing element is gated on a real, openable source.
+  for (const gated of ['styles.sourceTile', 'styles.watchButton']) {
+    const index = detail.indexOf(gated);
+    assert.ok(index > -1, `${gated} exists`);
+    const preceding = detail.slice(Math.max(0, index - 900), index);
+    assert.ok(
+      preceding.includes('sourceUrl && sourceAttribution'),
+      `${gated} only renders when a real source URL is stored`,
+    );
+  }
+  // The attribution line is gated on attribution alone (a link source has no
+  // watch action but is still honestly credited).
+  const attribution = detail.indexOf('styles.attributionRow');
+  assert.ok(attribution > -1);
+  assert.ok(
+    detail.slice(attribution - 400, attribution).includes('sourceAttribution ? ('),
+    'the platform line needs attribution, not a hardcoded platform',
+  );
+
+  // Nearr does not persist the post's own thumbnail or the creator's handle,
+  // so neither may be invented.
+  assert.ok(
+    !/creator|@\{|avatarUrl|thumbnailUrl|posterUrl/i.test(detail),
+    'no fabricated creator handle, avatar, or video still',
+  );
+  // The copy is category-neutral: nothing assumes the place is a restaurant.
+  assert.ok(
+    !/\b(menu|dish|eat here|the food|reservation|table for)\b/i.test(detail),
+    'Place Detail copy never assumes a restaurant',
+  );
+}
+
+// Category neutrality: every Nearr category has a glyph, and a place with no
+// street address (a city, an island) drops the locality line instead of
+// rendering an empty one.
+{
+  const detail = readFileSync(join(process.cwd(), 'components/map/SelectedPlaceDetails.tsx'), 'utf8');
+  const start = detail.indexOf('const CATEGORY_ICONS');
+  const block = detail.slice(start, detail.indexOf('};', start));
+  for (const category of [
+    'restaurant', 'cafe', 'hotel', 'beach', 'island', 'park', 'museum',
+    'hiking_trail', 'scenic_spot', 'shopping', 'transportation', 'other',
+  ]) {
+    assert.ok(block.includes(`${category}:`), `${category} has a glyph`);
+  }
+  assert.ok(detail.includes('{locality ? ('), 'no address → no locality row');
+  assert.ok(
+    detail.includes('CATEGORY_ICONS[categoryKey]'),
+    'the glyph follows the normalized Nearr category, never a raw provider type',
+  );
+}
+
+// "Did you go yet?" is a compact feedback card, not gamification, and the
+// answered state persists rather than re-asking on reopen.
+{
+  const detail = readFileSync(join(process.cwd(), 'components/map/SelectedPlaceDetails.tsx'), 'utf8');
+  assert.ok(detail.includes('styles.visitCard'));
+  assert.ok(detail.includes('visited.prompt') && detail.includes('visited.supportCopy'));
+  assert.ok(detail.includes("visited.visited ? 'You went here'"), 'an answered place says so');
+  assert.ok(
+    detail.includes('{visited.visited ? null : ('),
+    'and does not re-offer the question it already has an answer to',
+  );
+  assert.ok(
+    !/\bstreaks?\b|\bachievement|\btrophy\b|\blevel up\b|\bmilestone\b|places visited this/i.test(detail),
+    'no gamification / achievement-card UI',
+  );
+  assert.ok(!/reviews?Count|review_count|\d+ reviews/i.test(detail), 'no review counts');
+}
+
+// Also Nearby is presentation-only: same selector, same exact-id navigation,
+// and the row component is generic enough for a future "From this video".
+{
+  const detail = readFileSync(join(process.cwd(), 'components/map/SelectedPlaceDetails.tsx'), 'utf8');
+  const row = readFileSync(join(process.cwd(), 'components/map/place/PlaceCardRow.tsx'), 'utf8');
+
+  assert.ok(detail.includes('<PlaceCardRow title="Also nearby"'), 'presented by the shared row');
+  assert.ok(
+    !/ALSO_NEARBY_MAX_METERS|maxMeters:|limit:/.test(detail),
+    'the redesign did not quietly retune the distance/limit semantics',
+  );
+  assert.ok(row.includes('title'), 'the row is titled by its caller, not hardcoded');
+  assert.ok(
+    !/alsoNearby|selectAlsoNearby|distanceMeters/.test(row),
+    'the row knows nothing about WHY its places were chosen — a second row can reuse it',
+  );
+  assert.ok(!/fetch\(|googleapis|placesService/.test(row), 'no external discovery');
+}
+
+// Theme: both palettes, via tokens — never a parallel colour system.
+{
+  const detail = readFileSync(join(process.cwd(), 'components/map/SelectedPlaceDetails.tsx'), 'utf8');
+  const styles = detail.slice(detail.indexOf('function createStyles('));
+  // Raw colour is permitted in exactly two places: type/scrims that sit ON the
+  // photo or the full-screen gallery (where the image, not the theme, sets the
+  // contrast), and shadow colours. Every surface colour must be a token.
+  for (const line of styles.split('\n')) {
+    const raw = line.match(/#[0-9A-Fa-f]{3,8}|rgba?\([^)]*\)/);
+    if (!raw) continue;
+    const isShadow = /shadowColor|textShadowColor/.test(line);
+    const isMonochrome =
+      /#FFFFFF/i.test(raw[0]) || /rgba\(\s*(0,\s*0,\s*0|255,\s*255,\s*255)/.test(raw[0]);
+    assert.ok(
+      isShadow || isMonochrome,
+      `raw colour ${raw[0]} must come from a theme token instead — "${line.trim()}"`,
+    );
+  }
+  assert.ok(styles.includes('colors.accentSoft'), 'accent washes use a theme token');
+  assert.ok(styles.includes('colors.accentBorder'), 'accent hairlines use a theme token');
+
+  const theme = readFileSync(join(process.cwd(), 'lib/theme.tsx'), 'utf8');
+  const constants = readFileSync(join(process.cwd(), 'constants/colors.ts'), 'utf8');
+  assert.ok(constants.includes('accentSoft') && constants.includes('accentBorder'), 'dark palette defines them');
+  assert.ok(theme.includes('accentSoft') && theme.includes('accentBorder'), 'light palette defines them');
+}
+
+// Small screens: the action row is allowed to reflow, never to clip.
+{
+  const detail = readFileSync(join(process.cwd(), 'components/map/SelectedPlaceDetails.tsx'), 'utf8');
+  assert.ok(detail.includes('const compactActionRow = viewportWidth < 390'), 'there is a breakpoint');
+  assert.equal(
+    detail.split('<Switch').length - 1,
+    1,
+    'one switch, rendered in whichever layout applies — never two out of sync',
+  );
+  assert.match(detail, /actionButtonText: \{[\s\S]*fontSize: 12/, 'labels stay readable');
+  assert.ok(detail.includes('numberOfLines={1}'), 'and truncate rather than reflow the row');
+}
+
+console.log('PASS place detail V2: one why-surface, TikTok/Instagram peers, working swipe-down, reference composition');

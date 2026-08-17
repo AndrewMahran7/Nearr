@@ -62,7 +62,7 @@ assert.match(details, /updateSavedPlacesCache/, 'the shared saved-place cache re
 // change: an edit writes `notes` and leaves `ai_note` provenance untouched, and
 // the editor is seeded from the cue only while the user has no note of their
 // own. (The display rule itself is unit-tested in scripts/testPlaceDetailV2.ts.)
-assert.match(details, /styles\.sourceNoteLabel/, 'the single surface has its own labeled section');
+assert.match(details, /styles\.savedBecauseTitle/, 'the single surface has its own labeled section');
 assert.match(details, /whySaved\.seedFromSourceNote/, 'the editor seeds from the cue, once');
 assert.match(
   details,

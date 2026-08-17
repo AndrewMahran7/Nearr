@@ -114,17 +114,24 @@ const sheet = readFileSync(
 // instead of an AI block stacked on a user block. The decision still lives in
 // the shared helper, so the display rule stays unit-testable.
 assert.match(sheet, /whySavedDisplay\(/, 'the sheet derives its notes from the shared helper');
-assert.match(sheet, /whySaved\.text \?/, 'the surface is gated on the helper');
-assert.match(sheet, /WHY YOU SAVED IT/, 'consumer-facing label for the source cue');
+assert.match(sheet, /hasReason = !!whySaved\.text/, 'the surface is gated on the helper');
+// The heading names the ORIGIN of the save, and falls back to the user's own
+// note when there is no post to credit — one surface either way.
+assert.match(sheet, /'Saved because…'/, 'consumer-facing label for the source cue');
+assert.match(sheet, /savedBecauseLabel = sourceAttribution \? 'Saved because…' : 'Your note'/);
 // The label must never expose how the cue was produced.
 assert.doesNotMatch(
   sheet,
   /AI summary|AI note<|generated description|model output|extraction|No AI note/i,
   'the cue is never described as model output to the user',
 );
-assert.match(sheet, /accessibilityLabel=\{`Get directions to \$\{saved\.place\.name\}`\}/);
+assert.match(sheet, /a11yLabel=\{`Get directions to \$\{saved\.place\.name\}`\}/);
 assert.match(sheet, /reminderStatus/, 'compact reminder still surfaces its status');
-assert.match(sheet, /accessibilityLabel="Nearby reminder"/, 'the switch keeps its label');
+assert.match(
+  sheet,
+  /accessibilityLabel=\{`Nearby reminder for \$\{saved\.place\.name\}`\}/,
+  'the switch keeps a label, now naming the place it controls',
+);
 assert.match(sheet, /minHeight: 44/, 'management actions keep an accessible target');
 assert.match(sheet, /styles\.manageRow/, 'destructive actions live in the low-emphasis footer');
 

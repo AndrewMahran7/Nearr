@@ -10,6 +10,10 @@ export const Colors = {
   textInverse: '#FFFFFF',
   primary: '#FF6A1A',
   accent: '#FF6A1A',
+  /** Faint accent wash for "this belongs to Nearr" surfaces (Saved because…). */
+  accentSoft: 'rgba(255, 106, 26, 0.10)',
+  /** Restrained accent hairline for those same surfaces. */
+  accentBorder: 'rgba(255, 106, 26, 0.28)',
   gradientStart: '#FF8A1C',
   gradientEnd: '#FF3D2E',
   danger: '#EF4444',

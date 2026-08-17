@@ -14,6 +14,7 @@ import Constants from 'expo-constants';
 import { isDemoMode } from '@/lib/demoMode';
 import { isMapPreviewMode } from '@/lib/mapPreview';
 import { searchDemoPlaces, getDemoPlaceDetails } from '@/services/demo';
+import type { OpeningHoursPeriod, PlaceOpeningHours } from '@/lib/placeHours';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -54,6 +55,20 @@ export type PlaceRichDetails = {
   formattedPhoneNumber: string | null;
   internationalPhoneNumber: string | null;
   photoUrls: string[];
+  /**
+   * Weekly opening periods in the PLACE's local time, plus Google's own
+   * weekday strings. Null for anything without published hours — a city, a
+   * beach, an island, and plenty of real businesses. `open_now` is
+   * deliberately NOT surfaced: it is deprecated and we compute the state from
+   * `periods` + `utcOffsetMinutes` instead (see lib/placeHours.ts).
+   */
+  openingHours: PlaceOpeningHours | null;
+  /**
+   * Minutes east of UTC for the place at request time (DST already applied).
+   * Required to reason about the venue's own clock; null when Google omits it,
+   * in which case no open/closed claim may be made.
+   */
+  utcOffsetMinutes: number | null;
 };
 
 export type LocationBias = { lat: number; lng: number };
@@ -123,6 +138,11 @@ const DETAILS_FIELDS = [
   'url',
 ].join(',');
 
+// `opening_hours` sits in the same Contact-data tier as `website` /
+// `formatted_phone_number`, which this request already pays for, and
+// `utc_offset` is a Basic field — so today's hours cost NO extra request and no
+// extra billing tier. They ride along on the one cached rich-details call the
+// detail sheet already makes for photos.
 const RICH_DETAILS_FIELDS = [
   'place_id',
   'name',
@@ -134,6 +154,8 @@ const RICH_DETAILS_FIELDS = [
   'formatted_phone_number',
   'international_phone_number',
   'photos',
+  'opening_hours',
+  'utc_offset',
 ].join(',');
 
 // ---------------------------------------------------------------------------
@@ -220,6 +242,8 @@ export async function getPlaceRichDetails(
       formattedPhoneNumber: null,
       internationalPhoneNumber: null,
       photoUrls: [],
+      openingHours: null,
+      utcOffsetMinutes: null,
     };
   }
   if (!placeId) throw new PlacesError('INVALID_REQUEST', 'placeId is required');
@@ -279,7 +303,44 @@ export async function getPlaceRichDetails(
         ? result.international_phone_number.trim()
         : null,
     photoUrls,
+    openingHours: toOpeningHours(result.opening_hours),
+    // Google has shipped this field under both names; read either rather than
+    // silently losing the venue's clock and suppressing the hours line.
+    utcOffsetMinutes: toUtcOffsetMinutes(result.utc_offset_minutes ?? result.utc_offset),
   };
+}
+
+/**
+ * Normalize Google's `opening_hours` into our shape. Returns null when there
+ * are no usable periods so the UI omits hours rather than rendering a shell.
+ * `open_now` is intentionally dropped — it is deprecated and, more importantly,
+ * it is a snapshot from request time that goes stale in the cache.
+ */
+function toOpeningHours(raw: any): PlaceOpeningHours | null {
+  if (!raw || !Array.isArray(raw.periods)) return null;
+  const periods = raw.periods
+    .map((period: any): OpeningHoursPeriod | null => {
+      const open = period?.open;
+      if (typeof open?.day !== 'number' || typeof open?.time !== 'string') return null;
+      const close = period?.close;
+      const hasClose = typeof close?.day === 'number' && typeof close?.time === 'string';
+      return {
+        open: { day: open.day, time: open.time },
+        close: hasClose ? { day: close.day, time: close.time } : null,
+      };
+    })
+    .filter((period: OpeningHoursPeriod | null): period is OpeningHoursPeriod => period !== null);
+  if (periods.length === 0) return null;
+  return {
+    periods,
+    weekdayDescriptions: Array.isArray(raw.weekday_text)
+      ? raw.weekday_text.filter((line: unknown): line is string => typeof line === 'string')
+      : [],
+  };
+}
+
+function toUtcOffsetMinutes(raw: unknown): number | null {
+  return typeof raw === 'number' && Number.isFinite(raw) ? raw : null;
 }
 
 // ---------------------------------------------------------------------------

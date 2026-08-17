@@ -1,9 +1,12 @@
 import { useMemo } from 'react';
-import { View, ViewStyle, StyleSheet } from 'react-native';
+import { View, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
 import { Radius, Spacing } from '@/constants';
 import { useTheme } from '@/lib/theme';
 
-export function Card({ children, style }: { children: React.ReactNode; style?: ViewStyle }) {
+// `StyleProp` rather than a bare `ViewStyle` so callers can compose conditional
+// styles (`[base, expanded && override]`) the way every other RN component
+// accepts — a plain object is still valid.
+export function Card({ children, style }: { children: React.ReactNode; style?: StyleProp<ViewStyle> }) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   return <View style={[styles.card, style]}>{children}</View>;

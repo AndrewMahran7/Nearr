@@ -28,6 +28,8 @@ const LightColors: ThemeColors = {
   textInverse: '#FFFFFF',
   primary: '#D85C16',
   accent: '#D85C16',
+  accentSoft: 'rgba(216, 92, 22, 0.08)',
+  accentBorder: 'rgba(216, 92, 22, 0.22)',
   gradientStart: '#FF9A3D',
   gradientEnd: '#E5512C',
   danger: '#D14343',
