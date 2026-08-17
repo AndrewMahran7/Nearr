@@ -105,6 +105,8 @@
     "test:source-location-tag": "ts-node -P scripts/tsconfig.json scripts/testSourceLocationTag.ts",
     "test:no-match-diagnostics": "ts-node -P scripts/tsconfig.json scripts/testNoMatchDiagnostics.ts",
     "test:provider-api-path": "ts-node -P scripts/tsconfig.json scripts/testProviderApiPath.ts",
+    "test:audit-preflight": "ts-node -P scripts/tsconfig.json scripts/testRecognitionAuditPreflight.ts",
+    "audit:recognition-preflight": "ts-node -P scripts/tsconfig.json scripts/recognitionAuditPreflight.ts",
     "test:shared-geo-context": "ts-node -P scripts/tsconfig.json scripts/testSharedGeoContext.ts",
     "test:media-run-diagnostics": "ts-node -P scripts/tsconfig.json scripts/testMediaRunDiagnostics.ts",
     "test:ambiguity-review": "ts-node -P scripts/tsconfig.json scripts/testAmbiguityReviewFlow.ts",
