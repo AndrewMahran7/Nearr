@@ -51,9 +51,18 @@ import * as TaskManager from 'expo-task-manager';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import { trackEvent } from './analytics';
 import { isDemoMode } from './demoMode';
 import { isDebugLoggingEnabled, logDebug, logInfo } from './logger';
 import { isMapPreviewMode } from './mapPreview';
+import {
+  evaluateNearbyNotificationEligibility,
+  getNearbyNotificationRadiusBucket,
+  getNearbyNotificationRadiusMeters,
+  isPlaceReliablyClosed,
+  resolveReminderPlaceCategory,
+  selectNearbyNotificationWinner,
+} from './nearbyEligibility';
 import {
   createPlaceNotificationDedupeGate,
   PLACE_NOTIFICATION_DEDUPE_WINDOW_MS,
@@ -696,25 +705,29 @@ export async function handleNotificationAction(
 
 /**
  * Resolve the effective radius (in meters) for a saved place:
- *   - per-place override wins
- *   - otherwise fall back to the profile default
- *   - otherwise fall back to 1 mile
+ *   - per-place override wins (user explicitly chose this radius)
+ *   - otherwise a category-aware default (see `lib/nearbyEligibility.ts`)
+ *
+ * NOTE ON THE PROFILE DEFAULT: `profile.default_radius_value` (Settings ->
+ * "Default reminder distance") is intentionally no longer read here. Before
+ * this change every un-customized place used that single flat number —
+ * exactly the one-size-fits-all behavior this task replaces with a
+ * category-aware default. The Settings screen and the place-detail
+ * "Default" label still display `profile.default_radius_value` verbatim;
+ * updating that copy to describe the new behavior is a UI change and was
+ * deliberately left out of this pass. `profile` stays in the signature so
+ * existing call sites are untouched.
  */
 export function effectiveRadiusMeters(
   saved: ReminderPlace,
-  profile: ReminderProfile | null,
+  _profile: ReminderProfile | null,
 ): number {
   if (saved.radius_value != null && saved.radius_unit) {
     return saved.radius_unit === 'minutes'
       ? minutesToMeters(saved.radius_value)
       : milesToMeters(saved.radius_value);
   }
-  if (profile) {
-    return profile.default_radius_unit === 'minutes'
-      ? minutesToMeters(profile.default_radius_value)
-      : milesToMeters(profile.default_radius_value);
-  }
-  return milesToMeters(1);
+  return getNearbyNotificationRadiusMeters(resolveReminderPlaceCategory(saved));
 }
 
 /**
@@ -772,24 +785,23 @@ export function decideProximity(
     longitude: saved.place.longitude,
   });
   const radius = effectiveRadiusMeters(saved, profile);
-  if (distance > radius) {
-    return { kind: 'skip', reason: 'out-of-range' };
-  }
 
-  // In-memory cooldown check.
   const memLast = lastAlertAtMem.get(saved.id) ?? 0;
-  if (now - memLast < ALERT_COOLDOWN_MS) {
-    return { kind: 'skip', reason: 'cooldown-mem' };
-  }
+  const dbLastMs = saved.last_notified_at ? Date.parse(saved.last_notified_at) : NaN;
+  const isRecentlyNotified =
+    now - memLast < ALERT_COOLDOWN_MS ||
+    (Number.isFinite(dbLastMs) && now - dbLastMs < ALERT_COOLDOWN_MS);
 
-  // Persisted cooldown check.
-  if (saved.last_notified_at) {
-    const ts = Date.parse(saved.last_notified_at);
-    if (Number.isFinite(ts) && now - ts < ALERT_COOLDOWN_MS) {
-      return { kind: 'skip', reason: 'cooldown-db' };
-    }
-  }
+  const eligibility = evaluateNearbyNotificationEligibility({
+    distanceMeters: distance,
+    radiusMeters: radius,
+    isReliablyClosed: isPlaceReliablyClosed(saved.place.business_status),
+    isRecentlyNotified,
+  });
 
+  if (!eligibility.eligible) {
+    return { kind: 'skip', reason: eligibility.reason };
+  }
   return { kind: 'notify', distanceMeters: distance, radiusMeters: radius };
 }
 
@@ -829,6 +841,12 @@ export async function checkProximity(
   if (saved.length === 0) return;
 
   // --- evaluate ---
+  // Radius entry means ELIGIBLE, not automatic send: pass 1 below collects
+  // every identity that just crossed outside->inside and cleared the base
+  // eligibility bar (radius, closed, per-place cooldown) into `candidates`.
+  // Multiple identities can collect in one tick — e.g. the user's GPS jumps
+  // and they're suddenly inside two unrelated places' radii at once. Pass 2
+  // picks at most one winner; everyone else is logged as lost, never sent.
   const here: LatLng = { latitude, longitude };
   const now = Date.now();
   const identities = groupSavedPlacesByIdentity(saved, here);
@@ -839,6 +857,15 @@ export async function checkProximity(
     skippedCooldown: 0,
     skippedOutside: 0,
   };
+
+  type NearbyCandidate = {
+    identity: NotificationIdentityGroup;
+    s: ReminderPlace;
+    label: string;
+    distanceMeters: number;
+  };
+  const candidates: NearbyCandidate[] = [];
+
   for (const identity of identities) {
     const s = identity.representative;
     const radius = effectiveRadiusMeters(s, profile);
@@ -869,66 +896,87 @@ export async function checkProximity(
       continue;
     }
 
-    // wasInside === false → outside→inside transition. Run cooldown + settings checks.
+    // wasInside === false → outside->inside transition. Run the base
+    // eligibility checks (radius, closed, per-place cooldown).
     const decision = decideProximity(here, s, profile, now);
+    const categoryBucket = getNearbyNotificationRadiusBucket(resolveReminderPlaceCategory(s));
     if (decision.kind === 'skip') {
-      if (decision.reason.includes('cooldown') || decision.reason.includes('count')) {
+      if (decision.reason === 'recently_notified') {
         summary.skippedCooldown += 1;
       }
       logDebug('checkProximity', 'skipped after transition', {
         place: label,
         reason: decision.reason,
       });
+      void trackEvent('nearby_suppressed', {
+        category_bucket: categoryBucket,
+        radius_meters: Math.round(radius),
+        reason: decision.reason,
+      });
       continue;
     }
 
+    void trackEvent('nearby_eligible', {
+      category_bucket: categoryBucket,
+      radius_meters: Math.round(decision.radiusMeters),
+    });
+    candidates.push({ identity, s, label, distanceMeters: decision.distanceMeters });
+  }
+
+  const { winner, losers } = selectNearbyNotificationWinner(candidates);
+  for (const loser of losers) {
+    logDebug('checkProximity', 'lost_to_nearer_candidate', { place: loser.label });
+  }
+
+  if (winner) {
     const overlapGroup = buildNotificationAreaGroup({
-      triggered: s,
+      triggered: winner.s,
       allSaved: saved,
       triggerPoint: here,
       profile,
       now,
     });
+
     if (overlapGroup.allSavedPlaceIds.length === 0) {
       summary.skippedCooldown += 1;
-      logDebug('checkProximity', 'skipped overlap group', { place: label });
-      continue;
-    }
+      logDebug('checkProximity', 'skipped overlap group', { place: winner.label });
+    } else {
+      const groupMemLast = lastAlertAtGroupMem.get(overlapGroup.key) ?? 0;
+      const groupDbLast = latestGroupLastNotifiedAt(
+        overlapGroup.identities.flatMap((groupIdentity) => groupIdentity.members),
+      );
+      const groupOnCooldown =
+        now - groupMemLast < ALERT_COOLDOWN_MS ||
+        (groupDbLast > 0 && now - groupDbLast < ALERT_COOLDOWN_MS);
 
-    const groupMemLast = lastAlertAtGroupMem.get(overlapGroup.key) ?? 0;
-    if (now - groupMemLast < ALERT_COOLDOWN_MS) {
-      summary.skippedCooldown += 1;
-      continue;
-    }
-
-    const groupDbLast = latestGroupLastNotifiedAt(
-      overlapGroup.identities.flatMap((groupIdentity) => groupIdentity.members),
-    );
-    if (groupDbLast > 0 && now - groupDbLast < ALERT_COOLDOWN_MS) {
-      summary.skippedCooldown += 1;
-      continue;
-    }
-
-    const copy = buildGroupNotificationCopy(overlapGroup.labels);
-
-    const sendResult = await sendPlaceReminderNotificationOnce({
-      userId,
-      saved: overlapGroup.representative,
-      distance: decision.distanceMeters,
-      triggerType,
-      copyOverride: copy,
-      groupedSavedPlaces: overlapGroup.members,
-      preferredLabel: overlapGroup.labels[0] ?? label,
-    });
-    if (sendResult.status !== 'sent') {
-      if (sendResult.status === 'skipped_duplicate') {
+      if (groupOnCooldown) {
         summary.skippedCooldown += 1;
+      } else {
+        const copy = buildGroupNotificationCopy(overlapGroup.labels);
+        const sendResult = await sendPlaceReminderNotificationOnce({
+          userId,
+          saved: overlapGroup.representative,
+          distance: winner.distanceMeters,
+          triggerType,
+          copyOverride: copy,
+          groupedSavedPlaces: overlapGroup.members,
+          preferredLabel: overlapGroup.labels[0] ?? winner.label,
+        });
+        if (sendResult.status === 'sent') {
+          lastAlertAtMem.set(winner.s.id, now);
+          lastAlertAtGroupMem.set(overlapGroup.key, now);
+          summary.notified += 1;
+          void trackEvent('nearby_notified', {
+            category_bucket: getNearbyNotificationRadiusBucket(
+              resolveReminderPlaceCategory(winner.s),
+            ),
+            grouped_count: overlapGroup.members.length,
+          });
+        } else if (sendResult.status === 'skipped_duplicate') {
+          summary.skippedCooldown += 1;
+        }
       }
-      continue;
     }
-    lastAlertAtMem.set(s.id, now);
-    lastAlertAtGroupMem.set(overlapGroup.key, now);
-    summary.notified += 1;
   }
 
   const summaryMessage = `summary checked=${summary.checked} inside=${summary.inside} notified=${summary.notified} skippedCooldown=${summary.skippedCooldown} skippedOutside=${summary.skippedOutside}`;
@@ -963,6 +1011,7 @@ export type MaybeNotifyResult =
         | 'master_off'
         | 'nearby_off'
         | 'quiet_hours'
+        | 'closed'
         | 'cooldown_mem'
         | 'cooldown_db'
         | 'count_limit'
@@ -1267,6 +1316,12 @@ export async function maybeNotifyForSavedPlace(
     }
     if (inQuietHours(profile)) return { sent: false, reason: 'quiet_hours' };
 
+    const categoryBucket = getNearbyNotificationRadiusBucket(resolveReminderPlaceCategory(saved));
+    if (isPlaceReliablyClosed(saved.place.business_status)) {
+      void trackEvent('nearby_suppressed', { category_bucket: categoryBucket, reason: 'closed' });
+      return { sent: false, reason: 'closed' };
+    }
+
     const now = Date.now();
     const trigger = triggerPoint ?? {
       latitude: saved.place.latitude,
@@ -1281,6 +1336,10 @@ export async function maybeNotifyForSavedPlace(
       };
     const identityReason = getIdentityGroupCooldownReason(triggeredIdentity, now);
     if (identityReason) {
+      void trackEvent('nearby_suppressed', {
+        category_bucket: categoryBucket,
+        reason: 'recently_notified',
+      });
       return { sent: false, reason: identityReason };
     }
 
@@ -1292,17 +1351,29 @@ export async function maybeNotifyForSavedPlace(
       now,
     });
     if (overlapGroup.allSavedPlaceIds.length === 0) {
+      void trackEvent('nearby_suppressed', {
+        category_bucket: categoryBucket,
+        reason: 'recently_notified',
+      });
       return { sent: false, reason: 'count_limit' };
     }
 
     const groupMemLast = lastAlertAtGroupMem.get(overlapGroup.key) ?? 0;
     if (now - groupMemLast < ALERT_COOLDOWN_MS) {
+      void trackEvent('nearby_suppressed', {
+        category_bucket: categoryBucket,
+        reason: 'recently_notified',
+      });
       return { sent: false, reason: 'cooldown_mem' };
     }
     const groupDbLast = latestGroupLastNotifiedAt(
       overlapGroup.identities.flatMap((identity) => identity.members),
     );
     if (groupDbLast > 0 && now - groupDbLast < ALERT_COOLDOWN_MS) {
+      void trackEvent('nearby_suppressed', {
+        category_bucket: categoryBucket,
+        reason: 'recently_notified',
+      });
       return { sent: false, reason: 'cooldown_db' };
     }
 
@@ -1336,6 +1407,10 @@ export async function maybeNotifyForSavedPlace(
 
     lastAlertAtMem.set(overlapGroup.representative.id, now);
     lastAlertAtGroupMem.set(overlapGroup.key, now);
+    void trackEvent('nearby_notified', {
+      category_bucket: categoryBucket,
+      grouped_count: overlapGroup.members.length,
+    });
     return { sent: true };
   } catch (e) {
     console.warn('[notifications] maybeNotifyForSavedPlace failed', e);

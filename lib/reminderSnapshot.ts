@@ -27,13 +27,17 @@
  * -----------------
  * Only what the reminder decision consumes:
  *   - the profile master switches / quiet hours / default radius
- *   - the eligible saved places, projected to reminder fields only
+ *   - the eligible saved places, projected to reminder fields only —
+ *     including the resolved `category` (used to pick a category-aware
+ *     radius, see `lib/nearbyEligibility.ts`) and the place's
+ *     `business_status` (used only to suppress reminders for places that
+ *     are reliably closed)
  *   - a small local notification ledger (see below)
  *
- * Deliberately NOT persisted: notes, ai_note, source_url, categories,
- * recognition evidence, captions, transcripts, candidate arrays. Those are
- * product data owned by `lib/savedPlacesCache.ts`; the reminder path has no
- * business reading them, and notification payloads must never carry them.
+ * Deliberately NOT persisted: notes, ai_note, source_url, recognition
+ * evidence, captions, transcripts, candidate arrays. Those are product data
+ * owned by `lib/savedPlacesCache.ts`; the reminder path has no business
+ * reading them, and notification payloads must never carry them.
  *
  * THE LOCAL LEDGER
  * ----------------
@@ -55,6 +59,7 @@
  */
 
 import type { Profile, RadiusUnit } from '@/types';
+import type { NearrCategory } from './placeCategory';
 
 /**
  * The slice of AsyncStorage this module uses.
@@ -84,7 +89,11 @@ function store(): ReminderSnapshotStore {
   return require('@react-native-async-storage/async-storage').default as ReminderSnapshotStore;
 }
 
-const SNAPSHOT_VERSION = 2 as const;
+// v3 adds `category` and `place.business_status` to the projected shape
+// (category-aware radius + closed suppression). Bumping the version is the
+// established way this module handles a shape change: an old v2 snapshot is
+// simply never read again, and the next successful sync writes a fresh one.
+const SNAPSHOT_VERSION = 3 as const;
 const SNAPSHOT_KEY_PREFIX = `nearr:reminderSnapshot:v${SNAPSHOT_VERSION}:`;
 const ACTIVE_USER_KEY = `nearr:reminderSnapshot:activeUser:v${SNAPSHOT_VERSION}`;
 
@@ -111,6 +120,8 @@ export type ReminderEligiblePlace = {
   last_notified_at: string | null;
   notification_count: number;
   created_at: string;
+  /** Canonical Nearr category; drives the category-aware default radius. */
+  category?: NearrCategory | null;
   place: {
     id: string;
     google_place_id: string | null;
@@ -118,6 +129,8 @@ export type ReminderEligiblePlace = {
     formatted_address: string | null;
     latitude: number;
     longitude: number;
+    /** Google business_status. Used only to suppress reminders for places that are reliably not actionable. */
+    business_status?: string | null;
   };
 };
 
@@ -200,6 +213,7 @@ export function toReminderPlace(row: ReminderEligiblePlace): ReminderEligiblePla
     last_notified_at: row.last_notified_at ?? null,
     notification_count: row.notification_count ?? 0,
     created_at: row.created_at,
+    category: row.category ?? null,
     place: {
       id: row.place.id,
       google_place_id: row.place.google_place_id ?? null,
@@ -207,6 +221,7 @@ export function toReminderPlace(row: ReminderEligiblePlace): ReminderEligiblePla
       formatted_address: row.place.formatted_address ?? null,
       latitude: row.place.latitude,
       longitude: row.place.longitude,
+      business_status: row.place.business_status ?? null,
     },
   };
 }

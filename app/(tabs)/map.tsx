@@ -150,6 +150,10 @@ import {
 } from '@/lib/openSavedPlace';
 import { isLikelyUrl } from '@/lib/shareParser';
 import { distanceMeters, milesToMeters, minutesToMeters } from '@/lib/geo';
+import {
+  getNearbyNotificationRadiusMeters,
+  resolveReminderPlaceCategory,
+} from '@/lib/nearbyEligibility';
 import { savedPlacePinOpacity } from '@/lib/savedPlacePinState';
 import { useTheme } from '@/lib/theme';
 import { getDemoSeededSavedPlacesSync } from '@/services/demo';
@@ -194,10 +198,6 @@ function selectedIconName(saved: SavedPlaceWithPlace): React.ComponentProps<type
   }
 }
 
-// Default radius used when neither the saved place nor the profile specify one.
-// Matches the V1 default surfaced in add-place.tsx.
-const DEFAULT_RADIUS_MILES = 1;
-
 // Vertical space reserved by the floating search bar + filter chips from the
 // top of the map area. When async share-jobs are enabled we add one more row
 // for the Queue pill so View All / preview pills never overlap it.
@@ -223,19 +223,22 @@ function expandedSheetMapPeek(safeTopInset: number): number {
 
 /**
  * Effective radius (in meters) for a saved place, used to render a Life360-
- * style zone bubble. Honors:
+ * style zone bubble. Mirrors `effectiveRadiusMeters` in `lib/notifications.ts`
+ * exactly — the map circle must show the SAME radius the reminder engine
+ * actually uses, never a locally-recomputed guess. Honors:
  *   1. per-place radius_value/radius_unit if set
- *   2. else profile default_radius_value/default_radius_unit if available
- *   3. else 1 mile
+ *   2. else the category-aware default (see `lib/nearbyEligibility.ts`)
  */
 function effectiveRadiusMeters(
   s: SavedPlaceWithPlace,
-  profile: Profile | null,
+  _profile: Profile | null,
 ): number {
-  const value =
-    s.radius_value ?? profile?.default_radius_value ?? DEFAULT_RADIUS_MILES;
-  const unit = s.radius_unit ?? profile?.default_radius_unit ?? 'miles';
-  return unit === 'minutes' ? minutesToMeters(value) : milesToMeters(value);
+  if (s.radius_value != null && s.radius_unit) {
+    return s.radius_unit === 'minutes'
+      ? minutesToMeters(s.radius_value)
+      : milesToMeters(s.radius_value);
+  }
+  return getNearbyNotificationRadiusMeters(resolveReminderPlaceCategory(s));
 }
 
 // Approximate degrees-of-latitude per meter. Good enough for camera framing

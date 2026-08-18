@@ -296,7 +296,7 @@ async function main() {
   );
 
   // The snapshot must carry ONLY reminder fields — never notes or provenance.
-  const rawA = JSON.parse(store.values.get('nearr:reminderSnapshot:v2:user-a')!);
+  const rawA = JSON.parse(store.values.get('nearr:reminderSnapshot:v3:user-a')!);
   const serialisedPlace = rawA.places[0];
   for (const forbidden of ['notes', 'ai_note', 'source_url', 'source_type']) {
     assert.ok(
@@ -396,7 +396,7 @@ async function main() {
     'a place with no coordinates is rejected',
   );
 
-  store.values.set('nearr:reminderSnapshot:v2:user-a', '{not json at all');
+  store.values.set('nearr:reminderSnapshot:v3:user-a', '{not json at all');
   assert.equal(
     await readReminderSnapshot(userA),
     null,
@@ -404,8 +404,8 @@ async function main() {
   );
 
   store.values.set(
-    'nearr:reminderSnapshot:v2:user-a',
-    JSON.stringify({ version: 2, userId: userA, syncedAt: 'x', places: 'nope', ledger: {} }),
+    'nearr:reminderSnapshot:v3:user-a',
+    JSON.stringify({ version: 3, userId: userA, syncedAt: 'x', places: 'nope', ledger: {} }),
   );
   assert.equal(
     await readReminderSnapshot(userA),
@@ -415,8 +415,8 @@ async function main() {
 
   // A snapshot from an older schema version is ignored rather than migrated.
   store.values.set(
-    'nearr:reminderSnapshot:v2:user-a',
-    JSON.stringify({ version: 1, userId: userA, syncedAt: 'x', places: [], ledger: {} }),
+    'nearr:reminderSnapshot:v3:user-a',
+    JSON.stringify({ version: 2, userId: userA, syncedAt: 'x', places: [], ledger: {} }),
   );
   assert.equal(
     await readReminderSnapshot(userA),
