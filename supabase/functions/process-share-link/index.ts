@@ -174,6 +174,15 @@ serve(async (req) => {
     venueHintCount: evidence.venueNameHints.length,
     isRoundup: evidence.isRoundup,
     hasTaggedLocation: !!evidence.taggedLocation,
+    // Counts only — never caption text. These three are what made the
+    // Twin Falls / Irvine failure invisible: the caption WAS present and
+    // WAS full of explicit places, but the hints derived from it were
+    // sentence fragments and the city anchor came off the wrong end of a
+    // flight. Length + anchor presence + whether any hint still carries a
+    // name/description separator are enough to spot that from a job log.
+    captionLen: evidence.captionText.length,
+    hasCityAnchor: !!evidence.cityState,
+    malformedHintCount: evidence.venueNameHints.filter((h) => /[:;]/.test(h)).length,
   });
   // Address-first extraction audit (no secrets — lengths + parsed fields
   // only). Lets the remote tester show exactly what the address path saw.

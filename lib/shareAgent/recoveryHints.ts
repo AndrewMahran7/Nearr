@@ -434,6 +434,55 @@ const KNOWN_CITY_HASHTAGS: ReadonlyArray<readonly [RegExp, string, string]> = [
 export type CityStateContext = { city: string; state: string };
 
 /**
+ * Words that introduce a place as the trip's ORIGIN or the creator's home
+ * base rather than as somewhere the post is about.
+ *
+ * 2026-08-17 — a travel caption routinely names two places in opposite roles:
+ * "@breezeairways now has a great flight from Orange County (OC) to Twin
+ * Falls, Idaho". `extractCityStateContext` took the first known literal
+ * anywhere in prose, so the DEPARTURE airport won the city anchor, and every
+ * downstream Places search for that post was biased to southern California —
+ * which is how a Twin Falls, Idaho itinerary came back as a list of lakes in
+ * Irvine. "Orange County" was never wrong as a string; it was wrong as a
+ * ROLE. Same family as the creator-home-city guard: naming a place does not
+ * make it the destination.
+ */
+const ORIGIN_ROLE_MARKER =
+  /(?:^|[^A-Za-z])(?:from|out\s+of|depart(?:s|ing|ure)?(?:\s+from)?|leaving|fly(?:ing)?\s+from|flights?\s+from|drive|driving|drove|based(?:\s+in)?|born(?:\s+in)?|home(?:town)?(?:\s+(?:is|in))?|lives?\s+in|native\s+of)\s*(?:\(|"|')?\s*$/i;
+
+/** The other half of the same idiom, written AFTER the city: "LA-based
+ *  creator", "Long Beach based photographer". Same role, mirrored word order. */
+const ORIGIN_ROLE_SUFFIX = /^\s*[-–—]?\s*(?:based|native|born)\b/i;
+
+/** Bounded lookback, so a distant unrelated "from" can never veto a city. */
+const ORIGIN_LOOKBACK_CHARS = 28;
+
+function hasOriginRoleMarker(text: string, index: number, length: number): boolean {
+  const start = Math.max(0, index - ORIGIN_LOOKBACK_CHARS);
+  if (index > 0 && ORIGIN_ROLE_MARKER.test(text.slice(start, index))) return true;
+  return ORIGIN_ROLE_SUFFIX.test(text.slice(index + length, index + length + 12));
+}
+
+/**
+ * True when `re` matches somewhere the caption is TALKING ABOUT the place —
+ * i.e. at least one occurrence is not immediately introduced by an
+ * origin/home-base marker. A city mentioned only as an origin returns false,
+ * so the caller falls through to the next candidate rather than anchoring the
+ * whole resolution on the wrong end of a journey.
+ */
+function appearsInDestinationRole(text: string, re: RegExp): boolean {
+  const scan = new RegExp(
+    re.source,
+    re.flags.includes('g') ? re.flags : re.flags + 'g',
+  );
+  for (const m of text.matchAll(scan)) {
+    if (m.index == null) continue;
+    if (!hasOriginRoleMarker(text, m.index, m[0].length)) return true;
+  }
+  return false;
+}
+
+/**
  * Detect a city/state anchor in caption text. Looks for:
  *   1. An explicit `<City>, <ST>` form ("Santa Cruz, CA").
  *   2. A known city literal in prose ("in Newport Beach").
@@ -448,14 +497,18 @@ export function extractCityStateContext(
   text: string | null | undefined,
 ): CityStateContext | null {
   if (!text) return null;
-  // 1. Explicit "Known City, ST" — strongest signal, check first.
+  // 1. Explicit "Known City, ST" — strongest signal, check first. Still
+  //    role-checked: "flight from Orange County, CA to Boise" spells the
+  //    state out and would otherwise sail past step 2's guard.
   for (const [re, city, state] of KNOWN_CITY_STATE_LITERALS) {
     const literalRe = new RegExp(re.source + String.raw`\s*,\s*` + state + String.raw`\b`, 'i');
-    if (literalRe.test(text)) return { city, state };
+    if (appearsInDestinationRole(text, literalRe)) return { city, state };
   }
-  // 2. Known city literal anywhere in prose.
+  // 2. Known city literal anywhere in prose — but only where the caption is
+  //    talking ABOUT the place, not naming it as where the trip departed from
+  //    or where the creator is based. See ORIGIN_ROLE_MARKER.
   for (const [re, city, state] of KNOWN_CITY_STATE_LITERALS) {
-    if (re.test(text)) return { city, state };
+    if (appearsInDestinationRole(text, re)) return { city, state };
   }
   // 3. Known hashtag form.
   for (const [re, city, state] of KNOWN_CITY_HASHTAGS) {
@@ -593,7 +646,18 @@ export function looksLikeRoundupPost(
     // positives on single-place event posts that happened to use it.
     /\bround-?up\b/i.test(body) ||
     /\blist\s+of\b/i.test(body) ||
-    /\bour\s+picks\b/i.test(body);
+    /\bour\s+picks\b/i.test(body) ||
+    // 2026-08-17 — three or more SEPARATELY PINNED, name-shaped places is
+    // itself list language, whatever words surround it. A day-by-day travel
+    // itinerary ("📍 Shoshone Falls: … 📍 Dierkes Lake: … 📍 Pillar Falls: …")
+    // carries none of the keywords above, so it read as a single-place post
+    // and the resolver attributed the whole share to whichever pin happened
+    // to be first. Counting NAMES rather than 📍 glyphs is deliberate: the pin
+    // is also used as a decorative bullet for hours and parking notes, and
+    // those never survive the name-shape filter in extractCaptionVenueHints.
+    // Soft, not hard — a single venue that pins its own address stays a
+    // single venue via the anchor check below.
+    countPinnedVenueNames(body) >= 3;
 
   // Single-place anchor: an explicit pin or "Name, Known City" plus
   // a likely full street address. If both are present we treat this
@@ -625,6 +689,63 @@ export function looksLikeRoundupPost(
   return false;
 }
 
+// 2026-05-27 — Patch 6 follow-up: stoplist of descriptor / filler
+// first-words that real venue names almost never start with.
+// Without this, "Easily the best sandwich spot in Santa Cruz"
+// produced "Easily the best sandwich spot" as a venue hint and
+// the synchronous-path seed query used it as a literal place
+// name, returning unrelated places (e.g. a sandwich shop in
+// Austin, TX). Keep this list short and high-confidence —
+// anything that COULD legitimately start a venue name (e.g.
+// "Big", "Little", "Old") is NOT here.
+const NOISE_FIRST_WORDS = new Set([
+  'easily', 'a', 'an', 'the', 'this', 'that', 'these', 'those',
+  'my', 'our', 'your', 'their', 'his', 'her',
+  'best', 'better', 'good', 'great', 'amazing', 'awesome',
+  'fresh', 'happy', 'open', 'new',
+  'am', 'pm',
+]);
+
+/** `📍 <Name>` — see Pattern 1 in `extractCaptionVenueHints`. Module-level so
+ *  the roundup detector can count pinned names without re-deriving it. */
+const PIN_AHEAD_RE =
+  /📍\s*((?:[A-Z]|\d{1,2}(?:st|nd|rd|th)\b)[^\n@,:;–—|•·📍]{2,60})/giu;
+
+/**
+ * Normalize one raw capture into a name-shaped venue hint, or `null` when it
+ * does not look like a venue name. Extracted verbatim from the `push` closure
+ * so the roundup detector can apply the SAME bar rather than a looser one.
+ */
+function cleanVenueHintCandidate(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  let cleaned = raw.replace(/\s+/g, ' ').trim();
+  // Trim trailing punctuation/emoji-ish chars.
+  cleaned = cleaned.replace(/[\s,.;:!?\-–—|]+$/u, '').trim();
+  if (!cleaned) return null;
+  if (cleaned.length < 3 || cleaned.length > 60) return null;
+  if (/[@\/]/.test(cleaned)) return null;
+  if (!/^[A-Za-z0-9]/.test(cleaned)) return null;
+  // Reject time-fragment captures like "AM - 3PM", "11AM - 3PM".
+  if (/\b\d{1,2}\s*[ap]m\b/i.test(cleaned)) return null;
+  // Reject phrases whose first word is a descriptor/filler word.
+  const firstWord = cleaned.split(/\s+/)[0].toLowerCase().replace(/[^a-z]/g, '');
+  if (firstWord && NOISE_FIRST_WORDS.has(firstWord)) return null;
+  const wordCount = cleaned.split(/\s+/).length;
+  if (wordCount < 1 || wordCount > 6) return null;
+  return cleaned;
+}
+
+/** Distinct name-shaped places the caption pinned with `📍`. */
+function countPinnedVenueNames(text: string | null | undefined): number {
+  if (!text) return 0;
+  const names = new Set<string>();
+  for (const m of text.matchAll(PIN_AHEAD_RE)) {
+    const cleaned = cleanVenueHintCandidate(m[1]);
+    if (cleaned) names.add(cleaned.toLowerCase());
+  }
+  return names.size;
+}
+
 /**
  * Extract candidate venue-name strings from caption/title text using
  * conservative deterministic patterns. Returns an ordered list of
@@ -648,38 +769,9 @@ export function extractCaptionVenueHints(
   if (!text) return [];
   const out: string[] = [];
   const seen = new Set<string>();
-  // 2026-05-27 — Patch 6 follow-up: stoplist of descriptor / filler
-  // first-words that real venue names almost never start with.
-  // Without this, "Easily the best sandwich spot in Santa Cruz"
-  // produced "Easily the best sandwich spot" as a venue hint and
-  // the synchronous-path seed query used it as a literal place
-  // name, returning unrelated places (e.g. a sandwich shop in
-  // Austin, TX). Keep this list short and high-confidence —
-  // anything that COULD legitimately start a venue name (e.g.
-  // "Big", "Little", "Old") is NOT here.
-  const NOISE_FIRST_WORDS = new Set([
-    'easily', 'a', 'an', 'the', 'this', 'that', 'these', 'those',
-    'my', 'our', 'your', 'their', 'his', 'her',
-    'best', 'better', 'good', 'great', 'amazing', 'awesome',
-    'fresh', 'happy', 'open', 'new',
-    'am', 'pm',
-  ]);
   const push = (raw: string | null | undefined) => {
-    if (!raw) return;
-    let cleaned = raw.replace(/\s+/g, ' ').trim();
-    // Trim trailing punctuation/emoji-ish chars.
-    cleaned = cleaned.replace(/[\s,.;:!?\-–—|]+$/u, '').trim();
+    const cleaned = cleanVenueHintCandidate(raw);
     if (!cleaned) return;
-    if (cleaned.length < 3 || cleaned.length > 60) return;
-    if (/[@\/]/.test(cleaned)) return;
-    if (!/^[A-Za-z0-9]/.test(cleaned)) return;
-    // Reject time-fragment captures like "AM - 3PM", "11AM - 3PM".
-    if (/\b\d{1,2}\s*[ap]m\b/i.test(cleaned)) return;
-    // Reject phrases whose first word is a descriptor/filler word.
-    const firstWord = cleaned.split(/\s+/)[0].toLowerCase().replace(/[^a-z]/g, '');
-    if (firstWord && NOISE_FIRST_WORDS.has(firstWord)) return;
-    const wordCount = cleaned.split(/\s+/).length;
-    if (wordCount < 1 || wordCount > 6) return;
     const key = cleaned.toLowerCase();
     if (seen.has(key)) return;
     seen.add(key);
@@ -689,7 +781,20 @@ export function extractCaptionVenueHints(
   // Pattern 1: 📍 <Name> until newline / @ / end-of-line.
   // Also allow ordinal-led names like "2nd Floor" while still rejecting
   // numeric street addresses ("19688 Beach Blvd" has no ordinal token).
-  const pinAhead = text.matchAll(/📍\s*((?:[A-Z]|\d{1,2}(?:st|nd|rd|th)\b)[^\n@,📍]{2,60})/giu);
+  //
+  // 2026-08-17 - the colon is a NAME/DESCRIPTION boundary, not name text.
+  // The dominant Instagram travel-caption idiom is "📍 <Venue>: <what to
+  // do there>", and without ':' as a terminator the capture swallowed the
+  // whole sentence. That threw away the creator's own explicit evidence two
+  // different ways: a short run-on became a malformed provider query
+  // ("Dierkes Lake: Perfect for swimming"), and anything longer blew the
+  // 6-word name gate below and was DROPPED outright - so a caption that
+  // pinned ten real places BY NAME contributed almost nothing, and the
+  // resolver fell through to far weaker guesses. Semicolon and the
+  // dash/pipe/bullet separators (already name boundaries in Pattern 1b) get
+  // the same treatment. Deliberately NOT stripping other punctuation: venue
+  // names legitimately carry apostrophes, ampersands and accents worldwide.
+  const pinAhead = text.matchAll(PIN_AHEAD_RE);
   for (const m of pinAhead) push(m[1]);
 
   // Pattern 1b: <Name> <sep> 📍<address> — the venue name precedes the pin
