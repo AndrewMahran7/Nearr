@@ -42,6 +42,15 @@ export type OpenSavedPlaceArgs = {
   /** Stable fallback identity when the saved_places id can't be resolved. */
   googlePlaceId?: string | null;
   source: OpenSavedPlaceSource;
+  /**
+   * Reuse an ALREADY-MINTED request id instead of minting a fresh one. Only a
+   * caller that owns the navigation intent as a first-class object passes this
+   * — a notification tap mints its intent id once (see
+   * lib/notificationNavigation) so the intent, the route param, and the
+   * analytics event all name the same navigation. Omitted everywhere else, in
+   * which case a fresh single-use id is minted exactly as before.
+   */
+  openRequestId?: string | null;
 };
 
 /** A validated Expo Router target for the map tab. Always navigable. */
@@ -74,7 +83,7 @@ export function resolveOpenSavedPlaceRoute(args: OpenSavedPlaceArgs): MapRouteTa
   const googlePlaceId = validId(args.googlePlaceId);
   const params: Record<string, string> = {
     placeSource: args.source,
-    openRequestId: nextOpenSavedPlaceRequestId(),
+    openRequestId: validId(args.openRequestId) ?? nextOpenSavedPlaceRequestId(),
   };
   if (savedPlaceId) params.savedPlaceId = savedPlaceId;
   if (googlePlaceId) params.savedPlaceGoogleId = googlePlaceId;

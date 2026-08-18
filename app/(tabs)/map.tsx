@@ -148,6 +148,10 @@ import {
   savedPlaceFocusKey,
   shouldExpandSavedPlaceDetails,
 } from '@/lib/openSavedPlace';
+import {
+  getNotificationUiClaim,
+  subscribeToNotificationUiClaim,
+} from '@/lib/notificationNavigation';
 import { isLikelyUrl } from '@/lib/shareParser';
 import { distanceMeters, milesToMeters, minutesToMeters } from '@/lib/geo';
 import { savedPlacePinOpacity } from '@/lib/savedPlacePinState';
@@ -610,6 +614,10 @@ export default function MapScreen() {
   const followModeRef = useRef(true);
   followModeRef.current = followMode;
   const [selected, setSelected] = useState<SavedPlaceWithPlace | null>(null);
+  // Mirror of the selection for listeners that must NOT re-subscribe whenever
+  // the selection changes (the notification-ownership reset below).
+  const selectedIdRef = useRef<string | null>(null);
+  selectedIdRef.current = selected?.id ?? null;
 
   // Keep an already-open detail sheet attached to the live cached row. Media
   // enrichment updates ai_note asynchronously after the initial save.
@@ -1162,6 +1170,57 @@ export default function MapScreen() {
     }
   }, [userRegion, mapReady, mapPreview]);
 
+  // ---- a notification destination is taking ownership of the UI ---------
+  //
+  // Route-level transient UI (the Queue, a queue item, the grouped-opportunity
+  // screen, /place/[id], the add-place / share / feedback modals) is torn down
+  // by the root layout's dismissal. Everything in this list is transient state
+  // the MAP owns in React, which no navigation can reach: the search dropdown,
+  // the currently selected place and its expanded detail sheet, the grouped
+  // selector, the snackbar, and the sheet's snap position.
+  //
+  // Declared ABOVE the focus effect on purpose: effects run in declaration
+  // order, so on a cold start the reset can never land after the notified place
+  // has already been focused.
+  //
+  // What this deliberately does NOT do: move the camera (closing UI is not a
+  // reason to move the map -- see `dismissSelectedPlace`), change the category
+  // filter, drop follow mode, refetch, or touch saved places, the offline
+  // cache, auth, theme, onboarding or settings. This is a transient UI reset,
+  // not an app reset.
+  const handledUiClaimRef = useRef(0);
+  useEffect(() => {
+    const releaseTransientUi = (generation: number) => {
+      if (handledUiClaimRef.current >= generation) return;
+      handledUiClaimRef.current = generation;
+
+      setSearchVisible(false);
+      setSnackbar(null);
+      setReminderContextSavedPlaceId(null);
+      const openId = selectedIdRef.current;
+      if (openId) {
+        try {
+          markerRefs.current[openId]?.hideCallout?.();
+        } catch {
+          // a detached marker ref is not a reason to keep the old place around
+        }
+      }
+      previewTranslateY.stopAnimation();
+      previewTranslateY.setValue(0);
+      setSelected(null);
+      setPreviewExpanded(false);
+      setSheetMinimizeSignal((n) => n + 1);
+    };
+
+    // A claim raised before this screen existed (a cold start straight from a
+    // notification) needs no reset -- a freshly mounted map has no transient UI
+    // to clear -- but it IS marked handled, so the mount can never re-run an
+    // old claim's reset over state the user has since created.
+    handledUiClaimRef.current = getNotificationUiClaim()?.generation ?? 0;
+
+    return subscribeToNotificationUiClaim((claim) => releaseTransientUi(claim.generation));
+  }, [previewTranslateY]);
+
   // ---- deep-link target: focus a specific saved place -------------------
   // Triggered by the "Show on map" action elsewhere in the app. Runs once
   // per `savedPlaceId` change, after the map is ready and the saved-places
@@ -1268,6 +1327,15 @@ export default function MapScreen() {
         savedPlaceId: savedPlaceId ?? null,
         result: 'open_target_not_found',
       });
+      if (placeSource === 'notification') {
+        // The notification named a place that is genuinely gone. Recorded as a
+        // FAILED destination (never as an open) so a deleted place is
+        // distinguishable from one the user actually landed on.
+        void trackEvent('notification_destination_failed', {
+          destination: 'saved_place',
+          reason: 'not_found',
+        });
+      }
       if (__DEV__) console.log('[map] target id not found', requestKey);
       return;
     }
@@ -1296,6 +1364,14 @@ export default function MapScreen() {
       const successMessage = openSavedPlaceMessage(placeSource);
       if (successMessage) {
         showSnackbar(successMessage, null);
+      }
+      if (placeSource === 'notification') {
+        // The destination actually opened. Ids only -- no notification copy.
+        void trackEvent('notification_destination_opened', {
+          destination: 'saved_place',
+          saved_place_id: target.id,
+          reminder: !!reminderOpen,
+        });
       }
     } catch (err) {
       console.warn('[map] focus failed', (err as Error)?.message ?? err);

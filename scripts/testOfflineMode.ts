@@ -36,6 +36,11 @@ import {
   decideOfflineIdentity,
   isAuthNetworkFailure,
 } from '../lib/offlineIdentityCore';
+import {
+  createNotificationOpenIntent,
+  planNotificationNavigation,
+  resolveNotificationDestination,
+} from '../lib/notificationNavigation';
 import type { SavedPlaceWithPlace } from '../types';
 
 const read = (p: string) => readFileSync(join(process.cwd(), p), 'utf8');
@@ -428,15 +433,29 @@ async function main() {
     /getLastNotificationResponseAsync/,
     'a cold start from a notification tap is handled, not just a warm one',
   );
-  assert.match(
-    layout,
-    /savedPlaceId: nearbyRoute\.savedPlaceId/,
+  // The route is built from the payload alone — a pure decision over ids, with
+  // no fetch — so an offline tap can still open a place the cache already holds.
+  const nearbyPlan = planNotificationNavigation(
+    createNotificationOpenIntent(
+      resolveNotificationDestination({
+        isDefaultTap: true,
+        data: { savedPlaceId: 'sp-offline', placeId: 'p', nearbyCount: 1 },
+      }),
+    ),
+  );
+  assert.ok(nearbyPlan.action !== 'none');
+  assert.equal(
+    nearbyPlan.params.savedPlaceId,
+    'sp-offline',
     'tapping a nearby reminder opens the exact saved place by id',
   );
-  assert.ok(
-    !/getSavedPlace\(|listSavedPlaces\(/.test(layout),
-    'notification routing must not require a fresh server fetch before showing anything',
-  );
+  const notificationNav = read('lib/notificationNavigation.ts');
+  for (const src of [layout, notificationNav]) {
+    assert.ok(
+      !/getSavedPlace\(|listSavedPlaces\(/.test(src),
+      'notification routing must not require a fresh server fetch before showing anything',
+    );
+  }
 
   // -------------------------------------------------------------------------
   // Offline UI contracts
