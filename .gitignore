@@ -29,3 +29,7 @@ expo-config.json
 # inspection). Never commit downloaded media, frames, transcripts, or any
 # response that may contain signed URLs / secrets.
 .tmp/
+
+# Recognition audit raw output — contains real user-shared source URLs.
+# Summaries for sharing use audit IDs only; raw records stay local.
+artifacts/recognition-audit/
