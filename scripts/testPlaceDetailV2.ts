@@ -19,10 +19,14 @@ import { join } from 'node:path';
 import { whySavedDisplay } from '../lib/placeDetailUi';
 import { hasOpenableSource, resolvePlaceSource } from '../lib/placeSource';
 import {
+  GALLERY_DISMISS_ACTIVATE_DY,
   GALLERY_DISMISS_DISTANCE,
+  GALLERY_DISMISS_FAIL_DX,
+  GALLERY_DISMISS_VELOCITY,
   galleryBackdropOpacity,
   galleryDragOffset,
-  shouldClaimGalleryDismiss,
+  gallerySwipeIntent,
+  resolveGallerySwipe,
   shouldDismissGalleryOnRelease,
 } from '../lib/photoCarousel';
 
@@ -179,48 +183,103 @@ import {
 // 3. Gallery swipe-down — the promise the copy makes
 // ---------------------------------------------------------------------------
 
-// Claiming (capture phase): only a decisively downward drag takes the gesture
-// away from the horizontal carousel.
+// Axis lock, one sample at a time. These are the SAME numbers handed to the
+// native recogniser (failOffsetX / failOffsetY / activeOffsetY), evaluated in
+// the recogniser's own order: fail first, activate second.
 {
-  assert.equal(shouldClaimGalleryDismiss({ dx: 0, dy: 40 }), true, 'straight down claims');
-  assert.equal(shouldClaimGalleryDismiss({ dx: 6, dy: 60 }), true, 'mostly down claims');
-  assert.equal(shouldClaimGalleryDismiss({ dx: 0, dy: 4 }), false, 'a tiny twitch does not');
-  assert.equal(shouldClaimGalleryDismiss({ dx: 0, dy: -80 }), false, 'upward never claims');
-  assert.equal(shouldClaimGalleryDismiss({ dx: 90, dy: 0 }), false, 'horizontal paging is safe');
-  assert.equal(shouldClaimGalleryDismiss({ dx: -90, dy: 10 }), false, 'reverse paging is safe');
-  // Diagonal must NOT constantly dismiss: equal parts down and across is paging.
-  assert.equal(shouldClaimGalleryDismiss({ dx: 50, dy: 50 }), false, 'diagonal stays with paging');
-  assert.equal(shouldClaimGalleryDismiss({ dx: 30, dy: 60 }), true, 'clearly-down diagonal claims');
+  assert.equal(gallerySwipeIntent({ dx: 0, dy: 40 }), 'dismiss', 'straight down dismisses');
+  assert.equal(gallerySwipeIntent({ dx: 6, dy: 60 }), 'dismiss', 'mostly down dismisses');
+  assert.equal(gallerySwipeIntent({ dx: 0, dy: 4 }), 'undecided', 'a tiny twitch decides nothing');
+  assert.equal(gallerySwipeIntent({ dx: 0, dy: -80 }), 'page', 'upward is never a dismissal');
+  assert.equal(gallerySwipeIntent({ dx: 90, dy: 0 }), 'page', 'horizontal paging is safe');
+  assert.equal(gallerySwipeIntent({ dx: -90, dy: 10 }), 'page', 'reverse paging is safe');
+  // Diagonal must NOT constantly dismiss: real sideways travel is paging.
+  assert.equal(gallerySwipeIntent({ dx: 50, dy: 50 }), 'page', 'diagonal stays with paging');
+  assert.equal(
+    gallerySwipeIntent({ dx: GALLERY_DISMISS_FAIL_DX, dy: GALLERY_DISMISS_ACTIVATE_DY + 20 }),
+    'dismiss',
+    'a slightly diagonal downward drag still closes',
+  );
+  assert.equal(gallerySwipeIntent({ dx: Number.NaN, dy: Number.NaN }), 'undecided');
 }
 
-// Release: distance OR velocity commits; anything else settles back.
+// A whole gesture: the FIRST decisive sample owns it. Neither side may change
+// its mind afterwards, so a page turn that drifts downward at the end is still
+// a page turn — and a downward drag that wanders sideways still dismisses.
+{
+  const straightDown = [
+    { dx: 0, dy: 3 },
+    { dx: 1, dy: 9 },
+    { dx: 2, dy: 30 },
+    { dx: 4, dy: 160 },
+  ];
+  assert.equal(resolveGallerySwipe(straightDown), 'dismiss', 'a slow drag down closes');
+
+  const fastHorizontal = [
+    { dx: 8, dy: 1 },
+    { dx: 46, dy: 3 },
+    { dx: 140, dy: 9 },
+  ];
+  assert.equal(resolveGallerySwipe(fastHorizontal), 'page', 'a fast swipe pages');
+
+  const pageThenSag = [
+    { dx: 12, dy: 2 },
+    { dx: 80, dy: 40 },
+    { dx: 120, dy: 220 },
+  ];
+  assert.equal(resolveGallerySwipe(pageThenSag), 'page', 'a page turn that sags never dismisses');
+
+  const dismissThenDrift = [
+    { dx: 2, dy: 20 },
+    { dx: 60, dy: 90 },
+    { dx: 130, dy: 240 },
+  ];
+  assert.equal(resolveGallerySwipe(dismissThenDrift), 'dismiss', 'a claimed dismissal is kept');
+
+  // Overscrolling at the first/last photo drags sideways against a wall — the
+  // list does not move, but the FINGER does, so this must still page.
+  const overscrollAtEdge = [
+    { dx: -5, dy: 1 },
+    { dx: -28, dy: 6 },
+    { dx: -60, dy: 22 },
+  ];
+  assert.equal(resolveGallerySwipe(overscrollAtEdge), 'page', 'edge overscroll is not a dismissal');
+
+  assert.equal(resolveGallerySwipe([]), 'undecided', 'a tap decides nothing');
+  assert.equal(resolveGallerySwipe([{ dx: 0, dy: 0 }]), 'undecided');
+}
+
+// Release: distance OR velocity commits; anything else settles back. `dy` is
+// measured from ACTIVATION (the recogniser zeroes translation there), and
+// velocity is px/second, matching the recogniser's `velocityY`.
 {
   assert.equal(
-    shouldDismissGalleryOnRelease({ dx: 0, dy: GALLERY_DISMISS_DISTANCE + 5, vy: 0 }),
+    shouldDismissGalleryOnRelease({ dy: GALLERY_DISMISS_DISTANCE + 5, vy: 0 }),
     true,
-    'a long drag dismisses',
+    'a long slow drag dismisses',
   );
   assert.equal(
-    shouldDismissGalleryOnRelease({ dx: 0, dy: 40, vy: 1.5 }),
+    shouldDismissGalleryOnRelease({ dy: GALLERY_DISMISS_DISTANCE - 5, vy: 0 }),
+    false,
+    'just short of the threshold settles back',
+  );
+  assert.equal(
+    shouldDismissGalleryOnRelease({ dy: 40, vy: GALLERY_DISMISS_VELOCITY + 100 }),
     true,
     'a short fast flick dismisses',
   );
   assert.equal(
-    shouldDismissGalleryOnRelease({ dx: 0, dy: 40, vy: 0.1 }),
+    shouldDismissGalleryOnRelease({ dy: 40, vy: 100 }),
     false,
     'a small slow drag settles back',
   );
   assert.equal(
-    shouldDismissGalleryOnRelease({ dx: 0, dy: -200, vy: -3 }),
+    shouldDismissGalleryOnRelease({ dy: -200, vy: -3000 }),
     false,
     'upward never dismisses',
   );
-  assert.equal(
-    shouldDismissGalleryOnRelease({ dx: 300, dy: 20, vy: 0.2 }),
-    false,
-    'a horizontal page turn never dismisses',
-  );
-  assert.equal(shouldDismissGalleryOnRelease({ dx: 0, dy: 0, vy: 0 }), false, 'a tap never dismisses');
+  assert.equal(shouldDismissGalleryOnRelease({ dy: 0, vy: 0 }), false, 'a tap never dismisses');
+  assert.equal(shouldDismissGalleryOnRelease({ dy: Number.NaN, vy: Number.NaN }), false);
 }
 
 // Interactive follow: downward-only, clamped, with a bounded backdrop fade.
@@ -235,28 +294,64 @@ import {
   assert.equal(galleryBackdropOpacity(120, 0), galleryBackdropOpacity(120, 1), 'degenerate height safe');
 }
 
-// The wiring: arbitration MUST be in the capture phase. Using the bubble phase
-// is exactly why the old handler never fired — the horizontal FlatList inside
-// became responder first and never yielded.
+// The wiring. Arbitration must happen in the NATIVE recogniser, not the JS
+// responder system: on iOS the carousel is a UIScrollView whose pan cancels JS
+// touches at ~10pt in any direction, which is exactly why the PanResponder
+// versions of this gesture only ever fired by luck.
 {
   const detail = readFileSync(join(process.cwd(), 'components/map/SelectedPlaceDetails.tsx'), 'utf8');
+  // (`PanResponder` still appears in the explanatory comment above the gesture
+  // — what must be gone is any USE of it.)
   assert.ok(
-    detail.includes('onMoveShouldSetPanResponderCapture'),
-    'the dismiss layer arbitrates before the scroll view',
+    !detail.includes('PanResponder.create') && !detail.includes('panHandlers'),
+    'the JS responder system no longer arbitrates against a native scroll view',
+  );
+  assert.ok(detail.includes('Gesture.Pan()'), 'the dismiss gesture is a native recogniser');
+  assert.ok(
+    detail.includes('.activeOffsetY(GALLERY_DISMISS_ACTIVATE_DY)'),
+    'it activates only on decisively downward movement',
   );
   assert.ok(
-    detail.includes('shouldClaimGalleryDismiss(gestureState)'),
-    'and uses the tested predicate',
+    detail.includes('.failOffsetX([-GALLERY_DISMISS_FAIL_DX, GALLERY_DISMISS_FAIL_DX])'),
+    'and fails the moment a drag shows sideways intent, so paging is untouched',
   );
   assert.ok(
-    detail.includes('onStartShouldSetPanResponderCapture: () => false'),
-    'taps still reach the close button and the photos',
+    detail.includes('.failOffsetY(-GALLERY_DISMISS_FAIL_DY)'),
+    'dragging up hands the touch straight back',
   );
   assert.ok(
-    detail.includes('shouldDismissGalleryOnRelease(gestureState)'),
-    'release uses the tested threshold',
+    detail.includes('.blocksExternalGesture(galleryScrollGesture)'),
+    'the carousel waits for the verdict instead of racing it',
   );
-  assert.ok(detail.includes('onPanResponderMove'), 'the gallery follows the finger');
+  assert.ok(
+    detail.includes('<GestureDetector gesture={galleryScrollGesture}>'),
+    'the list is wrapped so the scroll recogniser can be ordered',
+  );
+  assert.ok(
+    detail.includes('<GestureHandlerRootView style={styles.galleryRoot}>'),
+    'gestures are rooted inside the Modal, so Android receives them too',
+  );
+  assert.ok(
+    detail.includes('shouldDismissGalleryOnRelease({ dy: event.translationY, vy: event.velocityY })'),
+    'release uses the tested threshold, in the units the recogniser reports',
+  );
+  // The drag must never run through React state — that would re-render (and
+  // re-request) every photo on every frame of the gesture.
+  assert.ok(
+    detail.includes('galleryDragY.value = galleryDragOffset(event.translationY)'),
+    'the gallery follows the finger through a shared value',
+  );
+  assert.ok(detail.includes('useSharedValue(0)'), 'the drag lives off the JS thread');
+  assert.ok(
+    !/setGalleryDrag|setState\(.*translationY/.test(detail),
+    'no per-frame React state during the gesture',
+  );
+  // Dismissal ends at the ONE close path, and a reopen starts from rest.
+  assert.ok(detail.includes('runOnJS(closeGallery)()'), 'a committed swipe uses the canonical close');
+  assert.ok(
+    /galleryDragY\.value = 0;\r?\n\s*setGalleryOpenSeed/.test(detail),
+    'reopening clears any leftover translation before the modal is shown',
+  );
   // The copy stays because it is now true.
   assert.ok(detail.includes('Swipe down to close'), 'the instruction remains, and is honest');
   // The X button must keep working.

@@ -34,7 +34,7 @@
  *     silently changed here.
  */
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -43,7 +43,6 @@ import {
   Image,
   Linking,
   Modal,
-  PanResponder,
   Pressable,
   Share,
   StyleSheet,
@@ -54,6 +53,18 @@ import {
   type NativeSyntheticEvent,
 } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
+import {
+  Gesture,
+  GestureDetector,
+  GestureHandlerRootView,
+} from 'react-native-gesture-handler';
+import Reanimated, {
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button, Input } from '@/components';
@@ -89,10 +100,13 @@ import { selectSameSourcePlaces } from '@/lib/sameSourcePlaces';
 import { savedPlaceRemovalCopy } from '@/lib/savedPlaceRemoval';
 import {
   adjacentPrefetchTargets,
+  galleryBackdropOpacity,
   galleryDragOffset,
   pageIndexFromOffset,
-  shouldClaimGalleryDismiss,
   shouldDismissGalleryOnRelease,
+  GALLERY_DISMISS_ACTIVATE_DY,
+  GALLERY_DISMISS_FAIL_DX,
+  GALLERY_DISMISS_FAIL_DY,
 } from '@/lib/photoCarousel';
 import { resolvePlaceSource } from '@/lib/placeSource';
 import { splitPlaceAddress } from '@/lib/sharePhase1Ui';
@@ -112,6 +126,10 @@ const GALLERY_CARD_GAP = 18;
 /** Focus treatment for non-centered pages. Interpolated from scroll offset. */
 const GALLERY_INACTIVE_OPACITY = 0.45;
 const GALLERY_INACTIVE_SCALE = 0.92;
+/** How long the committed dismissal takes to carry the gallery off-screen. */
+const GALLERY_DISMISS_EXIT_MS = 180;
+/** Settle for a drag that did not earn a dismissal. */
+const GALLERY_DISMISS_SPRING = { damping: 22, stiffness: 240 } as const;
 
 /**
  * Category glyphs for the hero's context line. Ionicons only (already bundled
@@ -260,8 +278,10 @@ export function SelectedPlaceDetails({
   }, [saved.id, saved.visited_at]);
   const galleryListRef = useRef<FlatList<string> | null>(null);
   // Interactive dismiss offset: the gallery follows the finger downward and
-  // either continues off-screen or springs back. Native-driven.
-  const galleryDragY = useRef(new Animated.Value(0)).current;
+  // either continues off-screen or springs back. A Reanimated shared value, so
+  // every frame of the drag runs on the UI thread — no setState, no re-render,
+  // and no image reload while the finger is down.
+  const galleryDragY = useSharedValue(0);
   // Native-thread scroll position. Owns the focus dimming so the centered
   // photo never waits on a JS re-render to look active.
   const galleryScrollX = useRef(new Animated.Value(0)).current;
@@ -754,13 +774,20 @@ export function SelectedPlaceDetails({
     // Seed the animated offset so the opened page renders bright on its very
     // first frame instead of fading up once the first scroll event lands.
     galleryScrollX.setValue(nextIndex * gallerySnapInterval);
+    // A previous open may have ended by flinging the gallery off the bottom of
+    // the screen. Clear that translation BEFORE the modal becomes visible so a
+    // reopen never renders from the last gesture's resting position.
+    galleryDragY.value = 0;
     setGalleryOpenSeed((s) => s + 1);
     setGalleryOpen(true);
   }
 
-  function closeGallery() {
+  // The one close path: the X button, the hardware/system back gesture, and a
+  // committed swipe-down all end here, so no route leaves modal state behind.
+  // Stable identity — the dismiss gesture calls it across the JS bridge.
+  const closeGallery = useCallback(() => {
     setGalleryOpen(false);
-  }
+  }, []);
 
   // Restore the opened page's offset ONCE per open. This must not depend on
   // `galleryIndex`: that now updates continuously while scrolling, and
@@ -796,64 +823,81 @@ export function SelectedPlaceDetails({
   /**
    * Swipe-down-to-dismiss.
    *
-   * The previous version never fired. It used `onMoveShouldSetPanResponder` on
-   * the View WRAPPING the horizontal Animated.FlatList — but in React Native's
-   * responder negotiation the bubble phase runs from the touch target OUTWARD,
-   * so the ScrollView inside claimed the responder first and never gave it
-   * back. The wrapper's handler was simply never consulted, which is why
-   * "↓ Swipe down to close" was a promise the UI could not keep.
+   * Why the previous two attempts did not hold: both were built on the JS
+   * responder system (`PanResponder`), and on iOS the carousel is a real
+   * `UIScrollView`. Its `panGestureRecognizer` begins after roughly 10pt of
+   * movement in ANY direction and then cancels the touches feeding the JS
+   * responder — so the dismiss layer was told the gesture had been terminated
+   * at just about the distance it needed in order to claim it. Sometimes JS
+   * saw one move sample past the threshold first and it worked; usually it did
+   * not. That race is precisely the reported "does not reliably dismiss".
    *
-   * The fix is to arbitrate in the CAPTURE phase (parent-first), which is the
-   * only point at which the dismiss layer can take a gesture the scroll view
-   * would otherwise own. The predicate is deliberately strict so horizontal
-   * paging keeps working: only a decisively downward drag is claimed, and the
-   * carousel keeps everything else.
+   * The fix moves the arbitration to where the scroll view lives — native
+   * gesture recognisers, via react-native-gesture-handler (already a
+   * dependency, already rooted in app/_layout.tsx):
+   *
+   *   - `failOffsetX` / `failOffsetY` make the dismiss gesture FAIL the instant
+   *     a drag shows sideways or upward intent.
+   *   - `activeOffsetY` activates it only on decisively downward movement.
+   *   - `blocksExternalGesture(galleryScrollGesture)` makes the carousel's own
+   *     scroll recogniser WAIT for that verdict instead of racing it. Wrapping
+   *     the list in `Gesture.Native()` is what lets RNGH recognise the
+   *     UIScrollView's pan as a handler it may order.
+   *
+   * The result is a real directional lock: horizontal (and diagonal-horizontal)
+   * drags page photos and can no longer dismiss, downward drags always reach
+   * the dismiss layer, and neither side can steal the touch back mid-gesture.
    */
-  const galleryPanResponder = useMemo(
+  const galleryScrollGesture = useMemo(() => Gesture.Native(), []);
+
+  const galleryDismissGesture = useMemo(
     () =>
-      PanResponder.create({
-        // A tap must always reach the photo / close button underneath.
-        onStartShouldSetPanResponderCapture: () => false,
-        onMoveShouldSetPanResponderCapture: (_evt, gestureState) =>
-          shouldClaimGalleryDismiss(gestureState),
-        onPanResponderGrant: () => {
-          galleryDragY.setValue(0);
-        },
-        onPanResponderMove: (_evt, gestureState) => {
+      Gesture.Pan()
+        .activeOffsetY(GALLERY_DISMISS_ACTIVATE_DY)
+        .failOffsetX([-GALLERY_DISMISS_FAIL_DX, GALLERY_DISMISS_FAIL_DX])
+        .failOffsetY(-GALLERY_DISMISS_FAIL_DY)
+        .blocksExternalGesture(galleryScrollGesture)
+        .onUpdate((event) => {
           // Downward-only: dragging back up settles at 0 rather than lifting
           // the gallery off the top of the screen.
-          galleryDragY.setValue(galleryDragOffset(gestureState.dy));
-        },
-        onPanResponderRelease: (_evt, gestureState) => {
-          if (shouldDismissGalleryOnRelease(gestureState)) {
+          galleryDragY.value = galleryDragOffset(event.translationY);
+        })
+        .onEnd((event, success) => {
+          const dismissing =
+            success &&
+            shouldDismissGalleryOnRelease({ dy: event.translationY, vy: event.velocityY });
+          if (dismissing) {
             // Carry the motion off-screen instead of cutting to a fade, so the
             // dismissal reads as the continuation of the user's own gesture.
-            Animated.timing(galleryDragY, {
-              toValue: viewportHeight,
-              duration: 180,
-              useNativeDriver: true,
-            }).start(() => {
-              closeGallery();
-              galleryDragY.setValue(0);
-            });
+            // The modal is torn down only once that has finished, so there is
+            // exactly one close path and no half-dismissed state.
+            galleryDragY.value = withTiming(
+              viewportHeight,
+              { duration: GALLERY_DISMISS_EXIT_MS },
+              () => {
+                runOnJS(closeGallery)();
+              },
+            );
             return;
           }
-          Animated.spring(galleryDragY, {
-            toValue: 0,
-            useNativeDriver: true,
-            bounciness: 4,
-          }).start();
-        },
-        onPanResponderTerminate: () => {
-          Animated.spring(galleryDragY, {
-            toValue: 0,
-            useNativeDriver: true,
-            bounciness: 4,
-          }).start();
-        },
-      }),
-    [galleryDragY, viewportHeight],
+          galleryDragY.value = withSpring(0, GALLERY_DISMISS_SPRING);
+        })
+        .onFinalize((_event, success) => {
+          // Interruption (a second finger, a system gesture) must not strand
+          // the gallery part-way down the screen.
+          if (!success) galleryDragY.value = withSpring(0, GALLERY_DISMISS_SPRING);
+        }),
+    [closeGallery, galleryDragY, galleryScrollGesture, viewportHeight],
   );
+
+  // Both driven off the UI thread from the same shared value, so the backdrop
+  // fade stays locked to the finger even while JS is busy.
+  const galleryContentStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: galleryDragY.value }],
+  }));
+  const galleryBackdropStyle = useAnimatedStyle(() => ({
+    opacity: galleryBackdropOpacity(galleryDragY.value, viewportHeight),
+  }));
 
   /**
    * "I went" — record the visit WITHOUT deleting the memory.
@@ -1121,30 +1165,21 @@ export function SelectedPlaceDetails({
           onRequestClose={closeGallery}
           statusBarTranslucent
         >
-          {/* The pan handlers sit on the ROOT so a downward swipe anywhere in
-              the gallery dismisses it. Taps still reach the close button and
-              the carousel: the responder is only claimed on a decisively
-              downward drag (capture phase), never on touch-start. */}
-          <View style={styles.galleryRoot} {...galleryPanResponder.panHandlers}>
-            <Animated.View
+          {/* RNGH needs its own root inside a Modal — the modal's content lives
+              in a separate view hierarchy, and on Android gestures are simply
+              not delivered without it. Visually it is a plain flex container. */}
+          <GestureHandlerRootView style={styles.galleryRoot}>
+          {/* The dismiss gesture sits on the ROOT so a downward swipe anywhere
+              in the gallery closes it. Taps still reach the close button and
+              the carousel: a pan only activates on decisively downward
+              movement, and never on touch-start. */}
+          <GestureDetector gesture={galleryDismissGesture}>
+          <View style={styles.galleryRoot}>
+            <Reanimated.View
               pointerEvents="none"
-              style={[
-                styles.galleryBackdrop,
-                {
-                  opacity: galleryDragY.interpolate({
-                    inputRange: [0, Math.max(1, viewportHeight)],
-                    outputRange: [1, 0.35],
-                    extrapolate: 'clamp',
-                  }),
-                },
-              ]}
+              style={[styles.galleryBackdrop, galleryBackdropStyle]}
             />
-            <Animated.View
-              style={[
-                styles.galleryContent,
-                { transform: [{ translateY: galleryDragY }] },
-              ]}
-            >
+            <Reanimated.View style={[styles.galleryContent, galleryContentStyle]}>
             <View style={[styles.galleryCounterWrap, { top: insets.top + Spacing.md }]}>
               <View style={styles.galleryCounterPill}>
                 <Text style={styles.galleryCounterText}>
@@ -1168,6 +1203,11 @@ export function SelectedPlaceDetails({
                   as it centers — mid-drag, mid-momentum, and while the JS
                   thread is busy. `galleryIndex` below only backs the counter,
                   the dots, and the prefetch window. */}
+              {/* Wrapping the list in a Native gesture is what puts its scroll
+                  recogniser under RNGH's arbitration, so the dismiss pan above
+                  can order it to wait rather than race it. The list itself is
+                  unchanged — same props, same paging, same image loading. */}
+              <GestureDetector gesture={galleryScrollGesture}>
               <Animated.FlatList
                 ref={galleryListRef}
                 key={galleryListKey}
@@ -1242,6 +1282,7 @@ export function SelectedPlaceDetails({
                   );
                 }}
               />
+              </GestureDetector>
             </View>
 
             <View style={styles.galleryDots}>
@@ -1254,8 +1295,10 @@ export function SelectedPlaceDetails({
             </View>
 
             <Text style={styles.galleryHint}>↓ Swipe down to close</Text>
-            </Animated.View>
+            </Reanimated.View>
           </View>
+          </GestureDetector>
+          </GestureHandlerRootView>
         </Modal>
       ) : null}
 

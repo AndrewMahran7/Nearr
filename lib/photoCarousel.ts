@@ -16,58 +16,94 @@
 // Swipe-down-to-dismiss arbitration.
 //
 // The gallery promises "↓ Swipe down to close" and must honour it WITHOUT
-// breaking horizontal paging. The two gestures live on the same pixels, so the
-// decision is made from the first few move samples and then owned for the rest
-// of the gesture:
+// breaking horizontal paging. Both gestures live on the same pixels, so the
+// axis is decided from the first few move samples and then owned for the rest
+// of the touch:
 //
-//   mostly horizontal  → the FlatList keeps the responder (photo paging)
-//   decisively downward → the dismiss layer claims it
+//   horizontal first   → the carousel pages, the dismiss gesture FAILS
+//   decisively downward → the dismiss layer activates and follows the finger
 //   upward             → never dismisses
 //
-// Extracted as pure functions so the thresholds are unit-tested without a
-// native gesture harness.
+// These thresholds are not merely advisory: they are handed straight to the
+// native pan recogniser as `failOffsetX` / `activeOffsetY` / `failOffsetY`, so
+// the arbitration happens in native land before the horizontal scroll view can
+// claim the touch. The pure functions below mirror the recogniser's own rules
+// (fail is evaluated before activation on every sample — see
+// RNPanHandler.m `interactionsMoved`) so the decision is unit-testable without
+// a device.
 // ---------------------------------------------------------------------------
 
-/** Downward travel (px) before a drag is even considered a dismiss attempt. */
-export const GALLERY_DISMISS_CLAIM_DY = 12;
-/** How much more vertical than horizontal a drag must be to claim dismissal. */
-export const GALLERY_DISMISS_AXIS_RATIO = 1.6;
-/** Downward travel (px) that commits to dismissal on release. */
+/**
+ * Downward travel (px) that activates the dismiss gesture.
+ *
+ * Above a finger's incidental wobble, below the ~10pt at which iOS' scroll view
+ * would otherwise take the touch for itself.
+ */
+export const GALLERY_DISMISS_ACTIVATE_DY = 14;
+/**
+ * Horizontal travel (px) that hands the touch back to the carousel for good.
+ *
+ * Deliberately small: a swipe with any real sideways intent must page photos,
+ * never dismiss. A slightly diagonal downward drag still clears
+ * `GALLERY_DISMISS_ACTIVATE_DY` first and dismisses.
+ */
+export const GALLERY_DISMISS_FAIL_DX = 10;
+/** Upward travel (px) that hands the touch back — dragging up is not a close. */
+export const GALLERY_DISMISS_FAIL_DY = 14;
+/** Downward travel (px), measured from activation, that commits on release. */
 export const GALLERY_DISMISS_DISTANCE = 110;
-/** Downward velocity that commits to dismissal even on a short drag. */
-export const GALLERY_DISMISS_VELOCITY = 0.75;
+/** Downward velocity (px/second) that commits even on a short drag. */
+export const GALLERY_DISMISS_VELOCITY = 750;
+
+/** What a single move sample tells us about the user's intent. */
+export type GallerySwipeIntent = 'page' | 'dismiss' | 'undecided';
 
 /**
- * Should the dismiss layer take the gesture away from the horizontal list?
- *
- * Evaluated in the CAPTURE phase, so it must be strict: anything with real
- * horizontal intent has to fall through to the carousel. Upward drags never
- * qualify.
+ * The axis decision for one move sample, in the recogniser's own order:
+ * failure criteria first, activation second. A sample that crosses BOTH
+ * thresholds therefore pages rather than dismisses, which is the safe way
+ * round — an unwanted dismissal costs the user their place in the album.
  */
-export function shouldClaimGalleryDismiss(gesture: { dx: number; dy: number }): boolean {
-  const dx = Number.isFinite(gesture?.dx) ? gesture.dx : 0;
-  const dy = Number.isFinite(gesture?.dy) ? gesture.dy : 0;
-  if (dy < GALLERY_DISMISS_CLAIM_DY) return false; // upward or not yet moved
-  return dy > Math.abs(dx) * GALLERY_DISMISS_AXIS_RATIO;
+export function gallerySwipeIntent(sample: { dx: number; dy: number }): GallerySwipeIntent {
+  'worklet';
+  const dx = Number.isFinite(sample?.dx) ? sample.dx : 0;
+  const dy = Number.isFinite(sample?.dy) ? sample.dy : 0;
+  if (Math.abs(dx) > GALLERY_DISMISS_FAIL_DX) return 'page';
+  if (dy < -GALLERY_DISMISS_FAIL_DY) return 'page'; // dragged up: not a dismiss
+  if (dy > GALLERY_DISMISS_ACTIVATE_DY) return 'dismiss';
+  return 'undecided';
+}
+
+/**
+ * Replay a whole move stream through {@link gallerySwipeIntent}. The FIRST
+ * decisive sample owns the gesture — neither side can change its mind later,
+ * which is what stops a long horizontal swipe that drifts downward at the end
+ * from closing the gallery.
+ */
+export function resolveGallerySwipe(
+  samples: readonly { dx: number; dy: number }[],
+): GallerySwipeIntent {
+  if (!Array.isArray(samples)) return 'undecided';
+  for (const sample of samples) {
+    const intent = gallerySwipeIntent(sample);
+    if (intent !== 'undecided') return intent;
+  }
+  return 'undecided';
 }
 
 /**
  * On release: commit to closing, or spring the gallery back?
  *
  * Distance OR downward velocity commits, so a short flick feels as responsive
- * as a long drag. An upward or horizontal release always settles back.
+ * as a long drag. `dy` is measured from the moment the gesture ACTIVATED (the
+ * recogniser zeroes its translation there), so the horizontal axis has already
+ * been ruled out by then and plays no part in this decision.
  */
-export function shouldDismissGalleryOnRelease(gesture: {
-  dx: number;
-  dy: number;
-  vy: number;
-}): boolean {
-  const dx = Number.isFinite(gesture?.dx) ? gesture.dx : 0;
+export function shouldDismissGalleryOnRelease(gesture: { dy: number; vy: number }): boolean {
+  'worklet';
   const dy = Number.isFinite(gesture?.dy) ? gesture.dy : 0;
   const vy = Number.isFinite(gesture?.vy) ? gesture.vy : 0;
   if (dy <= 0) return false; // upward / no movement never closes
-  // A gesture that turned out to be mostly horizontal is paging, not dismissal.
-  if (dy <= Math.abs(dx)) return false;
   return dy > GALLERY_DISMISS_DISTANCE || vy > GALLERY_DISMISS_VELOCITY;
 }
 
@@ -76,12 +112,14 @@ export function shouldDismissGalleryOnRelease(gesture: {
  * interactive translate + backdrop fade so the sheet tracks the finger.
  */
 export function galleryDragOffset(dy: number): number {
+  'worklet';
   if (!Number.isFinite(dy) || dy <= 0) return 0;
   return dy;
 }
 
 /** Backdrop opacity for a given drag distance. Never fully transparent. */
 export function galleryBackdropOpacity(dy: number, viewportHeight: number): number {
+  'worklet';
   const height = Number.isFinite(viewportHeight) && viewportHeight > 0 ? viewportHeight : 1;
   const travel = galleryDragOffset(dy);
   const faded = 1 - (travel / height) * 1.4;
