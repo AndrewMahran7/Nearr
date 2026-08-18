@@ -41,9 +41,9 @@ export default function ActivateScreen() {
     if (source === 'paste_link') {
       router.push('/share');
     } else if (source === 'instagram') {
-      void openExternalApp('instagram://app', 'https://www.instagram.com');
+      void openExternalApp('instagram://app', 'https://www.instagram.com/reel/DcK_jXtxc7_/');
     } else {
-      void openExternalApp('tiktok://', 'https://www.tiktok.com');
+      void openExternalApp('tiktok://', 'https://www.tiktok.com/@kate.liz.harley/video/7620099722161769741');
     }
 
     setTimeout(() => {
