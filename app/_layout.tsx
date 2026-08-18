@@ -1,6 +1,12 @@
 import { Component, useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
-import { Stack, usePathname, useRouter, useSegments } from 'expo-router';
+import {
+  Stack,
+  usePathname,
+  useRootNavigationState,
+  useRouter,
+  useSegments,
+} from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -32,17 +38,20 @@ import {
   setInitialUrlClassification,
   setLastNotificationId,
 } from '@/lib/diagnosticContext';
-import {
-  routeShareJobNotification,
-  shouldReplaceShareJobDetail,
-} from '@/lib/shareJobRouting';
 import { createMapGroupFocusRequest } from '@/lib/mapGroupFocus';
-import {
-  encodeGroupedSavedPlaceIds,
-  routeNearbyReminder,
-} from '@/lib/nearbyGroupRouting';
 import { claimSaveCompletionSignal } from '@/lib/saveCompletionNavigation';
-import { resolveOpenSavedPlaceRoute } from '@/lib/openSavedPlace';
+import {
+  claimUiForNotification,
+  clearPendingNotificationNavigation,
+  createNotificationOpenIntent,
+  notificationOwnsVisibleSurface,
+  notificationRouteLabel,
+  planNotificationNavigation,
+  resolveNotificationDestination,
+  setPendingNotificationNavigation,
+  takePendingNotificationNavigation,
+  type NotificationOpenIntent,
+} from '@/lib/notificationNavigation';
 import {
   deactivatePushTokenForCurrentUser,
   registerPushTokenForCurrentUser,
@@ -636,6 +645,93 @@ function RootLayoutContent() {
     return () => sub.remove();
   }, [processIncomingUrl]);
 
+  // ---- notification navigation ------------------------------------------
+  // ONE authority for "a notification was tapped". Every response -- foreground,
+  // background resume, and cold start -- funnels through the same three steps:
+  //
+  //   claim the UI  ->  dismiss transient routes  ->  open the exact destination
+  //
+  // The decisions live in lib/notificationNavigation (pure, unit-tested); this
+  // effect only owns the router and the side effects that need it.
+
+  // Read inside the response handler, which is registered ONCE per mount.
+  const pathnameRef = useRef(pathname);
+  pathnameRef.current = pathname;
+
+  // Expo Router publishes a root navigation state with a key once the navigator
+  // can accept actions. A cold-start tap arrives BEFORE that, so its intent is
+  // parked and replayed the moment this flips -- readiness is the
+  // synchronization, never a timer.
+  const rootNavigationState = useRootNavigationState();
+  const navigationReady = !!rootNavigationState?.key;
+
+  const runNotificationNavigation = useCallback(
+    (intent: NotificationOpenIntent) => {
+      const plan = planNotificationNavigation(intent, {
+        pathname: pathnameRef.current,
+        createMapGroupRequestId: (savedPlaceIds) =>
+          createMapGroupFocusRequest({ savedPlaceIds, source: 'share_job_saved' })?.id ?? null,
+      });
+      if (plan.action === 'none') return;
+
+      // Transient ROUTES first. The Queue and the queue item are transparent
+      // modals, and the grouped-opportunity screen, /place/[id], add-place,
+      // share and feedback all sit above the tabs. `dismissAll` pops back to
+      // the tab navigator; it never touches auth, onboarding, or persisted
+      // state, and it is skipped entirely when there is nothing stacked.
+      if (plan.dismissTransient && router.canDismiss()) {
+        router.dismissAll();
+      }
+
+      const target = { pathname: plan.pathname, params: plan.params };
+      // `navigate` -- not `push` -- for the map destinations. A push resolves
+      // against the state BEFORE the dismissal and stacked a SECOND (tabs)
+      // navigator behind the transient screen (the Queue then survived one Back
+      // gesture away). NAVIGATE to an already-present (tabs) route pops
+      // everything above it and replaces its params in a single dispatch, which
+      // is exactly "clear transient UI, then open the exact place".
+      if (plan.action === 'navigate') router.navigate(target);
+      else if (plan.action === 'replace') router.replace(target);
+      else router.push(target);
+    },
+    [router],
+  );
+
+  const flushPendingNotificationNavigation = useCallback(() => {
+    if (!navigationReady) return;
+    const intent = takePendingNotificationNavigation();
+    if (!intent) return;
+    try {
+      runNotificationNavigation(intent);
+    } catch (err) {
+      // Never reach the global error boundary from a notification. The intent
+      // is already consumed, so this cannot loop.
+      recordBreadcrumb('error_boundary_triggered', {
+        route: 'notification',
+        errorName: err instanceof Error ? err.name : typeof err,
+        errorMessage: sanitizeErrorText(err),
+      });
+      void recordDiagnostic({
+        errorCode: 'notification_route_failed',
+        route: 'notification',
+        error: err,
+      });
+      void trackEvent('notification_destination_failed', {
+        destination: intent.destination.kind,
+        reason: 'navigation_failed',
+      });
+    }
+  }, [navigationReady, runNotificationNavigation]);
+
+  const flushNotificationNavigationRef = useRef(flushPendingNotificationNavigation);
+  flushNotificationNavigationRef.current = flushPendingNotificationNavigation;
+
+  // Cold start: the parked intent is replayed as soon as the navigator reports
+  // ready. A warm tap flushes in the same tick it was queued.
+  useEffect(() => {
+    flushPendingNotificationNavigation();
+  }, [flushPendingNotificationNavigation]);
+
   // Register notification action categories once per launch, and handle
   // action taps (e.g. "Give me 3 more chances" resets notification_count).
   useEffect(() => {
@@ -643,148 +739,80 @@ function RootLayoutContent() {
 
     function routeFromResponse(response: Notifications.NotificationResponse) {
       try {
-      const notificationId = response.notification.request.identifier;
-      const responseKey = `${response.actionIdentifier ?? 'default'}:${notificationId}`;
-      recordBreadcrumb('notification_tapped', { notificationId });
-      if (lastNotificationResponseKeyRef.current === responseKey) {
-        recordBreadcrumb('notification_dedupe', {
+        const notificationId = response.notification.request.identifier;
+        const responseKey = `${response.actionIdentifier ?? 'default'}:${notificationId}`;
+        recordBreadcrumb('notification_tapped', { notificationId });
+        // Dedupes the SAME OS response arriving twice (the cold-start
+        // `getLastNotificationResponseAsync` racing the live listener). Keyed on
+        // the RESPONSE, never on the place -- two separate notifications for the
+        // same place stay two separate navigations.
+        if (lastNotificationResponseKeyRef.current === responseKey) {
+          recordBreadcrumb('notification_dedupe', {
+            notificationId,
+            result: 'duplicate_ignored',
+          });
+          return;
+        }
+        lastNotificationResponseKeyRef.current = responseKey;
+        setLastNotificationId(notificationId);
+
+        const { actionIdentifier, notification } = response;
+        const data = (notification.request.content.data ?? {}) as Record<string, unknown>;
+        const isDefaultTap =
+          !actionIdentifier ||
+          actionIdentifier === Notifications.DEFAULT_ACTION_IDENTIFIER;
+
+        const destination = resolveNotificationDestination({ isDefaultTap, data });
+
+        // Action-button taps (going, reset_count, reduce_radius, next_time) keep
+        // their existing handler and never navigate.
+        if (destination.kind === 'none') {
+          void handleNotificationAction(
+            actionIdentifier,
+            data.savedPlaceId as string | undefined,
+            data.placeId as string | undefined,
+          );
+          return;
+        }
+
+        // A completed-share notification and the in-app save-completion
+        // navigation can both fire for the same save; whichever claims the
+        // signal first owns the navigation.
+        if (
+          destination.kind === 'saved_place' &&
+          !destination.reminder &&
+          !claimSaveCompletionSignal([destination.savedPlaceId])
+        ) {
+          recordBreadcrumb('notification_dedupe', {
+            notificationId,
+            result: 'save_completion_already_navigated',
+          });
+          return;
+        }
+
+        const intent = createNotificationOpenIntent(destination, notificationId);
+        recordBreadcrumb('intended_route', {
           notificationId,
-          result: 'duplicate_ignored',
+          result: notificationRouteLabel(destination),
         });
-        return;
-      }
-      lastNotificationResponseKeyRef.current = responseKey;
-      setLastNotificationId(notificationId);
+        // Destination KIND only -- never the place id, the job id, or any
+        // notification copy.
+        void trackEvent('notification_tapped', {
+          destination: destination.kind,
+          owns_visible_surface: notificationOwnsVisibleSurface(destination),
+        });
 
-      const { actionIdentifier, notification } = response;
-      const data = (notification.request.content.data ?? {}) as Record<string, unknown>;
-      const savedPlaceId = data.savedPlaceId as string | undefined;
-      const placeId = data.placeId as string | undefined;
-      const nearbyCountRaw = data.nearbyCount;
-      const groupedSavedPlaceIds = Array.isArray(data.groupedSavedPlaceIds)
-        ? data.groupedSavedPlaceIds
-        : [];
-      const nearbyCountFromArray = groupedSavedPlaceIds.length;
-      const nearbyCount =
-        typeof nearbyCountRaw === 'number' && Number.isFinite(nearbyCountRaw)
-          ? Math.max(1, Math.floor(nearbyCountRaw))
-          : nearbyCountFromArray > 0
-            ? nearbyCountFromArray
-            : undefined;
-
-      // Action-button taps keep their existing handler (reset_count, going,
-      // reduce_radius, next_time). Default tap routes nearby reminders into
-      // the map with the relevant saved place selected.
-      const isDefaultTap =
-        !actionIdentifier ||
-        actionIdentifier === Notifications.DEFAULT_ACTION_IDENTIFIER;
-      const isNearbyReminderPayload =
-        !!placeId ||
-        typeof nearbyCountRaw === 'number' ||
-        nearbyCountFromArray > 0;
-
-      // Async share-job notifications route by OUTCOME through one typed, pure
-      // function (never throws): completed / already-saved → the existing saved
-      // place; needs_help → the queue item (the detail route itself redirects
-      // safely if that job has since become terminal). Old payloads without an
-      // `outcome` field still route correctly by `data.type`.
-      if (isDefaultTap) {
-        const sjRoute = routeShareJobNotification(data);
-        if (sjRoute) {
-          recordBreadcrumb('intended_route', {
-            notificationId,
-            result: sjRoute.kind,
-          });
-          switch (sjRoute.kind) {
-            case 'saved_group': {
-              const request = createMapGroupFocusRequest({
-                savedPlaceIds: sjRoute.savedPlaceIds,
-                source: 'share_job_saved',
-              });
-              router.push(
-                request
-                  ? { pathname: '/(tabs)/map', params: { mapGroupId: request.id, placeSource: request.source } }
-                  : '/(tabs)/map',
-              );
-              break;
-            }
-            case 'saved_place':
-              if (!claimSaveCompletionSignal([sjRoute.savedPlaceId])) {
-                recordBreadcrumb('notification_dedupe', {
-                  notificationId,
-                  result: 'save_completion_already_navigated',
-                });
-                break;
-              }
-              // Open the EXISTING saved place through the one validated contract
-              // (resolves by saved_places.id, falls back to google_place_id).
-              router.push(
-                resolveOpenSavedPlaceRoute({
-                  savedPlaceId: sjRoute.savedPlaceId,
-                  googlePlaceId: sjRoute.googlePlaceId,
-                  source: 'notification',
-                }),
-              );
-              break;
-            case 'queue_item':
-              if (shouldReplaceShareJobDetail(pathname)) {
-                router.replace({ pathname: '/share-jobs/[jobId]', params: { jobId: sjRoute.jobId } });
-              } else {
-                router.push({ pathname: '/share-jobs/[jobId]', params: { jobId: sjRoute.jobId } });
-              }
-              break;
-            case 'queue_root':
-              router.push('/share-jobs');
-              break;
-            case 'map':
-              router.push('/(tabs)/map');
-              break;
-          }
-          return;
-        }
-      }
-
-      if (isDefaultTap && isNearbyReminderPayload) {
-        // The grouped payload already names every place the notification was
-        // about, so the tap can honour "you're near 4 saved places" instead of
-        // silently opening one of them. Never re-derived from current
-        // proximity: the group is what the user was told, minutes ago.
-        const nearbyRoute = routeNearbyReminder(data);
-        if (nearbyRoute.kind === 'group') {
-          recordBreadcrumb('intended_route', {
-            notificationId,
-            result: `nearby_group:${nearbyRoute.savedPlaceIds.length}`,
-          });
-          router.push({
-            pathname: '/opportunity/group',
-            params: { ids: encodeGroupedSavedPlaceIds(nearbyRoute.savedPlaceIds) },
-          });
-          return;
-        }
-        if (nearbyRoute.kind === 'single') {
-          router.push({
-            pathname: '/(tabs)/map',
-            params: {
-              savedPlaceId: nearbyRoute.savedPlaceId,
-              reminderOpen: 'true',
-              reminderSource: 'nearby',
-              nearbyCount: nearbyCount ? String(nearbyCount) : undefined,
-            },
-          });
-          return;
-        }
-      }
-
-      if (isDefaultTap && isNearbyReminderPayload) {
-        router.push('/(tabs)/map');
-        return;
-      }
-
-      void handleNotificationAction(actionIdentifier, savedPlaceId, placeId);
+        // Published BEFORE navigating, so the map's own transient state (search
+        // dropdown, selected place, expanded detail sheet, grouped selector,
+        // snackbar) is already gone by the time the destination lands -- even
+        // when resolving the destination has to wait for saved places to load.
+        claimUiForNotification(intent);
+        setPendingNotificationNavigation(intent);
+        flushNotificationNavigationRef.current();
       } catch (err) {
-        // A malformed payload or a navigation failure must NEVER reach the
-        // global error boundary. Record a sanitized diagnostic and fall back to
-        // the map instead of crashing the app.
+        // A malformed payload must NEVER reach the global error boundary.
+        // Record a sanitized diagnostic and leave the user where they are
+        // rather than throwing them at an unrelated place.
         recordBreadcrumb('error_boundary_triggered', {
           route: 'notification',
           errorName: err instanceof Error ? err.name : typeof err,
@@ -795,11 +823,7 @@ function RootLayoutContent() {
           route: 'notification',
           error: err,
         });
-        try {
-          router.push('/(tabs)/map');
-        } catch {
-          // give up silently — never rethrow from a notification handler
-        }
+        clearPendingNotificationNavigation();
       }
     }
 
@@ -810,14 +834,19 @@ function RootLayoutContent() {
       })
       .catch(() => undefined);
 
-    // Warm-start: app already open.
+    // Warm-start: app already open (foreground tap, or a background resume).
     logInfo('notification-dedupe', 'listener_registered name=notification_response');
     const sub = Notifications.addNotificationResponseReceivedListener(routeFromResponse);
     return () => {
       logInfo('notification-dedupe', 'listener_cleanup name=notification_response');
       sub.remove();
     };
-  }, [router]);
+    // Registered ONCE per mount on purpose: the handler reads the live pathname
+    // and flush function through refs, so re-subscribing on every navigation
+    // (which would also re-run `getLastNotificationResponseAsync`) is neither
+    // needed nor wanted.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <AppErrorBoundary onReturnToMap={() => router.replace('/(tabs)/map')}>
