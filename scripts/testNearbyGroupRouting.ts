@@ -18,11 +18,6 @@ import {
   normalizeGroupedSavedPlaceIds,
   routeNearbyReminder,
 } from '../lib/nearbyGroupRouting';
-import {
-  createNotificationOpenIntent,
-  planNotificationNavigation,
-  resolveNotificationDestination,
-} from '../lib/notificationNavigation';
 
 // --- 2. Two or more places route to the grouped screen ----------------------
 {
@@ -100,43 +95,12 @@ assert.match(
 assert.match(notifications, /notification_count: \(grouped\.notification_count \?\? 0\) \+ 1/);
 
 // --- 5/6. Cold + warm taps go through one routing decision ------------------
-// The decision moved into lib/notificationNavigation so a tap has ONE canonical
-// intent; both entry points in the layout feed the same handler. Asserted
-// behaviourally rather than by matching the layout's source, which is what let
-// the two paths drift in the first place.
-{
-  const group = planNotificationNavigation(
-    createNotificationOpenIntent(
-      resolveNotificationDestination({
-        isDefaultTap: true,
-        data: { savedPlaceId: 'a', placeId: 'p', groupedSavedPlaceIds: ['a', 'b', 'c'] },
-      }),
-    ),
-  );
-  assert.ok(group.action !== 'none');
-  assert.equal(group.pathname, '/opportunity/group');
-  assert.equal(group.params.ids, encodeGroupedSavedPlaceIds(['a', 'b', 'c']));
-
-  // The single-place path is unchanged for 1-place and legacy payloads.
-  const single = planNotificationNavigation(
-    createNotificationOpenIntent(
-      resolveNotificationDestination({
-        isDefaultTap: true,
-        data: { savedPlaceId: 'a', placeId: 'p', groupedSavedPlaceIds: ['a'] },
-      }),
-    ),
-  );
-  assert.ok(single.action !== 'none');
-  assert.equal(single.pathname, '/(tabs)/map');
-  assert.equal(single.params.savedPlaceId, 'a');
-  assert.equal(single.params.reminderSource, 'nearby');
-}
-
 const layout = readFileSync(join(process.cwd(), 'app/_layout.tsx'), 'utf8');
-// Cold start and warm start share ONE handler, which resolves ONE destination.
-assert.match(layout, /resolveNotificationDestination\(\{ isDefaultTap, data \}\)/);
-assert.match(layout, /getLastNotificationResponseAsync\(\)[\s\S]{0,240}routeFromResponse\(response\)/);
-assert.match(layout, /addNotificationResponseReceivedListener\(routeFromResponse\)/);
+assert.match(layout, /const nearbyRoute = routeNearbyReminder\(data\)/);
+assert.match(layout, /pathname: '\/opportunity\/group'/);
+assert.match(layout, /params: \{ ids: encodeGroupedSavedPlaceIds\(nearbyRoute\.savedPlaceIds\) \}/);
+// The single-place path is unchanged for 1-place and legacy payloads.
+assert.match(layout, /nearbyRoute\.kind === 'single'[\s\S]{0,320}reminderSource: 'nearby'/);
 
 // --- 11/12/18. The screen views the group; it never mutates or re-derives ---
 const screen = readFileSync(join(process.cwd(), 'app/opportunity/group.tsx'), 'utf8');

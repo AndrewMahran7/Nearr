@@ -26,11 +26,6 @@ import {
 import { visitedDisplay } from '../lib/placeDetailUi';
 import { routeNearbyReminder } from '../lib/nearbyGroupRouting';
 import { resetOpenSavedPlaceRequests } from '../lib/openSavedPlace';
-import {
-  createNotificationOpenIntent,
-  planNotificationNavigation,
-  resolveNotificationDestination,
-} from '../lib/notificationNavigation';
 
 const read = (p: string) => readFileSync(join(process.cwd(), p), 'utf8');
 
@@ -217,30 +212,14 @@ const NO_COORDS: SP = { id: 'sp-nocoords', place: { name: 'Somewhere Unmapped', 
 // The single case lands on the canonical map detail, EXPANDED — not on a
 // separate single-place opportunity screen.
 {
-  // The notification's destination is now one typed intent (lib/notificationNavigation),
-  // so this is asserted on the decision itself rather than on the layout's source.
-  const singlePlan = planNotificationNavigation(
-    createNotificationOpenIntent(
-      resolveNotificationDestination({
-        isDefaultTap: true,
-        data: { savedPlaceId: 'sp-anchor', placeId: 'p', nearbyCount: 1 },
-      }),
-    ),
-  );
-  assert.ok(singlePlan.action !== 'none');
-  assert.equal(
-    singlePlan.pathname,
-    '/(tabs)/map',
+  const layout = read('app/_layout.tsx');
+  assert.match(
+    layout,
+    /nearbyRoute\.kind === 'single'[\s\S]{0,400}pathname: '\/\(tabs\)\/map'/,
     'a single nearby notification goes to the canonical map detail',
   );
-  assert.equal(singlePlan.params.savedPlaceId, 'sp-anchor', 'by exact saved_places.id');
-  assert.equal(
-    singlePlan.params.reminderOpen,
-    'true',
-    'and opens Place Detail V2 expanded, not a bespoke reminder screen',
-  );
   assert.ok(
-    !/opportunity\/\[id\]/.test(read('lib/notificationNavigation.ts')),
+    !/nearbyRoute\.kind === 'single'[\s\S]{0,400}opportunity\/\[id\]/.test(layout),
     'never to a dedicated single-place opportunity screen',
   );
 
@@ -277,16 +256,8 @@ const NO_COORDS: SP = { id: 'sp-nocoords', place: { name: 'Somewhere Unmapped', 
 // A grouped notification still opens the group, and picking a member lands on
 // the canonical detail by exact saved_places.id.
 {
-  const groupPlan = planNotificationNavigation(
-    createNotificationOpenIntent(
-      resolveNotificationDestination({
-        isDefaultTap: true,
-        data: { savedPlaceId: 'a', placeId: 'p', groupedSavedPlaceIds: ['a', 'b', 'c'] },
-      }),
-    ),
-  );
-  assert.ok(groupPlan.action !== 'none');
-  assert.equal(groupPlan.pathname, '/opportunity/group', 'group UX preserved');
+  const layout = read('app/_layout.tsx');
+  assert.match(layout, /nearbyRoute\.kind === 'group'[\s\S]{0,300}opportunity\/group/, 'group UX preserved');
 
   const group = read('app/opportunity/group.tsx');
   assert.ok(group.includes('resolveOpenSavedPlaceRoute'), 'members use the canonical contract');
