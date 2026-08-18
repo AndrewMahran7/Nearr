@@ -23,6 +23,7 @@
     "test:tiktok-url": "ts-node -P scripts/tsconfig.json scripts/testTiktokUrl.ts",
     "test:platform-url-classification": "ts-node -P scripts/tsconfig.json scripts/testPlatformUrlClassification.ts",
     "test:evidence-provenance": "ts-node -P scripts/tsconfig.json scripts/testEvidenceProvenanceRegressions.ts",
+    "test:explicit-source-place": "ts-node -P scripts/tsconfig.json scripts/testExplicitSourcePlaceEvidence.ts",
     "test:media-live-regression": "ts-node -P scripts/tsconfig.json scripts/mediaLiveRegression.ts",
     "test:platform-noise": "ts-node -P scripts/tsconfig.json scripts/testPlatformNoise.ts",
     "test:generic-caption-guard": "ts-node -P scripts/tsconfig.json scripts/testGenericCaptionGuard.ts",
