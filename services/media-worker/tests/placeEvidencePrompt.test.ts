@@ -8,17 +8,64 @@ import {
 } from '../src/prompts/placeEvidencePrompt.js';
 
 test('post-save hook prompt is lively, concise, grounded, and visual-aware', () => {
-  assert.equal(PROMPT_VERSION, 'media-place-evidence-2026-08-16.v7-visible-text');
+  assert.equal(PROMPT_VERSION, 'media-place-evidence-2026-08-17.v8-cue-voice');
   assert.match(PLACE_EVIDENCE_SYSTEM_PROMPT, /brewery, winery, dessert/);
   assert.match(PLACE_EVIDENCE_SYSTEM_PROMPT, /waterfall, lake, marina, island/);
   assert.match(PLACE_EVIDENCE_SYSTEM_PROMPT, /Use other only when/i);
-  assert.match(PLACE_EVIDENCE_SYSTEM_PROMPT, /fun, excited friend/i);
-  assert.match(PLACE_EVIDENCE_SYSTEM_PROMPT, /5-22 words/);
-  assert.match(PLACE_EVIDENCE_SYSTEM_PROMPT, /two very short\s+sentences/);
   assert.match(PLACE_EVIDENCE_SYSTEM_PROMPT, /source=frame for an obvious visual feature/);
   assert.match(PLACE_EVIDENCE_SYSTEM_PROMPT, /never an unseen ingredient/i);
   assert.match(PLACE_EVIDENCE_SYSTEM_PROMPT, /Never use another place's segment/);
   assert.match(PLACE_EVIDENCE_SYSTEM_PROMPT, /Missing is better than filler/);
+});
+
+// --- memoryCue persona -------------------------------------------------------
+//
+// These assert that the INSTRUCTION exists, never that a stochastic model
+// produced particular words. Each one stands for a product rule that a future
+// prompt edit would otherwise be free to delete silently.
+
+test('memoryCue prompt asks for a friend reacting to the post, not a description', () => {
+  assert.match(PLACE_EVIDENCE_SYSTEM_PROMPT, /voice\s+of a friend who just watched the same post/i);
+  assert.match(PLACE_EVIDENCE_SYSTEM_PROMPT, /worth remembering/i);
+});
+
+test('memoryCue prompt constrains length to a note, not a paragraph', () => {
+  assert.match(PLACE_EVIDENCE_SYSTEM_PROMPT, /one or two SHORT sentences/);
+  assert.match(PLACE_EVIDENCE_SYSTEM_PROMPT, /4-22 words/);
+  assert.match(PLACE_EVIDENCE_SYSTEM_PROMPT, /A note, not a\s+paragraph/);
+});
+
+test('memoryCue prompt allows slang but forbids forcing it', () => {
+  assert.match(PLACE_EVIDENCE_SYSTEM_PROMPT, /do NOT reach for slang in every note/);
+  assert.match(PLACE_EVIDENCE_SYSTEM_PROMPT, /marketing copy, review-site prose, or travel-brochure/i);
+});
+
+test('memoryCue prompt demands variation instead of one template', () => {
+  assert.match(PLACE_EVIDENCE_SYSTEM_PROMPT, /Vary how you open/i);
+  assert.match(PLACE_EVIDENCE_SYSTEM_PROMPT, /Do not start every cue the same way/i);
+});
+
+test('memoryCue prompt is evidence-only and names the sunset trap', () => {
+  assert.match(PLACE_EVIDENCE_SYSTEM_PROMPT, /Use ONLY what the supplied evidence supports/);
+  assert.match(PLACE_EVIDENCE_SYSTEM_PROMPT, /Never invent a rating, price,\s+date, menu item, view, event, special/);
+  assert.match(PLACE_EVIDENCE_SYSTEM_PROMPT, /do not mention a sunset/i);
+  assert.match(PLACE_EVIDENCE_SYSTEM_PROMPT, /do\s+not say it is easy/i);
+});
+
+test('memoryCue prompt preserves explicit dates instead of relative phrasing', () => {
+  assert.match(PLACE_EVIDENCE_SYSTEM_PROMPT, /September 1 through September 14.+Sept 1-14/s);
+  assert.match(PLACE_EVIDENCE_SYSTEM_PROMPT, /this month.+next week.+currently/s);
+  assert.match(PLACE_EVIDENCE_SYSTEM_PROMPT, /goes stale/i);
+});
+
+test('memoryCue prompt keeps creator opinion attributed, not asserted', () => {
+  assert.match(PLACE_EVIDENCE_SYSTEM_PROMPT, /An opinion in the source stays an opinion/);
+  assert.match(PLACE_EVIDENCE_SYSTEM_PROMPT, /never restate it as established fact/i);
+});
+
+test('memoryCue prompt discourages repeating the venue name the UI already shows', () => {
+  assert.match(PLACE_EVIDENCE_SYSTEM_PROMPT, /already shows the place's name and category/);
+  assert.match(PLACE_EVIDENCE_SYSTEM_PROMPT, /Naming the place is fine when the sentence actually needs it/);
 });
 
 // --- visible_text semantics: delegated OCR must not be reported as "(none)" ---

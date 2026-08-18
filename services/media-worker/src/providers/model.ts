@@ -64,21 +64,33 @@ export function groundClaimedEvidence(
   evidence: MediaPlaceEvidence,
   input: Pick<AnalyzeInput, 'transcript' | 'metadataTitle' | 'metadataDescription'> & {
     ocr?: AnalyzeInput['ocr'];
+    ocrExtracted?: AnalyzeInput['ocrExtracted'];
   },
 ): MediaPlaceEvidence {
   const speech = groundingText(input.transcript.map((segment) => segment.text).join(' '));
   const caption = groundingText([input.metadataTitle, input.metadataDescription].filter(Boolean).join(' '));
   const visibleText = groundingText((input.ocr ?? []).map((segment) => segment.text).join(' '));
+  // Corroborating a visible-text claim requires a text stream to corroborate it
+  // AGAINST. `ocrExtracted` is false whenever reading frames is delegated to
+  // this same multimodal step (today: always — selectOcrProvider returns the
+  // noop provider for every configured value), so `visibleText` is empty for
+  // the trivial reason that no separate pass looked. Checking a claim against
+  // it then fails every time, which is not a stricter test — it is an
+  // unconditional one. Same reasoning as buildUserContext: an empty OCR result
+  // means "nothing looked yet", never "there is no visible text".
+  const canCorroborateVisibleText = input.ocrExtracted === true;
   let dropped = 0;
   const groundedItems = (
     items: PlaceCandidateEvidence['explicitEvidence'],
     validateVisibleText: boolean,
   ) =>
     items.filter((item) => {
-      // Preserve the resolver's existing explicit-evidence behavior. The new
-      // cue path is stricter for OCR because it is supplemental and may safely
-      // disappear without changing extraction or save eligibility.
-      if (item.source === 'frame' || (item.source === 'visible_text' && !validateVisibleText)) return true;
+      // Preserve the resolver's existing explicit-evidence behavior. The cue
+      // path additionally corroborates visible text, but only once a real OCR
+      // pass exists to corroborate against; a sign the model read off a frame
+      // is otherwise exactly as observed as the frame itself.
+      if (item.source === 'frame') return true;
+      if (item.source === 'visible_text' && !(validateVisibleText && canCorroborateVisibleText)) return true;
       const claim = groundingText(item.value);
       const source = item.source === 'speech'
         ? speech
