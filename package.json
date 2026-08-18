@@ -148,7 +148,8 @@
     "test:pin-state": "ts-node -P scripts/tsconfig.json scripts/testSavedPlacePinState.ts",
     "test:offline-mode": "ts-node -P scripts/tsconfig.json scripts/testOfflineMode.ts",
     "test:offline-reminders": "ts-node -P scripts/tsconfig.json scripts/testOfflineReminders.ts",
-    "test:nearby-eligibility": "ts-node -P scripts/tsconfig.json scripts/testNearbyEligibility.ts"
+    "test:nearby-eligibility": "ts-node -P scripts/tsconfig.json scripts/testNearbyEligibility.ts",
+    "test:nearby-arbitration": "ts-node -P scripts/tsconfig.json scripts/testNearbyArbitration.ts"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "1.23.1",

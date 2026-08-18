@@ -31,7 +31,8 @@
  * based on judgements they never asked for.
  */
 
-import { distanceMeters, type LatLng } from './geo';
+import { distanceMeters, milesToMeters, type LatLng } from './geo';
+import { NEARBY_RADIUS_MILES } from './nearbyEligibility';
 import type { ReminderEligiblePlace } from './reminderSnapshot';
 
 /**
@@ -44,8 +45,19 @@ export const MAX_MONITORED_REGIONS = 20;
 /** Geofences below ~150m are unreliable on iOS in practice. */
 export const MIN_REGION_RADIUS_M = 150;
 
-/** Avoid huge noisy regions that fire from blocks away. */
-export const MAX_REGION_RADIUS_M = 5000;
+/**
+ * Ceiling for a registered OS region. Must be at least as large as the
+ * biggest adaptive category radius (see `lib/nearbyEligibility.ts`,
+ * currently the "destination" bucket at 10 mi) — otherwise a native
+ * geofence would silently monitor a SMALLER area than the SAME place's
+ * in-app proximity check and map circle use, which is exactly the
+ * flat-radius-in-disguise bug this derivation prevents. Computed from
+ * `NEARBY_RADIUS_MILES` rather than a hardcoded number so retuning a
+ * bucket there can never silently reintroduce the mismatch.
+ */
+export const MAX_REGION_RADIUS_M = milesToMeters(
+  Math.max(...Object.values(NEARBY_RADIUS_MILES)),
+);
 
 /**
  * Clamp a user-configured radius into the range the OS can monitor reliably.

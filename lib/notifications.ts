@@ -1073,6 +1073,54 @@ async function rollbackPlaceNotificationReservations(
   }
 }
 
+// ---------------------------------------------------------------------------
+// Global arbitration — at most one nearby notification per short window,
+// across BOTH send paths (background poll and native geofence ENTER).
+//
+// `checkProximity`'s two-pass winner selection already limits the POLLING
+// path to one send attempt per tick. It cannot limit the NATIVE geofence
+// path: iOS/Android can deliver ENTER events for two different,
+// non-overlapping saved places as independent async invocations of the
+// `NEARR_GEOFENCE_TASK` callback (see lib/geofencing.ts), and since JS is
+// single-threaded but non-blocking, two such calls can genuinely interleave
+// at their `await` points — each reading the per-place cooldown state
+// before either one has written its result. Per-place cooldown cannot catch
+// this because the two places are, by definition, different places with
+// independent cooldown keys.
+//
+// The fix reuses the SAME dedupe gate (and its existing promise-chained
+// mutex — see `withLock` in lib/placeNotificationDedupe.ts, which already
+// serializes concurrent `checkAndRecord` calls so two interleaved callers
+// cannot both pass) with one extra, globally-scoped key and a much shorter
+// window than the per-place 5-minute one. It is claimed at the same point
+// and rolled back on the same failure paths as every other reservation in
+// this function, so a failed send never wrongly blocks a later, unrelated
+// notification.
+// ---------------------------------------------------------------------------
+const NEARBY_ARBITRATION_KEY = '__nearby_global_arbitration__';
+/**
+ * Long enough to absorb near-simultaneous native ENTER delivery for a
+ * cluster of saved places; short enough to never meaningfully delay a
+ * genuinely separate, later notification.
+ */
+const NEARBY_ARBITRATION_WINDOW_MS = 5_000;
+
+async function reserveGlobalNearbyArbitrationSlot(
+  now: number,
+): Promise<PlaceNotificationGateResult> {
+  return placeNotificationDedupeGate.checkAndRecord({
+    savedPlaceId: NEARBY_ARBITRATION_KEY,
+    triggerType: 'global',
+    now,
+    cooldownMs: NEARBY_ARBITRATION_WINDOW_MS,
+    dedupeAcrossTriggers: false,
+  });
+}
+
+async function releaseGlobalNearbyArbitrationSlot(): Promise<void> {
+  await placeNotificationDedupeGate.rollback(NEARBY_ARBITRATION_KEY, 'global');
+}
+
 async function sendPlaceReminderNotificationOnce(params: {
   userId: string;
   saved: ReminderPlace;
@@ -1092,6 +1140,23 @@ async function sendPlaceReminderNotificationOnce(params: {
     preferredLabel,
   } = params;
   const now = Date.now();
+
+  const arbitration = await reserveGlobalNearbyArbitrationSlot(now);
+  if (arbitration.status !== 'allow') {
+    if (arbitration.status === 'skipped_duplicate') {
+      logInfo(
+        'notification-dedupe',
+        `skipped_arbitration saved_place_id=${saved.id} trigger=${triggerType} age_ms=${arbitration.ageMs}`,
+      );
+      return {
+        status: 'skipped_duplicate',
+        savedPlaceId: saved.id,
+        ageMs: arbitration.ageMs,
+      };
+    }
+    return { status: 'failed', reason: 'dedupe_failed' };
+  }
+
   const uniqueSavedPlaceIds = Array.from(
     new Set(groupedSavedPlaces.map((grouped) => grouped.id).filter((id) => !!id)),
   );
@@ -1110,6 +1175,7 @@ async function sendPlaceReminderNotificationOnce(params: {
     }
 
     await rollbackPlaceNotificationReservations(reservedIds, triggerType);
+    await releaseGlobalNearbyArbitrationSlot();
 
     if (gate.status === 'skipped_duplicate') {
       return {
@@ -1135,6 +1201,7 @@ async function sendPlaceReminderNotificationOnce(params: {
 
   if (!sent) {
     await rollbackPlaceNotificationReservations(reservedIds, triggerType);
+    await releaseGlobalNearbyArbitrationSlot();
     return { status: 'failed', reason: 'send_failed' };
   }
 

@@ -136,17 +136,21 @@ export function reminderStatusLabel(args: {
     const value = Number.parseInt(args.minutesText, 10);
     return Number.isFinite(value) && value > 0 ? `On · ${formatUnit(value, 'minutes')}` : 'On';
   }
-  return args.profile
-    ? `On · ${formatUnit(args.profile.default_radius_value, args.profile.default_radius_unit)}`
-    : 'On';
+  // 'default' mode no longer resolves to `profile.default_radius_value` at
+  // notification time (see lib/notifications.ts effectiveRadiusMeters) — a
+  // category-aware radius applies instead, and this label has no place/
+  // category to compute that number from. Showing "On" (no magnitude) is
+  // honest; showing the profile's number would be a wrong, specific claim.
+  return 'On';
 }
 
 /**
  * The distance shown INSIDE the compact action-row reminder control, next to
  * the bell. Deliberately just the magnitude ("1 mi", "10 min") — the adjacent
  * switch already says whether reminders are on, so repeating "On ·" there
- * would be noise. Falls back to the profile default, and finally to a plain
- * dash when there is genuinely no number to show.
+ * would be noise. In 'default' mode there is no single number to show (see
+ * `reminderStatusLabel` above), so this falls back to the plain "Default"
+ * word rather than a specific, no-longer-accurate figure.
  */
 export function reminderDistanceLabel(args: {
   mode: ReminderDisplayMode;
@@ -162,8 +166,5 @@ export function reminderDistanceLabel(args: {
     const value = Number.parseInt(args.minutesText, 10);
     return Number.isFinite(value) && value > 0 ? `${value} min` : 'Time';
   }
-  if (!args.profile) return 'Default';
-  return args.profile.default_radius_unit === 'minutes'
-    ? `${args.profile.default_radius_value} min`
-    : `${args.profile.default_radius_value} mi`;
+  return 'Default';
 }

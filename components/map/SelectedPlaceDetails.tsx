@@ -353,12 +353,12 @@ export function SelectedPlaceDetails({
 
   const radiusHelperText = useMemo(() => {
     if (mode === 'default') {
-      return profile
-        ? `Use your usual reminder distance: ${formatUnit(
-            profile.default_radius_value,
-            profile.default_radius_unit,
-          )}.`
-        : 'Use your usual reminder distance.';
+      // No longer resolves to profile.default_radius_value at notification
+      // time — a category-aware distance applies instead (see
+      // lib/nearbyEligibility.ts). Not naming a specific number here since
+      // this screen doesn't know which category bucket the place resolved
+      // to, and a wrong specific number is worse than a general statement.
+      return "We'll pick a sensible reminder distance for this type of place.";
     }
     if (mode === 'miles') {
       const parsed = Number.parseFloat(milesText);
@@ -370,7 +370,7 @@ export function SelectedPlaceDetails({
     return Number.isFinite(parsed) && parsed > 0
       ? `Remind me when I’m about ${formatUnit(parsed, 'minutes')} away.`
       : 'Remind me when I’m about this many minutes away.';
-  }, [milesText, minutesText, mode, profile]);
+  }, [milesText, minutesText, mode]);
 
   const dirty = useMemo(() => {
     if (notifyOn !== saved.notifications_enabled) return true;

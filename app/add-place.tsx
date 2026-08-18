@@ -6,9 +6,10 @@
  *   2. Tap a result   -> confirmation card with radius chooser + Save.
  *
  * Radius modes:
- *   - 'default'  : leave radius_value / radius_unit NULL so the profile
- *                  default (default_radius_value / default_radius_unit) is
- *                  used at notification time.
+ *   - 'default'  : leave radius_value / radius_unit NULL so a category-aware
+ *                  distance is used at notification time (see
+ *                  lib/nearbyEligibility.ts) — NOT the profile's
+ *                  default_radius_value, which no longer drives this.
  *   - 'miles'    : numeric override in miles.
  *   - 'minutes'  : numeric override in minutes (drive-time).
  *
@@ -19,7 +20,7 @@
  * Duplicates are non-fatal: we show a friendly alert and still navigate.
  */
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -38,11 +39,10 @@ import { getActivationSaveFeedback } from '@/lib/activation';
 
 import { usePlacesSearch } from '@/hooks/usePlacesSearch';
 import { upsertSavedPlaceIntoCache } from '@/hooks/useSavedPlaces';
-import { getProfile } from '@/services/profileService';
 import { listSavedPlaces, saveSavedPlace } from '@/services/savedPlacesService';
 import { trackEvent } from '@/lib/analytics';
 import type { LocationBias, PlaceCandidate, PlacesError } from '@/services/placesService';
-import type { Profile, RadiusUnit, SourceType } from '@/types';
+import type { RadiusUnit, SourceType } from '@/types';
 
 type RadiusMode = 'default' | 'miles' | 'minutes';
 
@@ -102,18 +102,6 @@ export default function SavePlace() {
   const [selected, setSelected] = useState<PlaceCandidate | null>(null);
   const [saving, setSaving] = useState(false);
 
-  // ---- profile (for default radius display) ------------------------------
-  const [profile, setProfile] = useState<Profile | null>(null);
-  useEffect(() => {
-    let alive = true;
-    getProfile().then((p) => {
-      if (alive) setProfile(p);
-    });
-    return () => {
-      alive = false;
-    };
-  }, []);
-
   // ---- best-effort user location for search bias ------------------------
   // Used so manual searches like "Starbucks" surface the closest one when
   // we already have foreground permission. We never prompt -- if the user
@@ -145,10 +133,12 @@ export default function SavePlace() {
   const [milesText, setMilesText] = useState('1');
   const [minutesText, setMinutesText] = useState('10');
 
-  const defaultRadiusLabel = useMemo(() => {
-    if (!profile) return 'Profile default';
-    return `${profile.default_radius_value} ${profile.default_radius_unit}`;
-  }, [profile]);
+  // No longer resolves to a single profile-wide number at notification time
+  // (a category-aware distance applies instead — see
+  // lib/nearbyEligibility.ts), and this screen doesn't yet know which
+  // category bucket the place will resolve to, so the chooser names the
+  // behavior rather than a specific, no-longer-accurate figure.
+  const defaultRadiusLabel = 'auto';
 
   // ---- auto-search if a query came in via deep-link/share ---------------
   useEffect(() => {

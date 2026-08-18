@@ -654,11 +654,18 @@ export default function SettingsScreen() {
           </View>
         </Card>
 
-        {/* --- Default radius ------------------------------------------- */}
+        {/* --- Default radius -------------------------------------------
+         * Most saved places now pick their own reminder distance
+         * automatically based on what kind of place they are (see
+         * lib/nearbyEligibility.ts) rather than reading this value — see
+         * lib/notifications.ts effectiveRadiusMeters for why. The field is
+         * kept (still saved, still usable per-place via "Default" mode) but
+         * the copy no longer claims it drives most places' behavior.
+         */}
         <Text style={styles.sectionLabel}>Default reminder distance</Text>
         <Card style={styles.section}>
           <Text style={[typography.caption, styles.muted]}>
-            Used when a place uses your usual nearby reminder setting.
+            Most saved places pick their own reminder distance automatically. This setting isn't used yet.
           </Text>
 
           <View style={styles.unitRow}>

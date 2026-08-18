@@ -17,6 +17,11 @@
  */
 import assert from 'node:assert/strict';
 
+import { milesToMeters } from '../lib/geo';
+import {
+  getNearbyNotificationRadiusMeters,
+  NEARBY_RADIUS_MILES,
+} from '../lib/nearbyEligibility';
 import {
   MAX_MONITORED_REGIONS,
   MIN_REGION_RADIUS_M,
@@ -253,6 +258,61 @@ async function main() {
     3,
     "clamping the region must never rewrite the user's configured radius",
   );
+
+  // -------------------------------------------------------------------------
+  // Native geofence registration reflects the adaptive category radius.
+  //
+  // lib/geofencing.ts registers each region with
+  // `clampRegionRadius(effectiveRadiusMeters(s, profile))`, and
+  // `effectiveRadiusMeters`'s no-override branch is a direct passthrough to
+  // `getNearbyNotificationRadiusMeters` (see lib/notifications.ts). This
+  // reproduces that exact composition using the two real, pure functions —
+  // lib/notifications.ts itself cannot be imported under plain ts-node (a
+  // transitive Expo/RN dependency breaks Node's module loader), which is why
+  // this proves the composition here instead of importing that file.
+  //
+  // MAX_REGION_RADIUS_M is derived FROM NEARBY_RADIUS_MILES (see
+  // lib/reminderSelection.ts) specifically so this can never silently regress:
+  // a native region must never be smaller than the SAME place's in-app
+  // proximity check and map circle.
+  // -------------------------------------------------------------------------
+  assert.equal(
+    MAX_REGION_RADIUS_M,
+    milesToMeters(Math.max(...Object.values(NEARBY_RADIUS_MILES))),
+    'the region-radius ceiling is derived from the adaptive category radii, not a stale hardcoded number',
+  );
+
+  const registeredRegionRadius = (category: string) =>
+    clampRegionRadius(getNearbyNotificationRadiusMeters(category));
+
+  assert.equal(
+    Math.round(registeredRegionRadius('restaurant')),
+    Math.round(milesToMeters(3)),
+    'a restaurant registers a ~3 mi native region',
+  );
+  assert.equal(
+    Math.round(registeredRegionRadius('shopping')),
+    Math.round(milesToMeters(4)),
+    'an everyday-bucket place registers its full ~4 mi native region, not truncated',
+  );
+  assert.equal(
+    Math.round(registeredRegionRadius('park')),
+    Math.round(milesToMeters(6)),
+    'a park registers a ~6 mi native region',
+  );
+  assert.equal(
+    Math.round(registeredRegionRadius('hiking_trail')),
+    Math.round(milesToMeters(10)),
+    'a hiking trail registers a ~10 mi native region, not clamped down to ~3 mi',
+  );
+
+  // Nothing above the ceiling ever reaches the OS.
+  for (const category of ['restaurant', 'shopping', 'park', 'hiking_trail']) {
+    assert.ok(
+      registeredRegionRadius(category) <= MAX_REGION_RADIUS_M,
+      `${category} region radius must never exceed the platform-safe ceiling`,
+    );
+  }
 
   // -------------------------------------------------------------------------
   // Snapshot: write / read round trip

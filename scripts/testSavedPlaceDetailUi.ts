@@ -80,9 +80,13 @@ for (const ai_note of [null, undefined, '', '   ', '\n\t ']) {
 // --- reminder enabled / disabled -------------------------------------------
 {
   const profile = { default_radius_value: 1, default_radius_unit: 'miles' as const };
+  // 'default' mode no longer resolves to profile.default_radius_value at
+  // notification time (a category-aware distance applies instead — see
+  // lib/nearbyEligibility.ts), so it must not claim a specific number even
+  // when a profile is present.
   assert.equal(
     reminderStatusLabel({ enabled: true, mode: 'default', profile, milesText: '1', minutesText: '10' }),
-    'On · 1 mile',
+    'On',
   );
   assert.equal(
     reminderStatusLabel({ enabled: true, mode: 'miles', profile, milesText: '2.5', minutesText: '10' }),
