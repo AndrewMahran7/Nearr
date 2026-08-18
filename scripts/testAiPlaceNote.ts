@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 
 import {
+  evaluateAiPlaceNote,
   generateAiPlaceNote,
   persistAiNoteSupplementally,
   preserveUserNote,
@@ -125,6 +126,149 @@ assert.equal(
   }),
   null,
   'Place A evidence cannot leak into Place B',
+);
+
+// ---------------------------------------------------------------------------
+// Nearr voice. A reaction note is mostly stance ("sick", "unreal", "for sure")
+// wrapped around one grounded detail. The previous revision required EVERY
+// content word to appear in the evidence, which rejected the entire voice; the
+// cases below are the contract that it stays accepted, and the cases after
+// them are the contract that grounding did not loosen with it.
+// ---------------------------------------------------------------------------
+
+const beach = generateAiPlaceNote({
+  placeName: 'Praia do Sancho',
+  proposedNote: 'Sick beach. That water looks unreal',
+  evidence: [{ source: 'frame', value: 'wide sandy beach, clear blue water, dramatic cliffs' }],
+});
+assert.equal(beach, 'Sick beach. That water looks unreal.', 'a two-beat reaction to a visual hook is accepted');
+
+assert.equal(
+  generateAiPlaceNote({
+    placeName: 'Oeschinensee',
+    proposedNote: 'That water with those mountains is ridiculous',
+    evidence: [{ source: 'frame', value: 'turquoise water surrounded by mountains' }],
+  }),
+  'That water with those mountains is ridiculous.',
+  'a cue may react to the scene without repeating the venue name',
+);
+
+assert.equal(
+  generateAiPlaceNote({
+    placeName: 'Falls Trail',
+    proposedNote: 'That hike looks unreal. Saving this for sure',
+    evidence: [{ source: 'speech', value: 'this hike takes about two hours to the falls' }],
+  }),
+  'That hike looks unreal. Saving this for sure.',
+  'saving-intent phrasing is stance, not an unsupported claim',
+);
+
+// Creator opinion stays the creator's. Echoing "best pizza in OC" is grounded
+// because the caption says it; the note is not asserting it independently.
+assert.equal(
+  generateAiPlaceNote({
+    placeName: 'Angelos Pizza',
+    proposedNote: 'Best pizza in OC!!!!! Yeah I need to try this',
+    evidence: [{ source: 'caption', value: 'best pizza in OC' }],
+  }),
+  'Best pizza in OC!!!!! Yeah I need to try this.',
+  'creator enthusiasm may be echoed as enthusiasm',
+);
+
+// Dates: shortening is allowed, restating is not.
+assert.equal(
+  generateAiPlaceNote({
+    placeName: "Tuxedo Cat's Coffee",
+    proposedNote: 'Special drink Sept 1-14. Definitely a limited-time move',
+    evidence: [{
+      source: 'visible_text',
+      value: 'Special drink available September 1 through September 14',
+    }],
+  }),
+  'Special drink Sept 1-14. Definitely a limited-time move.',
+  '"Sept" may abbreviate "September" and the days must survive intact',
+);
+assert.equal(
+  generateAiPlaceNote({
+    placeName: "Tuxedo Cat's Coffee",
+    proposedNote: 'Special drink Sept 2-20. Definitely a limited-time move',
+    evidence: [{
+      source: 'visible_text',
+      value: 'Special drink available September 1 through September 14',
+    }],
+  }),
+  null,
+  'a date the evidence never named is an invented date',
+);
+assert.equal(
+  generateAiPlaceNote({
+    placeName: 'Juniper Coffee',
+    proposedNote: 'Their limited-time drink is a move worth catching',
+    evidence: [{ source: 'caption', value: 'come try our drink' }],
+  }),
+  null,
+  '"limited-time" is licensed by an evidenced date, never asserted alone',
+);
+
+// Unsupported atmosphere is still refused, however casual the wording.
+assert.equal(
+  generateAiPlaceNote({
+    placeName: 'Oeschinensee',
+    proposedNote: 'That view is ridiculous. Sunset here would go crazy',
+    evidence: [{ source: 'frame', value: 'turquoise lake below snowy mountain peaks' }],
+  }),
+  null,
+  'no evidence mentions a sunset, so the cue cannot',
+);
+assert.equal(
+  generateAiPlaceNote({
+    placeName: 'Falls Trail',
+    proposedNote: 'Easy hike and the water is warm. Going',
+    evidence: [{ source: 'frame', value: 'narrow trail beside a river' }],
+  }),
+  null,
+  'difficulty and water temperature are inventions, not reactions',
+);
+
+// A mood with no grounded detail would read identically on every saved place.
+assert.equal(
+  generateAiPlaceNote({
+    placeName: 'Some Cafe',
+    proposedNote: 'Yeah this is going on the list',
+    evidence: [{ source: 'caption', value: 'you have to try this cafe' }],
+  }),
+  null,
+  'stance alone is not a reason the place was worth saving',
+);
+
+// --- bounded status codes ---------------------------------------------------
+assert.deepEqual(
+  evaluateAiPlaceNote({ placeName: 'Any', proposedNote: null, evidence: burritoEvidence }),
+  { note: null, status: 'not_requested', reason: null },
+  'the model declining to propose a cue is distinguishable from a refusal',
+);
+assert.deepEqual(
+  evaluateAiPlaceNote({ placeName: 'Any', proposedNote: 'Saved for the birria burrito', evidence: [] }),
+  { note: null, status: 'insufficient_evidence', reason: null },
+  'an unscoped cue reports missing evidence rather than a validation failure',
+);
+assert.deepEqual(
+  evaluateAiPlaceNote({
+    placeName: 'Any',
+    proposedNote: 'Saved for the lobster roll the creator ordered',
+    evidence: burritoEvidence,
+  }),
+  { note: null, status: 'rejected', reason: 'ungrounded_claim' },
+  'a refused cue names the rule it broke',
+);
+assert.equal(
+  evaluateAiPlaceNote({
+    placeName: 'Lakeview Hotel',
+    proposedNote: 'This place is worth checking out',
+    evidence: [{ source: 'caption', value: 'This place is worth checking out' }],
+  }).reason,
+  'banned_opening',
+  'the first failing rule is the one reported',
 );
 
 assert.deepEqual(

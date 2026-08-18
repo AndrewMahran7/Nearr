@@ -125,6 +125,65 @@ test('groundClaimedEvidence drops an unsupported memory cue source', () => {
   assert.deepEqual(grounded.places[0]!.memoryCueEvidence, []);
 });
 
+test('a sign the model read survives when no separate OCR pass ran', () => {
+  // Regression: `selectOcrProvider` returns the noop provider for every
+  // configured value, so `ocr` is always empty and `ocrExtracted` is false.
+  // Validating a visible-text cue claim against that empty stream is not a
+  // stricter test, it is an unconditional one — it silently nulled the cue on
+  // every post whose hook was a sign, menu board, or on-screen offer date.
+  const evidence: MediaPlaceEvidence = {
+    places: [{
+      name: "Tuxedo Cat's Coffee", category: 'cafe', categoryConfidence: 0.9, categoryEvidenceTags: [],
+      address: null, city: null, region: null, country: null, coordinates: null,
+      role: 'primary', confidence: 0.9,
+      explicitEvidence: [{ source: 'caption', value: "Tuxedo Cat's Coffee", timestampSeconds: null }],
+      inferredEvidence: [],
+      memoryCue: 'Special drink Sept 1-14. Definitely a limited-time move',
+      memoryCueEvidence: [
+        { source: 'visible_text', value: 'Special drink September 1 through September 14', timestampSeconds: 4 },
+      ],
+    }],
+    multipleIntentionalPlaces: false,
+    insufficientEvidence: false,
+    warnings: [],
+  };
+  const grounded = groundClaimedEvidence(evidence, {
+    metadataTitle: "Tuxedo Cat's Coffee",
+    metadataDescription: null,
+    transcript: [],
+    ocr: [],
+    ocrExtracted: false,
+  });
+  assert.equal(grounded.places[0]!.memoryCue, 'Special drink Sept 1-14. Definitely a limited-time move');
+  assert.equal(grounded.places[0]!.memoryCueEvidence.length, 1);
+});
+
+test('a real OCR pass still corroborates visible-text cue claims', () => {
+  const evidence: MediaPlaceEvidence = {
+    places: [{
+      name: 'Matcha House', category: 'cafe', categoryConfidence: 0.9, categoryEvidenceTags: [],
+      address: null, city: null, region: null, country: null, coordinates: null,
+      role: 'primary', confidence: 0.9,
+      explicitEvidence: [{ source: 'caption', value: 'Matcha House', timestampSeconds: null }],
+      inferredEvidence: [],
+      memoryCue: 'That caviar flight on the board looks absurd',
+      memoryCueEvidence: [{ source: 'visible_text', value: 'caviar flight', timestampSeconds: 3 }],
+    }],
+    multipleIntentionalPlaces: false,
+    insufficientEvidence: false,
+    warnings: [],
+  };
+  const grounded = groundClaimedEvidence(evidence, {
+    metadataTitle: 'Matcha House',
+    metadataDescription: null,
+    transcript: [],
+    ocr: [{ timestampSeconds: 0, text: 'MATCHA FLIGHT 12', confidence: 1 }],
+    ocrExtracted: true,
+  });
+  assert.equal(grounded.places[0]!.memoryCue, null);
+  assert.deepEqual(grounded.places[0]!.memoryCueEvidence, []);
+});
+
 test('Gemini 429 retains usable transcript evidence', async () => {
   const originalFetch = globalThis.fetch;
   globalThis.fetch = (async () => new Response('', { status: 429, headers: { 'retry-after': '45' } })) as typeof fetch;

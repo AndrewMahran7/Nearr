@@ -32,7 +32,12 @@ import { saveForUser } from '../process-share-link/save.ts';
 import { normalizeShareUrl } from '../../../lib/shareAgent/tiktokUrl.ts';
 import { buildShareJobCandidatePayload } from '../../../lib/shareJobResult.ts';
 import { isNearrCategory, resolvePlaceCategory } from '../../../lib/placeCategory.ts';
-import { generateAiPlaceNote, persistAiNoteSupplementally } from '../../../lib/aiPlaceNote.ts';
+import {
+  evaluateAiPlaceNote,
+  generateAiPlaceNote,
+  persistAiNoteSupplementally,
+  type AiPlaceNoteResult,
+} from '../../../lib/aiPlaceNote.ts';
 
 import { submitPushToUser, checkExpoReceipts, type TicketRef } from './push.ts';
 import {
@@ -143,22 +148,29 @@ function safeCandidate(c: any, aiNote: string | null = null) {
   };
 }
 
-function noteForLogicalMention(parsed: any, mention: any): string | null {
-  if (!parsed?.ok || !mention) return null;
+/**
+ * Evaluate this mention's cue. Returns the note plus the bounded status code
+ * that explains an absent one — "the model proposed nothing" and "the model
+ * proposed something we refused" are different bugs, and before this the
+ * pipeline reported both as a silent null.
+ */
+function noteResultForLogicalMention(parsed: any, mention: any): AiPlaceNoteResult {
+  if (!parsed?.ok || !mention) return { note: null, status: 'not_requested', reason: null };
   const logicalName = mention.primaryVenueName ?? mention.displayName ?? '';
   const normalizedName = mention.normalizedName ?? normalizeVenueName(logicalName);
   const scopedPlaces = parsed.value.places.filter(
     (place: any) => normalizeVenueName(place.name ?? '') === normalizedName,
   );
+  let last: AiPlaceNoteResult = { note: null, status: 'not_requested', reason: null };
   for (const place of scopedPlaces) {
-    const note = generateAiPlaceNote({
+    last = evaluateAiPlaceNote({
       placeName: logicalName,
       proposedNote: place.memoryCue,
       evidence: place.memoryCueEvidence ?? [],
     });
-    if (note) return note;
+    if (last.note) return last;
   }
-  return null;
+  return last;
 }
 
 function noteForAggregateCandidate(
@@ -871,12 +883,29 @@ async function finalizeMediaTask(
   // `mentionResults` itself stays in memory: it carries candidate names and the
   // raw Places query, neither of which belongs in stored diagnostics.
   const resolutionDiagnostics = result.diagnostics?.resolutionDiagnostics ?? null;
-  const aiNoteByMentionId = new Map(
+  const aiNoteResultByMentionId = new Map<string, AiPlaceNoteResult>(
     mediaMentions.mentions.map((mention: any) => [
       mention.id,
-      noteForLogicalMention(parsed, mention),
+      noteResultForLogicalMention(parsed, mention),
     ]),
   );
+  const aiNoteByMentionId = new Map(
+    [...aiNoteResultByMentionId].map(([mentionId, noteResult]) => [mentionId, noteResult.note]),
+  );
+  // Status codes only — never the cue text, the caption, or the user's note.
+  // This is what makes "the note is missing" answerable from logs alone.
+  if (aiNoteResultByMentionId.size > 0) {
+    console.log(JSON.stringify({
+      event: 'ai_note_generation',
+      jobId: job.id,
+      taskId,
+      outcomes: [...aiNoteResultByMentionId].map(([mentionId, noteResult]) => ({
+        logicalPlaceId: mentionId,
+        status: noteResult.status,
+        reason: noteResult.reason,
+      })),
+    }));
+  }
   const nameDrivenResult = {
     mentionResults,
     aggregateCandidates: result.candidates ?? [],
