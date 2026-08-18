@@ -101,6 +101,10 @@ try {
     confidence: result?.confidence ?? null,
     cleanSearchQuery: result?.cleanSearchQuery ?? null,
     resolverPath: result?.diagnostics?.resolverPath ?? null,
+    // Bounded recognition-failure funnel (provider path, per-mention
+    // no-match reasons, rejection counts). Forwarded verbatim so a local
+    // audit can explain a zero-suggestion outcome without a production job.
+    resolutionDiagnostics: result?.diagnostics?.resolutionDiagnostics ?? null,
     evidenceUsed: Array.isArray(result?.evidenceUsed) ? result.evidenceUsed.slice(0, 24) : [],
     // Name-driven mention slots (sanitized). Populated for one OR many names.
     mentionCount: built.mentions.length,

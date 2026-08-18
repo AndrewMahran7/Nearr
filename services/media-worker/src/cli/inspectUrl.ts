@@ -209,6 +209,7 @@ function buildVerificationBreakdown(v: VerificationOutcome, evidence: MediaPlace
       groupingReason: string;
     }[];
     rejectedCandidates?: { mentionId: string | null; name: string | null; reason: string | null }[];
+    resolutionDiagnostics?: unknown;
     mentionResults?: {
       mentionId: string | null;
       displayName: string | null;
@@ -232,6 +233,11 @@ function buildVerificationBreakdown(v: VerificationOutcome, evidence: MediaPlace
     safeToAutoSave: r.safeToAutoSave === true, // reported as-is; never weakened
     confidence: r.confidence ?? null,
     geoContext: r.geoContext ?? null,
+    // The bounded recognition-failure funnel the resolver already computed
+    // (provider path, per-mention no-match reasons, rejection counts). Surfaced
+    // here so a local audit run can explain a zero-suggestion outcome without a
+    // production job. Reported as-is; this CLI never influences recognition.
+    resolutionDiagnostics: r.resolutionDiagnostics ?? null,
     // Detected venue↔host relationships (X Eats @ Brewery X → one slot).
     venueRelationships: Array.isArray(r.relationships) ? r.relationships : [],
     // Google Places queries issued, one per mention slot.
