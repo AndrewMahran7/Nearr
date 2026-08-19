@@ -32,11 +32,100 @@ const GOOGLE_MAPS_ANDROID_KEY =
 // remove the `expo-share-extension` plugin entry from app.json to revert
 // to a single-target build while you debug provisioning.
 
+// ---------------------------------------------------------------------------
+// Environment declaration (see docs/DEVELOPMENT_WORKFLOW.md)
+// ---------------------------------------------------------------------------
+//
+// Two independent axes, both declared explicitly by the EAS environment or the
+// eas.json build profile — never inferred from a URL:
+//
+//   EXPO_PUBLIC_APP_ENV      development | preview | production
+//   EXPO_PUBLIC_BACKEND_ENV  development | production
+//
+// The authoritative ruleset lives in lib/appEnvironmentCore.ts and is enforced
+// by `npm run verify:env` (which the deploy scripts run) and surfaced at
+// runtime by lib/appEnvironment.ts. The guard below deliberately implements
+// only ONE of those rules — the one that can be decided from config alone and
+// must never reach a build:
+//
+//   a build that DECLARES a lane must not contradict itself.
+//
+// An UNDECLARED build is never blocked here, so adopting this system does not
+// break an existing `expo start`; under-declaration is caught by the deploy
+// wrappers instead. Keep this in sync with appEnvironmentCore's Rules 2 and 3.
+
+const APP_ENV = (process.env.EXPO_PUBLIC_APP_ENV || '').trim();
+const BACKEND_ENV = (process.env.EXPO_PUBLIC_BACKEND_ENV || '').trim().toLowerCase();
+const ALLOW_PRODUCTION_BACKEND = /^(true|1|yes|on)$/i.test(
+  (process.env.EXPO_PUBLIC_ALLOW_PRODUCTION_BACKEND || '').trim(),
+);
+
+function assertEnvironmentIsCoherent() {
+  if (!APP_ENV) return; // undeclared: advisory only, see note above
+  if (APP_ENV === 'production' && BACKEND_ENV === 'development') {
+    throw new Error(
+      '[APP_ENV] Refusing to generate config: EXPO_PUBLIC_APP_ENV=production with ' +
+        'EXPO_PUBLIC_BACKEND_ENV=development. A production build must never ship ' +
+        'development endpoints. Fix the `production` EAS environment. ' +
+        '(docs/DEVELOPMENT_WORKFLOW.md → Environment variables)',
+    );
+  }
+  if (APP_ENV !== 'production' && BACKEND_ENV === 'production' && !ALLOW_PRODUCTION_BACKEND) {
+    throw new Error(
+      `[APP_ENV] Refusing to generate config: EXPO_PUBLIC_APP_ENV=${APP_ENV} with ` +
+        'EXPO_PUBLIC_BACKEND_ENV=production. Experimental code must not reach real ' +
+        'user data. Point this lane at a development backend, or set ' +
+        'EXPO_PUBLIC_ALLOW_PRODUCTION_BACKEND=true to record the choice deliberately. ' +
+        '(docs/DEVELOPMENT_WORKFLOW.md → Environment variables)',
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Side-by-side dev app (APP_VARIANT=dev)
+// ---------------------------------------------------------------------------
+//
+// OFF BY DEFAULT. Production output is byte-identical unless APP_VARIANT=dev.
+//
+// When enabled this produces a SEPARATE iOS app ("Nearr Dev",
+// com.nearr.ios.dev) that installs alongside App Store Nearr instead of
+// replacing it. Everything derived from the bundle identifier moves with it:
+// expo-share-extension generates `com.nearr.ios.dev.ShareExtension` and the
+// App Group `group.com.nearr.ios.dev` (see `getAppGroup` in the plugin).
+//
+// THIS REQUIRES ONE-TIME APPLE + SUPABASE SETUP BEFORE IT WILL BUILD OR SIGN.
+// Do not enable it until the checklist in docs/DEVELOPMENT_WORKFLOW.md →
+// "Side-by-side dev app" is done: the two bundle IDs and the App Group must
+// exist in the Apple Developer portal, Sign in with Apple must accept the dev
+// bundle ID, and `nearrdev://auth-callback` must be an allowed Supabase Auth
+// redirect. The separate `scheme` is what stops iOS from arbitrarily handing a
+// `nearr://` deep link to whichever of the two apps it feels like.
+const IS_DEV_VARIANT = (process.env.APP_VARIANT || '').trim().toLowerCase() === 'dev';
+
 module.exports = ({ config }) => {
+  assertEnvironmentIsCoherent();
+
+  const variant = IS_DEV_VARIANT
+    ? {
+        name: 'Nearr Dev',
+        scheme: 'nearrdev',
+        iosBundleIdentifier: 'com.nearr.ios.dev',
+        androidPackage: 'com.nearr.app.dev',
+      }
+    : {
+        name: config.name,
+        scheme: config.scheme,
+        iosBundleIdentifier: config.ios && config.ios.bundleIdentifier,
+        androidPackage: config.android && config.android.package,
+      };
+
   return {
     ...config,
+    name: variant.name,
+    scheme: variant.scheme,
     ios: {
       ...config.ios,
+      bundleIdentifier: variant.iosBundleIdentifier,
       config: {
         ...(config.ios && config.ios.config),
         googleMapsApiKey: GOOGLE_MAPS_IOS_KEY,
@@ -44,6 +133,7 @@ module.exports = ({ config }) => {
     },
     android: {
       ...config.android,
+      package: variant.androidPackage,
       config: {
         ...(config.android && config.android.config),
         googleMaps: {
@@ -56,6 +146,14 @@ module.exports = ({ config }) => {
     },
     extra: {
       ...config.extra,
+      // 2026-08-19: which lane this build belongs to, and which backend it was
+      // pointed at. Read via lib/appEnvironment.ts (process.env first, this
+      // `extra` fallback second — same inlining caveat as the URLs below).
+      // These are what the Settings "Build info" card renders, so a device can
+      // always answer "which app/update am I actually looking at?".
+      appEnv: APP_ENV,
+      backendEnv: BACKEND_ENV,
+      allowProductionBackend: process.env.EXPO_PUBLIC_ALLOW_PRODUCTION_BACKEND || '',
       // Expose to runtime via Constants.expoConfig.extra.* as a fallback for
       // code paths that don't read process.env directly.
       supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL || '',
