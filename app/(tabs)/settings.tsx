@@ -22,6 +22,7 @@ import {
   ActivityIndicator,
   Alert,
   Linking,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -29,6 +30,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 
 import { Button, Card, DemoModeBanner, DevModeBanner, EmptyState, HowNearrWorksModal, Input, Screen, SetupChecklist } from '@/components';
@@ -40,7 +42,8 @@ import { disableDevAuth } from '@/lib/devAuth';
 import { isDemoMode } from '@/lib/demoMode';
 import { setOnboardingPreview } from '@/lib/onboarding';
 import * as Clipboard from 'expo-clipboard';
-import { getRecentDiagnostics, formatDiagnosticForCopy } from '@/lib/deviceDiagnostics';
+import { getRecentDiagnostics, formatDiagnosticForCopy, getUpdateInfo } from '@/lib/deviceDiagnostics';
+import { areDeveloperToolsVisible, describeEnvironment } from '@/lib/appEnvironment';
 import { sharedAuth } from '@/lib/sharedAuth';
 import { LEGAL_ACCEPTANCE_REQUIRED, LEGAL_VERSION } from '@/constants';
 import { getProfile, getLegalAcceptanceStatus, updateProfile } from '@/services/profileService';
@@ -485,6 +488,38 @@ export default function SettingsScreen() {
   // in-memory preview flag so AuthGate keeps a signed-in session on the
   // onboarding route instead of redirecting to the map. Does NOT reset any
   // production onboarding state.
+  // Which app / which update / which backend, rendered on the device itself.
+  // Every field here is non-secret: hosts and identifiers only, never a key.
+  const buildInfoText = useMemo(() => {
+    const update = getUpdateInfo();
+    const cfg = Constants.expoConfig;
+    const buildNumber =
+      Platform.OS === 'ios'
+        ? cfg?.ios?.buildNumber
+        : cfg?.android?.versionCode != null
+        ? String(cfg.android.versionCode)
+        : null;
+    return [
+      describeEnvironment(),
+      `app=${cfg?.name ?? '?'} version=${cfg?.version ?? '?'} build=${buildNumber ?? '?'}`,
+      `runtime=${update.runtimeVersion ?? '?'} channel=${update.channel ?? '?'}`,
+      `update=${update.updateId ?? 'embedded (no OTA applied)'}`,
+      update.embedded == null ? '' : `embedded=${update.embedded}`,
+      update.emergencyLaunch ? 'emergencyLaunch=true' : '',
+    ]
+      .filter(Boolean)
+      .join('\n');
+  }, []);
+
+  async function handleCopyBuildInfo() {
+    try {
+      await Clipboard.setStringAsync(buildInfoText);
+      Alert.alert('Build info copied', 'Paste it into the task or bug report.');
+    } catch (err) {
+      Alert.alert('Could not copy', (err as Error)?.message ?? 'Please try again.');
+    }
+  }
+
   async function handleCopyDiagnostic() {
     try {
       const recent = await getRecentDiagnostics();
@@ -832,6 +867,34 @@ export default function SettingsScreen() {
         <View style={{ height: Spacing.xxl }} />
         <Text style={styles.sectionLabel}>Setup Nearr</Text>
         <SetupChecklist />
+
+        {/* --- Build info (non-production builds only) ----------------- */}
+        {/*
+          Answers "which app, which update, which backend am I looking at?" on
+          the device itself. After the 2026-08-18 bad OTA there was no way to
+          tell a stale install from a live one without a laptop.
+
+          Gated on areDeveloperToolsVisible(), NOT __DEV__: an update published
+          to the development channel is a production-mode bundle, so __DEV__ is
+          false exactly when this card matters. It requires an explicit
+          development/preview declaration, so it can never appear in the App
+          Store build.
+        */}
+        {areDeveloperToolsVisible() ? (
+          <>
+            <View style={{ height: Spacing.xxl }} />
+            <Text style={styles.sectionLabel}>Build info</Text>
+            <Card style={styles.section}>
+              <Text style={[typography.caption, styles.muted]}>{buildInfoText}</Text>
+              <View style={{ height: Spacing.sm }} />
+              <Button
+                title="Copy build info"
+                variant="ghost"
+                onPress={() => void handleCopyBuildInfo()}
+              />
+            </Card>
+          </>
+        ) : null}
 
         {/* --- Testing (dev/debug builds only) ------------------------ */}
         {__DEV__ ? (
