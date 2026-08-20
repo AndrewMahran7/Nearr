@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
@@ -12,6 +12,11 @@ import {
   findTargetEvidenceHandoff,
 } from '../src/pipeline/targetedNoteContext.js';
 import { selectModelProvider } from '../src/providers/model.js';
+import {
+  encodeRetainedFrameSnapshot,
+  MAX_RETAINED_FRAME_BYTES,
+  restoreRetainedFrameSnapshot,
+} from '../src/pipeline/retainedFrameSnapshot.js';
 import type { SelectedFrame } from '../src/types/media.js';
 
 function frame(timestampSeconds: number): SelectedFrame {
@@ -156,6 +161,30 @@ test('unscoped source metadata is retained as bounded caption evidence', () => {
     'Ocean hotel tour',
     'Infinity pool overlooking the water',
   ]);
+});
+
+test('one bounded frame snapshot survives temp cleanup and rejects oversized blobs', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'nearr-retained-frame-'));
+  const source = path.join(dir, 'source.jpg');
+  const restored = path.join(dir, 'restored.jpg');
+  try {
+    await writeFile(source, new Uint8Array([0xff, 0xd8, 0x11, 0x22, 0xff, 0xd9]));
+    const snapshot = await encodeRetainedFrameSnapshot([{ ...frame(12), path: source }]);
+    assert.ok(snapshot);
+    await rm(source);
+    const retained = await restoreRetainedFrameSnapshot({
+      value: snapshot?.postgresBytea,
+      timestampSeconds: snapshot?.timestampSeconds,
+      outputPath: restored,
+    });
+    assert.equal(retained?.timestampSeconds, 12);
+    assert.deepEqual([...await readFile(restored)], [0xff, 0xd8, 0x11, 0x22, 0xff, 0xd9]);
+    const oversized = path.join(dir, 'oversized.jpg');
+    await writeFile(oversized, new Uint8Array(MAX_RETAINED_FRAME_BYTES + 1));
+    assert.equal(await encodeRetainedFrameSnapshot([{ ...frame(13), path: oversized }]), null);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
 });
 
 const visualCases = [

@@ -93,6 +93,8 @@ alter table public.share_media_tasks
   add column if not exists retry_cycles integer not null default 0,
   add column if not exists evidence_snapshot jsonb not null default '[]'::jsonb,
   add column if not exists media_acquired_once boolean not null default false,
+  add column if not exists frame_snapshot bytea,
+  add column if not exists frame_snapshot_timestamp_seconds double precision,
   add column if not exists analysis_model text,
   add column if not exists prompt_version text,
   add column if not exists latency_ms integer,
@@ -117,6 +119,12 @@ alter table public.share_media_tasks
     jsonb_typeof(evidence_snapshot) = 'array'
     and octet_length(evidence_snapshot::text) <= 16000
   );
+
+alter table public.share_media_tasks
+  drop constraint if exists share_media_tasks_frame_snapshot_check;
+alter table public.share_media_tasks
+  add constraint share_media_tasks_frame_snapshot_check
+  check (frame_snapshot is null or octet_length(frame_snapshot) <= 524288);
 
 alter table public.share_media_tasks
   drop constraint if exists share_media_tasks_target_check;
@@ -335,6 +343,14 @@ begin
         when public.share_media_tasks.source_url is distinct from excluded.source_url
           or public.share_media_tasks.target_place_id is distinct from excluded.target_place_id
           then false else public.share_media_tasks.media_acquired_once end,
+      frame_snapshot = case
+        when public.share_media_tasks.source_url is distinct from excluded.source_url
+          or public.share_media_tasks.target_place_id is distinct from excluded.target_place_id
+          then null else public.share_media_tasks.frame_snapshot end,
+      frame_snapshot_timestamp_seconds = case
+        when public.share_media_tasks.source_url is distinct from excluded.source_url
+          or public.share_media_tasks.target_place_id is distinct from excluded.target_place_id
+          then null else public.share_media_tasks.frame_snapshot_timestamp_seconds end,
       updated_at = now();
   else
     -- Synchronous generation won the race, a user deleted the video-derived
@@ -348,6 +364,8 @@ begin
              when coalesce(length(trim(new.ai_note)), 0) > 0 then 'already_present'
              else 'not_video_derived'
            end,
+           frame_snapshot = null,
+           frame_snapshot_timestamp_seconds = null,
            updated_at = now()
      where task_kind = 'ai_note_enrichment'
        and saved_place_id = new.id
@@ -544,6 +562,8 @@ select
   mt.ai_note_outcome,
   jsonb_array_length(mt.evidence_snapshot) as retained_evidence_count,
   mt.media_acquired_once,
+  octet_length(mt.frame_snapshot) as retained_frame_bytes,
+  mt.frame_snapshot_timestamp_seconds,
   mt.updated_at as task_updated_at
 from public.saved_places sp
 left join public.share_media_tasks mt

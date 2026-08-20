@@ -28,6 +28,7 @@ import { cleanupMedia } from './cleanupMedia.js';
 import {
   renewAiNoteRetryCycle,
   recordAiNoteEvidenceSnapshot,
+  recordAiNoteFrameSnapshot,
   requeueAiNoteTask,
   setProgress,
   setTaskStatus,
@@ -50,6 +51,10 @@ import {
   sanitizeTargetEvidence,
   type TargetEvidenceHandoff,
 } from './targetedNoteContext.js';
+import {
+  encodeRetainedFrameSnapshot,
+  restoreRetainedFrameSnapshot,
+} from './retainedFrameSnapshot.js';
 
 export type TaskDeps = {
   cfg: WorkerConfig;
@@ -123,6 +128,8 @@ async function loadAiNoteTarget(
     await setTaskStatus(client, task.id, 'failed', {
       failure_code: 'ai_note_target_missing',
       ai_note_outcome: 'target_missing',
+      frame_snapshot: null,
+      frame_snapshot_timestamp_seconds: null,
       completed_at: new Date().toISOString(),
     });
     return null;
@@ -141,6 +148,8 @@ async function loadAiNoteTarget(
     await setTaskStatus(client, task.id, 'failed', {
       failure_code: 'ai_note_target_missing',
       ai_note_outcome: 'target_missing',
+      frame_snapshot: null,
+      frame_snapshot_timestamp_seconds: null,
       completed_at: new Date().toISOString(),
     });
     return null;
@@ -155,6 +164,8 @@ async function loadAiNoteTarget(
       progress_stage: 'cleanup',
       failure_code: null,
       ai_note_outcome: 'already_present',
+      frame_snapshot: null,
+      frame_snapshot_timestamp_seconds: null,
       completed_at: new Date().toISOString(),
     });
     return null;
@@ -331,6 +342,65 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
       diagnostics.noteStructuredEvidenceInsufficient = true;
     }
 
+    // A single bounded frame survives only while this exact note obligation is
+    // unresolved. It rescues visual-only saves when the provider was down and
+    // the public source disappeared before the next cooled retry.
+    if (task.task_kind === 'ai_note_enrichment' && aiNoteTarget && task.frame_snapshot) {
+      const retainedFrame = await restoreRetainedFrameSnapshot({
+        value: task.frame_snapshot,
+        timestampSeconds: task.frame_snapshot_timestamp_seconds,
+        outputPath: jobTemp.file('retained-ai-note-frame.jpg'),
+      });
+      if (retainedFrame) {
+        await setProgress(client, task, 'analyzing_evidence');
+        const retainedFrameAnalysis = await deps.model.analyze({
+          platform: task.platform,
+          canonicalUrl: task.canonical_url || task.source_url,
+          transcript: [],
+          ocr: [],
+          ocrExtracted: false,
+          frames: [retainedFrame],
+          metadataTitle: null,
+          metadataDescription: null,
+          targetPlace: {
+            name: aiNoteTarget.name,
+            category: aiNoteTarget.category,
+            formattedAddress: aiNoteTarget.formattedAddress,
+          },
+          retainedEvidence: aiNoteTarget.handoff?.evidence ?? [],
+          signal: controller.signal,
+        });
+        accumulateModelDiagnostics(diagnostics, retainedFrameAnalysis);
+        const retainedFrameHasCue = retainedFrameAnalysis.evidence.places.some(
+          (place) => !!place.memoryCue?.trim() && place.memoryCueEvidence.length > 0,
+        );
+        diagnostics.noteRetainedFrameAttempt = true;
+        diagnostics.noteGenerationPasses = (Number(diagnostics.noteGenerationPasses) || 0) + 1;
+        diagnostics.noteInputFrameCount = 1;
+        diagnostics.noteInputEvidenceCount = aiNoteTarget.handoff?.evidence.length ?? 0;
+        diagnostics.modelProvider = retainedFrameAnalysis.provider;
+        diagnostics.modelName = retainedFrameAnalysis.modelName;
+        diagnostics.promptVersion = retainedFrameAnalysis.promptVersion;
+        if (retainedFrameHasCue) {
+          diagnostics.durationMs = Date.now() - startedAt;
+          const fin = await finalizeWithRetry(() => verifyPlaceEvidence(cfg, {
+            taskId: task.id,
+            targetPlaceId: task.target_place_id ?? null,
+            targetSourceUrl: task.canonical_url || task.source_url,
+            outcome: 'evidence',
+            evidence: retainedFrameAnalysis.evidence,
+            diagnostics,
+            signal: controller.signal,
+          }));
+          if (!fin.ok) {
+            throw new MediaError('download_failed', `verifying_place:finalize_http_${fin.status}`, fin.retryAfterSeconds);
+          }
+          return;
+        }
+        warnings.push('retained_frame_insufficient');
+      }
+    }
+
     // 1. Retrieve public media to the isolated temp dir.
     await setProgress(client, task, 'retrieving_media');
     const rawUrl = task.canonical_url || task.source_url;
@@ -459,6 +529,8 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
       const acquired = frames.length > 0 || transcript.segments.length > 0 || ocr.length > 0 ||
         !!media.metadataTitle || !!media.metadataDescription || primaryContext.evidence.length > 0;
       await recordAiNoteEvidenceSnapshot(client, task, primaryContext.evidence, acquired);
+      const frameSnapshot = await encodeRetainedFrameSnapshot(primaryContext.frames);
+      if (frameSnapshot) await recordAiNoteFrameSnapshot(client, task, frameSnapshot);
     }
     const analyzeTarget = async (context: typeof primaryContext) => {
       const analyzeInput = {

@@ -177,6 +177,8 @@ export type MediaTask = {
   evidence_snapshot?: unknown;
   /** True once any attempt acquired usable media/text. */
   media_acquired_once?: boolean;
+  frame_snapshot?: unknown;
+  frame_snapshot_timestamp_seconds?: number | null;
   /** Last disposition, used to widen scene context after a quality rejection. */
   ai_note_outcome?: string | null;
   model_calls?: number | null;

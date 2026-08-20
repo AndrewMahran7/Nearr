@@ -7,6 +7,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { WorkerConfig } from '../config/env.js';
 import { MediaError, type MediaTask, type ProgressStage } from '../types/media.js';
 import type { EvidenceItem } from '../types/evidence.js';
+import type { RetainedFrameSnapshot } from '../pipeline/retainedFrameSnapshot.js';
 import { log } from '../util/logger.js';
 
 /**
@@ -212,6 +213,30 @@ export async function recordAiNoteEvidenceSnapshot(
   if (error) {
     throw new MediaError('provider_unavailable', 'ai_note_evidence_snapshot_failed');
   }
+}
+
+export async function recordAiNoteFrameSnapshot(
+  client: SupabaseClient,
+  task: MediaTask,
+  snapshot: RetainedFrameSnapshot,
+): Promise<void> {
+  let query = client
+    .from('share_media_tasks')
+    .update({
+      frame_snapshot: snapshot.postgresBytea,
+      frame_snapshot_timestamp_seconds: snapshot.timestampSeconds,
+      media_acquired_once: true,
+    })
+    .eq('id', task.id)
+    .eq('task_kind', 'ai_note_enrichment')
+    .eq('saved_place_id', task.saved_place_id)
+    .eq('target_place_id', task.target_place_id)
+    .eq('source_url', task.source_url);
+  query = task.canonical_url == null
+    ? query.is('canonical_url', null)
+    : query.eq('canonical_url', task.canonical_url);
+  const { error } = await query;
+  if (error) throw new MediaError('provider_unavailable', 'ai_note_frame_snapshot_failed');
 }
 
 /** Best-effort cleanup of tasks that exhausted their retry budget. */

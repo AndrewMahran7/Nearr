@@ -74,8 +74,11 @@ The note task first tries the selected logical scene's compact observations.
 If those cannot support a useful cue, it reacquires public media and sends at
 most eight nearby frames to Gemini, widening once to at most sixteen. Selected
 transcript/OCR and unscoped creator-caption evidence are persisted before the
-provider call, so a provider outage cannot discard compact evidence already
-extracted. Raw video, base64 frames, and giant model payloads are never stored.
+provider call. One relevant JPEG, capped at 512 KiB, is retained privately on
+the unresolved task and cleared on success, correction, or ineligibility. This
+lets a visual-only note recover if the provider is down and the public source
+later disappears without storing videos, frame sets, base64 payloads, or giant
+model responses.
 
 Multi-place integration contract:
 

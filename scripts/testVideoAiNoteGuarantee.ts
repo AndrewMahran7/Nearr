@@ -281,10 +281,15 @@ assert.doesNotMatch(finalizer, /event: 'ai_note_generation'/);
 assert.match(finalizer, /noteEvidenceForLogicalMention/);
 assert.match(migration, /evidence_snapshot jsonb/);
 assert.match(migration, /media_acquired_once boolean/);
+assert.match(migration, /frame_snapshot bytea/);
+assert.match(migration, /octet_length\(frame_snapshot\) <= 524288/);
+assert.match(migration, /frame_snapshot = null/);
 assert.match(migration, /model_input_tokens integer/);
 assert.match(migration, /model_output_tokens integer/);
 assert.match(migration, /model_thinking_tokens integer/);
 assert.match(worker, /accumulateModelDiagnostics/);
+assert.match(worker, /restoreRetainedFrameSnapshot/);
+assert.match(worker, /recordAiNoteFrameSnapshot/);
 assert.match(finalizer, /model_input_tokens: Number\.isFinite\(diagnostics\.modelInputTokens\)/);
 const evidenceWriter = taskDb.slice(
   taskDb.indexOf('export async function recordAiNoteEvidenceSnapshot'),
