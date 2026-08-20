@@ -1,0 +1,199 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-20T04:21:20.130Z",
+  "caseId": "tiktok_coffee_exact",
+  "groundTruth": "Tuxedo Cat's Coffee, 6075 Heath Rd, San Antonio, Texas",
+  "evaluationStatus": "PENDING_MANUAL_CLASSIFICATION",
+  "input": {
+    "kind": "video",
+    "source": "C:\\Users\\andre\\Desktop\\Nearr-vayrin-core\\artifacts\\vayrin\\fixtures\\tiktok-coffee.mp4",
+    "extractedFrameCount": 22
+  },
+  "model": "gpt-5.6-sol",
+  "promptVersion": "vayrin-visual-geolocation-2026-08-19.v1",
+  "reasoningEffort": "model_default",
+  "credential": {
+    "hasApiKey": true,
+    "apiKeyVariable": "MEDIA_TRANSCRIPTION_API_KEY"
+  },
+  "pricingUsdPerMillionTokens": {
+    "inputPerMillion": 5,
+    "cachedInputPerMillion": 0.5,
+    "outputPerMillion": 30
+  },
+  "runs": [
+    {
+      "strategy": "diverse",
+      "budget": 8,
+      "consideredFrameCount": 22,
+      "selectedFrameCount": 8,
+      "selectedTimestampsSeconds": [
+        0,
+        7.488,
+        8.558,
+        9.628,
+        11.767,
+        21.395,
+        22.465,
+        23.534
+      ],
+      "meanPairwiseDistance": 33.82,
+      "condition": "visual_only",
+      "ok": true,
+      "latencyMs": 6642,
+      "usage": {
+        "inputTokens": 11412,
+        "outputTokens": 229,
+        "reasoningTokens": 0,
+        "totalTokens": 11641,
+        "cachedInputTokens": 0
+      },
+      "estimatedCostUsd": 0.06393,
+      "payload": {
+        "place_hypotheses": [
+          {
+            "name": "Tuxedo Cat's Coffee",
+            "place_type": "mobile coffee shop and garden seating venue",
+            "city": "San Antonio",
+            "region": "Texas",
+            "country": "United States",
+            "specificity": "exact_location",
+            "confidence": 0.99,
+            "reasoning_summary": "The video identifies the coffee business and full street address, while showing its branded mobile espresso trailer and surrounding garden seating.",
+            "supporting_visual_clues": [
+              "White coffee trailer displays the branding and website “tuxedocatscoffeellc.us”",
+              "Cat-themed stickers and decorations match the named business",
+              "Distinctive shaded garden contains palms, bamboo, picnic tables, and ornamental seating"
+            ],
+            "supporting_textual_clues": [
+              "Overlay repeatedly reads “Tuxedo Cat’s Coffee 6075 Heath Rd, San Antonio, TX 78250”",
+              "Trailer text includes “The Purrfect cup!” and “Mobile Espresso”"
+            ],
+            "conflicting_clues": [],
+            "needs_external_verification": false
+          }
+        ],
+        "multiple_distinct_places_visible": false,
+        "additional_place_segments": [],
+        "metadata_was_sufficient": false
+      }
+    },
+    {
+      "strategy": "diverse",
+      "budget": 8,
+      "consideredFrameCount": 22,
+      "selectedFrameCount": 8,
+      "selectedTimestampsSeconds": [
+        0,
+        7.488,
+        8.558,
+        9.628,
+        11.767,
+        21.395,
+        22.465,
+        23.534
+      ],
+      "meanPairwiseDistance": 33.82,
+      "condition": "visual_metadata",
+      "ok": true,
+      "latencyMs": 7131,
+      "usage": {
+        "inputTokens": 11426,
+        "outputTokens": 264,
+        "reasoningTokens": 0,
+        "totalTokens": 11690,
+        "cachedInputTokens": 1380
+      },
+      "estimatedCostUsd": 0.05884,
+      "payload": {
+        "place_hypotheses": [
+          {
+            "name": "Tuxedo Cat's Coffee",
+            "place_type": "mobile coffee shop and garden seating venue",
+            "city": "San Antonio",
+            "region": "Texas",
+            "country": "United States",
+            "specificity": "exact_location",
+            "confidence": 0.99,
+            "reasoning_summary": "Repeated video overlays identify Tuxedo Cat's Coffee and give its full street address; the coffee trailer also displays the matching business website and cat-themed branding.",
+            "supporting_visual_clues": [
+              "White mobile espresso trailer with cat illustrations and outdoor service window",
+              "Distinctive lush garden seating area with palms, bamboo, colorful furniture, and gravel paths",
+              "Coffee drinks, bagels, and avocado toast shown at the garden tables"
+            ],
+            "supporting_textual_clues": [
+              "Overlay: \"Tuxedo Cat's Coffee 6075 Heath Rd, San Antonio, TX 78250\"",
+              "Trailer text: \"tuxedocatscoffeellc.us\"",
+              "Trailer text includes \"The Purrfect cup!\" and \"Mobile Espresso\"",
+              "Opening overlay: \"Hidden Gem Coffee Shop San Antonio Texas\""
+            ],
+            "conflicting_clues": [],
+            "needs_external_verification": false
+          }
+        ],
+        "multiple_distinct_places_visible": false,
+        "additional_place_segments": [],
+        "metadata_was_sufficient": false
+      }
+    },
+    {
+      "strategy": "diverse",
+      "budget": 8,
+      "consideredFrameCount": 22,
+      "selectedFrameCount": 8,
+      "selectedTimestampsSeconds": [
+        0,
+        7.488,
+        8.558,
+        9.628,
+        11.767,
+        21.395,
+        22.465,
+        23.534
+      ],
+      "meanPairwiseDistance": 33.82,
+      "condition": "fused",
+      "ok": true,
+      "latencyMs": 10331,
+      "usage": {
+        "inputTokens": 11462,
+        "outputTokens": 368,
+        "reasoningTokens": 89,
+        "totalTokens": 11830,
+        "cachedInputTokens": 1380
+      },
+      "estimatedCostUsd": 0.06214,
+      "payload": {
+        "place_hypotheses": [
+          {
+            "name": "Tuxedo Cat's Coffee at Palm Buddha",
+            "place_type": "coffee shop / mobile espresso trailer in a plant nursery garden",
+            "city": "San Antonio",
+            "region": "Texas",
+            "country": "United States",
+            "specificity": "exact_location",
+            "confidence": 0.99,
+            "reasoning_summary": "A cat-themed espresso trailer and garden seating are shown, while repeated on-screen text explicitly identifies Tuxedo Cat's Coffee at 6075 Heath Rd, San Antonio, TX 78250.",
+            "supporting_visual_clues": [
+              "White mobile espresso trailer decorated with cat graphics",
+              "Outdoor tables and seating amid dense nursery-style tropical plants",
+              "Coffee drinks, bagels, and avocado toast shown throughout",
+              "Cat-themed merchandise and seasonal garden decorations"
+            ],
+            "supporting_textual_clues": [
+              "On-screen text: “Tuxedo Cat's Coffee, 6075 Heath Rd, San Antonio, TX 78250”",
+              "Trailer text includes “tuxedocatscoffeellc.us”",
+              "Trailer text includes “Mobile Espresso” and “The Purrfect cup!”",
+              "Caption says the coffee shop is located in the Palm Buddha plant nursery"
+            ],
+            "conflicting_clues": [],
+            "needs_external_verification": false
+          }
+        ],
+        "multiple_distinct_places_visible": false,
+        "additional_place_segments": [],
+        "metadata_was_sufficient": true
+      }
+    }
+  ]
+}

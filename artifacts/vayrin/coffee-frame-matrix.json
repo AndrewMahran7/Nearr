@@ -1,0 +1,382 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-20T04:22:30.301Z",
+  "caseId": "tiktok_coffee_frame_matrix",
+  "groundTruth": "Tuxedo Cat's Coffee, 6075 Heath Rd, San Antonio, Texas",
+  "evaluationStatus": "PENDING_MANUAL_CLASSIFICATION",
+  "input": {
+    "kind": "video",
+    "source": "C:\\Users\\andre\\Desktop\\Nearr-vayrin-core\\artifacts\\vayrin\\fixtures\\tiktok-coffee.mp4",
+    "extractedFrameCount": 22
+  },
+  "model": "gpt-5.6-sol",
+  "promptVersion": "vayrin-visual-geolocation-2026-08-19.v1",
+  "reasoningEffort": "model_default",
+  "credential": {
+    "hasApiKey": true,
+    "apiKeyVariable": "MEDIA_TRANSCRIPTION_API_KEY"
+  },
+  "pricingUsdPerMillionTokens": {
+    "inputPerMillion": 5,
+    "cachedInputPerMillion": 0.5,
+    "outputPerMillion": 30
+  },
+  "runs": [
+    {
+      "strategy": "uniform",
+      "budget": 6,
+      "consideredFrameCount": 22,
+      "selectedFrameCount": 6,
+      "selectedTimestampsSeconds": [
+        0,
+        5.349,
+        9.628,
+        14.976,
+        20.325,
+        24.604
+      ],
+      "meanPairwiseDistance": 28.07,
+      "condition": "visual_only",
+      "ok": true,
+      "latencyMs": 6475,
+      "usage": {
+        "inputTokens": 8918,
+        "outputTokens": 236,
+        "reasoningTokens": 0,
+        "totalTokens": 9154,
+        "cachedInputTokens": 1380
+      },
+      "estimatedCostUsd": 0.04546,
+      "payload": {
+        "place_hypotheses": [
+          {
+            "name": "Tuxedo Cat's Coffee",
+            "place_type": "coffee shop",
+            "city": "San Antonio",
+            "region": "Texas",
+            "country": "United States",
+            "specificity": "exact_location",
+            "confidence": 0.99,
+            "reasoning_summary": "The video shows colorful iced drinks and a garden seating area; repeated overlays explicitly identify the coffee shop and give its full street address, while an entrance banner visibly begins “Tuxedo Cat’s.”",
+            "supporting_visual_clues": [
+              "Outdoor garden seating with decorative metal furniture and bamboo",
+              "Coffee drinks being prepared and displayed",
+              "Pink directional entrance banner bearing the venue name"
+            ],
+            "supporting_textual_clues": [
+              "Overlay: “Tuxedo Cat’s Coffee”",
+              "Overlay: “6075 Heath Rd., San Antonio, TX 78250”",
+              "Opening overlay: “Hidden Gem Coffee Shop San Antonio Texas”",
+              "Banner text: “Tuxedo Cat’s … & Botanical …”"
+            ],
+            "conflicting_clues": [],
+            "needs_external_verification": false
+          }
+        ],
+        "multiple_distinct_places_visible": false,
+        "additional_place_segments": [],
+        "metadata_was_sufficient": false
+      }
+    },
+    {
+      "strategy": "uniform",
+      "budget": 12,
+      "consideredFrameCount": 22,
+      "selectedFrameCount": 12,
+      "selectedTimestampsSeconds": [
+        0,
+        3.209,
+        5.349,
+        7.488,
+        9.628,
+        11.767,
+        12.837,
+        14.976,
+        17.116,
+        20.325,
+        22.465,
+        24.604
+      ],
+      "meanPairwiseDistance": 30.39,
+      "condition": "visual_only",
+      "ok": true,
+      "latencyMs": 6425,
+      "usage": {
+        "inputTokens": 16400,
+        "outputTokens": 257,
+        "reasoningTokens": 0,
+        "totalTokens": 16657,
+        "cachedInputTokens": 1380
+      },
+      "estimatedCostUsd": 0.0835,
+      "payload": {
+        "place_hypotheses": [
+          {
+            "name": "Tuxedo Cat's Coffee",
+            "place_type": "coffee trailer and garden café",
+            "city": "San Antonio",
+            "region": "Texas",
+            "country": "United States",
+            "specificity": "exact_location",
+            "confidence": 0.99,
+            "reasoning_summary": "The video shows a cat-themed coffee trailer in a shaded garden, while repeated overlays explicitly identify the business and full street address.",
+            "supporting_visual_clues": [
+              "White mobile coffee trailer decorated with tuxedo-cat graphics",
+              "Garden seating amid bamboo, palms, and other dense vegetation",
+              "Colorful layered iced drinks and café food shown throughout",
+              "Fence banner begins with “Tuxedo Cat’s”"
+            ],
+            "supporting_textual_clues": [
+              "Overlay: “Tuxedo Cat’s Coffee, 6075 Heath Rd, San Antonio, TX 78250”",
+              "Trailer text: “tuxedocatscoffeellc.us”",
+              "Trailer text includes “Mobile Espresso” and “The Purrfect cup!”",
+              "Opening overlay: “Hidden Gem Coffee Shop San Antonio Texas”"
+            ],
+            "conflicting_clues": [],
+            "needs_external_verification": false
+          }
+        ],
+        "multiple_distinct_places_visible": false,
+        "additional_place_segments": [],
+        "metadata_was_sufficient": false
+      }
+    },
+    {
+      "strategy": "pipeline",
+      "budget": 6,
+      "consideredFrameCount": 22,
+      "selectedFrameCount": 6,
+      "selectedTimestampsSeconds": [
+        0,
+        2.139,
+        3.209,
+        4.279,
+        5.349,
+        6.418
+      ],
+      "meanPairwiseDistance": 25.4,
+      "condition": "visual_only",
+      "ok": true,
+      "latencyMs": 6745,
+      "usage": {
+        "inputTokens": 8918,
+        "outputTokens": 337,
+        "reasoningTokens": 85,
+        "totalTokens": 9255,
+        "cachedInputTokens": 1380
+      },
+      "estimatedCostUsd": 0.04849,
+      "payload": {
+        "place_hypotheses": [
+          {
+            "name": "Tuxedo Cat's Coffee & Botanical Bar",
+            "place_type": "coffee shop and botanical garden café",
+            "city": "San Antonio",
+            "region": "Texas",
+            "country": "United States",
+            "specificity": "venue",
+            "confidence": 0.99,
+            "reasoning_summary": "A large entrance banner directly names “Tuxedo Cat’s Coffee & Botanical Bar,” while the video overlay identifies the setting as San Antonio, Texas. The greenhouse, botanical grounds, drink service window, and cat-themed decorations are consistent across the frames.",
+            "supporting_visual_clues": [
+              "Entrance banner with the venue name and directional arrow",
+              "Greenhouse surrounded by cacti and other cultivated plants",
+              "Outdoor café seating amid dense botanical landscaping",
+              "Cat-themed paw-print trim and artwork at the drink window"
+            ],
+            "supporting_textual_clues": [
+              "“Tuxedo Cat’s Coffee & Botanical Bar” on the entrance banner",
+              "“Hidden Gem Coffee Shop San Antonio Texas” in the video overlay",
+              "“OPEN” sign beside the venue banner"
+            ],
+            "conflicting_clues": [],
+            "needs_external_verification": false
+          }
+        ],
+        "multiple_distinct_places_visible": false,
+        "additional_place_segments": [],
+        "metadata_was_sufficient": false
+      }
+    },
+    {
+      "strategy": "pipeline",
+      "budget": 12,
+      "consideredFrameCount": 22,
+      "selectedFrameCount": 12,
+      "selectedTimestampsSeconds": [
+        0,
+        2.139,
+        3.209,
+        4.279,
+        5.349,
+        6.418,
+        7.488,
+        8.558,
+        9.628,
+        10.697,
+        11.767,
+        12.837
+      ],
+      "meanPairwiseDistance": 31.2,
+      "condition": "visual_only",
+      "ok": true,
+      "latencyMs": 9051,
+      "usage": {
+        "inputTokens": 16400,
+        "outputTokens": 271,
+        "reasoningTokens": 0,
+        "totalTokens": 16671,
+        "cachedInputTokens": 1380
+      },
+      "estimatedCostUsd": 0.08392,
+      "payload": {
+        "place_hypotheses": [
+          {
+            "name": "Tuxedo Cat's Coffee & Botanical Bar",
+            "place_type": "outdoor coffee shop and botanical garden",
+            "city": "San Antonio",
+            "region": "Texas",
+            "country": "United States",
+            "specificity": "exact_location",
+            "confidence": 0.99,
+            "reasoning_summary": "The video shows a coffee trailer in a landscaped garden, with a large entrance banner naming “Tuxedo Cat’s Coffee & Botanical Bar” and overlays giving its street address.",
+            "supporting_visual_clues": [
+              "White mobile espresso trailer decorated with tuxedo-cat graphics",
+              "Outdoor seating among bamboo, palms, greenhouse plants, and garden paths",
+              "Coffee drinks, avocado toast, and cat-themed merchandise are shown"
+            ],
+            "supporting_textual_clues": [
+              "Banner reads “Tuxedo Cat’s Coffee & Botanical Bar”",
+              "Overlay reads “Tuxedo Cat’s Coffee, 6075 Heath Rd, San Antonio, TX 78250”",
+              "Trailer displays “tuxedocatscoffeellc.us” and “Tuxedo Cat’s Coffee LLC”",
+              "Opening overlay reads “Hidden Gem Coffee Shop San Antonio Texas”"
+            ],
+            "conflicting_clues": [],
+            "needs_external_verification": false
+          }
+        ],
+        "multiple_distinct_places_visible": false,
+        "additional_place_segments": [],
+        "metadata_was_sufficient": false
+      }
+    },
+    {
+      "strategy": "diverse",
+      "budget": 6,
+      "consideredFrameCount": 22,
+      "selectedFrameCount": 6,
+      "selectedTimestampsSeconds": [
+        0,
+        8.558,
+        9.628,
+        21.395,
+        22.465,
+        23.534
+      ],
+      "meanPairwiseDistance": 35.27,
+      "condition": "visual_only",
+      "ok": true,
+      "latencyMs": 5051,
+      "usage": {
+        "inputTokens": 8918,
+        "outputTokens": 240,
+        "reasoningTokens": 0,
+        "totalTokens": 9158,
+        "cachedInputTokens": 1380
+      },
+      "estimatedCostUsd": 0.04558,
+      "payload": {
+        "place_hypotheses": [
+          {
+            "name": "Tuxedo Cat's Coffee",
+            "place_type": "coffee shop with garden seating",
+            "city": "San Antonio",
+            "region": "Texas",
+            "country": "United States",
+            "specificity": "exact_location",
+            "confidence": 0.99,
+            "reasoning_summary": "Repeated video overlay explicitly identifies the coffee shop and gives its full street address; the frames consistently show drinks, cat-themed merchandise, food, and a landscaped outdoor seating garden.",
+            "supporting_visual_clues": [
+              "Coffee drinks being prepared and served",
+              "Cat-themed stickers and garden decorations",
+              "Landscaped outdoor seating area with café tables and benches",
+              "All frames appear to depict one continuous café venue"
+            ],
+            "supporting_textual_clues": [
+              "Overlay: \"Tuxedo Cat's Coffee\"",
+              "Overlay: \"6075 Heath Rd, San Antonio, TX 78250\"",
+              "Opening overlay: \"Hidden Gem Coffee Shop San Antonio Texas\"",
+              "Handwritten sign: \"Stickers $3 each\""
+            ],
+            "conflicting_clues": [],
+            "needs_external_verification": false
+          }
+        ],
+        "multiple_distinct_places_visible": false,
+        "additional_place_segments": [],
+        "metadata_was_sufficient": false
+      }
+    },
+    {
+      "strategy": "diverse",
+      "budget": 12,
+      "consideredFrameCount": 22,
+      "selectedFrameCount": 12,
+      "selectedTimestampsSeconds": [
+        0,
+        3.209,
+        7.488,
+        8.558,
+        9.628,
+        10.697,
+        11.767,
+        12.837,
+        13.907,
+        21.395,
+        22.465,
+        23.534
+      ],
+      "meanPairwiseDistance": 32.97,
+      "condition": "visual_only",
+      "ok": true,
+      "latencyMs": 9538,
+      "usage": {
+        "inputTokens": 16400,
+        "outputTokens": 377,
+        "reasoningTokens": 133,
+        "totalTokens": 16777,
+        "cachedInputTokens": 1380
+      },
+      "estimatedCostUsd": 0.0871,
+      "payload": {
+        "place_hypotheses": [
+          {
+            "name": "Tuxedo Cat's Coffee",
+            "place_type": "mobile coffee trailer with outdoor garden seating",
+            "city": "San Antonio",
+            "region": "Texas",
+            "country": "United States",
+            "specificity": "exact_location",
+            "confidence": 0.99,
+            "reasoning_summary": "The video repeatedly displays the business name and full street address, while the coffee trailer itself carries matching Tuxedo Cat's Coffee branding and website text.",
+            "supporting_visual_clues": [
+              "Cat-themed coffee trailer",
+              "Shaded outdoor garden seating surrounded by bamboo and palms",
+              "Coffee drinks, pastries, and avocado toast served at the site"
+            ],
+            "supporting_textual_clues": [
+              "Overlay: “Tuxedo Cat's Coffee, 6075 Heath Rd, San Antonio, TX 78250”",
+              "Trailer branding: “Tuxedo Cat's Coffee LLC”",
+              "Trailer website: “tuxedocatscoffeellc.us”",
+              "Trailer slogan: “The Purrfect cup!”"
+            ],
+            "conflicting_clues": [],
+            "needs_external_verification": false
+          }
+        ],
+        "multiple_distinct_places_visible": false,
+        "additional_place_segments": [],
+        "metadata_was_sufficient": false
+      }
+    }
+  ]
+}

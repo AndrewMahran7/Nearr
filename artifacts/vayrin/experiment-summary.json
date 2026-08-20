@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "experimentDate": "2026-08-19",
+  "model": "gpt-5.6-sol",
+  "promptVersion": "vayrin-visual-geolocation-2026-08-19.v1",
+  "pricingUsdPerMillionTokens": {
+    "input": 5,
+    "cachedInput": 0.5,
+    "output": 30
+  },
+  "totals": {
+    "apiCalls": 11,
+    "inputTokens": 114414,
+    "outputTokens": 3436,
+    "estimatedCostUsd": 0.61305,
+    "latencyMs": {
+      "minimum": 5051,
+      "average": 7742,
+      "maximum": 10331
+    }
+  },
+  "scoredRuns": {
+    "exact": 9,
+    "useful": 0,
+    "coarse": 0,
+    "wrong": 0,
+    "noAnswer": 1,
+    "unknownExploratory": 1
+  },
+  "recommendation": {
+    "initialFrameCount": 6,
+    "selection": "diverse",
+    "reason": "All six-frame strategies were exact on the positive fixture; diverse had the best measured visual spread and lowest latency, while 12 frames roughly doubled input cost without improving specificity.",
+    "measuredSixFrameCostUsd": {
+      "positiveFixture": 0.04558,
+      "negativeFixture": 0.0148
+    }
+  },
+  "limitations": [
+    "Only one independently verified positive specific-place fixture was locally available.",
+    "The multi-place corpus video download failed with provider HTTP 403 and was not replaced with an unverified source.",
+    "The fused zoo result is UNKNOWN, not scored as exact or wrong, because the fixture does not independently verify the specific zoo.",
+    "Hard natural-feature cases such as cliffs and beaches were not locally available and remain unproven."
+  ]
+}

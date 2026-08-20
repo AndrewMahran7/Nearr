@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-20T04:23:04.457Z",
+  "caseId": "youtube_zoo_negative",
+  "groundTruth": "No identifiable specific zoo or place",
+  "evaluationStatus": "PENDING_MANUAL_CLASSIFICATION",
+  "input": {
+    "kind": "video",
+    "source": "C:\\Users\\andre\\Desktop\\Nearr-vayrin-core\\artifacts\\vayrin\\fixtures\\youtube-zoo-negative.mp4",
+    "extractedFrameCount": 9
+  },
+  "model": "gpt-5.6-sol",
+  "promptVersion": "vayrin-visual-geolocation-2026-08-19.v1",
+  "reasoningEffort": "model_default",
+  "credential": {
+    "hasApiKey": true,
+    "apiKeyVariable": "MEDIA_TRANSCRIPTION_API_KEY"
+  },
+  "pricingUsdPerMillionTokens": {
+    "inputPerMillion": 5,
+    "cachedInputPerMillion": 0.5,
+    "outputPerMillion": 30
+  },
+  "runs": [
+    {
+      "strategy": "diverse",
+      "budget": 6,
+      "consideredFrameCount": 9,
+      "selectedFrameCount": 6,
+      "selectedTimestampsSeconds": [
+        0,
+        0.823,
+        1.645,
+        2.468,
+        8.227,
+        9.049
+      ],
+      "meanPairwiseDistance": 15,
+      "condition": "visual_only",
+      "ok": true,
+      "latencyMs": 9091,
+      "usage": {
+        "inputTokens": 2066,
+        "outputTokens": 356,
+        "reasoningTokens": 314,
+        "totalTokens": 2422,
+        "cachedInputTokens": 1380
+      },
+      "estimatedCostUsd": 0.0148,
+      "payload": {
+        "place_hypotheses": [],
+        "multiple_distinct_places_visible": false,
+        "additional_place_segments": [],
+        "metadata_was_sufficient": false
+      }
+    },
+    {
+      "strategy": "diverse",
+      "budget": 6,
+      "consideredFrameCount": 9,
+      "selectedFrameCount": 6,
+      "selectedTimestampsSeconds": [
+        0,
+        0.823,
+        1.645,
+        2.468,
+        8.227,
+        9.049
+      ],
+      "meanPairwiseDistance": 15,
+      "condition": "fused",
+      "ok": true,
+      "latencyMs": 8687,
+      "usage": {
+        "inputTokens": 2094,
+        "outputTokens": 501,
+        "reasoningTokens": 170,
+        "totalTokens": 2595,
+        "cachedInputTokens": 1380
+      },
+      "estimatedCostUsd": 0.01929,
+      "payload": {
+        "place_hypotheses": [
+          {
+            "name": "San Diego Zoo elephant exhibit",
+            "place_type": "zoo elephant enclosure",
+            "city": "San Diego",
+            "region": "California",
+            "country": "United States",
+            "specificity": "exact_location",
+            "confidence": 0.99,
+            "reasoning_summary": "A visitor stands directly before an elephant enclosure; the caption and exact spoken lines identify the well-known “Me at the zoo” video filmed at San Diego Zoo.",
+            "supporting_visual_clues": [
+              "Elephants visible behind the speaker",
+              "Purpose-built zoo enclosure with steel barriers, artificial rockwork, and scattered hay"
+            ],
+            "supporting_textual_clues": [
+              "Caption: “Me at the zoo”",
+              "Transcript matches the dialogue from the first YouTube video: “Here we are, in front of the elephants… they have really, really long trunks.”"
+            ],
+            "conflicting_clues": [],
+            "needs_external_verification": false
+          },
+          {
+            "name": "San Diego Zoo",
+            "place_type": "zoo",
+            "city": "San Diego",
+            "region": "California",
+            "country": "United States",
+            "specificity": "venue",
+            "confidence": 0.995,
+            "reasoning_summary": "The frames and accompanying dialogue reproduce the recognizable “Me at the zoo” recording made beside the elephants at San Diego Zoo.",
+            "supporting_visual_clues": [
+              "Elephant habitat in a professionally constructed zoological facility"
+            ],
+            "supporting_textual_clues": [
+              "Recognizable title and verbatim dialogue of “Me at the zoo”"
+            ],
+            "conflicting_clues": [],
+            "needs_external_verification": false
+          }
+        ],
+        "multiple_distinct_places_visible": false,
+        "additional_place_segments": [],
+        "metadata_was_sufficient": false
+      }
+    }
+  ]
+}
