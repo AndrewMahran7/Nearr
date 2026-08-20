@@ -73,6 +73,15 @@ export type AnalyzeOutput = {
     timestampsSeconds: number[];
     textContextCategories: string[];
   };
+  /** Provider-reported billing counters when available. */
+  usage?: {
+    inputTokens: number;
+    outputTokens: number;
+    thinkingTokens: number;
+    totalTokens: number;
+  };
+  /** Wall-clock provider request latency, excluding local media extraction. */
+  latencyMs?: number;
 };
 
 export interface ModelProvider {
@@ -302,6 +311,7 @@ class GeminiModel implements ModelProvider {
       const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
         this.cfg.geminiModel,
       )}:generateContent?key=${encodeURIComponent(this.cfg.geminiApiKey)}`;
+      const requestStartedAt = Date.now();
       const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
@@ -338,13 +348,28 @@ class GeminiModel implements ModelProvider {
       }
       const json = (await res.json()) as {
         candidates?: { content?: { parts?: { text?: string }[] } }[];
+        usageMetadata?: {
+          promptTokenCount?: number;
+          candidatesTokenCount?: number;
+          thoughtsTokenCount?: number;
+          totalTokenCount?: number;
+        };
       };
+      const latencyMs = Date.now() - requestStartedAt;
+      const usage = json.usageMetadata
+        ? {
+            inputTokens: Math.max(0, Number(json.usageMetadata.promptTokenCount) || 0),
+            outputTokens: Math.max(0, Number(json.usageMetadata.candidatesTokenCount) || 0),
+            thinkingTokens: Math.max(0, Number(json.usageMetadata.thoughtsTokenCount) || 0),
+            totalTokens: Math.max(0, Number(json.usageMetadata.totalTokenCount) || 0),
+          }
+        : undefined;
       const text = json.candidates?.[0]?.content?.parts?.map((p) => p.text ?? '').join('') ?? '';
       let parsed: unknown;
       try {
         parsed = JSON.parse(text);
       } catch {
-        return { provider: this.name, modelName: this.cfg.geminiModel, promptVersion: PROMPT_VERSION, evidence: emptyEvidence(['gemini_json_parse_failed']), modelRawPreview: text.slice(0, 500), modelInput };
+        return { provider: this.name, modelName: this.cfg.geminiModel, promptVersion: PROMPT_VERSION, evidence: emptyEvidence(['gemini_json_parse_failed']), modelRawPreview: text.slice(0, 500), modelInput, usage, latencyMs };
       }
       const { evidence: validated, diagnostics: parseDiag } = parseEvidenceWithDiagnostics(parsed);
       const evidence = groundClaimedEvidence(validated, input);
@@ -368,6 +393,8 @@ class GeminiModel implements ModelProvider {
         modelRawPreview: text.slice(0, 500),
         parseDiagnostics: parseDiag,
         modelInput,
+        usage,
+        latencyMs,
       };
     } catch (err) {
       if (err instanceof MediaError) throw err;

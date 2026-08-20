@@ -62,6 +62,43 @@ flowchart TD
   scoring, `safeToAutoSave`, and `saveForUser` all stay in the Deno
   `process-share-jobs` finalizer — there is **no parallel resolver**.
 
+## Post-save video AI notes
+
+Dedicated memory-cue inference is separate from recognition. Recognition asks
+where the video is and always emits `memoryCue=null`; it may retain bounded
+observations and scene timestamps as an incidental handoff. Every qualifying
+`saved_places` insert then creates one reusable `ai_note_enrichment` obligation
+targeted by `saved_place_id`, final `place_id`, user, and source snapshot.
+
+The note task first tries the selected logical scene's compact observations.
+If those cannot support a useful cue, it reacquires public media and sends at
+most eight nearby frames to Gemini, widening once to at most sixteen. Selected
+transcript/OCR and unscoped creator-caption evidence are persisted before the
+provider call, so a provider outage cannot discard compact evidence already
+extracted. Raw video, base64 frames, and giant model payloads are never stored.
+
+Multi-place integration contract:
+
+```text
+logicalPlaceId / mentionId
+  -> authoritative final provider place ID
+  -> scene timestamps
+  -> bounded caption, speech, OCR, and frame observations
+  -> post-save ai_note_enrichment task
+```
+
+Today, mention IDs and timestamps provide this boundary. When Vayrin Core is
+integrated, its logical-place IDs, ranked identity hypotheses, scene ranges,
+and frame provenance should populate the same handoff; Vayrin remains the
+recognizer and the saved place remains authoritative. TikTok/Facebook parity
+should add their canonical URL, full creator caption, transcript, and frame
+provenance without restoring pre-save candidate-note generation.
+
+An old callback cannot cross a correction: the finalizer requires an exact
+match among the saved row, claimed target place, callback target place, and all
+three source snapshots. It only fills blank `saved_places.ai_note`; the user's
+`saved_places.notes` is never part of the update.
+
 ## Task state machine
 
 ```mermaid

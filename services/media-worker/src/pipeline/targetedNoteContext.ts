@@ -158,3 +158,36 @@ export function mergeTargetEvidence(
 ): EvidenceItem[] {
   return sanitizeTargetEvidence([...current, ...generated]);
 }
+
+/** Convert already-extracted, target-selected text into the same compact
+ * durable handoff used by recognition. This runs before model inference so a
+ * provider outage cannot discard transcript/OCR/caption evidence that the
+ * worker has already paid to acquire. */
+export function buildDurableTargetEvidence(args: {
+  current: readonly EvidenceItem[];
+  transcript: readonly TranscriptSegment[];
+  transcriptSource: 'caption' | 'speech';
+  ocr: readonly OcrSegment[];
+  metadataTitle?: string | null;
+  metadataDescription?: string | null;
+  includeMetadata: boolean;
+}): EvidenceItem[] {
+  const extracted: EvidenceItem[] = [
+    ...args.ocr.map((segment) => ({
+      source: 'visible_text' as const,
+      value: segment.text,
+      timestampSeconds: segment.timestampSeconds,
+    })),
+    ...args.transcript.map((segment) => ({
+      source: args.transcriptSource,
+      value: segment.text,
+      timestampSeconds: segment.startSeconds,
+    })),
+  ];
+  if (args.includeMetadata) {
+    for (const value of [args.metadataTitle, args.metadataDescription]) {
+      if (value?.trim()) extracted.push({ source: 'caption', value, timestampSeconds: null });
+    }
+  }
+  return mergeTargetEvidence(args.current, extracted);
+}

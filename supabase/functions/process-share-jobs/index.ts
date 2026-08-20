@@ -46,7 +46,10 @@ import {
   persistAiNoteSupplementally,
   type AiPlaceNoteResult,
 } from '../../../lib/aiPlaceNote.ts';
-import { classifyVideoAiNoteFailure } from '../../../lib/videoDerivedAiNote.ts';
+import {
+  classifyVideoAiNoteFailure,
+  videoAiNoteCallbackMatchesTarget,
+} from '../../../lib/videoDerivedAiNote.ts';
 
 import { submitPushToUser, checkExpoReceipts, type TicketRef } from './push.ts';
 import {
@@ -584,14 +587,14 @@ async function finalizeVideoAiNoteTask(
     ? body.targetSourceUrl
     : null;
   const taskSourceUrl = task.canonical_url || task.source_url;
-  if (
-    !task.target_place_id ||
-    saved.place_id !== task.target_place_id ||
-    callbackTargetPlaceId !== task.target_place_id ||
-    !callbackTargetSourceUrl ||
-    callbackTargetSourceUrl !== taskSourceUrl ||
-    saved.source_url !== callbackTargetSourceUrl
-  ) {
+  if (!videoAiNoteCallbackMatchesTarget({
+    savedPlaceId: saved.place_id,
+    taskPlaceId: task.target_place_id,
+    callbackPlaceId: callbackTargetPlaceId,
+    savedSourceUrl: saved.source_url,
+    taskSourceUrl,
+    callbackSourceUrl: callbackTargetSourceUrl,
+  })) {
     // The reusable task row was reset for a correction after this worker run
     // began. Never let Place A's callback modify Place B or its queued work.
     logFinalStatus('stale_target', 'claim_conflict');
@@ -652,6 +655,21 @@ async function finalizeVideoAiNoteTask(
     latency_ms: Number.isFinite(diagnostics.durationMs)
       ? Math.max(0, Math.round(diagnostics.durationMs))
       : null,
+    model_calls: Number.isFinite(diagnostics.modelCalls)
+      ? Math.max(0, Math.round(diagnostics.modelCalls))
+      : null,
+    model_input_tokens: Number.isFinite(diagnostics.modelInputTokens)
+      ? Math.max(0, Math.round(diagnostics.modelInputTokens))
+      : null,
+    model_output_tokens: Number.isFinite(diagnostics.modelOutputTokens)
+      ? Math.max(0, Math.round(diagnostics.modelOutputTokens))
+      : null,
+    model_thinking_tokens: Number.isFinite(diagnostics.modelThinkingTokens)
+      ? Math.max(0, Math.round(diagnostics.modelThinkingTokens))
+      : null,
+    model_latency_ms: Number.isFinite(diagnostics.modelLatencyMs)
+      ? Math.max(0, Math.round(diagnostics.modelLatencyMs))
+      : null,
   };
 
   if (!noteResult.note) {
@@ -675,7 +693,7 @@ async function finalizeVideoAiNoteTask(
       mediaAcquiredOnce: task.media_acquired_once === true,
     });
     const retryCycles = Math.max(0, Number(task.retry_cycles) || 0);
-    if (disposition !== 'no_evidence') {
+    if (disposition !== 'awaiting_evidence') {
       const delaySeconds = Math.min(86_400, 3_600 * 2 ** Math.min(retryCycles, 5));
       const updatedTask = await markVideoAiNoteTask(admin, task, 'queued', {
         ...diagnosticPatch,
@@ -697,7 +715,7 @@ async function finalizeVideoAiNoteTask(
       const updatedTask = await markVideoAiNoteTask(admin, task, 'failed', {
         ...diagnosticPatch,
         failure_code: failureCode.slice(0, 200),
-        ai_note_outcome: 'no_evidence',
+        ai_note_outcome: 'awaiting_evidence',
         progress_stage: 'cleanup',
         locked_until: null,
         completed_at: nowIso(),
@@ -719,17 +737,22 @@ async function finalizeVideoAiNoteTask(
       provider: diagnosticPatch.analysis_provider,
       model: diagnosticPatch.analysis_model,
       latencyMs: diagnosticPatch.latency_ms,
+      modelCalls: diagnosticPatch.model_calls,
+      modelInputTokens: diagnosticPatch.model_input_tokens,
+      modelOutputTokens: diagnosticPatch.model_output_tokens,
+      modelThinkingTokens: diagnosticPatch.model_thinking_tokens,
+      modelLatencyMs: diagnosticPatch.model_latency_ms,
       errorClass: failureCode,
       userNotePreserved: true,
       ruleVersion: VIDEO_AI_NOTE_RULE_VERSION,
     }));
     logFinalStatus(
-      disposition !== 'no_evidence' ? 'note_retry_scheduled' : 'note_no_evidence',
+      disposition !== 'awaiting_evidence' ? 'note_retry_scheduled' : 'note_awaiting_evidence',
       disposition === 'retry_after_outage'
         ? 'transient_provider_error'
         : disposition === 'retry_after_generation'
           ? 'generation_quality_error'
-          : 'literal_no_evidence',
+          : 'literal_information_absence',
     );
     return json({
       ok: true,
@@ -820,6 +843,11 @@ async function finalizeVideoAiNoteTask(
     provider: diagnosticPatch.analysis_provider,
     model: diagnosticPatch.analysis_model,
     latencyMs: diagnosticPatch.latency_ms,
+    modelCalls: diagnosticPatch.model_calls,
+    modelInputTokens: diagnosticPatch.model_input_tokens,
+    modelOutputTokens: diagnosticPatch.model_output_tokens,
+    modelThinkingTokens: diagnosticPatch.model_thinking_tokens,
+    modelLatencyMs: diagnosticPatch.model_latency_ms,
     errorClass: null,
     userNotePreserved: true,
     ruleVersion: VIDEO_AI_NOTE_RULE_VERSION,

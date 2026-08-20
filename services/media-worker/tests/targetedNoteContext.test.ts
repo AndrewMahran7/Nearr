@@ -7,6 +7,7 @@ import test from 'node:test';
 import { evaluateAiPlaceNote } from '../../../lib/aiPlaceNote.js';
 import { loadConfig } from '../src/config/env.js';
 import {
+  buildDurableTargetEvidence,
   buildTargetedNoteContext,
   findTargetEvidenceHandoff,
 } from '../src/pipeline/targetedNoteContext.js';
@@ -64,6 +65,30 @@ test('multi-place handoff isolates the final saved place scene', () => {
   assert.deepEqual(context.transcript.map((item) => item.text), ['crispy smashburger']);
   assert.deepEqual(context.ocr.map((item) => item.text), ['BURGER HOUSE']);
   assert.equal(context.sceneScoped, true);
+
+  const placeBHandoff = findTargetEvidenceHandoff(
+    [payload],
+    { name: 'Cliff Cove', googlePlaceId: 'g-b' },
+  );
+  const placeBContext = buildTargetedNoteContext({
+    frames: [frame(4), frame(5), frame(8), frame(39), frame(40), frame(43)],
+    transcript: [
+      { startSeconds: 3, endSeconds: 6, text: 'crispy smashburger' },
+      { startSeconds: 38, endSeconds: 42, text: 'turquoise water' },
+    ],
+    ocr: [
+      { timestampSeconds: 5, text: 'BURGER HOUSE', confidence: 1 },
+      { timestampSeconds: 40, text: 'CLIFF COVE', confidence: 1 },
+    ],
+    handoff: placeBHandoff,
+    maxFrames: 24,
+  });
+  assert.deepEqual(placeBContext.frames.map((item) => item.timestampSeconds), [39, 40, 43]);
+  assert.deepEqual(placeBContext.transcript.map((item) => item.text), ['turquoise water']);
+  assert.deepEqual(placeBContext.ocr.map((item) => item.text), ['CLIFF COVE']);
+  assert.deepEqual(placeBContext.evidence.map((item) => item.value), [
+    'turquoise cove surrounded by cliffs',
+  ]);
 });
 
 test('unsaved candidates have observations but no note-generation obligation', () => {
@@ -102,6 +127,37 @@ test('weak unscoped context can widen from focused to representative frames', ()
   assert.equal(expanded.frames.length, 16);
 });
 
+test('extracted target text is durable before a provider outage', () => {
+  const evidence = buildDurableTargetEvidence({
+    current: [{ source: 'frame', value: 'oceanfront pool', timestampSeconds: 9 }],
+    transcript: [{ text: 'the pool faces the ocean', startSeconds: 8, endSeconds: 10 }],
+    transcriptSource: 'speech',
+    ocr: [{ text: 'ROOFTOP POOL', timestampSeconds: 9, confidence: 1 }],
+    metadataTitle: 'A hotel tour',
+    metadataDescription: 'Creator caption',
+    includeMetadata: false,
+  });
+  assert.deepEqual(evidence.map((item) => item.source), ['frame', 'visible_text', 'speech']);
+  assert.ok(evidence.every((item) => item.timestampSeconds !== null));
+  assert.ok(!evidence.some((item) => item.value === 'Creator caption'));
+});
+
+test('unscoped source metadata is retained as bounded caption evidence', () => {
+  const evidence = buildDurableTargetEvidence({
+    current: [],
+    transcript: [],
+    transcriptSource: 'caption',
+    ocr: [],
+    metadataTitle: '  Ocean   hotel tour  ',
+    metadataDescription: 'Infinity pool overlooking the water',
+    includeMetadata: true,
+  });
+  assert.deepEqual(evidence.map((item) => item.value), [
+    'Ocean hotel tour',
+    'Infinity pool overlooking the water',
+  ]);
+});
+
 const visualCases = [
   {
     label: 'food',
@@ -123,6 +179,13 @@ const visualCases = [
     category: 'hotel',
     observation: 'infinity pool overlooking the ocean',
     note: 'That infinity pool overlooking the ocean looked unreal.',
+  },
+  {
+    label: 'visible activity',
+    placeName: 'Cliff Cove',
+    category: 'beach',
+    observation: 'people jumping from the cliff into the water below',
+    note: 'People were jumping from the cliff into the water below.',
   },
 ] as const;
 
@@ -159,6 +222,12 @@ for (const fixture of visualCases) {
       };
       return new Response(JSON.stringify({
         candidates: [{ content: { parts: [{ text: JSON.stringify(modelPayload) }] } }],
+        usageMetadata: {
+          promptTokenCount: 900,
+          candidatesTokenCount: 80,
+          thoughtsTokenCount: 20,
+          totalTokenCount: 1000,
+        },
       }), { status: 200, headers: { 'content-type': 'application/json' } });
     }) as typeof fetch;
     try {
@@ -190,9 +259,88 @@ for (const fixture of visualCases) {
       assert.equal(requestBody.contents[0].parts.filter((part: any) => part.inlineData).length, 1);
       assert.match(requestBody.contents[0].parts[0].text, /TARGETED AI-NOTE ENRICHMENT/);
       assert.match(requestBody.contents[0].parts[0].text, /transcript:\s*\n\(none\)/);
+      assert.deepEqual(output.usage, {
+        inputTokens: 900,
+        outputTokens: 80,
+        thinkingTokens: 20,
+        totalTokens: 1000,
+      });
+      assert.ok(Number.isFinite(output.latencyMs));
     } finally {
       globalThis.fetch = originalFetch;
       await rm(dir, { recursive: true, force: true });
     }
   });
 }
+
+test('provider outage recovers from durable evidence after frames are gone', async () => {
+  const retainedEvidence = buildDurableTargetEvidence({
+    current: [{ source: 'frame', value: 'smashburger with crispy edges', timestampSeconds: 7 }],
+    transcript: [],
+    transcriptSource: 'speech',
+    ocr: [],
+    includeMetadata: false,
+  });
+  const provider = selectModelProvider({
+    ...loadConfig(),
+    analysisProvider: 'gemini',
+    geminiApiKey: 'test-key',
+    maxSelectedFrames: 8,
+  });
+  const originalFetch = globalThis.fetch;
+  let attempts = 0;
+  globalThis.fetch = (async () => {
+    attempts += 1;
+    if (attempts === 1) return new Response('', { status: 503 });
+    const modelPayload = {
+      places: [{
+        name: 'Burger House',
+        category: 'restaurant',
+        categoryConfidence: 1,
+        categoryEvidenceTags: ['visual'],
+        address: null,
+        city: null,
+        region: null,
+        country: null,
+        coordinates: null,
+        role: 'primary',
+        confidence: 1,
+        explicitEvidence: retainedEvidence,
+        inferredEvidence: [],
+        memoryCue: 'That smashburger with crispy edges looked ridiculous.',
+        memoryCueEvidence: retainedEvidence,
+      }],
+      multipleIntentionalPlaces: false,
+      insufficientEvidence: false,
+      warnings: [],
+    };
+    return new Response(JSON.stringify({
+      candidates: [{ content: { parts: [{ text: JSON.stringify(modelPayload) }] } }],
+    }), { status: 200, headers: { 'content-type': 'application/json' } });
+  }) as typeof fetch;
+  const input = {
+    platform: 'instagram',
+    canonicalUrl: 'https://www.instagram.com/reel/outage/',
+    transcript: [],
+    ocr: [],
+    ocrExtracted: false,
+    frames: [],
+    metadataTitle: null,
+    metadataDescription: null,
+    targetPlace: { name: 'Burger House', category: 'restaurant' },
+    retainedEvidence,
+    signal: new AbortController().signal,
+  };
+  try {
+    await assert.rejects(provider.analyze(input), /provider_unavailable/);
+    const recovered = await provider.analyze(input);
+    assert.equal(attempts, 2);
+    assert.equal(
+      recovered.evidence.places[0]?.memoryCue,
+      'That smashburger with crispy edges looked ridiculous.',
+    );
+    assert.deepEqual(recovered.evidence.places[0]?.memoryCueEvidence, retainedEvidence);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});

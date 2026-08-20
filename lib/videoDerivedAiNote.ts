@@ -164,7 +164,7 @@ const TRANSIENT_AI_NOTE_ERRORS = new Set([
 export type VideoAiNoteFailureDisposition =
   | 'retry_after_outage'
   | 'retry_after_generation'
-  | 'no_evidence';
+  | 'awaiting_evidence';
 
 /** Only literal absence of every observable input may terminate blank. A
  * provider outage or a failed/invalid generation over real evidence remains a
@@ -183,7 +183,26 @@ export function classifyVideoAiNoteFailure(input: {
   }
   const hasEvidence = (Number(input.observableEvidenceCount) || 0) > 0 ||
     input.mediaAcquiredOnce === true;
-  return hasEvidence ? 'retry_after_generation' : 'no_evidence';
+  return hasEvidence ? 'retry_after_generation' : 'awaiting_evidence';
+}
+
+/** A finalizer callback is valid only for the exact saved-place identity and
+ * source snapshot claimed by the worker. This is deliberately independent of
+ * names: a correction may reuse a row while changing its authoritative FK. */
+export function videoAiNoteCallbackMatchesTarget(input: {
+  savedPlaceId?: string | null;
+  taskPlaceId?: string | null;
+  callbackPlaceId?: string | null;
+  savedSourceUrl?: string | null;
+  taskSourceUrl?: string | null;
+  callbackSourceUrl?: string | null;
+}): boolean {
+  return !!input.taskPlaceId &&
+    input.savedPlaceId === input.taskPlaceId &&
+    input.callbackPlaceId === input.taskPlaceId &&
+    !!input.taskSourceUrl &&
+    input.callbackSourceUrl === input.taskSourceUrl &&
+    input.savedSourceUrl === input.callbackSourceUrl;
 }
 
 /**

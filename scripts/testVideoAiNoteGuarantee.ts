@@ -7,6 +7,7 @@ import {
   evaluateTargetedVideoAiNote,
   planVideoAiNoteInvariant,
   savedPlaceIdentityChanged,
+  videoAiNoteCallbackMatchesTarget,
   videoSourcePlatform,
 } from '../lib/videoDerivedAiNote';
 
@@ -21,6 +22,10 @@ const finalizer = fs.readFileSync(
 );
 const worker = fs.readFileSync(
   path.join(root, 'services/media-worker/src/pipeline/runMediaTask.ts'),
+  'utf8',
+);
+const taskDb = fs.readFileSync(
+  path.join(root, 'services/media-worker/src/db/tasks.ts'),
   'utf8',
 );
 const initialSchema = fs.readFileSync(
@@ -118,6 +123,17 @@ assert.deepEqual(selected, [
 ]);
 assert.notEqual(selected[0], selected[1]);
 
+// Dedicated note inference is save-count based, never candidate-count based:
+// three picker candidates cost zero before selection, and saving two of three
+// recognized places creates exactly two obligations.
+const pickerCandidates = places.map((place) => ({ ...place, memoryCue: null, memoryCueEvidence: [] }));
+assert.equal(pickerCandidates.filter((place) => place.memoryCue).length, 0);
+const selectivelySaved = [places[0]!, places[2]!].map(() =>
+  planVideoAiNoteInvariant(instagram, null),
+);
+assert.deepEqual(selectivelySaved, ['ensure_enrichment', 'ensure_enrichment']);
+assert.equal(selectivelySaved.length, 2);
+
 // Correction safety: Place B cannot inherit a valid Place A note. The task is
 // targeted at B and must await/regenerate B-scoped evidence.
 const corrected = evaluateTargetedVideoAiNote({
@@ -186,7 +202,7 @@ assert.equal(
     observableEvidenceCount: 0,
     mediaAcquiredOnce: false,
   }),
-  'no_evidence',
+  'awaiting_evidence',
   'only literal zero-media/zero-observation state may terminate blank',
 );
 
@@ -206,6 +222,25 @@ assert.equal(
   false,
   'same place metadata enrichment',
 );
+
+// A worker claimed Place A, then the reusable saved row was corrected to B.
+// Its late callback must fail the exact FK/source snapshot guard.
+assert.equal(videoAiNoteCallbackMatchesTarget({
+  savedPlaceId: 'place-b',
+  taskPlaceId: 'place-a',
+  callbackPlaceId: 'place-a',
+  savedSourceUrl: instagram.source_url,
+  taskSourceUrl: instagram.source_url,
+  callbackSourceUrl: instagram.source_url,
+}), false, 'stale Place A callback cannot write after correction to Place B');
+assert.equal(videoAiNoteCallbackMatchesTarget({
+  savedPlaceId: 'place-b',
+  taskPlaceId: 'place-b',
+  callbackPlaceId: 'place-b',
+  savedSourceUrl: instagram.source_url,
+  taskSourceUrl: instagram.source_url,
+  callbackSourceUrl: instagram.source_url,
+}), true, 'fresh Place B callback remains valid');
 assert.match(initialSchema, /place_id\s+uuid not null references public\.places\(id\)/i);
 
 // Persistence-boundary coverage and idempotency: every saved_places insert or
@@ -232,8 +267,8 @@ assert.match(worker, /renewAiNoteRetryCycle\(client, task, code\)/);
 assert.match(migration, /retry_cycles = case when mt\.task_kind = 'ai_note_enrichment' then mt\.retry_cycles \+ 1/i);
 assert.match(migration, /least\(86400, 3600 \* power/i);
 assert.match(finalizer, /failure_code: failureCode\.slice\(0, 200\)/);
-assert.match(finalizer, /ai_note_outcome: 'no_evidence'/);
-assert.match(finalizer, /disposition !== 'no_evidence'/);
+assert.match(finalizer, /ai_note_outcome: 'awaiting_evidence'/);
+assert.match(finalizer, /disposition !== 'awaiting_evidence'/);
 assert.match(finalizer, /retryCount: Number\(task\.attempts\)/);
 assert.match(worker, /noteStructuredEvidencePreflight/);
 assert.match(worker, /task\.ai_note_outcome !== 'retry_after_generation'/);
@@ -246,6 +281,16 @@ assert.doesNotMatch(finalizer, /event: 'ai_note_generation'/);
 assert.match(finalizer, /noteEvidenceForLogicalMention/);
 assert.match(migration, /evidence_snapshot jsonb/);
 assert.match(migration, /media_acquired_once boolean/);
+assert.match(migration, /model_input_tokens integer/);
+assert.match(migration, /model_output_tokens integer/);
+assert.match(migration, /model_thinking_tokens integer/);
+assert.match(worker, /accumulateModelDiagnostics/);
+assert.match(finalizer, /model_input_tokens: Number\.isFinite\(diagnostics\.modelInputTokens\)/);
+const evidenceWriter = taskDb.slice(
+  taskDb.indexOf('export async function recordAiNoteEvidenceSnapshot'),
+  taskDb.indexOf('/** Best-effort cleanup', taskDb.indexOf('export async function recordAiNoteEvidenceSnapshot')),
+);
+assert.match(evidenceWriter, /ai_note_evidence_snapshot_failed/);
 
 // Data-integrity contract: only ai_note is written, with final id/user/source
 // and observed blank-value guards. `notes` is selected for audit but untouched.
@@ -255,7 +300,7 @@ const guaranteeBody = finalizer.slice(guaranteeStart, guaranteeEnd);
 assert.match(guaranteeBody, /\.update\(\{ ai_note: noteResult\.note \}\)/);
 assert.match(guaranteeBody, /\.eq\('source_url', representedSource\)/);
 assert.match(guaranteeBody, /\.eq\('place_id', task\.target_place_id\)/);
-assert.match(guaranteeBody, /callbackTargetSourceUrl !== taskSourceUrl/);
+assert.match(guaranteeBody, /videoAiNoteCallbackMatchesTarget/);
 assert.match(worker, /targetSourceUrl: task\.canonical_url \|\| task\.source_url/);
 assert.match(finalizer, /async function markVideoAiNoteTask/);
 assert.match(finalizer, /\.eq\('target_place_id', task\.target_place_id\)/);

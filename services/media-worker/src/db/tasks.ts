@@ -135,7 +135,7 @@ export async function requeueAiNoteTask(
     : query.eq('canonical_url', task.canonical_url);
   const { error } = await query;
   if (error) {
-    throw new MediaError('provider_unavailable', 'ai_note_evidence_snapshot_failed');
+    throw new MediaError('provider_unavailable', 'ai_note_requeue_failed');
   }
 }
 
@@ -180,7 +180,10 @@ export async function renewAiNoteRetryCycle(
   query = task.canonical_url == null
     ? query.is('canonical_url', null)
     : query.eq('canonical_url', task.canonical_url);
-  await query;
+  const { error } = await query;
+  if (error) {
+    throw new MediaError('provider_unavailable', 'ai_note_retry_cycle_failed');
+  }
 }
 
 /** Retain only bounded structured observations and acquisition state. This is
@@ -205,7 +208,10 @@ export async function recordAiNoteEvidenceSnapshot(
   query = task.canonical_url == null
     ? query.is('canonical_url', null)
     : query.eq('canonical_url', task.canonical_url);
-  await query;
+  const { error } = await query;
+  if (error) {
+    throw new MediaError('provider_unavailable', 'ai_note_evidence_snapshot_failed');
+  }
 }
 
 /** Best-effort cleanup of tasks that exhausted their retry budget. */

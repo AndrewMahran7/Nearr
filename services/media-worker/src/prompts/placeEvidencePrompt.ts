@@ -4,7 +4,7 @@
 // persisted into diagnostics so we can correlate evidence quality with prompt
 // changes. Bump PROMPT_VERSION on any wording change.
 
-export const PROMPT_VERSION = 'media-place-evidence-2026-08-19.v10-post-save-visual-note';
+export const PROMPT_VERSION = 'media-place-evidence-2026-08-19.v11-post-save-visual-safety';
 
 export const PLACE_EVIDENCE_SYSTEM_PROMPT = `
 You extract structured evidence about REAL-WORLD PLACES from a short social
@@ -88,6 +88,9 @@ Rules:
   date, menu item, view, event, special, or any other claim. If the post shows
   daylight water, do not mention a sunset. If nobody said the hike was easy, do
   not say it is easy.
+- A clearly visible activity (people hiking, swimming, surfing, or jumping into
+  water) may be described as an observation. Never turn it into a claim that
+  the activity is safe, legal, permitted, or recommended.
 - When the evidence states an explicit date or window, keep it accurate. You
   may shorten "September 1 through September 14" to "Sept 1-14". Never restate
   it as "this month", "next week", or "currently" — the note is read long after

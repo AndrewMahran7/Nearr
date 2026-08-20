@@ -96,6 +96,11 @@ alter table public.share_media_tasks
   add column if not exists analysis_model text,
   add column if not exists prompt_version text,
   add column if not exists latency_ms integer,
+  add column if not exists model_calls integer,
+  add column if not exists model_input_tokens integer,
+  add column if not exists model_output_tokens integer,
+  add column if not exists model_thinking_tokens integer,
+  add column if not exists model_latency_ms integer,
   add column if not exists ai_note_outcome text;
 
 alter table public.share_media_tasks
@@ -530,6 +535,11 @@ select
   mt.analysis_model as model,
   mt.prompt_version,
   mt.latency_ms,
+  mt.model_calls,
+  mt.model_input_tokens,
+  mt.model_output_tokens,
+  mt.model_thinking_tokens,
+  mt.model_latency_ms,
   mt.failure_code,
   mt.ai_note_outcome,
   jsonb_array_length(mt.evidence_snapshot) as retained_evidence_count,

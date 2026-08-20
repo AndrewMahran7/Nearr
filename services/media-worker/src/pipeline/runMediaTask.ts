@@ -34,11 +34,16 @@ import {
   requeueTask,
 } from '../db/tasks.js';
 import type { TranscriptionProvider } from '../providers/transcription.js';
-import { groundClaimedEvidence, type ModelProvider } from '../providers/model.js';
+import {
+  groundClaimedEvidence,
+  type AnalyzeOutput,
+  type ModelProvider,
+} from '../providers/model.js';
 import { type OcrProvider, deduplicateOcrSegments } from '../providers/ocr.js';
 import { selectInstagramContentUrl } from '../resolvers/instagramUrl.js';
 import { sourceDescriptionForModel } from '../util/sourceText.js';
 import {
+  buildDurableTargetEvidence,
   buildTargetedNoteContext,
   findTargetEvidenceHandoff,
   mergeTargetEvidence,
@@ -62,6 +67,20 @@ type AiNoteTarget = {
   formattedAddress: string | null;
   handoff: TargetEvidenceHandoff | null;
 };
+
+function accumulateModelDiagnostics(
+  diagnostics: Record<string, unknown>,
+  output: AnalyzeOutput,
+): void {
+  diagnostics.modelCalls = (Number(diagnostics.modelCalls) || 0) + 1;
+  diagnostics.modelLatencyMs = (Number(diagnostics.modelLatencyMs) || 0) +
+    (Number(output.latencyMs) || 0);
+  if (!output.usage) return;
+  diagnostics.modelInputTokens = (Number(diagnostics.modelInputTokens) || 0) + output.usage.inputTokens;
+  diagnostics.modelOutputTokens = (Number(diagnostics.modelOutputTokens) || 0) + output.usage.outputTokens;
+  diagnostics.modelThinkingTokens = (Number(diagnostics.modelThinkingTokens) || 0) + output.usage.thinkingTokens;
+  diagnostics.modelTotalTokens = (Number(diagnostics.modelTotalTokens) || 0) + output.usage.totalTokens;
+}
 
 async function loadRetainedHandoff(
   client: SupabaseClient,
@@ -284,6 +303,7 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
       const preflightHasCue = preflight.evidence.places.some(
         (place) => !!place.memoryCue?.trim() && place.memoryCueEvidence.length > 0,
       );
+      accumulateModelDiagnostics(diagnostics, preflight);
       diagnostics.noteStructuredEvidencePreflight = true;
       diagnostics.noteGenerationPasses = 1;
       diagnostics.noteSceneScoped = true;
@@ -407,7 +427,7 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
     await setProgress(client, task, 'analyzing_evidence');
     analysisAttempted = true;
     diagnostics.analysisAttempted = true;
-    const primaryContext = task.task_kind === 'ai_note_enrichment'
+    let primaryContext = task.task_kind === 'ai_note_enrichment'
       ? buildTargetedNoteContext({
           frames,
           transcript: transcript.segments,
@@ -424,6 +444,18 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
           sceneScoped: false,
         };
     if (task.task_kind === 'ai_note_enrichment') {
+      primaryContext = {
+        ...primaryContext,
+        evidence: buildDurableTargetEvidence({
+          current: primaryContext.evidence,
+          transcript: primaryContext.transcript,
+          transcriptSource: media.captionsTranscript?.length ? 'caption' : 'speech',
+          ocr: primaryContext.ocr,
+          metadataTitle: media.metadataTitle,
+          metadataDescription: media.metadataDescription,
+          includeMetadata: !primaryContext.sceneScoped,
+        }),
+      };
       const acquired = frames.length > 0 || transcript.segments.length > 0 || ocr.length > 0 ||
         !!media.metadataTitle || !!media.metadataDescription || primaryContext.evidence.length > 0;
       await recordAiNoteEvidenceSnapshot(client, task, primaryContext.evidence, acquired);
@@ -458,6 +490,7 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
       };
     };
     let analysis = await analyzeTarget(primaryContext);
+    accumulateModelDiagnostics(diagnostics, analysis);
     diagnostics.noteGenerationPasses = (Number(diagnostics.noteGenerationPasses) || 0) + 1;
     diagnostics.noteSceneScoped = primaryContext.sceneScoped;
     diagnostics.noteQualityRetryExpanded = task.ai_note_outcome === 'retry_after_generation';
@@ -469,7 +502,7 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
         (place) => !!place.memoryCue?.trim() && place.memoryCueEvidence.length > 0,
       );
     if (focusedCueMissing) {
-      const expandedContext = buildTargetedNoteContext({
+      let expandedContext = buildTargetedNoteContext({
         frames,
         transcript: transcript.segments,
         ocr,
@@ -481,7 +514,21 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
         expandedContext.transcript.length > primaryContext.transcript.length ||
         expandedContext.ocr.length > primaryContext.ocr.length;
       if (widened) {
+        expandedContext = {
+          ...expandedContext,
+          evidence: buildDurableTargetEvidence({
+            current: expandedContext.evidence,
+            transcript: expandedContext.transcript,
+            transcriptSource: media.captionsTranscript?.length ? 'caption' : 'speech',
+            ocr: expandedContext.ocr,
+            metadataTitle: media.metadataTitle,
+            metadataDescription: media.metadataDescription,
+            includeMetadata: !expandedContext.sceneScoped,
+          }),
+        };
+        await recordAiNoteEvidenceSnapshot(client, task, expandedContext.evidence, true);
         analysis = await analyzeTarget(expandedContext);
+        accumulateModelDiagnostics(diagnostics, analysis);
         diagnostics.noteGenerationPasses = (Number(diagnostics.noteGenerationPasses) || 0) + 1;
         diagnostics.noteInputFrameCount = expandedContext.frames.length;
         diagnostics.noteInputEvidenceCount = expandedContext.evidence.length;

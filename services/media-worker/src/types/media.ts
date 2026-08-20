@@ -179,6 +179,11 @@ export type MediaTask = {
   media_acquired_once?: boolean;
   /** Last disposition, used to widen scene context after a quality rejection. */
   ai_note_outcome?: string | null;
+  model_calls?: number | null;
+  model_input_tokens?: number | null;
+  model_output_tokens?: number | null;
+  model_thinking_tokens?: number | null;
+  model_latency_ms?: number | null;
   user_id: string;
   source_url: string;
   canonical_url: string | null;
