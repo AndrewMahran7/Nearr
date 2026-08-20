@@ -5,13 +5,13 @@
  * Create an isolated worktree for one task, so several agents (or several of
  * your own sessions) can work at once without sharing a checkout.
  *
- *   npm run task:new -- shazam-v2
+ *   npm run task:new -- shazam-v2 --base <validated-safe-ref>
  *   npm run task:new -- shazam-v2 --kind fix --base main
  *
  * produces
  *
  *   branch    feat/shazam-v2
- *   worktree  ../Nearr-shazam-v2      (matches the existing Nearr-<slug> convention)
+ *   worktree  ../Nearr-worktrees/shazam-v2
  *
  * and prints the base commit, which the agent working there must record.
  *
@@ -22,7 +22,7 @@
  */
 
 import { execFileSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
 
 const KINDS = ['feat', 'fix', 'chore', 'docs', 'test', 'integration'];
@@ -51,8 +51,8 @@ for (let i = 0; i < argv.length; i += 1) {
 const slug = (positional[0] || '').trim();
 if (!slug) {
   fail(
-    'Usage: npm run task:new -- <slug> [--kind feat|fix|chore|docs|test|integration] [--base <ref>]\n' +
-      'Example: npm run task:new -- shazam-v2',
+    'Usage: npm run task:new -- <slug> --base <ref> [--kind feat|fix|chore|docs|test|integration]\n' +
+      'Example: npm run task:new -- shazam-v2 --base integrate/safe-development-baseline',
   );
 }
 if (!/^[a-z0-9][a-z0-9-]*$/.test(slug)) {
@@ -64,10 +64,21 @@ if (!KINDS.includes(kind)) {
   fail(`Invalid --kind "${kind}". Expected one of: ${KINDS.join(', ')}.`);
 }
 
-const base = (flags.base || 'main').trim();
+const base = (flags.base || '').trim();
+if (!base) {
+  fail(
+    'A starting ref is required: --base <validated-safe-ref>.\n' +
+      'This is intentionally not defaulted to main while baseline promotion awaits physical validation.',
+  );
+}
 const branch = `${kind}/${slug}`;
 const repoRoot = git(['rev-parse', '--show-toplevel']);
-const worktreePath = path.resolve(repoRoot, '..', `Nearr-${slug}`);
+// All feature worktrees live together in a sibling folder rather than beside
+// the repo. With three agents in flight the old `../Nearr-<slug>` layout buried
+// the real checkout among its worktrees, and `git worktree list` was the only
+// way to tell which directory was which.
+const WORKTREE_ROOT = path.resolve(repoRoot, '..', 'Nearr-worktrees');
+const worktreePath = path.join(WORKTREE_ROOT, slug);
 
 // --- Preconditions ---------------------------------------------------------
 
@@ -102,6 +113,9 @@ if (existsSync(worktreePath)) {
 console.log(`Creating worktree for ${branch}`);
 console.log(`  base      ${base} @ ${baseCommit.slice(0, 8)}`);
 console.log(`  worktree  ${worktreePath}`);
+
+// `git worktree add` creates the leaf directory but not a missing parent.
+mkdirSync(WORKTREE_ROOT, { recursive: true });
 
 execFileSync('git', ['worktree', 'add', '-b', branch, worktreePath, baseCommit], {
   stdio: 'inherit',

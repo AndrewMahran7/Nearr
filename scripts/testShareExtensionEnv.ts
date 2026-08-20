@@ -31,7 +31,12 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
-import { blockingViolations, validateEnvironment } from '../lib/appEnvironmentCore';
+import {
+  blockingViolations,
+  NEARR_DEV_SUPABASE_REF,
+  NEARR_PRODUCTION_SUPABASE_REF,
+  validateEnvironment,
+} from '../lib/appEnvironmentCore';
 
 const REPO_ROOT = path.resolve(__dirname, '..');
 const EXTENSION = readFileSync(path.join(REPO_ROOT, 'ShareExtension.tsx'), 'utf8');
@@ -151,8 +156,8 @@ const devAppProdBackend = blockingViolations(
   validateEnvironment({
     appEnv: 'development',
     backendEnv: 'production',
-    supabaseUrl: 'https://prod.supabase.co',
-    createShareJobUrl: 'https://prod.supabase.co/functions/v1/create-share-job',
+    supabaseUrl: `https://${NEARR_PRODUCTION_SUPABASE_REF}.supabase.co`,
+    createShareJobUrl: `https://${NEARR_PRODUCTION_SUPABASE_REF}.supabase.co/functions/v1/create-share-job`,
   }),
 ).map((violation) => violation.code);
 check(
@@ -165,8 +170,8 @@ const splitBrain = blockingViolations(
   validateEnvironment({
     appEnv: 'development',
     backendEnv: 'development',
-    supabaseUrl: 'https://dev.supabase.co',
-    createShareJobUrl: 'https://prod.supabase.co/functions/v1/create-share-job',
+    supabaseUrl: `https://${NEARR_DEV_SUPABASE_REF}.supabase.co`,
+    createShareJobUrl: `https://${NEARR_PRODUCTION_SUPABASE_REF}.supabase.co/functions/v1/create-share-job`,
   }),
 ).map((violation) => violation.code);
 check(
@@ -179,12 +184,29 @@ const coherentDev = blockingViolations(
   validateEnvironment({
     appEnv: 'development',
     backendEnv: 'development',
-    supabaseUrl: 'https://dev.supabase.co',
-    processShareLinkUrl: 'https://dev.supabase.co/functions/v1/process-share-link',
-    createShareJobUrl: 'https://dev.supabase.co/functions/v1/create-share-job',
+    supabaseUrl: `https://${NEARR_DEV_SUPABASE_REF}.supabase.co`,
+    processShareLinkUrl: `https://${NEARR_DEV_SUPABASE_REF}.supabase.co/functions/v1/process-share-link`,
+    createShareJobUrl: `https://${NEARR_DEV_SUPABASE_REF}.supabase.co/functions/v1/create-share-job`,
   }),
 );
 check('a coherent development extension is allowed to submit', coherentDev.length === 0);
+
+const lyingButConsistentDev = blockingViolations(
+  validateEnvironment({
+    appEnv: 'development',
+    backendEnv: 'development',
+    supabaseUrl: `https://${NEARR_PRODUCTION_SUPABASE_REF}.supabase.co`,
+    processShareLinkUrl: `https://${NEARR_PRODUCTION_SUPABASE_REF}.supabase.co/functions/v1/process-share-link`,
+    createShareJobUrl: `https://${NEARR_PRODUCTION_SUPABASE_REF}.supabase.co/functions/v1/create-share-job`,
+    allowProductionBackend: 'true',
+  }),
+).map((violation) => violation.code);
+check(
+  'consistent production URLs cannot masquerade as development',
+  lyingButConsistentDev.includes('SUPABASE_PROJECT_MISMATCH') &&
+    lyingButConsistentDev.includes('PRODUCTION_BACKEND_OVERRIDE_FORBIDDEN'),
+  `got ${JSON.stringify(lyingButConsistentDev)}`,
+);
 
 if (failures > 0) {
   console.error(`\n${failures} share-extension environment test(s) FAILED`);

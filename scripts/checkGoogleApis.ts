@@ -16,7 +16,7 @@
  *   [usePlacesSearch] error REQUEST_DENIED
  *   This API key is not authorized to use this service or API.
  *
- * The development lane has its own EXPO_PUBLIC_GOOGLE_MAPS_API_KEY (a separate
+ * The development lane currently falls back to EXPO_PUBLIC_GOOGLE_MAPS_API_KEY (a separate
  * EAS variable from production's), and that key's API-restrictions allowlist
  * had Geocoding and "Places API (New)" but not "Places API" — the LEGACY
  * service. services/placesService.ts calls the legacy endpoints:
@@ -67,20 +67,28 @@ function readEnvFile(file: string): Record<string, string> {
   return out;
 }
 
-function localKey(): string {
+type SelectedKey = { key: string; variable: string };
+
+function selectKey(env: Record<string, string | undefined>): SelectedKey {
+  if ((env.EXPO_PUBLIC_GOOGLE_PLACES_KEY || '').trim()) {
+    return { key: env.EXPO_PUBLIC_GOOGLE_PLACES_KEY!.trim(), variable: 'EXPO_PUBLIC_GOOGLE_PLACES_KEY' };
+  }
+  if ((env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY || '').trim()) {
+    return { key: env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY!.trim(), variable: 'EXPO_PUBLIC_GOOGLE_MAPS_API_KEY (fallback)' };
+  }
+  return { key: '', variable: '(none)' };
+}
+
+function localKey(): SelectedKey {
   const env = {
     ...process.env,
     ...readEnvFile(path.join(REPO_ROOT, '.env')),
     ...readEnvFile(path.join(REPO_ROOT, '.env.local')),
   } as Record<string, string | undefined>;
-  return (
-    env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY ||
-    env.EXPO_PUBLIC_GOOGLE_PLACES_KEY ||
-    ''
-  ).trim();
+  return selectKey(env);
 }
 
-function easKey(environment: string): string {
+function easKey(environment: string): SelectedKey {
   if (!/^[A-Za-z0-9_-]+$/.test(environment)) {
     console.error(`Invalid EAS environment name: ${environment}`);
     process.exit(2);
@@ -99,11 +107,12 @@ function easKey(environment: string): string {
     );
     process.exit(2);
   }
+  const env: Record<string, string> = {};
   for (const rawLine of stdout.split(/\r?\n/)) {
-    const match = /^EXPO_PUBLIC_GOOGLE_MAPS_API_KEY=(.*)$/.exec(rawLine.trim());
-    if (match && !match[1].startsWith('*****')) return match[1];
+    const match = /^(EXPO_PUBLIC_GOOGLE_(?:PLACES|MAPS_API)_KEY)=(.*)$/.exec(rawLine.trim());
+    if (match && !match[2].startsWith('*****')) env[match[1]] = match[2];
   }
-  return '';
+  return selectKey(env);
 }
 
 /** Classify a legacy web-service response without echoing the key. */
@@ -189,17 +198,19 @@ async function main(): Promise<void> {
   const index = argv.indexOf('--eas-environment');
   const environment = index >= 0 ? argv[index + 1] : undefined;
 
-  const key = environment ? easKey(environment) : localKey();
+  const selected = environment ? easKey(environment) : localKey();
+  const key = selected.key;
   const source = environment ? `EAS environment \`${environment}\`` : 'local .env';
 
   console.log(`Google API check — source: ${source}`);
   if (!key) {
     console.error(
-      '\nNo EXPO_PUBLIC_GOOGLE_MAPS_API_KEY found for this source. Nothing to check.',
+      '\nNo EXPO_PUBLIC_GOOGLE_PLACES_KEY or EXPO_PUBLIC_GOOGLE_MAPS_API_KEY found for this source. Nothing to check.',
     );
     process.exit(1);
   }
   // Length only — never the value.
+  console.log(`  key class: ${selected.variable}`);
   console.log(`  key present (length ${key.length}); value is never printed\n`);
 
   let requiredFailures = 0;
@@ -221,13 +232,15 @@ async function main(): Promise<void> {
     console.error(
       `${requiredFailures} required Google service(s) are not authorized for this key.\n\n` +
         'Fix in Google Cloud Console (this cannot be done from the repo):\n' +
-        '  1. APIs & Services -> Library -> enable "Places API" (the LEGACY one,\n' +
-        '     listed separately from "Places API (New)") on this key\'s project.\n' +
-        '  2. APIs & Services -> Credentials -> this key -> API restrictions ->\n' +
-        '     add "Places API" and "Geocoding API" to the allowlist.\n' +
-        '  3. Application restrictions: web-service endpoints ignore iOS/Android\n' +
-        '     app restrictions, so use "None" or an IP allowlist for this key.\n' +
-        '  4. Re-run this command.\n\n' +
+        '  1. Create a DEVELOPMENT-ONLY API key (do not edit the production key).\n' +
+        '  2. Enable "Places API" (LEGACY, separate from "Places API (New)")\n' +
+        '     and "Geocoding API" in that Google Cloud project.\n' +
+        '  3. Restrict the key\'s APIs to exactly those two services.\n' +
+        '  4. Application restriction must be None for this client REST key;\n' +
+        '     iOS/Android restrictions are not honoured by these web endpoints.\n' +
+        '     Keep the key development-only and monitor/quota-limit it.\n' +
+        '  5. Save it as EXPO_PUBLIC_GOOGLE_PLACES_KEY in EAS development + preview.\n' +
+        '  6. Re-run this command.\n\n' +
         'Do NOT widen the production key to work around this — the development\n' +
         'lane has its own key precisely so they can be restricted separately.',
     );

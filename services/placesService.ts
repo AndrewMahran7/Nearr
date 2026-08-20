@@ -99,17 +99,17 @@ const extra = (Constants.expoConfig?.extra ?? {}) as Record<string, string>;
 
 /**
  * Resolve the API key. Order of precedence:
- *   1. EXPO_PUBLIC_GOOGLE_MAPS_API_KEY  (preferred new name)
- *   2. EXPO_PUBLIC_GOOGLE_PLACES_KEY    (legacy)
- *   3. app.json `extra.googlePlacesKey` (legacy)
+ *   1. EXPO_PUBLIC_GOOGLE_PLACES_KEY    (REST/web-service key)
+ *   2. EXPO_PUBLIC_GOOGLE_MAPS_API_KEY  (compatibility fallback)
+ *   3. app config `extra.googlePlacesKey`
  *
  * Note: the Maps SDK keys (`GOOGLE_MAPS_IOS_KEY` / `GOOGLE_MAPS_ANDROID_KEY`)
  * live in `app.json` `ios.config` / `android.config` and are *not* read here.
  */
 function resolveApiKey(): string {
   return (
-    process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY ??
     process.env.EXPO_PUBLIC_GOOGLE_PLACES_KEY ??
+    process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY ??
     extra.googlePlacesKey ??
     ''
   );
@@ -1098,7 +1098,8 @@ export async function geocodeContextText(
 //   anyone is allowed to silent-save.
 //
 // Requires the Geocoding API to be enabled on the same key
-// (EXPO_PUBLIC_GOOGLE_MAPS_API_KEY) used elsewhere in this file.
+// (EXPO_PUBLIC_GOOGLE_PLACES_KEY, with MAPS_API_KEY as compatibility fallback)
+// used elsewhere in this file.
 // ---------------------------------------------------------------------------
 
 /** Maximum distance (meters) a Places candidate may sit from the geocoded

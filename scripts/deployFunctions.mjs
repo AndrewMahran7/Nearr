@@ -29,7 +29,8 @@ import { readdirSync } from 'node:fs';
 import path from 'node:path';
 
 import { runCli } from './lib/cliRunner.js';
-import { REPO_ROOT, describeRef, resolveDevProjectRef } from './devTarget.mjs';
+import { assertProductionSource } from './lib/productionSource.mjs';
+import { PRODUCTION_REF, REPO_ROOT, describeRef, resolveDevProjectRef } from './devTarget.mjs';
 
 const FUNCTIONS_DIR = path.join(REPO_ROOT, 'supabase', 'functions');
 
@@ -47,6 +48,7 @@ function fail(message) {
 
 const argv = process.argv.slice(2);
 const confirmed = argv.includes('--yes');
+const production = argv.includes('--production');
 const refFlagIndex = argv.indexOf('--project-ref');
 const explicitRef = refFlagIndex >= 0 ? argv[refFlagIndex + 1] : undefined;
 const selected = argv.filter(
@@ -57,7 +59,11 @@ const selected = argv.filter(
 // this script and `npm run dev:db` cannot drift apart. Reading .env.local there
 // also closes a real gap: Node does not load .env files and neither does npm,
 // so the previous process.env-only lookup never saw NEARR_DEV_SUPABASE_REF.
-const projectRef = resolveDevProjectRef({ explicitRef, onFail: fail });
+if (production && explicitRef) fail('Production target is owned by the wrapper; do not pass --project-ref.');
+if (production) assertProductionSource({ repoRoot: REPO_ROOT, onFail: fail });
+const projectRef = production
+  ? PRODUCTION_REF
+  : resolveDevProjectRef({ explicitRef, onFail: fail });
 
 const available = readdirSync(FUNCTIONS_DIR, { withFileTypes: true })
   .filter((e) => e.isDirectory())
@@ -71,7 +77,7 @@ for (const name of targets) {
   }
 }
 
-console.log('Deploying Supabase Edge Functions');
+console.log(`Deploying Supabase Edge Functions (${production ? 'PRODUCTION' : 'development'})`);
 console.log(`  project ref  ${describeRef(projectRef)}`);
 console.log(`  functions    ${targets.join(', ')}`);
 for (const name of targets) {
@@ -80,9 +86,9 @@ for (const name of targets) {
 
 if (!confirmed) {
   fail(
-    `This deploys to project ${projectRef}. Confirm the ref is your DEVELOPMENT project,\n` +
+    `This deploys to project ${projectRef}. Confirm the target and deployment ownership,\n` +
       'then re-run with --yes:\n' +
-      `  npm run dev:functions -- ${targets.join(' ')} --yes`,
+      `  npm run ${production ? 'prod' : 'dev'}:functions -- ${targets.join(' ')} --yes`,
   );
 }
 

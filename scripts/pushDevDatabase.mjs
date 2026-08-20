@@ -32,9 +32,11 @@ import { readdirSync } from 'node:fs';
 import path from 'node:path';
 
 import { runCli } from './lib/cliRunner.js';
+import { assertProductionSource } from './lib/productionSource.mjs';
 
 import {
   EXPECTED_DEV_REF,
+  PRODUCTION_REF,
   REPO_ROOT,
   describeRef,
   linkedProjectRef,
@@ -48,12 +50,17 @@ function fail(message) {
 
 const argv = process.argv.slice(2);
 const confirmed = argv.includes('--yes');
+const production = argv.includes('--production');
 const refFlagIndex = argv.indexOf('--project-ref');
 const explicitRef = refFlagIndex >= 0 ? argv[refFlagIndex + 1] : undefined;
 
 // ---- Gates 1-3: the ref must exist, not be production, and be recognised ---
 
-const projectRef = resolveDevProjectRef({ explicitRef, onFail: fail });
+if (production && explicitRef) fail('Production target is owned by the wrapper; do not pass --project-ref.');
+if (production) assertProductionSource({ repoRoot: REPO_ROOT, onFail: fail });
+const projectRef = production
+  ? PRODUCTION_REF
+  : resolveDevProjectRef({ explicitRef, onFail: fail });
 
 // ---- Gate 4: the CLI link must agree --------------------------------------
 //
@@ -86,7 +93,7 @@ const migrations = readdirSync(migrationsDir)
   .filter((f) => f.endsWith('.sql'))
   .sort();
 
-console.log('Development database push');
+console.log(`${production ? 'PRODUCTION' : 'Development'} database push`);
 console.log(`  target ref   ${describeRef(projectRef)}`);
 console.log(`  CLI linked   ${linkedRef}  [agrees]`);
 console.log(`  migrations   ${migrations.length} file(s) in supabase/migrations/`);
@@ -95,12 +102,16 @@ console.log(`  newest       ${migrations[migrations.length - 1] ?? '(none)'}`);
 if (!confirmed) {
   console.log(
     '\nDry run. Nothing was applied. Re-run with --yes to push:\n' +
-      '  npm run dev:db -- --yes',
+      `  npm run ${production ? 'prod' : 'dev'}:db -- --yes`,
   );
   process.exit(0);
 }
 
-const args = ['db', 'push', '--linked', ...argv.filter((a) => a !== '--yes')];
+const wrapperFlags = new Set(['--yes', '--production']);
+const passthrough = argv.filter(
+  (a, i) => !wrapperFlags.has(a) && a !== '--project-ref' && i !== refFlagIndex + 1,
+);
+const args = ['db', 'push', '--linked', ...passthrough];
 console.log(`\n$ supabase ${args.join(' ')}\n`);
 // Argv array, no shell — see scripts/lib/cliRunner.js.
 process.exit(runCli('supabase', args, { cwd: REPO_ROOT }));

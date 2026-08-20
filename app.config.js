@@ -44,11 +44,11 @@ const GOOGLE_MAPS_ANDROID_KEY =
 //
 // The authoritative ruleset lives in lib/appEnvironmentCore.ts and is enforced
 // by `npm run verify:env` (which the deploy scripts run) and surfaced at
-// runtime by lib/appEnvironment.ts. The guard below deliberately implements
-// only ONE of those rules — the one that can be decided from config alone and
+// runtime by lib/appEnvironment.ts. The guard below implements the rules that
+// can be decided from config alone and
 // must never reach a build:
 //
-//   a build that DECLARES a lane must not contradict itself.
+//   a declared lane must not contradict itself or name the wrong Supabase project.
 //
 // An UNDECLARED build is never blocked here, so adopting this system does not
 // break an existing `expo start`; under-declaration is caught by the deploy
@@ -56,9 +56,8 @@ const GOOGLE_MAPS_ANDROID_KEY =
 
 const APP_ENV = (process.env.EXPO_PUBLIC_APP_ENV || '').trim();
 const BACKEND_ENV = (process.env.EXPO_PUBLIC_BACKEND_ENV || '').trim().toLowerCase();
-const ALLOW_PRODUCTION_BACKEND = /^(true|1|yes|on)$/i.test(
-  (process.env.EXPO_PUBLIC_ALLOW_PRODUCTION_BACKEND || '').trim(),
-);
+const DEV_SUPABASE_HOST = 'qnfxnmvxpjzfydgudtvs.supabase.co';
+const PRODUCTION_SUPABASE_HOST = 'rlqvxdwtetxsqxhqztkw.supabase.co';
 
 function assertEnvironmentIsCoherent() {
   if (!APP_ENV) return; // undeclared: advisory only, see note above
@@ -70,13 +69,35 @@ function assertEnvironmentIsCoherent() {
         '(docs/DEVELOPMENT_WORKFLOW.md → Environment variables)',
     );
   }
-  if (APP_ENV !== 'production' && BACKEND_ENV === 'production' && !ALLOW_PRODUCTION_BACKEND) {
+  if (APP_ENV !== 'production' && BACKEND_ENV === 'production') {
     throw new Error(
       `[APP_ENV] Refusing to generate config: EXPO_PUBLIC_APP_ENV=${APP_ENV} with ` +
         'EXPO_PUBLIC_BACKEND_ENV=production. Experimental code must not reach real ' +
-        'user data. Point this lane at a development backend, or set ' +
-        'EXPO_PUBLIC_ALLOW_PRODUCTION_BACKEND=true to record the choice deliberately. ' +
+        'user data. Point this lane at Nearr-Dev. There is no production override. ' +
         '(docs/DEVELOPMENT_WORKFLOW.md → Environment variables)',
+    );
+  }
+  if (/^(true|1|yes|on)$/i.test((process.env.EXPO_PUBLIC_ALLOW_PRODUCTION_BACKEND || '').trim())) {
+    throw new Error(
+      '[APP_ENV] EXPO_PUBLIC_ALLOW_PRODUCTION_BACKEND is retired. Remove it; ' +
+        'development and preview builds may never reach production.',
+    );
+  }
+
+  const rawSupabaseUrl = (process.env.EXPO_PUBLIC_SUPABASE_URL || '').trim();
+  let configuredHost = '';
+  try {
+    configuredHost = new URL(rawSupabaseUrl).hostname.toLowerCase();
+  } catch {
+    // Empty/invalid is rejected below with the same fail-closed message.
+  }
+  const expectedHost =
+    BACKEND_ENV === 'development' ? DEV_SUPABASE_HOST : PRODUCTION_SUPABASE_HOST;
+  if (!configuredHost || configuredHost !== expectedHost) {
+    throw new Error(
+      `[APP_ENV] Refusing config: BACKEND_ENV=${BACKEND_ENV || '(unset)'} must use ` +
+        `${expectedHost}, but EXPO_PUBLIC_SUPABASE_URL resolves to ` +
+        `${configuredHost || '(missing/invalid)'}.`,
     );
   }
 }
@@ -164,12 +185,14 @@ module.exports = ({ config }) => {
       // always answer "which app/update am I actually looking at?".
       appEnv: APP_ENV,
       backendEnv: BACKEND_ENV,
-      allowProductionBackend: process.env.EXPO_PUBLIC_ALLOW_PRODUCTION_BACKEND || '',
       // Expose to runtime via Constants.expoConfig.extra.* as a fallback for
       // code paths that don't read process.env directly.
       supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL || '',
       supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '',
-      googlePlacesKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY || '',
+      googlePlacesKey:
+        process.env.EXPO_PUBLIC_GOOGLE_PLACES_KEY ||
+        process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY ||
+        '',
       // 2026-05-26: surface PROCESS_SHARE_LINK_URL in extra too. The iOS
       // share extension and lib/shareExtractionBackend.ts both fall back
       // to Constants.expoConfig.extra.processShareLinkUrl when the env

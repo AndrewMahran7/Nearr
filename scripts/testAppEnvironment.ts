@@ -19,7 +19,10 @@ import {
   blockingViolations,
   formatEnvironmentSummary,
   hostOf,
+  NEARR_DEV_SUPABASE_REF,
+  NEARR_PRODUCTION_SUPABASE_REF,
   resolveEnvironment,
+  supabaseProjectRefOfHost,
   validateEnvironment,
   type EnvironmentInputs,
 } from '../lib/appEnvironmentCore';
@@ -34,8 +37,8 @@ function check(name: string, condition: boolean, detail?: string): void {
   }
 }
 
-const PROD_HOST = 'https://prod-project.supabase.co';
-const DEV_HOST = 'https://dev-project.supabase.co';
+const PROD_HOST = `https://${NEARR_PRODUCTION_SUPABASE_REF}.supabase.co`;
+const DEV_HOST = `https://${NEARR_DEV_SUPABASE_REF}.supabase.co`;
 
 /** A fully-declared, internally consistent production configuration. */
 const PRODUCTION: EnvironmentInputs = {
@@ -101,21 +104,19 @@ check(
   codes({ ...PRODUCTION, appEnv: 'preview' }).includes('DEV_APP_PROD_BACKEND'),
 );
 
-// The escape hatch is explicit, and ONLY clears this one rule.
+// The old escape hatch is retired now that Nearr-Dev exists.
 const acknowledged: EnvironmentInputs = {
   ...devAppProdBackend,
   allowProductionBackend: 'true',
 };
 check(
-  'explicit ALLOW_PRODUCTION_BACKEND clears the dev->prod rule',
-  !codes(acknowledged).includes('DEV_APP_PROD_BACKEND'),
+  'ALLOW_PRODUCTION_BACKEND cannot clear the dev->prod rule',
+  codes(acknowledged).includes('DEV_APP_PROD_BACKEND'),
 );
-check('acknowledged dev->prod has no blocking violations', blockingCodes(acknowledged).length === 0);
 check(
-  'the acknowledgement is still visible in the summary',
-  formatEnvironmentSummary(acknowledged).includes('allowProductionBackend=true'),
+  'ALLOW_PRODUCTION_BACKEND is itself a blocking retired override',
+  blockingCodes(acknowledged).includes('PRODUCTION_BACKEND_OVERRIDE_FORBIDDEN'),
 );
-// It must NOT be readable as a general "skip all checks" switch.
 check(
   'ALLOW_PRODUCTION_BACKEND does NOT excuse a prod app on a dev backend',
   blockingCodes({ ...prodAppDevBackend, allowProductionBackend: 'true' }).includes(
@@ -167,11 +168,40 @@ check(
   ),
 );
 
-// ---- Rule 5 + 6: production-only guards ------------------------------------
+// ---- Rule 5: exact hosted project identity ---------------------------------
 check(
-  'production without a Supabase URL is flagged',
-  codes({ appEnv: 'production', backendEnv: 'production' }).includes('PROD_SUPABASE_MISSING'),
+  'any declared lane without a Supabase URL is blocked',
+  blockingCodes({ appEnv: 'development', backendEnv: 'development' }).includes('SUPABASE_MISSING'),
 );
+check(
+  'development label with production project is blocked even when labels agree',
+  blockingCodes({
+    ...DEVELOPMENT,
+    supabaseUrl: PROD_HOST,
+    processShareLinkUrl: `${PROD_HOST}/functions/v1/process-share-link`,
+    createShareJobUrl: `${PROD_HOST}/functions/v1/create-share-job`,
+  }).includes('SUPABASE_PROJECT_MISMATCH'),
+);
+check(
+  'production label with development project is blocked even when labels agree',
+  blockingCodes({
+    ...PRODUCTION,
+    supabaseUrl: DEV_HOST,
+    processShareLinkUrl: `${DEV_HOST}/functions/v1/process-share-link`,
+    createShareJobUrl: `${DEV_HOST}/functions/v1/create-share-job`,
+  }).includes('SUPABASE_PROJECT_MISMATCH'),
+);
+check(
+  'a custom/unrecognised hosted project cannot masquerade as Nearr-Dev',
+  blockingCodes({
+    ...DEVELOPMENT,
+    supabaseUrl: 'https://other-project.supabase.co',
+    processShareLinkUrl: 'https://other-project.supabase.co/functions/v1/process-share-link',
+    createShareJobUrl: 'https://other-project.supabase.co/functions/v1/create-share-job',
+  }).includes('SUPABASE_PROJECT_MISMATCH'),
+);
+
+// ---- Rule 6: production-only guards ---------------------------------------
 check(
   'demo mode in production is flagged',
   codes({ ...PRODUCTION, demoMode: 'true' }).includes('PROD_DEMO_MODE'),
@@ -198,6 +228,15 @@ check('hostOf strips userinfo', hostOf('https://user:pw@a.supabase.co/x') === 'a
 check('hostOf of empty is null', hostOf('') === null);
 check('hostOf of garbage is null', hostOf('not-a-url') === null);
 check('hostOf of non-string is null', hostOf(42 as unknown) === null);
+check(
+  'supabaseProjectRefOfHost extracts a standard project ref',
+  supabaseProjectRefOfHost(`${NEARR_DEV_SUPABASE_REF}.supabase.co`) === NEARR_DEV_SUPABASE_REF,
+);
+check('supabaseProjectRefOfHost rejects a custom host', supabaseProjectRefOfHost('db.example.com') === null);
+check(
+  'summary identifies Nearr-Dev without exposing configuration values',
+  formatEnvironmentSummary(DEVELOPMENT).includes('supabase=Nearr-Dev('),
+);
 
 // ---- Purity ----------------------------------------------------------------
 const frozen: EnvironmentInputs = { ...PRODUCTION };

@@ -240,12 +240,13 @@ function recoveryWiring() {
   assert.match(resetPassword, /Link expired/, 'an expired/malformed link is handled gracefully');
 }
 
-function developerLoginIsUnchangedAndSeparate() {
+function developerLoginIsEnvironmentGatedAndSeparate() {
   assert.match(
     account,
-    /const DEV_PASSWORD_LOGIN_ENABLED =\s*\n?\s*__DEV__ && process\.env\.EXPO_PUBLIC_ENABLE_DEV_PASSWORD_LOGIN === 'true';/,
-    'the developer gate is exactly as before',
+    /const DEV_PASSWORD_LOGIN_ENABLED =\s*[\s\S]{0,80}areDeveloperToolsVisible\(\) &&\s*process\.env\.EXPO_PUBLIC_ENABLE_DEV_PASSWORD_LOGIN === 'true';/,
+    'the developer gate uses the explicit non-production lane plus the opt-in flag',
   );
+  assert.doesNotMatch(account, /const DEV_PASSWORD_LOGIN_ENABLED =[\s\S]{0,80}__DEV__/);
   assert.match(account, /DEV_PASSWORD_LOGIN_ENABLED \? \(/, 'the panel is still gated on it');
 
   // The production password mode must not depend on the developer gate.
@@ -396,7 +397,7 @@ function run() {
   magicLinkPreserved();
   recoveryWiring();
   legacySignInRouteIsNeutralised();
-  developerLoginIsUnchangedAndSeparate();
+  developerLoginIsEnvironmentGatedAndSeparate();
   analyticsAndLoggingAreSafe();
   accessibilityAndKeyboard();
   console.log('testAuthScreenContracts: all assertions passed');

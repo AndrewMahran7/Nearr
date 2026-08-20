@@ -41,6 +41,12 @@ export const APP_ENVIRONMENT_NAMES: readonly AppEnvironmentName[] = [
   'production',
 ];
 
+// Supabase project refs are public identifiers (they are already present in
+// every project URL), not credentials. Keeping the two approved refs here lets
+// runtime code and deployment guards prove which database a lane reaches.
+export const NEARR_DEV_SUPABASE_REF = 'qnfxnmvxpjzfydgudtvs';
+export const NEARR_PRODUCTION_SUPABASE_REF = 'rlqvxdwtetxsqxhqztkw';
+
 /** Raw, unresolved environment declaration. Every field may be absent. */
 export type EnvironmentInputs = {
   appEnv?: unknown;
@@ -74,6 +80,7 @@ export type ResolvedEnvironment = {
   allowProductionBackend: boolean;
   /** Host of each configured backend URL, or null when unset/unparseable. */
   supabaseHost: string | null;
+  supabaseProjectRef: string | null;
   processShareLinkHost: string | null;
   createShareJobHost: string | null;
 };
@@ -100,6 +107,13 @@ export function hostOf(value: unknown): string | null {
     : authority;
   const host = afterUserInfo.replace(/:\d+$/, '');
   return host.toLowerCase() || null;
+}
+
+/** Extract the public project ref from a standard hosted Supabase hostname. */
+export function supabaseProjectRefOfHost(host: string | null): string | null {
+  if (!host) return null;
+  const match = /^([a-z0-9]+)\.supabase\.co$/i.exec(host);
+  return match ? match[1].toLowerCase() : null;
 }
 
 export function isAppEnvironmentName(value: unknown): value is AppEnvironmentName {
@@ -132,13 +146,15 @@ export function resolveEnvironment(inputs: EnvironmentInputs): ResolvedEnvironme
     ? 'production'
     : (rawBackendEnv as BackendEnvironmentName);
 
+  const supabaseHost = hostOf(inputs.supabaseUrl);
   return {
     appEnv,
     backendEnv,
     appEnvWasDefaulted,
     backendEnvWasDefaulted,
     allowProductionBackend: truthy(inputs.allowProductionBackend),
-    supabaseHost: hostOf(inputs.supabaseUrl),
+    supabaseHost,
+    supabaseProjectRef: supabaseProjectRefOfHost(supabaseHost),
     processShareLinkHost: hostOf(inputs.processShareLinkUrl),
     createShareJobHost: hostOf(inputs.createShareJobUrl),
   };
@@ -185,22 +201,23 @@ export function validateEnvironment(inputs: EnvironmentInputs): EnvironmentViola
     });
   }
 
-  // ---- Rule 3: a DEV app must not silently use the PROD backend. (Ph 15)
+  // ---- Rule 3: a DEV app must never use the PROD backend. (Phase 15) -----
   if (r.appEnv !== 'production' && r.backendEnv === 'production') {
-    if (!r.allowProductionBackend) {
-      violations.push({
-        code: 'DEV_APP_PROD_BACKEND',
-        message:
-          `APP_ENV=${r.appEnv} is configured against BACKEND_ENV=production. ` +
-          'Experimental code must not reach real user data. Point this lane at a ' +
-          'development backend, or — if you genuinely intend to test against ' +
-          'production with a dedicated test account — set ' +
-          'EXPO_PUBLIC_ALLOW_PRODUCTION_BACKEND=true so the choice is recorded.',
-      });
-    }
-    // When the opt-in IS set the pairing is deliberate, so it is not a
-    // violation. It stays visible because describeEnvironment() reports it and
-    // the Settings build-info card renders it.
+    violations.push({
+      code: 'DEV_APP_PROD_BACKEND',
+      message:
+        `APP_ENV=${r.appEnv} is configured against BACKEND_ENV=production. ` +
+        'Development and preview builds are never permitted to reach real user data. ' +
+        'Point this lane at Nearr-Dev.',
+    });
+  }
+  if (truthy(inputs.allowProductionBackend)) {
+    violations.push({
+      code: 'PRODUCTION_BACKEND_OVERRIDE_FORBIDDEN',
+      message:
+        'EXPO_PUBLIC_ALLOW_PRODUCTION_BACKEND is retired now that Nearr-Dev exists. ' +
+        'Remove it; there is no override for a development/preview lane.',
+    });
   }
 
   // ---- Rule 4: the three backend URLs must agree. -----------------------
@@ -220,14 +237,30 @@ export function validateEnvironment(inputs: EnvironmentInputs): EnvironmentViola
     });
   }
 
-  // ---- Rule 5: a production build needs a backend at all. ---------------
-  if (r.appEnv === 'production' && !r.supabaseHost) {
+  // ---- Rule 5: the label must match the exact approved Supabase project. -
+  // Host agreement alone is insufficient: every URL could consistently point
+  // at production while the labels still say "development".
+  if (!r.supabaseHost) {
     violations.push({
-      code: 'PROD_SUPABASE_MISSING',
+      code: 'SUPABASE_MISSING',
       message:
-        'APP_ENV=production but EXPO_PUBLIC_SUPABASE_URL is empty. This build ' +
-        'would boot straight to the "reinstall the build" error screen.',
+        'EXPO_PUBLIC_SUPABASE_URL is empty, so the lane cannot prove which project it reaches.',
     });
+  } else {
+    const expectedRef =
+      r.backendEnv === 'development'
+        ? NEARR_DEV_SUPABASE_REF
+        : NEARR_PRODUCTION_SUPABASE_REF;
+    if (r.supabaseProjectRef !== expectedRef) {
+      violations.push({
+        code: 'SUPABASE_PROJECT_MISMATCH',
+        message:
+          `BACKEND_ENV=${r.backendEnv} must use the approved ` +
+          `${r.backendEnv === 'development' ? 'Nearr-Dev' : 'production'} Supabase project ` +
+          `(${expectedRef}), but the configured host resolves to ` +
+          `${r.supabaseProjectRef ?? 'an unrecognised/custom project host'}.`,
+      });
+    }
   }
 
   // ---- Rule 6: developer-only switches must never reach production. -----
@@ -268,7 +301,9 @@ const BLOCKING_CODES: ReadonlySet<string> = new Set([
   'PROD_APP_DEV_BACKEND',
   'DEV_APP_PROD_BACKEND',
   'BACKEND_HOST_MISMATCH',
-  'PROD_SUPABASE_MISSING',
+  'SUPABASE_MISSING',
+  'SUPABASE_PROJECT_MISMATCH',
+  'PRODUCTION_BACKEND_OVERRIDE_FORBIDDEN',
   'PROD_DEMO_MODE',
   'PROD_DEV_PASSWORD_LOGIN',
   'PROD_DEBUG_LOGS',
@@ -283,11 +318,16 @@ export function blockingViolations(
 /** One-line, secret-free summary for logs, the CLI guard, and Settings. */
 export function formatEnvironmentSummary(inputs: EnvironmentInputs): string {
   const r = resolveEnvironment(inputs);
+  const supabaseLabel =
+    r.supabaseProjectRef === NEARR_DEV_SUPABASE_REF
+      ? `Nearr-Dev(${NEARR_DEV_SUPABASE_REF.slice(0, 4)}…${NEARR_DEV_SUPABASE_REF.slice(-4)})`
+      : r.supabaseProjectRef === NEARR_PRODUCTION_SUPABASE_REF
+        ? `Production(${NEARR_PRODUCTION_SUPABASE_REF.slice(0, 4)}…${NEARR_PRODUCTION_SUPABASE_REF.slice(-4)})`
+        : r.supabaseHost ?? 'none';
   return [
     `app=${r.appEnv}${r.appEnvWasDefaulted ? '(defaulted)' : ''}`,
     `backend=${r.backendEnv}${r.backendEnvWasDefaulted ? '(defaulted)' : ''}`,
-    `supabaseHost=${r.supabaseHost ?? 'none'}`,
-    r.allowProductionBackend ? 'allowProductionBackend=true' : '',
+    `supabase=${supabaseLabel}`,
   ]
     .filter(Boolean)
     .join(' ');
