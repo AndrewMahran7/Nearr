@@ -529,7 +529,11 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
       const acquired = frames.length > 0 || transcript.segments.length > 0 || ocr.length > 0 ||
         !!media.metadataTitle || !!media.metadataDescription || primaryContext.evidence.length > 0;
       await recordAiNoteEvidenceSnapshot(client, task, primaryContext.evidence, acquired);
-      const frameSnapshot = await encodeRetainedFrameSnapshot(primaryContext.frames);
+      const frameSnapshot = await encodeRetainedFrameSnapshot(primaryContext.frames, {
+        ffmpegPath: cfg.ffmpegPath,
+        workDir: jobTemp.dir,
+        signal: controller.signal,
+      });
       if (frameSnapshot) await recordAiNoteFrameSnapshot(client, task, frameSnapshot);
     }
     const analyzeTarget = async (context: typeof primaryContext) => {

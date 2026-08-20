@@ -1,5 +1,7 @@
 import { readFile, writeFile } from 'node:fs/promises';
+import path from 'node:path';
 import type { SelectedFrame } from '../types/media.js';
+import { execBinary } from '../util/exec.js';
 
 export const MAX_RETAINED_FRAME_BYTES = 512 * 1024;
 
@@ -12,10 +14,25 @@ export type RetainedFrameSnapshot = {
  * oversized frames are skipped rather than turning task rows into media blobs. */
 export async function encodeRetainedFrameSnapshot(
   frames: readonly SelectedFrame[],
+  compression?: {
+    ffmpegPath: string;
+    workDir: string;
+    signal: AbortSignal;
+  },
 ): Promise<RetainedFrameSnapshot | null> {
-  for (const frame of frames) {
+  for (let index = 0; index < frames.length; index += 1) {
+    const frame = frames[index]!;
     try {
-      const bytes = await readFile(frame.path);
+      let bytes = await readFile(frame.path);
+      if (bytes.length > MAX_RETAINED_FRAME_BYTES && compression) {
+        const compressedPath = path.join(compression.workDir, `retained-frame-${index}.jpg`);
+        const result = await execBinary(
+          compression.ffmpegPath,
+          ['-y', '-i', frame.path, '-vf', "scale='min(384,iw)':-2", '-q:v', '12', compressedPath],
+          { timeoutMs: 15_000, signal: compression.signal },
+        );
+        if (result.code === 0) bytes = await readFile(compressedPath);
+      }
       if (bytes.length === 0 || bytes.length > MAX_RETAINED_FRAME_BYTES) continue;
       return {
         postgresBytea: `\\x${bytes.toString('hex')}`,
