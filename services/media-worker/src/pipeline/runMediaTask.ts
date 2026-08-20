@@ -25,7 +25,13 @@ import {
   type FinalizeResponse,
 } from './verifyPlaceEvidence.js';
 import { cleanupMedia } from './cleanupMedia.js';
-import { setProgress, setTaskStatus, requeueTask } from '../db/tasks.js';
+import {
+  renewAiNoteRetryCycle,
+  requeueAiNoteTask,
+  setProgress,
+  setTaskStatus,
+  requeueTask,
+} from '../db/tasks.js';
 import type { TranscriptionProvider } from '../providers/transcription.js';
 import { groundClaimedEvidence, type ModelProvider } from '../providers/model.js';
 import { type OcrProvider, deduplicateOcrSegments } from '../providers/ocr.js';
@@ -64,7 +70,7 @@ async function loadAiNoteTarget(
 
   const { data, error } = await client
     .from('saved_places')
-    .select('id,user_id,source_url,source_type,ai_note,category,place:places(name,formatted_address)')
+    .select('id,user_id,place_id,source_url,source_type,ai_note,category,place:places(name,formatted_address)')
     .eq('id', task.saved_place_id)
     .eq('user_id', task.user_id)
     .maybeSingle();
@@ -77,6 +83,11 @@ async function loadAiNoteTarget(
       ai_note_outcome: 'target_missing',
       completed_at: new Date().toISOString(),
     });
+    return null;
+  }
+  if (task.target_place_id && data.place_id !== task.target_place_id) {
+    // A correction reset this reusable obligation while this stale claim was
+    // running. Leave the freshly queued generation untouched.
     return null;
   }
   if (typeof data.ai_note === 'string' && data.ai_note.trim()) {
@@ -94,12 +105,8 @@ async function loadAiNoteTarget(
     data.source_url !== representedSource ||
     (data.source_type ?? '').trim().toLowerCase() === 'manual'
   ) {
-    await setTaskStatus(client, task.id, 'completed', {
-      progress_stage: 'cleanup',
-      failure_code: 'ai_note_source_changed',
-      ai_note_outcome: 'stale_source',
-      completed_at: new Date().toISOString(),
-    });
+    // The trigger already completed or reset the reusable task row. This
+    // worker owns an old snapshot and must not mutate the new obligation.
     return null;
   }
 
@@ -372,6 +379,8 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
     const fin = await finalizeWithRetry(() =>
       verifyPlaceEvidence(cfg, {
         taskId: task.id,
+        targetPlaceId: task.target_place_id ?? null,
+        targetSourceUrl: task.canonical_url || task.source_url,
         outcome,
         evidence: hasEvidence ? analysis.evidence : undefined,
         // Already fetched during retrieval — no additional round trip.
@@ -438,9 +447,9 @@ async function handleTaskError(
   // queue backoff as provider/download failures. Recognition keeps its existing
   // behavior unchanged.
   if (shouldRequeueAiNoteFinalizerFailure(media, task)) {
-    await requeueTask(
+    await requeueAiNoteTask(
       client,
-      task.id,
+      task,
       computeRetryDelaySeconds(
         task.attempts,
         cfg.retryBaseSeconds,
@@ -454,10 +463,14 @@ async function handleTaskError(
 
   const plan = planTaskFailure(media, task, cfg);
   if (plan.action === 'requeue') {
-    await requeueTask(client, task.id, plan.delaySeconds, media.code);
+    if (task.task_kind === 'ai_note_enrichment') {
+      await requeueAiNoteTask(client, task, plan.delaySeconds, media.code);
+    } else {
+      await requeueTask(client, task.id, plan.delaySeconds, media.code);
+    }
     return;
   }
-  await safeFinalize(cfg, client, task, plan.outcome, diagnostics, media.code);
+  await safeFinalize(cfg, client, task, plan.outcome, diagnostics, media.code, analysisAttempted);
 }
 
 // Finalize with a FRESH signal (the job-timeout controller may already be
@@ -469,19 +482,33 @@ async function safeFinalize(
   outcome: FinalizeOutcome,
   diagnostics: Record<string, unknown>,
   code: string,
+  analysisAttempted: boolean,
 ): Promise<void> {
   const c = new AbortController();
   const t = setTimeout(() => c.abort(), 15_000);
   try {
-    const fin = await verifyPlaceEvidence(cfg, { taskId: task.id, outcome, diagnostics, signal: c.signal });
+    const fin = await verifyPlaceEvidence(cfg, {
+      taskId: task.id,
+      targetPlaceId: task.target_place_id ?? null,
+      targetSourceUrl: task.canonical_url || task.source_url,
+      outcome,
+      failureCode: code,
+      analysisAttempted,
+      diagnostics: { ...diagnostics, analysisAttempted },
+      signal: c.signal,
+    });
     if (!fin.ok) throw new Error(`finalize_http_${fin.status}`);
   } catch {
-    // Finalize endpoint unreachable — mark the task terminal locally. The
-    // parent's parked lease still guarantees the metadata claim rescues it.
-    await setTaskStatus(client, task.id, outcome === 'unavailable' ? 'needs_help' : 'failed', {
-      failure_code: code,
-      completed_at: new Date().toISOString(),
-    });
+    // A note obligation survives a finalizer outage on a long retry cycle.
+    // Recognition retains its original terminal/recovery behavior.
+    if (task.task_kind === 'ai_note_enrichment') {
+      await renewAiNoteRetryCycle(client, task, code);
+    } else {
+      await setTaskStatus(client, task.id, outcome === 'unavailable' ? 'needs_help' : 'failed', {
+        failure_code: code,
+        completed_at: new Date().toISOString(),
+      });
+    }
   } finally {
     clearTimeout(t);
   }

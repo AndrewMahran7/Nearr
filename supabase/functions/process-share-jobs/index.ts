@@ -46,6 +46,7 @@ import {
   persistAiNoteSupplementally,
   type AiPlaceNoteResult,
 } from '../../../lib/aiPlaceNote.ts';
+import { classifyVideoAiNoteFailure } from '../../../lib/videoDerivedAiNote.ts';
 
 import { submitPushToUser, checkExpoReceipts, type TicketRef } from './push.ts';
 import {
@@ -392,6 +393,30 @@ async function markMediaTask(
   await admin.from('share_media_tasks').update({ status, ...patch }).eq('id', taskId);
 }
 
+/** Guard supplemental task state by the generation snapshot. The row is
+ * reusable across source changes/corrections, so id alone is not ownership. */
+async function markVideoAiNoteTask(
+  admin: any,
+  task: any,
+  status: string,
+  patch: Record<string, unknown>,
+): Promise<boolean> {
+  let query = admin
+    .from('share_media_tasks')
+    .update({ status, ...patch })
+    .eq('id', task.id)
+    .eq('task_kind', 'ai_note_enrichment')
+    .eq('saved_place_id', task.saved_place_id)
+    .eq('target_place_id', task.target_place_id)
+    .eq('source_url', task.source_url);
+  query = task.canonical_url == null
+    ? query.is('canonical_url', null)
+    : query.eq('canonical_url', task.canonical_url);
+  const { data, error } = await query.select('id');
+  if (error) throw new Error(`ai_note_task_update_failed: ${error.message}`);
+  return Array.isArray(data) && data.length === 1;
+}
+
 function boundedJson(value: unknown, max = 8000): unknown {
   try {
     const s = JSON.stringify(value);
@@ -493,14 +518,14 @@ async function finalizeVideoAiNoteTask(
 
   const { data: saved, error: savedError } = await admin
     .from('saved_places')
-    .select('id,user_id,source_url,source_type,notes,ai_note,place:places(id,name)')
+    .select('id,user_id,place_id,source_url,source_type,notes,ai_note,place:places(id,name)')
     .eq('id', task.saved_place_id)
     .eq('user_id', task.user_id)
     .maybeSingle();
   if (savedError) throw new Error(`ai_note_target_lookup_failed: ${savedError.message}`);
   const finalPlace = Array.isArray(saved?.place) ? saved.place[0] : saved?.place;
   if (!saved?.id || !finalPlace?.name) {
-    await markMediaTask(admin, task.id, 'failed', {
+    await markVideoAiNoteTask(admin, task, 'failed', {
       failure_code: 'ai_note_target_missing',
       ai_note_outcome: 'target_missing',
       progress_stage: 'cleanup',
@@ -511,7 +536,7 @@ async function finalizeVideoAiNoteTask(
   }
 
   if ((saved.ai_note ?? '').trim()) {
-    await markMediaTask(admin, task.id, 'completed', {
+    await markVideoAiNoteTask(admin, task, 'completed', {
       failure_code: null,
       ai_note_outcome: 'already_present',
       progress_stage: 'cleanup',
@@ -521,13 +546,34 @@ async function finalizeVideoAiNoteTask(
     return json({ ok: true, route: 'ai_note_enrichment', enriched: false, alreadyPresent: true });
   }
 
-  const representedSource = task.canonical_url || task.source_url;
+  const callbackTargetPlaceId = typeof body.targetPlaceId === 'string'
+    ? body.targetPlaceId
+    : null;
+  const callbackTargetSourceUrl = typeof body.targetSourceUrl === 'string'
+    ? body.targetSourceUrl
+    : null;
+  const taskSourceUrl = task.canonical_url || task.source_url;
+  if (
+    !task.target_place_id ||
+    saved.place_id !== task.target_place_id ||
+    callbackTargetPlaceId !== task.target_place_id ||
+    !callbackTargetSourceUrl ||
+    callbackTargetSourceUrl !== taskSourceUrl ||
+    saved.source_url !== callbackTargetSourceUrl
+  ) {
+    // The reusable task row was reset for a correction after this worker run
+    // began. Never let Place A's callback modify Place B or its queued work.
+    logFinalStatus('stale_target', 'claim_conflict');
+    return json({ ok: true, route: 'ai_note_enrichment', enriched: false, reason: 'stale_target' });
+  }
+
+  const representedSource = taskSourceUrl;
   if (
     !representedSource ||
     saved.source_url !== representedSource ||
     (saved.source_type ?? '').trim().toLowerCase() === 'manual'
   ) {
-    await markMediaTask(admin, task.id, 'completed', {
+    await markVideoAiNoteTask(admin, task, 'completed', {
       failure_code: 'ai_note_source_changed',
       ai_note_outcome: 'stale_source',
       progress_stage: 'cleanup',
@@ -583,21 +629,50 @@ async function finalizeVideoAiNoteTask(
       : targetMatch !== 'matched'
         ? `ai_note_target_${targetMatch}`
         : `ai_note_${noteResult.status}${noteResult.reason ? `_${noteResult.reason}` : ''}`;
-    await markMediaTask(admin, task.id, 'failed', {
-      ...diagnosticPatch,
-      failure_code: failureCode.slice(0, 200),
-      ai_note_outcome: noteResult.status,
-      progress_stage: 'cleanup',
-      locked_until: null,
-      completed_at: nowIso(),
+    const disposition = classifyVideoAiNoteFailure({
+      outcome,
+      errorCodes: Array.isArray(diagnostics.errors) ? diagnostics.errors : [],
     });
+    const retryCycles = Math.max(0, Number(task.retry_cycles) || 0);
+    if (disposition === 'retry_after_outage') {
+      const delaySeconds = Math.min(86_400, 3_600 * 2 ** Math.min(retryCycles, 5));
+      const updatedTask = await markVideoAiNoteTask(admin, task, 'queued', {
+        ...diagnosticPatch,
+        attempts: 0,
+        retry_cycles: retryCycles + 1,
+        next_attempt_at: addSecondsIso(delaySeconds),
+        failure_code: failureCode.slice(0, 200),
+        ai_note_outcome: disposition,
+        progress_stage: 'queued',
+        locked_at: null,
+        locked_until: null,
+        completed_at: null,
+      });
+      if (!updatedTask) {
+        logFinalStatus('stale_target_during_retry', 'claim_conflict');
+        return json({ ok: true, route: 'ai_note_enrichment', enriched: false, reason: 'stale_target' });
+      }
+    } else {
+      const updatedTask = await markVideoAiNoteTask(admin, task, 'needs_help', {
+        ...diagnosticPatch,
+        failure_code: failureCode.slice(0, 200),
+        ai_note_outcome: 'awaiting_evidence',
+        progress_stage: 'cleanup',
+        locked_until: null,
+        completed_at: nowIso(),
+      });
+      if (!updatedTask) {
+        logFinalStatus('stale_target_during_evidence_wait', 'claim_conflict');
+        return json({ ok: true, route: 'ai_note_enrichment', enriched: false, reason: 'stale_target' });
+      }
+    }
     console.log(JSON.stringify({
       event: 'video_ai_note_enrichment',
       savedPlaceId: saved.id,
       taskId: task.id,
       videoDerived: true,
       generationAttempted: outcome === 'evidence',
-      generationOutcome: noteResult.status,
+      generationOutcome: disposition,
       targetMatch,
       retryCount: Number(task.attempts) || 0,
       provider: diagnosticPatch.analysis_provider,
@@ -607,8 +682,17 @@ async function finalizeVideoAiNoteTask(
       userNotePreserved: true,
       ruleVersion: VIDEO_AI_NOTE_RULE_VERSION,
     }));
-    logFinalStatus('note_unavailable', 'permanent_processing_error');
-    return json({ ok: true, route: 'ai_note_enrichment', enriched: false, reason: failureCode });
+    logFinalStatus(
+      disposition === 'retry_after_outage' ? 'note_retry_scheduled' : 'note_awaiting_evidence',
+      disposition === 'retry_after_outage' ? 'transient_provider_error' : 'insufficient_evidence',
+    );
+    return json({
+      ok: true,
+      route: 'ai_note_enrichment',
+      enriched: false,
+      reason: failureCode,
+      disposition,
+    });
   }
 
   let update = admin
@@ -616,6 +700,7 @@ async function finalizeVideoAiNoteTask(
     .update({ ai_note: noteResult.note })
     .eq('id', saved.id)
     .eq('user_id', saved.user_id)
+    .eq('place_id', task.target_place_id)
     .eq('source_url', representedSource);
   update = saved.ai_note == null
     ? update.is('ai_note', null)
@@ -626,11 +711,11 @@ async function finalizeVideoAiNoteTask(
   if (!Array.isArray(updated) || updated.length !== 1) {
     const { data: current } = await admin
       .from('saved_places')
-      .select('ai_note,source_url')
+      .select('ai_note,place_id,source_url')
       .eq('id', saved.id)
       .maybeSingle();
     if ((current?.ai_note ?? '').trim()) {
-      await markMediaTask(admin, task.id, 'completed', {
+      await markVideoAiNoteTask(admin, task, 'completed', {
         ...diagnosticPatch,
         failure_code: null,
         ai_note_outcome: 'already_present',
@@ -641,19 +726,35 @@ async function finalizeVideoAiNoteTask(
       logFinalStatus('concurrent_note_preserved');
       return json({ ok: true, route: 'ai_note_enrichment', enriched: false, alreadyPresent: true });
     }
-    await markMediaTask(admin, task.id, 'failed', {
+    if (current?.place_id !== task.target_place_id || current?.source_url !== representedSource) {
+      logFinalStatus('stale_target_after_guard', 'claim_conflict');
+      return json({ ok: true, route: 'ai_note_enrichment', enriched: false, reason: 'stale_target' });
+    }
+    const exhausted = Number(task.attempts) >= Number(task.max_attempts);
+    const retryCycles = Math.max(0, Number(task.retry_cycles) || 0);
+    const updatedTask = await markVideoAiNoteTask(admin, task, 'queued', {
       ...diagnosticPatch,
+      attempts: exhausted ? 0 : Number(task.attempts) || 0,
+      retry_cycles: exhausted ? retryCycles + 1 : retryCycles,
+      next_attempt_at: exhausted
+        ? addSecondsIso(Math.min(86_400, 3_600 * 2 ** Math.min(retryCycles, 5)))
+        : addSecondsIso(60),
       failure_code: 'ai_note_guard_conflict',
-      ai_note_outcome: 'guard_conflict',
-      progress_stage: 'cleanup',
+      ai_note_outcome: 'retry_after_guard_conflict',
+      progress_stage: 'queued',
+      locked_at: null,
       locked_until: null,
-      completed_at: nowIso(),
+      completed_at: null,
     });
-    logFinalStatus('guard_conflict', 'claim_conflict');
-    return json({ ok: true, route: 'ai_note_enrichment', enriched: false, reason: 'guard_conflict' });
+    if (!updatedTask) {
+      logFinalStatus('stale_target_during_guard_retry', 'claim_conflict');
+      return json({ ok: true, route: 'ai_note_enrichment', enriched: false, reason: 'stale_target' });
+    }
+    logFinalStatus('guard_conflict_retry_scheduled', 'claim_conflict');
+    return json({ ok: true, route: 'ai_note_enrichment', enriched: false, reason: 'guard_conflict_retry' });
   }
 
-  await markMediaTask(admin, task.id, 'completed', {
+  await markVideoAiNoteTask(admin, task, 'completed', {
     ...diagnosticPatch,
     failure_code: null,
     ai_note_outcome: 'generated',

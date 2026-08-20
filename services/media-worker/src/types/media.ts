@@ -169,6 +169,10 @@ export type MediaTask = {
   task_kind?: 'recognition' | 'ai_note_enrichment';
   share_job_id: string | null;
   saved_place_id?: string | null;
+  /** Internal public.places.id captured for this enrichment generation. */
+  target_place_id?: string | null;
+  /** Number of exhausted transient-outage retry cycles. */
+  retry_cycles?: number;
   user_id: string;
   source_url: string;
   canonical_url: string | null;

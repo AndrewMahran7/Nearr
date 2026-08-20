@@ -11,7 +11,7 @@
 begin;
 
 with candidates as (
-  select sp.id, sp.user_id, sp.source_url, sp.source_type
+  select sp.id, sp.user_id, sp.place_id, sp.source_url, sp.source_type
     from public.saved_places sp
    where public.is_video_derived_saved_place(sp.source_type, sp.source_url)
      and coalesce(length(trim(sp.ai_note)), 0) = 0
@@ -25,13 +25,13 @@ with candidates as (
    limit :batch_size
 ), inserted as (
   insert into public.share_media_tasks (
-    task_kind, share_job_id, saved_place_id, user_id,
+    task_kind, share_job_id, saved_place_id, target_place_id, user_id,
     source_url, canonical_url, platform,
     status, progress_stage, attempts, max_attempts, next_attempt_at,
     ai_note_outcome
   )
   select
-    'ai_note_enrichment', null, c.id, c.user_id,
+    'ai_note_enrichment', null, c.id, c.place_id, c.user_id,
     trim(c.source_url), trim(c.source_url),
     public.video_source_platform(c.source_type, c.source_url),
     'queued', 'queued', 0, 3, now(), 'queued'

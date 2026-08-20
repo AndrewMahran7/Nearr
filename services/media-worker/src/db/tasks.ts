@@ -108,6 +108,77 @@ export async function requeueTask(
   }
 }
 
+/** Requeue only if the reusable AI-note row still represents this worker's
+ * source/final-place snapshot. */
+export async function requeueAiNoteTask(
+  client: SupabaseClient,
+  task: MediaTask,
+  backoffSeconds: number,
+  failureCode: string,
+): Promise<void> {
+  let query = client
+    .from('share_media_tasks')
+    .update({
+      status: 'queued',
+      next_attempt_at: new Date(Date.now() + Math.max(1, backoffSeconds) * 1000).toISOString(),
+      locked_until: null,
+      failure_code: failureCode,
+    })
+    .eq('id', task.id)
+    .eq('task_kind', 'ai_note_enrichment')
+    .eq('saved_place_id', task.saved_place_id)
+    .eq('target_place_id', task.target_place_id)
+    .eq('source_url', task.source_url);
+  query = task.canonical_url == null
+    ? query.is('canonical_url', null)
+    : query.eq('canonical_url', task.canonical_url);
+  await query;
+}
+
+export function aiNoteRetryCycleDelaySeconds(retryCycles: number): number {
+  const cycle = Math.max(0, Math.floor(retryCycles));
+  return Math.min(86_400, 3_600 * 2 ** Math.min(cycle, 5));
+}
+
+/** Renew a supplemental note obligation after one bounded attempt cycle. The
+ * long capped cooldown avoids hot-looping while allowing eventual convergence
+ * after an extended provider/finalizer outage. */
+export async function renewAiNoteRetryCycle(
+  client: SupabaseClient,
+  task: Pick<
+    MediaTask,
+    'id' | 'retry_cycles' | 'saved_place_id' | 'target_place_id' | 'source_url' | 'canonical_url'
+  >,
+  failureCode: string,
+): Promise<void> {
+  const retryCycles = Math.max(0, Number(task.retry_cycles) || 0);
+  const nextAttemptAt = new Date(
+    Date.now() + aiNoteRetryCycleDelaySeconds(retryCycles) * 1000,
+  ).toISOString();
+  let query = client
+    .from('share_media_tasks')
+    .update({
+      status: 'queued',
+      attempts: 0,
+      retry_cycles: retryCycles + 1,
+      next_attempt_at: nextAttemptAt,
+      locked_at: null,
+      locked_until: null,
+      completed_at: null,
+      failure_code: failureCode,
+      ai_note_outcome: 'retry_after_outage',
+    })
+    .eq('id', task.id)
+    .eq('task_kind', 'ai_note_enrichment')
+    .eq('saved_place_id', task.saved_place_id)
+    .eq('target_place_id', task.target_place_id)
+    .eq('source_url', task.source_url);
+  query = task.canonical_url == null
+    ? query.is('canonical_url', null)
+    : query.eq('canonical_url', task.canonical_url);
+  await query;
+}
+
 /** Best-effort cleanup of tasks that exhausted their retry budget. */
 export async function expireExhaustedTasks(client: SupabaseClient): Promise<number> {
   const { data, error } = await client.rpc('expire_media_tasks', { p_limit: 25 });

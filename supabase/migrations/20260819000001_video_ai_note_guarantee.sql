@@ -13,29 +13,9 @@
 
 set check_function_bodies = off;
 
--- A real attached source URL is the durable provenance fact. `manual` opts out;
--- null/legacy and `link` remain eligible because older/future normalized social
--- platforms can arrive before a dedicated source_type label exists.
-create or replace function public.is_video_derived_saved_place(
-  p_source_type text,
-  p_source_url text
-)
-returns boolean
-language sql
-immutable
-parallel safe
-set search_path = public, pg_temp
-as $$
-  select coalesce(length(trim(p_source_url)), 0) > 0
-     and coalesce(lower(trim(p_source_type)), '') <> 'manual';
-$$;
-
-revoke all on function public.is_video_derived_saved_place(text, text) from public, anon, authenticated;
-grant execute on function public.is_video_derived_saved_place(text, text) to service_role;
-
--- Resolve legacy/link provenance to a worker-supported platform without tying
--- the invariant to a UI route. New explicit source_type values win; URL host is
--- the compatibility fallback.
+-- Resolve only provenance the media worker can process. Every row needs a
+-- durable post/video URL shape. An explicit normalized label must agree with
+-- that URL; `link`/null preserves legacy compatibility.
 create or replace function public.video_source_platform(
   p_source_type text,
   p_source_url text
@@ -47,20 +27,54 @@ parallel safe
 set search_path = public, pg_temp
 as $$
   select case
-    when lower(trim(coalesce(p_source_type, ''))) in
-      ('instagram', 'tiktok', 'youtube', 'facebook', 'snapchat')
-      then lower(trim(p_source_type))
-    when lower(coalesce(p_source_url, '')) ~ '(^|[./])instagram\.com([/?#]|$)' then 'instagram'
-    when lower(coalesce(p_source_url, '')) ~ '(^|[./])tiktok\.com([/?#]|$)' then 'tiktok'
-    when lower(coalesce(p_source_url, '')) ~ '(^|[./])(youtube\.com|youtu\.be)([/?#]|$)' then 'youtube'
-    when lower(coalesce(p_source_url, '')) ~ '(^|[./])(facebook\.com|fb\.watch)([/?#]|$)' then 'facebook'
-    when lower(coalesce(p_source_url, '')) ~ '(^|[./])snapchat\.com([/?#]|$)' then 'snapchat'
-    else 'link'
+    when coalesce(length(trim(p_source_url)), 0) = 0 then null
+    when lower(trim(coalesce(p_source_type, ''))) = 'manual' then null
+    when lower(trim(coalesce(p_source_type, ''))) in ('', 'link', 'instagram')
+      and lower(p_source_url) ~ '^https://([^/?#]+\.)?instagram\.com/((p|reel|reels|tv)/[^/?#]+|stories/[^/?#]+/[^/?#]+)/?([?#].*)?$' then 'instagram'
+    when lower(trim(coalesce(p_source_type, ''))) in ('', 'link', 'tiktok')
+      and lower(p_source_url) ~ '^https://(vm\.|vt\.)tiktok\.com/[^/?#]+' then 'tiktok'
+    when lower(trim(coalesce(p_source_type, ''))) in ('', 'link', 'tiktok')
+      and lower(p_source_url) ~ '^https://([^/?#]+\.)?tiktok\.com/(@[^/]+/video/[0-9]+|t/[^/?#]+)/?([?#].*)?$' then 'tiktok'
+    when lower(trim(coalesce(p_source_type, ''))) in ('', 'link', 'youtube')
+      and lower(p_source_url) ~ '^https://([^/?#]+\.)?youtube\.com/(shorts|live)/[^/?#]+/?([?#].*)?$' then 'youtube'
+    when lower(trim(coalesce(p_source_type, ''))) in ('', 'link', 'youtube')
+      and lower(p_source_url) ~ '^https://([^/?#]+\.)?youtube\.com/watch/?\?[^#]*v=[^&#]+' then 'youtube'
+    when lower(trim(coalesce(p_source_type, ''))) in ('', 'link', 'youtube')
+      and lower(p_source_url) ~ '^https://youtu\.be/[^/?#]+' then 'youtube'
+    when lower(trim(coalesce(p_source_type, ''))) in ('', 'link', 'facebook')
+      and lower(p_source_url) ~ '^https://([^/?#]+\.)?facebook\.com/(reel|reels)/[^/?#]+' then 'facebook'
+    when lower(trim(coalesce(p_source_type, ''))) in ('', 'link', 'facebook')
+      and lower(p_source_url) ~ '^https://([^/?#]+\.)?facebook\.com/[^/?#]+/(videos|posts)/[^/?#]+' then 'facebook'
+    when lower(trim(coalesce(p_source_type, ''))) in ('', 'link', 'facebook')
+      and lower(p_source_url) ~ '^https://([^/?#]+\.)?facebook\.com/share/(r|v|p)/[^/?#]+' then 'facebook'
+    when lower(trim(coalesce(p_source_type, ''))) in ('', 'link', 'facebook')
+      and lower(p_source_url) ~ '^https://([^/?#]+\.)?facebook\.com/watch/?\?[^#]*v=[^&#]+' then 'facebook'
+    when lower(trim(coalesce(p_source_type, ''))) in ('', 'link', 'facebook')
+      and lower(p_source_url) ~ '^https://fb\.watch/[^/?#]+' then 'facebook'
+    when lower(trim(coalesce(p_source_type, ''))) in ('', 'link', 'snapchat')
+      and lower(p_source_url) ~ '^https://([^/?#]+\.)?snapchat\.com/spotlight/[^/?#]+' then 'snapchat'
+    else null
   end;
 $$;
 
 revoke all on function public.video_source_platform(text, text) from public, anon, authenticated;
 grant execute on function public.video_source_platform(text, text) to service_role;
+
+create or replace function public.is_video_derived_saved_place(
+  p_source_type text,
+  p_source_url text
+)
+returns boolean
+language sql
+immutable
+parallel safe
+set search_path = public, pg_temp
+as $$
+  select public.video_source_platform(p_source_type, p_source_url) is not null;
+$$;
+
+revoke all on function public.is_video_derived_saved_place(text, text) from public, anon, authenticated;
+grant execute on function public.is_video_derived_saved_place(text, text) to service_role;
 
 -- Generalize the existing durable media queue. Recognition still has exactly
 -- one task per share_job. AI-note enrichment has exactly one task per saved
@@ -75,6 +89,8 @@ alter table public.share_media_tasks
 alter table public.share_media_tasks
   add column if not exists task_kind text not null default 'recognition',
   add column if not exists saved_place_id uuid references public.saved_places(id) on delete cascade,
+  add column if not exists target_place_id uuid references public.places(id) on delete cascade,
+  add column if not exists retry_cycles integer not null default 0,
   add column if not exists analysis_model text,
   add column if not exists prompt_version text,
   add column if not exists latency_ms integer,
@@ -91,9 +107,9 @@ alter table public.share_media_tasks
 alter table public.share_media_tasks
   add constraint share_media_tasks_target_check
   check (
-    (task_kind = 'recognition' and share_job_id is not null and saved_place_id is null)
+    (task_kind = 'recognition' and share_job_id is not null and saved_place_id is null and target_place_id is null)
     or
-    (task_kind = 'ai_note_enrichment' and share_job_id is null and saved_place_id is not null)
+    (task_kind = 'ai_note_enrichment' and share_job_id is null and saved_place_id is not null and target_place_id is not null)
   );
 
 create unique index if not exists share_media_tasks_recognition_job_uidx
@@ -118,6 +134,7 @@ set search_path = public, pg_temp
 as $$
 declare
   v_owner uuid;
+  v_target uuid;
 begin
   if new.task_kind = 'recognition' then
     select sj.user_id into v_owner
@@ -127,11 +144,15 @@ begin
       raise exception 'share_media_tasks: parent share_job % not found', new.share_job_id;
     end if;
   elsif new.task_kind = 'ai_note_enrichment' then
-    select sp.user_id into v_owner
+    select sp.user_id, sp.place_id into v_owner, v_target
       from public.saved_places sp
      where sp.id = new.saved_place_id;
     if v_owner is null then
       raise exception 'share_media_tasks: saved_place % not found', new.saved_place_id;
+    end if;
+    if new.target_place_id is distinct from v_target then
+      raise exception 'share_media_tasks: target_place_id % does not match saved place %',
+        new.target_place_id, v_target;
     end if;
   else
     raise exception 'share_media_tasks: invalid task_kind %', new.task_kind;
@@ -147,7 +168,7 @@ $$;
 
 drop trigger if exists share_media_tasks_owner_guard on public.share_media_tasks;
 create trigger share_media_tasks_owner_guard
-  before insert or update of user_id, share_job_id, saved_place_id, task_kind
+  before insert or update of user_id, share_job_id, saved_place_id, target_place_id, task_kind
   on public.share_media_tasks
   for each row execute function public.share_media_tasks_enforce_owner();
 
@@ -163,7 +184,18 @@ set search_path = public, pg_temp
 as $$
 declare
   v_platform text;
+  v_rearm boolean := false;
 begin
+  if tg_op = 'UPDATE' then
+    v_rearm :=
+      not public.is_video_derived_saved_place(old.source_type, old.source_url)
+      or old.place_id is distinct from new.place_id
+      or old.source_url is distinct from new.source_url
+      or (
+        coalesce(length(trim(old.ai_note)), 0) > 0
+        and coalesce(length(trim(new.ai_note)), 0) = 0
+      );
+  end if;
   if public.is_video_derived_saved_place(new.source_type, new.source_url)
      and coalesce(length(trim(new.ai_note)), 0) = 0 then
     v_platform := public.video_source_platform(new.source_type, new.source_url);
@@ -172,6 +204,7 @@ begin
       task_kind,
       share_job_id,
       saved_place_id,
+      target_place_id,
       user_id,
       source_url,
       canonical_url,
@@ -191,6 +224,7 @@ begin
       'ai_note_enrichment',
       null,
       new.id,
+      new.place_id,
       new.user_id,
       trim(new.source_url),
       trim(new.source_url),
@@ -210,57 +244,73 @@ begin
     on conflict (saved_place_id) where task_kind = 'ai_note_enrichment'
     do update set
       user_id = excluded.user_id,
+      target_place_id = excluded.target_place_id,
       source_url = excluded.source_url,
       canonical_url = excluded.canonical_url,
       platform = excluded.platform,
       status = case
         when public.share_media_tasks.source_url is distinct from excluded.source_url
-          or public.share_media_tasks.status in ('completed', 'needs_help', 'failed', 'cancelled')
+          or public.share_media_tasks.target_place_id is distinct from excluded.target_place_id
+          or v_rearm
           then 'queued'
         else public.share_media_tasks.status
       end,
       progress_stage = case
         when public.share_media_tasks.source_url is distinct from excluded.source_url
-          or public.share_media_tasks.status in ('completed', 'needs_help', 'failed', 'cancelled')
+          or public.share_media_tasks.target_place_id is distinct from excluded.target_place_id
+          or v_rearm
           then 'queued'
         else public.share_media_tasks.progress_stage
       end,
       attempts = case
         when public.share_media_tasks.source_url is distinct from excluded.source_url
-          or public.share_media_tasks.status in ('completed', 'needs_help', 'failed', 'cancelled')
+          or public.share_media_tasks.target_place_id is distinct from excluded.target_place_id
+          or v_rearm
           then 0
         else public.share_media_tasks.attempts
       end,
       next_attempt_at = case
         when public.share_media_tasks.source_url is distinct from excluded.source_url
-          or public.share_media_tasks.status in ('completed', 'needs_help', 'failed', 'cancelled')
+          or public.share_media_tasks.target_place_id is distinct from excluded.target_place_id
+          or v_rearm
           then now()
         else public.share_media_tasks.next_attempt_at
       end,
       locked_at = case
         when public.share_media_tasks.source_url is distinct from excluded.source_url
-          or public.share_media_tasks.status in ('completed', 'needs_help', 'failed', 'cancelled')
+          or public.share_media_tasks.target_place_id is distinct from excluded.target_place_id
+          or v_rearm
           then null else public.share_media_tasks.locked_at end,
       locked_until = case
         when public.share_media_tasks.source_url is distinct from excluded.source_url
-          or public.share_media_tasks.status in ('completed', 'needs_help', 'failed', 'cancelled')
+          or public.share_media_tasks.target_place_id is distinct from excluded.target_place_id
+          or v_rearm
           then null else public.share_media_tasks.locked_until end,
       failure_code = case
         when public.share_media_tasks.source_url is distinct from excluded.source_url
-          or public.share_media_tasks.status in ('completed', 'needs_help', 'failed', 'cancelled')
+          or public.share_media_tasks.target_place_id is distinct from excluded.target_place_id
+          or v_rearm
           then null else public.share_media_tasks.failure_code end,
       failure_detail = case
         when public.share_media_tasks.source_url is distinct from excluded.source_url
-          or public.share_media_tasks.status in ('completed', 'needs_help', 'failed', 'cancelled')
+          or public.share_media_tasks.target_place_id is distinct from excluded.target_place_id
+          or v_rearm
           then null else public.share_media_tasks.failure_detail end,
       completed_at = case
         when public.share_media_tasks.source_url is distinct from excluded.source_url
-          or public.share_media_tasks.status in ('completed', 'needs_help', 'failed', 'cancelled')
+          or public.share_media_tasks.target_place_id is distinct from excluded.target_place_id
+          or v_rearm
           then null else public.share_media_tasks.completed_at end,
       ai_note_outcome = case
         when public.share_media_tasks.source_url is distinct from excluded.source_url
-          or public.share_media_tasks.status in ('completed', 'needs_help', 'failed', 'cancelled')
+          or public.share_media_tasks.target_place_id is distinct from excluded.target_place_id
+          or v_rearm
           then 'queued' else public.share_media_tasks.ai_note_outcome end,
+      retry_cycles = case
+        when public.share_media_tasks.source_url is distinct from excluded.source_url
+          or public.share_media_tasks.target_place_id is distinct from excluded.target_place_id
+          or v_rearm
+          then 0 else public.share_media_tasks.retry_cycles end,
       updated_at = now();
   else
     -- Synchronous generation won the race, a user deleted the video-derived
@@ -372,6 +422,7 @@ begin
                 from public.saved_places sp
                where sp.id = c.saved_place_id
                  and sp.user_id = c.user_id
+                 and sp.place_id = c.target_place_id
                  and sp.source_url = coalesce(c.canonical_url, c.source_url)
                  and public.is_video_derived_saved_place(sp.source_type, sp.source_url)
                  and coalesce(length(trim(sp.ai_note)), 0) = 0
@@ -388,6 +439,55 @@ $$;
 
 revoke all on function public.claim_media_tasks(integer, integer) from public, anon, authenticated;
 grant execute on function public.claim_media_tasks(integer, integer) to service_role;
+
+-- Recognition keeps its original terminal exhaustion semantics. An AI-note
+-- task is a durable obligation: after a worker crash or repeated transient
+-- outage exhausts one three-attempt cycle, renew it on an increasingly long,
+-- capped cooldown. This cannot hot-loop, and it converges once the provider
+-- recovers without making the place save synchronous.
+create or replace function public.expire_media_tasks(
+  p_limit integer default 25
+)
+returns setof public.share_media_tasks
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+begin
+  return query
+  update public.share_media_tasks mt
+     set status = case when mt.task_kind = 'ai_note_enrichment' then 'queued' else 'failed' end,
+         attempts = case when mt.task_kind = 'ai_note_enrichment' then 0 else mt.attempts end,
+         retry_cycles = case when mt.task_kind = 'ai_note_enrichment' then mt.retry_cycles + 1 else mt.retry_cycles end,
+         next_attempt_at = case
+           when mt.task_kind = 'ai_note_enrichment' then
+             now() + make_interval(secs => least(86400, 3600 * power(2, least(mt.retry_cycles, 5)))::integer)
+           else mt.next_attempt_at
+         end,
+         failure_code = coalesce(mt.failure_code, 'media_worker_unavailable'),
+         ai_note_outcome = case
+           when mt.task_kind = 'ai_note_enrichment' then 'retry_after_outage'
+           else mt.ai_note_outcome
+         end,
+         locked_until = null,
+         completed_at = case when mt.task_kind = 'ai_note_enrichment' then null else now() end,
+         updated_at = now()
+   where mt.id in (
+     select c.id
+       from public.share_media_tasks c
+      where c.status in ('queued', 'processing')
+        and c.attempts >= c.max_attempts
+        and (c.locked_until is null or c.locked_until < now())
+      order by c.updated_at
+      for update skip locked
+      limit greatest(p_limit, 1)
+   )
+  returning mt.*;
+end;
+$$;
+
+revoke all on function public.expire_media_tasks(integer) from public, anon, authenticated;
+grant execute on function public.expire_media_tasks(integer) to service_role;
 
 -- Internal invariant metric. This is intentionally service-role only; it is a
 -- diagnostics source, not user-facing UI. One row per missing place, including
@@ -406,6 +506,7 @@ select
   mt.status as generation_status,
   mt.attempts as retry_count,
   mt.max_attempts,
+  mt.retry_cycles,
   mt.analysis_provider as provider,
   mt.analysis_model as model,
   mt.prompt_version,

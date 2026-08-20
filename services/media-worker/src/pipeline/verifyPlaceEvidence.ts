@@ -40,6 +40,10 @@ export type MediaSourceMetadata = {
 
 export type FinalizeArgs = {
   taskId: string;
+  /** Internal places.id used to generate targeted evidence. */
+  targetPlaceId?: string | null;
+  /** Canonical source URL used for this generation snapshot. */
+  targetSourceUrl?: string | null;
   outcome: FinalizeOutcome;
   evidence?: MediaPlaceEvidence;
   sourceMetadata?: MediaSourceMetadata;
@@ -69,6 +73,8 @@ export async function verifyPlaceEvidence(
     body: JSON.stringify({
       mode: 'finalize_media_task',
       taskId: args.taskId,
+      targetPlaceId: args.targetPlaceId ?? undefined,
+      targetSourceUrl: args.targetSourceUrl ?? undefined,
       outcome: args.outcome,
       evidence: args.outcome === 'evidence' ? args.evidence : undefined,
       // Sent on EVERY outcome, not just `evidence`. The caption can name a

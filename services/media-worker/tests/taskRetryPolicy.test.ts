@@ -6,6 +6,7 @@ import {
   shouldRequeueAiNoteFinalizerFailure,
 } from '../src/pipeline/runMediaTask.js';
 import { MediaError } from '../src/types/media.js';
+import { aiNoteRetryCycleDelaySeconds } from '../src/db/tasks.js';
 
 const cfg = { retryBaseSeconds: 30, retryMaxSeconds: 900 };
 
@@ -19,7 +20,7 @@ test('transient provider failure requeues with bounded Retry-After', () => {
   assert.deepEqual(plan, { action: 'requeue', delaySeconds: 120 });
 });
 
-test('transient failure exhausts into a safe failed finalization', () => {
+test('one bounded attempt cycle reports exhaustion to the finalizer', () => {
   const plan = planTaskFailure(
     new MediaError('provider_unavailable', 'http_503'),
     { attempts: 3, max_attempts: 3 },
@@ -29,7 +30,7 @@ test('transient failure exhausts into a safe failed finalization', () => {
   assert.deepEqual(plan, { action: 'finalize', outcome: 'failed' });
 });
 
-test('finalizer outage never requeues the full media pipeline', () => {
+test('recognition keeps its existing terminal finalizer-outage plan', () => {
   const plan = planTaskFailure(
     new MediaError('finalizer_unavailable', 'verifying_place:finalize_http_503'),
     { attempts: 1, max_attempts: 3 },
@@ -37,6 +38,14 @@ test('finalizer outage never requeues the full media pipeline', () => {
     () => 0,
   );
   assert.deepEqual(plan, { action: 'finalize', outcome: 'failed' });
+});
+
+test('AI-note retry cycles use a one-hour exponential cooldown capped at one day', () => {
+  assert.equal(aiNoteRetryCycleDelaySeconds(0), 3_600);
+  assert.equal(aiNoteRetryCycleDelaySeconds(1), 7_200);
+  assert.equal(aiNoteRetryCycleDelaySeconds(4), 57_600);
+  assert.equal(aiNoteRetryCycleDelaySeconds(5), 86_400);
+  assert.equal(aiNoteRetryCycleDelaySeconds(100), 86_400);
 });
 
 test('AI-note enrichment requeues a transient finalizer outage within budget', () => {
