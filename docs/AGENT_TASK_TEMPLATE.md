@@ -10,14 +10,14 @@ Full context in [DEVELOPMENT_WORKFLOW.md](DEVELOPMENT_WORKFLOW.md).
 ```
 task          <one sentence: what "done" looks like>
 branch        feat/<slug>
-worktree      C:\Users\andre\Desktop\Nearr-<slug>
+worktree      C:\Users\andre\Desktop\Nearr-worktrees\<slug>
 base commit   <full sha — from `npm run task:new`>
 ```
 
 ## Rules
 
 1. **Work only inside your worktree.** Never read, write, or `cd` into another
-   `Nearr-*` directory. They belong to other agents working right now.
+   `Nearr-worktrees\*` directory. They belong to other agents working right now.
 2. **Never switch branches** inside the worktree, and never rebase onto or merge
    `main` unless asked. You start from the recorded base commit and stay there.
 3. **Commit your own work**, in focused commits, on your branch only.

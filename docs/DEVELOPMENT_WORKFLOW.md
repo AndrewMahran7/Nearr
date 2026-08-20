@@ -25,7 +25,7 @@ task C ─┘
 | EAS environment | `development` | `preview` | `production` |
 | App on the phone | dev build (replaces App Store Nearr — §12F) | same build | Nearr (App Store) |
 | Backend | development Supabase + Railway `development` | same | production Supabase + Railway `production` |
-| Who publishes | any agent | you | you, from `main`, with `--yes` |
+| Who publishes | designated integration/deployment owner | you | you, from `main`, with `--yes` |
 
 `main` means **production-ready**, not "whatever finished most recently". Nothing reaches
 `main` before it has passed its own tests, integration tests, and a physical iPhone check
@@ -36,32 +36,33 @@ where the change is user-visible.
 ## 2. Start a task
 
 ```powershell
-npm run task:new -- shazam-v2
+npm run task:new -- shazam-v2 --base integrate/safe-development-baseline
 ```
 
-Creates branch `feat/shazam-v2` and worktree `..\Nearr-shazam-v2` (matching the existing
-`Nearr-<slug>` convention), based on `main`, and prints the base commit.
+Creates branch `feat/shazam-v2` and worktree `..\Nearr-worktrees\shazam-v2`, based on the
+explicit ref, and prints the base commit. `--base` is mandatory: until physical validation
+and promotion, `main` is not the approved feature base. After promotion, use `--base main`.
 
 ```powershell
-cd ..\Nearr-shazam-v2
+cd ..\Nearr-worktrees\shazam-v2
 npm install     # worktrees do NOT share node_modules
 ```
 
-Options: `--kind fix|chore|docs|test|integration`, `--base <ref>`.
+Options: `--kind fix|chore|docs|test|integration`. Always provide `--base <ref>`.
 
 List everything in flight: `npm run task:list`. Clean up after merge:
 
 ```powershell
-git worktree remove ..\Nearr-shazam-v2
+git worktree remove ..\Nearr-worktrees\shazam-v2
 git branch -d feat/shazam-v2
 ```
 
 ## 3. Run several tasks at once
 
 ```powershell
-npm run task:new -- shazam-v2       # agent 1  ->  ..\Nearr-shazam-v2
-npm run task:new -- onboarding-v2   # agent 2  ->  ..\Nearr-onboarding-v2
-npm run task:new -- tiktok-ingestion # agent 3 ->  ..\Nearr-tiktok-ingestion
+npm run task:new -- vayrin-core --base integrate/safe-development-baseline
+npm run task:new -- onboarding-v2 --base integrate/safe-development-baseline
+npm run task:new -- tiktok-parity --base integrate/safe-development-baseline
 ```
 
 Give each agent the brief in [AGENT_TASK_TEMPLATE.md](AGENT_TASK_TEMPLATE.md). The rules
@@ -94,6 +95,17 @@ channel are for.
 Only create a temporary Railway environment if serializing actually blocks you. One shared
 development worker is the right default for a solo founder.
 
+Backend deployment ownership is stricter than source ownership:
+
+- Feature agents may write/test backend code locally, but do not deploy shared infrastructure.
+- Merge the backend change into the current integration branch first.
+- One named deployment owner runs one `dev:functions`, `dev:db`, or `dev:worker` command at
+  a time and records the integration commit deployed.
+- App-only OTA publishing also waits for integration approval; the development/preview
+  channel is not an agent scratchpad.
+- Production deployment is never run from a feature or integration worktree—only validated,
+  promoted, clean `main` can satisfy the wrappers.
+
 ---
 
 ## 4. Test the frontend without production
@@ -122,14 +134,15 @@ Rule of thumb: if it changes `ios/` after `expo prebuild`, it needs a build, not
 **Media worker (Railway):**
 
 ```powershell
-npm run dev:worker          # deploys the working tree to Railway `development`
+npm run dev:worker -- --yes # designated owner deploys to Railway `development`
 npm run dev:worker:logs
 curl.exe -fsS https://media-worker-development.up.railway.app/health
 ```
 
-Both scripts hardcode `--environment development --service media-worker` and the project
-ID. There is deliberately **no `prod:worker` script** — production worker deploys are
-manual and explicit (§10).
+The deploy wrapper owns the Railway project/environment/service flags, reads Railway's
+`SUPABASE_URL` first, and refuses unless it resolves to Nearr-Dev. `--yes` means the
+designated deployment owner has acquired the shared development deployment slot. Logs are
+read-only and do not need a confirmation. Production has its own stricter wrapper (§10).
 
 **Edge Functions:**
 
@@ -169,7 +182,7 @@ Two declarations decide everything. Both are explicit; neither is inferred from 
 The rules live in [`lib/appEnvironmentCore.ts`](../lib/appEnvironmentCore.ts), are locked
 down by `npm run test:app-environment`, and are enforced in three places:
 
-- **config generation** — `app.config.js` throws on a self-contradicting build.
+- **config generation** — `app.config.js` throws on a contradictory lane or wrong project.
 - **before publishing** — `npm run verify:env -- --eas-environment <name>` reads the EAS
   environment and refuses if it is unsafe. Every `*:update` script runs this first.
 - **at runtime** — `lib/appEnvironment.ts` logs the resolved lane at startup and feeds the
@@ -178,9 +191,11 @@ down by `npm run test:app-environment`, and are enforced in three places:
 The two rules that matter:
 
 - A **production** app must never ship **development** endpoints.
-- A **development** app must never silently reach the **production** backend. If you
-  genuinely intend to (see §12), set `EXPO_PUBLIC_ALLOW_PRODUCTION_BACKEND=true` so the
-  choice is recorded rather than accidental.
+- A **development/preview** app must never reach the **production** backend. The former
+  `EXPO_PUBLIC_ALLOW_PRODUCTION_BACKEND` escape hatch is retired and now fails the build.
+- Labels are not trusted by themselves: `development` must resolve to project
+  `qnfx…dtvs` (Nearr-Dev), and `production` to `rlqv…qztkw`. All share endpoint hosts must
+  match that Supabase host.
 
 ### Matrix
 
@@ -195,18 +210,72 @@ No values here — only where each one lives. Never paste secrets into this repo
 | `EXPO_PUBLIC_PROCESS_SHARE_LINK_URL` | dev project | prod project | EAS environment |
 | `EXPO_PUBLIC_CREATE_SHARE_JOB_URL` | dev project | prod project | EAS environment |
 | `EXPO_PUBLIC_ASYNC_SHARE_JOBS_ENABLED` | per experiment | `true` | EAS environment |
-| `EXPO_PUBLIC_GOOGLE_MAPS_API_KEY` | shared (restrict by bundle ID) | shared | EAS environment (sensitive) |
-| `EXPO_PUBLIC_ALLOW_PRODUCTION_BACKEND` | only while §12 applies | never set | EAS environment |
+| `EXPO_PUBLIC_GOOGLE_MAPS_API_KEY` | native Maps SDK key | native Maps SDK key | EAS environment (sensitive) |
+| `EXPO_PUBLIC_GOOGLE_PLACES_KEY` | dev-only REST key | production REST key | EAS environment (sensitive) |
+| `EXPO_PUBLIC_ALLOW_PRODUCTION_BACKEND` | **must be unset** | **must be unset** | retired |
 | `APP_VARIANT` | `dev` | unset | `eas.json` build profile |
 | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | **dev project** | prod project | Railway env / Supabase secrets |
 | `SHARE_JOBS_FINALIZE_URL`, `MEDIA_FINALIZE_SECRET`, `SHARE_MEDIA_WORKER_SECRET` | dev-specific | prod-specific | Railway env / Supabase secrets |
 | `GEMINI_API_KEY`, `MEDIA_TRANSCRIPTION_API_KEY`, `GOOGLE_PLACES_KEY` | may be shared | shared | Railway env / Supabase secrets |
 | `NEARR_DEV_SUPABASE_REF` | dev project ref | n/a | your `.env.local` |
 
-Provider API keys (Gemini, transcription, Places) can safely be shared across
-environments — they are quota, not data. **Anything that names a project, database, queue
+Provider API keys are quota/security surfaces. Prefer separate development keys, especially
+for on-device REST calls. **Anything that names a project, database, queue
 or callback must be environment-specific**: that is the boundary that keeps experiments
 away from real user rows.
+
+### Google Places on the development app
+
+`services/placesService.ts` calls Google's legacy web-service endpoints (`place/textsearch`,
+`place/details`, `place/photo`) plus `geocode/json`; it does not use Places API (New).
+The key path is:
+
+```text
+EXPO_PUBLIC_GOOGLE_PLACES_KEY (preferred REST key)
+  -> EXPO_PUBLIC_GOOGLE_MAPS_API_KEY (compatibility fallback)
+  -> app.config.js extra.googlePlacesKey
+  -> services/placesService.ts
+```
+
+`npm run verify:google -- --eas-environment development` currently proves the EAS lane is
+using the Maps fallback key: Geocoding API and Places API (New) are authorized, but legacy
+Places API is denied. The repo cannot change a Google Cloud allowlist.
+
+One manual action remains: create a **development-only** key, enable/restrict it to exactly
+`Places API` (legacy) and `Geocoding API`, leave application restriction `None` because
+these REST endpoints do not honor an iOS bundle restriction, apply a strict quota/budget
+alert, and save it as `EXPO_PUBLIC_GOOGLE_PLACES_KEY` in EAS `development` and `preview`.
+Do not edit the production key. Re-run `verify:google`; both required rows must say `OK`.
+
+### iOS Share Extension lane contract
+
+The extension excludes both `expo-updates` and `expo-dev-client`. It therefore runs the JS
+and `extra` values inlined at **native build time**, even after the host app receives an OTA.
+For the current same-identity development build, it also uses the production app's App Group
+name (`group.com.nearr.ios`). This is not a data-routing authority—the endpoint guard is—but
+it can contain a stale production session marker/token after replacing the App Store app.
+
+Before its first network call the async extension now logs only lane names and endpoint host,
+then requires all of the following:
+
+- app/backend declarations are development/development (or preview/development),
+- Supabase is exactly Nearr-Dev (`qnfx…dtvs`),
+- `process-share-link` and `create-share-job` hosts agree with that project,
+- the shared session is initialized and unexpired.
+
+Any configuration violation renders non-retryable `config_error`; it never calls
+`create-share-job`. Never log keys, JWTs, authorization headers, or token contents. After
+installing a development build, launch the host first, sign in to Nearr-Dev, then share. If
+stale App Group state is suspected, remove Nearr from the phone, reinstall the development
+build, launch it, and sign in before opening the Share Sheet.
+
+### Developer credential panel
+
+The installed development client may execute a production-mode OTA bundle, so `__DEV__` is
+not a lane identity. Developer password login is visible only when
+`areDeveloperToolsVisible()` sees an explicitly declared development/preview app **and**
+`EXPO_PUBLIC_ENABLE_DEV_PASSWORD_LOGIN=true`. Production rejects the flag at validation and
+never renders the panel. Credential values remain environment-provided and are not committed.
 
 ---
 
@@ -219,7 +288,7 @@ never modify a migration that has already been applied to production.
 `--linked` targets whichever project the CLI happens to be linked to, and on 2026-08-19 that
 was production — one habitual command away from altering real user schema. The wrapper
 proves its target before the CLI runs. There is deliberately no generic `db:push` script;
-production migrations are typed by hand with the ref visible (§10).
+the production wrapper is separately named, main-only, origin-matched and explicit (§10).
 
 Flow:
 
@@ -339,29 +408,29 @@ git merge integration/pre-shazam
 git push origin main
 
 # 2. database (only if migrations changed) — additive/backward-compatible first
-supabase db push --linked
+supabase link --project-ref rlqvxdwtetxsqxhqztkw
+npm run prod:db -- --yes
 
-# 3. Edge Functions (only if changed) — explicit ref, explicit flags
-supabase functions deploy process-share-jobs --project-ref <PROD_REF> --no-verify-jwt
-supabase functions deploy create-share-job   --project-ref <PROD_REF>
+# 3. Edge Functions (only if changed; wrapper preserves per-function JWT flags)
+npm run prod:functions -- process-share-jobs create-share-job --yes
 
 # 4. Railway production worker (only if services/media-worker changed)
-railway up services/media-worker --path-as-root --project 4037a3b5-d66f-409e-b734-56c22c244e3e --environment production --service Nearr
+npm run prod:worker -- --yes
 curl.exe -fsS https://nearr-production.up.railway.app/health
 
 # 5. the app
 npm run prod:update -- -m "Shazam V2" --yes      # JS-only
-eas build --profile production --platform ios    # native change -> build + submit
+npm run prod:build -- --yes                       # native change -> build + submit
 
 # 6. validate on the real production Nearr, on a real device
 ```
 
-`npm run prod:update` refuses unless: the branch is `main`, the working tree is clean,
-`HEAD` matches `origin/main`, the production EAS environment passes validation, and you
-passed `--yes`. Each of those checks corresponds to something that actually went wrong.
-
-Steps 2–4 have **no npm script** on purpose. Production backend changes should be typed
-deliberately, with the target visible in the command.
+Every `prod:*` wrapper refuses unless the branch is `main`, the tree is clean, and `HEAD`
+matches `origin/main`; mutating commands require `--yes`. Database additionally requires
+the CLI link to equal the known production ref. Functions pass the known production ref
+explicitly. Railway reads its target environment's `SUPABASE_URL` and requires the known
+production ref before `railway up`. Build/update validate the production EAS environment.
+After a production DB deploy, relink this development checkout to Nearr-Dev.
 
 ## 11. Rollback
 
@@ -370,25 +439,26 @@ Different layers roll back differently. This is the most important thing on this
 **Frontend (OTA)** — fast and safe:
 
 ```powershell
-eas update:rollback --channel production
+npm run prod:rollback -- --yes
 ```
 
-Republishes the previous update on that channel. Users get it on next launch. If the app
+Republishes the previous update on that fixed channel. For a bad development OTA use
+`npm run dev:rollback`; for preview use `npm run preview:rollback`. Users get the rollback
+on next launch. If the app
 cannot even boot, `eas update:republish` an older known-good update ID instead.
 
 **Railway** — redeploy the last known-good deployment from the Railway dashboard
 (Deployments → the green one → Redeploy), or `railway up` from the last known-good commit
 with the same explicit `--environment` flags. Do not roll back by deleting the service.
 
-**Edge Functions** — there is no built-in rollback. Check out the last known-good commit
-into a temporary worktree and redeploy from it, preserving the flags:
+**Edge Functions** — there is no built-in rollback. Restore the known-good source as a
+reviewed revert on `main`, push it, then use the guarded production wrapper:
 
 ```powershell
-git worktree add ..\Nearr-fn-rollback <good-commit>
-cd ..\Nearr-fn-rollback
-supabase functions deploy process-share-jobs --project-ref <PROD_REF> --no-verify-jwt
-cd ..\Nearr
-git worktree remove ..\Nearr-fn-rollback
+git switch main
+git revert <bad-function-commit>
+git push origin main
+npm run prod:functions -- process-share-jobs --yes
 ```
 
 **Database — do NOT roll back schema migrations.** A reverse migration on live data
@@ -401,9 +471,10 @@ unused is trivially recoverable; a column that is dropped is not.
 
 ---
 
-## 12. Setup status — what is done, what you still owe
+## 12. Setup status — validated facts and required rechecks
 
-Updated 2026-08-19 after the development-lane build-out.
+Updated 2026-08-19 during safe-baseline integration. Do not treat old dashboard observations
+as current without rechecking; repo tests cannot prove hosted secrets or phone behavior.
 
 ### Done
 
@@ -417,9 +488,14 @@ Updated 2026-08-19 after the development-lane build-out.
 | EAS `development` / `preview` | fully declared, pointing at Nearr-Dev, both pass `verify:env` |
 | EAS `production` | `APP_ENV`/`BACKEND_ENV` declared; endpoints untouched; passes `verify:env` |
 | Railway `development` | URL, service-role key and finalize URL all Nearr-Dev; `/ready` 200 |
-| Guards | `dev:db`, `dev:functions`, `dev:update`, `prod:update` all refuse the wrong target |
+| Guards | update/rollback/build/DB/functions/worker have fixed-lane wrappers; production is main+clean+origin+`--yes` |
 
-### Still required before the first dev build
+### Hosted configuration to revalidate before physical sharing
+
+The user has since physically confirmed Google auth and the Railway development `/ready`
+check. The remaining items below came from the earlier hosted audit; verify them read-only
+before changing anything. They are possible share-pipeline failure boundaries, not permission
+to copy production secrets or mutate production.
 
 **A. Supabase Edge Function secrets in `Nearr-Dev`** — the functions are deployed but have
 no configuration, so place resolution and the worker handshake will fail. Set with
@@ -448,27 +524,27 @@ worker; without it dev jobs never reach the dev worker:
 | `share_media_worker_url` | `https://media-worker-development.up.railway.app` — **not** production |
 | `share_media_worker_secret` | must match Railway `development` `SHARE_MEDIA_WORKER_SECRET` |
 
-**C. Railway `development` variables.** `MEDIA_FINALIZE_SECRET` is missing. The currently
-deployed worker predates that check so `/ready` is green today, but current `main` requires
-it and `npm run dev:worker` will drop the worker to 503 without it. Also add
+**C. Railway `development` variables.** Recheck `MEDIA_FINALIZE_SECRET` before deploying
+current source; `/ready` was confirmed green, but that only proves the deployed revision's
+requirements. Also compare
 `TIKTOK_MEDIA_RESOLVER_ENABLED` (and `FACEBOOK_`/`SNAPCHAT_` if wanted) — present in
 production, absent in development.
 
-`SHARE_MEDIA_WORKER_SECRET` is currently **identical** in development and production. Data
-isolation still holds because each worker only talks to its own Supabase, but the
-authentication boundary is shared. Rotate the development one to a distinct value.
+The prior audit found `SHARE_MEDIA_WORKER_SECRET` identical across lanes. Recheck without
+printing either value; if still true, rotate only the development secret and its matching
+Nearr-Dev Vault value. Do not change production during this task.
 
-**D. Railway auto-deploy.** The `development` service still deploys from
+**D. Railway auto-deploy.** The prior audit found the `development` service deploying from
 `fix/phase1-intermittent-crash-20260802` (2026-08-03), so it silently reverts anything you
 push with `npm run dev:worker`. In the Railway dashboard → project `Nearr Phase 2 Dev` →
 environment `development` → service `media-worker` → Settings → Source: disconnect the
 branch trigger (or repoint it to `main`). Explicit `npm run dev:worker` is the model this
 workflow assumes.
 
-**E. Supabase Auth in `Nearr-Dev`.** Email/magic-link is enabled and signup is allowed, so
-login works. Apple and Google are **disabled**, so those buttons cannot be tested in dev.
-Add `nearr://auth-callback` and `nearr:///auth-callback` to the redirect allowlist
-(`nearrdev://` variants only if you later enable side-by-side, §F).
+**E. Supabase Auth in `Nearr-Dev`.** Google sign-in has now been physically confirmed.
+Keep `nearr://auth-callback` and `nearr:///auth-callback` in the redirect allowlist
+(`nearrdev://` variants only if side-by-side identity is later enabled, §F). Apple remains
+separately unverified; do not infer it from Google success.
 
 **F. Side-by-side dev app — deliberately deferred.** `eas.json` currently builds the
 **existing** identity (`com.nearr.ios`), so the dev build **replaces** App Store Nearr on
@@ -489,25 +565,71 @@ alongside the migrations is the right home, so a rebuild is one command.
 
 ---
 
-## 13. Quick reference
+## 13. Final safe-baseline physical gate
+
+Do not merge `integrate/safe-development-baseline` to `main` until one installed development
+build passes every item:
+
+1. Force-quit/cold-start signed out: no maximum-depth warning and no black screen.
+2. Sign in with Google, force-quit, cold-start signed in, then background/resume warm.
+3. Settings -> Build info must show `app=development`, `backend=development`,
+   `supabase=Nearr-Dev(qnfx…dtvs)`, `channel=development`, and the expected update ID.
+4. Search for a real place. Fail on `REQUEST_DENIED`; first complete the Google key action
+   in §6 and rerun `verify:google`.
+5. Open map, saved place, gallery/basic navigation, and nearby flow. A notification tap and
+   a later cold start must not black-screen or dismiss/own the root UI.
+6. From a real Instagram or TikTok video: Share -> Nearr. The extension must accept it.
+   If it shows `config_error`, capture only the printed violation codes/hosts—never tokens.
+7. In Nearr-Dev, locate the unique test URL/time in `share_jobs`; inspect
+   `share_media_tasks` if created; wait for the development worker; confirm the resulting
+   `saved_places` row.
+8. Railway development logs must show that job/request and successful processing.
+9. Read-only inspect production Supabase for the same unique URL/time: no matching
+   `share_jobs`, `share_media_tasks`, or `saved_places` row. Production Railway must have no
+   corresponding request/job log.
+10. Pass means all nine checks succeed. Any production record/log, wrong Build Info lane,
+    startup black screen, Places denial, or unprocessed share is a hard fail; do not promote.
+
+Only after the user reports PASS:
 
 ```powershell
-npm run task:new -- <slug>        # new branch + worktree
+git switch main
+git merge --no-ff integrate/safe-development-baseline
+npm run verify:integration
+git push origin main
+```
+
+The merge is deliberate and non-fast-forward so the physically validated integration state
+has a named promotion boundary. Do not run these commands before approval.
+
+---
+
+## 14. Quick reference
+
+```powershell
+npm run task:new -- <slug> --base <safe-ref> # new branch + isolated worktree
 npm run task:list                 # what is in flight
 
 npm run verify:env                # is my local config coherent?
 npm run verify:env -- --eas-environment development
+npm run verify:google -- --eas-environment development
 npm run verify:integration        # typecheck + full test suite
 
 npm run dev:update -- -m "..."    # OTA to the dev app
+npm run dev:rollback              # recover the development channel only
 npm run dev:build                 # new dev build (native changes)
-npm run dev:worker                # media-worker -> Railway development
+npm run dev:worker -- --yes       # designated owner -> Railway development
 npm run dev:functions -- <fn> --yes
 npm run dev:db -- --yes          # migrations -> Nearr-Dev (refuses production)
 
 npm run preview:update -- -m "..." # integration build for combined testing
+npm run preview:rollback
 
-npm run prod:update -- -m "..." --yes   # main + clean + pushed + validated only
+npm run prod:db -- --yes
+npm run prod:functions -- <fn> --yes
+npm run prod:worker -- --yes
+npm run prod:update -- -m "..." --yes
+npm run prod:build -- --yes              # all prod commands: main + clean + origin
 ```
 
 Related: [AGENT_TASK_TEMPLATE.md](AGENT_TASK_TEMPLATE.md) ·
