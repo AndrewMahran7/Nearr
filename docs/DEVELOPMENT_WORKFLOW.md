@@ -23,7 +23,7 @@ task C ─┘
 | Git | `feat/<slug>` in its own worktree | `integration/<milestone>` | `main` |
 | EAS channel | `development` | `preview` | `production` |
 | EAS environment | `development` | `preview` | `production` |
-| App on the phone | Nearr Dev | Nearr Dev | Nearr (App Store) |
+| App on the phone | dev build (replaces App Store Nearr — §12F) | same build | Nearr (App Store) |
 | Backend | development Supabase + Railway `development` | same | production Supabase + Railway `production` |
 | Who publishes | any agent | you | you, from `main`, with `--yes` |
 
@@ -104,7 +104,7 @@ development worker is the right default for a solo founder.
 npm run dev:update -- -m "Shazam V2: first pass"
 ```
 
-Then open **Nearr Dev** on the iPhone, force-quit, reopen. `npm run dev:update` always
+Then open the dev build on the iPhone, force-quit, reopen. `npm run dev:update` always
 passes `--channel development --environment development` explicitly and validates that
 environment before publishing. There is no way to reach the production channel from it.
 
@@ -138,11 +138,21 @@ npm run dev:functions -- process-share-jobs --yes
 ```
 
 Requires `NEARR_DEV_SUPABASE_REF` in `.env.local` (or `--project-ref`). It never falls back
-to the linked project, because the linked project is production. It also applies
+to the linked project — the 2026-08-19 audit found that project was production. It also applies
 `--no-verify-jwt` automatically to `process-share-jobs` and `process-share-link`, which
 authenticate callers themselves and have broken before when redeployed without it.
 
-**Database:** see §7.
+**Database:**
+
+```powershell
+npm run dev:db              # dry run: shows the target and what would be applied
+npm run dev:db -- --yes     # apply supabase/migrations/ to Nearr-Dev
+```
+
+Four gates, all of which must pass before the Supabase CLI is invoked at all: the ref must
+be set explicitly, must not be the production ref, must be the Nearr-Dev ref this repo
+knows, and the CLI's own link must agree with it. `npm run test:dev-db-guard` proves it
+refuses production. See §7.
 
 ---
 
@@ -204,6 +214,12 @@ away from real user rows.
 
 `supabase/migrations/` is the source of truth. Never hand-edit schema in a dashboard, and
 never modify a migration that has already been applied to production.
+
+**Always apply through `npm run dev:db`, never `supabase db push --linked` by hand.**
+`--linked` targets whichever project the CLI happens to be linked to, and on 2026-08-19 that
+was production — one habitual command away from altering real user schema. The wrapper
+proves its target before the CLI runs. There is deliberately no generic `db:push` script;
+production migrations are typed by hand with the ref visible (§10).
 
 Flow:
 
@@ -291,7 +307,7 @@ prevent.
 2. you merge into integration/<milestone>
 3. npm run verify:integration            (must be green)
 4. npm run preview:update -- -m "..."    (JS-only)  OR  npm run preview:build (native)
-5. open Nearr Dev, force-quit, reopen
+5. open the dev build, force-quit, reopen
 6. Settings -> Build info: confirm channel + update ID match what you just published
 7. exercise the features together, not one at a time
 8. approve
@@ -385,92 +401,91 @@ unused is trivially recoverable; a column that is dropped is not.
 
 ---
 
-## 12. Known gaps — one-time setup still required
+## 12. Setup status — what is done, what you still owe
 
-The repo-side work is done. These need your account and, in one case, your money.
+Updated 2026-08-19 after the development-lane build-out.
 
-**A. Create the EAS channels and environments** (required before any of this works):
+### Done
 
-```powershell
-eas channel:create development
-eas channel:create preview
+| | |
+|---|---|
+| Supabase `Nearr-Dev` project | exists, `ACTIVE_HEALTHY`, distinct from production |
+| Supabase CLI link | points at `Nearr-Dev` — `--linked` no longer means production |
+| Dev schema | all 27 migrations applied; 13/13 tables present |
+| Dev Edge Functions | `create-share-job`, `delete-account`, `process-share-jobs`, `process-share-link` deployed with the correct JWT flags |
+| EAS channels | `development`, `preview`, `production` |
+| EAS `development` / `preview` | fully declared, pointing at Nearr-Dev, both pass `verify:env` |
+| EAS `production` | `APP_ENV`/`BACKEND_ENV` declared; endpoints untouched; passes `verify:env` |
+| Railway `development` | URL, service-role key and finalize URL all Nearr-Dev; `/ready` 200 |
+| Guards | `dev:db`, `dev:functions`, `dev:update`, `prod:update` all refuse the wrong target |
 
-eas env:create --environment development --name EXPO_PUBLIC_APP_ENV --value development --visibility plaintext
-eas env:create --environment development --name EXPO_PUBLIC_BACKEND_ENV --value development --visibility plaintext
-# ...plus SUPABASE_URL / ANON_KEY / the two function URLs / GOOGLE_MAPS_API_KEY
-# repeat for --environment preview with EXPO_PUBLIC_APP_ENV=preview
+### Still required before the first dev build
 
-eas env:create --environment production --name EXPO_PUBLIC_APP_ENV --value production --visibility plaintext
-eas env:create --environment production --name EXPO_PUBLIC_BACKEND_ENV --value production --visibility plaintext
-```
+**A. Supabase Edge Function secrets in `Nearr-Dev`** — the functions are deployed but have
+no configuration, so place resolution and the worker handshake will fail. Set with
+`supabase secrets set --project-ref <dev-ref> NAME=...`:
 
-Verify each with `npm run verify:env -- --eas-environment <name>`. Until the production
-environment declares `APP_ENV=production`, `npm run prod:update` will refuse to publish —
-that is intentional, and it is a two-minute fix, not a workaround to skip.
+| Name | Required? | Must match |
+|---|---|---|
+| `GOOGLE_PLACES_KEY` | required | any working Places key (may be shared with production) |
+| `GEMINI_API_KEY` | required | any working Gemini key (may be shared) |
+| `GEMINI_MODEL` | optional | defaults if unset |
+| `SHARE_JOBS_WORKER_SECRET` | required | the Vault `share_jobs_worker_secret` below |
+| `MEDIA_FINALIZE_SECRET` | required | Railway `development` `MEDIA_FINALIZE_SECRET` |
+| `TRANSCRIPTION_PROVIDER`, `SELF_HOSTED_TRANSCRIPTION_URL`, `TRANSCRIPTION_SERVICE_API_KEY`, `SOSCRIPTED_API_KEY` | optional | legacy path only |
+| `MEDIA_AUTO_SAVE_THRESHOLD`, `MEDIA_AUTO_SAVE_CANARY_USER_ID`, `PHASE2_CANARY_USER_ID` | optional | rollout controls |
 
-**B. One development build.** No development or preview build has ever existed for this
-project; all twelve builds to date are `production`/STORE. You need exactly one:
+`SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are injected by Supabase — do **not** set them.
 
-```powershell
-npm run dev:build
-```
+**B. Vault secrets in `Nearr-Dev`** (SQL editor). This is how `process-share-jobs` finds the
+worker; without it dev jobs never reach the dev worker:
 
-Install it from the EAS link. After that, JS iteration is OTA only.
+| Vault secret | Value |
+|---|---|
+| `share_jobs_worker_edge_base_url` | the Nearr-Dev functions base URL |
+| `share_jobs_worker_service_key` | the Nearr-Dev service-role key |
+| `share_jobs_worker_secret` | must match the `SHARE_JOBS_WORKER_SECRET` above |
+| `share_media_worker_url` | `https://media-worker-development.up.railway.app` — **not** production |
+| `share_media_worker_secret` | must match Railway `development` `SHARE_MEDIA_WORKER_SECRET` |
 
-**C. Side-by-side dev app.** `APP_VARIANT=dev` (already set in the `development` and
-`preview` build profiles) produces **Nearr Dev** — `com.nearr.ios.dev`, scheme `nearrdev`
-— which installs *alongside* App Store Nearr instead of replacing it. Everything derived
-from the bundle ID moves with it automatically: `com.nearr.ios.dev.ShareExtension` and App
-Group `group.com.nearr.ios.dev`. Before the first build, in the Apple Developer portal:
+**C. Railway `development` variables.** `MEDIA_FINALIZE_SECRET` is missing. The currently
+deployed worker predates that check so `/ready` is green today, but current `main` requires
+it and `npm run dev:worker` will drop the worker to 503 without it. Also add
+`TIKTOK_MEDIA_RESOLVER_ENABLED` (and `FACEBOOK_`/`SNAPCHAT_` if wanted) — present in
+production, absent in development.
 
-1. Register App IDs `com.nearr.ios.dev` and `com.nearr.ios.dev.ShareExtension`.
-2. Create App Group `group.com.nearr.ios.dev` and attach it to both.
-3. Enable Sign in with Apple on `com.nearr.ios.dev`, and add it to the Supabase Auth Apple
-   provider's allowed client IDs — otherwise Apple sign-in fails in the dev app only.
-4. Add `nearrdev://auth-callback` and `nearrdev:///auth-callback` to Supabase Auth's
-   allowed redirect URLs.
-5. `eas credentials` → iOS → let EAS generate profiles for both new bundle IDs.
+`SHARE_MEDIA_WORKER_SECRET` is currently **identical** in development and production. Data
+isolation still holds because each worker only talks to its own Supabase, but the
+authentication boundary is shared. Rotate the development one to a distinct value.
 
-If you would rather not do this yet, set `"env": {}` in the `development` profile in
-`eas.json`. The dev build then uses `com.nearr.ios` and **replaces** App Store Nearr on the
-device — everything else in this document still works, you just lose side-by-side. The
-separate `scheme` is what prevents iOS from handing a `nearr://` deep link to whichever of
-the two apps it feels like, so do not keep the dev bundle ID while reverting the scheme.
+**D. Railway auto-deploy.** The `development` service still deploys from
+`fix/phase1-intermittent-crash-20260802` (2026-08-03), so it silently reverts anything you
+push with `npm run dev:worker`. In the Railway dashboard → project `Nearr Phase 2 Dev` →
+environment `development` → service `media-worker` → Settings → Source: disconnect the
+branch trigger (or repoint it to `main`). Explicit `npm run dev:worker` is the model this
+workflow assumes.
 
-**D. A development Supabase project.** There isn't one — the org has `Nearr` (production)
-and the unrelated `StayReel`, and no branches. Until one exists there is no safe database
-for experiments. Options:
+**E. Supabase Auth in `Nearr-Dev`.** Email/magic-link is enabled and signup is allowed, so
+login works. Apple and Google are **disabled**, so those buttons cannot be tested in dev.
+Add `nearr://auth-callback` and `nearr:///auth-callback` to the redirect allowlist
+(`nearrdev://` variants only if you later enable side-by-side, §F).
 
-- **Create a `Nearr Dev` project** (may require Pro; a third project is beyond the free
-  tier). Then `supabase link --project-ref <new>`, `supabase db push`,
-  `npm run dev:functions -- --yes`, and set `NEARR_DEV_SUPABASE_REF` in `.env.local`.
-  This is the target state.
-- **Local Supabase** for schema and function iteration, free: `supabase init` (there is no
-  `supabase/config.toml` yet), then `supabase start` and `supabase db reset`. Reachable
-  from the iPhone over LAN. Good for migrations; awkward for Apple sign-in.
-- **Interim:** point the development lane at production with a *dedicated test account*
-  and `EXPO_PUBLIC_ALLOW_PRODUCTION_BACKEND=true`. This is a deliberate, recorded
-  compromise, not the default — and it does not protect other users' rows from a bad
-  migration or a service-role bug. Treat it as temporary.
+**F. Side-by-side dev app — deliberately deferred.** `eas.json` currently builds the
+**existing** identity (`com.nearr.ios`), so the dev build **replaces** App Store Nearr on
+your test phone. Isolation comes from the environment, not the bundle ID, so this is safe —
+you just reinstall from the App Store when you want production back. To get a separate
+**Nearr Dev** app later, register `com.nearr.ios.dev`,
+`com.nearr.ios.dev.ShareExtension` and App Group `group.com.nearr.ios.dev` in the Apple
+Developer portal, add the dev bundle ID to Supabase's Apple provider, allow
+`nearrdev://auth-callback`, run `eas credentials` for both IDs, then restore
+`"env": { "APP_VARIANT": "dev" }` on the development and preview profiles. `app.config.js`
+still carries the whole mechanism and is inert without that flag.
 
-**E. Repoint the Railway `development` worker.** It currently uses the **production**
-`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` and `SHARE_JOBS_FINALIZE_URL` — it is a second
-worker competing for the production `share_media_tasks` queue with full service-role write
-access to real user data. It is isolated in name only. Once (D) exists:
-
-```powershell
-railway variables --set SUPABASE_URL=... --environment development --service media-worker
-# ...and SUPABASE_SERVICE_ROLE_KEY, SHARE_JOBS_FINALIZE_URL, MEDIA_FINALIZE_SECRET
-```
-
-Enter secrets through the dashboard or `--stdin`, never as shell arguments.
-
-**F. Development test data.** Do not copy real user rows into development. Create a
-developer account in the dev project and seed synthetic data: ~15 saved places across two
-cities (for nearby notifications and multi-place results), a handful of `share_jobs` in
-each terminal state, and two or three `share_media_tasks`. A `supabase/seed.sql` checked in
-alongside the migrations is the right home for it, so `supabase db reset` rebuilds a usable
-database in one command.
+**G. Development test data.** Do not copy real user rows into development. Create a
+developer account in `Nearr-Dev` and seed synthetic data: ~15 saved places across two cities
+(for nearby notifications and multi-place results), a handful of `share_jobs` in each
+terminal state, and two or three `share_media_tasks`. A `supabase/seed.sql` checked in
+alongside the migrations is the right home, so a rebuild is one command.
 
 ---
 
@@ -488,6 +503,7 @@ npm run dev:update -- -m "..."    # OTA to the dev app
 npm run dev:build                 # new dev build (native changes)
 npm run dev:worker                # media-worker -> Railway development
 npm run dev:functions -- <fn> --yes
+npm run dev:db -- --yes          # migrations -> Nearr-Dev (refuses production)
 
 npm run preview:update -- -m "..." # integration build for combined testing
 
