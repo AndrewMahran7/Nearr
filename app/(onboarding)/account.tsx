@@ -14,6 +14,7 @@ import * as AppleAuthentication from 'expo-apple-authentication';
 
 import { trackEvent } from '@/lib/analytics';
 import { isSupabaseConfigured } from '@/lib/supabase';
+import { areDeveloperToolsVisible } from '@/lib/appEnvironment';
 import {
   beginPostAuthRouting,
   endPostAuthRouting,
@@ -62,8 +63,23 @@ import { NearrAppIcon } from '@/components/onboarding/demo';
  * The two share no state and no visibility logic: one is a QA tool, the other
  * is a real authentication method that ships to users.
  */
+// Gated on the canonical environment declaration, NOT on `__DEV__`.
+//
+// `__DEV__` is true only while the JS is served by Metro. An installed EAS
+// development build running a published update executes a production-mode
+// bundle, so `__DEV__` is false there -- which is exactly why the developer
+// login "didn't work" on the first physical dev build even though
+// EXPO_PUBLIC_ENABLE_DEV_PASSWORD_LOGIN was set.
+//
+// areDeveloperToolsVisible() fails CLOSED: it requires an EXPLICIT
+// development/preview EXPO_PUBLIC_APP_ENV, so a build that never declared a
+// lane (including the current App Store binary, whose environment predates the
+// declaration) can never expose this. The flag must still be set on top, and
+// lib/appEnvironmentCore treats the flag in a production build as a BLOCKING
+// violation, so `npm run verify:env` refuses to publish such a configuration.
 const DEV_PASSWORD_LOGIN_ENABLED =
-  __DEV__ && process.env.EXPO_PUBLIC_ENABLE_DEV_PASSWORD_LOGIN === 'true';
+  areDeveloperToolsVisible() &&
+  process.env.EXPO_PUBLIC_ENABLE_DEV_PASSWORD_LOGIN === 'true';
 
 /**
  * The single Nearr account gateway.

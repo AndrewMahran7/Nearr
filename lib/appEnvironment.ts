@@ -128,6 +128,18 @@ export function getEnvironmentViolations(): EnvironmentViolation[] {
   return VIOLATIONS;
 }
 
+/**
+ * Only the violations that must stop a build or a submission.
+ *
+ * Used by the iOS Share Extension, which is configured entirely at build time
+ * (it excludes expo-updates and expo-dev-client, so it never gets an OTA and
+ * never attaches to Metro). It fails CLOSED on these rather than posting a job
+ * into a backend it cannot prove is the right one.
+ */
+export function getBlockingEnvironmentViolations(): EnvironmentViolation[] {
+  return blockingViolations(VIOLATIONS);
+}
+
 /** One-line, secret-free summary. Safe to log and to render. */
 export function describeEnvironment(): string {
   return formatEnvironmentSummary(getEnvironmentInputs());

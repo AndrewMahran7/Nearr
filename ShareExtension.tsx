@@ -56,6 +56,10 @@ import {
   resolveProcessShareLinkUrl,
 } from './lib/shareEnvDiagnostics';
 import { isAsyncShareJobsEnabled, resolveCreateShareJobUrl } from './lib/featureFlags';
+import {
+  describeEnvironment,
+  getBlockingEnvironmentViolations,
+} from './lib/appEnvironment';
 import { createShareJob } from './lib/shareJobClient';
 import { selectExtensionAuthAction } from './lib/sharedAuthSession';
 import { SHARE_JOBS_DEEPLINK_PATH } from './lib/shareRoutes';
@@ -497,7 +501,12 @@ type AsyncUi =
   | { kind: 'needs_setup' }
   | { kind: 'signed_out' }
   | { kind: 'session_expired' }
-  | { kind: 'network_failure' };
+  | { kind: 'network_failure' }
+  // The extension's own environment declaration is incoherent (e.g. a
+  // development extension resolved a production endpoint). Fail CLOSED: this
+  // is the state that makes "a development share can never create a
+  // production job" a mechanical guarantee rather than a convention.
+  | { kind: 'config_error'; codes: string };
 
 /**
  * Cohesive content root shared by every async extension state. Native owns the
@@ -628,6 +637,33 @@ function AsyncShareExtension(props: InitialProps) {
       return;
     }
     const endpoint = resolveCreateShareJobUrl();
+
+    // ---- Environment identity, checked BEFORE anything is sent ------------
+    //
+    // The extension is configured entirely at BUILD time. `expo-updates` and
+    // `expo-dev-client` are both in `excludedPackages`, so it never receives an
+    // OTA and never attaches to Metro -- whatever was inlined when the binary
+    // was built is what it runs forever. That makes it the one surface where
+    // the app and its extension can silently disagree about which backend they
+    // point at, so it states its lane out loud and refuses to submit if that
+    // lane is incoherent.
+    //
+    // Reuses lib/appEnvironmentCore's rules rather than inventing new ones, so
+    // a production-app/development-backend pairing (or the reverse), or three
+    // endpoint URLs that do not agree on a host, stops the share here.
+    // Non-secret: lane names and a host, never a token, key or URL query.
+    const envSummary = describeEnvironment();
+    const blocking = getBlockingEnvironmentViolations();
+    console.log(
+      `[share-extension] env ${envSummary} endpointHost=${hostFromUrl(endpoint) ?? 'none'}`,
+    );
+    if (blocking.length > 0) {
+      const codes = blocking.map((violation) => violation.code).join(',');
+      console.log(`[share-extension] job_accepted=false reason=config_error codes=${codes}`);
+      setUi({ kind: 'config_error', codes });
+      return;
+    }
+
     const token = sharedAuth.getToken();
     // Decide from the bridged token AND the App Group bootstrap marker. This
     // never trusts mere token presence (an expired token must not be
@@ -811,6 +847,28 @@ function AsyncShareExtension(props: InitialProps) {
           accessibilityLabel="Open Nearr"
         >
           <Text style={asyncStyles.primaryText}>Open Nearr</Text>
+        </Pressable>
+      </AsyncSurface>
+    );
+  }
+  if (ui.kind === 'config_error') {
+    // Deliberately NOT retryable: the build itself is pointed at the wrong
+    // place, so retrying would submit the same job to the same wrong backend.
+    // The code is shown because only a developer ever sees this screen.
+    return (
+      <AsyncSurface onClose={finish} showClose={false}>
+        <Text style={asyncStyles.title}>Nearr build is misconfigured</Text>
+        <Text style={asyncStyles.subtle}>
+          This build&apos;s environment does not agree with itself, so nothing was
+          sent. Rebuild the app for this lane. ({ui.codes})
+        </Text>
+        <Pressable
+          style={asyncStyles.secondaryBtn}
+          onPress={finish}
+          accessibilityRole="button"
+          accessibilityLabel="Close"
+        >
+          <Text style={asyncStyles.secondaryText}>Close</Text>
         </Pressable>
       </AsyncSurface>
     );
