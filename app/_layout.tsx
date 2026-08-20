@@ -2,8 +2,8 @@ import { Component, useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import {
   Stack,
+  useNavigationContainerRef,
   usePathname,
-  useRootNavigationState,
   useRouter,
   useSegments,
 } from 'expo-router';
@@ -662,8 +662,43 @@ function RootLayoutContent() {
   // can accept actions. A cold-start tap arrives BEFORE that, so its intent is
   // parked and replayed the moment this flips -- readiness is the
   // synchronization, never a timer.
-  const rootNavigationState = useRootNavigationState();
-  const navigationReady = !!rootNavigationState?.key;
+  //
+  // Readiness is read through the STABLE navigation container ref, NOT through
+  // `useRootNavigationState()`. That hook subscribes this component to
+  // expo-router's `rootState` snapshot, and in expo-router 3.5 that snapshot is
+  // the one piece of store state assigned UNCONDITIONALLY:
+  //
+  //   updateState(state) {
+  //     store.rootState = state;                              // no guard
+  //     if (!deepEqual(this.routeInfo, next)) store.routeInfo = next;   // guarded
+  //   }
+  //
+  // `syncStoreRootState()` runs during RENDER and reassigns `rootState`
+  // whenever `navigationRef.getRootState()` returns a fresh object, which React
+  // Navigation does on every dispatch. useSyncExternalStore then sees a new
+  // snapshot identity between render and commit and re-renders us -- which runs
+  // the sync again. While startup navigation is churning that never settles.
+  // `routeInfo` is deepEqual-guarded, which is why useSegments/usePathname (and
+  // therefore AuthGate) stayed stable while only this component spun.
+  //
+  // We only ever needed one boolean, so take it from the ref, which is a plain
+  // stable object with no subscription at all. Readiness is a genuine one-way
+  // latch -- the navigator becomes ready and stays ready -- so the state here
+  // only ever transitions false -> true.
+  const navigationContainerRef = useNavigationContainerRef();
+  const [navigationReady, setNavigationReady] = useState(() =>
+    navigationContainerRef.isReady(),
+  );
+  useEffect(() => {
+    if (navigationReady) return;
+    const markReady = () => {
+      if (navigationContainerRef.isReady()) setNavigationReady(true);
+    };
+    // It may have become ready between this render and this effect.
+    markReady();
+    // Same signal expo-router's own store listens to for readiness.
+    return navigationContainerRef.addListener('state', markReady);
+  }, [navigationContainerRef, navigationReady]);
 
   const runNotificationNavigation = useCallback(
     (intent: NotificationOpenIntent) => {
