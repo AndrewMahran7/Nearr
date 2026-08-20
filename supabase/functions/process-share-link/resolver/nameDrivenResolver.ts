@@ -215,6 +215,15 @@ export type MentionResult = {
   providerError?: string;
   providerStatus?: string;
   providerRetryAfterSeconds?: number;
+  /** Ranked model identities that fed this one logical picker slot. No raw
+   * provider payloads, coordinates, or fabricated addresses. */
+  identityHypotheses?: Array<{
+    name: string;
+    contextLabel: string | null;
+    confidence: number;
+    evidenceKind: 'observable' | 'model_prior';
+    timestamps: number[];
+  }>;
 };
 
 export type NameDrivenResult = {
@@ -248,6 +257,80 @@ export function isRetryableNameDrivenProviderFailure(result: NameDrivenResult): 
         mention.providerError !== 'request_limit_reached',
     )
   );
+}
+
+export function expandIdentityAlternativeMentions(mentions: VenueMention[]): VenueMention[] {
+  return mentions.flatMap((mention) => [
+    { ...mention, identityAlternatives: [] },
+    ...(mention.identityAlternatives ?? []).map((identity, index) => ({
+      ...identity,
+      id: `${mention.id}:a${index + 1}`,
+      identityAlternatives: [],
+    })),
+  ]);
+}
+
+/** Recombine independently verified identity alternatives into the existing
+ * one-mention picker contract. Canonical Place IDs dedupe spelling variants;
+ * different canonical IDs remain ranked candidates in one slot. */
+export function consolidateIdentityAlternativeResults(
+  mentions: VenueMention[],
+  variantResults: MentionResult[],
+): MentionResult[] {
+  const byId = new Map(variantResults.map((result) => [result.mentionId, result]));
+  return mentions.map((mention) => {
+    const identities = [mention, ...(mention.identityAlternatives ?? [])];
+    const results = identities
+      .map((_, index) => byId.get(index === 0 ? mention.id : `${mention.id}:a${index}`))
+      .filter((result): result is MentionResult => !!result);
+    const candidates = [...new Map(
+      results
+        .flatMap((result) => result.candidates)
+        .sort((a, b) => b.confidenceScore - a.confidenceScore)
+        .map((candidate) => [candidate.googlePlaceId, candidate]),
+    ).values()];
+    const scoring = [...new Map(
+      results
+        .flatMap((result) => result.scoring)
+        .sort((a, b) => b.normalizedScore - a.normalizedScore)
+        .map((score) => [score.googlePlaceId, score]),
+    ).values()].slice(0, 8);
+    const allPrior = identities.every((identity) => identity.identityEvidenceKind === 'model_prior');
+    const outcome: MentionOutcome = candidates.length > 1
+      ? 'ambiguous_candidates'
+      : candidates.length === 1
+        ? (!allPrior && results.some((result) => result.outcome === 'verified_single')
+            ? 'verified_single'
+            : 'ambiguous_candidates')
+        : results.length > 0 && results.every((result) => result.outcome === 'provider_error')
+          ? 'provider_error'
+          : results.length > 0 && results.every((result) => result.outcome === 'rejected_insufficient_evidence')
+            ? 'rejected_insufficient_evidence'
+            : 'no_match';
+    const primary = results[0];
+    return {
+      mentionId: mention.id,
+      displayName: mention.displayName,
+      outcome,
+      query: results.map((result) => result.query).filter(Boolean).join(' | '),
+      categoryBiasedQuery: results.map((result) => result.categoryBiasedQuery).filter(Boolean).join(' | ') || undefined,
+      candidates,
+      scoring,
+      primaryVenueName: primary?.primaryVenueName,
+      hostVenueName: primary?.hostVenueName,
+      relationshipType: primary?.relationshipType,
+      providerError: outcome === 'provider_error' ? primary?.providerError : undefined,
+      providerStatus: outcome === 'provider_error' ? primary?.providerStatus : undefined,
+      providerRetryAfterSeconds: outcome === 'provider_error' ? primary?.providerRetryAfterSeconds : undefined,
+      identityHypotheses: identities.map((identity) => ({
+        name: identity.displayName,
+        contextLabel: [identity.geo.city, identity.geo.region, identity.geo.country].filter(Boolean).join(', ') || null,
+        confidence: identity.confidence,
+        evidenceKind: identity.identityEvidenceKind === 'model_prior' ? 'model_prior' : 'observable',
+        timestamps: identity.timestamps,
+      })),
+    };
+  });
 }
 
 /**
@@ -855,7 +938,9 @@ export async function resolveVenueMentions(args: {
   platform: string;
   deps?: NameDrivenDeps;
 }): Promise<NameDrivenResult> {
-  const { mentions, geoContext, env, platform } = args;
+  const sourceMentions = args.mentions;
+  const mentions = expandIdentityAlternativeMentions(sourceMentions);
+  const { geoContext, env, platform } = args;
   const search = args.deps?.search ?? searchPlaces;
   const geocode = args.deps?.geocode ?? geocodeContextText;
   const globalLimit = args.deps?.globalRequestLimit ?? DEFAULT_GLOBAL_REQUEST_LIMIT;
@@ -904,7 +989,7 @@ export async function resolveVenueMentions(args: {
     }
   };
 
-  const mentionResults: MentionResult[] = [];
+  const variantResults: MentionResult[] = [];
   const failureTraces: MentionFailureTrace[] = [];
   // Observability must never be able to fail a share. A malformed provider
   // entity that slipped past scoring costs us one trace, not the recognition.
@@ -943,7 +1028,7 @@ export async function resolveVenueMentions(args: {
     // Defensive: a mention with no distinctive token should never have been
     // built, but never search one if it slips through.
     if (mention.distinctiveTokens.length === 0) {
-      mentionResults.push({ mentionId: mention.id, displayName: mention.displayName, outcome: 'rejected_insufficient_evidence', query, candidates: [], scoring: [], ...relFields });
+      variantResults.push({ mentionId: mention.id, displayName: mention.displayName, outcome: 'rejected_insufficient_evidence', query, candidates: [], scoring: [], ...relFields });
       recordFailure(() => ({
         mentionId: mention.id,
         outcome: 'rejected_insufficient_evidence',
@@ -964,7 +1049,7 @@ export async function resolveVenueMentions(args: {
       result = cached;
     } else if (requestCount >= globalLimit) {
       // Budget exhausted — treat remaining mentions as provider_error (bounded).
-      mentionResults.push({ mentionId: mention.id, displayName: mention.displayName, outcome: 'provider_error', query, candidates: [], scoring: [], providerError: 'request_limit_reached', ...relFields });
+      variantResults.push({ mentionId: mention.id, displayName: mention.displayName, outcome: 'provider_error', query, candidates: [], scoring: [], providerError: 'request_limit_reached', ...relFields });
       recordFailure(() => ({
         mentionId: mention.id,
         outcome: 'provider_error',
@@ -992,7 +1077,7 @@ export async function resolveVenueMentions(args: {
     notePath(result);
 
     if (!result.ok) {
-      mentionResults.push({
+      variantResults.push({
         mentionId: mention.id,
         displayName: mention.displayName,
         outcome: 'provider_error',
@@ -1067,7 +1152,7 @@ export async function resolveVenueMentions(args: {
         ['media_name_mention', `mention:${mention.id}`, ...(outcome === 'verified_single' ? ['name_verified_single'] : ['name_ambiguous_candidate'])],
       ),
     );
-    mentionResults.push({
+    variantResults.push({
       mentionId: mention.id,
       displayName: mention.displayName,
       outcome,
@@ -1095,6 +1180,8 @@ export async function resolveVenueMentions(args: {
       }));
     }
   }
+
+  const mentionResults = consolidateIdentityAlternativeResults(sourceMentions, variantResults);
 
   // Aggregate + dedupe by canonical Place ID (distinct locations stay distinct).
   const aggregateCandidates: ResolvedCandidate[] = [];

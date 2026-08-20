@@ -24,7 +24,7 @@
 // in the production prompt — a prompt that has been shown the answer key cannot
 // be measured.
 
-export const VAYRIN_PROMPT_VERSION = 'vayrin-visual-geolocation-2026-08-19.v1';
+export const VAYRIN_PROMPT_VERSION = 'vayrin-visual-geolocation-2026-08-19.v2';
 
 export const VAYRIN_VISUAL_GEOLOCATION_SYSTEM_PROMPT = `
 You are a visual geolocation investigator. You are given timestamped frames
@@ -95,6 +95,20 @@ HONESTY
   - Returning zero hypotheses is a valid, useful answer when the frames carry
     no geographic signal at all.
 
+IDENTITY EVIDENCE BASIS
+For every hypothesis classify evidence_basis using exactly one value:
+  - direct_visible_identity: readable name/sign/address or another direct
+    visual identifier in the supplied frames.
+  - distinctive_visual_match: independently distinctive observable geography,
+    architecture, skyline, or spatial configuration supports the identity.
+  - contextual_or_memory_prior: the identity mainly comes from recognizing a
+    famous/viral clip, title, dialogue, caption, metadata, or general model
+    memory; the supplied pixels do not independently distinguish the place.
+  - insufficient: the observations do not responsibly support this identity.
+Do not call viral-clip familiarity a visual clue. Put it in reasoning_summary
+and use contextual_or_memory_prior. A contextual prior can be a lead, never
+observable proof.
+
 reasoning_summary must be a short statement of the OBSERVABLE evidence that led
 to the hypothesis — for example "layered sandstone cliff over a flat wave-cut
 platform, graffiti on collapsed concrete slabs, Pacific horizon". Do not
@@ -137,6 +151,7 @@ export const VAYRIN_GEOLOCATION_SCHEMA = {
           'supporting_textual_clues',
           'conflicting_clues',
           'needs_external_verification',
+          'evidence_basis',
         ],
         properties: {
           name: { type: 'string', description: 'The most specific credible name. Empty string if only an area is known.' },
@@ -163,6 +178,15 @@ export const VAYRIN_GEOLOCATION_SCHEMA = {
           supporting_textual_clues: { type: 'array', items: { type: 'string' } },
           conflicting_clues: { type: 'array', items: { type: 'string' } },
           needs_external_verification: { type: 'boolean' },
+          evidence_basis: {
+            type: 'string',
+            enum: [
+              'direct_visible_identity',
+              'distinctive_visual_match',
+              'contextual_or_memory_prior',
+              'insufficient',
+            ],
+          },
         },
       },
     },
@@ -198,6 +222,7 @@ export const VAYRIN_GEOLOCATION_SCHEMA = {
                 'supporting_textual_clues',
                 'conflicting_clues',
                 'needs_external_verification',
+                'evidence_basis',
               ],
               properties: {
                 name: { type: 'string' },
@@ -224,6 +249,15 @@ export const VAYRIN_GEOLOCATION_SCHEMA = {
                 supporting_textual_clues: { type: 'array', items: { type: 'string' } },
                 conflicting_clues: { type: 'array', items: { type: 'string' } },
                 needs_external_verification: { type: 'boolean' },
+                evidence_basis: {
+                  type: 'string',
+                  enum: [
+                    'direct_visible_identity',
+                    'distinctive_visual_match',
+                    'contextual_or_memory_prior',
+                    'insufficient',
+                  ],
+                },
               },
             },
           },

@@ -34,6 +34,15 @@ export const NearrCategory = z.enum([
 ]);
 
 export const PlaceCandidateEvidence = z.object({
+  /** Stable logical scene/place grouping. Different identity hypotheses for
+   *  one scene share this id; genuinely distinct scenes use different ids. */
+  logicalPlaceId: z.string().min(1).max(80).nullable().optional(),
+  /** Whether the proposed identity is supported by observable pixels, or is
+   *  only a contextual/memorized model prior. Priors may be shown as leads but
+   *  are never silently saveable. */
+  identityEvidenceKind: z.enum(['observable', 'model_prior']).optional(),
+  /** Best-first rank within one logical place. */
+  hypothesisRank: z.number().int().min(0).max(11).optional(),
   name: z.string().min(1).max(200),
   category: NearrCategory.nullable().default(null),
   categoryConfidence: z.number().min(0).max(1).default(0),

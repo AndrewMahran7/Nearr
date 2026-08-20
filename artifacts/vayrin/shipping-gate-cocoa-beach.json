@@ -1,0 +1,186 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-20T05:01:46.174Z",
+  "caseId": "cocoa_beach_coarse_refinement",
+  "groundTruth": "Cocoa Beach Pier, Cocoa Beach, Florida",
+  "evaluationStatus": "PENDING_MANUAL_CLASSIFICATION",
+  "input": {
+    "kind": "video",
+    "source": "C:\\Users\\andre\\AppData\\Local\\Temp\\nearr-vayrin-shipping-gate-20260819\\cocoa_beach.webm",
+    "extractedFrameCount": 15
+  },
+  "model": "gpt-5.6-sol",
+  "promptVersion": "vayrin-visual-geolocation-2026-08-19.v2",
+  "reasoningEffort": "model_default",
+  "credential": {
+    "hasApiKey": true,
+    "apiKeyVariable": "MEDIA_TRANSCRIPTION_API_KEY"
+  },
+  "pricingUsdPerMillionTokens": {
+    "inputPerMillion": 5,
+    "cachedInputPerMillion": 0.5,
+    "outputPerMillion": 30
+  },
+  "runs": [
+    {
+      "strategy": "diverse",
+      "budget": 6,
+      "consideredFrameCount": 15,
+      "selectedFrameCount": 6,
+      "selectedTimestampsSeconds": [
+        0,
+        1.331,
+        9.316,
+        13.308,
+        14.639,
+        25.286
+      ],
+      "meanPairwiseDistance": 18.27,
+      "condition": "visual_only",
+      "ok": true,
+      "latencyMs": 24339,
+      "usage": {
+        "inputTokens": 2513,
+        "outputTokens": 1236,
+        "reasoningTokens": 848,
+        "totalTokens": 3749,
+        "cachedInputTokens": 1599
+      },
+      "estimatedCostUsd": 0.042449,
+      "payload": {
+        "place_hypotheses": [
+          {
+            "name": "Cocoa Beach Pier",
+            "place_type": "ocean pier and adjacent surf beach",
+            "city": "Cocoa Beach",
+            "region": "Florida",
+            "country": "United States",
+            "specificity": "landmark",
+            "confidence": 0.86,
+            "reasoning_summary": "A long timber ocean pier has clustered buildings near shore and a wider, tan-roofed open pavilion at its seaward end, beside a broad Atlantic surf beach popular with swimmers and surfers.",
+            "supporting_visual_clues": [
+              "Long wooden pier on closely spaced timber pilings",
+              "Tan, tiki-style pavilion at the seaward end",
+              "Low commercial buildings along the shoreward section",
+              "Broad, developed Atlantic beach with active surf"
+            ],
+            "supporting_textual_clues": [],
+            "conflicting_clues": [
+              "No pier name or other location-specific text is clearly readable",
+              "Several southeastern U.S. beach piers have broadly similar construction"
+            ],
+            "needs_external_verification": true,
+            "evidence_basis": "distinctive_visual_match"
+          },
+          {
+            "name": "Folly Beach Pier",
+            "place_type": "ocean fishing pier",
+            "city": "Folly Beach",
+            "region": "South Carolina",
+            "country": "United States",
+            "specificity": "landmark",
+            "confidence": 0.08,
+            "reasoning_summary": "The developed Atlantic beach, timber pier, and roofed terminal pavilion are broadly compatible with Folly Beach, though the visible pier configuration appears closer to Cocoa Beach Pier.",
+            "supporting_visual_clues": [
+              "Atlantic-style sandy beach and moderate surf",
+              "Long pier with a roofed end pavilion"
+            ],
+            "supporting_textual_clues": [],
+            "conflicting_clues": [
+              "The pavilion and shoreward buildings do not closely match the current Folly Beach Pier",
+              "No readable identifying text"
+            ],
+            "needs_external_verification": true,
+            "evidence_basis": "contextual_or_memory_prior"
+          }
+        ],
+        "multiple_distinct_places_visible": false,
+        "additional_place_segments": [],
+        "metadata_was_sufficient": false
+      }
+    },
+    {
+      "strategy": "diverse",
+      "budget": 6,
+      "consideredFrameCount": 15,
+      "selectedFrameCount": 6,
+      "selectedTimestampsSeconds": [
+        0,
+        1.331,
+        9.316,
+        13.308,
+        14.639,
+        25.286
+      ],
+      "meanPairwiseDistance": 18.27,
+      "condition": "fused",
+      "ok": true,
+      "latencyMs": 16089,
+      "usage": {
+        "inputTokens": 2532,
+        "outputTokens": 786,
+        "reasoningTokens": 388,
+        "totalTokens": 3318,
+        "cachedInputTokens": 1599
+      },
+      "estimatedCostUsd": 0.029045,
+      "payload": {
+        "place_hypotheses": [
+          {
+            "name": "Westgate Cocoa Beach Pier",
+            "place_type": "ocean pier and beach",
+            "city": "Cocoa Beach",
+            "region": "Florida",
+            "country": "United States",
+            "specificity": "landmark",
+            "confidence": 0.9,
+            "reasoning_summary": "A long wooden Atlantic pier has a broad low building near its landward section and a prominent hip-roofed open pavilion at the seaward end, beside a busy surfing beach.",
+            "supporting_visual_clues": [
+              "Wooden pier on dense pilings",
+              "Distinctive hip-roofed pavilion at the pier's seaward end",
+              "Low roofed commercial structure near the shoreward portion",
+              "Crowded beach with frequent breaking waves and surfers",
+              "Configuration resembles the Cocoa Beach Pier and its end pavilion"
+            ],
+            "supporting_textual_clues": [
+              "Location metadata places the video in Florida",
+              "Caption describes a beach and pier"
+            ],
+            "conflicting_clues": [
+              "No pier name or other identifying text is legible in the frames",
+              "Several Florida Atlantic-coast piers have broadly similar wooden construction"
+            ],
+            "needs_external_verification": true,
+            "evidence_basis": "distinctive_visual_match"
+          },
+          {
+            "name": "Cocoa Beach",
+            "place_type": "beach",
+            "city": "Cocoa Beach",
+            "region": "Florida",
+            "country": "United States",
+            "specificity": "city",
+            "confidence": 0.86,
+            "reasoning_summary": "The frames show a developed, crowded Atlantic-facing surfing beach immediately beside a wooden pier consistent with Cocoa Beach Pier.",
+            "supporting_visual_clues": [
+              "Active surf and numerous swimmers or surfers",
+              "Developed beachfront beside a substantial wooden pier",
+              "Atlantic-style wave conditions"
+            ],
+            "supporting_textual_clues": [
+              "Florida location metadata"
+            ],
+            "conflicting_clues": [
+              "No readable city name appears in the supplied frames"
+            ],
+            "needs_external_verification": true,
+            "evidence_basis": "distinctive_visual_match"
+          }
+        ],
+        "multiple_distinct_places_visible": false,
+        "additional_place_segments": [],
+        "metadata_was_sufficient": false
+      }
+    }
+  ]
+}

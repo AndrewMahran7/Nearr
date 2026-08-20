@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-20T05:11:26.810Z",
+  "caseId": "dettifoss_hidden_natural",
+  "input": {
+    "frameCount": 9,
+    "durationSeconds": 29.58
+  },
+  "cheap": {
+    "latencyMs": 0,
+    "evidence": {
+      "places": [],
+      "multipleIntentionalPlaces": false,
+      "insufficientEvidence": true,
+      "warnings": [
+        "heuristic_no_text"
+      ]
+    }
+  },
+  "gemini": {
+    "provider": "gemini",
+    "promptVersion": "media-place-evidence-2026-08-17.v8-cue-voice",
+    "latencyMs": 3487,
+    "evidence": {
+      "places": [],
+      "multipleIntentionalPlaces": false,
+      "insufficientEvidence": true,
+      "warnings": [
+        "No specific place name or location identified in the caption, audio, or video frames."
+      ]
+    },
+    "parseDiagnostics": {
+      "emitted": 0,
+      "accepted": 0,
+      "rejected": 0,
+      "rejectionPaths": [],
+      "topLevelInvalid": false
+    }
+  }
+}

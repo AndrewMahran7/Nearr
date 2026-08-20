@@ -1,0 +1,195 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-20T05:03:51.573Z",
+  "caseId": "composite_verified_multi_place",
+  "groundTruth": "0-8s Dettifoss, Iceland; 8-16s Griffith Observatory, Los Angeles",
+  "evaluationStatus": "PENDING_MANUAL_CLASSIFICATION",
+  "input": {
+    "kind": "video",
+    "source": "C:\\Users\\andre\\AppData\\Local\\Temp\\nearr-vayrin-shipping-gate-20260819\\multi_dettifoss_griffith.mp4",
+    "extractedFrameCount": 19
+  },
+  "model": "gpt-5.6-sol",
+  "promptVersion": "vayrin-visual-geolocation-2026-08-19.v2",
+  "reasoningEffort": "model_default",
+  "credential": {
+    "hasApiKey": true,
+    "apiKeyVariable": "MEDIA_TRANSCRIPTION_API_KEY"
+  },
+  "pricingUsdPerMillionTokens": {
+    "inputPerMillion": 5,
+    "cachedInputPerMillion": 0.5,
+    "outputPerMillion": 30
+  },
+  "runs": [
+    {
+      "strategy": "diverse",
+      "budget": 6,
+      "consideredFrameCount": 19,
+      "selectedFrameCount": 6,
+      "selectedTimestampsSeconds": [
+        0,
+        8.272,
+        11.03,
+        12.409,
+        13.098,
+        14.477
+      ],
+      "meanPairwiseDistance": 28.13,
+      "condition": "visual_only",
+      "ok": true,
+      "latencyMs": 46377,
+      "usage": {
+        "inputTokens": 3437,
+        "outputTokens": 1990,
+        "reasoningTokens": 1747,
+        "totalTokens": 5427,
+        "cachedInputTokens": 1599
+      },
+      "estimatedCostUsd": 0.06969,
+      "payload": {
+        "place_hypotheses": [
+          {
+            "name": "Vulcania",
+            "place_type": "volcanology museum and science theme park",
+            "city": "Saint-Ours",
+            "region": "Auvergne-Rhône-Alpes",
+            "country": "France",
+            "specificity": "venue",
+            "confidence": 0.58,
+            "reasoning_summary": "Snow-covered, dark volcanic-looking excavation followed by a large pendulum-style science exhibit inside a circular subterranean chamber, consistent with an underground volcanology attraction.",
+            "supporting_visual_clues": [
+              "Terraced dark-rock landscape resembling a volcanic crater or constructed lava landscape",
+              "Snowy upland setting",
+              "Large suspended pendulum above a radial circular floor",
+              "Monumental concrete interior suggesting a mostly underground science museum"
+            ],
+            "supporting_textual_clues": [],
+            "conflicting_clues": [
+              "No venue name or clearly readable identifying sign appears in the frames",
+              "The exterior could instead be an ordinary quarry, and the pendulum design is not unique to Vulcania"
+            ],
+            "needs_external_verification": true,
+            "evidence_basis": "contextual_or_memory_prior"
+          }
+        ],
+        "multiple_distinct_places_visible": false,
+        "additional_place_segments": [],
+        "metadata_was_sufficient": false
+      }
+    },
+    {
+      "strategy": "diverse",
+      "budget": 6,
+      "consideredFrameCount": 19,
+      "selectedFrameCount": 6,
+      "selectedTimestampsSeconds": [
+        0,
+        8.272,
+        11.03,
+        12.409,
+        13.098,
+        14.477
+      ],
+      "meanPairwiseDistance": 28.13,
+      "condition": "fused",
+      "ok": true,
+      "latencyMs": 59320,
+      "usage": {
+        "inputTokens": 3440,
+        "outputTokens": 2908,
+        "reasoningTokens": 2329,
+        "totalTokens": 6348,
+        "cachedInputTokens": 1599
+      },
+      "estimatedCostUsd": 0.097244,
+      "payload": {
+        "place_hypotheses": [
+          {
+            "name": "Almannagjá Gorge, Þingvellir National Park",
+            "place_type": "tectonic rift gorge and walking trail",
+            "city": null,
+            "region": "Southern Region",
+            "country": "Iceland",
+            "specificity": "natural_feature",
+            "confidence": 0.57,
+            "reasoning_summary": "Snow-covered passage follows a broad linear depression between dark, layered volcanic cliffs, with a marked visitor path along the right side.",
+            "supporting_visual_clues": [
+              "Long, nearly parallel volcanic-rock escarpments",
+              "Snowy pedestrian route through the rift floor",
+              "Dark basaltic terrain characteristic of southwest Iceland",
+              "Visitor rope or boundary line beside the path"
+            ],
+            "supporting_textual_clues": [],
+            "conflicting_clues": [
+              "No readable sign or uniquely identifying landmark is visible",
+              "The distant Þingvellir lake and church are not visible in this framing"
+            ],
+            "needs_external_verification": true,
+            "evidence_basis": "distinctive_visual_match"
+          },
+          {
+            "name": "Kerið",
+            "place_type": "volcanic crater lake",
+            "city": null,
+            "region": "Southern Region",
+            "country": "Iceland",
+            "specificity": "natural_feature",
+            "confidence": 0.27,
+            "reasoning_summary": "The frame could show a snow-covered volcanic basin with dark stratified walls and a partially frozen depression or lake at its bottom.",
+            "supporting_visual_clues": [
+              "Dark volcanic crater-like walls",
+              "Enclosed snowy basin",
+              "Visitor boundary rope"
+            ],
+            "supporting_textual_clues": [],
+            "conflicting_clues": [
+              "The visible depression appears more linear than Kerið's characteristic oval crater",
+              "No clearly defined oval crater lake or red scoria slopes are visible"
+            ],
+            "needs_external_verification": true,
+            "evidence_basis": "distinctive_visual_match"
+          }
+        ],
+        "multiple_distinct_places_visible": true,
+        "additional_place_segments": [
+          {
+            "frame_timestamps_seconds": [
+              8.27,
+              11.03,
+              12.41,
+              13.1,
+              14.48
+            ],
+            "hypotheses": [
+              {
+                "name": "Perlan",
+                "place_type": "museum and observation venue",
+                "city": "Reykjavík",
+                "region": "Capital Region",
+                "country": "Iceland",
+                "specificity": "venue",
+                "confidence": 0.89,
+                "reasoning_summary": "A large golden Foucault pendulum swings over a circular radial floor inside a round atrium with a brightly illuminated perimeter, matching Perlan's central pendulum installation.",
+                "supporting_visual_clues": [
+                  "Golden spherical Foucault pendulum bob",
+                  "Circular radial floor directly below the pendulum",
+                  "Continuous illuminated ring around the atrium",
+                  "High overhead viewpoint within a cylindrical interior"
+                ],
+                "supporting_textual_clues": [],
+                "conflicting_clues": [
+                  "No readable Perlan name or logo is visible",
+                  "Other science venues also contain Foucault pendulums"
+                ],
+                "needs_external_verification": true,
+                "evidence_basis": "distinctive_visual_match"
+              }
+            ]
+          }
+        ],
+        "metadata_was_sufficient": false
+      }
+    }
+  ]
+}

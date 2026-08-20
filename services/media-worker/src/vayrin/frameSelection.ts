@@ -22,7 +22,7 @@ export type FrameStrategy =
   | 'uniform'
   /** The worker's own post-dedup ordering, truncated. What production has today. */
   | 'pipeline'
-  /** Greedy maximum-visual-diversity by average-hash distance. */
+  /** Temporal strata with visual-diversity selection inside each stratum. */
   | 'diverse'
   /** Everything the worker produced, capped only by `maxFrames`. */
   | 'all';
@@ -72,27 +72,37 @@ function uniformPick(frames: SelectedFrame[], maxFrames: number): SelectedFrame[
 }
 
 /**
- * Greedy farthest-point selection on average-hash distance.
+ * Temporally stratified farthest-point selection on average-hash distance.
  *
- * Seeds with the first frame (an establishing shot is usually the most
- * geographically informative single frame in a social video), then repeatedly
- * adds whichever remaining frame is most visually distant from everything
- * already chosen. This is the strategy that resists the failure mode uniform
- * sampling has on a talking-head clip: fifteen frames of the same face, one of
- * which happens to show the window.
+ * Every time stratum receives one frame, preventing a visually busy later
+ * scene from consuming nearly the whole budget and starving an earlier place.
+ * Within each stratum we still choose the frame farthest from those already
+ * selected, preserving the talking-head/window benefit of visual diversity.
+ * The first and last frames are anchors so clip boundaries cannot disappear.
  */
 function diversePick(frames: SelectedFrame[], maxFrames: number): SelectedFrame[] {
   const ordered = chronological(frames);
   if (ordered.length <= maxFrames) return ordered;
 
-  const chosen: SelectedFrame[] = [ordered[0]!];
-  const remaining = ordered.slice(1);
+  const chosen: SelectedFrame[] = [];
+  for (let bucket = 0; bucket < maxFrames; bucket += 1) {
+    const start = Math.floor((bucket * ordered.length) / maxFrames);
+    const endExclusive = Math.floor(((bucket + 1) * ordered.length) / maxFrames);
+    const candidates = ordered.slice(start, Math.max(start + 1, endExclusive));
+    if (candidates.length === 0) continue;
 
-  while (chosen.length < maxFrames && remaining.length > 0) {
-    let bestIndex = 0;
+    if (bucket === 0) {
+      chosen.push(ordered[0]!);
+      continue;
+    }
+    if (bucket === maxFrames - 1) {
+      chosen.push(ordered[ordered.length - 1]!);
+      continue;
+    }
+
+    let best = candidates[0]!;
     let bestDistance = -1;
-    for (let i = 0; i < remaining.length; i += 1) {
-      const candidate = remaining[i]!;
+    for (const candidate of candidates) {
       let nearest = Number.POSITIVE_INFINITY;
       for (const picked of chosen) {
         const d = hammingDistanceHex(picked.aHash, candidate.aHash);
@@ -100,11 +110,10 @@ function diversePick(frames: SelectedFrame[], maxFrames: number): SelectedFrame[
       }
       if (nearest > bestDistance) {
         bestDistance = nearest;
-        bestIndex = i;
+        best = candidate;
       }
     }
-    chosen.push(remaining[bestIndex]!);
-    remaining.splice(bestIndex, 1);
+    chosen.push(best);
   }
 
   return chronological(chosen);

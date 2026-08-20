@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-20T05:11:55.052Z",
+  "caseId": "cocoa_beach_coarse_refinement",
+  "input": {
+    "frameCount": 13,
+    "durationSeconds": 30.709
+  },
+  "cheap": {
+    "latencyMs": 0,
+    "evidence": {
+      "places": [],
+      "multipleIntentionalPlaces": false,
+      "insufficientEvidence": true,
+      "warnings": [
+        "heuristic_no_text"
+      ]
+    }
+  },
+  "gemini": {
+    "provider": "gemini",
+    "promptVersion": "media-place-evidence-2026-08-17.v8-cue-voice",
+    "latencyMs": 6426,
+    "evidence": {
+      "places": [],
+      "multipleIntentionalPlaces": false,
+      "insufficientEvidence": true,
+      "warnings": [
+        "No specific place name or identifiable location details found in the caption, audio, or visual frames."
+      ]
+    },
+    "parseDiagnostics": {
+      "emitted": 0,
+      "accepted": 0,
+      "rejected": 0,
+      "rejectionPaths": [],
+      "topLevelInvalid": false
+    }
+  }
+}

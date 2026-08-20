@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-20T05:11:56.244Z",
+  "caseId": "griffith_unlabeled_background",
+  "input": {
+    "frameCount": 11,
+    "durationSeconds": 13.724
+  },
+  "cheap": {
+    "latencyMs": 1,
+    "evidence": {
+      "places": [],
+      "multipleIntentionalPlaces": false,
+      "insufficientEvidence": true,
+      "warnings": [
+        "heuristic_no_text"
+      ]
+    }
+  },
+  "gemini": {
+    "provider": "gemini",
+    "promptVersion": "media-place-evidence-2026-08-17.v8-cue-voice",
+    "latencyMs": 10037,
+    "evidence": {
+      "places": [],
+      "multipleIntentionalPlaces": false,
+      "insufficientEvidence": true,
+      "warnings": [
+        "No explicit place name, address, or identifying signage provided in the caption or video frames."
+      ]
+    },
+    "parseDiagnostics": {
+      "emitted": 0,
+      "accepted": 0,
+      "rejected": 0,
+      "rejectionPaths": [],
+      "topLevelInvalid": false
+    }
+  }
+}

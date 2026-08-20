@@ -24,6 +24,7 @@ import {
   normalizeRawScore,
   isHostOnlyCandidate,
   isRetryableNameDrivenProviderFailure,
+  consolidateIdentityAlternativeResults,
   type ScoredMentionCandidate,
   type NameDrivenResult,
 } from '../supabase/functions/process-share-link/resolver/nameDrivenResolver';
@@ -226,6 +227,24 @@ check('single no candidates => manual_fallback', nameDrivenDecision(ndResult({ a
 check('multi verified => multi_candidate_confirmation', nameDrivenDecision(ndResult({ aggregateCandidates: [rc('a'), rc('b')], verifiedCount: 1 }), false).decision === 'multi_candidate_confirmation');
 check('multi no candidates => manual_fallback', nameDrivenDecision(ndResult({ aggregateCandidates: [] }), false).decision === 'manual_fallback');
 check('decision mapping never auto-saves (any case)', [true, false].every((s) => nameDrivenDecision(ndResult({ aggregateCandidates: [rc('a')], verifiedCount: 1 }), s).safeToAutoSave === false));
+{
+  const logical = mention('North Cove');
+  logical.identityAlternatives = [{
+    ...mention('South Cove'),
+    hypothesisRank: 1,
+  }];
+  const score = (id: string, value: number) => ({
+    googlePlaceId: id, name: id, rawScore: 60, normalizedScore: value,
+    reasons: ['strong_name_match'], rejected: false, rejectionReason: null,
+  });
+  const consolidated = consolidateIdentityAlternativeResults([logical], [
+    { mentionId: 'm1', displayName: 'North Cove', outcome: 'verified_single', query: 'North Cove', candidates: [rc('north')], scoring: [score('north', 0.9)] },
+    { mentionId: 'm1:a1', displayName: 'South Cove', outcome: 'verified_single', query: 'South Cove', candidates: [rc('south')], scoring: [score('south', 0.8)] },
+  ]);
+  check('same-scene identities reconverge to one mention id', consolidated.length === 1 && consolidated[0]!.mentionId === 'm1');
+  check('same-scene identities route two canonical candidates to picker', consolidated[0]!.outcome === 'ambiguous_candidates' && consolidated[0]!.candidates.map((candidate) => candidate.googlePlaceId).join(',') === 'north,south');
+  check('identity hypotheses remain ranked in the logical slot', consolidated[0]!.identityHypotheses?.map((identity) => identity.name).join(',') === 'North Cove,South Cove');
+}
 check('host-only candidate is detected', isHostOnlyCandidate('Brewery X', { primaryVenueName: 'X Eats', hostVenueName: 'Brewery X' }));
 check('primary candidate is not host-only', !isHostOnlyCandidate('X Eats', { primaryVenueName: 'X Eats', hostVenueName: 'Brewery X' }));
 check('all Places provider errors are retryable', isRetryableNameDrivenProviderFailure(ndResult({
@@ -310,6 +329,31 @@ const geo: MediaGeoContext = { city: null, region: 'California', country: 'Unite
     });
     check('two same-name candidates => ambiguous', r.mentionResults[0]!.outcome === 'ambiguous_candidates', r.mentionResults[0]!.outcome);
     check('ambiguous preserves both', r.mentionResults[0]!.candidates.length === 2);
+  }
+
+  // two model identities for one scene => one logical picker slot
+  {
+    const logical = mention('North Cove');
+    logical.identityAlternatives = [{
+      ...mention('South Cove'),
+      hypothesisRank: 1,
+    }];
+    const r = await resolveVenueMentions({
+      mentions: [logical],
+      geoContext: geo,
+      env,
+      platform: 'instagram',
+      deps: {
+        search: fixedSearch({
+          'North Cove': [cand('North Cove', { googlePlaceId: 'north-cove' })],
+          'South Cove': [cand('South Cove', { googlePlaceId: 'south-cove' })],
+        }),
+        geocode: noGeocode,
+      },
+    });
+    check('same-scene resolver returns one logical result', r.mentionResults.length === 1 && r.mentionResults[0]!.mentionId === 'm1');
+    check('same-scene resolver searches both identities', r.requestCount === 2);
+    check('same-scene resolver preserves two ranked picker candidates', r.mentionResults[0]!.outcome === 'ambiguous_candidates' && r.mentionResults[0]!.candidates.length === 2);
   }
 
   // no candidate => no_match

@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-20T05:01:19.670Z",
+  "caseId": "small_waterfall_hard_negative",
+  "groundTruth": "Unknown park; source establishes no specific named location",
+  "evaluationStatus": "PENDING_MANUAL_CLASSIFICATION",
+  "input": {
+    "kind": "video",
+    "source": "C:\\Users\\andre\\AppData\\Local\\Temp\\nearr-vayrin-shipping-gate-20260819\\small_waterfall.webm",
+    "extractedFrameCount": 2
+  },
+  "model": "gpt-5.6-sol",
+  "promptVersion": "vayrin-visual-geolocation-2026-08-19.v2",
+  "reasoningEffort": "model_default",
+  "credential": {
+    "hasApiKey": true,
+    "apiKeyVariable": "MEDIA_TRANSCRIPTION_API_KEY"
+  },
+  "pricingUsdPerMillionTokens": {
+    "inputPerMillion": 5,
+    "cachedInputPerMillion": 0.5,
+    "outputPerMillion": 30
+  },
+  "runs": [
+    {
+      "strategy": "diverse",
+      "budget": 6,
+      "consideredFrameCount": 2,
+      "selectedFrameCount": 2,
+      "selectedTimestampsSeconds": [
+        0,
+        24.852
+      ],
+      "meanPairwiseDistance": 4,
+      "condition": "visual_only",
+      "ok": true,
+      "latencyMs": 7519,
+      "usage": {
+        "inputTokens": 1941,
+        "outputTokens": 254,
+        "reasoningTokens": 212,
+        "totalTokens": 2195,
+        "cachedInputTokens": 1599
+      },
+      "estimatedCostUsd": 0.010129,
+      "payload": {
+        "place_hypotheses": [],
+        "multiple_distinct_places_visible": false,
+        "additional_place_segments": [],
+        "metadata_was_sufficient": false
+      }
+    },
+    {
+      "strategy": "diverse",
+      "budget": 6,
+      "consideredFrameCount": 2,
+      "selectedFrameCount": 2,
+      "selectedTimestampsSeconds": [
+        0,
+        24.852
+      ],
+      "meanPairwiseDistance": 4,
+      "condition": "fused",
+      "ok": true,
+      "latencyMs": 6242,
+      "usage": {
+        "inputTokens": 1945,
+        "outputTokens": 224,
+        "reasoningTokens": 182,
+        "totalTokens": 2169,
+        "cachedInputTokens": 1599
+      },
+      "estimatedCostUsd": 0.00925,
+      "payload": {
+        "place_hypotheses": [],
+        "multiple_distinct_places_visible": false,
+        "additional_place_segments": [],
+        "metadata_was_sufficient": false
+      }
+    }
+  ]
+}

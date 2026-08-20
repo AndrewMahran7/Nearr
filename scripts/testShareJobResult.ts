@@ -68,6 +68,17 @@ const relationship = normalizeMentionSlots([{
 assert.equal(relationship.length, 1);
 assert.equal(relationship[0]!.displayName, 'X Eats at Brewery X');
 assert.equal(relationship[0]!.outcome, 'ambiguous_candidates');
+const leadOnly = normalizeMentionSlots([{
+  mentionId: 'm1', displayName: 'Hidden Falls', outcome: 'no_match', candidates: [],
+  identityHypotheses: [{
+    name: 'Hidden Falls', contextLabel: 'Example County', confidence: 0.63,
+    evidenceKind: 'observable', timestamps: [2, 8],
+  }],
+}]);
+assert.deepEqual(leadOnly[0]!.identityHypotheses, [{
+  name: 'Hidden Falls', contextLabel: 'Example County', confidence: 0.63,
+  evidenceKind: 'observable', timestamps: [2, 8],
+}], 'unverified non-Places lead survives in the durable mention slot');
 assert.deepEqual(normalizeMentionSlots([{ bad: true }, null, 'x']), [], 'malformed payload never throws');
 
 const preview = buildFivePizzaPreviewJob();

@@ -5,9 +5,9 @@ import {
 import { isGeographicContextOnly } from '../process-share-link/places/placeNormalization.ts';
 import type { VenueMention } from './mediaMentions.ts';
 
-export const MEDIA_AUTO_SAVE_RULE_VERSION = 'media-autosave-2026-08-13.v6';
+export const MEDIA_AUTO_SAVE_RULE_VERSION = 'media-autosave-2026-08-19.v7';
 
-// Retained for configuration compatibility and diagnostics. The v6 decision
+// Retained for configuration compatibility and diagnostics. The v7 decision
 // does not apply this value as a second confirmation threshold: the resolver's
 // existing PLAUSIBLE_FLOOR defines the minimum meaningful candidate score.
 export const DEFAULT_MEDIA_AUTO_SAVE_THRESHOLD = 0.70;
@@ -266,7 +266,17 @@ export function evaluateMediaAutoSave(
 
   const plausible = [...plausibleByProviderId.values()];
   let reasonCode: string;
-  if (input.mention.hostVenueName || input.mention.relationshipType) {
+  if (input.mention.identityEvidenceKind === 'model_prior') {
+    reasonCode = 'model_prior_unverified';
+    explicitConflictFlags.push('model_prior_unverified');
+  } else if ((input.mention.identityAlternatives?.length ?? 0) > 0 && plausible.length <= 1) {
+    // A second surviving model identity that Places could not independently
+    // eliminate is real uncertainty, never permission to silently choose the
+    // only listed candidate. Two canonical candidates are handled below by the
+    // ordinary ambiguity branch.
+    reasonCode = 'identity_hypothesis_uncertainty';
+    explicitConflictFlags.push('identity_hypothesis_uncertainty');
+  } else if (input.mention.hostVenueName || input.mention.relationshipType) {
     reasonCode = 'host_relationship';
     explicitConflictFlags.push('host_relationship');
   } else if (plausible.length === 0) {

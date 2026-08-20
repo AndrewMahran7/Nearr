@@ -169,6 +169,8 @@ export function hypothesisToPlace(
   hypothesis: VayrinHypothesisRaw,
   role: PlaceCandidateEvidence['role'],
   timestamps: number[] = [],
+  logicalPlaceId: string | null = null,
+  hypothesisRank = 0,
 ): PlaceCandidateEvidence | null {
   const name = hypothesis.name.trim();
   if (!name) return null;
@@ -202,6 +204,13 @@ export function hypothesisToPlace(
   }
 
   return {
+    logicalPlaceId,
+    identityEvidenceKind:
+      hypothesis.evidence_basis === 'contextual_or_memory_prior' ||
+      hypothesis.evidence_basis === 'insufficient'
+        ? 'model_prior'
+        : 'observable',
+    hypothesisRank,
     name,
     category: categoryFor(hypothesis.place_type),
     categoryConfidence: 0,
@@ -218,6 +227,28 @@ export function hypothesisToPlace(
     memoryCue: null,
     memoryCueEvidence: [],
   };
+}
+
+function hypothesisIdentityKey(hypothesis: VayrinHypothesisRaw): string {
+  return [hypothesis.name, hypothesis.city, hypothesis.region, hypothesis.country]
+    .map((value) => (value ?? '').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ''))
+    .join('::');
+}
+
+/** Keep model order while collapsing spelling/punctuation variants of the same
+ * identity inside one scene. Distinct scenes are deduplicated independently. */
+export function deduplicateSceneHypotheses(
+  hypotheses: VayrinHypothesisRaw[],
+): VayrinHypothesisRaw[] {
+  const seen = new Set<string>();
+  const out: VayrinHypothesisRaw[] = [];
+  for (const hypothesis of hypotheses) {
+    const key = hypothesisIdentityKey(hypothesis);
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    out.push(hypothesis);
+  }
+  return out;
 }
 
 /**
@@ -238,24 +269,33 @@ export function payloadToEvidence(payload: VayrinPayload): {
   const places: PlaceCandidateEvidence[] = [];
   const alternatives: VayrinHypothesisRaw[] = [];
 
-  const [best, ...rest] = payload.place_hypotheses;
-  if (best) {
-    const place = hypothesisToPlace(best, 'primary');
-    if (place) places.push(place);
-    else alternatives.push(best);
-  }
-  alternatives.push(...rest);
-
-  for (const segment of payload.additional_place_segments) {
-    const [segmentBest, ...segmentRest] = segment.hypotheses;
-    if (!segmentBest) continue;
+  const primaryHypotheses = deduplicateSceneHypotheses(payload.place_hypotheses);
+  primaryHypotheses.forEach((hypothesis, rank) => {
     const place = hypothesisToPlace(
-      segmentBest,
-      places.length === 0 ? 'primary' : 'secondary',
-      segment.frame_timestamps_seconds,
+      hypothesis,
+      'primary',
+      [],
+      'vayrin-scene-1',
+      rank,
     );
     if (place) places.push(place);
-    alternatives.push(...segmentRest);
+    else alternatives.push(hypothesis);
+  });
+
+  for (let segmentIndex = 0; segmentIndex < payload.additional_place_segments.length; segmentIndex += 1) {
+    const segment = payload.additional_place_segments[segmentIndex]!;
+    const hypotheses = deduplicateSceneHypotheses(segment.hypotheses);
+    hypotheses.forEach((hypothesis, rank) => {
+      const place = hypothesisToPlace(
+        hypothesis,
+        places.length === 0 ? 'primary' : 'secondary',
+        segment.frame_timestamps_seconds,
+        `vayrin-scene-${segmentIndex + 2}`,
+        rank,
+      );
+      if (place) places.push(place);
+      else alternatives.push(hypothesis);
+    });
   }
 
   const warnings: string[] = ['vayrin_visual_geolocation'];
@@ -268,7 +308,8 @@ export function payloadToEvidence(payload: VayrinPayload): {
       // than one place actually surviving the mapping. A `true` flag with one
       // place would make the finalizer expect siblings that do not exist.
       multipleIntentionalPlaces:
-        payload.multiple_distinct_places_visible && places.length > 1,
+        payload.multiple_distinct_places_visible &&
+        new Set(places.map((place) => place.logicalPlaceId)).size > 1,
       insufficientEvidence: places.length === 0,
       warnings,
     },
@@ -419,7 +460,10 @@ export class VayrinFallbackModel implements ModelProvider {
     diagnostics.usage = { ...result.usage };
     diagnostics.estimatedCostUsd = estimateVayrinCostUsd(result.usage, this.options.pricing);
     diagnostics.hypothesisCount = evidence.places.length;
-    diagnostics.alternativeCount = alternatives.length;
+    diagnostics.alternativeCount = alternatives.length + Math.max(
+      0,
+      evidence.places.length - new Set(evidence.places.map((place) => place.logicalPlaceId)).size,
+    );
     diagnostics.multipleDistinctPlaces = evidence.multipleIntentionalPlaces;
 
     // The visual pass found nothing specific either. Keep the baseline rather

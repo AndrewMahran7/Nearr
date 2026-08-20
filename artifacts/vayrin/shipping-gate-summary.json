@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "experimentDate": "2026-08-19",
+  "model": "gpt-5.6-sol",
+  "promptVersion": "vayrin-visual-geolocation-2026-08-19.v2",
+  "defaultConfiguration": { "frames": 6, "strategy": "diverse_temporally_stratified" },
+  "matrix": [
+    { "fixture": "dettifoss_hidden_natural", "cheap": "COARSE", "gemini": "NO ANSWER", "visualOnly": "EXACT", "fused": "EXACT", "incrementalGptValue": true, "newInformation": "Dettifoss; existing context was only Iceland" },
+    { "fixture": "cocoa_beach_coarse_refinement", "cheap": "COARSE", "gemini": "NO ANSWER", "visualOnly": "EXACT", "fused": "EXACT", "incrementalGptValue": true, "newInformation": "Cocoa Beach Pier; existing context was only Florida" },
+    { "fixture": "griffith_unlabeled_background", "cheap": "COARSE", "gemini": "NO ANSWER", "visualOnly": "EXACT", "fused": "EXACT", "incrementalGptValue": true, "newInformation": "Griffith Observatory; existing context was only Los Angeles" },
+    { "fixture": "small_waterfall_hard_negative", "cheap": "NO ANSWER", "gemini": "NO ANSWER", "visualOnly": "NO ANSWER", "fused": "NO ANSWER", "incrementalGptValue": false, "newInformation": null },
+    { "fixture": "youtube_zoo_famous_clip_negative", "cheap": "NO ANSWER", "gemini": "NO ANSWER", "visualOnly": "UNKNOWN", "fused": "UNKNOWN", "incrementalGptValue": false, "newInformation": "Model prior only; marked contextual_or_memory_prior and blocked from auto-save" },
+    { "fixture": "composite_verified_multi_place", "cheap": "NO ANSWER", "gemini": "NO ANSWER", "visualOnly": "WRONG", "fused": "EXACT", "incrementalGptValue": true, "newInformation": "Separate Dettifoss and Griffith Observatory scene results with timestamps" }
+  ],
+  "totals": {
+    "cheap": { "EXACT": 0, "USEFUL": 0, "COARSE": 3, "WRONG": 0, "NO_ANSWER": 3, "UNKNOWN": 0 },
+    "gemini": { "EXACT": 0, "USEFUL": 0, "COARSE": 0, "WRONG": 0, "NO_ANSWER": 6, "UNKNOWN": 0 },
+    "visualOnly": { "EXACT": 3, "USEFUL": 0, "COARSE": 0, "WRONG": 1, "NO_ANSWER": 1, "UNKNOWN": 1 },
+    "fused": { "EXACT": 4, "USEFUL": 0, "COARSE": 0, "WRONG": 0, "NO_ANSWER": 1, "UNKNOWN": 1 }
+  },
+  "allGptCallsIncludingPreservedMultiFailures": {
+    "calls": 16,
+    "framesPerCall": { "median": 6, "range": [2, 6] },
+    "latencyMs": { "mean": 24481.8125, "median": 21110.5, "range": [6242, 59320] },
+    "inputTokens": { "mean": 2765.6875, "median": 2530.5, "range": [1941, 3440], "total": 44251 },
+    "outputTokens": { "mean": 1167.25, "median": 1079, "range": [224, 2908], "total": 18676 },
+    "estimatedCostUsd": { "mean": 0.0421, "median": 0.03722, "range": [0.00925, 0.097244], "total": 0.673603 }
+  },
+  "preservedFailures": [
+    "First multi run selected one early and five late frames, collapsed scenes, and was wrong.",
+    "After temporal coverage, the initial 0-8s source interval remained visually weak; scenes separated but identities were wrong.",
+    "Final composite used a predeclared informative interval from the same source; fused output was exact for both scenes, while visual-only still misidentified the second scene as Perlan."
+  ]
+}

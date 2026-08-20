@@ -177,6 +177,10 @@ Not worth pursuing from current evidence:
 ### Remaining limitations before Nearr-Dev deployment
 
 1. Run a small manually verified hard-place set (natural feature, unlabeled venue, gatekept spot) and at least one accessible multi-place itinerary.
-2. Wire same-scene alternative hypotheses into one existing picker contract; today the best hypothesis is verified and alternatives remain diagnostic rather than user-selectable.
+2. Same-scene alternatives are now wired through one logical mention and the existing picker contract; see `docs/VAYRIN_CORE_SHIPPING_GATE.md`. Non-Places alternatives remain durable leads rather than saveable candidates.
 3. Verify the final safe base and cherry-pick this branch's commits rather than rebasing blindly.
 4. Configure the server-only flag/key/pricing in Nearr-Dev, deploy the worker and relevant Edge change in the normal integration lane, then run a device share test. No environment was changed here.
+
+## Shipping-gate addendum
+
+The follow-up hardening pass established incremental GPT value beyond the current cheap/Gemini path on Dettifoss, Cocoa Beach Pier, Griffith Observatory, and a verified two-scene composite. It also added model-prior provenance, temporal coverage for the six-frame selector, same-scene picker routing, and a durable non-Places lead shape. Full results, preserved failures, and limitations are in `docs/VAYRIN_CORE_SHIPPING_GATE.md`.

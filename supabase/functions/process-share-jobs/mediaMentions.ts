@@ -92,9 +92,7 @@ export type SupportingEvidenceItem = {
 };
 
 /** A single eligible, normalized venue-name mention ready for a Places search. */
-export type VenueMention = {
-  /** Stable per-task id: m1, m2, … (assigned in group order). */
-  id: string;
+export type VenueIdentity = {
   /** Original display name (trimmed) — what the user sees. For a venue-in-host
    *  relationship this is the combined "Primary at Host" label. */
   displayName: string;
@@ -139,6 +137,15 @@ export type VenueMention = {
    *                         contains the place name can never satisfy it.
    */
   resolutionMode?: 'venue' | 'geographic';
+  identityEvidenceKind?: 'observable' | 'model_prior';
+  hypothesisRank?: number;
+};
+
+export type VenueMention = VenueIdentity & {
+  /** Stable per-task LOGICAL id: one per scene/place. */
+  id: string;
+  /** Competing identities for this same logical place, best-first. */
+  identityAlternatives?: VenueIdentity[];
 };
 
 /** Sanitized diagnostic for a detected venue↔host relationship. */
@@ -665,19 +672,29 @@ export function buildVenueMentions(evidence: MediaPlaceEvidence): BuildMentionsR
     hostName?: string;
     relationshipType?: VenueRelationshipType;
     hostPlaces?: PlaceCandidateEvidence[];
+    logicalPlaceId: string | null;
   };
   const groups: Group[] = [];
   const indexByKey = new Map<string, number>();
   for (const p of eligible) {
     const normalizedName = normalizeVenueName(p.name);
     const region = (p.region ?? '').trim().toLowerCase() || null;
-    const key = `${normalizedName}::${region ?? ''}`;
+    const identityName = p.logicalPlaceId
+      ? normalizedName.replace(/[^a-z0-9]+/g, '')
+      : normalizedName;
+    const key = `${p.logicalPlaceId ?? 'ordinary'}::${identityName}::${region ?? ''}`;
     const existing = indexByKey.get(key);
     if (existing != null) {
       groups[existing]!.places.push(p);
     } else {
       indexByKey.set(key, groups.length);
-      groups.push({ displayName: p.name.trim(), normalizedName, region, places: [p] });
+      groups.push({
+        displayName: p.name.trim(),
+        normalizedName,
+        region,
+        places: [p],
+        logicalPlaceId: p.logicalPlaceId ?? null,
+      });
     }
   }
 
@@ -727,7 +744,9 @@ export function buildVenueMentions(evidence: MediaPlaceEvidence): BuildMentionsR
   }
   const liveGroups = groups.filter((_, i) => !mergedHost.has(i));
 
-  const mentions: VenueMention[] = liveGroups.slice(0, MAX_MENTIONS).map((g, i) => {
+  // Do not apply the logical-place cap yet: several groups can be competing
+  // identities for one scene and must not crowd a later, distinct scene out.
+  const provisionalMentions: VenueMention[] = liveGroups.map((g, i) => {
     const sources = new Set<PlaceEvidenceSource>();
     const nameEvidenceSources = new Set<PlaceEvidenceSource>();
     const timestamps = new Set<number>();
@@ -791,6 +810,11 @@ export function buildVenueMentions(evidence: MediaPlaceEvidence): BuildMentionsR
       repeated,
       confidence: bestConfidence,
       geo: placeGeo(g.places[0]!),
+      identityEvidenceKind: g.places.some((place) => place.identityEvidenceKind !== 'model_prior')
+        ? 'observable'
+        : 'model_prior',
+      hypothesisRank: Math.min(...g.places.map((place) => place.hypothesisRank ?? 0)),
+      identityAlternatives: [],
     };
     // A group is geographic when every place in it is a peer geographic
     // destination. Mixed groups stay ordinary venues — the stricter default.
@@ -807,6 +831,29 @@ export function buildVenueMentions(evidence: MediaPlaceEvidence): BuildMentionsR
     }
     return mention;
   });
+
+  // Alternative identities for one scene reconverge into one logical mention.
+  // Ordinary evidence has no logicalPlaceId, so its behavior is unchanged.
+  const clusters = new Map<string, VenueMention[]>();
+  for (let index = 0; index < provisionalMentions.length; index += 1) {
+    const logical = liveGroups[index]?.logicalPlaceId;
+    const key = logical ? `logical:${logical}` : `ordinary:${index}`;
+    const current = clusters.get(key) ?? [];
+    current.push(provisionalMentions[index]!);
+    clusters.set(key, current);
+  }
+  const mentions: VenueMention[] = [...clusters.values()]
+    .slice(0, MAX_MENTIONS)
+    .map((cluster, index) => {
+      const ranked = [...cluster].sort(
+        (a, b) => (a.hypothesisRank ?? 0) - (b.hypothesisRank ?? 0) || b.confidence - a.confidence,
+      );
+      const [primary, ...alternatives] = ranked;
+      const identityAlternatives: VenueIdentity[] = alternatives.map(
+        ({ id: _id, identityAlternatives: _nested, ...identity }) => identity,
+      );
+      return { ...primary!, id: `m${index + 1}`, identityAlternatives };
+    });
 
   return {
     mentions,

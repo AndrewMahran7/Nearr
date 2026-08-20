@@ -1,0 +1,188 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-20T05:00:43.100Z",
+  "caseId": "dettifoss_hidden_natural",
+  "groundTruth": "Dettifoss, Vatnajokull National Park, Iceland",
+  "evaluationStatus": "PENDING_MANUAL_CLASSIFICATION",
+  "input": {
+    "kind": "video",
+    "source": "C:\\Users\\andre\\AppData\\Local\\Temp\\nearr-vayrin-shipping-gate-20260819\\dettifoss.webm",
+    "extractedFrameCount": 10
+  },
+  "model": "gpt-5.6-sol",
+  "promptVersion": "vayrin-visual-geolocation-2026-08-19.v2",
+  "reasoningEffort": "model_default",
+  "credential": {
+    "hasApiKey": true,
+    "apiKeyVariable": "MEDIA_TRANSCRIPTION_API_KEY"
+  },
+  "pricingUsdPerMillionTokens": {
+    "inputPerMillion": 5,
+    "cachedInputPerMillion": 0.5,
+    "outputPerMillion": 30
+  },
+  "runs": [
+    {
+      "strategy": "diverse",
+      "budget": 6,
+      "consideredFrameCount": 10,
+      "selectedFrameCount": 6,
+      "selectedTimestampsSeconds": [
+        0,
+        2.563,
+        3.845,
+        6.409,
+        10.254,
+        21.79
+      ],
+      "meanPairwiseDistance": 18.6,
+      "condition": "visual_only",
+      "ok": true,
+      "latencyMs": 12624,
+      "usage": {
+        "inputTokens": 2513,
+        "outputTokens": 647,
+        "reasoningTokens": 250,
+        "totalTokens": 3160,
+        "cachedInputTokens": 0
+      },
+      "estimatedCostUsd": 0.031975,
+      "payload": {
+        "place_hypotheses": [
+          {
+            "name": "Dettifoss",
+            "place_type": "waterfall",
+            "city": null,
+            "region": "Northeastern Region",
+            "country": "Iceland",
+            "specificity": "natural_feature",
+            "confidence": 0.96,
+            "reasoning_summary": "A very broad, high-volume waterfall plunges into a deep, snow-covered canyon with dark columnar-basalt walls and a large mist plume, closely matching Dettifoss and the Jökulsárgljúfur landscape.",
+            "supporting_visual_clues": [
+              "Broad single major drop carrying a powerful gray river",
+              "Deep canyon formed from dark, vertically fractured basalt",
+              "Large mist cloud filling the gorge",
+              "Treeless volcanic plateau under winter snow",
+              "Waterfall and canyon geometry characteristic of Dettifoss"
+            ],
+            "supporting_textual_clues": [],
+            "conflicting_clues": [
+              "No sign or other direct visual identifier is visible",
+              "Snow and mist obscure parts of the waterfall and surrounding terrain"
+            ],
+            "needs_external_verification": true,
+            "evidence_basis": "distinctive_visual_match"
+          },
+          {
+            "name": "Hafragilsfoss",
+            "place_type": "waterfall",
+            "city": null,
+            "region": "Northeastern Region",
+            "country": "Iceland",
+            "specificity": "natural_feature",
+            "confidence": 0.03,
+            "reasoning_summary": "The snow-covered basalt canyon is compatible with another major waterfall on the Jökulsá á Fjöllum, though the broad drop and familiar gorge view favor Dettifoss.",
+            "supporting_visual_clues": [
+              "Dark basalt gorge",
+              "High-volume glacial river",
+              "Snow-covered treeless terrain"
+            ],
+            "supporting_textual_clues": [],
+            "conflicting_clues": [
+              "The visible waterfall geometry appears broader and more consistent with Dettifoss",
+              "No direct identifier is visible"
+            ],
+            "needs_external_verification": true,
+            "evidence_basis": "distinctive_visual_match"
+          }
+        ],
+        "multiple_distinct_places_visible": false,
+        "additional_place_segments": [],
+        "metadata_was_sufficient": false
+      }
+    },
+    {
+      "strategy": "diverse",
+      "budget": 6,
+      "consideredFrameCount": 10,
+      "selectedFrameCount": 6,
+      "selectedTimestampsSeconds": [
+        0,
+        2.563,
+        3.845,
+        6.409,
+        10.254,
+        21.79
+      ],
+      "meanPairwiseDistance": 18.6,
+      "condition": "fused",
+      "ok": true,
+      "latencyMs": 16596,
+      "usage": {
+        "inputTokens": 2529,
+        "outputTokens": 745,
+        "reasoningTokens": 344,
+        "totalTokens": 3274,
+        "cachedInputTokens": 1599
+      },
+      "estimatedCostUsd": 0.0278,
+      "payload": {
+        "place_hypotheses": [
+          {
+            "name": "Dettifoss",
+            "place_type": "waterfall",
+            "city": null,
+            "region": "Northeastern Region",
+            "country": "Iceland",
+            "specificity": "natural_feature",
+            "confidence": 0.94,
+            "reasoning_summary": "An exceptionally broad, high-volume waterfall plunges into a deep, dark basalt canyon, producing dense spray above a gray glacial river in a snow-covered volcanic landscape.",
+            "supporting_visual_clues": [
+              "Very broad curtain of turbulent water",
+              "Enormous mist plume obscuring part of the gorge",
+              "Deep canyon with dark columnar basalt walls",
+              "Gray, sediment-rich river characteristic of a glacial outflow",
+              "Treeless volcanic terrain under winter snow"
+            ],
+            "supporting_textual_clues": [
+              "Caption describes a powerful waterfall during an Iceland trip",
+              "Location metadata places the scene in Iceland"
+            ],
+            "conflicting_clues": [
+              "No readable sign or direct place name appears in the frames"
+            ],
+            "needs_external_verification": false,
+            "evidence_basis": "distinctive_visual_match"
+          },
+          {
+            "name": "Hafragilsfoss",
+            "place_type": "waterfall",
+            "city": null,
+            "region": "Northeastern Region",
+            "country": "Iceland",
+            "specificity": "natural_feature",
+            "confidence": 0.05,
+            "reasoning_summary": "The snow-covered basalt gorge and glacial river are also compatible with another large waterfall in Jökulsárgljúfur, though the breadth and spray favor Dettifoss.",
+            "supporting_visual_clues": [
+              "Dark basalt canyon",
+              "Sediment-rich river",
+              "Snow-covered treeless terrain",
+              "Large waterfall within a gorge"
+            ],
+            "supporting_textual_clues": [
+              "Iceland location metadata"
+            ],
+            "conflicting_clues": [
+              "The visible waterfall appears broader and more powerful than typical views of Hafragilsfoss"
+            ],
+            "needs_external_verification": true,
+            "evidence_basis": "distinctive_visual_match"
+          }
+        ],
+        "multiple_distinct_places_visible": false,
+        "additional_place_segments": [],
+        "metadata_was_sufficient": false
+      }
+    }
+  ]
+}

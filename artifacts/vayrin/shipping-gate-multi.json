@@ -1,0 +1,229 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-20T05:09:07.944Z",
+  "caseId": "composite_verified_multi_place",
+  "groundTruth": "0-12s Dettifoss, Iceland; 12-26s Griffith Observatory, Los Angeles",
+  "evaluationStatus": "PENDING_MANUAL_CLASSIFICATION",
+  "input": {
+    "kind": "video",
+    "source": "C:\\Users\\andre\\AppData\\Local\\Temp\\nearr-vayrin-shipping-gate-20260819\\multi_verified_intervals.mp4",
+    "extractedFrameCount": 17
+  },
+  "model": "gpt-5.6-sol",
+  "promptVersion": "vayrin-visual-geolocation-2026-08-19.v2",
+  "reasoningEffort": "model_default",
+  "credential": {
+    "hasApiKey": true,
+    "apiKeyVariable": "MEDIA_TRANSCRIPTION_API_KEY"
+  },
+  "pricingUsdPerMillionTokens": {
+    "inputPerMillion": 5,
+    "cachedInputPerMillion": 0.5,
+    "outputPerMillion": 30
+  },
+  "runs": [
+    {
+      "strategy": "diverse",
+      "budget": 6,
+      "consideredFrameCount": 17,
+      "selectedFrameCount": 6,
+      "selectedTimestampsSeconds": [
+        0,
+        5.561,
+        12.234,
+        16.682,
+        17.794,
+        25.579
+      ],
+      "meanPairwiseDistance": 26.8,
+      "condition": "visual_only",
+      "ok": true,
+      "latencyMs": 30205,
+      "usage": {
+        "inputTokens": 3437,
+        "outputTokens": 1605,
+        "reasoningTokens": 1034,
+        "totalTokens": 5042,
+        "cachedInputTokens": 1599
+      },
+      "estimatedCostUsd": 0.05814,
+      "payload": {
+        "place_hypotheses": [
+          {
+            "name": "Dettifoss",
+            "place_type": "waterfall",
+            "city": null,
+            "region": "Northeastern Region",
+            "country": "Iceland",
+            "specificity": "natural_feature",
+            "confidence": 0.86,
+            "reasoning_summary": "A broad, high-volume waterfall plunges into a deep snow-covered canyon with dark, horizontally layered basalt walls and a barren volcanic landscape.",
+            "supporting_visual_clues": [
+              "Very wide single vertical waterfall with heavy spray",
+              "Deep gorge of dark layered volcanic rock",
+              "Snow-covered, treeless terrain characteristic of Iceland's interior",
+              "River continuing through a steep basalt canyon"
+            ],
+            "supporting_textual_clues": [],
+            "conflicting_clues": [
+              "No sign or uniquely identifying landmark is visible",
+              "Other large Icelandic waterfalls can look similar during winter"
+            ],
+            "needs_external_verification": true,
+            "evidence_basis": "distinctive_visual_match"
+          },
+          {
+            "name": "Gullfoss",
+            "place_type": "waterfall",
+            "city": null,
+            "region": "Southern Region",
+            "country": "Iceland",
+            "specificity": "natural_feature",
+            "confidence": 0.12,
+            "reasoning_summary": "The snowy volcanic gorge and powerful waterfall are broadly compatible with Gullfoss, although the visible drop appears straighter and more like Dettifoss.",
+            "supporting_visual_clues": [
+              "Powerful waterfall in a snow-covered Icelandic gorge",
+              "Dark volcanic canyon walls"
+            ],
+            "supporting_textual_clues": [],
+            "conflicting_clues": [
+              "Gullfoss normally presents a more clearly stepped and angled cascade",
+              "The frame shows a broad, nearly straight vertical curtain"
+            ],
+            "needs_external_verification": true,
+            "evidence_basis": "distinctive_visual_match"
+          }
+        ],
+        "multiple_distinct_places_visible": true,
+        "additional_place_segments": [
+          {
+            "frame_timestamps_seconds": [
+              12.23,
+              16.68,
+              17.79,
+              25.58
+            ],
+            "hypotheses": [
+              {
+                "name": "Perlan",
+                "place_type": "museum and observation landmark",
+                "city": "Reykjavík",
+                "region": "Capital Region",
+                "country": "Iceland",
+                "specificity": "venue",
+                "confidence": 0.82,
+                "reasoning_summary": "A large golden Foucault pendulum hangs within a multi-level circular atrium featuring a luminous floor ring and radial stone pattern, matching Perlan's central pendulum installation.",
+                "supporting_visual_clues": [
+                  "Golden spherical Foucault pendulum bob",
+                  "Circular multi-level interior viewed from above",
+                  "Illuminated ring surrounding a radial-patterned stone floor",
+                  "Architecture consistent with Perlan's central atrium"
+                ],
+                "supporting_textual_clues": [],
+                "conflicting_clues": [
+                  "The small wall plaque is not legible enough to confirm the venue directly",
+                  "Foucault pendulums exist in multiple museums worldwide"
+                ],
+                "needs_external_verification": true,
+                "evidence_basis": "distinctive_visual_match"
+              }
+            ]
+          }
+        ],
+        "metadata_was_sufficient": false
+      }
+    },
+    {
+      "strategy": "diverse",
+      "budget": 6,
+      "consideredFrameCount": 17,
+      "selectedFrameCount": 6,
+      "selectedTimestampsSeconds": [
+        0,
+        5.561,
+        12.234,
+        16.682,
+        17.794,
+        25.579
+      ],
+      "meanPairwiseDistance": 26.8,
+      "condition": "fused",
+      "ok": true,
+      "latencyMs": 27331,
+      "usage": {
+        "inputTokens": 3440,
+        "outputTokens": 1435,
+        "reasoningTokens": 1006,
+        "totalTokens": 4875,
+        "cachedInputTokens": 1599
+      },
+      "estimatedCostUsd": 0.053055,
+      "payload": {
+        "place_hypotheses": [
+          {
+            "name": "Dettifoss",
+            "place_type": "waterfall",
+            "city": null,
+            "region": "Northeast Iceland",
+            "country": "Iceland",
+            "specificity": "natural_feature",
+            "confidence": 0.9,
+            "reasoning_summary": "A massive single-drop waterfall plunges into a narrow, snow-covered canyon bounded by dark, horizontally layered basalt cliffs.",
+            "supporting_visual_clues": [
+              "Very broad and powerful waterfall",
+              "Deep canyon with sheer dark basalt walls",
+              "Horizontally layered volcanic geology",
+              "Snow-covered treeless landscape",
+              "Gray, sediment-laden river below the falls"
+            ],
+            "supporting_textual_clues": [],
+            "conflicting_clues": [
+              "No readable sign or unique direct identifier is visible",
+              "Only a limited side view of the waterfall is shown"
+            ],
+            "needs_external_verification": true,
+            "evidence_basis": "distinctive_visual_match"
+          }
+        ],
+        "multiple_distinct_places_visible": true,
+        "additional_place_segments": [
+          {
+            "frame_timestamps_seconds": [
+              12.23,
+              16.68,
+              17.79,
+              25.58
+            ],
+            "hypotheses": [
+              {
+                "name": "Foucault Pendulum, Griffith Observatory",
+                "place_type": "science exhibit within an observatory",
+                "city": "Los Angeles",
+                "region": "California",
+                "country": "United States",
+                "specificity": "exact_location",
+                "confidence": 0.85,
+                "reasoning_summary": "A bronze spherical pendulum hangs over a radial stone floor inside a circular illuminated well with concentric dark guard rings, matching Griffith Observatory's central Foucault pendulum installation.",
+                "supporting_visual_clues": [
+                  "Bronze pendulum bob with a bright equatorial band",
+                  "Long cable suspended over a circular radial floor",
+                  "Illuminated segmented ring around the pendulum pit",
+                  "Multiple concentric black guard rings",
+                  "Central circular mechanism with radial arms"
+                ],
+                "supporting_textual_clues": [],
+                "conflicting_clues": [
+                  "The adjacent exhibit label is too blurred to read",
+                  "Foucault pendulums with broadly similar circular displays exist at other museums"
+                ],
+                "needs_external_verification": true,
+                "evidence_basis": "distinctive_visual_match"
+              }
+            ]
+          }
+        ],
+        "metadata_was_sufficient": false
+      }
+    }
+  ]
+}

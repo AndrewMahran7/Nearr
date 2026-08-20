@@ -148,6 +148,42 @@ check('distinctiveTokensOf keeps brand', distinctiveTokensOf('Parlor Woodfire').
   check('same name different region => two mentions', r.mentions.length === 2, `got ${r.mentions.length}`);
 }
 
+// ---- Vayrin same-scene identities vs distinct scenes ----------------------
+{
+  const r = buildVenueMentions(evidence([
+    place({ name: 'North Cove', logicalPlaceId: 'scene-1', hypothesisRank: 0, country: 'Iceland', explicitEvidence: [ev('frame', 'basalt waterfall', 3)] }),
+    place({ name: 'South Cove', logicalPlaceId: 'scene-1', hypothesisRank: 1, country: 'Iceland', explicitEvidence: [ev('frame', 'basalt waterfall', 3)] }),
+    place({ name: 'Harbor Point', logicalPlaceId: 'scene-2', hypothesisRank: 0, country: 'United States', explicitEvidence: [ev('frame', 'pendulum rotunda', 15)] }),
+  ], { multipleIntentionalPlaces: true }));
+  check('two identities in one scene produce one logical mention', r.mentions.length === 2);
+  check('same-scene alternative is retained inside m1', r.mentions[0]!.identityAlternatives?.[0]?.displayName === 'South Cove');
+  check('distinct scene remains independent m2', r.mentions[1]!.id === 'm2' && r.mentions[1]!.displayName === 'Harbor Point');
+  check('scene timestamps remain isolated', r.mentions[0]!.timestamps.join(',') === '3' && r.mentions[1]!.timestamps.join(',') === '15');
+  check('cross-country scenes do not lend geography to each other', r.geoContext.countryStrength === 'conflicted' && r.geoContext.country === null);
+}
+
+{
+  const crowdedScene = Array.from({ length: 10 }, (_, index) => place({
+    name: `Cascade Landmark ${index + 1}`,
+    logicalPlaceId: 'scene-crowded',
+    hypothesisRank: index,
+  }));
+  const r = buildVenueMentions(evidence([
+    ...crowdedScene,
+    place({ name: 'Later Harbor Pavilion', logicalPlaceId: 'scene-later', hypothesisRank: 0 }),
+  ], { multipleIntentionalPlaces: true }));
+  check('same-scene alternatives do not consume the logical-place cap', r.mentions.length === 2);
+  check('later distinct scene survives an alternative-heavy first scene', r.mentions[1]?.displayName === 'Later Harbor Pavilion');
+}
+
+{
+  const r = buildVenueMentions(evidence([
+    place({ name: "Tuxedo Cat's Coffee", logicalPlaceId: 'scene-1', hypothesisRank: 0 }),
+    place({ name: 'Tuxedo Cats Coffee', logicalPlaceId: 'scene-1', hypothesisRank: 1 }),
+  ]));
+  check('punctuation-only identity variants deduplicate', r.mentions.length === 1 && (r.mentions[0]!.identityAlternatives?.length ?? 0) === 0);
+}
+
 // ---- inferred-only + malformed never becomes a mention --------------------
 {
   const r = buildVenueMentions(

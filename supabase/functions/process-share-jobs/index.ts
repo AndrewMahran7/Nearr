@@ -1176,6 +1176,7 @@ async function finalizeMediaTask(
         hostVenueName: mention.hostVenueName ?? null,
         relationshipType: mention.relationshipType ?? null,
         outcome: mention.outcome,
+        identityHypotheses: mention.identityHypotheses ?? [],
         aiNote: aiNoteByMentionId.get(mention.mentionId) ?? null,
         saveState: savedResultByMentionId.get(mention.mentionId)?.saveState ?? 'pending',
         savedPlaceId: savedResultByMentionId.get(mention.mentionId)?.savedPlaceId ?? null,
@@ -1324,6 +1325,7 @@ async function finalizeMediaTask(
       hostVenueName: mention.hostVenueName ?? null,
       relationshipType: mention.relationshipType ?? null,
       outcome: mention.outcome,
+      identityHypotheses: mention.identityHypotheses ?? [],
       aiNote: aiNoteByMentionId.get(mention.mentionId) ?? null,
       candidates: Array.isArray(mention.candidates)
         ? mention.candidates.map((candidate: any) =>

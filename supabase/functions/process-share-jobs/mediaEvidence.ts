@@ -47,6 +47,9 @@ export type PlaceEvidenceItem = {
 export type PlaceRole = 'primary' | 'secondary' | 'passing_mention';
 
 export type PlaceCandidateEvidence = {
+  logicalPlaceId?: string | null;
+  identityEvidenceKind?: 'observable' | 'model_prior';
+  hypothesisRank?: number;
   name: string;
   category: NearrCategory | null;
   categoryConfidence?: number;
@@ -152,6 +155,9 @@ function parsePlace(raw: unknown): PlaceCandidateEvidence | null {
   if (confidence > 1) confidence = 1;
 
   return {
+    logicalPlaceId: str(r.logicalPlaceId, 80),
+    identityEvidenceKind: r.identityEvidenceKind === 'model_prior' ? 'model_prior' : 'observable',
+    hypothesisRank: Math.max(0, Math.min(11, Math.floor(num(r.hypothesisRank) ?? 0))),
     name,
     category: isNearrCategory(r.category) ? r.category : null,
     categoryConfidence: Math.max(0, Math.min(1, num(r.categoryConfidence) ?? 0)),

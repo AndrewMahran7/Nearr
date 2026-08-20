@@ -134,6 +134,11 @@ export type VayrinHypothesisRaw = {
   supporting_textual_clues: string[];
   conflicting_clues: string[];
   needs_external_verification: boolean;
+  evidence_basis?:
+    | 'direct_visible_identity'
+    | 'distinctive_visual_match'
+    | 'contextual_or_memory_prior'
+    | 'insufficient';
 };
 
 export type VayrinSegmentRaw = {
@@ -333,6 +338,13 @@ function parseHypothesis(raw: unknown): VayrinHypothesisRaw | null {
     typeof r.confidence === 'number' && Number.isFinite(r.confidence)
       ? Math.max(0, Math.min(1, r.confidence))
       : 0;
+  const evidenceBasis =
+    r.evidence_basis === 'direct_visible_identity' ||
+    r.evidence_basis === 'distinctive_visual_match' ||
+    r.evidence_basis === 'contextual_or_memory_prior' ||
+    r.evidence_basis === 'insufficient'
+      ? r.evidence_basis
+      : 'contextual_or_memory_prior';
 
   return {
     name: name ?? '',
@@ -347,6 +359,7 @@ function parseHypothesis(raw: unknown): VayrinHypothesisRaw | null {
     supporting_textual_clues: strList(r.supporting_textual_clues),
     conflicting_clues: strList(r.conflicting_clues),
     needs_external_verification: r.needs_external_verification !== false,
+    evidence_basis: evidenceBasis,
   };
 }
 

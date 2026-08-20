@@ -1,0 +1,275 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-20T05:07:09.590Z",
+  "caseId": "composite_verified_multi_place",
+  "groundTruth": "0-8s Dettifoss, Iceland; 8-16s Griffith Observatory, Los Angeles",
+  "evaluationStatus": "PENDING_MANUAL_CLASSIFICATION",
+  "input": {
+    "kind": "video",
+    "source": "C:\\Users\\andre\\AppData\\Local\\Temp\\nearr-vayrin-shipping-gate-20260819\\multi_dettifoss_griffith.mp4",
+    "extractedFrameCount": 19
+  },
+  "model": "gpt-5.6-sol",
+  "promptVersion": "vayrin-visual-geolocation-2026-08-19.v2",
+  "reasoningEffort": "model_default",
+  "credential": {
+    "hasApiKey": true,
+    "apiKeyVariable": "MEDIA_TRANSCRIPTION_API_KEY"
+  },
+  "pricingUsdPerMillionTokens": {
+    "inputPerMillion": 5,
+    "cachedInputPerMillion": 0.5,
+    "outputPerMillion": 30
+  },
+  "runs": [
+    {
+      "strategy": "diverse",
+      "budget": 6,
+      "consideredFrameCount": 19,
+      "selectedFrameCount": 6,
+      "selectedTimestampsSeconds": [
+        0,
+        3.447,
+        8.272,
+        9.651,
+        12.409,
+        15.855
+      ],
+      "meanPairwiseDistance": 25.87,
+      "condition": "visual_only",
+      "ok": true,
+      "latencyMs": 46521,
+      "usage": {
+        "inputTokens": 3437,
+        "outputTokens": 2021,
+        "reasoningTokens": 1409,
+        "totalTokens": 5458,
+        "cachedInputTokens": 1599
+      },
+      "estimatedCostUsd": 0.07062,
+      "payload": {
+        "place_hypotheses": [
+          {
+            "name": "Almannagjá, Þingvellir National Park",
+            "place_type": "rift canyon and fault escarpment",
+            "city": null,
+            "region": "Southern Region",
+            "country": "Iceland",
+            "specificity": "natural_feature",
+            "confidence": 0.46,
+            "reasoning_summary": "A snow-covered, treeless volcanic ravine has dark layered basalt escarpments, multiple fault-like terraces, standing water, and a roped visitor path.",
+            "supporting_visual_clues": [
+              "Dark basaltic cliff faces with strong horizontal layering",
+              "Broad stepped ravine resembling a volcanic fissure zone",
+              "Treeless subarctic landscape with patchy snow",
+              "Rope barrier indicates an established visitor area"
+            ],
+            "supporting_textual_clues": [],
+            "conflicting_clues": [
+              "The straight benches and rubble piles could instead indicate an unidentified quarry",
+              "No sign, landmark, or distinctive skyline directly identifies Þingvellir"
+            ],
+            "needs_external_verification": true,
+            "evidence_basis": "distinctive_visual_match"
+          },
+          {
+            "name": "Þingvellir National Park",
+            "place_type": "national park and volcanic rift landscape",
+            "city": null,
+            "region": "Southern Region",
+            "country": "Iceland",
+            "specificity": "landmark",
+            "confidence": 0.34,
+            "reasoning_summary": "Snow, exposed dark volcanic strata, a treeless rift-like depression, water, and visitor barriers are consistent with the Þingvellir fissure landscape.",
+            "supporting_visual_clues": [
+              "Volcanic-looking rock strata",
+              "Snowy treeless terrain",
+              "Fault-like stepped topography",
+              "Managed visitor boundary"
+            ],
+            "supporting_textual_clues": [],
+            "conflicting_clues": [
+              "The exact fissure cannot be established visually",
+              "An excavated rock quarry could produce similar terrain"
+            ],
+            "needs_external_verification": true,
+            "evidence_basis": "distinctive_visual_match"
+          }
+        ],
+        "multiple_distinct_places_visible": true,
+        "additional_place_segments": [
+          {
+            "frame_timestamps_seconds": [
+              8.27,
+              9.65,
+              12.41,
+              15.86
+            ],
+            "hypotheses": [
+              {
+                "name": "Foucault Pendulum at Griffith Observatory",
+                "place_type": "science exhibit inside an observatory",
+                "city": "Los Angeles",
+                "region": "California",
+                "country": "United States",
+                "specificity": "exact_location",
+                "confidence": 0.86,
+                "reasoning_summary": "A large bronze pendulum bob swings over a recessed radial stone floor bordered by a luminous segmented ring and black concentric railing, matching Griffith Observatory's central Foucault Pendulum installation.",
+                "supporting_visual_clues": [
+                  "Large suspended bronze pendulum bob",
+                  "Circular recessed display viewed from above",
+                  "Illuminated segmented perimeter ring",
+                  "Radial stone floor and central electromagnetic drive",
+                  "Art Deco-style concentric black surround"
+                ],
+                "supporting_textual_clues": [],
+                "conflicting_clues": [
+                  "No readable Griffith Observatory name or address appears in the frames",
+                  "Other museums have visually similar Foucault pendulum installations"
+                ],
+                "needs_external_verification": true,
+                "evidence_basis": "distinctive_visual_match"
+              }
+            ]
+          }
+        ],
+        "metadata_was_sufficient": false
+      }
+    },
+    {
+      "strategy": "diverse",
+      "budget": 6,
+      "consideredFrameCount": 19,
+      "selectedFrameCount": 6,
+      "selectedTimestampsSeconds": [
+        0,
+        3.447,
+        8.272,
+        9.651,
+        12.409,
+        15.855
+      ],
+      "meanPairwiseDistance": 25.87,
+      "condition": "fused",
+      "ok": true,
+      "latencyMs": 33549,
+      "usage": {
+        "inputTokens": 3440,
+        "outputTokens": 1691,
+        "reasoningTokens": 956,
+        "totalTokens": 5131,
+        "cachedInputTokens": 1599
+      },
+      "estimatedCostUsd": 0.060734,
+      "payload": {
+        "place_hypotheses": [
+          {
+            "name": "Almannagjá",
+            "place_type": "rift gorge",
+            "city": null,
+            "region": "Þingvellir National Park",
+            "country": "Iceland",
+            "specificity": "natural_feature",
+            "confidence": 0.67,
+            "reasoning_summary": "Snow-covered rift valley with dark, horizontally layered basalt walls, extensive talus, a winding watercourse, and a marked visitor path.",
+            "supporting_visual_clues": [
+              "Dark basalt escarpments and blocky talus",
+              "Broad tectonic-looking fissure valley",
+              "Snow-covered subarctic terrain",
+              "Marked visitor route beside the gorge"
+            ],
+            "supporting_textual_clues": [],
+            "conflicting_clues": [
+              "No readable sign or uniquely identifying landmark is visible",
+              "The unusually regular rock benches could be mistaken for a quarry"
+            ],
+            "needs_external_verification": true,
+            "evidence_basis": "distinctive_visual_match"
+          },
+          {
+            "name": "Þingvellir National Park",
+            "place_type": "national park and rift valley",
+            "city": null,
+            "region": "Southern Region",
+            "country": "Iceland",
+            "specificity": "landmark",
+            "confidence": 0.76,
+            "reasoning_summary": "A snowy basalt rift landscape with steep fault scarps, broken lava rock, water, and visitor infrastructure matches the characteristic terrain of Þingvellir.",
+            "supporting_visual_clues": [
+              "Exposed layered basalt fault scarps",
+              "Snowy rift-floor landscape",
+              "Watercourse among fractured volcanic rock",
+              "Simple roped visitor boundary"
+            ],
+            "supporting_textual_clues": [],
+            "conflicting_clues": [
+              "Frames do not show signage or the park's better-known buildings and viewpoints"
+            ],
+            "needs_external_verification": true,
+            "evidence_basis": "distinctive_visual_match"
+          }
+        ],
+        "multiple_distinct_places_visible": true,
+        "additional_place_segments": [
+          {
+            "frame_timestamps_seconds": [
+              8.27,
+              9.65,
+              12.41,
+              15.86
+            ],
+            "hypotheses": [
+              {
+                "name": "Perlan",
+                "place_type": "museum and observation venue",
+                "city": "Reykjavík",
+                "region": "Capital Region",
+                "country": "Iceland",
+                "specificity": "venue",
+                "confidence": 0.72,
+                "reasoning_summary": "A suspended bronze Foucault pendulum swings over a circular stone floor inside a large ringed atrium, consistent with Perlan's central interior installation.",
+                "supporting_visual_clues": [
+                  "Large bronze pendulum bob suspended by a long wire",
+                  "Circular radial floor beneath the pendulum",
+                  "Bright segmented ring around the atrium",
+                  "Curved multi-level interior architecture"
+                ],
+                "supporting_textual_clues": [],
+                "conflicting_clues": [
+                  "The nearby plaque is not legible",
+                  "Foucault pendulums occur in many museums and observatories",
+                  "The Iceland identification is partly reinforced by the likely Þingvellir segment rather than a direct identifier here"
+                ],
+                "needs_external_verification": true,
+                "evidence_basis": "contextual_or_memory_prior"
+              },
+              {
+                "name": "Griffith Observatory",
+                "place_type": "observatory",
+                "city": "Los Angeles",
+                "region": "California",
+                "country": "United States",
+                "specificity": "venue",
+                "confidence": 0.13,
+                "reasoning_summary": "The circular floor and suspended bronze bob resemble the well-known Foucault pendulum exhibit at Griffith Observatory.",
+                "supporting_visual_clues": [
+                  "Bronze Foucault pendulum bob",
+                  "Circular radial floor and perimeter display"
+                ],
+                "supporting_textual_clues": [],
+                "conflicting_clues": [
+                  "No Griffith Observatory signage is visible",
+                  "This would place the two segments in unrelated countries",
+                  "The atrium details are not clearly diagnostic of Griffith Observatory"
+                ],
+                "needs_external_verification": true,
+                "evidence_basis": "contextual_or_memory_prior"
+              }
+            ]
+          }
+        ],
+        "metadata_was_sufficient": false
+      }
+    }
+  ]
+}

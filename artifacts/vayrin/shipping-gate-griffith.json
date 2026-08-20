@@ -1,0 +1,140 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-20T05:01:38.992Z",
+  "caseId": "griffith_unlabeled_background",
+  "groundTruth": "Foucault pendulum rotunda, Griffith Observatory, Los Angeles",
+  "evaluationStatus": "PENDING_MANUAL_CLASSIFICATION",
+  "input": {
+    "kind": "video",
+    "source": "C:\\Users\\andre\\AppData\\Local\\Temp\\nearr-vayrin-shipping-gate-20260819\\griffith.webm",
+    "extractedFrameCount": 16
+  },
+  "model": "gpt-5.6-sol",
+  "promptVersion": "vayrin-visual-geolocation-2026-08-19.v2",
+  "reasoningEffort": "model_default",
+  "credential": {
+    "hasApiKey": true,
+    "apiKeyVariable": "MEDIA_TRANSCRIPTION_API_KEY"
+  },
+  "pricingUsdPerMillionTokens": {
+    "inputPerMillion": 5,
+    "cachedInputPerMillion": 0.5,
+    "outputPerMillion": 30
+  },
+  "runs": [
+    {
+      "strategy": "diverse",
+      "budget": 6,
+      "consideredFrameCount": 16,
+      "selectedFrameCount": 6,
+      "selectedTimestampsSeconds": [
+        0,
+        1.185,
+        4.739,
+        6.516,
+        11.255,
+        13.032
+      ],
+      "meanPairwiseDistance": 25.8,
+      "condition": "visual_only",
+      "ok": true,
+      "latencyMs": 11299,
+      "usage": {
+        "inputTokens": 2513,
+        "outputTokens": 505,
+        "reasoningTokens": 261,
+        "totalTokens": 3018,
+        "cachedInputTokens": 1599
+      },
+      "estimatedCostUsd": 0.020519,
+      "payload": {
+        "place_hypotheses": [
+          {
+            "name": "Foucault Pendulum at Griffith Observatory",
+            "place_type": "science exhibit inside an observatory",
+            "city": "Los Angeles",
+            "region": "California",
+            "country": "United States",
+            "specificity": "exact_location",
+            "confidence": 0.9,
+            "reasoning_summary": "A large bronze pendulum bob swings over a circular Art Deco floor display with a luminous perimeter and upright knock-down markers, matching Griffith Observatory’s central-rotunda Foucault pendulum.",
+            "supporting_visual_clues": [
+              "Bronze spherical pendulum suspended over a recessed circular display",
+              "Illuminated segmented ring around the pendulum floor",
+              "Concentric black rings and pale stone Art Deco interior",
+              "Row of upright markers positioned to be knocked down by the pendulum"
+            ],
+            "supporting_textual_clues": [],
+            "conflicting_clues": [
+              "No readable venue name or other direct identifier appears in the frames",
+              "Other museums and observatories also operate Foucault pendulums"
+            ],
+            "needs_external_verification": true,
+            "evidence_basis": "distinctive_visual_match"
+          }
+        ],
+        "multiple_distinct_places_visible": false,
+        "additional_place_segments": [],
+        "metadata_was_sufficient": false
+      }
+    },
+    {
+      "strategy": "diverse",
+      "budget": 6,
+      "consideredFrameCount": 16,
+      "selectedFrameCount": 6,
+      "selectedTimestampsSeconds": [
+        0,
+        1.185,
+        4.739,
+        6.516,
+        11.255,
+        13.032
+      ],
+      "meanPairwiseDistance": 25.8,
+      "condition": "fused",
+      "ok": true,
+      "latencyMs": 22181,
+      "usage": {
+        "inputTokens": 2533,
+        "outputTokens": 1088,
+        "reasoningTokens": 862,
+        "totalTokens": 3621,
+        "cachedInputTokens": 1599
+      },
+      "estimatedCostUsd": 0.03811,
+      "payload": {
+        "place_hypotheses": [
+          {
+            "name": "Griffith Observatory",
+            "place_type": "observatory and public science museum",
+            "city": "Los Angeles",
+            "region": "California",
+            "country": "United States",
+            "specificity": "venue",
+            "confidence": 0.96,
+            "reasoning_summary": "A large bronze Foucault pendulum swings above a radial tiled floor inside a circular, illuminated rotunda, matching the signature pendulum exhibit at Griffith Observatory.",
+            "supporting_visual_clues": [
+              "Bronze pendulum bob suspended by a long cable",
+              "Circular radial floor with central magnetic mechanism",
+              "Bright segmented perimeter ring",
+              "Curved dark railings and concrete rotunda viewed from above"
+            ],
+            "supporting_textual_clues": [
+              "Caption describes a distinctive pendulum inside a public building",
+              "Los Angeles metadata is consistent with Griffith Observatory"
+            ],
+            "conflicting_clues": [
+              "No readable venue name or signage appears in the frames"
+            ],
+            "needs_external_verification": false,
+            "evidence_basis": "distinctive_visual_match"
+          }
+        ],
+        "multiple_distinct_places_visible": false,
+        "additional_place_segments": [],
+        "metadata_was_sufficient": false
+      }
+    }
+  ]
+}

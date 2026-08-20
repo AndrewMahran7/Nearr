@@ -1,0 +1,137 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-20T05:02:37.664Z",
+  "caseId": "youtube_zoo_famous_clip_negative",
+  "groundTruth": "No specific zoo is named or visually established; exact venue is UNKNOWN",
+  "evaluationStatus": "PENDING_MANUAL_CLASSIFICATION",
+  "input": {
+    "kind": "video",
+    "source": "C:\\Users\\andre\\AppData\\Local\\Temp\\nearr-vayrin-shipping-gate-20260819\\zoo.mp4",
+    "extractedFrameCount": 9
+  },
+  "model": "gpt-5.6-sol",
+  "promptVersion": "vayrin-visual-geolocation-2026-08-19.v2",
+  "reasoningEffort": "model_default",
+  "credential": {
+    "hasApiKey": true,
+    "apiKeyVariable": "MEDIA_TRANSCRIPTION_API_KEY"
+  },
+  "pricingUsdPerMillionTokens": {
+    "inputPerMillion": 5,
+    "cachedInputPerMillion": 0.5,
+    "outputPerMillion": 30
+  },
+  "runs": [
+    {
+      "strategy": "diverse",
+      "budget": 6,
+      "consideredFrameCount": 9,
+      "selectedFrameCount": 6,
+      "selectedTimestampsSeconds": [
+        0,
+        0.823,
+        1.645,
+        2.468,
+        8.227,
+        9.049
+      ],
+      "meanPairwiseDistance": 15,
+      "condition": "visual_only",
+      "ok": true,
+      "latencyMs": 20040,
+      "usage": {
+        "inputTokens": 2285,
+        "outputTokens": 1070,
+        "reasoningTokens": 836,
+        "totalTokens": 3355,
+        "cachedInputTokens": 1599
+      },
+      "estimatedCostUsd": 0.036329,
+      "payload": {
+        "place_hypotheses": [
+          {
+            "name": "Former Elephant Mesa exhibit, San Diego Zoo",
+            "place_type": "elephant exhibit at a zoo",
+            "city": "San Diego",
+            "region": "California",
+            "country": "United States",
+            "specificity": "exact_location",
+            "confidence": 0.99,
+            "reasoning_summary": "A man in a red-and-black jacket addresses the camera directly in front of elephants, matching the famous visual setup of Jawed Karim's 2005 video “Me at the zoo,” filmed at the San Diego Zoo's former elephant exhibit.",
+            "supporting_visual_clues": [
+              "Elephants standing behind a post-and-cable barrier",
+              "Artificial rockwork and zoo exhibit infrastructure",
+              "Presenter's appearance, clothing, framing, and elephant backdrop match the well-known video"
+            ],
+            "supporting_textual_clues": [],
+            "conflicting_clues": [
+              "No readable zoo name, exhibit sign, or other direct location identifier appears in the frames"
+            ],
+            "needs_external_verification": true,
+            "evidence_basis": "contextual_or_memory_prior"
+          }
+        ],
+        "multiple_distinct_places_visible": false,
+        "additional_place_segments": [],
+        "metadata_was_sufficient": false
+      }
+    },
+    {
+      "strategy": "diverse",
+      "budget": 6,
+      "consideredFrameCount": 9,
+      "selectedFrameCount": 6,
+      "selectedTimestampsSeconds": [
+        0,
+        0.823,
+        1.645,
+        2.468,
+        8.227,
+        9.049
+      ],
+      "meanPairwiseDistance": 15,
+      "condition": "fused",
+      "ok": true,
+      "latencyMs": 11477,
+      "usage": {
+        "inputTokens": 2316,
+        "outputTokens": 471,
+        "reasoningTokens": 251,
+        "totalTokens": 2787,
+        "cachedInputTokens": 1599
+      },
+      "estimatedCostUsd": 0.018514,
+      "payload": {
+        "place_hypotheses": [
+          {
+            "name": "San Diego Zoo",
+            "place_type": "zoo",
+            "city": "San Diego",
+            "region": "California",
+            "country": "United States",
+            "specificity": "venue",
+            "confidence": 0.99,
+            "reasoning_summary": "A young man speaks directly in front of an elephant enclosure; the caption and transcript match the well-known first YouTube video, “Me at the zoo,” filmed at San Diego Zoo.",
+            "supporting_visual_clues": [
+              "Elephants visible in a constructed zoo enclosure",
+              "Presenter stands immediately outside the enclosure barrier"
+            ],
+            "supporting_textual_clues": [
+              "Caption: “Me at the zoo”",
+              "Transcript discusses the elephants’ long trunks",
+              "Wording matches the known dialogue of the first YouTube upload"
+            ],
+            "conflicting_clues": [
+              "No readable venue sign or other direct location identifier appears in the frames"
+            ],
+            "needs_external_verification": true,
+            "evidence_basis": "contextual_or_memory_prior"
+          }
+        ],
+        "multiple_distinct_places_visible": false,
+        "additional_place_segments": [],
+        "metadata_was_sufficient": false
+      }
+    }
+  ]
+}

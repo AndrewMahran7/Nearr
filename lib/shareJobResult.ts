@@ -36,6 +36,16 @@ export type ShareJobMentionSlot = {
   aiNote?: string | null;
   saveState?: 'pending' | 'auto_saved' | 'already_saved';
   savedPlaceId?: string | null;
+  /** Ranked Vayrin identities for this one logical scene. This survives even
+   * when Places returns no candidate, enabling a future "few leads" UI without
+   * pretending a Google Place was verified. */
+  identityHypotheses?: Array<{
+    name: string;
+    contextLabel: string | null;
+    confidence: number | null;
+    evidenceKind: 'observable' | 'model_prior';
+    timestamps: number[];
+  }>;
 };
 
 export type ShareJobCandidatePayload = {
@@ -111,6 +121,25 @@ export function normalizeMentionSlots(input: unknown): ShareJobMentionSlot[] {
     const outcome = text(row.outcome) as ShareJobMentionOutcome | null;
     if (!mentionId || !displayName || !outcome || !OUTCOMES.has(outcome) || seen.has(mentionId)) continue;
     seen.add(mentionId);
+    const identityHypotheses = Array.isArray(row.identityHypotheses)
+      ? row.identityHypotheses.slice(0, 6).flatMap((rawIdentity) => {
+          if (!rawIdentity || typeof rawIdentity !== 'object') return [];
+          const identity = rawIdentity as Record<string, unknown>;
+          const name = text(identity.name);
+          if (!name) return [];
+          return [{
+            name,
+            contextLabel: text(identity.contextLabel),
+            confidence: typeof identity.confidence === 'number' && Number.isFinite(identity.confidence)
+              ? Math.max(0, Math.min(1, identity.confidence))
+              : null,
+            evidenceKind: identity.evidenceKind === 'model_prior' ? 'model_prior' as const : 'observable' as const,
+            timestamps: Array.isArray(identity.timestamps)
+              ? identity.timestamps.filter((value): value is number => typeof value === 'number' && Number.isFinite(value) && value >= 0).slice(0, 12)
+              : [],
+          }];
+        })
+      : [];
     slots.push({
       mentionId,
       displayName,
@@ -125,6 +154,7 @@ export function normalizeMentionSlots(input: unknown): ShareJobMentionSlot[] {
         ? row.saveState
         : 'pending',
       savedPlaceId: text(row.savedPlaceId),
+      identityHypotheses,
     });
   }
   return slots;

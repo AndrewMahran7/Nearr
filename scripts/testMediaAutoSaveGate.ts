@@ -102,6 +102,15 @@ check('configured threshold rejects non-number', !resolveMediaAutoSaveThreshold(
   check('gate explains the successful decision', d.reasonCodes.includes('single_plausible_candidate'));
 }
 {
+  const d = decide(mention({ identityEvidenceKind: 'model_prior' }));
+  check('model-prior recognition can never auto-save', !d.eligible && d.reasonCodes.includes('model_prior_unverified'));
+}
+{
+  const alternative = mention({ displayName: 'South Cove', normalizedName: 'south cove' });
+  const d = decide(mention({ identityAlternatives: [alternative] }));
+  check('unresolved same-scene identity uncertainty blocks auto-save', !d.eligible && d.reasonCodes.includes('identity_hypothesis_uncertainty'));
+}
+{
   const naturalMention = mention({
     displayName: 'Griffith Park',
     normalizedName: 'griffith park',

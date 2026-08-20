@@ -177,6 +177,9 @@ export function heuristicEvidence(input: AnalyzeInput): MediaPlaceEvidence {
   if (address) explicit.push({ timestampSeconds: address.ts, source: address.source, value: address.value });
 
   const place: PlaceCandidateEvidence = {
+    logicalPlaceId: null,
+    identityEvidenceKind: 'observable',
+    hypothesisRank: 0,
     name: name?.value ?? address?.value ?? 'Unknown place',
     category: null,
     categoryConfidence: 0,

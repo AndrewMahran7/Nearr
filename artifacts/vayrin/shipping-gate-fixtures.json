@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "experimentDate": "2026-08-19",
+  "fixtures": [
+    {
+      "id": "dettifoss_hidden_natural",
+      "classes": ["hidden_natural_place", "coarse_metadata_refinement"],
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Dettifoss_waterfall_in_Vatnajokull_National_Park,_Iceland.webm",
+      "license": "CC BY 2.0",
+      "groundTruth": "Dettifoss, Vatnajokull National Park, Iceland",
+      "groundTruthBasis": "The independently authored Wikimedia file description identifies Dettifoss and its Iceland national-park context.",
+      "suppliedContext": { "metadata": "Iceland", "caption": "A powerful waterfall during a trip." },
+      "intentionallyAbsent": ["exact place name", "address", "coordinates", "readable identifying sign"]
+    },
+    {
+      "id": "cocoa_beach_coarse_refinement",
+      "classes": ["hidden_natural_place", "coarse_metadata_refinement", "background_landmark"],
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Cocoa_Beach_(May_2023)_and_Pier.webm",
+      "license": "CC0",
+      "groundTruth": "Cocoa Beach Pier, Cocoa Beach, Florida",
+      "groundTruthBasis": "The uploader's own-work file description and categories independently identify Cocoa Beach and Cocoa Beach Pier.",
+      "suppliedContext": { "metadata": "Florida, United States", "caption": "A beach and pier during a trip." },
+      "intentionallyAbsent": ["exact pier name", "address", "coordinates", "readable identifying sign"]
+    },
+    {
+      "id": "griffith_unlabeled_background",
+      "classes": ["unlabeled_venue", "background_place_identification", "coarse_metadata_refinement"],
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Foucault_pendulum_in_the_rotunda_in_Griffith_Observatory_in_July_2022.webm",
+      "license": "CC0",
+      "groundTruth": "Foucault pendulum rotunda, Griffith Observatory, Los Angeles",
+      "groundTruthBasis": "The uploader's own-work file description independently identifies the exhibit and Griffith Observatory.",
+      "suppliedContext": { "metadata": "Los Angeles, California", "caption": "A distinctive pendulum inside a public building." },
+      "intentionallyAbsent": ["venue name", "address", "coordinates", "readable identifying sign"]
+    },
+    {
+      "id": "small_waterfall_hard_negative",
+      "classes": ["hard_negative"],
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Small_waterfall.webm",
+      "license": "CC BY 3.0",
+      "groundTruth": "No specific named location established",
+      "groundTruthBasis": "The reviewed source describes only a small waterfall in a park and provides no defensible exact location.",
+      "suppliedContext": { "caption": "A small waterfall in a park." },
+      "intentionallyAbsent": ["place name", "city", "region", "address", "coordinates", "distinctive landmark"]
+    },
+    {
+      "id": "youtube_zoo_famous_clip_negative",
+      "classes": ["hard_negative", "famous_clip_prior"],
+      "sourcePage": "https://www.youtube.com/watch?v=jNQXAC9IVRw",
+      "license": "public YouTube regression fixture",
+      "groundTruth": "No specific zoo is named or visually established; exact venue is UNKNOWN for scoring",
+      "groundTruthBasis": "The existing corpus independently verified the owner-authored captions; they mention elephants but no zoo name. Exact venue recognition is therefore excluded from accuracy totals.",
+      "suppliedContext": { "caption": "Me at the zoo", "transcript": "Owner-authored elephant dialogue from the existing corpus" },
+      "intentionallyAbsent": ["zoo name", "city", "address", "readable identifying sign"]
+    },
+    {
+      "id": "composite_verified_multi_place",
+      "classes": ["multi_place", "hidden_natural_place", "unlabeled_venue"],
+      "sourcePages": [
+        "https://commons.wikimedia.org/wiki/File:Dettifoss_waterfall_in_Vatnajokull_National_Park,_Iceland.webm",
+        "https://commons.wikimedia.org/wiki/File:Foucault_pendulum_in_the_rotunda_in_Griffith_Observatory_in_July_2022.webm"
+      ],
+      "license": "CC BY 2.0 plus CC0 test composite; media not committed",
+      "groundTruth": "0-12s Dettifoss, Iceland; 12-26s Griffith Observatory, Los Angeles",
+      "groundTruthBasis": "The composite concatenates informative intervals from the two independently identified source files without overlays or answer text.",
+      "suppliedContext": { "caption": "Two places from a trip." },
+      "intentionallyAbsent": ["place names", "addresses", "coordinates", "readable identifying signs"]
+    }
+  ]
+}
