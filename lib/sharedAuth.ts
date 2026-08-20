@@ -18,7 +18,10 @@
 
 import { Platform } from 'react-native';
 
-import nativeSharedAuth, { type SharedAuthNativeStatus } from '../modules/nearr-shared-auth';
+import nativeSharedAuth, {
+  type ShareTraceEvent,
+  type SharedAuthNativeStatus,
+} from '../modules/nearr-shared-auth';
 
 /** Non-secret diagnostic snapshot of the App Group auth bridge. */
 export type SharedAuthStatus = SharedAuthNativeStatus;
@@ -97,6 +100,18 @@ export const sharedAuth = {
   getStatus(): SharedAuthStatus | null {
     if (!PLATFORM_OK) return null;
     return nativeSharedAuth.getStatus();
+  },
+
+  /** Append a bounded, non-secret cross-process share breadcrumb. */
+  recordShareTrace(invocationId: string, event: string, detail?: string | null): boolean {
+    if (!PLATFORM_OK || !__DEV__) return false;
+    return nativeSharedAuth.recordShareTrace(invocationId, event, detail);
+  },
+
+  /** Read the App Group trace so Settings can copy the latest invocation. */
+  getShareTrace(): ShareTraceEvent[] {
+    if (!PLATFORM_OK) return [];
+    return nativeSharedAuth.getShareTrace();
   },
 };
 

@@ -19,6 +19,7 @@ import {
   resolveSubmissionId,
 } from '../lib/shareSubmission';
 import { createShareSubmitter, type GuardedSubmitResult } from '../lib/shareSubmit';
+import { buildHostDeepLink } from '../lib/shareRoutes';
 
 let failures = 0;
 function check(name: string, cond: boolean, detail?: string): void {
@@ -65,6 +66,15 @@ const URL_B = 'https://www.tiktok.com/@x/video/999';
   check('append to path with no query uses ?', appendSubmissionId('nearr:///share-jobs', sid).includes('?sid='));
   check('extract null when absent', extractSubmissionId(link) === null);
   check('extract rejects malformed sid', extractSubmissionId('nearr:///share?sid=%20%20') === null);
+
+  // Representative Instagram handoff: JS encodes the source URL, native
+  // preserves that percentEncodedQuery, and Expo/URL parsing decodes it once.
+  const handoffPath = appendSubmissionId(`share?url=${encodeURIComponent(URL_A)}`, sid);
+  const handoffURL = buildHostDeepLink(handoffPath);
+  const decoded = new URL(handoffURL).searchParams.get('url');
+  check('Instagram handoff uses canonical empty-host /share route', handoffURL.startsWith('nearr:///share?'));
+  check('Instagram handoff source URL decodes exactly once', decoded === URL_A);
+  check('Instagram handoff carries the same invocation id', new URL(handoffURL).searchParams.get('sid') === sid);
 }
 
 // ---- resolveSubmissionId: prefer deep-link, else derive --------------------

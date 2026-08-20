@@ -570,6 +570,7 @@ export default function SettingsScreen() {
       const appGroupIdentifier = sharedAuth.getAppGroup();
       const wroteMarker = sharedAuth.setInitialized();
       const status = sharedAuth.getStatus();
+      const shareTrace = sharedAuth.getShareTrace();
       const hostRoundTripSucceeded =
         !!status && status.appGroupAccessible === true && wroteMarker && status.initialized === true;
       const parts: string[] = [];
@@ -584,9 +585,34 @@ export default function SettingsScreen() {
               ' initialized=' + status.initialized +
               ' tokenPresent=' + status.tokenPresent +
               ' tokenStructurallyValid=' + status.tokenStructurallyValid +
+              ' tokenExpiresAt=' +
+              (status.tokenExpiresAt ? new Date(status.tokenExpiresAt).toISOString() : 'null') +
+              ' lastSyncAt=' +
+              (status.lastSyncAt ? new Date(status.lastSyncAt).toISOString() : 'null') +
               ' writerTarget=' + (status.writerTarget ?? 'null') +
-              ' errorCode=' + (status.errorCode ?? 'none')
+              ' errorCode=' + (status.errorCode ?? 'none') +
+              ' statusReadAt=' + new Date().toISOString() +
+              ' statusReader=host_settings'
           : 'Shared-auth: native module unavailable (non-iOS or not linked)',
+      );
+      const latestInvocationId = shareTrace.at(-1)?.invocationId ?? null;
+      const latestInvocation = latestInvocationId
+        ? shareTrace.filter((event) => event.invocationId === latestInvocationId)
+        : [];
+      parts.push(
+        latestInvocation.length === 0
+          ? 'Share trace: no development invocation recorded.'
+          : [
+              `Share trace: invocationId=${latestInvocationId}`,
+              ...latestInvocation.map((event) => {
+                const time = Number.isFinite(event.timestamp)
+                  ? new Date(event.timestamp).toISOString()
+                  : 'unknown-time';
+                return `${time} ${event.process} ${event.event}${
+                  event.detail ? ` detail=${event.detail}` : ''
+                }`;
+              }),
+            ].join('\n'),
       );
       parts.push(
         recent.length === 0

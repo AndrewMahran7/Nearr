@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 
 import { SHARE_JOBS_DEEPLINK_PATH } from '../lib/shareRoutes';
 import {
@@ -8,6 +9,33 @@ import {
 } from '../lib/shareExtensionCompletion';
 
 async function main() {
+  const source = (path: string) => readFileSync(path, 'utf8');
+  const extension = source('ShareExtension.tsx');
+  const hostRoute = source('app/share.tsx');
+  const handoff = source('components/ShareJobHandoff.tsx');
+  const hostSubmit = source('lib/hostShareSubmit.ts');
+  const sharedAuthNative = source('modules/nearr-shared-auth/ios/NearrSharedAuthModule.swift');
+  const settings = source('app/(tabs)/settings.tsx');
+
+  for (const breadcrumb of [
+    'extension_auth_checked',
+    'create_share_job_fetch_started',
+  ]) {
+    assert.match(extension, new RegExp(breadcrumb), `extension emits ${breadcrumb}`);
+  }
+  for (const breadcrumb of ['host_share_route_entered', 'host_share_payload_received']) {
+    assert.match(hostRoute, new RegExp(breadcrumb), `host route emits ${breadcrumb}`);
+  }
+  assert.match(handoff, /share_handoff_component_mounted/);
+  assert.match(handoff, /share_handoff_submit_started/);
+  assert.match(hostSubmit, /create_share_job_fetch_started/);
+  assert.match(sharedAuthNative, /share_extension_trace_v1/);
+  assert.match(sharedAuthNative, /MAX_SHARE_TRACE_EVENTS = 64/);
+  assert.match(settings, /Share trace: invocationId=/);
+  assert.match(settings, /lastSyncAt=/);
+  assert.match(settings, /statusReadAt=/);
+  assert.match(settings, /statusReader=host_settings/);
+
   // Successful completion render model.
   const accepted = completionView({ kind: 'accepted', duplicate: false });
   assert.deepEqual(accepted, {

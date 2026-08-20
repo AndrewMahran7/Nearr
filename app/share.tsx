@@ -37,6 +37,7 @@ import { ShareJobHandoff } from '@/components/ShareJobHandoff';
 import { Radius, Spacing } from '@/constants';
 import { useTheme } from '@/lib/theme';
 import { isAsyncShareJobsEnabled } from '@/lib/featureFlags';
+import { sharedAuth } from '@/lib/sharedAuth';
 import { getActivationSaveFeedback } from '@/lib/activation';
 import { createMapGroupFocusRequest } from '@/lib/mapGroupFocus';
 import {
@@ -374,6 +375,24 @@ function buildProfileDebugReason(profile: {
 
 export default function ShareScreen() {
   const params = useLocalSearchParams<{ url?: string; sid?: string }>();
+  const submissionId = typeof params.sid === 'string' ? params.sid : undefined;
+  const [tracedSubmissionId, setTracedSubmissionId] = useState<string | null>(null);
+  useEffect(() => {
+    if (submissionId) {
+      sharedAuth.recordShareTrace(submissionId, 'host_share_route_entered');
+      if (typeof params.url === 'string') {
+        sharedAuth.recordShareTrace(
+          submissionId,
+          'host_share_payload_received',
+          isLikelyUrl(params.url) ? sharePlatform(params.url) : 'invalid',
+        );
+      }
+    }
+    setTracedSubmissionId(submissionId ?? null);
+  }, [params.url, submissionId]);
+
+  // Preserve route -> payload -> component ordering in the cross-process trace.
+  if (submissionId && tracedSubmissionId !== submissionId) return null;
   // Async rollout: when the flag is on and a URL arrived (Android share
   // intent, iOS signed-out/network handoff, or in-app paste-link), create a
   // durable job and dismiss instead of running synchronous extraction. Falls
@@ -384,11 +403,22 @@ export default function ShareScreen() {
     return (
       <ShareJobHandoff
         url={params.url}
-        submissionId={typeof params.sid === 'string' ? params.sid : undefined}
+        submissionId={submissionId}
       />
     );
   }
   return <LegacyShareScreen />;
+}
+
+function sharePlatform(url: string): string {
+  try {
+    const host = new URL(url).hostname.toLowerCase();
+    if (host.includes('instagram.')) return 'instagram';
+    if (host.includes('tiktok.')) return 'tiktok';
+  } catch {
+    // The route validation owns invalid URLs; traces only need a safe class.
+  }
+  return 'web';
 }
 
 function LegacyShareScreen() {

@@ -26,6 +26,16 @@ type NativeShape = {
   isInitialized: () => boolean;
   getAppGroup: () => string | null;
   getStatus: () => SharedAuthNativeStatus;
+  recordShareTrace: (invocationId: string, event: string, detail: string | null) => boolean;
+  getShareTrace: () => ShareTraceEvent[];
+};
+
+export type ShareTraceEvent = {
+  invocationId: string;
+  event: string;
+  timestamp: number;
+  process: 'extension' | 'host' | string;
+  detail?: string | null;
 };
 
 /** Non-secret diagnostic snapshot from the App Group container. */
@@ -102,6 +112,27 @@ export function getStatus(): SharedAuthNativeStatus | null {
   }
 }
 
+export function recordShareTrace(
+  invocationId: string,
+  event: string,
+  detail?: string | null,
+): boolean {
+  try {
+    return Native?.recordShareTrace(invocationId, event, detail ?? null) ?? false;
+  } catch {
+    return false;
+  }
+}
+
+export function getShareTrace(): ShareTraceEvent[] {
+  try {
+    const events = Native?.getShareTrace() ?? [];
+    return Array.isArray(events) ? events : [];
+  } catch {
+    return [];
+  }
+}
+
 export default {
   isAvailable,
   getToken,
@@ -111,4 +142,6 @@ export default {
   isInitialized,
   getAppGroup,
   getStatus,
+  recordShareTrace,
+  getShareTrace,
 };

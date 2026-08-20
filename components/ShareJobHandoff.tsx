@@ -21,6 +21,7 @@ import { resolveSubmissionId } from '@/lib/shareSubmission';
 import { hostShareSubmitter } from '@/lib/hostShareSubmit';
 import { logDebug } from '@/lib/logger';
 import { recordDiagnostic } from '@/lib/deviceDiagnostics';
+import { sharedAuth } from '@/lib/sharedAuth';
 
 type UiState =
   | { kind: 'submitting' }
@@ -42,9 +43,16 @@ export function ShareJobHandoff({ url, submissionId }: { url: string; submission
     resolveSubmissionId({ url, fromDeepLink: submissionId ?? null }),
   );
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const submitAttemptRef = useRef(0);
 
   const submit = async () => {
     try {
+      submitAttemptRef.current += 1;
+      sharedAuth.recordShareTrace(
+        submissionIdRef.current,
+        'share_handoff_submit_started',
+        submitAttemptRef.current === 1 ? 'initial' : 'retry',
+      );
       setUi({ kind: 'submitting' });
       const result = await hostShareSubmitter.submit({
         url,
@@ -86,6 +94,10 @@ export function ShareJobHandoff({ url, submissionId }: { url: string; submission
   useEffect(() => {
     if (handledRef.current) return;
     handledRef.current = true;
+    sharedAuth.recordShareTrace(
+      submissionIdRef.current,
+      'share_handoff_component_mounted',
+    );
     void submit();
     return () => {
       if (closeTimerRef.current) clearTimeout(closeTimerRef.current);

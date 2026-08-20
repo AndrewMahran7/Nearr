@@ -63,7 +63,11 @@ import {
 import { createShareJob } from './lib/shareJobClient';
 import { selectExtensionAuthAction } from './lib/sharedAuthSession';
 import { SHARE_JOBS_DEEPLINK_PATH } from './lib/shareRoutes';
-import { appendSubmissionId, mintSubmissionId } from './lib/shareSubmission';
+import {
+  appendSubmissionId,
+  isSubmissionId,
+  mintSubmissionId,
+} from './lib/shareSubmission';
 import {
   SHARE_COMPLETION_LAYOUT,
   shareCompletionMotion,
@@ -123,7 +127,12 @@ function firstUrlIn(text: string | undefined | null): string | null {
   return m[0].replace(TRAILING_PUNCT, '');
 }
 
-function pickSharedUrl(props: InitialProps): string | null {
+type ExtensionInitialProps = InitialProps & {
+  invocationId?: string;
+  payloadOutcome?: string;
+};
+
+function pickSharedUrl(props: ExtensionInitialProps): string | null {
   // Direct URL share (Safari) takes priority.
   if (props.url && /^https?:\/\//i.test(props.url)) return props.url;
   // Otherwise scan any text payload for the first URL.
@@ -347,11 +356,12 @@ type ExtensionDiagnostics = {
   requestId: string;
 };
 
-function handOffToHostApp(url: string, reason?: string) {
+function handOffToHostApp(url: string, submissionId: string, reason?: string) {
   const encoded = encodeURIComponent(url);
-  const path = reason
+  const basePath = reason
     ? `share?url=${encoded}&ext_reason=${encodeURIComponent(reason)}`
     : `share?url=${encoded}`;
+  const path = appendSubmissionId(basePath, submissionId);
   // 2026-06-04 — manual-fallback handoff. The host app immediately shows
   // its manual search UI with the original URL attached; the extension
   // never renders a terminal "couldn't save" state. Log presence only,
@@ -382,7 +392,7 @@ type UiState =
   | { kind: 'saved'; message?: string }
   | { kind: 'error'; message: string };
 
-export default function ShareExtension(props: InitialProps) {
+export default function ShareExtension(props: ExtensionInitialProps) {
   // Feature-flagged: async submit-and-dismiss (new) vs the legacy synchronous
   // handoff (unchanged). Default OFF keeps the proven flow until rollout.
   if (isAsyncShareJobsEnabled()) {
@@ -391,10 +401,13 @@ export default function ShareExtension(props: InitialProps) {
   return <LegacyShareExtension {...props} />;
 }
 
-function LegacyShareExtension(props: InitialProps) {
+function LegacyShareExtension(props: ExtensionInitialProps) {
   // Guard against React 18 strict-mode double-invocation: only fire the
   // host-app handoff once per extension instantiation.
   const handledRef = useRef(false);
+  const submissionIdRef = useRef(
+    isSubmissionId(props.invocationId) ? props.invocationId : mintSubmissionId(),
+  );
   const [ui, setUi] = useState<UiState>({ kind: 'working' });
   // 2026-05-26: hold the latest structured diagnostics so the share
   // sheet itself can show the user (and screenshot-takers) exactly
@@ -451,7 +464,7 @@ function LegacyShareExtension(props: InitialProps) {
         case 'failed_requires_app': {
           // Need the full host-app UI for candidate selection or error
           // recovery (manual search, retry).
-          handOffToHostApp(url, result.status);
+          handOffToHostApp(url, submissionIdRef.current, result.status);
           // 2026-05-26: small delay so the diagnostics panel is visible
           // long enough to read / screenshot before we close.
           closeTimer = setTimeout(() => close(), 1500);
@@ -460,7 +473,11 @@ function LegacyShareExtension(props: InitialProps) {
         case 'open_app':
         default: {
           // Legacy/fallback path: same behavior as before this change.
-          handOffToHostApp(url, (result as { reason?: string }).reason);
+          handOffToHostApp(
+            url,
+            submissionIdRef.current,
+            (result as { reason?: string }).reason,
+          );
           closeTimer = setTimeout(() => close(), 1500);
           return;
         }
@@ -642,12 +659,14 @@ function SavedMark() {
   );
 }
 
-function AsyncShareExtension(props: InitialProps) {
+function AsyncShareExtension(props: ExtensionInitialProps) {
   const handledRef = useRef(false);
   // ONE stable submission id for THIS share action. Used as the idempotency key
   // for create-share-job AND propagated to the host fallback deep link (?sid=)
   // so the extension, the host, and any retry all resolve to a single job.
-  const submissionIdRef = useRef(mintSubmissionId());
+  const submissionIdRef = useRef(
+    isSubmissionId(props.invocationId) ? props.invocationId : mintSubmissionId(),
+  );
   const [ui, setUi] = useState<AsyncUi>({ kind: 'submitting' });
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const completionActionsRef = useRef<CompletionActions | null>(null);
@@ -700,6 +719,11 @@ function AsyncShareExtension(props: InitialProps) {
       token,
       initialized: sharedAuth.isInitialized(),
     });
+    sharedAuth.recordShareTrace(
+      submissionIdRef.current,
+      'extension_auth_checked',
+      action,
+    );
     if (action !== 'submit') {
       console.log(`[share-extension] job_accepted=false reason=${action}`);
       setUi(
@@ -722,6 +746,11 @@ function AsyncShareExtension(props: InitialProps) {
       return;
     }
     setUi({ kind: 'submitting' });
+    sharedAuth.recordShareTrace(
+      submissionIdRef.current,
+      'create_share_job_fetch_started',
+      'extension',
+    );
     const result = await createShareJob({
       endpoint,
       url,

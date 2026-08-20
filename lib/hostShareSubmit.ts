@@ -16,6 +16,7 @@ import { resolveCreateShareJobUrl } from './featureFlags';
 import { createShareJob } from './shareJobClient';
 import { reconcileDurableShareAcceptance } from './shareHandoffAcceptance';
 import { createShareSubmitter, type GuardedSubmitResult } from './shareSubmit';
+import { sharedAuth } from './sharedAuth';
 
 const DURABLE_RECONCILIATION_TIMEOUT_MS = 2_500;
 
@@ -45,6 +46,7 @@ export const hostShareSubmitter = createShareSubmitter(
     const { data } = await supabase.auth.getSession();
     const token = data.session?.access_token ?? '';
     if (!token) return { ok: false, reason: 'missing_auth' };
+    sharedAuth.recordShareTrace(submissionId, 'create_share_job_fetch_started', 'host');
     const requestResult = await createShareJob({
       endpoint,
       url,

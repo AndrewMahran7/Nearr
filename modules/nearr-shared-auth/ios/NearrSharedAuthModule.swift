@@ -41,6 +41,10 @@ public class NearrSharedAuthModule: Module {
   // which target performed it (host vs extension). NEVER the token itself.
   private static let LAST_SYNC_KEY = "shared_auth_last_sync_at"
   private static let WRITER_KEY = "shared_auth_writer_target"
+  // Bounded, non-secret cross-process trace used by development builds to
+  // locate a share invocation before any host AsyncStorage exists.
+  private static let SHARE_TRACE_KEY = "share_extension_trace_v1"
+  private static let MAX_SHARE_TRACE_EVENTS = 64
 
   public func definition() -> ModuleDefinition {
     Name("NearrSharedAuth")
@@ -89,6 +93,14 @@ public class NearrSharedAuthModule: Module {
     // WITHOUT ever returning or logging the token itself.
     Function("getStatus") { () -> [String: Any] in
       return Self.status()
+    }
+
+    Function("recordShareTrace") { (invocationId: String, event: String, detail: String?) -> Bool in
+      return Self.recordShareTrace(invocationId: invocationId, event: event, detail: detail)
+    }
+
+    Function("getShareTrace") { () -> [[String: Any]] in
+      return Self.defaults()?.array(forKey: Self.SHARE_TRACE_KEY) as? [[String: Any]] ?? []
     }
   }
 
@@ -152,6 +164,37 @@ public class NearrSharedAuthModule: Module {
       "writerTarget": writer.map { $0 as Any } ?? NSNull(),
       "errorCode": NSNull(),
     ]
+  }
+
+  private static func recordShareTrace(
+    invocationId: String,
+    event: String,
+    detail: String?
+  ) -> Bool {
+    guard
+      invocationId.range(of: "^[a-z]_[A-Za-z0-9_]{1,80}$", options: .regularExpression) != nil,
+      event.range(of: "^[a-z0-9_]{1,64}$", options: .regularExpression) != nil,
+      let defaults = defaults()
+    else { return false }
+
+    var events = defaults.array(forKey: SHARE_TRACE_KEY) as? [[String: Any]] ?? []
+    var entry: [String: Any] = [
+      "invocationId": invocationId,
+      "event": event,
+      "timestamp": Date().timeIntervalSince1970 * 1000.0,
+      "process": writerTarget(),
+    ]
+    if let detail = detail,
+       detail.range(of: "^[a-zA-Z0-9_.:-]{1,64}$", options: .regularExpression) != nil {
+      entry["detail"] = detail
+    }
+    events.append(entry)
+    if events.count > MAX_SHARE_TRACE_EVENTS {
+      events.removeFirst(events.count - MAX_SHARE_TRACE_EVENTS)
+    }
+    defaults.set(events, forKey: SHARE_TRACE_KEY)
+    defaults.synchronize()
+    return true
   }
 
   /// Decode a JWT's `exp` WITHOUT verifying the signature and WITHOUT exposing

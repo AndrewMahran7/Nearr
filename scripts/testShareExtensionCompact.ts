@@ -169,6 +169,10 @@ assert.match(swift, /preferredContentSizeCategory\.isAccessibilityCategory/);
 
 // Both startup and React content are confined to the compact native surface.
 assert.match(swift, /compactSurfaceView\.addSubview\(loadingIndicator\)/);
+assert.match(swift, /loadingLabel\.text = "Preparing share…"/);
+assert.match(swift, /title\.text = isBundleFailure \? "Couldn’t start Nearr" : "Couldn’t read this share"/);
+assert.match(swift, /retry\.setTitle\("Try again"/);
+assert.match(swift, /closeButton\.setTitle\("Close"/);
 assert.match(swift, /compactSurfaceView\.addSubview\(rootView\)/);
 assert.match(swift, /rootView\.topAnchor\.constraint\(equalTo: compactSurfaceView\.topAnchor\)/);
 assert.match(swift, /rootView\.bottomAnchor\.constraint\(equalTo: compactSurfaceView\.bottomAnchor\)/);
@@ -202,5 +206,38 @@ assert.match(react, /<SafeAreaView style={asyncStyles\.surface}>/);
 assert.doesNotMatch(react, /height: '100%'/);
 assert.doesNotMatch(react, /minHeight:\s*(?:[5-9]\d\d|\d{4})/);
 assert.doesNotMatch(react, /SharedPreview|previewImage/);
+
+// The extension is a separate process. It always runs its embedded bundle and
+// never depends on the host app's Metro session for its first frame.
+assert.match(swift, /return Bundle\.main\.url\(forResource: "main", withExtension: "jsbundle"\)/);
+assert.doesNotMatch(swift, /RCTBundleURLProvider\.sharedSettings/);
+assert.match(swift, /extension_js_bundle_failure/);
+
+// Instagram providers may advertise several representations. They are loaded
+// independently, every media branch balances its DispatchGroup via defer, and
+// a never-returning NSItemProvider is bounded by a deterministic deadline.
+assert.match(swift, /let hasURL = provider\.hasItemConformingToTypeIdentifier/);
+assert.match(swift, /let hasPropertyList = provider\.hasItemConformingToTypeIdentifier/);
+assert.match(swift, /let hasText = provider\.hasItemConformingToTypeIdentifier/);
+assert.match(swift, /if hasURL \{/);
+assert.match(swift, /if hasPropertyList \{/);
+assert.match(swift, /if hasText \{/);
+assert.ok((swift.match(/defer \{ group\.leave\(\) \}/g) ?? []).length >= 2, 'media guards always leave group');
+assert.match(swift, /DispatchQueue\.main\.asyncAfter\(deadline: \.now\(\) \+ Self\.payloadDeadline\)/);
+assert.match(swift, /finish\("timeout"\)/);
+assert.match(swift, /firstHTTPURL\(in: results\)/);
+assert.match(swift, /firstHTTPURL\(in: text\)/);
+
+// Preserve the already encoded query once. URLQueryItem would escape '%' a
+// second time and prevent the host route from recognizing the social URL.
+assert.match(swift, /urlComponents\.percentEncodedQuery = queryString/);
+assert.doesNotMatch(swift, /urlComponents\.queryItems = queryItems/);
+assert.match(swift, /extension_open_host_attempt/);
+assert.match(swift, /extension_open_host_success/);
+assert.match(swift, /extension_open_host_failure/);
+assert.match(swift, /extension_invoked/);
+assert.match(swift, /extension_payload_started/);
+assert.match(swift, /extension_url_extracted/);
+assert.doesNotMatch(swift, /openURL\(url\)\s*\n\s*self\.close\(\)/);
 
 console.log('PASS compact native share-extension layout and Swift structure');

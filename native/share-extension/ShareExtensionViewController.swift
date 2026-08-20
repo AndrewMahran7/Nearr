@@ -16,12 +16,19 @@ class ShareExtensionViewController: UIViewController {
   private static var sharedBridge: RCTBridge?
   private weak var rootView: RCTRootView?
   private let loadingIndicator = UIActivityIndicatorView(style: .large)
+  private let loadingLabel = UILabel()
   private let compactSurfaceView = UIView()
+  private var payloadFailureView: UIView?
   private var compactSurfaceHeightConstraint: NSLayoutConstraint?
   private var observerTokens: [NSObjectProtocol] = []
   private var isFinishing = false
   private var hasOpenedHost = false
   private var didCleanUp = false
+  private var lastHostURL: URL?
+  private let invocationId = "s_" + UUID().uuidString.replacingOccurrences(of: "-", with: "").lowercased()
+  private static let shareTraceKey = "share_extension_trace_v1"
+  private static let maximumTraceEvents = 64
+  private static let payloadDeadline: TimeInterval = 8
 
   // The share host owns the outer presentation controller. preferredContentSize
   // is therefore a best-effort request, while this bottom-anchored surface is
@@ -79,11 +86,13 @@ class ShareExtensionViewController: UIViewController {
 
   override func viewDidLoad() {
     super.viewDidLoad()
+    recordTrace("extension_invoked")
     view.backgroundColor = .clear
     view.isOpaque = false
     setupCompactSurface()
     applyCompactLayout()
     setupLoadingIndicator()
+    setupNotificationCenterObserver()
 #if canImport(FirebaseCore)
     if Bundle.main.object(forInfoDictionaryKey: "WithFirebase") as? Bool ?? false {
       FirebaseApp.configure()
@@ -91,7 +100,6 @@ class ShareExtensionViewController: UIViewController {
 #endif
     initializeReactNativeBridgeIfNeeded()
     loadReactNativeContent()
-    setupNotificationCenterObserver()
   }
 
   private func setupCompactSurface() {
@@ -133,14 +141,110 @@ class ShareExtensionViewController: UIViewController {
     loadingIndicator.translatesAutoresizingMaskIntoConstraints = false
     NSLayoutConstraint.activate([
       loadingIndicator.centerXAnchor.constraint(equalTo: compactSurfaceView.centerXAnchor),
-      loadingIndicator.centerYAnchor.constraint(equalTo: compactSurfaceView.centerYAnchor)
+      loadingIndicator.centerYAnchor.constraint(equalTo: compactSurfaceView.centerYAnchor, constant: -18)
+    ])
+    loadingLabel.text = "Preparing share…"
+    loadingLabel.textColor = .white
+    loadingLabel.font = .systemFont(ofSize: 16, weight: .semibold)
+    loadingLabel.textAlignment = .center
+    loadingLabel.translatesAutoresizingMaskIntoConstraints = false
+    compactSurfaceView.addSubview(loadingLabel)
+    NSLayoutConstraint.activate([
+      loadingLabel.topAnchor.constraint(equalTo: loadingIndicator.bottomAnchor, constant: 14),
+      loadingLabel.leadingAnchor.constraint(equalTo: compactSurfaceView.leadingAnchor, constant: 24),
+      loadingLabel.trailingAnchor.constraint(equalTo: compactSurfaceView.trailingAnchor, constant: -24)
     ])
     loadingIndicator.startAnimating()
   }
 
+  private func showLoadingState() {
+    payloadFailureView?.removeFromSuperview()
+    payloadFailureView = nil
+    loadingIndicator.isHidden = false
+    loadingLabel.isHidden = false
+    loadingIndicator.startAnimating()
+  }
+
+  private func showPayloadFailure(_ reason: String) {
+    loadingIndicator.stopAnimating()
+    loadingIndicator.isHidden = true
+    loadingLabel.isHidden = true
+    rootView?.isHidden = true
+    payloadFailureView?.removeFromSuperview()
+
+    let container = UIStackView()
+    container.axis = .vertical
+    container.alignment = .fill
+    container.spacing = 12
+    container.translatesAutoresizingMaskIntoConstraints = false
+
+    let title = UILabel()
+    let isBundleFailure = reason.contains("bundle") || reason == "bridge_unavailable"
+    title.text = isBundleFailure ? "Couldn’t start Nearr" : "Couldn’t read this share"
+    title.textColor = .white
+    title.font = .systemFont(ofSize: 21, weight: .bold)
+    title.textAlignment = .center
+
+    let body = UILabel()
+    body.text = isBundleFailure
+      ? "Nearr’s share extension couldn’t load. Try again or close this window."
+      : (reason == "timeout"
+        ? "Instagram didn’t finish sending the link. Try again or close this window."
+        : "Nearr couldn’t find a link in this item. Try again or close this window.")
+    body.textColor = UIColor(white: 0.72, alpha: 1)
+    body.font = .systemFont(ofSize: 15)
+    body.textAlignment = .center
+    body.numberOfLines = 0
+
+    let retry = UIButton(type: .system)
+    retry.setTitle("Try again", for: .normal)
+    retry.setTitleColor(.white, for: .normal)
+    retry.titleLabel?.font = .systemFont(ofSize: 16, weight: .bold)
+    retry.backgroundColor = UIColor(red: 1, green: 107.0 / 255.0, blue: 0, alpha: 1)
+    retry.layer.cornerRadius = 14
+    retry.heightAnchor.constraint(equalToConstant: 52).isActive = true
+    retry.addTarget(self, action: #selector(retryPayloadExtraction), for: .touchUpInside)
+
+    let closeButton = UIButton(type: .system)
+    closeButton.setTitle("Close", for: .normal)
+    closeButton.setTitleColor(UIColor(white: 0.82, alpha: 1), for: .normal)
+    closeButton.titleLabel?.font = .systemFont(ofSize: 15, weight: .semibold)
+    closeButton.heightAnchor.constraint(equalToConstant: 44).isActive = true
+    closeButton.addTarget(self, action: #selector(closeFromNativeFailure), for: .touchUpInside)
+
+    [title, body, retry, closeButton].forEach { container.addArrangedSubview($0) }
+    compactSurfaceView.addSubview(container)
+    NSLayoutConstraint.activate([
+      container.leadingAnchor.constraint(equalTo: compactSurfaceView.leadingAnchor, constant: 24),
+      container.trailingAnchor.constraint(equalTo: compactSurfaceView.trailingAnchor, constant: -24),
+      container.centerYAnchor.constraint(equalTo: compactSurfaceView.centerYAnchor)
+    ])
+    payloadFailureView = container
+  }
+
+  @objc private func retryPayloadExtraction() {
+    recordTrace("extension_payload_started", detail: "retry")
+    loadingLabel.text = "Preparing share…"
+    showLoadingState()
+    initializeReactNativeBridgeIfNeeded()
+    loadReactNativeContent(isRetry: true)
+  }
+
+  @objc private func closeFromNativeFailure() {
+    close()
+  }
+
   private func initializeReactNativeBridgeIfNeeded() {
     if ShareExtensionViewController.sharedBridge == nil {
-      let jsCodeLocation = self.jsCodeLocation()
+      guard let jsCodeLocation = self.jsCodeLocation() else {
+        recordTrace("extension_js_bundle_failure", detail: "bundle_missing")
+        showPayloadFailure("bundle_missing")
+        return
+      }
+      recordTrace(
+        "extension_js_bundle_started",
+        detail: jsCodeLocation.isFileURL ? "embedded" : "metro"
+      )
       ShareExtensionViewController.sharedBridge = RCTBridge(bundleURL: jsCodeLocation, moduleProvider: nil, launchOptions: nil)
     }
   }
@@ -149,7 +253,9 @@ class ShareExtensionViewController: UIViewController {
     guard !hasOpenedHost, !isFinishing else { return }
     hasOpenedHost = true
     guard let scheme = Bundle.main.object(forInfoDictionaryKey: "HostAppScheme") as? String else {
-      self.close()
+      recordTrace("extension_open_host_failure", detail: "missing_scheme")
+      hasOpenedHost = false
+      showHostOpenFailure()
       return
     }
     var urlComponents = URLComponents()
@@ -161,15 +267,12 @@ class ShareExtensionViewController: UIViewController {
       let pathWithoutQuery = String(pathComponents[0])
       let queryString = pathComponents.count > 1 ? String(pathComponents[1]) : nil
 
-      // Parse and set query items
+      // Preserve the query that JavaScript already percent-encoded. Rebuilding
+      // URLQueryItems from those encoded values escapes '%' a second time and
+      // turns `https%3A...` into `https%253A...`, so Expo Router receives a
+      // non-URL after its normal single decode.
       if let queryString = queryString {
-        let queryItems = queryString.split(separator: "&").map { queryParam -> URLQueryItem in
-          let paramComponents = queryParam.split(separator: "=", maxSplits: 1)
-          let name = String(paramComponents[0])
-          let value = paramComponents.count > 1 ? String(paramComponents[1]) : nil
-          return URLQueryItem(name: name, value: value)
-        }
-        urlComponents.queryItems = queryItems
+        urlComponents.percentEncodedQuery = queryString
       }
 
       let pathWithSlashEnsured = pathWithoutQuery.hasPrefix("/") ? pathWithoutQuery : "/\(pathWithoutQuery)"
@@ -177,44 +280,169 @@ class ShareExtensionViewController: UIViewController {
     }
 
     guard let url = urlComponents.url else {
-      self.close()
+      recordTrace("extension_open_host_failure", detail: "invalid_deep_link")
+      hasOpenedHost = false
+      showHostOpenFailure()
       return
     }
-    openURL(url)
-    self.close()
+    lastHostURL = url
+    recordTrace("extension_open_host_attempt")
+    openURL(url) { [weak self] opened in
+      DispatchQueue.main.async {
+        guard let self = self else { return }
+        if opened {
+          self.recordTrace("extension_open_host_success")
+          self.close()
+        } else {
+          self.recordTrace("extension_open_host_failure", detail: "open_rejected")
+          self.hasOpenedHost = false
+          self.showHostOpenFailure()
+        }
+      }
+    }
   }
 
-  @objc @discardableResult private func openURL(_ url: URL) -> Bool {
+  private func openURL(_ url: URL, completion: @escaping (Bool) -> Void) {
     var responder: UIResponder? = self
     while responder != nil {
       if let application = responder as? UIApplication {
         if #available(iOS 18.0, *) {
-          application.open(url, options: [:], completionHandler: nil)
-          return true
+          application.open(url, options: [:], completionHandler: completion)
+          return
         } else {
-          return application.perform(#selector(UIApplication.open(_:options:completionHandler:)), with: url, with: [:]) != nil
+          let dispatched = application.perform(
+            #selector(UIApplication.open(_:options:completionHandler:)),
+            with: url,
+            with: [:]
+          ) != nil
+          completion(dispatched)
+          return
         }
       }
       responder = responder?.next
     }
-    return false
+    completion(false)
   }
 
-  private func loadReactNativeContent() {
-    getShareData { [weak self] sharedData in
-      guard let self = self, let bridge = ShareExtensionViewController.sharedBridge else { return }
+  private func showHostOpenFailure() {
+    loadingIndicator.stopAnimating()
+    loadingIndicator.isHidden = true
+    loadingLabel.isHidden = true
+    rootView?.isHidden = true
+    payloadFailureView?.removeFromSuperview()
+
+    let container = UIStackView()
+    container.axis = .vertical
+    container.alignment = .fill
+    container.spacing = 12
+    container.translatesAutoresizingMaskIntoConstraints = false
+
+    let title = UILabel()
+    title.text = "Couldn’t open Nearr"
+    title.textColor = .white
+    title.font = .systemFont(ofSize: 21, weight: .bold)
+    title.textAlignment = .center
+
+    let body = UILabel()
+    body.text = "Try opening Nearr again, or close this window and keep browsing."
+    body.textColor = UIColor(white: 0.72, alpha: 1)
+    body.font = .systemFont(ofSize: 15)
+    body.textAlignment = .center
+    body.numberOfLines = 0
+
+    let retry = UIButton(type: .system)
+    retry.setTitle("Try again", for: .normal)
+    retry.setTitleColor(.white, for: .normal)
+    retry.titleLabel?.font = .systemFont(ofSize: 16, weight: .bold)
+    retry.backgroundColor = UIColor(red: 1, green: 107.0 / 255.0, blue: 0, alpha: 1)
+    retry.layer.cornerRadius = 14
+    retry.heightAnchor.constraint(equalToConstant: 52).isActive = true
+    retry.addTarget(self, action: #selector(retryHostOpen), for: .touchUpInside)
+
+    let closeButton = UIButton(type: .system)
+    closeButton.setTitle("Close", for: .normal)
+    closeButton.setTitleColor(UIColor(white: 0.82, alpha: 1), for: .normal)
+    closeButton.titleLabel?.font = .systemFont(ofSize: 15, weight: .semibold)
+    closeButton.heightAnchor.constraint(equalToConstant: 44).isActive = true
+    closeButton.addTarget(self, action: #selector(closeFromNativeFailure), for: .touchUpInside)
+
+    [title, body, retry, closeButton].forEach { container.addArrangedSubview($0) }
+    compactSurfaceView.addSubview(container)
+    NSLayoutConstraint.activate([
+      container.leadingAnchor.constraint(equalTo: compactSurfaceView.leadingAnchor, constant: 24),
+      container.trailingAnchor.constraint(equalTo: compactSurfaceView.trailingAnchor, constant: -24),
+      container.centerYAnchor.constraint(equalTo: compactSurfaceView.centerYAnchor)
+    ])
+    payloadFailureView = container
+  }
+
+  @objc private func retryHostOpen() {
+    guard let url = lastHostURL else {
+      showHostOpenFailure()
+      return
+    }
+    payloadFailureView?.removeFromSuperview()
+    payloadFailureView = nil
+    loadingLabel.text = "Opening Nearr…"
+    showLoadingState()
+    hasOpenedHost = true
+    recordTrace("extension_open_host_attempt", detail: "retry")
+    openURL(url) { [weak self] opened in
+      DispatchQueue.main.async {
+        guard let self = self else { return }
+        if opened {
+          self.recordTrace("extension_open_host_success", detail: "retry")
+          self.close()
+        } else {
+          self.recordTrace("extension_open_host_failure", detail: "retry_rejected")
+          self.hasOpenedHost = false
+          self.showHostOpenFailure()
+        }
+      }
+    }
+  }
+
+  private func loadReactNativeContent(isRetry: Bool = false) {
+    if !isRetry { recordTrace("extension_payload_started") }
+    getShareData { [weak self] sharedData, outcome in
+      guard let self = self else { return }
+
+      guard let sharedData = sharedData else {
+        self.recordTrace(
+          outcome == "timeout" ? "extension_payload_timeout" : "extension_payload_failure",
+          detail: outcome
+        )
+        self.showPayloadFailure(outcome)
+        return
+      }
+
+      guard let bridge = ShareExtensionViewController.sharedBridge else {
+        self.recordTrace("extension_payload_failure", detail: "bridge_unavailable")
+        self.showPayloadFailure("bridge_unavailable")
+        return
+      }
+
+      var initialProperties = sharedData
+      initialProperties["invocationId"] = self.invocationId
+      initialProperties["payloadOutcome"] = outcome
+      if outcome == "timeout" {
+        self.recordTrace("extension_payload_timeout", detail: "partial_url")
+      }
+      self.recordTrace("extension_url_extracted", detail: self.payloadRepresentation(sharedData))
 
       DispatchQueue.main.async {
         if self.rootView == nil {
-          let rootView = RCTRootView(bridge: bridge, moduleName: "shareExtension", initialProperties: sharedData)
+          let rootView = RCTRootView(bridge: bridge, moduleName: "shareExtension", initialProperties: initialProperties)
           self.configureRootView(rootView)
           self.rootView = rootView
         } else {
           // Update existing rootView with new data
-          self.rootView?.appProperties = sharedData
+          self.rootView?.appProperties = initialProperties
+          self.rootView?.isHidden = false
         }
         self.loadingIndicator.stopAnimating()
-        self.loadingIndicator.removeFromSuperview()
+        self.loadingIndicator.isHidden = true
+        self.loadingLabel.isHidden = true
       }
     }
   }
@@ -235,7 +463,28 @@ class ShareExtensionViewController: UIViewController {
         }
       }
     }
-    observerTokens = [closeToken, openToken]
+    let jsLoadedToken = NotificationCenter.default.addObserver(
+      forName: NSNotification.Name("RCTJavaScriptDidLoadNotification"),
+      object: nil,
+      queue: nil
+    ) { [weak self] _ in
+      self?.recordTrace("extension_js_bundle_loaded")
+    }
+    let jsFailureToken = NotificationCenter.default.addObserver(
+      forName: NSNotification.Name("RCTJavaScriptDidFailToLoadNotification"),
+      object: nil,
+      queue: nil
+    ) { [weak self] _ in
+      DispatchQueue.main.async {
+        self?.recordTrace("extension_js_bundle_failure", detail: "load_failed")
+        self?.rootView?.removeFromSuperview()
+        self?.rootView = nil
+        ShareExtensionViewController.sharedBridge?.invalidate()
+        ShareExtensionViewController.sharedBridge = nil
+        self?.showPayloadFailure("bundle_load_failed")
+      }
+    }
+    observerTokens = [closeToken, openToken, jsLoadedToken, jsFailureToken]
   }
 
   private func cleanupAfterClose() {
@@ -243,6 +492,8 @@ class ShareExtensionViewController: UIViewController {
     didCleanUp = true
     rootView?.removeFromSuperview()
     rootView = nil
+    payloadFailureView?.removeFromSuperview()
+    payloadFailureView = nil
     ShareExtensionViewController.sharedBridge?.invalidate()
     ShareExtensionViewController.sharedBridge = nil
     observerTokens.forEach { NotificationCenter.default.removeObserver($0) }
@@ -264,20 +515,94 @@ class ShareExtensionViewController: UIViewController {
   }
 
   private func jsCodeLocation() -> URL? {
-#if DEBUG
-    return RCTBundleURLProvider.sharedSettings().jsBundleURL(forBundleRoot: "index.share")
-#else
+    // A share extension is a separate process and this target deliberately
+    // excludes expo-dev-client. Always run the bundle shipped inside the appex;
+    // a development build must not depend on the host app's Metro session to
+    // render its first frame. A missing bundle becomes visible failure UI.
     return Bundle.main.url(forResource: "main", withExtension: "jsbundle")
+  }
+
+  private func firstHTTPURL(in value: Any) -> String? {
+    if let url = value as? URL {
+      let scheme = url.scheme?.lowercased()
+      return scheme == "http" || scheme == "https" ? url.absoluteString : nil
+    }
+    if let text = value as? String {
+      guard let detector = try? NSDataDetector(
+        types: NSTextCheckingResult.CheckingType.link.rawValue
+      ) else { return nil }
+      let range = NSRange(text.startIndex..<text.endIndex, in: text)
+      for match in detector.matches(in: text, options: [], range: range) {
+        guard let url = match.url else { continue }
+        let scheme = url.scheme?.lowercased()
+        if scheme == "http" || scheme == "https" { return url.absoluteString }
+      }
+      return nil
+    }
+    if let dictionary = value as? NSDictionary {
+      for nested in dictionary.allValues {
+        if let url = firstHTTPURL(in: nested) { return url }
+      }
+      return nil
+    }
+    if let array = value as? NSArray {
+      for nested in array {
+        if let url = firstHTTPURL(in: nested) { return url }
+      }
+    }
+    return nil
+  }
+
+  private func payloadRepresentation(_ sharedData: [String: Any]) -> String {
+    if let representation = sharedData["urlRepresentation"] as? String {
+      return representation
+    }
+    if sharedData["url"] != nil { return "public_url" }
+    if sharedData["text"] != nil { return "plain_text" }
+    if sharedData["preprocessingResults"] != nil { return "property_list" }
+    return "unknown"
+  }
+
+  private func recordTrace(_ event: String, detail: String? = nil) {
+#if DEBUG
+    guard
+      let appGroup = Bundle.main.object(forInfoDictionaryKey: "AppGroup") as? String,
+      let defaults = UserDefaults(suiteName: appGroup)
+    else {
+      NSLog("[NearrShareTrace] id=%@ event=%@ detail=%@", invocationId, event, detail ?? "none")
+      return
+    }
+    var events = defaults.array(forKey: Self.shareTraceKey) as? [[String: Any]] ?? []
+    var entry: [String: Any] = [
+      "invocationId": invocationId,
+      "event": String(event.prefix(64)),
+      "timestamp": Date().timeIntervalSince1970 * 1000.0,
+      "process": "extension"
+    ]
+    if let detail = detail,
+       detail.range(of: "^[a-zA-Z0-9_.:-]{1,64}$", options: .regularExpression) != nil {
+      entry["detail"] = detail
+    }
+    events.append(entry)
+    if events.count > Self.maximumTraceEvents {
+      events.removeFirst(events.count - Self.maximumTraceEvents)
+    }
+    defaults.set(events, forKey: Self.shareTraceKey)
+    defaults.synchronize()
+    NSLog("[NearrShareTrace] id=%@ event=%@ detail=%@", invocationId, event, detail ?? "none")
 #endif
   }
 
-  private func getShareData(completion: @escaping ([String: Any]?) -> Void) {
+  private func getShareData(completion: @escaping ([String: Any]?, String) -> Void) {
     guard let extensionItems = extensionContext?.inputItems as? [NSExtensionItem] else {
-      completion(nil)
+      completion(nil, "missing_input")
       return
     }
 
     var sharedItems: [String: Any] = [:]
+    var didFinish = false
+    var sawProviderFailure = false
+    var supportedProviderCount = 0
 
     let group = DispatchGroup()
 
@@ -285,11 +610,21 @@ class ShareExtensionViewController: UIViewController {
 
     for item in extensionItems {
       for provider in item.attachments ?? [] {
-        if provider.hasItemConformingToTypeIdentifier(kUTTypeURL as String) {
+        let hasURL = provider.hasItemConformingToTypeIdentifier(kUTTypeURL as String)
+        let hasPropertyList = provider.hasItemConformingToTypeIdentifier(kUTTypePropertyList as String)
+        let hasText = provider.hasItemConformingToTypeIdentifier(kUTTypeText as String)
+
+        // Load every textual representation the provider advertises. Instagram
+        // can expose both public.url and public.plain-text; if one callback
+        // fails or stalls, the other can still yield the Reel URL by deadline.
+        if hasURL {
+          supportedProviderCount += 1
           group.enter()
           provider.loadItem(forTypeIdentifier: kUTTypeURL as String, options: nil) { (urlItem, error) in
             DispatchQueue.main.async {
-              if let sharedURL = urlItem as? URL {
+              if error != nil { sawProviderFailure = true }
+              let loadedURL = (urlItem as? URL) ?? (urlItem as? NSURL).map { $0 as URL }
+              if let sharedURL = loadedURL {
                 if sharedURL.isFileURL {
                   if sharedItems["files"] == nil {
                     sharedItems["files"] = [String]()
@@ -301,35 +636,57 @@ class ShareExtensionViewController: UIViewController {
                 } else {
                   sharedItems["url"] = sharedURL.absoluteString
                 }
+              } else if let urlItem = urlItem,
+                        let extracted = self.firstHTTPURL(in: urlItem) {
+                sharedItems["url"] = extracted
               }
               group.leave()
             }
           }
-        } else if provider.hasItemConformingToTypeIdentifier(kUTTypePropertyList as String) {
+        }
+        if hasPropertyList {
+          supportedProviderCount += 1
           group.enter()
           provider.loadItem(forTypeIdentifier: kUTTypePropertyList as String, options: nil) { (item, error) in
             DispatchQueue.main.async {
-              if let itemDict = item as? NSDictionary,
-                 let results = itemDict[NSExtensionJavaScriptPreprocessingResultsKey] as? NSDictionary {
+              if error != nil { sawProviderFailure = true }
+              if let itemDict = item as? NSDictionary {
+                let results = itemDict[NSExtensionJavaScriptPreprocessingResultsKey] as? NSDictionary
+                  ?? itemDict
                 sharedItems["preprocessingResults"] = results
+                if sharedItems["url"] == nil, let extracted = self.firstHTTPURL(in: results) {
+                  sharedItems["url"] = extracted
+                  sharedItems["urlRepresentation"] = "property_list"
+                }
               }
               group.leave()
             }
           }
-        } else if provider.hasItemConformingToTypeIdentifier(kUTTypeText as String) {
+        }
+        if hasText {
+          supportedProviderCount += 1
           group.enter()
           provider.loadItem(forTypeIdentifier: kUTTypeText as String, options: nil) { (textItem, error) in
             DispatchQueue.main.async {
-              if let text = textItem as? String {
+              if error != nil { sawProviderFailure = true }
+              if let text = (textItem as? String) ?? (textItem as? NSString).map({ String($0) }) {
                 sharedItems["text"] = text
+                if sharedItems["url"] == nil, let extracted = self.firstHTTPURL(in: text) {
+                  sharedItems["url"] = extracted
+                  sharedItems["urlRepresentation"] = "plain_text"
+                }
               }
               group.leave()
             }
           }
-        } else if provider.hasItemConformingToTypeIdentifier(kUTTypeImage as String) {
+        }
+        if !hasURL && !hasPropertyList && !hasText && provider.hasItemConformingToTypeIdentifier(kUTTypeImage as String) {
+          supportedProviderCount += 1
           group.enter()
           provider.loadItem(forTypeIdentifier: kUTTypeImage as String, options: nil) { (imageItem, error) in
             DispatchQueue.main.async {
+              defer { group.leave() }
+              if error != nil { sawProviderFailure = true }
 
               // Ensure the array exists
               if sharedItems["images"] == nil {
@@ -403,13 +760,15 @@ class ShareExtensionViewController: UIViewController {
               } else {
                 print("imageItem is not a recognized type")
               }
-              group.leave()
             }
           }
-        } else if provider.hasItemConformingToTypeIdentifier(kUTTypeMovie as String) {
+        } else if !hasURL && !hasPropertyList && !hasText && provider.hasItemConformingToTypeIdentifier(kUTTypeMovie as String) {
+          supportedProviderCount += 1
           group.enter()
           provider.loadItem(forTypeIdentifier: kUTTypeMovie as String, options: nil) { (videoItem, error) in
             DispatchQueue.main.async {
+              defer { group.leave() }
+              if error != nil { sawProviderFailure = true }
               print("videoItem type: \(type(of: videoItem))")
 
               // Ensure the array exists
@@ -520,15 +879,35 @@ class ShareExtensionViewController: UIViewController {
               } else {
                 print("videoItem is not a recognized type")
               }
-              group.leave()
             }
           }
         }
       }
     }
 
+    func finish(_ reason: String) {
+      guard !didFinish else { return }
+      didFinish = true
+      if let directURL = sharedItems["url"] as? String,
+         self.firstHTTPURL(in: directURL) != nil {
+        if sharedItems["urlRepresentation"] == nil {
+          sharedItems["urlRepresentation"] = "public_url"
+        }
+        completion(sharedItems, reason)
+        return
+      }
+      completion(nil, reason)
+    }
+
     group.notify(queue: .main) {
-      completion(sharedItems.isEmpty ? nil : sharedItems)
+      let reason = supportedProviderCount == 0
+        ? "unsupported"
+        : (sawProviderFailure ? "provider_failed" : "complete")
+      finish(reason)
+    }
+
+    DispatchQueue.main.asyncAfter(deadline: .now() + Self.payloadDeadline) {
+      finish("timeout")
     }
   }
 }
