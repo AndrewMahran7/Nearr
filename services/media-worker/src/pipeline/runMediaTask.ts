@@ -468,7 +468,7 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
       !analysis.evidence.places.some(
         (place) => !!place.memoryCue?.trim() && place.memoryCueEvidence.length > 0,
       );
-    if (focusedCueMissing && primaryContext.sceneScoped) {
+    if (focusedCueMissing) {
       const expandedContext = buildTargetedNoteContext({
         frames,
         transcript: transcript.segments,

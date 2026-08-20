@@ -81,6 +81,27 @@ test('unsaved candidates have observations but no note-generation obligation', (
   assert.equal(payload.mentionSlots[0]!.aiNote, null);
 });
 
+test('weak unscoped context can widen from focused to representative frames', () => {
+  const frames = Array.from({ length: 20 }, (_, index) => frame(index));
+  const focused = buildTargetedNoteContext({
+    frames,
+    transcript: [],
+    ocr: [],
+    handoff: null,
+    maxFrames: 24,
+  });
+  const expanded = buildTargetedNoteContext({
+    frames,
+    transcript: [],
+    ocr: [],
+    handoff: null,
+    expanded: true,
+    maxFrames: 24,
+  });
+  assert.equal(focused.frames.length, 8);
+  assert.equal(expanded.frames.length, 16);
+});
+
 const visualCases = [
   {
     label: 'food',
