@@ -27,7 +27,7 @@ function config(): WorkerConfig {
     allowedMediaHosts: ['example.com'], transcriptionProvider: 'noop', transcriptionApiKey: '',
     transcriptionModel: 'whisper-1', selfHostedTranscriptionUrl: '', selfHostedTranscriptionApiKey: '',
     analysisProvider: 'heuristic', geminiApiKey: '', geminiModel: 'gemini-2.5-flash', ocrProvider: 'noop',
-    vayrinVisualGeolocationEnabled: false, vayrinModel: 'gpt-5.6-sol', vayrinFrameBudget: 8,
+    vayrinVisualGeolocationEnabled: false, vayrinModel: 'gpt-5.6-sol', vayrinFrameBudget: 6,
     vayrinFrameStrategy: 'diverse', vayrinReasoningEffort: undefined,
     vayrinInputPricePerMillion: 5, vayrinCachedInputPricePerMillion: 0.5,
     vayrinOutputPricePerMillion: 30,

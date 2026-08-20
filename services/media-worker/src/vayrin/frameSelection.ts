@@ -116,11 +116,12 @@ function diversePick(frames: SelectedFrame[], maxFrames: number): SelectedFrame[
  * Set from the cost/benefit shape rather than a round number: image tokens
  * scale linearly with frame count while marginal geographic information falls
  * off sharply once the distinct SCENES are covered, and a short-form social
- * video has very few distinct scenes. 8 covers a multi-scene itinerary without
- * paying for the fourth angle on the same wall. `MEDIA_MAX_SELECTED_FRAMES`
- * (24) remains the hard ceiling this can never exceed.
+ * video has very few distinct scenes. The local comparison found six diverse
+ * frames exact on the verified positive while 12 doubled input cost without
+ * improving specificity. `MEDIA_MAX_SELECTED_FRAMES` (24) remains the hard
+ * ceiling this can never exceed.
  */
-export const DEFAULT_VAYRIN_FRAME_BUDGET = 8;
+export const DEFAULT_VAYRIN_FRAME_BUDGET = 6;
 
 export function selectFramesForVayrin(
   frames: SelectedFrame[],

@@ -267,7 +267,7 @@ export function loadConfig(): WorkerConfig {
 
     vayrinVisualGeolocationEnabled: bool('VAYRIN_VISUAL_GEOLOCATION_ENABLED', false),
     vayrinModel: str('VAYRIN_MODEL', 'gpt-5.6-sol'),
-    vayrinFrameBudget: int('VAYRIN_FRAME_BUDGET', 8, 1),
+    vayrinFrameBudget: int('VAYRIN_FRAME_BUDGET', 6, 1),
     vayrinFrameStrategy: frameStrategy(str('VAYRIN_FRAME_STRATEGY', 'diverse')),
     vayrinReasoningEffort: reasoningEffort(str('VAYRIN_REASONING_EFFORT', '')),
     vayrinInputPricePerMillion: nonNegativeNumber('VAYRIN_PRICE_INPUT_PER_MILLION', 5),

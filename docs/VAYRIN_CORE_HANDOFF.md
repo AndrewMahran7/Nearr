@@ -96,7 +96,7 @@ npm run vayrin:geo -- --video C:\fixtures\clip.mp4 `
 
 The outer media fallback must already be enabled for a supported platform. It runs for metadata failure, manual fallback, recoverable resolver failure, weak non-address confirmation/picker, a blocked auto-save gate, a degenerate multi result, and now roundup posts. It does not run after a safe metadata auto-save, a resolved multi result, two explicit addresses, or a Places infrastructure error.
 
-Inside the worker, `VAYRIN_VISUAL_GEOLOCATION_ENABLED=false` is the default. When enabled, Vayrin runs only when frames exist and the cheap pass emitted no explicit place, declared insufficient evidence, or emitted only administrative geography. A specific cheap-pass destination skips the call. Default model is `gpt-5.6-sol`; default strategy is `diverse`; branch recommendation is six frames even though the conservative config remains eight until integration chooses to adopt the measured setting.
+Inside the worker, `VAYRIN_VISUAL_GEOLOCATION_ENABLED=false` is the default. When enabled, Vayrin runs only when frames exist and the cheap pass emitted no explicit place, declared insufficient evidence, or emitted only administrative geography. A specific cheap-pass destination skips the call. Default model is `gpt-5.6-sol`; the measured default is six diverse frames.
 
 ## Geographic evidence policy
 
@@ -177,7 +177,6 @@ Not worth pursuing from current evidence:
 ### Remaining limitations before Nearr-Dev deployment
 
 1. Run a small manually verified hard-place set (natural feature, unlabeled venue, gatekept spot) and at least one accessible multi-place itinerary.
-2. Decide whether to change the config default from eight diverse frames to the measured six.
-3. Wire same-scene alternative hypotheses into one existing picker contract; today the best hypothesis is verified and alternatives remain diagnostic rather than user-selectable.
-4. Verify the final safe base and cherry-pick this branch's commits rather than rebasing blindly.
-5. Configure the server-only flag/key/pricing in Nearr-Dev, deploy the worker and relevant Edge change in the normal integration lane, then run a device share test. No environment was changed here.
+2. Wire same-scene alternative hypotheses into one existing picker contract; today the best hypothesis is verified and alternatives remain diagnostic rather than user-selectable.
+3. Verify the final safe base and cherry-pick this branch's commits rather than rebasing blindly.
+4. Configure the server-only flag/key/pricing in Nearr-Dev, deploy the worker and relevant Edge change in the normal integration lane, then run a device share test. No environment was changed here.

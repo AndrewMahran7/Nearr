@@ -58,7 +58,7 @@ function testCfg(over: Partial<WorkerConfig> = {}): WorkerConfig {
     ocrProvider: 'noop',
     vayrinVisualGeolocationEnabled: false,
     vayrinModel: 'gpt-5.6-sol',
-    vayrinFrameBudget: 8,
+    vayrinFrameBudget: 6,
     vayrinFrameStrategy: 'diverse',
     vayrinReasoningEffort: undefined,
     vayrinInputPricePerMillion: 5,
