@@ -851,6 +851,9 @@ Existing code does not override stage gates.
 - Pre-auth onboarding
 - Sign-in contrast cleanup
 - Sign-in back navigation
+- Sign-in with Google
+- Sign-in with Apple
+- Sign-in with Email/Password
 
 ### Async share-job foundation
 
