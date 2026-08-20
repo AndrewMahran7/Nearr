@@ -20,6 +20,9 @@ export type GuardedSubmitResult = {
   jobId?: string;
   duplicate?: boolean;
   reason?: string;
+  httpStatus?: number;
+  responseErrorCode?: string;
+  requestId?: string;
 };
 
 export type GuardedSubmitArgs = { url: string; submissionId: string };

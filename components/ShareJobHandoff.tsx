@@ -63,7 +63,9 @@ export function ShareJobHandoff({ url, submissionId }: { url: string; submission
           route: '/share',
           error: `share handoff failed: ${result.reason}`,
           jobId: submissionIdRef.current,
-          responseErrorCode: result.reason,
+          httpStatus: result.httpStatus,
+          responseErrorCode: result.responseErrorCode ?? result.reason,
+          requestId: result.requestId,
         });
         setUi({ kind: 'error' });
       }

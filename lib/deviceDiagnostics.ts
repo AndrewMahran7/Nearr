@@ -104,6 +104,7 @@ export type DeviceDiagnostic = {
   jobId?: string | null; // current share-job id when safe to include
   httpStatus?: number | null; // response HTTP status when the failure was a request
   responseErrorCode?: string | null; // server-provided error code / reason
+  requestId?: string | null; // bounded provider/request correlation id
 };
 
 function appBuild(): { version: string | null; buildNumber: string | null } {
@@ -128,6 +129,7 @@ export async function recordDiagnostic(input: {
   jobId?: string | null;
   httpStatus?: number | null;
   responseErrorCode?: string | null;
+  requestId?: string | null;
 }): Promise<void> {
   try {
     const { version, buildNumber } = appBuild();
@@ -152,6 +154,7 @@ export async function recordDiagnostic(input: {
       responseErrorCode: input.responseErrorCode
         ? String(input.responseErrorCode).slice(0, 60)
         : null,
+      requestId: input.requestId ? sanitizeErrorText(input.requestId).slice(0, 80) : null,
     };
     const existing = await getRecentDiagnostics();
     const next = [record, ...existing].slice(0, MAX_RECORDS);
@@ -260,6 +263,7 @@ export function formatDiagnosticForCopy(d: DeviceDiagnostic): string {
     d.jobId ? `jobId=${d.jobId}` : '',
     d.httpStatus != null ? `httpStatus=${d.httpStatus}` : '',
     d.responseErrorCode ? `responseErrorCode=${d.responseErrorCode}` : '',
+    d.requestId ? `requestId=${d.requestId}` : '',
     `msg=${d.message}`,
     d.stack ? `stack=${d.stack}` : '',
   ]

@@ -23,7 +23,19 @@ export type CreateShareJobResult =
         | 'http_error'
         | 'invalid_response';
       httpStatus?: number;
+      responseErrorCode?: string;
+      requestId?: string;
     };
+
+function boundedCode(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  const code = value.trim();
+  return /^[a-zA-Z0-9_.:-]{1,60}$/.test(code) ? code : undefined;
+}
+
+function responseRequestId(res: Response): string | undefined {
+  return boundedCode(res.headers.get('sb-request-id') ?? res.headers.get('x-request-id'));
+}
 
 export async function createShareJob(args: {
   endpoint: string;
@@ -55,15 +67,26 @@ export async function createShareJob(args: {
       signal: controller.signal,
     });
 
-    if (res.status === 401) return { ok: false, reason: 'unauthorized', httpStatus: 401 };
-    if (res.status === 400) return { ok: false, reason: 'invalid_url', httpStatus: 400 };
-    if (!res.ok) return { ok: false, reason: 'http_error', httpStatus: res.status };
-
     const json = (await res.json().catch(() => null)) as
-      | { jobId?: string; status?: string; duplicate?: boolean }
+      | { jobId?: string; status?: string; duplicate?: boolean; error?: string }
       | null;
+    const diagnostic = {
+      httpStatus: res.status,
+      responseErrorCode: boundedCode(json?.error),
+      requestId: responseRequestId(res),
+    };
+
+    if (res.status === 401) return { ok: false, reason: 'unauthorized', ...diagnostic };
+    if (res.status === 400) return { ok: false, reason: 'invalid_url', ...diagnostic };
+    if (!res.ok) return { ok: false, reason: 'http_error', ...diagnostic };
+
     if (!json || typeof json.jobId !== 'string') {
-      return { ok: false, reason: 'invalid_response' };
+      return {
+        ok: false,
+        reason: 'invalid_response',
+        ...diagnostic,
+        responseErrorCode: diagnostic.responseErrorCode ?? 'missing_job_id',
+      };
     }
     return {
       ok: true,

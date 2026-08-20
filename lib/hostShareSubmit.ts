@@ -32,6 +32,12 @@ export const hostShareSubmitter = createShareSubmitter(
     if (result.ok) {
       return { ok: true, jobId: result.jobId, duplicate: result.duplicate };
     }
-    return { ok: false, reason: result.reason };
+    return {
+      ok: false,
+      reason: result.reason,
+      httpStatus: result.httpStatus,
+      responseErrorCode: result.responseErrorCode,
+      requestId: result.requestId,
+    };
   },
 );
