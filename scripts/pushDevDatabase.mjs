@@ -28,9 +28,10 @@
  * (docs/DEVELOPMENT_WORKFLOW.md -> Production promotion).
  */
 
-import { spawnSync } from 'node:child_process';
 import { readdirSync } from 'node:fs';
 import path from 'node:path';
+
+import { runCli } from './lib/cliRunner.js';
 
 import {
   EXPECTED_DEV_REF,
@@ -101,9 +102,5 @@ if (!confirmed) {
 
 const args = ['db', 'push', '--linked', ...argv.filter((a) => a !== '--yes')];
 console.log(`\n$ supabase ${args.join(' ')}\n`);
-const result = spawnSync('supabase', args, {
-  cwd: REPO_ROOT,
-  stdio: 'inherit',
-  shell: process.platform === 'win32',
-});
-process.exit(result.status ?? 1);
+// Argv array, no shell — see scripts/lib/cliRunner.js.
+process.exit(runCli('supabase', args, { cwd: REPO_ROOT }));

@@ -24,18 +24,14 @@
  * It never falls back to a default channel: if the lane is unknown it exits.
  */
 
-import { execFileSync, spawnSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+import { resolveLocalBin, runCli } from './lib/cliRunner.js';
+import { LANES, buildUpdateArgs, parseUpdateArgs } from './lib/updateArgs.js';
 
-/** lane -> the channel and EAS environment it is allowed to touch. */
-const LANES = {
-  development: { channel: 'development', environment: 'development', appEnv: 'development' },
-  preview: { channel: 'preview', environment: 'preview', appEnv: 'preview' },
-  production: { channel: 'production', environment: 'production', appEnv: 'production' },
-};
+const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 function fail(message) {
   console.error(`\n${message}\n`);
@@ -46,13 +42,20 @@ function git(args) {
   return execFileSync('git', args, { cwd: REPO_ROOT, encoding: 'utf8' }).trim();
 }
 
+/**
+ * Run a CLI with an argv ARRAY and no shell (scripts/lib/cliRunner.js).
+ *
+ * The previous `shell: process.platform === 'win32'` joined argv into one
+ * unquoted command line, which is what destroyed `-m "a message with spaces"`
+ * and what Node's DEP0190 warning was pointing at.
+ */
 function run(command, args) {
-  const result = spawnSync(command, args, {
-    cwd: REPO_ROOT,
-    stdio: 'inherit',
-    shell: process.platform === 'win32',
-  });
-  return result.status ?? 1;
+  try {
+    return runCli(command, args, { cwd: REPO_ROOT });
+  } catch (err) {
+    fail(err instanceof Error ? err.message : String(err));
+    return 1;
+  }
 }
 
 const [lane, ...rest] = process.argv.slice(2);
@@ -64,15 +67,7 @@ if (!target) {
   );
 }
 
-const confirmed = rest.includes('--yes');
-const passthrough = rest.filter((a) => a !== '--yes');
-
-let message = '';
-for (let i = 0; i < passthrough.length; i += 1) {
-  if (passthrough[i] === '-m' || passthrough[i] === '--message') {
-    message = passthrough[i + 1] ?? '';
-  }
-}
+const { message, passthrough, confirmed } = parseUpdateArgs(rest);
 if (!message) {
   fail(
     'A message is required so the update is identifiable later.\n' +
@@ -134,16 +129,27 @@ if (lane === 'production') {
 // --- Validate the target environment before touching anything --------------
 
 console.log(`\nValidating the EAS \`${target.environment}\` environment...`);
-const envCheck = run('npx', [
-  'ts-node',
-  '-P',
-  'scripts/tsconfig.json',
-  'scripts/checkEnvironment.ts',
-  '--eas-environment',
-  target.environment,
-  '--expect',
-  target.appEnv,
-]);
+// ts-node is a devDependency here, so run it from this repo's node_modules
+// with `process.execPath` rather than shelling out through `npx` (which is
+// itself a .cmd shim on Windows and would drag the shell back in).
+const tsNodeBin = resolveLocalBin('ts-node/dist/bin.js');
+if (!tsNodeBin) {
+  fail('Could not resolve ts-node from node_modules. Run `npm install` first.');
+}
+const envCheck = runCli(
+  process.execPath,
+  [
+    tsNodeBin,
+    '-P',
+    'scripts/tsconfig.json',
+    'scripts/checkEnvironment.ts',
+    '--eas-environment',
+    target.environment,
+    '--expect',
+    target.appEnv,
+  ],
+  { cwd: REPO_ROOT },
+);
 if (envCheck !== 0) {
   fail(
     `The EAS \`${target.environment}\` environment is not safe to publish from.\n` +
@@ -153,13 +159,21 @@ if (envCheck !== 0) {
 
 // --- Publish ---------------------------------------------------------------
 
-const args = [
-  'update',
-  '--channel',
-  target.channel,
-  '--environment',
-  target.environment,
-  ...passthrough,
-];
-console.log(`\n$ eas ${args.join(' ')}\n`);
+// buildUpdateArgs owns the targeting flags and REFUSES any caller argument that
+// would retarget the lane. Previously passthrough was appended after the
+// wrapper's own --channel and EAS honours the last occurrence, so
+// `npm run dev:update -- -m "x" --channel production` published to production
+// from the development wrapper.
+let args;
+try {
+  args = buildUpdateArgs(lane, passthrough);
+} catch (err) {
+  fail(err instanceof Error ? err.message : String(err));
+}
+
+// Display only. The real call passes this array to a shell-free spawn, so a
+// message containing spaces or shell metacharacters stays a single argument.
+console.log(
+  `\n$ eas ${args.map((a) => (/\s/.test(a) ? JSON.stringify(a) : a)).join(' ')}\n`,
+);
 process.exit(run('eas', args));

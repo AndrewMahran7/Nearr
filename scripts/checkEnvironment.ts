@@ -27,9 +27,10 @@
  * Exit codes: 0 = safe to proceed, 1 = blocking violation, 2 = usage error.
  */
 
-import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
+
+import { captureCli } from './lib/cliRunner';
 
 import {
   blockingViolations,
@@ -81,20 +82,20 @@ function localEnv(): Record<string, string | undefined> {
 }
 
 function easEnv(environment: string): Record<string, string | undefined> {
-  // Windows resolves `eas` to a .cmd shim, which execFileSync can only launch
-  // through a shell — so the name is restricted to an identifier rather than
-  // being interpolated into a command line unchecked.
+  // Belt and braces: the name is passed as an argv element to a shell-free
+  // spawn, so it cannot be interpolated into a command line — but an EAS
+  // environment name is an identifier, and rejecting anything else keeps the
+  // failure a clear message rather than a confusing CLI error.
   if (!/^[A-Za-z0-9_-]+$/.test(environment)) {
     console.error(`Invalid EAS environment name: ${environment}`);
     process.exit(2);
   }
   let stdout: string;
   try {
-    stdout = execFileSync('eas', ['env:list', '--environment', environment], {
+    // Argv array, no shell — scripts/lib/cliRunner.js resolves the npm shim to
+    // its JS entry point so `shell: true` (and DEP0190) are never needed.
+    stdout = captureCli('eas', ['env:list', '--environment', environment], {
       cwd: REPO_ROOT,
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'pipe'],
-      shell: process.platform === 'win32',
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

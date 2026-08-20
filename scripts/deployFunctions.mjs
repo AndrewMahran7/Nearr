@@ -25,10 +25,10 @@
  * explicit command.
  */
 
-import { spawnSync } from 'node:child_process';
 import { readdirSync } from 'node:fs';
 import path from 'node:path';
 
+import { runCli } from './lib/cliRunner.js';
 import { REPO_ROOT, describeRef, resolveDevProjectRef } from './devTarget.mjs';
 
 const FUNCTIONS_DIR = path.join(REPO_ROOT, 'supabase', 'functions');
@@ -90,11 +90,8 @@ for (const name of targets) {
   const args = ['functions', 'deploy', name, '--project-ref', projectRef];
   if (NO_VERIFY_JWT.has(name)) args.push('--no-verify-jwt');
   console.log(`\n$ supabase ${args.join(' ')}\n`);
-  const result = spawnSync('supabase', args, {
-    cwd: REPO_ROOT,
-    stdio: 'inherit',
-    shell: process.platform === 'win32',
-  });
+  // Argv array, no shell — see scripts/lib/cliRunner.js.
+  const result = { status: runCli('supabase', args, { cwd: REPO_ROOT }) };
   if ((result.status ?? 1) !== 0) {
     fail(`Deploy of ${name} failed. Remaining functions were not deployed.`);
   }
