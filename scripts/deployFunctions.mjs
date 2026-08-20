@@ -28,9 +28,9 @@
 import { spawnSync } from 'node:child_process';
 import { readdirSync } from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 
-const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+import { REPO_ROOT, describeRef, resolveDevProjectRef } from './devTarget.mjs';
+
 const FUNCTIONS_DIR = path.join(REPO_ROOT, 'supabase', 'functions');
 
 /**
@@ -53,18 +53,11 @@ const selected = argv.filter(
   (a, i) => !a.startsWith('--') && i !== refFlagIndex + 1,
 );
 
-const projectRef = (explicitRef || process.env.NEARR_DEV_SUPABASE_REF || '').trim();
-if (!projectRef) {
-  fail(
-    'No target project.\n' +
-      'Set NEARR_DEV_SUPABASE_REF in .env.local (the development Supabase project ref),\n' +
-      'or pass --project-ref <ref> explicitly.\n' +
-      'This script never falls back to the linked project, because that is production.',
-  );
-}
-if (!/^[a-z]{20}$/.test(projectRef)) {
-  fail(`"${projectRef}" does not look like a Supabase project ref (20 lowercase letters).`);
-}
+// Target resolution and the production refusal live in scripts/devTarget.mjs so
+// this script and `npm run dev:db` cannot drift apart. Reading .env.local there
+// also closes a real gap: Node does not load .env files and neither does npm,
+// so the previous process.env-only lookup never saw NEARR_DEV_SUPABASE_REF.
+const projectRef = resolveDevProjectRef({ explicitRef, onFail: fail });
 
 const available = readdirSync(FUNCTIONS_DIR, { withFileTypes: true })
   .filter((e) => e.isDirectory())
@@ -79,7 +72,7 @@ for (const name of targets) {
 }
 
 console.log('Deploying Supabase Edge Functions');
-console.log(`  project ref  ${projectRef}`);
+console.log(`  project ref  ${describeRef(projectRef)}`);
 console.log(`  functions    ${targets.join(', ')}`);
 for (const name of targets) {
   if (NO_VERIFY_JWT.has(name)) console.log(`               ${name} -> --no-verify-jwt`);
