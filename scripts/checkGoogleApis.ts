@@ -38,6 +38,7 @@
  * fails every call here even though the Maps SDK works.
  */
 
+import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
@@ -67,16 +68,36 @@ function readEnvFile(file: string): Record<string, string> {
   return out;
 }
 
-type SelectedKey = { key: string; variable: string };
+type SelectedKey = {
+  key: string;
+  variable: string;
+  source: 'dedicated_places_key' | 'maps_fallback' | 'missing';
+  appEnvironment: string;
+};
 
 function selectKey(env: Record<string, string | undefined>): SelectedKey {
+  const appEnvironment = (env.EXPO_PUBLIC_APP_ENV || '').trim().toLowerCase();
   if ((env.EXPO_PUBLIC_GOOGLE_PLACES_KEY || '').trim()) {
-    return { key: env.EXPO_PUBLIC_GOOGLE_PLACES_KEY!.trim(), variable: 'EXPO_PUBLIC_GOOGLE_PLACES_KEY' };
+    return {
+      key: env.EXPO_PUBLIC_GOOGLE_PLACES_KEY!.trim(),
+      variable: 'EXPO_PUBLIC_GOOGLE_PLACES_KEY',
+      source: 'dedicated_places_key',
+      appEnvironment,
+    };
   }
   if ((env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY || '').trim()) {
-    return { key: env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY!.trim(), variable: 'EXPO_PUBLIC_GOOGLE_MAPS_API_KEY (fallback)' };
+    return {
+      key: env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY!.trim(),
+      variable: 'EXPO_PUBLIC_GOOGLE_MAPS_API_KEY (fallback)',
+      source: 'maps_fallback',
+      appEnvironment,
+    };
   }
-  return { key: '', variable: '(none)' };
+  return { key: '', variable: '(none)', source: 'missing', appEnvironment };
+}
+
+function fingerprint(key: string): string {
+  return createHash('sha256').update(key).digest('hex').slice(0, 8);
 }
 
 function localKey(): SelectedKey {
@@ -109,7 +130,10 @@ function easKey(environment: string): SelectedKey {
   }
   const env: Record<string, string> = {};
   for (const rawLine of stdout.split(/\r?\n/)) {
-    const match = /^(EXPO_PUBLIC_GOOGLE_(?:PLACES|MAPS_API)_KEY)=(.*)$/.exec(rawLine.trim());
+    const match =
+      /^(EXPO_PUBLIC_(?:GOOGLE_(?:PLACES|MAPS_API)_KEY|APP_ENV))=(.*)$/.exec(
+        rawLine.trim(),
+      );
     if (match && !match[2].startsWith('*****')) env[match[1]] = match[2];
   }
   return selectKey(env);
@@ -146,11 +170,78 @@ const PROBES: Probe[] = [
     usedBy: 'services/placesService.ts — textsearch / details / photo',
     required: true,
     run: async (key) => {
-      const url =
-        'https://maps.googleapis.com/maps/api/place/textsearch/json?query=coffee&key=' +
-        encodeURIComponent(key);
-      const response = await fetch(url);
-      return classifyLegacy(await response.json());
+      const textSearchParams = new URLSearchParams({ query: 'coffee', key });
+      const textSearchResponse = await fetch(
+        `https://maps.googleapis.com/maps/api/place/textsearch/json?${textSearchParams}`,
+      );
+      const textSearchJson = (await textSearchResponse.json()) as {
+        status?: string;
+        error_message?: string;
+        results?: Array<{ place_id?: string }>;
+      };
+      const textSearch = classifyLegacy(textSearchJson);
+      if (!textSearch.ok) return { ok: false, detail: `textsearch=${textSearch.detail}` };
+
+      const placeId = textSearchJson.results?.[0]?.place_id;
+      if (!placeId) {
+        return {
+          ok: true,
+          detail: `textsearch=${textSearch.detail}; details/photo=SKIPPED (no result)`,
+        };
+      }
+
+      const detailsParams = new URLSearchParams({
+        place_id: placeId,
+        key,
+        fields: 'place_id,name,formatted_address,geometry/location,types,url,photos',
+      });
+      const detailsResponse = await fetch(
+        `https://maps.googleapis.com/maps/api/place/details/json?${detailsParams}`,
+      );
+      const detailsJson = (await detailsResponse.json()) as {
+        status?: string;
+        error_message?: string;
+        result?: { photos?: Array<{ photo_reference?: string }> };
+      };
+      const details = classifyLegacy(detailsJson);
+      if (!details.ok) {
+        return {
+          ok: false,
+          detail: `textsearch=${textSearch.detail}; details=${details.detail}`,
+        };
+      }
+
+      const photoReference = detailsJson.result?.photos?.[0]?.photo_reference;
+      if (!photoReference) {
+        return {
+          ok: true,
+          detail:
+            `textsearch=${textSearch.detail}; details=${details.detail}; ` +
+            'photo=SKIPPED (no reference)',
+        };
+      }
+      const photoParams = new URLSearchParams({
+        maxwidth: '64',
+        photo_reference: photoReference,
+        key,
+      });
+      const photoResponse = await fetch(
+        `https://maps.googleapis.com/maps/api/place/photo?${photoParams}`,
+      );
+      if (!photoResponse.ok) {
+        return {
+          ok: false,
+          detail:
+            `textsearch=${textSearch.detail}; details=${details.detail}; ` +
+            `photo=HTTP ${photoResponse.status}`,
+        };
+      }
+      return {
+        ok: true,
+        detail:
+          `textsearch=${textSearch.detail}; details=${details.detail}; ` +
+          `photo=HTTP ${photoResponse.status}`,
+      };
     },
   },
   {
@@ -209,9 +300,24 @@ async function main(): Promise<void> {
     );
     process.exit(1);
   }
-  // Length only — never the value.
+  // Safe metadata only — never the value.
   console.log(`  key class: ${selected.variable}`);
-  console.log(`  key present (length ${key.length}); value is never printed\n`);
+  console.log(`  selected key source: ${selected.source}`);
+  console.log(`  key present (length ${key.length}); fingerprint: ${fingerprint(key)}`);
+  console.log('  key value is never printed\n');
+
+  const selectedLane = environment ?? selected.appEnvironment;
+  if (
+    (selectedLane === 'development' || selectedLane === 'preview') &&
+    selected.source !== 'dedicated_places_key'
+  ) {
+    const laneLabel = environment ? `EAS ${environment}` : `Local ${selectedLane}`;
+    console.error(
+      `${laneLabel} must define EXPO_PUBLIC_GOOGLE_PLACES_KEY. ` +
+        'Refusing to report success for the Maps compatibility fallback.',
+    );
+    process.exit(1);
+  }
 
   let requiredFailures = 0;
   for (const probe of PROBES) {

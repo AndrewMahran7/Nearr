@@ -55,7 +55,7 @@ function isSourceType(v: string | undefined): v is SourceType {
 function placesErrorMessage(err: PlacesError): string {
   switch (err.code) {
     case 'MISSING_API_KEY':
-      return 'Google Places API key is missing. Set EXPO_PUBLIC_GOOGLE_MAPS_API_KEY.';
+      return err.message || 'Google Places API key is missing.';
     case 'NETWORK':
       return 'Network error. Check your connection and try again.';
     case 'OVER_QUERY_LIMIT':

@@ -232,20 +232,26 @@ The key path is:
 
 ```text
 EXPO_PUBLIC_GOOGLE_PLACES_KEY (preferred REST key)
-  -> EXPO_PUBLIC_GOOGLE_MAPS_API_KEY (compatibility fallback)
-  -> app.config.js extra.googlePlacesKey
+  -> app.config.js extra.googlePlacesKey + googlePlacesKeySource
   -> services/placesService.ts
 ```
 
-`npm run verify:google -- --eas-environment development` currently proves the EAS lane is
-using the Maps fallback key: Geocoding API and Places API (New) are authorized, but legacy
-Places API is denied. The repo cannot change a Google Cloud allowlist.
+Production preserves `EXPO_PUBLIC_GOOGLE_MAPS_API_KEY` as a compatibility fallback.
+Development and preview fail with an explicit configuration error instead of sending that
+native Maps key to a legacy REST endpoint. Settings -> Build info shows the selected source,
+location, endpoint family, and a one-way eight-character SHA-256 fingerprint; it never shows
+the key.
 
-One manual action remains: create a **development-only** key, enable/restrict it to exactly
-`Places API` (legacy) and `Geocoding API`, leave application restriction `None` because
-these REST endpoints do not honor an iOS bundle restriction, apply a strict quota/budget
-alert, and save it as `EXPO_PUBLIC_GOOGLE_PLACES_KEY` in EAS `development` and `preview`.
-Do not edit the production key. Re-run `verify:google`; both required rows must say `OK`.
+EAS Build reads the environment declared by the profile, but `npx expo start` builds the
+development-client JavaScript with local `.env*` files. After creating or rotating the EAS
+development key, sync the local development environment with `eas env:pull` (preserving any
+machine-only values) or set `EXPO_PUBLIC_GOOGLE_PLACES_KEY` locally. Otherwise Metro can inline
+the Maps fallback even when `verify:google -- --eas-environment development` passes.
+
+The development-only key must authorize exactly `Places API` (legacy) and `Geocoding API`.
+These REST endpoints do not honor an iOS bundle restriction, so use the approved development
+key policy and quotas rather than widening the production key. Re-run `verify:google`; legacy
+text search, details, photo, and Geocoding must say `OK`.
 
 ### iOS Share Extension lane contract
 

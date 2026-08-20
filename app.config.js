@@ -18,6 +18,16 @@ const GOOGLE_MAPS_ANDROID_KEY =
   process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY ||
   '';
 
+const GOOGLE_PLACES_REST_KEY =
+  (process.env.EXPO_PUBLIC_GOOGLE_PLACES_KEY || '').trim() ||
+  (process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY || '').trim() ||
+  '';
+const GOOGLE_PLACES_REST_KEY_SOURCE = (process.env.EXPO_PUBLIC_GOOGLE_PLACES_KEY || '').trim()
+  ? 'dedicated_places_key'
+  : (process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY || '').trim()
+  ? 'maps_fallback'
+  : 'missing';
+
 // NOTE(ios-share-extension): Re-enabled in app.json after the first
 // TestFlight build shipped as a single-target app. Before submitting a
 // build that includes the extension, make sure:
@@ -189,10 +199,10 @@ module.exports = ({ config }) => {
       // code paths that don't read process.env directly.
       supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL || '',
       supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '',
-      googlePlacesKey:
-        process.env.EXPO_PUBLIC_GOOGLE_PLACES_KEY ||
-        process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY ||
-        '',
+      googlePlacesKey: GOOGLE_PLACES_REST_KEY,
+      // Lets the device prove whether the slot contains the dedicated REST key
+      // or the native Maps compatibility fallback without exposing the value.
+      googlePlacesKeySource: GOOGLE_PLACES_REST_KEY_SOURCE,
       // 2026-05-26: surface PROCESS_SHARE_LINK_URL in extra too. The iOS
       // share extension and lib/shareExtractionBackend.ts both fall back
       // to Constants.expoConfig.extra.processShareLinkUrl when the env

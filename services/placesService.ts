@@ -9,9 +9,8 @@
  *   (e.g. show "no results" vs "quota exceeded").
  */
 
-import Constants from 'expo-constants';
-
 import { isDemoMode } from '@/lib/demoMode';
+import { getGooglePlacesRuntimeConfig } from '@/lib/googlePlacesConfig';
 import { isMapPreviewMode } from '@/lib/mapPreview';
 import { searchDemoPlaces, getDemoPlaceDetails } from '@/services/demo';
 import type { OpeningHoursPeriod, PlaceOpeningHours } from '@/lib/placeHours';
@@ -95,24 +94,22 @@ export class PlacesError extends Error {
 // Config
 // ---------------------------------------------------------------------------
 
-const extra = (Constants.expoConfig?.extra ?? {}) as Record<string, string>;
-
 /**
  * Resolve the API key. Order of precedence:
- *   1. EXPO_PUBLIC_GOOGLE_PLACES_KEY    (REST/web-service key)
- *   2. EXPO_PUBLIC_GOOGLE_MAPS_API_KEY  (compatibility fallback)
- *   3. app config `extra.googlePlacesKey`
+ *   1. Dedicated EXPO_PUBLIC_GOOGLE_PLACES_KEY (inlined or Expo extra)
+ *   2. EXPO_PUBLIC_GOOGLE_MAPS_API_KEY compatibility fallback
  *
  * Note: the Maps SDK keys (`GOOGLE_MAPS_IOS_KEY` / `GOOGLE_MAPS_ANDROID_KEY`)
  * live in `app.json` `ios.config` / `android.config` and are *not* read here.
+ * Development/preview refuses the fallback explicitly; production keeps it
+ * for compatibility.
  */
 function resolveApiKey(): string {
-  return (
-    process.env.EXPO_PUBLIC_GOOGLE_PLACES_KEY ??
-    process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY ??
-    extra.googlePlacesKey ??
-    ''
-  );
+  const config = getGooglePlacesRuntimeConfig();
+  if (config.configurationError) {
+    throw new PlacesError('MISSING_API_KEY', config.configurationError);
+  }
+  return config.key;
 }
 
 const BASE = 'https://maps.googleapis.com/maps/api/place';

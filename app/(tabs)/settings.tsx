@@ -44,6 +44,7 @@ import { setOnboardingPreview } from '@/lib/onboarding';
 import * as Clipboard from 'expo-clipboard';
 import { getRecentDiagnostics, formatDiagnosticForCopy, getUpdateInfo } from '@/lib/deviceDiagnostics';
 import { areDeveloperToolsVisible, describeEnvironment } from '@/lib/appEnvironment';
+import { getGooglePlacesRuntimeDiagnostic } from '@/lib/googlePlacesConfig';
 import { sharedAuth } from '@/lib/sharedAuth';
 import { LEGAL_ACCEPTANCE_REQUIRED, LEGAL_VERSION } from '@/constants';
 import { getProfile, getLegalAcceptanceStatus, updateProfile } from '@/services/profileService';
@@ -126,6 +127,40 @@ export default function SettingsScreen() {
   const [legalAcceptedVersion, setLegalAcceptedVersion] = useState<string | null>(null);
   const [legalAcceptedAt, setLegalAcceptedAt] = useState<string | null>(null);
   const [deletingAccount, setDeletingAccount] = useState(false);
+  const [placesDiagnosticText, setPlacesDiagnosticText] = useState(
+    'Places REST key diagnostic: loading',
+  );
+
+  useEffect(() => {
+    if (!areDeveloperToolsVisible()) return;
+    let active = true;
+    void getGooglePlacesRuntimeDiagnostic()
+      .then((diagnostic) => {
+        if (!active) return;
+        setPlacesDiagnosticText(
+          [
+            `Places REST key source: ${diagnostic.source}`,
+            `Places REST key selected from: ${diagnostic.location}`,
+            `Places REST key present: ${diagnostic.present ? 'yes' : 'no'}`,
+            `Places REST key fingerprint: ${diagnostic.fingerprint ?? 'unavailable'}`,
+            `Google Places endpoint family: ${diagnostic.endpointFamily}`,
+            `Places app environment: ${diagnostic.appEnvironment || 'undeclared'}`,
+            `Places backend environment: ${diagnostic.backendEnvironment || 'undeclared'}`,
+            diagnostic.configurationError
+              ? `Places config error: ${diagnostic.configurationError}`
+              : '',
+          ]
+            .filter(Boolean)
+            .join('\n'),
+        );
+      })
+      .catch(() => {
+        if (active) setPlacesDiagnosticText('Places REST key diagnostic: unavailable');
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const hasUnsavedChanges = useMemo(() => {
     if (!profile) return false;
@@ -506,10 +541,11 @@ export default function SettingsScreen() {
       `update=${update.updateId ?? 'embedded (no OTA applied)'}`,
       update.embedded == null ? '' : `embedded=${update.embedded}`,
       update.emergencyLaunch ? 'emergencyLaunch=true' : '',
+      placesDiagnosticText,
     ]
       .filter(Boolean)
       .join('\n');
-  }, []);
+  }, [placesDiagnosticText]);
 
   async function handleCopyBuildInfo() {
     try {
