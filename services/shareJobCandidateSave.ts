@@ -34,6 +34,12 @@ export function shareJobSourceType(platform: string | null | undefined): SourceT
       return 'instagram';
     case 'tiktok':
       return 'tiktok';
+    case 'youtube':
+      return 'youtube';
+    case 'facebook':
+      return 'facebook';
+    case 'snapchat':
+      return 'snapchat';
     default:
       return 'link';
   }

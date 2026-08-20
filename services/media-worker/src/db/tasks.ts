@@ -64,11 +64,13 @@ export async function setProgress(
   stage: ProgressStage,
 ): Promise<void> {
   await client.from('share_media_tasks').update({ progress_stage: stage }).eq('id', task.id);
-  await client
-    .from('share_jobs')
-    .update({ progress_stage: TASK_TO_PARENT[stage] })
-    .eq('id', task.share_job_id)
-    .eq('status', 'processing_metadata');
+  if (task.share_job_id) {
+    await client
+      .from('share_jobs')
+      .update({ progress_stage: TASK_TO_PARENT[stage] })
+      .eq('id', task.share_job_id)
+      .eq('status', 'processing_metadata');
+  }
 }
 
 export async function setTaskStatus(

@@ -4,7 +4,7 @@
 // persisted into diagnostics so we can correlate evidence quality with prompt
 // changes. Bump PROMPT_VERSION on any wording change.
 
-export const PROMPT_VERSION = 'media-place-evidence-2026-08-17.v8-cue-voice';
+export const PROMPT_VERSION = 'media-place-evidence-2026-08-19.v9-targeted-note';
 
 export const PLACE_EVIDENCE_SYSTEM_PROMPT = `
 You extract structured evidence about REAL-WORLD PLACES from a short social
@@ -152,8 +152,33 @@ export function buildUserContext(input: {
   ocrExtracted?: boolean;
   metadataTitle?: string | null;
   metadataDescription?: string | null;
+  /** Final saved-place identity for supplemental AI-note enrichment. Identity
+   *  is authoritative and must never be re-resolved or changed by the model. */
+  targetPlace?: {
+    name: string;
+    category?: string | null;
+    formattedAddress?: string | null;
+  } | null;
 }): string {
   const parts: string[] = [`platform: ${input.platform}`];
+  if (input.targetPlace) {
+    const bounded = (value: string | null | undefined, max: number): string =>
+      (value ?? '').replace(/\s+/g, ' ').trim().slice(0, max) || '(unknown)';
+    parts.push([
+      'TARGETED AI-NOTE ENRICHMENT:',
+      `final_place_name: ${bounded(input.targetPlace.name, 200)}`,
+      `final_place_category: ${bounded(input.targetPlace.category, 80)}`,
+      `final_place_address: ${bounded(input.targetPlace.formattedAddress, 300)}`,
+      'The final saved place above is authoritative. Do not identify, replace,',
+      'correct, or suggest a different venue. Return exactly one place object',
+      'whose name is exactly final_place_name. Generate memoryCue only from the',
+      'caption/speech/visible/frame evidence specifically relevant to that final',
+      'place. Never borrow a sibling place\'s segment in a multi-place post. If',
+      'no useful place-specific hook is supported, return memoryCue=null and',
+      'memoryCueEvidence=[]. The final place metadata may disambiguate evidence',
+      'but must not become generic filler or the primary content of the cue.',
+    ].join('\n'));
+  }
   if (input.metadataTitle) parts.push(`caption_title: ${input.metadataTitle}`);
   if (input.metadataDescription) parts.push(`caption_text: ${input.metadataDescription}`);
   // Transcription genuinely runs, so an empty transcript IS a real observation.

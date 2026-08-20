@@ -40,11 +40,18 @@ export type AnalyzeInput = {
   metadataTitle?: string | null;
   metadataDescription?: string | null;
   metadataLocation?: string | null;
+  targetPlace?: {
+    name: string;
+    category?: string | null;
+    formattedAddress?: string | null;
+  } | null;
   signal: AbortSignal;
 };
 
 export type AnalyzeOutput = {
   provider: string;
+  /** Optional for custom/test providers; production providers always set it. */
+  modelName?: string;
   promptVersion: string;
   evidence: MediaPlaceEvidence;
   /** Size-bounded raw preview for diagnostics (never the full response). */
@@ -215,7 +222,7 @@ export function heuristicEvidence(input: AnalyzeInput): MediaPlaceEvidence {
 class HeuristicModel implements ModelProvider {
   readonly name = 'heuristic';
   async analyze(input: AnalyzeInput): Promise<AnalyzeOutput> {
-    return { provider: this.name, promptVersion: 'heuristic-v1', evidence: heuristicEvidence(input) };
+    return { provider: this.name, modelName: 'heuristic-v1', promptVersion: 'heuristic-v1', evidence: heuristicEvidence(input) };
   }
 }
 
@@ -231,7 +238,7 @@ class GeminiModel implements ModelProvider {
 
   async analyze(input: AnalyzeInput): Promise<AnalyzeOutput> {
     if (!this.cfg.geminiApiKey) {
-      return { provider: this.name, promptVersion: PROMPT_VERSION, evidence: emptyEvidence(['gemini_missing_key']) };
+      return { provider: this.name, modelName: this.cfg.geminiModel, promptVersion: PROMPT_VERSION, evidence: emptyEvidence(['gemini_missing_key']) };
     }
     const transcriptText = input.transcript
       .map((s) => `[${s.startSeconds.toFixed(1)}] ${s.text}`)
@@ -246,6 +253,7 @@ class GeminiModel implements ModelProvider {
       ocrExtracted: input.ocrExtracted === true,
       metadataTitle: input.metadataTitle,
       metadataDescription: input.metadataDescription,
+      targetPlace: input.targetPlace,
     });
 
     const parts: unknown[] = [{ text: `${PLACE_EVIDENCE_SYSTEM_PROMPT}\n\n${userText}` }];
@@ -288,9 +296,14 @@ class GeminiModel implements ModelProvider {
       if (!res.ok) {
         const warning = `gemini_http_${res.status}`;
         const fallback = heuristicEvidence(input);
-        if (!fallback.insufficientEvidence && fallback.places.length > 0) {
+        // Recognition may retain deterministic identity evidence during a
+        // provider outage. Targeted note generation cannot: the heuristic does
+        // not generate notes, so accepting it would turn a transient provider
+        // failure into a terminal blank. Requeue instead.
+        if (!input.targetPlace && !fallback.insufficientEvidence && fallback.places.length > 0) {
           return {
             provider: `${this.name}+heuristic`,
+            modelName: this.cfg.geminiModel,
             promptVersion: PROMPT_VERSION,
             evidence: { ...fallback, warnings: [...fallback.warnings, warning] },
             modelInput,
@@ -303,7 +316,7 @@ class GeminiModel implements ModelProvider {
             parseRetryAfterSeconds(res.headers.get('retry-after')),
           );
         }
-        return { provider: this.name, promptVersion: PROMPT_VERSION, evidence: emptyEvidence([warning]), modelInput };
+        return { provider: this.name, modelName: this.cfg.geminiModel, promptVersion: PROMPT_VERSION, evidence: emptyEvidence([warning]), modelInput };
       }
       const json = (await res.json()) as {
         candidates?: { content?: { parts?: { text?: string }[] } }[];
@@ -313,7 +326,7 @@ class GeminiModel implements ModelProvider {
       try {
         parsed = JSON.parse(text);
       } catch {
-        return { provider: this.name, promptVersion: PROMPT_VERSION, evidence: emptyEvidence(['gemini_json_parse_failed']), modelRawPreview: text.slice(0, 500), modelInput };
+        return { provider: this.name, modelName: this.cfg.geminiModel, promptVersion: PROMPT_VERSION, evidence: emptyEvidence(['gemini_json_parse_failed']), modelRawPreview: text.slice(0, 500), modelInput };
       }
       const { evidence: validated, diagnostics: parseDiag } = parseEvidenceWithDiagnostics(parsed);
       const evidence = groundClaimedEvidence(validated, input);
@@ -331,6 +344,7 @@ class GeminiModel implements ModelProvider {
       }
       return {
         provider: this.name,
+        modelName: this.cfg.geminiModel,
         promptVersion: PROMPT_VERSION,
         evidence,
         modelRawPreview: text.slice(0, 500),
@@ -342,9 +356,10 @@ class GeminiModel implements ModelProvider {
       if (input.signal.aborted) throw new MediaError('download_timeout', 'gemini_timeout');
       log.warn('gemini_error', { model: this.cfg.geminiModel });
       const fallback = heuristicEvidence(input);
-      if (!fallback.insufficientEvidence && fallback.places.length > 0) {
+      if (!input.targetPlace && !fallback.insufficientEvidence && fallback.places.length > 0) {
         return {
           provider: `${this.name}+heuristic`,
+          modelName: this.cfg.geminiModel,
           promptVersion: PROMPT_VERSION,
           evidence: { ...fallback, warnings: [...fallback.warnings, 'gemini_exception'] },
           modelInput,

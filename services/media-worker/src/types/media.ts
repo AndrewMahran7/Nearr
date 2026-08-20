@@ -165,7 +165,10 @@ export type OcrSegment = {
 /** The media task row as claimed from the DB (subset the worker needs). */
 export type MediaTask = {
   id: string;
-  share_job_id: string;
+  /** Added by the video-AI-note migration; absent legacy/test rows are recognition. */
+  task_kind?: 'recognition' | 'ai_note_enrichment';
+  share_job_id: string | null;
+  saved_place_id?: string | null;
   user_id: string;
   source_url: string;
   canonical_url: string | null;

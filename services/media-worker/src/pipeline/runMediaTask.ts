@@ -40,9 +40,88 @@ export type TaskDeps = {
   ocr: OcrProvider;
 };
 
+type AiNoteTarget = {
+  name: string;
+  category: string | null;
+  formattedAddress: string | null;
+};
+
+/** Re-read the authoritative final place before spending media/provider work.
+ *  A note that arrived concurrently is a successful idempotent no-op. */
+async function loadAiNoteTarget(
+  client: SupabaseClient,
+  task: MediaTask,
+): Promise<AiNoteTarget | null> {
+  if (task.task_kind !== 'ai_note_enrichment') return null;
+  if (!task.saved_place_id) {
+    await setTaskStatus(client, task.id, 'failed', {
+      failure_code: 'ai_note_target_missing',
+      ai_note_outcome: 'target_missing',
+      completed_at: new Date().toISOString(),
+    });
+    return null;
+  }
+
+  const { data, error } = await client
+    .from('saved_places')
+    .select('id,user_id,source_url,source_type,ai_note,category,place:places(name,formatted_address)')
+    .eq('id', task.saved_place_id)
+    .eq('user_id', task.user_id)
+    .maybeSingle();
+  if (error) throw new MediaError('provider_unavailable', 'ai_note_target_lookup_failed');
+
+  const place = Array.isArray(data?.place) ? data.place[0] : data?.place;
+  if (!data?.id || !place?.name) {
+    await setTaskStatus(client, task.id, 'failed', {
+      failure_code: 'ai_note_target_missing',
+      ai_note_outcome: 'target_missing',
+      completed_at: new Date().toISOString(),
+    });
+    return null;
+  }
+  if (typeof data.ai_note === 'string' && data.ai_note.trim()) {
+    await setTaskStatus(client, task.id, 'completed', {
+      progress_stage: 'cleanup',
+      failure_code: null,
+      ai_note_outcome: 'already_present',
+      completed_at: new Date().toISOString(),
+    });
+    return null;
+  }
+  const representedSource = task.canonical_url || task.source_url;
+  if (
+    typeof data.source_url !== 'string' ||
+    data.source_url !== representedSource ||
+    (data.source_type ?? '').trim().toLowerCase() === 'manual'
+  ) {
+    await setTaskStatus(client, task.id, 'completed', {
+      progress_stage: 'cleanup',
+      failure_code: 'ai_note_source_changed',
+      ai_note_outcome: 'stale_source',
+      completed_at: new Date().toISOString(),
+    });
+    return null;
+  }
+
+  return {
+    name: place.name,
+    category: data.category ?? null,
+    formattedAddress: place.formatted_address ?? null,
+  };
+}
+
 export type TaskFailurePlan =
   | { action: 'requeue'; delaySeconds: number }
   | { action: 'finalize'; outcome: 'unavailable' | 'failed' };
+
+export function shouldRequeueAiNoteFinalizerFailure(
+  media: MediaError,
+  task: Pick<MediaTask, 'task_kind' | 'attempts' | 'max_attempts'>,
+): boolean {
+  return task.task_kind === 'ai_note_enrichment' &&
+    media.code === 'finalizer_unavailable' &&
+    task.attempts < task.max_attempts;
+}
 
 export function planTaskFailure(
   media: MediaError,
@@ -117,6 +196,9 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
   const errors: string[] = [];
 
   try {
+    const aiNoteTarget = await loadAiNoteTarget(client, task);
+    if (task.task_kind === 'ai_note_enrichment' && !aiNoteTarget) return;
+
     // 1. Retrieve public media to the isolated temp dir.
     await setProgress(client, task, 'retrieving_media');
     const rawUrl = task.canonical_url || task.source_url;
@@ -140,7 +222,7 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
     diagnostics.resolverName = resolver.name;
 
     const media = await resolver.resolve({
-      jobId: task.share_job_id,
+      jobId: task.share_job_id ?? task.id,
       sourceUrl: task.source_url,
       canonicalUrl: task.canonical_url ?? undefined,
       workDir: jobTemp.dir,
@@ -220,6 +302,7 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
       metadataTitle: media.metadataTitle,
       metadataDescription: media.metadataDescription,
       metadataLocation: media.metadataLocation,
+      targetPlace: aiNoteTarget,
       signal: controller.signal,
     };
     const rawAnalysis = await deps.model.analyze(analyzeInput);
@@ -232,6 +315,7 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
       evidence: groundClaimedEvidence(rawAnalysis.evidence, analyzeInput),
     };
     diagnostics.modelProvider = analysis.provider;
+    diagnostics.modelName = analysis.modelName;
     diagnostics.promptVersion = analysis.promptVersion;
     if (analysis.modelRawPreview) diagnostics.modelOutput = analysis.modelRawPreview;
     // Structured validation outcome. Answers "did the model emit places, and
@@ -279,7 +363,11 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
 
     // 7. Verify through Nearr's EXISTING resolver + safeToAutoSave + save path.
     await setProgress(client, task, 'verifying_place');
-    const hasEvidence = !analysis.evidence.insufficientEvidence && analysis.evidence.places.length > 0;
+    const hasEvidence = task.task_kind === 'ai_note_enrichment'
+      ? analysis.evidence.places.some(
+          (place) => !!place.memoryCue?.trim() && place.memoryCueEvidence.length > 0,
+        )
+      : !analysis.evidence.insufficientEvidence && analysis.evidence.places.length > 0;
     const outcome: FinalizeOutcome = hasEvidence ? 'evidence' : 'insufficient_evidence';
     const fin = await finalizeWithRetry(() =>
       verifyPlaceEvidence(cfg, {
@@ -344,6 +432,25 @@ async function handleTaskError(
     attempts: task.attempts,
     max: task.max_attempts,
   });
+
+  // The place save already succeeded. A transient finalizer outage must not
+  // turn a valid generated cue into a terminal blank; reuse the same bounded
+  // queue backoff as provider/download failures. Recognition keeps its existing
+  // behavior unchanged.
+  if (shouldRequeueAiNoteFinalizerFailure(media, task)) {
+    await requeueTask(
+      client,
+      task.id,
+      computeRetryDelaySeconds(
+        task.attempts,
+        cfg.retryBaseSeconds,
+        cfg.retryMaxSeconds,
+        media.retryAfterSeconds,
+      ),
+      media.code,
+    );
+    return;
+  }
 
   const plan = planTaskFailure(media, task, cfg);
   if (plan.action === 'requeue') {

@@ -472,6 +472,215 @@ async function persistBlockedPlaceResult(
 }
 
 const POST_SAVE_ENRICHMENT_RULE_VERSION = 'post-save-enrichment.v1';
+const VIDEO_AI_NOTE_RULE_VERSION = 'video-ai-note-enrichment.v1';
+
+/**
+ * Finalize the supplemental task against the authoritative saved place. This
+ * path never invokes recognition or save/upsert logic: the place is final, and
+ * the only permitted product-data write is fill-if-blank `ai_note` while the
+ * same source URL is still attached.
+ */
+async function finalizeVideoAiNoteTask(
+  admin: any,
+  task: any,
+  body: any,
+  logFinalStatus: (status: string, errorClass?: string | null) => void,
+): Promise<Response> {
+  if (['completed', 'needs_help', 'failed', 'cancelled'].includes(task.status)) {
+    logFinalStatus('idempotent_task_terminal');
+    return json({ ok: true, idempotent: true, taskStatus: task.status });
+  }
+
+  const { data: saved, error: savedError } = await admin
+    .from('saved_places')
+    .select('id,user_id,source_url,source_type,notes,ai_note,place:places(id,name)')
+    .eq('id', task.saved_place_id)
+    .eq('user_id', task.user_id)
+    .maybeSingle();
+  if (savedError) throw new Error(`ai_note_target_lookup_failed: ${savedError.message}`);
+  const finalPlace = Array.isArray(saved?.place) ? saved.place[0] : saved?.place;
+  if (!saved?.id || !finalPlace?.name) {
+    await markMediaTask(admin, task.id, 'failed', {
+      failure_code: 'ai_note_target_missing',
+      ai_note_outcome: 'target_missing',
+      progress_stage: 'cleanup',
+      completed_at: nowIso(),
+    });
+    logFinalStatus('target_missing', 'permanent_processing_error');
+    return json({ ok: true, route: 'ai_note_enrichment', enriched: false, reason: 'target_missing' });
+  }
+
+  if ((saved.ai_note ?? '').trim()) {
+    await markMediaTask(admin, task.id, 'completed', {
+      failure_code: null,
+      ai_note_outcome: 'already_present',
+      progress_stage: 'cleanup',
+      completed_at: nowIso(),
+    });
+    logFinalStatus('already_present');
+    return json({ ok: true, route: 'ai_note_enrichment', enriched: false, alreadyPresent: true });
+  }
+
+  const representedSource = task.canonical_url || task.source_url;
+  if (
+    !representedSource ||
+    saved.source_url !== representedSource ||
+    (saved.source_type ?? '').trim().toLowerCase() === 'manual'
+  ) {
+    await markMediaTask(admin, task.id, 'completed', {
+      failure_code: 'ai_note_source_changed',
+      ai_note_outcome: 'stale_source',
+      progress_stage: 'cleanup',
+      completed_at: nowIso(),
+    });
+    logFinalStatus('stale_source', 'claim_conflict');
+    return json({ ok: true, route: 'ai_note_enrichment', enriched: false, reason: 'stale_source' });
+  }
+
+  const outcome = typeof body.outcome === 'string' ? body.outcome : 'failed';
+  const parsed = outcome === 'evidence'
+    ? parseMediaEvidence(body.evidence)
+    : ({ ok: false, error: outcome } as const);
+  const targetName = normalizeVenueName(finalPlace.name);
+  const matches = parsed.ok
+    ? parsed.value.places.filter(
+        (place: any) => normalizeVenueName(place.name ?? '') === targetName,
+      )
+    : [];
+
+  const targetMatch = matches.length === 1
+    ? 'matched'
+    : matches.length > 1
+      ? 'ambiguous'
+      : 'missing';
+  const noteResult: AiPlaceNoteResult = matches.length === 1
+    ? evaluateAiPlaceNote({
+        placeName: finalPlace.name,
+        proposedNote: matches[0].memoryCue,
+        evidence: matches[0].memoryCueEvidence ?? [],
+      })
+    : { note: null, status: 'insufficient_evidence', reason: null };
+
+  const diagnostics = body?.diagnostics ?? {};
+  const diagnosticPatch = {
+    analysis_provider: typeof diagnostics.modelProvider === 'string'
+      ? diagnostics.modelProvider.slice(0, 120)
+      : null,
+    analysis_model: typeof diagnostics.modelName === 'string'
+      ? diagnostics.modelName.slice(0, 160)
+      : null,
+    prompt_version: typeof diagnostics.promptVersion === 'string'
+      ? diagnostics.promptVersion.slice(0, 160)
+      : null,
+    latency_ms: Number.isFinite(diagnostics.durationMs)
+      ? Math.max(0, Math.round(diagnostics.durationMs))
+      : null,
+  };
+
+  if (!noteResult.note) {
+    const failureCode = outcome !== 'evidence'
+      ? `ai_note_${outcome}`
+      : targetMatch !== 'matched'
+        ? `ai_note_target_${targetMatch}`
+        : `ai_note_${noteResult.status}${noteResult.reason ? `_${noteResult.reason}` : ''}`;
+    await markMediaTask(admin, task.id, 'failed', {
+      ...diagnosticPatch,
+      failure_code: failureCode.slice(0, 200),
+      ai_note_outcome: noteResult.status,
+      progress_stage: 'cleanup',
+      locked_until: null,
+      completed_at: nowIso(),
+    });
+    console.log(JSON.stringify({
+      event: 'video_ai_note_enrichment',
+      savedPlaceId: saved.id,
+      taskId: task.id,
+      videoDerived: true,
+      generationAttempted: outcome === 'evidence',
+      generationOutcome: noteResult.status,
+      targetMatch,
+      retryCount: Number(task.attempts) || 0,
+      provider: diagnosticPatch.analysis_provider,
+      model: diagnosticPatch.analysis_model,
+      latencyMs: diagnosticPatch.latency_ms,
+      errorClass: failureCode,
+      userNotePreserved: true,
+      ruleVersion: VIDEO_AI_NOTE_RULE_VERSION,
+    }));
+    logFinalStatus('note_unavailable', 'permanent_processing_error');
+    return json({ ok: true, route: 'ai_note_enrichment', enriched: false, reason: failureCode });
+  }
+
+  let update = admin
+    .from('saved_places')
+    .update({ ai_note: noteResult.note })
+    .eq('id', saved.id)
+    .eq('user_id', saved.user_id)
+    .eq('source_url', representedSource);
+  update = saved.ai_note == null
+    ? update.is('ai_note', null)
+    : update.eq('ai_note', saved.ai_note);
+  const { data: updated, error: updateError } = await update.select('id');
+  if (updateError) throw new Error(`ai_note_write_failed: ${updateError.message}`);
+
+  if (!Array.isArray(updated) || updated.length !== 1) {
+    const { data: current } = await admin
+      .from('saved_places')
+      .select('ai_note,source_url')
+      .eq('id', saved.id)
+      .maybeSingle();
+    if ((current?.ai_note ?? '').trim()) {
+      await markMediaTask(admin, task.id, 'completed', {
+        ...diagnosticPatch,
+        failure_code: null,
+        ai_note_outcome: 'already_present',
+        progress_stage: 'cleanup',
+        locked_until: null,
+        completed_at: nowIso(),
+      });
+      logFinalStatus('concurrent_note_preserved');
+      return json({ ok: true, route: 'ai_note_enrichment', enriched: false, alreadyPresent: true });
+    }
+    await markMediaTask(admin, task.id, 'failed', {
+      ...diagnosticPatch,
+      failure_code: 'ai_note_guard_conflict',
+      ai_note_outcome: 'guard_conflict',
+      progress_stage: 'cleanup',
+      locked_until: null,
+      completed_at: nowIso(),
+    });
+    logFinalStatus('guard_conflict', 'claim_conflict');
+    return json({ ok: true, route: 'ai_note_enrichment', enriched: false, reason: 'guard_conflict' });
+  }
+
+  await markMediaTask(admin, task.id, 'completed', {
+    ...diagnosticPatch,
+    failure_code: null,
+    ai_note_outcome: 'generated',
+    progress_stage: 'cleanup',
+    locked_until: null,
+    completed_at: nowIso(),
+  });
+  console.log(JSON.stringify({
+    event: 'video_ai_note_enrichment',
+    savedPlaceId: saved.id,
+    taskId: task.id,
+    videoDerived: true,
+    aiNotePresent: true,
+    generationAttempted: true,
+    generationOutcome: 'generated',
+    targetMatch,
+    retryCount: Number(task.attempts) || 0,
+    provider: diagnosticPatch.analysis_provider,
+    model: diagnosticPatch.analysis_model,
+    latencyMs: diagnosticPatch.latency_ms,
+    errorClass: null,
+    userNotePreserved: true,
+    ruleVersion: VIDEO_AI_NOTE_RULE_VERSION,
+  }));
+  logFinalStatus('note_stored');
+  return json({ ok: true, route: 'ai_note_enrichment', enriched: true, savedPlaceId: saved.id });
+}
 
 /**
  * Enrich a metadata-auto-saved row without invoking any save/upsert path.
@@ -757,6 +966,10 @@ async function finalizeMediaTask(
       errorClass,
     }));
   };
+
+  if (task.task_kind === 'ai_note_enrichment') {
+    return await finalizeVideoAiNoteTask(admin, task, body, logFinalStatus);
+  }
 
   const outcome = typeof body.outcome === 'string' ? body.outcome : 'evidence';
   const parsed = outcome === 'evidence'
