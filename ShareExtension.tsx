@@ -157,6 +157,7 @@ export type ProcessSharedUrlResult =
   | { status: 'saved'; savedPlaceId?: string; message?: string }
   | { status: 'ambiguous'; candidates?: PlaceCandidate[]; message?: string }
   | { status: 'failed_requires_app'; message?: string }
+  | { status: 'config_error'; codes: string }
   | { status: 'open_app'; reason?: string };
 
 /**
@@ -189,6 +190,26 @@ async function processSharedUrl(
     `[share-extension-debug] entry url_host=${hostFromUrl(url) ?? '(unknown)'}` +
       ` backend_configured=${!!endpoint} request_id=${requestId}`,
   );
+  // The legacy process-share-link path is feature-flagged, but a missing flag
+  // must not weaken the lane boundary. Apply the same exact-project guard as
+  // create-share-job BEFORE this function can fetch or hand off to a host app
+  // built with the same incoherent configuration.
+  const blocking = getBlockingEnvironmentViolations();
+  if (blocking.length > 0) {
+    const codes = blocking.map((violation) => violation.code).join(',');
+    console.log(`[share-extension] legacy_submit=false reason=config_error codes=${codes}`);
+    onDiagnostics?.({
+      backendConfigured: !!endpoint,
+      backendUrlHost: extensionUrlHost,
+      authTokenPresent: false,
+      nativeAvailable: sharedAuth.isAvailable(),
+      didCallProcessShareLink: false,
+      httpStatus: null,
+      handoffReason: 'config_error',
+      requestId,
+    });
+    return { status: 'config_error', codes };
+  }
   if (!endpoint) {
     console.log('[share-extension-debug] handoff_reason=backend_not_configured');
     onDiagnostics?.({
@@ -410,6 +431,12 @@ function LegacyShareExtension(props: InitialProps) {
       if (cancelled) return;
 
       switch (result.status) {
+        case 'config_error': {
+          // Do not open the host app: it was built from the same incoherent
+          // lane declaration and could repeat the unsafe request.
+          setUi({ kind: 'error', message: `Development configuration blocked (${result.codes})` });
+          return;
+        }
         case 'saved': {
           // Backend handled it confidently. Reuse the map focus deep link so
           // the host app opens directly to the place the extension just saved.

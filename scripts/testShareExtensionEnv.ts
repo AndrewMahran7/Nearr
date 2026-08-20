@@ -61,6 +61,10 @@ function code(source: string): string {
 }
 
 const extensionCode = code(EXTENSION);
+const legacyCode = extensionCode.slice(
+  extensionCode.indexOf('async function processSharedUrl('),
+  extensionCode.indexOf('type ExtensionDiagnostics'),
+);
 
 // ---- The build-time-only assumption this contract rests on ------------------
 
@@ -106,6 +110,17 @@ check(
   'the environment guard runs BEFORE createShareJob',
   guardIndex > -1 && submitIndex > -1 && guardIndex < submitIndex,
   `guard@${guardIndex} submit@${submitIndex}`,
+);
+const legacyGuardIndex = legacyCode.indexOf('getBlockingEnvironmentViolations()');
+const legacyFetchIndex = legacyCode.indexOf('fetch(endpoint');
+check(
+  'the environment guard also runs before legacy process-share-link fetch',
+  legacyGuardIndex > -1 && legacyFetchIndex > -1 && legacyGuardIndex < legacyFetchIndex,
+  `guard@${legacyGuardIndex} fetch@${legacyFetchIndex}`,
+);
+check(
+  'legacy config errors never hand off to the equally misconfigured host',
+  /case 'config_error':[\s\S]{0,400}setUi\([\s\S]{0,300}return;/.test(extensionCode),
 );
 
 // ---- No endpoint may be baked in --------------------------------------------
