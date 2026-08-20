@@ -27,6 +27,12 @@ export type CreateShareJobResult =
       requestId?: string;
     };
 
+// Bound a request whose native networking callback never reaches JavaScript.
+// Host callers reconcile this indeterminate result against the durable queue
+// by clientRequestId; a timeout alone is therefore not treated as proof that
+// create-share-job failed.
+export const DEFAULT_SHARE_JOB_TIMEOUT_MS = 10_000;
+
 function boundedCode(value: unknown): string | undefined {
   if (typeof value !== 'string') return undefined;
   const code = value.trim();
@@ -52,7 +58,10 @@ export async function createShareJob(args: {
   }
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), args.timeoutMs ?? 10_000);
+  let timeout: ReturnType<typeof setTimeout> | null = setTimeout(
+    () => controller.abort(),
+    args.timeoutMs ?? DEFAULT_SHARE_JOB_TIMEOUT_MS,
+  );
   try {
     const res = await fetch(endpoint, {
       method: 'POST',
@@ -66,6 +75,14 @@ export async function createShareJob(args: {
       }),
       signal: controller.signal,
     });
+
+    // The network/bridge acknowledgement has arrived. Do not let its old
+    // deadline abort response parsing and turn a durable HTTP 200 into a false
+    // timeout. From here the parsed response contract decides success/failure.
+    if (timeout) {
+      clearTimeout(timeout);
+      timeout = null;
+    }
 
     const json = (await res.json().catch(() => null)) as
       | { jobId?: string; status?: string; duplicate?: boolean; error?: string }
@@ -95,9 +112,14 @@ export async function createShareJob(args: {
       duplicate: !!json.duplicate,
     };
   } catch (err) {
-    const isAbort = err instanceof Error && err.name === 'AbortError';
-    return { ok: false, reason: isAbort ? 'timeout' : 'network' };
+    // React Native can surface an AbortController cancellation as either an
+    // AbortError or TypeError("Network request failed"). The signal is the
+    // authoritative indication that our deadline, rather than the network,
+    // caused the failure.
+    const timedOut =
+      controller.signal.aborted || (err instanceof Error && err.name === 'AbortError');
+    return { ok: false, reason: timedOut ? 'timeout' : 'network' };
   } finally {
-    clearTimeout(timeout);
+    if (timeout) clearTimeout(timeout);
   }
 }
