@@ -100,6 +100,17 @@ function assertEnvironmentIsCoherent() {
 // bundle ID, and `nearrdev://auth-callback` must be an allowed Supabase Auth
 // redirect. The separate `scheme` is what stops iOS from arbitrarily handing a
 // `nearr://` deep link to whichever of the two apps it feels like.
+// SIMPLE MODE (2026-08-19): eas.json deliberately does NOT set APP_VARIANT on
+// the development or preview profiles, so both build the existing identity and
+// the dev build REPLACES App Store Nearr on the test device. Isolation comes
+// from the EAS environment (which points at the Nearr-Dev Supabase project),
+// not from the bundle identifier — requiring the Apple portal work below would
+// have meant no development build at all.
+//
+// To restore side-by-side once that work is done, add
+//   "env": { "APP_VARIANT": "dev" }
+// back to those two build profiles. Everything below stays inert until then.
+// Note: eas.json rejects unknown keys, so this note cannot live there.
 const IS_DEV_VARIANT = (process.env.APP_VARIANT || '').trim().toLowerCase() === 'dev';
 
 module.exports = ({ config }) => {

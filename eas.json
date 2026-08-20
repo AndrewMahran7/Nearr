@@ -1,21 +1,4 @@
 {
-  "//": [
-    "SIMPLE MODE (2026-08-19): development and preview build the EXISTING native",
-    "identity (com.nearr.ios). The dev app therefore REPLACES App Store Nearr on",
-    "the test device rather than installing beside it. That is deliberate: the",
-    "side-by-side variant needs com.nearr.ios.dev, com.nearr.ios.dev.ShareExtension",
-    "and group.com.nearr.ios.dev registered in the Apple Developer portal, plus the",
-    "dev bundle ID accepted by Supabase's Apple provider and nearrdev:// added to",
-    "the Auth redirect allowlist. None of that exists yet, and requiring it would",
-    "mean no dev build at all. Isolation comes from the ENVIRONMENT, not the bundle",
-    "ID: these profiles resolve to the `development`/`preview` EAS environments,",
-    "which point at Nearr-Dev.",
-    "TO RE-ENABLE side-by-side later, after the Apple portal work: add",
-    "  \"env\": { \"APP_VARIANT\": \"dev\" }",
-    "back to the development and preview profiles. app.config.js still carries the",
-    "whole variant mechanism and is inert without that flag.",
-    "See docs/DEVELOPMENT_WORKFLOW.md -> Side-by-side dev app."
-  ],
   "cli": {
     "version": ">= 18.8.1",
     "appVersionSource": "remote"
