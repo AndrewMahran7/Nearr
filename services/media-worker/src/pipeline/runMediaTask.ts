@@ -27,6 +27,7 @@ import {
 import { cleanupMedia } from './cleanupMedia.js';
 import {
   renewAiNoteRetryCycle,
+  recordAiNoteEvidenceSnapshot,
   requeueAiNoteTask,
   setProgress,
   setTaskStatus,
@@ -36,6 +37,14 @@ import type { TranscriptionProvider } from '../providers/transcription.js';
 import { groundClaimedEvidence, type ModelProvider } from '../providers/model.js';
 import { type OcrProvider, deduplicateOcrSegments } from '../providers/ocr.js';
 import { selectInstagramContentUrl } from '../resolvers/instagramUrl.js';
+import { sourceDescriptionForModel } from '../util/sourceText.js';
+import {
+  buildTargetedNoteContext,
+  findTargetEvidenceHandoff,
+  mergeTargetEvidence,
+  sanitizeTargetEvidence,
+  type TargetEvidenceHandoff,
+} from './targetedNoteContext.js';
 
 export type TaskDeps = {
   cfg: WorkerConfig;
@@ -48,9 +57,41 @@ export type TaskDeps = {
 
 type AiNoteTarget = {
   name: string;
+  googlePlaceId: string | null;
   category: string | null;
   formattedAddress: string | null;
+  handoff: TargetEvidenceHandoff | null;
 };
+
+async function loadRetainedHandoff(
+  client: SupabaseClient,
+  task: MediaTask,
+  target: { name: string; googlePlaceId: string | null },
+): Promise<TargetEvidenceHandoff | null> {
+  const retained = sanitizeTargetEvidence(task.evidence_snapshot);
+  if (retained.length) {
+    return {
+      evidence: retained,
+      timestamps: [...new Set(retained
+        .map((item) => item.timestampSeconds)
+        .filter((value): value is number => typeof value === 'number'))].sort((a, b) => a - b),
+    };
+  }
+
+  const source = task.canonical_url || task.source_url;
+  const payloads: unknown[] = [];
+  for (const field of ['canonical_url', 'source_url'] as const) {
+    const { data } = await client
+      .from('share_jobs')
+      .select('candidate_payload')
+      .eq('user_id', task.user_id)
+      .eq(field, source)
+      .order('created_at', { ascending: false })
+      .limit(10);
+    for (const row of data ?? []) payloads.push(row?.candidate_payload);
+  }
+  return findTargetEvidenceHandoff(payloads, target);
+}
 
 /** Re-read the authoritative final place before spending media/provider work.
  *  A note that arrived concurrently is a successful idempotent no-op. */
@@ -70,7 +111,7 @@ async function loadAiNoteTarget(
 
   const { data, error } = await client
     .from('saved_places')
-    .select('id,user_id,place_id,source_url,source_type,ai_note,category,place:places(name,formatted_address)')
+    .select('id,user_id,place_id,source_url,source_type,ai_note,category,place:places(name,google_place_id,formatted_address)')
     .eq('id', task.saved_place_id)
     .eq('user_id', task.user_id)
     .maybeSingle();
@@ -110,11 +151,18 @@ async function loadAiNoteTarget(
     return null;
   }
 
-  return {
+  const target: AiNoteTarget = {
     name: place.name,
+    googlePlaceId: place.google_place_id ?? null,
     category: data.category ?? null,
     formattedAddress: place.formatted_address ?? null,
+    handoff: null,
   };
+  target.handoff = await loadRetainedHandoff(client, task, target);
+  if (target.handoff?.evidence.length) {
+    await recordAiNoteEvidenceSnapshot(client, task, target.handoff.evidence, false);
+  }
+  return target;
 }
 
 export type TaskFailurePlan =
@@ -199,12 +247,69 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
   const jobTemp = await createJobTemp(cfg.tempDir, task.id);
   const startedAt = Date.now();
   const diagnostics: Record<string, unknown> = {};
+  let analysisAttempted = false;
   const warnings: string[] = [];
   const errors: string[] = [];
 
   try {
     const aiNoteTarget = await loadAiNoteTarget(client, task);
     if (task.task_kind === 'ai_note_enrichment' && !aiNoteTarget) return;
+
+    // Cheapest post-save path: ask for a cue from the bounded place-specific
+    // observations already retained by recognition. Only if this cannot support
+    // a useful cue do we reacquire media and inspect scene-scoped frames.
+    if (
+      task.task_kind === 'ai_note_enrichment' &&
+      task.ai_note_outcome !== 'retry_after_generation' &&
+      aiNoteTarget?.handoff?.evidence.length
+    ) {
+      await setProgress(client, task, 'analyzing_evidence');
+      const preflight = await deps.model.analyze({
+        platform: task.platform,
+        canonicalUrl: task.canonical_url || task.source_url,
+        transcript: [],
+        ocr: [],
+        ocrExtracted: false,
+        frames: [],
+        metadataTitle: null,
+        metadataDescription: null,
+        targetPlace: {
+          name: aiNoteTarget.name,
+          category: aiNoteTarget.category,
+          formattedAddress: aiNoteTarget.formattedAddress,
+        },
+        retainedEvidence: aiNoteTarget.handoff.evidence,
+        signal: controller.signal,
+      });
+      const preflightHasCue = preflight.evidence.places.some(
+        (place) => !!place.memoryCue?.trim() && place.memoryCueEvidence.length > 0,
+      );
+      diagnostics.noteStructuredEvidencePreflight = true;
+      diagnostics.noteGenerationPasses = 1;
+      diagnostics.noteSceneScoped = true;
+      diagnostics.noteInputFrameCount = 0;
+      diagnostics.noteInputEvidenceCount = aiNoteTarget.handoff.evidence.length;
+      diagnostics.modelProvider = preflight.provider;
+      diagnostics.modelName = preflight.modelName;
+      diagnostics.promptVersion = preflight.promptVersion;
+      if (preflightHasCue) {
+        diagnostics.durationMs = Date.now() - startedAt;
+        const fin = await finalizeWithRetry(() => verifyPlaceEvidence(cfg, {
+          taskId: task.id,
+          targetPlaceId: task.target_place_id ?? null,
+          targetSourceUrl: task.canonical_url || task.source_url,
+          outcome: 'evidence',
+          evidence: preflight.evidence,
+          diagnostics,
+          signal: controller.signal,
+        }));
+        if (!fin.ok) {
+          throw new MediaError('download_failed', `verifying_place:finalize_http_${fin.status}`, fin.retryAfterSeconds);
+        }
+        return;
+      }
+      diagnostics.noteStructuredEvidenceInsufficient = true;
+    }
 
     // 1. Retrieve public media to the isolated temp dir.
     await setProgress(client, task, 'retrieving_media');
@@ -282,6 +387,7 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
     }
     diagnostics.transcriptionProvider = transcript.provider;
     diagnostics.transcriptSegmentCount = transcript.segments.length;
+    diagnostics.metadataTextPresent = !!media.metadataTitle || !!media.metadataDescription;
     if (transcript.status === 'failed') warnings.push('transcription_failed');
 
     // 4. Frames + perceptual dedup.
@@ -299,28 +405,97 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
 
     // 6. Analyze → propose structured place evidence.
     await setProgress(client, task, 'analyzing_evidence');
-    const analyzeInput = {
-      platform: task.platform,
-      canonicalUrl: media.canonicalUrl,
-      transcript: transcript.segments,
-      ocr,
-      ocrExtracted: deps.ocr.extractsVisibleText,
-      frames,
-      metadataTitle: media.metadataTitle,
-      metadataDescription: media.metadataDescription,
-      metadataLocation: media.metadataLocation,
-      targetPlace: aiNoteTarget,
-      signal: controller.signal,
+    analysisAttempted = true;
+    diagnostics.analysisAttempted = true;
+    const primaryContext = task.task_kind === 'ai_note_enrichment'
+      ? buildTargetedNoteContext({
+          frames,
+          transcript: transcript.segments,
+          ocr,
+          handoff: aiNoteTarget?.handoff,
+          expanded: task.ai_note_outcome === 'retry_after_generation',
+          maxFrames: cfg.maxSelectedFrames,
+        })
+      : {
+          frames,
+          transcript: transcript.segments,
+          ocr,
+          evidence: [],
+          sceneScoped: false,
+        };
+    if (task.task_kind === 'ai_note_enrichment') {
+      const acquired = frames.length > 0 || transcript.segments.length > 0 || ocr.length > 0 ||
+        !!media.metadataTitle || !!media.metadataDescription || primaryContext.evidence.length > 0;
+      await recordAiNoteEvidenceSnapshot(client, task, primaryContext.evidence, acquired);
+    }
+    const analyzeTarget = async (context: typeof primaryContext) => {
+      const analyzeInput = {
+        platform: task.platform,
+        canonicalUrl: media.canonicalUrl,
+        transcript: context.transcript,
+        ocr: context.ocr,
+        ocrExtracted: deps.ocr.extractsVisibleText,
+        frames: context.frames,
+        metadataTitle: context.sceneScoped ? null : media.metadataTitle,
+        metadataDescription: context.sceneScoped
+          ? null
+          : sourceDescriptionForModel(media.metadataDescription),
+        metadataLocation: context.sceneScoped ? null : media.metadataLocation,
+        targetPlace: aiNoteTarget
+          ? {
+              name: aiNoteTarget.name,
+              category: aiNoteTarget.category,
+              formattedAddress: aiNoteTarget.formattedAddress,
+            }
+          : null,
+        retainedEvidence: context.evidence,
+        signal: controller.signal,
+      };
+      const rawAnalysis = await deps.model.analyze(analyzeInput);
+      return {
+        ...rawAnalysis,
+        evidence: groundClaimedEvidence(rawAnalysis.evidence, analyzeInput),
+      };
     };
-    const rawAnalysis = await deps.model.analyze(analyzeInput);
-    // Apply the same provenance check after EVERY provider, including Vayrin.
-    // A model-labelled caption/speech/OCR clue must occur in that real source;
-    // frame observations remain admissible as visual evidence. This is
-    // intentionally idempotent for Gemini, which already grounds internally.
-    const analysis = {
-      ...rawAnalysis,
-      evidence: groundClaimedEvidence(rawAnalysis.evidence, analyzeInput),
-    };
+    let analysis = await analyzeTarget(primaryContext);
+    diagnostics.noteGenerationPasses = (Number(diagnostics.noteGenerationPasses) || 0) + 1;
+    diagnostics.noteSceneScoped = primaryContext.sceneScoped;
+    diagnostics.noteQualityRetryExpanded = task.ai_note_outcome === 'retry_after_generation';
+    diagnostics.noteInputFrameCount = primaryContext.frames.length;
+    diagnostics.noteInputEvidenceCount = primaryContext.evidence.length;
+
+    const focusedCueMissing = task.task_kind === 'ai_note_enrichment' &&
+      !analysis.evidence.places.some(
+        (place) => !!place.memoryCue?.trim() && place.memoryCueEvidence.length > 0,
+      );
+    if (focusedCueMissing && primaryContext.sceneScoped) {
+      const expandedContext = buildTargetedNoteContext({
+        frames,
+        transcript: transcript.segments,
+        ocr,
+        handoff: aiNoteTarget?.handoff,
+        expanded: true,
+        maxFrames: cfg.maxSelectedFrames,
+      });
+      const widened = expandedContext.frames.length > primaryContext.frames.length ||
+        expandedContext.transcript.length > primaryContext.transcript.length ||
+        expandedContext.ocr.length > primaryContext.ocr.length;
+      if (widened) {
+        analysis = await analyzeTarget(expandedContext);
+        diagnostics.noteGenerationPasses = (Number(diagnostics.noteGenerationPasses) || 0) + 1;
+        diagnostics.noteInputFrameCount = expandedContext.frames.length;
+        diagnostics.noteInputEvidenceCount = expandedContext.evidence.length;
+        warnings.push('target_scene_expanded');
+      }
+    }
+
+    if (task.task_kind === 'ai_note_enrichment' && aiNoteTarget) {
+      const generated = analysis.evidence.places
+        .filter((place) => place.name.trim().toLowerCase() === aiNoteTarget.name.trim().toLowerCase())
+        .flatMap((place) => [...place.explicitEvidence, ...place.memoryCueEvidence]);
+      const retained = mergeTargetEvidence(primaryContext.evidence, generated);
+      await recordAiNoteEvidenceSnapshot(client, task, retained, true);
+    }
     diagnostics.modelProvider = analysis.provider;
     diagnostics.modelName = analysis.modelName;
     diagnostics.promptVersion = analysis.promptVersion;
@@ -382,6 +557,8 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
         targetPlaceId: task.target_place_id ?? null,
         targetSourceUrl: task.canonical_url || task.source_url,
         outcome,
+        failureCode: outcome === 'insufficient_evidence' ? 'insufficient_evidence' : undefined,
+        analysisAttempted,
         evidence: hasEvidence ? analysis.evidence : undefined,
         // Already fetched during retrieval — no additional round trip.
         sourceMetadata: {
@@ -418,7 +595,7 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
     errors.push(isMediaError(err) ? err.code : 'unknown_error');
     diagnostics.warnings = warnings.slice(0, 24);
     diagnostics.errors = errors.slice(0, 24);
-    await handleTaskError(deps, task, err, diagnostics);
+    await handleTaskError(deps, task, err, diagnostics, analysisAttempted);
   } finally {
     clearTimeout(timer);
     await cleanupMedia(jobTemp, task.id);
@@ -430,6 +607,7 @@ async function handleTaskError(
   task: MediaTask,
   err: unknown,
   diagnostics: Record<string, unknown>,
+  analysisAttempted: boolean,
 ): Promise<void> {
   const { cfg, client } = deps;
   const media = isMediaError(err) ? err : new MediaError('download_failed', 'unknown');

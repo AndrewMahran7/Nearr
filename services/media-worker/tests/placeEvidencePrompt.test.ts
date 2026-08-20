@@ -8,14 +8,15 @@ import {
 } from '../src/prompts/placeEvidencePrompt.js';
 
 test('post-save hook prompt is lively, concise, grounded, and visual-aware', () => {
-  assert.equal(PROMPT_VERSION, 'media-place-evidence-2026-08-19.v9-targeted-note');
+  assert.equal(PROMPT_VERSION, 'media-place-evidence-2026-08-19.v10-post-save-visual-note');
   assert.match(PLACE_EVIDENCE_SYSTEM_PROMPT, /brewery, winery, dessert/);
   assert.match(PLACE_EVIDENCE_SYSTEM_PROMPT, /waterfall, lake, marina, island/);
   assert.match(PLACE_EVIDENCE_SYSTEM_PROMPT, /Use other only when/i);
   assert.match(PLACE_EVIDENCE_SYSTEM_PROMPT, /source=frame for an obvious visual feature/);
   assert.match(PLACE_EVIDENCE_SYSTEM_PROMPT, /never an unseen ingredient/i);
   assert.match(PLACE_EVIDENCE_SYSTEM_PROMPT, /Never use another place's segment/);
-  assert.match(PLACE_EVIDENCE_SYSTEM_PROMPT, /Missing is better than filler/);
+  assert.match(PLACE_EVIDENCE_SYSTEM_PROMPT, /Missing is better than filler/i);
+  assert.match(PLACE_EVIDENCE_SYSTEM_PROMPT, /ordinary recognition mode return memoryCue=null/i);
 });
 
 // --- memoryCue persona -------------------------------------------------------
@@ -149,5 +150,23 @@ test('targeted note context treats the final saved place as authoritative', () =
   assert.match(ctx, /Do not identify, replace,\s*\ncorrect, or suggest a different venue/i);
   assert.match(ctx, /exactly one place object/i);
   assert.match(ctx, /Never borrow a sibling place's segment/i);
-  assert.match(ctx, /memoryCue=null/i);
+  assert.match(ctx, /Return null only when no useful place-specific detail/i);
+});
+
+test('targeted context carries bounded place-scoped evidence without requiring explicit intent', () => {
+  const ctx = buildUserContext({
+    platform: 'instagram',
+    transcriptText: '',
+    ocrText: '',
+    targetPlace: { name: 'Cliff Cove', category: 'beach' },
+    retainedEvidence: [{
+      source: 'frame',
+      value: 'turquoise cove surrounded by cliffs',
+      timestampSeconds: 12,
+    }],
+  });
+  assert.match(ctx, /PLACE-SCOPED RETAINED EVIDENCE/);
+  assert.match(ctx, /frame @12\.0s: turquoise cove surrounded by cliffs/);
+  assert.match(PLACE_EVIDENCE_SYSTEM_PROMPT, /visual\/content memory cue/i);
+  assert.match(PLACE_EVIDENCE_SYSTEM_PROMPT, /Never say why the user saved it/i);
 });

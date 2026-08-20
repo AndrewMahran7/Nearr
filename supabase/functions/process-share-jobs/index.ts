@@ -183,6 +183,37 @@ function noteResultForLogicalMention(parsed: any, mention: any): AiPlaceNoteResu
   return last;
 }
 
+/** Bounded place-scoped handoff for the post-save note task. Observations and
+ * scene timestamps are retained; candidate notes and frame bytes are not. */
+function noteEvidenceForLogicalMention(parsed: any, mention: any): {
+  noteEvidence: any[];
+  noteTimestamps: number[];
+} {
+  if (!parsed?.ok || !mention) return { noteEvidence: [], noteTimestamps: [] };
+  const logicalName = mention.primaryVenueName ?? mention.displayName ?? '';
+  const normalizedName = mention.normalizedName ?? normalizeVenueName(logicalName);
+  const evidence = parsed.value.places
+    .filter((place: any) => normalizeVenueName(place.name ?? '') === normalizedName)
+    .flatMap((place: any) => Array.isArray(place.explicitEvidence) ? place.explicitEvidence : [])
+    .filter((item: any) => item && typeof item.value === 'string')
+    .map((item: any) => ({
+      source: item.source,
+      value: item.value.replace(/\s+/g, ' ').trim().slice(0, 240),
+      timestampSeconds: typeof item.timestampSeconds === 'number' && Number.isFinite(item.timestampSeconds)
+        ? item.timestampSeconds
+        : null,
+    }))
+    .filter((item: any) => item.value.length >= 3)
+    .slice(0, 16);
+  const timestamps = [...new Set([
+    ...(Array.isArray(mention.timestamps) ? mention.timestamps : []),
+    ...evidence.map((item: any) => item.timestampSeconds),
+  ].filter((value: unknown): value is number =>
+    typeof value === 'number' && Number.isFinite(value) && value >= 0,
+  ))].sort((a, b) => a - b).slice(0, 16);
+  return { noteEvidence: evidence, noteTimestamps: timestamps };
+}
+
 function noteForAggregateCandidate(
   candidateId: string,
   mentionResults: any[],
@@ -629,12 +660,22 @@ async function finalizeVideoAiNoteTask(
       : targetMatch !== 'matched'
         ? `ai_note_target_${targetMatch}`
         : `ai_note_${noteResult.status}${noteResult.reason ? `_${noteResult.reason}` : ''}`;
+    const observableEvidenceCount = [
+      diagnostics.frameCount,
+      diagnostics.transcriptSegmentCount,
+      diagnostics.ocrSegmentCount,
+      diagnostics.noteInputEvidenceCount,
+      diagnostics.metadataTextPresent ? 1 : 0,
+      Array.isArray(task.evidence_snapshot) ? task.evidence_snapshot.length : 0,
+    ].reduce((total, value) => total + (Number(value) || 0), 0);
     const disposition = classifyVideoAiNoteFailure({
       outcome,
       errorCodes: Array.isArray(diagnostics.errors) ? diagnostics.errors : [],
+      observableEvidenceCount,
+      mediaAcquiredOnce: task.media_acquired_once === true,
     });
     const retryCycles = Math.max(0, Number(task.retry_cycles) || 0);
-    if (disposition === 'retry_after_outage') {
+    if (disposition !== 'no_evidence') {
       const delaySeconds = Math.min(86_400, 3_600 * 2 ** Math.min(retryCycles, 5));
       const updatedTask = await markVideoAiNoteTask(admin, task, 'queued', {
         ...diagnosticPatch,
@@ -653,10 +694,10 @@ async function finalizeVideoAiNoteTask(
         return json({ ok: true, route: 'ai_note_enrichment', enriched: false, reason: 'stale_target' });
       }
     } else {
-      const updatedTask = await markVideoAiNoteTask(admin, task, 'needs_help', {
+      const updatedTask = await markVideoAiNoteTask(admin, task, 'failed', {
         ...diagnosticPatch,
         failure_code: failureCode.slice(0, 200),
-        ai_note_outcome: 'awaiting_evidence',
+        ai_note_outcome: 'no_evidence',
         progress_stage: 'cleanup',
         locked_until: null,
         completed_at: nowIso(),
@@ -671,7 +712,7 @@ async function finalizeVideoAiNoteTask(
       savedPlaceId: saved.id,
       taskId: task.id,
       videoDerived: true,
-      generationAttempted: outcome === 'evidence',
+      generationAttempted: outcome === 'evidence' || outcome === 'insufficient_evidence',
       generationOutcome: disposition,
       targetMatch,
       retryCount: Number(task.attempts) || 0,
@@ -683,8 +724,12 @@ async function finalizeVideoAiNoteTask(
       ruleVersion: VIDEO_AI_NOTE_RULE_VERSION,
     }));
     logFinalStatus(
-      disposition === 'retry_after_outage' ? 'note_retry_scheduled' : 'note_awaiting_evidence',
-      disposition === 'retry_after_outage' ? 'transient_provider_error' : 'insufficient_evidence',
+      disposition !== 'no_evidence' ? 'note_retry_scheduled' : 'note_no_evidence',
+      disposition === 'retry_after_outage'
+        ? 'transient_provider_error'
+        : disposition === 'retry_after_generation'
+          ? 'generation_quality_error'
+          : 'literal_no_evidence',
     );
     return json({
       ok: true,
@@ -1247,29 +1292,11 @@ async function finalizeMediaTask(
   // `mentionResults` itself stays in memory: it carries candidate names and the
   // raw Places query, neither of which belongs in stored diagnostics.
   const resolutionDiagnostics = result.diagnostics?.resolutionDiagnostics ?? null;
-  const aiNoteResultByMentionId = new Map<string, AiPlaceNoteResult>(
-    mediaMentions.mentions.map((mention: any) => [
-      mention.id,
-      noteResultForLogicalMention(parsed, mention),
-    ]),
+  // Recognition retains place-scoped observations but never creates candidate
+  // notes. Only a task for an already-saved final place may ask for memoryCue.
+  const aiNoteByMentionId = new Map<string, string | null>(
+    mediaMentions.mentions.map((mention: any) => [mention.id, null]),
   );
-  const aiNoteByMentionId = new Map(
-    [...aiNoteResultByMentionId].map(([mentionId, noteResult]) => [mentionId, noteResult.note]),
-  );
-  // Status codes only — never the cue text, the caption, or the user's note.
-  // This is what makes "the note is missing" answerable from logs alone.
-  if (aiNoteResultByMentionId.size > 0) {
-    console.log(JSON.stringify({
-      event: 'ai_note_generation',
-      jobId: job.id,
-      taskId,
-      outcomes: [...aiNoteResultByMentionId].map(([mentionId, noteResult]) => ({
-        logicalPlaceId: mentionId,
-        status: noteResult.status,
-        reason: noteResult.reason,
-      })),
-    }));
-  }
   const nameDrivenResult = {
     mentionResults,
     aggregateCandidates: result.candidates ?? [],
@@ -1566,6 +1593,7 @@ async function finalizeMediaTask(
           noteForAggregateCandidate(candidate.googlePlaceId, unresolvedResults, aiNoteByMentionId),
         )),
       mentionResults.map((mention: any) => ({
+        ...noteEvidenceForLogicalMention(parsed, mentionById.get(mention.mentionId)),
         mentionId: mention.mentionId,
         displayName: mention.displayName,
         contextLabel: (() => {
@@ -1735,6 +1763,10 @@ async function finalizeMediaTask(
       noteForAggregateCandidate(candidate.googlePlaceId, mentionResults, aiNoteByMentionId),
     )),
     mentionResults.map((mention: any) => ({
+      ...noteEvidenceForLogicalMention(
+        parsed,
+        mediaMentions.mentions.find((item: any) => item.id === mention.mentionId),
+      ),
       mentionId: mention.mentionId,
       displayName: mention.displayName,
       contextLabel: (() => {

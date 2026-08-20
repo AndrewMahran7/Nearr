@@ -153,13 +153,13 @@ const rejected = evaluateTargetedVideoAiNote({
 assert.equal(rejected.note, null);
 assert.equal(rejected.status, 'rejected');
 assert.equal(
-  classifyVideoAiNoteFailure({ outcome: 'evidence', errorCodes: [] }),
-  'await_new_evidence',
-  'validator rejection does not hot-loop',
+  classifyVideoAiNoteFailure({ outcome: 'evidence', errorCodes: [], observableEvidenceCount: 2 }),
+  'retry_after_generation',
+  'validator rejection over real evidence retains a cooled retry obligation',
 );
 
 // Provider outages retain an eventual retry obligation; deterministic content
-// failures wait for genuinely new source/final-place evidence.
+// failures over acquired evidence also remain durable quality retries.
 for (const error of [
   'provider_rate_limited',
   'download_timeout',
@@ -174,13 +174,21 @@ for (const error of [
   );
 }
 for (const input of [
-  { outcome: 'insufficient_evidence', errorCodes: [] },
-  { outcome: 'evidence', errorCodes: [] },
-  { outcome: 'unavailable', errorCodes: ['private_or_unavailable'] },
-  { outcome: 'failed', errorCodes: ['unsupported_url'] },
+  { outcome: 'insufficient_evidence', errorCodes: [], observableEvidenceCount: 1 },
+  { outcome: 'evidence', errorCodes: [], mediaAcquiredOnce: true },
 ]) {
-  assert.equal(classifyVideoAiNoteFailure(input), 'await_new_evidence');
+  assert.equal(classifyVideoAiNoteFailure(input), 'retry_after_generation');
 }
+assert.equal(
+  classifyVideoAiNoteFailure({
+    outcome: 'unavailable',
+    errorCodes: ['private_or_unavailable'],
+    observableEvidenceCount: 0,
+    mediaAcquiredOnce: false,
+  }),
+  'no_evidence',
+  'only literal zero-media/zero-observation state may terminate blank',
+);
 
 // saved_places.place_id is the non-null internal identity even when the
 // provider google_place_id is null. Every A/B provider-null combination is an
@@ -217,15 +225,27 @@ assert.match(migration, /new\.ai_note := null/i);
 
 // Hybrid convergence: a three-attempt cycle remains bounded, but exhaustion
 // renews only AI-note obligations on a capped long cooldown. Content failures
-// park until new evidence rather than hot-looping or inventing filler.
+// remain durable, and a rejected structured cue escalates to expanded visual
+// evidence on the next attempt instead of replaying the same prompt forever.
 assert.match(worker, /task\.task_kind === 'ai_note_enrichment'[\s\S]+media\.code === 'finalizer_unavailable'[\s\S]+requeueAiNoteTask/i);
 assert.match(worker, /renewAiNoteRetryCycle\(client, task, code\)/);
 assert.match(migration, /retry_cycles = case when mt\.task_kind = 'ai_note_enrichment' then mt\.retry_cycles \+ 1/i);
 assert.match(migration, /least\(86400, 3600 \* power/i);
 assert.match(finalizer, /failure_code: failureCode\.slice\(0, 200\)/);
-assert.match(finalizer, /ai_note_outcome: 'awaiting_evidence'/);
-assert.match(finalizer, /disposition === 'retry_after_outage'/);
+assert.match(finalizer, /ai_note_outcome: 'no_evidence'/);
+assert.match(finalizer, /disposition !== 'no_evidence'/);
 assert.match(finalizer, /retryCount: Number\(task\.attempts\)/);
+assert.match(worker, /noteStructuredEvidencePreflight/);
+assert.match(worker, /task\.ai_note_outcome !== 'retry_after_generation'/);
+assert.match(worker, /buildTargetedNoteContext/);
+assert.match(worker, /expanded: task\.ai_note_outcome === 'retry_after_generation'/);
+assert.match(worker, /noteQualityRetryExpanded/);
+assert.match(worker, /target_scene_expanded/);
+assert.match(finalizer, /mediaMentions\.mentions\.map\(\(mention: any\) => \[mention\.id, null\]\)/);
+assert.doesNotMatch(finalizer, /event: 'ai_note_generation'/);
+assert.match(finalizer, /noteEvidenceForLogicalMention/);
+assert.match(migration, /evidence_snapshot jsonb/);
+assert.match(migration, /media_acquired_once boolean/);
 
 // Data-integrity contract: only ai_note is written, with final id/user/source
 // and observed blank-value guards. `notes` is selected for audit but untouched.

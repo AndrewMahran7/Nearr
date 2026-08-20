@@ -14,17 +14,23 @@ import type { SavedPlaceWithPlace } from '../types';
 
 const cue = 'Try the matcha flight and strawberry cream latte.';
 const payload = buildShareJobCandidatePayload(
-  [{ googlePlaceId: 'g1', name: 'Matcha House', latitude: 1, longitude: 2, aiNote: cue }],
+  [{ googlePlaceId: 'g1', name: 'Matcha House', latitude: 1, longitude: 2 }],
   [{
     mentionId: 'm1',
     displayName: 'Matcha House',
     outcome: 'verified_single',
-    aiNote: cue,
-    candidates: [{ googlePlaceId: 'g1', name: 'Matcha House', latitude: 1, longitude: 2, aiNote: cue }],
+    noteEvidence: [{ source: 'frame', value: 'matcha flight and strawberry cream latte', timestampSeconds: 7 }],
+    noteTimestamps: [7],
+    candidates: [{ googlePlaceId: 'g1', name: 'Matcha House', latitude: 1, longitude: 2 }],
   }],
 );
-assert.equal(payload.candidates[0]!.aiNote, cue, 'manual candidate preserves the generated note');
-assert.equal(normalizeMentionSlots(payload.mentionSlots)[0]!.aiNote, cue, 'logical slot preserves its own note');
+assert.equal(payload.candidates[0]!.aiNote, null, 'recognition does not pre-generate a candidate note');
+assert.equal(normalizeMentionSlots(payload.mentionSlots)[0]!.aiNote, null, 'unsaved logical slots carry no note');
+assert.deepEqual(
+  normalizeMentionSlots(payload.mentionSlots)[0]!.noteTimestamps,
+  [7],
+  'the post-save task retains only the selected scene anchor',
+);
 
 const root = process.cwd();
 const finalizer = readFileSync(join(root, 'supabase/functions/process-share-jobs/index.ts'), 'utf8');
@@ -153,17 +159,17 @@ assert.match(
 );
 assert.match(
   finalizer,
-  /event: 'ai_note_generation'/,
-  'cue outcomes are observable rather than a silent null',
+  /event: 'video_ai_note_enrichment'/,
+  'post-save cue outcomes are observable rather than a silent null',
 );
 assert.match(
   finalizer,
-  /status: noteResult\.status/,
-  'the log carries the bounded status code',
+  /generationOutcome: disposition/,
+  'the log carries the bounded post-save outcome code',
 );
 assert.doesNotMatch(
   finalizer,
-  /event: 'ai_note_generation'[\s\S]{0,400}(?:memoryCue|proposedNote|caption)/,
+  /event: 'video_ai_note_enrichment'[\s\S]{0,500}(?:memoryCue|proposedNote|caption)/,
   'note diagnostics never carry cue, caption, or user text',
 );
 

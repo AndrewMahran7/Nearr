@@ -29,6 +29,12 @@ export type ShareJobMentionOutcome =
   | 'rejected_insufficient_evidence'
   | 'provider_error';
 
+export type ShareJobNoteEvidence = {
+  source: 'caption' | 'speech' | 'visible_text' | 'frame';
+  value: string;
+  timestampSeconds: number | null;
+};
+
 export type ShareJobMentionSlot = {
   mentionId: string;
   displayName: string;
@@ -38,6 +44,10 @@ export type ShareJobMentionSlot = {
   relationshipType: string | null;
   outcome: ShareJobMentionOutcome;
   candidates: ShareJobResultCandidate[];
+  /** Bounded place-scoped observations retained for post-save note generation. */
+  noteEvidence?: ShareJobNoteEvidence[];
+  /** Scene anchors used to avoid sending sibling scenes to the note model. */
+  noteTimestamps?: number[];
   aiNote?: string | null;
   saveState?: 'pending' | 'auto_saved' | 'already_saved';
   savedPlaceId?: string | null;
@@ -72,6 +82,40 @@ function normalizedTimestamps(value: unknown): number[] {
 
 function text(value: unknown): string | null {
   return typeof value === 'string' && value.trim() ? value.trim() : null;
+}
+
+function normalizedNoteEvidence(input: unknown): ShareJobNoteEvidence[] {
+  if (!Array.isArray(input)) return [];
+  const result: ShareJobNoteEvidence[] = [];
+  const seen = new Set<string>();
+  for (const raw of input.slice(0, 24)) {
+    if (!raw || typeof raw !== 'object') continue;
+    const row = raw as Record<string, unknown>;
+    const source = text(row.source);
+    const value = text(row.value)?.replace(/\s+/g, ' ').slice(0, 240) ?? null;
+    if (!source || !['caption', 'speech', 'visible_text', 'frame'].includes(source) || !value) continue;
+    const timestampSeconds = typeof row.timestampSeconds === 'number' &&
+      Number.isFinite(row.timestampSeconds) && row.timestampSeconds >= 0
+      ? row.timestampSeconds
+      : null;
+    const key = `${source}|${timestampSeconds ?? ''}|${value.toLowerCase()}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push({
+      source: source as ShareJobNoteEvidence['source'],
+      value,
+      timestampSeconds,
+    });
+    if (result.length === 16) break;
+  }
+  return result;
+}
+
+function normalizedNoteTimestamps(input: unknown): number[] {
+  if (!Array.isArray(input)) return [];
+  return [...new Set(input.filter(
+    (value): value is number => typeof value === 'number' && Number.isFinite(value) && value >= 0,
+  ))].sort((a, b) => a - b).slice(0, 16);
 }
 
 export function normalizeResultCandidate(input: unknown): ShareJobResultCandidate | null {
@@ -164,6 +208,8 @@ export function normalizeMentionSlots(input: unknown): ShareJobMentionSlot[] {
       relationshipType: text(row.relationshipType),
       outcome,
       candidates: normalizeResultCandidates(row.candidates).slice(0, 5),
+      noteEvidence: normalizedNoteEvidence(row.noteEvidence),
+      noteTimestamps: normalizedNoteTimestamps(row.noteTimestamps),
       aiNote: text(row.aiNote),
       saveState: row.saveState === 'auto_saved' || row.saveState === 'already_saved'
         ? row.saveState

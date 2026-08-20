@@ -1,0 +1,177 @@
+import assert from 'node:assert/strict';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import test from 'node:test';
+
+import { evaluateAiPlaceNote } from '../../../lib/aiPlaceNote.js';
+import { loadConfig } from '../src/config/env.js';
+import {
+  buildTargetedNoteContext,
+  findTargetEvidenceHandoff,
+} from '../src/pipeline/targetedNoteContext.js';
+import { selectModelProvider } from '../src/providers/model.js';
+import type { SelectedFrame } from '../src/types/media.js';
+
+function frame(timestampSeconds: number): SelectedFrame {
+  return {
+    path: `frame-${timestampSeconds}.jpg`,
+    timestampSeconds,
+    width: 768,
+    height: 1024,
+    aHash: String(timestampSeconds).padStart(16, '0'),
+    reason: 'interval',
+  };
+}
+
+test('multi-place handoff isolates the final saved place scene', () => {
+  const payload = {
+    mentionSlots: [
+      {
+        mentionId: 'm1',
+        displayName: 'Burger House',
+        candidates: [{ googlePlaceId: 'g-a' }],
+        noteEvidence: [{ source: 'frame', value: 'smashburger with crispy edges', timestampSeconds: 5 }],
+        noteTimestamps: [5],
+      },
+      {
+        mentionId: 'm2',
+        displayName: 'Cliff Cove',
+        candidates: [{ googlePlaceId: 'g-b' }],
+        noteEvidence: [{ source: 'frame', value: 'turquoise cove surrounded by cliffs', timestampSeconds: 40 }],
+        noteTimestamps: [40],
+      },
+    ],
+  };
+  const handoff = findTargetEvidenceHandoff([payload], { name: 'Burger House', googlePlaceId: 'g-a' });
+  assert.deepEqual(handoff?.timestamps, [5]);
+  assert.deepEqual(handoff?.evidence.map((item) => item.value), ['smashburger with crispy edges']);
+
+  const context = buildTargetedNoteContext({
+    frames: [frame(4), frame(5), frame(8), frame(39), frame(40), frame(43)],
+    transcript: [
+      { startSeconds: 3, endSeconds: 6, text: 'crispy smashburger' },
+      { startSeconds: 38, endSeconds: 42, text: 'turquoise water' },
+    ],
+    ocr: [
+      { timestampSeconds: 5, text: 'BURGER HOUSE', confidence: 1 },
+      { timestampSeconds: 40, text: 'CLIFF COVE', confidence: 1 },
+    ],
+    handoff,
+    maxFrames: 24,
+  });
+  assert.deepEqual(context.frames.map((item) => item.timestampSeconds), [4, 5, 8]);
+  assert.deepEqual(context.transcript.map((item) => item.text), ['crispy smashburger']);
+  assert.deepEqual(context.ocr.map((item) => item.text), ['BURGER HOUSE']);
+  assert.equal(context.sceneScoped, true);
+});
+
+test('unsaved candidates have observations but no note-generation obligation', () => {
+  const payload = {
+    mentionSlots: [{
+      mentionId: 'm1',
+      displayName: 'Hotel One',
+      candidates: [{ googlePlaceId: 'g-hotel' }],
+      noteEvidence: [{ source: 'frame', value: 'infinity pool overlooking the ocean', timestampSeconds: 9 }],
+      aiNote: null,
+    }],
+  };
+  const handoff = findTargetEvidenceHandoff([payload], { name: 'Hotel One', googlePlaceId: 'g-hotel' });
+  assert.equal(handoff?.evidence.length, 1);
+  assert.equal(payload.mentionSlots[0]!.aiNote, null);
+});
+
+const visualCases = [
+  {
+    label: 'food',
+    placeName: 'Burger House',
+    category: 'restaurant',
+    observation: 'smashburger with crispy edges',
+    note: 'That smashburger with crispy edges looked ridiculous.',
+  },
+  {
+    label: 'outdoor',
+    placeName: 'Cliff Cove',
+    category: 'beach',
+    observation: 'cliff-lined turquoise cove',
+    note: 'That cliff-lined turquoise cove looked unreal.',
+  },
+  {
+    label: 'hotel',
+    placeName: 'Ocean Hotel',
+    category: 'hotel',
+    observation: 'infinity pool overlooking the ocean',
+    note: 'That infinity pool overlooking the ocean looked unreal.',
+  },
+] as const;
+
+for (const fixture of visualCases) {
+  test(`visual-heavy ${fixture.label} fixture yields a grounded cue with empty text`, async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), 'nearr-note-'));
+    const imagePath = path.join(dir, 'frame.jpg');
+    await writeFile(imagePath, new Uint8Array([0xff, 0xd8, 0xff, 0xd9]));
+    const originalFetch = globalThis.fetch;
+    let requestBody: any = null;
+    globalThis.fetch = (async (_url: string | URL | Request, init?: RequestInit) => {
+      requestBody = JSON.parse(String(init?.body));
+      const modelPayload = {
+        places: [{
+          name: fixture.placeName,
+          category: fixture.category,
+          categoryConfidence: 1,
+          categoryEvidenceTags: ['visual'],
+          address: null,
+          city: null,
+          region: null,
+          country: null,
+          coordinates: null,
+          role: 'primary',
+          confidence: 1,
+          explicitEvidence: [{ source: 'frame', value: fixture.observation, timestampSeconds: 7 }],
+          inferredEvidence: [],
+          memoryCue: fixture.note,
+          memoryCueEvidence: [{ source: 'frame', value: fixture.observation, timestampSeconds: 7 }],
+        }],
+        multipleIntentionalPlaces: false,
+        insufficientEvidence: false,
+        warnings: [],
+      };
+      return new Response(JSON.stringify({
+        candidates: [{ content: { parts: [{ text: JSON.stringify(modelPayload) }] } }],
+      }), { status: 200, headers: { 'content-type': 'application/json' } });
+    }) as typeof fetch;
+    try {
+      const provider = selectModelProvider({
+        ...loadConfig(),
+        analysisProvider: 'gemini',
+        geminiApiKey: 'test-key',
+        maxSelectedFrames: 8,
+      });
+      const output = await provider.analyze({
+        platform: 'instagram',
+        canonicalUrl: 'https://www.instagram.com/reel/visual/',
+        transcript: [],
+        ocr: [],
+        ocrExtracted: false,
+        frames: [{ ...frame(7), path: imagePath }],
+        metadataTitle: null,
+        metadataDescription: null,
+        targetPlace: { name: fixture.placeName, category: fixture.category },
+        signal: new AbortController().signal,
+      });
+      const place = output.evidence.places[0]!;
+      const evaluated = evaluateAiPlaceNote({
+        placeName: fixture.placeName,
+        proposedNote: place.memoryCue,
+        evidence: place.memoryCueEvidence,
+      });
+      assert.equal(evaluated.note, fixture.note);
+      assert.equal(requestBody.contents[0].parts.filter((part: any) => part.inlineData).length, 1);
+      assert.match(requestBody.contents[0].parts[0].text, /TARGETED AI-NOTE ENRICHMENT/);
+      assert.match(requestBody.contents[0].parts[0].text, /transcript:\s*\n\(none\)/);
+    } finally {
+      globalThis.fetch = originalFetch;
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+}

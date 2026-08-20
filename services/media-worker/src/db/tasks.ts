@@ -5,7 +5,8 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { WorkerConfig } from '../config/env.js';
-import type { MediaTask, ProgressStage } from '../types/media.js';
+import { MediaError, type MediaTask, type ProgressStage } from '../types/media.js';
+import type { EvidenceItem } from '../types/evidence.js';
 import { log } from '../util/logger.js';
 
 /**
@@ -132,7 +133,10 @@ export async function requeueAiNoteTask(
   query = task.canonical_url == null
     ? query.is('canonical_url', null)
     : query.eq('canonical_url', task.canonical_url);
-  await query;
+  const { error } = await query;
+  if (error) {
+    throw new MediaError('provider_unavailable', 'ai_note_evidence_snapshot_failed');
+  }
 }
 
 export function aiNoteRetryCycleDelaySeconds(retryCycles: number): number {
@@ -167,6 +171,31 @@ export async function renewAiNoteRetryCycle(
       completed_at: null,
       failure_code: failureCode,
       ai_note_outcome: 'retry_after_outage',
+    })
+    .eq('id', task.id)
+    .eq('task_kind', 'ai_note_enrichment')
+    .eq('saved_place_id', task.saved_place_id)
+    .eq('target_place_id', task.target_place_id)
+    .eq('source_url', task.source_url);
+  query = task.canonical_url == null
+    ? query.is('canonical_url', null)
+    : query.eq('canonical_url', task.canonical_url);
+  await query;
+}
+
+/** Retain only bounded structured observations and acquisition state. This is
+ * guarded by the same final-place/source snapshot as every other task write. */
+export async function recordAiNoteEvidenceSnapshot(
+  client: SupabaseClient,
+  task: MediaTask,
+  evidence: readonly EvidenceItem[],
+  mediaAcquired: boolean,
+): Promise<void> {
+  let query = client
+    .from('share_media_tasks')
+    .update({
+      evidence_snapshot: evidence.slice(0, 16),
+      media_acquired_once: mediaAcquired || task.media_acquired_once === true,
     })
     .eq('id', task.id)
     .eq('task_kind', 'ai_note_enrichment')

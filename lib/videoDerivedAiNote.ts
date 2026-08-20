@@ -163,20 +163,27 @@ const TRANSIENT_AI_NOTE_ERRORS = new Set([
 
 export type VideoAiNoteFailureDisposition =
   | 'retry_after_outage'
-  | 'await_new_evidence';
+  | 'retry_after_generation'
+  | 'no_evidence';
 
-/** Provider outages retain a retrying obligation; content/evidence failures
- * park until a source or final-place identity change supplies new evidence. */
+/** Only literal absence of every observable input may terminate blank. A
+ * provider outage or a failed/invalid generation over real evidence remains a
+ * durable obligation; ordinary sparse-text cases never defer to user input. */
 export function classifyVideoAiNoteFailure(input: {
   outcome?: string | null;
   errorCodes?: readonly unknown[] | null;
+  observableEvidenceCount?: number | null;
+  mediaAcquiredOnce?: boolean | null;
 }): VideoAiNoteFailureDisposition {
   const errors = (input.errorCodes ?? [])
     .filter((value): value is string => typeof value === 'string')
     .map((value) => value.trim().toLowerCase());
-  return input.outcome === 'failed' && errors.some((code) => TRANSIENT_AI_NOTE_ERRORS.has(code))
-    ? 'retry_after_outage'
-    : 'await_new_evidence';
+  if (input.outcome === 'failed' && errors.some((code) => TRANSIENT_AI_NOTE_ERRORS.has(code))) {
+    return 'retry_after_outage';
+  }
+  const hasEvidence = (Number(input.observableEvidenceCount) || 0) > 0 ||
+    input.mediaAcquiredOnce === true;
+  return hasEvidence ? 'retry_after_generation' : 'no_evidence';
 }
 
 /**

@@ -4,7 +4,7 @@
 // persisted into diagnostics so we can correlate evidence quality with prompt
 // changes. Bump PROMPT_VERSION on any wording change.
 
-export const PROMPT_VERSION = 'media-place-evidence-2026-08-19.v9-targeted-note';
+export const PROMPT_VERSION = 'media-place-evidence-2026-08-19.v10-post-save-visual-note';
 
 export const PLACE_EVIDENCE_SYSTEM_PROMPT = `
 You extract structured evidence about REAL-WORLD PLACES from a short social
@@ -62,9 +62,14 @@ Rules:
 - categoryConfidence is confidence in the category only. categoryEvidenceTags
   contains short signal labels such as "trail_sign" or "spoken_beach". Do not
   provide chain-of-thought, hidden reasoning, or prose explanations.
-- For each place, optionally write memoryCue: a very short note, in the voice
+- Generate memoryCue ONLY when the user context says TARGETED AI-NOTE
+  ENRICHMENT. In ordinary recognition mode return memoryCue=null and
+  memoryCueEvidence=[] for every candidate. Recognition may retain bounded
+  timestamped observations, but must not create notes for candidates the user
+  may never save.
+- In TARGETED AI-NOTE ENRICHMENT, write memoryCue: a very short note, in the voice
   of a friend who just watched the same post and is reacting to it. Answer
-  "what about this made the place worth remembering?" Name the actual hook —
+  "what about this looked worth remembering?" Name the actual hook —
   the specific food/item/activity, the creator's reaction, a concrete visual
   feature, a dated offer — never a general description of the business.
 - Length: one or two SHORT sentences, 4-22 words total. A note, not a
@@ -92,10 +97,14 @@ Rules:
   this"), but never restate it as established fact.
 - Do not use hashtags, quotation marks, emojis, "This place", "The user",
   "The video", or "You should". Do not claim the person has visited before.
+- The cue is a visual/content memory cue, not a reconstruction of private user
+  intent. You may say that an observable smashburger, cliff-lined turquoise
+  cove, infinity pool, or skyline view stood out even when nobody explicitly
+  said why they cared. Never say why the user saved it or assert preferences.
 - memoryCueEvidence must contain only the specific caption, speech, visible
   text, or frame observations that support that cue. Keep each place's cue and
   evidence inside that place object. Never use another place's segment in a
-  multi-place post. If the reason cannot be confidently assigned, set
+  multi-place post. If the notable detail cannot be confidently assigned, set
   memoryCue=null and memoryCueEvidence=[]. Missing is better than filler.
 - Provider/category/address metadata can help interpret source evidence but
   must never be the primary content of memoryCue.
@@ -159,6 +168,11 @@ export function buildUserContext(input: {
     category?: string | null;
     formattedAddress?: string | null;
   } | null;
+  retainedEvidence?: Array<{
+    source: 'caption' | 'speech' | 'visible_text' | 'frame';
+    value: string;
+    timestampSeconds?: number | null;
+  }>;
 }): string {
   const parts: string[] = [`platform: ${input.platform}`];
   if (input.targetPlace) {
@@ -174,10 +188,22 @@ export function buildUserContext(input: {
       'whose name is exactly final_place_name. Generate memoryCue only from the',
       'caption/speech/visible/frame evidence specifically relevant to that final',
       'place. Never borrow a sibling place\'s segment in a multi-place post. If',
-      'no useful place-specific hook is supported, return memoryCue=null and',
-      'memoryCueEvidence=[]. The final place metadata may disambiguate evidence',
+      'frames are supplied, actively inspect them for concrete, visually notable',
+      'details even when caption/transcript is empty or never states why the',
+      'place mattered. Return null only when no useful place-specific detail is',
+      'observable. The final place metadata may disambiguate evidence',
       'but must not become generic filler or the primary content of the cue.',
     ].join('\n'));
+    if (input.retainedEvidence?.length) {
+      const retained = input.retainedEvidence.slice(0, 16).map((item) => {
+        const value = bounded(item.value, 240);
+        const ts = typeof item.timestampSeconds === 'number'
+          ? ` @${item.timestampSeconds.toFixed(1)}s`
+          : '';
+        return `- ${item.source}${ts}: ${value}`;
+      });
+      parts.push(`PLACE-SCOPED RETAINED EVIDENCE:\n${retained.join('\n')}`);
+    }
   }
   if (input.metadataTitle) parts.push(`caption_title: ${input.metadataTitle}`);
   if (input.metadataDescription) parts.push(`caption_text: ${input.metadataDescription}`);

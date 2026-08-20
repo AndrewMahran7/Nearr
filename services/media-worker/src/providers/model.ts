@@ -10,6 +10,7 @@ import { readFile } from 'node:fs/promises';
 import type { WorkerConfig } from '../config/env.js';
 import type { OcrSegment, SelectedFrame, TranscriptSegment } from '../types/media.js';
 import {
+  type EvidenceItem,
   type MediaPlaceEvidence,
   type PlaceCandidateEvidence,
   emptyEvidence,
@@ -45,6 +46,8 @@ export type AnalyzeInput = {
     category?: string | null;
     formattedAddress?: string | null;
   } | null;
+  /** Place-scoped evidence retained from an earlier recognition pass. */
+  retainedEvidence?: EvidenceItem[];
   signal: AbortSignal;
 };
 
@@ -83,14 +86,27 @@ function groundingText(value: string): string {
 
 export function groundClaimedEvidence(
   evidence: MediaPlaceEvidence,
-  input: Pick<AnalyzeInput, 'transcript' | 'metadataTitle' | 'metadataDescription'> & {
+  input: Pick<AnalyzeInput, 'transcript' | 'metadataTitle' | 'metadataDescription' | 'retainedEvidence'> & {
     ocr?: AnalyzeInput['ocr'];
     ocrExtracted?: AnalyzeInput['ocrExtracted'];
   },
 ): MediaPlaceEvidence {
-  const speech = groundingText(input.transcript.map((segment) => segment.text).join(' '));
-  const caption = groundingText([input.metadataTitle, input.metadataDescription].filter(Boolean).join(' '));
-  const visibleText = groundingText((input.ocr ?? []).map((segment) => segment.text).join(' '));
+  const retained = input.retainedEvidence ?? [];
+  const retainedFor = (source: EvidenceItem['source']): string =>
+    retained.filter((item) => item.source === source).map((item) => item.value).join(' ');
+  const speech = groundingText([
+    input.transcript.map((segment) => segment.text).join(' '),
+    retainedFor('speech'),
+  ].join(' '));
+  const caption = groundingText([
+    input.metadataTitle,
+    input.metadataDescription,
+    retainedFor('caption'),
+  ].filter(Boolean).join(' '));
+  const visibleText = groundingText([
+    (input.ocr ?? []).map((segment) => segment.text).join(' '),
+    retainedFor('visible_text'),
+  ].join(' '));
   // Corroborating a visible-text claim requires a text stream to corroborate it
   // AGAINST. `ocrExtracted` is false whenever reading frames is delegated to
   // this same multimodal step (today: always — selectOcrProvider returns the
@@ -238,6 +254,7 @@ class GeminiModel implements ModelProvider {
 
   async analyze(input: AnalyzeInput): Promise<AnalyzeOutput> {
     if (!this.cfg.geminiApiKey) {
+      if (input.targetPlace) throw new MediaError('provider_unavailable', 'gemini_missing_key');
       return { provider: this.name, modelName: this.cfg.geminiModel, promptVersion: PROMPT_VERSION, evidence: emptyEvidence(['gemini_missing_key']) };
     }
     const transcriptText = input.transcript
@@ -254,6 +271,7 @@ class GeminiModel implements ModelProvider {
       metadataTitle: input.metadataTitle,
       metadataDescription: input.metadataDescription,
       targetPlace: input.targetPlace,
+      retainedEvidence: input.retainedEvidence,
     });
 
     const parts: unknown[] = [{ text: `${PLACE_EVIDENCE_SYSTEM_PROMPT}\n\n${userText}` }];

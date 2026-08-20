@@ -173,6 +173,12 @@ export type MediaTask = {
   target_place_id?: string | null;
   /** Number of exhausted transient-outage retry cycles. */
   retry_cycles?: number;
+  /** Bounded place-specific observations retained across retries. Never raw media. */
+  evidence_snapshot?: unknown;
+  /** True once any attempt acquired usable media/text. */
+  media_acquired_once?: boolean;
+  /** Last disposition, used to widen scene context after a quality rejection. */
+  ai_note_outcome?: string | null;
   user_id: string;
   source_url: string;
   canonical_url: string | null;

@@ -91,6 +91,8 @@ alter table public.share_media_tasks
   add column if not exists saved_place_id uuid references public.saved_places(id) on delete cascade,
   add column if not exists target_place_id uuid references public.places(id) on delete cascade,
   add column if not exists retry_cycles integer not null default 0,
+  add column if not exists evidence_snapshot jsonb not null default '[]'::jsonb,
+  add column if not exists media_acquired_once boolean not null default false,
   add column if not exists analysis_model text,
   add column if not exists prompt_version text,
   add column if not exists latency_ms integer,
@@ -101,6 +103,15 @@ alter table public.share_media_tasks
 alter table public.share_media_tasks
   add constraint share_media_tasks_task_kind_check
   check (task_kind in ('recognition', 'ai_note_enrichment'));
+
+alter table public.share_media_tasks
+  drop constraint if exists share_media_tasks_evidence_snapshot_check;
+alter table public.share_media_tasks
+  add constraint share_media_tasks_evidence_snapshot_check
+  check (
+    jsonb_typeof(evidence_snapshot) = 'array'
+    and octet_length(evidence_snapshot::text) <= 16000
+  );
 
 alter table public.share_media_tasks
   drop constraint if exists share_media_tasks_target_check;
@@ -233,7 +244,7 @@ begin
       'queued',
       0,
       3,
-      now(),
+      now() + interval '15 seconds',
       null,
       null,
       null,
@@ -273,7 +284,7 @@ begin
         when public.share_media_tasks.source_url is distinct from excluded.source_url
           or public.share_media_tasks.target_place_id is distinct from excluded.target_place_id
           or v_rearm
-          then now()
+          then now() + interval '15 seconds'
         else public.share_media_tasks.next_attempt_at
       end,
       locked_at = case
@@ -311,6 +322,14 @@ begin
           or public.share_media_tasks.target_place_id is distinct from excluded.target_place_id
           or v_rearm
           then 0 else public.share_media_tasks.retry_cycles end,
+      evidence_snapshot = case
+        when public.share_media_tasks.source_url is distinct from excluded.source_url
+          or public.share_media_tasks.target_place_id is distinct from excluded.target_place_id
+          then '[]'::jsonb else public.share_media_tasks.evidence_snapshot end,
+      media_acquired_once = case
+        when public.share_media_tasks.source_url is distinct from excluded.source_url
+          or public.share_media_tasks.target_place_id is distinct from excluded.target_place_id
+          then false else public.share_media_tasks.media_acquired_once end,
       updated_at = now();
   else
     -- Synchronous generation won the race, a user deleted the video-derived
@@ -513,6 +532,8 @@ select
   mt.latency_ms,
   mt.failure_code,
   mt.ai_note_outcome,
+  jsonb_array_length(mt.evidence_snapshot) as retained_evidence_count,
+  mt.media_acquired_once,
   mt.updated_at as task_updated_at
 from public.saved_places sp
 left join public.share_media_tasks mt
