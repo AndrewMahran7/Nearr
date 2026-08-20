@@ -1,6 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { finalizeWithRetry, planTaskFailure } from '../src/pipeline/runMediaTask.js';
+import {
+  finalizeWithRetry,
+  planTaskFailure,
+  shouldRequeueAiNoteFinalizerFailure,
+} from '../src/pipeline/runMediaTask.js';
 import { MediaError } from '../src/types/media.js';
 
 const cfg = { retryBaseSeconds: 30, retryMaxSeconds: 900 };
@@ -33,6 +37,30 @@ test('finalizer outage never requeues the full media pipeline', () => {
     () => 0,
   );
   assert.deepEqual(plan, { action: 'finalize', outcome: 'failed' });
+});
+
+test('AI-note enrichment requeues a transient finalizer outage within budget', () => {
+  assert.equal(
+    shouldRequeueAiNoteFinalizerFailure(
+      new MediaError('finalizer_unavailable'),
+      { task_kind: 'ai_note_enrichment', attempts: 1, max_attempts: 3 },
+    ),
+    true,
+  );
+  assert.equal(
+    shouldRequeueAiNoteFinalizerFailure(
+      new MediaError('finalizer_unavailable'),
+      { task_kind: 'ai_note_enrichment', attempts: 3, max_attempts: 3 },
+    ),
+    false,
+  );
+  assert.equal(
+    shouldRequeueAiNoteFinalizerFailure(
+      new MediaError('finalizer_unavailable'),
+      { task_kind: 'recognition', attempts: 1, max_attempts: 3 },
+    ),
+    false,
+  );
 });
 
 test('finalizer retry reuses completed analysis and preserves the HTTP status', async () => {

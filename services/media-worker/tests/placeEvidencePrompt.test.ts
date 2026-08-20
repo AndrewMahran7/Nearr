@@ -8,7 +8,7 @@ import {
 } from '../src/prompts/placeEvidencePrompt.js';
 
 test('post-save hook prompt is lively, concise, grounded, and visual-aware', () => {
-  assert.equal(PROMPT_VERSION, 'media-place-evidence-2026-08-17.v8-cue-voice');
+  assert.equal(PROMPT_VERSION, 'media-place-evidence-2026-08-19.v9-targeted-note');
   assert.match(PLACE_EVIDENCE_SYSTEM_PROMPT, /brewery, winery, dessert/);
   assert.match(PLACE_EVIDENCE_SYSTEM_PROMPT, /waterfall, lake, marina, island/);
   assert.match(PLACE_EVIDENCE_SYSTEM_PROMPT, /Use other only when/i);
@@ -131,4 +131,23 @@ test('buildUserContext: transcript still renders (none) when genuinely empty', (
     ocrExtracted: false,
   });
   assert.match(ctx, /transcript:\s*\n\(none\)/);
+});
+
+test('targeted note context treats the final saved place as authoritative', () => {
+  const ctx = buildUserContext({
+    platform: 'instagram',
+    transcriptText: 'The spicy vodka rigatoni is the move',
+    ocrText: '',
+    targetPlace: {
+      name: 'Pasta Sisters',
+      category: 'restaurant',
+      formattedAddress: '123 Main St',
+    },
+  });
+  assert.match(ctx, /final_place_name: Pasta Sisters/);
+  assert.match(ctx, /authoritative/i);
+  assert.match(ctx, /Do not identify, replace,\s*\ncorrect, or suggest a different venue/i);
+  assert.match(ctx, /exactly one place object/i);
+  assert.match(ctx, /Never borrow a sibling place's segment/i);
+  assert.match(ctx, /memoryCue=null/i);
 });

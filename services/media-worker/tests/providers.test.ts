@@ -223,3 +223,25 @@ test('Gemini 429 without partial evidence is retryable and honors Retry-After', 
     globalThis.fetch = originalFetch;
   }
 });
+
+test('targeted AI-note generation never accepts heuristic fallback on Gemini 429', async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = (async () => new Response('', { status: 429 })) as typeof fetch;
+  try {
+    const provider = selectModelProvider({
+      ...loadConfig(),
+      analysisProvider: 'gemini',
+      geminiApiKey: 'test-key',
+      maxSelectedFrames: 0,
+    });
+    await assert.rejects(
+      () => provider.analyze(analyzeInput({
+        transcript: [{ startSeconds: 0, endSeconds: 2, text: "We're at Pasta Sisters for the vodka rigatoni" }],
+        targetPlace: { name: 'Pasta Sisters', category: 'restaurant' },
+      })),
+      (error: unknown) => isMediaError(error) && error.code === 'provider_rate_limited',
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
