@@ -85,6 +85,9 @@ export type ResolvedMedia = {
   /** Bounded public-post metadata used transiently as caption evidence. */
   metadataTitle?: string | null;
   metadataDescription?: string | null;
+  /** Platform-provided location label when the public extractor exposes one.
+   *  This is geographic context, never trusted as the final place. */
+  metadataLocation?: string | null;
   /** The post author's @handle, when the extractor exposed one. Forwarded to
    *  the resolver so the CREATOR is never mistaken for a tagged venue. */
   metadataCreatorHandle?: string | null;

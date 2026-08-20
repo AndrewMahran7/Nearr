@@ -25,6 +25,7 @@ import {
 import { log } from '../util/logger.js';
 import { MediaError } from '../types/media.js';
 import { parseRetryAfterSeconds } from '../util/backoff.js';
+import { withVayrinFallback } from '../vayrin/visualGeolocationProvider.js';
 
 export type AnalyzeInput = {
   platform: string;
@@ -38,6 +39,7 @@ export type AnalyzeInput = {
   frames: SelectedFrame[];
   metadataTitle?: string | null;
   metadataDescription?: string | null;
+  metadataLocation?: string | null;
   signal: AbortSignal;
 };
 
@@ -49,6 +51,11 @@ export type AnalyzeOutput = {
   modelRawPreview?: string;
   /** Structured record of what schema validation kept vs dropped. */
   parseDiagnostics?: EvidenceParseDiagnostics;
+  /** Bounded, secret-free record of the Vayrin visual-geolocation escalation:
+   *  whether it ran, why, what it cost, and what it produced. Absent when the
+   *  provider is not wrapped. Typed loosely so this module does not have to
+   *  depend on the vayrin module, which already depends on this one. */
+  vayrin?: Record<string, unknown>;
 };
 
 export interface ModelProvider {
@@ -323,6 +330,11 @@ class GeminiModel implements ModelProvider {
 }
 
 export function selectModelProvider(cfg: WorkerConfig): ModelProvider {
-  if (cfg.analysisProvider === 'gemini') return new GeminiModel(cfg);
-  return new HeuristicModel();
+  const base = cfg.analysisProvider === 'gemini' ? new GeminiModel(cfg) : new HeuristicModel();
+  // Vayrin WRAPS the configured provider rather than replacing it: the cheap
+  // pass still runs first on every share and still decides every case it can
+  // already decide. With VAYRIN_VISUAL_GEOLOCATION_ENABLED off (the default)
+  // this returns `base` untouched — no wrapper, no OpenAI call, no behavior
+  // change of any kind.
+  return withVayrinFallback(base, cfg);
 }

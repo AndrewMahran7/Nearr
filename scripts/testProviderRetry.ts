@@ -252,8 +252,10 @@ const job = readFileSync(
   'utf8',
 );
 assert.match(job, /classifyResolverFailure\(\{/, 'the metadata path classifies before routing');
+const metadataClassification = job.indexOf('const providerFailureClass = classifyResolverFailure({');
+const metadataRouting = job.lastIndexOf('const plan = planFromResolverDecision({');
 assert.ok(
-  job.indexOf('classifyResolverFailure({') < job.indexOf('const plan = planFromResolverDecision({\n    decision: metadataResult.decision'),
+  metadataClassification >= 0 && metadataRouting > metadataClassification,
   'classification happens BEFORE the job is routed to the user',
 );
 // 16. Cancellation safety + 17. no duplicate finalize: the retry park is

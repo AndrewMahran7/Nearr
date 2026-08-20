@@ -27,7 +27,7 @@ import {
 import { cleanupMedia } from './cleanupMedia.js';
 import { setProgress, setTaskStatus, requeueTask } from '../db/tasks.js';
 import type { TranscriptionProvider } from '../providers/transcription.js';
-import type { ModelProvider } from '../providers/model.js';
+import { groundClaimedEvidence, type ModelProvider } from '../providers/model.js';
 import { type OcrProvider, deduplicateOcrSegments } from '../providers/ocr.js';
 
 export type TaskDeps = {
@@ -198,7 +198,7 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
 
     // 6. Analyze → propose structured place evidence.
     await setProgress(client, task, 'analyzing_evidence');
-    const analysis = await deps.model.analyze({
+    const analyzeInput = {
       platform: task.platform,
       canonicalUrl: media.canonicalUrl,
       transcript: transcript.segments,
@@ -207,8 +207,18 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
       frames,
       metadataTitle: media.metadataTitle,
       metadataDescription: media.metadataDescription,
+      metadataLocation: media.metadataLocation,
       signal: controller.signal,
-    });
+    };
+    const rawAnalysis = await deps.model.analyze(analyzeInput);
+    // Apply the same provenance check after EVERY provider, including Vayrin.
+    // A model-labelled caption/speech/OCR clue must occur in that real source;
+    // frame observations remain admissible as visual evidence. This is
+    // intentionally idempotent for Gemini, which already grounds internally.
+    const analysis = {
+      ...rawAnalysis,
+      evidence: groundClaimedEvidence(rawAnalysis.evidence, analyzeInput),
+    };
     diagnostics.modelProvider = analysis.provider;
     diagnostics.promptVersion = analysis.promptVersion;
     if (analysis.modelRawPreview) diagnostics.modelOutput = analysis.modelRawPreview;
@@ -223,6 +233,7 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
         diagnostics.evidenceRejectionPaths = analysis.parseDiagnostics.rejectionPaths;
       }
     }
+    if (analysis.vayrin) diagnostics.vayrin = analysis.vayrin;
     warnings.push(...analysis.evidence.warnings);
     diagnostics.durationMs = Date.now() - startedAt;
     diagnostics.warnings = warnings.slice(0, 24);

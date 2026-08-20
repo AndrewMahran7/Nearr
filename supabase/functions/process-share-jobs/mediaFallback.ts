@@ -118,7 +118,6 @@ const STRONG_ADDRESS_EVIDENCE = new Set<string>([
 // analysis cannot help these, so we must not spend it.
 const NON_MEDIA_FAILURES = new Set<string>([
   'places_error', // Google Places infra error — retry metadata, not video.
-  'roundup_post', // "Top N" list post — video won't disambiguate one place.
 ]);
 
 /** Which platforms currently have a wired, flag-enabled media resolver. */
@@ -215,9 +214,17 @@ export function shouldRunMediaFallback(
     return { run: false, reason: 'multi_address_evidence' };
   }
 
-  // 5. Failure is unrelated to missing media evidence (infra error / roundup).
+  // 5. Failure is unrelated to missing media evidence (provider infra only).
   if (input.failureReason && NON_MEDIA_FAILURES.has(input.failureReason)) {
     return { run: false, reason: 'unrelated_failure' };
+  }
+
+  // A roundup is exactly where timestamped video evidence adds value: the
+  // caption may say "top 5" without naming the five venues, while the frames
+  // and transcript preserve each one. Skipping media made the existing
+  // multi-place mention architecture unreachable for this core case.
+  if (input.failureReason === 'roundup_post') {
+    return { run: true, reason: 'roundup_video_places' };
   }
 
   // ---- Positive triggers (metadata evidence was insufficient) -------------

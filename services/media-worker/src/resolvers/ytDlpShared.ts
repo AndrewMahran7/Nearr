@@ -40,6 +40,10 @@ export type YtInfo = {
   duration?: number;
   title?: string;
   description?: string;
+  /** Public location fields emitted by some social extractors. They are coarse
+   *  context and must never be treated as verified ground truth. */
+  location?: string;
+  release_location?: string;
   ext?: string;
   url?: string;
   formats?: YtFormat[];
@@ -102,6 +106,10 @@ export function boundedMetadata(value: unknown, max: number): string | null {
   if (typeof value !== 'string') return null;
   const normalized = value.replace(/\s+/g, ' ').trim();
   return normalized ? normalized.slice(0, max) : null;
+}
+
+export function pickLocationMetadata(info: YtInfo): string | null {
+  return boundedMetadata(info.location ?? info.release_location, 500);
 }
 
 /** Classify a yt-dlp stderr blob into a structured MediaError. Deliberately

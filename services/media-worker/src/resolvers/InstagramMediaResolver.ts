@@ -30,6 +30,7 @@ import { MediaError } from '../types/media.js';
 import type { WorkerConfig } from '../config/env.js';
 import {
   boundedMetadata,
+  pickLocationMetadata,
   pickCreatorHandle,
   enforceDurationLimit,
   probeWithYtDlp,
@@ -79,6 +80,7 @@ export class InstagramMediaResolver implements MediaResolver {
       durationSeconds: duration,
       metadataTitle: boundedMetadata(info.title, 500),
       metadataDescription: boundedMetadata(info.description, 4000),
+      metadataLocation: pickLocationMetadata(info),
       metadataCreatorHandle: pickCreatorHandle(info, url),
       source: file.source,
       warnings: file.warnings,

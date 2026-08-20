@@ -181,7 +181,7 @@ for (const platform of ['tiktok', 'facebook', 'youtube', 'snapchat', 'twitter', 
 }
 {
   const r = shouldRunMediaFallback(input({ decision: 'manual_fallback', failureReason: 'roundup_post' }), ctx());
-  check('roundup_post => no run (video cannot disambiguate)', !r.run && r.reason === 'unrelated_failure');
+  check('roundup_post => run (video can preserve multiple places)', r.run && r.reason === 'roundup_video_places');
 }
 {
   // Address-verified single candidate is already strong — video adds nothing.

@@ -26,6 +26,7 @@ import { parseVttToSegments, normalizeTranscriptSegments } from '../util/subtitl
 import { log } from '../util/logger.js';
 import {
   boundedMetadata,
+  pickLocationMetadata,
   pickCreatorHandle,
   enforceDurationLimit,
   probeWithYtDlp,
@@ -173,6 +174,7 @@ export class YouTubeMediaResolver implements MediaResolver {
       durationSeconds: duration,
       metadataTitle: boundedMetadata(info.title, 500),
       metadataDescription: boundedMetadata(info.description, 4000),
+      metadataLocation: pickLocationMetadata(info),
       metadataCreatorHandle: pickCreatorHandle(info, url),
       source: file.source,
       warnings: file.warnings,

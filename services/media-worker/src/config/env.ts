@@ -24,6 +24,32 @@ function int(name: string, fallback: number, min = 0): number {
   return Math.max(min, Math.floor(v));
 }
 
+function nonNegativeNumber(name: string, fallback: number): number {
+  const value = Number(process.env[name]);
+  return Number.isFinite(value) && value >= 0 ? value : fallback;
+}
+
+/** Narrow an env string to the frame-strategy union, falling back to the
+ *  default rather than trusting an unrecognized value. */
+function frameStrategy(value: string): WorkerConfig['vayrinFrameStrategy'] {
+  const v = value.trim().toLowerCase();
+  return v === 'uniform' || v === 'pipeline' || v === 'diverse' || v === 'all' ? v : 'diverse';
+}
+
+/** Reasoning effort is OMITTED unless explicitly configured, so the model's own
+ *  default applies rather than one this repo picked blind. */
+function reasoningEffort(value: string): WorkerConfig['vayrinReasoningEffort'] {
+  const v = value.trim().toLowerCase();
+  return v === 'none' ||
+    v === 'low' ||
+    v === 'medium' ||
+    v === 'high' ||
+    v === 'xhigh' ||
+    v === 'max'
+    ? v
+    : undefined;
+}
+
 function list(name: string, fallback: string[]): string[] {
   const v = process.env[name];
   if (!v || !v.trim()) return fallback;
@@ -94,6 +120,25 @@ export type WorkerConfig = {
   geminiApiKey: string;
   geminiModel: string;
   ocrProvider: string; // 'noop' | 'model' (default model when a model is configured, else noop)
+
+  // ---- Vayrin visual geolocation (strong-model fallback; default OFF) ----
+  // A share whose cheap pass identified no specific place is escalated to a
+  // multimodal geolocation call. Deliberately a fallback rather than the first
+  // call: it is materially more expensive per share than the default provider.
+  //
+  // The API key is NOT held here. It is resolved at call time from the
+  // environment by `vayrin/visualGeolocationClient.resolveVayrinApiKey`, so it
+  // has exactly one reader and cannot be copied into a config summary or a log
+  // line by accident.
+  vayrinVisualGeolocationEnabled: boolean;
+  vayrinModel: string;
+  /** Frames sent per call. Capped by maxSelectedFrames. */
+  vayrinFrameBudget: number;
+  vayrinFrameStrategy: 'uniform' | 'pipeline' | 'diverse' | 'all';
+  vayrinReasoningEffort: 'none' | 'low' | 'medium' | 'high' | 'xhigh' | 'max' | undefined;
+  vayrinInputPricePerMillion: number;
+  vayrinCachedInputPricePerMillion: number;
+  vayrinOutputPricePerMillion: number;
 
   // ---- Fallback public-media retrieval provider (optional; env-configured) ----
   // A production-grade external public-media fetch service used ONLY when the
@@ -220,6 +265,15 @@ export function loadConfig(): WorkerConfig {
     geminiModel: str('GEMINI_MODEL', 'gemini-flash-latest'),
     ocrProvider: str('MEDIA_OCR_PROVIDER', geminiApiKey ? 'model' : 'noop').toLowerCase(),
 
+    vayrinVisualGeolocationEnabled: bool('VAYRIN_VISUAL_GEOLOCATION_ENABLED', false),
+    vayrinModel: str('VAYRIN_MODEL', 'gpt-5.6-sol'),
+    vayrinFrameBudget: int('VAYRIN_FRAME_BUDGET', 8, 1),
+    vayrinFrameStrategy: frameStrategy(str('VAYRIN_FRAME_STRATEGY', 'diverse')),
+    vayrinReasoningEffort: reasoningEffort(str('VAYRIN_REASONING_EFFORT', '')),
+    vayrinInputPricePerMillion: nonNegativeNumber('VAYRIN_PRICE_INPUT_PER_MILLION', 5),
+    vayrinCachedInputPricePerMillion: nonNegativeNumber('VAYRIN_PRICE_CACHED_INPUT_PER_MILLION', 0.5),
+    vayrinOutputPricePerMillion: nonNegativeNumber('VAYRIN_PRICE_OUTPUT_PER_MILLION', 30),
+
     mediaFetchProviderUrl: str('MEDIA_FETCH_PROVIDER_URL'),
     mediaFetchProviderApiKey: str('MEDIA_FETCH_PROVIDER_API_KEY'),
     mediaFetchProviderAuthHeader: str('MEDIA_FETCH_PROVIDER_AUTH_HEADER', 'authorization'),
@@ -265,6 +319,7 @@ export function redactedConfigSummary(cfg: WorkerConfig): Record<string, unknown
       facebookResolverEnabled: cfg.facebookResolverEnabled,
       snapchatResolverEnabled: cfg.snapchatResolverEnabled,
       nativeVideoAnalysisEnabled: cfg.nativeVideoAnalysisEnabled,
+      vayrinVisualGeolocationEnabled: cfg.vayrinVisualGeolocationEnabled,
     },
     limits: {
       maxDurationSeconds: cfg.maxDurationSeconds,
@@ -279,6 +334,18 @@ export function redactedConfigSummary(cfg: WorkerConfig): Record<string, unknown
       transcription: cfg.transcriptionProvider,
       analysis: cfg.analysisProvider,
       ocr: cfg.ocrProvider,
+    },
+    vayrin: {
+      enabled: cfg.vayrinVisualGeolocationEnabled,
+      model: cfg.vayrinModel,
+      frameBudget: cfg.vayrinFrameBudget,
+      frameStrategy: cfg.vayrinFrameStrategy,
+      reasoningEffort: cfg.vayrinReasoningEffort ?? 'model_default',
+      pricingUsdPerMillion: {
+        input: cfg.vayrinInputPricePerMillion,
+        cachedInput: cfg.vayrinCachedInputPricePerMillion,
+        output: cfg.vayrinOutputPricePerMillion,
+      },
     },
     allowedMediaHosts: cfg.allowedMediaHosts,
     hasWorkerSecret: !!cfg.workerSecret,
