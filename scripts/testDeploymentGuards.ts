@@ -62,7 +62,7 @@ check(
 );
 check(
   'worker preserves the configured /services/media-worker Railway root',
-  workerSource.includes("'services/media-worker',") && !workerSource.includes("'--path-as-root',"),
+  !workerSource.includes("'services/media-worker',") && !workerSource.includes("'--path-as-root',"),
 );
 check('worker has no shell interpolation', !/shell\s*:/.test(workerSource));
 

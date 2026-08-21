@@ -71,7 +71,6 @@ if (ref !== target.ref) {
 
 const args = [
   'up',
-  'services/media-worker',
   '--project',
   PROJECT,
   '--environment',
