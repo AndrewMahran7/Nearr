@@ -63,7 +63,13 @@ export function extractHandles(args: {
         : args.platform === 'youtube'
           ? 'youtube'
           : 'link';
-  const known = normalizeKnownHandle(args.knownPosterHandle);
+  // Instagram's current OG title starts with "@creator on Instagram: ...".
+  // That prefix is platform-authored identity metadata, not a caption tag.
+  // Recognize it before scanning all @mentions so the creator cannot be
+  // reclassified as the first tagged venue when the caption also names friends.
+  const known =
+    normalizeKnownHandle(args.knownPosterHandle) ??
+    extractMetadataPosterHandle(args.platform, args.title);
   // With an authoritative poster, `detectHandles` must not apply its
   // page-shaped single-handle shortcut — pass the neutral platform so every
   // handle it finds stays a TAGGED handle, then attribute the poster below.
@@ -94,6 +100,17 @@ export function extractHandles(args: {
     venueHandles: venue,
     posterNameHint,
   };
+}
+
+/** Extract only provider-authored creator identity forms. Caption prose is
+ * deliberately excluded: an arbitrary leading @mention is not the poster. */
+export function extractMetadataPosterHandle(
+  platform: SourcePlatform,
+  title: string | null | undefined,
+): string | null {
+  if (platform !== 'instagram' || typeof title !== 'string') return null;
+  const match = title.match(/^\s*@([A-Za-z0-9._]{2,30})\s+on\s+Instagram\s*:/i);
+  return normalizeKnownHandle(match?.[1]);
 }
 
 /** Accept only handle-shaped values, so a display name or numeric account id

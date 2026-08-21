@@ -169,7 +169,11 @@ export type VayrinResult =
       payload: VayrinPayload;
       model: string;
       promptVersion: string;
+      /** Frames selected/requested by the caller before file-read validation. */
       frameCount: number;
+      /** Frames actually encoded into the Responses API payload. */
+      sentFrameCount: number;
+      sentTimestampsSeconds: number[];
       latencyMs: number;
       usage: VayrinUsage;
       /** Bounded preview for diagnostics. Never the full response. */
@@ -185,6 +189,8 @@ export type VayrinResult =
       model: string;
       promptVersion: string;
       frameCount: number;
+      sentFrameCount: number;
+      sentTimestampsSeconds: number[];
     };
 
 const EMPTY_USAGE: VayrinUsage = {
@@ -395,9 +401,16 @@ export async function runVisualGeolocation(request: VayrinRequest): Promise<Vayr
   const model = request.model?.trim() || DEFAULT_VAYRIN_MODEL;
   const endpoint = request.endpoint?.trim() || DEFAULT_ENDPOINT;
   const frameCount = request.frames.length;
+  const sentTimestampsSeconds: number[] = [];
   const started = Date.now();
 
-  const base = { model, promptVersion: VAYRIN_PROMPT_VERSION, frameCount };
+  const base = () => ({
+    model,
+    promptVersion: VAYRIN_PROMPT_VERSION,
+    frameCount,
+    sentFrameCount: sentTimestampsSeconds.length,
+    sentTimestampsSeconds: [...sentTimestampsSeconds],
+  });
   const fail = (
     kind: VayrinFailureKind,
     code: string,
@@ -408,7 +421,7 @@ export async function runVisualGeolocation(request: VayrinRequest): Promise<Vayr
     code,
     retryAfterSeconds,
     latencyMs: Date.now() - started,
-    ...base,
+    ...base(),
   });
 
   if (frameCount === 0) return fail('no_frames', 'vayrin_no_frames');
@@ -419,7 +432,10 @@ export async function runVisualGeolocation(request: VayrinRequest): Promise<Vayr
   const content: unknown[] = [{ type: 'input_text', text: buildVayrinUserContext(request.context) }];
   for (const frame of request.frames) {
     const parts = await frameToImagePart(frame);
-    if (parts) content.push(...parts);
+    if (parts) {
+      content.push(...parts);
+      sentTimestampsSeconds.push(frame.timestampSeconds);
+    }
   }
   // Every frame was unreadable — the same state as having no frames.
   if (content.length === 1) return fail('no_frames', 'vayrin_frames_unreadable');
@@ -491,7 +507,7 @@ export async function runVisualGeolocation(request: VayrinRequest): Promise<Vayr
     latencyMs: Date.now() - started,
     usage: readUsage((body as Record<string, unknown>).usage),
     rawPreview: text.slice(0, 800),
-    ...base,
+    ...base(),
   };
 }
 

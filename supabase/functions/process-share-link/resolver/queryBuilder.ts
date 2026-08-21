@@ -30,14 +30,15 @@ export function buildQueryPlan(evidence: Evidence): QueryPlan {
       : null) ??
     null;
 
-  // Address evidence is stronger than the poster. When a street address is
-  // present we NEVER prepend the poster handle/name to a Places query — only
-  // the caption-derived venue may qualify the address. The poster name is
-  // only allowed as a weak fallback when there is no address at all (this
-  // preserves the pre-existing no-address behavior).
-  const placeNameHint = evidence.address
-    ? venueName
-    : venueName ?? evidence.handles.posterNameHint ?? null;
+  // Only venue/location evidence may become a Places identity query. The
+  // poster handle/display name remains available as context on `evidence`, but
+  // never enters this name ladder.
+  // Creator identity is context, never place identity. It must not seed a
+  // Places query even when there is no address: that exact fallback turned
+  // @oliversamiee into the query "Oliversamiee" and silently saved an
+  // unrelated Oliver's business. Independently-derived venue evidence still
+  // occupies `venueName` and follows the unchanged query ladder below.
+  const placeNameHint = venueName;
 
   // Explicit place evidence = something that actually anchors a place
   // (a street address, a caption venue hint like "📍 X" / "X, City", or a
@@ -47,6 +48,11 @@ export function buildQueryPlan(evidence: Evidence): QueryPlan {
     !!evidence.address ||
     evidence.venueNameHints.length > 0 ||
     evidence.handles.venueHandles.length > 0;
+  const hasIndependentCaptionSeedEvidence =
+    !!evidence.address ||
+    evidence.venueNameHints.some(
+      (hint) => !evidence.venueNameHintsFromHandle.includes(hint),
+    );
 
   const queries: string[] = [];
   const push = (q: string | null | undefined) => {
@@ -70,7 +76,12 @@ export function buildQueryPlan(evidence: Evidence): QueryPlan {
       profileDisplayName: null,
       // Only allow casual caption prose as a seed when an explicit place
       // signal is present to anchor it.
-      allowGenericCaptionSeed: hasExplicitPlaceEvidence,
+      // A handle-only plan may query that exact account-derived name for a
+      // confirmation, but must not unlock arbitrary caption/title seeds. Those
+      // provider strings repeat the creator identity ("@creator on Instagram"
+      // and "comments - creator on DATE") and reopened the Oliver query even
+      // after the poster itself was excluded from venue handles.
+      allowGenericCaptionSeed: hasIndependentCaptionSeedEvidence,
       max: 6,
     });
     for (const q of subQueries) push(q);

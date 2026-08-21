@@ -56,6 +56,13 @@ export type AnalyzeOutput = {
    *  provider is not wrapped. Typed loosely so this module does not have to
    *  depend on the vayrin module, which already depends on this one. */
   vayrin?: Record<string, unknown>;
+  /** Content-free account of what the baseline model actually received. */
+  modelInput?: {
+    model: string;
+    frameCount: number;
+    timestampsSeconds: number[];
+    textContextCategories: string[];
+  };
 };
 
 export interface ModelProvider {
@@ -242,15 +249,28 @@ class GeminiModel implements ModelProvider {
     });
 
     const parts: unknown[] = [{ text: `${PLACE_EVIDENCE_SYSTEM_PROMPT}\n\n${userText}` }];
+    const sentTimestampsSeconds: number[] = [];
     for (const frame of input.frames.slice(0, this.cfg.maxSelectedFrames)) {
       try {
         const bytes = await readFile(frame.path);
         parts.push({ text: `frame_timestamp_seconds: ${frame.timestampSeconds.toFixed(3)}` });
         parts.push({ inlineData: { mimeType: 'image/jpeg', data: bytes.toString('base64') } });
+        sentTimestampsSeconds.push(frame.timestampSeconds);
       } catch {
         /* skip unreadable frame */
       }
     }
+    const modelInput: NonNullable<AnalyzeOutput['modelInput']> = {
+      model: this.cfg.geminiModel,
+      frameCount: sentTimestampsSeconds.length,
+      timestampsSeconds: sentTimestampsSeconds,
+      textContextCategories: [
+        'platform',
+        ...([input.metadataTitle, input.metadataDescription].some(Boolean) ? ['caption'] : []),
+        ...(input.transcript.length > 0 ? ['transcript'] : []),
+        ...(input.ocr.length > 0 ? ['visible_text'] : []),
+      ],
+    };
 
     try {
       const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
@@ -273,6 +293,7 @@ class GeminiModel implements ModelProvider {
             provider: `${this.name}+heuristic`,
             promptVersion: PROMPT_VERSION,
             evidence: { ...fallback, warnings: [...fallback.warnings, warning] },
+            modelInput,
           };
         }
         if (res.status === 429 || res.status >= 500) {
@@ -282,7 +303,7 @@ class GeminiModel implements ModelProvider {
             parseRetryAfterSeconds(res.headers.get('retry-after')),
           );
         }
-        return { provider: this.name, promptVersion: PROMPT_VERSION, evidence: emptyEvidence([warning]) };
+        return { provider: this.name, promptVersion: PROMPT_VERSION, evidence: emptyEvidence([warning]), modelInput };
       }
       const json = (await res.json()) as {
         candidates?: { content?: { parts?: { text?: string }[] } }[];
@@ -292,7 +313,7 @@ class GeminiModel implements ModelProvider {
       try {
         parsed = JSON.parse(text);
       } catch {
-        return { provider: this.name, promptVersion: PROMPT_VERSION, evidence: emptyEvidence(['gemini_json_parse_failed']), modelRawPreview: text.slice(0, 500) };
+        return { provider: this.name, promptVersion: PROMPT_VERSION, evidence: emptyEvidence(['gemini_json_parse_failed']), modelRawPreview: text.slice(0, 500), modelInput };
       }
       const { evidence: validated, diagnostics: parseDiag } = parseEvidenceWithDiagnostics(parsed);
       const evidence = groundClaimedEvidence(validated, input);
@@ -314,6 +335,7 @@ class GeminiModel implements ModelProvider {
         evidence,
         modelRawPreview: text.slice(0, 500),
         parseDiagnostics: parseDiag,
+        modelInput,
       };
     } catch (err) {
       if (err instanceof MediaError) throw err;
@@ -325,6 +347,7 @@ class GeminiModel implements ModelProvider {
           provider: `${this.name}+heuristic`,
           promptVersion: PROMPT_VERSION,
           evidence: { ...fallback, warnings: [...fallback.warnings, 'gemini_exception'] },
+          modelInput,
         };
       }
       throw new MediaError('provider_unavailable', 'gemini_exception');

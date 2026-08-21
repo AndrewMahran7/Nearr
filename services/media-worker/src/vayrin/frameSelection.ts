@@ -36,6 +36,19 @@ export type FrameSelectionResult = {
    *  read on whether the selection actually captured visual variation — a set
    *  averaging under ~8 is largely the same shot repeated. */
   meanPairwiseDistance: number;
+  /** Bounded, content-free explanation for every chosen timestamp. This is
+   * observability only; it is derived after selection and cannot affect it. */
+  decisions: Array<{
+    timestampSeconds: number;
+    reason:
+      | 'within_budget'
+      | 'boundary_first'
+      | 'boundary_last'
+      | 'temporal_stratum_farthest_hash'
+      | 'uniform_temporal_index'
+      | 'pipeline_order'
+      | 'all_within_budget';
+  }>;
 };
 
 /** Chronological order. Timestamps are what let the model group scenes, so a
@@ -157,10 +170,31 @@ export function selectFramesForVayrin(
       break;
   }
 
+  const decisions: FrameSelectionResult['decisions'] = picked.map((frame, index) => {
+    if (considered <= budget) {
+      return { timestampSeconds: frame.timestampSeconds, reason: 'within_budget' as const };
+    }
+    if (strategy === 'diverse') {
+      if (index === 0) return { timestampSeconds: frame.timestampSeconds, reason: 'boundary_first' as const };
+      if (index === picked.length - 1) {
+        return { timestampSeconds: frame.timestampSeconds, reason: 'boundary_last' as const };
+      }
+      return { timestampSeconds: frame.timestampSeconds, reason: 'temporal_stratum_farthest_hash' as const };
+    }
+    if (strategy === 'uniform') {
+      return { timestampSeconds: frame.timestampSeconds, reason: 'uniform_temporal_index' as const };
+    }
+    if (strategy === 'pipeline') {
+      return { timestampSeconds: frame.timestampSeconds, reason: 'pipeline_order' as const };
+    }
+    return { timestampSeconds: frame.timestampSeconds, reason: 'all_within_budget' as const };
+  });
+
   return {
     strategy,
     frames: picked,
     consideredCount: considered,
     meanPairwiseDistance: meanPairwiseDistance(picked),
+    decisions,
   };
 }

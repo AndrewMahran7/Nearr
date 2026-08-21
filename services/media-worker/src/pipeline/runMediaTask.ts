@@ -199,6 +199,8 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
     await setProgress(client, task, 'extracting_frames');
     const rawFrames = await extractFrames(cfg, probe, playable, jobTemp.dir, controller.signal);
     const frames = deduplicateFrames(rawFrames);
+    diagnostics.framesExtracted = rawFrames.length;
+    diagnostics.framesConsidered = frames.length;
     diagnostics.frameCount = frames.length;
 
     // 5. Visible text (OCR provider; default noop → model reads frames).
@@ -243,7 +245,33 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
         diagnostics.evidenceRejectionPaths = analysis.parseDiagnostics.rejectionPaths;
       }
     }
-    if (analysis.vayrin) diagnostics.vayrin = analysis.vayrin;
+    if (analysis.vayrin) {
+      diagnostics.vayrin = analysis.vayrin;
+      const v = analysis.vayrin as Record<string, unknown>;
+      log.info('vayrin_invocation', {
+        jobId: task.share_job_id,
+        taskId: task.id,
+        videoDurationSeconds: probe.durationSeconds,
+        framesExtracted: rawFrames.length,
+        framesConsidered: frames.length,
+        invoked: v.invoked,
+        triggerReason: v.triggerReason,
+        baselineModel: v.baselineModel,
+        baselineResultClass: v.baselineResultClass,
+        baselineFrameCount: v.baselineFrameCount,
+        frameBudget: v.frameBudget,
+        selectedFrameCount: v.selectedFrameCount,
+        selectedTimestampsSeconds: v.selectedTimestampsSeconds,
+        selectionStrategy: v.frameStrategy,
+        selectionDecisions: v.selectionDecisions,
+        model: v.model,
+        sentFrameCount: v.sentFrameCount,
+        sentTimestampsSeconds: v.sentTimestampsSeconds,
+        latencyMs: v.latencyMs,
+        estimatedCostUsd: v.estimatedCostUsd,
+        usageAvailable: !!v.usage,
+      });
+    }
     warnings.push(...analysis.evidence.warnings);
     diagnostics.durationMs = Date.now() - startedAt;
     diagnostics.warnings = warnings.slice(0, 24);

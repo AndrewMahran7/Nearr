@@ -49,6 +49,10 @@ test('diverse frame selection preserves chronology and increases visual spread',
   const uniform = selectFramesForVayrin(frames, 'uniform', 2);
   const diverse = selectFramesForVayrin(frames, 'diverse', 2);
   assert.deepEqual(diverse.frames.map((item) => item.timestampSeconds), [0, 3]);
+  assert.deepEqual(diverse.decisions, [
+    { timestampSeconds: 0, reason: 'boundary_first' },
+    { timestampSeconds: 3, reason: 'boundary_last' },
+  ]);
   assert.ok(meanPairwiseDistance(diverse.frames) >= meanPairwiseDistance(uniform.frames));
 });
 
@@ -168,7 +172,12 @@ test('API client keeps the key out of request JSON and returns structured usage'
     assert.equal(requestBody.includes(secret), false);
     assert.equal(requestBody.includes('data:image/png;base64,'), true);
     assert.equal(requestBody.includes('"store":false'), true);
-    if (result.ok) assert.equal(result.usage.totalTokens, 125);
+    if (result.ok) {
+      assert.equal(result.usage.totalTokens, 125);
+      assert.equal(result.frameCount, 1);
+      assert.equal(result.sentFrameCount, 1);
+      assert.deepEqual(result.sentTimestampsSeconds, [1.5]);
+    }
   } finally {
     globalThis.fetch = originalFetch;
     await rm(directory, { recursive: true, force: true });

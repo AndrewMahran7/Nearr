@@ -6,6 +6,9 @@ import {
   formatMetadataAutoSaveDecisionLog,
 } from '../supabase/functions/process-share-jobs/metadataAutoSaveGate';
 import { planFromResolverDecision } from '../supabase/functions/process-share-jobs/decisionMapping';
+import { extractHandles } from '../supabase/functions/process-share-link/evidence/handleExtraction';
+import { extractEvidence } from '../supabase/functions/process-share-link/evidence/extractEvidence';
+import { buildQueryPlan } from '../supabase/functions/process-share-link/resolver/queryBuilder';
 
 const santaFe = {
   googlePlaceId: 'ChIJxRuQrqwv3YARWdKYfs8FIBY',
@@ -113,5 +116,103 @@ assert.equal(
   true,
   'one plausible provider candidate auto-saves unless concrete evidence blocks it',
 );
+
+// Reproduced metadata-path P0: creator identity was mislabelled as a venue
+// handle, queried as "Oliversamiee", and a single unrelated Places result was
+// accepted despite carrying only a generic business-type score.
+const creatorOnly = evaluateMetadataAutoSave({
+  result: {
+    decision: 'candidate_confirmation',
+    cleanSearchQuery: 'Oliversamiee',
+    candidates: [{
+      ...santaFe,
+      googlePlaceId: 'olivers-unrelated-provider',
+      name: "Oliver's - Olive Oil & Balsamic Tasting Gallery",
+      confidenceScore: 0.5,
+      reasons: ['business_type'],
+    }],
+  },
+  evidence: {
+    venueNameHints: ['Oliversamiee'],
+    venueNameHintsFromHandle: ['Oliversamiee'],
+    handles: {
+      posterHandle: 'oliversamiee',
+      posterNameHint: 'Oliversamiee',
+      venueHandles: ['oliversamiee'],
+    },
+  },
+});
+assert.equal(creatorOnly.eligible, false, 'creator identity alone must never auto-save');
+assert.deepEqual(creatorOnly.explicitConflictFlags, ['creator_identity_only']);
+assert.equal(creatorOnly.selectedProviderId, 'olivers-unrelated-provider');
+
+// Positive compatibility: a business-owned creator post remains eligible when
+// the caption independently names the venue. The creator is context; the
+// explicit caption venue is the identity evidence.
+const corroboratedCreator = evaluateMetadataAutoSave({
+  result: {
+    decision: 'candidate_confirmation',
+    cleanSearchQuery: 'Some Coffee Irvine',
+    candidates: [{
+      ...santaFe,
+      googlePlaceId: 'some-coffee-provider',
+      name: 'Some Coffee',
+      confidenceScore: 0.86,
+      reasons: ['meaningful_name_match', 'business_type'],
+    }],
+  },
+  evidence: {
+    venueNameHints: ['Some Coffee'],
+    venueNameHintsFromHandle: [],
+    handles: {
+      posterHandle: 'somecoffee',
+      posterNameHint: 'Somecoffee',
+      venueHandles: [],
+    },
+  },
+});
+assert.equal(corroboratedCreator.eligible, true, 'independent explicit venue evidence preserves cheap resolution');
+assert.deepEqual(corroboratedCreator.explicitConflictFlags, []);
+
+const reproducedTitle = '@oliversamiee on Instagram: "My biggest backflip"';
+const reproducedDescription = [
+  'My biggest backflip. Been eyeing this up for years.',
+  '@jonahlarson_ @seth__carp @leonard.pretorius @jonah.maliskas',
+  '#cliffjumping #pnw',
+].join(' ');
+const reproducedHandles = extractHandles({
+  platform: 'instagram',
+  title: reproducedTitle,
+  description: reproducedDescription,
+  html: '',
+});
+assert.equal(reproducedHandles.posterHandle, 'oliversamiee');
+assert.equal(reproducedHandles.venueHandles.includes('oliversamiee'), false);
+const reproducedEvidence = extractEvidence({
+  platform: 'instagram',
+  title: reproducedTitle,
+  description: reproducedDescription,
+  handles: reproducedHandles,
+});
+const reproducedPlan = buildQueryPlan(reproducedEvidence);
+assert.equal(
+  reproducedPlan.queries.some((query) => /oliversamiee/i.test(query)),
+  false,
+  'the creator must not generate an Oliver Places query',
+);
+
+const creatorWithoutOtherAccounts = extractHandles({
+  platform: 'instagram',
+  title: reproducedTitle,
+  description: 'Cliff jumping with no explicit place evidence.',
+  html: '',
+});
+const noPlaceEvidence = extractEvidence({
+  platform: 'instagram',
+  title: reproducedTitle,
+  description: 'Cliff jumping with no explicit place evidence.',
+  handles: creatorWithoutOtherAccounts,
+});
+assert.deepEqual(buildQueryPlan(noPlaceEvidence).queries, []);
 
 console.log('PASS exact Santa Fe metadata auto-save and explicit contradiction gates');

@@ -25,6 +25,7 @@ import { runMediaDispatchProof } from './checks/dispatch';
 import {
   fixtureCheapPath,
   fixtureCreatorIdentitySafety,
+  fixtureMetadataCreatorLive,
   fixtureHardNegative,
   fixtureMediaFallback,
 } from './fixtures/pipeline';
@@ -34,7 +35,7 @@ import {
   resolveCanaryOptions,
 } from './fixtures/vayrin';
 
-const SUITES = ['config', 'dispatch', 'pipeline', 'safety', 'all', 'vayrin-live'] as const;
+const SUITES = ['config', 'dispatch', 'pipeline', 'safety', 'all', 'creator-live', 'vayrin-live'] as const;
 type Suite = (typeof SUITES)[number];
 
 const EXIT_OK = 0;
@@ -70,6 +71,13 @@ async function main(): Promise<number> {
       console.error(canary.error);
       return EXIT_REFUSED;
     }
+  }
+  const creatorLiveUrl = suite === 'creator-live'
+    ? (process.env.NEARR_E2E_CREATOR_URL ?? '').trim()
+    : '';
+  if (suite === 'creator-live' && !creatorLiveUrl) {
+    console.error('creator-live requires NEARR_E2E_CREATOR_URL naming the exact public regression source.');
+    return EXIT_REFUSED;
   }
 
   let session: E2ESession;
@@ -121,6 +129,12 @@ async function main(): Promise<number> {
       ok = ok && outcome.ok;
     }
 
+    if (ready && suite === 'creator-live') {
+      console.log('LIVE CREATOR REGRESSION: one public source will traverse metadata and may invoke paid media models.');
+      const outcome = await fixtureMetadataCreatorLive(reporter, session, creatorLiveUrl);
+      ok = ok && outcome.ok;
+    }
+
     if (ready && suite === 'vayrin-live' && canary && !('error' in canary)) {
       printLiveModelBanner(canary.sourceUrl, session.config.railwayVars.VAYRIN_MODEL || 'gpt-5.6-sol (worker default)');
       const outcome = await fixtureVayrinLiveCanary(reporter, session, canary);
@@ -161,6 +175,8 @@ function pendingStagesFor(suite: Suite): string[] {
       return ['Fixture D — creator identity is not place identity'];
     case 'vayrin-live':
       return ['Fixture C — live Vayrin model boundary'];
+    case 'creator-live':
+      return ['Fixture F — physical metadata creator safety'];
     case 'all':
       return [
         'media dispatch proof',

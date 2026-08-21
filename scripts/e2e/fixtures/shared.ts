@@ -17,7 +17,7 @@ import { StatusTrail, type JobRow, type TaskRow } from '../lifecycle';
 import { correlationKeyFor, type E2ESession } from '../session';
 
 export const JOB_COLUMNS =
-  'id,status,progress_stage,decision,saved_place_id,candidate_payload,failure_reason,needs_help_reason,suggested_query';
+  'id,status,progress_stage,decision,saved_place_id,candidate_payload,extraction_payload,failure_reason,needs_help_reason,suggested_query';
 export const TASK_COLUMNS = 'id,share_job_id,status,progress_stage,attempts,locked_at,failure_code';
 
 export async function readJob(admin: SupabaseClient, jobId: string): Promise<JobRow | null> {

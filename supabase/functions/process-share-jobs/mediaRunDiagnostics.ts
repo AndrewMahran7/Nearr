@@ -58,6 +58,35 @@ export type RecognitionFunnel = {
   sharedGeoCountryApplied?: boolean;
   /** Geographic places admitted as destinations in their own right (peer cities). */
   peerGeographicDestinations?: number;
+  /** One bounded, content-free record of the Vayrin invocation. The job/task
+   * IDs and media duration already live in columns on the same run row. */
+  vayrinInvocation?: {
+    invoked: true;
+    framesExtracted?: number;
+    framesConsidered?: number;
+    frameBudget?: number;
+    selectedFrameCount?: number;
+    selectedTimestampsSeconds?: number[];
+    selectionStrategy?: string;
+    selectionDecisions?: Array<{ timestampSeconds: number; reason: string }>;
+    baselineModel?: string;
+    baselineResultClass?: string;
+    baselineFrameCount?: number;
+    baselineTimestampsSeconds?: number[];
+    baselineTextContextCategories?: string[];
+    model?: string;
+    sentFrameCount?: number;
+    sentTimestampsSeconds?: number[];
+    latencyMs?: number;
+    usage?: {
+      inputTokens: number | null;
+      cachedInputTokens: number | null;
+      outputTokens: number | null;
+      reasoningTokens: number | null;
+      totalTokens: number | null;
+    };
+    estimatedCostUsd?: number | null;
+  };
 };
 
 /**
@@ -128,6 +157,84 @@ export function buildRecognitionFunnel(
     if (Array.isArray(geoContext.countryCandidates)) {
       out.sharedGeoCountryCandidates = geoContext.countryCandidates.length;
     }
+  }
+
+  const rawVayrin = d.vayrin;
+  if (rawVayrin && typeof rawVayrin === 'object' && (rawVayrin as Record<string, unknown>).invoked === true) {
+    const v = rawVayrin as Record<string, unknown>;
+    const finite = (value: unknown): number | undefined =>
+      typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : undefined;
+    const boundedString = (value: unknown, max = 100): string | undefined =>
+      typeof value === 'string' && value.length > 0 ? value.slice(0, max) : undefined;
+    const timestamps = (value: unknown): number[] | undefined => {
+      if (!Array.isArray(value)) return undefined;
+      const values = value
+        .filter((item): item is number => typeof item === 'number' && Number.isFinite(item) && item >= 0)
+        .slice(0, 24);
+      return values.length > 0 ? values : undefined;
+    };
+    const usageRaw = v.usage && typeof v.usage === 'object'
+      ? v.usage as Record<string, unknown>
+      : null;
+    const nullableCount = (value: unknown): number | null => {
+      const parsed = count(value);
+      return parsed === undefined ? null : parsed;
+    };
+    const selectionDecisions = Array.isArray(v.selectionDecisions)
+      ? v.selectionDecisions
+          .filter((item): item is Record<string, unknown> => !!item && typeof item === 'object')
+          .map((item) => ({
+            timestampSeconds: finite(item.timestampSeconds),
+            reason: boundedString(item.reason, 64),
+          }))
+          .filter((item): item is { timestampSeconds: number; reason: string } =>
+            item.timestampSeconds !== undefined && item.reason !== undefined)
+          .slice(0, 24)
+      : [];
+    const baselineCategories = Array.isArray(v.baselineTextContextCategories)
+      ? v.baselineTextContextCategories
+          .filter((item): item is string => typeof item === 'string' && item.length > 0)
+          .map((item) => item.slice(0, 48))
+          .slice(0, 12)
+      : [];
+
+    out.vayrinInvocation = {
+      invoked: true,
+      ...(count(d.framesExtracted) !== undefined ? { framesExtracted: count(d.framesExtracted) } : {}),
+      ...(count(d.framesConsidered ?? d.frameCount) !== undefined
+        ? { framesConsidered: count(d.framesConsidered ?? d.frameCount) }
+        : {}),
+      ...(count(v.frameBudget) !== undefined ? { frameBudget: count(v.frameBudget) } : {}),
+      ...(count(v.selectedFrameCount) !== undefined ? { selectedFrameCount: count(v.selectedFrameCount) } : {}),
+      ...(timestamps(v.selectedTimestampsSeconds) ? { selectedTimestampsSeconds: timestamps(v.selectedTimestampsSeconds) } : {}),
+      ...(boundedString(v.frameStrategy, 32) ? { selectionStrategy: boundedString(v.frameStrategy, 32) } : {}),
+      ...(selectionDecisions.length > 0 ? { selectionDecisions } : {}),
+      ...(boundedString(v.baselineModel) ? { baselineModel: boundedString(v.baselineModel) } : {}),
+      ...(boundedString(v.baselineResultClass, 48) ? { baselineResultClass: boundedString(v.baselineResultClass, 48) } : {}),
+      ...(count(v.baselineFrameCount) !== undefined ? { baselineFrameCount: count(v.baselineFrameCount) } : {}),
+      ...(timestamps(v.baselineTimestampsSeconds) ? { baselineTimestampsSeconds: timestamps(v.baselineTimestampsSeconds) } : {}),
+      ...(baselineCategories.length > 0 ? { baselineTextContextCategories: baselineCategories } : {}),
+      ...(boundedString(v.model) ? { model: boundedString(v.model) } : {}),
+      ...(count(v.sentFrameCount) !== undefined ? { sentFrameCount: count(v.sentFrameCount) } : {}),
+      ...(timestamps(v.sentTimestampsSeconds) ? { sentTimestampsSeconds: timestamps(v.sentTimestampsSeconds) } : {}),
+      ...(count(v.latencyMs) !== undefined ? { latencyMs: count(v.latencyMs) } : {}),
+      ...(usageRaw
+        ? {
+            usage: {
+              inputTokens: nullableCount(usageRaw.inputTokens),
+              cachedInputTokens: nullableCount(usageRaw.cachedInputTokens),
+              outputTokens: nullableCount(usageRaw.outputTokens),
+              reasoningTokens: nullableCount(usageRaw.reasoningTokens),
+              totalTokens: nullableCount(usageRaw.totalTokens),
+            },
+          }
+        : {}),
+      ...(v.estimatedCostUsd === null
+        ? { estimatedCostUsd: null }
+        : finite(v.estimatedCostUsd) !== undefined
+        ? { estimatedCostUsd: finite(v.estimatedCostUsd) }
+        : {}),
+    };
   }
   return out;
 }

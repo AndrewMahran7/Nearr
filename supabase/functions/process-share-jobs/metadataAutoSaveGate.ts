@@ -8,7 +8,7 @@
 import { addressesMatch } from '../../../lib/shareAgent/tools.ts';
 import { geographicContextTypeOf } from '../process-share-link/places/placeNormalization.ts';
 
-export const METADATA_AUTO_SAVE_RULE_VERSION = 'metadata-autosave-2026-08-15.v3';
+export const METADATA_AUTO_SAVE_RULE_VERSION = 'metadata-autosave-2026-08-20.v4';
 
 type Candidate = {
   googlePlaceId?: unknown;
@@ -28,6 +28,7 @@ type Candidate = {
 type MetadataResult = {
   decision?: unknown;
   candidates?: unknown;
+  cleanSearchQuery?: unknown;
 };
 
 type MetadataEvidence = {
@@ -35,6 +36,13 @@ type MetadataEvidence = {
   address?: { raw?: unknown } | null;
   addresses?: unknown;
   venueNameHints?: unknown;
+  venueNameHintsFromHandle?: unknown;
+  taggedLocation?: unknown;
+  handles?: {
+    posterHandle?: unknown;
+    posterNameHint?: unknown;
+    venueHandles?: unknown;
+  } | null;
 };
 
 export type MetadataCandidateRejection = {
@@ -179,6 +187,45 @@ export function evaluateMetadataAutoSave(input: {
   // by the resolver decision; raw address count alone must not manufacture a
   // false ambiguity after the resolver produced one confirmation candidate.
   if (input.evidence.isRoundup === true) explicitConflictFlags.push('roundup_post');
+
+  // A handle is an account identity, not automatically a place identity.
+  // Handle-derived text may still be searched to offer a confirmation, but it
+  // cannot silently save unless an independent source also identifies a place
+  // (caption venue prose, address, or structured location tag). This is the
+  // defense-in-depth boundary for stale/malformed upstream provenance.
+  const venueHints = Array.isArray(input.evidence.venueNameHints)
+    ? input.evidence.venueNameHints.map(text).filter(Boolean)
+    : [];
+  const handleHints = new Set(
+    Array.isArray(input.evidence.venueNameHintsFromHandle)
+      ? input.evidence.venueNameHintsFromHandle.map(normalizedName).filter(Boolean)
+      : [],
+  );
+  const independentCaptionHints = venueHints.filter(
+    (hint) => !handleHints.has(normalizedName(hint)),
+  );
+  const hasIndependentPlaceIdentity =
+    !!text(input.evidence.address?.raw) ||
+    independentCaptionHints.length > 0 ||
+    !!input.evidence.taggedLocation;
+  const posterHandle = text(input.evidence.handles?.posterHandle);
+  const posterNameHint = text(input.evidence.handles?.posterNameHint);
+  const query = normalizedName(input.result.cleanSearchQuery);
+  const creatorNames = [posterHandle, posterNameHint]
+    .map(normalizedName)
+    .filter(Boolean);
+  const creatorIdentityOnly =
+    !hasIndependentPlaceIdentity &&
+    creatorNames.length > 0 &&
+    (creatorNames.includes(query) || venueHints.some((hint) => creatorNames.includes(normalizedName(hint))));
+  const hasHandleIdentity =
+    handleHints.size > 0 ||
+    (Array.isArray(input.evidence.handles?.venueHandles) && input.evidence.handles!.venueHandles.length > 0) ||
+    creatorNames.length > 0;
+  if (creatorIdentityOnly) explicitConflictFlags.push('creator_identity_only');
+  else if (!hasIndependentPlaceIdentity && hasHandleIdentity) {
+    explicitConflictFlags.push('handle_identity_only');
+  }
 
   const selected = plausible.length === 1 ? plausible[0]! : null;
   const expectedAddress = text(input.evidence.address?.raw);

@@ -341,8 +341,20 @@ export type VayrinDiagnostics = {
   model?: string;
   promptVersion?: string;
   frameCount?: number;
+  sentFrameCount?: number;
+  sentTimestampsSeconds?: number[];
+  framesConsidered?: number;
+  frameBudget?: number;
+  selectedFrameCount?: number;
+  selectedTimestampsSeconds?: number[];
+  selectionDecisions?: ReturnType<typeof selectFramesForVayrin>['decisions'];
   frameStrategy?: FrameStrategy;
   meanPairwiseDistance?: number;
+  baselineModel?: string;
+  baselineFrameCount?: number;
+  baselineTimestampsSeconds?: number[];
+  baselineTextContextCategories?: string[];
+  baselineResultClass?: 'insufficient' | 'no_place' | 'coarse_geography' | 'explicit_place';
   latencyMs?: number;
   usage?: Record<string, number | null>;
   estimatedCostUsd?: number | null;
@@ -420,8 +432,26 @@ export class VayrinFallbackModel implements ModelProvider {
       model: result.model,
       promptVersion: result.promptVersion,
       frameCount: result.frameCount,
+      sentFrameCount: result.sentFrameCount,
+      sentTimestampsSeconds: result.sentTimestampsSeconds,
+      framesConsidered: selection.consideredCount,
+      frameBudget: this.options.frameBudget,
+      selectedFrameCount: selection.frames.length,
+      selectedTimestampsSeconds: selection.frames.map((frame) => frame.timestampSeconds),
+      selectionDecisions: selection.decisions,
       frameStrategy: selection.strategy,
       meanPairwiseDistance: selection.meanPairwiseDistance,
+      baselineModel: baseline.modelInput?.model ?? this.inner.name,
+      baselineFrameCount: baseline.modelInput?.frameCount,
+      baselineTimestampsSeconds: baseline.modelInput?.timestampsSeconds,
+      baselineTextContextCategories: baseline.modelInput?.textContextCategories,
+      baselineResultClass: baseline.evidence.insufficientEvidence
+        ? 'insufficient'
+        : baseline.evidence.places.length === 0
+        ? 'no_place'
+        : baseline.evidence.places.every(isCoarseGeographicPlace)
+        ? 'coarse_geography'
+        : 'explicit_place',
       latencyMs: result.latencyMs,
     };
 

@@ -433,6 +433,91 @@ export async function fixtureCreatorIdentitySafety(
 }
 
 // ---------------------------------------------------------------------------
+// Physical metadata-path creator regression (explicit opt-in)
+// ---------------------------------------------------------------------------
+
+const FORBIDDEN_CREATOR_PROVIDER_ID = 'ChIJeRkVOGz03IARsswHfGFA368';
+
+/**
+ * Runs the reproduced public Reel through the real create-share-job → metadata
+ * → optional media path. This is intentionally separate from the deterministic
+ * synthetic fixture above: it is opt-in, can spend model tokens, and proves the
+ * deployed metadata boundary against the exact source that exposed the bug.
+ */
+export async function fixtureMetadataCreatorLive(
+  reporter: StageReporter,
+  session: E2ESession,
+  sourceUrl: string,
+): Promise<FixtureOutcome> {
+  const name = 'Fixture F — physical metadata creator safety';
+  const submitted = await submitShareJob(session, 'metadata-creator-live', sourceUrl);
+  if (!submitted.ok) {
+    reporter.fail(`${name}: share job accepted`, submitted.elapsedMs, submitted.detail);
+    return { name, ok: false };
+  }
+  reporter.identify({ jobId: submitted.jobId });
+  reporter.pass(`${name}: share job accepted`, submitted.elapsedMs, `job ${submitted.jobId}`);
+
+  const trail = new StatusTrail('job');
+  const terminal = await awaitJobTerminal(
+    session.admin,
+    submitted.jobId,
+    trail,
+    JOB_TERMINAL,
+    timeoutFor('terminal'),
+  );
+  if (!terminal.ok) {
+    reporter.fail(`${name}: terminal result`, terminal.elapsedMs, 'the physical job did not reach a terminal state', {
+      jobStatusTrail: trail.trail,
+      lastObservedJob: terminal.last ?? null,
+    });
+    return { name, ok: false };
+  }
+
+  const job = terminal.value as JobRow & { extraction_payload?: unknown };
+  let savedName: string | null = null;
+  let savedProviderId: string | null = null;
+  if (job.saved_place_id) {
+    const { data: saved } = await session.admin
+      .from('saved_places')
+      .select('place_id')
+      .eq('id', job.saved_place_id)
+      .maybeSingle();
+    const placeId = (saved as { place_id?: string } | null)?.place_id;
+    if (placeId) {
+      const { data: place } = await session.admin
+        .from('places')
+        .select('name,google_place_id')
+        .eq('id', placeId)
+        .maybeSingle();
+      savedName = (place as { name?: string } | null)?.name ?? null;
+      savedProviderId = (place as { google_place_id?: string } | null)?.google_place_id ?? null;
+    }
+  }
+  const extractionText = JSON.stringify(job.extraction_payload ?? {});
+  const poisoned =
+    savedProviderId === FORBIDDEN_CREATOR_PROVIDER_ID ||
+    /Oliver's\s*-\s*Olive Oil\s*&\s*Balsamic Tasting Gallery/i.test(savedName ?? '') ||
+    /ChIJeRkVOGz03IARsswHfGFA368|Oliver's\s*-\s*Olive Oil\s*&\s*Balsamic Tasting Gallery/i.test(extractionText);
+  if (poisoned) {
+    reporter.fail(`${name}: creator identity did not auto-save`, terminal.elapsedMs, 'the reproduced Oliver creator candidate survived the deployed metadata path', {
+      jobId: submitted.jobId,
+      decision: job.decision,
+      saved_place_id: job.saved_place_id,
+      savedProviderId,
+      savedName,
+    });
+    return { name, ok: false };
+  }
+  reporter.pass(
+    `${name}: creator identity did not auto-save`,
+    terminal.elapsedMs,
+    `decision=${job.decision ?? 'null'} saved_place_id=${job.saved_place_id ?? 'null'} saved_name=${savedName ?? 'null'}`,
+  );
+  return { name, ok: true };
+}
+
+// ---------------------------------------------------------------------------
 // Fixture E — hard negative
 // ---------------------------------------------------------------------------
 

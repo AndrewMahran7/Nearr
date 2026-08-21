@@ -257,7 +257,57 @@ check('bounds: every geographic place is counted (as peers here - none contains 
 check('bounds: context labels capped at 12', (manyFunnel.sourceGeographicContextLabels ?? []).length === 12);
 
 // ---------------------------------------------------------------------------
-// 7. Privacy — no free-form source content may appear in any persisted value.
+// 7. Vayrin invocation observability — counts, timestamps, selector reasons,
+//    model inputs and usage survive without any raw frames or source text.
+// ---------------------------------------------------------------------------
+
+const invocation = buildRecognitionFunnel(
+  {
+    framesExtracted: 12,
+    framesConsidered: 9,
+    vayrin: {
+      invoked: true,
+      frameBudget: 6,
+      selectedFrameCount: 6,
+      selectedTimestampsSeconds: [0, 2, 4, 6, 8, 10.167],
+      frameStrategy: 'diverse',
+      selectionDecisions: [
+        { timestampSeconds: 0, reason: 'boundary_first' },
+        { timestampSeconds: 2, reason: 'temporal_stratum_farthest_hash' },
+        { timestampSeconds: 10.167, reason: 'boundary_last' },
+      ],
+      baselineModel: 'gemini-2.5-flash',
+      baselineResultClass: 'insufficient',
+      baselineFrameCount: 9,
+      baselineTimestampsSeconds: [0, 1, 2, 3, 4, 5, 6, 8, 10.167],
+      baselineTextContextCategories: ['platform', 'caption', 'transcript'],
+      model: 'gpt-5.6-sol',
+      sentFrameCount: 6,
+      sentTimestampsSeconds: [0, 2, 4, 6, 8, 10.167],
+      latencyMs: 18420,
+      usage: {
+        inputTokens: 2100,
+        cachedInputTokens: 500,
+        outputTokens: 420,
+        reasoningTokens: 180,
+        totalTokens: 2520,
+      },
+      estimatedCostUsd: 0.02135,
+    },
+  },
+  null,
+  0,
+).vayrinInvocation;
+check('vayrin telemetry: invocation persisted', invocation?.invoked === true);
+check('vayrin telemetry: extracted and considered remain distinct', invocation?.framesExtracted === 12 && invocation.framesConsidered === 9);
+check('vayrin telemetry: selected timestamps persisted', invocation?.selectedTimestampsSeconds?.length === 6);
+check('vayrin telemetry: actual transmitted frames persisted', invocation?.sentFrameCount === 6 && invocation.sentTimestampsSeconds?.length === 6);
+check('vayrin telemetry: baseline model inputs persisted', invocation?.baselineFrameCount === 9 && invocation.baselineTextContextCategories?.includes('caption') === true);
+check('vayrin telemetry: usage and cost persisted', invocation?.usage?.inputTokens === 2100 && invocation.estimatedCostUsd === 0.02135);
+check('vayrin telemetry: selector rationale persisted', invocation?.selectionDecisions?.[1]?.reason === 'temporal_stratum_farthest_hash');
+
+// ---------------------------------------------------------------------------
+// 8. Privacy — no free-form source content may appear in any persisted value.
 // ---------------------------------------------------------------------------
 
 const secretish = evidence([
@@ -281,7 +331,7 @@ check(
 );
 
 // ---------------------------------------------------------------------------
-// 8. The reason helper must agree with the boolean guard on every case — the
+// 9. The reason helper must agree with the boolean guard on every case — the
 //    guard is DEFINED in terms of it, and this pins that they cannot drift.
 // ---------------------------------------------------------------------------
 

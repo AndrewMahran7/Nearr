@@ -190,6 +190,7 @@
     "test:e2e:dev:dispatch": "ts-node -P scripts/tsconfig.json scripts/e2e/runE2E.ts --suite dispatch",
     "test:e2e:dev:pipeline": "ts-node -P scripts/tsconfig.json scripts/e2e/runE2E.ts --suite pipeline",
     "test:e2e:dev:safety": "ts-node -P scripts/tsconfig.json scripts/e2e/runE2E.ts --suite safety",
+    "test:e2e:dev:creator-live": "ts-node -P scripts/tsconfig.json scripts/e2e/runE2E.ts --suite creator-live",
     "test:e2e:dev:vayrin-live": "ts-node -P scripts/tsconfig.json scripts/e2e/runE2E.ts --suite vayrin-live",
     "verify:dev:e2e": "ts-node -P scripts/tsconfig.json scripts/e2e/verifyDevE2E.ts"
   },
