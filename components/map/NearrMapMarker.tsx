@@ -36,6 +36,12 @@ type Props = {
   onPress: (place: SavedPlaceWithPlace) => void;
   dimmed: boolean;
   selected: boolean;
+  /**
+   * True while the selected place's Place Detail card is on screen. Only the
+   * marker's visual name capsule reacts to this; the accessible name is
+   * unconditional.
+   */
+  detailVisible: boolean;
   detailLevel: MapMarkerDetailLevel;
   redesignEnabled: boolean;
 };
@@ -59,6 +65,7 @@ function NearrMapMarkerView({
   onPress,
   dimmed,
   selected,
+  detailVisible,
   detailLevel,
   redesignEnabled,
 }: Props) {
@@ -108,9 +115,15 @@ function NearrMapMarkerView({
       selected,
       photoUri,
       photoFailed,
+      detailVisible,
     }),
-    [detailLevel, photoFailed, photoUri, place, selected],
+    [detailLevel, detailVisible, photoFailed, photoUri, place, selected],
   );
+
+  // The label capsule is part of the rasterized visual, so its presence also
+  // decides how much canvas the selected marker needs and where the pin's
+  // anchor sits inside that canvas.
+  const showsLabel = presentation.showLabel;
 
   // Re-arm native snapshotting only when the visual itself changes. Category
   // markers freeze on the next turn; a selected photo gets a bounded window to
@@ -120,7 +133,13 @@ function NearrMapMarkerView({
     const delay = presentation.visual === 'photo' ? PHOTO_TRACKING_SAFETY_MS : 0;
     const id = setTimeout(() => setTracksViewChanges(false), delay);
     return () => clearTimeout(id);
-  }, [presentation.detailLevel, presentation.selected, presentation.visual, presentation.photoUri]);
+  }, [
+    presentation.detailLevel,
+    presentation.selected,
+    presentation.showLabel,
+    presentation.visual,
+    presentation.photoUri,
+  ]);
 
   const handlePress = useCallback(
     (event: { stopPropagation?: () => void }) => {
@@ -170,7 +189,12 @@ function NearrMapMarkerView({
         latitude: place.place.latitude,
         longitude: place.place.longitude,
       }}
-      anchor={selected && redesignEnabled ? { x: 0.5, y: 0.335 } : { x: 0.5, y: 0.5 }}
+      // The label capsule extends the canvas BELOW the disc, so the selected
+      // pin anchors on the disc's centre (26 of 78) instead of the box centre.
+      // Without a label the canvas is the disc itself and the anchor is 0.5 —
+      // both resolve to the same geographic point, so hiding the label never
+      // nudges the pin.
+      anchor={selected && redesignEnabled && showsLabel ? { x: 0.5, y: 0.335 } : { x: 0.5, y: 0.5 }}
       centerOffset={{ x: 0, y: 0 }}
       tracksViewChanges={tracksViewChanges}
       onPress={handlePress}
@@ -190,7 +214,7 @@ function NearrMapMarkerView({
         <View
           style={[
             styles.redesignWrap,
-            selected
+            selected && showsLabel
               ? { width: selectedWidth, height: selectedHeight }
               : { width: markerSize, height: markerSize },
           ]}
@@ -222,7 +246,7 @@ function NearrMapMarkerView({
             )}
             {!selected && detailLevel !== 'dense' ? <View style={styles.savedDot} /> : null}
           </View>
-          {presentation.showLabel ? (
+          {showsLabel ? (
             <View style={styles.labelCapsule}>
               <Text style={styles.labelText} numberOfLines={1}>
                 {place.place.name}
@@ -250,6 +274,7 @@ export const NearrMapMarker = memo(NearrMapMarkerView, (prev, next) =>
   prev.place.place.longitude === next.place.place.longitude &&
   prev.dimmed === next.dimmed &&
   prev.selected === next.selected &&
+  prev.detailVisible === next.detailVisible &&
   prev.detailLevel === next.detailLevel &&
   prev.redesignEnabled === next.redesignEnabled &&
   prev.onPress === next.onPress,

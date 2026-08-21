@@ -8,7 +8,7 @@ import {
   MEDIA_AUTO_SAVE_RULE_VERSION,
   resolveMediaAutoSaveThreshold,
 } from '../supabase/functions/process-share-jobs/mediaAutoSaveGate';
-import { buildMediaResultNotification } from '../supabase/functions/process-share-jobs/decisionMapping';
+import { composeShareCompletionNotification } from '../supabase/functions/process-share-jobs/shareCompletionNotification';
 import type { MentionResult } from '../supabase/functions/process-share-link/resolver/nameDrivenResolver';
 import type { VenueMention } from '../supabase/functions/process-share-jobs/mediaMentions';
 
@@ -527,11 +527,11 @@ check('model confidence is diagnostic only', decide(mention({ confidence: 0.01 }
 }
 {
   const d = decide();
-  const notification = buildMediaResultNotification({
+  const notification = composeShareCompletionNotification({
     jobId: 'job-single-plausible',
-    createdSavedPlaceIds: d.eligible ? ['saved-1'] : [],
-    alreadySavedPlaceIds: [],
-    reviewCount: d.eligible ? 0 : 1,
+    status: d.eligible ? 'completed' : 'needs_help',
+    savedPlaceId: d.eligible ? 'saved-1' : null,
+    candidateCount: d.eligible ? 0 : 1,
   });
   check('one-candidate auto-save cannot generate unresolved notification', notification.data.type === 'share_job_completed');
 }

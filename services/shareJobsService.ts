@@ -19,6 +19,7 @@ import type {
   ShareJobResultCandidate,
 } from '@/lib/shareJobResult';
 import type { SavedPlaceWithPlace } from '@/types';
+import type { ShareFailureCategory } from '@/lib/shareFailurePresentation';
 
 export type ShareJobStatus =
   | 'queued'
@@ -54,6 +55,9 @@ export type ShareJob = {
   suggested_query: string | null;
   needs_help_reason: string | null;
   failure_reason: string | null;
+  failure_category: ShareFailureCategory | null;
+  failure_code: string | null;
+  analysis_attempted: boolean;
   notification_status:
     | 'pending'
     | 'sending'
@@ -89,7 +93,7 @@ export type UndoAutoSaveResult = {
 };
 
 const JOB_COLUMNS =
-  'id, user_id, source_url, canonical_url, source_platform, status, progress_stage, decision, saved_place_id, candidate_payload, extraction_payload, suggested_query, needs_help_reason, failure_reason, notification_status, notification_attempts, notification_last_attempt_at, notification_ticket_ids, notification_error_code, notification_submitted_at, created_at, updated_at, completed_at';
+  'id, user_id, source_url, canonical_url, source_platform, status, progress_stage, decision, saved_place_id, candidate_payload, extraction_payload, suggested_query, needs_help_reason, failure_reason, failure_category, failure_code, analysis_attempted, notification_status, notification_attempts, notification_last_attempt_at, notification_ticket_ids, notification_error_code, notification_submitted_at, created_at, updated_at, completed_at';
 
 /** List the current user's active/actionable jobs, newest first.
  *

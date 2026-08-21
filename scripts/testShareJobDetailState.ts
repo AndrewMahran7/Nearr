@@ -71,12 +71,17 @@ const job = (patch: Partial<ShareJobDetailInput>): ShareJobDetailInput => ({
       decision: 'manual_fallback',
       candidate_payload: { candidates: [] },
       suggested_query: 'pizza san clemente',
+      failure_code: 'insufficient_evidence',
+      failure_category: 'analysis_insufficient',
+      analysis_attempted: true,
     }),
   );
   assert.equal(state.kind, 'manual');
   assert.equal(state.copy.title, SHARE_JOB_DETAIL_COPY.manual.title);
   assert.equal(state.suggestedQuery, 'pizza san clemente');
-  assert.equal(state.reason, 'no_candidates');
+  assert.equal(state.reason, 'analysis_insufficient');
+  assert.equal(state.canSearchManually, true);
+  assert.equal(state.canRetry, false);
 }
 
 // 4. Completed + saved_place_id -> offer the existing saved place.

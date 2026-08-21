@@ -41,6 +41,10 @@ import {
   selectionModeForPlaceResult,
   type SelectionMode,
 } from './placeSelection';
+import {
+  presentShareFailure,
+  type ShareFailureCategory,
+} from './shareFailurePresentation';
 
 /**
  * What the detail screen should render.
@@ -79,6 +83,7 @@ export type ShareJobDetailReason =
   | 'multi_slots'
   | 'candidates_multiple'
   | 'candidates_single'
+  | ShareFailureCategory
   | 'no_candidates';
 
 /** Loose structural input so this works with `ShareJob` and with a raw row. */
@@ -91,6 +96,11 @@ export type ShareJobDetailInput = {
   extraction_payload?: unknown;
   suggested_query?: string | null;
   needs_help_reason?: string | null;
+  failure_reason?: string | null;
+  failure_category?: string | null;
+  failure_code?: string | null;
+  analysis_attempted?: boolean | null;
+  source_platform?: string | null;
 };
 
 export type ShareJobDetailState = {
@@ -108,6 +118,9 @@ export type ShareJobDetailState = {
   suggestedQuery: string | null;
   /** True only for a recoverable failure that has not already saved a place. */
   canRetry: boolean;
+  /** Manual search is useful for access/policy/insufficient states, not runtime failures. */
+  canSearchManually: boolean;
+  failureCategory: ShareFailureCategory | null;
   copy: ShareJobDetailCopy;
   reason: ShareJobDetailReason;
 };
@@ -119,8 +132,8 @@ export const SHARE_JOB_DETAIL_COPY = {
     body: 'Give us a quick check before we save it.',
   },
   manual: {
-    title: "We couldn't quite find this one",
-    body: 'Help us track down the place.',
+    title: "We couldn't pin this one down",
+    body: 'Open Nearr to search manually.',
   },
   multi: {
     body: 'Pick the ones you meant and we’ll save them together.',
@@ -196,6 +209,8 @@ export function buildShareJobDetailState(
     alreadySaved: false,
     suggestedQuery: null,
     canRetry: false,
+    canSearchManually: false,
+    failureCategory: null,
     copy: SHARE_JOB_DETAIL_COPY.missing,
     reason: 'no_job',
   };
@@ -231,6 +246,8 @@ export function buildShareJobDetailState(
     alreadySaved: extraction?.alreadySaved === true,
     suggestedQuery,
     canRetry: false,
+    canSearchManually: false,
+    failureCategory: null,
   };
 
   switch (classifyShareJobDetail({ status: job.status })) {
@@ -270,7 +287,14 @@ export function buildShareJobDetailState(
 
   // `failed` stays recoverable, but ONLY when nothing was saved from it — a
   // retry must never be able to double-save.
-  const canRetry = job.status === 'failed' && !savedPlaceId;
+  const failure = presentShareFailure({
+    failureCategory: job.failure_category,
+    failureCode: text(job.failure_code) ?? text(job.failure_reason),
+    provider: job.source_platform,
+    analysisAttempted: job.analysis_attempted,
+    status: job.status,
+  });
+  const canRetry = job.status === 'failed' && !savedPlaceId && failure.retryable;
 
   // Several logical places from one post are reviewed together. The decision
   // column is the primary signal; the persisted slots are the fallback so a row
@@ -280,6 +304,8 @@ export function buildShareJobDetailState(
     return {
       ...base,
       canRetry,
+      canSearchManually: true,
+      failureCategory: null,
       kind: 'multi',
       copy: {
         title: `We found ${count} ${count === 1 ? 'place' : 'places'}`,
@@ -297,6 +323,8 @@ export function buildShareJobDetailState(
     return {
       ...base,
       canRetry,
+      canSearchManually: true,
+      failureCategory: null,
       kind: 'picker',
       copy: {
         title: `We found ${pluralPlaces(candidates.length)}`,
@@ -310,6 +338,8 @@ export function buildShareJobDetailState(
     return {
       ...base,
       canRetry,
+      canSearchManually: true,
+      failureCategory: null,
       kind: 'confirm',
       // A known backend contradiction (closed, address conflict, …) gets its
       // own honest wording instead of an unqualified "we found it".
@@ -321,8 +351,10 @@ export function buildShareJobDetailState(
   return {
     ...base,
     canRetry,
+    canSearchManually: failure.actions.includes('manual_search'),
+    failureCategory: failure.category,
     kind: 'manual',
-    copy: SHARE_JOB_DETAIL_COPY.manual,
-    reason: 'no_candidates',
+    copy: { title: failure.title, body: failure.body },
+    reason: failure.category,
   };
 }

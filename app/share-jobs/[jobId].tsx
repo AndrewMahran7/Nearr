@@ -450,13 +450,13 @@ function ShareJobDetailScreen() {
 
   // Seed the manual search only for a job that genuinely has nothing to offer.
   useEffect(() => {
-    if (!routeJobId || detail.kind !== 'manual') return;
+    if (!routeJobId || detail.kind !== 'manual' || !detail.canSearchManually) return;
     const query = manualQuery.trim();
     if (!query || manualQueryEditedRef.current) return;
     const key = quickCheckSearchKey(routeJobId, 'manual', query);
     if (!claimInitialQuickCheckSearch(key)) return;
     void runManualSearch(query);
-  }, [detail.kind, routeJobId, manualQuery, runManualSearch]);
+  }, [detail.canSearchManually, detail.kind, routeJobId, manualQuery, runManualSearch]);
 
   useEffect(() => {
     if (
@@ -1813,7 +1813,7 @@ function ShareJobDetailScreen() {
                   renderIdentityLead(lead, () => openIdentityLead(lead)))}
               </View>
             ) : null}
-            {renderManualSearch()}
+            {detail.canSearchManually ? renderManualSearch() : null}
           </View>
         ) : (
           <View style={styles.section}>

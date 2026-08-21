@@ -116,7 +116,7 @@ const ALL_ON = {
   const enqueueBlock = branch.slice(branch.indexOf('if (trigger.run)'), finalizeAt);
   assert.ok(enqueueBlock.includes('parkPatch'), 'the parent is parked, not finalized');
   assert.ok(
-    !enqueueBlock.includes('buildNeedsHelpNotification'),
+    !enqueueBlock.includes('composeShareCompletionNotification'),
     'no needs_help push while media fallback is still pending',
   );
   assert.ok(!enqueueBlock.includes('await finalize('), 'the job is not made terminal');
@@ -128,7 +128,7 @@ const ALL_ON = {
     'manual fallback still available when media fallback cannot run',
   );
   assert.ok(
-    branch.includes('buildNeedsHelpNotification'),
+    branch.includes('composeShareCompletionNotification'),
     'and still notifies in that genuinely terminal case',
   );
 }

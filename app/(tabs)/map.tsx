@@ -84,6 +84,7 @@ import {
   MapPlaceSearchDropdown,
   MapSnackbar,
   MapTopSearchBar,
+  NearrMapClusterMarker,
   NearrMapMarker,
   SelectedPlaceDetails,
   ShareQueueButton,
@@ -142,6 +143,16 @@ import { recordBreadcrumb } from '@/lib/breadcrumbs';
 import { setLocationWatcherState } from '@/lib/diagnosticContext';
 import { isMapPinRedesignEnabled } from '@/lib/featureFlags';
 import { mapMarkerDetailLevel } from '@/lib/mapMarkerPresentation';
+import {
+  buildMapClusterIndex,
+  clusterExpansionRegion,
+  clusterExpansionZoom,
+  clusterTapZoom,
+  nextClusterZoom,
+  queryMapClusters,
+  regionToClusterZoom,
+  type MapClusterMarker as MapClusterMarkerModel,
+} from '@/lib/mapClustering';
 import {
   decideSavedPlaceFocus,
   findSavedPlaceForOpen,
@@ -492,6 +503,15 @@ export default function MapScreen() {
   const [markerLatitudeDelta, setMarkerLatitudeDelta] = useState(
     PREVIEW_INITIAL_REGION.latitudeDelta,
   );
+  // The completed camera, used ONLY to decide clustering. Like
+  // markerLatitudeDelta it updates after a gesture settles, never per frame,
+  // so clustering is recomputed a handful of times per interaction rather than
+  // dozens. `null` until the first region change; `initialRegion` stands in.
+  const [settledRegion, setSettledRegion] = useState<Region | null>(null);
+  // The committed integer clustering zoom. Held through small pans by the
+  // hysteresis in nextClusterZoom so the map does not re-cluster on a nudge.
+  const [clusterZoom, setClusterZoom] = useState<number | null>(null);
+
   // Keep an already-open detail sheet attached to the live cached row. Media
   // enrichment updates ai_note asynchronously after the initial save.
   useEffect(() => {
@@ -525,13 +545,6 @@ export default function MapScreen() {
   const visiblePlaces = useMemo(
     () => filterPlacesForMap(validPlaces, mapCategoryFilter, selected?.id ?? null),
     [mapCategoryFilter, selected?.id, validPlaces],
-  );
-  const markerDetailLevel = useMemo(
-    () => mapMarkerDetailLevel({
-      latitudeDelta: markerLatitudeDelta,
-      visibleCount: visiblePlaces.length,
-    }),
-    [markerLatitudeDelta, visiblePlaces.length],
   );
 
   // A filter whose group no longer has any places (last one deleted, or the
@@ -685,7 +698,7 @@ export default function MapScreen() {
   // We measure the real map-area height (excludes header + tab bar) via
   // onLayout so the sheet's expanded height never clips behind the top chrome;
   // windowHeight is only a first-paint fallback.
-  const { height: windowHeight } = useWindowDimensions();
+  const { height: windowHeight, width: windowWidth } = useWindowDimensions();
   const [mapAreaHeight, setMapAreaHeight] = useState(0);
   const [mapGroupSelectorHeight, setMapGroupSelectorHeight] = useState(0);
   const availableHeight = mapAreaHeight || windowHeight;
@@ -722,6 +735,16 @@ export default function MapScreen() {
   const previewExpandedRef = useRef(false);
   previewExpandedRef.current = previewExpanded;
   const shouldShowMapControls = !selected || !previewExpanded;
+  /**
+   * Whether the selected place's own Place Detail card is on screen.
+   *
+   * Selecting a place is what mounts that card (see the "Preview card" block
+   * below, which renders on this same flag), and the card titles the place in
+   * both its collapsed and expanded states. This is therefore the semantic
+   * signal — not a layout measurement — that the map's selected-pin name
+   * capsule would be a second copy of a name already visible.
+   */
+  const selectedPlaceDetailVisible = !!selected;
   const didFitRef = useRef(false);
   // Set to true when the user pans or zooms the map so auto-centering
   // effects don't override the user's chosen viewport.
@@ -1012,6 +1035,150 @@ export default function MapScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mapPreview]);
 
+  // ---- clustering -------------------------------------------------------
+  //
+  // Ownership, so two density systems never fight:
+  //
+  //   filterPlacesForMap  decides WHICH places exist on the map
+  //   clustering          decides HOW MANY markers those become
+  //   mapMarkerDetailLevel decides HOW EACH REMAINING individual pin looks
+  //
+  // The detail level therefore reads the count AFTER clustering. Collapsing
+  // 200 pins into 14 clusters plus 6 loose pins must leave those 6 drawn as
+  // ordinary local pins, not as the 20px dense dots that a 200-pin viewport
+  // used to require.
+  //
+  // Gated on the same flag as the pin redesign: the cluster marker is built
+  // from the redesign's glyph set and visual language, so the legacy path
+  // stays byte-for-byte the map that shipped.
+  const clusteringEnabled = mapPinRedesignActive;
+
+  // Places that are NEVER folded into a cluster.
+  //
+  //   - the selected place, so a selection can never vanish into a "7"
+  //   - every place in an active map-group focus, so queue/notification group
+  //     semantics survive clustering untouched
+  const alwaysIndividualIds = useMemo(() => {
+    const ids = new Set<string>(mapGroupCoordinateIds);
+    if (selected?.id) ids.add(selected.id);
+    return ids;
+  }, [mapGroupCoordinateIds, selected?.id]);
+
+  const clusterCandidates = useMemo(
+    () =>
+      clusteringEnabled
+        ? visiblePlaces.filter((place) => !alwaysIndividualIds.has(place.id))
+        : [],
+    [alwaysIndividualIds, clusteringEnabled, visiblePlaces],
+  );
+
+  // The spatial index. Rebuilt only when the FILTERED set or the
+  // always-individual exceptions change — never on pan, zoom, or an unrelated
+  // re-render.
+  const clusterIndex = useMemo(
+    () => buildMapClusterIndex(clusterCandidates),
+    [clusterCandidates],
+  );
+
+  const clusterRegion = settledRegion ?? initialRegion;
+  const effectiveClusterZoom = useMemo(() => {
+    const continuous = regionToClusterZoom({
+      longitudeDelta: clusterRegion.longitudeDelta,
+      viewportWidth: windowWidth,
+    });
+    return nextClusterZoom(clusterZoom, continuous);
+  }, [clusterRegion.longitudeDelta, clusterZoom, windowWidth]);
+
+  const clusterNodes = useMemo(
+    () =>
+      clusteringEnabled
+        ? queryMapClusters(clusterIndex, {
+            region: clusterRegion,
+            zoom: effectiveClusterZoom,
+          })
+        : [],
+    [clusterIndex, clusterRegion, clusteringEnabled, effectiveClusterZoom],
+  );
+
+  const clusterMarkers = useMemo(
+    () => clusterNodes.flatMap((node) => (node.kind === 'cluster' ? [node] : [])),
+    [clusterNodes],
+  );
+
+  /**
+   * The places drawn as ordinary Nearr pins: the always-individual exceptions
+   * plus whatever clustering left loose. Kept in `visiblePlaces` order so pin
+   * identity and z-order are stable across pans.
+   */
+  const individualPlaces = useMemo(() => {
+    if (!clusteringEnabled) return visiblePlaces;
+    const looseIds = new Set(
+      clusterNodes.flatMap((node) => (node.kind === 'place' ? [node.id] : [])),
+    );
+    return visiblePlaces.filter(
+      (place) => alwaysIndividualIds.has(place.id) || looseIds.has(place.id),
+    );
+  }, [alwaysIndividualIds, clusterNodes, clusteringEnabled, visiblePlaces]);
+
+  const markerDetailLevel = useMemo(
+    () => mapMarkerDetailLevel({
+      latitudeDelta: markerLatitudeDelta,
+      visibleCount: individualPlaces.length,
+    }),
+    [individualPlaces.length, markerLatitudeDelta],
+  );
+
+  /**
+   * Cluster tap: the ONE camera movement clustering is allowed to cause.
+   *
+   * Uses the clustering engine's own expansion zoom, so the animation lands
+   * exactly where this cluster breaks apart rather than at a guessed step. The
+   * zoom is floored at one level in (a tap always does something) and capped
+   * at the level where clustering stops, so places sharing a coordinate settle
+   * into today's overlapping individual pins instead of a cluster the user can
+   * tap forever.
+   */
+  const handleClusterPress = useCallback(
+    (cluster: MapClusterMarkerModel) => {
+      handleUserInteraction('marker_press');
+      const expansion = clusterExpansionZoom(clusterIndex, cluster.clusterId);
+      const zoom = clusterTapZoom({
+        expansionZoom: expansion ?? effectiveClusterZoom + 1,
+        currentZoom: effectiveClusterZoom,
+      });
+      void trackEvent('map_cluster_tapped', {
+        count: cluster.count,
+        dominant_group: cluster.groupId,
+        from_zoom: effectiveClusterZoom,
+        to_zoom: zoom,
+      });
+      followModeRef.current = false;
+      setFollowMode(false);
+      try {
+        mapRef.current?.animateToRegion(
+          clusterExpansionRegion({
+            latitude: cluster.latitude,
+            longitude: cluster.longitude,
+            zoom,
+            viewportWidth: windowWidth,
+            viewportHeight: mapAreaHeight || windowHeight,
+          }),
+          350,
+        );
+      } catch (e) {
+        if (__DEV__) console.debug('[map] cluster expand skipped', e);
+      }
+    },
+    [
+      clusterIndex,
+      effectiveClusterZoom,
+      handleUserInteraction,
+      mapAreaHeight,
+      windowHeight,
+      windowWidth,
+    ],
+  );
+
   // ---- center on user location once on initial map load ----------------
   // Runs when we have both a ready map and a GPS fix. Skipped if:
   //   - the user has already panned (hasUserMovedRef)
@@ -1226,7 +1393,7 @@ export default function MapScreen() {
   const debugStateRef = useRef<string>('');
   const debugLogCountRef = useRef(0);
   if (__DEV__) {
-    const sig = `${liveLoading}|${data.length}|${validPlaces.length}|${visiblePlaces.length}|${markerDetailLevel}|${mapPinRedesignActive}|${permission}|${currentLocationLoading}|${mapReady}|${mapPreview}`;
+    const sig = `${liveLoading}|${data.length}|${validPlaces.length}|${visiblePlaces.length}|${clusterMarkers.length}|${individualPlaces.length}|${effectiveClusterZoom}|${markerDetailLevel}|${mapPinRedesignActive}|${permission}|${currentLocationLoading}|${mapReady}|${mapPreview}`;
     if (debugStateRef.current !== sig && debugLogCountRef.current < 30) {
       debugStateRef.current = sig;
       debugLogCountRef.current += 1;
@@ -1245,7 +1412,12 @@ export default function MapScreen() {
         locationPermissionState: permission,
         currentLocationLoading,
         mapReady,
-        markersRendered: visiblePlaces.length,
+        visiblePlacesLength: visiblePlaces.length,
+        markersRendered: clusterMarkers.length + individualPlaces.length,
+        clustersRendered: clusterMarkers.length,
+        individualMarkersRendered: individualPlaces.length,
+        clusteringEnabled,
+        clusterZoom: effectiveClusterZoom,
         markerDetailLevel,
         mapPinRedesignActive,
         mapPreview,
@@ -1592,8 +1764,21 @@ export default function MapScreen() {
   }, []);
   const handleRegionChangeComplete = useCallback((region: Region) => {
     lastRegionRef.current = region;
-    if (mapPinRedesignEnabled) setMarkerLatitudeDelta(region.latitudeDelta);
-  }, [mapPinRedesignEnabled]);
+    if (!mapPinRedesignEnabled) return;
+    setMarkerLatitudeDelta(region.latitudeDelta);
+    // Clustering inputs settle here and ONLY here. Recording the camera is not
+    // a camera command: nothing in the clustering path may move the map back.
+    setSettledRegion(region);
+    setClusterZoom((current) =>
+      nextClusterZoom(
+        current,
+        regionToClusterZoom({
+          longitudeDelta: region.longitudeDelta,
+          viewportWidth: windowWidth,
+        }),
+      ),
+    );
+  }, [mapPinRedesignEnabled, windowWidth]);
   const handleMapReady = useCallback(() => setMapReady(true), []);
   const handleMapPress = useCallback(() => {
     dismissSelectedPlace();
@@ -1809,12 +1994,12 @@ export default function MapScreen() {
             reads clearly on satellite, dark, and light map tiles alike.
             Archived places are rendered without a radius circle to keep
             the active set visually quiet. */}
-        {visiblePlaces.map((p) => (
+        {individualPlaces.map((p) => (
           !shouldRenderZoneCircle({
             isSelected: selected?.id === p.id,
             hasSelection: !!selected,
             isArchived: !!p.archived_at,
-            visibleCount: visiblePlaces.length,
+            visibleCount: individualPlaces.length,
           }) ? null : (
             <Circle
               key={`circle-${p.id}`}
@@ -1841,7 +2026,15 @@ export default function MapScreen() {
             />
           )
         ))}
-        {visiblePlaces.map((p) => (
+        {clusterMarkers.map((cluster) => (
+          <NearrMapClusterMarker
+            key={cluster.id}
+            cluster={cluster}
+            onPress={handleClusterPress}
+            dimmed={!!mapGroupRequest}
+          />
+        ))}
+        {individualPlaces.map((p) => (
           <NearrMapMarker
             key={p.id}
             place={p}
@@ -1849,6 +2042,10 @@ export default function MapScreen() {
             onPress={handleMarkerPress}
             dimmed={!!mapGroupRequest && !mapGroupCoordinateIds.has(p.id)}
             selected={selected?.id === p.id}
+            // Scoped to the selected marker on purpose: an unselected pin's
+            // value never changes when a detail opens, so its memo still holds
+            // and the Android bitmap path is not re-armed map-wide.
+            detailVisible={selectedPlaceDetailVisible && selected?.id === p.id}
             detailLevel={markerDetailLevel}
             redesignEnabled={mapPinRedesignActive}
           />
@@ -1913,7 +2110,7 @@ export default function MapScreen() {
       ) : null}
 
       {/* Preview card */}
-      {selected ? (
+      {selected && selectedPlaceDetailVisible ? (
         <Animated.View
           onStartShouldSetResponderCapture={() => {
             handleUserInteraction('press');

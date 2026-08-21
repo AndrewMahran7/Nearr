@@ -39,6 +39,10 @@ import {
 } from '../../../lib/shareAgent/facebookUrl.ts';
 import { buildShareJobCandidatePayload } from '../../../lib/shareJobResult.ts';
 import { selectionModeForPlaceResult } from '../../../lib/placeSelection.ts';
+import {
+  classifyShareFailure,
+  type ShareFailureCategory,
+} from '../../../lib/shareFailurePresentation.ts';
 import { isNearrCategory, resolvePlaceCategory } from '../../../lib/placeCategory.ts';
 import {
   evaluateDeliverableAiPlaceNote,
@@ -59,10 +63,12 @@ import {
 } from './providerRetry.ts';
 import {
   planFromResolverDecision,
-  buildCompletedNotification,
-  buildMediaResultNotification,
-  buildNeedsHelpNotification,
 } from './decisionMapping.ts';
+import {
+  composeShareCompletionNotification,
+  type NotificationLocality,
+  type ShareCompletionNotification,
+} from './shareCompletionNotification.ts';
 import {
   effectiveMediaFlags,
   mediaInfrastructureEnabled,
@@ -163,6 +169,152 @@ function safeCandidate(c: any, aiNote: string | null = null) {
     reasons: Array.isArray(c.reasons) ? c.reasons.filter((value: unknown) => typeof value === 'string').slice(0, 12) : [],
     aiNote,
   };
+}
+
+const MEDIA_FAILURE_CODES = new Set([
+  'unsupported_platform',
+  'unsupported_url',
+  'private_or_unavailable',
+  'authentication_required',
+  'provider_changed',
+  'redirect_limit',
+  'download_timeout',
+  'download_failed',
+  'provider_rate_limited',
+  'provider_unavailable',
+  'finalizer_unavailable',
+  'file_too_large',
+  'duration_too_long',
+  'invalid_media',
+  'missing_video',
+  'ssrf_blocked',
+  'cancelled',
+  'insufficient_evidence',
+]);
+
+function safeMediaFailureCode(value: unknown): string | null {
+  return typeof value === 'string' && MEDIA_FAILURE_CODES.has(value) ? value : null;
+}
+
+const SAFE_WEAK_CLUE_KEYS = new Set([
+  'caption_explicit_address',
+  'caption_multiple_addresses',
+  'caption_city_state',
+  'caption_venue_hint',
+  'venue_handle_tagged',
+  'tagged_location',
+  'media_name_mention',
+]);
+
+function hasSafeWeakClues(evidenceUsed: unknown): boolean {
+  return Array.isArray(evidenceUsed) && evidenceUsed.some(
+    (value) => typeof value === 'string' && SAFE_WEAK_CLUE_KEYS.has(value),
+  );
+}
+
+function observableLeadSummary(mentionResults: any[]): {
+  strongestLead: { name: string; evidenceKind: 'observable' } | null;
+  observableLeadCount: number;
+} {
+  const names: string[] = [];
+  const seen = new Set<string>();
+  for (const mention of Array.isArray(mentionResults) ? mentionResults : []) {
+    for (const identity of Array.isArray(mention?.identityHypotheses) ? mention.identityHypotheses : []) {
+      const name = typeof identity?.name === 'string' ? identity.name.trim() : '';
+      const key = name.toLowerCase();
+      if (!name || identity?.evidenceKind !== 'observable' || seen.has(key)) continue;
+      seen.add(key);
+      names.push(name);
+    }
+  }
+  return {
+    strongestLead: names[0] ? { name: names[0], evidenceKind: 'observable' } : null,
+    observableLeadCount: names.length,
+  };
+}
+
+function trustedLocalityFromGeoContext(geo: any): NotificationLocality | null {
+  const city = geo?.cityStrength === 'strong' && typeof geo?.city === 'string' ? geo.city.trim() : '';
+  const region = geo?.regionStrength === 'strong' && typeof geo?.region === 'string' ? geo.region.trim() : '';
+  const country = geo?.countryStrength === 'strong' && typeof geo?.country === 'string' ? geo.country.trim() : '';
+  const label = city ? [city, region].filter(Boolean).join(', ') : region || country;
+  return label ? { label, basis: 'observable_corroborated' } : null;
+}
+
+function trustedMediaNotificationLocality(parsed: any): NotificationLocality | null {
+  if (!parsed?.ok) return null;
+  // A model-prior identity may be retained for review, but cannot turn its
+  // city/region guess into factual lock-screen copy.
+  const observableOnly = {
+    ...parsed.value,
+    places: parsed.value.places.filter((place: any) => place?.identityEvidenceKind !== 'model_prior'),
+  };
+  return trustedLocalityFromGeoContext(buildVenueMentions(observableOnly).geoContext);
+}
+
+function trustedMetadataNotificationLocality(evidence: any, result: any): NotificationLocality | null {
+  const providerClassifiedGeographic =
+    result?.diagnostics?.sourceLocationTagGranularity === 'geographic_context';
+  const label = typeof evidence?.taggedLocation?.placeName === 'string'
+    ? evidence.taggedLocation.placeName.trim()
+    : '';
+  return providerClassifiedGeographic && label
+    ? { label, basis: 'provider_verified' }
+    : null;
+}
+
+function reviewNotification(args: {
+  jobId: string;
+  status?: 'needs_help' | 'failed';
+  mode: string;
+  candidates?: any[];
+  mentionResults?: any[];
+  notificationLocality?: NotificationLocality | null;
+  hasWeakClues?: boolean;
+  technicalFailure?: boolean;
+  failureCategory?: ShareFailureCategory | null;
+  failureCode?: string | null;
+  provider?: string | null;
+  analysisAttempted?: boolean | null;
+  savedPlaceId?: string | null;
+  savedPlaceIds?: string[];
+  createdSavedPlaceIds?: string[];
+  reviewCount?: number;
+}): ShareCompletionNotification {
+  const candidates = Array.isArray(args.candidates) ? args.candidates : [];
+  const mentionResults = Array.isArray(args.mentionResults) ? args.mentionResults : [];
+  const leads = observableLeadSummary(mentionResults);
+  const savedPlaceIds = Array.isArray(args.savedPlaceIds) ? args.savedPlaceIds : [];
+  const multiPlace = mentionResults.length > 1
+    ? {
+        totalCount: mentionResults.length,
+        savedCount: savedPlaceIds.length,
+        unresolvedCandidateGroupCount: mentionResults.filter(
+          (mention: any) => Array.isArray(mention?.candidates) && mention.candidates.length > 0 && !mention?.savedPlaceId,
+        ).length,
+      }
+    : null;
+  return composeShareCompletionNotification({
+    jobId: args.jobId,
+    status: args.status ?? 'needs_help',
+    technicalFailure: args.technicalFailure,
+    failureCategory: args.failureCategory,
+    failureCode: args.failureCode,
+    provider: args.provider,
+    analysisAttempted: args.analysisAttempted,
+    candidateCount: multiPlace ? 0 : candidates.length,
+    strongestCandidateName: multiPlace ? null : candidates[0]?.name ?? null,
+    notificationLocality: args.notificationLocality,
+    strongestLead: leads.strongestLead,
+    observableLeadCount: leads.observableLeadCount,
+    hasWeakClues: args.hasWeakClues,
+    multiPlace,
+    savedPlaceId: args.savedPlaceId,
+    savedPlaceIds,
+    createdSavedPlaceIds: args.createdSavedPlaceIds,
+    reviewMode: args.mode === 'picker' ? 'candidate_picker' : args.mode,
+    reviewCount: args.reviewCount,
+  });
 }
 
 /**
@@ -282,25 +434,28 @@ async function handleProcessingError(admin: any, job: any, err: unknown): Promis
   const maxAttempts = typeof job.max_attempts === 'number' ? job.max_attempts : 5;
 
   if (attempts >= maxAttempts) {
-    const { data: updated } = await admin
-      .from('share_jobs')
-      .update({
+    await finalize(
+      admin,
+      job,
+      {
         status: 'failed',
         decision: 'failed',
         failure_reason: 'processing_error',
+        failure_code: 'processing_error',
+        failure_category: 'technical_failure',
+        analysis_attempted: false,
         last_error: message,
         completed_at: nowIso(),
-      })
-      .eq('id', job.id)
-      .eq('status', 'processing_metadata')
-      .select('id')
-      .maybeSingle();
-    if (updated) {
-      console.log(
-        `[share-job] status from=processing_metadata to=failed job_id=${job.id} attempts=${attempts}`,
-      );
-    }
-    // No push for hard failures (nothing actionable for the user).
+      },
+      composeShareCompletionNotification({
+        jobId: job.id,
+        status: 'failed',
+        failureCategory: 'technical_failure',
+        failureCode: 'processing_error',
+        analysisAttempted: false,
+        reviewMode: 'manual',
+      }),
+    );
     return;
   }
 
@@ -1066,18 +1221,45 @@ async function finalizePostSaveEnrichment(
 async function finalizeParentManual(
   admin: any,
   job: any,
+  presentation: {
+    failureCode?: string | null;
+    analysisAttempted?: boolean;
+    provider?: string | null;
+    notificationLocality?: NotificationLocality | null;
+    hasWeakClues?: boolean;
+  } = {},
   sourceMetadata: MediaSourceMetadata | null = null,
 ): Promise<void> {
   const candidateCount = persistedCandidateCount(job?.candidate_payload);
   const fallback = mediaFailureReview(job?.candidate_payload);
   const mode = fallback.mode === 'auto' ? 'single' : fallback.mode;
+  const candidates = Array.isArray(job?.candidate_payload?.candidates)
+    ? job.candidate_payload.candidates
+    : [];
+  const mentionSlots = Array.isArray(job?.candidate_payload?.mentionSlots)
+    ? job.candidate_payload.mentionSlots
+    : [];
+  const failureCode = presentation.failureCode ?? 'media_failed';
+  const analysisAttempted = presentation.analysisAttempted === true;
+  const failureCategory = classifyShareFailure({
+    failureCode,
+    provider: presentation.provider,
+    analysisAttempted,
+  });
+  const terminalStatus = candidateCount === 0 && failureCategory === 'technical_failure'
+    ? 'failed'
+    : 'needs_help';
   await finalize(
     admin,
     job,
     {
-      status: 'needs_help',
-      decision: fallback.decision,
-      needs_help_reason: candidateCount > 0 ? 'media_unavailable_candidates_preserved' : 'manual_search',
+      status: terminalStatus,
+      decision: terminalStatus === 'failed' ? 'failed' : fallback.decision,
+      needs_help_reason: candidateCount > 0 ? 'media_unavailable_candidates_preserved' : failureCode,
+      failure_reason: failureCode,
+      failure_code: failureCode,
+      failure_category: failureCategory,
+      analysis_attempted: analysisAttempted,
       ...(candidateCount === 0 ? { suggested_query: null } : {}),
       ...(sourceMetadata
         ? {
@@ -1090,11 +1272,17 @@ async function finalizeParentManual(
         : {}),
       progress_stage: mode,
     },
-    buildNeedsHelpNotification({
+    reviewNotification({
       mode,
       jobId: job.id,
-      candidateCount,
-      candidateName: candidateCount === 1 ? job?.candidate_payload?.candidates?.[0]?.name ?? null : null,
+      candidates,
+      mentionResults: mentionSlots,
+      notificationLocality: presentation.notificationLocality,
+      hasWeakClues: presentation.hasWeakClues,
+      failureCategory,
+      failureCode,
+      provider: presentation.provider,
+      analysisAttempted,
     }),
   );
 }
@@ -1116,7 +1304,11 @@ async function recoverStrandedMediaJobs(admin: any): Promise<void> {
       return;
     }
     for (const job of Array.isArray(parents) ? parents : []) {
-      await finalizeParentManual(admin, job);
+      await finalizeParentManual(admin, job, {
+        failureCode: 'media_failed',
+        analysisAttempted: false,
+        provider: job.source_platform,
+      });
       console.log(`[media-task] recovered_stranded_parent job_id=${job.id}`);
     }
   } catch (err) {
@@ -1170,18 +1362,22 @@ async function finalizeMediaTask(
   }
 
   const outcome = typeof body.outcome === 'string' ? body.outcome : 'evidence';
+  const failureCode = safeMediaFailureCode(body.failureCode);
+  const analysisAttempted = body.analysisAttempted === true;
   const parsed = outcome === 'evidence'
     ? parseMediaEvidence(body.evidence)
     : ({ ok: false, error: outcome } as const);
   const rendered = parsed.ok
     ? renderMediaEvidenceCaption(parsed.value)
     : { title: '', description: '', renderedPlaces: 0 };
+  const notificationLocality = trustedMediaNotificationLocality(parsed);
 
   const pre = planPreResolve({
     taskStatus: task.status,
     parentStatus: job?.status ?? 'missing',
     parentSavedPlaceId: job?.saved_place_id ?? null,
     outcome,
+    failureCode,
     evidenceParseOk: parsed.ok,
     renderedPlaces: rendered.renderedPlaces,
   });
@@ -1271,7 +1467,17 @@ async function finalizeMediaTask(
 
   // Media unusable / parse failure / no explicit places → safe manual fallback.
   if (pre.action === 'manual_fallback') {
-    if (!pre.supplemental) await finalizeParentManual(admin, job, sourceMetadata);
+    if (!pre.supplemental) {
+      await finalizeParentManual(admin, job, {
+        failureCode: pre.failureCode,
+        analysisAttempted,
+        provider: task.platform,
+        notificationLocality,
+        hasWeakClues: parsed.ok && parsed.value.places.some(
+          (place: any) => place?.identityEvidenceKind !== 'model_prior' && place?.explicitEvidence?.length > 0,
+        ),
+      }, sourceMetadata);
+    }
     await markMediaTask(admin, taskId, pre.taskTerminalStatus, {
       failure_code: pre.failureCode,
       progress_stage: 'cleanup',
@@ -1395,7 +1601,14 @@ async function finalizeMediaTask(
       );
     }
 
-    if (pre.mode !== 'enrich_saved_place') await finalizeParentManual(admin, job);
+    if (pre.mode !== 'enrich_saved_place') {
+      await finalizeParentManual(admin, job, {
+        failureCode: 'places_provider_unavailable_exhausted',
+        analysisAttempted: true,
+        provider: task.platform,
+        notificationLocality,
+      });
+    }
     await markMediaTask(admin, taskId, 'failed', {
       failure_code: 'places_provider_unavailable_exhausted',
       progress_stage: 'cleanup',
@@ -1667,12 +1880,35 @@ async function finalizeMediaTask(
       savedPlaceIds: allSavedPlaceIds,
       results: perPlaceSummary,
     };
-    const notification = buildMediaResultNotification({
-      jobId: job.id,
-      createdSavedPlaceIds,
-      alreadySavedPlaceIds,
-      reviewCount: unresolvedResults.length,
-    });
+    const notification = unresolvedResults.length === 0
+      ? composeShareCompletionNotification({
+          jobId: job.id,
+          status: 'completed',
+          alreadySaved: createdSavedPlaceIds.length === 0,
+          placeName: mentionResults.length === 1 ? mentionResults[0]?.candidates?.[0]?.name ?? null : null,
+          multiPlace: mentionResults.length > 1
+            ? {
+                totalCount: mentionResults.length,
+                savedCount: mentionResults.length,
+                unresolvedCandidateGroupCount: 0,
+              }
+            : null,
+          savedPlaceId: allSavedPlaceIds[0] ?? null,
+          savedPlaceIds: allSavedPlaceIds,
+          createdSavedPlaceIds,
+        })
+      : reviewNotification({
+          jobId: job.id,
+          mode: unresolvedResults.some((mention: any) => mention?.candidates?.length > 0) ? 'multi' : 'manual',
+          candidates: candidatePayload.candidates,
+          mentionResults: candidatePayload.mentionSlots,
+          notificationLocality,
+          hasWeakClues: hasSafeWeakClues(result.evidenceUsed),
+          savedPlaceId: allSavedPlaceIds[0] ?? null,
+          savedPlaceIds: allSavedPlaceIds,
+          createdSavedPlaceIds,
+          reviewCount: unresolvedResults.length,
+        });
 
     if (unresolvedResults.length === 0) {
       await finalize(
@@ -1795,11 +2031,13 @@ async function finalizeMediaTask(
         progress_stage: 'completed',
         completed_at: nowIso(),
       },
-      buildCompletedNotification({
+      composeShareCompletionNotification({
+        status: 'completed',
         placeName: candidate.name,
-        platform: task.platform,
         jobId: job.id,
         savedPlaceId: saved.savedPlaceId,
+        googlePlaceId: candidate.googlePlaceId,
+        alreadySaved: saved.reused,
       }),
     );
     await markMediaTask(admin, taskId, 'completed', { resolver_name: 'media', progress_stage: 'cleanup', completed_at: nowIso() });
@@ -1855,18 +2093,14 @@ async function finalizeMediaTask(
     ? plan.needsHelpReason
     : 'candidate_confirmation';
   const suggestedQuery = plan.route === 'needs_help' ? plan.suggestedQuery : (result.cleanSearchQuery ?? null);
-  const note =
-    mode === 'manual'
-      ? buildNeedsHelpNotification({ mode: 'manual', jobId: job.id })
-      : mode === 'picker'
-      ? buildNeedsHelpNotification({ mode: 'picker', jobId: job.id, candidateCount: result.candidates.length })
-      : mode === 'multi'
-      ? buildNeedsHelpNotification({ mode: 'multi', jobId: job.id, candidateCount: result.candidates.length })
-      : buildNeedsHelpNotification({
-          mode: 'single',
-          jobId: job.id,
-          candidateName: result.candidates[0]?.name ?? result.primaryCandidate?.name ?? null,
-        });
+  const note = reviewNotification({
+    mode,
+    jobId: job.id,
+    candidates: result.candidates,
+    mentionResults: candidatePayload.mentionSlots,
+    notificationLocality,
+    hasWeakClues: hasSafeWeakClues(result.evidenceUsed),
+  });
   await finalize(
     admin,
     job,
@@ -1960,9 +2194,13 @@ async function processOne(admin: any, env: any, job: any): Promise<void> {
       admin,
       job,
       {
-        status: 'needs_help',
-        decision: 'manual_fallback',
+        status: 'failed',
+        decision: 'failed',
         needs_help_reason: 'metadata_unavailable',
+        failure_reason: 'metadata_unavailable',
+        failure_code: 'metadata_unavailable',
+        failure_category: 'technical_failure',
+        analysis_attempted: false,
         suggested_query: null,
         candidate_payload: { candidates: [] },
         canonical_url: requestUrl,
@@ -1970,7 +2208,15 @@ async function processOne(admin: any, env: any, job: any): Promise<void> {
         extraction_payload: { platform, reason: meta.reason },
         progress_stage: 'manual',
       },
-      buildNeedsHelpNotification({ mode: 'manual', jobId: job.id }),
+      composeShareCompletionNotification({
+        jobId: job.id,
+        status: 'failed',
+        failureCategory: 'technical_failure',
+        failureCode: 'metadata_unavailable',
+        provider: platform,
+        analysisAttempted: false,
+        reviewMode: 'manual',
+      }),
     );
     return;
   }
@@ -2186,9 +2432,9 @@ async function processOne(admin: any, env: any, job: any): Promise<void> {
         progress_stage: 'completed',
         completed_at: nowIso(),
       },
-      buildCompletedNotification({
+      composeShareCompletionNotification({
+        status: 'completed',
         placeName: candidate.name,
-        platform,
         jobId: job.id,
         savedPlaceId: saved.savedPlaceId,
         googlePlaceId: candidate.googlePlaceId,
@@ -2299,34 +2545,50 @@ async function processOne(admin: any, env: any, job: any): Promise<void> {
       ? 'candidate_picker'
       : 'candidate_confirmation';
 
-  const note =
-    plan.mode === 'manual'
-      ? buildNeedsHelpNotification({ mode: 'manual', jobId: job.id })
-      : plan.mode === 'picker'
-      ? buildNeedsHelpNotification({
-          mode: 'picker',
-          jobId: job.id,
-          candidateCount: metadataResult.candidates.length,
-        })
-      : plan.mode === 'multi'
-      ? buildNeedsHelpNotification({
-          mode: 'multi',
-          jobId: job.id,
-          candidateCount: metadataResult.candidates.length,
-        })
-      : buildNeedsHelpNotification({
-          mode: 'single',
-          jobId: job.id,
-          candidateName: metadataResult.candidates[0]?.name ?? metadataResult.primaryCandidate?.name ?? null,
-        });
+  const metadataTechnicalFailure =
+    metadataResult.candidates.length === 0 &&
+    providerFailureClass === 'transient_provider' &&
+    retryPlan.action === 'degrade' &&
+    retryPlan.reason === 'attempts_exhausted';
+  const metadataFailureCode = metadataResult.candidates.length === 0
+    ? metadataTechnicalFailure
+      ? metadataResult.failureReason ?? 'places_provider_unavailable_exhausted'
+      : 'media_unavailable'
+    : null;
+  const metadataFailureCategory = metadataFailureCode
+    ? classifyShareFailure({
+        failureCode: metadataFailureCode,
+        provider: platform,
+        analysisAttempted: false,
+      })
+    : null;
+  const note = reviewNotification({
+    mode: plan.mode,
+    jobId: job.id,
+    candidates: metadataResult.candidates,
+    notificationLocality: trustedMetadataNotificationLocality(evidence, metadataResult),
+    hasWeakClues: hasSafeWeakClues(metadataResult.evidenceUsed),
+    failureCategory: metadataFailureCategory,
+    failureCode: metadataFailureCode,
+    provider: platform,
+    analysisAttempted: metadataFailureCode ? false : null,
+  });
 
   await finalize(
     admin,
     job,
     {
-      status: 'needs_help',
-      decision: decisionForRow,
+      status: metadataTechnicalFailure ? 'failed' : 'needs_help',
+      decision: metadataTechnicalFailure ? 'failed' : decisionForRow,
       needs_help_reason: metadataReviewReason,
+      ...(metadataFailureCode
+        ? {
+            failure_reason: metadataFailureCode,
+            failure_code: metadataFailureCode,
+            failure_category: metadataFailureCategory,
+            analysis_attempted: false,
+          }
+        : {}),
       suggested_query: plan.suggestedQuery,
       candidate_payload: candidatePayload,
       canonical_url: canonicalUrl,

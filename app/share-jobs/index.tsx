@@ -30,6 +30,7 @@ import { useTheme } from '@/lib/theme';
 import { useAuth } from '@/hooks/useAuth';
 import { useShareJobs } from '@/hooks/useShareJobs';
 import { routeShareJobCard } from '@/lib/shareJobRouting';
+import { buildShareJobDetailState } from '@/lib/shareJobDetailState';
 import { resolveOpenSavedPlaceRoute } from '@/lib/openSavedPlace';
 import {
   savedPlaceRemovalA11yLabel,
@@ -161,12 +162,14 @@ function jobTitle(job: ShareJob): string {
   const candidateCount = Array.isArray(candidates) ? candidates.length : 0;
   const first = Array.isArray(candidates) ? candidates[0]?.name : undefined;
   const firstLead = normalizeVayrinIdentityLeads(job.candidate_payload)[0];
+  const detail = buildShareJobDetailState(job);
   if (job.status === 'needs_help') {
     if (isVayrinProductUiEnabled() && firstLead && candidateCount === 0) return firstLead.displayName;
     if (candidateCount > 1) return `${candidateCount} possible places`;
     if (first) return first;
-    return 'Place from your post';
+    return detail.copy.title;
   }
+  if (job.status === 'failed') return detail.copy.title;
   return platformLabel(job.source_platform) + ' post';
 }
 
@@ -185,11 +188,11 @@ function jobSubtitle(job: ShareJob, stalled = false): string {
       if (Array.isArray(job.candidate_payload?.candidates) && job.candidate_payload.candidates.length > 1) {
         return vayrin ? 'Vayrin has a few leads' : 'Pick the one you meant';
       }
-      if (job.needs_help_reason === 'manual_search' || job.needs_help_reason === 'metadata_unavailable')
-        return 'Tap to search for it';
+      if (!Array.isArray(job.candidate_payload?.candidates) || job.candidate_payload.candidates.length === 0)
+        return buildShareJobDetailState(job).copy.body;
       return vayrin ? 'Vayrin thinks this may be it' : 'Does this look right?';
     case 'failed':
-      return vayrin ? 'Vayrin hit a problem — tap to retry' : "Couldn't find it — tap to search";
+      return buildShareJobDetailState(job).copy.body;
     default:
       return '';
   }

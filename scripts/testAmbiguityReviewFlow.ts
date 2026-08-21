@@ -9,7 +9,8 @@ import {
   mediaFailureReview,
   persistedCandidateCount,
 } from '../supabase/functions/process-share-jobs/ambiguityReview';
-import { buildNeedsHelpNotification, planFromResolverDecision } from '../supabase/functions/process-share-jobs/decisionMapping';
+import { planFromResolverDecision } from '../supabase/functions/process-share-jobs/decisionMapping';
+import { composeShareCompletionNotification } from '../supabase/functions/process-share-jobs/shareCompletionNotification';
 import { evaluateMetadataAutoSave } from '../supabase/functions/process-share-jobs/metadataAutoSaveGate';
 import { routeShareJobNotification } from '../lib/shareJobRouting';
 import { actionableCount, normalizeShareJobCandidates } from '../lib/shareJobsUi';
@@ -92,9 +93,11 @@ for (const count of [0, 1, 2, 3, 5]) {
   const decision = decisionForPlausibleCandidates(count);
   assert.equal(decision.decision, count === 0 ? 'manual_fallback' : count === 1 ? 'auto_save' : 'candidate_picker');
   if (count >= 2) {
-    const notification = buildNeedsHelpNotification({ mode: 'picker', jobId: `job-${count}`, candidateCount: count });
-    assert.equal(notification.title, `We found ${count} possible places`);
-    assert.equal(notification.body, 'Pick the one you meant and we’ll save it.');
+    const notification = composeShareCompletionNotification({
+      status: 'needs_help', jobId: `job-${count}`, candidateCount: count, reviewMode: 'candidate_picker',
+    });
+    assert.equal(notification.title, `We found ${count} possible spots`);
+    assert.equal(notification.body, count === 2 ? 'Which one looks right?' : 'Take a look and choose the best match.');
     assert.deepEqual(routeShareJobNotification(notification.data), { kind: 'queue_item', jobId: `job-${count}` });
     assert.equal(notification.data.reviewMode, 'candidate_picker');
   }
@@ -103,8 +106,8 @@ for (const count of [0, 1, 2, 3, 5]) {
 assert.deepEqual(decisionForPlausibleCandidates(1, true), {
   decision: 'candidate_confirmation', mode: 'single', autoSave: false,
 });
-assert.equal(buildNeedsHelpNotification({ mode: 'single', jobId: 'blocked' }).title, 'We think we found it');
-assert.equal(buildNeedsHelpNotification({ mode: 'manual', jobId: 'none' }).title, 'We couldn’t quite find this one');
+assert.equal(composeShareCompletionNotification({ status: 'needs_help', jobId: 'blocked', candidateCount: 1 }).title, 'We found a possible match');
+assert.equal(composeShareCompletionNotification({ status: 'needs_help', jobId: 'none' }).title, 'We couldn’t pin this one down');
 
 const pickerPlan = planFromResolverDecision({
   decision: 'candidate_picker', safeToAutoSave: false, hasPrimaryCandidate: true, candidateCount: 3,

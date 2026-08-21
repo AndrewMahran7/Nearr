@@ -34,6 +34,8 @@ export const MAX_PERSISTED_REJECTION_PATHS = 8;
 export const MAX_REJECTION_LABEL_CHARS = 120;
 
 export type RecognitionFunnel = {
+  /** Whether usable frames entered the recognition/model path. */
+  analysisAttempted?: boolean;
   /** Places the model emitted, before our schema ran (worker-reported). */
   modelPlacesEmitted?: number;
   /** Places that independently passed the strict schema (worker-reported). */
@@ -122,6 +124,10 @@ export function buildRecognitionFunnel(
     typeof v === 'number' && Number.isInteger(v) && v >= 0 ? v : undefined;
 
   const out: RecognitionFunnel = {};
+
+  if (typeof d.analysisAttempted === 'boolean') {
+    out.analysisAttempted = d.analysisAttempted;
+  }
 
   const emitted = count(d.modelPlacesEmitted);
   const valid = count(d.modelPlacesValid);

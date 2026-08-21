@@ -86,13 +86,14 @@ const fourPlaces = evidence([
 ]);
 
 const allValid = buildRecognitionFunnel(
-  { modelPlacesEmitted: 4, modelPlacesValid: 4, modelPlacesRejected: 0 },
+  { analysisAttempted: true, modelPlacesEmitted: 4, modelPlacesValid: 4, modelPlacesRejected: 0 },
   fourPlaces,
   selectRenderablePlaces(fourPlaces).length,
 );
 check('all valid: emitted persists', allValid.modelPlacesEmitted === 4);
 check('all valid: valid persists', allValid.modelPlacesValid === 4);
 check('all valid: rejected persists as 0', allValid.modelPlacesRejected === 0);
+check('all valid: analysis-attempted persists', allValid.analysisAttempted === true);
 check('all valid: no rejection labels emitted', allValid.evidenceRejectionPaths === undefined);
 check('all valid: no geographic context dropped', allValid.sourceGeographicContextDropped === 0);
 check('all valid: no context labels emitted', allValid.sourceGeographicContextLabels === undefined);

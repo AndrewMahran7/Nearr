@@ -178,7 +178,12 @@ const map = readFileSync(join(process.cwd(), 'app/(tabs)/map.tsx'), 'utf8');
 
 assert.match(map, /<MapCategoryFilterBar/, 'the map renders the category filter row');
 assert.doesNotMatch(map, /MapFilterChips/, 'the Nearby/Recent/Saved chips are gone');
-assert.match(map, /visiblePlaces\.map\(\(p\) => \(\s*\n\s*<NearrMapMarker/, 'markers render the filtered set');
+// Filtering stays FIRST in the pipeline: the filtered set is what gets
+// clustered, and both clusters and loose pins are drawn from that result.
+// Nothing hidden by a filter can ever be counted inside a cluster.
+assert.match(map, /individualPlaces\.map\(\(p\) => \(\s*\n\s*<NearrMapMarker/, 'individual markers render the post-clustering set');
+assert.match(map, /clusterCandidates = useMemo\(/, 'clustering consumes the filtered set');
+assert.match(map, /visiblePlaces\.filter\(\(place\) => !alwaysIndividualIds\.has\(place\.id\)\)/, 'clustering input is filterPlacesForMap output');
 assert.match(map, /shouldRenderZoneCircle\(\{/, 'zone circles go through the density policy');
 assert.match(map, /onFitAll=\{visiblePlaces\.length > 0/, 'fit-all lives on the same control row');
 assert.match(map, /setMapCategoryFilter\(MAP_FILTER_ALL\);\s*\n\s*if \(reminderOpen\)/, 'deep links reset the filter');

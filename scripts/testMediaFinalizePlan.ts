@@ -99,6 +99,23 @@ for (const s of ['cancelled', 'completed', 'needs_help', 'failed']) {
   check('outcome failed => manual_fallback failed', p.action === 'manual_fallback' && (p as any).taskTerminalStatus === 'failed');
 }
 {
+  const auth = pre({ outcome: 'unavailable', failureCode: 'authentication_required' });
+  check(
+    'authentication_required survives worker -> finalizer planning',
+    auth.action === 'manual_fallback' && auth.failureCode === 'authentication_required',
+  );
+  const duration = pre({ outcome: 'unavailable', failureCode: 'duration_too_long' });
+  check(
+    'duration_too_long survives worker -> finalizer planning',
+    duration.action === 'manual_fallback' && duration.failureCode === 'duration_too_long',
+  );
+  const timeout = pre({ outcome: 'failed', failureCode: 'download_timeout' });
+  check(
+    'download_timeout survives exhausted retry -> finalizer planning',
+    timeout.action === 'manual_fallback' && timeout.failureCode === 'download_timeout',
+  );
+}
+{
   const p = pre({ outcome: 'evidence', evidenceParseOk: false });
   check('malformed evidence => manual_fallback', p.action === 'manual_fallback' && (p as any).failureCode === 'evidence_parse_failed');
 }

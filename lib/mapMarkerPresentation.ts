@@ -100,6 +100,10 @@ export type SavedMarkerPresentation = {
   selected: boolean;
   visual: 'category' | 'photo';
   photoUri: string | null;
+  /**
+   * Whether the marker draws its own name capsule. This is a purely VISUAL
+   * cue: `accessibilityLabel` always carries the place name regardless.
+   */
   showLabel: boolean;
   accessibilityLabel: string;
 };
@@ -120,6 +124,13 @@ export function savedMarkerPresentation(
     selected: boolean;
     photoUri?: string | null;
     photoFailed?: boolean;
+    /**
+     * True while the selected place's own Place Detail card is on screen. That
+     * card already titles the place, so repeating the name on the pin is pure
+     * duplication. Defaults to false, which keeps the standalone
+     * selected-marker label behaviour for any surface without the card.
+     */
+    detailVisible?: boolean;
   },
 ): SavedMarkerPresentation {
   const category = savedPlaceCategory(saved);
@@ -136,7 +147,7 @@ export function savedMarkerPresentation(
     selected: input.selected,
     visual: usePhoto ? 'photo' : 'category',
     photoUri: usePhoto ? photoUri : null,
-    showLabel: input.selected,
+    showLabel: input.selected && !input.detailVisible,
     accessibilityLabel: savedMarkerAccessibilityLabel(saved, input.selected),
   };
 }

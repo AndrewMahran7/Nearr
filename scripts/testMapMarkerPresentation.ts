@@ -54,6 +54,70 @@ assert.equal(selected.selected, true);
 assert.equal(selected.showLabel, true, 'selection has a non-color label cue');
 assert.deepEqual(normalAgain, normal, 'deselect returns to the exact normal presentation');
 
+// Duplicate-name suppression. The Place Detail card titles the selected place,
+// so the pin's own name capsule is hidden for exactly as long as that card is
+// on screen — and for nothing else.
+const selectedWithDetail = savedMarkerPresentation(restaurant, {
+  detailLevel: 'local', selected: true, detailVisible: true,
+});
+assert.equal(
+  selectedWithDetail.showLabel,
+  false,
+  'selected + Place Detail open hides the duplicate name capsule',
+);
+assert.equal(
+  savedMarkerPresentation(restaurant, {
+    detailLevel: 'local', selected: true, detailVisible: false,
+  }).showLabel,
+  true,
+  'selected + Place Detail closed restores the normal selected-marker label',
+);
+assert.equal(
+  savedMarkerPresentation(restaurant, {
+    detailLevel: 'local', selected: false, detailVisible: true,
+  }).showLabel,
+  false,
+  "an unselected marker never gains a label from another place's detail card",
+);
+// Switching the selection: the place that just lost selection returns to the
+// exact normal presentation, with no residual hidden-label state.
+assert.deepEqual(
+  savedMarkerPresentation(restaurant, {
+    detailLevel: 'local', selected: false, detailVisible: true,
+  }),
+  normal,
+  'deselecting while another detail is open leaves no stale label state',
+);
+// Hiding the visual capsule must not touch selection identity, the selected
+// body, or the photo/category fallback.
+assert.equal(selectedWithDetail.selected, true, 'the marker stays selected');
+assert.equal(
+  savedMarkerPresentation(restaurant, {
+    detailLevel: 'local', selected: true, detailVisible: true,
+    photoUri: 'https://example.com/place.jpg',
+  }).visual,
+  'photo',
+  'selected photo survives label suppression',
+);
+assert.equal(
+  savedMarkerPresentation(restaurant, {
+    detailLevel: 'local', selected: true, detailVisible: true,
+    photoUri: 'https://example.com/place.jpg', photoFailed: true,
+  }).glyph,
+  selected.glyph,
+  'category fallback survives label suppression',
+);
+// Accessibility is never traded for visual polish.
+assert.equal(
+  selectedWithDetail.accessibilityLabel,
+  selected.accessibilityLabel,
+  'the accessible name is unchanged when the visual label is hidden',
+);
+assert.ok(
+  selectedWithDetail.accessibilityLabel.includes(restaurant.place.name),
+  'VoiceOver still identifies the selected place by name',
+);
+
 // Photos are progressive and selected-only. Missing and failed photos retain a
 // complete category marker; an unselected marker never becomes a photo wall.
 assert.equal(savedMarkerPresentation(restaurant, {
@@ -110,16 +174,41 @@ for (const count of [25, 100, 250, 500]) {
 
 const mapSource = readFileSync(join(process.cwd(), 'app/(tabs)/map.tsx'), 'utf8');
 const componentSource = readFileSync(join(process.cwd(), 'components/map/NearrMapMarker.tsx'), 'utf8');
-assert.match(mapSource, /visiblePlaces\.map\(\(p\) => \(\s*\n\s*<NearrMapMarker/);
+// Individual pins now render from the post-clustering set, and their detail
+// level is derived from that same set — clustering owns marker COUNT, this
+// module owns how each surviving pin looks. See lib/mapClustering.ts.
+assert.match(mapSource, /individualPlaces\.map\(\(p\) => \(\s*\n\s*<NearrMapMarker/);
+assert.match(mapSource, /visibleCount: individualPlaces\.length/);
 assert.match(mapSource, /detailLevel=\{markerDetailLevel\}/);
 assert.match(mapSource, /MaterialCommunityIcons\.loadFont\(\)/);
 assert.match(mapSource, /redesignEnabled=\{mapPinRedesignActive\}/);
+// The rule is driven by the same flag that mounts the Place Detail card, not
+// by a layout measurement, and it is scoped to the selected marker.
+assert.match(mapSource, /const selectedPlaceDetailVisible = !!selected;/);
+assert.match(mapSource, /\{selected && selectedPlaceDetailVisible \? \(/);
+assert.match(
+  mapSource,
+  /detailVisible=\{selectedPlaceDetailVisible && selected\?\.id === p\.id\}/,
+);
+assert.match(componentSource, /accessibilityLabel=\{presentation\.accessibilityLabel\}/);
+assert.match(componentSource, /const showsLabel = presentation\.showLabel;/);
+assert.match(componentSource, /prev\.detailVisible === next\.detailVisible/);
+// Hiding the capsule shrinks the canvas, so the anchor must follow it or the
+// pin would jump off its coordinate.
+assert.match(
+  componentSource,
+  /anchor=\{selected && redesignEnabled && showsLabel \? \{ x: 0\.5, y: 0\.335 \} : \{ x: 0\.5, y: 0\.5 \}\}/,
+);
+assert.match(
+  componentSource,
+  /selected && showsLabel[\s\S]{0,40}width: selectedWidth, height: selectedHeight/,
+);
 assert.match(componentSource, /!redesignEnabled \|\| !selected \|\| !googlePlaceId/);
 assert.match(componentSource, /tracksViewChanges=\{tracksViewChanges\}/);
 assert.match(componentSource, /setPhotoFailed\(true\)/);
 assert.match(componentSource, /MAP_PIN_DIAGNOSTIC_LIMIT = 30/);
 assert.match(componentSource, /selected-photo-(request|result|loaded|failed)/);
 assert.match(mapSource, /renderCount: mapRenderCountRef\.current/);
-assert.match(mapSource, /markersRendered: visiblePlaces\.length/);
+assert.match(mapSource, /markersRendered: clusterMarkers\.length \+ individualPlaces\.length/);
 
-console.log('PASS category, selection, filter, photo fallback, density, accessibility, bounded diagnostics, and marker wiring');
+console.log('PASS category, selection, duplicate-label suppression, filter, photo fallback, density, accessibility, bounded diagnostics, and marker wiring');

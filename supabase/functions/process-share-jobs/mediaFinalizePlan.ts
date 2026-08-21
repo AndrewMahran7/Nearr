@@ -99,6 +99,8 @@ export type PreResolveInput = {
   parentStatus: string;
   /** Worker-reported outcome. */
   outcome: FinalizeOutcome;
+  /** Worker-supplied stable error code for unavailable/failed outcomes. */
+  failureCode?: string | null;
   /** Whether the evidence payload parsed into the schema. */
   evidenceParseOk: boolean;
   /** How many explicit-evidence places rendered (0 → nothing verifiable). */
@@ -137,10 +139,10 @@ export function planPreResolve(input: PreResolveInput): PreResolvePlan {
 
   // Media retrieval/analysis failed before producing a usable result.
   if (input.outcome === 'unavailable') {
-    return { action: 'manual_fallback', failureCode: 'media_unavailable', taskTerminalStatus: 'needs_help', supplemental: enrichSavedPlace };
+    return { action: 'manual_fallback', failureCode: input.failureCode || 'media_unavailable', taskTerminalStatus: 'needs_help', supplemental: enrichSavedPlace };
   }
   if (input.outcome === 'failed') {
-    return { action: 'manual_fallback', failureCode: 'media_failed', taskTerminalStatus: 'failed', supplemental: enrichSavedPlace };
+    return { action: 'manual_fallback', failureCode: input.failureCode || 'media_failed', taskTerminalStatus: 'failed', supplemental: enrichSavedPlace };
   }
 
   // Retrieval and analysis completed, but no place evidence survived the
