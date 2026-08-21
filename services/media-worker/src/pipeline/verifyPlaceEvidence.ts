@@ -45,6 +45,10 @@ export type FinalizeArgs = {
   /** Canonical source URL used for this generation snapshot. */
   targetSourceUrl?: string | null;
   outcome: FinalizeOutcome;
+  /** Stable AI-note finalizer code; never a raw provider error. */
+  failureCode?: string;
+  /** True once usable evidence entered the recognition/model path. */
+  analysisAttempted: boolean;
   evidence?: MediaPlaceEvidence;
   sourceMetadata?: MediaSourceMetadata;
   /** Stronger exact source URL discovered during public media retrieval. */
@@ -80,6 +84,8 @@ export async function verifyPlaceEvidence(
       targetPlaceId: args.targetPlaceId ?? undefined,
       targetSourceUrl: args.targetSourceUrl ?? undefined,
       outcome: args.outcome,
+      failureCode: args.failureCode,
+      analysisAttempted: args.analysisAttempted,
       evidence: args.outcome === 'evidence' ? args.evidence : undefined,
       // Sent on EVERY outcome, not just `evidence`. The caption can name a
       // venue even when the model found no structured place at all.

@@ -14,7 +14,7 @@ import {
 
 const root = path.resolve(__dirname, '..');
 const migration = fs.readFileSync(
-  path.join(root, 'supabase/migrations/20260819000001_video_ai_note_guarantee.sql'),
+  path.join(root, 'supabase/migrations/20260821000001_video_ai_note_guarantee.sql'),
   'utf8',
 );
 const finalizer = fs.readFileSync(

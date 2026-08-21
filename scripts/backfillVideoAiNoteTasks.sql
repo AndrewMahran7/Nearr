@@ -5,7 +5,7 @@
 -- notes are never selected or modified, and the partial unique index makes the
 -- operation idempotent.
 --
--- Example (after the 20260819000001 migration is deployed to the intended DB):
+-- Example (after the 20260821000001 migration is deployed to the intended DB):
 --   psql "$DATABASE_URL" -v batch_size=250 -f scripts/backfillVideoAiNoteTasks.sql
 
 begin;
