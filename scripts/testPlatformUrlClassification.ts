@@ -50,6 +50,8 @@ check('Instagram legacySource=instagram', legacySourceFor('instagram') === 'inst
 check('TikTok full URL detected', detectPlatform('https://www.tiktok.com/@user/video/7212345678901234567') === 'tiktok');
 check('TikTok vm short link detected', detectPlatform('https://vm.tiktok.com/ZMabcdefg/') === 'tiktok');
 check('TikTok vt short link detected', detectPlatform('https://vt.tiktok.com/ZMabcdefg/') === 'tiktok');
+check('TikTok suffix spoof rejected', detectPlatform('https://eviltiktok.com/@user/video/1') === 'genericWeb');
+check('TikTok in query text does not classify host', detectPlatform('https://example.com/?next=tiktok.com') === 'genericWeb');
 check('TikTok legacySource=tiktok', legacySourceFor('tiktok') === 'tiktok');
 
 // ---------------------------------------------------------------------------

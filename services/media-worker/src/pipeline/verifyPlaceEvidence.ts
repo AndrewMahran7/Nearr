@@ -32,6 +32,10 @@ export type MediaSourceMetadata = {
   /** The post author's handle — sent so the resolver can EXCLUDE it, never to
    *  be used as a venue name. */
   creatorHandle?: string | null;
+  postId?: string | null;
+  sourceId?: string | null;
+  creatorName?: string | null;
+  creatorId?: string | null;
 };
 
 export type FinalizeArgs = {
@@ -39,6 +43,8 @@ export type FinalizeArgs = {
   outcome: FinalizeOutcome;
   evidence?: MediaPlaceEvidence;
   sourceMetadata?: MediaSourceMetadata;
+  /** Stronger exact source URL discovered during public media retrieval. */
+  canonicalUrl?: string | null;
   diagnostics?: Record<string, unknown>;
   signal: AbortSignal;
 };
@@ -68,6 +74,7 @@ export async function verifyPlaceEvidence(
       // Sent on EVERY outcome, not just `evidence`. The caption can name a
       // venue even when the model found no structured place at all.
       sourceMetadata: args.sourceMetadata,
+      canonicalUrl: args.canonicalUrl,
       diagnostics: args.diagnostics ?? {},
     }),
     signal: args.signal,

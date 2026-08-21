@@ -8,15 +8,23 @@
 
 import type { SourcePlatform, LegacySource } from '../types.ts';
 
+function isHostOrSubdomain(host: string, domain: string): boolean {
+  return host === domain || host.endsWith(`.${domain}`);
+}
+
 export function detectPlatform(url: string): SourcePlatform {
-  const u = (url ?? '').toLowerCase();
-  if (!u) return 'unknown';
-  if (u.includes('tiktok.com')) return 'tiktok';
-  if (u.includes('instagram.com')) return 'instagram';
-  if (u.includes('youtube.com') || u.includes('youtu.be')) return 'youtube';
-  if (u.includes('facebook.com') || u.includes('fb.watch')) return 'facebook';
-  if (u.includes('snapchat.com')) return 'snapchat';
-  if (u.includes('twitter.com') || u.includes('x.com')) return 'twitter';
+  let host = '';
+  try {
+    host = new URL((url ?? '').trim()).hostname.toLowerCase().replace(/\.$/, '');
+  } catch {
+    return 'unknown';
+  }
+  if (isHostOrSubdomain(host, 'tiktok.com')) return 'tiktok';
+  if (isHostOrSubdomain(host, 'instagram.com')) return 'instagram';
+  if (isHostOrSubdomain(host, 'youtube.com') || host === 'youtu.be') return 'youtube';
+  if (isHostOrSubdomain(host, 'facebook.com') || host === 'fb.watch') return 'facebook';
+  if (isHostOrSubdomain(host, 'snapchat.com')) return 'snapchat';
+  if (isHostOrSubdomain(host, 'twitter.com') || isHostOrSubdomain(host, 'x.com')) return 'twitter';
   return 'genericWeb';
 }
 

@@ -1,6 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { FacebookMediaResolver } from '../src/resolvers/FacebookMediaResolver.js';
+import {
+  FacebookMediaResolver,
+  assertFacebookPostIdentityMatches,
+  facebookSourceIdentityFromInfo,
+} from '../src/resolvers/FacebookMediaResolver.js';
 import { isMediaError } from '../src/types/media.js';
 import type { WorkerConfig } from '../src/config/env.js';
 
@@ -37,6 +41,49 @@ test('resolve(): rejects a non-Facebook host before yt-dlp', async () => {
     () => r.resolve({ jobId: 'j', sourceUrl: 'https://evil.com/reel/123456/', workDir: '/tmp/none', signal: new AbortController().signal }),
     (e) => isMediaError(e) && e.code === 'unsupported_url',
   );
+});
+
+test('public extractor identity canonicalizes every numeric Facebook video id', () => {
+  const identity = facebookSourceIdentityFromInfo(
+    {
+      id: '10153231379946729',
+      uploader: 'Facebook',
+      uploader_id: '100064860875397',
+    },
+    'https://fb.watch/opaqueToken/',
+  );
+  assert.deepEqual(identity, {
+    canonicalUrl: 'https://www.facebook.com/reel/10153231379946729/',
+    sourceId: '10153231379946729',
+    creatorName: 'Facebook',
+    creatorId: '100064860875397',
+  });
+});
+
+test('numeric extractor identity mismatch stops before Facebook download', () => {
+  assert.doesNotThrow(() => assertFacebookPostIdentityMatches(
+    'https://www.facebook.com/watch/?v=11111',
+    '11111',
+    'https://www.facebook.com/reel/11111/',
+  ));
+  assert.throws(
+    () => assertFacebookPostIdentityMatches(
+      'https://www.facebook.com/reel/11111/',
+      '22222',
+      'https://www.facebook.com/reel/22222/',
+    ),
+    (e) => isMediaError(e) && e.code === 'identity_mismatch' && !e.retryable,
+  );
+});
+
+test('non-numeric extractor ids preserve the exact fallback URL', () => {
+  const identity = facebookSourceIdentityFromInfo(
+    { id: 'pfbid0abcDEF', uploader: 'Example Page' },
+    'https://www.facebook.com/example/posts/pfbid0abcDEF/',
+  );
+  assert.equal(identity.canonicalUrl, 'https://www.facebook.com/example/posts/pfbid0abcDEF/');
+  assert.equal(identity.sourceId, 'pfbid0abcDEF');
+  assert.equal(identity.creatorName, 'Example Page');
 });
 
 test('resolve(): rejects a malformed URL before yt-dlp', async () => {

@@ -17,6 +17,8 @@ import {
   isTikTokUrl,
   isTikTokShortLink,
   buildTikTokOEmbedUrl,
+  extractTikTokPostIdentity,
+  isSupportedTikTokShareUrl,
 } from '../lib/shareAgent/tiktokUrl';
 
 let failures = 0;
@@ -27,6 +29,30 @@ function check(name: string, condition: boolean, detail?: string): void {
     failures += 1;
     console.log(`FAIL ${name}${detail ? ` — ${detail}` : ''}`);
   }
+}
+
+// Canonical-equivalent direct forms collapse to one exact-post identity.
+{
+  const expected = 'https://www.tiktok.com/@creator.name/video/7212345678901234567';
+  const forms = [
+    'http://tiktok.com/@Creator.Name/video/7212345678901234567/',
+    'https://m.tiktok.com/@creator.name/video/7212345678901234567?lang=en#comments',
+    'https://www.tiktok.com/@creator.name/video/7212345678901234567?utm_source=copy',
+  ];
+  for (const [index, form] of forms.entries()) {
+    check(`A7.${index + 1} canonical-equivalent direct form`, normalizeShareUrl(form).url === expected, normalizeShareUrl(form).url);
+  }
+  const identity = extractTikTokPostIdentity(forms[1]);
+  check('A8 post id recovered', identity?.postId === '7212345678901234567', identity?.postId);
+  check('A9 creator identity recovered', identity?.creatorHandle === 'creator.name', identity?.creatorHandle);
+  check('A10 exact TikTok post supported', isSupportedTikTokShareUrl(forms[1]));
+}
+
+// The post id is the identity boundary: different posts remain distinct.
+{
+  const a = normalizeShareUrl('https://www.tiktok.com/@creator/video/111').url;
+  const b = normalizeShareUrl('https://www.tiktok.com/@creator/video/222').url;
+  check('A11 different post ids remain distinct', a !== b, `${a} / ${b}`);
 }
 
 // ---------------------------------------------------------------------------
@@ -81,6 +107,17 @@ function check(name: string, condition: boolean, detail?: string): void {
 {
   const r = normalizeShareUrl('https://www.tiktok.com/t/ZTabc123/');
   check('C4 /t/ path isShortLink=true', r.isShortLink === true, r.url);
+  check('C5 recognized short link supported', isSupportedTikTokShareUrl(r.url));
+}
+
+// Profiles/discover/search pages are TikTok-owned but are not one post.
+for (const unsupported of [
+  'https://www.tiktok.com/',
+  'https://www.tiktok.com/@creator',
+  'https://www.tiktok.com/discover/best-pizza',
+  'https://www.tiktok.com/search?q=pizza',
+]) {
+  check(`C6 unsupported non-post: ${new URL(unsupported).pathname}`, !isSupportedTikTokShareUrl(unsupported));
 }
 
 // ---------------------------------------------------------------------------
@@ -88,7 +125,7 @@ function check(name: string, condition: boolean, detail?: string): void {
 // ---------------------------------------------------------------------------
 {
   const r = normalizeShareUrl('https://M.TikTok.com/@user/video/7212345678901234567');
-  check('H1 host lowercased', r.host === 'm.tiktok.com', r.host ?? 'null');
+  check('H1 exact post host canonicalized', r.host === 'www.tiktok.com', r.host ?? 'null');
   check('H2 isTikTokUrl helper', isTikTokUrl('https://www.tiktok.com/@u/video/1'));
   check(
     'H3 oembed url built + encoded',
@@ -96,6 +133,13 @@ function check(name: string, condition: boolean, detail?: string): void {
       'https://www.tiktok.com/oembed?url=https%3A%2F%2Fwww.tiktok.com%2F%40u%2Fvideo%2F1',
     buildTikTokOEmbedUrl('https://www.tiktok.com/@u/video/1'),
   );
+}
+
+// Suffix spoofing must never be treated as TikTok.
+{
+  const r = normalizeShareUrl('https://eviltiktok.com/@u/video/1');
+  check('H4 suffix-spoof host is not TikTok', r.platform === 'other', r.platform);
+  check('H5 suffix-spoof URL has no TikTok identity', extractTikTokPostIdentity(r.url) === null);
 }
 
 // ---------------------------------------------------------------------------

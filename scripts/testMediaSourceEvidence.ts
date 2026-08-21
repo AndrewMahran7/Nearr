@@ -308,6 +308,10 @@ function resolveMediaEvidence(
   const long = parseMediaSourceMetadata({ description: 'x'.repeat(9_000) });
   check('7h: oversized description is bounded',
     (long?.description?.length ?? 0) === 4_000, String(long?.description?.length));
+  check('7i: stable numeric post id is preserved as provenance',
+    parseMediaSourceMetadata({ postId: '7433811014237326622' })?.postId === '7433811014237326622');
+  check('7j: non-numeric post id is rejected',
+    parseMediaSourceMetadata({ description: 'x', postId: 'not-a-post' })?.postId === null);
 }
 
 // ---------------------------------------------------------------------------

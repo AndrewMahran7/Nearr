@@ -19,7 +19,7 @@ import path from 'node:path';
 import { runMediaTask, type TaskDeps } from '../src/pipeline/runMediaTask.js';
 import type { MediaResolver, ResolveInput } from '../src/resolvers/MediaResolver.js';
 import type { ResolvedMedia, MediaTask } from '../src/types/media.js';
-import type { TranscriptionProvider } from '../src/providers/transcription.js';
+import type { TranscriptionProvider, TranscribeInput } from '../src/providers/transcription.js';
 import type { ModelProvider, AnalyzeInput, AnalyzeOutput } from '../src/providers/model.js';
 import { selectOcrProvider } from '../src/providers/ocr.js';
 import { loadConfig } from '../src/config/env.js';
@@ -35,6 +35,23 @@ class NoopTranscription implements TranscriptionProvider {
   readonly name = 'noop';
   async transcribe() {
     return { provider: this.name, segments: [], language: null, status: 'no_audio' as const };
+  }
+}
+
+class FixtureTranscription implements TranscriptionProvider {
+  readonly name = 'fixture-transcription';
+  calls: Array<{ hasAudio: boolean }> = [];
+  constructor(private readonly text: string | null) {}
+  async transcribe(input: TranscribeInput) {
+    this.calls.push({ hasAudio: input.hasAudio });
+    return {
+      provider: this.name,
+      segments: this.text && input.hasAudio
+        ? [{ startSeconds: 0, endSeconds: 2, text: this.text }]
+        : [],
+      language: this.text ? 'en' : null,
+      status: input.hasAudio ? 'success' as const : 'no_audio' as const,
+    };
   }
 }
 
@@ -133,6 +150,44 @@ for (const platform of PLATFORMS) {
       assert.ok(Array.isArray(evidence.transcript));
       assert.ok(Array.isArray(evidence.ocr));
       assert.ok(Array.isArray(evidence.frames) && evidence.frames.length > 0, 'frame evidence must reach analyze() same as every other platform');
+    } finally {
+      await rm(workDir, { recursive: true, force: true }).catch(() => {});
+    }
+  });
+}
+
+for (const fixture of [
+  { name: 'spoken place clue', withAudio: true, transcript: 'Meet me at Tuxedo Cats Coffee on Heath Road' },
+  { name: 'music or no useful speech', withAudio: true, transcript: null },
+  { name: 'missing audio stream', withAudio: false, transcript: null },
+] as const) {
+  test(`TikTok audio/frame parity: ${fixture.name}`, async (t) => {
+    if (!(await ffmpegAvailable())) {
+      t.skip('ffmpeg not available');
+      return;
+    }
+    const workDir = await mkdtemp(path.join(tmpdir(), 'nearr-tiktok-audio-contract-'));
+    try {
+      const media = await generateSyntheticMedia(workDir);
+      const cfg = loadConfig();
+      const model = new CapturingModel();
+      const transcription = new FixtureTranscription(fixture.transcript);
+      const source = fixture.withAudio ? media.videoWithAudio : media.videoNoAudio;
+      await withMockedFetch(() => runMediaTask({
+        cfg,
+        client: fakeSupabaseClient(),
+        resolvers: [resolverFor('tiktok', source, 'TikTok fixture', 'Full #place caption')],
+        transcription,
+        model,
+        ocr: selectOcrProvider(cfg),
+      }, fakeTask(`tiktok-${fixture.name.replace(/\W+/g, '-')}`, 'tiktok')));
+
+      assert.equal(transcription.calls.length, 1);
+      assert.equal(transcription.calls[0]?.hasAudio, fixture.withAudio);
+      assert.equal(model.captured.length, 1);
+      assert.equal(model.captured[0]?.transcript[0]?.text ?? null, fixture.transcript);
+      assert.ok((model.captured[0]?.frames.length ?? 0) > 0, 'timestamped frames must survive every audio outcome');
+      assert.equal(model.captured[0]?.metadataDescription, 'Full #place caption');
     } finally {
       await rm(workDir, { recursive: true, force: true }).catch(() => {});
     }

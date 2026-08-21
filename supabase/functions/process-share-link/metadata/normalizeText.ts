@@ -27,6 +27,19 @@ export function cleanDescription(raw: string | null): string | null {
   return s;
 }
 
+/**
+ * Normalize a source caption for ingestion without applying the legacy
+ * 240-character search/UI preview cap. The 10k guard is an abuse bound, not a
+ * display limit; TikTok and Facebook creator captions retain hashtags, venue
+ * names, list entries and location language intact.
+ */
+export function cleanIngestionCaption(raw: string | null): string | null {
+  if (!raw) return null;
+  const s = raw.trim();
+  if (!s) return null;
+  return s.length > 10_000 ? s.slice(0, 10_000) : s;
+}
+
 export function firstSentence(s: string | null): string | null {
   if (!s) return null;
   const m = s.match(/^[^.!?\n]{4,}/);

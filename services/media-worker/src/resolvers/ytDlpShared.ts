@@ -37,6 +37,7 @@ export type YtFormat = {
 };
 
 export type YtInfo = {
+  id?: string;
   duration?: number;
   title?: string;
   description?: string;
@@ -64,6 +65,7 @@ export type YtInfo = {
   uploader?: string;
   uploader_id?: string;
   creator?: string;
+  channel_id?: string;
   webpage_url?: string;
 };
 
@@ -120,7 +122,7 @@ export function classifyYtError(stderr: string): MediaError {
   const s = stderr.toLowerCase();
   if (
     /\blog(?:in| in)\s+(?:is\s+)?required\b/.test(s) ||
-    /\b(?:log|sign) in to (?:confirm|view|continue|access|watch)\b/.test(s) ||
+    /\b(?:log|sign) in (?:to (?:confirm|view|continue|access|watch)|for access)\b/.test(s) ||
     /\bauthentication (?:is )?required\b/.test(s) ||
     /\bcookies? (?:are |is )?required\b/.test(s) ||
     /\bonly available (?:to|for) (?:registered|logged[- ]in) users?\b/.test(s) ||
@@ -131,8 +133,11 @@ export function classifyYtError(stderr: string): MediaError {
   if (/private|not available|removed|only available to|restricted|no longer available/.test(s)) {
     return new MediaError('private_or_unavailable', 'not_public');
   }
-  if (/rate.?limit|429|too many requests|temporar/.test(s)) {
-    return new MediaError('download_failed', 'rate_limited');
+  if (/rate.?limit|\b429\b|too many requests/.test(s)) {
+    return new MediaError('provider_rate_limited', 'rate_limited');
+  }
+  if (/\b5\d\d\b|service unavailable|temporar|connection reset|network is unreachable/.test(s)) {
+    return new MediaError('provider_unavailable', 'provider_temporarily_unavailable');
   }
   if (/unable to extract|unsupported url|no video formats|failed to parse|no video could be found/.test(s)) {
     return new MediaError('provider_changed', 'extractor_failed');
@@ -233,6 +238,7 @@ export async function probeWithYtDlp(
     { timeoutMs: Math.min(cfg.downloadTimeoutMs, 45_000), signal: opts.signal, cwd: opts.workDir },
   );
   if (opts.signal.aborted) throw new MediaError('cancelled');
+  if (probe.timedOut) throw new MediaError('download_timeout', 'metadata_probe_timeout');
   if (probe.code !== 0 || !probe.stdout.trim()) {
     throw classifyYtError(probe.stderr || 'no_output');
   }

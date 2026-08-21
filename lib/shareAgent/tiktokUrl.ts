@@ -1,3 +1,7 @@
+// @ts-ignore -- Deno requires the explicit .ts extension; Node test tooling
+// resolves it through ts-node. The module is intentionally runtime-shared.
+import { inspectFacebookUrl } from './facebookUrl.ts';
+
 /**
  * Pure, dependency-free share-URL normalization — shared by the React
  * Native client (`lib/shareParser.ts`) and the Deno Edge Function
@@ -43,6 +47,13 @@ export type NormalizedShareUrl = {
   wasModified: boolean;
 };
 
+/** Stable identity carried by TikTok's exact public post URL. */
+export type TikTokPostIdentity = {
+  postId: string;
+  creatorHandle: string;
+  canonicalUrl: string;
+};
+
 // TikTok tracking / share-sheet params. TikTok canonical video URLs carry
 // NO meaningful query, so for TikTok hosts we drop the query entirely;
 // this list documents the params we've observed on shared links.
@@ -65,19 +76,61 @@ const TIKTOK_HOSTS = new Set([
 ]);
 const TIKTOK_SHORT_HOSTS = new Set(['vm.tiktok.com', 'vt.tiktok.com']);
 
+function isHostOrSubdomain(host: string, domain: string): boolean {
+  const h = host.toLowerCase().replace(/\.$/, '');
+  return h === domain || h.endsWith(`.${domain}`);
+}
+
+export function isTikTokHost(host: string): boolean {
+  return isHostOrSubdomain(host, 'tiktok.com');
+}
+
 function stripWww(host: string): string {
   return host.startsWith('www.') ? host.slice(4) : host;
 }
 
 export function classifyShareUrlPlatform(host: string | null): ShareUrlPlatform {
   if (!host) return 'unknown';
-  const h = host.toLowerCase();
-  if (h.endsWith('tiktok.com')) return 'tiktok';
-  if (h.endsWith('instagram.com')) return 'instagram';
-  if (h.endsWith('youtube.com') || h === 'youtu.be') return 'youtube';
-  if (h.endsWith('facebook.com') || h === 'fb.watch') return 'facebook';
-  if (h.endsWith('snapchat.com')) return 'snapchat';
+  const h = host.toLowerCase().replace(/\.$/, '');
+  if (isHostOrSubdomain(h, 'tiktok.com')) return 'tiktok';
+  if (isHostOrSubdomain(h, 'instagram.com')) return 'instagram';
+  if (isHostOrSubdomain(h, 'youtube.com') || h === 'youtu.be') return 'youtube';
+  if (isHostOrSubdomain(h, 'facebook.com') || h === 'fb.watch') return 'facebook';
+  if (isHostOrSubdomain(h, 'snapchat.com')) return 'snapchat';
   return 'other';
+}
+
+/**
+ * Recover identity only from TikTok's exact public video URL shape. Profile,
+ * discover, search, API and generic feed URLs deliberately return null: they
+ * do not identify one post and must never become saved provenance.
+ */
+export function extractTikTokPostIdentity(rawUrl: string): TikTokPostIdentity | null {
+  let parsed: URL;
+  try {
+    parsed = new URL((rawUrl ?? '').trim());
+  } catch {
+    return null;
+  }
+  if (!['http:', 'https:'].includes(parsed.protocol) || !isTikTokHost(parsed.hostname)) {
+    return null;
+  }
+  const match = parsed.pathname.match(/^\/@([A-Za-z0-9._]{1,30})\/video\/(\d{1,24})\/?$/i);
+  if (!match) return null;
+  const creatorHandle = match[1]!.toLowerCase();
+  const postId = match[2]!;
+  return {
+    postId,
+    creatorHandle,
+    canonicalUrl: `https://www.tiktok.com/@${creatorHandle}/video/${postId}`,
+  };
+}
+
+/** True only for an exact post URL or a recognized TikTok redirect form. */
+export function isSupportedTikTokShareUrl(rawUrl: string): boolean {
+  const normalized = normalizeShareUrl(rawUrl);
+  return normalized.platform === 'tiktok' &&
+    (normalized.isShortLink || extractTikTokPostIdentity(normalized.url) !== null);
 }
 
 export function isTikTokUrl(rawUrl: string): boolean {
@@ -122,14 +175,47 @@ export function normalizeShareUrl(rawUrl: string): NormalizedShareUrl {
     return { url: trimmed, host: null, platform: 'unknown', isShortLink: false, wasModified: false };
   }
 
-  const host = parsed.host.toLowerCase();
-  parsed.host = host;
+  const host = parsed.hostname.toLowerCase().replace(/\.$/, '');
+  parsed.hostname = host;
   const bareHost = stripWww(host);
   const platform = classifyShareUrlPlatform(host);
 
   const isShortLink =
     TIKTOK_SHORT_HOSTS.has(host) ||
     (TIKTOK_HOSTS.has(host) && parsed.pathname.toLowerCase().startsWith('/t/'));
+
+  const tiktokIdentity = platform === 'tiktok'
+    ? extractTikTokPostIdentity(parsed.toString())
+    : null;
+
+  if (tiktokIdentity) {
+    // Canonicalize every exact-post spelling (bare/www/mobile host, HTTP,
+    // trailing slash, creator casing, query and fragment) to one reopenable
+    // identity. The post id is never inferred from arbitrary query params.
+    const out = tiktokIdentity.canonicalUrl;
+    return {
+      url: out,
+      host: 'www.tiktok.com',
+      platform,
+      isShortLink: false,
+      wasModified: out !== trimmed,
+    };
+  }
+
+  if (platform === 'facebook') {
+    const facebook = inspectFacebookUrl(parsed.toString());
+    if (facebook) {
+      return {
+        url: facebook.canonicalUrl,
+        host: new URL(facebook.canonicalUrl).host.toLowerCase(),
+        platform,
+        // Keep this field TikTok-specific for backward compatibility. Facebook
+        // redirect state lives on FacebookUrlInfo.needsRedirectResolution.
+        isShortLink: false,
+        wasModified: facebook.canonicalUrl !== trimmed,
+      };
+    }
+  }
 
   if (platform === 'tiktok' && !isShortLink) {
     // Canonical TikTok video URLs need no query at all. Dropping it gives
@@ -150,6 +236,11 @@ export function normalizeShareUrl(rawUrl: string): NormalizedShareUrl {
       }
     }
     parsed.search = params.toString() ? `?${params.toString()}` : '';
+  }
+
+  if (platform === 'tiktok') {
+    parsed.protocol = 'https:';
+    parsed.hash = '';
   }
 
   // Drop a dangling "?" and normalize.

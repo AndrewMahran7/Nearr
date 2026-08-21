@@ -98,7 +98,7 @@ const ALL_ON = {
   const start = src.indexOf('const meta = await fetchPostMetadata(requestUrl, platform);');
   assert.ok(start > -1, 'the metadata fetch branch exists');
   // The branch body up to the end of the `!meta.ok` block.
-  const branch = src.slice(start, src.indexOf('const { title, description, html } = meta.metadata;', start));
+  const branch = src.slice(start, src.indexOf('const { title, description, html, creatorHandle, postId } = meta.metadata;', start));
 
   assert.ok(
     branch.includes('shouldRunMediaFallbackForMetadataFailure('),
@@ -139,7 +139,7 @@ const ALL_ON = {
 {
   const src = read('supabase/functions/process-share-jobs/index.ts');
   const start = src.indexOf('const meta = await fetchPostMetadata(requestUrl, platform);');
-  const branch = src.slice(start, src.indexOf('const { title, description, html } = meta.metadata;', start));
+  const branch = src.slice(start, src.indexOf('const { title, description, html, creatorHandle, postId } = meta.metadata;', start));
   // No candidate is invented, and nothing is auto-saved off a failed fetch.
   assert.ok(branch.includes('candidate_payload: { candidates: [] }'), 'no invented candidates');
   assert.ok(!branch.includes('auto_save'), 'a metadata failure never auto-saves');

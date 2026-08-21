@@ -46,12 +46,15 @@ export type ContractInput = {
 /**
  * Flags that MUST be literally "true" on the Supabase Edge side.
  *
- * These two are the exact configuration whose absence let hard videos fall out
- * of the pipeline while every code-level test still passed: with either one
- * unset, `shouldRunMediaFallback` returns { run: false } and no media task is
- * ever created, silently.
+ * This testing branch requires Instagram plus TikTok/Facebook parity end to
+ * end. If a platform flag is unset, no media task is created for that source.
  */
-export const EDGE_REQUIRED_TRUE = ['MEDIA_FALLBACK_ENABLED', 'INSTAGRAM_MEDIA_RESOLVER_ENABLED'] as const;
+export const EDGE_REQUIRED_TRUE = [
+  'MEDIA_FALLBACK_ENABLED',
+  'INSTAGRAM_MEDIA_RESOLVER_ENABLED',
+  'TIKTOK_MEDIA_RESOLVER_ENABLED',
+  'FACEBOOK_MEDIA_RESOLVER_ENABLED',
+] as const;
 
 /** Edge secrets that must merely EXIST for the pipeline to function. */
 export const EDGE_REQUIRED_PRESENT = [
@@ -68,6 +71,8 @@ export const EDGE_REQUIRED_PRESENT = [
 export const WORKER_REQUIRED_TRUE = [
   'MEDIA_FALLBACK_ENABLED',
   'INSTAGRAM_MEDIA_RESOLVER_ENABLED',
+  'TIKTOK_MEDIA_RESOLVER_ENABLED',
+  'FACEBOOK_MEDIA_RESOLVER_ENABLED',
   'VAYRIN_VISUAL_GEOLOCATION_ENABLED',
 ] as const;
 
@@ -126,8 +131,9 @@ export const CROSS_SERVICE_ADVISORY = ['SUPABASE_SERVICE_ROLE_KEY'] as const;
 /**
  * Resolver flags whose two sides should agree.
  *
- * Advisory rather than required for the platforms beyond Instagram: a platform
- * enabled on the worker but not on the Edge is not broken, it is simply never
+ * TikTok and Facebook are required on this dedicated phone-testing branch.
+ * Other optional platforms remain advisory: a platform enabled on the worker
+ * but not on the Edge is not broken, it is simply never
  * reached — the Edge never enqueues for it. That is worth saying out loud on
  * every run without failing a deployment that may have chosen it deliberately.
  */
@@ -143,6 +149,8 @@ export const PARITY_FLAGS = [
 const REQUIRED_PARITY: ReadonlySet<string> = new Set([
   'MEDIA_FALLBACK_ENABLED',
   'INSTAGRAM_MEDIA_RESOLVER_ENABLED',
+  'TIKTOK_MEDIA_RESOLVER_ENABLED',
+  'FACEBOOK_MEDIA_RESOLVER_ENABLED',
 ]);
 
 export function evaluateContract(input: ContractInput): ContractFinding[] {

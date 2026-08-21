@@ -250,7 +250,7 @@ assert.doesNotMatch(
 const job = readFileSync(
   join(process.cwd(), 'supabase/functions/process-share-jobs/index.ts'),
   'utf8',
-);
+).replace(/\r\n/g, '\n');
 assert.match(job, /classifyResolverFailure\(\{/, 'the metadata path classifies before routing');
 const metadataClassification = job.indexOf('const providerFailureClass = classifyResolverFailure({');
 const metadataRouting = job.lastIndexOf('const plan = planFromResolverDecision({');

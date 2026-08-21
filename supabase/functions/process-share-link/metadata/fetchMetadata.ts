@@ -6,31 +6,38 @@
 //   - User-agent set to NearrBot
 //   - captures the post-redirect canonical URL (`resolvedUrl`) so short
 //     links (vm./vt.tiktok.com) resolve to `@user/video/<id>`
-//   - TikTok-only: when OG metadata is thin, fall back to the OFFICIAL,
-//     keyless TikTok oEmbed endpoint for the caption (Phase 3)
+//   - TikTok-only: use the OFFICIAL keyless oEmbed endpoint for the complete
+//     caption plus creator/post identity; HTML remains the fallback
 //   - Failures are propagated; callers decide how to degrade.
 
 // @ts-nocheck — Deno runtime.
 
 import { pickMeta, pickTitle } from './htmlMeta.ts';
-import { cleanTitle, cleanDescription } from './normalizeText.ts';
+import { cleanTitle, cleanDescription, cleanIngestionCaption } from './normalizeText.ts';
 import { fetchTikTokOEmbed } from './fetchTikTokOEmbed.ts';
-import { normalizeShareUrl } from '../../../../lib/shareAgent/tiktokUrl.ts';
-import { selectInstagramContentUrl } from '../../../../services/media-worker/src/resolvers/instagramUrl.ts';
+import {
+  extractTikTokPostIdentity,
+  isSupportedTikTokShareUrl,
+  normalizeShareUrl,
+} from '../../../../lib/shareAgent/tiktokUrl.ts';
+import { normalizeFacebookMetadata } from './facebookMetadata.ts';
+import { inspectFacebookUrl } from '../../../../lib/shareAgent/facebookUrl.ts';
+import { selectInstagramContentUrl } from '../../../../lib/shareAgent/instagramUrl.ts';
 
 const USER_AGENT =
   'Mozilla/5.0 (compatible; NearrBot/1.0; +https://nearr.app)';
 const FETCH_TIMEOUT_MS = 8000;
-// TikTok OG descriptions are often empty or a generic boilerplate line;
-// below this length we try the oEmbed caption as a richer signal.
-const TIKTOK_MIN_DESC_LEN = 24;
-
 export type PostMetadata = {
   title: string | null;
   description: string | null;
+  /** Public source identity. It is provenance/context, never a venue hint. */
+  creatorHandle: string | null;
+  postId: string | null;
   /** Raw HTML — kept so caller can run platform-specific extra
    *  scrapes (e.g. Instagram profile enrichment). */
   html: string;
+  titleSource: 'open_graph' | 'html_title' | null;
+  descriptionSource: 'open_graph' | 'html_description' | 'tiktok_oembed' | null;
 };
 
 export type FetchMetadataResult =
@@ -40,10 +47,30 @@ export type FetchMetadataResult =
       /** Post-redirect, tracking-stripped canonical URL. Equals the input
        *  when no redirect happened / parsing failed. */
       resolvedUrl: string;
-      /** True when the TikTok oEmbed fallback supplied the caption. */
+      /** True when TikTok oEmbed supplied a caption different from HTML. */
       usedTikTokOEmbed: boolean;
     }
-  | { ok: false; reason: 'network_error' | 'http_error' | 'redirect_off_platform'; error?: string };
+  | {
+      ok: false;
+      reason:
+        | 'network_error'
+        | 'http_error'
+        | 'redirect_off_platform'
+        | 'unsupported_tiktok_url'
+        | 'tiktok_redirect_not_post'
+        | 'tiktok_post_mismatch';
+      error?: string;
+    };
+
+export type MetadataFailureReason = Extract<FetchMetadataResult, { ok: false }>['reason'];
+
+/** Permanent acquisition failures must not enqueue/retry the media worker. */
+export function isPermanentMetadataFailure(reason: MetadataFailureReason): boolean {
+  return reason === 'redirect_off_platform' ||
+    reason === 'unsupported_tiktok_url' ||
+    reason === 'tiktok_redirect_not_post' ||
+    reason === 'tiktok_post_mismatch';
+}
 
 // A share link's own redirect/deep-link machinery can bounce an
 // unauthenticated fetch completely OFF the source platform and onto an app
@@ -76,6 +103,10 @@ export async function fetchPostMetadata(
   url: string,
   platform?: string,
 ): Promise<FetchMetadataResult> {
+  const inputIdentity = platform === 'tiktok' ? extractTikTokPostIdentity(url) : null;
+  if (platform === 'tiktok' && !isSupportedTikTokShareUrl(url)) {
+    return { ok: false, reason: 'unsupported_tiktok_url' };
+  }
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
 
@@ -83,6 +114,8 @@ export async function fetchPostMetadata(
   let description: string | null = null;
   let html = '';
   let htmlOk = false;
+  let titleSource: PostMetadata['titleSource'] = null;
+  let descriptionSource: PostMetadata['descriptionSource'] = null;
   let resolvedUrl = url;
   let networkError: string | undefined;
   let httpError: string | undefined;
@@ -94,7 +127,8 @@ export async function fetchPostMetadata(
     });
     // `res.url` is the FINAL url after redirect follow — this is how a
     // vm./vt.tiktok.com short link resolves to its canonical video URL.
-    const normalizedFinalUrl = normalizeShareUrl(res.url || url).url || url;
+    const normalizedResponse = normalizeShareUrl(res.url || url);
+    const normalizedFinalUrl = normalizedResponse.url || url;
     // A temporary Instagram auth wall is transport/provider behavior, not a
     // new content identity. Never replace a valid post/reel source with an
     // /accounts/login (or any other same-host non-content) final URL. If the
@@ -102,16 +136,43 @@ export async function fetchPostMetadata(
     resolvedUrl = platform === 'instagram'
       ? selectInstagramContentUrl(url, normalizedFinalUrl) ?? url
       : normalizedFinalUrl;
+    if (platform === 'tiktok' && normalizedResponse.platform !== 'tiktok') {
+      clearTimeout(timer);
+      return { ok: false, reason: 'redirect_off_platform' };
+    }
     if (res.ok && isNonContentRedirectHost(resolvedUrl)) {
+      clearTimeout(timer);
+      return { ok: false, reason: 'redirect_off_platform' };
+    }
+    // Facebook commonly answers an unavailable/private share with a successful
+    // 200 login/home redirect. That HTML is product chrome, not post metadata.
+    if (res.ok && platform === 'facebook' && !inspectFacebookUrl(resolvedUrl)?.supported) {
       clearTimeout(timer);
       return { ok: false, reason: 'redirect_off_platform' };
     }
     if (res.ok) {
       html = await res.text();
-      title = cleanTitle(pickMeta(html, 'og:title') ?? pickTitle(html));
-      description = cleanDescription(
-        pickMeta(html, 'og:description') ?? pickMeta(html, 'description'),
-      );
+      const ogTitle = pickMeta(html, 'og:title');
+      const ogDescription = pickMeta(html, 'og:description');
+      const plainDescription = pickMeta(html, 'description');
+      title = cleanTitle(ogTitle ?? pickTitle(html));
+      const rawDescription = ogDescription ?? plainDescription;
+      description = platform === 'tiktok' || platform === 'facebook'
+        ? cleanIngestionCaption(rawDescription)
+        : cleanDescription(rawDescription);
+      titleSource = ogTitle ? 'open_graph' : title ? 'html_title' : null;
+      descriptionSource = ogDescription
+        ? 'open_graph'
+        : plainDescription
+        ? 'html_description'
+        : null;
+      if (platform === 'facebook') {
+        const cleaned = normalizeFacebookMetadata({ title, description });
+        title = cleaned.title;
+        description = cleaned.description;
+        if (!title) titleSource = null;
+        if (!description) descriptionSource = null;
+      }
       htmlOk = true;
     } else {
       httpError = `HTTP ${res.status}`;
@@ -122,19 +183,49 @@ export async function fetchPostMetadata(
     clearTimeout(timer);
   }
 
-  // ---- TikTok oEmbed fallback (Phase 3) --------------------------------
-  // Official, keyless. Only used to fill a MISSING/THIN caption — never to
-  // inject the creator handle as a place signal. Feeds the exact same
-  // evidence/resolver pipeline as Instagram (no TikTok safety shortcut).
+  // ---- TikTok official oEmbed enrichment -------------------------------
+  // Its caption is authoritative; creator identity is provenance/exclusion
+  // context only and never becomes a place signal.
   let usedTikTokOEmbed = false;
-  if (platform === 'tiktok' && (!description || description.length < TIKTOK_MIN_DESC_LEN)) {
+  let creatorHandle = inputIdentity?.creatorHandle ?? null;
+  let postId = inputIdentity?.postId ?? null;
+  if (platform === 'tiktok') {
     const oe = await fetchTikTokOEmbed(resolvedUrl);
-    if (oe.ok && oe.title) {
-      const caption = cleanDescription(oe.title);
-      if (caption && (!description || caption.length > description.length)) {
-        description = caption;
-        usedTikTokOEmbed = true;
+    if (oe.ok) {
+      const pageIdentity = extractTikTokPostIdentity(resolvedUrl);
+      const observedIds = [inputIdentity?.postId, pageIdentity?.postId, oe.postId]
+        .filter((value): value is string => !!value);
+      if (new Set(observedIds).size > 1) {
+        return { ok: false, reason: 'tiktok_post_mismatch' };
       }
+      if (oe.canonicalUrl) resolvedUrl = normalizeShareUrl(oe.canonicalUrl).url;
+      const observedIdentity = extractTikTokPostIdentity(resolvedUrl) ?? inputIdentity;
+      creatorHandle = oe.creatorHandle ?? observedIdentity?.creatorHandle ?? creatorHandle;
+      postId = oe.postId ?? observedIdentity?.postId ?? postId;
+      const caption = cleanIngestionCaption(oe.title);
+      if (caption) {
+        usedTikTokOEmbed = caption !== description;
+        description = caption;
+        descriptionSource = 'tiktok_oembed';
+      }
+    }
+
+    const finalIdentity = extractTikTokPostIdentity(resolvedUrl) ?? inputIdentity;
+    if (!finalIdentity) {
+      // A successful redirect that lands on a feed/profile is permanent. A
+      // network/HTTP failure while expanding a short link is transient and
+      // must retain its original classification so durable media can retry it.
+      if (htmlOk) return { ok: false, reason: 'tiktok_redirect_not_post' };
+      if (httpError) return { ok: false, reason: 'http_error', error: httpError };
+      return { ok: false, reason: 'network_error', error: networkError };
+    }
+    if (inputIdentity && finalIdentity && finalIdentity.postId !== inputIdentity.postId) {
+      return { ok: false, reason: 'tiktok_post_mismatch' };
+    }
+    if (finalIdentity) {
+      resolvedUrl = finalIdentity.canonicalUrl;
+      creatorHandle = creatorHandle ?? finalIdentity.creatorHandle;
+      postId = postId ?? finalIdentity.postId;
     }
   }
 
@@ -147,7 +238,7 @@ export async function fetchPostMetadata(
 
   return {
     ok: true,
-    metadata: { title, description, html },
+    metadata: { title, description, html, creatorHandle, postId, titleSource, descriptionSource },
     resolvedUrl,
     usedTikTokOEmbed,
   };

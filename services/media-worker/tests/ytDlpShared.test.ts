@@ -96,6 +96,13 @@ test('classifyYtError: maps common yt-dlp stderr vocabulary to structured codes'
   assert.equal(classifyYtError('ERROR: Login required to view this video').code, 'authentication_required');
   assert.equal(classifyYtError('ERROR: Sign in to confirm you are not a bot').code, 'authentication_required');
   assert.equal(
+    classifyYtError(
+      'ERROR: [TikTok] 123: This post may not be comfortable for some audiences. Log in for access. ' +
+        'Use --cookies-from-browser or --cookies for the authentication.',
+    ).code,
+    'authentication_required',
+  );
+  assert.equal(
     classifyYtError('ERROR: This content is only available for registered users who follow this account').code,
     'authentication_required',
   );
@@ -104,7 +111,8 @@ test('classifyYtError: maps common yt-dlp stderr vocabulary to structured codes'
     'authentication_required',
   );
   assert.equal(classifyYtError('ERROR: This video is private').code, 'private_or_unavailable');
-  assert.equal(classifyYtError('ERROR: HTTP Error 429: Too Many Requests').code, 'download_failed');
+  assert.equal(classifyYtError('ERROR: HTTP Error 429: Too Many Requests').code, 'provider_rate_limited');
+  assert.equal(classifyYtError('ERROR: HTTP Error 503: Service Unavailable').code, 'provider_unavailable');
   assert.equal(classifyYtError('ERROR: Unable to extract video data').code, 'provider_changed');
   assert.equal(classifyYtError('some totally unrecognized message').code, 'provider_changed');
 });

@@ -1,4 +1,4 @@
-﻿// supabase/functions/process-share-link/index.ts
+// supabase/functions/process-share-link/index.ts
 //
 // Thin HTTP router for the share-save Edge Function.
 //
@@ -47,6 +47,7 @@ import {
   type WireStatus,
 } from './failureLogging.ts';
 import { normalizeShareUrl } from '../../../lib/shareAgent/tiktokUrl.ts';
+import { inspectFacebookUrl } from '../../../lib/shareAgent/facebookUrl.ts';
 
 // ---------------------------------------------------------------------------
 
@@ -111,6 +112,10 @@ serve(async (req) => {
   const normalizedInput = normalizeShareUrl(url);
   const requestUrl = normalizedInput.url || url;
   const platform = detectPlatform(requestUrl);
+  if (platform === 'facebook' && !inspectFacebookUrl(requestUrl)?.supported) {
+    logShareDebug('facebook-share:unsupported_url', {});
+    return statusFailedRequiresApp({ reason: 'unsupported_facebook_url' });
+  }
   if (platform === 'tiktok') {
     logShareDebug('tiktok-share:input', {
       rawInputPresent: !!url,
@@ -126,10 +131,10 @@ serve(async (req) => {
     }
     return statusFailedRequiresApp({
       reason: 'metadata_failed',
-      diagnostics: { metadataError: meta.error },
+      diagnostics: { metadataReason: meta.reason, metadataError: meta.error },
     });
   }
-  const { title, description, html } = meta.metadata;
+  const { title, description, html, creatorHandle, postId } = meta.metadata;
   // Post-redirect canonical URL — persisted as the source URL so short
   // links are stored in their stable `@user/video/<id>` form.
   const canonicalUrl = meta.resolvedUrl || requestUrl;
@@ -258,6 +263,15 @@ serve(async (req) => {
     source,
     title,
     description,
+    metadataProvenance: {
+      title: meta.metadata.titleSource,
+      description: meta.metadata.descriptionSource,
+    },
+    sourceIdentity: platform === 'tiktok'
+      ? (postId || creatorHandle ? { postId, creatorHandle } : null)
+      : platform === 'facebook'
+      ? inspectFacebookUrl(canonicalUrl)
+      : null,
     evidence,
     result,
   });
@@ -415,6 +429,13 @@ function buildExtractionPayload(args: {
   source: string;
   title: string | null;
   description: string | null;
+  metadataProvenance: {
+    title: string | null;
+    description: string | null;
+  };
+  sourceIdentity:
+    | { postId: string | null; creatorHandle: string | null }
+    | ReturnType<typeof inspectFacebookUrl>;
   evidence: ReturnType<typeof extractEvidence>;
   result: Awaited<ReturnType<typeof resolveSharedPlace>>;
 }) {
@@ -481,6 +502,16 @@ function buildExtractionPayload(args: {
     url: args.url,
     title: args.title,
     description: args.description,
+    metadataProvenance: args.metadataProvenance,
+    sourceIdentity: args.sourceIdentity && 'kind' in args.sourceIdentity
+      ? {
+          kind: args.sourceIdentity.kind,
+          contentId: args.sourceIdentity.contentId,
+          canonicalUrl: args.sourceIdentity.canonicalUrl,
+          creatorOrPage: args.sourceIdentity.creatorOrPage,
+          redirectResolved: !args.sourceIdentity.needsRedirectResolution,
+      }
+      : args.sourceIdentity,
     handlesDetected,
     query,
     querySource,

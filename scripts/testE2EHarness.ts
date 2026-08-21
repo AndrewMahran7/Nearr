@@ -171,6 +171,8 @@ function healthyWorker(): Record<string, string> {
   return {
     MEDIA_FALLBACK_ENABLED: 'true',
     INSTAGRAM_MEDIA_RESOLVER_ENABLED: 'true',
+    TIKTOK_MEDIA_RESOLVER_ENABLED: 'true',
+    FACEBOOK_MEDIA_RESOLVER_ENABLED: 'true',
     VAYRIN_VISUAL_GEOLOCATION_ENABLED: 'true',
     MEDIA_ANALYSIS_PROVIDER: 'gemini',
     MEDIA_TRANSCRIPTION_PROVIDER: 'openai',
@@ -265,15 +267,25 @@ check(
 );
 
 // -- Drift between the two sides --------------------------------------------
-const driftWorker = { ...healthyWorker(), TIKTOK_MEDIA_RESOLVER_ENABLED: 'true' };
-const drift = evaluateContract({ edgeDigests: healthyEdge(), workerVars: driftWorker, hash });
+const tiktokDriftEdge = healthyEdge();
+delete tiktokDriftEdge.TIKTOK_MEDIA_RESOLVER_ENABLED;
+const drift = evaluateContract({ edgeDigests: tiktokDriftEdge, workerVars: healthyWorker(), hash });
 check(
-  'a resolver flag on for the worker but off for the Edge is reported as drift',
-  advisoryFindings(drift).some((f) => f.id === 'parity.TIKTOK_MEDIA_RESOLVER_ENABLED'),
+  'TikTok on for the worker but off for the Edge is reported as required drift',
+  requiredFindings(drift).some((f) => f.id === 'parity.TIKTOK_MEDIA_RESOLVER_ENABLED'),
 );
 check(
-  'optional-platform drift does not fail the deployment',
-  requiredFindings(drift).length === 0,
+  'TikTok Edge/worker drift fails phone-test readiness',
+  requiredFindings(drift).length > 0,
+);
+const facebookDrift = evaluateContract({
+  edgeDigests: healthyEdge(),
+  workerVars: { ...healthyWorker(), FACEBOOK_MEDIA_RESOLVER_ENABLED: 'false' },
+  hash,
+});
+check(
+  'Facebook on for the Edge but off for the worker is required drift',
+  requiredFindings(facebookDrift).some((f) => f.id === 'parity.FACEBOOK_MEDIA_RESOLVER_ENABLED'),
 );
 const requiredDrift = evaluateContract({
   edgeDigests: healthyEdge(),

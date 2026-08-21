@@ -23,15 +23,67 @@
 
 // @ts-nocheck — Deno runtime.
 
-import { buildTikTokOEmbedUrl } from '../../../../lib/shareAgent/tiktokUrl.ts';
+import {
+  buildTikTokOEmbedUrl,
+  extractTikTokPostIdentity,
+} from '../../../../lib/shareAgent/tiktokUrl.ts';
 
 const USER_AGENT =
   'Mozilla/5.0 (compatible; NearrBot/1.0; +https://nearr.app)';
 const OEMBED_TIMEOUT_MS = 6000;
 
 export type TikTokOEmbedResult =
-  | { ok: true; title: string | null; authorName: string | null }
+  | {
+      ok: true;
+      title: string | null;
+      authorName: string | null;
+      creatorHandle: string | null;
+      postId: string | null;
+      canonicalUrl: string | null;
+    }
   | { ok: false; reason: 'network_error' | 'http_error' | 'bad_json'; error?: string };
+
+function boundedHandle(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const normalized = value.trim().toLowerCase().replace(/^@/, '');
+  return /^[a-z0-9._]{1,30}$/.test(normalized) ? normalized : null;
+}
+
+function boundedPostId(value: unknown): string | null {
+  if (typeof value === 'number' && Number.isSafeInteger(value) && value > 0) {
+    return String(value);
+  }
+  if (typeof value !== 'string') return null;
+  const normalized = value.trim();
+  return /^\d{1,24}$/.test(normalized) ? normalized : null;
+}
+
+function identityFromOEmbed(obj: Record<string, unknown>, requestUrl: string) {
+  const html = typeof obj.html === 'string' ? obj.html : '';
+  const cite = html.match(/\bcite=["']([^"']+)["']/i)?.[1] ?? null;
+  const citeIdentity = cite ? extractTikTokPostIdentity(cite.replace(/&amp;/g, '&')) : null;
+  const requestIdentity = extractTikTokPostIdentity(requestUrl);
+  const authorUrlIdentity = typeof obj.author_url === 'string'
+    ? obj.author_url.match(/\/\@([A-Za-z0-9._]{1,30})(?:[/?#]|$)/)
+    : null;
+  const creatorHandle =
+    boundedHandle(obj.author_unique_id) ??
+    citeIdentity?.creatorHandle ??
+    boundedHandle(authorUrlIdentity?.[1]) ??
+    requestIdentity?.creatorHandle ??
+    null;
+  const postId =
+    boundedPostId(obj.embed_product_id) ??
+    boundedPostId(html.match(/\bdata-video-id=["'](\d{1,24})["']/i)?.[1]) ??
+    citeIdentity?.postId ??
+    requestIdentity?.postId ??
+    null;
+  const canonicalUrl = citeIdentity?.canonicalUrl ??
+    (creatorHandle && postId
+      ? `https://www.tiktok.com/@${creatorHandle}/video/${postId}`
+      : requestIdentity?.canonicalUrl ?? null);
+  return { creatorHandle, postId, canonicalUrl };
+}
 
 export async function fetchTikTokOEmbed(
   canonicalUrl: string,
@@ -59,7 +111,8 @@ export async function fetchTikTokOEmbed(
       typeof obj.author_name === 'string' && obj.author_name.trim()
         ? obj.author_name.trim()
         : null;
-    return { ok: true, title, authorName };
+    const identity = identityFromOEmbed(obj, canonicalUrl);
+    return { ok: true, title, authorName, ...identity };
   } catch (err) {
     return { ok: false, reason: 'network_error', error: (err as Error)?.message };
   } finally {

@@ -14,6 +14,7 @@ test('manualFallback classification (safe needs_help, not retry)', () => {
   for (const code of [
     'unsupported_platform',
     'unsupported_url',
+    'identity_mismatch',
     'private_or_unavailable',
     'authentication_required',
     'file_too_large',

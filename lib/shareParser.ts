@@ -45,9 +45,9 @@ const SOCIAL_MENTION_RE = /@[^\s#@]+/g;
 // ---------------------------------------------------------------------------
 
 export function detectSource(url: string): ShareSource {
-  const u = url.toLowerCase();
-  if (u.includes('tiktok.com')) return 'tiktok';
-  if (u.includes('instagram.com')) return 'instagram';
+  const platform = normalizeShareUrl(url).platform;
+  if (platform === 'tiktok') return 'tiktok';
+  if (platform === 'instagram') return 'instagram';
   return 'link';
 }
 

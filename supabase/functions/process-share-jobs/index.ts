@@ -22,7 +22,10 @@ import { createClient } from 'npm:@supabase/supabase-js@2.45.0';
 
 import { readEnv, validateEnv } from '../process-share-link/env.ts';
 import { detectPlatform, legacySourceFor } from '../process-share-link/platform/detectPlatform.ts';
-import { fetchPostMetadata } from '../process-share-link/metadata/fetchMetadata.ts';
+import {
+  fetchPostMetadata,
+  isPermanentMetadataFailure,
+} from '../process-share-link/metadata/fetchMetadata.ts';
 import { extractHandles } from '../process-share-link/evidence/handleExtraction.ts';
 import { extractEvidence } from '../process-share-link/evidence/extractEvidence.ts';
 import { extractTaggedLocation } from '../process-share-link/evidence/taggedLocation.ts';
@@ -30,6 +33,10 @@ import { resolveSharedPlace } from '../process-share-link/resolver/resolveShared
 import { isRetryableNameDrivenProviderFailure } from '../process-share-link/resolver/nameDrivenResolver.ts';
 import { saveForUser } from '../process-share-link/save.ts';
 import { normalizeShareUrl } from '../../../lib/shareAgent/tiktokUrl.ts';
+import {
+  inspectFacebookUrl,
+  planFacebookDiscoveredCanonicalUrl,
+} from '../../../lib/shareAgent/facebookUrl.ts';
 import { buildShareJobCandidatePayload } from '../../../lib/shareJobResult.ts';
 import { isNearrCategory, resolvePlaceCategory } from '../../../lib/placeCategory.ts';
 import {
@@ -90,6 +97,7 @@ import {
   formatFinalizeReliabilityLog,
   planProviderUnavailable,
 } from './mediaFinalizeReliability.ts';
+import { planMediaCanonicalUrl } from './sourceCanonicalization.ts';
 import {
   buildCandidateReviewSnapshot,
   decisionForPlausibleCandidates,
@@ -778,6 +786,44 @@ async function finalizeMediaTask(
     return json({ error: 'parent_job_missing' }, 404);
   }
 
+  // A TikTok short link may resolve only inside yt-dlp. Accept that discovery
+  // at this trust boundary only when it is an exact TikTok post and does not
+  // contradict a post id already known from the task input.
+  const canonicalPlan = planMediaCanonicalUrl({
+    platform: task.platform,
+    sourceUrl: task.source_url,
+    canonicalUrl: task.canonical_url,
+    discoveredCanonicalUrl: body.canonicalUrl,
+  });
+  if (canonicalPlan.changed) {
+    const { error: canonicalUpdateError } = await admin
+      .from('share_media_tasks')
+      .update({ canonical_url: canonicalPlan.canonicalUrl })
+      .eq('id', taskId)
+      .eq('status', task.status);
+    if (canonicalUpdateError) {
+      throw new Error(`media_canonical_update_failed: ${canonicalUpdateError.message}`);
+    }
+    task.canonical_url = canonicalPlan.canonicalUrl;
+    if (job.status === 'processing_metadata') {
+      const { error: jobCanonicalError } = await admin
+        .from('share_jobs')
+        .update({ canonical_url: canonicalPlan.canonicalUrl })
+        .eq('id', job.id)
+        .eq('status', 'processing_metadata');
+      if (jobCanonicalError) {
+        throw new Error(`job_canonical_update_failed: ${jobCanonicalError.message}`);
+      }
+      job.canonical_url = canonicalPlan.canonicalUrl;
+    }
+  }
+  if (task.platform === 'tiktok') {
+    console.log(
+      `[media-task] canonical task_id=${taskId} accepted=${canonicalPlan.acceptedDiscoveredUrl} ` +
+      `changed=${canonicalPlan.changed} reason=${canonicalPlan.reason}`,
+    );
+  }
+
   // Diagnostics for every actionable callback. The summary carries the whole
   // RECOGNITION FUNNEL — model places emitted, how many survived our schema,
   // how many were suppressed as geographic context, and how many reached the
@@ -829,6 +875,9 @@ async function finalizeMediaTask(
   // job and a post that named its venue in text degraded to an address-only
   // guess. Absent/older payloads parse to null and behave exactly as before.
   const sourceMetadata = parseMediaSourceMetadata(body.sourceMetadata);
+  const mediaSourceIdentity = sourceMetadata?.postId || sourceMetadata?.creatorHandle
+    ? { postId: sourceMetadata.postId, creatorHandle: sourceMetadata.creatorHandle }
+    : null;
   const handles = sourceMetadata
     ? extractHandles({
         platform: task.platform,
@@ -962,7 +1011,43 @@ async function finalizeMediaTask(
       errorClass: retryPlan.errorClass,
     });
   }
-  const canonicalUrl = task.canonical_url || task.source_url;
+  const taskCanonicalUrl = task.canonical_url || task.source_url;
+  const discoveredCanonicalUrl = typeof body.canonicalUrl === 'string'
+    ? body.canonicalUrl
+    : '';
+  // A resolver may discover the stable id while expanding an opaque Facebook
+  // share. Accept that stronger URL only when it remains on the task's own
+  // platform; otherwise fail closed to the already-validated task URL.
+  const normalizedMediaCanonical = discoveredCanonicalUrl
+    ? normalizeShareUrl(discoveredCanonicalUrl).url
+    : '';
+  const canonicalUrl = task.platform === 'facebook'
+    ? planFacebookDiscoveredCanonicalUrl(taskCanonicalUrl, discoveredCanonicalUrl).canonicalUrl
+    : normalizedMediaCanonical && detectPlatform(normalizedMediaCanonical) === task.platform
+    ? normalizedMediaCanonical
+    : taskCanonicalUrl;
+  const sourceProvenance = {
+    platform: task.platform,
+    canonicalUrl,
+    postId: sourceMetadata?.postId ?? null,
+    sourceId: sourceMetadata?.sourceId ?? null,
+    creatorHandle: sourceMetadata?.creatorHandle ?? null,
+    creatorName: sourceMetadata?.creatorName ?? null,
+    creatorId: sourceMetadata?.creatorId ?? null,
+    captionSource: sourceMetadata?.description ? 'public_provider_metadata' : null,
+    mediaAcquired: true,
+  };
+  const persistedSourceMetadata = sourceMetadata
+    ? {
+        title: sourceMetadata.title,
+        description: sourceMetadata.description,
+        creatorHandle: sourceMetadata.creatorHandle,
+        postId: sourceMetadata.postId,
+        sourceId: sourceMetadata.sourceId,
+        creatorName: sourceMetadata.creatorName,
+        creatorId: sourceMetadata.creatorId,
+      }
+    : null;
 
   if (pre.mode === 'enrich_saved_place') {
     return await finalizePostSaveEnrichment(admin, {
@@ -1212,7 +1297,15 @@ async function finalizeMediaTask(
           candidate_payload: candidatePayload,
           canonical_url: canonicalUrl,
           source_platform: task.platform,
-          extraction_payload: { platform: task.platform, via: 'media', mediaResultSummary, resolutionDiagnostics },
+          extraction_payload: {
+            platform: task.platform,
+            via: 'media',
+            sourceIdentity: mediaSourceIdentity,
+            sourceProvenance,
+            sourceMetadata: persistedSourceMetadata,
+            mediaResultSummary,
+            resolutionDiagnostics,
+          },
           progress_stage: 'completed',
           completed_at: nowIso(),
         },
@@ -1237,7 +1330,15 @@ async function finalizeMediaTask(
         candidate_payload: candidatePayload,
         canonical_url: canonicalUrl,
         source_platform: task.platform,
-        extraction_payload: { platform: task.platform, via: 'media', mediaResultSummary, resolutionDiagnostics },
+        extraction_payload: {
+          platform: task.platform,
+          via: 'media',
+          sourceIdentity: mediaSourceIdentity,
+          sourceProvenance,
+          sourceMetadata: persistedSourceMetadata,
+          mediaResultSummary,
+          resolutionDiagnostics,
+        },
         progress_stage: unresolvedWithCandidates > 0 ? 'multi' : 'manual',
       },
       notification,
@@ -1249,6 +1350,9 @@ async function finalizeMediaTask(
   const extractionPayload = {
     platform: task.platform,
     via: 'media',
+    sourceIdentity: mediaSourceIdentity,
+    sourceProvenance,
+    sourceMetadata: persistedSourceMetadata,
     confidence: result.confidence,
     cleanSearchQuery: result.cleanSearchQuery ?? null,
     evidenceUsed: result.evidenceUsed,
@@ -1388,6 +1492,24 @@ async function processOne(admin: any, env: any, job: any): Promise<void> {
   const requestUrl = normalized.url || rawUrl;
   const platform = detectPlatform(requestUrl);
 
+  if (platform === 'facebook' && !inspectFacebookUrl(requestUrl)?.supported) {
+    await finalize(
+      admin,
+      job,
+      {
+        status: 'needs_help',
+        decision: 'manual_fallback',
+        needs_help_reason: 'unsupported_facebook_url',
+        canonical_url: requestUrl,
+        source_platform: platform,
+        extraction_payload: { platform, reason: 'unsupported_facebook_url' },
+        progress_stage: 'manual',
+      },
+      buildNeedsHelpNotification({ mode: 'manual', jobId: job.id }),
+    );
+    return;
+  }
+
   const meta = await fetchPostMetadata(requestUrl, platform);
   if (!meta.ok) {
     // Metadata unavailable is NOT the same as "this place cannot be
@@ -1396,7 +1518,7 @@ async function processOne(admin: any, env: any, job: any): Promise<void> {
     // finalized to needs_help in ~1s, pushed "We couldn't quite find this
     // one", and never inserted a share_media_tasks row.
     const metaFailFlags = effectiveMediaFlags(readMediaFlags(), job.user_id);
-    if (metaFailFlags.mediaFallbackEnabled) {
+    if (metaFailFlags.mediaFallbackEnabled && !isPermanentMetadataFailure(meta.reason)) {
       const mediaTaskExists = await mediaTaskExistsFor(admin, job.id);
       const trigger = shouldRunMediaFallbackForMetadataFailure({
         platform,
@@ -1422,7 +1544,7 @@ async function processOne(admin: any, env: any, job: any): Promise<void> {
             needs_help_reason: 'metadata_unavailable',
             suggested_query: null,
             candidate_payload: { candidates: [] },
-            extraction_payload: { platform, reason: 'metadata_failed' },
+            extraction_payload: { platform, reason: meta.reason },
             canonical_url: requestUrl,
             source_platform: platform,
           },
@@ -1443,7 +1565,7 @@ async function processOne(admin: any, env: any, job: any): Promise<void> {
         candidate_payload: { candidates: [] },
         canonical_url: requestUrl,
         source_platform: platform,
-        extraction_payload: { platform, reason: 'metadata_failed' },
+        extraction_payload: { platform, reason: meta.reason },
         progress_stage: 'manual',
       },
       buildNeedsHelpNotification({ mode: 'manual', jobId: job.id }),
@@ -1451,7 +1573,7 @@ async function processOne(admin: any, env: any, job: any): Promise<void> {
     return;
   }
 
-  const { title, description, html } = meta.metadata;
+  const { title, description, html, creatorHandle, postId } = meta.metadata;
   const canonicalUrl = meta.resolvedUrl || requestUrl;
   const handles = extractHandles({ platform, title, description, html });
   const taggedLocation = extractTaggedLocation({
@@ -1486,6 +1608,27 @@ async function processOne(admin: any, env: any, job: any): Promise<void> {
 
   const extractionPayload = {
     platform,
+    sourceMetadata: { title, description, creatorHandle, postId },
+    metadataProvenance: {
+      title: meta.metadata.titleSource,
+      description: meta.metadata.descriptionSource,
+    },
+    sourceIdentity: platform === 'tiktok'
+      ? (postId || creatorHandle ? { postId, creatorHandle } : null)
+      : platform === 'facebook'
+      ? (() => {
+          const identity = inspectFacebookUrl(canonicalUrl);
+          return identity
+            ? {
+                kind: identity.kind,
+                contentId: identity.contentId,
+                canonicalUrl: identity.canonicalUrl,
+                creatorOrPage: identity.creatorOrPage,
+                redirectResolved: !identity.needsRedirectResolution,
+              }
+            : null;
+        })()
+      : null,
     confidence: result.confidence,
     cleanSearchQuery: result.cleanSearchQuery ?? null,
     evidenceUsed: result.evidenceUsed,

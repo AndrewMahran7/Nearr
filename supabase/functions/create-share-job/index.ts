@@ -23,6 +23,7 @@ import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'npm:@supabase/supabase-js@2.45.0';
 
 import { normalizeShareUrl } from '../../../lib/shareAgent/tiktokUrl.ts';
+import { inspectFacebookUrl } from '../../../lib/shareAgent/facebookUrl.ts';
 import { detectPlatform } from '../process-share-link/platform/detectPlatform.ts';
 import { validateShareUrl } from './urlValidation.ts';
 
@@ -99,6 +100,13 @@ serve(async (req) => {
   const normalized = normalizeShareUrl(originalUrl);
   const canonicalUrl = normalized.url || originalUrl;
   const platform = detectPlatform(canonicalUrl);
+  if (platform === 'facebook') {
+    const facebook = inspectFacebookUrl(canonicalUrl);
+    if (!facebook?.supported) {
+      console.log('[share-job] rejected reason=unsupported_facebook_url');
+      return json({ error: 'unsupported_facebook_url' }, 400);
+    }
+  }
 
   const idempotencyKey =
     typeof body.clientRequestId === 'string' && body.clientRequestId.trim()

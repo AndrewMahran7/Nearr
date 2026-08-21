@@ -32,6 +32,10 @@ export type MediaSourceMetadata = {
   /** The post author's handle. Carried so it can be EXCLUDED from the venue
    *  set — never so it can become a venue name. */
   creatorHandle: string | null;
+  postId: string | null;
+  sourceId: string | null;
+  creatorName: string | null;
+  creatorId: string | null;
 };
 
 function boundedText(value: unknown, max: number): string | null {
@@ -48,6 +52,12 @@ function boundedHandle(value: unknown): string | null {
   return normalized;
 }
 
+function boundedPostId(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const normalized = value.trim();
+  return /^\d{1,24}$/.test(normalized) ? normalized : null;
+}
+
 /**
  * Parse the worker's `sourceMetadata` block. Returns null when nothing usable
  * is present — an older worker, an extractor that exposes no caption, or a
@@ -60,8 +70,12 @@ export function parseMediaSourceMetadata(raw: unknown): MediaSourceMetadata | nu
   const title = boundedText(r.title, MAX_TITLE);
   const description = boundedText(r.description, MAX_DESCRIPTION);
   const creatorHandle = boundedHandle(r.creatorHandle);
-  if (!title && !description && !creatorHandle) return null;
-  return { title, description, creatorHandle };
+  const postId = boundedPostId(r.postId);
+  const sourceId = boundedText(r.sourceId, 120);
+  const creatorName = boundedText(r.creatorName, 200);
+  const creatorId = boundedText(r.creatorId, 120);
+  if (!title && !description && !creatorHandle && !postId && !sourceId && !creatorName && !creatorId) return null;
+  return { title, description, creatorHandle, postId, sourceId, creatorName, creatorId };
 }
 
 export type RenderedCaptionLike = { title: string; description: string };
@@ -114,6 +128,9 @@ export function summarizeSourceMetadata(args: {
     sourceDescriptionPresent: !!args.source?.description,
     sourceTitlePresent: !!args.source?.title,
     creatorHandlePresent: !!args.source?.creatorHandle,
+    sourcePostIdPresent: !!args.source?.postId,
+    sourceIdentityPresent: !!args.source?.sourceId,
+    creatorIdentityPresent: !!args.source?.creatorName || !!args.source?.creatorId,
     creatorExcludedFromVenues: !!args.source?.creatorHandle && args.posterHandlePresent,
     sourceVenueHandleCount: args.venueHandles.length,
     venueHintCount: args.venueNameHints.length,

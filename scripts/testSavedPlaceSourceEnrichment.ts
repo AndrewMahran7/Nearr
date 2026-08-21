@@ -59,6 +59,22 @@ const TIKTOK = 'https://www.tiktok.com/@chef/video/7412345678901234567';
   assert.equal(hasAttachedSource(manualSave), false);
   assert.equal(hasAttachedSource({ source_url: REEL }), true);
   assert.equal(hasAttachedSource({ source_url: '   ' }), false, 'blank is not a source');
+
+  const tiktokPlan = planSavedPlaceEnrichment(
+    manualSave,
+    {
+      sourceUrl: 'https://m.tiktok.com/@Chef/video/7412345678901234567/?is_from_webapp=1',
+      sourceType: 'tiktok',
+      aiNote: null,
+    },
+    shareUrlKey,
+  );
+  assert.equal(tiktokPlan.source, 'attached');
+  assert.equal(
+    shareUrlKey(tiktokPlan.sourcePatch!.patch.source_url),
+    TIKTOK,
+    'a later TikTok source attaches with canonical exact-post identity',
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -147,6 +163,11 @@ const TIKTOK = 'https://www.tiktok.com/@chef/video/7412345678901234567';
   assert.equal(
     isSameSourceUrl(TIKTOK, `${TIKTOK}?is_from_webapp=1&sender_device=pc`, shareUrlKey),
     true,
+  );
+  assert.equal(
+    isSameSourceUrl(TIKTOK, 'https://m.tiktok.com/@Chef/video/7412345678901234567/', shareUrlKey),
+    true,
+    'host/case/trailing-slash variants remain one attached TikTok',
   );
   assert.equal(isSameSourceUrl(REEL, TIKTOK, shareUrlKey), false);
   assert.equal(isSameSourceUrl(null, REEL, shareUrlKey), false);

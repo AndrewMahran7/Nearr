@@ -8,6 +8,7 @@
 export type MediaErrorCode =
   | 'unsupported_platform'
   | 'unsupported_url'
+  | 'identity_mismatch'
   | 'private_or_unavailable'
   | 'authentication_required'
   | 'provider_changed'
@@ -38,6 +39,7 @@ const RETRYABLE_CODES: ReadonlySet<MediaErrorCode> = new Set<MediaErrorCode>([
 const MANUAL_FALLBACK_CODES: ReadonlySet<MediaErrorCode> = new Set<MediaErrorCode>([
   'unsupported_platform',
   'unsupported_url',
+  'identity_mismatch',
   'private_or_unavailable',
   'authentication_required',
   'file_too_large',
@@ -91,6 +93,13 @@ export type ResolvedMedia = {
   /** The post author's @handle, when the extractor exposed one. Forwarded to
    *  the resolver so the CREATOR is never mistaken for a tagged venue. */
   metadataCreatorHandle?: string | null;
+  /** Stable public post id when the extractor exposes one. Provenance only. */
+  metadataPostId?: string | null;
+  /** Stable platform content id plus public creator/page attribution. These
+   *  are provenance only; they never become place identity evidence. */
+  sourceId?: string | null;
+  metadataCreatorName?: string | null;
+  metadataCreatorId?: string | null;
   /** Human label of the retrieval source (e.g. "instagram/yt-dlp"). */
   source: string;
   warnings: string[];

@@ -8,12 +8,12 @@
 // `vt.tiktok.com`). We do NOT require the caller to have already resolved
 // those — yt-dlp follows the redirect itself during the metadata probe, same
 // as it does for the canonical `@user/video/<id>` form. The share pipeline
-// separately resolves + normalizes short links earlier (fetchPostMetadata /
-// normalizeShareUrl) so `Watch post` still opens the user's ORIGINAL link;
-// this resolver only needs a URL it can hand to yt-dlp.
+// usually resolves + normalizes short links earlier. If metadata expansion
+// failed but yt-dlp succeeds, this resolver returns `webpage_url` so the
+// finalizer can persist the exact post rather than the redirect token.
 
 import type { MediaResolver, ResolveInput } from './MediaResolver.js';
-import type { ResolvedMedia } from '../types/media.js';
+import { MediaError, type ResolvedMedia } from '../types/media.js';
 import type { WorkerConfig } from '../config/env.js';
 import {
   boundedMetadata,
@@ -38,6 +38,45 @@ function isTikTokHost(hostname: string): boolean {
   return TIKTOK_HOSTS.has(host) || host.endsWith('.tiktok.com');
 }
 
+/** Accept only an exact TikTok video URL and optionally pin it to yt-dlp's id. */
+export function canonicalTikTokVideoUrl(rawUrl: string | undefined, expectedPostId?: string | null): string | null {
+  if (!rawUrl) return null;
+  let parsed: URL;
+  try {
+    parsed = new URL(rawUrl);
+  } catch {
+    return null;
+  }
+  if (parsed.protocol !== 'https:' || !isTikTokHost(parsed.hostname)) return null;
+  const match = parsed.pathname.match(/^\/@([A-Za-z0-9._]{1,30})\/video\/(\d{1,24})\/?$/i);
+  if (!match) return null;
+  const [, rawCreator, postId] = match;
+  if (!rawCreator || !postId) return null;
+  if (expectedPostId && postId !== expectedPostId) return null;
+  return `https://www.tiktok.com/@${rawCreator.toLowerCase()}/video/${postId}`;
+}
+
+function postIdFromCanonicalTikTokUrl(rawUrl: string | undefined): string | null {
+  const canonical = canonicalTikTokVideoUrl(rawUrl);
+  return canonical?.split('/').pop() ?? null;
+}
+
+/** Fail before download when yt-dlp appears to have crossed post identities. */
+export function assertTikTokPostIdentityMatches(
+  requestedUrl: string,
+  extractorPostId: string | null,
+  extractorWebpageUrl?: string,
+): void {
+  const observedIds = [
+    postIdFromCanonicalTikTokUrl(requestedUrl),
+    extractorPostId,
+    postIdFromCanonicalTikTokUrl(extractorWebpageUrl),
+  ].filter((value): value is string => !!value);
+  if (new Set(observedIds).size > 1) {
+    throw new MediaError('identity_mismatch', 'tiktok_post_id_mismatch');
+  }
+}
+
 export class TikTokMediaResolver implements MediaResolver {
   readonly name = 'tiktok/yt-dlp';
   private readonly cfg: WorkerConfig;
@@ -58,6 +97,15 @@ export class TikTokMediaResolver implements MediaResolver {
 
     const info = await probeWithYtDlp(this.cfg, url, { workDir: input.workDir, signal: input.signal });
     const duration = enforceDurationLimit(this.cfg, info);
+    const postId = typeof info.id === 'string' && /^\d{1,24}$/.test(info.id) ? info.id : null;
+    assertTikTokPostIdentityMatches(url, postId, info.webpage_url);
+    const creatorHandle = pickCreatorHandle(info, info.webpage_url ?? url);
+    const canonicalUrl =
+      canonicalTikTokVideoUrl(info.webpage_url, postId) ??
+      canonicalTikTokVideoUrl(url, postId) ??
+      (creatorHandle && postId
+        ? `https://www.tiktok.com/@${creatorHandle}/video/${postId}`
+        : url);
 
     const file = await retrieveVideoFile(this.cfg, {
       jobId: input.jobId,
@@ -77,7 +125,7 @@ export class TikTokMediaResolver implements MediaResolver {
     });
 
     return {
-      canonicalUrl: url,
+      canonicalUrl,
       localFilePath: file.path,
       mimeType: file.mimeType,
       sizeBytes: file.sizeBytes,
@@ -85,7 +133,8 @@ export class TikTokMediaResolver implements MediaResolver {
       metadataTitle: boundedMetadata(info.title, 500),
       metadataDescription: boundedMetadata(info.description, 4000),
       metadataLocation: pickLocationMetadata(info),
-      metadataCreatorHandle: pickCreatorHandle(info, url),
+      metadataCreatorHandle: creatorHandle,
+      metadataPostId: postId,
       source: file.source,
       warnings: file.warnings,
     };
