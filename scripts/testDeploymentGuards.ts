@@ -60,6 +60,10 @@ check(
   'worker verifies Railway SUPABASE_URL before railway up',
   workerSource.indexOf("'SUPABASE_URL'") < workerSource.indexOf("'up',"),
 );
+check(
+  'worker preserves the configured /services/media-worker Railway root',
+  workerSource.includes("'services/media-worker',") && !workerSource.includes("'--path-as-root',"),
+);
 check('worker has no shell interpolation', !/shell\s*:/.test(workerSource));
 
 if (failures) {
