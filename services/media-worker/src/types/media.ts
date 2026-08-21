@@ -84,7 +84,8 @@ export type ResolvedMedia = {
   mimeType: string;
   sizeBytes: number;
   durationSeconds?: number;
-  /** Bounded public-post metadata used transiently as caption evidence. */
+  /** Public-post metadata retained to the source limit. Model callers derive
+   *  a smaller prompt excerpt without replacing this evidence. */
   metadataTitle?: string | null;
   metadataDescription?: string | null;
   /** Platform-provided location label when the public extractor exposes one.

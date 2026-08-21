@@ -80,7 +80,11 @@ import { buildRecognitionFunnel } from './mediaRunDiagnostics.ts';
 import {
   parseMediaSourceMetadata,
   mergeMediaCaption,
+  mergeRetainedSourceMetadata,
+  sourceMetadataFromExtractionPayload,
   summarizeSourceMetadata,
+  withRetainedSourceMetadata,
+  type MediaSourceMetadata,
 } from './mediaSourceMetadata.ts';
 import { buildVenueMentions, normalizeVenueName, sharedCountryForEvidence } from './mediaMentions.ts';
 import {
@@ -1059,7 +1063,11 @@ async function finalizePostSaveEnrichment(
 // Move a parent job to its best safe needs_help state after unusable media.
 // The persisted metadata snapshot wins; manual search is used only when that
 // snapshot truly has zero candidates.
-async function finalizeParentManual(admin: any, job: any): Promise<void> {
+async function finalizeParentManual(
+  admin: any,
+  job: any,
+  sourceMetadata: MediaSourceMetadata | null = null,
+): Promise<void> {
   const candidateCount = persistedCandidateCount(job?.candidate_payload);
   const fallback = mediaFailureReview(job?.candidate_payload);
   const mode = fallback.mode === 'auto' ? 'single' : fallback.mode;
@@ -1071,6 +1079,15 @@ async function finalizeParentManual(admin: any, job: any): Promise<void> {
       decision: fallback.decision,
       needs_help_reason: candidateCount > 0 ? 'media_unavailable_candidates_preserved' : 'manual_search',
       ...(candidateCount === 0 ? { suggested_query: null } : {}),
+      ...(sourceMetadata
+        ? {
+            extraction_payload: withRetainedSourceMetadata(
+              job?.extraction_payload,
+              { platform: job?.source_platform ?? null, via: 'media' },
+              sourceMetadata,
+            ),
+          }
+        : {}),
       progress_stage: mode,
     },
     buildNeedsHelpNotification({
@@ -1219,6 +1236,11 @@ async function finalizeMediaTask(
     );
   }
 
+  const sourceMetadata = mergeRetainedSourceMetadata(
+    sourceMetadataFromExtractionPayload(job.extraction_payload),
+    parseMediaSourceMetadata(body.sourceMetadata),
+  );
+
   // Diagnostics for every actionable callback. The summary carries the whole
   // RECOGNITION FUNNEL — model places emitted, how many survived our schema,
   // how many were suppressed as geographic context, and how many reached the
@@ -1249,7 +1271,7 @@ async function finalizeMediaTask(
 
   // Media unusable / parse failure / no explicit places → safe manual fallback.
   if (pre.action === 'manual_fallback') {
-    if (!pre.supplemental) await finalizeParentManual(admin, job);
+    if (!pre.supplemental) await finalizeParentManual(admin, job, sourceMetadata);
     await markMediaTask(admin, taskId, pre.taskTerminalStatus, {
       failure_code: pre.failureCode,
       progress_stage: 'cleanup',
@@ -1269,7 +1291,6 @@ async function finalizeMediaTask(
   // caption only, so `venue_handle_tagged` could never be emitted from a media
   // job and a post that named its venue in text degraded to an address-only
   // guess. Absent/older payloads parse to null and behave exactly as before.
-  const sourceMetadata = parseMediaSourceMetadata(body.sourceMetadata);
   const mediaSourceIdentity = sourceMetadata?.postId || sourceMetadata?.creatorHandle
     ? { postId: sourceMetadata.postId, creatorHandle: sourceMetadata.creatorHandle }
     : null;
@@ -1414,18 +1435,6 @@ async function finalizeMediaTask(
     captionSource: sourceMetadata?.description ? 'public_provider_metadata' : null,
     mediaAcquired: true,
   };
-  const persistedSourceMetadata = sourceMetadata
-    ? {
-        title: sourceMetadata.title,
-        description: sourceMetadata.description,
-        creatorHandle: sourceMetadata.creatorHandle,
-        postId: sourceMetadata.postId,
-        sourceId: sourceMetadata.sourceId,
-        creatorName: sourceMetadata.creatorName,
-        creatorId: sourceMetadata.creatorId,
-      }
-    : null;
-
   if (pre.mode === 'enrich_saved_place') {
     return await finalizePostSaveEnrichment(admin, {
       job,
@@ -1676,15 +1685,18 @@ async function finalizeMediaTask(
           candidate_payload: candidatePayload,
           canonical_url: canonicalUrl,
           source_platform: task.platform,
-          extraction_payload: {
-            platform: task.platform,
-            via: 'media',
-            sourceIdentity: mediaSourceIdentity,
-            sourceProvenance,
-            sourceMetadata: persistedSourceMetadata,
-            mediaResultSummary,
-            resolutionDiagnostics,
-          },
+          extraction_payload: withRetainedSourceMetadata(
+            job.extraction_payload,
+            {
+              platform: task.platform,
+              via: 'media',
+              sourceIdentity: mediaSourceIdentity,
+              sourceProvenance,
+              mediaResultSummary,
+              resolutionDiagnostics,
+            },
+            sourceMetadata,
+          ),
           progress_stage: 'completed',
           completed_at: nowIso(),
         },
@@ -1709,15 +1721,18 @@ async function finalizeMediaTask(
         candidate_payload: candidatePayload,
         canonical_url: canonicalUrl,
         source_platform: task.platform,
-        extraction_payload: {
-          platform: task.platform,
-          via: 'media',
-          sourceIdentity: mediaSourceIdentity,
-          sourceProvenance,
-          sourceMetadata: persistedSourceMetadata,
-          mediaResultSummary,
-          resolutionDiagnostics,
-        },
+        extraction_payload: withRetainedSourceMetadata(
+          job.extraction_payload,
+          {
+            platform: task.platform,
+            via: 'media',
+            sourceIdentity: mediaSourceIdentity,
+            sourceProvenance,
+            mediaResultSummary,
+            resolutionDiagnostics,
+          },
+          sourceMetadata,
+        ),
         progress_stage: unresolvedWithCandidates > 0 ? 'multi' : 'manual',
       },
       notification,
@@ -1726,18 +1741,21 @@ async function finalizeMediaTask(
     return json({ ok: true, route: 'needs_help', mode: 'mixed', ...mediaResultSummary });
   }
 
-  const extractionPayload = {
-    platform: task.platform,
-    via: 'media',
-    sourceIdentity: mediaSourceIdentity,
-    sourceProvenance,
-    sourceMetadata: persistedSourceMetadata,
-    confidence: result.confidence,
-    cleanSearchQuery: result.cleanSearchQuery ?? null,
-    evidenceUsed: result.evidenceUsed,
-    warnings: result.warnings,
-    resolutionDiagnostics,
-  };
+  const extractionPayload = withRetainedSourceMetadata(
+    job.extraction_payload,
+    {
+      platform: task.platform,
+      via: 'media',
+      sourceIdentity: mediaSourceIdentity,
+      sourceProvenance,
+      confidence: result.confidence,
+      cleanSearchQuery: result.cleanSearchQuery ?? null,
+      evidenceUsed: result.evidenceUsed,
+      warnings: result.warnings,
+      resolutionDiagnostics,
+    },
+    sourceMetadata,
+  );
   const plan = planFromResolverDecision({
     decision: result.decision,
     safeToAutoSave: result.safeToAutoSave,
@@ -1957,7 +1975,27 @@ async function processOne(admin: any, env: any, job: any): Promise<void> {
     return;
   }
 
-  const { title, description, html, creatorHandle, postId } = meta.metadata;
+  const {
+    title: fetchedTitle,
+    description: fetchedDescription,
+    html,
+    creatorHandle,
+    postId,
+  } = meta.metadata;
+  // A provider retry can return a thinner caption than an earlier attempt.
+  // Resolve and persist from the richer retained source instead of shortening
+  // evidence merely because this fetch degraded.
+  const metadataSourceMetadata = mergeRetainedSourceMetadata(
+    sourceMetadataFromExtractionPayload(job.extraction_payload),
+    parseMediaSourceMetadata({
+      title: fetchedTitle,
+      description: fetchedDescription,
+      creatorHandle,
+      postId,
+    }),
+  );
+  const title = metadataSourceMetadata?.title ?? fetchedTitle;
+  const description = metadataSourceMetadata?.description ?? fetchedDescription;
   const canonicalUrl = meta.resolvedUrl || requestUrl;
   const handles = extractHandles({ platform, title, description, html });
   const taggedLocation = extractTaggedLocation({
@@ -1998,40 +2036,43 @@ async function processOne(admin: any, env: any, job: any): Promise<void> {
     safeToAutoSave: effectiveDecision === 'auto_save',
   };
 
-  const extractionPayload = {
-    platform,
-    sourceMetadata: { title, description, creatorHandle, postId },
-    metadataProvenance: {
-      title: meta.metadata.titleSource,
-      description: meta.metadata.descriptionSource,
+  const extractionPayload = withRetainedSourceMetadata(
+    job.extraction_payload,
+    {
+      platform,
+      metadataProvenance: {
+        title: meta.metadata.titleSource,
+        description: meta.metadata.descriptionSource,
+      },
+      sourceIdentity: platform === 'tiktok'
+        ? (postId || creatorHandle ? { postId, creatorHandle } : null)
+        : platform === 'facebook'
+        ? (() => {
+            const identity = inspectFacebookUrl(canonicalUrl);
+            return identity
+              ? {
+                  kind: identity.kind,
+                  contentId: identity.contentId,
+                  canonicalUrl: identity.canonicalUrl,
+                  creatorOrPage: identity.creatorOrPage,
+                  redirectResolved: !identity.needsRedirectResolution,
+                }
+              : null;
+          })()
+        : null,
+      confidence: result.confidence,
+      cleanSearchQuery: result.cleanSearchQuery ?? null,
+      evidenceUsed: result.evidenceUsed,
+      warnings: result.warnings,
+      autoSaveDecision: metadataAutoSave,
+      rawResolverCandidates: result.candidates.slice(0, 10).map(safeCandidate),
+      plausibleCandidates: plausibleCandidates.slice(0, 10).map(safeCandidate),
+      // Present only when the metadata path ran name-driven mention resolution;
+      // the address/query-ladder path produces no mentions and so no traces.
+      resolutionDiagnostics: (result.diagnostics as any)?.resolutionDiagnostics ?? null,
     },
-    sourceIdentity: platform === 'tiktok'
-      ? (postId || creatorHandle ? { postId, creatorHandle } : null)
-      : platform === 'facebook'
-      ? (() => {
-          const identity = inspectFacebookUrl(canonicalUrl);
-          return identity
-            ? {
-                kind: identity.kind,
-                contentId: identity.contentId,
-                canonicalUrl: identity.canonicalUrl,
-                creatorOrPage: identity.creatorOrPage,
-                redirectResolved: !identity.needsRedirectResolution,
-              }
-            : null;
-        })()
-      : null,
-    confidence: result.confidence,
-    cleanSearchQuery: result.cleanSearchQuery ?? null,
-    evidenceUsed: result.evidenceUsed,
-    warnings: result.warnings,
-    autoSaveDecision: metadataAutoSave,
-    rawResolverCandidates: result.candidates.slice(0, 10).map(safeCandidate),
-    plausibleCandidates: plausibleCandidates.slice(0, 10).map(safeCandidate),
-    // Present only when the metadata path ran name-driven mention resolution;
-    // the address/query-ladder path produces no mentions and so no traces.
-    resolutionDiagnostics: (result.diagnostics as any)?.resolutionDiagnostics ?? null,
-  };
+    metadataSourceMetadata,
+  );
 
   // ---- transient provider failure -> retry, don't blame the user ----------
   // A Google Places 429/5xx/timeout previously fell straight through to

@@ -12,6 +12,7 @@
 
 import { isDemoMode } from './demoMode';
 import { normalizeShareUrl } from './shareAgent/tiktokUrl';
+import { normalizeSourceDescription } from './sourceDescription';
 
 export type ShareSource = 'tiktok' | 'instagram' | 'link';
 
@@ -100,7 +101,7 @@ export async function parseShare(rawUrl: string): Promise<ParsedShare> {
       pickMeta(html, 'og:description') ?? pickMeta(html, 'twitter:description') ?? null;
 
     title = cleanTitle(title, source);
-    description = cleanDescription(description);
+    description = normalizeSourceDescription(description);
 
     if (!title && !description) {
       metadataFailed = true;
@@ -171,14 +172,6 @@ function cleanTitle(raw: string | null, source: ShareSource): string | null {
   s = s.replace(/^["\u201C\u201D'`]+|["\u201C\u201D'`]+$/g, '').trim();
   if (!s) return null;
   void source;
-  return s;
-}
-
-function cleanDescription(raw: string | null): string | null {
-  if (!raw) return null;
-  let s = raw.trim();
-  if (!s) return null;
-  if (s.length > 240) s = s.slice(0, 237).trimEnd() + '\u2026';
   return s;
 }
 

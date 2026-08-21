@@ -4,6 +4,20 @@
 // Behaviorally identical to `cleanTitle`, `cleanDescription`,
 // `buildQuery`, and `firstSentence` in the legacy index.ts.
 
+// Kept local because this module runs in Deno Edge and is also imported by the
+// Node worker's cross-runtime contract tests. A `.ts` import works in Deno but
+// violates the worker's NodeNext typecheck; a `.js` import does the reverse.
+// The shared 10k contract is asserted against lib/sourceDescription.ts and the
+// worker helper by scripts/testLongCaptionPreservation.ts.
+export const SOURCE_DESCRIPTION_RETENTION_MAX = 10_000;
+
+function boundedSourceDescription(raw: string): string {
+  let bounded = raw.slice(0, SOURCE_DESCRIPTION_RETENTION_MAX);
+  const last = bounded.charCodeAt(bounded.length - 1);
+  if (last >= 0xd800 && last <= 0xdbff) bounded = bounded.slice(0, -1);
+  return bounded;
+}
+
 export function cleanTitle(raw: string | null): string | null {
   if (!raw) return null;
   const s = raw
@@ -28,16 +42,17 @@ export function cleanDescription(raw: string | null): string | null {
 }
 
 /**
- * Normalize a source caption for ingestion without applying the legacy
- * 240-character search/UI preview cap. The 10k guard is an abuse bound, not a
- * display limit; TikTok and Facebook creator captions retain hashtags, venue
- * names, list entries and location language intact.
+ * Normalize creator-authored source text at the ingestion boundary. Unlike
+ * `cleanDescription` (the legacy 240-character preview helper), this retains
+ * useful source evidence up to the explicit abuse/transport guard.
  */
 export function cleanIngestionCaption(raw: string | null): string | null {
   if (!raw) return null;
-  const s = raw.trim();
-  if (!s) return null;
-  return s.length > 10_000 ? s.slice(0, 10_000) : s;
+  const normalized = raw.trim();
+  if (!normalized) return null;
+  return normalized.length > SOURCE_DESCRIPTION_RETENTION_MAX
+    ? boundedSourceDescription(normalized)
+    : normalized;
 }
 
 export function firstSentence(s: string | null): string | null {

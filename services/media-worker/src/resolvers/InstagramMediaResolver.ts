@@ -42,6 +42,7 @@ import {
   requireHttpsHost,
   retrieveVideoFile,
 } from './ytDlpShared.js';
+import { normalizeSourceDescription } from '../util/sourceText.js';
 
 // Re-exported for back-compat: existing tests + any external caller import
 // `pickProgressiveUrl` from this module specifically.
@@ -85,7 +86,7 @@ export class InstagramMediaResolver implements MediaResolver {
       sizeBytes: file.sizeBytes,
       durationSeconds: duration,
       metadataTitle: boundedMetadata(info.title, 500),
-      metadataDescription: boundedMetadata(info.description, 4000),
+      metadataDescription: normalizeSourceDescription(info.description),
       metadataLocation: pickLocationMetadata(info),
       metadataCreatorHandle: pickCreatorHandle(info, url),
       source: file.source,

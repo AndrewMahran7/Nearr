@@ -59,12 +59,12 @@ const asyncWorkerSource = readFileSync(
 );
 assert.match(
   asyncWorkerSource,
-  /sourceMetadata:\s*\{\s*title,\s*description,/,
+  /withRetainedSourceMetadata\([\s\S]{0,2500}metadataSourceMetadata,\s*\);/,
   'metadata jobs durably retain the bounded public caption',
 );
 assert.match(
   asyncWorkerSource,
-  /sourceMetadata:\s*persistedSourceMetadata/,
+  /withRetainedSourceMetadata\([\s\S]{0,2500}sourceMetadata,\s*\)/,
   'media jobs durably retain the resolver caption and public identity',
 );
 

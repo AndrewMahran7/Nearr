@@ -14,8 +14,20 @@ import { binaryAvailable } from '../util/exec.js';
 import { processMediaTasks } from '../queue/processMediaTasks.js';
 import type { TaskDeps } from '../pipeline/runMediaTask.js';
 import { log } from '../util/logger.js';
+import {
+  inspectYtDlpRuntime,
+  ytDlpRuntimeFields,
+  type YtDlpRuntimeDiagnostic,
+} from '../util/runtimeDiagnostics.js';
 
-export type ServerContext = { cfg: WorkerConfig; deps: TaskDeps | null };
+export type ServerContext = {
+  cfg: WorkerConfig;
+  deps: TaskDeps | null;
+  /** Test seam; production always uses the bounded binary probe above. */
+  inspectYtDlp?: (ytDlpPath: string) => Promise<YtDlpRuntimeDiagnostic>;
+};
+
+type RuntimeLogger = Pick<typeof log, 'info' | 'warn'>;
 
 function sendJson(res: http.ServerResponse, status: number, body: unknown): void {
   const payload = JSON.stringify(body);
@@ -38,10 +50,10 @@ async function drainBody(req: http.IncomingMessage, maxBytes = 64 * 1024): Promi
 
 async function handleReady(ctx: ServerContext, res: http.ServerResponse): Promise<void> {
   const cfgCheck = validateConfig(ctx.cfg);
-  const [ffmpeg, ffprobe, ytdlp] = await Promise.all([
+  const [ffmpeg, ffprobe, ytDlpDiagnostic] = await Promise.all([
     binaryAvailable(ctx.cfg.ffmpegPath, '-version'),
     binaryAvailable(ctx.cfg.ffprobePath, '-version'),
-    binaryAvailable(ctx.cfg.ytDlpPath, '--version'),
+    (ctx.inspectYtDlp ?? inspectYtDlpRuntime)(ctx.cfg.ytDlpPath),
   ]);
 
   let supabase = false;
@@ -54,14 +66,32 @@ async function handleReady(ctx: ServerContext, res: http.ServerResponse): Promis
     }
   }
 
-  const checks = { config: cfgCheck.ok, ffmpeg, ffprobe, ytdlp, supabase };
+  const checks = {
+    config: cfgCheck.ok,
+    ffmpeg,
+    ffprobe,
+    ytdlp: ytDlpDiagnostic.status === 'ok',
+    supabase,
+  };
   const ready = Object.values(checks).every(Boolean);
   sendJson(res, ready ? 200 : 503, {
     status: ready ? 'ready' : 'not_ready',
     checks,
     capabilities: { aiNoteEnrichment: true },
+    runtime: ytDlpRuntimeFields(ytDlpDiagnostic),
     missingConfig: cfgCheck.ok ? [] : cfgCheck.missing,
   });
+}
+
+export async function logStartupRuntimeDiagnostics(
+  ctx: ServerContext,
+  logger: RuntimeLogger = log,
+): Promise<YtDlpRuntimeDiagnostic> {
+  const diagnostic = await (ctx.inspectYtDlp ?? inspectYtDlpRuntime)(ctx.cfg.ytDlpPath);
+  const fields = ytDlpRuntimeFields(diagnostic);
+  if (diagnostic.status === 'ok') logger.info('runtime_diagnostics', fields);
+  else logger.warn('runtime_diagnostics', fields);
+  return diagnostic;
 }
 
 export function startServer(ctx: ServerContext): http.Server {
@@ -107,6 +137,7 @@ export function startServer(ctx: ServerContext): http.Server {
 
   server.listen(ctx.cfg.port, () => {
     log.info('listening', { port: ctx.cfg.port, config: redactedConfigSummary(ctx.cfg) });
+    void logStartupRuntimeDiagnostics(ctx);
   });
   return server;
 }

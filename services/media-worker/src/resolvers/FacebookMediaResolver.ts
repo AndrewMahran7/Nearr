@@ -26,6 +26,7 @@ import {
 } from './ytDlpShared.js';
 import { safeFetchText } from '../security/ssrf.js';
 import { log } from '../util/logger.js';
+import { normalizeSourceDescription } from '../util/sourceText.js';
 
 const FACEBOOK_VIDEO_ID_RE = /^\d{5,30}$/;
 const FACEBOOK_EMBED_MAX_BYTES = 512 * 1024;
@@ -282,7 +283,7 @@ export class FacebookMediaResolver implements MediaResolver {
       sizeBytes: file.sizeBytes,
       durationSeconds: duration,
       metadataTitle: boundedMetadata(info.title, 500),
-      metadataDescription: boundedMetadata(info.description, 4000),
+      metadataDescription: normalizeSourceDescription(info.description),
       metadataLocation: pickLocationMetadata(info),
       metadataCreatorHandle: pickCreatorHandle(info, url),
       sourceId: identity.sourceId,

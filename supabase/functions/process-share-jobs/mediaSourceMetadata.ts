@@ -22,9 +22,9 @@
 // No imports on purpose — runs under Deno in the edge function and under
 // ts-node in scripts/testMediaSourceMetadata.ts.
 
-/** Same bounds the worker already applies, re-enforced at the trust boundary. */
+/** Source-retention bounds re-enforced at the worker callback trust boundary. */
 const MAX_TITLE = 500;
-const MAX_DESCRIPTION = 4_000;
+export const SOURCE_DESCRIPTION_RETENTION_MAX = 10_000;
 
 export type MediaSourceMetadata = {
   title: string | null;
@@ -36,12 +36,24 @@ export type MediaSourceMetadata = {
   sourceId: string | null;
   creatorName: string | null;
   creatorId: string | null;
+  /** Public extractor location label. Context only, never final place identity. */
+  location: string | null;
 };
 
 function boundedText(value: unknown, max: number): string | null {
   if (typeof value !== 'string') return null;
   const normalized = value.replace(/\s+/g, ' ').trim();
   return normalized ? normalized.slice(0, max) : null;
+}
+
+function boundedSourceDescription(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const normalized = value.trim();
+  if (!normalized) return null;
+  let bounded = normalized.slice(0, SOURCE_DESCRIPTION_RETENTION_MAX);
+  const last = bounded.charCodeAt(bounded.length - 1);
+  if (last >= 0xd800 && last <= 0xdbff) bounded = bounded.slice(0, -1);
+  return bounded;
 }
 
 function boundedHandle(value: unknown): string | null {
@@ -68,14 +80,76 @@ export function parseMediaSourceMetadata(raw: unknown): MediaSourceMetadata | nu
   if (!raw || typeof raw !== 'object') return null;
   const r = raw as Record<string, unknown>;
   const title = boundedText(r.title, MAX_TITLE);
-  const description = boundedText(r.description, MAX_DESCRIPTION);
+  const description = boundedSourceDescription(r.description);
   const creatorHandle = boundedHandle(r.creatorHandle);
   const postId = boundedPostId(r.postId);
   const sourceId = boundedText(r.sourceId, 120);
   const creatorName = boundedText(r.creatorName, 200);
   const creatorId = boundedText(r.creatorId, 120);
-  if (!title && !description && !creatorHandle && !postId && !sourceId && !creatorName && !creatorId) return null;
-  return { title, description, creatorHandle, postId, sourceId, creatorName, creatorId };
+  const location = boundedText(r.location, 500);
+  if (!title && !description && !creatorHandle && !postId && !sourceId && !creatorName && !creatorId && !location) return null;
+  return { title, description, creatorHandle, postId, sourceId, creatorName, creatorId, location };
+}
+
+/**
+ * Recover source metadata from either the canonical nested media shape or the
+ * older synchronous extraction shape (`title` / `description` at top level).
+ */
+export function sourceMetadataFromExtractionPayload(raw: unknown): MediaSourceMetadata | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const payload = raw as Record<string, unknown>;
+  return parseMediaSourceMetadata(payload.sourceMetadata ?? payload);
+}
+
+/**
+ * Replay-safe enrichment. A retry may re-fetch a shorter provider caption;
+ * keep the richer retained value instead of progressively replacing it.
+ */
+export function mergeRetainedSourceMetadata(
+  existing: MediaSourceMetadata | null,
+  incoming: MediaSourceMetadata | null,
+): MediaSourceMetadata | null {
+  if (!existing) return incoming;
+  if (!incoming) return existing;
+  const richer = (left: string | null, right: string | null): string | null => {
+    if (!left) return right;
+    if (!right) return left;
+    return right.length > left.length ? right : left;
+  };
+  return {
+    title: richer(existing.title, incoming.title),
+    description: richer(existing.description, incoming.description),
+    creatorHandle: existing.creatorHandle ?? incoming.creatorHandle,
+    postId: existing.postId ?? incoming.postId,
+    sourceId: existing.sourceId ?? incoming.sourceId,
+    creatorName: existing.creatorName ?? incoming.creatorName,
+    creatorId: existing.creatorId ?? incoming.creatorId,
+    location: existing.location ?? incoming.location,
+  };
+}
+
+/**
+ * Store the source caption once, in a canonical nested block, while retaining
+ * non-caption diagnostics from the prior extraction payload.
+ */
+export function withRetainedSourceMetadata(
+  prior: unknown,
+  patch: Record<string, unknown>,
+  source: MediaSourceMetadata | null,
+): Record<string, unknown> {
+  const previous = prior && typeof prior === 'object'
+    ? { ...(prior as Record<string, unknown>) }
+    : {};
+  // Older metadata payloads kept these at top level. Remove them when the
+  // nested source block is written so the same large caption is not duplicated.
+  delete previous.title;
+  delete previous.description;
+  delete previous.sourceMetadata;
+  return {
+    ...previous,
+    ...patch,
+    ...(source ? { sourceMetadata: source } : {}),
+  };
 }
 
 export type RenderedCaptionLike = { title: string; description: string };

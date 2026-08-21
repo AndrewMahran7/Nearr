@@ -276,6 +276,16 @@ serve(async (req) => {
     evidence,
     result,
   });
+  const persistSourceEvidence = (savedPlaceId: string | null = null) =>
+    persistSourceEvidenceSnapshot({
+      client: userClient,
+      userId,
+      canonicalUrl,
+      platform,
+      decision: result.decision,
+      extraction,
+      savedPlaceId,
+    });
   const wireStatus: WireStatus =
     mode !== 'save'
       ? 'extracted'
@@ -349,6 +359,7 @@ serve(async (req) => {
   // `extraction.agent.userFacingDecision` so clients (and the gold
   // evaluator) can pick the right UX.
   if (mode !== 'save') {
+    await persistSourceEvidence();
     return statusExtracted({
       candidate: result.primaryCandidate,
       candidates: result.candidates,
@@ -361,6 +372,7 @@ serve(async (req) => {
   switch (result.decision) {
     case 'auto_save': {
       if (!result.safeToAutoSave || !result.primaryCandidate) {
+        await persistSourceEvidence();
         return statusExtracted({
           candidate: result.primaryCandidate,
           candidates: result.candidates,
@@ -376,6 +388,7 @@ serve(async (req) => {
           sourceUrl: canonicalUrl,
           source,
         });
+        await persistSourceEvidence(saved.savedPlaceId);
         return statusSaved({
           placeId: saved.placeId,
           googlePlaceId: result.primaryCandidate.googlePlaceId,
@@ -385,6 +398,7 @@ serve(async (req) => {
         });
       } catch (err) {
         logShareDebug('save:failed', { error: (err as Error)?.message });
+        await persistSourceEvidence();
         return statusFailedRequiresApp({
           reason: 'save_failed',
           extracted: extraction,
@@ -396,6 +410,7 @@ serve(async (req) => {
     case 'candidate_picker':
     case 'candidate_confirmation':
     case 'multi_candidate_confirmation':
+      await persistSourceEvidence();
       return statusAmbiguous({
         candidates: result.candidates,
         primaryCandidate: result.primaryCandidate,
@@ -404,6 +419,7 @@ serve(async (req) => {
       });
 
     case 'manual_fallback':
+      await persistSourceEvidence();
       return statusOpenApp({
         reason: result.failureReason ?? 'manual_fallback',
         extracted: extraction,
@@ -412,6 +428,7 @@ serve(async (req) => {
 
     case 'failed':
     default:
+      await persistSourceEvidence();
       return statusFailedRequiresApp({
         reason: result.failureReason ?? 'resolver_failed',
         extracted: extraction,
@@ -423,6 +440,63 @@ serve(async (req) => {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+async function persistSourceEvidenceSnapshot(args: {
+  client: any;
+  userId: string;
+  canonicalUrl: string;
+  platform: string;
+  decision: string;
+  extraction: Record<string, unknown>;
+  savedPlaceId: string | null;
+}): Promise<void> {
+  // The synchronous flow has no queued job, but `share_jobs.extraction_payload`
+  // is already the product's durable source/evidence store. Reuse it instead
+  // of adding a large caption column to saved_places. One stable key per user
+  // and canonical post makes retries update the same snapshot.
+  const idempotencyKey = `source-evidence:${args.canonicalUrl}`;
+  try {
+    const { data: existing, error: readError } = await args.client
+      .from('share_jobs')
+      .select('id, saved_place_id')
+      .eq('user_id', args.userId)
+      .eq('idempotency_key', idempotencyKey)
+      .maybeSingle();
+    if (readError) throw readError;
+
+    const now = new Date().toISOString();
+    const snapshot = {
+      source_url: args.canonicalUrl,
+      canonical_url: args.canonicalUrl,
+      source_platform: args.platform,
+      status: 'completed',
+      progress_stage: 'completed',
+      decision: args.decision,
+      extraction_payload: args.extraction,
+      saved_place_id: args.savedPlaceId ?? existing?.saved_place_id ?? null,
+      completed_at: now,
+      updated_at: now,
+    };
+    if (existing?.id) {
+      const { error } = await args.client.from('share_jobs').update(snapshot).eq('id', existing.id);
+      if (error) throw error;
+      return;
+    }
+
+    const { error } = await args.client.from('share_jobs').insert({
+      ...snapshot,
+      user_id: args.userId,
+      idempotency_key: idempotencyKey,
+    });
+    // A concurrent replay may win the partial unique index. The winner already
+    // retained this same canonical post, so no second large payload is needed.
+    if (error && error.code !== '23505') throw error;
+  } catch {
+    // Source evidence is supplementary to the user-facing save/extract result.
+    // Log only a bounded status code; never emit the caption or URL here.
+    logShareDebug('source-evidence:persist_failed', { reason: 'db_error' });
+  }
+}
 
 function buildExtractionPayload(args: {
   url: string;

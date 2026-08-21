@@ -305,9 +305,9 @@ function resolveMediaEvidence(
   check('7g: merge with no source returns the rendered caption unchanged',
     mergeMediaCaption(null, SANTA_FE_RENDERED).description === SANTA_FE_RENDERED.description);
   // Bounds are re-enforced at the trust boundary.
-  const long = parseMediaSourceMetadata({ description: 'x'.repeat(9_000) });
-  check('7h: oversized description is bounded',
-    (long?.description?.length ?? 0) === 4_000, String(long?.description?.length));
+  const long = parseMediaSourceMetadata({ description: 'x'.repeat(12_000) });
+  check('7h: oversized description is bounded at the source-retention limit',
+    (long?.description?.length ?? 0) === 10_000, String(long?.description?.length));
   check('7i: stable numeric post id is preserved as provenance',
     parseMediaSourceMetadata({ postId: '7433811014237326622' })?.postId === '7433811014237326622');
   check('7j: non-numeric post id is rejected',

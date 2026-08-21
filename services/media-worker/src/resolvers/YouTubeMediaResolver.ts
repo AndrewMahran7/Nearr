@@ -35,6 +35,7 @@ import {
   type YtInfo,
   type YtSubtitleTrack,
 } from './ytDlpShared.js';
+import { normalizeSourceDescription } from '../util/sourceText.js';
 
 const YOUTUBE_HOSTS = new Set([
   'youtube.com',
@@ -173,7 +174,7 @@ export class YouTubeMediaResolver implements MediaResolver {
       sizeBytes: file.sizeBytes,
       durationSeconds: duration,
       metadataTitle: boundedMetadata(info.title, 500),
-      metadataDescription: boundedMetadata(info.description, 4000),
+      metadataDescription: normalizeSourceDescription(info.description),
       metadataLocation: pickLocationMetadata(info),
       metadataCreatorHandle: pickCreatorHandle(info, url),
       source: file.source,

@@ -1,4 +1,5 @@
-/** Derived model-context contract used by targeted video AI-note generation. */
+/** Public-source retention and derived model-context contracts. */
+export const SOURCE_DESCRIPTION_RETENTION_MAX = 10_000;
 export const MODEL_DESCRIPTION_CONTEXT_MAX = 4_000;
 
 function sliceWithoutSplittingSurrogate(value: string, max: number): string {
@@ -6,6 +7,16 @@ function sliceWithoutSplittingSurrogate(value: string, max: number): string {
   const last = bounded.charCodeAt(bounded.length - 1);
   if (last >= 0xd800 && last <= 0xdbff) bounded = bounded.slice(0, -1);
   return bounded;
+}
+
+/** Preserve useful caption structure while applying the source-retention guard. */
+export function normalizeSourceDescription(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const normalized = value.trim();
+  if (!normalized) return null;
+  return normalized.length > SOURCE_DESCRIPTION_RETENTION_MAX
+    ? sliceWithoutSplittingSurrogate(normalized, SOURCE_DESCRIPTION_RETENTION_MAX)
+    : normalized;
 }
 
 /** Derive a bounded prompt excerpt without mutating the retained source value. */

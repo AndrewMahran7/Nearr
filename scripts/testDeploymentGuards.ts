@@ -65,6 +65,18 @@ check(
   !workerSource.includes("'services/media-worker',") && !workerSource.includes("'--path-as-root',"),
 );
 check('worker has no shell interpolation', !/shell\s*:/.test(workerSource));
+const workerDockerfile = readFileSync(path.join(ROOT, 'services', 'media-worker', 'Dockerfile'), 'utf8');
+const ytDlpVersion = workerDockerfile.match(/^ARG YT_DLP_VERSION=(\S+)$/m)?.[1] ?? '';
+check('worker yt-dlp version is the tested explicit pin', ytDlpVersion === '2026.08.19', ytDlpVersion);
+check(
+  'worker yt-dlp install has no floating release URL or default',
+  !/^ARG YT_DLP_VERSION=(?:latest|nightly|master)$/mi.test(workerDockerfile) &&
+    !/releases\/latest(?:\/|$)/i.test(workerDockerfile),
+);
+check(
+  'worker yt-dlp install verifies the pinned release checksum',
+  /^ARG YT_DLP_SHA256=[a-f0-9]{64}$/m.test(workerDockerfile) && workerDockerfile.includes('sha256sum -c -'),
+);
 const functionsSource = readFileSync(path.join(ROOT, 'scripts', 'deployFunctions.mjs'), 'utf8');
 check(
   'production functions refuse the development-only E2E fixture',

@@ -13,7 +13,7 @@
 // @ts-nocheck — Deno runtime.
 
 import { pickMeta, pickTitle } from './htmlMeta.ts';
-import { cleanTitle, cleanDescription, cleanIngestionCaption } from './normalizeText.ts';
+import { cleanTitle, cleanIngestionCaption } from './normalizeText.ts';
 import { fetchTikTokOEmbed } from './fetchTikTokOEmbed.ts';
 import {
   extractTikTokPostIdentity,
@@ -157,9 +157,7 @@ export async function fetchPostMetadata(
       const plainDescription = pickMeta(html, 'description');
       title = cleanTitle(ogTitle ?? pickTitle(html));
       const rawDescription = ogDescription ?? plainDescription;
-      description = platform === 'tiktok' || platform === 'facebook'
-        ? cleanIngestionCaption(rawDescription)
-        : cleanDescription(rawDescription);
+      description = cleanIngestionCaption(rawDescription);
       titleSource = ogTitle ? 'open_graph' : title ? 'html_title' : null;
       descriptionSource = ogDescription
         ? 'open_graph'

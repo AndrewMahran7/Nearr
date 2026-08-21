@@ -36,6 +36,8 @@ export type MediaSourceMetadata = {
   sourceId?: string | null;
   creatorName?: string | null;
   creatorId?: string | null;
+  /** Public extractor location label. Geographic context only. */
+  location?: string | null;
 };
 
 export type FinalizeArgs = {

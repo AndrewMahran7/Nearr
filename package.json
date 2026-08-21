@@ -89,6 +89,7 @@
     "test:queue-place-focus": "ts-node -P scripts/tsconfig.json scripts/testQueueSavedPlaceFocus.ts",
     "test:share-job-result": "ts-node -P scripts/tsconfig.json scripts/testShareJobResult.ts",
     "test:source-enrichment": "ts-node -P scripts/tsconfig.json scripts/testSavedPlaceSourceEnrichment.ts",
+    "test:long-caption-preservation": "ts-node -P scripts/tsconfig.json scripts/testLongCaptionPreservation.ts",
     "test:map-group-focus": "ts-node -P scripts/tsconfig.json scripts/testMapGroupFocus.ts",
     "test:phase2-ui-render": "ts-node -P scripts/tsconfig.json scripts/testPhase2UiRenderContracts.ts",
     "test:share-phase1-ui": "ts-node -P scripts/tsconfig.json scripts/testSharePhase1Ui.ts",

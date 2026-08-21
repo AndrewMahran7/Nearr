@@ -52,7 +52,7 @@ safety gate decides — a wrong silent save is worse than asking the user.
 | Method | Path | Auth | Purpose |
 | --- | --- | --- | --- |
 | GET | `/health` | none | Process is alive. |
-| GET | `/ready` | none | Config valid + ffmpeg/ffprobe/yt-dlp present + Supabase reachable. Never returns secrets. |
+| GET | `/ready` | none | Config valid + ffmpeg/ffprobe/yt-dlp present + Supabase reachable. Includes bounded `runtime.ytDlpVersion` / `ytDlpStatus`; never returns secrets. |
 | POST | `/v1/process-media-tasks` | `Bearer SHARE_MEDIA_WORKER_SECRET` | Claim + process a batch. |
 
 The service-role key is used **internally only** (DB access) and is never
@@ -106,6 +106,23 @@ docker run --rm --env-file services/media-worker/.env -p 8090:8090 nearr-media-w
 curl -s localhost:8090/health
 curl -s localhost:8090/ready
 ```
+
+The image pins the stable yt-dlp release and its official SHA-256 in
+[`Dockerfile`](Dockerfile). The build refuses a non-`YYYY.MM.DD` version, uses
+the immutable tagged release URL, and verifies the downloaded artifact before
+installing it. Startup emits one structured `runtime_diagnostics` event, and
+`/ready` reports the installed version as a bounded date string (or `null` with
+an `unavailable` / `unparseable` status).
+
+### Safe yt-dlp upgrade sequence
+
+1. Change the Dockerfile version and matching official SHA-256 together.
+2. Run the deterministic media regressions, including Instagram, TikTok,
+   Facebook, media fallback, and provider retry coverage.
+3. Deploy the media worker to Railway **development only**.
+4. Verify `/health` and `/ready`, confirm the reported version equals the new
+   pin, and physically check one known-good sample per enabled social provider.
+5. Promote to production only in a separately authorized production change.
 
 ## Live tests (opt-in, may incur API cost)
 

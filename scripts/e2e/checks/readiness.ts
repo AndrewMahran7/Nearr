@@ -13,11 +13,22 @@
  * work is done.
  */
 
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import { evaluateContract, requiredFindings, advisoryFindings } from '../contract';
 import { sha256, presence, type DeployedConfig } from '../config';
 import { StageReporter } from '../report';
+
+const workerDockerfile = readFileSync(
+  path.resolve(__dirname, '..', '..', '..', 'services', 'media-worker', 'Dockerfile'),
+  'utf8',
+);
+const EXPECTED_YT_DLP_VERSION = workerDockerfile.match(/^ARG YT_DLP_VERSION=(\d{4}\.\d{2}\.\d{2})$/m)?.[1];
+if (!EXPECTED_YT_DLP_VERSION) {
+  throw new Error('media-worker Dockerfile must contain an explicit YYYY.MM.DD YT_DLP_VERSION pin');
+}
 
 export type ReadinessOptions = {
   /** Skip the two probes that need the public internet (used by --offline diagnosis). */
@@ -145,6 +156,7 @@ export async function runReadiness(
   if (options.skipNetwork) {
     reporter.skip('Railway worker health', '--offline: network probes skipped');
     reporter.skip('Railway worker readiness', '--offline: network probes skipped');
+    reporter.skip('Railway worker yt-dlp version', '--offline: network probes skipped');
     reporter.skip('Railway worker invocation auth', '--offline: network probes skipped');
     reporter.skip('Edge finalize-callback auth', '--offline: network probes skipped');
     return ok;
@@ -177,10 +189,16 @@ export async function runReadiness(
   } else {
     let checks: Record<string, unknown> = {};
     let missing: unknown[] = [];
+    let runtime: Record<string, unknown> = {};
     try {
-      const parsed = JSON.parse(ready.body) as { checks?: Record<string, unknown>; missingConfig?: unknown[] };
+      const parsed = JSON.parse(ready.body) as {
+        checks?: Record<string, unknown>;
+        missingConfig?: unknown[];
+        runtime?: Record<string, unknown>;
+      };
       checks = parsed.checks ?? {};
       missing = Array.isArray(parsed.missingConfig) ? parsed.missingConfig : [];
+      runtime = parsed.runtime ?? {};
     } catch {
       /* reported below via status */
     }
@@ -197,6 +215,22 @@ export async function runReadiness(
         Date.now() - readyStarted,
         `GET /ready returned ${ready.status}`,
         { checks, missingConfig: missing },
+      );
+    }
+
+    if (runtime.ytDlpVersion === EXPECTED_YT_DLP_VERSION && runtime.ytDlpStatus === 'ok') {
+      reporter.pass(
+        'Railway worker yt-dlp version',
+        Date.now() - readyStarted,
+        `reported ${runtime.ytDlpVersion}, matching the source pin`,
+      );
+    } else {
+      ok = false;
+      reporter.fail(
+        'Railway worker yt-dlp version',
+        Date.now() - readyStarted,
+        `reported ${String(runtime.ytDlpVersion ?? '(missing)')}, expected ${EXPECTED_YT_DLP_VERSION}`,
+        { ytDlpStatus: runtime.ytDlpStatus ?? '(missing)' },
       );
     }
   }
