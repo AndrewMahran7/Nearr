@@ -322,6 +322,12 @@ assert.match(guaranteeBody, /\.update\(\{ ai_note: noteResult\.note \}\)/);
 assert.match(guaranteeBody, /\.eq\('source_url', representedSource\)/);
 assert.match(guaranteeBody, /\.eq\('place_id', task\.target_place_id\)/);
 assert.match(guaranteeBody, /videoAiNoteCallbackMatchesTarget/);
+assert.match(
+  guaranteeBody,
+  /evaluateDeliverableAiPlaceNote/,
+  'the physical callback uses the evidence-grounded delivery boundary',
+);
+assert.match(guaranteeBody, /groundedFallbackUsed: noteResult\.groundedFallbackUsed/);
 assert.match(worker, /targetSourceUrl: task\.canonical_url \|\| task\.source_url/);
 assert.match(finalizer, /async function markVideoAiNoteTask/);
 assert.match(finalizer, /\.eq\('target_place_id', task\.target_place_id\)/);

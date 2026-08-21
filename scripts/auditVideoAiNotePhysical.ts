@@ -1,3 +1,6 @@
+import { createHash } from 'node:crypto';
+
+import { groundedAiPlaceNoteFallback } from '../lib/aiPlaceNote';
 import { openSession } from './e2e/session';
 
 type Row = Record<string, any>;
@@ -10,6 +13,11 @@ function nonEmpty(value: unknown): boolean {
 
 function countJsonArray(value: unknown): number {
   return Array.isArray(value) ? value.length : 0;
+}
+
+function safeHash(value: unknown): string | null {
+  if (typeof value !== 'string' || !value) return null;
+  return createHash('sha256').update(value).digest('hex').slice(0, 12);
 }
 
 async function required<T>(label: string, promise: PromiseLike<{ data: T | null; error: any }>): Promise<T> {
@@ -26,7 +34,7 @@ async function main(): Promise<void> {
     'saved places',
     admin
       .from('saved_places')
-      .select('*')
+      .select('*, place:places(name)')
       .in('source_type', [...SOCIAL_TYPES])
       .order('created_at', { ascending: false })
       .limit(30),
@@ -63,20 +71,48 @@ async function main(): Promise<void> {
         .order('created_at', { ascending: false })
         .limit(5),
     );
-    const jobIds = [...new Set(results.map((row) => row.share_job_id).filter(Boolean))];
-    const jobs = jobIds.length > 0
-      ? await required<Row[]>('share jobs', admin.from('share_jobs').select('*').in('id', jobIds))
-      : [];
-    const recognitionTaskIds = results.map((row) => row.share_media_task_id).filter(Boolean);
-    const recognitionTasks = recognitionTaskIds.length > 0
+    const recentUserJobs = await required<Row[]>(
+      'recent user share jobs',
+      admin
+        .from('share_jobs')
+        .select('*')
+        .eq('user_id', place.user_id)
+        .gte('created_at', '2026-08-21T20:00:00Z')
+        .order('created_at', { ascending: false }),
+    );
+    const jobs = recentUserJobs.filter((job) =>
+      job.saved_place_id === place.id ||
+      job.source_url === place.source_url ||
+      job.canonical_url === place.source_url,
+    );
+    const jobIds = jobs.map((job) => job.id);
+    const recognitionTasks = jobIds.length > 0
       ? await required<Row[]>(
           'recognition tasks',
-          admin.from('share_media_tasks').select('*').in('id', recognitionTaskIds),
+          admin
+            .from('share_media_tasks')
+            .select('*')
+            .in('share_job_id', jobIds)
+            .eq('task_kind', 'recognition'),
         )
       : [];
+    const duplicates = await required<Row[]>(
+      'same-user same-place rows',
+      admin
+        .from('saved_places')
+        .select('id,source_url,created_at,ai_note')
+        .eq('user_id', place.user_id)
+        .eq('place_id', place.place_id)
+        .order('created_at', { ascending: false }),
+    );
+    const authUser = await admin.auth.admin.getUserById(place.user_id);
+    const finalPlace = Array.isArray(place.place) ? place.place[0] : place.place;
 
     output.push({
       savedPlaceId: place.id,
+      userIdentityHash: safeHash(place.user_id),
+      userIsEphemeral: (authUser.data.user?.email ?? '').endsWith('@nearr.invalid'),
+      sourceHash: safeHash(place.source_url),
       sourcePlatform: place.source_type,
       savedAt: place.created_at,
       updatedAt: place.updated_at,
@@ -118,6 +154,11 @@ async function main(): Promise<void> {
         mediaAcquiredOnce: task.media_acquired_once,
         retainedEvidenceCount: countJsonArray(task.evidence_snapshot),
         retainedFramePresent: task.frame_snapshot != null,
+        groundedFallbackAvailable: !!groundedAiPlaceNoteFallback({
+          placeName: finalPlace?.name ?? null,
+          // The Edge parser accepts at most eight memory-cue evidence items.
+          evidence: Array.isArray(task.evidence_snapshot) ? task.evidence_snapshot.slice(0, 8) : [],
+        }).note,
       })),
       mediaRuns: runs.map((run) => ({
         taskId: run.share_media_task_id,
@@ -125,6 +166,12 @@ async function main(): Promise<void> {
         modelProvider: run.model_provider,
         warningCount: countJsonArray(run.warnings),
         errorCount: countJsonArray(run.errors),
+      })),
+      sameUserSamePlaceRows: duplicates.map((row) => ({
+        id: row.id,
+        sourceHash: safeHash(row.source_url),
+        createdAt: row.created_at,
+        aiNoteNonempty: nonEmpty(row.ai_note),
       })),
     });
   }

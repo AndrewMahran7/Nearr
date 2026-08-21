@@ -76,6 +76,11 @@ export type AiPlaceNoteResult = {
   reason: AiPlaceNoteRejection | null;
 };
 
+export type DeliverableAiPlaceNoteResult = AiPlaceNoteResult & {
+  /** True only when a rejected model cue was replaced with scoped evidence. */
+  groundedFallbackUsed: boolean;
+};
+
 const MIN_WORDS = 4;
 const MAX_WORDS = 22;
 const VALID_SOURCES = new Set<AiPlaceNoteEvidenceSource>([
@@ -287,6 +292,56 @@ export function evaluateAiPlaceNote(input: AiPlaceNoteInput): AiPlaceNoteResult 
     status: 'generated',
     reason: null,
   };
+}
+
+/**
+ * Build a conservative last-mile cue by quoting only normalized words from one
+ * scoped evidence item. This is intentionally not a second generator and does
+ * not relax validation: every candidate goes back through evaluateAiPlaceNote.
+ * Frame/visible-text observations are preferred because they read naturally as
+ * "That ... looked unreal"; weak/generic evidence still fails the hook rule.
+ */
+export function groundedAiPlaceNoteFallback(
+  input: Pick<AiPlaceNoteInput, 'placeName' | 'evidence'>,
+): AiPlaceNoteResult {
+  const rankedEvidence = meaningfulEvidence({ ...input, proposedNote: null })
+    .map((item, index) => ({ item, index }))
+    .sort((a, b) => {
+      const rank = (source: AiPlaceNoteEvidenceSource) =>
+        source === 'frame' ? 0 : source === 'visible_text' ? 1 : source === 'speech' ? 2 : 3;
+      return rank(a.item.source) - rank(b.item.source) || a.index - b.index;
+    });
+
+  for (const { item } of rankedEvidence) {
+    // 18 evidence words + "That" + "looked unreal" stays within the 22-word
+    // product bound. Tokenization also removes quotes, emoji and extra stops.
+    const evidencePhrase = words(item.value).slice(0, 18).join(' ');
+    if (!evidencePhrase) continue;
+    const candidate = evaluateAiPlaceNote({
+      placeName: input.placeName,
+      proposedNote: `That ${evidencePhrase} looked unreal.`,
+      evidence: input.evidence,
+    });
+    if (candidate.note) return candidate;
+  }
+  return reject('ungrounded_claim');
+}
+
+/**
+ * Delivery-boundary evaluation. The model's cue wins whenever it is valid.
+ * Only an ungrounded-claim rejection may use the evidence-derived fallback;
+ * every other safety/quality rejection keeps its original result.
+ */
+export function evaluateDeliverableAiPlaceNote(
+  input: AiPlaceNoteInput,
+): DeliverableAiPlaceNoteResult {
+  const primary = evaluateAiPlaceNote(input);
+  if (primary.note || primary.reason !== 'ungrounded_claim') {
+    return { ...primary, groundedFallbackUsed: false };
+  }
+  const fallback = groundedAiPlaceNoteFallback(input);
+  if (!fallback.note) return { ...primary, groundedFallbackUsed: false };
+  return { ...fallback, groundedFallbackUsed: true };
 }
 
 /** Back-compatible wrapper: the note, or null when it must not be persisted. */

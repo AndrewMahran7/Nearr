@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 
 import {
+  evaluateDeliverableAiPlaceNote,
   evaluateAiPlaceNote,
   generateAiPlaceNote,
   persistAiNoteSupplementally,
@@ -246,6 +247,41 @@ assert.deepEqual(
   evaluateAiPlaceNote({ placeName: 'Any', proposedNote: null, evidence: burritoEvidence }),
   { note: null, status: 'not_requested', reason: null },
   'the model declining to propose a cue is distinguishable from a refusal',
+);
+
+const groundedFallback = evaluateDeliverableAiPlaceNote({
+  placeName: 'Any',
+  proposedNote: 'Saved for the lobster roll the creator ordered',
+  evidence: burritoEvidence,
+});
+assert.equal(groundedFallback.groundedFallbackUsed, true);
+assert.equal(
+  groundedFallback.note,
+  'That I ordered the birria burrito and an orange soda looked unreal.',
+  'an ungrounded model claim is replaced only with exact scoped evidence',
+);
+assert.equal(
+  evaluateAiPlaceNote({
+    placeName: 'Any',
+    proposedNote: groundedFallback.note,
+    evidence: burritoEvidence,
+  }).status,
+  'generated',
+  'the last-mile fallback passes the unchanged grounding validator',
+);
+assert.deepEqual(
+  evaluateDeliverableAiPlaceNote({
+    placeName: 'Some Cafe',
+    proposedNote: 'Saved for the invented lobster roll',
+    evidence: [{ source: 'caption', value: 'This is a great cafe' }],
+  }),
+  {
+    note: null,
+    status: 'rejected',
+    reason: 'ungrounded_claim',
+    groundedFallbackUsed: false,
+  },
+  'generic evidence cannot be promoted into a fallback note',
 );
 assert.deepEqual(
   evaluateAiPlaceNote({ placeName: 'Any', proposedNote: 'Saved for the birria burrito', evidence: [] }),

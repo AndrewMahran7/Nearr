@@ -41,7 +41,7 @@ import { buildShareJobCandidatePayload } from '../../../lib/shareJobResult.ts';
 import { selectionModeForPlaceResult } from '../../../lib/placeSelection.ts';
 import { isNearrCategory, resolvePlaceCategory } from '../../../lib/placeCategory.ts';
 import {
-  evaluateAiPlaceNote,
+  evaluateDeliverableAiPlaceNote,
   generateAiPlaceNote,
   persistAiNoteSupplementally,
   type AiPlaceNoteResult,
@@ -176,7 +176,7 @@ function noteResultForLogicalMention(parsed: any, mention: any): AiPlaceNoteResu
   );
   let last: AiPlaceNoteResult = { note: null, status: 'not_requested', reason: null };
   for (const place of scopedPlaces) {
-    last = evaluateAiPlaceNote({
+    last = evaluateDeliverableAiPlaceNote({
       placeName: logicalName,
       proposedNote: place.memoryCue,
       evidence: place.memoryCueEvidence ?? [],
@@ -633,13 +633,13 @@ async function finalizeVideoAiNoteTask(
     : matches.length > 1
       ? 'ambiguous'
       : 'missing';
-  const noteResult: AiPlaceNoteResult = matches.length === 1
-    ? evaluateAiPlaceNote({
+  const noteResult = matches.length === 1
+    ? evaluateDeliverableAiPlaceNote({
         placeName: finalPlace.name,
         proposedNote: matches[0].memoryCue,
         evidence: matches[0].memoryCueEvidence ?? [],
       })
-    : { note: null, status: 'insufficient_evidence', reason: null };
+    : { note: null, status: 'insufficient_evidence', reason: null, groundedFallbackUsed: false };
 
   const diagnostics = body?.diagnostics ?? {};
   const diagnosticPatch = {
@@ -838,6 +838,7 @@ async function finalizeVideoAiNoteTask(
     aiNotePresent: true,
     generationAttempted: true,
     generationOutcome: 'generated',
+    groundedFallbackUsed: noteResult.groundedFallbackUsed,
     targetMatch,
     retryCount: Number(task.attempts) || 0,
     provider: diagnosticPatch.analysis_provider,
@@ -853,7 +854,13 @@ async function finalizeVideoAiNoteTask(
     ruleVersion: VIDEO_AI_NOTE_RULE_VERSION,
   }));
   logFinalStatus('note_stored');
-  return json({ ok: true, route: 'ai_note_enrichment', enriched: true, savedPlaceId: saved.id });
+  return json({
+    ok: true,
+    route: 'ai_note_enrichment',
+    enriched: true,
+    savedPlaceId: saved.id,
+    groundedFallbackUsed: noteResult.groundedFallbackUsed,
+  });
 }
 
 /**

@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { savedPlaceNarrative, whySavedDisplay } from '../lib/placeDetailUi';
+import { findSavedPlaceForOpen } from '../lib/openSavedPlace';
 import { planSavedPlaceEnrichment } from '../lib/savedPlaceSourceMerge';
 import {
   readSavedPlaceFromCache,
@@ -36,6 +37,9 @@ const root = process.cwd();
 const finalizer = readFileSync(join(root, 'supabase/functions/process-share-jobs/index.ts'), 'utf8');
 const candidateSave = readFileSync(join(root, 'services/shareJobCandidateSave.ts'), 'utf8');
 const savedService = readFileSync(join(root, 'services/savedPlacesService.ts'), 'utf8');
+const savedHook = readFileSync(join(root, 'hooks/useSavedPlaces.ts'), 'utf8');
+const mapScreen = readFileSync(join(root, 'app/(tabs)/map.tsx'), 'utf8');
+const detail = readFileSync(join(root, 'components/map/SelectedPlaceDetails.tsx'), 'utf8');
 assert.match(finalizer, /persistAiNoteSupplementally/, 'auto-save stores an available note supplementally');
 assert.doesNotMatch(finalizer, /throw new Error\(`media_ai_note_save_failed/, 'AI-note failure cannot fail place finalization');
 assert.match(finalizer, /supplemental ai note save failed/, 'supplemental failure is diagnostic only');
@@ -133,9 +137,12 @@ async function testCacheRoundTrip(): Promise<void> {
   const row = {
     id: 'saved-1',
     user_id: 'user-1',
+    place_id: 'place-1',
+    source_url: 'https://www.instagram.com/reel/database-shaped',
+    source_type: 'instagram',
     notes: null,
     ai_note: cue,
-    place: { id: 'place-1', name: 'Matcha House' },
+    place: { id: 'place-1', google_place_id: 'provider-1', name: 'Matcha House' },
   } as unknown as SavedPlaceWithPlace;
   await writeSavedPlacesCache('user-1', [row]);
   const restored = await readSavedPlaceFromCache('user-1', 'saved-1');
@@ -144,6 +151,22 @@ async function testCacheRoundTrip(): Promise<void> {
     whySavedDisplay({ notes: restored?.notes, ai_note: restored?.ai_note }),
     { text: cue, origin: 'source', seedFromSourceNote: true },
     'a cache-hydrated row renders exactly like a freshly fetched one',
+  );
+  const sameProviderDifferentRow = {
+    ...row,
+    id: 'saved-other',
+    ai_note: 'A note belonging to a different saved row.',
+  } as SavedPlaceWithPlace;
+  const selected = findSavedPlaceForOpen([sameProviderDifferentRow, restored!], {
+    savedPlaceId: 'saved-1',
+    googlePlaceId: 'provider-1',
+  });
+  assert.equal(selected?.id, 'saved-1', 'cold-start selection uses the exact saved_places id first');
+  assert.equal(selected?.ai_note, cue, 'duplicate provider identity cannot substitute another row');
+  assert.equal(
+    whySavedDisplay(selected!).text,
+    cue,
+    'the exact database-shaped, cache-hydrated selected row reaches Place Detail',
   );
   setSavedPlacesCacheStore(null);
 }
@@ -157,6 +180,20 @@ assert.match(
   /\.select\('id, source_url, source_type, ai_note, place:places\(\*\)'\)/,
   'the dedupe lookup reads ai_note, so an existing cue is visible to the merge',
 );
+assert.match(
+  savedService,
+  /export async function listSavedPlaces[\s\S]*?\.select\('\*, place:places\(\*\)'\)/,
+  'the authenticated cold-start list projection includes saved_places.ai_note',
+);
+assert.match(savedHook, /const promise = listSavedPlaces\(\)/, 'cold start performs the network list query');
+assert.match(savedHook, /readSavedPlacesCache\(userId\)/, 'cold start can hydrate the full cached row');
+assert.match(
+  mapScreen,
+  /const live = validPlaces\.find\(\(place\) => place\.id === selected\.id\)/,
+  'an open detail is repointed to the exact refreshed database row',
+);
+assert.match(detail, /whySavedDisplay\(\{ notes, ai_note: saved\.ai_note \}\)/);
+assert.match(detail, /<Text style=\{styles\.reasonText\}>\{`“\$\{whySaved\.text\}”`\}<\/Text>/);
 assert.match(
   finalizer,
   /event: 'video_ai_note_enrichment'/,
