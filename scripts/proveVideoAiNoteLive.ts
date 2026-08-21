@@ -1,3 +1,5 @@
+import { findSavedPlaceForOpen } from '../lib/openSavedPlace';
+import { whySavedDisplay } from '../lib/placeDetailUi';
 import { pollUntil } from './e2e/poll';
 import { openSession } from './e2e/session';
 import { submitShareJob } from './e2e/fixtures/shared';
@@ -84,6 +86,26 @@ async function main(): Promise<void> {
 
     const task = completion.value.task;
     const saved = completion.value.saved;
+    // Cold-start proof: issue the same full database projection used by
+    // listSavedPlaces(), cross the JSON cache/storage boundary, then resolve by
+    // the exact saved_places.id before applying Place Detail's render rule.
+    const { data: appRows, error: appRowsError } = await session.admin
+      .from('saved_places')
+      .select('*, place:places(*)')
+      .eq('user_id', session.identity!.userId)
+      .order('created_at', { ascending: false });
+    if (appRowsError) throw appRowsError;
+    const coldRows = JSON.parse(JSON.stringify(appRows ?? [])) as Array<{
+      id: string;
+      notes?: string | null;
+      ai_note?: string | null;
+      place?: { google_place_id?: string | null } | null;
+    }>;
+    const selected = findSavedPlaceForOpen(coldRows, { savedPlaceId: saved.id });
+    const rendered = whySavedDisplay(selected ?? {});
+    const coldStartQueryReturnsAiNote = nonEmpty(selected?.ai_note);
+    const placeDetailRendersAiNote =
+      rendered.origin === 'source' && rendered.text === selected?.ai_note;
     proof = {
       target: session.config.supabaseRef,
       jobId: job.id,
@@ -106,6 +128,11 @@ async function main(): Promise<void> {
       aiNoteNonempty: nonEmpty(saved.ai_note),
       userNoteUntouched: !nonEmpty(saved.notes),
       readbackSucceeded: saved.id === job.saved_place_id && nonEmpty(saved.ai_note),
+      realPhysicalLikeSavePathUsed:
+        job.source_platform === 'instagram' && job.decision === 'auto_save',
+      coldStartQueryReturnsAiNote,
+      exactSelectedRow: selected?.id === saved.id,
+      placeDetailRendersAiNote,
     };
     console.log(`LIVE_PROOF_RESULT ${JSON.stringify(proof)}`);
     if (
@@ -113,7 +140,11 @@ async function main(): Promise<void> {
       !proof.taskClaimed ||
       proof.taskOutcome !== 'generated' ||
       !proof.aiNoteNonempty ||
-      !proof.readbackSucceeded
+      !proof.readbackSucceeded ||
+      !proof.realPhysicalLikeSavePathUsed ||
+      !proof.coldStartQueryReturnsAiNote ||
+      !proof.exactSelectedRow ||
+      !proof.placeDetailRendersAiNote
     ) {
       throw new Error(`live proof incomplete: ${JSON.stringify(proof)}`);
     }
