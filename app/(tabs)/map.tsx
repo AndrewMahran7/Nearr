@@ -156,6 +156,7 @@ import { isLikelyUrl } from '@/lib/shareParser';
 import { distanceMeters } from '@/lib/geo';
 import { getEffectiveNearbyNotificationRadiusMeters } from '@/lib/nearbyEligibility';
 import { savedPlacePinOpacity } from '@/lib/savedPlacePinState';
+import { shouldRefreshVideoAiNoteOnDetailOpen } from '@/lib/videoDerivedAiNote';
 import { useTheme } from '@/lib/theme';
 import { getDemoSeededSavedPlacesSync } from '@/services/demo';
 import {
@@ -1383,6 +1384,14 @@ export default function MapScreen() {
     followModeRef.current = false;
     setFollowMode(false);
     setSelected(item);
+    // AI-note enrichment completes after the save and has no parent share-job
+    // row whose realtime event could invalidate this cache. Force exactly one
+    // list refresh per detail open while the eligible row is still blank. If
+    // enrichment finishes later, closing and reopening performs one more read;
+    // there is no timer and no polling loop.
+    if (shouldRefreshVideoAiNoteOnDetailOpen(item, item.ai_note)) {
+      void refresh();
+    }
     // Always (re)open a newly selected marker in the collapsed preview state.
     setPreviewExpanded(false);
     previewTranslateY.setValue(0);

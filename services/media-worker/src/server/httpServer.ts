@@ -59,6 +59,7 @@ async function handleReady(ctx: ServerContext, res: http.ServerResponse): Promis
   sendJson(res, ready ? 200 : 503, {
     status: ready ? 'ready' : 'not_ready',
     checks,
+    capabilities: { aiNoteEnrichment: true },
     missingConfig: cfgCheck.ok ? [] : cfgCheck.missing,
   });
 }

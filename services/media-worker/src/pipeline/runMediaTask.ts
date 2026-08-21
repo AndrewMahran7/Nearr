@@ -270,6 +270,24 @@ export async function finalizeWithRetry(
   throw new MediaError('finalizer_unavailable', 'verifying_place:finalize_retry_exhausted');
 }
 
+function logFinalizeResult(
+  task: MediaTask,
+  outcome: FinalizeOutcome,
+  response: FinalizeResponse,
+): void {
+  log.info('finalize_result', {
+    taskId: task.id,
+    jobId: task.share_job_id,
+    taskKind: task.task_kind,
+    outcome,
+    status: response.status,
+    route: response.route,
+    enriched: response.enriched,
+    reason: response.reason,
+    disposition: response.disposition,
+  });
+}
+
 export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<void> {
   const { cfg, client } = deps;
   const controller = new AbortController();
@@ -284,6 +302,19 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
   try {
     const aiNoteTarget = await loadAiNoteTarget(client, task);
     if (task.task_kind === 'ai_note_enrichment' && !aiNoteTarget) return;
+    if (task.task_kind === 'ai_note_enrichment') {
+      log.info('ai_note_task_context', {
+        taskId: task.id,
+        savedPlaceId: task.saved_place_id,
+        platform: task.platform,
+        attempt: task.attempts,
+        targetLoaded: !!aiNoteTarget,
+        sourcePresent: !!(task.canonical_url || task.source_url),
+        retainedEvidenceCount: Array.isArray(task.evidence_snapshot) ? task.evidence_snapshot.length : 0,
+        retainedFramePresent: !!task.frame_snapshot,
+        mediaAcquiredOnce: task.media_acquired_once === true,
+      });
+    }
 
     // Cheapest post-save path: ask for a cue from the bounded place-specific
     // observations already retained by recognition. Only if this cannot support
@@ -337,6 +368,7 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
         if (!fin.ok) {
           throw new MediaError('download_failed', `verifying_place:finalize_http_${fin.status}`, fin.retryAfterSeconds);
         }
+        logFinalizeResult(task, 'evidence', fin);
         return;
       }
       diagnostics.noteStructuredEvidenceInsufficient = true;
@@ -395,6 +427,7 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
           if (!fin.ok) {
             throw new MediaError('download_failed', `verifying_place:finalize_http_${fin.status}`, fin.retryAfterSeconds);
           }
+          logFinalizeResult(task, 'evidence', fin);
           return;
         }
         warnings.push('retained_frame_insufficient');
@@ -705,12 +738,17 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
         fin.retryAfterSeconds,
       );
     }
+    logFinalizeResult(task, outcome, fin);
     log.info('task_finalized', {
       taskId: task.id,
       jobId: task.share_job_id,
+      taskKind: task.task_kind,
       platform: task.platform,
       outcome,
       route: fin.route,
+      enriched: fin.enriched,
+      reason: fin.reason,
+      disposition: fin.disposition,
       frameCount: diagnostics.frameCount,
       durationMs: diagnostics.durationMs,
     });
@@ -737,6 +775,7 @@ async function handleTaskError(
   log.warn('task_error', {
     taskId: task.id,
     jobId: task.share_job_id,
+    taskKind: task.task_kind,
     code: media.code,
     detail: media.detail,
     attempts: task.attempts,

@@ -57,14 +57,18 @@ export type FinalizeResponse = {
   ok: boolean;
   status: number;
   route?: string;
+  enriched?: boolean;
+  reason?: string;
+  disposition?: string;
   retryAfterSeconds?: number;
 };
 
 export async function verifyPlaceEvidence(
   cfg: WorkerConfig,
   args: FinalizeArgs,
+  fetchImpl: typeof fetch = fetch,
 ): Promise<FinalizeResponse> {
-  const res = await fetch(cfg.finalizeUrl, {
+  const res = await fetchImpl(cfg.finalizeUrl, {
     method: 'POST',
     headers: {
       'content-type': 'application/json',
@@ -87,9 +91,20 @@ export async function verifyPlaceEvidence(
   });
 
   let route: string | undefined;
+  let enriched: boolean | undefined;
+  let reason: string | undefined;
+  let disposition: string | undefined;
   try {
-    const body = (await res.json()) as { route?: string };
-    route = body?.route;
+    const body = (await res.json()) as {
+      route?: unknown;
+      enriched?: unknown;
+      reason?: unknown;
+      disposition?: unknown;
+    };
+    route = typeof body?.route === 'string' ? body.route.slice(0, 120) : undefined;
+    enriched = typeof body?.enriched === 'boolean' ? body.enriched : undefined;
+    reason = typeof body?.reason === 'string' ? body.reason.slice(0, 200) : undefined;
+    disposition = typeof body?.disposition === 'string' ? body.disposition.slice(0, 120) : undefined;
   } catch {
     /* ignore body parse errors */
   }
@@ -97,5 +112,5 @@ export async function verifyPlaceEvidence(
   const retryAfterSeconds = retryAfter && /^\d+$/.test(retryAfter)
     ? Number(retryAfter)
     : undefined;
-  return { ok: res.ok, status: res.status, route, retryAfterSeconds };
+  return { ok: res.ok, status: res.status, route, enriched, reason, disposition, retryAfterSeconds };
 }

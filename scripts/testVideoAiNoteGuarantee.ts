@@ -7,6 +7,7 @@ import {
   evaluateTargetedVideoAiNote,
   planVideoAiNoteInvariant,
   savedPlaceIdentityChanged,
+  shouldRefreshVideoAiNoteOnDetailOpen,
   videoAiNoteCallbackMatchesTarget,
   videoSourcePlatform,
 } from '../lib/videoDerivedAiNote';
@@ -32,6 +33,10 @@ const initialSchema = fs.readFileSync(
   path.join(root, 'supabase/migrations/20260426000001_init_schema.sql'),
   'utf8',
 );
+const mapScreen = fs.readFileSync(
+  path.join(root, 'app/(tabs)/map.tsx'),
+  'utf8',
+);
 
 const instagram = {
   source_type: 'instagram',
@@ -47,6 +52,17 @@ assert.equal(planVideoAiNoteInvariant({ ...instagram, source_type: 'manual' }, n
 assert.equal(planVideoAiNoteInvariant({ source_type: 'link', source_url: instagram.source_url }, null), 'ensure_enrichment');
 assert.equal(planVideoAiNoteInvariant({ source_type: null, source_url: instagram.source_url }, null), 'ensure_enrichment');
 assert.equal(planVideoAiNoteInvariant({ source_type: 'instagram', source_url: ' ' }, null), 'not_video_derived');
+
+// A completed async note must become observable from a previously cached
+// detail row. One open performs one refresh; an existing note and non-video
+// saves never cause extra reads or model work.
+assert.equal(shouldRefreshVideoAiNoteOnDetailOpen(instagram, null), true);
+assert.equal(shouldRefreshVideoAiNoteOnDetailOpen(instagram, 'Completed async note.'), false);
+assert.equal(shouldRefreshVideoAiNoteOnDetailOpen({ source_type: 'manual', source_url: null }, null), false);
+assert.match(
+  mapScreen,
+  /shouldRefreshVideoAiNoteOnDetailOpen\(item, item\.ai_note\)[\s\S]{0,100}void refresh\(\)/,
+);
 
 const provenanceCases = [
   ['Instagram reel', 'instagram', 'https://www.instagram.com/reel/abc/', 'instagram'],

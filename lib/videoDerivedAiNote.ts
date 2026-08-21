@@ -129,6 +129,18 @@ export function planVideoAiNoteInvariant(
   return hasUsefulAiNote(aiNote) ? 'already_satisfied' : 'ensure_enrichment';
 }
 
+/** One network refresh when a video-backed detail is opened with no cached
+ * note. The enrichment task is asynchronous and has no parent share-job row,
+ * so the existing share-job realtime subscriptions cannot invalidate this
+ * cached saved-place record. Reopening detail is the retry boundary; this is
+ * intentionally not a timer or polling loop. */
+export function shouldRefreshVideoAiNoteOnDetailOpen(
+  source: VideoDerivedSource | null | undefined,
+  aiNote: unknown,
+): boolean {
+  return planVideoAiNoteInvariant(source, aiNote) === 'ensure_enrichment';
+}
+
 export function normalizePlaceIdentity(value: unknown): string {
   return (cleaned(value) ?? '')
     .toLowerCase()
