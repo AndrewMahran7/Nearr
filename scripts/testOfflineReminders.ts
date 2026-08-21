@@ -263,7 +263,7 @@ async function main() {
   // Native geofence registration reflects the adaptive category radius.
   //
   // lib/geofencing.ts registers each region with
-  // `clampRegionRadius(effectiveRadiusMeters(s, profile))`, and
+  // `clampRegionRadius(effectiveRadiusMeters(s))`, and
   // `effectiveRadiusMeters`'s no-override branch is a direct passthrough to
   // `getNearbyNotificationRadiusMeters` (see lib/notifications.ts). This
   // reproduces that exact composition using the two real, pure functions —
@@ -348,7 +348,10 @@ async function main() {
   const readA = await readReminderSnapshot(userA);
   assert.ok(readA, 'a written snapshot reads back');
   assert.equal(readA.places.length, 2, 'both places survive the round trip');
-  assert.equal(readA.profile?.default_radius_value, 2, 'the profile radius survives');
+  assert.ok(
+    readA.profile && !('default_radius_value' in readA.profile) && !('default_radius_unit' in readA.profile),
+    'legacy profile radius fields are not exposed by the reminder snapshot',
+  );
   assert.equal(
     await readActiveReminderUserId(),
     userA,
@@ -357,6 +360,10 @@ async function main() {
 
   // The snapshot must carry ONLY reminder fields — never notes or provenance.
   const rawA = JSON.parse(store.values.get('nearr:reminderSnapshot:v3:user-a')!);
+  assert.ok(
+    !('default_radius_value' in rawA.profile) && !('default_radius_unit' in rawA.profile),
+    'new reminder snapshots do not persist the legacy profile radius',
+  );
   const serialisedPlace = rawA.places[0];
   for (const forbidden of ['notes', 'ai_note', 'source_url', 'source_type']) {
     assert.ok(
@@ -364,6 +371,30 @@ async function main() {
       `the reminder snapshot must not persist ${forbidden} — that is product data, not a reminder input`,
     );
   }
+
+  // Upgrade-style read: an existing v3 snapshot may still contain the old
+  // fields. Read-and-ignore is deliberately non-mutating and idempotent.
+  const legacySnapshot = JSON.stringify({
+    ...rawA,
+    profile: {
+      ...rawA.profile,
+      default_radius_value: 99,
+      default_radius_unit: 'miles',
+    },
+  });
+  store.values.set('nearr:reminderSnapshot:v3:user-a', legacySnapshot);
+  const legacyReadA = await readReminderSnapshot(userA);
+  const legacyReadAgain = await readReminderSnapshot(userA);
+  assert.ok(
+    legacyReadA?.profile && !('default_radius_value' in legacyReadA.profile),
+    'an old local reminder-distance value is ignored safely',
+  );
+  assert.deepEqual(legacyReadAgain, legacyReadA, 'repeated legacy reads are idempotent');
+  assert.equal(
+    store.values.get('nearr:reminderSnapshot:v3:user-a'),
+    legacySnapshot,
+    'read-and-ignore does not repeatedly mutate AsyncStorage',
+  );
 
   // -------------------------------------------------------------------------
   // User isolation

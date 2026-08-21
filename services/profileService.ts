@@ -10,7 +10,12 @@ import { isDemoMode } from '@/lib/demoMode';
 import { logDebug } from '@/lib/logger';
 import { LEGAL_VERSION } from '@/constants';
 import { getDemoProfile, updateDemoProfile } from '@/services/demo';
-import type { Profile, RadiusUnit } from '@/types';
+import type { Profile } from '@/types';
+
+// The legacy default_radius_* columns remain in production for older-client
+// compatibility, but the current client neither selects nor writes them.
+const PROFILE_SELECT =
+  'id, email, notifications_enabled, nearby_notifications_enabled, quiet_hours_enabled, quiet_hours_start, quiet_hours_end, terms_accepted_at, privacy_accepted_at, legal_version, created_at, updated_at';
 
 export type LegalAcceptanceStatus = {
   termsAcceptedAt: string | null;
@@ -33,7 +38,7 @@ export async function getProfile(): Promise<Profile | null> {
 
   const { data, error } = await supabase
     .from('profiles')
-    .select('*')
+    .select(PROFILE_SELECT)
     .eq('id', userId)
     .maybeSingle();
 
@@ -59,7 +64,7 @@ export async function getProfile(): Promise<Profile | null> {
   const { data: recovered, error: insertErr } = await supabase
     .from('profiles')
     .insert({ id: userId, email: userEmail })
-    .select()
+    .select(PROFILE_SELECT)
     .single();
 
   if (insertErr) {
@@ -69,7 +74,7 @@ export async function getProfile(): Promise<Profile | null> {
       logDebug('profileService', 'insert race on recovery, re-selecting');
       const { data: raced, error: raceErr } = await supabase
         .from('profiles')
-        .select('*')
+        .select(PROFILE_SELECT)
         .eq('id', userId)
         .maybeSingle();
       if (raceErr) {
@@ -95,8 +100,6 @@ export async function getProfile(): Promise<Profile | null> {
 }
 
 export type ProfilePatch = {
-  default_radius_value?: number;
-  default_radius_unit?: RadiusUnit;
   notifications_enabled?: boolean;
   nearby_notifications_enabled?: boolean;
   quiet_hours_enabled?: boolean;
@@ -121,7 +124,7 @@ export async function updateProfile(patch: ProfilePatch): Promise<Profile> {
     .from('profiles')
     .update(patch)
     .eq('id', userId)
-    .select()
+    .select(PROFILE_SELECT)
     .single();
 
   if (error) {
@@ -174,7 +177,7 @@ export async function acceptLegalTerms(userId: string, legalVersion: string): Pr
       legal_version: legalVersion,
     })
     .eq('id', userId)
-    .select()
+    .select(PROFILE_SELECT)
     .single();
 
   if (error) {

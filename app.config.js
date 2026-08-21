@@ -217,6 +217,11 @@ module.exports = ({ config }) => {
       // create-share-job URL) or the flag stays off at runtime.
       asyncShareJobsEnabled:
         process.env.EXPO_PUBLIC_ASYNC_SHARE_JOBS_ENABLED || '',
+      // Saved-place identity markers default ON in the current client. An
+      // explicit false restores the legacy marker in a newly published bundle;
+      // this host-JS fallback does not mutate any EAS environment.
+      mapPinRedesignEnabled:
+        process.env.EXPO_PUBLIC_MAP_PIN_REDESIGN_ENABLED || 'true',
       createShareJobUrl: process.env.EXPO_PUBLIC_CREATE_SHARE_JOB_URL || '',
     },
   };

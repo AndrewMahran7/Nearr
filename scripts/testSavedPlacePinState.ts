@@ -127,18 +127,18 @@ const VISITED_AT = '2026-08-15T18:00:00.000Z';
 // Wiring: the marker uses the derived rule AND re-renders when it changes
 // ---------------------------------------------------------------------------
 {
-  const map = read('app/(tabs)/map.tsx');
+  const marker = read('components/map/NearrMapMarker.tsx');
 
-  assert.ok(map.includes('savedPlacePinOpacity(p, dimmed)'), 'the marker uses the tested rule');
+  assert.ok(marker.includes('savedPlacePinOpacity(place, dimmed)'), 'the marker uses the tested rule');
   assert.ok(
-    !/opacity=\{dimmed \? 0\.22 : p\.archived_at \|\| p\.visited_at/.test(map),
+    !/opacity=\{dimmed \? 0\.22 : place\.archived_at \|\| place\.visited_at/.test(marker),
     'the history-only expression is gone',
   );
 
   // The memo comparator is the second half of the bug: a correct opacity that
   // never re-evaluates is invisible.
-  const start = map.indexOf('}, (prev, next) =>');
-  const comparator = map.slice(start, map.indexOf(');', start));
+  const start = marker.indexOf('export const NearrMapMarker = memo');
+  const comparator = marker.slice(start, marker.indexOf(');', start));
   assert.ok(
     comparator.includes('prev.place.notifications_enabled === next.place.notifications_enabled'),
     'a reminder toggle must invalidate the memoized marker',

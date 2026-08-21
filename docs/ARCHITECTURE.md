@@ -251,7 +251,7 @@ Decision inputs:
 - nearby notifications toggle
 - per-place notification toggle
 - quiet hours
-- effective radius (place override -> profile default -> 1 mile)
+- effective radius (explicit saved-place override -> category-aware V2 radius)
 - 12-hour cooldown
 - 3-notification lifetime cap per saved place
 

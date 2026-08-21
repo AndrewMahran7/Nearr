@@ -79,31 +79,28 @@ for (const ai_note of [null, undefined, '', '   ', '\n\t ']) {
 
 // --- reminder enabled / disabled -------------------------------------------
 {
-  const profile = { default_radius_value: 1, default_radius_unit: 'miles' as const };
-  // 'default' mode no longer resolves to profile.default_radius_value at
-  // notification time (a category-aware distance applies instead — see
-  // lib/nearbyEligibility.ts), so it must not claim a specific number even
-  // when a profile is present.
+  // Default mode resolves by category at notification time, so it must not
+  // claim a stale profile-wide number.
   assert.equal(
-    reminderStatusLabel({ enabled: true, mode: 'default', profile, milesText: '1', minutesText: '10' }),
+    reminderStatusLabel({ enabled: true, mode: 'default', milesText: '1', minutesText: '10' }),
     'On',
   );
   assert.equal(
-    reminderStatusLabel({ enabled: true, mode: 'miles', profile, milesText: '2.5', minutesText: '10' }),
+    reminderStatusLabel({ enabled: true, mode: 'miles', milesText: '2.5', minutesText: '10' }),
     'On · 2.5 miles',
   );
   assert.equal(
-    reminderStatusLabel({ enabled: true, mode: 'minutes', profile, milesText: '1', minutesText: '10' }),
+    reminderStatusLabel({ enabled: true, mode: 'minutes', milesText: '1', minutesText: '10' }),
     'On · 10 minutes',
   );
   assert.equal(
-    reminderStatusLabel({ enabled: false, mode: 'miles', profile, milesText: '1', minutesText: '10' }),
+    reminderStatusLabel({ enabled: false, mode: 'miles', milesText: '1', minutesText: '10' }),
     'Off',
     'a disabled reminder still states its state plainly',
   );
-  // No profile yet (cold start) must still produce a readable status.
+  // Cold-start state must still produce a readable status.
   assert.equal(
-    reminderStatusLabel({ enabled: true, mode: 'default', profile: null, milesText: '1', minutesText: '10' }),
+    reminderStatusLabel({ enabled: true, mode: 'default', milesText: '1', minutesText: '10' }),
     'On',
   );
 }

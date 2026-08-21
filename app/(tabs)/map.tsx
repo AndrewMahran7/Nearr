@@ -18,10 +18,11 @@
  *                    'denied' for rendering: small non-blocking pill, no user
  *                    dot, but we never hide the map behind a spinner.
  *
- * V1 deliberately omits filters, clustering, and tile/style customization.
+ * Marker filtering and visual density are presentation-only; clustering and
+ * tile/style customization remain intentionally out of scope.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState, memo, type ComponentRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ComponentRef } from 'react';
 import {
   Animated,
   Alert,
@@ -37,7 +38,7 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
-import { Feather } from '@expo/vector-icons';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import MapView, { Circle, Marker, PROVIDER_GOOGLE, Region } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
@@ -83,6 +84,7 @@ import {
   MapPlaceSearchDropdown,
   MapSnackbar,
   MapTopSearchBar,
+  NearrMapMarker,
   SelectedPlaceDetails,
   ShareQueueButton,
   getSheetPartialHeight,
@@ -138,6 +140,8 @@ import {
 import { trackEvent } from '@/lib/analytics';
 import { recordBreadcrumb } from '@/lib/breadcrumbs';
 import { setLocationWatcherState } from '@/lib/diagnosticContext';
+import { isMapPinRedesignEnabled } from '@/lib/featureFlags';
+import { mapMarkerDetailLevel } from '@/lib/mapMarkerPresentation';
 import {
   decideSavedPlaceFocus,
   findSavedPlaceForOpen,
@@ -149,15 +153,11 @@ import {
   shouldExpandSavedPlaceDetails,
 } from '@/lib/openSavedPlace';
 import { isLikelyUrl } from '@/lib/shareParser';
-import { distanceMeters, milesToMeters, minutesToMeters } from '@/lib/geo';
-import {
-  getNearbyNotificationRadiusMeters,
-  resolveReminderPlaceCategory,
-} from '@/lib/nearbyEligibility';
+import { distanceMeters } from '@/lib/geo';
+import { getEffectiveNearbyNotificationRadiusMeters } from '@/lib/nearbyEligibility';
 import { savedPlacePinOpacity } from '@/lib/savedPlacePinState';
 import { useTheme } from '@/lib/theme';
 import { getDemoSeededSavedPlacesSync } from '@/services/demo';
-import { getProfile } from '@/services/profileService';
 import {
   deleteSavedPlace,
   markArchived,
@@ -165,7 +165,7 @@ import {
   saveSavedPlace,
 } from '@/services/savedPlacesService';
 import type { PlaceCandidate } from '@/services/placesService';
-import type { Profile, SavedPlaceWithPlace } from '@/types';
+import type { SavedPlaceWithPlace } from '@/types';
 
 function formatDistanceAway(meters: number): string {
   const miles = meters / 1609.344;
@@ -229,16 +229,8 @@ function expandedSheetMapPeek(safeTopInset: number): number {
  *   1. per-place radius_value/radius_unit if set
  *   2. else the category-aware default (see `lib/nearbyEligibility.ts`)
  */
-function effectiveRadiusMeters(
-  s: SavedPlaceWithPlace,
-  _profile: Profile | null,
-): number {
-  if (s.radius_value != null && s.radius_unit) {
-    return s.radius_unit === 'minutes'
-      ? minutesToMeters(s.radius_value)
-      : milesToMeters(s.radius_value);
-  }
-  return getNearbyNotificationRadiusMeters(resolveReminderPlaceCategory(s));
+function effectiveRadiusMeters(s: SavedPlaceWithPlace): number {
+  return getEffectiveNearbyNotificationRadiusMeters(s);
 }
 
 // Approximate degrees-of-latitude per meter. Good enough for camera framing
@@ -275,7 +267,6 @@ function radiusBoundingCoords(
  */
 function allZoneBoundingCoords(
   places: SavedPlaceWithPlace[],
-  profile: Profile | null,
 ): Array<{ latitude: number; longitude: number }> {
   const coords: Array<{ latitude: number; longitude: number }> = [];
   for (const p of places) {
@@ -283,7 +274,7 @@ function allZoneBoundingCoords(
       ...radiusBoundingCoords(
         p.place.latitude,
         p.place.longitude,
-        effectiveRadiusMeters(p, profile),
+        effectiveRadiusMeters(p),
       ),
     );
   }
@@ -336,150 +327,11 @@ const PREVIEW_INITIAL_REGION: Region = {
   longitudeDelta: 0.08,
 };
 
-// ---------------------------------------------------------------------------
-// PlaceMarker
-//
-// 2026-05-27 Android OOM fix.
-//
-// Symptom: java.lang.OutOfMemoryError in
-//   com.google.android.gms.maps.model.Marker.setIcon
-//   ← com.rnmaps.maps.MapMarker.updateMarkerIcon
-//   ← com.rnmaps.maps.ViewChangesTracker.update
-//
-// Cause: react-native-maps' `ViewChangesTracker` polls every custom
-// <Marker> view on Android (default `tracksViewChanges={true}`),
-// re-rasterizing its React children into a Bitmap on each tick.
-// With N saved-place markers this allocates N bitmaps per poll,
-// quickly exhausting the GC heap.
-//
-// Fix: render the custom child views ONCE, then flip
-// `tracksViewChanges` to `false` after a single frame. The marker
-// bitmap is then frozen on the GPU and no further allocations occur.
-// We never mutate the marker children after mount (opacity is a
-// native-side prop, not part of the rasterized bitmap), so this is
-// safe. iOS is unaffected by the OOM but the same pattern is harmless
-// there and avoids unnecessary work.
-//
-// Memoized on the few inputs that can actually change so a selection /
-// theme update doesn't churn all N markers.
-type PlaceMarkerProps = {
-  place: SavedPlaceWithPlace;
-  markerRefs: React.MutableRefObject<Record<string, ComponentRef<typeof Marker> | null>>;
-  onPress: (place: SavedPlaceWithPlace) => void;
-  dimmed: boolean;
-  selected: boolean;
-};
-
-const PlaceMarker = memo(function PlaceMarker({
-  place: p,
-  markerRefs,
-  onPress,
-  dimmed,
-  selected,
-}: PlaceMarkerProps) {
-  const [tracksViewChanges, setTracksViewChanges] = useState(true);
-  useEffect(() => {
-    // Stop tracking on the next frame — gives the native side one
-    // chance to rasterize the custom child View, then locks the
-    // bitmap. See block comment above for the OOM context.
-    const id = setTimeout(() => setTracksViewChanges(false), 0);
-    return () => clearTimeout(id);
-  }, []);
-  const handlePress = useCallback(
-    (e: { stopPropagation?: () => void }) => {
-      e.stopPropagation?.();
-      onPress(p);
-    },
-    [onPress, p],
-  );
-  return (
-    <Marker
-      identifier={p.id}
-      // Derived, not historical: a visited place whose reminder is switched
-      // back on is live again, and its visit stays on the record. See
-      // lib/savedPlacePinState.ts.
-      opacity={savedPlacePinOpacity(p, dimmed)}
-      zIndex={selected ? 30 : dimmed ? 1 : 20}
-      ref={(ref) => {
-        markerRefs.current[p.id] = ref;
-      }}
-      coordinate={{
-        latitude: p.place.latitude,
-        longitude: p.place.longitude,
-      }}
-      // Custom marker views default to bottom-center anchoring, which
-      // would offset our pin upward from the geographic coordinate and
-      // visually push it off-center inside the radius circle. Anchor
-      // (and iOS centerOffset) at the marker's middle so the pin sits
-      // exactly on the coordinate that the Circle is centered on.
-      anchor={{ x: 0.5, y: 0.5 }}
-      centerOffset={{ x: 0, y: 0 }}
-      tracksViewChanges={tracksViewChanges}
-      onPress={handlePress}
-    >
-      {/* "Home base" pin: a soft halo around a solid dot reinforces
-          that this is the center of the zone, not just a pin drop.
-          Static (no animation) to keep V1 light. */}
-      <View style={MARKER_STYLES.wrap}>
-        <View style={MARKER_STYLES.halo} />
-        <View style={MARKER_STYLES.core} />
-        <View style={MARKER_STYLES.dot} />
-      </View>
-    </Marker>
-  );
-}, (prev, next) =>
-  prev.place.id === next.place.id &&
-  prev.place.archived_at === next.place.archived_at &&
-  prev.place.visited_at === next.place.visited_at &&
-  // Part of the opacity input since the pin stopped being purely historical.
-  // Without it the marker would keep its old bitmap-adjacent props after a
-  // reminder toggle — the fix would be correct and invisible.
-  prev.place.notifications_enabled === next.place.notifications_enabled &&
-  prev.place.place.latitude === next.place.place.latitude &&
-  prev.place.place.longitude === next.place.place.longitude &&
-  prev.dimmed === next.dimmed &&
-  prev.selected === next.selected &&
-  prev.onPress === next.onPress,
-);
-
-// Static — does NOT change with theme. Using fixed colors here keeps
-// the marker bitmap identity stable across light/dark switches so the
-// memoized PlaceMarker doesn't have to re-rasterize on theme change
-// (which would re-arm the OOM path).
-const MARKER_STYLES = StyleSheet.create({
-  wrap: {
-    width: 28,
-    height: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  halo: {
-    position: 'absolute',
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255, 106, 26, 0.18)',
-  },
-  core: {
-    position: 'absolute',
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: 'rgba(255, 106, 26, 0.35)',
-  },
-  dot: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: '#FF6A1A',
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
-  },
-});
-
 export default function MapScreen() {
   const router = useRouter();
   const { colors, typography, resolvedTheme } = useTheme();
+  const mapRenderCountRef = useRef(0);
+  mapRenderCountRef.current += 1;
   // Reserve the Queue pill's row unconditionally. It used to follow
   // `isAsyncShareJobsEnabled()`, but the pill itself no longer does (see
   // lib/shareQueueAccess.ts), and two different predicates deciding whether the
@@ -549,6 +401,27 @@ export default function MapScreen() {
   // Map Preview keeps the real MapView but skips Supabase / Google / location.
   // Demo Mode wins if both flags are set (it doesn't render MapView at all).
   const mapPreview = !demo && isMapPreviewMode();
+  const mapPinRedesignEnabled = isMapPinRedesignEnabled();
+  const [mapPinGlyphsReady, setMapPinGlyphsReady] = useState(!mapPinRedesignEnabled);
+  useEffect(() => {
+    if (!mapPinRedesignEnabled) {
+      setMapPinGlyphsReady(true);
+      return;
+    }
+    let cancelled = false;
+    void MaterialCommunityIcons.loadFont()
+      .then(() => {
+        if (!cancelled) setMapPinGlyphsReady(true);
+      })
+      .catch((error) => {
+        // Keep the complete legacy marker instead of snapshotting blank glyphs.
+        if (__DEV__) console.debug('[map] marker icon font unavailable', error);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [mapPinRedesignEnabled]);
+  const mapPinRedesignActive = mapPinRedesignEnabled && mapPinGlyphsReady;
 
   // In Map Preview Mode, render against the synchronous seeded dataset so the
   // first frame already has markers — no async race, no loading state.
@@ -613,6 +486,11 @@ export default function MapScreen() {
   const followModeRef = useRef(true);
   followModeRef.current = followMode;
   const [selected, setSelected] = useState<SavedPlaceWithPlace | null>(null);
+  // Updated only after a camera gesture completes. Presentation tiers are
+  // discrete, so memoized markers never rerender on every pan frame.
+  const [markerLatitudeDelta, setMarkerLatitudeDelta] = useState(
+    PREVIEW_INITIAL_REGION.latitudeDelta,
+  );
 
   // Keep an already-open detail sheet attached to the live cached row. Media
   // enrichment updates ai_note asynchronously after the initial save.
@@ -622,7 +500,6 @@ export default function MapScreen() {
     if (live && live !== selected) setSelected(live);
   }, [selected, validPlaces]);
   const [mapReady, setMapReady] = useState(false);
-  const [profile, setProfile] = useState<Profile | null>(null);
   // Which list the bottom sheet shows. The old Nearby/Recent/Saved chips drove
   // this from the map chrome; they never filtered the map and each duplicated
   // something the sheet already offers (its default list already carries a
@@ -647,6 +524,13 @@ export default function MapScreen() {
   const visiblePlaces = useMemo(
     () => filterPlacesForMap(validPlaces, mapCategoryFilter, selected?.id ?? null),
     [mapCategoryFilter, selected?.id, validPlaces],
+  );
+  const markerDetailLevel = useMemo(
+    () => mapMarkerDetailLevel({
+      latitudeDelta: markerLatitudeDelta,
+      visibleCount: visiblePlaces.length,
+    }),
+    [markerLatitudeDelta, visiblePlaces.length],
   );
 
   // A filter whose group no longer has any places (last one deleted, or the
@@ -676,7 +560,7 @@ export default function MapScreen() {
     if (!mapRef.current) return;
     if (visiblePlaces.length === 0) return;
     setSheetMinimizeSignal((n) => n + 1);
-    const coords = allZoneBoundingCoords(visiblePlaces, profile);
+    const coords = allZoneBoundingCoords(visiblePlaces);
     if (coords.length === 0) return;
     try {
       // Camera center uses the average of coordinates (center of mass) so a
@@ -753,7 +637,7 @@ export default function MapScreen() {
     } catch (e) {
       if (__DEV__) console.debug('[map] fit skipped', e);
     }
-  }, [profile, visiblePlaces]);
+  }, [visiblePlaces]);
   // In-app search overlay (replaces the old native Alert on the search bar).
   const [searchVisible, setSearchVisible] = useState(false);
   // Post-save "Saved to your map" snackbar with optional Undo.
@@ -1101,24 +985,6 @@ export default function MapScreen() {
     return () => sub.remove();
   }, []);
 
-  // ---- load profile (for default radius fallback) -----------------------
-  // Best-effort. If this fails or returns null we just fall back to 1 mile
-  // per place — never blocks the map.
-  useEffect(() => {
-    if (mapPreview) return;
-    let cancelled = false;
-    getProfile()
-      .then((p) => {
-        if (!cancelled) setProfile(p);
-      })
-      .catch((e) => {
-        if (__DEV__) console.debug('[map] getProfile failed', e);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [mapPreview]);
-
   // ---- pick an initial region -------------------------------------------
   // Map Preview Mode uses the hoisted PREVIEW_INITIAL_REGION so the map
   // always has a valid camera target on first paint, regardless of seed
@@ -1310,7 +1176,6 @@ export default function MapScreen() {
     placeSource,
     mapReady,
     validPlaces,
-    profile,
     liveLoading,
     liveRefreshing,
     focusRefreshTick,
@@ -1358,12 +1223,16 @@ export default function MapScreen() {
   // AppState / Supabase chatter and contributed to a native
   // EventDispatcher OOM observed on Android.
   const debugStateRef = useRef<string>('');
+  const debugLogCountRef = useRef(0);
   if (__DEV__) {
-    const sig = `${liveLoading}|${data.length}|${validPlaces.length}|${permission}|${currentLocationLoading}|${mapReady}|${mapPreview}`;
-    if (debugStateRef.current !== sig) {
+    const sig = `${liveLoading}|${data.length}|${validPlaces.length}|${visiblePlaces.length}|${markerDetailLevel}|${mapPinRedesignActive}|${permission}|${currentLocationLoading}|${mapReady}|${mapPreview}`;
+    if (debugStateRef.current !== sig && debugLogCountRef.current < 30) {
       debugStateRef.current = sig;
+      debugLogCountRef.current += 1;
       // eslint-disable-next-line no-console
       console.log('[map] state', {
+        renderCount: mapRenderCountRef.current,
+        diagnosticUpdateCount: debugLogCountRef.current,
         platform: Platform.OS,
         providerIntended: MAP_PROVIDER ?? 'default',
         googleProviderIntended: MAP_PROVIDER === PROVIDER_GOOGLE,
@@ -1375,7 +1244,9 @@ export default function MapScreen() {
         locationPermissionState: permission,
         currentLocationLoading,
         mapReady,
-        markersRendered: validPlaces.length,
+        markersRendered: visiblePlaces.length,
+        markerDetailLevel,
+        mapPinRedesignActive,
         mapPreview,
       });
     }
@@ -1440,7 +1311,7 @@ export default function MapScreen() {
     const coords = radiusBoundingCoords(
       item.place.latitude,
       item.place.longitude,
-      effectiveRadiusMeters(item, profile),
+      effectiveRadiusMeters(item),
     );
     try {
       mapRef.current.fitToCoordinates(coords, {
@@ -1535,7 +1406,7 @@ export default function MapScreen() {
     }
   }
 
-  // Stable identity so PlaceMarker memoization survives parent re-renders
+  // Stable identity so NearrMapMarker memoization survives parent re-renders
   // (selection, theme, etc.). Without this, every render would pass a
   // fresh inline closure and re-arm the Android view-tracking path that
   // produced the OutOfMemoryError on the GMS Marker.setIcon side.
@@ -1712,7 +1583,8 @@ export default function MapScreen() {
   }, []);
   const handleRegionChangeComplete = useCallback((region: Region) => {
     lastRegionRef.current = region;
-  }, []);
+    if (mapPinRedesignEnabled) setMarkerLatitudeDelta(region.latitudeDelta);
+  }, [mapPinRedesignEnabled]);
   const handleMapReady = useCallback(() => setMapReady(true), []);
   const handleMapPress = useCallback(() => {
     dismissSelectedPlace();
@@ -1739,7 +1611,7 @@ export default function MapScreen() {
   }, [router]);
 
   // Direct-save a real-world place chosen from the map search dropdown. Saves
-  // immediately using the profile DEFAULT radius (radiusValue/Unit = null), so
+  // immediately using the category-aware automatic radius (null override), so
   // the user never sees the add-place radius picker. On success we revalidate
   // the cache, focus the new place, and show an Undo snackbar.
   const handleSavePlaceCandidate = useCallback(
@@ -1933,7 +1805,7 @@ export default function MapScreen() {
                 latitude: p.place.latitude,
                 longitude: p.place.longitude,
               }}
-              radius={effectiveRadiusMeters(p, profile)}
+              radius={effectiveRadiusMeters(p)}
               strokeColor={
                 selected?.id === p.id
                   ? 'rgba(255,106,26,0.52)'
@@ -1953,13 +1825,15 @@ export default function MapScreen() {
           )
         ))}
         {visiblePlaces.map((p) => (
-          <PlaceMarker
+          <NearrMapMarker
             key={p.id}
             place={p}
             markerRefs={markerRefs}
             onPress={handleMarkerPress}
             dimmed={!!mapGroupRequest && !mapGroupCoordinateIds.has(p.id)}
             selected={selected?.id === p.id}
+            detailLevel={markerDetailLevel}
+            redesignEnabled={mapPinRedesignActive}
           />
         ))}
       </MapView>
@@ -2141,7 +2015,6 @@ export default function MapScreen() {
               >
                 <SelectedPlaceDetails
                   saved={selected}
-                  profile={profile}
                   allSavedPlaces={validPlaces}
                   // "Also nearby" routes through the SAME selection path a
                   // marker tap uses, by exact saved_places.id — so tapping a
@@ -2336,7 +2209,7 @@ export default function MapScreen() {
 
       {/* Compact place-search dropdown — searches REAL places (Google Places
           via usePlacesSearch), not saved places. Tapping a result direct-saves
-          it to the map with the default radius (no add-place screens). */}
+          it to the map with the automatic category radius (no add-place screens). */}
       <MapPlaceSearchDropdown
         visible={searchVisible}
         topInset={safeTopInset + Spacing.md}
@@ -2408,37 +2281,6 @@ function createStyles(
     position: 'absolute',
     left: Spacing.md,
     right: Spacing.md,
-  },
-
-  markerWrap: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  markerHalo: {
-    position: 'absolute',
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,106,26,0.16)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,106,26,0.22)',
-  },
-  markerCore: {
-    position: 'absolute',
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: 'rgba(255,106,26,0.28)',
-  },
-  markerDot: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: colors.primary,
-    borderWidth: 2,
-    borderColor: colors.text,
   },
 
   locPill: {

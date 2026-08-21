@@ -71,8 +71,8 @@ Columns:
 
 - `id uuid primary key references auth.users(id) on delete cascade`
 - `email text`
-- `default_radius_value numeric not null default 1`
-- `default_radius_unit text not null default 'miles' check in ('miles','minutes')`
+- `default_radius_value numeric not null default 1` — legacy compatibility only; current clients do not read or write it
+- `default_radius_unit text not null default 'miles' check in ('miles','minutes')` — legacy compatibility only; current clients do not read or write it
 - `notifications_enabled boolean not null default true`
 - `nearby_notifications_enabled boolean not null default true`
 - `quiet_hours_enabled boolean not null default false`

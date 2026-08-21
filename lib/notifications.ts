@@ -14,7 +14,7 @@
  *      `notification_events` row.
  *
  * Schema this module reads/writes:
- *   - `profiles`            (default radius, master + nearby toggles, quiet hours)
+ *   - `profiles`            (master + nearby toggles, quiet hours)
  *   - `saved_places`        (per-place radius, notifications_enabled,
  *                            last_notified_at)
  *   - `places`              (lat / lng / name / address)
@@ -57,8 +57,8 @@ import { isDebugLoggingEnabled, logDebug, logInfo } from './logger';
 import { isMapPreviewMode } from './mapPreview';
 import {
   evaluateNearbyNotificationEligibility,
+  getEffectiveNearbyNotificationRadiusMeters,
   getNearbyNotificationRadiusBucket,
-  getNearbyNotificationRadiusMeters,
   isPlaceReliablyClosed,
   resolveReminderPlaceCategory,
   selectNearbyNotificationWinner,
@@ -69,12 +69,7 @@ import {
   type PlaceNotificationGateResult,
 } from './placeNotificationDedupe';
 import { supabase } from './supabase';
-import {
-  distanceMeters,
-  milesToMeters,
-  minutesToMeters,
-  type LatLng,
-} from './geo';
+import { distanceMeters, type LatLng } from './geo';
 import {
   readActiveReminderSnapshot,
   readReminderSnapshot,
@@ -313,10 +308,9 @@ function buildNotificationAreaGroup(params: {
   triggered: ReminderPlace;
   allSaved: ReminderPlace[];
   triggerPoint: LatLng;
-  profile: ReminderProfile | null;
   now: number;
 }): NotificationAreaGroup {
-  const { triggered, allSaved, triggerPoint, profile, now } = params;
+  const { triggered, allSaved, triggerPoint, now } = params;
   const identities = groupSavedPlacesByIdentity(allSaved, triggerPoint);
   const triggeredIdentityKey = notificationDedupKey(triggered);
   const triggeredIdentity =
@@ -325,13 +319,13 @@ function buildNotificationAreaGroup(params: {
       representative: triggered,
       members: [triggered],
     };
-  const triggerRadius = effectiveRadiusMeters(triggeredIdentity.representative, profile);
+  const triggerRadius = effectiveRadiusMeters(triggeredIdentity.representative);
 
   const overlapping = identities
     .filter((identity) => getIdentityGroupCooldownReason(identity, now) === null)
     .filter((identity) => {
       if (identity.key === triggeredIdentity.key) return true;
-      const placeRadius = effectiveRadiusMeters(identity.representative, profile);
+      const placeRadius = effectiveRadiusMeters(identity.representative);
       const distance = distanceMeters(triggerPoint, {
         latitude: identity.representative.place.latitude,
         longitude: identity.representative.place.longitude,
@@ -708,26 +702,12 @@ export async function handleNotificationAction(
  *   - per-place override wins (user explicitly chose this radius)
  *   - otherwise a category-aware default (see `lib/nearbyEligibility.ts`)
  *
- * NOTE ON THE PROFILE DEFAULT: `profile.default_radius_value` (Settings ->
- * "Default reminder distance") is intentionally no longer read here. Before
- * this change every un-customized place used that single flat number —
- * exactly the one-size-fits-all behavior this task replaces with a
- * category-aware default. The Settings screen and the place-detail
- * "Default" label still display `profile.default_radius_value` verbatim;
- * updating that copy to describe the new behavior is a UI change and was
- * deliberately left out of this pass. `profile` stays in the signature so
- * existing call sites are untouched.
+ * The profile-wide legacy default is deliberately not an input. The pure V2
+ * policy in `lib/nearbyEligibility.ts` is shared by polling, native
+ * geofencing, and the map display.
  */
-export function effectiveRadiusMeters(
-  saved: ReminderPlace,
-  _profile: ReminderProfile | null,
-): number {
-  if (saved.radius_value != null && saved.radius_unit) {
-    return saved.radius_unit === 'minutes'
-      ? minutesToMeters(saved.radius_value)
-      : milesToMeters(saved.radius_value);
-  }
-  return getNearbyNotificationRadiusMeters(resolveReminderPlaceCategory(saved));
+export function effectiveRadiusMeters(saved: ReminderPlace): number {
+  return getEffectiveNearbyNotificationRadiusMeters(saved);
 }
 
 /**
@@ -784,7 +764,7 @@ export function decideProximity(
     latitude: saved.place.latitude,
     longitude: saved.place.longitude,
   });
-  const radius = effectiveRadiusMeters(saved, profile);
+  const radius = effectiveRadiusMeters(saved);
 
   const memLast = lastAlertAtMem.get(saved.id) ?? 0;
   const dbLastMs = saved.last_notified_at ? Date.parse(saved.last_notified_at) : NaN;
@@ -868,7 +848,7 @@ export async function checkProximity(
 
   for (const identity of identities) {
     const s = identity.representative;
-    const radius = effectiveRadiusMeters(s, profile);
+    const radius = effectiveRadiusMeters(s);
     const dist = distanceMeters(here, {
       latitude: s.place.latitude,
       longitude: s.place.longitude,
@@ -933,7 +913,6 @@ export async function checkProximity(
       triggered: winner.s,
       allSaved: saved,
       triggerPoint: here,
-      profile,
       now,
     });
 
@@ -1285,7 +1264,13 @@ async function loadReminderContextFromServer(): Promise<ReminderContext | null> 
         .eq('notifications_enabled', true)
         .is('archived_at', null)
         .is('visited_at', null),
-      supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
+      supabase
+        .from('profiles')
+        .select(
+          'id, notifications_enabled, nearby_notifications_enabled, quiet_hours_enabled, quiet_hours_start, quiet_hours_end',
+        )
+        .eq('id', userId)
+        .maybeSingle(),
     ]);
 
     if (savedResult.error) return null;
@@ -1414,7 +1399,6 @@ export async function maybeNotifyForSavedPlace(
       triggered: saved,
       allSaved,
       triggerPoint: trigger,
-      profile,
       now,
     });
     if (overlapGroup.allSavedPlaceIds.length === 0) {
@@ -1446,7 +1430,7 @@ export async function maybeNotifyForSavedPlace(
 
     // For geofence ENTER we only know the trigger region center, not the
     // exact user coordinate. Use the triggered place radius as an upper bound.
-    const radius = effectiveRadiusMeters(overlapGroup.representative, profile);
+    const radius = effectiveRadiusMeters(overlapGroup.representative);
     const copyOverride = buildGroupNotificationCopy(overlapGroup.labels);
 
     const sendResult = await sendPlaceReminderNotificationOnce({

@@ -1,6 +1,6 @@
 /**
- * Demo profile service. AsyncStorage-backed; survives reload so radius /
- * notification preference edits stick during a UX test session.
+ * Demo profile service. AsyncStorage-backed; survives reload so notification
+ * preference edits stick during a UX test session.
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -12,12 +12,25 @@ const STORAGE_KEY = 'nearr.demo.profile';
 
 let cache: Profile | null = null;
 
+/** Drop obsolete distance fields from older demo-mode AsyncStorage values. */
+function withoutLegacyReminderDistance(profile: Profile): Profile {
+  const sanitized = { ...profile };
+  delete sanitized.default_radius_value;
+  delete sanitized.default_radius_unit;
+  return sanitized;
+}
+
 async function load(): Promise<Profile> {
   if (cache) return cache;
   try {
     const raw = await AsyncStorage.getItem(STORAGE_KEY);
     if (raw) {
-      cache = JSON.parse(raw) as Profile;
+      const parsed = JSON.parse(raw) as Profile;
+      const hadLegacyDistance =
+        Object.prototype.hasOwnProperty.call(parsed, 'default_radius_value') ||
+        Object.prototype.hasOwnProperty.call(parsed, 'default_radius_unit');
+      cache = withoutLegacyReminderDistance(parsed);
+      if (hadLegacyDistance) await persist();
       return cache;
     }
   } catch (e) {
@@ -31,6 +44,7 @@ async function load(): Promise<Profile> {
 async function persist(): Promise<void> {
   if (!cache) return;
   try {
+    cache = withoutLegacyReminderDistance(cache);
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(cache));
   } catch (e) {
     console.warn('[demo:profile] persist failed', e);

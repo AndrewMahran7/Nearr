@@ -18,6 +18,7 @@ import { join } from 'node:path';
 
 import { whySavedDisplay } from '../lib/placeDetailUi';
 import { hasOpenableSource, resolvePlaceSource } from '../lib/placeSource';
+import { createOnceLatch } from '../lib/onceLatch';
 import {
   GALLERY_DISMISS_ACTIVATE_DY,
   GALLERY_DISMISS_DISTANCE,
@@ -282,6 +283,27 @@ import {
   assert.equal(shouldDismissGalleryOnRelease({ dy: Number.NaN, vy: Number.NaN }), false);
 }
 
+// Every gallery opening gets a fresh close latch. Competing close sources
+// (swipe completion, X, system back) can therefore produce exactly one state
+// transition, while a subsequent opening can still close normally.
+{
+  let closeCount = 0;
+  let closeLatch = createOnceLatch();
+  const close = () => {
+    if (!closeLatch.acquire()) return;
+    closeCount += 1;
+  };
+
+  close();
+  close();
+  close();
+  assert.equal(closeCount, 1, 'duplicate dismiss attempts close once per opening');
+
+  closeLatch = createOnceLatch();
+  close();
+  assert.equal(closeCount, 2, 'a reopened gallery receives a fresh close allowance');
+}
+
 // Interactive follow: downward-only, clamped, with a bounded backdrop fade.
 {
   assert.equal(galleryDragOffset(120), 120, 'the gallery tracks the finger');
@@ -349,7 +371,16 @@ import {
   // Dismissal ends at the ONE close path, and a reopen starts from rest.
   assert.ok(detail.includes('runOnJS(closeGallery)()'), 'a committed swipe uses the canonical close');
   assert.ok(
-    /galleryDragY\.value = 0;\r?\n\s*setGalleryOpenSeed/.test(detail),
+    detail.includes('galleryDismissLatchRef.current = createOnceLatch()') &&
+      detail.includes('galleryDismissLatchRef.current?.acquire()'),
+    'all close sources are idempotent for each gallery opening',
+  );
+  assert.ok(
+    detail.includes('if (finished) runOnJS(closeGallery)()'),
+    'a cancelled exit animation cannot close an immediately reopened gallery',
+  );
+  assert.ok(
+    /galleryDragY\.value = 0;[\s\S]{0,120}setGalleryOpenSeed/.test(detail),
     'reopening clears any leftover translation before the modal is shown',
   );
   // The copy stays because it is now true.

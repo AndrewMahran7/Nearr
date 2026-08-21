@@ -1,8 +1,7 @@
 /**
  * Static seed data for Demo Mode.
  *
- * - `DEMO_PROFILE` is the fake user's profile (default radius, notification
- *   prefs, quiet hours).
+ * - `DEMO_PROFILE` is the fake user's notification / quiet-hours profile.
  * - `DEMO_PLACE_CATALOG` is a small catalog of Google-Places-shaped
  *   candidates that powers the demo `searchPlaces()`.
  * - `DEMO_SEED_SAVED_PLACES` is the initial saved-places list for the
@@ -23,8 +22,6 @@ import type { Profile, RadiusUnit, SourceType } from '@/types';
 export const DEMO_PROFILE: Profile = {
   id: 'demo-user',
   email: 'demo@nearr.local',
-  default_radius_value: 1,
-  default_radius_unit: 'miles',
   notifications_enabled: true,
   nearby_notifications_enabled: true,
   quiet_hours_enabled: false,

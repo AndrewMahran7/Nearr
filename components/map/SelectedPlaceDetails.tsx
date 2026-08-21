@@ -76,6 +76,7 @@ import { Radius, Spacing } from '@/constants';
 import { useTheme } from '@/lib/theme';
 import { useAuth } from '@/hooks/useAuth';
 import { trackEvent } from '@/lib/analytics';
+import { createOnceLatch, type OnceLatch } from '@/lib/onceLatch';
 import { applySavedPlaceEdit } from '@/lib/savedPlaceEdits';
 import {
   cancelNoteEditor,
@@ -120,7 +121,7 @@ import {
 } from '@/hooks/useSavedPlaces';
 import { getCachedPlaceRichDetails } from '@/lib/placeRichDetailsCache';
 import type { PlaceRichDetails } from '@/services/placesService';
-import type { Profile, RadiusUnit, SavedPlaceWithPlace } from '@/types';
+import type { RadiusUnit, SavedPlaceWithPlace } from '@/types';
 
 const GALLERY_CARD_GAP = 18;
 /** Focus treatment for non-centered pages. Interpolated from scroll offset. */
@@ -203,7 +204,6 @@ function formatUnit(value: number, unit: RadiusUnit): string {
 
 type Props = {
   saved: SavedPlaceWithPlace;
-  profile: Profile | null;
   /** The user's whole saved collection, for the "Also nearby" row. */
   allSavedPlaces?: SavedPlaceWithPlace[];
   /** Select another saved place by its exact row (map owns the selection). */
@@ -225,7 +225,6 @@ type Props = {
 
 export function SelectedPlaceDetails({
   saved,
-  profile,
   allSavedPlaces,
   onSelectNearby,
   onGetDirections,
@@ -277,6 +276,10 @@ export function SelectedPlaceDetails({
     setVisitedAt(saved.visited_at ?? null);
   }, [saved.id, saved.visited_at]);
   const galleryListRef = useRef<FlatList<string> | null>(null);
+  // One latch per gallery opening. X, system back, and the swipe animation may
+  // converge on the same close callback; only the first is allowed to mutate
+  // modal state. A new opening receives a new latch.
+  const galleryDismissLatchRef = useRef<OnceLatch | null>(null);
   // Interactive dismiss offset: the gallery follows the finger downward and
   // either continues off-screen or springs back. A Reanimated shared value, so
   // every frame of the drag runs on the UI thread — no setState, no re-render,
@@ -353,11 +356,8 @@ export function SelectedPlaceDetails({
 
   const radiusHelperText = useMemo(() => {
     if (mode === 'default') {
-      // No longer resolves to profile.default_radius_value at notification
-      // time — a category-aware distance applies instead (see
-      // lib/nearbyEligibility.ts). Not naming a specific number here since
-      // this screen doesn't know which category bucket the place resolved
-      // to, and a wrong specific number is worse than a general statement.
+      // A category-aware distance applies. Not naming a specific number here
+      // keeps the copy correct without exposing internal category buckets.
       return "We'll pick a sensible reminder distance for this type of place.";
     }
     if (mode === 'miles') {
@@ -537,17 +537,16 @@ export function SelectedPlaceDetails({
     () => reminderStatusLabel({
       enabled: notifyOn,
       mode,
-      profile,
       milesText,
       minutesText,
     }),
-    [milesText, minutesText, mode, notifyOn, profile],
+    [milesText, minutesText, mode, notifyOn],
   );
   // Just the magnitude for the compact action-row control; the adjacent switch
   // already communicates on/off.
   const reminderDistance = useMemo(
-    () => reminderDistanceLabel({ mode, profile, milesText, minutesText }),
-    [milesText, minutesText, mode, profile],
+    () => reminderDistanceLabel({ mode, milesText, minutesText }),
+    [milesText, minutesText, mode],
   );
 
   /**
@@ -778,6 +777,7 @@ export function SelectedPlaceDetails({
     // the screen. Clear that translation BEFORE the modal becomes visible so a
     // reopen never renders from the last gesture's resting position.
     galleryDragY.value = 0;
+    galleryDismissLatchRef.current = createOnceLatch();
     setGalleryOpenSeed((s) => s + 1);
     setGalleryOpen(true);
   }
@@ -786,6 +786,7 @@ export function SelectedPlaceDetails({
   // committed swipe-down all end here, so no route leaves modal state behind.
   // Stable identity — the dismiss gesture calls it across the JS bridge.
   const closeGallery = useCallback(() => {
+    if (!galleryDismissLatchRef.current?.acquire()) return;
     setGalleryOpen(false);
   }, []);
 
@@ -874,8 +875,11 @@ export function SelectedPlaceDetails({
             galleryDragY.value = withTiming(
               viewportHeight,
               { duration: GALLERY_DISMISS_EXIT_MS },
-              () => {
-                runOnJS(closeGallery)();
+              (finished) => {
+                // Resetting the shared value on an immediate reopen cancels an
+                // old exit animation. Its callback still runs with
+                // `finished=false`; never let it close the new opening.
+                if (finished) runOnJS(closeGallery)();
               },
             );
             return;
@@ -1027,7 +1031,7 @@ export function SelectedPlaceDetails({
       {notifyOn && reminderSettingsExpanded ? (
         <View style={styles.reminderSettings}>
           <View style={styles.radiusGroup}>
-            <RadiusOption label="Default" active={mode === 'default'} onPress={() => setMode('default')} />
+            <RadiusOption label="Auto" active={mode === 'default'} onPress={() => setMode('default')} />
             <RadiusOption label="Distance" active={mode === 'miles'} onPress={() => setMode('miles')} />
             <RadiusOption label="Time" active={mode === 'minutes'} onPress={() => setMode('minutes')} />
           </View>

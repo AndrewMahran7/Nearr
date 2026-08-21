@@ -168,14 +168,11 @@ assert.doesNotMatch(detail, /\[saved\.place\.google_place_id, saved\]/, 'AI-note
 assert.match(detail, /useState\(false\);[\s\S]*setReminderSettingsExpanded/);
 assert.match(detail, /notifyOn && reminderSettingsExpanded \? \(/);
 assert.match(detail, /accessibilityState=\{\{ expanded: reminderSettingsExpanded \}\}/);
-assert.equal(reminderStatusLabel({ enabled: false, mode: 'default', profile: null, milesText: '1', minutesText: '10' }), 'Off');
-// 'default' mode no longer resolves to profile.default_radius_value at
-// notification time (a category-aware distance applies instead — see
-// lib/nearbyEligibility.ts), so it must not claim a specific number here,
-// with or without a profile present.
-assert.equal(reminderStatusLabel({ enabled: true, mode: 'default', profile: { default_radius_value: 1, default_radius_unit: 'miles' }, milesText: '1', minutesText: '10' }), 'On');
-assert.equal(reminderStatusLabel({ enabled: true, mode: 'default', profile: null, milesText: '1', minutesText: '10' }), 'On');
-assert.equal(reminderStatusLabel({ enabled: true, mode: 'miles', profile: null, milesText: '2.5', minutesText: '10' }), 'On · 2.5 miles');
+assert.equal(reminderStatusLabel({ enabled: false, mode: 'default', milesText: '1', minutesText: '10' }), 'Off');
+// Default mode resolves by category at notification time, so it must not
+// claim a stale profile-wide number here.
+assert.equal(reminderStatusLabel({ enabled: true, mode: 'default', milesText: '1', minutesText: '10' }), 'On');
+assert.equal(reminderStatusLabel({ enabled: true, mode: 'miles', milesText: '2.5', minutesText: '10' }), 'On · 2.5 miles');
 
 // Correction/removal stay reachable but visually secondary — they must never
 // compete with Directions or the content itself.

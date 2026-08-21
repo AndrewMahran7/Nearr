@@ -61,7 +61,7 @@ import type {
 
 export type SaveSavedPlaceInput = {
   candidate: PlaceCandidate;
-  /** null/null means "use the profile default radius". */
+  /** null/null means "use the category-aware automatic radius". */
   radiusValue: number | null;
   radiusUnit: RadiusUnit | null;
   sourceType?: SourceType;

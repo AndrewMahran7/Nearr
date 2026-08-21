@@ -6,14 +6,12 @@
  * round-trips on every keystroke / toggle.
  *
  * Fields:
- *   - default reminder distance value + unit (miles / minutes)
  *   - global notifications enabled
  *   - nearby notifications enabled (only meaningful when global is on)
  *   - quiet hours enabled
  *   - quiet hours start / end (HH:MM, only when quiet hours enabled)
  *
  * Validation runs before save:
- *   - radius must be a positive finite number
  *   - if quiet hours are enabled, both start and end must be valid HH:MM
  */
 
@@ -82,7 +80,7 @@ const APP_STORE_APP_ID: string | null = null;
 function appStoreReviewUrl(appId: string): string {
   return `itms-apps://itunes.apple.com/app/id${appId}?action=write-review`;
 }
-import type { Profile, RadiusUnit } from '@/types';
+import type { Profile } from '@/types';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -116,8 +114,6 @@ export default function SettingsScreen() {
   const [saving, setSaving] = useState(false);
 
   // editable state
-  const [radiusText, setRadiusText] = useState('1');
-  const [radiusUnit, setRadiusUnit] = useState<RadiusUnit>('miles');
   const [notificationsOn, setNotificationsOn] = useState(true);
   const [nearbyOn, setNearbyOn] = useState(true);
   const [quietOn, setQuietOn] = useState(false);
@@ -166,8 +162,6 @@ export default function SettingsScreen() {
     if (!profile) return false;
 
     return (
-      radiusText !== String(profile.default_radius_value) ||
-      radiusUnit !== profile.default_radius_unit ||
       notificationsOn !== profile.notifications_enabled ||
       nearbyOn !== profile.nearby_notifications_enabled ||
       quietOn !== profile.quiet_hours_enabled ||
@@ -181,8 +175,6 @@ export default function SettingsScreen() {
     quietEnd,
     quietOn,
     quietStart,
-    radiusText,
-    radiusUnit,
   ]);
 
   const load = useCallback(async () => {
@@ -200,8 +192,6 @@ export default function SettingsScreen() {
         return;
       }
       setProfile(p);
-      setRadiusText(String(p.default_radius_value));
-      setRadiusUnit(p.default_radius_unit);
       setNotificationsOn(p.notifications_enabled);
       setNearbyOn(p.nearby_notifications_enabled);
       setQuietOn(p.quiet_hours_enabled);
@@ -257,16 +247,6 @@ export default function SettingsScreen() {
   }
 
   async function handleSave() {
-    // --- validate reminder distance ---
-    const radius = Number.parseFloat(radiusText);
-    if (!Number.isFinite(radius) || radius <= 0) {
-      Alert.alert(
-        'Invalid reminder distance',
-        `Enter a positive number of ${radiusUnit}.`,
-      );
-      return;
-    }
-
     // --- validate quiet hours (only when enabled) ---
     let normalizedStart: string | null = null;
     let normalizedEnd: string | null = null;
@@ -300,8 +280,6 @@ export default function SettingsScreen() {
         profile.nearby_notifications_enabled !== nearbyOn;
 
       const updated = await updateProfile({
-        default_radius_value: radius,
-        default_radius_unit: radiusUnit,
         notifications_enabled: notificationsOn,
         nearby_notifications_enabled: nearbyOn,
         quiet_hours_enabled: quietOn,
@@ -311,8 +289,6 @@ export default function SettingsScreen() {
 
       setProfile(updated);
 
-      setRadiusText(String(updated.default_radius_value));
-      setRadiusUnit(updated.default_radius_unit);
       setNotificationsOn(updated.notifications_enabled);
       setNearbyOn(updated.nearby_notifications_enabled);
       setQuietOn(updated.quiet_hours_enabled);
@@ -751,41 +727,6 @@ export default function SettingsScreen() {
           </View>
         </Card>
 
-        {/* --- Default radius -------------------------------------------
-         * Most saved places now pick their own reminder distance
-         * automatically based on what kind of place they are (see
-         * lib/nearbyEligibility.ts) rather than reading this value — see
-         * lib/notifications.ts effectiveRadiusMeters for why. The field is
-         * kept (still saved, still usable per-place via "Default" mode) but
-         * the copy no longer claims it drives most places' behavior.
-         */}
-        <Text style={styles.sectionLabel}>Default reminder distance</Text>
-        <Card style={styles.section}>
-          <Text style={[typography.caption, styles.muted]}>
-            Most saved places pick their own reminder distance automatically. This setting isn't used yet.
-          </Text>
-
-          <View style={styles.unitRow}>
-            <UnitOption
-              label="Distance"
-              active={radiusUnit === 'miles'}
-              onPress={() => setRadiusUnit('miles')}
-            />
-            <UnitOption
-              label="Time away"
-              active={radiusUnit === 'minutes'}
-              onPress={() => setRadiusUnit('minutes')}
-            />
-          </View>
-
-          <Input
-            value={radiusText}
-            onChangeText={setRadiusText}
-            keyboardType={radiusUnit === 'miles' ? 'decimal-pad' : 'number-pad'}
-            placeholder={radiusUnit === 'miles' ? 'e.g. 1.5' : 'e.g. 10'}
-          />
-        </Card>
-
         {/* --- Notifications ------------------------------------------- */}
         <Text style={styles.sectionLabel}>Nearby alerts</Text>
         <Card style={styles.section}>
@@ -1095,34 +1036,6 @@ export default function SettingsScreen() {
 }
 
 // ---------------------------------------------------------------------------
-
-function UnitOption({
-  label,
-  active,
-  onPress,
-}: {
-  label: string;
-  active: boolean;
-  onPress: () => void;
-}) {
-  const { colors, typography } = useTheme();
-  const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
-  return (
-    <Pressable
-      onPress={onPress}
-      style={[styles.unitOption, active && styles.unitOptionActive]}
-    >
-      <Text
-        style={[
-          typography.label,
-          { color: active ? colors.textInverse : colors.text },
-        ]}
-      >
-        {label}
-      </Text>
-    </Pressable>
-  );
-}
 
 function ThemeOption({
   label,

@@ -9,8 +9,10 @@ export type SourceType = 'manual' | 'tiktok' | 'instagram' | 'youtube' | 'facebo
 export type Profile = {
   id: string;
   email: string | null;
-  default_radius_value: number;
-  default_radius_unit: RadiusUnit;
+  /** @deprecated Physical schema compatibility only; the current client never reads this. */
+  default_radius_value?: number;
+  /** @deprecated Physical schema compatibility only; the current client never reads this. */
+  default_radius_unit?: RadiusUnit;
   notifications_enabled: boolean;
   nearby_notifications_enabled: boolean;
   quiet_hours_enabled: boolean;

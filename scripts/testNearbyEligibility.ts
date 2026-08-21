@@ -15,6 +15,7 @@ import {
   CATEGORY_RADIUS_BUCKET,
   NEARBY_RADIUS_MILES,
   evaluateNearbyNotificationEligibility,
+  getEffectiveNearbyNotificationRadiusMeters,
   getNearbyNotificationRadiusBucket,
   getNearbyNotificationRadiusMeters,
   getNearbyNotificationRadiusMiles,
@@ -76,6 +77,36 @@ check('undefined -> default (4 mi)', getNearbyNotificationRadiusMiles(undefined)
 check(
   'default bucket matches the suggested V1 default',
   NEARBY_RADIUS_MILES[getNearbyNotificationRadiusBucket('other')] === 4,
+);
+
+// A legacy profile preference is intentionally not an input to the V2
+// resolver. Whether an old value exists or not, the saved place/category is
+// the complete radius policy input.
+for (const legacyProfile of [
+  null,
+  { default_radius_value: 1, default_radius_unit: 'miles' },
+  { default_radius_value: 99, default_radius_unit: 'miles' },
+]) {
+  const resolved = getEffectiveNearbyNotificationRadiusMeters({
+    category: 'restaurant',
+    radius_value: null,
+    radius_unit: null,
+  });
+  check(
+    `restaurant stays category-driven with legacy profile ${legacyProfile?.default_radius_value ?? 'absent'}`,
+    Math.abs(resolved - milesToMeters(3)) < 1e-6,
+  );
+}
+
+check(
+  'explicit per-place override remains active V2 behavior',
+  Math.abs(
+    getEffectiveNearbyNotificationRadiusMeters({
+      category: 'hiking_trail',
+      radius_value: 2,
+      radius_unit: 'miles',
+    }) - milesToMeters(2),
+  ) < 1e-6,
 );
 
 // resolveReminderPlaceCategory

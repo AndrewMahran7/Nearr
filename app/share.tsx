@@ -8,7 +8,7 @@
  *   3. We parse public OpenGraph metadata in the background, derive a
  *      Google-Places-friendly query, and call `searchPlaces`.
  *   4. If exactly one candidate comes back, we save it automatically using
- *      the user's profile default radius, preserve `source_url` /
+ *      the category-aware automatic radius, preserve `source_url` /
  *      `source_type`, show a success alert, and navigate to /(tabs)/map.
  *   5. If multiple candidates come back, we show a compact picker; tapping
  *      one saves it.
@@ -2077,7 +2077,7 @@ function LegacyShareScreen() {
     try {
       const result = await saveSavedPlace({
         candidate,
-        // null/null → use profile default radius (see savedPlacesService).
+        // null/null → use the category-aware automatic radius.
         radiusValue: null,
         radiusUnit: null,
         sourceType,

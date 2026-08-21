@@ -56,13 +56,14 @@ import {
   readActiveReminderSnapshot,
   writeReminderSnapshot,
   type ReminderEligiblePlace,
+  type ReminderProfile,
 } from './reminderSnapshot';
 import {
   effectiveRadiusMeters,
   getNotificationPermissionState,
   maybeNotifyForSavedPlace,
 } from './notifications';
-import type { Profile, SavedPlaceWithPlace } from '@/types';
+import type { SavedPlaceWithPlace } from '@/types';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -246,7 +247,7 @@ export async function syncGeofencesForSavedPlaces(): Promise<GeofenceSyncStatus>
  * Returns null only when we genuinely know there is nobody to monitor for.
  */
 async function resolveGeofenceInputs(): Promise<
-  | { kind: 'ready'; userId: string; profile: Profile | null; places: ReminderEligiblePlace[]; source: 'server' | 'snapshot' }
+  | { kind: 'ready'; userId: string; profile: ReminderProfile | null; places: ReminderEligiblePlace[]; source: 'server' | 'snapshot' }
   | { kind: 'no_user' }
   | { kind: 'unavailable' }
 > {
@@ -255,7 +256,13 @@ async function resolveGeofenceInputs(): Promise<
     if (!userErr && userRes.user) {
       const userId = userRes.user.id;
       const [profileResult, savedResult] = await Promise.all([
-        supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
+        supabase
+          .from('profiles')
+          .select(
+            'id, notifications_enabled, nearby_notifications_enabled, quiet_hours_enabled, quiet_hours_start, quiet_hours_end',
+          )
+          .eq('id', userId)
+          .maybeSingle(),
         supabase
           .from('saved_places')
           .select('*, place:places(*)')
@@ -266,7 +273,7 @@ async function resolveGeofenceInputs(): Promise<
           .order('created_at', { ascending: false }),
       ]);
       if (!savedResult.error) {
-        const profile = (profileResult.data as Profile | null) ?? null;
+        const profile = (profileResult.data as ReminderProfile | null) ?? null;
         const places = (savedResult.data ?? []) as SavedPlaceWithPlace[];
         // Persist the authoritative answer for the next offline wake-up.
         // Only a SUCCESSFUL fetch ever reaches this write.
@@ -294,7 +301,7 @@ async function resolveGeofenceInputs(): Promise<
   return {
     kind: 'ready',
     userId: snapshot.userId,
-    profile: snapshot.profile as Profile | null,
+    profile: snapshot.profile,
     places: snapshot.places,
     source: 'snapshot',
   };
@@ -373,7 +380,7 @@ async function runSyncGeofencesForSavedPlaces(): Promise<GeofenceSyncStatus> {
     identifier: regionIdFor(s.id),
     latitude: s.place.latitude,
     longitude: s.place.longitude,
-    radius: clampRegionRadius(effectiveRadiusMeters(s, profile)),
+    radius: clampRegionRadius(effectiveRadiusMeters(s)),
     notifyOnEnter: true,
     notifyOnExit: false,
   }));

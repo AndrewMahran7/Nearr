@@ -1,8 +1,8 @@
 /**
  * lib/featureFlags.ts
  *
- * Runtime feature flags for Nearr. Currently just the async share-jobs
- * rollout switch, plus the `create-share-job` Edge Function URL resolver.
+ * Runtime feature flags for Nearr, plus the `create-share-job` Edge Function
+ * URL resolver.
  *
  * Resolution mirrors lib/shareEnvDiagnostics.ts exactly (process.env first,
  * then expoConfig.extra, then the legacy manifest shapes) so a build where
@@ -54,6 +54,18 @@ export function isAsyncShareJobsEnabled(): boolean {
   return resolveBooleanFlag(
     process.env.EXPO_PUBLIC_ASYNC_SHARE_JOBS_ENABLED,
     readExtra('asyncShareJobsEnabled'),
+  );
+}
+
+/**
+ * Saved-place identity markers default on through app config. An explicit
+ * false in a newly built/published bundle selects the legacy marker path. No
+ * EAS environment is changed by defining this reader.
+ */
+export function isMapPinRedesignEnabled(): boolean {
+  return resolveBooleanFlag(
+    process.env.EXPO_PUBLIC_MAP_PIN_REDESIGN_ENABLED,
+    readExtra('mapPinRedesignEnabled'),
   );
 }
 

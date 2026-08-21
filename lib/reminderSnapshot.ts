@@ -26,7 +26,7 @@
  * WHAT IS PERSISTED
  * -----------------
  * Only what the reminder decision consumes:
- *   - the profile master switches / quiet hours / default radius
+ *   - the profile master switches / quiet hours
  *   - the eligible saved places, projected to reminder fields only —
  *     including the resolved `category` (used to pick a category-aware
  *     radius, see `lib/nearbyEligibility.ts`) and the place's
@@ -58,7 +58,7 @@
  * process know WHOSE reminders it is holding without calling Supabase auth.
  */
 
-import type { Profile, RadiusUnit } from '@/types';
+import type { RadiusUnit } from '@/types';
 import type { NearrCategory } from './placeCategory';
 
 /**
@@ -135,17 +135,14 @@ export type ReminderEligiblePlace = {
 };
 
 /** The profile fields the reminder decision actually reads. */
-export type ReminderProfile = Pick<
-  Profile,
-  | 'id'
-  | 'default_radius_value'
-  | 'default_radius_unit'
-  | 'notifications_enabled'
-  | 'nearby_notifications_enabled'
-  | 'quiet_hours_enabled'
-  | 'quiet_hours_start'
-  | 'quiet_hours_end'
->;
+export type ReminderProfile = {
+  id: string;
+  notifications_enabled: boolean;
+  nearby_notifications_enabled: boolean;
+  quiet_hours_enabled: boolean;
+  quiet_hours_start: string | null;
+  quiet_hours_end: string | null;
+};
 
 type LedgerEntry = { at: number; count: number };
 
@@ -226,12 +223,10 @@ export function toReminderPlace(row: ReminderEligiblePlace): ReminderEligiblePla
   };
 }
 
-function toReminderProfile(profile: Profile | null): ReminderProfile | null {
+function toReminderProfile(profile: ReminderProfile | null): ReminderProfile | null {
   if (!profile) return null;
   return {
     id: profile.id,
-    default_radius_value: profile.default_radius_value,
-    default_radius_unit: profile.default_radius_unit,
     notifications_enabled: profile.notifications_enabled,
     nearby_notifications_enabled: profile.nearby_notifications_enabled,
     quiet_hours_enabled: profile.quiet_hours_enabled,
@@ -317,7 +312,7 @@ async function writeActiveReminderUserId(userId: string): Promise<void> {
  */
 export async function writeReminderSnapshot(params: {
   userId: string;
-  profile: Profile | null;
+  profile: ReminderProfile | null;
   places: ReminderEligiblePlace[];
 }): Promise<void> {
   const { userId, profile, places } = params;
@@ -373,7 +368,10 @@ async function readEnvelope(userId: string): Promise<Envelope | null> {
       version: SNAPSHOT_VERSION,
       userId,
       syncedAt: parsed.syncedAt,
-      profile: (parsed.profile as ReminderProfile | null) ?? null,
+      // Re-project on read so existing v3 snapshots that contain the old
+      // profile-wide default safely ignore it immediately. Extra legacy keys
+      // are neither returned to the reminder engine nor copied by later writes.
+      profile: toReminderProfile((parsed.profile as ReminderProfile | null) ?? null),
       places: parsed.places.filter(isValidReminderPlace),
       ledger,
     };

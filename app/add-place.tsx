@@ -8,8 +8,7 @@
  * Radius modes:
  *   - 'default'  : leave radius_value / radius_unit NULL so a category-aware
  *                  distance is used at notification time (see
- *                  lib/nearbyEligibility.ts) — NOT the profile's
- *                  default_radius_value, which no longer drives this.
+ *                  lib/nearbyEligibility.ts).
  *   - 'miles'    : numeric override in miles.
  *   - 'minutes'  : numeric override in minutes (drive-time).
  *
@@ -132,13 +131,6 @@ export default function SavePlace() {
   const [radiusMode, setRadiusMode] = useState<RadiusMode>('default');
   const [milesText, setMilesText] = useState('1');
   const [minutesText, setMinutesText] = useState('10');
-
-  // No longer resolves to a single profile-wide number at notification time
-  // (a category-aware distance applies instead — see
-  // lib/nearbyEligibility.ts), and this screen doesn't yet know which
-  // category bucket the place will resolve to, so the chooser names the
-  // behavior rather than a specific, no-longer-accurate figure.
-  const defaultRadiusLabel = 'auto';
 
   // ---- auto-search if a query came in via deep-link/share ---------------
   useEffect(() => {
@@ -308,7 +300,7 @@ export default function SavePlace() {
 
         <View style={styles.radiusGroup}>
           <RadiusOption
-            label={`Default (${defaultRadiusLabel})`}
+            label="Auto"
             active={radiusMode === 'default'}
             onPress={() => setRadiusMode('default')}
           />

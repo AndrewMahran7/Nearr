@@ -21,18 +21,16 @@
  * cooldown/dedupe machinery in `lib/notifications.ts` as the single owner of
  * persisted state.
  *
- * WHERE THE DEFAULT USED TO COME FROM
- * ------------------------------------
- * `effectiveRadiusMeters()` in `lib/notifications.ts` still honors an
- * explicit per-place radius first. When a place has none, it now resolves
- * the category radius below instead of the profile's flat default — see
- * that function's comment for the reasoning. The Settings screen and the
- * place-detail "Default" label still describe `profile.default_radius_value`
- * verbatim; updating that copy is a UI change and was deliberately left out
- * of this pass (flagged as a follow-up in the PR notes).
+ * SOURCE OF TRUTH
+ * ---------------
+ * `getEffectiveNearbyNotificationRadiusMeters()` is the one radius policy
+ * shared by polling, native geofences, and the map zone display. An explicit
+ * per-place override remains supported; otherwise the stored category maps
+ * to the adaptive radius below. The obsolete profile-wide default is not an
+ * input to the reminder decision.
  */
 
-import { milesToMeters } from './geo';
+import { milesToMeters, minutesToMeters } from './geo';
 import { isNearrCategory, type NearrCategory } from './placeCategory';
 
 // ---------------------------------------------------------------------------
@@ -121,6 +119,35 @@ export function getNearbyNotificationRadiusMeters(
   category: NearrCategory | string | null | undefined,
 ): number {
   return milesToMeters(getNearbyNotificationRadiusMiles(category));
+}
+
+/**
+ * Radius inputs persisted on a saved place. These are intentionally
+ * structural so both the online SavedPlace row and the offline reminder
+ * snapshot can use the exact same policy without importing one another.
+ */
+export type NearbyReminderRadiusInput = {
+  category?: NearrCategory | string | null;
+  radius_value?: number | null;
+  radius_unit?: 'miles' | 'minutes' | null;
+};
+
+/**
+ * Resolve the active reminder radius for a saved place.
+ *
+ * The profile-wide `default_radius_*` fields are deliberately absent from
+ * this API. Legacy profile values therefore cannot override, modify, or
+ * provide a fallback for the V2 category policy.
+ */
+export function getEffectiveNearbyNotificationRadiusMeters(
+  saved: NearbyReminderRadiusInput,
+): number {
+  if (saved.radius_value != null && saved.radius_unit) {
+    return saved.radius_unit === 'minutes'
+      ? minutesToMeters(saved.radius_value)
+      : milesToMeters(saved.radius_value);
+  }
+  return getNearbyNotificationRadiusMeters(resolveReminderPlaceCategory(saved));
 }
 
 /**
