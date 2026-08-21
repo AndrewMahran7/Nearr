@@ -2,7 +2,7 @@ import {
   evaluateAiPlaceNote,
   type AiPlaceNoteEvidence,
   type AiPlaceNoteResult,
-} from './aiPlaceNote';
+} from './aiPlaceNote.ts';
 
 export type VideoDerivedSource = {
   source_url?: string | null;
