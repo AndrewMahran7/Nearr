@@ -106,8 +106,12 @@ test('classifyYtError: maps common yt-dlp stderr vocabulary to structured codes'
     classifyYtError('ERROR: This content is only available for registered users who follow this account').code,
     'authentication_required',
   );
-  assert.notEqual(
-    classifyYtError('ERROR: Unsupported URL: https://www.instagram.com/accounts/login/?next=%2Freel%2Fx').code,
+  assert.equal(
+    classifyYtError('ERROR: Unsupported URL: https://www.facebook.com/login/?next=%2Fwatch%2F').code,
+    'authentication_required',
+  );
+  assert.equal(
+    classifyYtError('ERROR: Unsupported URL: https://www.fb.watch/login/?next=%2Fwatch%2F').code,
     'authentication_required',
   );
   assert.equal(classifyYtError('ERROR: This video is private').code, 'private_or_unavailable');

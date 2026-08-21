@@ -24,8 +24,20 @@ import {
   requireHttpsHost,
   retrieveVideoFile,
 } from './ytDlpShared.js';
+import { safeFetchText } from '../security/ssrf.js';
+import { log } from '../util/logger.js';
 
 const FACEBOOK_VIDEO_ID_RE = /^\d{5,30}$/;
+const FACEBOOK_EMBED_MAX_BYTES = 512 * 1024;
+const FACEBOOK_EMBED_TIMEOUT_MS = 8_000;
+const FACEBOOK_PAGE_ALLOWLIST = ['facebook.com'];
+
+type FacebookPageFetch = typeof safeFetchText;
+
+type FacebookAcquisitionUrl = {
+  url: string;
+  canonicalized: boolean;
+};
 
 function boundedIdentity(value: unknown, max: number): string | null {
   if (typeof value !== 'string') return null;
@@ -91,6 +103,123 @@ function numericFacebookContentId(rawUrl: string | undefined): string | null {
     : null;
 }
 
+function decodeHtmlAttribute(value: string): string {
+  return value
+    .replace(/&amp;/gi, '&')
+    .replace(/&#x2f;/gi, '/')
+    .replace(/&#47;/g, '/')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;/gi, "'");
+}
+
+function linkAttribute(tag: string, name: string): string | null {
+  const match = tag.match(new RegExp(`\\b${name}\\s*=\\s*(["'])(.*?)\\1`, 'i'));
+  return match?.[2] ? decodeHtmlAttribute(match[2]) : null;
+}
+
+/**
+ * Accept only a numeric Facebook video identity from the public Video Plugin's
+ * canonical link. The plugin page may contain many unrelated Facebook URLs;
+ * none of them are trusted unless they expose the same stable video-id shape
+ * accepted by the ordinary resolver.
+ */
+export function facebookCanonicalVideoUrlFromHtml(html: string): string | null {
+  for (const match of html.matchAll(/<link\b[^>]{0,2000}>/gi)) {
+    const tag = match[0];
+    const rel = linkAttribute(tag, 'rel');
+    if (!rel?.toLowerCase().split(/\s+/).includes('canonical')) continue;
+    const href = linkAttribute(tag, 'href');
+    const id = numericFacebookContentId(href ?? undefined);
+    if (id) return `https://www.facebook.com/reel/${id}/`;
+  }
+  return null;
+}
+
+export function isOpaqueFacebookRedirectUrl(rawUrl: string): boolean {
+  let url: URL;
+  try {
+    url = new URL(rawUrl);
+  } catch {
+    return false;
+  }
+  if (url.protocol !== 'https:' || !isFacebookHost(url.hostname)) return false;
+  const host = url.hostname.toLowerCase();
+  if (host === 'fb.watch') return /^\/[A-Za-z0-9_-]{4,200}\/?$/.test(url.pathname);
+  return /^\/share\/(?:r|v|p)\/[A-Za-z0-9_-]{4,200}\/?$/i.test(url.pathname);
+}
+
+function classifyFacebookPage(finalUrl: string, html: string): MediaError | null {
+  let pathname = '';
+  try {
+    pathname = new URL(finalUrl).pathname.toLowerCase();
+  } catch {
+    // HTML signals below remain available.
+  }
+  if (/^\/(?:login|checkpoint)(?:\/|\.php|$)/.test(pathname)) {
+    return new MediaError('authentication_required', 'facebook_login_redirect');
+  }
+
+  const bounded = html.slice(0, FACEBOOK_EMBED_MAX_BYTES).toLowerCase();
+  const hasLoginForm = /<form\b[^>]{0,1500}(?:id=["']login_form["']|action=["'][^"']*\/login)/i.test(bounded);
+  const hasIdentityInput = /<input\b[^>]{0,500}(?:name=["'](?:email|pass)["']|autocomplete=["'](?:username|current-password)["'])/i.test(bounded);
+  if (hasLoginForm && hasIdentityInput) {
+    return new MediaError('authentication_required', 'facebook_login_page');
+  }
+
+  if (
+    /this content isn['’]t available|this video isn['’]t available|content not available|video unavailable|page isn['’]t available/.test(
+      bounded,
+    )
+  ) {
+    return new MediaError('private_or_unavailable', 'facebook_content_unavailable');
+  }
+  return null;
+}
+
+/**
+ * Resolve only Facebook's opaque public share forms through Facebook's own
+ * public Video Plugin. This is URL normalization, not media scraping: no
+ * cookies, credentials, login flow, private API, or media URL is requested.
+ */
+export async function resolveFacebookAcquisitionUrl(
+  rawUrl: string,
+  signal: AbortSignal,
+  fetchPage: FacebookPageFetch = safeFetchText,
+): Promise<FacebookAcquisitionUrl> {
+  if (!isOpaqueFacebookRedirectUrl(rawUrl)) {
+    return { url: rawUrl, canonicalized: false };
+  }
+
+  const embed = new URL('https://www.facebook.com/plugins/video.php');
+  embed.searchParams.set('href', rawUrl);
+
+  let page: Awaited<ReturnType<FacebookPageFetch>>;
+  try {
+    page = await fetchPage({
+      url: embed.toString(),
+      maxBytes: FACEBOOK_EMBED_MAX_BYTES,
+      timeoutMs: FACEBOOK_EMBED_TIMEOUT_MS,
+      redirectLimit: 2,
+      allowlist: FACEBOOK_PAGE_ALLOWLIST,
+      signal,
+    });
+  } catch (error) {
+    if (error instanceof MediaError && (error.code === 'cancelled' || error.code === 'authentication_required')) {
+      throw error;
+    }
+    // The plugin is a normalization aid. If it is temporarily unavailable,
+    // preserve the previously working direct yt-dlp path and its classifier.
+    return { url: rawUrl, canonicalized: false };
+  }
+
+  const canonical = facebookCanonicalVideoUrlFromHtml(page.text);
+  if (canonical) return { url: canonical, canonicalized: true };
+
+  const wall = classifyFacebookPage(page.finalUrl, page.text);
+  if (wall) throw wall;
+  return { url: rawUrl, canonicalized: false };
+}
+
 /** Numeric Facebook identities are immutable across redirects and extraction. */
 export function assertFacebookPostIdentityMatches(
   requestedUrl: string,
@@ -123,7 +252,12 @@ export class FacebookMediaResolver implements MediaResolver {
 
   async resolve(input: ResolveInput): Promise<ResolvedMedia> {
     const rawUrl = input.canonicalUrl || input.sourceUrl;
-    const url = requireHttpsHost(rawUrl, isFacebookHost);
+    const validatedUrl = requireHttpsHost(rawUrl, isFacebookHost);
+    const acquisition = await resolveFacebookAcquisitionUrl(validatedUrl, input.signal);
+    const url = requireHttpsHost(acquisition.url, isFacebookHost);
+    if (acquisition.canonicalized) {
+      log.info('facebook_redirect_canonicalized', { jobId: input.jobId });
+    }
 
     const info = await probeWithYtDlp(this.cfg, url, { workDir: input.workDir, signal: input.signal });
     const duration = enforceDurationLimit(this.cfg, info);
@@ -138,6 +272,8 @@ export class FacebookMediaResolver implements MediaResolver {
       signal: input.signal,
       sourceLabel: 'facebook',
     });
+
+    if (acquisition.canonicalized) file.warnings.push('facebook_public_embed_canonicalized');
 
     return {
       canonicalUrl: identity.canonicalUrl,

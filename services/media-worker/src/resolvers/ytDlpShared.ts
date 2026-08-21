@@ -126,7 +126,9 @@ export function classifyYtError(stderr: string): MediaError {
     /\bauthentication (?:is )?required\b/.test(s) ||
     /\bcookies? (?:are |is )?required\b/.test(s) ||
     /\bonly available (?:to|for) (?:registered|logged[- ]in) users?\b/.test(s) ||
-    /\bmust be logged in\b/.test(s)
+    /\bmust be logged in\b/.test(s) ||
+    /https?:\/\/[^\s/]*facebook\.com\/(?:login|checkpoint)(?:\/|\.php|\?)/.test(s) ||
+    /https?:\/\/(?:www\.)?fb\.watch\/(?:login|checkpoint)(?:\/|\?)/.test(s)
   ) {
     return new MediaError('authentication_required', 'login_required');
   }
