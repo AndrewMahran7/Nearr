@@ -52,7 +52,7 @@ const production = argv.includes('--production');
 const refFlagIndex = argv.indexOf('--project-ref');
 const explicitRef = refFlagIndex >= 0 ? argv[refFlagIndex + 1] : undefined;
 const selected = argv.filter(
-  (a, i) => !a.startsWith('--') && i !== refFlagIndex + 1,
+  (a, i) => !a.startsWith('--') && !(refFlagIndex >= 0 && i === refFlagIndex + 1),
 );
 
 // Target resolution and the production refusal live in scripts/devTarget.mjs so

@@ -136,6 +136,18 @@ check(
   fnDefault.status !== 0 && !/\$ supabase functions deploy/.test(fnDefault.out),
 );
 
+const fnSelected = runFunctions(['process-share-jobs']);
+check(
+  'dev:functions preserves the first positional function selector',
+  /functions\s+process-share-jobs(?:\r?\n|$)/.test(fnSelected.out),
+  'the requested function was not the sole selected deploy target',
+);
+check(
+  'dev:functions does not broaden a selected deploy to unrelated functions',
+  !/functions\s+.*create-share-job/.test(fnSelected.out),
+  'the selected deploy unexpectedly included another function',
+);
+
 if (failures > 0) {
   console.error(`\n${failures} dev-database-guard test(s) FAILED`);
   process.exit(1);
