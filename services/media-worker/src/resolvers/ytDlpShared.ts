@@ -118,7 +118,14 @@ export function pickLocationMetadata(info: YtInfo): string | null {
  *  extractors, so one classifier serves every resolver built on this module. */
 export function classifyYtError(stderr: string): MediaError {
   const s = stderr.toLowerCase();
-  if (/login required|log in|sign in|account|cookies|authentication/.test(s)) {
+  if (
+    /\blog(?:in| in)\s+(?:is\s+)?required\b/.test(s) ||
+    /\b(?:log|sign) in to (?:confirm|view|continue|access|watch)\b/.test(s) ||
+    /\bauthentication (?:is )?required\b/.test(s) ||
+    /\bcookies? (?:are |is )?required\b/.test(s) ||
+    /\bonly available (?:to|for) (?:registered|logged[- ]in) users?\b/.test(s) ||
+    /\bmust be logged in\b/.test(s)
+  ) {
     return new MediaError('authentication_required', 'login_required');
   }
   if (/private|not available|removed|only available to|restricted|no longer available/.test(s)) {

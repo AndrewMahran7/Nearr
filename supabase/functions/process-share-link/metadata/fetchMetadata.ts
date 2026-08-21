@@ -16,6 +16,7 @@ import { pickMeta, pickTitle } from './htmlMeta.ts';
 import { cleanTitle, cleanDescription } from './normalizeText.ts';
 import { fetchTikTokOEmbed } from './fetchTikTokOEmbed.ts';
 import { normalizeShareUrl } from '../../../../lib/shareAgent/tiktokUrl.ts';
+import { selectInstagramContentUrl } from '../../../../services/media-worker/src/resolvers/instagramUrl.ts';
 
 const USER_AGENT =
   'Mozilla/5.0 (compatible; NearrBot/1.0; +https://nearr.app)';
@@ -93,7 +94,14 @@ export async function fetchPostMetadata(
     });
     // `res.url` is the FINAL url after redirect follow — this is how a
     // vm./vt.tiktok.com short link resolves to its canonical video URL.
-    resolvedUrl = normalizeShareUrl(res.url || url).url || url;
+    const normalizedFinalUrl = normalizeShareUrl(res.url || url).url || url;
+    // A temporary Instagram auth wall is transport/provider behavior, not a
+    // new content identity. Never replace a valid post/reel source with an
+    // /accounts/login (or any other same-host non-content) final URL. If the
+    // final URL is still a real content identity it remains preferred.
+    resolvedUrl = platform === 'instagram'
+      ? selectInstagramContentUrl(url, normalizedFinalUrl) ?? url
+      : normalizedFinalUrl;
     if (res.ok && isNonContentRedirectHost(resolvedUrl)) {
       clearTimeout(timer);
       return { ok: false, reason: 'redirect_off_platform' };

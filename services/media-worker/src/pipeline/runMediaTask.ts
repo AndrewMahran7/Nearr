@@ -29,6 +29,7 @@ import { setProgress, setTaskStatus, requeueTask } from '../db/tasks.js';
 import type { TranscriptionProvider } from '../providers/transcription.js';
 import { groundClaimedEvidence, type ModelProvider } from '../providers/model.js';
 import { type OcrProvider, deduplicateOcrSegments } from '../providers/ocr.js';
+import { selectInstagramContentUrl } from '../resolvers/instagramUrl.js';
 
 export type TaskDeps = {
   cfg: WorkerConfig;
@@ -125,7 +126,16 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
     } catch {
       throw new MediaError('unsupported_url', 'bad_url');
     }
-    const resolver = selectResolver(deps.resolvers, { platform: task.platform, url: parsedUrl });
+    let resolver = selectResolver(deps.resolvers, { platform: task.platform, url: parsedUrl });
+    // A poisoned Instagram canonical URL is not supported by the strict
+    // Instagram resolver. Give the original source content identity one
+    // defense-in-depth chance before declaring the platform unsupported.
+    if (!resolver && task.platform.toLowerCase() === 'instagram') {
+      const safeInstagramUrl = selectInstagramContentUrl(task.source_url, task.canonical_url);
+      if (!safeInstagramUrl) throw new MediaError('unsupported_url', 'invalid_instagram_content_url');
+      parsedUrl = new URL(safeInstagramUrl);
+      resolver = selectResolver(deps.resolvers, { platform: task.platform, url: parsedUrl });
+    }
     if (!resolver) throw new MediaError('unsupported_platform', task.platform);
     diagnostics.resolverName = resolver.name;
 

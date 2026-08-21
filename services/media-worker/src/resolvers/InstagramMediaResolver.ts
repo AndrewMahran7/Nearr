@@ -29,6 +29,11 @@ import type { ResolvedMedia } from '../types/media.js';
 import { MediaError } from '../types/media.js';
 import type { WorkerConfig } from '../config/env.js';
 import {
+  isInstagramContentUrl,
+  isInstagramHost,
+  selectInstagramContentUrl,
+} from './instagramUrl.js';
+import {
   boundedMetadata,
   pickLocationMetadata,
   pickCreatorHandle,
@@ -53,12 +58,13 @@ export class InstagramMediaResolver implements MediaResolver {
   supports(input: { platform: string; url: URL }): boolean {
     if (!this.cfg.instagramResolverEnabled) return false;
     if (input.platform.toLowerCase() !== 'instagram') return false;
-    return isInstagramHost(input.url.hostname);
+    return isInstagramContentUrl(input.url);
   }
 
   async resolve(input: ResolveInput): Promise<ResolvedMedia> {
-    const rawUrl = input.canonicalUrl || input.sourceUrl;
-    const url = requireHttpsHost(rawUrl, isInstagramHost);
+    const selectedUrl = selectInstagramContentUrl(input.sourceUrl, input.canonicalUrl);
+    if (!selectedUrl) throw new MediaError('unsupported_url', 'invalid_instagram_content_url');
+    const url = requireHttpsHost(selectedUrl, isInstagramHost);
 
     const info = await probeWithYtDlp(this.cfg, url, { workDir: input.workDir, signal: input.signal });
     const duration = enforceDurationLimit(this.cfg, info);
@@ -86,9 +92,4 @@ export class InstagramMediaResolver implements MediaResolver {
       warnings: file.warnings,
     };
   }
-}
-
-function isInstagramHost(hostname: string): boolean {
-  const host = hostname.toLowerCase();
-  return host === 'instagram.com' || host.endsWith('.instagram.com');
 }

@@ -17,14 +17,14 @@ export function pickMeta(html: string, prop: string): string | null {
   ];
   for (const re of patterns) {
     const m = html.match(re);
-    if (m) return decodeHtml(m[1]);
+    if (m?.[1]) return decodeHtml(m[1]);
   }
   return null;
 }
 
 export function pickTitle(html: string): string | null {
   const m = html.match(/<title[^>]*>([^<]+)<\/title>/i);
-  return m ? decodeHtml(m[1]) : null;
+  return m?.[1] ? decodeHtml(m[1]) : null;
 }
 
 export function decodeHtml(s: string): string {

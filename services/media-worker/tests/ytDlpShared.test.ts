@@ -94,6 +94,15 @@ test('pickProgressiveHeaders: no matching headers => undefined', () => {
 
 test('classifyYtError: maps common yt-dlp stderr vocabulary to structured codes', () => {
   assert.equal(classifyYtError('ERROR: Login required to view this video').code, 'authentication_required');
+  assert.equal(classifyYtError('ERROR: Sign in to confirm you are not a bot').code, 'authentication_required');
+  assert.equal(
+    classifyYtError('ERROR: This content is only available for registered users who follow this account').code,
+    'authentication_required',
+  );
+  assert.notEqual(
+    classifyYtError('ERROR: Unsupported URL: https://www.instagram.com/accounts/login/?next=%2Freel%2Fx').code,
+    'authentication_required',
+  );
   assert.equal(classifyYtError('ERROR: This video is private').code, 'private_or_unavailable');
   assert.equal(classifyYtError('ERROR: HTTP Error 429: Too Many Requests').code, 'download_failed');
   assert.equal(classifyYtError('ERROR: Unable to extract video data').code, 'provider_changed');
