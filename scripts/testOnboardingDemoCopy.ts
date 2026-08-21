@@ -250,7 +250,11 @@ function finalCtaCreatesTheMap() {
 }
 
 function authContinuity() {
-  assert.match(account, /<Text style=\{styles\.headline\}>Create your map<\/Text>/, 'the auth headline continues the CTA promise');
+  assert.match(
+    account,
+    /anonymousOnboarding \? 'Keep your Nearr map' : 'Create your map'/,
+    'auth preserves the legacy promise and uses preservation copy after the real tutorial',
+  );
   assert.doesNotMatch(account, /Continue to Nearr/, 'no conflicting auth headline remains');
   assert.match(
     account,

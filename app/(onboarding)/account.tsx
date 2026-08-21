@@ -13,6 +13,7 @@ import { Feather } from '@expo/vector-icons';
 import * as AppleAuthentication from 'expo-apple-authentication';
 
 import { trackEvent } from '@/lib/analytics';
+import { recordOnboardingV2SignInStarted } from '@/lib/onboardingV2';
 import { isSupabaseConfigured } from '@/lib/supabase';
 import { areDeveloperToolsVisible } from '@/lib/appEnvironment';
 import {
@@ -43,6 +44,10 @@ import {
   startGoogleSignIn,
 } from '@/services/auth';
 import { useAuth } from '@/hooks/useAuth';
+import {
+  cancelOnboardingAccountTransfer,
+  prepareOnboardingAccountTransfer,
+} from '@/lib/anonymousOnboarding';
 import {
   AuthDivider,
   GoogleSignInButton,
@@ -100,7 +105,8 @@ const DEV_PASSWORD_LOGIN_ENABLED =
 export default function AccountAuthScreen() {
   const router = useRouter();
   const { session } = useAuth();
-  const signedIn = !!session;
+  const anonymousOnboarding = session?.user.is_anonymous === true;
+  const signedIn = !!session && !anonymousOnboarding;
 
   const [emailState, setEmailState] = useState(() => initialEmailAuthState());
   const { mode, checkEmailReason, email } = emailState;
@@ -173,6 +179,7 @@ export default function AccountAuthScreen() {
     activeOperationRef.current = next;
     setActiveOperation(next);
     setErrorMessage(null);
+    void recordOnboardingV2SignInStarted(next);
     return true;
   }
 
@@ -187,6 +194,20 @@ export default function AccountAuthScreen() {
     return false;
   }
 
+  async function prepareTransferIfNeeded(): Promise<boolean> {
+    if (!anonymousOnboarding) return true;
+    try {
+      await prepareOnboardingAccountTransfer();
+      return true;
+    } catch (error) {
+      console.warn('[onboarding-v2] transfer_prepare_failed', error);
+      if (mountedRef.current) {
+        setErrorMessage('Nearr could not secure your tutorial transfer. Check your connection and try again.');
+      }
+      return false;
+    }
+  }
+
   /**
    * THE shared success path. Apple, Google, magic-link callback, password
    * sign-in and immediate-session signup all end here, so no provider has its
@@ -198,8 +219,11 @@ export default function AccountAuthScreen() {
     try {
       const route = await resolvePostAuthRoute(userId);
       router.replace(route);
-    } catch {
-      router.replace('/(tabs)/map');
+    } catch (error) {
+      console.warn('[onboarding-v2] account_transition_failed', error);
+      if (mountedRef.current) {
+        setErrorMessage('Your account signed in, but Nearr could not preserve the tutorial yet. Try Continue again.');
+      }
     } finally {
       endPostAuthRouting();
     }
@@ -217,6 +241,7 @@ export default function AccountAuthScreen() {
 
     void trackEvent('onboarding_email_submitted', {});
     try {
+      if (!(await prepareTransferIfNeeded())) return;
       const { error } = await sendMagicLink(email);
       if (!mountedRef.current) return;
       if (error) {
@@ -246,6 +271,7 @@ export default function AccountAuthScreen() {
 
     void trackEvent('onboarding_password_signin_started', {});
     try {
+      if (!(await prepareTransferIfNeeded())) return;
       const { data, error } = await signInWithPassword(email, password);
       const user = data.session?.user ?? data.user ?? null;
       if (error || !user) {
@@ -258,6 +284,7 @@ export default function AccountAuthScreen() {
       void trackEvent('onboarding_password_signin_completed', {});
       await completeAuthentication(user.id);
     } catch {
+      if (anonymousOnboarding) void cancelOnboardingAccountTransfer();
       void trackEvent('onboarding_password_signin_failed', {});
       console.warn('[auth] password sign-in threw');
       if (mountedRef.current) {
@@ -276,6 +303,7 @@ export default function AccountAuthScreen() {
 
     void trackEvent('onboarding_password_signup_started', {});
     try {
+      if (!(await prepareTransferIfNeeded())) return;
       const result = await signUpWithPassword(email, password);
 
       if (result.outcome === 'session') {
@@ -293,6 +321,7 @@ export default function AccountAuthScreen() {
       }
 
       void trackEvent('onboarding_password_signup_failed', {});
+      if (anonymousOnboarding) void cancelOnboardingAccountTransfer();
       if (!mountedRef.current) return;
       setErrorMessage(
         toUserFacingAuthError(
@@ -336,6 +365,7 @@ export default function AccountAuthScreen() {
 
     void trackEvent('onboarding_google_started', {});
     try {
+      if (!(await prepareTransferIfNeeded())) return;
       const outcome = await startGoogleSignIn();
       if (outcome.status === 'signed_in') {
         void trackEvent('onboarding_google_completed', {});
@@ -345,8 +375,10 @@ export default function AccountAuthScreen() {
       if (outcome.status === 'cancelled') {
         // Backing out of the browser is a normal action — no error UI.
         void trackEvent('onboarding_google_cancelled', {});
+        if (anonymousOnboarding) void cancelOnboardingAccountTransfer();
         return;
       }
+      if (anonymousOnboarding) void cancelOnboardingAccountTransfer();
       void trackEvent('onboarding_google_failed', { reason: outcome.code });
       if (mountedRef.current) setErrorMessage(toUserFacingAuthError(null, 'google'));
     } finally {
@@ -360,6 +392,7 @@ export default function AccountAuthScreen() {
 
     void trackEvent('onboarding_apple_started', {});
     try {
+      if (!(await prepareTransferIfNeeded())) return;
       const outcome = await signInWithApple();
       if (outcome.status === 'signed_in') {
         void trackEvent('onboarding_apple_completed', {});
@@ -367,10 +400,11 @@ export default function AccountAuthScreen() {
         return;
       }
       if (outcome.status === 'cancelled') {
-        // Closing Apple's sheet is a normal action — never a red error.
         void trackEvent('onboarding_apple_cancelled', {});
+        if (anonymousOnboarding) void cancelOnboardingAccountTransfer();
         return;
       }
+      if (anonymousOnboarding) void cancelOnboardingAccountTransfer();
       void trackEvent('onboarding_apple_failed', { reason: outcome.code });
       if (mountedRef.current) setErrorMessage(toUserFacingAuthError(null, 'apple'));
     } finally {
@@ -380,7 +414,8 @@ export default function AccountAuthScreen() {
 
   // Dev/QA preview: a session already exists → skip auth to the activation step.
   function handleContinueSignedIn() {
-    router.replace('/activate');
+    const userId = session?.user.id;
+    if (userId) void completeAuthentication(userId);
   }
 
   // -------------------------------------------------------------------------
@@ -416,6 +451,7 @@ export default function AccountAuthScreen() {
     setDeveloperSigningIn(true);
     setDeveloperError(null);
     try {
+      if (!(await prepareTransferIfNeeded())) return;
       const { data, error } = await signInWithPassword(trimmedEmail, developerPassword);
       if (error) {
         console.warn('[auth] developer password sign-in error', error.message);
@@ -492,9 +528,11 @@ export default function AccountAuthScreen() {
           CTA. The subtext covers returning users, since every email path here
           both signs in and creates an account.
         */}
-        <Text style={styles.headline}>Create your map</Text>
+        <Text style={styles.headline}>{anonymousOnboarding ? 'Keep your Nearr map' : 'Create your map'}</Text>
         <Text style={styles.subtext}>
-          Sign in or create an account to start saving the places you find online.
+          {anonymousOnboarding
+            ? 'Nearr found your first place. Create or connect an account to preserve it and continue.'
+            : 'Sign in or create an account to start saving the places you find online.'}
         </Text>
 
         {signedIn ? (

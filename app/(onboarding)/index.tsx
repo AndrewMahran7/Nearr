@@ -15,6 +15,8 @@ import {
   TapShareScreen,
   ValuePropScreen,
 } from '@/components/onboarding/screens';
+import { OnboardingV2PreAuth } from '@/components/onboarding/v2';
+import { isOnboardingV2Enabled } from '@/lib/featureFlags';
 
 // Five demonstration screens. The first is a value-prop intro advanced by a
 // CTA; screens 2–3 advance only when the user performs the taught action (tap
@@ -52,7 +54,12 @@ function screenProps(index: number) {
  * the user in, saves nothing real, and does not count as a first save. No
  * location/notification permission is requested here.
  */
-export default function OnboardingScreen() {
+export default function OnboardingRoute() {
+  if (isOnboardingV2Enabled()) return <OnboardingV2PreAuth />;
+  return <LegacyOnboardingScreen />;
+}
+
+function LegacyOnboardingScreen() {
   const router = useRouter();
   const [step, setStep] = useState(0);
 

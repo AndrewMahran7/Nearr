@@ -31,6 +31,17 @@ export async function sendMagicLink(email: string) {
   console.log(
     `[auth] magic_link_redirect_configured scheme=${redirectScheme} path=auth-callback`,
   );
+  const current = await supabase.auth.getSession();
+  if (current.data.session?.user.is_anonymous === true) {
+    const linked = await supabase.auth.updateUser(
+      { email: email.trim() },
+      { emailRedirectTo: redirectTo },
+    );
+    if (!linked.error) return linked;
+    // The address may already belong to a permanent account. Fall through to
+    // normal OTP sign-in; the one-time onboarding transfer grant preserves the
+    // tutorial if the callback establishes a different user id.
+  }
   return supabase.auth.signInWithOtp({
     email: email.trim(),
     options: { emailRedirectTo: redirectTo },
@@ -73,17 +84,23 @@ export async function signUpWithPassword(
   email: string,
   password: string,
 ): Promise<PasswordSignUpResult> {
-  const { data, error } = await supabase.auth.signUp({
-    email: email.trim(),
-    password,
-    options: { emailRedirectTo: getAuthCallbackUrl() },
-  });
+  const current = await supabase.auth.getSession();
+  const { data, error } = current.data.session?.user.is_anonymous === true
+    ? await supabase.auth.updateUser(
+        { email: email.trim(), password },
+        { emailRedirectTo: getAuthCallbackUrl() },
+      )
+    : await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+        options: { emailRedirectTo: getAuthCallbackUrl() },
+      });
 
   if (error) return { outcome: 'error', error };
 
-  const user = data.session?.user ?? data.user ?? null;
+  const user = ('session' in data ? data.session?.user : null) ?? data.user ?? null;
   const kind = classifySignUpResult({
-    hasSession: !!data.session,
+    hasSession: 'session' in data ? !!data.session : user?.is_anonymous === false,
     hasUser: !!user,
   });
 
@@ -146,11 +163,18 @@ export async function startGoogleSignIn(): Promise<SocialSignInOutcome> {
   const redirectTo = getAuthCallbackUrl();
 
   let providerUrl: string | null = null;
+  const current = await supabase.auth.getSession();
+  const linkInPlace = current.data.session?.user.is_anonymous === true;
   try {
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo, skipBrowserRedirect: true },
-    });
+    const { data, error } = linkInPlace
+      ? await supabase.auth.linkIdentity({
+          provider: 'google',
+          options: { redirectTo, skipBrowserRedirect: true },
+        })
+      : await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: { redirectTo, skipBrowserRedirect: true },
+        });
     if (error) {
       console.warn('[auth] google oauth_start_failed');
       return { status: 'failed', code: 'oauth_start_failed' };
@@ -186,10 +210,32 @@ export async function startGoogleSignIn(): Promise<SocialSignInOutcome> {
 
   const linkResult = await handleAuthDeepLink(result.url, { source: 'oauth_result' });
   const user = await resolveSessionUser(linkResult.sessionEstablished);
-  if (user) return { status: 'signed_in', user };
+  if (user && !user.is_anonymous) return { status: 'signed_in', user };
+
+  // Linking fails when the Google identity already belongs to an established
+  // account. Start a normal sign-in only in that collision case; the transfer
+  // grant made before opening the provider authorizes the later merge.
+  if (linkInPlace) return startGoogleSignInAsExistingAccount();
 
   console.warn(`[auth] google exchange_failed reason=${linkResult.reason}`);
   return { status: 'failed', code: linkResult.reason };
+}
+
+async function startGoogleSignInAsExistingAccount(): Promise<SocialSignInOutcome> {
+  const redirectTo = getAuthCallbackUrl();
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo, skipBrowserRedirect: true },
+  });
+  if (error || !data.url) return { status: 'failed', code: 'oauth_existing_start_failed' };
+  const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+  if (result.type === 'cancel' || result.type === 'dismiss') return { status: 'cancelled' };
+  if (result.type !== 'success' || !result.url) return { status: 'failed', code: 'callback_missing' };
+  const exchanged = await handleAuthDeepLink(result.url, { source: 'oauth_result' });
+  const user = await resolveSessionUser(exchanged.sessionEstablished);
+  return user && !user.is_anonymous
+    ? { status: 'signed_in', user }
+    : { status: 'failed', code: exchanged.reason };
 }
 
 /**
@@ -278,11 +324,28 @@ export async function signInWithApple(): Promise<SocialSignInOutcome> {
     return { status: 'failed', code: 'missing_identity_token' };
   }
 
-  const { data, error } = await supabase.auth.signInWithIdToken({
-    provider: 'apple',
-    token: credential.identityToken,
-    nonce: nonce.raw,
-  });
+  const current = await supabase.auth.getSession();
+  const linkInPlace = current.data.session?.user.is_anonymous === true;
+  let response = linkInPlace
+    ? await supabase.auth.linkIdentity({
+        provider: 'apple',
+        token: credential.identityToken,
+        nonce: nonce.raw,
+      })
+    : await supabase.auth.signInWithIdToken({
+        provider: 'apple',
+        token: credential.identityToken,
+        nonce: nonce.raw,
+      });
+
+  if ((response.error || !response.data.user || response.data.user.is_anonymous) && linkInPlace) {
+    response = await supabase.auth.signInWithIdToken({
+      provider: 'apple',
+      token: credential.identityToken,
+      nonce: nonce.raw,
+    });
+  }
+  const { data, error } = response;
 
   if (error || !data.user) {
     console.warn('[auth] apple id_token_rejected');

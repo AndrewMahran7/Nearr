@@ -148,6 +148,21 @@ check(
   'the selected deploy unexpectedly included another function',
 );
 
+// A missing --project-ref has index -1. Its nonexistent value must not make
+// the positional-filter discard argv[0], or a targeted deploy becomes an
+// all-functions deploy.
+const fnSingleTarget = runFunctions(['delete-account']);
+check(
+  'dev:functions preserves a single positional target',
+  /functions\s+delete-account(?:\r?\n|$)/.test(fnSingleTarget.out),
+  fnSingleTarget.out,
+);
+check(
+  'dev:functions does not widen one target to all functions',
+  !/functions\s+[^\r\n]*create-share-job/.test(fnSingleTarget.out),
+  fnSingleTarget.out,
+);
+
 if (failures > 0) {
   console.error(`\n${failures} dev-database-guard test(s) FAILED`);
   process.exit(1);

@@ -71,6 +71,14 @@ check('Vayrin Product UI flag reads build env', /EXPO_PUBLIC_VAYRIN_PRODUCT_UI_E
 check('Vayrin Product UI flag has app config fallback', /readExtra\('vayrinProductUiEnabled'\)/.test(featureFlagsSource));
 check('app config exposes Vayrin Product UI flag', /vayrinProductUiEnabled/.test(appConfigSource));
 
+// Onboarding V2 uses the same resolver and therefore inherits the same
+// production-safe default-off behavior.
+check('onboarding v2 unset => OFF', resolveBooleanFlag(undefined, undefined) === false);
+check('onboarding v2 explicit true => ON', resolveBooleanFlag('true', undefined) === true);
+check('phase 1 rollout flag is exposed', /isOnboardingV2Phase1Only/.test(featureFlagsSource));
+check('phase 1 rollout defaults safe', /raw !== 'false' && raw !== '0'/.test(featureFlagsSource));
+check('app config exposes phase 1 boundary', /onboardingV2Phase1Only/.test(appConfigSource));
+
 if (failures > 0) {
   console.error(`\n${failures} feature-flag test(s) FAILED`);
   process.exit(1);

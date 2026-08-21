@@ -99,7 +99,13 @@ import {
 } from '@/services/placesService';
 import { getSavedPlace, listSavedPlaces, saveSavedPlace } from '@/services/savedPlacesService';
 import { upsertSavedPlaceIntoCache } from '@/hooks/useSavedPlaces';
+import { useOnboardingV2 } from '@/hooks/useOnboardingV2';
 import { trackEvent } from '@/lib/analytics';
+import {
+  observeOnboardingV2Result,
+  observeOnboardingV2ShareReceived,
+} from '@/lib/onboardingV2';
+import { isExpectedOnboardingSource } from '@/lib/onboardingV2Core';
 import { logDebug, logInfo } from '@/lib/logger';
 import { classifyExtractedQuery, shouldSearchPlaces } from '@/lib/queryValidation';
 import {
@@ -431,6 +437,7 @@ function LegacyShareScreen() {
   const router = useRouter();
   const navigation = useNavigation();
   const params = useLocalSearchParams<{ url?: string }>();
+  const { state: onboardingV2 } = useOnboardingV2();
   const completionOnceRef = useRef(createOnceLatch());
 
   // Themed tokens. `typography` is aliased to `Typography` so every existing
@@ -621,6 +628,7 @@ function LegacyShareScreen() {
     if (!incoming || !isLikelyUrl(incoming)) return;
     if (lastProcessedUrlRef.current === incoming) return;
     lastProcessedUrlRef.current = incoming;
+    void observeOnboardingV2ShareReceived(incoming);
     logDebug('share', 'auto-running from incoming url param', incoming);
     // Cold/warm start from share extension (or deep link with ?url=...).
     void trackEvent('share_received', {
@@ -632,6 +640,22 @@ function LegacyShareScreen() {
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.url]);
+
+  const onboardingShare = isExpectedOnboardingSource(
+    onboardingV2?.pendingShare ?? null,
+    params.url,
+  );
+
+  useEffect(() => {
+    if (!onboardingShare || !params.url) return;
+    if (phase === 'choose') {
+      void observeOnboardingV2Result(params.url, candidates.length > 1 ? 'multiple' : 'found');
+    } else if (phase === 'multi-choose') {
+      void observeOnboardingV2Result(params.url, 'multiple');
+    } else if (phase === 'failed') {
+      void observeOnboardingV2Result(params.url, 'not_enough');
+    }
+  }, [candidates.length, onboardingShare, params.url, phase]);
 
   // ---------------------------------------------------------------------
   // Main one-tap flow
@@ -2449,7 +2473,7 @@ function LegacyShareScreen() {
 
   const primaryButtonTitle =
     phase === 'parsing' || phase === 'searching'
-      ? 'Finding place…'
+      ? onboardingShare ? 'Vayrin is looking…' : 'Finding place…'
       : phase === 'saving'
         ? 'Saving…'
         : 'Save place';
@@ -2523,12 +2547,18 @@ function LegacyShareScreen() {
           ) : (
             <>
               <Text style={[Typography.title, styles.headerTitle]}>
-                {launchedFromShare ? 'Saving from share…' : 'Save from a link'}
+                {onboardingShare
+                  ? 'Vayrin is looking…'
+                  : launchedFromShare
+                    ? 'Saving from share…'
+                    : 'Save from a link'}
               </Text>
               <Text style={[Typography.body, styles.muted, styles.headerBody]}>
-                {launchedFromShare
-                  ? 'Nearr received a link from another app. Finding the place now.'
-                  : 'Paste a link to test. In production, this opens automatically from the share sheet.'}
+                {onboardingShare
+                  ? 'Nearr received the post. Vayrin is checking it for a real place.'
+                  : launchedFromShare
+                    ? 'Nearr received a link from another app. Finding the place now.'
+                    : 'Paste a link to test. In production, this opens automatically from the share sheet.'}
               </Text>
             </>
           )}
@@ -2609,9 +2639,13 @@ function LegacyShareScreen() {
               {!vayrinEnabled ? (
                 <>
                   <Text style={[Typography.label, styles.muted]}>
-                    {renderableCandidates.length === 1
-                      ? 'Found this place. Confirm it?'
-                      : 'Found a few matches. Pick the right one:'}
+                    {onboardingShare
+                      ? renderableCandidates.length === 1
+                        ? 'I think this is it.'
+                        : "I've got a few leads."
+                      : renderableCandidates.length === 1
+                        ? 'Found this place. Confirm it?'
+                        : 'Found a few matches. Pick the right one:'}
                   </Text>
                   <View style={{ height: Spacing.sm }} />
                 </>
@@ -2876,7 +2910,7 @@ function LegacyShareScreen() {
           {phase === 'failed' ? (
             <Card style={styles.section}>
               <Text style={Typography.heading}>
-                Search manually
+                {onboardingShare ? 'Not enough to go on.' : 'Search manually'}
               </Text>
               {!vayrinEnabled ? (
                 <Text

@@ -26,6 +26,7 @@ import Constants from 'expo-constants';
 import { supabase } from '@/lib/supabase';
 import { isDemoMode } from '@/lib/demoMode';
 import { isMapPreviewMode } from '@/lib/mapPreview';
+import { getActiveOnboardingFunnelId } from '@/lib/onboardingFunnelIdentity';
 
 const ANON_ID_KEY = 'nearr.analytics.anonymousId';
 
@@ -110,16 +111,22 @@ export async function trackEvent(
   }
 
   try {
-    const [{ data: userData }, anonymousId] = await Promise.all([
+    const [{ data: userData }, anonymousId, onboardingSessionId] = await Promise.all([
       supabase.auth.getUser().catch(() => ({ data: { user: null } })),
       getAnonymousId(),
+      getActiveOnboardingFunnelId(),
     ]);
 
     const userId = userData?.user?.id ?? null;
+    const permanentUserId = userData?.user?.is_anonymous === false ? userId : null;
 
     const row = {
       user_id: userId,
       anonymous_id: anonymousId,
+      ...(onboardingSessionId ? { onboarding_session_id: onboardingSessionId } : {}),
+      ...(onboardingSessionId && permanentUserId
+        ? { converted_user_id: permanentUserId }
+        : {}),
       event_name: eventName,
       properties: properties ?? {},
       platform: Platform.OS,

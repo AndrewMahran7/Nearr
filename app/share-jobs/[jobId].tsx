@@ -95,6 +95,9 @@ import {
 import { usePlacesSearch } from '@/hooks/usePlacesSearch';
 import { getSavedPlacesCacheSnapshot } from '@/hooks/useSavedPlaces';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
+import { useOnboardingV2 } from '@/hooks/useOnboardingV2';
+import { observeOnboardingV2Result } from '@/lib/onboardingV2';
+import { isExpectedOnboardingSource } from '@/lib/onboardingV2Core';
 import { recordBreadcrumb } from '@/lib/breadcrumbs';
 import { setCurrentShareJobId } from '@/lib/diagnosticContext';
 import { createOnceLatch } from '@/lib/onceLatch';
@@ -214,6 +217,7 @@ function ShareJobDetailScreen() {
   const routeJobId = typeof jobId === 'string' ? jobId.trim() : '';
   const { colors, typography } = useTheme();
   const vayrinEnabled = isVayrinProductUiEnabled();
+  const { state: onboardingV2 } = useOnboardingV2();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   const [job, setJob] = useState<ShareJob | null>(null);
@@ -374,6 +378,20 @@ function ShareJobDetailScreen() {
     () => mapShareJobToVayrinPresentation(detail, job),
     [detail, job],
   );
+  const onboardingShare = isExpectedOnboardingSource(
+    onboardingV2?.pendingShare ?? null,
+    sourceUrl,
+  );
+  useEffect(() => {
+    if (!onboardingShare || !sourceUrl) return;
+    if (detail.kind === 'confirm' || detail.kind === 'completed') {
+      void observeOnboardingV2Result(sourceUrl, 'found');
+    } else if (detail.kind === 'picker' || detail.kind === 'multi') {
+      void observeOnboardingV2Result(sourceUrl, 'multiple');
+    } else if (detail.kind === 'manual') {
+      void observeOnboardingV2Result(sourceUrl, 'not_enough');
+    }
+  }, [detail.kind, onboardingShare, sourceUrl]);
   const candidates = detail.candidates;
   const mentionSlots = detail.mentionSlots;
   useEffect(() => {

@@ -166,11 +166,17 @@ check(
 
 check(
   'AuthGate still routes signed-out users to onboarding',
-  /router\.replace\('\/\(onboarding\)'\)/.test(layoutCode),
+  /replaceOnce\('\/\(onboarding\)'\)/.test(layoutCode),
 );
 check(
   'AuthGate still pulls signed-in users into the tabs',
-  /router\.replace\('\/\(tabs\)\/map'\)/.test(layoutCode),
+  /replaceOnce\('\/\(tabs\)\/map'\)/.test(layoutCode),
+);
+check(
+  'AuthGate guards current and in-flight onboarding routes before replace',
+  /shouldNavigateOnboarding\s*\(\s*\{/.test(layoutCode) &&
+    /pendingOnboardingNavigationRef/.test(layoutCode) &&
+    /router\.replace\(expectedRoute\)/.test(layoutCode),
 );
 
 check(

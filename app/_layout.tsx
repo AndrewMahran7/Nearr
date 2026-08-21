@@ -7,6 +7,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
 import * as ExpoLinking from 'expo-linking';
 import { useAuth } from '@/hooks/useAuth';
+import { useOnboardingV2 } from '@/hooks/useOnboardingV2';
 import { isOnboardingPreviewActive } from '@/lib/onboarding';
 import { LegalAgreementModal, SetupReminderModal } from '@/components';
 import { getLocationStatus } from '@/components/SetupChecklist';
@@ -18,6 +19,14 @@ import {
 } from '@/lib/authDeepLinkCore';
 import { clearDevAuth } from '@/lib/devAuth';
 import { isPostAuthRoutingPending } from '@/lib/postAuthRouting';
+import { isOnboardingV2Enabled } from '@/lib/featureFlags';
+import {
+  expectedOnboardingV2Route,
+  onboardingRouteKey,
+  shouldNavigateOnboarding,
+  type OnboardingV2Route,
+  type PendingOnboardingNavigation,
+} from '@/lib/onboardingV2RoutingCore';
 import { trackEvent } from '@/lib/analytics';
 import { sanitizeErrorText, sanitizeStack } from '@/lib/sanitizeError';
 import { buildErrorDiagnostic, recordDiagnostic } from '@/lib/deviceDiagnostics';
@@ -230,12 +239,20 @@ function AuthGate({
   authLinkPending: boolean;
 }) {
   const { session, loading, isDevSession } = useAuth();
+  const isAnonymousSession = session?.user.is_anonymous === true;
+  const { state: onboardingV2 } = useOnboardingV2();
   const segments = useSegments();
   const router = useRouter();
-  const inOnboarding = segments[0] === '(onboarding)';
-  const inAuthCallback = segments[0] === 'auth-callback';
-  const inResetPassword = segments[0] === 'reset-password';
-  const inTabs = segments[0] === '(tabs)';
+  const currentRoute = onboardingRouteKey(segments);
+  const inOnboarding = currentRoute === '/(onboarding)' || currentRoute === '/(onboarding)/account';
+  const inAuth = currentRoute.startsWith('/(auth)');
+  const inAuthCallback = currentRoute === '/auth-callback';
+  const inResetPassword = currentRoute === '/reset-password';
+  const inTabs = currentRoute.startsWith('/(tabs)');
+  const pendingOnboardingNavigationRef = useRef<PendingOnboardingNavigation>(null);
+  if (pendingOnboardingNavigationRef.current?.to === currentRoute) {
+    pendingOnboardingNavigationRef.current = null;
+  }
   // Only surface the setup reminder once the user has fully landed in the app
   // (on the tabs route) AND no magic-link exchange is still in flight. This
   // keeps the transparent modal from ever being presented over the
@@ -244,7 +261,12 @@ function AuthGate({
   // leave an invisible modal that swallows every touch. Reaching the tabs
   // route with a real session already implies auth + the pre-auth onboarding
   // intro are complete.
-  const suppressSetupReminder = !inTabs || authLinkPending;
+  const behavioralOnboardingActive =
+    isOnboardingV2Enabled() &&
+    onboardingV2?.cohort === 'new_user_v2' &&
+    !onboardingV2.phase1CompletedAt &&
+    !onboardingV2.behavioralCompletedAt;
+  const suppressSetupReminder = !inTabs || authLinkPending || behavioralOnboardingActive;
   const [setupReminderVisible, setSetupReminderVisible] = useState(false);
   const [needsNotifications, setNeedsNotifications] = useState(false);
   const [needsLocation, setNeedsLocation] = useState(false);
@@ -275,7 +297,7 @@ function AuthGate({
   useEffect(() => {
     let cancelled = false;
 
-    if (!session || isDevSession || !LEGAL_ACCEPTANCE_REQUIRED) {
+    if (!session || isDevSession || isAnonymousSession || !LEGAL_ACCEPTANCE_REQUIRED) {
       setLegalAgreementVisible(false);
       return () => {
         cancelled = true;
@@ -302,10 +324,10 @@ function AuthGate({
     return () => {
       cancelled = true;
     };
-  }, [session, session?.user.id, isDevSession]);
+  }, [session, session?.user.id, isAnonymousSession, isDevSession]);
 
   const refreshSetupReminder = useCallback(async (force = false) => {
-    if (!session || isDevSession) {
+    if (!session || isDevSession || isAnonymousSession) {
       setSetupReminderVisible(false);
       setNeedsNotifications(false);
       setNeedsLocation(false);
@@ -326,7 +348,7 @@ function AuthGate({
     setNeedsNotifications(missingNotifications);
     setNeedsLocation(missingLocation);
     setSetupReminderVisible(missingNotifications || missingLocation);
-  }, [suppressSetupReminder, isDevSession, legalAgreementVisible, session, setupReminderDismissedThisSession]);
+  }, [suppressSetupReminder, isAnonymousSession, isDevSession, legalAgreementVisible, session, setupReminderDismissedThisSession]);
 
   async function handleAcceptLegal() {
     if (!session) return;
@@ -363,7 +385,6 @@ function AuthGate({
 
   useEffect(() => {
     if (loading) return;
-    const inAuth = segments[0] === '(auth)';
     logDebug('AuthGate', 'decide', {
       hasSession: !!session,
       inAuth,
@@ -371,8 +392,20 @@ function AuthGate({
       inAuthCallback,
       authLinkPending,
       isDevSession,
-      segments: segments.join('/'),
+      route: currentRoute,
+      onboardingStage: onboardingV2?.stage ?? null,
     });
+
+    const replaceOnce = (expectedRoute: OnboardingV2Route) => {
+      if (!shouldNavigateOnboarding({
+        currentRoute,
+        expectedRoute,
+        pendingNavigation: pendingOnboardingNavigationRef.current,
+      })) return;
+      pendingOnboardingNavigationRef.current = { from: currentRoute, to: expectedRoute };
+      logDebug('AuthGate', `-> ${expectedRoute}`);
+      router.replace(expectedRoute);
+    };
 
     // Logged out: onboarding is the PUBLIC landing. Allow the auth and
     // onboarding groups; send everything else into the intro flow.
@@ -386,9 +419,23 @@ function AuthGate({
       // on the reset screen rather than being bounced back to the intro.
       if (inResetPassword) return;
       if (!inAuth && !inOnboarding) {
-        logDebug('AuthGate', '-> /(onboarding)');
-        router.replace('/(onboarding)');
+        replaceOnce('/(onboarding)');
       }
+      return;
+    }
+
+    // A Supabase anonymous user is authenticated for RLS/share-extension
+    // purposes but is still inside Onboarding V2. AuthGate is the sole owner
+    // of automatic V2 routing: screens mutate durable stage only, then this
+    // guarded edge moves at most once to the route that owns that stage.
+    if (isAnonymousSession) {
+      if (!isOnboardingV2Enabled() || onboardingV2?.cohort !== 'new_user_v2') {
+        replaceOnce('/(onboarding)');
+        return;
+      }
+      if (onboardingV2.boundUserId && onboardingV2.boundUserId !== session.user.id) return;
+      const expectedRoute = expectedOnboardingV2Route(onboardingV2.stage);
+      if (expectedRoute) replaceOnce(expectedRoute);
       return;
     }
 
@@ -402,19 +449,23 @@ function AuthGate({
     // resolving its save-aware destination, leave routing to that resolver —
     // otherwise a brand-new user flashes past the first-save activation step.
     if ((inAuth || inOnboarding) && !previewingOnboarding && !isPostAuthRoutingPending()) {
-      logDebug('AuthGate', '-> /(tabs)/map');
-      router.replace('/(tabs)/map');
+      replaceOnce('/(tabs)/map');
     }
   }, [
-    session,
+    session?.user.id,
     loading,
-    segments,
+    currentRoute,
     router,
     isDevSession,
     inOnboarding,
     inAuthCallback,
     inResetPassword,
     authLinkPending,
+    isAnonymousSession,
+    onboardingV2?.boundUserId,
+    onboardingV2?.cohort,
+    onboardingV2?.phase1CompletedAt,
+    onboardingV2?.stage,
   ]);
 
   // Run a one-shot proximity check on sign-in and on app foreground. The
@@ -423,7 +474,7 @@ function AuthGate({
   // because there's no real Supabase auth — the query would just return
   // empty and we'd needlessly trigger the location prompt.
   useEffect(() => {
-    if (!session || isDevSession) return;
+    if (!session || isDevSession || isAnonymousSession) return;
     void syncProximityWatch();
     void checkProximityOnce();
     // Register this device's Expo push token for server-sent share-job
@@ -450,10 +501,10 @@ function AuthGate({
       logInfo('notification-dedupe', 'listener_cleanup name=app_state_proximity_sync');
       sub.remove();
     };
-  }, [session, isDevSession, refreshSetupReminder]);
+  }, [session, isAnonymousSession, isDevSession, refreshSetupReminder]);
 
   useEffect(() => {
-    if (!session || isDevSession) {
+    if (!session || isDevSession || isAnonymousSession) {
       setSetupReminderVisible(false);
       setNeedsNotifications(false);
       setNeedsLocation(false);
@@ -465,7 +516,7 @@ function AuthGate({
       return;
     }
     void refreshSetupReminder();
-  }, [session, isDevSession, suppressSetupReminder, refreshSetupReminder]);
+  }, [session, isAnonymousSession, isDevSession, suppressSetupReminder, refreshSetupReminder]);
 
   return (
     <>

@@ -8,7 +8,7 @@ import { Colors, Spacing, Typography } from '@/constants';
 import { useAuth } from '@/hooks/useAuth';
 import { trackEvent } from '@/lib/analytics';
 import { parseAuthCallbackUrl } from '@/lib/authDeepLink';
-import { resolvePostAuthRoute } from '@/lib/postAuthRouting';
+import { resolvePostAuthRoute, type PostAuthRoute } from '@/lib/postAuthRouting';
 import { decideAuthCallbackNavigation } from '@/lib/authDeepLinkCore';
 import { useAuthLinkStatus } from '@/lib/authLinkStatus';
 
@@ -69,12 +69,18 @@ export default function AuthCallbackScreen() {
     if (decision === 'navigate_app') {
       void (async () => {
         const current = sessionRef.current;
-        let route: '/activate' | '/(tabs)/map' = '/(tabs)/map';
-        if (current) {
-          route = await resolvePostAuthRoute(current.user.id);
-          void trackEvent('onboarding_auth_completed', {
-            destination: route === '/activate' ? 'activate' : 'map',
-          });
+        let route: PostAuthRoute = '/(tabs)/map';
+        try {
+          if (current) {
+            route = await resolvePostAuthRoute(current.user.id);
+            void trackEvent('onboarding_auth_completed', {
+              destination: route === '/activate' ? 'activate' : 'map',
+            });
+          }
+        } catch (error) {
+          console.warn('[auth-callback] onboarding_transfer_failed', error);
+          router.replace('/(onboarding)/account');
+          return;
         }
         if (!hasLoggedOutcome.current) {
           hasLoggedOutcome.current = true;

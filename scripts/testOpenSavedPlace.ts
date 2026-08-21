@@ -94,6 +94,10 @@ check('notification does not show duplicate feedback', openSavedPlaceMessage('no
 check('manual save opens full details', shouldExpandSavedPlaceDetails('share_job_saved'));
 check('already-saved confirmation opens full details', shouldExpandSavedPlaceDetails('share_job_already_saved'));
 check('notification leaves details collapsed', !shouldExpandSavedPlaceDetails('notification'));
+const onboardingRoute = resolveOpenSavedPlaceRoute({ savedPlaceId: 'sp1', source: 'onboarding_tutorial' });
+check('onboarding continuation carries the exact saved_places.id', onboardingRoute.params.savedPlaceId === 'sp1');
+check('onboarding continuation expands Place Detail', shouldExpandSavedPlaceDetails('onboarding_tutorial'));
+check('onboarding continuation is an open-existing source', isOpenExistingPlaceSource('onboarding_tutorial'));
 
 // --- DECISIVE end-to-end: already-saved notification opens the place --------
 function openFromAlreadySavedNotification(

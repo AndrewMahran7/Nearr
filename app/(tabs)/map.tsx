@@ -92,6 +92,7 @@ import {
   type MapSheetMode,
   type SheetSnap,
 } from '@/components/map';
+import { OnboardingV2MapCoachmark } from '@/components/onboarding/v2';
 import { Colors, Radius, Spacing, Typography } from '@/constants';
 import {
   isMeaningfulInteraction,
@@ -139,6 +140,13 @@ import {
   type LocationSample,
 } from '@/lib/liveLocation';
 import { trackEvent } from '@/lib/analytics';
+import { isOnboardingV2Enabled } from '@/lib/featureFlags';
+import {
+  closeOnboardingV2PlaceTour,
+  isOnboardingV2InProgress,
+  reconcileOnboardingV2SavedPlaces,
+  recordOnboardingV2PlaceTourOpened,
+} from '@/lib/onboardingV2';
 import { recordBreadcrumb } from '@/lib/breadcrumbs';
 import { setLocationWatcherState } from '@/lib/diagnosticContext';
 import { isMapPinRedesignEnabled } from '@/lib/featureFlags';
@@ -511,7 +519,7 @@ export default function MapScreen() {
   // The committed integer clustering zoom. Held through small pans by the
   // hysteresis in nextClusterZoom so the map does not re-cluster on a nudge.
   const [clusterZoom, setClusterZoom] = useState<number | null>(null);
-
+  const onboardingReconcileRunningRef = useRef(false);
   // Keep an already-open detail sheet attached to the live cached row. Media
   // enrichment updates ai_note asynchronously after the initial save.
   useEffect(() => {
@@ -520,6 +528,33 @@ export default function MapScreen() {
     if (live && live !== selected) setSelected(live);
   }, [selected, validPlaces]);
 
+  // Thin V2 adapter: the saved-place list is authoritative. An onboarding
+  // attempt advances only when a real row carries the exact expected source
+  // URL. Duplicate cache/realtime callbacks are idempotent in the state machine.
+  useEffect(() => {
+    if (!isOnboardingV2Enabled() || onboardingReconcileRunningRef.current) return;
+    onboardingReconcileRunningRef.current = true;
+    let cancelled = false;
+    void reconcileOnboardingV2SavedPlaces(places)
+      .then((result) => {
+        if (cancelled) return;
+        if (result.state.stage === 'account_required') return;
+        if (result.state.stage !== 'place_tour' || !result.state.tutorialSave) return;
+        const target = validPlaces.find(
+          (place) => place.id === result.state.tutorialSave?.savedPlaceId,
+        );
+        if (!target) return;
+        selectPlace(target);
+        setPreviewExpanded(true);
+        void recordOnboardingV2PlaceTourOpened(target.id);
+      })
+      .finally(() => {
+        onboardingReconcileRunningRef.current = false;
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [places, validPlaces]);
   const [mapReady, setMapReady] = useState(false);
   // Which list the bottom sheet shows. The old Nearby/Recent/Saved chips drove
   // this from the map chrome; they never filtered the map and each duplicated
@@ -803,7 +838,11 @@ export default function MapScreen() {
     let cancelled = false;
     (async () => {
       try {
-        const { status } = await Location.requestForegroundPermissionsAsync();
+        const suppressOnboardingPrompt =
+          isOnboardingV2Enabled() && await isOnboardingV2InProgress();
+        const { status } = suppressOnboardingPrompt
+          ? await Location.getForegroundPermissionsAsync()
+          : await Location.requestForegroundPermissionsAsync();
         if (cancelled) return;
         if (status !== 'granted') {
           console.log('[map] location permission denied');
@@ -1330,6 +1369,9 @@ export default function MapScreen() {
       if (shouldExpandSavedPlaceDetails(placeSource) || reminderOpen) {
         setPreviewExpanded(true);
       }
+      if (placeSource === 'onboarding_tutorial') {
+        void recordOnboardingV2PlaceTourOpened(target.id);
+      }
       const successMessage = openSavedPlaceMessage(placeSource);
       if (successMessage) {
         showSnackbar(successMessage, null);
@@ -1462,6 +1504,7 @@ export default function MapScreen() {
    */
   const dismissSelectedPlace = useCallback(() => {
     if (!selected) return;
+    void closeOnboardingV2PlaceTour(selected.id);
     // Collapsing the place is itself a user action; the confirmation must
     // not be left floating over the bare map.
     handleUserInteraction('sheet_dismiss');
@@ -2456,6 +2499,12 @@ export default function MapScreen() {
         token={snackbar?.id}
         onDismiss={() => setSnackbar(null)}
       />
+      {isOnboardingV2Enabled() ? (
+        <OnboardingV2MapCoachmark
+          selected={selected}
+          onDismissTutorialPlace={dismissSelectedPlace}
+        />
+      ) : null}
     </View>
   );
 }

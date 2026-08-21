@@ -30,6 +30,9 @@ import {
 import { clearSavedPlacesCache } from '@/lib/savedPlacesCache';
 import { clearOfflineUserData } from '@/lib/offlineIdentity';
 import { resetOnboarding } from '@/lib/onboarding';
+import { clearOnboardingAccountTransferAfterDeletion } from '@/lib/anonymousOnboarding';
+import { rotateOnboardingFunnelId } from '@/lib/onboardingFunnelIdentity';
+import { resetOnboardingV2AfterAccountDeletion } from '@/lib/onboardingV2';
 import { getHowNearrWorksStorageKey } from '@/components/HowNearrWorksModal';
 import { PLACE_NOTIFICATION_DEDUPE_STORAGE_KEY } from '@/lib/placeNotificationDedupe';
 import { stopNearrGeofencing } from '@/lib/geofencing';
@@ -180,6 +183,25 @@ export async function cleanupAfterAccountDeletion(
     if (userId) await resetOnboarding(userId);
   } catch (err) {
     console.warn('[account] cleanup: resetOnboarding failed', err);
+  }
+
+  // Account deletion is a hard identity boundary. Replace the V2 snapshot in
+  // memory and storage, remove any one-time transfer grant, and rotate the
+  // device funnel before auth changes can mount the signed-out onboarding UI.
+  try {
+    await resetOnboardingV2AfterAccountDeletion();
+  } catch (err) {
+    console.warn('[account] cleanup: resetOnboardingV2AfterAccountDeletion failed', err);
+  }
+  try {
+    await clearOnboardingAccountTransferAfterDeletion();
+  } catch (err) {
+    console.warn('[account] cleanup: clear onboarding transfer failed', err);
+  }
+  try {
+    await rotateOnboardingFunnelId();
+  } catch (err) {
+    console.warn('[account] cleanup: rotate onboarding funnel failed', err);
   }
 
   // Onboarding/setup flags + global dedupe store.

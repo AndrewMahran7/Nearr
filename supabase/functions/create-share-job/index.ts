@@ -8,7 +8,9 @@
 //   Response (200):  { "jobId": "...", "status": "queued", "duplicate": false }
 //
 // Responsibilities (and NOTHING more — this must return fast):
-//   1. Authenticate the user (no anonymous jobs).
+//   1. Authenticate the user (no unauthenticated jobs). Supabase Anonymous
+//      Sign-In users are intentionally valid: they have a verified auth user
+//      id and remain inside the same owner/RLS boundary as permanent users.
 //   2. Validate the URL is a public http/https URL (SSRF guard).
 //   3. Normalize known platform tracking params.
 //   4. Create OR return an idempotent job.

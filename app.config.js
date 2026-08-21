@@ -229,6 +229,13 @@ module.exports = ({ config }) => {
       vayrinProductUiEnabled:
         process.env.EXPO_PUBLIC_VAYRIN_PRODUCT_UI_ENABLED || 'true',
       createShareJobUrl: process.env.EXPO_PUBLIC_CREATE_SHARE_JOB_URL || '',
+      // V2 is deliberately enabled by the production EAS environment. The
+      // separate boundary defaults to Phase 1 only so malformed/missing config
+      // can never expose unfinished Practice or Graduate flows.
+      onboardingV2Enabled:
+        process.env.EXPO_PUBLIC_ONBOARDING_V2_ENABLED || '',
+      onboardingV2Phase1Only:
+        process.env.EXPO_PUBLIC_ONBOARDING_V2_PHASE1_ONLY || 'true',
     },
   };
 };

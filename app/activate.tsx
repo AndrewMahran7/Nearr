@@ -13,6 +13,10 @@ import {
   OnboardingSecondaryButton,
 } from '@/components/onboarding';
 import { ScreenHeading } from '@/components/onboarding/screens';
+import { OnboardingV2Activation } from '@/components/onboarding/v2';
+import { useAuth } from '@/hooks/useAuth';
+import { useOnboardingV2 } from '@/hooks/useOnboardingV2';
+import { isOnboardingV2Enabled } from '@/lib/featureFlags';
 
 type FirstSaveSource = 'instagram' | 'tiktok' | 'paste_link';
 
@@ -25,7 +29,20 @@ type FirstSaveSource = 'instagram' | 'tiktok' | 'paste_link';
  * actual first_save_completed event fires later from the save flow when a
  * place is confirmed and saved. No location/notification permission here.
  */
-export default function ActivateScreen() {
+export default function ActivateRoute() {
+  const { session, loading: authLoading } = useAuth();
+  const { state, loading } = useOnboardingV2();
+  if (isOnboardingV2Enabled() && (loading || authLoading)) return null;
+  const resumesV2 =
+    isOnboardingV2Enabled() &&
+    state?.cohort === 'new_user_v2' &&
+    state.boundUserId === session?.user.id &&
+    !state.behavioralCompletedAt;
+  if (resumesV2) return <OnboardingV2Activation />;
+  return <LegacyActivateScreen />;
+}
+
+function LegacyActivateScreen() {
   const router = useRouter();
 
   // Guard so a fast double-tap can't fire two launches / navigations.

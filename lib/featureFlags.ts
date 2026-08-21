@@ -86,6 +86,30 @@ export function isVayrinProductUiEnabled(): boolean {
 }
 
 /**
+ * Onboarding V2 is intentionally default OFF until the isolated lane is
+ * integrated and its real social links pass the physical device matrix.
+ */
+export function isOnboardingV2Enabled(): boolean {
+  return resolveBooleanFlag(
+    process.env.EXPO_PUBLIC_ONBOARDING_V2_ENABLED,
+    readExtra('onboardingV2Enabled'),
+  );
+}
+
+/**
+ * Production safety boundary for the initial V2 rollout. Phase 1 only is the
+ * fail-safe default: Phase 2 can run only after an explicit `false` value is
+ * shipped in a later product release.
+ */
+export function isOnboardingV2Phase1Only(): boolean {
+  const raw = trim(
+    process.env.EXPO_PUBLIC_ONBOARDING_V2_PHASE1_ONLY ||
+      readExtra('onboardingV2Phase1Only'),
+  ).toLowerCase();
+  return raw !== 'false' && raw !== '0';
+}
+
+/**
  * Resolve the `create-share-job` Edge Function URL. Empty string when not
  * configured — callers MUST treat empty as "async disabled / fall back".
  */

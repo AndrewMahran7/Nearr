@@ -20,12 +20,14 @@
 //
 // Deletion order (must delete user-owned rows that do NOT cascade BEFORE
 // removing the auth user):
-//   1. analytics_events        (FK ON DELETE SET NULL → delete explicitly)
-//   2. feedback                (FK ON DELETE SET NULL → delete explicitly)
-//   3. share_agent_runs        (FK ON DELETE SET NULL → delete explicitly)
-//   4. share_extraction_failures (FK ON DELETE SET NULL → delete explicitly)
-//   5. auth.users delete → cascades profiles, saved_places,
+//   1. capture the narrowly owned onboarding_v2_sessions IDs (read only)
+//   2. analytics_events        (FK ON DELETE SET NULL → delete explicitly)
+//   3. feedback                (FK ON DELETE SET NULL → delete explicitly)
+//   4. share_agent_runs        (FK ON DELETE SET NULL → delete explicitly)
+//   5. share_extraction_failures (FK ON DELETE SET NULL → delete explicitly)
+//   6. auth.users delete → cascades profiles, saved_places,
 //      notification_events (all FK ON DELETE CASCADE).
+//   7. delete the captured onboarding checkpoints (transfer grants cascade).
 //
 // Canonical `places` rows are shared across users and are intentionally
 // NEVER deleted here.
@@ -112,6 +114,23 @@ serve(async (req) => {
 
   console.log(`[delete-account] start ref=${userRef(userId)}`);
 
+  // Capture only this identity's sessions before auth deletion nulls their
+  // foreign keys. This is deliberately read-only: if account deletion later
+  // fails, the still-valid account keeps its onboarding checkpoint.
+  const { data: onboardingSessions, error: onboardingLookupError } = await admin
+    .from('onboarding_v2_sessions')
+    .select('id')
+    .or(`user_id.eq.${userId},permanent_user_id.eq.${userId}`);
+  if (onboardingLookupError) {
+    console.error(
+      `[delete-account] lookup failed table=onboarding_v2_sessions ref=${userRef(userId)} code=${
+        onboardingLookupError.code ?? 'unknown'
+      }`,
+    );
+    return json({ ok: false, error: 'deletion_failed', step: 'onboarding_v2_sessions_lookup' }, 500);
+  }
+  const onboardingSessionIds = (onboardingSessions ?? []).map((session) => session.id);
+
   // ---- Delete user-owned rows that do NOT cascade ------------------
   for (const table of EXPLICIT_DELETE_TABLES) {
     const { error } = await admin.from(table).delete().eq('user_id', userId);
@@ -130,24 +149,48 @@ serve(async (req) => {
 
   // ---- Delete the auth user (cascades profiles/saved_places/notif) -
   const { error: deleteErr } = await admin.auth.admin.deleteUser(userId);
+  let alreadyDeleted = false;
   if (deleteErr) {
     // Idempotency: if the user is already gone, treat as success so a
     // retried request after a dropped response still resolves cleanly.
     const message = String(deleteErr.message ?? '').toLowerCase();
     const alreadyGone =
       message.includes('not found') || deleteErr.status === 404;
-    if (alreadyGone) {
-      console.log(`[delete-account] already_deleted ref=${userRef(userId)}`);
-      return json({ ok: true, alreadyDeleted: true });
+    if (!alreadyGone) {
+      console.error(
+        `[delete-account] auth delete failed ref=${userRef(userId)} status=${
+          deleteErr.status ?? 'unknown'
+        }`,
+      );
+      return json({ ok: false, error: 'deletion_failed', step: 'auth_user' }, 500);
     }
-    console.error(
-      `[delete-account] auth delete failed ref=${userRef(userId)} status=${
-        deleteErr.status ?? 'unknown'
-      }`,
-    );
-    return json({ ok: false, error: 'deletion_failed', step: 'auth_user' }, 500);
+    alreadyDeleted = true;
+    console.log(`[delete-account] already_deleted ref=${userRef(userId)}`);
+  }
+
+  // The identity boundary now exists. Delete the captured checkpoints so
+  // their JSON and transfer grants do not remain on the server. If this
+  // best-effort cleanup fails, auth deletion has already made the rows
+  // impossible to hydrate by the deleted user; do not misreport the account
+  // as surviving.
+  let onboardingCleanupPending = false;
+  if (onboardingSessionIds.length > 0) {
+    const { error: onboardingDeleteError } = await admin
+      .from('onboarding_v2_sessions')
+      .delete()
+      .in('id', onboardingSessionIds);
+    if (onboardingDeleteError) {
+      onboardingCleanupPending = true;
+      console.error(
+        `[delete-account] post-auth cleanup failed table=onboarding_v2_sessions ref=${userRef(userId)} code=${
+          onboardingDeleteError.code ?? 'unknown'
+        }`,
+      );
+    } else {
+      console.log(`[delete-account] cleared table=onboarding_v2_sessions ref=${userRef(userId)}`);
+    }
   }
 
   console.log(`[delete-account] success ref=${userRef(userId)}`);
-  return json({ ok: true });
+  return json({ ok: true, alreadyDeleted, onboardingCleanupPending });
 });

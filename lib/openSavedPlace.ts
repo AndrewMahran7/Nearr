@@ -34,6 +34,7 @@ export type OpenSavedPlaceSource =
   | 'share_job_already_saved'
   | 'share_job_completed'
   | 'share_job_saved'
+  | 'onboarding_tutorial'
   | 'notification';
 
 export type OpenSavedPlaceArgs = {
@@ -182,6 +183,7 @@ export function isOpenExistingPlaceSource(source: string | null | undefined): bo
     source === 'share_job_already_saved' ||
     source === 'share_job_completed' ||
     source === 'share_job_saved' ||
+    source === 'onboarding_tutorial' ||
     source === 'notification'
   );
 }
@@ -196,7 +198,7 @@ export function openSavedPlaceMessage(source: string | null | undefined): string
 
 /** Manual save completion opens full details; passive notification opens do not. */
 export function shouldExpandSavedPlaceDetails(source: string | null | undefined): boolean {
-  return source === 'share_job_saved' || source === 'share_job_already_saved';
+  return source === 'share_job_saved' || source === 'share_job_already_saved' || source === 'onboarding_tutorial';
 }
 
 /** Minimal shape the map needs to resolve a saved place for opening. */

@@ -137,7 +137,9 @@ export function useAuth() {
         if (data.session) {
           // A real session. Remember who it is so a later offline cold start
           // can still open their cache.
-          void rememberAuthenticatedUser(data.session.user?.id);
+          if (data.session.user?.is_anonymous !== true) {
+            void rememberAuthenticatedUser(data.session.user?.id);
+          }
           setSession(data.session);
           setOfflineAuth(false);
         } else {
@@ -180,7 +182,9 @@ export function useAuth() {
       if (s) {
         // Connectivity returned and the token refreshed: the real session
         // replaces any offline reconstruction.
-        void rememberAuthenticatedUser(s.user?.id);
+        if (s.user?.is_anonymous !== true) {
+          void rememberAuthenticatedUser(s.user?.id);
+        }
         setSession(s);
         setOfflineAuth(false);
         return;

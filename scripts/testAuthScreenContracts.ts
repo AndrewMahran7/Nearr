@@ -63,12 +63,13 @@ function sharedPostAuthRouting() {
       );
     }
   }
-  // The only hardcoded map destination is the resolver's own catch fallback.
+  // A failed ownership transfer must stay recoverable on the account screen;
+  // it must never fail open into a map whose tutorial data may be missing.
   const mapReplaces = account.match(/router\.replace\('\/\(tabs\)\/map'\)/g) ?? [];
   assert.equal(
     mapReplaces.length,
-    1,
-    'the map route is only reachable via the shared resolver fallback',
+    0,
+    'the account screen has no hardcoded map fallback',
   );
   const completeBody = account.slice(
     account.indexOf('async function completeAuthentication'),
@@ -76,8 +77,8 @@ function sharedPostAuthRouting() {
   );
   assert.match(
     completeBody,
-    /catch \{\s*router\.replace\('\/\(tabs\)\/map'\);/,
-    'that single hardcoded route is the resolver fallback',
+    /catch \(error\) \{[\s\S]*account_transition_failed[\s\S]*could not preserve the tutorial/,
+    'resolver failure stays visible and retryable instead of bypassing transfer',
   );
 
   // The magic-link callback screen uses the same resolver.

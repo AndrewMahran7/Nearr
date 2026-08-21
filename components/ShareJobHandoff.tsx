@@ -26,6 +26,9 @@ import { hostShareSubmitter } from '@/lib/hostShareSubmit';
 import { logDebug } from '@/lib/logger';
 import { recordDiagnostic } from '@/lib/deviceDiagnostics';
 import { sharedAuth } from '@/lib/sharedAuth';
+import { useOnboardingV2 } from '@/hooks/useOnboardingV2';
+import { observeOnboardingV2ShareReceived } from '@/lib/onboardingV2';
+import { isExpectedOnboardingSource } from '@/lib/onboardingV2Core';
 
 type UiState =
   | { kind: 'submitting' }
@@ -38,6 +41,8 @@ export function ShareJobHandoff({ url, submissionId }: { url: string; submission
   const { colors, typography } = useTheme();
   const vayrinEnabled = isVayrinProductUiEnabled();
   const [ui, setUi] = useState<UiState>({ kind: 'submitting' });
+  const { state: onboardingV2 } = useOnboardingV2();
+  const onboardingShare = isExpectedOnboardingSource(onboardingV2?.pendingShare ?? null, url);
   const handledRef = useRef(false);
   // ONE stable submission id for this share action. Prefer an id propagated from
   // the extension/deep link (?sid=), else derive a deterministic (remount- and
@@ -60,6 +65,7 @@ export function ShareJobHandoff({ url, submissionId }: { url: string; submission
       );
       setUi({ kind: 'submitting' });
       if (vayrinEnabled) void trackEvent('vayrin_started', { source: 'async_handoff' });
+      await observeOnboardingV2ShareReceived(url);
       const result = await hostShareSubmitter.submit({
         url,
         submissionId: submissionIdRef.current,
@@ -124,7 +130,9 @@ export function ShareJobHandoff({ url, submissionId }: { url: string; submission
               presentation={{
                 ...buildVayrinPresentation({ kind: 'looking', source: 'async' }),
                 headline: 'Sent to Nearr',
-                body: "Vayrin's on it. You can close this.",
+                body: onboardingShare
+                  ? 'Vayrin is checking the post. Nearr will let you know when the result is ready.'
+                  : "Vayrin's on it. You can close this.",
               }}
             />
           ) : (
@@ -201,8 +209,10 @@ export function ShareJobHandoff({ url, submissionId }: { url: string; submission
             compact
             presentation={{
               ...buildVayrinPresentation({ kind: 'looking', source: 'async' }),
-              headline: 'Sending to Nearr',
-              body: 'Vayrin will start as soon as it arrives.',
+              headline: onboardingShare ? 'Vayrin is looking…' : 'Sending to Nearr',
+              body: onboardingShare
+                ? 'Nearr received the post.'
+                : 'Vayrin will start as soon as it arrives.',
             }}
           />
         ) : (
