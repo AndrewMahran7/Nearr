@@ -65,6 +65,12 @@ check(
   !workerSource.includes("'services/media-worker',") && !workerSource.includes("'--path-as-root',"),
 );
 check('worker has no shell interpolation', !/shell\s*:/.test(workerSource));
+const functionsSource = readFileSync(path.join(ROOT, 'scripts', 'deployFunctions.mjs'), 'utf8');
+check(
+  'production functions refuse the development-only E2E fixture',
+  functionsSource.includes("DEVELOPMENT_ONLY_FUNCTIONS = new Set(['e2e-place-fixture'])") &&
+    functionsSource.includes('production && DEVELOPMENT_ONLY_FUNCTIONS.has(name)'),
+);
 
 if (failures) {
   console.error(`\n${failures} deployment-guard test(s) FAILED`);

@@ -35,11 +35,13 @@ import { PRODUCTION_REF, REPO_ROOT, describeRef, resolveDevProjectRef } from './
 const FUNCTIONS_DIR = path.join(REPO_ROOT, 'supabase', 'functions');
 
 /**
- * Functions that must be deployed with --no-verify-jwt because they
- * authenticate the caller themselves. Anything absent here keeps Supabase's
- * default JWT verification.
+ * Functions that intentionally receive unauthenticated requests. The runtime
+ * handlers either authenticate the caller themselves or, for the development
+ * fixture, hard-refuse every non-development Supabase deployment.
+ * Anything absent here keeps Supabase's default JWT verification.
  */
-const NO_VERIFY_JWT = new Set(['process-share-jobs', 'process-share-link']);
+const NO_VERIFY_JWT = new Set(['e2e-place-fixture', 'process-share-jobs', 'process-share-link']);
+const DEVELOPMENT_ONLY_FUNCTIONS = new Set(['e2e-place-fixture']);
 
 function fail(message) {
   console.error(`\n${message}\n`);
@@ -70,10 +72,17 @@ const available = readdirSync(FUNCTIONS_DIR, { withFileTypes: true })
   .map((e) => e.name)
   .sort();
 
-const targets = selected.length > 0 ? selected : available;
+const targets = selected.length > 0
+  ? selected
+  : production
+    ? available.filter((name) => !DEVELOPMENT_ONLY_FUNCTIONS.has(name))
+    : available;
 for (const name of targets) {
   if (!available.includes(name)) {
     fail(`Unknown function "${name}". Available: ${available.join(', ')}.`);
+  }
+  if (production && DEVELOPMENT_ONLY_FUNCTIONS.has(name)) {
+    fail(`Function "${name}" is development-only and cannot be deployed to production.`);
   }
 }
 

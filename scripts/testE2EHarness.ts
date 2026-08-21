@@ -409,6 +409,14 @@ check(
 check('the cheap path with no media task passes', assertCheapPathSkippedMedia(null) === null);
 check('the cheap path that created a media task FAILS', assertCheapPathSkippedMedia(queuedTask) !== null);
 
+const pipelineFixtureSource = readFileSync(path.join(REPO_ROOT, 'scripts', 'e2e', 'fixtures', 'pipeline.ts'), 'utf8');
+check('Fixture A no longer depends on Wikipedia', !/wikipedia\.org/i.test(pipelineFixtureSource));
+check(
+  'Fixture A uses the fixed Nearr-Dev metadata page and exact Google identity',
+  pipelineFixtureSource.includes('/functions/v1/e2e-place-fixture') &&
+    pipelineFixtureSource.includes('ChIJCar0f49ZwokR6ozLV-dHNTE'),
+);
+
 // Every shape the pipeline uses to say "a place was identified". The auto-save
 // route leaves candidate_payload.candidates EMPTY because there is nothing left
 // to choose between — treating that as a resolver failure would report a

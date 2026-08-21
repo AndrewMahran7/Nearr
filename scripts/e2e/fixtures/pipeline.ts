@@ -41,14 +41,16 @@ export type FixtureOutcome = { name: string; ok: boolean };
 // ---------------------------------------------------------------------------
 
 /**
- * A long-lived reference page whose own metadata names a business AND its
- * street address, so the deterministic metadata resolver can identify the place
- * from text alone. Chosen because it has been stable for years, is free to
- * fetch, is not a social post, and cannot be taken down by one account holder.
- * Override with NEARR_E2E_CHEAP_URL if it ever stops carrying the address.
+ * A development-only Edge page whose fixed metadata names a real business and
+ * street address. The product still performs its normal network fetch,
+ * metadata extraction, evidence classification, Google Places lookup and save;
+ * only the otherwise-mutable source page is controlled by Nearr.
  */
 const CHEAP_PATH_URL =
-  process.env.NEARR_E2E_CHEAP_URL || 'https://en.wikipedia.org/wiki/Katz%27s_Delicatessen';
+  process.env.NEARR_E2E_CHEAP_URL ||
+  'https://qnfxnmvxpjzfydgudtvs.supabase.co/functions/v1/e2e-place-fixture';
+const CHEAP_PATH_EXPECTED_NAME = "Katz's Delicatessen";
+const CHEAP_PATH_EXPECTED_PROVIDER_ID = 'ChIJCar0f49ZwokR6ozLV-dHNTE';
 
 export async function fixtureCheapPath(
   reporter: StageReporter,
@@ -149,6 +151,60 @@ export async function fixtureCheapPath(
     reporter.fail(`${name}: terminal result persisted`, 0, persistence, { jobId: submitted.jobId });
   } else {
     reporter.pass(`${name}: terminal result persisted`, 0, `saved_place_id=${job.saved_place_id ?? 'null'}`);
+  }
+
+  let persistedName: string | null = null;
+  let persistedProviderId: string | null = null;
+  if (job.saved_place_id) {
+    const { data: saved } = await session.admin
+      .from('saved_places')
+      .select('place_id')
+      .eq('id', job.saved_place_id)
+      .maybeSingle();
+    const placeId = (saved as { place_id?: string } | null)?.place_id;
+    if (placeId) {
+      const { data: place } = await session.admin
+        .from('places')
+        .select('name,google_place_id')
+        .eq('id', placeId)
+        .maybeSingle();
+      persistedName = (place as { name?: string } | null)?.name ?? null;
+      persistedProviderId = (place as { google_place_id?: string } | null)?.google_place_id ?? null;
+    }
+  }
+  const candidatePayloadText = JSON.stringify(job.candidate_payload ?? {});
+  const expectedCandidatePresent =
+    candidatePayloadText.includes(CHEAP_PATH_EXPECTED_NAME) &&
+    candidatePayloadText.includes(CHEAP_PATH_EXPECTED_PROVIDER_ID);
+  const exactCheapWin =
+    (job.status === 'completed' &&
+      job.decision === 'auto_save' &&
+      persistedName === CHEAP_PATH_EXPECTED_NAME &&
+      persistedProviderId === CHEAP_PATH_EXPECTED_PROVIDER_ID) ||
+    (job.status === 'needs_help' &&
+      job.decision === 'candidate_confirmation' &&
+      expectedCandidatePresent);
+  if (!exactCheapWin) {
+    ok = false;
+    reporter.fail(
+      `${name}: expected place resolved`,
+      0,
+      'the controlled name/address metadata did not produce the exact Google place through the cheap path',
+      {
+        status: job.status,
+        decision: job.decision,
+        saved_place_id: job.saved_place_id,
+        persistedName,
+        persistedProviderId,
+        expectedCandidatePresent,
+      },
+    );
+  } else {
+    reporter.pass(
+      `${name}: expected place resolved`,
+      0,
+      `${persistedName ?? CHEAP_PATH_EXPECTED_NAME} provider=${persistedProviderId ?? CHEAP_PATH_EXPECTED_PROVIDER_ID} decision=${job.decision}`,
+    );
   }
 
   if (trail.violations.length > 0) {
