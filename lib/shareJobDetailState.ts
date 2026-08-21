@@ -37,6 +37,10 @@ import {
   savedPlaceIdsFromPayload,
   type ShareJobMentionSlot,
 } from './shareJobResult';
+import {
+  selectionModeForPlaceResult,
+  type SelectionMode,
+} from './placeSelection';
 
 /**
  * What the detail screen should render.
@@ -91,6 +95,7 @@ export type ShareJobDetailInput = {
 
 export type ShareJobDetailState = {
   kind: ShareJobDetailKind;
+  selectionMode: SelectionMode;
   /** Every candidate the row can still offer, in persisted order. */
   candidates: NormalizedCandidate[];
   /** Multi-place review slots; empty for single-place jobs. */
@@ -182,6 +187,7 @@ export function buildShareJobDetailState(
 ): ShareJobDetailState {
   const empty: ShareJobDetailState = {
     kind: 'missing',
+    selectionMode: 'single_identity',
     candidates: [],
     mentionSlots: [],
     savedPlaceIds: [],
@@ -201,14 +207,22 @@ export function buildShareJobDetailState(
 
   // Normalisation is total — each helper drops anything unusable rather than
   // throwing — so a malformed payload lands on `manual`, never on an error.
-  const mentionSlots = normalizeMentionSlots(record(job.candidate_payload)?.mentionSlots);
+  const candidatePayload = record(job.candidate_payload);
+  const mentionSlots = normalizeMentionSlots(candidatePayload?.mentionSlots);
   const candidates = collectCandidates(job.candidate_payload, mentionSlots);
   const savedPlaceIds = savedPlaceIdsFromPayload(job.candidate_payload);
   const extraction = record(job.extraction_payload);
   const savedPlaceId = text(job.saved_place_id);
   const suggestedQuery = text(job.suggested_query) ?? candidates[0]?.name ?? null;
+  const selectionMode = selectionModeForPlaceResult({
+    explicitMode: candidatePayload?.selectionMode,
+    decision: job.decision,
+    mentionSlots,
+    diagnostics: record(job.extraction_payload)?.diagnostics,
+  });
 
   const base = {
+    selectionMode,
     candidates,
     mentionSlots,
     savedPlaceIds,
@@ -261,7 +275,7 @@ export function buildShareJobDetailState(
   // Several logical places from one post are reviewed together. The decision
   // column is the primary signal; the persisted slots are the fallback so a row
   // written before that column existed still opens the grouped review.
-  if (job.decision === 'multi_candidate_confirmation' || mentionSlots.length > 1) {
+  if (selectionMode === 'multi_independent') {
     const count = mentionSlots.length || candidates.length;
     return {
       ...base,

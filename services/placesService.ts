@@ -70,6 +70,14 @@ export type PlaceRichDetails = {
   utcOffsetMinutes: number | null;
 };
 
+/** Normalized fields returned by one legacy Nearby Search request. */
+export type NearbyPlaceCandidate = PlaceCandidate & {
+  rating: number | null;
+  userRatingsTotal: number | null;
+  /** Direct provider photo URL built from the Nearby Search response. */
+  photoUrl: string | null;
+};
+
 export type LocationBias = { lat: number; lng: number };
 
 export type PlacesErrorCode =
@@ -188,6 +196,71 @@ export async function searchPlaces(
   assertOk(json, true /* allow ZERO_RESULTS */);
 
   return (json.results ?? []).slice(0, 8).map(toCandidateFromTextSearch);
+}
+
+/**
+ * One bounded Nearby Search request for secondary place recommendations.
+ * The response already contains display/ranking fields, so callers do not need
+ * an N+1 Place Details enrichment pass.
+ */
+export async function searchNearbyPlaces(args: {
+  latitude: number;
+  longitude: number;
+  radiusMeters: number;
+  type?: string;
+}): Promise<NearbyPlaceCandidate[]> {
+  const { latitude, longitude } = args;
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return [];
+
+  if (isDemoMode() || isMapPreviewMode()) {
+    const results = await searchDemoPlaces('', { lat: latitude, lng: longitude });
+    return results.map((candidate) => ({
+      ...candidate,
+      rating: null,
+      userRatingsTotal: null,
+      photoUrl: null,
+    }));
+  }
+
+  const key = resolveApiKey();
+  if (!key) throw new PlacesError('MISSING_API_KEY', 'Google Maps API key not configured.');
+  const radius = Math.max(100, Math.min(50_000, Math.round(args.radiusMeters)));
+  const params = new URLSearchParams({
+    location: `${latitude},${longitude}`,
+    radius: String(radius),
+    key,
+  });
+  if (args.type?.trim()) params.set('type', args.type.trim());
+
+  const url = `${BASE}/nearbysearch/json?${params.toString()}`;
+  console.log('[placesService] nearbysearch', {
+    radius,
+    type: args.type?.trim() || null,
+  });
+  const json = await safeFetch(url);
+  assertOk(json, true);
+
+  return (json.results ?? []).slice(0, 20).map((result: any): NearbyPlaceCandidate => {
+    const candidate = toCandidateFromTextSearch(result);
+    const photoReference = Array.isArray(result.photos)
+      ? result.photos.find((photo: any) => typeof photo?.photo_reference === 'string')?.photo_reference
+      : null;
+    return {
+      ...candidate,
+      formattedAddress:
+        typeof result.vicinity === 'string' && result.vicinity.trim()
+          ? result.vicinity.trim()
+          : candidate.formattedAddress,
+      rating: typeof result.rating === 'number' && Number.isFinite(result.rating)
+        ? result.rating
+        : null,
+      userRatingsTotal:
+        typeof result.user_ratings_total === 'number' && Number.isFinite(result.user_ratings_total)
+          ? result.user_ratings_total
+          : null,
+      photoUrl: photoReference ? buildPlacePhotoUrl(photoReference, key, 500) : null,
+    };
+  });
 }
 
 /** Get full details for one place. Throws PlacesError('NOT_FOUND') if missing. */

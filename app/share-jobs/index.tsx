@@ -76,6 +76,8 @@ import {
   processingJobs,
 } from '@/lib/shareJobsUi';
 import { PHASE_1_COPY, processingMessage, queueIntro, splitPlaceAddress } from '@/lib/sharePhase1Ui';
+import { isVayrinProductUiEnabled } from '@/lib/featureFlags';
+import { normalizeVayrinIdentityLeads } from '@/lib/vayrinPresentation';
 import { hapticSuccess } from '@/lib/haptics';
 import {
   isPersistableShareJobCandidate,
@@ -158,7 +160,9 @@ function jobTitle(job: ShareJob): string {
   const candidates = job.candidate_payload?.candidates;
   const candidateCount = Array.isArray(candidates) ? candidates.length : 0;
   const first = Array.isArray(candidates) ? candidates[0]?.name : undefined;
+  const firstLead = normalizeVayrinIdentityLeads(job.candidate_payload)[0];
   if (job.status === 'needs_help') {
+    if (isVayrinProductUiEnabled() && firstLead && candidateCount === 0) return firstLead.displayName;
     if (candidateCount > 1) return `${candidateCount} possible places`;
     if (first) return first;
     return 'Place from your post';
@@ -167,19 +171,25 @@ function jobTitle(job: ShareJob): string {
 }
 
 function jobSubtitle(job: ShareJob, stalled = false): string {
+  const vayrin = isVayrinProductUiEnabled();
   switch (job.status) {
     case 'queued':
     case 'processing_metadata':
-      return processingMessage(job.status, stalled ? STALE_PROCESSING_MS + 1 : 0);
+      return vayrin
+        ? stalled ? 'Still looking. You can leave while Nearr keeps working.' : 'Vayrin is looking…'
+        : processingMessage(job.status, stalled ? STALE_PROCESSING_MS + 1 : 0);
     case 'needs_help':
+      if (vayrin && normalizeVayrinIdentityLeads(job.candidate_payload).length > 0) {
+        return 'Possible lead — tap to search';
+      }
       if (Array.isArray(job.candidate_payload?.candidates) && job.candidate_payload.candidates.length > 1) {
-        return 'Pick the one you meant';
+        return vayrin ? 'Vayrin has a few leads' : 'Pick the one you meant';
       }
       if (job.needs_help_reason === 'manual_search' || job.needs_help_reason === 'metadata_unavailable')
         return 'Tap to search for it';
-      return 'Does this look right?';
+      return vayrin ? 'Vayrin thinks this may be it' : 'Does this look right?';
     case 'failed':
-      return "Couldn't find it — tap to search";
+      return vayrin ? 'Vayrin hit a problem — tap to retry' : "Couldn't find it — tap to search";
     default:
       return '';
   }
@@ -195,6 +205,7 @@ function shouldShowHost(job: ShareJob): boolean {
 function ShareJobsQueueScreen() {
   const router = useRouter();
   const { colors, typography } = useTheme();
+  const vayrinEnabled = isVayrinProductUiEnabled();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { jobs, recentAutoSaves, loading, refreshing, refresh, enabled, authLoading } = useShareJobs();
   const { session } = useAuth();
@@ -699,9 +710,15 @@ function ShareJobsQueueScreen() {
         ) : (
           <>
             {actionable.length > 0 ? (
-              <Text style={[typography.body, styles.intro]}>{queueIntro(count)}</Text>
+              <Text style={[typography.body, styles.intro]}>
+                {vayrinEnabled
+                  ? count === 1
+                    ? 'Vayrin found a place that needs a quick check.'
+                    : `Vayrin found ${count} places that need a quick check.`
+                  : queueIntro(count)}
+              </Text>
             ) : null}
-            {renderSection('Working', processing)}
+            {renderSection(vayrinEnabled ? 'Vayrin is looking' : 'Working', processing)}
             {renderSection('Needs you', actionable)}
           </>
         )}

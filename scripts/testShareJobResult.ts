@@ -36,6 +36,7 @@ const rawSlots = [
 
 const payload = buildShareJobCandidatePayload(rawSlots.flatMap((slot) => slot.candidates), rawSlots);
 assert.equal(payload.version, 2);
+assert.equal(payload.selectionMode, 'multi_independent');
 assert.equal(mentionCount(payload), 5, 'five logical slots, not candidate rows');
 assert.equal(payload.mentionSlots[1]!.candidates.length, 2, 'ambiguous candidates remain grouped');
 

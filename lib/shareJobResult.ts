@@ -1,5 +1,10 @@
 /** Shared persisted contract for share-job confirmation results. */
 
+import {
+  selectionModeForPlaceResult,
+  type SelectionMode,
+} from './placeSelection.ts';
+
 export type ShareJobResultCandidate = {
   googlePlaceId: string;
   name: string;
@@ -36,6 +41,8 @@ export type ShareJobMentionSlot = {
   aiNote?: string | null;
   saveState?: 'pending' | 'auto_saved' | 'already_saved';
   savedPlaceId?: string | null;
+  /** Source-scene timestamps, seconds from the beginning of the post. */
+  sourceTimestamps?: number[];
   /** Ranked Vayrin identities for this one logical scene. This survives even
    * when Places returns no candidate, enabling a future "few leads" UI without
    * pretending a Google Place was verified. */
@@ -50,10 +57,18 @@ export type ShareJobMentionSlot = {
 
 export type ShareJobCandidatePayload = {
   version: 2;
+  selectionMode?: SelectionMode;
   candidates: ShareJobResultCandidate[];
   mentionSlots: ShareJobMentionSlot[];
   savedPlaceIds?: string[];
 };
+
+function normalizedTimestamps(value: unknown): number[] {
+  if (!Array.isArray(value)) return [];
+  return [...new Set(value.filter(
+    (item): item is number => typeof item === 'number' && Number.isFinite(item) && item >= 0,
+  ))].sort((a, b) => a - b).slice(0, 24);
+}
 
 function text(value: unknown): string | null {
   return typeof value === 'string' && value.trim() ? value.trim() : null;
@@ -154,6 +169,7 @@ export function normalizeMentionSlots(input: unknown): ShareJobMentionSlot[] {
         ? row.saveState
         : 'pending',
       savedPlaceId: text(row.savedPlaceId),
+      sourceTimestamps: normalizedTimestamps(row.sourceTimestamps),
       identityHypotheses,
     });
   }
@@ -161,10 +177,12 @@ export function normalizeMentionSlots(input: unknown): ShareJobMentionSlot[] {
 }
 
 export function buildShareJobCandidatePayload(candidates: unknown, mentionResults: unknown): ShareJobCandidatePayload {
+  const mentionSlots = normalizeMentionSlots(mentionResults);
   return {
     version: 2,
+    selectionMode: selectionModeForPlaceResult({ mentionSlots }),
     candidates: normalizeResultCandidates(candidates).slice(0, 10),
-    mentionSlots: normalizeMentionSlots(mentionResults),
+    mentionSlots,
   };
 }
 
@@ -257,6 +275,20 @@ export function multiPlaceTitle(slotCount: number): string {
 
 export function saveSelectedLabel(count: number): string {
   return `Save selected (${Math.max(0, Math.floor(count))})`;
+}
+
+function clockTime(seconds: number): string {
+  const whole = Math.max(0, Math.floor(seconds));
+  const minutes = Math.floor(whole / 60);
+  return `${minutes}:${String(whole % 60).padStart(2, '0')}`;
+}
+
+export function sourceTimestampLabel(timestamps: readonly number[]): string | null {
+  const normalized = normalizedTimestamps(timestamps);
+  if (normalized.length === 0) return null;
+  const first = normalized[0]!;
+  const last = normalized[normalized.length - 1]!;
+  return first === last ? `At ${clockTime(first)}` : `${clockTime(first)}–${clockTime(last)}`;
 }
 
 export function removeSuccessfulSelections(

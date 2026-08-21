@@ -57,6 +57,14 @@ export function isAsyncShareJobsEnabled(): boolean {
   );
 }
 
+/** True when the validated Place Recommendations V1 surface is enabled. */
+export function isPlaceRecommendationsEnabled(): boolean {
+  return resolveBooleanFlag(
+    process.env.EXPO_PUBLIC_PLACE_RECOMMENDATIONS_ENABLED,
+    readExtra('placeRecommendationsEnabled'),
+  );
+}
+
 /**
  * Saved-place identity markers default on through app config. An explicit
  * false in a newly built/published bundle selects the legacy marker path. No
@@ -66,6 +74,14 @@ export function isMapPinRedesignEnabled(): boolean {
   return resolveBooleanFlag(
     process.env.EXPO_PUBLIC_MAP_PIN_REDESIGN_ENABLED,
     readExtra('mapPinRedesignEnabled'),
+  );
+}
+
+/** Enable the user-facing Vayrin presentation without changing recognition. */
+export function isVayrinProductUiEnabled(): boolean {
+  return resolveBooleanFlag(
+    process.env.EXPO_PUBLIC_VAYRIN_PRODUCT_UI_ENABLED,
+    readExtra('vayrinProductUiEnabled'),
   );
 }
 

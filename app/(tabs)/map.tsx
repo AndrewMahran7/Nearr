@@ -491,7 +491,6 @@ export default function MapScreen() {
   const [markerLatitudeDelta, setMarkerLatitudeDelta] = useState(
     PREVIEW_INITIAL_REGION.latitudeDelta,
   );
-
   // Keep an already-open detail sheet attached to the live cached row. Media
   // enrichment updates ai_note asynchronously after the initial save.
   useEffect(() => {
@@ -499,6 +498,7 @@ export default function MapScreen() {
     const live = validPlaces.find((place) => place.id === selected.id);
     if (live && live !== selected) setSelected(live);
   }, [selected, validPlaces]);
+
   const [mapReady, setMapReady] = useState(false);
   // Which list the bottom sheet shows. The old Nearby/Recent/Saved chips drove
   // this from the map chrome; they never filtered the map and each duplicated
@@ -1615,9 +1615,9 @@ export default function MapScreen() {
   // the user never sees the add-place radius picker. On success we revalidate
   // the cache, focus the new place, and show an Undo snackbar.
   const handleSavePlaceCandidate = useCallback(
-    async (place: PlaceCandidate) => {
-      if (savingPlace) return;
-      setSearchVisible(false);
+    async (place: PlaceCandidate, flow: 'map_search' | 'recommendation' = 'map_search') => {
+      if (savingPlace) return false;
+      if (flow === 'map_search') setSearchVisible(false);
       setSavingPlace(true);
       try {
         const result = await saveSavedPlace({
@@ -1638,20 +1638,28 @@ export default function MapScreen() {
               : undefined;
           if (existing) selectPlace(existing);
           showSnackbar('Already on your map', null);
-          return;
+          return false;
         }
         selectPlace(result.saved);
         showSnackbar('Saved to your map', result.savedPlaceId);
         void trackEvent('save_success', {
           source_type: 'manual',
-          flow: 'map_search',
+          flow,
           google_place_id: place.googlePlaceId ?? null,
           saved_place_id: result.savedPlaceId,
           duplicate: false,
         });
+        if (flow === 'recommendation') {
+          void trackEvent('recommendation_saved', {
+            google_place_id: place.googlePlaceId,
+            saved_place_id: result.savedPlaceId,
+          });
+        }
+        return true;
       } catch (e: any) {
         console.warn('[map] direct save failed', e?.message);
         Alert.alert('Could not save', e?.message ?? 'Please try again.');
+        return false;
       } finally {
         setSavingPlace(false);
       }
@@ -2016,6 +2024,9 @@ export default function MapScreen() {
                 <SelectedPlaceDetails
                   saved={selected}
                   allSavedPlaces={validPlaces}
+                  savedProviderPlaceIds={places
+                    .map((entry) => entry.place.google_place_id?.trim())
+                    .filter((id): id is string => !!id)}
                   // "Also nearby" routes through the SAME selection path a
                   // marker tap uses, by exact saved_places.id — so tapping a
                   // nearby save lands on the identical Place Detail V2.
@@ -2024,6 +2035,9 @@ export default function MapScreen() {
                     selectPlace(next);
                     setPreviewExpanded(true);
                   }}
+                  onSaveRecommendation={(candidate) =>
+                    handleSavePlaceCandidate(candidate, 'recommendation')
+                  }
                   onGetDirections={() => openExternalMaps(selected)}
                   // "See map" collapses back to the preview card so the pins
                   // are visible again. It is deliberately NOT a dismiss: the

@@ -12,6 +12,7 @@ import {
   reconcileMultiPlaceBatch,
   recoverableBatchRowCount,
   rowCandidate,
+  selectAllResolvedBatchRows,
   selectedBatchTargets,
   setBatchSearchQuery,
   setCandidateSelector,
@@ -31,6 +32,19 @@ function candidate(id: string, name = id) {
     primaryType: 'restaurant',
     matchScore: 0.95,
   };
+}
+
+// Save all selects every safely resolved row but never an unresolved scene.
+{
+  const initial = reconcileMultiPlaceBatch({ jobId: 'save-all', slots: slots(4) });
+  const cleared = toggleBatchRow(toggleBatchRow(initial, 'logical-1'), 'logical-3');
+  assert.equal(selectedBatchTargets(cleared).length, 1);
+  const all = selectAllResolvedBatchRows(cleared);
+  assert.deepEqual(
+    selectedBatchTargets(all).map((target) => target.logicalPlaceId),
+    ['logical-1', 'logical-3', 'logical-4'],
+  );
+  assert.equal(all.rows['logical-2']!.selectedForSave, false, 'ambiguous row stays unsaveable');
 }
 
 function slots(count: number): ShareJobMentionSlot[] {
@@ -107,9 +121,8 @@ for (const count of [0, 1, 2, 5, 8, 10]) {
 }
 
 // Rows THIS JOB already saved retain ids, cannot toggle, and are excluded from N.
-// A place the user saved earlier (by any means) is different: it stays a real
-// save target, because running the save is how the shared post's source_url /
-// ai_note reach that existing row.
+// A place the user saved earlier stays explicitly enrichable, but is not
+// preselected or included by Save all.
 {
   const source = slots(3);
   source[2] = { ...source[2]!, saveState: 'auto_saved', savedPlaceId: 'saved-auto' };
@@ -120,18 +133,19 @@ for (const count of [0, 1, 2, 5, 8, 10]) {
   });
   assert.equal(batch.rows['logical-1']!.persistence, 'pending', 'an earlier save is enrichable');
   assert.equal(batch.rows['logical-1']!.savedPlaceId, 'saved-existing');
-  assert.equal(batch.rows['logical-1']!.selectedForSave, true);
+  assert.equal(batch.rows['logical-1']!.selectedForSave, false);
   assert.equal(batch.rows['logical-3']!.persistence, 'saved');
   assert.equal(batch.rows['logical-3']!.savedPlaceId, 'saved-auto');
+  assert.deepEqual(selectedBatchTargets(batch), [], 'Save all skips pre-existing places');
+  const explicitlySelected = toggleBatchRow(batch, 'logical-1');
   assert.deepEqual(
-    selectedBatchTargets(batch).map((target) => target.logicalPlaceId),
+    selectedBatchTargets(explicitlySelected).map((target) => target.logicalPlaceId),
     ['logical-1'],
-    'this job\'s own save is terminal; the pre-existing save is enriched',
+    'an explicit selection still enriches the existing row',
   );
-  assert.notEqual(toggleBatchRow(batch, 'logical-1'), batch, 'the user can still deselect it');
   assert.equal(
-    toggleBatchRow(batch, 'logical-3'),
-    batch,
+    toggleBatchRow(explicitlySelected, 'logical-3'),
+    explicitlySelected,
     'a row this job already saved is not a new-save toggle',
   );
 }

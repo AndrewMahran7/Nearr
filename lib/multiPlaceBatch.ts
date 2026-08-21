@@ -4,6 +4,7 @@ import {
   type ShareJobResultCandidate,
   type SharePlaceSaveOutcome,
 } from './shareJobResult';
+import type { SelectionMode } from './placeSelection';
 
 export type BatchResolution = 'resolved' | 'ambiguous' | 'unmatched' | 'unavailable';
 export type BatchPersistence = 'pending' | 'saved' | 'already_saved';
@@ -11,6 +12,7 @@ export type BatchSearchPhase = 'closed' | 'idle' | 'searching' | 'results' | 'em
 
 export type MultiPlaceBatchRow = {
   logicalPlaceId: string;
+  selectionMode: SelectionMode;
   extractedName: string;
   contextLabel: string | null;
   primaryVenueName: string | null;
@@ -23,6 +25,7 @@ export type MultiPlaceBatchRow = {
   selectedForSave: boolean;
   persistence: BatchPersistence;
   savedPlaceId: string | null;
+  sourceTimestamps: number[];
   candidateSelectorExpanded: boolean;
   search: {
     phase: BatchSearchPhase;
@@ -42,6 +45,7 @@ export type MultiPlaceBatchFeedback = {
 
 export type MultiPlaceBatch = {
   jobId: string;
+  selectionMode: SelectionMode;
   order: string[];
   rows: Record<string, MultiPlaceBatchRow>;
   feedback: MultiPlaceBatchFeedback;
@@ -121,10 +125,14 @@ export function reconcileMultiPlaceBatch(args: {
     const resolution = prior?.resolution === 'resolved' && candidate
       ? 'resolved'
       : initialResolution(slot);
-    const canDefaultSelect = resolution === 'resolved' && validCandidate(candidate) && persistence === 'pending';
+    const canDefaultSelect = resolution === 'resolved' &&
+      validCandidate(candidate) &&
+      persistence === 'pending' &&
+      !savedPlaceId;
 
     rows[logicalPlaceId] = {
       logicalPlaceId,
+      selectionMode: 'single_identity',
       extractedName: slot.displayName,
       contextLabel: slot.contextLabel ?? null,
       primaryVenueName: slot.primaryVenueName,
@@ -139,6 +147,7 @@ export function reconcileMultiPlaceBatch(args: {
         : false,
       persistence,
       savedPlaceId,
+      sourceTimestamps: slot.sourceTimestamps ?? [],
       candidateSelectorExpanded: prior?.candidateSelectorExpanded ?? false,
       search: prior?.search ?? {
         phase: 'closed',
@@ -150,7 +159,13 @@ export function reconcileMultiPlaceBatch(args: {
     };
   }
 
-  return { jobId: args.jobId, order, rows, feedback: previous?.feedback ?? null };
+  return {
+    jobId: args.jobId,
+    selectionMode: 'multi_independent',
+    order,
+    rows,
+    feedback: previous?.feedback ?? null,
+  };
 }
 
 export function rowCandidate(row: MultiPlaceBatchRow): ShareJobResultCandidate | null {
@@ -356,6 +371,59 @@ export function selectedBatchTargets(batch: MultiPlaceBatch): BatchSaveTarget[] 
     targets.push({ logicalPlaceId: id, candidate, aiNote: row.aiNote });
   }
   return targets;
+}
+
+function independentlyEligible(row: MultiPlaceBatchRow): boolean {
+  return row.persistence === 'pending' &&
+    row.resolution === 'resolved' &&
+    validCandidate(rowCandidate(row) ?? undefined);
+}
+
+function eligibleForSaveAll(row: MultiPlaceBatchRow): boolean {
+  // Existing places can still be explicitly selected to attach this source,
+  // but "Save all" never opts the user into that enrichment automatically.
+  return independentlyEligible(row) && !row.savedPlaceId;
+}
+
+/** Select every eligible logical place once, deduped by provider identity. */
+export function selectAllEligibleBatchRows(batch: MultiPlaceBatch): MultiPlaceBatch {
+  const providerIds = new Set<string>();
+  const rows = { ...batch.rows };
+  for (const id of batch.order) {
+    const row = rows[id]!;
+    const candidate = rowCandidate(row);
+    if (!eligibleForSaveAll(row) || !candidate || providerIds.has(candidate.googlePlaceId)) {
+      rows[id] = independentlyEligible(row) ? { ...row, selectedForSave: false } : row;
+      continue;
+    }
+    providerIds.add(candidate.googlePlaceId);
+    rows[id] = { ...row, selectedForSave: true, saveError: null };
+  }
+  return { ...batch, rows, feedback: null };
+}
+
+/** Backward-compatible Vayrin presentation name; Multi-Select owns its semantics. */
+export const selectAllResolvedBatchRows = selectAllEligibleBatchRows;
+
+/** Clear only eligible pending selections; saved and disabled rows are untouched. */
+export function clearAllEligibleBatchRows(batch: MultiPlaceBatch): MultiPlaceBatch {
+  const rows = { ...batch.rows };
+  for (const id of batch.order) {
+    const row = rows[id]!;
+    if (independentlyEligible(row)) rows[id] = { ...row, selectedForSave: false };
+  }
+  return { ...batch, rows, feedback: null };
+}
+
+export function allEligibleBatchTargets(batch: MultiPlaceBatch): BatchSaveTarget[] {
+  return selectedBatchTargets(selectAllEligibleBatchRows(batch));
+}
+
+export function allEligibleBatchRowsSelected(batch: MultiPlaceBatch): boolean {
+  const eligible = allEligibleBatchTargets(batch);
+  if (eligible.length === 0) return false;
+  const selected = new Set(selectedBatchTargets(batch).map((target) => target.logicalPlaceId));
+  return eligible.every((target) => selected.has(target.logicalPlaceId));
 }
 
 export function duplicateSelectionOwner(batch: MultiPlaceBatch, logicalPlaceId: string): string | null {

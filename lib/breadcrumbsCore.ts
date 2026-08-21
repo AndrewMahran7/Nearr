@@ -32,6 +32,7 @@ export type BreadcrumbEvent =
   | 'notification_received'
   | 'notification_tapped'
   | 'notification_dedupe'
+  | 'notification_route_applied'
   | 'intended_route'
   | 'actual_navigation'
   | 'queue_item_opened'

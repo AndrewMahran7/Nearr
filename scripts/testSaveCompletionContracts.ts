@@ -7,7 +7,7 @@ const detail = read('app/share-jobs/[jobId].tsx');
 const queue = read('app/share-jobs/index.tsx');
 const legacyQuickCheck = read('app/share.tsx');
 const map = read('app/(tabs)/map.tsx');
-const layout = read('app/_layout.tsx');
+const notificationRouting = read('lib/notificationTapRouting.ts');
 
 for (const source of [detail, queue, legacyQuickCheck]) {
   assert.match(source, /planSaveCompletionNavigation/, 'manual saves use the shared planner');
@@ -20,6 +20,6 @@ const swipeSave = queue.slice(queue.indexOf('async function saveJob'), queue.ind
 assert.doesNotMatch(swipeSave, /await refresh\(\)/, 'swipe save navigates instead of leaving the queue open');
 assert.match(detail, /completeManualSave/, 'Quick Check uses one completion function');
 assert.match(map, /shouldExpandSavedPlaceDetails\(placeSource\)/, 'post-save route opens details');
-assert.match(layout, /claimSaveCompletionSignal\(\[sjRoute\.savedPlaceId\]\)/, 'notification cannot race a manual completion');
+assert.match(notificationRouting, /NotificationTapQueue/, 'notification responses use their own exactly-once ledger');
 
 console.log('PASS shared single-save completion, queue teardown, detail open, and notification dedupe contracts');

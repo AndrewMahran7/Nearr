@@ -15,8 +15,12 @@ import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { Button, Screen } from '@/components';
+import { VayrinPresentationHeader } from '@/components/VayrinPresentationHeader';
 import { Spacing } from '@/constants';
+import { isVayrinProductUiEnabled } from '@/lib/featureFlags';
 import { useTheme } from '@/lib/theme';
+import { buildVayrinPresentation } from '@/lib/vayrinPresentation';
+import { trackEvent } from '@/lib/analytics';
 import { resolveSubmissionId } from '@/lib/shareSubmission';
 import { hostShareSubmitter } from '@/lib/hostShareSubmit';
 import { logDebug } from '@/lib/logger';
@@ -32,6 +36,7 @@ type UiState =
 export function ShareJobHandoff({ url, submissionId }: { url: string; submissionId?: string }) {
   const router = useRouter();
   const { colors, typography } = useTheme();
+  const vayrinEnabled = isVayrinProductUiEnabled();
   const [ui, setUi] = useState<UiState>({ kind: 'submitting' });
   const handledRef = useRef(false);
   // ONE stable submission id for this share action. Prefer an id propagated from
@@ -54,6 +59,7 @@ export function ShareJobHandoff({ url, submissionId }: { url: string; submission
         submitAttemptRef.current === 1 ? 'initial' : 'retry',
       );
       setUi({ kind: 'submitting' });
+      if (vayrinEnabled) void trackEvent('vayrin_started', { source: 'async_handoff' });
       const result = await hostShareSubmitter.submit({
         url,
         submissionId: submissionIdRef.current,
@@ -112,10 +118,23 @@ export function ShareJobHandoff({ url, submissionId }: { url: string; submission
       <Screen>
         <View style={styles.centered}>
           <Text style={styles.check}>✓</Text>
-          <Text style={[typography.heading, styles.title]}>Added to your queue</Text>
-          <Text style={[typography.body, styles.subtle]}>
-            {"We'll notify you when it's ready. You can keep browsing."}
-          </Text>
+          {vayrinEnabled ? (
+            <VayrinPresentationHeader
+              compact
+              presentation={{
+                ...buildVayrinPresentation({ kind: 'looking', source: 'async' }),
+                headline: 'Sent to Nearr',
+                body: "Vayrin's on it. You can close this.",
+              }}
+            />
+          ) : (
+            <>
+              <Text style={[typography.heading, styles.title]}>Added to your queue</Text>
+              <Text style={[typography.body, styles.subtle]}>
+                {"We'll notify you when it's ready. You can keep browsing."}
+              </Text>
+            </>
+          )}
           <View style={{ height: Spacing.lg }} />
           <Button title="View queue" onPress={() => router.replace('/share-jobs')} />
           <Button
@@ -148,10 +167,19 @@ export function ShareJobHandoff({ url, submissionId }: { url: string; submission
     return (
       <Screen>
         <View style={styles.centered}>
-          <Text style={[typography.heading, styles.title]}>{"Couldn't add to queue"}</Text>
-          <Text style={[typography.body, styles.subtle]}>
-            {'Check your connection and try again.'}
-          </Text>
+          {vayrinEnabled ? (
+            <VayrinPresentationHeader
+              compact
+              presentation={buildVayrinPresentation({ kind: 'technical_failure', source: 'async' })}
+            />
+          ) : (
+            <>
+              <Text style={[typography.heading, styles.title]}>{"Couldn't add to queue"}</Text>
+              <Text style={[typography.body, styles.subtle]}>
+                {'Check your connection and try again.'}
+              </Text>
+            </>
+          )}
           <View style={{ height: Spacing.lg }} />
           <Button title="Retry" onPress={() => void submit()} />
           <Button
@@ -168,13 +196,26 @@ export function ShareJobHandoff({ url, submissionId }: { url: string; submission
   return (
     <Screen>
       <View style={styles.centered}>
-        <ActivityIndicator color={colors.primary} />
-        <Text style={[typography.heading, styles.title, { marginTop: Spacing.md }]}>
-          Saving to Nearr
-        </Text>
-        <Text style={[typography.body, styles.subtle]}>
-          {'Finding the place from this post…'}
-        </Text>
+        {vayrinEnabled ? (
+          <VayrinPresentationHeader
+            compact
+            presentation={{
+              ...buildVayrinPresentation({ kind: 'looking', source: 'async' }),
+              headline: 'Sending to Nearr',
+              body: 'Vayrin will start as soon as it arrives.',
+            }}
+          />
+        ) : (
+          <>
+            <ActivityIndicator color={colors.primary} />
+            <Text style={[typography.heading, styles.title, { marginTop: Spacing.md }]}>
+              Saving to Nearr
+            </Text>
+            <Text style={[typography.body, styles.subtle]}>
+              {'Finding the place from this post…'}
+            </Text>
+          </>
+        )}
       </View>
     </Screen>
   );

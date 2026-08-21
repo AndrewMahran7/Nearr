@@ -31,6 +31,10 @@ export type PlaceCardEntry = {
   key: string;
   name: string;
   googlePlaceId?: string | null;
+  /** Photo already returned by a bounded discovery query (avoids details N+1). */
+  photoUrl?: string | null;
+  /** Saved rows default true; discovery cards explicitly pass false. */
+  saved?: boolean;
   /** Secondary line, e.g. "0.4 mi". */
   meta?: string | null;
   a11yLabel: string;
@@ -108,18 +112,19 @@ function PlaceCardRowImpl({
                   make VoiceOver announce the card twice. */}
               <PlaceImage
                 googlePlaceId={entry.googlePlaceId}
+                sourceUri={entry.photoUrl}
                 size={CARD_WIDTH}
                 borderRadius={0}
                 style={styles.mediaImage}
               />
-              {/* Everything in this row is already one of the user's saves, so
-                  the bookmark is a filled state, not an unfulfilled action. */}
-              <View
-                style={[styles.savedBadge, { backgroundColor: colors.surface }]}
-                pointerEvents="none"
-              >
-                <Feather name="bookmark" size={11} color={colors.accent} />
-              </View>
+              {entry.saved !== false ? (
+                <View
+                  style={[styles.savedBadge, { backgroundColor: colors.surface }]}
+                  pointerEvents="none"
+                >
+                  <Feather name="bookmark" size={11} color={colors.accent} />
+                </View>
+              ) : null}
             </View>
             <View style={styles.body}>
               <Text

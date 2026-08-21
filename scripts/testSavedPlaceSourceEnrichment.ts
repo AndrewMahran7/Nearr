@@ -667,9 +667,10 @@ const slot = (patch: Partial<ShareJobMentionSlot> = {}): ShareJobMentionSlot => 
   const row = batch.rows.m1!;
   assert.equal(row.persistence, 'pending', 'an existing save is not a terminal state');
   assert.equal(row.savedPlaceId, 'saved-existing', 'the existing row is still identified');
-  assert.equal(row.selectedForSave, true);
-  assert.equal(selectedBatchTargets(batch).length, 1, 'the post reaches the existing place');
-  assert.notEqual(toggleBatchRow(batch, 'm1'), batch, 'the user can still deselect it');
+  assert.equal(row.selectedForSave, false, 'Save all never opts into enriching an existing row');
+  assert.equal(selectedBatchTargets(batch).length, 0);
+  const explicitlySelected = toggleBatchRow(batch, 'm1');
+  assert.equal(selectedBatchTargets(explicitlySelected).length, 1, 'explicit selection reaches the existing place');
 
   // A save THIS job already performed stays terminal — no double work.
   const serverSaved = reconcileMultiPlaceBatch({

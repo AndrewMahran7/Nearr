@@ -95,12 +95,14 @@ assert.match(
 assert.match(notifications, /notification_count: \(grouped\.notification_count \?\? 0\) \+ 1/);
 
 // --- 5/6. Cold + warm taps go through one routing decision ------------------
-const layout = readFileSync(join(process.cwd(), 'app/_layout.tsx'), 'utf8');
-assert.match(layout, /const nearbyRoute = routeNearbyReminder\(data\)/);
-assert.match(layout, /pathname: '\/opportunity\/group'/);
-assert.match(layout, /params: \{ ids: encodeGroupedSavedPlaceIds\(nearbyRoute\.savedPlaceIds\) \}/);
+const resolver = readFileSync(join(process.cwd(), 'lib/notificationTapRouting.ts'), 'utf8');
+const controller = readFileSync(join(process.cwd(), 'components/NotificationTapController.tsx'), 'utf8');
+assert.match(resolver, /const route = routeNearbyReminder\(data\)/);
+assert.match(controller, /pathname: '\/opportunity\/group'/);
+assert.match(controller, /params: \{ ids: encodeGroupedSavedPlaceIds\(destination\.savedPlaceIds\) \}/);
 // The single-place path is unchanged for 1-place and legacy payloads.
-assert.match(layout, /nearbyRoute\.kind === 'single'[\s\S]{0,320}reminderSource: 'nearby'/);
+assert.match(resolver, /route\.kind === 'single'/);
+assert.match(controller, /destination\.reminder[\s\S]{0,500}reminderSource: 'nearby'/);
 
 // --- 11/12/18. The screen views the group; it never mutates or re-derives ---
 const screen = readFileSync(join(process.cwd(), 'app/opportunity/group.tsx'), 'utf8');

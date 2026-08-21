@@ -11,7 +11,7 @@ assert.match(detail, /const mentionSlots = detail\.mentionSlots/);
 assert.match(detail, /const reviewSlots = useMemo/);
 assert.match(detail, /reconcileMultiPlaceBatch/);
 assert.match(detail, /batch\.order\.map/);
-assert.match(detail, /Resolve any uncertain matches, then save everything together\./);
+assert.match(detail, /Choose the places you want to save\. Uncertain matches stay separate until you choose one\./);
 assert.match(detail, /Already on your map · this post will be attached/);
 assert.match(detail, /Search for this place/);
 assert.match(detail, /setCandidateSelector/);

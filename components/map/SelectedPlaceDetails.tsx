@@ -70,6 +70,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, Input } from '@/components';
 import { WrongPlaceSheet } from '@/components/map/WrongPlaceSheet';
 import { NoteEditorModal } from '@/components/map/NoteEditorModal';
+import { RecommendedPlaceDetails } from '@/components/map/RecommendedPlaceDetails';
 import { PlaceCardRow } from '@/components/map/place/PlaceCardRow';
 import { ReminderToggle } from '@/components/map/place/ReminderToggle';
 import { Radius, Spacing } from '@/constants';
@@ -77,6 +78,7 @@ import { useTheme } from '@/lib/theme';
 import { useAuth } from '@/hooks/useAuth';
 import { trackEvent } from '@/lib/analytics';
 import { createOnceLatch, type OnceLatch } from '@/lib/onceLatch';
+import { isPlaceRecommendationsEnabled } from '@/lib/featureFlags';
 import { applySavedPlaceEdit } from '@/lib/savedPlaceEdits';
 import {
   cancelNoteEditor,
@@ -120,7 +122,9 @@ import {
   updateSavedPlacesCache,
 } from '@/hooks/useSavedPlaces';
 import { getCachedPlaceRichDetails } from '@/lib/placeRichDetailsCache';
-import type { PlaceRichDetails } from '@/services/placesService';
+import { loadPlaceRecommendations } from '@/services/placeRecommendationsService';
+import type { PlaceRecommendation } from '@/lib/placeRecommendations';
+import type { PlaceCandidate, PlaceRichDetails } from '@/services/placesService';
 import type { RadiusUnit, SavedPlaceWithPlace } from '@/types';
 
 const GALLERY_CARD_GAP = 18;
@@ -206,8 +210,12 @@ type Props = {
   saved: SavedPlaceWithPlace;
   /** The user's whole saved collection, for the "Also nearby" row. */
   allSavedPlaces?: SavedPlaceWithPlace[];
+  /** Provider identities from every save, including rows without map-safe coordinates. */
+  savedProviderPlaceIds?: string[];
   /** Select another saved place by its exact row (map owns the selection). */
   onSelectNearby?: (next: SavedPlaceWithPlace) => void;
+  /** Explicit save from an opened (still-unsaved) recommendation detail. */
+  onSaveRecommendation?: (candidate: PlaceCandidate) => Promise<boolean>;
   /** Open the platform maps app for this place (map screen owns this). */
   onGetDirections: () => void;
   /**
@@ -226,7 +234,9 @@ type Props = {
 export function SelectedPlaceDetails({
   saved,
   allSavedPlaces,
+  savedProviderPlaceIds,
   onSelectNearby,
+  onSaveRecommendation,
   onGetDirections,
   onSeeMap,
   onRequestDismiss,
@@ -266,6 +276,9 @@ export function SelectedPlaceDetails({
   const [galleryIndex, setGalleryIndex] = useState(0);
   const [galleryOpenSeed, setGalleryOpenSeed] = useState(0);
   const [wrongPlaceOpen, setWrongPlaceOpen] = useState(false);
+  const [recommendations, setRecommendations] = useState<PlaceRecommendation[]>([]);
+  const [recommendationsLoading, setRecommendationsLoading] = useState(false);
+  const [selectedRecommendation, setSelectedRecommendation] = useState<PlaceRecommendation | null>(null);
   // Local mirror so "I went" flips the UI immediately; the row itself is
   // updated in the shared cache (never removed) so the map keeps the marker.
   const [visitedAt, setVisitedAt] = useState<string | null>(saved.visited_at ?? null);
@@ -319,8 +332,75 @@ export function SelectedPlaceDetails({
     setNoteEditor({ ...openNoteEditor(saved.notes), open: false });
     setReminderSettingsExpanded(false);
     setWrongPlaceOpen(false);
+    setSelectedRecommendation(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [saved.id]);
+
+  const recommendationsEnabled = isPlaceRecommendationsEnabled();
+  const recommendationSourceCategory = savedPlaceCategory(saved);
+  const savedGooglePlaceIds = useMemo(
+    () =>
+      savedProviderPlaceIds ??
+      (allSavedPlaces ?? [])
+        .map((entry) => entry.place.google_place_id?.trim())
+        .filter((id): id is string => !!id),
+    [allSavedPlaces, savedProviderPlaceIds],
+  );
+  const savedGooglePlaceIdsKey = savedGooglePlaceIds.slice().sort().join('|');
+
+  // Secondary and non-blocking: the saved detail paints independently, then
+  // this one cached provider request fills (or quietly omits) the row.
+  useEffect(() => {
+    let canceled = false;
+    if (!recommendationsEnabled) {
+      setRecommendations([]);
+      setRecommendationsLoading(false);
+      return () => {
+        canceled = true;
+      };
+    }
+
+    setRecommendations([]);
+    setRecommendationsLoading(true);
+    void loadPlaceRecommendations({
+      source: {
+        googlePlaceId: saved.place.google_place_id,
+        name: saved.place.name,
+        latitude: saved.place.latitude,
+        longitude: saved.place.longitude,
+        category: recommendationSourceCategory,
+      },
+      savedGooglePlaceIds,
+    }).then((next) => {
+      if (canceled) return;
+      setRecommendations(next);
+      if (next.length > 0) {
+        void trackEvent('recommendations_shown', {
+          saved_place_id: saved.id,
+          count: next.length,
+          category: recommendationSourceCategory,
+        });
+      }
+    }).finally(() => {
+      if (!canceled) setRecommendationsLoading(false);
+    });
+
+    return () => {
+      canceled = true;
+    };
+    // The sorted key makes saved-state changes invalidate filtering without
+    // tying the request effect to array identity.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    recommendationSourceCategory,
+    recommendationsEnabled,
+    saved.id,
+    saved.place.google_place_id,
+    saved.place.latitude,
+    saved.place.longitude,
+    saved.place.name,
+    savedGooglePlaceIdsKey,
+  ]);
 
   // Provider correction intentionally keeps saved.id stable. Re-seed the
   // provider-derived presentation when that association changes in place.
@@ -532,6 +612,31 @@ export function SelectedPlaceDetails({
         onPress: () => onSelectNearby?.(entry.saved),
       })),
     [alsoNearby, onSelectNearby],
+  );
+  const recommendationEntries = useMemo(
+    () =>
+      recommendations.map((entry, index) => {
+        const distance = formatNearbyDistance(entry.distanceMeters);
+        const category = CATEGORY_LABELS[entry.nearrCategory];
+        return {
+          key: entry.googlePlaceId,
+          name: entry.name,
+          googlePlaceId: null,
+          photoUrl: entry.photoUrl,
+          saved: false,
+          meta: `${category} · ${distance}`,
+          a11yLabel: `Open ${entry.name}, ${category}, ${distance} away`,
+          onPress: () => {
+            setSelectedRecommendation(entry);
+            void trackEvent('recommendation_opened', {
+              source_saved_place_id: saved.id,
+              google_place_id: entry.googlePlaceId,
+              rank: index + 1,
+            });
+          },
+        };
+      }),
+    [recommendations, saved.id],
   );
   const reminderStatus = useMemo(
     () => reminderStatusLabel({
@@ -1491,11 +1596,20 @@ export function SelectedPlaceDetails({
 
       {alsoNearbyEntries.length > 0 ? (
         <PlaceCardRow
-          title="Also nearby"
+          title="Saved nearby"
           entries={alsoNearbyEntries}
           actionLabel={onSeeMap ? 'See map' : undefined}
           onAction={onSeeMap}
         />
+      ) : null}
+
+      {recommendationsEnabled && recommendationEntries.length > 0 ? (
+        <PlaceCardRow title="Also nearby" entries={recommendationEntries} />
+      ) : recommendationsEnabled && recommendationsLoading ? (
+        <View style={styles.recommendationsLoading} accessibilityLabel="Loading nearby places">
+          <ActivityIndicator size="small" color={colors.accent} />
+          <Text style={styles.recommendationsLoadingText}>Finding places nearby…</Text>
+        </View>
       ) : null}
 
       {/* Management actions stay reachable but never compete with the place
@@ -1543,6 +1657,13 @@ export function SelectedPlaceDetails({
         aiNote={saved.ai_note}
         onClose={() => setNoteEditor((current) => cancelNoteEditor(current))}
         onSave={saveNote}
+      />
+      <RecommendedPlaceDetails
+        recommendation={selectedRecommendation}
+        onClose={() => setSelectedRecommendation(null)}
+        onSave={onSaveRecommendation
+          ? async (candidate) => onSaveRecommendation(candidate)
+          : undefined}
       />
     </View>
   );
@@ -1613,6 +1734,16 @@ function createStyles(
     // type. One gap value for the whole page.
     wrap: { gap: Spacing.md },
     pressed: { opacity: 0.6 },
+    recommendationsLoading: {
+      minHeight: 36,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.sm,
+    },
+    recommendationsLoadingText: {
+      ...typography.caption,
+      color: colors.textMuted,
+    },
 
     // ----- action row ------------------------------------------------------
     // Zero row gap on purpose: each action carries its own padding, and those

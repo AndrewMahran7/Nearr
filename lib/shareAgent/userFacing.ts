@@ -25,6 +25,7 @@ import type {
   GeminiDiagnostics,
   ResolvedPlace,
 } from './types.ts';
+import type { SelectionMode } from '../placeSelection.ts';
 
 export type UserFacingDecision =
   | 'auto_save' // safety gate passed; caller MAY silent-save resolvedPlace
@@ -65,6 +66,10 @@ export type ClientAgentBlock = {
   safetyDecision: 'auto_save' | 'candidate_confirmation' | 'manual_fallback' | 'failed';
   /** What the host app should render / do. Always equals safetyDecision. */
   userFacingDecision: UserFacingDecision;
+  /** Explicit option semantics; older responses are classified from resolver diagnostics. */
+  selectionMode?: SelectionMode;
+  /** Resolver-owned structured diagnostics used only for safe compatibility mapping. */
+  diagnostics?: unknown;
   /**
    * STAGE 3 — true iff the safety gate cleared every rule for auto-save.
    * Callers MUST re-check this flag (defense-in-depth) before invoking

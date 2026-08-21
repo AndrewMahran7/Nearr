@@ -18,9 +18,9 @@
  * production-safe architecture is the one asserted here:
  *
  *   ONE navigation authority (AuthGate) decides where startup lands.
- *   A tapped notification simply routes with `router.push` from the response
- *   handler. It never parks intent, never gates on navigator readiness, and
- *   never dismisses the stack out from under the navigator.
+ *   Notification response capture lives in a renderless child controller.
+ *   Its bounded intent queue never owns root state, never gates rendering,
+ *   and never dismisses the stack out from under the navigator.
  *
  * ---------------------------------------------------------------------------
  * 2. The development render loop (Maximum update depth exceeded)
@@ -59,6 +59,7 @@ import path from 'node:path';
 
 const REPO_ROOT = path.resolve(__dirname, '..');
 const LAYOUT_PATH = path.join(REPO_ROOT, 'app', '_layout.tsx');
+const CONTROLLER_PATH = path.join(REPO_ROOT, 'components', 'NotificationTapController.tsx');
 
 let failures = 0;
 function check(name: string, condition: boolean, detail?: string): void {
@@ -86,6 +87,7 @@ function code(source: string): string {
 }
 
 const layoutCode = code(readFileSync(LAYOUT_PATH, 'utf8'));
+const controllerCode = code(readFileSync(CONTROLLER_PATH, 'utf8'));
 
 // ---------------------------------------------------------------------------
 // 1. The reverted notification-ownership architecture must stay reverted.
@@ -132,6 +134,10 @@ check(
   'the root layout does not dismiss the stack on a notification tap',
   !/dismissAll\s*\(/.test(layoutCode),
 );
+check(
+  'the notification controller does not dismiss or reset the root stack',
+  !/dismissAll\s*\(|resetRoot|navigation\.reset/.test(controllerCode),
+);
 
 // ---------------------------------------------------------------------------
 // 2. The render loop must stay fixed.
@@ -148,10 +154,10 @@ check(
   !/\buseRootNavigationState\b/.test(layoutCode),
 );
 
-// The guarded snapshot is fine and is what AuthGate relies on.
+// The guarded route-info snapshot is fine and is what AuthGate relies on.
 check(
   'route reads still go through the deepEqual-guarded snapshot',
-  /useSegments\s*\(/.test(layoutCode) && /usePathname\s*\(/.test(layoutCode),
+  /useSegments\s*\(/.test(layoutCode),
 );
 
 // ---------------------------------------------------------------------------
@@ -167,19 +173,36 @@ check(
   /router\.replace\('\/\(tabs\)\/map'\)/.test(layoutCode),
 );
 
-// Notification taps still route -- they just do it plainly, from the response
-// handler, without owning startup.
+check(
+  'RootLayout owns no notification response listener or cold-start retrieval',
+  !/addNotificationResponseReceivedListener|getLastNotificationResponseAsync/.test(layoutCode),
+);
+check(
+  'RootLayout owns no notification response or pending-intent state',
+  !/lastNotificationResponse|pendingNotification|useRootNavigationState/.test(layoutCode),
+);
+check(
+  'the renderless controller is mounted inside the existing auth shell',
+  /<NotificationTapController\s+authReady=/.test(layoutCode),
+);
+
+// Notification taps still route from one isolated response controller. Its
+// pending queue is non-rendering and AuthGate remains startup authority.
 check(
   'notification responses are still handled',
-  /addNotificationResponseReceivedListener/.test(layoutCode),
+  /addNotificationResponseReceivedListener/.test(controllerCode),
 );
 check(
   'cold-start notification responses are still read',
-  /getLastNotificationResponseAsync/.test(layoutCode),
+  /getLastNotificationResponseAsync/.test(controllerCode),
 );
 check(
   'notification action buttons still reach their handler',
-  /handleNotificationAction/.test(layoutCode),
+  /handleNotificationAction/.test(controllerCode),
+);
+check(
+  'notification routing cannot block root rendering',
+  /return null;/.test(controllerCode) && !/return\s+<.*(?:Loading|ActivityIndicator)/s.test(controllerCode),
 );
 
 if (failures > 0) {

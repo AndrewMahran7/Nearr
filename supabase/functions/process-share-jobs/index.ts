@@ -38,6 +38,7 @@ import {
   planFacebookDiscoveredCanonicalUrl,
 } from '../../../lib/shareAgent/facebookUrl.ts';
 import { buildShareJobCandidatePayload } from '../../../lib/shareJobResult.ts';
+import { selectionModeForPlaceResult } from '../../../lib/placeSelection.ts';
 import { isNearrCategory, resolvePlaceCategory } from '../../../lib/placeCategory.ts';
 import {
   evaluateAiPlaceNote,
@@ -100,7 +101,7 @@ import {
 import { planMediaCanonicalUrl } from './sourceCanonicalization.ts';
 import {
   buildCandidateReviewSnapshot,
-  decisionForPlausibleCandidates,
+  decisionForSelectionSemantics,
   mediaFailureReview,
   persistedCandidateCount,
 } from './ambiguityReview.ts';
@@ -1265,6 +1266,7 @@ async function finalizeMediaTask(
         aiNote: aiNoteByMentionId.get(mention.mentionId) ?? null,
         saveState: savedResultByMentionId.get(mention.mentionId)?.saveState ?? 'pending',
         savedPlaceId: savedResultByMentionId.get(mention.mentionId)?.savedPlaceId ?? null,
+        sourceTimestamps: mentionById.get(mention.mentionId)?.timestamps ?? [],
         candidates: Array.isArray(mention.candidates)
           ? mention.candidates.map((candidate: any) =>
               safeCandidate(candidate, aiNoteByMentionId.get(mention.mentionId) ?? null))
@@ -1429,6 +1431,7 @@ async function finalizeMediaTask(
       hostVenueName: mention.hostVenueName ?? null,
       relationshipType: mention.relationshipType ?? null,
       outcome: mention.outcome,
+      sourceTimestamps: mediaMentions.mentions.find((item: any) => item.id === mention.mentionId)?.timestamps ?? [],
       identityHypotheses: mention.identityHypotheses ?? [],
       aiNote: aiNoteByMentionId.get(mention.mentionId) ?? null,
       candidates: Array.isArray(mention.candidates)
@@ -1596,7 +1599,15 @@ async function processOne(admin: any, env: any, job: any): Promise<void> {
     plausibleProviderIds.has(candidate.googlePlaceId)
   );
   const hasConcreteBlocker = metadataAutoSave.explicitConflictFlags.length > 0;
-  const countDecision = decisionForPlausibleCandidates(plausibleCandidates.length, hasConcreteBlocker);
+  const metadataSelectionMode = selectionModeForPlaceResult({
+    decision: result.decision,
+    diagnostics: result.diagnostics,
+  });
+  const countDecision = decisionForSelectionSemantics(
+    plausibleCandidates.length,
+    metadataSelectionMode,
+    hasConcreteBlocker,
+  );
   const effectiveDecision = countDecision.decision;
   const metadataResult = {
     ...result,
@@ -1696,6 +1707,8 @@ async function processOne(admin: any, env: any, job: any): Promise<void> {
           ? {
               candidate_payload: buildCandidateReviewSnapshot(
                 metadataResult.candidates.map(safeCandidate),
+                10,
+                metadataSelectionMode,
               ),
             }
           : {}),
@@ -1823,6 +1836,8 @@ async function processOne(admin: any, env: any, job: any): Promise<void> {
     if (trigger.run) {
       const parkedCandidatePayload = buildCandidateReviewSnapshot(
         metadataResult.candidates.map(safeCandidate),
+        10,
+        metadataSelectionMode,
       );
       await enqueueMediaTask(admin, job, platform, canonicalUrl, requestUrl, {
         parkPatch: {
@@ -1842,7 +1857,11 @@ async function processOne(admin: any, env: any, job: any): Promise<void> {
   }
 
   // needs_help (single / multi / manual)
-  const candidatePayload = buildCandidateReviewSnapshot(metadataResult.candidates.map(safeCandidate));
+  const candidatePayload = buildCandidateReviewSnapshot(
+    metadataResult.candidates.map(safeCandidate),
+    10,
+    metadataSelectionMode,
+  );
   const metadataReviewReason =
     metadataAutoSave.plausibleCandidateCount === 1 && metadataAutoSave.explicitConflictFlags.length > 0
       ? `metadata_${metadataAutoSave.explicitConflictFlags[0]}`

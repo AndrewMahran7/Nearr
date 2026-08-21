@@ -32,6 +32,7 @@ import {
   json,
 } from './response.ts';
 import { logShareDebug } from './diagnostics/logger.ts';
+import { selectionModeForPlaceResult } from '../../../lib/placeSelection.ts';
 
 import { detectPlatform, legacySourceFor } from './platform/detectPlatform.ts';
 import { fetchPostMetadata } from './metadata/fetchMetadata.ts';
@@ -540,6 +541,10 @@ function buildExtractionPayload(args: {
     //      script and the host app's diagnostics UI both work.
     agent: {
       userFacingDecision: result.decision,
+      selectionMode: selectionModeForPlaceResult({
+        decision: result.decision,
+        diagnostics: result.diagnostics,
+      }),
       safeToAutoSave: result.safeToAutoSave,
       confidence: result.confidence,
       candidates: agentCandidates,

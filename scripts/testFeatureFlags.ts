@@ -14,6 +14,8 @@
  */
 
 import { isTruthyFlag, resolveBooleanFlag } from '../lib/featureFlagsCore';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 let failures = 0;
 function check(name: string, condition: boolean, detail?: string): void {
@@ -59,6 +61,15 @@ check('env "false" short-circuits extra "true" => OFF', resolveBooleanFlag('fals
 check('isTruthyFlag("true")', isTruthyFlag('true') === true);
 check('isTruthyFlag(undefined)', isTruthyFlag(undefined) === false);
 check('isTruthyFlag(1 number)', isTruthyFlag(1 as unknown) === false);
+
+// Vayrin Product UI uses the same default-OFF resolver and is surfaced through
+// both runtime env and app.config extra. Static checks avoid importing Expo in
+// this pure Node contract test.
+const featureFlagsSource = readFileSync(join(process.cwd(), 'lib/featureFlags.ts'), 'utf8');
+const appConfigSource = readFileSync(join(process.cwd(), 'app.config.js'), 'utf8');
+check('Vayrin Product UI flag reads build env', /EXPO_PUBLIC_VAYRIN_PRODUCT_UI_ENABLED/.test(featureFlagsSource));
+check('Vayrin Product UI flag has app config fallback', /readExtra\('vayrinProductUiEnabled'\)/.test(featureFlagsSource));
+check('app config exposes Vayrin Product UI flag', /vayrinProductUiEnabled/.test(appConfigSource));
 
 if (failures > 0) {
   console.error(`\n${failures} feature-flag test(s) FAILED`);

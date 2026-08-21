@@ -212,14 +212,14 @@ const NO_COORDS: SP = { id: 'sp-nocoords', place: { name: 'Somewhere Unmapped', 
 // The single case lands on the canonical map detail, EXPANDED — not on a
 // separate single-place opportunity screen.
 {
-  const layout = read('app/_layout.tsx');
+  const controller = read('components/NotificationTapController.tsx');
   assert.match(
-    layout,
-    /nearbyRoute\.kind === 'single'[\s\S]{0,400}pathname: '\/\(tabs\)\/map'/,
+    controller,
+    /case 'saved_place'[\s\S]{0,500}resolveOpenSavedPlaceRoute/,
     'a single nearby notification goes to the canonical map detail',
   );
   assert.ok(
-    !/nearbyRoute\.kind === 'single'[\s\S]{0,400}opportunity\/\[id\]/.test(layout),
+    !/case 'saved_place'[\s\S]{0,500}opportunity\/\[id\]/.test(controller),
     'never to a dedicated single-place opportunity screen',
   );
 
@@ -256,8 +256,10 @@ const NO_COORDS: SP = { id: 'sp-nocoords', place: { name: 'Somewhere Unmapped', 
 // A grouped notification still opens the group, and picking a member lands on
 // the canonical detail by exact saved_places.id.
 {
-  const layout = read('app/_layout.tsx');
-  assert.match(layout, /nearbyRoute\.kind === 'group'[\s\S]{0,300}opportunity\/group/, 'group UX preserved');
+  const resolver = read('lib/notificationTapRouting.ts');
+  const controller = read('components/NotificationTapController.tsx');
+  assert.match(resolver, /route\.kind === 'group'[\s\S]{0,300}nearby_group/, 'group UX preserved');
+  assert.match(controller, /case 'nearby_group'[\s\S]{0,300}opportunity\/group/, 'group destination is applied');
 
   const group = read('app/opportunity/group.tsx');
   assert.ok(group.includes('resolveOpenSavedPlaceRoute'), 'members use the canonical contract');

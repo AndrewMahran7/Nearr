@@ -265,14 +265,19 @@ Persistence side effects:
 
 ## Nearby-opportunity flow
 
-When the user taps the body of a nearby reminder (default tap, not an action button), `app/_layout.tsx` routes to `/opportunity/[id]` with the `savedPlaceId` from the notification payload. Cold-start handling uses `Notifications.getLastNotificationResponseAsync()`; warm-start handling uses `Notifications.addNotificationResponseReceivedListener()`.
+Notification response capture lives in the renderless
+`components/NotificationTapController.tsx`, mounted inside the existing auth
+shell. Cold responses use `Notifications.getLastNotificationResponseAsync()`;
+warm/background/foreground responses use one response listener. Both feed the
+same bounded exactly-once queue and pure `lib/notificationTapRouting.ts`
+resolver. `RootLayoutContent` does not own notification response state or wait
+for notification navigation.
 
-The opportunity screen (`app/opportunity/[id].tsx`) reads `reminder_opportunity_count` and shows `Opportunity N of 3` with copy that varies by N. Four actions:
-
-1. Get directions — opens external maps via `openExternalMaps`. Tracks `opportunity_get_directions_tapped`.
-2. I went here — calls `markVisited`, plays a lightweight checkmark animation built on the existing `Animated` API (no new dependency), then closes. Tracks `opportunity_visited_tapped` and `place_marked_visited`.
-3. Adjust reminder radius — routes to `/place/[id]`. Tracks `opportunity_adjust_radius_tapped`.
-4. Maybe next time — closes. If `reminder_opportunity_count >= 3` it also calls `markArchived(id, { exhausted: true })`, stamping `reminders_exhausted_at`. Tracks `opportunity_maybe_next_time_tapped` and (when applicable) `opportunity_archived_after_3`.
+A single nearby reminder opens the named `saved_places.id` through the
+canonical map-owned Place Detail. A grouped reminder opens
+`/opportunity/group` with the exact delivered `groupedSavedPlaceIds`; deleted
+members are dropped safely. The legacy `/opportunity/[id]` route remains only
+as a compatibility redirect into the same map-owned detail.
 
 `markVisited` and `markArchived` both set `notifications_enabled = false` so the next geofence resync drops the region. `unarchive` clears `archived_at` and `reminders_exhausted_at` but does NOT re-enable notifications — the user opts back in from the place detail screen.
 
@@ -283,12 +288,11 @@ Current grouping behavior:
 - When one saved place triggers, the app uses that place's effective radius as the trigger circle.
 - Other eligible saved places are grouped into the same notification when their own effective-radius circles intersect that trigger circle.
 - Group cooldown is keyed in app memory from the sorted included `saved_place` ids.
-- Grouping changes notification copy and persistence updates, but it does not create a separate opportunity route or archive state yet.
+- Grouping opens the existing grouped browse route and does not create separate archive state.
 - Adaptive ellipse/blob zones are intentionally deferred as future work.
 
 Not yet built:
 
-- notification tap -> dedicated opportunity screen
 - visited completion state
 - archived reminder exhaustion state
 - archive / visited list filters

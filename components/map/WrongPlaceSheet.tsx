@@ -24,6 +24,7 @@ import { trackEvent } from '@/lib/analytics';
 import { usePlacesSearch } from '@/hooks/usePlacesSearch';
 import { planOpenOriginal } from '@/lib/openOriginalPost';
 import { splitPlaceAddress } from '@/lib/sharePhase1Ui';
+import { buildVayrinPresentation } from '@/lib/vayrinPresentation';
 import {
   CORRECTION_COPY,
   correctionInitialQuery,
@@ -43,6 +44,9 @@ type Props = {
   saved: SavedPlaceWithPlace;
   actingUserId: string | null;
   extractedName?: string | null;
+  /** Keeps the finder present only when correction was opened directly from a
+   * Vayrin result. Ordinary saved-place correction remains Nearr-only. */
+  finderMode?: boolean;
   onClose: () => void;
   onCorrected: (updated: SavedPlaceWithPlace) => void;
 };
@@ -52,6 +56,7 @@ export function WrongPlaceSheet({
   saved,
   actingUserId,
   extractedName,
+  finderMode = false,
   onClose,
   onCorrected,
 }: Props) {
@@ -166,7 +171,12 @@ export function WrongPlaceSheet({
     }
   }
 
-  const title = mode === 'strong_single' ? 'Is this the right place?' : 'Which place is it?';
+  const finderPresentation = finderMode
+    ? buildVayrinPresentation({ kind: 'correcting', source: 'async' })
+    : null;
+  const title = finderPresentation
+    ? finderPresentation.headline
+    : mode === 'strong_single' ? 'Is this the right place?' : 'Which place is it?';
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
@@ -182,6 +192,12 @@ export function WrongPlaceSheet({
         />
         <SafeAreaView edges={['bottom']} style={styles.sheet}>
           <View style={styles.handle} />
+          {finderMode ? (
+            <View style={styles.finderLabel} accessible accessibilityLabel="Vayrin correction">
+              <View style={styles.finderRule} />
+              <Text style={styles.finderLabelText}>VAYRIN</Text>
+            </View>
+          ) : null}
           <View style={styles.header}>
             <Text style={[typography.heading, styles.title]}>{title}</Text>
             <Pressable
@@ -193,7 +209,9 @@ export function WrongPlaceSheet({
               <Feather name="x" size={22} color={colors.textSecondary} />
             </Pressable>
           </View>
-          <Text style={[typography.caption, styles.body]}>{CORRECTION_COPY.body}</Text>
+          <Text style={[typography.caption, styles.body]}>
+            {finderPresentation?.body ?? CORRECTION_COPY.body}
+          </Text>
 
           <Input
             value={query}
@@ -231,10 +249,13 @@ export function WrongPlaceSheet({
                       isSelected ? styles.rowSelected : null,
                       pressed && !current ? styles.rowPressed : null,
                     ]}
-                    accessibilityRole="button"
-                    accessibilityState={{ disabled: current || saving, selected: isSelected }}
-                    accessibilityLabel={`${candidate.name}${locality ? `, ${locality}` : ''}`}
-                    accessibilityHint={current ? 'This is the current place' : 'Select this provider result'}
+                    accessibilityRole="radio"
+                    accessibilityState={{
+                      disabled: current || saving || mode === 'strong_single',
+                      checked: isSelected,
+                    }}
+                    accessibilityLabel={`Choose ${candidate.name} as the correct place${locality ? `, ${locality}` : ''}`}
+                    accessibilityHint={current ? 'This is the current place' : 'Choose this provider result'}
                   >
                     <PlaceImage googlePlaceId={candidate.googlePlaceId} size={56} borderRadius={10} />
                     <View style={styles.rowMain}>
@@ -316,6 +337,9 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       alignSelf: 'center', width: 38, height: 4, borderRadius: 2,
       marginTop: Spacing.sm, backgroundColor: colors.textMuted, opacity: 0.7,
     },
+    finderLabel: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginTop: Spacing.md },
+    finderRule: { width: 18, height: 3, borderRadius: 2, backgroundColor: '#FF6A1A' },
+    finderLabelText: { color: colors.primary, fontSize: 12, fontWeight: '800', letterSpacing: 1.2 },
     header: { flexDirection: 'row', alignItems: 'center', marginTop: Spacing.sm },
     title: { color: colors.text, flex: 1 },
     closeButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },

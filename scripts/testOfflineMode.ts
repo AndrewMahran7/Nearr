@@ -422,19 +422,19 @@ async function main() {
     'notification routing must never match on a place NAME — names are not identities',
   );
 
-  const layout = read('app/_layout.tsx');
+  const controller = read('components/NotificationTapController.tsx');
   assert.match(
-    layout,
+    controller,
     /getLastNotificationResponseAsync/,
     'a cold start from a notification tap is handled, not just a warm one',
   );
   assert.match(
-    layout,
-    /savedPlaceId: nearbyRoute\.savedPlaceId/,
+    controller,
+    /savedPlaceId: destination\.savedPlaceId/,
     'tapping a nearby reminder opens the exact saved place by id',
   );
   assert.ok(
-    !/getSavedPlace\(|listSavedPlaces\(/.test(layout),
+    !/getSavedPlace\(|listSavedPlaces\(/.test(controller),
     'notification routing must not require a fresh server fetch before showing anything',
   );
 

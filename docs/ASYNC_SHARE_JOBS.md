@@ -162,12 +162,16 @@ never badged). The `[jobId]` detail screen reuses `usePlacesSearch` +
 multi-select, and manual search — resolving a job updates it transactionally and
 never deletes a saved place.
 
-### Notification deep links — `app/_layout.tsx`
+### Notification tap routing
 
-Tapped notifications route by `data.type` (cold start via
-`getLastNotificationResponseAsync`, warm via the response listener):
+`lib/notificationTapRouting.ts` resolves structured `data` only;
+`components/NotificationTapController.tsx` applies the route after the existing
+auth shell is ready. Cold retrieval and the warm response listener share the
+same exactly-once ledger. Title/body copy is never parsed:
 - `share_job_completed` → `/(tabs)/map?savedPlaceId=<id>`
 - `share_job_needs_help` → `/share-jobs/<jobId>`
+- completed multi-place results → grouped map focus
+- mixed/partial multi-place results → `/share-jobs/<jobId>`
 
 ---
 

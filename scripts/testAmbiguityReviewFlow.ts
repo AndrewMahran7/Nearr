@@ -5,6 +5,7 @@ import path from 'node:path';
 import {
   buildCandidateReviewSnapshot,
   decisionForPlausibleCandidates,
+  decisionForSelectionSemantics,
   mediaFailureReview,
   persistedCandidateCount,
 } from '../supabase/functions/process-share-jobs/ambiguityReview';
@@ -72,6 +73,20 @@ assert.equal(normalizeShareJobCandidates(persistedThree).length, 3);
 assert.deepEqual(mediaFailureReview(persistedThree), {
   decision: 'candidate_picker', mode: 'picker', autoSave: false,
 });
+const persistedIndependent = buildCandidateReviewSnapshot(
+  exactCandidates,
+  10,
+  'multi_independent',
+);
+assert.deepEqual(mediaFailureReview(persistedIndependent), {
+  decision: 'multi_candidate_confirmation', mode: 'multi', autoSave: false,
+});
+assert.deepEqual(decisionForSelectionSemantics(3, 'single_identity'), {
+  decision: 'candidate_picker', mode: 'picker', autoSave: false,
+});
+assert.deepEqual(decisionForSelectionSemantics(3, 'multi_independent'), {
+  decision: 'multi_candidate_confirmation', mode: 'multi', autoSave: false,
+});
 
 for (const count of [0, 1, 2, 3, 5]) {
   const decision = decisionForPlausibleCandidates(count);
@@ -126,8 +141,13 @@ assert.equal(
 );
 
 const detailSource = fs.readFileSync(path.join(process.cwd(), 'app/share-jobs/[jobId].tsx'), 'utf8');
-assert.match(detailSource, /title="None of these"/);
-assert.match(detailSource, /onPress=\{\(\) => void handleSaveStored\(candidate\)\}/);
+assert.match(
+  detailSource,
+  /vayrinEnabled \? 'Not it' : 'None of these'/,
+  'Vayrin presentation changes copy without changing the explicit alternative action',
+);
+assert.match(detailSource, /onPress=\{\(\) => setPickerSelectedId\(candidate\.googlePlaceId\)\}/);
+assert.match(detailSource, /handleSaveStored\(pickerSelected\)/, 'identity selection waits for explicit save');
 assert.match(detailSource, /if \(!job \|\| resolvingRef\.current\) return;/, 'the existing once-latch guards candidate saves');
 assert.match(detailSource, /await getPlaceDetails\(candidate\.googlePlaceId\)/, 'legacy candidates hydrate by authoritative provider id');
 

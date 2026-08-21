@@ -322,8 +322,8 @@ const categoryOf = (p: SP) => p.category ?? null;
   // Same compact card component for both rows — no new sibling card style.
   assert.equal(
     detail.split('<PlaceCardRow').length - 1,
-    2,
-    'both rows are the accepted PlaceCardRow',
+    3,
+    'saved relationships and recommendations use the accepted PlaceCardRow',
   );
   assert.ok(
     detail.indexOf('sourceAttribution.siblingSectionTitle') < detail.indexOf('title="Also nearby"'),

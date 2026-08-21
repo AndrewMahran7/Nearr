@@ -222,6 +222,12 @@ module.exports = ({ config }) => {
       // this host-JS fallback does not mutate any EAS environment.
       mapPinRedesignEnabled:
         process.env.EXPO_PUBLIC_MAP_PIN_REDESIGN_ENABLED || 'true',
+      // Physically validated Product UI release: enabled in production.
+      placeRecommendationsEnabled:
+        process.env.EXPO_PUBLIC_PLACE_RECOMMENDATIONS_ENABLED || 'true',
+      // Presentation-only Vayrin rollout; recognition policy is unchanged.
+      vayrinProductUiEnabled:
+        process.env.EXPO_PUBLIC_VAYRIN_PRODUCT_UI_ENABLED || 'true',
       createShareJobUrl: process.env.EXPO_PUBLIC_CREATE_SHARE_JOB_URL || '',
     },
   };
