@@ -2,9 +2,12 @@ import type { MediaErrorCode } from '../types/media.js';
 
 export type ScrapeCreatorsFallbackPolicyInput = {
   platform: string;
-  failureCode: MediaErrorCode;
+  primaryAcquisitionProducedUsableMedia: boolean;
+  scrapeCreatorsAttempted: boolean;
+  failureCode?: MediaErrorCode;
   failureDetail?: string;
   canonicalTikTokId?: string | null;
+  /** Telemetry only. Content classification never controls eligibility. */
   contentClassification?: string | null;
 };
 
@@ -14,19 +17,12 @@ export type ScrapeCreatorsFallbackDecision = {
 };
 
 const VIDEO_ID = /^\d{1,24}$/;
-const PROTECTED_CLASSIFICATION = /(?:sensitive|private|deleted|unavailable|removed|age[_ -]?restrict|protected|auth|login|not[_ -]?public)/i;
-const ELIGIBLE_YTDLP_DETAILS = new Set([
-  'extractor_failed',
-  'yt_dlp_failed',
-  'json_parse_failed',
-]);
 
 /** The one authoritative decision point for the paid TikTok fallback.
  *
- * General traffic is intentionally narrow: only a stable TikTok video ID and
- * a generic yt-dlp/extractor break qualify. Authentication, policy, privacy,
- * deletion and post-download media gates never qualify. There is no
- * authentication or sensitive-content override in production. */
+ * Eligibility is intentionally independent of yt-dlp's content classification:
+ * once a shared TikTok has a stable canonical ID, every primary acquisition
+ * failure gets one provider attempt. Classifications remain telemetry only. */
 export function shouldUseScrapeCreatorsFallback(
   input: ScrapeCreatorsFallbackPolicyInput,
 ): ScrapeCreatorsFallbackDecision {
@@ -37,19 +33,14 @@ export function shouldUseScrapeCreatorsFallback(
   if (!VIDEO_ID.test(id)) {
     return { eligible: false, reason: 'canonical_id_missing' };
   }
-
-  const classification = `${input.contentClassification ?? ''} ${input.failureDetail ?? ''}`.trim();
-  if (PROTECTED_CLASSIFICATION.test(classification)) {
-    return { eligible: false, reason: 'protected_classification' };
+  if (input.primaryAcquisitionProducedUsableMedia) {
+    return { eligible: false, reason: 'primary_media_usable' };
   }
-  if (input.failureCode !== 'provider_changed') {
-    return { eligible: false, reason: `excluded_${input.failureCode}` };
-  }
-  if (!ELIGIBLE_YTDLP_DETAILS.has(input.failureDetail ?? '')) {
-    return { eligible: false, reason: 'not_generic_ytdlp_break' };
+  if (input.scrapeCreatorsAttempted) {
+    return { eligible: false, reason: 'scrapecreators_already_attempted' };
   }
   return {
     eligible: true,
-    reason: input.failureDetail ?? 'yt_dlp_failed',
+    reason: input.failureDetail ?? input.failureCode ?? 'primary_no_usable_media',
   };
 }

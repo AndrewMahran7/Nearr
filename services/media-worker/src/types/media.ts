@@ -121,6 +121,12 @@ export type ResolvedMedia = {
    * provider responses are deliberately absent. */
   acquisition?: {
     provider: 'yt_dlp' | 'scrapecreators';
+    primaryAcquisitionResult?: 'success_media' | 'failure_no_usable_media';
+    primaryFailureCode?: MediaErrorCode;
+    scrapeCreatorsInvoked?: boolean;
+    scrapeCreatorsResult?: string;
+    identityMatch?: boolean;
+    finalAcquisitionProvider?: 'yt_dlp' | 'scrapecreators';
     fallbackReason?: string;
     canonicalTikTokId?: string;
     providerLatencyMs?: number;

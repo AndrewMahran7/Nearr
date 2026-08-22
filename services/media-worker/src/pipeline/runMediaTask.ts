@@ -468,6 +468,18 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
     warnings.push(...media.warnings);
     if (media.acquisition) {
       diagnostics.mediaAcquisitionProvider = media.acquisition.provider;
+      if (media.acquisition.primaryAcquisitionResult) {
+        diagnostics.primaryAcquisitionResult = media.acquisition.primaryAcquisitionResult;
+      }
+      if (media.acquisition.primaryFailureCode) diagnostics.primaryFailureCode = media.acquisition.primaryFailureCode;
+      if (media.acquisition.scrapeCreatorsInvoked !== undefined) {
+        diagnostics.scrapeCreatorsInvoked = media.acquisition.scrapeCreatorsInvoked;
+      }
+      if (media.acquisition.scrapeCreatorsResult) diagnostics.scrapeCreatorsResult = media.acquisition.scrapeCreatorsResult;
+      if (media.acquisition.identityMatch !== undefined) diagnostics.identityMatch = media.acquisition.identityMatch;
+      if (media.acquisition.finalAcquisitionProvider) {
+        diagnostics.finalAcquisitionProvider = media.acquisition.finalAcquisitionProvider;
+      }
       if (media.acquisition.fallbackReason) diagnostics.fallbackReason = media.acquisition.fallbackReason;
       if (media.acquisition.canonicalTikTokId) diagnostics.canonicalTikTokId = media.acquisition.canonicalTikTokId;
       if (media.acquisition.providerLatencyMs !== undefined) {

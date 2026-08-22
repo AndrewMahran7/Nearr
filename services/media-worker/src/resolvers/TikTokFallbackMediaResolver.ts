@@ -35,6 +35,7 @@ export class TikTokFallbackMediaResolver implements MediaResolver {
   }
 
   async resolve(input: ResolveInput): Promise<ResolvedMedia> {
+    let scrapeCreatorsAttempted = false;
     const cached = await this.cacheLookup?.(input);
     if (cached) return cached;
 
@@ -47,13 +48,21 @@ export class TikTokFallbackMediaResolver implements MediaResolver {
         ...media,
         acquisition: {
           provider: 'yt_dlp',
+          primaryAcquisitionResult: 'success_media',
+          scrapeCreatorsInvoked: false,
+          finalAcquisitionProvider: 'yt_dlp',
           ...(canonicalTikTokId ? { canonicalTikTokId } : {}),
         },
       };
     } catch (error) {
       if (!isMediaError(error)) throw error;
+      // Cancellation is an exhausted execution budget, not an acquisition
+      // classification. Never start a paid call after the task was cancelled.
+      if (error.code === 'cancelled' || input.signal.aborted) throw error;
       const decision = shouldUseScrapeCreatorsFallback({
         platform: 'tiktok',
+        primaryAcquisitionProducedUsableMedia: false,
+        scrapeCreatorsAttempted,
         failureCode: error.code,
         failureDetail: error.detail,
         canonicalTikTokId,
@@ -63,8 +72,12 @@ export class TikTokFallbackMediaResolver implements MediaResolver {
         return Promise.reject(error);
       }
 
+      scrapeCreatorsAttempted = true;
       log.info('scrapecreators_fallback_invoked', {
         jobId: input.jobId,
+        primaryAcquisitionResult: 'failure_no_usable_media',
+        primaryFailureCode: error.code,
+        scrapeCreatorsInvoked: true,
         canonicalTikTokId,
         fallbackReason: decision.reason,
       });
@@ -82,15 +95,27 @@ export class TikTokFallbackMediaResolver implements MediaResolver {
           provider: 'scrapecreators' as const,
           fallbackReason: decision.reason,
           canonicalTikTokId,
+          primaryAcquisitionResult: 'failure_no_usable_media' as const,
+          primaryFailureCode: error.code,
+          scrapeCreatorsInvoked: true,
+          scrapeCreatorsResult: media.acquisition?.providerResult ?? 'SUCCESS_MEDIA',
+          identityMatch: true,
+          finalAcquisitionProvider: 'scrapecreators' as const,
         };
         log.info('scrapecreators_fallback_success', {
           jobId: input.jobId,
+          primaryAcquisitionResult: 'failure_no_usable_media',
+          primaryFailureCode: error.code,
+          scrapeCreatorsInvoked: true,
           canonicalTikTokId,
           fallbackReason: decision.reason,
           providerLatencyMs: acquisition.providerLatencyMs,
           providerMediaBytes: acquisition.providerMediaBytes,
           providerResult: acquisition.providerResult,
+          scrapeCreatorsResult: acquisition.scrapeCreatorsResult,
           providerCredits: acquisition.providerCredits,
+          identityMatch: true,
+          finalAcquisitionProvider: 'scrapecreators',
           mediaRecovered: true,
         });
         return { ...media, acquisition };
@@ -98,10 +123,15 @@ export class TikTokFallbackMediaResolver implements MediaResolver {
         const fallbackMediaError = isMediaError(fallbackError) ? fallbackError : null;
         log.warn('scrapecreators_fallback_failure', {
           jobId: input.jobId,
+          primaryAcquisitionResult: 'failure_no_usable_media',
+          primaryFailureCode: error.code,
+          scrapeCreatorsInvoked: true,
           canonicalTikTokId,
           fallbackReason: decision.reason,
           providerResult: fallbackMediaError?.code ?? 'download_failed',
+          scrapeCreatorsResult: fallbackMediaError?.code ?? 'download_failed',
           providerFailureDetail: fallbackMediaError?.detail ?? 'unknown',
+          identityMatch: fallbackMediaError?.code === 'identity_mismatch' ? false : undefined,
           mediaRecovered: false,
         });
         throw fallbackError;

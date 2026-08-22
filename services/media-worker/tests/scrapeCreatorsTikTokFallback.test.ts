@@ -10,7 +10,10 @@ import {
 } from '../src/providers/ScrapeCreatorsTikTokProvider.js';
 import { planTaskFailure } from '../src/pipeline/runMediaTask.js';
 import { TikTokFallbackMediaResolver } from '../src/resolvers/TikTokFallbackMediaResolver.js';
-import { shouldUseScrapeCreatorsFallback } from '../src/resolvers/scrapeCreatorsTikTokFallbackPolicy.js';
+import {
+  shouldUseScrapeCreatorsFallback,
+  type ScrapeCreatorsFallbackPolicyInput,
+} from '../src/resolvers/scrapeCreatorsTikTokFallbackPolicy.js';
 import { isMediaError, MediaError, type MediaProbe, type ResolvedMedia } from '../src/types/media.js';
 import type { MediaResolver, ResolveInput } from '../src/resolvers/MediaResolver.js';
 
@@ -53,6 +56,18 @@ function primary(result: ResolvedMedia | MediaError): MediaResolver {
       return result;
     },
   };
+}
+
+function fallbackDecision(over: Partial<ScrapeCreatorsFallbackPolicyInput> = {}) {
+  return shouldUseScrapeCreatorsFallback({
+    platform: 'tiktok',
+    primaryAcquisitionProducedUsableMedia: false,
+    scrapeCreatorsAttempted: false,
+    failureCode: 'provider_changed',
+    failureDetail: 'yt_dlp_failed',
+    canonicalTikTokId: VIDEO_ID,
+    ...over,
+  });
 }
 
 const input: ResolveInput & { canonicalUrl: string } = {
@@ -147,27 +162,84 @@ test('2. eligible generic yt-dlp failure calls provider exactly once', async () 
 });
 
 test('3. non-TikTok is ineligible', () => {
-  assert.equal(shouldUseScrapeCreatorsFallback({ platform: 'instagram', failureCode: 'provider_changed', failureDetail: 'yt_dlp_failed', canonicalTikTokId: VIDEO_ID }).eligible, false);
+  assert.equal(fallbackDecision({ platform: 'instagram' }).eligible, false);
 });
 
-test('4. authentication_required never falls through normally', async () => {
+test('4. authentication_required falls through to ScrapeCreators once', async () => {
   let calls = 0;
-  const ladder = new TikTokFallbackMediaResolver(cfg(), { resolve: async () => { calls += 1; return resolved(); } }, primary(new MediaError('authentication_required', 'login_required')));
-  await assert.rejects(() => ladder.resolve(input), (error) => isMediaError(error) && error.code === 'authentication_required');
+  const ladder = new TikTokFallbackMediaResolver(cfg(), { resolve: async () => { calls += 1; return resolved('tiktok/scrapecreators-direct'); } }, primary(new MediaError('authentication_required', 'login_required')));
+  const media = await ladder.resolve(input);
+  assert.equal(media.acquisition?.provider, 'scrapecreators');
+  assert.equal(media.acquisition?.primaryFailureCode, 'authentication_required');
+  assert.equal(calls, 1);
+});
+
+test('5. explicit sensitive classification remains eligible', () => {
+  assert.equal(fallbackDecision({ contentClassification: 'sensitive_content' }).eligible, true);
+});
+
+test('6. private/protected content with a canonical ID remains eligible', () => {
+  assert.equal(fallbackDecision({ failureCode: 'private_or_unavailable', failureDetail: 'private_protected' }).eligible, true);
+});
+
+test('7. age-restricted classification remains eligible', () => {
+  assert.equal(fallbackDecision({ failureCode: 'authentication_required', failureDetail: 'age_restricted' }).eligible, true);
+});
+
+test('7b. every terminal primary acquisition failure class invokes the provider once', async () => {
+  const failures: Array<[ConstructorParameters<typeof MediaError>[0], string]> = [
+    ['authentication_required', 'login_required'],
+    ['provider_changed', 'sensitive'],
+    ['authentication_required', 'age_restricted'],
+    ['private_or_unavailable', 'private_protected'],
+    ['provider_changed', 'provider_changed'],
+    ['provider_changed', 'extractor_failed'],
+    ['provider_changed', 'yt_dlp_failed'],
+    ['download_failed', 'download_failed'],
+    ['download_timeout', 'download_timeout'],
+    ['provider_unavailable', 'provider_unavailable'],
+    ['provider_rate_limited', 'rate_limited'],
+    ['missing_video', 'no_media'],
+  ];
+  for (const [code, detail] of failures) {
+    let calls = 0;
+    const ladder = new TikTokFallbackMediaResolver(cfg(), {
+      resolve: async () => {
+        calls += 1;
+        return resolved('tiktok/scrapecreators-direct');
+      },
+    }, primary(new MediaError(code, detail)));
+    assert.equal((await ladder.resolve(input)).acquisition?.provider, 'scrapecreators', `${code}:${detail}`);
+    assert.equal(calls, 1, `${code}:${detail}`);
+  }
+});
+
+test('7c. a missing canonical ID never invokes the paid provider', async () => {
+  let calls = 0;
+  const noIdentity: ResolveInput = {
+    ...input,
+    sourceUrl: 'https://www.tiktok.com/t/short-code/',
+    canonicalUrl: undefined,
+  };
+  const ladder = new TikTokFallbackMediaResolver(cfg(), {
+    resolve: async () => { calls += 1; return resolved(); },
+  }, primary(new MediaError('authentication_required', 'login_required')));
+  await assert.rejects(() => ladder.resolve(noIdentity), (error) => isMediaError(error) && error.code === 'authentication_required');
   assert.equal(calls, 0);
 });
 
-test('5. explicit sensitive classification is ineligible', () => {
-  const decision = shouldUseScrapeCreatorsFallback({ platform: 'tiktok', failureCode: 'provider_changed', failureDetail: 'yt_dlp_failed', canonicalTikTokId: VIDEO_ID, contentClassification: 'sensitive_content' });
-  assert.equal(decision.eligible, false);
+test('7d. usable primary media and an exhausted fallback attempt are ineligible', () => {
+  assert.equal(fallbackDecision({ primaryAcquisitionProducedUsableMedia: true }).eligible, false);
+  assert.equal(fallbackDecision({ scrapeCreatorsAttempted: true }).eligible, false);
 });
 
-test('6. private content is ineligible', () => {
-  assert.equal(shouldUseScrapeCreatorsFallback({ platform: 'tiktok', failureCode: 'private_or_unavailable', failureDetail: 'private', canonicalTikTokId: VIDEO_ID }).eligible, false);
-});
-
-test('7. deleted/unavailable content is ineligible', () => {
-  assert.equal(shouldUseScrapeCreatorsFallback({ platform: 'tiktok', failureCode: 'private_or_unavailable', failureDetail: 'deleted_unavailable', canonicalTikTokId: VIDEO_ID }).eligible, false);
+test('7e. task cancellation never starts a paid provider call', async () => {
+  let calls = 0;
+  const ladder = new TikTokFallbackMediaResolver(cfg(), {
+    resolve: async () => { calls += 1; return resolved(); },
+  }, primary(new MediaError('cancelled')));
+  await assert.rejects(() => ladder.resolve(input), (error) => isMediaError(error) && error.code === 'cancelled');
+  assert.equal(calls, 0);
 });
 
 test('8. exact provider video ID is accepted', () => {
@@ -313,4 +385,26 @@ test('22. provider-specific error detail does not enter user failure plan', () =
   );
   assert.deepEqual(plan, { action: 'requeue', delaySeconds: 30 });
   assert.equal(JSON.stringify(plan).includes('scrapecreators'), false);
+});
+
+test('23. final unavailable result is planned only after primary and fallback both fail', async () => {
+  let calls = 0;
+  const ladder = new TikTokFallbackMediaResolver(cfg(), {
+    resolve: async () => {
+      calls += 1;
+      throw new MediaError('missing_video', 'scrapecreators_no_direct_media');
+    },
+  }, primary(new MediaError('authentication_required', 'login_required')));
+  let finalError: MediaError | null = null;
+  try {
+    await ladder.resolve(input);
+  } catch (error) {
+    if (isMediaError(error)) finalError = error;
+  }
+  assert.equal(calls, 1);
+  assert.ok(finalError);
+  assert.deepEqual(
+    planTaskFailure(finalError, { attempts: 1, max_attempts: 3 }, { retryBaseSeconds: 30, retryMaxSeconds: 900 }),
+    { action: 'finalize', outcome: 'unavailable' },
+  );
 });
