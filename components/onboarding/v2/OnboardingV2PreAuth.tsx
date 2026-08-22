@@ -9,7 +9,9 @@ import {
 } from '@/components/onboarding/v2/Phase1Visuals';
 import { platformLabel, selectTutorialContent } from '@/constants/onboardingStarterContent';
 import { useOnboardingV2 } from '@/hooks/useOnboardingV2';
+import { useAuth } from '@/hooks/useAuth';
 import { bootstrapAnonymousOnboarding } from '@/lib/anonymousOnboarding';
+import { ANONYMOUS_BOOTSTRAP_TIMEOUT_MS } from '@/lib/anonymousOnboardingCore';
 import { personalizedSavePrompt } from '@/lib/onboardingV2ImmersiveCore';
 import {
   continueOnboardingV2ToTutorial,
@@ -54,17 +56,26 @@ const INTERESTS: Array<{
 
 export function OnboardingV2PreAuth() {
   const { state, loading } = useOnboardingV2();
+  const { session, loading: authLoading } = useAuth();
   const [bootstrapError, setBootstrapError] = useState<string | null>(null);
   const [bootstrapping, setBootstrapping] = useState(false);
   const bootstrapInFlightRef = useRef(false);
+  const bootstrapAttemptRef = useRef(0);
   const mountedRef = useRef(true);
+  const anonymousSessionReady = !!(
+    state?.cohort === 'new_user_v2' &&
+    state.identityLifecycle === 'anonymous_active' &&
+    state.anonymousUserId &&
+    session?.user.is_anonymous === true &&
+    session.user.id === state.anonymousUserId
+  );
   const screenOwnedStage =
     state?.stage === 'overview' ||
     state?.stage === 'platform' ||
     state?.stage === 'interest' ||
     state?.stage === 'interest_selected';
   const waitingForRouteOwner = !!state && !screenOwnedStage;
-  const startupPending = loading || bootstrapping || waitingForRouteOwner;
+  const startupPending = loading || authLoading || bootstrapping || !anonymousSessionReady || waitingForRouteOwner;
   const startupWatchdog = useStartupWatchdog(startupPending);
 
   useEffect(() => {
@@ -77,24 +88,37 @@ export function OnboardingV2PreAuth() {
   useEffect(() => {
     if (
       loading ||
+      authLoading ||
       bootstrapInFlightRef.current ||
       bootstrapError ||
-      (state?.cohort === 'new_user_v2' && state.identityLifecycle === 'anonymous_active')
+      anonymousSessionReady ||
+      (session && session.user.is_anonymous !== true)
     ) return;
     bootstrapInFlightRef.current = true;
+    const attempt = ++bootstrapAttemptRef.current;
     setBootstrapping(true);
+    const timeout = setTimeout(() => {
+      if (!mountedRef.current || bootstrapAttemptRef.current !== attempt) return;
+      bootstrapAttemptRef.current += 1;
+      bootstrapInFlightRef.current = false;
+      setBootstrapping(false);
+      setBootstrapError('anonymous_setup_timeout');
+    }, ANONYMOUS_BOOTSTRAP_TIMEOUT_MS);
     void bootstrapAnonymousOnboarding().then((result) => {
-      if (!mountedRef.current) return;
+      if (!mountedRef.current || bootstrapAttemptRef.current !== attempt) return;
       if (result.kind === 'failed') setBootstrapError(result.reason);
+      else setBootstrapError(null);
     }).catch((error) => {
-      if (mountedRef.current) {
+      if (mountedRef.current && bootstrapAttemptRef.current === attempt) {
         setBootstrapError(error instanceof Error ? error.message : 'anonymous_setup_failed');
       }
     }).finally(() => {
+      clearTimeout(timeout);
+      if (bootstrapAttemptRef.current !== attempt) return;
       bootstrapInFlightRef.current = false;
       if (mountedRef.current) setBootstrapping(false);
     });
-  }, [bootstrapError, loading, state?.cohort, state?.identityLifecycle]);
+  }, [anonymousSessionReady, authLoading, bootstrapError, loading, session]);
 
   if (bootstrapError) {
     return (
@@ -106,7 +130,7 @@ export function OnboardingV2PreAuth() {
     );
   }
 
-  if (!state || loading || bootstrapping || waitingForRouteOwner) {
+  if (!state || loading || authLoading || bootstrapping || !anonymousSessionReady || waitingForRouteOwner) {
     return (
       <StartupSurface
         owner={startupWatchdog.timedOut ? 'ERROR_RECOVERY' : 'ONBOARDING'}

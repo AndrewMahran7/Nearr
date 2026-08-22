@@ -103,6 +103,14 @@ export type CompletedOnboardingSave = {
   completedAt: string;
 };
 
+export type OnboardingPracticeRecovery = {
+  attemptId: string;
+  returnedAt: string;
+  helpEligibleAt: string;
+  helpOfferedAt: string | null;
+  dismissedAt: string | null;
+};
+
 export type OnboardingPlaceTourStep =
   | 'found'
   | 'ai_note'
@@ -137,6 +145,9 @@ export type OnboardingV2State = {
   starterPromptShownAt: string | null;
   starterShelfOpenedAt: string | null;
   impressedContentIds: string[];
+  practiceContentIds: string[];
+  practiceAttemptedContentIds: string[];
+  practiceRecovery: OnboardingPracticeRecovery | null;
   lastFailure: { kind: OnboardingSaveKind; at: string; reason: string } | null;
   behavioralCompletedAt: string | null;
   graduationAcknowledgedAt: string | null;
@@ -148,6 +159,23 @@ export type OnboardingTransition = {
   changed: boolean;
   events: Array<{ name: string; properties?: Record<string, unknown> }>;
 };
+
+export type OnboardingV2SyncCredentialDecision =
+  | { allowed: true }
+  | { allowed: false; reason: 'state_not_syncable' | 'session_missing' | 'session_mismatch' | 'token_missing' };
+
+export function onboardingV2SyncCredentialDecision(
+  state: Pick<OnboardingV2State, 'funnelSessionId' | 'boundUserId' | 'cohort'>,
+  session: { userId: string; accessToken: string } | null,
+): OnboardingV2SyncCredentialDecision {
+  if (!state.funnelSessionId || !state.boundUserId || state.cohort !== 'new_user_v2') {
+    return { allowed: false, reason: 'state_not_syncable' };
+  }
+  if (!session) return { allowed: false, reason: 'session_missing' };
+  if (session.userId !== state.boundUserId) return { allowed: false, reason: 'session_mismatch' };
+  if (!session.accessToken.trim()) return { allowed: false, reason: 'token_missing' };
+  return { allowed: true };
+}
 
 function transition(
   state: OnboardingV2State,
@@ -197,6 +225,9 @@ export function createInitialOnboardingV2State(now = new Date().toISOString()): 
     starterPromptShownAt: null,
     starterShelfOpenedAt: null,
     impressedContentIds: [],
+    practiceContentIds: [],
+    practiceAttemptedContentIds: [],
+    practiceRecovery: null,
     lastFailure: null,
     behavioralCompletedAt: null,
     graduationAcknowledgedAt: null,
@@ -346,6 +377,21 @@ export function decodeOnboardingV2State(
       impressedContentIds: Array.isArray(parsed.impressedContentIds)
         ? parsed.impressedContentIds.filter((id): id is string => typeof id === 'string')
         : [],
+      practiceContentIds: Array.isArray(parsed.practiceContentIds)
+        ? parsed.practiceContentIds.filter((id): id is string => typeof id === 'string').slice(0, 2)
+        : [],
+      practiceAttemptedContentIds: Array.isArray(parsed.practiceAttemptedContentIds)
+        ? parsed.practiceAttemptedContentIds.filter((id): id is string => typeof id === 'string')
+        : [],
+      practiceRecovery: parsed.practiceRecovery?.attemptId
+        ? {
+            attemptId: parsed.practiceRecovery.attemptId,
+            returnedAt: parsed.practiceRecovery.returnedAt,
+            helpEligibleAt: parsed.practiceRecovery.helpEligibleAt,
+            helpOfferedAt: parsed.practiceRecovery.helpOfferedAt ?? null,
+            dismissedAt: parsed.practiceRecovery.dismissedAt ?? null,
+          }
+        : null,
     };
   } catch {
     return initial;
@@ -698,6 +744,60 @@ function expectedKind(state: OnboardingV2State): OnboardingSaveKind | null {
   return null;
 }
 
+export const ONBOARDING_PRACTICE_MIN_EXTERNAL_DWELL_MS = 3_000;
+export const ONBOARDING_PRACTICE_SHARE_GRACE_MS = 7_000;
+
+export function onboardingV2SavedPlaceProgress(state: OnboardingV2State): {
+  count: 0 | 1 | 2 | 3;
+  savedPlaceIds: string[];
+} {
+  const savedPlaceIds = [...new Set([
+    state.tutorialSave?.savedPlaceId,
+    ...state.independentSaves.map((save) => save.savedPlaceId),
+  ].filter((id): id is string => !!id))].slice(0, 3);
+  return { count: savedPlaceIds.length as 0 | 1 | 2 | 3, savedPlaceIds };
+}
+
+export function selectPracticeSource(
+  state: OnboardingV2State,
+  contentId: string,
+  now: string,
+  replace = false,
+): OnboardingTransition {
+  if (
+    state.cohort !== 'new_user_v2' ||
+    state.identityLifecycle !== 'permanent_account' ||
+    state.behavioralCompletedAt ||
+    !state.tutorialSave ||
+    !contentId
+  ) return unchanged(state);
+  const slot = state.independentSaves.length;
+  if (slot > 1) return unchanged(state);
+  const excluded = new Set([
+    state.tutorialContentId,
+    ...state.independentSaves.map((save) => save.contentId),
+    ...state.practiceAttemptedContentIds,
+  ].filter((id): id is string => !!id));
+  if (excluded.has(contentId)) return unchanged(state);
+  const current = state.practiceContentIds[slot];
+  if (current && !replace) return unchanged(state);
+  const practiceContentIds = state.practiceContentIds.slice(0, slot);
+  practiceContentIds[slot] = contentId;
+  const practiceAttemptedContentIds = replace && current && !state.practiceAttemptedContentIds.includes(current)
+    ? [...state.practiceAttemptedContentIds, current]
+    : state.practiceAttemptedContentIds;
+  return transition(state, {
+    practiceContentIds,
+    practiceAttemptedContentIds,
+    stage: replace
+      ? (slot === 0 ? 'practice_ready' : 'first_independent_save_complete')
+      : state.stage,
+    pendingShare: replace ? null : state.pendingShare,
+    lastFailure: replace ? null : state.lastFailure,
+    practiceRecovery: null,
+  }, now, [{ name: 'practice_started', properties: { content_id: contentId, save_number: slot + 2 } }]);
+}
+
 export function openExternalStarter(
   state: OnboardingV2State,
   input: { contentId: string; sourceUrl: string },
@@ -711,6 +811,10 @@ export function openExternalStarter(
     return unchanged(state);
   }
   if (kind === 'tutorial' && state.tutorialContentId !== input.contentId) return unchanged(state);
+  if (kind !== 'tutorial') {
+    const slot = kind === 'independent_1' ? 0 : 1;
+    if (state.practiceContentIds[slot] !== input.contentId) return unchanged(state);
+  }
   const pendingShare: PendingOnboardingShare = {
     attemptId: `${kind}:${input.contentId}:${now}`,
     kind,
@@ -733,9 +837,20 @@ export function openExternalStarter(
     : kind === 'independent_1'
       ? 'first_independent_video_opened'
       : 'second_independent_video_opened';
-  return transition(state, { pendingShare, stage, lastFailure: null }, now, [
+  return transition(state, {
+    pendingShare,
+    stage,
+    lastFailure: null,
+    practiceRecovery: null,
+    practiceAttemptedContentIds: kind === 'tutorial' || state.practiceAttemptedContentIds.includes(input.contentId)
+      ? state.practiceAttemptedContentIds
+      : [...state.practiceAttemptedContentIds, input.contentId],
+  }, now, [
     { name: event, properties: { content_id: input.contentId } },
-    ...(kind === 'tutorial' ? [] : [{ name: 'starter_card_opened', properties: { content_id: input.contentId } }]),
+    ...(kind === 'tutorial' ? [] : [
+      { name: 'starter_card_opened', properties: { content_id: input.contentId } },
+      { name: 'practice_source_opened', properties: { content_id: input.contentId } },
+    ]),
   ]);
 }
 
@@ -784,7 +899,7 @@ export function receiveSharedSource(
     [
       ...(pending.kind === 'tutorial'
         ? [{ name: 'tutorial_share_received', properties: { content_id: pending.contentId } }]
-        : []),
+        : [{ name: 'practice_share_received', properties: { content_id: pending.contentId } }]),
       { name: event, properties: { content_id: pending.contentId } },
     ],
   );
@@ -801,6 +916,9 @@ export function observeOnboardingResult(
   if (!isExpectedOnboardingSource(state.pendingShare, sourceUrl)) return unchanged(state);
   const pending = state.pendingShare!;
   if (pending.resultSeenAt) return unchanged(state);
+  if (pending.kind !== 'tutorial' && result === 'not_enough') {
+    return failPendingSave(state, 'not_enough', now);
+  }
   return transition(
     state,
     {
@@ -823,9 +941,18 @@ export function completePendingSave(
   if (!input.savedPlaceId) return unchanged(state);
   const pending = state.pendingShare!;
   if (pending.kind === 'tutorial' && state.stage !== 'tutorial_result_seen') return unchanged(state);
-  if (state.tutorialSave?.savedPlaceId === input.savedPlaceId) return unchanged(state);
-  if (state.independentSaves.some((save) => save.savedPlaceId === input.savedPlaceId)) {
-    return unchanged(state);
+  if (onboardingV2SavedPlaceProgress(state).savedPlaceIds.includes(input.savedPlaceId)) {
+    if (pending.kind === 'tutorial') return unchanged(state);
+    return transition(state, {
+      lastFailure: { kind: pending.kind, at: now, reason: 'duplicate_place' },
+      pendingShare: null,
+      practiceRecovery: null,
+    }, now, [{
+      name: pending.kind === 'independent_1'
+        ? 'first_independent_save_failed'
+        : 'second_independent_save_failed',
+      properties: { reason: 'duplicate_place' },
+    }]);
   }
   const save: CompletedOnboardingSave = {
     kind: pending.kind,
@@ -865,13 +992,15 @@ export function completePendingSave(
   if (independentSaves.length === 1) {
     return transition(
       state,
-      { stage: 'first_independent_save_complete', pendingShare: null, independentSaves },
+      { stage: 'first_independent_save_complete', pendingShare: null, independentSaves, practiceRecovery: null },
       now,
       [
         ...(pending.shareReceivedAt
           ? []
           : [{ name: 'first_independent_save_started', properties: { content_id: pending.contentId } }]),
         { name: 'first_independent_save_completed', properties: { saved_place_id: input.savedPlaceId } },
+        { name: 'practice_place_saved', properties: { saved_place_id: input.savedPlaceId, progress: 2 } },
+        { name: 'practice_progress_2_of_3' },
       ],
     );
   }
@@ -883,6 +1012,7 @@ export function completePendingSave(
       pendingShare: null,
       independentSaves: independentSaves.slice(0, 2),
       behavioralCompletedAt: now,
+      practiceRecovery: null,
     },
     now,
     [
@@ -890,6 +1020,8 @@ export function completePendingSave(
         ? []
         : [{ name: 'second_independent_save_started', properties: { content_id: pending.contentId } }]),
       { name: 'second_independent_save_completed', properties: { saved_place_id: input.savedPlaceId } },
+      { name: 'practice_place_saved', properties: { saved_place_id: input.savedPlaceId, progress: 3 } },
+      { name: 'practice_progress_3_of_3' },
       { name: 'behavioral_onboarding_completed' },
     ],
   );
@@ -913,6 +1045,65 @@ export function failPendingSave(
     now,
     event ? [{ name: event, properties: { reason } }] : [],
   );
+}
+
+export type OnboardingPracticeRecoveryPlan =
+  | { status: 'ignore' }
+  | { status: 'wait'; delayMs: number }
+  | { status: 'offer'; returnedAt: string; helpEligibleAt: string };
+
+export function planOnboardingPracticeRecovery(input: {
+  pendingShare: PendingOnboardingShare | null;
+  backgroundedAt: string | null;
+  returnedAt: string;
+  now: string;
+}): OnboardingPracticeRecoveryPlan {
+  const pending = input.pendingShare;
+  if (!pending || pending.kind === 'tutorial' || pending.shareReceivedAt) return { status: 'ignore' };
+  const backgroundedMs = input.backgroundedAt ? Date.parse(input.backgroundedAt) : Number.NaN;
+  const returnedMs = Date.parse(input.returnedAt);
+  const nowMs = Date.parse(input.now);
+  const openedMs = Date.parse(pending.openedAt);
+  if (![backgroundedMs, returnedMs, nowMs, openedMs].every(Number.isFinite)) return { status: 'ignore' };
+  if (returnedMs - Math.max(backgroundedMs, openedMs) < ONBOARDING_PRACTICE_MIN_EXTERNAL_DWELL_MS) {
+    return { status: 'ignore' };
+  }
+  const eligibleMs = returnedMs + ONBOARDING_PRACTICE_SHARE_GRACE_MS;
+  if (nowMs < eligibleMs) return { status: 'wait', delayMs: eligibleMs - nowMs };
+  return {
+    status: 'offer',
+    returnedAt: new Date(returnedMs).toISOString(),
+    helpEligibleAt: new Date(eligibleMs).toISOString(),
+  };
+}
+
+export function recordPracticeReturnedWithoutShare(
+  state: OnboardingV2State,
+  input: { attemptId: string; returnedAt: string; helpEligibleAt: string },
+  now: string,
+): OnboardingTransition {
+  const pending = state.pendingShare;
+  if (!pending || pending.kind === 'tutorial' || pending.shareReceivedAt || pending.attemptId !== input.attemptId) {
+    return unchanged(state);
+  }
+  if (state.practiceRecovery?.attemptId === pending.attemptId) return unchanged(state);
+  return transition(state, {
+    practiceRecovery: { ...input, helpOfferedAt: null, dismissedAt: null },
+  }, now, [{ name: 'practice_returned_without_share', properties: { content_id: pending.contentId } }]);
+}
+
+export function recordPracticeHelpOpened(state: OnboardingV2State, now: string): OnboardingTransition {
+  const recovery = state.practiceRecovery;
+  if (!recovery || recovery.dismissedAt || recovery.helpOfferedAt) return unchanged(state);
+  return transition(state, { practiceRecovery: { ...recovery, helpOfferedAt: now } }, now, [
+    { name: 'practice_help_opened' },
+  ]);
+}
+
+export function dismissPracticeRecovery(state: OnboardingV2State, now: string): OnboardingTransition {
+  const recovery = state.practiceRecovery;
+  if (!recovery || recovery.dismissedAt) return unchanged(state);
+  return transition(state, { practiceRecovery: { ...recovery, dismissedAt: now } }, now);
 }
 
 export function openPlaceTour(
@@ -939,7 +1130,7 @@ export function advancePlaceTour(
   let next: OnboardingPlaceTourStep;
   const events: OnboardingTransition['events'] = [];
   if (state.placeTourStep === 'found') {
-    next = availability.aiNote ? 'ai_note' : availability.source ? 'source' : 'directions';
+    next = availability.source ? 'source' : 'directions';
   } else if (state.placeTourStep === 'ai_note') {
     events.push({ name: 'place_tour_ai_note_seen' });
     next = availability.source ? 'source' : 'directions';

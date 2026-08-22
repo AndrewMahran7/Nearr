@@ -3,9 +3,14 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { trackEvent } from '@/lib/analytics';
+import { getResolvedEnvironment } from '@/lib/appEnvironment';
 import { markOnboardingComplete } from '@/lib/onboarding';
 import { isOnboardingV2Phase1Only } from '@/lib/featureFlags';
 import { restoreOnboardingFunnelId } from '@/lib/onboardingFunnelIdentity';
+import {
+  canRunOnboardingV2DevelopmentReset,
+  ONBOARDING_DEV_RESET_BLOCKED_NON_DEV,
+} from '@/lib/onboardingV2DevResetCore';
 import { supabase } from '@/lib/supabase';
 import type { SavedPlaceWithPlace } from '@/types';
 import {
@@ -23,20 +28,25 @@ import {
   continueToTutorial,
   createInitialOnboardingV2State,
   decodeOnboardingV2State,
+  dismissPracticeRecovery,
   encodeOnboardingV2State,
   failPendingSave,
   freshOnboardingV2StateAfterAccountDeletion,
   isExpectedOnboardingSource,
   isOnboardingV2InProgressState,
   observeOnboardingResult,
+  onboardingV2SyncCredentialDecision,
   onboardingV2ResumeEligibility,
   openExternalStarter,
   openPlaceTour,
   openStarterShelf,
+  recordPracticeHelpOpened,
+  recordPracticeReturnedWithoutShare,
   receiveSharedSource,
   replaceTutorialContent,
   recordStarterImpressions,
   selectInterest,
+  selectPracticeSource,
   selectPlatform,
   showStarterPrompt,
   startOnboardingV2,
@@ -93,12 +103,21 @@ export type OnboardingV2EventName =
   | 'second_independent_save_started'
   | 'second_independent_save_completed'
   | 'second_independent_save_failed'
-  | 'behavioral_onboarding_completed';
+  | 'behavioral_onboarding_completed'
+  | 'practice_started'
+  | 'practice_source_opened'
+  | 'practice_share_received'
+  | 'practice_returned_without_share'
+  | 'practice_help_opened'
+  | 'practice_place_saved'
+  | 'practice_progress_2_of_3'
+  | 'practice_progress_3_of_3';
 
 type Listener = (state: OnboardingV2State) => void;
 const listeners = new Set<Listener>();
 let cachedState: OnboardingV2State | null = null;
 let mutationQueue: Promise<unknown> = Promise.resolve();
+let serverSyncGeneration = 0;
 
 function nowIso(): string {
   return new Date().toISOString();
@@ -150,9 +169,27 @@ async function emitEvents(events: OnboardingTransition['events']): Promise<void>
   );
 }
 
-async function syncStateToServer(state: OnboardingV2State): Promise<void> {
-  if (!state.funnelSessionId || !state.boundUserId || state.cohort !== 'new_user_v2') return;
+async function syncStateToServer(
+  state: OnboardingV2State,
+  generation = serverSyncGeneration,
+): Promise<void> {
   try {
+    const { data, error: sessionError } = await supabase.auth.getSession();
+    if (generation !== serverSyncGeneration) return;
+    const session = data.session;
+    const credential = onboardingV2SyncCredentialDecision(state, session
+      ? { userId: session.user.id, accessToken: session.access_token }
+      : null);
+    if (sessionError) {
+      console.warn('[onboarding-v2] server_sync_skipped', 'session_read_failed');
+      return;
+    }
+    if (!credential.allowed) {
+      if (credential.reason !== 'state_not_syncable') {
+        console.warn('[onboarding-v2] server_sync_skipped', credential.reason);
+      }
+      return;
+    }
     const { error } = await supabase.rpc('upsert_onboarding_v2_session', {
       p_session_id: state.funnelSessionId,
       p_revision: state.revision,
@@ -187,7 +224,7 @@ async function applyTransition(
     } catch (error) {
       console.warn('[onboarding-v2] state_write_failed', error);
     }
-    void syncStateToServer(result.state);
+    void syncStateToServer(result.state, serverSyncGeneration);
     void emitEvents(result.events);
     if (
       !current.phase1CompletedAt &&
@@ -346,6 +383,29 @@ export function openOnboardingV2Starter(input: {
   return applyTransition((state, now) => openExternalStarter(state, input, now));
 }
 
+export function selectOnboardingV2PracticeSource(
+  contentId: string,
+  replace = false,
+): Promise<OnboardingV2State> {
+  return applyTransition((state, now) => selectPracticeSource(state, contentId, now, replace));
+}
+
+export function recordOnboardingV2ReturnedWithoutShare(input: {
+  attemptId: string;
+  returnedAt: string;
+  helpEligibleAt: string;
+}): Promise<OnboardingV2State> {
+  return applyTransition((state, now) => recordPracticeReturnedWithoutShare(state, input, now));
+}
+
+export function recordOnboardingV2PracticeHelpOpened(): Promise<OnboardingV2State> {
+  return applyTransition(recordPracticeHelpOpened);
+}
+
+export function dismissOnboardingV2PracticeRecovery(): Promise<OnboardingV2State> {
+  return applyTransition(dismissPracticeRecovery);
+}
+
 export function replaceOnboardingV2TutorialContent(contentId: string): Promise<OnboardingV2State> {
   return applyTransition((state, now) => replaceTutorialContent(state, contentId, now));
 }
@@ -464,17 +524,38 @@ async function replaceOnboardingV2AfterIdentityDeletion(): Promise<OnboardingV2S
 
 /** Production identity-boundary reset. Call only after confirmed deletion. */
 export function resetOnboardingV2AfterAccountDeletion(): Promise<OnboardingV2State> {
+  serverSyncGeneration += 1;
   return replaceOnboardingV2AfterIdentityDeletion();
 }
 
 /** Self-heal a checkpoint whose auth identity no longer exists. */
 export function discardOnboardingV2CheckpointForMissingIdentity(): Promise<OnboardingV2State> {
+  serverSyncGeneration += 1;
   return replaceOnboardingV2AfterIdentityDeletion();
 }
 
 /** Test-only seam; never exposed through production UI. */
 export async function resetOnboardingV2ForTests(): Promise<void> {
-  await AsyncStorage.removeItem(ONBOARDING_V2_STORAGE_KEY);
-  cachedState = createInitialOnboardingV2State();
-  publish(cachedState);
+  await replaceOnboardingV2WithInitialLocalState();
+}
+
+async function replaceOnboardingV2WithInitialLocalState(): Promise<OnboardingV2State> {
+  const operation = mutationQueue.then(async () => {
+    await AsyncStorage.removeItem(ONBOARDING_V2_STORAGE_KEY);
+    const initial = createInitialOnboardingV2State();
+    publish(initial);
+    return initial;
+  });
+  mutationQueue = operation.catch(() => undefined);
+  return operation;
+}
+
+/** Guarded local slice used by the development reset orchestrator. */
+export async function resetOnboardingV2LocalStateForDevelopment(): Promise<OnboardingV2State> {
+  if (!canRunOnboardingV2DevelopmentReset(getResolvedEnvironment())) {
+    console.warn(ONBOARDING_DEV_RESET_BLOCKED_NON_DEV);
+    throw new Error(ONBOARDING_DEV_RESET_BLOCKED_NON_DEV);
+  }
+  serverSyncGeneration += 1;
+  return replaceOnboardingV2WithInitialLocalState();
 }

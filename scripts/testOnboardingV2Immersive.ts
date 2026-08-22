@@ -140,9 +140,10 @@ assert.equal(decodeOnboardingV2State(encodeOnboardingV2State(resume), now()).sta
 pass('19 immersive stable checkpoint resumes after force quit');
 
 const settings = read('app/(tabs)/settings.tsx');
-assert.doesNotMatch(settings, /Reset onboarding|Development QA/);
-assert.equal(existsSync(join(process.cwd(), 'lib/onboardingV2DevReset.ts')), false);
-pass('20 development reset remains excluded from production');
+assert.match(settings, /\{onboardingResetAvailable \? \(/);
+assert.equal(existsSync(join(process.cwd(), 'lib/onboardingV2DevReset.ts')), true);
+assert.match(read('lib/onboardingV2DevResetCore.ts'), /appEnv === 'development'[\s\S]{0,200}backendEnv === 'development'/);
+pass('20 development reset remains fail-closed outside the declared development lane');
 
 const layout = read('app/_layout.tsx');
 assert.match(layout, /pendingOnboardingNavigationRef/);

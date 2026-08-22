@@ -132,6 +132,15 @@ export async function signOut() {
   return supabase.auth.signOut();
 }
 
+/**
+ * The server has already deleted this identity, so a global sign-out request
+ * can only race or fail against a dead JWT. Clear the device session locally
+ * and let the fresh onboarding bootstrap establish the next identity.
+ */
+export async function clearDeletedAccountSession() {
+  return supabase.auth.signOut({ scope: 'local' });
+}
+
 export async function getCurrentUser() {
   const { data } = await supabase.auth.getUser();
   return data.user;

@@ -32,7 +32,11 @@ export function expectedOnboardingV2Route(
     stage === 'place_tour' ||
     stage === 'phase1_complete' ||
     stage === 'practice_ready' ||
+    stage === 'first_independent_external_video_opened' ||
+    stage === 'first_independent_share_returned' ||
     stage === 'first_independent_save_complete' ||
+    stage === 'second_independent_external_video_opened' ||
+    stage === 'second_independent_share_returned' ||
     stage === 'graduated'
   ) return '/(tabs)/map';
   return '/(onboarding)';

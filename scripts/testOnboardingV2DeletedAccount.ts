@@ -146,9 +146,10 @@ assert.match(service, /clearOnboardingAccountTransferAfterDeletion/);
 assert.match(service, /rotateOnboardingFunnelId/);
 pass('10 failed deletion returns before identity-bound local cleanup');
 
-assert.equal(existsSync(join(process.cwd(), 'lib/onboardingV2DevReset.ts')), false);
-assert.doesNotMatch(settings, /Reset onboarding|Development QA/);
-pass('11 production contains no development reset surface');
+assert.equal(existsSync(join(process.cwd(), 'lib/onboardingV2DevReset.ts')), true);
+assert.match(settings, /\{onboardingResetAvailable \? \(/);
+assert.match(read('lib/onboardingV2DevResetCore.ts'), /appEnv === 'development'[\s\S]{0,200}backendEnv === 'development'/);
+pass('11 development reset remains unavailable outside the explicit Nearr-Dev lane');
 
 const root = read('app/_layout.tsx');
 assert.match(root, /pendingOnboardingNavigationRef/);

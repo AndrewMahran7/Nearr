@@ -81,16 +81,19 @@ const coach = readFileSync(join(root, 'components/onboarding/v2/OnboardingV2MapC
 const picker = readFileSync(join(root, 'components/onboarding/v2/OnboardingV2PreAuth.tsx'), 'utf8');
 const anonymousRuntime = readFileSync(join(root, 'lib/anonymousOnboarding.ts'), 'utf8');
 const settings = readFileSync(join(root, 'app/(tabs)/settings.tsx'), 'utf8');
+const appConfig = readFileSync(join(root, 'app.config.js'), 'utf8');
 assert.match(coach, /if \(isOnboardingV2Phase1Only\(\)\) return null;/);
 assert.match(picker, /disabled=\{option\.value !== 'instagram'\}/);
 assert.match(
   anonymousRuntime,
-  /prior\.cohort === 'existing_user_bypassed' \|\|\s+!!prior\.phase1CompletedAt \|\|\s+!!prior\.behavioralCompletedAt/,
+  /decision === 'restart_with_new_anonymous_session'/,
   'a missing session after Phase 1 rotates to a fresh journey instead of restoring completed onboarding',
 );
-assert.doesNotMatch(settings, /Reset onboarding|Development QA/);
-assert.equal(existsSync(join(root, 'lib/onboardingV2DevReset.ts')), false);
-assert.equal(existsSync(join(root, 'lib/onboardingV2DevResetCore.ts')), false);
+assert.match(settings, /\{onboardingResetAvailable \? \(/);
+assert.equal(existsSync(join(root, 'lib/onboardingV2DevReset.ts')), true);
+assert.equal(existsSync(join(root, 'lib/onboardingV2DevResetCore.ts')), true);
+assert.match(appConfig, /IS_DEVELOPMENT_APP \? 'false' : 'true'/);
+assert.match(appConfig, /IS_DEVELOPMENT_APP \? 'true' : ''/);
 
 console.log('PASS Phase 1 closes to the normal map without Phase 2/3');
 console.log('PASS Phase 1 completion is durable and future-safe');

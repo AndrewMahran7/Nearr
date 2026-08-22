@@ -192,6 +192,38 @@ export const ONBOARDING_STARTER_CONTENT: readonly OnboardingStarterContent[] = [
     tutorialNote: 'White sand and turquoise water in Cape Le Grand National Park.',
     verification: 'repository_regression_fixture_needs_device_validation',
   },
+  {
+    id: 'tt-tuxedo-cats-coffee-san-antonio',
+    platform: 'tiktok',
+    category: 'food',
+    subcategory: 'coffee',
+    title: "Tuxedo Cat's Coffee",
+    sourceUrl: 'https://www.tiktok.com/@satexasfoodies/video/7433811014237326622',
+    thumbnail: null,
+    creator: '@satexasfoodies',
+    knownPlace: { name: "Tuxedo Cat's Coffee", locality: 'San Antonio, TX' },
+    difficulty: 'easy',
+    onboardingPriority: 95,
+    active: true,
+    tutorialEligible: false,
+    verification: 'repository_regression_fixture_needs_device_validation',
+  },
+  {
+    id: 'tt-vip-list-nyc-food-roundup',
+    platform: 'tiktok',
+    category: 'food',
+    subcategory: 'roundup',
+    title: 'NYC food finds',
+    sourceUrl: 'https://www.tiktok.com/@theviplist/video/7285850230342290731',
+    thumbnail: null,
+    creator: '@theviplist',
+    knownPlace: { name: 'NYC food finds', locality: 'New York, NY' },
+    difficulty: 'medium',
+    onboardingPriority: 65,
+    active: true,
+    tutorialEligible: false,
+    verification: 'repository_regression_fixture_needs_device_validation',
+  },
 ] as const;
 
 const TUTORIAL_CONTENT_BY_INTEREST: Readonly<Record<OnboardingInterest, string>> = {
@@ -272,6 +304,7 @@ export function selectPracticeContent(input: {
   interest: OnboardingInterest | null;
   excludeContentIds?: readonly string[];
   limit?: number;
+  rotationKey?: string;
 }): OnboardingStarterContent[] {
   const excluded = new Set(input.excludeContentIds ?? []);
   const ranked = [...ONBOARDING_STARTER_CONTENT]
@@ -280,6 +313,17 @@ export function selectPracticeContent(input: {
 
   // When available, put one different category in the first three so Nearr
   // does not teach itself as only a restaurant finder.
+  if (input.rotationKey && ranked.length > 1) {
+    const affinity = (item: OnboardingStarterContent) =>
+      (input.platform && input.platform !== 'other' && item.platform === input.platform ? 2 : 0) +
+      (input.interest && item.category === input.interest ? 1 : 0);
+    const topAffinity = affinity(ranked[0]!);
+    const personalized = ranked.filter((item) => affinity(item) === topAffinity);
+    const fallback = ranked.filter((item) => affinity(item) !== topAffinity);
+    const offset = [...input.rotationKey].reduce((total, char) => total + char.charCodeAt(0), 0) % personalized.length;
+    const rotated = [...personalized.slice(offset), ...personalized.slice(0, offset)];
+    ranked.splice(0, ranked.length, ...rotated, ...fallback);
+  }
   const first = ranked[0];
   if (!first) return [];
   const diverse = ranked.find((item) => item.category !== first.category);
@@ -287,6 +331,21 @@ export function selectPracticeContent(input: {
     ? [first, diverse, ...ranked.filter((item) => item !== first && item !== diverse)]
     : ranked;
   return ordered.slice(0, input.limit ?? 3);
+}
+
+export type NextPracticeSourceResult =
+  | { kind: 'FOUND'; source: OnboardingStarterContent }
+  | { kind: 'EXHAUSTED' };
+
+/** Return an explicit source-rotation result so exhaustion cannot render null. */
+export function getNextPracticeSource(input: {
+  platform: OnboardingPlatform | null;
+  interest: OnboardingInterest | null;
+  excludeContentIds?: readonly string[];
+  rotationKey: string;
+}): NextPracticeSourceResult {
+  const [source] = selectPracticeContent({ ...input, limit: 1 });
+  return source ? { kind: 'FOUND', source } : { kind: 'EXHAUSTED' };
 }
 
 export function platformLabel(platform: StarterPlatform): string {

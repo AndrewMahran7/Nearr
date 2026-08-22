@@ -2,7 +2,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Crypto from 'expo-crypto';
 import type { User } from '@supabase/supabase-js';
 
-import { isAnonymousSupabaseUser, parseAccountTransitionResult } from '@/lib/anonymousOnboardingCore';
+import {
+  decideAnonymousBootstrap,
+  isAnonymousSupabaseUser,
+  parseAccountTransitionResult,
+} from '@/lib/anonymousOnboardingCore';
+import { waitForAccountDeletionCleanup } from '@/lib/accountDeletionCore';
 import { ensureOnboardingFunnelId, rotateOnboardingFunnelId } from '@/lib/onboardingFunnelIdentity';
 import {
   beginOnboardingV2,
@@ -54,29 +59,27 @@ export type AnonymousBootstrapResult =
 
 /** Establish exactly one persisted Supabase anonymous session for this install. */
 export async function bootstrapAnonymousOnboarding(): Promise<AnonymousBootstrapResult> {
+  await waitForAccountDeletionCleanup();
   const current = await supabase.auth.getSession();
   let session = current.data.session;
   const resumed = !!session;
-  if (session && !isAnonymousSupabaseUser(session.user)) {
+  const prior = await getOnboardingV2State();
+  const decision = decideAnonymousBootstrap({
+    sessionUserId: session?.user.id ?? null,
+    sessionIsAnonymous: isAnonymousSupabaseUser(session?.user),
+    state: prior,
+  });
+  if (decision === 'use_permanent_session' && session) {
     return { kind: 'permanent', user: session.user };
   }
   if (!session) {
-    const prior = await getOnboardingV2State();
-    if (
-      prior.identityLifecycle === 'anonymous_active' &&
-      prior.anonymousUserId &&
-      prior.cohort === 'new_user_v2'
-    ) {
+    if (decision === 'recover_saved_identity') {
       // A normal restart restores the persisted Supabase session. If it is
       // missing while local product state still belongs to that user, creating
       // another anonymous identity would orphan/duplicate the tutorial save.
       return { kind: 'failed', reason: 'anonymous_session_recovery_required' };
     }
-    const needsFreshJourney =
-      prior.identityLifecycle === 'permanent_account' ||
-      prior.cohort === 'existing_user_bypassed' ||
-      !!prior.phase1CompletedAt ||
-      !!prior.behavioralCompletedAt;
+    const needsFreshJourney = decision === 'restart_with_new_anonymous_session';
     if (needsFreshJourney) {
       await discardOnboardingV2CheckpointForMissingIdentity();
       await AsyncStorage.removeItem(TRANSFER_KEY);

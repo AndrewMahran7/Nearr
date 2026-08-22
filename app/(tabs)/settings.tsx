@@ -39,6 +39,10 @@ import { trackEvent } from '@/lib/analytics';
 import { disableDevAuth } from '@/lib/devAuth';
 import { isDemoMode } from '@/lib/demoMode';
 import { setOnboardingPreview } from '@/lib/onboarding';
+import {
+  isOnboardingV2DevelopmentResetAvailable,
+  resetOnboardingV2ForDevelopment,
+} from '@/lib/onboardingV2DevReset';
 import * as Clipboard from 'expo-clipboard';
 import { getRecentDiagnostics, formatDiagnosticForCopy, getUpdateInfo } from '@/lib/deviceDiagnostics';
 import { areDeveloperToolsVisible, describeEnvironment } from '@/lib/appEnvironment';
@@ -123,6 +127,8 @@ export default function SettingsScreen() {
   const [legalAcceptedVersion, setLegalAcceptedVersion] = useState<string | null>(null);
   const [legalAcceptedAt, setLegalAcceptedAt] = useState<string | null>(null);
   const [deletingAccount, setDeletingAccount] = useState(false);
+  const [resettingOnboarding, setResettingOnboarding] = useState(false);
+  const onboardingResetAvailable = isOnboardingV2DevelopmentResetAvailable();
   const [placesDiagnosticText, setPlacesDiagnosticText] = useState(
     'Places REST key diagnostic: loading',
   );
@@ -610,6 +616,41 @@ export default function SettingsScreen() {
     router.push('/(onboarding)?preview=1');
   }
 
+  function handleResetOnboarding() {
+    if (resettingOnboarding) return;
+    Alert.alert(
+      'Reset onboarding?',
+      'Reset onboarding progress for this development app? This signs out this device and removes only a verified tutorial place. Other saved places and settings stay.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Reset onboarding',
+          style: 'destructive',
+          onPress: () => void runOnboardingReset(),
+        },
+      ],
+      { cancelable: true },
+    );
+  }
+
+  async function runOnboardingReset() {
+    if (resettingOnboarding) return;
+    setResettingOnboarding(true);
+    const result = await resetOnboardingV2ForDevelopment();
+    if (!result.ok) {
+      setResettingOnboarding(false);
+      Alert.alert(
+        'Reset blocked',
+        result.code === 'ONBOARDING_DEV_RESET_BLOCKED_NON_DEV'
+          ? 'Onboarding reset is available only in the development app connected to Nearr-Dev.'
+          : 'Onboarding could not be reset. Try again.',
+      );
+      return;
+    }
+    router.replace('/(onboarding)');
+    Alert.alert('Onboarding reset', 'Fresh state is ready. Start again from Welcome.');
+  }
+
   // Open the App Store review flow. Public App Store rating — distinct from
   // the private in-app "Send feedback" flow. Until Nearr is live (no App Store
   // ID yet) this shows a friendly "coming soon" alert; never crashes.
@@ -901,6 +942,25 @@ export default function SettingsScreen() {
                 title="Copy build info"
                 variant="ghost"
                 onPress={() => void handleCopyBuildInfo()}
+              />
+            </Card>
+          </>
+        ) : null}
+
+        {/* --- Development onboarding QA (hard-gated in the operation too) */}
+        {onboardingResetAvailable ? (
+          <>
+            <View style={{ height: Spacing.xxl }} />
+            <Text style={styles.sectionLabel}>Development QA</Text>
+            <Card style={styles.section}>
+              <Text style={[typography.caption, styles.muted]}>
+                Clears only Onboarding V2 QA state, signs out this device, and returns to Welcome.
+              </Text>
+              <Button
+                title="Reset onboarding"
+                variant="secondary"
+                loading={resettingOnboarding}
+                onPress={handleResetOnboarding}
               />
             </Card>
           </>

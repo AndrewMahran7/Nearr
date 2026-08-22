@@ -22,9 +22,11 @@ import * as Notifications from 'expo-notifications';
 
 import { supabase } from '@/lib/supabase';
 import {
+  beginAccountDeletionCleanupBoundary,
   classifyDeletionError,
   createSingleFlightGuard,
   DELETE_ACCOUNT_FAILURE_MESSAGE,
+  finishAccountDeletionCleanupBoundary,
   type AccountDeletionResult,
 } from '@/lib/accountDeletionCore';
 import { clearSavedPlacesCache } from '@/lib/savedPlacesCache';
@@ -37,7 +39,7 @@ import { getHowNearrWorksStorageKey } from '@/components/HowNearrWorksModal';
 import { PLACE_NOTIFICATION_DEDUPE_STORAGE_KEY } from '@/lib/placeNotificationDedupe';
 import { stopNearrGeofencing } from '@/lib/geofencing';
 import { stopProximityWatch } from '@/lib/notifications';
-import { signOut } from '@/services/auth';
+import { clearDeletedAccountSession } from '@/services/auth';
 
 const DELETE_ACCOUNT_FUNCTION = 'delete-account';
 
@@ -62,68 +64,76 @@ export function isAccountDeletionInProgress(): boolean {
  */
 export async function deleteAccount(): Promise<AccountDeletionResult> {
   return deletionGuard.run(async () => {
-    // Current, valid session token is the sole deletion authority.
-    let accessToken: string | null = null;
+    beginAccountDeletionCleanupBoundary();
+    let deletionConfirmed = false;
     try {
-      const { data } = await supabase.auth.getSession();
-      accessToken = data.session?.access_token ?? null;
-    } catch (err) {
-      return {
-        ok: false,
-        reason: classifyDeletionError(err),
-        message: DELETE_ACCOUNT_FAILURE_MESSAGE,
-      };
-    }
-
-    if (!accessToken) {
-      return {
-        ok: false,
-        reason: 'unauthorized',
-        message: DELETE_ACCOUNT_FAILURE_MESSAGE,
-      };
-    }
-
-    try {
-      const { data, error } = await supabase.functions.invoke(
-        DELETE_ACCOUNT_FUNCTION,
-        {
-          method: 'POST',
-          // Explicit Authorization header — the account to delete is derived
-          // from this token server-side. No user id is ever sent.
-          headers: { Authorization: `Bearer ${accessToken}` },
-          body: {},
-        },
-      );
-
-      if (error) {
-        // supabase-js FunctionsHttpError exposes `.context` (the Response).
-        const status: number | undefined = (error as { context?: { status?: number } })
-          ?.context?.status;
-        console.warn('[account] delete function error', status ?? 'unknown');
+      // Current, valid session token is the sole deletion authority.
+      let accessToken: string | null = null;
+      try {
+        const { data } = await supabase.auth.getSession();
+        accessToken = data.session?.access_token ?? null;
+      } catch (err) {
         return {
           ok: false,
-          reason: classifyDeletionError(error, status),
+          reason: classifyDeletionError(err),
           message: DELETE_ACCOUNT_FAILURE_MESSAGE,
         };
       }
 
-      if (!data || (data as { ok?: boolean }).ok !== true) {
-        console.warn('[account] delete function returned non-ok payload');
+      if (!accessToken) {
         return {
           ok: false,
-          reason: 'server',
+          reason: 'unauthorized',
           message: DELETE_ACCOUNT_FAILURE_MESSAGE,
         };
       }
 
-      return { ok: true };
-    } catch (err) {
-      console.warn('[account] delete request threw');
-      return {
-        ok: false,
-        reason: classifyDeletionError(err),
-        message: DELETE_ACCOUNT_FAILURE_MESSAGE,
-      };
+      try {
+        const { data, error } = await supabase.functions.invoke(
+          DELETE_ACCOUNT_FUNCTION,
+          {
+            method: 'POST',
+            // The account to delete is derived only from this bearer token.
+            headers: { Authorization: `Bearer ${accessToken}` },
+            body: {},
+          },
+        );
+
+        if (error) {
+          // supabase-js FunctionsHttpError exposes `.context` (the Response).
+          const status: number | undefined = (error as { context?: { status?: number } })
+            ?.context?.status;
+          console.warn('[account] delete function error', status ?? 'unknown');
+          return {
+            ok: false,
+            reason: classifyDeletionError(error, status),
+            message: DELETE_ACCOUNT_FAILURE_MESSAGE,
+          };
+        }
+
+        if (!data || (data as { ok?: boolean }).ok !== true) {
+          console.warn('[account] delete function returned non-ok payload');
+          return {
+            ok: false,
+            reason: 'server',
+            message: DELETE_ACCOUNT_FAILURE_MESSAGE,
+          };
+        }
+
+        deletionConfirmed = true;
+        return { ok: true };
+      } catch (err) {
+        console.warn('[account] delete request threw');
+        return {
+          ok: false,
+          reason: classifyDeletionError(err),
+          message: DELETE_ACCOUNT_FAILURE_MESSAGE,
+        };
+      }
+    } finally {
+      // A successful request keeps the barrier closed until the caller runs
+      // cleanup. Failures release it immediately so normal auth can continue.
+      if (!deletionConfirmed) finishAccountDeletionCleanupBoundary();
     }
   });
 }
@@ -220,8 +230,10 @@ export async function cleanupAfterAccountDeletion(
   // Finally clear the local Supabase session. This flips `useAuth` to
   // signed-out and lets AuthGate route back to the pre-auth flow.
   try {
-    await signOut();
+    const { error } = await clearDeletedAccountSession();
+    if (error) throw error;
   } catch (err) {
     console.warn('[account] cleanup: signOut failed', err);
   }
+  finishAccountDeletionCleanupBoundary();
 }

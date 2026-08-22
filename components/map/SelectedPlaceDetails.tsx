@@ -76,7 +76,13 @@ import { ReminderToggle } from '@/components/map/place/ReminderToggle';
 import { Radius, Spacing } from '@/constants';
 import { useTheme } from '@/lib/theme';
 import { useAuth } from '@/hooks/useAuth';
+import { useOnboardingV2 } from '@/hooks/useOnboardingV2';
 import { trackEvent } from '@/lib/analytics';
+import {
+  advanceOnboardingV2PlaceTour,
+  closeOnboardingV2PlaceTour,
+} from '@/lib/onboardingV2';
+import type { OnboardingPlaceTourStep } from '@/lib/onboardingV2Core';
 import { createOnceLatch, type OnceLatch } from '@/lib/onceLatch';
 import { isPlaceRecommendationsEnabled } from '@/lib/featureFlags';
 import { applySavedPlaceEdit } from '@/lib/savedPlaceEdits';
@@ -248,6 +254,19 @@ export function SelectedPlaceDetails({
   const { width: viewportWidth, height: viewportHeight } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const { session } = useAuth();
+  const { state: onboardingState } = useOnboardingV2();
+  const onboardingTourStep = onboardingState?.stage === 'place_tour' &&
+    onboardingState.tutorialSave?.savedPlaceId === saved.id
+    ? onboardingState.placeTourStep
+    : null;
+  const onboardingTourAvailability = { aiNote: !!saved.ai_note?.trim(), source: !!saved.source_url?.trim() };
+  const advanceOnboardingTour = () => {
+    void advanceOnboardingV2PlaceTour(onboardingTourAvailability);
+  };
+  const skipOnboardingTour = () => {
+    void closeOnboardingV2PlaceTour(saved.id);
+    onRequestDismiss();
+  };
 
   const [notifyOn, setNotifyOn] = useState(saved.notifications_enabled);
   const [mode, setMode] = useState<RadiusMode>(modeFromSaved(saved));
@@ -1131,6 +1150,15 @@ export function SelectedPlaceDetails({
         {reminderCluster}
       </View>
 
+      {onboardingTourStep && ['source', 'directions', 'close'].includes(onboardingTourStep) ? (
+        <PlaceTourCallout
+          step={onboardingTourStep}
+          placeName={saved.place.name}
+          onContinue={onboardingTourStep === 'close' ? skipOnboardingTour : advanceOnboardingTour}
+          onSkip={skipOnboardingTour}
+        />
+      ) : null}
+
       {/* Reminder distance settings — unchanged behaviour, just no longer a
           permanently-open card competing with the place itself. */}
       {notifyOn && reminderSettingsExpanded ? (
@@ -1239,6 +1267,15 @@ export function SelectedPlaceDetails({
           ) : null}
         </View>
       </Pressable>
+
+      {onboardingTourStep && ['found', 'ai_note'].includes(onboardingTourStep) ? (
+        <PlaceTourCallout
+          step={onboardingTourStep}
+          placeName={saved.place.name}
+          onContinue={advanceOnboardingTour}
+          onSkip={skipOnboardingTour}
+        />
+      ) : null}
 
       {/* Today's hours, in the venue's own timezone or not at all. */}
       {todayHours ? (
@@ -1723,6 +1760,43 @@ function RadiusOption({
   );
 }
 
+function PlaceTourCallout({
+  step,
+  placeName,
+  onContinue,
+  onSkip,
+}: {
+  step: OnboardingPlaceTourStep;
+  placeName: string;
+  onContinue: () => void;
+  onSkip: () => void;
+}) {
+  const { colors, typography } = useTheme();
+  const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
+  const sentence = step === 'source'
+    ? 'The original post stays with every place you save.'
+    : step === 'directions'
+      ? 'Directions turns a saved find into a plan.'
+      : step === 'close'
+        ? 'That’s it. Head back to your map when you’re ready.'
+        : `This is ${placeName}, exactly as it now lives on your map.`;
+  return (
+    <View style={styles.onboardingCallout} accessibilityLiveRegion="polite">
+      <View style={styles.onboardingCalloutPointer} />
+      <Feather name="bookmark" size={16} color={colors.accent} />
+      <Text style={styles.onboardingCalloutText}>{sentence}</Text>
+      <Pressable onPress={onContinue} hitSlop={8} accessibilityRole="button">
+        <Text style={styles.onboardingCalloutAction}>{step === 'close' ? 'Back to map' : 'Got it'}</Text>
+      </Pressable>
+      {step !== 'close' ? (
+        <Pressable onPress={onSkip} hitSlop={8} accessibilityRole="button">
+          <Text style={styles.onboardingCalloutSkip}>Skip tour</Text>
+        </Pressable>
+      ) : null}
+    </View>
+  );
+}
+
 function createStyles(
   colors: ReturnType<typeof useTheme>['colors'],
   typography: ReturnType<typeof useTheme>['typography'],
@@ -1734,6 +1808,38 @@ function createStyles(
     // type. One gap value for the whole page.
     wrap: { gap: Spacing.md },
     pressed: { opacity: 0.6 },
+    onboardingCallout: {
+      position: 'relative',
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      borderRadius: 14,
+      backgroundColor: colors.surfaceElevated,
+      borderWidth: 1,
+      borderColor: colors.accentBorder,
+    },
+    onboardingCalloutPointer: {
+      position: 'absolute',
+      top: -5,
+      left: 28,
+      width: 10,
+      height: 10,
+      backgroundColor: colors.surfaceElevated,
+      borderLeftWidth: 1,
+      borderTopWidth: 1,
+      borderColor: colors.accentBorder,
+      transform: [{ rotate: '45deg' }],
+    },
+    onboardingCalloutText: {
+      ...typography.caption,
+      flex: 1,
+      color: colors.textSecondary,
+      lineHeight: 18,
+    },
+    onboardingCalloutAction: { color: colors.accent, fontSize: 12, fontWeight: '800' },
+    onboardingCalloutSkip: { color: colors.textMuted, fontSize: 11, fontWeight: '600' },
     recommendationsLoading: {
       minHeight: 36,
       flexDirection: 'row',

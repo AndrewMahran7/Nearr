@@ -19,8 +19,12 @@ import {
   DELETE_ACCOUNT_FAILURE_MESSAGE,
   DELETE_ACCOUNT_FINAL_CONFIRM,
   DELETE_ACCOUNT_FIRST_CONFIRM,
+  beginAccountDeletionCleanupBoundary,
   classifyDeletionError,
   createSingleFlightGuard,
+  finishAccountDeletionCleanupBoundary,
+  isAccountDeletionCleanupPending,
+  waitForAccountDeletionCleanup,
 } from '../lib/accountDeletionCore';
 import {
   extractBearerToken,
@@ -148,6 +152,24 @@ async function run() {
     });
     check('a later call runs a fresh operation', () => {
       assert.equal(secondCalls, 1);
+    });
+  })();
+
+  // --- Post-delete bootstrap sequencing --------------------------------
+  await (async () => {
+    beginAccountDeletionCleanupBoundary();
+    assert.equal(isAccountDeletionCleanupPending(), true);
+    let bootstrapReleased = false;
+    const waitingBootstrap = waitForAccountDeletionCleanup().then(() => {
+      bootstrapReleased = true;
+    });
+    await Promise.resolve();
+    assert.equal(bootstrapReleased, false, 'bootstrap remains blocked during cleanup');
+    finishAccountDeletionCleanupBoundary();
+    await waitingBootstrap;
+    check('fresh anonymous bootstrap waits for deletion cleanup', () => {
+      assert.equal(bootstrapReleased, true);
+      assert.equal(isAccountDeletionCleanupPending(), false);
     });
   })();
 

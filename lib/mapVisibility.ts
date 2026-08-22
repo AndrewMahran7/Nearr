@@ -73,8 +73,11 @@ export function isMapFilterActive(filter: MapVisibilityFilter): boolean {
  */
 export function mapFilterOptions(
   places: readonly SavedPlaceWithPlace[] | null | undefined,
+  includeEmptyFilterIds: readonly string[] = [],
 ): MapFilterOption[] {
-  if (!Array.isArray(places) || places.length === 0) return [];
+  if (!Array.isArray(places)) return [];
+  const required = new Set(includeEmptyFilterIds);
+  if (places.length === 0 && required.size === 0) return [];
 
   const counts = new Map<string, number>();
   for (const saved of places) {
@@ -88,11 +91,13 @@ export function mapFilterOptions(
   ];
   for (const section of CATEGORY_BROWSE_SECTIONS) {
     const count = counts.get(section.id) ?? 0;
-    if (count === 0) continue;
+    if (count === 0 && !required.has(section.id)) continue;
     options.push({ id: section.id, label: section.label, count });
   }
   // A single group means filtering can only ever be a no-op — don't offer it.
-  return options.length > 2 ? options : [];
+  // Phase 2 may keep selected production groups visible at zero so Practice
+  // users learn the real map controls; normal map behavior is unchanged.
+  return options.length > 2 || required.size > 0 ? options : [];
 }
 
 /**

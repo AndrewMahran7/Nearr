@@ -23,6 +23,7 @@ import {
   openPlaceTour,
   receiveSharedSource,
   selectInterest,
+  selectPracticeSource,
   selectPlatform,
   startOnboardingV2,
   tapGetStarted,
@@ -69,7 +70,7 @@ for (const action of ['share', 'more', 'nearr', 'favorite', 'process', 'result']
   assert.ok(activationSource.includes(`'${action}'`), `interactive tutorial wires ${action}`);
 }
 assert.match(mapCoachmarkSource, /AppState\.addEventListener/, 'Practice detects a return without sharing');
-assert.match(mapCoachmarkSource, /PLACE PREVIEW/, 'Practice previews a place before opening the source');
+assert.match(mapCoachmarkSource, /TRY THIS ONE/, 'Practice previews a place before opening the source');
 assert.match(mapCoachmarkSource, /ONBOARDING_PRACTICE_HELP_VIDEO/, 'Practice exposes the future help-video hook');
 const finderStart = activationSource.indexOf("if (stage === 'tutorial_processing')");
 const finderEnd = activationSource.indexOf("if (stage === 'tutorial_result_seen')", finderStart);
@@ -182,6 +183,7 @@ assert.equal(practice.length, 3, 'starter shelf returns three cards');
 assert.ok(practice.some((item) => item.category !== practice[0]!.category), 'shelf diversifies category when possible');
 
 const first = practice[0]!;
+state = selectPracticeSource(state, first.id, now()).state;
 state = openExternalStarter(state, { contentId: first.id, sourceUrl: first.sourceUrl }, now()).state;
 assert.equal(state.pendingShare?.kind, 'independent_1');
 state = receiveSharedSource(state, first.sourceUrl, now()).state;
@@ -198,6 +200,7 @@ assert.equal(state.independentSaves.length, 1);
 // Resume after the first independent save.
 state = restart(state);
 const second = practice[1]!;
+state = selectPracticeSource(state, second.id, now()).state;
 state = openExternalStarter(state, { contentId: second.id, sourceUrl: second.sourceUrl }, now()).state;
 assert.equal(state.pendingShare?.kind, 'independent_2');
 const wrongSecondRevision = state.revision;

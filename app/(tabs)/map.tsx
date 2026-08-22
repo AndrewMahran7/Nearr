@@ -110,6 +110,7 @@ import {
   type MapVisibilityFilter,
 } from '@/lib/mapVisibility';
 import { useNearbyPlaces } from '@/hooks/useNearbyPlaces';
+import { useOnboardingV2 } from '@/hooks/useOnboardingV2';
 import { useRecentPlaces } from '@/hooks/useRecentPlaces';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
 import {
@@ -140,7 +141,7 @@ import {
   type LocationSample,
 } from '@/lib/liveLocation';
 import { trackEvent } from '@/lib/analytics';
-import { isOnboardingV2Enabled } from '@/lib/featureFlags';
+import { isOnboardingV2Enabled, isOnboardingV2Phase1Only } from '@/lib/featureFlags';
 import {
   closeOnboardingV2PlaceTour,
   isOnboardingV2InProgress,
@@ -347,9 +348,26 @@ const PREVIEW_INITIAL_REGION: Region = {
   longitudeDelta: 0.08,
 };
 
+const PHASE2_MAP_FILTER_STAGES = new Set([
+  'practice_ready',
+  'first_independent_external_video_opened',
+  'first_independent_share_returned',
+  'first_independent_save_complete',
+  'second_independent_external_video_opened',
+  'second_independent_share_returned',
+  'graduated',
+]);
+const PHASE2_REQUIRED_MAP_FILTERS = ['food_drink', 'outdoors'] as const;
+
 export default function MapScreen() {
   const router = useRouter();
   const { colors, typography, resolvedTheme } = useTheme();
+  const { state: onboardingV2State } = useOnboardingV2();
+  const phase2MapActive = !!(
+    !isOnboardingV2Phase1Only() &&
+    onboardingV2State?.cohort === 'new_user_v2' &&
+    PHASE2_MAP_FILTER_STAGES.has(onboardingV2State.stage)
+  );
   const mapRenderCountRef = useRef(0);
   mapRenderCountRef.current += 1;
   // Reserve the Queue pill's row unconditionally. It used to follow
@@ -570,9 +588,14 @@ export default function MapScreen() {
   // they just chose otherwise.
   const [mapCategoryFilter, setMapCategoryFilter] = useState<MapVisibilityFilter>(MAP_FILTER_ALL);
 
-  // Chips to offer, derived from what the user actually saved. Only groups
-  // with places appear, so a small collection shows two or three chips.
-  const mapFilterChoices = useMemo(() => mapFilterOptions(validPlaces), [validPlaces]);
+  // Chips to offer, derived from what the user actually saved. Normal map
+  // behavior shows only populated groups. During Phase 2 the real Food and
+  // Outdoors controls stay visible at zero so a fresh 1/3 map can practice
+  // the production filter interaction without introducing a second map UI.
+  const mapFilterChoices = useMemo(
+    () => mapFilterOptions(validPlaces, phase2MapActive ? PHASE2_REQUIRED_MAP_FILTERS : []),
+    [phase2MapActive, validPlaces],
+  );
 
   // The markers that actually render. One memoized pass over an array the map
   // already holds — no query, no refetch, no mutation. The selected place is
@@ -2500,10 +2523,7 @@ export default function MapScreen() {
         onDismiss={() => setSnackbar(null)}
       />
       {isOnboardingV2Enabled() ? (
-        <OnboardingV2MapCoachmark
-          selected={selected}
-          onDismissTutorialPlace={dismissSelectedPlace}
-        />
+        <OnboardingV2MapCoachmark />
       ) : null}
     </View>
   );

@@ -15,6 +15,7 @@ import {
   failPendingSave,
   openExternalStarter,
   selectInterest,
+  selectPracticeSource,
   selectPlatform,
   startOnboardingV2,
   tapGetStarted,
@@ -216,13 +217,14 @@ function dispatchedNavigationCount(
 // 11. Practice 1/3 -> external attempt -> return without share.
 {
   const before = practiceReady();
-  let state = openExternalStarter(before, {
+  let state = selectPracticeSource(before, 'practice-one', now()).state;
+  state = openExternalStarter(state, {
     contentId: 'practice-one',
     sourceUrl: 'https://www.instagram.com/reel/practice-one/',
   }, now()).state;
   state = failPendingSave(state, 'returned_without_share', now()).state;
   assert.equal(state.independentSaves.length, 0);
-  assertBounded('Practice 1/3 -> external attempt -> return', before.revision, state.revision, 2);
+  assertBounded('Practice 1/3 -> external attempt -> return', before.revision, state.revision, 3);
 }
 
 // 12. Graduation -> map.
@@ -231,13 +233,14 @@ function dispatchedNavigationCount(
   const before = state.revision;
   for (const [index, contentId] of ['practice-one', 'practice-two'].entries()) {
     const sourceUrl = `https://www.instagram.com/reel/${contentId}/`;
+    state = selectPracticeSource(state, contentId, now()).state;
     state = openExternalStarter(state, { contentId, sourceUrl }, now()).state;
     state = completePendingSave(state, { sourceUrl, savedPlaceId: `saved-${index}` }, now()).state;
   }
   assert.equal(state.stage, 'graduated');
   state = apply(state, acknowledgeGraduation);
   assert.equal(dispatchedNavigationCount('/(tabs)/map', state.stage, 20), 0);
-  assertBounded('Graduation -> map', before, state.revision, 5);
+  assertBounded('Graduation -> map', before, state.revision, 7);
 }
 
 // 13. Already-graduated user -> map exactly once from a stale route.

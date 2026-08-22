@@ -1,13 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, AppState, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, AppState, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
-  ONBOARDING_STARTER_CONTENT,
+  getNextPracticeSource,
   ONBOARDING_PRACTICE_HELP_VIDEO,
   platformLabel,
-  selectPracticeContent,
   starterContentById,
   type OnboardingStarterContent,
 } from '@/constants/onboardingStarterContent';
@@ -15,148 +14,165 @@ import { useOnboardingV2 } from '@/hooks/useOnboardingV2';
 import { isOnboardingV2Phase1Only } from '@/lib/featureFlags';
 import {
   acknowledgeOnboardingV2Graduation,
-  advanceOnboardingV2PlaceTour,
+  dismissOnboardingV2PracticeRecovery,
   failOnboardingV2PendingSave,
   openOnboardingV2Starter,
+  recordOnboardingV2PracticeHelpOpened,
+  recordOnboardingV2ReturnedWithoutShare,
   recordOnboardingV2StarterImpressions,
   recordOnboardingV2StarterPrompt,
-  recordOnboardingV2StarterShelfOpened,
+  selectOnboardingV2PracticeSource,
 } from '@/lib/onboardingV2';
-import type { SavedPlaceWithPlace } from '@/types';
+import {
+  onboardingV2SavedPlaceProgress,
+  planOnboardingPracticeRecovery,
+} from '@/lib/onboardingV2Core';
 
-type Props = {
-  selected: SavedPlaceWithPlace | null;
-  onDismissTutorialPlace: () => void;
-};
+// Current production map chrome occupies search, filters, and Queue above this edge.
+// Phase 2 remains a small overlay on the canonical map and never covers those controls.
+export const PHASE2_MAP_CHROME_CLEARANCE = 168;
 
-export function OnboardingV2MapCoachmark({ selected, onDismissTutorialPlace }: Props) {
+export function OnboardingV2MapCoachmark() {
   const insets = useSafeAreaInsets();
   const { state } = useOnboardingV2();
-  const [shelfOpen, setShelfOpen] = useState(false);
-  const [showAll, setShowAll] = useState(false);
   const [openingId, setOpeningId] = useState<string | null>(null);
-  const [previewCard, setPreviewCard] = useState<OnboardingStarterContent | null>(null);
   const [helpOpen, setHelpOpen] = useState(false);
-  const [returnedWithoutShare, setReturnedWithoutShare] = useState(false);
+  const [poolExhausted, setPoolExhausted] = useState(false);
   const appStateRef = useRef(AppState.currentState);
-
-  const excluded = useMemo(
-    () => [
-      state?.tutorialContentId,
-      ...(state?.independentSaves.map((save) => save.contentId) ?? []),
-    ].filter((id): id is string => !!id),
-    [state?.independentSaves, state?.tutorialContentId],
-  );
-  const cards = useMemo(
-    () => state
-      ? selectPracticeContent({
-          platform: state.preferredPlatform,
-          interest: state.interest,
-          excludeContentIds: excluded,
-          limit: showAll ? ONBOARDING_STARTER_CONTENT.length : 3,
-        })
-      : [],
-    [excluded, showAll, state],
-  );
+  const backgroundedAtRef = useRef<string | null>(null);
 
   const practiceReady = state?.stage === 'practice_ready' || state?.stage === 'first_independent_save_complete';
+  const slot = state?.independentSaves.length ?? 0;
+  const selectedId = state?.practiceContentIds[slot] ?? null;
+  const selected = starterContentById(selectedId);
+  const retrySource = starterContentById(state?.pendingShare?.contentId ?? selectedId);
   const independentPending = state?.pendingShare?.kind === 'independent_1' || state?.pendingShare?.kind === 'independent_2';
+  const recoveryVisible = !!state?.practiceRecovery && !state.practiceRecovery.dismissedAt;
+  const progress = state ? onboardingV2SavedPlaceProgress(state) : { count: 0 as const, savedPlaceIds: [] };
+
+  const excluded = useMemo(() => [
+    state?.tutorialContentId,
+    ...(state?.independentSaves.map((save) => save.contentId) ?? []),
+    ...(state?.practiceAttemptedContentIds ?? []),
+    ...(state?.practiceContentIds ?? []),
+  ].filter((id): id is string => !!id), [
+    state?.independentSaves,
+    state?.practiceAttemptedContentIds,
+    state?.practiceContentIds,
+    state?.tutorialContentId,
+  ]);
 
   useEffect(() => {
-    if (practiceReady) void recordOnboardingV2StarterPrompt();
+    if (!practiceReady || selectedId || !state) return;
+    const next = getNextPracticeSource({
+      platform: state.preferredPlatform,
+      interest: state.interest,
+      excludeContentIds: excluded,
+      rotationKey: `${state.funnelSessionId ?? 'practice'}:${slot}`,
+    });
+    if (next.kind === 'FOUND') {
+      setPoolExhausted(false);
+      void selectOnboardingV2PracticeSource(next.source.id);
+    } else {
+      setPoolExhausted(true);
+    }
+  }, [excluded, practiceReady, selectedId, slot, state]);
+
+  useEffect(() => {
+    if (!practiceReady) return;
+    void recordOnboardingV2StarterPrompt();
   }, [practiceReady]);
 
   useEffect(() => {
-    if (shelfOpen && cards.length > 0) {
-      void recordOnboardingV2StarterImpressions(cards.map((card) => card.id));
-    }
-  }, [cards, shelfOpen]);
+    if (selectedId) void recordOnboardingV2StarterImpressions([selectedId]);
+  }, [selectedId]);
 
   useEffect(() => {
-    let recoveryTimer: ReturnType<typeof setTimeout> | null = null;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const offerRecovery = (returnedAt: string) => {
+      const pending = state?.pendingShare ?? null;
+      const plan = planOnboardingPracticeRecovery({
+        pendingShare: pending,
+        backgroundedAt: backgroundedAtRef.current,
+        returnedAt,
+        now: new Date().toISOString(),
+      });
+      if (plan.status === 'wait') {
+        timer = setTimeout(() => offerRecovery(returnedAt), plan.delayMs);
+      } else if (plan.status === 'offer' && pending) {
+        void recordOnboardingV2ReturnedWithoutShare({
+          attemptId: pending.attemptId,
+          returnedAt: plan.returnedAt,
+          helpEligibleAt: plan.helpEligibleAt,
+        });
+      }
+    };
     const subscription = AppState.addEventListener('change', (nextState) => {
-      const returned = /inactive|background/.test(appStateRef.current) && nextState === 'active';
+      const previous = appStateRef.current;
       appStateRef.current = nextState;
-      if (!returned || !state?.pendingShare || state.pendingShare.shareReceivedAt) return;
-      recoveryTimer = setTimeout(() => {
-        setReturnedWithoutShare(true);
-        void failOnboardingV2PendingSave('returned_without_share');
-      }, 900);
+      if (nextState === 'background') backgroundedAtRef.current = new Date().toISOString();
+      if (/inactive|background/.test(previous) && nextState === 'active') {
+        offerRecovery(new Date().toISOString());
+      }
     });
     return () => {
-      if (recoveryTimer) clearTimeout(recoveryTimer);
+      if (timer) clearTimeout(timer);
       subscription.remove();
     };
-  }, [state?.pendingShare]);
+  }, [state?.pendingShare?.attemptId, state?.pendingShare?.shareReceivedAt]);
 
-  async function openShelf() {
-    await recordOnboardingV2StarterShelfOpened();
-    setShelfOpen(true);
-  }
-
-  async function openCard(card: OnboardingStarterContent) {
+  async function openSource(card: OnboardingStarterContent) {
     if (openingId) return;
     setOpeningId(card.id);
     try {
-      await openOnboardingV2Starter({ contentId: card.id, sourceUrl: card.sourceUrl });
-      setShelfOpen(false);
-      setPreviewCard(null);
-      setReturnedWithoutShare(false);
+      const next = await openOnboardingV2Starter({ contentId: card.id, sourceUrl: card.sourceUrl });
+      if (next.pendingShare?.contentId !== card.id) return;
       setHelpOpen(false);
       await Linking.openURL(card.sourceUrl);
     } catch {
-      void failOnboardingV2PendingSave('starter_link_open_failed');
-      setShelfOpen(true);
-      Alert.alert('Could not open this post', 'The link may have changed. Choose another starter video.');
+      void failOnboardingV2PendingSave('source_unavailable');
+      Alert.alert('This post is unavailable', 'Your map progress is safe. Try another find.');
     } finally {
       setOpeningId(null);
     }
   }
 
-  if (!state || state.cohort !== 'new_user_v2') return null;
-
-  if (state.stage === 'place_tour' && selected && selected.id === state.tutorialSave?.savedPlaceId) {
-    const step = state.placeTourStep ?? 'found';
-    const available = { aiNote: !!selected.ai_note?.trim(), source: !!selected.source_url?.trim() };
-    const copy = tourCopy(step, selected);
-    return (
-      <View style={[styles.coach, { top: insets.top + 12 }]}>
-        <Text style={styles.kicker}>YOUR FIRST PLACE</Text>
-        <Text style={styles.title}>{copy.title}</Text>
-        <Text style={styles.body}>{copy.body}</Text>
-        {step === 'close' ? (
-          <Pressable style={styles.primary} onPress={onDismissTutorialPlace}>
-            <Text style={styles.primaryText}>Close place card</Text>
-          </Pressable>
-        ) : (
-          <Pressable
-            style={styles.primary}
-            onPress={() => void advanceOnboardingV2PlaceTour(available)}
-          >
-            <Text style={styles.primaryText}>Next</Text>
-          </Pressable>
-        )}
-      </View>
-    );
+  async function tryAnother() {
+    if (!state) return;
+    const next = getNextPracticeSource({
+      platform: state.preferredPlatform,
+      interest: state.interest,
+      excludeContentIds: excluded,
+      rotationKey: `${state.funnelSessionId ?? 'practice'}:${slot}:${excluded.length}`,
+    });
+    if (next.kind === 'FOUND') {
+      setPoolExhausted(false);
+      await selectOnboardingV2PracticeSource(next.source.id, true);
+    } else {
+      setPoolExhausted(true);
+    }
   }
 
-  // Phase 2/3 implementation remains unreachable in the Phase-1 production
-  // rollout. Missing or invalid config also lands here and renders nothing.
+  async function retryCurrentSource() {
+    if (!retrySource) return;
+    setPoolExhausted(false);
+    await openSource(retrySource);
+  }
+
+  async function showHelp() {
+    await recordOnboardingV2PracticeHelpOpened();
+    setHelpOpen(true);
+  }
+
+  if (!state || state.cohort !== 'new_user_v2' || state.stage === 'place_tour') return null;
   if (isOnboardingV2Phase1Only()) return null;
 
   if (state.behavioralCompletedAt && !state.graduationAcknowledgedAt) {
     return (
-      <View style={[styles.coach, styles.readyCard, { top: insets.top + 90 }]}>
-        <View style={styles.readyIcon}><Feather name="map" size={28} color="#FF6B00" /></View>
+      <View style={[styles.graduation, { top: insets.top + PHASE2_MAP_CHROME_CLEARANCE }]}>
+        <Progress count={3} />
         <Text style={styles.title}>Your map is ready.</Text>
-        <View style={styles.graduationProgress}>
-          {[0, 1, 2].map((index) => <View key={index} style={styles.graduationDot}><Feather name="check" size={15} color="#101010" /></View>)}
-        </View>
-        <Text style={styles.body}>Three real places are on your map. Keep sending Nearr the ones you want to remember.</Text>
-        <View style={styles.challengeCard}>
-          <Feather name="flag" size={18} color="#FF6B00" />
-          <Text style={styles.challengeText}>Optional next challenge: save 3 places for your next free weekend.</Text>
-        </View>
+        <Text style={styles.body}>Three real places are yours. Keep sending Nearr the finds worth remembering.</Text>
         <Pressable style={styles.primary} onPress={() => void acknowledgeOnboardingV2Graduation()}>
           <Text style={styles.primaryText}>Explore your map</Text>
         </Pressable>
@@ -164,192 +180,164 @@ export function OnboardingV2MapCoachmark({ selected, onDismissTutorialPlace }: P
     );
   }
 
-  if (independentPending && state.pendingShare) {
-    const content = starterContentById(state.pendingShare.contentId);
-    return (
-      <View style={[styles.coach, { top: insets.top + 90 }]}>
-        <Text style={styles.kicker}>{1 + state.independentSaves.length} OF 3 PLACES SAVED</Text>
-        <Text style={styles.title}>{returnedWithoutShare ? 'Need more help?' : 'Finish the real share.'}</Text>
-        <Text style={styles.body}>
-          {returnedWithoutShare
-            ? 'It looks like Nearr did not receive that post. Your progress is safe.'
-            : 'Nothing is counted until Nearr receives this exact post and the place is really saved.'}
-        </Text>
-        {content ? (
-          <Pressable style={styles.primary} onPress={() => void openCard(content)}>
-            <Text style={styles.primaryText}>Open source video again</Text>
-          </Pressable>
-        ) : null}
-        <Pressable style={styles.secondary} onPress={() => returnedWithoutShare ? setHelpOpen(true) : void openShelf()}>
-          <Text style={styles.secondaryText}>{returnedWithoutShare ? 'Yes, show me the steps' : 'Choose another video'}</Text>
-        </Pressable>
-        {helpOpen ? <PracticeHelp onClose={() => setHelpOpen(false)} /> : null}
-      </View>
-    );
-  }
+  if (!practiceReady && !independentPending && !state.lastFailure) return null;
 
-  if (!practiceReady) return null;
-
-  const visualCount = Math.min(3, 1 + state.independentSaves.length);
   return (
-    <>
-      <View style={[styles.coach, { top: insets.top + 90 }]}>
-        <Text style={styles.kicker}>{visualCount} OF 3 PLACES SAVED</Text>
-        <Text style={styles.title}>
-          {state.independentSaves.length === 0 ? "Your map looks a bit empty. Let's change that." : 'One more place to go.'}
-        </Text>
-        <Text style={styles.body}>Nearr becomes useful when you send it places you actually want to remember.</Text>
-        <Pressable style={styles.primary} onPress={() => void openShelf()}>
-          <Text style={styles.primaryText}>
-            {state.independentSaves.length === 0 ? 'Add 2 real places' : 'Add one more real place'}
+    <View style={[styles.dock, { top: insets.top + PHASE2_MAP_CHROME_CLEARANCE }]}>
+      <Progress count={progress.count} />
+      {poolExhausted ? (
+        <>
+          <Text style={styles.title}>No more suggestions right now</Text>
+          <Text style={styles.body}>
+            {retrySource
+              ? 'Your progress is safe. Retry this find or return to the current practice step.'
+              : 'Your progress is safe. Check again when more starter finds are available.'}
           </Text>
-        </Pressable>
-      </View>
-
-      {shelfOpen ? (
-        <View style={styles.shelfBackdrop}>
-          <View style={[styles.shelf, { paddingBottom: Math.max(insets.bottom, 18) }]}>
-            <View style={styles.shelfHeader}>
-              <View>
-                <Text style={styles.kicker}>STARTER VIDEOS</Text>
-                <Text style={styles.shelfTitle}>Pick a place to practice with</Text>
-              </View>
-              <Pressable onPress={() => setShelfOpen(false)} hitSlop={10}>
-                <Feather name="x" size={24} color="#FFFFFF" />
+          <View style={styles.actionRow}>
+            {retrySource ? (
+              <>
+                <Pressable style={styles.primaryCompact} onPress={() => void retryCurrentSource()}>
+                  <Text style={styles.primaryText}>Retry current source</Text>
+                </Pressable>
+                <Pressable style={styles.quietButton} onPress={() => setPoolExhausted(false)}>
+                  <Text style={styles.quietText}>Return</Text>
+                </Pressable>
+              </>
+            ) : (
+              <Pressable style={styles.primaryCompact} onPress={() => void tryAnother()}>
+                <Text style={styles.primaryText}>Check again</Text>
               </Pressable>
-            </View>
-            <ScrollView showsVerticalScrollIndicator={false}>
-              {cards.map((card) => (
-                <Pressable
-                  key={card.id}
-                  onPress={() => setPreviewCard(card)}
-                  style={({ pressed }) => [styles.starterCard, pressed && { opacity: 0.78 }]}
-                >
-                  <View style={styles.cardIcon}><Feather name="play" size={18} color="#FF6B00" /></View>
-                  <View style={styles.cardCopy}>
-                    <Text style={styles.cardTitle}>{card.title}</Text>
-                    <Text style={styles.cardMeta}>{card.knownPlace?.locality ?? platformLabel(card.platform)} · Preview first</Text>
-                  </View>
-                  <Feather name="external-link" size={18} color="#888888" />
-                </Pressable>
-              ))}
-              {!showAll && ONBOARDING_STARTER_CONTENT.length > cards.length ? (
-                <Pressable onPress={() => setShowAll(true)} style={styles.seeMore}>
-                  <Text style={styles.seeMoreText}>See more</Text>
-                </Pressable>
-              ) : null}
-              <Text style={styles.shelfHelp}>You will preview the place before Nearr opens the real source video.</Text>
-            </ScrollView>
+            )}
           </View>
-        </View>
-      ) : null}
-      {previewCard ? (
-        <View style={styles.previewBackdrop}>
-          <View style={styles.previewModal}>
-            <Pressable onPress={() => setPreviewCard(null)} style={styles.previewClose} accessibilityLabel="Close preview">
-              <Feather name="x" size={22} color="#FFFFFF" />
+        </>
+      ) : recoveryVisible ? (
+        <>
+          <Text style={styles.title}>Need more help?</Text>
+          <Text style={styles.body}>No rush—your progress is safe, and that share may simply not have reached Nearr.</Text>
+          <View style={styles.actionRow}>
+            <Pressable style={styles.primaryCompact} onPress={() => void showHelp()}>
+              <Text style={styles.primaryText}>Show me again</Text>
             </Pressable>
-            <View style={styles.previewVisual}>
-              <Feather name={previewCard.category === 'beaches' ? 'wind' : 'map-pin'} size={38} color="#FFFFFF" />
-            </View>
-            <Text style={styles.kicker}>PLACE PREVIEW</Text>
-            <Text style={styles.title}>{previewCard.knownPlace?.name ?? previewCard.title}</Text>
-            <Text style={styles.body}>{previewCard.knownPlace?.locality ?? 'A real place from Nearr’s starter library'}</Text>
-            <View style={styles.previewNote}>
-              <Feather name="external-link" size={17} color="#FF6B00" />
-              <Text style={styles.previewNoteText}>The next tap leaves Nearr and opens the real source video.</Text>
-            </View>
-            <Pressable style={styles.primary} onPress={() => void openCard(previewCard)}>
-              <Text style={styles.primaryText}>{openingId === previewCard.id ? 'Opening…' : `Open in ${platformLabel(previewCard.platform)}`}</Text>
+            <Pressable style={styles.quietButton} onPress={() => void dismissOnboardingV2PracticeRecovery()}>
+              <Text style={styles.quietText}>I’m good</Text>
             </Pressable>
           </View>
-        </View>
+          <Pressable style={styles.tryAnother} onPress={() => void tryAnother()}>
+            <Text style={styles.quietText}>Try another</Text>
+          </Pressable>
+          {helpOpen ? <PracticeHelp onClose={() => setHelpOpen(false)} /> : null}
+        </>
+      ) : state.lastFailure && state.lastFailure.kind !== 'tutorial' ? (
+        <>
+          <Text style={styles.title}>That one didn’t land.</Text>
+          <Text style={styles.body}>Your saved places still count. Pick a fresh find and keep going.</Text>
+          <Pressable style={styles.primary} onPress={() => void tryAnother()}>
+            <Text style={styles.primaryText}>Try another</Text>
+          </Pressable>
+        </>
+      ) : independentPending && state.pendingShare ? (
+        <>
+          <Text style={styles.title}>Share it when it feels worth saving.</Text>
+          <Text style={styles.body}>Use the social app’s Share menu and choose Nearr. We’ll keep this exact find ready.</Text>
+          <View style={styles.actionRow}>
+            {starterContentById(state.pendingShare.contentId) ? (
+              <Pressable style={styles.primaryCompact} onPress={() => void openSource(starterContentById(state.pendingShare!.contentId)!)}>
+                <Text style={styles.primaryText}>Open again</Text>
+              </Pressable>
+            ) : null}
+            <Pressable style={styles.quietButton} onPress={() => void tryAnother()}>
+              <Text style={styles.quietText}>Try another</Text>
+            </Pressable>
+          </View>
+        </>
+      ) : selected ? (
+        <>
+          <Text style={styles.eyebrow}>{progress.count === 1 ? 'TRY THIS ONE' : 'NICE SAVE · ONE MORE'}</Text>
+          <View style={styles.preview}>
+            <View style={styles.poster}>
+              <Feather name={selected.category === 'beaches' ? 'sun' : 'map-pin'} size={28} color="#FFFFFF" />
+              <Text style={styles.posterPlatform}>{platformLabel(selected.platform)}</Text>
+            </View>
+            <View style={styles.previewCopy}>
+              <Text style={styles.previewTitle}>{selected.knownPlace?.name ?? selected.title}</Text>
+              <Text style={styles.previewMeta}>{selected.knownPlace?.locality ?? selected.category} · {selected.creator ?? platformLabel(selected.platform)}</Text>
+            </View>
+          </View>
+          <Text style={styles.body}>
+            {progress.count === 1
+              ? 'One place is already on your map. Two more good finds make it yours.'
+              : 'That marker is in. One more find finishes your map.'}
+          </Text>
+          <Pressable style={styles.primary} onPress={() => void openSource(selected)}>
+            <Text style={styles.primaryText}>{openingId === selected.id ? 'Opening…' : `Open in ${platformLabel(selected.platform)}`}</Text>
+          </Pressable>
+          <Pressable style={styles.tryAnother} onPress={() => void tryAnother()}>
+            <Text style={styles.quietText}>Try another find</Text>
+          </Pressable>
+        </>
       ) : null}
-    </>
+    </View>
   );
 }
 
-function tourCopy(step: string, selected: SavedPlaceWithPlace): { title: string; body: string } {
-  if (step === 'ai_note') {
-    return { title: 'Remember why it caught your eye.', body: selected.ai_note?.trim() ?? 'The video note is still being prepared, so this step can wait.' };
-  }
-  if (step === 'source') {
-    return { title: 'The original post stays attached.', body: 'Use the source action on this real place card whenever you want to watch it again.' };
-  }
-  if (step === 'directions') {
-    return { title: 'Turn a saved place into a plan.', body: 'Directions opens your maps app using this place.' };
-  }
-  if (step === 'close') {
-    return { title: 'Back to your map.', body: 'Close this real place card to start using Nearr.' };
-  }
-  return { title: 'Found it.', body: `Nearr found ${selected.place.name} and saved it to your map.` };
+function Progress({ count }: { count: number }) {
+  return (
+    <View style={styles.progressRow}>
+      <View style={styles.dots}>
+        {[0, 1, 2].map((index) => <View key={index} style={[styles.dot, index < count && styles.dotFilled]} />)}
+      </View>
+      <Text style={styles.progressText}>{count} of 3 saved</Text>
+    </View>
+  );
 }
 
 function PracticeHelp({ onClose }: { onClose: () => void }) {
   return (
     <View style={styles.helpCard}>
       <View style={styles.helpHeader}>
-        <Text style={styles.helpTitle}>Real-share refresher</Text>
-        <Pressable onPress={onClose} accessibilityLabel="Close help"><Feather name="x" size={20} color="#FFFFFF" /></Pressable>
+        <Text style={styles.helpTitle}>Share to Nearr</Text>
+        <Pressable onPress={onClose} accessibilityLabel="Close help"><Feather name="x" size={18} color="#FFFFFF" /></Pressable>
       </View>
-      <Text style={styles.helpAsset}>
-        {ONBOARDING_PRACTICE_HELP_VIDEO.uri ? 'HELP VIDEO READY' : 'HELP VIDEO SLOT · ASSET PENDING'}
-      </Text>
-      {['Tap Share on the source video', 'Tap More / Other if Nearr is hidden', 'Choose Nearr and finish the share'].map((label, index) => (
-        <View key={label} style={styles.helpStep}>
-          <View style={styles.helpNumber}><Text style={styles.helpNumberText}>{index + 1}</Text></View>
-          <Text style={styles.helpStepText}>{label}</Text>
-        </View>
-      ))}
-      <Text style={styles.helpFootnote}>The product hook is ready for Andrew’s future help/demo video asset.</Text>
+      <Text style={styles.helpAsset}>{ONBOARDING_PRACTICE_HELP_VIDEO.uri ? 'VIDEO READY' : 'HELP VIDEO SLOT · ASSET PENDING'}</Text>
+      <Text style={styles.helpSteps}>In the source app, tap Share. If Nearr is hidden, choose More or Other, then choose Nearr and finish the share.</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  coach: {
+  dock: {
+    position: 'absolute', left: 16, right: 16, zIndex: 80, elevation: 12,
+    padding: 14, borderRadius: 18, backgroundColor: '#111111', borderWidth: 1, borderColor: '#303030',
+    shadowColor: '#000', shadowOpacity: 0.28, shadowRadius: 14, shadowOffset: { width: 0, height: 7 },
+  },
+  graduation: {
     position: 'absolute', left: 16, right: 16, zIndex: 80, elevation: 12,
     padding: 20, borderRadius: 22, backgroundColor: '#111111', borderWidth: 1, borderColor: '#303030',
-    shadowColor: '#000', shadowOpacity: 0.35, shadowRadius: 18, shadowOffset: { width: 0, height: 8 },
   },
-  readyCard: { alignItems: 'stretch' },
-  readyIcon: { width: 52, height: 52, borderRadius: 18, backgroundColor: '#1E1E1E', alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
-  graduationProgress: { flexDirection: 'row', gap: 8, marginTop: 16 },
-  graduationDot: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center', backgroundColor: '#55D98B' },
-  challengeCard: { flexDirection: 'row', gap: 10, marginTop: 14, padding: 12, borderRadius: 14, backgroundColor: '#1B1B1B' },
-  challengeText: { flex: 1, color: '#B0B0B0', fontSize: 12, lineHeight: 18 },
-  kicker: { color: '#FF6B00', fontSize: 11, fontWeight: '800', letterSpacing: 1.4 },
-  title: { color: '#FFFFFF', fontSize: 23, lineHeight: 28, fontWeight: '800', marginTop: 8 },
-  body: { color: '#A0A0A0', fontSize: 14, lineHeight: 20, marginTop: 8 },
-  primary: { minHeight: 48, marginTop: 16, borderRadius: 15, backgroundColor: '#FF6B00', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 14 },
-  primaryText: { color: '#090909', fontSize: 15, fontWeight: '800' },
-  secondary: { minHeight: 42, alignItems: 'center', justifyContent: 'center', marginTop: 6 },
-  secondaryText: { color: '#FF6B00', fontSize: 14, fontWeight: '800' },
-  shelfBackdrop: { ...StyleSheet.absoluteFillObject, zIndex: 100, elevation: 20, backgroundColor: 'rgba(0,0,0,0.58)', justifyContent: 'flex-end' },
-  shelf: { maxHeight: '78%', backgroundColor: '#101010', borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingHorizontal: 18, paddingTop: 20 },
-  shelfHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 },
-  shelfTitle: { color: '#FFFFFF', fontSize: 22, fontWeight: '800', marginTop: 5 },
-  starterCard: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, marginBottom: 10, borderRadius: 18, backgroundColor: '#1B1B1B', borderWidth: 1, borderColor: '#2B2B2B' },
-  cardIcon: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: '#252525' },
-  cardCopy: { flex: 1 },
-  cardTitle: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
-  cardMeta: { color: '#8C8C8C', fontSize: 12, marginTop: 4 },
-  seeMore: { alignItems: 'center', padding: 14 },
-  seeMoreText: { color: '#FF6B00', fontWeight: '800' },
-  shelfHelp: { color: '#888888', fontSize: 12, lineHeight: 18, textAlign: 'center', paddingVertical: 14 },
-  previewBackdrop: { ...StyleSheet.absoluteFillObject, zIndex: 120, elevation: 24, justifyContent: 'center', padding: 18, backgroundColor: 'rgba(0,0,0,0.78)' },
-  previewModal: { padding: 20, borderRadius: 28, backgroundColor: '#111111', borderWidth: 1, borderColor: '#303030' },
-  previewClose: { position: 'absolute', right: 14, top: 14, zIndex: 2, width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.45)' },
-  previewVisual: { height: 150, marginBottom: 18, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: '#3A2519', overflow: 'hidden' },
-  previewNote: { flexDirection: 'row', gap: 10, marginTop: 16, padding: 12, borderRadius: 14, backgroundColor: '#1A1A1A' },
-  previewNoteText: { flex: 1, color: '#A5A5A5', fontSize: 12, lineHeight: 18 },
-  helpCard: { marginTop: 14, padding: 14, borderRadius: 16, backgroundColor: '#1B1B1B', borderWidth: 1, borderColor: '#3A3A3A' },
+  progressRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  dots: { flexDirection: 'row', gap: 6 },
+  dot: { width: 22, height: 6, borderRadius: 3, backgroundColor: '#383838' },
+  dotFilled: { backgroundColor: '#FF6B00' },
+  progressText: { color: '#A0A0A0', fontSize: 11, fontWeight: '800' },
+  eyebrow: { color: '#FF6B00', fontSize: 10, fontWeight: '900', letterSpacing: 1.2, marginTop: 12 },
+  title: { color: '#FFFFFF', fontSize: 18, lineHeight: 22, fontWeight: '800', marginTop: 12 },
+  body: { color: '#A4A4A4', fontSize: 13, lineHeight: 18, marginTop: 8 },
+  preview: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 9 },
+  poster: { width: 76, height: 76, borderRadius: 16, padding: 10, justifyContent: 'space-between', backgroundColor: '#5A321B' },
+  posterPlatform: { color: '#FFFFFF', fontSize: 10, fontWeight: '800' },
+  previewCopy: { flex: 1 },
+  previewTitle: { color: '#FFFFFF', fontSize: 17, lineHeight: 21, fontWeight: '800' },
+  previewMeta: { color: '#8F8F8F', fontSize: 12, lineHeight: 17, marginTop: 4, textTransform: 'capitalize' },
+  primary: { minHeight: 46, marginTop: 12, borderRadius: 14, backgroundColor: '#FF6B00', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 14 },
+  primaryCompact: { flex: 1, minHeight: 42, borderRadius: 13, backgroundColor: '#FF6B00', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12 },
+  primaryText: { color: '#090909', fontSize: 14, fontWeight: '800' },
+  actionRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 12 },
+  quietButton: { minHeight: 42, paddingHorizontal: 13, alignItems: 'center', justifyContent: 'center' },
+  quietText: { color: '#FF8A38', fontSize: 13, fontWeight: '800' },
+  tryAnother: { alignSelf: 'center', paddingHorizontal: 14, paddingTop: 11, paddingBottom: 2 },
+  helpCard: { marginTop: 12, padding: 12, borderRadius: 14, backgroundColor: '#1B1B1B', borderWidth: 1, borderColor: '#393939' },
   helpHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  helpTitle: { color: '#FFFFFF', fontSize: 15, fontWeight: '800' },
-  helpAsset: { color: '#FF6B00', fontSize: 10, fontWeight: '900', letterSpacing: 0.8, marginTop: 10, marginBottom: 12 },
-  helpStep: { flexDirection: 'row', alignItems: 'center', gap: 9, marginTop: 8 },
-  helpNumber: { width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: '#2B2B2B' },
-  helpNumberText: { color: '#FF6B00', fontSize: 11, fontWeight: '900' },
-  helpStepText: { flex: 1, color: '#CECECE', fontSize: 12 },
-  helpFootnote: { color: '#777777', fontSize: 10, lineHeight: 15, marginTop: 12 },
+  helpTitle: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
+  helpAsset: { color: '#FF6B00', fontSize: 9, fontWeight: '900', letterSpacing: 0.8, marginTop: 8 },
+  helpSteps: { color: '#C4C4C4', fontSize: 12, lineHeight: 18, marginTop: 8 },
 });

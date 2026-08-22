@@ -117,3 +117,37 @@ export function createSingleFlightGuard<T>(): SingleFlightGuard<T> {
     },
   };
 }
+
+// ---------------------------------------------------------------------------
+// Post-delete bootstrap barrier
+// ---------------------------------------------------------------------------
+
+let deletionCleanupBarrier: Promise<void> | null = null;
+let releaseDeletionCleanup: (() => void) | null = null;
+
+/**
+ * Block signed-out onboarding before the delete request can invalidate Auth.
+ * The Edge Function may trigger SIGNED_OUT before device cleanup finishes.
+ */
+export function beginAccountDeletionCleanupBoundary(): void {
+  if (deletionCleanupBarrier) return;
+  deletionCleanupBarrier = new Promise<void>((resolve) => {
+    releaseDeletionCleanup = resolve;
+  });
+}
+
+/** Release onboarding after local state and the deleted session are cleared. */
+export function finishAccountDeletionCleanupBoundary(): void {
+  releaseDeletionCleanup?.();
+  releaseDeletionCleanup = null;
+  deletionCleanupBarrier = null;
+}
+
+/** Wait until a confirmed deletion has completed all device-side teardown. */
+export async function waitForAccountDeletionCleanup(): Promise<void> {
+  await deletionCleanupBarrier;
+}
+
+export function isAccountDeletionCleanupPending(): boolean {
+  return deletionCleanupBarrier !== null;
+}

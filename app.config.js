@@ -66,6 +66,7 @@ const GOOGLE_PLACES_REST_KEY_SOURCE = (process.env.EXPO_PUBLIC_GOOGLE_PLACES_KEY
 
 const APP_ENV = (process.env.EXPO_PUBLIC_APP_ENV || '').trim();
 const BACKEND_ENV = (process.env.EXPO_PUBLIC_BACKEND_ENV || '').trim().toLowerCase();
+const IS_DEVELOPMENT_APP = APP_ENV.toLowerCase() === 'development';
 const DEV_SUPABASE_HOST = 'qnfxnmvxpjzfydgudtvs.supabase.co';
 const PRODUCTION_SUPABASE_HOST = 'rlqvxdwtetxsqxhqztkw.supabase.co';
 
@@ -235,9 +236,9 @@ module.exports = ({ config }) => {
       onboardingV2Enabled:
         process.env.EXPO_PUBLIC_ONBOARDING_V2_ENABLED || '',
       onboardingV2Phase1Only:
-        process.env.EXPO_PUBLIC_ONBOARDING_V2_PHASE1_ONLY || 'true',
+        process.env.EXPO_PUBLIC_ONBOARDING_V2_PHASE1_ONLY || (IS_DEVELOPMENT_APP ? 'false' : 'true'),
       onboardingV2BackendReady:
-        process.env.EXPO_PUBLIC_ONBOARDING_V2_BACKEND_READY || '',
+        process.env.EXPO_PUBLIC_ONBOARDING_V2_BACKEND_READY || (IS_DEVELOPMENT_APP ? 'true' : ''),
     },
   };
 };

@@ -1,8 +1,52 @@
 import type { User } from '@supabase/supabase-js';
+import type { OnboardingV2State } from './onboardingV2Core';
 
 export const ABANDONED_ANONYMOUS_TTL_DAYS = 30;
 export const CONVERTED_ANONYMOUS_GRACE_HOURS = 24;
 export const ACCOUNT_TRANSFER_TTL_MINUTES = 24 * 60;
+export const ANONYMOUS_BOOTSTRAP_TIMEOUT_MS = 12_000;
+
+export type AnonymousBootstrapDecision =
+  | 'use_anonymous_session'
+  | 'use_permanent_session'
+  | 'create_anonymous_session'
+  | 'restart_with_new_anonymous_session'
+  | 'recover_saved_identity';
+
+/**
+ * Auth is the identity authority. A local `anonymous_active` label without a
+ * live Supabase session cannot authorize RPCs and must never suppress repair.
+ */
+export function decideAnonymousBootstrap(input: {
+  sessionUserId: string | null;
+  sessionIsAnonymous: boolean;
+  state: Pick<
+    OnboardingV2State,
+    'cohort' | 'identityLifecycle' | 'anonymousUserId' | 'tutorialSave' |
+    'behavioralCompletedAt'
+  >;
+}): AnonymousBootstrapDecision {
+  if (input.sessionUserId) {
+    return input.sessionIsAnonymous ? 'use_anonymous_session' : 'use_permanent_session';
+  }
+  const locallyAnonymous =
+    input.state.cohort === 'new_user_v2' &&
+    input.state.identityLifecycle === 'anonymous_active' &&
+    !!input.state.anonymousUserId;
+  if (locallyAnonymous) {
+    return input.state.tutorialSave
+      ? 'recover_saved_identity'
+      : 'restart_with_new_anonymous_session';
+  }
+  if (
+    input.state.identityLifecycle === 'permanent_account' ||
+    input.state.cohort === 'existing_user_bypassed' ||
+    !!input.state.behavioralCompletedAt
+  ) {
+    return 'restart_with_new_anonymous_session';
+  }
+  return 'create_anonymous_session';
+}
 
 export function isAnonymousSupabaseUser(
   user: Pick<User, 'is_anonymous'> | null | undefined,
