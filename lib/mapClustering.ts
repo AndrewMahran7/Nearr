@@ -585,3 +585,24 @@ export function clusterExpansionZoom<T extends Clusterable>(
     return null;
   }
 }
+
+/** Current members for a cluster id. Empty means the id is stale/invalid. */
+export function clusterMemberPlaces<T extends Clusterable>(
+  built: MapClusterIndex<T>,
+  clusterId: number,
+): T[] {
+  if (!built.index) return [];
+  try {
+    return built.index
+      .getLeaves(clusterId, Infinity)
+      .flatMap((leaf) => {
+        const savedPlaceId = String(
+          (leaf.properties as { savedPlaceId?: string })?.savedPlaceId ?? '',
+        );
+        const place = built.byId.get(savedPlaceId);
+        return place ? [place] : [];
+      });
+  } catch {
+    return [];
+  }
+}

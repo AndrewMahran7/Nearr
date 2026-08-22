@@ -156,12 +156,22 @@ import {
   buildMapClusterIndex,
   clusterExpansionRegion,
   clusterExpansionZoom,
+  clusterMemberPlaces,
   clusterTapZoom,
   nextClusterZoom,
   queryMapClusters,
   regionToClusterZoom,
   type MapClusterMarker as MapClusterMarkerModel,
 } from '@/lib/mapClustering';
+import {
+  MapClusterExpansionCoordinator,
+  clusterMemberFitCoordinates,
+  clusterMemberKey,
+  resolveLatestClusterMarker,
+  type ClusterExpansionAction,
+  type ClusterExpansionRequest,
+} from '@/lib/mapClusterExpansion';
+import { recordMapClusterDiagnostic } from '@/lib/mapClusterDiagnostics';
 import {
   decideSavedPlaceFocus,
   findSavedPlaceForOpen,
@@ -434,6 +444,14 @@ export default function MapScreen() {
     revalidate,
   } = useSavedPlaces();
   const mapRef = useRef<MapView | null>(null);
+  const mapReadyRef = useRef(false);
+  const clusterExpansionCoordinatorRef = useRef(new MapClusterExpansionCoordinator());
+  const clusterExpansionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const clusterExpansionTokenRef = useRef(0);
+  const resetClusterExpansionRef = useRef<() => void>(() => undefined);
+  const executeClusterExpansionRef = useRef<(action: ClusterExpansionAction) => void>(() => undefined);
+  const dismissSelectedPlaceRef = useRef<() => void>(() => undefined);
+  const selectPlaceRef = useRef<(place: SavedPlaceWithPlace) => void>(() => undefined);
   const markerRefs = useRef<Record<string, ComponentRef<typeof Marker> | null>>({});
   const demo = isDemoMode();
   // Map Preview keeps the real MapView but skips Supabase / Google / location.
@@ -524,6 +542,8 @@ export default function MapScreen() {
   const followModeRef = useRef(true);
   followModeRef.current = followMode;
   const [selected, setSelected] = useState<SavedPlaceWithPlace | null>(null);
+  const selectedRef = useRef<SavedPlaceWithPlace | null>(null);
+  selectedRef.current = selected;
   // Updated only after a camera gesture completes. Presentation tiers are
   // discrete, so memoized markers never rerender on every pan frame.
   const [markerLatitudeDelta, setMarkerLatitudeDelta] = useState(
@@ -574,6 +594,7 @@ export default function MapScreen() {
     };
   }, [places, validPlaces]);
   const [mapReady, setMapReady] = useState(false);
+  mapReadyRef.current = mapReady;
   // Which list the bottom sheet shows. The old Nearby/Recent/Saved chips drove
   // this from the map chrome; they never filtered the map and each duplicated
   // something the sheet already offers (its default list already carries a
@@ -604,6 +625,10 @@ export default function MapScreen() {
     () => filterPlacesForMap(validPlaces, mapCategoryFilter, selected?.id ?? null),
     [mapCategoryFilter, selected?.id, validPlaces],
   );
+  const visiblePlacesRef = useRef<SavedPlaceWithPlace[]>(visiblePlaces);
+  visiblePlacesRef.current = visiblePlaces;
+  const mapCategoryFilterRef = useRef<MapVisibilityFilter>(mapCategoryFilter);
+  mapCategoryFilterRef.current = mapCategoryFilter;
 
   // A filter whose group no longer has any places (last one deleted, or the
   // collection changed underneath) silently returns to All rather than leaving
@@ -1048,6 +1073,9 @@ export default function MapScreen() {
   // when returning to this tab.
   useFocusEffect(
     useCallback(() => {
+      // A navigation return must not inherit an unfinished native camera
+      // transaction from the previously focused screen.
+      resetClusterExpansionRef.current();
       setScreenFocused(true);
       void revalidate();
       void trackEvent('map_opened', {});
@@ -1056,6 +1084,7 @@ export default function MapScreen() {
         // this and tears down the subscription so we never track a screen the
         // user isn't looking at.
         setScreenFocused(false);
+        resetClusterExpansionRef.current();
       };
     }, [revalidate]),
   );
@@ -1066,6 +1095,10 @@ export default function MapScreen() {
   // foreground the watch effect restarts a fresh subscription.
   useEffect(() => {
     const sub = AppState.addEventListener('change', (state: AppStateStatus) => {
+      // Native map animations can be interrupted without a completion callback
+      // while backgrounding. Retire that transient ownership on either edge;
+      // the next explicit tap starts from the latest settled camera/index.
+      resetClusterExpansionRef.current();
       setAppActive(state === 'active');
     });
     return () => sub.remove();
@@ -1141,6 +1174,8 @@ export default function MapScreen() {
     () => buildMapClusterIndex(clusterCandidates),
     [clusterCandidates],
   );
+  const clusterIndexRef = useRef(clusterIndex);
+  clusterIndexRef.current = clusterIndex;
 
   const clusterRegion = settledRegion ?? initialRegion;
   const effectiveClusterZoom = useMemo(() => {
@@ -1150,6 +1185,10 @@ export default function MapScreen() {
     });
     return nextClusterZoom(clusterZoom, continuous);
   }, [clusterRegion.longitudeDelta, clusterZoom, windowWidth]);
+  const clusterRegionRef = useRef(clusterRegion);
+  clusterRegionRef.current = clusterRegion;
+  const effectiveClusterZoomRef = useRef(effectiveClusterZoom);
+  effectiveClusterZoomRef.current = effectiveClusterZoom;
 
   const clusterNodes = useMemo(
     () =>
@@ -1166,6 +1205,8 @@ export default function MapScreen() {
     () => clusterNodes.flatMap((node) => (node.kind === 'cluster' ? [node] : [])),
     [clusterNodes],
   );
+  const clusterMarkersRef = useRef<MapClusterMarkerModel[]>(clusterMarkers);
+  clusterMarkersRef.current = clusterMarkers;
 
   /**
    * The places drawn as ordinary Nearr pins: the always-individual exceptions
@@ -1181,6 +1222,8 @@ export default function MapScreen() {
       (place) => alwaysIndividualIds.has(place.id) || looseIds.has(place.id),
     );
   }, [alwaysIndividualIds, clusterNodes, clusteringEnabled, visiblePlaces]);
+  const individualPlacesRef = useRef<SavedPlaceWithPlace[]>(individualPlaces);
+  individualPlacesRef.current = individualPlaces;
 
   const markerDetailLevel = useMemo(
     () => mapMarkerDetailLevel({
@@ -1190,56 +1233,293 @@ export default function MapScreen() {
     [individualPlaces.length, markerLatitudeDelta],
   );
 
-  /**
-   * Cluster tap: the ONE camera movement clustering is allowed to cause.
-   *
-   * Uses the clustering engine's own expansion zoom, so the animation lands
-   * exactly where this cluster breaks apart rather than at a guessed step. The
-   * zoom is floored at one level in (a tap always does something) and capped
-   * at the level where clustering stops, so places sharing a coordinate settle
-   * into today's overlapping individual pins instead of a cluster the user can
-   * tap forever.
-   */
-  const handleClusterPress = useCallback(
-    (cluster: MapClusterMarkerModel) => {
-      handleUserInteraction('marker_press');
-      const expansion = clusterExpansionZoom(clusterIndex, cluster.clusterId);
-      const zoom = clusterTapZoom({
-        expansionZoom: expansion ?? effectiveClusterZoom + 1,
-        currentZoom: effectiveClusterZoom,
-      });
-      void trackEvent('map_cluster_tapped', {
-        count: cluster.count,
-        dominant_group: cluster.groupId,
-        from_zoom: effectiveClusterZoom,
-        to_zoom: zoom,
-      });
-      followModeRef.current = false;
-      setFollowMode(false);
-      try {
-        mapRef.current?.animateToRegion(
-          clusterExpansionRegion({
-            latitude: cluster.latitude,
-            longitude: cluster.longitude,
-            zoom,
-            viewportWidth: windowWidth,
-            viewportHeight: mapAreaHeight || windowHeight,
-          }),
-          350,
-        );
-      } catch (e) {
-        if (__DEV__) console.debug('[map] cluster expand skipped', e);
-      }
+  const clearClusterExpansionTimer = useCallback(() => {
+    if (clusterExpansionTimerRef.current) {
+      clearTimeout(clusterExpansionTimerRef.current);
+      clusterExpansionTimerRef.current = null;
+    }
+  }, []);
+
+  const resetClusterExpansion = useCallback(() => {
+    clearClusterExpansionTimer();
+    clusterExpansionCoordinatorRef.current.reset();
+  }, [clearClusterExpansionTimer]);
+  resetClusterExpansionRef.current = resetClusterExpansion;
+
+  const emitClusterDiagnostic = useCallback((
+    event: Parameters<typeof recordMapClusterDiagnostic>[0],
+    request: ClusterExpansionRequest,
+    details: {
+      expansionDispatched: boolean;
+      cameraCommandExecuted: boolean;
+      clusteringRecomputed?: boolean;
+      result?: string;
     },
-    [
-      clusterIndex,
-      effectiveClusterZoom,
-      handleUserInteraction,
-      mapAreaHeight,
-      windowHeight,
-      windowWidth,
-    ],
-  );
+  ) => {
+    const active = clusterExpansionCoordinatorRef.current.current();
+    const membersVisible = request.memberIds.filter((id) =>
+      visiblePlacesRef.current.some((place) => place.id === id),
+    ).length;
+    recordMapClusterDiagnostic(event, {
+      clusterId: request.clusterId,
+      memberCount: request.memberIds.length,
+      currentZoom: request.currentZoom,
+      targetZoom: request.targetZoom,
+      currentRegion: lastRegionRef.current ?? clusterRegionRef.current,
+      targetRegion: request.targetRegion,
+      mapReady: mapReadyRef.current && !!mapRef.current,
+      selectedPin: !!selectedRef.current,
+      selectedCluster: active?.request.clusterId ?? null,
+      cameraOwner: active ? 'cluster' : followModeRef.current ? 'follow' : 'user',
+      animationActive: !!active && active.phase !== 'queued',
+      filterKey: String(mapCategoryFilterRef.current),
+      visibleMarkerCount: clusterMarkersRef.current.length + individualPlacesRef.current.length,
+      clusterChildCount: request.members.length,
+      expansionDispatched: details.expansionDispatched,
+      cameraCommandExecuted: details.cameraCommandExecuted,
+      clusteringRecomputed: details.clusteringRecomputed ?? false,
+      resultingClusterCount: details.clusteringRecomputed
+        ? clusterMarkersRef.current.length
+        : null,
+      resultingMemberCount: details.clusteringRecomputed ? membersVisible : null,
+      result: details.result,
+    });
+  }, []);
+
+  const executeClusterExpansion = useCallback((action: ClusterExpansionAction) => {
+    if (action.kind === 'none') return;
+    const { request } = action;
+
+    if (action.kind === 'queued') {
+      emitClusterDiagnostic('cluster_expand_skipped', request, {
+        expansionDispatched: false,
+        cameraCommandExecuted: false,
+        result: 'map_not_ready_queued',
+      });
+      return;
+    }
+
+    if (action.kind === 'completed') {
+      clearClusterExpansionTimer();
+      emitClusterDiagnostic('cluster_expand_completed', request, {
+        expansionDispatched: true,
+        cameraCommandExecuted: true,
+        clusteringRecomputed: true,
+        result: action.result,
+      });
+      return;
+    }
+
+    if (action.kind === 'fallback_select') {
+      clearClusterExpansionTimer();
+      const latest = request.memberIds
+        .map((id) => visiblePlacesRef.current.find((place) => place.id === id))
+        .find((place): place is SavedPlaceWithPlace => !!place);
+      if (latest) {
+        selectPlaceRef.current(latest);
+        const completed = clusterExpansionCoordinatorRef.current.completeFallbackSelection(request);
+        executeClusterExpansionRef.current(completed);
+      } else {
+        emitClusterDiagnostic('cluster_expand_skipped', request, {
+          expansionDispatched: true,
+          cameraCommandExecuted: false,
+          clusteringRecomputed: true,
+          result: 'members_no_longer_visible',
+        });
+      }
+      return;
+    }
+
+    const currentMap = mapRef.current;
+    if (!mapReadyRef.current || !currentMap) {
+      const queued = clusterExpansionCoordinatorRef.current.tap(request, false);
+      executeClusterExpansionRef.current(queued);
+      return;
+    }
+
+    clearClusterExpansionTimer();
+    try {
+      if (action.kind === 'primary_camera') {
+        currentMap.animateToRegion(request.targetRegion, 350);
+      } else {
+        const coordinates = clusterMemberFitCoordinates(request.members);
+        currentMap.fitToCoordinates(coordinates, {
+          edgePadding: { top: 100, right: 80, bottom: 220, left: 80 },
+          animated: true,
+        });
+      }
+      emitClusterDiagnostic('cluster_expand_requested', request, {
+        expansionDispatched: true,
+        cameraCommandExecuted: true,
+        result: action.kind === 'primary_camera' ? 'primary' : 'fallback_fit',
+      });
+      clusterExpansionTimerRef.current = setTimeout(() => {
+        clusterExpansionTimerRef.current = null;
+        emitClusterDiagnostic('cluster_expand_timeout', request, {
+          expansionDispatched: true,
+          cameraCommandExecuted: true,
+          result: action.kind,
+        });
+        executeClusterExpansionRef.current(clusterExpansionCoordinatorRef.current.timeout());
+      }, action.kind === 'primary_camera' ? 1_000 : 1_200);
+    } catch (error) {
+      emitClusterDiagnostic('cluster_expand_skipped', request, {
+        expansionDispatched: true,
+        cameraCommandExecuted: false,
+        result: error instanceof Error ? error.name : 'camera_exception',
+      });
+      executeClusterExpansionRef.current(clusterExpansionCoordinatorRef.current.cameraFailed());
+    }
+  }, [clearClusterExpansionTimer, emitClusterDiagnostic]);
+  executeClusterExpansionRef.current = executeClusterExpansion;
+
+  const expansionRegionFor = useCallback((args: {
+    latitude: number;
+    longitude: number;
+    zoom: number;
+  }) => clusterExpansionRegion({
+    ...args,
+    viewportWidth: windowWidth,
+    viewportHeight: mapAreaHeight || windowHeight,
+  }), [mapAreaHeight, windowHeight, windowWidth]);
+
+  /**
+   * Resolve every tap against the latest index. A stale native marker id is
+   * repaired by the closest currently-rendered cluster; an invalid id can
+   * therefore never turn the optional map-ref call into a silent no-op.
+   */
+  const handleClusterPress = useCallback((tapped: MapClusterMarkerModel) => {
+    handleUserInteraction('marker_press');
+    const latestMarkers = clusterMarkersRef.current;
+    const cluster = resolveLatestClusterMarker(tapped, latestMarkers);
+
+    const members = cluster
+      ? clusterMemberPlaces(clusterIndexRef.current, cluster.clusterId)
+      : [];
+    if (!cluster || members.length < 2) {
+      const nearest = [...visiblePlacesRef.current].sort((left, right) => {
+        const leftDistance = (left.place.latitude - tapped.latitude) ** 2
+          + (left.place.longitude - tapped.longitude) ** 2;
+        const rightDistance = (right.place.latitude - tapped.latitude) ** 2
+          + (right.place.longitude - tapped.longitude) ** 2;
+        return leftDistance - rightDistance;
+      })[0];
+      const currentZoom = effectiveClusterZoomRef.current;
+      const targetZoom = clusterTapZoom({ expansionZoom: currentZoom + 1, currentZoom });
+      const targetRegion = expansionRegionFor({
+        latitude: tapped.latitude,
+        longitude: tapped.longitude,
+        zoom: targetZoom,
+      });
+      const unresolved: ClusterExpansionRequest = {
+        token: ++clusterExpansionTokenRef.current,
+        clusterId: tapped.clusterId,
+        clusterKey: `stale-${tapped.clusterId}`,
+        memberIds: nearest ? [nearest.id] : [],
+        members: nearest ? [{
+          id: nearest.id,
+          latitude: nearest.place.latitude,
+          longitude: nearest.place.longitude,
+        }] : [],
+        currentZoom,
+        targetZoom,
+        latitude: tapped.latitude,
+        longitude: tapped.longitude,
+        targetRegion,
+      };
+      emitClusterDiagnostic('cluster_tap', unresolved, {
+        expansionDispatched: false,
+        cameraCommandExecuted: false,
+        result: 'stale_id_unresolved',
+      });
+      emitClusterDiagnostic('cluster_expand_skipped', unresolved, {
+        expansionDispatched: false,
+        cameraCommandExecuted: false,
+        clusteringRecomputed: true,
+        result: nearest ? 'fallback_selection' : 'stale_center_zoom',
+      });
+      if (nearest) {
+        selectPlaceRef.current(nearest);
+        emitClusterDiagnostic('cluster_expand_completed', unresolved, {
+          expansionDispatched: false,
+          cameraCommandExecuted: false,
+          clusteringRecomputed: true,
+          result: 'fallback_selection',
+        });
+      } else {
+        executeClusterExpansionRef.current(
+          clusterExpansionCoordinatorRef.current.tap(
+            unresolved,
+            mapReadyRef.current && !!mapRef.current,
+          ),
+        );
+      }
+      return;
+    }
+
+    dismissSelectedPlaceRef.current();
+    followModeRef.current = false;
+    setFollowMode(false);
+
+    const currentZoom = effectiveClusterZoomRef.current;
+    const expansion = clusterExpansionZoom(clusterIndexRef.current, cluster.clusterId);
+    const targetZoom = clusterTapZoom({
+      expansionZoom: expansion ?? currentZoom + 1,
+      currentZoom,
+    });
+    const targetRegion = expansionRegionFor({
+      latitude: cluster.latitude,
+      longitude: cluster.longitude,
+      zoom: targetZoom,
+    });
+    const request: ClusterExpansionRequest = {
+      token: ++clusterExpansionTokenRef.current,
+      clusterId: cluster.clusterId,
+      clusterKey: clusterMemberKey(members.map((member) => member.id)),
+      memberIds: members.map((member) => member.id),
+      members: members.map((member) => ({
+        id: member.id,
+        latitude: member.place.latitude,
+        longitude: member.place.longitude,
+      })),
+      currentZoom,
+      targetZoom,
+      latitude: cluster.latitude,
+      longitude: cluster.longitude,
+      targetRegion,
+    };
+
+    emitClusterDiagnostic('cluster_tap', request, {
+      expansionDispatched: false,
+      cameraCommandExecuted: false,
+      result: tapped.clusterId === cluster.clusterId ? 'latest_id' : 'stale_id_repaired',
+    });
+    void trackEvent('map_cluster_tapped', {
+      count: members.length,
+      dominant_group: cluster.groupId,
+      from_zoom: currentZoom,
+      to_zoom: targetZoom,
+    });
+    executeClusterExpansionRef.current(
+      clusterExpansionCoordinatorRef.current.tap(
+        request,
+        mapReadyRef.current && !!mapRef.current,
+      ),
+    );
+  }, [emitClusterDiagnostic, expansionRegionFor, handleUserInteraction]);
+
+  useEffect(() => {
+    const memberships = clusterMarkers.map((cluster) => {
+      const memberIds = clusterMemberPlaces(clusterIndex, cluster.clusterId).map((place) => place.id);
+      return { clusterKey: clusterMemberKey(memberIds), memberIds };
+    });
+    executeClusterExpansionRef.current(
+      clusterExpansionCoordinatorRef.current.clustersRecomputed(memberships),
+    );
+  }, [clusterIndex, clusterMarkers, effectiveClusterZoom]);
+
+  useEffect(() => resetClusterExpansion, [resetClusterExpansion]);
+
 
   // ---- center on user location once on initial map load ----------------
   // Runs when we have both a ready map and a GPS fix. Skipped if:
@@ -1539,6 +1819,7 @@ export default function MapScreen() {
     setPreviewExpanded(false);
     if (__DEV__) console.log('[map-sheet] dismissed');
   }, [previewTranslateY, selected]);
+  dismissSelectedPlaceRef.current = dismissSelectedPlace;
 
   /**
    * Frame the map around a single saved place's zone (marker + radius
@@ -1639,6 +1920,7 @@ export default function MapScreen() {
       console.warn('[map] focus failed', (err as Error)?.message ?? err);
     }
   }
+  selectPlaceRef.current = selectPlace;
 
   function focusCorrectedPlace(item: SavedPlaceWithPlace) {
     followModeRef.current = false;
@@ -1830,6 +2112,7 @@ export default function MapScreen() {
   }, []);
   const handleRegionChangeComplete = useCallback((region: Region) => {
     lastRegionRef.current = region;
+    clusterExpansionCoordinatorRef.current.cameraSettled();
     if (!mapPinRedesignEnabled) return;
     setMarkerLatitudeDelta(region.latitudeDelta);
     // Clustering inputs settle here and ONLY here. Recording the camera is not
@@ -1845,7 +2128,13 @@ export default function MapScreen() {
       ),
     );
   }, [mapPinRedesignEnabled, windowWidth]);
-  const handleMapReady = useCallback(() => setMapReady(true), []);
+  const handleMapReady = useCallback(() => {
+    mapReadyRef.current = true;
+    setMapReady(true);
+    executeClusterExpansionRef.current(
+      clusterExpansionCoordinatorRef.current.mapBecameUsable(),
+    );
+  }, []);
   const handleMapPress = useCallback(() => {
     dismissSelectedPlace();
   }, [dismissSelectedPlace]);
