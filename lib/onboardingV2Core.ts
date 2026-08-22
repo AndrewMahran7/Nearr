@@ -251,6 +251,7 @@ export type OnboardingV2ResumeEligibility =
 const TUTORIAL_SAVE_REQUIRED_STAGES = new Set<OnboardingV2Stage>([
   'account_required',
   'place_tour',
+  'phase1_complete',
   'practice_ready',
   'first_independent_external_video_opened',
   'first_independent_share_returned',
@@ -272,7 +273,11 @@ export function onboardingV2ResumeEligibility(
   const userId = typeof identity.userId === 'string' ? identity.userId.trim() : '';
   if (!identity.identityExists || !userId) return { eligible: false, reason: 'identity_missing' };
   if (state.cohort !== 'new_user_v2') return { eligible: false, reason: 'not_resumable_cohort' };
-  if (state.phase1CompletedAt || state.behavioralCompletedAt) {
+  // `phase1CompletedAt` is a durable milestone, not completion of the full
+  // behavioral journey. A full-Phase-2 client upgrades phase1_complete to
+  // practice_ready while preserving that timestamp; that repaired checkpoint
+  // must remain resumable after a force-close.
+  if (state.behavioralCompletedAt || (state.phase1CompletedAt && state.stage === 'phase1_complete')) {
     return { eligible: false, reason: 'already_completed' };
   }
   if (state.boundUserId !== userId) return { eligible: false, reason: 'identity_mismatch' };
@@ -758,6 +763,67 @@ export function onboardingV2SavedPlaceProgress(state: OnboardingV2State): {
   return { count: savedPlaceIds.length as 0 | 1 | 2 | 3, savedPlaceIds };
 }
 
+const PHASE2_MAP_STAGES = new Set<OnboardingV2Stage>([
+  // A Phase-1-only release persisted this stage before Phase 2 was enabled.
+  // Treat it as a visible continuation immediately while the durable upgrade
+  // to practice_ready is queued, so no frame can lose both Practice and its
+  // required map controls.
+  'phase1_complete',
+  'practice_ready',
+  'first_independent_external_video_opened',
+  'first_independent_share_returned',
+  'first_independent_save_complete',
+  'second_independent_external_video_opened',
+  'second_independent_share_returned',
+  'graduated',
+]);
+
+export function isOnboardingV2Phase2MapState(state: OnboardingV2State): boolean {
+  return state.cohort === 'new_user_v2' && !!state.tutorialSave && PHASE2_MAP_STAGES.has(state.stage);
+}
+
+export type OnboardingV2VisibleOwner =
+  | 'none'
+  | 'graduation'
+  | 'practice_loading'
+  | 'practice_preview'
+  | 'practice_pending'
+  | 'practice_recovery'
+  | 'practice_failure'
+  | 'practice_exhausted';
+
+/**
+ * The map's single visible-owner invariant for Phase 2. Every eligible,
+ * non-graduated checkpoint resolves to a concrete surface, including the
+ * short source-selection window and old phase1_complete checkpoints.
+ */
+export function resolveOnboardingV2VisibleOwner(input: {
+  state: OnboardingV2State | null | undefined;
+  phase1Only: boolean;
+  selectedSourceAvailable: boolean;
+  poolExhausted: boolean;
+}): OnboardingV2VisibleOwner {
+  const state = input.state;
+  if (
+    !state ||
+    input.phase1Only ||
+    state.cohort !== 'new_user_v2' ||
+    state.stage === 'place_tour' ||
+    !isOnboardingV2Phase2MapState(state)
+  ) return 'none';
+  if (state.behavioralCompletedAt) {
+    return state.graduationAcknowledgedAt ? 'none' : 'graduation';
+  }
+  if (input.poolExhausted) return 'practice_exhausted';
+  if (state.practiceRecovery && !state.practiceRecovery.dismissedAt) return 'practice_recovery';
+  if (state.lastFailure && state.lastFailure.kind !== 'tutorial') return 'practice_failure';
+  if (state.pendingShare?.kind === 'independent_1' || state.pendingShare?.kind === 'independent_2') {
+    return 'practice_pending';
+  }
+  if (input.selectedSourceAvailable) return 'practice_preview';
+  return 'practice_loading';
+}
+
 export function selectPracticeSource(
   state: OnboardingV2State,
   contentId: string,
@@ -1173,6 +1239,29 @@ export function closePlaceTour(
   );
 }
 
+/**
+ * Upgrade the exact checkpoint written by the Phase-1-only production OTA.
+ * The Phase 1 milestone and identity stay intact; only ownership moves from a
+ * terminal Phase-1 surface to the visible Phase 2 practice surface.
+ */
+export function resumePhase2AfterCompletedPhase1(
+  state: OnboardingV2State,
+  now: string,
+): OnboardingTransition {
+  if (
+    state.cohort !== 'new_user_v2' ||
+    state.stage !== 'phase1_complete' ||
+    !state.phase1CompletedAt ||
+    !state.tutorialSave ||
+    state.identityLifecycle !== 'permanent_account' ||
+    !state.permanentUserId ||
+    state.behavioralCompletedAt
+  ) return unchanged(state);
+  return transition(state, { stage: 'practice_ready' }, now, [
+    { name: 'practice_started', properties: { resumed_after_phase1: true } },
+  ]);
+}
+
 export function showStarterPrompt(state: OnboardingV2State, now: string): OnboardingTransition {
   if (state.cohort !== 'new_user_v2' || state.starterPromptShownAt) return unchanged(state);
   return transition(state, { starterPromptShownAt: now }, now, [
@@ -1211,5 +1300,8 @@ export function acknowledgeGraduation(
 }
 
 export function isOnboardingV2InProgressState(state: OnboardingV2State): boolean {
-  return state.cohort === 'new_user_v2' && !state.phase1CompletedAt && !state.behavioralCompletedAt;
+  return state.cohort === 'new_user_v2' &&
+    !state.behavioralCompletedAt &&
+    state.stage !== 'phase1_complete' &&
+    state.stage !== 'graduated';
 }

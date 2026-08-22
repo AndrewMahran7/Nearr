@@ -20,6 +20,7 @@ import {
 import { clearDevAuth } from '@/lib/devAuth';
 import { isPostAuthRoutingPending } from '@/lib/postAuthRouting';
 import { isOnboardingV2Enabled } from '@/lib/featureFlags';
+import { isOnboardingV2InProgressState } from '@/lib/onboardingV2Core';
 import {
   expectedOnboardingV2Route,
   onboardingRouteKey,
@@ -266,9 +267,8 @@ function AuthGate({
   // intro are complete.
   const behavioralOnboardingActive =
     isOnboardingV2Enabled() &&
-    onboardingV2?.cohort === 'new_user_v2' &&
-    !onboardingV2.phase1CompletedAt &&
-    !onboardingV2.behavioralCompletedAt;
+    !!onboardingV2 &&
+    isOnboardingV2InProgressState(onboardingV2);
   const suppressSetupReminder = !inTabs || authLinkPending || behavioralOnboardingActive;
   const [setupReminderVisible, setSetupReminderVisible] = useState(false);
   const [needsNotifications, setNeedsNotifications] = useState(false);

@@ -43,6 +43,7 @@ import {
   recordPracticeHelpOpened,
   recordPracticeReturnedWithoutShare,
   receiveSharedSource,
+  resumePhase2AfterCompletedPhase1,
   replaceTutorialContent,
   recordStarterImpressions,
   selectInterest,
@@ -135,7 +136,16 @@ async function readStateFresh(): Promise<OnboardingV2State> {
 }
 
 export async function getOnboardingV2State(): Promise<OnboardingV2State> {
-  return cachedState ?? readStateFresh();
+  const current = cachedState ?? await readStateFresh();
+  // Phase 1 shipped before Phase 2. Its valid terminal checkpoint must become
+  // a visible Practice continuation when (and only when) the installed bundle
+  // explicitly enables full V2. Persist through the normal mutation queue so
+  // local storage, subscribers and the server checkpoint converge once.
+  if (!isOnboardingV2Phase1Only()) {
+    const planned = resumePhase2AfterCompletedPhase1(current, nowIso());
+    if (planned.changed) return applyTransition(resumePhase2AfterCompletedPhase1);
+  }
+  return current;
 }
 
 export function getOnboardingV2Snapshot(): OnboardingV2State | null {

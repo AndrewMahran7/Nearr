@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, AppState, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
   getNextPracticeSource,
@@ -24,16 +23,13 @@ import {
   selectOnboardingV2PracticeSource,
 } from '@/lib/onboardingV2';
 import {
+  isOnboardingV2Phase2MapState,
   onboardingV2SavedPlaceProgress,
   planOnboardingPracticeRecovery,
+  resolveOnboardingV2VisibleOwner,
 } from '@/lib/onboardingV2Core';
 
-// Current production map chrome occupies search, filters, and Queue above this edge.
-// Phase 2 remains a small overlay on the canonical map and never covers those controls.
-export const PHASE2_MAP_CHROME_CLEARANCE = 168;
-
-export function OnboardingV2MapCoachmark() {
-  const insets = useSafeAreaInsets();
+export function OnboardingV2MapCoachmark({ topOffset }: { topOffset: number }) {
   const { state } = useOnboardingV2();
   const [openingId, setOpeningId] = useState<string | null>(null);
   const [helpOpen, setHelpOpen] = useState(false);
@@ -41,7 +37,8 @@ export function OnboardingV2MapCoachmark() {
   const appStateRef = useRef(AppState.currentState);
   const backgroundedAtRef = useRef<string | null>(null);
 
-  const practiceReady = state?.stage === 'practice_ready' || state?.stage === 'first_independent_save_complete';
+  const phase1Only = isOnboardingV2Phase1Only();
+  const practiceReady = !!state && isOnboardingV2Phase2MapState(state) && !state.behavioralCompletedAt;
   const slot = state?.independentSaves.length ?? 0;
   const selectedId = state?.practiceContentIds[slot] ?? null;
   const selected = starterContentById(selectedId);
@@ -49,6 +46,12 @@ export function OnboardingV2MapCoachmark() {
   const independentPending = state?.pendingShare?.kind === 'independent_1' || state?.pendingShare?.kind === 'independent_2';
   const recoveryVisible = !!state?.practiceRecovery && !state.practiceRecovery.dismissedAt;
   const progress = state ? onboardingV2SavedPlaceProgress(state) : { count: 0 as const, savedPlaceIds: [] };
+  const visibleOwner = resolveOnboardingV2VisibleOwner({
+    state,
+    phase1Only,
+    selectedSourceAvailable: !!selected,
+    poolExhausted,
+  });
 
   const excluded = useMemo(() => [
     state?.tutorialContentId,
@@ -164,12 +167,11 @@ export function OnboardingV2MapCoachmark() {
     setHelpOpen(true);
   }
 
-  if (!state || state.cohort !== 'new_user_v2' || state.stage === 'place_tour') return null;
-  if (isOnboardingV2Phase1Only()) return null;
+  if (!state || visibleOwner === 'none') return null;
 
-  if (state.behavioralCompletedAt && !state.graduationAcknowledgedAt) {
+  if (visibleOwner === 'graduation') {
     return (
-      <View style={[styles.graduation, { top: insets.top + PHASE2_MAP_CHROME_CLEARANCE }]}>
+      <View style={[styles.graduation, { top: topOffset }]}>
         <Progress count={3} />
         <Text style={styles.title}>Your map is ready.</Text>
         <Text style={styles.body}>Three real places are yours. Keep sending Nearr the finds worth remembering.</Text>
@@ -180,12 +182,10 @@ export function OnboardingV2MapCoachmark() {
     );
   }
 
-  if (!practiceReady && !independentPending && !state.lastFailure) return null;
-
   return (
-    <View style={[styles.dock, { top: insets.top + PHASE2_MAP_CHROME_CLEARANCE }]}>
+    <View style={[styles.dock, { top: topOffset }]}>
       <Progress count={progress.count} />
-      {poolExhausted ? (
+      {visibleOwner === 'practice_exhausted' ? (
         <>
           <Text style={styles.title}>No more suggestions right now</Text>
           <Text style={styles.body}>
@@ -210,7 +210,7 @@ export function OnboardingV2MapCoachmark() {
             )}
           </View>
         </>
-      ) : recoveryVisible ? (
+      ) : visibleOwner === 'practice_recovery' && recoveryVisible ? (
         <>
           <Text style={styles.title}>Need more help?</Text>
           <Text style={styles.body}>No rush—your progress is safe, and that share may simply not have reached Nearr.</Text>
@@ -227,7 +227,7 @@ export function OnboardingV2MapCoachmark() {
           </Pressable>
           {helpOpen ? <PracticeHelp onClose={() => setHelpOpen(false)} /> : null}
         </>
-      ) : state.lastFailure && state.lastFailure.kind !== 'tutorial' ? (
+      ) : visibleOwner === 'practice_failure' ? (
         <>
           <Text style={styles.title}>That one didn’t land.</Text>
           <Text style={styles.body}>Your saved places still count. Pick a fresh find and keep going.</Text>
@@ -235,7 +235,7 @@ export function OnboardingV2MapCoachmark() {
             <Text style={styles.primaryText}>Try another</Text>
           </Pressable>
         </>
-      ) : independentPending && state.pendingShare ? (
+      ) : visibleOwner === 'practice_pending' && independentPending && state.pendingShare ? (
         <>
           <Text style={styles.title}>Share it when it feels worth saving.</Text>
           <Text style={styles.body}>Use the social app’s Share menu and choose Nearr. We’ll keep this exact find ready.</Text>
@@ -250,7 +250,7 @@ export function OnboardingV2MapCoachmark() {
             </Pressable>
           </View>
         </>
-      ) : selected ? (
+      ) : visibleOwner === 'practice_preview' && selected ? (
         <>
           <Text style={styles.eyebrow}>{progress.count === 1 ? 'TRY THIS ONE' : 'NICE SAVE · ONE MORE'}</Text>
           <View style={styles.preview}>
@@ -275,7 +275,12 @@ export function OnboardingV2MapCoachmark() {
             <Text style={styles.quietText}>Try another find</Text>
           </Pressable>
         </>
-      ) : null}
+      ) : (
+        <>
+          <Text style={styles.title}>Getting your next find ready…</Text>
+          <Text style={styles.body}>Your first place is safe. Practice will stay here while Nearr prepares another source.</Text>
+        </>
+      )}
     </View>
   );
 }
