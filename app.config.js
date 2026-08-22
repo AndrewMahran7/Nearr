@@ -236,6 +236,8 @@ module.exports = ({ config }) => {
         process.env.EXPO_PUBLIC_ONBOARDING_V2_ENABLED || '',
       onboardingV2Phase1Only:
         process.env.EXPO_PUBLIC_ONBOARDING_V2_PHASE1_ONLY || 'true',
+      onboardingV2BackendReady:
+        process.env.EXPO_PUBLIC_ONBOARDING_V2_BACKEND_READY || '',
     },
   };
 };

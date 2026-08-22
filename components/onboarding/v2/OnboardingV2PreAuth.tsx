@@ -19,6 +19,8 @@ import {
   setOnboardingV2Platform,
 } from '@/lib/onboardingV2';
 import type { OnboardingInterest, OnboardingPlatform } from '@/lib/onboardingV2Core';
+import { StartupSurface } from '@/components/StartupSurface';
+import { useStartupWatchdog } from '@/hooks/useStartupWatchdog';
 
 const PLATFORMS: Array<{
   value: Exclude<OnboardingPlatform, 'other'>;
@@ -56,6 +58,14 @@ export function OnboardingV2PreAuth() {
   const [bootstrapping, setBootstrapping] = useState(false);
   const bootstrapInFlightRef = useRef(false);
   const mountedRef = useRef(true);
+  const screenOwnedStage =
+    state?.stage === 'overview' ||
+    state?.stage === 'platform' ||
+    state?.stage === 'interest' ||
+    state?.stage === 'interest_selected';
+  const waitingForRouteOwner = !!state && !screenOwnedStage;
+  const startupPending = loading || bootstrapping || waitingForRouteOwner;
+  const startupWatchdog = useStartupWatchdog(startupPending);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -86,8 +96,6 @@ export function OnboardingV2PreAuth() {
     });
   }, [bootstrapError, loading, state?.cohort, state?.identityLifecycle]);
 
-  if (!state || loading || bootstrapping) return <View style={styles.loading} />;
-
   if (bootstrapError) {
     return (
       <Phase1Frame footer={<Phase1PrimaryButton title="Try again" onPress={() => setBootstrapError(null)} />}>
@@ -95,6 +103,16 @@ export function OnboardingV2PreAuth() {
         <Text style={styles.headline}>We could not open your private map.</Text>
         <Text style={styles.body}>Check your connection and try again.</Text>
       </Phase1Frame>
+    );
+  }
+
+  if (!state || loading || bootstrapping || waitingForRouteOwner) {
+    return (
+      <StartupSurface
+        owner={startupWatchdog.timedOut ? 'ERROR_RECOVERY' : 'ONBOARDING'}
+        recovery={startupWatchdog.timedOut}
+        onRetry={startupWatchdog.timedOut ? startupWatchdog.retry : undefined}
+      />
     );
   }
 
@@ -208,10 +226,7 @@ export function OnboardingV2PreAuth() {
     );
   }
 
-  // Stages owned by /activate, /account, or /map wait for the sole automatic
-  // navigation authority in app/_layout.tsx. No screen-level resume CTA can
-  // compete with AuthGate or bounce a deleted identity between routes.
-  return <View style={styles.loading} accessibilityLabel="Opening your next Nearr step" />;
+  return <StartupSurface owner="ERROR_RECOVERY" recovery onRetry={startupWatchdog.retry} />;
 }
 
 function WelcomeProductHero() {

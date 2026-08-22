@@ -192,6 +192,15 @@ check(
   /<NotificationTapController\s+authReady=/.test(layoutCode),
 );
 
+check(
+  'the root app owns a visible startup surface while dependencies hydrate',
+  /resolveStartupPresentation/.test(layoutCode) && /<StartupSurface/.test(layoutCode),
+);
+check(
+  'the root startup watchdog exposes explicit recovery',
+  /startupPresentation\.mode === 'recovery'/.test(layoutCode) && /startupWatchdog\.retry/.test(layoutCode),
+);
+
 // Notification taps still route from one isolated response controller. Its
 // pending queue is non-rendering and AuthGate remains startup authority.
 check(

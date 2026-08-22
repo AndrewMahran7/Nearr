@@ -14,6 +14,8 @@ import {
   saveOnboardingV2TutorialPlace,
 } from '@/lib/onboardingV2';
 import type { OnboardingV2Stage } from '@/lib/onboardingV2Core';
+import { StartupSurface } from '@/components/StartupSurface';
+import { useStartupWatchdog } from '@/hooks/useStartupWatchdog';
 
 const LEARN_PROGRESS: Partial<Record<OnboardingV2Stage, number>> = {
   tutorial_processing: 0.9,
@@ -25,6 +27,16 @@ export function OnboardingV2Activation() {
   const { state } = useOnboardingV2();
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const invalidStage = !!state && !!state.stage && ![
+    'tutorial_ready',
+    'tutorial_share_tapped',
+    'tutorial_more_tapped',
+    'tutorial_nearr_selected',
+    'tutorial_favorite_added',
+    'tutorial_processing',
+    'tutorial_result_seen',
+  ].includes(state.stage);
+  const startupWatchdog = useStartupWatchdog(!state || invalidStage);
   const content = starterContentById(state?.tutorialContentId);
   const stage = state?.stage;
   const contentId = content?.id;
@@ -129,7 +141,13 @@ export function OnboardingV2Activation() {
     return <ImmersiveGuidedSave stage={stage} platform={platform} interest={state.interest ?? 'anything'} title={content.title} onBack={goBack} onAdvance={advance} />;
   }
 
-  return null;
+  return (
+    <StartupSurface
+      owner={startupWatchdog.timedOut ? 'ERROR_RECOVERY' : 'ONBOARDING'}
+      recovery={startupWatchdog.timedOut}
+      onRetry={startupWatchdog.timedOut ? startupWatchdog.retry : undefined}
+    />
+  );
 }
 
 function FoundPlaceHero({ name, locality }: { name: string; locality: string }) {

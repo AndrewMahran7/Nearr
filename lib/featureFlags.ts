@@ -18,7 +18,7 @@
 
 import Constants from 'expo-constants';
 
-import { resolveBooleanFlag } from './featureFlagsCore';
+import { resolveBooleanFlag, resolveOnboardingV2Mode } from './featureFlagsCore';
 
 function trim(value: unknown): string {
   return typeof value === 'string' ? value.trim() : '';
@@ -90,10 +90,20 @@ export function isVayrinProductUiEnabled(): boolean {
  * integrated and its real social links pass the physical device matrix.
  */
 export function isOnboardingV2Enabled(): boolean {
-  return resolveBooleanFlag(
-    process.env.EXPO_PUBLIC_ONBOARDING_V2_ENABLED,
-    readExtra('onboardingV2Enabled'),
+  return getOnboardingV2Mode() !== 'legacy';
+}
+
+export function getOnboardingV2Mode(): 'legacy' | 'phase1' | 'full' {
+  const enabled = trim(
+    process.env.EXPO_PUBLIC_ONBOARDING_V2_ENABLED || readExtra('onboardingV2Enabled'),
   );
+  const phase1Only = trim(
+    process.env.EXPO_PUBLIC_ONBOARDING_V2_PHASE1_ONLY || readExtra('onboardingV2Phase1Only'),
+  );
+  const backendReady = trim(
+    process.env.EXPO_PUBLIC_ONBOARDING_V2_BACKEND_READY || readExtra('onboardingV2BackendReady'),
+  );
+  return resolveOnboardingV2Mode({ enabled, phase1Only, backendReady });
 }
 
 /**
@@ -102,11 +112,7 @@ export function isOnboardingV2Enabled(): boolean {
  * shipped in a later product release.
  */
 export function isOnboardingV2Phase1Only(): boolean {
-  const raw = trim(
-    process.env.EXPO_PUBLIC_ONBOARDING_V2_PHASE1_ONLY ||
-      readExtra('onboardingV2Phase1Only'),
-  ).toLowerCase();
-  return raw !== 'false' && raw !== '0';
+  return getOnboardingV2Mode() !== 'full';
 }
 
 /**

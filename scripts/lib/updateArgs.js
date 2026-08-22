@@ -57,11 +57,27 @@ function reservedFlagOf(arg) {
  * forward, and whether they confirmed a production publish.
  *
  * @param {string[]} rest
- * @returns {{message: string, passthrough: string[], confirmed: boolean}}
+ * @returns {{message: string, passthrough: string[], confirmed: boolean, releaseRecord: string}}
  */
 function parseUpdateArgs(rest) {
   const confirmed = rest.includes('--yes');
-  const passthrough = rest.filter((arg) => arg !== '--yes');
+  const passthrough = [];
+  let releaseRecord = '';
+
+  for (let i = 0; i < rest.length; i += 1) {
+    const arg = rest[i];
+    if (arg === '--yes') continue;
+    if (arg === '--release-record') {
+      releaseRecord = rest[i + 1] ?? '';
+      i += 1;
+      continue;
+    }
+    if (arg.startsWith('--release-record=')) {
+      releaseRecord = arg.slice('--release-record='.length);
+      continue;
+    }
+    passthrough.push(arg);
+  }
 
   let message = '';
   for (let i = 0; i < passthrough.length; i += 1) {
@@ -73,7 +89,7 @@ function parseUpdateArgs(rest) {
     }
   }
 
-  return { message, passthrough, confirmed };
+  return { message, passthrough, confirmed, releaseRecord };
 }
 
 /**

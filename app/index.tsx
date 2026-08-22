@@ -3,6 +3,7 @@ import { Redirect } from 'expo-router';
 import { useAuth } from '@/hooks/useAuth';
 import { useOnboardingV2 } from '@/hooks/useOnboardingV2';
 import { isOnboardingV2Enabled } from '@/lib/featureFlags';
+import { StartupSurface } from '@/components/StartupSurface';
 
 export default function Index() {
   // Initial-entry decision. Onboarding is now the PUBLIC pre-auth landing:
@@ -12,7 +13,9 @@ export default function Index() {
   const { session, loading } = useAuth();
   const { state: onboardingV2, loading: onboardingV2Loading } = useOnboardingV2();
 
-  if (loading || (isOnboardingV2Enabled() && onboardingV2Loading)) return null;
+  if (loading || (isOnboardingV2Enabled() && onboardingV2Loading)) {
+    return <StartupSurface owner="AUTH" />;
+  }
   if (!session) return <Redirect href="/(onboarding)" />;
   if (isOnboardingV2Enabled() && session.user.is_anonymous === true) {
     if (onboardingV2?.stage === 'account_required') {

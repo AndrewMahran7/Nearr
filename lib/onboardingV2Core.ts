@@ -51,6 +51,23 @@ export type OnboardingV2Stage =
   | 'second_independent_share_returned'
   | 'graduated';
 
+const ONBOARDING_V2_STAGES = new Set<OnboardingV2Stage>([
+  'not_started', 'overview', 'platform', 'platform_selected', 'interest',
+  'interest_selected', 'tutorial_ready', 'tutorial_share_tapped',
+  'tutorial_more_tapped', 'tutorial_nearr_selected', 'tutorial_favorite_added',
+  'tutorial_processing', 'tutorial_result_seen', 'tutorial_external_video_opened',
+  'tutorial_share_returned', 'account_required', 'place_tour', 'phase1_complete',
+  'practice_ready', 'first_independent_external_video_opened',
+  'first_independent_share_returned', 'first_independent_save_complete',
+  'second_independent_external_video_opened', 'second_independent_share_returned',
+  'graduated',
+]);
+const LEGACY_ONBOARDING_V2_STAGES = new Set(['signin']);
+
+const IDENTITY_LIFECYCLES = new Set<OnboardingIdentityLifecycle>([
+  'none', 'anonymous_active', 'permanent_account_linking', 'permanent_account',
+]);
+
 export type OnboardingSaveKind = 'tutorial' | 'independent_1' | 'independent_2';
 
 export type OnboardingIdentityLifecycle =
@@ -277,16 +294,26 @@ export function decodeOnboardingV2State(
   if (!raw) return initial;
   try {
     const parsed = JSON.parse(raw) as Partial<OnboardingV2State>;
-    if (!parsed || parsed.version !== ONBOARDING_V2_VERSION || typeof parsed.stage !== 'string') {
+    if (
+      !parsed ||
+      parsed.version !== ONBOARDING_V2_VERSION ||
+      typeof parsed.stage !== 'string' ||
+      (!ONBOARDING_V2_STAGES.has(parsed.stage as OnboardingV2Stage) &&
+        !LEGACY_ONBOARDING_V2_STAGES.has(parsed.stage)) ||
+      (parsed.identityLifecycle != null &&
+        !IDENTITY_LIFECYCLES.has(parsed.identityLifecycle as OnboardingIdentityLifecycle))
+    ) {
       return initial;
     }
     const legacyPermanent = !!parsed.authCompletedAt && !!parsed.boundUserId;
     const persistedStage = parsed.stage as string;
     const stage: OnboardingV2Stage = persistedStage === 'signin'
       ? 'interest_selected'
-      : ['tutorial_external_video_opened', 'tutorial_share_returned'].includes(persistedStage)
-        ? 'tutorial_ready'
-        : persistedStage as OnboardingV2Stage;
+      : persistedStage === 'platform_selected'
+        ? 'interest'
+        : ['tutorial_external_video_opened', 'tutorial_share_returned'].includes(persistedStage)
+          ? 'tutorial_ready'
+          : persistedStage as OnboardingV2Stage;
     const pendingShare = parsed.pendingShare
       ? {
           ...parsed.pendingShare,

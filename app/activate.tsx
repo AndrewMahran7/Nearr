@@ -17,6 +17,7 @@ import { OnboardingV2Activation } from '@/components/onboarding/v2';
 import { useAuth } from '@/hooks/useAuth';
 import { useOnboardingV2 } from '@/hooks/useOnboardingV2';
 import { isOnboardingV2Enabled } from '@/lib/featureFlags';
+import { StartupSurface } from '@/components/StartupSurface';
 
 type FirstSaveSource = 'instagram' | 'tiktok' | 'paste_link';
 
@@ -32,7 +33,9 @@ type FirstSaveSource = 'instagram' | 'tiktok' | 'paste_link';
 export default function ActivateRoute() {
   const { session, loading: authLoading } = useAuth();
   const { state, loading } = useOnboardingV2();
-  if (isOnboardingV2Enabled() && (loading || authLoading)) return null;
+  if (isOnboardingV2Enabled() && (loading || authLoading)) {
+    return <StartupSurface owner="ONBOARDING" />;
+  }
   const resumesV2 =
     isOnboardingV2Enabled() &&
     state?.cohort === 'new_user_v2' &&

@@ -31,3 +31,15 @@ export function resolveBooleanFlag(envValue: unknown, extraValue: unknown): bool
   if (env) return isTruthyFlag(env);
   return isTruthyFlag(extraValue);
 }
+
+export type OnboardingV2Mode = 'legacy' | 'phase1' | 'full';
+
+/** Fail-safe resolution for the only supported onboarding flag combinations. */
+export function resolveOnboardingV2Mode(input: {
+  enabled: unknown;
+  phase1Only: unknown;
+  backendReady: unknown;
+}): OnboardingV2Mode {
+  if (!isTruthyFlag(input.enabled) || !isTruthyFlag(input.backendReady)) return 'legacy';
+  return isTruthyFlag(input.phase1Only) ? 'phase1' : 'full';
+}

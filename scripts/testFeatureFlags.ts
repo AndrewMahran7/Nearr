@@ -13,7 +13,7 @@
  *   npx ts-node -P scripts/tsconfig.json scripts/testFeatureFlags.ts
  */
 
-import { isTruthyFlag, resolveBooleanFlag } from '../lib/featureFlagsCore';
+import { isTruthyFlag, resolveBooleanFlag, resolveOnboardingV2Mode } from '../lib/featureFlagsCore';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -76,8 +76,21 @@ check('app config exposes Vayrin Product UI flag', /vayrinProductUiEnabled/.test
 check('onboarding v2 unset => OFF', resolveBooleanFlag(undefined, undefined) === false);
 check('onboarding v2 explicit true => ON', resolveBooleanFlag('true', undefined) === true);
 check('phase 1 rollout flag is exposed', /isOnboardingV2Phase1Only/.test(featureFlagsSource));
-check('phase 1 rollout defaults safe', /raw !== 'false' && raw !== '0'/.test(featureFlagsSource));
+check('phase 1 rollout defaults safe', /getOnboardingV2Mode\(\) !== 'full'/.test(featureFlagsSource));
 check('app config exposes phase 1 boundary', /onboardingV2Phase1Only/.test(appConfigSource));
+check(
+  'enabled without backend capability falls back to legacy',
+  resolveOnboardingV2Mode({ enabled: 'true', phase1Only: 'true', backendReady: '' }) === 'legacy',
+);
+check(
+  'enabled + backend + phase1 boundary selects phase1',
+  resolveOnboardingV2Mode({ enabled: 'true', phase1Only: 'true', backendReady: 'true' }) === 'phase1',
+);
+check(
+  'enabled + backend + explicit phase2 selects full',
+  resolveOnboardingV2Mode({ enabled: 'true', phase1Only: 'false', backendReady: 'true' }) === 'full',
+);
+check('app config exposes backend capability', /onboardingV2BackendReady/.test(appConfigSource));
 
 if (failures > 0) {
   console.error(`\n${failures} feature-flag test(s) FAILED`);

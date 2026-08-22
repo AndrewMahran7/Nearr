@@ -60,6 +60,9 @@ import { Colors } from '@/constants';
 import { ThemeProvider, useTheme } from '@/lib/theme';
 import { AutoSaveUndoToast } from '@/components/AutoSaveUndoToast';
 import { NotificationTapController } from '@/components/NotificationTapController';
+import { StartupSurface } from '@/components/StartupSurface';
+import { useStartupWatchdog } from '@/hooks/useStartupWatchdog';
+import { ownerForStartupRoute, resolveStartupPresentation } from '@/lib/startupWatchdogCore';
 
 logInfo('APP_START', '_layout module loaded');
 
@@ -240,7 +243,7 @@ function AuthGate({
 }) {
   const { session, loading, isDevSession } = useAuth();
   const isAnonymousSession = session?.user.is_anonymous === true;
-  const { state: onboardingV2 } = useOnboardingV2();
+  const { state: onboardingV2, loading: onboardingV2Loading } = useOnboardingV2();
   const segments = useSegments();
   const router = useRouter();
   const currentRoute = onboardingRouteKey(segments);
@@ -274,6 +277,14 @@ function AuthGate({
   const [legalAgreementVisible, setLegalAgreementVisible] = useState(false);
   const [acceptingLegal, setAcceptingLegal] = useState(false);
   const previousUserIdRef = useRef<string | null>(null);
+  const startupPending = loading || (isOnboardingV2Enabled() && onboardingV2Loading);
+  const startupWatchdog = useStartupWatchdog(startupPending);
+  const startupPresentation = resolveStartupPresentation({
+    pending: startupPending,
+    timedOut: startupWatchdog.timedOut,
+    pendingOwner: 'AUTH',
+    readyOwner: ownerForStartupRoute(currentRoute),
+  });
 
   // Fire `session_started` once per real Supabase session (id changes when
   // the user signs in, signs out + back in, or the JWT identity changes).
@@ -433,7 +444,12 @@ function AuthGate({
         replaceOnce('/(onboarding)');
         return;
       }
-      if (onboardingV2.boundUserId && onboardingV2.boundUserId !== session.user.id) return;
+      if (onboardingV2.boundUserId && onboardingV2.boundUserId !== session.user.id) {
+        // A checkpoint owned by a deleted/stale identity must return to the
+        // visible repair owner. Never wait forever on the route it used to own.
+        replaceOnce('/(onboarding)');
+        return;
+      }
       const expectedRoute = expectedOnboardingV2Route(onboardingV2.stage);
       if (expectedRoute) replaceOnce(expectedRoute);
       return;
@@ -517,6 +533,16 @@ function AuthGate({
     }
     void refreshSetupReminder();
   }, [session, isAnonymousSession, isDevSession, suppressSetupReminder, refreshSetupReminder]);
+
+  if (startupPresentation.mode !== 'ready') {
+    return (
+      <StartupSurface
+        owner={startupPresentation.owner}
+        recovery={startupPresentation.mode === 'recovery'}
+        onRetry={startupPresentation.mode === 'recovery' ? startupWatchdog.retry : undefined}
+      />
+    );
+  }
 
   return (
     <>

@@ -69,6 +69,11 @@ check(
 check('parseUpdateArgs strips --yes from passthrough', !parseUpdateArgs(['-m', 'x', '--yes']).passthrough.includes('--yes'));
 check('parseUpdateArgs reports confirmation', parseUpdateArgs(['-m', 'x', '--yes']).confirmed === true);
 check('parseUpdateArgs defaults to unconfirmed', parseUpdateArgs(['-m', 'x']).confirmed === false);
+check(
+  'release record is stripped from EAS passthrough',
+  parseUpdateArgs(['-m', 'x', '--release-record', 'release.json']).releaseRecord === 'release.json' &&
+    !parseUpdateArgs(['-m', 'x', '--release-record', 'release.json']).passthrough.includes('--release-record'),
+);
 
 // ---- Shell metacharacters stay inert ---------------------------------------
 // These are only dangerous if argv is flattened into a shell command line.

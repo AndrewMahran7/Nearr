@@ -1,0 +1,21 @@
+{
+  "releaseId": "YYYY-MM-DD-short-description",
+  "previousMainSha": "0000000000000000000000000000000000000000",
+  "previousOtaGroup": "00000000-0000-4000-8000-000000000000",
+  "currentOtaGroup": null,
+  "edgeVersions": {
+    "process-share-link": 0
+  },
+  "railwayDeployment": "deployment-id-and-commit",
+  "migrationLedger": [
+    "latest-production-migration"
+  ],
+  "rollbackProcedure": "Republish previousOtaGroup to the production channel after repeating the concurrency guard.",
+  "deploymentStatus": "PLANNED",
+  "physicalQa": {
+    "signedOutColdLaunch": "PENDING",
+    "signedInColdLaunch": "PENDING",
+    "forceCloseRelaunch": "PENDING",
+    "freshOnboardingLaunch": "PENDING"
+  }
+}

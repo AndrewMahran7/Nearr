@@ -28,8 +28,11 @@ import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { resolveLocalBin, runCli } from './lib/cliRunner.js';
+import { captureCli, resolveLocalBin, runCli } from './lib/cliRunner.js';
 import { LANES, buildUpdateArgs, parseUpdateArgs } from './lib/updateArgs.js';
+import releaseGate from './lib/releaseGate.js';
+
+const { markReleaseDeployed, readReleaseRecord, releaseVerdict, validateReleaseRecord } = releaseGate;
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -67,7 +70,7 @@ if (!target) {
   );
 }
 
-const { message, passthrough, confirmed } = parseUpdateArgs(rest);
+const { message, passthrough, confirmed, releaseRecord } = parseUpdateArgs(rest);
 if (!message) {
   fail(
     'A message is required so the update is identifiable later.\n' +
@@ -78,6 +81,35 @@ if (!message) {
 const branch = git(['rev-parse', '--abbrev-ref', 'HEAD']);
 const head = git(['rev-parse', 'HEAD']);
 const dirty = git(['status', '--porcelain']) !== '';
+let productionRecord = null;
+
+function findUpdate(value) {
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const found = findUpdate(item);
+      if (found) return found;
+    }
+    return null;
+  }
+  if (!value || typeof value !== 'object') return null;
+  if (typeof value.group === 'string' && typeof value.runtimeVersion === 'string') return value;
+  for (const item of Object.values(value)) {
+    const found = findUpdate(item);
+    if (found) return found;
+  }
+  return null;
+}
+
+function latestProductionUpdate() {
+  const raw = captureCli(
+    'eas',
+    ['update:list', '--branch', 'production', '--limit', '1', '--json', '--non-interactive'],
+    { cwd: REPO_ROOT },
+  );
+  const update = findUpdate(JSON.parse(raw));
+  if (!update) fail('Could not resolve the current production OTA group.');
+  return update;
+}
 
 console.log(`Publishing an EAS Update`);
 console.log(`  lane         ${lane}`);
@@ -122,6 +154,27 @@ if (lane === 'production') {
       'This publishes to REAL USERS on the production channel.\n' +
         'Re-run with --yes once you have completed the production promotion checklist:\n' +
         '  npm run prod:update -- -m "..." --yes',
+    );
+  }
+  if (!releaseRecord) {
+    fail(
+      'Production updates require --release-record <path>. Copy and fill ' +
+        'docs/PRODUCTION_RELEASE_RECORD.template.json first.',
+    );
+  }
+  try {
+    productionRecord = readReleaseRecord(releaseRecord, REPO_ROOT);
+  } catch (error) {
+    fail(`Could not read production release record: ${error instanceof Error ? error.message : String(error)}`);
+  }
+  const recordErrors = validateReleaseRecord(productionRecord.record);
+  if (recordErrors.length) fail(`Incomplete production release record: ${recordErrors.join(', ')}`);
+  const current = latestProductionUpdate();
+  if (current.group !== productionRecord.record.previousOtaGroup) {
+    fail(
+      'Production OTA changed since the release record was prepared.\n' +
+        `  record ${productionRecord.record.previousOtaGroup}\n  live   ${current.group}\n` +
+        'Stop and reconcile before publishing.',
     );
   }
 }
@@ -176,4 +229,21 @@ try {
 console.log(
   `\n$ eas ${args.map((a) => (/\s/.test(a) ? JSON.stringify(a) : a)).join(' ')}\n`,
 );
-process.exit(run('eas', args));
+const updateExit = run('eas', args);
+if (updateExit !== 0) process.exit(updateExit);
+
+if (lane === 'production' && productionRecord) {
+  const current = latestProductionUpdate();
+  if (current.group === productionRecord.record.previousOtaGroup) {
+    fail('EAS returned success but the production OTA head did not change.');
+  }
+  const deployed = markReleaseDeployed(
+    productionRecord.resolved,
+    productionRecord.record,
+    current.group,
+  );
+  console.log(`\n${releaseVerdict(deployed).verdict}`);
+  console.log(`Release record: ${productionRecord.resolved}`);
+}
+
+process.exit(0);

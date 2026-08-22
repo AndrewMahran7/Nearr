@@ -18,6 +18,7 @@ export function parseUpdateArgs(rest: string[]): {
   message: string;
   passthrough: string[];
   confirmed: boolean;
+  releaseRecord: string;
 };
 
 /** Build the full `eas` argv with the lane's targeting fixed. Throws on retarget. */
