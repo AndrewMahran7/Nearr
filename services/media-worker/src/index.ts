@@ -8,7 +8,8 @@
 import { loadConfig, validateConfig } from './config/env.js';
 import { createAdminClient } from './db/supabase.js';
 import { InstagramMediaResolver } from './resolvers/InstagramMediaResolver.js';
-import { TikTokMediaResolver } from './resolvers/TikTokMediaResolver.js';
+import { TikTokFallbackMediaResolver } from './resolvers/TikTokFallbackMediaResolver.js';
+import { ScrapeCreatorsTikTokProvider } from './providers/ScrapeCreatorsTikTokProvider.js';
 import { YouTubeMediaResolver } from './resolvers/YouTubeMediaResolver.js';
 import { FacebookMediaResolver } from './resolvers/FacebookMediaResolver.js';
 import { SnapchatMediaResolver } from './resolvers/SnapchatMediaResolver.js';
@@ -31,7 +32,7 @@ function main(): void {
       client,
       resolvers: [
         new InstagramMediaResolver(cfg),
-        new TikTokMediaResolver(cfg),
+        new TikTokFallbackMediaResolver(cfg, new ScrapeCreatorsTikTokProvider(cfg)),
         new YouTubeMediaResolver(cfg),
         new FacebookMediaResolver(cfg),
         new SnapchatMediaResolver(cfg),

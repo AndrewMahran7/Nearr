@@ -19,6 +19,7 @@ function config(): WorkerConfig {
     port: 8090, workerSecret: 'benchmark', mediaFallbackEnabled: true,
     instagramResolverEnabled: true, tiktokResolverEnabled: true, youtubeResolverEnabled: true,
     facebookResolverEnabled: true, snapchatResolverEnabled: true, nativeVideoAnalysisEnabled: true,
+    scrapeCreatorsTikTokFallbackEnabled: false,
     supabaseUrl: 'http://localhost', supabaseServiceRoleKey: 'benchmark', finalizeUrl: 'http://localhost/finalize',
     mediaFinalizeSecret: 'benchmark',
     maxConcurrency: 1, claimBatchSize: 1, claimLockSeconds: 600, retryBaseSeconds: 30, retryMaxSeconds: 900,
@@ -33,6 +34,7 @@ function config(): WorkerConfig {
     vayrinOutputPricePerMillion: 30,
     mediaFetchProviderUrl: '', mediaFetchProviderApiKey: '', mediaFetchProviderAuthHeader: 'authorization',
     mediaFetchProviderUrlParam: 'url', mediaFetchProviderResultPath: 'url', ytDlpPath: 'yt-dlp',
+    scrapeCreatorsApiKey: '',
     ffmpegPath: process.env.FFMPEG_PATH || 'ffmpeg', ffprobePath: process.env.FFPROBE_PATH || 'ffprobe', tempDir: '',
   };
 }

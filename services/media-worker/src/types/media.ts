@@ -117,6 +117,17 @@ export type ResolvedMedia = {
   /** Label for diagnostics, e.g. "youtube_captions" / "youtube_auto_captions". */
   captionsSource?: string;
   captionsLanguage?: string | null;
+  /** Bounded, secret-free acquisition provenance. Signed CDN URLs and raw
+   * provider responses are deliberately absent. */
+  acquisition?: {
+    provider: 'yt_dlp' | 'scrapecreators';
+    fallbackReason?: string;
+    canonicalTikTokId?: string;
+    providerLatencyMs?: number;
+    providerMediaBytes?: number;
+    providerResult?: string;
+    providerCredits?: number;
+  };
 };
 
 /** ffprobe-derived media facts. */

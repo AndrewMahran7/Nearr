@@ -22,6 +22,7 @@
     "test:auth-screen-contracts": "ts-node -P scripts/tsconfig.json scripts/testAuthScreenContracts.ts",
     "test:tiktok-url": "ts-node -P scripts/tsconfig.json scripts/testTiktokUrl.ts",
     "test:tiktok-ingestion-parity": "ts-node -P scripts/tsconfig.json scripts/testTikTokIngestionParity.ts",
+    "test:scrapecreators-tiktok-fallback": "cd services/media-worker && node --import tsx --test tests/scrapeCreatorsTikTokFallback.test.ts",
     "test:facebook-url": "ts-node -P scripts/tsconfig.json scripts/testFacebookUrl.ts",
     "test:facebook-metadata": "ts-node -P scripts/tsconfig.json scripts/testFacebookMetadata.ts",
     "test:platform-url-classification": "ts-node -P scripts/tsconfig.json scripts/testPlatformUrlClassification.ts && npm run test:tiktok-ingestion-parity && npm run test:facebook-url && npm run test:facebook-metadata",

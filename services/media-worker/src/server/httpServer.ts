@@ -77,7 +77,11 @@ async function handleReady(ctx: ServerContext, res: http.ServerResponse): Promis
   sendJson(res, ready ? 200 : 503, {
     status: ready ? 'ready' : 'not_ready',
     checks,
-    capabilities: { aiNoteEnrichment: true },
+    capabilities: {
+      aiNoteEnrichment: true,
+      scrapeCreatorsTikTokFallback:
+        ctx.cfg.scrapeCreatorsTikTokFallbackEnabled && !!ctx.cfg.scrapeCreatorsApiKey,
+    },
     runtime: ytDlpRuntimeFields(ytDlpDiagnostic),
     missingConfig: cfgCheck.ok ? [] : cfgCheck.missing,
   });

@@ -466,11 +466,30 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
       signal: controller.signal,
     });
     warnings.push(...media.warnings);
+    if (media.acquisition) {
+      diagnostics.mediaAcquisitionProvider = media.acquisition.provider;
+      if (media.acquisition.fallbackReason) diagnostics.fallbackReason = media.acquisition.fallbackReason;
+      if (media.acquisition.canonicalTikTokId) diagnostics.canonicalTikTokId = media.acquisition.canonicalTikTokId;
+      if (media.acquisition.providerLatencyMs !== undefined) {
+        diagnostics.providerLatencyMs = media.acquisition.providerLatencyMs;
+      }
+      if (media.acquisition.providerMediaBytes !== undefined) {
+        diagnostics.providerMediaBytes = media.acquisition.providerMediaBytes;
+      }
+      if (media.acquisition.providerResult) diagnostics.providerResult = media.acquisition.providerResult;
+      if (media.acquisition.providerCredits !== undefined) {
+        diagnostics.providerCredits = media.acquisition.providerCredits;
+      }
+    }
 
     const sha = await sha256File(media.localFilePath);
+    const persistedResolverName = media.acquisition?.provider === 'scrapecreators'
+      ? 'tiktok/scrapecreators'
+      : resolver.name;
+    diagnostics.resolverName = persistedResolverName;
     await client
       .from('share_media_tasks')
-      .update({ resolver_name: resolver.name, media_size_bytes: media.sizeBytes, media_sha256: sha })
+      .update({ resolver_name: persistedResolverName, media_size_bytes: media.sizeBytes, media_sha256: sha })
       .eq('id', task.id);
 
     // 2. Inspect (ffprobe) + normalize only if required.
@@ -532,6 +551,15 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
     await setProgress(client, task, 'analyzing_evidence');
     analysisAttempted = true;
     diagnostics.analysisAttempted = true;
+    if (media.acquisition?.provider === 'scrapecreators') {
+      diagnostics.modelPipelineReached = true;
+      log.info('scrapecreators_model_pipeline_reached', {
+        taskId: task.id,
+        jobId: task.share_job_id,
+        canonicalTikTokId: media.acquisition.canonicalTikTokId,
+        modelPipelineReached: true,
+      });
+    }
     let primaryContext = task.task_kind === 'ai_note_enrichment'
       ? buildTargetedNoteContext({
           frames,

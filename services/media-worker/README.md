@@ -148,6 +148,10 @@ These are **not** part of the default `npm test` / repo prebuild.
   traffic. Per the public-content-only mission, no anti-bot evasion was
   attempted. Verify from the actual Railway deployment (different IP
   reputation) before enabling `TIKTOK_MEDIA_RESOLVER_ENABLED` broadly.
+  Production may optionally enable the narrowly gated ScrapeCreators tail
+  fallback. It runs only after eligible generic yt-dlp extractor failures and
+  never handles authentication, sensitive, private, deleted/unavailable,
+  protected, or duration/media-validation failures.
 - **YouTube**: uses yt-dlp's adaptive video+audio merge, not a single
   progressive URL — verified live that YouTube's legacy single-file format
   (id `18`) can 403 or resolve to an HLS manifest instead of raw bytes even

@@ -74,6 +74,8 @@ export type WorkerConfig = {
   facebookResolverEnabled: boolean;
   snapchatResolverEnabled: boolean;
   nativeVideoAnalysisEnabled: boolean;
+  /** Server-side TikTok tail fallback. The primary yt-dlp path remains first. */
+  scrapeCreatorsTikTokFallbackEnabled: boolean;
 
   // ---- Supabase (service-role, used INTERNALLY only) ----
   supabaseUrl: string;
@@ -149,6 +151,8 @@ export type WorkerConfig = {
   mediaFetchProviderAuthHeader: string; // header name for the key (default authorization)
   mediaFetchProviderUrlParam: string; // query param carrying the source URL (default url)
   mediaFetchProviderResultPath: string; // dot-path to the direct media URL in the JSON response
+  /** ScrapeCreators server credential. Never included in config summaries. */
+  scrapeCreatorsApiKey: string;
 
   // ---- External binaries (overridable for local dev) ----
   ytDlpPath: string;
@@ -190,6 +194,10 @@ const DEFAULT_ALLOWED_HOSTS = [
   'tiktokcdn-us.com',
   'tiktokv.com',
   'tiktokv.us',
+  'tiktokv.eu',
+  'tiktokcdn-eu.com',
+  'byteoversea.com',
+  'ibytedtos.com',
   'tiktok.com',
   'muscdn.com',
   // Snapchat Spotlight CDN (verified live).
@@ -230,6 +238,7 @@ export function loadConfig(): WorkerConfig {
     facebookResolverEnabled: bool('FACEBOOK_MEDIA_RESOLVER_ENABLED', false),
     snapchatResolverEnabled: bool('SNAPCHAT_MEDIA_RESOLVER_ENABLED', false),
     nativeVideoAnalysisEnabled: bool('NATIVE_VIDEO_ANALYSIS_ENABLED', false),
+    scrapeCreatorsTikTokFallbackEnabled: bool('SCRAPECREATORS_TIKTOK_FALLBACK_ENABLED', false),
 
     supabaseUrl,
     supabaseServiceRoleKey: str('SUPABASE_SERVICE_ROLE_KEY'),
@@ -279,6 +288,7 @@ export function loadConfig(): WorkerConfig {
     mediaFetchProviderAuthHeader: str('MEDIA_FETCH_PROVIDER_AUTH_HEADER', 'authorization'),
     mediaFetchProviderUrlParam: str('MEDIA_FETCH_PROVIDER_URL_PARAM', 'url'),
     mediaFetchProviderResultPath: str('MEDIA_FETCH_PROVIDER_RESULT_PATH', 'url'),
+    scrapeCreatorsApiKey: str('SCRAPE_CREATORS_KEY'),
 
     ytDlpPath: str('YT_DLP_PATH', 'yt-dlp'),
     ffmpegPath: str('FFMPEG_PATH', 'ffmpeg'),
@@ -304,6 +314,9 @@ export function validateConfig(cfg: WorkerConfig): ConfigValidation {
   if (!cfg.transcriptionApiKey) missing.push('MEDIA_TRANSCRIPTION_API_KEY');
   if (cfg.analysisProvider !== 'gemini') missing.push('MEDIA_ANALYSIS_PROVIDER=gemini');
   if (!cfg.geminiApiKey) missing.push('GEMINI_API_KEY');
+  if (cfg.scrapeCreatorsTikTokFallbackEnabled && !cfg.scrapeCreatorsApiKey) {
+    missing.push('SCRAPE_CREATORS_KEY');
+  }
   return missing.length ? { ok: false, missing } : { ok: true };
 }
 
@@ -319,6 +332,7 @@ export function redactedConfigSummary(cfg: WorkerConfig): Record<string, unknown
       facebookResolverEnabled: cfg.facebookResolverEnabled,
       snapchatResolverEnabled: cfg.snapchatResolverEnabled,
       nativeVideoAnalysisEnabled: cfg.nativeVideoAnalysisEnabled,
+      scrapeCreatorsTikTokFallbackEnabled: cfg.scrapeCreatorsTikTokFallbackEnabled,
       vayrinVisualGeolocationEnabled: cfg.vayrinVisualGeolocationEnabled,
     },
     limits: {
@@ -334,6 +348,7 @@ export function redactedConfigSummary(cfg: WorkerConfig): Record<string, unknown
       transcription: cfg.transcriptionProvider,
       analysis: cfg.analysisProvider,
       ocr: cfg.ocrProvider,
+      scrapeCreatorsTikTok: cfg.scrapeCreatorsTikTokFallbackEnabled,
     },
     vayrin: {
       enabled: cfg.vayrinVisualGeolocationEnabled,
@@ -352,5 +367,6 @@ export function redactedConfigSummary(cfg: WorkerConfig): Record<string, unknown
     hasServiceRoleKey: !!cfg.supabaseServiceRoleKey,
     hasMediaFinalizeSecret: !!cfg.mediaFinalizeSecret,
     hasGeminiKey: !!cfg.geminiApiKey,
+    hasScrapeCreatorsKey: !!cfg.scrapeCreatorsApiKey,
   };
 }
