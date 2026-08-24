@@ -38,6 +38,7 @@ const candidateCarousel = read('components/CandidatePhotoCarousel.tsx');
 const card = read('components/CandidateConfirmationCard.tsx');
 const worker = read('services/media-worker/src/pipeline/persistEvidenceFrames.ts');
 const shareJobsService = read('services/shareJobsService.ts');
+const mediaFinalizer = read('supabase/functions/process-share-jobs/index.ts');
 const migration = read('supabase/migrations/20260824225520_vayrin_quick_check_evidence_frames.sql');
 
 const exact = (id: string, score: number | null = 0.8): CandidateConfirmationPlace => ({
@@ -153,6 +154,9 @@ assert.match(migration, /owners delete share evidence/);
 assert.match(migration, /bucket_id = 'share-evidence'/);
 assert.match(migration, /sj\.user_id = auth\.uid\(\)/);
 assert.equal(SIGNED_URL_TTL_SECONDS, 3600);
+assert.match(mediaFinalizer, /finalizeParentManual[\s\S]*normalizeEvidenceFrames\(presentation\.evidenceFrames\)/);
+assert.match(mediaFinalizer, /candidate_payload: candidatePayload/);
+assert.match(mediaFinalizer, /failureCode: 'places_provider_unavailable_exhausted'[\s\S]{0,300}evidenceFrames/);
 
 // Lifecycle: job scoping blocks cross-job/traversal references, missing
 // objects remain idempotent, and partial failures are returned to the caller.

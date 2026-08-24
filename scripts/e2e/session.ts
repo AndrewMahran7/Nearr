@@ -202,7 +202,7 @@ export async function cleanupSession(
       report.errors.push(`evidence references: ${jobsError.message}`);
       report.retained.push(`share-evidence objects for jobs ${jobIds.join(', ')}`);
     } else {
-      const paths = [...new Set((jobs ?? []).flatMap((job) => {
+      const referencedPaths = (jobs ?? []).flatMap((job) => {
         const payload = job?.candidate_payload;
         if (!payload || typeof payload !== 'object') return [];
         const frames = (payload as { evidenceFrames?: unknown }).evidenceFrames;
@@ -215,7 +215,38 @@ export async function cleanupSession(
             ? [storagePath]
             : [];
         });
-      }))];
+      });
+      // Also discover objects under the exact ephemeral user/job prefix. This
+      // catches a callback failure after upload but before references were
+      // attached, without ever listing or sweeping another user's namespace.
+      const discoveredPaths: string[] = [];
+      for (const jobId of jobIds) {
+        const jobPrefix = `${identity.userId}/${jobId}`;
+        const { data: taskFolders, error: taskListError } = await admin.storage
+          .from('share-evidence')
+          .list(jobPrefix, { limit: 20 });
+        if (taskListError) {
+          report.errors.push(`share-evidence list ${jobId}: ${taskListError.message}`);
+          report.retained.push(`share-evidence objects under ${jobPrefix}`);
+          continue;
+        }
+        for (const folder of taskFolders ?? []) {
+          if (!/^[0-9a-f-]{36}$/i.test(folder.name)) continue;
+          const taskPrefix = `${jobPrefix}/${folder.name}`;
+          const { data: objects, error: objectListError } = await admin.storage
+            .from('share-evidence')
+            .list(taskPrefix, { limit: 10 });
+          if (objectListError) {
+            report.errors.push(`share-evidence list ${folder.name}: ${objectListError.message}`);
+            report.retained.push(`share-evidence objects under ${taskPrefix}`);
+            continue;
+          }
+          for (const object of objects ?? []) {
+            if (/^[^/]+\.jpg$/i.test(object.name)) discoveredPaths.push(`${taskPrefix}/${object.name}`);
+          }
+        }
+      }
+      const paths = [...new Set([...referencedPaths, ...discoveredPaths])];
       if (paths.length > 0) {
         const { data: removed, error: removeError } = await admin.storage
           .from('share-evidence')

@@ -1324,6 +1324,7 @@ async function finalizeParentManual(
     provider?: string | null;
     notificationLocality?: NotificationLocality | null;
     hasWeakClues?: boolean;
+    evidenceFrames?: unknown;
   } = {},
   sourceMetadata: MediaSourceMetadata | null = null,
 ): Promise<void> {
@@ -1346,6 +1347,15 @@ async function finalizeParentManual(
   const terminalStatus = candidateCount === 0 && failureCategory === 'technical_failure'
     ? 'failed'
     : 'needs_help';
+  const evidenceFrames = normalizeEvidenceFrames(presentation.evidenceFrames);
+  const candidatePayload = evidenceFrames.length > 0
+    ? {
+        ...(job?.candidate_payload && typeof job.candidate_payload === 'object'
+          ? job.candidate_payload
+          : {}),
+        evidenceFrames,
+      }
+    : job?.candidate_payload ?? null;
   await finalize(
     admin,
     job,
@@ -1357,6 +1367,7 @@ async function finalizeParentManual(
       failure_code: failureCode,
       failure_category: failureCategory,
       analysis_attempted: analysisAttempted,
+      candidate_payload: candidatePayload,
       ...(candidateCount === 0 ? { suggested_query: null } : {}),
       ...(sourceMetadata
         ? {
@@ -1574,6 +1585,7 @@ async function finalizeMediaTask(
         hasWeakClues: parsed.ok && parsed.value.places.some(
           (place: any) => place?.identityEvidenceKind !== 'model_prior' && place?.explicitEvidence?.length > 0,
         ),
+        evidenceFrames,
       }, sourceMetadata);
     }
     await markMediaTask(admin, taskId, pre.taskTerminalStatus, {
@@ -1705,6 +1717,7 @@ async function finalizeMediaTask(
         analysisAttempted: true,
         provider: task.platform,
         notificationLocality,
+        evidenceFrames,
       });
     }
     await markMediaTask(admin, taskId, 'failed', {
