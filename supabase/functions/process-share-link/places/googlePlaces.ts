@@ -103,11 +103,18 @@ export async function searchPlaces(
   key: string,
   bias?: SearchBias,
 ): Promise<SearchPlacesResult> {
-  const body: Record<string, unknown> = { textQuery: query, maxResultCount: 8 };
+  const maxResultCount = 12;
+  const body: Record<string, unknown> = { textQuery: query, maxResultCount };
   if (bias) {
+    const radius = Math.max(1_000, Math.min(200_000, Math.round(bias.radiusMeters ?? 50_000)));
     body.locationBias = {
-      circle: { center: { latitude: bias.lat, longitude: bias.lng }, radius: 50_000 },
+      circle: { center: { latitude: bias.lat, longitude: bias.lng }, radius },
     };
+    const regionCodes = [...new Set((bias.includedRegionCodes ?? [])
+      .map((code) => code.trim().toUpperCase())
+      .filter((code) => /^[A-Z]{2}$/.test(code)))]
+      .slice(0, 15);
+    if (regionCodes.length > 0) body.includedRegionCodes = regionCodes;
   }
   let json: any;
   const ctrl = new AbortController();
@@ -162,7 +169,7 @@ export async function searchPlaces(
     clearTimeout(timer);
   }
   const results: PlacesCandidate[] = (json.places ?? [])
-    .slice(0, 8)
+    .slice(0, maxResultCount)
     .map(mapPlacesV1Candidate)
     .filter(isUsableCandidate);
   return { ok: true, results, apiPath: 'places_new' };
@@ -201,7 +208,7 @@ async function searchPlacesLegacy(
   const params = new URLSearchParams({ query, key });
   if (bias) {
     params.set('location', `${bias.lat},${bias.lng}`);
-    params.set('radius', '50000');
+    params.set('radius', String(Math.max(1_000, Math.min(200_000, Math.round(bias.radiusMeters ?? 50_000)))));
   }
   const res = await fetch(`${PLACES_BASE}?${params}`, { signal });
   if (!res.ok) {
@@ -220,7 +227,7 @@ async function searchPlacesLegacy(
   return {
     ok: true,
     results: (json.results ?? [])
-      .slice(0, 8)
+      .slice(0, 12)
       .map(mapPlacesLegacyCandidate)
       .filter(isUsableCandidate),
   };

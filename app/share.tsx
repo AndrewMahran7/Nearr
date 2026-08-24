@@ -1699,7 +1699,17 @@ function LegacyShareScreen() {
       pushShareDebug('[share-debug] PLACES_SEARCH_START', {
         query: truncateShareDebugText(query),
       });
-      results = await searchPlaces(query, bias);
+      results = await searchPlaces(query, bias, {
+        mode: 'source',
+        inferredLocality: extractionResult?.city ?? locationCtx.contextText,
+        inferredRegion: extractionResult?.state ?? null,
+        inferredCoordinates: locationCtx.contextLatLng,
+        regionConfidence: locationCtx.contextLatLng ? 'strong' : 'none',
+        sourceEvidence: locationCtx.contextLatLng
+          ? ['exact_source_evidence']
+          : [],
+        userLocation: locationCtx.contextLatLng ? null : userLatLngRef.current,
+      });
     } catch (err) {
       const msg =
         err instanceof PlacesError

@@ -15,6 +15,7 @@ export type MultiPlaceBatchRow = {
   selectionMode: SelectionMode;
   extractedName: string;
   contextLabel: string | null;
+  noNearbyMatch: boolean;
   primaryVenueName: string | null;
   hostVenueName: string | null;
   relationshipType: string | null;
@@ -135,6 +136,7 @@ export function reconcileMultiPlaceBatch(args: {
       selectionMode: 'single_identity',
       extractedName: slot.displayName,
       contextLabel: slot.contextLabel ?? null,
+      noNearbyMatch: slot.noNearbyMatch === true,
       primaryVenueName: slot.primaryVenueName,
       hostVenueName: slot.hostVenueName,
       relationshipType: slot.relationshipType,

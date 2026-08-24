@@ -13,6 +13,7 @@
  */
 
 import type { ShareAgentPlatform, ToolInvocation } from './types.ts';
+import { rankContextAwareCandidates } from '../contextAwarePlacesResolution.ts';
 
 declare const process: { env: Record<string, string | undefined> } | undefined;
 
@@ -524,7 +525,7 @@ export async function searchPlaces(
         },
       };
     }
-    const candidates: PlacesSearchCandidate[] = (json.results ?? []).slice(0, 8).map((r) => ({
+    const providerCandidates: PlacesSearchCandidate[] = (json.results ?? []).slice(0, 12).map((r) => ({
       googlePlaceId: r.place_id,
       name: r.name,
       formattedAddress: r.formatted_address,
@@ -532,6 +533,18 @@ export async function searchPlaces(
       longitude: r.geometry?.location?.lng,
       types: Array.isArray(r.types) ? r.types : undefined,
     }));
+    const candidates = rankContextAwareCandidates({
+      query: cleaned,
+      candidates: providerCandidates,
+      context: {
+        mode: 'source',
+        inferredCoordinates: locationBias ?? null,
+        regionConfidence: locationBias ? 'strong' : 'none',
+        sourceEvidence: locationBias ? ['creator_caption_geo'] : [],
+      },
+      searchTierKm: locationBias ? 25 : null,
+      placesCallCount: 1,
+    }).ranked.map((item) => item.candidate);
     return {
       result: { status: 'ok', candidates },
       invocation: {

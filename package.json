@@ -89,6 +89,7 @@
     "test:open-original-post": "ts-node -P scripts/tsconfig.json scripts/testOpenOriginalPost.ts",
     "test:share-jobs-ui": "ts-node -P scripts/tsconfig.json scripts/testShareJobsUi.ts",
     "test:quick-check": "ts-node -P scripts/tsconfig.json scripts/testQuickCheckResolution.ts",
+    "test:context-aware-places-resolution": "ts-node -P scripts/tsconfig.json scripts/testContextAwarePlacesResolution.ts --write-artifact",
     "test:share-completion": "ts-node -P scripts/tsconfig.json scripts/testShareCompletionUi.ts",
     "test:queue-inbox": "ts-node -P scripts/tsconfig.json scripts/testQueueInbox.ts",
     "test:queue-persistence": "ts-node -P scripts/tsconfig.json scripts/testQueuePersistence.ts",

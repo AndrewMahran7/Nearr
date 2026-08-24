@@ -15,6 +15,10 @@ export type CandidateConfirmationPlace = {
   sourceTimestamps?: readonly number[] | null;
   matchScore?: number | null;
   businessStatus?: string | null;
+  contextReason?: string | null;
+  contextLabel?: string | null;
+  distanceKm?: number | null;
+  localityMatch?: boolean;
 };
 
 /** The complete review taxonomy. Only provider-backed canonical values are saveable. */
@@ -210,6 +214,21 @@ export function candidateEvidenceLabel(
 ): string | null {
   const first = timestamps?.find((value) => Number.isFinite(value) && value >= 0);
   return first == null ? null : `Seen around ${formatCandidateTimestamp(first)}`;
+}
+
+export function candidateContextEvidenceLabel(
+  candidate: CandidateConfirmationPlace,
+): string | null {
+  const label = candidate.contextLabel?.trim();
+  if (!label) return null;
+  if (candidate.contextReason === 'near_resolved_video_place') {
+    return `Near the other place in this video · ${label}`;
+  }
+  if (candidate.localityMatch || candidate.contextReason === 'source_locality' ||
+    candidate.contextReason === 'exact_source_evidence' || candidate.contextReason === 'video_geo_hint') {
+    return `Matches the ${label} area`;
+  }
+  return null;
 }
 
 export function candidateCategoryLabel(candidate: CandidateConfirmationPlace): string | null {
