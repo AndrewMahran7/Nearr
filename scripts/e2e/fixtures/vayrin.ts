@@ -375,7 +375,7 @@ export async function fixtureVayrinLiveCanary(
   // photo hydration path; prove the exact live candidate currently has a photo
   // that Google will serve rather than trusting a synthetic URL.
   const photoCandidate = detailState.candidates.find((candidate) => !!candidate.googlePlaceId);
-  const placesKey = session.config.railwayVars.GOOGLE_PLACES_KEY;
+  const placesKey = session.config.railwayVars.GOOGLE_PLACES_KEY?.trim();
   if (!photoCandidate?.googlePlaceId || !placesKey) {
     reporter.fail(`${name}: candidate photo available`, 0, 'no verified Google candidate or deployed Places key');
     return false;
