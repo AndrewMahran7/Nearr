@@ -14,6 +14,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  FlatList,
   KeyboardAvoidingView,
   LayoutAnimation,
   Linking,
@@ -31,7 +32,9 @@ import * as Location from 'expo-location';
 
 import { Button, ErrorBoundary, Input, ShareJobsHeader } from '@/components';
 import { CandidateConfirmationCard } from '@/components/CandidateConfirmationCard';
+import { MultiPlaceCandidateCard } from '@/components/MultiPlaceCandidateCard';
 import { PlaceImage } from '@/components/PlaceImage';
+import { SourceEvidenceGallery } from '@/components/SourceEvidenceGallery';
 import { ShareJobsSheet } from '@/components/ShareJobsSheet';
 import { VayrinPresentationHeader } from '@/components/VayrinPresentationHeader';
 import { WrongPlaceSheet } from '@/components/map/WrongPlaceSheet';
@@ -73,6 +76,7 @@ import {
   chooseBatchCandidate,
   clearAllEligibleBatchRows,
   closeBatchSearch,
+  dismissBatchRow,
   duplicateSelectionOwner,
   failBatchSearch,
   finishBatchSearch,
@@ -90,6 +94,14 @@ import {
   type MultiPlaceBatch,
   type MultiPlaceBatchRow,
 } from '@/lib/multiPlaceBatch';
+import {
+  batchActionCounts,
+  batchPrimaryActionLabel,
+  batchResolutionProgress,
+  evidenceFramesForMention,
+  visibleMentionCandidates,
+  visibleMentionSearchCandidates,
+} from '@/lib/vayrinMultiPlaceReview';
 import {
   claimInitialQuickCheckSearch,
   quickCheckSearchKey,
@@ -1144,45 +1156,53 @@ function ShareJobDetailScreen() {
     batchSearchRequestsRef.current[logicalPlaceId] = requestId;
     setBatch((value) => value ? startBatchSearch(value, logicalPlaceId) : value);
     try {
-      const fields = geographicFieldsFromLabel(current.contextLabel);
-      const coordinates = current.contextLabel
-        ? await geocodeContextText(current.contextLabel)
+      const fixture = __DEV__ && isVayrinCandidateFixtureId(job?.id)
+        ? getVayrinCandidateFixture(job.id)
         : null;
-      const nearbyResolvedMentions: NearbyResolvedMention[] = batch.order
-        .filter((id) => id !== logicalPlaceId)
-        .flatMap((id) => {
-          const other = batch.rows[id];
-          const candidate = other ? rowCandidate(other) : null;
-          if (!candidate || !Number.isFinite(candidate.latitude) || !Number.isFinite(candidate.longitude)) return [];
-          const nearbyFields = geographicFieldsFromLabel(other?.contextLabel ?? candidate.formattedAddress);
-          return [{
-            googlePlaceId: candidate.googlePlaceId,
-            name: candidate.name,
-            coordinates: { lat: candidate.latitude!, lng: candidate.longitude! },
-            locality: nearbyFields.locality,
-            region: nearbyFields.region,
-            country: nearbyFields.country,
-            mentionTimestamp: other?.sourceTimestamps[0] ?? null,
-          }];
-        });
-      const sourceContextAvailable = !!(current.contextLabel || coordinates || nearbyResolvedMentions.length);
-      const context: PlacesResolutionContext = sourceContextAvailable
-        ? {
-            mode: 'source',
-            inferredLocality: fields.locality,
-            inferredRegion: fields.region,
-            inferredCountry: fields.country,
-            inferredCoordinates: coordinates,
-            regionConfidence: current.contextLabel ? 'strong' : 'medium',
-            sourceEvidence: current.contextLabel ? ['video_region'] : ['nearby_resolved_video_place'],
-            mentionTimestamp: current.sourceTimestamps[0] ?? null,
-            nearbyResolvedMentions,
-            userLocation: null,
-          }
-        : { mode: 'manual', userLocation: userLocationRef.current, regionConfidence: 'none' };
-      const bias = coordinates ?? nearbyResolvedMentions[0]?.coordinates ??
-        (!sourceContextAvailable ? userLocationRef.current : null) ?? undefined;
-      const found = (await searchPlaces(query, bias, context)).map(toResultCandidate);
+      let found: ShareJobResultCandidate[];
+      if (fixture?.manualResults) {
+        found = fixture.manualResults;
+      } else {
+        const fields = geographicFieldsFromLabel(current.contextLabel);
+        const coordinates = current.contextLabel
+          ? await geocodeContextText(current.contextLabel)
+          : null;
+        const nearbyResolvedMentions: NearbyResolvedMention[] = batch.order
+          .filter((id) => id !== logicalPlaceId)
+          .flatMap((id) => {
+            const other = batch.rows[id];
+            const candidate = other ? rowCandidate(other) : null;
+            if (!candidate || !Number.isFinite(candidate.latitude) || !Number.isFinite(candidate.longitude)) return [];
+            const nearbyFields = geographicFieldsFromLabel(other?.contextLabel ?? candidate.formattedAddress);
+            return [{
+              googlePlaceId: candidate.googlePlaceId,
+              name: candidate.name,
+              coordinates: { lat: candidate.latitude!, lng: candidate.longitude! },
+              locality: nearbyFields.locality,
+              region: nearbyFields.region,
+              country: nearbyFields.country,
+              mentionTimestamp: other?.sourceTimestamps[0] ?? null,
+            }];
+          });
+        const sourceContextAvailable = !!(current.contextLabel || coordinates || nearbyResolvedMentions.length);
+        const context: PlacesResolutionContext = sourceContextAvailable
+          ? {
+              mode: 'source',
+              inferredLocality: fields.locality,
+              inferredRegion: fields.region,
+              inferredCountry: fields.country,
+              inferredCoordinates: coordinates,
+              regionConfidence: current.contextLabel ? 'strong' : 'medium',
+              sourceEvidence: current.contextLabel ? ['video_region'] : ['nearby_resolved_video_place'],
+              mentionTimestamp: current.sourceTimestamps[0] ?? null,
+              nearbyResolvedMentions,
+              userLocation: null,
+            }
+          : { mode: 'manual', userLocation: userLocationRef.current, regionConfidence: 'none' };
+        const bias = coordinates ?? nearbyResolvedMentions[0]?.coordinates ??
+          (!sourceContextAvailable ? userLocationRef.current : null) ?? undefined;
+        found = (await searchPlaces(query, bias, context)).map(toResultCandidate);
+      }
       if (!mountedRef.current || batchSearchRequestsRef.current[logicalPlaceId] !== requestId) return;
       setBatch((value) => value ? finishBatchSearch(value, logicalPlaceId, found) : value);
     } catch {
@@ -1201,6 +1221,11 @@ function ShareJobDetailScreen() {
     setBatch((value) => value
       ? chooseBatchCandidate(value, row.logicalPlaceId, candidate, savedPlaceId)
       : value);
+    void trackEvent('multi_place_selection_changed', {
+      job_id: job?.id ?? null,
+      logical_place_id: row.logicalPlaceId,
+      selected: true,
+    });
   }
 
   function toggleBatchSelection(row: MultiPlaceBatchRow) {
@@ -1404,36 +1429,19 @@ function ShareJobDetailScreen() {
   function renderBatchCandidateChoice(row: MultiPlaceBatchRow, candidate: ShareJobResultCandidate) {
     const savedPlaceId = savedByGoogleId[candidate.googlePlaceId] ?? null;
     const selected = row.selectedCandidateId === candidate.googlePlaceId;
+    const duplicate = !!batch && batch.order.some((id) => id !== row.logicalPlaceId &&
+      batch.rows[id]!.selectedForSave && rowCandidate(batch.rows[id]!)?.googlePlaceId === candidate.googlePlaceId);
     return (
-      <Pressable
+      <MultiPlaceCandidateCard
         key={candidate.googlePlaceId}
+        candidate={candidate}
+        meta={batchCandidateMeta(candidate, row) || candidate.formattedAddress}
+        selected={selected && (row.selectedForSave || row.persistence !== 'pending')}
+        alreadySaved={Boolean(savedPlaceId || row.persistence === 'already_saved')}
+        persisted={row.persistence !== 'pending'}
+        duplicate={duplicate}
         onPress={() => selectBatchCandidate(row, candidate)}
-        accessibilityRole="radio"
-        accessibilityLabel={`Choose ${candidate.name} as the match for ${row.extractedName}${candidate.formattedAddress ? `, ${candidate.formattedAddress}` : ''}`}
-        accessibilityState={{ checked: selected }}
-        style={({ pressed }) => [
-          styles.batchCandidateChoice,
-          selected && styles.batchCandidateChoiceSelected,
-          pressed && styles.candidatePressed,
-        ]}
-      >
-        <View style={[styles.radio, selected && styles.radioOn]}>
-          {selected ? <View style={styles.radioDot} /> : null}
-        </View>
-        <PlaceImage
-          googlePlaceId={candidate.googlePlaceId}
-          size={46}
-          borderRadius={10}
-          accessibilityLabel={`Photo of ${candidate.name}`}
-        />
-        <View style={styles.flex}>
-          <Text style={[typography.bodyStrong, styles.candidateName]} numberOfLines={1}>{candidate.name}</Text>
-          {candidate.formattedAddress ? (
-            <Text style={[typography.caption, styles.candidateAddr]} numberOfLines={2}>{candidate.formattedAddress}</Text>
-          ) : null}
-          {savedPlaceId ? <Text style={[typography.caption, styles.savedText]}>Already saved</Text> : null}
-        </View>
-      </Pressable>
+      />
     );
   }
 
@@ -1490,94 +1498,50 @@ function ShareJobDetailScreen() {
         {row.search.phase === 'error' ? (
           <Text style={[typography.caption, styles.batchError]}>{row.search.error}</Text>
         ) : null}
-        {row.search.candidates.map((candidate) => renderBatchCandidateChoice(row, candidate))}
+        {visibleMentionSearchCandidates(row).map((candidate) => renderBatchCandidateChoice(row, candidate))}
       </View>
     );
   }
 
   function renderBatchRow(row: MultiPlaceBatchRow, index: number, total: number) {
-    const candidate = rowCandidate(row);
-    const duplicateOwner = batch ? duplicateSelectionOwner(batch, row.logicalPlaceId) : null;
     const persisted = row.persistence !== 'pending';
-    const checked = row.selectedForSave && !duplicateOwner;
     const timestamp = sourceTimestampLabel(row.sourceTimestamps);
-    const canChooseCandidates = row.candidates.length > 1 || row.resolution === 'ambiguous';
+    const momentLabel = [row.contextLabel, timestamp ? `Seen around ${timestamp.replace(/^At /, '')}` : null]
+      .filter(Boolean)
+      .join(' · ');
+    const evidenceFrames = evidenceFramesForMention(row, detail.evidenceFrames);
+    const visibleCandidates = visibleMentionCandidates(row);
     const rowLeads = leadsByMention.get(row.logicalPlaceId) ?? [];
     return (
       <View
         key={row.logicalPlaceId}
-        style={[styles.mentionCard, checked && styles.mentionCardSelected]}
+        style={[styles.mentionCard, row.selectedForSave && styles.mentionCardSelected]}
       >
-        <View style={styles.batchRowHeader}>
-          <View style={styles.flex}>
-            <Text
-              accessibilityRole="header"
-              accessibilityLabel={`Place ${index + 1} of ${total}: ${row.primaryVenueName ?? row.extractedName}`}
-              style={[typography.heading, styles.mentionName]}
-              numberOfLines={2}
-            >
-              {row.primaryVenueName ?? row.extractedName}
-            </Text>
-            {row.hostVenueName ? (
-              <Text style={[typography.caption, styles.relationshipText]}>at {row.hostVenueName}</Text>
-            ) : row.contextLabel ? (
-              <Text style={[typography.caption, styles.relationshipText]}>{row.contextLabel}</Text>
-            ) : null}
-            {timestamp ? (
-              <Text style={[typography.caption, styles.sourceTimestamp]}>{timestamp}</Text>
-            ) : null}
-          </View>
-          {candidate && row.resolution === 'resolved' ? (
-            persisted ? (
-              <View style={styles.savedBadgeCompact}>
-                <Feather name="check" size={14} color={colors.accent} />
-              </View>
-            ) : (
-              <Pressable
-                onPress={() => toggleBatchSelection(row)}
-                accessibilityRole="checkbox"
-                accessibilityLabel={`${checked ? 'Deselect' : 'Select'} ${candidate.name}`}
-                accessibilityState={{ checked, disabled: !!duplicateOwner }}
-                hitSlop={10}
-                style={[styles.checkbox, checked && styles.checkboxOn, styles.batchCheckboxTarget]}
-              >
-                {checked ? <Feather name="check" size={14} color={colors.textInverse} /> : null}
-              </Pressable>
-            )
-          ) : null}
+        <View style={styles.mentionPositionRow}>
+          <Text style={styles.mentionPosition}>MOMENT {index + 1} OF {total}</Text>
+          {persisted ? <Feather name="check-circle" size={18} color={colors.accent} /> : null}
         </View>
+        <Text accessibilityRole="header" accessibilityLabel={`Place ${index + 1} of ${total}: ${row.primaryVenueName ?? row.extractedName}`} style={[typography.heading, styles.mentionName]} numberOfLines={3}>
+          {row.primaryVenueName ?? row.extractedName}
+        </Text>
+        {row.hostVenueName ? <Text style={[typography.caption, styles.relationshipText]}>at {row.hostVenueName}</Text> : null}
+        {momentLabel ? <Text style={[typography.caption, styles.sourceTimestamp]}>{momentLabel}</Text> : null}
 
-        {candidate && row.resolution === 'resolved' ? (
-          <View style={styles.resolvedCandidate}>
-            <PlaceImage
-              googlePlaceId={candidate.googlePlaceId}
-              size={52}
-              borderRadius={10}
-              accessibilityLabel={`Photo of ${candidate.name}`}
-            />
-            <View style={styles.flex}>
-              <Text style={[typography.bodyStrong, styles.candidateName]} numberOfLines={1}>{candidate.name}</Text>
-              <Text style={[typography.caption, styles.candidateAddr]} numberOfLines={2}>
-                {batchCandidateMeta(candidate, row) || candidate.formattedAddress}
-              </Text>
-              {row.persistence === 'already_saved' ? (
-                <Text style={[typography.caption, styles.savedText]}>Already saved</Text>
-              ) : row.persistence === 'saved' ? (
-                <Text style={[typography.caption, styles.savedText]}>Saved</Text>
-              ) : row.savedPlaceId ? (
-                // Already on the map, but still selectable: saving attaches
-                // this post to that existing place rather than duplicating it.
-                <Text style={[typography.caption, styles.savedText]}>
-                  Already on your map · this post will be attached
-                </Text>
-              ) : duplicateOwner ? (
-                <Text style={[typography.caption, styles.batchWarning]}>Same place selected above · excluded from count</Text>
-              ) : null}
-            </View>
-          </View>
+        {evidenceFrames.length > 0 ? (
+          <SourceEvidenceGallery frames={evidenceFrames} title="Moment from the video" subtitle="Source evidence for this place" compact />
         ) : null}
 
         {row.saveError ? <Text style={[typography.caption, styles.batchError]}>{row.saveError}</Text> : null}
+
+        {visibleCandidates.length > 0 ? (
+          <View style={styles.possiblePlaces}>
+            <Text style={styles.possiblePlacesTitle}>Possible places</Text>
+            {visibleCandidates.map((choice) => renderBatchCandidateChoice(row, choice))}
+            {row.candidates.length > visibleCandidates.length ? (
+              <Text style={[typography.caption, styles.candidateCapCopy]}>Showing the 3 strongest matches.</Text>
+            ) : null}
+          </View>
+        ) : null}
 
         {(row.resolution === 'unmatched' || row.resolution === 'unavailable') && rowLeads.length > 0 ? (
           <View style={styles.unmatchedBlock}>
@@ -1595,65 +1559,22 @@ function ShareJobDetailScreen() {
           </View>
         ) : null}
 
-        {row.candidateSelectorExpanded ? (
-          <View>
-            <Pressable
-              onPress={() => setBatch((value) => value
-                ? setCandidateSelector(value, row.logicalPlaceId, false)
-                : value)}
-              accessibilityRole="button"
-              accessibilityLabel={`Hide candidate choices for ${row.extractedName}`}
-              accessibilityState={{ expanded: true }}
-              style={styles.disclosureButton}
-            >
-              <Text style={styles.inlineActionText}>Choose the right place</Text>
-              <Feather name="chevron-up" size={18} color={colors.accent} />
-            </Pressable>
-            {row.candidates.map((choice) => renderBatchCandidateChoice(row, choice))}
-            <Pressable
-              onPress={() => openSearchForBatchRow(row)}
-              accessibilityRole="button"
-              style={styles.inlineAction}
-            >
+        {row.userDismissed ? <Text style={[typography.caption, styles.unresolvedCopy]}>Left unresolved · other selected places can still be saved.</Text> : null}
+        {!persisted && row.search.phase === 'closed' ? (
+          <View style={styles.mentionActions}>
+            <Pressable onPress={() => openSearchForBatchRow(row)} accessibilityRole="button" accessibilityLabel={`Search another place for ${row.extractedName}`} style={styles.inlineAction}>
               <Feather name="search" size={16} color={colors.accent} />
-              <Text style={styles.inlineActionText}>Search manually</Text>
+              <Text style={styles.inlineActionText}>Search another place</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => setBatch((value) => value ? dismissBatchRow(value, row.logicalPlaceId) : value)}
+              accessibilityRole="button"
+              accessibilityLabel={`None of these for ${row.extractedName}`}
+              style={styles.noneAction}
+            >
+              <Text style={styles.noneActionText}>None of these</Text>
             </Pressable>
           </View>
-        ) : row.resolution === 'ambiguous' ? (
-          <>
-            <Pressable
-              onPress={() => setBatch((value) => value
-                ? setCandidateSelector(value, row.logicalPlaceId, !row.candidateSelectorExpanded)
-                : value)}
-              accessibilityRole="button"
-              accessibilityLabel={`Choose the right place for ${row.extractedName}`}
-              accessibilityState={{ expanded: row.candidateSelectorExpanded }}
-              style={styles.disclosureButton}
-            >
-              <Text style={styles.inlineActionText}>Choose the right place</Text>
-              <Feather name={row.candidateSelectorExpanded ? 'chevron-up' : 'chevron-down'} size={18} color={colors.accent} />
-            </Pressable>
-          </>
-        ) : row.resolution === 'unmatched' || row.resolution === 'unavailable' ? (
-          <Pressable
-            onPress={() => openSearchForBatchRow(row)}
-            accessibilityRole="button"
-            accessibilityLabel={`Search for ${row.extractedName}`}
-            style={styles.inlineAction}
-          >
-            <Feather name="search" size={16} color={colors.accent} />
-            <Text style={styles.inlineActionText}>
-              {row.resolution === 'unavailable' ? 'Try searching again' : 'Search for this place'}
-            </Text>
-          </Pressable>
-        ) : canChooseCandidates && !persisted ? (
-          <Pressable
-            onPress={() => setBatch((value) => value ? setCandidateSelector(value, row.logicalPlaceId, true) : value)}
-            accessibilityRole="button"
-            style={styles.inlineAction}
-          >
-            <Text style={styles.inlineActionText}>Change place</Text>
-          </Pressable>
         ) : null}
         {renderBatchSearch(row)}
       </View>
@@ -1813,9 +1734,8 @@ function ShareJobDetailScreen() {
   const isCandidatePicker = detail.kind === 'picker';
   const isManual = detail.kind === 'manual';
   const selectedPendingCount = batch ? selectedBatchTargets(batch).length : 0;
-  const eligiblePendingCount = batch ? allEligibleBatchTargets(batch).length : 0;
-  const everyEligibleSelected = batch ? allEligibleBatchRowsSelected(batch) : false;
-  const showBatchSelectionControls = !!batch && batch.order.length >= 3 && eligiblePendingCount >= 2;
+  const batchCounts = batch ? batchActionCounts(batch) : { total: 0, newPlaces: 0, sourceAttachments: 0 };
+  const batchProgress = batch ? batchResolutionProgress(batch) : { resolved: 0, total: 0 };
   const single = candidates[0];
   const confirmationSingle = confirmationCandidates[0] ?? null;
   const broadSingle = confirmationSingle ? isBroadCandidate(confirmationSingle) : false;
@@ -1867,66 +1787,46 @@ function ShareJobDetailScreen() {
             style={styles.batchKeyboardSurface}
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           >
-            <ScrollView
+            <FlatList
               style={styles.batchScroll}
+              data={batch.order}
+              keyExtractor={(id) => id}
+              renderItem={({ item: id, index }) => renderBatchRow(batch.rows[id]!, index, batch.order.length)}
               contentContainerStyle={styles.batchContent}
               contentInsetAdjustmentBehavior="automatic"
-              automaticallyAdjustKeyboardInsets
               keyboardShouldPersistTaps="handled"
-              keyboardDismissMode="interactive"
+              keyboardDismissMode="on-drag"
               showsVerticalScrollIndicator={false}
-            >
-              <View style={styles.sourceRow}>
-                <Feather name={sourceIcon} size={14} color={colors.textSecondary} />
-                <Text style={[typography.caption, styles.sourceText]} numberOfLines={1}>
-                  {platformName(platform)} · From the original post
-                </Text>
-              </View>
-              {vayrinEnabled ? (
-                <VayrinPresentationHeader presentation={vayrinPresentation} />
-              ) : (
-                <>
-                  <Text style={[typography.title, styles.title]}>
-                    {`Found ${batch.order.length} ${batch.order.length === 1 ? 'place' : 'places'}`}
+              initialNumToRender={2}
+              maxToRenderPerBatch={2}
+              windowSize={3}
+              removeClippedSubviews
+              ListHeaderComponent={(
+                <View style={styles.batchIntro}>
+                  <View style={styles.sourceRow}>
+                    <Feather name={sourceIcon} size={14} color={colors.textSecondary} />
+                    <Text style={[typography.caption, styles.sourceText]} numberOfLines={1}>{platformName(platform)} · From the original post</Text>
+                  </View>
+                  <Text style={styles.vayrinLabel}>VAYRIN</Text>
+                  <Text style={[typography.title, styles.title]}>Vayrin found a few places in this video.</Text>
+                  <Text style={[typography.body, styles.help]}>Match each moment to the right place.</Text>
+                  <Text accessibilityLiveRegion="polite" style={styles.batchProgress}>
+                    {batchProgress.resolved} of {batchProgress.total} places resolved
                   </Text>
-                  <Text style={[typography.body, styles.help]}>
-                    Choose the places you want to save. Uncertain matches stay separate until you choose one.
-                  </Text>
-                </>
+                </View>
               )}
-              {showBatchSelectionControls ? (
-                <View style={styles.batchSelectionActions}>
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel="Select all eligible places"
-                    onPress={selectEveryEligibleBatchRow}
-                    hitSlop={8}
-                  >
-                    <Text style={styles.inlineActionText}>Select all</Text>
-                  </Pressable>
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel="Clear all eligible place selections"
-                    onPress={clearEveryEligibleBatchRow}
-                    hitSlop={8}
-                  >
-                    <Text style={styles.inlineActionText}>Clear all</Text>
-                  </Pressable>
+              ListEmptyComponent={<View style={styles.emptyBatch}><Text style={[typography.body, styles.help]}>No places were available to review.</Text></View>}
+              ListFooterComponent={(
+                <View>
+                  {automaticallySavedPlaceIds.length > 0 && savedBatchIds.length === 0 ? (
+                    <Text style={[typography.caption, styles.helpCompact]}>{automaticallySavedPlaceIds.length} place{automaticallySavedPlaceIds.length === 1 ? ' was' : 's were'} already saved from this post.</Text>
+                  ) : null}
+                  {renderJobFooter()}
                 </View>
-              ) : null}
-              {batch.order.length === 0 ? (
-                <View style={styles.emptyBatch}>
-                  <Text style={[typography.body, styles.help]}>No logical places were available to review.</Text>
-                </View>
-              ) : batch.order.map((id, index) => renderBatchRow(batch.rows[id]!, index, batch.order.length))}
-              {automaticallySavedPlaceIds.length > 0 && savedBatchIds.length === 0 ? (
-                <Text style={[typography.caption, styles.helpCompact]}>
-                  {automaticallySavedPlaceIds.length} place{automaticallySavedPlaceIds.length === 1 ? ' was' : 's were'} already saved from this post.
-                </Text>
-              ) : null}
-              {renderJobFooter()}
-            </ScrollView>
-            <View style={styles.batchFooter}>
+              )}
+            />
+            {batchCounts.total > 0 || batch.feedback || (savedBatchIds.length > 0 && recoveryCount > 0) ? (
+              <View style={[styles.batchFooter, { paddingBottom: Math.max(safeAreaInsets.bottom, Spacing.sm) }]}>
               {batch.feedback ? (
                 <Text
                   accessibilityLiveRegion="polite"
@@ -1941,22 +1841,14 @@ function ShareJobDetailScreen() {
                         : `Saved ${batch.feedback.saved} ${batch.feedback.saved === 1 ? 'place' : 'places'}.`}
                 </Text>
               ) : null}
-              <Button
-                title={saveSelectedLabel(selectedPendingCount)}
-                accessibilityLabel={`${saveSelectedLabel(selectedPendingCount)} from this batch`}
-                onPress={() => void handleSaveSelected()}
-                disabled={selectedPendingCount === 0 || busy}
-                loading={busy}
-                style={styles.batchSaveButton}
-              />
-              {showBatchSelectionControls && !everyEligibleSelected ? (
+              {batchCounts.total > 0 ? (
                 <Button
-                  title={`Save all (${eligiblePendingCount})`}
-                  accessibilityLabel={`Save all ${eligiblePendingCount} eligible places`}
-                  variant="secondary"
-                  onPress={() => void handleSaveAll()}
-                  disabled={eligiblePendingCount === 0 || busy}
-                  style={styles.batchSaveAllButton}
+                  title={batchPrimaryActionLabel(batchCounts)}
+                  accessibilityLabel={`${batchPrimaryActionLabel(batchCounts)} from this review`}
+                  onPress={() => void handleSaveSelected()}
+                  disabled={selectedPendingCount === 0 || busy}
+                  loading={busy}
+                  style={styles.batchSaveButton}
                 />
               ) : null}
               {savedBatchIds.length > 0 && recoveryCount > 0 ? (
@@ -1967,7 +1859,8 @@ function ShareJobDetailScreen() {
                   style={styles.batchViewSavedButton}
                 />
               ) : null}
-            </View>
+              </View>
+            ) : null}
           </KeyboardAvoidingView>
         )}
       </ShareJobsSheet>
@@ -2272,8 +2165,11 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
     batchContent: {
       paddingHorizontal: Spacing.lg,
       paddingTop: Spacing.sm,
-      paddingBottom: Spacing.lg,
+      paddingBottom: Spacing.xxl,
     },
+    batchIntro: { paddingBottom: Spacing.sm },
+    vayrinLabel: { color: colors.accent, fontSize: 11, lineHeight: 16, fontWeight: '800', letterSpacing: 1.6, marginTop: Spacing.lg },
+    batchProgress: { color: colors.textSecondary, fontSize: 13, lineHeight: 18, fontWeight: '700', marginTop: Spacing.md },
     batchFooter: {
       paddingHorizontal: Spacing.lg,
       paddingTop: Spacing.sm,
@@ -2421,6 +2317,8 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       marginTop: Spacing.md,
     },
     mentionCardSelected: { borderColor: colors.primary },
+    mentionPositionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 3 },
+    mentionPosition: { color: colors.accent, fontSize: 10, lineHeight: 15, fontWeight: '800', letterSpacing: 1.1 },
     batchRowHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.md },
     batchCheckboxTarget: { width: 44, height: 44, marginLeft: 0 },
     savedBadgeCompact: {
@@ -2460,6 +2358,13 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       alignItems: 'center',
       justifyContent: 'space-between',
     },
+    possiblePlaces: { marginTop: Spacing.md },
+    possiblePlacesTitle: { color: colors.text, fontSize: 15, lineHeight: 20, fontWeight: '700' },
+    candidateCapCopy: { color: colors.textMuted, marginTop: Spacing.sm, lineHeight: 18 },
+    unresolvedCopy: { color: colors.textSecondary, marginTop: Spacing.md, lineHeight: 18 },
+    mentionActions: { marginTop: Spacing.sm, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
+    noneAction: { minHeight: 44, alignItems: 'flex-start', justifyContent: 'center' },
+    noneActionText: { color: colors.textSecondary, fontSize: 14, lineHeight: 20, fontWeight: '700' },
     batchSearch: {
       marginTop: Spacing.md,
       paddingTop: Spacing.md,
