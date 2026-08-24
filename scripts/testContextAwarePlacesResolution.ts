@@ -8,6 +8,7 @@ import {
   MAX_VISIBLE_CONTEXTUAL_CANDIDATES,
   analyzePlacesAmbiguity,
   contextualWideningDecision,
+  countryCodeForContext,
   haversineDistanceKm,
   isPrivacySafeResolutionTelemetry,
   rankContextAwareCandidates,
@@ -132,6 +133,13 @@ function topDistance(fixture: Fixture, candidate: ContextualPlaceCandidate | und
   return anchor ? haversineDistanceKm(anchor, { lat: candidate.latitude, lng: candidate.longitude }) : null;
 }
 
+function isCrossCountryTop1(fixture: Fixture, candidate: ContextualPlaceCandidate | undefined): boolean {
+  const expected = countryCodeForContext(fixture.context.inferredCountry);
+  const addressCountry = (candidate?.formattedAddress ?? '').split(',').map((part) => part.trim()).filter(Boolean).pop();
+  const actual = countryCodeForContext(addressCountry);
+  return !!expected && !!actual && expected !== actual;
+}
+
 function percentile(values: number[], p: number): number {
   if (values.length === 0) return 0;
   const sorted = [...values].sort((a, b) => a - b);
@@ -145,6 +153,8 @@ function benchmark() {
   let afterRecall3 = 0;
   let beforeWrong = 0;
   let afterWrong = 0;
+  let beforeCrossCountryWrong = 0;
+  let afterCrossCountryWrong = 0;
   let beforeVisible = 0;
   let afterVisible = 0;
   let beforeNoResult = 0;
@@ -168,6 +178,8 @@ function benchmark() {
     if (expectedNoResult ? after.length === 0 : after.slice(0, 3).some((candidate) => correct.has(candidate.googlePlaceId))) afterRecall3 += 1;
     if (!expectedNoResult && fixture.context.mode === 'source' && !correct.has(before[0]?.googlePlaceId ?? '')) beforeWrong += 1;
     if (!expectedNoResult && fixture.context.mode === 'source' && !correct.has(after[0]?.googlePlaceId ?? '')) afterWrong += 1;
+    if (!expectedNoResult && isCrossCountryTop1(fixture, before[0])) beforeCrossCountryWrong += 1;
+    if (!expectedNoResult && isCrossCountryTop1(fixture, after[0])) afterCrossCountryWrong += 1;
     beforeVisible += Math.min(5, before.length);
     afterVisible += after.length;
     if (before.length === 0) beforeNoResult += 1;
@@ -198,6 +210,7 @@ function benchmark() {
       recallAt1: beforeRecall1 / total,
       recallAt3: beforeRecall3 / total,
       crossRegionWrongTop1: beforeWrong,
+      crossCountryWrongTop1: beforeCrossCountryWrong,
       meanTopDistanceKm: mean(beforeDistances),
       meanVisibleCandidates: beforeVisible / total,
       noResultRate: beforeNoResult / total,
@@ -208,6 +221,7 @@ function benchmark() {
       recallAt1: afterRecall1 / total,
       recallAt3: afterRecall3 / total,
       crossRegionWrongTop1: afterWrong,
+      crossCountryWrongTop1: afterCrossCountryWrong,
       meanTopDistanceKm: mean(afterDistances),
       meanVisibleCandidates: afterVisible / total,
       noResultRate: afterNoResult / total,
@@ -253,6 +267,7 @@ assert.ok(isPrivacySafeResolutionTelemetry(rank('in-n-out-santa-paula').telemetr
 const report = benchmark();
 assert.ok(report.after.recallAt1 > report.before.recallAt1, 'benchmark Recall@1 materially improves');
 assert.ok(report.after.crossRegionWrongTop1 <= report.before.crossRegionWrongTop1, 'benchmark cross-region wrong top-1 does not increase');
+assert.ok(report.after.crossCountryWrongTop1 <= report.before.crossCountryWrongTop1, 'benchmark cross-country wrong top-1 does not increase');
 assert.ok(report.after.meanVisibleCandidates <= 3, 'benchmark visible candidate average obeys cap');
 
 if (process.argv.includes('--write-artifact')) {

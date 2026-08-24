@@ -1,10 +1,11 @@
 {
-  "generatedAt": "2026-08-24T23:35:25.710Z",
+  "generatedAt": "2026-08-24T23:40:30.202Z",
   "corpusSize": 18,
   "before": {
     "recallAt1": 0.05555555555555555,
     "recallAt3": 0.9444444444444444,
     "crossRegionWrongTop1": 14,
+    "crossCountryWrongTop1": 4,
     "meanTopDistanceKm": 4233.956580897388,
     "meanVisibleCandidates": 2.7222222222222223,
     "noResultRate": 0,
@@ -15,13 +16,14 @@
     "recallAt1": 1,
     "recallAt3": 1,
     "crossRegionWrongTop1": 0,
+    "crossCountryWrongTop1": 0,
     "meanTopDistanceKm": 14.894193834476189,
     "meanVisibleCandidates": 1.4444444444444444,
     "noResultRate": 0.05555555555555555,
     "wideningRate": 0.05555555555555555,
     "placesCallsPerQuery": 1.1111111111111112,
-    "rankingLatencyP50Ms": 0.04230000000001155,
-    "rankingLatencyP95Ms": 0.11309999999997444
+    "rankingLatencyP50Ms": 0.03880000000003747,
+    "rankingLatencyP95Ms": 0.11600000000004229
   },
   "cases": [
     {
