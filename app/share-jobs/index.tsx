@@ -52,7 +52,6 @@ import {
 import {
   addClearedQueueIds,
   addDismissedQueueIds,
-  persistQueueIdsOptimistically,
   readClearedQueueIds,
   readDismissedQueueIds,
 } from '@/lib/queueClearedState';
@@ -81,11 +80,14 @@ import { PHASE_1_COPY, processingMessage, queueIntro, splitPlaceAddress } from '
 import { isVayrinProductUiEnabled } from '@/lib/featureFlags';
 import { normalizeVayrinIdentityLeads } from '@/lib/vayrinPresentation';
 import { hapticSuccess } from '@/lib/haptics';
+import { isLikelyOfflineError } from '@/lib/savedPlacesCache';
 import {
   isPersistableShareJobCandidate,
   saveResolvedQueueCandidate,
 } from '@/services/shareJobCandidateSave';
 import {
+  archiveActiveQueue,
+  archiveQueueJobs,
   undoAutoSavedPlace,
   type RecentAutoSave,
   type ShareJob,
@@ -212,7 +214,7 @@ function ShareJobsQueueScreen() {
   const vayrinEnabled = isVayrinProductUiEnabled();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { jobs, recentAutoSaves, loading, refreshing, refresh, enabled, authLoading } = useShareJobs();
-  const { session } = useAuth();
+  const { session, isOfflineSession } = useAuth();
   const userId = session?.user?.id ?? null;
   const [actingId, setActingId] = useState<string | null>(null);
   const [clearedIds, setClearedIds] = useState<Set<string>>(new Set());
@@ -261,20 +263,84 @@ function ShareJobsQueueScreen() {
     actionLocksRef.current.add(lock);
     swipeCoordinator.closeActive();
     setActingId('clear-completed');
-    const ids = completedRows.map((item) => item.resultId);
+    const resultIds = completedRows.map((item) => item.resultId);
+    const jobIds = [...new Set(completedRows.map((item) => item.shareJobId))];
+    const previous = new Set(clearedIds);
+    setClearedIds((current) => new Set([...current, ...resultIds]));
     try {
-      await persistQueueIdsOptimistically({
-        current: clearedIds,
-        ids,
-        apply: setClearedIds,
-        persist: (nextIds) => addClearedQueueIds(userId, nextIds),
-      });
+      await archiveQueueJobs(jobIds);
+      void addClearedQueueIds(userId, resultIds).catch(() => undefined);
+      await refresh();
     } catch {
+      setClearedIds(previous);
+      await refresh();
       Alert.alert('Could not clear completed items', 'Please try again in a moment.');
     } finally {
       actionLocksRef.current.delete(lock);
       setActingId(null);
     }
+  }
+
+  async function emptyQueue() {
+    if (actionLocksRef.current.size > 0 || !hasContent) return;
+    const requestedCount = visibleJobs.length + completedRows.length;
+    void trackEvent('queue_empty_requested', { queue_empty_count: requestedCount });
+
+    if (isOfflineSession) {
+      void trackEvent('queue_empty_failed', { reason: 'offline' });
+      Alert.alert("You're offline", 'Connect to empty your queue.');
+      return;
+    }
+
+    const lock = 'empty-queue';
+    const previousDismissed = new Set(dismissedIds);
+    const previousCleared = new Set(clearedIds);
+    const jobIds = visibleJobs.map((job) => job.id);
+    const resultIds = completedRows.map((item) => item.resultId);
+    actionLocksRef.current.add(lock);
+    swipeCoordinator.closeActive();
+    setActingId(lock);
+    setDismissedIds((current) => new Set([...current, ...jobIds]));
+    setClearedIds((current) => new Set([...current, ...resultIds]));
+
+    try {
+      const result = await archiveActiveQueue();
+      await refresh();
+      void addDismissedQueueIds(userId, jobIds).catch(() => undefined);
+      void addClearedQueueIds(userId, resultIds).catch(() => undefined);
+      void trackEvent('queue_empty_completed', {
+        queue_empty_count: result.archivedCount,
+      });
+      void trackEvent('queue_empty_count', {
+        count: result.archivedCount,
+      });
+      hapticSuccess();
+      Alert.alert('Queue emptied');
+    } catch (error) {
+      setDismissedIds(previousDismissed);
+      setClearedIds(previousCleared);
+      await refresh();
+      const offline = isLikelyOfflineError(error);
+      void trackEvent('queue_empty_failed', { reason: offline ? 'offline' : 'server' });
+      Alert.alert(
+        offline ? "You're offline" : "Couldn't empty queue",
+        offline ? 'Connect to empty your queue.' : 'Your queue was reloaded. Please try again.',
+      );
+    } finally {
+      actionLocksRef.current.delete(lock);
+      setActingId(null);
+    }
+  }
+
+  function confirmEmptyQueue() {
+    Alert.alert(
+      'Empty your queue?',
+      "This removes all items from your queue. Your saved places won't be affected.",
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Empty queue', style: 'destructive', onPress: () => void emptyQueue() },
+      ],
+    );
   }
 
   /** Swipe/accessibility model for an actionable or processing job row. */
@@ -335,14 +401,15 @@ function ShareJobsQueueScreen() {
     if (actionLocksRef.current.size > 0) return;
     actionLocksRef.current.add(lock);
     setActingId(job.id);
+    const previous = new Set(dismissedIds);
+    setDismissedIds((current) => new Set(current).add(job.id));
     try {
-      await persistQueueIdsOptimistically({
-        current: dismissedIds,
-        ids: [job.id],
-        apply: setDismissedIds,
-        persist: (ids) => addDismissedQueueIds(userId, ids),
-      });
+      await archiveQueueJobs([job.id]);
+      void addDismissedQueueIds(userId, [job.id]).catch(() => undefined);
+      await refresh();
     } catch {
+      setDismissedIds(previous);
+      await refresh();
       Alert.alert('Could not remove', 'Please try again in a moment.');
     } finally {
       actionLocksRef.current.delete(lock);
@@ -386,14 +453,15 @@ function ShareJobsQueueScreen() {
     if (actionLocksRef.current.size > 0) return;
     actionLocksRef.current.add(lock);
     setActingId(lock);
+    const previous = new Set(clearedIds);
+    setClearedIds((current) => new Set(current).add(item.resultId));
     try {
-      await persistQueueIdsOptimistically({
-        current: clearedIds,
-        ids: [item.resultId],
-        apply: setClearedIds,
-        persist: (ids) => addClearedQueueIds(userId, ids),
-      });
+      await archiveQueueJobs([item.shareJobId]);
+      void addClearedQueueIds(userId, [item.resultId]).catch(() => undefined);
+      await refresh();
     } catch {
+      setClearedIds(previous);
+      await refresh();
       Alert.alert('Could not remove', 'Please try again in a moment.');
     } finally {
       actionLocksRef.current.delete(lock);
@@ -668,7 +736,17 @@ function ShareJobsQueueScreen() {
   // The header is rendered in EVERY state so the back control is always
   // available — even while auth restores, when the flag is off, or when empty.
   const header = (
-    <ShareJobsHeader title="Your queue" onBack={goBack} backLabel="Close queue" icon="close" />
+    <ShareJobsHeader
+      title="Your queue"
+      onBack={goBack}
+      backLabel="Close queue"
+      icon="close"
+      rightAction={hasContent ? {
+        accessibilityLabel: 'Queue actions',
+        onPress: confirmEmptyQueue,
+        disabled: !!actingId,
+      } : undefined}
+    />
   );
 
   if (!enabled) {

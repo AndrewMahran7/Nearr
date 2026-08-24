@@ -73,10 +73,12 @@ export type ShareJob = {
   created_at: string;
   updated_at: string;
   completed_at: string | null;
+  queue_archived_at?: string | null;
 };
 
 export type RecentAutoSave = {
   resultId: string;
+  shareJobId: string;
   savedPlaceId: string;
   finalizedAt: string;
   confidenceScore: number | null;
@@ -93,7 +95,7 @@ export type UndoAutoSaveResult = {
 };
 
 const JOB_COLUMNS =
-  'id, user_id, source_url, canonical_url, source_platform, status, progress_stage, decision, saved_place_id, candidate_payload, extraction_payload, suggested_query, needs_help_reason, failure_reason, failure_category, failure_code, analysis_attempted, notification_status, notification_attempts, notification_last_attempt_at, notification_ticket_ids, notification_error_code, notification_submitted_at, created_at, updated_at, completed_at';
+  'id, user_id, source_url, canonical_url, source_platform, status, progress_stage, decision, saved_place_id, candidate_payload, extraction_payload, suggested_query, needs_help_reason, failure_reason, failure_category, failure_code, analysis_attempted, notification_status, notification_attempts, notification_last_attempt_at, notification_ticket_ids, notification_error_code, notification_submitted_at, created_at, updated_at, completed_at, queue_archived_at';
 
 /** List the current user's active/actionable jobs, newest first.
  *
@@ -107,6 +109,7 @@ export async function listShareJobs(limit = 100): Promise<ShareJob[]> {
     .from('share_jobs')
     .select(JOB_COLUMNS)
     .in('status', QUEUE_VISIBLE_STATUSES as unknown as string[])
+    .is('queue_archived_at', null)
     .order('created_at', { ascending: false })
     .limit(limit);
   if (error) {
@@ -117,13 +120,14 @@ export async function listShareJobs(limit = 100): Promise<ShareJob[]> {
 }
 
 const RECENT_AUTO_SAVE_COLUMNS =
-  'id, saved_place_id, finalized_at, confidence_score, saved_place:saved_places!share_job_place_results_saved_place_id_fkey(*, place:places(*))';
+  'id, share_job_id, saved_place_id, finalized_at, confidence_score, share_job:share_jobs!inner(queue_archived_at), saved_place:saved_places!share_job_place_results_saved_place_id_fkey(*, place:places(*))';
 
 function normalizeRecentAutoSave(row: any): RecentAutoSave | null {
   const savedPlace = Array.isArray(row?.saved_place) ? row.saved_place[0] : row?.saved_place;
-  if (!row?.id || !row?.saved_place_id || !row?.finalized_at || !savedPlace?.place) return null;
+  if (!row?.id || !row?.share_job_id || !row?.saved_place_id || !row?.finalized_at || !savedPlace?.place) return null;
   return {
     resultId: row.id,
+    shareJobId: row.share_job_id,
     savedPlaceId: row.saved_place_id,
     finalizedAt: row.finalized_at,
     confidenceScore: typeof row.confidence_score === 'number' ? row.confidence_score : null,
@@ -140,6 +144,7 @@ export async function listRecentAutoSaves(limit = 20): Promise<RecentAutoSave[]>
     .select(RECENT_AUTO_SAVE_COLUMNS)
     .eq('origin', 'automatic')
     .eq('outcome', 'auto_saved')
+    .is('share_job.queue_archived_at', null)
     .gte('finalized_at', since)
     .order('finalized_at', { ascending: false })
     .limit(limit);
@@ -155,6 +160,7 @@ export async function getRecentAutoSave(resultId: string): Promise<RecentAutoSav
     .eq('id', resultId)
     .eq('origin', 'automatic')
     .eq('outcome', 'auto_saved')
+    .is('share_job.queue_archived_at', null)
     .maybeSingle();
   if (error) throw new Error(error.message);
   return normalizeRecentAutoSave(data);
@@ -191,6 +197,7 @@ export async function getShareJob(jobId: string): Promise<ShareJob | null> {
     .from('share_jobs')
     .select(JOB_COLUMNS)
     .eq('id', jobId)
+    .is('queue_archived_at', null)
     .maybeSingle();
   if (error) {
     logDebug('share-jobs', `get failed: ${error.message}`);
@@ -222,33 +229,43 @@ export async function markShareJobResolved(
   }
 }
 
+/** Result returned by the atomic account-scoped archive RPC. */
+export type ArchiveQueueResult = {
+  archivedCount: number;
+  cutoff: string;
+};
+
 /**
- * Delete a job from the queue. This removes ONLY the job row — the FK to
- * saved_places is ON DELETE SET NULL on the job side, so a saved place is
- * never deleted by removing its originating job.
+ * The one durable queue-removal primitive. Omitting ids atomically archives
+ * the account's queue at a database-side cutoff; supplying ids applies the
+ * same owner-scoped archival semantics to per-item/batch removal.
  */
-export async function deleteShareJob(jobId: string): Promise<void> {
-  if (isDemoMode() || isMapPreviewMode()) return;
-  const { error } = await supabase.from('share_jobs').delete().eq('id', jobId);
+export async function archiveQueueJobs(
+  jobIds?: readonly string[],
+): Promise<ArchiveQueueResult> {
+  if (isDemoMode() || isMapPreviewMode()) {
+    return { archivedCount: 0, cutoff: new Date().toISOString() };
+  }
+  const args = jobIds === undefined ? undefined : { p_job_ids: [...jobIds] };
+  const { data, error } = await supabase.rpc('archive_active_queue_for_user', args);
   if (error) {
-    logDebug('share-jobs', `delete failed: ${error.message}`);
+    logDebug('share-jobs', `archive failed: ${error.message}`);
     throw new Error(error.message);
   }
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row || typeof row.cutoff !== 'string') throw new Error('Queue archive returned no result.');
+  return {
+    archivedCount: Number(row.archived_count ?? 0),
+    cutoff: row.cutoff,
+  };
 }
 
-/** Cancel an in-flight job so it stops processing and leaves the queue. */
-export async function cancelShareJob(jobId: string): Promise<void> {
-  if (isDemoMode() || isMapPreviewMode()) return;
-  const { data, error } = await supabase.rpc('cancel_share_job', {
-    p_job_id: jobId,
-  });
-  if (error) {
-    logDebug('share-jobs', `cancel failed: ${error.message}`);
-    throw new Error(error.message);
-  }
-  if (data !== true) {
-    throw new Error('Job is no longer cancelable. Refresh and try again.');
-  }
+export async function archiveActiveQueue(): Promise<ArchiveQueueResult> {
+  return archiveQueueJobs();
+}
+
+export async function archiveShareJob(jobId: string): Promise<ArchiveQueueResult> {
+  return archiveQueueJobs([jobId]);
 }
 
 /**

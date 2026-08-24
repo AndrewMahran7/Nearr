@@ -23,8 +23,10 @@ with
   )
 select
   now() as observed_at,
-  (select count(*) from public.share_jobs where status = 'queued') as queued_share_jobs,
-  (select count(*) from public.share_jobs where status = 'processing_metadata') as processing_share_jobs,
+  (select count(*) from public.share_jobs where status = 'queued' and queue_archived_at is null) as queued_share_jobs,
+  (select count(*) from public.share_jobs where status = 'processing_metadata' and queue_archived_at is null) as processing_share_jobs,
+  (select count(*) from public.share_jobs where status = 'queued') as worker_queued_share_jobs,
+  (select count(*) from public.share_jobs where status = 'processing_metadata') as worker_processing_share_jobs,
   (select count(*) from public.share_media_tasks where status = 'queued') as queued_media_tasks,
   (select extract(epoch from now() - min(created_at))::integer from public.share_media_tasks where status = 'queued') as oldest_queued_media_seconds,
   (select count(*) from public.share_media_tasks where status = 'processing' and locked_until > now()) as active_media_leases,

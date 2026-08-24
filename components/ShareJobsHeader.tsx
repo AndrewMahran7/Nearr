@@ -25,6 +25,12 @@ type Props = {
   icon?: 'back' | 'close';
   /** Optional small actionable-count badge shown on the right. */
   count?: number;
+  /** Optional overflow action used for infrequent queue-wide operations. */
+  rightAction?: {
+    accessibilityLabel: string;
+    onPress: () => void;
+    disabled?: boolean;
+  };
 };
 
 export function ShareJobsHeader({
@@ -33,6 +39,7 @@ export function ShareJobsHeader({
   backLabel = 'Back',
   icon = 'back',
   count,
+  rightAction,
 }: Props) {
   const { colors, typography } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -52,7 +59,22 @@ export function ShareJobsHeader({
       <Text style={[typography.title, styles.title]} numberOfLines={1}>
         {title}
       </Text>
-      {showBadge ? (
+      {rightAction ? (
+        <Pressable
+          onPress={rightAction.onPress}
+          disabled={rightAction.disabled}
+          style={({ pressed }) => [
+            styles.actionBtn,
+            pressed && styles.backBtnPressed,
+            rightAction.disabled && styles.actionBtnDisabled,
+          ]}
+          accessibilityRole="button"
+          accessibilityLabel={rightAction.accessibilityLabel}
+          hitSlop={8}
+        >
+          <Feather name="more-horizontal" size={22} color={colors.text} />
+        </Pressable>
+      ) : showBadge ? (
         <View
           style={styles.badge}
           accessibilityLabel={`${count} ${count === 1 ? 'item needs' : 'items need'} your help`}
@@ -87,6 +109,14 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       borderColor: colors.border,
     },
     backBtnPressed: { backgroundColor: colors.surfaceElevated },
+    actionBtn: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    actionBtnDisabled: { opacity: 0.45 },
     title: { flex: 1, color: colors.text },
     spacer: { width: 44, height: 44 },
     badge: {

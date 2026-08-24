@@ -28,8 +28,9 @@ assert.match(queue, /clearCompletedButton/);
 assert.match(queue, /minHeight: 44/);
 assert.match(queue, /saveResolvedQueueCandidate\(job, candidate\)/);
 assert.doesNotMatch(queue, /cancelShareJob/, 'Remove never cancels backend work');
-assert.match(queue, /addDismissedQueueIds/, 'Remove persists inbox dismissal');
-assert.match(queue, /persistQueueIdsOptimistically/, 'failed dismissal can roll back');
+assert.match(queue, /archiveQueueJobs\(\[job\.id\]\)/, 'Remove persists durable server archival');
+assert.match(queue, /addDismissedQueueIds/, 'Remove also keeps the local view synchronized');
+assert.match(queue, /setDismissedIds\(previous\)/, 'failed dismissal restores exact prior state');
 
 assert.match(candidateSave, /persistShareJobCandidate/);
 assert.match(candidateSave, /sourceType: shareJobSourceType/);

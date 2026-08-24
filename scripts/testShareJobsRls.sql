@@ -156,15 +156,18 @@ begin
 end;
 $$;
 
--- A cannot DELETE B job (RLS filters the row out → 0 rows deleted). A
--- data-modifying statement must live in a CTE, not a FROM subquery.
-with a_delete_b as (
-  delete from public.share_jobs
-   where id = (select b_job_id from _share_job_rls_ctx limit 1)
-  returning 1
-)
-select 'A_cannot_delete_B_job' as test_name,
-       (select count(*) from a_delete_b) = 0 as pass;
+-- Authenticated clients cannot hard-delete even their own share-job history.
+do $$
+begin
+  begin
+    delete from public.share_jobs
+     where id = (select a_job_id from _share_job_rls_ctx limit 1);
+    raise notice 'A_cannot_hard_delete_job: FAIL (unexpectedly allowed)';
+  exception when insufficient_privilege then
+    raise notice 'A_cannot_hard_delete_job: PASS (%).', sqlerrm;
+  end;
+end;
+$$;
 
 do $$
 begin
@@ -258,6 +261,12 @@ select 'A_resolve_B_job_rejected' as test_name,
          (select b_job_id from _share_job_rls_ctx limit 1),
          (select a_saved_place_id from _share_job_rls_ctx limit 1)
        ) = false as pass;
+
+select 'A_cannot_archive_B_job' as test_name,
+       archived_count = 0 as pass
+  from public.archive_active_queue_for_user(
+    array[(select b_job_id from _share_job_rls_ctx limit 1)]
+  );
 
 -- A cannot attach B saved_place_id to own job.
 do $$
