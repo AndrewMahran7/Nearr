@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-24T23:40:30.202Z",
+  "generatedAt": "2026-08-24T23:42:07.313Z",
   "corpusSize": 18,
   "before": {
     "recallAt1": 0.05555555555555555,
@@ -22,8 +22,8 @@
     "noResultRate": 0.05555555555555555,
     "wideningRate": 0.05555555555555555,
     "placesCallsPerQuery": 1.1111111111111112,
-    "rankingLatencyP50Ms": 0.03880000000003747,
-    "rankingLatencyP95Ms": 0.11600000000004229
+    "rankingLatencyP50Ms": 0.037399999999990996,
+    "rankingLatencyP95Ms": 0.09710000000001173
   },
   "cases": [
     {
