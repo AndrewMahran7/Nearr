@@ -120,3 +120,21 @@ The deterministic policy preserves rank-one Stiniva under that uncertainty.
 Run the focused policy suite with `npm run test:vayrin-verification-v3`. Run one withheld verifier fixture with the worker `vayrin:verification-v3` command, then compile the frozen report with `vayrin:verification-v3:compile`. The compiler requires the V2 benchmark artifact, V2 raw reports, and V3 raw reports so legacy and new metrics remain traceable.
 
 The benchmark artifact is the machine-readable source of truth for per-fixture hashes, ranks, every candidate record, Sol usage, latency, cost, and no-save outcome.
+
+## Nearr-Dev deployment
+
+The benchmark gate passed and worker commit lineage was rebased onto concurrent `origin/main` commit `efb5b2267661d512cf951065a9dcb63cf7777551` before deployment, preserving the newer Instagram/Facebook acquisition work.
+
+- Railway project: `Nearr Phase 2 Dev` (`4037a3b5-d66f-409e-b734-56c22c244e3e`).
+- Environment: `development` (`57d055b7-5326-4f96-a7a9-70523ee0d3f0`).
+- Service: `media-worker` (`3c8cd190-b118-4ee4-9338-407843ef4e1f`).
+- Successful deployment: `e6572f8d-101a-4101-b62c-6ad9096b245e`.
+- Health: `/health` returned `status: ok`.
+- Readiness: `/ready` returned `status: ready`; config, ffmpeg, ffprobe, yt-dlp, and Supabase checks were true.
+- Redacted startup config: V3 enabled, Vayrin visual geolocation enabled, Places key present, POI limit 8, Vision disabled.
+- Edge functions: unchanged.
+- Schema: unchanged.
+- OTA/mobile release: none.
+- Production: untouched.
+
+An initial upload from the worker subdirectory failed before build because Railway interpreted that directory as repository root. It did not replace the healthy instance. The corrected upload from repository root used `/services/media-worker/railway.json` and reached `SUCCESS`.

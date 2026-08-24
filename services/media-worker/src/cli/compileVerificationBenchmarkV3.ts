@@ -46,8 +46,9 @@ function p95(values: readonly number[]): number {
   return sorted[Math.ceil(sorted.length * 0.95) - 1]!;
 }
 
-function ratio(numerator: number, denominator: number): number | null {
-  return denominator > 0 ? Number((numerator / denominator).toFixed(6)) : null;
+function ratio(numerator: number, denominator: number): number {
+  if (denominator <= 0) throw new Error('benchmark ratio denominator must be positive');
+  return Number((numerator / denominator).toFixed(6));
 }
 
 async function json(file: string): Promise<JsonObject> {
