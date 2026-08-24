@@ -761,18 +761,23 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
         )
       : !analysis.evidence.insufficientEvidence && analysis.evidence.places.length > 0;
     const outcome: FinalizeOutcome = hasEvidence ? 'evidence' : 'insufficient_evidence';
-    const durableEvidenceFrames = task.task_kind === 'ai_note_enrichment' || !hasEvidence
+    const selectedEvidenceFrames = task.task_kind === 'ai_note_enrichment' || !hasEvidence
       ? []
-      : await persistEvidenceFrames(
-          client,
-          task,
-          selectDurableEvidenceFrames({
-            frames: primaryContext.frames,
-            evidence: analysis.evidence,
-            vayrinSelectedTimestamps: analysis.vayrin?.selectedTimestampsSeconds,
-          }),
-        );
+      : selectDurableEvidenceFrames({
+          frames: primaryContext.frames,
+          evidence: analysis.evidence,
+          vayrinSelectedTimestamps: analysis.vayrin?.selectedTimestampsSeconds,
+        });
+    const durableEvidenceFrames = selectedEvidenceFrames.length === 0
+      ? []
+      : await persistEvidenceFrames(client, task, selectedEvidenceFrames);
     diagnostics.evidenceFramesRetained = durableEvidenceFrames.length;
+    log.info('evidence_frame_persistence', {
+      taskId: task.id,
+      jobId: task.share_job_id,
+      selected: selectedEvidenceFrames.length,
+      retained: durableEvidenceFrames.length,
+    });
     const fin = await finalizeWithRetry(() =>
       verifyPlaceEvidence(cfg, {
         taskId: task.id,

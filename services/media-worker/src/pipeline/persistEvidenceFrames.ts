@@ -93,9 +93,26 @@ export async function persistEvidenceFrames(
 
   try {
     const bucket = client.storage.from(SHARE_EVIDENCE_BUCKET);
-    const { data: previous } = await bucket.list(prefix, { limit: 20 });
+    const { data: previous, error: listError } = await bucket.list(prefix, { limit: 20 });
+    if (listError) {
+      log.warn('evidence_frame_list_failed', {
+        taskId: task.id,
+        jobId: task.share_job_id,
+        message: listError.message.slice(0, 120),
+      });
+    }
     const stale = (previous ?? []).map((object) => `${prefix}/${object.name}`);
-    if (stale.length > 0) await bucket.remove(stale);
+    if (stale.length > 0) {
+      const { error: removeError } = await bucket.remove(stale);
+      if (removeError) {
+        log.warn('evidence_frame_stale_cleanup_failed', {
+          taskId: task.id,
+          jobId: task.share_job_id,
+          count: stale.length,
+          message: removeError.message.slice(0, 120),
+        });
+      }
+    }
 
     const uploaded = await Promise.all(bounded.map(async ({ frame, relevance }, index) => {
       const timestampKey = Math.round(frame.timestampSeconds * 1000);
@@ -106,7 +123,15 @@ export async function persistEvidenceFrames(
         cacheControl: '86400',
         upsert: true,
       });
-      if (error) return null;
+      if (error) {
+        log.warn('evidence_frame_upload_failed', {
+          taskId: task.id,
+          jobId: task.share_job_id,
+          index,
+          message: error.message.slice(0, 120),
+        });
+        return null;
+      }
       return {
         id: `${task.id}:${timestampKey}`,
         storagePath,

@@ -254,14 +254,17 @@ export async function fixtureVayrinLiveCanary(
     `model_provider=${String(run.model_provider)} transcription=${String(run.transcription_provider ?? 'none')}`,
   );
 
-  if (!run.model_output || typeof run.model_output !== 'object') {
-    reporter.fail(`${name}: structured response accepted`, 0, 'no structured model_output was persisted');
+  // Current Edge persists the bounded, parsed recognition/funnel summary in
+  // `evidence`. `model_output` is a legacy optional raw-preview field and is
+  // intentionally null for the current worker transport.
+  if (!run.evidence || typeof run.evidence !== 'object') {
+    reporter.fail(`${name}: structured response accepted`, 0, 'no structured evidence summary was persisted');
     return false;
   }
   reporter.pass(
     `${name}: structured response accepted`,
     0,
-    `structured model output persisted (${JSON.stringify(run.model_output).length} bytes), evidence summary present=${!!run.evidence}`,
+    `bounded structured evidence persisted (${JSON.stringify(run.evidence).length} bytes); legacy raw model preview present=${!!run.model_output}`,
   );
 
   // ---- Finalizer ----------------------------------------------------------
