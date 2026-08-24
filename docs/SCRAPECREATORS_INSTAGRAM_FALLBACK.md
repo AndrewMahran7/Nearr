@@ -211,44 +211,90 @@ but Nearr does not rely on cache savings for production architecture.
   numeric provider post ID, and credits only when returned.
 - User-facing failure planning contains no provider name or detail.
 
-## Nearr-Dev state and proof status
+## Funded resume run
 
-Captured before any possible mutation:
+The funded resume completed on 2026-08-24. The original implementation survives
+as commit `7f13c9c` (`feat: add ScrapeCreators Instagram fallback`). It was
+semantically reconciled with the concurrent Facebook fallback, the development
+worker heartbeat, and `origin/main` at `fc293c1`; the tested integration commit
+was `d4a7ed3`.
 
-- Railway project: `Nearr Phase 2 Dev`
-- Environment: `development`
-- Service: `media-worker`
-- Deployment: `9a545c98-e99d-4a63-a939-b9c739d05cb8`
-- Image: `sha256:27a1f50ae1e4e96f011c80e26fd822f1a2539526ffe207c844165ae30a0b4c23`
-- Instance status: running/success
-- Existing flags: media fallback, Instagram resolver, TikTok resolver, and
-  TikTok ScrapeCreators fallback enabled
-- Shared ScrapeCreators key: configured
-- Instagram ScrapeCreators fallback flag: absent/disabled
-- Edge/schema/OTA: no mutation made or required by this worker-only change
+One bounded pre-deployment provider probe returned HTTP 200 for shortcode
+`DUWyZkfgbT4`, reported one charged credit, and confirmed that HTTP 402 was
+resolved. The local and Nearr-Dev keys were both present and matched by length
+and SHA-256 digest; no credential value was printed. The full ten-video
+benchmark was deliberately not repeated.
 
-Provider benchmark proof passed before the account balance was exhausted.
-Subsequent requests returned HTTP 402. Therefore the implementation was not
-deployed and ordinary/fallback/both-fail/identity-mismatch live Nearr-Dev proofs
-were not run. This preserves the requested deployment gate and avoids replacing
-the healthy dev worker with a configuration that cannot perform its paid tail.
+Before deployment, Nearr-Dev was running the concurrent Facebook proof
+deployment `7d545e17-9da5-4b00-a340-733a28133557`, image
+`sha256:ad58fb9713990d068a704bed29f35fc1cd3612d97ca8e0ad727d8b084750a3c3`.
+That work was preserved rather than overwritten: the combined source includes
+both Instagram and Facebook fallbacks. The final proof-capable deployment was
+`47ad0bc1-ca74-401b-845c-b437363db0eb`, image
+`sha256:00c9e738d0fb934fc02451092d0d6d2ae865d66785d1b275de17e8be419e47de`.
+
+Live Nearr-Dev evidence on that exact image:
+
+- Healthy primary: public Reel `CxdY35frOrf`, job
+  `9e232053-f01f-419d-9a46-791f4e9290ea`. Primary acquisition succeeded,
+  ScrapeCreators was not invoked, 22 frames reached the normal model adapter,
+  and Brooklyn City Pizzeria & Market was recognized.
+- Forced primary failure: public Reel `DUWyZkfgbT4`, job
+  `d7b01c7a-633e-4ab5-bbd6-30ae6cb798bf`. The development-only exact-shortcode
+  seam produced a primary `provider_changed` failure. ScrapeCreators was invoked
+  once, returned the matching identity and 7,087,527 bytes of valid media,
+  reported one charged credit, passed ffprobe, yielded 24 extracted/22 analyzed
+  frames, and reached the normal recognition and finalizer path. The model did
+  not name Capone's Italian Cucina; exact auto-save was explicitly not a gate
+  for this acquisition ticket.
+- Both paths fail: synthetic well-formed shortcode `E2eNearrProbe0`, job
+  `ec68aab0-e14d-4207-8d67-2260de88fba6`. The natural yt-dlp path failed,
+  ScrapeCreators was invoked once and returned terminal HTTP 404/no media, the
+  task ended `needs_help` with `missing_video`, and the model was not reached.
+  Existing failure-presentation tests confirm this maps to Nearr's Honest
+  Failure without exposing the provider name.
+- Exact identity mismatch and single-/multi-video carousel behavior were
+  re-proved deterministically. A mismatch is rejected before download and never
+  reaches recognition. A single exact video child is accepted; multiple video
+  children are explicitly unsupported and are never selected by response order.
+
+The forced-shortcode environment variable was then deleted. Deployment
+`17a66eff-6ac2-433e-af68-f0cf382d1af7` redeployed the same image with the proof
+seam disabled. Final `/health` and `/ready` both returned 200; config, ffmpeg,
+ffprobe, yt-dlp `2026.08.19`, Supabase, and the Instagram, TikTok, and Facebook
+ScrapeCreators capabilities were ready. The final state is one replica with
+worker concurrency 1 and claim batch 2. Edge functions, schema, OTA, production,
+and host JavaScript were not deployed.
+
+Five bounded provider calls were made during the complete resume: the funded
+probe, one fallback whose provider response succeeded before a transient CDN
+download failure, its single controlled retry, the final combined-image
+fallback proof, and the terminal 404 proof. Three charged credits are confirmed
+by provider responses; charging for the CDN-failure and 404 calls was not
+reported, so total consumption is 3 confirmed and at most 5. No cache hit was
+observed or relied upon.
+
+There is one paid call per resolver execution. The queue default is three task
+attempts, so a retryable post-provider CDN failure can make at most three paid
+calls for one user submission. Terminal provider statuses and validation
+failures do not outer-retry. A checkpoint was not added because the returned CDN
+URL is temporary and reusing it would weaken recovery reliability for negligible
+cost.
+
+The post-proof historical audit again found zero non-E2E Instagram tasks ending
+in `failed` or `needs_help`, so a historical recovery rate remains unavailable.
 
 ## Remaining limitations and recommendation
 
-1. Top up ScrapeCreators credits, rerun one live provider probe, then rerun the
-   complete test gate.
-2. Re-read Railway deployment/image, Edge versions, schema, OTA, and feature
-   flags immediately before deploying; reconcile if another task changed dev.
-3. Deploy only the development media worker, set
-   `SCRAPECREATORS_INSTAGRAM_FALLBACK_ENABLED=true`, verify `/health` and
-   `/ready`, then run all four requested live proofs.
-4. No Nearr-Dev historical acquisition-failure cohort exists yet; collect a
-   bounded public cohort after rollout and report recovery rate.
-5. Multi-video carousels remain unsupported until the recognition contract can
+1. No real historical Nearr-Dev acquisition-failure cohort exists, so field
+   recovery rate is not yet measurable.
+2. Multi-video carousels remain deliberately unsupported until recognition can
    preserve ordered multi-asset context.
-6. CPU was not separately instrumented; wall-clock worker occupancy is the
-   available performance measure.
+3. A transient CDN failure after a charged provider response can spend again on
+   an outer task retry, bounded to three total calls per default task.
+4. The forced fallback reached recognition but did not name the known venue;
+   acquisition integration is proven, while recognition quality remains a
+   separate evaluation concern.
 
-Production recommendation: **NEEDS MORE INSTAGRAM FALLBACK WORK** until the
-credit and live Nearr-Dev proof gates are cleared. No production deployment is
-authorized by this task.
+Production recommendation: **READY FOR PRODUCTION PROMOTION**. Production still
+requires a separate promotion ticket and was not changed by this run.
