@@ -81,7 +81,7 @@ function isFacebookHost(hostname: string): boolean {
   return FACEBOOK_HOSTS.has(host) || host.endsWith('.facebook.com');
 }
 
-function numericFacebookContentId(rawUrl: string | undefined): string | null {
+export function facebookNumericContentId(rawUrl: string | undefined): string | null {
   if (!rawUrl) return null;
   let url: URL;
   try {
@@ -130,7 +130,7 @@ export function facebookCanonicalVideoUrlFromHtml(html: string): string | null {
     const rel = linkAttribute(tag, 'rel');
     if (!rel?.toLowerCase().split(/\s+/).includes('canonical')) continue;
     const href = linkAttribute(tag, 'href');
-    const id = numericFacebookContentId(href ?? undefined);
+    const id = facebookNumericContentId(href ?? undefined);
     if (id) return `https://www.facebook.com/reel/${id}/`;
   }
   return null;
@@ -228,9 +228,9 @@ export function assertFacebookPostIdentityMatches(
   extractorWebpageUrl?: string,
 ): void {
   const observedIds = [
-    numericFacebookContentId(requestedUrl),
+    facebookNumericContentId(requestedUrl),
     extractorPostId && FACEBOOK_VIDEO_ID_RE.test(extractorPostId) ? extractorPostId : null,
-    numericFacebookContentId(extractorWebpageUrl),
+    facebookNumericContentId(extractorWebpageUrl),
   ].filter((value): value is string => !!value);
   if (new Set(observedIds).size > 1) {
     throw new MediaError('identity_mismatch', 'facebook_post_id_mismatch');

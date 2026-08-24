@@ -12,6 +12,8 @@ import { TikTokFallbackMediaResolver } from './resolvers/TikTokFallbackMediaReso
 import { ScrapeCreatorsTikTokProvider } from './providers/ScrapeCreatorsTikTokProvider.js';
 import { YouTubeMediaResolver } from './resolvers/YouTubeMediaResolver.js';
 import { FacebookMediaResolver } from './resolvers/FacebookMediaResolver.js';
+import { FacebookFallbackMediaResolver } from './resolvers/FacebookFallbackMediaResolver.js';
+import { ScrapeCreatorsFacebookProvider } from './providers/ScrapeCreatorsFacebookProvider.js';
 import { SnapchatMediaResolver } from './resolvers/SnapchatMediaResolver.js';
 import { selectTranscriptionProvider } from './providers/transcription.js';
 import { selectModelProvider } from './providers/model.js';
@@ -34,7 +36,7 @@ function main(): void {
         new InstagramMediaResolver(cfg),
         new TikTokFallbackMediaResolver(cfg, new ScrapeCreatorsTikTokProvider(cfg)),
         new YouTubeMediaResolver(cfg),
-        new FacebookMediaResolver(cfg),
+        new FacebookFallbackMediaResolver(cfg, new ScrapeCreatorsFacebookProvider(cfg), new FacebookMediaResolver(cfg)),
         new SnapchatMediaResolver(cfg),
       ],
       transcription: selectTranscriptionProvider(cfg),

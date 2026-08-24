@@ -31,6 +31,7 @@ function testCfg(over: Partial<WorkerConfig> = {}): WorkerConfig {
     snapchatResolverEnabled: true,
     nativeVideoAnalysisEnabled: false,
     scrapeCreatorsTikTokFallbackEnabled: false,
+    scrapeCreatorsFacebookFallbackEnabled: false,
     supabaseUrl: 'http://localhost',
     supabaseServiceRoleKey: 'k',
     finalizeUrl: 'http://localhost/f',

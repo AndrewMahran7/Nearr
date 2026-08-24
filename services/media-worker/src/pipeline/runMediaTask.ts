@@ -482,6 +482,10 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
       }
       if (media.acquisition.fallbackReason) diagnostics.fallbackReason = media.acquisition.fallbackReason;
       if (media.acquisition.canonicalTikTokId) diagnostics.canonicalTikTokId = media.acquisition.canonicalTikTokId;
+      if (media.acquisition.canonicalFacebookId) {
+        diagnostics.canonicalFacebookId = media.acquisition.canonicalFacebookId;
+      }
+      if (media.acquisition.sourceUrlClass) diagnostics.sourceUrlClass = media.acquisition.sourceUrlClass;
       if (media.acquisition.providerLatencyMs !== undefined) {
         diagnostics.providerLatencyMs = media.acquisition.providerLatencyMs;
       }
@@ -496,7 +500,7 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
 
     const sha = await sha256File(media.localFilePath);
     const persistedResolverName = media.acquisition?.provider === 'scrapecreators'
-      ? 'tiktok/scrapecreators'
+      ? `${task.platform}/scrapecreators`
       : resolver.name;
     diagnostics.resolverName = persistedResolverName;
     await client
@@ -569,6 +573,8 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
         taskId: task.id,
         jobId: task.share_job_id,
         canonicalTikTokId: media.acquisition.canonicalTikTokId,
+        canonicalFacebookId: media.acquisition.canonicalFacebookId,
+        platform: task.platform,
         modelPipelineReached: true,
       });
     }
