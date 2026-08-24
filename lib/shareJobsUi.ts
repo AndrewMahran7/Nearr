@@ -110,9 +110,26 @@ export type NormalizedCandidate = {
   latitude: number | null;
   longitude: number | null;
   types: string[];
+  primaryType: string | null;
+  primaryTypeDisplayName: string | null;
+  googleMapsTypeLabel: string | null;
   matchScore: number | null;
   aiNote: string | null;
+  photoUrl: string | null;
+  sourceFrameUrl: string | null;
+  sourceTimestamps: number[];
 };
+
+function optionalText(value: unknown): string | null {
+  return typeof value === 'string' && value.trim() ? value.trim() : null;
+}
+
+function timestamps(value: unknown): number[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((item): item is number => typeof item === 'number' && Number.isFinite(item) && item >= 0)
+    .slice(0, 12);
+}
 
 export function normalizeShareJobCandidates(input: unknown): NormalizedCandidate[] {
   const rows = Array.isArray(input)
@@ -143,8 +160,14 @@ export function normalizeShareJobCandidates(input: unknown): NormalizedCandidate
         types: Array.isArray(row.types)
           ? row.types.filter((v): v is string => typeof v === 'string')
           : [],
+        primaryType: optionalText(row.primaryType),
+        primaryTypeDisplayName: optionalText(row.primaryTypeDisplayName),
+        googleMapsTypeLabel: optionalText(row.googleMapsTypeLabel),
         matchScore: typeof row.matchScore === 'number' ? row.matchScore : null,
         aiNote: typeof row.aiNote === 'string' && row.aiNote.trim() ? row.aiNote.trim() : null,
+        photoUrl: optionalText(row.photoUrl ?? row.photo_url),
+        sourceFrameUrl: optionalText(row.sourceFrameUrl ?? row.source_frame_url ?? row.frameUrl),
+        sourceTimestamps: timestamps(row.sourceTimestamps ?? row.source_timestamps),
       };
     })
     .filter((row) => row.googlePlaceId.length > 0 && row.name.length > 0);

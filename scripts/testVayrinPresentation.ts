@@ -41,8 +41,8 @@ const FIRST_PERSON_OR_WE = /\b(?:I|I['’](?:m|ve|ll)|me|my|we|we['’]re|our|le
   const row = job({ decision: 'candidate_confirmation', candidate_payload: { candidates: [candidate('g1', 'Griffith Observatory')] } });
   const result = mapShareJobToVayrinPresentation(buildShareJobDetailState(row), row);
   assert.equal(result.kind, 'likely');
-  assert.equal(result.headline, 'Vayrin thinks this is it.');
-  assert.equal(result.secondaryAction, 'Not it');
+  assert.equal(result.headline, 'Is this the place?');
+  assert.equal(result.secondaryAction, 'Not this place');
 }
 
 // Same-scene ambiguity is leads, not multi-place.
@@ -50,7 +50,7 @@ const FIRST_PERSON_OR_WE = /\b(?:I|I['’](?:m|ve|ll)|me|my|we|we['’]re|our|le
   const row = job({ decision: 'candidate_picker', candidate_payload: { candidates: [candidate('g1', 'A'), candidate('g2', 'B')] } });
   const result = mapShareJobToVayrinPresentation(buildShareJobDetailState(row), row);
   assert.equal(result.kind, 'leads_candidates');
-  assert.equal(result.headline, 'Vayrin found a few leads.');
+  assert.equal(result.headline, 'Which one is it?');
 }
 
 // Non-Places named lead stays explicitly unverified.
@@ -68,7 +68,7 @@ const leadPayload = {
   const row = job({ decision: 'manual_fallback', candidate_payload: leadPayload });
   const result = mapShareJobToVayrinPresentation(buildShareJobDetailState(row), row);
   assert.equal(result.kind, 'leads_unverified');
-  assert.match(result.body, /not verified/i);
+  assert.match(result.body, /choose an exact place/i);
   assert.notEqual(result.headline, 'Found it.');
 }
 
@@ -145,8 +145,8 @@ assert.match(buildVayrinPresentation({ kind: 'saved', source: 'async' }).body, /
   }
   assert.equal(noArtStates[1]?.headline, 'Vayrin is looking…');
   assert.equal(noArtStates[3]?.headline, 'Found it.');
-  assert.equal(noArtStates[4]?.headline, 'Vayrin thinks this is it.');
-  assert.equal(noArtStates[5]?.headline, 'Vayrin found a few leads.');
+  assert.equal(noArtStates[4]?.headline, 'Is this the place?');
+  assert.equal(noArtStates[5]?.headline, 'Which one is it?');
   assert.equal(noArtStates[7]?.headline, 'Vayrin found 3 places.');
   assert.equal(noArtStates[8]?.headline, 'Vayrin found 2 places.');
 }
@@ -168,15 +168,13 @@ assert.match(buildVayrinPresentation({ kind: 'saved', source: 'async' }).body, /
   ];
   for (const presentation of artStates) {
     assert.equal(presentation.artVisible, true, `${presentation.kind} records visible art`);
-    assert.match(
-      `${presentation.headline} ${presentation.body}`,
-      FIRST_PERSON_OR_WE,
-      `${presentation.kind} art-visible copy may speak as Vayrin`,
-    );
+  }
+  for (const presentation of [artStates[0]!, artStates[1]!, artStates[4]!, artStates[5]!, artStates[7]!, artStates[9]!]) {
+    assert.match(`${presentation.headline} ${presentation.body}`, FIRST_PERSON_OR_WE);
   }
   assert.equal(artStates[0]?.headline, "I'm looking…");
-  assert.equal(artStates[2]?.headline, 'I think this is it.');
-  assert.equal(artStates[3]?.headline, "I've got a few leads.");
+  assert.equal(artStates[2]?.headline, 'Is this the place?');
+  assert.equal(artStates[3]?.headline, 'Which one is it?');
   assert.equal(artStates[4]?.headline, 'I found 3 places.');
 }
 
@@ -186,7 +184,7 @@ assert.match(buildVayrinPresentation({ kind: 'saved', source: 'async' }).body, /
     { phase: 'choose', candidateCount: 1 },
     ART_VISIBLE,
   );
-  assert.equal(sync.headline, 'I think this is it.');
+  assert.equal(sync.headline, 'Is this the place?');
 
   const row = job({ decision: 'candidate_confirmation', candidate_payload: { candidates: [candidate('g1', 'A')] } });
   const async = mapShareJobToVayrinPresentation(
@@ -195,7 +193,7 @@ assert.match(buildVayrinPresentation({ kind: 'saved', source: 'async' }).body, /
     Date.now(),
     ART_VISIBLE,
   );
-  assert.equal(async.headline, 'I think this is it.');
+  assert.equal(async.headline, 'Is this the place?');
 }
 
 // Equivalent domain data produces equivalent presentation regardless of route.
