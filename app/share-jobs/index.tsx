@@ -165,7 +165,7 @@ function jobTitle(job: ShareJob): string {
   const firstLead = normalizeVayrinIdentityLeads(job.candidate_payload)[0];
   const detail = buildShareJobDetailState(job);
   if (job.status === 'needs_help') {
-    if (isVayrinProductUiEnabled() && firstLead && candidateCount === 0) return firstLead.displayName;
+    if (isVayrinProductUiEnabled() && firstLead && candidateCount === 0) return 'Search needed';
     if (candidateCount > 1) return `${candidateCount} possible places`;
     if (first) return first;
     return detail.copy.title;
@@ -184,7 +184,7 @@ function jobSubtitle(job: ShareJob, stalled = false): string {
         : processingMessage(job.status, stalled ? STALE_PROCESSING_MS + 1 : 0);
     case 'needs_help':
       if (vayrin && normalizeVayrinIdentityLeads(job.candidate_payload).length > 0) {
-        return 'Name found — tap to search places';
+        return 'Open to search for the exact place';
       }
       if (Array.isArray(job.candidate_payload?.candidates) && job.candidate_payload.candidates.length > 1) {
         return vayrin ? 'Choose the place that matches' : 'Pick the one you meant';

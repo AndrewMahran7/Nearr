@@ -209,17 +209,13 @@ function resultCopy(
   }
 
   if (candidateCount === 1) {
-    return candidateName
-      ? {
-          title: `We think this might be ${candidateName}`,
-          body: 'Take a look and see if it matches.',
-          resultClass: 'single_likely_candidate',
-        }
-      : {
-          title: 'We found a possible match',
-          body: 'Take a look and see if it matches.',
-          resultClass: 'single_likely_candidate',
-        };
+    return {
+      title: 'Vayrin found a possible place',
+      body: candidateName
+        ? `Open Nearr to check ${candidateName}.`
+        : 'Open Nearr to see if it matches.',
+      resultClass: 'single_likely_candidate',
+    };
   }
 
   if (candidateCount > 1) {
@@ -254,8 +250,8 @@ function resultCopy(
 
   if (leadName) {
     return {
-      title: `We found a possible lead: ${leadName}`,
-      body: 'Take a look and see if it fits.',
+      title: 'Vayrin found something to check',
+      body: 'Open Nearr to search for the exact place.',
       resultClass: 'named_lead',
     };
   }

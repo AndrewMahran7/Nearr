@@ -47,7 +47,7 @@ assert.match(detail, /LayoutAnimation\.Presets\.easeInEaseOut/);
 assert.match(detail, /automaticallyAdjustKeyboardInsets/);
 assert.match(detail, /View original post/);
 assert.match(detail, /PHASE_1_COPY\.removeMessage/);
-assert.match(candidateConfirmationCard, /numberOfLines=\{3\}[\s\S]*?candidate\.name/);
+assert.match(candidateConfirmationCard, /numberOfLines=\{compact \? 2 : 3\}[\s\S]*?candidate\.name/);
 assert.match(detail, /<PlaceImage/);
 assert.match(detail, /<ShareJobsSheet onDismiss=\{backToQueue\} size="detail">/);
 const completedBranch = detail.slice(detail.indexOf("detailMode === 'completed'"), detail.indexOf("detailMode === 'dismissed'"));

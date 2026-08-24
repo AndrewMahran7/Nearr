@@ -18,7 +18,8 @@ assert.equal(strong.resultClass, 'strong_exact');
 assert.deepEqual(routeShareJobNotification(strong.data), { kind: 'saved_place', savedPlaceId: 'saved-1', googlePlaceId: 'google-1' });
 
 const likely = note({ candidateCount: 1, strongestCandidateName: 'Es Pontas' });
-assert.equal(likely.title, 'We think this might be Es Pontas');
+assert.equal(likely.title, 'Vayrin found a possible place');
+assert.equal(likely.body, 'Open Nearr to check Es Pontas.');
 assert.equal(likely.resultClass, 'single_likely_candidate');
 assert.doesNotMatch(`${likely.title} ${likely.body}`, /Found it/);
 
@@ -42,7 +43,8 @@ for (const basis of ['model_prior', 'weak_context'] as const) {
 }
 
 const lead = note({ strongestLead: { name: 'Hidden Falls', evidenceKind: 'observable' }, observableLeadCount: 1 });
-assert.equal(lead.title, 'We found a possible lead: Hidden Falls');
+assert.equal(lead.title, 'Vayrin found something to check');
+assert.doesNotMatch(`${lead.title} ${lead.body}`, /Hidden Falls/);
 assert.equal(lead.resultClass, 'named_lead');
 assert.doesNotMatch(lead.title, /Found it/);
 
@@ -114,7 +116,7 @@ assert.ok(privacy.title.length < 100);
 
 const allCopy = [strong, likely, two, many, coarse, lead, allMulti, partialMulti, weak, none, technical, alreadySaved, privacy]
   .map((value) => `${value.title} ${value.body}`).join('\n');
-assert.doesNotMatch(allCopy, /Vayrin|Detective|\bAI\b|\bmodel\b|GPT|Gemini/i);
+assert.doesNotMatch(allCopy, /Detective|\bAI\b|\bmodel\b|GPT|Gemini/i);
 assert.doesNotMatch(allCopy, /We need your help|Need your help|Help us/i);
 
 const failureClaimMigration = fs.readFileSync(

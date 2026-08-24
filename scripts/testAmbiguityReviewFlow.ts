@@ -106,7 +106,7 @@ for (const count of [0, 1, 2, 3, 5]) {
 assert.deepEqual(decisionForPlausibleCandidates(1, true), {
   decision: 'candidate_confirmation', mode: 'single', autoSave: false,
 });
-assert.equal(composeShareCompletionNotification({ status: 'needs_help', jobId: 'blocked', candidateCount: 1 }).title, 'We found a possible match');
+assert.equal(composeShareCompletionNotification({ status: 'needs_help', jobId: 'blocked', candidateCount: 1 }).title, 'Vayrin found a possible place');
 assert.equal(composeShareCompletionNotification({ status: 'needs_help', jobId: 'none' }).title, 'We couldn’t pin this one down');
 
 const pickerPlan = planFromResolverDecision({
@@ -151,8 +151,9 @@ assert.match(
   /title="None of these"/,
   'candidate alternatives retain an explicit none-of-these action',
 );
-assert.match(detailSource, /setPickerSelectedId\(candidate\.googlePlaceId\)/);
-assert.match(detailSource, /handleSaveStored\(pickerSelected\)/, 'identity selection waits for explicit save');
+assert.match(detailSource, /toggleCandidateSelection\(current, candidate\.googlePlaceId, pickerSelectionMode\)/);
+assert.match(detailSource, /handleSaveCanonicalCandidates\(/, 'identity selection waits for explicit canonical save');
+assert.match(detailSource, /'async_picker'/);
 assert.match(detailSource, /if \(!job \|\| resolvingRef\.current\) return;/, 'the existing once-latch guards candidate saves');
 assert.match(detailSource, /await getPlaceDetails\(candidate\.googlePlaceId\)/, 'legacy candidates hydrate by authoritative provider id');
 

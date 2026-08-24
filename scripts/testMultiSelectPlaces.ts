@@ -199,11 +199,12 @@ assert.equal(sourceTimestampLabel([75]), 'At 1:15');
   assert.match(detail, /accessibilityRole="radio"/);
   assert.match(detail, /Choose \$\{candidate\.name\} as the match for/);
   assert.match(legacy, /accessibilityRole="checkbox"/);
-  assert.match(confirmationCard, /accessibilityRole="radio"/);
+  assert.match(confirmationCard, /accessibilityRole=\{selectionRole\}/);
   assert.match(correction, /accessibilityRole="radio"/);
   assert.match(detail, /isVayrinProductUiEnabled/);
-  assert.match(legacy, /setSingleSelectedId\(c\.googlePlaceId\)/);
-  assert.match(legacy, /'See places in this area' : 'Save this place'/);
+  assert.match(legacy, /setCandidateSelectedIds/);
+  assert.match(legacy, /if \(broad\)/);
+  assert.match(legacy, /candidateSaveLabel\(candidateSelectedIds\.size\)/);
 }
 
 console.log('PASS multi-select place semantics, persistence, accessibility, and Vayrin integration');

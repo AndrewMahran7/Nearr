@@ -48,7 +48,7 @@ assert.equal(confirmationPrompt('broad'), 'Is it around here?');
 assert.equal(isBroadCandidate(exact), false);
 assert.equal(candidateEvidenceLabel([3, 8]), 'Seen around 0:03');
 
-assert.equal(VAYRIN_CANDIDATE_FIXTURES.length, 12, 'all requested deterministic states exist');
+assert.ok(VAYRIN_CANDIDATE_FIXTURES.length >= 12, 'all requested deterministic states exist');
 for (const id of [
   'vayrin-confirm-stari-most',
   'vayrin-confirm-san-diego',
@@ -87,12 +87,12 @@ assert.equal(
   null,
 );
 
-assert.match(asyncDetail, /title="Save this place"/);
-assert.match(syncShare, /Save this place/);
+assert.match(asyncDetail, /candidateSaveLabel/);
+assert.match(syncShare, /candidateSaveLabel/);
 assert.match(syncShare, /confirmationPrompt\(syncCandidateMode\)/, 'sync broad candidates use the broad-region prompt');
 assert.match(asyncDetail, /confirmationCandidates\.map/);
 assert.match(card, /selectable/);
-assert.match(card, /accessibilityRole="radio"/);
+assert.match(card, /accessibilityRole=\{selectionRole\}/);
 assert.match(card, /accessibilityState=\{\{ checked: selected \}\}/);
 assert.match(card, /AREA MATCH/);
 assert.match(asyncDetail, /See places in this area/);

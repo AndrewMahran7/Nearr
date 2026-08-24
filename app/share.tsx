@@ -32,6 +32,7 @@ import {
   View,
 } from 'react-native';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button, Card, Input, Screen } from '@/components';
 import { CandidateConfirmationCard } from '@/components/CandidateConfirmationCard';
@@ -63,7 +64,9 @@ import { splitPlaceAddress } from '@/lib/sharePhase1Ui';
 import {
   confirmationMode,
   confirmationPrompt,
+  candidateSaveLabel,
   isBroadCandidate,
+  visibleCandidateShortlist,
 } from '@/lib/vayrinCandidateConfirmation';
 import {
   isLikelyUrl,
@@ -444,6 +447,7 @@ function sharePlatform(url: string): string {
 
 function LegacyShareScreen() {
   const router = useRouter();
+  const safeAreaInsets = useSafeAreaInsets();
   const navigation = useNavigation();
   const params = useLocalSearchParams<{ url?: string }>();
   const { state: onboardingV2 } = useOnboardingV2();
@@ -463,7 +467,9 @@ function LegacyShareScreen() {
   const [extraction, setExtraction] = useState<PlaceExtraction | null>(null);
   const [aiExtraction, setAiExtraction] = useState<AIExtractResult | null>(null);
   const [candidates, setCandidates] = useState<PlaceCandidate[]>([]);
-  const [singleSelectedId, setSingleSelectedId] = useState<string | null>(null);
+  const [candidateSelectedIds, setCandidateSelectedIds] = useState<Set<string>>(
+    () => new Set<string>(),
+  );
   // For 'multi-choose': IDs of independent resolved places selected for the
   // explicit bulk save action. Preselection never persists by itself.
   const [multiSelectedIds, setMultiSelectedIds] = useState<Set<string>>(
@@ -486,10 +492,15 @@ function LegacyShareScreen() {
   const [debugState, setDebugState] = useState<ShareDebugState>(() => createInitialShareDebugState());
 
   useEffect(() => {
-    if (phase !== 'choose') return;
-    setSingleSelectedId((current) => {
-      if (current && candidates.some((candidate) => candidate.googlePlaceId === current)) return current;
-      return candidates.length === 1 ? candidates[0]!.googlePlaceId : null;
+    if (phase !== 'choose') {
+      setCandidateSelectedIds(new Set<string>());
+      return;
+    }
+    setCandidateSelectedIds((current) => {
+      const valid = new Set(candidates.map((candidate) => candidate.googlePlaceId));
+      const next = new Set([...current].filter((id) => valid.has(id)));
+      if (candidates.length === 1 && candidates[0]?.googlePlaceId) next.add(candidates[0].googlePlaceId);
+      return next;
     });
   }, [candidates, phase]);
 
@@ -721,7 +732,6 @@ function LegacyShareScreen() {
 
     // Reset prior attempt state.
     setCandidates([]);
-    setSingleSelectedId(null);
     setMultiSelectedIds(new Set<string>());
     setFailMessage(null);
     setAiExtraction(null);
@@ -1111,7 +1121,6 @@ function LegacyShareScreen() {
           setMultiSelectedIds(new Set(capped.map((candidate) => candidate.googlePlaceId)));
           setPhase('multi-choose');
         } else {
-          setSingleSelectedId(null);
           setPhase('choose');
         }
         setDebugState((prev) => ({
@@ -2549,12 +2558,9 @@ function LegacyShareScreen() {
   // can no longer throw during render and reach the root AppErrorBoundary —
   // it is silently skipped. (Empty/invalid candidate arrays are routed to
   // manual fallback at the decision layer; this is the last line of defense.)
-  const renderableCandidates = filterRenderableCandidates(candidates).valid;
+  const internalRenderableCandidates = filterRenderableCandidates(candidates).valid;
+  const renderableCandidates = visibleCandidateShortlist(internalRenderableCandidates);
   const syncCandidateMode = confirmationMode(renderableCandidates);
-  const syncSelectedCandidate = singleSelectedId
-    ? renderableCandidates.find((candidate) => candidate.googlePlaceId === singleSelectedId) ?? null
-    : null;
-  const syncSelectedBroad = syncSelectedCandidate ? isBroadCandidate(syncSelectedCandidate) : false;
   const syncVayrinPresentation = vayrinPresentation && phase === 'choose' && renderableCandidates.length > 0
     ? {
         ...vayrinPresentation,
@@ -2575,11 +2581,13 @@ function LegacyShareScreen() {
     void trackEvent('vayrin_confirmation_viewed', {
       source: 'sync',
       candidate_count: renderableCandidates.length,
+      candidate_count_internal: internalRenderableCandidates.length,
+      candidate_count_shown: renderableCandidates.length,
       candidate_type: syncCandidateMode,
       has_place_photo: renderableCandidates.some((candidate) => Boolean(candidate.googlePlaceId)),
       has_video_frame_fallback: false,
     });
-  }, [phase, renderableCandidates, syncCandidateMode, vayrinEnabled]);
+  }, [internalRenderableCandidates.length, phase, renderableCandidates, syncCandidateMode, vayrinEnabled]);
 
   return (
     <Screen>
@@ -2705,7 +2713,8 @@ function LegacyShareScreen() {
                 </>
               ) : null}
               {renderableCandidates.map((c) => {
-                const selected = singleSelectedId === c.googlePlaceId;
+                const selected = candidateSelectedIds.has(c.googlePlaceId);
+                const broad = isBroadCandidate(c);
                 const address = splitPlaceAddress(c.formattedAddress);
                 return (
                   <CandidateConfirmationCard
@@ -2713,9 +2722,22 @@ function LegacyShareScreen() {
                     candidate={c}
                     locality={address.locality ?? c.formattedAddress}
                     selected={selected}
-                    selectable={renderableCandidates.length > 1}
+                    selectable
+                    compact={renderableCandidates.length > 1}
+                    selectionRole="checkbox"
                     onPress={() => {
-                      setSingleSelectedId(c.googlePlaceId);
+                      if (broad) {
+                        setCandidates([]);
+                        setManualQuery([c.name, c.formattedAddress].filter(Boolean).join(' '));
+                        setPhase('failed');
+                        return;
+                      }
+                      setCandidateSelectedIds((current) => {
+                        const next = new Set(current);
+                        if (next.has(c.googlePlaceId)) next.delete(c.googlePlaceId);
+                        else next.add(c.googlePlaceId);
+                        return next;
+                      });
                       if (vayrinEnabled) void trackEvent('vayrin_candidate_selected', {
                         source: 'sync',
                         candidate_count: renderableCandidates.length,
@@ -2729,30 +2751,6 @@ function LegacyShareScreen() {
                   />
                 );
               })}
-              {singleSelectedId ? (
-                <Button
-                  title={syncSelectedBroad ? 'See places in this area' : 'Save this place'}
-                  onPress={() => {
-                    const selected = renderableCandidates.find(
-                      (candidate) => candidate.googlePlaceId === singleSelectedId,
-                    );
-                    if (!selected) return;
-                    if (isBroadCandidate(selected)) {
-                      setCandidates([]);
-                      setManualQuery([selected.name, selected.formattedAddress].filter(Boolean).join(' '));
-                      setPhase('failed');
-                      return;
-                    }
-                    void saveCandidate(
-                      selected,
-                      parsed?.url ?? null,
-                      parsed?.source ?? 'link',
-                    );
-                  }}
-                  loading={busy}
-                  disabled={busy}
-                />
-              ) : null}
               <Pressable
                 onPress={() => {
                   if (vayrinEnabled) void trackEvent('vayrin_none_selected', {
@@ -3190,6 +3188,32 @@ function LegacyShareScreen() {
             </View>
           ) : null}
         </ScrollView>
+        {phase === 'choose' && candidateSelectedIds.size > 0 ? (
+          <View style={[styles.stickySaveBar, { paddingBottom: Math.max(safeAreaInsets.bottom, Spacing.sm) }]}>
+            <Button
+              title={candidateSaveLabel(candidateSelectedIds.size)}
+              accessibilityLabel={`${candidateSaveLabel(candidateSelectedIds.size)} from selected candidates`}
+              onPress={() => {
+                const selected = renderableCandidates.filter(
+                  (candidate) => candidateSelectedIds.has(candidate.googlePlaceId),
+                );
+                if (selected.length === 0) return;
+                void trackEvent('vayrin_candidate_selected', {
+                  source: 'sync',
+                  candidate_count_selected: selected.length,
+                  multi_select_count: selected.length,
+                });
+                void saveSelectedCandidates(
+                  selected,
+                  parsed?.url ?? null,
+                  parsed?.source ?? 'link',
+                );
+              }}
+              loading={busy}
+              disabled={busy}
+            />
+          </View>
+        ) : null}
       </KeyboardAvoidingView>
     </Screen>
   );
@@ -3267,6 +3291,13 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       paddingHorizontal: Spacing.md,
     },
     section: { marginTop: Spacing.lg },
+    stickySaveBar: {
+      paddingHorizontal: Spacing.lg,
+      paddingTop: Spacing.sm,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: colors.border,
+      backgroundColor: colors.bg,
+    },
     savedResultCard: { marginBottom: Spacing.md },
     muted: { color: colors.textMuted },
 

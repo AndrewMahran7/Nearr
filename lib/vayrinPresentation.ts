@@ -7,6 +7,7 @@
  */
 
 import type { ShareJobDetailState } from './shareJobDetailState';
+import { classifyUnresolvedText, type VayrinResultType } from './vayrinCandidateConfirmation';
 
 export type VayrinPresentationKind =
   | 'ready'
@@ -31,6 +32,7 @@ export type VayrinIdentityLead = {
   evidenceKind: 'observable' | 'model_prior';
   timestamps: number[];
   suggestedQuery: string;
+  resultType: Extract<VayrinResultType, 'RAW_NAME' | 'TEXTUAL_LEAD'>;
 };
 
 export type VayrinPresentation = {
@@ -113,6 +115,7 @@ export function normalizeVayrinIdentityLeads(payload: unknown): VayrinIdentityLe
         evidenceKind: identity.evidenceKind === 'model_prior' ? 'model_prior' : 'observable',
         timestamps: timestamps(identity.timestamps),
         suggestedQuery: [displayName, contextLabel].filter(Boolean).join(' '),
+        resultType: classifyUnresolvedText(displayName, 'identity') as Extract<VayrinResultType, 'RAW_NAME' | 'TEXTUAL_LEAD'>,
       });
       if (leads.length === 12) return leads;
     }
@@ -286,7 +289,7 @@ export function buildVayrinPresentation(
       return {
         ...base,
         kind: 'no_evidence',
-        headline: "Couldn't pin this one down.",
+        headline: "Couldn't find an exact place.",
         body: voiceCopy(
           artVisible,
           'Search by name or location to choose the place.',

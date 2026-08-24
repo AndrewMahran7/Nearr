@@ -29,6 +29,7 @@ type Props = {
   onPress?: () => void;
   onImageResolved?: (kind: PlaceImageResolutionKind) => void;
   compact?: boolean;
+  selectionRole?: 'checkbox' | 'radio';
 };
 
 export function CandidateConfirmationCard({
@@ -41,11 +42,12 @@ export function CandidateConfirmationCard({
   onPress,
   onImageResolved,
   compact = false,
+  selectionRole = 'radio',
 }: Props) {
   const broad = isBroadCandidate(candidate);
   const category = candidateCategoryLabel(candidate);
   const evidenceLabel = evidence ?? candidateEvidenceLabel(candidate.sourceTimestamps);
-  const actionLabel = selectable ? (selected ? 'Selected' : 'Choose') : null;
+  const actionLabel = selectable ? (selected ? 'Selected' : selectionRole === 'checkbox' ? 'Select' : 'Choose') : null;
   const accessibilityLabel = [
     candidate.name,
     locality,
@@ -66,10 +68,10 @@ export function CandidateConfirmationCard({
         sourceUri={candidate.photoUrl}
         fallbackSourceUri={candidate.sourceFrameUrl}
         preferPlacePhoto
-        width="100%"
-        height={compact ? 128 : 184}
-        borderRadius={0}
-        style={styles.imageFrame}
+        width={compact ? 88 : '100%'}
+        height={compact ? 88 : 184}
+        borderRadius={compact ? 14 : 0}
+        style={compact ? styles.compactImageFrame : styles.imageFrame}
         accessibilityLabel={`Photo of ${candidate.name}`}
         onResolvedKind={onImageResolved}
       />
@@ -77,12 +79,17 @@ export function CandidateConfirmationCard({
         <View style={styles.titleRow}>
           <View style={styles.titleCopy}>
             {broad ? <Text style={styles.areaLabel}>AREA MATCH</Text> : null}
-            <Text style={styles.name} numberOfLines={3}>{candidate.name}</Text>
+            <Text style={[styles.name, compact && styles.nameCompact]} numberOfLines={compact ? 2 : 3}>{candidate.name}</Text>
           </View>
           {selectable ? (
-            <View style={[styles.chooseBadge, selected && styles.chooseBadgeSelected]}>
+            <View style={[
+              selectionRole === 'checkbox' ? styles.checkbox : styles.chooseBadge,
+              selected && (selectionRole === 'checkbox' ? styles.checkboxSelected : styles.chooseBadgeSelected),
+            ]}>
               {selected ? <Feather name="check" size={15} color="#FFFFFF" /> : null}
-              <Text style={[styles.chooseText, selected && styles.chooseTextSelected]}>{actionLabel}</Text>
+              {selectionRole === 'radio' ? (
+                <Text style={[styles.chooseText, selected && styles.chooseTextSelected]}>{actionLabel}</Text>
+              ) : null}
             </View>
           ) : null}
         </View>
@@ -102,9 +109,9 @@ export function CandidateConfirmationCard({
   return (
     <Pressable
       onPress={onPress}
-      accessibilityRole="radio"
+      accessibilityRole={selectionRole}
       accessibilityLabel={accessibilityLabel}
-      accessibilityHint="Selects this place for saving"
+      accessibilityHint={selectionRole === 'checkbox' ? 'Toggles this place for saving' : 'Selects this place for saving'}
       accessibilityState={{ checked: selected }}
       style={({ pressed }) => pressed && styles.pressed}
     >
@@ -123,14 +130,22 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
   },
   cardSelected: { borderColor: BRAND.orange, borderWidth: 2, backgroundColor: BRAND.selected },
-  cardCompact: { marginBottom: Spacing.sm },
+  cardCompact: {
+    minHeight: 96,
+    marginBottom: Spacing.sm,
+    padding: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   pressed: { opacity: 0.88 },
   imageFrame: { borderWidth: 0, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: BRAND.border },
-  copy: { paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md },
+  compactImageFrame: { borderWidth: 0, flexShrink: 0 },
+  copy: { flex: 1, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm },
   titleRow: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.md },
   titleCopy: { flex: 1 },
   areaLabel: { color: BRAND.orange, fontSize: 11, lineHeight: 15, fontWeight: '800', letterSpacing: 0.9, marginBottom: 3 },
   name: { color: BRAND.charcoal, fontSize: 21, lineHeight: 26, fontWeight: '700' },
+  nameCompact: { fontSize: 17, lineHeight: 21 },
   locality: { color: BRAND.muted, fontSize: 15, lineHeight: 21, fontWeight: '600', marginTop: 4 },
   metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm, marginTop: Spacing.sm },
   meta: { color: BRAND.muted, fontSize: 13, lineHeight: 18, textTransform: 'capitalize' },
@@ -148,6 +163,16 @@ const styles = StyleSheet.create({
     gap: 5,
   },
   chooseBadgeSelected: { backgroundColor: BRAND.orange },
+  checkbox: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: BRAND.orange,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxSelected: { backgroundColor: BRAND.orange },
   chooseText: { color: BRAND.orange, fontSize: 13, fontWeight: '800' },
   chooseTextSelected: { color: '#FFFFFF' },
   saved: { color: BRAND.orange, fontSize: 13, lineHeight: 18, fontWeight: '700', marginTop: Spacing.sm },
