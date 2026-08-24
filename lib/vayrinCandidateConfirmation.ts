@@ -11,15 +11,47 @@ export type CandidateConfirmationPlace = {
   primaryTypeDisplayName?: string | null;
   googleMapsTypeLabel?: string | null;
   photoUrl?: string | null;
+  photoUrls?: readonly string[] | null;
   sourceFrameUrl?: string | null;
   sourceTimestamps?: readonly number[] | null;
   matchScore?: number | null;
+  /** Optional producer-authored qualitative label. */
+  matchStrength?: 'high' | 'medium' | 'low' | null;
+  /** Closed resolver reason codes; never raw model reasoning. */
+  reasons?: readonly string[] | null;
+  evidence?: readonly string[] | null;
+  /** Candidate evidence that explicitly came from analyzed video frames. */
+  matchedFrameTimestamps?: readonly number[] | null;
+  analyzedFrameCount?: number | null;
+  evidenceItems?: readonly {
+    source: 'caption' | 'speech' | 'visible_text' | 'frame';
+    timestampSeconds: number | null;
+  }[] | null;
   businessStatus?: string | null;
   contextReason?: string | null;
   contextLabel?: string | null;
   distanceKm?: number | null;
   localityMatch?: boolean;
 };
+
+export type CandidateMatchStrength = 'high' | 'medium' | 'low';
+
+/**
+ * CONFIDENCE SOURCE: the resolver's normalized evidence-strength score, or an
+ * explicit qualitative producer decision. The numeric score is a ranking aid,
+ * not a calibrated probability, so the UI never renders it as a percentage.
+ *
+ * CONFIDENCE INTERPRETATION: bands mirror the resolver's existing strong and
+ * medium decision thresholds. They compare evidence strength only and never
+ * imply that Vayrin is a stated percentage "sure".
+ */
+export const CONFIDENCE_SOURCE = 'resolver_normalized_evidence_strength';
+export const CONFIDENCE_INTERPRETATION = 'qualitative evidence-strength band; not a probability';
+
+/** Physical-layout contract for 375/390/430 pt iPhone widths. */
+export function quickCheckEvidenceFrameWidth(windowWidth: number): number {
+  return Math.max(280, Math.min(390, Math.floor(windowWidth) - 48));
+}
 
 /** The complete review taxonomy. Only provider-backed canonical values are saveable. */
 export type VayrinResultType =
@@ -173,6 +205,7 @@ export function toggleCandidateSelection(
 
 export function candidateSaveLabel(count: number): string {
   const safeCount = Math.max(0, Math.floor(count));
+  if (safeCount === 0) return 'Select a place to save';
   return safeCount <= 1 ? 'Save this place' : `Save ${safeCount} places`;
 }
 
@@ -237,4 +270,75 @@ export function candidateCategoryLabel(candidate: CandidateConfirmationPlace): s
   const value = candidate.primaryTypeDisplayName ?? candidate.googleMapsTypeLabel ?? candidate.category ?? fallbackType;
   if (!value?.trim()) return null;
   return value.trim().replace(/_/g, ' ');
+}
+
+export function candidateMatchStrength(
+  candidate: CandidateConfirmationPlace,
+): CandidateMatchStrength | null {
+  if (candidate.matchStrength) return candidate.matchStrength;
+  const score = candidate.matchScore;
+  if (typeof score !== 'number' || !Number.isFinite(score) || score < 0 || score > 1) return null;
+  if (score >= 0.78) return 'high';
+  if (score >= 0.55) return 'medium';
+  return 'low';
+}
+
+export function candidateMatchLabel(candidate: CandidateConfirmationPlace): string | null {
+  const strength = candidateMatchStrength(candidate);
+  return strength ? `${strength[0]!.toUpperCase()}${strength.slice(1)} match` : null;
+}
+
+function uniqueFiniteTimestamps(values: readonly number[] | null | undefined): number[] {
+  return [...new Set((values ?? []).filter(
+    (value): value is number => typeof value === 'number' && Number.isFinite(value) && value >= 0,
+  ))].sort((a, b) => a - b);
+}
+
+export function candidateMatchedFramesLabel(
+  candidate: CandidateConfirmationPlace,
+): string | null {
+  const matched = uniqueFiniteTimestamps(candidate.matchedFrameTimestamps);
+  if (matched.length === 0) return null;
+  const analyzed = typeof candidate.analyzedFrameCount === 'number' && candidate.analyzedFrameCount >= matched.length
+    ? Math.floor(candidate.analyzedFrameCount)
+    : null;
+  return analyzed ? `Matched frames: ${matched.length} of ${analyzed}` : 'Matched multiple video frames';
+}
+
+const REASON_COPY: Readonly<Record<string, string>> = {
+  address_verified: 'Address details agree with the source evidence.',
+  address_verified_multi: 'Address details agree with the source evidence.',
+  address_verified_multi_ambiguous: 'Address details agree with the source evidence.',
+  compact_name_match: 'The place name matches text found in the post.',
+  strong_name_match: 'The place name strongly matches the source evidence.',
+  meaningful_name_match: 'The place name matches the source evidence.',
+  state_match: 'The region agrees with the source evidence.',
+  country_match: 'The country agrees with the source evidence.',
+  category_match: 'The place type agrees with what appears in the video.',
+  category_primary_type_match: 'The place type agrees with what appears in the video.',
+  distinctive_token_match: 'Distinctive words in the place name match the source evidence.',
+};
+
+/** Plain-language, bounded explanations derived only from structured evidence. */
+export function candidateWhyMatchLines(
+  candidate: CandidateConfirmationPlace,
+  locality?: string | null,
+): string[] {
+  const lines: string[] = [];
+  const add = (line: string | null | undefined) => {
+    if (line && !lines.includes(line) && lines.length < 4) lines.push(line);
+  };
+  const frameCount = uniqueFiniteTimestamps(candidate.matchedFrameTimestamps).length;
+  if (frameCount > 0) {
+    add(`${frameCount} analyzed video ${frameCount === 1 ? 'frame contains' : 'frames contain'} supporting visual evidence.`);
+  }
+  for (const reason of candidate.reasons ?? []) add(REASON_COPY[reason]);
+  const sources = new Set((candidate.evidenceItems ?? []).map((item) => item.source));
+  if (sources.has('visible_text')) add('Visible text in the video supports this match.');
+  if (sources.has('speech')) add('Spoken evidence in the video supports this match.');
+  if (sources.has('caption')) add('The post caption supports this match.');
+  if (locality && [...(candidate.reasons ?? [])].some((reason) => reason.includes('state') || reason.includes('country'))) {
+    add(`Video evidence points to ${locality}.`);
+  }
+  return lines.slice(0, 4);
 }

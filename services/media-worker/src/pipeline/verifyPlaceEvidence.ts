@@ -11,6 +11,7 @@
 
 import type { WorkerConfig } from '../config/env.js';
 import type { MediaPlaceEvidence } from '../types/evidence.js';
+import type { PersistedEvidenceFrame } from './persistEvidenceFrames.js';
 
 export type FinalizeOutcome = 'evidence' | 'insufficient_evidence' | 'unavailable' | 'failed';
 
@@ -52,6 +53,7 @@ export type FinalizeArgs = {
   /** True once usable evidence entered the recognition/model path. */
   analysisAttempted: boolean;
   evidence?: MediaPlaceEvidence;
+  evidenceFrames?: PersistedEvidenceFrame[];
   sourceMetadata?: MediaSourceMetadata;
   /** Stronger exact source URL discovered during public media retrieval. */
   canonicalUrl?: string | null;
@@ -89,6 +91,7 @@ export async function verifyPlaceEvidence(
       failureCode: args.failureCode,
       analysisAttempted: args.analysisAttempted,
       evidence: args.outcome === 'evidence' ? args.evidence : undefined,
+      evidenceFrames: args.outcome === 'evidence' ? args.evidenceFrames?.slice(0, 5) : undefined,
       // Sent on EVERY outcome, not just `evidence`. The caption can name a
       // venue even when the model found no structured place at all.
       sourceMetadata: args.sourceMetadata,

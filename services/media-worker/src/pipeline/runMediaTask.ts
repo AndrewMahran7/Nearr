@@ -25,6 +25,7 @@ import {
   type FinalizeResponse,
 } from './verifyPlaceEvidence.js';
 import { cleanupMedia } from './cleanupMedia.js';
+import { persistEvidenceFrames, selectDurableEvidenceFrames } from './persistEvidenceFrames.js';
 import {
   renewAiNoteRetryCycle,
   recordAiNoteEvidenceSnapshot,
@@ -760,6 +761,18 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
         )
       : !analysis.evidence.insufficientEvidence && analysis.evidence.places.length > 0;
     const outcome: FinalizeOutcome = hasEvidence ? 'evidence' : 'insufficient_evidence';
+    const durableEvidenceFrames = task.task_kind === 'ai_note_enrichment' || !hasEvidence
+      ? []
+      : await persistEvidenceFrames(
+          client,
+          task,
+          selectDurableEvidenceFrames({
+            frames: primaryContext.frames,
+            evidence: analysis.evidence,
+            vayrinSelectedTimestamps: analysis.vayrin?.selectedTimestampsSeconds,
+          }),
+        );
+    diagnostics.evidenceFramesRetained = durableEvidenceFrames.length;
     const fin = await finalizeWithRetry(() =>
       verifyPlaceEvidence(cfg, {
         taskId: task.id,
@@ -769,6 +782,7 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
         failureCode: outcome === 'insufficient_evidence' ? 'insufficient_evidence' : undefined,
         analysisAttempted,
         evidence: hasEvidence ? analysis.evidence : undefined,
+        evidenceFrames: durableEvidenceFrames,
         // Already fetched during retrieval — no additional round trip.
         sourceMetadata: {
           title: media.metadataTitle,

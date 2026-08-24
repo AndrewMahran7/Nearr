@@ -22,6 +22,8 @@ export type ShareJobResultCandidate = {
   aiNote?: string | null;
   /** Existing authoritative/cached place image, when the producer has one. */
   photoUrl?: string | null;
+  /** Bounded pre-hydrated place imagery (fixtures/cache adapters). */
+  photoUrls?: string[];
   /** Best candidate-associated source-video frame, when durably available. */
   sourceFrameUrl?: string | null;
   /** Candidate-scoped scene anchors used for concise confirmation evidence. */
@@ -31,6 +33,26 @@ export type ShareJobResultCandidate = {
   distanceKm?: number | null;
   localityMatch?: boolean;
   wideningTierKm?: 25 | 75 | 200 | null;
+  /** Closed resolver evidence keys. These are mapped to plain-language UI copy. */
+  evidence?: string[];
+  /** Closed resolver score reason codes. Never model prose or chain-of-thought. */
+  reasons?: string[];
+  /** Optional authoritative qualitative decision from a producer. */
+  matchStrength?: 'high' | 'medium' | 'low' | null;
+};
+
+/** A bounded, durable reference to a frame that was actually supplied to the
+ * recognition model. The object stays private; clients resolve a short-lived
+ * signed URL when the confirmation screen opens. */
+export type ShareJobEvidenceFrame = {
+  id: string;
+  storagePath: string | null;
+  /** Fixtures/legacy adapters may already carry a safe renderable URL. */
+  url?: string | null;
+  timestampSeconds: number;
+  width: number | null;
+  height: number | null;
+  relevance: 'vayrin_selected' | 'candidate_evidence' | 'analysis_coverage';
 };
 
 export type ShareJobMentionOutcome =
@@ -86,6 +108,8 @@ export type ShareJobCandidatePayload = {
   candidates: ShareJobResultCandidate[];
   mentionSlots: ShareJobMentionSlot[];
   savedPlaceIds?: string[];
+  /** At most five frames, ordered strongest/relevant first. */
+  evidenceFrames?: ShareJobEvidenceFrame[];
 };
 
 function normalizedTimestamps(value: unknown): number[] {
@@ -97,6 +121,53 @@ function normalizedTimestamps(value: unknown): number[] {
 
 function text(value: unknown): string | null {
   return typeof value === 'string' && value.trim() ? value.trim() : null;
+}
+
+function normalizedStringList(value: unknown, limit = 12): string[] {
+  if (!Array.isArray(value)) return [];
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const item of value) {
+    const normalized = text(item)?.slice(0, 120) ?? null;
+    if (!normalized || seen.has(normalized)) continue;
+    seen.add(normalized);
+    result.push(normalized);
+    if (result.length === limit) break;
+  }
+  return result;
+}
+
+export function normalizeEvidenceFrames(input: unknown): ShareJobEvidenceFrame[] {
+  if (!Array.isArray(input)) return [];
+  const frames: ShareJobEvidenceFrame[] = [];
+  const seen = new Set<string>();
+  for (const raw of input.slice(0, 5)) {
+    if (!raw || typeof raw !== 'object') continue;
+    const row = raw as Record<string, unknown>;
+    const timestampSeconds = typeof row.timestampSeconds === 'number' &&
+      Number.isFinite(row.timestampSeconds) && row.timestampSeconds >= 0
+      ? row.timestampSeconds
+      : null;
+    const storagePath = text(row.storagePath ?? row.storage_path);
+    const url = text(row.url);
+    if (timestampSeconds == null || (!storagePath && !url)) continue;
+    const id = text(row.id) ?? `${storagePath ?? url}:${timestampSeconds}`;
+    if (seen.has(id)) continue;
+    seen.add(id);
+    const relevance = row.relevance === 'vayrin_selected' || row.relevance === 'candidate_evidence'
+      ? row.relevance
+      : 'analysis_coverage';
+    frames.push({
+      id,
+      storagePath,
+      url,
+      timestampSeconds,
+      width: typeof row.width === 'number' && Number.isFinite(row.width) && row.width > 0 ? row.width : null,
+      height: typeof row.height === 'number' && Number.isFinite(row.height) && row.height > 0 ? row.height : null,
+      relevance,
+    });
+  }
+  return frames;
 }
 
 function normalizedNoteEvidence(input: unknown): ShareJobNoteEvidence[] {
@@ -160,6 +231,7 @@ export function normalizeResultCandidate(input: unknown): ShareJobResultCandidat
         : null,
     aiNote: text(row.aiNote),
     photoUrl: text(row.photoUrl ?? row.photo_url),
+    photoUrls: normalizedStringList(row.photoUrls ?? row.photo_urls, 5),
     sourceFrameUrl: text(row.sourceFrameUrl ?? row.source_frame_url ?? row.frameUrl),
     sourceTimestamps: normalizedTimestamps(row.sourceTimestamps ?? row.source_timestamps),
     contextReason: text(row.contextReason),
@@ -170,6 +242,11 @@ export function normalizeResultCandidate(input: unknown): ShareJobResultCandidat
     localityMatch: row.localityMatch === true,
     wideningTierKm: row.wideningTierKm === 25 || row.wideningTierKm === 75 || row.wideningTierKm === 200
       ? row.wideningTierKm
+      : null,
+    evidence: normalizedStringList(row.evidence),
+    reasons: normalizedStringList(row.reasons),
+    matchStrength: row.matchStrength === 'high' || row.matchStrength === 'medium' || row.matchStrength === 'low'
+      ? row.matchStrength
       : null,
   };
 }
@@ -259,6 +336,11 @@ export function buildShareJobCandidatePayload(candidates: unknown, mentionResult
     candidates: normalizeResultCandidates(candidates).slice(0, 10),
     mentionSlots,
   };
+}
+
+export function evidenceFramesFromPayload(payload: unknown): ShareJobEvidenceFrame[] {
+  if (!payload || typeof payload !== 'object') return [];
+  return normalizeEvidenceFrames((payload as Record<string, unknown>).evidenceFrames);
 }
 
 export function mentionCount(payload: unknown): number {

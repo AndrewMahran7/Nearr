@@ -103,7 +103,8 @@ assert.doesNotMatch(`${rawNotification.title} ${rawNotification.body}`, /Worlds 
 const resolvedNotification = composeShareCompletionNotification({ jobId: 'resolved', status: 'needs_help', candidateCount: 1, strongestCandidateName: 'Stari Most' });
 assert.equal(resolvedNotification.title, 'Vayrin found a possible place');
 
-assert.match(card, /height=\{compact \? 88 : 184\}/);
+assert.match(card, /CandidatePhotoCarousel/);
+assert.match(read('components/CandidatePhotoCarousel.tsx'), /height: 220/);
 assert.match(card, /accessibilityRole=\{selectionRole\}/);
 assert.match(asyncDetail, /selectionRole="checkbox"/);
 assert.match(asyncDetail, /visibleCandidateShortlist/);

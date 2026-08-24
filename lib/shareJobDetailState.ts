@@ -33,8 +33,10 @@ import {
   type NormalizedCandidate,
 } from './shareJobsUi';
 import {
+  evidenceFramesFromPayload,
   normalizeMentionSlots,
   savedPlaceIdsFromPayload,
+  type ShareJobEvidenceFrame,
   type ShareJobMentionSlot,
 } from './shareJobResult';
 import {
@@ -110,6 +112,8 @@ export type ShareJobDetailState = {
   candidates: NormalizedCandidate[];
   /** Multi-place review slots; empty for single-place jobs. */
   mentionSlots: ShareJobMentionSlot[];
+  /** Bounded private frames that were actually analyzed for this result. */
+  evidenceFrames: ShareJobEvidenceFrame[];
   /** Places this job already saved automatically. */
   savedPlaceIds: string[];
   savedPlaceId: string | null;
@@ -203,6 +207,7 @@ export function buildShareJobDetailState(
     selectionMode: 'single_identity',
     candidates: [],
     mentionSlots: [],
+    evidenceFrames: [],
     savedPlaceIds: [],
     savedPlaceId: null,
     savedPlaceName: null,
@@ -224,6 +229,7 @@ export function buildShareJobDetailState(
   // throwing — so a malformed payload lands on `manual`, never on an error.
   const candidatePayload = record(job.candidate_payload);
   const mentionSlots = normalizeMentionSlots(candidatePayload?.mentionSlots);
+  const evidenceFrames = evidenceFramesFromPayload(candidatePayload);
   const candidates = collectCandidates(job.candidate_payload, mentionSlots);
   const savedPlaceIds = savedPlaceIdsFromPayload(job.candidate_payload);
   const extraction = record(job.extraction_payload);
@@ -240,6 +246,7 @@ export function buildShareJobDetailState(
     selectionMode,
     candidates,
     mentionSlots,
+    evidenceFrames,
     savedPlaceIds,
     savedPlaceId,
     savedPlaceName: text(extraction?.savedPlaceName),

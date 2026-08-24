@@ -38,7 +38,7 @@ import {
   inspectFacebookUrl,
   planFacebookDiscoveredCanonicalUrl,
 } from '../../../lib/shareAgent/facebookUrl.ts';
-import { buildShareJobCandidatePayload } from '../../../lib/shareJobResult.ts';
+import { buildShareJobCandidatePayload, normalizeEvidenceFrames } from '../../../lib/shareJobResult.ts';
 import { selectionModeForPlaceResult } from '../../../lib/placeSelection.ts';
 import {
   classifyShareFailure,
@@ -1464,6 +1464,7 @@ async function finalizeMediaTask(
   const parsed = outcome === 'evidence'
     ? parseMediaEvidence(body.evidence)
     : ({ ok: false, error: outcome } as const);
+  const evidenceFrames = normalizeEvidenceFrames(body.evidenceFrames);
   const rendered = parsed.ok
     ? renderMediaEvidenceCaption(parsed.value)
     : { title: '', description: '', renderedPlaces: 0 };
@@ -1985,6 +1986,7 @@ async function finalizeMediaTask(
           : [],
       })),
     );
+    candidatePayload.evidenceFrames = evidenceFrames;
     candidatePayload.savedPlaceIds = allSavedPlaceIds;
     const mediaResultSummary = {
       createdCount: createdSavedPlaceIds.length,
@@ -2200,6 +2202,7 @@ async function finalizeMediaTask(
         : [],
     })),
   );
+  candidatePayload.evidenceFrames = evidenceFrames;
   const decisionForRow =
     mode === 'manual'
       ? 'manual_fallback'

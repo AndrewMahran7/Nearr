@@ -32,6 +32,7 @@ import * as Location from 'expo-location';
 import { Button, ErrorBoundary, Input, ShareJobsHeader } from '@/components';
 import { CandidateConfirmationCard } from '@/components/CandidateConfirmationCard';
 import { PlaceImage } from '@/components/PlaceImage';
+import { SourceEvidenceGallery } from '@/components/SourceEvidenceGallery';
 import { ShareJobsSheet } from '@/components/ShareJobsSheet';
 import { VayrinPresentationHeader } from '@/components/VayrinPresentationHeader';
 import { WrongPlaceSheet } from '@/components/map/WrongPlaceSheet';
@@ -60,6 +61,7 @@ import {
 } from '@/lib/vayrinCandidateFixtures';
 import {
   planShareSaveCompletion,
+  normalizeResultCandidates,
   saveSelectedLabel,
   sourceTimestampLabel,
   type ShareJobResultCandidate,
@@ -572,17 +574,40 @@ function ShareJobDetailScreen() {
   }, [detail.kind, onboardingShare, sourceUrl]);
   const candidates = detail.candidates;
   const mentionSlots = detail.mentionSlots;
+  const persistedConfirmationCandidates = useMemo(
+    () => normalizeResultCandidates(
+      job?.candidate_payload && typeof job.candidate_payload === 'object'
+        ? (job.candidate_payload as { candidates?: unknown }).candidates
+        : [],
+    ),
+    [job?.candidate_payload],
+  );
   const rankedConfirmationCandidates = useMemo(() => candidates.map((candidate) => {
     const slot = mentionSlots.find((item) =>
       item.candidates.some((choice) => choice.googlePlaceId === candidate.googlePlaceId));
+    const persisted = slot?.candidates.find((choice) => choice.googlePlaceId === candidate.googlePlaceId)
+      ?? persistedConfirmationCandidates.find((choice) => choice.googlePlaceId === candidate.googlePlaceId);
+    const evidenceItems = (slot?.noteEvidence ?? []).map((item) => ({
+      source: item.source,
+      timestampSeconds: item.timestampSeconds,
+    }));
     return {
       ...candidate,
+      photoUrls: persisted?.photoUrls ?? [],
+      evidence: persisted?.evidence ?? [],
+      reasons: persisted?.reasons ?? [],
+      matchStrength: persisted?.matchStrength ?? null,
       sourceFrameUrl: candidate.sourceFrameUrl ?? slot?.sourceFrameUrl ?? overallSourceFrameUrl,
       sourceTimestamps: candidate.sourceTimestamps.length > 0
         ? candidate.sourceTimestamps
         : slot?.sourceTimestamps ?? [],
+      matchedFrameTimestamps: evidenceItems
+        .filter((item) => item.source === 'frame' && item.timestampSeconds != null)
+        .map((item) => item.timestampSeconds!),
+      analyzedFrameCount: detail.evidenceFrames.length,
+      evidenceItems,
     } satisfies CandidateConfirmationPlace;
-  }), [candidates, mentionSlots, overallSourceFrameUrl]);
+  }), [candidates, detail.evidenceFrames.length, mentionSlots, overallSourceFrameUrl, persistedConfirmationCandidates]);
   const confirmationCandidates = useMemo(
     () => visibleCandidateShortlist(rankedConfirmationCandidates),
     [rankedConfirmationCandidates],
@@ -591,12 +616,14 @@ function ShareJobDetailScreen() {
   const pickerSelectionMode = reviewSelectionMode(mentionSlots);
   const candidateConfirmationPresentation = {
     ...vayrinPresentation,
-    headline: confirmationPrompt(candidateMode),
+    headline: candidateMode === 'multiple'
+      ? 'Vayrin found a few possibilities.'
+      : confirmationPrompt(candidateMode),
     body: candidateMode === 'broad'
       ? 'This is an area match. Search nearby to choose an exact destination.'
       : candidateMode === 'multiple'
-        ? 'Choose the place that matches the video.'
-        : 'Compare it with the video, then save it.'
+        ? 'Compare the photos, frames, and match evidence.'
+        : 'Compare the photos, frames, and match evidence before saving.'
   };
   useEffect(() => {
     if (detail.kind !== 'picker') {
@@ -1889,6 +1916,10 @@ function ShareJobDetailScreen() {
                   </Text>
                 </>
               )}
+              <SourceEvidenceGallery
+                frames={detail.evidenceFrames}
+                analysisAttempted={job.analysis_attempted}
+              />
               {showBatchSelectionControls ? (
                 <View style={styles.batchSelectionActions}>
                   <Pressable
@@ -1937,23 +1968,13 @@ function ShareJobDetailScreen() {
                 </Text>
               ) : null}
               <Button
-                title={saveSelectedLabel(selectedPendingCount)}
-                accessibilityLabel={`${saveSelectedLabel(selectedPendingCount)} from this batch`}
+                title={candidateSaveLabel(selectedPendingCount)}
+                accessibilityLabel={`${candidateSaveLabel(selectedPendingCount)} from this batch`}
                 onPress={() => void handleSaveSelected()}
                 disabled={selectedPendingCount === 0 || busy}
                 loading={busy}
                 style={styles.batchSaveButton}
               />
-              {showBatchSelectionControls && !everyEligibleSelected ? (
-                <Button
-                  title={`Save all (${eligiblePendingCount})`}
-                  accessibilityLabel={`Save all ${eligiblePendingCount} eligible places`}
-                  variant="secondary"
-                  onPress={() => void handleSaveAll()}
-                  disabled={eligiblePendingCount === 0 || busy}
-                  style={styles.batchSaveAllButton}
-                />
-              ) : null}
               {savedBatchIds.length > 0 && recoveryCount > 0 ? (
                 <Button
                   title={`View ${savedBatchIds.length} saved ${savedBatchIds.length === 1 ? 'place' : 'places'}`}
@@ -1995,8 +2016,12 @@ function ShareJobDetailScreen() {
               <Text style={[typography.body, styles.help]}>{detail.copy.body}</Text>
             </>
           )}
+          <SourceEvidenceGallery
+            frames={detail.evidenceFrames}
+            analysisAttempted={job.analysis_attempted}
+          />
           <View style={styles.section}>
-            {confirmationCandidates.map((candidate) => {
+            {confirmationCandidates.map((candidate, index) => {
               const address = splitPlaceAddress(candidate.formattedAddress);
               const broad = isBroadCandidate(candidate);
               return (
@@ -2007,6 +2032,7 @@ function ShareJobDetailScreen() {
                   selected={pickerSelectedIds.includes(candidate.googlePlaceId)}
                   selectable
                   compact
+                  bestMatch={index === 0 && confirmationCandidates.length > 1}
                   selectionRole={pickerSelectionMode === 'exclusive' ? 'radio' : 'checkbox'}
                   saved={Boolean(savedByGoogleId[candidate.googlePlaceId])}
                   onPress={() => {
@@ -2061,7 +2087,7 @@ function ShareJobDetailScreen() {
           )}
           {renderJobFooter()}
         </ScrollView>
-        {(searchExpanded ? manualSelected.length : pickerSelected.length) > 0 ? (
+        {(
           <View style={[styles.stickySaveBar, { paddingBottom: Math.max(safeAreaInsets.bottom, Spacing.sm) }]}>
             <Button
               title={candidateSaveLabel(searchExpanded ? manualSelected.length : pickerSelected.length)}
@@ -2070,12 +2096,12 @@ function ShareJobDetailScreen() {
                 searchExpanded ? manualSelected : pickerSelected,
                 searchExpanded ? 'raw_name_search' : 'async_picker',
               )}
-              disabled={busy}
+              disabled={busy || (searchExpanded ? manualSelected.length : pickerSelected.length) === 0}
               loading={busy}
               style={styles.stickySaveButton}
             />
           </View>
-        ) : null}
+        )}
       </ShareJobsSheet>
     );
   }
@@ -2178,6 +2204,10 @@ function ShareJobDetailScreen() {
                 </Text>
               </>
             )}
+            <SourceEvidenceGallery
+              frames={detail.evidenceFrames}
+              analysisAttempted={job.analysis_attempted}
+            />
             {confirmationSingle ? (
               <CandidateConfirmationCard
                 candidate={confirmationSingle}
@@ -2192,21 +2222,19 @@ function ShareJobDetailScreen() {
 
             {/* One action either way: the save path enriches an existing row
                 instead of creating a second one, so it is safe to always run. */}
-            <Button
-              title={broadSingle ? 'See places in this area' : 'Save this place'}
-              onPress={() => {
-                if (broadSingle && confirmationSingle) {
+            {broadSingle ? (
+              <Button
+                title="See places in this area"
+                onPress={() => {
+                  if (!confirmationSingle) return;
                   changeManualQuery(confirmationSingle.name);
                   revealSearch();
                   void runManualSearch(confirmationSingle.name);
-                  return;
-                }
-                if (single) void handleSaveStored(single);
-              }}
-              disabled={busy || !single}
-              loading={busy && !broadSingle}
-              style={styles.primaryBtn}
-            />
+                }}
+                disabled={busy || !single}
+                style={styles.primaryBtn}
+              />
+            ) : null}
 
             {searchExpanded ? (
               renderManualSearch({
@@ -2254,6 +2282,17 @@ function ShareJobDetailScreen() {
             style={styles.stickySaveButton}
           />
         </View>
+      ) : confirmationSingle && !broadSingle && !searchExpanded && !isManual && !isProcessing ? (
+        <View style={[styles.stickySaveBar, { paddingBottom: Math.max(safeAreaInsets.bottom, Spacing.sm) }]}>
+          <Button
+            title="Save this place"
+            accessibilityLabel={`Save ${confirmationSingle.name}`}
+            onPress={() => { if (single) void handleSaveStored(single); }}
+            disabled={busy || !single}
+            loading={busy}
+            style={styles.stickySaveButton}
+          />
+        </View>
       ) : null}
     </ShareJobsSheet>
   );
@@ -2261,7 +2300,7 @@ function ShareJobDetailScreen() {
 
 function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
   return StyleSheet.create({
-    content: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.sm, paddingBottom: Spacing.xxl },
+    content: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.sm, paddingBottom: Spacing.xxl + 72 },
     batchKeyboardSurface: { flex: 1 },
     batchScroll: { flex: 1 },
     batchContent: {
