@@ -33,6 +33,7 @@ import { resolveSharedPlace } from '../process-share-link/resolver/resolveShared
 import { isRetryableNameDrivenProviderFailure } from '../process-share-link/resolver/nameDrivenResolver.ts';
 import { saveForUser } from '../process-share-link/save.ts';
 import { normalizeShareUrl } from '../../../lib/shareAgent/tiktokUrl.ts';
+import { canonicalContentIdentity, type CanonicalContentIdentity } from '../../../lib/shareAgent/contentIdentity.ts';
 import {
   inspectFacebookUrl,
   planFacebookDiscoveredCanonicalUrl,
@@ -119,6 +120,16 @@ import {
   mediaFailureReview,
   persistedCandidateCount,
 } from './ambiguityReview.ts';
+import {
+  attachSavedPlaceSource,
+  claimRecognition,
+  lookupRecognition,
+  persistRecognition,
+  recordIdentityOnJob,
+  recordRecognitionEvent,
+  releaseRecognition,
+  type RecognitionCacheDecision,
+} from './recognitionCache.ts';
 
 const CORS_HEADERS: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
@@ -149,6 +160,14 @@ function notificationBackoffSeconds(attempts: number): number {
 function truncate(s: string | null | undefined, max = 300): string {
   if (!s) return '';
   return s.length > max ? `${s.slice(0, max)}…` : s;
+}
+
+function isMultiPlaceCachePayload(value: unknown): boolean {
+  if (!value || typeof value !== 'object') return false;
+  const payload = value as Record<string, unknown>;
+  return payload.selectionMode === 'multi_independent' ||
+    (Array.isArray(payload.mentionSlots) && payload.mentionSlots.length > 1) ||
+    (Array.isArray(payload.savedPlaceIds) && payload.savedPlaceIds.length > 1);
 }
 
 function safeCandidate(c: any, aiNote: string | null = null) {
@@ -401,6 +420,15 @@ async function finalize(
   note: { title: string; body: string; data: Record<string, unknown> } | null,
 ): Promise<void> {
   const updatePatch: Record<string, unknown> = { ...patch };
+  const finalUrl = typeof patch.canonical_url === 'string'
+    ? patch.canonical_url
+    : job.canonical_url || job.source_url;
+  const identity = canonicalContentIdentity(job.source_url, finalUrl);
+  if (identity) {
+    updatePatch.recognition_identity_key = identity.key;
+    updatePatch.recognition_identity_version = identity.identityVersion;
+    updatePatch.recognition_content_id = identity.contentId;
+  }
   if (note) {
     updatePatch.notification_status = 'pending';
     updatePatch.notification_attempts = 0;
@@ -426,12 +454,56 @@ async function finalize(
     return;
   }
   console.log(`[share-job] status from=processing_metadata to=${patch.status} job_id=${job.id}`);
+
+  // Auxiliary cache write after the user-facing transition commits. Cache
+  // outages never roll back a save or candidate review.
+  if (identity) {
+    const candidatePayload = patch.candidate_payload ?? job.candidate_payload ?? null;
+    if (patch.status === 'completed' && patch.saved_place_id && isMultiPlaceCachePayload(candidatePayload)) {
+      await persistRecognition({
+        admin,
+        identity,
+        trust: 'CANDIDATE_SET',
+        candidatePayload,
+        evidenceSummary: { decision: 'multi_place_review' },
+      });
+    } else if (patch.status === 'completed' && patch.saved_place_id) {
+      const { data: saved } = await admin
+        .from('saved_places')
+        .select('place_id')
+        .eq('id', patch.saved_place_id)
+        .maybeSingle();
+      if (saved?.place_id) {
+        await persistRecognition({
+          admin,
+          identity,
+          trust: 'VERIFIED_AUTO_SAVE',
+          canonicalPlaceId: saved.place_id,
+          candidatePayload,
+          evidenceSummary: { decision: patch.decision ?? null },
+        });
+      }
+    } else if (patch.status === 'needs_help' && persistedCandidateCount(candidatePayload) > 0) {
+      await persistRecognition({
+        admin,
+        identity,
+        trust: 'CANDIDATE_SET',
+        candidatePayload,
+        evidenceSummary: { decision: patch.decision ?? null },
+      });
+    }
+    await releaseRecognition(admin, identity.key, job.id);
+    if (job.recognition_identity_key && job.recognition_identity_key !== identity.key) {
+      await releaseRecognition(admin, job.recognition_identity_key, job.id);
+    }
+  }
 }
 
 async function handleProcessingError(admin: any, job: any, err: unknown): Promise<void> {
   const message = truncate(err instanceof Error ? err.message : String(err));
   const attempts = typeof job.attempts === 'number' ? job.attempts : 1;
   const maxAttempts = typeof job.max_attempts === 'number' ? job.max_attempts : 5;
+  await releaseRecognition(admin, job.recognition_identity_key, job.id);
 
   if (attempts >= maxAttempts) {
     await finalize(
@@ -1039,9 +1111,10 @@ async function finalizePostSaveEnrichment(
     mentionResults: any[];
     aiNoteByMentionId: Map<string, string | null>;
     parsed: any;
+    sourceMetadata: MediaSourceMetadata | null;
   },
 ): Promise<Response> {
-  const { job, task, taskId, mediaRunId, result, mentionResults, aiNoteByMentionId, parsed } = args;
+  const { job, task, taskId, mediaRunId, result, mentionResults, aiNoteByMentionId, parsed, sourceMetadata } = args;
   const { data: saved, error: savedError } = await admin
     .from('saved_places')
     .select('id,user_id,place_id,notes,ai_note,place:places(id,google_place_id,name)')
@@ -1164,6 +1237,21 @@ async function finalizePostSaveEnrichment(
       console.warn(`[media-task] supplemental ai note save failed task_id=${taskId}`);
     }
   }
+
+  // The source child owns this video's context even when the compatibility
+  // saved_places row still represents an earlier primary video.
+  await attachSavedPlaceSource({
+    admin,
+    userId: job.user_id,
+    savedPlaceId: saved.id,
+    sourceUrl: task.source_url,
+    sourceType: task.platform,
+    resolvedUrl: task.canonical_url || task.source_url,
+    creatorHandle: sourceMetadata?.creatorHandle ?? null,
+    creatorName: sourceMetadata?.creatorName ?? null,
+    caption: sourceMetadata?.description ?? null,
+    aiNote,
+  });
 
   // Publish the authoritative per-place completion only after the note write.
   // share_job_place_results is already in Supabase Realtime, so this becomes
@@ -1658,6 +1746,7 @@ async function finalizeMediaTask(
       mentionResults,
       aiNoteByMentionId,
       parsed,
+      sourceMetadata,
     });
   }
 
@@ -1751,6 +1840,18 @@ async function finalizeMediaTask(
         if (saveError) throw new Error(`media_auto_save_failed: ${saveError.message}`);
         const saved = Array.isArray(savedRows) ? savedRows[0] : savedRows;
         if (!saved?.saved_place_id) throw new Error('media_auto_save_missing_saved_place_id');
+        await attachSavedPlaceSource({
+          admin,
+          userId: job.user_id,
+          savedPlaceId: saved.saved_place_id,
+          sourceUrl: canonicalUrl,
+          sourceType: source,
+          resolvedUrl: canonicalUrl,
+          creatorHandle: sourceMetadata?.creatorHandle ?? null,
+          creatorName: sourceMetadata?.creatorName ?? null,
+          caption: sourceMetadata?.description ?? null,
+          aiNote: aiNoteByMentionId.get(mention.mentionId) ?? null,
+        });
         if (aiNote) {
           const aiNoteSave = await persistAiNoteSupplementally(aiNote, async (note) => {
             // PROVENANCE: the cue describes THIS post, and the place page shows
@@ -2017,6 +2118,12 @@ async function finalizeMediaTask(
       candidate,
       sourceUrl: canonicalUrl,
       source,
+      sourceMetadata: {
+        resolvedUrl: canonicalUrl,
+        creatorHandle: sourceMetadata?.creatorHandle ?? null,
+        creatorName: sourceMetadata?.creatorName ?? null,
+        caption: sourceMetadata?.description ?? null,
+      },
     });
     await finalize(
       admin,
@@ -2025,6 +2132,7 @@ async function finalizeMediaTask(
         status: 'completed',
         decision: 'auto_save',
         saved_place_id: saved.savedPlaceId,
+        candidate_payload: buildCandidateReviewSnapshot([safeCandidate(candidate)], 10, 'single'),
         canonical_url: canonicalUrl,
         source_platform: task.platform,
         extraction_payload: { ...extractionPayload, savedPlaceName: candidate.name },
@@ -2122,11 +2230,170 @@ async function finalizeMediaTask(
   return json({ ok: true, route: 'needs_help', mode });
 }
 
+function cacheCandidateFromPlace(place: any): any | null {
+  if (!place?.id || !place?.google_place_id || !place?.name) return null;
+  return {
+    googlePlaceId: place.google_place_id,
+    name: place.name,
+    formattedAddress: place.formatted_address ?? null,
+    latitude: Number(place.latitude),
+    longitude: Number(place.longitude),
+    types: Array.isArray(place.google_types) ? place.google_types : [],
+    primaryType: place.google_primary_type ?? null,
+    primaryTypeDisplayName: place.google_type_label ?? null,
+    googleMapsTypeLabel: place.google_type_label ?? null,
+    shortFormattedAddress: place.short_formatted_address ?? null,
+    businessStatus: place.business_status ?? null,
+  };
+}
+
+async function useRecognitionCache(args: {
+  admin: any;
+  job: any;
+  identity: CanonicalContentIdentity;
+  decision: RecognitionCacheDecision;
+}): Promise<boolean> {
+  const { admin, job, identity, decision } = args;
+  if (decision.kind === 'miss') return false;
+
+  if (decision.kind === 'candidate_set') {
+    const payload = decision.row.candidate_payload;
+    const count = persistedCandidateCount(payload);
+    if (count < 1) return false;
+    const selectionMode = selectionModeForPlaceResult({
+      explicitMode: (payload as any)?.selectionMode,
+      mentionSlots: (payload as any)?.mentionSlots,
+    });
+    // A cached candidate set is review-only. The concrete blocker flag keeps
+    // even a singleton out of auto-save while preserving single-vs-multi
+    // selection semantics for the confirmation RPC.
+    const review = decisionForSelectionSemantics(count, selectionMode, true);
+    const mode = review.mode === 'auto' ? 'single' : review.mode;
+    await recordRecognitionEvent(admin, 'recognition_cache_candidate_hit', identity, {
+      mediaDownloadAvoided: true,
+      geminiCallsAvoided: 1,
+      solCallsAvoided: 1,
+      candidateCount: count,
+    });
+    await finalize(
+      admin,
+      job,
+      {
+        status: 'needs_help',
+        decision: review.decision,
+        needs_help_reason: 'recognition_cache_candidate_review',
+        candidate_payload: payload,
+        canonical_url: identity.canonicalUrl,
+        source_platform: identity.platform,
+        extraction_payload: {
+          ...(job.extraction_payload ?? {}),
+          recognitionCache: { hit: true, trust: 'CANDIDATE_SET' },
+        },
+        progress_stage: mode,
+      },
+      reviewNotification({
+        mode,
+        jobId: job.id,
+        candidates: (payload as any)?.candidates,
+        mentionResults: (payload as any)?.mentionSlots,
+      }),
+    );
+    return true;
+  }
+
+  const { data: place, error } = await admin
+    .from('places')
+    .select('id,google_place_id,name,formatted_address,latitude,longitude,short_formatted_address,google_primary_type,google_types,google_type_label,business_status')
+    .eq('id', decision.row.canonical_place_id)
+    .maybeSingle();
+  if (error || !place) return false;
+  const candidate = cacheCandidateFromPlace(place);
+  if (!candidate || !Number.isFinite(candidate.latitude) || !Number.isFinite(candidate.longitude)) return false;
+
+  const saved = await saveForUser({
+    client: admin,
+    userId: job.user_id,
+    candidate,
+    sourceUrl: identity.canonicalUrl,
+    source: legacySourceFor(identity.platform),
+    sourceMetadata: { resolvedUrl: identity.canonicalUrl },
+  });
+  const candidatePayload = buildCandidateReviewSnapshot([safeCandidate(candidate)], 10, 'single');
+  await recordRecognitionEvent(admin, 'recognition_cache_hit', identity, {
+    mediaDownloadAvoided: true,
+    geminiCallsAvoided: 1,
+    solCallsAvoided: 1,
+    trust: decision.row.trust_level,
+  });
+  await finalize(
+    admin,
+    job,
+    {
+      status: 'completed',
+      decision: 'auto_save',
+      saved_place_id: saved.savedPlaceId,
+      candidate_payload: candidatePayload,
+      canonical_url: identity.canonicalUrl,
+      source_platform: identity.platform,
+      extraction_payload: {
+        ...(job.extraction_payload ?? {}),
+        savedPlaceName: candidate.name,
+        alreadySaved: saved.reused,
+        recognitionCache: { hit: true, trust: decision.row.trust_level },
+      },
+      progress_stage: 'completed',
+      completed_at: nowIso(),
+    },
+    composeShareCompletionNotification({
+      status: 'completed',
+      placeName: candidate.name,
+      jobId: job.id,
+      savedPlaceId: saved.savedPlaceId,
+      googlePlaceId: candidate.googlePlaceId,
+      alreadySaved: saved.reused,
+    }),
+  );
+  return true;
+}
+
+async function prepareRecognitionIdentity(
+  admin: any,
+  job: any,
+  identity: CanonicalContentIdentity,
+): Promise<'owner' | 'parked' | 'continue'> {
+  job.recognition_identity_key = identity.key;
+  job.recognition_identity_version = identity.identityVersion;
+  job.recognition_content_id = identity.contentId;
+  job.canonical_url = identity.canonicalUrl;
+  await recordIdentityOnJob(admin, job.id, identity);
+  const decision = await lookupRecognition(admin, identity);
+  if (await useRecognitionCache({ admin, job, identity, decision })) return 'parked';
+  await recordRecognitionEvent(admin, 'recognition_cache_miss', identity, { reason: decision.kind === 'miss' ? decision.reason : 'unusable' });
+  const claim = await claimRecognition(admin, identity, job.id);
+  if (claim === 'joined') {
+    await recordRecognitionEvent(admin, 'recognition_singleflight_joined', identity);
+    await admin.from('share_jobs').update({
+      locked_until: addSecondsIso(30),
+      attempts: Math.max(0, (Number(job.attempts) || 1) - 1),
+      last_error: 'recognition_singleflight_joined',
+      progress_stage: 'checking_video',
+    }).eq('id', job.id).eq('status', 'processing_metadata');
+    return 'parked';
+  }
+  return claim === 'owner' ? 'owner' : 'continue';
+}
+
 async function processOne(admin: any, env: any, job: any): Promise<void> {
   const rawUrl = job.canonical_url || job.source_url;
   const normalized = normalizeShareUrl(rawUrl);
   const requestUrl = normalized.url || rawUrl;
   const platform = detectPlatform(requestUrl);
+
+  let activeIdentity = canonicalContentIdentity(job.source_url, requestUrl);
+  if (activeIdentity) {
+    const preparation = await prepareRecognitionIdentity(admin, job, activeIdentity);
+    if (preparation === 'parked') return;
+  }
 
   if (platform === 'facebook' && !inspectFacebookUrl(requestUrl)?.supported) {
     await finalize(
@@ -2141,7 +2408,7 @@ async function processOne(admin: any, env: any, job: any): Promise<void> {
         extraction_payload: { platform, reason: 'unsupported_facebook_url' },
         progress_stage: 'manual',
       },
-      buildNeedsHelpNotification({ mode: 'manual', jobId: job.id }),
+      reviewNotification({ mode: 'manual', jobId: job.id }),
     );
     return;
   }
@@ -2243,6 +2510,13 @@ async function processOne(admin: any, env: any, job: any): Promise<void> {
   const title = metadataSourceMetadata?.title ?? fetchedTitle;
   const description = metadataSourceMetadata?.description ?? fetchedDescription;
   const canonicalUrl = meta.resolvedUrl || requestUrl;
+  const resolvedIdentity = canonicalContentIdentity(job.source_url, canonicalUrl);
+  if (resolvedIdentity && resolvedIdentity.key !== activeIdentity?.key) {
+    if (activeIdentity) await releaseRecognition(admin, activeIdentity.key, job.id);
+    activeIdentity = resolvedIdentity;
+    const preparation = await prepareRecognitionIdentity(admin, job, resolvedIdentity);
+    if (preparation === 'parked') return;
+  }
   const handles = extractHandles({ platform, title, description, html });
   const taggedLocation = extractTaggedLocation({
     platform,
@@ -2414,6 +2688,11 @@ async function processOne(admin: any, env: any, job: any): Promise<void> {
       candidate,
       sourceUrl: canonicalUrl,
       source,
+      sourceMetadata: {
+        resolvedUrl: canonicalUrl,
+        creatorHandle,
+        caption: description,
+      },
     });
     await finalize(
       admin,
@@ -2422,6 +2701,7 @@ async function processOne(admin: any, env: any, job: any): Promise<void> {
         status: 'completed',
         decision: 'auto_save',
         saved_place_id: saved.savedPlaceId,
+        candidate_payload: buildCandidateReviewSnapshot([safeCandidate(candidate)], 10, 'single'),
         canonical_url: canonicalUrl,
         source_platform: platform,
         extraction_payload: {

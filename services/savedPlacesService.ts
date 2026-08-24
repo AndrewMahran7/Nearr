@@ -51,6 +51,7 @@ import {
   type SavedPlaceEnrichmentPlan,
 } from '@/lib/savedPlaceSourceMerge';
 import { normalizeShareUrl } from '@/lib/shareAgent/tiktokUrl';
+import { attachSavedPlaceSource } from '@/services/savedPlaceSourcesService';
 import type {
   PlaceRow,
   RadiusUnit,
@@ -319,6 +320,13 @@ export async function saveSavedPlace(
     });
     const enrichment = await enrichExistingSavedPlace(existingForUser, input);
     await patchSavedPlaceCategory(existingForUser.id, categoryResolution);
+    await attachSavedPlaceSource({
+      userId,
+      savedPlaceId: existingForUser.id,
+      sourceUrl: input.sourceUrl,
+      sourceType: input.sourceType,
+      aiNote: input.aiNote,
+    });
     return {
       status: 'duplicate',
       place: existingForUser.place,
@@ -482,6 +490,13 @@ export async function saveSavedPlace(
       if (existingSaved?.id) {
         enrichment = await enrichExistingSavedPlace(existingSaved, input);
         await patchSavedPlaceCategory(existingSaved.id, categoryResolution);
+        await attachSavedPlaceSource({
+          userId,
+          savedPlaceId: existingSaved.id,
+          sourceUrl: input.sourceUrl,
+          sourceType: input.sourceType,
+          aiNote: input.aiNote,
+        });
       }
 
       return {
@@ -500,10 +515,20 @@ export async function saveSavedPlace(
   // never block the UI on geofence registration.
   triggerGeofenceResync();
 
+  const savedPlaceId = (saved as SavedPlace).id;
+  await attachSavedPlaceSource({
+    userId,
+    savedPlaceId,
+    sourceUrl: input.sourceUrl,
+    sourceType: input.sourceType,
+    aiNote: input.aiNote,
+  });
+  const hydrated = await readSavedPlaceAfterEnrichment(savedPlaceId);
+
   return {
     status: 'saved',
-    saved: saved as SavedPlace & { place: PlaceRow },
-    savedPlaceId: (saved as SavedPlace).id,
+    saved: hydrated ?? saved as SavedPlace & { place: PlaceRow },
+    savedPlaceId,
   };
 }
 
@@ -542,7 +567,27 @@ export async function listSavedPlaces(
     throw new Error(error.message);
   }
   logDebug('savedPlacesService', 'listSavedPlaces done', { count: (data ?? []).length });
-  const rows = (data ?? []) as SavedPlaceWithPlace[];
+  let rows = (data ?? []) as SavedPlaceWithPlace[];
+  // Keep the map's authoritative saved-place query unchanged. Child source
+  // provenance is additive and failure-tolerant during staged rollout.
+  if (rows.length > 0) {
+    const { data: sourceRows, error: sourceError } = await supabase
+      .from('saved_place_sources')
+      .select('*')
+      .in('saved_place_id', rows.map((row) => row.id))
+      .order('first_attached_at', { ascending: true });
+    if (!sourceError) {
+      const bySaved = new Map<string, any[]>();
+      for (const source of sourceRows ?? []) {
+        const group = bySaved.get(source.saved_place_id) ?? [];
+        group.push(source);
+        bySaved.set(source.saved_place_id, group);
+      }
+      rows = rows.map((row) => ({ ...row, sources: bySaved.get(row.id) ?? [] }));
+    } else {
+      console.warn('[savedPlacesService] source list failed (non-fatal)', sourceError.message);
+    }
+  }
   // Refresh the offline cache on every successful list. The hook
   // (`useSavedPlaces`) also writes the cache, but doing it here covers any
   // service caller that bypasses the hook (future code, scripts).
@@ -564,7 +609,7 @@ export async function getSavedPlace(id: string): Promise<SavedPlaceWithPlace | n
   try {
     const { data, error } = await supabase
       .from('saved_places')
-      .select('*, place:places(*)')
+      .select('*, place:places(*), sources:saved_place_sources(*)')
       .eq('id', id)
       .maybeSingle();
 
@@ -699,7 +744,7 @@ export async function correctSavedPlace(args: {
   const retainedId = correction.saved_place_id;
   const { data: retained, error: retainedErr } = await supabase
     .from('saved_places')
-    .select('*, place:places(*)')
+    .select('*, place:places(*), sources:saved_place_sources(*)')
     .eq('id', retainedId)
     .maybeSingle();
   if (retainedErr) rethrowMutationError('correct place', retainedErr);

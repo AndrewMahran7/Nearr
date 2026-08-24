@@ -18,6 +18,7 @@ import {
 import { resolvePlaceCategory } from '../../../lib/placeCategory.ts';
 import { planSavedPlaceEnrichment } from '../../../lib/savedPlaceSourceMerge.ts';
 import { normalizeShareUrl } from '../../../lib/shareAgent/tiktokUrl.ts';
+import { attachSavedPlaceSource } from '../process-share-jobs/recognitionCache.ts';
 
 const shareUrlKey = (url: string): string => normalizeShareUrl(url).url;
 
@@ -205,8 +206,28 @@ export async function saveForUser(args: {
   sourceUrl: string;
   source: LegacySource;
   autoNote?: string | null;
+  sourceMetadata?: {
+    resolvedUrl?: string | null;
+    creatorHandle?: string | null;
+    creatorName?: string | null;
+    caption?: string | null;
+    thumbnailUrl?: string | null;
+  } | null;
 }): Promise<SaveResult> {
-  const { client, userId, candidate, sourceUrl, source, autoNote } = args;
+  const { client, userId, candidate, sourceUrl, source, autoNote, sourceMetadata } = args;
+  const attachSource = async (savedPlaceId: string) => attachSavedPlaceSource({
+    admin: client,
+    userId,
+    savedPlaceId,
+    sourceUrl,
+    sourceType: source,
+    resolvedUrl: sourceMetadata?.resolvedUrl ?? sourceUrl,
+    creatorHandle: sourceMetadata?.creatorHandle ?? null,
+    creatorName: sourceMetadata?.creatorName ?? null,
+    caption: sourceMetadata?.caption ?? null,
+    aiNote: autoNote ?? null,
+    thumbnailUrl: sourceMetadata?.thumbnailUrl ?? null,
+  });
   const categoryResolution = resolvePlaceCategory({
     placeName: candidate.name,
     googlePrimaryType: candidate.primaryType,
@@ -230,6 +251,7 @@ export async function saveForUser(args: {
       category_model_version: categoryResolution.modelVersion,
       categorized_at: new Date().toISOString(),
     }).eq('id', existingForUser.id).eq('category_user_overridden', false);
+    await attachSource(existingForUser.id);
     return {
       savedPlaceId: existingForUser.id,
       placeId: existingForUser.place.id,
@@ -331,10 +353,12 @@ export async function saveForUser(args: {
           category_model_version: categoryResolution.modelVersion,
           categorized_at: new Date().toISOString(),
         }).eq('id', existingSaved.id).eq('category_user_overridden', false);
+        await attachSource(existingSaved.id);
         return { savedPlaceId: existingSaved.id, placeId: placeId!, reused: true };
       }
     }
     throw new Error(`saved_places insert: ${savedErr.message}`);
   }
-  return { savedPlaceId: saved.id, placeId: placeId! };
+  await attachSource(saved.id);
+  return { savedPlaceId: saved.id, placeId: placeId!, reused: false };
 }

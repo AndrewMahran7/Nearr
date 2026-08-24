@@ -117,6 +117,7 @@ import {
   GALLERY_DISMISS_FAIL_DY,
 } from '@/lib/photoCarousel';
 import { resolvePlaceSource } from '@/lib/placeSource';
+import { placeSourceCards, shouldShowMoreVideos } from '@/lib/placeSources';
 import { splitPlaceAddress } from '@/lib/sharePhase1Ui';
 import { deleteSavedPlace, markVisited, updateSavedPlace } from '@/services/savedPlacesService';
 import { CATEGORY_LABELS, savedPlaceCategory, type NearrCategory } from '@/lib/placeCategory';
@@ -486,11 +487,18 @@ export function SelectedPlaceDetails({
 
   // Only offer the "open original" affordance when a non-empty source URL is
   // actually stored (share/paste flows). Manual saves have none → no button.
-  const sourceUrl =
-    saved.source_url && saved.source_url.trim() ? saved.source_url.trim() : null;
+  const sourceCards = useMemo(() => placeSourceCards(saved), [saved]);
+  const primarySource = sourceCards.find((source) => source.primary) ?? sourceCards[0] ?? null;
+  const sourceUrl = primarySource?.url ??
+    (saved.source_url && saved.source_url.trim() ? saved.source_url.trim() : null);
   // Canonical `source_type` first, host only as a fallback. Null for manual
   // saves, which render NO source affordance rather than a fake platform.
-  const sourceAttribution = useMemo(() => resolvePlaceSource(saved), [saved]);
+  const sourceAttribution = useMemo(
+    () => resolvePlaceSource(primarySource
+      ? { source_type: primarySource.platform, source_url: primarySource.url }
+      : saved),
+    [primarySource, saved],
+  );
 
   const photoUrls = useMemo(() => {
     if (!richDetails?.photoUrls?.length) return [];
@@ -789,6 +797,14 @@ export function SelectedPlaceDetails({
     await openExternalUrl({
       rawUrl: sourceUrl,
       label: sourceAttribution?.actionLabel ?? 'Open original',
+      messageWhenUnavailable: 'No app is available to open this source link.',
+    });
+  }
+
+  async function openSourceCard(url: string, platformName: string) {
+    await openExternalUrl({
+      rawUrl: url,
+      label: `${platformName} post`,
       messageWhenUnavailable: 'No app is available to open this source link.',
     });
   }
@@ -1537,6 +1553,64 @@ export function SelectedPlaceDetails({
             post, and carries a play badge so that is not a secret. */}
       </View>
 
+      {shouldShowMoreVideos(sourceCards) ? (
+        <View style={styles.moreVideosSection}>
+          <Text style={styles.moreVideosTitle}>More videos from this place</Text>
+          <FlatList
+            data={sourceCards}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.moreVideosList}
+            keyExtractor={(item) => item.key}
+            renderItem={({ item }) => {
+              const attribution = resolvePlaceSource({
+                source_type: item.platform,
+                source_url: item.url,
+              });
+              if (!attribution) return null;
+              return (
+                <Pressable
+                  onPress={() => { void openSourceCard(item.url, attribution.platformName); }}
+                  accessibilityRole="link"
+                  accessibilityLabel={`Open ${item.primary ? 'original ' : ''}${attribution.platformName} video for ${saved.place.name}`}
+                  style={({ pressed }) => [styles.sourceCard, pressed && styles.pressed]}
+                >
+                  <View style={styles.sourceCardMedia}>
+                    {item.thumbnailUrl ? (
+                      <Image source={{ uri: item.thumbnailUrl }} style={styles.sourceCardImage} resizeMode="cover" />
+                    ) : (
+                      <Ionicons
+                        name={attribution.brandIcon as React.ComponentProps<typeof Ionicons>['name']}
+                        size={30}
+                        color={colors.text}
+                      />
+                    )}
+                    <View style={styles.sourceCardPlatformBadge}>
+                      <Ionicons
+                        name={attribution.brandIcon as React.ComponentProps<typeof Ionicons>['name']}
+                        size={12}
+                        color={colors.textInverse}
+                      />
+                    </View>
+                    {item.primary ? (
+                      <View style={styles.sourceCardPrimaryBadge}>
+                        <Text style={styles.sourceCardPrimaryText}>Original</Text>
+                      </View>
+                    ) : null}
+                  </View>
+                  <Text style={styles.sourceCardCreator} numberOfLines={1}>
+                    {item.creator ? `@${item.creator.replace(/^@/, '')}` : attribution.platformName}
+                  </Text>
+                  {item.caption ? (
+                    <Text style={styles.sourceCardCaption} numberOfLines={2}>{item.caption}</Text>
+                  ) : null}
+                </Pressable>
+              );
+            }}
+          />
+        </View>
+      ) : null}
+
       {/* Have I gone yet? A saved place can be BOTH saved and visited —
           answering this never removes the place from the map, and the answer
           persists, so reopening never asks again as if nothing happened. */}
@@ -2073,6 +2147,51 @@ function createStyles(
       color: colors.textSecondary,
       fontWeight: '600',
     },
+    // ----- multi-source videos -------------------------------------------
+    moreVideosSection: { gap: Spacing.sm },
+    moreVideosTitle: { ...typography.bodyStrong, color: colors.text, fontSize: 16 },
+    moreVideosList: { gap: Spacing.sm, paddingRight: Spacing.md },
+    sourceCard: { width: 148, gap: 5, paddingBottom: 2 },
+    sourceCardMedia: {
+      width: 148,
+      height: 94,
+      borderRadius: Radius.md,
+      overflow: 'hidden',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.surfaceElevated,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.border,
+    },
+    sourceCardImage: { width: '100%', height: '100%' },
+    sourceCardPlatformBadge: {
+      position: 'absolute',
+      right: 6,
+      bottom: 6,
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: 'rgba(0,0,0,0.72)',
+    },
+    sourceCardPrimaryBadge: {
+      position: 'absolute',
+      left: 6,
+      top: 6,
+      paddingHorizontal: 7,
+      paddingVertical: 3,
+      borderRadius: Radius.pill,
+      backgroundColor: 'rgba(0,0,0,0.72)',
+    },
+    sourceCardPrimaryText: {
+      ...typography.caption,
+      color: '#FFFFFF',
+      fontSize: 10,
+      fontWeight: '700',
+    },
+    sourceCardCreator: { ...typography.caption, color: colors.text, fontWeight: '700' },
+    sourceCardCaption: { ...typography.caption, color: colors.textSecondary, lineHeight: 16 },
     // ----- did you go yet? -------------------------------------------------
     // One horizontal band: icon, copy, both answers. Previously a stacked card
     // roughly twice this tall.

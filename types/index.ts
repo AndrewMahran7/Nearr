@@ -79,5 +79,31 @@ export type SavedPlace = {
   updated_at: string;
 };
 
+export type SavedPlaceSource = {
+  id: string;
+  saved_place_id: string;
+  user_id: string;
+  identity_key: string;
+  identity_version: number;
+  platform: Exclude<SourceType, 'manual'>;
+  content_id: string;
+  canonical_url: string;
+  original_url: string | null;
+  creator_handle: string | null;
+  creator_name: string | null;
+  caption_excerpt: string | null;
+  ai_note: string | null;
+  thumbnail_url: string | null;
+  is_primary: boolean;
+  first_attached_at: string;
+  last_seen_at: string;
+  created_at: string;
+  updated_at: string;
+};
+
 /** A saved_places row joined with its place. Returned by feed queries. */
-export type SavedPlaceWithPlace = SavedPlace & { place: PlaceRow };
+export type SavedPlaceWithPlace = SavedPlace & {
+  place: PlaceRow;
+  /** Additive child provenance. Older/offline rows may omit it. */
+  sources?: SavedPlaceSource[];
+};
