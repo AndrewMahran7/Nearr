@@ -24,7 +24,7 @@
 // in the production prompt — a prompt that has been shown the answer key cannot
 // be measured.
 
-export const VAYRIN_PROMPT_VERSION = 'vayrin-visual-geolocation-2026-08-19.v2';
+export const VAYRIN_PROMPT_VERSION = 'vayrin-verification-2026-08-24.v3.1';
 
 export const VAYRIN_VISUAL_GEOLOCATION_SYSTEM_PROMPT = `
 You are a visual geolocation investigator. You are given timestamped frames
@@ -83,6 +83,33 @@ additional_place_segments with the frame timestamps it occupies. Do NOT merge
 distinct places into one answer, and do not split one place into several just
 because the camera moved.
 
+RETRIEVED CANDIDATES: EVALUATE BEFORE GUESSING
+When retrieved_candidates are supplied, evaluate EVERY candidateId exactly
+once before considering anything outside the shortlist. Retrieval order and
+retrieval evidence are real evidence. Start with canonical identity and
+retrieval evidence, then assess visible support, region/category compatibility,
+and only then genuine contradictions.
+
+Classify every evidence statement as exactly SUPPORTS, CONTRADICTS, or UNKNOWN.
+"Not visible" defaults to UNKNOWN. An expected entrance, waterfall, enclosure,
+facade, mountain, beach, skyline, or other iconic feature may be behind the
+camera, cropped, occluded, distant, seasonally different, poorly lit, or absent
+from the selected frames. It is CONTRADICTS only when the observed viewpoint
+necessarily would show it and the visible geometry or identity is genuinely
+incompatible. Never hallucinate a camera position to justify rejection.
+
+Valid strong contradiction kinds are identity_conflict, geographic_conflict,
+or impossible_geometry backed by directly visible evidence. Missing expected
+features, crop/viewpoint uncertainty, weather, season, lighting, drone versus
+ground angle, and partial occlusion are UNKNOWN. Prefer uncertainty over false
+certainty.
+
+Use overallVerdict preserve for SUPPORTS + UNKNOWN and for UNKNOWN-only credible
+retrievals. Strong retrieval evidence requires correspondingly strong direct
+contradiction to reject. Outside proposals are allowed only after every
+shortlist candidate is weak or has strong direct contradiction. Do not restart
+freeform search while any credible shortlist candidate remains possible.
+
 HONESTY
   - Separate what is DIRECTLY VISIBLE from what you INFERRED.
   - Give several hypotheses when you are genuinely uncertain, ordered
@@ -118,6 +145,39 @@ Return only the structured object requested.
 `.trim();
 
 /**
+ * Candidate verification is intentionally a smaller task than open-ended
+ * geolocation. Keeping its instructions and schema separate avoids paying for
+ * unused hypothesis/segment fields on every shortlisted candidate call.
+ */
+export const VAYRIN_CANDIDATE_VERIFICATION_SYSTEM_PROMPT = `
+You verify a supplied shortlist of real-world places against timestamped video
+frames and text context. Evaluate EVERY candidateId exactly once.
+
+For each candidate return at most three short, non-duplicate OBSERVATIONAL
+evidence claims. Do not repeat supplied retrieval rank or retrieval evidence;
+Nearr records that deterministically. Classify each claim SUPPORTS,
+CONTRADICTS, or UNKNOWN.
+
+"Not visible" defaults to UNKNOWN. Missing landmarks, waterfalls, enclosures,
+facades, mountains, beaches, or skylines may be behind the camera, cropped,
+occluded, distant, seasonal, poorly lit, or outside the selected frames. They
+CONTRADICT only when the observed viewpoint necessarily would show them and
+visible identity or geometry is genuinely incompatible. Never invent a camera
+position. Weather, season, lighting, drone/ground angle, partial occlusion, and
+viewpoint differences are UNKNOWN.
+
+Use strong CONTRADICTS only for a directly visible identity_conflict,
+geographic_conflict, or impossible_geometry. Preserve SUPPORTS + UNKNOWN and
+credible UNKNOWN-only retrievals. Weak generic model opinion cannot override
+strong retrieval evidence.
+
+Only propose an outside place if every shortlist candidate is weak or every
+candidate has strong direct contradiction. Otherwise return no outside
+proposal. Return only the requested structured object; reasonCode must be a
+short machine-readable label, not prose.
+`.trim();
+
+/**
  * Structured Outputs schema. Strict mode requires `additionalProperties:false`
  * and every property listed in `required` — optional-by-nullability, never
  * optional-by-absence, which is why nullable fields are typed as unions.
@@ -130,6 +190,8 @@ export const VAYRIN_GEOLOCATION_SCHEMA = {
     'multiple_distinct_places_visible',
     'additional_place_segments',
     'metadata_was_sufficient',
+    'retrieved_candidate_evaluations',
+    'outside_candidate_proposals',
   ],
   properties: {
     place_hypotheses: {
@@ -268,6 +330,148 @@ export const VAYRIN_GEOLOCATION_SCHEMA = {
       type: 'boolean',
       description: 'True only when the supplied metadata already named the specific place shown.',
     },
+    retrieved_candidate_evaluations: {
+      type: 'array',
+      description: 'Exactly one structured evaluation for every supplied candidateId.',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: [
+          'candidateId',
+          'evidence',
+          'visualCompatibility',
+          'regionCompatibility',
+          'overallVerdict',
+          'reasonCode',
+        ],
+        properties: {
+          candidateId: { type: 'string' },
+          evidence: {
+            type: 'array',
+            maxItems: 16,
+            items: {
+              type: 'object',
+              additionalProperties: false,
+              required: ['statement', 'state', 'basis', 'strength', 'visibility', 'contradictionKind'],
+              properties: {
+                statement: { type: 'string' },
+                state: { type: 'string', enum: ['SUPPORTS', 'CONTRADICTS', 'UNKNOWN'] },
+                basis: { type: 'string', enum: ['visual', 'textual', 'region', 'canonical_identity', 'retrieval'] },
+                strength: { type: 'string', enum: ['strong', 'moderate', 'weak'] },
+                visibility: { type: 'string', enum: ['visible', 'necessarily_visible', 'not_visible', 'unknown'] },
+                contradictionKind: {
+                  type: 'string',
+                  enum: [
+                    'identity_conflict',
+                    'geographic_conflict',
+                    'impossible_geometry',
+                    'visible_feature_conflict',
+                    'expected_feature_absent',
+                    'viewpoint_uncertain',
+                    'appearance_variation',
+                    'none',
+                  ],
+                },
+              },
+            },
+          },
+          visualCompatibility: { type: 'string', enum: ['strong', 'moderate', 'weak', 'unknown'] },
+          regionCompatibility: { type: 'string', enum: ['strong', 'moderate', 'weak', 'unknown'] },
+          overallVerdict: { type: 'string', enum: ['promote', 'preserve', 'demote', 'reject'] },
+          reasonCode: { type: 'string' },
+        },
+      },
+    },
+    outside_candidate_proposals: {
+      type: 'array',
+      maxItems: 2,
+      description: 'Allowed only after every retrieved candidate is weak or directly contradicted.',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['placeName', 'supportingEvidence', 'contradictingEvidence'],
+        properties: {
+          placeName: { type: 'string' },
+          supportingEvidence: { type: 'array', items: { type: 'string' }, maxItems: 6 },
+          contradictingEvidence: { type: 'array', items: { type: 'string' }, maxItems: 6 },
+        },
+      },
+    },
+  },
+} as const;
+
+export const VAYRIN_CANDIDATE_VERIFICATION_SCHEMA = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['retrieved_candidate_evaluations', 'outside_candidate_proposals'],
+  properties: {
+    retrieved_candidate_evaluations: {
+      type: 'array',
+      description: 'Exactly one evaluation for every supplied candidateId.',
+      maxItems: 8,
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: [
+          'candidateId',
+          'evidence',
+          'visualCompatibility',
+          'regionCompatibility',
+          'overallVerdict',
+          'reasonCode',
+        ],
+        properties: {
+          candidateId: { type: 'string' },
+          evidence: {
+            type: 'array',
+            maxItems: 3,
+            items: {
+              type: 'object',
+              additionalProperties: false,
+              required: ['statement', 'state', 'basis', 'strength', 'visibility', 'contradictionKind'],
+              properties: {
+                statement: { type: 'string', maxLength: 160 },
+                state: { type: 'string', enum: ['SUPPORTS', 'CONTRADICTS', 'UNKNOWN'] },
+                basis: { type: 'string', enum: ['visual', 'textual', 'region', 'canonical_identity'] },
+                strength: { type: 'string', enum: ['strong', 'moderate', 'weak'] },
+                visibility: { type: 'string', enum: ['visible', 'necessarily_visible', 'not_visible', 'unknown'] },
+                contradictionKind: {
+                  type: 'string',
+                  enum: [
+                    'identity_conflict',
+                    'geographic_conflict',
+                    'impossible_geometry',
+                    'visible_feature_conflict',
+                    'expected_feature_absent',
+                    'viewpoint_uncertain',
+                    'appearance_variation',
+                    'none',
+                  ],
+                },
+              },
+            },
+          },
+          visualCompatibility: { type: 'string', enum: ['strong', 'moderate', 'weak', 'unknown'] },
+          regionCompatibility: { type: 'string', enum: ['strong', 'moderate', 'weak', 'unknown'] },
+          overallVerdict: { type: 'string', enum: ['promote', 'preserve', 'demote', 'reject'] },
+          reasonCode: { type: 'string', maxLength: 80 },
+        },
+      },
+    },
+    outside_candidate_proposals: {
+      type: 'array',
+      maxItems: 2,
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['placeName', 'supportingEvidence', 'contradictingEvidence'],
+        properties: {
+          placeName: { type: 'string', maxLength: 120 },
+          supportingEvidence: { type: 'array', items: { type: 'string', maxLength: 160 }, maxItems: 2 },
+          contradictingEvidence: { type: 'array', items: { type: 'string', maxLength: 160 }, maxItems: 2 },
+        },
+      },
+    },
   },
 } as const;
 
@@ -279,6 +483,8 @@ export type VayrinTextContext = {
   locationMetadata?: string | null;
   visibleText?: string | null;
   otherText?: string | null;
+  /** Bounded machine-generated shortlist. */
+  retrievedCandidatesJson?: string | null;
   /** True only when a SEPARATE OCR pass ran. See placeEvidencePrompt.ts for why
    *  this distinction matters: an empty OCR result must never be presented as
    *  "there is no visible text" when nothing has looked yet. */
@@ -310,6 +516,14 @@ export function buildVayrinUserContext(ctx: VayrinTextContext): string {
   }
 
   if (ctx.otherText?.trim()) parts.push(`other_textual_evidence:\n${ctx.otherText.trim()}`);
+
+  if (ctx.retrievedCandidatesJson?.trim()) {
+    parts.push(
+      `retrieved_candidates (evaluate every candidateId; missing expected features are UNKNOWN):\n${ctx.retrievedCandidatesJson.trim()}`,
+    );
+  } else {
+    parts.push('retrieved_candidates: (none; return empty candidate evaluation and outside-proposal arrays)');
+  }
 
   parts.push(
     'The frames follow in chronological order, each preceded by its timestamp in seconds.',

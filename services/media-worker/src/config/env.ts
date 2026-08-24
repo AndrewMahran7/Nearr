@@ -12,6 +12,15 @@ function str(name: string, fallback = ''): string {
   return typeof v === 'string' && v.trim() ? v.trim() : fallback;
 }
 
+/** Server-only credential allowlist. Public/mobile keys cannot be selected. */
+function serverCredential(...names: readonly string[]): string {
+  for (const name of names) {
+    const value = str(name);
+    if (value) return value;
+  }
+  return '';
+}
+
 function bool(name: string, fallback = false): boolean {
   const v = process.env[name];
   if (v == null || v.trim() === '') return fallback;
@@ -145,6 +154,10 @@ export type WorkerConfig = {
   vayrinInputPricePerMillion: number;
   vayrinCachedInputPricePerMillion: number;
   vayrinOutputPricePerMillion: number;
+  // ---- Verification V3 + bounded region-to-POI expansion (default OFF) ----
+  vayrinVerificationV3Enabled?: boolean;
+  googlePlacesServerApiKey?: string;
+  vayrinRegionPoiCandidateLimit?: number;
 
   // ---- Fallback public-media retrieval provider (optional; env-configured) ----
   // A production-grade external public-media fetch service used ONLY when the
@@ -288,6 +301,9 @@ export function loadConfig(): WorkerConfig {
     vayrinInputPricePerMillion: nonNegativeNumber('VAYRIN_PRICE_INPUT_PER_MILLION', 5),
     vayrinCachedInputPricePerMillion: nonNegativeNumber('VAYRIN_PRICE_CACHED_INPUT_PER_MILLION', 0.5),
     vayrinOutputPricePerMillion: nonNegativeNumber('VAYRIN_PRICE_OUTPUT_PER_MILLION', 30),
+    vayrinVerificationV3Enabled: bool('VAYRIN_VERIFICATION_V3_ENABLED', false),
+    googlePlacesServerApiKey: serverCredential('GOOGLE_PLACES_KEY'),
+    vayrinRegionPoiCandidateLimit: int('VAYRIN_REGION_POI_CANDIDATE_LIMIT', 8, 1),
 
     mediaFetchProviderUrl: str('MEDIA_FETCH_PROVIDER_URL'),
     mediaFetchProviderApiKey: str('MEDIA_FETCH_PROVIDER_API_KEY'),
@@ -349,6 +365,7 @@ export function redactedConfigSummary(cfg: WorkerConfig): Record<string, unknown
       scrapeCreatorsInstagramFallbackEnabled: cfg.scrapeCreatorsInstagramFallbackEnabled,
       scrapeCreatorsFacebookFallbackEnabled: cfg.scrapeCreatorsFacebookFallbackEnabled,
       vayrinVisualGeolocationEnabled: cfg.vayrinVisualGeolocationEnabled,
+      vayrinVerificationV3Enabled: cfg.vayrinVerificationV3Enabled,
     },
     limits: {
       maxDurationSeconds: cfg.maxDurationSeconds,
@@ -377,6 +394,12 @@ export function redactedConfigSummary(cfg: WorkerConfig): Record<string, unknown
         input: cfg.vayrinInputPricePerMillion,
         cachedInput: cfg.vayrinCachedInputPricePerMillion,
         output: cfg.vayrinOutputPricePerMillion,
+      },
+      verificationV3: {
+        enabled: cfg.vayrinVerificationV3Enabled,
+        regionPoiCandidateLimit: cfg.vayrinRegionPoiCandidateLimit ?? 8,
+        hasPlacesKey: !!cfg.googlePlacesServerApiKey,
+        visionEnabled: false,
       },
     },
     allowedMediaHosts: cfg.allowedMediaHosts,

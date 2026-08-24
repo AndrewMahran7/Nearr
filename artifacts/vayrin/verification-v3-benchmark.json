@@ -1,0 +1,3549 @@
+{
+  "schemaVersion": 3,
+  "generatedAt": "2026-08-24T22:48:05.013Z",
+  "branch": "feat/vayrin-verification-v3",
+  "promptVersion": "vayrin-verification-2026-08-24.v3.1",
+  "corpusPolicy": "same frozen exact-eight corpus; ground truth withheld from verifier prompts and applied only during compilation",
+  "exactFixtureCount": 8,
+  "unavailableExactSources": [
+    "Sunset Cliffs",
+    "Nelson's Landing",
+    "Falkensteinwand",
+    "Waimea",
+    "Es Pontas",
+    "Supai reel"
+  ],
+  "metrics": {
+    "baseline": {
+      "recallAt1": 0,
+      "recallAt3": 0,
+      "recallAt5": 0,
+      "wrongTop1Rate": 1,
+      "latencyMedianMs": 6890.5,
+      "latencyP95Ms": 17046,
+      "correctCandidatePreservedRate": null,
+      "correctCandidateRejectedRate": null,
+      "retrievedCorrectButRejectedCount": 0,
+      "meanCandidateSurvivalRate": null
+    },
+    "v1FinalReference": {
+      "recallAt1": 0.125,
+      "recallAt3": 0.25,
+      "recallAt5": 0.375,
+      "wrongTop1Rate": 0.875
+    },
+    "v2": {
+      "recallAt1": 0.25,
+      "recallAt3": 0.25,
+      "recallAt5": 0.25,
+      "wrongTop1Rate": 0.75,
+      "candidateCountMedian": 1.5,
+      "candidateCountP95": 4,
+      "verificationLatencyMedianMs": 34290,
+      "verificationLatencyP95Ms": 53911,
+      "verificationCostTotalUsd": 0.5253,
+      "verificationCostMedianUsd": 0.072033,
+      "verificationCostP95Usd": 0.090338,
+      "correctCandidatePreservedRate": 0.5,
+      "correctCandidateRejectedRate": 0.5,
+      "retrievedCorrectButRejectedCount": 1,
+      "meanCandidateSurvivalRate": 0.196429
+    },
+    "v3": {
+      "recallAt1": 0.375,
+      "recallAt3": 0.375,
+      "recallAt5": 0.375,
+      "wrongTop1Rate": 0.625,
+      "correctCandidatePreservedRate": 1,
+      "correctCandidateRejectedRate": 0,
+      "retrievedCorrectButRejectedCount": 0,
+      "meanCandidateSurvivalRate": 1,
+      "verificationLatencyMedianMs": 38062.5,
+      "verificationLatencyP95Ms": 49021,
+      "verificationCostMedianUsd": 0.07589,
+      "verificationCostP95Usd": 0.09374,
+      "verificationCostTotalUsd": 0.551212,
+      "wrongAutoSaveCount": 0,
+      "candidateConfirmationRate": 0.875,
+      "broadRegionFalseExactPromotionCount": 0,
+      "outsideShortlistPrematureJumpCount": 0
+    },
+    "deltaV3VsV2": {
+      "recallAt1": 0.125,
+      "recallAt3": 0.125,
+      "recallAt5": 0.125,
+      "wrongTop1Rate": -0.125,
+      "medianVerifierCostFraction": 0.053545,
+      "medianVerifierLatencyFraction": 0.110017
+    }
+  },
+  "stiniva": {
+    "id": "stiniva",
+    "availability": "exact",
+    "sourcePlatform": "tiktok",
+    "canonicalSourceId": "7673607812571876630",
+    "sourceUrl": "https://www.tiktok.com/t/ZTDajbFov/",
+    "sha256": "f2cb2268dfbb7d019145047c32c1103cebf930e793bdbb9299910a99d585d101",
+    "mediaProvenance": "ScrapeCreators exact-ID reacquisition with hash match",
+    "canonicalGroundTruth": [
+      "Stiniva Cove",
+      "Stiniva Beach",
+      "Stiniva"
+    ],
+    "groundTruthEvidence": "exact frozen TikTok identity and manually verified V1 benchmark",
+    "retrievalSource": "descriptor_web",
+    "retrievalRank": 1,
+    "finalRank": 1,
+    "correctRetrievedCandidatePreserved": true,
+    "correctRetrievedCandidateRejected": false,
+    "correctCandidateEvidence": {
+      "supports": [
+        {
+          "statement": "The frames show a steep-sided limestone inlet with clear seawater.",
+          "state": "SUPPORTS",
+          "basis": "visual",
+          "strength": "weak",
+          "visibility": "visible",
+          "contradictionKind": "none"
+        },
+        {
+          "statement": "The caption explicitly places the cliff diving in Croatia.",
+          "state": "SUPPORTS",
+          "basis": "textual",
+          "strength": "moderate",
+          "visibility": "visible",
+          "contradictionKind": "none"
+        }
+      ],
+      "contradicts": [],
+      "unknowns": [
+        {
+          "statement": "No distinctive Stiniva Cove identifier is visible.",
+          "state": "UNKNOWN",
+          "basis": "canonical_identity",
+          "strength": "moderate",
+          "visibility": "not_visible",
+          "contradictionKind": "viewpoint_uncertain"
+        }
+      ],
+      "verdict": "PRESERVE",
+      "reasonCode": "generic_croatian_cove"
+    },
+    "finalCandidates": [
+      "Stiniva Cove",
+      "Seagull's Rocks (Galebove stijene)",
+      "Red Rocks (Crvene stijene)",
+      "Velika Kolombarica",
+      "Beach Njive"
+    ],
+    "everyRetrievedCandidateEvaluation": [
+      {
+        "candidateId": "frozen:1",
+        "candidateName": "Stiniva Cove",
+        "initialRank": 1,
+        "retrievalSource": "descriptor_web",
+        "retrievalEvidence": [
+          "Frozen source-backed hybrid retrieval rank 1."
+        ],
+        "supportingEvidence": [
+          {
+            "statement": "The frames show a steep-sided limestone inlet with clear seawater.",
+            "state": "SUPPORTS",
+            "basis": "visual",
+            "strength": "weak",
+            "visibility": "visible",
+            "contradictionKind": "none"
+          },
+          {
+            "statement": "The caption explicitly places the cliff diving in Croatia.",
+            "state": "SUPPORTS",
+            "basis": "textual",
+            "strength": "moderate",
+            "visibility": "visible",
+            "contradictionKind": "none"
+          }
+        ],
+        "contradictingEvidence": [],
+        "unknownEvidence": [
+          {
+            "statement": "No distinctive Stiniva Cove identifier is visible.",
+            "state": "UNKNOWN",
+            "basis": "canonical_identity",
+            "strength": "moderate",
+            "visibility": "not_visible",
+            "contradictionKind": "viewpoint_uncertain"
+          }
+        ],
+        "visualCompatibility": "weak",
+        "regionCompatibility": "strong",
+        "verdict": "PRESERVE",
+        "reasonCode": "generic_croatian_cove",
+        "finalScore": 77,
+        "finalRank": 1,
+        "rejectionReasonIfAny": null,
+        "confirmationOnly": true
+      },
+      {
+        "candidateId": "frozen:2",
+        "candidateName": "Seagull's Rocks (Galebove stijene)",
+        "initialRank": 2,
+        "retrievalSource": "descriptor_web",
+        "retrievalEvidence": [
+          "Frozen source-backed hybrid retrieval rank 2."
+        ],
+        "supportingEvidence": [
+          {
+            "statement": "People are visibly cliff-diving into clear water surrounded by pale limestone.",
+            "state": "SUPPORTS",
+            "basis": "visual",
+            "strength": "moderate",
+            "visibility": "visible",
+            "contradictionKind": "none"
+          },
+          {
+            "statement": "The caption explicitly places the scene in Croatia.",
+            "state": "SUPPORTS",
+            "basis": "textual",
+            "strength": "moderate",
+            "visibility": "visible",
+            "contradictionKind": "none"
+          }
+        ],
+        "contradictingEvidence": [],
+        "unknownEvidence": [
+          {
+            "statement": "No readable sign or unique landmark confirms Seagull's Rocks.",
+            "state": "UNKNOWN",
+            "basis": "canonical_identity",
+            "strength": "moderate",
+            "visibility": "not_visible",
+            "contradictionKind": "viewpoint_uncertain"
+          }
+        ],
+        "visualCompatibility": "moderate",
+        "regionCompatibility": "strong",
+        "verdict": "PRESERVE",
+        "reasonCode": "compatible_cliff_site",
+        "finalScore": 65,
+        "finalRank": 2,
+        "rejectionReasonIfAny": null,
+        "confirmationOnly": true
+      },
+      {
+        "candidateId": "frozen:3",
+        "candidateName": "Red Rocks (Crvene stijene)",
+        "initialRank": 3,
+        "retrievalSource": "descriptor_web",
+        "retrievalEvidence": [
+          "Frozen source-backed hybrid retrieval rank 3."
+        ],
+        "supportingEvidence": [
+          {
+            "statement": "The scene is an established-looking cliff-jumping area on a rocky Croatian coast.",
+            "state": "SUPPORTS",
+            "basis": "visual",
+            "strength": "moderate",
+            "visibility": "visible",
+            "contradictionKind": "none"
+          },
+          {
+            "statement": "The caption explicitly identifies Croatia.",
+            "state": "SUPPORTS",
+            "basis": "textual",
+            "strength": "moderate",
+            "visibility": "visible",
+            "contradictionKind": "none"
+          }
+        ],
+        "contradictingEvidence": [],
+        "unknownEvidence": [
+          {
+            "statement": "The exposed rock is predominantly pale gray rather than visibly red, but color can vary by face and lighting.",
+            "state": "UNKNOWN",
+            "basis": "visual",
+            "strength": "weak",
+            "visibility": "visible",
+            "contradictionKind": "appearance_variation"
+          }
+        ],
+        "visualCompatibility": "weak",
+        "regionCompatibility": "strong",
+        "verdict": "PRESERVE",
+        "reasonCode": "nonunique_rocky_coast",
+        "finalScore": 64,
+        "finalRank": 3,
+        "rejectionReasonIfAny": null,
+        "confirmationOnly": true
+      },
+      {
+        "candidateId": "frozen:4",
+        "candidateName": "Velika Kolombarica",
+        "initialRank": 4,
+        "retrievalSource": "descriptor_web",
+        "retrievalEvidence": [
+          "Frozen source-backed hybrid retrieval rank 4."
+        ],
+        "supportingEvidence": [
+          {
+            "statement": "The frames show a deep, compact swimming basin enclosed by layered pale limestone cliffs.",
+            "state": "SUPPORTS",
+            "basis": "visual",
+            "strength": "strong",
+            "visibility": "visible",
+            "contradictionKind": "none"
+          },
+          {
+            "statement": "Multiple people are cliff-diving from broad rock ledges into the basin.",
+            "state": "SUPPORTS",
+            "basis": "visual",
+            "strength": "strong",
+            "visibility": "visible",
+            "contradictionKind": "none"
+          },
+          {
+            "statement": "Small cavities and undercuts are visible around the waterline and cliff walls.",
+            "state": "SUPPORTS",
+            "basis": "visual",
+            "strength": "moderate",
+            "visibility": "visible",
+            "contradictionKind": "none"
+          }
+        ],
+        "contradictingEvidence": [],
+        "unknownEvidence": [],
+        "visualCompatibility": "strong",
+        "regionCompatibility": "strong",
+        "verdict": "PROMOTE",
+        "reasonCode": "distinctive_kolombarica_geometry",
+        "finalScore": 64,
+        "finalRank": 4,
+        "rejectionReasonIfAny": null,
+        "confirmationOnly": true
+      },
+      {
+        "candidateId": "frozen:5",
+        "candidateName": "Beach Njive",
+        "initialRank": 5,
+        "retrievalSource": "descriptor_web",
+        "retrievalEvidence": [
+          "Frozen source-backed hybrid retrieval rank 5."
+        ],
+        "supportingEvidence": [
+          {
+            "statement": "Clear seawater and pale coastal limestone are visible.",
+            "state": "SUPPORTS",
+            "basis": "visual",
+            "strength": "weak",
+            "visibility": "visible",
+            "contradictionKind": "none"
+          },
+          {
+            "statement": "The caption places the scene in Croatia.",
+            "state": "SUPPORTS",
+            "basis": "textual",
+            "strength": "moderate",
+            "visibility": "visible",
+            "contradictionKind": "none"
+          }
+        ],
+        "contradictingEvidence": [],
+        "unknownEvidence": [
+          {
+            "statement": "No beach-identifying feature or readable place name is visible.",
+            "state": "UNKNOWN",
+            "basis": "canonical_identity",
+            "strength": "moderate",
+            "visibility": "not_visible",
+            "contradictionKind": "viewpoint_uncertain"
+          }
+        ],
+        "visualCompatibility": "weak",
+        "regionCompatibility": "strong",
+        "verdict": "PRESERVE",
+        "reasonCode": "beach_not_established",
+        "finalScore": 43,
+        "finalRank": 5,
+        "rejectionReasonIfAny": null,
+        "confirmationOnly": true
+      },
+      {
+        "candidateId": "frozen:6",
+        "candidateName": "Slana Beach",
+        "initialRank": 6,
+        "retrievalSource": "descriptor_web",
+        "retrievalEvidence": [
+          "Frozen source-backed hybrid retrieval rank 6."
+        ],
+        "supportingEvidence": [
+          {
+            "statement": "The setting is a rocky coastal swimming location with transparent blue-green water.",
+            "state": "SUPPORTS",
+            "basis": "visual",
+            "strength": "weak",
+            "visibility": "visible",
+            "contradictionKind": "none"
+          },
+          {
+            "statement": "The caption identifies the country as Croatia.",
+            "state": "SUPPORTS",
+            "basis": "textual",
+            "strength": "moderate",
+            "visibility": "visible",
+            "contradictionKind": "none"
+          }
+        ],
+        "contradictingEvidence": [],
+        "unknownEvidence": [
+          {
+            "statement": "The selected viewpoint does not establish whether Slana Beach lies nearby or outside the frame.",
+            "state": "UNKNOWN",
+            "basis": "canonical_identity",
+            "strength": "moderate",
+            "visibility": "unknown",
+            "contradictionKind": "viewpoint_uncertain"
+          }
+        ],
+        "visualCompatibility": "weak",
+        "regionCompatibility": "strong",
+        "verdict": "PRESERVE",
+        "reasonCode": "generic_coastal_match",
+        "finalScore": 42,
+        "finalRank": 6,
+        "rejectionReasonIfAny": null,
+        "confirmationOnly": true
+      },
+      {
+        "candidateId": "frozen:7",
+        "candidateName": "Mala Travna Bay",
+        "initialRank": 7,
+        "retrievalSource": "descriptor_web",
+        "retrievalEvidence": [
+          "Frozen source-backed hybrid retrieval rank 7."
+        ],
+        "supportingEvidence": [
+          {
+            "statement": "The water occupies a sheltered-looking rocky indentation rather than an exposed horizon view.",
+            "state": "SUPPORTS",
+            "basis": "visual",
+            "strength": "weak",
+            "visibility": "visible",
+            "contradictionKind": "none"
+          },
+          {
+            "statement": "The caption explicitly places the footage in Croatia.",
+            "state": "SUPPORTS",
+            "basis": "textual",
+            "strength": "moderate",
+            "visibility": "visible",
+            "contradictionKind": "none"
+          }
+        ],
+        "contradictingEvidence": [],
+        "unknownEvidence": [
+          {
+            "statement": "No unique bay outline or sign identifies Mala Travna Bay.",
+            "state": "UNKNOWN",
+            "basis": "canonical_identity",
+            "strength": "moderate",
+            "visibility": "not_visible",
+            "contradictionKind": "viewpoint_uncertain"
+          }
+        ],
+        "visualCompatibility": "weak",
+        "regionCompatibility": "strong",
+        "verdict": "PRESERVE",
+        "reasonCode": "bay_identity_unresolved",
+        "finalScore": 41,
+        "finalRank": 7,
+        "rejectionReasonIfAny": null,
+        "confirmationOnly": true
+      },
+      {
+        "candidateId": "frozen:8",
+        "candidateName": "Betina Cave",
+        "initialRank": 8,
+        "retrievalSource": "descriptor_web",
+        "retrievalEvidence": [
+          "Frozen source-backed hybrid retrieval rank 8."
+        ],
+        "supportingEvidence": [
+          {
+            "statement": "Several dark cavities and eroded recesses are visible in the limestone walls.",
+            "state": "SUPPORTS",
+            "basis": "visual",
+            "strength": "weak",
+            "visibility": "visible",
+            "contradictionKind": "none"
+          },
+          {
+            "statement": "The caption places the rocky swimming scene in Croatia.",
+            "state": "SUPPORTS",
+            "basis": "textual",
+            "strength": "moderate",
+            "visibility": "visible",
+            "contradictionKind": "none"
+          }
+        ],
+        "contradictingEvidence": [],
+        "unknownEvidence": [
+          {
+            "statement": "The footage does not show a distinctive cave interior or readable identifier for Betina Cave.",
+            "state": "UNKNOWN",
+            "basis": "canonical_identity",
+            "strength": "moderate",
+            "visibility": "not_visible",
+            "contradictionKind": "viewpoint_uncertain"
+          }
+        ],
+        "visualCompatibility": "weak",
+        "regionCompatibility": "strong",
+        "verdict": "PRESERVE",
+        "reasonCode": "cave_identity_unresolved",
+        "finalScore": 40,
+        "finalRank": 8,
+        "rejectionReasonIfAny": null,
+        "confirmationOnly": true
+      }
+    ],
+    "candidateCount": 8,
+    "survivingCandidateCount": 8,
+    "outsideShortlistAllowed": false,
+    "outsideProposals": [],
+    "selectedFrames": [
+      {
+        "timestampSeconds": 0,
+        "reason": "first"
+      },
+      {
+        "timestampSeconds": 3,
+        "reason": "interval"
+      },
+      {
+        "timestampSeconds": 5,
+        "reason": "interval"
+      },
+      {
+        "timestampSeconds": 7,
+        "reason": "interval"
+      },
+      {
+        "timestampSeconds": 9,
+        "reason": "interval"
+      },
+      {
+        "timestampSeconds": 11.1,
+        "reason": "last"
+      }
+    ],
+    "frameSelection": {
+      "consideredCount": 12,
+      "meanPairwiseDistance": 30.67,
+      "decisions": [
+        {
+          "timestampSeconds": 0,
+          "reason": "boundary_first"
+        },
+        {
+          "timestampSeconds": 3,
+          "reason": "temporal_stratum_farthest_hash"
+        },
+        {
+          "timestampSeconds": 5,
+          "reason": "temporal_stratum_farthest_hash"
+        },
+        {
+          "timestampSeconds": 7,
+          "reason": "temporal_stratum_farthest_hash"
+        },
+        {
+          "timestampSeconds": 9,
+          "reason": "temporal_stratum_farthest_hash"
+        },
+        {
+          "timestampSeconds": 11.1,
+          "reason": "boundary_last"
+        }
+      ]
+    },
+    "latencyMs": 30930,
+    "solUsage": {
+      "inputTokens": 5471,
+      "outputTokens": 1751,
+      "reasoningTokens": 412,
+      "totalTokens": 7222,
+      "cachedInputTokens": 0
+    },
+    "estimatedCostUsd": 0.079885,
+    "autoSave": false,
+    "outcome": "candidate_confirmation_no_autosave"
+  },
+  "supaiRegionPoiLiveCheck": {
+    "checkedAt": "2026-08-24",
+    "region": "Supai, Arizona",
+    "sceneCategory": "waterfall",
+    "externalCallCount": 2,
+    "latencyMs": 339,
+    "candidateLimit": 8,
+    "canonicalIdsUnique": true,
+    "confirmationOnly": true,
+    "falseExactAutoSave": false,
+    "candidates": [
+      "Havasu Falls",
+      "Fifty Foot Falls",
+      "Mooney Falls",
+      "Little Navajo Falls",
+      "Chutes Havasu",
+      "Havasupai Falls",
+      "Fiftyfoot Falls",
+      "Hidden Falls"
+    ]
+  },
+  "safety": {
+    "visionEnabled": false,
+    "autoSaveAllowedForV3Candidates": false,
+    "userFacingCandidateLimit": 3,
+    "placesQueryLimit": 2,
+    "placesCandidateLimit": 8,
+    "providerOutageFallbackTested": true,
+    "missingServerKeyFallbackTested": true
+  },
+  "deploymentGate": {
+    "stinivaSurvives": true,
+    "retrievedCorrectButRejectedIsZero": true,
+    "recallAt1AtLeastV2": true,
+    "recallAt3NoRegressionVsV1": true,
+    "recallAt5NoRegressionVsV1": true,
+    "wrongTop1NoWorseThanV2": true,
+    "unsafeAutoSaveNotIncreased": true,
+    "medianCostNotMateriallyIncreased": true,
+    "noBlockingOutagePath": true,
+    "passed": true
+  },
+  "perFixture": [
+    {
+      "id": "stiniva",
+      "availability": "exact",
+      "sourcePlatform": "tiktok",
+      "canonicalSourceId": "7673607812571876630",
+      "sourceUrl": "https://www.tiktok.com/t/ZTDajbFov/",
+      "sha256": "f2cb2268dfbb7d019145047c32c1103cebf930e793bdbb9299910a99d585d101",
+      "mediaProvenance": "ScrapeCreators exact-ID reacquisition with hash match",
+      "canonicalGroundTruth": [
+        "Stiniva Cove",
+        "Stiniva Beach",
+        "Stiniva"
+      ],
+      "groundTruthEvidence": "exact frozen TikTok identity and manually verified V1 benchmark",
+      "retrievalSource": "descriptor_web",
+      "retrievalRank": 1,
+      "finalRank": 1,
+      "correctRetrievedCandidatePreserved": true,
+      "correctRetrievedCandidateRejected": false,
+      "correctCandidateEvidence": {
+        "supports": [
+          {
+            "statement": "The frames show a steep-sided limestone inlet with clear seawater.",
+            "state": "SUPPORTS",
+            "basis": "visual",
+            "strength": "weak",
+            "visibility": "visible",
+            "contradictionKind": "none"
+          },
+          {
+            "statement": "The caption explicitly places the cliff diving in Croatia.",
+            "state": "SUPPORTS",
+            "basis": "textual",
+            "strength": "moderate",
+            "visibility": "visible",
+            "contradictionKind": "none"
+          }
+        ],
+        "contradicts": [],
+        "unknowns": [
+          {
+            "statement": "No distinctive Stiniva Cove identifier is visible.",
+            "state": "UNKNOWN",
+            "basis": "canonical_identity",
+            "strength": "moderate",
+            "visibility": "not_visible",
+            "contradictionKind": "viewpoint_uncertain"
+          }
+        ],
+        "verdict": "PRESERVE",
+        "reasonCode": "generic_croatian_cove"
+      },
+      "finalCandidates": [
+        "Stiniva Cove",
+        "Seagull's Rocks (Galebove stijene)",
+        "Red Rocks (Crvene stijene)",
+        "Velika Kolombarica",
+        "Beach Njive"
+      ],
+      "everyRetrievedCandidateEvaluation": [
+        {
+          "candidateId": "frozen:1",
+          "candidateName": "Stiniva Cove",
+          "initialRank": 1,
+          "retrievalSource": "descriptor_web",
+          "retrievalEvidence": [
+            "Frozen source-backed hybrid retrieval rank 1."
+          ],
+          "supportingEvidence": [
+            {
+              "statement": "The frames show a steep-sided limestone inlet with clear seawater.",
+              "state": "SUPPORTS",
+              "basis": "visual",
+              "strength": "weak",
+              "visibility": "visible",
+              "contradictionKind": "none"
+            },
+            {
+              "statement": "The caption explicitly places the cliff diving in Croatia.",
+              "state": "SUPPORTS",
+              "basis": "textual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "none"
+            }
+          ],
+          "contradictingEvidence": [],
+          "unknownEvidence": [
+            {
+              "statement": "No distinctive Stiniva Cove identifier is visible.",
+              "state": "UNKNOWN",
+              "basis": "canonical_identity",
+              "strength": "moderate",
+              "visibility": "not_visible",
+              "contradictionKind": "viewpoint_uncertain"
+            }
+          ],
+          "visualCompatibility": "weak",
+          "regionCompatibility": "strong",
+          "verdict": "PRESERVE",
+          "reasonCode": "generic_croatian_cove",
+          "finalScore": 77,
+          "finalRank": 1,
+          "rejectionReasonIfAny": null,
+          "confirmationOnly": true
+        },
+        {
+          "candidateId": "frozen:2",
+          "candidateName": "Seagull's Rocks (Galebove stijene)",
+          "initialRank": 2,
+          "retrievalSource": "descriptor_web",
+          "retrievalEvidence": [
+            "Frozen source-backed hybrid retrieval rank 2."
+          ],
+          "supportingEvidence": [
+            {
+              "statement": "People are visibly cliff-diving into clear water surrounded by pale limestone.",
+              "state": "SUPPORTS",
+              "basis": "visual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "none"
+            },
+            {
+              "statement": "The caption explicitly places the scene in Croatia.",
+              "state": "SUPPORTS",
+              "basis": "textual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "none"
+            }
+          ],
+          "contradictingEvidence": [],
+          "unknownEvidence": [
+            {
+              "statement": "No readable sign or unique landmark confirms Seagull's Rocks.",
+              "state": "UNKNOWN",
+              "basis": "canonical_identity",
+              "strength": "moderate",
+              "visibility": "not_visible",
+              "contradictionKind": "viewpoint_uncertain"
+            }
+          ],
+          "visualCompatibility": "moderate",
+          "regionCompatibility": "strong",
+          "verdict": "PRESERVE",
+          "reasonCode": "compatible_cliff_site",
+          "finalScore": 65,
+          "finalRank": 2,
+          "rejectionReasonIfAny": null,
+          "confirmationOnly": true
+        },
+        {
+          "candidateId": "frozen:3",
+          "candidateName": "Red Rocks (Crvene stijene)",
+          "initialRank": 3,
+          "retrievalSource": "descriptor_web",
+          "retrievalEvidence": [
+            "Frozen source-backed hybrid retrieval rank 3."
+          ],
+          "supportingEvidence": [
+            {
+              "statement": "The scene is an established-looking cliff-jumping area on a rocky Croatian coast.",
+              "state": "SUPPORTS",
+              "basis": "visual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "none"
+            },
+            {
+              "statement": "The caption explicitly identifies Croatia.",
+              "state": "SUPPORTS",
+              "basis": "textual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "none"
+            }
+          ],
+          "contradictingEvidence": [],
+          "unknownEvidence": [
+            {
+              "statement": "The exposed rock is predominantly pale gray rather than visibly red, but color can vary by face and lighting.",
+              "state": "UNKNOWN",
+              "basis": "visual",
+              "strength": "weak",
+              "visibility": "visible",
+              "contradictionKind": "appearance_variation"
+            }
+          ],
+          "visualCompatibility": "weak",
+          "regionCompatibility": "strong",
+          "verdict": "PRESERVE",
+          "reasonCode": "nonunique_rocky_coast",
+          "finalScore": 64,
+          "finalRank": 3,
+          "rejectionReasonIfAny": null,
+          "confirmationOnly": true
+        },
+        {
+          "candidateId": "frozen:4",
+          "candidateName": "Velika Kolombarica",
+          "initialRank": 4,
+          "retrievalSource": "descriptor_web",
+          "retrievalEvidence": [
+            "Frozen source-backed hybrid retrieval rank 4."
+          ],
+          "supportingEvidence": [
+            {
+              "statement": "The frames show a deep, compact swimming basin enclosed by layered pale limestone cliffs.",
+              "state": "SUPPORTS",
+              "basis": "visual",
+              "strength": "strong",
+              "visibility": "visible",
+              "contradictionKind": "none"
+            },
+            {
+              "statement": "Multiple people are cliff-diving from broad rock ledges into the basin.",
+              "state": "SUPPORTS",
+              "basis": "visual",
+              "strength": "strong",
+              "visibility": "visible",
+              "contradictionKind": "none"
+            },
+            {
+              "statement": "Small cavities and undercuts are visible around the waterline and cliff walls.",
+              "state": "SUPPORTS",
+              "basis": "visual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "none"
+            }
+          ],
+          "contradictingEvidence": [],
+          "unknownEvidence": [],
+          "visualCompatibility": "strong",
+          "regionCompatibility": "strong",
+          "verdict": "PROMOTE",
+          "reasonCode": "distinctive_kolombarica_geometry",
+          "finalScore": 64,
+          "finalRank": 4,
+          "rejectionReasonIfAny": null,
+          "confirmationOnly": true
+        },
+        {
+          "candidateId": "frozen:5",
+          "candidateName": "Beach Njive",
+          "initialRank": 5,
+          "retrievalSource": "descriptor_web",
+          "retrievalEvidence": [
+            "Frozen source-backed hybrid retrieval rank 5."
+          ],
+          "supportingEvidence": [
+            {
+              "statement": "Clear seawater and pale coastal limestone are visible.",
+              "state": "SUPPORTS",
+              "basis": "visual",
+              "strength": "weak",
+              "visibility": "visible",
+              "contradictionKind": "none"
+            },
+            {
+              "statement": "The caption places the scene in Croatia.",
+              "state": "SUPPORTS",
+              "basis": "textual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "none"
+            }
+          ],
+          "contradictingEvidence": [],
+          "unknownEvidence": [
+            {
+              "statement": "No beach-identifying feature or readable place name is visible.",
+              "state": "UNKNOWN",
+              "basis": "canonical_identity",
+              "strength": "moderate",
+              "visibility": "not_visible",
+              "contradictionKind": "viewpoint_uncertain"
+            }
+          ],
+          "visualCompatibility": "weak",
+          "regionCompatibility": "strong",
+          "verdict": "PRESERVE",
+          "reasonCode": "beach_not_established",
+          "finalScore": 43,
+          "finalRank": 5,
+          "rejectionReasonIfAny": null,
+          "confirmationOnly": true
+        },
+        {
+          "candidateId": "frozen:6",
+          "candidateName": "Slana Beach",
+          "initialRank": 6,
+          "retrievalSource": "descriptor_web",
+          "retrievalEvidence": [
+            "Frozen source-backed hybrid retrieval rank 6."
+          ],
+          "supportingEvidence": [
+            {
+              "statement": "The setting is a rocky coastal swimming location with transparent blue-green water.",
+              "state": "SUPPORTS",
+              "basis": "visual",
+              "strength": "weak",
+              "visibility": "visible",
+              "contradictionKind": "none"
+            },
+            {
+              "statement": "The caption identifies the country as Croatia.",
+              "state": "SUPPORTS",
+              "basis": "textual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "none"
+            }
+          ],
+          "contradictingEvidence": [],
+          "unknownEvidence": [
+            {
+              "statement": "The selected viewpoint does not establish whether Slana Beach lies nearby or outside the frame.",
+              "state": "UNKNOWN",
+              "basis": "canonical_identity",
+              "strength": "moderate",
+              "visibility": "unknown",
+              "contradictionKind": "viewpoint_uncertain"
+            }
+          ],
+          "visualCompatibility": "weak",
+          "regionCompatibility": "strong",
+          "verdict": "PRESERVE",
+          "reasonCode": "generic_coastal_match",
+          "finalScore": 42,
+          "finalRank": 6,
+          "rejectionReasonIfAny": null,
+          "confirmationOnly": true
+        },
+        {
+          "candidateId": "frozen:7",
+          "candidateName": "Mala Travna Bay",
+          "initialRank": 7,
+          "retrievalSource": "descriptor_web",
+          "retrievalEvidence": [
+            "Frozen source-backed hybrid retrieval rank 7."
+          ],
+          "supportingEvidence": [
+            {
+              "statement": "The water occupies a sheltered-looking rocky indentation rather than an exposed horizon view.",
+              "state": "SUPPORTS",
+              "basis": "visual",
+              "strength": "weak",
+              "visibility": "visible",
+              "contradictionKind": "none"
+            },
+            {
+              "statement": "The caption explicitly places the footage in Croatia.",
+              "state": "SUPPORTS",
+              "basis": "textual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "none"
+            }
+          ],
+          "contradictingEvidence": [],
+          "unknownEvidence": [
+            {
+              "statement": "No unique bay outline or sign identifies Mala Travna Bay.",
+              "state": "UNKNOWN",
+              "basis": "canonical_identity",
+              "strength": "moderate",
+              "visibility": "not_visible",
+              "contradictionKind": "viewpoint_uncertain"
+            }
+          ],
+          "visualCompatibility": "weak",
+          "regionCompatibility": "strong",
+          "verdict": "PRESERVE",
+          "reasonCode": "bay_identity_unresolved",
+          "finalScore": 41,
+          "finalRank": 7,
+          "rejectionReasonIfAny": null,
+          "confirmationOnly": true
+        },
+        {
+          "candidateId": "frozen:8",
+          "candidateName": "Betina Cave",
+          "initialRank": 8,
+          "retrievalSource": "descriptor_web",
+          "retrievalEvidence": [
+            "Frozen source-backed hybrid retrieval rank 8."
+          ],
+          "supportingEvidence": [
+            {
+              "statement": "Several dark cavities and eroded recesses are visible in the limestone walls.",
+              "state": "SUPPORTS",
+              "basis": "visual",
+              "strength": "weak",
+              "visibility": "visible",
+              "contradictionKind": "none"
+            },
+            {
+              "statement": "The caption places the rocky swimming scene in Croatia.",
+              "state": "SUPPORTS",
+              "basis": "textual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "none"
+            }
+          ],
+          "contradictingEvidence": [],
+          "unknownEvidence": [
+            {
+              "statement": "The footage does not show a distinctive cave interior or readable identifier for Betina Cave.",
+              "state": "UNKNOWN",
+              "basis": "canonical_identity",
+              "strength": "moderate",
+              "visibility": "not_visible",
+              "contradictionKind": "viewpoint_uncertain"
+            }
+          ],
+          "visualCompatibility": "weak",
+          "regionCompatibility": "strong",
+          "verdict": "PRESERVE",
+          "reasonCode": "cave_identity_unresolved",
+          "finalScore": 40,
+          "finalRank": 8,
+          "rejectionReasonIfAny": null,
+          "confirmationOnly": true
+        }
+      ],
+      "candidateCount": 8,
+      "survivingCandidateCount": 8,
+      "outsideShortlistAllowed": false,
+      "outsideProposals": [],
+      "selectedFrames": [
+        {
+          "timestampSeconds": 0,
+          "reason": "first"
+        },
+        {
+          "timestampSeconds": 3,
+          "reason": "interval"
+        },
+        {
+          "timestampSeconds": 5,
+          "reason": "interval"
+        },
+        {
+          "timestampSeconds": 7,
+          "reason": "interval"
+        },
+        {
+          "timestampSeconds": 9,
+          "reason": "interval"
+        },
+        {
+          "timestampSeconds": 11.1,
+          "reason": "last"
+        }
+      ],
+      "frameSelection": {
+        "consideredCount": 12,
+        "meanPairwiseDistance": 30.67,
+        "decisions": [
+          {
+            "timestampSeconds": 0,
+            "reason": "boundary_first"
+          },
+          {
+            "timestampSeconds": 3,
+            "reason": "temporal_stratum_farthest_hash"
+          },
+          {
+            "timestampSeconds": 5,
+            "reason": "temporal_stratum_farthest_hash"
+          },
+          {
+            "timestampSeconds": 7,
+            "reason": "temporal_stratum_farthest_hash"
+          },
+          {
+            "timestampSeconds": 9,
+            "reason": "temporal_stratum_farthest_hash"
+          },
+          {
+            "timestampSeconds": 11.1,
+            "reason": "boundary_last"
+          }
+        ]
+      },
+      "latencyMs": 30930,
+      "solUsage": {
+        "inputTokens": 5471,
+        "outputTokens": 1751,
+        "reasoningTokens": 412,
+        "totalTokens": 7222,
+        "cachedInputTokens": 0
+      },
+      "estimatedCostUsd": 0.079885,
+      "autoSave": false,
+      "outcome": "candidate_confirmation_no_autosave"
+    },
+    {
+      "id": "etretat_porte_damont",
+      "availability": "frozen_derived",
+      "sourcePlatform": "wikimedia_commons",
+      "canonicalSourceId": "Porte_d%27Amont_2013_02_02_11_50.webm",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Porte_d%27Amont_2013_02_02_11_50.webm",
+      "sha256": "22ea7370a2276e04b192b56ccf21916e159b5eefed2e6b4a72a8b24df32a3733",
+      "mediaProvenance": "frozen V1 derived public-control clip",
+      "canonicalGroundTruth": [
+        "Porte d'Amont",
+        "Falaise d'Amont",
+        "Etretat Cliffs"
+      ],
+      "groundTruthEvidence": "public source title and frozen V1 benchmark",
+      "retrievalSource": null,
+      "retrievalRank": null,
+      "finalRank": null,
+      "correctRetrievedCandidatePreserved": null,
+      "correctRetrievedCandidateRejected": null,
+      "correctCandidateEvidence": null,
+      "finalCandidates": [
+        "Old Man of Hoy",
+        "Twelve Apostles",
+        "Reynisdrangar",
+        "Haystack Rock",
+        "Ball's Pyramid"
+      ],
+      "everyRetrievedCandidateEvaluation": [
+        {
+          "candidateId": "frozen:1",
+          "candidateName": "Old Man of Hoy",
+          "initialRank": 1,
+          "retrievalSource": "descriptor_web",
+          "retrievalEvidence": [
+            "Frozen source-backed hybrid retrieval rank 1."
+          ],
+          "supportingEvidence": [],
+          "contradictingEvidence": [],
+          "unknownEvidence": [
+            {
+              "statement": "The central formation is a broad, triangular pale rock fin rather than the Old Man of Hoy's narrow, near-vertical sandstone pillar.",
+              "state": "UNKNOWN",
+              "basis": "canonical_identity",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "expected_feature_absent"
+            },
+            {
+              "statement": "The exposed rock has conspicuous pale horizontal strata.",
+              "state": "UNKNOWN",
+              "basis": "visual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "expected_feature_absent"
+            }
+          ],
+          "visualCompatibility": "weak",
+          "regionCompatibility": "unknown",
+          "verdict": "PRESERVE",
+          "reasonCode": "ABSENCE_OR_UNKNOWN_CANNOT_REMOVE_CREDIBLE_RETRIEVAL",
+          "finalScore": 69,
+          "finalRank": 1,
+          "rejectionReasonIfAny": null,
+          "confirmationOnly": true
+        },
+        {
+          "candidateId": "frozen:2",
+          "candidateName": "Twelve Apostles",
+          "initialRank": 2,
+          "retrievalSource": "descriptor_web",
+          "retrievalEvidence": [
+            "Frozen source-backed hybrid retrieval rank 2."
+          ],
+          "supportingEvidence": [
+            {
+              "statement": "A pale, horizontally stratified sea stack beside an eroding cliff is visually compatible with the Twelve Apostles' limestone coast.",
+              "state": "SUPPORTS",
+              "basis": "visual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "none"
+            }
+          ],
+          "contradictingEvidence": [],
+          "unknownEvidence": [
+            {
+              "statement": "The narrow framing does not establish whether additional offshore stacks are present.",
+              "state": "UNKNOWN",
+              "basis": "visual",
+              "strength": "weak",
+              "visibility": "not_visible",
+              "contradictionKind": "viewpoint_uncertain"
+            }
+          ],
+          "visualCompatibility": "moderate",
+          "regionCompatibility": "unknown",
+          "verdict": "PROMOTE",
+          "reasonCode": "limestone_stack_match",
+          "finalScore": 68,
+          "finalRank": 2,
+          "rejectionReasonIfAny": null,
+          "confirmationOnly": true
+        },
+        {
+          "candidateId": "frozen:3",
+          "candidateName": "Reynisdrangar",
+          "initialRank": 3,
+          "retrievalSource": "descriptor_web",
+          "retrievalEvidence": [
+            "Frozen source-backed hybrid retrieval rank 3."
+          ],
+          "supportingEvidence": [],
+          "contradictingEvidence": [],
+          "unknownEvidence": [
+            {
+              "statement": "The visible formation is pale and sedimentary-looking, incompatible with Reynisdrangar's dark basalt stacks.",
+              "state": "UNKNOWN",
+              "basis": "canonical_identity",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "expected_feature_absent"
+            },
+            {
+              "statement": "The frame shows a broad triangular fin rather than the landmark's jagged basalt pillars.",
+              "state": "UNKNOWN",
+              "basis": "visual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "expected_feature_absent"
+            }
+          ],
+          "visualCompatibility": "weak",
+          "regionCompatibility": "unknown",
+          "verdict": "PRESERVE",
+          "reasonCode": "ABSENCE_OR_UNKNOWN_CANNOT_REMOVE_CREDIBLE_RETRIEVAL",
+          "finalScore": 53,
+          "finalRank": 3,
+          "rejectionReasonIfAny": null,
+          "confirmationOnly": true
+        },
+        {
+          "candidateId": "frozen:4",
+          "candidateName": "Haystack Rock",
+          "initialRank": 4,
+          "retrievalSource": "descriptor_web",
+          "retrievalEvidence": [
+            "Frozen source-backed hybrid retrieval rank 4."
+          ],
+          "supportingEvidence": [
+            {
+              "statement": "The scene contains a large offshore rock viewed from a temperate coastal cliff.",
+              "state": "SUPPORTS",
+              "basis": "visual",
+              "strength": "weak",
+              "visibility": "visible",
+              "contradictionKind": "none"
+            }
+          ],
+          "contradictingEvidence": [],
+          "unknownEvidence": [
+            {
+              "statement": "The central rock is a sharp triangular fin rather than Haystack Rock's broad, rounded monolith profile.",
+              "state": "UNKNOWN",
+              "basis": "canonical_identity",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "expected_feature_absent"
+            }
+          ],
+          "visualCompatibility": "weak",
+          "regionCompatibility": "unknown",
+          "verdict": "DEMOTE",
+          "reasonCode": "profile_mismatch",
+          "finalScore": 29,
+          "finalRank": 4,
+          "rejectionReasonIfAny": null,
+          "confirmationOnly": true
+        },
+        {
+          "candidateId": "frozen:5",
+          "candidateName": "Ball's Pyramid",
+          "initialRank": 5,
+          "retrievalSource": "descriptor_web",
+          "retrievalEvidence": [
+            "Frozen source-backed hybrid retrieval rank 5."
+          ],
+          "supportingEvidence": [],
+          "contradictingEvidence": [],
+          "unknownEvidence": [
+            {
+              "statement": "The central formation is a low, broad sedimentary fin beside a nearby vegetated cliff, unlike Ball's Pyramid's immense volcanic needle.",
+              "state": "UNKNOWN",
+              "basis": "canonical_identity",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "expected_feature_absent"
+            }
+          ],
+          "visualCompatibility": "weak",
+          "regionCompatibility": "unknown",
+          "verdict": "DEMOTE",
+          "reasonCode": "REJECTION_WITHOUT_STRONG_DIRECT_CONTRADICTION",
+          "finalScore": 26,
+          "finalRank": 5,
+          "rejectionReasonIfAny": null,
+          "confirmationOnly": true
+        },
+        {
+          "candidateId": "frozen:6",
+          "candidateName": "Drangarnir",
+          "initialRank": 6,
+          "retrievalSource": "descriptor_web",
+          "retrievalEvidence": [
+            "Frozen source-backed hybrid retrieval rank 6."
+          ],
+          "supportingEvidence": [],
+          "contradictingEvidence": [],
+          "unknownEvidence": [
+            {
+              "statement": "The exposed rock is pale and horizontally layered rather than dark volcanic rock.",
+              "state": "UNKNOWN",
+              "basis": "visual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "expected_feature_absent"
+            },
+            {
+              "statement": "No arch is visible, but the selected angle may not reveal every part of the formation.",
+              "state": "UNKNOWN",
+              "basis": "visual",
+              "strength": "weak",
+              "visibility": "not_visible",
+              "contradictionKind": "viewpoint_uncertain"
+            }
+          ],
+          "visualCompatibility": "weak",
+          "regionCompatibility": "unknown",
+          "verdict": "DEMOTE",
+          "reasonCode": "geology_mismatch",
+          "finalScore": 24,
+          "finalRank": 7,
+          "rejectionReasonIfAny": null,
+          "confirmationOnly": true
+        },
+        {
+          "candidateId": "frozen:7",
+          "candidateName": "Risin og Kellingin",
+          "initialRank": 7,
+          "retrievalSource": "descriptor_web",
+          "retrievalEvidence": [
+            "Frozen source-backed hybrid retrieval rank 7."
+          ],
+          "supportingEvidence": [],
+          "contradictingEvidence": [],
+          "unknownEvidence": [
+            {
+              "statement": "The visible formation is one broad, pale stratified fin rather than a thin dark basalt spire.",
+              "state": "UNKNOWN",
+              "basis": "canonical_identity",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "expected_feature_absent"
+            },
+            {
+              "statement": "A second stack could lie outside the narrow frame or be occluded.",
+              "state": "UNKNOWN",
+              "basis": "visual",
+              "strength": "weak",
+              "visibility": "not_visible",
+              "contradictionKind": "viewpoint_uncertain"
+            }
+          ],
+          "visualCompatibility": "weak",
+          "regionCompatibility": "unknown",
+          "verdict": "DEMOTE",
+          "reasonCode": "formation_mismatch",
+          "finalScore": 23,
+          "finalRank": 8,
+          "rejectionReasonIfAny": null,
+          "confirmationOnly": true
+        },
+        {
+          "candidateId": "frozen:8",
+          "candidateName": "Kicker Rock (León Dormido)",
+          "initialRank": 8,
+          "retrievalSource": "descriptor_web",
+          "retrievalEvidence": [
+            "Frozen source-backed hybrid retrieval rank 8."
+          ],
+          "supportingEvidence": [
+            {
+              "statement": "The frame shows a steep-sided offshore rock formation in open ocean.",
+              "state": "SUPPORTS",
+              "basis": "visual",
+              "strength": "weak",
+              "visibility": "visible",
+              "contradictionKind": "none"
+            }
+          ],
+          "contradictingEvidence": [],
+          "unknownEvidence": [
+            {
+              "statement": "The central formation is a single pale triangular fin, unlike Kicker Rock's tall divided volcanic mass.",
+              "state": "UNKNOWN",
+              "basis": "canonical_identity",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "expected_feature_absent"
+            }
+          ],
+          "visualCompatibility": "weak",
+          "regionCompatibility": "unknown",
+          "verdict": "DEMOTE",
+          "reasonCode": "silhouette_mismatch",
+          "finalScore": 25,
+          "finalRank": 6,
+          "rejectionReasonIfAny": null,
+          "confirmationOnly": true
+        }
+      ],
+      "candidateCount": 8,
+      "survivingCandidateCount": 8,
+      "outsideShortlistAllowed": false,
+      "outsideProposals": [],
+      "selectedFrames": [
+        {
+          "timestampSeconds": 0,
+          "reason": "first"
+        },
+        {
+          "timestampSeconds": 9,
+          "reason": "interval"
+        }
+      ],
+      "frameSelection": {
+        "consideredCount": 2,
+        "meanPairwiseDistance": 7,
+        "decisions": [
+          {
+            "timestampSeconds": 0,
+            "reason": "within_budget"
+          },
+          {
+            "timestampSeconds": 9,
+            "reason": "within_budget"
+          }
+        ]
+      },
+      "latencyMs": 35969,
+      "solUsage": {
+        "inputTokens": 2085,
+        "outputTokens": 2049,
+        "reasoningTokens": 978,
+        "totalTokens": 4134,
+        "cachedInputTokens": 0
+      },
+      "estimatedCostUsd": 0.071895,
+      "autoSave": false,
+      "outcome": "candidate_confirmation_no_autosave"
+    },
+    {
+      "id": "griffith_observatory_rotunda",
+      "availability": "frozen_derived",
+      "sourcePlatform": "wikimedia_commons",
+      "canonicalSourceId": "Foucault_pendulum_in_the_rotunda_in_Griffith_Observatory_in_July_2022.webm",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Foucault_pendulum_in_the_rotunda_in_Griffith_Observatory_in_July_2022.webm",
+      "sha256": "6b51919c196df3b450b65bfdc57b722f83b885bf2d3e1a0f1d0c525c392c6b6d",
+      "mediaProvenance": "frozen V1 derived public-control clip",
+      "canonicalGroundTruth": [
+        "Griffith Observatory",
+        "Foucault Pendulum at Griffith Observatory"
+      ],
+      "groundTruthEvidence": "public source title and frozen V1 benchmark",
+      "retrievalSource": null,
+      "retrievalRank": null,
+      "finalRank": 1,
+      "correctRetrievedCandidatePreserved": null,
+      "correctRetrievedCandidateRejected": null,
+      "correctCandidateEvidence": null,
+      "finalCandidates": [
+        "Griffith Observatory, Los Angeles",
+        "Pont d’Arc",
+        "Aloba Arch",
+        "Arcomagno",
+        "Landscape Arch"
+      ],
+      "everyRetrievedCandidateEvaluation": [
+        {
+          "candidateId": "frozen:1",
+          "candidateName": "Pont d’Arc",
+          "initialRank": 1,
+          "retrievalSource": "descriptor_web",
+          "retrievalEvidence": [
+            "Frozen source-backed hybrid retrieval rank 1."
+          ],
+          "supportingEvidence": [],
+          "contradictingEvidence": [],
+          "unknownEvidence": [
+            {
+              "statement": "All frames show a manufactured pendulum suspended over an illuminated circular dial inside a finished rotunda.",
+              "state": "UNKNOWN",
+              "basis": "visual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "expected_feature_absent"
+            }
+          ],
+          "visualCompatibility": "weak",
+          "regionCompatibility": "unknown",
+          "verdict": "PRESERVE",
+          "reasonCode": "ABSENCE_OR_UNKNOWN_CANNOT_REMOVE_CREDIBLE_RETRIEVAL",
+          "finalScore": 70,
+          "finalRank": 1,
+          "rejectionReasonIfAny": null,
+          "confirmationOnly": true
+        },
+        {
+          "candidateId": "frozen:2",
+          "candidateName": "Aloba Arch",
+          "initialRank": 2,
+          "retrievalSource": "descriptor_web",
+          "retrievalEvidence": [
+            "Frozen source-backed hybrid retrieval rank 2."
+          ],
+          "supportingEvidence": [],
+          "contradictingEvidence": [],
+          "unknownEvidence": [
+            {
+              "statement": "The visible scene is an enclosed architectural interior containing calibrated markings, lighting, and mechanical hardware.",
+              "state": "UNKNOWN",
+              "basis": "visual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "expected_feature_absent"
+            }
+          ],
+          "visualCompatibility": "weak",
+          "regionCompatibility": "unknown",
+          "verdict": "PRESERVE",
+          "reasonCode": "ABSENCE_OR_UNKNOWN_CANNOT_REMOVE_CREDIBLE_RETRIEVAL",
+          "finalScore": 55,
+          "finalRank": 2,
+          "rejectionReasonIfAny": null,
+          "confirmationOnly": true
+        },
+        {
+          "candidateId": "frozen:3",
+          "candidateName": "Arcomagno",
+          "initialRank": 3,
+          "retrievalSource": "descriptor_web",
+          "retrievalEvidence": [
+            "Frozen source-backed hybrid retrieval rank 3."
+          ],
+          "supportingEvidence": [],
+          "contradictingEvidence": [],
+          "unknownEvidence": [
+            {
+              "statement": "A bronze pendulum bob and engineered circular floor instrument occupy the entire visible setting.",
+              "state": "UNKNOWN",
+              "basis": "visual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "expected_feature_absent"
+            }
+          ],
+          "visualCompatibility": "weak",
+          "regionCompatibility": "unknown",
+          "verdict": "PRESERVE",
+          "reasonCode": "ABSENCE_OR_UNKNOWN_CANNOT_REMOVE_CREDIBLE_RETRIEVAL",
+          "finalScore": 54,
+          "finalRank": 3,
+          "rejectionReasonIfAny": null,
+          "confirmationOnly": true
+        },
+        {
+          "candidateId": "frozen:4",
+          "candidateName": "Landscape Arch",
+          "initialRank": 4,
+          "retrievalSource": "descriptor_web",
+          "retrievalEvidence": [
+            "Frozen source-backed hybrid retrieval rank 4."
+          ],
+          "supportingEvidence": [],
+          "contradictingEvidence": [],
+          "unknownEvidence": [
+            {
+              "statement": "Finished masonry, artificial illumination, and a suspended mechanical apparatus are directly visible throughout.",
+              "state": "UNKNOWN",
+              "basis": "visual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "expected_feature_absent"
+            }
+          ],
+          "visualCompatibility": "weak",
+          "regionCompatibility": "unknown",
+          "verdict": "DEMOTE",
+          "reasonCode": "REJECTION_WITHOUT_STRONG_DIRECT_CONTRADICTION",
+          "finalScore": 27,
+          "finalRank": 4,
+          "rejectionReasonIfAny": null,
+          "confirmationOnly": true
+        },
+        {
+          "candidateId": "frozen:5",
+          "candidateName": "Kapros Beach",
+          "initialRank": 5,
+          "retrievalSource": "descriptor_web",
+          "retrievalEvidence": [
+            "Frozen source-backed hybrid retrieval rank 5."
+          ],
+          "supportingEvidence": [],
+          "contradictingEvidence": [],
+          "unknownEvidence": [
+            {
+              "statement": "The frames depict an indoor pendulum installation rather than an outdoor coastal environment.",
+              "state": "UNKNOWN",
+              "basis": "visual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "expected_feature_absent"
+            }
+          ],
+          "visualCompatibility": "weak",
+          "regionCompatibility": "unknown",
+          "verdict": "DEMOTE",
+          "reasonCode": "REJECTION_WITHOUT_STRONG_DIRECT_CONTRADICTION",
+          "finalScore": 26,
+          "finalRank": 5,
+          "rejectionReasonIfAny": null,
+          "confirmationOnly": true
+        },
+        {
+          "candidateId": "frozen:6",
+          "candidateName": "Honopu Beach",
+          "initialRank": 6,
+          "retrievalSource": "descriptor_web",
+          "retrievalEvidence": [
+            "Frozen source-backed hybrid retrieval rank 6."
+          ],
+          "supportingEvidence": [],
+          "contradictingEvidence": [],
+          "unknownEvidence": [
+            {
+              "statement": "The entire view is occupied by an enclosed rotunda and a manufactured circular pendulum display.",
+              "state": "UNKNOWN",
+              "basis": "visual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "expected_feature_absent"
+            }
+          ],
+          "visualCompatibility": "weak",
+          "regionCompatibility": "unknown",
+          "verdict": "DEMOTE",
+          "reasonCode": "REJECTION_WITHOUT_STRONG_DIRECT_CONTRADICTION",
+          "finalScore": 25,
+          "finalRank": 6,
+          "rejectionReasonIfAny": null,
+          "confirmationOnly": true
+        },
+        {
+          "candidateId": "frozen:7",
+          "candidateName": "Delicate Arch",
+          "initialRank": 7,
+          "retrievalSource": "descriptor_web",
+          "retrievalEvidence": [
+            "Frozen source-backed hybrid retrieval rank 7."
+          ],
+          "supportingEvidence": [],
+          "contradictingEvidence": [],
+          "unknownEvidence": [
+            {
+              "statement": "A calibrated illuminated dial and suspended metal bob are directly visible within a finished building interior.",
+              "state": "UNKNOWN",
+              "basis": "visual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "expected_feature_absent"
+            }
+          ],
+          "visualCompatibility": "weak",
+          "regionCompatibility": "unknown",
+          "verdict": "DEMOTE",
+          "reasonCode": "REJECTION_WITHOUT_STRONG_DIRECT_CONTRADICTION",
+          "finalScore": 24,
+          "finalRank": 7,
+          "rejectionReasonIfAny": null,
+          "confirmationOnly": true
+        },
+        {
+          "candidateId": "frozen:8",
+          "candidateName": "Durdle Door",
+          "initialRank": 8,
+          "retrievalSource": "descriptor_web",
+          "retrievalEvidence": [
+            "Frozen source-backed hybrid retrieval rank 8."
+          ],
+          "supportingEvidence": [],
+          "contradictingEvidence": [],
+          "unknownEvidence": [
+            {
+              "statement": "The visible identity is an indoor scientific pendulum exhibit, not an exposed coastal rock formation.",
+              "state": "UNKNOWN",
+              "basis": "visual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "expected_feature_absent"
+            }
+          ],
+          "visualCompatibility": "weak",
+          "regionCompatibility": "unknown",
+          "verdict": "DEMOTE",
+          "reasonCode": "REJECTION_WITHOUT_STRONG_DIRECT_CONTRADICTION",
+          "finalScore": 23,
+          "finalRank": 8,
+          "rejectionReasonIfAny": null,
+          "confirmationOnly": true
+        }
+      ],
+      "candidateCount": 8,
+      "survivingCandidateCount": 8,
+      "outsideShortlistAllowed": true,
+      "outsideProposals": [
+        "Griffith Observatory, Los Angeles"
+      ],
+      "selectedFrames": [
+        {
+          "timestampSeconds": 0,
+          "reason": "first"
+        },
+        {
+          "timestampSeconds": 1,
+          "reason": "interval"
+        },
+        {
+          "timestampSeconds": 3,
+          "reason": "interval"
+        },
+        {
+          "timestampSeconds": 5,
+          "reason": "interval"
+        },
+        {
+          "timestampSeconds": 7,
+          "reason": "interval"
+        }
+      ],
+      "frameSelection": {
+        "consideredCount": 5,
+        "meanPairwiseDistance": 20.8,
+        "decisions": [
+          {
+            "timestampSeconds": 0,
+            "reason": "within_budget"
+          },
+          {
+            "timestampSeconds": 1,
+            "reason": "within_budget"
+          },
+          {
+            "timestampSeconds": 3,
+            "reason": "within_budget"
+          },
+          {
+            "timestampSeconds": 5,
+            "reason": "within_budget"
+          },
+          {
+            "timestampSeconds": 7,
+            "reason": "within_budget"
+          }
+        ]
+      },
+      "latencyMs": 40156,
+      "solUsage": {
+        "inputTokens": 3309,
+        "outputTokens": 1834,
+        "reasoningTokens": 1030,
+        "totalTokens": 5143,
+        "cachedInputTokens": 3306
+      },
+      "estimatedCostUsd": 0.056688,
+      "autoSave": false,
+      "outcome": "candidate_confirmation_no_autosave"
+    },
+    {
+      "id": "kozjak_waterfall_canyoning",
+      "availability": "frozen_derived",
+      "sourcePlatform": "wikimedia_commons",
+      "canonicalSourceId": "CANYONING_%26_CLIFF_JUMPING_OFF_KOZJAK_WATERFALL_-_SLOVENIA.webm",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:CANYONING_%26_CLIFF_JUMPING_OFF_KOZJAK_WATERFALL_-_SLOVENIA.webm",
+      "sha256": "a56e32a737d5e8518ceebc974a19a545de8fe7ecbf404674f728c4c2017f7995",
+      "mediaProvenance": "frozen V1 derived public-control clip",
+      "canonicalGroundTruth": [
+        "Kozjak Waterfall",
+        "Veliki Kozjak",
+        "Kozjak Falls"
+      ],
+      "groundTruthEvidence": "public source title and frozen V1 benchmark",
+      "retrievalSource": null,
+      "retrievalRank": null,
+      "finalRank": null,
+      "correctRetrievedCandidatePreserved": null,
+      "correctRetrievedCandidateRejected": null,
+      "correctCandidateEvidence": null,
+      "finalCandidates": [
+        "Sierra de Guara",
+        "Nahal Yehudiya",
+        "Cathedral in the Desert",
+        "Rocky Creek Canyon",
+        "Verdon Gorge"
+      ],
+      "everyRetrievedCandidateEvaluation": [
+        {
+          "candidateId": "frozen:1",
+          "candidateName": "Cathedral in the Desert",
+          "initialRank": 1,
+          "retrievalSource": "descriptor_web",
+          "retrievalEvidence": [
+            "Frozen source-backed hybrid retrieval rank 1."
+          ],
+          "supportingEvidence": [],
+          "contradictingEvidence": [],
+          "unknownEvidence": [
+            {
+              "statement": "The scene is a densely wooded stream with mossy boulders rather than an exposed desert sandstone alcove.",
+              "state": "UNKNOWN",
+              "basis": "visual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "expected_feature_absent"
+            },
+            {
+              "statement": "Dark rock walls surround a compact waterfall and pool.",
+              "state": "UNKNOWN",
+              "basis": "visual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "expected_feature_absent"
+            }
+          ],
+          "visualCompatibility": "weak",
+          "regionCompatibility": "unknown",
+          "verdict": "PRESERVE",
+          "reasonCode": "ABSENCE_OR_UNKNOWN_CANNOT_REMOVE_CREDIBLE_RETRIEVAL",
+          "finalScore": 69,
+          "finalRank": 3,
+          "rejectionReasonIfAny": null,
+          "confirmationOnly": true
+        },
+        {
+          "candidateId": "frozen:2",
+          "candidateName": "Sierra de Guara",
+          "initialRank": 2,
+          "retrievalSource": "descriptor_web",
+          "retrievalEvidence": [
+            "Frozen source-backed hybrid retrieval rank 2."
+          ],
+          "supportingEvidence": [
+            {
+              "statement": "A forested rocky canyon contains large pale boulders, flowing water, and a plunge pool.",
+              "state": "SUPPORTS",
+              "basis": "visual",
+              "strength": "strong",
+              "visibility": "visible",
+              "contradictionKind": "none"
+            },
+            {
+              "statement": "Helmeted participants in wetsuits indicate recreational canyoning.",
+              "state": "SUPPORTS",
+              "basis": "visual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "none"
+            },
+            {
+              "statement": "A narrow waterfall descends between steep shaded walls.",
+              "state": "SUPPORTS",
+              "basis": "visual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "none"
+            }
+          ],
+          "contradictingEvidence": [],
+          "unknownEvidence": [],
+          "visualCompatibility": "strong",
+          "regionCompatibility": "unknown",
+          "verdict": "PROMOTE",
+          "reasonCode": "forested_canyoning_match",
+          "finalScore": 82,
+          "finalRank": 1,
+          "rejectionReasonIfAny": null,
+          "confirmationOnly": true
+        },
+        {
+          "candidateId": "frozen:3",
+          "candidateName": "Nahal Yehudiya",
+          "initialRank": 3,
+          "retrievalSource": "descriptor_web",
+          "retrievalEvidence": [
+            "Frozen source-backed hybrid retrieval rank 3."
+          ],
+          "supportingEvidence": [
+            {
+              "statement": "A waterfall drops through a dark-walled gorge into a swimmable pool.",
+              "state": "SUPPORTS",
+              "basis": "visual",
+              "strength": "strong",
+              "visibility": "visible",
+              "contradictionKind": "none"
+            },
+            {
+              "statement": "Dense vegetation and a boulder-filled stream occupy the canyon floor.",
+              "state": "SUPPORTS",
+              "basis": "visual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "none"
+            }
+          ],
+          "contradictingEvidence": [],
+          "unknownEvidence": [
+            {
+              "statement": "The dark cliff material could be compatible with volcanic rock, but its geology is not visually conclusive.",
+              "state": "UNKNOWN",
+              "basis": "visual",
+              "strength": "weak",
+              "visibility": "visible",
+              "contradictionKind": "appearance_variation"
+            }
+          ],
+          "visualCompatibility": "strong",
+          "regionCompatibility": "unknown",
+          "verdict": "PROMOTE",
+          "reasonCode": "waterfall_gorge_match",
+          "finalScore": 75,
+          "finalRank": 2,
+          "rejectionReasonIfAny": null,
+          "confirmationOnly": true
+        },
+        {
+          "candidateId": "frozen:4",
+          "candidateName": "Verdon Gorge",
+          "initialRank": 4,
+          "retrievalSource": "descriptor_web",
+          "retrievalEvidence": [
+            "Frozen source-backed hybrid retrieval rank 4."
+          ],
+          "supportingEvidence": [
+            {
+              "statement": "The footage shows a steep, water-filled canyon used for wetsuit canyoning.",
+              "state": "SUPPORTS",
+              "basis": "visual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "none"
+            },
+            {
+              "statement": "Pale boulders and a green pool are compatible with a limestone gorge.",
+              "state": "SUPPORTS",
+              "basis": "visual",
+              "strength": "weak",
+              "visibility": "visible",
+              "contradictionKind": "none"
+            }
+          ],
+          "contradictingEvidence": [],
+          "unknownEvidence": [
+            {
+              "statement": "The tightly cropped views do not expose distinctive large-scale gorge geometry.",
+              "state": "UNKNOWN",
+              "basis": "visual",
+              "strength": "moderate",
+              "visibility": "not_visible",
+              "contradictionKind": "viewpoint_uncertain"
+            }
+          ],
+          "visualCompatibility": "moderate",
+          "regionCompatibility": "unknown",
+          "verdict": "PRESERVE",
+          "reasonCode": "generic_limestone_gorge_match",
+          "finalScore": 44,
+          "finalRank": 5,
+          "rejectionReasonIfAny": null,
+          "confirmationOnly": true
+        },
+        {
+          "candidateId": "frozen:5",
+          "candidateName": "Rocky Creek Canyon",
+          "initialRank": 5,
+          "retrievalSource": "descriptor_web",
+          "retrievalEvidence": [
+            "Frozen source-backed hybrid retrieval rank 5."
+          ],
+          "supportingEvidence": [
+            {
+              "statement": "The scene contains a shaded rocky creek canyon beneath dense forest.",
+              "state": "SUPPORTS",
+              "basis": "visual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "none"
+            },
+            {
+              "statement": "A compact waterfall and deep green pool fit a wet canyoning environment.",
+              "state": "SUPPORTS",
+              "basis": "visual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "none"
+            }
+          ],
+          "contradictingEvidence": [],
+          "unknownEvidence": [
+            {
+              "statement": "No visible sign or uniquely identifiable formation links the footage to this specific canyon.",
+              "state": "UNKNOWN",
+              "basis": "textual",
+              "strength": "moderate",
+              "visibility": "not_visible",
+              "contradictionKind": "none"
+            }
+          ],
+          "visualCompatibility": "moderate",
+          "regionCompatibility": "unknown",
+          "verdict": "PRESERVE",
+          "reasonCode": "generic_creek_canyon_match",
+          "finalScore": 46,
+          "finalRank": 4,
+          "rejectionReasonIfAny": null,
+          "confirmationOnly": true
+        },
+        {
+          "candidateId": "frozen:6",
+          "candidateName": "Wadi Al Hoqain Hidden Blue Pools",
+          "initialRank": 6,
+          "retrievalSource": "descriptor_web",
+          "retrievalEvidence": [
+            "Frozen source-backed hybrid retrieval rank 6."
+          ],
+          "supportingEvidence": [
+            {
+              "statement": "A natural pool and waterfall in a narrow rocky channel are broadly compatible with the candidate category.",
+              "state": "SUPPORTS",
+              "basis": "visual",
+              "strength": "weak",
+              "visibility": "visible",
+              "contradictionKind": "none"
+            }
+          ],
+          "contradictingEvidence": [],
+          "unknownEvidence": [
+            {
+              "statement": "The canyon is enclosed by dense mature woodland and moss-covered rocks.",
+              "state": "UNKNOWN",
+              "basis": "visual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "expected_feature_absent"
+            },
+            {
+              "statement": "Rock color and structure are not distinctive enough to establish the candidate's geology.",
+              "state": "UNKNOWN",
+              "basis": "visual",
+              "strength": "weak",
+              "visibility": "visible",
+              "contradictionKind": "appearance_variation"
+            }
+          ],
+          "visualCompatibility": "weak",
+          "regionCompatibility": "unknown",
+          "verdict": "DEMOTE",
+          "reasonCode": "woodland_climate_mismatch",
+          "finalScore": 26,
+          "finalRank": 8,
+          "rejectionReasonIfAny": null,
+          "confirmationOnly": true
+        },
+        {
+          "candidateId": "frozen:7",
+          "candidateName": "Zion Narrows",
+          "initialRank": 7,
+          "retrievalSource": "descriptor_web",
+          "retrievalEvidence": [
+            "Frozen source-backed hybrid retrieval rank 7."
+          ],
+          "supportingEvidence": [
+            {
+              "statement": "People are traversing a narrow watercourse between steep rock walls.",
+              "state": "SUPPORTS",
+              "basis": "visual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "none"
+            }
+          ],
+          "contradictingEvidence": [],
+          "unknownEvidence": [
+            {
+              "statement": "The visible section includes a plunge waterfall and boulder-choked forested floor.",
+              "state": "UNKNOWN",
+              "basis": "visual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "viewpoint_uncertain"
+            },
+            {
+              "statement": "No broad wall profile or identifiable sandstone pattern is exposed in the selected frames.",
+              "state": "UNKNOWN",
+              "basis": "visual",
+              "strength": "moderate",
+              "visibility": "not_visible",
+              "contradictionKind": "viewpoint_uncertain"
+            }
+          ],
+          "visualCompatibility": "moderate",
+          "regionCompatibility": "unknown",
+          "verdict": "PRESERVE",
+          "reasonCode": "narrow_water_canyon_only",
+          "finalScore": 38,
+          "finalRank": 6,
+          "rejectionReasonIfAny": null,
+          "confirmationOnly": true
+        },
+        {
+          "candidateId": "frozen:8",
+          "candidateName": "Wadi Mujib (Siq Trail)",
+          "initialRank": 8,
+          "retrievalSource": "descriptor_web",
+          "retrievalEvidence": [
+            "Frozen source-backed hybrid retrieval rank 8."
+          ],
+          "supportingEvidence": [
+            {
+              "statement": "Wetsuited, helmeted visitors and a confined waterfall support a technical water-trail setting.",
+              "state": "SUPPORTS",
+              "basis": "visual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "none"
+            }
+          ],
+          "contradictingEvidence": [],
+          "unknownEvidence": [
+            {
+              "statement": "Dense mature woodland fills the gorge and overhangs the stream.",
+              "state": "UNKNOWN",
+              "basis": "visual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "expected_feature_absent"
+            },
+            {
+              "statement": "The frames do not show built trail infrastructure or a uniquely identifiable slot profile.",
+              "state": "UNKNOWN",
+              "basis": "visual",
+              "strength": "weak",
+              "visibility": "not_visible",
+              "contradictionKind": "viewpoint_uncertain"
+            }
+          ],
+          "visualCompatibility": "weak",
+          "regionCompatibility": "unknown",
+          "verdict": "DEMOTE",
+          "reasonCode": "forested_gorge_mismatch",
+          "finalScore": 27,
+          "finalRank": 7,
+          "rejectionReasonIfAny": null,
+          "confirmationOnly": true
+        }
+      ],
+      "candidateCount": 8,
+      "survivingCandidateCount": 8,
+      "outsideShortlistAllowed": false,
+      "outsideProposals": [],
+      "selectedFrames": [
+        {
+          "timestampSeconds": 0,
+          "reason": "first"
+        },
+        {
+          "timestampSeconds": 1,
+          "reason": "interval"
+        },
+        {
+          "timestampSeconds": 3,
+          "reason": "interval"
+        },
+        {
+          "timestampSeconds": 5,
+          "reason": "interval"
+        },
+        {
+          "timestampSeconds": 7,
+          "reason": "interval"
+        },
+        {
+          "timestampSeconds": 9,
+          "reason": "interval"
+        }
+      ],
+      "frameSelection": {
+        "consideredCount": 6,
+        "meanPairwiseDistance": 28.13,
+        "decisions": [
+          {
+            "timestampSeconds": 0,
+            "reason": "within_budget"
+          },
+          {
+            "timestampSeconds": 1,
+            "reason": "within_budget"
+          },
+          {
+            "timestampSeconds": 3,
+            "reason": "within_budget"
+          },
+          {
+            "timestampSeconds": 5,
+            "reason": "within_budget"
+          },
+          {
+            "timestampSeconds": 7,
+            "reason": "within_budget"
+          },
+          {
+            "timestampSeconds": 9,
+            "reason": "within_budget"
+          }
+        ]
+      },
+      "latencyMs": 46726,
+      "solUsage": {
+        "inputTokens": 3740,
+        "outputTokens": 2304,
+        "reasoningTokens": 947,
+        "totalTokens": 6044,
+        "cachedInputTokens": 0
+      },
+      "estimatedCostUsd": 0.08782,
+      "autoSave": false,
+      "outcome": "candidate_confirmation_no_autosave"
+    },
+    {
+      "id": "la_jolla_cove_a",
+      "availability": "frozen_derived",
+      "sourcePlatform": "wikimedia_commons",
+      "canonicalSourceId": "La_Jolla_Cove_1_2016-05-15.webm",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:La_Jolla_Cove_1_2016-05-15.webm",
+      "sha256": "5519eae878ae9ae7d0acb1cf29a7f00cb8ae472f3d534879246c2cc5a8b8a608",
+      "mediaProvenance": "frozen V1 derived public-control clip",
+      "canonicalGroundTruth": [
+        "La Jolla Cove"
+      ],
+      "groundTruthEvidence": "public source title and frozen V1 benchmark",
+      "retrievalSource": null,
+      "retrievalRank": null,
+      "finalRank": null,
+      "correctRetrievedCandidatePreserved": null,
+      "correctRetrievedCandidateRejected": null,
+      "correctCandidateEvidence": null,
+      "finalCandidates": [
+        "Boulders Beach",
+        "Kynance Cove",
+        "Cala Goloritzè",
+        "Lulworth Cove",
+        "Navagio Beach"
+      ],
+      "everyRetrievedCandidateEvaluation": [
+        {
+          "candidateId": "frozen:1",
+          "candidateName": "Boulders Beach",
+          "initialRank": 1,
+          "retrievalSource": "descriptor_web",
+          "retrievalEvidence": [
+            "Frozen source-backed hybrid retrieval rank 1."
+          ],
+          "supportingEvidence": [],
+          "contradictingEvidence": [],
+          "unknownEvidence": [
+            {
+              "statement": "The shore has horizontally layered rock and a prominent curved concrete seawall rather than the rounded granite-boulder setting characteristic of Boulders Beach",
+              "state": "UNKNOWN",
+              "basis": "visual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "expected_feature_absent"
+            },
+            {
+              "statement": "Numerous pinnipeds are visible on the enclosed sand; no readable signage identifies Boulders Beach",
+              "state": "UNKNOWN",
+              "basis": "visual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "none"
+            }
+          ],
+          "visualCompatibility": "weak",
+          "regionCompatibility": "unknown",
+          "verdict": "PRESERVE",
+          "reasonCode": "ABSENCE_OR_UNKNOWN_CANNOT_REMOVE_CREDIBLE_RETRIEVAL",
+          "finalScore": 69,
+          "finalRank": 1,
+          "rejectionReasonIfAny": null,
+          "confirmationOnly": true
+        },
+        {
+          "candidateId": "frozen:2",
+          "candidateName": "Kynance Cove",
+          "initialRank": 2,
+          "retrievalSource": "descriptor_web",
+          "retrievalEvidence": [
+            "Frozen source-backed hybrid retrieval rank 2."
+          ],
+          "supportingEvidence": [],
+          "contradictingEvidence": [],
+          "unknownEvidence": [
+            {
+              "statement": "The frames show an urbanized shore with a curved concrete seawall, not Kynance Cove's natural branching inlet and rock-stack landscape",
+              "state": "UNKNOWN",
+              "basis": "visual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "expected_feature_absent"
+            },
+            {
+              "statement": "The exposed horizon and heavy surf provide no direct textual or landmark identification",
+              "state": "UNKNOWN",
+              "basis": "visual",
+              "strength": "weak",
+              "visibility": "visible",
+              "contradictionKind": "none"
+            }
+          ],
+          "visualCompatibility": "weak",
+          "regionCompatibility": "unknown",
+          "verdict": "PRESERVE",
+          "reasonCode": "ABSENCE_OR_UNKNOWN_CANNOT_REMOVE_CREDIBLE_RETRIEVAL",
+          "finalScore": 54,
+          "finalRank": 2,
+          "rejectionReasonIfAny": null,
+          "confirmationOnly": true
+        },
+        {
+          "candidateId": "frozen:3",
+          "candidateName": "Cala Goloritzè",
+          "initialRank": 3,
+          "retrievalSource": "descriptor_web",
+          "retrievalEvidence": [
+            "Frozen source-backed hybrid retrieval rank 3."
+          ],
+          "supportingEvidence": [],
+          "contradictingEvidence": [],
+          "unknownEvidence": [
+            {
+              "statement": "A low, engineered seawall encloses the beach, whereas Cala Goloritzè is a natural limestone cove",
+              "state": "UNKNOWN",
+              "basis": "visual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "expected_feature_absent"
+            },
+            {
+              "statement": "No readable sign or other direct identifier is present",
+              "state": "UNKNOWN",
+              "basis": "textual",
+              "strength": "weak",
+              "visibility": "not_visible",
+              "contradictionKind": "none"
+            }
+          ],
+          "visualCompatibility": "weak",
+          "regionCompatibility": "unknown",
+          "verdict": "PRESERVE",
+          "reasonCode": "ABSENCE_OR_UNKNOWN_CANNOT_REMOVE_CREDIBLE_RETRIEVAL",
+          "finalScore": 53,
+          "finalRank": 3,
+          "rejectionReasonIfAny": null,
+          "confirmationOnly": true
+        },
+        {
+          "candidateId": "frozen:4",
+          "candidateName": "Lulworth Cove",
+          "initialRank": 4,
+          "retrievalSource": "descriptor_web",
+          "retrievalEvidence": [
+            "Frozen source-backed hybrid retrieval rank 4."
+          ],
+          "supportingEvidence": [],
+          "contradictingEvidence": [],
+          "unknownEvidence": [
+            {
+              "statement": "The visible beach is a small artificial enclosure behind a curved seawall, unlike Lulworth Cove's broad natural circular basin",
+              "state": "UNKNOWN",
+              "basis": "visual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "expected_feature_absent"
+            },
+            {
+              "statement": "The adjacent rocks are dark, horizontally bedded coastal shelves",
+              "state": "UNKNOWN",
+              "basis": "visual",
+              "strength": "weak",
+              "visibility": "visible",
+              "contradictionKind": "none"
+            }
+          ],
+          "visualCompatibility": "weak",
+          "regionCompatibility": "unknown",
+          "verdict": "DEMOTE",
+          "reasonCode": "REJECTION_WITHOUT_STRONG_DIRECT_CONTRADICTION",
+          "finalScore": 26,
+          "finalRank": 4,
+          "rejectionReasonIfAny": null,
+          "confirmationOnly": true
+        },
+        {
+          "candidateId": "frozen:5",
+          "candidateName": "Navagio Beach",
+          "initialRank": 5,
+          "retrievalSource": "descriptor_web",
+          "retrievalEvidence": [
+            "Frozen source-backed hybrid retrieval rank 5."
+          ],
+          "supportingEvidence": [],
+          "contradictingEvidence": [],
+          "unknownEvidence": [
+            {
+              "statement": "The beach is bounded by a constructed seawall and low layered rocks, incompatible with Navagio Beach's natural high-cliff enclosure",
+              "state": "UNKNOWN",
+              "basis": "visual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "expected_feature_absent"
+            },
+            {
+              "statement": "No readable sign or direct identifier is visible",
+              "state": "UNKNOWN",
+              "basis": "textual",
+              "strength": "weak",
+              "visibility": "not_visible",
+              "contradictionKind": "none"
+            }
+          ],
+          "visualCompatibility": "weak",
+          "regionCompatibility": "unknown",
+          "verdict": "DEMOTE",
+          "reasonCode": "REJECTION_WITHOUT_STRONG_DIRECT_CONTRADICTION",
+          "finalScore": 25,
+          "finalRank": 5,
+          "rejectionReasonIfAny": null,
+          "confirmationOnly": true
+        },
+        {
+          "candidateId": "frozen:6",
+          "candidateName": "Hidden Beach",
+          "initialRank": 6,
+          "retrievalSource": "descriptor_web",
+          "retrievalEvidence": [
+            "Frozen source-backed hybrid retrieval rank 6."
+          ],
+          "supportingEvidence": [],
+          "contradictingEvidence": [],
+          "unknownEvidence": [
+            {
+              "statement": "The scene shows an openly exposed, engineered beach beside urban infrastructure rather than a beach concealed within a natural rock opening",
+              "state": "UNKNOWN",
+              "basis": "visual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "expected_feature_absent"
+            },
+            {
+              "statement": "The generic name Hidden Beach cannot be resolved to a unique place from the frames",
+              "state": "UNKNOWN",
+              "basis": "canonical_identity",
+              "strength": "strong",
+              "visibility": "unknown",
+              "contradictionKind": "none"
+            }
+          ],
+          "visualCompatibility": "weak",
+          "regionCompatibility": "unknown",
+          "verdict": "DEMOTE",
+          "reasonCode": "AMBIGUOUS_NAME_POOR_FIT",
+          "finalScore": 24,
+          "finalRank": 6,
+          "rejectionReasonIfAny": null,
+          "confirmationOnly": true
+        },
+        {
+          "candidateId": "frozen:7",
+          "candidateName": "White Beach",
+          "initialRank": 7,
+          "retrievalSource": "descriptor_web",
+          "retrievalEvidence": [
+            "Frozen source-backed hybrid retrieval rank 7."
+          ],
+          "supportingEvidence": [],
+          "contradictingEvidence": [],
+          "unknownEvidence": [
+            {
+              "statement": "The visible sand is a small enclosed strip occupied by numerous pinnipeds, with dark layered rocks and a concrete seawall",
+              "state": "UNKNOWN",
+              "basis": "visual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "none"
+            },
+            {
+              "statement": "The generic name White Beach cannot be tied to a unique canonical location from the imagery",
+              "state": "UNKNOWN",
+              "basis": "canonical_identity",
+              "strength": "strong",
+              "visibility": "unknown",
+              "contradictionKind": "none"
+            }
+          ],
+          "visualCompatibility": "unknown",
+          "regionCompatibility": "unknown",
+          "verdict": "DEMOTE",
+          "reasonCode": "AMBIGUOUS_NAME_NO_ID",
+          "finalScore": 23,
+          "finalRank": 7,
+          "rejectionReasonIfAny": null,
+          "confirmationOnly": true
+        },
+        {
+          "candidateId": "frozen:8",
+          "candidateName": "Calanque d'En-Vau",
+          "initialRank": 8,
+          "retrievalSource": "descriptor_web",
+          "retrievalEvidence": [
+            "Frozen source-backed hybrid retrieval rank 8."
+          ],
+          "supportingEvidence": [],
+          "contradictingEvidence": [],
+          "unknownEvidence": [
+            {
+              "statement": "The broad open-ocean horizon and curved engineered seawall conflict with Calanque d'En-Vau's narrow natural limestone inlet geometry",
+              "state": "UNKNOWN",
+              "basis": "visual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "expected_feature_absent"
+            },
+            {
+              "statement": "Low, horizontally layered rocks are visible beside the sand",
+              "state": "UNKNOWN",
+              "basis": "visual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "expected_feature_absent"
+            }
+          ],
+          "visualCompatibility": "weak",
+          "regionCompatibility": "unknown",
+          "verdict": "DEMOTE",
+          "reasonCode": "REJECTION_WITHOUT_STRONG_DIRECT_CONTRADICTION",
+          "finalScore": 22,
+          "finalRank": 8,
+          "rejectionReasonIfAny": null,
+          "confirmationOnly": true
+        }
+      ],
+      "candidateCount": 8,
+      "survivingCandidateCount": 8,
+      "outsideShortlistAllowed": false,
+      "outsideProposals": [],
+      "selectedFrames": [
+        {
+          "timestampSeconds": 0,
+          "reason": "first"
+        },
+        {
+          "timestampSeconds": 5,
+          "reason": "interval"
+        },
+        {
+          "timestampSeconds": 7,
+          "reason": "interval"
+        },
+        {
+          "timestampSeconds": 9,
+          "reason": "interval"
+        }
+      ],
+      "frameSelection": {
+        "consideredCount": 4,
+        "meanPairwiseDistance": 9.17,
+        "decisions": [
+          {
+            "timestampSeconds": 0,
+            "reason": "within_budget"
+          },
+          {
+            "timestampSeconds": 5,
+            "reason": "within_budget"
+          },
+          {
+            "timestampSeconds": 7,
+            "reason": "within_budget"
+          },
+          {
+            "timestampSeconds": 9,
+            "reason": "within_budget"
+          }
+        ]
+      },
+      "latencyMs": 24992,
+      "solUsage": {
+        "inputTokens": 2904,
+        "outputTokens": 1653,
+        "reasoningTokens": 430,
+        "totalTokens": 4557,
+        "cachedInputTokens": 0
+      },
+      "estimatedCostUsd": 0.06411,
+      "autoSave": false,
+      "outcome": "candidate_confirmation_no_autosave"
+    },
+    {
+      "id": "multnomah_falls",
+      "availability": "frozen_derived",
+      "sourcePlatform": "wikimedia_commons",
+      "canonicalSourceId": "Multnomah_Falls_(2017-05-28).webm",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Multnomah_Falls_(2017-05-28).webm",
+      "sha256": "a811efe499421b7daae3db2f44ce75890e6d1bdabe776cda1e3e2778c1125fdc",
+      "mediaProvenance": "frozen V1 derived public-control clip",
+      "canonicalGroundTruth": [
+        "Multnomah Falls"
+      ],
+      "groundTruthEvidence": "public source title and frozen V1 benchmark",
+      "retrievalSource": "direct_image",
+      "retrievalRank": 1,
+      "finalRank": 1,
+      "correctRetrievedCandidatePreserved": true,
+      "correctRetrievedCandidateRejected": false,
+      "correctCandidateEvidence": {
+        "supports": [
+          {
+            "statement": "A narrow upper fall and broader lower fall form the distinctive two-tier profile of Multnomah Falls.",
+            "state": "SUPPORTS",
+            "basis": "canonical_identity",
+            "strength": "strong",
+            "visibility": "visible",
+            "contradictionKind": "none"
+          },
+          {
+            "statement": "The arched pedestrian bridge between the two tiers matches Benson Bridge.",
+            "state": "SUPPORTS",
+            "basis": "canonical_identity",
+            "strength": "strong",
+            "visibility": "visible",
+            "contradictionKind": "none"
+          },
+          {
+            "statement": "The falls stand within a steep, densely vegetated basalt gorge.",
+            "state": "SUPPORTS",
+            "basis": "visual",
+            "strength": "moderate",
+            "visibility": "visible",
+            "contradictionKind": "none"
+          }
+        ],
+        "contradicts": [],
+        "unknowns": [],
+        "verdict": "PROMOTE",
+        "reasonCode": "exact_landmark_match"
+      },
+      "finalCandidates": [
+        "Multnomah Falls",
+        "Silver Falls",
+        "Gaotun Natural Bridge",
+        "Pozo del Arco",
+        "Gaotun Natural Bridge / Bazhou He Scenic Area"
+      ],
+      "everyRetrievedCandidateEvaluation": [
+        {
+          "candidateId": "frozen:1",
+          "candidateName": "Multnomah Falls",
+          "initialRank": 1,
+          "retrievalSource": "direct_image",
+          "retrievalEvidence": [
+            "Frozen source-backed hybrid retrieval rank 1."
+          ],
+          "supportingEvidence": [
+            {
+              "statement": "A narrow upper fall and broader lower fall form the distinctive two-tier profile of Multnomah Falls.",
+              "state": "SUPPORTS",
+              "basis": "canonical_identity",
+              "strength": "strong",
+              "visibility": "visible",
+              "contradictionKind": "none"
+            },
+            {
+              "statement": "The arched pedestrian bridge between the two tiers matches Benson Bridge.",
+              "state": "SUPPORTS",
+              "basis": "canonical_identity",
+              "strength": "strong",
+              "visibility": "visible",
+              "contradictionKind": "none"
+            },
+            {
+              "statement": "The falls stand within a steep, densely vegetated basalt gorge.",
+              "state": "SUPPORTS",
+              "basis": "visual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "none"
+            }
+          ],
+          "contradictingEvidence": [],
+          "unknownEvidence": [],
+          "visualCompatibility": "strong",
+          "regionCompatibility": "unknown",
+          "verdict": "PROMOTE",
+          "reasonCode": "exact_landmark_match",
+          "finalScore": 100,
+          "finalRank": 1,
+          "rejectionReasonIfAny": null,
+          "confirmationOnly": true
+        },
+        {
+          "candidateId": "frozen:2",
+          "candidateName": "Silver Falls",
+          "initialRank": 2,
+          "retrievalSource": "direct_image",
+          "retrievalEvidence": [
+            "Frozen source-backed hybrid retrieval rank 2."
+          ],
+          "supportingEvidence": [
+            {
+              "statement": "The frames show a tall waterfall in a lush, rocky forest setting.",
+              "state": "SUPPORTS",
+              "basis": "visual",
+              "strength": "weak",
+              "visibility": "visible",
+              "contradictionKind": "none"
+            }
+          ],
+          "contradictingEvidence": [],
+          "unknownEvidence": [
+            {
+              "statement": "The name Silver Falls is not disambiguated by any readable sign or supplied locality.",
+              "state": "UNKNOWN",
+              "basis": "textual",
+              "strength": "moderate",
+              "visibility": "not_visible",
+              "contradictionKind": "viewpoint_uncertain"
+            },
+            {
+              "statement": "The visible two-tier configuration and intervening arched bridge are not sufficient to identify an unspecified Silver Falls.",
+              "state": "UNKNOWN",
+              "basis": "canonical_identity",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "appearance_variation"
+            }
+          ],
+          "visualCompatibility": "weak",
+          "regionCompatibility": "unknown",
+          "verdict": "PRESERVE",
+          "reasonCode": "ambiguous_place_name",
+          "finalScore": 64,
+          "finalRank": 2,
+          "rejectionReasonIfAny": null,
+          "confirmationOnly": true
+        },
+        {
+          "candidateId": "frozen:3",
+          "candidateName": "Gaotun Natural Bridge",
+          "initialRank": 3,
+          "retrievalSource": "descriptor_web",
+          "retrievalEvidence": [
+            "Frozen source-backed hybrid retrieval rank 3."
+          ],
+          "supportingEvidence": [],
+          "contradictingEvidence": [],
+          "unknownEvidence": [
+            {
+              "statement": "The prominent arch is visibly a slender engineered pedestrian bridge with railings and visitors, not a natural rock bridge.",
+              "state": "UNKNOWN",
+              "basis": "visual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "expected_feature_absent"
+            },
+            {
+              "statement": "The scene is dominated by a two-tier waterfall passing behind the constructed bridge.",
+              "state": "UNKNOWN",
+              "basis": "canonical_identity",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "expected_feature_absent"
+            }
+          ],
+          "visualCompatibility": "weak",
+          "regionCompatibility": "unknown",
+          "verdict": "PRESERVE",
+          "reasonCode": "ABSENCE_OR_UNKNOWN_CANNOT_REMOVE_CREDIBLE_RETRIEVAL",
+          "finalScore": 53,
+          "finalRank": 3,
+          "rejectionReasonIfAny": null,
+          "confirmationOnly": true
+        },
+        {
+          "candidateId": "frozen:4",
+          "candidateName": "Gaotun Natural Bridge / Bazhou He Scenic Area",
+          "initialRank": 4,
+          "retrievalSource": "descriptor_web",
+          "retrievalEvidence": [
+            "Frozen source-backed hybrid retrieval rank 4."
+          ],
+          "supportingEvidence": [],
+          "contradictingEvidence": [],
+          "unknownEvidence": [
+            {
+              "statement": "The only visible arch is a constructed pedestrian bridge with regular railings and people crossing it.",
+              "state": "UNKNOWN",
+              "basis": "visual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "expected_feature_absent"
+            },
+            {
+              "statement": "No text or regional context connects the depicted waterfall to the Bazhou He scenic area.",
+              "state": "UNKNOWN",
+              "basis": "region",
+              "strength": "moderate",
+              "visibility": "not_visible",
+              "contradictionKind": "viewpoint_uncertain"
+            }
+          ],
+          "visualCompatibility": "weak",
+          "regionCompatibility": "unknown",
+          "verdict": "DEMOTE",
+          "reasonCode": "REJECTION_WITHOUT_STRONG_DIRECT_CONTRADICTION",
+          "finalScore": 26,
+          "finalRank": 5,
+          "rejectionReasonIfAny": null,
+          "confirmationOnly": true
+        },
+        {
+          "candidateId": "frozen:5",
+          "candidateName": "Pont d’Arc",
+          "initialRank": 5,
+          "retrievalSource": "descriptor_web",
+          "retrievalEvidence": [
+            "Frozen source-backed hybrid retrieval rank 5."
+          ],
+          "supportingEvidence": [],
+          "contradictingEvidence": [],
+          "unknownEvidence": [
+            {
+              "statement": "The visible arch is an engineered footbridge rather than the massive natural limestone span defining Pont d’Arc.",
+              "state": "UNKNOWN",
+              "basis": "canonical_identity",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "expected_feature_absent"
+            },
+            {
+              "statement": "The scene centers on a tall, confined two-tier waterfall rather than a river passing through a rock arch.",
+              "state": "UNKNOWN",
+              "basis": "visual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "expected_feature_absent"
+            }
+          ],
+          "visualCompatibility": "weak",
+          "regionCompatibility": "unknown",
+          "verdict": "DEMOTE",
+          "reasonCode": "REJECTION_WITHOUT_STRONG_DIRECT_CONTRADICTION",
+          "finalScore": 25,
+          "finalRank": 6,
+          "rejectionReasonIfAny": null,
+          "confirmationOnly": true
+        },
+        {
+          "candidateId": "frozen:6",
+          "candidateName": "Pozo del Arco",
+          "initialRank": 6,
+          "retrievalSource": "descriptor_web",
+          "retrievalEvidence": [
+            "Frozen source-backed hybrid retrieval rank 6."
+          ],
+          "supportingEvidence": [],
+          "contradictingEvidence": [],
+          "unknownEvidence": [
+            {
+              "statement": "The frames show a waterfall and a constructed bridge, but no identifiable natural rock arch or pool.",
+              "state": "UNKNOWN",
+              "basis": "visual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "viewpoint_uncertain"
+            },
+            {
+              "statement": "No readable signage or locality information identifies Pozo del Arco.",
+              "state": "UNKNOWN",
+              "basis": "textual",
+              "strength": "moderate",
+              "visibility": "not_visible",
+              "contradictionKind": "viewpoint_uncertain"
+            }
+          ],
+          "visualCompatibility": "unknown",
+          "regionCompatibility": "unknown",
+          "verdict": "PRESERVE",
+          "reasonCode": "insufficient_disambiguation",
+          "finalScore": 34,
+          "finalRank": 4,
+          "rejectionReasonIfAny": null,
+          "confirmationOnly": true
+        },
+        {
+          "candidateId": "frozen:7",
+          "candidateName": "Honopu Beach / Honopū Valley",
+          "initialRank": 7,
+          "retrievalSource": "descriptor_web",
+          "retrievalEvidence": [
+            "Frozen source-backed hybrid retrieval rank 7."
+          ],
+          "supportingEvidence": [],
+          "contradictingEvidence": [],
+          "unknownEvidence": [
+            {
+              "statement": "A crowded, engineered pedestrian bridge spans the waterfall gorge, conflicting with the undeveloped and access-limited identity of Honopū Valley.",
+              "state": "UNKNOWN",
+              "basis": "canonical_identity",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "expected_feature_absent"
+            },
+            {
+              "statement": "No visible feature establishes a coastal viewpoint, beach, or Honopū sea arch.",
+              "state": "UNKNOWN",
+              "basis": "visual",
+              "strength": "moderate",
+              "visibility": "not_visible",
+              "contradictionKind": "viewpoint_uncertain"
+            }
+          ],
+          "visualCompatibility": "weak",
+          "regionCompatibility": "unknown",
+          "verdict": "DEMOTE",
+          "reasonCode": "REJECTION_WITHOUT_STRONG_DIRECT_CONTRADICTION",
+          "finalScore": 23,
+          "finalRank": 7,
+          "rejectionReasonIfAny": null,
+          "confirmationOnly": true
+        },
+        {
+          "candidateId": "frozen:8",
+          "candidateName": "Arcomagno Beach",
+          "initialRank": 8,
+          "retrievalSource": "descriptor_web",
+          "retrievalEvidence": [
+            "Frozen source-backed hybrid retrieval rank 8."
+          ],
+          "supportingEvidence": [],
+          "contradictingEvidence": [],
+          "unknownEvidence": [
+            {
+              "statement": "The visible arch is a man-made footbridge in a waterfall gorge, not Arcomagno's coastal rock opening.",
+              "state": "UNKNOWN",
+              "basis": "canonical_identity",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "expected_feature_absent"
+            },
+            {
+              "statement": "The frames provide no visible coastal or regional cue linking the scene to Arcomagno Beach.",
+              "state": "UNKNOWN",
+              "basis": "region",
+              "strength": "moderate",
+              "visibility": "not_visible",
+              "contradictionKind": "viewpoint_uncertain"
+            }
+          ],
+          "visualCompatibility": "weak",
+          "regionCompatibility": "unknown",
+          "verdict": "DEMOTE",
+          "reasonCode": "REJECTION_WITHOUT_STRONG_DIRECT_CONTRADICTION",
+          "finalScore": 22,
+          "finalRank": 8,
+          "rejectionReasonIfAny": null,
+          "confirmationOnly": true
+        }
+      ],
+      "candidateCount": 8,
+      "survivingCandidateCount": 8,
+      "outsideShortlistAllowed": false,
+      "outsideProposals": [],
+      "selectedFrames": [
+        {
+          "timestampSeconds": 0,
+          "reason": "first"
+        },
+        {
+          "timestampSeconds": 5,
+          "reason": "interval"
+        },
+        {
+          "timestampSeconds": 7,
+          "reason": "interval"
+        }
+      ],
+      "frameSelection": {
+        "consideredCount": 3,
+        "meanPairwiseDistance": 12,
+        "decisions": [
+          {
+            "timestampSeconds": 0,
+            "reason": "within_budget"
+          },
+          {
+            "timestampSeconds": 5,
+            "reason": "within_budget"
+          },
+          {
+            "timestampSeconds": 7,
+            "reason": "within_budget"
+          }
+        ]
+      },
+      "latencyMs": 49021,
+      "solUsage": {
+        "inputTokens": 1780,
+        "outputTokens": 2828,
+        "reasoningTokens": 1616,
+        "totalTokens": 4608,
+        "cachedInputTokens": 0
+      },
+      "estimatedCostUsd": 0.09374,
+      "autoSave": false,
+      "outcome": "candidate_confirmation_no_autosave"
+    },
+    {
+      "id": "summersville_lake_cliff_jump",
+      "availability": "frozen_derived",
+      "sourcePlatform": "wikimedia_commons",
+      "canonicalSourceId": "Teen_dives_on_Summersville_Lake_Cliff_Jump.-d8Jo_xqxEn0.webm",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Teen_dives_on_Summersville_Lake_Cliff_Jump.-d8Jo_xqxEn0.webm",
+      "sha256": "5654e9f691dcafb68b108839ef0e1e027b357d46d648e5539ebdb4420a56ec11",
+      "mediaProvenance": "frozen V1 derived public-control clip",
+      "canonicalGroundTruth": [
+        "Summersville Lake",
+        "Summersville Lake Cliff Jump"
+      ],
+      "groundTruthEvidence": "public source title and frozen V1 benchmark",
+      "retrievalSource": null,
+      "retrievalRank": null,
+      "finalRank": null,
+      "correctRetrievedCandidatePreserved": null,
+      "correctRetrievedCandidateRejected": null,
+      "correctCandidateEvidence": null,
+      "finalCandidates": [],
+      "everyRetrievedCandidateEvaluation": [],
+      "candidateCount": 0,
+      "survivingCandidateCount": 0,
+      "outsideShortlistAllowed": false,
+      "outsideProposals": [],
+      "selectedFrames": [
+        {
+          "timestampSeconds": 0,
+          "reason": "first"
+        },
+        {
+          "timestampSeconds": 1,
+          "reason": "interval"
+        },
+        {
+          "timestampSeconds": 3,
+          "reason": "interval"
+        },
+        {
+          "timestampSeconds": 5,
+          "reason": "interval"
+        },
+        {
+          "timestampSeconds": 7,
+          "reason": "interval"
+        }
+      ],
+      "frameSelection": {
+        "consideredCount": 5,
+        "meanPairwiseDistance": 32.2,
+        "decisions": [
+          {
+            "timestampSeconds": 0,
+            "reason": "within_budget"
+          },
+          {
+            "timestampSeconds": 1,
+            "reason": "within_budget"
+          },
+          {
+            "timestampSeconds": 3,
+            "reason": "within_budget"
+          },
+          {
+            "timestampSeconds": 5,
+            "reason": "within_budget"
+          },
+          {
+            "timestampSeconds": 7,
+            "reason": "within_budget"
+          }
+        ]
+      },
+      "latencyMs": 6602,
+      "solUsage": {
+        "inputTokens": 2840,
+        "outputTokens": 280,
+        "reasoningTokens": 224,
+        "totalTokens": 3120,
+        "cachedInputTokens": 2837
+      },
+      "estimatedCostUsd": 0.009834,
+      "autoSave": false,
+      "outcome": "insufficient_evidence_no_autosave"
+    },
+    {
+      "id": "twelve_apostles",
+      "availability": "frozen_derived",
+      "sourcePlatform": "wikimedia_commons",
+      "canonicalSourceId": "Aerial_views_of_Port_Campbell_National_Park_and_Twelve_Apostles_Marine_National_Park,_Victoria,_Australia.webm",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Aerial_views_of_Port_Campbell_National_Park_and_Twelve_Apostles_Marine_National_Park,_Victoria,_Australia.webm",
+      "sha256": "bed83805977371a337420f99fe8368d96771606f78e1fc14b01662d466802f43",
+      "mediaProvenance": "frozen V1 derived public-control clip",
+      "canonicalGroundTruth": [
+        "Twelve Apostles",
+        "Twelve Apostles Marine National Park",
+        "Port Campbell National Park"
+      ],
+      "groundTruthEvidence": "public source title and frozen V1 benchmark",
+      "retrievalSource": null,
+      "retrievalRank": null,
+      "finalRank": null,
+      "correctRetrievedCandidatePreserved": null,
+      "correctRetrievedCandidateRejected": null,
+      "correctCandidateEvidence": null,
+      "finalCandidates": [
+        "Étretat Cliffs and Sea Arches",
+        "Durdle Door",
+        "El Arco de Cabo San Lucas",
+        "Ponta da Piedade",
+        "Hōlei Sea Arch"
+      ],
+      "everyRetrievedCandidateEvaluation": [
+        {
+          "candidateId": "frozen:1",
+          "candidateName": "Étretat Cliffs and Sea Arches",
+          "initialRank": 1,
+          "retrievalSource": "descriptor_web",
+          "retrievalEvidence": [
+            "Frozen source-backed hybrid retrieval rank 1."
+          ],
+          "supportingEvidence": [],
+          "contradictingEvidence": [],
+          "unknownEvidence": [
+            {
+              "statement": "The visible cliffs are low, orange-brown, horizontally layered rock rather than Étretat’s tall white chalk cliffs.",
+              "state": "UNKNOWN",
+              "basis": "visual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "expected_feature_absent"
+            },
+            {
+              "statement": "The featured opening is a small basal hole in a broad offshore slab, unlike Étretat’s monumental arch geometry.",
+              "state": "UNKNOWN",
+              "basis": "visual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "expected_feature_absent"
+            }
+          ],
+          "visualCompatibility": "weak",
+          "regionCompatibility": "weak",
+          "verdict": "PRESERVE",
+          "reasonCode": "ABSENCE_OR_UNKNOWN_CANNOT_REMOVE_CREDIBLE_RETRIEVAL",
+          "finalScore": 69,
+          "finalRank": 1,
+          "rejectionReasonIfAny": null,
+          "confirmationOnly": true
+        },
+        {
+          "candidateId": "frozen:2",
+          "candidateName": "Durdle Door",
+          "initialRank": 2,
+          "retrievalSource": "descriptor_web",
+          "retrievalEvidence": [
+            "Frozen source-backed hybrid retrieval rank 2."
+          ],
+          "supportingEvidence": [],
+          "contradictingEvidence": [],
+          "unknownEvidence": [
+            {
+              "statement": "The visible formation is a detached, flat-topped offshore block with a small basal opening, not Durdle Door’s large mainland-attached arch.",
+              "state": "UNKNOWN",
+              "basis": "visual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "expected_feature_absent"
+            },
+            {
+              "statement": "Orange and reddish horizontal strata dominate instead of Durdle Door’s pale limestone ridge.",
+              "state": "UNKNOWN",
+              "basis": "visual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "expected_feature_absent"
+            }
+          ],
+          "visualCompatibility": "weak",
+          "regionCompatibility": "weak",
+          "verdict": "PRESERVE",
+          "reasonCode": "ABSENCE_OR_UNKNOWN_CANNOT_REMOVE_CREDIBLE_RETRIEVAL",
+          "finalScore": 54,
+          "finalRank": 2,
+          "rejectionReasonIfAny": null,
+          "confirmationOnly": true
+        },
+        {
+          "candidateId": "frozen:3",
+          "candidateName": "El Arco de Cabo San Lucas",
+          "initialRank": 3,
+          "retrievalSource": "descriptor_web",
+          "retrievalEvidence": [
+            "Frozen source-backed hybrid retrieval rank 3."
+          ],
+          "supportingEvidence": [],
+          "contradictingEvidence": [],
+          "unknownEvidence": [
+            {
+              "statement": "The formation is a broad, flat sedimentary slab rather than El Arco’s steep, irregular granite promontory.",
+              "state": "UNKNOWN",
+              "basis": "visual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "expected_feature_absent"
+            },
+            {
+              "statement": "The opening is a small low tunnel, incompatible with El Arco’s tall passage between rock pillars.",
+              "state": "UNKNOWN",
+              "basis": "visual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "expected_feature_absent"
+            }
+          ],
+          "visualCompatibility": "weak",
+          "regionCompatibility": "weak",
+          "verdict": "PRESERVE",
+          "reasonCode": "ABSENCE_OR_UNKNOWN_CANNOT_REMOVE_CREDIBLE_RETRIEVAL",
+          "finalScore": 53,
+          "finalRank": 3,
+          "rejectionReasonIfAny": null,
+          "confirmationOnly": true
+        },
+        {
+          "candidateId": "frozen:4",
+          "candidateName": "Ponta da Piedade",
+          "initialRank": 4,
+          "retrievalSource": "descriptor_web",
+          "retrievalEvidence": [
+            "Frozen source-backed hybrid retrieval rank 4."
+          ],
+          "supportingEvidence": [],
+          "contradictingEvidence": [],
+          "unknownEvidence": [
+            {
+              "statement": "The coast consists of broad, flat-topped layered cliffs and slabs rather than Ponta da Piedade’s narrow, deeply dissected golden pinnacles.",
+              "state": "UNKNOWN",
+              "basis": "visual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "expected_feature_absent"
+            },
+            {
+              "statement": "The featured arch is a small basal opening through an elongated block, incompatible with the characteristic pillar-and-grotto geometry.",
+              "state": "UNKNOWN",
+              "basis": "visual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "expected_feature_absent"
+            }
+          ],
+          "visualCompatibility": "weak",
+          "regionCompatibility": "weak",
+          "verdict": "DEMOTE",
+          "reasonCode": "REJECTION_WITHOUT_STRONG_DIRECT_CONTRADICTION",
+          "finalScore": 26,
+          "finalRank": 4,
+          "rejectionReasonIfAny": null,
+          "confirmationOnly": true
+        },
+        {
+          "candidateId": "frozen:5",
+          "candidateName": "Hōlei Sea Arch",
+          "initialRank": 5,
+          "retrievalSource": "descriptor_web",
+          "retrievalEvidence": [
+            "Frozen source-backed hybrid retrieval rank 5."
+          ],
+          "supportingEvidence": [],
+          "contradictingEvidence": [],
+          "unknownEvidence": [
+            {
+              "statement": "The visible formation is pale orange, horizontally bedded sedimentary rock rather than Hōlei’s dark volcanic lava.",
+              "state": "UNKNOWN",
+              "basis": "visual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "expected_feature_absent"
+            },
+            {
+              "statement": "The surrounding coast is formed from matching layered cliffs, not a black-lava shoreline.",
+              "state": "UNKNOWN",
+              "basis": "region",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "expected_feature_absent"
+            }
+          ],
+          "visualCompatibility": "weak",
+          "regionCompatibility": "weak",
+          "verdict": "DEMOTE",
+          "reasonCode": "REJECTION_WITHOUT_STRONG_DIRECT_CONTRADICTION",
+          "finalScore": 25,
+          "finalRank": 5,
+          "rejectionReasonIfAny": null,
+          "confirmationOnly": true
+        },
+        {
+          "candidateId": "frozen:6",
+          "candidateName": "La Portada",
+          "initialRank": 6,
+          "retrievalSource": "descriptor_web",
+          "retrievalEvidence": [
+            "Frozen source-backed hybrid retrieval rank 6."
+          ],
+          "supportingEvidence": [],
+          "contradictingEvidence": [],
+          "unknownEvidence": [
+            {
+              "statement": "The observed rock is an elongated, flat-topped slab with only a small opening near its base, unlike La Portada’s tall central arch.",
+              "state": "UNKNOWN",
+              "basis": "visual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "expected_feature_absent"
+            },
+            {
+              "statement": "The formation lies beside a lush low-heath coastline rather than appearing as La Portada’s isolated monumental gateway.",
+              "state": "UNKNOWN",
+              "basis": "visual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "expected_feature_absent"
+            }
+          ],
+          "visualCompatibility": "weak",
+          "regionCompatibility": "weak",
+          "verdict": "DEMOTE",
+          "reasonCode": "REJECTION_WITHOUT_STRONG_DIRECT_CONTRADICTION",
+          "finalScore": 24,
+          "finalRank": 6,
+          "rejectionReasonIfAny": null,
+          "confirmationOnly": true
+        },
+        {
+          "candidateId": "frozen:7",
+          "candidateName": "Étretat Cliffs",
+          "initialRank": 7,
+          "retrievalSource": "descriptor_web",
+          "retrievalEvidence": [
+            "Frozen source-backed hybrid retrieval rank 7."
+          ],
+          "supportingEvidence": [],
+          "contradictingEvidence": [],
+          "unknownEvidence": [
+            {
+              "statement": "The visible cliffs are orange-brown and horizontally stratified rather than Étretat’s unmistakable white chalk.",
+              "state": "UNKNOWN",
+              "basis": "visual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "expected_feature_absent"
+            },
+            {
+              "statement": "The coastline is composed of low flat-topped slabs and heath-covered headlands, incompatible with the candidate’s chalk-cliff identity.",
+              "state": "UNKNOWN",
+              "basis": "visual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "expected_feature_absent"
+            }
+          ],
+          "visualCompatibility": "weak",
+          "regionCompatibility": "weak",
+          "verdict": "DEMOTE",
+          "reasonCode": "REJECTION_WITHOUT_STRONG_DIRECT_CONTRADICTION",
+          "finalScore": 23,
+          "finalRank": 7,
+          "rejectionReasonIfAny": null,
+          "confirmationOnly": true
+        },
+        {
+          "candidateId": "frozen:8",
+          "candidateName": "Pont d'Arc",
+          "initialRank": 8,
+          "retrievalSource": "descriptor_web",
+          "retrievalEvidence": [
+            "Frozen source-backed hybrid retrieval rank 8."
+          ],
+          "supportingEvidence": [],
+          "contradictingEvidence": [],
+          "unknownEvidence": [
+            {
+              "statement": "Open ocean surf visibly surrounds the formation, whereas Pont d'Arc spans an inland river.",
+              "state": "UNKNOWN",
+              "basis": "region",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "expected_feature_absent"
+            },
+            {
+              "statement": "The opening is in a detached coastal rock slab rather than a large bridge connecting two riverbanks.",
+              "state": "UNKNOWN",
+              "basis": "visual",
+              "strength": "moderate",
+              "visibility": "visible",
+              "contradictionKind": "expected_feature_absent"
+            }
+          ],
+          "visualCompatibility": "weak",
+          "regionCompatibility": "weak",
+          "verdict": "DEMOTE",
+          "reasonCode": "REJECTION_WITHOUT_STRONG_DIRECT_CONTRADICTION",
+          "finalScore": 22,
+          "finalRank": 8,
+          "rejectionReasonIfAny": null,
+          "confirmationOnly": true
+        }
+      ],
+      "candidateCount": 8,
+      "survivingCandidateCount": 8,
+      "outsideShortlistAllowed": false,
+      "outsideProposals": [],
+      "selectedFrames": [
+        {
+          "timestampSeconds": 0,
+          "reason": "first"
+        },
+        {
+          "timestampSeconds": 1,
+          "reason": "interval"
+        },
+        {
+          "timestampSeconds": 3,
+          "reason": "interval"
+        },
+        {
+          "timestampSeconds": 5,
+          "reason": "interval"
+        },
+        {
+          "timestampSeconds": 7,
+          "reason": "interval"
+        },
+        {
+          "timestampSeconds": 9,
+          "reason": "interval"
+        }
+      ],
+      "frameSelection": {
+        "consideredCount": 6,
+        "meanPairwiseDistance": 19.6,
+        "decisions": [
+          {
+            "timestampSeconds": 0,
+            "reason": "within_budget"
+          },
+          {
+            "timestampSeconds": 1,
+            "reason": "within_budget"
+          },
+          {
+            "timestampSeconds": 3,
+            "reason": "within_budget"
+          },
+          {
+            "timestampSeconds": 5,
+            "reason": "within_budget"
+          },
+          {
+            "timestampSeconds": 7,
+            "reason": "within_budget"
+          },
+          {
+            "timestampSeconds": 9,
+            "reason": "within_budget"
+          }
+        ]
+      },
+      "latencyMs": 40897,
+      "solUsage": {
+        "inputTokens": 3738,
+        "outputTokens": 2285,
+        "reasoningTokens": 989,
+        "totalTokens": 6023,
+        "cachedInputTokens": 0
+      },
+      "estimatedCostUsd": 0.08724,
+      "autoSave": false,
+      "outcome": "candidate_confirmation_no_autosave"
+    }
+  ]
+}

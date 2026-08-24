@@ -87,6 +87,20 @@ export async function extractFrames(
       continue;
     }
 
+    // A seek at the nominal final timestamp can exit zero without emitting a
+    // decodable image. Do not let one nonexistent frame bias coverage or reach
+    // the verifier as if the whole clip had been inspected.
+    try {
+      const bytes = await readFile(jpg);
+      if (bytes.length === 0) {
+        log.warn('frame_extract_empty', { index: i });
+        continue;
+      }
+    } catch {
+      log.warn('frame_extract_missing', { index: i });
+      continue;
+    }
+
     let aHash = '0000000000000000';
     const grayRes = await execBinary(
       cfg.ffmpegPath,

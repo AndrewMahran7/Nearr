@@ -39,10 +39,24 @@ import {
   runVisualGeolocation,
   estimateVayrinCostUsd,
   type VayrinHypothesisRaw,
+  type VayrinOutsideCandidateProposalRaw,
   type VayrinPayload,
   type VayrinResult,
 } from './visualGeolocationClient.js';
 import { VAYRIN_PROMPT_VERSION } from './visualGeolocationPrompt.js';
+import {
+  detectStrongRegionEvidence,
+  expandRegionToPoiCandidatesV3,
+  type RegionPoiExpansionResult,
+} from './regionPoiV3.js';
+import {
+  serializeCandidatesForVerificationV3,
+  userFacingVerificationCandidates,
+  verifyRetrievedCandidatesV3,
+  type CandidateVerificationRecord,
+  type VerificationCandidate,
+  type VerificationV3Result,
+} from './verificationV3.js';
 
 // ---------------------------------------------------------------------------
 // Trigger
@@ -332,6 +346,11 @@ export type VayrinProviderOptions = {
     cachedInputPerMillion: number;
     outputPerMillion: number;
   };
+  verificationV3: {
+    enabled: boolean;
+    googlePlacesApiKey: string;
+    regionPoiCandidateLimit: number;
+  };
 };
 
 /** Bounded, secret-free diagnostics for one Vayrin escalation. */
@@ -362,7 +381,119 @@ export type VayrinDiagnostics = {
   alternativeCount?: number;
   multipleDistinctPlaces?: boolean;
   failureCode?: string;
+  verificationV3?: {
+    enabled: boolean;
+    regionDetected: boolean;
+    regionLabel: string | null;
+    placesExpansionInvoked: boolean;
+    placesExternalCallCount: number;
+    placesLatencyMs: number;
+    placesFailureCode: RegionPoiExpansionResult['failureCode'];
+    candidateCount: number;
+    candidateNames: string[];
+    evaluatedCount: number;
+    missingEvaluationCount: number;
+    outsideShortlistAllowed: boolean;
+    records: CandidateVerificationRecord[];
+    visionEnabled: false;
+  };
 };
+
+function foldCandidateName(value: string): string {
+  return value.toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, ' ').replace(/\b(?:the|beach|cove|bay)\b/g, ' ')
+    .replace(/\s+/g, ' ').trim();
+}
+
+function verifiedCandidatePlace(
+  candidate: VerificationCandidate,
+  record: CandidateVerificationRecord,
+): PlaceCandidateEvidence | null {
+  const explicitEvidence: EvidenceItem[] = [];
+  for (const claim of record.supportingEvidence) {
+    if (claim.basis === 'visual') explicitEvidence.push({ timestampSeconds: null, source: 'frame', value: claim.statement });
+    if (claim.basis === 'textual') explicitEvidence.push({ timestampSeconds: null, source: 'caption', value: claim.statement });
+    if (explicitEvidence.length >= 12) break;
+  }
+  // UNKNOWN-only candidates stay in the explicit verification record, but are
+  // not mislabeled as observable place evidence for the finalizer.
+  if (explicitEvidence.length === 0) return null;
+  const inferredEvidence: EvidenceItem[] = [
+    ...record.unknownEvidence,
+    ...record.contradictingEvidence,
+  ].map((claim) => ({ timestampSeconds: null, source: 'frame' as const, value: claim.statement })).slice(0, 16);
+  return {
+    logicalPlaceId: 'vayrin-scene-1',
+    identityEvidenceKind: 'model_prior',
+    hypothesisRank: Math.max(0, (record.finalRank ?? record.initialRank) - 1),
+    name: candidate.candidateName,
+    category: categoryFor(candidate.category ?? candidate.candidateName),
+    categoryConfidence: 0,
+    categoryEvidenceTags: [],
+    address: null,
+    city: candidate.locality ?? null,
+    region: null,
+    country: candidate.country ?? null,
+    coordinates: null,
+    role: 'primary',
+    confidence: Math.min(0.49, record.finalScore / 200),
+    explicitEvidence,
+    inferredEvidence,
+    memoryCue: null,
+    memoryCueEvidence: [],
+  };
+}
+
+export function mergeVerificationV3Evidence(input: {
+  mappedEvidence: MediaPlaceEvidence;
+  candidates: readonly VerificationCandidate[];
+  verification: VerificationV3Result;
+  outsideProposals: readonly VayrinOutsideCandidateProposalRaw[];
+}): MediaPlaceEvidence {
+  if (input.candidates.length === 0) return input.mappedEvidence;
+  const records = new Map(input.verification.records.map((record) => [record.candidateId, record]));
+  const verifiedPlaces = userFacingVerificationCandidates(input.verification).flatMap((candidate) => {
+    const record = records.get(candidate.candidateId);
+    const place = record ? verifiedCandidatePlace(candidate, record) : null;
+    return place ? [place] : [];
+  });
+  const outsidePlaces: PlaceCandidateEvidence[] = input.verification.outsideShortlistAllowed
+    ? input.outsideProposals.slice(0, 2).map((proposal, index) => ({
+      logicalPlaceId: 'vayrin-scene-1',
+      identityEvidenceKind: 'model_prior',
+      hypothesisRank: index,
+      name: proposal.placeName,
+      category: categoryFor(proposal.placeName),
+      categoryConfidence: 0,
+      categoryEvidenceTags: [],
+      address: null,
+      city: null,
+      region: null,
+      country: null,
+      coordinates: null,
+      role: 'primary',
+      confidence: 0.4,
+      explicitEvidence: proposal.supportingEvidence.slice(0, 3)
+        .map((value) => ({ timestampSeconds: null, source: 'frame' as const, value })),
+      inferredEvidence: proposal.contradictingEvidence.slice(0, 3)
+        .map((value) => ({ timestampSeconds: null, source: 'frame' as const, value })),
+      memoryCue: null,
+      memoryCueEvidence: [],
+    }))
+    : [];
+  const places = [...outsidePlaces, ...verifiedPlaces].slice(0, 3)
+    .map((place, index) => ({ ...place, hypothesisRank: index }));
+  return {
+    ...input.mappedEvidence,
+    places,
+    insufficientEvidence: places.length === 0,
+    warnings: [...new Set([
+      ...input.mappedEvidence.warnings,
+      'vayrin_verification_v3',
+      input.verification.outsideShortlistAllowed ? 'v3_outside_shortlist_allowed' : 'v3_ranked_within_shortlist',
+    ])].slice(0, 24),
+  };
+}
 
 export class VayrinFallbackModel implements ModelProvider {
   readonly name = 'vayrin';
@@ -398,6 +529,24 @@ export class VayrinFallbackModel implements ModelProvider {
       this.options.frameBudget,
     );
 
+    const caption = [input.metadataTitle, input.metadataDescription].filter(Boolean).join('\n') || null;
+    const region = detectStrongRegionEvidence({
+      locationMetadata: input.metadataLocation,
+      caption,
+      coarseCandidates: baseline.evidence.places.filter(isCoarseGeographicPlace)
+        .map((place) => ({ name: place.name, specificity: 'REGION' as const })),
+    });
+    const regionExpansion: RegionPoiExpansionResult = this.options.verificationV3.enabled
+      ? await expandRegionToPoiCandidatesV3({
+          apiKey: this.options.verificationV3.googlePlacesApiKey,
+          region,
+          sceneCategory: baseline.evidence.places[0]?.category ?? null,
+          signal: input.signal,
+          maxCandidates: this.options.verificationV3.regionPoiCandidateLimit,
+        })
+      : { candidates: [], places: [], externalCallCount: 0, latencyMs: 0, failureCode: 'not_configured', confirmationOnly: true };
+    const verificationCandidates = regionExpansion.candidates;
+
     const result = await runVisualGeolocation({
       model: this.options.model,
       reasoningEffort: this.options.reasoningEffort,
@@ -408,15 +557,18 @@ export class VayrinFallbackModel implements ModelProvider {
       })),
       context: {
         platform: input.platform,
-        caption: [input.metadataTitle, input.metadataDescription].filter(Boolean).join('\n') || null,
+        caption,
         transcript: input.transcript.map((s) => `[${s.startSeconds.toFixed(1)}] ${s.text}`).join('\n'),
         visibleText: input.ocr.map((o) => o.text).join('\n'),
         visibleTextExtracted: input.ocrExtracted === true,
         locationMetadata: input.metadataLocation ?? null,
+        retrievedCandidatesJson: verificationCandidates.length > 0
+          ? serializeCandidatesForVerificationV3(verificationCandidates)
+          : null,
       },
     });
 
-    return this.merge(baseline, result, selection, trigger, input);
+    return this.merge(baseline, result, selection, trigger, input, region, regionExpansion, verificationCandidates);
   }
 
   private merge(
@@ -425,6 +577,9 @@ export class VayrinFallbackModel implements ModelProvider {
     selection: ReturnType<typeof selectFramesForVayrin>,
     trigger: VayrinTriggerResult,
     input: AnalyzeInput,
+    region: ReturnType<typeof detectStrongRegionEvidence>,
+    regionExpansion: RegionPoiExpansionResult,
+    verificationCandidates: VerificationCandidate[],
   ): AnalyzeOutput {
     const diagnostics: VayrinDiagnostics = {
       invoked: true,
@@ -453,6 +608,22 @@ export class VayrinFallbackModel implements ModelProvider {
         ? 'coarse_geography'
         : 'explicit_place',
       latencyMs: result.latencyMs,
+      verificationV3: {
+        enabled: this.options.verificationV3.enabled,
+        regionDetected: region.detected,
+        regionLabel: region.label,
+        placesExpansionInvoked: regionExpansion.externalCallCount > 0,
+        placesExternalCallCount: regionExpansion.externalCallCount,
+        placesLatencyMs: regionExpansion.latencyMs,
+        placesFailureCode: regionExpansion.failureCode,
+        candidateCount: verificationCandidates.length,
+        candidateNames: verificationCandidates.map((candidate) => candidate.candidateName),
+        evaluatedCount: 0,
+        missingEvaluationCount: 0,
+        outsideShortlistAllowed: false,
+        records: [],
+        visionEnabled: false,
+      },
     };
 
     if (!result.ok) {
@@ -486,7 +657,28 @@ export class VayrinFallbackModel implements ModelProvider {
       } as AnalyzeOutput & { vayrin: VayrinDiagnostics };
     }
 
-    const { evidence, alternatives } = payloadToEvidence(result.payload);
+    const mapped = payloadToEvidence(result.payload);
+    let evidence = mapped.evidence;
+    const alternatives = mapped.alternatives;
+    if (verificationCandidates.length > 0) {
+      const verification = verifyRetrievedCandidatesV3({
+        candidates: verificationCandidates,
+        evaluations: result.payload.retrieved_candidate_evaluations ?? [],
+      });
+      evidence = mergeVerificationV3Evidence({
+        mappedEvidence: mapped.evidence,
+        candidates: verificationCandidates,
+        verification,
+        outsideProposals: result.payload.outside_candidate_proposals ?? [],
+      });
+      diagnostics.verificationV3 = {
+        ...diagnostics.verificationV3!,
+        evaluatedCount: verification.records.length,
+        missingEvaluationCount: verification.missingEvaluationCount,
+        outsideShortlistAllowed: verification.outsideShortlistAllowed,
+        records: verification.records,
+      };
+    }
     diagnostics.usage = { ...result.usage };
     diagnostics.estimatedCostUsd = estimateVayrinCostUsd(result.usage, this.options.pricing);
     diagnostics.hypothesisCount = evidence.places.length;
@@ -537,6 +729,11 @@ export function withVayrinFallback(inner: ModelProvider, cfg: WorkerConfig): Mod
       inputPerMillion: cfg.vayrinInputPricePerMillion,
       cachedInputPerMillion: cfg.vayrinCachedInputPricePerMillion,
       outputPerMillion: cfg.vayrinOutputPricePerMillion,
+    },
+    verificationV3: {
+      enabled: cfg.vayrinVerificationV3Enabled === true,
+      googlePlacesApiKey: cfg.googlePlacesServerApiKey ?? '',
+      regionPoiCandidateLimit: Math.min(8, cfg.vayrinRegionPoiCandidateLimit ?? 8),
     },
   });
 }

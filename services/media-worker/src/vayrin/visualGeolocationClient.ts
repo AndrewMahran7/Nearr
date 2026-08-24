@@ -23,12 +23,18 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import {
+  VAYRIN_CANDIDATE_VERIFICATION_SCHEMA,
+  VAYRIN_CANDIDATE_VERIFICATION_SYSTEM_PROMPT,
   VAYRIN_GEOLOCATION_SCHEMA,
   VAYRIN_PROMPT_VERSION,
   VAYRIN_VISUAL_GEOLOCATION_SYSTEM_PROMPT,
   buildVayrinUserContext,
   type VayrinTextContext,
 } from './visualGeolocationPrompt.js';
+import type {
+  RawCandidateVerification,
+  VerificationEvidenceClaim,
+} from './verificationV3.js';
 
 /** Environment variables consulted for the OpenAI credential, in order.
  *
@@ -151,6 +157,14 @@ export type VayrinPayload = {
   multiple_distinct_places_visible: boolean;
   additional_place_segments: VayrinSegmentRaw[];
   metadata_was_sufficient: boolean;
+  retrieved_candidate_evaluations?: RawCandidateVerification[];
+  outside_candidate_proposals?: VayrinOutsideCandidateProposalRaw[];
+};
+
+export type VayrinOutsideCandidateProposalRaw = {
+  placeName: string;
+  supportingEvidence: string[];
+  contradictingEvidence: string[];
 };
 
 /** How a failure should be handled. Mirrors the worker's existing philosophy in
@@ -280,9 +294,12 @@ export function extractResponseText(body: unknown): string {
 export function parseVayrinPayload(raw: unknown): VayrinPayload | null {
   if (!raw || typeof raw !== 'object') return null;
   const r = raw as Record<string, unknown>;
-  if (!Array.isArray(r.place_hypotheses)) return null;
+  const verificationOnly = !Array.isArray(r.place_hypotheses) &&
+    Array.isArray(r.retrieved_candidate_evaluations) &&
+    Array.isArray(r.outside_candidate_proposals);
+  if (!Array.isArray(r.place_hypotheses) && !verificationOnly) return null;
 
-  const hypotheses = r.place_hypotheses
+  const hypotheses = (Array.isArray(r.place_hypotheses) ? r.place_hypotheses : [])
     .map(parseHypothesis)
     .filter((h): h is VayrinHypothesisRaw => h !== null);
 
@@ -297,6 +314,18 @@ export function parseVayrinPayload(raw: unknown): VayrinPayload | null {
     multiple_distinct_places_visible: r.multiple_distinct_places_visible === true,
     additional_place_segments: segments,
     metadata_was_sufficient: r.metadata_was_sufficient === true,
+    retrieved_candidate_evaluations: Array.isArray(r.retrieved_candidate_evaluations)
+      ? r.retrieved_candidate_evaluations
+          .map(parseCandidateVerification)
+          .filter((item): item is RawCandidateVerification => item !== null)
+          .slice(0, 8)
+      : [],
+    outside_candidate_proposals: Array.isArray(r.outside_candidate_proposals)
+      ? r.outside_candidate_proposals
+          .map(parseOutsideCandidateProposal)
+          .filter((item): item is VayrinOutsideCandidateProposalRaw => item !== null)
+          .slice(0, 2)
+      : [],
   };
 }
 
@@ -324,6 +353,64 @@ function strList(v: unknown, maxItems = 12, maxLen = 300): string[] {
     .map((x) => strOrNull(x, maxLen))
     .filter((x): x is string => x !== null)
     .slice(0, maxItems);
+}
+
+function parseVerificationEvidence(raw: unknown): VerificationEvidenceClaim | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const r = raw as Record<string, unknown>;
+  const statement = strOrNull(r.statement, 320);
+  const states = new Set(['SUPPORTS', 'CONTRADICTS', 'UNKNOWN']);
+  const bases = new Set(['visual', 'textual', 'region', 'canonical_identity', 'retrieval']);
+  const strengths = new Set(['strong', 'moderate', 'weak']);
+  const visibility = new Set(['visible', 'necessarily_visible', 'not_visible', 'unknown']);
+  const kinds = new Set([
+    'identity_conflict', 'geographic_conflict', 'impossible_geometry', 'visible_feature_conflict',
+    'expected_feature_absent', 'viewpoint_uncertain', 'appearance_variation', 'none',
+  ]);
+  if (!statement || !states.has(String(r.state)) || !bases.has(String(r.basis)) ||
+    !strengths.has(String(r.strength)) || !visibility.has(String(r.visibility)) ||
+    !kinds.has(String(r.contradictionKind))) return null;
+  return {
+    statement,
+    state: r.state as VerificationEvidenceClaim['state'],
+    basis: r.basis as VerificationEvidenceClaim['basis'],
+    strength: r.strength as VerificationEvidenceClaim['strength'],
+    visibility: r.visibility as VerificationEvidenceClaim['visibility'],
+    contradictionKind: r.contradictionKind as VerificationEvidenceClaim['contradictionKind'],
+  };
+}
+
+function parseCandidateVerification(raw: unknown): RawCandidateVerification | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const r = raw as Record<string, unknown>;
+  const candidateId = strOrNull(r.candidateId, 300);
+  const compatibility = new Set(['strong', 'moderate', 'weak', 'unknown']);
+  const verdicts = new Set(['promote', 'preserve', 'demote', 'reject']);
+  if (!candidateId || !compatibility.has(String(r.visualCompatibility)) ||
+    !compatibility.has(String(r.regionCompatibility)) || !verdicts.has(String(r.overallVerdict))) return null;
+  const evidence = Array.isArray(r.evidence)
+    ? r.evidence.map(parseVerificationEvidence).filter((item): item is VerificationEvidenceClaim => item !== null).slice(0, 16)
+    : [];
+  return {
+    candidateId,
+    evidence,
+    visualCompatibility: r.visualCompatibility as RawCandidateVerification['visualCompatibility'],
+    regionCompatibility: r.regionCompatibility as RawCandidateVerification['regionCompatibility'],
+    overallVerdict: r.overallVerdict as RawCandidateVerification['overallVerdict'],
+    reasonCode: strOrNull(r.reasonCode, 120) ?? 'MODEL_VERDICT_UNSPECIFIED',
+  };
+}
+
+function parseOutsideCandidateProposal(raw: unknown): VayrinOutsideCandidateProposalRaw | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const r = raw as Record<string, unknown>;
+  const placeName = strOrNull(r.placeName, 200);
+  if (!placeName) return null;
+  return {
+    placeName,
+    supportingEvidence: strList(r.supportingEvidence, 6, 300),
+    contradictingEvidence: strList(r.contradictingEvidence, 6, 300),
+  };
 }
 
 function parseHypothesis(raw: unknown): VayrinHypothesisRaw | null {
@@ -440,6 +527,14 @@ export async function runVisualGeolocation(request: VayrinRequest): Promise<Vayr
   // Every frame was unreadable — the same state as having no frames.
   if (content.length === 1) return fail('no_frames', 'vayrin_frames_unreadable');
 
+  const verificationOnly = !!request.context.retrievedCandidatesJson?.trim();
+  const instructions = verificationOnly
+    ? VAYRIN_CANDIDATE_VERIFICATION_SYSTEM_PROMPT
+    : VAYRIN_VISUAL_GEOLOCATION_SYSTEM_PROMPT;
+  const schema = verificationOnly
+    ? VAYRIN_CANDIDATE_VERIFICATION_SCHEMA
+    : VAYRIN_GEOLOCATION_SCHEMA;
+
   let response: Response;
   try {
     response = await fetch(endpoint, {
@@ -450,14 +545,14 @@ export async function runVisualGeolocation(request: VayrinRequest): Promise<Vayr
       },
       body: JSON.stringify({
         model,
-        instructions: VAYRIN_VISUAL_GEOLOCATION_SYSTEM_PROMPT,
+        instructions,
         input: [{ role: 'user', content }],
         text: {
           format: {
             type: 'json_schema',
-            name: 'vayrin_geolocation',
+            name: verificationOnly ? 'vayrin_candidate_verification' : 'vayrin_geolocation',
             strict: true,
-            schema: VAYRIN_GEOLOCATION_SCHEMA,
+            schema,
           },
         },
         store: false,

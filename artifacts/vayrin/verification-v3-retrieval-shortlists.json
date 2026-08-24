@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "source": "Frozen source-backed V2 hybrid retrieval shortlists from the exact-eight corpus. No ground truth is present.",
+  "strengthPolicy": "Rank 1 is strong, ranks 2-3 are moderate, later ranks are weak. Multnomah ranks 1-2 retain their direct-image source.",
+  "fixtures": [
+    {
+      "id": "stiniva",
+      "candidateNames": ["Stiniva Cove", "Seagull's Rocks (Galebove stijene)", "Red Rocks (Crvene stijene)", "Velika Kolombarica", "Beach Njive", "Slana Beach", "Mala Travna Bay", "Betina Cave"]
+    },
+    {
+      "id": "etretat_porte_damont",
+      "candidateNames": ["Old Man of Hoy", "Twelve Apostles", "Reynisdrangar", "Haystack Rock", "Ball's Pyramid", "Drangarnir", "Risin og Kellingin", "Kicker Rock (León Dormido)"]
+    },
+    {
+      "id": "griffith_observatory_rotunda",
+      "candidateNames": ["Pont d’Arc", "Aloba Arch", "Arcomagno", "Landscape Arch", "Kapros Beach", "Honopu Beach", "Delicate Arch", "Durdle Door"]
+    },
+    {
+      "id": "kozjak_waterfall_canyoning",
+      "candidateNames": ["Cathedral in the Desert", "Sierra de Guara", "Nahal Yehudiya", "Verdon Gorge", "Rocky Creek Canyon", "Wadi Al Hoqain Hidden Blue Pools", "Zion Narrows", "Wadi Mujib (Siq Trail)"]
+    },
+    {
+      "id": "la_jolla_cove_a",
+      "candidateNames": ["Boulders Beach", "Kynance Cove", "Cala Goloritzè", "Lulworth Cove", "Navagio Beach", "Hidden Beach", "White Beach", "Calanque d'En-Vau"]
+    },
+    {
+      "id": "multnomah_falls",
+      "directCandidateCount": 2,
+      "candidateNames": ["Multnomah Falls", "Silver Falls", "Gaotun Natural Bridge", "Gaotun Natural Bridge / Bazhou He Scenic Area", "Pont d’Arc", "Pozo del Arco", "Honopu Beach / Honopū Valley", "Arcomagno Beach"]
+    },
+    { "id": "summersville_lake_cliff_jump", "candidateNames": [] },
+    {
+      "id": "twelve_apostles",
+      "candidateNames": ["Étretat Cliffs and Sea Arches", "Durdle Door", "El Arco de Cabo San Lucas", "Ponta da Piedade", "Hōlei Sea Arch", "La Portada", "Étretat Cliffs", "Pont d'Arc"]
+    }
+  ]
+}
