@@ -167,7 +167,36 @@ async function main(): Promise<void> {
       .select('identity_key')
       .in('identity_key', keys);
     if (preexistingError) throw preexistingError;
-    assert.deepEqual(preexisting, [], 'proof refuses to overwrite or clean up a pre-existing shared recognition row');
+    const useExisting = process.env.NEARR_PROOF_USE_EXISTING_CACHE === '1';
+    if (rowArray(preexisting).length > 0) {
+      assert.equal(useExisting, true, 'proof refuses to overwrite or clean up a pre-existing shared recognition row');
+      assert.deepEqual(
+        rowArray(preexisting).map((row) => row.identity_key),
+        [keys[0]],
+        'existing-cache mode accepts only the designated canonical cache fixture',
+      );
+      const startedAt = new Date().toISOString();
+      const warm = await submitAndWait(session, 'cache-existing-warm', FIXTURES.cache.canonical);
+      assert.equal(warm.job.status, 'completed');
+      assert.equal(warm.job.extraction_payload?.recognitionCache?.hit, true);
+      const [{ data: tasks, error: tasksError }, { data: runs, error: runsError }] = await Promise.all([
+        session.admin.from('share_media_tasks').select('id').eq('user_id', session.identity!.userId).gte('created_at', startedAt),
+        session.admin.from('share_agent_runs').select('id').eq('user_id', session.identity!.userId).gte('created_at', startedAt),
+      ]);
+      if (tasksError) throw tasksError;
+      if (runsError) throw runsError;
+      assert.equal(rowArray(tasks).length, 0, 'existing cache hit must not enqueue media work');
+      assert.equal(rowArray(runs).length, 0, 'existing cache hit must not invoke the recognition agent');
+      console.log(`CACHE_EXISTING_PROOF_RESULT ${JSON.stringify({
+        jobId: warm.job.id,
+        identityKey: keys[0],
+        cacheHit: true,
+        mediaTasks: 0,
+        recognitionAgentRuns: 0,
+        latencyMs: warm.latencyMs,
+      })}`);
+      return;
+    }
     ownsCacheKeys = true;
 
     console.log(`CACHE_PROOF_STAGE target=${session.config.supabaseRef} correlation=${session.correlationId}`);
