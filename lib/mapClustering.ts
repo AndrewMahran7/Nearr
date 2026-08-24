@@ -1,7 +1,7 @@
 /**
  * lib/mapClustering.ts
  *
- * Semantic clustering for saved-place map markers.
+ * Screen-space visual clustering for saved-place map markers.
  *
  * PRESENTATION ONLY. Nothing here mutates a saved place, changes group or
  * reminder semantics, issues a network request, or reads a photo. A cluster is
@@ -381,12 +381,18 @@ type ClusterAggregateProperties = { [groupKey: string]: number };
 
 export type MapClusterMarker = {
   kind: 'cluster';
-  /** Stable across pans at the same zoom; supplied by the clustering engine. */
+  /** Stable for the same canonical member set and dataset. */
   id: string;
+  /** Ephemeral engine id; valid only against `datasetKey`. */
   clusterId: number;
+  datasetKey: string;
+  clusterKey: string;
+  memberIds: readonly string[];
   latitude: number;
   longitude: number;
   count: number;
+  /** Engine count retained so conservation monitoring can detect divergence. */
+  engineCount: number;
   /** Dominant browse-section id, or null for a mixed cluster. */
   groupId: string | null;
   groupLabel: string | null;
@@ -408,6 +414,8 @@ export type MapClusterIndex<T> = {
   index: Supercluster<ClusterPointProperties, ClusterAggregateProperties> | null;
   byId: Map<string, T>;
   pointCount: number;
+  /** Stable identity of the canonical id/coordinate/category input. */
+  datasetKey: string;
 };
 
 type Clusterable = Pick<SavedPlaceWithPlace, 'id' | 'place'>;
@@ -416,6 +424,79 @@ function hasCoordinates(place: Clusterable): boolean {
   return (
     Number.isFinite(place?.place?.latitude) && Number.isFinite(place?.place?.longitude)
   );
+}
+
+function stableHash(value: string): string {
+  let fnv = 0x811c9dc5;
+  let djb = 5381;
+  for (let index = 0; index < value.length; index += 1) {
+    const code = value.charCodeAt(index);
+    fnv ^= code;
+    fnv = Math.imul(fnv, 0x01000193);
+    djb = (Math.imul(djb, 33) ^ code) >>> 0;
+  }
+  return `${(fnv >>> 0).toString(36)}${(djb >>> 0).toString(36)}`;
+}
+
+function stableMemberIds(ids: readonly string[]): string[] {
+  return [...new Set(ids)].sort((left, right) => left.localeCompare(right));
+}
+
+export function mapClusterIdentity(args: {
+  datasetKey: string;
+  zoom: number;
+  memberIds: readonly string[];
+}): { id: string; clusterKey: string; memberIds: string[] } {
+  const memberIds = stableMemberIds(args.memberIds);
+  const clusterKey = memberIds.join('|');
+  return {
+    id: `cluster-${args.datasetKey}-${args.zoom}-${memberIds.length}-${stableHash(clusterKey)}`,
+    clusterKey,
+    memberIds,
+  };
+}
+
+/** Remove one selected id from a rendered cluster without rebuilding the index. */
+export function clusterWithoutSelectedMember(
+  cluster: MapClusterMarker,
+  selectedId: string | null | undefined,
+  zoom: number,
+): { cluster: MapClusterMarker | null; looseMemberId: string | null } {
+  if (!selectedId || !cluster.memberIds.includes(selectedId)) {
+    return { cluster, looseMemberId: null };
+  }
+  const remaining = cluster.memberIds.filter((id) => id !== selectedId);
+  if (remaining.length === 0) return { cluster: null, looseMemberId: null };
+  if (remaining.length === 1) return { cluster: null, looseMemberId: remaining[0]! };
+  const identity = mapClusterIdentity({
+    datasetKey: cluster.datasetKey,
+    zoom,
+    memberIds: remaining,
+  });
+  return {
+    cluster: {
+      ...cluster,
+      ...identity,
+      count: remaining.length,
+      engineCount: remaining.length,
+      sizing: clusterSizing(remaining.length),
+      accessibilityLabel: clusterAccessibilityLabel({
+        count: remaining.length,
+        groupLabel: cluster.groupLabel,
+      }),
+    },
+    looseMemberId: null,
+  };
+}
+
+function datasetIdentity<T extends Clusterable>(places: readonly T[]): string {
+  const rows = places.map((saved) => [
+    saved.id,
+    saved.place.latitude,
+    saved.place.longitude,
+    mapFilterGroupForPlace(saved as never),
+  ].join(':'));
+  return `d${places.length}-${stableHash(rows.join('|'))}`;
 }
 
 /**
@@ -433,6 +514,16 @@ export function buildMapClusterIndex<T extends Clusterable>(
   if (Array.isArray(places)) {
     for (const saved of places) {
       if (!saved || !hasCoordinates(saved)) continue;
+      // saved_places.id is the marker identity. Duplicate cache/realtime rows
+      // must never become duplicate Supercluster points or duplicate React keys.
+      if (!saved.id || byId.has(saved.id)) continue;
+      byId.set(saved.id, saved);
+    }
+    const canonicalPlaces = [...byId.values()].sort((left, right) =>
+      left.id.localeCompare(right.id),
+    );
+    byId.clear();
+    for (const saved of canonicalPlaces) {
       byId.set(saved.id, saved);
       const groupIndex = GROUP_IDS.indexOf(mapFilterGroupForPlace(saved as never));
       const properties = { savedPlaceId: saved.id } as ClusterPointProperties;
@@ -451,7 +542,7 @@ export function buildMapClusterIndex<T extends Clusterable>(
   }
 
   if (features.length === 0) {
-    return { index: null, byId, pointCount: 0 };
+    return { index: null, byId, pointCount: 0, datasetKey: 'd0-empty' };
   }
 
   const index = new Supercluster<ClusterPointProperties, ClusterAggregateProperties>({
@@ -472,7 +563,12 @@ export function buildMapClusterIndex<T extends Clusterable>(
     },
   });
   index.load(features);
-  return { index, byId, pointCount: features.length };
+  return {
+    index,
+    byId,
+    pointCount: features.length,
+    datasetKey: datasetIdentity([...byId.values()]),
+  };
 }
 
 /**
@@ -484,12 +580,20 @@ export function buildMapClusterIndex<T extends Clusterable>(
  */
 export function queryMapClusters<T extends Clusterable>(
   built: MapClusterIndex<T>,
-  args: { region: ClusterRegion; zoom: number },
+  args: { region: ClusterRegion; zoom: number; viewportWidth?: number },
 ): MapClusterNode<T>[] {
   const { index, byId } = built;
   if (!index) return [];
 
-  const bbox = regionToClusterBbox(args.region);
+  const viewportWidth = Number.isFinite(args.viewportWidth) && (args.viewportWidth ?? 0) > 0
+    ? args.viewportWidth!
+    : 320;
+  // A cluster is returned by its weighted center, not by every member point.
+  // Pad by at least the configured screen-space radius (plus a small native
+  // camera rounding margin), so a member inside the visible viewport cannot
+  // vanish merely because its cluster center sits just beyond an edge.
+  const radiusPadding = (CLUSTER_RADIUS_PX + 8) / viewportWidth;
+  const bbox = regionToClusterBbox(args.region, Math.max(CLUSTER_BBOX_PADDING, radiusPadding));
   const zoom = clamp(Math.round(args.zoom), 0, CLUSTER_MAX_ZOOM + 1);
 
   let features: ReturnType<typeof index.getClusters>;
@@ -500,18 +604,10 @@ export function queryMapClusters<T extends Clusterable>(
     return [...byId.values()].map((place) => ({ kind: 'place', id: place.id, place }));
   }
 
-  // `visiblePlaces` means "allowed by the active Nearr filter", not "inside
-  // the current camera bounds". Supercluster's bbox query legitimately returns
-  // no features when the camera is temporarily elsewhere (for example while a
-  // GPS-centered initial region settles). The caller used the query result as
-  // the complete ownership list for ordinary markers, so that valid empty
-  // viewport response removed every Marker component. Keep the pre-clustering
-  // rendering invariant in that one case: mount the filtered places as
-  // ordinary markers and let MapView cull the off-screen visuals. The next
-  // settled region re-queries normally and restores clustering where relevant.
-  if (features.length === 0 && byId.size > 0) {
-    return [...byId.values()].map((place) => ({ kind: 'place', id: place.id, place }));
-  }
+  // A legitimate empty viewport is an explicit offscreen state. Returning the
+  // entire collection here used to mount 10,000 native Marker views at once,
+  // turning a harmless pan into a JS/native-thread freeze risk.
+  if (features.length === 0) return [];
 
   const clusters: MapClusterMarker[] = [];
   const loose: MapClusterPlace<T>[] = [];
@@ -521,20 +617,31 @@ export function queryMapClusters<T extends Clusterable>(
     const [longitude, latitude] = feature.geometry.coordinates as [number, number];
 
     if (properties.cluster) {
-      const count = Math.max(0, Math.floor(Number(properties.point_count ?? 0)));
+      const engineCount = Math.max(0, Math.floor(Number(properties.point_count ?? 0)));
       const counts: Record<string, number> = {};
       for (let i = 0; i < GROUP_KEYS.length; i += 1) {
         counts[GROUP_IDS[i]!] = Number(properties[GROUP_KEYS[i]!] ?? 0);
       }
-      const dominant = dominantClusterGroup(counts, count);
       const clusterId = Number(properties.cluster_id);
+      const memberIds = stableMemberIds(
+        index.getLeaves(clusterId, Infinity).map((leaf) =>
+          String((leaf.properties as { savedPlaceId?: string })?.savedPlaceId ?? ''),
+        ).filter((id) => !!id && byId.has(id)),
+      );
+      const count = memberIds.length;
+      const dominant = dominantClusterGroup(counts, count);
+      const identity = mapClusterIdentity({ datasetKey: built.datasetKey, zoom, memberIds });
       clusters.push({
         kind: 'cluster',
-        id: `cluster-${clusterId}`,
+        id: identity.id,
         clusterId,
+        datasetKey: built.datasetKey,
+        clusterKey: identity.clusterKey,
+        memberIds: identity.memberIds,
         latitude,
         longitude,
         count,
+        engineCount,
         groupId: dominant?.groupId ?? null,
         groupLabel: dominant?.label ?? null,
         glyph: clusterGlyphForGroup(dominant?.groupId ?? null),
@@ -552,6 +659,8 @@ export function queryMapClusters<T extends Clusterable>(
     if (place) loose.push({ kind: 'place', id: savedPlaceId, place });
   }
 
+  clusters.sort((left, right) => left.id.localeCompare(right.id));
+  loose.sort((left, right) => left.id.localeCompare(right.id));
   return [...clusters, ...loose];
 }
 
@@ -593,12 +702,15 @@ export function clusterMemberPlaces<T extends Clusterable>(
 ): T[] {
   if (!built.index) return [];
   try {
+    const seen = new Set<string>();
     return built.index
       .getLeaves(clusterId, Infinity)
       .flatMap((leaf) => {
         const savedPlaceId = String(
           (leaf.properties as { savedPlaceId?: string })?.savedPlaceId ?? '',
         );
+        if (!savedPlaceId || seen.has(savedPlaceId)) return [];
+        seen.add(savedPlaceId);
         const place = built.byId.get(savedPlaceId);
         return place ? [place] : [];
       });

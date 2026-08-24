@@ -26,7 +26,6 @@ import { isDemoMode } from '@/lib/demoMode';
 import { logDebug } from '@/lib/logger';
 import { isMapPreviewMode } from '@/lib/mapPreview';
 import { triggerGeofenceResync } from '@/lib/geofencing';
-import { distanceMeters } from '@/lib/geo';
 import {
   isLikelyOfflineError,
   OfflineMutationError,
@@ -43,7 +42,8 @@ import {
   markDemoArchived,
   unarchiveDemo,
 } from '@/services/demo';
-import { isAddressLikePlace, type PlaceCandidate } from '@/services/placesService';
+import type { PlaceCandidate } from '@/services/placesService';
+import { isSameCanonicalPlace } from '@/lib/placeCanonicalization';
 import { resolvePlaceCategory, type CategoryResolution } from '@/lib/placeCategory';
 import {
   planSavedPlaceEnrichment,
@@ -108,79 +108,11 @@ type PostgrestFilter = {
   then<T>(onfulfilled: (value: { error: { message: string } | null }) => T): PromiseLike<T>;
 };
 
-const DEDUPE_DISTANCE_M = 40;
-
-function normalizeDedupeText(value: string | null | undefined): string {
-  return (value ?? '')
-    .toLowerCase()
-    .normalize('NFKD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9 ]+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-function looksLikeAddressName(value: string | null | undefined): boolean {
-  const normalized = normalizeDedupeText(value);
-  if (!normalized) return false;
-  return /^\d{1,6}\s+/.test(normalized) &&
-    /\b(st|street|ave|avenue|blvd|boulevard|rd|road|dr|drive|ln|lane|way|hwy|highway|pkwy|parkway|ct|court|ter|terrace|pl|place)\b/.test(normalized);
-}
-
-function sameNormalizedName(a: string | null | undefined, b: string | null | undefined): boolean {
-  const left = normalizeDedupeText(a);
-  const right = normalizeDedupeText(b);
-  if (!left || !right) return false;
-  return left === right || left.includes(right) || right.includes(left);
-}
-
-function isNearbyPlace(candidate: PlaceCandidate, place: PlaceRow): boolean {
-  if (
-    !Number.isFinite(candidate.latitude) ||
-    !Number.isFinite(candidate.longitude) ||
-    !Number.isFinite(place.latitude) ||
-    !Number.isFinite(place.longitude)
-  ) {
-    return false;
-  }
-  return (
-    distanceMeters(
-      { latitude: candidate.latitude, longitude: candidate.longitude },
-      { latitude: place.latitude, longitude: place.longitude },
-    ) <= DEDUPE_DISTANCE_M
-  );
-}
-
 function matchesExistingRealPlace(
   candidate: PlaceCandidate,
   existing: ExistingSavedPlaceLookup,
 ): boolean {
-  if (candidate.googlePlaceId && existing.place.google_place_id === candidate.googlePlaceId) {
-    return true;
-  }
-
-  if (!isNearbyPlace(candidate, existing.place)) {
-    return false;
-  }
-
-  const sameAddress =
-    !!candidate.formattedAddress &&
-    !!existing.place.formatted_address &&
-    normalizeDedupeText(candidate.formattedAddress) ===
-      normalizeDedupeText(existing.place.formatted_address);
-  const sameName = sameNormalizedName(candidate.name, existing.place.name);
-  const candidateIsAddressLike =
-    isAddressLikePlace(candidate) || looksLikeAddressName(candidate.name);
-  const existingIsAddressLike =
-    looksLikeAddressName(existing.place.name) ||
-    (!!existing.place.formatted_address &&
-      normalizeDedupeText(existing.place.name) ===
-        normalizeDedupeText(existing.place.formatted_address));
-
-  if (sameName && sameAddress) return true;
-  if (sameName) return true;
-  if ((candidateIsAddressLike || existingIsAddressLike) && sameAddress) return true;
-  return false;
+  return isSameCanonicalPlace(candidate, existing.place);
 }
 
 /**
@@ -434,7 +366,7 @@ export async function saveSavedPlace(
       candidateGooglePlaceId: candidate.googlePlaceId,
       existingPlaceId: existingForUser.place.id,
       existingSavedPlaceId: existingForUser.id,
-      addressLikeName: isAddressLikePlace(candidate),
+      rule: 'exact_name_address_nearby',
     });
     placeRow = existingForUser.place;
   }
@@ -580,7 +512,9 @@ export async function saveSavedPlace(
 // ---------------------------------------------------------------------------
 
 /** List the current user's saved places, newest first, with the joined place. */
-export async function listSavedPlaces(): Promise<SavedPlaceWithPlace[]> {
+export async function listSavedPlaces(
+  options: { persistCache?: boolean } = {},
+): Promise<SavedPlaceWithPlace[]> {
   if (isDemoMode()) return await listDemoSavedPlaces();
   if (isMapPreviewMode()) return await listDemoSavedPlaces();
 
@@ -612,7 +546,7 @@ export async function listSavedPlaces(): Promise<SavedPlaceWithPlace[]> {
   // Refresh the offline cache on every successful list. The hook
   // (`useSavedPlaces`) also writes the cache, but doing it here covers any
   // service caller that bypasses the hook (future code, scripts).
-  if (sessionUserId) void writeSavedPlacesCache(sessionUserId, rows);
+  if (sessionUserId && options.persistCache !== false) void writeSavedPlacesCache(sessionUserId, rows);
   return rows;
 }
 

@@ -187,7 +187,21 @@ assert.match(map, /visiblePlaces\.filter\(\(place\) => !alwaysIndividualIds\.has
 assert.match(map, /shouldRenderZoneCircle\(\{/, 'zone circles go through the density policy');
 assert.match(map, /onFitAll=\{visiblePlaces\.length > 0/, 'fit-all lives on the same control row');
 assert.match(map, /setMapCategoryFilter\(MAP_FILTER_ALL\);\s*\n\s*if \(reminderOpen\)/, 'deep links reset the filter');
-assert.match(map, /filterPlacesForMap\(validPlaces, mapCategoryFilter, selected\?\.id \?\? null\)/);
+assert.match(
+  map,
+  /filterPlacesForMap\(validPlaces, mapCategoryFilter\)/,
+  'the filter-eligible dataset is stable when selection changes',
+);
+assert.match(
+  map,
+  /filterEligiblePlaces\.some\(\(place\) => place\.id === selected\.id\)/,
+  'a selected place already eligible under the filter is not duplicated',
+);
+assert.match(
+  map,
+  /liveSelected \? \[\.\.\.filterEligiblePlaces, liveSelected\] : filterEligiblePlaces/,
+  'a filtered-out selected place is projected explicitly after filtering',
+);
 assert.match(map, /trackEvent\('map_filter_changed'/, 'filter changes are tracked');
 // Filtering must never trigger data work.
 assert.doesNotMatch(map, /mapCategoryFilter[\s\S]{0,200}refresh\(\)/, 'changing a filter never refetches');

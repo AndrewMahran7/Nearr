@@ -32,6 +32,7 @@ import {
   writeSavedPlacesCache,
 } from '@/lib/savedPlacesCache';
 import type { SavedPlaceWithPlace } from '@/types';
+import { shouldCommitSavedPlacesFetch } from '@/lib/savedPlacesDatasetVersion';
 
 type State = {
   data: SavedPlaceWithPlace[];
@@ -62,7 +63,9 @@ type MemoryEntry = {
 };
 
 let memoryCache: MemoryEntry | null = null;
-let inflight: { userId: string; promise: Promise<SavedPlaceWithPlace[]> } | null = null;
+let cacheMutationRevision = 0;
+type ListResult = { data: SavedPlaceWithPlace[]; startedMutationRevision: number };
+let inflight: { userId: string; promise: Promise<ListResult> } | null = null;
 
 // Mounted hook instances register here so a cache mutation (optimistic
 // delete/undo) from ANY screen pushes the new list to ALL screens at once,
@@ -96,11 +99,15 @@ function getMemory(userId: string | null): MemoryEntry | null {
   return null;
 }
 
-function runListSavedPlaces(userId: string): Promise<SavedPlaceWithPlace[]> {
+function runListSavedPlaces(userId: string): Promise<ListResult> {
   // Coalesce concurrent callers (e.g. two screens mounting at once) onto one
   // Supabase round-trip.
   if (inflight && inflight.userId === userId) return inflight.promise;
-  const promise = listSavedPlaces();
+  const startedMutationRevision = cacheMutationRevision;
+  const promise = listSavedPlaces({ persistCache: false }).then((data) => ({
+    data,
+    startedMutationRevision,
+  }));
   inflight = { userId, promise };
   void promise
     .catch(() => undefined)
@@ -170,9 +177,24 @@ export function useSavedPlaces() {
       logDebug('useSavedPlaces', 'querying', { hasUserId: !!userId, mode });
       recordBreadcrumb('saved_places_fetch_started', { result: mode });
       try {
-        const data = await runListSavedPlaces(userId);
+        const result = await runListSavedPlaces(userId);
+        const { data } = result;
         logDebug('useSavedPlaces', 'query complete', { count: data.length, mode });
         recordBreadcrumb('saved_places_fetch_completed', { result: mode });
+        // An optimistic save/delete/visit mutation that happened after this
+        // request started owns the newer dataset. Never let an older network
+        // snapshot resurrect a deleted marker or drop a newly inserted one.
+        if (!shouldCommitSavedPlacesFetch(result.startedMutationRevision, cacheMutationRevision)) {
+          if (mountedRef.current) {
+            setState((current) => ({
+              ...current,
+              loading: false,
+              refreshing: false,
+            }));
+          }
+          recordBreadcrumb('saved_places_fetch_completed', { result: 'stale_dataset_ignored' });
+          return;
+        }
         setMemoryCache({ userId, data, fetchedAt: Date.now() });
         if (mountedRef.current) {
           setState({
@@ -308,6 +330,7 @@ export function useSavedPlaces() {
       // user's list at once. A direct assignment left other already-mounted
       // screens rendering the signed-out user's places until they refetched.
       setMemoryCache(null);
+      cacheMutationRevision += 1;
       inflight = null;
       setState({
         data: [],
@@ -414,6 +437,7 @@ export function updateSavedPlacesCache(
   const prev = memoryCache.data;
   const next = updater(prev);
   if (next === prev) return;
+  cacheMutationRevision += 1;
   setMemoryCache({ ...memoryCache, data: next });
   // Persist so the change survives a cold start (the original stale-after-
   // restart symptom came from the offline cache still holding the old list).

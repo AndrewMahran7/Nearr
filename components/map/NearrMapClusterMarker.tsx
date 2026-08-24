@@ -30,13 +30,15 @@ type Props = {
   dimmed: boolean;
 };
 
+const CLUSTER_SNAPSHOT_SETTLE_MS = 120;
+
 function NearrMapClusterMarkerView({ cluster, onPress, dimmed }: Props) {
   const [tracksViewChanges, setTracksViewChanges] = useState(true);
 
   // Re-arm native snapshotting only when the drawn visual actually changes.
   useEffect(() => {
     setTracksViewChanges(true);
-    const id = setTimeout(() => setTracksViewChanges(false), 0);
+    const id = setTimeout(() => setTracksViewChanges(false), CLUSTER_SNAPSHOT_SETTLE_MS);
     return () => clearTimeout(id);
   }, [cluster.count, cluster.glyph, cluster.sizing.diameter]);
 

@@ -16,6 +16,7 @@ export type ClusterExpansionMember = {
 
 export type ClusterExpansionRequest = {
   token: number;
+  datasetKey: string;
   clusterId: number;
   clusterKey: string;
   memberIds: readonly string[];
@@ -138,28 +139,32 @@ export function clusterMemberKey(memberIds: readonly string[]): string {
 
 type ClusterMarkerIdentity = {
   clusterId: number;
+  datasetKey?: string;
+  clusterKey?: string;
   latitude: number;
   longitude: number;
 };
 
-/** Resolve a possibly stale native marker event against the latest render. */
+/**
+ * Resolve a possibly stale native marker event against the latest render.
+ *
+ * An ephemeral Supercluster id is trusted only within the same dataset. Across
+ * rebuilds, membership identity must match exactly. The previous unbounded
+ * "nearest cluster" fallback could route a stale native event to an unrelated
+ * group anywhere in the current viewport.
+ */
 export function resolveLatestClusterMarker<T extends ClusterMarkerIdentity>(
   tapped: ClusterMarkerIdentity,
   current: readonly T[],
 ): T | null {
-  const exact = current.find((candidate) => candidate.clusterId === tapped.clusterId);
-  if (exact) return exact;
-  let nearest: T | null = null;
-  let nearestDistance = Number.POSITIVE_INFINITY;
-  for (const candidate of current) {
-    const distance = (candidate.latitude - tapped.latitude) ** 2
-      + (candidate.longitude - tapped.longitude) ** 2;
-    if (distance < nearestDistance) {
-      nearest = candidate;
-      nearestDistance = distance;
-    }
-  }
-  return nearest;
+  const sameMembership = tapped.clusterKey
+    ? current.find((candidate) => candidate.clusterKey === tapped.clusterKey)
+    : null;
+  if (sameMembership) return sameMembership;
+  if (!tapped.datasetKey) return null;
+  return current.find((candidate) =>
+    candidate.datasetKey === tapped.datasetKey && candidate.clusterId === tapped.clusterId,
+  ) ?? null;
 }
 
 /**

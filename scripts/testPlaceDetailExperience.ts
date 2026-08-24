@@ -11,7 +11,10 @@ const editor = read('components/map/NoteEditorModal.tsx');
 const fallback = read('app/place/[id].tsx');
 
 // The physical runtime is the selected-place branch owned by the map.
-assert.match(map, /selected \? \([\s\S]*previewExpanded[\s\S]*<SelectedPlaceDetails/);
+assert.match(
+  map,
+  /selected && selectedPlaceDetailVisible \? \([\s\S]*previewExpanded[\s\S]*<SelectedPlaceDetails/,
+);
 assert.match(map, /accessibilityLabel="Close place details"/);
 // The expanded sheet takes a FIXED share of the map area rather than growing
 // with its content. Content-driven height is what let it swallow the screen

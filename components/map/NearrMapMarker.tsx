@@ -47,6 +47,10 @@ type Props = {
 };
 
 const PHOTO_TRACKING_SAFETY_MS = 2500;
+// A zero-delay timer can run before Android has rasterized the first native
+// frame, freezing a blank custom-marker bitmap. Keep the bounded tracker alive
+// long enough for layout + one rendered frame, then disable it as before.
+const STATIC_MARKER_SNAPSHOT_MS = 120;
 const MAP_PIN_DIAGNOSTIC_LIMIT = 30;
 let mapPinDiagnosticsEmitted = 0;
 
@@ -130,7 +134,9 @@ function NearrMapMarkerView({
   // decode and also freezes immediately from its onLoad callback.
   useEffect(() => {
     setTracksViewChanges(true);
-    const delay = presentation.visual === 'photo' ? PHOTO_TRACKING_SAFETY_MS : 0;
+    const delay = presentation.visual === 'photo'
+      ? PHOTO_TRACKING_SAFETY_MS
+      : STATIC_MARKER_SNAPSHOT_MS;
     const id = setTimeout(() => setTracksViewChanges(false), delay);
     return () => clearTimeout(id);
   }, [

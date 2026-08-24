@@ -77,6 +77,7 @@ function requestFor(
   });
   return {
     token,
+    datasetKey: index.datasetKey,
     clusterId: cluster.clusterId,
     clusterKey: clusterMemberKey(members.map((member) => member.id)),
     memberIds: members.map((member) => member.id),
@@ -186,14 +187,13 @@ assert.ok(originalRequest.memberIds.length >= 2, 'rendered cluster resolves curr
   assert.ok(clusterMemberPlaces(index, repaired!.clusterId).length >= 2);
 }
 
-// 6. A filter rebuild cannot leave an old id as a silent no-op.
+// 6. A filter rebuild never reroutes an old marker to an unrelated cluster.
 {
   const foodOnly = allPlaces.filter((place) => place.place.category === 'restaurant');
   const filteredIndex = buildMapClusterIndex(foodOnly);
   const filteredClusters = clusters(queryMapClusters(filteredIndex, { region: wide, zoom: wideZoom }));
   const repaired = resolveLatestClusterMarker(original, filteredClusters);
-  assert.ok(repaired, 'stale pre-filter marker resolves to a current filtered cluster');
-  assert.ok(clusterMemberPlaces(filteredIndex, repaired!.clusterId).length >= 2);
+  assert.equal(repaired, null, 'changed membership is handled by deterministic member fallback');
   index = buildMapClusterIndex(allPlaces); // clearing the filter rebuilds cleanly
   wideClusters = clusters(queryMapClusters(index, { region: wide, zoom: wideZoom }));
   assert.ok(resolveLatestClusterMarker(original, wideClusters));

@@ -185,7 +185,11 @@ assert.match(
   /export async function listSavedPlaces[\s\S]*?\.select\('\*, place:places\(\*\)'\)/,
   'the authenticated cold-start list projection includes saved_places.ai_note',
 );
-assert.match(savedHook, /const promise = listSavedPlaces\(\)/, 'cold start performs the network list query');
+assert.match(
+  savedHook,
+  /const promise = listSavedPlaces\(\{ persistCache: false \}\)/,
+  'cold start performs the network list query without bypassing the dataset-generation commit gate',
+);
 assert.match(savedHook, /readSavedPlacesCache\(userId\)/, 'cold start can hydrate the full cached row');
 assert.match(
   mapScreen,

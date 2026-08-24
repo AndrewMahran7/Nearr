@@ -19,6 +19,7 @@ import {
   CLUSTER_SIZE_TIERS,
   CLUSTER_ZOOM_HYSTERESIS,
   buildMapClusterIndex,
+  clusterWithoutSelectedMember,
   clusterAccessibilityLabel,
   clusterExpansionRegion,
   clusterExpansionZoom,
@@ -403,29 +404,32 @@ assert.deepEqual(
 // 9. Selected-place exception
 // ---------------------------------------------------------------------------
 //
-// The map excludes the selected place (and any active map-group focus) from
-// the clustering input and renders it individually. Modelled here exactly as
-// the screen does it.
+// Selection is projected out of its rendered cluster without rebuilding the
+// full spatial index on the tap path.
 
 const selectedId = 'food-1';
-const withoutSelected = foodHuddle.filter((place) => place.id !== selectedId);
-const selectedIndex = buildMapClusterIndex(withoutSelected);
+const selectedIndex = buildMapClusterIndex(foodHuddle);
 const selectedNodes = queryMapClusters(selectedIndex, {
   region: wideRegion(),
   zoom: zoomFor(wideRegion()),
 });
+const selectedClusters = clustersOf(selectedNodes).flatMap((cluster) => {
+  const projected = clusterWithoutSelectedMember(cluster, selectedId, zoomFor(wideRegion()));
+  return projected.cluster ? [projected.cluster] : [];
+});
 const rendered = [
-  ...clustersOf(selectedNodes).map((c) => `cluster:${c.count}`),
+  ...selectedClusters.map((c) => `cluster:${c.count}`),
   ...placesOf(selectedNodes),
   selectedId,
 ];
 assert.ok(rendered.includes(selectedId), 'the selected place is always rendered individually');
 assert.equal(
-  clustersOf(selectedNodes).reduce((sum, c) => sum + c.count, 0) + placesOf(selectedNodes).length,
+  selectedClusters.reduce((sum, c) => sum + c.count, 0) + placesOf(selectedNodes).length,
   foodHuddle.length - 1,
   'the selected place is not double-counted inside a cluster',
 );
-assert.equal(clustersOf(selectedNodes)[0]!.count, 6, 'the surrounding cluster drops to 6');
+assert.equal(selectedClusters[0]!.count, 6, 'the surrounding cluster drops to 6');
+assert.equal(selectedIndex.datasetKey, buildMapClusterIndex(foodHuddle).datasetKey, 'selection does not rebuild dataset identity');
 
 // Selecting and deselecting is reversible with no residue.
 const deselected = queryMapClusters(buildMapClusterIndex(foodHuddle), {
@@ -573,10 +577,9 @@ for (let zoom = 0; zoom <= CLUSTER_MAX_ZOOM + 1; zoom += 1) {
   assert.equal(accounted, foodHuddle.length, `zoom ${zoom}: every place is accounted for exactly once`);
 }
 
-// Regression: `visiblePlaces` is the collection allowed by the active Nearr
-// filter; it is not pre-clipped to the current camera. A GPS-centered camera
-// can therefore be away from all three saves while it settles. Supercluster's
-// empty bbox result must not become an empty React marker list.
+// A GPS-centered camera can be away from all saves while it settles. That is
+// an explicit offscreen state, not a reason to mount the entire dataset as
+// native markers and ask MapView to cull it.
 const threeOrdinaryPlaces = [
   saved('restaurant', 33.7500, -117.8500, 'three-a'),
   saved('cafe', 33.7525, -117.8525, 'three-b'),
@@ -592,15 +595,7 @@ const awayFromPlaces = queryMapClusters(buildMapClusterIndex(threeOrdinaryPlaces
   zoom: 14,
 });
 assert.equal(clustersOf(awayFromPlaces).length, 0);
-assert.deepEqual(
-  placesOf(awayFromPlaces).sort(),
-  ['three-a', 'three-b', 'three-c'],
-  'three filter-visible valid places always produce marker nodes even while the camera is elsewhere',
-);
-assert.ok(
-  clustersOf(awayFromPlaces).length + placesOf(awayFromPlaces).length > 0,
-  'visiblePlacesLength > 0 can never produce a zero-marker render list',
-);
+assert.deepEqual(placesOf(awayFromPlaces), []);
 
 // ---------------------------------------------------------------------------
 // 13. Degenerate input
@@ -642,7 +637,7 @@ for (const forbidden of ['fetch(', 'placeRichDetails', 'photoUrl', 'Image', 'sup
 const mapSource = readFileSync(join(process.cwd(), 'app/(tabs)/map.tsx'), 'utf8');
 assert.match(mapSource, /const clusterCandidates = useMemo\(/);
 assert.match(mapSource, /visiblePlaces\.filter\(\(place\) => !alwaysIndividualIds\.has\(place\.id\)\)/);
-assert.match(mapSource, /if \(selected\?\.id\) ids\.add\(selected\.id\);/);
+assert.match(mapSource, /clusterWithoutSelectedMember\(node, selected\?\.id/);
 assert.match(mapSource, /new Set<string>\(mapGroupCoordinateIds\)/);
 assert.match(mapSource, /buildMapClusterIndex\(clusterCandidates\)/);
 assert.match(mapSource, /visibleCount: individualPlaces\.length/);

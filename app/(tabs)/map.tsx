@@ -18,8 +18,9 @@
  *                    'denied' for rendering: small non-blocking pill, no user
  *                    dot, but we never hide the map behind a spinner.
  *
- * Marker filtering and visual density are presentation-only; clustering and
- * tile/style customization remain intentionally out of scope.
+ * Marker filtering, canonical identity, screen-space clustering, selection,
+ * and camera ownership are presentation-only; tile/style customization is
+ * intentionally separate.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ComponentRef } from 'react';
@@ -162,9 +163,9 @@ import { isMapPinRedesignEnabled } from '@/lib/featureFlags';
 import { mapMarkerDetailLevel } from '@/lib/mapMarkerPresentation';
 import {
   buildMapClusterIndex,
+  clusterWithoutSelectedMember,
   clusterExpansionRegion,
   clusterExpansionZoom,
-  clusterMemberPlaces,
   clusterTapZoom,
   nextClusterZoom,
   queryMapClusters,
@@ -180,6 +181,11 @@ import {
   type ClusterExpansionRequest,
 } from '@/lib/mapClusterExpansion';
 import { recordMapClusterDiagnostic } from '@/lib/mapClusterDiagnostics';
+import {
+  assertMarkerConservation,
+  inspectMarkerConservation,
+  recordMapReliabilityDiagnostic,
+} from '@/lib/mapReliability';
 import {
   decideSavedPlaceFocus,
   findSavedPlaceForOpen,
@@ -505,13 +511,20 @@ export default function MapScreen() {
   // Skip any saved place whose coordinates are missing or non-finite. Maps
   // crashes hard on NaN, so we filter once at the top of render.
   const validPlaces = useMemo<SavedPlaceWithPlace[]>(
-    () =>
-      places.filter(
-        (s) =>
-          !!s.place &&
-          Number.isFinite(s.place.latitude) &&
-          Number.isFinite(s.place.longitude),
-      ),
+    () => {
+      const seen = new Set<string>();
+      return places.filter((s) => {
+        if (
+          !s?.id ||
+          seen.has(s.id) ||
+          !s.place ||
+          !Number.isFinite(s.place.latitude) ||
+          !Number.isFinite(s.place.longitude)
+        ) return false;
+        seen.add(s.id);
+        return true;
+      });
+    },
     [places],
   );
 
@@ -622,10 +635,17 @@ export default function MapScreen() {
   // The markers that actually render. One memoized pass over an array the map
   // already holds — no query, no refetch, no mutation. The selected place is
   // pinned visible so a focused place is never hidden by an active filter.
-  const visiblePlaces = useMemo(
-    () => filterPlacesForMap(validPlaces, mapCategoryFilter, selected?.id ?? null),
-    [mapCategoryFilter, selected?.id, validPlaces],
+  const filterEligiblePlaces = useMemo(
+    () => filterPlacesForMap(validPlaces, mapCategoryFilter),
+    [mapCategoryFilter, validPlaces],
   );
+  const visiblePlaces = useMemo(() => {
+    if (!selected?.id || filterEligiblePlaces.some((place) => place.id === selected.id)) {
+      return filterEligiblePlaces;
+    }
+    const liveSelected = validPlaces.find((place) => place.id === selected.id);
+    return liveSelected ? [...filterEligiblePlaces, liveSelected] : filterEligiblePlaces;
+  }, [filterEligiblePlaces, selected?.id, validPlaces]);
   const visiblePlacesRef = useRef<SavedPlaceWithPlace[]>(visiblePlaces);
   visiblePlacesRef.current = visiblePlaces;
   const mapCategoryFilterRef = useRef<MapVisibilityFilter>(mapCategoryFilter);
@@ -1155,14 +1175,11 @@ export default function MapScreen() {
 
   // Places that are NEVER folded into a cluster.
   //
-  //   - the selected place, so a selection can never vanish into a "7"
   //   - every place in an active map-group focus, so queue/notification group
   //     semantics survive clustering untouched
   const alwaysIndividualIds = useMemo(() => {
-    const ids = new Set<string>(mapGroupCoordinateIds);
-    if (selected?.id) ids.add(selected.id);
-    return ids;
-  }, [mapGroupCoordinateIds, selected?.id]);
+    return new Set<string>(mapGroupCoordinateIds);
+  }, [mapGroupCoordinateIds]);
 
   const clusterCandidates = useMemo(
     () =>
@@ -1175,12 +1192,25 @@ export default function MapScreen() {
   // The spatial index. Rebuilt only when the FILTERED set or the
   // always-individual exceptions change — never on pan, zoom, or an unrelated
   // re-render.
-  const clusterIndex = useMemo(
-    () => buildMapClusterIndex(clusterCandidates),
+  const clusterBuild = useMemo(
+    () => {
+      const startedAt = Date.now();
+      const index = buildMapClusterIndex(clusterCandidates);
+      return { index, durationMs: Date.now() - startedAt };
+    },
     [clusterCandidates],
   );
+  const clusterIndex = clusterBuild.index;
   const clusterIndexRef = useRef(clusterIndex);
   clusterIndexRef.current = clusterIndex;
+  const datasetGenerationRef = useRef({ key: '', value: 0 });
+  if (datasetGenerationRef.current.key !== clusterIndex.datasetKey) {
+    datasetGenerationRef.current = {
+      key: clusterIndex.datasetKey,
+      value: datasetGenerationRef.current.value + 1,
+    };
+  }
+  const datasetGeneration = datasetGenerationRef.current.value;
 
   const clusterRegion = settledRegion ?? initialRegion;
   const effectiveClusterZoom = useMemo(() => {
@@ -1195,21 +1225,34 @@ export default function MapScreen() {
   const effectiveClusterZoomRef = useRef(effectiveClusterZoom);
   effectiveClusterZoomRef.current = effectiveClusterZoom;
 
-  const clusterNodes = useMemo(
-    () =>
-      clusteringEnabled
+  const clusterQuery = useMemo(
+    () => {
+      const startedAt = Date.now();
+      const nodes = clusteringEnabled
         ? queryMapClusters(clusterIndex, {
             region: clusterRegion,
             zoom: effectiveClusterZoom,
+            viewportWidth: windowWidth,
           })
-        : [],
-    [clusterIndex, clusterRegion, clusteringEnabled, effectiveClusterZoom],
+        : [];
+      return { nodes, durationMs: Date.now() - startedAt };
+    },
+    [clusterIndex, clusterRegion, clusteringEnabled, effectiveClusterZoom, windowWidth],
   );
+  const clusterNodes = clusterQuery.nodes;
 
-  const clusterMarkers = useMemo(
-    () => clusterNodes.flatMap((node) => (node.kind === 'cluster' ? [node] : [])),
-    [clusterNodes],
-  );
+  const selectedClusterProjection = useMemo(() => {
+    const clusters: MapClusterMarkerModel[] = [];
+    const looseMemberIds = new Set<string>();
+    for (const node of clusterNodes) {
+      if (node.kind !== 'cluster') continue;
+      const projected = clusterWithoutSelectedMember(node, selected?.id, effectiveClusterZoom);
+      if (projected.cluster) clusters.push(projected.cluster);
+      if (projected.looseMemberId) looseMemberIds.add(projected.looseMemberId);
+    }
+    return { clusters, looseMemberIds };
+  }, [clusterNodes, effectiveClusterZoom, selected?.id]);
+  const clusterMarkers = selectedClusterProjection.clusters;
   const clusterMarkersRef = useRef<MapClusterMarkerModel[]>(clusterMarkers);
   clusterMarkersRef.current = clusterMarkers;
 
@@ -1224,9 +1267,13 @@ export default function MapScreen() {
       clusterNodes.flatMap((node) => (node.kind === 'place' ? [node.id] : [])),
     );
     return visiblePlaces.filter(
-      (place) => alwaysIndividualIds.has(place.id) || looseIds.has(place.id),
+      (place) =>
+        alwaysIndividualIds.has(place.id) ||
+        selected?.id === place.id ||
+        looseIds.has(place.id) ||
+        selectedClusterProjection.looseMemberIds.has(place.id),
     );
-  }, [alwaysIndividualIds, clusterNodes, clusteringEnabled, visiblePlaces]);
+  }, [alwaysIndividualIds, clusterNodes, clusteringEnabled, selected?.id, selectedClusterProjection.looseMemberIds, visiblePlaces]);
   const individualPlacesRef = useRef<SavedPlaceWithPlace[]>(individualPlaces);
   individualPlacesRef.current = individualPlaces;
 
@@ -1237,6 +1284,70 @@ export default function MapScreen() {
     }),
     [individualPlaces.length, markerLatitudeDelta],
   );
+
+  useEffect(() => {
+    recordMapReliabilityDiagnostic('map_dataset_changed', {
+      datasetGeneration,
+      placeCount: clusterIndex.pointCount,
+      filter: String(mapCategoryFilter),
+    });
+    recordMapReliabilityDiagnostic('map_cluster_index_rebuilt', {
+      datasetGeneration,
+      placeCount: clusterIndex.pointCount,
+      durationMs: clusterBuild.durationMs,
+      filter: String(mapCategoryFilter),
+    });
+    if (clusterBuild.durationMs > 50) {
+      recordMapReliabilityDiagnostic('map_interaction_slow', {
+        datasetGeneration,
+        placeCount: clusterIndex.pointCount,
+        durationMs: clusterBuild.durationMs,
+        result: 'cluster_index_build',
+      });
+    }
+  }, [clusterBuild.durationMs, clusterIndex.datasetKey, clusterIndex.pointCount, datasetGeneration, mapCategoryFilter]);
+
+  useEffect(() => {
+    if (clusterQuery.durationMs > 24) {
+      recordMapReliabilityDiagnostic('map_interaction_slow', {
+        datasetGeneration,
+        placeCount: clusterIndex.pointCount,
+        durationMs: clusterQuery.durationMs,
+        result: 'viewport_query',
+      });
+    }
+  }, [clusterIndex.pointCount, clusterQuery.durationMs, datasetGeneration]);
+
+  useEffect(() => {
+    const args = {
+      eligiblePlaces: visiblePlaces,
+      individualIds: individualPlaces.map((place) => place.id),
+      clusters: clusterMarkers,
+      region: clusterRegion,
+    };
+    const report = __DEV__
+      ? assertMarkerConservation(args)
+      : inspectMarkerConservation(args);
+    if (!report.ok) {
+      recordMapReliabilityDiagnostic('map_marker_conservation_failed', {
+        datasetGeneration,
+        placeCount: report.eligibleIds.length,
+        visibleIndividualCount: report.individualIds.length,
+        clusterCount: clusterMarkers.length,
+        clusterMemberCount: report.clusterMemberIds.length,
+        zoom: effectiveClusterZoom,
+        filter: String(mapCategoryFilter),
+        result: `missing=${report.missingOnscreenIds.length};duplicates=${report.duplicateIds.length}`,
+      });
+    }
+    if (report.invalidClusterIds.length > 0) {
+      recordMapReliabilityDiagnostic('map_cluster_membership_invalid', {
+        datasetGeneration,
+        clusterCount: report.invalidClusterIds.length,
+        result: 'count_or_membership_mismatch',
+      });
+    }
+  }, [clusterMarkers, clusterRegion, datasetGeneration, effectiveClusterZoom, individualPlaces, mapCategoryFilter, visiblePlaces]);
 
   const clearClusterExpansionTimer = useCallback(() => {
     if (clusterExpansionTimerRef.current) {
@@ -1306,6 +1417,12 @@ export default function MapScreen() {
 
     if (action.kind === 'completed') {
       clearClusterExpansionTimer();
+      recordMapReliabilityDiagnostic('map_cluster_expand_completed', {
+        datasetGeneration: datasetGenerationRef.current.value,
+        clusterMemberCount: request.memberIds.length,
+        zoom: request.targetZoom,
+        result: action.result,
+      });
       emitClusterDiagnostic('cluster_expand_completed', request, {
         expansionDispatched: true,
         cameraCommandExecuted: true,
@@ -1317,6 +1434,11 @@ export default function MapScreen() {
 
     if (action.kind === 'fallback_select') {
       clearClusterExpansionTimer();
+      recordMapReliabilityDiagnostic('map_cluster_expand_fallback', {
+        datasetGeneration: datasetGenerationRef.current.value,
+        clusterMemberCount: request.memberIds.length,
+        result: 'member_selection',
+      });
       const latest = request.memberIds
         .map((id) => visiblePlacesRef.current.find((place) => place.id === id))
         .find((place): place is SavedPlaceWithPlace => !!place);
@@ -1358,6 +1480,14 @@ export default function MapScreen() {
         cameraCommandExecuted: true,
         result: action.kind === 'primary_camera' ? 'primary' : 'fallback_fit',
       });
+      recordMapReliabilityDiagnostic('map_cluster_expand_requested', {
+        datasetGeneration: datasetGenerationRef.current.value,
+        clusterMemberCount: request.memberIds.length,
+        zoom: request.targetZoom,
+        cameraState: action.kind === 'primary_camera' ? 'CLUSTER_EXPAND' : 'CLUSTER_FALLBACK',
+        mapReady: true,
+        result: action.kind,
+      });
       clusterExpansionTimerRef.current = setTimeout(() => {
         clusterExpansionTimerRef.current = null;
         emitClusterDiagnostic('cluster_expand_timeout', request, {
@@ -1368,6 +1498,11 @@ export default function MapScreen() {
         executeClusterExpansionRef.current(clusterExpansionCoordinatorRef.current.timeout());
       }, action.kind === 'primary_camera' ? 1_000 : 1_200);
     } catch (error) {
+      recordMapReliabilityDiagnostic('map_cluster_expand_failed', {
+        datasetGeneration: datasetGenerationRef.current.value,
+        clusterMemberCount: request.memberIds.length,
+        result: error instanceof Error ? error.name : 'camera_exception',
+      });
       emitClusterDiagnostic('cluster_expand_skipped', request, {
         expansionDispatched: true,
         cameraCommandExecuted: false,
@@ -1399,16 +1534,15 @@ export default function MapScreen() {
     const cluster = resolveLatestClusterMarker(tapped, latestMarkers);
 
     const members = cluster
-      ? clusterMemberPlaces(clusterIndexRef.current, cluster.clusterId)
+      ? cluster.memberIds.flatMap((id) => {
+          const member = clusterIndexRef.current.byId.get(id);
+          return member ? [member] : [];
+        })
       : [];
     if (!cluster || members.length < 2) {
-      const nearest = [...visiblePlacesRef.current].sort((left, right) => {
-        const leftDistance = (left.place.latitude - tapped.latitude) ** 2
-          + (left.place.longitude - tapped.longitude) ** 2;
-        const rightDistance = (right.place.latitude - tapped.latitude) ** 2
-          + (right.place.longitude - tapped.longitude) ** 2;
-        return leftDistance - rightDistance;
-      })[0];
+      const latestTappedMember = tapped.memberIds
+        .map((id) => visiblePlacesRef.current.find((place) => place.id === id))
+        .find((place): place is SavedPlaceWithPlace => !!place);
       const currentZoom = effectiveClusterZoomRef.current;
       const targetZoom = clusterTapZoom({ expansionZoom: currentZoom + 1, currentZoom });
       const targetRegion = expansionRegionFor({
@@ -1418,13 +1552,14 @@ export default function MapScreen() {
       });
       const unresolved: ClusterExpansionRequest = {
         token: ++clusterExpansionTokenRef.current,
+        datasetKey: tapped.datasetKey,
         clusterId: tapped.clusterId,
-        clusterKey: `stale-${tapped.clusterId}`,
-        memberIds: nearest ? [nearest.id] : [],
-        members: nearest ? [{
-          id: nearest.id,
-          latitude: nearest.place.latitude,
-          longitude: nearest.place.longitude,
+        clusterKey: tapped.clusterKey,
+        memberIds: latestTappedMember ? [latestTappedMember.id] : tapped.memberIds,
+        members: latestTappedMember ? [{
+          id: latestTappedMember.id,
+          latitude: latestTappedMember.place.latitude,
+          longitude: latestTappedMember.place.longitude,
         }] : [],
         currentZoom,
         targetZoom,
@@ -1441,10 +1576,10 @@ export default function MapScreen() {
         expansionDispatched: false,
         cameraCommandExecuted: false,
         clusteringRecomputed: true,
-        result: nearest ? 'fallback_selection' : 'stale_center_zoom',
+        result: latestTappedMember ? 'fallback_selection' : 'stale_center_zoom',
       });
-      if (nearest) {
-        selectPlaceRef.current(nearest);
+      if (latestTappedMember) {
+        selectPlaceRef.current(latestTappedMember);
         emitClusterDiagnostic('cluster_expand_completed', unresolved, {
           expansionDispatched: false,
           cameraCommandExecuted: false,
@@ -1479,6 +1614,7 @@ export default function MapScreen() {
     });
     const request: ClusterExpansionRequest = {
       token: ++clusterExpansionTokenRef.current,
+      datasetKey: cluster.datasetKey,
       clusterId: cluster.clusterId,
       clusterKey: clusterMemberKey(members.map((member) => member.id)),
       memberIds: members.map((member) => member.id),
@@ -1499,6 +1635,15 @@ export default function MapScreen() {
       cameraCommandExecuted: false,
       result: tapped.clusterId === cluster.clusterId ? 'latest_id' : 'stale_id_repaired',
     });
+    recordMapReliabilityDiagnostic('map_cluster_tap', {
+      datasetGeneration: datasetGenerationRef.current.value,
+      clusterMemberCount: members.length,
+      zoom: currentZoom,
+      filter: String(mapCategoryFilterRef.current),
+      cameraState: 'CLUSTER_EXPAND',
+      mapReady: mapReadyRef.current && !!mapRef.current,
+      result: tapped.id === cluster.id ? 'current' : 'stale_membership_repaired',
+    });
     void trackEvent('map_cluster_tapped', {
       count: members.length,
       dominant_group: cluster.groupId,
@@ -1514,10 +1659,10 @@ export default function MapScreen() {
   }, [emitClusterDiagnostic, expansionRegionFor, handleUserInteraction]);
 
   useEffect(() => {
-    const memberships = clusterMarkers.map((cluster) => {
-      const memberIds = clusterMemberPlaces(clusterIndex, cluster.clusterId).map((place) => place.id);
-      return { clusterKey: clusterMemberKey(memberIds), memberIds };
-    });
+    const memberships = clusterMarkers.map((cluster) => ({
+      clusterKey: cluster.clusterKey,
+      memberIds: cluster.memberIds,
+    }));
     executeClusterExpansionRef.current(
       clusterExpansionCoordinatorRef.current.clustersRecomputed(memberships),
     );
@@ -1946,6 +2091,13 @@ export default function MapScreen() {
   // produced the OutOfMemoryError on the GMS Marker.setIcon side.
   const handleMarkerPress = useCallback((p: SavedPlaceWithPlace) => {
     handleUserInteraction('marker_press');
+    recordMapReliabilityDiagnostic('map_pin_tap', {
+      datasetGeneration: datasetGenerationRef.current.value,
+      placeCount: visiblePlacesRef.current.length,
+      cameraState: 'PIN_FOCUS',
+      mapReady: mapReadyRef.current && !!mapRef.current,
+      result: 'selected',
+    });
     void trackEvent('place_marker_tapped', {
       saved_place_id: p.id,
       google_place_id: p.place.google_place_id ?? null,
