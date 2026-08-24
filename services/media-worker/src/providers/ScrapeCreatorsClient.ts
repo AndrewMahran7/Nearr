@@ -61,12 +61,13 @@ export async function requestScrapeCreatorsJson(input: {
   timeoutMs: number;
   signal: AbortSignal;
   clientErrorCode?: 'download_failed' | 'missing_video';
+  terminalNoMediaStatuses?: readonly number[];
+  paymentRequiredDetail?: string;
   deps?: Partial<ScrapeCreatorsRequestDeps>;
 }): Promise<ScrapeCreatorsJsonResult> {
   const deps: ScrapeCreatorsRequestDeps = {
-    fetch,
-    now: Date.now,
-    ...input.deps,
+    fetch: input.deps?.fetch ?? fetch,
+    now: input.deps?.now ?? Date.now,
   };
   const controller = new AbortController();
   const onAbort = () => controller.abort();
@@ -105,7 +106,10 @@ export async function requestScrapeCreatorsJson(input: {
   if (response.status === 402) {
     await response.body?.cancel().catch(() => undefined);
     finish();
-    throw new MediaError('provider_unavailable', 'scrapecreators_credits_exhausted');
+    throw new MediaError(
+      'provider_unavailable',
+      input.paymentRequiredDetail ?? 'scrapecreators_credits_exhausted',
+    );
   }
   if (response.status === 401 || response.status === 403) {
     await response.body?.cancel().catch(() => undefined);
@@ -115,10 +119,12 @@ export async function requestScrapeCreatorsJson(input: {
   if (!response.ok) {
     await response.body?.cancel().catch(() => undefined);
     finish();
-    throw new MediaError(
-      response.status >= 500 ? 'provider_unavailable' : input.clientErrorCode ?? 'download_failed',
-      `scrapecreators_status_${response.status}`,
-    );
+    const code = input.terminalNoMediaStatuses?.includes(response.status)
+      ? 'missing_video'
+      : response.status >= 500
+        ? 'provider_unavailable'
+        : input.clientErrorCode ?? 'download_failed';
+    throw new MediaError(code, `scrapecreators_status_${response.status}`);
   }
 
   try {

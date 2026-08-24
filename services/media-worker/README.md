@@ -148,10 +148,15 @@ These are **not** part of the default `npm test` / repo prebuild.
   traffic. Per the public-content-only mission, no anti-bot evasion was
   attempted. Verify from the actual Railway deployment (different IP
   reputation) before enabling `TIKTOK_MEDIA_RESOLVER_ENABLED` broadly.
-  Production may optionally enable the narrowly gated ScrapeCreators tail
-  fallback. It runs only after eligible generic yt-dlp extractor failures and
-  never handles authentication, sensitive, private, deleted/unavailable,
-  protected, or duration/media-validation failures.
+  Production may optionally enable the bounded ScrapeCreators tail fallback.
+  With a valid canonical video ID, every primary acquisition failure gets one
+  provider attempt; content classifications are telemetry, not exclusions.
+- **Instagram ScrapeCreators fallback**: `SCRAPECREATORS_INSTAGRAM_FALLBACK_ENABLED`
+  adds one server-side `GET /v1/instagram/post?download_media=false` attempt
+  after the primary path produces no ffprobe-valid video. The exact shortcode
+  must match before a direct Meta CDN URL is downloaded. Single videos and
+  one-video carousels are supported; multi-video carousels fail explicitly
+  because the current recognition pipeline cannot preserve multiple assets.
 - **YouTube**: uses yt-dlp's adaptive video+audio merge, not a single
   progressive URL — verified live that YouTube's legacy single-file format
   (id `18`) can 403 or resolve to an HLS manifest instead of raw bytes even

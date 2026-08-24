@@ -129,6 +129,8 @@ export type ResolvedMedia = {
     finalAcquisitionProvider?: 'yt_dlp' | 'scrapecreators';
     fallbackReason?: string;
     canonicalTikTokId?: string;
+    canonicalInstagramId?: string;
+    providerPostId?: string;
     canonicalFacebookId?: string;
     sourceUrlClass?: string;
     providerLatencyMs?: number;

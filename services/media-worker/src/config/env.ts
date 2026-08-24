@@ -76,6 +76,8 @@ export type WorkerConfig = {
   nativeVideoAnalysisEnabled: boolean;
   /** Server-side TikTok tail fallback. The primary yt-dlp path remains first. */
   scrapeCreatorsTikTokFallbackEnabled: boolean;
+  /** Server-side Instagram tail fallback. The primary yt-dlp path remains first. */
+  scrapeCreatorsInstagramFallbackEnabled: boolean;
   /** Server-side Facebook tail fallback. Canonical public yt-dlp remains first. */
   scrapeCreatorsFacebookFallbackEnabled: boolean;
 
@@ -241,6 +243,7 @@ export function loadConfig(): WorkerConfig {
     snapchatResolverEnabled: bool('SNAPCHAT_MEDIA_RESOLVER_ENABLED', false),
     nativeVideoAnalysisEnabled: bool('NATIVE_VIDEO_ANALYSIS_ENABLED', false),
     scrapeCreatorsTikTokFallbackEnabled: bool('SCRAPECREATORS_TIKTOK_FALLBACK_ENABLED', false),
+    scrapeCreatorsInstagramFallbackEnabled: bool('SCRAPECREATORS_INSTAGRAM_FALLBACK_ENABLED', false),
     scrapeCreatorsFacebookFallbackEnabled: bool('SCRAPECREATORS_FACEBOOK_FALLBACK_ENABLED', false),
 
     supabaseUrl,
@@ -318,7 +321,11 @@ export function validateConfig(cfg: WorkerConfig): ConfigValidation {
   if (cfg.analysisProvider !== 'gemini') missing.push('MEDIA_ANALYSIS_PROVIDER=gemini');
   if (!cfg.geminiApiKey) missing.push('GEMINI_API_KEY');
   if (
-    (cfg.scrapeCreatorsTikTokFallbackEnabled || cfg.scrapeCreatorsFacebookFallbackEnabled) &&
+    (
+      cfg.scrapeCreatorsTikTokFallbackEnabled ||
+      cfg.scrapeCreatorsInstagramFallbackEnabled ||
+      cfg.scrapeCreatorsFacebookFallbackEnabled
+    ) &&
     !cfg.scrapeCreatorsApiKey
   ) {
     missing.push('SCRAPE_CREATORS_KEY');
@@ -339,6 +346,7 @@ export function redactedConfigSummary(cfg: WorkerConfig): Record<string, unknown
       snapchatResolverEnabled: cfg.snapchatResolverEnabled,
       nativeVideoAnalysisEnabled: cfg.nativeVideoAnalysisEnabled,
       scrapeCreatorsTikTokFallbackEnabled: cfg.scrapeCreatorsTikTokFallbackEnabled,
+      scrapeCreatorsInstagramFallbackEnabled: cfg.scrapeCreatorsInstagramFallbackEnabled,
       scrapeCreatorsFacebookFallbackEnabled: cfg.scrapeCreatorsFacebookFallbackEnabled,
       vayrinVisualGeolocationEnabled: cfg.vayrinVisualGeolocationEnabled,
     },
@@ -356,6 +364,7 @@ export function redactedConfigSummary(cfg: WorkerConfig): Record<string, unknown
       analysis: cfg.analysisProvider,
       ocr: cfg.ocrProvider,
       scrapeCreatorsTikTok: cfg.scrapeCreatorsTikTokFallbackEnabled,
+      scrapeCreatorsInstagram: cfg.scrapeCreatorsInstagramFallbackEnabled,
       scrapeCreatorsFacebook: cfg.scrapeCreatorsFacebookFallbackEnabled,
     },
     vayrin: {

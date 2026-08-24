@@ -81,11 +81,13 @@ function resolverFor(platform: string, sourceVideo: string, title: string, descr
         localFilePath: dest,
         mimeType: 'video/mp4',
         sizeBytes: s.size,
-        source: platform === 'tiktok' ? 'tiktok/scrapecreators-direct' : `${platform}/yt-dlp`,
+        source: platform === 'tiktok' || platform === 'instagram'
+          ? `${platform}/scrapecreators-direct`
+          : `${platform}/yt-dlp`,
         warnings: [],
         metadataTitle: title,
         metadataDescription: description,
-        ...(platform === 'tiktok' ? {
+        ...(platform === 'tiktok' || platform === 'instagram' ? {
           acquisition: {
             provider: 'scrapecreators' as const,
             primaryAcquisitionResult: 'failure_no_usable_media' as const,
@@ -94,6 +96,9 @@ function resolverFor(platform: string, sourceVideo: string, title: string, descr
             scrapeCreatorsResult: 'SUCCESS_MEDIA',
             identityMatch: true,
             finalAcquisitionProvider: 'scrapecreators' as const,
+            ...(platform === 'instagram'
+              ? { canonicalInstagramId: 'fixture-shortcode' }
+              : { canonicalTikTokId: '1234567890' }),
           },
         } : {}),
       };
@@ -161,7 +166,7 @@ for (const platform of PLATFORMS) {
       assert.ok(Array.isArray(evidence.transcript));
       assert.ok(Array.isArray(evidence.ocr));
       assert.ok(Array.isArray(evidence.frames) && evidence.frames.length > 0, 'frame evidence must reach analyze() same as every other platform');
-      if (platform === 'tiktok') {
+      if (platform === 'tiktok' || platform === 'instagram') {
         assert.equal(model.captured.length, 1, 'ScrapeCreators media reaches the configured Gemini/Vayrin model wrapper');
       }
     } finally {

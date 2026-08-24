@@ -59,3 +59,34 @@ export function selectInstagramContentUrl(
   }
   return null;
 }
+
+export type InstagramContentIdentity = {
+  shortcode: string;
+  kind: 'p' | 'reel' | 'tv';
+  canonicalUrl: string;
+};
+
+/** Extract the exact stable Instagram post identity and normalize away creator
+ * prefixes, tracking parameters, fragments, and the plural `reels` alias. */
+export function instagramContentIdentity(
+  sourceUrl: string,
+  canonicalUrl?: string | null,
+): InstagramContentIdentity | null {
+  const selected = selectInstagramContentUrl(sourceUrl, canonicalUrl);
+  if (!selected) return null;
+  const parsed = parseUrl(selected);
+  if (!parsed) return null;
+  const segments = parsed.pathname.split('/').filter(Boolean);
+  const kindIndex = segments.length === 2 ? 0 : 1;
+  const rawKind = segments[kindIndex]?.toLowerCase();
+  const shortcode = segments[kindIndex + 1];
+  if (!rawKind || !shortcode || !INSTAGRAM_CONTENT_KINDS.has(rawKind) || !INSTAGRAM_SHORTCODE_RE.test(shortcode)) {
+    return null;
+  }
+  const kind: InstagramContentIdentity['kind'] = rawKind === 'reels' ? 'reel' : rawKind as 'p' | 'reel' | 'tv';
+  return {
+    shortcode,
+    kind,
+    canonicalUrl: `https://www.instagram.com/${kind}/${shortcode}/`,
+  };
+}

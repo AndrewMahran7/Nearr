@@ -81,6 +81,8 @@ async function handleReady(ctx: ServerContext, res: http.ServerResponse): Promis
       aiNoteEnrichment: true,
       scrapeCreatorsTikTokFallback:
         ctx.cfg.scrapeCreatorsTikTokFallbackEnabled && !!ctx.cfg.scrapeCreatorsApiKey,
+      scrapeCreatorsInstagramFallback:
+        ctx.cfg.scrapeCreatorsInstagramFallbackEnabled && !!ctx.cfg.scrapeCreatorsApiKey,
       scrapeCreatorsFacebookFallback:
         ctx.cfg.scrapeCreatorsFacebookFallbackEnabled && !!ctx.cfg.scrapeCreatorsApiKey,
     },

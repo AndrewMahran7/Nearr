@@ -482,6 +482,10 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
       }
       if (media.acquisition.fallbackReason) diagnostics.fallbackReason = media.acquisition.fallbackReason;
       if (media.acquisition.canonicalTikTokId) diagnostics.canonicalTikTokId = media.acquisition.canonicalTikTokId;
+      if (media.acquisition.canonicalInstagramId) {
+        diagnostics.canonicalInstagramId = media.acquisition.canonicalInstagramId;
+      }
+      if (media.acquisition.providerPostId) diagnostics.providerPostId = media.acquisition.providerPostId;
       if (media.acquisition.canonicalFacebookId) {
         diagnostics.canonicalFacebookId = media.acquisition.canonicalFacebookId;
       }
@@ -573,6 +577,7 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
         taskId: task.id,
         jobId: task.share_job_id,
         canonicalTikTokId: media.acquisition.canonicalTikTokId,
+        canonicalInstagramId: media.acquisition.canonicalInstagramId,
         canonicalFacebookId: media.acquisition.canonicalFacebookId,
         platform: task.platform,
         modelPipelineReached: true,
