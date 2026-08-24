@@ -120,7 +120,7 @@ function boundedJson(value: unknown, maxBytes: number): unknown {
   }
 }
 
-function sanitizeGlobalPayload(value: unknown, depth = 0): unknown {
+export function sanitizeGlobalPayload(value: unknown, depth = 0): unknown {
   if (depth > 8 || value == null || typeof value !== 'object') return value;
   if (Array.isArray(value)) {
     return value.slice(0, 50).map((item) => sanitizeGlobalPayload(item, depth + 1));
@@ -129,6 +129,10 @@ function sanitizeGlobalPayload(value: unknown, depth = 0): unknown {
   const privateKeys = new Set([
     'userId', 'user_id', 'savedPlaceId', 'saved_place_id', 'savedPlaceIds',
     'shareJobId', 'share_job_id', 'notification_payload',
+    // Evidence objects are deliberately user/job scoped. A global cache row
+    // must never hand one user's private Storage paths to another user; cache
+    // hits degrade to the existing honest missing-frame UI instead.
+    'evidenceFrames', 'storagePath',
   ]);
   for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
     if (privateKeys.has(key)) continue;

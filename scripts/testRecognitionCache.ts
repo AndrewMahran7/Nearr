@@ -7,7 +7,11 @@ import {
   canonicalContentIdentity,
 } from '../lib/shareAgent/contentIdentity';
 import { placeSourceCards, shouldShowMoreVideos } from '../lib/placeSources';
-import { recognitionCacheDecision, type RecognitionCacheRow } from '../supabase/functions/process-share-jobs/recognitionCache';
+import {
+  recognitionCacheDecision,
+  sanitizeGlobalPayload,
+  type RecognitionCacheRow,
+} from '../supabase/functions/process-share-jobs/recognitionCache';
 
 const root = path.resolve(__dirname, '..');
 const read = (relative: string) => fs.readFileSync(path.join(root, relative), 'utf8');
@@ -54,6 +58,15 @@ const row = (patch: Partial<RecognitionCacheRow> = {}): RecognitionCacheRow => (
   invalidated_at: null,
   ...patch,
 });
+
+assert.deepEqual(
+  sanitizeGlobalPayload({
+    candidates: [{ googlePlaceId: 'place-1', storagePath: 'user/job/task/frame.jpg' }],
+    evidenceFrames: [{ storagePath: 'user/job/task/frame.jpg', timestampSeconds: 4 }],
+  }),
+  { candidates: [{ googlePlaceId: 'place-1' }] },
+  'global recognition cache strips private user/job evidence paths',
+);
 
 assert.equal(recognitionCacheDecision(row()).kind, 'trusted_place');
 assert.equal(recognitionCacheDecision(null).kind, 'miss');
