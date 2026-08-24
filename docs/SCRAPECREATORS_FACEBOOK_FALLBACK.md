@@ -1,6 +1,6 @@
 # ScrapeCreators Facebook fallback
 
-Status: implementation and deterministic tests pass; production promotion is blocked on replenishing the authorized development provider credits and completing Nearr-Dev end-to-end proofs. No production deployment was performed.
+Status: funded validation and Nearr-Dev proofs pass. Recommendation: `READY FOR PRODUCTION PROMOTION` after Andrew's explicit production review. No production deployment was performed.
 
 ## Current Facebook acquisition ladder
 
@@ -88,7 +88,7 @@ The first provider pass made 10 metadata calls: nine live public successes at on
 | Canonical watch/longer `10153231379946729` | success | metadata success with matching returned URL; full replay blocked by 402 | 5,388,007 primary | 74.312 s | video+audio | 5,922 ms primary | 1 on metadata pass | known negative-place corpus fixture; not rerun |
 | Unavailable `9999999999999999` | `provider_changed` | 404/zero credits on metadata pass; later 402 after balance exhaustion | none | none | not reached | 2,118 ms primary | 0 on 404 pass | not reached |
 
-The requested independently verified known-location Facebook ground-truth fixture was not present in the repository or bounded operational history. Three historical Facebook tasks had prior `auto_save` decisions, but those model outputs were not relabeled as ground truth.
+In the original unfunded pass, an independently verified known-location Facebook ground-truth fixture was not present in the repository or bounded operational history. Three historical Facebook tasks had prior `auto_save` decisions, but those model outputs were not relabeled as ground truth. The funded resume run below closes this gap with independent public sources.
 
 ## Historical failure replay
 
@@ -142,7 +142,7 @@ Nearr-Dev before implementation used Railway development deployment `9a545c98-e9
 
 The benchmark gate did not pass completely because the authorized development key returned HTTP 402 after the bounded calls. Therefore no Railway development deployment was made, and live Proofs A-D were not claimed. Edge Functions, schema, OTA, and production were untouched.
 
-## Known limitations and next gate
+## Historical blocked gate (superseded by funded resume run)
 
 1. Replenish the authorized development ScrapeCreators balance.
 2. Rerun the remaining full fixture downloads and record all ffprobe/latency fields without HTTP 402.
@@ -151,3 +151,94 @@ The benchmark gate did not pass completely because the authorized development ke
 5. Run live proofs for healthy `fb.watch` primary/no-paid-call, forced primary failure/provider success/recognition, provider mismatch/no-recognition, and both-fail honest UI.
 6. Review retry economics: a transient CDN failure after a charged provider response can cause another paid call on an outer task retry (bounded by existing attempts).
 7. Production promotion remains a separate, explicit action after Andrew review.
+
+## FUNDED RESUME RUN — 2026-08-24
+
+This section supersedes the earlier blocked-state recommendation while preserving the original HTTP 402 history above. The authorized development account was replenished, the same server-only key was verified locally and in Railway development by length plus a boolean SHA-256 equality check, and no secret or digest was printed.
+
+### Funded provider and full-media replay
+
+The first funded probe returned HTTP 200, `success=true`, the exact expected Facebook video ID, and one charged credit. All five previously incomplete full-media comparisons then returned exact identity, downloaded the same bytes as primary, and passed ffprobe with video and audio.
+
+| Canonical Facebook ID | Primary bytes / duration / latency | ScrapeCreators bytes / duration / latency | Provider API latency | Credits |
+|---|---|---|---:|---:|
+| `2349748325554244` | 10,163,975 / 15.600 s / 5,754 ms | 10,163,975 / 15.600 s / 4,667 ms | 3,265 ms | 1 |
+| `1313027950911844` | 5,515,693 / 19.200 s / 4,789 ms | 5,515,693 / 19.200 s / 4,788 ms | 3,727 ms | 1 |
+| `3384429771712962` | 3,045,824 / 10.967 s / 3,722 ms | 3,045,824 / 10.967 s / 2,634 ms | 1,559 ms | 1 |
+| `1052691990581061` | 2,482,325 / 8.733 s / 4,419 ms | 2,482,325 / 8.733 s / 6,970 ms | 5,791 ms | 1 |
+| `10153231379946729` | 5,388,007 / 74.312 s / 5,243 ms | 5,388,007 / 74.312 s / 3,400 ms | 2,231 ms | 1 |
+
+All temporary media directories were removed after validation. Across the eight completed full provider comparisons from both runs, provider bytes and ffprobe duration matched primary on every pair.
+
+### Independently grounded known-location fixture
+
+Fixture `https://www.facebook.com/reel/3384429771712962/` is public and titled “summer day on your balcony in the alps” by `Hotel Staubbach, Lauterbrunnen`. Ground truth was established independently of model output:
+
+- Hotel Staubbach's official site lists `Im Rohr 424F, 3822 Lauterbrunnen, Switzerland`: <https://www.staubbach.com/>
+- Switzerland Tourism independently lists Hotel Staubbach in Lauterbrunnen: <https://www.myswitzerland.com/en-us/accommodations/hotel-staubbach/>
+
+No private user content or answer-bearing prompt was used. Primary-media recognition identified Hotel Staubbach, Lauterbrunnen, Bern, Switzerland at 0.95 model confidence; deterministic Places verification resolved the exact hotel and address at 0.97950099 confidence. The safe decision was `candidate_confirmation`, not auto-save.
+
+### Nearr-Dev deployment
+
+- Facebook feature branch after reconciliation with current `main`: `59c47671bf87593172e4991200da121b091d888a`
+- Concurrent-safe development integration commit: `fa4a7d2c8cd812edd09fda9277e4de3222a99d36`
+- Railway development deployment: `7d545e17-9da5-4b00-a340-733a28133557`
+- Image: `sha256:ad58fb9713990d068a704bed29f35fc1cd3612d97ca8e0ad727d8b084750a3c3`
+- Scope: project `Nearr Phase 2 Dev`, environment `development`, service `media-worker`; production untouched
+- Concurrency: one replica, `MEDIA_WORKER_MAX_CONCURRENCY=1`, claim batch 2
+- `/health`: HTTP 200
+- `/ready`: HTTP 200; config, ffmpeg, ffprobe, yt-dlp, and Supabase checks true; `scrapeCreatorsFacebookFallback=true`; no missing config
+
+The deployment integration preserves the concurrently deployed Instagram fallback instead of overwriting it. Its combined worker gate passed 358 tests (351 pass, 7 intentional live skips), typecheck, and production build before upload. The Facebook feature remains isolated on its original branch.
+
+### Live development proofs
+
+The production modules ran with the deployed Nearr-Dev variables. The forced paths used constructor injection only; there is no production force-failure flag.
+
+| Proof | Result | Paid calls |
+|---|---|---:|
+| A — healthy `fb.watch/J8m9M2wynx` | Canonicalized to `1356645589772949`; primary yt-dlp returned 5,975,661 validated bytes; 15 raw/12 deduplicated frames; OpenAI transcription 2 segments; Gemini recognition reached; `scrapeCreatorsInvoked=false` | 0 |
+| B — forced primary failure, provider success, real Vayrin | Exact ID `3384429771712962`; 3,045,824 bytes; 10.967 s video+audio; 12 frames; OpenAI transcription 6 segments; one provider call; real `gpt-5.6-sol` Vayrin invocation over 6 diverse frames identified Staubbach Falls and Lauterbrunnen Valley, Switzerland at 0.98 confidence with 6 explicit evidence items | 1 |
+| C — identity mismatch | Expected `3384429771712962`, observed `9999999999999999`; rejected as `identity_mismatch` before download; recognition calls 0 | 0 |
+| D — primary and fallback both fail | Recognition calls 0; final plan `{action: finalize, outcome: unavailable}`; user-facing plan contains no provider name | 0 |
+
+An initial live B pass also proved provider bytes re-entered the normal Gemini pipeline, but Gemini considered broad Alps/Switzerland evidence sufficient and correctly skipped Vayrin. The final B gate injected a deterministic insufficient baseline into the production Vayrin wrapper so the required real Vayrin invocation did not depend on model nondeterminism.
+
+### Historical failure replay
+
+The one historical acquisition failure, `fb.watch/J8m9M2wynx`, was forced through the funded fallback in Nearr-Dev. It recovered exact identity `1356645589772949`, 5,975,661 bytes, 13.767 seconds, video+audio, 15 raw/12 deduplicated frames, successful OpenAI transcription, and a normal Gemini recognition result for riverside restaurants in Chongqing, China. Acquisition and end-to-end recognition recovery are both 1/1 (100%).
+
+### Retry economics and charged-call bound
+
+The provider makes at most one API request per resolver execution. `share_media_tasks.max_attempts` is normally 3, so one submission can charge at most three provider credits if all outer attempts reach the fallback. At the observed $47/25,000-credit rate, that bound is $0.00564 per submission.
+
+No retry behavior was weakened. Provider-response caching was not added because persisting signed CDN URLs creates expiration and reliability risk; the promoted upstream recognition cache can avoid new media tasks when a completed content identity is reusable, while the resolver's cache seam remains available for future worker wiring.
+
+### Funded credit accounting
+
+The resumed run charged 10 credits:
+
+- 1 funded readiness probe
+- 5 remaining full-media fixture replays
+- 1 local known-location forced-fallback recognition proof
+- 2 first-pass Nearr-Dev calls (known-location B plus historical replay)
+- 1 deterministic forced-Vayrin Nearr-Dev B proof
+
+No cached/free responses were observed in this resumed run. Deterministic mismatch and both-fail proofs made no live provider request. The run remained below the authorized 30-credit ceiling.
+
+### Final regression and state guard
+
+- Current-main root `npm run test:prebuild`: pass, including the promoted recognition-cache contracts
+- Worker typecheck: pass
+- Worker suite: 325 total, 318 pass, 7 intentional live skips, 0 fail
+- Worker production build: pass
+- Combined Instagram/Facebook deployment suite: 358 total, 351 pass, 7 intentional live skips, 0 fail
+- iOS Expo export: pass, 1,700 modules
+- `git diff --check`: pass
+- Edge versions unchanged: `create-share-job` v8, `delete-account` v5, `process-share-jobs` v16, `process-share-link` v11, `e2e-place-fixture` v2
+- Remote schema ledger was not mutated; current-main reconciliation merely made migrations `20260822000002` and `20260822000003` present locally as well as remotely
+- Development OTA unchanged: group `e7213794-9293-4dea-9bc5-678bc0a5175a`, runtime `1.3.52`, Android and iOS
+- Production Railway, production Edge Functions, production schema, and production OTA were not changed
+
+Recommendation: `READY FOR PRODUCTION PROMOTION` after explicit review and a separate production change window.
