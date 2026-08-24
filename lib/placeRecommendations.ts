@@ -55,6 +55,9 @@ export type PlaceRecommendationProviderCandidate = {
   businessStatus?: string | null;
   rating: number | null;
   userRatingsTotal: number | null;
+  /** Up to five provider photos, ordered as returned by Google Places. */
+  photoUrls: string[];
+  /** First photo kept for compact recommendation cards. */
   photoUrl: string | null;
 };
 
@@ -69,6 +72,37 @@ export type PlaceRecommendationQuery = {
   radiusMeters: number;
   providerType?: string;
 };
+
+/**
+ * Normalize the recommendation gallery while retaining compatibility with a
+ * candidate that only has the original single-photo field in memory.
+ */
+export function recommendationPhotoUrls(
+  candidate:
+    | { photoUrls?: readonly (string | null | undefined)[]; photoUrl?: string | null }
+    | null
+    | undefined,
+): string[] {
+  const seen = new Set<string>();
+  const urls: string[] = [];
+  const append = (values: readonly (string | null | undefined)[]) => {
+    for (const value of values) {
+      if (typeof value !== 'string') continue;
+      const url = value.trim();
+      if (!url || seen.has(url)) continue;
+      seen.add(url);
+      urls.push(url);
+      if (urls.length === 5) break;
+    }
+  };
+
+  append(candidate?.photoUrls ?? []);
+  // `photoUrl` is a lower-resolution thumbnail of the first provider photo in
+  // the new shape. It is a fallback for legacy/single-photo candidates, not an
+  // additional gallery page.
+  if (urls.length === 0) append([candidate?.photoUrl]);
+  return urls;
+}
 
 /** One category-derived radius and at most one provider type = one query. */
 export function recommendationQueryForCategory(

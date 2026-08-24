@@ -455,11 +455,21 @@ import {
   );
   assert.ok(detail.includes('Add a note'), 'writing one is offered as a quiet link');
 
-  // Nearr does not persist the post's own thumbnail or the creator's handle,
-  // so neither may be invented.
+  // The primary source card does not invent visual media or a creator. Current
+  // multi-source rows may render persisted thumbnails / creator attribution,
+  // so scope this contract to the primary card instead of banning those valid
+  // fields component-wide.
+  const primarySourceStart = detail.indexOf('{sourceUrl && sourceAttribution ? (');
+  const primarySourceEnd = detail.indexOf('<View style={styles.savedBecauseCopy}>', primarySourceStart);
+  assert.ok(primarySourceStart > -1 && primarySourceEnd > primarySourceStart);
+  const primarySourceCard = detail.slice(primarySourceStart, primarySourceEnd);
   assert.ok(
-    !/creator|@\{|avatarUrl|thumbnailUrl|posterUrl/i.test(detail),
-    'no fabricated creator handle, avatar, or video still',
+    !/item\.creator|avatarUrl|thumbnailUrl|posterUrl/i.test(primarySourceCard),
+    'the primary source card does not fabricate creator or media fields',
+  );
+  assert.ok(
+    detail.includes('item.creator') && detail.includes('item.thumbnailUrl'),
+    'persisted multi-source creator and thumbnail attribution remain supported',
   );
   // The copy is category-neutral: nothing assumes the place is a restaurant.
   assert.ok(

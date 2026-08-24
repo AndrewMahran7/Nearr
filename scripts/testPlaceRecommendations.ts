@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import {
   PLACE_RECOMMENDATIONS_CACHE_TTL_MS,
   rankPlaceRecommendations,
+  recommendationPhotoUrls,
   recommendationQueryForCategory,
   type PlaceRecommendationProviderCandidate,
   type PlaceRecommendationSource,
@@ -41,6 +42,7 @@ const candidate = (
   businessStatus: 'OPERATIONAL',
   rating: 4.5,
   userRatingsTotal: 100,
+  photoUrls: [],
   photoUrl: null,
   ...overrides,
 });
@@ -56,6 +58,23 @@ assert.deepEqual(
   ['new'],
 );
 assert.equal(rankPlaceRecommendations(source(), [candidate('dupe'), candidate('dupe')]).length, 1);
+
+// The full provider gallery survives ranking, while legacy first-photo data
+// remains a clean fallback. Blank and duplicate URLs never become pages.
+{
+  const photos = ['https://img/one.jpg', 'https://img/two.jpg'];
+  const [result] = rankPlaceRecommendations(source(), [
+    candidate('gallery', 'restaurant', 0.005, { photoUrls: photos, photoUrl: photos[0]! }),
+  ]);
+  assert.deepEqual(result?.photoUrls, photos);
+  assert.deepEqual(recommendationPhotoUrls(result), photos);
+  assert.deepEqual(
+    recommendationPhotoUrls({ photoUrls: [' ', photos[0], photos[0]], photoUrl: photos[1] }),
+    [photos[0]],
+  );
+  assert.deepEqual(recommendationPhotoUrls({ photoUrl: photos[0] }), [photos[0]]);
+  assert.deepEqual(recommendationPhotoUrls(null), []);
+}
 
 // A relevant restaurant beats (and filters out) an unrelated gas station.
 {
@@ -154,8 +173,20 @@ assert.deepEqual(recommendationQueryForCategory('attraction'), {
   const map = readFileSync(join(process.cwd(), 'app/(tabs)/map.tsx'), 'utf8');
   assert.ok(detail.includes('setSelectedRecommendation(entry)'));
   assert.ok(detail.includes("trackEvent('recommendation_opened'"));
-  assert.ok(recommended.includes('Not saved until you choose Save place.'));
+  assert.ok(!recommended.includes('Not saved until you choose Save place.'));
   assert.ok(recommended.includes('title="Save place"'));
+  assert.ok(recommended.includes('pagingEnabled'));
+  assert.ok(recommended.includes('initialNumToRender={1}'));
+  assert.ok(recommended.includes('maxToRenderPerBatch={2}'));
+  assert.ok(recommended.includes('windowSize={3}'));
+  assert.ok(recommended.includes('visibleRecommendationPhotoUrls(recommendation, failedPhotoUrls)'));
+  assert.ok(recommended.includes('onRequestClose={onClose}'));
+  assert.ok(recommended.includes('void openExternalMaps({'));
+  assert.ok(recommended.includes('const saved = await onSave(recommendation)'));
+  assert.ok(recommended.includes('setFailedPhotoUrls'));
+  assert.ok(recommended.includes('No place photos yet'));
+  assert.ok(recommended.includes('numberOfLines={3}'));
+  assert.ok(recommended.includes("filter(Boolean).join(' · ')"));
   assert.ok(map.includes("handleSavePlaceCandidate(candidate, 'recommendation')"));
   assert.ok(map.includes('selectPlace(result.saved)'));
   assert.ok(!/onPress:\s*\(\)\s*=>\s*onSaveRecommendation/.test(detail));
@@ -167,6 +198,8 @@ assert.deepEqual(recommendationQueryForCategory('attraction'), {
   const service = readFileSync(join(process.cwd(), 'services/placeRecommendationsService.ts'), 'utf8');
   assert.ok(provider.includes('/nearbysearch/json?'));
   assert.ok(provider.includes('user_ratings_total'));
+  assert.ok(provider.includes('.slice(0, 5)'));
+  assert.ok(provider.includes('photoUrls,'));
   assert.ok(!service.includes('getPlaceDetails('));
   assert.ok(!service.includes('getPlaceRichDetails('));
 }

@@ -183,6 +183,7 @@
     "test:map-queue-entry": "ts-node -P scripts/tsconfig.json scripts/testMapQueueEntryPoint.ts",
     "test:related-places": "ts-node -P scripts/tsconfig.json scripts/testRelatedPlaces.ts",
     "test:place-recommendations": "ts-node -P scripts/tsconfig.json scripts/testPlaceRecommendations.ts",
+    "test:recommendation-detail": "ts-node -P scripts/tsconfig.json scripts/testRecommendedPlaceDetailRedesign.ts",
     "test:pin-state": "ts-node -P scripts/tsconfig.json scripts/testSavedPlacePinState.ts",
     "test:offline-mode": "ts-node -P scripts/tsconfig.json scripts/testOfflineMode.ts",
     "test:offline-reminders": "ts-node -P scripts/tsconfig.json scripts/testOfflineReminders.ts",

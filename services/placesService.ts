@@ -74,7 +74,9 @@ export type PlaceRichDetails = {
 export type NearbyPlaceCandidate = PlaceCandidate & {
   rating: number | null;
   userRatingsTotal: number | null;
-  /** Direct provider photo URL built from the Nearby Search response. */
+  /** Direct provider photo URLs built from the Nearby Search response. */
+  photoUrls: string[];
+  /** First photo kept for compact cards and existing callers. */
   photoUrl: string | null;
 };
 
@@ -218,6 +220,7 @@ export async function searchNearbyPlaces(args: {
       ...candidate,
       rating: null,
       userRatingsTotal: null,
+      photoUrls: [],
       photoUrl: null,
     }));
   }
@@ -242,9 +245,20 @@ export async function searchNearbyPlaces(args: {
 
   return (json.results ?? []).slice(0, 20).map((result: any): NearbyPlaceCandidate => {
     const candidate = toCandidateFromTextSearch(result);
-    const photoReference = Array.isArray(result.photos)
-      ? result.photos.find((photo: any) => typeof photo?.photo_reference === 'string')?.photo_reference
-      : null;
+    // Nearby Search already returns every available photo reference on the
+    // candidate. Keep a bounded set here so the detail carousel needs no N+1
+    // Place Details request and compact cards can still use the first image.
+    const photoReferences: string[] = Array.isArray(result.photos)
+      ? result.photos
+          .map((photo: any) =>
+            typeof photo?.photo_reference === 'string' ? photo.photo_reference.trim() : '',
+          )
+          .filter((reference: string) => !!reference)
+          .slice(0, 5)
+      : [];
+    const photoUrls = photoReferences.map((reference) =>
+      buildPlacePhotoUrl(reference, key, 1000),
+    );
     return {
       ...candidate,
       formattedAddress:
@@ -258,7 +272,10 @@ export async function searchNearbyPlaces(args: {
         typeof result.user_ratings_total === 'number' && Number.isFinite(result.user_ratings_total)
           ? result.user_ratings_total
           : null,
-      photoUrl: photoReference ? buildPlacePhotoUrl(photoReference, key, 500) : null,
+      photoUrls,
+      photoUrl: photoReferences[0]
+        ? buildPlacePhotoUrl(photoReferences[0], key, 500)
+        : null,
     };
   });
 }
