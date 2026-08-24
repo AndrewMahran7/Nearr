@@ -101,6 +101,7 @@ async function main(): Promise<number> {
       attempted: true,
       userDeleted: false,
       diagnosticsDeleted: 0,
+      evidenceObjectsDeleted: 0,
       retained: ['cleanup threw'],
       errors: [errText(err)],
     }));

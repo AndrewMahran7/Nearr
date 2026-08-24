@@ -25,6 +25,9 @@
  * no way for this fixture to loop.
  */
 
+import { createClient } from '@supabase/supabase-js';
+
+import { buildShareJobDetailState } from '../../../lib/shareJobDetailState';
 import { pollUntil, timeoutFor } from '../poll';
 import { StageReporter } from '../report';
 import { JOB_TERMINAL, StatusTrail, TASK_TERMINAL, type TaskRow } from '../lifecycle';
@@ -286,6 +289,124 @@ export async function fixtureVayrinLiveCanary(
     finalized.elapsedMs,
     `job status=${finalized.value.status} decision=${finalized.value.decision ?? 'null'}`,
   );
+
+  // ---- Evidence-First persistence and private delivery -------------------
+  const detailState = buildShareJobDetailState(finalized.value);
+  const evidenceFrames = detailState.evidenceFrames;
+  if (evidenceFrames.length < 1 || evidenceFrames.length > 5) {
+    reporter.fail(
+      `${name}: durable evidence populated`,
+      0,
+      `expected 1..5 retained frames; detail state exposed ${evidenceFrames.length}`,
+      { detailKind: detailState.kind, candidateCount: detailState.candidates.length },
+    );
+    return false;
+  }
+  const expectedPrefix = `${identity.userId}/${jobId}/${taskId}/`;
+  const paths = evidenceFrames.flatMap((frame) => frame.storagePath ? [frame.storagePath] : []);
+  const pathsAreSafe = paths.length === evidenceFrames.length &&
+    new Set(paths).size === paths.length &&
+    paths.every((path) => path.startsWith(expectedPrefix) && path.split('/').length === 4) &&
+    evidenceFrames.every((frame) => Number.isFinite(frame.timestampSeconds) && frame.timestampSeconds >= 0);
+  if (!pathsAreSafe) {
+    reporter.fail(`${name}: durable evidence populated`, 0, 'persisted frame metadata or ownership path is invalid');
+    return false;
+  }
+  reporter.pass(
+    `${name}: durable evidence populated`,
+    0,
+    `${evidenceFrames.length} bounded frame reference(s); Quick Check kind=${detailState.kind}; candidates=${detailState.candidates.length}`,
+  );
+
+  const owner = createClient(session.config.supabaseUrl, session.config.anonKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+    global: { headers: { Authorization: `Bearer ${identity.accessToken}` } },
+  });
+  const evidenceBucket = owner.storage.from('share-evidence');
+  const { data: stored, error: listError } = await evidenceBucket.list(expectedPrefix.slice(0, -1), { limit: 10 });
+  const storedNames = new Set((stored ?? []).map((item) => item.name));
+  if (listError || paths.some((path) => !storedNames.has(path.slice(expectedPrefix.length)))) {
+    reporter.fail(
+      `${name}: private evidence objects exist`,
+      0,
+      listError?.message ?? 'one or more persisted references have no matching Storage object',
+    );
+    return false;
+  }
+
+  const publicUrl = evidenceBucket.getPublicUrl(paths[0]!).data.publicUrl;
+  const publicResponse = await fetch(publicUrl, { redirect: 'manual' });
+  if (publicResponse.ok) {
+    reporter.fail(`${name}: evidence bucket is private`, 0, 'an unsigned public object request unexpectedly succeeded');
+    return false;
+  }
+  const anonymous = createClient(session.config.supabaseUrl, session.config.anonKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const anonymousSigning = await anonymous.storage.from('share-evidence').createSignedUrls(paths, 60);
+  if (!anonymousSigning.error && (anonymousSigning.data ?? []).some((row) => !!row.signedUrl)) {
+    reporter.fail(`${name}: evidence bucket is private`, 0, 'an unauthenticated client created an evidence URL');
+    return false;
+  }
+  reporter.pass(`${name}: evidence bucket is private`, 0, `unsigned fetch HTTP ${publicResponse.status}; anonymous signing denied`);
+
+  const signedStartedAt = Date.now();
+  const { data: signed, error: signError } = await evidenceBucket.createSignedUrls(paths, 60);
+  const signedUrls = (signed ?? []).flatMap((row) => row.signedUrl ? [row.signedUrl] : []);
+  if (signError || signedUrls.length !== paths.length) {
+    reporter.fail(`${name}: owner evidence signing`, Date.now() - signedStartedAt, signError?.message ?? 'not every frame was signed');
+    return false;
+  }
+  const imageResponses = await Promise.all(signedUrls.map((url) => fetch(url)));
+  if (imageResponses.some((response) => !response.ok || !/^image\/jpeg\b/i.test(response.headers.get('content-type') ?? ''))) {
+    reporter.fail(`${name}: signed images resolve`, Date.now() - signedStartedAt, 'one or more signed URLs did not return image/jpeg');
+    return false;
+  }
+  reporter.pass(
+    `${name}: signed images resolve`,
+    Date.now() - signedStartedAt,
+    `${signedUrls.length} JPEG(s) resolved from one batched signing request`,
+  );
+
+  // A verified Google candidate is sufficient for the app's existing lazy
+  // photo hydration path; prove the exact live candidate currently has a photo
+  // that Google will serve rather than trusting a synthetic URL.
+  const photoCandidate = detailState.candidates.find((candidate) => !!candidate.googlePlaceId);
+  const placesKey = session.config.railwayVars.GOOGLE_PLACES_KEY;
+  if (!photoCandidate?.googlePlaceId || !placesKey) {
+    reporter.fail(`${name}: candidate photo available`, 0, 'no verified Google candidate or deployed Places key');
+    return false;
+  }
+  const placeResponse = await fetch(
+    `https://places.googleapis.com/v1/places/${encodeURIComponent(photoCandidate.googlePlaceId)}`,
+    { headers: { 'X-Goog-Api-Key': placesKey, 'X-Goog-FieldMask': 'id,photos' } },
+  );
+  const placeBody = await placeResponse.json().catch(() => null) as { photos?: Array<{ name?: string }> } | null;
+  const photoName = placeBody?.photos?.find((photo) => typeof photo.name === 'string')?.name;
+  if (!placeResponse.ok || !photoName) {
+    reporter.fail(`${name}: candidate photo available`, 0, `Places details HTTP ${placeResponse.status} returned no supported photo`);
+    return false;
+  }
+  const mediaResponse = await fetch(
+    `https://places.googleapis.com/v1/${photoName}/media?maxWidthPx=640&skipHttpRedirect=true&key=${encodeURIComponent(placesKey)}`,
+  );
+  const mediaBody = await mediaResponse.json().catch(() => null) as { photoUri?: string } | null;
+  const photoResponse = mediaBody?.photoUri ? await fetch(mediaBody.photoUri) : null;
+  if (!mediaResponse.ok || !photoResponse?.ok || !/^image\//i.test(photoResponse.headers.get('content-type') ?? '')) {
+    reporter.fail(`${name}: candidate photo available`, 0, 'the verified candidate photo did not resolve as an image');
+    return false;
+  }
+  reporter.pass(`${name}: candidate photo available`, 0, 'verified Google candidate photo resolved as an image');
+
+  // Exercise the authenticated delete policy now. Session cleanup repeats this
+  // idempotently if a later assertion fails, before cascading the owner job.
+  const { error: removeError } = await evidenceBucket.remove(paths);
+  const { data: remaining, error: remainingError } = await evidenceBucket.list(expectedPrefix.slice(0, -1), { limit: 10 });
+  if (removeError || remainingError || (remaining ?? []).length !== 0) {
+    reporter.fail(`${name}: evidence cleanup`, 0, removeError?.message ?? remainingError?.message ?? 'objects remained after owner delete');
+    return false;
+  }
+  reporter.pass(`${name}: evidence cleanup`, 0, `${paths.length} object(s) deleted through the authenticated owner policy`);
 
   // ---- Recognition, reported but never blocking ---------------------------
   if (options.groundTruth) {
