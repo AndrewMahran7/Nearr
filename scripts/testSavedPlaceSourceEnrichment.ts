@@ -704,7 +704,7 @@ const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
   assert.match(screen, /alreadySavedActionCopy\(/, 'copy is derived from the merge plan');
   assert.match(
     screen,
-    /title=\{alreadySavedCopy\?\.action \?\? 'Save to my map'\}[\s\S]{0,160}handleSaveStored\(single\)/,
+    /title=\{broadSingle \? 'See places in this area' : 'Save this place'\}[\s\S]{0,700}handleSaveStored\(single\)/,
     'both cases run the canonical save, which enriches an existing row',
   );
 }

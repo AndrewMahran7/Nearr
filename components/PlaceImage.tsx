@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
   StyleSheet,
   View,
+  type DimensionValue,
   type ImageStyle,
   type StyleProp,
   type ViewStyle,
@@ -17,42 +18,71 @@ import { useTheme } from '@/lib/theme';
 type Props = {
   googlePlaceId?: string | null;
   sourceUri?: string | null;
+  /** Candidate-specific source-video frame, used only after place imagery. */
+  fallbackSourceUri?: string | null;
+  /** Candidate confirmation prefers an exact Places photo over source media. */
+  preferPlacePhoto?: boolean;
   size?: number;
+  width?: DimensionValue;
+  height?: number;
   borderRadius?: number;
   style?: StyleProp<ViewStyle>;
   imageStyle?: StyleProp<ImageStyle>;
   accessibilityLabel?: string;
+  onResolvedKind?: (kind: PlaceImageResolutionKind) => void;
 };
+
+export type PlaceImageResolutionKind = 'places' | 'source' | 'frame' | 'neutral';
+
+const PHOTO_RESOLUTION_TIMEOUT_MS = 2200;
 
 export function PlaceImage({
   googlePlaceId,
   sourceUri,
+  fallbackSourceUri,
+  preferPlacePhoto = false,
   size = 64,
+  width,
+  height,
   borderRadius = 12,
   style,
   imageStyle,
   accessibilityLabel,
+  onResolvedKind,
 }: Props) {
   const { colors } = useTheme();
   const [placePhotoUrls, setPlacePhotoUrls] = useState<string[]>([]);
   const [failedUris, setFailedUris] = useState<Record<string, boolean>>({});
-  const [loading, setLoading] = useState(!sourceUri && !!googlePlaceId);
+  const [loading, setLoading] = useState(Boolean(googlePlaceId) && (preferPlacePhoto || !sourceUri));
+  const [resolutionTimedOut, setResolutionTimedOut] = useState(false);
+  const lastResolutionRef = useRef<PlaceImageResolutionKind | null>(null);
   const frameStyle = useMemo(
-    () => ({ width: size, height: size, borderRadius }),
-    [borderRadius, size],
+    () => ({ width: width ?? size, height: height ?? size, borderRadius }),
+    [borderRadius, height, size, width],
   );
 
   useEffect(() => {
     setPlacePhotoUrls([]);
     setFailedUris({});
-  }, [googlePlaceId, sourceUri]);
+    setResolutionTimedOut(false);
+    lastResolutionRef.current = null;
+  }, [fallbackSourceUri, googlePlaceId, sourceUri]);
 
-  const resolvedUri = selectPlaceImageUri(sourceUri, placePhotoUrls, failedUris);
+  const holdFallbackForPlacePhoto = preferPlacePhoto && loading && !resolutionTimedOut;
+  const resolvedUri = selectPlaceImageUri(
+    holdFallbackForPlacePhoto ? null : sourceUri,
+    placePhotoUrls,
+    failedUris,
+    {
+      preferPlacePhoto,
+      fallbackSourceUri: holdFallbackForPlacePhoto ? null : fallbackSourceUri,
+    },
+  );
 
   useEffect(() => {
     let cancelled = false;
 
-    if (sourceUri && !failedUris[sourceUri]) {
+    if (!preferPlacePhoto && sourceUri && !failedUris[sourceUri]) {
       setLoading(false);
       return () => {
         cancelled = true;
@@ -67,16 +97,39 @@ export function PlaceImage({
     }
 
     setLoading(true);
+    setResolutionTimedOut(false);
+    const timeout = setTimeout(() => {
+      if (!cancelled) setResolutionTimedOut(true);
+    }, PHOTO_RESOLUTION_TIMEOUT_MS);
     void getCachedPlaceRichDetails(googlePlaceId).then((details) => {
       if (cancelled) return;
       setPlacePhotoUrls(details?.photoUrls ?? []);
       setLoading(false);
+      clearTimeout(timeout);
     });
 
     return () => {
       cancelled = true;
+      clearTimeout(timeout);
     };
-  }, [failedUris, googlePlaceId, sourceUri]);
+  }, [failedUris, googlePlaceId, preferPlacePhoto, sourceUri]);
+
+  const resolutionKind: PlaceImageResolutionKind = resolvedUri
+    ? placePhotoUrls.includes(resolvedUri)
+      ? 'places'
+      : resolvedUri === sourceUri
+        ? 'source'
+        : 'frame'
+    : loading && !resolutionTimedOut
+      ? 'neutral'
+      : 'neutral';
+
+  useEffect(() => {
+    if (!onResolvedKind || (loading && !resolvedUri && !resolutionTimedOut)) return;
+    if (lastResolutionRef.current === resolutionKind) return;
+    lastResolutionRef.current = resolutionKind;
+    onResolvedKind(resolutionKind);
+  }, [loading, onResolvedKind, resolutionKind, resolutionTimedOut, resolvedUri]);
 
   return (
     <View
@@ -96,10 +149,14 @@ export function PlaceImage({
           accessibilityLabel={accessibilityLabel}
           accessible={Boolean(accessibilityLabel)}
         />
-      ) : loading ? (
-        <ActivityIndicator size="small" color={colors.primary} />
+      ) : loading && !resolutionTimedOut ? (
+        <View style={[styles.skeleton, { backgroundColor: colors.border }]} accessibilityLabel="Loading place photo">
+          <ActivityIndicator size="small" color={colors.primary} />
+        </View>
       ) : (
-        <Feather name="map-pin" size={Math.max(18, Math.round(size * 0.3))} color={colors.accent} />
+        <View style={styles.neutral} accessibilityLabel="No place photo available">
+          <Feather name="map-pin" size={Math.max(22, Math.round(Math.min(size, height ?? size) * 0.28))} color={colors.accent} />
+        </View>
       )}
     </View>
   );
@@ -120,4 +177,6 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
   },
+  skeleton: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center', opacity: 0.55 },
+  neutral: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
 });

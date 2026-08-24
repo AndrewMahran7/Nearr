@@ -26,8 +26,10 @@ import {
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button, ErrorBoundary, Input, ShareJobsHeader } from '@/components';
+import { CandidateConfirmationCard } from '@/components/CandidateConfirmationCard';
 import { PlaceImage } from '@/components/PlaceImage';
 import { ShareJobsSheet } from '@/components/ShareJobsSheet';
 import { VayrinPresentationHeader } from '@/components/VayrinPresentationHeader';
@@ -37,6 +39,7 @@ import { isVayrinProductUiEnabled } from '@/lib/featureFlags';
 import { useTheme } from '@/lib/theme';
 import { trackEvent } from '@/lib/analytics';
 import { buildShareJobDetailState } from '@/lib/shareJobDetailState';
+import type { NormalizedCandidate } from '@/lib/shareJobsUi';
 import { planOpenOriginal, validateSourceUrl } from '@/lib/openOriginalPost';
 import { sanitizeErrorText } from '@/lib/sanitizeError';
 import { logDebug } from '@/lib/logger';
@@ -49,6 +52,11 @@ import {
   type VayrinIdentityLead,
 } from '@/lib/vayrinPresentation';
 import { buildPhase2PreviewJob, isPhase2PreviewId } from '@/lib/phase2Preview';
+import {
+  buildVayrinCandidateFixtureJob,
+  getVayrinCandidateFixture,
+  isVayrinCandidateFixtureId,
+} from '@/lib/vayrinCandidateFixtures';
 import {
   planShareSaveCompletion,
   saveSelectedLabel,
@@ -123,6 +131,16 @@ import {
   type ShareJobCandidate,
 } from '@/services/shareJobsService';
 import { CATEGORY_LABELS, resolvePlaceCategory } from '@/lib/placeCategory';
+import {
+  confirmationMode,
+  confirmationPrompt,
+  candidateSaveLabel,
+  isBroadCandidate,
+  reviewSelectionMode,
+  toggleCandidateSelection,
+  visibleCandidateShortlist,
+  type CandidateConfirmationPlace,
+} from '@/lib/vayrinCandidateConfirmation';
 
 /** Human platform label for the "Suggested from …" source-context row. */
 function platformNoun(platform: string | null | undefined): string {
@@ -211,6 +229,7 @@ function formatLeadTimestamp(seconds: number): string {
 
 function ShareJobDetailScreen() {
   const router = useRouter();
+  const safeAreaInsets = useSafeAreaInsets();
   const { jobId } = useLocalSearchParams<{ jobId: string }>();
   // Expo Router can hand back an array or an empty value for a route param —
   // normalise ONCE so no downstream string call can throw on it.
@@ -226,8 +245,8 @@ function ShareJobDetailScreen() {
   const [busy, setBusy] = useState(false);
   const [manualQuery, setManualQuery] = useState('');
   const [manualSearchPhase, setManualSearchPhase] = useState<SearchPhase>('idle');
-  const [manualSelected, setManualSelected] = useState<PlaceCandidate | null>(null);
-  const [pickerSelectedId, setPickerSelectedId] = useState<string | null>(null);
+  const [manualSelectedIds, setManualSelectedIds] = useState<string[]>([]);
+  const [pickerSelectedIds, setPickerSelectedIds] = useState<string[]>([]);
   const [batch, setBatch] = useState<MultiPlaceBatch | null>(null);
   // The alternative-place search is a SECONDARY action — collapsed by default
   // for single-candidate jobs, revealed on demand. Manual-only jobs start
@@ -251,6 +270,7 @@ function ShareJobDetailScreen() {
   // unmounted tree or fire a second navigation.
   const mountedRef = useRef(true);
   const manualRequestRef = useRef(0);
+  const rawResolutionQueryRef = useRef<string | null>(null);
   const batchSearchRequestsRef = useRef<Record<string, number>>({});
   useEffect(() => {
     mountedRef.current = true;
@@ -266,20 +286,41 @@ function ShareJobDetailScreen() {
     const trimmed = query.trim();
     if (!trimmed) return;
     const requestId = ++manualRequestRef.current;
-    if (vayrinEnabled) void trackEvent('vayrin_manual_fallback', { source: 'async' });
-    setManualSelected(null);
+    if (vayrinEnabled) {
+      void trackEvent('vayrin_manual_fallback', { source: 'async' });
+      void trackEvent('vayrin_manual_search_started', { source: 'async' });
+      if (rawResolutionQueryRef.current === trimmed) {
+        void trackEvent('vayrin_raw_name_resolution_attempt', { source: 'async' });
+      }
+    }
+    setManualSelectedIds([]);
     setManualSearchPhase('searching');
-    const found = await search(trimmed);
+    const fixture = __DEV__ && isVayrinCandidateFixtureId(job?.id)
+      ? getVayrinCandidateFixture(job.id)
+      : null;
+    const found = fixture?.manualResults
+      ? fixture.manualResults.map((candidate) => shareJobCandidateToPlaceCandidate(candidate))
+      : await search(trimmed);
     if (!mountedRef.current || requestId !== manualRequestRef.current) return;
-    setManualSelected(selectedQuickCheckCandidate(trimmed, found));
+    const initial = selectedQuickCheckCandidate(trimmed, found);
+    setManualSelectedIds(initial ? [initial.googlePlaceId] : []);
     setManualSearchPhase(found.length > 0 ? 'results' : 'empty');
-  }, [search]);
+    if (vayrinEnabled && rawResolutionQueryRef.current === trimmed) {
+      void trackEvent(found.length > 0
+        ? 'vayrin_raw_name_resolution_success'
+        : 'vayrin_raw_name_resolution_failure', {
+        source: 'async',
+        candidate_count_internal: found.length,
+        candidate_count_shown: Math.min(found.length, 3),
+      });
+    }
+  }, [job?.id, search, vayrinEnabled]);
 
   function changeManualQuery(value: string) {
     manualRequestRef.current += 1;
     manualQueryEditedRef.current = true;
     setManualQuery(value);
-    setManualSelected(null);
+    setManualSelectedIds([]);
     setManualSearchPhase('idle');
     resetSearch();
   }
@@ -300,8 +341,10 @@ function ShareJobDetailScreen() {
       const previewSaved = getSavedPlacesCacheSnapshot()?.find(
         (saved) => saved.place?.google_place_id,
       );
-      const j = __DEV__ && isPhase2PreviewId(id)
-        ? buildPhase2PreviewJob(
+      const j = __DEV__ && isVayrinCandidateFixtureId(id)
+        ? buildVayrinCandidateFixtureJob(id)
+        : __DEV__ && isPhase2PreviewId(id)
+          ? buildPhase2PreviewJob(
             id,
             previewSaved?.place?.google_place_id
               ? {
@@ -314,8 +357,8 @@ function ShareJobDetailScreen() {
                   matchScore: 1,
                 }
               : null,
-          )
-        : await getShareJob(id);
+            )
+          : await getShareJob(id);
       if (!mountedRef.current) return;
       setJob(j);
       // A row the user can no longer read (deleted, or RLS-scoped away) comes
@@ -370,6 +413,14 @@ function ShareJobDetailScreen() {
 
   const platform = job?.source_platform ?? null;
   const sourceUrl = job?.canonical_url ?? job?.source_url ?? null;
+  const extractionPayload = job?.extraction_payload && typeof job.extraction_payload === 'object'
+    ? job.extraction_payload as Record<string, unknown>
+    : null;
+  const overallSourceFrameUrl = typeof extractionPayload?.sourceFrameUrl === 'string'
+    ? extractionPayload.sourceFrameUrl
+    : typeof extractionPayload?.source_frame_url === 'string'
+      ? extractionPayload.source_frame_url
+      : null;
   // ONE payload-tolerant mapping from the persisted row to what this screen
   // renders (lib/shareJobDetailState). Nothing below re-interprets
   // candidate_payload, so a drifted/partial payload can never throw here.
@@ -394,17 +445,43 @@ function ShareJobDetailScreen() {
   }, [detail.kind, onboardingShare, sourceUrl]);
   const candidates = detail.candidates;
   const mentionSlots = detail.mentionSlots;
+  const rankedConfirmationCandidates = useMemo(() => candidates.map((candidate) => {
+    const slot = mentionSlots.find((item) =>
+      item.candidates.some((choice) => choice.googlePlaceId === candidate.googlePlaceId));
+    return {
+      ...candidate,
+      sourceFrameUrl: candidate.sourceFrameUrl ?? slot?.sourceFrameUrl ?? overallSourceFrameUrl,
+      sourceTimestamps: candidate.sourceTimestamps.length > 0
+        ? candidate.sourceTimestamps
+        : slot?.sourceTimestamps ?? [],
+    } satisfies CandidateConfirmationPlace;
+  }), [candidates, mentionSlots, overallSourceFrameUrl]);
+  const confirmationCandidates = useMemo(
+    () => visibleCandidateShortlist(rankedConfirmationCandidates),
+    [rankedConfirmationCandidates],
+  );
+  const candidateMode = confirmationMode(confirmationCandidates);
+  const pickerSelectionMode = reviewSelectionMode(mentionSlots);
+  const candidateConfirmationPresentation = {
+    ...vayrinPresentation,
+    headline: confirmationPrompt(candidateMode),
+    body: candidateMode === 'broad'
+      ? 'This is an area match. Search nearby to choose an exact destination.'
+      : candidateMode === 'multiple'
+        ? 'Choose the place that matches the video.'
+        : 'Compare it with the video, then save it.'
+  };
   useEffect(() => {
     if (detail.kind !== 'picker') {
-      setPickerSelectedId(null);
+      setPickerSelectedIds([]);
       return;
     }
-    setPickerSelectedId((current) =>
-      current && candidates.some((candidate) => candidate.googlePlaceId === current)
-        ? current
-        : null,
-    );
-  }, [candidates, detail.kind, job?.id]);
+    setPickerSelectedIds((current) => {
+      const retained = current.filter((id) =>
+        confirmationCandidates.some((candidate) => candidate.googlePlaceId === id));
+      return pickerSelectionMode === 'exclusive' ? retained.slice(0, 1) : retained;
+    });
+  }, [confirmationCandidates, detail.kind, job?.id, pickerSelectionMode]);
   const reviewSlots = useMemo(() => {
     if (mentionSlots.length > 0) return mentionSlots;
     return candidates.map((candidate) => ({
@@ -426,11 +503,20 @@ function ShareJobDetailScreen() {
     () => savedPlaces.length > 0 ? savedPlaces : getSavedPlacesCacheSnapshot() ?? [],
     [savedPlaces],
   );
+  const fixtureAlreadySavedGooglePlaceIds = useMemo(
+    () => Array.isArray(extractionPayload?.fixtureAlreadySavedGooglePlaceIds)
+      ? extractionPayload.fixtureAlreadySavedGooglePlaceIds.filter((value): value is string => typeof value === 'string')
+      : [],
+    [extractionPayload],
+  );
   const savedByGoogleId = useMemo(() => Object.fromEntries(
-    savedSnapshot
+    [
+      ...savedSnapshot
       .filter((saved) => !!saved.place?.google_place_id)
-      .map((saved) => [saved.place.google_place_id as string, saved.id]),
-  ), [savedSnapshot]);
+      .map((saved) => [saved.place.google_place_id as string, saved.id] as const),
+      ...fixtureAlreadySavedGooglePlaceIds.map((googlePlaceId) => [googlePlaceId, `fixture-saved:${googlePlaceId}`] as const),
+    ],
+  ), [fixtureAlreadySavedGooglePlaceIds, savedSnapshot]);
   const leadsByMention = useMemo(() => {
     const grouped = new Map<string, VayrinIdentityLead[]>();
     for (const lead of vayrinPresentation.leads) {
@@ -453,6 +539,23 @@ function ShareJobDetailScreen() {
     });
   }, [job?.id, vayrinEnabled, vayrinPresentation.kind]);
 
+  const confirmationViewedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!vayrinEnabled || !job?.id || (detail.kind !== 'confirm' && detail.kind !== 'picker')) return;
+    const key = `${job.id}:${candidateMode}:${confirmationCandidates.length}`;
+    if (confirmationViewedRef.current === key) return;
+    confirmationViewedRef.current = key;
+    void trackEvent('vayrin_confirmation_viewed', {
+      job_id: job.id,
+      candidate_count: confirmationCandidates.length,
+      candidate_count_internal: rankedConfirmationCandidates.length,
+      candidate_count_shown: confirmationCandidates.length,
+      candidate_type: candidateMode,
+      has_place_photo: confirmationCandidates.some((candidate) => Boolean(candidate.photoUrl || candidate.googlePlaceId)),
+      has_video_frame_fallback: confirmationCandidates.some((candidate) => Boolean(candidate.sourceFrameUrl)),
+    });
+  }, [candidateMode, confirmationCandidates, detail.kind, job?.id, rankedConfirmationCandidates.length, vayrinEnabled]);
+
   // Keyed off the mapped view, so a grouped job identified by its persisted
   // slots (rather than by `decision`) still builds its batch instead of
   // spinning forever behind the "Review places" header.
@@ -468,13 +571,13 @@ function ShareJobDetailScreen() {
 
   // Seed the manual search only for a job that genuinely has nothing to offer.
   useEffect(() => {
-    if (!routeJobId || detail.kind !== 'manual' || !detail.canSearchManually) return;
+    if (!routeJobId || detail.kind !== 'manual' || !detail.canSearchManually || vayrinPresentation.leads.length > 0) return;
     const query = manualQuery.trim();
     if (!query || manualQueryEditedRef.current) return;
     const key = quickCheckSearchKey(routeJobId, 'manual', query);
     if (!claimInitialQuickCheckSearch(key)) return;
     void runManualSearch(query);
-  }, [detail.canSearchManually, detail.kind, routeJobId, manualQuery, runManualSearch]);
+  }, [detail.canSearchManually, detail.kind, routeJobId, manualQuery, runManualSearch, vayrinPresentation.leads.length]);
 
   useEffect(() => {
     if (
@@ -490,7 +593,7 @@ function ShareJobDetailScreen() {
     candidate: PlaceCandidate,
     aiNote: string | null = null,
   ): Promise<{ savedPlaceId: string | null; duplicate: boolean }> {
-    if (__DEV__ && isPhase2PreviewId(job?.id)) {
+    if (__DEV__ && (isPhase2PreviewId(job?.id) || isVayrinCandidateFixtureId(job?.id))) {
       throw new Error('This development preview is read-only.');
     }
     return persistShareJobCandidate({
@@ -512,6 +615,11 @@ function ShareJobDetailScreen() {
   ): Promise<void> {
     if (vayrinEnabled) {
       void trackEvent('vayrin_saved', {
+        job_id: jobId,
+        source: 'async',
+        duplicate,
+      });
+      void trackEvent('vayrin_candidate_saved', {
         job_id: jobId,
         source: 'async',
         duplicate,
@@ -613,6 +721,68 @@ function ShareJobDetailScreen() {
     try {
       const { savedPlaceId, duplicate } = await persistCandidate(candidate);
       await resolveJobWith(job.id, savedPlaceId, duplicate);
+    } catch (err) {
+      Alert.alert('Could not save', err instanceof Error ? err.message : 'Please try again.');
+    } finally {
+      resolvingRef.current = false;
+      if (mountedRef.current) setBusy(false);
+    }
+  }
+
+  async function handleSaveCanonicalCandidates(
+    selected: readonly (NormalizedCandidate | ShareJobCandidate | PlaceCandidate)[],
+    source: 'async_picker' | 'raw_name_search',
+  ) {
+    if (!job || resolvingRef.current || selected.length === 0) return;
+    const unique = [...new Map(selected.map((candidate) => [candidate.googlePlaceId, candidate])).values()];
+    resolvingRef.current = true;
+    if (mountedRef.current) setBusy(true);
+    void trackEvent('vayrin_candidate_selected', {
+      job_id: job.id,
+      source,
+      candidate_count_selected: unique.length,
+      multi_select_count: unique.length,
+    });
+    try {
+      const settled = await Promise.allSettled(unique.map(async (candidate) => {
+        const hydrated: PlaceCandidate = 'googleMapsUrl' in candidate
+          ? candidate
+          : hasCoords(candidate as ShareJobCandidate)
+            ? shareJobCandidateToPlaceCandidate(candidate as ShareJobCandidate)
+            : await getPlaceDetails(candidate.googlePlaceId);
+        const result = await persistCandidate(
+          hydrated,
+          'aiNote' in candidate ? candidate.aiNote ?? null : null,
+        );
+        return result;
+      }));
+      const created: string[] = [];
+      const duplicates: string[] = [];
+      let failed = 0;
+      for (const result of settled) {
+        if (result.status === 'rejected' || !result.value.savedPlaceId) {
+          failed += 1;
+        } else if (result.value.duplicate) {
+          duplicates.push(result.value.savedPlaceId);
+        } else {
+          created.push(result.value.savedPlaceId);
+        }
+      }
+      const resolutionId = created[0] ?? duplicates[0] ?? null;
+      if (resolutionId) await markShareJobResolved(job.id, resolutionId);
+      if (resolutionId) {
+        void trackEvent('vayrin_saved', {
+          job_id: job.id,
+          source,
+          saved_count: created.length,
+          duplicate_count: duplicates.length,
+          candidate_count_selected: unique.length,
+          multi_select_count: unique.length,
+        });
+        completeManualSave(created, duplicates, failed);
+      } else {
+        throw new Error('No selected places could be saved. Please retry.');
+      }
     } catch (err) {
       Alert.alert('Could not save', err instanceof Error ? err.message : 'Please try again.');
     } finally {
@@ -905,11 +1075,12 @@ function ShareJobDetailScreen() {
     const checkingKnownQuery = manualSearchPhase === 'idle' &&
       Boolean(manualQuery.trim()) &&
       !manualQueryEditedRef.current &&
-      !searchExpanded;
+      !searchExpanded &&
+      vayrinPresentation.leads.length === 0;
     const showSearchAction = manualSearchPhase === 'empty' || manualSearchPhase === 'error' || (
       manualSearchPhase === 'idle' && !checkingKnownQuery
     );
-    const selected = manualSelected;
+    const visibleResults = visibleCandidateShortlist(results);
     return (
       <View style={[styles.section, styles.searchSection]}>
         <View style={styles.searchHeaderRow}>
@@ -947,53 +1118,25 @@ function ShareJobDetailScreen() {
         {manualSearchPhase === 'error' ? (
           <Text style={[typography.caption, styles.help]}>Couldn&apos;t check right now. Your search is ready to retry.</Text>
         ) : null}
-        {results.map((c) => (
-          <Pressable
-            key={c.googlePlaceId}
-            onPress={() => setManualSelected(c)}
-            disabled={busy}
-            accessibilityRole="radio"
-            accessibilityLabel={`Choose ${c.name} as the place you meant`}
-            accessibilityState={{ checked: selected?.googlePlaceId === c.googlePlaceId }}
-            style={({ pressed }) => [
-              styles.candidate,
-              selected?.googlePlaceId === c.googlePlaceId ? styles.candidateSelected : null,
-              pressed ? styles.candidatePressed : null,
-            ]}
-          >
-            <View style={[
-              styles.radio,
-              selected?.googlePlaceId === c.googlePlaceId && styles.radioOn,
-            ]}>
-              {selected?.googlePlaceId === c.googlePlaceId ? <View style={styles.radioDot} /> : null}
-            </View>
-            <PlaceImage
-              googlePlaceId={c.googlePlaceId}
-              size={52}
-              borderRadius={10}
-              accessibilityLabel={`Photo of ${c.name}`}
-            />
-            <View style={styles.flex}>
-              <Text style={[typography.bodyStrong, styles.candidateName]} numberOfLines={1}>
-                {c.name}
-              </Text>
-              {c.formattedAddress ? (
-                <Text style={[typography.caption, styles.candidateAddr]} numberOfLines={2}>
-                  {c.formattedAddress}
-                </Text>
-              ) : null}
-            </View>
-          </Pressable>
-        ))}
-        {selected ? (
-          <Button
-            title="Save place"
-            onPress={() => void handleSaveManual(selected)}
-            disabled={busy}
-            loading={busy}
-            style={styles.primaryBtn}
-          />
+        {manualSearchPhase === 'empty' ? (
+          <Text style={[typography.caption, styles.help]}>Couldn&apos;t find an exact place.</Text>
         ) : null}
+        {visibleResults.map((c) => {
+          const address = splitPlaceAddress(c.formattedAddress);
+          return (
+            <CandidateConfirmationCard
+              key={c.googlePlaceId}
+              candidate={{ ...c, sourceFrameUrl: overallSourceFrameUrl }}
+              locality={address.locality ?? c.formattedAddress}
+              selected={manualSelectedIds.includes(c.googlePlaceId)}
+              selectable
+              compact
+              selectionRole="checkbox"
+              onPress={() => setManualSelectedIds((current) =>
+                toggleCandidateSelection(current, c.googlePlaceId, 'multiple'))}
+            />
+          );
+        })}
       </View>
     );
   }
@@ -1030,6 +1173,7 @@ function ShareJobDetailScreen() {
   }
 
   function openIdentityLead(lead: VayrinIdentityLead) {
+    rawResolutionQueryRef.current = lead.suggestedQuery.trim();
     changeManualQuery(lead.suggestedQuery);
     setSearchExpanded(true);
     void trackEvent('vayrin_lead_opened', {
@@ -1052,20 +1196,20 @@ function ShareJobDetailScreen() {
         key={`${lead.mentionId}:${lead.displayName}:${lead.contextLabel ?? ''}`}
         onPress={onPress}
         accessibilityRole="button"
-        accessibilityLabel={`Possible lead, ${lead.displayName}${lead.contextLabel ? `, ${lead.contextLabel}` : ''}. Search this lead.`}
+        accessibilityLabel={`${lead.displayName}${lead.contextLabel ? `, ${lead.contextLabel}` : ''}. Search for this place.`}
         style={({ pressed }) => [styles.leadCard, pressed && styles.candidatePressed]}
       >
         <View style={styles.leadIcon} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
           <Feather name="search" size={18} color={colors.primary} />
         </View>
         <View style={styles.flex}>
-          <Text style={styles.leadLabel}>POSSIBLE LEAD</Text>
+          <Text style={styles.leadLabel}>SEARCH SUGGESTION</Text>
           <Text style={[typography.bodyStrong, styles.candidateName]} numberOfLines={2}>{lead.displayName}</Text>
           {lead.contextLabel ? (
             <Text style={[typography.caption, styles.candidateAddr]} numberOfLines={2}>{lead.contextLabel}</Text>
           ) : null}
           {timeLabel ? <Text style={[typography.caption, styles.leadTime]}>{timeLabel}</Text> : null}
-          <Text style={[typography.caption, styles.leadCaveat]}>Not verified yet</Text>
+          <Text style={[typography.caption, styles.leadCaveat]}>Search places</Text>
         </View>
         <Feather name="chevron-right" size={18} color={colors.textMuted} />
       </Pressable>
@@ -1496,9 +1640,15 @@ function ShareJobDetailScreen() {
   const everyEligibleSelected = batch ? allEligibleBatchRowsSelected(batch) : false;
   const showBatchSelectionControls = !!batch && batch.order.length >= 3 && eligiblePendingCount >= 2;
   const single = candidates[0];
-  const pickerSelected = pickerSelectedId
-    ? candidates.find((candidate) => candidate.googlePlaceId === pickerSelectedId) ?? null
-    : null;
+  const confirmationSingle = confirmationCandidates[0] ?? null;
+  const broadSingle = confirmationSingle ? isBroadCandidate(confirmationSingle) : false;
+  const pickerSelected = pickerSelectedIds.flatMap((id) => {
+    const candidate = candidates.find((item) => item.googlePlaceId === id);
+    return candidate ? [candidate] : [];
+  });
+  const manualSelected = manualSelectedIds
+    .map((id) => results.find((candidate) => candidate.googlePlaceId === id))
+    .filter((candidate): candidate is PlaceCandidate => Boolean(candidate));
   // The user may already have this place (e.g. they saved it manually months
   // ago). That is not a reason to skip the save — running it is how this
   // post's source_url / ai_note reach that existing row. The copy just has to
@@ -1506,7 +1656,7 @@ function ShareJobDetailScreen() {
   const alreadySaved = single?.googlePlaceId
     ? savedSnapshot.find((row) => row.place?.google_place_id === single.googlePlaceId) ?? null
     : null;
-  const alreadySavedId = alreadySaved?.id ?? null;
+  const alreadySavedId = alreadySaved?.id ?? (single?.googlePlaceId ? savedByGoogleId[single.googlePlaceId] ?? null : null);
   const alreadySavedCopy = alreadySaved
     ? alreadySavedActionCopy(
         alreadySaved,
@@ -1666,7 +1816,7 @@ function ShareJobDetailScreen() {
             </Text>
           </View>
           {vayrinEnabled ? (
-            <VayrinPresentationHeader presentation={vayrinPresentation} />
+            <VayrinPresentationHeader presentation={candidateConfirmationPresentation} />
           ) : (
             <>
               <Text style={[typography.title, styles.title]}>{detail.copy.title}</Text>
@@ -1674,77 +1824,86 @@ function ShareJobDetailScreen() {
             </>
           )}
           <View style={styles.section}>
-            {candidates.map((candidate) => {
+            {confirmationCandidates.map((candidate) => {
               const address = splitPlaceAddress(candidate.formattedAddress);
-              const category = resolvePlaceCategory({
-                placeName: candidate.name,
-                googleTypes: candidate.types,
-              }).category;
-              const meta = [address.locality, CATEGORY_LABELS[category]].filter(Boolean).join(' · ');
+              const broad = isBroadCandidate(candidate);
               return (
-                <Pressable
+                <CandidateConfirmationCard
                   key={candidate.googlePlaceId}
-                  onPress={() => setPickerSelectedId(candidate.googlePlaceId)}
-                  disabled={busy}
-                  accessibilityRole="radio"
-                  accessibilityLabel={`Choose ${candidate.name} as the place for this post${candidate.formattedAddress ? `, ${candidate.formattedAddress}` : ''}`}
-                  accessibilityState={{ checked: pickerSelectedId === candidate.googlePlaceId }}
-                  style={({ pressed }) => [
-                    styles.candidate,
-                    pickerSelectedId === candidate.googlePlaceId && styles.candidateSelected,
-                    pressed && styles.candidatePressed,
-                  ]}
-                >
-                  <View style={[
-                    styles.radio,
-                    pickerSelectedId === candidate.googlePlaceId && styles.radioOn,
-                  ]}>
-                    {pickerSelectedId === candidate.googlePlaceId ? <View style={styles.radioDot} /> : null}
-                  </View>
-                  <PlaceImage
-                    googlePlaceId={candidate.googlePlaceId}
-                    size={58}
-                    borderRadius={11}
-                    accessibilityLabel={`Photo of ${candidate.name}`}
-                  />
-                  <View style={styles.flex}>
-                    <Text style={[typography.bodyStrong, styles.candidateName]} numberOfLines={2}>{candidate.name}</Text>
-                    {meta ? <Text style={[typography.caption, styles.candidateAddr]} numberOfLines={1}>{meta}</Text> : null}
-                    {candidate.formattedAddress ? (
-                      <Text style={[typography.caption, styles.candidateAddr]} numberOfLines={2}>{candidate.formattedAddress}</Text>
-                    ) : null}
-                  </View>
-                </Pressable>
+                  candidate={candidate}
+                  locality={address.locality ?? candidate.formattedAddress}
+                  selected={pickerSelectedIds.includes(candidate.googlePlaceId)}
+                  selectable
+                  compact
+                  selectionRole={pickerSelectionMode === 'exclusive' ? 'radio' : 'checkbox'}
+                  saved={Boolean(savedByGoogleId[candidate.googlePlaceId])}
+                  onPress={() => {
+                    if (broad) {
+                      changeManualQuery(candidate.name);
+                      revealSearch();
+                      void runManualSearch(candidate.name);
+                      return;
+                    }
+                    setPickerSelectedIds((current) =>
+                      toggleCandidateSelection(current, candidate.googlePlaceId, pickerSelectionMode));
+                    if (vayrinEnabled) void trackEvent('vayrin_candidate_selected', {
+                      job_id: job.id,
+                      source: 'async_picker',
+                      candidate_count_internal: rankedConfirmationCandidates.length,
+                      candidate_count_shown: confirmationCandidates.length,
+                    });
+                  }}
+                />
               );
             })}
           </View>
-          {pickerSelected ? (
-            <Button
-              title="Save place"
-              onPress={() => void handleSaveStored(pickerSelected)}
-              disabled={busy}
-              loading={busy}
-              style={styles.primaryBtn}
-            />
-          ) : null}
           {searchExpanded ? (
             renderManualSearch({
               note: 'Search for the exact place and save it instead.',
               onCancel: hideSearch,
             })
           ) : (
-            <Button
-              title={vayrinEnabled ? 'Not it' : 'None of these'}
-              variant="secondary"
-              onPress={() => {
-                if (vayrinEnabled) void trackEvent('vayrin_not_it', { job_id: job.id, source: 'async_picker' });
-                revealSearch();
-              }}
-              style={styles.secondaryBtn}
-            />
+            <>
+              <Button
+                title="None of these"
+                variant="secondary"
+                onPress={() => {
+                  if (vayrinEnabled) {
+                    void trackEvent('vayrin_not_it', { job_id: job.id, source: 'async_picker' });
+                    void trackEvent('vayrin_none_selected', { job_id: job.id, source: 'async_picker' });
+                  }
+                  revealSearch();
+                }}
+                style={styles.secondaryBtn}
+              />
+              <Pressable
+                onPress={revealSearch}
+                accessibilityRole="button"
+                accessibilityLabel="Search for the place"
+                style={styles.searchForPlaceAction}
+              >
+                <Feather name="search" size={17} color={colors.accent} />
+                <Text style={styles.searchForPlaceText}>Search for the place</Text>
+              </Pressable>
+            </>
           )}
           {renderJobFooter()}
         </ScrollView>
+        {(searchExpanded ? manualSelected.length : pickerSelected.length) > 0 ? (
+          <View style={[styles.stickySaveBar, { paddingBottom: Math.max(safeAreaInsets.bottom, Spacing.sm) }]}>
+            <Button
+              title={candidateSaveLabel(searchExpanded ? manualSelected.length : pickerSelected.length)}
+              accessibilityLabel={`${candidateSaveLabel(searchExpanded ? manualSelected.length : pickerSelected.length)} from selected candidates`}
+              onPress={() => void handleSaveCanonicalCandidates(
+                searchExpanded ? manualSelected : pickerSelected,
+                searchExpanded ? 'raw_name_search' : 'async_picker',
+              )}
+              disabled={busy}
+              loading={busy}
+              style={styles.stickySaveButton}
+            />
+          </View>
+        ) : null}
       </ShareJobsSheet>
     );
   }
@@ -1804,7 +1963,7 @@ function ShareJobDetailScreen() {
                 <Text style={[typography.title, styles.title]}>
                   {manualSearchPhase === 'searching' || (manualSearchPhase === 'idle' && manualQuery.trim())
                     ? 'Checking this place'
-                    : results.length === 1 && manualSelected
+                    : results.length === 1 && manualSelected.length > 0
                       ? 'Is this the place?'
                       : results.length > 1
                         ? 'Which place is it?'
@@ -1836,7 +1995,7 @@ function ShareJobDetailScreen() {
         ) : (
           <View style={styles.section}>
             {vayrinEnabled ? (
-              <VayrinPresentationHeader presentation={vayrinPresentation} />
+              <VayrinPresentationHeader presentation={candidateConfirmationPresentation} />
             ) : (
               <>
                 <Text style={[typography.title, styles.title]}>
@@ -1847,29 +2006,13 @@ function ShareJobDetailScreen() {
                 </Text>
               </>
             )}
-            <View style={styles.candidateCard}>
-              <PlaceImage
-                googlePlaceId={single?.googlePlaceId}
-                size={88}
-                borderRadius={12}
-                accessibilityLabel={single?.name ? `Photo of ${single.name}` : undefined}
+            {confirmationSingle ? (
+              <CandidateConfirmationCard
+                candidate={confirmationSingle}
+                locality={placeAddress.locality ?? confirmationSingle.formattedAddress}
+                saved={Boolean(alreadySavedId)}
               />
-              <View style={styles.flex}>
-                <Text style={[typography.heading, styles.candidateCardName]} numberOfLines={2}>
-                  {single?.name ?? 'This place'}
-                </Text>
-                {placeAddress.locality ? (
-                  <Text style={[typography.body, styles.candidateCardLocality]} numberOfLines={1}>
-                    {placeAddress.locality}
-                  </Text>
-                ) : null}
-                {placeAddress.streetAddress || (!placeAddress.locality && single?.formattedAddress) ? (
-                  <Text style={[typography.caption, styles.candidateCardAddr]} numberOfLines={2}>
-                    {placeAddress.streetAddress ?? single?.formattedAddress}
-                  </Text>
-                ) : null}
-              </View>
-            </View>
+            ) : null}
 
             {alreadySavedCopy?.note ? (
               <Text style={[typography.caption, styles.help]}>{alreadySavedCopy.note}</Text>
@@ -1878,10 +2021,18 @@ function ShareJobDetailScreen() {
             {/* One action either way: the save path enriches an existing row
                 instead of creating a second one, so it is safe to always run. */}
             <Button
-              title={alreadySavedCopy?.action ?? 'Save to my map'}
-              onPress={() => single && void handleSaveStored(single)}
+              title={broadSingle ? 'See places in this area' : 'Save this place'}
+              onPress={() => {
+                if (broadSingle && confirmationSingle) {
+                  changeManualQuery(confirmationSingle.name);
+                  revealSearch();
+                  void runManualSearch(confirmationSingle.name);
+                  return;
+                }
+                if (single) void handleSaveStored(single);
+              }}
               disabled={busy || !single}
-              loading={busy}
+              loading={busy && !broadSingle}
               style={styles.primaryBtn}
             />
 
@@ -1891,21 +2042,47 @@ function ShareJobDetailScreen() {
                 onCancel: hideSearch,
               })
             ) : (
-              <Button
-                title={vayrinEnabled ? 'Not it' : PHASE_1_COPY.alternativeAction}
-                variant="secondary"
-                onPress={() => {
-                  if (vayrinEnabled) void trackEvent('vayrin_not_it', { job_id: job.id, source: 'async_likely' });
-                  revealSearch();
-                }}
-                style={styles.secondaryBtn}
-              />
+              <>
+                <Button
+                  title={broadSingle ? 'Not this area' : 'Not this place'}
+                  variant="secondary"
+                  onPress={() => {
+                    if (vayrinEnabled) {
+                      void trackEvent('vayrin_not_it', { job_id: job.id, source: 'async_likely' });
+                      void trackEvent('vayrin_none_selected', { job_id: job.id, source: 'async_likely' });
+                    }
+                    revealSearch();
+                  }}
+                  style={styles.secondaryBtn}
+                />
+                <Pressable
+                  onPress={revealSearch}
+                  accessibilityRole="button"
+                  accessibilityLabel="Search for the place"
+                  style={styles.searchForPlaceAction}
+                >
+                  <Feather name="search" size={17} color={colors.accent} />
+                  <Text style={styles.searchForPlaceText}>Search for the place</Text>
+                </Pressable>
+              </>
             )}
           </View>
         )}
 
         {renderJobFooter()}
       </ScrollView>
+      {manualSelected.length > 0 ? (
+        <View style={[styles.stickySaveBar, { paddingBottom: Math.max(safeAreaInsets.bottom, Spacing.sm) }]}>
+          <Button
+            title={candidateSaveLabel(manualSelected.length)}
+            accessibilityLabel={`${candidateSaveLabel(manualSelected.length)} from selected search results`}
+            onPress={() => void handleSaveCanonicalCandidates(manualSelected, 'raw_name_search')}
+            disabled={busy}
+            loading={busy}
+            style={styles.stickySaveButton}
+          />
+        </View>
+      ) : null}
     </ShareJobsSheet>
   );
 }
@@ -1928,6 +2105,14 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       borderTopColor: colors.border,
       backgroundColor: colors.bg,
     },
+    stickySaveBar: {
+      paddingHorizontal: Spacing.lg,
+      paddingTop: Spacing.sm,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: colors.border,
+      backgroundColor: colors.bg,
+    },
+    stickySaveButton: { minHeight: 56 },
     batchSaveButton: { minHeight: 56 },
     batchSaveAllButton: { minHeight: 48, marginTop: Spacing.sm },
     batchViewSavedButton: { minHeight: 48, marginTop: Spacing.sm },
@@ -1986,6 +2171,15 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
     },
     primaryBtn: { marginTop: Spacing.lg, minHeight: 56 },
     secondaryBtn: { marginTop: Spacing.md, minHeight: 52 },
+    searchForPlaceAction: {
+      minHeight: 48,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: Spacing.sm,
+      marginTop: Spacing.sm,
+    },
+    searchForPlaceText: { color: colors.accent, fontSize: 15, fontWeight: '700' },
     searchHeaderRow: {
       flexDirection: 'row',
       alignItems: 'center',

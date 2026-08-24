@@ -20,6 +20,12 @@ export type ShareJobResultCandidate = {
   matchScore: number | null;
   /** Source-grounded cue already generated for this logical result. */
   aiNote?: string | null;
+  /** Existing authoritative/cached place image, when the producer has one. */
+  photoUrl?: string | null;
+  /** Best candidate-associated source-video frame, when durably available. */
+  sourceFrameUrl?: string | null;
+  /** Candidate-scoped scene anchors used for concise confirmation evidence. */
+  sourceTimestamps?: number[];
 };
 
 export type ShareJobMentionOutcome =
@@ -53,6 +59,8 @@ export type ShareJobMentionSlot = {
   savedPlaceId?: string | null;
   /** Source-scene timestamps, seconds from the beginning of the post. */
   sourceTimestamps?: number[];
+  /** Best frame for this logical scene, when a durable media producer supplies one. */
+  sourceFrameUrl?: string | null;
   /** Ranked Vayrin identities for this one logical scene. This survives even
    * when Places returns no candidate, enabling a future "few leads" UI without
    * pretending a Google Place was verified. */
@@ -144,6 +152,9 @@ export function normalizeResultCandidate(input: unknown): ShareJobResultCandidat
         ? row.confidenceScore
         : null,
     aiNote: text(row.aiNote),
+    photoUrl: text(row.photoUrl ?? row.photo_url),
+    sourceFrameUrl: text(row.sourceFrameUrl ?? row.source_frame_url ?? row.frameUrl),
+    sourceTimestamps: normalizedTimestamps(row.sourceTimestamps ?? row.source_timestamps),
   };
 }
 
@@ -216,6 +227,7 @@ export function normalizeMentionSlots(input: unknown): ShareJobMentionSlot[] {
         : 'pending',
       savedPlaceId: text(row.savedPlaceId),
       sourceTimestamps: normalizedTimestamps(row.sourceTimestamps),
+      sourceFrameUrl: text(row.sourceFrameUrl ?? row.source_frame_url),
       identityHypotheses,
     });
   }

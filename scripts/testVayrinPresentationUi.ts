@@ -19,10 +19,11 @@ assert.match(sync, /mapSyncShareToVayrinPresentation/, 'sync outcomes use the sh
 assert.match(asyncDetail, /mapShareJobToVayrinPresentation/, 'durable outcomes use the shared mapper');
 assert.match(correction, /buildVayrinPresentation/, 'Vayrin correction copy uses the shared mapper');
 assert.match(asyncDetail, /normalizeVayrinIdentityLeads|vayrinPresentation\.leads/, 'durable UI keeps non-Places leads');
-assert.match(asyncDetail, /Not verified yet/, 'lead cards do not claim verification');
+assert.doesNotMatch(asyncDetail, /Possible lead|Not verified yet/i, 'lead cards use decision language, not system state');
+assert.match(asyncDetail, /CandidateConfirmationCard/, 'candidate confirmation uses the visual card');
 assert.match(asyncDetail, /selectAllEligibleBatchRows/, 'Multi-Select owns safe Save all semantics');
 assert.match(asyncDetail, /title="Not it"/, 'strong result correction uses canonical action');
-assert.match(sync, /'Not it'/, 'sync correction uses canonical action');
+assert.match(sync, /title="Not it"/, 'sync saved-place correction uses canonical action');
 
 assert.match(header, /accessibilityRole="summary"/);
 assert.match(header, /accessibilityLiveRegion=/);

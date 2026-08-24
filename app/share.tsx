@@ -23,6 +23,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -31,8 +32,10 @@ import {
   View,
 } from 'react-native';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button, Card, Input, Screen } from '@/components';
+import { CandidateConfirmationCard } from '@/components/CandidateConfirmationCard';
 import { ShareJobHandoff } from '@/components/ShareJobHandoff';
 import { VayrinPresentationHeader } from '@/components/VayrinPresentationHeader';
 import { WrongPlaceSheet } from '@/components/map/WrongPlaceSheet';
@@ -56,6 +59,15 @@ import {
   type SharePlaceSaveOutcome,
 } from '@/lib/shareJobResult';
 import { selectionModeForPlaceResult } from '@/lib/placeSelection';
+import { planOpenOriginal } from '@/lib/openOriginalPost';
+import { splitPlaceAddress } from '@/lib/sharePhase1Ui';
+import {
+  confirmationMode,
+  confirmationPrompt,
+  candidateSaveLabel,
+  isBroadCandidate,
+  visibleCandidateShortlist,
+} from '@/lib/vayrinCandidateConfirmation';
 import {
   isLikelyUrl,
   parseShare,
@@ -435,6 +447,7 @@ function sharePlatform(url: string): string {
 
 function LegacyShareScreen() {
   const router = useRouter();
+  const safeAreaInsets = useSafeAreaInsets();
   const navigation = useNavigation();
   const params = useLocalSearchParams<{ url?: string }>();
   const { state: onboardingV2 } = useOnboardingV2();
@@ -454,7 +467,9 @@ function LegacyShareScreen() {
   const [extraction, setExtraction] = useState<PlaceExtraction | null>(null);
   const [aiExtraction, setAiExtraction] = useState<AIExtractResult | null>(null);
   const [candidates, setCandidates] = useState<PlaceCandidate[]>([]);
-  const [singleSelectedId, setSingleSelectedId] = useState<string | null>(null);
+  const [candidateSelectedIds, setCandidateSelectedIds] = useState<Set<string>>(
+    () => new Set<string>(),
+  );
   // For 'multi-choose': IDs of independent resolved places selected for the
   // explicit bulk save action. Preselection never persists by itself.
   const [multiSelectedIds, setMultiSelectedIds] = useState<Set<string>>(
@@ -477,10 +492,15 @@ function LegacyShareScreen() {
   const [debugState, setDebugState] = useState<ShareDebugState>(() => createInitialShareDebugState());
 
   useEffect(() => {
-    if (phase !== 'choose') return;
-    setSingleSelectedId((current) => {
-      if (current && candidates.some((candidate) => candidate.googlePlaceId === current)) return current;
-      return candidates.length === 1 ? candidates[0]!.googlePlaceId : null;
+    if (phase !== 'choose') {
+      setCandidateSelectedIds(new Set<string>());
+      return;
+    }
+    setCandidateSelectedIds((current) => {
+      const valid = new Set(candidates.map((candidate) => candidate.googlePlaceId));
+      const next = new Set([...current].filter((id) => valid.has(id)));
+      if (candidates.length === 1 && candidates[0]?.googlePlaceId) next.add(candidates[0].googlePlaceId);
+      return next;
     });
   }, [candidates, phase]);
 
@@ -712,7 +732,6 @@ function LegacyShareScreen() {
 
     // Reset prior attempt state.
     setCandidates([]);
-    setSingleSelectedId(null);
     setMultiSelectedIds(new Set<string>());
     setFailMessage(null);
     setAiExtraction(null);
@@ -1102,7 +1121,6 @@ function LegacyShareScreen() {
           setMultiSelectedIds(new Set(capped.map((candidate) => candidate.googlePlaceId)));
           setPhase('multi-choose');
         } else {
-          setSingleSelectedId(null);
           setPhase('choose');
         }
         setDebugState((prev) => ({
@@ -2222,6 +2240,12 @@ function LegacyShareScreen() {
           saved_place_id: result.savedPlaceId,
           duplicate: result.status === 'duplicate',
         });
+        void trackEvent('vayrin_candidate_saved', {
+          source: 'sync',
+          source_type: sourceType,
+          saved_place_id: result.savedPlaceId,
+          duplicate: result.status === 'duplicate',
+        });
         return;
       }
       try {
@@ -2499,6 +2523,15 @@ function LegacyShareScreen() {
     );
   }
 
+  function openOriginalPost() {
+    const plan = planOpenOriginal(parsed?.url ?? url);
+    if (plan.kind !== 'open') return;
+    void trackEvent('share_original_post_opened', { source: 'sync', host: plan.host });
+    void Linking.openURL(plan.url).catch(() => {
+      Alert.alert("Couldn't open this post", 'Try opening it again from the source app.');
+    });
+  }
+
   useEffect(() => {
     if (!vayrinEnabled || !vayrinPresentation || vayrinPresentation.kind === 'ready') return;
     const key = `${phase}:${vayrinPresentation.kind}`;
@@ -2525,7 +2558,36 @@ function LegacyShareScreen() {
   // can no longer throw during render and reach the root AppErrorBoundary —
   // it is silently skipped. (Empty/invalid candidate arrays are routed to
   // manual fallback at the decision layer; this is the last line of defense.)
-  const renderableCandidates = filterRenderableCandidates(candidates).valid;
+  const internalRenderableCandidates = filterRenderableCandidates(candidates).valid;
+  const renderableCandidates = visibleCandidateShortlist(internalRenderableCandidates);
+  const syncCandidateMode = confirmationMode(renderableCandidates);
+  const syncVayrinPresentation = vayrinPresentation && phase === 'choose' && renderableCandidates.length > 0
+    ? {
+        ...vayrinPresentation,
+        headline: confirmationPrompt(syncCandidateMode),
+        body: syncCandidateMode === 'broad'
+          ? 'This is an area match. Search nearby to choose an exact destination.'
+          : syncCandidateMode === 'multiple'
+            ? 'Choose the place that matches the video.'
+            : 'Compare it with the video, then save it.',
+      }
+    : vayrinPresentation;
+  const syncConfirmationViewedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!vayrinEnabled || phase !== 'choose' || renderableCandidates.length === 0) return;
+    const key = `${syncCandidateMode}:${renderableCandidates.map((candidate) => candidate.googlePlaceId).join(',')}`;
+    if (syncConfirmationViewedRef.current === key) return;
+    syncConfirmationViewedRef.current = key;
+    void trackEvent('vayrin_confirmation_viewed', {
+      source: 'sync',
+      candidate_count: renderableCandidates.length,
+      candidate_count_internal: internalRenderableCandidates.length,
+      candidate_count_shown: renderableCandidates.length,
+      candidate_type: syncCandidateMode,
+      has_place_photo: renderableCandidates.some((candidate) => Boolean(candidate.googlePlaceId)),
+      has_video_frame_fallback: false,
+    });
+  }, [internalRenderableCandidates.length, phase, renderableCandidates, syncCandidateMode, vayrinEnabled]);
 
   return (
     <Screen>
@@ -2542,8 +2604,8 @@ function LegacyShareScreen() {
               failed, debug) layer on top — they never replace the input
               + primary button. This is what guarantees the user always
               sees something actionable. */}
-          {vayrinEnabled && vayrinPresentation ? (
-            <VayrinPresentationHeader presentation={vayrinPresentation} />
+          {vayrinEnabled && syncVayrinPresentation ? (
+            <VayrinPresentationHeader presentation={syncVayrinPresentation} />
           ) : (
             <>
               <Text style={[Typography.title, styles.headerTitle]}>
@@ -2651,80 +2713,50 @@ function LegacyShareScreen() {
                 </>
               ) : null}
               {renderableCandidates.map((c) => {
-                const selected = singleSelectedId === c.googlePlaceId;
+                const selected = candidateSelectedIds.has(c.googlePlaceId);
+                const broad = isBroadCandidate(c);
+                const address = splitPlaceAddress(c.formattedAddress);
                 return (
-                <Pressable
-                  key={c.googlePlaceId}
-                  onPress={() => {
-                    setSingleSelectedId(c.googlePlaceId);
-                    if (vayrinEnabled) void trackEvent('vayrin_candidate_selected', {
-                      source: 'sync',
-                      candidate_count: renderableCandidates.length,
-                    });
-                    void trackEvent('share_candidate_selected', {
-                      source_type: parsed?.source ?? 'link',
-                      google_place_id: c.googlePlaceId ?? null,
-                      candidate_count: renderableCandidates.length,
-                    });
-                  }}
-                  accessibilityRole="radio"
-                  accessibilityLabel={`Choose ${c.name} as the place for this post`}
-                  accessibilityState={{ checked: selected }}
-                  style={({ pressed }) => [
-                    styles.candidate,
-                    selected && styles.candidateChecked,
-                    pressed && styles.candidatePressed,
-                  ]}
-                >
-                  <View style={styles.multiRow}>
-                    <View style={[styles.radio, selected && styles.radioChecked]}>
-                      {selected ? <View style={styles.radioDot} /> : null}
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={Typography.bodyStrong} numberOfLines={1}>
-                        {c.name}
-                      </Text>
-                      {c.formattedAddress ? (
-                        <Text
-                          style={[Typography.caption, styles.muted]}
-                          numberOfLines={2}
-                        >
-                          {c.formattedAddress}
-                        </Text>
-                      ) : null}
-                      {c.category ? (
-                        <Text
-                          style={[Typography.caption, styles.muted, { marginTop: 2 }]}
-                          numberOfLines={1}
-                        >
-                          {c.category}
-                        </Text>
-                      ) : null}
-                    </View>
-                  </View>
-                </Pressable>
+                  <CandidateConfirmationCard
+                    key={c.googlePlaceId}
+                    candidate={c}
+                    locality={address.locality ?? c.formattedAddress}
+                    selected={selected}
+                    selectable
+                    compact={renderableCandidates.length > 1}
+                    selectionRole="checkbox"
+                    onPress={() => {
+                      if (broad) {
+                        setCandidates([]);
+                        setManualQuery([c.name, c.formattedAddress].filter(Boolean).join(' '));
+                        setPhase('failed');
+                        return;
+                      }
+                      setCandidateSelectedIds((current) => {
+                        const next = new Set(current);
+                        if (next.has(c.googlePlaceId)) next.delete(c.googlePlaceId);
+                        else next.add(c.googlePlaceId);
+                        return next;
+                      });
+                      if (vayrinEnabled) void trackEvent('vayrin_candidate_selected', {
+                        source: 'sync',
+                        candidate_count: renderableCandidates.length,
+                      });
+                      void trackEvent('share_candidate_selected', {
+                        source_type: parsed?.source ?? 'link',
+                        google_place_id: c.googlePlaceId ?? null,
+                        candidate_count: renderableCandidates.length,
+                      });
+                    }}
+                  />
                 );
               })}
-              {singleSelectedId ? (
-                <Button
-                  title="Save place"
-                  onPress={() => {
-                    const selected = renderableCandidates.find(
-                      (candidate) => candidate.googlePlaceId === singleSelectedId,
-                    );
-                    if (!selected) return;
-                    void saveCandidate(
-                      selected,
-                      parsed?.url ?? null,
-                      parsed?.source ?? 'link',
-                    );
-                  }}
-                  loading={busy}
-                  disabled={busy}
-                />
-              ) : null}
               <Pressable
                 onPress={() => {
+                  if (vayrinEnabled) void trackEvent('vayrin_none_selected', {
+                    source: 'sync',
+                    candidate_count: renderableCandidates.length,
+                  });
                   setCandidates([]);
                   setFailMessage(null);
                   setManualQuery(extraction?.query ?? aiExtraction?.query ?? '');
@@ -2734,8 +2766,29 @@ function LegacyShareScreen() {
                 style={styles.manualLink}
               >
                 <Text style={[Typography.caption, styles.manualLinkText]}>
-                  {vayrinEnabled ? 'Not it' : 'None of these — search manually'}
+                  {renderableCandidates.length === 1 ? 'Not this place' : 'None of these'}
                 </Text>
+              </Pressable>
+              <Pressable
+                onPress={() => {
+                  setCandidates([]);
+                  setFailMessage(null);
+                  setManualQuery(extraction?.query ?? aiExtraction?.query ?? '');
+                  setPhase('failed');
+                }}
+                accessibilityRole="button"
+                accessibilityLabel="Search for the place"
+                style={styles.manualLink}
+              >
+                <Text style={[Typography.caption, styles.searchPlaceText]}>Search for the place</Text>
+              </Pressable>
+              <Pressable
+                onPress={openOriginalPost}
+                accessibilityRole="button"
+                accessibilityLabel="View original post"
+                style={styles.manualLink}
+              >
+                <Text style={[Typography.caption, styles.originalPostText]}>View original post</Text>
               </Pressable>
             </View>
           ) : null}
@@ -2910,7 +2963,7 @@ function LegacyShareScreen() {
           {phase === 'failed' ? (
             <Card style={styles.section}>
               <Text style={Typography.heading}>
-                {onboardingShare ? 'Not enough to go on.' : 'Search manually'}
+                {vayrinEnabled ? 'Search for the place' : onboardingShare ? 'Not enough to go on.' : 'Search manually'}
               </Text>
               {!vayrinEnabled ? (
                 <Text
@@ -2943,11 +2996,24 @@ function LegacyShareScreen() {
               <Button
                 title="Search"
                 onPress={() => {
-                  if (vayrinEnabled) void trackEvent('vayrin_manual_fallback', { source: 'sync' });
+                  if (vayrinEnabled) {
+                    void trackEvent('vayrin_manual_fallback', { source: 'sync' });
+                    void trackEvent('vayrin_manual_search_started', { source: 'sync' });
+                  }
                   runManualSearch();
                 }}
                 disabled={!manualQuery.trim()}
               />
+              {launchedFromShare ? (
+                <Pressable
+                  onPress={openOriginalPost}
+                  accessibilityRole="button"
+                  accessibilityLabel="View original post"
+                  style={styles.manualLink}
+                >
+                  <Text style={[Typography.caption, styles.originalPostText]}>View original post</Text>
+                </Pressable>
+              ) : null}
             </Card>
           ) : null}
 
@@ -3122,6 +3188,32 @@ function LegacyShareScreen() {
             </View>
           ) : null}
         </ScrollView>
+        {phase === 'choose' && candidateSelectedIds.size > 0 ? (
+          <View style={[styles.stickySaveBar, { paddingBottom: Math.max(safeAreaInsets.bottom, Spacing.sm) }]}>
+            <Button
+              title={candidateSaveLabel(candidateSelectedIds.size)}
+              accessibilityLabel={`${candidateSaveLabel(candidateSelectedIds.size)} from selected candidates`}
+              onPress={() => {
+                const selected = renderableCandidates.filter(
+                  (candidate) => candidateSelectedIds.has(candidate.googlePlaceId),
+                );
+                if (selected.length === 0) return;
+                void trackEvent('vayrin_candidate_selected', {
+                  source: 'sync',
+                  candidate_count_selected: selected.length,
+                  multi_select_count: selected.length,
+                });
+                void saveSelectedCandidates(
+                  selected,
+                  parsed?.url ?? null,
+                  parsed?.source ?? 'link',
+                );
+              }}
+              loading={busy}
+              disabled={busy}
+            />
+          </View>
+        ) : null}
       </KeyboardAvoidingView>
     </Screen>
   );
@@ -3199,6 +3291,13 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       paddingHorizontal: Spacing.md,
     },
     section: { marginTop: Spacing.lg },
+    stickySaveBar: {
+      paddingHorizontal: Spacing.lg,
+      paddingTop: Spacing.sm,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: colors.border,
+      backgroundColor: colors.bg,
+    },
     savedResultCard: { marginBottom: Spacing.md },
     muted: { color: colors.textMuted },
 
@@ -3283,5 +3382,7 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       color: colors.textMuted,
       textDecorationLine: 'underline',
     },
+    searchPlaceText: { color: colors.accent, fontWeight: '700' },
+    originalPostText: { color: colors.textSecondary, fontWeight: '600' },
   });
 }
