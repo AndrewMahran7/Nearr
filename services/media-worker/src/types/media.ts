@@ -121,6 +121,7 @@ export type ResolvedMedia = {
    * provider responses are deliberately absent. */
   acquisition?: {
     provider: 'yt_dlp' | 'scrapecreators';
+    primaryAcquisitionProvider?: 'yt_dlp';
     primaryAcquisitionResult?: 'success_media' | 'failure_no_usable_media';
     primaryFailureCode?: MediaErrorCode;
     scrapeCreatorsInvoked?: boolean;
