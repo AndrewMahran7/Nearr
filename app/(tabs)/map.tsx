@@ -142,6 +142,14 @@ import {
 } from '@/lib/liveLocation';
 import { trackEvent } from '@/lib/analytics';
 import { isOnboardingV2Enabled, isOnboardingV2Phase1Only } from '@/lib/featureFlags';
+import { isOnboardingV2Phase2MapState } from '@/lib/onboardingV2Core';
+import {
+  MAP_QUEUE_CLEARANCE,
+  MAP_TOP_CHROME_BASE_CLEARANCE,
+  PHASE2_REQUIRED_MAP_FILTERS,
+  resolvePhase2MapLayout,
+  shouldRenderMapTopChrome,
+} from '@/lib/onboardingV2MapPresentation';
 import {
   closeOnboardingV2PlaceTour,
   isOnboardingV2InProgress,
@@ -232,8 +240,8 @@ function selectedIconName(saved: SavedPlaceWithPlace): React.ComponentProps<type
 // Vertical space reserved by the floating search bar + filter chips from the
 // top of the map area. When async share-jobs are enabled we add one more row
 // for the Queue pill so View All / preview pills never overlap it.
-const TOP_CHROME_BASE_CLEARANCE = Spacing.md + 50 + Spacing.sm + 40 + Spacing.sm;
-const QUEUE_PILL_CLEARANCE = 18 + Spacing.sm + 8;
+const TOP_CHROME_BASE_CLEARANCE = MAP_TOP_CHROME_BASE_CLEARANCE;
+const QUEUE_PILL_CLEARANCE = MAP_QUEUE_CLEARANCE;
 
 // The Queue pill as it sits while Place Detail is expanded: its own top margin
 // plus its minimum height.
@@ -358,25 +366,14 @@ const PREVIEW_INITIAL_REGION: Region = {
   longitudeDelta: 0.08,
 };
 
-const PHASE2_MAP_FILTER_STAGES = new Set([
-  'practice_ready',
-  'first_independent_external_video_opened',
-  'first_independent_share_returned',
-  'first_independent_save_complete',
-  'second_independent_external_video_opened',
-  'second_independent_share_returned',
-  'graduated',
-]);
-const PHASE2_REQUIRED_MAP_FILTERS = ['food_drink', 'outdoors'] as const;
-
 export default function MapScreen() {
   const router = useRouter();
   const { colors, typography, resolvedTheme } = useTheme();
   const { state: onboardingV2State } = useOnboardingV2();
+  const phase1Only = isOnboardingV2Phase1Only();
   const phase2MapActive = !!(
-    !isOnboardingV2Phase1Only() &&
-    onboardingV2State?.cohort === 'new_user_v2' &&
-    PHASE2_MAP_FILTER_STAGES.has(onboardingV2State.stage)
+    !phase1Only &&
+    onboardingV2State && isOnboardingV2Phase2MapState(onboardingV2State)
   );
   const mapRenderCountRef = useRef(0);
   mapRenderCountRef.current += 1;
@@ -392,6 +389,7 @@ export default function MapScreen() {
   // status bar instead of hugging the very top edge.
   const insets = useSafeAreaInsets();
   const safeTopInset = Math.max(insets.top, Spacing.xl);
+  const phase2MapLayout = useMemo(() => resolvePhase2MapLayout(safeTopInset), [safeTopInset]);
   const styles = useMemo(
     () => createStyles(colors, typography, safeTopInset, topChromeClearance),
     [colors, typography, safeTopInset, topChromeClearance],
@@ -614,7 +612,10 @@ export default function MapScreen() {
   // Outdoors controls stay visible at zero so a fresh 1/3 map can practice
   // the production filter interaction without introducing a second map UI.
   const mapFilterChoices = useMemo(
-    () => mapFilterOptions(validPlaces, phase2MapActive ? PHASE2_REQUIRED_MAP_FILTERS : []),
+    () => mapFilterOptions(
+      validPlaces,
+      phase2MapActive ? PHASE2_REQUIRED_MAP_FILTERS : [],
+    ),
     [phase2MapActive, validPlaces],
   );
 
@@ -817,7 +818,11 @@ export default function MapScreen() {
   const [previewExpanded, setPreviewExpanded] = useState(false);
   const previewExpandedRef = useRef(false);
   previewExpandedRef.current = previewExpanded;
-  const shouldShowMapControls = !selected || !previewExpanded;
+  const shouldShowMapControls = shouldRenderMapTopChrome({
+    searchVisible,
+    hasSelectedPlace: !!selected,
+    previewExpanded,
+  });
   /**
    * Whether the selected place's own Place Detail card is on screen.
    *
@@ -2702,7 +2707,7 @@ export default function MapScreen() {
           as a box-none overlay so only the bar/chips capture touches and the
           rest of the map stays pannable underneath. Hidden while the search
           dropdown is open so there is only ever ONE visible search input. */}
-      {!searchVisible && shouldShowMapControls ? (
+      {shouldShowMapControls ? (
         <View style={styles.topChrome} pointerEvents="box-none">
           <MapTopSearchBar
             onPress={() => setSearchVisible(true)}
@@ -2812,7 +2817,7 @@ export default function MapScreen() {
         onDismiss={() => setSnackbar(null)}
       />
       {isOnboardingV2Enabled() ? (
-        <OnboardingV2MapCoachmark />
+        <OnboardingV2MapCoachmark topOffset={phase2MapLayout.dockTop} />
       ) : null}
     </View>
   );

@@ -10,6 +10,8 @@ import {
   createInitialOnboardingV2State,
   isOnboardingV2InProgressState,
   onboardingV2ResumeEligibility,
+  resolveOnboardingV2VisibleOwner,
+  resumePhase2AfterCompletedPhase1,
   type OnboardingV2State,
 } from '../lib/onboardingV2Core';
 import { expectedOnboardingV2Route } from '../lib/onboardingV2RoutingCore';
@@ -70,8 +72,22 @@ assert.deepEqual(
     isAnonymous: false,
   }),
   { eligible: false, reason: 'already_completed' },
-  'a future release cannot unexpectedly force Phase-1 users back into onboarding',
+  'the Phase-1-only checkpoint remains terminal while that mode is active',
 );
+assert.equal(resolveOnboardingV2VisibleOwner({
+  state: released,
+  phase1Only: true,
+  selectedSourceAvailable: false,
+  poolExhausted: false,
+}), 'none');
+const resumed = resumePhase2AfterCompletedPhase1(released, at).state;
+assert.equal(resumed.stage, 'practice_ready', 'an explicit full Phase 2 rollout resumes the durable handoff');
+assert.equal(resumed.phase1CompletedAt, released.phase1CompletedAt);
+assert.equal(onboardingV2ResumeEligibility(resumed, {
+  userId: 'permanent-user',
+  identityExists: true,
+  isAnonymous: false,
+}).eligible, true);
 
 const futureFullRollout = closePlaceTour(before, 'mad-yolks-saved-id', at).state;
 assert.equal(futureFullRollout.stage, 'practice_ready', 'future Phase 2 remains an explicit rollout choice');
@@ -82,7 +98,8 @@ const picker = readFileSync(join(root, 'components/onboarding/v2/OnboardingV2Pre
 const anonymousRuntime = readFileSync(join(root, 'lib/anonymousOnboarding.ts'), 'utf8');
 const settings = readFileSync(join(root, 'app/(tabs)/settings.tsx'), 'utf8');
 const appConfig = readFileSync(join(root, 'app.config.js'), 'utf8');
-assert.match(coach, /if \(isOnboardingV2Phase1Only\(\)\) return null;/);
+assert.match(coach, /const phase1Only = isOnboardingV2Phase1Only\(\)/);
+assert.match(coach, /resolveOnboardingV2VisibleOwner\(\{[\s\S]{0,180}phase1Only/);
 assert.match(picker, /disabled=\{option\.value !== 'instagram'\}/);
 assert.match(
   anonymousRuntime,

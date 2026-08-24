@@ -37,6 +37,7 @@ import { join } from 'node:path';
 
 import { SHARE_JOBS_ROUTE } from '../lib/shareRoutes';
 import { canReachShareQueue } from '../lib/shareQueueAccess';
+import { shouldRenderMapTopChrome } from '../lib/onboardingV2MapPresentation';
 
 const read = (p: string) => readFileSync(join(process.cwd(), p), 'utf8');
 
@@ -148,9 +149,26 @@ const button = read('components/map/ShareQueueButton.tsx');
     chromeBlock.includes('shouldShowMapControls'),
     'search + filters still yield to an expanded place, as they did before',
   );
-  assert.ok(
-    map.indexOf('shouldShowMapControls = !selected || !previewExpanded') > -1,
-    'the original gate itself is unchanged',
+  assert.ok(map.includes('shouldShowMapControls = shouldRenderMapTopChrome({'));
+  assert.equal(
+    shouldRenderMapTopChrome({ searchVisible: true, hasSelectedPlace: false, previewExpanded: false }),
+    false,
+    'the search dropdown still owns the top surface',
+  );
+  assert.equal(
+    shouldRenderMapTopChrome({ searchVisible: false, hasSelectedPlace: false, previewExpanded: false }),
+    true,
+    'normal map chrome remains visible without a selection',
+  );
+  assert.equal(
+    shouldRenderMapTopChrome({ searchVisible: false, hasSelectedPlace: true, previewExpanded: false }),
+    true,
+    'a collapsed place preview keeps the top chrome visible',
+  );
+  assert.equal(
+    shouldRenderMapTopChrome({ searchVisible: false, hasSelectedPlace: true, previewExpanded: true }),
+    false,
+    'an expanded place detail still owns the surface above it',
   );
 }
 

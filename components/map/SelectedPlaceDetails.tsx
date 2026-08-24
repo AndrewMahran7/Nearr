@@ -80,7 +80,6 @@ import { useOnboardingV2 } from '@/hooks/useOnboardingV2';
 import { trackEvent } from '@/lib/analytics';
 import {
   advanceOnboardingV2PlaceTour,
-  closeOnboardingV2PlaceTour,
 } from '@/lib/onboardingV2';
 import type { OnboardingPlaceTourStep } from '@/lib/onboardingV2Core';
 import { createOnceLatch, type OnceLatch } from '@/lib/onceLatch';
@@ -264,7 +263,6 @@ export function SelectedPlaceDetails({
     void advanceOnboardingV2PlaceTour(onboardingTourAvailability);
   };
   const skipOnboardingTour = () => {
-    void closeOnboardingV2PlaceTour(saved.id);
     onRequestDismiss();
   };
 

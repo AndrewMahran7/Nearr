@@ -66,7 +66,12 @@ let state = practiceState('place_tour');
 assert.equal(state.tutorialSave?.savedPlaceId, 'saved-tutorial');
 assert.match(map, /tutorialSave\?\.savedPlaceId/);
 assert.match(detail, /onboardingState\.tutorialSave\?\.savedPlaceId === saved\.id/);
-assert.match(detail, /closeOnboardingV2PlaceTour\(saved\.id\)/);
+assert.doesNotMatch(detail, /closeOnboardingV2PlaceTour/);
+assert.match(
+  map,
+  /const dismissSelectedPlace[\s\S]{0,180}closeOnboardingV2PlaceTour\(selected\.id\)/,
+  'map dismissal owns the single durable Place Detail close transition',
+);
 
 // 5-7: personalization, preview-before-open, and real external URL.
 const pool = selectPracticeContent({ platform: 'tiktok', interest: 'food', excludeContentIds: [tutorialSave.contentId] });

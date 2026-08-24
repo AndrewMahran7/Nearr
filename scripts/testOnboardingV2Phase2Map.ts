@@ -9,15 +9,22 @@ import {
 import {
   createInitialOnboardingV2State,
   encodeOnboardingV2State,
+  isOnboardingV2Phase2MapState,
   onboardingV2SavedPlaceProgress,
+  resolveOnboardingV2VisibleOwner,
+  resumePhase2AfterCompletedPhase1,
   type CompletedOnboardingSave,
   type OnboardingV2State,
 } from '../lib/onboardingV2Core';
+import {
+  PHASE2_REQUIRED_MAP_FILTERS,
+  resolvePhase2MapLayout,
+  shouldRenderMapTopChrome,
+} from '../lib/onboardingV2MapPresentation';
 import { expectedOnboardingV2Route } from '../lib/onboardingV2RoutingCore';
 import type { SavedPlaceWithPlace } from '../types';
 
 const at = '2026-08-22T12:00:00.000Z';
-const requiredPhase2Filters = ['food_drink', 'outdoors'] as const;
 
 function completedSave(
   kind: CompletedOnboardingSave['kind'],
@@ -82,7 +89,7 @@ function provePhase2Filters(
 ) {
   assert.equal(onboardingV2SavedPlaceProgress(state).count, expectedProgress);
   assert.equal(expectedOnboardingV2Route(state.stage), '/(tabs)/map');
-  const options = mapFilterOptions(places, requiredPhase2Filters);
+  const options = mapFilterOptions(places, PHASE2_REQUIRED_MAP_FILTERS);
   assert.deepEqual(
     options.slice(0, 3).map((option) => option.label),
     ['All places', 'Food & drink', 'Outdoors'],
@@ -118,8 +125,10 @@ assert.match(map, /<MapTopSearchBar/);
 assert.match(map, /<MapCategoryFilterBar/);
 assert.match(map, /<ShareQueueButton \/>/);
 assert.match(map, /<MapBottomSheet/);
-assert.match(map, /PHASE2_REQUIRED_MAP_FILTERS = \['food_drink', 'outdoors'\]/);
-assert.match(map, /mapFilterOptions\(validPlaces, phase2MapActive \? PHASE2_REQUIRED_MAP_FILTERS : \[\]\)/);
+assert.match(
+  map,
+  /mapFilterOptions\(\s*validPlaces,\s*phase2MapActive \? PHASE2_REQUIRED_MAP_FILTERS : \[\],\s*\)/,
+);
 assert.match(
   map,
   /const handleSelectMapCategory[\s\S]{0,700}setMapCategoryFilter\(next\)[\s\S]{0,700}trackEvent\('map_filter_changed'/,
@@ -130,9 +139,44 @@ assert.doesNotMatch(
   /const handleSelectMapCategory[\s\S]{0,700}(closeOnboarding|router\.|replace\(|dismiss)/,
   'filter selection does not dismiss or navigate onboarding',
 );
-assert.match(coach, /export const PHASE2_MAP_CHROME_CLEARANCE = 168/);
-assert.match(coach, /top: insets\.top \+ PHASE2_MAP_CHROME_CLEARANCE/);
-assert.match(coach, /practiceReady = state\?\.stage === 'practice_ready' \|\| state\?\.stage === 'first_independent_save_complete'/);
+assert.match(coach, /resolveOnboardingV2VisibleOwner/);
+assert.match(coach, /style=\{\[styles\.dock, \{ top: topOffset \}\]\}/);
+assert.doesNotMatch(coach, /useSafeAreaInsets|PHASE2_MAP_CHROME_CLEARANCE/);
+
+const phase1Checkpoint: OnboardingV2State = {
+  ...oneOfThree,
+  stage: 'phase1_complete',
+  phase1CompletedAt: at,
+};
+assert.equal(isOnboardingV2Phase2MapState(phase1Checkpoint), true);
+assert.equal(resolveOnboardingV2VisibleOwner({
+  state: phase1Checkpoint,
+  phase1Only: false,
+  selectedSourceAvailable: false,
+  poolExhausted: false,
+}), 'practice_loading');
+assert.equal(resumePhase2AfterCompletedPhase1(phase1Checkpoint, at).state.stage, 'practice_ready');
+assert.equal(resolveOnboardingV2VisibleOwner({
+  state: {
+    ...twoOfThree,
+    stage: 'graduated',
+    behavioralCompletedAt: at,
+    graduationAcknowledgedAt: at,
+  },
+  phase1Only: false,
+  selectedSourceAvailable: false,
+  poolExhausted: false,
+}), 'none', 'completed users never regain a Practice owner');
+assert.equal(shouldRenderMapTopChrome({
+  searchVisible: false,
+  hasSelectedPlace: false,
+  previewExpanded: false,
+}), true);
+for (const safeTop of [24, 47, 59]) {
+  const layout = resolvePhase2MapLayout(safeTop);
+  assert.equal(layout.overlapsControls, false);
+  assert.ok(layout.queueBand.bottom < layout.dockTop);
+}
 
 console.log('PASS Phase 2 1/3 keeps All places, Food & drink, Outdoors, and Queue visible');
 console.log('PASS Phase 2 2/3 keeps canonical production filters visible');
