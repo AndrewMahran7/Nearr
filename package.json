@@ -227,7 +227,9 @@
     "verify:dev:e2e": "ts-node -P scripts/tsconfig.json scripts/e2e/verifyDevE2E.ts",
     "test:multi-select-places": "ts-node -P scripts/tsconfig.json scripts/testMultiSelectPlaces.ts",
     "test:vayrin-presentation": "ts-node -P scripts/tsconfig.json scripts/testVayrinPresentation.ts",
-    "test:vayrin-ui": "ts-node -P scripts/tsconfig.json scripts/testVayrinPresentationUi.ts"
+    "test:vayrin-ui": "ts-node -P scripts/tsconfig.json scripts/testVayrinPresentationUi.ts",
+    "test:vayrin-candidate-confirmation": "ts-node -P scripts/tsconfig.json scripts/testVayrinCandidateConfirmation.ts",
+    "test:vayrin-product-ui": "npm run test:vayrin-presentation && npm run test:vayrin-ui && npm run test:vayrin-candidate-confirmation"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "1.23.1",

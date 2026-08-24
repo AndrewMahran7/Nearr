@@ -201,28 +201,28 @@ export function buildVayrinPresentation(
       return {
         ...base,
         kind: 'likely',
-        headline: voiceCopy(artVisible, 'Vayrin thinks this is it.', 'I think this is it.'),
-        body: 'Quick check before Nearr saves it.',
-        primaryAction: 'Yes, save it',
-        secondaryAction: 'Not it',
+        headline: 'Is this the place?',
+        body: 'Compare it with the video, then save it.',
+        primaryAction: 'Save this place',
+        secondaryAction: 'Not this place',
       };
     case 'leads_candidates':
       return {
         ...base,
         kind: 'leads_candidates',
-        headline: voiceCopy(artVisible, 'Vayrin found a few leads.', "I've got a few leads."),
-        body: 'Which one is it?',
-        primaryAction: 'Choose a place',
+        headline: 'Which one is it?',
+        body: 'Choose the place that matches the video.',
+        primaryAction: 'Choose',
         secondaryAction: 'None of these',
       };
     case 'leads_unverified':
       return {
         ...base,
         kind: 'leads_unverified',
-        headline: voiceCopy(artVisible, 'Vayrin found a few leads.', "I've got a few leads."),
-        body: 'These are possible names, not verified places yet.',
-        primaryAction: 'Search this',
-        secondaryAction: 'Search manually',
+        headline: 'A few names may match.',
+        body: 'Search them to choose an exact place.',
+        primaryAction: 'Search places',
+        secondaryAction: 'Search for the place',
       };
     case 'multi_found':
       return {
@@ -267,8 +267,8 @@ export function buildVayrinPresentation(
       return {
         ...base,
         kind: 'correcting',
-        headline: voiceCopy(artVisible, 'Find the right place.', "Let's find the right place."),
-        body: 'Choose another match or search for it.',
+        headline: 'Search for the place.',
+        body: 'Choose the result that matches the video.',
         primaryAction: 'Use this place',
         secondaryAction: 'Search again',
       };
@@ -286,10 +286,10 @@ export function buildVayrinPresentation(
       return {
         ...base,
         kind: 'no_evidence',
-        headline: voiceCopy(artVisible, 'Not enough to go on.', "I couldn't find an exact place."),
+        headline: "Couldn't pin this one down.",
         body: voiceCopy(
           artVisible,
-          "Vayrin couldn't identify an exact place from this video.",
+          'Search by name or location to choose the place.',
           'There was not enough evidence in this video.',
         ),
         primaryAction: 'Search manually',

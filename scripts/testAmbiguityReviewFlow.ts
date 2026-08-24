@@ -120,7 +120,9 @@ assert.deepEqual(normalizeShareJobCandidates({ options: [{
   providerId: 'legacy-provider', displayName: 'Legacy Place', address: null,
 }]}), [{
   googlePlaceId: 'legacy-provider', name: 'Legacy Place', formattedAddress: null,
-  latitude: null, longitude: null, types: [], matchScore: null, aiNote: null,
+  latitude: null, longitude: null, types: [],
+  primaryType: null, primaryTypeDisplayName: null, googleMapsTypeLabel: null,
+  matchScore: null, aiNote: null, photoUrl: null, sourceFrameUrl: null, sourceTimestamps: [],
 }]);
 
 // One review row counts once; completion removes it from Needs-you immediately.
@@ -146,10 +148,10 @@ assert.equal(
 const detailSource = fs.readFileSync(path.join(process.cwd(), 'app/share-jobs/[jobId].tsx'), 'utf8');
 assert.match(
   detailSource,
-  /vayrinEnabled \? 'Not it' : 'None of these'/,
-  'Vayrin presentation changes copy without changing the explicit alternative action',
+  /title="None of these"/,
+  'candidate alternatives retain an explicit none-of-these action',
 );
-assert.match(detailSource, /onPress=\{\(\) => setPickerSelectedId\(candidate\.googlePlaceId\)\}/);
+assert.match(detailSource, /setPickerSelectedId\(candidate\.googlePlaceId\)/);
 assert.match(detailSource, /handleSaveStored\(pickerSelected\)/, 'identity selection waits for explicit save');
 assert.match(detailSource, /if \(!job \|\| resolvingRef\.current\) return;/, 'the existing once-latch guards candidate saves');
 assert.match(detailSource, /await getPlaceDetails\(candidate\.googlePlaceId\)/, 'legacy candidates hydrate by authoritative provider id');

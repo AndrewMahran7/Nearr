@@ -38,6 +38,7 @@ import {
 } from '@/lib/savedPlaceRemoval';
 import { createMapGroupFocusRequest } from '@/lib/mapGroupFocus';
 import { PHASE2_PREVIEW_FIXTURES } from '@/lib/phase2Preview';
+import { VAYRIN_CANDIDATE_FIXTURES } from '@/lib/vayrinCandidateFixtures';
 import {
   QUEUE_EMPTY_COPY,
   activeQueueCount,
@@ -183,14 +184,14 @@ function jobSubtitle(job: ShareJob, stalled = false): string {
         : processingMessage(job.status, stalled ? STALE_PROCESSING_MS + 1 : 0);
     case 'needs_help':
       if (vayrin && normalizeVayrinIdentityLeads(job.candidate_payload).length > 0) {
-        return 'Possible lead — tap to search';
+        return 'Name found — tap to search places';
       }
       if (Array.isArray(job.candidate_payload?.candidates) && job.candidate_payload.candidates.length > 1) {
-        return vayrin ? 'Vayrin has a few leads' : 'Pick the one you meant';
+        return vayrin ? 'Choose the place that matches' : 'Pick the one you meant';
       }
       if (!Array.isArray(job.candidate_payload?.candidates) || job.candidate_payload.candidates.length === 0)
         return buildShareJobDetailState(job).copy.body;
-      return vayrin ? 'Vayrin thinks this may be it' : 'Does this look right?';
+      return vayrin ? 'Is this the place?' : 'Does this look right?';
     case 'failed':
       return buildShareJobDetailState(job).copy.body;
     default:
@@ -774,6 +775,17 @@ function ShareJobsQueueScreen() {
                   key={fixture.id}
                   onPress={() => router.push({ pathname: '/share-jobs/[jobId]', params: { jobId: fixture.id } })}
                   style={styles.previewButton}
+                >
+                  <Text style={styles.previewButtonText}>{fixture.label}</Text>
+                </Pressable>
+              ))}
+              {VAYRIN_CANDIDATE_FIXTURES.map((fixture) => (
+                <Pressable
+                  key={fixture.id}
+                  onPress={() => router.push({ pathname: '/share-jobs/[jobId]', params: { jobId: fixture.id } })}
+                  style={styles.previewButton}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${fixture.label}. ${fixture.description}`}
                 >
                   <Text style={styles.previewButtonText}>{fixture.label}</Text>
                 </Pressable>
