@@ -24,6 +24,11 @@ import {
 } from '../lib/vayrinCandidateFixtures';
 import { buildShareJobDetailState } from '../lib/shareJobDetailState';
 import { evidenceFramesFromPayload, normalizeEvidenceFrames } from '../lib/shareJobResult';
+import {
+  cleanupShareEvidenceFrames,
+  evidenceFrameStoragePaths,
+  SIGNED_URL_TTL_SECONDS,
+} from '../lib/shareEvidenceFrameLifecycle';
 
 const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 const asyncDetail = read('app/share-jobs/[jobId].tsx');
@@ -32,6 +37,7 @@ const sourceGallery = read('components/SourceEvidenceGallery.tsx');
 const candidateCarousel = read('components/CandidatePhotoCarousel.tsx');
 const card = read('components/CandidateConfirmationCard.tsx');
 const worker = read('services/media-worker/src/pipeline/persistEvidenceFrames.ts');
+const shareJobsService = read('services/shareJobsService.ts');
 const migration = read('supabase/migrations/20260824225520_vayrin_quick_check_evidence_frames.sql');
 
 const exact = (id: string, score: number | null = 0.8): CandidateConfirmationPlace => ({
@@ -143,5 +149,37 @@ assert.match(worker, /MAX_RETAINED_EVIDENCE_FRAMES = 5/);
 assert.match(worker, /selectedTimestampsSeconds|vayrinSelectedTimestamps/);
 assert.match(migration, /public, file_size_limit[\s\S]*false/);
 assert.match(migration, /owners read share evidence/);
+assert.match(migration, /owners delete share evidence/);
+assert.match(migration, /bucket_id = 'share-evidence'/);
+assert.match(migration, /sj\.user_id = auth\.uid\(\)/);
+assert.equal(SIGNED_URL_TTL_SECONDS, 3600);
 
-console.log('PASS Vayrin Quick Check evidence-first frames, galleries, truthful confidence, evidence, selection, fixtures, persistence, and safe-area CTA');
+// Lifecycle: job scoping blocks cross-job/traversal references, missing
+// objects remain idempotent, and partial failures are returned to the caller.
+const lifecyclePayload = {
+  evidenceFrames: [
+    { storagePath: 'user-1/job-1/task-1/00-1000.jpg' },
+    { storagePath: 'user-1/job-2/task-1/00-1000.jpg' },
+    { storagePath: 'user-1/job-1/../secret.jpg' },
+  ],
+};
+assert.deepEqual(evidenceFrameStoragePaths(lifecyclePayload, 'job-1'), ['user-1/job-1/task-1/00-1000.jpg']);
+async function verifyLifecycleCleanup(): Promise<void> {
+  const cleanupSuccess = await cleanupShareEvidenceFrames(lifecyclePayload, 'job-1', async () => ({ data: [] }));
+  assert.equal(cleanupSuccess.status, 'success');
+  assert.equal(cleanupSuccess.attempted, 1);
+  const cleanupFailure = await cleanupShareEvidenceFrames(lifecyclePayload, 'job-1', async () => ({
+    data: [], error: { message: 'partial storage outage' },
+  }));
+  assert.equal(cleanupFailure.status, 'failed');
+assert.match(cleanupFailure.errorMessage ?? '', /partial storage outage/);
+  assert.match(shareJobsService, /evidence cleanup failed[\s\S]*throw new Error\('Could not remove all retained evidence/);
+  assert.match(shareJobsService, /evidence cleanup snapshot failed[\s\S]*throw new Error\('Could not verify evidence cleanup/);
+}
+
+void verifyLifecycleCleanup().then(() => {
+  console.log('PASS Vayrin Quick Check evidence-first frames, galleries, truthful confidence, evidence, selection, fixtures, persistence, lifecycle, and safe-area CTA');
+}).catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});

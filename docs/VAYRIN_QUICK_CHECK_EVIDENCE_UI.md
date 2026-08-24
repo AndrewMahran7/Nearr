@@ -17,7 +17,8 @@ The media worker retains only frames that were supplied to analysis. When Vayrin
 - Maximum bytes per retained JPEG: 768 KiB.
 - Object path: `<user>/<share-job>/<media-task>/<index>-<timestamp>.jpg`.
 - The worker's service role uploads; the app signs URLs only when the authenticated user owns the parent share job.
-- The app removes referenced objects before deleting the share job. Frames otherwise live for the share-job/result lifetime.
+- The app removes referenced objects before deleting the share job. Missing objects are an idempotent success; partial Storage failure is production-warn logged and preserves the job/reference for retry.
+- There is no periodic orphan sweeper in this release. The ordered, retryable delete path prevents app-driven deletion from discarding the references needed for cleanup; no broad destructive sweep is introduced.
 - All videos, audio, unselected frames, hashes, and temp files keep the existing immediate cleanup behavior.
 - If upload/signing fails or an older result has no references, recognition/save remains available and the UI says frames were not retained.
 

@@ -1,9 +1,13 @@
 import { supabase } from './supabase';
 import type { ShareJobEvidenceFrame } from './shareJobResult';
+import {
+  MAX_RETAINED_EVIDENCE_FRAMES,
+  SIGNED_URL_TTL_SECONDS,
+} from './shareEvidenceFrameLifecycle';
+
+export { MAX_RETAINED_EVIDENCE_FRAMES, SIGNED_URL_TTL_SECONDS } from './shareEvidenceFrameLifecycle';
 
 export const SHARE_EVIDENCE_BUCKET = 'share-evidence';
-export const MAX_RETAINED_EVIDENCE_FRAMES = 5;
-const SIGNED_URL_TTL_SECONDS = 60 * 60;
 const REFRESH_SKEW_MS = 5 * 60 * 1000;
 
 export type ResolvedShareEvidenceFrame = ShareJobEvidenceFrame & {
@@ -12,17 +16,6 @@ export type ResolvedShareEvidenceFrame = ShareJobEvidenceFrame & {
 
 type CachedUrl = { uri: string; expiresAt: number };
 const signedUrlCache = new Map<string, CachedUrl>();
-
-export function evidenceFrameStoragePaths(payload: unknown): string[] {
-  if (!payload || typeof payload !== 'object') return [];
-  const frames = (payload as { evidenceFrames?: unknown }).evidenceFrames;
-  if (!Array.isArray(frames)) return [];
-  return [...new Set(frames.flatMap((raw) => {
-    if (!raw || typeof raw !== 'object') return [];
-    const path = (raw as { storagePath?: unknown }).storagePath;
-    return typeof path === 'string' && path.trim() ? [path.trim()] : [];
-  }))].slice(0, MAX_RETAINED_EVIDENCE_FRAMES);
-}
 
 /** Resolve all private frame references in one bounded Storage request. */
 export async function resolveShareEvidenceFrames(
