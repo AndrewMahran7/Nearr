@@ -200,14 +200,14 @@ const visualCases = [
     placeName: 'Cliff Cove',
     category: 'beach',
     observation: 'cliff-lined turquoise cove',
-    note: 'That cliff-lined turquoise cove looked unreal.',
+    note: 'That turquoise cove makes me want to dive in.',
   },
   {
     label: 'hotel',
     placeName: 'Ocean Hotel',
     category: 'hotel',
     observation: 'infinity pool overlooking the ocean',
-    note: 'That infinity pool overlooking the ocean looked unreal.',
+    note: "I'd stay for that infinity pool alone.",
   },
   {
     label: 'visible activity',
@@ -228,26 +228,8 @@ for (const fixture of visualCases) {
     globalThis.fetch = (async (_url: string | URL | Request, init?: RequestInit) => {
       requestBody = JSON.parse(String(init?.body));
       const modelPayload = {
-        places: [{
-          name: fixture.placeName,
-          category: fixture.category,
-          categoryConfidence: 1,
-          categoryEvidenceTags: ['visual'],
-          address: null,
-          city: null,
-          region: null,
-          country: null,
-          coordinates: null,
-          role: 'primary',
-          confidence: 1,
-          explicitEvidence: [{ source: 'frame', value: fixture.observation, timestampSeconds: 7 }],
-          inferredEvidence: [],
-          memoryCue: fixture.note,
-          memoryCueEvidence: [{ source: 'frame', value: fixture.observation, timestampSeconds: 7 }],
-        }],
-        multipleIntentionalPlaces: false,
-        insufficientEvidence: false,
-        warnings: [],
+        note: fixture.note,
+        evidence: [{ source: 'frame', value: fixture.observation, timestampSeconds: 7 }],
       };
       return new Response(JSON.stringify({
         candidates: [{ content: { parts: [{ text: JSON.stringify(modelPayload) }] } }],
@@ -286,8 +268,12 @@ for (const fixture of visualCases) {
       });
       assert.equal(evaluated.note, fixture.note);
       assert.equal(requestBody.contents[0].parts.filter((part: any) => part.inlineData).length, 1);
-      assert.match(requestBody.contents[0].parts[0].text, /TARGETED AI-NOTE ENRICHMENT/);
-      assert.match(requestBody.contents[0].parts[0].text, /transcript:\s*\n\(none\)/);
+      assert.match(requestBody.systemInstruction.parts[0].text, /Vayrin Voice/);
+      assert.match(requestBody.systemInstruction.parts[0].text, /does not summarize videos/i);
+      assert.match(requestBody.contents[0].parts[0].text, /untrusted_saved_post_evidence/);
+      assert.equal(requestBody.generationConfig.temperature, 1);
+      assert.equal(requestBody.generationConfig.maxOutputTokens, 256);
+      assert.equal(requestBody.generationConfig.thinkingConfig.thinkingBudget, 0);
       assert.deepEqual(output.usage, {
         inputTokens: 900,
         outputTokens: 80,
@@ -322,26 +308,8 @@ test('provider outage recovers from durable evidence after frames are gone', asy
     attempts += 1;
     if (attempts === 1) return new Response('', { status: 503 });
     const modelPayload = {
-      places: [{
-        name: 'Burger House',
-        category: 'restaurant',
-        categoryConfidence: 1,
-        categoryEvidenceTags: ['visual'],
-        address: null,
-        city: null,
-        region: null,
-        country: null,
-        coordinates: null,
-        role: 'primary',
-        confidence: 1,
-        explicitEvidence: retainedEvidence,
-        inferredEvidence: [],
-        memoryCue: 'That smashburger with crispy edges looked ridiculous.',
-        memoryCueEvidence: retainedEvidence,
-      }],
-      multipleIntentionalPlaces: false,
-      insufficientEvidence: false,
-      warnings: [],
+      note: 'That smashburger with crispy edges looked ridiculous.',
+      evidence: retainedEvidence,
     };
     return new Response(JSON.stringify({
       candidates: [{ content: { parts: [{ text: JSON.stringify(modelPayload) }] } }],

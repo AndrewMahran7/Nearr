@@ -1,6 +1,5 @@
 import { createHash } from 'node:crypto';
 
-import { groundedAiPlaceNoteFallback } from '../lib/aiPlaceNote';
 import { openSession } from './e2e/session';
 
 type Row = Record<string, any>;
@@ -106,8 +105,6 @@ async function main(): Promise<void> {
         .order('created_at', { ascending: false }),
     );
     const authUser = await admin.auth.admin.getUserById(place.user_id);
-    const finalPlace = Array.isArray(place.place) ? place.place[0] : place.place;
-
     output.push({
       savedPlaceId: place.id,
       userIdentityHash: safeHash(place.user_id),
@@ -154,11 +151,7 @@ async function main(): Promise<void> {
         mediaAcquiredOnce: task.media_acquired_once,
         retainedEvidenceCount: countJsonArray(task.evidence_snapshot),
         retainedFramePresent: task.frame_snapshot != null,
-        groundedFallbackAvailable: !!groundedAiPlaceNoteFallback({
-          placeName: finalPlace?.name ?? null,
-          // The Edge parser accepts at most eight memory-cue evidence items.
-          evidence: Array.isArray(task.evidence_snapshot) ? task.evidence_snapshot.slice(0, 8) : [],
-        }).note,
+        fillerFallbackEnabled: false,
       })),
       mediaRuns: runs.map((run) => ({
         taskId: run.share_media_task_id,

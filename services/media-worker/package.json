@@ -15,6 +15,7 @@
     "start": "node dist/index.js",
     "dev": "tsx watch src/index.ts",
     "test": "node --import tsx --test \"tests/**/*.test.ts\"",
+    "test:ai-note-voice": "node --import tsx --test tests/aiNoteVoice.test.ts tests/placeEvidencePrompt.test.ts tests/targetedNoteContext.test.ts",
     "test:e2e": "node --import tsx --test \"tests/integration/e2e.test.ts\"",
     "test:e2e-local": "node --import tsx --test \"tests/integration/e2e.test.ts\"",
     "test:media-worker-live": "node --import tsx --test \"tests/live/mediaWorker.live.test.ts\"",
@@ -27,6 +28,7 @@
     "vayrin:baseline": "node --import tsx src/cli/vayrinBaseline.ts",
     "vayrin:verification-v3": "node --import tsx src/cli/verificationBenchmarkV3.ts",
     "vayrin:verification-v3:compile": "node --import tsx src/cli/compileVerificationBenchmarkV3.ts",
+    "eval:ai-note-voice": "node --import tsx src/cli/evaluateAiNoteVoice.ts",
     "fixtures:generate": "node --import tsx tests/support/generateSyntheticMedia.ts",
     "benchmark:concurrency": "node --import tsx tests/support/concurrencyBenchmark.ts"
   },

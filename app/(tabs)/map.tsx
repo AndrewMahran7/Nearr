@@ -118,6 +118,7 @@ import {
   getSavedPlacesCacheSnapshot,
   removeSavedPlaceFromCache,
   restoreSavedPlacesCache,
+  upsertSavedPlaceIntoCache,
   updateSavedPlacesCache,
 } from '@/hooks/useSavedPlaces';
 import { isDemoMode } from '@/lib/demoMode';
@@ -1378,6 +1379,9 @@ export default function MapScreen() {
     ).length;
     recordMapClusterDiagnostic(event, {
       clusterId: request.clusterId,
+      datasetGeneration: datasetGenerationRef.current.value,
+      renderedDatasetKey: request.datasetKey,
+      currentDatasetKey: clusterIndexRef.current.datasetKey,
       memberCount: request.memberIds.length,
       currentZoom: request.currentZoom,
       targetZoom: request.targetZoom,
@@ -2332,6 +2336,11 @@ export default function MapScreen() {
           radiusUnit: null,
           sourceType: 'manual',
         });
+        // Establish local mutation ownership before any refetch. `refresh()`
+        // may coalesce onto a request that began before this save; the shared
+        // cache revision gate can reject that stale snapshot only after this
+        // canonical optimistic upsert increments the mutation revision.
+        if (result.saved) upsertSavedPlaceIntoCache(result.saved);
         // Force a refetch so the newly saved place is in the shared cache and
         // its marker renders immediately (a stale-while-revalidate would skip
         // the network within the freshness window and the marker wouldn't

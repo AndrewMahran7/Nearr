@@ -104,7 +104,7 @@ const resolvedNotification = composeShareCompletionNotification({ jobId: 'resolv
 assert.equal(resolvedNotification.title, 'Vayrin found a possible place');
 
 assert.match(card, /CandidatePhotoCarousel/);
-assert.match(read('components/CandidatePhotoCarousel.tsx'), /height: 220/);
+assert.match(read('components/CandidatePhotoCarousel.tsx'), /height\s*=\s*220/);
 assert.match(card, /accessibilityRole=\{selectionRole\}/);
 assert.match(asyncDetail, /selectionRole="checkbox"/);
 assert.match(asyncDetail, /visibleCandidateShortlist/);

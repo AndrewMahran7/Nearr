@@ -8,14 +8,18 @@ const resultContract = read('lib/shareJobResult.ts');
 const finalizer = read('supabase/functions/process-share-jobs/index.ts');
 
 assert.match(detail, /reconcileMultiPlaceBatch/, 'Realtime data reconciles into one keyed batch');
-assert.match(detail, /batch\.order\.map\(\(id, index\)/, 'rows render by stable logical ids');
-assert.match(detail, /key=\{row\.logicalPlaceId\}/, 'array index is never the row key');
+assert.match(detail, /data=\{batch\.order\}/, 'mentions render through one virtualized list');
+assert.match(detail, /keyExtractor=\{\(id\) => id\}/, 'array index is never the row key');
 assert.match(detail, /Place \$\{index \+ 1\} of \$\{total\}/, 'row position is announced');
-assert.match(detail, /accessibilityRole="checkbox"/);
-assert.match(detail, /accessibilityState=\{\{ checked, disabled: !!duplicateOwner \}\}/);
-assert.match(detail, /accessibilityState=\{\{ expanded: row\.candidateSelectorExpanded \}\}/);
-assert.match(detail, /style=\{styles\.batchFooter\}/, 'final batch action is sticky outside row cards');
+assert.match(detail, /MultiPlaceCandidateCard/);
+assert.match(detail, /visibleMentionCandidates\(row\)/, 'candidate presentation is capped without truncating the model');
+assert.match(detail, /SourceEvidenceGallery/);
+assert.match(detail, /batchCounts\.total > 0/, 'zero selection hides the dominant footer');
+assert.match(detail, /styles\.batchFooter/, 'final batch action is sticky outside row cards');
 assert.doesNotMatch(detail, /batch\.order\.slice\(/, 'UI does not slice logical rows to five');
+assert.doesNotMatch(detail, /Choose the right place/, 'candidate accordions are removed');
+assert.match(detail, /None of these/);
+assert.match(detail, /Search another place/);
 assert.match(detail, /void runBatchSearch\(row\.logicalPlaceId/, 'opening unmatched search runs its prefilled query');
 
 const batchSearchStart = detail.indexOf('function renderBatchSearch');

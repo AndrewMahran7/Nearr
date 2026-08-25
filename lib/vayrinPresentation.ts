@@ -252,8 +252,8 @@ export function buildVayrinPresentation(
             )
           : voiceCopy(artVisible, 'Vayrin found a few leads.', "I've got a few leads."),
         body: count > 0
-          ? 'Some are ready to save. A few still need your help.'
-          : 'This video shows several places, but none are verified yet.',
+          ? 'Some are ready to save. Match each moment to the right place.'
+          : 'Match each moment to the right place.',
         primaryAction: 'Save selected',
         secondaryAction: 'Review leads',
       };
