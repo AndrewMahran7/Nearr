@@ -8,7 +8,19 @@
 import { addressesMatch } from '../../../lib/shareAgent/tools.ts';
 import { geographicContextTypeOf } from '../process-share-link/places/placeNormalization.ts';
 
-export const METADATA_AUTO_SAVE_RULE_VERSION = 'metadata-autosave-2026-08-20.v4';
+export const METADATA_AUTO_SAVE_RULE_VERSION = 'metadata-autosave-2026-08-24.v5';
+
+// Keep this aligned with decisionPolicy's confirmation floor. A singleton
+// still has to be independently good enough to show as a real place match;
+// becoming the last row after other candidates were rejected is not evidence.
+const METADATA_SINGLETON_QUALITY_FLOOR = 0.35;
+const INDEPENDENT_IDENTITY_REASONS = new Set([
+  'address_verified',
+  'address_verified_multi',
+  'compact_name_match',
+  'strong_name_match',
+  'meaningful_name_match',
+]);
 
 type Candidate = {
   googlePlaceId?: unknown;
@@ -18,6 +30,9 @@ type Candidate = {
   longitude?: unknown;
   businessStatus?: unknown;
   confidenceScore?: unknown;
+  /** Persisted confirmation/cache payloads call the same normalized score
+   * `matchScore`; replayed evidence must use the identical quality floor. */
+  matchScore?: unknown;
   reasons?: unknown;
   /** Google entity types. Present on every resolver candidate; used to tell a
    *  destination apart from pure geographic context. */
@@ -62,10 +77,14 @@ export type MetadataAutoSaveDecision = {
   selectedProviderId: string | null;
   confidenceScore: number | null;
   plausibleProviderIds: string[];
+  viableCandidateCount: number;
+  viableProviderIds: string[];
   rejectedCandidates: MetadataCandidateRejection[];
   reasonCodes: string[];
   candidateRejectionReasons: string[];
   explicitConflictFlags: string[];
+  independentQualityGatePassed: boolean;
+  independentQualityReason: string | null;
 };
 
 function text(value: unknown): string {
@@ -133,6 +152,28 @@ function candidateRejectionReason(candidate: Candidate): CandidateRejection | nu
   return null;
 }
 
+function independentSingletonQuality(candidate: Candidate): {
+  passed: boolean;
+  reason: string;
+} {
+  const reasons = Array.isArray(candidate.reasons)
+    ? candidate.reasons.filter((reason): reason is string => typeof reason === 'string')
+    : [];
+  const identityReason = reasons.find((reason) => INDEPENDENT_IDENTITY_REASONS.has(reason));
+  if (!identityReason) return { passed: false, reason: 'independent_identity_evidence_missing' };
+
+  const score = typeof candidate.confidenceScore === 'number'
+    ? candidate.confidenceScore
+    : candidate.matchScore;
+  if (typeof score !== 'number' || !Number.isFinite(score)) {
+    return { passed: false, reason: 'independent_quality_score_missing' };
+  }
+  if (score < METADATA_SINGLETON_QUALITY_FLOOR) {
+    return { passed: false, reason: 'below_confirmation_floor' };
+  }
+  return { passed: true, reason: identityReason };
+}
+
 export function evaluateMetadataAutoSave(input: {
   result: MetadataResult;
   evidence: MetadataEvidence;
@@ -181,6 +222,12 @@ export function evaluateMetadataAutoSave(input: {
   }
 
   const plausible = [...plausibleByProviderId.values()];
+  const qualityByProviderId = new Map(
+    plausible.map((candidate) => [text(candidate.googlePlaceId), independentSingletonQuality(candidate)]),
+  );
+  const viable = plausible.filter(
+    (candidate) => qualityByProviderId.get(text(candidate.googlePlaceId))?.passed === true,
+  );
   const explicitConflictFlags: string[] = [];
   // A caption may mention another branch/address while resolving one logical
   // provider (the Santa Fe post does). Multi-place intent is already expressed
@@ -227,7 +274,11 @@ export function evaluateMetadataAutoSave(input: {
     explicitConflictFlags.push('handle_identity_only');
   }
 
-  const selected = plausible.length === 1 ? plausible[0]! : null;
+  const selected = viable.length === 1
+    ? viable[0]!
+    : plausible.length === 1
+    ? plausible[0]!
+    : null;
   const expectedAddress = text(input.evidence.address?.raw);
   if (
     selected &&
@@ -237,10 +288,15 @@ export function evaluateMetadataAutoSave(input: {
     explicitConflictFlags.push('location_conflict');
   }
 
+  const singletonQuality = selected
+    ? qualityByProviderId.get(text(selected.googlePlaceId)) ?? independentSingletonQuality(selected)
+    : { passed: false, reason: 'not_singleton' };
+
   let reasonCode: string;
   if (explicitConflictFlags.length > 0) reasonCode = explicitConflictFlags[0]!;
   else if (plausible.length === 0) reasonCode = candidateRejectionReasons[0] ?? 'no_plausible_candidate';
-  else if (plausible.length > 1) reasonCode = 'multiple_plausible_candidates';
+  else if (viable.length > 1) reasonCode = 'multiple_plausible_candidates';
+  else if (viable.length === 0) reasonCode = plausible.length === 1 ? 'weak_singleton' : 'multiple_weak_candidates';
   else reasonCode = 'single_plausible_candidate';
 
   return {
@@ -250,14 +306,22 @@ export function evaluateMetadataAutoSave(input: {
     plausibleCandidateCount: plausible.length,
     selectedProviderId: selected ? text(selected.googlePlaceId) : null,
     plausibleProviderIds: plausible.map((candidate) => text(candidate.googlePlaceId)),
+    viableCandidateCount: viable.length,
+    viableProviderIds: viable.map((candidate) => text(candidate.googlePlaceId)),
     rejectedCandidates,
-    confidenceScore:
-      selected && typeof selected.confidenceScore === 'number' && Number.isFinite(selected.confidenceScore)
-        ? selected.confidenceScore
-        : null,
+    confidenceScore: selected
+      ? (() => {
+          const score = typeof selected.confidenceScore === 'number'
+            ? selected.confidenceScore
+            : selected.matchScore;
+          return typeof score === 'number' && Number.isFinite(score) ? score : null;
+        })()
+      : null,
     reasonCodes: [reasonCode],
     candidateRejectionReasons: [...new Set(candidateRejectionReasons)],
     explicitConflictFlags: [...new Set(explicitConflictFlags)],
+    independentQualityGatePassed: singletonQuality.passed,
+    independentQualityReason: singletonQuality.reason,
   };
 }
 
@@ -275,10 +339,13 @@ export function formatMetadataAutoSaveDecisionLog(args: {
     `rule_version=${safe(args.decision.ruleVersion)}`,
     `raw_candidate_count=${args.decision.rawCandidateCount}`,
     `plausible_candidate_count=${args.decision.plausibleCandidateCount}`,
+    `viable_candidate_count=${args.decision.viableCandidateCount}`,
     `selected_provider_id=${safe(args.decision.selectedProviderId)}`,
     `selected_score=${args.decision.confidenceScore == null ? 'none' : args.decision.confidenceScore.toFixed(4)}`,
     `rejection_reasons=${safe(args.decision.candidateRejectionReasons.join(','))}`,
     `explicit_conflict_flags=${safe(args.decision.explicitConflictFlags.join(','))}`,
+    `independent_quality_gate=${args.decision.independentQualityGatePassed ? 'pass' : 'block'}`,
+    `independent_quality_reason=${safe(args.decision.independentQualityReason)}`,
     `final_decision=${args.decision.eligible ? 'auto_save' : 'review'}`,
     `decision_reason=${safe(args.decision.reasonCodes.join(','))}`,
   ].join(' ');

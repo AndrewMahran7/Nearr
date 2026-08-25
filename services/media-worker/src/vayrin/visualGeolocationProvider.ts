@@ -52,6 +52,7 @@ import {
 import {
   serializeCandidatesForVerificationV3,
   userFacingVerificationCandidates,
+  verificationV3IdentityEvidenceKind,
   verifyRetrievedCandidatesV3,
   type CandidateVerificationRecord,
   type VerificationCandidate,
@@ -424,7 +425,12 @@ function verifiedCandidatePlace(
   ].map((claim) => ({ timestampSeconds: null, source: 'frame' as const, value: claim.statement })).slice(0, 16);
   return {
     logicalPlaceId: 'vayrin-scene-1',
-    identityEvidenceKind: 'model_prior',
+    // Reaching this mapper requires at least one explicit SUPPORTS claim.
+    // That claim may identify a candidate for the ordinary Places resolver;
+    // it does not itself authorize a save. UNKNOWN-only records return above,
+    // and the downstream canonical identity / score / ambiguity gates remain
+    // authoritative.
+    identityEvidenceKind: verificationV3IdentityEvidenceKind(record),
     hypothesisRank: Math.max(0, (record.finalRank ?? record.initialRank) - 1),
     name: candidate.candidateName,
     category: categoryFor(candidate.category ?? candidate.candidateName),

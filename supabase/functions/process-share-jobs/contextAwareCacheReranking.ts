@@ -21,6 +21,7 @@ import {
   type ShareJobMentionSlot,
   type ShareJobResultCandidate,
 } from '../../../lib/shareJobResult.ts';
+import { evaluateMetadataAutoSave } from './metadataAutoSaveGate.ts';
 
 export const CACHE_CANDIDATE_RANKING_POLICY = 'rerank_on_every_candidate_set_hit';
 
@@ -35,6 +36,15 @@ export type CachedCandidateRerankResult = {
   candidateCountAfterRerank: number;
   placesCallCount: 0;
   rankingPolicy: typeof CACHE_CANDIDATE_RANKING_POLICY;
+};
+
+export type CachedSingletonAutoSaveDecision = {
+  eligible: boolean;
+  candidate: JsonObject | null;
+  selectedProviderId: string | null;
+  viableCandidateCount: number;
+  reason: string;
+  qualityReason: string | null;
 };
 
 type ReconstructedContext = {
@@ -344,6 +354,70 @@ export function rerankCachedCandidatePayload(payload: unknown): CachedCandidateR
     candidateCountAfterRerank: aggregateCandidates.length,
     placesCallCount: 0,
     rankingPolicy: CACHE_CANDIDATE_RANKING_POLICY,
+  };
+}
+
+/**
+ * A CANDIDATE_SET row is never trusted merely because only one row survived.
+ * It may become saveable only after this request reconstructs non-user source
+ * context and the provider identity independently passes the same canonical
+ * singleton gate as a fresh metadata resolution.
+ */
+export function evaluateCachedSingletonAutoSave(
+  reranked: CachedCandidateRerankResult,
+): CachedSingletonAutoSaveDecision {
+  const payload = object(reranked.payload);
+  const candidates = rawCandidates(payload?.candidates);
+  const slots = normalizeMentionSlots(payload?.mentionSlots);
+  const rawSlots = rawCandidates(payload?.mentionSlots);
+  const multi = payload?.selectionMode === 'multi_independent' || slots.length > 1;
+  if (multi) {
+    return {
+      eligible: false,
+      candidate: null,
+      selectedProviderId: null,
+      viableCandidateCount: 0,
+      reason: 'multi_identity_payload',
+      qualityReason: null,
+    };
+  }
+  const contextObjects = [object(payload?.recognitionContext), ...rawSlots.map((slot) => object(slot.recognitionContext))]
+    .filter((value): value is JsonObject => !!value);
+  const hasConcreteSourceContext = contextObjects.some((context) => {
+    const coordinates = object(context.coordinates);
+    return !!text(context.locality) || !!text(context.region) || !!text(context.country) ||
+      (finite(coordinates?.lat) != null && finite(coordinates?.lng) != null);
+  }) || slots.some((slot) => !!text(slot.contextLabel)) || candidates.some((candidate) => !!text(candidate.contextLabel));
+  if (!reranked.contextAvailable || !hasConcreteSourceContext || reranked.contextSourceKind === 'none' ||
+      reranked.contextSourceKind === 'user_location') {
+    return {
+      eligible: false,
+      candidate: null,
+      selectedProviderId: null,
+      viableCandidateCount: 0,
+      reason: 'independent_source_context_missing',
+      qualityReason: null,
+    };
+  }
+
+  const quality = evaluateMetadataAutoSave({
+    result: { candidates },
+    evidence: {},
+  });
+  const selectedProviderId = quality.viableCandidateCount === 1
+    ? quality.viableProviderIds[0] ?? null
+    : null;
+  const candidate = selectedProviderId
+    ? candidates.find((item) => text(item.googlePlaceId) === selectedProviderId) ?? null
+    : null;
+  const eligible = quality.eligible && !!candidate;
+  return {
+    eligible,
+    candidate: eligible ? candidate : null,
+    selectedProviderId,
+    viableCandidateCount: quality.viableCandidateCount,
+    reason: eligible ? 'single_viable_contextual_candidate' : quality.reasonCodes[0] ?? 'quality_gate_blocked',
+    qualityReason: quality.independentQualityReason,
   };
 }
 

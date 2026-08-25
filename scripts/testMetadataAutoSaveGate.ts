@@ -107,15 +107,33 @@ for (const [name, input, reason] of cases) {
   );
 }
 
-const resolverLabelCannotVetoSingleton = evaluateMetadataAutoSave({
+const resolverLabelCannotVetoStrongSingleton = evaluateMetadataAutoSave({
   result: { decision: 'manual_fallback', candidates: [santaFe] },
   evidence: {},
 });
 assert.equal(
-  resolverLabelCannotVetoSingleton.eligible,
+  resolverLabelCannotVetoStrongSingleton.eligible,
   true,
-  'one plausible provider candidate auto-saves unless concrete evidence blocks it',
+  'an old resolver label cannot veto a candidate that independently passes the singleton quality gate',
 );
+
+const weakLoneSurvivor = evaluateMetadataAutoSave({
+  result: {
+    decision: 'candidate_confirmation',
+    candidates: [{
+      ...santaFe,
+      googlePlaceId: 'weak-leftover',
+      name: 'Unrelated Business',
+      confidenceScore: 0.5,
+      reasons: ['business_type'],
+    }],
+  },
+  evidence: {},
+});
+assert.equal(weakLoneSurvivor.eligible, false, 'a weak lone survivor must never auto-save');
+assert.deepEqual(weakLoneSurvivor.reasonCodes, ['weak_singleton']);
+assert.equal(weakLoneSurvivor.independentQualityGatePassed, false);
+assert.equal(weakLoneSurvivor.independentQualityReason, 'independent_identity_evidence_missing');
 
 // Reproduced metadata-path P0: creator identity was mislabelled as a venue
 // handle, queried as "Oliversamiee", and a single unrelated Places result was

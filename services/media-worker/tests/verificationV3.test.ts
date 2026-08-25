@@ -14,6 +14,7 @@ import {
   normalizeEvidenceClaim,
   serializeCandidatesForVerificationV3,
   verificationV3AllowsAutoSave,
+  verificationV3IdentityEvidenceKind,
   verifyRetrievedCandidatesV3,
   type RawCandidateVerification,
   type VerificationCandidate,
@@ -62,6 +63,7 @@ test('1 SUPPORTS evidence is retained', () => {
   const result = verifyRetrievedCandidatesV3({ candidates: [candidate()], evaluations: [evaluation()] });
   assert.equal(result.records[0]?.supportingEvidence.length, 1);
   assert.equal(result.records[0]?.verdict, 'PRESERVE');
+  assert.equal(verificationV3IdentityEvidenceKind(result.records[0]!), 'observable');
 });
 
 test('2 genuine necessarily-visible incompatibility remains CONTRADICTS', () => {
@@ -116,6 +118,7 @@ test('13 Stiniva-style credible rank-one retrieval survives absent geometry reje
   assert.notEqual(result.records[0]?.verdict, 'REJECT');
   assert.equal(result.records[0]?.finalRank, 1);
   assert.equal(result.records[0]?.unknownEvidence[0]?.state, 'UNKNOWN');
+  assert.equal(verificationV3IdentityEvidenceKind(result.records[0]!), 'model_prior');
 });
 
 test('14 strong retrieval cannot be overridden by one weak semantic conflict', () => {
@@ -134,6 +137,22 @@ test('15 strong visible identity conflict may reject', () => {
     })], overallVerdict: 'reject', reasonCode: 'VISIBLE_IDENTITY_CONFLICT',
   })] });
   assert.equal(result.records[0]?.verdict, 'REJECT');
+});
+
+test('15b any surviving strong direct contradiction remains confirmation-only', () => {
+  const result = verifyRetrievedCandidatesV3({ candidates: [candidate()], evaluations: [evaluation({
+    evidence: [
+      claim(),
+      claim({
+        statement: 'A necessarily visible sign names another place.', state: 'CONTRADICTS',
+        basis: 'canonical_identity', strength: 'strong', visibility: 'necessarily_visible',
+        contradictionKind: 'identity_conflict',
+      }),
+    ],
+    overallVerdict: 'demote',
+  })] });
+  assert.notEqual(result.records[0]?.verdict, 'REJECT');
+  assert.equal(verificationV3IdentityEvidenceKind(result.records[0]!), 'model_prior');
 });
 
 test('16 every candidate receives an explicit record even when the model omits it', () => {
@@ -188,7 +207,7 @@ test('21 candidate identity survives serialization', () => {
   assert.equal(serialized[0]?.candidateName, 'Example Cove');
 });
 
-test('22 V3 candidates can never auto-save', () => {
+test('22 V3 alone can never authorize auto-save', () => {
   const record = verifyRetrievedCandidatesV3({ candidates: [candidate()], evaluations: [evaluation()] }).records[0]!;
   assert.equal(verificationV3AllowsAutoSave(record), false);
 });
