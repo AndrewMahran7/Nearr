@@ -253,11 +253,6 @@ export default function SavePlace() {
       if (result.status === 'saved') {
         upsertSavedPlaceIntoCache(result.saved);
       }
-      if (!result.savedPlaceId) {
-        console.warn('[save-flow] saved place id missing; opening map without focus');
-        router.replace('/(tabs)/map');
-        return;
-      }
       router.replace({
         pathname: '/(tabs)/map',
         params: { savedPlaceId: result.savedPlaceId },

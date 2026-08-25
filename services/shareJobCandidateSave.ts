@@ -15,6 +15,7 @@ import {
   type ShareJobCandidate,
 } from '@/services/shareJobsService';
 import type { SavedPlaceWithPlace, SourceType } from '@/types';
+import type { CanonicalSaveOutcome } from '@/lib/canonicalSaveContract';
 
 export type ShareJobCandidateSaveDependencies = {
   save: (input: SaveSavedPlaceInput) => Promise<SaveSavedPlaceResult>;
@@ -76,8 +77,9 @@ export function shareJobCandidateToPlaceCandidate(candidate: ShareJobCandidate):
 }
 
 export type ShareJobCandidateSaveOutcome = {
-  savedPlaceId: string | null;
+  savedPlaceId: string;
   duplicate: boolean;
+  outcome: CanonicalSaveOutcome;
   /** Present when the place was already saved: what this post actually added. */
   enrichment?: SavedPlaceEnrichmentPlan;
 };
@@ -108,7 +110,7 @@ export async function persistShareJobCandidate(
       savedPlaceId: result.savedPlaceId,
       result: 'saved',
     });
-    return { savedPlaceId: result.savedPlaceId, duplicate: false };
+    return { savedPlaceId: result.savedPlaceId, duplicate: false, outcome: result.outcome };
   }
   // "Already saved" is an ENRICHED save, not a no-op: the existing row may have
   // just gained this post's source_url / ai_note. Seed the cache from the
@@ -116,12 +118,13 @@ export async function persistShareJobCandidate(
   if (result.saved) dependencies.cache(result.saved);
   recordBreadcrumb('already_saved_response', {
     jobId: args.jobId,
-    savedPlaceId: result.savedPlaceId ?? null,
+    savedPlaceId: result.savedPlaceId,
     result: 'duplicate',
   });
   return {
-    savedPlaceId: result.savedPlaceId ?? null,
+    savedPlaceId: result.savedPlaceId,
     duplicate: true,
+    outcome: result.outcome,
     enrichment: result.enrichment,
   };
 }

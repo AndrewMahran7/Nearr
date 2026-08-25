@@ -457,12 +457,19 @@ export function removeSuccessfulSelections(
   return next;
 }
 
-export type SharePlaceSaveOutcome = {
-  logicalPlaceId: string;
-  candidateId: string;
-  status: 'saved' | 'duplicate' | 'failed';
-  savedPlaceId: string | null;
-};
+export type SharePlaceSaveOutcome =
+  | {
+      logicalPlaceId: string;
+      candidateId: string;
+      status: 'saved' | 'duplicate';
+      savedPlaceId: string;
+    }
+  | {
+      logicalPlaceId: string;
+      candidateId: string;
+      status: 'failed';
+      savedPlaceId: null;
+    };
 
 export type ShareSaveCompletionPlan = {
   createdSavedPlaceIds: string[];
