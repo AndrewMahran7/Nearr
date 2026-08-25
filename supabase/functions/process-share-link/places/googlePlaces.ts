@@ -103,11 +103,40 @@ export async function searchPlaces(
   key: string,
   bias?: SearchBias,
 ): Promise<SearchPlacesResult> {
-  const body: Record<string, unknown> = { textQuery: query, maxResultCount: 8 };
+  const maxResultCount = 12;
+  const body: Record<string, unknown> = { textQuery: query, maxResultCount };
   if (bias) {
-    body.locationBias = {
-      circle: { center: { latitude: bias.lat, longitude: bias.lng }, radius: 50_000 },
-    };
+    const radius = Math.max(1_000, Math.min(200_000, Math.round(bias.radiusMeters ?? 50_000)));
+    if (radius <= 50_000) {
+      body.locationBias = {
+        circle: { center: { latitude: bias.lat, longitude: bias.lng }, radius },
+      };
+    } else {
+      // Text Search (New) caps circular bias at 50 km. Use an equivalent
+      // bounding viewport for the 75/200 km widening tiers so the request is
+      // valid and each paid widening call actually searches a wider area.
+      const latitudeDelta = radius / 111_320;
+      const longitudeDelta = radius / (111_320 * Math.max(0.1, Math.cos(bias.lat * Math.PI / 180)));
+      const west = bias.lng - longitudeDelta;
+      const east = bias.lng + longitudeDelta;
+      body.locationBias = west >= -180 && east <= 180
+        ? {
+            rectangle: {
+              low: { latitude: Math.max(-90, bias.lat - latitudeDelta), longitude: west },
+              high: { latitude: Math.min(90, bias.lat + latitudeDelta), longitude: east },
+            },
+          }
+        : {
+            circle: { center: { latitude: bias.lat, longitude: bias.lng }, radius: 50_000 },
+          };
+    }
+    const regionCodes = [...new Set((bias.includedRegionCodes ?? [])
+      .map((code) => code.trim().toUpperCase())
+      .filter((code) => /^[A-Z]{2}$/.test(code)))]
+      .slice(0, 15);
+    // Text Search accepts one CLDR regionCode. `includedRegionCodes` is an
+    // Autocomplete field and would make this Places New request invalid.
+    if (regionCodes.length > 0) body.regionCode = regionCodes[0];
   }
   let json: any;
   const ctrl = new AbortController();
@@ -162,7 +191,7 @@ export async function searchPlaces(
     clearTimeout(timer);
   }
   const results: PlacesCandidate[] = (json.places ?? [])
-    .slice(0, 8)
+    .slice(0, maxResultCount)
     .map(mapPlacesV1Candidate)
     .filter(isUsableCandidate);
   return { ok: true, results, apiPath: 'places_new' };
@@ -201,7 +230,7 @@ async function searchPlacesLegacy(
   const params = new URLSearchParams({ query, key });
   if (bias) {
     params.set('location', `${bias.lat},${bias.lng}`);
-    params.set('radius', '50000');
+    params.set('radius', String(Math.max(1_000, Math.min(200_000, Math.round(bias.radiusMeters ?? 50_000)))));
   }
   const res = await fetch(`${PLACES_BASE}?${params}`, { signal });
   if (!res.ok) {
@@ -220,7 +249,7 @@ async function searchPlacesLegacy(
   return {
     ok: true,
     results: (json.results ?? [])
-      .slice(0, 8)
+      .slice(0, 12)
       .map(mapPlacesLegacyCandidate)
       .filter(isUsableCandidate),
   };

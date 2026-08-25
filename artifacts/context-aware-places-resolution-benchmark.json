@@ -1,0 +1,228 @@
+{
+  "generatedAt": "2026-08-24T23:56:47.512Z",
+  "corpusSize": 18,
+  "before": {
+    "recallAt1": 0.05555555555555555,
+    "recallAt3": 0.9444444444444444,
+    "crossRegionWrongTop1": 14,
+    "crossCountryWrongTop1": 4,
+    "meanTopDistanceKm": 4233.956580897388,
+    "meanVisibleCandidates": 2.7222222222222223,
+    "noResultRate": 0,
+    "wideningRate": 0,
+    "placesCallsPerQuery": 1
+  },
+  "after": {
+    "recallAt1": 1,
+    "recallAt3": 1,
+    "crossRegionWrongTop1": 0,
+    "crossCountryWrongTop1": 0,
+    "meanTopDistanceKm": 14.894193834476189,
+    "meanVisibleCandidates": 1.4444444444444444,
+    "noResultRate": 0.05555555555555555,
+    "wideningRate": 0.05555555555555555,
+    "placesCallsPerQuery": 1.1111111111111112,
+    "rankingLatencyP50Ms": 0.042300000000068394,
+    "rankingLatencyP95Ms": 0.10980000000017753
+  },
+  "cases": [
+    {
+      "id": "in-n-out-santa-paula",
+      "beforeTop": "ino-frisco",
+      "afterTop": "ino-camarillo",
+      "expected": [
+        "ino-camarillo",
+        "ino-ventura"
+      ],
+      "visible": 2,
+      "noNearbyMatch": false,
+      "calls": 1
+    },
+    {
+      "id": "starbucks-new-york",
+      "beforeTop": "sb-la",
+      "afterTop": "sb-ny",
+      "expected": [
+        "sb-ny"
+      ],
+      "visible": 1,
+      "noNearbyMatch": false,
+      "calls": 1
+    },
+    {
+      "id": "chipotle-manual-la",
+      "beforeTop": "chip-far",
+      "afterTop": "chip-near",
+      "expected": [
+        "chip-near"
+      ],
+      "visible": 3,
+      "noNearbyMatch": false,
+      "calls": 1
+    },
+    {
+      "id": "cedar-creek-washington-nature",
+      "beforeTop": "cedar-houston",
+      "afterTop": "cedar-wa",
+      "expected": [
+        "cedar-wa"
+      ],
+      "visible": 1,
+      "noNearbyMatch": false,
+      "calls": 1
+    },
+    {
+      "id": "hotel-staubbach-swiss",
+      "beforeTop": "staubbach-us",
+      "afterTop": "staubbach-ch",
+      "expected": [
+        "staubbach-ch"
+      ],
+      "visible": 2,
+      "noNearbyMatch": false,
+      "calls": 1
+    },
+    {
+      "id": "punchbowl-santa-paula",
+      "beforeTop": "punch-hi",
+      "afterTop": "punch-ca",
+      "expected": [
+        "punch-ca"
+      ],
+      "visible": 1,
+      "noNearbyMatch": false,
+      "calls": 1
+    },
+    {
+      "id": "blue-lagoon-iceland",
+      "beforeTop": "blue-us",
+      "afterTop": "blue-is",
+      "expected": [
+        "blue-is"
+      ],
+      "visible": 1,
+      "noNearbyMatch": false,
+      "calls": 1
+    },
+    {
+      "id": "central-park-ny",
+      "beforeTop": "central-ca",
+      "afterTop": "central-ny",
+      "expected": [
+        "central-ny"
+      ],
+      "visible": 1,
+      "noNearbyMatch": false,
+      "calls": 1
+    },
+    {
+      "id": "main-street-cafe-user",
+      "beforeTop": "main-tx",
+      "afterTop": "main-ca",
+      "expected": [
+        "main-ca"
+      ],
+      "visible": 2,
+      "noNearbyMatch": false,
+      "calls": 1
+    },
+    {
+      "id": "common-park-seattle",
+      "beforeTop": "river-ny",
+      "afterTop": "river-wa",
+      "expected": [
+        "river-wa"
+      ],
+      "visible": 1,
+      "noNearbyMatch": false,
+      "calls": 1
+    },
+    {
+      "id": "natural-swimming-hole",
+      "beforeTop": "cedar-houston",
+      "afterTop": "cedar-wa",
+      "expected": [
+        "cedar-wa"
+      ],
+      "visible": 1,
+      "noNearbyMatch": false,
+      "calls": 1
+    },
+    {
+      "id": "same-name-hotel-country",
+      "beforeTop": "alpine-us",
+      "afterTop": "alpine-ch",
+      "expected": [
+        "alpine-ch"
+      ],
+      "visible": 1,
+      "noNearbyMatch": false,
+      "calls": 1
+    },
+    {
+      "id": "nearby-mention-chain",
+      "beforeTop": "ino-frisco",
+      "afterTop": "ino-camarillo",
+      "expected": [
+        "ino-camarillo"
+      ],
+      "visible": 3,
+      "noNearbyMatch": false,
+      "calls": 1
+    },
+    {
+      "id": "foreign-video-user-in-la",
+      "beforeTop": "staubbach-us",
+      "afterTop": "staubbach-ch",
+      "expected": [
+        "staubbach-ch"
+      ],
+      "visible": 2,
+      "noNearbyMatch": false,
+      "calls": 1
+    },
+    {
+      "id": "chain-no-nearby",
+      "beforeTop": "coffee-tx",
+      "afterTop": null,
+      "expected": [],
+      "visible": 0,
+      "noNearbyMatch": true,
+      "calls": 3
+    },
+    {
+      "id": "no-context-control",
+      "beforeTop": "spot-tx",
+      "afterTop": "spot-tx",
+      "expected": [
+        "spot-tx",
+        "spot-ca"
+      ],
+      "visible": 2,
+      "noNearbyMatch": false,
+      "calls": 1
+    },
+    {
+      "id": "cafe-country-guard",
+      "beforeTop": "corner-us",
+      "afterTop": "corner-fr",
+      "expected": [
+        "corner-fr"
+      ],
+      "visible": 1,
+      "noNearbyMatch": false,
+      "calls": 1
+    },
+    {
+      "id": "park-region-guard",
+      "beforeTop": "lake-fl",
+      "afterTop": "lake-wa",
+      "expected": [
+        "lake-wa"
+      ],
+      "visible": 1,
+      "noNearbyMatch": false,
+      "calls": 1
+    }
+  ]
+}

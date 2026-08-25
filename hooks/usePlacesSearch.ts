@@ -5,6 +5,7 @@ import {
   PlacesError,
   type LocationBias,
 } from '@/services/placesService';
+import type { PlacesResolutionContext } from '@/lib/contextAwarePlacesResolution';
 
 type State = {
   results: PlaceCandidate[];
@@ -36,7 +37,11 @@ export function usePlacesSearch() {
     };
   }, []);
 
-  const run = useCallback(async (query: string, locationBias?: LocationBias) => {
+  const run = useCallback(async (
+    query: string,
+    locationBias?: LocationBias,
+    resolutionContext?: PlacesResolutionContext,
+  ) => {
     const id = ++reqId.current;
     const q = query.trim();
     if (!q) {
@@ -49,7 +54,7 @@ export function usePlacesSearch() {
       setState((s) => ({ ...s, loading: true, error: null, lastQuery: q }));
     }
     try {
-      const results = await searchPlaces(q, locationBias);
+      const results = await searchPlaces(q, locationBias, resolutionContext);
       if (!mountedRef.current || id !== reqId.current) return results; // stale
       setState({ results, loading: false, error: null, lastQuery: q });
       return results;

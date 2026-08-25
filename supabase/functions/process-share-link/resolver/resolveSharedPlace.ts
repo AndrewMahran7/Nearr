@@ -44,6 +44,7 @@ import {
 } from '../places/placeNormalization.ts';
 import type { TaggedLocationGranularity } from '../evidence/taggedLocation.ts';
 import { Timings, logShareDebug } from '../diagnostics/logger.ts';
+import { rankContextAwareCandidates } from '../../../../lib/contextAwarePlacesResolution.ts';
 
 // Score gap below which two tagged-location candidates are treated as an
 // ambiguous picker rather than a single confirmation.
@@ -723,6 +724,44 @@ export async function resolveSharedPlace(args: {
       confidence: 'low',
       cleanSearchQuery:
         (evidence.address ? addressPrefillQuery : null) ?? lastQuery ?? undefined,
+      evidenceUsed,
+      warnings,
+      diagnostics,
+      failureReason: 'no_candidates',
+    };
+  }
+
+  const contextualRanking = rankContextAwareCandidates({
+    query: lastQuery ?? plan.placeNameHint ?? '',
+    candidates,
+    context: {
+      mode: 'source',
+      inferredLocality: evidence.cityState?.city ?? null,
+      inferredRegion: evidence.cityState?.state ?? null,
+      inferredCoordinates: bias,
+      regionConfidence: evidence.cityState || tagBias ? 'strong' : 'none',
+      sourceEvidence: evidence.cityState
+        ? ['creator_caption_geo']
+        : tagBias
+          ? ['exact_source_evidence']
+          : [],
+    },
+    searchTierKm: bias ? 25 : null,
+    placesCallCount: diagnostics.searchAttempts ?? 1,
+  });
+  diagnostics.contextAwarePlaceResolution = contextualRanking.telemetry;
+  diagnostics.countryMismatchFiltered = contextualRanking.filteredCountryMismatch;
+  diagnostics.noNearbyMatch = contextualRanking.noNearbyMatch;
+  candidates = contextualRanking.ranked.map((item) => item.candidate);
+
+  if (candidates.length === 0 && contextualRanking.noNearbyMatch) {
+    warnings.push('no_matching_location_near_source_context');
+    return {
+      decision: 'manual_fallback',
+      candidates: [],
+      safeToAutoSave: false,
+      confidence: 'low',
+      cleanSearchQuery: lastQuery ?? undefined,
       evidenceUsed,
       warnings,
       diagnostics,

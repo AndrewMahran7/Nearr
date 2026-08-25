@@ -35,6 +35,8 @@ type Props = {
   visible: boolean;
   /** Top safe-area + chrome offset so the input lines up with the search bar. */
   topInset: number;
+  /** Current-device proximity for manual search. Never source/video context. */
+  locationBias?: { lat: number; lng: number };
   onClose: () => void;
   /** Open the existing add/save flow for the chosen real-world place. */
   onPickPlace: (place: PlaceCandidate) => void;
@@ -43,6 +45,7 @@ type Props = {
 export function MapPlaceSearchDropdown({
   visible,
   topInset,
+  locationBias,
   onClose,
   onPickPlace,
 }: Props) {
@@ -74,10 +77,15 @@ export function MapPlaceSearchDropdown({
     if (q.length < 3) return;
     if (q === lastQuery) return;
     const id = setTimeout(() => {
-      void search(q);
+      void search(q, locationBias, {
+        mode: 'manual',
+        userLocation: locationBias ?? null,
+        regionConfidence: 'none',
+        sourceEvidence: [],
+      });
     }, 300);
     return () => clearTimeout(id);
-  }, [query, visible, lastQuery, search]);
+  }, [query, visible, lastQuery, search, locationBias]);
 
   const trimmed = query.trim();
   const panelMaxHeight = Math.round(windowHeight * 0.4);

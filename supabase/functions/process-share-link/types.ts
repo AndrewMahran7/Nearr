@@ -43,6 +43,21 @@ export type ResolvedCandidate = {
   evidence: string[];
   /** Reasons the ranker kept or boosted this candidate. */
   reasons: string[];
+  /** Bounded explanation suitable for confirmation UI; never a raw score or
+   * model rationale. */
+  contextReason?:
+    | 'exact_source_evidence'
+    | 'source_locality'
+    | 'source_region'
+    | 'source_country'
+    | 'near_resolved_video_place'
+    | 'video_geo_hint'
+    | 'user_proximity'
+    | 'no_geographic_context';
+  contextLabel?: string | null;
+  distanceKm?: number | null;
+  localityMatch?: boolean;
+  wideningTierKm?: 25 | 75 | 200 | null;
 };
 
 export type RequestMode = 'save' | 'extract' | 'extract_debug_slow' | 'debug_gemini';
@@ -61,7 +76,15 @@ export type SourcePlatform =
  *  existing clients expect (`saved_places.source_type`). */
 export type LegacySource = 'instagram' | 'tiktok' | 'youtube' | 'facebook' | 'snapchat' | 'link';
 
-export type SearchBias = { lat: number; lng: number };
+export type SearchBias = {
+  lat: number;
+  lng: number;
+  /** Structured Places API (New) circle radius. Legacy receives the same
+   * bounded radius as a bias and resolver-side ranking enforces the tier. */
+  radiusMeters?: number;
+  /** ISO-3166 alpha-2 codes for Places API (New) includedRegionCodes. */
+  includedRegionCodes?: string[];
+};
 
 export type ResolverResult = {
   decision: ResolverDecision;

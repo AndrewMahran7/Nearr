@@ -186,6 +186,15 @@ function safeCandidate(c: any, aiNote: string | null = null) {
     matchScore: typeof c.confidenceScore === 'number' ? c.confidenceScore : null,
     evidence: Array.isArray(c.evidence) ? c.evidence.filter((value: unknown) => typeof value === 'string').slice(0, 12) : [],
     reasons: Array.isArray(c.reasons) ? c.reasons.filter((value: unknown) => typeof value === 'string').slice(0, 12) : [],
+    contextReason: typeof c.contextReason === 'string' ? c.contextReason : null,
+    contextLabel: typeof c.contextLabel === 'string' ? c.contextLabel : null,
+    distanceKm: typeof c.distanceKm === 'number' && Number.isFinite(c.distanceKm)
+      ? Math.max(0, Math.round(c.distanceKm * 10) / 10)
+      : null,
+    localityMatch: c.localityMatch === true,
+    wideningTierKm: c.wideningTierKm === 25 || c.wideningTierKm === 75 || c.wideningTierKm === 200
+      ? c.wideningTierKm
+      : null,
     aiNote,
   };
 }
@@ -1956,12 +1965,15 @@ async function finalizeMediaTask(
         displayName: mention.displayName,
         contextLabel: (() => {
           const sourceMention = mentionById.get(mention.mentionId);
-          return [sourceMention?.geo?.city, sourceMention?.geo?.region].filter(Boolean).join(', ') || null;
+          return mention.contextLabel ?? (
+            [sourceMention?.geo?.city, sourceMention?.geo?.region].filter(Boolean).join(', ') || null
+          );
         })(),
         primaryVenueName: mention.primaryVenueName ?? null,
         hostVenueName: mention.hostVenueName ?? null,
         relationshipType: mention.relationshipType ?? null,
         outcome: mention.outcome,
+        noNearbyMatch: mention.noNearbyMatch === true,
         identityHypotheses: mention.identityHypotheses ?? [],
         aiNote: aiNoteByMentionId.get(mention.mentionId) ?? null,
         saveState: savedResultByMentionId.get(mention.mentionId)?.saveState ?? 'pending',
@@ -2170,12 +2182,15 @@ async function finalizeMediaTask(
       displayName: mention.displayName,
       contextLabel: (() => {
         const sourceMention = mediaMentions.mentions.find((item: any) => item.id === mention.mentionId);
-        return [sourceMention?.geo?.city, sourceMention?.geo?.region].filter(Boolean).join(', ') || null;
+        return mention.contextLabel ?? (
+          [sourceMention?.geo?.city, sourceMention?.geo?.region].filter(Boolean).join(', ') || null
+        );
       })(),
       primaryVenueName: mention.primaryVenueName ?? null,
       hostVenueName: mention.hostVenueName ?? null,
       relationshipType: mention.relationshipType ?? null,
       outcome: mention.outcome,
+      noNearbyMatch: mention.noNearbyMatch === true,
       sourceTimestamps: mediaMentions.mentions.find((item: any) => item.id === mention.mentionId)?.timestamps ?? [],
       identityHypotheses: mention.identityHypotheses ?? [],
       aiNote: aiNoteByMentionId.get(mention.mentionId) ?? null,

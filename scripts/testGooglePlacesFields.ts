@@ -46,10 +46,10 @@ assert.equal(legacyMapped.businessStatus, 'OPERATIONAL');
 assert.equal(legacyMapped.photos?.[0]?.name, 'legacy-photo-reference');
 
 const originalFetch = globalThis.fetch;
-const requests: string[] = [];
-globalThis.fetch = (async (input: string | URL | Request) => {
+const requests: Array<{ url: string; body: Record<string, unknown> | null }> = [];
+globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) => {
   const url = String(input);
-  requests.push(url);
+  requests.push({ url, body: typeof init?.body === 'string' ? JSON.parse(init.body) : null });
   if (url.includes('places.googleapis.com/v1/places:searchText')) {
     return new Response(JSON.stringify({
       error: {
@@ -75,10 +75,23 @@ globalThis.fetch = (async (input: string | URL | Request) => {
 
 async function main(): Promise<void> {
   try {
-    const fallback = await searchPlaces('Fallback Place', 'test-key');
+    const fallback = await searchPlaces('Fallback Place', 'test-key', {
+      lat: 34,
+      lng: -118,
+      radiusMeters: 75_000,
+      includedRegionCodes: ['US'],
+    });
     assert.equal(fallback.ok, true);
     assert.equal(fallback.ok ? fallback.results[0]?.googlePlaceId : null, 'legacy-fallback-place');
     assert.equal(requests.length, 2);
+    const newBody = requests[0]?.body as {
+      regionCode?: string;
+      includedRegionCodes?: string[];
+      locationBias?: { rectangle?: unknown; circle?: unknown };
+    };
+    assert.equal(newBody.regionCode, 'US', 'Text Search New receives the supported CLDR regionCode');
+    assert.equal(newBody.includedRegionCodes, undefined, 'Autocomplete-only includedRegionCodes is never sent');
+    assert.ok(newBody.locationBias?.rectangle, '75 km widening uses a valid viewport instead of an oversized circle');
   } finally {
     globalThis.fetch = originalFetch;
   }

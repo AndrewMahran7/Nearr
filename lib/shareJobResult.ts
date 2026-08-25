@@ -26,6 +26,11 @@ export type ShareJobResultCandidate = {
   sourceFrameUrl?: string | null;
   /** Candidate-scoped scene anchors used for concise confirmation evidence. */
   sourceTimestamps?: number[];
+  contextReason?: string | null;
+  contextLabel?: string | null;
+  distanceKm?: number | null;
+  localityMatch?: boolean;
+  wideningTierKm?: 25 | 75 | 200 | null;
 };
 
 export type ShareJobMentionOutcome =
@@ -61,6 +66,8 @@ export type ShareJobMentionSlot = {
   sourceTimestamps?: number[];
   /** Best frame for this logical scene, when a durable media producer supplies one. */
   sourceFrameUrl?: string | null;
+  /** Strong context existed but no plausible candidate survived within it. */
+  noNearbyMatch?: boolean;
   /** Ranked Vayrin identities for this one logical scene. This survives even
    * when Places returns no candidate, enabling a future "few leads" UI without
    * pretending a Google Place was verified. */
@@ -155,6 +162,15 @@ export function normalizeResultCandidate(input: unknown): ShareJobResultCandidat
     photoUrl: text(row.photoUrl ?? row.photo_url),
     sourceFrameUrl: text(row.sourceFrameUrl ?? row.source_frame_url ?? row.frameUrl),
     sourceTimestamps: normalizedTimestamps(row.sourceTimestamps ?? row.source_timestamps),
+    contextReason: text(row.contextReason),
+    contextLabel: text(row.contextLabel),
+    distanceKm: typeof row.distanceKm === 'number' && Number.isFinite(row.distanceKm)
+      ? Math.max(0, Math.round(row.distanceKm * 10) / 10)
+      : null,
+    localityMatch: row.localityMatch === true,
+    wideningTierKm: row.wideningTierKm === 25 || row.wideningTierKm === 75 || row.wideningTierKm === 200
+      ? row.wideningTierKm
+      : null,
   };
 }
 
@@ -228,6 +244,7 @@ export function normalizeMentionSlots(input: unknown): ShareJobMentionSlot[] {
       savedPlaceId: text(row.savedPlaceId),
       sourceTimestamps: normalizedTimestamps(row.sourceTimestamps),
       sourceFrameUrl: text(row.sourceFrameUrl ?? row.source_frame_url),
+      noNearbyMatch: row.noNearbyMatch === true,
       identityHypotheses,
     });
   }
