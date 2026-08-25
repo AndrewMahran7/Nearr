@@ -1,0 +1,22 @@
+{
+  "releaseId": "2026-08-24-context-aware-places-resolution",
+  "previousMainSha": "0bd1e121d10ab062e41b0d08bd223812b082fa1b",
+  "previousOtaGroup": "65089c3b-bf7f-4cee-8a47-96dfdab97131",
+  "currentOtaGroup": null,
+  "edgeVersions": {
+    "process-share-link": 132,
+    "process-share-jobs": 81
+  },
+  "railwayDeployment": "0cc03945-5b33-4170-b344-91d8a5981574@0bd1e121d10ab062e41b0d08bd223812b082fa1b",
+  "migrationLedger": [
+    "20260822000003"
+  ],
+  "rollbackProcedure": "Repeat the concurrency guard; republish previousOtaGroup to production; restore process-share-link and process-share-jobs from previousMainSha and redeploy them with the guarded production wrapper; forward-revert the integration merge; rerun the contextual, V3, autosave, map, startup, and release suites.",
+  "deploymentStatus": "PLANNED",
+  "physicalQa": {
+    "signedOutColdLaunch": "PENDING",
+    "signedInColdLaunch": "PENDING",
+    "forceCloseRelaunch": "PENDING",
+    "freshOnboardingLaunch": "NOT_REQUIRED"
+  }
+}
