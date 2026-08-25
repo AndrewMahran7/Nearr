@@ -301,7 +301,6 @@ export async function saveOnboardingV2TutorialPlace(
     aiNote: content.tutorialNote,
   });
   const savedPlaceId = result.savedPlaceId;
-  if (!savedPlaceId) throw new Error('Nearr saved the place but could not verify its map entry.');
   const next = await applyTransition((state, now) => completePendingSave(
     state,
     { sourceUrl: content.sourceUrl, savedPlaceId },

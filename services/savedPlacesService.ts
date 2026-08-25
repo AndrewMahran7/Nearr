@@ -52,6 +52,11 @@ import {
 } from '@/lib/savedPlaceSourceMerge';
 import { normalizeShareUrl } from '@/lib/shareAgent/tiktokUrl';
 import { attachSavedPlaceSource } from '@/services/savedPlaceSourcesService';
+import {
+  canonicalSaveSuccess,
+  type CanonicalSaveOutcome,
+  type CanonicalSaveSuccess,
+} from '@/lib/canonicalSaveContract';
 import type {
   PlaceRow,
   RadiusUnit,
@@ -72,11 +77,17 @@ export type SaveSavedPlaceInput = {
 };
 
 export type SaveSavedPlaceResult =
-  | { status: 'saved'; saved: SavedPlaceWithPlace; savedPlaceId: string }
+  | (CanonicalSaveSuccess & {
+      status: 'saved';
+      outcome: 'created';
+      saved: SavedPlaceWithPlace;
+    })
   | {
+      success: true;
       status: 'duplicate';
       place: PlaceRow;
-      savedPlaceId: string | null;
+      savedPlaceId: string;
+      outcome: Exclude<CanonicalSaveOutcome, 'created'>;
       /** The existing row re-read AFTER enrichment, so callers can refresh the
        *  cache with the newly attached source instead of showing stale data. */
       saved?: SavedPlaceWithPlace | null;
@@ -98,6 +109,8 @@ type ExistingSavedPlaceLookup = ExistingSavedPlaceSource & {
 type ExistingSavedPlaceLookupRow = ExistingSavedPlaceSource & {
   place: PlaceRow | PlaceRow[] | null;
 };
+
+type ExistingSavedPlaceIdentity = ExistingSavedPlaceSource;
 
 const shareUrlKey = (url: string): string => normalizeShareUrl(url).url;
 
@@ -226,6 +239,52 @@ async function readSavedPlaceAfterEnrichment(
   }
 }
 
+/**
+ * A 23505 on (user_id, place_id) proves that the canonical saved_place exists.
+ * Resolve that identity at the save boundary so callers never have to infer it
+ * from an empty INSERT response. Prefer the row already observed before the
+ * insert, then perform a bounded re-read for the conflict/race path.
+ */
+async function resolveExistingSavedPlaceAfterConflict(args: {
+  userId: string;
+  placeId: string;
+  previouslyObserved: ExistingSavedPlaceLookup | null;
+}): Promise<ExistingSavedPlaceIdentity> {
+  if (args.previouslyObserved?.place.id === args.placeId) {
+    return args.previouslyObserved;
+  }
+
+  let lastMessage = 'row not visible after unique conflict';
+  for (let attempt = 1; attempt <= 2; attempt += 1) {
+    const { data, error } = await supabase
+      .from('saved_places')
+      .select('id, source_url, source_type, ai_note')
+      .eq('user_id', args.userId)
+      .eq('place_id', args.placeId)
+      .maybeSingle();
+    if (data?.id) return data as ExistingSavedPlaceIdentity;
+    if (error?.message) lastMessage = error.message;
+  }
+
+  console.error('[savedPlacesService] canonical id reconciliation failed', {
+    placeId: args.placeId,
+    reason: lastMessage,
+  });
+  throw new Error(
+    'This place is already saved, but Nearr could not reconcile its map entry. Refresh your map before trying again.',
+  );
+}
+
+function reusedSaveOutcome(args: {
+  enrichment: SavedPlaceEnrichmentPlan;
+  sourceAttachment: 'attached' | 'deduped' | 'skipped';
+  hasIncomingSource: boolean;
+}): Exclude<CanonicalSaveOutcome, 'created'> {
+  if (args.enrichment.changed || args.sourceAttachment === 'attached') return 'enriched';
+  if (args.hasIncomingSource && args.sourceAttachment === 'deduped') return 'already_attached';
+  return 'reused';
+}
+
 async function patchSavedPlaceCategory(
   savedPlaceId: string,
   resolution: CategoryResolution,
@@ -320,20 +379,23 @@ export async function saveSavedPlace(
     });
     const enrichment = await enrichExistingSavedPlace(existingForUser, input);
     await patchSavedPlaceCategory(existingForUser.id, categoryResolution);
-    await attachSavedPlaceSource({
+    const sourceAttachment = await attachSavedPlaceSource({
       userId,
       savedPlaceId: existingForUser.id,
       sourceUrl: input.sourceUrl,
       sourceType: input.sourceType,
       aiNote: input.aiNote,
     });
-    return {
+    return canonicalSaveSuccess(existingForUser.id, reusedSaveOutcome({
+      enrichment,
+      sourceAttachment,
+      hasIncomingSource: Boolean(input.sourceUrl),
+    }), {
       status: 'duplicate',
       place: existingForUser.place,
-      savedPlaceId: existingForUser.id,
       saved: await readSavedPlaceAfterEnrichment(existingForUser.id),
       enrichment,
-    };
+    });
   }
 
   // --- 1. resolve canonical place (SELECT first, INSERT only if missing) -
@@ -472,40 +534,31 @@ export async function saveSavedPlace(
         placeId: placeRow.id,
       });
 
-      const { data: existingSaved, error: existingSavedErr } = await supabase
-        .from('saved_places')
-        .select('id, source_url, source_type, ai_note')
-        .eq('user_id', userId)
-        .eq('place_id', placeRow.id)
-        .maybeSingle();
+      const existingSaved = await resolveExistingSavedPlaceAfterConflict({
+        userId,
+        placeId: placeRow.id,
+        previouslyObserved: existingForUser,
+      });
+      const enrichment = await enrichExistingSavedPlace(existingSaved, input);
+      await patchSavedPlaceCategory(existingSaved.id, categoryResolution);
+      const sourceAttachment = await attachSavedPlaceSource({
+        userId,
+        savedPlaceId: existingSaved.id,
+        sourceUrl: input.sourceUrl,
+        sourceType: input.sourceType,
+        aiNote: input.aiNote,
+      });
 
-      if (existingSavedErr) {
-        console.warn(
-          '[savedPlacesService] duplicate lookup failed (non-fatal)',
-          existingSavedErr.message,
-        );
-      }
-
-      let enrichment: SavedPlaceEnrichmentPlan | undefined;
-      if (existingSaved?.id) {
-        enrichment = await enrichExistingSavedPlace(existingSaved, input);
-        await patchSavedPlaceCategory(existingSaved.id, categoryResolution);
-        await attachSavedPlaceSource({
-          userId,
-          savedPlaceId: existingSaved.id,
-          sourceUrl: input.sourceUrl,
-          sourceType: input.sourceType,
-          aiNote: input.aiNote,
-        });
-      }
-
-      return {
+      return canonicalSaveSuccess(existingSaved.id, reusedSaveOutcome({
+        enrichment,
+        sourceAttachment,
+        hasIncomingSource: Boolean(input.sourceUrl),
+      }), {
         status: 'duplicate',
         place: placeRow,
-        savedPlaceId: existingSaved?.id ?? null,
-        saved: existingSaved?.id ? await readSavedPlaceAfterEnrichment(existingSaved.id) : null,
+        saved: await readSavedPlaceAfterEnrichment(existingSaved.id),
         enrichment,
-      };
+      });
     }
     console.warn('[savedPlacesService] saved_places insert failed', savedErr.message);
     throw new Error(savedErr.message);
@@ -525,11 +578,10 @@ export async function saveSavedPlace(
   });
   const hydrated = await readSavedPlaceAfterEnrichment(savedPlaceId);
 
-  return {
+  return canonicalSaveSuccess(savedPlaceId, 'created', {
     status: 'saved',
     saved: hydrated ?? saved as SavedPlace & { place: PlaceRow },
-    savedPlaceId,
-  };
+  });
 }
 
 // ---------------------------------------------------------------------------

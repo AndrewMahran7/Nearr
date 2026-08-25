@@ -2338,10 +2338,7 @@ export default function MapScreen() {
         // appear until later).
         await refresh();
         if (result.status === 'duplicate') {
-          const existing =
-            result.savedPlaceId != null
-              ? validPlaces.find((p) => p.id === result.savedPlaceId)
-              : undefined;
+          const existing = validPlaces.find((p) => p.id === result.savedPlaceId);
           if (existing) selectPlace(existing);
           showSnackbar('Already on your map', null);
           return false;

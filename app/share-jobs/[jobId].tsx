@@ -139,6 +139,7 @@ import {
   persistShareJobCandidate,
   shareJobCandidateToPlaceCandidate,
   shareJobSourceType,
+  type ShareJobCandidateSaveOutcome,
 } from '@/services/shareJobCandidateSave';
 import {
   archiveShareJob,
@@ -731,7 +732,7 @@ function ShareJobDetailScreen() {
   async function persistCandidate(
     candidate: PlaceCandidate,
     aiNote: string | null = null,
-  ): Promise<{ savedPlaceId: string | null; duplicate: boolean }> {
+  ): Promise<ShareJobCandidateSaveOutcome> {
     if (__DEV__ && (isPhase2PreviewId(job?.id) || isVayrinCandidateFixtureId(job?.id))) {
       throw new Error('This development preview is read-only.');
     }
@@ -744,12 +745,11 @@ function ShareJobDetailScreen() {
     });
   }
 
-  // Resolve the job to the saved place. For an already-saved place whose exact
-  // row id could not be recovered (rare), just open the map — the place IS in
-  // Nearr, so "already saved" is never treated as a failure.
+  // Resolve the job to the exact canonical saved place returned by the shared
+  // save boundary. Created, reused and enriched saves all carry this identity.
   async function resolveJobWith(
     jobId: string,
-    savedPlaceId: string | null,
+    savedPlaceId: string,
     duplicate: boolean,
   ): Promise<void> {
     if (vayrinEnabled) {
@@ -764,19 +764,11 @@ function ShareJobDetailScreen() {
         duplicate,
       });
     }
-    if (savedPlaceId) {
-      await markShareJobResolved(jobId, savedPlaceId);
-      completeManualSave(
-        duplicate ? [] : [savedPlaceId],
-        duplicate ? [savedPlaceId] : [],
-      );
-      return;
-    }
-    if (duplicate) {
-      openExistingPlace({ source: 'share_job_saved' });
-      return;
-    }
-    throw new Error('Save succeeded but did not return an id. Please retry.');
+    await markShareJobResolved(jobId, savedPlaceId);
+    completeManualSave(
+      duplicate ? [] : [savedPlaceId],
+      duplicate ? [savedPlaceId] : [],
+    );
   }
 
   function openNewlySavedPlaces(savedPlaceIds: string[], failedCount = 0) {
@@ -899,7 +891,7 @@ function ShareJobDetailScreen() {
       const duplicates: string[] = [];
       let failed = 0;
       for (const result of settled) {
-        if (result.status === 'rejected' || !result.value.savedPlaceId) {
+        if (result.status === 'rejected') {
           failed += 1;
         } else if (result.value.duplicate) {
           duplicates.push(result.value.savedPlaceId);
@@ -997,24 +989,30 @@ function ShareJobDetailScreen() {
         return;
       }
       const accumulated = batchCompletionSavedPlaceIds(nextBatch);
-      const resolutionId = accumulated.createdSavedPlaceIds[0] ?? accumulated.duplicateSavedPlaceIds[0] ?? null;
-      if (resolutionId) await markShareJobResolved(job.id, resolutionId);
-      if (resolutionId) {
-        if (vayrinEnabled) {
-          void trackEvent('vayrin_saved', {
-            job_id: job.id,
-            source: 'async_multi',
-            saved_count: accumulated.createdSavedPlaceIds.length,
-            duplicate_count: accumulated.duplicateSavedPlaceIds.length,
-          });
-        }
-        completeManualSave(
-          accumulated.createdSavedPlaceIds,
-          accumulated.duplicateSavedPlaceIds,
-        );
-      } else {
-        throw new Error('Save succeeded but did not return an id. Please retry.');
+      const successfulOutcome = outcomes.find((outcome) => outcome.status !== 'failed');
+      if (!successfulOutcome) {
+        console.error('[share-jobs] batch completed without a successful canonical outcome', {
+          jobId: job.id,
+          targetCount: targets.length,
+        });
+        return;
       }
+      const resolutionId = accumulated.createdSavedPlaceIds[0] ??
+        accumulated.duplicateSavedPlaceIds[0] ??
+        successfulOutcome.savedPlaceId;
+      await markShareJobResolved(job.id, resolutionId);
+      if (vayrinEnabled) {
+        void trackEvent('vayrin_saved', {
+          job_id: job.id,
+          source: 'async_multi',
+          saved_count: accumulated.createdSavedPlaceIds.length,
+          duplicate_count: accumulated.duplicateSavedPlaceIds.length,
+        });
+      }
+      completeManualSave(
+        accumulated.createdSavedPlaceIds,
+        accumulated.duplicateSavedPlaceIds,
+      );
     } catch (err) {
       Alert.alert('Could not save', err instanceof Error ? err.message : 'Please try again.');
     } finally {

@@ -498,6 +498,22 @@ export function applyBatchSaveOutcomes(
       savedPlaceId: outcome.savedPlaceId,
       saveError: null,
     };
+    // One canonical persistence can represent multiple logical mentions. The
+    // target list intentionally dedupes by provider identity; mirror the
+    // canonical result onto every sibling mention so none loses the returned
+    // savedPlaceId or remains incorrectly retryable.
+    for (const siblingId of batch.order) {
+      if (siblingId === outcome.logicalPlaceId) continue;
+      const sibling = rows[siblingId]!;
+      if (rowCandidate(sibling)?.googlePlaceId !== outcome.candidateId) continue;
+      rows[siblingId] = {
+        ...sibling,
+        selectedForSave: false,
+        persistence: outcome.status === 'saved' ? 'saved' : 'already_saved',
+        savedPlaceId: outcome.savedPlaceId,
+        saveError: null,
+      };
+    }
   }
   return {
     ...batch,
