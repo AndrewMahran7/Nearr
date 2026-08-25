@@ -1,7 +1,7 @@
 {
   "releaseId": "2026-08-24-empty-queue-durable",
-  "previousMainSha": "48f0d5bbb39ca6135451d0c62c69285697187c6a",
-  "previousOtaGroup": "9dda009a-04bf-4a9b-9060-15fe7b2c1891",
+  "previousMainSha": "0637226e6c3f08e6b4721bce0de7af2815bead63",
+  "previousOtaGroup": "6e497e1a-96de-4986-b5b4-533397ec1c71",
   "currentOtaGroup": null,
   "edgeVersions": {
     "process-share-link": 133,
