@@ -1,25 +1,35 @@
 {
   "releaseId": "2026-08-24-vayrin-evidence-first-durable-queue",
   "previousMainSha": "4d6e2900b69be3f3be347aa4cc42d96b079660a4",
-  "previousOtaGroup": "c1482239-3a3a-406a-9ae1-6082d3c6aa85",
-  "currentOtaGroup": null,
+  "initialPreviousOtaGroup": "c1482239-3a3a-406a-9ae1-6082d3c6aa85",
+  "previousOtaGroup": "f9673f37-9a34-4ee6-85e0-d653dda41a31",
+  "currentOtaGroup": "9f05fc85-fca2-465c-8705-48d77935798c",
   "edgeVersions": {
     "process-share-link": 133,
-    "process-share-jobs": 84,
+    "process-share-jobs": 85,
     "create-share-job": 25,
-    "delete-account": 23,
-    "delete-share-job": 0
+    "delete-account": 24,
+    "delete-share-job": 1
   },
-  "railwayDeployment": "1982da61-abbb-44a8-817e-02a4fc998fb2@48f0d5bbb39ca6135451d0c62c69285697187c6a image sha256:ad3a1cbe6b95946ae5b9c5e12d9d1ebe3237f9cd968a8c42fd099d0da1250840",
+  "railwayDeployment": "621dd4b8-9785-4e2c-add2-f26ec4cbf514@72ded8696e1d2df18db290dd8f3d3437fe7387e9 image sha256:dd60d6c618b8a02a2ee6485e5ebddc91ee6ea7737d529bdeb4daba733824647d",
   "migrationLedger": [
+    "20260824225520",
     "20260824233000"
   ],
   "rollbackProcedure": "Repeat the full concurrency guard; republish previousOtaGroup to production; forward-revert the Evidence-First integration; restore Railway deployment 1982da61-abbb-44a8-817e-02a4fc998fb2 and the recorded Edge versions. The additive Evidence migration and private bucket remain in place; do not drop the bucket during rollback.",
-  "deploymentStatus": "PLANNED",
+  "deploymentStatus": "DEPLOYED",
   "physicalQa": {
     "signedOutColdLaunch": "PENDING",
     "signedInColdLaunch": "PENDING",
     "forceCloseRelaunch": "PENDING",
     "freshOnboardingLaunch": "NOT_REQUIRED"
+  },
+  "firstDeployedAt": "2026-08-25T01:21:01.748Z",
+  "deployedAt": "2026-08-25T01:31:19.299Z",
+  "boundedProductionProof": {
+    "correlationId": "nearr-production-qa-20260825012516-51311c43",
+    "result": "19 passed, 0 failed, 0 skipped, 0 warned",
+    "evidenceFrames": 5,
+    "evidenceOrphansAfterDelete": 0
   }
 }
