@@ -2,7 +2,7 @@
   "releaseId": "2026-08-24-place-detail-source-previews",
   "previousMainSha": "0cfabe54e07b9d354945a7a5d6d5cd862a735f12",
   "previousOtaGroup": "09c9f76c-800a-48a3-b4d5-ac3ee0ff78e4",
-  "currentOtaGroup": null,
+  "currentOtaGroup": "f6c0d855-2127-4b63-a5b5-459ea97abc2e",
   "edgeVersions": {
     "process-share-link": 133,
     "process-share-jobs": 86,
@@ -15,11 +15,12 @@
     "20260824233000"
   ],
   "rollbackProcedure": "Repeat the concurrency guard; republish previousOtaGroup to the production channel; forward-revert only the saved-source preview integration commit on main; rerun source-thumbnail, source-enrichment, Place Detail, open-saved-place, evidence lifecycle, startup, release, prebuild, and iOS export gates. Railway, Edge, schema, native code, and EAS Build remain unchanged.",
-  "deploymentStatus": "PLANNED",
+  "deploymentStatus": "DEPLOYED",
   "physicalQa": {
     "signedOutColdLaunch": "PENDING",
     "signedInColdLaunch": "PENDING",
     "forceCloseRelaunch": "PENDING",
     "freshOnboardingLaunch": "NOT_REQUIRED"
-  }
+  },
+  "deployedAt": "2026-08-25T04:14:04.231Z"
 }
