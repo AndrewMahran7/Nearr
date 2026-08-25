@@ -138,7 +138,6 @@ export function clusterMemberKey(memberIds: readonly string[]): string {
 }
 
 type ClusterMarkerIdentity = {
-  id?: string;
   clusterId: number;
   datasetKey?: string;
   clusterKey?: string;
@@ -162,13 +161,6 @@ export function resolveLatestClusterMarker<T extends ClusterMarkerIdentity>(
     ? current.find((candidate) => candidate.clusterKey === tapped.clusterKey)
     : null;
   if (sameMembership) return sameMembership;
-  // A projected cluster deliberately retains the stable visual/native id of
-  // its underlying canonical member set. This repairs the exact selection ->
-  // save -> index rebuild boundary without redirecting to a nearby cluster.
-  const sameVisualOwner = tapped.id
-    ? current.find((candidate) => candidate.id === tapped.id)
-    : null;
-  if (sameVisualOwner) return sameVisualOwner;
   if (!tapped.datasetKey) return null;
   return current.find((candidate) =>
     candidate.datasetKey === tapped.datasetKey && candidate.clusterId === tapped.clusterId,

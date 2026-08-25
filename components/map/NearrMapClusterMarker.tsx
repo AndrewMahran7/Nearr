@@ -109,11 +109,6 @@ function NearrMapClusterMarkerView({ cluster, onPress, dimmed }: Props) {
 
 export const NearrMapClusterMarker = memo(NearrMapClusterMarkerView, (prev, next) =>
   prev.cluster.id === next.cluster.id &&
-  // A stable native owner must still receive the current engine/index payload
-  // so its onPress closure can never resolve against a superseded generation.
-  prev.cluster.datasetKey === next.cluster.datasetKey &&
-  prev.cluster.clusterId === next.cluster.clusterId &&
-  prev.cluster.clusterKey === next.cluster.clusterKey &&
   prev.cluster.count === next.cluster.count &&
   prev.cluster.glyph === next.cluster.glyph &&
   prev.cluster.latitude === next.cluster.latitude &&

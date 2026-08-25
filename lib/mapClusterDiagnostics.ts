@@ -18,9 +18,6 @@ export type MapClusterDiagnostic = {
   event: MapClusterDiagnosticEvent;
   timestamp: number;
   clusterId: number;
-  datasetGeneration?: number;
-  renderedDatasetKey?: string;
-  currentDatasetKey?: string;
   memberCount: number;
   currentZoom: number;
   targetZoom: number;
