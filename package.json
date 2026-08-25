@@ -85,6 +85,7 @@
     "test:map-clustering": "ts-node -P scripts/tsconfig.json scripts/testMapClustering.ts",
     "test:map-cluster-expansion": "ts-node -P scripts/tsconfig.json scripts/testMapClusterExpansion.ts",
     "test:map-reliability": "ts-node -P scripts/tsconfig.json scripts/testMapReliability.ts",
+    "test:map-post-save-reliability": "ts-node -P scripts/tsconfig.json scripts/testMapPostSaveReliability.ts",
     "test:place-image": "ts-node -P scripts/tsconfig.json scripts/testPlaceImage.ts",
     "test:open-original-post": "ts-node -P scripts/tsconfig.json scripts/testOpenOriginalPost.ts",
     "test:share-jobs-ui": "ts-node -P scripts/tsconfig.json scripts/testShareJobsUi.ts",
