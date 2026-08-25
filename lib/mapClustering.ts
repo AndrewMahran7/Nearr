@@ -450,7 +450,12 @@ export function mapClusterIdentity(args: {
   const memberIds = stableMemberIds(args.memberIds);
   const clusterKey = memberIds.join('|');
   return {
-    id: `cluster-${args.datasetKey}-${args.zoom}-${memberIds.length}-${stableHash(clusterKey)}`,
+    // React/native marker ownership follows the visual member set, not the
+    // full index generation. Adding an unrelated saved place changes
+    // `datasetKey`; putting that key in `id` remounted every cluster and could
+    // leave a detached native marker on screen. The engine generation remains
+    // available separately on `datasetKey` for safe tap resolution.
+    id: `cluster-z${args.zoom}-${memberIds.length}-${stableHash(clusterKey)}`,
     clusterKey,
     memberIds,
   };
@@ -477,6 +482,9 @@ export function clusterWithoutSelectedMember(
     cluster: {
       ...cluster,
       ...identity,
+      // Selection is presentation-only. Keep the underlying visual marker
+      // owner mounted while its count/member projection changes.
+      id: cluster.id,
       count: remaining.length,
       engineCount: remaining.length,
       sizing: clusterSizing(remaining.length),
