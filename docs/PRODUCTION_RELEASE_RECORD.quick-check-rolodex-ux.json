@@ -2,7 +2,7 @@
   "releaseId": "2026-08-24-quick-check-rolodex-ux",
   "previousMainSha": "7762d9bc0b5a7ab6bda4332efc9c24fa9a285f41",
   "previousOtaGroup": "eaff2090-c3d7-475b-995d-abe5917038d4",
-  "currentOtaGroup": null,
+  "currentOtaGroup": "09c9f76c-800a-48a3-b4d5-ac3ee0ff78e4",
   "edgeVersions": {
     "process-share-link": 133,
     "process-share-jobs": 86,
@@ -15,11 +15,12 @@
     "20260824233000"
   ],
   "rollbackProcedure": "Repeat the concurrency guard; republish previousOtaGroup to the production channel; forward-revert only the Quick Check rolodex UX integration commit on main; rerun the Quick Check, Multi-Place, photo-carousel, Place Detail, startup, release, prebuild, and iOS export gates. Railway, Edge, schema, native code, and EAS Build remain unchanged.",
-  "deploymentStatus": "PLANNED",
+  "deploymentStatus": "DEPLOYED",
   "physicalQa": {
     "signedOutColdLaunch": "PENDING",
     "signedInColdLaunch": "PENDING",
     "forceCloseRelaunch": "PENDING",
     "freshOnboardingLaunch": "NOT_REQUIRED"
-  }
+  },
+  "deployedAt": "2026-08-25T04:00:19.534Z"
 }
