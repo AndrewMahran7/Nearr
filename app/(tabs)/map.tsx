@@ -29,6 +29,7 @@ import {
   Alert,
   AppState,
   type AppStateStatus,
+  BackHandler,
   Linking,
   PanResponder,
   Platform,
@@ -87,6 +88,8 @@ import {
   MapTopSearchBar,
   NearrMapClusterMarker,
   NearrMapMarker,
+  NearbyMapExplorerCarousel,
+  RecommendedPlaceDetails,
   SelectedPlaceDetails,
   ShareQueueButton,
   getSheetPartialHeight,
@@ -198,6 +201,21 @@ import {
 } from '@/lib/openSavedPlace';
 import { isLikelyUrl } from '@/lib/shareParser';
 import { distanceMeters } from '@/lib/geo';
+import {
+  buildNearbyMapExplorerItems,
+  explorerItemToCandidate,
+  explorerItemToMarkerPlace,
+  explorerItemToRecommendation,
+  explorerItemsForInitialFit,
+  explorerSelectionRegion,
+  explorerSinglePlaceRegion,
+  nearbyExplorerEdgePadding,
+  saveNearbyExplorerItemTransition,
+  shouldRecenterExplorerSelection,
+  type NearbyMapExplorerItem,
+  type NearbyMapExplorerPayload,
+} from '@/lib/nearbyMapExplorer';
+import type { PlaceRecommendation } from '@/lib/placeRecommendations';
 import { getEffectiveNearbyNotificationRadiusMeters } from '@/lib/nearbyEligibility';
 import { savedPlacePinOpacity } from '@/lib/savedPlacePinState';
 import { shouldRefreshVideoAiNoteOnDetailOpen } from '@/lib/videoDerivedAiNote';
@@ -210,6 +228,7 @@ import {
   saveSavedPlace,
 } from '@/services/savedPlacesService';
 import type { PlaceCandidate } from '@/services/placesService';
+import { loadPlaceRecommendations } from '@/services/placeRecommendationsService';
 import type { SavedPlaceWithPlace } from '@/types';
 
 function formatDistanceAway(meters: number): string {
@@ -555,6 +574,25 @@ export default function MapScreen() {
   const [selected, setSelected] = useState<SavedPlaceWithPlace | null>(null);
   const selectedRef = useRef<SavedPlaceWithPlace | null>(null);
   selectedRef.current = selected;
+  const explorerSessionRef = useRef(0);
+  const explorerUserMovedRef = useRef(false);
+  const [nearbyExplorer, setNearbyExplorer] = useState<{
+    sessionId: number;
+    anchorSavedPlaceId: string;
+    originFilter: MapVisibilityFilter;
+    items: NearbyMapExplorerItem[];
+    selectedId: string;
+  } | null>(null);
+  const nearbyExplorerRef = useRef(nearbyExplorer);
+  nearbyExplorerRef.current = nearbyExplorer;
+  const [explorerCarouselHeight, setExplorerCarouselHeight] = useState(0);
+  const [savingExplorerItemId, setSavingExplorerItemId] = useState<string | null>(null);
+  const [selectedExplorerRecommendation, setSelectedExplorerRecommendation] =
+    useState<PlaceRecommendation | null>(null);
+  const [explorerSavedDetailOpen, setExplorerSavedDetailOpen] = useState(false);
+  const explorerSavedDetailOpenRef = useRef(false);
+  explorerSavedDetailOpenRef.current = explorerSavedDetailOpen;
+  const explorerSavedRowsRef = useRef(new Map<string, SavedPlaceWithPlace>());
   // Updated only after a camera gesture completes. Presentation tiers are
   // discrete, so memoized markers never rerender on every pan frame.
   const [markerLatitudeDelta, setMarkerLatitudeDelta] = useState(
@@ -620,32 +658,48 @@ export default function MapScreen() {
   // they just chose otherwise.
   const [mapCategoryFilter, setMapCategoryFilter] = useState<MapVisibilityFilter>(MAP_FILTER_ALL);
 
-  // Chips to offer, derived from what the user actually saved. Normal map
+  const explorerMarkerPlaces = useMemo(
+    () => nearbyExplorer?.items.map(explorerItemToMarkerPlace) ?? [],
+    [nearbyExplorer?.items],
+  );
+  const explorerItemsById = useMemo(
+    () => new Map(nearbyExplorer?.items.map((item) => [item.id, item]) ?? []),
+    [nearbyExplorer?.items],
+  );
+  const selectedMarkerId = nearbyExplorer?.selectedId ?? selected?.id ?? null;
+  const mapPlaces = nearbyExplorer ? explorerMarkerPlaces : validPlaces;
+
+  // Chips to offer, derived from the map's current semantic dataset. Normal map
   // behavior shows only populated groups. During Phase 2 the real Food and
   // Outdoors controls stay visible at zero so a fresh 1/3 map can practice
   // the production filter interaction without introducing a second map UI.
   const mapFilterChoices = useMemo(
     () => mapFilterOptions(
-      validPlaces,
-      phase2MapActive ? PHASE2_REQUIRED_MAP_FILTERS : [],
+      mapPlaces,
+      phase2MapActive && !nearbyExplorer ? PHASE2_REQUIRED_MAP_FILTERS : [],
     ),
-    [phase2MapActive, validPlaces],
+    [mapPlaces, nearbyExplorer, phase2MapActive],
   );
 
   // The markers that actually render. One memoized pass over an array the map
   // already holds — no query, no refetch, no mutation. The selected place is
   // pinned visible so a focused place is never hidden by an active filter.
   const filterEligiblePlaces = useMemo(
-    () => filterPlacesForMap(validPlaces, mapCategoryFilter),
-    [mapCategoryFilter, validPlaces],
+    () => filterPlacesForMap(mapPlaces, mapCategoryFilter),
+    [mapCategoryFilter, mapPlaces],
   );
   const visiblePlaces = useMemo(() => {
-    if (!selected?.id || filterEligiblePlaces.some((place) => place.id === selected.id)) {
+    if (!selectedMarkerId || filterEligiblePlaces.some((place) => place.id === selectedMarkerId)) {
       return filterEligiblePlaces;
     }
-    const liveSelected = validPlaces.find((place) => place.id === selected.id);
+    const liveSelected = mapPlaces.find((place) => place.id === selectedMarkerId);
     return liveSelected ? [...filterEligiblePlaces, liveSelected] : filterEligiblePlaces;
-  }, [filterEligiblePlaces, selected?.id, validPlaces]);
+  }, [filterEligiblePlaces, mapPlaces, selectedMarkerId]);
+  const visibleExplorerItems = useMemo(() => {
+    if (!nearbyExplorer) return [];
+    const visibleIds = new Set(visiblePlaces.map((place) => place.id));
+    return nearbyExplorer.items.filter((item) => visibleIds.has(item.id));
+  }, [nearbyExplorer, visiblePlaces]);
   const visiblePlacesRef = useRef<SavedPlaceWithPlace[]>(visiblePlaces);
   visiblePlacesRef.current = visiblePlaces;
   const mapCategoryFilterRef = useRef<MapVisibilityFilter>(mapCategoryFilter);
@@ -838,7 +892,7 @@ export default function MapScreen() {
   const [previewExpanded, setPreviewExpanded] = useState(false);
   const previewExpandedRef = useRef(false);
   previewExpandedRef.current = previewExpanded;
-  const shouldShowMapControls = shouldRenderMapTopChrome({
+  const shouldShowMapControls = !nearbyExplorer && shouldRenderMapTopChrome({
     searchVisible,
     hasSelectedPlace: !!selected,
     previewExpanded,
@@ -853,6 +907,8 @@ export default function MapScreen() {
    * capsule would be a second copy of a name already visible.
    */
   const selectedPlaceDetailVisible = !!selected;
+  const shouldRenderSelectedPlaceDetail =
+    selectedPlaceDetailVisible && (!nearbyExplorer || explorerSavedDetailOpen);
   const didFitRef = useRef(false);
   // Set to true when the user pans or zooms the map so auto-centering
   // effects don't override the user's chosen viewport.
@@ -880,6 +936,179 @@ export default function MapScreen() {
   // which is exactly what yanked the camera back toward the user's location
   // when a place was closed. Closing UI does not move the camera.
   const lastRegionRef = useRef<Region | null>(null);
+  const fittedExplorerSessionRef = useRef<number | null>(null);
+
+  const closeNearbyExplorer = useCallback(() => {
+    const current = nearbyExplorerRef.current;
+    if (!current) return;
+    const anchor = validPlaces.find((place) => place.id === current.anchorSavedPlaceId);
+    if (anchor) setSelected(anchor);
+    setMapCategoryFilter(current.originFilter);
+    setSelectedExplorerRecommendation(null);
+    setExplorerSavedDetailOpen(false);
+    setNearbyExplorer(null);
+    setSavingExplorerItemId(null);
+    explorerSavedRowsRef.current.clear();
+    previewTranslateY.setValue(0);
+    setPreviewExpanded(true);
+  }, [previewTranslateY, validPlaces]);
+
+  const openNearbyExplorer = useCallback((payload: NearbyMapExplorerPayload) => {
+    const items = buildNearbyMapExplorerItems(payload);
+    const anchor = items.find((item) => item.sourceType === 'anchor') ?? items[0];
+    if (!anchor) return;
+    explorerSessionRef.current += 1;
+    const sessionId = explorerSessionRef.current;
+    fittedExplorerSessionRef.current = null;
+    explorerUserMovedRef.current = false;
+    explorerSavedRowsRef.current.clear();
+    didFitRef.current = true;
+    followModeRef.current = false;
+    setFollowMode(false);
+    setPreviewExpanded(false);
+    setSelectedExplorerRecommendation(null);
+    setExplorerSavedDetailOpen(false);
+    setNearbyExplorer({
+      sessionId,
+      anchorSavedPlaceId: payload.anchor.id,
+      originFilter: mapCategoryFilter,
+      items,
+      selectedId: anchor.id,
+    });
+    void trackEvent('nearby_map_explorer_opened', {
+      anchor_saved_place_id: payload.anchor.id,
+      saved_nearby_count: payload.savedNearby.length,
+      also_nearby_count: payload.alsoNearby.length,
+      visible_count: items.length,
+    });
+
+    if (!payload.recommendationsPending) return;
+    const savedGooglePlaceIds = places
+      .map((entry) => entry.place.google_place_id?.trim())
+      .filter((id): id is string => !!id);
+    void loadPlaceRecommendations({
+      source: {
+        googlePlaceId: payload.anchor.place.google_place_id,
+        name: payload.anchor.place.name,
+        latitude: payload.anchor.place.latitude,
+        longitude: payload.anchor.place.longitude,
+        category: anchor.category,
+      },
+      savedGooglePlaceIds,
+    }).catch((error) => {
+      if (__DEV__) console.debug('[nearby-explorer] recommendations unavailable', error);
+      return [];
+    }).then((alsoNearby) => {
+      setNearbyExplorer((current) => {
+        if (!current || current.sessionId !== sessionId) return current;
+        if (!explorerUserMovedRef.current) fittedExplorerSessionRef.current = null;
+        const nextItems = buildNearbyMapExplorerItems({ ...payload, alsoNearby });
+        return { ...current, items: nextItems };
+      });
+    });
+  }, [mapCategoryFilter, places]);
+
+  const selectNearbyExplorerItem = useCallback(
+    (item: NearbyMapExplorerItem, source: 'card' | 'marker') => {
+      const current = nearbyExplorerRef.current;
+      if (!current) return;
+      if (current.selectedId !== item.id) {
+        setNearbyExplorer({ ...current, selectedId: item.id });
+      }
+      void trackEvent(
+        source === 'card' ? 'nearby_map_card_selected' : 'nearby_map_marker_selected',
+        {
+          anchor_saved_place_id: current.anchorSavedPlaceId,
+          selected_saved_place_id: item.savedPlaceId,
+          provider_place_id: item.providerPlaceId,
+          source_type: item.sourceType,
+          saved: item.savedState === 'saved',
+        },
+      );
+      // Marker taps never move the camera. A deliberate card selection may
+      // gently bring an offscreen target into view while preserving zoom.
+      if (source !== 'card' || !shouldRecenterExplorerSelection(lastRegionRef.current, item)) {
+        return;
+      }
+      try {
+        mapRef.current?.animateToRegion(explorerSelectionRegion(lastRegionRef.current, item), 280);
+      } catch (error) {
+        if (__DEV__) console.debug('[nearby-explorer] selection recenter skipped', error);
+      }
+    },
+    [],
+  );
+
+  const handleOpenExplorerDetails = useCallback(
+    (item: NearbyMapExplorerItem) => {
+      const explorer = nearbyExplorerRef.current;
+      if (explorer && explorer.selectedId !== item.id) {
+        setNearbyExplorer({ ...explorer, selectedId: item.id });
+      }
+      if (item.savedState === 'unsaved') {
+        setSelectedExplorerRecommendation(explorerItemToRecommendation(item));
+        return;
+      }
+      const saved = explorerSavedRowsRef.current.get(item.id) ?? validPlaces.find((candidate) =>
+        candidate.id === item.savedPlaceId ||
+        (!!item.placeId && candidate.place.id === item.placeId) ||
+        (!!item.providerPlaceId && candidate.place.google_place_id === item.providerPlaceId),
+      );
+      if (!saved) {
+        showSnackbar('This saved place is not available right now.', null);
+        return;
+      }
+      setSelected(saved);
+      setExplorerSavedDetailOpen(true);
+      setPreviewExpanded(true);
+      previewTranslateY.setValue(0);
+    },
+    [previewTranslateY, showSnackbar, validPlaces],
+  );
+
+  useEffect(() => {
+    if (!nearbyExplorer) return;
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (selectedExplorerRecommendation) {
+        setSelectedExplorerRecommendation(null);
+      } else if (explorerSavedDetailOpen) {
+        setExplorerSavedDetailOpen(false);
+        setPreviewExpanded(false);
+      } else {
+        closeNearbyExplorer();
+      }
+      return true;
+    });
+    return () => subscription.remove();
+  }, [closeNearbyExplorer, explorerSavedDetailOpen, nearbyExplorer, selectedExplorerRecommendation]);
+
+  useEffect(() => {
+    if (!nearbyExplorer) return;
+    if (!mapReady || explorerCarouselHeight <= 0 || mapAreaHeight <= 0) return;
+    if (fittedExplorerSessionRef.current === nearbyExplorer.sessionId) return;
+    fittedExplorerSessionRef.current = nearbyExplorer.sessionId;
+    const fitItems = explorerItemsForInitialFit(nearbyExplorer.items);
+    if (fitItems.length === 0) return;
+    try {
+      if (fitItems.length === 1) {
+        mapRef.current?.animateToRegion(explorerSinglePlaceRegion(fitItems[0]!), 350);
+      } else {
+        mapRef.current?.fitToCoordinates(
+          fitItems.map((item) => ({ latitude: item.latitude, longitude: item.longitude })),
+          {
+            edgePadding: nearbyExplorerEdgePadding({
+              topInset: safeTopInset,
+              carouselHeight: explorerCarouselHeight,
+              bottomInset: insets.bottom,
+            }),
+            animated: true,
+          },
+        );
+      }
+    } catch (error) {
+      if (__DEV__) console.debug('[nearby-explorer] initial fit skipped', error);
+    }
+  }, [explorerCarouselHeight, insets.bottom, mapAreaHeight, mapReady, nearbyExplorer, safeTopInset]);
 
   // ---- live foreground location tracking --------------------------------
   // A single `watchPositionAsync` subscription, its last-accepted reading (for
@@ -1246,13 +1475,31 @@ export default function MapScreen() {
     const looseMemberIds = new Set<string>();
     for (const node of clusterNodes) {
       if (node.kind !== 'cluster') continue;
-      const projected = clusterWithoutSelectedMember(node, selected?.id, effectiveClusterZoom);
+      const projected = clusterWithoutSelectedMember(node, selectedMarkerId, effectiveClusterZoom);
       if (projected.cluster) clusters.push(projected.cluster);
       if (projected.looseMemberId) looseMemberIds.add(projected.looseMemberId);
     }
     return { clusters, looseMemberIds };
-  }, [clusterNodes, effectiveClusterZoom, selected?.id]);
-  const clusterMarkers = selectedClusterProjection.clusters;
+  }, [clusterNodes, effectiveClusterZoom, selectedMarkerId]);
+  // Explorer saved/recommendation items share this SAME temporary spatial
+  // cluster. A cluster is presentation, never semantic dedupe; its accessible
+  // name reports the composition while individual pins/cards carry save state.
+  const clusterMarkers = useMemo(() => {
+    if (!nearbyExplorer) return selectedClusterProjection.clusters;
+    return selectedClusterProjection.clusters.map((cluster) => {
+      const savedCount = cluster.memberIds.filter(
+        (id) => explorerItemsById.get(id)?.savedState === 'saved',
+      ).length;
+      const recommendationCount = cluster.memberIds.length - savedCount;
+      const parts = [
+        savedCount > 0 ? `${savedCount} saved` : null,
+        recommendationCount > 0
+          ? `${recommendationCount} nearby ${recommendationCount === 1 ? 'recommendation' : 'recommendations'}`
+          : null,
+      ].filter(Boolean).join(', ');
+      return { ...cluster, accessibilityLabel: `${cluster.count} places: ${parts}` };
+    });
+  }, [explorerItemsById, nearbyExplorer, selectedClusterProjection.clusters]);
   const clusterMarkersRef = useRef<MapClusterMarkerModel[]>(clusterMarkers);
   clusterMarkersRef.current = clusterMarkers;
 
@@ -1269,11 +1516,11 @@ export default function MapScreen() {
     return visiblePlaces.filter(
       (place) =>
         alwaysIndividualIds.has(place.id) ||
-        selected?.id === place.id ||
+        selectedMarkerId === place.id ||
         looseIds.has(place.id) ||
         selectedClusterProjection.looseMemberIds.has(place.id),
     );
-  }, [alwaysIndividualIds, clusterNodes, clusteringEnabled, selected?.id, selectedClusterProjection.looseMemberIds, visiblePlaces]);
+  }, [alwaysIndividualIds, clusterNodes, clusteringEnabled, selectedClusterProjection.looseMemberIds, selectedMarkerId, visiblePlaces]);
   const individualPlacesRef = useRef<SavedPlaceWithPlace[]>(individualPlaces);
   individualPlacesRef.current = individualPlaces;
 
@@ -1956,6 +2203,17 @@ export default function MapScreen() {
    * request (recenter, or a deliberate navigation to a place) moves it.
    */
   const dismissSelectedPlace = useCallback(() => {
+    if (nearbyExplorerRef.current) {
+      if (explorerSavedDetailOpenRef.current) {
+        previewTranslateY.stopAnimation();
+        previewTranslateY.setValue(0);
+        setPreviewExpanded(false);
+        setExplorerSavedDetailOpen(false);
+      } else {
+        setSelectedExplorerRecommendation(null);
+      }
+      return;
+    }
     if (!selected) return;
     void closeOnboardingV2PlaceTour(selected.id);
     // Collapsing the place is itself a user action; the confirmation must
@@ -2070,7 +2328,15 @@ export default function MapScreen() {
       console.warn('[map] focus failed', (err as Error)?.message ?? err);
     }
   }
-  selectPlaceRef.current = selectPlace;
+  selectPlaceRef.current = (place) => {
+    const explorer = nearbyExplorerRef.current;
+    const item = explorer?.items.find((candidate) => candidate.id === place.id);
+    if (item) {
+      selectNearbyExplorerItem(item, 'marker');
+      return;
+    }
+    selectPlace(place);
+  };
 
   function focusCorrectedPlace(item: SavedPlaceWithPlace) {
     followModeRef.current = false;
@@ -2091,6 +2357,15 @@ export default function MapScreen() {
   // produced the OutOfMemoryError on the GMS Marker.setIcon side.
   const handleMarkerPress = useCallback((p: SavedPlaceWithPlace) => {
     handleUserInteraction('marker_press');
+    const explorer = nearbyExplorerRef.current;
+    if (explorer) {
+      const item = explorer.items.find((candidate) => candidate.id === p.id);
+      if (item) {
+        selectNearbyExplorerItem(item, 'marker');
+        handleOpenExplorerDetails(item);
+      }
+      return;
+    }
     recordMapReliabilityDiagnostic('map_pin_tap', {
       datasetGeneration: datasetGenerationRef.current.value,
       placeCount: visiblePlacesRef.current.length,
@@ -2103,11 +2378,7 @@ export default function MapScreen() {
       google_place_id: p.place.google_place_id ?? null,
     });
     selectPlace(p);
-    // selectPlace and trackEvent are stable enough in practice (defined
-    // in the component body); we intentionally exclude them from deps
-    // to keep the callback identity stable for the whole session.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [handleOpenExplorerDetails, selectNearbyExplorerItem]);
 
   const handleNearbyReminderGetDirections = useCallback(() => {
     if (!selected) return;
@@ -2261,6 +2532,7 @@ export default function MapScreen() {
   // is set instead of recreating closures or re-writing the ref.
   const handlePanDrag = useCallback(() => {
     if (!hasUserMovedRef.current) hasUserMovedRef.current = true;
+    if (nearbyExplorerRef.current) explorerUserMovedRef.current = true;
     // Manual pan/zoom hands navigation back to the user — stop the camera from
     // chasing new location readings. The user dot keeps updating regardless.
     if (followModeRef.current) {
@@ -2293,6 +2565,7 @@ export default function MapScreen() {
     );
   }, []);
   const handleMapPress = useCallback(() => {
+    if (nearbyExplorerRef.current) return;
     dismissSelectedPlace();
   }, [dismissSelectedPlace]);
 
@@ -2321,8 +2594,12 @@ export default function MapScreen() {
   // the user never sees the add-place radius picker. On success we revalidate
   // the cache, focus the new place, and show an Undo snackbar.
   const handleSavePlaceCandidate = useCallback(
-    async (place: PlaceCandidate, flow: 'map_search' | 'recommendation' = 'map_search') => {
-      if (savingPlace) return false;
+    async (
+      place: PlaceCandidate,
+      flow: 'map_search' | 'recommendation' = 'map_search',
+      selectAfterSave = true,
+    ): Promise<SavedPlaceWithPlace | null> => {
+      if (savingPlace) return null;
       if (flow === 'map_search') setSearchVisible(false);
       setSavingPlace(true);
       try {
@@ -2338,15 +2615,16 @@ export default function MapScreen() {
         // appear until later).
         await refresh();
         if (result.status === 'duplicate') {
-          const existing =
+          const existing = result.saved ?? (
             result.savedPlaceId != null
               ? validPlaces.find((p) => p.id === result.savedPlaceId)
-              : undefined;
-          if (existing) selectPlace(existing);
+              : undefined
+          );
+          if (existing && selectAfterSave) selectPlace(existing);
           showSnackbar('Already on your map', null);
-          return false;
+          return existing ?? null;
         }
-        selectPlace(result.saved);
+        if (selectAfterSave) selectPlace(result.saved);
         showSnackbar('Saved to your map', result.savedPlaceId);
         void trackEvent('save_success', {
           source_type: 'manual',
@@ -2361,17 +2639,64 @@ export default function MapScreen() {
             saved_place_id: result.savedPlaceId,
           });
         }
-        return true;
+        return result.saved;
       } catch (e: any) {
         console.warn('[map] direct save failed', e?.message);
         Alert.alert('Could not save', e?.message ?? 'Please try again.');
-        return false;
+        return null;
       } finally {
         setSavingPlace(false);
       }
     },
     [refresh, savingPlace, validPlaces],
   );
+
+  const handleSaveExplorerRecommendation = useCallback(
+    async (item: NearbyMapExplorerItem): Promise<boolean> => {
+      if (item.savedState === 'saved' || savingExplorerItemId) return false;
+      setSavingExplorerItemId(item.id);
+      try {
+        const saved = await handleSavePlaceCandidate(
+          explorerItemToCandidate(item),
+          'recommendation',
+          false,
+        );
+        if (!saved) return false;
+        explorerSavedRowsRef.current.set(item.id, saved);
+        setNearbyExplorer((current) => {
+          if (!current) return current;
+          const transition = saveNearbyExplorerItemTransition(current.items, item.id, saved);
+          return { ...current, ...transition };
+        });
+        setSelectedExplorerRecommendation(null);
+        void trackEvent('nearby_map_recommendation_saved', {
+          anchor_saved_place_id: nearbyExplorerRef.current?.anchorSavedPlaceId ?? null,
+          provider_place_id: item.providerPlaceId,
+          saved_place_id: saved.id,
+        });
+        return true;
+      } finally {
+        setSavingExplorerItemId(null);
+      }
+    },
+    [handleSavePlaceCandidate, savingExplorerItemId],
+  );
+
+  const handleExplorerDirections = useCallback((item: NearbyMapExplorerItem) => {
+    void trackEvent('open_in_maps_tapped', {
+      saved_place_id: item.savedPlaceId,
+      google_place_id: item.providerPlaceId,
+      surface: 'nearby_map_explorer',
+    });
+    void openInExternalMaps({
+      google_maps_url: item.googleMapsUrl,
+      google_place_id: item.providerPlaceId,
+      latitude: item.latitude,
+      longitude: item.longitude,
+      name: item.name,
+      formatted_address: item.address,
+    });
+  }, []);
 
   // Undo a just-saved place: optimistically remove it from the shared cache
   // (marker disappears on every screen at once), clear the selection if it is
@@ -2507,9 +2832,9 @@ export default function MapScreen() {
             Archived places are rendered without a radius circle to keep
             the active set visually quiet. */}
         {individualPlaces.map((p) => (
-          !shouldRenderZoneCircle({
-            isSelected: selected?.id === p.id,
-            hasSelection: !!selected,
+          nearbyExplorer || !shouldRenderZoneCircle({
+            isSelected: selectedMarkerId === p.id,
+            hasSelection: !!selectedMarkerId,
             isArchived: !!p.archived_at,
             visibleCount: individualPlaces.length,
           }) ? null : (
@@ -2521,15 +2846,15 @@ export default function MapScreen() {
               }}
               radius={effectiveRadiusMeters(p)}
               strokeColor={
-                selected?.id === p.id
+                selectedMarkerId === p.id
                   ? 'rgba(255,106,26,0.52)'
                   : mapGroupRequest && !mapGroupCoordinateIds.has(p.id)
                     ? 'rgba(255,106,26,0.035)'
                   : 'rgba(255,106,26,0.14)'
               }
-              strokeWidth={selected?.id === p.id ? 2 : 1}
+              strokeWidth={selectedMarkerId === p.id ? 2 : 1}
               fillColor={
-                selected?.id === p.id
+                selectedMarkerId === p.id
                   ? 'rgba(255,106,26,0.12)'
                   : mapGroupRequest && !mapGroupCoordinateIds.has(p.id)
                     ? 'rgba(255,106,26,0.012)'
@@ -2552,14 +2877,21 @@ export default function MapScreen() {
             place={p}
             markerRefs={markerRefs}
             onPress={handleMarkerPress}
-            dimmed={!!mapGroupRequest && !mapGroupCoordinateIds.has(p.id)}
-            selected={selected?.id === p.id}
+            dimmed={nearbyExplorer ? false : !!mapGroupRequest && !mapGroupCoordinateIds.has(p.id)}
+            selected={selectedMarkerId === p.id}
             // Scoped to the selected marker on purpose: an unselected pin's
             // value never changes when a detail opens, so its memo still holds
             // and the Android bitmap path is not re-armed map-wide.
-            detailVisible={selectedPlaceDetailVisible && selected?.id === p.id}
+            detailVisible={
+              nearbyExplorer
+                ? selectedMarkerId === p.id
+                : selectedPlaceDetailVisible && selected?.id === p.id
+            }
             detailLevel={markerDetailLevel}
             redesignEnabled={mapPinRedesignActive}
+            savedState={explorerItemsById.get(p.id)?.savedState !== 'unsaved'}
+            photoUri={explorerItemsById.get(p.id)?.photoUrl ?? undefined}
+            accessibilityHint={nearbyExplorer ? 'Opens this nearby place' : undefined}
           />
         ))}
       </MapView>
@@ -2622,7 +2954,7 @@ export default function MapScreen() {
       ) : null}
 
       {/* Preview card */}
-      {selected && selectedPlaceDetailVisible ? (
+      {selected && shouldRenderSelectedPlaceDetail ? (
         <Animated.View
           onStartShouldSetResponderCapture={() => {
             handleUserInteraction('press');
@@ -2753,15 +3085,13 @@ export default function MapScreen() {
                     selectPlace(next);
                     setPreviewExpanded(true);
                   }}
-                  onSaveRecommendation={(candidate) =>
-                    handleSavePlaceCandidate(candidate, 'recommendation')
+                  onSaveRecommendation={async (candidate) =>
+                    !!(await handleSavePlaceCandidate(candidate, 'recommendation'))
                   }
                   onGetDirections={() => openExternalMaps(selected)}
-                  // "See map" collapses back to the preview card so the pins
-                  // are visible again. It is deliberately NOT a dismiss: the
-                  // place stays selected and its marker stays focused, and the
-                  // camera is not touched (79e5fba).
-                  onSeeMap={() => setPreviewExpanded(false)}
+                  // The existing detail owns discovery; the production map
+                  // owns every explorer marker, cluster, filter, and camera.
+                  onSeeMap={openNearbyExplorer}
                   onRequestDismiss={() => dismissSelectedPlace()}
                   onSaved={(updated) => setSelected(updated)}
                   onCorrected={focusCorrectedPlace}
@@ -2835,7 +3165,7 @@ export default function MapScreen() {
         </Animated.View>
       ) : null}
 
-      {mapGroupRequest && resolvedMapGroup.places.length > 0 && !previewExpanded ? (
+      {!nearbyExplorer && mapGroupRequest && resolvedMapGroup.places.length > 0 && !previewExpanded ? (
         <View
           style={[
             styles.mapGroupWrap,
@@ -2874,6 +3204,17 @@ export default function MapScreen() {
         </View>
       ) : null}
 
+      {nearbyExplorer ? (
+        <View style={styles.explorerFilterChrome} pointerEvents="box-none">
+          <MapCategoryFilterBar
+            options={mapFilterChoices}
+            value={mapCategoryFilter}
+            onChange={handleSelectMapCategory}
+            onFitAll={visiblePlaces.length > 0 && !mapPreview ? fitVisiblePlaces : undefined}
+          />
+        </View>
+      ) : null}
+
       {/* The Queue is the user's INBOX, not map-selection chrome, so it is
           deliberately NOT gated on `shouldShowMapControls`. It used to live
           inside the block above and vanished with the search bar and filter
@@ -2884,7 +3225,7 @@ export default function MapScreen() {
           (below the filter row, left-aligned) so nothing else moves, and it
           still hides behind the search dropdown, which owns the whole screen.
           Regression covered by scripts/testMapQueueEntryPoint.ts. */}
-      {!searchVisible ? (
+      {!searchVisible && !nearbyExplorer ? (
         <View
           style={[
             styles.queueChrome,
@@ -2904,7 +3245,7 @@ export default function MapScreen() {
       {/* Floating right-side actions: recenter + orange paste-link. Hidden
           while a preview card is showing or the sheet is full so they never
           overlap. They follow the sheet's top edge via `actionsLift`. */}
-      {selected || sheetSnap === 'full' ? null : (
+      {nearbyExplorer || selected || sheetSnap === 'full' ? null : (
         <FloatingMapActions
           onRecenter={recenterOnUser}
           onPasteLink={handlePasteLink}
@@ -2915,7 +3256,7 @@ export default function MapScreen() {
       {/* Map-first bottom sheet. Hidden while a place is selected so the
           existing selected-place preview card (rendered above) is the single
           bottom surface — the smallest safe way to avoid overlap this phase. */}
-      {selected || mapGroupRequest ? null : (
+      {nearbyExplorer || selected || mapGroupRequest ? null : (
         <MapBottomSheet
           mode={sheetMode}
           loading={liveLoading}
@@ -2939,6 +3280,32 @@ export default function MapScreen() {
         />
       )}
 
+      {nearbyExplorer && !explorerSavedDetailOpen ? (
+        <NearbyMapExplorerCarousel
+          items={visibleExplorerItems}
+          selectedId={nearbyExplorer.selectedId}
+          savingItemId={savingExplorerItemId}
+          onHeightChange={setExplorerCarouselHeight}
+          onSelect={(item) => selectNearbyExplorerItem(item, 'card')}
+          onOpenDetails={handleOpenExplorerDetails}
+          onDirections={handleExplorerDirections}
+          onSave={(item) => void handleSaveExplorerRecommendation(item)}
+          onClose={closeNearbyExplorer}
+        />
+      ) : null}
+
+      <RecommendedPlaceDetails
+        recommendation={selectedExplorerRecommendation}
+        backAccessibilityLabel="Back to nearby map"
+        onClose={() => setSelectedExplorerRecommendation(null)}
+        onSave={async (candidate) => {
+          const item = nearbyExplorerRef.current?.items.find(
+            (entry) => entry.providerPlaceId === candidate.googlePlaceId,
+          );
+          return item ? !!(await handleSaveExplorerRecommendation(item)) : false;
+        }}
+      />
+
       {/* Compact place-search dropdown — searches REAL places (Google Places
           via usePlacesSearch), not saved places. Tapping a result direct-saves
           it to the map with the automatic category radius (no add-place screens). */}
@@ -2956,7 +3323,9 @@ export default function MapScreen() {
         visible={!!snackbar}
         message={snackbar?.message ?? ''}
         bottomOffset={
-          (selected
+          (nearbyExplorer
+            ? explorerCarouselHeight + Spacing.md
+            : selected
             ? 264
             : mapGroupRequest
               ? mapGroupSelectorHeight + Spacing.xl
@@ -2989,6 +3358,13 @@ function createStyles(
   container: { flex: 1, backgroundColor: colors.bg },
 
   topChrome: {
+    position: 'absolute',
+    top: insetTop + Spacing.md,
+    left: Spacing.lg,
+    right: Spacing.lg,
+  },
+
+  explorerFilterChrome: {
     position: 'absolute',
     top: insetTop + Spacing.md,
     left: Spacing.lg,

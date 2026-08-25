@@ -34,13 +34,19 @@ type Props = {
   recommendation: PlaceRecommendation | null;
   onClose: () => void;
   onSave?: (recommendation: PlaceRecommendation) => Promise<boolean>;
+  backAccessibilityLabel?: string;
 };
 
 /**
  * Read-only detail for an unsaved recommendation. Opening this view never
  * saves; the only mutation is the explicit "Save place" button.
  */
-export function RecommendedPlaceDetails({ recommendation, onClose, onSave }: Props) {
+export function RecommendedPlaceDetails({
+  recommendation,
+  onClose,
+  onSave,
+  backAccessibilityLabel = 'Close nearby place',
+}: Props) {
   const { colors, typography } = useTheme();
   const insets = useSafeAreaInsets();
   const { width: viewportWidth } = useWindowDimensions();
@@ -128,7 +134,7 @@ export function RecommendedPlaceDetails({ recommendation, onClose, onSave }: Pro
           <Pressable
             onPress={onClose}
             accessibilityRole="button"
-            accessibilityLabel="Close nearby place"
+            accessibilityLabel={backAccessibilityLabel}
             hitSlop={10}
             style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}
           >

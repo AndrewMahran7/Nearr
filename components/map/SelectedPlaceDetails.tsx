@@ -130,6 +130,7 @@ import {
 import { getCachedPlaceRichDetails } from '@/lib/placeRichDetailsCache';
 import { loadPlaceRecommendations } from '@/services/placeRecommendationsService';
 import type { PlaceRecommendation } from '@/lib/placeRecommendations';
+import type { NearbyMapExplorerPayload } from '@/lib/nearbyMapExplorer';
 import type { PlaceCandidate, PlaceRichDetails } from '@/services/placesService';
 import type { RadiusUnit, SavedPlaceWithPlace } from '@/types';
 
@@ -225,11 +226,10 @@ type Props = {
   /** Open the platform maps app for this place (map screen owns this). */
   onGetDirections: () => void;
   /**
-   * Collapse back to the map with this place still selected. Used by "See map"
-   * on the Also nearby header — it is a contraction, not a dismissal, and it
-   * never moves the camera.
+   * Hand the current nearby projection to the production map. Used by
+   * "See map" on Saved nearby / Also nearby; no route is pushed.
    */
-  onSeeMap?: () => void;
+  onSeeMap?: (payload: NearbyMapExplorerPayload) => void;
   /** Called after a successful delete so the map can dismiss the sheet. */
   onRequestDismiss: () => void;
   /** Called after a successful save so the map can refresh its `selected`. */
@@ -663,6 +663,14 @@ export function SelectedPlaceDetails({
       }),
     [recommendations, saved.id],
   );
+  const openNearbyMapExplorer = useCallback(() => {
+    onSeeMap?.({
+      anchor: saved,
+      savedNearby: alsoNearby,
+      alsoNearby: recommendations,
+      recommendationsPending: recommendationsLoading,
+    });
+  }, [alsoNearby, onSeeMap, recommendations, recommendationsLoading, saved]);
   const reminderStatus = useMemo(
     () => reminderStatusLabel({
       enabled: notifyOn,
@@ -1707,13 +1715,18 @@ export function SelectedPlaceDetails({
         <PlaceCardRow
           title="Saved nearby"
           entries={alsoNearbyEntries}
-          actionLabel={onSeeMap ? 'See map' : undefined}
-          onAction={onSeeMap}
+          actionLabel={onSeeMap && recommendationEntries.length === 0 ? 'See map' : undefined}
+          onAction={onSeeMap && recommendationEntries.length === 0 ? openNearbyMapExplorer : undefined}
         />
       ) : null}
 
       {recommendationsEnabled && recommendationEntries.length > 0 ? (
-        <PlaceCardRow title="Also nearby" entries={recommendationEntries} />
+        <PlaceCardRow
+          title="Also nearby"
+          entries={recommendationEntries}
+          actionLabel={onSeeMap ? 'See map' : undefined}
+          onAction={onSeeMap ? openNearbyMapExplorer : undefined}
+        />
       ) : recommendationsEnabled && recommendationsLoading ? (
         <View style={styles.recommendationsLoading} accessibilityLabel="Loading nearby places">
           <ActivityIndicator size="small" color={colors.accent} />

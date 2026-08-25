@@ -69,7 +69,7 @@ assert.match(detail, /onboardingState\.tutorialSave\?\.savedPlaceId === saved\.i
 assert.doesNotMatch(detail, /closeOnboardingV2PlaceTour/);
 assert.match(
   map,
-  /const dismissSelectedPlace[\s\S]{0,180}closeOnboardingV2PlaceTour\(selected\.id\)/,
+  /const dismissSelectedPlace[\s\S]{0,800}closeOnboardingV2PlaceTour\(selected\.id\)/,
   'map dismissal owns the single durable Place Detail close transition',
 );
 

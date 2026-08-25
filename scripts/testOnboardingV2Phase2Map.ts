@@ -127,7 +127,7 @@ assert.match(map, /<ShareQueueButton \/>/);
 assert.match(map, /<MapBottomSheet/);
 assert.match(
   map,
-  /mapFilterOptions\(\s*validPlaces,\s*phase2MapActive \? PHASE2_REQUIRED_MAP_FILTERS : \[\],\s*\)/,
+  /mapFilterOptions\(\s*mapPlaces,\s*phase2MapActive && !nearbyExplorer \? PHASE2_REQUIRED_MAP_FILTERS : \[\],\s*\)/,
 );
 assert.match(
   map,

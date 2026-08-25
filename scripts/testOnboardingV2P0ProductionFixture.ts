@@ -175,16 +175,16 @@ for (const fixture of [
 }
 
 // Verify the production component wiring, not just helper outputs.
-assert.match(mapSource, /mapFilterOptions\(\s*validPlaces,\s*phase2MapActive \? PHASE2_REQUIRED_MAP_FILTERS : \[\],\s*\)/);
+assert.match(mapSource, /mapFilterOptions\(\s*mapPlaces,\s*phase2MapActive && !nearbyExplorer \? PHASE2_REQUIRED_MAP_FILTERS : \[\],\s*\)/);
 assert.match(mapSource, /<MapCategoryFilterBar\s+options=\{mapFilterChoices\}/);
-assert.match(mapSource, /!searchVisible \? \([\s\S]{0,700}<ShareQueueButton \/>/);
+assert.match(mapSource, /!searchVisible && !nearbyExplorer \? \([\s\S]{0,700}<ShareQueueButton \/>/);
 assert.match(mapSource, /<OnboardingV2MapCoachmark topOffset=\{phase2MapLayout\.dockTop\} \/>/);
 assert.match(coachSource, /resolveOnboardingV2VisibleOwner/);
 assert.doesNotMatch(coachSource, /PHASE2_MAP_CHROME_CLEARANCE|useSafeAreaInsets/);
 
 const detailSource = readFileSync(join(root, 'components/map/SelectedPlaceDetails.tsx'), 'utf8');
 assert.doesNotMatch(detailSource, /closeOnboardingV2PlaceTour/);
-assert.match(mapSource, /const dismissSelectedPlace[\s\S]{0,180}closeOnboardingV2PlaceTour\(selected\.id\)/);
+assert.match(mapSource, /const dismissSelectedPlace[\s\S]{0,800}closeOnboardingV2PlaceTour\(selected\.id\)/);
 
 console.log('POST-FIX PRODUCTION CHECKPOINT PROMOTES TO VISIBLE PHASE 2: YES');
 console.log('POST-FIX MAP FILTERS AND QUEUE ARE VISIBLE AT 1/3: YES');

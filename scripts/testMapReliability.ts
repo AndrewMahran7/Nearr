@@ -513,7 +513,7 @@ assert.equal(getMapReliabilityDiagnostics().length, 80);
 const mapSource = readFileSync(join(process.cwd(), 'app/(tabs)/map.tsx'), 'utf8');
 assert.match(mapSource, /viewportWidth: windowWidth/);
 assert.match(mapSource, /assertMarkerConservation\(args\)/);
-assert.match(mapSource, /clusterWithoutSelectedMember\(node, selected\?\.id/);
+assert.match(mapSource, /clusterWithoutSelectedMember\(node, selectedMarkerId/);
 assert.match(mapSource, /recordMapReliabilityDiagnostic\('map_pin_tap'/);
 assert.match(mapSource, /recordMapReliabilityDiagnostic\('map_cluster_tap'/);
 

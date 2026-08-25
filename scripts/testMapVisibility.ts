@@ -189,12 +189,12 @@ assert.match(map, /onFitAll=\{visiblePlaces\.length > 0/, 'fit-all lives on the 
 assert.match(map, /setMapCategoryFilter\(MAP_FILTER_ALL\);\s*\n\s*if \(reminderOpen\)/, 'deep links reset the filter');
 assert.match(
   map,
-  /filterPlacesForMap\(validPlaces, mapCategoryFilter\)/,
+  /filterPlacesForMap\(mapPlaces, mapCategoryFilter\)/,
   'the filter-eligible dataset is stable when selection changes',
 );
 assert.match(
   map,
-  /filterEligiblePlaces\.some\(\(place\) => place\.id === selected\.id\)/,
+  /filterEligiblePlaces\.some\(\(place\) => place\.id === selectedMarkerId\)/,
   'a selected place already eligible under the filter is not duplicated',
 );
 assert.match(

@@ -17,3 +17,5 @@ export { SelectedPlaceDetails } from './SelectedPlaceDetails';
 export { ShareQueueButton } from './ShareQueueButton';
 export { NearrMapMarker } from './NearrMapMarker';
 export { NearrMapClusterMarker } from './NearrMapClusterMarker';
+export { NearbyMapExplorerCarousel } from './NearbyMapExplorerCarousel';
+export { RecommendedPlaceDetails } from './RecommendedPlaceDetails';

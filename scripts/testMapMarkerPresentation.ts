@@ -185,10 +185,11 @@ assert.match(mapSource, /redesignEnabled=\{mapPinRedesignActive\}/);
 // The rule is driven by the same flag that mounts the Place Detail card, not
 // by a layout measurement, and it is scoped to the selected marker.
 assert.match(mapSource, /const selectedPlaceDetailVisible = !!selected;/);
-assert.match(mapSource, /\{selected && selectedPlaceDetailVisible \? \(/);
+assert.match(mapSource, /const shouldRenderSelectedPlaceDetail =/);
+assert.match(mapSource, /\{selected && shouldRenderSelectedPlaceDetail \? \(/);
 assert.match(
   mapSource,
-  /detailVisible=\{selectedPlaceDetailVisible && selected\?\.id === p\.id\}/,
+  /: selectedPlaceDetailVisible && selected\?\.id === p\.id/,
 );
 assert.match(componentSource, /accessibilityLabel=\{presentation\.accessibilityLabel\}/);
 assert.match(componentSource, /const showsLabel = presentation\.showLabel;/);

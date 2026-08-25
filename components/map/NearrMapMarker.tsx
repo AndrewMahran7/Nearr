@@ -44,6 +44,11 @@ type Props = {
   detailVisible: boolean;
   detailLevel: MapMarkerDetailLevel;
   redesignEnabled: boolean;
+  /** Explorer recommendations use the current marker without implying a save. */
+  savedState?: boolean;
+  /** Bounded thumbnail already returned by the nearby recommendation request. */
+  photoUri?: string | null;
+  accessibilityHint?: string;
 };
 
 const PHOTO_TRACKING_SAFETY_MS = 2500;
@@ -72,6 +77,9 @@ function NearrMapMarkerView({
   detailVisible,
   detailLevel,
   redesignEnabled,
+  savedState = true,
+  photoUri: suppliedPhotoUri,
+  accessibilityHint,
 }: Props) {
   const [tracksViewChanges, setTracksViewChanges] = useState(true);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
@@ -91,8 +99,9 @@ function NearrMapMarkerView({
     let cancelled = false;
     const googlePlaceId = place.place.google_place_id?.trim() || null;
 
-    setPhotoUri(null);
+    setPhotoUri(suppliedPhotoUri?.trim() || null);
     setPhotoFailed(false);
+    if (suppliedPhotoUri?.trim()) return () => { cancelled = true; };
     if (!redesignEnabled || !selected || !googlePlaceId) return () => { cancelled = true; };
 
     // The selected Place Detail uses this same in-memory cache. Concurrent
@@ -111,7 +120,7 @@ function NearrMapMarkerView({
     return () => {
       cancelled = true;
     };
-  }, [place.id, place.place.google_place_id, redesignEnabled, selected]);
+  }, [place.id, place.place.google_place_id, redesignEnabled, selected, suppliedPhotoUri]);
 
   const presentation = useMemo(
     () => savedMarkerPresentation(place, {
@@ -120,8 +129,9 @@ function NearrMapMarkerView({
       photoUri,
       photoFailed,
       detailVisible,
+      savedState,
     }),
-    [detailLevel, detailVisible, photoFailed, photoUri, place, selected],
+    [detailLevel, detailVisible, photoFailed, photoUri, place, savedState, selected],
   );
 
   // The label capsule is part of the rasterized visual, so its presence also
@@ -207,7 +217,7 @@ function NearrMapMarkerView({
       accessible
       accessibilityRole="button"
       accessibilityLabel={presentation.accessibilityLabel}
-      accessibilityHint="Opens saved place details"
+      accessibilityHint={accessibilityHint ?? 'Opens saved place details'}
       accessibilityState={{ selected }}
     >
       {!redesignEnabled ? (
@@ -250,7 +260,7 @@ function NearrMapMarkerView({
                 color={selected ? '#FFF7ED' : '#282421'}
               />
             )}
-            {!selected && detailLevel !== 'dense' ? <View style={styles.savedDot} /> : null}
+            {savedState && !selected && detailLevel !== 'dense' ? <View style={styles.savedDot} /> : null}
           </View>
           {showsLabel ? (
             <View style={styles.labelCapsule}>
@@ -283,6 +293,9 @@ export const NearrMapMarker = memo(NearrMapMarkerView, (prev, next) =>
   prev.detailVisible === next.detailVisible &&
   prev.detailLevel === next.detailLevel &&
   prev.redesignEnabled === next.redesignEnabled &&
+  prev.savedState === next.savedState &&
+  prev.photoUri === next.photoUri &&
+  prev.accessibilityHint === next.accessibilityHint &&
   prev.onPress === next.onPress,
 );
 

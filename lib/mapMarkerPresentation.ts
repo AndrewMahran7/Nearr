@@ -111,9 +111,12 @@ export type SavedMarkerPresentation = {
 export function savedMarkerAccessibilityLabel(
   saved: SavedPlaceWithPlace,
   selected: boolean,
+  savedState = true,
 ): string {
   const category = savedPlaceCategory(saved);
-  const prefix = selected ? 'Selected saved' : 'Saved';
+  const prefix = savedState
+    ? selected ? 'Selected saved' : 'Saved'
+    : selected ? 'Selected unsaved' : 'Unsaved';
   return `${prefix} ${CATEGORY_LABELS[category].toLowerCase()}, ${saved.place.name}`;
 }
 
@@ -124,6 +127,8 @@ export function savedMarkerPresentation(
     selected: boolean;
     photoUri?: string | null;
     photoFailed?: boolean;
+    /** Defaults true for the ordinary saved-place map. */
+    savedState?: boolean;
     /**
      * True while the selected place's own Place Detail card is on screen. That
      * card already titles the place, so repeating the name on the pin is pure
@@ -148,6 +153,10 @@ export function savedMarkerPresentation(
     visual: usePhoto ? 'photo' : 'category',
     photoUri: usePhoto ? photoUri : null,
     showLabel: input.selected && !input.detailVisible,
-    accessibilityLabel: savedMarkerAccessibilityLabel(saved, input.selected),
+    accessibilityLabel: savedMarkerAccessibilityLabel(
+      saved,
+      input.selected,
+      input.savedState ?? true,
+    ),
   };
 }
