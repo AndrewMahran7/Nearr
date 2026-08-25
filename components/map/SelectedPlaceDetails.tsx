@@ -92,8 +92,10 @@ import { selectSameSourcePlaces } from '@/lib/sameSourcePlaces';
 import { savedPlaceRemovalCopy } from '@/lib/savedPlaceRemoval';
 import { resolvePlaceSource } from '@/lib/placeSource';
 import { placeSourceCards, shouldShowMoreVideos } from '@/lib/placeSources';
+import { placeSourcePreviewCandidates } from '@/lib/placeSourcePreviews';
 import { splitPlaceAddress } from '@/lib/sharePhase1Ui';
 import { deleteSavedPlace, markVisited, updateSavedPlace } from '@/services/savedPlacesService';
+import { loadPlaceSourceEvidencePreviewUrls } from '@/services/placeSourcePreviewsService';
 import { CATEGORY_LABELS, savedPlaceCategory, type NearrCategory } from '@/lib/placeCategory';
 import {
   getSavedPlacesCacheSnapshot,
@@ -107,6 +109,7 @@ import type { PlaceRecommendation } from '@/lib/placeRecommendations';
 import type { NearbyMapExplorerPayload } from '@/lib/nearbyMapExplorer';
 import type { PlaceCandidate, PlaceRichDetails } from '@/services/placesService';
 import type { RadiusUnit, SavedPlaceWithPlace } from '@/types';
+import { logDebug } from '@/lib/logger';
 
 /**
  * Category glyphs for the hero's context line. Ionicons only (already bundled
@@ -253,6 +256,8 @@ export function SelectedPlaceDetails({
   const [richDetails, setRichDetails] = useState<PlaceRichDetails | null>(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [failedPhotoUrls, setFailedPhotoUrls] = useState<Record<string, true>>({});
+  const [sourceEvidencePreviewUrls, setSourceEvidencePreviewUrls] = useState<Record<string, string>>({});
+  const [failedSourcePreviewUrls, setFailedSourcePreviewUrls] = useState<Record<string, true>>({});
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [galleryIndex, setGalleryIndex] = useState(0);
   const [wrongPlaceOpen, setWrongPlaceOpen] = useState(false);
@@ -430,6 +435,38 @@ export function SelectedPlaceDetails({
   // Only offer the "open original" affordance when a non-empty source URL is
   // actually stored (share/paste flows). Manual saves have none → no button.
   const sourceCards = useMemo(() => placeSourceCards(saved), [saved]);
+  const sourceCardsKey = sourceCards
+    .map((source) => `${source.key}|${source.url}|${source.thumbnailUrl ?? ''}`)
+    .join('\n');
+
+  // Retained evidence is an enhancement, never a gate for opening the sheet.
+  // Match every frame to its exact source post, then let the renderer fall
+  // through to the stored source thumbnail (and finally the platform tile).
+  useEffect(() => {
+    let canceled = false;
+    setSourceEvidencePreviewUrls({});
+    setFailedSourcePreviewUrls({});
+    if (!shouldShowMoreVideos(sourceCards)) {
+      return () => {
+        canceled = true;
+      };
+    }
+
+    void loadPlaceSourceEvidencePreviewUrls(saved.id, sourceCards)
+      .then((urls) => {
+        if (!canceled) setSourceEvidencePreviewUrls(urls);
+      })
+      .catch((error) => {
+        logDebug('place-source-previews', `load failed: ${error instanceof Error ? error.message : 'unknown'}`);
+      });
+
+    return () => {
+      canceled = true;
+    };
+    // A stable projection avoids refetching after unrelated Saved Place edits.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [saved.id, sourceCardsKey]);
+
   const primarySource = sourceCards.find((source) => source.primary) ?? sourceCards[0] ?? null;
   const sourceUrl = primarySource?.url ??
     (saved.source_url && saved.source_url.trim() ? saved.source_url.trim() : null);
@@ -1329,6 +1366,10 @@ export function SelectedPlaceDetails({
                 source_url: item.url,
               });
               if (!attribution) return null;
+              const previewUrl = placeSourcePreviewCandidates(
+                sourceEvidencePreviewUrls[item.key],
+                item.thumbnailUrl,
+              ).find((url) => !failedSourcePreviewUrls[url]) ?? null;
               return (
                 <Pressable
                   onPress={() => { void openSourceCard(item.url, attribution.platformName); }}
@@ -1337,8 +1378,18 @@ export function SelectedPlaceDetails({
                   style={({ pressed }) => [styles.sourceCard, pressed && styles.pressed]}
                 >
                   <View style={styles.sourceCardMedia}>
-                    {item.thumbnailUrl ? (
-                      <Image source={{ uri: item.thumbnailUrl }} style={styles.sourceCardImage} resizeMode="cover" />
+                    {previewUrl ? (
+                      <Image
+                        source={{ uri: previewUrl }}
+                        style={styles.sourceCardImage}
+                        resizeMode="cover"
+                        accessible={false}
+                        onError={() => {
+                          setFailedSourcePreviewUrls((current) => current[previewUrl]
+                            ? current
+                            : { ...current, [previewUrl]: true });
+                        }}
+                      />
                     ) : (
                       <Ionicons
                         name={attribution.brandIcon as React.ComponentProps<typeof Ionicons>['name']}

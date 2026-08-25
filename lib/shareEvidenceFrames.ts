@@ -17,12 +17,12 @@ export type ResolvedShareEvidenceFrame = ShareJobEvidenceFrame & {
 type CachedUrl = { uri: string; expiresAt: number };
 const signedUrlCache = new Map<string, CachedUrl>();
 
-/** Resolve all private frame references in one bounded Storage request. */
-export async function resolveShareEvidenceFrames(
+async function resolveFrames(
   frames: readonly ShareJobEvidenceFrame[],
-  now = Date.now(),
+  limit: number,
+  now: number,
 ): Promise<ResolvedShareEvidenceFrame[]> {
-  const bounded = frames.slice(0, MAX_RETAINED_EVIDENCE_FRAMES);
+  const bounded = frames.slice(0, limit);
   const missingPaths = [...new Set(bounded.flatMap((frame) => {
     if (frame.url || !frame.storagePath) return [];
     const cached = signedUrlCache.get(frame.storagePath);
@@ -49,6 +49,25 @@ export async function resolveShareEvidenceFrames(
     ...frame,
     uri: frame.url ?? (frame.storagePath ? signedUrlCache.get(frame.storagePath)?.uri ?? null : null),
   }));
+}
+
+/** Resolve all private frame references in one bounded Storage request. */
+export async function resolveShareEvidenceFrames(
+  frames: readonly ShareJobEvidenceFrame[],
+  now = Date.now(),
+): Promise<ResolvedShareEvidenceFrame[]> {
+  return resolveFrames(frames, MAX_RETAINED_EVIDENCE_FRAMES, now);
+}
+
+/** Resolve one already-selected frame per source card in one Storage request.
+ * The per-job retention cap above remains unchanged; this larger presentation
+ * bound only prevents a many-source place from issuing one signing request per
+ * card. */
+export async function resolveShareEvidenceFramePreviews(
+  frames: readonly ShareJobEvidenceFrame[],
+  now = Date.now(),
+): Promise<ResolvedShareEvidenceFrame[]> {
+  return resolveFrames(frames, 20, now);
 }
 
 export function clearShareEvidenceFrameUrlCache(): void {
