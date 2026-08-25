@@ -1,7 +1,7 @@
 {
   "releaseId": "2026-08-24-context-aware-places-resolution",
   "previousMainSha": "0bd1e121d10ab062e41b0d08bd223812b082fa1b",
-  "previousOtaGroup": "65089c3b-bf7f-4cee-8a47-96dfdab97131",
+  "previousOtaGroup": "89251a45-7b07-4780-8024-20898af40a5e",
   "currentOtaGroup": null,
   "edgeVersions": {
     "process-share-link": 132,
