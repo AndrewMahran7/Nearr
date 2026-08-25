@@ -17,9 +17,9 @@
   "rollbackProcedure": "Repeat the concurrency guard; republish previousOtaGroup to the production channel; forward-revert only the Nearby Map Explorer integration commit on main; rerun the explorer, recommendation, map reliability, cluster, startup, release, prebuild, and iOS export gates. Railway, Edge, and schema remain unchanged.",
   "deploymentStatus": "PLANNED",
   "physicalQa": {
-    "signedOutColdLaunch": "NOT_REQUIRED",
+    "signedOutColdLaunch": "PENDING",
     "signedInColdLaunch": "PENDING",
     "forceCloseRelaunch": "PENDING",
-    "freshOnboardingLaunch": "NOT_REQUIRED"
+    "freshOnboardingLaunch": "PENDING"
   }
 }
