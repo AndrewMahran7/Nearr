@@ -13,7 +13,9 @@
  *   today's hours, in the VENUE's timezone or omitted
  *   Saved because…  (or "Your note" for a manual save)
  *   Did you go yet?
+ *   Saved nearby
  *   Also nearby
+ *   More videos from this place
  *   management footer (Wrong place? · Remove)
  *
  * Things that are deliberately true here:
@@ -1553,64 +1555,6 @@ export function SelectedPlaceDetails({
             post, and carries a play badge so that is not a secret. */}
       </View>
 
-      {shouldShowMoreVideos(sourceCards) ? (
-        <View style={styles.moreVideosSection}>
-          <Text style={styles.moreVideosTitle}>More videos from this place</Text>
-          <FlatList
-            data={sourceCards}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.moreVideosList}
-            keyExtractor={(item) => item.key}
-            renderItem={({ item }) => {
-              const attribution = resolvePlaceSource({
-                source_type: item.platform,
-                source_url: item.url,
-              });
-              if (!attribution) return null;
-              return (
-                <Pressable
-                  onPress={() => { void openSourceCard(item.url, attribution.platformName); }}
-                  accessibilityRole="link"
-                  accessibilityLabel={`Open ${item.primary ? 'original ' : ''}${attribution.platformName} video for ${saved.place.name}`}
-                  style={({ pressed }) => [styles.sourceCard, pressed && styles.pressed]}
-                >
-                  <View style={styles.sourceCardMedia}>
-                    {item.thumbnailUrl ? (
-                      <Image source={{ uri: item.thumbnailUrl }} style={styles.sourceCardImage} resizeMode="cover" />
-                    ) : (
-                      <Ionicons
-                        name={attribution.brandIcon as React.ComponentProps<typeof Ionicons>['name']}
-                        size={30}
-                        color={colors.text}
-                      />
-                    )}
-                    <View style={styles.sourceCardPlatformBadge}>
-                      <Ionicons
-                        name={attribution.brandIcon as React.ComponentProps<typeof Ionicons>['name']}
-                        size={12}
-                        color={colors.textInverse}
-                      />
-                    </View>
-                    {item.primary ? (
-                      <View style={styles.sourceCardPrimaryBadge}>
-                        <Text style={styles.sourceCardPrimaryText}>Original</Text>
-                      </View>
-                    ) : null}
-                  </View>
-                  <Text style={styles.sourceCardCreator} numberOfLines={1}>
-                    {item.creator ? `@${item.creator.replace(/^@/, '')}` : attribution.platformName}
-                  </Text>
-                  {item.caption ? (
-                    <Text style={styles.sourceCardCaption} numberOfLines={2}>{item.caption}</Text>
-                  ) : null}
-                </Pressable>
-              );
-            }}
-          />
-        </View>
-      ) : null}
-
       {/* Have I gone yet? A saved place can be BOTH saved and visited —
           answering this never removes the place from the map, and the answer
           persists, so reopening never asks again as if nothing happened. */}
@@ -1718,6 +1662,64 @@ export function SelectedPlaceDetails({
         <View style={styles.recommendationsLoading} accessibilityLabel="Loading nearby places">
           <ActivityIndicator size="small" color={colors.accent} />
           <Text style={styles.recommendationsLoadingText}>Finding places nearby…</Text>
+        </View>
+      ) : null}
+
+      {shouldShowMoreVideos(sourceCards) ? (
+        <View style={styles.moreVideosSection}>
+          <Text style={styles.moreVideosTitle}>More videos from this place</Text>
+          <FlatList
+            data={sourceCards}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.moreVideosList}
+            keyExtractor={(item) => item.key}
+            renderItem={({ item }) => {
+              const attribution = resolvePlaceSource({
+                source_type: item.platform,
+                source_url: item.url,
+              });
+              if (!attribution) return null;
+              return (
+                <Pressable
+                  onPress={() => { void openSourceCard(item.url, attribution.platformName); }}
+                  accessibilityRole="link"
+                  accessibilityLabel={`Open ${item.primary ? 'original ' : ''}${attribution.platformName} video for ${saved.place.name}`}
+                  style={({ pressed }) => [styles.sourceCard, pressed && styles.pressed]}
+                >
+                  <View style={styles.sourceCardMedia}>
+                    {item.thumbnailUrl ? (
+                      <Image source={{ uri: item.thumbnailUrl }} style={styles.sourceCardImage} resizeMode="cover" />
+                    ) : (
+                      <Ionicons
+                        name={attribution.brandIcon as React.ComponentProps<typeof Ionicons>['name']}
+                        size={30}
+                        color={colors.text}
+                      />
+                    )}
+                    <View style={styles.sourceCardPlatformBadge}>
+                      <Ionicons
+                        name={attribution.brandIcon as React.ComponentProps<typeof Ionicons>['name']}
+                        size={12}
+                        color={colors.textInverse}
+                      />
+                    </View>
+                    {item.primary ? (
+                      <View style={styles.sourceCardPrimaryBadge}>
+                        <Text style={styles.sourceCardPrimaryText}>Original</Text>
+                      </View>
+                    ) : null}
+                  </View>
+                  <Text style={styles.sourceCardCreator} numberOfLines={1}>
+                    {item.creator ? `@${item.creator.replace(/^@/, '')}` : attribution.platformName}
+                  </Text>
+                  {item.caption ? (
+                    <Text style={styles.sourceCardCaption} numberOfLines={2}>{item.caption}</Text>
+                  ) : null}
+                </Pressable>
+              );
+            }}
+          />
         </View>
       ) : null}
 
