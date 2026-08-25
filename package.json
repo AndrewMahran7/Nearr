@@ -171,6 +171,7 @@
     "test:ai-place-note": "ts-node -P scripts/tsconfig.json scripts/testAiPlaceNote.ts",
     "test:note-editor": "ts-node -P scripts/tsconfig.json scripts/testNoteEditor.ts",
     "test:ai-note-integration": "ts-node -P scripts/tsconfig.json scripts/testAiNoteIntegrationContracts.ts",
+    "test:ai-note-voice": "npm --prefix services/media-worker run test:ai-note-voice",
     "test:video-ai-note-guarantee": "ts-node -P scripts/tsconfig.json scripts/testVideoAiNoteGuarantee.ts && npm run test:video-ai-note-product-claim",
     "test:video-ai-note-product-claim": "cd services/media-worker && node --import tsx --test tests/targetedNoteContext.test.ts",
     "test:multi-place-batch": "ts-node -P scripts/tsconfig.json scripts/testMultiPlaceBatch.ts",

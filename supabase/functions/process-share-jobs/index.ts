@@ -771,7 +771,8 @@ async function persistBlockedPlaceResult(
 }
 
 const POST_SAVE_ENRICHMENT_RULE_VERSION = 'post-save-enrichment.v1';
-const VIDEO_AI_NOTE_RULE_VERSION = 'video-ai-note-enrichment.v1';
+const VIDEO_AI_NOTE_RULE_VERSION = 'video-ai-note-voice.v2';
+const MAX_AI_NOTE_GENERATION_RETRY_CYCLES = 1;
 
 /**
  * Finalize the supplemental task against the authoritative saved place. This
@@ -933,7 +934,13 @@ async function finalizeVideoAiNoteTask(
       mediaAcquiredOnce: task.media_acquired_once === true,
     });
     const retryCycles = Math.max(0, Number(task.retry_cycles) || 0);
-    if (disposition !== 'awaiting_evidence') {
+    const generationRetryExhausted =
+      disposition === 'retry_after_generation' &&
+      retryCycles >= MAX_AI_NOTE_GENERATION_RETRY_CYCLES;
+    const terminalDisposition = generationRetryExhausted
+      ? 'omitted_after_generation_failure'
+      : disposition;
+    if (disposition !== 'awaiting_evidence' && !generationRetryExhausted) {
       const delaySeconds = Math.min(86_400, 3_600 * 2 ** Math.min(retryCycles, 5));
       const updatedTask = await markVideoAiNoteTask(admin, task, 'queued', {
         ...diagnosticPatch,
@@ -955,7 +962,7 @@ async function finalizeVideoAiNoteTask(
       const updatedTask = await markVideoAiNoteTask(admin, task, 'failed', {
         ...diagnosticPatch,
         failure_code: failureCode.slice(0, 200),
-        ai_note_outcome: 'awaiting_evidence',
+        ai_note_outcome: terminalDisposition,
         progress_stage: 'cleanup',
         locked_until: null,
         completed_at: nowIso(),
@@ -971,7 +978,7 @@ async function finalizeVideoAiNoteTask(
       taskId: task.id,
       videoDerived: true,
       generationAttempted: outcome === 'evidence' || outcome === 'insufficient_evidence',
-      generationOutcome: disposition,
+      generationOutcome: terminalDisposition,
       targetMatch,
       retryCount: Number(task.attempts) || 0,
       provider: diagnosticPatch.analysis_provider,
@@ -987,7 +994,11 @@ async function finalizeVideoAiNoteTask(
       ruleVersion: VIDEO_AI_NOTE_RULE_VERSION,
     }));
     logFinalStatus(
-      disposition !== 'awaiting_evidence' ? 'note_retry_scheduled' : 'note_awaiting_evidence',
+      disposition !== 'awaiting_evidence' && !generationRetryExhausted
+        ? 'note_retry_scheduled'
+        : generationRetryExhausted
+          ? 'note_omitted_after_generation_failure'
+          : 'note_awaiting_evidence',
       disposition === 'retry_after_outage'
         ? 'transient_provider_error'
         : disposition === 'retry_after_generation'
@@ -999,7 +1010,7 @@ async function finalizeVideoAiNoteTask(
       route: 'ai_note_enrichment',
       enriched: false,
       reason: failureCode,
-      disposition,
+      disposition: terminalDisposition,
     });
   }
 

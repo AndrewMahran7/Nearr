@@ -30,6 +30,7 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN npm install
 COPY tsconfig.json tsconfig.build.json ./
+COPY VOICE.md ./VOICE.md
 COPY src ./src
 RUN npm run build
 
@@ -42,6 +43,7 @@ ENV NODE_ENV=production \
 COPY package.json package-lock.json* ./
 RUN npm install --omit=dev && npm cache clean --force
 COPY --from=build /app/dist ./dist
+COPY --from=build /app/VOICE.md ./VOICE.md
 RUN mkdir -p /tmp/nearr-media && chown -R node:node /tmp/nearr-media /app
 USER node
 EXPOSE 8090
