@@ -79,6 +79,24 @@ function mergeCandidates(
 }
 
 /**
+ * Preserve the resolver's displayed rank when the user chooses an existing
+ * candidate. A genuinely new manual-search result is inserted at the front
+ * once so it remains visible after the search panel closes.
+ */
+function mergeChosenCandidate(
+  ranked: readonly ShareJobResultCandidate[],
+  chosen: ShareJobResultCandidate,
+): ShareJobResultCandidate[] {
+  let matched = false;
+  const retainedOrder = ranked.map((candidate) => {
+    if (candidate.googlePlaceId !== chosen.googlePlaceId) return candidate;
+    matched = true;
+    return mergeCandidates([chosen], [candidate])[0] ?? candidate;
+  });
+  return matched ? retainedOrder : mergeCandidates([chosen], retainedOrder);
+}
+
+/**
  * Reconcile Realtime/server data into the keyed batch without replacing local
  * choices, row-scoped search results, disclosure state, or partial-save state.
  */
@@ -220,7 +238,7 @@ export function chooseBatchCandidate(
       ...batch.rows,
       [logicalPlaceId]: {
         ...row,
-        candidates: mergeCandidates([candidate], row.candidates),
+        candidates: mergeChosenCandidate(row.candidates, candidate),
         selectedCandidateId: candidate.googlePlaceId,
         resolution: 'resolved',
         selectedForSave: validCandidate(candidate),

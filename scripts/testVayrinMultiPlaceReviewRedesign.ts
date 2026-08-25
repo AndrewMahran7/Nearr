@@ -65,6 +65,7 @@ const fiveBatch = reconcileMultiPlaceBatch({ jobId: 'five', slots: five.mentionS
 assert.equal(fiveBatch.rows['five-punch']!.candidates.length, 5, 'internal ranking stays intact');
 assert.equal(visibleMentionCandidates(fiveBatch.rows['five-punch']!).length, MAX_VISIBLE_CANDIDATES_PER_MENTION); // 3/21
 assert.match(card, /<Pressable[\s\S]*onPress=\{onPress\}[\s\S]*accessibilityRole="radio"/); // 4
+assert.ok(card.indexOf('</Pressable>') < card.indexOf('<CandidatePhotoCarousel'), 'gallery is not inside the selection responder');
 
 const alternatives = [candidate('a'), candidate('b'), candidate('c')];
 batch = reconcileMultiPlaceBatch({ jobId: 'exclusive', slots: [slot('one', alternatives), slot('two', [candidate('two')])] });
