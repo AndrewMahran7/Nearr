@@ -636,7 +636,7 @@ for (const forbidden of ['fetch(', 'placeRichDetails', 'photoUrl', 'Image', 'sup
 
 const mapSource = readFileSync(join(process.cwd(), 'app/(tabs)/map.tsx'), 'utf8');
 assert.match(mapSource, /const clusterCandidates = useMemo\(/);
-assert.match(mapSource, /visiblePlaces\.filter\(\(place\) => !alwaysIndividualIds\.has\(place\.id\)\)/);
+assert.match(mapSource, /filterEligiblePlaces\.filter\(\(place\) => !alwaysIndividualIds\.has\(place\.id\)\)/);
 assert.match(mapSource, /clusterWithoutSelectedMember\(node, selectedMarkerId/);
 assert.match(mapSource, /new Set<string>\(mapGroupCoordinateIds\)/);
 assert.match(mapSource, /buildMapClusterIndex\(clusterCandidates\)/);

@@ -1417,9 +1417,9 @@ export default function MapScreen() {
   const clusterCandidates = useMemo(
     () =>
       clusteringEnabled
-        ? visiblePlaces.filter((place) => !alwaysIndividualIds.has(place.id))
+        ? filterEligiblePlaces.filter((place) => !alwaysIndividualIds.has(place.id))
         : [],
-    [alwaysIndividualIds, clusteringEnabled, visiblePlaces],
+    [alwaysIndividualIds, clusteringEnabled, filterEligiblePlaces],
   );
 
   // The spatial index. Rebuilt only when the FILTERED set or the

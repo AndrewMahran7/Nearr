@@ -116,6 +116,16 @@ assert.ok(
 );
 
 const mapSource = readFileSync(join(process.cwd(), 'app/(tabs)/map.tsx'), 'utf8');
+assert.match(
+  mapSource,
+  /filterEligiblePlaces\.filter\(\(place\) => !alwaysIndividualIds\.has\(place\.id\)\)/,
+  'selection is an overlay and never redefines the canonical clustered dataset',
+);
+assert.doesNotMatch(
+  mapSource,
+  /visiblePlaces\.filter\(\(place\) => !alwaysIndividualIds\.has\(place\.id\)\)/,
+  'selected-place visibility must not feed back into index ownership',
+);
 const saveStart = mapSource.indexOf('const handleSavePlaceCandidate = useCallback');
 const saveEnd = mapSource.indexOf('const handleUndoSave = useCallback', saveStart);
 const saveFlow = mapSource.slice(saveStart, saveEnd);
