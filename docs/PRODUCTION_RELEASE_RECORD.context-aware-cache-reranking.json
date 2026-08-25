@@ -1,0 +1,74 @@
+{
+  "releaseId": "2026-08-24-context-aware-cache-reranking",
+  "previousMainSha": "c9085229a54e6d0afe46bf840960bed61b9582d2",
+  "deployedCodeSha": "4d6e2900b69be3f3be347aa4cc42d96b079660a4",
+  "previousOtaGroup": "c1482239-3a3a-406a-9ae1-6082d3c6aa85",
+  "currentOtaGroup": "f9673f37-9a34-4ee6-85e0-d653dda41a31",
+  "previousEdge": {
+    "process-share-link": {
+      "version": 133,
+      "sha256": "2d947e259f587585bb925bf82162f1cb7b1f5089722e507b828587a57aed98a3"
+    },
+    "process-share-jobs": {
+      "version": 83,
+      "sha256": "0731ba7362ab807fb4dc037c4836cca889b1b54e9bb91d508c369cbdf4b2e3d4"
+    },
+    "create-share-job": 25,
+    "delete-account": 23
+  },
+  "currentEdge": {
+    "process-share-link": {
+      "version": 133,
+      "sha256": "2d947e259f587585bb925bf82162f1cb7b1f5089722e507b828587a57aed98a3"
+    },
+    "process-share-jobs": {
+      "version": 85,
+      "sha256": "67aebd8d93258de779bcc523d9e7fc89c54f80fd35b242f7283166ebf265678e"
+    },
+    "create-share-job": 25,
+    "delete-account": 24,
+    "delete-share-job": 1
+  },
+  "previousRailwayDeployment": "1982da61-abbb-44a8-817e-02a4fc998fb2@48f0d5bbb39ca6135451d0c62c69285697187c6a#sha256:ad3a1cbe6b95946ae5b9c5e12d9d1ebe3237f9cd968a8c42fd099d0da1250840",
+  "currentRailwayDeployment": "621dd4b8-9785-4e2c-add2-f26ec4cbf514@72ded8696e1d2df18db290dd8f3d3437fe7387e9#sha256:dd60d6c618b8a02a2ee6485e5ebddc91ee6ea7737d529bdeb4daba733824647d",
+  "concurrentReleaseReconciled": {
+    "name": "Vayrin Evidence-First Quick Check + durable queue",
+    "mainSha": "72ded8696e1d2df18db290dd8f3d3437fe7387e9",
+    "cacheFixMergeSha": "f043160",
+    "note": "OTA, Railway, and additional Edge functions advanced independently after cache-fix v84 smoke. process-share-jobs v85 contains the shared cached-candidate reranker and was re-smoked."
+  },
+  "additionalMainReconciliation": {
+    "mainSha": "532297363c59e295301acd5cfe32c83000833bca",
+    "name": "place detail source-video ordering",
+    "productionRuntimeChanged": false
+  },
+  "migrationLedger": [
+    "20260824233000"
+  ],
+  "schemaChanged": false,
+  "productionSmoke": {
+    "workerVersion": 85,
+    "workerSha256": "67aebd8d93258de779bcc523d9e7fc89c54f80fd35b242f7283166ebf265678e",
+    "candidateJobId": "a9e7d86c-1a5f-4b97-9941-95c38b88353c",
+    "userConfirmedJobId": "ff05600d-59a9-4167-8988-761397bc9297",
+    "candidateSetCacheHit": true,
+    "contextualRerankApplied": true,
+    "topCandidateIds": [
+      "prod-qa-ca-ventura",
+      "prod-qa-ca-oxnard"
+    ],
+    "cachedCandidateCountRetained": 5,
+    "cacheHitProviderCalls": 0,
+    "manualChipotleTop": "ChIJQdyYik6t6YARrhz2eIfg3oU",
+    "manualChipotleDistanceKm": 4.7,
+    "cleanupErrors": []
+  },
+  "rollbackProcedure": "Repeat the concurrency guard; forward-revert deployedCodeSha on current main; push the revert; deploy only process-share-jobs through the guarded production wrapper. Do not purge recognition_cache. OTA, process-share-link, create-share-job, delete-account, Railway, schema, native code, and EAS Build remain unchanged.",
+  "deploymentStatus": "DEPLOYED",
+  "physicalQa": {
+    "sameSantaPaulaInNOutReshare": "PENDING",
+    "manualChipotle": "PENDING",
+    "previouslyUserConfirmedPlace": "PENDING"
+  },
+  "deployedAt": "2026-08-25T01:27:00.000Z"
+}
