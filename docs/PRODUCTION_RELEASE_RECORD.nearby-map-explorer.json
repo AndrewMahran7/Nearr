@@ -2,7 +2,7 @@
   "releaseId": "2026-08-24-nearby-map-explorer",
   "previousMainSha": "b4125daa4b5c18123cf436881c856ee069c09372",
   "previousOtaGroup": "9f05fc85-fca2-465c-8705-48d77935798c",
-  "currentOtaGroup": null,
+  "currentOtaGroup": "eaff2090-c3d7-475b-995d-abe5917038d4",
   "edgeVersions": {
     "process-share-link": 133,
     "process-share-jobs": 86,
@@ -15,11 +15,12 @@
     "20260824233000"
   ],
   "rollbackProcedure": "Repeat the concurrency guard; republish previousOtaGroup to the production channel; forward-revert only the Nearby Map Explorer integration commit on main; rerun the explorer, recommendation, map reliability, cluster, startup, release, prebuild, and iOS export gates. Railway, Edge, and schema remain unchanged.",
-  "deploymentStatus": "PLANNED",
+  "deploymentStatus": "DEPLOYED",
   "physicalQa": {
     "signedOutColdLaunch": "PENDING",
     "signedInColdLaunch": "PENDING",
     "forceCloseRelaunch": "PENDING",
     "freshOnboardingLaunch": "PENDING"
-  }
+  },
+  "deployedAt": "2026-08-25T01:43:17.943Z"
 }
