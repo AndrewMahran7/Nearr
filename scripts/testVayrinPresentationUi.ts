@@ -8,6 +8,7 @@ const asyncDetail = read('app/share-jobs/[jobId].tsx');
 const queue = read('app/share-jobs/index.tsx');
 const handoff = read('components/ShareJobHandoff.tsx');
 const header = read('components/VayrinPresentationHeader.tsx');
+const multiCard = read('components/MultiPlaceCandidateCard.tsx');
 const correction = read('components/map/WrongPlaceSheet.tsx');
 const ordinaryDetail = read('components/map/SelectedPlaceDetails.tsx');
 
@@ -27,8 +28,8 @@ assert.match(sync, /title="Not it"/, 'sync saved-place correction uses canonical
 
 assert.match(header, /accessibilityRole="summary"/);
 assert.match(header, /accessibilityLiveRegion=/);
-assert.match(asyncDetail, /accessibilityRole="checkbox"/, 'multi selection stays accessible');
-assert.match(asyncDetail, /accessibilityState=\{\{ checked:/, 'radio and checkbox selection expose state');
+assert.match(multiCard, /accessibilityRole="radio"/, 'per-mention candidate selection stays accessible');
+assert.match(multiCard, /accessibilityState=\{\{ checked:/, 'candidate radios expose checked state');
 
 assert.match(correction, /finderMode\?: boolean/, 'Vayrin correction is explicitly scoped');
 assert.match(correction, /finderMode = false/, 'ordinary correction defaults to Nearr-only');

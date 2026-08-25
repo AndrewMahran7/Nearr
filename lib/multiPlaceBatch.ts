@@ -27,6 +27,9 @@ export type MultiPlaceBatchRow = {
   persistence: BatchPersistence;
   savedPlaceId: string | null;
   sourceTimestamps: number[];
+  sourceFrameUrl: string | null;
+  /** Explicit per-mention "None of these" choice; never affects siblings. */
+  userDismissed: boolean;
   candidateSelectorExpanded: boolean;
   search: {
     phase: BatchSearchPhase;
@@ -112,7 +115,8 @@ export function reconcileMultiPlaceBatch(args: {
       candidates.some((candidate) => candidate.googlePlaceId === prior.selectedCandidateId)
       ? prior.selectedCandidateId
       : null;
-    const selectedCandidateId = retainedCandidateId ?? initialCandidateId;
+    const userDismissed = prior?.userDismissed ?? false;
+    const selectedCandidateId = userDismissed ? null : retainedCandidateId ?? initialCandidateId;
     // A place the user already has on their map is still a valid save target:
     // running the save is how this post's source_url / ai_note reach the
     // EXISTING row. Only a save this job already performed (server saveState,
@@ -123,7 +127,9 @@ export function reconcileMultiPlaceBatch(args: {
       ? prior.persistence
       : serverPersistence;
     const candidate = candidates.find((item) => item.googlePlaceId === selectedCandidateId);
-    const resolution = prior?.resolution === 'resolved' && candidate
+    const resolution = userDismissed
+      ? 'unmatched'
+      : prior?.resolution === 'resolved' && candidate
       ? 'resolved'
       : initialResolution(slot);
     const canDefaultSelect = resolution === 'resolved' &&
@@ -150,6 +156,8 @@ export function reconcileMultiPlaceBatch(args: {
       persistence,
       savedPlaceId,
       sourceTimestamps: slot.sourceTimestamps ?? [],
+      sourceFrameUrl: slot.sourceFrameUrl ?? candidate?.sourceFrameUrl ?? null,
+      userDismissed,
       candidateSelectorExpanded: prior?.candidateSelectorExpanded ?? false,
       search: prior?.search ?? {
         phase: 'closed',
@@ -218,6 +226,31 @@ export function chooseBatchCandidate(
         selectedForSave: validCandidate(candidate),
         persistence: 'pending',
         savedPlaceId,
+        sourceFrameUrl: row.sourceFrameUrl ?? candidate.sourceFrameUrl ?? null,
+        userDismissed: false,
+        candidateSelectorExpanded: false,
+        search: { ...row.search, phase: 'closed', error: null },
+        saveError: null,
+      },
+    },
+  };
+}
+
+/** Mark exactly one mention unresolved without clearing any sibling choice. */
+export function dismissBatchRow(batch: MultiPlaceBatch, logicalPlaceId: string): MultiPlaceBatch {
+  const row = batch.rows[logicalPlaceId];
+  if (!row || row.persistence !== 'pending') return batch;
+  return {
+    ...batch,
+    feedback: null,
+    rows: {
+      ...batch.rows,
+      [logicalPlaceId]: {
+        ...row,
+        selectedCandidateId: null,
+        selectedForSave: false,
+        resolution: 'unmatched',
+        userDismissed: true,
         candidateSelectorExpanded: false,
         search: { ...row.search, phase: 'closed', error: null },
         saveError: null,

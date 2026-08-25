@@ -1,4 +1,4 @@
-import type { ShareJobCandidatePayload, ShareJobMentionSlot, ShareJobResultCandidate } from './shareJobResult';
+import type { ShareJobCandidatePayload, ShareJobEvidenceFrame, ShareJobMentionSlot, ShareJobResultCandidate } from './shareJobResult';
 import type { ShareJob } from '../services/shareJobsService';
 
 const PHOTO_FIXTURE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFElEQVR42mP8v5ThPwMDAwMjI4MBAEdoBAUZS2xbAAAAAElFTkSuQmCC';
@@ -15,6 +15,7 @@ export type VayrinCandidateFixture = {
   mentionSlots?: ShareJobMentionSlot[];
   suggestedQuery?: string;
   manualResults?: ShareJobResultCandidate[];
+  evidenceFrames?: ShareJobEvidenceFrame[];
 };
 
 function place(
@@ -67,6 +68,51 @@ const supai = place(
 const sunsetCliffs = place('fixture-sunset-cliffs', 'Sunset Cliffs Natural Park', 'San Diego, California', ['park', 'tourist_attraction'], { photoUrl: PHOTO_FIXTURE, sourceTimestamps: [1] });
 const sunsetPoint = place('fixture-sunset-point', 'Sunset Point Park', 'San Diego, California', ['park', 'point_of_interest'], { sourceFrameUrl: FRAME_FIXTURE, sourceTimestamps: [5] });
 const sunsetBeach = place('fixture-sunset-beach', 'Sunset Beach', 'Orange County, California', ['tourist_attraction', 'point_of_interest'], { sourceTimestamps: [9] });
+const punchBowl = place('fixture-santa-paula-punch-bowls', 'Santa Paula Punch Bowls', 'Santa Paula, California', ['park', 'tourist_attraction'], { photoUrl: PHOTO_FIXTURE, sourceFrameUrl: FRAME_FIXTURE, sourceTimestamps: [0] });
+const punchTrailhead = place('fixture-santa-paula-canyon', 'Santa Paula Canyon Trailhead', 'Santa Paula, California', ['hiking_area', 'point_of_interest'], { sourceFrameUrl: FRAME_FIXTURE, sourceTimestamps: [0] });
+const inNOutSantaPaula = place('fixture-in-n-out-santa-paula', 'In-N-Out Burger', 'Santa Paula, California', ['restaurant'], { photoUrl: PHOTO_FIXTURE, sourceFrameUrl: FRAME_FIXTURE, sourceTimestamps: [18] });
+const inNOutVentura = place('fixture-in-n-out-ventura', 'In-N-Out Burger', 'Ventura, California', ['restaurant'], { sourceFrameUrl: FRAME_FIXTURE, sourceTimestamps: [18] });
+
+function evidenceFrame(id: string, timestampSeconds: number): ShareJobEvidenceFrame {
+  return { id, storagePath: null, url: FRAME_FIXTURE, timestampSeconds, width: 1080, height: 1920, relevance: 'candidate_evidence' };
+}
+
+function mention(
+  id: string,
+  displayName: string,
+  timestamp: number,
+  candidates: ShareJobResultCandidate[],
+  outcome: ShareJobMentionSlot['outcome'] = candidates.length === 1 ? 'verified_single' : candidates.length > 1 ? 'ambiguous_candidates' : 'no_match',
+  contextLabel: string | null = 'Santa Paula, CA',
+): ShareJobMentionSlot {
+  return {
+    mentionId: id, displayName, contextLabel, primaryVenueName: null, hostVenueName: null, relationshipType: null,
+    outcome, candidates, sourceTimestamps: [timestamp], sourceFrameUrl: candidates[0]?.sourceFrameUrl ?? FRAME_FIXTURE,
+  };
+}
+
+const punchbowlAndBurger = [
+  mention('punchbowl', 'Punchbowl', 0, [punchBowl, punchTrailhead]),
+  mention('in-n-out', 'In-N-Out', 18, [inNOutSantaPaula, inNOutVentura]),
+];
+
+function multiFixture(
+  id: string,
+  label: string,
+  mentionSlots: ShareJobMentionSlot[],
+  options: Partial<VayrinCandidateFixture> = {},
+): VayrinCandidateFixture {
+  return {
+    id,
+    label,
+    description: `${mentionSlots.length} independent evidence-first place moments`,
+    candidates: mentionSlots.flatMap((slot) => slot.candidates),
+    selectionMode: 'multi_independent',
+    mentionSlots,
+    evidenceFrames: mentionSlots.map((slot, index) => evidenceFrame(`${id}-frame-${index + 1}`, slot.sourceTimestamps?.[0] ?? index * 8)),
+    ...options,
+  };
+}
 const sanDiegoAlternativeSlots: ShareJobMentionSlot[] = [{
   mentionId: 'fixture-san-diego-scene', displayName: 'San Diego waterfront', contextLabel: 'San Diego, California',
   primaryVenueName: null, hostVenueName: null, relationshipType: null,
@@ -128,6 +174,20 @@ export const VAYRIN_CANDIDATE_FIXTURES: readonly VayrinCandidateFixture[] = [
       sourceTimestamps: candidate.sourceTimestamps ?? [index * 5],
     })),
   },
+  multiFixture('vayrin-multi-punchbowl-in-n-out', 'Punchbowl + In-N-Out', punchbowlAndBurger),
+  multiFixture('vayrin-multi-two-resolved', 'Two resolved mentions', [mention('resolved-a', 'Punchbowl', 0, [punchBowl]), mention('resolved-b', 'In-N-Out', 18, [inNOutSantaPaula])]),
+  multiFixture('vayrin-multi-three-resolved', 'Three resolved mentions', [mention('three-a', 'Punchbowl', 0, [punchBowl]), mention('three-b', 'In-N-Out', 18, [inNOutSantaPaula]), mention('three-c', 'Mission Bay', 33, [missionBay], 'verified_single', 'San Diego, CA')]),
+  multiFixture('vayrin-multi-existing-and-new', 'Already saved + new', [mention('existing', 'Punchbowl', 0, [punchBowl]), mention('new', 'In-N-Out', 18, [inNOutSantaPaula])], { alreadySavedGooglePlaceIds: [punchBowl.googlePlaceId] }),
+  multiFixture('vayrin-multi-unresolved-two-resolved', 'One unresolved + two resolved', [mention('none', 'Beach', 0, [], 'no_match'), mention('resolved-one', 'Punchbowl', 9, [punchBowl]), mention('resolved-two', 'In-N-Out', 18, [inNOutSantaPaula])]),
+  multiFixture('vayrin-multi-manual-search', 'Manual search for one mention', [mention('manual', 'Punch Bowl', 0, [], 'no_match'), mention('manual-sibling', 'In-N-Out', 18, [inNOutSantaPaula])], { manualResults: [punchBowl, punchTrailhead] }),
+  multiFixture('vayrin-multi-duplicate-canonical', 'Repeated canonical candidate', [mention('duplicate-a', 'Punchbowl', 0, [punchBowl]), mention('duplicate-b', 'Punch Bowl trail', 7, [punchBowl])]),
+  multiFixture('vayrin-multi-three-per-mention', 'Three candidates per mention', [mention('three-punch', 'Punchbowl', 0, [punchBowl, punchTrailhead, sunsetCliffs]), mention('three-burger', 'In-N-Out', 18, [inNOutSantaPaula, inNOutVentura, missionBay])]),
+  multiFixture('vayrin-multi-five-internal', 'Five internal / three shown', [mention('five-punch', 'Punchbowl', 0, [punchBowl, punchTrailhead, sunsetCliffs, sunsetPoint, sunsetBeach]), mention('five-burger', 'In-N-Out', 18, [inNOutSantaPaula])]),
+  multiFixture('vayrin-multi-missing-image', 'Missing candidate image', [mention('missing-image', 'Scenic overlook', 0, [{ ...sunsetBeach, photoUrl: null, photoUrls: [], sourceFrameUrl: null }]), mention('image-sibling', 'In-N-Out', 18, [inNOutSantaPaula])]),
+  multiFixture('vayrin-multi-long-name', 'Long place name', [mention('long-name', 'Museum', 0, [place('multi-long-name', 'The Museum of Extremely Long Place Names and Remarkably Specific Destinations', 'Santa Paula, California', ['museum'], { photoUrl: PHOTO_FIXTURE })]), mention('long-sibling', 'In-N-Out', 18, [inNOutSantaPaula])]),
+  multiFixture('vayrin-multi-evidence-frames', 'Evidence frames per mention', punchbowlAndBurger),
+  multiFixture('vayrin-multi-five-mentions', 'Five independent mentions', [mention('five-a', 'Punchbowl', 0, [punchBowl]), mention('five-b', 'In-N-Out', 10, [inNOutSantaPaula]), mention('five-c', 'Mission Bay', 20, [missionBay], 'verified_single', 'San Diego, CA'), mention('five-d', 'Stari Most', 30, [stariMost], 'verified_single', 'Mostar'), mention('five-e', 'Sunset Cliffs', 40, [sunsetCliffs], 'verified_single', 'San Diego, CA')]),
+  multiFixture('vayrin-multi-chain-context', 'Chain mention after context ranking', [mention('chain-punch', 'Punchbowl', 0, [punchBowl]), mention('chain-branch', 'In-N-Out', 18, [inNOutSantaPaula, inNOutVentura])]),
   rawFixture('vayrin-confirm-raw-waterfall', 'Raw waterfall phrase', 'Worlds Most Dangerous Waterfall Hole', [sunsetCliffs, sunsetPoint]),
   rawFixture('vayrin-confirm-raw-zero', 'Raw name → 0', 'Unfindable Test Landmark Phrase', []),
   rawFixture('vayrin-confirm-raw-two', 'Raw name → 2', 'Sunset overlook', [sunsetCliffs, sunsetPoint]),
@@ -160,6 +220,7 @@ export function buildVayrinCandidateFixtureJob(id: string): ShareJob {
     selectionMode: fixture.selectionMode,
     candidates: fixture.candidates,
     mentionSlots,
+    evidenceFrames: fixture.evidenceFrames ?? [],
   };
   return {
     id,
