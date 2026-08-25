@@ -205,7 +205,7 @@ assert.match(
 );
 assert.match(
   finalizer,
-  /generationOutcome: disposition/,
+  /generationOutcome: terminalDisposition/,
   'the log carries the bounded post-save outcome code',
 );
 assert.doesNotMatch(

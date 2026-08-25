@@ -10,11 +10,12 @@ import { readFile } from 'node:fs/promises';
 import type { WorkerConfig } from '../config/env.js';
 import type { OcrSegment, SelectedFrame, TranscriptSegment } from '../types/media.js';
 import {
+  EvidenceItem as EvidenceItemSchema,
+  NearrCategory,
   type EvidenceItem,
   type MediaPlaceEvidence,
   type PlaceCandidateEvidence,
   emptyEvidence,
-  safeParseEvidence,
   parseEvidenceWithDiagnostics,
   type EvidenceParseDiagnostics,
 } from '../types/evidence.js';
@@ -23,6 +24,11 @@ import {
   PROMPT_VERSION,
   buildUserContext,
 } from '../prompts/placeEvidencePrompt.js';
+import {
+  AI_NOTE_PROMPT_VERSION,
+  VAYRIN_AI_NOTE_SYSTEM_PROMPT,
+  buildAiNoteUserContext,
+} from '../prompts/aiNotePrompt.js';
 import { log } from '../util/logger.js';
 import { MediaError } from '../types/media.js';
 import { parseRetryAfterSeconds } from '../util/backoff.js';
@@ -251,6 +257,85 @@ class HeuristicModel implements ModelProvider {
   }
 }
 
+function parseTargetedAiNoteResponse(
+  raw: unknown,
+  input: AnalyzeInput & { targetPlace: NonNullable<AnalyzeInput['targetPlace']> },
+): { evidence: MediaPlaceEvidence; diagnostics: EvidenceParseDiagnostics } {
+  const invalid = (path: string) => ({
+    evidence: emptyEvidence(['ai_note_schema_invalid']),
+    diagnostics: {
+      emitted: 1,
+      accepted: 0,
+      rejected: 1,
+      rejectionPaths: [path],
+      topLevelInvalid: true,
+    },
+  });
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return invalid('response:invalid_type');
+  const value = raw as Record<string, unknown>;
+  if (Object.keys(value).some((key) => !['note', 'evidence'].includes(key))) {
+    return invalid('response:unrecognized_keys');
+  }
+  const note = value.note === null
+    ? null
+    : typeof value.note === 'string' && value.note.trim().length <= 180
+      ? value.note.replace(/\s+/g, ' ').trim()
+      : undefined;
+  if (note === undefined) return invalid('note:invalid_type');
+  const parsedEvidence = EvidenceItemSchema.array().max(8).safeParse(value.evidence);
+  if (!parsedEvidence.success) return invalid('evidence:invalid_schema');
+  const mergedEvidence = [...parsedEvidence.data];
+  const seenEvidence = new Set(mergedEvidence.map((item) =>
+    `${item.source}|${item.timestampSeconds ?? ''}|${item.value.toLowerCase()}`));
+  for (const item of input.retainedEvidence ?? []) {
+    const parsed = EvidenceItemSchema.safeParse(item);
+    if (!parsed.success) continue;
+    const key = `${parsed.data.source}|${parsed.data.timestampSeconds ?? ''}|${parsed.data.value.toLowerCase()}`;
+    if (seenEvidence.has(key)) continue;
+    seenEvidence.add(key);
+    mergedEvidence.push(parsed.data);
+    if (mergedEvidence.length === 8) break;
+  }
+  const category = NearrCategory.safeParse(input.targetPlace.category).success
+    ? NearrCategory.parse(input.targetPlace.category)
+    : null;
+  const place: PlaceCandidateEvidence = {
+    logicalPlaceId: 'saved-place-target',
+    identityEvidenceKind: 'observable',
+    hypothesisRank: 0,
+    name: input.targetPlace.name,
+    category,
+    categoryConfidence: 1,
+    categoryEvidenceTags: [],
+    address: input.targetPlace.formattedAddress ?? null,
+    city: null,
+    region: null,
+    country: null,
+    coordinates: null,
+    role: 'primary',
+    confidence: 1,
+    explicitEvidence: mergedEvidence,
+    inferredEvidence: [],
+    memoryCue: note,
+    memoryCueEvidence: note ? mergedEvidence : [],
+  };
+  return {
+    evidence: {
+      places: [place],
+      multipleIntentionalPlaces: false,
+      insufficientEvidence: !note || mergedEvidence.length === 0,
+      warnings: [],
+    },
+    diagnostics: {
+      emitted: 1,
+      accepted: 1,
+      rejected: 0,
+      rejectionPaths: [],
+      topLevelInvalid: false,
+    },
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Multimodal Gemini (optional). Sends frames + transcript + caption and asks
 // for the structured JSON evidence. Any failure degrades to insufficient
@@ -262,9 +347,10 @@ class GeminiModel implements ModelProvider {
   constructor(private cfg: WorkerConfig) {}
 
   async analyze(input: AnalyzeInput): Promise<AnalyzeOutput> {
+    const promptVersion = input.targetPlace ? AI_NOTE_PROMPT_VERSION : PROMPT_VERSION;
     if (!this.cfg.geminiApiKey) {
       if (input.targetPlace) throw new MediaError('provider_unavailable', 'gemini_missing_key');
-      return { provider: this.name, modelName: this.cfg.geminiModel, promptVersion: PROMPT_VERSION, evidence: emptyEvidence(['gemini_missing_key']) };
+      return { provider: this.name, modelName: this.cfg.geminiModel, promptVersion, evidence: emptyEvidence(['gemini_missing_key']) };
     }
     const transcriptText = input.transcript
       .map((s) => `[${s.startSeconds.toFixed(1)}] ${s.text}`)
@@ -272,18 +358,30 @@ class GeminiModel implements ModelProvider {
     const ocrText = input.ocr
       .map((o) => `[${o.timestampSeconds.toFixed(1)}] ${o.text}`)
       .join('\n');
-    const userText = buildUserContext({
-      platform: input.platform,
-      transcriptText,
-      ocrText,
-      ocrExtracted: input.ocrExtracted === true,
-      metadataTitle: input.metadataTitle,
-      metadataDescription: input.metadataDescription,
-      targetPlace: input.targetPlace,
-      retainedEvidence: input.retainedEvidence,
-    });
+    const userText = input.targetPlace
+      ? buildAiNoteUserContext({
+          platform: input.platform,
+          transcriptText,
+          ocrText,
+          ocrExtracted: input.ocrExtracted === true,
+          metadataTitle: input.metadataTitle,
+          metadataDescription: input.metadataDescription,
+          targetPlace: input.targetPlace,
+          retainedEvidence: input.retainedEvidence,
+        })
+      : buildUserContext({
+          platform: input.platform,
+          transcriptText,
+          ocrText,
+          ocrExtracted: input.ocrExtracted === true,
+          metadataTitle: input.metadataTitle,
+          metadataDescription: input.metadataDescription,
+          retainedEvidence: input.retainedEvidence,
+        });
 
-    const parts: unknown[] = [{ text: `${PLACE_EVIDENCE_SYSTEM_PROMPT}\n\n${userText}` }];
+    const parts: unknown[] = [{
+      text: input.targetPlace ? userText : `${PLACE_EVIDENCE_SYSTEM_PROMPT}\n\n${userText}`,
+    }];
     const sentTimestampsSeconds: number[] = [];
     for (const frame of input.frames.slice(0, this.cfg.maxSelectedFrames)) {
       try {
@@ -316,8 +414,21 @@ class GeminiModel implements ModelProvider {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
+          ...(input.targetPlace
+            ? { systemInstruction: { parts: [{ text: VAYRIN_AI_NOTE_SYSTEM_PROMPT }] } }
+            : {}),
           contents: [{ role: 'user', parts }],
-          generationConfig: { responseMimeType: 'application/json', temperature: 0 },
+          generationConfig: input.targetPlace
+            ? {
+                responseMimeType: 'application/json',
+                temperature: 1,
+                maxOutputTokens: 256,
+                // A short grounded reaction does not benefit from hidden
+                // reasoning. On Gemini 2.5 Flash the dynamic default can spend
+                // the entire response budget thinking and emit zero JSON.
+                thinkingConfig: { thinkingBudget: 0 },
+              }
+            : { responseMimeType: 'application/json', temperature: 0 },
         }),
         signal: input.signal,
       });
@@ -332,7 +443,7 @@ class GeminiModel implements ModelProvider {
           return {
             provider: `${this.name}+heuristic`,
             modelName: this.cfg.geminiModel,
-            promptVersion: PROMPT_VERSION,
+            promptVersion,
             evidence: { ...fallback, warnings: [...fallback.warnings, warning] },
             modelInput,
           };
@@ -344,7 +455,7 @@ class GeminiModel implements ModelProvider {
             parseRetryAfterSeconds(res.headers.get('retry-after')),
           );
         }
-        return { provider: this.name, modelName: this.cfg.geminiModel, promptVersion: PROMPT_VERSION, evidence: emptyEvidence([warning]), modelInput };
+        return { provider: this.name, modelName: this.cfg.geminiModel, promptVersion, evidence: emptyEvidence([warning]), modelInput };
       }
       const json = (await res.json()) as {
         candidates?: { content?: { parts?: { text?: string }[] } }[];
@@ -369,9 +480,11 @@ class GeminiModel implements ModelProvider {
       try {
         parsed = JSON.parse(text);
       } catch {
-        return { provider: this.name, modelName: this.cfg.geminiModel, promptVersion: PROMPT_VERSION, evidence: emptyEvidence(['gemini_json_parse_failed']), modelRawPreview: text.slice(0, 500), modelInput, usage, latencyMs };
+        return { provider: this.name, modelName: this.cfg.geminiModel, promptVersion, evidence: emptyEvidence(['gemini_json_parse_failed']), modelRawPreview: text.slice(0, 500), modelInput, usage, latencyMs };
       }
-      const { evidence: validated, diagnostics: parseDiag } = parseEvidenceWithDiagnostics(parsed);
+      const { evidence: validated, diagnostics: parseDiag } = input.targetPlace
+        ? parseTargetedAiNoteResponse(parsed, input as AnalyzeInput & { targetPlace: NonNullable<AnalyzeInput['targetPlace']> })
+        : parseEvidenceWithDiagnostics(parsed);
       const evidence = groundClaimedEvidence(validated, input);
       // Bounded, structured record of what validation kept vs dropped. This is
       // what makes a future schema regression diagnosable WITHOUT storing the
@@ -388,7 +501,7 @@ class GeminiModel implements ModelProvider {
       return {
         provider: this.name,
         modelName: this.cfg.geminiModel,
-        promptVersion: PROMPT_VERSION,
+        promptVersion,
         evidence,
         modelRawPreview: text.slice(0, 500),
         parseDiagnostics: parseDiag,
@@ -405,7 +518,7 @@ class GeminiModel implements ModelProvider {
         return {
           provider: `${this.name}+heuristic`,
           modelName: this.cfg.geminiModel,
-          promptVersion: PROMPT_VERSION,
+          promptVersion,
           evidence: { ...fallback, warnings: [...fallback.warnings, 'gemini_exception'] },
           modelInput,
         };

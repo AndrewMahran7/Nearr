@@ -109,7 +109,7 @@ const places = [
   },
   {
     name: 'Courtyard Matcha',
-    memoryCue: 'Quiet courtyard and matcha drinks looked unreal.',
+    memoryCue: "I'd grab that matcha and sit in the quiet courtyard.",
     memoryCueEvidence: [{ source: 'frame' as const, value: 'quiet courtyard and matcha drinks' }],
   },
   {
@@ -179,7 +179,7 @@ const rejected = evaluateTargetedVideoAiNote({
   places: [{
     ...places[0],
     memoryCue: 'A great place worth checking out.',
-    memoryCueEvidence: [{ source: 'speech', value: 'great place' }],
+    memoryCueEvidence: [{ source: 'speech', value: 'spicy vodka rigatoni' }],
   }],
 });
 assert.equal(rejected.note, null);
@@ -274,16 +274,16 @@ assert.match(migration, /video_derived_saved_places_without_ai_note/i);
 assert.match(migration, /before update of place_id[\s\S]+execute function public\.invalidate_video_ai_note_on_place_change\(\)/i);
 assert.match(migration, /new\.ai_note := null/i);
 
-// Hybrid convergence: a three-attempt cycle remains bounded, but exhaustion
-// renews only AI-note obligations on a capped long cooldown. Content failures
-// remain durable, and a rejected structured cue escalates to expanded visual
-// evidence on the next attempt instead of replaying the same prompt forever.
+// Provider/infrastructure failures remain durable. A rejected structured cue
+// gets one expanded-evidence generation cycle, then terminates as an honest
+// omission instead of replaying forever or manufacturing fallback prose.
 assert.match(worker, /task\.task_kind === 'ai_note_enrichment'[\s\S]+media\.code === 'finalizer_unavailable'[\s\S]+requeueAiNoteTask/i);
 assert.match(worker, /renewAiNoteRetryCycle\(client, task, code\)/);
 assert.match(migration, /retry_cycles = case when mt\.task_kind = 'ai_note_enrichment' then mt\.retry_cycles \+ 1/i);
 assert.match(migration, /least\(86400, 3600 \* power/i);
 assert.match(finalizer, /failure_code: failureCode\.slice\(0, 200\)/);
-assert.match(finalizer, /ai_note_outcome: 'awaiting_evidence'/);
+assert.match(finalizer, /MAX_AI_NOTE_GENERATION_RETRY_CYCLES = 1/);
+assert.match(finalizer, /omitted_after_generation_failure/);
 assert.match(finalizer, /disposition !== 'awaiting_evidence'/);
 assert.match(finalizer, /retryCount: Number\(task\.attempts\)/);
 assert.match(worker, /noteStructuredEvidencePreflight/);

@@ -1,0 +1,1276 @@
+{
+  "generatedAt": "2026-08-25T00:11:16.647Z",
+  "baseSha": "efb5b2267661d512cf951065a9dcb63cf7777551",
+  "model": "gemini-2.5-flash",
+  "fixtureCount": 18,
+  "before": {
+    "generated": 18,
+    "omitted": 0,
+    "phraseFrequency": {
+      "looked unreal": 0,
+      "caught your eye": 0,
+      "looks amazing": 0,
+      "I want to": 0,
+      "need to": 0
+    },
+    "openerTokens": [
+      {
+        "value": "that",
+        "count": 10,
+        "percentage": 0.5555555555555556
+      },
+      {
+        "value": "looks",
+        "count": 6,
+        "percentage": 0.3333333333333333
+      },
+      {
+        "value": "cool",
+        "count": 2,
+        "percentage": 0.1111111111111111
+      }
+    ],
+    "firstTwoTokenOpeners": [
+      {
+        "value": "looks like",
+        "count": 6,
+        "percentage": 0.3333333333333333
+      },
+      {
+        "value": "cool building",
+        "count": 1,
+        "percentage": 0.05555555555555555
+      },
+      {
+        "value": "cool rooftop",
+        "count": 1,
+        "percentage": 0.05555555555555555
+      },
+      {
+        "value": "that canyon",
+        "count": 1,
+        "percentage": 0.05555555555555555
+      },
+      {
+        "value": "that dark",
+        "count": 1,
+        "percentage": 0.05555555555555555
+      },
+      {
+        "value": "that double",
+        "count": 1,
+        "percentage": 0.05555555555555555
+      },
+      {
+        "value": "that empty",
+        "count": 1,
+        "percentage": 0.05555555555555555
+      },
+      {
+        "value": "that hotel",
+        "count": 1,
+        "percentage": 0.05555555555555555
+      },
+      {
+        "value": "that overflowing",
+        "count": 1,
+        "percentage": 0.05555555555555555
+      },
+      {
+        "value": "that scenic",
+        "count": 1,
+        "percentage": 0.05555555555555555
+      },
+      {
+        "value": "that tiny",
+        "count": 1,
+        "percentage": 0.05555555555555555
+      },
+      {
+        "value": "that view",
+        "count": 1,
+        "percentage": 0.05555555555555555
+      },
+      {
+        "value": "that wide",
+        "count": 1,
+        "percentage": 0.05555555555555555
+      }
+    ],
+    "repeatedThreeWordPrefixes": [
+      {
+        "value": "looks like a",
+        "count": 6,
+        "percentage": 0.3333333333333333
+      }
+    ],
+    "constructionFrequency": {
+      "That ... looks/looked/is/was ...": 10,
+      "This ...": 0,
+      "Looks like ...": 6,
+      "first-person openers": 0,
+      "fragments": 2,
+      "questions": 0,
+      "imperative or verb-led": 0
+    },
+    "structuralFamilies": [
+      {
+        "value": "that + looks/looked/is/was",
+        "count": 10,
+        "percentage": 0.5555555555555556
+      },
+      {
+        "value": "looks like",
+        "count": 6,
+        "percentage": 0.3333333333333333
+      },
+      {
+        "value": "fragment",
+        "count": 2,
+        "percentage": 0.1111111111111111
+      }
+    ],
+    "largestStructuralFamily": {
+      "value": "that + looks/looked/is/was",
+      "count": 10,
+      "percentage": 0.5555555555555556
+    }
+  },
+  "after": {
+    "generated": 17,
+    "omitted": 1,
+    "phraseFrequency": {
+      "looked unreal": 0,
+      "caught your eye": 0,
+      "looks amazing": 0,
+      "I want to": 0,
+      "need to": 0
+    },
+    "openerTokens": [
+      {
+        "value": "a",
+        "count": 2,
+        "percentage": 0.11764705882352941
+      },
+      {
+        "value": "look",
+        "count": 2,
+        "percentage": 0.11764705882352941
+      },
+      {
+        "value": "looks",
+        "count": 2,
+        "percentage": 0.11764705882352941
+      },
+      {
+        "value": "that",
+        "count": 2,
+        "percentage": 0.11764705882352941
+      },
+      {
+        "value": "affogato",
+        "count": 1,
+        "percentage": 0.058823529411764705
+      },
+      {
+        "value": "black",
+        "count": 1,
+        "percentage": 0.058823529411764705
+      },
+      {
+        "value": "definitely",
+        "count": 1,
+        "percentage": 0.058823529411764705
+      },
+      {
+        "value": "just",
+        "count": 1,
+        "percentage": 0.058823529411764705
+      },
+      {
+        "value": "love",
+        "count": 1,
+        "percentage": 0.058823529411764705
+      },
+      {
+        "value": "okay",
+        "count": 1,
+        "percentage": 0.058823529411764705
+      },
+      {
+        "value": "rooftop",
+        "count": 1,
+        "percentage": 0.058823529411764705
+      },
+      {
+        "value": "those",
+        "count": 1,
+        "percentage": 0.058823529411764705
+      },
+      {
+        "value": "two",
+        "count": 1,
+        "percentage": 0.058823529411764705
+      }
+    ],
+    "firstTwoTokenOpeners": [
+      {
+        "value": "looks like",
+        "count": 2,
+        "percentage": 0.11764705882352941
+      },
+      {
+        "value": "a platform",
+        "count": 1,
+        "percentage": 0.058823529411764705
+      },
+      {
+        "value": "a whole",
+        "count": 1,
+        "percentage": 0.058823529411764705
+      },
+      {
+        "value": "affogato that's",
+        "count": 1,
+        "percentage": 0.058823529411764705
+      },
+      {
+        "value": "black pebbles",
+        "count": 1,
+        "percentage": 0.058823529411764705
+      },
+      {
+        "value": "definitely a",
+        "count": 1,
+        "percentage": 0.058823529411764705
+      },
+      {
+        "value": "just endless",
+        "count": 1,
+        "percentage": 0.058823529411764705
+      },
+      {
+        "value": "look at",
+        "count": 1,
+        "percentage": 0.058823529411764705
+      },
+      {
+        "value": "look how",
+        "count": 1,
+        "percentage": 0.058823529411764705
+      },
+      {
+        "value": "love a",
+        "count": 1,
+        "percentage": 0.058823529411764705
+      },
+      {
+        "value": "okay that",
+        "count": 1,
+        "percentage": 0.058823529411764705
+      },
+      {
+        "value": "rooftop tables",
+        "count": 1,
+        "percentage": 0.058823529411764705
+      },
+      {
+        "value": "that dark",
+        "count": 1,
+        "percentage": 0.058823529411764705
+      },
+      {
+        "value": "that spiral",
+        "count": 1,
+        "percentage": 0.058823529411764705
+      },
+      {
+        "value": "those waves",
+        "count": 1,
+        "percentage": 0.058823529411764705
+      },
+      {
+        "value": "two thousand",
+        "count": 1,
+        "percentage": 0.058823529411764705
+      }
+    ],
+    "repeatedThreeWordPrefixes": [],
+    "constructionFrequency": {
+      "That ... looks/looked/is/was ...": 2,
+      "This ...": 0,
+      "Looks like ...": 2,
+      "first-person openers": 0,
+      "fragments": 8,
+      "questions": 6,
+      "imperative or verb-led": 2
+    },
+    "structuralFamilies": [
+      {
+        "value": "question-led or rhetorical",
+        "count": 6,
+        "percentage": 0.35294117647058826
+      },
+      {
+        "value": "fragment",
+        "count": 4,
+        "percentage": 0.23529411764705882
+      },
+      {
+        "value": "imperative or verb-led",
+        "count": 2,
+        "percentage": 0.11764705882352941
+      },
+      {
+        "value": "looks like",
+        "count": 2,
+        "percentage": 0.11764705882352941
+      },
+      {
+        "value": "that + looks/looked/is/was",
+        "count": 2,
+        "percentage": 0.11764705882352941
+      },
+      {
+        "value": "other demonstrative",
+        "count": 1,
+        "percentage": 0.058823529411764705
+      }
+    ],
+    "largestStructuralFamily": {
+      "value": "question-led or rhetorical",
+      "count": 6,
+      "percentage": 0.35294117647058826
+    }
+  },
+  "grounding": {
+    "unsupportedAcceptedClaims": 0,
+    "summaryLikeAccepted": 0
+  },
+  "pricing": {
+    "assumption": "Gemini 2.5 Flash standard paid tier, USD per 1M tokens",
+    "inputUsdPerMillion": 0.3,
+    "outputIncludingThinkingUsdPerMillion": 2.5
+  },
+  "usage": {
+    "beforeTotal": {
+      "inputTokens": 36190,
+      "outputTokens": 6662,
+      "thinkingTokens": 9402,
+      "totalTokens": 52254
+    },
+    "afterTotal": {
+      "inputTokens": 14768,
+      "outputTokens": 1507,
+      "thinkingTokens": 0,
+      "totalTokens": 16275
+    },
+    "beforeAverage": {
+      "inputTokens": 2010.5555555555557,
+      "outputTokens": 370.1111111111111,
+      "thinkingTokens": 522.3333333333334,
+      "totalTokens": 2903
+    },
+    "afterAverage": {
+      "inputTokens": 820.4444444444445,
+      "outputTokens": 83.72222222222223,
+      "thinkingTokens": 0,
+      "totalTokens": 904.1666666666666
+    },
+    "beforeAverageEstimatedCostUsd": 0.002834277777777778,
+    "afterAverageEstimatedCostUsd": 0.0004554388888888889
+  },
+  "releaseGate": {
+    "passed": true,
+    "thresholds": {
+      "maxStructuralFamilyShare": 0.4,
+      "maxExactTwoTokenOpenerCount": 3,
+      "maxAverageEstimatedCostUsd": 0.001
+    },
+    "failures": []
+  },
+  "rows": [
+    {
+      "id": "burger",
+      "group": "food",
+      "label": "Burger",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "double smashburger with crisp browned edges and melted cheese",
+          "timestampSeconds": 4
+        },
+        {
+          "source": "frame",
+          "value": "hands lifting the same very tall smashburger from a tray",
+          "timestampSeconds": 7
+        }
+      ],
+      "before": "That double smashburger looked insane, with those crisp browned edges and melted cheese!",
+      "proposedAfter": "Look at that double smashburger, so tall!",
+      "after": "Look at that double smashburger, so tall!",
+      "disposition": "accepted",
+      "rejectionReason": null,
+      "structuralFamily": "imperative or verb-led",
+      "validation": {
+        "note": "Look at that double smashburger, so tall!",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "before": {
+          "inputTokens": 2013,
+          "outputTokens": 400,
+          "thinkingTokens": 292,
+          "totalTokens": 2705
+        },
+        "after": {
+          "inputTokens": 822,
+          "outputTokens": 107,
+          "thinkingTokens": 0,
+          "totalTokens": 929
+        }
+      }
+    },
+    {
+      "id": "pizza",
+      "group": "food",
+      "label": "Pizza",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "wide pizza slice bending under bubbling cheese",
+          "timestampSeconds": 3
+        },
+        {
+          "source": "speech",
+          "value": "listen to that crust crack",
+          "timestampSeconds": 5
+        }
+      ],
+      "before": "That wide pizza slice with bubbling cheese looked amazing! And the crust crack sound was so satisfying.",
+      "proposedAfter": "Okay, that crust sounds perfect.",
+      "after": "Okay, that crust sounds perfect.",
+      "disposition": "accepted",
+      "rejectionReason": null,
+      "structuralFamily": "fragment",
+      "validation": {
+        "note": "Okay, that crust sounds perfect.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "before": {
+          "inputTokens": 2004,
+          "outputTokens": 355,
+          "thinkingTokens": 276,
+          "totalTokens": 2635
+        },
+        "after": {
+          "inputTokens": 813,
+          "outputTokens": 59,
+          "thinkingTokens": 0,
+          "totalTokens": 872
+        }
+      }
+    },
+    {
+      "id": "coffee-dessert",
+      "group": "food",
+      "label": "Coffee and dessert",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "espresso poured over vanilla ice cream in a small glass",
+          "timestampSeconds": 8
+        },
+        {
+          "source": "frame",
+          "value": "the affogato overflowing slightly onto its saucer",
+          "timestampSeconds": 10
+        }
+      ],
+      "before": "That overflowing affogato looked amazing!",
+      "proposedAfter": "Affogato that's ready to overflow? I need that.",
+      "after": "Affogato that's ready to overflow? I need that.",
+      "disposition": "accepted",
+      "rejectionReason": null,
+      "structuralFamily": "question-led or rhetorical",
+      "validation": {
+        "note": "Affogato that's ready to overflow? I need that.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "before": {
+          "inputTokens": 2012,
+          "outputTokens": 382,
+          "thinkingTokens": 315,
+          "totalTokens": 2709
+        },
+        "after": {
+          "inputTokens": 821,
+          "outputTokens": 71,
+          "thinkingTokens": 0,
+          "totalTokens": 892
+        }
+      }
+    },
+    {
+      "id": "surfing",
+      "group": "water",
+      "label": "Surfing",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "surfer dropping down the face of a very large curling wave",
+          "timestampSeconds": 12
+        },
+        {
+          "source": "frame",
+          "value": "several large waves breaking hard close together",
+          "timestampSeconds": 15
+        }
+      ],
+      "before": "Looks like a great spot for big waves and surfing!",
+      "proposedAfter": "Those waves look seriously massive.",
+      "after": "Those waves look seriously massive.",
+      "disposition": "accepted",
+      "rejectionReason": null,
+      "structuralFamily": "other demonstrative",
+      "validation": {
+        "note": "Those waves look seriously massive.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "before": {
+          "inputTokens": 2012,
+          "outputTokens": 392,
+          "thinkingTokens": 385,
+          "totalTokens": 2789
+        },
+        "after": {
+          "inputTokens": 822,
+          "outputTokens": 103,
+          "thinkingTokens": 0,
+          "totalTokens": 925
+        }
+      }
+    },
+    {
+      "id": "swimming-hole",
+      "group": "water",
+      "label": "Swimming hole",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "dark blue swimming hole shaded by tall granite walls",
+          "timestampSeconds": 6
+        },
+        {
+          "source": "frame",
+          "value": "swimmer entering the dark water from a low rock",
+          "timestampSeconds": 9
+        }
+      ],
+      "before": "That dark blue swimming hole with tall granite walls looked amazing for a swim!",
+      "proposedAfter": "That dark blue water looks so deep.",
+      "after": "That dark blue water looks so deep.",
+      "disposition": "accepted",
+      "rejectionReason": null,
+      "structuralFamily": "that + looks/looked/is/was",
+      "validation": {
+        "note": "That dark blue water looks so deep.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "before": {
+          "inputTokens": 2010,
+          "outputTokens": 369,
+          "thinkingTokens": 755,
+          "totalTokens": 3134
+        },
+        "after": {
+          "inputTokens": 821,
+          "outputTokens": 64,
+          "thinkingTokens": 0,
+          "totalTokens": 885
+        }
+      }
+    },
+    {
+      "id": "waterfall",
+      "group": "water",
+      "label": "Waterfall",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "narrow waterfall dropping into a bright clear pool",
+          "timestampSeconds": 11
+        },
+        {
+          "source": "frame",
+          "value": "people standing tiny beside the tall waterfall",
+          "timestampSeconds": 14
+        }
+      ],
+      "before": "Looks like a tall waterfall with a bright clear pool. People look tiny next to it!",
+      "proposedAfter": "Look how clear that water is!",
+      "after": "Look how clear that water is!",
+      "disposition": "accepted",
+      "rejectionReason": null,
+      "structuralFamily": "imperative or verb-led",
+      "validation": {
+        "note": "Look how clear that water is!",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "before": {
+          "inputTokens": 2009,
+          "outputTokens": 356,
+          "thinkingTokens": 341,
+          "totalTokens": 2706
+        },
+        "after": {
+          "inputTokens": 819,
+          "outputTokens": 63,
+          "thinkingTokens": 0,
+          "totalTokens": 882
+        }
+      }
+    },
+    {
+      "id": "cliff-jump",
+      "group": "water",
+      "label": "Cliff jump",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "person hesitating at the edge of a high rock ledge over water",
+          "timestampSeconds": 5
+        },
+        {
+          "source": "frame",
+          "value": "same person jumping from the high ledge into the water",
+          "timestampSeconds": 7
+        }
+      ],
+      "before": "Looks like a cool spot for cliff jumping! That high ledge over the water is intense.",
+      "proposedAfter": "Definitely a high jump. A little intimidating!",
+      "after": "Definitely a high jump. A little intimidating!",
+      "disposition": "accepted",
+      "rejectionReason": null,
+      "structuralFamily": "fragment",
+      "validation": {
+        "note": "Definitely a high jump. A little intimidating!",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "before": {
+          "inputTokens": 2016,
+          "outputTokens": 374,
+          "thinkingTokens": 187,
+          "totalTokens": 2577
+        },
+        "after": {
+          "inputTokens": 826,
+          "outputTokens": 108,
+          "thinkingTokens": 0,
+          "totalTokens": 934
+        }
+      }
+    },
+    {
+      "id": "hike",
+      "group": "outdoors",
+      "label": "Hike",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "hikers climbing a long exposed staircase cut into the canyon",
+          "timestampSeconds": 18
+        },
+        {
+          "source": "speech",
+          "value": "we still have two thousand feet to climb",
+          "timestampSeconds": 19
+        }
+      ],
+      "before": "That canyon loop looks intense with hikers climbing a long exposed staircase and 2000 feet to go!",
+      "proposedAfter": "Two thousand feet on those stairs? Oh my gosh.",
+      "after": "Two thousand feet on those stairs? Oh my gosh.",
+      "disposition": "accepted",
+      "rejectionReason": null,
+      "structuralFamily": "question-led or rhetorical",
+      "validation": {
+        "note": "Two thousand feet on those stairs? Oh my gosh.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "before": {
+          "inputTokens": 2014,
+          "outputTokens": 386,
+          "thinkingTokens": 602,
+          "totalTokens": 3002
+        },
+        "after": {
+          "inputTokens": 825,
+          "outputTokens": 108,
+          "thinkingTokens": 0,
+          "totalTokens": 933
+        }
+      }
+    },
+    {
+      "id": "mountain-viewpoint",
+      "group": "outdoors",
+      "label": "Mountain viewpoint",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "layered mountain ridges extending above a low cloud deck",
+          "timestampSeconds": 22
+        },
+        {
+          "source": "frame",
+          "value": "small lookout platform facing the same mountain panorama",
+          "timestampSeconds": 25
+        }
+      ],
+      "before": "That view of layered mountain ridges above the clouds from the lookout platform looked amazing!",
+      "proposedAfter": "A platform to take in those ridge layers above the clouds? Yes, please.",
+      "after": "A platform to take in those ridge layers above the clouds? Yes, please.",
+      "disposition": "accepted",
+      "rejectionReason": null,
+      "structuralFamily": "question-led or rhetorical",
+      "validation": {
+        "note": "A platform to take in those ridge layers above the clouds? Yes, please.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "before": {
+          "inputTokens": 2013,
+          "outputTokens": 371,
+          "thinkingTokens": 1464,
+          "totalTokens": 3848
+        },
+        "after": {
+          "inputTokens": 823,
+          "outputTokens": 111,
+          "thinkingTokens": 0,
+          "totalTokens": 934
+        }
+      }
+    },
+    {
+      "id": "cave",
+      "group": "outdoors",
+      "label": "Cave",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "person squeezing sideways through a narrow cave passage",
+          "timestampSeconds": 9
+        },
+        {
+          "source": "frame",
+          "value": "large underground chamber filled with jagged rock columns",
+          "timestampSeconds": 14
+        }
+      ],
+      "before": "Looks like a wild cave adventure with tight squeezes and huge chambers!",
+      "proposedAfter": "Looks like you have to squeeze through some tight spots!",
+      "after": "Looks like you have to squeeze through some tight spots!",
+      "disposition": "accepted",
+      "rejectionReason": null,
+      "structuralFamily": "looks like",
+      "validation": {
+        "note": "Looks like you have to squeeze through some tight spots!",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "before": {
+          "inputTokens": 2010,
+          "outputTokens": 364,
+          "thinkingTokens": 460,
+          "totalTokens": 2834
+        },
+        "after": {
+          "inputTokens": 820,
+          "outputTokens": 66,
+          "thinkingTokens": 0,
+          "totalTokens": 886
+        }
+      }
+    },
+    {
+      "id": "beach",
+      "group": "outdoors",
+      "label": "Beach",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "empty crescent beach bordered by black volcanic cliffs",
+          "timestampSeconds": 3
+        },
+        {
+          "source": "frame",
+          "value": "waves washing over smooth black pebbles on the same beach",
+          "timestampSeconds": 6
+        }
+      ],
+      "before": "That empty crescent beach with black volcanic cliffs and smooth pebbles looked amazing.",
+      "proposedAfter": "Black pebbles? I'd love to see that in person.",
+      "after": "Black pebbles? I'd love to see that in person.",
+      "disposition": "accepted",
+      "rejectionReason": null,
+      "structuralFamily": "question-led or rhetorical",
+      "validation": {
+        "note": "Black pebbles? I'd love to see that in person.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "before": {
+          "inputTokens": 2010,
+          "outputTokens": 373,
+          "thinkingTokens": 407,
+          "totalTokens": 2790
+        },
+        "after": {
+          "inputTokens": 819,
+          "outputTokens": 70,
+          "thinkingTokens": 0,
+          "totalTokens": 889
+        }
+      }
+    },
+    {
+      "id": "rooftop",
+      "group": "city_venue",
+      "label": "Rooftop",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "rooftop tables glowing under small lamps after sunset",
+          "timestampSeconds": 16
+        },
+        {
+          "source": "frame",
+          "value": "city lights visible beyond the same rooftop patio",
+          "timestampSeconds": 19
+        }
+      ],
+      "before": "Cool rooftop spot with city views and a nice evening vibe.",
+      "proposedAfter": "Rooftop tables after sunset? That’s the mood.",
+      "after": "Rooftop tables after sunset? That’s the mood.",
+      "disposition": "accepted",
+      "rejectionReason": null,
+      "structuralFamily": "question-led or rhetorical",
+      "validation": {
+        "note": "Rooftop tables after sunset? That’s the mood.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "before": {
+          "inputTokens": 2011,
+          "outputTokens": 358,
+          "thinkingTokens": 444,
+          "totalTokens": 2813
+        },
+        "after": {
+          "inputTokens": 822,
+          "outputTokens": 71,
+          "thinkingTokens": 0,
+          "totalTokens": 893
+        }
+      }
+    },
+    {
+      "id": "hotel",
+      "group": "city_venue",
+      "label": "Hotel",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "hotel room window opening directly onto a busy harbor view",
+          "timestampSeconds": 7
+        },
+        {
+          "source": "frame",
+          "value": "bed positioned to face the same floor-to-ceiling harbor window",
+          "timestampSeconds": 10
+        }
+      ],
+      "before": "That hotel room with the floor-to-ceiling window and direct harbor view looked amazing!",
+      "proposedAfter": "A whole wall is a window, right over the harbor? Nice.",
+      "after": "A whole wall is a window, right over the harbor? Nice.",
+      "disposition": "accepted",
+      "rejectionReason": null,
+      "structuralFamily": "question-led or rhetorical",
+      "validation": {
+        "note": "A whole wall is a window, right over the harbor? Nice.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "before": {
+          "inputTokens": 2016,
+          "outputTokens": 386,
+          "thinkingTokens": 412,
+          "totalTokens": 2814
+        },
+        "after": {
+          "inputTokens": 826,
+          "outputTokens": 114,
+          "thinkingTokens": 0,
+          "totalTokens": 940
+        }
+      }
+    },
+    {
+      "id": "restaurant-interior",
+      "group": "city_venue",
+      "label": "Restaurant interior",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "tiny candlelit dining room with closely packed tables",
+          "timestampSeconds": 4
+        },
+        {
+          "source": "frame",
+          "value": "open kitchen visible from nearly every table",
+          "timestampSeconds": 8
+        }
+      ],
+      "before": "That tiny candlelit dining room with the open kitchen looked so cozy.",
+      "proposedAfter": "Love a restaurant with an open kitchen, watching them cook.",
+      "after": "Love a restaurant with an open kitchen, watching them cook.",
+      "disposition": "accepted",
+      "rejectionReason": null,
+      "structuralFamily": "fragment",
+      "validation": {
+        "note": "Love a restaurant with an open kitchen, watching them cook.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "before": {
+          "inputTokens": 2008,
+          "outputTokens": 362,
+          "thinkingTokens": 551,
+          "totalTokens": 2921
+        },
+        "after": {
+          "inputTokens": 817,
+          "outputTokens": 66,
+          "thinkingTokens": 0,
+          "totalTokens": 883
+        }
+      }
+    },
+    {
+      "id": "architecture",
+      "group": "city_venue",
+      "label": "Unusual architecture",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "building exterior formed from stacked curved concrete terraces",
+          "timestampSeconds": 5
+        },
+        {
+          "source": "frame",
+          "value": "spiral ramp continuing around the building interior",
+          "timestampSeconds": 13
+        }
+      ],
+      "before": "Cool building with stacked curved terraces and a spiral ramp inside.",
+      "proposedAfter": "That spiral ramp inside is pretty intense.",
+      "after": "That spiral ramp inside is pretty intense.",
+      "disposition": "accepted",
+      "rejectionReason": null,
+      "structuralFamily": "that + looks/looked/is/was",
+      "validation": {
+        "note": "That spiral ramp inside is pretty intense.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "before": {
+          "inputTokens": 2008,
+          "outputTokens": 360,
+          "thinkingTokens": 1237,
+          "totalTokens": 3605
+        },
+        "after": {
+          "inputTokens": 818,
+          "outputTokens": 63,
+          "thinkingTokens": 0,
+          "totalTokens": 881
+        }
+      }
+    },
+    {
+      "id": "scenic-road",
+      "group": "ambiguous",
+      "label": "Scenic road",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "two-lane road curving along a steep ocean cliff",
+          "timestampSeconds": 6
+        },
+        {
+          "source": "frame",
+          "value": "same empty road continuing beside the ocean",
+          "timestampSeconds": 9
+        }
+      ],
+      "before": "That scenic two-lane road curving along the ocean cliff looked amazing.",
+      "proposedAfter": "A coastal drive like that would be so relaxing.",
+      "after": null,
+      "disposition": "rejected",
+      "rejectionReason": "ungrounded_claim",
+      "structuralFamily": "other: a",
+      "validation": {
+        "note": null,
+        "status": "rejected",
+        "reason": "ungrounded_claim"
+      },
+      "evaluation": {
+        "grounded": false,
+        "concise": false,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": false
+      },
+      "usage": {
+        "before": {
+          "inputTokens": 2009,
+          "outputTokens": 365,
+          "thinkingTokens": 294,
+          "totalTokens": 2668
+        },
+        "after": {
+          "inputTokens": 819,
+          "outputTokens": 103,
+          "thinkingTokens": 0,
+          "totalTokens": 922
+        }
+      }
+    },
+    {
+      "id": "storefront",
+      "group": "ambiguous",
+      "label": "Ordinary storefront",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "small neighborhood storefront with two bicycles outside",
+          "timestampSeconds": 3
+        },
+        {
+          "source": "visible_text",
+          "value": "MORI MARKET",
+          "timestampSeconds": 3
+        }
+      ],
+      "before": "Looks like a cute neighborhood market with bikes outside.",
+      "proposedAfter": "Looks like a great little neighborhood spot.",
+      "after": "Looks like a great little neighborhood spot.",
+      "disposition": "accepted",
+      "rejectionReason": null,
+      "structuralFamily": "looks like",
+      "validation": {
+        "note": "Looks like a great little neighborhood spot.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "before": {
+          "inputTokens": 2004,
+          "outputTokens": 351,
+          "thinkingTokens": 538,
+          "totalTokens": 2893
+        },
+        "after": {
+          "inputTokens": 814,
+          "outputTokens": 62,
+          "thinkingTokens": 0,
+          "totalTokens": 876
+        }
+      }
+    },
+    {
+      "id": "broad-landscape",
+      "group": "ambiguous",
+      "label": "Broad landscape",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "broad grassy plain beneath a pale overcast sky",
+          "timestampSeconds": 4
+        },
+        {
+          "source": "frame",
+          "value": "distant low hills across the same grassy plain",
+          "timestampSeconds": 8
+        }
+      ],
+      "before": "Looks like a peaceful spot with a broad grassy plain and distant hills.",
+      "proposedAfter": "Just endless, rolling plains.",
+      "after": "Just endless, rolling plains.",
+      "disposition": "accepted",
+      "rejectionReason": null,
+      "structuralFamily": "fragment",
+      "validation": {
+        "note": "Just endless, rolling plains.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "before": {
+          "inputTokens": 2011,
+          "outputTokens": 358,
+          "thinkingTokens": 442,
+          "totalTokens": 2811
+        },
+        "after": {
+          "inputTokens": 821,
+          "outputTokens": 98,
+          "thinkingTokens": 0,
+          "totalTokens": 919
+        }
+      }
+    }
+  ]
+}

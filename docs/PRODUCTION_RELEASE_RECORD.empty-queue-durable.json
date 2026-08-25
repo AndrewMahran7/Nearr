@@ -1,15 +1,15 @@
 {
   "releaseId": "2026-08-24-empty-queue-durable",
-  "previousMainSha": "0be20996ea4439a17a1fac31ad115846a82d7df8",
+  "previousMainSha": "48f0d5bbb39ca6135451d0c62c69285697187c6a",
   "previousOtaGroup": "9dda009a-04bf-4a9b-9060-15fe7b2c1891",
   "currentOtaGroup": null,
   "edgeVersions": {
     "process-share-link": 133,
-    "process-share-jobs": 82,
+    "process-share-jobs": 83,
     "create-share-job": 25,
     "delete-account": 23
   },
-  "railwayDeployment": "0cc03945-5b33-4170-b344-91d8a5981574@0bd1e121d10ab062e41b0d08bd223812b082fa1b",
+  "railwayDeployment": "1982da61-abbb-44a8-817e-02a4fc998fb2@48f0d5bbb39ca6135451d0c62c69285697187c6a",
   "migrationLedger": [
     "20260822000003"
   ],
