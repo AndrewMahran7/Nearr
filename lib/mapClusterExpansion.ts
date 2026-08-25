@@ -141,6 +141,7 @@ type ClusterMarkerIdentity = {
   clusterId: number;
   datasetKey?: string;
   clusterKey?: string;
+  canonicalClusterKey?: string;
   latitude: number;
   longitude: number;
 };
@@ -161,6 +162,12 @@ export function resolveLatestClusterMarker<T extends ClusterMarkerIdentity>(
     ? current.find((candidate) => candidate.clusterKey === tapped.clusterKey)
     : null;
   if (sameMembership) return sameMembership;
+  const sameCanonicalMembership = tapped.canonicalClusterKey
+    ? current.find((candidate) =>
+        candidate.canonicalClusterKey === tapped.canonicalClusterKey,
+      )
+    : null;
+  if (sameCanonicalMembership) return sameCanonicalMembership;
   if (!tapped.datasetKey) return null;
   return current.find((candidate) =>
     candidate.datasetKey === tapped.datasetKey && candidate.clusterId === tapped.clusterId,

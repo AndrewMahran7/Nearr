@@ -121,6 +121,7 @@ import {
   getSavedPlacesCacheSnapshot,
   removeSavedPlaceFromCache,
   restoreSavedPlacesCache,
+  upsertSavedPlaceIntoCache,
   updateSavedPlacesCache,
 } from '@/hooks/useSavedPlaces';
 import { isDemoMode } from '@/lib/demoMode';
@@ -474,7 +475,10 @@ export default function MapScreen() {
   const resetClusterExpansionRef = useRef<() => void>(() => undefined);
   const executeClusterExpansionRef = useRef<(action: ClusterExpansionAction) => void>(() => undefined);
   const dismissSelectedPlaceRef = useRef<() => void>(() => undefined);
-  const selectPlaceRef = useRef<(place: SavedPlaceWithPlace) => void>(() => undefined);
+  const selectPlaceRef = useRef<(
+    place: SavedPlaceWithPlace,
+    options?: { focusCamera?: boolean },
+  ) => void>(() => undefined);
   const markerRefs = useRef<Record<string, ComponentRef<typeof Marker> | null>>({});
   const demo = isDemoMode();
   // Map Preview keeps the real MapView but skips Supabase / Google / location.
@@ -1625,6 +1629,9 @@ export default function MapScreen() {
     ).length;
     recordMapClusterDiagnostic(event, {
       clusterId: request.clusterId,
+      datasetGeneration: datasetGenerationRef.current.value,
+      renderedDatasetKey: request.datasetKey,
+      currentDatasetKey: clusterIndexRef.current.datasetKey,
       memberCount: request.memberIds.length,
       currentZoom: request.currentZoom,
       targetZoom: request.targetZoom,
@@ -1771,9 +1778,9 @@ export default function MapScreen() {
   }), [mapAreaHeight, windowHeight, windowWidth]);
 
   /**
-   * Resolve every tap against the latest index. A stale native marker id is
-   * repaired by the closest currently-rendered cluster; an invalid id can
-   * therefore never turn the optional map-ref call into a silent no-op.
+   * Resolve every tap against the latest index by rendered or preserved
+   * canonical membership. Never redirect a stale native event to the nearest
+   * unrelated cluster; preserved member coordinates own deterministic recovery.
    */
   const handleClusterPress = useCallback((tapped: MapClusterMarkerModel) => {
     handleUserInteraction('marker_press');
@@ -1781,15 +1788,17 @@ export default function MapScreen() {
     const cluster = resolveLatestClusterMarker(tapped, latestMarkers);
 
     const members = cluster
-      ? cluster.memberIds.flatMap((id) => {
+      ? cluster.canonicalMemberIds.flatMap((id) => {
           const member = clusterIndexRef.current.byId.get(id);
           return member ? [member] : [];
         })
       : [];
     if (!cluster || members.length < 2) {
-      const latestTappedMember = tapped.memberIds
+      const preservedIds = tapped.canonicalMemberIds ?? tapped.memberIds;
+      const latestTappedMembers = preservedIds
         .map((id) => visiblePlacesRef.current.find((place) => place.id === id))
-        .find((place): place is SavedPlaceWithPlace => !!place);
+        .filter((place): place is SavedPlaceWithPlace => !!place);
+      const latestTappedMember = latestTappedMembers[0];
       const currentZoom = effectiveClusterZoomRef.current;
       const targetZoom = clusterTapZoom({ expansionZoom: currentZoom + 1, currentZoom });
       const targetRegion = expansionRegionFor({
@@ -1801,13 +1810,15 @@ export default function MapScreen() {
         token: ++clusterExpansionTokenRef.current,
         datasetKey: tapped.datasetKey,
         clusterId: tapped.clusterId,
-        clusterKey: tapped.clusterKey,
-        memberIds: latestTappedMember ? [latestTappedMember.id] : tapped.memberIds,
-        members: latestTappedMember ? [{
-          id: latestTappedMember.id,
-          latitude: latestTappedMember.place.latitude,
-          longitude: latestTappedMember.place.longitude,
-        }] : [],
+        clusterKey: tapped.canonicalClusterKey ?? tapped.clusterKey,
+        memberIds: latestTappedMembers.length > 0
+          ? latestTappedMembers.map((member) => member.id)
+          : preservedIds,
+        members: latestTappedMembers.map((member) => ({
+          id: member.id,
+          latitude: member.place.latitude,
+          longitude: member.place.longitude,
+        })),
         currentZoom,
         targetZoom,
         latitude: tapped.latitude,
@@ -1823,9 +1834,20 @@ export default function MapScreen() {
         expansionDispatched: false,
         cameraCommandExecuted: false,
         clusteringRecomputed: true,
-        result: latestTappedMember ? 'fallback_selection' : 'stale_center_zoom',
+        result: latestTappedMembers.length >= 2
+          ? 'preserved_member_expansion'
+          : latestTappedMember
+            ? 'fallback_selection'
+            : 'stale_center_zoom',
       });
-      if (latestTappedMember) {
+      if (latestTappedMembers.length >= 2) {
+        executeClusterExpansionRef.current(
+          clusterExpansionCoordinatorRef.current.tap(
+            unresolved,
+            mapReadyRef.current && !!mapRef.current,
+          ),
+        );
+      } else if (latestTappedMember) {
         selectPlaceRef.current(latestTappedMember);
         emitClusterDiagnostic('cluster_expand_completed', unresolved, {
           expansionDispatched: false,
@@ -2302,12 +2324,14 @@ export default function MapScreen() {
     router.replace('/(tabs)/map');
   }
 
-  function selectPlace(item: SavedPlaceWithPlace) {
-    // Selecting a place is manual navigation to a specific spot — stop the
-    // follow camera so it doesn't yank back to the user's live location while
-    // they're examining this place. The user dot keeps updating; tapping the
-    // recenter button re-enables follow. Set the ref directly for immediate
-    // effect in any in-flight watch callback.
+  function selectPlace(
+    item: SavedPlaceWithPlace,
+    options: { focusCamera?: boolean } = {},
+  ) {
+    // Selection always owns the detail surface and pauses follow mode. Most
+    // explicit pin/search navigation also focuses the zone; a recommendation
+    // saved from an already-open map context opts out so saving cannot replace
+    // the user's viewport with a narrow one-cluster query.
     followModeRef.current = false;
     setFollowMode(false);
     setSelected(item);
@@ -2322,10 +2346,12 @@ export default function MapScreen() {
     // Always (re)open a newly selected marker in the collapsed preview state.
     setPreviewExpanded(false);
     previewTranslateY.setValue(0);
-    try {
-      focusZone(item);
-    } catch (err) {
-      console.warn('[map] focus failed', (err as Error)?.message ?? err);
+    if (options.focusCamera !== false) {
+      try {
+        focusZone(item);
+      } catch (err) {
+        console.warn('[map] focus failed', (err as Error)?.message ?? err);
+      }
     }
   }
   selectPlaceRef.current = (place) => {
@@ -2592,7 +2618,8 @@ export default function MapScreen() {
   // Direct-save a real-world place chosen from the map search dropdown. Saves
   // immediately using the category-aware automatic radius (null override), so
   // the user never sees the add-place radius picker. On success we revalidate
-  // the cache, focus the new place, and show an Undo snackbar.
+  // the cache, select the new place, and show an Undo snackbar. Map search
+  // focuses it; a Nearby recommendation preserves the current viewport.
   const handleSavePlaceCandidate = useCallback(
     async (
       place: PlaceCandidate,
@@ -2609,6 +2636,10 @@ export default function MapScreen() {
           radiusUnit: null,
           sourceType: 'manual',
         });
+        // This shared mutation increments the dataset revision before a
+        // coalesced pre-save fetch can commit, and pushes the saved row to all
+        // mounted consumers exactly once.
+        if (result.saved) upsertSavedPlaceIntoCache(result.saved);
         // Force a refetch so the newly saved place is in the shared cache and
         // its marker renders immediately (a stale-while-revalidate would skip
         // the network within the freshness window and the marker wouldn't
@@ -2620,11 +2651,15 @@ export default function MapScreen() {
               ? validPlaces.find((p) => p.id === result.savedPlaceId)
               : undefined
           );
-          if (existing && selectAfterSave) selectPlace(existing);
+          if (existing && selectAfterSave) {
+            selectPlace(existing, { focusCamera: flow === 'map_search' });
+          }
           showSnackbar('Already on your map', null);
           return existing ?? null;
         }
-        if (selectAfterSave) selectPlace(result.saved);
+        if (selectAfterSave) {
+          selectPlace(result.saved, { focusCamera: flow === 'map_search' });
+        }
         showSnackbar('Saved to your map', result.savedPlaceId);
         void trackEvent('save_success', {
           source_type: 'manual',

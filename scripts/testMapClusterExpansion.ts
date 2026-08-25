@@ -14,6 +14,7 @@ import {
 } from '../lib/mapClusterExpansion';
 import {
   buildMapClusterIndex,
+  clusterWithoutSelectedMember,
   clusterExpansionRegion,
   clusterExpansionZoom,
   clusterMemberPlaces,
@@ -197,6 +198,17 @@ assert.ok(originalRequest.memberIds.length >= 2, 'rendered cluster resolves curr
   index = buildMapClusterIndex(allPlaces); // clearing the filter rebuilds cleanly
   wideClusters = clusters(queryMapClusters(index, { region: wide, zoom: wideZoom }));
   assert.ok(resolveLatestClusterMarker(original, wideClusters));
+}
+
+// 6b. A selected-member projection resolves through the preserved canonical
+// membership after deselection; its rendered remainder key is not overloaded.
+{
+  const selectedId = original.memberIds[0]!;
+  const projected = clusterWithoutSelectedMember(original, selectedId, wideZoom).cluster!;
+  assert.notEqual(projected.clusterKey, original.clusterKey);
+  assert.equal(projected.canonicalClusterKey, original.clusterKey);
+  const repaired = resolveLatestClusterMarker(projected, wideClusters);
+  assert.equal(repaired?.clusterKey, original.clusterKey);
 }
 
 // 7. Same/equal expansion zoom is forced to a meaningful level in.

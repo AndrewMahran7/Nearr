@@ -109,6 +109,12 @@ function NearrMapClusterMarkerView({ cluster, onPress, dimmed }: Props) {
 
 export const NearrMapClusterMarker = memo(NearrMapClusterMarkerView, (prev, next) =>
   prev.cluster.id === next.cluster.id &&
+  // Same native owner, current engine payload. These fields update the press
+  // closure without remounting an unchanged logical visual marker.
+  prev.cluster.datasetKey === next.cluster.datasetKey &&
+  prev.cluster.clusterId === next.cluster.clusterId &&
+  prev.cluster.clusterKey === next.cluster.clusterKey &&
+  prev.cluster.canonicalClusterKey === next.cluster.canonicalClusterKey &&
   prev.cluster.count === next.cluster.count &&
   prev.cluster.glyph === next.cluster.glyph &&
   prev.cluster.latitude === next.cluster.latitude &&

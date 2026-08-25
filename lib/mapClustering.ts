@@ -381,13 +381,16 @@ type ClusterAggregateProperties = { [groupKey: string]: number };
 
 export type MapClusterMarker = {
   kind: 'cluster';
-  /** Stable for the same canonical member set and dataset. */
+  /** Native/React owner for this exact rendered member set + zoom context. */
   id: string;
   /** Ephemeral engine id; valid only against `datasetKey`. */
   clusterId: number;
   datasetKey: string;
   clusterKey: string;
   memberIds: readonly string[];
+  /** Underlying index membership, preserved through selection projection. */
+  canonicalClusterKey: string;
+  canonicalMemberIds: readonly string[];
   latitude: number;
   longitude: number;
   count: number;
@@ -450,7 +453,11 @@ export function mapClusterIdentity(args: {
   const memberIds = stableMemberIds(args.memberIds);
   const clusterKey = memberIds.join('|');
   return {
-    id: `cluster-${args.datasetKey}-${args.zoom}-${memberIds.length}-${stableHash(clusterKey)}`,
+    // Dataset generations are tap/index ownership, not visual ownership. An
+    // unrelated save may rebuild the index without changing this logical
+    // marker. Conversely, a selected-member projection changes `clusterKey`
+    // and therefore MUST get a different native owner.
+    id: `cluster-z${args.zoom}-${memberIds.length}-${stableHash(clusterKey)}`,
     clusterKey,
     memberIds,
   };
@@ -638,6 +645,8 @@ export function queryMapClusters<T extends Clusterable>(
         datasetKey: built.datasetKey,
         clusterKey: identity.clusterKey,
         memberIds: identity.memberIds,
+        canonicalClusterKey: identity.clusterKey,
+        canonicalMemberIds: identity.memberIds,
         latitude,
         longitude,
         count,

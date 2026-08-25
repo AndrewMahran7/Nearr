@@ -188,7 +188,7 @@ assert.deepEqual(recommendationQueryForCategory('attraction'), {
   assert.ok(recommended.includes('numberOfLines={3}'));
   assert.ok(recommended.includes("filter(Boolean).join(' · ')"));
   assert.ok(map.includes("handleSavePlaceCandidate(candidate, 'recommendation')"));
-  assert.ok(map.includes('selectPlace(result.saved)'));
+  assert.ok(map.includes("selectPlace(result.saved, { focusCamera: flow === 'map_search' })"));
   assert.ok(!/onPress:\s*\(\)\s*=>\s*onSaveRecommendation/.test(detail));
 }
 
