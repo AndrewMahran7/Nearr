@@ -2945,6 +2945,7 @@ export default function MapScreen() {
       <MapPlaceSearchDropdown
         visible={searchVisible}
         topInset={safeTopInset + Spacing.md}
+        locationBias={userRegion ? { lat: userRegion.latitude, lng: userRegion.longitude } : undefined}
         onClose={() => setSearchVisible(false)}
         onPickPlace={handleSavePlaceCandidate}
       />

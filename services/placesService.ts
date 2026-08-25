@@ -14,6 +14,11 @@ import { getGooglePlacesRuntimeConfig } from '@/lib/googlePlacesConfig';
 import { isMapPreviewMode } from '@/lib/mapPreview';
 import { searchDemoPlaces, getDemoPlaceDetails } from '@/services/demo';
 import type { OpeningHoursPeriod, PlaceOpeningHours } from '@/lib/placeHours';
+import {
+  analyzePlacesAmbiguity,
+  rankContextAwareCandidates,
+  type PlacesResolutionContext,
+} from '@/lib/contextAwarePlacesResolution';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -40,6 +45,11 @@ export type PlaceCandidate = {
   googleMapsTypeLabel?: string | null;
   shortFormattedAddress?: string | null;
   businessStatus?: string | null;
+  contextReason?: string | null;
+  contextLabel?: string | null;
+  distanceKm?: number | null;
+  localityMatch?: boolean;
+  wideningTierKm?: 25 | 75 | 200 | null;
 };
 
 export type PlaceRichDetails = {
@@ -176,6 +186,7 @@ const RICH_DETAILS_FIELDS = [
 export async function searchPlaces(
   query: string,
   locationBias?: LocationBias,
+  resolutionContext?: PlacesResolutionContext,
 ): Promise<PlaceCandidate[]> {
   if (isDemoMode()) return await searchDemoPlaces(query, locationBias);
   if (isMapPreviewMode()) return await searchDemoPlaces(query, locationBias);
@@ -188,7 +199,12 @@ export async function searchPlaces(
   const params = new URLSearchParams({ query: trimmed, key });
   if (locationBias) {
     params.set('location', `${locationBias.lat},${locationBias.lng}`);
-    params.set('radius', '50000'); // 50 km bias
+    params.set(
+      'radius',
+      String(resolutionContext?.mode === 'source' && !resolutionContext.manualExpansionRequested
+        ? 25_000
+        : 50_000),
+    );
   }
 
   const url = `${BASE}/textsearch/json?${params.toString()}`;
@@ -197,7 +213,19 @@ export async function searchPlaces(
   const json = await safeFetch(url);
   assertOk(json, true /* allow ZERO_RESULTS */);
 
-  return (json.results ?? []).slice(0, 8).map(toCandidateFromTextSearch);
+  const candidates: PlaceCandidate[] = (json.results ?? []).slice(0, 12).map(toCandidateFromTextSearch);
+  const context: PlacesResolutionContext = resolutionContext ?? {
+    mode: 'manual',
+    userLocation: locationBias ?? null,
+    regionConfidence: 'none',
+  };
+  return rankContextAwareCandidates({
+    query: trimmed,
+    candidates,
+    context,
+    searchTierKm: context.mode === 'source' && locationBias ? 25 : null,
+    placesCallCount: 1,
+  }).ranked.map((item) => ({ ...item.candidate, ...item.metadata }));
 }
 
 /**
@@ -805,30 +833,6 @@ function haversineMeters(
 // Franchise / multi-location detection + ranking
 // ---------------------------------------------------------------------------
 
-/**
- * Known chain / franchise names. Lower-cased, normalized (no apostrophes /
- * punctuation). We don't try to be exhaustive -- this list is a fast
- * positive signal; the `multiple-similar-results` check below catches
- * franchises we don't know about.
- *
- * Add cautiously: only well-known multi-location brands. Independent
- * restaurants with one location should NOT go here.
- */
-const KNOWN_CHAIN_NAMES: string[] = [
-  'starbucks', 'mcdonalds', 'in n out', 'in n out burger', 'chipotle',
-  'taco bell', 'subway', 'kfc', 'wendys', 'burger king', 'shake shack',
-  'five guys', 'chick fil a', 'panera', 'panera bread', 'dominos',
-  'pizza hut', 'papa johns', 'trader joes', 'whole foods', 'cvs',
-  'walgreens', 'rite aid', 'salt and straw', 'sidecar doughnuts',
-  'dunkin', 'jamba juice', 'jamba', 'panda express', 'sweetgreen', 'cava',
-  'blue bottle', 'blue bottle coffee', 'philz', 'philz coffee',
-  'peets coffee', 'crumbl', 'crumbl cookies', 'jollibee', 'el pollo loco',
-  'jersey mikes', 'noahs bagels', 'einstein bagels', 'baskin robbins',
-  'cold stone', 'coldstone', 'pinkberry', 'menchies', 'tatte', 'levain',
-  'levain bakery', 'porto s', 'portos', 'din tai fung', 'pieology',
-  'mendocino farms', 'tender greens', 'erewhon',
-];
-
 function normalizeName(s: string | null | undefined): string {
   if (!s) return '';
   return s
@@ -855,16 +859,7 @@ export function isLikelyMultiLocationPlace(
   query: string,
   candidates: PlaceCandidate[],
 ): boolean {
-  const q = normalizeName(query);
-  if (q) {
-    for (const chain of KNOWN_CHAIN_NAMES) {
-      // word-boundary-ish match so "starbucks" matches "starbucks reserve"
-      // but "barstool" does not match "bar".
-      if (q === chain || q.startsWith(chain + ' ') || q.includes(' ' + chain + ' ') || q.endsWith(' ' + chain)) {
-        return true;
-      }
-    }
-  }
+  if (analyzePlacesAmbiguity(query, candidates).ambiguous) return true;
   if (candidates.length < 2) return false;
 
   const exact = new Map<string, number>();

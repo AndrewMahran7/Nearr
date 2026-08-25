@@ -6,6 +6,7 @@ import { Radius, Spacing } from '@/constants';
 import {
   candidateCategoryLabel,
   candidateEvidenceLabel,
+  candidateContextEvidenceLabel,
   isBroadCandidate,
   type CandidateConfirmationPlace,
 } from '@/lib/vayrinCandidateConfirmation';
@@ -46,7 +47,8 @@ export function CandidateConfirmationCard({
 }: Props) {
   const broad = isBroadCandidate(candidate);
   const category = candidateCategoryLabel(candidate);
-  const evidenceLabel = evidence ?? candidateEvidenceLabel(candidate.sourceTimestamps);
+  const evidenceLabel = evidence ?? candidateContextEvidenceLabel(candidate) ??
+    candidateEvidenceLabel(candidate.sourceTimestamps);
   const actionLabel = selectable ? (selected ? 'Selected' : selectionRole === 'checkbox' ? 'Select' : 'Choose') : null;
   const accessibilityLabel = [
     candidate.name,

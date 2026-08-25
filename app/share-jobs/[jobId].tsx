@@ -27,6 +27,7 @@ import {
 import { Feather } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Location from 'expo-location';
 
 import { Button, ErrorBoundary, Input, ShareJobsHeader } from '@/components';
 import { CandidateConfirmationCard } from '@/components/CandidateConfirmationCard';
@@ -113,7 +114,13 @@ import {
   resolveOpenSavedPlaceRoute,
   type OpenSavedPlaceSource,
 } from '@/lib/openSavedPlace';
-import { getPlaceDetails, searchPlaces, type PlaceCandidate } from '@/services/placesService';
+import {
+  geocodeContextText,
+  getPlaceDetails,
+  searchPlaces,
+  type LocationBias,
+  type PlaceCandidate,
+} from '@/services/placesService';
 import { getSavedPlace } from '@/services/savedPlacesService';
 import type { SavedPlaceWithPlace } from '@/types';
 import {
@@ -140,6 +147,12 @@ import {
   visibleCandidateShortlist,
   type CandidateConfirmationPlace,
 } from '@/lib/vayrinCandidateConfirmation';
+import {
+  geographicFieldsFromLabel,
+  normalizeResolutionName,
+  type NearbyResolvedMention,
+  type PlacesResolutionContext,
+} from '@/lib/contextAwarePlacesResolution';
 
 /** Human platform label for the "Suggested from …" source-context row. */
 function platformNoun(platform: string | null | undefined): string {
@@ -175,6 +188,69 @@ function hasCoords(c: ShareJobCandidate): boolean {
   return Number.isFinite(c.latitude) && Number.isFinite(c.longitude);
 }
 
+function objectRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : null;
+}
+
+function sourceResolutionSeed(job: ShareJob | null, query: string): {
+  contextLabel: string | null;
+  mentionTimestamp: number | null;
+  nearbyResolvedMentions: NearbyResolvedMention[];
+  noNearbyMatch: boolean;
+} {
+  const payload = objectRecord(job?.candidate_payload);
+  const slots = Array.isArray(payload?.mentionSlots) ? payload!.mentionSlots : [];
+  const foldedQuery = normalizeResolutionName(query);
+  const parsed = slots.map(objectRecord).filter((slot): slot is Record<string, unknown> => !!slot);
+  const target = parsed.find((slot) => {
+    const name = typeof slot.displayName === 'string' ? normalizeResolutionName(slot.displayName) : '';
+    return !!name && (foldedQuery === name || foldedQuery.startsWith(`${name} `) || name.startsWith(`${foldedQuery} `));
+  }) ?? parsed[0] ?? null;
+  const timestamps = Array.isArray(target?.sourceTimestamps)
+    ? target!.sourceTimestamps.filter((value): value is number => typeof value === 'number' && Number.isFinite(value))
+    : [];
+  const nearbyResolvedMentions: NearbyResolvedMention[] = [];
+  for (const slot of parsed) {
+    if (slot === target || !Array.isArray(slot.candidates)) continue;
+    for (const rawCandidate of slot.candidates.slice(0, 3)) {
+      const candidate = objectRecord(rawCandidate);
+      if (!candidate) continue;
+      const googlePlaceId = typeof candidate.googlePlaceId === 'string' ? candidate.googlePlaceId.trim() : '';
+      const lat = candidate.latitude;
+      const lng = candidate.longitude;
+      if (!googlePlaceId || typeof lat !== 'number' || typeof lng !== 'number' || !Number.isFinite(lat) || !Number.isFinite(lng)) continue;
+      const fields = geographicFieldsFromLabel(
+        typeof candidate.contextLabel === 'string'
+          ? candidate.contextLabel
+          : typeof candidate.formattedAddress === 'string'
+            ? candidate.formattedAddress
+            : null,
+      );
+      const slotTimes = Array.isArray(slot.sourceTimestamps)
+        ? slot.sourceTimestamps.filter((value): value is number => typeof value === 'number' && Number.isFinite(value))
+        : [];
+      nearbyResolvedMentions.push({
+        googlePlaceId,
+        name: typeof candidate.name === 'string' ? candidate.name : null,
+        coordinates: { lat, lng },
+        locality: fields.locality,
+        region: fields.region,
+        country: fields.country,
+        mentionTimestamp: slotTimes[0] ?? null,
+      });
+      break;
+    }
+  }
+  return {
+    contextLabel: typeof target?.contextLabel === 'string' ? target.contextLabel : null,
+    mentionTimestamp: timestamps[0] ?? null,
+    nearbyResolvedMentions,
+    noNearbyMatch: target?.noNearbyMatch === true,
+  };
+}
+
 function toResultCandidate(candidate: PlaceCandidate): ShareJobResultCandidate {
   return {
     googlePlaceId: candidate.googlePlaceId,
@@ -189,6 +265,11 @@ function toResultCandidate(candidate: PlaceCandidate): ShareJobResultCandidate {
     shortFormattedAddress: candidate.shortFormattedAddress,
     businessStatus: candidate.businessStatus,
     matchScore: null,
+    contextReason: candidate.contextReason ?? null,
+    contextLabel: candidate.contextLabel ?? null,
+    distanceKm: candidate.distanceKm ?? null,
+    localityMatch: candidate.localityMatch === true,
+    wideningTierKm: candidate.wideningTierKm ?? null,
   };
 }
 
@@ -271,11 +352,28 @@ function ShareJobDetailScreen() {
   const manualRequestRef = useRef(0);
   const rawResolutionQueryRef = useRef<string | null>(null);
   const batchSearchRequestsRef = useRef<Record<string, number>>({});
+  const userLocationRef = useRef<LocationBias | null>(null);
   useEffect(() => {
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
     };
+  }, []);
+  useEffect(() => {
+    let alive = true;
+    void (async () => {
+      try {
+        const permission = await Location.getForegroundPermissionsAsync();
+        if (permission.status !== 'granted') return;
+        const last = await Location.getLastKnownPositionAsync({});
+        if (alive && last) {
+          userLocationRef.current = { lat: last.coords.latitude, lng: last.coords.longitude };
+        }
+      } catch {
+        // Manual proximity is best-effort and never prompts from this screen.
+      }
+    })();
+    return () => { alive = false; };
   }, []);
 
   const { results, loading: searching, error: searchError, search, reset: resetSearch } = usePlacesSearch();
@@ -297,9 +395,39 @@ function ShareJobDetailScreen() {
     const fixture = __DEV__ && isVayrinCandidateFixtureId(job?.id)
       ? getVayrinCandidateFixture(job.id)
       : null;
+    const seed = sourceResolutionSeed(job, trimmed);
+    const fields = geographicFieldsFromLabel(seed.contextLabel);
+    const sourceCoordinates = seed.contextLabel
+      ? await geocodeContextText(seed.contextLabel)
+      : null;
+    const sourceContextAvailable = !!(
+      seed.contextLabel || sourceCoordinates || seed.nearbyResolvedMentions.length > 0
+    );
+    const resolutionContext: PlacesResolutionContext = sourceContextAvailable
+      ? {
+          mode: 'source',
+          inferredLocality: fields.locality,
+          inferredRegion: fields.region,
+          inferredCountry: fields.country,
+          inferredCoordinates: sourceCoordinates,
+          regionConfidence: seed.contextLabel ? 'strong' : 'medium',
+          sourceEvidence: seed.contextLabel ? ['video_region'] : ['nearby_resolved_video_place'],
+          mentionTimestamp: seed.mentionTimestamp,
+          nearbyResolvedMentions: seed.nearbyResolvedMentions,
+          userLocation: null,
+        }
+      : {
+          mode: 'manual',
+          userLocation: userLocationRef.current,
+          regionConfidence: 'none',
+        };
+    const searchBias = sourceCoordinates ??
+      seed.nearbyResolvedMentions[0]?.coordinates ??
+      (!sourceContextAvailable ? userLocationRef.current : null) ??
+      undefined;
     const found = fixture?.manualResults
       ? fixture.manualResults.map((candidate) => shareJobCandidateToPlaceCandidate(candidate))
-      : await search(trimmed);
+      : await search(trimmed, searchBias, resolutionContext);
     if (!mountedRef.current || requestId !== manualRequestRef.current) return;
     const initial = selectedQuickCheckCandidate(trimmed, found);
     setManualSelectedIds(initial ? [initial.googlePlaceId] : []);
@@ -313,7 +441,7 @@ function ShareJobDetailScreen() {
         candidate_count_shown: Math.min(found.length, 3),
       });
     }
-  }, [job?.id, search, vayrinEnabled]);
+  }, [job, search, vayrinEnabled]);
 
   function changeManualQuery(value: string) {
     manualRequestRef.current += 1;
@@ -1011,7 +1139,45 @@ function ShareJobDetailScreen() {
     batchSearchRequestsRef.current[logicalPlaceId] = requestId;
     setBatch((value) => value ? startBatchSearch(value, logicalPlaceId) : value);
     try {
-      const found = (await searchPlaces(query)).map(toResultCandidate);
+      const fields = geographicFieldsFromLabel(current.contextLabel);
+      const coordinates = current.contextLabel
+        ? await geocodeContextText(current.contextLabel)
+        : null;
+      const nearbyResolvedMentions: NearbyResolvedMention[] = batch.order
+        .filter((id) => id !== logicalPlaceId)
+        .flatMap((id) => {
+          const other = batch.rows[id];
+          const candidate = other ? rowCandidate(other) : null;
+          if (!candidate || !Number.isFinite(candidate.latitude) || !Number.isFinite(candidate.longitude)) return [];
+          const nearbyFields = geographicFieldsFromLabel(other?.contextLabel ?? candidate.formattedAddress);
+          return [{
+            googlePlaceId: candidate.googlePlaceId,
+            name: candidate.name,
+            coordinates: { lat: candidate.latitude!, lng: candidate.longitude! },
+            locality: nearbyFields.locality,
+            region: nearbyFields.region,
+            country: nearbyFields.country,
+            mentionTimestamp: other?.sourceTimestamps[0] ?? null,
+          }];
+        });
+      const sourceContextAvailable = !!(current.contextLabel || coordinates || nearbyResolvedMentions.length);
+      const context: PlacesResolutionContext = sourceContextAvailable
+        ? {
+            mode: 'source',
+            inferredLocality: fields.locality,
+            inferredRegion: fields.region,
+            inferredCountry: fields.country,
+            inferredCoordinates: coordinates,
+            regionConfidence: current.contextLabel ? 'strong' : 'medium',
+            sourceEvidence: current.contextLabel ? ['video_region'] : ['nearby_resolved_video_place'],
+            mentionTimestamp: current.sourceTimestamps[0] ?? null,
+            nearbyResolvedMentions,
+            userLocation: null,
+          }
+        : { mode: 'manual', userLocation: userLocationRef.current, regionConfidence: 'none' };
+      const bias = coordinates ?? nearbyResolvedMentions[0]?.coordinates ??
+        (!sourceContextAvailable ? userLocationRef.current : null) ?? undefined;
+      const found = (await searchPlaces(query, bias, context)).map(toResultCandidate);
       if (!mountedRef.current || batchSearchRequestsRef.current[logicalPlaceId] !== requestId) return;
       setBatch((value) => value ? finishBatchSearch(value, logicalPlaceId, found) : value);
     } catch {
@@ -1067,6 +1233,7 @@ function ShareJobDetailScreen() {
   }
 
   function renderManualSearch(opts?: { note?: string; onCancel?: () => void }) {
+    const emptyContext = sourceResolutionSeed(job, manualQuery);
     const checkingKnownQuery = manualSearchPhase === 'idle' &&
       Boolean(manualQuery.trim()) &&
       !manualQueryEditedRef.current &&
@@ -1114,7 +1281,13 @@ function ShareJobDetailScreen() {
           <Text style={[typography.caption, styles.help]}>Couldn&apos;t check right now. Your search is ready to retry.</Text>
         ) : null}
         {manualSearchPhase === 'empty' ? (
-          <Text style={[typography.caption, styles.help]}>Couldn&apos;t find an exact place.</Text>
+          emptyContext.noNearbyMatch && emptyContext.contextLabel ? (
+            <Text style={[typography.caption, styles.help]}>
+              {`No matching location found near ${emptyContext.contextLabel}. Search manually or edit the area to widen it.`}
+            </Text>
+          ) : (
+            <Text style={[typography.caption, styles.help]}>Couldn&apos;t find an exact place.</Text>
+          )
         ) : null}
         {visibleResults.map((c) => {
           const address = splitPlaceAddress(c.formattedAddress);
@@ -1303,7 +1476,11 @@ function ShareJobDetailScreen() {
           </View>
         ) : null}
         {row.search.phase === 'empty' ? (
-          <Text style={[typography.caption, styles.helpCompact]}>No matches yet. Edit the query and try again.</Text>
+          <Text style={[typography.caption, styles.helpCompact]}>
+            {row.noNearbyMatch && row.contextLabel
+              ? `No matching location found near ${row.contextLabel}. Edit the area to search wider.`
+              : 'No matches yet. Edit the query and try again.'}
+          </Text>
         ) : null}
         {row.search.phase === 'error' ? (
           <Text style={[typography.caption, styles.batchError]}>{row.search.error}</Text>

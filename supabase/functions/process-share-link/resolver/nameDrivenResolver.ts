@@ -56,6 +56,15 @@ import {
 import { compactNameMatches } from '../../../../lib/shareAgent/recoveryHints.ts';
 import { isPlatformNoiseName } from '../../../../lib/shareAgent/platformNoise.ts';
 import { isNearrCategory, mapGoogleType } from '../../../../lib/placeCategory.ts';
+import {
+  CONTEXT_DISTANCE_TIERS_KM,
+  MAX_CONTEXTUAL_SEARCH_CALLS,
+  countryCodeForContext,
+  rankContextAwareCandidates,
+  selectResolutionAnchor,
+  type NearbyResolvedMention,
+  type PlacesResolutionContext,
+} from '../../../../lib/contextAwarePlacesResolution.ts';
 
 export type MentionOutcome =
   | 'verified_single'
@@ -195,6 +204,18 @@ export type ResolutionDiagnostics = {
   insufficientEvidence: number;
   noMatchReasonCounts: Record<string, number>;
   failureTraces: MentionFailureTrace[];
+  /** Aggregate, privacy-safe resolution telemetry. No raw queries, captions,
+   * addresses, or coordinates. */
+  contextAware?: {
+    contextAvailable: boolean;
+    contextSources: Record<string, number>;
+    initialSearchTierKm: 25 | null;
+    widenCount: number;
+    placesCallCount: number;
+    countryMismatchFiltered: number;
+    categoryMismatchFiltered: number;
+    noNearbyMatchCount: number;
+  };
 };
 
 export type MentionResult = {
@@ -208,6 +229,10 @@ export type MentionResult = {
   candidates: ResolvedCandidate[];
   /** Per-candidate deterministic scoring explanation (diagnostics). */
   scoring: MentionScoreExplanation[];
+  /** Honest empty state for an ambiguous/common name under strong source geo. */
+  noNearbyMatch?: boolean;
+  /** Bounded source-context label; never raw caption text. */
+  contextLabel?: string | null;
   /** Venue-in-host relationship context (present only for a merged mention). */
   primaryVenueName?: string;
   hostVenueName?: string;
@@ -372,7 +397,7 @@ export function nameDrivenDecision(
 export const ACCEPT_SCORE = 0.62; // verified_single needs to clearly exceed this
 export const PLAUSIBLE_FLOOR = 0.4; // below this a candidate is not surfaced
 export const AMBIGUITY_MARGIN = 0.1; // top-2 within this band → ambiguous
-const MAX_CANDIDATES_PER_MENTION = 5;
+const MAX_CANDIDATES_PER_MENTION = 3;
 const MAX_AGGREGATE_CANDIDATES = 10;
 const DEFAULT_GLOBAL_REQUEST_LIMIT = 12;
 
@@ -521,8 +546,8 @@ export function scoreMentionCandidate(
     score += 8;
     reasons.push('expected_category_match');
   } else if (expectedCategory && resolvedCategory && resolvedCategory !== expectedCategory) {
-    score -= 2;
-    reasons.push('expected_category_mismatch_soft');
+    score -= 24;
+    reasons.push('expected_category_mismatch');
   }
 
   // Name match against the mention display name.
@@ -878,7 +903,12 @@ function toExplanation(s: ScoredMentionCandidate): MentionScoreExplanation {
 // ---------------------------------------------------------------------------
 
 export type NameDrivenDeps = {
-  search?: (query: string, key: string, bias?: { lat: number; lng: number }) => Promise<SearchPlacesResult>;
+  search?: (query: string, key: string, bias?: {
+    lat: number;
+    lng: number;
+    radiusMeters?: number;
+    includedRegionCodes?: string[];
+  }) => Promise<SearchPlacesResult>;
   geocode?: (text: string, key: string) => Promise<{ lat: number; lng: number; region?: string } | null>;
   /** Max total Places text searches across all mentions. */
   globalRequestLimit?: number;
@@ -971,7 +1001,68 @@ export async function resolveVenueMentions(args: {
     }
   }
 
-  // Per-task cache so identical queries aren't searched twice.
+  // Per-mention structured context. The legacy shared-city bias above remains
+  // as a compatibility fallback, but an explicit mention locality and nearby
+  // resolved same-video place can now provide a more relevant anchor.
+  const geocodeCache = new Map<string, { lat: number; lng: number; region?: string } | null>();
+  const nearbyResolvedMentions: NearbyResolvedMention[] = [];
+  const contextTelemetry = {
+    contextSources: {} as Record<string, number>,
+    widenCount: 0,
+    countryMismatchFiltered: 0,
+    categoryMismatchFiltered: 0,
+    noNearbyMatchCount: 0,
+  };
+  if (bias && geoContext.city) {
+    geocodeCache.set(
+      [geoContext.city, geoContext.region, geoContext.country].filter(Boolean).join(', '),
+      bias,
+    );
+  }
+
+  const contextForMention = async (mention: VenueMention): Promise<PlacesResolutionContext> => {
+    const ownLocality = (mention.geo.city ?? '').trim() || null;
+    const sharedLocality = geoContext.cityStrength === 'strong' || geoContext.cityStrength == null
+      ? (geoContext.city ?? '').trim() || null
+      : null;
+    const ownRegion = (mention.geo.region ?? '').trim() || null;
+    const sharedRegion = geoContext.regionStrength === 'strong' || geoContext.regionStrength == null
+      ? (geoContext.region ?? '').trim() || null
+      : null;
+    const locality = ownLocality ?? sharedLocality;
+    const region = ownRegion ?? sharedRegion;
+    const country = mentionQueryCountry(mention, geoContext);
+    let coordinates: { lat: number; lng: number } | null = null;
+    const peerGeographicLocality = mention.resolutionMode === 'geographic' && !!ownLocality && !sharedLocality;
+    if (locality && !peerGeographicLocality) {
+      const label = [locality, region, country].filter(Boolean).join(', ');
+      if (!geocodeCache.has(label)) {
+        try {
+          geocodeCache.set(label, await geocode(label, env.googlePlacesKey));
+        } catch {
+          geocodeCache.set(label, null);
+        }
+      }
+      const geocoded = geocodeCache.get(label) ?? null;
+      if (geocoded) coordinates = { lat: geocoded.lat, lng: geocoded.lng };
+    }
+    const hasOwnGeo = !!(ownLocality || ownRegion || (mention.geo.country ?? '').trim());
+    const hasStrongSharedGeo = !!(sharedLocality || sharedRegion || geoContext.countryStrength === 'strong');
+    return {
+      mode: 'source',
+      inferredLocality: locality,
+      inferredRegion: region,
+      inferredCountry: country,
+      inferredCoordinates: coordinates,
+      regionConfidence: hasOwnGeo || hasStrongSharedGeo ? 'strong' : 'none',
+      sourceEvidence: [hasOwnGeo ? 'exact_source_evidence' : 'video_region'],
+      mentionTimestamp: mention.timestamps[0] ?? null,
+      nearbyResolvedMentions: [...nearbyResolvedMentions],
+      expectedCategory: mention.category,
+    };
+  };
+
+  // Per-task cache so identical query + structured bias searches aren't repeated.
   const cache = new Map<string, SearchPlacesResult>();
   let requestCount = 0;
   // Which Places surface actually served this task. Degraded wins: if ANY
@@ -1006,6 +1097,19 @@ export async function resolveVenueMentions(args: {
 
   for (const mention of mentions) {
     const query = buildMentionQuery(mention, geoContext);
+    const resolutionContext = await contextForMention(mention);
+    const resolutionAnchor = selectResolutionAnchor(resolutionContext);
+    const contextCountryCode = countryCodeForContext(resolutionContext.inferredCountry);
+    const mentionBias = resolutionAnchor.coordinates
+      ? {
+          ...resolutionAnchor.coordinates,
+          radiusMeters: CONTEXT_DISTANCE_TIERS_KM[0] * 1_000,
+          includedRegionCodes: contextCountryCode ? [contextCountryCode] : undefined,
+        }
+      : null;
+    const mentionExpectedState = normalizeStateToAbbr(
+      resolutionContext.inferredRegion ?? geoContext.region,
+    ) ?? expectedState;
     // Structural facts about how this query was scoped, captured BEFORE the
     // search so a failed mention still explains what context it had. These are
     // booleans about the same inputs `buildMentionQuery` used — never the query.
@@ -1020,7 +1124,7 @@ export async function resolveVenueMentions(args: {
       countryFromMention: !!(mention.geo.country ?? '').trim(),
       sharedCountryApplied:
         !(mention.geo.country ?? '').trim() && !!resolvedCountry,
-      locationBiasApplied: !!bias,
+      locationBiasApplied: !!mentionBias,
     };
     const relFields = mention.hostVenueName
       ? { primaryVenueName: mention.primaryVenueName, hostVenueName: mention.hostVenueName, relationshipType: mention.relationshipType }
@@ -1044,7 +1148,13 @@ export async function resolveVenueMentions(args: {
     }
 
     let result: SearchPlacesResult;
-    const cached = cache.get(query);
+    let mentionPlacesCalls = 0;
+    let mentionWidenCount = 0;
+    const biasKey = mentionBias
+      ? `${mentionBias.lat.toFixed(4)},${mentionBias.lng.toFixed(4)},${mentionBias.radiusMeters},${contextCountryCode ?? ''}`
+      : 'unbounded';
+    const cacheKey = `${query}|${biasKey}`;
+    const cached = cache.get(cacheKey);
     if (cached) {
       result = cached;
     } else if (requestCount >= globalLimit) {
@@ -1067,12 +1177,13 @@ export async function resolveVenueMentions(args: {
       continue;
     } else {
       requestCount += 1;
+      mentionPlacesCalls += 1;
       try {
-        result = await search(query, env.googlePlacesKey, bias ?? undefined);
+        result = await search(query, env.googlePlacesKey, mentionBias ?? undefined);
       } catch (err) {
         result = { ok: false, reason: 'http_error', error: (err as Error)?.message };
       }
-      cache.set(query, result);
+      cache.set(cacheKey, result);
     }
     notePath(result);
 
@@ -1107,8 +1218,73 @@ export async function resolveVenueMentions(args: {
       continue;
     }
 
-    let candidatesToScore = result.results;
-    let scored = candidatesToScore.map((c) => scoreMentionCandidate(c, mention, { expectedState, bias, platform, expectedCountry: mentionQueryCountry(mention, geoContext) }));
+    // Keep the full provider population for failure diagnostics. Contextual
+    // ranking may intentionally hide a wrong-country or >200 km result, but
+    // observability still needs to count and classify what Google returned.
+    let providerCandidates = result.results;
+    let candidatesToScore = providerCandidates;
+    let contextRanking = rankContextAwareCandidates({
+      query,
+      candidates: candidatesToScore,
+      context: resolutionContext,
+      searchTierKm: mentionBias ? 25 : null,
+      widenCount: mentionWidenCount,
+      placesCallCount: mentionPlacesCalls,
+    });
+
+    // Lazy progressive widening. Each wider call happens only if the previous
+    // tier produced no contextually plausible candidate, and the per-mention
+    // request count can never exceed three.
+    while (
+      mentionBias &&
+      contextRanking.ranked.length === 0 &&
+      mentionWidenCount < CONTEXT_DISTANCE_TIERS_KM.length - 1 &&
+      mentionPlacesCalls < MAX_CONTEXTUAL_SEARCH_CALLS &&
+      requestCount < globalLimit
+    ) {
+      const tierKm = CONTEXT_DISTANCE_TIERS_KM[mentionWidenCount + 1] ?? null;
+      if (!tierKm) break;
+      const widenedBias = { ...mentionBias, radiusMeters: tierKm * 1_000 };
+      const widenedKey = `${query}|${widenedBias.lat.toFixed(4)},${widenedBias.lng.toFixed(4)},${widenedBias.radiusMeters},${contextCountryCode ?? ''}`;
+      let widened = cache.get(widenedKey);
+      if (!widened) {
+        requestCount += 1;
+        mentionPlacesCalls += 1;
+        mentionWidenCount += 1;
+        try {
+          widened = await search(query, env.googlePlacesKey, widenedBias);
+        } catch (err) {
+          widened = { ok: false, reason: 'http_error', error: (err as Error)?.message };
+        }
+        cache.set(widenedKey, widened);
+      } else {
+        mentionWidenCount += 1;
+      }
+      notePath(widened);
+      if (!widened.ok) break;
+      providerCandidates = mergePlacesCandidates(providerCandidates, widened.results);
+      contextRanking = rankContextAwareCandidates({
+        query,
+        candidates: providerCandidates,
+        context: resolutionContext,
+        searchTierKm: tierKm,
+        widenCount: mentionWidenCount,
+        placesCallCount: mentionPlacesCalls,
+      });
+    }
+
+    candidatesToScore = contextRanking.ranked.map((item) => item.candidate);
+    const candidateContext = new Map(
+      contextRanking.ranked.map((item) => [item.candidate.googlePlaceId, item.metadata] as const),
+    );
+    const scoreAll = (items: PlacesCandidate[]) => items.map((c) =>
+      scoreMentionCandidate(c, mention, {
+        expectedState: mentionExpectedState,
+        bias: resolutionAnchor.coordinates,
+        platform,
+        expectedCountry: resolutionContext.inferredCountry,
+      }));
+    let scored = scoreAll(candidatesToScore);
     let classified = classifyMention(scored);
     let categoryBiasedQuery: string | undefined;
     const categoryHint = expectedMentionCategory(mention);
@@ -1116,20 +1292,32 @@ export async function resolveVenueMentions(args: {
     // could only surface businesses, which the geographic path rejects anyway.
     if (classified.outcome !== 'verified_single' && categoryHint && mention.resolutionMode !== 'geographic') {
       categoryBiasedQuery = `${query} ${categoryHint.replace(/_/g, ' ')}`.replace(/\s+/g, ' ').trim();
-      let biased = cache.get(categoryBiasedQuery);
-      if (!biased && requestCount < globalLimit) {
+      const categoryCacheKey = `${categoryBiasedQuery}|${biasKey}`;
+      let biased = cache.get(categoryCacheKey);
+      if (!biased && requestCount < globalLimit && mentionPlacesCalls < MAX_CONTEXTUAL_SEARCH_CALLS) {
         requestCount += 1;
+        mentionPlacesCalls += 1;
         try {
-          biased = await search(categoryBiasedQuery, env.googlePlacesKey, bias ?? undefined);
+          biased = await search(categoryBiasedQuery, env.googlePlacesKey, mentionBias ?? undefined);
         } catch (err) {
           biased = { ok: false, reason: 'http_error', error: (err as Error)?.message };
         }
-        cache.set(categoryBiasedQuery, biased);
+        cache.set(categoryCacheKey, biased);
       }
       notePath(biased);
       if (biased?.ok) {
-        candidatesToScore = mergePlacesCandidates(candidatesToScore, biased.results);
-        scored = candidatesToScore.map((c) => scoreMentionCandidate(c, mention, { expectedState, bias, platform, expectedCountry: mentionQueryCountry(mention, geoContext) }));
+        providerCandidates = mergePlacesCandidates(providerCandidates, biased.results);
+        contextRanking = rankContextAwareCandidates({
+          query,
+          candidates: providerCandidates,
+          context: resolutionContext,
+          searchTierKm: mentionBias ? (CONTEXT_DISTANCE_TIERS_KM[Math.max(0, mentionWidenCount)] ?? 200) : null,
+          widenCount: mentionWidenCount,
+          placesCallCount: mentionPlacesCalls,
+        });
+        candidatesToScore = contextRanking.ranked.map((item) => item.candidate);
+        for (const item of contextRanking.ranked) candidateContext.set(item.candidate.googlePlaceId, item.metadata);
+        scored = scoreAll(candidatesToScore);
         classified = classifyMention(scored);
       }
     }
@@ -1146,12 +1334,14 @@ export async function resolveVenueMentions(args: {
         : outcome === 'ambiguous_candidates'
         ? ranked.filter((s) => normalizeRawScore(s.rawScore) >= PLAUSIBLE_FLOOR).slice(0, MAX_CANDIDATES_PER_MENTION)
         : [];
-    const candidates = kept.map((s) =>
-      toResolvedCandidate(
+    const candidates = kept.map((s) => {
+      const resolved = toResolvedCandidate(
         { candidate: s.candidate, score: s.rawScore, reasons: s.reasons, rejected: false, rejectionReason: null },
         ['media_name_mention', `mention:${mention.id}`, ...(outcome === 'verified_single' ? ['name_verified_single'] : ['name_ambiguous_candidate'])],
-      ),
-    );
+      );
+      const metadata = candidateContext.get(s.candidate.googlePlaceId);
+      return metadata ? { ...resolved, ...metadata } : resolved;
+    });
     variantResults.push({
       mentionId: mention.id,
       displayName: mention.displayName,
@@ -1160,21 +1350,47 @@ export async function resolveVenueMentions(args: {
       categoryBiasedQuery,
       candidates,
       scoring: scored.map(toExplanation).slice(0, 8),
+      noNearbyMatch: contextRanking.noNearbyMatch,
+      contextLabel: contextRanking.ranked[0]?.metadata.contextLabel ?? resolutionAnchor.label,
       ...relFields,
     });
+    const contextSource = resolutionAnchor.source;
+    contextTelemetry.contextSources[contextSource] =
+      (contextTelemetry.contextSources[contextSource] ?? 0) + 1;
+    contextTelemetry.widenCount += mentionWidenCount;
+    contextTelemetry.countryMismatchFiltered += contextRanking.filteredCountryMismatch;
+    contextTelemetry.categoryMismatchFiltered += contextRanking.categoryMismatchCount;
+    if (contextRanking.noNearbyMatch) contextTelemetry.noNearbyMatchCount += 1;
+    if (outcome === 'verified_single' && candidates[0] &&
+      Number.isFinite(candidates[0].latitude) && Number.isFinite(candidates[0].longitude)) {
+      nearbyResolvedMentions.push({
+        googlePlaceId: candidates[0].googlePlaceId,
+        name: candidates[0].name,
+        coordinates: { lat: candidates[0].latitude!, lng: candidates[0].longitude! },
+        locality: resolutionContext.inferredLocality,
+        region: resolutionContext.inferredRegion,
+        country: resolutionContext.inferredCountry,
+        mentionTimestamp: mention.timestamps[0] ?? null,
+      });
+    }
     // Only failures are traced. A resolved mention already explains itself
     // through its candidates, and tracing every success would double the
     // diagnostics payload of an ordinary share for no audit value.
     if (outcome === 'no_match') {
+      const diagnosticScored = scoreAll(providerCandidates);
+      const diagnosticClassified = classifyMention(diagnosticScored);
+      const contextualNoMatchReason = contextRanking.filteredCountryMismatch > 0 || contextRanking.filteredTooFar > 0
+        ? 'distance_or_geo_rejected' as const
+        : null;
       recordFailure(() => ({
         mentionId: mention.id,
         outcome,
-        noMatchReason: classified.noMatchReason,
-        providerSearchStatus: candidatesToScore.length === 0 ? 'empty' : 'ok',
+        noMatchReason: diagnosticClassified.noMatchReason ?? contextualNoMatchReason ?? classified.noMatchReason,
+        providerSearchStatus: providerCandidates.length === 0 ? 'empty' : 'ok',
         providerApiPath,
-        providerResultCount: candidatesToScore.length,
-        scored,
-        ranked,
+        providerResultCount: providerCandidates.length,
+        scored: diagnosticScored,
+        ranked: diagnosticClassified.ranked,
         categoryBiasedSearchUsed: !!categoryBiasedQuery,
         ...queryContext,
       }));
@@ -1234,6 +1450,18 @@ export async function resolveVenueMentions(args: {
       insufficientEvidence: rejectedCount,
       noMatchReasonCounts,
       failureTraces,
+      contextAware: {
+        contextAvailable: Object.keys(contextTelemetry.contextSources)
+          .some((source) => source !== 'none'),
+        contextSources: contextTelemetry.contextSources,
+        initialSearchTierKm: Object.keys(contextTelemetry.contextSources)
+          .some((source) => source !== 'none' && source !== 'user_location') ? 25 : null,
+        widenCount: contextTelemetry.widenCount,
+        placesCallCount: requestCount,
+        countryMismatchFiltered: contextTelemetry.countryMismatchFiltered,
+        categoryMismatchFiltered: contextTelemetry.categoryMismatchFiltered,
+        noNearbyMatchCount: contextTelemetry.noNearbyMatchCount,
+      },
     },
   };
 }
