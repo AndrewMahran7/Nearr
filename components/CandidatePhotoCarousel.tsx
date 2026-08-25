@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -11,6 +11,7 @@ import {
 import { Feather } from '@expo/vector-icons';
 
 import { Spacing } from '@/constants';
+import { pageIndexFromOffset } from '@/lib/photoCarousel';
 import { getCachedPlaceRichDetails } from '@/lib/placeRichDetailsCache';
 import type { PlaceImageResolutionKind } from '@/components/PlaceImage';
 
@@ -87,6 +88,11 @@ export function CandidatePhotoCarousel({
   }, [items, loading, onResolvedKind, timedOut]);
 
   const markFailed = (uri: string) => setFailedUris((current) => new Set([...current, uri]));
+  const updatePageFromOffset = useCallback((offset: number) => {
+    const index = pageIndexFromOffset(offset, width, items.length);
+    setActiveIndex(index);
+    setHydratedThrough((current) => Math.max(current, index + 1));
+  }, [items.length, width]);
 
   return (
     <View style={[styles.root, { minHeight: height }]} onLayout={(event) => setMeasuredWidth(Math.round(event.nativeEvent.layout.width))} testID="candidate-photo-carousel">
@@ -95,6 +101,9 @@ export function CandidatePhotoCarousel({
           <FlatList
             horizontal
             pagingEnabled
+            nestedScrollEnabled
+            directionalLockEnabled
+            scrollEnabled={items.length > 1}
             data={items}
             keyExtractor={(item) => item.uri}
             showsHorizontalScrollIndicator={false}
@@ -103,11 +112,9 @@ export function CandidatePhotoCarousel({
             maxToRenderPerBatch={2}
             windowSize={2}
             getItemLayout={(_, index) => ({ length: width, offset: width * index, index })}
-            onMomentumScrollEnd={(event) => {
-              const index = Math.max(0, Math.min(Math.round(event.nativeEvent.contentOffset.x / width), items.length - 1));
-              setActiveIndex(index);
-              setHydratedThrough((current) => Math.max(current, index + 1));
-            }}
+            onScroll={(event) => updatePageFromOffset(event.nativeEvent.contentOffset.x)}
+            onMomentumScrollEnd={(event) => updatePageFromOffset(event.nativeEvent.contentOffset.x)}
+            scrollEventThrottle={16}
             renderItem={({ item, index }) => (
               <View style={[styles.photo, { width, height }]}>
                 {index <= hydratedThrough ? (
