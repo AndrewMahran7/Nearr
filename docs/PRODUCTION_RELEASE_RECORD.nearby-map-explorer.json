@@ -1,15 +1,16 @@
 {
   "releaseId": "2026-08-24-nearby-map-explorer",
-  "previousMainSha": "118de802ab0771b282ed2b6326e12e01201fa645",
-  "previousOtaGroup": "4dd8539a-6bc1-4d07-88ce-e73a1503e3ca",
+  "previousMainSha": "b4125daa4b5c18123cf436881c856ee069c09372",
+  "previousOtaGroup": "9f05fc85-fca2-465c-8705-48d77935798c",
   "currentOtaGroup": null,
   "edgeVersions": {
     "process-share-link": 133,
-    "process-share-jobs": 83,
+    "process-share-jobs": 86,
     "create-share-job": 25,
-    "delete-account": 23
+    "delete-account": 24,
+    "delete-share-job": 1
   },
-  "railwayDeployment": "1982da61-abbb-44a8-817e-02a4fc998fb2@48f0d5bbb39ca6135451d0c62c69285697187c6a",
+  "railwayDeployment": "9f44f4a4-f76c-4a99-bd18-43fbd3450e7f@b4125daa4b5c18123cf436881c856ee069c09372#sha256:cba1722590e2ab0e97c352a47c2ad3edee6d7f647026a3fc7a476192273ee01d",
   "migrationLedger": [
     "20260824233000"
   ],
