@@ -248,7 +248,10 @@ export function filterDismissedQueueRows<T extends { id: string }>(
 // Authoritative active queue model
 // ---------------------------------------------------------------------------
 
-type ActiveQueueInput = QueueRow & { updated_at?: unknown };
+type ActiveQueueInput = QueueRow & {
+  updated_at?: unknown;
+  queue_archived_at?: string | null;
+};
 
 function timestamp(value: unknown): number {
   return typeof value === 'string' ? Date.parse(value) : Number.NaN;
@@ -268,7 +271,12 @@ export function normalizeActiveQueueRows<T extends ActiveQueueInput>(
   const order: string[] = [];
   for (const row of rows) {
     const id = typeof row?.id === 'string' ? row.id.trim() : '';
-    if (!id || dismissedIds.has(id) || (!isProcessingRow(row) && !isNeedsYouRow(row))) continue;
+    if (
+      !id ||
+      dismissedIds.has(id) ||
+      row.queue_archived_at != null ||
+      (!isProcessingRow(row) && !isNeedsYouRow(row))
+    ) continue;
     const existing = byId.get(id);
     if (!existing) {
       byId.set(id, row);

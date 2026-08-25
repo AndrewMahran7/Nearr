@@ -94,6 +94,7 @@
     "test:share-completion": "ts-node -P scripts/tsconfig.json scripts/testShareCompletionUi.ts",
     "test:queue-inbox": "ts-node -P scripts/tsconfig.json scripts/testQueueInbox.ts",
     "test:queue-persistence": "ts-node -P scripts/tsconfig.json scripts/testQueuePersistence.ts",
+    "test:empty-queue": "ts-node -P scripts/tsconfig.json scripts/testEmptyQueue.ts && powershell -NoProfile -ExecutionPolicy Bypass -File scripts/testEmptyQueueMigration.ps1",
     "test:queue-swipe": "ts-node -P scripts/tsconfig.json scripts/testQueueSwipeCoordinator.ts",
     "test:queue-save": "ts-node -P scripts/tsconfig.json scripts/testQueueSaveResolution.ts",
     "test:queue-interactions": "ts-node -P scripts/tsconfig.json scripts/testQueueInteractionContracts.ts",

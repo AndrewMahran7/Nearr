@@ -76,7 +76,7 @@ end $$;
 do $$
 declare
   declared text[] := array[
-    'auto_save_share_job_place_result','bump_reminder_opportunity_count','cancel_share_job','claim_media_tasks',
+    'archive_active_queue_for_user','auto_save_share_job_place_result','bump_reminder_opportunity_count','cancel_share_job','claim_media_tasks',
     'claim_share_job_notifications','claim_share_job_receipts','claim_share_jobs',
     'claim_stranded_media_parents','create_share_job_for_user','expire_media_tasks',
     'handle_new_user','invoke_process_media_tasks','invoke_process_share_jobs',
@@ -155,9 +155,9 @@ select pg_temp._t(pg_temp._tbl('authenticated','public.user_push_tokens','INSERT
 select pg_temp._t(pg_temp._tbl('authenticated','public.user_push_tokens','UPDATE'), 'authenticated UPDATE user_push_tokens');
 select pg_temp._t(pg_temp._tbl('authenticated','public.user_push_tokens','DELETE'), 'authenticated DELETE user_push_tokens');
 
--- share_jobs: owner may READ + DELETE; NEVER direct insert/update (worker state).
+-- share_jobs: owner may READ; queue removal is constrained archival RPC only.
 select pg_temp._t(pg_temp._tbl('authenticated','public.share_jobs','SELECT'), 'authenticated SELECT share_jobs');
-select pg_temp._t(pg_temp._tbl('authenticated','public.share_jobs','DELETE'), 'authenticated DELETE share_jobs');
+select pg_temp._t(not pg_temp._tbl('authenticated','public.share_jobs','DELETE'), 'authenticated NO DELETE share_jobs');
 
 -- analytics_events: append-only telemetry — authenticated INSERT only.
 select pg_temp._t(pg_temp._tbl('authenticated','public.analytics_events','INSERT'), 'authenticated INSERT analytics_events');
@@ -263,6 +263,7 @@ declare
   fn text;
 begin
   foreach fn in array array[
+    'public.archive_active_queue_for_user(uuid[])',
     'public.resolve_share_job(uuid, uuid)',
     'public.cancel_share_job(uuid)',
     'public.retry_share_job(uuid)',
@@ -278,7 +279,7 @@ begin
       raise exception 'FAIL anon must NOT execute owner RPC %', fn;
     end if;
   end loop;
-  raise notice 'PASS owner RPCs: authenticated granted, anon denied (7 fns)';
+  raise notice 'PASS owner RPCs: authenticated granted, anon denied (8 fns)';
 end $$;
 
 -- =====================================================================

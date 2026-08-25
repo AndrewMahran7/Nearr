@@ -141,8 +141,7 @@ import {
   shareJobSourceType,
 } from '@/services/shareJobCandidateSave';
 import {
-  cancelShareJob,
-  deleteShareJob,
+  archiveShareJob,
   getShareJob,
   markShareJobResolved,
   retryShareJob,
@@ -1039,11 +1038,7 @@ function ShareJobDetailScreen() {
   async function handleRemove() {
     if (!job) return;
     try {
-      if (job.status === 'queued' || job.status === 'processing_metadata') {
-        await cancelShareJob(job.id);
-      } else {
-        await deleteShareJob(job.id);
-      }
+      await archiveShareJob(job.id);
       router.back();
     } catch {
       Alert.alert('Could not remove', 'Please try again in a moment.');
