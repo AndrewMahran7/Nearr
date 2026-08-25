@@ -113,6 +113,7 @@
     "test:share-extension-completion": "ts-node -P scripts/tsconfig.json scripts/testShareExtensionCompletion.ts",
     "test:media-fallback": "ts-node -P scripts/tsconfig.json scripts/testMediaFallbackTrigger.ts",
     "test:vayrin-core": "ts-node -P scripts/tsconfig.json scripts/testVayrinCore.ts",
+    "test:vayrin-singleton-autosave": "ts-node -P scripts/tsconfig.json scripts/testVayrinSingletonAutoSave.ts && npm --prefix services/media-worker run test:vayrin-verification-v3",
     "test:vayrin-visual-retrieval": "npm --prefix services/media-worker run test:vayrin-region-poi-v3",
     "test:vayrin-visual-retrieval-v2": "npm --prefix services/media-worker run test:vayrin-region-poi-v3",
     "test:vayrin-verification-v3": "npm --prefix services/media-worker run test:vayrin-verification-v3",

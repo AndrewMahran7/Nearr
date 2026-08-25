@@ -6,6 +6,7 @@ import { rankContextAwareCandidates } from '../lib/contextAwarePlacesResolution'
 import {
   cacheCandidateVisibleLimit,
   candidateSetForRecognitionCache,
+  evaluateCachedSingletonAutoSave,
   rerankCachedCandidatePayload,
 } from '../supabase/functions/process-share-jobs/contextAwareCacheReranking';
 import {
@@ -26,6 +27,7 @@ type Candidate = {
   types: string[];
   primaryType: string;
   matchScore: number;
+  reasons?: string[];
   contextReason?: string;
   contextLabel?: string;
   retrievalRank?: number;
@@ -46,7 +48,8 @@ const place = (
   longitude,
   types: ['restaurant', 'food'],
   primaryType: 'restaurant',
-  matchScore: 80,
+  matchScore: 0.8,
+  reasons: ['business_type', 'strong_name_match'],
   contextReason: 'source_locality',
   contextLabel,
 });
@@ -218,13 +221,41 @@ assert.ok(visibleIds.every((id) => staleCandidates.some((candidate) => candidate
 assert.equal(cacheCandidateVisibleLimit(), 3);
 assert.ok(visibleIds.length <= cacheCandidateVisibleLimit());
 
-// 17. Cache candidate hits remain confirmation-only and cannot call saveForUser.
+// 17. A context-reranked singleton may save, but stale or weak singletons do not.
+const contextualSingleton = rerankCachedCandidatePayload(cachedPayload([
+  place('ca-ventura', '2070 Harbor Blvd, Ventura, CA, USA', 34.27, -119.27),
+]))!;
+assert.equal(evaluateCachedSingletonAutoSave(contextualSingleton).eligible, true);
+assert.equal(evaluateCachedSingletonAutoSave(contextualSingleton).selectedProviderId, 'ca-ventura');
+const staleSingleton = rerankCachedCandidatePayload({
+  version: 1,
+  selectionMode: 'single_identity',
+  candidates: [noContextCandidates[0]],
+})!;
+assert.equal(evaluateCachedSingletonAutoSave(staleSingleton).eligible, false);
+assert.equal(evaluateCachedSingletonAutoSave(staleSingleton).reason, 'independent_source_context_missing');
+const reasonOnlySingleton = rerankCachedCandidatePayload({
+  version: 1,
+  selectionMode: 'single_identity',
+  candidates: [{ ...noContextCandidates[0], contextReason: 'source_locality' }],
+})!;
+assert.equal(evaluateCachedSingletonAutoSave(reasonOnlySingleton).eligible, false,
+  'a legacy reason label without concrete source context is not new evidence');
+const weakSingleton = rerankCachedCandidatePayload(cachedPayload([
+  { ...place('ca-weak', 'Weak Place, Ventura, CA, USA', 34.27, -119.27), reasons: ['business_type'] },
+]))!;
+assert.equal(evaluateCachedSingletonAutoSave(weakSingleton).eligible, false);
+assert.equal(evaluateCachedSingletonAutoSave(weakSingleton).reason, 'weak_singleton');
+
+// 18. The worker calls the gate before save and keeps non-eligible hits in review.
 const worker = read('supabase/functions/process-share-jobs/index.ts');
 const candidateHitStart = worker.indexOf("if (decision.kind === 'candidate_set')");
 const trustedHitStart = worker.indexOf('const { data: place', candidateHitStart);
 const candidateHitSource = worker.slice(candidateHitStart, trustedHitStart);
 assert.match(candidateHitSource, /decisionForSelectionSemantics\(count, selectionMode, true\)/);
-assert.doesNotMatch(candidateHitSource, /saveForUser/);
+assert.match(candidateHitSource, /evaluateCachedSingletonAutoSave\(reranked\)/);
+assert.match(candidateHitSource, /if \(singletonGate\.eligible && singletonGate\.candidate\)/);
+assert.match(candidateHitSource, /saveForUser/);
 assert.match(candidateHitSource, /rerankCachedCandidatePayload\(payload\)/);
 assert.match(candidateHitSource, /__skipRecognitionCachePersist: true/);
 assert.match(
@@ -233,7 +264,7 @@ assert.match(
   'cache-hit presentation payload cannot overwrite the full recognition set',
 );
 
-// 18. Retrieval rank remains evidence while presentation rank is recomputed.
+// 19. Retrieval rank remains evidence while presentation rank is recomputed.
 const recognitionSet = candidateSetForRecognitionCache(cachedPayload()) as any;
 assert.deepEqual(recognitionSet.candidates.map((candidate: Candidate) => candidate.retrievalRank), [1, 2, 3, 4, 5]);
 const rerankedEvidence = rerankCachedCandidatePayload(recognitionSet)!;
@@ -260,4 +291,4 @@ assert.match(
 console.log('TRACE canonical=v1:youtube:santa-paula-in-n-out cache_hit=YES trust=CANDIDATE_SET payload=version_2 contextual_ranker=YES cached_order_returned_unchanged=NO');
 console.log(`TRACE before=${cached.candidateCountBeforeRerank} after=${cached.candidateCountAfterRerank} context=${cached.contextSourceKind} top=${visible.map((candidate) => candidate.googlePlaceId).join(',')}`);
 console.log('COST primary=0 scrapecreators=0 gemini=0 sol=0 transcription=0 frames=0 places=0 contextual_rerank=1');
-console.log('PASS context-aware cache reranking (18 required regressions)');
+console.log('PASS context-aware cache reranking (19 required regressions)');

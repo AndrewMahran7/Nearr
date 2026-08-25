@@ -169,8 +169,13 @@ assert.match(worker, /decisionForSelectionSemantics\(count, selectionMode, true\
   'candidate cache preserves single-place versus multi-place confirmation semantics');
 const candidateHitStart = worker.indexOf("if (decision.kind === 'candidate_set')");
 assert.ok(candidateHitStart >= 0);
-assert.doesNotMatch(worker.slice(candidateHitStart, worker.indexOf("const { data: place", candidateHitStart)), /saveForUser/,
-  'candidate-only cache never silently saves');
+const candidateHitSource = worker.slice(candidateHitStart, worker.indexOf("const { data: place", candidateHitStart));
+assert.match(candidateHitSource, /evaluateCachedSingletonAutoSave\(reranked\)/,
+  'candidate-only cache must pass the contextual singleton safety gate');
+assert.match(candidateHitSource, /if \(singletonGate\.eligible && singletonGate\.candidate\)[\s\S]{0,500}saveForUser/,
+  'only a gate-authorized cache singleton may use the canonical save path');
+assert.match(candidateHitSource, /__skipRecognitionCachePersist: true/,
+  'a request-specific presentation decision cannot overwrite recognition evidence');
 
 const migration = read('supabase/migrations/20260822000002_vayrin_recognition_cache_and_place_sources.sql');
 assert.match(migration, /unique \(saved_place_id, identity_key\)/i);

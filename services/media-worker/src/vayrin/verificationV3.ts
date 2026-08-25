@@ -313,7 +313,18 @@ export function userFacingVerificationCandidates(result: VerificationV3Result): 
   return result.rankedCandidates.slice(0, VERIFICATION_V3_USER_CANDIDATE_LIMIT);
 }
 
-/** V3 retrieval/region candidates always require confirmation. */
+/**
+ * V3 never authorizes a save by itself. A supported candidate may proceed to
+ * the ordinary canonical resolver and autosave gates, which retain the final
+ * decision.
+ */
 export function verificationV3AllowsAutoSave(_record: CandidateVerificationRecord): false {
   return false;
+}
+
+export function verificationV3IdentityEvidenceKind(
+  record: CandidateVerificationRecord,
+): 'observable' | 'model_prior' {
+  if (strongDirectContradictions(record.contradictingEvidence).length > 0) return 'model_prior';
+  return record.supportingEvidence.length > 0 ? 'observable' : 'model_prior';
 }

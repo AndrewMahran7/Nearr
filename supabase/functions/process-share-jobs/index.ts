@@ -132,6 +132,7 @@ import {
 } from './recognitionCache.ts';
 import {
   candidateSetForRecognitionCache,
+  evaluateCachedSingletonAutoSave,
   rerankCachedCandidatePayload,
 } from './contextAwareCacheReranking.ts';
 
@@ -187,7 +188,11 @@ function safeCandidate(c: any, aiNote: string | null = null) {
     googleMapsTypeLabel: typeof c.googleMapsTypeLabel === 'string' ? c.googleMapsTypeLabel : null,
     shortFormattedAddress: typeof c.shortFormattedAddress === 'string' ? c.shortFormattedAddress : null,
     businessStatus: typeof c.businessStatus === 'string' ? c.businessStatus : null,
-    matchScore: typeof c.confidenceScore === 'number' ? c.confidenceScore : null,
+    matchScore: typeof c.confidenceScore === 'number'
+      ? c.confidenceScore
+      : typeof c.matchScore === 'number'
+      ? c.matchScore
+      : null,
     evidence: Array.isArray(c.evidence) ? c.evidence.filter((value: unknown) => typeof value === 'string').slice(0, 12) : [],
     reasons: Array.isArray(c.reasons) ? c.reasons.filter((value: unknown) => typeof value === 'string').slice(0, 12) : [],
     contextReason: typeof c.contextReason === 'string' ? c.contextReason : null,
@@ -2315,9 +2320,74 @@ async function useRecognitionCache(args: {
       explicitMode: (presentationPayload as any)?.selectionMode,
       mentionSlots: (presentationPayload as any)?.mentionSlots,
     });
-    // A cached candidate set is review-only. The concrete blocker flag keeps
-    // even a singleton out of auto-save while preserving single-vs-multi
-    // selection semantics for the confirmation RPC.
+    const singletonGate = evaluateCachedSingletonAutoSave(reranked);
+    if (singletonGate.eligible && singletonGate.candidate) {
+      const candidate = singletonGate.candidate as any;
+      const saved = await saveForUser({
+        client: admin,
+        userId: job.user_id,
+        candidate,
+        sourceUrl: identity.canonicalUrl,
+        source: legacySourceFor(identity.platform),
+        sourceMetadata: { resolvedUrl: identity.canonicalUrl },
+      });
+      await recordRecognitionEvent(admin, 'recognition_cache_candidate_auto_save', identity, {
+        mediaDownloadAvoided: true,
+        geminiCallsAvoided: 1,
+        solCallsAvoided: 1,
+        cacheHit: true,
+        cacheTrust: 'CANDIDATE_SET',
+        contextualRerankApplied: true,
+        contextSourceKind: reranked.contextSourceKind,
+        contextAvailable: reranked.contextAvailable,
+        candidateCountBeforeRerank: reranked.candidateCountBeforeRerank,
+        candidateCountAfterRerank: reranked.candidateCountAfterRerank,
+        viableCandidateCount: singletonGate.viableCandidateCount,
+        singletonGateReason: singletonGate.reason,
+        singletonQualityReason: singletonGate.qualityReason,
+        placesCallCount: 0,
+      });
+      await finalize(
+        admin,
+        job,
+        {
+          status: 'completed',
+          decision: 'auto_save',
+          saved_place_id: saved.savedPlaceId,
+          candidate_payload: buildCandidateReviewSnapshot([safeCandidate(candidate)], 10, 'single'),
+          canonical_url: identity.canonicalUrl,
+          source_platform: identity.platform,
+          extraction_payload: {
+            ...(job.extraction_payload ?? {}),
+            savedPlaceName: candidate.name,
+            alreadySaved: saved.reused,
+            recognitionCache: {
+              hit: true,
+              trust: 'CANDIDATE_SET',
+              contextualRerankApplied: true,
+              contextSourceKind: reranked.contextSourceKind,
+              singletonGateReason: singletonGate.reason,
+            },
+          },
+          // This is a safe decision over the current request's reranked
+          // presentation, not authority to overwrite the full cache row.
+          __skipRecognitionCachePersist: true,
+          progress_stage: 'completed',
+          completed_at: nowIso(),
+        },
+        composeShareCompletionNotification({
+          status: 'completed',
+          placeName: candidate.name,
+          jobId: job.id,
+          savedPlaceId: saved.savedPlaceId,
+          googlePlaceId: candidate.googlePlaceId,
+          alreadySaved: saved.reused,
+        }),
+      );
+      return true;
+    }
+    // Every candidate set that failed the contextual singleton gate remains
+    // review-only, with single-vs-multi confirmation semantics preserved.
     const review = decisionForSelectionSemantics(count, selectionMode, true);
     const mode = review.mode === 'auto' ? 'single' : review.mode;
     await recordRecognitionEvent(admin, 'recognition_cache_candidate_hit', identity, {
@@ -2333,6 +2403,9 @@ async function useRecognitionCache(args: {
       contextAvailable: reranked.contextAvailable,
       rankingPolicy: reranked.rankingPolicy,
       placesCallCount: reranked.placesCallCount,
+      viableCandidateCount: singletonGate.viableCandidateCount,
+      singletonGateReason: singletonGate.reason,
+      singletonQualityReason: singletonGate.qualityReason,
     });
     await finalize(
       admin,
@@ -2607,13 +2680,19 @@ async function processOne(admin: any, env: any, job: any): Promise<void> {
   const plausibleCandidates = result.candidates.filter((candidate: any) =>
     plausibleProviderIds.has(candidate.googlePlaceId)
   );
-  const hasConcreteBlocker = metadataAutoSave.explicitConflictFlags.length > 0;
+  const viableProviderIds = new Set(metadataAutoSave.viableProviderIds);
+  const viableCandidates = result.candidates.filter((candidate: any) =>
+    viableProviderIds.has(candidate.googlePlaceId)
+  );
+  const routingCandidates = metadataAutoSave.eligible ? viableCandidates : plausibleCandidates;
+  const hasConcreteBlocker = metadataAutoSave.explicitConflictFlags.length > 0 ||
+    (routingCandidates.length === 1 && !metadataAutoSave.eligible);
   const metadataSelectionMode = selectionModeForPlaceResult({
     decision: result.decision,
     diagnostics: result.diagnostics,
   });
   const countDecision = decisionForSelectionSemantics(
-    plausibleCandidates.length,
+    routingCandidates.length,
     metadataSelectionMode,
     hasConcreteBlocker,
   );
@@ -2621,8 +2700,8 @@ async function processOne(admin: any, env: any, job: any): Promise<void> {
   const metadataResult = {
     ...result,
     decision: effectiveDecision,
-    candidates: plausibleCandidates,
-    primaryCandidate: plausibleCandidates[0],
+    candidates: routingCandidates,
+    primaryCandidate: routingCandidates[0],
     safeToAutoSave: effectiveDecision === 'auto_save',
   };
 
@@ -2657,6 +2736,7 @@ async function processOne(admin: any, env: any, job: any): Promise<void> {
       autoSaveDecision: metadataAutoSave,
       rawResolverCandidates: result.candidates.slice(0, 10).map(safeCandidate),
       plausibleCandidates: plausibleCandidates.slice(0, 10).map(safeCandidate),
+      viableCandidates: viableCandidates.slice(0, 10).map(safeCandidate),
       // Present only when the metadata path ran name-driven mention resolution;
       // the address/query-ladder path produces no mentions and so no traces.
       resolutionDiagnostics: (result.diagnostics as any)?.resolutionDiagnostics ?? null,
@@ -2883,6 +2963,8 @@ async function processOne(admin: any, env: any, job: any): Promise<void> {
   const metadataReviewReason =
     metadataAutoSave.plausibleCandidateCount === 1 && metadataAutoSave.explicitConflictFlags.length > 0
       ? `metadata_${metadataAutoSave.explicitConflictFlags[0]}`
+      : metadataAutoSave.viableCandidateCount === 0 && metadataAutoSave.plausibleCandidateCount > 0
+      ? `metadata_${metadataAutoSave.reasonCodes[0] ?? 'weak_singleton'}`
       : metadataAutoSave.plausibleCandidateCount === 0 && metadataAutoSave.candidateRejectionReasons.length > 0
       ? `metadata_${metadataAutoSave.candidateRejectionReasons[0]}`
       : plan.needsHelpReason;

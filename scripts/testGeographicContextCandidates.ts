@@ -474,14 +474,18 @@ for (const fx of CONTEXT_ONLY) {
 
 // Case D — a business whose name contains a state still auto-saves.
 {
-  const decision = gate([{ ...DESTINATIONS[0], confidenceScore: 0.7, reasons: ['business_type'] }]);
+  const decision = gate([{
+    ...DESTINATIONS[0], confidenceScore: 0.7, reasons: ['business_type', 'strong_name_match'],
+  }]);
   assert.equal(decision.eligible, true, 'California Pizza Kitchen must auto-save');
   assert.equal(decision.selectedProviderId, 'dest-cpk');
 }
 
 // Case E — a real park still auto-saves.
 {
-  const decision = gate([{ ...DESTINATIONS[4], confidenceScore: 0.7, reasons: ['business_type'] }]);
+  const decision = gate([{
+    ...DESTINATIONS[4], confidenceScore: 0.7, reasons: ['business_type', 'strong_name_match'],
+  }]);
   assert.equal(decision.eligible, true, 'Central Park must auto-save');
 }
 
