@@ -39,6 +39,10 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
 import { CORS_HEADERS, preflight } from './cors.ts';
 import { extractBearerToken, resolveDeleteAuthority } from './authToken.ts';
+import {
+  SHARE_EVIDENCE_BUCKET,
+  evidencePathsForOwnedJob,
+} from '../_shared/shareEvidenceLifecycle.ts';
 
 function json(payload: unknown, status = 200): Response {
   return new Response(JSON.stringify(payload), {
@@ -131,6 +135,43 @@ serve(async (req) => {
   }
   const onboardingSessionIds = (onboardingSessions ?? []).map((session) => session.id);
 
+  // Storage objects do not participate in auth/database cascades. Remove only
+  // paths referenced by this user's job payloads; never list or sweep a bucket.
+  let evidenceObjectsDeleted = 0;
+  let lastJobId = '';
+  for (;;) {
+    let jobsQuery = admin
+      .from('share_jobs')
+      .select('id,user_id,candidate_payload')
+      .eq('user_id', userId)
+      .order('id', { ascending: true })
+      .limit(200);
+    if (lastJobId) jobsQuery = jobsQuery.gt('id', lastJobId);
+    const { data: jobs, error: jobsError } = await jobsQuery;
+    if (jobsError) {
+      console.error(`[delete-account] lookup failed table=share_jobs ref=${userRef(userId)} code=${jobsError.code ?? 'unknown'}`);
+      return json({ ok: false, error: 'deletion_failed', step: 'share_evidence_lookup' }, 500);
+    }
+    const rows = jobs ?? [];
+    const paths = rows.flatMap((job) => evidencePathsForOwnedJob(job.candidate_payload, userId, job.id));
+    for (let offset = 0; offset < paths.length; offset += 100) {
+      const batch = paths.slice(offset, offset + 100);
+      const { data: removed, error: removeError } = await admin.storage
+        .from(SHARE_EVIDENCE_BUCKET)
+        .remove(batch);
+      if (removeError) {
+        console.error(`[delete-account] failed storage=${SHARE_EVIDENCE_BUCKET} ref=${userRef(userId)} count=${batch.length}`);
+        return json({ ok: false, error: 'deletion_failed', step: 'share_evidence' }, 500);
+      }
+      evidenceObjectsDeleted += removed?.length ?? batch.length;
+    }
+    if (rows.length < 200) break;
+    lastJobId = rows[rows.length - 1].id;
+  }
+  if (evidenceObjectsDeleted > 0) {
+    console.log(`[delete-account] cleared storage=${SHARE_EVIDENCE_BUCKET} ref=${userRef(userId)} count=${evidenceObjectsDeleted}`);
+  }
+
   // ---- Delete user-owned rows that do NOT cascade ------------------
   for (const table of EXPLICIT_DELETE_TABLES) {
     const { error } = await admin.from(table).delete().eq('user_id', userId);
@@ -192,5 +233,5 @@ serve(async (req) => {
   }
 
   console.log(`[delete-account] success ref=${userRef(userId)}`);
-  return json({ ok: true, alreadyDeleted, onboardingCleanupPending });
+  return json({ ok: true, alreadyDeleted, onboardingCleanupPending, evidenceObjectsDeleted });
 });

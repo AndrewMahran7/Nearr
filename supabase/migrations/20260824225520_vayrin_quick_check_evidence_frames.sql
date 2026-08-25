@@ -4,8 +4,9 @@
 --   <user_id>/<share_job_id>/<media_task_id>/<index>-<timestamp>.jpg
 -- References live in share_jobs.candidate_payload.evidenceFrames. The bucket is
 -- private; an authenticated client may sign/delete only objects belonging to a
--- share job it owns. Removing the job through the app removes the referenced
--- objects first. No extracted video/audio or unselected frames are retained.
+-- share job it owns. Queue archival preserves objects. Physical job/account
+-- deletion removes exact referenced objects through authenticated server
+-- authority. No extracted video/audio or unselected frames are retained.
 
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values (

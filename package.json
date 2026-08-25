@@ -94,6 +94,7 @@
     "test:queue-inbox": "ts-node -P scripts/tsconfig.json scripts/testQueueInbox.ts",
     "test:queue-persistence": "ts-node -P scripts/tsconfig.json scripts/testQueuePersistence.ts",
     "test:empty-queue": "ts-node -P scripts/tsconfig.json scripts/testEmptyQueue.ts && powershell -NoProfile -ExecutionPolicy Bypass -File scripts/testEmptyQueueMigration.ps1",
+    "test:share-evidence-lifecycle": "ts-node -P scripts/tsconfig.json scripts/testShareEvidenceLifecycle.ts",
     "test:queue-swipe": "ts-node -P scripts/tsconfig.json scripts/testQueueSwipeCoordinator.ts",
     "test:queue-save": "ts-node -P scripts/tsconfig.json scripts/testQueueSaveResolution.ts",
     "test:queue-interactions": "ts-node -P scripts/tsconfig.json scripts/testQueueInteractionContracts.ts",
@@ -242,7 +243,7 @@
     "test:vayrin-ui": "ts-node -P scripts/tsconfig.json scripts/testVayrinPresentationUi.ts",
     "test:vayrin-candidate-confirmation": "ts-node -P scripts/tsconfig.json scripts/testVayrinCandidateConfirmation.ts",
     "test:vayrin-candidate-confirmation-v2": "ts-node -P scripts/tsconfig.json scripts/testVayrinCandidateConfirmationV2.ts",
-    "test:vayrin-quick-check-evidence-ui": "ts-node -P scripts/tsconfig.json scripts/testVayrinQuickCheckEvidenceUi.ts",
+    "test:vayrin-quick-check-evidence-ui": "ts-node -P scripts/tsconfig.json scripts/testVayrinQuickCheckEvidenceUi.ts && npm run test:share-evidence-lifecycle",
     "test:vayrin-product-ui": "npm run test:vayrin-presentation && npm run test:vayrin-ui && npm run test:vayrin-candidate-confirmation"
   },
   "dependencies": {

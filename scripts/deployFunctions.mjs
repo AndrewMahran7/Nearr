@@ -68,7 +68,7 @@ const projectRef = production
   : resolveDevProjectRef({ explicitRef, onFail: fail });
 
 const available = readdirSync(FUNCTIONS_DIR, { withFileTypes: true })
-  .filter((e) => e.isDirectory())
+  .filter((e) => e.isDirectory() && !e.name.startsWith('_'))
   .map((e) => e.name)
   .sort();
 

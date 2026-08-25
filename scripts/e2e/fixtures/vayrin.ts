@@ -28,10 +28,11 @@
 import { createClient } from '@supabase/supabase-js';
 
 import { buildShareJobDetailState } from '../../../lib/shareJobDetailState';
+import { candidateMatchLabel, candidateWhyMatchLines } from '../../../lib/vayrinCandidateConfirmation';
 import { pollUntil, timeoutFor } from '../poll';
 import { StageReporter } from '../report';
 import { JOB_TERMINAL, StatusTrail, TASK_TERMINAL, type TaskRow } from '../lifecycle';
-import { correlationKeyFor, type E2ESession } from '../session';
+import { correlationKeyFor, createEphemeralIdentity, type E2ESession } from '../session';
 import { readJob, readTaskForJob } from './shared';
 
 /** Worst case for ONE attempt: transcription, evidence analysis, OCR, Vayrin. */
@@ -401,15 +402,213 @@ export async function fixtureVayrinLiveCanary(
   }
   reporter.pass(`${name}: candidate photo available`, 0, 'verified Google candidate photo resolved as an image');
 
-  // Exercise the authenticated delete policy now. Session cleanup repeats this
-  // idempotently if a later assertion fails, before cascading the owner job.
-  const { error: removeError } = await evidenceBucket.remove(paths);
-  const { data: remaining, error: remainingError } = await evidenceBucket.list(expectedPrefix.slice(0, -1), { limit: 10 });
-  if (removeError || remainingError || (remaining ?? []).length !== 0) {
-    reporter.fail(`${name}: evidence cleanup`, 0, removeError?.message ?? remainingError?.message ?? 'objects remained after owner delete');
+  const matchLabel = candidateMatchLabel(photoCandidate);
+  const whyLines = candidateWhyMatchLines(photoCandidate, photoCandidate.formattedAddress);
+  if (!matchLabel || whyLines.length === 0) {
+    reporter.fail(`${name}: match evidence + Why this match`, 0, 'live candidate did not expose qualitative match evidence');
     return false;
   }
-  reporter.pass(`${name}: evidence cleanup`, 0, `${paths.length} object(s) deleted through the authenticated owner policy`);
+  reporter.pass(`${name}: match evidence + Why this match`, 0, `${matchLabel}; ${whyLines.length} grounded reason(s)`);
+
+  // Save through the same owner-scoped places/saved_places/resolve contract as
+  // the application. This is an isolated user, so no personal data is touched.
+  if (!Number.isFinite(photoCandidate.latitude) || !Number.isFinite(photoCandidate.longitude)) {
+    reporter.fail(`${name}: save candidate`, 0, 'candidate has no persistable coordinates');
+    return false;
+  }
+  let savedPlaceId = finalized.value.saved_place_id ?? null;
+  if (!savedPlaceId) {
+    const { data: existingPlace, error: placeLookupError } = await owner
+      .from('places')
+      .select('id')
+      .eq('google_place_id', photoCandidate.googlePlaceId)
+      .maybeSingle();
+    if (placeLookupError) {
+      reporter.fail(`${name}: save candidate`, 0, placeLookupError.message);
+      return false;
+    }
+    let placeId = existingPlace?.id ?? null;
+    if (!placeId) {
+      const { data: insertedPlace, error: placeInsertError } = await owner
+        .from('places')
+        .insert({
+          google_place_id: photoCandidate.googlePlaceId,
+          name: photoCandidate.name,
+          formatted_address: photoCandidate.formattedAddress,
+          latitude: photoCandidate.latitude,
+          longitude: photoCandidate.longitude,
+          google_types: photoCandidate.types,
+        })
+        .select('id')
+        .single();
+      if (placeInsertError || !insertedPlace) {
+        reporter.fail(`${name}: save candidate`, 0, placeInsertError?.message ?? 'place insert returned no id');
+        return false;
+      }
+      placeId = insertedPlace.id;
+    }
+    const { data: saved, error: saveError } = await owner
+      .from('saved_places')
+      .insert({
+        user_id: identity.userId,
+        place_id: placeId,
+        radius_value: null,
+        radius_unit: null,
+        source_type: options.platform,
+        source_url: options.sourceUrl,
+      })
+      .select('id')
+      .single();
+    if (saveError || !saved) {
+      reporter.fail(`${name}: save candidate`, 0, saveError?.message ?? 'saved place insert returned no id');
+      return false;
+    }
+    savedPlaceId = saved.id;
+    const { data: resolved, error: resolveError } = await owner.rpc('resolve_share_job', {
+      p_job_id: jobId,
+      p_saved_place_id: savedPlaceId,
+    });
+    if (resolveError || resolved !== true) {
+      reporter.fail(`${name}: save candidate`, 0, resolveError?.message ?? 'resolve_share_job returned false');
+      return false;
+    }
+  }
+  const { data: savedProof, error: savedProofError } = await owner
+    .from('saved_places')
+    .select('id,place_id,source_url')
+    .eq('id', savedPlaceId)
+    .maybeSingle();
+  if (savedProofError || !savedProof) {
+    reporter.fail(`${name}: save candidate`, 0, savedProofError?.message ?? 'saved place is not owner-readable');
+    return false;
+  }
+  reporter.pass(`${name}: save candidate`, 0, `saved_place=${savedPlaceId}`);
+
+  const invokeDelete = async (accessToken: string | null) => {
+    const headers: Record<string, string> = {
+      apikey: session.config.anonKey,
+      'Content-Type': 'application/json',
+    };
+    if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+    const response = await fetch(`${session.config.supabaseUrl}/functions/v1/delete-share-job`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ jobId }),
+    });
+    const body = await response.json().catch(() => null) as Record<string, unknown> | null;
+    return { response, body };
+  };
+
+  const anonymousDelete = await invokeDelete(null);
+  if (anonymousDelete.response.status !== 401) {
+    reporter.fail(`${name}: anonymous deletion denied`, 0, `HTTP ${anonymousDelete.response.status}`);
+    return false;
+  }
+  const traversal = `${identity.userId}/${jobId}/${taskId}/../${paths[0]!.split('/').pop()}`;
+  const traversalSign = await evidenceBucket.createSignedUrl(traversal, 60);
+  if (!traversalSign.error && traversalSign.data?.signedUrl) {
+    reporter.fail(`${name}: path traversal denied`, 0, 'a traversal path received a signed URL');
+    return false;
+  }
+  reporter.pass(`${name}: anonymous + traversal denied`, 0, 'delete HTTP 401; traversal signing rejected');
+
+  // A second ephemeral identity proves both Storage and server deletion remain
+  // scoped to the token owner. Always remove it, even if an assertion fails.
+  const adversary = await createEphemeralIdentity(
+    session.admin,
+    session.config,
+    `${session.correlationId}-other`,
+  );
+  try {
+    const other = createClient(session.config.supabaseUrl, session.config.anonKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+      global: { headers: { Authorization: `Bearer ${adversary.accessToken}` } },
+    });
+    const otherSigning = await other.storage.from('share-evidence').createSignedUrls(paths, 60);
+    if (!otherSigning.error && (otherSigning.data ?? []).some((row) => !!row.signedUrl)) {
+      reporter.fail(`${name}: cross-user signing denied`, 0, 'other user received a signed evidence URL');
+      return false;
+    }
+    await other.storage.from('share-evidence').remove(paths);
+    const { data: afterOtherRemove } = await session.admin.storage
+      .from('share-evidence')
+      .list(expectedPrefix.slice(0, -1), { limit: 10 });
+    if ((afterOtherRemove ?? []).length !== paths.length) {
+      reporter.fail(`${name}: cross-user object deletion denied`, 0, 'other user removed one or more evidence objects');
+      return false;
+    }
+    const otherDelete = await invokeDelete(adversary.accessToken);
+    const { data: jobAfterOtherDelete } = await session.admin
+      .from('share_jobs')
+      .select('id')
+      .eq('id', jobId)
+      .maybeSingle();
+    if (otherDelete.response.status !== 404 || !jobAfterOtherDelete) {
+      reporter.fail(`${name}: cross-user job deletion denied`, 0, `HTTP ${otherDelete.response.status}`);
+      return false;
+    }
+    reporter.pass(`${name}: cross-user sign + delete denied`, 0, 'other identity could not sign objects or delete object/job state');
+  } finally {
+    await session.admin.auth.admin.deleteUser(adversary.userId).catch(() => undefined);
+  }
+
+  // Queue archival changes visibility only. The job, model/media history,
+  // saved place, and private evidence must all remain available afterward.
+  const { data: archiveRows, error: archiveError } = await owner.rpc('archive_active_queue_for_user', {
+    p_job_ids: [jobId],
+  });
+  const archiveRow = Array.isArray(archiveRows) ? archiveRows[0] : archiveRows;
+  if (archiveError || Number(archiveRow?.archived_count ?? 0) !== 1) {
+    reporter.fail(`${name}: queue archive`, 0, archiveError?.message ?? 'archive count was not 1');
+    return false;
+  }
+  const [{ data: archivedJob }, { data: activeJob }, { data: runHistory }, { data: taskHistory }, { data: savedAfterArchive }, { data: evidenceAfterArchive }] = await Promise.all([
+    session.admin.from('share_jobs').select('id,queue_archived_at,candidate_payload').eq('id', jobId).maybeSingle(),
+    owner.from('share_jobs').select('id').eq('id', jobId).is('queue_archived_at', null).maybeSingle(),
+    session.admin.from('share_media_runs').select('id').eq('id', String(run.id)).maybeSingle(),
+    session.admin.from('share_media_tasks').select('id').eq('id', taskId).maybeSingle(),
+    owner.from('saved_places').select('id').eq('id', savedPlaceId).maybeSingle(),
+    session.admin.storage.from('share-evidence').list(expectedPrefix.slice(0, -1), { limit: 10 }),
+  ]);
+  if (!archivedJob?.queue_archived_at || activeJob || !runHistory || !taskHistory || !savedAfterArchive || (evidenceAfterArchive ?? []).length !== paths.length) {
+    reporter.fail(`${name}: queue archive`, 0, 'archive hid more than active queue visibility');
+    return false;
+  }
+  const signedAfterArchive = await fetch(signedUrls[0]!);
+  if (!signedAfterArchive.ok) {
+    reporter.fail(`${name}: evidence retained after archive`, 0, `signed evidence HTTP ${signedAfterArchive.status}`);
+    return false;
+  }
+  reporter.pass(`${name}: queue archive + evidence retention`, 0, 'queue hidden; job/history/save/evidence preserved');
+
+  // Direct authenticated table deletion is revoked. The reviewed Edge path is
+  // the sole physical job-deletion authority exercised by this canary.
+  const directDelete = await owner.from('share_jobs').delete().eq('id', jobId).select('id');
+  const { data: jobAfterDirectDelete } = await session.admin.from('share_jobs').select('id').eq('id', jobId).maybeSingle();
+  if ((!directDelete.error && (directDelete.data ?? []).length > 0) || !jobAfterDirectDelete) {
+    reporter.fail(`${name}: client hard delete denied`, 0, 'authenticated table delete removed the job');
+    return false;
+  }
+  const authorizedDelete = await invokeDelete(identity.accessToken);
+  if (!authorizedDelete.response.ok || authorizedDelete.body?.ok !== true) {
+    reporter.fail(`${name}: authorized deletion cleanup`, 0, `HTTP ${authorizedDelete.response.status}`);
+    return false;
+  }
+  const [{ data: deletedJob }, { data: orphanObjects }, { data: savedAfterDelete }] = await Promise.all([
+    session.admin.from('share_jobs').select('id').eq('id', jobId).maybeSingle(),
+    session.admin.storage.from('share-evidence').list(expectedPrefix.slice(0, -1), { limit: 10 }),
+    owner.from('saved_places').select('id').eq('id', savedPlaceId).maybeSingle(),
+  ]);
+  if (deletedJob || (orphanObjects ?? []).length !== 0 || !savedAfterDelete) {
+    reporter.fail(`${name}: authorized deletion cleanup`, 0, 'job/evidence/save postconditions were not met');
+    return false;
+  }
+  const repeatedDelete = await invokeDelete(identity.accessToken);
+  if (!repeatedDelete.response.ok || repeatedDelete.body?.alreadyDeleted !== true) {
+    reporter.fail(`${name}: idempotent deletion cleanup`, 0, `HTTP ${repeatedDelete.response.status}`);
+    return false;
+  }
+  reporter.pass(`${name}: authorized deletion cleanup`, 0, `${paths.length} evidence object(s) removed; job deleted; saved place preserved; orphans=0; retry idempotent`);
 
   // ---- Recognition, reported but never blocking ---------------------------
   if (options.groundTruth) {

@@ -38,6 +38,7 @@ const candidateCarousel = read('components/CandidatePhotoCarousel.tsx');
 const card = read('components/CandidateConfirmationCard.tsx');
 const worker = read('services/media-worker/src/pipeline/persistEvidenceFrames.ts');
 const shareJobsService = read('services/shareJobsService.ts');
+const deleteShareJobEdge = read('supabase/functions/delete-share-job/index.ts');
 const mediaFinalizer = read('supabase/functions/process-share-jobs/index.ts');
 const migration = read('supabase/migrations/20260824225520_vayrin_quick_check_evidence_frames.sql');
 
@@ -177,8 +178,10 @@ async function verifyLifecycleCleanup(): Promise<void> {
   }));
   assert.equal(cleanupFailure.status, 'failed');
 assert.match(cleanupFailure.errorMessage ?? '', /partial storage outage/);
-  assert.match(shareJobsService, /evidence cleanup failed[\s\S]*throw new Error\('Could not remove all retained evidence/);
-  assert.match(shareJobsService, /evidence cleanup snapshot failed[\s\S]*throw new Error\('Could not verify evidence cleanup/);
+  assert.doesNotMatch(shareJobsService, /from\('share_jobs'\)\.delete\(/);
+  assert.match(shareJobsService, /archive_active_queue_for_user/);
+  assert.match(deleteShareJobEdge, /deleteOwnedShareJob/);
+  assert.match(deleteShareJobEdge, /evidence_cleanup_failed/);
 }
 
 void verifyLifecycleCleanup().then(() => {

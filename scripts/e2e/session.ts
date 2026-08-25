@@ -117,7 +117,7 @@ export async function openSession(options: {
   return session;
 }
 
-async function createEphemeralIdentity(
+export async function createEphemeralIdentity(
   admin: SupabaseClient,
   config: DeployedConfig,
   correlationId: string,
