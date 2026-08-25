@@ -113,7 +113,7 @@ export function SourceEvidenceGallery({
       ) : (
         <View style={[styles.missing, { width: frameWidth, minHeight: compact ? 92 : 112 }]}>
           <Feather name="film" size={22} color={COLORS.muted} />
-          <Text style={styles.missingText}>A frame wasn’t retained for this moment.</Text>
+          <Text style={styles.missingText}>Analyzed frames weren’t retained for this result.</Text>
         </View>
       )}
       <Modal visible={!!viewerFrame} animationType="fade" transparent onRequestClose={() => setViewerIndex(null)}>

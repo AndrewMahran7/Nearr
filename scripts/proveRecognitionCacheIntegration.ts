@@ -167,7 +167,60 @@ async function main(): Promise<void> {
       .select('identity_key')
       .in('identity_key', keys);
     if (preexistingError) throw preexistingError;
-    assert.deepEqual(preexisting, [], 'proof refuses to overwrite or clean up a pre-existing shared recognition row');
+    const useExisting = process.env.NEARR_PROOF_USE_EXISTING_CACHE === '1';
+    if (rowArray(preexisting).length > 0) {
+      assert.equal(useExisting, true, 'proof refuses to overwrite or clean up a pre-existing shared recognition row');
+      assert.deepEqual(
+        rowArray(preexisting).map((row) => row.identity_key),
+        [keys[0]],
+        'existing-cache mode accepts only the designated canonical cache fixture',
+      );
+      const startedAt = new Date().toISOString();
+      const warm = await submitAndWait(session, 'cache-existing-warm', FIXTURES.cache.canonical);
+      assert.equal(warm.job.status, 'completed');
+      assert.equal(warm.job.extraction_payload?.recognitionCache?.hit, true);
+      const [{ data: tasks, error: tasksError }, { data: runs, error: runsError }] = await Promise.all([
+        session.admin.from('share_media_tasks').select('id,task_kind,status').eq('user_id', session.identity!.userId).gte('created_at', startedAt),
+        session.admin.from('share_agent_runs').select('id').eq('user_id', session.identity!.userId).gte('created_at', startedAt),
+      ]);
+      if (tasksError) throw tasksError;
+      if (runsError) throw runsError;
+      const firstTasks = rowArray(tasks);
+      assert.ok(
+        firstTasks.every((task) => task.task_kind === 'ai_note_enrichment'),
+        'existing cache hit may enqueue only the required post-save AI-note task, never recognition media work',
+      );
+      assert.equal(rowArray(runs).length, 0, 'existing cache hit must not invoke the recognition agent');
+      if (firstTasks.length > 0) {
+        assert.ok(warm.job.saved_place_id);
+        await waitForClaimedAiNoteTask(session.admin, warm.job.saved_place_id, true);
+      }
+      const repeatStartedAt = new Date().toISOString();
+      const repeat = await submitAndWait(session, 'cache-existing-repeat', FIXTURES.cache.variant);
+      assert.equal(repeat.job.status, 'completed');
+      assert.equal(repeat.job.saved_place_id, warm.job.saved_place_id);
+      assert.equal(repeat.job.extraction_payload?.recognitionCache?.hit, true);
+      const [{ data: repeatTasks, error: repeatTasksError }, { data: repeatRuns, error: repeatRunsError }] = await Promise.all([
+        session.admin.from('share_media_tasks').select('id').eq('user_id', session.identity!.userId).gte('created_at', repeatStartedAt),
+        session.admin.from('share_agent_runs').select('id').eq('user_id', session.identity!.userId).gte('created_at', repeatStartedAt),
+      ]);
+      if (repeatTasksError) throw repeatTasksError;
+      if (repeatRunsError) throw repeatRunsError;
+      assert.equal(rowArray(repeatTasks).length, 0, 'repeat trusted cache hit must not create media work');
+      assert.equal(rowArray(repeatRuns).length, 0, 'repeat trusted cache hit must not invoke the recognition agent');
+      console.log(`CACHE_EXISTING_PROOF_RESULT ${JSON.stringify({
+        jobId: warm.job.id,
+        repeatJobId: repeat.job.id,
+        identityKey: keys[0],
+        cacheHit: true,
+        firstHitRecognitionTasks: 0,
+        firstHitRequiredAiNoteTasks: firstTasks.length,
+        repeatHitMediaTasks: 0,
+        recognitionAgentRuns: 0,
+        latencyMs: warm.latencyMs,
+      })}`);
+      return;
+    }
     ownsCacheKeys = true;
 
     console.log(`CACHE_PROOF_STAGE target=${session.config.supabaseRef} correlation=${session.correlationId}`);

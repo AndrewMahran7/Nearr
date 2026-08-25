@@ -21,6 +21,7 @@ import type {
   SavedPlace,
   SavedPlaceWithPlace,
 } from '@/types';
+import { canonicalSaveSuccess } from '@/lib/canonicalSaveContract';
 import type {
   SavedPlacePatch,
   SaveSavedPlaceInput,
@@ -144,11 +145,10 @@ export async function saveDemoSavedPlace(
   );
   if (existing) {
     console.log('[demo:saved] duplicate', candidate.googlePlaceId);
-    return {
+    return canonicalSaveSuccess(existing.id, input.sourceUrl ? 'already_attached' : 'reused', {
       status: 'duplicate',
       place: existing.place,
-      savedPlaceId: existing.id,
-    };
+    });
   }
 
   const nowIso = new Date().toISOString();
@@ -187,7 +187,7 @@ export async function saveDemoSavedPlace(
   cache = [withPlace, ...list];
   await persist();
   console.log('[demo:saved] saved', candidate.name);
-  return { status: 'saved', saved: withPlace, savedPlaceId: withPlace.id };
+  return canonicalSaveSuccess(withPlace.id, 'created', { status: 'saved', saved: withPlace });
 }
 
 export async function updateDemoSavedPlace(

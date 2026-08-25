@@ -1,8 +1,26 @@
-import type { ShareJobCandidatePayload, ShareJobEvidenceFrame, ShareJobMentionSlot, ShareJobResultCandidate } from './shareJobResult';
+import type {
+  ShareJobCandidatePayload,
+  ShareJobEvidenceFrame,
+  ShareJobMentionSlot,
+  ShareJobResultCandidate,
+} from './shareJobResult';
 import type { ShareJob } from '../services/shareJobsService';
 
 const PHOTO_FIXTURE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFElEQVR42mP8v5ThPwMDAwMjI4MBAEdoBAUZS2xbAAAAAElFTkSuQmCC';
 const FRAME_FIXTURE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFklEQVR42mP8f5HhPwMDAwMjiAEMDAwAhiQFBf+oKYQAAAAASUVORK5CYII=';
+const FIVE_PHOTO_FIXTURES = Array.from({ length: 5 }, (_, index) => `${PHOTO_FIXTURE}#place-photo-${index + 1}`);
+
+function evidenceFrames(timestamps: readonly number[]): ShareJobEvidenceFrame[] {
+  return timestamps.slice(0, 5).map((timestampSeconds, index) => ({
+    id: `fixture-frame-${index + 1}-${timestampSeconds}`,
+    storagePath: null,
+    url: `${FRAME_FIXTURE}#evidence-${index + 1}`,
+    timestampSeconds,
+    width: 768,
+    height: 432,
+    relevance: index < 3 ? 'candidate_evidence' : 'vayrin_selected',
+  }));
+}
 
 export type VayrinCandidateFixture = {
   id: string;
@@ -11,11 +29,11 @@ export type VayrinCandidateFixture = {
   candidates: ShareJobResultCandidate[];
   selectionMode: 'single_identity' | 'multi_independent';
   sourceFrameUrl?: string | null;
+  evidenceFrames?: ShareJobEvidenceFrame[];
   alreadySavedGooglePlaceIds?: string[];
   mentionSlots?: ShareJobMentionSlot[];
   suggestedQuery?: string;
   manualResults?: ShareJobResultCandidate[];
-  evidenceFrames?: ShareJobEvidenceFrame[];
 };
 
 function place(
@@ -117,6 +135,7 @@ const sanDiegoAlternativeSlots: ShareJobMentionSlot[] = [{
   mentionId: 'fixture-san-diego-scene', displayName: 'San Diego waterfront', contextLabel: 'San Diego, California',
   primaryVenueName: null, hostVenueName: null, relationshipType: null,
   outcome: 'ambiguous_candidates', candidates: [seaworldBridge, missionBay],
+  noteEvidence: [0, 4].map((timestampSeconds) => ({ source: 'frame' as const, value: 'Fixture visual evidence', timestampSeconds })),
   identityHypotheses: [
     { name: seaworldBridge.name, contextLabel: 'San Diego, California', confidence: 0.7, evidenceKind: 'observable', timestamps: [0] },
     { name: missionBay.name, contextLabel: 'San Diego, California', confidence: 0.62, evidenceKind: 'observable', timestamps: [4] },
@@ -142,18 +161,23 @@ function rawFixture(id: string, label: string, query: string, manualResults: Sha
 }
 
 export const VAYRIN_CANDIDATE_FIXTURES: readonly VayrinCandidateFixture[] = [
-  { id: 'vayrin-confirm-stari-most', label: 'Stari Most', description: 'Single exact candidate with source-frame fallback', candidates: [stariMost], selectionMode: 'single_identity', sourceFrameUrl: FRAME_FIXTURE },
-  { id: 'vayrin-confirm-san-diego', label: 'San Diego ×2', description: 'Two explicit mutually exclusive identities for one logical place', candidates: [seaworldBridge, missionBay], selectionMode: 'single_identity', sourceFrameUrl: FRAME_FIXTURE, mentionSlots: sanDiegoAlternativeSlots },
-  { id: 'vayrin-confirm-supai', label: 'Supai area', description: 'Broad locality candidate', candidates: [supai], selectionMode: 'single_identity', sourceFrameUrl: FRAME_FIXTURE },
-  { id: 'vayrin-confirm-photo', label: 'Place photo', description: 'Exact candidate with an existing place photo', candidates: [{ ...missionBay, googlePlaceId: 'fixture-place-photo', photoUrl: PHOTO_FIXTURE }], selectionMode: 'single_identity' },
+  { id: 'vayrin-confirm-stari-most', label: 'Stari Most', description: 'Single exact candidate with source-frame fallback', candidates: [{ ...stariMost, reasons: ['strong_name_match'], matchScore: 0.84 }], selectionMode: 'single_identity', sourceFrameUrl: FRAME_FIXTURE, evidenceFrames: evidenceFrames([3]) },
+  { id: 'vayrin-confirm-san-diego', label: 'San Diego ×2', description: 'Two explicit mutually exclusive identities for one logical place', candidates: [seaworldBridge, missionBay], selectionMode: 'single_identity', sourceFrameUrl: FRAME_FIXTURE, evidenceFrames: evidenceFrames([0, 4, 9, 14]), mentionSlots: sanDiegoAlternativeSlots },
+  { id: 'vayrin-confirm-supai', label: 'Supai area', description: 'Broad locality candidate', candidates: [supai], selectionMode: 'single_identity', sourceFrameUrl: FRAME_FIXTURE, evidenceFrames: evidenceFrames([2]) },
+  { id: 'vayrin-confirm-photo', label: 'Place photo', description: 'Exact candidate with an existing place photo', candidates: [{ ...missionBay, googlePlaceId: 'fixture-place-photo', photoUrl: PHOTO_FIXTURE }], selectionMode: 'single_identity', evidenceFrames: evidenceFrames([4]) },
+  { id: 'vayrin-confirm-five-photos', label: 'Five place photos', description: 'Candidate gallery is capped at five cached place photos', candidates: [{ ...sunsetCliffs, googlePlaceId: 'fixture-five-photos', photoUrls: FIVE_PHOTO_FIXTURES, sourceTimestamps: [1, 4, 9], reasons: ['strong_name_match', 'state_match'], matchScore: 0.86 }], selectionMode: 'single_identity', evidenceFrames: evidenceFrames([1, 4, 9, 14]) },
+  { id: 'vayrin-confirm-one-photo', label: 'One place photo', description: 'Single-photo gallery remains stable', candidates: [{ ...missionBay, googlePlaceId: 'fixture-one-photo', photoUrls: [PHOTO_FIXTURE] }], selectionMode: 'single_identity', evidenceFrames: evidenceFrames([4]) },
   { id: 'vayrin-confirm-frame', label: 'Frame fallback', description: 'No place photo; candidate-associated video frame available', candidates: [{ ...stariMost, googlePlaceId: 'fixture-frame-only', photoUrl: null, sourceFrameUrl: FRAME_FIXTURE }], selectionMode: 'single_identity', sourceFrameUrl: FRAME_FIXTURE },
-  { id: 'vayrin-confirm-neutral', label: 'Neutral fallback', description: 'Neither place photo nor source frame available', candidates: [{ ...stariMost, googlePlaceId: 'fixture-neutral', photoUrl: null, sourceFrameUrl: null }], selectionMode: 'single_identity' },
+  { id: 'vayrin-confirm-neutral', label: 'Neutral fallback', description: 'Neither place photo nor source frame available', candidates: [{ ...stariMost, googlePlaceId: 'fixture-neutral', photoUrl: null, photoUrls: [], sourceFrameUrl: null }], selectionMode: 'single_identity', evidenceFrames: evidenceFrames([3]) },
   { id: 'vayrin-confirm-three', label: '3 alternatives', description: 'Three alternatives remain directly selectable', candidates: [stariMost, seaworldBridge, missionBay], selectionMode: 'single_identity', sourceFrameUrl: FRAME_FIXTURE },
-  { id: 'vayrin-confirm-sunset-three', label: 'Sunset ×3', description: 'Three plausible destinations support compact multi-select', candidates: [sunsetCliffs, sunsetPoint, sunsetBeach], selectionMode: 'single_identity', sourceFrameUrl: FRAME_FIXTURE },
+  { id: 'vayrin-confirm-sunset-three', label: 'Sunset Cliffs ×3', description: 'Three plausible destinations support evidence-first multi-select', candidates: [{ ...sunsetCliffs, sourceTimestamps: [1, 4, 9], reasons: ['strong_name_match', 'state_match'], matchScore: 0.84 }, { ...sunsetPoint, sourceTimestamps: [4], reasons: ['meaningful_name_match'], matchScore: 0.63 }, { ...sunsetBeach, sourceTimestamps: [9], reasons: ['meaningful_name_match'], matchScore: 0.48 }], selectionMode: 'single_identity', sourceFrameUrl: FRAME_FIXTURE, evidenceFrames: evidenceFrames([1, 4, 9, 14]) },
   { id: 'vayrin-confirm-five-internal', label: 'Five internal / three shown', description: 'Full evidence retained with a three-row presentation cap', candidates: [sunsetCliffs, sunsetPoint, sunsetBeach, stariMost, missionBay], selectionMode: 'single_identity', sourceFrameUrl: FRAME_FIXTURE },
   { id: 'vayrin-confirm-long-name', label: 'Long name', description: 'Long place name wraps without clipping', candidates: [place('fixture-long-name', 'The Museum of Extremely Long Place Names and Remarkably Specific Destinations', 'Central Waterfront, San Diego, California', ['museum', 'point_of_interest'], { photoUrl: PHOTO_FIXTURE })], selectionMode: 'single_identity' },
   { id: 'vayrin-confirm-long-locality', label: 'Long locality', description: 'Long locality wraps without clipping', candidates: [place('fixture-long-locality', 'Stone Bridge Lookout', 'The Historic Riverside and Old Market District of Mostar, Federation of Bosnia and Herzegovina', ['tourist_attraction', 'point_of_interest'], { sourceFrameUrl: FRAME_FIXTURE })], selectionMode: 'single_identity', sourceFrameUrl: FRAME_FIXTURE },
   { id: 'vayrin-confirm-duplicate', label: 'Already saved', description: 'Duplicate-safe source enrichment state', candidates: [{ ...stariMost, googlePlaceId: 'fixture-duplicate' }], selectionMode: 'single_identity', alreadySavedGooglePlaceIds: ['fixture-duplicate'], sourceFrameUrl: FRAME_FIXTURE },
+  { id: 'vayrin-confirm-low-confidence', label: 'Low match', description: 'Supported low qualitative strength without a fabricated percentage', candidates: [{ ...sunsetBeach, googlePlaceId: 'fixture-low-confidence', matchScore: 0.41, reasons: ['meaningful_name_match'] }], selectionMode: 'single_identity', evidenceFrames: evidenceFrames([9]) },
+  { id: 'vayrin-confirm-qualitative-only', label: 'Qualitative only', description: 'Producer-provided qualitative strength with no numeric score', candidates: [{ ...missionBay, googlePlaceId: 'fixture-qualitative-only', matchScore: null, matchStrength: 'medium', reasons: ['state_match'] }], selectionMode: 'single_identity', evidenceFrames: evidenceFrames([4]) },
+  { id: 'vayrin-confirm-missing-frames', label: 'Missing retained frames', description: 'Analysis completed before durable frame retention was available', candidates: [{ ...stariMost, googlePlaceId: 'fixture-missing-frames' }], selectionMode: 'single_identity', evidenceFrames: [] },
   { id: 'vayrin-confirm-none', label: 'No candidate', description: 'Honest no-candidate recovery', candidates: [], selectionMode: 'single_identity' },
   {
     id: 'vayrin-confirm-multi-place',
@@ -172,6 +196,11 @@ export const VAYRIN_CANDIDATE_FIXTURES: readonly VayrinCandidateFixture[] = [
       outcome: 'verified_single',
       candidates: [candidate],
       sourceTimestamps: candidate.sourceTimestamps ?? [index * 5],
+      noteEvidence: (candidate.sourceTimestamps ?? [index * 5]).map((timestampSeconds) => ({
+        source: 'frame' as const,
+        value: 'Fixture visual evidence',
+        timestampSeconds,
+      })),
     })),
   },
   multiFixture('vayrin-multi-punchbowl-in-n-out', 'Punchbowl + In-N-Out', punchbowlAndBurger),
@@ -214,6 +243,11 @@ export function buildVayrinCandidateFixtureJob(id: string): ShareJob {
     outcome: fixture.candidates.length > 1 ? 'ambiguous_candidates' as const : 'verified_single' as const,
     candidates: fixture.candidates,
     sourceTimestamps: fixture.candidates.flatMap((candidate) => candidate.sourceTimestamps ?? []).slice(0, 12),
+    noteEvidence: fixture.candidates.flatMap((candidate) => candidate.sourceTimestamps ?? []).slice(0, 12).map((timestampSeconds) => ({
+      source: 'frame' as const,
+      value: 'Fixture visual evidence',
+      timestampSeconds,
+    })),
   }] : []);
   const payload: ShareJobCandidatePayload = {
     version: 2,

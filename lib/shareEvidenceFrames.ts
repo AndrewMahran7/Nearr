@@ -1,12 +1,18 @@
 import { supabase } from './supabase';
 import type { ShareJobEvidenceFrame } from './shareJobResult';
+import {
+  MAX_RETAINED_EVIDENCE_FRAMES,
+  SIGNED_URL_TTL_SECONDS,
+} from './shareEvidenceFrameLifecycle';
+
+export { MAX_RETAINED_EVIDENCE_FRAMES, SIGNED_URL_TTL_SECONDS } from './shareEvidenceFrameLifecycle';
 
 export const SHARE_EVIDENCE_BUCKET = 'share-evidence';
-export const MAX_RETAINED_EVIDENCE_FRAMES = 5;
-const SIGNED_URL_TTL_SECONDS = 60 * 60;
 const REFRESH_SKEW_MS = 5 * 60 * 1000;
 
-export type ResolvedShareEvidenceFrame = ShareJobEvidenceFrame & { uri: string | null };
+export type ResolvedShareEvidenceFrame = ShareJobEvidenceFrame & {
+  uri: string | null;
+};
 
 type CachedUrl = { uri: string; expiresAt: number };
 const signedUrlCache = new Map<string, CachedUrl>();

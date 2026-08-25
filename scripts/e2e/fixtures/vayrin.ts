@@ -25,10 +25,15 @@
  * no way for this fixture to loop.
  */
 
+import { createClient } from '@supabase/supabase-js';
+
+import { buildShareJobDetailState } from '../../../lib/shareJobDetailState';
+import { normalizeResultCandidates } from '../../../lib/shareJobResult';
+import { candidateMatchLabel, candidateWhyMatchLines } from '../../../lib/vayrinCandidateConfirmation';
 import { pollUntil, timeoutFor } from '../poll';
 import { StageReporter } from '../report';
 import { JOB_TERMINAL, StatusTrail, TASK_TERMINAL, type TaskRow } from '../lifecycle';
-import { correlationKeyFor, type E2ESession } from '../session';
+import { correlationKeyFor, createEphemeralIdentity, type E2ESession } from '../session';
 import { readJob, readTaskForJob } from './shared';
 
 /** Worst case for ONE attempt: transcription, evidence analysis, OCR, Vayrin. */
@@ -251,14 +256,17 @@ export async function fixtureVayrinLiveCanary(
     `model_provider=${String(run.model_provider)} transcription=${String(run.transcription_provider ?? 'none')}`,
   );
 
-  if (!run.model_output || typeof run.model_output !== 'object') {
-    reporter.fail(`${name}: structured response accepted`, 0, 'no structured model_output was persisted');
+  // Current Edge persists the bounded, parsed recognition/funnel summary in
+  // `evidence`. `model_output` is a legacy optional raw-preview field and is
+  // intentionally null for the current worker transport.
+  if (!run.evidence || typeof run.evidence !== 'object') {
+    reporter.fail(`${name}: structured response accepted`, 0, 'no structured evidence summary was persisted');
     return false;
   }
   reporter.pass(
     `${name}: structured response accepted`,
     0,
-    `structured model output persisted (${JSON.stringify(run.model_output).length} bytes), evidence summary present=${!!run.evidence}`,
+    `bounded structured evidence persisted (${JSON.stringify(run.evidence).length} bytes); legacy raw model preview present=${!!run.model_output}`,
   );
 
   // ---- Finalizer ----------------------------------------------------------
@@ -286,6 +294,355 @@ export async function fixtureVayrinLiveCanary(
     finalized.elapsedMs,
     `job status=${finalized.value.status} decision=${finalized.value.decision ?? 'null'}`,
   );
+
+  // ---- Evidence-First persistence and private delivery -------------------
+  const detailState = buildShareJobDetailState(finalized.value);
+  const evidenceFrames = detailState.evidenceFrames;
+  if (evidenceFrames.length < 1 || evidenceFrames.length > 5) {
+    reporter.fail(
+      `${name}: durable evidence populated`,
+      0,
+      `expected 1..5 retained frames; detail state exposed ${evidenceFrames.length}`,
+      { detailKind: detailState.kind, candidateCount: detailState.candidates.length },
+    );
+    return false;
+  }
+  const expectedPrefix = `${identity.userId}/${jobId}/${taskId}/`;
+  const paths = evidenceFrames.flatMap((frame) => frame.storagePath ? [frame.storagePath] : []);
+  const pathsAreSafe = paths.length === evidenceFrames.length &&
+    new Set(paths).size === paths.length &&
+    paths.every((path) => path.startsWith(expectedPrefix) && path.split('/').length === 4) &&
+    evidenceFrames.every((frame) => Number.isFinite(frame.timestampSeconds) && frame.timestampSeconds >= 0);
+  if (!pathsAreSafe) {
+    reporter.fail(`${name}: durable evidence populated`, 0, 'persisted frame metadata or ownership path is invalid');
+    return false;
+  }
+  reporter.pass(
+    `${name}: durable evidence populated`,
+    0,
+    `${evidenceFrames.length} bounded frame reference(s); Quick Check kind=${detailState.kind}; candidates=${detailState.candidates.length}`,
+  );
+
+  const owner = createClient(session.config.supabaseUrl, session.config.anonKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+    global: { headers: { Authorization: `Bearer ${identity.accessToken}` } },
+  });
+  const evidenceBucket = owner.storage.from('share-evidence');
+  const { data: stored, error: listError } = await evidenceBucket.list(expectedPrefix.slice(0, -1), { limit: 10 });
+  const storedNames = new Set((stored ?? []).map((item) => item.name));
+  if (listError || paths.some((path) => !storedNames.has(path.slice(expectedPrefix.length)))) {
+    reporter.fail(
+      `${name}: private evidence objects exist`,
+      0,
+      listError?.message ?? 'one or more persisted references have no matching Storage object',
+    );
+    return false;
+  }
+
+  const publicUrl = evidenceBucket.getPublicUrl(paths[0]!).data.publicUrl;
+  const publicResponse = await fetch(publicUrl, { redirect: 'manual' });
+  if (publicResponse.ok) {
+    reporter.fail(`${name}: evidence bucket is private`, 0, 'an unsigned public object request unexpectedly succeeded');
+    return false;
+  }
+  const anonymous = createClient(session.config.supabaseUrl, session.config.anonKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const anonymousSigning = await anonymous.storage.from('share-evidence').createSignedUrls(paths, 60);
+  if (!anonymousSigning.error && (anonymousSigning.data ?? []).some((row) => !!row.signedUrl)) {
+    reporter.fail(`${name}: evidence bucket is private`, 0, 'an unauthenticated client created an evidence URL');
+    return false;
+  }
+  reporter.pass(`${name}: evidence bucket is private`, 0, `unsigned fetch HTTP ${publicResponse.status}; anonymous signing denied`);
+
+  const signedStartedAt = Date.now();
+  const { data: signed, error: signError } = await evidenceBucket.createSignedUrls(paths, 60);
+  const signedUrls = (signed ?? []).flatMap((row) => row.signedUrl ? [row.signedUrl] : []);
+  if (signError || signedUrls.length !== paths.length) {
+    reporter.fail(`${name}: owner evidence signing`, Date.now() - signedStartedAt, signError?.message ?? 'not every frame was signed');
+    return false;
+  }
+  const imageResponses = await Promise.all(signedUrls.map((url) => fetch(url)));
+  if (imageResponses.some((response) => !response.ok || !/^image\/jpeg\b/i.test(response.headers.get('content-type') ?? ''))) {
+    reporter.fail(`${name}: signed images resolve`, Date.now() - signedStartedAt, 'one or more signed URLs did not return image/jpeg');
+    return false;
+  }
+  reporter.pass(
+    `${name}: signed images resolve`,
+    Date.now() - signedStartedAt,
+    `${signedUrls.length} JPEG(s) resolved from one batched signing request`,
+  );
+
+  // A verified Google candidate is sufficient for the app's existing lazy
+  // photo hydration path; prove the exact live candidate currently has a photo
+  // that Google will serve rather than trusting a synthetic URL.
+  const basePhotoCandidate = detailState.candidates.find((candidate) => !!candidate.googlePlaceId);
+  const persistedCandidates = normalizeResultCandidates(
+    finalized.value.candidate_payload && typeof finalized.value.candidate_payload === 'object'
+      ? (finalized.value.candidate_payload as { candidates?: unknown }).candidates
+      : [],
+  );
+  const slot = detailState.mentionSlots.find((item) =>
+    item.candidates.some((candidate) => candidate.googlePlaceId === basePhotoCandidate?.googlePlaceId));
+  const persistedCandidate = slot?.candidates.find((candidate) =>
+    candidate.googlePlaceId === basePhotoCandidate?.googlePlaceId)
+    ?? persistedCandidates.find((candidate) => candidate.googlePlaceId === basePhotoCandidate?.googlePlaceId);
+  const evidenceItems = (slot?.noteEvidence ?? []).map((item) => ({
+    source: item.source,
+    timestampSeconds: item.timestampSeconds,
+  }));
+  // Mirror the app's rankedConfirmationCandidates compatibility mapping so
+  // this proves what Quick Check renders, not the intentionally minimal queue
+  // candidate shape returned by buildShareJobDetailState.
+  const photoCandidate = basePhotoCandidate ? {
+    ...basePhotoCandidate,
+    photoUrls: persistedCandidate?.photoUrls ?? [],
+    evidence: persistedCandidate?.evidence ?? [],
+    reasons: persistedCandidate?.reasons ?? [],
+    matchStrength: persistedCandidate?.matchStrength ?? null,
+    sourceFrameUrl: basePhotoCandidate.sourceFrameUrl ?? slot?.sourceFrameUrl ?? null,
+    sourceTimestamps: basePhotoCandidate.sourceTimestamps.length > 0
+      ? basePhotoCandidate.sourceTimestamps
+      : slot?.sourceTimestamps ?? [],
+    matchedFrameTimestamps: evidenceItems
+      .filter((item) => item.source === 'frame' && item.timestampSeconds != null)
+      .map((item) => item.timestampSeconds!),
+    analyzedFrameCount: evidenceFrames.length,
+    evidenceItems,
+  } : null;
+  const placesKey = session.config.railwayVars.GOOGLE_PLACES_KEY?.trim();
+  if (!photoCandidate?.googlePlaceId || !placesKey) {
+    reporter.fail(`${name}: candidate photo available`, 0, 'no verified Google candidate or deployed Places key');
+    return false;
+  }
+  const placeResponse = await fetch(
+    `https://places.googleapis.com/v1/places/${encodeURIComponent(photoCandidate.googlePlaceId)}`,
+    { headers: { 'X-Goog-Api-Key': placesKey, 'X-Goog-FieldMask': 'id,photos' } },
+  );
+  const placeBody = await placeResponse.json().catch(() => null) as { photos?: Array<{ name?: string }> } | null;
+  const photoName = placeBody?.photos?.find((photo) => typeof photo.name === 'string')?.name;
+  if (!placeResponse.ok || !photoName) {
+    reporter.fail(`${name}: candidate photo available`, 0, `Places details HTTP ${placeResponse.status} returned no supported photo`);
+    return false;
+  }
+  const mediaResponse = await fetch(
+    `https://places.googleapis.com/v1/${photoName}/media?maxWidthPx=640&skipHttpRedirect=true&key=${encodeURIComponent(placesKey)}`,
+  );
+  const mediaBody = await mediaResponse.json().catch(() => null) as { photoUri?: string } | null;
+  const photoResponse = mediaBody?.photoUri ? await fetch(mediaBody.photoUri) : null;
+  if (!mediaResponse.ok || !photoResponse?.ok || !/^image\//i.test(photoResponse.headers.get('content-type') ?? '')) {
+    reporter.fail(`${name}: candidate photo available`, 0, 'the verified candidate photo did not resolve as an image');
+    return false;
+  }
+  reporter.pass(`${name}: candidate photo available`, 0, 'verified Google candidate photo resolved as an image');
+
+  const matchLabel = candidateMatchLabel(photoCandidate);
+  const whyLines = candidateWhyMatchLines(photoCandidate, photoCandidate.formattedAddress);
+  if (!matchLabel || whyLines.length === 0) {
+    reporter.fail(`${name}: match evidence + Why this match`, 0, 'live candidate did not expose qualitative match evidence');
+    return false;
+  }
+  reporter.pass(`${name}: match evidence + Why this match`, 0, `${matchLabel}; ${whyLines.length} grounded reason(s)`);
+
+  // Save through the same owner-scoped places/saved_places/resolve contract as
+  // the application. This is an isolated user, so no personal data is touched.
+  if (!Number.isFinite(photoCandidate.latitude) || !Number.isFinite(photoCandidate.longitude)) {
+    reporter.fail(`${name}: save candidate`, 0, 'candidate has no persistable coordinates');
+    return false;
+  }
+  let savedPlaceId = finalized.value.saved_place_id ?? null;
+  if (!savedPlaceId) {
+    const { data: existingPlace, error: placeLookupError } = await owner
+      .from('places')
+      .select('id')
+      .eq('google_place_id', photoCandidate.googlePlaceId)
+      .maybeSingle();
+    if (placeLookupError) {
+      reporter.fail(`${name}: save candidate`, 0, placeLookupError.message);
+      return false;
+    }
+    let placeId = existingPlace?.id ?? null;
+    if (!placeId) {
+      const { data: insertedPlace, error: placeInsertError } = await owner
+        .from('places')
+        .insert({
+          google_place_id: photoCandidate.googlePlaceId,
+          name: photoCandidate.name,
+          formatted_address: photoCandidate.formattedAddress,
+          latitude: photoCandidate.latitude,
+          longitude: photoCandidate.longitude,
+          google_types: photoCandidate.types,
+        })
+        .select('id')
+        .single();
+      if (placeInsertError || !insertedPlace) {
+        reporter.fail(`${name}: save candidate`, 0, placeInsertError?.message ?? 'place insert returned no id');
+        return false;
+      }
+      placeId = insertedPlace.id;
+    }
+    const { data: saved, error: saveError } = await owner
+      .from('saved_places')
+      .insert({
+        user_id: identity.userId,
+        place_id: placeId,
+        radius_value: null,
+        radius_unit: null,
+        source_type: options.platform,
+        source_url: options.sourceUrl,
+      })
+      .select('id')
+      .single();
+    if (saveError || !saved) {
+      reporter.fail(`${name}: save candidate`, 0, saveError?.message ?? 'saved place insert returned no id');
+      return false;
+    }
+    savedPlaceId = saved.id;
+    const { data: resolved, error: resolveError } = await owner.rpc('resolve_share_job', {
+      p_job_id: jobId,
+      p_saved_place_id: savedPlaceId,
+    });
+    if (resolveError || resolved !== true) {
+      reporter.fail(`${name}: save candidate`, 0, resolveError?.message ?? 'resolve_share_job returned false');
+      return false;
+    }
+  }
+  const { data: savedProof, error: savedProofError } = await owner
+    .from('saved_places')
+    .select('id,place_id,source_url')
+    .eq('id', savedPlaceId)
+    .maybeSingle();
+  if (savedProofError || !savedProof) {
+    reporter.fail(`${name}: save candidate`, 0, savedProofError?.message ?? 'saved place is not owner-readable');
+    return false;
+  }
+  reporter.pass(`${name}: save candidate`, 0, `saved_place=${savedPlaceId}`);
+
+  const invokeDelete = async (accessToken: string | null) => {
+    const headers: Record<string, string> = {
+      apikey: session.config.anonKey,
+      'Content-Type': 'application/json',
+    };
+    if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+    const response = await fetch(`${session.config.supabaseUrl}/functions/v1/delete-share-job`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ jobId }),
+    });
+    const body = await response.json().catch(() => null) as Record<string, unknown> | null;
+    return { response, body };
+  };
+
+  const anonymousDelete = await invokeDelete(null);
+  if (anonymousDelete.response.status !== 401) {
+    reporter.fail(`${name}: anonymous deletion denied`, 0, `HTTP ${anonymousDelete.response.status}`);
+    return false;
+  }
+  const traversal = `${identity.userId}/${jobId}/${taskId}/../${paths[0]!.split('/').pop()}`;
+  const traversalSign = await evidenceBucket.createSignedUrl(traversal, 60);
+  if (!traversalSign.error && traversalSign.data?.signedUrl) {
+    reporter.fail(`${name}: path traversal denied`, 0, 'a traversal path received a signed URL');
+    return false;
+  }
+  reporter.pass(`${name}: anonymous + traversal denied`, 0, 'delete HTTP 401; traversal signing rejected');
+
+  // A second ephemeral identity proves both Storage and server deletion remain
+  // scoped to the token owner. Always remove it, even if an assertion fails.
+  const adversary = await createEphemeralIdentity(
+    session.admin,
+    session.config,
+    `${session.correlationId}-other`,
+  );
+  try {
+    const other = createClient(session.config.supabaseUrl, session.config.anonKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+      global: { headers: { Authorization: `Bearer ${adversary.accessToken}` } },
+    });
+    const otherSigning = await other.storage.from('share-evidence').createSignedUrls(paths, 60);
+    if (!otherSigning.error && (otherSigning.data ?? []).some((row) => !!row.signedUrl)) {
+      reporter.fail(`${name}: cross-user signing denied`, 0, 'other user received a signed evidence URL');
+      return false;
+    }
+    await other.storage.from('share-evidence').remove(paths);
+    const { data: afterOtherRemove } = await session.admin.storage
+      .from('share-evidence')
+      .list(expectedPrefix.slice(0, -1), { limit: 10 });
+    if ((afterOtherRemove ?? []).length !== paths.length) {
+      reporter.fail(`${name}: cross-user object deletion denied`, 0, 'other user removed one or more evidence objects');
+      return false;
+    }
+    const otherDelete = await invokeDelete(adversary.accessToken);
+    const { data: jobAfterOtherDelete } = await session.admin
+      .from('share_jobs')
+      .select('id')
+      .eq('id', jobId)
+      .maybeSingle();
+    if (otherDelete.response.status !== 404 || !jobAfterOtherDelete) {
+      reporter.fail(`${name}: cross-user job deletion denied`, 0, `HTTP ${otherDelete.response.status}`);
+      return false;
+    }
+    reporter.pass(`${name}: cross-user sign + delete denied`, 0, 'other identity could not sign objects or delete object/job state');
+  } finally {
+    await session.admin.auth.admin.deleteUser(adversary.userId).catch(() => undefined);
+  }
+
+  // Queue archival changes visibility only. The job, model/media history,
+  // saved place, and private evidence must all remain available afterward.
+  const { data: archiveRows, error: archiveError } = await owner.rpc('archive_active_queue_for_user', {
+    p_job_ids: [jobId],
+  });
+  const archiveRow = Array.isArray(archiveRows) ? archiveRows[0] : archiveRows;
+  if (archiveError || Number(archiveRow?.archived_count ?? 0) !== 1) {
+    reporter.fail(`${name}: queue archive`, 0, archiveError?.message ?? 'archive count was not 1');
+    return false;
+  }
+  const [{ data: archivedJob }, { data: activeJob }, { data: runHistory }, { data: taskHistory }, { data: savedAfterArchive }, { data: evidenceAfterArchive }] = await Promise.all([
+    session.admin.from('share_jobs').select('id,queue_archived_at,candidate_payload').eq('id', jobId).maybeSingle(),
+    owner.from('share_jobs').select('id').eq('id', jobId).is('queue_archived_at', null).maybeSingle(),
+    session.admin.from('share_media_runs').select('id').eq('id', String(run.id)).maybeSingle(),
+    session.admin.from('share_media_tasks').select('id').eq('id', taskId).maybeSingle(),
+    owner.from('saved_places').select('id').eq('id', savedPlaceId).maybeSingle(),
+    session.admin.storage.from('share-evidence').list(expectedPrefix.slice(0, -1), { limit: 10 }),
+  ]);
+  if (!archivedJob?.queue_archived_at || activeJob || !runHistory || !taskHistory || !savedAfterArchive || (evidenceAfterArchive ?? []).length !== paths.length) {
+    reporter.fail(`${name}: queue archive`, 0, 'archive hid more than active queue visibility');
+    return false;
+  }
+  const signedAfterArchive = await fetch(signedUrls[0]!);
+  if (!signedAfterArchive.ok) {
+    reporter.fail(`${name}: evidence retained after archive`, 0, `signed evidence HTTP ${signedAfterArchive.status}`);
+    return false;
+  }
+  reporter.pass(`${name}: queue archive + evidence retention`, 0, 'queue hidden; job/history/save/evidence preserved');
+
+  // Direct authenticated table deletion is revoked. The reviewed Edge path is
+  // the sole physical job-deletion authority exercised by this canary.
+  const directDelete = await owner.from('share_jobs').delete().eq('id', jobId).select('id');
+  const { data: jobAfterDirectDelete } = await session.admin.from('share_jobs').select('id').eq('id', jobId).maybeSingle();
+  if ((!directDelete.error && (directDelete.data ?? []).length > 0) || !jobAfterDirectDelete) {
+    reporter.fail(`${name}: client hard delete denied`, 0, 'authenticated table delete removed the job');
+    return false;
+  }
+  const authorizedDelete = await invokeDelete(identity.accessToken);
+  if (!authorizedDelete.response.ok || authorizedDelete.body?.ok !== true) {
+    reporter.fail(`${name}: authorized deletion cleanup`, 0, `HTTP ${authorizedDelete.response.status}`);
+    return false;
+  }
+  const [{ data: deletedJob }, { data: orphanObjects }, { data: savedAfterDelete }] = await Promise.all([
+    session.admin.from('share_jobs').select('id').eq('id', jobId).maybeSingle(),
+    session.admin.storage.from('share-evidence').list(expectedPrefix.slice(0, -1), { limit: 10 }),
+    owner.from('saved_places').select('id').eq('id', savedPlaceId).maybeSingle(),
+  ]);
+  if (deletedJob || (orphanObjects ?? []).length !== 0 || !savedAfterDelete) {
+    reporter.fail(`${name}: authorized deletion cleanup`, 0, 'job/evidence/save postconditions were not met');
+    return false;
+  }
+  const repeatedDelete = await invokeDelete(identity.accessToken);
+  if (!repeatedDelete.response.ok || repeatedDelete.body?.alreadyDeleted !== true) {
+    reporter.fail(`${name}: idempotent deletion cleanup`, 0, `HTTP ${repeatedDelete.response.status}`);
+    return false;
+  }
+  reporter.pass(`${name}: authorized deletion cleanup`, 0, `${paths.length} evidence object(s) removed; job deleted; saved place preserved; orphans=0; retry idempotent`);
 
   // ---- Recognition, reported but never blocking ---------------------------
   if (options.groundTruth) {

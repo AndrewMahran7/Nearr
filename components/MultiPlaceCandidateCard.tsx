@@ -19,22 +19,23 @@ const BRAND = {
   cream: '#F4F2EF', orange: '#FF6A1A', muted: '#A7A39D', border: '#34363D', surface: '#17191E', selected: '#211B18',
 };
 
-/** Compact evidence-first candidate card. The whole surface is the radio control. */
+/** Compact evidence-first candidate card with an independent native gallery gesture surface. */
 export function MultiPlaceCandidateCard({ candidate, meta, selected, alreadySaved, persisted, duplicate, onPress }: Props) {
   const match = candidate.matchStrength
     ? `${candidate.matchStrength[0]!.toUpperCase()}${candidate.matchStrength.slice(1)} match`
     : null;
   return (
-    <Pressable
-      onPress={onPress}
-      disabled={persisted}
-      accessibilityRole="radio"
-      accessibilityLabel={[candidate.name, meta, match, alreadySaved ? 'Already saved; this video will be attached' : null].filter(Boolean).join(', ')}
-      accessibilityHint="Selects this candidate for this moment"
-      accessibilityState={{ checked: selected, disabled: persisted }}
-      style={({ pressed }) => [styles.card, selected && styles.cardSelected, persisted && styles.cardPersisted, pressed && styles.pressed]}
-    >
-      <View style={styles.header}>
+    <View style={[styles.card, selected && styles.cardSelected, persisted && styles.cardPersisted]}>
+      <Pressable
+        onPress={onPress}
+        disabled={persisted}
+        accessibilityRole="radio"
+        accessibilityLabel={[candidate.name, meta, match, alreadySaved ? 'Already saved; this video will be attached' : null].filter(Boolean).join(', ')}
+        accessibilityHint="Selects this candidate for this moment"
+        accessibilityState={{ checked: selected, disabled: persisted }}
+        style={({ pressed }) => [styles.header, pressed && styles.pressed]}
+        testID="candidate-selection-control"
+      >
         <View style={styles.copy}>
           <Text style={styles.name} numberOfLines={3}>{candidate.name}</Text>
           {meta ? <Text style={styles.meta} numberOfLines={2}>{meta}</Text> : null}
@@ -43,7 +44,7 @@ export function MultiPlaceCandidateCard({ candidate, meta, selected, alreadySave
         <View style={[styles.radio, selected && styles.radioSelected]}>
           {selected ? <Feather name="check" size={16} color="#FFFFFF" /> : null}
         </View>
-      </View>
+      </Pressable>
       <CandidatePhotoCarousel
         googlePlaceId={candidate.googlePlaceId}
         sourceUri={candidate.photoUrl}
@@ -53,16 +54,18 @@ export function MultiPlaceCandidateCard({ candidate, meta, selected, alreadySave
         height={132}
       />
       {alreadySaved ? (
-        <View style={styles.statusRow}>
+        <Pressable onPress={onPress} disabled={persisted} accessible={false} style={({ pressed }) => [styles.statusRow, pressed && styles.pressed]}>
           <Feather name="check-circle" size={15} color={BRAND.orange} />
           <Text style={styles.saved}>{persisted ? 'Already saved · source attached' : 'Already saved · this video will be attached'}</Text>
-        </View>
+        </Pressable>
       ) : persisted ? (
         <View style={styles.statusRow}><Feather name="check-circle" size={15} color={BRAND.orange} /><Text style={styles.saved}>Saved</Text></View>
       ) : duplicate ? (
-        <Text style={styles.duplicate}>Same place selected for another moment · saved once</Text>
+        <Pressable onPress={onPress} accessible={false} style={({ pressed }) => pressed && styles.pressed}>
+          <Text style={styles.duplicate}>Same place selected for another moment · saved once</Text>
+        </Pressable>
       ) : null}
-    </Pressable>
+    </View>
   );
 }
 

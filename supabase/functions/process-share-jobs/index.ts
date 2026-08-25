@@ -38,7 +38,7 @@ import {
   inspectFacebookUrl,
   planFacebookDiscoveredCanonicalUrl,
 } from '../../../lib/shareAgent/facebookUrl.ts';
-import { buildShareJobCandidatePayload } from '../../../lib/shareJobResult.ts';
+import { buildShareJobCandidatePayload, normalizeEvidenceFrames } from '../../../lib/shareJobResult.ts';
 import { selectionModeForPlaceResult } from '../../../lib/placeSelection.ts';
 import {
   classifyShareFailure,
@@ -130,6 +130,10 @@ import {
   releaseRecognition,
   type RecognitionCacheDecision,
 } from './recognitionCache.ts';
+import {
+  candidateSetForRecognitionCache,
+  rerankCachedCandidatePayload,
+} from './contextAwareCacheReranking.ts';
 
 const CORS_HEADERS: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
@@ -429,6 +433,8 @@ async function finalize(
   note: { title: string; body: string; data: Record<string, unknown> } | null,
 ): Promise<void> {
   const updatePatch: Record<string, unknown> = { ...patch };
+  const skipRecognitionCachePersist = updatePatch.__skipRecognitionCachePersist === true;
+  delete updatePatch.__skipRecognitionCachePersist;
   const finalUrl = typeof patch.canonical_url === 'string'
     ? patch.canonical_url
     : job.canonical_url || job.source_url;
@@ -466,14 +472,14 @@ async function finalize(
 
   // Auxiliary cache write after the user-facing transition commits. Cache
   // outages never roll back a save or candidate review.
-  if (identity) {
+  if (identity && !skipRecognitionCachePersist) {
     const candidatePayload = patch.candidate_payload ?? job.candidate_payload ?? null;
     if (patch.status === 'completed' && patch.saved_place_id && isMultiPlaceCachePayload(candidatePayload)) {
       await persistRecognition({
         admin,
         identity,
         trust: 'CANDIDATE_SET',
-        candidatePayload,
+        candidatePayload: candidateSetForRecognitionCache(candidatePayload),
         evidenceSummary: { decision: 'multi_place_review' },
       });
     } else if (patch.status === 'completed' && patch.saved_place_id) {
@@ -497,7 +503,7 @@ async function finalize(
         admin,
         identity,
         trust: 'CANDIDATE_SET',
-        candidatePayload,
+        candidatePayload: candidateSetForRecognitionCache(candidatePayload),
         evidenceSummary: { decision: patch.decision ?? null },
       });
     }
@@ -1335,6 +1341,7 @@ async function finalizeParentManual(
     provider?: string | null;
     notificationLocality?: NotificationLocality | null;
     hasWeakClues?: boolean;
+    evidenceFrames?: unknown;
   } = {},
   sourceMetadata: MediaSourceMetadata | null = null,
 ): Promise<void> {
@@ -1357,6 +1364,15 @@ async function finalizeParentManual(
   const terminalStatus = candidateCount === 0 && failureCategory === 'technical_failure'
     ? 'failed'
     : 'needs_help';
+  const evidenceFrames = normalizeEvidenceFrames(presentation.evidenceFrames);
+  const candidatePayload = evidenceFrames.length > 0
+    ? {
+        ...(job?.candidate_payload && typeof job.candidate_payload === 'object'
+          ? job.candidate_payload
+          : {}),
+        evidenceFrames,
+      }
+    : job?.candidate_payload ?? null;
   await finalize(
     admin,
     job,
@@ -1368,6 +1384,7 @@ async function finalizeParentManual(
       failure_code: failureCode,
       failure_category: failureCategory,
       analysis_attempted: analysisAttempted,
+      candidate_payload: candidatePayload,
       ...(candidateCount === 0 ? { suggested_query: null } : {}),
       ...(sourceMetadata
         ? {
@@ -1475,6 +1492,7 @@ async function finalizeMediaTask(
   const parsed = outcome === 'evidence'
     ? parseMediaEvidence(body.evidence)
     : ({ ok: false, error: outcome } as const);
+  const evidenceFrames = normalizeEvidenceFrames(body.evidenceFrames);
   const rendered = parsed.ok
     ? renderMediaEvidenceCaption(parsed.value)
     : { title: '', description: '', renderedPlaces: 0 };
@@ -1584,6 +1602,7 @@ async function finalizeMediaTask(
         hasWeakClues: parsed.ok && parsed.value.places.some(
           (place: any) => place?.identityEvidenceKind !== 'model_prior' && place?.explicitEvidence?.length > 0,
         ),
+        evidenceFrames,
       }, sourceMetadata);
     }
     await markMediaTask(admin, taskId, pre.taskTerminalStatus, {
@@ -1715,6 +1734,7 @@ async function finalizeMediaTask(
         analysisAttempted: true,
         provider: task.platform,
         notificationLocality,
+        evidenceFrames,
       });
     }
     await markMediaTask(admin, taskId, 'failed', {
@@ -1996,6 +2016,7 @@ async function finalizeMediaTask(
           : [],
       })),
     );
+    candidatePayload.evidenceFrames = evidenceFrames;
     candidatePayload.savedPlaceIds = allSavedPlaceIds;
     const mediaResultSummary = {
       createdCount: createdSavedPlaceIds.length,
@@ -2211,6 +2232,7 @@ async function finalizeMediaTask(
         : [],
     })),
   );
+  candidatePayload.evidenceFrames = evidenceFrames;
   const decisionForRow =
     mode === 'manual'
       ? 'manual_fallback'
@@ -2284,11 +2306,14 @@ async function useRecognitionCache(args: {
 
   if (decision.kind === 'candidate_set') {
     const payload = decision.row.candidate_payload;
-    const count = persistedCandidateCount(payload);
+    const reranked = rerankCachedCandidatePayload(payload);
+    if (!reranked) return false;
+    const presentationPayload = reranked.payload;
+    const count = persistedCandidateCount(presentationPayload);
     if (count < 1) return false;
     const selectionMode = selectionModeForPlaceResult({
-      explicitMode: (payload as any)?.selectionMode,
-      mentionSlots: (payload as any)?.mentionSlots,
+      explicitMode: (presentationPayload as any)?.selectionMode,
+      mentionSlots: (presentationPayload as any)?.mentionSlots,
     });
     // A cached candidate set is review-only. The concrete blocker flag keeps
     // even a singleton out of auto-save while preserving single-vs-multi
@@ -2299,7 +2324,15 @@ async function useRecognitionCache(args: {
       mediaDownloadAvoided: true,
       geminiCallsAvoided: 1,
       solCallsAvoided: 1,
-      candidateCount: count,
+      cacheHit: true,
+      cacheTrust: 'CANDIDATE_SET',
+      candidateCountBeforeRerank: reranked.candidateCountBeforeRerank,
+      candidateCountAfterRerank: reranked.candidateCountAfterRerank,
+      contextualRerankApplied: reranked.applied,
+      contextSourceKind: reranked.contextSourceKind,
+      contextAvailable: reranked.contextAvailable,
+      rankingPolicy: reranked.rankingPolicy,
+      placesCallCount: reranked.placesCallCount,
     });
     await finalize(
       admin,
@@ -2308,20 +2341,31 @@ async function useRecognitionCache(args: {
         status: 'needs_help',
         decision: review.decision,
         needs_help_reason: 'recognition_cache_candidate_review',
-        candidate_payload: payload,
+        candidate_payload: presentationPayload,
         canonical_url: identity.canonicalUrl,
         source_platform: identity.platform,
         extraction_payload: {
           ...(job.extraction_payload ?? {}),
-          recognitionCache: { hit: true, trust: 'CANDIDATE_SET' },
+          recognitionCache: {
+            hit: true,
+            trust: 'CANDIDATE_SET',
+            contextualRerankApplied: true,
+            candidateCountBeforeRerank: reranked.candidateCountBeforeRerank,
+            candidateCountAfterRerank: reranked.candidateCountAfterRerank,
+            contextSourceKind: reranked.contextSourceKind,
+            contextAvailable: reranked.contextAvailable,
+            rankingPolicy: reranked.rankingPolicy,
+            placesCallCount: 0,
+          },
         },
+        __skipRecognitionCachePersist: true,
         progress_stage: mode,
       },
       reviewNotification({
         mode,
         jobId: job.id,
-        candidates: (payload as any)?.candidates,
-        mentionResults: (payload as any)?.mentionSlots,
+        candidates: (presentationPayload as any)?.candidates,
+        mentionResults: (presentationPayload as any)?.mentionSlots,
       }),
     );
     return true;

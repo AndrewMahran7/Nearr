@@ -1,0 +1,25 @@
+{
+  "releaseId": "2026-08-24-canonical-save-return-contract",
+  "previousMainSha": "109d1118c89f6145219cd4d97005ce0177460d57",
+  "previousOtaGroup": "d2bf7589-c2d4-4ab3-8e09-6b585c7313c4",
+  "currentOtaGroup": "b62389be-d3ad-4db0-b292-2e74199e5286",
+  "edgeVersions": {
+    "process-share-link": 133,
+    "process-share-jobs": 83,
+    "create-share-job": 25,
+    "delete-account": 23
+  },
+  "railwayDeployment": "1982da61-abbb-44a8-817e-02a4fc998fb2@48f0d5bbb39ca6135451d0c62c69285697187c6a",
+  "migrationLedger": [
+    "20260824233000"
+  ],
+  "rollbackProcedure": "Repeat the concurrency guard; republish previousOtaGroup to production; forward-revert the canonical-save integration commit; rerun canonical save, multi-place, source-enrichment, map, startup, release, prebuild, and iOS export gates. Edge, schema, Railway, native code, and EAS Build are unchanged by this release.",
+  "deploymentStatus": "DEPLOYED",
+  "physicalQa": {
+    "signedOutColdLaunch": "PENDING",
+    "signedInColdLaunch": "PENDING",
+    "forceCloseRelaunch": "PENDING",
+    "freshOnboardingLaunch": "NOT_REQUIRED"
+  },
+  "deployedAt": "2026-08-25T00:58:51.874Z"
+}

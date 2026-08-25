@@ -13,12 +13,19 @@ const outcome = (
   candidateId: string,
   status: SharePlaceSaveOutcome['status'],
   savedPlaceId: string | null,
-): SharePlaceSaveOutcome => ({
-  logicalPlaceId: `mention-${candidateId}`,
-  candidateId,
-  status,
-  savedPlaceId,
-});
+): SharePlaceSaveOutcome => status === 'failed'
+  ? {
+      logicalPlaceId: `mention-${candidateId}`,
+      candidateId,
+      status,
+      savedPlaceId: null,
+    }
+  : {
+      logicalPlaceId: `mention-${candidateId}`,
+      candidateId,
+      status,
+      savedPlaceId: savedPlaceId ?? (() => { throw new Error('Successful fixture needs an id.'); })(),
+    };
 
 for (const count of [0, 1, 2, 5, 8, 12]) {
   const outcomes = Array.from({ length: count }, (_, index) =>
@@ -41,12 +48,10 @@ assert.deepEqual(partialPlan.successfulCandidateIds, ['created-a', 'duplicate-b'
 assert.deepEqual(partialPlan.failedCandidateIds, ['failed-c']);
 assert.equal(partialPlan.destination, 'single');
 
-const duplicateWithoutId = planShareSaveCompletion([
-  outcome('duplicate-without-id', 'duplicate', null),
-]);
-assert.deepEqual(duplicateWithoutId.successfulCandidateIds, ['duplicate-without-id']);
-assert.deepEqual(duplicateWithoutId.createdSavedPlaceIds, []);
-assert.equal(duplicateWithoutId.destination, 'none');
+assert.throws(
+  () => outcome('duplicate-without-id', 'duplicate', null),
+  /Successful fixture needs an id/,
+);
 
 const request = createMapGroupFocusRequest({
   savedPlaceIds: ['saved-a', 'saved-b', 'saved-a', '  ', 'missing'],

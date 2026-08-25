@@ -2,7 +2,7 @@
   "releaseId": "2026-08-24-empty-queue-durable",
   "previousMainSha": "0637226e6c3f08e6b4721bce0de7af2815bead63",
   "previousOtaGroup": "4dd8539a-6bc1-4d07-88ce-e73a1503e3ca",
-  "currentOtaGroup": null,
+  "currentOtaGroup": "d2bf7589-c2d4-4ab3-8e09-6b585c7313c4",
   "edgeVersions": {
     "process-share-link": 133,
     "process-share-jobs": 83,
@@ -14,11 +14,12 @@
     "20260822000003"
   ],
   "rollbackProcedure": "Repeat the concurrency guard; republish previousOtaGroup to production; forward-revert the durable-queue integration commit on main; leave the additive queue_archived_at column and archive RPC in place; rerun the empty-queue, queue, Vayrin, startup, release, prebuild, and iOS export gates. Edge and Railway remain unchanged.",
-  "deploymentStatus": "PLANNED",
+  "deploymentStatus": "DEPLOYED",
   "physicalQa": {
     "signedOutColdLaunch": "PENDING",
     "signedInColdLaunch": "PENDING",
     "forceCloseRelaunch": "PENDING",
     "freshOnboardingLaunch": "NOT_REQUIRED"
-  }
+  },
+  "deployedAt": "2026-08-25T00:54:23.691Z"
 }

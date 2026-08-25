@@ -145,6 +145,7 @@ async function main(): Promise<number> {
       attempted: true,
       userDeleted: false,
       diagnosticsDeleted: 0,
+      evidenceObjectsDeleted: 0,
       retained: ['cleanup threw'],
       errors: [errText(err)],
     }));
@@ -154,7 +155,7 @@ async function main(): Promise<number> {
       reporter.pass(
         'cleanup',
         0,
-        `ephemeral user deleted (cascading ${session.trackedJobIds.length} share job(s), their media tasks and any saved places) and ${cleanup.diagnosticsDeleted} diagnostics row(s) removed`,
+        `ephemeral user deleted (cascading ${session.trackedJobIds.length} share job(s), their media tasks and any saved places), ${cleanup.diagnosticsDeleted} diagnostics row(s), and ${cleanup.evidenceObjectsDeleted} evidence object(s) removed`,
       );
     } else {
       reporter.warn('cleanup', `retained: ${cleanup.retained.join('; ')} | errors: ${cleanup.errors.join('; ')}`);

@@ -63,6 +63,7 @@ import {
 } from '@/lib/vayrinCandidateFixtures';
 import {
   planShareSaveCompletion,
+  normalizeResultCandidates,
   saveSelectedLabel,
   sourceTimestampLabel,
   type ShareJobResultCandidate,
@@ -139,6 +140,7 @@ import {
   persistShareJobCandidate,
   shareJobCandidateToPlaceCandidate,
   shareJobSourceType,
+  type ShareJobCandidateSaveOutcome,
 } from '@/services/shareJobCandidateSave';
 import {
   archiveShareJob,
@@ -584,17 +586,40 @@ function ShareJobDetailScreen() {
   }, [detail.kind, onboardingShare, sourceUrl]);
   const candidates = detail.candidates;
   const mentionSlots = detail.mentionSlots;
+  const persistedConfirmationCandidates = useMemo(
+    () => normalizeResultCandidates(
+      job?.candidate_payload && typeof job.candidate_payload === 'object'
+        ? (job.candidate_payload as { candidates?: unknown }).candidates
+        : [],
+    ),
+    [job?.candidate_payload],
+  );
   const rankedConfirmationCandidates = useMemo(() => candidates.map((candidate) => {
     const slot = mentionSlots.find((item) =>
       item.candidates.some((choice) => choice.googlePlaceId === candidate.googlePlaceId));
+    const persisted = slot?.candidates.find((choice) => choice.googlePlaceId === candidate.googlePlaceId)
+      ?? persistedConfirmationCandidates.find((choice) => choice.googlePlaceId === candidate.googlePlaceId);
+    const evidenceItems = (slot?.noteEvidence ?? []).map((item) => ({
+      source: item.source,
+      timestampSeconds: item.timestampSeconds,
+    }));
     return {
       ...candidate,
+      photoUrls: persisted?.photoUrls ?? [],
+      evidence: persisted?.evidence ?? [],
+      reasons: persisted?.reasons ?? [],
+      matchStrength: persisted?.matchStrength ?? null,
       sourceFrameUrl: candidate.sourceFrameUrl ?? slot?.sourceFrameUrl ?? overallSourceFrameUrl,
       sourceTimestamps: candidate.sourceTimestamps.length > 0
         ? candidate.sourceTimestamps
         : slot?.sourceTimestamps ?? [],
+      matchedFrameTimestamps: evidenceItems
+        .filter((item) => item.source === 'frame' && item.timestampSeconds != null)
+        .map((item) => item.timestampSeconds!),
+      analyzedFrameCount: detail.evidenceFrames.length,
+      evidenceItems,
     } satisfies CandidateConfirmationPlace;
-  }), [candidates, mentionSlots, overallSourceFrameUrl]);
+  }), [candidates, detail.evidenceFrames.length, mentionSlots, overallSourceFrameUrl, persistedConfirmationCandidates]);
   const confirmationCandidates = useMemo(
     () => visibleCandidateShortlist(rankedConfirmationCandidates),
     [rankedConfirmationCandidates],
@@ -603,12 +628,14 @@ function ShareJobDetailScreen() {
   const pickerSelectionMode = reviewSelectionMode(mentionSlots);
   const candidateConfirmationPresentation = {
     ...vayrinPresentation,
-    headline: confirmationPrompt(candidateMode),
+    headline: candidateMode === 'multiple'
+      ? 'Vayrin found a few possibilities.'
+      : confirmationPrompt(candidateMode),
     body: candidateMode === 'broad'
       ? 'This is an area match. Search nearby to choose an exact destination.'
       : candidateMode === 'multiple'
-        ? 'Choose the place that matches the video.'
-        : 'Compare it with the video, then save it.'
+        ? 'Compare the photos, frames, and match evidence.'
+        : 'Compare the photos, frames, and match evidence before saving.'
   };
   useEffect(() => {
     if (detail.kind !== 'picker') {
@@ -731,7 +758,7 @@ function ShareJobDetailScreen() {
   async function persistCandidate(
     candidate: PlaceCandidate,
     aiNote: string | null = null,
-  ): Promise<{ savedPlaceId: string | null; duplicate: boolean }> {
+  ): Promise<ShareJobCandidateSaveOutcome> {
     if (__DEV__ && (isPhase2PreviewId(job?.id) || isVayrinCandidateFixtureId(job?.id))) {
       throw new Error('This development preview is read-only.');
     }
@@ -744,12 +771,11 @@ function ShareJobDetailScreen() {
     });
   }
 
-  // Resolve the job to the saved place. For an already-saved place whose exact
-  // row id could not be recovered (rare), just open the map — the place IS in
-  // Nearr, so "already saved" is never treated as a failure.
+  // Resolve the job to the exact canonical saved place returned by the shared
+  // save boundary. Created, reused and enriched saves all carry this identity.
   async function resolveJobWith(
     jobId: string,
-    savedPlaceId: string | null,
+    savedPlaceId: string,
     duplicate: boolean,
   ): Promise<void> {
     if (vayrinEnabled) {
@@ -764,19 +790,11 @@ function ShareJobDetailScreen() {
         duplicate,
       });
     }
-    if (savedPlaceId) {
-      await markShareJobResolved(jobId, savedPlaceId);
-      completeManualSave(
-        duplicate ? [] : [savedPlaceId],
-        duplicate ? [savedPlaceId] : [],
-      );
-      return;
-    }
-    if (duplicate) {
-      openExistingPlace({ source: 'share_job_saved' });
-      return;
-    }
-    throw new Error('Save succeeded but did not return an id. Please retry.');
+    await markShareJobResolved(jobId, savedPlaceId);
+    completeManualSave(
+      duplicate ? [] : [savedPlaceId],
+      duplicate ? [savedPlaceId] : [],
+    );
   }
 
   function openNewlySavedPlaces(savedPlaceIds: string[], failedCount = 0) {
@@ -899,7 +917,7 @@ function ShareJobDetailScreen() {
       const duplicates: string[] = [];
       let failed = 0;
       for (const result of settled) {
-        if (result.status === 'rejected' || !result.value.savedPlaceId) {
+        if (result.status === 'rejected') {
           failed += 1;
         } else if (result.value.duplicate) {
           duplicates.push(result.value.savedPlaceId);
@@ -997,24 +1015,30 @@ function ShareJobDetailScreen() {
         return;
       }
       const accumulated = batchCompletionSavedPlaceIds(nextBatch);
-      const resolutionId = accumulated.createdSavedPlaceIds[0] ?? accumulated.duplicateSavedPlaceIds[0] ?? null;
-      if (resolutionId) await markShareJobResolved(job.id, resolutionId);
-      if (resolutionId) {
-        if (vayrinEnabled) {
-          void trackEvent('vayrin_saved', {
-            job_id: job.id,
-            source: 'async_multi',
-            saved_count: accumulated.createdSavedPlaceIds.length,
-            duplicate_count: accumulated.duplicateSavedPlaceIds.length,
-          });
-        }
-        completeManualSave(
-          accumulated.createdSavedPlaceIds,
-          accumulated.duplicateSavedPlaceIds,
-        );
-      } else {
-        throw new Error('Save succeeded but did not return an id. Please retry.');
+      const successfulOutcome = outcomes.find((outcome) => outcome.status !== 'failed');
+      if (!successfulOutcome) {
+        console.error('[share-jobs] batch completed without a successful canonical outcome', {
+          jobId: job.id,
+          targetCount: targets.length,
+        });
+        return;
       }
+      const resolutionId = accumulated.createdSavedPlaceIds[0] ??
+        accumulated.duplicateSavedPlaceIds[0] ??
+        successfulOutcome.savedPlaceId;
+      await markShareJobResolved(job.id, resolutionId);
+      if (vayrinEnabled) {
+        void trackEvent('vayrin_saved', {
+          job_id: job.id,
+          source: 'async_multi',
+          saved_count: accumulated.createdSavedPlaceIds.length,
+          duplicate_count: accumulated.duplicateSavedPlaceIds.length,
+        });
+      }
+      completeManualSave(
+        accumulated.createdSavedPlaceIds,
+        accumulated.duplicateSavedPlaceIds,
+      );
     } catch (err) {
       Alert.alert('Could not save', err instanceof Error ? err.message : 'Please try again.');
     } finally {
@@ -1888,8 +1912,12 @@ function ShareJobDetailScreen() {
               <Text style={[typography.body, styles.help]}>{detail.copy.body}</Text>
             </>
           )}
+          <SourceEvidenceGallery
+            frames={detail.evidenceFrames}
+            analysisAttempted={job.analysis_attempted}
+          />
           <View style={styles.section}>
-            {confirmationCandidates.map((candidate) => {
+            {confirmationCandidates.map((candidate, index) => {
               const address = splitPlaceAddress(candidate.formattedAddress);
               const broad = isBroadCandidate(candidate);
               return (
@@ -1900,6 +1928,7 @@ function ShareJobDetailScreen() {
                   selected={pickerSelectedIds.includes(candidate.googlePlaceId)}
                   selectable
                   compact
+                  bestMatch={index === 0 && confirmationCandidates.length > 1}
                   selectionRole={pickerSelectionMode === 'exclusive' ? 'radio' : 'checkbox'}
                   saved={Boolean(savedByGoogleId[candidate.googlePlaceId])}
                   onPress={() => {
@@ -1954,7 +1983,7 @@ function ShareJobDetailScreen() {
           )}
           {renderJobFooter()}
         </ScrollView>
-        {(searchExpanded ? manualSelected.length : pickerSelected.length) > 0 ? (
+        {(
           <View style={[styles.stickySaveBar, { paddingBottom: Math.max(safeAreaInsets.bottom, Spacing.sm) }]}>
             <Button
               title={candidateSaveLabel(searchExpanded ? manualSelected.length : pickerSelected.length)}
@@ -1963,12 +1992,12 @@ function ShareJobDetailScreen() {
                 searchExpanded ? manualSelected : pickerSelected,
                 searchExpanded ? 'raw_name_search' : 'async_picker',
               )}
-              disabled={busy}
+              disabled={busy || (searchExpanded ? manualSelected.length : pickerSelected.length) === 0}
               loading={busy}
               style={styles.stickySaveButton}
             />
           </View>
-        ) : null}
+        )}
       </ShareJobsSheet>
     );
   }
@@ -2071,6 +2100,10 @@ function ShareJobDetailScreen() {
                 </Text>
               </>
             )}
+            <SourceEvidenceGallery
+              frames={detail.evidenceFrames}
+              analysisAttempted={job.analysis_attempted}
+            />
             {confirmationSingle ? (
               <CandidateConfirmationCard
                 candidate={confirmationSingle}
@@ -2085,21 +2118,19 @@ function ShareJobDetailScreen() {
 
             {/* One action either way: the save path enriches an existing row
                 instead of creating a second one, so it is safe to always run. */}
-            <Button
-              title={broadSingle ? 'See places in this area' : 'Save this place'}
-              onPress={() => {
-                if (broadSingle && confirmationSingle) {
+            {broadSingle ? (
+              <Button
+                title="See places in this area"
+                onPress={() => {
+                  if (!confirmationSingle) return;
                   changeManualQuery(confirmationSingle.name);
                   revealSearch();
                   void runManualSearch(confirmationSingle.name);
-                  return;
-                }
-                if (single) void handleSaveStored(single);
-              }}
-              disabled={busy || !single}
-              loading={busy && !broadSingle}
-              style={styles.primaryBtn}
-            />
+                }}
+                disabled={busy || !single}
+                style={styles.primaryBtn}
+              />
+            ) : null}
 
             {searchExpanded ? (
               renderManualSearch({
@@ -2147,6 +2178,17 @@ function ShareJobDetailScreen() {
             style={styles.stickySaveButton}
           />
         </View>
+      ) : confirmationSingle && !broadSingle && !searchExpanded && !isManual && !isProcessing ? (
+        <View style={[styles.stickySaveBar, { paddingBottom: Math.max(safeAreaInsets.bottom, Spacing.sm) }]}>
+          <Button
+            title="Save this place"
+            accessibilityLabel={`Save ${confirmationSingle.name}`}
+            onPress={() => { if (single) void handleSaveStored(single); }}
+            disabled={busy || !single}
+            loading={busy}
+            style={styles.stickySaveButton}
+          />
+        </View>
       ) : null}
     </ShareJobsSheet>
   );
@@ -2154,7 +2196,7 @@ function ShareJobDetailScreen() {
 
 function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
   return StyleSheet.create({
-    content: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.sm, paddingBottom: Spacing.xxl },
+    content: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.sm, paddingBottom: Spacing.xxl + 72 },
     batchKeyboardSurface: { flex: 1 },
     batchScroll: { flex: 1 },
     batchContent: {

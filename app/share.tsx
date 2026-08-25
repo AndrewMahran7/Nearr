@@ -2225,6 +2225,7 @@ function LegacyShareScreen() {
         google_place_id: candidate.googlePlaceId ?? null,
         saved_place_id: result.savedPlaceId,
         duplicate: result.status === 'duplicate',
+        save_outcome: result.outcome,
       });
       // Seed the shared cache so the map's savedPlaceId focus finds the newly
       // saved place immediately (before any network revalidation).
@@ -2232,9 +2233,6 @@ function LegacyShareScreen() {
       // too — otherwise the newly attached post stays invisible until restart.
       if (result.saved) {
         upsertSavedPlaceIntoCache(result.saved);
-      }
-      if (!result.savedPlaceId) {
-        throw new Error('Save succeeded but did not return an id. Please retry.');
       }
       if (vayrinEnabled) {
         setSavedResult({
@@ -2326,7 +2324,7 @@ function LegacyShareScreen() {
     );
     const saved: Array<{
       candidate: PlaceCandidate;
-      savedPlaceId: string | null;
+      savedPlaceId: string;
       duplicate: boolean;
     }> = [];
     const failed: Array<{ candidate: PlaceCandidate; message: string }> = [];
@@ -2339,14 +2337,14 @@ function LegacyShareScreen() {
         if (r.status === 'saved') upsertSavedPlaceIntoCache(r.saved);
         saved.push({
           candidate: cand,
-          savedPlaceId: r.savedPlaceId ?? null,
+          savedPlaceId: r.savedPlaceId,
           duplicate: r.status === 'duplicate',
         });
         outcomes.push({
           logicalPlaceId: cand.googlePlaceId,
           candidateId: cand.googlePlaceId,
           status: r.status === 'duplicate' ? 'duplicate' : 'saved',
-          savedPlaceId: r.savedPlaceId ?? null,
+          savedPlaceId: r.savedPlaceId,
         });
         void trackEvent('save_success', {
           source_type: sourceType,
@@ -2354,6 +2352,7 @@ function LegacyShareScreen() {
           google_place_id: cand.googlePlaceId ?? null,
           saved_place_id: r.savedPlaceId,
           duplicate: r.status === 'duplicate',
+          save_outcome: r.outcome,
           multi_select: true,
         });
       } else {

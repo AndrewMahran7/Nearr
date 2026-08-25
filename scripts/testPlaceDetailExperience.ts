@@ -131,7 +131,7 @@ assert.match(detail, /actionButton: \{[\s\S]*minHeight: 48/, 'comfortable touch 
 
 // Section order, top to bottom, exactly as the production reference lays it
 // out: action row → hero → today's hours → Saved because → Did you go yet? →
-// Also nearby → management footer.
+// Saved nearby → Also nearby → More videos → management footer.
 {
   const order = [
     'styles.actionRow',
@@ -139,7 +139,9 @@ assert.match(detail, /actionButton: \{[\s\S]*minHeight: 48/, 'comfortable touch 
     '{todayHours ? (',
     'styles.savedBecauseCard',
     'styles.visitCard',
+    'title="Saved nearby"',
     'title="Also nearby"',
+    'styles.moreVideosSection',
     'styles.manageRow',
   ].map((marker) => {
     const index = detail.indexOf(marker);

@@ -29,7 +29,7 @@ incoming URL
   -> canonical content identity (provider ID when already visible)
   -> RECOGNITION CACHE LOOKUP
        trusted place -> existing save/autosave contract -> attach source
-       candidate set -> candidate review (never silent save)
+       candidate set -> current shared contextual ranker -> candidate review (never silent save)
        miss -> bounded recognition lease
   -> provider metadata / redirect expansion when needed
   -> stronger identity, second cache lookup
@@ -47,6 +47,33 @@ Trust semantics:
 - Failures (`FAILED`, `INSUFFICIENT`, `AUTH_REQUIRED`, technical/provider failures): never written as canonical recognition truth. A negative TTL cache is deferred.
 
 `recognition_version` is `vayrin-recognition-2026-08-21.v1`. User-confirmed rows survive a version change; machine-only verified rows and candidate sets miss and recompute. Material recognition/policy changes must bump this constant.
+
+## Candidate-set ranking contract
+
+A `CANDIDATE_SET` cache row owns the bounded canonical Google Place IDs and
+recognition evidence. Its array order is retrieval evidence, not durable
+presentation truth. Every candidate-set hit reconstructs the strongest
+privacy-safe source context that survived in the payload (exact structured
+source context, strong video/locality context, timestamp-weighted verified
+sibling places, then the honest no-context fallback) and calls
+`rankContextAwareCandidates`. The share-job presentation is deduplicated and
+bounded to the current top three candidates per ambiguous mention.
+
+The cache-only payload retains `retrievalRank`; the job result gets a separate
+`presentationRank`. The top-three presentation projection is never written
+back over the full cached recognition set. Old entries with partial textual
+context rerank from that context without hydration. Entries with no usable
+context still execute the shared deterministic ranker, remain confirmation-only,
+and report `contextAvailable=false`; they do not trigger media, ScrapeCreators,
+Gemini, Sol, transcription, frame extraction, or Places calls.
+
+No schema or persisted `ranking_version` is needed. Candidate ranking is cheap
+and is deliberately recomputed on every candidate-set hit under policy
+`rerank_on_every_candidate_set_hit`; `recognition_version` continues to govern
+recognition/model truth only. Telemetry records the trust tier, before/after
+counts, whether reranking ran, the closed context-source kind, the ranking
+policy, and zero Places calls without recording captions, precise user-location
+history, private source content, or model reasoning.
 
 ## Durable schema
 

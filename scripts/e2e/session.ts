@@ -56,6 +56,7 @@ export type CleanupReport = {
   attempted: boolean;
   userDeleted: boolean;
   diagnosticsDeleted: number;
+  evidenceObjectsDeleted: number;
   retained: string[];
   errors: string[];
 };
@@ -116,7 +117,7 @@ export async function openSession(options: {
   return session;
 }
 
-async function createEphemeralIdentity(
+export async function createEphemeralIdentity(
   admin: SupabaseClient,
   config: DeployedConfig,
   correlationId: string,
@@ -170,6 +171,7 @@ export async function cleanupSession(
     attempted: true,
     userDeleted: false,
     diagnosticsDeleted: 0,
+    evidenceObjectsDeleted: 0,
     retained: [],
     errors: [],
   };
@@ -185,6 +187,78 @@ export async function cleanupSession(
         'Delete the user in the Supabase dashboard to cascade them away.',
     );
     return report;
+  }
+
+  // Storage objects do not participate in the auth-user/database cascades.
+  // Discover only references owned by this run, remove them while their owner
+  // job still exists (the production RLS order), then delete database rows.
+  if (jobIds.length > 0) {
+    const { data: jobs, error: jobsError } = await admin
+      .from('share_jobs')
+      .select('id,candidate_payload')
+      .eq('user_id', identity.userId)
+      .in('id', jobIds);
+    if (jobsError) {
+      report.errors.push(`evidence references: ${jobsError.message}`);
+      report.retained.push(`share-evidence objects for jobs ${jobIds.join(', ')}`);
+    } else {
+      const referencedPaths = (jobs ?? []).flatMap((job) => {
+        const payload = job?.candidate_payload;
+        if (!payload || typeof payload !== 'object') return [];
+        const frames = (payload as { evidenceFrames?: unknown }).evidenceFrames;
+        if (!Array.isArray(frames)) return [];
+        return frames.flatMap((frame) => {
+          if (!frame || typeof frame !== 'object') return [];
+          const storagePath = (frame as { storagePath?: unknown }).storagePath;
+          return typeof storagePath === 'string' &&
+            storagePath.startsWith(`${identity.userId}/${String(job.id)}/`)
+            ? [storagePath]
+            : [];
+        });
+      });
+      // Also discover objects under the exact ephemeral user/job prefix. This
+      // catches a callback failure after upload but before references were
+      // attached, without ever listing or sweeping another user's namespace.
+      const discoveredPaths: string[] = [];
+      for (const jobId of jobIds) {
+        const jobPrefix = `${identity.userId}/${jobId}`;
+        const { data: taskFolders, error: taskListError } = await admin.storage
+          .from('share-evidence')
+          .list(jobPrefix, { limit: 20 });
+        if (taskListError) {
+          report.errors.push(`share-evidence list ${jobId}: ${taskListError.message}`);
+          report.retained.push(`share-evidence objects under ${jobPrefix}`);
+          continue;
+        }
+        for (const folder of taskFolders ?? []) {
+          if (!/^[0-9a-f-]{36}$/i.test(folder.name)) continue;
+          const taskPrefix = `${jobPrefix}/${folder.name}`;
+          const { data: objects, error: objectListError } = await admin.storage
+            .from('share-evidence')
+            .list(taskPrefix, { limit: 10 });
+          if (objectListError) {
+            report.errors.push(`share-evidence list ${folder.name}: ${objectListError.message}`);
+            report.retained.push(`share-evidence objects under ${taskPrefix}`);
+            continue;
+          }
+          for (const object of objects ?? []) {
+            if (/^[^/]+\.jpg$/i.test(object.name)) discoveredPaths.push(`${taskPrefix}/${object.name}`);
+          }
+        }
+      }
+      const paths = [...new Set([...referencedPaths, ...discoveredPaths])];
+      if (paths.length > 0) {
+        const { data: removed, error: removeError } = await admin.storage
+          .from('share-evidence')
+          .remove(paths);
+        if (removeError) {
+          report.errors.push(`share-evidence: ${removeError.message}`);
+          report.retained.push(`${paths.length} share-evidence object(s)`);
+        } else {
+          report.evidenceObjectsDeleted = removed?.length ?? paths.length;
+        }
+      }
+    }
   }
 
   // Append-only diagnostics use ON DELETE SET NULL, so a user delete would

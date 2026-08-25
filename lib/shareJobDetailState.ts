@@ -112,7 +112,7 @@ export type ShareJobDetailState = {
   candidates: NormalizedCandidate[];
   /** Multi-place review slots; empty for single-place jobs. */
   mentionSlots: ShareJobMentionSlot[];
-  /** Bounded analyzed frames, available to mention-level evidence matching. */
+  /** Bounded private frames that were actually analyzed for this result. */
   evidenceFrames: ShareJobEvidenceFrame[];
   /** Places this job already saved automatically. */
   savedPlaceIds: string[];
