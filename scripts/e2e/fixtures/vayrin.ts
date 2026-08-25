@@ -28,6 +28,7 @@
 import { createClient } from '@supabase/supabase-js';
 
 import { buildShareJobDetailState } from '../../../lib/shareJobDetailState';
+import { normalizeResultCandidates } from '../../../lib/shareJobResult';
 import { candidateMatchLabel, candidateWhyMatchLines } from '../../../lib/vayrinCandidateConfirmation';
 import { pollUntil, timeoutFor } from '../poll';
 import { StageReporter } from '../report';
@@ -375,7 +376,40 @@ export async function fixtureVayrinLiveCanary(
   // A verified Google candidate is sufficient for the app's existing lazy
   // photo hydration path; prove the exact live candidate currently has a photo
   // that Google will serve rather than trusting a synthetic URL.
-  const photoCandidate = detailState.candidates.find((candidate) => !!candidate.googlePlaceId);
+  const basePhotoCandidate = detailState.candidates.find((candidate) => !!candidate.googlePlaceId);
+  const persistedCandidates = normalizeResultCandidates(
+    finalized.value.candidate_payload && typeof finalized.value.candidate_payload === 'object'
+      ? (finalized.value.candidate_payload as { candidates?: unknown }).candidates
+      : [],
+  );
+  const slot = detailState.mentionSlots.find((item) =>
+    item.candidates.some((candidate) => candidate.googlePlaceId === basePhotoCandidate?.googlePlaceId));
+  const persistedCandidate = slot?.candidates.find((candidate) =>
+    candidate.googlePlaceId === basePhotoCandidate?.googlePlaceId)
+    ?? persistedCandidates.find((candidate) => candidate.googlePlaceId === basePhotoCandidate?.googlePlaceId);
+  const evidenceItems = (slot?.noteEvidence ?? []).map((item) => ({
+    source: item.source,
+    timestampSeconds: item.timestampSeconds,
+  }));
+  // Mirror the app's rankedConfirmationCandidates compatibility mapping so
+  // this proves what Quick Check renders, not the intentionally minimal queue
+  // candidate shape returned by buildShareJobDetailState.
+  const photoCandidate = basePhotoCandidate ? {
+    ...basePhotoCandidate,
+    photoUrls: persistedCandidate?.photoUrls ?? [],
+    evidence: persistedCandidate?.evidence ?? [],
+    reasons: persistedCandidate?.reasons ?? [],
+    matchStrength: persistedCandidate?.matchStrength ?? null,
+    sourceFrameUrl: basePhotoCandidate.sourceFrameUrl ?? slot?.sourceFrameUrl ?? null,
+    sourceTimestamps: basePhotoCandidate.sourceTimestamps.length > 0
+      ? basePhotoCandidate.sourceTimestamps
+      : slot?.sourceTimestamps ?? [],
+    matchedFrameTimestamps: evidenceItems
+      .filter((item) => item.source === 'frame' && item.timestampSeconds != null)
+      .map((item) => item.timestampSeconds!),
+    analyzedFrameCount: evidenceFrames.length,
+    evidenceItems,
+  } : null;
   const placesKey = session.config.railwayVars.GOOGLE_PLACES_KEY?.trim();
   if (!photoCandidate?.googlePlaceId || !placesKey) {
     reporter.fail(`${name}: candidate photo available`, 0, 'no verified Google candidate or deployed Places key');
