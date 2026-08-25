@@ -2,7 +2,7 @@
   "releaseId": "2026-08-24-place-detail-more-videos-order",
   "previousMainSha": "72ded8696e1d2df18db290dd8f3d3437fe7387e9",
   "previousOtaGroup": "f9673f37-9a34-4ee6-85e0-d653dda41a31",
-  "currentOtaGroup": null,
+  "currentOtaGroup": "9f05fc85-fca2-465c-8705-48d77935798c",
   "edgeVersions": {
     "process-share-link": 133,
     "process-share-jobs": 84,
@@ -15,11 +15,12 @@
     "20260824233000"
   ],
   "rollbackProcedure": "Repeat the full concurrency guard; republish previousOtaGroup to production; forward-revert the Place Detail section-order commit on main. Railway, Edge, schema, native code, and EAS Build remain unchanged.",
-  "deploymentStatus": "PLANNED",
+  "deploymentStatus": "DEPLOYED",
   "physicalQa": {
     "signedOutColdLaunch": "PENDING",
     "signedInColdLaunch": "PENDING",
     "forceCloseRelaunch": "PENDING",
     "freshOnboardingLaunch": "NOT_REQUIRED"
-  }
+  },
+  "deployedAt": "2026-08-25T01:31:23.077Z"
 }
