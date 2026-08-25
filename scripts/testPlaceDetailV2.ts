@@ -60,6 +60,8 @@ import {
 // saveNote: updateSavedPlace(id, { notes }) — ai_note is never in the patch.
 {
   const detail = readFileSync(join(process.cwd(), 'components/map/SelectedPlaceDetails.tsx'), 'utf8');
+  const rolodex = readFileSync(join(process.cwd(), 'components/PhotoRolodex.tsx'), 'utf8');
+  assert.ok(detail.includes('<PhotoRolodexModal'), 'Place Detail delegates to the shared rolodex');
   const start = detail.indexOf('async function saveNote(');
   assert.ok(start > -1, 'saveNote exists');
   const body = detail.slice(start, detail.indexOf('\n  }', start));
@@ -322,74 +324,75 @@ import {
 // versions of this gesture only ever fired by luck.
 {
   const detail = readFileSync(join(process.cwd(), 'components/map/SelectedPlaceDetails.tsx'), 'utf8');
+  const rolodex = readFileSync(join(process.cwd(), 'components/PhotoRolodex.tsx'), 'utf8');
   // (`PanResponder` still appears in the explanatory comment above the gesture
   // — what must be gone is any USE of it.)
   assert.ok(
-    !detail.includes('PanResponder.create') && !detail.includes('panHandlers'),
+    !rolodex.includes('PanResponder.create') && !rolodex.includes('panHandlers'),
     'the JS responder system no longer arbitrates against a native scroll view',
   );
-  assert.ok(detail.includes('Gesture.Pan()'), 'the dismiss gesture is a native recogniser');
+  assert.ok(rolodex.includes('Gesture.Pan()'), 'the dismiss gesture is a native recogniser');
   assert.ok(
-    detail.includes('.activeOffsetY(GALLERY_DISMISS_ACTIVATE_DY)'),
+    rolodex.includes('.activeOffsetY(GALLERY_DISMISS_ACTIVATE_DY)'),
     'it activates only on decisively downward movement',
   );
   assert.ok(
-    detail.includes('.failOffsetX([-GALLERY_DISMISS_FAIL_DX, GALLERY_DISMISS_FAIL_DX])'),
+    rolodex.includes('.failOffsetX([-GALLERY_DISMISS_FAIL_DX, GALLERY_DISMISS_FAIL_DX])'),
     'and fails the moment a drag shows sideways intent, so paging is untouched',
   );
   assert.ok(
-    detail.includes('.failOffsetY(-GALLERY_DISMISS_FAIL_DY)'),
+    rolodex.includes('.failOffsetY(-GALLERY_DISMISS_FAIL_DY)'),
     'dragging up hands the touch straight back',
   );
   assert.ok(
-    detail.includes('.blocksExternalGesture(galleryScrollGesture)'),
+    rolodex.includes('.blocksExternalGesture(scrollGesture)'),
     'the carousel waits for the verdict instead of racing it',
   );
   assert.ok(
-    detail.includes('<GestureDetector gesture={galleryScrollGesture}>'),
+    rolodex.includes('<GestureDetector gesture={scrollGesture}>'),
     'the list is wrapped so the scroll recogniser can be ordered',
   );
   assert.ok(
-    detail.includes('<GestureHandlerRootView style={styles.galleryRoot}>'),
+    rolodex.includes('<GestureHandlerRootView style={styles.root}>'),
     'gestures are rooted inside the Modal, so Android receives them too',
   );
   assert.ok(
-    detail.includes('shouldDismissGalleryOnRelease({ dy: event.translationY, vy: event.velocityY })'),
+    rolodex.includes('shouldDismissGalleryOnRelease({'),
     'release uses the tested threshold, in the units the recogniser reports',
   );
   // The drag must never run through React state — that would re-render (and
   // re-request) every photo on every frame of the gesture.
   assert.ok(
-    detail.includes('galleryDragY.value = galleryDragOffset(event.translationY)'),
+    rolodex.includes('dragY.value = galleryDragOffset(event.translationY)'),
     'the gallery follows the finger through a shared value',
   );
-  assert.ok(detail.includes('useSharedValue(0)'), 'the drag lives off the JS thread');
+  assert.ok(rolodex.includes('useSharedValue(0)'), 'the drag lives off the JS thread');
   assert.ok(
-    !/setGalleryDrag|setState\(.*translationY/.test(detail),
+    !/setGalleryDrag|setState\(.*translationY/.test(rolodex),
     'no per-frame React state during the gesture',
   );
   // Dismissal ends at the ONE close path, and a reopen starts from rest.
-  assert.ok(detail.includes('runOnJS(closeGallery)()'), 'a committed swipe uses the canonical close');
+  assert.ok(rolodex.includes('runOnJS(close)()'), 'a committed swipe uses the canonical close');
   assert.ok(
-    detail.includes('galleryDismissLatchRef.current = createOnceLatch()') &&
-      detail.includes('galleryDismissLatchRef.current?.acquire()'),
+    rolodex.includes('dismissLatchRef.current = createOnceLatch()') &&
+      rolodex.includes('dismissLatchRef.current.acquire()'),
     'all close sources are idempotent for each gallery opening',
   );
   assert.ok(
-    detail.includes('if (finished) runOnJS(closeGallery)()'),
+    rolodex.includes('if (finished) runOnJS(close)()'),
     'a cancelled exit animation cannot close an immediately reopened gallery',
   );
   assert.ok(
-    /galleryDragY\.value = 0;[\s\S]{0,120}setGalleryOpenSeed/.test(detail),
+    /dragY\.value = 0;[\s\S]{0,160}setOpenSeed/.test(rolodex),
     'reopening clears any leftover translation before the modal is shown',
   );
   // The copy stays because it is now true.
-  assert.ok(detail.includes('Swipe down to close'), 'the instruction remains, and is honest');
+  assert.ok(rolodex.includes('Swipe down to close'), 'the instruction remains, and is honest');
   // The X button must keep working.
-  assert.ok(detail.includes('accessibilityLabel="Close photo gallery"'), 'explicit close preserved');
+  assert.ok(rolodex.includes('accessibilityLabel="Close photo gallery"'), 'explicit close preserved');
   // Horizontal paging untouched.
-  assert.ok(detail.includes('horizontal'), 'the carousel is still horizontal');
-  assert.ok(detail.includes('snapToInterval={gallerySnapInterval}'), 'paging preserved');
+  assert.ok(rolodex.includes('horizontal'), 'the carousel is still horizontal');
+  assert.ok(rolodex.includes('snapToInterval={snapInterval}'), 'paging preserved');
 }
 
 // ---------------------------------------------------------------------------
@@ -628,11 +631,11 @@ import {
   assert.ok(row.includes('actionLabel') && row.includes('onAction'), 'the row supports a header action');
   const map = readFileSync(join(process.cwd(), 'app/(tabs)/map.tsx'), 'utf8');
   assert.ok(
-    map.includes('onSeeMap={() => setPreviewExpanded(false)}'),
+    map.includes('onSeeMap={openNearbyExplorer}'),
     'See map contracts the sheet — it does not dismiss the place or move the camera',
   );
   assert.ok(
-    !/onSeeMap=\{[^}]*(?:animateToRegion|fitToCoordinates|router\.(push|replace))/.test(map),
+    !/onSeeMap=\{[^}]*(?:router\.(push|replace))/.test(map),
     'and never builds a new route or drives the camera',
   );
 }

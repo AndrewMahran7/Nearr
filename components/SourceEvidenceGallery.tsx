@@ -3,7 +3,6 @@ import {
   ActivityIndicator,
   FlatList,
   Image,
-  Modal,
   Pressable,
   StyleSheet,
   Text,
@@ -13,8 +12,8 @@ import {
   type StyleProp,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { PhotoRolodexModal } from '@/components/PhotoRolodex';
 import { Radius, Spacing } from '@/constants';
 import { formatCandidateTimestamp } from '@/lib/vayrinCandidateConfirmation';
 import { resolveShareEvidenceFrames, type ResolvedShareEvidenceFrame } from '@/lib/shareEvidenceFrames';
@@ -41,8 +40,10 @@ export function SourceEvidenceGallery({
   compact = false,
 }: Props) {
   const { width: windowWidth } = useWindowDimensions();
-  const frameWidth = compact ? Math.min(300, Math.max(232, windowWidth - 88)) : Math.min(360, Math.max(280, windowWidth - 56));
-  const frameHeight = compact ? 154 : 204;
+  const frameWidth = compact
+    ? Math.min(160, Math.max(148, (windowWidth - 72) / 2))
+    : Math.min(360, Math.max(280, windowWidth - 56));
+  const frameHeight = compact ? 100 : 204;
   const [resolved, setResolved] = useState<ResolvedShareEvidenceFrame[]>([]);
   const [loading, setLoading] = useState(frames.length > 0);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -60,8 +61,13 @@ export function SourceEvidenceGallery({
   }, [signature]);
 
   if (frames.length === 0 && !analysisAttempted) return null;
-  const available = resolved.filter((frame) => !!frame.uri);
-  const viewerFrame = viewerIndex == null ? null : available[viewerIndex] ?? null;
+  const available = useMemo(() => resolved.filter((frame) => !!frame.uri), [resolved]);
+  const rolodexItems = useMemo(() => available.map((frame, index) => ({
+    key: frame.id,
+    uri: frame.uri!,
+    accessibilityLabel: `Source video frame ${index + 1} of ${available.length} at ${formatCandidateTimestamp(frame.timestampSeconds)}`,
+    footerLabel: formatCandidateTimestamp(frame.timestampSeconds),
+  })), [available]);
 
   return (
     <View style={[styles.section, compact && styles.sectionCompact]} testID="source-evidence-gallery">
@@ -76,6 +82,9 @@ export function SourceEvidenceGallery({
         <>
           <FlatList
             horizontal
+            nestedScrollEnabled
+            directionalLockEnabled
+            scrollEnabled={available.length > 1}
             data={available}
             keyExtractor={(frame) => frame.id}
             showsHorizontalScrollIndicator={false}
@@ -86,7 +95,12 @@ export function SourceEvidenceGallery({
             snapToInterval={frameWidth + Spacing.sm}
             snapToAlignment="start"
             disableIntervalMomentum
+            scrollEventThrottle={16}
             contentContainerStyle={styles.carouselContent}
+            onScroll={(event) => {
+              const index = Math.round(event.nativeEvent.contentOffset.x / (frameWidth + Spacing.sm));
+              setActiveIndex(Math.max(0, Math.min(index, available.length - 1)));
+            }}
             onMomentumScrollEnd={(event) => {
               const index = Math.round(event.nativeEvent.contentOffset.x / (frameWidth + Spacing.sm));
               setActiveIndex(Math.max(0, Math.min(index, available.length - 1)));
@@ -116,16 +130,13 @@ export function SourceEvidenceGallery({
           <Text style={styles.missingText}>Analyzed frames weren’t retained for this result.</Text>
         </View>
       )}
-      <Modal visible={!!viewerFrame} animationType="fade" transparent onRequestClose={() => setViewerIndex(null)}>
-        <SafeAreaView style={styles.viewer}>
-          <Pressable onPress={() => setViewerIndex(null)} accessibilityRole="button" accessibilityLabel="Close frame viewer" style={styles.close}>
-            <Feather name="x" size={26} color={COLORS.cream} />
-          </Pressable>
-          {viewerFrame ? (
-            <><Image source={{ uri: viewerFrame.uri! }} style={styles.viewerImage as StyleProp<ImageStyle>} resizeMode="contain" /><Text style={styles.viewerTimestamp}>{formatCandidateTimestamp(viewerFrame.timestampSeconds)}</Text></>
-          ) : null}
-        </SafeAreaView>
-      </Modal>
+      <PhotoRolodexModal
+        visible={viewerIndex != null}
+        items={rolodexItems}
+        initialIndex={viewerIndex ?? activeIndex}
+        onClose={() => setViewerIndex(null)}
+        resizeMode="contain"
+      />
     </View>
   );
 }
@@ -147,8 +158,4 @@ const styles = StyleSheet.create({
   dotActive: { width: 18, backgroundColor: COLORS.orange },
   missing: { borderRadius: Radius.lg, backgroundColor: COLORS.surface, borderWidth: StyleSheet.hairlineWidth, borderColor: COLORS.border, alignItems: 'center', justifyContent: 'center', padding: Spacing.lg, gap: Spacing.sm },
   missingText: { color: COLORS.muted, fontSize: 13, lineHeight: 18, textAlign: 'center' },
-  viewer: { flex: 1, backgroundColor: COLORS.black, justifyContent: 'center' },
-  viewerImage: { width: '100%', height: '78%' },
-  close: { position: 'absolute', zIndex: 2, right: Spacing.lg, top: Spacing.lg, width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(23,25,30,0.9)', alignItems: 'center', justifyContent: 'center' },
-  viewerTimestamp: { color: COLORS.cream, fontSize: 15, fontWeight: '800', textAlign: 'center', fontVariant: ['tabular-nums'] },
 });

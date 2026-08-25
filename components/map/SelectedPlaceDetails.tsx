@@ -40,36 +40,19 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Animated,
   FlatList,
   Image,
   Linking,
-  Modal,
   Pressable,
   Share,
   StyleSheet,
   Text,
-  useWindowDimensions,
   View,
-  type NativeScrollEvent,
-  type NativeSyntheticEvent,
 } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
-import {
-  Gesture,
-  GestureDetector,
-  GestureHandlerRootView,
-} from 'react-native-gesture-handler';
-import Reanimated, {
-  runOnJS,
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-  withTiming,
-} from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button, Input } from '@/components';
+import { PhotoRolodexModal } from '@/components/PhotoRolodex';
 import { WrongPlaceSheet } from '@/components/map/WrongPlaceSheet';
 import { NoteEditorModal } from '@/components/map/NoteEditorModal';
 import { RecommendedPlaceDetails } from '@/components/map/RecommendedPlaceDetails';
@@ -84,7 +67,6 @@ import {
   advanceOnboardingV2PlaceTour,
 } from '@/lib/onboardingV2';
 import type { OnboardingPlaceTourStep } from '@/lib/onboardingV2Core';
-import { createOnceLatch, type OnceLatch } from '@/lib/onceLatch';
 import { isPlaceRecommendationsEnabled } from '@/lib/featureFlags';
 import { applySavedPlaceEdit } from '@/lib/savedPlaceEdits';
 import {
@@ -108,16 +90,6 @@ import {
 } from '@/lib/alsoNearby';
 import { selectSameSourcePlaces } from '@/lib/sameSourcePlaces';
 import { savedPlaceRemovalCopy } from '@/lib/savedPlaceRemoval';
-import {
-  adjacentPrefetchTargets,
-  galleryBackdropOpacity,
-  galleryDragOffset,
-  pageIndexFromOffset,
-  shouldDismissGalleryOnRelease,
-  GALLERY_DISMISS_ACTIVATE_DY,
-  GALLERY_DISMISS_FAIL_DX,
-  GALLERY_DISMISS_FAIL_DY,
-} from '@/lib/photoCarousel';
 import { resolvePlaceSource } from '@/lib/placeSource';
 import { placeSourceCards, shouldShowMoreVideos } from '@/lib/placeSources';
 import { splitPlaceAddress } from '@/lib/sharePhase1Ui';
@@ -135,15 +107,6 @@ import type { PlaceRecommendation } from '@/lib/placeRecommendations';
 import type { NearbyMapExplorerPayload } from '@/lib/nearbyMapExplorer';
 import type { PlaceCandidate, PlaceRichDetails } from '@/services/placesService';
 import type { RadiusUnit, SavedPlaceWithPlace } from '@/types';
-
-const GALLERY_CARD_GAP = 18;
-/** Focus treatment for non-centered pages. Interpolated from scroll offset. */
-const GALLERY_INACTIVE_OPACITY = 0.45;
-const GALLERY_INACTIVE_SCALE = 0.92;
-/** How long the committed dismissal takes to carry the gallery off-screen. */
-const GALLERY_DISMISS_EXIT_MS = 180;
-/** Settle for a drag that did not earn a dismissal. */
-const GALLERY_DISMISS_SPRING = { damping: 22, stiffness: 240 } as const;
 
 /**
  * Category glyphs for the hero's context line. Ionicons only (already bundled
@@ -253,8 +216,6 @@ export function SelectedPlaceDetails({
 }: Props) {
   const { colors, typography } = useTheme();
   const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
-  const { width: viewportWidth, height: viewportHeight } = useWindowDimensions();
-  const insets = useSafeAreaInsets();
   const { session } = useAuth();
   const { state: onboardingState } = useOnboardingV2();
   const onboardingTourStep = onboardingState?.stage === 'place_tour' &&
@@ -294,7 +255,6 @@ export function SelectedPlaceDetails({
   const [failedPhotoUrls, setFailedPhotoUrls] = useState<Record<string, true>>({});
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [galleryIndex, setGalleryIndex] = useState(0);
-  const [galleryOpenSeed, setGalleryOpenSeed] = useState(0);
   const [wrongPlaceOpen, setWrongPlaceOpen] = useState(false);
   const [recommendations, setRecommendations] = useState<PlaceRecommendation[]>([]);
   const [recommendationsLoading, setRecommendationsLoading] = useState(false);
@@ -308,26 +268,6 @@ export function SelectedPlaceDetails({
   useEffect(() => {
     setVisitedAt(saved.visited_at ?? null);
   }, [saved.id, saved.visited_at]);
-  const galleryListRef = useRef<FlatList<string> | null>(null);
-  // One latch per gallery opening. X, system back, and the swipe animation may
-  // converge on the same close callback; only the first is allowed to mutate
-  // modal state. A new opening receives a new latch.
-  const galleryDismissLatchRef = useRef<OnceLatch | null>(null);
-  // Interactive dismiss offset: the gallery follows the finger downward and
-  // either continues off-screen or springs back. A Reanimated shared value, so
-  // every frame of the drag runs on the UI thread — no setState, no re-render,
-  // and no image reload while the finger is down.
-  const galleryDragY = useSharedValue(0);
-  // Native-thread scroll position. Owns the focus dimming so the centered
-  // photo never waits on a JS re-render to look active.
-  const galleryScrollX = useRef(new Animated.Value(0)).current;
-  // Mirrors galleryIndex for effects that must NOT re-run as the index changes.
-  const galleryIndexRef = useRef(0);
-  galleryIndexRef.current = galleryIndex;
-  // Photos already handed to the image loader for this mounted sheet. Bounded
-  // by the place's photo list (max 5) and released when the sheet unmounts.
-  const prefetchedPhotoUrlsRef = useRef<Set<string>>(new Set());
-
   const googlePlaceId =
     saved.place.google_place_id && saved.place.google_place_id.trim()
       ? saved.place.google_place_id.trim()
@@ -507,54 +447,11 @@ export function SelectedPlaceDetails({
     return richDetails.photoUrls.filter((url) => !failedPhotoUrls[url]).slice(0, 5);
   }, [failedPhotoUrls, richDetails?.photoUrls]);
 
-  const safeGalleryIndex = useMemo(() => {
-    if (photoUrls.length === 0) return 0;
-    return Math.max(0, Math.min(galleryIndex, photoUrls.length - 1));
-  }, [galleryIndex, photoUrls.length]);
-
-  const galleryListKey = useMemo(
-    () => `gallery-${galleryOpenSeed}-${photoUrls.length}`,
-    [galleryOpenSeed, photoUrls.length],
-  );
-
-  const galleryCardWidth = useMemo(
-    () => Math.max(220, Math.round(viewportWidth * 0.76)),
-    [viewportWidth],
-  );
-  const galleryCardHeight = useMemo(
-    () => Math.max(220, Math.round(viewportHeight * 0.54)),
-    [viewportHeight],
-  );
-  const gallerySideSpacing = useMemo(
-    () => Math.max(0, Math.round((viewportWidth - galleryCardWidth) / 2)),
-    [galleryCardWidth, viewportWidth],
-  );
-  const gallerySnapInterval = useMemo(
-    () => galleryCardWidth + GALLERY_CARD_GAP,
-    [galleryCardWidth],
-  );
-
-  // One native-driven scroll binding. The JS listener only advances the page
-  // counter/dots/prefetch window — the visible brightness never depends on it,
-  // and setState is skipped entirely while the page is unchanged.
-  const handleGalleryScroll = useMemo(
-    () =>
-      Animated.event(
-        [{ nativeEvent: { contentOffset: { x: galleryScrollX } } }],
-        {
-          useNativeDriver: true,
-          listener: (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-            const next = pageIndexFromOffset(
-              event.nativeEvent.contentOffset.x,
-              gallerySnapInterval,
-              photoUrls.length,
-            );
-            setGalleryIndex((current) => (current === next ? current : next));
-          },
-        },
-      ),
-    [galleryScrollX, gallerySnapInterval, photoUrls.length],
-  );
+  const photoRolodexItems = useMemo(() => photoUrls.map((uri, index) => ({
+    key: uri,
+    uri,
+    accessibilityLabel: `${saved.place.name}, photo ${index + 1} of ${photoUrls.length}`,
+  })), [photoUrls, saved.place.name]);
 
   const locality = splitPlaceAddress(saved.place.formatted_address).locality;
   // A city / island / beach frequently has no street address at all, in which
@@ -918,15 +815,6 @@ export function SelectedPlaceDetails({
     if (photoUrls.length === 0) return;
     const nextIndex = Math.max(0, Math.min(index, photoUrls.length - 1));
     setGalleryIndex(nextIndex);
-    // Seed the animated offset so the opened page renders bright on its very
-    // first frame instead of fading up once the first scroll event lands.
-    galleryScrollX.setValue(nextIndex * gallerySnapInterval);
-    // A previous open may have ended by flinging the gallery off the bottom of
-    // the screen. Clear that translation BEFORE the modal becomes visible so a
-    // reopen never renders from the last gesture's resting position.
-    galleryDragY.value = 0;
-    galleryDismissLatchRef.current = createOnceLatch();
-    setGalleryOpenSeed((s) => s + 1);
     setGalleryOpen(true);
   }
 
@@ -934,122 +822,8 @@ export function SelectedPlaceDetails({
   // committed swipe-down all end here, so no route leaves modal state behind.
   // Stable identity — the dismiss gesture calls it across the JS bridge.
   const closeGallery = useCallback(() => {
-    if (!galleryDismissLatchRef.current?.acquire()) return;
     setGalleryOpen(false);
   }, []);
-
-  // Restore the opened page's offset ONCE per open. This must not depend on
-  // `galleryIndex`: that now updates continuously while scrolling, and
-  // re-running scrollToOffset mid-gesture would fight the user's drag.
-  useEffect(() => {
-    if (!galleryOpen || photoUrls.length === 0) return;
-    const targetIndex = Math.max(0, Math.min(galleryIndexRef.current, photoUrls.length - 1));
-    const frameId = requestAnimationFrame(() => {
-      galleryListRef.current?.scrollToOffset({
-        offset: targetIndex * gallerySnapInterval,
-        animated: false,
-      });
-    });
-    return () => cancelAnimationFrame(frameId);
-  }, [galleryOpen, galleryOpenSeed, gallerySnapInterval, photoUrls.length]);
-
-  // Warm the neighbours of the centered photo while the gallery is open — the
-  // user has shown intent to browse. Bounded to one page each side, deduped
-  // per open sheet, and never runs for a single-photo place, so this cannot
-  // turn into background downloading of every saved place's gallery.
-  useEffect(() => {
-    if (!galleryOpen) return;
-    const targets = adjacentPrefetchTargets(photoUrls, galleryIndex);
-    for (const url of targets) {
-      if (prefetchedPhotoUrlsRef.current.has(url)) continue;
-      prefetchedPhotoUrlsRef.current.add(url);
-      // Fire-and-forget: a failed warm-up must never surface to the user, and
-      // the <Image> below still requests the photo normally.
-      void Image.prefetch(url).catch(() => undefined);
-    }
-  }, [galleryIndex, galleryOpen, photoUrls]);
-
-  /**
-   * Swipe-down-to-dismiss.
-   *
-   * Why the previous two attempts did not hold: both were built on the JS
-   * responder system (`PanResponder`), and on iOS the carousel is a real
-   * `UIScrollView`. Its `panGestureRecognizer` begins after roughly 10pt of
-   * movement in ANY direction and then cancels the touches feeding the JS
-   * responder — so the dismiss layer was told the gesture had been terminated
-   * at just about the distance it needed in order to claim it. Sometimes JS
-   * saw one move sample past the threshold first and it worked; usually it did
-   * not. That race is precisely the reported "does not reliably dismiss".
-   *
-   * The fix moves the arbitration to where the scroll view lives — native
-   * gesture recognisers, via react-native-gesture-handler (already a
-   * dependency, already rooted in app/_layout.tsx):
-   *
-   *   - `failOffsetX` / `failOffsetY` make the dismiss gesture FAIL the instant
-   *     a drag shows sideways or upward intent.
-   *   - `activeOffsetY` activates it only on decisively downward movement.
-   *   - `blocksExternalGesture(galleryScrollGesture)` makes the carousel's own
-   *     scroll recogniser WAIT for that verdict instead of racing it. Wrapping
-   *     the list in `Gesture.Native()` is what lets RNGH recognise the
-   *     UIScrollView's pan as a handler it may order.
-   *
-   * The result is a real directional lock: horizontal (and diagonal-horizontal)
-   * drags page photos and can no longer dismiss, downward drags always reach
-   * the dismiss layer, and neither side can steal the touch back mid-gesture.
-   */
-  const galleryScrollGesture = useMemo(() => Gesture.Native(), []);
-
-  const galleryDismissGesture = useMemo(
-    () =>
-      Gesture.Pan()
-        .activeOffsetY(GALLERY_DISMISS_ACTIVATE_DY)
-        .failOffsetX([-GALLERY_DISMISS_FAIL_DX, GALLERY_DISMISS_FAIL_DX])
-        .failOffsetY(-GALLERY_DISMISS_FAIL_DY)
-        .blocksExternalGesture(galleryScrollGesture)
-        .onUpdate((event) => {
-          // Downward-only: dragging back up settles at 0 rather than lifting
-          // the gallery off the top of the screen.
-          galleryDragY.value = galleryDragOffset(event.translationY);
-        })
-        .onEnd((event, success) => {
-          const dismissing =
-            success &&
-            shouldDismissGalleryOnRelease({ dy: event.translationY, vy: event.velocityY });
-          if (dismissing) {
-            // Carry the motion off-screen instead of cutting to a fade, so the
-            // dismissal reads as the continuation of the user's own gesture.
-            // The modal is torn down only once that has finished, so there is
-            // exactly one close path and no half-dismissed state.
-            galleryDragY.value = withTiming(
-              viewportHeight,
-              { duration: GALLERY_DISMISS_EXIT_MS },
-              (finished) => {
-                // Resetting the shared value on an immediate reopen cancels an
-                // old exit animation. Its callback still runs with
-                // `finished=false`; never let it close the new opening.
-                if (finished) runOnJS(closeGallery)();
-              },
-            );
-            return;
-          }
-          galleryDragY.value = withSpring(0, GALLERY_DISMISS_SPRING);
-        })
-        .onFinalize((_event, success) => {
-          // Interruption (a second finger, a system gesture) must not strand
-          // the gallery part-way down the screen.
-          if (!success) galleryDragY.value = withSpring(0, GALLERY_DISMISS_SPRING);
-        }),
-    [closeGallery, galleryDragY, galleryScrollGesture, viewportHeight],
-  );
-
-  // Both driven off the UI thread from the same shared value, so the backdrop
-  // fade stays locked to the finger even while JS is busy.
-  const galleryContentStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: galleryDragY.value }],
-  }));
-  const galleryBackdropStyle = useAnimatedStyle(() => ({
-    opacity: galleryBackdropOpacity(galleryDragY.value, viewportHeight),
-  }));
 
   /**
    * "I went" — record the visit WITHOUT deleting the memory.
@@ -1327,150 +1101,12 @@ export function SelectedPlaceDetails({
         </View>
       ) : null}
 
-      {photoUrls.length > 0 ? (
-        <Modal
-          visible={galleryOpen}
-          animationType="fade"
-          transparent
-          onRequestClose={closeGallery}
-          statusBarTranslucent
-        >
-          {/* RNGH needs its own root inside a Modal — the modal's content lives
-              in a separate view hierarchy, and on Android gestures are simply
-              not delivered without it. Visually it is a plain flex container. */}
-          <GestureHandlerRootView style={styles.galleryRoot}>
-          {/* The dismiss gesture sits on the ROOT so a downward swipe anywhere
-              in the gallery closes it. Taps still reach the close button and
-              the carousel: a pan only activates on decisively downward
-              movement, and never on touch-start. */}
-          <GestureDetector gesture={galleryDismissGesture}>
-          <View style={styles.galleryRoot}>
-            <Reanimated.View
-              pointerEvents="none"
-              style={[styles.galleryBackdrop, galleryBackdropStyle]}
-            />
-            <Reanimated.View style={[styles.galleryContent, galleryContentStyle]}>
-            <View style={[styles.galleryCounterWrap, { top: insets.top + Spacing.md }]}>
-              <View style={styles.galleryCounterPill}>
-                <Text style={styles.galleryCounterText}>
-                  {safeGalleryIndex + 1} / {photoUrls.length}
-                </Text>
-              </View>
-            </View>
-
-            <Pressable
-              style={[styles.galleryCloseButton, { top: insets.top + Spacing.sm }]}
-              onPress={closeGallery}
-              accessibilityRole="button"
-              accessibilityLabel="Close photo gallery"
-            >
-              <Feather name="x" size={22} color="#FFFFFF" />
-            </Pressable>
-
-            <View style={styles.galleryCarouselArea}>
-              {/* Focus dimming is driven by the NATIVE scroll offset, not by
-                  React state. The centered page reaches full opacity exactly
-                  as it centers — mid-drag, mid-momentum, and while the JS
-                  thread is busy. `galleryIndex` below only backs the counter,
-                  the dots, and the prefetch window. */}
-              {/* Wrapping the list in a Native gesture is what puts its scroll
-                  recogniser under RNGH's arbitration, so the dismiss pan above
-                  can order it to wait rather than race it. The list itself is
-                  unchanged — same props, same paging, same image loading. */}
-              <GestureDetector gesture={galleryScrollGesture}>
-              <Animated.FlatList
-                ref={galleryListRef}
-                key={galleryListKey}
-                data={photoUrls}
-                horizontal
-                snapToInterval={gallerySnapInterval}
-                snapToAlignment="start"
-                decelerationRate="fast"
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{ paddingHorizontal: gallerySideSpacing }}
-                initialScrollIndex={safeGalleryIndex}
-                scrollEventThrottle={16}
-                onScroll={handleGalleryScroll}
-                getItemLayout={(_data: unknown, index: number) => ({
-                  length: gallerySnapInterval,
-                  offset: gallerySnapInterval * index,
-                  index,
-                })}
-                onScrollToIndexFailed={(info: { index: number }) => {
-                  const safeIndex = Math.max(0, Math.min(info.index, photoUrls.length - 1));
-                  setGalleryIndex(safeIndex);
-                  requestAnimationFrame(() => {
-                    galleryListRef.current?.scrollToOffset({
-                      offset: safeIndex * gallerySnapInterval,
-                      animated: false,
-                    });
-                  });
-                }}
-                keyExtractor={(url: string) => `gallery-${url}`}
-                renderItem={({ item, index }: { item: string; index: number }) => {
-                  // Centered => 1; one page away in either direction => dimmed.
-                  const inputRange = [
-                    (index - 1) * gallerySnapInterval,
-                    index * gallerySnapInterval,
-                    (index + 1) * gallerySnapInterval,
-                  ];
-                  const opacity = galleryScrollX.interpolate({
-                    inputRange,
-                    outputRange: [GALLERY_INACTIVE_OPACITY, 1, GALLERY_INACTIVE_OPACITY],
-                    extrapolate: 'clamp',
-                  });
-                  const scale = galleryScrollX.interpolate({
-                    inputRange,
-                    outputRange: [GALLERY_INACTIVE_SCALE, 1, GALLERY_INACTIVE_SCALE],
-                    extrapolate: 'clamp',
-                  });
-                  return (
-                    <Animated.View
-                      style={[
-                        styles.galleryItem,
-                        {
-                          opacity,
-                          transform: [{ scale }],
-                          width: galleryCardWidth,
-                          marginRight: index === photoUrls.length - 1 ? 0 : GALLERY_CARD_GAP,
-                        },
-                      ]}
-                    >
-                      <View
-                        style={[
-                          styles.galleryPhotoShell,
-                          { width: galleryCardWidth, height: galleryCardHeight },
-                        ]}
-                      >
-                        <Image
-                          source={{ uri: item }}
-                          style={styles.galleryImage}
-                          resizeMode="cover"
-                        />
-                      </View>
-                    </Animated.View>
-                  );
-                }}
-              />
-              </GestureDetector>
-            </View>
-
-            <View style={styles.galleryDots}>
-              {photoUrls.map((url, index) => (
-                <View
-                  key={`dot-${url}`}
-                  style={[styles.galleryDot, index === safeGalleryIndex && styles.galleryDotActive]}
-                />
-              ))}
-            </View>
-
-            <Text style={styles.galleryHint}>↓ Swipe down to close</Text>
-            </Reanimated.View>
-          </View>
-          </GestureDetector>
-          </GestureHandlerRootView>
-        </Modal>
-      ) : null}
+      <PhotoRolodexModal
+        visible={galleryOpen}
+        items={photoRolodexItems}
+        initialIndex={galleryIndex}
+        onClose={closeGallery}
+      />
 
       {/* Why this place is on the user's map at all.
           ONE surface, not an "AI note" card stacked on a "Your note" card.
@@ -2254,108 +1890,6 @@ function createStyles(
     thumbButtonSelected: {
       backgroundColor: colors.accentSoft,
       borderColor: colors.accentBorder,
-    },
-    galleryRoot: {
-      flex: 1,
-    },
-    // Separated from the content layer so the backdrop can fade with the drag
-    // while the gallery itself translates.
-    galleryBackdrop: {
-      ...StyleSheet.absoluteFillObject,
-      backgroundColor: 'rgba(0,0,0,0.96)',
-    },
-    galleryContent: {
-      flex: 1,
-    },
-    galleryCloseButton: {
-      position: 'absolute',
-      right: 22,
-      width: 44,
-      height: 44,
-      borderRadius: 22,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: 'rgba(255,255,255,0.16)',
-      zIndex: 6,
-    },
-    galleryCounterWrap: {
-      position: 'absolute',
-      left: 0,
-      right: 0,
-      alignItems: 'center',
-      zIndex: 5,
-    },
-    galleryCounterPill: {
-      paddingHorizontal: 10,
-      paddingVertical: 4,
-      borderRadius: 999,
-      backgroundColor: 'rgba(0,0,0,0.65)',
-      borderWidth: 1,
-      borderColor: 'rgba(255,255,255,0.18)',
-    },
-    galleryCounterText: {
-      ...typography.caption,
-      color: '#FFFFFF',
-      fontWeight: '700',
-    },
-    galleryCarouselArea: {
-      flex: 1,
-      justifyContent: 'center',
-      zIndex: 2,
-      paddingTop: 64,
-      paddingBottom: 118,
-    },
-    galleryItem: {
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingVertical: Spacing.md,
-    },
-    galleryPhotoShell: {
-      borderRadius: 18,
-      overflow: 'hidden',
-      backgroundColor: 'transparent',
-    },
-    galleryImage: {
-      width: '100%',
-      height: '100%',
-      borderRadius: 18,
-      shadowColor: '#000000',
-      shadowOpacity: 0.26,
-      shadowRadius: 12,
-      shadowOffset: { width: 0, height: 6 },
-      elevation: 6,
-    },
-    galleryDots: {
-      position: 'absolute',
-      bottom: 82,
-      left: 0,
-      right: 0,
-      flexDirection: 'row',
-      justifyContent: 'center',
-      gap: 8,
-      zIndex: 4,
-    },
-    galleryDot: {
-      width: 6,
-      height: 6,
-      borderRadius: 3,
-      backgroundColor: 'rgba(255,255,255,0.35)',
-    },
-    galleryDotActive: {
-      width: 7,
-      height: 7,
-      borderRadius: 3.5,
-      backgroundColor: '#FFFFFF',
-    },
-    galleryHint: {
-      position: 'absolute',
-      bottom: 48,
-      left: 0,
-      right: 0,
-      zIndex: 4,
-      ...typography.caption,
-      textAlign: 'center',
-      color: 'rgba(255,255,255,0.65)',
     },
     textAction: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center' },
     helperText: { color: colors.textSecondary },

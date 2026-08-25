@@ -1915,6 +1915,7 @@ function ShareJobDetailScreen() {
           <SourceEvidenceGallery
             frames={detail.evidenceFrames}
             analysisAttempted={job.analysis_attempted}
+            compact
           />
           <View style={styles.section}>
             {confirmationCandidates.map((candidate, index) => {

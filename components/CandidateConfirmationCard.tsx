@@ -23,6 +23,9 @@ const BRAND = {
   selected: '#211B18',
 };
 
+export const COMPACT_CANDIDATE_PHOTO_HEIGHT = 132;
+export const STANDARD_CANDIDATE_PHOTO_HEIGHT = 220;
+
 type Props = {
   candidate: CandidateConfirmationPlace;
   locality?: string | null;
@@ -58,6 +61,11 @@ export function CandidateConfirmationCard({
   const conciseEvidence = evidence ?? matchedFrames ?? (!broad ? category : null);
   const whyLines = candidateWhyMatchLines(candidate, locality);
   const actionLabel = selectable ? (selected ? 'Selected' : selectionRole === 'checkbox' ? 'Select' : 'Choose') : null;
+  const compactMeta = [
+    locality,
+    broad ? 'Area match' : matchLabel,
+    bestMatch && !broad ? 'Best match' : null,
+  ].filter(Boolean).join(' · ');
   const accessibilityLabel = [
     candidate.name,
     locality,
@@ -68,16 +76,19 @@ export function CandidateConfirmationCard({
     actionLabel,
   ].filter(Boolean).join(', ');
 
-  const card = (
-    <View style={[styles.card, selected && styles.cardSelected]}>
-      <View style={styles.header}>
+  const headerContent = (
+    <>
         <View style={styles.titleCopy}>
-          <View style={styles.badgeRow}>
+          {!compact ? <View style={styles.badgeRow}>
             {broad ? <Text style={styles.areaLabel}>AREA MATCH</Text> : null}
             {bestMatch && !broad ? <Text style={styles.bestLabel}>BEST MATCH</Text> : null}
-          </View>
+          </View> : null}
           <Text style={[styles.name, compact && styles.nameCompact]} numberOfLines={compact ? 2 : 3}>{candidate.name}</Text>
-          {locality ? <Text style={styles.locality} numberOfLines={2}>{locality}</Text> : null}
+          {(compact ? compactMeta : locality) ? (
+            <Text style={[styles.locality, compact && styles.localityCompact]} numberOfLines={compact ? 1 : 2}>
+              {compact ? compactMeta : locality}
+            </Text>
+          ) : null}
         </View>
         {selectable ? (
           <View style={[
@@ -90,7 +101,26 @@ export function CandidateConfirmationCard({
             ) : null}
           </View>
         ) : null}
-      </View>
+    </>
+  );
+
+  return (
+    <View style={[styles.card, compact && styles.cardCompact, selected && styles.cardSelected]}>
+      {selectable && onPress ? (
+        <Pressable
+          onPress={onPress}
+          accessibilityRole={selectionRole}
+          accessibilityLabel={accessibilityLabel}
+          accessibilityHint={selectionRole === 'checkbox' ? 'Toggles this place for saving' : 'Selects this place for saving'}
+          accessibilityState={{ checked: selected }}
+          style={({ pressed }) => [styles.header, compact && styles.headerCompact, pressed && styles.pressed]}
+          testID="candidate-selection-control"
+        >
+          {headerContent}
+        </Pressable>
+      ) : (
+        <View style={[styles.header, compact && styles.headerCompact]}>{headerContent}</View>
+      )}
 
       <CandidatePhotoCarousel
         googlePlaceId={candidate.googlePlaceId}
@@ -99,19 +129,24 @@ export function CandidateConfirmationCard({
         fallbackSourceUri={candidate.sourceFrameUrl}
         accessibilityLabel={`Photo of ${candidate.name}`}
         onResolvedKind={onImageResolved}
+        height={compact ? COMPACT_CANDIDATE_PHOTO_HEIGHT : STANDARD_CANDIDATE_PHOTO_HEIGHT}
       />
 
-      <View style={styles.evidenceBlock}>
-        {broad ? (
+      <View style={[styles.evidenceBlock, compact && styles.evidenceBlockCompact]}>
+        {broad && !compact ? (
           <Text style={styles.areaDescription}>Vayrin narrowed the video to this area.</Text>
         ) : null}
-        {matchLabel ? (
+        {matchLabel && !compact ? (
           <View style={styles.evidenceRow}>
             <Text style={styles.evidenceKey}>Vayrin match</Text>
             <Text style={styles.matchValue}>{matchLabel}</Text>
           </View>
         ) : null}
-        {conciseEvidence ? (
+        {conciseEvidence ? compact ? (
+          <Text style={styles.conciseEvidence} numberOfLines={1}>
+            {matchedFrames ? 'Video evidence' : broad ? 'Area evidence' : 'Category'}: {conciseEvidence}
+          </Text>
+        ) : (
           <View style={styles.evidenceRow}>
             <Text style={styles.evidenceKey}>{matchedFrames ? 'Video evidence' : 'Category'}</Text>
             <Text style={styles.evidenceValue}>{conciseEvidence}</Text>
@@ -148,37 +183,26 @@ export function CandidateConfirmationCard({
       </View>
     </View>
   );
-
-  if (!selectable || !onPress) return card;
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole={selectionRole}
-      accessibilityLabel={accessibilityLabel}
-      accessibilityHint={selectionRole === 'checkbox' ? 'Toggles this place for saving' : 'Selects this place for saving'}
-      accessibilityState={{ checked: selected }}
-      style={({ pressed }) => pressed && styles.pressed}
-    >
-      {card}
-    </Pressable>
-  );
 }
 
 const styles = StyleSheet.create({
   card: {
     overflow: 'hidden', backgroundColor: BRAND.charcoal, borderRadius: Radius.lg,
-    borderWidth: 1, borderColor: BRAND.border, marginBottom: Spacing.lg,
+    borderWidth: 2, borderColor: BRAND.border, marginBottom: Spacing.lg,
   },
-  cardSelected: { borderColor: BRAND.orange, borderWidth: 2, backgroundColor: BRAND.selected },
+  cardCompact: { marginBottom: Spacing.sm },
+  cardSelected: { borderColor: BRAND.orange, backgroundColor: BRAND.selected },
   pressed: { opacity: 0.9 },
   header: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.md, padding: Spacing.md },
+  headerCompact: { minHeight: 68, alignItems: 'center', paddingHorizontal: 12, paddingVertical: 9 },
   titleCopy: { flex: 1 },
   badgeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm, marginBottom: 3 },
   areaLabel: { color: BRAND.orange, fontSize: 11, lineHeight: 15, fontWeight: '800', letterSpacing: 0.9 },
   bestLabel: { color: BRAND.cream, fontSize: 11, lineHeight: 15, fontWeight: '800', letterSpacing: 0.8 },
   name: { color: BRAND.cream, fontSize: 21, lineHeight: 27, fontWeight: '700' },
-  nameCompact: { fontSize: 20, lineHeight: 25 },
+  nameCompact: { fontSize: 17, lineHeight: 21 },
   locality: { color: BRAND.muted, fontSize: 14, lineHeight: 20, fontWeight: '600', marginTop: 3 },
+  localityCompact: { fontSize: 12, lineHeight: 17, marginTop: 2 },
   chooseBadge: {
     minHeight: 40, minWidth: 70, paddingHorizontal: Spacing.sm, borderRadius: 20,
     borderWidth: 1, borderColor: BRAND.orange, alignItems: 'center', justifyContent: 'center',
@@ -193,11 +217,13 @@ const styles = StyleSheet.create({
   chooseText: { color: BRAND.orange, fontSize: 13, fontWeight: '800' },
   chooseTextSelected: { color: '#FFFFFF' },
   evidenceBlock: { paddingHorizontal: Spacing.md, paddingVertical: Spacing.md },
+  evidenceBlockCompact: { paddingHorizontal: 12, paddingTop: 4, paddingBottom: 5 },
   areaDescription: { color: BRAND.muted, fontSize: 14, lineHeight: 20, marginBottom: Spacing.sm },
   evidenceRow: { flexDirection: 'row', justifyContent: 'space-between', gap: Spacing.md, marginBottom: 7 },
   evidenceKey: { color: BRAND.muted, fontSize: 13, lineHeight: 19 },
   matchValue: { color: BRAND.cream, fontSize: 14, lineHeight: 19, fontWeight: '800' },
   evidenceValue: { flex: 1, color: BRAND.cream, fontSize: 13, lineHeight: 19, fontWeight: '600', textAlign: 'right' },
+  conciseEvidence: { color: BRAND.muted, fontSize: 12, lineHeight: 17, paddingVertical: 4 },
   whyButton: {
     minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     marginTop: 2, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: BRAND.border,

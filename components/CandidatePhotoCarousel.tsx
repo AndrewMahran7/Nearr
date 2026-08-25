@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   FlatList,
   Image,
+  Pressable,
   StyleSheet,
   Text,
   View,
@@ -11,6 +12,7 @@ import {
 import { Feather } from '@expo/vector-icons';
 
 import { Spacing } from '@/constants';
+import { PhotoRolodexModal } from '@/components/PhotoRolodex';
 import { pageIndexFromOffset } from '@/lib/photoCarousel';
 import { getCachedPlaceRichDetails } from '@/lib/placeRichDetailsCache';
 import type { PlaceImageResolutionKind } from '@/components/PlaceImage';
@@ -50,6 +52,7 @@ export function CandidatePhotoCarousel({
   const [placePhotoUrls, setPlacePhotoUrls] = useState<string[]>(() => [...(initialPhotoUrls ?? [])].slice(0, MAX_CANDIDATE_PHOTOS));
   const [failedUris, setFailedUris] = useState<ReadonlySet<string>>(new Set());
   const [activeIndex, setActiveIndex] = useState(0);
+  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
   const [hydratedThrough, setHydratedThrough] = useState(1);
   const [loading, setLoading] = useState(!!googlePlaceId);
   const [timedOut, setTimedOut] = useState(false);
@@ -59,6 +62,7 @@ export function CandidatePhotoCarousel({
     setPlacePhotoUrls([...(initialPhotoUrls ?? [])].slice(0, MAX_CANDIDATE_PHOTOS));
     setFailedUris(new Set());
     setActiveIndex(0);
+    setViewerIndex(null);
     setHydratedThrough(1);
     setLoading(!!googlePlaceId && !(initialPhotoUrls?.length));
     setTimedOut(false);
@@ -93,6 +97,11 @@ export function CandidatePhotoCarousel({
     setActiveIndex(index);
     setHydratedThrough((current) => Math.max(current, index + 1));
   }, [items.length, width]);
+  const rolodexItems = useMemo(() => items.map((item, index) => ({
+    key: item.uri,
+    uri: item.uri,
+    accessibilityLabel: `${accessibilityLabel}, photo ${index + 1} of ${items.length}`,
+  })), [accessibilityLabel, items]);
 
   return (
     <View style={[styles.root, { minHeight: height }]} onLayout={(event) => setMeasuredWidth(Math.round(event.nativeEvent.layout.width))} testID="candidate-photo-carousel">
@@ -116,17 +125,30 @@ export function CandidatePhotoCarousel({
             onMomentumScrollEnd={(event) => updatePageFromOffset(event.nativeEvent.contentOffset.x)}
             scrollEventThrottle={16}
             renderItem={({ item, index }) => (
-              <View style={[styles.photo, { width, height }]}>
+              <Pressable
+                style={[styles.photo, { width, height }]}
+                onPress={() => setViewerIndex(index)}
+                accessibilityRole="imagebutton"
+                accessibilityLabel={`${accessibilityLabel}, photo ${index + 1} of ${items.length}`}
+                accessibilityHint="Opens the shared photo gallery"
+                testID={`candidate-photo-${index + 1}`}
+              >
                 {index <= hydratedThrough ? (
-                  <Image source={{ uri: item.uri }} style={styles.image} resizeMode="cover" onError={() => markFailed(item.uri)} accessibilityLabel={`${accessibilityLabel}, photo ${index + 1} of ${items.length}`} accessible />
+                  <Image source={{ uri: item.uri }} style={styles.image} resizeMode="cover" onError={() => markFailed(item.uri)} accessible={false} />
                 ) : (
                   <View style={styles.lazyPlaceholder} accessibilityLabel="Photo loads when viewed"><Feather name="image" size={23} color={COLORS.muted} /></View>
                 )}
-              </View>
+              </Pressable>
             )}
           />
           {items.length > 1 ? (
-            <View style={styles.dots} accessibilityLabel={`Photo ${activeIndex + 1} of ${items.length}`}>
+            <View
+              style={styles.dots}
+              accessible
+              accessibilityLabel={`Photo ${activeIndex + 1} of ${items.length}`}
+              accessibilityValue={{ text: `${activeIndex + 1} of ${items.length}` }}
+              testID="candidate-photo-pagination"
+            >
               {items.map((item, index) => <View key={item.uri} style={[styles.dot, index === activeIndex && styles.dotActive]} />)}
             </View>
           ) : null}
@@ -139,6 +161,12 @@ export function CandidatePhotoCarousel({
           <Text style={styles.fallbackText}>Place photos unavailable</Text>
         </View>
       )}
+      <PhotoRolodexModal
+        visible={viewerIndex != null}
+        items={rolodexItems}
+        initialIndex={viewerIndex ?? activeIndex}
+        onClose={() => setViewerIndex(null)}
+      />
     </View>
   );
 }

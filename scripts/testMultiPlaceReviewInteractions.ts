@@ -93,8 +93,9 @@ assert.match(carousel, /onScroll=\{\(event\) => updatePageFromOffset/);
 assert.match(carousel, /index === activeIndex && styles\.dotActive/);
 assert.match(carousel, /scrollEventThrottle=\{16\}/);
 
-// 9. A gallery swipe cannot invoke candidate selection.
-assert.doesNotMatch(carousel, /\bonPress=/);
+// 9. Gallery gestures can open the shared viewer but cannot invoke candidate selection.
+assert.match(carousel, /onPress=\{\(\) => setViewerIndex\(index\)\}/);
+assert.doesNotMatch(carousel, /onPress=\{onPress\}|toggleCandidateSelection|chooseBatchCandidate/);
 assert.ok(card.indexOf('</Pressable>') < card.indexOf('<CandidatePhotoCarousel'));
 
 // 10. The non-gallery header remains an explicit radio selection target.

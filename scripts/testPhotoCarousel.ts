@@ -88,32 +88,37 @@ const sheet = readFileSync(
   join(process.cwd(), 'components/map/SelectedPlaceDetails.tsx'),
   'utf8',
 );
+const rolodex = readFileSync(
+  join(process.cwd(), 'components/PhotoRolodex.tsx'),
+  'utf8',
+);
 
-assert.match(sheet, /<Animated\.FlatList/, 'the carousel is animated-capable');
-assert.match(sheet, /useNativeDriver: true/, 'focus dimming runs off the JS thread');
-assert.match(sheet, /onScroll=\{handleGalleryScroll\}/);
-assert.match(sheet, /scrollEventThrottle=\{16\}/);
+assert.match(sheet, /<PhotoRolodexModal/, 'Place Detail uses the shared rolodex');
+assert.match(rolodex, /<Animated\.FlatList/, 'the shared carousel is animated-capable');
+assert.match(rolodex, /useNativeDriver: true/, 'focus dimming runs off the JS thread');
+assert.match(rolodex, /onScroll=\{handleScroll\}/);
+assert.match(rolodex, /scrollEventThrottle=\{16\}/);
 assert.match(
-  sheet,
-  /galleryScrollX\.interpolate\(/,
+  rolodex,
+  /scrollX\.interpolate\(/,
   'brightness is interpolated from scroll offset, not from React state',
 );
 assert.doesNotMatch(
-  sheet,
+  rolodex,
   /index === safeGalleryIndex\s*\?\s*styles\.galleryPhotoShellActive/,
   'the centered page must not depend on a state comparison to look active',
 );
 assert.doesNotMatch(
-  sheet,
+  rolodex,
   /onMomentumScrollEnd=\{\(event\) => \{[\s\S]{0,200}setGalleryIndex/,
   'the active page must not wait for momentum to end',
 );
 // The list identity must stay stable across swipes (remounting would refetch).
-assert.match(sheet, /`gallery-\$\{galleryOpenSeed\}-\$\{photoUrls\.length\}`/);
-assert.doesNotMatch(sheet, /key=\{`gallery-\$\{safeGalleryIndex/, 'never key the list by active index');
-assert.match(sheet, /keyExtractor=\{\(url: string\) => `gallery-\$\{url\}`\}/, 'stable per-photo identity');
+assert.match(rolodex, /`photo-rolodex-\$\{openSeed\}-\$\{items\.length\}`/);
+assert.doesNotMatch(rolodex, /key=\{`photo-rolodex-\$\{safeActiveIndex/, 'never key the list by active index');
+assert.match(rolodex, /keyExtractor=\{\(item\) => item\.key\}/, 'stable per-photo identity');
 // Prefetch stays bounded and only while the gallery is open.
-assert.match(sheet, /if \(!galleryOpen\) return;[\s\S]{0,120}adjacentPrefetchTargets/);
-assert.match(sheet, /prefetchedPhotoUrlsRef\.current\.has\(url\)/, 'requests are deduped');
+assert.match(rolodex, /if \(!visible\) return;[\s\S]{0,160}adjacentPrefetchTargets/);
+assert.match(rolodex, /prefetchedUrisRef\.current\.has\(uri\)/, 'requests are deduped');
 
 console.log('PASS photo carousel paging, bounded prefetch window, and native focus wiring');
