@@ -2,7 +2,7 @@
   "releaseId": "2026-08-25-quick-check-density-pass",
   "previousMainSha": "6e8538c15496778e9f810d8972a75d9bed37efab",
   "previousOtaGroup": "5fbf86ed-ab69-47d6-8ad1-16b540a1e6e3",
-  "currentOtaGroup": null,
+  "currentOtaGroup": "ad389230-86e7-41b8-9cae-ef5fb2c10f7c",
   "edgeVersions": {
     "process-share-link": 133,
     "process-share-jobs": 87,
@@ -15,11 +15,12 @@
     "20260825000001"
   ],
   "rollbackProcedure": "Repeat the concurrency guard; republish previousOtaGroup to the production channel; forward-revert only commit af39446b4de37cae36ec18f1f34b0609e2c8d6f5; rerun Quick Check density, rolodex, startup, release, prebuild, and iOS export gates. Railway, Edge, schema, native code, and EAS Build remain unchanged.",
-  "deploymentStatus": "PLANNED",
+  "deploymentStatus": "DEPLOYED",
   "physicalQa": {
     "signedOutColdLaunch": "PENDING",
     "signedInColdLaunch": "PENDING",
     "forceCloseRelaunch": "PENDING",
     "freshOnboardingLaunch": "NOT_REQUIRED"
-  }
+  },
+  "deployedAt": "2026-08-26T02:20:14.764Z"
 }
