@@ -2,7 +2,7 @@
   "releaseId": "2026-08-25-vayrin-recognition-truth",
   "previousMainSha": "b973b692b368e9b3411c7fce9419fab5dbd50599",
   "previousOtaGroup": "5c1ca69c-0b8c-4aeb-9cc3-665b4294c45f",
-  "currentOtaGroup": null,
+  "currentOtaGroup": "5fbf86ed-ab69-47d6-8ad1-16b540a1e6e3",
   "edgeVersions": {
     "process-share-link": 133,
     "process-share-jobs": 87,
@@ -15,11 +15,12 @@
     "20260825000001"
   ],
   "rollbackProcedure": "Repeat the concurrency guard; republish previousOtaGroup to production; forward-revert the Vayrin recognition-truth commits on current main; redeploy process-share-jobs. Leave the additive user-scoped rejection table in place and do not delete recognition evidence.",
-  "deploymentStatus": "PLANNED",
+  "deploymentStatus": "DEPLOYED",
   "physicalQa": {
     "signedOutColdLaunch": "PENDING",
     "signedInColdLaunch": "PENDING",
     "forceCloseRelaunch": "PENDING",
     "freshOnboardingLaunch": "NOT_REQUIRED"
-  }
+  },
+  "deployedAt": "2026-08-26T02:04:32.712Z"
 }
