@@ -1,0 +1,25 @@
+{
+  "releaseId": "2026-08-25-multi-save-tray-dismiss",
+  "previousMainSha": "c3e9977f1c29bb92acc880e60c482c301d6dda3b",
+  "previousOtaGroup": "eef1ec75-57a0-4209-ba4f-ac1e4841439a",
+  "currentOtaGroup": null,
+  "edgeVersions": {
+    "process-share-link": 133,
+    "process-share-jobs": 86,
+    "create-share-job": 25,
+    "delete-account": 24,
+    "delete-share-job": 1
+  },
+  "railwayDeployment": "9f44f4a4-f76c-4a99-bd18-43fbd3450e7f@b4125daa4b5c18123cf436881c856ee069c09372#sha256:cba1722590e2ab0e97c352a47c2ad3edee6d7f647026a3fc7a476192273ee01d",
+  "migrationLedger": [
+    "20260824233000"
+  ],
+  "rollbackProcedure": "Repeat the concurrency guard; republish previousOtaGroup to the production channel; forward-revert only the multi-save tray dismissal commits on main; rerun the tray dismissal, multi-select, queue-save, open-saved-place, source-enrichment, recognition-cache, map reliability, marker, clustering, pin-state, startup, release, prebuild, and iOS export gates. Railway, Edge, schema, native code, and EAS Build remain unchanged.",
+  "deploymentStatus": "PLANNED",
+  "physicalQa": {
+    "signedOutColdLaunch": "PENDING",
+    "signedInColdLaunch": "PENDING",
+    "forceCloseRelaunch": "PENDING",
+    "freshOnboardingLaunch": "NOT_REQUIRED"
+  }
+}
