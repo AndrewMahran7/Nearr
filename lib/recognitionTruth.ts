@@ -2,7 +2,7 @@ import {
   isNearrCategory,
   mapGoogleType,
   type NearrCategory,
-} from './placeCategory';
+} from './placeCategory.ts';
 
 export type SemanticCompatibility = 'SUPPORTS' | 'CONTRADICTS' | 'UNKNOWN';
 
