@@ -5,6 +5,7 @@ import { Feather } from '@expo/vector-icons';
 import { CandidatePhotoCarousel } from '@/components/CandidatePhotoCarousel';
 import type { PlaceImageResolutionKind } from '@/components/PlaceImage';
 import { Radius, Spacing } from '@/constants';
+import { QUICK_CHECK_LAYOUT } from '@/lib/quickCheckDensity';
 import {
   candidateCategoryLabel,
   candidateMatchLabel,
@@ -139,7 +140,7 @@ export function CandidateConfirmationCard({
                 accessibilityRole="button"
                 accessibilityLabel="Why this match?"
                 accessibilityState={{ expanded }}
-                hitSlop={4}
+                hitSlop={6}
                 style={styles.whyButtonCompact}
                 testID="candidate-why-match"
               >
@@ -276,12 +277,12 @@ const styles = StyleSheet.create({
     overflow: 'hidden', backgroundColor: BRAND.charcoal, borderRadius: Radius.lg,
     borderWidth: 2, borderColor: BRAND.border, marginBottom: Spacing.lg,
   },
-  cardCompact: { marginBottom: Spacing.sm, padding: 8 },
+  cardCompact: { marginBottom: QUICK_CHECK_LAYOUT.candidateGap, padding: QUICK_CHECK_LAYOUT.candidatePadding },
   cardSelected: { borderColor: BRAND.orange, backgroundColor: BRAND.selected },
   pressed: { opacity: 0.9 },
   compactRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
-  compactBody: { flex: 1, minWidth: 0 },
-  compactHeadingRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 6 },
+  compactBody: { flex: 1, minWidth: 0, position: 'relative' },
+  compactHeadingRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, paddingRight: 50 },
   rankBadge: {
     width: 28, height: 28, borderRadius: 14, borderWidth: 1.5, borderColor: BRAND.orange,
     alignItems: 'center', justifyContent: 'center', marginTop: 1,
@@ -289,7 +290,7 @@ const styles = StyleSheet.create({
   rankText: { color: BRAND.orange, fontSize: 15, lineHeight: 19, fontWeight: '800' },
   compactSelection: {
     width: 44, height: 44, borderRadius: 22, borderWidth: 1.5, borderColor: BRAND.muted,
-    alignItems: 'center', justifyContent: 'center', marginLeft: 'auto',
+    alignItems: 'center', justifyContent: 'center', position: 'absolute', right: 0, top: 0,
   },
   compactSelectionCheckbox: { borderRadius: 12 },
   compactSelectionSelected: { borderColor: BRAND.orange, backgroundColor: BRAND.orange },
@@ -301,7 +302,7 @@ const styles = StyleSheet.create({
   bestCompact: { color: BRAND.orange, fontSize: 12, lineHeight: 17, fontWeight: '800' },
   conciseEvidenceCompact: { color: BRAND.muted, fontSize: 12, lineHeight: 17, marginTop: 3 },
   whyButtonCompact: {
-    minHeight: 36, flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: 2,
+    minHeight: QUICK_CHECK_LAYOUT.whyButtonHeight, flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: 2,
   },
   whyPanelCompact: {
     paddingHorizontal: 4, paddingTop: Spacing.sm, marginTop: 8,

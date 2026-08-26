@@ -20,6 +20,8 @@ import { useTheme } from '@/lib/theme';
 type Props = {
   title: string;
   onBack: () => void;
+  /** Keeps the 44pt control while reducing non-interactive header padding. */
+  compact?: boolean;
   /** Accessibility label for the back control (e.g. "Back to map"). */
   backLabel?: string;
   icon?: 'back' | 'close';
@@ -36,6 +38,7 @@ type Props = {
 export function ShareJobsHeader({
   title,
   onBack,
+  compact = false,
   backLabel = 'Back',
   icon = 'back',
   count,
@@ -46,7 +49,7 @@ export function ShareJobsHeader({
   const showBadge = typeof count === 'number' && count > 0;
 
   return (
-    <View style={styles.header}>
+    <View style={[styles.header, compact && styles.headerCompact]}>
       <Pressable
         onPress={onBack}
         style={({ pressed }) => [styles.backBtn, pressed && styles.backBtnPressed]}
@@ -98,6 +101,7 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       paddingBottom: Spacing.md,
       gap: Spacing.md,
     },
+    headerCompact: { paddingTop: Spacing.xs, paddingBottom: Spacing.sm },
     backBtn: {
       width: 44,
       height: 44,

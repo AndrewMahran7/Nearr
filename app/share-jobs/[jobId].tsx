@@ -161,6 +161,7 @@ import {
   visibleCandidateShortlist,
   type CandidateConfirmationPlace,
 } from '@/lib/vayrinCandidateConfirmation';
+import { QUICK_CHECK_LAYOUT } from '@/lib/quickCheckDensity';
 import {
   geographicFieldsFromLabel,
   normalizeResolutionName,
@@ -1890,35 +1891,28 @@ function ShareJobDetailScreen() {
   if (isCandidatePicker) {
     return (
       <ShareJobsSheet onDismiss={backToQueue} size="detail">
-        <ShareJobsHeader title={PHASE_1_COPY.detailTitle} onBack={backToQueue} backLabel="Back to queue" />
+        <ShareJobsHeader title={PHASE_1_COPY.detailTitle} onBack={backToQueue} backLabel="Back to queue" compact />
         <ScrollView
-          contentContainerStyle={styles.content}
+          contentContainerStyle={[styles.content, styles.quickCheckContent]}
           contentInsetAdjustmentBehavior="automatic"
           automaticallyAdjustKeyboardInsets
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="interactive"
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.sourceRow}>
+          <View style={[styles.sourceRow, styles.quickCheckSourceRow]}>
             <Feather name={sourceIcon} size={14} color={colors.textSecondary} />
             <Text style={[typography.caption, styles.sourceText]} numberOfLines={1}>
               {platformName(platform)} · From the original post
             </Text>
           </View>
-          {vayrinEnabled ? (
-            <VayrinPresentationHeader presentation={candidateConfirmationPresentation} />
-          ) : (
-            <>
-              <Text style={[typography.title, styles.title]}>{detail.copy.title}</Text>
-              <Text style={[typography.body, styles.help]}>{detail.copy.body}</Text>
-            </>
-          )}
           <SourceEvidenceGallery
             frames={detail.evidenceFrames}
             analysisAttempted={job.analysis_attempted}
             compact
+            dense
           />
-          <View style={styles.section}>
+          <View style={[styles.section, styles.quickCheckCandidates]}>
             {confirmationCandidates.map((candidate, index) => {
               const address = splitPlaceAddress(candidate.formattedAddress);
               const broad = isBroadCandidate(candidate);
@@ -1987,7 +1981,10 @@ function ShareJobDetailScreen() {
           {renderJobFooter()}
         </ScrollView>
         {(
-          <View style={[styles.stickySaveBar, { paddingBottom: Math.max(safeAreaInsets.bottom, Spacing.sm) }]}>
+          <View
+            style={[styles.stickySaveBar, { paddingBottom: Math.max(safeAreaInsets.bottom, Spacing.sm) }]}
+            testID="quick-check-sticky-save-bar"
+          >
             <Button
               title={candidateSaveLabel(searchExpanded ? manualSelected.length : pickerSelected.length)}
               accessibilityLabel={`${candidateSaveLabel(searchExpanded ? manualSelected.length : pickerSelected.length)} from selected candidates`}
@@ -2200,6 +2197,7 @@ function ShareJobDetailScreen() {
 function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
   return StyleSheet.create({
     content: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.sm, paddingBottom: Spacing.xxl + 72 },
+    quickCheckContent: { paddingTop: QUICK_CHECK_LAYOUT.scrollContentTop, paddingBottom: QUICK_CHECK_LAYOUT.scrollBottomPadding },
     batchKeyboardSurface: { flex: 1 },
     batchScroll: { flex: 1 },
     batchContent: {
@@ -2255,8 +2253,13 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       marginBottom: Spacing.lg,
     },
     sourceText: { color: colors.textSecondary },
+    quickCheckSourceRow: {
+      minHeight: QUICK_CHECK_LAYOUT.sourceLineHeight,
+      marginBottom: QUICK_CHECK_LAYOUT.sourceLineBottomGap,
+    },
     flex: { flex: 1 },
     section: { marginBottom: Spacing.lg },
+    quickCheckCandidates: { marginBottom: Spacing.sm },
     title: { color: colors.text, marginBottom: Spacing.xs },
     help: { color: colors.textSecondary, marginBottom: Spacing.md },
     processingRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },

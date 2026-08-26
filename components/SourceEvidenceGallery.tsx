@@ -16,6 +16,7 @@ import { Feather } from '@expo/vector-icons';
 import { PhotoRolodexModal } from '@/components/PhotoRolodex';
 import { Radius, Spacing } from '@/constants';
 import { formatCandidateTimestamp } from '@/lib/vayrinCandidateConfirmation';
+import { QUICK_CHECK_LAYOUT, quickCheckCompactEvidenceFrameWidth } from '@/lib/quickCheckDensity';
 import { resolveShareEvidenceFrames, type ResolvedShareEvidenceFrame } from '@/lib/shareEvidenceFrames';
 import type { ShareJobEvidenceFrame } from '@/lib/shareJobResult';
 
@@ -25,6 +26,7 @@ type Props = {
   title?: string;
   subtitle?: string;
   compact?: boolean;
+  dense?: boolean;
 };
 
 const COLORS = {
@@ -38,12 +40,15 @@ export function SourceEvidenceGallery({
   title = 'Frames Vayrin checked',
   subtitle = 'Evidence from the video',
   compact = false,
+  dense = false,
 }: Props) {
   const { width: windowWidth } = useWindowDimensions();
-  const frameWidth = compact
+  const frameWidth = compact && dense
+    ? quickCheckCompactEvidenceFrameWidth(windowWidth)
+    : compact
     ? Math.min(160, Math.max(148, (windowWidth - 72) / 2))
     : Math.min(360, Math.max(280, windowWidth - 56));
-  const frameHeight = compact ? 100 : 204;
+  const frameHeight = compact && dense ? QUICK_CHECK_LAYOUT.evidenceFrameHeight : compact ? 100 : 204;
   const [resolved, setResolved] = useState<ResolvedShareEvidenceFrame[]>([]);
   const [loading, setLoading] = useState(frames.length > 0);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -70,9 +75,9 @@ export function SourceEvidenceGallery({
   })), [available]);
 
   return (
-    <View style={[styles.section, compact && styles.sectionCompact]} testID="source-evidence-gallery">
+    <View style={[styles.section, compact && styles.sectionCompact, dense && styles.sectionDense]} testID="source-evidence-gallery">
       <Text style={[styles.title, compact && styles.titleCompact]}>{title}</Text>
-      <Text style={styles.subtitle}>{subtitle}</Text>
+      <Text style={[styles.subtitle, dense && styles.subtitleDense]}>{subtitle}</Text>
       {loading ? (
         <View style={[styles.missing, { width: frameWidth, height: frameHeight }]}>
           <ActivityIndicator color={COLORS.orange} />
@@ -119,7 +124,7 @@ export function SourceEvidenceGallery({
             )}
           />
           {available.length > 1 ? (
-            <View style={styles.dots} accessibilityLabel={`Frame ${activeIndex + 1} of ${available.length}`}>
+            <View style={[styles.dots, dense && styles.dotsDense]} accessibilityLabel={`Frame ${activeIndex + 1} of ${available.length}`}>
               {available.map((frame, index) => <View key={frame.id} style={[styles.dot, index === activeIndex && styles.dotActive]} />)}
             </View>
           ) : null}
@@ -144,9 +149,11 @@ export function SourceEvidenceGallery({
 const styles = StyleSheet.create({
   section: { marginTop: Spacing.lg, marginBottom: Spacing.md },
   sectionCompact: { marginTop: Spacing.md, marginBottom: Spacing.sm },
+  sectionDense: { marginTop: QUICK_CHECK_LAYOUT.evidenceSectionTop, marginBottom: QUICK_CHECK_LAYOUT.evidenceSectionBottom },
   title: { color: COLORS.cream, fontSize: 19, lineHeight: 24, fontWeight: '700' },
   titleCompact: { fontSize: 15, lineHeight: 20 },
   subtitle: { color: COLORS.muted, fontSize: 13, lineHeight: 18, marginTop: 2, marginBottom: Spacing.sm },
+  subtitleDense: { lineHeight: QUICK_CHECK_LAYOUT.evidenceSubtitleHeight, marginTop: 0, marginBottom: QUICK_CHECK_LAYOUT.evidenceSubtitleBottomGap },
   carouselContent: { paddingRight: Spacing.lg, gap: Spacing.sm },
   frame: { overflow: 'hidden', borderRadius: Radius.lg, backgroundColor: COLORS.black, borderWidth: StyleSheet.hairlineWidth, borderColor: COLORS.border },
   frameImage: { width: '100%', height: '100%' },
@@ -154,6 +161,7 @@ const styles = StyleSheet.create({
   timestamp: { color: COLORS.cream, fontSize: 13, lineHeight: 17, fontWeight: '800', fontVariant: ['tabular-nums'] },
   expandBadge: { position: 'absolute', right: Spacing.sm, top: Spacing.sm, width: 34, height: 34, borderRadius: 17, backgroundColor: 'rgba(5,6,8,0.72)', alignItems: 'center', justifyContent: 'center' },
   dots: { minHeight: 22, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6 },
+  dotsDense: { minHeight: QUICK_CHECK_LAYOUT.evidenceDotsHeight },
   dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: COLORS.border },
   dotActive: { width: 18, backgroundColor: COLORS.orange },
   missing: { borderRadius: Radius.lg, backgroundColor: COLORS.surface, borderWidth: StyleSheet.hairlineWidth, borderColor: COLORS.border, alignItems: 'center', justifyContent: 'center', padding: Spacing.lg, gap: Spacing.sm },
