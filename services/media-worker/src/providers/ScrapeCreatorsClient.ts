@@ -52,6 +52,46 @@ function retryAfterSeconds(response: Response): number | undefined {
   return Number.isFinite(value) && value >= 0 ? Math.min(Math.ceil(value), 900) : undefined;
 }
 
+function stringField(value: unknown): string | null {
+  return typeof value === 'string' && value.trim() ? value.trim().slice(0, 500) : null;
+}
+
+/** Convert a bounded provider error body into one stable, secret-free detail.
+ * Raw messages and payloads are never returned to callers or logs. */
+export function classifyScrapeCreatorsTerminalResponse(status: number, body: unknown): string {
+  const root = body && typeof body === 'object' && !Array.isArray(body)
+    ? body as Record<string, unknown>
+    : null;
+  const nested = root?.error && typeof root.error === 'object' && !Array.isArray(root.error)
+    ? root.error as Record<string, unknown>
+    : null;
+  const text = [
+    stringField(root?.error),
+    stringField(root?.message),
+    stringField(root?.errorStatus),
+    stringField(nested?.code),
+    stringField(nested?.message),
+    stringField(nested?.status),
+  ].filter((value): value is string => !!value).join(' ').toLowerCase();
+
+  if (/cannot\s+(?:get|post)|endpoint\s+not\s+found|route\s+not\s+found/.test(text)) {
+    return 'scrapecreators_endpoint_not_found';
+  }
+  if (/(?:post|content|media|video)\s+not\s+found|not\s+found.*(?:post|content|media|video)/.test(text)) {
+    return 'scrapecreators_content_not_found';
+  }
+  if (/unsupported|not\s+supported/.test(text)) return 'scrapecreators_unsupported_media';
+  if (/invalid.*url|url.*(?:required|missing)|missing.*url/.test(text)) {
+    return 'scrapecreators_invalid_request';
+  }
+  if (/pars(?:e|er|ing)|scrap(?:e|ing).*fail|fail.*scrap|could\s+not.*(?:fetch|retrieve)/.test(text)) {
+    return 'scrapecreators_provider_parser_failure';
+  }
+  if (status === 400 || status === 422) return 'scrapecreators_invalid_request';
+  if (status === 404) return 'scrapecreators_not_found_unknown';
+  return `scrapecreators_status_${status}`;
+}
+
 /** Shared, server-only ScrapeCreators request boundary. It owns authentication,
  * bounded response parsing, timeouts, and structured HTTP errors. Platform
  * providers own endpoint parameters and response interpretation. */
@@ -117,14 +157,28 @@ export async function requestScrapeCreatorsJson(input: {
     throw new MediaError('provider_unavailable', 'scrapecreators_provider_auth_failed');
   }
   if (!response.ok) {
-    await response.body?.cancel().catch(() => undefined);
+    let terminalBody: unknown = null;
+    const terminal = input.terminalNoMediaStatuses?.includes(response.status) === true;
+    if (terminal) {
+      try {
+        terminalBody = await readBoundedJson(response);
+      } catch {
+        // Status remains authoritative. A malformed/oversized error body must
+        // not turn a deterministic provider result into a paid outer retry.
+      }
+    } else {
+      await response.body?.cancel().catch(() => undefined);
+    }
     finish();
-    const code = input.terminalNoMediaStatuses?.includes(response.status)
+    const code = terminal
       ? 'missing_video'
       : response.status >= 500
         ? 'provider_unavailable'
         : input.clientErrorCode ?? 'download_failed';
-    throw new MediaError(code, `scrapecreators_status_${response.status}`);
+    const detail = terminal
+      ? classifyScrapeCreatorsTerminalResponse(response.status, terminalBody)
+      : `scrapecreators_status_${response.status}`;
+    throw new MediaError(code, detail);
   }
 
   try {

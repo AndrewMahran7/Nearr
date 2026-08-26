@@ -23,6 +23,7 @@
     "test:tiktok-url": "ts-node -P scripts/tsconfig.json scripts/testTiktokUrl.ts",
     "test:tiktok-ingestion-parity": "ts-node -P scripts/tsconfig.json scripts/testTikTokIngestionParity.ts",
     "test:instagram-ingestion-parity": "cd services/media-worker && node --import tsx --test tests/instagramResolver.test.ts tests/instagramCanonicalRedirect.test.ts tests/scrapeCreatorsInstagramFallback.test.ts",
+    "test:instagram-acquisition-dcgng4hd83": "cd services/media-worker && node --import tsx --test tests/instagramAcquisitionDcgng4hd83.test.ts",
     "test:scrapecreators-tiktok-fallback": "cd services/media-worker && node --import tsx --test tests/scrapeCreatorsTikTokFallback.test.ts",
     "test:scrapecreators-instagram-fallback": "cd services/media-worker && node --import tsx --test tests/scrapeCreatorsInstagramFallback.test.ts",
     "test:scrapecreators-facebook-fallback": "cd services/media-worker && node --import tsx --test tests/scrapeCreatorsFacebookFallback.test.ts",
