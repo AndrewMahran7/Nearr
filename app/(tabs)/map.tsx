@@ -132,6 +132,10 @@ import {
   mapGroupEdgePadding,
   resolveMapGroupPlaces,
 } from '@/lib/mapGroupFocus';
+import {
+  MAP_GROUP_TRAY_OVERLAY_ELEVATION,
+  MAP_GROUP_TRAY_OVERLAY_Z_INDEX,
+} from '@/lib/mapGroupTray';
 import { openExternalMaps as openInExternalMaps } from '@/lib/externalMaps';
 import {
   shouldAcceptSample,
@@ -3171,6 +3175,7 @@ export default function MapScreen() {
             styles.mapGroupWrap,
             { bottom: (selected ? 248 : Spacing.lg) + insets.bottom },
           ]}
+          pointerEvents="box-none"
           onLayout={(event) => setMapGroupSelectorHeight(event.nativeEvent.layout.height)}
         >
           <MapGroupSelector
@@ -3393,6 +3398,9 @@ function createStyles(
     position: 'absolute',
     left: Spacing.md,
     right: Spacing.md,
+    zIndex: MAP_GROUP_TRAY_OVERLAY_Z_INDEX,
+    elevation: MAP_GROUP_TRAY_OVERLAY_ELEVATION,
+    overflow: 'visible',
   },
 
   locPill: {

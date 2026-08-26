@@ -4,6 +4,10 @@ import { Feather } from '@expo/vector-icons';
 
 import { PlaceImage } from '@/components/PlaceImage';
 import { Radius, Spacing } from '@/constants';
+import {
+  MAP_GROUP_TRAY_CLOSE_HIT_SLOP,
+  MAP_GROUP_TRAY_CLOSE_TARGET_SIZE,
+} from '@/lib/mapGroupTray';
 import { useTheme } from '@/lib/theme';
 import type { SavedPlaceWithPlace } from '@/types';
 
@@ -41,7 +45,7 @@ export function MapGroupSelector({
   }, [places, selectedId]);
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} pointerEvents="auto" testID="newly-saved-tray">
       <View style={styles.header}>
         <View style={styles.headerCopy}>
           <Text style={styles.title}>{places.length} newly saved</Text>
@@ -61,9 +65,11 @@ export function MapGroupSelector({
         <Pressable
           onPress={onClose}
           accessibilityRole="button"
-          accessibilityLabel="Close newly saved places"
-          hitSlop={10}
-          style={styles.closeButton}
+          accessibilityLabel="Dismiss newly saved places"
+          hitSlop={MAP_GROUP_TRAY_CLOSE_HIT_SLOP}
+          pressRetentionOffset={12}
+          testID="newly-saved-tray-close"
+          style={({ pressed }) => [styles.closeButton, pressed && styles.closeButtonPressed]}
         >
           <Feather name="x" size={18} color={colors.textSecondary} />
         </Pressable>
@@ -126,9 +132,11 @@ function createStyles(
       shadowRadius: 18,
       shadowOffset: { width: 0, height: 8 },
       elevation: 8,
+      overflow: 'visible',
+      zIndex: 1,
     },
     header: {
-      minHeight: 32,
+      minHeight: MAP_GROUP_TRAY_CLOSE_TARGET_SIZE,
       paddingHorizontal: Spacing.md,
       flexDirection: 'row',
       alignItems: 'center',
@@ -138,7 +146,7 @@ function createStyles(
     title: { ...typography.label, color: colors.text },
     subtitle: { ...typography.caption, color: colors.textSecondary, marginTop: 2 },
     headerAction: {
-      minHeight: 32,
+      minHeight: MAP_GROUP_TRAY_CLOSE_TARGET_SIZE,
       flexDirection: 'row',
       alignItems: 'center',
       gap: 5,
@@ -146,11 +154,15 @@ function createStyles(
     },
     headerActionText: { ...typography.caption, color: colors.accent, fontWeight: '700' },
     closeButton: {
-      width: 32,
-      height: 32,
+      width: MAP_GROUP_TRAY_CLOSE_TARGET_SIZE,
+      height: MAP_GROUP_TRAY_CLOSE_TARGET_SIZE,
+      flexShrink: 0,
       alignItems: 'center',
       justifyContent: 'center',
+      borderRadius: MAP_GROUP_TRAY_CLOSE_TARGET_SIZE / 2,
+      zIndex: 2,
     },
+    closeButtonPressed: { opacity: 0.65 },
     list: {
       paddingHorizontal: Spacing.md,
       paddingTop: Spacing.sm,
