@@ -254,6 +254,7 @@
     "test:e2e:dev:safety": "ts-node -P scripts/tsconfig.json scripts/e2e/runE2E.ts --suite safety",
     "test:e2e:dev:creator-live": "ts-node -P scripts/tsconfig.json scripts/e2e/runE2E.ts --suite creator-live",
     "test:e2e:dev:vayrin-live": "ts-node -P scripts/tsconfig.json scripts/e2e/runE2E.ts --suite vayrin-live",
+    "test:e2e:dev:vayrin-never-dead-end": "ts-node -P scripts/tsconfig.json scripts/e2e/runNeverDeadEndLiveProof.ts",
     "verify:dev:e2e": "ts-node -P scripts/tsconfig.json scripts/e2e/verifyDevE2E.ts",
     "test:multi-select-places": "ts-node -P scripts/tsconfig.json scripts/testMultiSelectPlaces.ts",
     "test:vayrin-presentation": "ts-node -P scripts/tsconfig.json scripts/testVayrinPresentation.ts",
