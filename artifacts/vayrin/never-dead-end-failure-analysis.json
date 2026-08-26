@@ -1,0 +1,157 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-24T00:00:00-07:00",
+  "scope": "sanitized production research plus deterministic local fixtures",
+  "incident": {
+    "eventTimestamp": "2026-08-25T03:32:44.238Z",
+    "validationPath": "places.0.name:too_small",
+    "emitted": 1,
+    "accepted": 0,
+    "rejected": 1,
+    "exactInvalidShape": { "name": "" },
+    "fullPayloadAvailable": false,
+    "payloadRetentionNote": "Only a 500-character raw preview was retained.",
+    "candidateRecoverability": {
+      "exactCanonicalPlace": false,
+      "partialAreaOrSearchLead": true,
+      "reason": "No canonical provider ID, address, or trusted coordinates survived in the retained preview; country/category/confidence and at least one explicit-evidence object were present."
+    },
+    "fallback": {
+      "model": "gpt-5.6-sol",
+      "latencyMs": 19914,
+      "estimatedCostUsd": 0.070651,
+      "result": "vayrin_no_hypotheses"
+    },
+    "final": {
+      "outcome": "insufficient_evidence",
+      "failureCategory": "analysis_insufficient",
+      "failureCode": "insufficient_evidence",
+      "userTitle": "We couldn't pin this one down"
+    }
+  },
+  "productionSample": {
+    "window": "last 200 share_media_runs available at inspection",
+    "oldest": "2026-08-18T04:25:00Z",
+    "newest": "2026-08-25T03:43:00Z",
+    "allRuns": 200,
+    "recognitionRuns": 190,
+    "runsWithValidationRejection": 26,
+    "rejectionRateAllRuns": 0.13,
+    "rejectionRateRecognitionRuns": 0.1368,
+    "rejectionRunsRecoveredCompleted": 7,
+    "rejectionRunsUserTerminal": 16,
+    "rejectionRunsUnknownOrDeleted": 3,
+    "rejectionRunsWithEmptyManualTerminal": 11,
+    "causalityWarning": "Association is not causation; only the named incident is confirmed as a validation-to-insufficient conflation.",
+    "paths": {
+      "places.0.name:invalid_type": 16,
+      "places.0.name:too_small": 3,
+      "places.1.name:too_small": 2,
+      "places.0.categoryEvidenceTags:too_big": 3,
+      "places.6.categoryEvidenceTags:too_big": 2,
+      "places.1.name:invalid_type": 1,
+      "places.2.name:invalid_type": 1,
+      "places.3.name:invalid_type": 1,
+      "places.7.name:invalid_type": 1,
+      "places.0.explicitEvidence.10.value:too_big": 1
+    }
+  },
+  "fixtures": [
+    {
+      "id": 1,
+      "name": "name:too_small",
+      "currentBehavior": "Whole candidate rejected; if no sibling survives, Sol runs and an empty Sol result becomes insufficient_evidence.",
+      "idealBehavior": "Retain typed partial evidence, attempt deterministic rehydration, then expose a non-saveable area/search lead or a technical recovery state.",
+      "recoverable": "conditional",
+      "recommendedRecoveryPath": "provider identity -> address/provider coordinates -> field normalization -> bounded evidence-grounded repair -> area/search lead"
+    },
+    {
+      "id": 2,
+      "name": "name missing but Place ID present",
+      "currentBehavior": "Whole candidate rejected; the worker schema has no Place ID field.",
+      "idealBehavior": "Rehydrate canonical name and fields from the provider ID, retaining provenance.",
+      "recoverable": true,
+      "recommendedRecoveryPath": "canonical provider rehydration"
+    },
+    {
+      "id": 3,
+      "name": "name missing but coordinates/address present",
+      "currentBehavior": "Whole candidate rejected before resolution.",
+      "idealBehavior": "Use address or provider-sourced coordinates for canonical lookup; never trust model coordinates as canonical.",
+      "recoverable": "conditional",
+      "recommendedRecoveryPath": "address lookup or provider-coordinate lookup"
+    },
+    {
+      "id": 4,
+      "name": "malformed category",
+      "currentBehavior": "Whole candidate rejected.",
+      "idealBehavior": "Set category to null and preserve identity evidence.",
+      "recoverable": true,
+      "recommendedRecoveryPath": "deterministic field normalization"
+    },
+    {
+      "id": 5,
+      "name": "malformed evidence list",
+      "currentBehavior": "Bare/misshapen items are dropped, but object-shaped items with empty/oversize values survive normalization and can reject the whole candidate.",
+      "idealBehavior": "Continue item-level filtering/truncation with diagnostics.",
+      "recoverable": true,
+      "recommendedRecoveryPath": "item-level normalization"
+    },
+    {
+      "id": 6,
+      "name": "partial candidate",
+      "currentBehavior": "Can parse, but without explicit evidence it renders zero places and becomes insufficient_evidence.",
+      "idealBehavior": "Preserve it as a typed noncanonical lead only when its text has observable provenance.",
+      "recoverable": "conditional",
+      "recommendedRecoveryPath": "grounding check then raw/search lead"
+    },
+    {
+      "id": 7,
+      "name": "parser-invalid JSON",
+      "currentBehavior": "Gemini path records gemini_json_parse_failed as empty evidence; fallback may run, and an empty fallback can be presented as evidence insufficiency.",
+      "idealBehavior": "Classify MALFORMED_MODEL_OUTPUT and repair/retry/fallback before any evidence conclusion.",
+      "recoverable": true,
+      "recommendedRecoveryPath": "bounded structured repair then provider fallback"
+    },
+    {
+      "id": 8,
+      "name": "provider timeout",
+      "currentBehavior": "Retryable MediaError requeues until max attempts, then finalizes failed.",
+      "idealBehavior": "Keep technical classification and user retry state after exhaustion.",
+      "recoverable": "often",
+      "recommendedRecoveryPath": "retry/backoff then provider fallback"
+    },
+    {
+      "id": 9,
+      "name": "Places failure",
+      "currentBehavior": "All-provider-error paths retry; exhausted failures are technical, but some region expansion failures can disappear into no-hypothesis/insufficient paths.",
+      "idealBehavior": "Persist PLACES_RESOLUTION_FAILURE separately while retaining partial candidates/leads.",
+      "recoverable": "often",
+      "recommendedRecoveryPath": "retry/fallback with partial lead preservation"
+    },
+    {
+      "id": 10,
+      "name": "genuine insufficient evidence",
+      "currentBehavior": "Accepted empty evidence routes to analysis_insufficient.",
+      "idealBehavior": "Only reach true no-useful-evidence after the technical ladder succeeds and no grounded candidate, region, or lead exists.",
+      "recoverable": false,
+      "recommendedRecoveryPath": "honest no-useful-evidence outcome"
+    },
+    {
+      "id": 11,
+      "name": "weak region-only evidence",
+      "currentBehavior": "Preserved and triggers only_coarse_geography Sol escalation; it is not a canonical destination.",
+      "idealBehavior": "Retain as an AREA MATCH/likely-area result if no better candidate emerges.",
+      "recoverable": true,
+      "recommendedRecoveryPath": "region-to-POI then non-saveable AREA MATCH"
+    },
+    {
+      "id": 12,
+      "name": "one valid plus one malformed candidate",
+      "currentBehavior": "Valid sibling survives and prevents insufficientEvidence from being forced true.",
+      "idealBehavior": "Keep this behavior and additionally salvage safe fields inside the malformed sibling.",
+      "recoverable": true,
+      "recommendedRecoveryPath": "sibling salvage plus field-level normalization"
+    }
+  ]
+}
