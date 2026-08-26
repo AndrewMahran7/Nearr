@@ -2,7 +2,7 @@
   "releaseId": "2026-08-25-multi-save-tray-dismiss",
   "previousMainSha": "c3e9977f1c29bb92acc880e60c482c301d6dda3b",
   "previousOtaGroup": "eef1ec75-57a0-4209-ba4f-ac1e4841439a",
-  "currentOtaGroup": null,
+  "currentOtaGroup": "5c1ca69c-0b8c-4aeb-9cc3-665b4294c45f",
   "edgeVersions": {
     "process-share-link": 133,
     "process-share-jobs": 86,
@@ -15,11 +15,12 @@
     "20260824233000"
   ],
   "rollbackProcedure": "Repeat the concurrency guard; republish previousOtaGroup to the production channel; forward-revert only the multi-save tray dismissal commits on main; rerun the tray dismissal, multi-select, queue-save, open-saved-place, source-enrichment, recognition-cache, map reliability, marker, clustering, pin-state, startup, release, prebuild, and iOS export gates. Railway, Edge, schema, native code, and EAS Build remain unchanged.",
-  "deploymentStatus": "PLANNED",
+  "deploymentStatus": "DEPLOYED",
   "physicalQa": {
     "signedOutColdLaunch": "PENDING",
     "signedInColdLaunch": "PENDING",
     "forceCloseRelaunch": "PENDING",
     "freshOnboardingLaunch": "NOT_REQUIRED"
-  }
+  },
+  "deployedAt": "2026-08-26T01:41:10.086Z"
 }
