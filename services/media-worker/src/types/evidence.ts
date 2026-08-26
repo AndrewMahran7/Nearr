@@ -18,6 +18,37 @@ export type EvidenceSource = z.infer<typeof EvidenceSource>;
 export const PlaceRole = z.enum(['primary', 'secondary', 'passing_mention']);
 export type PlaceRole = z.infer<typeof PlaceRole>;
 
+export const SceneEnvironmentType = z.enum([
+  'natural_water', 'natural_land', 'food_venue', 'lodging', 'cultural',
+  'retail', 'urban_outdoor', 'transport', 'other', 'unknown',
+]);
+export type SceneEnvironmentType = z.infer<typeof SceneEnvironmentType>;
+
+export const SceneSetting = z.enum(['indoor', 'outdoor', 'mixed', 'unknown']);
+export type SceneSetting = z.infer<typeof SceneSetting>;
+
+/** Small visual signature produced by the existing analysis call. It describes
+ * an observed moment; it never names or verifies a canonical place. */
+export const SceneSignature = z.object({
+  environmentType: SceneEnvironmentType.default('unknown'),
+  setting: SceneSetting.default('unknown'),
+  visualAnchors: z.array(z.string().min(1).max(100)).max(8).default([]),
+  activity: z.string().min(1).max(100).nullable().default(null),
+  regionClue: z.string().min(1).max(120).nullable().default(null),
+});
+export type SceneSignature = z.infer<typeof SceneSignature>;
+
+/** Closed, bounded claims that a moment begins a different destination. These
+ * are hints only; the deterministic grouper corroborates them against source
+ * text/structured geography before splitting. */
+export const DistinctPlaceSignal = z.enum([
+  'explicit_next_stop', 'explicit_then_went_to', 'explicit_new_day',
+  'distinct_named_venue', 'different_city', 'different_region',
+  'different_country', 'geographic_conflict', 'environment_conflict',
+  'travel_segment', 'platform_location_conflict',
+]);
+export type DistinctPlaceSignal = z.infer<typeof DistinctPlaceSignal>;
+
 export const EvidenceItem = z.object({
   timestampSeconds: z.number().finite().nonnegative().nullable().default(null),
   source: EvidenceSource,
@@ -43,6 +74,10 @@ export const PlaceCandidateEvidence = z.object({
   identityEvidenceKind: z.enum(['observable', 'model_prior']).optional(),
   /** Best-first rank within one logical place. */
   hypothesisRank: z.number().int().min(0).max(11).optional(),
+  /** All retained frame/evidence timestamps belonging to this raw moment. */
+  momentTimestamps: z.array(z.number().finite().nonnegative()).max(24).default([]),
+  sceneSignature: SceneSignature.optional(),
+  distinctPlaceSignals: z.array(DistinctPlaceSignal).max(8).default([]),
   name: z.string().min(1).max(200),
   category: NearrCategory.nullable().default(null),
   categoryConfidence: z.number().min(0).max(1).default(0),
@@ -66,7 +101,17 @@ export const PlaceCandidateEvidence = z.object({
   memoryCue: z.string().min(1).max(180).nullable().default(null),
   memoryCueEvidence: z.array(EvidenceItem).max(8).default([]),
 });
-export type PlaceCandidateEvidence = z.infer<typeof PlaceCandidateEvidence>;
+type ParsedPlaceCandidateEvidence = z.infer<typeof PlaceCandidateEvidence>;
+/** New grouping fields are optional in the TypeScript compatibility surface so
+ * existing injected/custom providers remain source-compatible. The parser
+ * materializes their defaults for real model output. */
+export type PlaceCandidateEvidence = Omit<
+  ParsedPlaceCandidateEvidence,
+  'momentTimestamps' | 'distinctPlaceSignals'
+> & {
+  momentTimestamps?: ParsedPlaceCandidateEvidence['momentTimestamps'];
+  distinctPlaceSignals?: ParsedPlaceCandidateEvidence['distinctPlaceSignals'];
+};
 
 /** Field-level evidence retained from a candidate that failed whole-object
  * validation. It is intentionally not a canonical candidate: downstream may
@@ -97,7 +142,8 @@ export const MediaPlaceEvidence = z.object({
 type ParsedMediaPlaceEvidence = z.infer<typeof MediaPlaceEvidence>;
 /** Optional in the TypeScript compatibility surface so existing custom/test
  * providers remain source-compatible. The parser always materializes `[]`. */
-export type MediaPlaceEvidence = Omit<ParsedMediaPlaceEvidence, 'partialPlaces'> & {
+export type MediaPlaceEvidence = Omit<ParsedMediaPlaceEvidence, 'places' | 'partialPlaces'> & {
+  places: PlaceCandidateEvidence[];
   partialPlaces?: ParsedMediaPlaceEvidence['partialPlaces'];
 };
 

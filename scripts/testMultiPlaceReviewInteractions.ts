@@ -80,7 +80,7 @@ batch = chooseBatchCandidate(batch, 'first', manual);
 assert.deepEqual(ids(batch.rows.first!.candidates), ['manual', 'a', 'b', 'c']);
 
 const carousel = read('components/CandidatePhotoCarousel.tsx');
-const card = read('components/MultiPlaceCandidateCard.tsx');
+const card = read('components/CandidateConfirmationCard.tsx');
 const detail = read('app/share-jobs/[jobId].tsx');
 
 // 7. Native horizontal paging advances the derived photo index.
@@ -96,10 +96,11 @@ assert.match(carousel, /scrollEventThrottle=\{16\}/);
 // 9. Gallery gestures can open the shared viewer but cannot invoke candidate selection.
 assert.match(carousel, /onPress=\{\(\) => setViewerIndex\(index\)\}/);
 assert.doesNotMatch(carousel, /onPress=\{onPress\}|toggleCandidateSelection|chooseBatchCandidate/);
-assert.ok(card.indexOf('</Pressable>') < card.indexOf('<CandidatePhotoCarousel'));
+assert.ok(card.indexOf('<CandidatePhotoCarousel') < card.indexOf('testID="candidate-selection-control"'));
 
 // 10. The non-gallery header remains an explicit radio selection target.
-assert.match(card, /testID="candidate-selection-control"[\s\S]*accessibilityRole="radio"|accessibilityRole="radio"[\s\S]*testID="candidate-selection-control"/);
+assert.match(card, /testID="candidate-selection-control"/);
+assert.match(card, /accessibilityRole=\{selectionRole\}/);
 assert.match(card, /onPress=\{onPress\}/);
 
 // 11. The vertical parent and horizontal child use independent native scroll surfaces.

@@ -192,13 +192,12 @@ assert.equal(sourceTimestampLabel([75]), 'At 1:15');
 {
   const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
   const detail = read('app/share-jobs/[jobId].tsx');
-  const multiCard = read('components/MultiPlaceCandidateCard.tsx');
   const legacy = read('app/share.tsx');
   const confirmationCard = read('components/CandidateConfirmationCard.tsx');
   const correction = read('components/map/WrongPlaceSheet.tsx');
-  assert.match(multiCard, /accessibilityRole="radio"/);
-  assert.match(multiCard, /testID="candidate-selection-control"/, 'the non-gallery card area is the per-mention radio target');
-  assert.ok(multiCard.indexOf('</Pressable>') < multiCard.indexOf('<CandidatePhotoCarousel'), 'the gallery does not share the selection responder');
+  assert.match(confirmationCard, /accessibilityRole=\{selectionRole\}/);
+  assert.match(confirmationCard, /testID="candidate-selection-control"/, 'the shared compact row has an explicit selection target');
+  assert.ok(confirmationCard.indexOf('<CandidatePhotoCarousel') < confirmationCard.indexOf('testID="candidate-selection-control"'), 'the gallery does not share the selection responder');
   assert.match(detail, /selectBatchCandidate\(row, candidate\)/);
   assert.match(legacy, /accessibilityRole="checkbox"/);
   assert.match(confirmationCard, /accessibilityRole=\{selectionRole\}/);

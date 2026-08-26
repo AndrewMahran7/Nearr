@@ -14,8 +14,9 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "declaration": false,
-    "sourceMap": true
+    "sourceMap": true,
+    "allowImportingTsExtensions": true
   },
   "include": ["src/**/*.ts", "tests/**/*.ts"],
-  "exclude": ["dist", "node_modules", "src/**/*.deno.ts"]
+  "exclude": ["dist", "node_modules", "src/**/*.deno.ts", "src/cli/verifyEvidence.deno.ts"]
 }

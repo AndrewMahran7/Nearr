@@ -59,6 +59,7 @@ import {
   type VerificationCandidate,
   type VerificationV3Result,
 } from './verificationV3.js';
+import { isCategoryOnlyPlaceName } from './placeIdentityGuard.js';
 
 // ---------------------------------------------------------------------------
 // Trigger
@@ -75,6 +76,8 @@ export type VayrinTriggerInput = {
   /** Places whose only identity is an administrative label (city/region/
    *  country restated as the place name). Coarse geography, not a destination. */
   geographicOnlyPlaceCount: number;
+  /** Explicit places whose phrase is only a category/scene description. */
+  genericOnlyPlaceCount?: number;
   /** Review-only evidence already useful to ordinary Places/area recovery. */
   usefulPartialPlaceCount?: number;
   /** The cheap pass ended because extraction/validation broke, not because the
@@ -89,6 +92,7 @@ export type VayrinTriggerReason =
   | 'no_frames'
   | 'no_specific_place_identified'
   | 'only_coarse_geography'
+  | 'only_generic_place_type'
   | 'partial_recovery_sufficient'
   | 'technical_output_recovery'
   | 'no_grounded_recovery_input'
@@ -129,6 +133,10 @@ export function shouldRunVayrinFallback(input: VayrinTriggerInput): VayrinTrigge
     input.geographicOnlyPlaceCount >= input.explicitPlaceCount
   ) {
     return { run: true, reason: 'only_coarse_geography' };
+  }
+  if ((input.genericOnlyPlaceCount ?? 0) > 0 &&
+      (input.genericOnlyPlaceCount ?? 0) >= input.explicitPlaceCount) {
+    return { run: true, reason: 'only_generic_place_type' };
   }
 
   return { run: false, reason: 'cheap_pass_sufficient' };
@@ -201,6 +209,17 @@ function categoryFor(placeType: string): PlaceCandidateEvidence['category'] {
   return null;
 }
 
+function environmentFor(category: PlaceCandidateEvidence['category']): NonNullable<PlaceCandidateEvidence['sceneSignature']>['environmentType'] {
+  if (category && ['beach', 'waterfall', 'lake', 'marina', 'island'].includes(category)) return 'natural_water';
+  if (category && ['hiking_trail', 'park', 'scenic_spot'].includes(category)) return 'natural_land';
+  if (category && ['restaurant', 'cafe', 'bakery', 'bar', 'brewery', 'winery', 'dessert'].includes(category)) return 'food_venue';
+  if (category === 'hotel' || category === 'resort') return 'lodging';
+  if (category === 'museum' || category === 'education') return 'cultural';
+  if (category === 'shopping') return 'retail';
+  if (category === 'transportation') return 'transport';
+  return 'unknown';
+}
+
 /**
  * Turn one hypothesis into a place.
  *
@@ -223,6 +242,7 @@ export function hypothesisToPlace(
   const name = hypothesis.name.trim();
   if (!name) return null;
   if (!SPECIFIC_LEVELS.has(hypothesis.specificity)) return null;
+  if (isCategoryOnlyPlaceName(name)) return null;
 
   const firstTimestamp = timestamps.length > 0 ? timestamps[0]! : null;
 
@@ -251,6 +271,7 @@ export function hypothesisToPlace(
     inferredEvidence.push({ timestampSeconds: firstTimestamp, source: 'frame', value });
   }
 
+  const category = categoryFor(hypothesis.place_type);
   return {
     logicalPlaceId,
     identityEvidenceKind:
@@ -259,8 +280,17 @@ export function hypothesisToPlace(
         ? 'model_prior'
         : 'observable',
     hypothesisRank,
+    momentTimestamps: timestamps.slice(0, 24),
+    sceneSignature: {
+      environmentType: environmentFor(category),
+      setting: 'unknown',
+      visualAnchors: hypothesis.supporting_visual_clues.slice(0, 8),
+      activity: null,
+      regionClue: [hypothesis.city, hypothesis.region, hypothesis.country].filter(Boolean).join(', ') || null,
+    },
+    distinctPlaceSignals: [],
     name,
-    category: categoryFor(hypothesis.place_type),
+    category,
     categoryConfidence: 0,
     categoryEvidenceTags: [],
     address: null, // never fabricated — Places supplies the address
@@ -281,7 +311,8 @@ function hypothesisToPartialPlace(
   hypothesis: VayrinHypothesisRaw,
   timestamps: number[] = [],
 ): PartialPlaceEvidence | null {
-  if (!['neighborhood', 'city', 'region', 'country'].includes(hypothesis.specificity)) return null;
+  const categoryOnly = isCategoryOnlyPlaceName(hypothesis.name);
+  if (!categoryOnly && !['neighborhood', 'city', 'region', 'country'].includes(hypothesis.specificity)) return null;
   const firstTimestamp = timestamps[0] ?? null;
   const explicitEvidence: EvidenceItem[] = hypothesis.supporting_visual_clues.slice(0, 8)
     .map((value) => ({ timestampSeconds: firstTimestamp, source: 'frame' as const, value }));
@@ -292,7 +323,7 @@ function hypothesisToPartialPlace(
   const areaName = hypothesis.name.trim() || null;
   return {
     // Area labels live in administrative fields, not canonical/search identity.
-    nameHint: null,
+    nameHint: categoryOnly ? hypothesis.name.trim() || null : null,
     category: categoryFor(hypothesis.place_type),
     categoryConfidence: 0,
     categoryEvidenceTags: [],
@@ -483,6 +514,7 @@ function verifiedCandidatePlace(
   candidate: VerificationCandidate,
   record: CandidateVerificationRecord,
 ): PlaceCandidateEvidence | null {
+  if (isCategoryOnlyPlaceName(candidate.candidateName)) return null;
   const explicitEvidence: EvidenceItem[] = [];
   for (const claim of record.supportingEvidence) {
     if (claim.basis === 'visual') explicitEvidence.push({ timestampSeconds: null, source: 'frame', value: claim.statement });
@@ -537,7 +569,7 @@ export function mergeVerificationV3Evidence(input: {
     return place ? [place] : [];
   });
   const outsidePlaces: PlaceCandidateEvidence[] = input.verification.outsideShortlistAllowed
-    ? input.outsideProposals.slice(0, 2).map((proposal, index) => ({
+    ? input.outsideProposals.filter((proposal) => !isCategoryOnlyPlaceName(proposal.placeName)).slice(0, 2).map((proposal, index) => ({
       logicalPlaceId: 'vayrin-scene-1',
       identityEvidenceKind: 'model_prior',
       hypothesisRank: index,
@@ -594,6 +626,8 @@ export class VayrinFallbackModel implements ModelProvider {
       explicitPlaceCount: baseline.evidence.places.filter((p) => p.explicitEvidence.length > 0)
         .length,
       geographicOnlyPlaceCount: baseline.evidence.places.filter(isCoarseGeographicPlace).length,
+      genericOnlyPlaceCount: baseline.evidence.places.filter((place) =>
+        place.explicitEvidence.length > 0 && isCategoryOnlyPlaceName(place.name)).length,
       usefulPartialPlaceCount,
       technicalFailure: baseline.recognitionFailureClass !== undefined,
     });

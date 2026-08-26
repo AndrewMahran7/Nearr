@@ -99,6 +99,19 @@ check('all valid: no geographic context dropped', allValid.sourceGeographicConte
 check('all valid: no context labels emitted', allValid.sourceGeographicContextLabels === undefined);
 check('all valid: four destination places', allValid.destinationPlaces === 4);
 
+const groupedMoments = buildRecognitionFunnel({
+  raw_moment_count: 3,
+  logical_place_count: 1,
+  moments_merged: 2,
+  moments_split: 0,
+  grouping_reason_codes: ['visual_anchor_overlap', 'conservative_unknown_merged', 'private model prose'],
+  same_place_confidence_band: 'medium',
+  distinct_place_evidence_present: false,
+}, fourPlaces, 4);
+check('grouping telemetry: bounded counts persist', groupedMoments.raw_moment_count === 3 && groupedMoments.logical_place_count === 1 && groupedMoments.moments_merged === 2);
+check('grouping telemetry: only closed reason codes persist', JSON.stringify(groupedMoments.grouping_reason_codes) === '["visual_anchor_overlap","conservative_unknown_merged"]');
+check('grouping telemetry: confidence and separation flag persist', groupedMoments.same_place_confidence_band === 'medium' && groupedMoments.distinct_place_evidence_present === false);
+
 // ---------------------------------------------------------------------------
 // 2. Partial schema rejection — emitted 4 / valid 3 / rejected 1, with a
 //    bounded structural label.

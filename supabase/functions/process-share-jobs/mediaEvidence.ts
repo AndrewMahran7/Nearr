@@ -17,6 +17,8 @@
 //
 // No Deno globals, no I/O — unit-tested from Node (scripts/testMediaEvidenceAdapter.ts).
 
+import { classifyPlacePhrase } from '../../../lib/placeIdentityClassification.ts';
+
 type NearrCategory =
   | 'restaurant' | 'cafe' | 'bakery' | 'bar' | 'brewery' | 'winery' | 'dessert'
   | 'hotel' | 'resort' | 'hiking_trail' | 'park' | 'beach' | 'waterfall'
@@ -369,10 +371,18 @@ export type VayrinPartialResult = {
   category: NearrCategory | null;
   searchQuery: string | null;
   clueCount: number;
+  placeType?: string | null;
+  reasonCode?: 'category_only_candidate';
+  discoveryOnly?: true;
+  provenance?: {
+    identityEvidence: string[];
+    categoryEvidence: string[];
+    geoEvidence: string[];
+  };
 };
 
 export function buildVayrinPartialResult(evidence: MediaPlaceEvidence): VayrinPartialResult | null {
-  const results = (evidence.partialPlaces ?? []).flatMap((partial, index) => {
+  const partialResults = (evidence.partialPlaces ?? []).flatMap((partial, index) => {
     const candidate = partialPlaceToReviewOnlyCandidate(partial, index);
     const groundedName = candidate && partial.nameHint && foldLabel(candidate.name) === foldLabel(partial.nameHint)
       ? partial.nameHint
@@ -396,6 +406,30 @@ export function buildVayrinPartialResult(evidence: MediaPlaceEvidence): VayrinPa
       clueCount: partial.explicitEvidence.length,
     }];
   });
+  const categoryOnlyResults = evidence.places.flatMap((place) => {
+    const admission = classifyPlacePhrase(place.name);
+    if (admission.classification !== 'GENERIC_PLACE_TYPE' && admission.classification !== 'DESCRIPTIVE_CLUE') return [];
+    const locality = place.city ?? place.region ?? place.country ?? null;
+    const category = isNearrCategory(admission.nearrCategory) ? admission.nearrCategory : place.category;
+    const categoryEvidence = [place.name, ...place.explicitEvidence.map((item) => item.value)]
+      .filter(Boolean).slice(0, 8);
+    const geoEvidence = [place.city, place.region, place.country]
+      .filter((value): value is string => !!value).slice(0, 3);
+    return [{
+      version: 1 as const,
+      reviewOnly: true as const,
+      resultClass: locality ? 'area_match' as const : 'partial_result' as const,
+      locality,
+      category,
+      searchQuery: [admission.placeType?.replace(/_/g, ' '), locality].filter(Boolean).join(' ').slice(0, 240) || null,
+      clueCount: place.explicitEvidence.length,
+      placeType: admission.placeType,
+      reasonCode: 'category_only_candidate' as const,
+      discoveryOnly: true as const,
+      provenance: { identityEvidence: [], categoryEvidence, geoEvidence },
+    }];
+  });
+  const results = [...partialResults, ...categoryOnlyResults];
   const priority: Record<VayrinPartialResult['resultClass'], number> = {
     area_match: 3,
     search_lead: 2,

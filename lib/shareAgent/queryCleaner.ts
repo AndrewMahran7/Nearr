@@ -17,6 +17,8 @@
  * not a venue extractor. Keep additions conservative.
  */
 
+import { classifyPlacePhrase, isMachineGeneratedIdentityPhrase } from '../placeIdentityClassification.ts';
+
 const SOCIAL_WRAPPER_PATTERNS: RegExp[] = [
   // "Joe (@joehuang) on Instagram:" / "...on TikTok:"
   /\bon\s+(?:instagram|tiktok|facebook|youtube|threads)\s*[:|\-–—]?/gi,
@@ -376,6 +378,7 @@ export function buildCleanPlacesQueries(args: {
 }): string[] {
   const max = args.max ?? 5;
   const queries: string[] = [];
+  const geographicHints = [args.city].filter((value): value is string => !!value?.trim());
   const push = (q: string | null | undefined) => {
     if (!q) return;
     const t = q.trim();
@@ -387,6 +390,12 @@ export function buildCleanPlacesQueries(args: {
     // law firm with "Null" as a surname). A query that merely mentions one of
     // these words as part of real content is unaffected.
     if (isPlaceholderValue(t)) return;
+    if (!args.address) {
+      const admission = classifyPlacePhrase(t, { geographicHints });
+      if (admission.classification === 'GENERIC_PLACE_TYPE' ||
+          admission.classification === 'DESCRIPTIVE_CLUE' ||
+          admission.classification === 'GEOGRAPHIC_CLUE') return;
+    }
     if (queries.find((existing) => existing.toLowerCase() === t.toLowerCase())) return;
     queries.push(t);
   };
@@ -401,11 +410,15 @@ export function buildCleanPlacesQueries(args: {
   // try `<placeName> <address>, <city>, <state>` BEFORE any bare-
   // address variant so Google's text search returns the actual
   // business first.
-  if (args.placeName && args.address) {
+  const admittedPlaceName = args.placeName && (
+    !!args.address || isMachineGeneratedIdentityPhrase(args.placeName, { geographicHints })
+  ) ? args.placeName : null;
+
+  if (admittedPlaceName && args.address) {
     const a = args.address;
-    if (a.city && a.state) push(`${args.placeName} ${a.raw}, ${a.city}, ${a.state}`);
-    if (a.city) push(`${args.placeName} ${a.raw}, ${a.city}`);
-    push(`${args.placeName} ${a.raw}`);
+    if (a.city && a.state) push(`${admittedPlaceName} ${a.raw}, ${a.city}, ${a.state}`);
+    if (a.city) push(`${admittedPlaceName} ${a.raw}, ${a.city}`);
+    push(`${admittedPlaceName} ${a.raw}`);
   }
 
   // 1. Address-first (strongest evidence per docs/architecture).
@@ -414,17 +427,17 @@ export function buildCleanPlacesQueries(args: {
     if (a.city && a.state) push(`${a.raw}, ${a.city}, ${a.state}`);
     if (a.city) push(`${a.raw}, ${a.city}`);
     push(a.raw);
-    if (args.placeName && a.city) push(`${args.placeName} ${a.city}`);
+    if (admittedPlaceName && a.city) push(`${admittedPlaceName} ${a.city}`);
   }
 
   // 2. Explicit name + city.
-  if (args.placeName && args.city) push(`${args.placeName} ${args.city}`);
-  if (args.placeName) push(args.placeName);
+  if (admittedPlaceName && args.city) push(`${admittedPlaceName} ${args.city}`);
+  if (admittedPlaceName) push(admittedPlaceName);
   // "&" ↔ "and" variant so "NOVA Kitchen & Bar" also tries "NOVA Kitchen
   // and Bar" (Google usually normalizes this, but the extra seed is cheap
   // and improves recall for ampersand venue names).
-  if (args.placeName && /\s*&\s*/.test(args.placeName)) {
-    const andName = args.placeName.replace(/\s*&\s*/g, ' and ');
+  if (admittedPlaceName && /\s*&\s*/.test(admittedPlaceName)) {
+    const andName = admittedPlaceName.replace(/\s*&\s*/g, ' and ');
     if (args.city) push(`${andName} ${args.city}`);
     push(andName);
   }

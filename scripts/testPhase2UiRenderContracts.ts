@@ -3,7 +3,8 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const detail = readFileSync(join(process.cwd(), 'app/share-jobs/[jobId].tsx'), 'utf8');
-const multiCard = readFileSync(join(process.cwd(), 'components/MultiPlaceCandidateCard.tsx'), 'utf8');
+const confirmationCard = readFileSync(join(process.cwd(), 'components/CandidateConfirmationCard.tsx'), 'utf8');
+const multiReview = readFileSync(join(process.cwd(), 'lib/vayrinMultiPlaceReview.ts'), 'utf8');
 const finalizer = readFileSync(join(process.cwd(), 'supabase/functions/process-share-jobs/index.ts'), 'utf8');
 
 assert.match(finalizer, /buildShareJobCandidatePayload/);
@@ -12,9 +13,10 @@ assert.match(detail, /const mentionSlots = detail\.mentionSlots/);
 assert.match(detail, /const reviewSlots = useMemo/);
 assert.match(detail, /reconcileMultiPlaceBatch/);
 assert.match(detail, /data=\{batch\.order\}/);
-assert.match(detail, /Vayrin found a few places in this video\./);
-assert.match(detail, /Match each moment to the right place\./);
-assert.match(multiCard, /Already saved · this video will be attached/);
+assert.match(detail, /\{batch\.order\.length\} places found/);
+assert.match(detail, /Open one place at a time to review its matches\./);
+assert.match(confirmationCard, /Already on your map/);
+assert.match(multiReview, /Already saved · source attached/);
 assert.match(detail, /Search for this place/);
 assert.match(detail, /visibleMentionCandidates/);
 assert.match(detail, /selectedBatchTargets/);

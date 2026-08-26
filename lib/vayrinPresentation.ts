@@ -8,6 +8,7 @@
 
 import type { ShareJobDetailState } from './shareJobDetailState';
 import { classifyUnresolvedText, type VayrinResultType } from './vayrinCandidateConfirmation';
+import { isMachineGeneratedIdentityPhrase } from './placeIdentityClassification';
 
 export type VayrinPresentationKind =
   | 'ready'
@@ -106,6 +107,7 @@ export function normalizeVayrinIdentityLeads(payload: unknown): VayrinIdentityLe
       const identity = record(rawIdentity);
       const displayName = text(identity?.name);
       if (!identity || !displayName) continue;
+      if (!isMachineGeneratedIdentityPhrase(displayName)) continue;
       const contextLabel = text(identity.contextLabel) ?? text(slot.contextLabel);
       const key = `${mentionId}:${displayName.toLocaleLowerCase()}:${contextLabel?.toLocaleLowerCase() ?? ''}`;
       if (seen.has(key)) continue;

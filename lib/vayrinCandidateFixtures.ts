@@ -204,6 +204,19 @@ export const VAYRIN_CANDIDATE_FIXTURES: readonly VayrinCandidateFixture[] = [
     })),
   },
   multiFixture('vayrin-multi-punchbowl-in-n-out', 'Punchbowl + In-N-Out', punchbowlAndBurger),
+  multiFixture('vayrin-multi-disclosure-two-unresolved', 'Two unresolved mentions', [
+    mention('disclosure-two-a', 'Santa Paula Punch Bowls', 4, [punchBowl, punchTrailhead], 'ambiguous_candidates'),
+    mention('disclosure-two-b', 'In-N-Out Burger', 18, [inNOutSantaPaula, inNOutVentura], 'ambiguous_candidates'),
+  ]),
+  multiFixture('vayrin-multi-disclosure-three-unresolved', 'Three unresolved mentions', [
+    mention('disclosure-three-a', 'Underground swimming hole', 4, [punchBowl, punchTrailhead, sunsetCliffs], 'ambiguous_candidates'),
+    mention('disclosure-three-b', 'Waterfront park', 18, [missionBay, sunsetPoint], 'ambiguous_candidates', 'San Diego, CA'),
+    mention('disclosure-three-c', 'Restaurant', 31, [inNOutSantaPaula, inNOutVentura], 'ambiguous_candidates'),
+  ]),
+  multiFixture('vayrin-multi-disclosure-first-resolved', 'First resolved, second unresolved', [
+    mention('disclosure-resolved-first', 'Santa Paula Punch Bowls', 4, [punchBowl]),
+    mention('disclosure-unresolved-second', 'Restaurant', 18, [inNOutSantaPaula, inNOutVentura], 'ambiguous_candidates'),
+  ]),
   multiFixture('vayrin-multi-two-resolved', 'Two resolved mentions', [mention('resolved-a', 'Punchbowl', 0, [punchBowl]), mention('resolved-b', 'In-N-Out', 18, [inNOutSantaPaula])]),
   multiFixture('vayrin-multi-three-resolved', 'Three resolved mentions', [mention('three-a', 'Punchbowl', 0, [punchBowl]), mention('three-b', 'In-N-Out', 18, [inNOutSantaPaula]), mention('three-c', 'Mission Bay', 33, [missionBay], 'verified_single', 'San Diego, CA')]),
   multiFixture('vayrin-multi-existing-and-new', 'Already saved + new', [mention('existing', 'Punchbowl', 0, [punchBowl]), mention('new', 'In-N-Out', 18, [inNOutSantaPaula])], { alreadySavedGooglePlaceIds: [punchBowl.googlePlaceId] }),
@@ -216,6 +229,17 @@ export const VAYRIN_CANDIDATE_FIXTURES: readonly VayrinCandidateFixture[] = [
   multiFixture('vayrin-multi-long-name', 'Long place name', [mention('long-name', 'Museum', 0, [place('multi-long-name', 'The Museum of Extremely Long Place Names and Remarkably Specific Destinations', 'Santa Paula, California', ['museum'], { photoUrl: PHOTO_FIXTURE })]), mention('long-sibling', 'In-N-Out', 18, [inNOutSantaPaula])]),
   multiFixture('vayrin-multi-evidence-frames', 'Evidence frames per mention', punchbowlAndBurger),
   multiFixture('vayrin-multi-five-mentions', 'Five independent mentions', [mention('five-a', 'Punchbowl', 0, [punchBowl]), mention('five-b', 'In-N-Out', 10, [inNOutSantaPaula]), mention('five-c', 'Mission Bay', 20, [missionBay], 'verified_single', 'San Diego, CA'), mention('five-d', 'Stari Most', 30, [stariMost], 'verified_single', 'Mostar'), mention('five-e', 'Sunset Cliffs', 40, [sunsetCliffs], 'verified_single', 'San Diego, CA')]),
+  multiFixture('vayrin-multi-ten-mentions', 'Ten independent mentions', Array.from({ length: 10 }, (_, index) => mention(
+    `ten-${index + 1}`,
+    `Place ${index + 1}`,
+    index * 7,
+    index % 2 === 0 ? [punchBowl, punchTrailhead] : [inNOutSantaPaula, inNOutVentura],
+    'ambiguous_candidates',
+  ))),
+  multiFixture('vayrin-multi-no-source-frame', 'No retained source frame', [
+    { ...mention('no-source-frame', 'Scenic overlook', 2, [sunsetBeach, sunsetPoint], 'ambiguous_candidates'), sourceFrameUrl: null },
+    mention('no-source-sibling', 'Restaurant', 18, [inNOutSantaPaula, inNOutVentura], 'ambiguous_candidates'),
+  ], { evidenceFrames: [] }),
   multiFixture('vayrin-multi-chain-context', 'Chain mention after context ranking', [mention('chain-punch', 'Punchbowl', 0, [punchBowl]), mention('chain-branch', 'In-N-Out', 18, [inNOutSantaPaula, inNOutVentura])]),
   rawFixture('vayrin-confirm-raw-waterfall', 'Raw waterfall phrase', 'Worlds Most Dangerous Waterfall Hole', [sunsetCliffs, sunsetPoint]),
   rawFixture('vayrin-confirm-raw-zero', 'Raw name → 0', 'Unfindable Test Landmark Phrase', []),

@@ -57,7 +57,21 @@ export type VayrinCanaryOptions = {
   platform: string;
   /** Optional ground truth. Reported as a WARN when missed, never a FAIL. */
   groundTruth?: string;
+  /** Optional exact logical-place count for grouping regressions. */
+  expectedLogicalPlaces?: number;
+  /** Optional lower bound for genuine multi-place grouping regressions. */
+  minimumLogicalPlaces?: number;
+  /** Stop after the deployed grouping/finalizer contract instead of exercising
+   * the canary's unrelated save/archive/delete coverage. */
+  groupingOnly?: boolean;
 };
+
+function positiveIntegerEnv(name: string): number | undefined {
+  const raw = (process.env[name] || '').trim();
+  if (!raw) return undefined;
+  const value = Number(raw);
+  return Number.isInteger(value) && value > 0 ? value : undefined;
+}
 
 export function resolveCanaryOptions(): VayrinCanaryOptions | { error: string } {
   const sourceUrl = (process.env.NEARR_E2E_VAYRIN_URL || '').trim();
@@ -87,6 +101,9 @@ export function resolveCanaryOptions(): VayrinCanaryOptions | { error: string } 
     sourceUrl,
     platform,
     groundTruth: (process.env.NEARR_E2E_VAYRIN_TRUTH || '').trim() || undefined,
+    expectedLogicalPlaces: positiveIntegerEnv('NEARR_E2E_VAYRIN_EXPECT_LOGICAL_COUNT'),
+    minimumLogicalPlaces: positiveIntegerEnv('NEARR_E2E_VAYRIN_EXPECT_MIN_LOGICAL_COUNT'),
+    groupingOnly: (process.env.NEARR_E2E_VAYRIN_GROUPING_ONLY || '').trim().toLowerCase() === 'true',
   };
 }
 
@@ -269,6 +286,26 @@ export async function fixtureVayrinLiveCanary(
     `bounded structured evidence persisted (${JSON.stringify(run.evidence).length} bytes); legacy raw model preview present=${!!run.model_output}`,
   );
 
+  const recognition = run.evidence as Record<string, unknown>;
+  const rawMomentCount = Number(recognition.raw_moment_count);
+  const logicalPlaceCount = Number(recognition.logical_place_count);
+  if (!Number.isInteger(rawMomentCount) || rawMomentCount < 0 ||
+      !Number.isInteger(logicalPlaceCount) || logicalPlaceCount < 0) {
+    reporter.fail(
+      `${name}: grouping telemetry`,
+      0,
+      'the deployed run did not persist raw/logical grouping counts',
+      { evidence: recognition },
+    );
+    return false;
+  }
+  const groupingDetail =
+    `raw_moments=${rawMomentCount} logical_places=${logicalPlaceCount} ` +
+    `merged=${String(recognition.moments_merged ?? 'unknown')} ` +
+    `split=${String(recognition.moments_split ?? 'unknown')} ` +
+    `reasons=${JSON.stringify(recognition.grouping_reason_codes ?? [])}`;
+  reporter.pass(`${name}: grouping telemetry`, 0, groupingDetail);
+
   // ---- Finalizer ----------------------------------------------------------
   const jobTrail = new StatusTrail('job');
   const finalized = await pollUntil(
@@ -297,6 +334,29 @@ export async function fixtureVayrinLiveCanary(
 
   // ---- Evidence-First persistence and private delivery -------------------
   const detailState = buildShareJobDetailState(finalized.value);
+  const renderedLogicalPlaces = detailState.mentionSlots.length || (detailState.candidates.length > 0 ? 1 : 0);
+  const renderedDetail =
+    `ui_logical_mentions=${renderedLogicalPlaces} Quick Check kind=${detailState.kind} ` +
+    `candidates=${detailState.candidates.length}`;
+  if (options.expectedLogicalPlaces !== undefined && renderedLogicalPlaces !== options.expectedLogicalPlaces) {
+    reporter.fail(
+      `${name}: rendered logical-place count`,
+      0,
+      `expected exactly ${options.expectedLogicalPlaces}; ${renderedDetail}`,
+    );
+    return false;
+  }
+  if (options.minimumLogicalPlaces !== undefined && renderedLogicalPlaces < options.minimumLogicalPlaces) {
+    reporter.fail(
+      `${name}: rendered logical-place count`,
+      0,
+      `expected at least ${options.minimumLogicalPlaces}; ${renderedDetail}`,
+    );
+    return false;
+  }
+  reporter.pass(`${name}: rendered logical-place count`, 0, renderedDetail);
+  if (options.groupingOnly) return true;
+
   const evidenceFrames = detailState.evidenceFrames;
   if (evidenceFrames.length < 1 || evidenceFrames.length > 5) {
     reporter.fail(

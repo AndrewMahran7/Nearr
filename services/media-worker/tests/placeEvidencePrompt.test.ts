@@ -8,11 +8,14 @@ import {
 } from '../src/prompts/placeEvidencePrompt.js';
 
 test('recognition prompt remains place-focused and never generates notes', () => {
-  assert.equal(PROMPT_VERSION, 'media-place-evidence-2026-08-24.v12-recognition-only');
+  assert.equal(PROMPT_VERSION, 'media-place-evidence-2026-08-26.v13-moment-grouping');
   assert.match(PLACE_EVIDENCE_SYSTEM_PROMPT, /brewery, winery, dessert/);
   assert.match(PLACE_EVIDENCE_SYSTEM_PROMPT, /source=frame for an obvious visual feature/);
   assert.match(PLACE_EVIDENCE_SYSTEM_PROMPT, /Always return memoryCue=null/i);
   assert.match(PLACE_EVIDENCE_SYSTEM_PROMPT, /never for unsaved candidates/i);
+  assert.match(PLACE_EVIDENCE_SYSTEM_PROMPT, /MOMENT COUNT IS NOT PLACE COUNT/);
+  assert.match(PLACE_EVIDENCE_SYSTEM_PROMPT, /sceneSignature/);
+  assert.match(PLACE_EVIDENCE_SYSTEM_PROMPT, /distinctPlaceSignals/);
   assert.doesNotMatch(PLACE_EVIDENCE_SYSTEM_PROMPT, /friend who just watched/i);
 });
 

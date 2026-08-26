@@ -34,6 +34,7 @@ import {
   type PlaceCandidateEvidence,
   type PlaceEvidenceSource,
 } from './mediaEvidence.ts';
+import { isMachineGeneratedIdentityPhrase } from '../../../lib/placeIdentityClassification.ts';
 
 /** Bounds so a malformed / oversized payload can never fan out unbounded work. */
 export const MAX_MENTIONS = 10;
@@ -258,6 +259,9 @@ export function isEligibleVenueName(raw: string): boolean {
   if (name.length < 2) return false;
   if (VAGUE_OR_CTA_RE.test(name)) return false;
   if (PLATFORM_NOISE_RE.test(name)) return false;
+  // Category and scene descriptions are evidence, not POI identity. This is
+  // the deterministic boundary before any resolver can construct a query.
+  if (!isMachineGeneratedIdentityPhrase(name)) return false;
   // Must retain at least one distinctive (non-generic) token.
   if (distinctiveTokensOf(name).length === 0) return false;
   return true;

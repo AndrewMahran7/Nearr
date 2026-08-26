@@ -43,6 +43,7 @@ import {
   extractLikelyAddress,
   type LikelyAddress,
 } from './queryCleaner.ts';
+import { isMachineGeneratedIdentityPhrase } from '../placeIdentityClassification.ts';
 import {
   derivePlaceNameHintFromHandle,
   extractCaptionVenueHints,
@@ -505,15 +506,19 @@ function parsePlaceHypotheses(raw: unknown): PlaceHypothesis[] {
     const e = entry as Record<string, unknown>;
     const placeName = typeof e.placeName === 'string' ? e.placeName.trim() : '';
     if (!placeName) continue;
+    const address = typeof e.address === 'string' ? e.address.trim() : '';
+    const city = typeof e.city === 'string' ? e.city.trim() : '';
+    const state = typeof e.state === 'string' ? e.state.trim() : '';
     out.push({
       placeName,
-      address: typeof e.address === 'string' ? e.address.trim() : '',
-      city: typeof e.city === 'string' ? e.city.trim() : '',
-      state: typeof e.state === 'string' ? e.state.trim() : '',
+      address,
+      city,
+      state,
       evidenceSource: typeof e.evidenceSource === 'string' ? e.evidenceSource : 'uncertain',
       confidence: typeof e.confidence === 'string' ? e.confidence : 'low',
       reason: typeof e.reason === 'string' ? e.reason : '',
-      shouldQueryPlaces: e.shouldQueryPlaces !== false,
+      shouldQueryPlaces: e.shouldQueryPlaces !== false &&
+        (!!address || isMachineGeneratedIdentityPhrase(placeName, { geographicHints: [city, state] })),
     });
     if (out.length >= 3) break;
   }
@@ -566,25 +571,29 @@ function buildPlacesRetryQueries(args: {
   const city = args.proposal.city?.trim() ?? '';
   const state = args.proposal.state?.trim() ?? '';
   const stateShort = abbreviateState(state);
+  const admittedName = address || isMachineGeneratedIdentityPhrase(placeName, { geographicHints: [city, state] })
+    ? placeName
+    : '';
   const categoryHint = inferCategoryHint([args.title, args.description].filter(Boolean).join(' '));
   const baseVariants = uniqueStrings([
     // 2026-05-27 — Patch 6: venue+address FIRST (only when both are
     // known) so the retry never hands a bare address to Google when
     // a real venue name is available — that's the path that returns
     // generic "<number> <street>" cards.
-    placeName && address && city && state ? `${placeName} ${address}, ${city}, ${state}` : null,
-    placeName && address && city ? `${placeName} ${address}, ${city}` : null,
-    placeName && address ? `${placeName} ${address}` : null,
+    admittedName && address && city && state ? `${admittedName} ${address}, ${city}, ${state}` : null,
+    admittedName && address && city ? `${admittedName} ${address}, ${city}` : null,
+    admittedName && address ? `${admittedName} ${address}` : null,
     // 2026-05-26: address-first retries — strongest evidence per docs.
     address && city && state ? `${address}, ${city}, ${state}` : null,
     address && city ? `${address}, ${city}` : null,
     address || null,
-    address && placeName ? `${placeName} ${address}` : null,
-    args.proposal.searchQuery,
-    [placeName, city, state].filter(Boolean).join(' '),
-    [removePossessiveSuffix(placeName), city].filter(Boolean).join(' '),
-    [singularizeCrepes(placeName), city, stateShort].filter(Boolean).join(' '),
-    categoryHint ? [removePossessiveSuffix(placeName), categoryHint, city].filter(Boolean).join(' ') : null,
+    address && admittedName ? `${admittedName} ${address}` : null,
+    address || isMachineGeneratedIdentityPhrase(args.proposal.searchQuery, { geographicHints: [city, state] })
+      ? args.proposal.searchQuery : null,
+    [admittedName, city, state].filter(Boolean).join(' '),
+    [removePossessiveSuffix(admittedName), city].filter(Boolean).join(' '),
+    [singularizeCrepes(admittedName), city, stateShort].filter(Boolean).join(' '),
+    categoryHint && admittedName ? [removePossessiveSuffix(admittedName), categoryHint, city].filter(Boolean).join(' ') : null,
   ]);
   const attempted = new Set(args.attemptedQueries.map((query) => query.toLowerCase()));
   return baseVariants

@@ -34,6 +34,13 @@ export const MAX_PERSISTED_REJECTION_PATHS = 8;
 export const MAX_REJECTION_LABEL_CHARS = 120;
 
 export type RecognitionFunnel = {
+  raw_moment_count?: number;
+  logical_place_count?: number;
+  moments_merged?: number;
+  moments_split?: number;
+  grouping_reason_codes?: string[];
+  same_place_confidence_band?: string;
+  distinct_place_evidence_present?: boolean;
   /** Whether usable frames entered the recognition/model path. */
   analysisAttempted?: boolean;
   /** Places the model emitted, before our schema ran (worker-reported). */
@@ -128,6 +135,32 @@ export function buildRecognitionFunnel(
     typeof v === 'number' && Number.isInteger(v) && v >= 0 ? v : undefined;
 
   const out: RecognitionFunnel = {};
+
+  const groupingCountFields = [
+    'raw_moment_count', 'logical_place_count', 'moments_merged', 'moments_split',
+  ] as const;
+  for (const field of groupingCountFields) {
+    const value = count(d[field]);
+    if (value !== undefined) out[field] = value;
+  }
+  const groupingReasons = new Set([
+    'same_logical_place_id', 'same_normalized_name', 'compatible_identity_name',
+    'overlapping_candidate_ids', 'visual_anchor_overlap', 'explicit_transition',
+    'travel_segment', 'different_city', 'different_region', 'different_country',
+    'distinct_named_venues', 'incompatible_categories',
+    'visually_incompatible_environment', 'conservative_unknown_merged',
+  ]);
+  if (Array.isArray(d.grouping_reason_codes)) {
+    out.grouping_reason_codes = d.grouping_reason_codes
+      .filter((value): value is string => typeof value === 'string' && groupingReasons.has(value))
+      .slice(0, 16);
+  }
+  if (d.same_place_confidence_band === 'high' || d.same_place_confidence_band === 'medium' || d.same_place_confidence_band === 'none') {
+    out.same_place_confidence_band = d.same_place_confidence_band;
+  }
+  if (typeof d.distinct_place_evidence_present === 'boolean') {
+    out.distinct_place_evidence_present = d.distinct_place_evidence_present;
+  }
 
   if (typeof d.analysisAttempted === 'boolean') {
     out.analysisAttempted = d.analysisAttempted;

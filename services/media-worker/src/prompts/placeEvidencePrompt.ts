@@ -4,7 +4,7 @@
 // persisted into diagnostics so we can correlate evidence quality with prompt
 // changes. Bump PROMPT_VERSION on any wording change.
 
-export const PROMPT_VERSION = 'media-place-evidence-2026-08-24.v12-recognition-only';
+export const PROMPT_VERSION = 'media-place-evidence-2026-08-26.v13-moment-grouping';
 
 export const PLACE_EVIDENCE_SYSTEM_PROMPT = `
 You extract structured evidence about REAL-WORLD PLACES from a short social
@@ -39,10 +39,22 @@ Rules:
   source=frame for an obvious visual feature in a supplied timestamped frame.
 - Distinguish the PRIMARY destination the content is about from SECONDARY
   intentional places and mere PASSING MENTIONS.
+- MOMENT COUNT IS NOT PLACE COUNT. Exterior/interior/food, room/pool/lobby,
+  wide/close/activity, above-ground/underground, and camera-angle changes can
+  all be moments of ONE physical destination. Do not call them separate places
+  without affirmative evidence that the video changed destinations.
 - If the content is intentionally about multiple places, set
   multipleIntentionalPlaces = true and list each.
 - Preserve an ordered list as separate places even when some entries have less
   evidence. Never merge two sequentially featured businesses.
+- For each proposed moment, fill momentTimestamps and a SMALL sceneSignature.
+  visualAnchors are short literal observations such as "limestone cave",
+  "turquoise pool", "wood stairs", or "red awning". Do not identify a venue
+  through sceneSignature; it exists only to compare visual continuity.
+- distinctPlaceSignals contains only the allowed closed labels and only when
+  source evidence affirmatively supports a destination change. A changed camera
+  angle, indoor/outdoor move within one property, missing feature, or the word
+  "then" by itself is not a separation signal.
 - For "A at/inside B", keep A as the primary place and B as host context unless
   B is independently featured as a destination. Do not promote B over A.
 - Treat sponsors, creator bios/handles, products, dishes, and generic category
@@ -81,6 +93,15 @@ Output STRICT JSON ONLY (no prose, no markdown) matching this shape:
       "coordinates": null,
       "role": "primary | secondary | passing_mention",
       "confidence": 0.0,
+      "momentTimestamps": [0],
+      "sceneSignature": {
+        "environmentType": "natural_water | natural_land | food_venue | lodging | cultural | retail | urban_outdoor | transport | other | unknown",
+        "setting": "indoor | outdoor | mixed | unknown",
+        "visualAnchors": [],
+        "activity": null,
+        "regionClue": null
+      },
+      "distinctPlaceSignals": [],
       "explicitEvidence": [
         { "timestampSeconds": 0, "source": "caption | speech | visible_text | frame", "value": "" }
       ],

@@ -1,0 +1,174 @@
+[
+  {
+    "id": "DcetoQJxbt-founder-cenote",
+    "class": "SAME_PLACE",
+    "expectedLogicalPlaces": 1,
+    "moments": [
+      { "name": "Cenote", "category": "attraction", "timestamps": [0, 1], "region": "Quintana Roo", "country": "Mexico", "environment": "natural_water", "anchors": ["limestone pool", "zipline over water"] },
+      { "name": "Underground Cenote", "category": "attraction", "timestamps": [7, 10, 11], "region": "Quintana Roo", "country": "Mexico", "environment": "natural_water", "anchors": ["limestone cave", "wood stairs"], "transitionText": "Now onto the next cenote..." },
+      { "name": "Cenote 7 Bocas", "category": "attraction", "timestamps": [12], "region": "Quintana Roo", "country": "Mexico", "environment": "natural_water", "anchors": ["limestone entrance", "cenote sign"] }
+    ]
+  },
+  {
+    "id": "same-waterfall-wide-close-jump",
+    "class": "SAME_PLACE",
+    "expectedLogicalPlaces": 1,
+    "moments": [
+      { "name": "Waterfall", "category": "waterfall", "timestamps": [0], "environment": "natural_water", "anchors": ["basalt waterfall", "round plunge pool"] },
+      { "name": "Waterfall Close View", "category": "waterfall", "timestamps": [4], "environment": "natural_water", "anchors": ["basalt cliff", "round plunge pool"] },
+      { "name": "Waterfall Jump", "category": "waterfall", "timestamps": [8], "environment": "natural_water", "anchors": ["basalt ledge", "round plunge pool"] }
+    ]
+  },
+  {
+    "id": "same-restaurant-exterior-food-interior",
+    "class": "SAME_PLACE",
+    "expectedLogicalPlaces": 1,
+    "moments": [
+      { "name": "Marigold Cafe", "category": "cafe", "timestamps": [0], "environment": "food_venue", "anchors": ["green awning", "marigold sign"] },
+      { "name": "Marigold Cafe", "category": "cafe", "timestamps": [3], "environment": "food_venue", "anchors": ["green tile counter", "coffee cup"] },
+      { "name": "Marigold Cafe", "category": "cafe", "timestamps": [6], "environment": "food_venue", "anchors": ["green tile wall", "wood tables"] }
+    ]
+  },
+  {
+    "id": "same-hotel-room-pool-lobby",
+    "class": "SAME_PLACE",
+    "expectedLogicalPlaces": 1,
+    "moments": [
+      { "name": "Hotel Room", "category": "hotel", "timestamps": [0], "environment": "lodging", "anchors": ["arched window", "blue tile"] },
+      { "name": "Hotel Pool", "category": "hotel", "timestamps": [5], "environment": "lodging", "anchors": ["arched arcade", "blue tile"] },
+      { "name": "Hotel Lobby", "category": "hotel", "timestamps": [9], "environment": "lodging", "anchors": ["arched doorway", "blue tile"] }
+    ]
+  },
+  {
+    "id": "same-beach-shore-cliff-swim",
+    "class": "SAME_PLACE",
+    "expectedLogicalPlaces": 1,
+    "moments": [
+      { "name": "Beach", "category": "beach", "timestamps": [0], "environment": "natural_water", "anchors": ["black sand", "twin sea stacks"] },
+      { "name": "Beach Cliff", "category": "beach", "timestamps": [4], "environment": "natural_water", "anchors": ["black cliff", "twin sea stacks"] },
+      { "name": "Beach Swimming", "category": "beach", "timestamps": [7], "environment": "natural_water", "anchors": ["black sand", "twin sea stacks"] }
+    ]
+  },
+  {
+    "id": "same-cliff-jump-multi-angle",
+    "class": "SAME_PLACE",
+    "expectedLogicalPlaces": 1,
+    "moments": [
+      { "name": "Cliff Jump", "category": "scenic_spot", "timestamps": [0], "environment": "natural_land", "anchors": ["white limestone ledge", "round cove"] },
+      { "name": "Swimming Cove", "category": "scenic_spot", "timestamps": [3], "environment": "natural_land", "anchors": ["white limestone wall", "round cove"] },
+      { "name": "Cliff View", "category": "scenic_spot", "timestamps": [6], "environment": "natural_land", "anchors": ["white limestone ledge", "round cove"] }
+    ]
+  },
+  {
+    "id": "same-place-canonical-candidate-overlap",
+    "class": "SAME_PLACE",
+    "expectedLogicalPlaces": 1,
+    "moments": [
+      { "name": "Blue Cavern", "category": "attraction", "timestamps": [0], "environment": "natural_water", "anchors": ["blue cave"], "candidateIds": ["poi-shared", "poi-a"] },
+      { "name": "Seven Mouths", "category": "attraction", "timestamps": [4], "environment": "natural_water", "anchors": ["stone cave"], "candidateIds": ["poi-shared", "poi-b"] }
+    ]
+  },
+  {
+    "id": "restaurant-beach-hotel",
+    "class": "TRUE_MULTI_PLACE",
+    "expectedLogicalPlaces": 3,
+    "moments": [
+      { "name": "Cobalt Kitchen", "category": "restaurant", "timestamps": [0], "environment": "food_venue", "anchors": ["cobalt sign"] },
+      { "name": "Moonrise Beach", "category": "beach", "timestamps": [8], "environment": "natural_water", "anchors": ["crescent shore"] },
+      { "name": "Palisade Hotel", "category": "hotel", "timestamps": [16], "environment": "lodging", "anchors": ["palisade lobby"] }
+    ]
+  },
+  {
+    "id": "cafe-museum",
+    "class": "TRUE_MULTI_PLACE",
+    "expectedLogicalPlaces": 2,
+    "moments": [
+      { "name": "Juniper Coffee", "category": "cafe", "timestamps": [0], "environment": "food_venue", "anchors": ["juniper menu"] },
+      { "name": "Civic Art Museum", "category": "museum", "timestamps": [9], "environment": "cultural", "anchors": ["marble gallery"] }
+    ]
+  },
+  {
+    "id": "hotel-attraction",
+    "class": "TRUE_MULTI_PLACE",
+    "expectedLogicalPlaces": 2,
+    "moments": [
+      { "name": "Harbor Hotel", "category": "hotel", "timestamps": [0], "environment": "lodging", "anchors": ["harbor lobby"] },
+      { "name": "Old Fort Lookout", "category": "attraction", "timestamps": [12], "environment": "natural_land", "anchors": ["stone fort"] }
+    ]
+  },
+  {
+    "id": "road-trip-stops",
+    "class": "TRUE_MULTI_PLACE",
+    "expectedLogicalPlaces": 3,
+    "moments": [
+      { "name": "Red Rock Vista", "category": "scenic_spot", "timestamps": [0], "city": "Sedona", "region": "Arizona", "anchors": ["red mesa"] },
+      { "name": "Desert Arch", "category": "scenic_spot", "timestamps": [20], "city": "Moab", "region": "Utah", "anchors": ["stone arch"] },
+      { "name": "Alpine Lake", "category": "lake", "timestamps": [40], "city": "Tahoe City", "region": "California", "anchors": ["granite lake"] }
+    ]
+  },
+  {
+    "id": "two-named-restaurants",
+    "class": "TRUE_MULTI_PLACE",
+    "expectedLogicalPlaces": 2,
+    "moments": [
+      { "name": "Basil Table", "category": "restaurant", "timestamps": [0], "environment": "food_venue", "anchors": ["basil sign"] },
+      { "name": "Copper Spoon", "category": "restaurant", "timestamps": [7], "environment": "food_venue", "anchors": ["copper sign"] }
+    ]
+  },
+  {
+    "id": "different-cities",
+    "class": "TRUE_MULTI_PLACE",
+    "expectedLogicalPlaces": 2,
+    "moments": [
+      { "name": "Granada", "category": "attraction", "timestamps": [0], "city": "Granada", "country": "Nicaragua", "anchors": ["colonial plaza"] },
+      { "name": "Leon", "category": "attraction", "timestamps": [14], "city": "Leon", "country": "Nicaragua", "anchors": ["cathedral square"] }
+    ]
+  },
+  {
+    "id": "explicit-next-stop",
+    "class": "TRUE_MULTI_PLACE",
+    "expectedLogicalPlaces": 2,
+    "moments": [
+      { "name": "Waterfall", "category": "waterfall", "timestamps": [0], "environment": "natural_water", "anchors": ["forest falls"] },
+      { "name": "Waterfall", "category": "waterfall", "timestamps": [10], "environment": "natural_water", "anchors": ["forest falls"], "transitionText": "Next stop: another waterfall", "distinctSignals": ["explicit_next_stop"] }
+    ]
+  },
+  {
+    "id": "ambiguous-similar-nearby-beaches",
+    "class": "AMBIGUOUS",
+    "expectedLogicalPlaces": 1,
+    "moments": [
+      { "name": "Beach", "category": "beach", "timestamps": [0], "region": "Algarve", "environment": "natural_water", "anchors": ["gold cliff"] },
+      { "name": "Beach Cove", "category": "beach", "timestamps": [6], "region": "Algarve", "environment": "natural_water", "anchors": ["gold rock"] }
+    ]
+  },
+  {
+    "id": "ambiguous-same-region-uncertain-transition",
+    "class": "AMBIGUOUS",
+    "expectedLogicalPlaces": 1,
+    "moments": [
+      { "name": "Swimming Hole", "category": "lake", "timestamps": [0], "region": "Oaxaca", "environment": "natural_water", "anchors": ["green water"] },
+      { "name": "Rock Jump", "category": "lake", "timestamps": [9], "region": "Oaxaca", "environment": "natural_water", "anchors": ["green pool"] }
+    ]
+  },
+  {
+    "id": "ambiguous-montage-weak-separation",
+    "class": "AMBIGUOUS",
+    "expectedLogicalPlaces": 1,
+    "moments": [
+      { "name": "Park", "category": "park", "timestamps": [0], "environment": "natural_land", "anchors": ["oak path"] },
+      { "name": "Picnic Area", "category": "park", "timestamps": [5], "environment": "natural_land", "anchors": ["oak grove"] },
+      { "name": "Trail", "category": "park", "timestamps": [10], "environment": "natural_land", "anchors": ["oak trail"] }
+    ]
+  },
+  {
+    "id": "same-place-return-after-other-stop",
+    "class": "TRUE_MULTI_PLACE",
+    "expectedLogicalPlaces": 2,
+    "moments": [
+      { "name": "Basil Table", "category": "restaurant", "timestamps": [0], "environment": "food_venue", "anchors": ["basil sign"] },
+      { "name": "Moonrise Beach", "category": "beach", "timestamps": [6], "environment": "natural_water", "anchors": ["crescent shore"] },
+      { "name": "Basil Table", "category": "restaurant", "timestamps": [12], "environment": "food_venue", "anchors": ["basil dining room"] }
+    ]
+  }
+]

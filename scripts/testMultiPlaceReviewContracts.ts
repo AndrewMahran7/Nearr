@@ -11,7 +11,9 @@ assert.match(detail, /reconcileMultiPlaceBatch/, 'Realtime data reconciles into 
 assert.match(detail, /data=\{batch\.order\}/, 'mentions render through one virtualized list');
 assert.match(detail, /keyExtractor=\{\(id\) => id\}/, 'array index is never the row key');
 assert.match(detail, /Place \$\{index \+ 1\} of \$\{total\}/, 'row position is announced');
-assert.match(detail, /MultiPlaceCandidateCard/);
+assert.match(detail, /CandidateConfirmationCard/, 'expanded mentions reuse the shared compact candidate row');
+assert.match(detail, /expandedMentionId/, 'one scalar owns progressive disclosure');
+assert.match(detail, /accessibilityState=\{\{ expanded \}\}/, 'mention summaries announce disclosure state');
 assert.match(detail, /visibleMentionCandidates\(row\)/, 'candidate presentation is capped without truncating the model');
 assert.match(detail, /SourceEvidenceGallery/);
 assert.match(detail, /batchCounts\.total > 0/, 'zero selection hides the dominant footer');

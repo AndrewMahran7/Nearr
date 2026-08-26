@@ -3,7 +3,8 @@
   "compilerOptions": {
     "rootDir": "src",
     "outDir": "dist",
-    "noEmit": false
+    "noEmit": false,
+    "allowImportingTsExtensions": false
   },
   "include": ["src/**/*.ts"],
   "exclude": ["tests", "dist", "node_modules", "src/**/*.deno.ts", "src/cli/evaluateAiNoteVoice.ts"]

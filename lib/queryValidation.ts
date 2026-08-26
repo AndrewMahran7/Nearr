@@ -1,4 +1,5 @@
 import type { AIExtractResult } from './aiExtractPlace';
+import { classifyPlacePhrase } from './placeIdentityClassification';
 
 /**
  * @deprecated STAGE 4 — this module is part of the LEGACY query gating
@@ -186,6 +187,14 @@ export function shouldSearchPlaces(
   query: string | null | undefined,
   evidence: QueryEvidence,
 ): boolean {
+  if (!evidence.address && !evidence.profileExtractedAddress) {
+    const admission = classifyPlacePhrase(evidence.placeName ?? query, {
+      geographicHints: [evidence.city, evidence.state].filter((value): value is string => !!value),
+    });
+    if (admission.classification === 'GENERIC_PLACE_TYPE' ||
+        admission.classification === 'DESCRIPTIVE_CLUE' ||
+        admission.classification === 'GEOGRAPHIC_CLUE') return false;
+  }
   const kind = classifyExtractedQuery(query, evidence);
   if (kind === 'empty' || kind === 'generic_content') return false;
   if (kind === 'account_identity') {

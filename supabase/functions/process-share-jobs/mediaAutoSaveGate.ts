@@ -4,6 +4,7 @@ import {
 } from '../process-share-link/resolver/nameDrivenResolver.ts';
 import { isGeographicContextOnly } from '../process-share-link/places/placeNormalization.ts';
 import type { VenueMention } from './mediaMentions.ts';
+import { isCategoryOrDescriptivePlacePhrase } from '../../../lib/placeIdentityClassification.ts';
 import {
   candidatePoiCategory,
   semanticAutoSaveDecision,
@@ -11,7 +12,7 @@ import {
   type SemanticCompatibility,
 } from '../../../lib/recognitionTruth.ts';
 
-export const MEDIA_AUTO_SAVE_RULE_VERSION = 'media-autosave-2026-08-25.v8';
+export const MEDIA_AUTO_SAVE_RULE_VERSION = 'media-autosave-2026-08-26.v9';
 
 // Retained for configuration compatibility and diagnostics. The v7 decision
 // does not apply this value as a second confirmation threshold: the resolver's
@@ -258,6 +259,23 @@ export function mediaReviewDecision(
 export function evaluateMediaAutoSave(
   input: MediaAutoSaveGateInput,
 ): MediaAutoSaveGateDecision {
+  if (isCategoryOrDescriptivePlacePhrase(input.mention.primaryVenueName ?? input.mention.displayName)) {
+    return {
+      eligible: false,
+      confidenceScore: null,
+      ruleVersion: MEDIA_AUTO_SAVE_RULE_VERSION,
+      reasonCodes: ['category_only_candidate'],
+      rawCandidateCount: input.result.scoring.length,
+      plausibleCandidateCount: 0,
+      selectedProviderId: null,
+      candidateRejectionReasons: ['category_only_candidate'],
+      explicitConflictFlags: ['category_only_candidate'],
+      semanticCompatibility: 'UNKNOWN',
+      sceneCategory: input.mention.category ?? null,
+      candidateCategory: null,
+      semanticOverrideApplied: false,
+    };
+  }
   const rawCandidateCount = input.result.scoring.length;
   const candidateRejectionReasons = input.result.scoring
     .filter((score) => score.rejected)

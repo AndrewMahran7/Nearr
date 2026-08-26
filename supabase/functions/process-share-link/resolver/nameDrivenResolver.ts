@@ -56,6 +56,7 @@ import {
 import { compactNameMatches } from '../../../../lib/shareAgent/recoveryHints.ts';
 import { isPlatformNoiseName } from '../../../../lib/shareAgent/platformNoise.ts';
 import { isNearrCategory, mapGoogleType } from '../../../../lib/placeCategory.ts';
+import { isCategoryOrDescriptivePlacePhrase } from '../../../../lib/placeIdentityClassification.ts';
 import {
   CONTEXT_DISTANCE_TIERS_KM,
   MAX_CONTEXTUAL_SEARCH_CALLS,
@@ -981,7 +982,9 @@ export async function resolveVenueMentions(args: {
   // (a state-only context is too broad to bias by coordinates — we rely on
   // state matching instead). Geocoded once, reused for every mention.
   let bias: { lat: number; lng: number } | null = null;
-  if (geoContext.city) {
+  if (geoContext.city && mentions.some((mention) =>
+    mention.resolutionMode === 'geographic' ||
+    !isCategoryOrDescriptivePlacePhrase(mention.primaryVenueName ?? mention.displayName))) {
     try {
       // The country is included whenever the post stated one — no strength gate.
       // This does not add a constraint, it DISAMBIGUATES one we already apply:
@@ -1097,6 +1100,15 @@ export async function resolveVenueMentions(args: {
 
   for (const mention of mentions) {
     const query = buildMentionQuery(mention, geoContext);
+    const categoryOnly = mention.resolutionMode !== 'geographic' &&
+      isCategoryOrDescriptivePlacePhrase(mention.primaryVenueName ?? mention.displayName);
+    if (categoryOnly) {
+      const relFields = mention.hostVenueName
+        ? { primaryVenueName: mention.primaryVenueName, hostVenueName: mention.hostVenueName, relationshipType: mention.relationshipType }
+        : {};
+      variantResults.push({ mentionId: mention.id, displayName: mention.displayName, outcome: 'rejected_insufficient_evidence', query, candidates: [], scoring: [], ...relFields });
+      continue;
+    }
     const resolutionContext = await contextForMention(mention);
     const resolutionAnchor = selectResolutionAnchor(resolutionContext);
     const contextCountryCode = countryCodeForContext(resolutionContext.inferredCountry);

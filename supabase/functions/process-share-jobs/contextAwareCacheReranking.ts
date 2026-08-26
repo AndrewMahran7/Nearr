@@ -22,6 +22,7 @@ import {
   type ShareJobResultCandidate,
 } from '../../../lib/shareJobResult.ts';
 import { evaluateMetadataAutoSave } from './metadataAutoSaveGate.ts';
+import { isCategoryOrDescriptivePlacePhrase } from '../../../lib/placeIdentityClassification.ts';
 
 export const CACHE_CANDIDATE_RANKING_POLICY = 'rerank_on_every_candidate_set_hit';
 
@@ -380,6 +381,16 @@ export function evaluateCachedSingletonAutoSave(
   }
   const candidates = rawCandidates(payload?.candidates);
   const slots = normalizeMentionSlots(payload?.mentionSlots);
+  if (slots.some((slot) => isCategoryOrDescriptivePlacePhrase(slot.displayName))) {
+    return {
+      eligible: false,
+      candidate: null,
+      selectedProviderId: null,
+      viableCandidateCount: 0,
+      reason: 'category_only_candidate',
+      qualityReason: null,
+    };
+  }
   const rawSlots = rawCandidates(payload?.mentionSlots);
   const multi = payload?.selectionMode === 'multi_independent' || slots.length > 1;
   if (multi) {

@@ -39,6 +39,13 @@ export type ShareJobResultCandidate = {
   reasons?: string[];
   /** Optional authoritative qualitative decision from a producer. */
   matchStrength?: 'high' | 'medium' | 'low' | null;
+  /** Discovery results are never recognition matches or cache/autosave truth. */
+  discoveryOnly?: boolean;
+  provenance?: {
+    identityEvidence?: string[];
+    categoryEvidence?: string[];
+    geoEvidence?: string[];
+  };
 };
 
 /** A bounded, durable reference to a frame that was actually supplied to the
@@ -121,6 +128,14 @@ export type ShareJobPartialResult = {
   category: string | null;
   searchQuery: string | null;
   clueCount: number;
+  placeType?: string | null;
+  reasonCode?: 'category_only_candidate' | null;
+  discoveryOnly?: boolean;
+  provenance?: {
+    identityEvidence: string[];
+    categoryEvidence: string[];
+    geoEvidence: string[];
+  };
 };
 
 function normalizedTimestamps(value: unknown): number[] {
@@ -259,6 +274,12 @@ export function normalizeResultCandidate(input: unknown): ShareJobResultCandidat
     matchStrength: row.matchStrength === 'high' || row.matchStrength === 'medium' || row.matchStrength === 'low'
       ? row.matchStrength
       : null,
+    discoveryOnly: row.discoveryOnly === true,
+    provenance: row.provenance && typeof row.provenance === 'object' ? {
+      identityEvidence: normalizedStringList((row.provenance as Record<string, unknown>).identityEvidence),
+      categoryEvidence: normalizedStringList((row.provenance as Record<string, unknown>).categoryEvidence),
+      geoEvidence: normalizedStringList((row.provenance as Record<string, unknown>).geoEvidence),
+    } : undefined,
   };
 }
 
@@ -374,6 +395,14 @@ export function partialResultFromPayload(payload: unknown): ShareJobPartialResul
     clueCount: typeof row.clueCount === 'number' && Number.isFinite(row.clueCount)
       ? Math.max(0, Math.min(24, Math.floor(row.clueCount)))
       : 0,
+    placeType: text(row.placeType)?.slice(0, 80) ?? null,
+    reasonCode: row.reasonCode === 'category_only_candidate' ? row.reasonCode : null,
+    discoveryOnly: row.discoveryOnly === true,
+    provenance: row.provenance && typeof row.provenance === 'object' ? {
+      identityEvidence: normalizedStringList((row.provenance as Record<string, unknown>).identityEvidence),
+      categoryEvidence: normalizedStringList((row.provenance as Record<string, unknown>).categoryEvidence),
+      geoEvidence: normalizedStringList((row.provenance as Record<string, unknown>).geoEvidence),
+    } : undefined,
   };
 }
 

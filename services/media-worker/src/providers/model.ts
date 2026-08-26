@@ -33,6 +33,10 @@ import { log } from '../util/logger.js';
 import { MediaError } from '../types/media.js';
 import { parseRetryAfterSeconds } from '../util/backoff.js';
 import { withVayrinFallback } from '../vayrin/visualGeolocationProvider.js';
+import {
+  consolidatePlaceMoments,
+  type MomentGroupingTelemetry,
+} from '../pipeline/consolidatePlaceMoments.js';
 
 export type AnalyzeInput = {
   platform: string;
@@ -81,6 +85,8 @@ export type AnalyzeOutput = {
    *  provider is not wrapped. Typed loosely so this module does not have to
    *  depend on the vayrin module, which already depends on this one. */
   vayrin?: Record<string, unknown>;
+  /** Privacy-safe deterministic moment -> logical-place consolidation result. */
+  grouping?: MomentGroupingTelemetry;
   /** Content-free account of what the baseline model actually received. */
   modelInput?: {
     model: string;
@@ -593,5 +599,23 @@ export function selectModelProvider(cfg: WorkerConfig): ModelProvider {
   // already decide. With VAYRIN_VISUAL_GEOLOCATION_ENABLED off (the default)
   // this returns `base` untouched — no wrapper, no OpenAI call, no behavior
   // change of any kind.
-  return withVayrinFallback(base, cfg);
+  return new MomentConsolidationModel(withVayrinFallback(base, cfg));
+}
+
+/** Recognition-only structural stage. Both the cheap pass and Vayrin flow
+ * through this decorator, so temporal segments can never bypass grouping. */
+class MomentConsolidationModel implements ModelProvider {
+  readonly name: string;
+
+  constructor(private readonly inner: ModelProvider) {
+    this.name = inner.name;
+  }
+
+  async analyze(input: AnalyzeInput): Promise<AnalyzeOutput> {
+    const output = await this.inner.analyze(input);
+    if (input.targetPlace) return output; // AI-note generation is already place-scoped.
+    const grouped = consolidatePlaceMoments(output.evidence);
+    log.info('moment_grouping_completed', grouped.telemetry);
+    return { ...output, evidence: grouped.evidence, grouping: grouped.telemetry };
+  }
 }

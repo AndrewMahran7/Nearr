@@ -32,6 +32,8 @@ export type CandidateConfirmationPlace = {
   contextLabel?: string | null;
   distanceKm?: number | null;
   localityMatch?: boolean;
+  discoveryOnly?: boolean;
+  provenance?: { identityEvidence?: readonly string[] | null } | null;
 };
 
 export type CandidateMatchStrength = 'high' | 'medium' | 'low';
@@ -275,6 +277,8 @@ export function candidateCategoryLabel(candidate: CandidateConfirmationPlace): s
 export function candidateMatchStrength(
   candidate: CandidateConfirmationPlace,
 ): CandidateMatchStrength | null {
+  if (candidate.discoveryOnly ||
+      (candidate.provenance && (candidate.provenance.identityEvidence?.length ?? 0) === 0)) return null;
   if (candidate.matchStrength) return candidate.matchStrength;
   const score = candidate.matchScore;
   if (typeof score !== 'number' || !Number.isFinite(score) || score < 0 || score > 1) return null;

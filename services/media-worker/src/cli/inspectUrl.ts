@@ -441,6 +441,7 @@ async function analyzeMedia(args: {
     insufficientEvidence: analysis.evidence.insufficientEvidence,
     warnings: analysis.evidence.warnings,
     placeCount: analysis.evidence.places.length,
+    grouping: analysis.grouping ?? null,
     explicitMentions: explicitPlaces.map(sanitizePlace),
     inferredOnlyMentions: inferredOnlyPlaces.map(sanitizePlace),
     distinctProposedPlaces: explicitPlaces.filter((p) => p.role !== 'passing_mention').length,

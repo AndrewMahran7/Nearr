@@ -39,6 +39,8 @@ type Props = {
   onPress?: () => void;
   onImageResolved?: (kind: PlaceImageResolutionKind) => void;
   compact?: boolean;
+  compactPhotoHeight?: number;
+  compactThumbnailWidth?: number;
   rank?: number;
   selectionRole?: 'checkbox' | 'radio';
 };
@@ -54,6 +56,8 @@ export function CandidateConfirmationCard({
   onPress,
   onImageResolved,
   compact = false,
+  compactPhotoHeight = COMPACT_CANDIDATE_PHOTO_HEIGHT,
+  compactThumbnailWidth = COMPACT_CANDIDATE_THUMB_WIDTH,
   rank,
   selectionRole = 'radio',
 }: Props) {
@@ -92,8 +96,8 @@ export function CandidateConfirmationCard({
             fallbackSourceUri={candidate.sourceFrameUrl}
             accessibilityLabel={`Photo of ${candidate.name}`}
             onResolvedKind={onImageResolved}
-            height={COMPACT_CANDIDATE_PHOTO_HEIGHT}
-            thumbnailWidth={COMPACT_CANDIDATE_THUMB_WIDTH}
+            height={compactPhotoHeight}
+            thumbnailWidth={compactThumbnailWidth}
             variant="thumbnail"
           />
 

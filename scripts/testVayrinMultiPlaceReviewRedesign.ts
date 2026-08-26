@@ -27,7 +27,7 @@ import type { ShareJobMentionSlot, ShareJobResultCandidate } from '../lib/shareJ
 
 const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 const app = read('app/share-jobs/[jobId].tsx');
-const card = read('components/MultiPlaceCandidateCard.tsx');
+const card = read('components/CandidateConfirmationCard.tsx');
 const photos = read('components/CandidatePhotoCarousel.tsx');
 const sourceGallery = read('components/SourceEvidenceGallery.tsx');
 const saveService = read('services/shareJobCandidateSave.ts');
@@ -64,8 +64,9 @@ const five = buildShareJobDetailState(buildVayrinCandidateFixtureJob('vayrin-mul
 const fiveBatch = reconcileMultiPlaceBatch({ jobId: 'five', slots: five.mentionSlots });
 assert.equal(fiveBatch.rows['five-punch']!.candidates.length, 5, 'internal ranking stays intact');
 assert.equal(visibleMentionCandidates(fiveBatch.rows['five-punch']!).length, MAX_VISIBLE_CANDIDATES_PER_MENTION); // 3/21
-assert.match(card, /<Pressable[\s\S]*onPress=\{onPress\}[\s\S]*accessibilityRole="radio"/); // 4
-assert.ok(card.indexOf('</Pressable>') < card.indexOf('<CandidatePhotoCarousel'), 'gallery is not inside the selection responder');
+assert.match(card, /accessibilityRole=\{selectionRole\}/); // 4
+assert.match(card, /testID="compact-candidate-row"/);
+assert.ok(card.indexOf('<CandidatePhotoCarousel') < card.indexOf('testID="candidate-selection-control"'), 'gallery remains separate from the selection responder');
 
 const alternatives = [candidate('a'), candidate('b'), candidate('c')];
 batch = reconcileMultiPlaceBatch({ jobId: 'exclusive', slots: [slot('one', alternatives), slot('two', [candidate('two')])] });

@@ -27,6 +27,8 @@ type Props = {
   subtitle?: string;
   compact?: boolean;
   dense?: boolean;
+  /** One small, tappable frame for progressive-disclosure review rows. */
+  preview?: boolean;
 };
 
 const COLORS = {
@@ -41,14 +43,17 @@ export function SourceEvidenceGallery({
   subtitle = 'Evidence from the video',
   compact = false,
   dense = false,
+  preview = false,
 }: Props) {
   const { width: windowWidth } = useWindowDimensions();
-  const frameWidth = compact && dense
+  const frameWidth = preview
+    ? 112
+    : compact && dense
     ? quickCheckCompactEvidenceFrameWidth(windowWidth)
     : compact
     ? Math.min(160, Math.max(148, (windowWidth - 72) / 2))
     : Math.min(360, Math.max(280, windowWidth - 56));
-  const frameHeight = compact && dense ? QUICK_CHECK_LAYOUT.evidenceFrameHeight : compact ? 100 : 204;
+  const frameHeight = preview ? 92 : compact && dense ? QUICK_CHECK_LAYOUT.evidenceFrameHeight : compact ? 100 : 204;
   const [resolved, setResolved] = useState<ResolvedShareEvidenceFrame[]>([]);
   const [loading, setLoading] = useState(frames.length > 0);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -65,7 +70,6 @@ export function SourceEvidenceGallery({
     return () => { cancelled = true; };
   }, [signature]);
 
-  if (frames.length === 0 && !analysisAttempted) return null;
   const available = useMemo(() => resolved.filter((frame) => !!frame.uri), [resolved]);
   const rolodexItems = useMemo(() => available.map((frame, index) => ({
     key: frame.id,
@@ -73,11 +77,12 @@ export function SourceEvidenceGallery({
     accessibilityLabel: `Source video frame ${index + 1} of ${available.length} at ${formatCandidateTimestamp(frame.timestampSeconds)}`,
     footerLabel: formatCandidateTimestamp(frame.timestampSeconds),
   })), [available]);
+  if (frames.length === 0 && !analysisAttempted) return null;
 
   return (
-    <View style={[styles.section, compact && styles.sectionCompact, dense && styles.sectionDense]} testID="source-evidence-gallery">
-      <Text style={[styles.title, compact && styles.titleCompact]}>{title}</Text>
-      <Text style={[styles.subtitle, dense && styles.subtitleDense]}>{subtitle}</Text>
+    <View style={[styles.section, compact && styles.sectionCompact, dense && styles.sectionDense, preview && styles.sectionPreview]} testID="source-evidence-gallery">
+      {!preview ? <Text style={[styles.title, compact && styles.titleCompact]}>{title}</Text> : null}
+      {!preview ? <Text style={[styles.subtitle, dense && styles.subtitleDense]}>{subtitle}</Text> : null}
       {loading ? (
         <View style={[styles.missing, { width: frameWidth, height: frameHeight }]}>
           <ActivityIndicator color={COLORS.orange} />
@@ -123,7 +128,7 @@ export function SourceEvidenceGallery({
               </Pressable>
             )}
           />
-          {available.length > 1 ? (
+          {!preview && available.length > 1 ? (
             <View style={[styles.dots, dense && styles.dotsDense]} accessibilityLabel={`Frame ${activeIndex + 1} of ${available.length}`}>
               {available.map((frame, index) => <View key={frame.id} style={[styles.dot, index === activeIndex && styles.dotActive]} />)}
             </View>
@@ -150,6 +155,7 @@ const styles = StyleSheet.create({
   section: { marginTop: Spacing.lg, marginBottom: Spacing.md },
   sectionCompact: { marginTop: Spacing.md, marginBottom: Spacing.sm },
   sectionDense: { marginTop: QUICK_CHECK_LAYOUT.evidenceSectionTop, marginBottom: QUICK_CHECK_LAYOUT.evidenceSectionBottom },
+  sectionPreview: { marginTop: Spacing.sm, marginBottom: Spacing.sm },
   title: { color: COLORS.cream, fontSize: 19, lineHeight: 24, fontWeight: '700' },
   titleCompact: { fontSize: 15, lineHeight: 20 },
   subtitle: { color: COLORS.muted, fontSize: 13, lineHeight: 18, marginTop: 2, marginBottom: Spacing.sm },

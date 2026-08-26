@@ -32,7 +32,6 @@ import * as Location from 'expo-location';
 
 import { Button, ErrorBoundary, Input, ShareJobsHeader } from '@/components';
 import { CandidateConfirmationCard } from '@/components/CandidateConfirmationCard';
-import { MultiPlaceCandidateCard } from '@/components/MultiPlaceCandidateCard';
 import { PlaceImage } from '@/components/PlaceImage';
 import { SourceEvidenceGallery } from '@/components/SourceEvidenceGallery';
 import { ShareJobsSheet } from '@/components/ShareJobsSheet';
@@ -100,6 +99,8 @@ import {
   batchPrimaryActionLabel,
   batchResolutionProgress,
   evidenceFramesForMention,
+  initialExpandedMentionId,
+  mentionSummaryStatus,
   visibleMentionCandidates,
   visibleMentionSearchCandidates,
 } from '@/lib/vayrinMultiPlaceReview';
@@ -343,6 +344,7 @@ function ShareJobDetailScreen() {
   const [manualSelectedIds, setManualSelectedIds] = useState<string[]>([]);
   const [pickerSelectedIds, setPickerSelectedIds] = useState<string[]>([]);
   const [batch, setBatch] = useState<MultiPlaceBatch | null>(null);
+  const [expandedMentionId, setExpandedMentionId] = useState<string | null>(null);
   // The alternative-place search is a SECONDARY action — collapsed by default
   // for single-candidate jobs, revealed on demand. Manual-only jobs start
   // expanded because search is their primary action.
@@ -367,6 +369,7 @@ function ShareJobDetailScreen() {
   const manualRequestRef = useRef(0);
   const rawResolutionQueryRef = useRef<string | null>(null);
   const batchSearchRequestsRef = useRef<Record<string, number>>({});
+  const disclosureInitializedJobRef = useRef<string | null>(null);
   const userLocationRef = useRef<LocationBias | null>(null);
   useEffect(() => {
     mountedRef.current = true;
@@ -684,15 +687,6 @@ function ShareJobDetailScreen() {
       ...fixtureAlreadySavedGooglePlaceIds.map((googlePlaceId) => [googlePlaceId, `fixture-saved:${googlePlaceId}`] as const),
     ],
   ), [fixtureAlreadySavedGooglePlaceIds, savedSnapshot]);
-  const leadsByMention = useMemo(() => {
-    const grouped = new Map<string, VayrinIdentityLead[]>();
-    for (const lead of vayrinPresentation.leads) {
-      const current = grouped.get(lead.mentionId) ?? [];
-      current.push(lead);
-      grouped.set(lead.mentionId, current);
-    }
-    return grouped;
-  }, [vayrinPresentation.leads]);
   const presentationEventRef = useRef<string | null>(null);
   useEffect(() => {
     if (!vayrinEnabled || !job?.id) return;
@@ -736,15 +730,26 @@ function ShareJobDetailScreen() {
     }));
   }, [detail.kind, job?.id, reviewSlots, savedByGoogleId]);
 
+  useEffect(() => {
+    if (!batch) return;
+    if (disclosureInitializedJobRef.current !== batch.jobId) {
+      disclosureInitializedJobRef.current = batch.jobId;
+      setExpandedMentionId(initialExpandedMentionId(batch));
+      return;
+    }
+    if (expandedMentionId && !batch.rows[expandedMentionId]) setExpandedMentionId(null);
+  }, [batch, expandedMentionId]);
+
   // Seed the manual search only for a job that genuinely has nothing to offer.
   useEffect(() => {
-    if (!routeJobId || detail.kind !== 'manual' || !detail.canSearchManually || vayrinPresentation.leads.length > 0) return;
+    if (!routeJobId || detail.kind !== 'manual' || !detail.canSearchManually ||
+        vayrinPresentation.leads.length > 0 || detail.partialResult?.discoveryOnly) return;
     const query = manualQuery.trim();
     if (!query || manualQueryEditedRef.current) return;
     const key = quickCheckSearchKey(routeJobId, 'manual', query);
     if (!claimInitialQuickCheckSearch(key)) return;
     void runManualSearch(query);
-  }, [detail.canSearchManually, detail.kind, routeJobId, manualQuery, runManualSearch, vayrinPresentation.leads.length]);
+  }, [detail.canSearchManually, detail.kind, detail.partialResult?.discoveryOnly, routeJobId, manualQuery, runManualSearch, vayrinPresentation.leads.length]);
 
   useEffect(() => {
     if (
@@ -1162,6 +1167,7 @@ function ShareJobDetailScreen() {
   function openSearchForBatchRow(row: MultiPlaceBatchRow) {
     if (!batch) return;
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setExpandedMentionId(row.logicalPlaceId);
     setBatch(openBatchSearch(batch, row.logicalPlaceId));
     if (row.search.phase === 'closed' || row.search.phase === 'idle') {
       void runBatchSearch(row.logicalPlaceId, row.search.query || row.primaryVenueName || row.extractedName);
@@ -1238,14 +1244,27 @@ function ShareJobDetailScreen() {
 
   function selectBatchCandidate(row: MultiPlaceBatchRow, candidate: ShareJobResultCandidate) {
     const savedPlaceId = savedByGoogleId[candidate.googlePlaceId] ?? null;
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setBatch((value) => value
       ? chooseBatchCandidate(value, row.logicalPlaceId, candidate, savedPlaceId)
       : value);
+    setExpandedMentionId(null);
     void trackEvent('multi_place_selection_changed', {
       job_id: job?.id ?? null,
       logical_place_id: row.logicalPlaceId,
       selected: true,
     });
+  }
+
+  function toggleMentionDisclosure(logicalPlaceId: string) {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setExpandedMentionId((current) => current === logicalPlaceId ? null : logicalPlaceId);
+  }
+
+  function dismissMention(row: MultiPlaceBatchRow) {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setBatch((value) => value ? dismissBatchRow(value, row.logicalPlaceId) : value);
+    setExpandedMentionId(null);
   }
 
   function toggleBatchSelection(row: MultiPlaceBatchRow) {
@@ -1450,18 +1469,22 @@ function ShareJobDetailScreen() {
   function renderBatchCandidateChoice(row: MultiPlaceBatchRow, candidate: ShareJobResultCandidate) {
     const savedPlaceId = savedByGoogleId[candidate.googlePlaceId] ?? null;
     const selected = row.selectedCandidateId === candidate.googlePlaceId;
-    const duplicate = !!batch && batch.order.some((id) => id !== row.logicalPlaceId &&
-      batch.rows[id]!.selectedForSave && rowCandidate(batch.rows[id]!)?.googlePlaceId === candidate.googlePlaceId);
+    const persisted = row.persistence !== 'pending';
+    const rank = visibleMentionCandidates(row).findIndex((item) => item.googlePlaceId === candidate.googlePlaceId) + 1;
     return (
-      <MultiPlaceCandidateCard
+      <CandidateConfirmationCard
         key={candidate.googlePlaceId}
         candidate={candidate}
-        meta={batchCandidateMeta(candidate, row) || candidate.formattedAddress}
-        selected={selected && (row.selectedForSave || row.persistence !== 'pending')}
-        alreadySaved={Boolean(savedPlaceId || row.persistence === 'already_saved')}
-        persisted={row.persistence !== 'pending'}
-        duplicate={duplicate}
-        onPress={() => selectBatchCandidate(row, candidate)}
+        locality={batchCandidateMeta(candidate, row) || candidate.formattedAddress}
+        selected={selected && (row.selectedForSave || persisted)}
+        selectable={!persisted}
+        saved={Boolean(savedPlaceId || persisted)}
+        onPress={persisted ? undefined : () => selectBatchCandidate(row, candidate)}
+        compact
+        compactPhotoHeight={104}
+        compactThumbnailWidth={96}
+        rank={rank > 0 ? rank : undefined}
+        selectionRole="radio"
       />
     );
   }
@@ -1527,77 +1550,79 @@ function ShareJobDetailScreen() {
   function renderBatchRow(row: MultiPlaceBatchRow, index: number, total: number) {
     const persisted = row.persistence !== 'pending';
     const timestamp = sourceTimestampLabel(row.sourceTimestamps);
-    const momentLabel = [row.contextLabel, timestamp ? `Seen around ${timestamp.replace(/^At /, '')}` : null]
-      .filter(Boolean)
-      .join(' · ');
-    const evidenceFrames = evidenceFramesForMention(row, detail.evidenceFrames);
-    const visibleCandidates = visibleMentionCandidates(row);
-    const rowLeads = leadsByMention.get(row.logicalPlaceId) ?? [];
+    const expanded = expandedMentionId === row.logicalPlaceId;
+    const status = mentionSummaryStatus(row);
+    const visibleCandidates = expanded ? visibleMentionCandidates(row) : [];
+    const evidenceFrames = expanded
+      ? evidenceFramesForMention(row, detail.evidenceFrames).slice(0, 1)
+      : [];
+    const mentionName = row.primaryVenueName ?? row.extractedName;
     return (
       <View
         key={row.logicalPlaceId}
-        style={[styles.mentionCard, row.selectedForSave && styles.mentionCardSelected]}
+        style={[styles.mentionCard, row.selectedForSave && styles.mentionCardSelected, expanded && styles.mentionCardExpanded]}
+        testID={`mention-${row.logicalPlaceId}`}
       >
-        <View style={styles.mentionPositionRow}>
-          <Text style={styles.mentionPosition}>MOMENT {index + 1} OF {total}</Text>
-          {persisted ? <Feather name="check-circle" size={18} color={colors.accent} /> : null}
-        </View>
-        <Text accessibilityRole="header" accessibilityLabel={`Place ${index + 1} of ${total}: ${row.primaryVenueName ?? row.extractedName}`} style={[typography.heading, styles.mentionName]} numberOfLines={3}>
-          {row.primaryVenueName ?? row.extractedName}
-        </Text>
-        {row.hostVenueName ? <Text style={[typography.caption, styles.relationshipText]}>at {row.hostVenueName}</Text> : null}
-        {momentLabel ? <Text style={[typography.caption, styles.sourceTimestamp]}>{momentLabel}</Text> : null}
+        <Pressable
+          onPress={() => toggleMentionDisclosure(row.logicalPlaceId)}
+          accessibilityRole="button"
+          accessibilityLabel={`Place ${index + 1} of ${total}: ${mentionName}. ${status}.`}
+          accessibilityHint={expanded ? 'Collapses place details' : 'Expands place details'}
+          accessibilityState={{ expanded }}
+          style={({ pressed }) => [styles.mentionSummary, pressed && styles.mentionSummaryPressed]}
+          testID="mention-summary"
+        >
+          <View style={styles.mentionSequence} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+            <Text style={styles.mentionSequenceText}>{index + 1}</Text>
+          </View>
+          <View style={styles.flex}>
+            <Text style={styles.mentionSummaryName} numberOfLines={2}>{mentionName}</Text>
+            <Text style={styles.mentionSummaryStatus} numberOfLines={1}>{status}</Text>
+            {timestamp ? <Text style={styles.mentionSummaryTimestamp}>Seen around {timestamp.replace(/^At /, '')}</Text> : null}
+          </View>
+          <View style={styles.mentionSummaryIcons} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+            {persisted ? <Feather name="check-circle" size={18} color={colors.accent} /> : null}
+            <Feather name={expanded ? 'chevron-up' : 'chevron-right'} size={22} color={colors.textMuted} />
+          </View>
+        </Pressable>
 
-        {evidenceFrames.length > 0 ? (
-          <SourceEvidenceGallery frames={evidenceFrames} title="Moment from the video" subtitle="Source evidence for this place" compact />
-        ) : null}
-
-        {row.saveError ? <Text style={[typography.caption, styles.batchError]}>{row.saveError}</Text> : null}
-
-        {visibleCandidates.length > 0 ? (
-          <View style={styles.possiblePlaces}>
-            <Text style={styles.possiblePlacesTitle}>Possible places</Text>
-            {visibleCandidates.map((choice) => renderBatchCandidateChoice(row, choice))}
-            {row.candidates.length > visibleCandidates.length ? (
-              <Text style={[typography.caption, styles.candidateCapCopy]}>Showing the 3 strongest matches.</Text>
+        {expanded ? (
+          <View style={styles.mentionDetails} testID="expanded-mention-details">
+            {row.hostVenueName ? <Text style={[typography.caption, styles.relationshipText]}>at {row.hostVenueName}</Text> : null}
+            {row.contextLabel ? <Text style={[typography.caption, styles.sourceTimestamp]} numberOfLines={2}>{row.contextLabel}</Text> : null}
+            {evidenceFrames.length > 0 ? (
+              <SourceEvidenceGallery frames={evidenceFrames} compact preview />
             ) : null}
+            {row.saveError ? <Text style={[typography.caption, styles.batchError]}>{row.saveError}</Text> : null}
+            {visibleCandidates.length > 0 ? (
+              <View style={styles.possiblePlaces}>
+                <Text style={styles.possiblePlacesTitle}>Possible places</Text>
+                {visibleCandidates.map((choice) => renderBatchCandidateChoice(row, choice))}
+                {row.candidates.length > visibleCandidates.length ? (
+                  <Text style={[typography.caption, styles.candidateCapCopy]}>Showing the 3 strongest matches.</Text>
+                ) : null}
+              </View>
+            ) : null}
+            {row.userDismissed ? <Text style={[typography.caption, styles.unresolvedCopy]}>No place selected. Other selections are unchanged.</Text> : null}
+            {!persisted && row.search.phase === 'closed' ? (
+              <View style={styles.mentionActions}>
+                <Pressable onPress={() => openSearchForBatchRow(row)} accessibilityRole="button" accessibilityLabel={`Search another place for ${row.extractedName}`} style={styles.inlineAction}>
+                  <Feather name="search" size={16} color={colors.accent} />
+                  <Text style={styles.inlineActionText}>Search another place</Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => dismissMention(row)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`None of these for ${row.extractedName}`}
+                  style={styles.noneAction}
+                >
+                  <Text style={styles.noneActionText}>None of these</Text>
+                </Pressable>
+              </View>
+            ) : null}
+            {renderBatchSearch(row)}
           </View>
         ) : null}
-
-        {(row.resolution === 'unmatched' || row.resolution === 'unavailable') && rowLeads.length > 0 ? (
-          <View style={styles.unmatchedBlock}>
-            {rowLeads.slice(0, 3).map((lead) => renderIdentityLead(lead, () => {
-              if (!batch) return;
-              setBatch(openBatchSearch(batch, row.logicalPlaceId));
-              changeBatchSearchQuery(row.logicalPlaceId, lead.suggestedQuery);
-              void trackEvent('vayrin_lead_opened', {
-                job_id: job?.id ?? null,
-                source: 'async_multi',
-                evidence_kind: lead.evidenceKind,
-              });
-              void runBatchSearch(row.logicalPlaceId, lead.suggestedQuery);
-            }))}
-          </View>
-        ) : null}
-
-        {row.userDismissed ? <Text style={[typography.caption, styles.unresolvedCopy]}>Left unresolved · other selected places can still be saved.</Text> : null}
-        {!persisted && row.search.phase === 'closed' ? (
-          <View style={styles.mentionActions}>
-            <Pressable onPress={() => openSearchForBatchRow(row)} accessibilityRole="button" accessibilityLabel={`Search another place for ${row.extractedName}`} style={styles.inlineAction}>
-              <Feather name="search" size={16} color={colors.accent} />
-              <Text style={styles.inlineActionText}>Search another place</Text>
-            </Pressable>
-            <Pressable
-              onPress={() => setBatch((value) => value ? dismissBatchRow(value, row.logicalPlaceId) : value)}
-              accessibilityRole="button"
-              accessibilityLabel={`None of these for ${row.extractedName}`}
-              style={styles.noneAction}
-            >
-              <Text style={styles.noneActionText}>None of these</Text>
-            </Pressable>
-          </View>
-        ) : null}
-        {renderBatchSearch(row)}
       </View>
     );
   }
@@ -1828,9 +1853,8 @@ function ShareJobDetailScreen() {
                     <Feather name={sourceIcon} size={14} color={colors.textSecondary} />
                     <Text style={[typography.caption, styles.sourceText]} numberOfLines={1}>{platformName(platform)} · From the original post</Text>
                   </View>
-                  <Text style={styles.vayrinLabel}>VAYRIN</Text>
-                  <Text style={[typography.title, styles.title]}>Vayrin found a few places in this video.</Text>
-                  <Text style={[typography.body, styles.help]}>Match each moment to the right place.</Text>
+                  <Text style={[typography.title, styles.batchTitle]}>{batch.order.length} places found</Text>
+                  <Text style={[typography.caption, styles.batchHelp]}>Open one place at a time to review its matches.</Text>
                   <Text accessibilityLiveRegion="polite" style={styles.batchProgress}>
                     {batchProgress.resolved} of {batchProgress.total} places resolved
                   </Text>
@@ -2205,9 +2229,11 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       paddingTop: Spacing.sm,
       paddingBottom: Spacing.xxl,
     },
-    batchIntro: { paddingBottom: Spacing.sm },
+    batchIntro: { paddingBottom: Spacing.xs },
+    batchTitle: { color: colors.text, marginTop: Spacing.sm },
+    batchHelp: { color: colors.textSecondary, marginTop: 2, lineHeight: 18 },
     vayrinLabel: { color: colors.accent, fontSize: 11, lineHeight: 16, fontWeight: '800', letterSpacing: 1.6, marginTop: Spacing.lg },
-    batchProgress: { color: colors.textSecondary, fontSize: 13, lineHeight: 18, fontWeight: '700', marginTop: Spacing.md },
+    batchProgress: { color: colors.textSecondary, fontSize: 13, lineHeight: 18, fontWeight: '700', marginTop: Spacing.xs },
     batchFooter: {
       paddingHorizontal: Spacing.lg,
       paddingTop: Spacing.sm,
@@ -2352,14 +2378,44 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
     radioOn: { borderColor: colors.primary },
     radioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.primary },
     mentionCard: {
+      overflow: 'hidden',
       backgroundColor: colors.surface,
       borderRadius: Radius.lg,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: colors.border,
-      padding: Spacing.md,
-      marginTop: Spacing.md,
+      marginTop: Spacing.sm,
     },
     mentionCardSelected: { borderColor: colors.primary },
+    mentionCardExpanded: { borderColor: colors.accentBorder },
+    mentionSummary: {
+      minHeight: 72,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.sm,
+      paddingHorizontal: Spacing.md,
+      paddingVertical: Spacing.sm,
+    },
+    mentionSummaryPressed: { backgroundColor: colors.surfaceElevated },
+    mentionSequence: {
+      width: 34,
+      height: 34,
+      borderRadius: 17,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1.5,
+      borderColor: colors.accent,
+    },
+    mentionSequenceText: { color: colors.accent, fontSize: 15, lineHeight: 19, fontWeight: '800' },
+    mentionSummaryName: { color: colors.text, fontSize: 16, lineHeight: 20, fontWeight: '700' },
+    mentionSummaryStatus: { color: colors.textSecondary, fontSize: 13, lineHeight: 17, fontWeight: '700', marginTop: 1 },
+    mentionSummaryTimestamp: { color: colors.textMuted, fontSize: 11, lineHeight: 15, marginTop: 1 },
+    mentionSummaryIcons: { minWidth: 24, flexDirection: 'row', alignItems: 'center', gap: 5 },
+    mentionDetails: {
+      paddingHorizontal: Spacing.md,
+      paddingBottom: Spacing.md,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: colors.border,
+    },
     mentionPositionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 3 },
     mentionPosition: { color: colors.accent, fontSize: 10, lineHeight: 15, fontWeight: '800', letterSpacing: 1.1 },
     batchRowHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.md },
@@ -2401,11 +2457,11 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       alignItems: 'center',
       justifyContent: 'space-between',
     },
-    possiblePlaces: { marginTop: Spacing.md },
+    possiblePlaces: { marginTop: Spacing.sm },
     possiblePlacesTitle: { color: colors.text, fontSize: 15, lineHeight: 20, fontWeight: '700' },
     candidateCapCopy: { color: colors.textMuted, marginTop: Spacing.sm, lineHeight: 18 },
     unresolvedCopy: { color: colors.textSecondary, marginTop: Spacing.md, lineHeight: 18 },
-    mentionActions: { marginTop: Spacing.sm, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
+    mentionActions: { marginTop: Spacing.xs, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
     noneAction: { minHeight: 44, alignItems: 'flex-start', justifyContent: 'center' },
     noneActionText: { color: colors.textSecondary, fontSize: 14, lineHeight: 20, fontWeight: '700' },
     batchSearch: {

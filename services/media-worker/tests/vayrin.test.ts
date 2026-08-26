@@ -72,6 +72,20 @@ test('coarse metadata does not suppress the visual fallback', () => {
   }), { run: true, reason: 'only_coarse_geography' });
 });
 
+test('generic place type does not masquerade as a resolved cheap-pass identity', () => {
+  assert.deepEqual(shouldRunVayrinFallback({
+    enabled: true, frameCount: 8, insufficientEvidence: false,
+    explicitPlaceCount: 1, geographicOnlyPlaceCount: 0, genericOnlyPlaceCount: 1,
+  }), { run: true, reason: 'only_generic_place_type' });
+  const mapped = payloadToEvidence({
+    place_hypotheses: [hypothesis('Underground Cenote')],
+    multiple_distinct_places_visible: false,
+    additional_place_segments: [], metadata_was_sufficient: false,
+  });
+  assert.equal(mapped.evidence.places.length, 0);
+  assert.equal(mapped.evidence.partialPlaces?.[0]?.nameHint, 'Underground Cenote');
+});
+
 test('clean empty evidence does not spend Sol without a grounded recovery input', () => {
   assert.deepEqual(shouldRunVayrinFallback({
     enabled: true, frameCount: 8, insufficientEvidence: true,

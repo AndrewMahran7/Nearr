@@ -14,6 +14,7 @@ import {
   derivePlaceNameHintFromHandle,
 } from './venueHints.ts';
 import { isPlatformSelfReference } from '../../../../lib/shareAgent/recoveryHints.ts';
+import { isCategoryOrDescriptivePlacePhrase } from '../../../../lib/placeIdentityClassification.ts';
 import { extractCityStateContext } from '../places/locationGuards.ts';
 import { looksLikeRoundupPost } from './roundupDetection.ts';
 import type { ExtractedHandles } from './handleExtraction.ts';
@@ -355,6 +356,7 @@ function isGenericVenuePhrase(phrase: string): boolean {
   const p = phrase.trim().toLowerCase();
   if (GENERIC_VENUE_PHRASES.has(p)) return true;
   if (isPlatformSelfReference(p)) return true;
+  if (isCategoryOrDescriptivePlacePhrase(p)) return true;
   // Single filler words that read as sentiment, not a name.
   if (/^(foodie|media|reel|reels|video)$/.test(p)) return true;
   return false;

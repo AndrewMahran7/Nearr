@@ -46,7 +46,7 @@ Trust semantics:
 - `CANDIDATE_SET`: reusable only at the current version and only as review input. It never calls the save path until the user selects.
 - Failures (`FAILED`, `INSUFFICIENT`, `AUTH_REQUIRED`, technical/provider failures): never written as canonical recognition truth. A negative TTL cache is deferred.
 
-`recognition_version` is `vayrin-recognition-2026-08-21.v1`. User-confirmed rows survive a version change; machine-only verified rows and candidate sets miss and recompute. Material recognition/policy changes must bump this constant.
+`recognition_version` is `vayrin-recognition-2026-08-26.v3-generic-guard-same-place-groups`. User-confirmed rows survive a version change; machine-only verified rows and candidate sets from earlier category-as-identity or moment-per-place behavior miss and recompute. Material recognition/policy changes must bump this constant.
 
 ## Candidate-set ranking contract
 

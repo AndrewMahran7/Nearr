@@ -751,6 +751,7 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
         usageAvailable: !!v.usage,
       });
     }
+    if (analysis.grouping) Object.assign(diagnostics, analysis.grouping);
     warnings.push(...analysis.evidence.warnings);
     diagnostics.durationMs = Date.now() - startedAt;
     diagnostics.warnings = warnings.slice(0, 24);
