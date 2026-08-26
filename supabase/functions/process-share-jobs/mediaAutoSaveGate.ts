@@ -4,8 +4,14 @@ import {
 } from '../process-share-link/resolver/nameDrivenResolver.ts';
 import { isGeographicContextOnly } from '../process-share-link/places/placeNormalization.ts';
 import type { VenueMention } from './mediaMentions.ts';
+import {
+  candidatePoiCategory,
+  semanticAutoSaveDecision,
+  semanticCategoryCompatibility,
+  type SemanticCompatibility,
+} from '../../../lib/recognitionTruth.ts';
 
-export const MEDIA_AUTO_SAVE_RULE_VERSION = 'media-autosave-2026-08-19.v7';
+export const MEDIA_AUTO_SAVE_RULE_VERSION = 'media-autosave-2026-08-25.v8';
 
 // Retained for configuration compatibility and diagnostics. The v7 decision
 // does not apply this value as a second confirmation threshold: the resolver's
@@ -49,6 +55,10 @@ export type MediaAutoSaveGateDecision = {
   selectedProviderId: string | null;
   candidateRejectionReasons: string[];
   explicitConflictFlags: string[];
+  semanticCompatibility: SemanticCompatibility;
+  sceneCategory: string | null;
+  candidateCategory: string | null;
+  semanticOverrideApplied: boolean;
 };
 
 export function mediaAutoSaveAuthorized(args: {
@@ -266,6 +276,10 @@ export function evaluateMediaAutoSave(
 
   const plausible = [...plausibleByProviderId.values()];
   let reasonCode: string;
+  let semanticCompatibility: SemanticCompatibility = 'UNKNOWN';
+  let sceneCategory: string | null = null;
+  let candidateCategory: string | null = null;
+  let semanticOverrideApplied = false;
   if (input.mention.identityEvidenceKind === 'model_prior') {
     reasonCode = 'model_prior_unverified';
     explicitConflictFlags.push('model_prior_unverified');
@@ -296,7 +310,33 @@ export function evaluateMediaAutoSave(
       reasonCode = 'canonical_place_ambiguity';
       explicitConflictFlags.push('canonical_place_ambiguity');
     } else {
-      reasonCode = 'single_plausible_candidate';
+      const compatibility = semanticCategoryCompatibility({
+        sceneCategory: input.mention.category,
+        sceneConfidence: input.mention.categoryConfidence,
+        categoryEvidenceTags: input.mention.categoryEvidenceTags,
+        candidateCategory: candidatePoiCategory(selected.candidate),
+      });
+      semanticCompatibility = compatibility.verdict;
+      sceneCategory = compatibility.sceneCategory;
+      candidateCategory = compatibility.candidateCategory;
+      const identity = {
+        exactAddress: selected.score.reasons?.includes('address_verified') ||
+          selected.score.reasons?.includes('address_verified_multi'),
+        readableSignageExactName: input.mention.sources.includes('visible_text') &&
+          input.mention.nameEvidenceSources.includes('visible_text'),
+        explicitCaptionExactName: input.mention.nameEvidenceSources.includes('caption'),
+        independentNameSourceCount: input.mention.nameEvidenceSources.length,
+      };
+      const semantic = semanticAutoSaveDecision({ compatibility, identityEvidence: identity });
+      semanticOverrideApplied = semantic.overridden;
+      if (!semantic.allowed) {
+        reasonCode = 'candidate_semantic_mismatch';
+        candidateRejectionReasons.push('candidate_semantic_mismatch');
+        explicitConflictFlags.push('candidate_semantic_mismatch');
+      } else {
+        reasonCode = 'single_plausible_candidate';
+        if (semantic.overridden) explicitConflictFlags.push('candidate_semantic_override');
+      }
     }
   }
 
@@ -311,6 +351,10 @@ export function evaluateMediaAutoSave(
     selectedProviderId: selected?.candidate.googlePlaceId ?? null,
     candidateRejectionReasons: [...new Set(candidateRejectionReasons)],
     explicitConflictFlags: [...new Set(explicitConflictFlags)],
+    semanticCompatibility,
+    sceneCategory,
+    candidateCategory,
+    semanticOverrideApplied,
   };
 }
 
@@ -338,6 +382,10 @@ export function formatMediaAutoSaveDecisionLog(args: {
     `selected_score=${selectedScore}`,
     `rejection_reasons=${safeLogValue(args.decision.candidateRejectionReasons.join(','))}`,
     `explicit_conflict_flags=${safeLogValue(args.decision.explicitConflictFlags.join(','))}`,
+    `semantic_compatibility=${safeLogValue(args.decision.semanticCompatibility)}`,
+    `scene_category=${safeLogValue(args.decision.sceneCategory)}`,
+    `candidate_category=${safeLogValue(args.decision.candidateCategory)}`,
+    `semantic_override=${args.decision.semanticOverrideApplied ? 'true' : 'false'}`,
     `final_decision=${args.finalDecision}`,
     `decision_reason=${safeLogValue(args.finalReasonCodes.join(','))}`,
   ].join(' ');

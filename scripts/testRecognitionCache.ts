@@ -172,8 +172,13 @@ assert.ok(candidateHitStart >= 0);
 const candidateHitSource = worker.slice(candidateHitStart, worker.indexOf("const { data: place", candidateHitStart));
 assert.match(candidateHitSource, /evaluateCachedSingletonAutoSave\(reranked\)/,
   'candidate-only cache must pass the contextual singleton safety gate');
-assert.match(candidateHitSource, /if \(singletonGate\.eligible && singletonGate\.candidate\)[\s\S]{0,500}saveForUser/,
-  'only a gate-authorized cache singleton may use the canonical save path');
+assert.match(candidateHitSource, /if \(!disputedHit && singletonGate\.eligible && singletonGate\.candidate\)[\s\S]{0,500}saveForUser/,
+  'only a non-disputed gate-authorized cache singleton may use the canonical save path');
+assert.match(worker, /lookupRecognition\(admin, identity, job\.user_id\)/,
+  'recognition cache lookup must be user-aware');
+assert.match(worker, /cache_hit_disputed_result/);
+assert.match(worker, /disputed_candidate_suppressed/);
+assert.match(worker, /recognition_recomputed_after_rejection/);
 assert.match(candidateHitSource, /__skipRecognitionCachePersist: true/,
   'a request-specific presentation decision cannot overwrite recognition evidence');
 
@@ -189,6 +194,14 @@ assert.match(migration, /revoke all on public\.recognition_cache/);
 const correction = read('supabase/migrations/20260822000003_correct_saved_place_multi_source.sql');
 assert.match(correction, /jsonb_agg\(to_jsonb\(s\)/);
 assert.match(correction, /on conflict \(saved_place_id, identity_key\)/);
+
+const rejectionMigration = read('supabase/migrations/20260825000001_user_scoped_recognition_rejections.sql');
+assert.match(rejectionMigration, /create table if not exists public\.recognition_rejections/);
+assert.match(rejectionMigration, /unique \(user_id, identity_key, canonical_place_id\)/);
+assert.match(rejectionMigration, /reject_saved_place_recognition/);
+assert.match(rejectionMigration, /generic DELETE remains intentionally/i);
+assert.doesNotMatch(rejectionMigration, /update public\.recognition_cache rc set\s+invalidated_at/i,
+  'user rejection must not poison global cache truth');
 
 const detail = read('components/map/SelectedPlaceDetails.tsx');
 assert.match(detail, /More videos from this place/);

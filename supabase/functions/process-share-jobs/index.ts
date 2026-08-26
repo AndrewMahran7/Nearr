@@ -1828,6 +1828,10 @@ async function finalizeMediaTask(
             selectedProviderId: null,
             candidateRejectionReasons: ['mention_evidence_missing'],
             explicitConflictFlags: [],
+            semanticCompatibility: 'UNKNOWN',
+            sceneCategory: null,
+            candidateCategory: null,
+            semanticOverrideApplied: false,
           };
       const blockingReasons = [...gate.reasonCodes];
       if (gate.eligible && !autoSaveAuthorized) blockingReasons.push('auto_save_disabled_or_user_not_allowlisted');
@@ -1845,6 +1849,31 @@ async function finalizeMediaTask(
         finalDecision: mayAutoSave ? 'auto_save' : 'review',
         finalReasonCodes: blockingReasons,
       }));
+      if (gate.semanticCompatibility === 'CONTRADICTS') {
+        await recordRecognitionEvent(
+          admin,
+          gate.semanticOverrideApplied ? 'candidate_semantic_override' : 'candidate_semantic_mismatch',
+          canonicalContentIdentity(job.source_url, canonicalUrl),
+          {
+            sceneCategory: gate.sceneCategory,
+            candidateCategory: gate.candidateCategory,
+            logicalPlaceId: mentionResult.mentionId,
+            ruleVersion: gate.ruleVersion,
+          },
+        );
+        if (!gate.semanticOverrideApplied) {
+          await recordRecognitionEvent(
+            admin,
+            'autosave_blocked_semantic_mismatch',
+            canonicalContentIdentity(job.source_url, canonicalUrl),
+            {
+              sceneCategory: gate.sceneCategory,
+              candidateCategory: gate.candidateCategory,
+              ruleVersion: gate.ruleVersion,
+            },
+          );
+        }
+      }
 
       if (mayAutoSave) {
         const categoryResolution = resolvePlaceCategory({
@@ -2306,7 +2335,28 @@ async function useRecognitionCache(args: {
   identity: CanonicalContentIdentity;
   decision: RecognitionCacheDecision;
 }): Promise<boolean> {
-  const { admin, job, identity, decision } = args;
+  const { admin, job, identity } = args;
+  let decision = args.decision;
+  let disputedHit = false;
+  if (decision.kind === 'disputed') {
+    disputedHit = true;
+    await recordRecognitionEvent(admin, 'cache_hit_disputed_result', identity, {
+      suppressedCandidateCount: decision.suppressedCandidateCount,
+      reusableEvidence: decision.reusableEvidence,
+      cacheTrust: decision.row.trust_level,
+    });
+    if (decision.suppressedCandidateCount > 0) {
+      await recordRecognitionEvent(admin, 'disputed_candidate_suppressed', identity, {
+        suppressedCandidateCount: decision.suppressedCandidateCount,
+      });
+    }
+    const remaining = persistedCandidateCount(decision.candidatePayload);
+    if (remaining < 1) return false;
+    decision = {
+      kind: 'candidate_set',
+      row: { ...decision.row, candidate_payload: decision.candidatePayload },
+    };
+  }
   if (decision.kind === 'miss') return false;
 
   if (decision.kind === 'candidate_set') {
@@ -2321,7 +2371,7 @@ async function useRecognitionCache(args: {
       mentionSlots: (presentationPayload as any)?.mentionSlots,
     });
     const singletonGate = evaluateCachedSingletonAutoSave(reranked);
-    if (singletonGate.eligible && singletonGate.candidate) {
+    if (!disputedHit && singletonGate.eligible && singletonGate.candidate) {
       const candidate = singletonGate.candidate as any;
       const saved = await saveForUser({
         client: admin,
@@ -2509,8 +2559,14 @@ async function prepareRecognitionIdentity(
   job.recognition_content_id = identity.contentId;
   job.canonical_url = identity.canonicalUrl;
   await recordIdentityOnJob(admin, job.id, identity);
-  const decision = await lookupRecognition(admin, identity);
+  const decision = await lookupRecognition(admin, identity, job.user_id);
   if (await useRecognitionCache({ admin, job, identity, decision })) return 'parked';
+  if (decision.kind === 'disputed') {
+    await recordRecognitionEvent(admin, 'recognition_recomputed_after_rejection', identity, {
+      reusableEvidence: decision.reusableEvidence,
+      suppressedCandidateCount: decision.suppressedCandidateCount,
+    });
+  }
   await recordRecognitionEvent(admin, 'recognition_cache_miss', identity, { reason: decision.kind === 'miss' ? decision.reason : 'unusable' });
   const claim = await claimRecognition(admin, identity, job.id);
   if (claim === 'joined') {

@@ -6,7 +6,10 @@ import { inspectFacebookUrl } from './facebookUrl.ts';
 import { normalizeShareUrl, extractTikTokPostIdentity, type ShareUrlPlatform } from './tiktokUrl.ts';
 
 export const CONTENT_IDENTITY_VERSION = 1;
-export const RECOGNITION_VERSION = 'vayrin-recognition-2026-08-21.v1';
+// Recognition truth semantics changed: machine conclusions now include a
+// semantic compatibility gate and user-scoped disputes. Bumping the version
+// prevents older VERIFIED_AUTO_SAVE rows from bypassing the new policy.
+export const RECOGNITION_VERSION = 'vayrin-recognition-2026-08-25.v2';
 
 export type CanonicalContentIdentity = {
   platform: ShareUrlPlatform;

@@ -33,8 +33,13 @@ import {
   planWrongPlaceCorrection,
   reconcileCorrectedSavedPlaces,
 } from '@/lib/wrongPlaceCorrection';
-import { correctSavedPlace } from '@/services/savedPlacesService';
-import { updateSavedPlacesCache } from '@/hooks/useSavedPlaces';
+import { correctSavedPlace, rejectSavedPlaceRecognition } from '@/services/savedPlacesService';
+import {
+  getSavedPlacesCacheSnapshot,
+  removeSavedPlaceFromCache,
+  restoreSavedPlacesCache,
+  updateSavedPlacesCache,
+} from '@/hooks/useSavedPlaces';
 import { invalidatePlaceRichDetails } from '@/lib/placeRichDetailsCache';
 import type { PlaceCandidate } from '@/services/placesService';
 import type { SavedPlaceWithPlace } from '@/types';
@@ -49,6 +54,7 @@ type Props = {
   finderMode?: boolean;
   onClose: () => void;
   onCorrected: (updated: SavedPlaceWithPlace) => void;
+  onRejected?: (savedPlaceId: string) => void;
 };
 
 export function WrongPlaceSheet({
@@ -59,6 +65,7 @@ export function WrongPlaceSheet({
   finderMode = false,
   onClose,
   onCorrected,
+  onRejected,
 }: Props) {
   const { colors, typography } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -169,6 +176,41 @@ export function WrongPlaceSheet({
     } catch {
       Alert.alert('Could not open the original post');
     }
+  }
+
+  function rejectWithoutReplacement() {
+    if (saving) return;
+    Alert.alert(
+      'Mark this result as wrong?',
+      'Nearr will remove it and will not silently auto-save this same place for this post again.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Mark as wrong',
+          style: 'destructive',
+          onPress: async () => {
+            const snapshot = getSavedPlacesCacheSnapshot();
+            setSaving(true);
+            removeSavedPlaceFromCache(saved.id);
+            try {
+              const sourceCount = await rejectSavedPlaceRecognition(saved.id);
+              void trackEvent('user_rejected_recognition', {
+                saved_place_id: saved.id,
+                source_count: sourceCount,
+                reason: 'wrong_place',
+              });
+              onRejected?.(saved.id);
+              onClose();
+            } catch (caught) {
+              restoreSavedPlacesCache(snapshot);
+              Alert.alert('Could not mark as wrong', caught instanceof Error ? caught.message : 'Please try again.');
+            } finally {
+              setSaving(false);
+            }
+          },
+        },
+      ],
+    );
   }
 
   const finderPresentation = finderMode
@@ -307,6 +349,13 @@ export function WrongPlaceSheet({
             onPress={() => void runSearch(query)}
             disabled={loading || !query.trim()}
             style={styles.secondaryButton}
+          />
+          <Button
+            title="This isn’t the place"
+            variant="ghost"
+            onPress={rejectWithoutReplacement}
+            disabled={saving}
+            style={styles.sourceButton}
           />
           {planOpenOriginal(saved.source_url).kind === 'open' ? (
             <Button

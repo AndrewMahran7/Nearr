@@ -63,6 +63,9 @@ insert into public.saved_places(id,user_id,place_id,source_type,source_url,ai_no
   & "$pgBin\psql.exe" -X -w -v ON_ERROR_STOP=1 -h 127.0.0.1 -p $taskPort -U postgres -d postgres `
     -f 'supabase\migrations\20260822000003_correct_saved_place_multi_source.sql' | Out-Null
   if ($LASTEXITCODE -ne 0) { throw 'migration 03 failed' }
+  & "$pgBin\psql.exe" -X -w -v ON_ERROR_STOP=1 -h 127.0.0.1 -p $taskPort -U postgres -d postgres `
+    -f 'supabase\migrations\20260825000001_user_scoped_recognition_rejections.sql' | Out-Null
+  if ($LASTEXITCODE -ne 0) { throw 'recognition rejection migration failed' }
 
   $proofSql = @'
 do $$ begin
@@ -121,8 +124,10 @@ insert into public.recognition_cache(
  'v1:tiktok:111','tiktok','111','https://www.tiktok.com/@a/video/111',1,'test-v1',
  'verified_place','VERIFIED_AUTO_SAVE','10000000-0000-0000-0000-000000000001'
 );
+select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000001',false);
 update public.saved_places set place_id='10000000-0000-0000-0000-000000000002'
  where id='20000000-0000-0000-0000-000000000001';
+select set_config('request.jwt.claim.sub','',false);
 do $$ begin
  if (select count(*) from public.saved_places where user_id='00000000-0000-0000-0000-000000000001') <> 1 then raise exception 'saved count'; end if;
  if (select count(*) from public.saved_place_sources where saved_place_id='20000000-0000-0000-0000-000000000001') <> 2 then raise exception 'source count'; end if;
@@ -134,8 +139,15 @@ do $$ begin
  if (select claimed from public.claim_recognition_identity('v1:tiktok:111','30000000-0000-0000-0000-000000000002',60)) then raise exception 'duplicate claim'; end if;
  if (select canonical_place_id from public.recognition_cache where identity_key='v1:tiktok:111') <>
    '10000000-0000-0000-0000-000000000001'::uuid then raise exception 'correction rewrote global truth'; end if;
- if (select invalidation_reason from public.recognition_cache where identity_key='v1:tiktok:111') <>
-   'user_correction' then raise exception 'correction did not dispute cache'; end if;
+ if (select invalidation_reason from public.recognition_cache where identity_key='v1:tiktok:111') is not null
+   then raise exception 'one correction globally invalidated truth'; end if;
+ if not exists (
+   select 1 from public.recognition_rejections
+    where user_id='00000000-0000-0000-0000-000000000001'
+      and identity_key='v1:tiktok:111'
+      and canonical_place_id='10000000-0000-0000-0000-000000000001'
+      and reason='corrected_place'
+ ) then raise exception 'user-scoped correction rejection missing'; end if;
 end $$;
 update public.recognition_inflight set lease_expires_at=now()-interval '1 second'
  where identity_key='v1:tiktok:111';
@@ -163,9 +175,10 @@ insert into public.recognition_cache(
  invalidated_at=null,invalidation_reason=null;
 do $$ begin
  if (select trust_level from public.recognition_cache where identity_key='v1:tiktok:111') <>
-   'CANDIDATE_SET' then raise exception 'disputed machine result not candidate-only'; end if;
- if (select canonical_place_id from public.recognition_cache where identity_key='v1:tiktok:111') is not null
-   then raise exception 'disputed machine result retained global truth'; end if;
+   'VERIFIED_AUTO_SAVE' then raise exception 'user dispute poisoned global machine truth'; end if;
+ if (select canonical_place_id from public.recognition_cache where identity_key='v1:tiktok:111') <>
+   '10000000-0000-0000-0000-000000000002'::uuid
+   then raise exception 'global truth update failed'; end if;
 end $$;
 update public.recognition_cache set
  result_type='verified_place',trust_level='USER_CONFIRMED',

@@ -865,6 +865,32 @@ export async function deleteSavedPlace(id: string): Promise<void> {
   triggerGeofenceResync();
 }
 
+/**
+ * Explicitly reject an automatic recognition result and remove the save.
+ * Unlike generic delete, the RPC first records user-scoped negative truth for
+ * every canonical source attached to this saved place.
+ */
+export async function rejectSavedPlaceRecognition(id: string): Promise<number> {
+  if (isDemoMode() || isMapPreviewMode()) {
+    throw new Error('Recognition feedback is unavailable in preview mode.');
+  }
+  try {
+    const { data, error } = await supabase.rpc('reject_saved_place_recognition', {
+      p_saved_place_id: id,
+      p_reason: 'wrong_place',
+    });
+    if (error) rethrowMutationError('reject recognition', error);
+    const rejected = Number(data);
+    if (!Number.isFinite(rejected) || rejected < 1) {
+      throw new Error('The recognition feedback did not complete. Please retry.');
+    }
+    triggerGeofenceResync();
+    return rejected;
+  } catch (err) {
+    rethrowMutationError('reject recognition', err);
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Opportunity / visited / archived state
 // ---------------------------------------------------------------------------

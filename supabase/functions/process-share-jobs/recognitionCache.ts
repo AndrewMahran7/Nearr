@@ -22,12 +22,30 @@ export type RecognitionCacheRow = {
   trust_level: RecognitionTrust;
   canonical_place_id: string | null;
   candidate_payload: Record<string, unknown> | null;
+  evidence_summary?: Record<string, unknown> | null;
   invalidated_at: string | null;
+  confirmed_at?: string | null;
+};
+
+export type RecognitionRejection = {
+  user_id: string;
+  identity_key: string;
+  canonical_place_id: string;
+  google_place_id: string | null;
+  rejected_at: string;
 };
 
 export type RecognitionCacheDecision =
   | { kind: 'trusted_place'; row: RecognitionCacheRow }
   | { kind: 'candidate_set'; row: RecognitionCacheRow }
+  | {
+      kind: 'disputed';
+      row: RecognitionCacheRow;
+      candidatePayload: Record<string, unknown> | null;
+      suppressedCandidateCount: number;
+      reusableEvidence: boolean;
+      reason: 'user_rejected_result';
+    }
   | { kind: 'miss'; reason: string };
 
 export function recognitionCacheDecision(
@@ -51,18 +69,94 @@ export function recognitionCacheDecision(
   return { kind: 'miss', reason: 'not_reusable' };
 }
 
+function suppressRejectedCandidates(
+  value: unknown,
+  rejectedGoogleIds: ReadonlySet<string>,
+): { value: unknown; suppressed: number } {
+  if (Array.isArray(value)) {
+    let suppressed = 0;
+    const output: unknown[] = [];
+    for (const item of value) {
+      const googleId = item && typeof item === 'object' &&
+          typeof (item as any).googlePlaceId === 'string'
+        ? (item as any).googlePlaceId
+        : null;
+      if (googleId && rejectedGoogleIds.has(googleId)) {
+        suppressed += 1;
+        continue;
+      }
+      const nested = suppressRejectedCandidates(item, rejectedGoogleIds);
+      suppressed += nested.suppressed;
+      output.push(nested.value);
+    }
+    return { value: output, suppressed };
+  }
+  if (!value || typeof value !== 'object') return { value, suppressed: 0 };
+  let suppressed = 0;
+  const output: Record<string, unknown> = {};
+  for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
+    const nested = suppressRejectedCandidates(child, rejectedGoogleIds);
+    output[key] = nested.value;
+    suppressed += nested.suppressed;
+  }
+  return { value: output, suppressed };
+}
+
+export function recognitionCacheDecisionForUser(
+  row: RecognitionCacheRow | null | undefined,
+  rejections: readonly RecognitionRejection[],
+  recognitionVersion = RECOGNITION_VERSION,
+): RecognitionCacheDecision {
+  const base = recognitionCacheDecision(row, recognitionVersion);
+  if (!row || rejections.length === 0 || base.kind === 'miss') return base;
+  const confirmedAt = row.confirmed_at ? Date.parse(row.confirmed_at) : Number.NEGATIVE_INFINITY;
+  const active = rejections.filter((rejection) =>
+    rejection.identity_key === row.identity_key && Date.parse(rejection.rejected_at) > confirmedAt
+  );
+  if (active.length === 0) return base;
+  const rejectedPlaceIds = new Set(active.map((entry) => entry.canonical_place_id));
+  const rejectedGoogleIds = new Set(
+    active.map((entry) => entry.google_place_id).filter((value): value is string => !!value),
+  );
+  const trustedRejected = !!row.canonical_place_id && rejectedPlaceIds.has(row.canonical_place_id);
+  const filtered = suppressRejectedCandidates(row.candidate_payload, rejectedGoogleIds);
+  if (!trustedRejected && filtered.suppressed === 0) return base;
+  return {
+    kind: 'disputed',
+    row,
+    candidatePayload: filtered.value && typeof filtered.value === 'object'
+      ? filtered.value as Record<string, unknown>
+      : null,
+    suppressedCandidateCount: filtered.suppressed + (trustedRejected ? 1 : 0),
+    reusableEvidence: !!row.evidence_summary || !!row.candidate_payload,
+    reason: 'user_rejected_result',
+  };
+}
+
 export async function lookupRecognition(
   admin: any,
   identity: CanonicalContentIdentity,
+  userId?: string | null,
 ): Promise<RecognitionCacheDecision> {
   try {
     const { data, error } = await admin
       .from('recognition_cache')
-      .select('id,identity_key,platform,content_id,canonical_url,identity_version,recognition_version,result_type,trust_level,canonical_place_id,candidate_payload,invalidated_at')
+      .select('id,identity_key,platform,content_id,canonical_url,identity_version,recognition_version,result_type,trust_level,canonical_place_id,candidate_payload,evidence_summary,invalidated_at,confirmed_at')
       .eq('identity_key', identity.key)
       .maybeSingle();
     if (error) throw error;
-    const decision = recognitionCacheDecision(data as RecognitionCacheRow | null);
+    let rejections: RecognitionRejection[] = [];
+    if (userId && data) {
+      const rejectionResult = await admin
+        .from('recognition_rejections')
+        .select('user_id,identity_key,canonical_place_id,google_place_id,rejected_at')
+        .eq('user_id', userId)
+        .eq('identity_key', identity.key);
+      if (!rejectionResult.error && Array.isArray(rejectionResult.data)) {
+        rejections = rejectionResult.data as RecognitionRejection[];
+      }
+    }
+    const decision = recognitionCacheDecisionForUser(data as RecognitionCacheRow | null, rejections);
     if (data?.id) {
       void admin.from('recognition_cache').update({ last_seen_at: new Date().toISOString() }).eq('id', data.id);
     }

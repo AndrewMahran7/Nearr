@@ -1461,6 +1461,10 @@ export function SelectedPlaceDetails({
           onCorrected?.(updated);
           setWrongPlaceOpen(false);
         }}
+        onRejected={() => {
+          setWrongPlaceOpen(false);
+          onRequestDismiss();
+        }}
       />
       <NoteEditorModal
         visible={noteEditor.open}

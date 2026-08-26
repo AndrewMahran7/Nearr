@@ -8,7 +8,7 @@
 import { addressesMatch } from '../../../lib/shareAgent/tools.ts';
 import { geographicContextTypeOf } from '../process-share-link/places/placeNormalization.ts';
 
-export const METADATA_AUTO_SAVE_RULE_VERSION = 'metadata-autosave-2026-08-24.v5';
+export const METADATA_AUTO_SAVE_RULE_VERSION = 'metadata-autosave-2026-08-25.v6';
 
 // Keep this aligned with decisionPolicy's confirmation floor. A singleton
 // still has to be independently good enough to show as a real place match;
@@ -52,7 +52,14 @@ type MetadataEvidence = {
   addresses?: unknown;
   venueNameHints?: unknown;
   venueNameHintsFromHandle?: unknown;
-  taggedLocation?: unknown;
+  taggedLocation?: {
+    placeName?: unknown;
+    address?: unknown;
+    latitude?: unknown;
+    longitude?: unknown;
+    externalPlaceId?: unknown;
+    provenance?: unknown;
+  } | null;
   handles?: {
     posterHandle?: unknown;
     posterNameHint?: unknown;
@@ -249,7 +256,8 @@ export function evaluateMetadataAutoSave(input: {
       : [],
   );
   const independentCaptionHints = venueHints.filter(
-    (hint) => !handleHints.has(normalizedName(hint)),
+    (hint) => !handleHints.has(normalizedName(hint)) &&
+      normalizedName(hint) !== normalizedName(input.evidence.taggedLocation?.placeName),
   );
   const hasIndependentPlaceIdentity =
     !!text(input.evidence.address?.raw) ||
@@ -273,6 +281,19 @@ export function evaluateMetadataAutoSave(input: {
   else if (!hasIndependentPlaceIdentity && hasHandleIdentity) {
     explicitConflictFlags.push('handle_identity_only');
   }
+
+  // The tagged-location resolver has always promised that a tag alone is a
+  // confirmation hypothesis, not auto-save authority. Enforce that promise at
+  // the product gate too. The incident proved that Instagram's first-party
+  // XDTLocationDict can be real markup yet semantically unrelated to the reel.
+  // An exact address, provider external id, or independently repeated caption
+  // identity can still authorize the ordinary gate; a name-only tag waits for
+  // media verification and preserves its useful candidate for review.
+  const tag = input.evidence.taggedLocation;
+  const tagHasStrongProviderIdentity = !!text(tag?.address) || !!text(tag?.externalPlaceId);
+  const tagOnlyIdentity = !!tag && !tagHasStrongProviderIdentity &&
+    !text(input.evidence.address?.raw) && independentCaptionHints.length === 0;
+  if (tagOnlyIdentity) explicitConflictFlags.push('tagged_location_requires_media_verification');
 
   const selected = viable.length === 1
     ? viable[0]!
