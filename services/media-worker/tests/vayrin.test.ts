@@ -72,6 +72,27 @@ test('coarse metadata does not suppress the visual fallback', () => {
   }), { run: true, reason: 'only_coarse_geography' });
 });
 
+test('clean empty evidence does not spend Sol without a grounded recovery input', () => {
+  assert.deepEqual(shouldRunVayrinFallback({
+    enabled: true, frameCount: 8, insufficientEvidence: true,
+    explicitPlaceCount: 0, geographicOnlyPlaceCount: 0,
+    usefulPartialPlaceCount: 0, technicalFailure: false,
+  }), { run: false, reason: 'no_grounded_recovery_input' });
+});
+
+test('grounded partial recovery uses cheap Places while technical emptiness may use Sol', () => {
+  assert.deepEqual(shouldRunVayrinFallback({
+    enabled: true, frameCount: 8, insufficientEvidence: false,
+    explicitPlaceCount: 0, geographicOnlyPlaceCount: 0,
+    usefulPartialPlaceCount: 1, technicalFailure: true,
+  }), { run: false, reason: 'partial_recovery_sufficient' });
+  assert.deepEqual(shouldRunVayrinFallback({
+    enabled: true, frameCount: 8, insufficientEvidence: true,
+    explicitPlaceCount: 0, geographicOnlyPlaceCount: 0,
+    usefulPartialPlaceCount: 0, technicalFailure: true,
+  }), { run: true, reason: 'technical_output_recovery' });
+});
+
 test('disabled feature flag returns the original provider and cannot call OpenAI', () => {
   const inner: ModelProvider = {
     name: 'test',
@@ -96,6 +117,26 @@ test('multi-place payload remains multiple with timestamp-associated segments', 
   assert.equal(mapped.evidence.multipleIntentionalPlaces, true);
   assert.deepEqual(mapped.evidence.places.map((place) => place.name), ['First Beach', 'Second Beach']);
   assert.equal(mapped.evidence.places[1]?.explicitEvidence[0]?.timestampSeconds, 12);
+});
+
+test('Sol region-only output survives as noncanonical AREA evidence', () => {
+  const broad = {
+    ...hypothesis('Algarve'),
+    city: null,
+    region: 'Algarve',
+    country: 'Portugal',
+    specificity: 'region',
+  };
+  const mapped = payloadToEvidence({
+    place_hypotheses: [broad],
+    multiple_distinct_places_visible: false,
+    additional_place_segments: [],
+    metadata_was_sufficient: false,
+  });
+  assert.equal(mapped.evidence.places.length, 0);
+  assert.equal(mapped.evidence.partialPlaces?.[0]?.region, 'Algarve');
+  assert.equal(mapped.evidence.partialPlaces?.[0]?.nameHint, null);
+  assert.equal(mapped.evidence.insufficientEvidence, false);
 });
 
 test('same-scene alternatives share one logical place while distinct scenes do not', () => {

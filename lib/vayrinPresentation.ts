@@ -16,6 +16,8 @@ export type VayrinPresentationKind =
   | 'likely'
   | 'leads_candidates'
   | 'leads_unverified'
+  | 'area_match'
+  | 'partial_result'
   | 'multi_found'
   | 'multi_partial'
   | 'no_evidence'
@@ -227,6 +229,24 @@ export function buildVayrinPresentation(
         primaryAction: 'Search places',
         secondaryAction: 'Search for the place',
       };
+    case 'area_match':
+      return {
+        ...base,
+        kind: 'area_match',
+        headline: 'Area match.',
+        body: 'We narrowed down the location. Search this area to choose the exact place.',
+        primaryAction: 'Search this area',
+        secondaryAction: 'Change location',
+      };
+    case 'partial_result':
+      return {
+        ...base,
+        kind: 'partial_result',
+        headline: 'A few useful clues.',
+        body: 'Use the name, category, or location clue to continue the search.',
+        primaryAction: 'Continue search',
+        secondaryAction: 'Search manually',
+      };
     case 'multi_found':
       return {
         ...base,
@@ -345,6 +365,15 @@ export function mapShareJobToVayrinPresentation(
   }
   if (leads.length > 0 || hasModelPrior) {
     return buildVayrinPresentation({ kind: 'leads_unverified', source: 'async', leads }, context);
+  }
+  if (detail.partialResult?.resultClass === 'area_match') {
+    return buildVayrinPresentation({ kind: 'area_match', source: 'async' }, context);
+  }
+  if (detail.partialResult?.resultClass === 'search_lead') {
+    return buildVayrinPresentation({ kind: 'leads_unverified', source: 'async' }, context);
+  }
+  if (detail.partialResult) {
+    return buildVayrinPresentation({ kind: 'partial_result', source: 'async' }, context);
   }
   if (detail.kind === 'manual' && job?.status === 'failed') {
     return buildVayrinPresentation({ kind: 'technical_failure', source: 'async' }, context);

@@ -67,6 +67,15 @@ export type AnalyzeOutput = {
   modelRawPreview?: string;
   /** Structured record of what schema validation kept vs dropped. */
   parseDiagnostics?: EvidenceParseDiagnostics;
+  /** Why recognition produced no canonical result. This is operational state,
+   * not user-facing copy, and lets the finalizer distinguish an honest empty
+   * scene from a broken extraction/recovery path. */
+  recognitionFailureClass?:
+    | 'candidate_field_invalid'
+    | 'model_schema_invalid'
+    | 'model_provider_failure'
+    | 'recovery_invalid'
+    | 'recovery_empty';
   /** Bounded, secret-free record of the Vayrin visual-geolocation escalation:
    *  whether it ran, why, what it cost, and what it produced. Absent when the
    *  provider is not wrapped. Typed loosely so this module does not have to
@@ -162,11 +171,18 @@ export function groundClaimedEvidence(
       memoryCueEvidence,
     };
   });
+  const partialPlaces = (evidence.partialPlaces ?? [])
+    .map((place) => ({
+      ...place,
+      explicitEvidence: groundedItems(place.explicitEvidence, false),
+    }))
+    .filter((place) => place.explicitEvidence.length > 0);
+  const hasCanonicalEvidence = places.some((place) => place.explicitEvidence.length > 0);
   return {
     ...evidence,
     places,
-    insufficientEvidence:
-      evidence.insufficientEvidence || places.every((place) => place.explicitEvidence.length === 0),
+    partialPlaces,
+    insufficientEvidence: !hasCanonicalEvidence && partialPlaces.length === 0,
     warnings: dropped > 0
       ? [...evidence.warnings, 'ungrounded_explicit_evidence_dropped']
       : evidence.warnings,
@@ -244,6 +260,7 @@ export function heuristicEvidence(input: AnalyzeInput): MediaPlaceEvidence {
 
   return {
     places: [place],
+    partialPlaces: [],
     multipleIntentionalPlaces: false,
     insufficientEvidence: false,
     warnings: ['heuristic_provider'],
@@ -269,6 +286,8 @@ function parseTargetedAiNoteResponse(
       rejected: 1,
       rejectionPaths: [path],
       topLevelInvalid: true,
+      partialPreserved: 0,
+      validationErrorClass: 'top_level_invalid' as const,
     },
   });
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return invalid('response:invalid_type');
@@ -322,6 +341,7 @@ function parseTargetedAiNoteResponse(
   return {
     evidence: {
       places: [place],
+      partialPlaces: [],
       multipleIntentionalPlaces: false,
       insufficientEvidence: !note || mergedEvidence.length === 0,
       warnings: [],
@@ -332,6 +352,8 @@ function parseTargetedAiNoteResponse(
       rejected: 0,
       rejectionPaths: [],
       topLevelInvalid: false,
+      partialPreserved: 0,
+      validationErrorClass: 'none',
     },
   };
 }
@@ -350,7 +372,13 @@ class GeminiModel implements ModelProvider {
     const promptVersion = input.targetPlace ? AI_NOTE_PROMPT_VERSION : PROMPT_VERSION;
     if (!this.cfg.geminiApiKey) {
       if (input.targetPlace) throw new MediaError('provider_unavailable', 'gemini_missing_key');
-      return { provider: this.name, modelName: this.cfg.geminiModel, promptVersion, evidence: emptyEvidence(['gemini_missing_key']) };
+      return {
+        provider: this.name,
+        modelName: this.cfg.geminiModel,
+        promptVersion,
+        evidence: emptyEvidence(['gemini_missing_key']),
+        recognitionFailureClass: 'model_provider_failure',
+      };
     }
     const transcriptText = input.transcript
       .map((s) => `[${s.startSeconds.toFixed(1)}] ${s.text}`)
@@ -455,7 +483,14 @@ class GeminiModel implements ModelProvider {
             parseRetryAfterSeconds(res.headers.get('retry-after')),
           );
         }
-        return { provider: this.name, modelName: this.cfg.geminiModel, promptVersion, evidence: emptyEvidence([warning]), modelInput };
+        return {
+          provider: this.name,
+          modelName: this.cfg.geminiModel,
+          promptVersion,
+          evidence: emptyEvidence([warning]),
+          recognitionFailureClass: 'model_provider_failure',
+          modelInput,
+        };
       }
       const json = (await res.json()) as {
         candidates?: { content?: { parts?: { text?: string }[] } }[];
@@ -480,7 +515,17 @@ class GeminiModel implements ModelProvider {
       try {
         parsed = JSON.parse(text);
       } catch {
-        return { provider: this.name, modelName: this.cfg.geminiModel, promptVersion, evidence: emptyEvidence(['gemini_json_parse_failed']), modelRawPreview: text.slice(0, 500), modelInput, usage, latencyMs };
+        return {
+          provider: this.name,
+          modelName: this.cfg.geminiModel,
+          promptVersion,
+          evidence: emptyEvidence(['gemini_json_parse_failed']),
+          recognitionFailureClass: 'model_schema_invalid',
+          modelRawPreview: text.slice(0, 500),
+          modelInput,
+          usage,
+          latencyMs,
+        };
       }
       const { evidence: validated, diagnostics: parseDiag } = input.targetPlace
         ? parseTargetedAiNoteResponse(parsed, input as AnalyzeInput & { targetPlace: NonNullable<AnalyzeInput['targetPlace']> })
@@ -495,7 +540,15 @@ class GeminiModel implements ModelProvider {
           accepted: parseDiag.accepted,
           rejected: parseDiag.rejected,
           topLevelInvalid: parseDiag.topLevelInvalid,
+          partialPreserved: parseDiag.partialPreserved,
+          validationErrorClass: parseDiag.validationErrorClass,
           paths: parseDiag.rejectionPaths,
+        });
+      }
+      if (parseDiag.partialPreserved > 0) {
+        log.info('partial_evidence_preserved', {
+          count: parseDiag.partialPreserved,
+          validationErrorClass: parseDiag.validationErrorClass,
         });
       }
       return {
@@ -505,6 +558,11 @@ class GeminiModel implements ModelProvider {
         evidence,
         modelRawPreview: text.slice(0, 500),
         parseDiagnostics: parseDiag,
+        recognitionFailureClass: parseDiag.topLevelInvalid
+          ? 'model_schema_invalid'
+          : parseDiag.rejected > 0
+            ? 'candidate_field_invalid'
+            : undefined,
         modelInput,
         usage,
         latencyMs,

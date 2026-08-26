@@ -66,6 +66,13 @@ export function selectDurableEvidenceFrames(args: {
       }
     }
   }
+  for (const place of args.evidence.partialPlaces ?? []) {
+    for (const item of place.explicitEvidence) {
+      if (item.source === 'frame' && typeof item.timestampSeconds === 'number') {
+        add(nearestFrame(eligible, item.timestampSeconds), 'candidate_evidence');
+      }
+    }
+  }
   for (const timestamp of selectedByVayrin) add(nearestFrame(eligible, timestamp), 'vayrin_selected');
   for (const frame of eligible) add(frame, selectedByVayrin.length > 0 ? 'vayrin_selected' : 'analysis_coverage');
   return result;

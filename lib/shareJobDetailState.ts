@@ -35,9 +35,11 @@ import {
 import {
   evidenceFramesFromPayload,
   normalizeMentionSlots,
+  partialResultFromPayload,
   savedPlaceIdsFromPayload,
   type ShareJobEvidenceFrame,
   type ShareJobMentionSlot,
+  type ShareJobPartialResult,
 } from './shareJobResult';
 import {
   selectionModeForPlaceResult,
@@ -86,6 +88,9 @@ export type ShareJobDetailReason =
   | 'candidates_multiple'
   | 'candidates_single'
   | ShareFailureCategory
+  | 'area_match'
+  | 'search_lead'
+  | 'partial_result'
   | 'no_candidates';
 
 /** Loose structural input so this works with `ShareJob` and with a raw row. */
@@ -114,6 +119,7 @@ export type ShareJobDetailState = {
   mentionSlots: ShareJobMentionSlot[];
   /** Bounded private frames that were actually analyzed for this result. */
   evidenceFrames: ShareJobEvidenceFrame[];
+  partialResult: ShareJobPartialResult | null;
   /** Places this job already saved automatically. */
   savedPlaceIds: string[];
   savedPlaceId: string | null;
@@ -138,6 +144,18 @@ export const SHARE_JOB_DETAIL_COPY = {
   manual: {
     title: "We couldn't pin this one down",
     body: 'Open Nearr to search manually.',
+  },
+  areaMatch: {
+    title: 'We narrowed down the area',
+    body: 'Use this area to check the place before saving it.',
+  },
+  searchLead: {
+    title: 'We found a useful lead',
+    body: 'Search this lead and confirm the place you meant.',
+  },
+  partialResult: {
+    title: 'We found a few useful clues',
+    body: 'Use these clues to continue the search in Nearr.',
   },
   multi: {
     body: 'Pick the ones you meant and we’ll save them together.',
@@ -208,6 +226,7 @@ export function buildShareJobDetailState(
     candidates: [],
     mentionSlots: [],
     evidenceFrames: [],
+    partialResult: null,
     savedPlaceIds: [],
     savedPlaceId: null,
     savedPlaceName: null,
@@ -230,11 +249,12 @@ export function buildShareJobDetailState(
   const candidatePayload = record(job.candidate_payload);
   const mentionSlots = normalizeMentionSlots(candidatePayload?.mentionSlots);
   const evidenceFrames = evidenceFramesFromPayload(candidatePayload);
+  const partialResult = partialResultFromPayload(candidatePayload);
   const candidates = collectCandidates(job.candidate_payload, mentionSlots);
   const savedPlaceIds = savedPlaceIdsFromPayload(job.candidate_payload);
   const extraction = record(job.extraction_payload);
   const savedPlaceId = text(job.saved_place_id);
-  const suggestedQuery = text(job.suggested_query) ?? candidates[0]?.name ?? null;
+  const suggestedQuery = text(job.suggested_query) ?? candidates[0]?.name ?? partialResult?.searchQuery ?? null;
   const selectionMode = selectionModeForPlaceResult({
     explicitMode: candidatePayload?.selectionMode,
     decision: job.decision,
@@ -247,6 +267,7 @@ export function buildShareJobDetailState(
     candidates,
     mentionSlots,
     evidenceFrames,
+    partialResult,
     savedPlaceIds,
     savedPlaceId,
     savedPlaceName: text(extraction?.savedPlaceName),
@@ -352,6 +373,23 @@ export function buildShareJobDetailState(
       // own honest wording instead of an unqualified "we found it".
       copy: quickCheckReviewCopy(job.needs_help_reason, SHARE_JOB_DETAIL_COPY.confirm),
       reason: 'candidates_single',
+    };
+  }
+
+  if (partialResult) {
+    const copy = partialResult.resultClass === 'area_match'
+      ? SHARE_JOB_DETAIL_COPY.areaMatch
+      : partialResult.resultClass === 'search_lead'
+        ? SHARE_JOB_DETAIL_COPY.searchLead
+        : SHARE_JOB_DETAIL_COPY.partialResult;
+    return {
+      ...base,
+      canRetry: false,
+      canSearchManually: true,
+      failureCategory: null,
+      kind: 'manual',
+      copy,
+      reason: partialResult.resultClass,
     };
   }
 

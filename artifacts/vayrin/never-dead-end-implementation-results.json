@@ -1,0 +1,138 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-25T18:40:00-07:00",
+  "implementationBranch": "feat/vayrin-never-dead-end",
+  "safety": {
+    "rawPartialDirectSave": false,
+    "regionOnlyAutoSave": false,
+    "categoryOnlyAutoSave": false,
+    "searchLeadAutoSave": false,
+    "cachedPartialSingletonAutoSave": false,
+    "wrongAutoSaveRegression": 0
+  },
+  "cases": [
+    {
+      "id": 1,
+      "fixture": "empty name plus valid country",
+      "before": "candidate rejected; empty recovery could become insufficient_evidence",
+      "after": "canonical rejected; grounded country retained as review-only AREA MATCH",
+      "saveable": false
+    },
+    {
+      "id": 2,
+      "fixture": "empty name plus valid category",
+      "before": "candidate rejected and category erased",
+      "after": "category retained as review-only partial result and manual-search query",
+      "saveable": false
+    },
+    {
+      "id": 3,
+      "fixture": "malformed canonical candidate plus strong region",
+      "before": "whole candidate rejected",
+      "after": "grounded region reaches geographic resolution and AREA MATCH copy",
+      "saveable": false
+    },
+    {
+      "id": 4,
+      "fixture": "malformed candidate plus weak or no valid explicit evidence",
+      "before": "could be conflated with insufficient evidence",
+      "after": "no partial is manufactured; failed recovery remains technical",
+      "saveable": false
+    },
+    {
+      "id": 5,
+      "fixture": "Sol recovers canonical place",
+      "before": "canonical Vayrin evidence entered existing resolver",
+      "after": "unchanged canonical resolver, V3, ambiguity, and autosave policy",
+      "saveable": "existing canonical trust rules only"
+    },
+    {
+      "id": 6,
+      "fixture": "Sol recovers region only",
+      "before": "non-specific hypothesis was dropped",
+      "after": "region survives in partialPlaces and becomes review-only AREA MATCH",
+      "saveable": false
+    },
+    {
+      "id": 7,
+      "fixture": "Sol returns nothing",
+      "before": "baseline technical invalidity could become insufficient_evidence",
+      "after": "existing partial wins; otherwise baseline technical failure remains failed",
+      "saveable": false
+    },
+    {
+      "id": 8,
+      "fixture": "Places resolves from partial clue",
+      "before": "partial clue never reached Places",
+      "after": "grounded name/locality reaches context-aware Places as model_prior confirmation",
+      "saveable": false
+    },
+    {
+      "id": 9,
+      "fixture": "Places returns no match",
+      "before": "generic manual fallback",
+      "after": "truthful search lead, area match, or category/locality partial result remains",
+      "saveable": false
+    },
+    {
+      "id": 10,
+      "fixture": "genuine insufficient evidence",
+      "before": "insufficient_evidence",
+      "after": "insufficient_evidence after a clean empty extraction; no unnecessary Sol call",
+      "saveable": false
+    },
+    {
+      "id": 11,
+      "fixture": "provider technical failure",
+      "before": "some malformed/empty paths could present as insufficient",
+      "after": "retryable provider errors retry; exhausted recovery is recognition_recovery_exhausted",
+      "saveable": false
+    },
+    {
+      "id": 12,
+      "fixture": "multiple partial candidates",
+      "before": "malformed units were erased while valid siblings survived",
+      "after": "up to 12 independently grounded partial units survive; canonical siblings remain authoritative",
+      "saveable": false
+    }
+  ],
+  "historicalReplay": {
+    "window": {
+      "from": "2026-08-18T04:25:00Z",
+      "to": "2026-08-25T03:43:00Z",
+      "runs": 199,
+      "validationRejections": 26
+    },
+    "currentOutcomes": {
+      "completed": 7,
+      "insufficient_evidence": 2,
+      "review_required": 14,
+      "unknown_or_deleted": 3
+    },
+    "newArchitectureStructuralReplay": {
+      "exact_recovered": 4,
+      "candidate_set_recovered": 8,
+      "conditional_area_match": 4,
+      "conditional_search_lead": 1,
+      "conditional_partial_result": 8,
+      "honest_terminal_or_unknown": 1
+    },
+    "caveat": "Retained previews are truncated. Conditional partial classifications require runtime grounding and are not ground-truth place correctness claims."
+  },
+  "costAndLatency": {
+    "deterministicRecoveryCostUsd": 0,
+    "placesCalls": "zero for category-only partials; existing bounded name/geographic resolver calls for grounded name or area",
+    "solPolicy": "skip for clean empty evidence and useful grounded partials; invoke for technical malformed output without a cheaper useful lead and existing coarse canonical geography",
+    "officialSolStandardShortContextUsdPerMillion": {
+      "input": 5,
+      "cachedInput": 0.5,
+      "output": 30
+    },
+    "knownIncidentSol": {
+      "latencyMs": 19914,
+      "estimatedCostUsd": 0.070651,
+      "recovered": false
+    },
+    "providerLatencyP50P95": "not claimed from the privacy-safe frozen cohort because only two rows retained invocation telemetry; new bounded telemetry records future branch latency"
+  }
+}

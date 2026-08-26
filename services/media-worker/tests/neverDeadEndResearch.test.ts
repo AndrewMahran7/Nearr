@@ -51,12 +51,14 @@ function envelope(places: unknown[], overrides: Record<string, unknown> = {}) {
   };
 }
 
-test('1: empty name reproduces places.0.name:too_small and discards the candidate', () => {
+test('1: empty name rejects canonical identity but preserves grounded partial evidence', () => {
   const parsed = parseEvidenceWithDiagnostics(envelope([candidate({ name: '' })]));
   assert.deepEqual(parsed.diagnostics.rejectionPaths, ['places.0.name:too_small']);
   assert.equal(parsed.diagnostics.rejected, 1);
   assert.equal(parsed.evidence.places.length, 0);
-  assert.equal(parsed.evidence.insufficientEvidence, true);
+  assert.equal(parsed.evidence.partialPlaces?.length, 1);
+  assert.equal(parsed.evidence.partialPlaces?.[0]?.country, 'Example Country');
+  assert.equal(parsed.evidence.insufficientEvidence, false);
 });
 
 test('2: a provider id cannot currently rescue a missing name', () => {

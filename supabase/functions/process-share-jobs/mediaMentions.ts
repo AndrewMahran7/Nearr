@@ -29,6 +29,7 @@
 import {
   classifyGeographicSourcePlace,
   isGeographicContextOnlySource,
+  partialPlaceToReviewOnlyCandidate,
   type MediaPlaceEvidence,
   type PlaceCandidateEvidence,
   type PlaceEvidenceSource,
@@ -178,6 +179,8 @@ export type BuildMentionsResult = {
   /** Geographic places the post offers as destinations in their own right.
    *  These DO become mentions, resolved through the geographic path. */
   peerGeographicDestinations: number;
+  /** Review-only partial units promoted into bounded resolver mentions. */
+  partialMentions: number;
 };
 
 // ---------------------------------------------------------------------------
@@ -615,8 +618,9 @@ export function buildVenueMentions(evidence: MediaPlaceEvidence): BuildMentionsR
     droppedPassingMention: 0,
     droppedGeographicContext: 0,
     peerGeographicDestinations: 0,
+    partialMentions: 0,
   };
-  if (!evidence || evidence.insufficientEvidence) return empty;
+  if (!evidence || (evidence.insufficientEvidence && (evidence.partialPlaces?.length ?? 0) === 0)) return empty;
 
   let droppedInferredOnly = 0;
   let droppedIneligibleName = 0;
@@ -630,7 +634,12 @@ export function buildVenueMentions(evidence: MediaPlaceEvidence): BuildMentionsR
   const geographicContext: PlaceCandidateEvidence[] = [];
   // Peer geographic destinations: mentions, but resolved geographically.
   const peerGeographic = new Set<PlaceCandidateEvidence>();
-  for (const p of evidence.places) {
+  const partialCandidates = (evidence.partialPlaces ?? []).flatMap((partial, index) => {
+    const candidate = partialPlaceToReviewOnlyCandidate(partial, index);
+    return candidate ? [candidate] : [];
+  });
+  const allPlaces = [...evidence.places, ...partialCandidates];
+  for (const p of allPlaces) {
     if (p.explicitEvidence.length === 0) {
       droppedInferredOnly += 1;
       continue;
@@ -639,7 +648,7 @@ export function buildVenueMentions(evidence: MediaPlaceEvidence): BuildMentionsR
       droppedPassingMention += 1;
       continue;
     }
-    const geoRole = classifyGeographicSourcePlace(p, evidence.places);
+    const geoRole = classifyGeographicSourcePlace(p, allPlaces);
     if (geoRole === 'redundant_container') {
       // The post's real destinations sit inside this place. Context only.
       geographicContext.push(p);
@@ -866,9 +875,9 @@ export function buildVenueMentions(evidence: MediaPlaceEvidence): BuildMentionsR
     // popularity vote. The vote is what let one peer destination's locality
     // become every sibling's search context; see `establishSharedCity`.
     geoContext: {
-      ...establishSharedCity([...eligible, ...geographicContext], evidence.places ?? []),
+      ...establishSharedCity([...eligible, ...geographicContext], allPlaces),
       ...establishSharedRegion([...eligible, ...geographicContext]),
-      ...sharedCountryForEvidence(evidence),
+      ...establishSharedCountry(eligible, geographicContext),
     },
     relationships,
     droppedInferredOnly,
@@ -876,5 +885,6 @@ export function buildVenueMentions(evidence: MediaPlaceEvidence): BuildMentionsR
     droppedPassingMention,
     droppedGeographicContext: geographicContext.length,
     peerGeographicDestinations: peerGeographic.size,
+    partialMentions: partialCandidates.length,
   };
 }

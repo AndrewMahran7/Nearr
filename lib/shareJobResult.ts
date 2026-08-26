@@ -110,6 +110,17 @@ export type ShareJobCandidatePayload = {
   savedPlaceIds?: string[];
   /** At most five frames, ordered strongest/relevant first. */
   evidenceFrames?: ShareJobEvidenceFrame[];
+  partialResult?: ShareJobPartialResult;
+};
+
+export type ShareJobPartialResult = {
+  version: 1;
+  reviewOnly: true;
+  resultClass: 'area_match' | 'search_lead' | 'partial_result';
+  locality: string | null;
+  category: string | null;
+  searchQuery: string | null;
+  clueCount: number;
 };
 
 function normalizedTimestamps(value: unknown): number[] {
@@ -341,6 +352,29 @@ export function buildShareJobCandidatePayload(candidates: unknown, mentionResult
 export function evidenceFramesFromPayload(payload: unknown): ShareJobEvidenceFrame[] {
   if (!payload || typeof payload !== 'object') return [];
   return normalizeEvidenceFrames((payload as Record<string, unknown>).evidenceFrames);
+}
+
+export function partialResultFromPayload(payload: unknown): ShareJobPartialResult | null {
+  if (!payload || typeof payload !== 'object') return null;
+  const raw = (payload as Record<string, unknown>).partialResult;
+  if (!raw || typeof raw !== 'object') return null;
+  const row = raw as Record<string, unknown>;
+  const resultClass = row.resultClass;
+  if (
+    row.version !== 1 || row.reviewOnly !== true ||
+    (resultClass !== 'area_match' && resultClass !== 'search_lead' && resultClass !== 'partial_result')
+  ) return null;
+  return {
+    version: 1,
+    reviewOnly: true,
+    resultClass,
+    locality: text(row.locality)?.slice(0, 160) ?? null,
+    category: text(row.category)?.slice(0, 80) ?? null,
+    searchQuery: text(row.searchQuery)?.slice(0, 240) ?? null,
+    clueCount: typeof row.clueCount === 'number' && Number.isFinite(row.clueCount)
+      ? Math.max(0, Math.min(24, Math.floor(row.clueCount)))
+      : 0,
+  };
 }
 
 export function mentionCount(payload: unknown): number {

@@ -367,6 +367,17 @@ export function evaluateCachedSingletonAutoSave(
   reranked: CachedCandidateRerankResult,
 ): CachedSingletonAutoSaveDecision {
   const payload = object(reranked.payload);
+  const partialResult = object(payload?.partialResult);
+  if (partialResult?.reviewOnly === true) {
+    return {
+      eligible: false,
+      candidate: null,
+      selectedProviderId: null,
+      viableCandidateCount: 0,
+      reason: 'partial_recovery_review_only',
+      qualityReason: null,
+    };
+  }
   const candidates = rawCandidates(payload?.candidates);
   const slots = normalizeMentionSlots(payload?.mentionSlots);
   const rawSlots = rawCandidates(payload?.mentionSlots);

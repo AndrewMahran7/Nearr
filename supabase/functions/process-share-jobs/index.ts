@@ -82,6 +82,7 @@ import {
   renderMediaEvidenceCaption,
   summarizeMediaEvidence,
   mediaEvidenceAutoSaveEligible,
+  buildVayrinPartialResult,
 } from './mediaEvidence.ts';
 import { buildRecognitionFunnel } from './mediaRunDiagnostics.ts';
 import {
@@ -227,6 +228,8 @@ const MEDIA_FAILURE_CODES = new Set([
   'ssrf_blocked',
   'cancelled',
   'insufficient_evidence',
+  'recognition_recovery_exhausted',
+  'partial_evidence_invalid',
 ]);
 
 function safeMediaFailureCode(value: unknown): string | null {
@@ -1494,14 +1497,19 @@ async function finalizeMediaTask(
   const outcome = typeof body.outcome === 'string' ? body.outcome : 'evidence';
   const failureCode = safeMediaFailureCode(body.failureCode);
   const analysisAttempted = body.analysisAttempted === true;
-  const parsed = outcome === 'evidence'
+  const parsed = outcome === 'evidence' || outcome === 'partial_evidence'
     ? parseMediaEvidence(body.evidence)
     : ({ ok: false, error: outcome } as const);
   const evidenceFrames = normalizeEvidenceFrames(body.evidenceFrames);
   const rendered = parsed.ok
     ? renderMediaEvidenceCaption(parsed.value)
     : { title: '', description: '', renderedPlaces: 0 };
-  const notificationLocality = trustedMediaNotificationLocality(parsed);
+  const partialResult = parsed.ok ? buildVayrinPartialResult(parsed.value) : null;
+  const notificationLocality = trustedMediaNotificationLocality(parsed) ?? (
+    partialResult?.locality
+      ? { label: partialResult.locality, basis: 'observable_corroborated' as const }
+      : null
+  );
 
   const pre = planPreResolve({
     taskStatus: task.status,
@@ -1511,6 +1519,7 @@ async function finalizeMediaTask(
     failureCode,
     evidenceParseOk: parsed.ok,
     renderedPlaces: rendered.renderedPlaces,
+    partialPlaces: parsed.ok ? parsed.value.partialPlaces?.length ?? 0 : 0,
   });
 
   // Terminal task → idempotent no-op (duplicate / replayed callback).
@@ -1670,7 +1679,15 @@ async function finalizeMediaTask(
   // path (e.g. a "top 5 pizza" reel with names but no street addresses).
   const mediaMentions = parsed.ok
     ? buildVenueMentions(parsed.value)
-    : { mentions: [], geoContext: { city: null, region: null, country: null }, relationships: [] };
+    : { mentions: [], geoContext: { city: null, region: null, country: null }, relationships: [], partialMentions: 0 };
+  if (partialResult) {
+    console.log(
+      `[media-task] partial_recovery task_id=${taskId} deterministic_recovery_attempted=true ` +
+      `places_recovery_attempted=${mediaMentions.partialMentions > 0} ` +
+      `recovery_outcome=${partialResult.resultClass} final_result_class=${partialResult.resultClass} ` +
+      `clue_count=${partialResult.clueCount}`,
+    );
+  }
   const result = await resolveSharedPlace({
     evidence: mediaEvidence,
     env,
@@ -2052,6 +2069,7 @@ async function finalizeMediaTask(
     );
     candidatePayload.evidenceFrames = evidenceFrames;
     candidatePayload.savedPlaceIds = allSavedPlaceIds;
+    if (partialResult) (candidatePayload as any).partialResult = partialResult;
     const mediaResultSummary = {
       createdCount: createdSavedPlaceIds.length,
       alreadySavedCount: alreadySavedPlaceIds.length,
@@ -2082,7 +2100,7 @@ async function finalizeMediaTask(
           candidates: candidatePayload.candidates,
           mentionResults: candidatePayload.mentionSlots,
           notificationLocality,
-          hasWeakClues: hasSafeWeakClues(result.evidenceUsed),
+          hasWeakClues: hasSafeWeakClues(result.evidenceUsed) || !!partialResult,
           savedPlaceId: allSavedPlaceIds[0] ?? null,
           savedPlaceIds: allSavedPlaceIds,
           createdSavedPlaceIds,
@@ -2132,7 +2150,7 @@ async function finalizeMediaTask(
         decision: mediaReviewDecision(unresolvedResults),
         saved_place_id: allSavedPlaceIds[0] ?? null,
         needs_help_reason: allSavedPlaceIds.length > 0 ? 'media_partial_review' : 'media_review_required',
-        suggested_query: unresolvedResults.map((mention: any) => mention.displayName).filter(Boolean).join(' | ') || null,
+        suggested_query: unresolvedResults.map((mention: any) => mention.displayName).filter(Boolean).join(' | ') || partialResult?.searchQuery || null,
         candidate_payload: candidatePayload,
         canonical_url: canonicalUrl,
         source_platform: task.platform,
@@ -2267,6 +2285,7 @@ async function finalizeMediaTask(
     })),
   );
   candidatePayload.evidenceFrames = evidenceFrames;
+  if (partialResult) (candidatePayload as any).partialResult = partialResult;
   const decisionForRow =
     mode === 'manual'
       ? 'manual_fallback'
@@ -2282,14 +2301,16 @@ async function finalizeMediaTask(
     : plan.route === 'needs_help'
     ? plan.needsHelpReason
     : 'candidate_confirmation';
-  const suggestedQuery = plan.route === 'needs_help' ? plan.suggestedQuery : (result.cleanSearchQuery ?? null);
+  const suggestedQuery = (plan.route === 'needs_help' ? plan.suggestedQuery : result.cleanSearchQuery)
+    ?? partialResult?.searchQuery
+    ?? null;
   const note = reviewNotification({
     mode,
     jobId: job.id,
     candidates: result.candidates,
     mentionResults: candidatePayload.mentionSlots,
     notificationLocality,
-    hasWeakClues: hasSafeWeakClues(result.evidenceUsed),
+    hasWeakClues: hasSafeWeakClues(result.evidenceUsed) || !!partialResult,
   });
   await finalize(
     admin,

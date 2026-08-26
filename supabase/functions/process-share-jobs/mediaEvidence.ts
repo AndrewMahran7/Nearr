@@ -67,8 +67,24 @@ export type PlaceCandidateEvidence = {
   memoryCueEvidence?: PlaceEvidenceItem[];
 };
 
+export type PartialPlaceEvidence = {
+  nameHint: string | null;
+  category: NearrCategory | null;
+  categoryConfidence: number;
+  categoryEvidenceTags: string[];
+  addressHint: string | null;
+  city: string | null;
+  region: string | null;
+  country: string | null;
+  role: PlaceRole;
+  confidence: number;
+  explicitEvidence: PlaceEvidenceItem[];
+  validationErrors: string[];
+};
+
 export type MediaPlaceEvidence = {
   places: PlaceCandidateEvidence[];
+  partialPlaces?: PartialPlaceEvidence[];
   multipleIntentionalPlaces: boolean;
   insufficientEvidence: boolean;
   warnings: string[];
@@ -180,6 +196,38 @@ function parsePlace(raw: unknown): PlaceCandidateEvidence | null {
   };
 }
 
+function parsePartialPlace(raw: unknown): PartialPlaceEvidence | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const r = raw as Record<string, unknown>;
+  const explicitEvidence = Array.isArray(r.explicitEvidence)
+    ? r.explicitEvidence.slice(0, MAX_EVIDENCE_PER_PLACE)
+      .map(parseEvidenceItem)
+      .filter((item): item is PlaceEvidenceItem => item !== null)
+    : [];
+  if (explicitEvidence.length === 0) return null;
+  const role = typeof r.role === 'string' && VALID_ROLES.has(r.role)
+    ? (r.role as PlaceRole)
+    : 'primary';
+  return {
+    nameHint: str(r.nameHint, 200),
+    category: isNearrCategory(r.category) ? r.category : null,
+    categoryConfidence: Math.max(0, Math.min(1, num(r.categoryConfidence) ?? 0)),
+    categoryEvidenceTags: Array.isArray(r.categoryEvidenceTags)
+      ? r.categoryEvidenceTags.map((tag) => str(tag, 80)).filter((tag): tag is string => !!tag).slice(0, 8)
+      : [],
+    addressHint: str(r.addressHint, 300),
+    city: str(r.city, 120),
+    region: str(r.region, 120),
+    country: str(r.country, 120),
+    role,
+    confidence: Math.max(0, Math.min(1, num(r.confidence) ?? 0)),
+    explicitEvidence,
+    validationErrors: Array.isArray(r.validationErrors)
+      ? r.validationErrors.map((error) => str(error, 160)).filter((error): error is string => !!error).slice(0, 8)
+      : [],
+  };
+}
+
 /**
  * Defensively parse/normalize the media worker's evidence JSON. The heavy
  * schema validation lives in the worker (Zod); this is defense-in-depth so a
@@ -198,6 +246,11 @@ export function parseMediaEvidence(raw: unknown): ParseResult {
         .map(parsePlace)
         .filter((x): x is PlaceCandidateEvidence => x !== null)
     : [];
+  const partialPlaces = Array.isArray(r.partialPlaces)
+    ? r.partialPlaces.slice(0, MAX_PLACES)
+      .map(parsePartialPlace)
+      .filter((place): place is PartialPlaceEvidence => place !== null)
+    : [];
 
   const warnings = Array.isArray(r.warnings)
     ? r.warnings
@@ -210,10 +263,89 @@ export function parseMediaEvidence(raw: unknown): ParseResult {
     ok: true,
     value: {
       places,
+      partialPlaces,
       multipleIntentionalPlaces: r.multipleIntentionalPlaces === true,
       insufficientEvidence: r.insufficientEvidence === true,
       warnings,
     },
+  };
+}
+
+function partialFieldIsGrounded(value: string | null, evidence: PlaceEvidenceItem[]): boolean {
+  if (!value) return false;
+  const folded = foldLabel(value);
+  return folded.length >= 3 && evidence.some((item) => foldLabel(item.value).includes(folded));
+}
+
+/** Convert partial evidence into a deliberately prior-labelled synthetic
+ * candidate for the existing resolver. Returning model_prior is load-bearing:
+ * even a perfect Places match remains confirmation-only. */
+export function partialPlaceToReviewOnlyCandidate(
+  partial: PartialPlaceEvidence,
+  index: number,
+): PlaceCandidateEvidence | null {
+  const groundedName = partialFieldIsGrounded(partial.nameHint, partial.explicitEvidence)
+    ? partial.nameHint
+    : null;
+  const city = partialFieldIsGrounded(partial.city, partial.explicitEvidence) ? partial.city : null;
+  const region = partialFieldIsGrounded(partial.region, partial.explicitEvidence) ? partial.region : null;
+  const country = partialFieldIsGrounded(partial.country, partial.explicitEvidence) ? partial.country : null;
+  const name = groundedName ?? city ?? region ?? country;
+  if (!name || partial.role === 'passing_mention') return null;
+  return {
+    logicalPlaceId: `partial-${index + 1}`,
+    identityEvidenceKind: 'model_prior',
+    hypothesisRank: 0,
+    name,
+    category: partial.category,
+    categoryConfidence: partial.categoryConfidence,
+    categoryEvidenceTags: partial.categoryEvidenceTags,
+    address: partialFieldIsGrounded(partial.addressHint, partial.explicitEvidence)
+      ? partial.addressHint
+      : null,
+    city,
+    region,
+    country,
+    coordinates: null,
+    role: 'primary',
+    confidence: Math.min(0.49, partial.confidence),
+    explicitEvidence: partial.explicitEvidence,
+    inferredEvidence: [],
+    memoryCue: null,
+    memoryCueEvidence: [],
+  };
+}
+
+export type VayrinPartialResult = {
+  version: 1;
+  reviewOnly: true;
+  resultClass: 'area_match' | 'search_lead' | 'partial_result';
+  locality: string | null;
+  category: NearrCategory | null;
+  searchQuery: string | null;
+  clueCount: number;
+};
+
+export function buildVayrinPartialResult(evidence: MediaPlaceEvidence): VayrinPartialResult | null {
+  const partial = evidence.partialPlaces?.[0];
+  if (!partial) return null;
+  const candidate = partialPlaceToReviewOnlyCandidate(partial, 0);
+  const groundedName = candidate && partial.nameHint && foldLabel(candidate.name) === foldLabel(partial.nameHint)
+    ? partial.nameHint
+    : null;
+  const locality = candidate
+    ? candidate.city ?? candidate.region ?? candidate.country ?? null
+    : null;
+  const searchQuery = [groundedName, partial.category?.replace(/_/g, ' '), locality]
+    .filter(Boolean).join(' ').trim().slice(0, 240) || null;
+  return {
+    version: 1,
+    reviewOnly: true,
+    resultClass: locality ? 'area_match' : groundedName ? 'search_lead' : 'partial_result',
+    locality,
+    category: partial.category,
+    searchQuery,
+    clueCount: partial.explicitEvidence.length,
   };
 }
 
@@ -601,11 +733,13 @@ export function summarizeMediaEvidence(evidence: MediaPlaceEvidence): {
   explicitPlaceCount: number;
   multiple: boolean;
   insufficient: boolean;
+  partialPlaceCount: number;
 } {
   return {
     placeCount: evidence.places.length,
     explicitPlaceCount: evidence.places.filter(hasExplicitEvidence).length,
     multiple: evidence.multipleIntentionalPlaces,
     insufficient: evidence.insufficientEvidence,
+    partialPlaceCount: evidence.partialPlaces?.length ?? 0,
   };
 }

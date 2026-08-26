@@ -24,6 +24,7 @@ import {
   type FinalizeOutcome,
   type FinalizeResponse,
 } from './verifyPlaceEvidence.js';
+import { classifyRecognitionFinalResult } from './recognitionOutcome.js';
 import { cleanupMedia } from './cleanupMedia.js';
 import { persistEvidenceFrames, selectDurableEvidenceFrames } from './persistEvidenceFrames.js';
 import {
@@ -717,6 +718,8 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
       diagnostics.modelPlacesEmitted = analysis.parseDiagnostics.emitted;
       diagnostics.modelPlacesValid = analysis.parseDiagnostics.accepted;
       diagnostics.modelPlacesRejected = analysis.parseDiagnostics.rejected;
+      diagnostics.modelPartialPlacesPreserved = analysis.parseDiagnostics.partialPreserved;
+      diagnostics.modelValidationErrorClass = analysis.parseDiagnostics.validationErrorClass;
       if (analysis.parseDiagnostics.rejectionPaths.length > 0) {
         diagnostics.evidenceRejectionPaths = analysis.parseDiagnostics.rejectionPaths;
       }
@@ -755,13 +758,20 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
 
     // 7. Verify through Nearr's EXISTING resolver + safeToAutoSave + save path.
     await setProgress(client, task, 'verifying_place');
-    const hasEvidence = task.task_kind === 'ai_note_enrichment'
-      ? analysis.evidence.places.some(
-          (place) => !!place.memoryCue?.trim() && place.memoryCueEvidence.length > 0,
-        )
-      : !analysis.evidence.insufficientEvidence && analysis.evidence.places.length > 0;
-    const outcome: FinalizeOutcome = hasEvidence ? 'evidence' : 'insufficient_evidence';
-    const selectedEvidenceFrames = task.task_kind === 'ai_note_enrichment' || !hasEvidence
+    const noteHasEvidence = analysis.evidence.places.some(
+      (place) => !!place.memoryCue?.trim() && place.memoryCueEvidence.length > 0,
+    );
+    const recognitionFinal = classifyRecognitionFinalResult(analysis);
+    const outcome: FinalizeOutcome = task.task_kind === 'ai_note_enrichment'
+      ? (noteHasEvidence ? 'evidence' : 'insufficient_evidence')
+      : recognitionFinal.outcome;
+    const forwardsEvidence = outcome === 'evidence' || outcome === 'partial_evidence';
+    diagnostics.finalResultClass = task.task_kind === 'ai_note_enrichment'
+      ? (noteHasEvidence ? 'ai_note_evidence' : 'ai_note_insufficient')
+      : recognitionFinal.resultClass;
+    diagnostics.partialPlaceCount = analysis.evidence.partialPlaces?.length ?? 0;
+    diagnostics.recognitionFailureClass = analysis.recognitionFailureClass ?? 'none';
+    const selectedEvidenceFrames = task.task_kind === 'ai_note_enrichment' || !forwardsEvidence
       ? []
       : selectDurableEvidenceFrames({
           frames: primaryContext.frames,
@@ -784,9 +794,11 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
         targetPlaceId: task.target_place_id ?? null,
         targetSourceUrl: task.canonical_url || task.source_url,
         outcome,
-        failureCode: outcome === 'insufficient_evidence' ? 'insufficient_evidence' : undefined,
+        failureCode: task.task_kind === 'ai_note_enrichment'
+          ? (outcome === 'insufficient_evidence' ? 'insufficient_evidence' : undefined)
+          : recognitionFinal.failureCode,
         analysisAttempted,
-        evidence: hasEvidence ? analysis.evidence : undefined,
+        evidence: forwardsEvidence ? analysis.evidence : undefined,
         evidenceFrames: durableEvidenceFrames,
         // Already fetched during retrieval — no additional round trip.
         sourceMetadata: {

@@ -11,7 +11,7 @@
 // authoritative saved_place_id may be enriched without being reopened; other
 // terminal parents and all terminal tasks remain no-ops.
 
-export type FinalizeOutcome = 'evidence' | 'insufficient_evidence' | 'unavailable' | 'failed';
+export type FinalizeOutcome = 'evidence' | 'partial_evidence' | 'insufficient_evidence' | 'unavailable' | 'failed';
 
 // ---------------------------------------------------------------------------
 // Request authorization. The media-worker calls the finalize endpoint with a
@@ -105,6 +105,8 @@ export type PreResolveInput = {
   evidenceParseOk: boolean;
   /** How many explicit-evidence places rendered (0 → nothing verifiable). */
   renderedPlaces: number;
+  /** Valid review-only partial units available to the recovery ladder. */
+  partialPlaces?: number;
   /** Authoritative saved_places link on a completed metadata-auto-save job. */
   parentSavedPlaceId?: string | null;
 };
@@ -151,11 +153,14 @@ export function planPreResolve(input: PreResolveInput): PreResolvePlan {
     return { action: 'manual_fallback', failureCode: 'insufficient_evidence', taskTerminalStatus: 'needs_help', supplemental: enrichSavedPlace };
   }
 
-  // outcome === 'evidence'
+  // outcome === evidence or partial_evidence
   if (!input.evidenceParseOk) {
     return { action: 'manual_fallback', failureCode: 'evidence_parse_failed', taskTerminalStatus: 'needs_help', supplemental: enrichSavedPlace };
   }
-  if (input.renderedPlaces === 0) {
+  if (input.outcome === 'partial_evidence' && (input.partialPlaces ?? 0) === 0) {
+    return { action: 'manual_fallback', failureCode: 'partial_evidence_invalid', taskTerminalStatus: 'failed', supplemental: enrichSavedPlace };
+  }
+  if (input.renderedPlaces === 0 && (input.partialPlaces ?? 0) === 0) {
     return { action: 'manual_fallback', failureCode: 'insufficient_evidence', taskTerminalStatus: 'needs_help', supplemental: enrichSavedPlace };
   }
 

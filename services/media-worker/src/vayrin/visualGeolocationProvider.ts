@@ -26,6 +26,7 @@ import {
   type MediaPlaceEvidence,
   type PlaceCandidateEvidence,
   type EvidenceItem,
+  type PartialPlaceEvidence,
 } from '../types/evidence.js';
 import { MediaError } from '../types/media.js';
 import { log } from '../util/logger.js';
@@ -74,6 +75,11 @@ export type VayrinTriggerInput = {
   /** Places whose only identity is an administrative label (city/region/
    *  country restated as the place name). Coarse geography, not a destination. */
   geographicOnlyPlaceCount: number;
+  /** Review-only evidence already useful to ordinary Places/area recovery. */
+  usefulPartialPlaceCount?: number;
+  /** The cheap pass ended because extraction/validation broke, not because the
+   * scene truthfully contained no evidence. */
+  technicalFailure?: boolean;
 };
 
 export type VayrinTriggerResult = { run: boolean; reason: VayrinTriggerReason };
@@ -83,6 +89,9 @@ export type VayrinTriggerReason =
   | 'no_frames'
   | 'no_specific_place_identified'
   | 'only_coarse_geography'
+  | 'partial_recovery_sufficient'
+  | 'technical_output_recovery'
+  | 'no_grounded_recovery_input'
   | 'cheap_pass_sufficient';
 
 /**
@@ -99,8 +108,19 @@ export function shouldRunVayrinFallback(input: VayrinTriggerInput): VayrinTrigge
   // No frames means no visual evidence to reason over. Nothing to escalate to.
   if (input.frameCount === 0) return { run: false, reason: 'no_frames' };
 
+  // A grounded name/locality is already useful to the cheaper deterministic
+  // Places/area ladder. Do not spend Sol merely to turn a review lead into a
+  // more confident-looking model assertion.
+  if ((input.usefulPartialPlaceCount ?? 0) > 0) {
+    return { run: false, reason: 'partial_recovery_sufficient' };
+  }
+
+  if (input.technicalFailure) {
+    return { run: true, reason: 'technical_output_recovery' };
+  }
+
   if (input.insufficientEvidence || input.explicitPlaceCount === 0) {
-    return { run: true, reason: 'no_specific_place_identified' };
+    return { run: false, reason: 'no_grounded_recovery_input' };
   }
 
   // Every place the cheap pass found is administrative context.
@@ -126,6 +146,19 @@ export function isCoarseGeographicPlace(place: PlaceCandidateEvidence): boolean 
   const name = fold(place.name);
   if (!name) return false;
   return [place.city, place.region, place.country].some((v) => fold(v) === name);
+}
+
+function partialRecoveryField(place: NonNullable<MediaPlaceEvidence['partialPlaces']>[number]): string | null {
+  const fold = (value: string) => value.toLowerCase().normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+  for (const value of [place.nameHint, place.city, place.region, place.country]) {
+    if (!value) continue;
+    const field = fold(value);
+    if (field.length >= 3 && place.explicitEvidence.some((item) => fold(item.value).includes(field))) {
+      return value;
+    }
+  }
+  return null;
 }
 
 // ---------------------------------------------------------------------------
@@ -244,6 +277,36 @@ export function hypothesisToPlace(
   };
 }
 
+function hypothesisToPartialPlace(
+  hypothesis: VayrinHypothesisRaw,
+  timestamps: number[] = [],
+): PartialPlaceEvidence | null {
+  if (!['neighborhood', 'city', 'region', 'country'].includes(hypothesis.specificity)) return null;
+  const firstTimestamp = timestamps[0] ?? null;
+  const explicitEvidence: EvidenceItem[] = hypothesis.supporting_visual_clues.slice(0, 8)
+    .map((value) => ({ timestampSeconds: firstTimestamp, source: 'frame' as const, value }));
+  for (const value of hypothesis.supporting_textual_clues.slice(0, 6)) {
+    explicitEvidence.push({ timestampSeconds: firstTimestamp, source: 'caption', value });
+  }
+  if (explicitEvidence.length === 0) return null;
+  const areaName = hypothesis.name.trim() || null;
+  return {
+    // Area labels live in administrative fields, not canonical/search identity.
+    nameHint: null,
+    category: categoryFor(hypothesis.place_type),
+    categoryConfidence: 0,
+    categoryEvidenceTags: [],
+    addressHint: null,
+    city: hypothesis.city ?? (hypothesis.specificity === 'city' ? areaName : null),
+    region: hypothesis.region ?? (hypothesis.specificity === 'region' ? areaName : null),
+    country: hypothesis.country ?? (hypothesis.specificity === 'country' ? areaName : null),
+    role: 'primary',
+    confidence: hypothesis.confidence,
+    explicitEvidence: explicitEvidence.slice(0, 24),
+    validationErrors: ['vayrin_noncanonical_geography'],
+  };
+}
+
 function hypothesisIdentityKey(hypothesis: VayrinHypothesisRaw): string {
   return [hypothesis.name, hypothesis.city, hypothesis.region, hypothesis.country]
     .map((value) => (value ?? '').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ''))
@@ -282,6 +345,7 @@ export function payloadToEvidence(payload: VayrinPayload): {
   alternatives: VayrinHypothesisRaw[];
 } {
   const places: PlaceCandidateEvidence[] = [];
+  const partialPlaces: PartialPlaceEvidence[] = [];
   const alternatives: VayrinHypothesisRaw[] = [];
 
   const primaryHypotheses = deduplicateSceneHypotheses(payload.place_hypotheses);
@@ -294,7 +358,11 @@ export function payloadToEvidence(payload: VayrinPayload): {
       rank,
     );
     if (place) places.push(place);
-    else alternatives.push(hypothesis);
+    else {
+      const partial = hypothesisToPartialPlace(hypothesis);
+      if (partial) partialPlaces.push(partial);
+      alternatives.push(hypothesis);
+    }
   });
 
   for (let segmentIndex = 0; segmentIndex < payload.additional_place_segments.length; segmentIndex += 1) {
@@ -309,7 +377,11 @@ export function payloadToEvidence(payload: VayrinPayload): {
         rank,
       );
       if (place) places.push(place);
-      else alternatives.push(hypothesis);
+      else {
+        const partial = hypothesisToPartialPlace(hypothesis, segment.frame_timestamps_seconds);
+        if (partial) partialPlaces.push(partial);
+        alternatives.push(hypothesis);
+      }
     });
   }
 
@@ -319,13 +391,14 @@ export function payloadToEvidence(payload: VayrinPayload): {
   return {
     evidence: {
       places: places.slice(0, 12),
+      partialPlaces: partialPlaces.slice(0, 12),
       // Trust the model's scene judgement only when it is corroborated by more
       // than one place actually surviving the mapping. A `true` flag with one
       // place would make the finalizer expect siblings that do not exist.
       multipleIntentionalPlaces:
         payload.multiple_distinct_places_visible &&
         new Set(places.map((place) => place.logicalPlaceId)).size > 1,
-      insufficientEvidence: places.length === 0,
+      insufficientEvidence: places.length === 0 && partialPlaces.length === 0,
       warnings,
     },
     alternatives,
@@ -511,6 +584,8 @@ export class VayrinFallbackModel implements ModelProvider {
 
   async analyze(input: AnalyzeInput): Promise<AnalyzeOutput> {
     const baseline = await this.inner.analyze(input);
+    const usefulPartialPlaceCount = (baseline.evidence.partialPlaces ?? [])
+      .filter((place) => partialRecoveryField(place) !== null).length;
 
     const trigger = shouldRunVayrinFallback({
       enabled: this.options.enabled,
@@ -519,6 +594,8 @@ export class VayrinFallbackModel implements ModelProvider {
       explicitPlaceCount: baseline.evidence.places.filter((p) => p.explicitEvidence.length > 0)
         .length,
       geographicOnlyPlaceCount: baseline.evidence.places.filter(isCoarseGeographicPlace).length,
+      usefulPartialPlaceCount,
+      technicalFailure: baseline.recognitionFailureClass !== undefined,
     });
 
     if (!trigger.run) {
@@ -536,22 +613,36 @@ export class VayrinFallbackModel implements ModelProvider {
     );
 
     const caption = [input.metadataTitle, input.metadataDescription].filter(Boolean).join('\n') || null;
+    const partialRegions = (baseline.evidence.partialPlaces ?? []).flatMap((place) => {
+      const grounded = partialRecoveryField(place);
+      const name = [place.city, place.region, place.country].includes(grounded) ? grounded : null;
+      return name ? [{ name, specificity: 'REGION' as const }] : [];
+    });
     const region = detectStrongRegionEvidence({
       locationMetadata: input.metadataLocation,
       caption,
       coarseCandidates: baseline.evidence.places.filter(isCoarseGeographicPlace)
-        .map((place) => ({ name: place.name, specificity: 'REGION' as const })),
+        .map((place) => ({ name: place.name, specificity: 'REGION' as const }))
+        .concat(partialRegions),
     });
     const regionExpansion: RegionPoiExpansionResult = this.options.verificationV3.enabled
       ? await expandRegionToPoiCandidatesV3({
           apiKey: this.options.verificationV3.googlePlacesApiKey,
           region,
-          sceneCategory: baseline.evidence.places[0]?.category ?? null,
+          sceneCategory:
+            baseline.evidence.places[0]?.category ?? baseline.evidence.partialPlaces?.[0]?.category ?? null,
           signal: input.signal,
           maxCandidates: this.options.verificationV3.regionPoiCandidateLimit,
         })
       : { candidates: [], places: [], externalCallCount: 0, latencyMs: 0, failureCode: 'not_configured', confirmationOnly: true };
     const verificationCandidates = regionExpansion.candidates;
+
+    log.info('sol_recovery_attempted', {
+      reason: trigger.reason,
+      frameCount: selection.frames.length,
+      partialPlaceCount: baseline.evidence.partialPlaces?.length ?? 0,
+      failureClass: baseline.recognitionFailureClass ?? 'none',
+    });
 
     const result = await runVisualGeolocation({
       model: this.options.model,
@@ -659,6 +750,7 @@ export class VayrinFallbackModel implements ModelProvider {
           ...baseline.evidence,
           warnings: [...baseline.evidence.warnings, result.code].slice(0, 24),
         },
+        recognitionFailureClass: baseline.recognitionFailureClass ?? 'recovery_invalid',
         vayrin: diagnostics,
       } as AnalyzeOutput & { vayrin: VayrinDiagnostics };
     }
@@ -694,19 +786,57 @@ export class VayrinFallbackModel implements ModelProvider {
     );
     diagnostics.multipleDistinctPlaces = evidence.multipleIntentionalPlaces;
 
+    if (evidence.places.length === 0 && (evidence.partialPlaces?.length ?? 0) > 0) {
+      const partialPlaces = [
+        ...(baseline.evidence.partialPlaces ?? []),
+        ...(evidence.partialPlaces ?? []),
+      ].slice(0, 12);
+      log.info('sol_recovery_completed', {
+        resultClass: 'partial_evidence',
+        hypothesisCount: 0,
+        partialPlaceCount: partialPlaces.length,
+      });
+      return {
+        provider: `${this.inner.name}+vayrin`,
+        promptVersion: `${baseline.promptVersion}+${VAYRIN_PROMPT_VERSION}`,
+        evidence: {
+          ...baseline.evidence,
+          partialPlaces,
+          insufficientEvidence: false,
+          warnings: [...baseline.evidence.warnings, ...evidence.warnings].slice(0, 24),
+        },
+        modelRawPreview: result.rawPreview,
+        // Keep the baseline technical class until the outer grounding pass
+        // confirms this partial evidence survives. A surviving partial wins in
+        // the final classifier; an ungrounded one must not turn technical
+        // extraction failure into apparent evidence exhaustion.
+        recognitionFailureClass: baseline.recognitionFailureClass,
+        vayrin: diagnostics,
+      } as AnalyzeOutput & { vayrin: VayrinDiagnostics };
+    }
+
     // The visual pass found nothing specific either. Keep the baseline rather
     // than replacing a real (if coarse) answer with an empty one.
     if (evidence.places.length === 0) {
+      log.info('sol_recovery_completed', {
+        resultClass: (baseline.evidence.partialPlaces?.length ?? 0) > 0 ? 'partial_evidence' : 'empty',
+        hypothesisCount: 0,
+      });
       return {
         ...baseline,
         evidence: {
           ...baseline.evidence,
           warnings: [...baseline.evidence.warnings, 'vayrin_no_hypotheses'].slice(0, 24),
         },
+        recognitionFailureClass: baseline.recognitionFailureClass ?? 'recovery_empty',
         vayrin: diagnostics,
       } as AnalyzeOutput & { vayrin: VayrinDiagnostics };
     }
 
+    log.info('sol_recovery_completed', {
+      resultClass: 'canonical_evidence',
+      hypothesisCount: evidence.places.length,
+    });
     return {
       provider: `${this.inner.name}+vayrin`,
       promptVersion: `${baseline.promptVersion}+${VAYRIN_PROMPT_VERSION}`,
@@ -715,6 +845,7 @@ export class VayrinFallbackModel implements ModelProvider {
         warnings: [...baseline.evidence.warnings, ...evidence.warnings].slice(0, 24),
       },
       modelRawPreview: result.rawPreview,
+      recognitionFailureClass: undefined,
       vayrin: diagnostics,
     } as AnalyzeOutput & { vayrin: VayrinDiagnostics };
   }

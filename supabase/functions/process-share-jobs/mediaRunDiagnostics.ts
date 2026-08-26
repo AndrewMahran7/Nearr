@@ -42,6 +42,10 @@ export type RecognitionFunnel = {
   modelPlacesValid?: number;
   /** Places dropped by the schema (worker-reported). */
   modelPlacesRejected?: number;
+  modelPartialPlacesPreserved?: number;
+  finalResultClass?: string;
+  recognitionFailureClass?: string;
+  modelValidationErrorClass?: string;
   /** Bounded `places.<i>.<path>:<code>` labels for the rejected places. */
   evidenceRejectionPaths?: string[];
   /** Places suppressed by the source geographic-context guard. */
@@ -132,9 +136,26 @@ export function buildRecognitionFunnel(
   const emitted = count(d.modelPlacesEmitted);
   const valid = count(d.modelPlacesValid);
   const rejected = count(d.modelPlacesRejected);
+  const partialPreserved = count(d.modelPartialPlacesPreserved);
   if (emitted !== undefined) out.modelPlacesEmitted = emitted;
   if (valid !== undefined) out.modelPlacesValid = valid;
   if (rejected !== undefined) out.modelPlacesRejected = rejected;
+  if (partialPreserved !== undefined) out.modelPartialPlacesPreserved = partialPreserved;
+  const closedClasses = new Set([
+    'canonical_evidence', 'partial_evidence', 'genuine_no_evidence', 'technical_failure',
+    'ai_note_evidence', 'ai_note_insufficient', 'none', 'candidate_field_invalid',
+    'model_schema_invalid', 'model_provider_failure', 'recovery_invalid', 'recovery_empty',
+    'candidate_field_invalid', 'envelope_invalid', 'top_level_invalid',
+  ]);
+  if (typeof d.finalResultClass === 'string' && closedClasses.has(d.finalResultClass)) {
+    out.finalResultClass = d.finalResultClass;
+  }
+  if (typeof d.recognitionFailureClass === 'string' && closedClasses.has(d.recognitionFailureClass)) {
+    out.recognitionFailureClass = d.recognitionFailureClass;
+  }
+  if (typeof d.modelValidationErrorClass === 'string' && closedClasses.has(d.modelValidationErrorClass)) {
+    out.modelValidationErrorClass = d.modelValidationErrorClass;
+  }
 
   if (Array.isArray(d.evidenceRejectionPaths)) {
     const labels = d.evidenceRejectionPaths

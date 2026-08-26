@@ -68,17 +68,43 @@ export const PlaceCandidateEvidence = z.object({
 });
 export type PlaceCandidateEvidence = z.infer<typeof PlaceCandidateEvidence>;
 
+/** Field-level evidence retained from a candidate that failed whole-object
+ * validation. It is intentionally not a canonical candidate: downstream may
+ * use it only for review-only search and area assistance. */
+export const PartialPlaceEvidence = z.object({
+  nameHint: z.string().min(1).max(200).nullable().default(null),
+  category: NearrCategory.nullable().default(null),
+  categoryConfidence: z.number().min(0).max(1).default(0),
+  categoryEvidenceTags: z.array(z.string().min(1).max(80)).max(8).default([]),
+  addressHint: z.string().min(1).max(300).nullable().default(null),
+  city: z.string().min(1).max(120).nullable().default(null),
+  region: z.string().min(1).max(120).nullable().default(null),
+  country: z.string().min(1).max(120).nullable().default(null),
+  role: PlaceRole.default('primary'),
+  confidence: z.number().min(0).max(1).default(0),
+  explicitEvidence: z.array(EvidenceItem).min(1).max(24),
+  validationErrors: z.array(z.string().min(1).max(160)).max(8).default([]),
+});
+export type PartialPlaceEvidence = z.infer<typeof PartialPlaceEvidence>;
+
 export const MediaPlaceEvidence = z.object({
   places: z.array(PlaceCandidateEvidence).max(12).default([]),
+  partialPlaces: z.array(PartialPlaceEvidence).max(12).default([]),
   multipleIntentionalPlaces: z.boolean().default(false),
   insufficientEvidence: z.boolean().default(false),
   warnings: z.array(z.string().max(200)).max(24).default([]),
 });
-export type MediaPlaceEvidence = z.infer<typeof MediaPlaceEvidence>;
+type ParsedMediaPlaceEvidence = z.infer<typeof MediaPlaceEvidence>;
+/** Optional in the TypeScript compatibility surface so existing custom/test
+ * providers remain source-compatible. The parser always materializes `[]`. */
+export type MediaPlaceEvidence = Omit<ParsedMediaPlaceEvidence, 'partialPlaces'> & {
+  partialPlaces?: ParsedMediaPlaceEvidence['partialPlaces'];
+};
 
 export function emptyEvidence(warnings: string[] = []): MediaPlaceEvidence {
   return {
     places: [],
+    partialPlaces: [],
     multipleIntentionalPlaces: false,
     insufficientEvidence: true,
     warnings,
@@ -119,6 +145,9 @@ function normalizeRawEvidence(raw: unknown): unknown {
   if (!Array.isArray(r.places)) return raw;
   return {
     ...r,
+    // This collection is parser-authored. A model may not self-declare that
+    // malformed output is safe partial evidence.
+    partialPlaces: [],
     places: r.places.map((p) => {
       if (!p || typeof p !== 'object') return p;
       const pl = p as Record<string, unknown>;
@@ -143,9 +172,63 @@ export type EvidenceParseDiagnostics = {
   rejectionPaths: string[];
   /** True when the payload was not even shaped like an evidence object. */
   topLevelInvalid: boolean;
+  /** Rejected candidates that retained independently valid explicit fields. */
+  partialPreserved: number;
+  /** Aggregate validation class; contains no model-provided text. */
+  validationErrorClass: 'none' | 'candidate_field_invalid' | 'envelope_invalid' | 'top_level_invalid';
 };
 
 const MAX_REJECTION_PATHS = 8;
+
+function boundedString(value: unknown, max: number): string | null {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  return trimmed.length > 0 && trimmed.length <= max ? trimmed : null;
+}
+
+function boundedNumber(value: unknown, min: number, max: number): number | null {
+  return typeof value === 'number' && Number.isFinite(value) && value >= min && value <= max
+    ? value
+    : null;
+}
+
+function partialFromRejectedPlace(raw: unknown, validationErrors: string[]): PartialPlaceEvidence | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const p = raw as Record<string, unknown>;
+  const explicitEvidence: EvidenceItem[] = [];
+  for (const item of coerceEvidenceItems(p.explicitEvidence)) {
+    const parsed = EvidenceItem.safeParse(item);
+    if (parsed.success) explicitEvidence.push(parsed.data);
+  }
+  // Model priors alone are not evidence and cannot become a partial result.
+  if (explicitEvidence.length === 0) return null;
+
+  const category = NearrCategory.safeParse(p.category);
+  const role = PlaceRole.safeParse(p.role);
+  const tags = Array.isArray(p.categoryEvidenceTags)
+    ? p.categoryEvidenceTags
+      .map((tag) => boundedString(tag, 80))
+      .filter((tag): tag is string => tag !== null)
+      .slice(0, 8)
+    : [];
+
+  return PartialPlaceEvidence.parse({
+    nameHint: boundedString(p.name, 200),
+    category: category.success ? category.data : null,
+    categoryConfidence: boundedNumber(p.categoryConfidence, 0, 1) ?? 0,
+    categoryEvidenceTags: tags,
+    addressHint: boundedString(p.address, 300),
+    city: boundedString(p.city, 120),
+    region: boundedString(p.region, 120),
+    country: boundedString(p.country, 120),
+    role: role.success ? role.data : 'primary',
+    confidence: boundedNumber(p.confidence, 0, 1) ?? 0,
+    explicitEvidence: explicitEvidence.slice(0, 24),
+    validationErrors: (validationErrors.length > 0
+      ? validationErrors
+      : ['candidate_field_invalid']).slice(0, 8),
+  });
+}
 
 /**
  * Parse unknown model output into validated evidence, isolating faults at the
@@ -174,6 +257,7 @@ export function parseEvidenceWithDiagnostics(
 ): { evidence: MediaPlaceEvidence; diagnostics: EvidenceParseDiagnostics } {
   const base: EvidenceParseDiagnostics = {
     emitted: 0, accepted: 0, rejected: 0, rejectionPaths: [], topLevelInvalid: false,
+    partialPreserved: 0, validationErrorClass: 'none',
   };
 
   const normalized = normalizeRawEvidence(raw);
@@ -191,13 +275,14 @@ export function parseEvidenceWithDiagnostics(
   if (!normalized || typeof normalized !== 'object' || !Array.isArray((normalized as any).places)) {
     return {
       evidence: emptyEvidence(['evidence_schema_invalid']),
-      diagnostics: { ...base, topLevelInvalid: true },
+      diagnostics: { ...base, topLevelInvalid: true, validationErrorClass: 'top_level_invalid' },
     };
   }
 
   const r = normalized as Record<string, unknown>;
   const rawPlaces = r.places as unknown[];
   const accepted: PlaceCandidateEvidence[] = [];
+  const partialPlaces: PartialPlaceEvidence[] = [];
   const rejectionPaths: string[] = [];
 
   for (let i = 0; i < rawPlaces.length; i += 1) {
@@ -206,29 +291,43 @@ export function parseEvidenceWithDiagnostics(
       accepted.push(one.data);
       continue;
     }
+    const candidateErrors: string[] = [];
     for (const issue of one.error.issues) {
-      if (rejectionPaths.length >= MAX_REJECTION_PATHS) break;
+      if (rejectionPaths.length >= MAX_REJECTION_PATHS && candidateErrors.length >= MAX_REJECTION_PATHS) break;
       // Bounded label only — path + code, never the offending value.
-      rejectionPaths.push(`places.${i}.${issue.path.join('.')}:${issue.code}`);
+      const label = `places.${i}.${issue.path.join('.')}:${issue.code}`;
+      if (rejectionPaths.length < MAX_REJECTION_PATHS) rejectionPaths.push(label);
+      if (candidateErrors.length < MAX_REJECTION_PATHS) candidateErrors.push(label);
     }
+    const partial = partialFromRejectedPlace(rawPlaces[i], candidateErrors);
+    if (partial) partialPlaces.push(partial);
   }
 
   // Re-validate the envelope with only the surviving places, so top-level
   // fields (warnings, flags) still go through the same strict schema.
-  const envelope = MediaPlaceEvidence.safeParse({ ...r, places: accepted });
+  const envelope = MediaPlaceEvidence.safeParse({ ...r, places: accepted, partialPlaces });
   const diagnostics: EvidenceParseDiagnostics = {
     emitted: rawPlaces.length,
     accepted: accepted.length,
     rejected: rawPlaces.length - accepted.length,
     rejectionPaths,
     topLevelInvalid: false,
+    partialPreserved: partialPlaces.length,
+    validationErrorClass: rawPlaces.length === accepted.length ? 'none' : 'candidate_field_invalid',
   };
 
   if (!envelope.success) {
     // The places were fine but the envelope itself is malformed — still safe-fail.
     return {
       evidence: emptyEvidence(['evidence_schema_invalid']),
-      diagnostics: { ...diagnostics, accepted: 0, rejected: rawPlaces.length, topLevelInvalid: true },
+      diagnostics: {
+        ...diagnostics,
+        accepted: 0,
+        rejected: rawPlaces.length,
+        partialPreserved: 0,
+        topLevelInvalid: true,
+        validationErrorClass: 'envelope_invalid',
+      },
     };
   }
 
@@ -240,7 +339,7 @@ export function parseEvidenceWithDiagnostics(
       warnings: warnings.slice(0, 24),
       // A surviving place is real evidence. Do NOT let a malformed sibling
       // flip this to "insufficient" — but never override an empty result.
-      insufficientEvidence: accepted.length === 0 ? true : envelope.data.insufficientEvidence,
+      insufficientEvidence: accepted.length === 0 && partialPlaces.length === 0,
     },
     diagnostics,
   };

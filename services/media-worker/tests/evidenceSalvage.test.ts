@@ -101,13 +101,15 @@ test('salvage: multi-place multiplicity is preserved, never collapsed to first',
   assert.equal(evidence.multipleIntentionalPlaces, true);
 });
 
-test('safety: every emitted place malformed -> no survivors, insufficient', () => {
+test('field salvage: malformed canonical candidates retain review-only explicit evidence', () => {
   const raw = envelope([validPlace('A', { confidence: 9 }), validPlace('B', { name: '' })]);
   const { evidence, diagnostics } = parseEvidenceWithDiagnostics(raw);
   assert.equal(evidence.places.length, 0);
-  assert.equal(evidence.insufficientEvidence, true);
+  assert.equal(evidence.partialPlaces?.length, 2);
+  assert.equal(evidence.insufficientEvidence, false);
   assert.equal(diagnostics.accepted, 0);
   assert.equal(diagnostics.rejected, 2);
+  assert.equal(diagnostics.partialPreserved, 2);
 });
 
 test('safety: structurally unintelligible payloads still hard-fail', () => {
