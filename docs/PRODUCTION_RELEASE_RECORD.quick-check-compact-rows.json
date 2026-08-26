@@ -1,0 +1,25 @@
+{
+  "releaseId": "2026-08-25-quick-check-compact-rows",
+  "previousMainSha": "78158abf0c30d29d08c43ead7155a179263c5d13",
+  "previousOtaGroup": "f6c0d855-2127-4b63-a5b5-459ea97abc2e",
+  "currentOtaGroup": null,
+  "edgeVersions": {
+    "process-share-link": 133,
+    "process-share-jobs": 86,
+    "create-share-job": 25,
+    "delete-account": 24,
+    "delete-share-job": 1
+  },
+  "railwayDeployment": "9f44f4a4-f76c-4a99-bd18-43fbd3450e7f@b4125daa4b5c18123cf436881c856ee069c09372#sha256:cba1722590e2ab0e97c352a47c2ad3edee6d7f647026a3fc7a476192273ee01d",
+  "migrationLedger": [
+    "20260824233000"
+  ],
+  "rollbackProcedure": "Repeat the concurrency guard; republish previousOtaGroup to the production channel; forward-revert only the compact Quick Check candidate-row commit on main; rerun Quick Check, candidate confirmation, photo-carousel, Place Detail, startup, release, prebuild, and iOS export gates. Railway, Edge, schema, native code, and EAS Build remain unchanged.",
+  "deploymentStatus": "PLANNED",
+  "physicalQa": {
+    "signedOutColdLaunch": "PENDING",
+    "signedInColdLaunch": "PENDING",
+    "forceCloseRelaunch": "PENDING",
+    "freshOnboardingLaunch": "NOT_REQUIRED"
+  }
+}
