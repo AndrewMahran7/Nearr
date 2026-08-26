@@ -1,7 +1,7 @@
 # Vayrin Never-Dead-End Failure Analysis
 
-Research date: 2026-08-24 America/Los_Angeles (production events are UTC)  
-Branch/worktree: `investigate/vayrin-never-dead-end` / `C:\Users\andre\Desktop\Nearr-worktrees\vayrin-never-dead-end`  
+Research date: 2026-08-24 America/Los_Angeles (production events are UTC)
+Branch/worktree: `investigate/vayrin-never-dead-end` / `C:\Users\andre\Desktop\Nearr-worktrees\vayrin-never-dead-end`
 Base: `main` at `7762d9bc0b5a7ab6bda4332efc9c24fa9a285f41`
 
 ## Executive decision

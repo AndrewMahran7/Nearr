@@ -277,6 +277,49 @@ function partialFieldIsGrounded(value: string | null, evidence: PlaceEvidenceIte
   return folded.length >= 3 && evidence.some((item) => foldLabel(item.value).includes(folded));
 }
 
+const PARTIAL_CATEGORY_GROUNDING: Readonly<Partial<Record<NearrCategory, readonly string[]>>> = {
+  restaurant: ['restaurant', 'dining', 'eatery'],
+  cafe: ['cafe', 'coffee'],
+  bakery: ['bakery', 'pastry', 'pastries'],
+  bar: ['bar', 'pub'],
+  brewery: ['brewery', 'beer'],
+  winery: ['winery', 'vineyard', 'wine'],
+  dessert: ['dessert', 'ice cream', 'gelato'],
+  hotel: ['hotel', 'hostel', 'inn'],
+  resort: ['resort'],
+  hiking_trail: ['hiking trail', 'hike', 'trail', 'trailhead'],
+  park: ['park'],
+  beach: ['beach', 'cove', 'shore'],
+  waterfall: ['waterfall', 'falls'],
+  lake: ['lake', 'lagoon', 'reservoir'],
+  marina: ['marina', 'harbor', 'harbour', 'pier'],
+  island: ['island', 'islet'],
+  scenic_spot: ['scenic', 'viewpoint', 'overlook', 'lookout', 'cliff'],
+  attraction: ['attraction', 'landmark'],
+  museum: ['museum', 'gallery'],
+  shopping: ['shopping', 'mall', 'store', 'boutique'],
+  entertainment: ['entertainment', 'theater', 'theatre', 'cinema', 'amusement'],
+  nightlife: ['nightlife', 'nightclub', 'club'],
+  sports: ['sports', 'stadium', 'arena'],
+  fitness: ['fitness', 'gym'],
+  wellness: ['wellness', 'spa'],
+  transportation: ['transportation', 'station', 'airport', 'transit'],
+  education: ['education', 'school', 'university', 'campus'],
+  service: ['service', 'salon', 'repair'],
+};
+
+function partialCategoryIsGrounded(
+  category: NearrCategory | null,
+  evidence: PlaceEvidenceItem[],
+): category is NearrCategory {
+  if (!category || category === 'other') return false;
+  const aliases = PARTIAL_CATEGORY_GROUNDING[category] ?? [category.replace(/_/g, ' ')];
+  return evidence.some((item) => {
+    const haystack = ` ${foldLabel(item.value)} `;
+    return aliases.some((alias) => haystack.includes(` ${foldLabel(alias)} `));
+  });
+}
+
 /** Convert partial evidence into a deliberately prior-labelled synthetic
  * candidate for the existing resolver. Returning model_prior is load-bearing:
  * even a perfect Places match remains confirmation-only. */
@@ -297,7 +340,9 @@ export function partialPlaceToReviewOnlyCandidate(
     identityEvidenceKind: 'model_prior',
     hypothesisRank: 0,
     name,
-    category: partial.category,
+    category: partialCategoryIsGrounded(partial.category, partial.explicitEvidence)
+      ? partial.category
+      : null,
     categoryConfidence: partial.categoryConfidence,
     categoryEvidenceTags: partial.categoryEvidenceTags,
     address: partialFieldIsGrounded(partial.addressHint, partial.explicitEvidence)
@@ -327,26 +372,36 @@ export type VayrinPartialResult = {
 };
 
 export function buildVayrinPartialResult(evidence: MediaPlaceEvidence): VayrinPartialResult | null {
-  const partial = evidence.partialPlaces?.[0];
-  if (!partial) return null;
-  const candidate = partialPlaceToReviewOnlyCandidate(partial, 0);
-  const groundedName = candidate && partial.nameHint && foldLabel(candidate.name) === foldLabel(partial.nameHint)
-    ? partial.nameHint
-    : null;
-  const locality = candidate
-    ? candidate.city ?? candidate.region ?? candidate.country ?? null
-    : null;
-  const searchQuery = [groundedName, partial.category?.replace(/_/g, ' '), locality]
-    .filter(Boolean).join(' ').trim().slice(0, 240) || null;
-  return {
-    version: 1,
-    reviewOnly: true,
-    resultClass: locality ? 'area_match' : groundedName ? 'search_lead' : 'partial_result',
-    locality,
-    category: partial.category,
-    searchQuery,
-    clueCount: partial.explicitEvidence.length,
+  const results = (evidence.partialPlaces ?? []).flatMap((partial, index) => {
+    const candidate = partialPlaceToReviewOnlyCandidate(partial, index);
+    const groundedName = candidate && partial.nameHint && foldLabel(candidate.name) === foldLabel(partial.nameHint)
+      ? partial.nameHint
+      : null;
+    const locality = candidate
+      ? candidate.city ?? candidate.region ?? candidate.country ?? null
+      : null;
+    const category = partialCategoryIsGrounded(partial.category, partial.explicitEvidence)
+      ? partial.category
+      : null;
+    if (!groundedName && !locality && !category) return [];
+    const searchQuery = [groundedName, category?.replace(/_/g, ' '), locality]
+      .filter(Boolean).join(' ').trim().slice(0, 240) || null;
+    return [{
+      version: 1 as const,
+      reviewOnly: true as const,
+      resultClass: locality ? 'area_match' as const : groundedName ? 'search_lead' as const : 'partial_result' as const,
+      locality,
+      category,
+      searchQuery,
+      clueCount: partial.explicitEvidence.length,
+    }];
+  });
+  const priority: Record<VayrinPartialResult['resultClass'], number> = {
+    area_match: 3,
+    search_lead: 2,
+    partial_result: 1,
   };
+  return results.sort((a, b) => priority[b.resultClass] - priority[a.resultClass] || b.clueCount - a.clueCount)[0] ?? null;
 }
 
 /** A place is renderable only if it carries at least one explicit evidence

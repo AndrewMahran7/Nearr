@@ -105,6 +105,32 @@ function partialEvidence(overrides: Record<string, unknown> = {}) {
   }
 }
 
+// 10b. A category is useful only when its own bounded cue is grounded.
+{
+  const unsupported = partialEvidence();
+  assert.equal(unsupported.ok && buildVayrinPartialResult(unsupported.value)?.category, null);
+  const supported = partialEvidence({
+    country: null,
+    category: 'cafe',
+    explicitEvidence: [{ timestampSeconds: 1, source: 'frame', value: 'coffee and tiled walls' }],
+  });
+  assert.equal(supported.ok && buildVayrinPartialResult(supported.value)?.category, 'cafe');
+}
+
+// 10c. Parser structure without any field-grounded clue is not product truth.
+{
+  const edge = partialEvidence({
+    country: null,
+    category: 'park',
+    explicitEvidence: [{ timestampSeconds: 1, source: 'frame', value: 'unrelated visual texture' }],
+  });
+  assert.equal(edge.ok && buildVayrinPartialResult(edge.value), null);
+  assert.equal(planPreResolve({
+    taskStatus: 'processing', parentStatus: 'processing_metadata', outcome: 'partial_evidence',
+    evidenceParseOk: true, renderedPlaces: 0, partialPlaces: 0,
+  }).action, 'manual_fallback');
+}
+
 // 12. A cached singleton derived from partial recovery is still never saveable.
 {
   const decision = evaluateCachedSingletonAutoSave({
@@ -170,4 +196,4 @@ function partialEvidence(overrides: Record<string, unknown> = {}) {
   assert.doesNotMatch(`${technical.title} ${technical.body}`, /not enough evidence/i);
 }
 
-console.log('Vayrin never-dead-end assertions passed (15/15 across worker + Edge/client).');
+console.log('Vayrin never-dead-end assertions passed (17/17 across worker + Edge/client).');

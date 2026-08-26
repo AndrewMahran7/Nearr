@@ -1,0 +1,25 @@
+{
+  "releaseId": "2026-08-25-vayrin-never-dead-end",
+  "previousMainSha": "e8d9d4b92bcddfedaea8014129cc64d2aa5331c9",
+  "previousOtaGroup": "ad389230-86e7-41b8-9cae-ef5fb2c10f7c",
+  "currentOtaGroup": null,
+  "edgeVersions": {
+    "process-share-link": 133,
+    "process-share-jobs": 87,
+    "create-share-job": 25,
+    "delete-account": 24,
+    "delete-share-job": 1
+  },
+  "railwayDeployment": "a1c959b0-1b06-419f-a0c7-67ec628caca5@6e8538c15496778e9f810d8972a75d9bed37efab#sha256:2b0310b1466548423130169aeeba6e0c24343c8fa33d5fceeaefe3743e17fada",
+  "migrationLedger": [
+    "20260825000001"
+  ],
+  "rollbackProcedure": "Repeat the full concurrency guard; republish previousOtaGroup to production; forward-revert the Never-Dead-End promotion on current main; redeploy the prior Railway worker and process-share-jobs Edge source from previousMainSha. Leave recognition cache, user confirmations, rejections, evidence history, and schema untouched.",
+  "deploymentStatus": "PLANNED",
+  "physicalQa": {
+    "signedOutColdLaunch": "PENDING",
+    "signedInColdLaunch": "PENDING",
+    "forceCloseRelaunch": "PENDING",
+    "freshOnboardingLaunch": "NOT_REQUIRED"
+  }
+}

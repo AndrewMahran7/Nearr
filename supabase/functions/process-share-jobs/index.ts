@@ -1519,7 +1519,9 @@ async function finalizeMediaTask(
     failureCode,
     evidenceParseOk: parsed.ok,
     renderedPlaces: rendered.renderedPlaces,
-    partialPlaces: parsed.ok ? parsed.value.partialPlaces?.length ?? 0 : 0,
+    // Count only a field-grounded partial. Parser-authored structure alone is
+    // not enough to claim a useful result at this trust boundary.
+    partialPlaces: partialResult ? 1 : 0,
   });
 
   // Terminal task → idempotent no-op (duplicate / replayed callback).

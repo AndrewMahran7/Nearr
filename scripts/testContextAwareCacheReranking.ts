@@ -254,7 +254,7 @@ const trustedHitStart = worker.indexOf('const { data: place', candidateHitStart)
 const candidateHitSource = worker.slice(candidateHitStart, trustedHitStart);
 assert.match(candidateHitSource, /decisionForSelectionSemantics\(count, selectionMode, true\)/);
 assert.match(candidateHitSource, /evaluateCachedSingletonAutoSave\(reranked\)/);
-assert.match(candidateHitSource, /if \(singletonGate\.eligible && singletonGate\.candidate\)/);
+assert.match(candidateHitSource, /if \(!disputedHit && singletonGate\.eligible && singletonGate\.candidate\)/);
 assert.match(candidateHitSource, /saveForUser/);
 assert.match(candidateHitSource, /rerankCachedCandidatePayload\(payload\)/);
 assert.match(candidateHitSource, /__skipRecognitionCachePersist: true/);
