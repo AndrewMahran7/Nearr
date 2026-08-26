@@ -2,7 +2,7 @@
   "releaseId": "2026-08-25-vayrin-never-dead-end",
   "previousMainSha": "e8d9d4b92bcddfedaea8014129cc64d2aa5331c9",
   "previousOtaGroup": "ad389230-86e7-41b8-9cae-ef5fb2c10f7c",
-  "currentOtaGroup": null,
+  "currentOtaGroup": "580b7be3-886d-4fef-bb60-8d2d168c3504",
   "edgeVersions": {
     "process-share-link": 133,
     "process-share-jobs": 88,
@@ -15,11 +15,12 @@
     "20260825000001"
   ],
   "rollbackProcedure": "Repeat the full concurrency guard; republish previousOtaGroup to production; forward-revert the Never-Dead-End promotion on current main; redeploy the prior Railway worker and process-share-jobs Edge source from previousMainSha. Leave recognition cache, user confirmations, rejections, evidence history, and schema untouched.",
-  "deploymentStatus": "PLANNED",
+  "deploymentStatus": "DEPLOYED",
   "physicalQa": {
     "signedOutColdLaunch": "PENDING",
     "signedInColdLaunch": "PENDING",
     "forceCloseRelaunch": "PENDING",
     "freshOnboardingLaunch": "NOT_REQUIRED"
-  }
+  },
+  "deployedAt": "2026-08-26T02:58:03.496Z"
 }
