@@ -33,27 +33,32 @@ assert.match(detail, /<PhotoRolodexModal/);
 assert.match(carousel, /<PhotoRolodexModal/);
 assert.match(source, /<PhotoRolodexModal/);
 
-// 2-3. Native horizontal paging changes index continuously and drives accessible pagination.
+// 2-3. The shared viewer retains native paging and accessible pagination.
 assert.deepEqual([0, 1, 2].map((index) => pageIndexFromOffset(index * 300, 300, 3)), [0, 1, 2]);
 assert.match(carousel, /horizontal[\s\S]{0,220}pagingEnabled/);
 assert.match(carousel, /onScroll=\{\(event\) => updatePageFromOffset/);
 assert.match(carousel, /testID="candidate-photo-pagination"/);
 assert.match(carousel, /accessibilityValue=\{\{ text:/);
+assert.match(rolodex, /horizontal[\s\S]{0,220}snapToInterval/);
 
-// 4-6. Selection owns the header, never the gallery; the outer screen remains vertical.
+// 4-6. Compact image and selection are sibling controls; the outer screen remains vertical.
 const selectionIndex = card.indexOf('testID="candidate-selection-control"');
-const galleryIndex = card.indexOf('<CandidatePhotoCarousel');
-assert.ok(selectionIndex > -1 && galleryIndex > selectionIndex, 'selection control precedes the independent gallery');
+const thumbnailIndex = card.indexOf('variant="thumbnail"');
+assert.ok(selectionIndex > -1 && thumbnailIndex > -1, 'selection and thumbnail controls both exist');
+assert.match(card, /compactRow: \{ flexDirection: 'row'/);
 assert.doesNotMatch(card, /<Pressable[\s\S]{0,200}<View style=\{\[styles\.card[\s\S]*<CandidatePhotoCarousel/);
 assert.match(quickCheck, /<ScrollView[\s\S]*showsVerticalScrollIndicator=\{false\}/);
 assert.match(carousel, /nestedScrollEnabled/);
 assert.match(carousel, /directionalLockEnabled/);
+assert.match(carousel, /variant === 'thumbnail'[\s\S]*onPress=\{\(\) => setViewerIndex\(0\)\}/);
 
 // 7-10. Two, five, one, and no-photo states share one bounded fallback chain.
 assert.equal(pageIndexFromOffset(300, 300, 2), 1);
 assert.match(carousel, /MAX_CANDIDATE_PHOTOS = 5/);
 assert.match(carousel, /scrollEnabled=\{items\.length > 1\}/);
 assert.match(carousel, /Place photos unavailable/);
+assert.match(carousel, /const rolodexItems = useMemo\(\(\) => items\.map/);
+assert.match(carousel, /items=\{rolodexItems\}/);
 assert.match(
   carousel,
   /if \(places\.length > 0\) return places;[\s\S]*if \(sourceUri[\s\S]*if \(fallbackSourceUri/,
@@ -76,15 +81,20 @@ assert.match(rolodex, /testID="photo-rolodex-close"/);
 assert.doesNotMatch(source, /<Modal\b/);
 assert.doesNotMatch(detail, /<Modal\b/);
 
-// 14. Multi-candidate imagery is materially shorter without reverting to thumbnails.
+// 14. Multi-candidate mode is a bounded image-left/text-right row at common iPhone widths.
+const compactThumbWidth = Number(card.match(/COMPACT_CANDIDATE_THUMB_WIDTH = (\d+)/)?.[1]);
 const compactPhotoHeight = Number(card.match(/COMPACT_CANDIDATE_PHOTO_HEIGHT = (\d+)/)?.[1]);
 const standardPhotoHeight = Number(card.match(/STANDARD_CANDIDATE_PHOTO_HEIGHT = (\d+)/)?.[1]);
+assert.equal(compactThumbWidth, 118);
 assert.equal(compactPhotoHeight, 132);
 assert.equal(standardPhotoHeight, 220);
-assert.ok(compactPhotoHeight >= 120);
-assert.match(card, /headerCompact: \{ minHeight: 68/);
-assert.match(card, /evidenceBlockCompact/);
-assert.match(card, /cardCompact: \{ marginBottom: Spacing\.sm \}/);
+assert.ok(3 * (compactPhotoHeight + 16) <= 480, 'three collapsed rows stay within a compact comparison budget');
+for (const width of [375, 390, 430]) {
+  assert.ok(width - 48 - compactThumbWidth - 10 >= 199, `${width}pt leaves useful comparison copy width`);
+}
+assert.match(card, /testID="compact-candidate-row"/);
+assert.match(card, /numberOfLines=\{2\}>\{candidate\.name\}/);
+assert.match(card, /numberOfLines=\{2\}>\{compactEvidence\}/);
 
 // 15-17. Qualitative evidence, Why, and the three-candidate cap remain intact.
 assert.equal(candidateMatchLabel(candidate('high')), 'High match');

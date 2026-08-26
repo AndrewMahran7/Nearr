@@ -33,6 +33,8 @@ type Props = {
   fallbackSourceUri?: string | null;
   accessibilityLabel: string;
   height?: number;
+  variant?: 'carousel' | 'thumbnail';
+  thumbnailWidth?: number;
   onResolvedKind?: (kind: PlaceImageResolutionKind) => void;
 };
 
@@ -44,6 +46,8 @@ export function CandidatePhotoCarousel({
   fallbackSourceUri,
   accessibilityLabel,
   height = 220,
+  variant = 'carousel',
+  thumbnailWidth = 118,
   onResolvedKind,
 }: Props) {
   const { width: windowWidth } = useWindowDimensions();
@@ -102,6 +106,57 @@ export function CandidatePhotoCarousel({
     uri: item.uri,
     accessibilityLabel: `${accessibilityLabel}, photo ${index + 1} of ${items.length}`,
   })), [accessibilityLabel, items]);
+
+  if (variant === 'thumbnail') {
+    const first = items[0] ?? null;
+    return (
+      <View
+        style={[styles.thumbnailRoot, { width: thumbnailWidth, height }]}
+        testID="candidate-photo-thumbnail"
+      >
+        {first ? (
+          <Pressable
+            style={styles.thumbnailButton}
+            onPress={() => setViewerIndex(0)}
+            accessibilityRole="imagebutton"
+            accessibilityLabel={`${accessibilityLabel}. Open gallery with ${items.length} ${items.length === 1 ? 'photo' : 'photos'}.`}
+            accessibilityHint="Opens the shared photo gallery"
+            testID="candidate-photo-thumbnail-open"
+          >
+            <Image
+              source={{ uri: first.uri }}
+              style={styles.image}
+              resizeMode="cover"
+              onError={() => markFailed(first.uri)}
+              accessible={false}
+            />
+            <View style={styles.expandBadge} pointerEvents="none">
+              <Feather name="maximize-2" size={15} color={COLORS.cream} />
+            </View>
+            <View style={styles.countBadge} pointerEvents="none">
+              <Feather name="image" size={14} color={COLORS.cream} />
+              <Text style={styles.countText}>1 / {items.length}</Text>
+            </View>
+          </Pressable>
+        ) : loading && !timedOut ? (
+          <View style={styles.thumbnailState} accessibilityLabel="Loading place photos">
+            <ActivityIndicator color={COLORS.orange} />
+          </View>
+        ) : (
+          <View style={styles.thumbnailState} accessibilityLabel="No place photos available">
+            <Feather name="map-pin" size={23} color={COLORS.orange} />
+            <Text style={styles.thumbnailFallback}>No photo</Text>
+          </View>
+        )}
+        <PhotoRolodexModal
+          visible={viewerIndex != null}
+          items={rolodexItems}
+          initialIndex={viewerIndex ?? 0}
+          onClose={() => setViewerIndex(null)}
+        />
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.root, { minHeight: height }]} onLayout={(event) => setMeasuredWidth(Math.round(event.nativeEvent.layout.width))} testID="candidate-photo-carousel">
@@ -173,11 +228,25 @@ export function CandidatePhotoCarousel({
 
 const styles = StyleSheet.create({
   root: { width: '100%', backgroundColor: COLORS.surface, overflow: 'hidden' },
+  thumbnailRoot: { overflow: 'hidden', borderRadius: 15, backgroundColor: COLORS.surface },
+  thumbnailButton: { flex: 1 },
   photo: { backgroundColor: COLORS.surface },
   image: { width: '100%', height: '100%' },
   lazyPlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   state: { alignItems: 'center', justifyContent: 'center', gap: Spacing.sm },
   fallbackText: { color: COLORS.muted, fontSize: 13, lineHeight: 18 },
+  thumbnailState: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 6 },
+  thumbnailFallback: { color: COLORS.muted, fontSize: 11, lineHeight: 15, fontWeight: '700' },
+  expandBadge: {
+    position: 'absolute', right: 7, top: 7, width: 32, height: 32, borderRadius: 16,
+    alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(5,6,8,0.76)',
+  },
+  countBadge: {
+    position: 'absolute', left: 7, bottom: 7, minHeight: 28, flexDirection: 'row',
+    alignItems: 'center', gap: 5, paddingHorizontal: 8, borderRadius: 10,
+    backgroundColor: 'rgba(5,6,8,0.82)',
+  },
+  countText: { color: COLORS.cream, fontSize: 12, lineHeight: 16, fontWeight: '800' },
   dots: { position: 'absolute', bottom: 9, alignSelf: 'center', minHeight: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 9, borderRadius: 10, backgroundColor: 'rgba(15,16,20,0.68)' },
   dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: COLORS.border },
   dotActive: { width: 17, backgroundColor: COLORS.cream },

@@ -1338,7 +1338,7 @@ function ShareJobDetailScreen() {
             <Text style={[typography.caption, styles.help]}>Couldn&apos;t find an exact place.</Text>
           )
         ) : null}
-        {visibleResults.map((c) => {
+        {visibleResults.map((c, index) => {
           const address = splitPlaceAddress(c.formattedAddress);
           return (
             <CandidateConfirmationCard
@@ -1348,6 +1348,7 @@ function ShareJobDetailScreen() {
               selected={manualSelectedIds.includes(c.googlePlaceId)}
               selectable
               compact
+              rank={index + 1}
               selectionRole="checkbox"
               onPress={() => setManualSelectedIds((current) =>
                 toggleCandidateSelection(current, c.googlePlaceId, 'multiple'))}
@@ -1929,6 +1930,7 @@ function ShareJobDetailScreen() {
                   selected={pickerSelectedIds.includes(candidate.googlePlaceId)}
                   selectable
                   compact
+                  rank={index + 1}
                   bestMatch={index === 0 && confirmationCandidates.length > 1}
                   selectionRole={pickerSelectionMode === 'exclusive' ? 'radio' : 'checkbox'}
                   saved={Boolean(savedByGoogleId[candidate.googlePlaceId])}
