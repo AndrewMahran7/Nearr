@@ -45,6 +45,7 @@ import {
   hasMeaningfulNameMatch,
   haversineMeters,
   BUSINESS_LIKE,
+  normalizeProviderEntityKind,
   isAddressLikeTypes,
   isLocalityLikeTypes,
   geographicContextTypeOf,
@@ -114,6 +115,7 @@ export type MentionNoMatchReason =
   | 'candidate_invalid'
   | 'geographic_context_rejected'
   | 'geographic_destination_type_rejected'
+  | 'entity_semantic_type_rejected'
   | 'distance_or_geo_rejected'
   | 'all_candidates_rejected'
   | 'name_match_failed'
@@ -128,6 +130,7 @@ const REJECTION_TO_NO_MATCH_REASON: Record<string, MentionNoMatchReason> = {
   geographic_context_only: 'geographic_context_rejected',
   not_a_geographic_entity: 'geographic_destination_type_rejected',
   geographic_country_mismatch: 'distance_or_geo_rejected',
+  entity_semantic_type_mismatch: 'entity_semantic_type_rejected',
 };
 
 /** Highest provider result count we will persist. Search asks for 8 and a
@@ -148,7 +151,7 @@ export const MAX_FAILURE_TRACES = 10;
 export type MentionFailureTrace = {
   /** Stable per-task slot id (m1, m2, …). Not source text. */
   mentionId: string;
-  resolutionMode: 'venue' | 'geographic';
+  resolutionMode: 'venue' | 'geographic' | 'natural_feature' | 'landmark';
   outcome: MentionOutcome;
   noMatchReason?: MentionNoMatchReason;
   providerSearchStatus: 'ok' | 'empty' | 'error' | 'not_attempted';
@@ -529,6 +532,8 @@ export function scoreMentionCandidate(
     return scoreGeographicMentionCandidate(candidate, mention, opts);
   }
 
+  const physicalMode = mention.resolutionMode === 'natural_feature' || mention.resolutionMode === 'landmark';
+
   // Wrong-location hard veto (candidate sits in a different asserted state).
   if (opts.expectedState && isWrongLocationCandidate(candidate.formattedAddress ?? null, opts.expectedState)) {
     return { candidate, rawScore: REJECT_SCORE, reasons: ['wrong_location_rejected'], rejected: true, rejectionReason: 'wrong_location' };
@@ -548,10 +553,41 @@ export function scoreMentionCandidate(
     };
   }
 
+  const providerKind = normalizeProviderEntityKind(candidate);
+  if (
+    physicalMode &&
+    providerKind === 'business_or_venue'
+  ) {
+    return {
+      candidate,
+      rawScore: REJECT_SCORE,
+      reasons: ['entity_semantic_type_mismatch'],
+      rejected: true,
+      rejectionReason: 'entity_semantic_type_mismatch',
+    };
+  }
+
   // Type-based base.
-  if (candidate.types?.some((t) => BUSINESS_LIKE.has(t))) {
+  if (!physicalMode && candidate.types?.some((t) => BUSINESS_LIKE.has(t))) {
     score += 25;
     reasons.push('business_type');
+  } else if (
+    mention.resolutionMode === 'natural_feature' &&
+    providerKind === 'named_natural_feature'
+  ) {
+    score += 25;
+    reasons.push('natural_feature_type');
+  } else if (
+    mention.resolutionMode === 'landmark' &&
+    (providerKind === 'landmark' || providerKind === 'named_natural_feature')
+  ) {
+    score += 25;
+    reasons.push('landmark_type');
+  } else if (physicalMode && providerKind === 'unknown') {
+    // Exact named physical destinations often arrive as only
+    // establishment/point_of_interest. Missing specificity is not business.
+    score += 5;
+    reasons.push('provider_type_semantically_unknown');
   }
   if (isAddressLikeTypes(candidate.types)) {
     score -= 30;
@@ -568,12 +604,17 @@ export function scoreMentionCandidate(
     score += 8;
     reasons.push('expected_category_match');
   } else if (expectedCategory && resolvedCategory && resolvedCategory !== expectedCategory) {
-    score -= 24;
-    reasons.push('expected_category_mismatch');
+    score -= physicalMode ? 4 : 24;
+    reasons.push(physicalMode ? 'natural_category_variant' : 'expected_category_mismatch');
   }
 
   // Name match against the mention display name.
-  const hint = mention.displayName;
+  const identityHints = [mention.displayName, ...(mention.matchAliases ?? [])]
+    .filter((value, index, values) => !!value && values.indexOf(value) === index);
+  const hint = identityHints.find((value) => compactNameMatches(candidate.name, value)) ??
+    identityHints.find((value) => hasStrongNameMatch(candidate.name, value)) ??
+    identityHints.find((value) => hasMeaningfulNameMatch(candidate.name, value)) ??
+    mention.displayName;
   let namedMatched = false;
   if (compactNameMatches(candidate.name, hint)) {
     score += 30;
@@ -841,7 +882,7 @@ function reasonForFullyRejected(scored: ScoredMentionCandidate[]): MentionNoMatc
  */
 export function buildMentionFailureTrace(args: {
   mentionId: string;
-  resolutionMode: 'venue' | 'geographic';
+  resolutionMode: 'venue' | 'geographic' | 'natural_feature' | 'landmark';
   outcome: MentionOutcome;
   noMatchReason: MentionNoMatchReason | null;
   providerSearchStatus: MentionFailureTrace['providerSearchStatus'];
@@ -936,7 +977,7 @@ export type NameDrivenDeps = {
   globalRequestLimit?: number;
 };
 
-function buildMentionQuery(mention: VenueMention, geo: MediaGeoContext): string {
+export function buildMentionQuery(mention: VenueMention, geo: MediaGeoContext): string {
   // Name + bounded geo + a light category hint. Geo/category are RANKING
   // hints only — the name is the anchor. For a venue-in-host relationship,
   // search the PRIMARY venue with the HOST as bounded context ("X Eats Brewery
@@ -945,7 +986,7 @@ function buildMentionQuery(mention: VenueMention, geo: MediaGeoContext): string 
   if (mention.hostVenueName && mention.primaryVenueName) {
     parts.push(mention.primaryVenueName, mention.hostVenueName);
   } else {
-    parts.push(mention.displayName);
+    parts.push(mention.canonicalSearchName ?? mention.displayName);
   }
   const city = mention.geo.city ?? geo.city;
   const region = mention.geo.region ?? geo.region;
@@ -954,6 +995,28 @@ function buildMentionQuery(mention: VenueMention, geo: MediaGeoContext): string 
   const country = mentionQueryCountry(mention, geo);
   if (country) parts.push(country);
   return parts.filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
+}
+
+/** Keep a physical-feature qualifier adjacent to the identity it describes.
+ * Google resolves "Okere Falls waterfall Rotorua New Zealand" to the park,
+ * while the same token appended after all geography can collapse back to the
+ * Okere Falls locality. Venue queries retain their historical suffix form. */
+export function buildCategoryBiasedMentionQuery(
+  mention: VenueMention,
+  query: string,
+  categoryHint: string,
+): string {
+  const readableCategory = categoryHint.replace(/_/g, ' ').trim();
+  if (!readableCategory) return query;
+  if (mention.resolutionMode !== 'natural_feature' && mention.resolutionMode !== 'landmark') {
+    return `${query} ${readableCategory}`.replace(/\s+/g, ' ').trim();
+  }
+  const identity = (mention.canonicalSearchName ?? mention.displayName).trim();
+  if (!identity || !query.toLowerCase().startsWith(identity.toLowerCase())) {
+    return `${query} ${readableCategory}`.replace(/\s+/g, ' ').trim();
+  }
+  const context = query.slice(identity.length).trim();
+  return [identity, readableCategory, context].filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
 }
 
 /**
@@ -1148,9 +1211,11 @@ export async function resolveVenueMentions(args: {
     // booleans about the same inputs `buildMentionQuery` used — never the query.
     const resolvedCountry = mentionQueryCountry(mention, geoContext);
     const queryContext = {
-      resolutionMode: (mention.resolutionMode === 'geographic' ? 'geographic' : 'venue') as
+      resolutionMode: (mention.resolutionMode ?? 'venue') as
         | 'venue'
-        | 'geographic',
+        | 'geographic'
+        | 'natural_feature'
+        | 'landmark',
       queryHadCity: !!(mention.geo.city ?? geoContext.city),
       queryHadRegion: !!(mention.geo.region ?? geoContext.region),
       queryHadCountry: !!resolvedCountry,
@@ -1324,7 +1389,7 @@ export async function resolveVenueMentions(args: {
     // A geographic mention is never category-biased: a venue category hint
     // could only surface businesses, which the geographic path rejects anyway.
     if (classified.outcome !== 'verified_single' && categoryHint && mention.resolutionMode !== 'geographic') {
-      categoryBiasedQuery = `${query} ${categoryHint.replace(/_/g, ' ')}`.replace(/\s+/g, ' ').trim();
+      categoryBiasedQuery = buildCategoryBiasedMentionQuery(mention, query, categoryHint);
       const categoryCacheKey = `${categoryBiasedQuery}|${biasKey}`;
       let biased = cache.get(categoryCacheKey);
       if (!biased && requestCount < globalLimit && mentionPlacesCalls < MAX_CONTEXTUAL_SEARCH_CALLS) {

@@ -2047,6 +2047,8 @@ async function finalizeMediaTask(
         ...noteEvidenceForLogicalMention(parsed, mentionById.get(mention.mentionId)),
         mentionId: mention.mentionId,
         displayName: mention.displayName,
+        entityType: mentionById.get(mention.mentionId)?.entityType ?? 'UNKNOWN',
+        resolutionMode: mentionById.get(mention.mentionId)?.resolutionMode ?? 'venue',
         contextLabel: (() => {
           const sourceMention = mentionById.get(mention.mentionId);
           return mention.contextLabel ?? (
@@ -2073,6 +2075,10 @@ async function finalizeMediaTask(
     candidatePayload.evidenceFrames = evidenceFrames;
     (candidatePayload as any).canonicalPlacesCalls =
       result.resolutionDiagnostics?.contextAware?.placesCallCount ?? result.requestCount ?? 0;
+    (candidatePayload as any).entitySemantics = {
+      droppedNonPlaceEntities: mediaMentions.droppedNonPlaceEntities ?? 0,
+      droppedEntityTypeCounts: mediaMentions.droppedEntityTypeCounts ?? {},
+    };
     candidatePayload.savedPlaceIds = allSavedPlaceIds;
     if (partialResult) (candidatePayload as any).partialResult = partialResult;
     const mediaResultSummary = {
@@ -2269,6 +2275,8 @@ async function finalizeMediaTask(
       ),
       mentionId: mention.mentionId,
       displayName: mention.displayName,
+      entityType: mediaMentions.mentions.find((item: any) => item.id === mention.mentionId)?.entityType ?? 'UNKNOWN',
+      resolutionMode: mediaMentions.mentions.find((item: any) => item.id === mention.mentionId)?.resolutionMode ?? 'venue',
       contextLabel: (() => {
         const sourceMention = mediaMentions.mentions.find((item: any) => item.id === mention.mentionId);
         return mention.contextLabel ?? (
@@ -2293,6 +2301,10 @@ async function finalizeMediaTask(
   candidatePayload.evidenceFrames = evidenceFrames;
   (candidatePayload as any).canonicalPlacesCalls =
     result.resolutionDiagnostics?.contextAware?.placesCallCount ?? result.requestCount ?? 0;
+  (candidatePayload as any).entitySemantics = {
+    droppedNonPlaceEntities: mediaMentions.droppedNonPlaceEntities ?? 0,
+    droppedEntityTypeCounts: mediaMentions.droppedEntityTypeCounts ?? {},
+  };
   if (partialResult) (candidatePayload as any).partialResult = partialResult;
   const decisionForRow =
     mode === 'manual'

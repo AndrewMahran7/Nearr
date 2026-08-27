@@ -18,25 +18,56 @@ export const LOCALITY_LIKE: ReadonlySet<string> = new Set([
   'country', 'political',
 ]);
 
-export const BUSINESS_LIKE: ReadonlySet<string> = new Set([
+export const BUSINESS_OR_VENUE_LIKE: ReadonlySet<string> = new Set([
   'restaurant', 'cafe', 'bar', 'bakery', 'brewery', 'brewpub', 'winery',
   'vineyard', 'dessert_shop', 'ice_cream_shop', 'candy_store', 'food', 'meal_takeaway',
   'meal_delivery', 'store', 'shopping_mall', 'clothing_store',
   'book_store', 'grocery_or_supermarket', 'supermarket',
   'convenience_store', 'gym', 'spa', 'beauty_salon', 'lodging',
   'museum', 'art_gallery', 'movie_theater', 'night_club',
-  'tourist_attraction', 'amusement_park', 'park', 'stadium',
+  'amusement_park', 'stadium',
   'liquor_store', 'pharmacy', 'pet_store',
   'hotel', 'motel', 'resort_hotel', 'hostel', 'inn',
-  'city_park', 'state_park', 'national_park', 'dog_park',
-  'hiking_area', 'hiking_trail', 'trailhead', 'trail_head', 'beach', 'waterfall',
-  'lake', 'marina', 'island', 'nature_preserve', 'mountain_peak', 'scenic_spot',
-  'observation_deck', 'cultural_landmark', 'historical_landmark', 'monument',
   'campground', 'theater', 'performing_arts_theater', 'fitness_center',
   'sports_activity_location', 'sports_complex', 'sports_club', 'wellness_center', 'yoga_studio',
   'airport', 'bus_station', 'train_station', 'transit_station', 'subway_station',
   'ferry_terminal', 'university', 'college', 'school', 'library',
 ]);
+
+/** Physical natural destinations. Google may combine any of these with
+ * `establishment`, `point_of_interest`, `political`, or no useful primary type.
+ * Those generic additions never change the semantic kind. */
+export const NATURAL_FEATURE_LIKE: ReadonlySet<string> = new Set([
+  'natural_feature', 'geographic_feature', 'park', 'city_park', 'state_park',
+  'national_park', 'nature_preserve', 'nature_reserve', 'wildlife_refuge',
+  'hiking_area', 'hiking_trail', 'trail', 'trailhead', 'trail_head', 'beach',
+  'waterfall', 'lake', 'river', 'island', 'gorge', 'canyon', 'cliff', 'cave',
+  'cenote', 'quarry', 'swimming_hole', 'mountain_peak', 'scenic_spot',
+  'scenic_area', 'marina', 'campground',
+]);
+
+export const LANDMARK_LIKE: ReadonlySet<string> = new Set([
+  'tourist_attraction', 'observation_deck', 'cultural_landmark',
+  'historical_landmark', 'historical_place', 'monument', 'memorial', 'bridge',
+]);
+
+export const VISITABLE_DESTINATION_LIKE: ReadonlySet<string> = new Set([
+  ...BUSINESS_OR_VENUE_LIKE,
+  ...NATURAL_FEATURE_LIKE,
+  ...LANDMARK_LIKE,
+]);
+
+/** Back-compatible name used by existing scoring. It now means "visitable
+ * destination", not business; new semantic code should use the narrower sets. */
+export const BUSINESS_LIKE: ReadonlySet<string> = VISITABLE_DESTINATION_LIKE;
+
+export type NormalizedProviderEntityKind =
+  | 'business_or_venue'
+  | 'named_natural_feature'
+  | 'landmark'
+  | 'administrative_geography'
+  | 'address'
+  | 'unknown';
 
 export function isAddressLikeTypes(types?: string[]): boolean {
   if (!types?.length) return false;
@@ -70,6 +101,20 @@ function candidateTypeSet(candidate: TypedCandidate): string[] {
     for (const t of types) if (typeof t === 'string' && t) out.push(t);
   }
   return out;
+}
+
+/** Normalize Places New and Legacy typing without treating the generic
+ * `establishment` marker as proof of business semantics. */
+export function normalizeProviderEntityKind(candidate: TypedCandidate): NormalizedProviderEntityKind {
+  const types = candidateTypeSet(candidate);
+  if (types.some((type) => NATURAL_FEATURE_LIKE.has(type))) return 'named_natural_feature';
+  if (types.some((type) => LANDMARK_LIKE.has(type))) return 'landmark';
+  if (types.some((type) => BUSINESS_OR_VENUE_LIKE.has(type))) return 'business_or_venue';
+  if (types.some((type) => LOCALITY_LIKE.has(type))) return 'administrative_geography';
+  if (types.some((type) => ADDRESS_LIKE.has(type))) return 'address';
+  // `establishment` and `point_of_interest` are deliberately UNKNOWN: Google
+  // uses them for reserves, waterfalls and landmarks as well as businesses.
+  return 'unknown';
 }
 
 /**
@@ -112,7 +157,7 @@ export function geographicContextTypeOf(candidate: TypedCandidate): string | nul
   if (typeSet.length === 0) return null;
   // A real-world visitable entity is never "context only", even when its type
   // set also carries political/geographic markers (national parks do).
-  if (typeSet.some((t) => BUSINESS_LIKE.has(t))) return null;
+  if (typeSet.some((t) => VISITABLE_DESTINATION_LIKE.has(t))) return null;
   return (
     typeSet.find((t) => LOCALITY_LIKE.has(t)) ??
     typeSet.find((t) => ADDRESS_LIKE.has(t)) ??

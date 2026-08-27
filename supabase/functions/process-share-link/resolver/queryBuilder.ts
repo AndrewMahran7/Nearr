@@ -7,6 +7,11 @@
 
 import type { Evidence } from '../evidence/extractEvidence.ts';
 import { buildCleanPlacesQueries } from '../../../../lib/shareAgent/queryCleaner.ts';
+import {
+  classifyEntity,
+  classifyHashtags,
+  type VayrinEntityType,
+} from '../../../../lib/vayrin/entitySemantics.ts';
 
 export type QueryPlan = {
   queries: string[];
@@ -17,6 +22,10 @@ export type QueryPlan = {
    *  caption venue hint, or a tagged venue handle). When false we refuse
    *  to run casual caption prose as a Places query. */
   hasExplicitPlaceEvidence: boolean;
+  entityType: VayrinEntityType;
+  semanticReasons: string[];
+  /** Independently typed context clues. Never concatenated into a venue. */
+  hashtagEntities: ReturnType<typeof classifyHashtags>;
 };
 
 export function buildQueryPlan(evidence: Evidence): QueryPlan {
@@ -38,16 +47,33 @@ export function buildQueryPlan(evidence: Evidence): QueryPlan {
   // @oliversamiee into the query "Oliversamiee" and silently saved an
   // unrelated Oliver's business. Independently-derived venue evidence still
   // occupies `venueName` and follows the unchanged query ladder below.
-  const placeNameHint = venueName;
+  const semantic = classifyEntity({
+    text: venueName ?? '',
+    source: 'caption',
+    contextText: [evidence.rawTitle, evidence.rawDescription].filter(Boolean).join(' '),
+    city: evidence.cityState?.city ?? evidence.address?.city ?? null,
+    region: evidence.cityState?.state ?? evidence.address?.state ?? null,
+  });
+  const placeNameHint = semantic.canonicalSearchName ?? venueName;
+  const hashtagEntities = classifyHashtags(
+    [evidence.rawTitle, evidence.rawDescription].filter(Boolean).join(' '),
+    {
+      contextText: [evidence.rawTitle, evidence.rawDescription].filter(Boolean).join(' '),
+      city: evidence.cityState?.city ?? evidence.address?.city ?? null,
+      region: evidence.cityState?.state ?? evidence.address?.state ?? null,
+    },
+  );
 
   // Explicit place evidence = something that actually anchors a place
   // (a street address, a caption venue hint like "📍 X" / "X, City", or a
   // tagged venue handle). A bare poster handle / poster name / city context
   // does NOT qualify — those must not license querying raw caption prose.
-  const hasExplicitPlaceEvidence =
+  const semanticPlacesEligible = semantic.placesEligible || semantic.entityType === 'UNKNOWN';
+  const hasExplicitPlaceEvidence = semanticPlacesEligible && (
     !!evidence.address ||
     evidence.venueNameHints.length > 0 ||
-    evidence.handles.venueHandles.length > 0;
+    evidence.handles.venueHandles.length > 0
+  );
   const hasIndependentCaptionSeedEvidence =
     !!evidence.address ||
     evidence.venueNameHints.some(
@@ -63,7 +89,22 @@ export function buildQueryPlan(evidence: Evidence): QueryPlan {
     queries.push(trimmed);
   };
 
-  const nameVariants = expandPlaceNameVariants(placeNameHint);
+  if (!semanticPlacesEligible) {
+    return {
+      queries: [],
+      placeNameHint,
+      hasExplicitPlaceEvidence: false,
+      entityType: semantic.entityType,
+      semanticReasons: semantic.reasons,
+      hashtagEntities,
+    };
+  }
+
+  const providerName = placeNameHint;
+  const nameVariants = expandPlaceNameVariants(
+    providerName,
+    semantic.entityType === 'BUSINESS_OR_VENUE' || semantic.entityType === 'PLACE_ALIAS',
+  );
   const cityHint = evidence.cityState?.city ?? evidence.address?.city ?? null;
   const namesToTry = nameVariants.length > 0 ? nameVariants : [null];
   for (const nameVariant of namesToTry) {
@@ -87,15 +128,22 @@ export function buildQueryPlan(evidence: Evidence): QueryPlan {
     for (const q of subQueries) push(q);
   }
 
-  return { queries, placeNameHint, hasExplicitPlaceEvidence };
+  return {
+    queries,
+    placeNameHint,
+    hasExplicitPlaceEvidence,
+    entityType: semantic.entityType,
+    semanticReasons: semantic.reasons,
+    hashtagEntities,
+  };
 }
 
-function expandPlaceNameVariants(placeName: string | null): string[] {
+function expandPlaceNameVariants(placeName: string | null, allowPossessive: boolean): string[] {
   if (!placeName) return [];
   const base = placeName.trim();
   if (!base) return [];
   const variants = [base];
-  if (base.includes("'")) return variants;
+  if (!allowPossessive || base.includes("'")) return variants;
   const words = base.split(/\s+/).filter(Boolean);
   if (words.length < 1) return variants;
   const first = words[0];

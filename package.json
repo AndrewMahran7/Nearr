@@ -128,6 +128,7 @@
     "test:vayrin-never-dead-end-research": "npm --prefix services/media-worker run test:never-dead-end-research",
     "test:vayrin-never-dead-end": "npm --prefix services/media-worker run test:never-dead-end && ts-node -P scripts/tsconfig.json scripts/testVayrinNeverDeadEnd.ts",
     "test:vayrin-generic-place-type-guard": "ts-node -P scripts/tsconfig.json scripts/testVayrinGenericPlaceTypeGuard.ts && cd services/media-worker && node --import tsx --test tests/vayrin.test.ts",
+    "test:vayrin-entity-semantics-natural-features": "ts-node -P scripts/tsconfig.json scripts/testVayrinEntitySemanticsNaturalFeatures.ts",
     "test:recognition-cache": "ts-node -P scripts/tsconfig.json scripts/testRecognitionCache.ts",
     "proof:recognition-cache:dev": "ts-node -P scripts/tsconfig.json scripts/proveRecognitionCacheIntegration.ts",
     "proof:canonical-save-return-contract:dev": "ts-node -P scripts/tsconfig.json scripts/proveCanonicalSaveReturnContractDev.ts",

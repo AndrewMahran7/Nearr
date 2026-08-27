@@ -24,7 +24,7 @@
 // in the production prompt — a prompt that has been shown the answer key cannot
 // be measured.
 
-export const VAYRIN_PROMPT_VERSION = 'vayrin-hypothesis-first-2026-08-27.v1';
+export const VAYRIN_PROMPT_VERSION = 'vayrin-core-v4-2026-08-27.v1';
 
 export const VAYRIN_VISUAL_GEOLOCATION_SYSTEM_PROMPT = `
 You are a visual geolocation investigator. You are given timestamped frames
@@ -81,6 +81,14 @@ Report the most specific level your evidence supports, using exactly one of:
 Prefer the most specific CREDIBLE level. Do not climb to a specific level on a
 single ambiguous frame, and do not retreat to "city" when a sign in frame names
 the venue.
+
+ENTITY TYPE
+For every hypothesis also classify entity_type as exactly one of PERSON,
+ACTIVITY, EVENT, GENERIC_PLACE_TYPE, BUSINESS_OR_VENUE,
+NAMED_NATURAL_FEATURE, LANDMARK, CITY, REGION, COUNTRY, GEOGRAPHIC_ALIAS,
+PLACE_ALIAS, or UNKNOWN. People, activities and events are context, never place
+identities. A named waterfall/island/lake/quarry/cave/trail/cliff/reserve is a
+NAMED_NATURAL_FEATURE even when a provider might call it an establishment.
 
 MULTIPLE PLACES
 Social videos often show several distinct places: a hotel then a beach then a
@@ -250,6 +258,7 @@ export const VAYRIN_GEOLOCATION_SCHEMA = {
         additionalProperties: false,
         required: [
           'name',
+          'entity_type',
           'place_type',
           'city',
           'region',
@@ -265,6 +274,7 @@ export const VAYRIN_GEOLOCATION_SCHEMA = {
         ],
         properties: {
           name: { type: 'string', description: 'The most specific credible name. Empty string if only an area is known.' },
+          entity_type: { type: 'string', enum: ['PERSON', 'ACTIVITY', 'EVENT', 'GENERIC_PLACE_TYPE', 'BUSINESS_OR_VENUE', 'NAMED_NATURAL_FEATURE', 'LANDMARK', 'CITY', 'REGION', 'COUNTRY', 'GEOGRAPHIC_ALIAS', 'PLACE_ALIAS', 'UNKNOWN'] },
           place_type: { type: 'string', description: 'Free-text kind of place, e.g. "beach", "taqueria", "sea cliff".' },
           city: { type: ['string', 'null'] },
           region: { type: ['string', 'null'] },
@@ -322,6 +332,7 @@ export const VAYRIN_GEOLOCATION_SCHEMA = {
               additionalProperties: false,
               required: [
                 'name',
+                'entity_type',
                 'place_type',
                 'city',
                 'region',
@@ -337,6 +348,7 @@ export const VAYRIN_GEOLOCATION_SCHEMA = {
               ],
               properties: {
                 name: { type: 'string' },
+                entity_type: { type: 'string', enum: ['PERSON', 'ACTIVITY', 'EVENT', 'GENERIC_PLACE_TYPE', 'BUSINESS_OR_VENUE', 'NAMED_NATURAL_FEATURE', 'LANDMARK', 'CITY', 'REGION', 'COUNTRY', 'GEOGRAPHIC_ALIAS', 'PLACE_ALIAS', 'UNKNOWN'] },
                 place_type: { type: 'string' },
                 city: { type: ['string', 'null'] },
                 region: { type: ['string', 'null'] },

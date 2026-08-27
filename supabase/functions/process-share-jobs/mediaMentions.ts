@@ -35,6 +35,11 @@ import {
   type PlaceEvidenceSource,
 } from './mediaEvidence.ts';
 import { isMachineGeneratedIdentityPhrase } from '../../../lib/placeIdentityClassification.ts';
+import {
+  classifyEntity,
+  type EntityClassification,
+  type VayrinEntityType,
+} from '../../../lib/vayrin/entitySemantics.ts';
 
 /** Bounds so a malformed / oversized payload can never fan out unbounded work. */
 export const MAX_MENTIONS = 10;
@@ -100,6 +105,13 @@ export type VenueIdentity = {
   displayName: string;
   /** Normalized name for matching/grouping (preserves & ' . in initials). */
   normalizedName: string;
+  /** Durable semantic identity decided before provider I/O. */
+  entityType?: VayrinEntityType;
+  /** Preferred canonical provider query for a contextual alias. */
+  canonicalSearchName?: string;
+  /** Canonical names allowed to establish identity for an alias. */
+  matchAliases?: string[];
+  entityReasons?: string[];
   /** Tokens that make the name distinctive (generic cuisine/stop words removed). */
   distinctiveTokens: string[];
   /** Model category hint (e.g. "Pizza Restaurant") — ranking hint ONLY. */
@@ -138,7 +150,7 @@ export type VenueIdentity = {
    *                         provider entity; a business whose name merely
    *                         contains the place name can never satisfy it.
    */
-  resolutionMode?: 'venue' | 'geographic';
+  resolutionMode?: 'venue' | 'geographic' | 'natural_feature' | 'landmark';
   identityEvidenceKind?: 'observable' | 'model_prior';
   hypothesisRank?: number;
   hypothesisOrigin?: 'independent_multimodal';
@@ -189,6 +201,9 @@ export type BuildMentionsResult = {
   peerGeographicDestinations: number;
   /** Review-only partial units promoted into bounded resolver mentions. */
   partialMentions: number;
+  /** Explicit machine names suppressed before any Places request. */
+  droppedNonPlaceEntities: number;
+  droppedEntityTypeCounts: Partial<Record<VayrinEntityType, number>>;
 };
 
 // ---------------------------------------------------------------------------
@@ -630,12 +645,18 @@ export function buildVenueMentions(evidence: MediaPlaceEvidence): BuildMentionsR
     droppedGeographicContext: 0,
     peerGeographicDestinations: 0,
     partialMentions: 0,
+    droppedNonPlaceEntities: 0,
+    droppedEntityTypeCounts: {},
   };
   if (!evidence || (evidence.insufficientEvidence && (evidence.partialPlaces?.length ?? 0) === 0)) return empty;
 
   let droppedInferredOnly = 0;
   let droppedIneligibleName = 0;
   let droppedPassingMention = 0;
+  let droppedNonPlaceEntities = 0;
+  const droppedEntityTypeCounts: Partial<Record<VayrinEntityType, number>> = {};
+
+  const semanticByPlace = new Map<PlaceCandidateEvidence, EntityClassification>();
 
   const eligible: PlaceCandidateEvidence[] = [];
   // Places that name only their own city/region/country. They never become a
@@ -657,6 +678,31 @@ export function buildVenueMentions(evidence: MediaPlaceEvidence): BuildMentionsR
     }
     if (p.role === 'passing_mention') {
       droppedPassingMention += 1;
+      continue;
+    }
+    const semantic = classifyEntity({
+      text: p.name,
+      source: 'multi_place',
+      declaredType: p.entityType ?? 'UNKNOWN',
+      contextText: p.explicitEvidence.map((item) => item.value).join(' '),
+      category: p.category,
+      city: p.city,
+      region: p.region,
+      country: p.country,
+      scene: p.sceneSignature,
+    });
+    semanticByPlace.set(p, semantic);
+    if (
+      semantic.entityType === 'PERSON' ||
+      semantic.entityType === 'ACTIVITY' ||
+      semantic.entityType === 'EVENT' ||
+      semantic.entityType === 'GENERIC_PLACE_TYPE'
+    ) {
+      droppedNonPlaceEntities += 1;
+      droppedEntityTypeCounts[semantic.entityType] = (droppedEntityTypeCounts[semantic.entityType] ?? 0) + 1;
+      // Preserve the existing generic-name diagnostic while adding the more
+      // precise semantic counter. Older dashboards/tests group this bucket.
+      if (semantic.entityType === 'GENERIC_PLACE_TYPE') droppedIneligibleName += 1;
       continue;
     }
     const geoRole = classifyGeographicSourcePlace(p, allPlaces);
@@ -693,6 +739,7 @@ export function buildVenueMentions(evidence: MediaPlaceEvidence): BuildMentionsR
     relationshipType?: VenueRelationshipType;
     hostPlaces?: PlaceCandidateEvidence[];
     logicalPlaceId: string | null;
+    semantic: EntityClassification;
   };
   const groups: Group[] = [];
   const indexByKey = new Map<string, number>();
@@ -714,6 +761,7 @@ export function buildVenueMentions(evidence: MediaPlaceEvidence): BuildMentionsR
         region,
         places: [p],
         logicalPlaceId: p.logicalPlaceId ?? null,
+        semantic: semanticByPlace.get(p) ?? classifyEntity({ text: p.name, category: p.category }),
       });
     }
   }
@@ -819,6 +867,10 @@ export function buildVenueMentions(evidence: MediaPlaceEvidence): BuildMentionsR
       id: `m${i + 1}`,
       displayName: g.displayName,
       normalizedName: g.normalizedName,
+      entityType: g.semantic.entityType,
+      canonicalSearchName: g.semantic.canonicalSearchName ?? undefined,
+      matchAliases: g.semantic.matchAliases,
+      entityReasons: g.semantic.reasons,
       distinctiveTokens,
       category,
       categoryConfidence,
@@ -847,6 +899,13 @@ export function buildVenueMentions(evidence: MediaPlaceEvidence): BuildMentionsR
     // destination. Mixed groups stay ordinary venues — the stricter default.
     if (g.places.length > 0 && g.places.every((pl) => peerGeographic.has(pl))) {
       mention.resolutionMode = 'geographic';
+    } else if (
+      g.semantic.entityType === 'NAMED_NATURAL_FEATURE' ||
+      g.semantic.entityType === 'GEOGRAPHIC_ALIAS'
+    ) {
+      mention.resolutionMode = 'natural_feature';
+    } else if (g.semantic.entityType === 'LANDMARK') {
+      mention.resolutionMode = 'landmark';
     }
     if (hasHost) {
       mention.primaryVenueName = g.primaryName;
@@ -904,5 +963,7 @@ export function buildVenueMentions(evidence: MediaPlaceEvidence): BuildMentionsR
     droppedGeographicContext: geographicContext.length,
     peerGeographicDestinations: peerGeographic.size,
     partialMentions: partialCandidates.length,
+    droppedNonPlaceEntities,
+    droppedEntityTypeCounts,
   };
 }

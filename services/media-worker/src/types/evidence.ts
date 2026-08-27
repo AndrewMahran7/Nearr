@@ -12,6 +12,13 @@
 
 import { z } from 'zod';
 
+export const VayrinEntityType = z.enum([
+  'PERSON', 'ACTIVITY', 'EVENT', 'GENERIC_PLACE_TYPE', 'BUSINESS_OR_VENUE',
+  'NAMED_NATURAL_FEATURE', 'LANDMARK', 'CITY', 'REGION', 'COUNTRY',
+  'GEOGRAPHIC_ALIAS', 'PLACE_ALIAS', 'UNKNOWN',
+]);
+export type VayrinEntityType = z.infer<typeof VayrinEntityType>;
+
 export const EvidenceSource = z.enum(['caption', 'speech', 'visible_text', 'frame']);
 export type EvidenceSource = z.infer<typeof EvidenceSource>;
 
@@ -89,6 +96,9 @@ export const PlaceCandidateEvidence = z.object({
   sceneSignature: SceneSignature.optional(),
   distinctPlaceSignals: z.array(DistinctPlaceSignal).max(8).default([]),
   name: z.string().min(1).max(200),
+  /** Semantic identity proposed by the extractor. The deterministic classifier
+   * re-checks this before Places; it is a typed hint, never authority. */
+  entityType: VayrinEntityType.default('UNKNOWN'),
   category: NearrCategory.nullable().default(null),
   categoryConfidence: z.number().min(0).max(1).default(0),
   categoryEvidenceTags: z.array(z.string().min(1).max(80)).max(8).default([]),
@@ -117,10 +127,11 @@ type ParsedPlaceCandidateEvidence = z.infer<typeof PlaceCandidateEvidence>;
  * materializes their defaults for real model output. */
 export type PlaceCandidateEvidence = Omit<
   ParsedPlaceCandidateEvidence,
-  'momentTimestamps' | 'distinctPlaceSignals'
+  'momentTimestamps' | 'distinctPlaceSignals' | 'entityType'
 > & {
   momentTimestamps?: ParsedPlaceCandidateEvidence['momentTimestamps'];
   distinctPlaceSignals?: ParsedPlaceCandidateEvidence['distinctPlaceSignals'];
+  entityType?: ParsedPlaceCandidateEvidence['entityType'];
 };
 
 /** Field-level evidence retained from a candidate that failed whole-object
@@ -128,6 +139,7 @@ export type PlaceCandidateEvidence = Omit<
  * use it only for review-only search and area assistance. */
 export const PartialPlaceEvidence = z.object({
   nameHint: z.string().min(1).max(200).nullable().default(null),
+  entityType: VayrinEntityType.default('UNKNOWN'),
   category: NearrCategory.nullable().default(null),
   categoryConfidence: z.number().min(0).max(1).default(0),
   categoryEvidenceTags: z.array(z.string().min(1).max(80)).max(8).default([]),
@@ -150,7 +162,10 @@ export const PartialPlaceEvidence = z.object({
     'contextual_or_memory_prior', 'insufficient',
   ]).optional(),
 });
-export type PartialPlaceEvidence = z.infer<typeof PartialPlaceEvidence>;
+type ParsedPartialPlaceEvidence = z.infer<typeof PartialPlaceEvidence>;
+export type PartialPlaceEvidence = Omit<ParsedPartialPlaceEvidence, 'entityType'> & {
+  entityType?: ParsedPartialPlaceEvidence['entityType'];
+};
 
 export const MediaPlaceEvidence = z.object({
   places: z.array(PlaceCandidateEvidence).max(12).default([]),
@@ -164,7 +179,7 @@ type ParsedMediaPlaceEvidence = z.infer<typeof MediaPlaceEvidence>;
  * providers remain source-compatible. The parser always materializes `[]`. */
 export type MediaPlaceEvidence = Omit<ParsedMediaPlaceEvidence, 'places' | 'partialPlaces'> & {
   places: PlaceCandidateEvidence[];
-  partialPlaces?: ParsedMediaPlaceEvidence['partialPlaces'];
+  partialPlaces?: PartialPlaceEvidence[];
 };
 
 export function emptyEvidence(warnings: string[] = []): MediaPlaceEvidence {
@@ -280,6 +295,9 @@ function partialFromRejectedPlace(raw: unknown, validationErrors: string[]): Par
 
   return PartialPlaceEvidence.parse({
     nameHint: boundedString(p.name, 200),
+    entityType: VayrinEntityType.safeParse(p.entityType).success
+      ? VayrinEntityType.parse(p.entityType)
+      : 'UNKNOWN',
     category: category.success ? category.data : null,
     categoryConfidence: boundedNumber(p.categoryConfidence, 0, 1) ?? 0,
     categoryEvidenceTags: tags,

@@ -129,6 +129,9 @@ export function estimateVayrinCostUsd(
 
 export type VayrinHypothesisRaw = {
   name: string;
+  entity_type?: 'PERSON' | 'ACTIVITY' | 'EVENT' | 'GENERIC_PLACE_TYPE' |
+    'BUSINESS_OR_VENUE' | 'NAMED_NATURAL_FEATURE' | 'LANDMARK' | 'CITY' |
+    'REGION' | 'COUNTRY' | 'GEOGRAPHIC_ALIAS' | 'PLACE_ALIAS' | 'UNKNOWN';
   place_type: string;
   city: string | null;
   region: string | null;
@@ -519,6 +522,13 @@ function parseHypothesis(raw: unknown): VayrinHypothesisRaw | null {
 
   return {
     name: name ?? '',
+    entity_type: [
+      'PERSON', 'ACTIVITY', 'EVENT', 'GENERIC_PLACE_TYPE', 'BUSINESS_OR_VENUE',
+      'NAMED_NATURAL_FEATURE', 'LANDMARK', 'CITY', 'REGION', 'COUNTRY',
+      'GEOGRAPHIC_ALIAS', 'PLACE_ALIAS', 'UNKNOWN',
+    ].includes(String(r.entity_type))
+      ? r.entity_type as VayrinHypothesisRaw['entity_type']
+      : 'UNKNOWN',
     place_type: strOrNull(r.place_type, 80) ?? '',
     city,
     region,

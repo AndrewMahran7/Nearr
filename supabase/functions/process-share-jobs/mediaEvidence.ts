@@ -18,6 +18,11 @@
 // No Deno globals, no I/O — unit-tested from Node (scripts/testMediaEvidenceAdapter.ts).
 
 import { classifyPlacePhrase } from '../../../lib/placeIdentityClassification.ts';
+import {
+  VAYRIN_ENTITY_TYPES,
+  classifyEntity,
+  type VayrinEntityType,
+} from '../../../lib/vayrin/entitySemantics.ts';
 
 type NearrCategory =
   | 'restaurant' | 'cafe' | 'bakery' | 'bar' | 'brewery' | 'winery' | 'dessert'
@@ -60,6 +65,14 @@ export type PlaceCandidateEvidence = {
   conflicts?: string[];
   evidenceBasis?: 'direct_visible_identity' | 'distinctive_visual_match' | 'contextual_or_memory_prior' | 'insufficient';
   name: string;
+  entityType?: VayrinEntityType;
+  sceneSignature?: {
+    environmentType?: string | null;
+    setting?: string | null;
+    visualAnchors?: string[];
+    activity?: string | null;
+    regionClue?: string | null;
+  };
   category: NearrCategory | null;
   categoryConfidence?: number;
   categoryEvidenceTags?: string[];
@@ -85,6 +98,7 @@ export type PartialPlaceEvidence = {
   conflicts?: string[];
   evidenceBasis?: 'direct_visible_identity' | 'distinctive_visual_match' | 'contextual_or_memory_prior' | 'insufficient';
   nameHint: string | null;
+  entityType?: VayrinEntityType;
   category: NearrCategory | null;
   categoryConfidence: number;
   categoryEvidenceTags: string[];
@@ -121,6 +135,13 @@ const VALID_ROLES: ReadonlySet<string> = new Set([
   'secondary',
   'passing_mention',
 ]);
+const VALID_ENTITY_TYPES: ReadonlySet<string> = new Set(VAYRIN_ENTITY_TYPES);
+
+function parseEntityType(v: unknown): VayrinEntityType {
+  return typeof v === 'string' && VALID_ENTITY_TYPES.has(v)
+    ? v as VayrinEntityType
+    : 'UNKNOWN';
+}
 
 // Bounds so a malformed / oversized model payload can never blow up the worker
 // finalizer. These mirror the worker-side Zod caps (defense in depth).
@@ -203,6 +224,19 @@ function parsePlace(raw: unknown): PlaceCandidateEvidence | null {
     evidenceBasis: r.evidenceBasis === 'direct_visible_identity' || r.evidenceBasis === 'distinctive_visual_match' || r.evidenceBasis === 'contextual_or_memory_prior' || r.evidenceBasis === 'insufficient'
       ? r.evidenceBasis : undefined,
     name,
+    entityType: parseEntityType(r.entityType),
+    sceneSignature: r.sceneSignature && typeof r.sceneSignature === 'object'
+      ? {
+          environmentType: str((r.sceneSignature as Record<string, unknown>).environmentType, 40),
+          setting: str((r.sceneSignature as Record<string, unknown>).setting, 20),
+          visualAnchors: Array.isArray((r.sceneSignature as Record<string, unknown>).visualAnchors)
+            ? ((r.sceneSignature as Record<string, unknown>).visualAnchors as unknown[])
+              .map((value) => str(value, 100)).filter((value): value is string => !!value).slice(0, 8)
+            : [],
+          activity: str((r.sceneSignature as Record<string, unknown>).activity, 100),
+          regionClue: str((r.sceneSignature as Record<string, unknown>).regionClue, 120),
+        }
+      : undefined,
     category: isNearrCategory(r.category) ? r.category : null,
     categoryConfidence: Math.max(0, Math.min(1, num(r.categoryConfidence) ?? 0)),
     categoryEvidenceTags: Array.isArray(r.categoryEvidenceTags)
@@ -250,6 +284,7 @@ function parsePartialPlace(raw: unknown): PartialPlaceEvidence | null {
     evidenceBasis: r.evidenceBasis === 'direct_visible_identity' || r.evidenceBasis === 'distinctive_visual_match' || r.evidenceBasis === 'contextual_or_memory_prior' || r.evidenceBasis === 'insufficient'
       ? r.evidenceBasis : undefined,
     nameHint: str(r.nameHint, 200),
+    entityType: parseEntityType(r.entityType),
     category: isNearrCategory(r.category) ? r.category : null,
     categoryConfidence: Math.max(0, Math.min(1, num(r.categoryConfidence) ?? 0)),
     categoryEvidenceTags: Array.isArray(r.categoryEvidenceTags)
@@ -380,6 +415,7 @@ export function partialPlaceToReviewOnlyCandidate(
     identityEvidenceKind: 'model_prior',
     hypothesisRank: 0,
     name,
+    entityType: partial.entityType ?? 'UNKNOWN',
     category: partialCategoryIsGrounded(partial.category, partial.explicitEvidence)
       ? partial.category
       : null,
@@ -422,8 +458,21 @@ export type VayrinPartialResult = {
 export function buildVayrinPartialResult(evidence: MediaPlaceEvidence): VayrinPartialResult | null {
   const partialResults = (evidence.partialPlaces ?? []).flatMap((partial, index) => {
     const candidate = partialPlaceToReviewOnlyCandidate(partial, index);
-    const groundedName = candidate && partial.nameHint && foldLabel(candidate.name) === foldLabel(partial.nameHint)
+    const proposedName = candidate && partial.nameHint && foldLabel(candidate.name) === foldLabel(partial.nameHint)
       ? partial.nameHint
+      : null;
+    const semantic = classifyEntity({
+      text: proposedName ?? '',
+      source: 'search_lead',
+      declaredType: partial.entityType ?? 'UNKNOWN',
+      contextText: partial.explicitEvidence.map((item) => item.value).join(' '),
+      category: partial.category,
+      city: partial.city,
+      region: partial.region,
+      country: partial.country,
+    });
+    const groundedName = proposedName && (semantic.placesEligible || semantic.entityType === 'UNKNOWN')
+      ? semantic.canonicalSearchName ?? proposedName
       : null;
     const locality = candidate
       ? candidate.city ?? candidate.region ?? candidate.country ?? null

@@ -44,6 +44,7 @@ import { useTheme } from '@/lib/theme';
 import { isAsyncShareJobsEnabled, isVayrinProductUiEnabled } from '@/lib/featureFlags';
 import { sharedAuth } from '@/lib/sharedAuth';
 import { mapSyncShareToVayrinPresentation } from '@/lib/vayrinPresentation';
+import { classifyEntity } from '@/lib/vayrin/entitySemantics';
 import { getActivationSaveFeedback } from '@/lib/activation';
 import { createMapGroupFocusRequest } from '@/lib/mapGroupFocus';
 import {
@@ -1687,6 +1688,33 @@ function LegacyShareScreen() {
     } = { contextText: null, contextLatLng: null },
     extractionResult: ExtractionResult | null = null,
   ) {
+    // Machine extraction must cross the same entity boundary as the Edge
+    // resolver. User-entered manual searches call this function with no
+    // extractionResult and remain intentionally unchanged.
+    if (extractionResult) {
+      const semantic = classifyEntity({
+        text: extractionResult.placeName ?? query,
+        source: 'suggested_query',
+        contextText: [query, extractionResult.sourceContext].filter(Boolean).join(' '),
+        city: extractionResult.city,
+        region: extractionResult.state,
+      });
+      if (!extractionResult.address && !semantic.placesEligible && semantic.entityType !== 'UNKNOWN') {
+        enterManualFallback({
+          reason: `machine_entity_blocked_${semantic.entityType.toLowerCase()}`,
+          suggestedQuery: [extractionResult.city, extractionResult.state]
+            .filter(Boolean).join(' '),
+        });
+        return;
+      }
+      if (semantic.canonicalSearchName) {
+        query = [
+          semantic.canonicalSearchName,
+          extractionResult.city,
+          extractionResult.state,
+        ].filter(Boolean).join(' ');
+      }
+    }
     setPhase('searching');
     // Bias priority: explicit post context > user device location > none.
     const bias: LocationBias | undefined =
