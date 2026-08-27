@@ -152,7 +152,31 @@ export type VayrinSegmentRaw = {
   hypotheses: VayrinHypothesisRaw[];
 };
 
+export type VayrinSourceGeographyRaw = {
+  country: string | null;
+  region: string | null;
+  city: string | null;
+  confidence_class: 'explicit_source_geo' | 'strong_inferred_geo' | 'weak_inferred_geo' | 'none';
+  evidence_provenance: Array<
+    'source_location_metadata' | 'source_caption' | 'source_hashtags' |
+    'source_transcript' | 'source_ocr' | 'source_visual'
+  >;
+};
+
+export type VayrinIdentityClueRaw = {
+  clue: string;
+  kind: 'exact_visible_name' | 'alias' | 'natural_feature' | 'architectural' | 'geological' | 'activity' | 'other';
+  provenance: 'source_location_metadata' | 'source_caption' | 'source_hashtags' |
+    'source_transcript' | 'source_ocr' | 'source_visual';
+  strength: 'strong' | 'moderate' | 'weak';
+};
+
 export type VayrinPayload = {
+  scene_category: string;
+  activity: string | null;
+  source_geography: VayrinSourceGeographyRaw;
+  identity_clues: VayrinIdentityClueRaw[];
+  no_exact_hypothesis: boolean;
   place_hypotheses: VayrinHypothesisRaw[];
   multiple_distinct_places_visible: boolean;
   additional_place_segments: VayrinSegmentRaw[];
@@ -301,7 +325,8 @@ export function parseVayrinPayload(raw: unknown): VayrinPayload | null {
 
   const hypotheses = (Array.isArray(r.place_hypotheses) ? r.place_hypotheses : [])
     .map(parseHypothesis)
-    .filter((h): h is VayrinHypothesisRaw => h !== null);
+    .filter((h): h is VayrinHypothesisRaw => h !== null)
+    .slice(0, 3);
 
   const segments = Array.isArray(r.additional_place_segments)
     ? r.additional_place_segments
@@ -310,6 +335,15 @@ export function parseVayrinPayload(raw: unknown): VayrinPayload | null {
     : [];
 
   return {
+    scene_category: strOrNull(r.scene_category, 100) ?? 'unknown',
+    activity: strOrNull(r.activity, 120),
+    source_geography: parseSourceGeography(r.source_geography),
+    identity_clues: Array.isArray(r.identity_clues)
+      ? r.identity_clues.map(parseIdentityClue)
+          .filter((item): item is VayrinIdentityClueRaw => item !== null)
+          .slice(0, 16)
+      : [],
+    no_exact_hypothesis: r.no_exact_hypothesis === true,
     place_hypotheses: hypotheses,
     multiple_distinct_places_visible: r.multiple_distinct_places_visible === true,
     additional_place_segments: segments,
@@ -326,6 +360,50 @@ export function parseVayrinPayload(raw: unknown): VayrinPayload | null {
           .filter((item): item is VayrinOutsideCandidateProposalRaw => item !== null)
           .slice(0, 2)
       : [],
+  };
+}
+
+function parseSourceGeography(raw: unknown): VayrinSourceGeographyRaw {
+  const r = raw && typeof raw === 'object' ? raw as Record<string, unknown> : {};
+  const confidence = new Set(['explicit_source_geo', 'strong_inferred_geo', 'weak_inferred_geo', 'none']);
+  const provenance = new Set([
+    'source_location_metadata', 'source_caption', 'source_hashtags',
+    'source_transcript', 'source_ocr', 'source_visual',
+  ]);
+  return {
+    country: strOrNull(r.country, 120),
+    region: strOrNull(r.region, 120),
+    city: strOrNull(r.city, 120),
+    confidence_class: confidence.has(String(r.confidence_class))
+      ? r.confidence_class as VayrinSourceGeographyRaw['confidence_class']
+      : 'none',
+    evidence_provenance: Array.isArray(r.evidence_provenance)
+      ? r.evidence_provenance.filter(
+          (item): item is VayrinSourceGeographyRaw['evidence_provenance'][number] =>
+            typeof item === 'string' && provenance.has(item),
+        ).slice(0, 8)
+      : [],
+  };
+}
+
+function parseIdentityClue(raw: unknown): VayrinIdentityClueRaw | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const r = raw as Record<string, unknown>;
+  const clue = strOrNull(r.clue, 240);
+  const kinds = new Set(['exact_visible_name', 'alias', 'natural_feature', 'architectural', 'geological', 'activity', 'other']);
+  const provenance = new Set([
+    'source_location_metadata', 'source_caption', 'source_hashtags',
+    'source_transcript', 'source_ocr', 'source_visual',
+  ]);
+  const strengths = new Set(['strong', 'moderate', 'weak']);
+  if (!clue || !kinds.has(String(r.kind)) || !provenance.has(String(r.provenance)) || !strengths.has(String(r.strength))) {
+    return null;
+  }
+  return {
+    clue,
+    kind: r.kind as VayrinIdentityClueRaw['kind'],
+    provenance: r.provenance as VayrinIdentityClueRaw['provenance'],
+    strength: r.strength as VayrinIdentityClueRaw['strength'],
   };
 }
 
@@ -460,7 +538,7 @@ function parseSegment(raw: unknown): VayrinSegmentRaw | null {
   if (!raw || typeof raw !== 'object') return null;
   const r = raw as Record<string, unknown>;
   const hypotheses = Array.isArray(r.hypotheses)
-    ? r.hypotheses.map(parseHypothesis).filter((h): h is VayrinHypothesisRaw => h !== null)
+    ? r.hypotheses.map(parseHypothesis).filter((h): h is VayrinHypothesisRaw => h !== null).slice(0, 3)
     : [];
   if (hypotheses.length === 0) return null;
   const timestamps = Array.isArray(r.frame_timestamps_seconds)

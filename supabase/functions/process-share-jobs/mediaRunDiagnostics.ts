@@ -99,6 +99,21 @@ export type RecognitionFunnel = {
       totalTokens: number | null;
     };
     estimatedCostUsd?: number | null;
+    hardPathEligible?: boolean;
+    hardPathReason?: string;
+    hardPathVersion?: string;
+    hypothesisModel?: string;
+    hypothesisFrameCount?: number;
+    hypothesisCount?: number;
+    topHypothesisNamePresent?: boolean;
+    hypothesisGeoStrength?: string;
+    rawFrames?: number;
+    candidateFrames?: number;
+    selectedFrames?: number;
+    canonicalizationOutcome?: 'deferred_to_edge';
+    canonicalPlacesCalls?: number;
+    hardPathCost?: number | null;
+    hardPathLatency?: number;
   };
 };
 
@@ -294,6 +309,25 @@ export function buildRecognitionFunnel(
         : finite(v.estimatedCostUsd) !== undefined
         ? { estimatedCostUsd: finite(v.estimatedCostUsd) }
         : {}),
+      ...(typeof v.hardPathEligible === 'boolean' ? { hardPathEligible: v.hardPathEligible } : {}),
+      ...(boundedString(v.hardPathReason, 64) ? { hardPathReason: boundedString(v.hardPathReason, 64) } : {}),
+      ...(boundedString(v.hardPathVersion, 100) ? { hardPathVersion: boundedString(v.hardPathVersion, 100) } : {}),
+      ...(boundedString(v.hypothesisModel, 100) ? { hypothesisModel: boundedString(v.hypothesisModel, 100) } : {}),
+      ...(count(v.hypothesisFrameCount) !== undefined ? { hypothesisFrameCount: count(v.hypothesisFrameCount) } : {}),
+      ...(count(v.hypothesisCount) !== undefined ? { hypothesisCount: count(v.hypothesisCount) } : {}),
+      ...(typeof v.topHypothesisNamePresent === 'boolean' ? { topHypothesisNamePresent: v.topHypothesisNamePresent } : {}),
+      ...(boundedString(v.hypothesisGeoStrength, 32) ? { hypothesisGeoStrength: boundedString(v.hypothesisGeoStrength, 32) } : {}),
+      ...(count(v.rawFrames) !== undefined ? { rawFrames: count(v.rawFrames) } : {}),
+      ...(count(v.candidateFrames) !== undefined ? { candidateFrames: count(v.candidateFrames) } : {}),
+      ...(count(v.selectedFrames) !== undefined ? { selectedFrames: count(v.selectedFrames) } : {}),
+      ...(v.canonicalizationOutcome === 'deferred_to_edge' ? { canonicalizationOutcome: 'deferred_to_edge' as const } : {}),
+      ...(count(v.canonicalPlacesCalls) !== undefined ? { canonicalPlacesCalls: count(v.canonicalPlacesCalls) } : {}),
+      ...(v.hardPathCost === null
+        ? { hardPathCost: null }
+        : finite(v.hardPathCost) !== undefined
+        ? { hardPathCost: finite(v.hardPathCost) }
+        : {}),
+      ...(count(v.hardPathLatency) !== undefined ? { hardPathLatency: count(v.hardPathLatency) } : {}),
     };
   }
   return out;

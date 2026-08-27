@@ -41,6 +41,20 @@ function hypothesis(name: string) {
   };
 }
 
+const independentContext = {
+  scene_category: 'coastal natural feature',
+  activity: 'sightseeing',
+  source_geography: {
+    city: null,
+    region: 'California',
+    country: 'United States',
+    confidence_class: 'weak_inferred_geo' as const,
+    evidence_provenance: ['source_visual' as const],
+  },
+  identity_clues: [],
+  no_exact_hypothesis: false,
+};
+
 test('diverse frame selection preserves chronology and increases visual spread', () => {
   const frames = [
     frame(0, '0000000000000000'), frame(1, '0000000000000001'),
@@ -78,6 +92,7 @@ test('generic place type does not masquerade as a resolved cheap-pass identity',
     explicitPlaceCount: 1, geographicOnlyPlaceCount: 0, genericOnlyPlaceCount: 1,
   }), { run: true, reason: 'only_generic_place_type' });
   const mapped = payloadToEvidence({
+    ...independentContext,
     place_hypotheses: [hypothesis('Underground Cenote')],
     multiple_distinct_places_visible: false,
     additional_place_segments: [], metadata_was_sufficient: false,
@@ -86,20 +101,20 @@ test('generic place type does not masquerade as a resolved cheap-pass identity',
   assert.equal(mapped.evidence.partialPlaces?.[0]?.nameHint, 'Underground Cenote');
 });
 
-test('clean empty evidence does not spend Sol without a grounded recovery input', () => {
+test('clean empty evidence enters the candidate-blind hard path', () => {
   assert.deepEqual(shouldRunVayrinFallback({
     enabled: true, frameCount: 8, insufficientEvidence: true,
     explicitPlaceCount: 0, geographicOnlyPlaceCount: 0,
     usefulPartialPlaceCount: 0, technicalFailure: false,
-  }), { run: false, reason: 'no_grounded_recovery_input' });
+  }), { run: true, reason: 'no_exact_source_identity' });
 });
 
-test('grounded partial recovery uses cheap Places while technical emptiness may use Sol', () => {
+test('partial or technically empty evidence enters the hard path', () => {
   assert.deepEqual(shouldRunVayrinFallback({
     enabled: true, frameCount: 8, insufficientEvidence: false,
     explicitPlaceCount: 0, geographicOnlyPlaceCount: 0,
     usefulPartialPlaceCount: 1, technicalFailure: true,
-  }), { run: false, reason: 'partial_recovery_sufficient' });
+  }), { run: true, reason: 'technical_output_recovery' });
   assert.deepEqual(shouldRunVayrinFallback({
     enabled: true, frameCount: 8, insufficientEvidence: true,
     explicitPlaceCount: 0, geographicOnlyPlaceCount: 0,
@@ -124,6 +139,7 @@ test('multi-place payload remains multiple with timestamp-associated segments', 
   const first = hypothesis('First Beach');
   const second = { ...hypothesis('Second Beach'), city: 'San Diego' };
   const mapped = payloadToEvidence({
+    ...independentContext,
     place_hypotheses: [first], multiple_distinct_places_visible: true,
     additional_place_segments: [{ frame_timestamps_seconds: [12, 18], hypotheses: [second] }],
     metadata_was_sufficient: false,
@@ -142,6 +158,7 @@ test('Sol region-only output survives as noncanonical AREA evidence', () => {
     specificity: 'region',
   };
   const mapped = payloadToEvidence({
+    ...independentContext,
     place_hypotheses: [broad],
     multiple_distinct_places_visible: false,
     additional_place_segments: [],
@@ -160,6 +177,7 @@ test('same-scene alternatives share one logical place while distinct scenes do n
   const secondScene = { ...hypothesis('Harbor Point'), city: 'San Diego' };
   assert.equal(deduplicateSceneHypotheses([first, spellingVariant, alternative]).length, 2);
   const mapped = payloadToEvidence({
+    ...independentContext,
     place_hypotheses: [first, spellingVariant, alternative],
     multiple_distinct_places_visible: true,
     additional_place_segments: [{ frame_timestamps_seconds: [15], hypotheses: [secondScene] }],
@@ -174,6 +192,7 @@ test('same-scene alternatives share one logical place while distinct scenes do n
 test('famous-clip or contextual recognition is marked as a model prior', () => {
   const prior = { ...hypothesis('Famous Place'), evidence_basis: 'contextual_or_memory_prior' as const };
   const place = payloadToEvidence({
+    ...independentContext,
     place_hypotheses: [prior], multiple_distinct_places_visible: false,
     additional_place_segments: [], metadata_was_sufficient: false,
   }).evidence.places[0];

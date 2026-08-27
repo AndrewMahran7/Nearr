@@ -60,6 +60,14 @@ import {
   type VerificationV3Result,
 } from './verificationV3.js';
 import { isCategoryOnlyPlaceName } from './placeIdentityGuard.js';
+import {
+  classifyHypothesisFirstPath,
+  independentHypothesisContract,
+  rankIndependentHypotheses,
+  VAYRIN_HYPOTHESIS_FIRST_VERSION,
+  type HardPathReason,
+  type IndependentHypothesisContract,
+} from './hypothesisFirstHardPath.js';
 
 // ---------------------------------------------------------------------------
 // Trigger
@@ -96,7 +104,8 @@ export type VayrinTriggerReason =
   | 'partial_recovery_sufficient'
   | 'technical_output_recovery'
   | 'no_grounded_recovery_input'
-  | 'cheap_pass_sufficient';
+  | 'cheap_pass_sufficient'
+  | HardPathReason;
 
 /**
  * Should the expensive visual pass run?
@@ -112,19 +121,12 @@ export function shouldRunVayrinFallback(input: VayrinTriggerInput): VayrinTrigge
   // No frames means no visual evidence to reason over. Nothing to escalate to.
   if (input.frameCount === 0) return { run: false, reason: 'no_frames' };
 
-  // A grounded name/locality is already useful to the cheaper deterministic
-  // Places/area ladder. Do not spend Sol merely to turn a review lead into a
-  // more confident-looking model assertion.
-  if ((input.usefulPartialPlaceCount ?? 0) > 0) {
-    return { run: false, reason: 'partial_recovery_sufficient' };
-  }
-
   if (input.technicalFailure) {
     return { run: true, reason: 'technical_output_recovery' };
   }
 
   if (input.insufficientEvidence || input.explicitPlaceCount === 0) {
-    return { run: false, reason: 'no_grounded_recovery_input' };
+    return { run: true, reason: 'no_exact_source_identity' };
   }
 
   // Every place the cheap pass found is administrative context.
@@ -176,6 +178,7 @@ function partialRecoveryField(place: NonNullable<MediaPlaceEvidence['partialPlac
 /** Model specificity levels that name an actual destination, as opposed to an
  *  area containing one. Only these may become a place Nearr tries to resolve. */
 const SPECIFIC_LEVELS = new Set(['exact_location', 'venue', 'landmark', 'natural_feature']);
+const PERSON_PLACE_TYPES = new Set(['person', 'athlete', 'creator', 'individual', 'celebrity']);
 
 /** Conservative `place_type` -> Nearr category mapping. Deliberately partial:
  *  an unrecognized type maps to null, and the existing category pipeline fills
@@ -238,9 +241,11 @@ export function hypothesisToPlace(
   timestamps: number[] = [],
   logicalPlaceId: string | null = null,
   hypothesisRank = 0,
+  contract?: IndependentHypothesisContract,
 ): PlaceCandidateEvidence | null {
   const name = hypothesis.name.trim();
   if (!name) return null;
+  if (PERSON_PLACE_TYPES.has(hypothesis.place_type.trim().toLowerCase())) return null;
   if (!SPECIFIC_LEVELS.has(hypothesis.specificity)) return null;
   if (isCategoryOnlyPlaceName(name)) return null;
 
@@ -280,6 +285,7 @@ export function hypothesisToPlace(
         ? 'model_prior'
         : 'observable',
     hypothesisRank,
+    ...(contract ?? {}),
     momentTimestamps: timestamps.slice(0, 24),
     sceneSignature: {
       environmentType: environmentFor(category),
@@ -310,8 +316,10 @@ export function hypothesisToPlace(
 function hypothesisToPartialPlace(
   hypothesis: VayrinHypothesisRaw,
   timestamps: number[] = [],
+  contract?: IndependentHypothesisContract,
 ): PartialPlaceEvidence | null {
   const categoryOnly = isCategoryOnlyPlaceName(hypothesis.name);
+  if (PERSON_PLACE_TYPES.has(hypothesis.place_type.trim().toLowerCase())) return null;
   if (!categoryOnly && !['neighborhood', 'city', 'region', 'country'].includes(hypothesis.specificity)) return null;
   const firstTimestamp = timestamps[0] ?? null;
   const explicitEvidence: EvidenceItem[] = hypothesis.supporting_visual_clues.slice(0, 8)
@@ -322,6 +330,7 @@ function hypothesisToPartialPlace(
   if (explicitEvidence.length === 0) return null;
   const areaName = hypothesis.name.trim() || null;
   return {
+    ...(contract ?? {}),
     // Area labels live in administrative fields, not canonical/search identity.
     nameHint: categoryOnly ? hypothesis.name.trim() || null : null,
     category: categoryFor(hypothesis.place_type),
@@ -379,18 +388,22 @@ export function payloadToEvidence(payload: VayrinPayload): {
   const partialPlaces: PartialPlaceEvidence[] = [];
   const alternatives: VayrinHypothesisRaw[] = [];
 
-  const primaryHypotheses = deduplicateSceneHypotheses(payload.place_hypotheses);
+  const primaryHypotheses = rankIndependentHypotheses(
+    deduplicateSceneHypotheses(payload.place_hypotheses).map((hypothesis) => ({ hypothesis })),
+  ).map((item) => item.hypothesis);
   primaryHypotheses.forEach((hypothesis, rank) => {
+    const contract = independentHypothesisContract(hypothesis, payload);
     const place = hypothesisToPlace(
       hypothesis,
       'primary',
       [],
       'vayrin-scene-1',
       rank,
+      contract,
     );
     if (place) places.push(place);
     else {
-      const partial = hypothesisToPartialPlace(hypothesis);
+      const partial = hypothesisToPartialPlace(hypothesis, [], contract);
       if (partial) partialPlaces.push(partial);
       alternatives.push(hypothesis);
     }
@@ -398,18 +411,22 @@ export function payloadToEvidence(payload: VayrinPayload): {
 
   for (let segmentIndex = 0; segmentIndex < payload.additional_place_segments.length; segmentIndex += 1) {
     const segment = payload.additional_place_segments[segmentIndex]!;
-    const hypotheses = deduplicateSceneHypotheses(segment.hypotheses);
+    const hypotheses = rankIndependentHypotheses(
+      deduplicateSceneHypotheses(segment.hypotheses).map((hypothesis) => ({ hypothesis })),
+    ).map((item) => item.hypothesis);
     hypotheses.forEach((hypothesis, rank) => {
+      const contract = independentHypothesisContract(hypothesis, payload);
       const place = hypothesisToPlace(
         hypothesis,
         places.length === 0 ? 'primary' : 'secondary',
         segment.frame_timestamps_seconds,
         `vayrin-scene-${segmentIndex + 2}`,
         rank,
+        contract,
       );
       if (place) places.push(place);
       else {
-        const partial = hypothesisToPartialPlace(hypothesis, segment.frame_timestamps_seconds);
+        const partial = hypothesisToPartialPlace(hypothesis, segment.frame_timestamps_seconds, contract);
         if (partial) partialPlaces.push(partial);
         alternatives.push(hypothesis);
       }
@@ -462,6 +479,20 @@ export type VayrinProviderOptions = {
 export type VayrinDiagnostics = {
   invoked: boolean;
   triggerReason: VayrinTriggerReason;
+  hardPathEligible?: boolean;
+  hardPathReason?: HardPathReason;
+  hardPathVersion?: string;
+  hypothesisModel?: string;
+  hypothesisFrameCount?: number;
+  topHypothesisNamePresent?: boolean;
+  hypothesisGeoStrength?: string;
+  rawFrames?: number;
+  candidateFrames?: number;
+  selectedFrames?: number;
+  canonicalizationOutcome?: 'deferred_to_edge';
+  canonicalPlacesCalls?: number;
+  hardPathCost?: number | null;
+  hardPathLatency?: number;
   model?: string;
   promptVersion?: string;
   frameCount?: number;
@@ -616,27 +647,35 @@ export class VayrinFallbackModel implements ModelProvider {
 
   async analyze(input: AnalyzeInput): Promise<AnalyzeOutput> {
     const baseline = await this.inner.analyze(input);
-    const usefulPartialPlaceCount = (baseline.evidence.partialPlaces ?? [])
-      .filter((place) => partialRecoveryField(place) !== null).length;
-
-    const trigger = shouldRunVayrinFallback({
+    const route = classifyHypothesisFirstPath({
       enabled: this.options.enabled,
       frameCount: input.frames.length,
-      insufficientEvidence: baseline.evidence.insufficientEvidence,
-      explicitPlaceCount: baseline.evidence.places.filter((p) => p.explicitEvidence.length > 0)
-        .length,
-      geographicOnlyPlaceCount: baseline.evidence.places.filter(isCoarseGeographicPlace).length,
-      genericOnlyPlaceCount: baseline.evidence.places.filter((place) =>
-        place.explicitEvidence.length > 0 && isCategoryOnlyPlaceName(place.name)).length,
-      usefulPartialPlaceCount,
+      evidence: baseline.evidence,
+      metadataLocation: input.metadataLocation,
+      sourceText: [
+        input.metadataTitle,
+        input.metadataDescription,
+        ...input.transcript.map((segment) => segment.text),
+      ].filter(Boolean).join('\n'),
+      sourceCreatorHandle: input.sourceCreatorHandle,
+      sourceCreatorName: input.sourceCreatorName,
       technicalFailure: baseline.recognitionFailureClass !== undefined,
     });
+    const trigger: VayrinTriggerResult = { run: route.eligible, reason: route.reason };
 
     if (!trigger.run) {
       return {
         ...baseline,
         provider: `${this.inner.name}`,
-        vayrin: { invoked: false, triggerReason: trigger.reason },
+        vayrin: {
+          invoked: false,
+          triggerReason: trigger.reason,
+          hardPathEligible: false,
+          hardPathReason: route.reason,
+          hardPathVersion: VAYRIN_HYPOTHESIS_FIRST_VERSION,
+          rawFrames: input.frames.length,
+          canonicalPlacesCalls: 0,
+        },
       } as AnalyzeOutput & { vayrin: VayrinDiagnostics };
     }
 
@@ -647,31 +686,8 @@ export class VayrinFallbackModel implements ModelProvider {
     );
 
     const caption = [input.metadataTitle, input.metadataDescription].filter(Boolean).join('\n') || null;
-    const partialRegions = (baseline.evidence.partialPlaces ?? []).flatMap((place) => {
-      const grounded = partialRecoveryField(place);
-      const name = [place.city, place.region, place.country].includes(grounded) ? grounded : null;
-      return name ? [{ name, specificity: 'REGION' as const }] : [];
-    });
-    const region = detectStrongRegionEvidence({
-      locationMetadata: input.metadataLocation,
-      caption,
-      coarseCandidates: baseline.evidence.places.filter(isCoarseGeographicPlace)
-        .map((place) => ({ name: place.name, specificity: 'REGION' as const }))
-        .concat(partialRegions),
-    });
-    const regionExpansion: RegionPoiExpansionResult = this.options.verificationV3.enabled
-      ? await expandRegionToPoiCandidatesV3({
-          apiKey: this.options.verificationV3.googlePlacesApiKey,
-          region,
-          sceneCategory:
-            baseline.evidence.places[0]?.category ?? baseline.evidence.partialPlaces?.[0]?.category ?? null,
-          signal: input.signal,
-          maxCandidates: this.options.verificationV3.regionPoiCandidateLimit,
-        })
-      : { candidates: [], places: [], externalCallCount: 0, latencyMs: 0, failureCode: 'not_configured', confirmationOnly: true };
-    const verificationCandidates = regionExpansion.candidates;
 
-    log.info('sol_recovery_attempted', {
+    log.info('hypothesis_first_attempted', {
       reason: trigger.reason,
       frameCount: selection.frames.length,
       partialPlaceCount: baseline.evidence.partialPlaces?.length ?? 0,
@@ -688,18 +704,21 @@ export class VayrinFallbackModel implements ModelProvider {
       })),
       context: {
         platform: input.platform,
+        durationSeconds: input.durationSeconds,
+        sourceCreatorHandle: input.sourceCreatorHandle,
+        sourceCreatorName: input.sourceCreatorName,
         caption,
         transcript: input.transcript.map((s) => `[${s.startSeconds.toFixed(1)}] ${s.text}`).join('\n'),
         visibleText: input.ocr.map((o) => o.text).join('\n'),
         visibleTextExtracted: input.ocrExtracted === true,
         locationMetadata: input.metadataLocation ?? null,
-        retrievedCandidatesJson: verificationCandidates.length > 0
-          ? serializeCandidatesForVerificationV3(verificationCandidates)
-          : null,
+        // Candidate blindness is architectural: the hard-path request never
+        // receives a Places shortlist. Canonicalization happens downstream.
+        retrievedCandidatesJson: null,
       },
     });
 
-    return this.merge(baseline, result, selection, trigger, input, region, regionExpansion, verificationCandidates);
+    return this.merge(baseline, result, selection, trigger, input);
   }
 
   private merge(
@@ -708,13 +727,20 @@ export class VayrinFallbackModel implements ModelProvider {
     selection: ReturnType<typeof selectFramesForVayrin>,
     trigger: VayrinTriggerResult,
     input: AnalyzeInput,
-    region: ReturnType<typeof detectStrongRegionEvidence>,
-    regionExpansion: RegionPoiExpansionResult,
-    verificationCandidates: VerificationCandidate[],
   ): AnalyzeOutput {
     const diagnostics: VayrinDiagnostics = {
       invoked: true,
       triggerReason: trigger.reason,
+      hardPathEligible: true,
+      hardPathReason: trigger.reason as HardPathReason,
+      hardPathVersion: VAYRIN_HYPOTHESIS_FIRST_VERSION,
+      hypothesisModel: result.model,
+      hypothesisFrameCount: result.sentFrameCount,
+      rawFrames: input.frames.length,
+      candidateFrames: selection.consideredCount,
+      selectedFrames: selection.frames.length,
+      canonicalizationOutcome: 'deferred_to_edge',
+      canonicalPlacesCalls: 0,
       model: result.model,
       promptVersion: result.promptVersion,
       frameCount: result.frameCount,
@@ -739,22 +765,7 @@ export class VayrinFallbackModel implements ModelProvider {
         ? 'coarse_geography'
         : 'explicit_place',
       latencyMs: result.latencyMs,
-      verificationV3: {
-        enabled: this.options.verificationV3.enabled,
-        regionDetected: region.detected,
-        regionLabel: region.label,
-        placesExpansionInvoked: regionExpansion.externalCallCount > 0,
-        placesExternalCallCount: regionExpansion.externalCallCount,
-        placesLatencyMs: regionExpansion.latencyMs,
-        placesFailureCode: regionExpansion.failureCode,
-        candidateCount: verificationCandidates.length,
-        candidateNames: verificationCandidates.map((candidate) => candidate.candidateName),
-        evaluatedCount: 0,
-        missingEvaluationCount: 0,
-        outsideShortlistAllowed: false,
-        records: [],
-        visionEnabled: false,
-      },
+      hardPathLatency: result.latencyMs,
     };
 
     if (!result.ok) {
@@ -790,29 +801,13 @@ export class VayrinFallbackModel implements ModelProvider {
     }
 
     const mapped = payloadToEvidence(result.payload);
-    let evidence = mapped.evidence;
+    const evidence = mapped.evidence;
     const alternatives = mapped.alternatives;
-    if (verificationCandidates.length > 0) {
-      const verification = verifyRetrievedCandidatesV3({
-        candidates: verificationCandidates,
-        evaluations: result.payload.retrieved_candidate_evaluations ?? [],
-      });
-      evidence = mergeVerificationV3Evidence({
-        mappedEvidence: mapped.evidence,
-        candidates: verificationCandidates,
-        verification,
-        outsideProposals: result.payload.outside_candidate_proposals ?? [],
-      });
-      diagnostics.verificationV3 = {
-        ...diagnostics.verificationV3!,
-        evaluatedCount: verification.records.length,
-        missingEvaluationCount: verification.missingEvaluationCount,
-        outsideShortlistAllowed: verification.outsideShortlistAllowed,
-        records: verification.records,
-      };
-    }
     diagnostics.usage = { ...result.usage };
     diagnostics.estimatedCostUsd = estimateVayrinCostUsd(result.usage, this.options.pricing);
+    diagnostics.hardPathCost = diagnostics.estimatedCostUsd;
+    diagnostics.topHypothesisNamePresent = evidence.places.some((place) => place.name.trim().length > 0);
+    diagnostics.hypothesisGeoStrength = result.payload.source_geography.confidence_class;
     diagnostics.hypothesisCount = evidence.places.length;
     diagnostics.alternativeCount = alternatives.length + Math.max(
       0,
@@ -893,7 +888,11 @@ export function withVayrinFallback(inner: ModelProvider, cfg: WorkerConfig): Mod
   return new VayrinFallbackModel(inner, {
     enabled: true,
     model: cfg.vayrinModel,
-    frameBudget: Math.min(cfg.vayrinFrameBudget || DEFAULT_VAYRIN_FRAME_BUDGET, cfg.maxSelectedFrames),
+    frameBudget: Math.min(
+      12,
+      Math.max(6, cfg.vayrinFrameBudget || DEFAULT_VAYRIN_FRAME_BUDGET),
+      cfg.maxSelectedFrames,
+    ),
     frameStrategy: cfg.vayrinFrameStrategy,
     reasoningEffort: cfg.vayrinReasoningEffort,
     pricing: {

@@ -124,6 +124,7 @@
     "test:vayrin-visual-retrieval": "npm --prefix services/media-worker run test:vayrin-region-poi-v3",
     "test:vayrin-visual-retrieval-v2": "npm --prefix services/media-worker run test:vayrin-region-poi-v3",
     "test:vayrin-verification-v3": "npm --prefix services/media-worker run test:vayrin-verification-v3",
+    "test:vayrin-hypothesis-first-hard-path": "npm --prefix services/media-worker run test:vayrin-hypothesis-first-hard-path && ts-node -P scripts/tsconfig.json scripts/testVayrinHypothesisFirstHardPath.ts && ts-node -P scripts/tsconfig.json scripts/benchmarkVayrinHypothesisFirstHardPath.ts",
     "test:vayrin-never-dead-end-research": "npm --prefix services/media-worker run test:never-dead-end-research",
     "test:vayrin-never-dead-end": "npm --prefix services/media-worker run test:never-dead-end && ts-node -P scripts/tsconfig.json scripts/testVayrinNeverDeadEnd.ts",
     "test:vayrin-generic-place-type-guard": "ts-node -P scripts/tsconfig.json scripts/testVayrinGenericPlaceTypeGuard.ts && cd services/media-worker && node --import tsx --test tests/vayrin.test.ts",

@@ -22,6 +22,7 @@
     "test:instagram-resolver-live": "node --import tsx --test \"tests/live/instagramResolver.live.test.ts\"",
     "test:native-video-live": "node --import tsx --test \"tests/live/nativeVideo.live.test.ts\"",
     "test:vayrin-verification-v3": "node --import tsx --test tests/verificationV3.test.ts tests/regionPoiV3.test.ts",
+    "test:vayrin-hypothesis-first-hard-path": "node --import tsx --test tests/hypothesisFirstHardPath.test.ts tests/vayrin.test.ts",
     "test:same-place-moments": "node --import tsx --test tests/samePlaceMomentConsolidation.test.ts",
     "test:never-dead-end-research": "node --import tsx --test tests/neverDeadEndResearch.test.ts",
     "test:never-dead-end": "node --import tsx --test tests/neverDeadEnd.test.ts",

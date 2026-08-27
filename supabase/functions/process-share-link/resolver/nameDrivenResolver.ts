@@ -249,7 +249,15 @@ export type MentionResult = {
     confidence: number;
     evidenceKind: 'observable' | 'model_prior';
     timestamps: number[];
+    hypothesisOrigin?: 'independent_multimodal';
+    hypothesisPathVersion?: string;
+    identitySupport?: 'exact' | 'strong' | 'weak' | 'none';
+    geoSupport?: 'explicit_source_geo' | 'strong_inferred_geo' | 'weak_inferred_geo' | 'none';
+    semanticCategory?: string | null;
+    conflicts?: string[];
+    evidenceBasis?: 'direct_visible_identity' | 'distinctive_visual_match' | 'contextual_or_memory_prior' | 'insufficient';
   }>;
+  canonicalizationOutcome?: 'CANONICAL_EXACT' | 'CANONICAL_NEAR_MATCH' | 'AMBIGUOUS_CANONICAL' | 'NO_CANONICAL_MATCH';
 };
 
 export type NameDrivenResult = {
@@ -312,7 +320,6 @@ export function consolidateIdentityAlternativeResults(
     const candidates = [...new Map(
       results
         .flatMap((result) => result.candidates)
-        .sort((a, b) => b.confidenceScore - a.confidenceScore)
         .map((candidate) => [candidate.googlePlaceId, candidate]),
     ).values()];
     const scoring = [...new Map(
@@ -354,7 +361,21 @@ export function consolidateIdentityAlternativeResults(
         confidence: identity.confidence,
         evidenceKind: identity.identityEvidenceKind === 'model_prior' ? 'model_prior' : 'observable',
         timestamps: identity.timestamps,
+        hypothesisOrigin: identity.hypothesisOrigin,
+        hypothesisPathVersion: identity.hypothesisPathVersion,
+        identitySupport: identity.identitySupport,
+        geoSupport: identity.geoSupport,
+        semanticCategory: identity.semanticCategory,
+        conflicts: identity.conflicts?.slice(0, 8),
+        evidenceBasis: identity.evidenceBasis,
       })),
+      canonicalizationOutcome: candidates.length === 0
+        ? 'NO_CANONICAL_MATCH'
+        : candidates.length > 1
+          ? 'AMBIGUOUS_CANONICAL'
+          : outcome === 'verified_single'
+            ? 'CANONICAL_EXACT'
+            : 'CANONICAL_NEAR_MATCH',
     };
   });
 }
