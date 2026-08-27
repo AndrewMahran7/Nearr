@@ -770,7 +770,7 @@ export async function resolveSharedPlace(args: {
   }
 
   // ---- 3. Score + rank + decide ---------------------------------
-  const scored = scoreCandidates(candidates, evidence, plan.placeNameHint, bias);
+  const scored = scoreCandidates(candidates, evidence, plan.placeNameHint, bias, plan.entityType);
 
   // Surface platform-noise rejections (TikTok "TikTok Inc." etc.) so they
   // are visible in remote diagnostics and can flip the outcome to manual.

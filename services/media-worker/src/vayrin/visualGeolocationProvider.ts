@@ -290,6 +290,14 @@ export function hypothesisToPlace(
     },
     distinctPlaceSignals: [],
     name,
+    entityType: hypothesis.entity_type ?? (
+      hypothesis.specificity === 'natural_feature' ? 'NAMED_NATURAL_FEATURE' :
+      hypothesis.specificity === 'landmark' ? 'LANDMARK' :
+      hypothesis.specificity === 'city' ? 'CITY' :
+      hypothesis.specificity === 'region' ? 'REGION' :
+      hypothesis.specificity === 'country' ? 'COUNTRY' :
+      hypothesis.specificity === 'venue' ? 'BUSINESS_OR_VENUE' : 'UNKNOWN'
+    ),
     category,
     categoryConfidence: 0,
     categoryEvidenceTags: [],

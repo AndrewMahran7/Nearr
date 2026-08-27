@@ -108,6 +108,8 @@ try {
     evidenceUsed: Array.isArray(result?.evidenceUsed) ? result.evidenceUsed.slice(0, 24) : [],
     // Name-driven mention slots (sanitized). Populated for one OR many names.
     mentionCount: built.mentions.length,
+    droppedNonPlaceEntities: built.droppedNonPlaceEntities,
+    droppedEntityTypeCounts: built.droppedEntityTypeCounts,
     geoContext: built.geoContext,
     nameDriven: result?.diagnostics?.nameDrivenMultiPlace ?? null,
     // Detected venue↔host relationships (X Eats @ Brewery X → one slot).
@@ -116,6 +118,8 @@ try {
     mentionResults: mentionResults.slice(0, 12).map((m: any) => ({
       mentionId: m?.mentionId ?? null,
       displayName: typeof m?.displayName === 'string' ? m.displayName : null,
+      entityType: mentionById.get(m?.mentionId)?.entityType ?? 'UNKNOWN',
+      resolutionMode: mentionById.get(m?.mentionId)?.resolutionMode ?? 'venue',
       outcome: m?.outcome ?? null,
       query: typeof m?.query === 'string' ? m.query : null,
       primaryVenueName: typeof m?.primaryVenueName === 'string' ? m.primaryVenueName : null,

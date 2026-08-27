@@ -44,6 +44,7 @@ import {
   type LikelyAddress,
 } from './queryCleaner.ts';
 import { isMachineGeneratedIdentityPhrase } from '../placeIdentityClassification.ts';
+import { classifyEntity } from '../vayrin/entitySemantics.ts';
 import {
   derivePlaceNameHintFromHandle,
   extractCaptionVenueHints,
@@ -890,6 +891,15 @@ export async function runShareAgent(input: RunShareAgentInput): Promise<AgentRes
       : null;
   const seedPlaceNameHint: string | null =
     captionVenueHints[0] ?? profileWithBio?.displayName ?? handleHint ?? null;
+  const seedSemantic = classifyEntity({
+    text: seedPlaceNameHint ?? '',
+    source: 'caption',
+    contextText: [titleText, descriptionText].filter(Boolean).join(' '),
+    city: likelyAddress?.city ?? null,
+    region: likelyAddress?.state ?? null,
+  });
+  const seedSemanticallyEligible = seedSemantic.placesEligible || seedSemantic.entityType === 'UNKNOWN';
+  const searchableSeedName = seedSemantic.canonicalSearchName ?? seedPlaceNameHint;
   if (seedPlaceNameHint) {
     warnings.push(`places_seed_name_hint:${seedPlaceNameHint}`);
   }
@@ -898,9 +908,13 @@ export async function runShareAgent(input: RunShareAgentInput): Promise<AgentRes
       title: titleText,
       description: descriptionText,
       address: likelyAddress,
-      placeName: seedPlaceNameHint,
+      // An address is independent place evidence and can safely coexist with a
+      // person-like business name. Without one, a person/activity/event seed is
+      // context only and cannot unlock caption-prose Places searches.
+      placeName: likelyAddress || seedSemanticallyEligible ? searchableSeedName : null,
       city: likelyAddress?.city ?? null,
       profileDisplayName: profileWithBio?.displayName ?? null,
+      allowGenericCaptionSeed: !!likelyAddress || seedSemanticallyEligible,
       // 2026-05-27 — Patch 6: bumped 3 → 5 so the new venue+address
       // variants don't crowd out the bare-address fallback.
       max: 5,
@@ -1107,12 +1121,25 @@ export async function runShareAgent(input: RunShareAgentInput): Promise<AgentRes
       !!proposal.placeName ||
       !!proposal.address)
   ) {
-    const retryQueries = buildPlacesRetryQueries({
+    const proposalSemantic = classifyEntity({
+      text: proposal.placeName ?? proposal.searchQuery,
+      source: 'gemini',
+      contextText: [titleText, descriptionText, proposal.city, proposal.state, proposal.country].filter(Boolean).join(' '),
+      city: proposal.city,
+      region: proposal.state,
+      country: proposal.country,
+    });
+    const retryQueries = (proposal.address || proposalSemantic.placesEligible || proposalSemantic.entityType === 'UNKNOWN')
+      ? buildPlacesRetryQueries({
       proposal,
       title: input.title,
       description: input.description,
       attemptedQueries: attemptedPlacesQueries,
-    });
+      })
+      : [];
+    if (retryQueries.length === 0 && !proposal.address && !proposalSemantic.placesEligible && proposalSemantic.entityType !== 'UNKNOWN') {
+      warnings.push(`places_retry_entity_blocked:${proposalSemantic.entityType.toLowerCase()}`);
+    }
     for (const query of retryQueries) {
       if (isOverBudget()) {
         warnings.push('places_retry_skipped_budget_exceeded');
@@ -1161,7 +1188,18 @@ export async function runShareAgent(input: RunShareAgentInput): Promise<AgentRes
     const hypoQueries: string[] = [];
     for (const h of hypotheses) {
       if (!h.shouldQueryPlaces) continue;
-      const name = h.placeName.trim();
+      const hypothesisSemantic = classifyEntity({
+        text: h.placeName,
+        source: 'gemini',
+        contextText: [titleText, descriptionText, h.city, h.state].filter(Boolean).join(' '),
+        city: h.city,
+        region: h.state,
+      });
+      if (!hypothesisSemantic.placesEligible && hypothesisSemantic.entityType !== 'UNKNOWN' && !h.address.trim()) {
+        warnings.push(`places_hypothesis_entity_blocked:${hypothesisSemantic.entityType.toLowerCase()}`);
+        continue;
+      }
+      const name = (hypothesisSemantic.canonicalSearchName ?? h.placeName).trim();
       if (!name) continue;
       const addr = h.address.trim();
       const city = h.city.trim();

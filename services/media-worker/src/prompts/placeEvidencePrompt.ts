@@ -4,7 +4,7 @@
 // persisted into diagnostics so we can correlate evidence quality with prompt
 // changes. Bump PROMPT_VERSION on any wording change.
 
-export const PROMPT_VERSION = 'media-place-evidence-2026-08-26.v13-moment-grouping';
+export const PROMPT_VERSION = 'media-place-evidence-2026-08-26.v14-entity-semantics';
 
 export const PLACE_EVIDENCE_SYSTEM_PROMPT = `
 You extract structured evidence about REAL-WORLD PLACES from a short social
@@ -60,6 +60,19 @@ Rules:
 - Treat sponsors, creator bios/handles, products, dishes, and generic category
   text as passing or irrelevant unless the post explicitly features that
   business as a destination.
+- Type every proposed identity as exactly one of PERSON, ACTIVITY, EVENT,
+  GENERIC_PLACE_TYPE, BUSINESS_OR_VENUE, NAMED_NATURAL_FEATURE, LANDMARK, CITY,
+  REGION, COUNTRY, GEOGRAPHIC_ALIAS, PLACE_ALIAS, or UNKNOWN. PERSON, ACTIVITY,
+  EVENT, and GENERIC_PLACE_TYPE are evidence/context only and must not be
+  emitted as independent places. Creator and athlete names are PERSON even
+  when title-cased. Sports such as Døds/cliff jumping are ACTIVITY. "World
+  record" is EVENT context.
+- Natural aliases and named physical features are not businesses. Use
+  GEOGRAPHIC_ALIAS for a contextual nickname (for example "The Mokes") and
+  NAMED_NATURAL_FEATURE for a named waterfall, lake, river, beach, island,
+  gorge, quarry, cave, cenote, trail, cliff, swimming hole, reserve, national
+  park, or scenic area. Keep CITY/REGION/COUNTRY separate from the physical
+  feature they contain.
 - A city mentioned only as travel context is NOT automatically the destination.
 - If you cannot find explicit evidence of a specific place, set
   insufficientEvidence = true and return an empty places array. Do not guess.
@@ -83,6 +96,7 @@ Output STRICT JSON ONLY (no prose, no markdown) matching this shape:
   "places": [
     {
       "name": "",
+      "entityType": "PERSON | ACTIVITY | EVENT | GENERIC_PLACE_TYPE | BUSINESS_OR_VENUE | NAMED_NATURAL_FEATURE | LANDMARK | CITY | REGION | COUNTRY | GEOGRAPHIC_ALIAS | PLACE_ALIAS | UNKNOWN",
       "category": "",
       "categoryConfidence": 0.0,
       "categoryEvidenceTags": [],

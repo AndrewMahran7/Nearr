@@ -166,7 +166,7 @@ const nicaR = await resolve(nica, (q) => {
 const names = nicaR.built.mentions.map((m) => m.displayName);
 check('nicaragua: all four intended destinations become mentions', names.length === 4 && ['Ometepe Island', 'Granada', 'San Juan del Sur', 'León'].every((n) => names.includes(n)), names.join(' | '));
 check('nicaragua: the three cities resolve GEOGRAPHICALLY', ['Granada', 'San Juan del Sur', 'León'].every((n) => modeOf(nicaR.built, n) === 'geographic'));
-check('nicaragua: Ometepe stays on the ordinary destination path', modeOf(nicaR.built, 'Ometepe Island') === undefined);
+check('nicaragua: Ometepe uses the named-natural-feature path', modeOf(nicaR.built, 'Ometepe Island') === 'natural_feature');
 check('nicaragua: peer count recorded, no container suppressed', nicaR.built.peerGeographicDestinations === 3 && nicaR.built.droppedGeographicContext === 0);
 check('nicaragua: every city query is scoped to Nicaragua', nicaR.queries.filter((q) => /granada|le[oó]n|san juan/i.test(q)).every((q) => /Nicaragua/i.test(q)), nicaR.queries.join(' | '));
 
@@ -274,7 +274,7 @@ const natural = evidence([
   place({ name: 'Navagio Beach', category: 'beach', country: 'Greece' }),
 ], { multipleIntentionalPlaces: true });
 const natR = await resolve(natural, () => [OMETEPE]);
-check('natural: beaches/islands/parks are untouched by the city path', natR.built.mentions.length === 4 && natR.built.mentions.every((m) => m.resolutionMode === undefined));
+check('natural: beaches/islands/parks use the physical-destination path, never the city path', natR.built.mentions.length === 4 && natR.built.mentions.every((m) => m.resolutionMode === 'natural_feature'));
 
 // Unicode is preserved into the query, not folded away.
 const uni = evidence([

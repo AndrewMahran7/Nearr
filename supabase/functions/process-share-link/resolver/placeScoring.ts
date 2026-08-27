@@ -21,7 +21,9 @@ import {
   isAddressLikeTypes,
   isLocalityLikeTypes,
   geographicContextTypeOf,
+  normalizeProviderEntityKind,
 } from '../places/placeNormalization.ts';
+import type { VayrinEntityType } from '../../../../lib/vayrin/entitySemantics.ts';
 import {
   isWrongLocationCandidate,
   extractStateFromFormattedAddress,
@@ -45,6 +47,7 @@ export function scoreCandidates(
   evidence: Evidence,
   placeNameHint: string | null,
   bias: { lat: number; lng: number } | null,
+  entityType: VayrinEntityType = 'UNKNOWN',
 ): ScoredCandidate[] {
   const expectedState =
     evidence.cityState?.state ?? evidence.address?.state ?? null;
@@ -76,6 +79,10 @@ export function scoreCandidates(
     // with a locality as the ONLY survivor and auto-save "Los Angeles".
     // Driven purely by Google's entity types, so a business or park whose NAME
     // is geographic ("California Pizza Kitchen", "Central Park") is unaffected.
+    const providerKind = normalizeProviderEntityKind(candidate);
+    const expectsNatural = entityType === 'NAMED_NATURAL_FEATURE' || entityType === 'GEOGRAPHIC_ALIAS';
+    const expectsLandmark = entityType === 'LANDMARK';
+    const expectsPhysical = expectsNatural || expectsLandmark;
     const geographicType = geographicContextTypeOf(candidate);
     if (geographicType) {
       return {
@@ -87,10 +94,29 @@ export function scoreCandidates(
       };
     }
 
+    if (expectsPhysical && providerKind === 'business_or_venue') {
+      return {
+        candidate,
+        score: REJECT_SCORE,
+        reasons: [...reasons, 'entity_semantic_type_mismatch'],
+        rejected: true,
+        rejectionReason: 'entity_semantic_type_mismatch',
+      };
+    }
+
     // Type-based base.
-    if (candidate.types?.some((t) => BUSINESS_LIKE.has(t))) {
+    if (!expectsPhysical && candidate.types?.some((t) => BUSINESS_LIKE.has(t))) {
       score += 25;
       reasons.push('business_type');
+    } else if (expectsNatural && providerKind === 'named_natural_feature') {
+      score += 25;
+      reasons.push('natural_feature_type');
+    } else if (expectsLandmark && (providerKind === 'landmark' || providerKind === 'named_natural_feature')) {
+      score += 25;
+      reasons.push('landmark_type');
+    } else if (expectsPhysical && providerKind === 'unknown') {
+      score += 5;
+      reasons.push('provider_type_semantically_unknown');
     }
     if (isAddressLikeTypes(candidate.types)) {
       score -= 30;
