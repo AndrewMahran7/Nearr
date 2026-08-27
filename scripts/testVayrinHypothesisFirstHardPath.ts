@@ -79,6 +79,6 @@ const funnel = buildRecognitionFunnel({
 assert.equal(funnel.vayrinInvocation?.hardPathCost, 0.13);
 assert.equal(funnel.vayrinInvocation?.selectedFrames, 8);
 assert.equal(funnel.vayrinInvocation?.canonicalizationOutcome, 'deferred_to_edge');
-assert.match(RECOGNITION_VERSION, /hypothesis-first-hard-path/);
+assert.match(RECOGNITION_VERSION, /v4-core/);
 
 console.log('PASS Vayrin hypothesis-first Edge provenance, ranking, cache, safety, and telemetry contracts');

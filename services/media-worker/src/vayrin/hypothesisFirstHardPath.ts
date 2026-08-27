@@ -3,7 +3,7 @@ import { isCategoryOnlyPlaceName } from './placeIdentityGuard.js';
 import type { VayrinHypothesisRaw, VayrinPayload } from './visualGeolocationClient.js';
 
 export const VAYRIN_HYPOTHESIS_FIRST_VERSION =
-  'vayrin-hypothesis-first-2026-08-27.v1';
+  'vayrin-core-v4-2026-08-27.v1';
 
 export type HardPathReason =
   | 'flag_disabled'

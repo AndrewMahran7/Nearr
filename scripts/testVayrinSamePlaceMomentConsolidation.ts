@@ -110,6 +110,6 @@ assert.equal(recognitionCacheDecision(oldRow('CANDIDATE_SET')).kind, 'miss',
 assert.equal(recognitionCacheDecision(oldRow('VERIFIED_AUTO_SAVE')).kind, 'miss');
 assert.equal(recognitionCacheDecision(oldRow('USER_CONFIRMED')).kind, 'trusted_place',
   'human-confirmed truth survives recognition-version changes');
-assert.match(RECOGNITION_VERSION, /same-place-groups/);
+assert.match(RECOGNITION_VERSION, /v4-core/);
 
 console.log('PASS Vayrin same-place moment consolidation boundary');

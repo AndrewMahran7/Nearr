@@ -267,7 +267,10 @@ for (const source of ['speech', 'visible_text', 'caption'] as const) {
 }
 {
   const d = decide(mention({ sources: [], nameEvidenceSources: [], repeated: false }));
-  check('missing transcript, OCR, caption, and frame channels is not a veto', d.eligible);
+  check(
+    'provider singleton without transcript, OCR, caption, or frame identity cannot auto-save',
+    !d.eligible && d.firewallReasonCodes.includes('candidate_cannot_create_identity'),
+  );
 }
 {
   const r = result();

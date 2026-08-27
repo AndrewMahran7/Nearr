@@ -9,7 +9,7 @@ export const CONTENT_IDENTITY_VERSION = 1;
 // Recognition semantics now reject category-only identity hypotheses and
 // consolidate same-place moments before candidate resolution. One intentional
 // bump prevents older machine conclusions from bypassing either policy.
-export const RECOGNITION_VERSION = 'vayrin-recognition-2026-08-27.v4-same-place-groups-hypothesis-first-hard-path';
+export const RECOGNITION_VERSION = 'vayrin-recognition-2026-08-27.v4-core';
 
 export type CanonicalContentIdentity = {
   platform: ShareUrlPlatform;

@@ -547,6 +547,14 @@ export type VayrinTextContext = {
   locationMetadata?: string | null;
   visibleText?: string | null;
   otherText?: string | null;
+  /** Candidate-independent typed clues from the cheap pass. Non-place clues
+   * remain reasoning context and are never converted into provider candidates. */
+  entitySemantics?: Array<{
+    text: string;
+    entityType: string;
+    source: string;
+    confidence: number;
+  }> | null;
   /** Bounded machine-generated shortlist. */
   retrievedCandidatesJson?: string | null;
   /** True only when a SEPARATE OCR pass ran. See placeEvidencePrompt.ts for why
@@ -589,6 +597,14 @@ export function buildVayrinUserContext(ctx: VayrinTextContext): string {
   }
 
   if (ctx.otherText?.trim()) parts.push(`other_textual_evidence:\n${ctx.otherText.trim()}`);
+
+  if (ctx.entitySemantics?.length) {
+    parts.push(
+      `entity_semantics (candidate-independent reasoning context; PERSON/ACTIVITY/EVENT are clues, not place identities):\n${JSON.stringify(ctx.entitySemantics.slice(0, 24))}`,
+    );
+  } else {
+    parts.push('entity_semantics: (none extracted)');
+  }
 
   parts.push(
     ctx.retrievedCandidatesJson?.trim()

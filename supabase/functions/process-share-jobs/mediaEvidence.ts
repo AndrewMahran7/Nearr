@@ -51,6 +51,13 @@ export type PlaceEvidenceItem = {
   value: string;
 };
 
+export type EntityContextClue = {
+  text: string;
+  entityType: VayrinEntityType;
+  source: PlaceEvidenceSource;
+  confidence: number;
+};
+
 export type PlaceRole = 'primary' | 'secondary' | 'passing_mention';
 
 export type PlaceCandidateEvidence = {
@@ -115,6 +122,7 @@ export type PartialPlaceEvidence = {
 export type MediaPlaceEvidence = {
   places: PlaceCandidateEvidence[];
   partialPlaces?: PartialPlaceEvidence[];
+  entityContext?: EntityContextClue[];
   multipleIntentionalPlaces: boolean;
   insufficientEvidence: boolean;
   warnings: string[];
@@ -326,6 +334,24 @@ export function parseMediaEvidence(raw: unknown): ParseResult {
       .map(parsePartialPlace)
       .filter((place): place is PartialPlaceEvidence => place !== null)
     : [];
+  const entityContext = Array.isArray(r.entityContext)
+    ? r.entityContext.slice(0, 24).map((item): EntityContextClue | null => {
+        if (!item || typeof item !== 'object') return null;
+        const clue = item as Record<string, unknown>;
+        const textValue = str(clue.text, 200);
+        const entityType = parseEntityType(clue.entityType);
+        const source = clue.source === 'caption' || clue.source === 'speech' ||
+          clue.source === 'visible_text' || clue.source === 'frame'
+          ? clue.source : null;
+        if (!textValue || !entityType || !source) return null;
+        return {
+          text: textValue,
+          entityType,
+          source,
+          confidence: Math.max(0, Math.min(1, num(clue.confidence) ?? 0)),
+        };
+      }).filter((item): item is EntityContextClue => item !== null)
+    : [];
 
   const warnings = Array.isArray(r.warnings)
     ? r.warnings
@@ -339,6 +365,7 @@ export function parseMediaEvidence(raw: unknown): ParseResult {
     value: {
       places,
       partialPlaces,
+      entityContext,
       multipleIntentionalPlaces: r.multipleIntentionalPlaces === true,
       insufficientEvidence: r.insufficientEvidence === true,
       warnings,

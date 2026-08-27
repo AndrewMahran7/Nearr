@@ -1,0 +1,160 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-27T06:26:33.624Z",
+  "benchmarkMode": "deterministic integration replay of retained outputs; no fresh provider inference",
+  "recognitionVersion": "vayrin-recognition-2026-08-27.v4-core",
+  "corpus": {
+    "deduplicatedReviewableFixtures": 74,
+    "realRecognitionFixtures": 41,
+    "semanticContractControls": 33,
+    "overlapRemoved": 5,
+    "realTruthTiers": {
+      "VERIFIED": 23,
+      "HIGHLY_LIKELY": 3,
+      "PLAUSIBLE": 10,
+      "UNKNOWN": 5
+    },
+    "note": "Only the 41 recognition fixtures are real-video inventory. Semantic controls are separately labeled contract fixtures and are not represented as fresh video truth."
+  },
+  "currentMainFrozen": {
+    "top1Exact": 1,
+    "top1CorrectOrPlausible": 2,
+    "top3CorrectOrPlausibleLowerBound": 2,
+    "safeAutosaves": 2,
+    "wrongAutosaves": 3,
+    "reviewOrNoAutosave": 3,
+    "partial": 1,
+    "noResult": 1,
+    "latencyMs": null,
+    "solCalls": null,
+    "placesCalls": 10,
+    "costUsd": null
+  },
+  "integratedV4": {
+    "top1Exact": 3,
+    "top1CorrectOrPlausible": 6,
+    "top3CorrectOrPlausible": 8,
+    "safeAutosaveCapable": 4,
+    "safeAutosaveCapableCases": [
+      "R03",
+      "R04",
+      "R05",
+      "R06"
+    ],
+    "wrongAutosaves": 0,
+    "confirmation": 2,
+    "partial": 2,
+    "noResult": 0,
+    "semanticNonsense": 0,
+    "explicitGeoContradictions": 0,
+    "hardPathInvocationRate": 0.625,
+    "hardPathInvocationCount": 5,
+    "meanHardCostUsd": 0.145098,
+    "p50HardCostUsd": 0.144966,
+    "p95HardCostUsd": 0.214936,
+    "meanHardLatencyMs": 77670.4,
+    "p50HardLatencyMs": 93704,
+    "p95HardLatencyMs": 121714,
+    "meanFramesPerHardCase": 9.6,
+    "placesCalls": 13
+  },
+  "blindBaselineComparison": {
+    "wins": 6,
+    "ties": 2,
+    "losses": 0
+  },
+  "frozenCases": [
+    {
+      "id": "R01",
+      "truthTier": "UNKNOWN",
+      "currentTop1": "Cliff Jumping",
+      "integratedTop1": "Cirque de Gens",
+      "integratedTop3": [
+        "Cirque de Gens",
+        "Pont d’Arc",
+        "Gorges du Gardon near Collias"
+      ],
+      "route": "HARD",
+      "requiredGate": "No Oregon activity POI; truthful southern-France gorge uncertainty."
+    },
+    {
+      "id": "R02",
+      "truthTier": "VERIFIED",
+      "currentTop1": "Batteries to Bluffs Trail",
+      "integratedTop1": "La Perouse Bay lava cliffs",
+      "integratedTop3": [
+        "La Perouse Bay lava cliffs",
+        "Puʻu Kekaʻa (Black Rock)",
+        "ʻĀhihi-Kīnaʻu Natural Area Reserve coast"
+      ],
+      "route": "HARD",
+      "requiredGate": "Maui only; no San Francisco."
+    },
+    {
+      "id": "R03",
+      "truthTier": "HIGHLY_LIKELY",
+      "currentTop1": "Chickasaw National Recreation Area",
+      "integratedTop1": "Tamolitch Blue Pool",
+      "integratedTop3": [
+        "Tamolitch Blue Pool"
+      ],
+      "route": "HARD",
+      "requiredGate": "Tamolitch top."
+    },
+    {
+      "id": "R04",
+      "truthTier": "HIGHLY_LIKELY",
+      "currentTop1": "Dorset Marble Quarry",
+      "integratedTop1": "Dorset Marble Quarry",
+      "integratedTop3": [
+        "Dorset Marble Quarry"
+      ],
+      "route": "EASY",
+      "requiredGate": "Dorset preserved through EASY route."
+    },
+    {
+      "id": "R05",
+      "truthTier": "VERIFIED",
+      "currentTop1": null,
+      "integratedTop1": "Okere Falls Scenic Reserve",
+      "integratedTop3": [
+        "Okere Falls Scenic Reserve"
+      ],
+      "route": "EASY",
+      "requiredGate": "Okere Falls identity retained even if canonicalization misses."
+    },
+    {
+      "id": "R06",
+      "truthTier": "VERIFIED",
+      "currentTop1": "Lake Havasu",
+      "integratedTop1": "Lake Havasu",
+      "integratedTop3": [
+        "Lake Havasu"
+      ],
+      "route": "EASY",
+      "requiredGate": "Lake Havasu preserved through EASY route."
+    },
+    {
+      "id": "R07",
+      "truthTier": "VERIFIED",
+      "currentTop1": "Ken's Korner Shopping Plaza",
+      "integratedTop1": "Stryn",
+      "integratedTop3": [
+        "Stryn"
+      ],
+      "route": "HARD",
+      "requiredGate": "Person typed as person; Norway/Stryn retained; no US commercial junk."
+    },
+    {
+      "id": "R08",
+      "truthTier": "HIGHLY_LIKELY",
+      "currentTop1": "Moke's Bread & Breakfast",
+      "integratedTop1": "Moku Nui (larger Mokulua Islet)",
+      "integratedTop3": [
+        "Moku Nui (larger Mokulua Islet)"
+      ],
+      "route": "HARD",
+      "requiredGate": "Moku Nui/Mokulua natural hypothesis; no restaurant."
+    }
+  ]
+}

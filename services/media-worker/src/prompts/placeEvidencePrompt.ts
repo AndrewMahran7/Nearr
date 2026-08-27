@@ -64,7 +64,8 @@ Rules:
   GENERIC_PLACE_TYPE, BUSINESS_OR_VENUE, NAMED_NATURAL_FEATURE, LANDMARK, CITY,
   REGION, COUNTRY, GEOGRAPHIC_ALIAS, PLACE_ALIAS, or UNKNOWN. PERSON, ACTIVITY,
   EVENT, and GENERIC_PLACE_TYPE are evidence/context only and must not be
-  emitted as independent places. Creator and athlete names are PERSON even
+  emitted as independent places. Preserve them in entityContext so a later
+  candidate-blind reasoning pass can still use them. Creator and athlete names are PERSON even
   when title-cased. Sports such as Døds/cliff jumping are ACTIVITY. "World
   record" is EVENT context.
 - Natural aliases and named physical features are not businesses. Use
@@ -93,6 +94,14 @@ Rules:
 
 Output STRICT JSON ONLY (no prose, no markdown) matching this shape:
 {
+  "entityContext": [
+    {
+      "text": "",
+      "entityType": "PERSON | ACTIVITY | EVENT | GENERIC_PLACE_TYPE | BUSINESS_OR_VENUE | NAMED_NATURAL_FEATURE | LANDMARK | CITY | REGION | COUNTRY | GEOGRAPHIC_ALIAS | PLACE_ALIAS | UNKNOWN",
+      "source": "caption | speech | visible_text | frame",
+      "confidence": 0.0
+    }
+  ],
   "places": [
     {
       "name": "",

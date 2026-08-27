@@ -9,7 +9,7 @@ import {
   VAYRIN_HYPOTHESIS_FIRST_VERSION,
 } from '../src/vayrin/hypothesisFirstHardPath.js';
 import { estimateVayrinCostUsd, parseVayrinPayload, type VayrinHypothesisRaw } from '../src/vayrin/visualGeolocationClient.js';
-import { payloadToEvidence } from '../src/vayrin/visualGeolocationProvider.js';
+import { payloadToEvidence, structuredEntitySemantics } from '../src/vayrin/visualGeolocationProvider.js';
 import {
   buildVayrinUserContext,
   VAYRIN_GEOLOCATION_SCHEMA,
@@ -186,11 +186,26 @@ test('13/14 multi-place stays split while same-scene alternatives stay grouped',
 });
 
 test('15/16 output is versioned and cost telemetry remains computable', () => {
-  assert.match(VAYRIN_HYPOTHESIS_FIRST_VERSION, /hypothesis-first/);
+  assert.match(VAYRIN_HYPOTHESIS_FIRST_VERSION, /core-v4/);
   assert.equal(estimateVayrinCostUsd({
     inputTokens: 10_000, cachedInputTokens: 0, outputTokens: 2_000,
     reasoningTokens: 1_000, totalTokens: 12_000,
   }, { inputPerMillion: 5, cachedInputPerMillion: 0.5, outputPerMillion: 30 }), 0.11);
+});
+
+test('entity semantics retain person and activity as blind reasoning context', () => {
+  const source = evidence([]);
+  source.entityContext = [
+    { text: 'Ken Stornes', entityType: 'PERSON', source: 'caption', confidence: 0.99 },
+    { text: 'Døds', entityType: 'ACTIVITY', source: 'caption', confidence: 0.99 },
+    { text: 'Norway', entityType: 'COUNTRY', source: 'caption', confidence: 0.99 },
+  ];
+  const semantics = structuredEntitySemantics(source);
+  assert.deepEqual(semantics.map((item) => item.entityType), ['PERSON', 'ACTIVITY', 'COUNTRY']);
+  const context = buildVayrinUserContext({ entitySemantics: semantics, retrievedCandidatesJson: null });
+  assert.match(context, /Ken Stornes/);
+  assert.match(context, /ACTIVITY/);
+  assert.match(context, /places_candidates: deliberately withheld/);
 });
 
 test('17 canonical outcome vocabulary is closed and cannot invent an identity', () => {

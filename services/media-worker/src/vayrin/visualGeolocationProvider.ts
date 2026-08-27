@@ -69,6 +69,30 @@ import {
   type IndependentHypothesisContract,
 } from './hypothesisFirstHardPath.js';
 
+export function structuredEntitySemantics(evidence: MediaPlaceEvidence): Array<{
+  text: string;
+  entityType: string;
+  source: string;
+  confidence: number;
+}> {
+  const clues = [
+    ...(evidence.entityContext ?? []),
+    ...evidence.places.map((place) => ({
+      text: place.name,
+      entityType: place.entityType ?? 'UNKNOWN',
+      source: place.explicitEvidence[0]?.source ?? 'frame',
+      confidence: place.confidence,
+    })),
+  ];
+  const seen = new Set<string>();
+  return clues.filter((clue) => {
+    const key = `${clue.entityType}:${clue.text.toLowerCase().trim()}`;
+    if (!clue.text.trim() || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  }).slice(0, 24);
+}
+
 // ---------------------------------------------------------------------------
 // Trigger
 // ---------------------------------------------------------------------------
@@ -737,6 +761,7 @@ export class VayrinFallbackModel implements ModelProvider {
         visibleText: input.ocr.map((o) => o.text).join('\n'),
         visibleTextExtracted: input.ocrExtracted === true,
         locationMetadata: input.metadataLocation ?? null,
+        entitySemantics: structuredEntitySemantics(baseline.evidence),
         // Candidate blindness is architectural: the hard-path request never
         // receives a Places shortlist. Canonicalization happens downstream.
         retrievedCandidatesJson: null,

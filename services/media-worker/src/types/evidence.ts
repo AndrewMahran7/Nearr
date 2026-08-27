@@ -63,6 +63,17 @@ export const EvidenceItem = z.object({
 });
 export type EvidenceItem = z.infer<typeof EvidenceItem>;
 
+/** Candidate-independent clues that are useful to global reasoning but are
+ * not necessarily place identities. PERSON/ACTIVITY/EVENT belong here so they
+ * survive the cheap pass without ever becoming Places queries. */
+export const EntityContextClue = z.object({
+  text: z.string().min(1).max(200),
+  entityType: VayrinEntityType,
+  source: EvidenceSource,
+  confidence: z.number().min(0).max(1).default(0),
+});
+export type EntityContextClue = z.infer<typeof EntityContextClue>;
+
 export const NearrCategory = z.enum([
   'restaurant', 'cafe', 'bakery', 'bar', 'brewery', 'winery', 'dessert',
   'hotel', 'resort', 'hiking_trail', 'park', 'beach', 'waterfall', 'lake',
@@ -170,6 +181,7 @@ export type PartialPlaceEvidence = Omit<ParsedPartialPlaceEvidence, 'entityType'
 export const MediaPlaceEvidence = z.object({
   places: z.array(PlaceCandidateEvidence).max(12).default([]),
   partialPlaces: z.array(PartialPlaceEvidence).max(12).default([]),
+  entityContext: z.array(EntityContextClue).max(24).default([]),
   multipleIntentionalPlaces: z.boolean().default(false),
   insufficientEvidence: z.boolean().default(false),
   warnings: z.array(z.string().max(200)).max(24).default([]),
@@ -177,15 +189,17 @@ export const MediaPlaceEvidence = z.object({
 type ParsedMediaPlaceEvidence = z.infer<typeof MediaPlaceEvidence>;
 /** Optional in the TypeScript compatibility surface so existing custom/test
  * providers remain source-compatible. The parser always materializes `[]`. */
-export type MediaPlaceEvidence = Omit<ParsedMediaPlaceEvidence, 'places' | 'partialPlaces'> & {
+export type MediaPlaceEvidence = Omit<ParsedMediaPlaceEvidence, 'places' | 'partialPlaces' | 'entityContext'> & {
   places: PlaceCandidateEvidence[];
   partialPlaces?: PartialPlaceEvidence[];
+  entityContext?: EntityContextClue[];
 };
 
 export function emptyEvidence(warnings: string[] = []): MediaPlaceEvidence {
   return {
     places: [],
     partialPlaces: [],
+    entityContext: [],
     multipleIntentionalPlaces: false,
     insufficientEvidence: true,
     warnings,

@@ -129,6 +129,8 @@
     "test:vayrin-never-dead-end": "npm --prefix services/media-worker run test:never-dead-end && ts-node -P scripts/tsconfig.json scripts/testVayrinNeverDeadEnd.ts",
     "test:vayrin-generic-place-type-guard": "ts-node -P scripts/tsconfig.json scripts/testVayrinGenericPlaceTypeGuard.ts && cd services/media-worker && node --import tsx --test tests/vayrin.test.ts",
     "test:vayrin-entity-semantics-natural-features": "ts-node -P scripts/tsconfig.json scripts/testVayrinEntitySemanticsNaturalFeatures.ts",
+    "test:vayrin-core-v4-integration": "ts-node -P scripts/tsconfig.json scripts/testVayrinCoreV4Integration.ts && npm run test:vayrin-hypothesis-first-hard-path && npm run test:vayrin-entity-semantics-natural-features && npm run test:vayrin-same-place-moment-consolidation && npm run test:multi-place-batch && npm run test:vayrin-generic-place-type-guard && npm run test:vayrin-never-dead-end && npm run test:manual-fallback",
+    "benchmark:vayrin-core-v4-integration": "ts-node -P scripts/tsconfig.json scripts/benchmarkVayrinCoreV4Integration.ts",
     "test:recognition-cache": "ts-node -P scripts/tsconfig.json scripts/testRecognitionCache.ts",
     "proof:recognition-cache:dev": "ts-node -P scripts/tsconfig.json scripts/proveRecognitionCacheIntegration.ts",
     "proof:canonical-save-return-contract:dev": "ts-node -P scripts/tsconfig.json scripts/proveCanonicalSaveReturnContractDev.ts",

@@ -1851,6 +1851,12 @@ async function finalizeMediaTask(
             sceneCategory: null,
             candidateCategory: null,
             semanticOverrideApplied: false,
+            recognitionConfidence: null,
+            canonicalizationConfidence: null,
+            canonicalizationOutcome: 'NO_CANONICAL_MATCH' as const,
+            firewallAdmissionOutcome: 'REJECT' as const,
+            firewallReasonCodes: ['mention_evidence_missing'],
+            independentIdentitySupport: false,
           };
       const blockingReasons = [...gate.reasonCodes];
       if (gate.eligible && !autoSaveAuthorized) blockingReasons.push('auto_save_disabled_or_user_not_allowlisted');
@@ -1997,6 +2003,11 @@ async function finalizeMediaTask(
           outcome: saved.reused ? 'already_saved' : 'auto_saved',
           savedPlaceId: saved.saved_place_id,
           confidenceScore: gate.confidenceScore,
+          recognitionConfidence: gate.recognitionConfidence,
+          canonicalizationConfidence: gate.canonicalizationConfidence,
+          canonicalizationOutcome: gate.canonicalizationOutcome,
+          firewallAdmissionOutcome: gate.firewallAdmissionOutcome,
+          firewallReasonCodes: gate.firewallReasonCodes,
           ruleVersion: gate.ruleVersion,
           reasonCodes: gate.reasonCodes,
         });
@@ -2023,6 +2034,11 @@ async function finalizeMediaTask(
         logicalResultId: mentionResult.mentionId,
         outcome: blockedOutcome,
         confidenceScore: gate.confidenceScore,
+        recognitionConfidence: gate.recognitionConfidence,
+        canonicalizationConfidence: gate.canonicalizationConfidence,
+        canonicalizationOutcome: gate.canonicalizationOutcome,
+        firewallAdmissionOutcome: gate.firewallAdmissionOutcome,
+        firewallReasonCodes: gate.firewallReasonCodes,
         ruleVersion: gate.ruleVersion,
         reasonCodes: blockingReasons,
       });

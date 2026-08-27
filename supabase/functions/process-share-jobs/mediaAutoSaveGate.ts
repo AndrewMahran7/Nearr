@@ -7,12 +7,15 @@ import type { VenueMention } from './mediaMentions.ts';
 import { isCategoryOrDescriptivePlacePhrase } from '../../../lib/placeIdentityClassification.ts';
 import {
   candidatePoiCategory,
+  evaluateSelectiveEvidenceFirewall,
   semanticAutoSaveDecision,
   semanticCategoryCompatibility,
   type SemanticCompatibility,
+  type VayrinEvidenceProvenance,
+  type VayrinFirewallAdmission,
 } from '../../../lib/recognitionTruth.ts';
 
-export const MEDIA_AUTO_SAVE_RULE_VERSION = 'media-autosave-2026-08-26.v9';
+export const MEDIA_AUTO_SAVE_RULE_VERSION = 'media-autosave-2026-08-27.v10-selective-evidence-firewall';
 
 // Retained for configuration compatibility and diagnostics. The v7 decision
 // does not apply this value as a second confirmation threshold: the resolver's
@@ -60,7 +63,30 @@ export type MediaAutoSaveGateDecision = {
   sceneCategory: string | null;
   candidateCategory: string | null;
   semanticOverrideApplied: boolean;
+  /** Source/model recognition confidence; never includes Places score. */
+  recognitionConfidence: number | null;
+  /** Provider/canonicalization confidence; retained separately from recognition. */
+  canonicalizationConfidence: number | null;
+  canonicalizationOutcome: 'CANONICAL_EXACT' | 'CANONICAL_NEAR_MATCH' | 'AMBIGUOUS_CANONICAL' | 'NO_CANONICAL_MATCH';
+  firewallAdmissionOutcome: VayrinFirewallAdmission;
+  firewallReasonCodes: string[];
+  independentIdentitySupport: boolean;
 };
+
+function evidenceProvenanceForMention(mention: VenueMention): VayrinEvidenceProvenance[] {
+  const values = new Set<VayrinEvidenceProvenance>(['PLACES_NAME', 'PLACES_SEARCH_RANK', 'CANDIDATE_DERIVED']);
+  for (const source of mention.nameEvidenceSources ?? []) {
+    if (source === 'caption') values.add('SOURCE_CAPTION');
+    if (source === 'speech') values.add('SOURCE_TRANSCRIPT');
+    if (source === 'visible_text') values.add('SOURCE_OCR');
+    if (source === 'frame') values.add('SOURCE_VISUAL');
+  }
+  if (mention.hypothesisOrigin === 'independent_multimodal') {
+    values.add('INDEPENDENT_MODEL_HYPOTHESIS');
+    values.add('SOURCE_VISUAL');
+  }
+  return [...values];
+}
 
 export function mediaAutoSaveAuthorized(args: {
   enabled: boolean;
@@ -274,9 +300,17 @@ export function evaluateMediaAutoSave(
       sceneCategory: input.mention.category ?? null,
       candidateCategory: null,
       semanticOverrideApplied: false,
+      recognitionConfidence: null,
+      canonicalizationConfidence: null,
+      canonicalizationOutcome: 'NO_CANONICAL_MATCH',
+      firewallAdmissionOutcome: 'REJECT',
+      firewallReasonCodes: ['category_only_candidate'],
+      independentIdentitySupport: false,
     };
   }
   const rawCandidateCount = input.result.scoring.length;
+  const nameEvidenceSources = input.mention.nameEvidenceSources ?? [];
+  const mentionGeo = input.mention.geo ?? { city: null, region: null, country: null };
   const candidateRejectionReasons = input.result.scoring
     .filter((score) => score.rejected)
     .map((score) => score.rejectionReason || 'provider_rejected');
@@ -298,6 +332,21 @@ export function evaluateMediaAutoSave(
   let sceneCategory: string | null = null;
   let candidateCategory: string | null = null;
   let semanticOverrideApplied = false;
+  let firewall = evaluateSelectiveEvidenceFirewall({
+    hypothesisOrigin: input.mention.hypothesisOrigin ?? 'provider_candidate',
+    entityType: input.mention.entityType,
+    identitySupport: input.mention.identitySupport ?? 'none',
+    geoSupport: input.mention.geoSupport ?? 'none',
+    semanticCategory: input.mention.semanticCategory ?? input.mention.category,
+    conflicts: input.mention.conflicts,
+    evidenceBasis: input.mention.evidenceBasis ?? null,
+    evidenceProvenance: evidenceProvenanceForMention(input.mention),
+    recognitionConfidence: input.mention.confidence,
+    canonicalizationConfidence: null,
+    canonicalizationOutcome: 'NO_CANONICAL_MATCH',
+    singletonCandidate: false,
+    hasTruthfulPartial: !!(mentionGeo.city || mentionGeo.region || mentionGeo.country),
+  });
   if (input.mention.identityEvidenceKind === 'model_prior') {
     reasonCode = 'model_prior_unverified';
     explicitConflictFlags.push('model_prior_unverified');
@@ -341,9 +390,9 @@ export function evaluateMediaAutoSave(
         exactAddress: selected.score.reasons?.includes('address_verified') ||
           selected.score.reasons?.includes('address_verified_multi'),
         readableSignageExactName: input.mention.sources.includes('visible_text') &&
-          input.mention.nameEvidenceSources.includes('visible_text'),
-        explicitCaptionExactName: input.mention.nameEvidenceSources.includes('caption'),
-        independentNameSourceCount: input.mention.nameEvidenceSources.length,
+          nameEvidenceSources.includes('visible_text'),
+        explicitCaptionExactName: nameEvidenceSources.includes('caption'),
+        independentNameSourceCount: nameEvidenceSources.length,
       };
       const semantic = semanticAutoSaveDecision({ compatibility, identityEvidence: identity });
       semanticOverrideApplied = semantic.overridden;
@@ -352,8 +401,39 @@ export function evaluateMediaAutoSave(
         candidateRejectionReasons.push('candidate_semantic_mismatch');
         explicitConflictFlags.push('candidate_semantic_mismatch');
       } else {
-        reasonCode = 'single_plausible_candidate';
-        if (semantic.overridden) explicitConflictFlags.push('candidate_semantic_override');
+        const inferredIdentitySupport = input.mention.identitySupport ??
+          (nameEvidenceSources.length > 0 ? 'exact' : input.mention.repeated ? 'strong' : 'none');
+        firewall = evaluateSelectiveEvidenceFirewall({
+          hypothesisOrigin: input.mention.hypothesisOrigin ??
+            (nameEvidenceSources.length > 0 ? 'easy_source' : 'provider_candidate'),
+          entityType: input.mention.entityType,
+          identitySupport: inferredIdentitySupport,
+          geoSupport: input.mention.geoSupport ??
+            ((mentionGeo.city || mentionGeo.region || mentionGeo.country)
+              ? 'explicit_source_geo' : 'none'),
+          semanticCategory: input.mention.semanticCategory ?? input.mention.category,
+          conflicts: input.mention.conflicts,
+          evidenceBasis: input.mention.evidenceBasis ??
+            (nameEvidenceSources.length > 0 ? 'direct_visible_identity' : null),
+          evidenceProvenance: evidenceProvenanceForMention(input.mention),
+          recognitionConfidence: input.mention.confidence,
+          canonicalizationConfidence: selected.score.normalizedScore,
+          canonicalizationOutcome: 'CANONICAL_EXACT',
+          explicitGeoConflict: selected.score.reasons?.includes('wrong_location_rejected') ||
+            selected.score.reasons?.some((item) => item.startsWith('geographic_country_mismatch')),
+          semanticConflict: compatibility.verdict === 'CONTRADICTS',
+          directSourceIdentity: semantic.overridden ||
+            nameEvidenceSources.includes('visible_text'),
+          singletonCandidate: true,
+          hasTruthfulPartial: !!(mentionGeo.city || mentionGeo.region || mentionGeo.country),
+        });
+        if (firewall.admissionOutcome === 'ADMIT_AUTOSAVE') {
+          reasonCode = 'single_plausible_candidate';
+          if (semantic.overridden) explicitConflictFlags.push('candidate_semantic_override');
+        } else {
+          reasonCode = firewall.reasonCodes[0] ?? 'selective_evidence_firewall_review';
+          explicitConflictFlags.push(...firewall.reasonCodes);
+        }
       }
     }
   }
@@ -373,6 +453,12 @@ export function evaluateMediaAutoSave(
     sceneCategory,
     candidateCategory,
     semanticOverrideApplied,
+    recognitionConfidence: firewall.recognitionConfidence,
+    canonicalizationConfidence: firewall.canonicalizationConfidence,
+    canonicalizationOutcome: firewall.canonicalizationOutcome ?? 'NO_CANONICAL_MATCH',
+    firewallAdmissionOutcome: firewall.admissionOutcome,
+    firewallReasonCodes: firewall.reasonCodes,
+    independentIdentitySupport: firewall.independentIdentitySupport,
   };
 }
 
@@ -404,6 +490,9 @@ export function formatMediaAutoSaveDecisionLog(args: {
     `scene_category=${safeLogValue(args.decision.sceneCategory)}`,
     `candidate_category=${safeLogValue(args.decision.candidateCategory)}`,
     `semantic_override=${args.decision.semanticOverrideApplied ? 'true' : 'false'}`,
+    `recognition_confidence=${args.decision.recognitionConfidence == null ? 'none' : args.decision.recognitionConfidence.toFixed(4)}`,
+    `canonicalization_confidence=${args.decision.canonicalizationConfidence == null ? 'none' : args.decision.canonicalizationConfidence.toFixed(4)}`,
+    `firewall_admission=${safeLogValue(args.decision.firewallAdmissionOutcome)}`,
     `final_decision=${args.finalDecision}`,
     `decision_reason=${safeLogValue(args.finalReasonCodes.join(','))}`,
   ].join(' ');

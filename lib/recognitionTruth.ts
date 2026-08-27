@@ -3,6 +3,7 @@ import {
   mapGoogleType,
   type NearrCategory,
 } from './placeCategory.ts';
+import type { VayrinEntityType } from './vayrin/entitySemantics.ts';
 
 export type SemanticCompatibility = 'SUPPORTS' | 'CONTRADICTS' | 'UNKNOWN';
 
@@ -137,4 +138,128 @@ export function semanticAutoSaveDecision(input: {
     return { allowed: true, overridden: true, reason: 'strong_identity_override' };
   }
   return { allowed: false, overridden: false, reason: 'candidate_semantic_mismatch' };
+}
+
+export const VAYRIN_EVIDENCE_PROVENANCE = [
+  'SOURCE_CAPTION', 'SOURCE_HASHTAG', 'SOURCE_TRANSCRIPT', 'SOURCE_OCR',
+  'SOURCE_LOCATION_METADATA', 'SOURCE_VISUAL', 'INDEPENDENT_MODEL_HYPOTHESIS',
+  'USER_CONFIRMED', 'PLACES_NAME', 'PLACES_ADDRESS', 'PLACES_CATEGORY',
+  'PLACES_GEOGRAPHY', 'PLACES_SEARCH_RANK', 'CANDIDATE_DERIVED',
+] as const;
+export type VayrinEvidenceProvenance = (typeof VAYRIN_EVIDENCE_PROVENANCE)[number];
+export type VayrinFirewallAdmission = 'ADMIT_AUTOSAVE' | 'ADMIT_REVIEW' | 'ADMIT_PARTIAL' | 'REJECT';
+
+export type SelectiveEvidenceFirewallInput = {
+  hypothesisOrigin?: 'easy_source' | 'independent_multimodal' | 'provider_candidate' | 'user_confirmed' | null;
+  entityType?: VayrinEntityType | null;
+  identitySupport?: 'exact' | 'strong' | 'weak' | 'none' | null;
+  geoSupport?: 'explicit_source_geo' | 'strong_inferred_geo' | 'weak_inferred_geo' | 'none' | null;
+  semanticCategory?: string | null;
+  conflicts?: readonly string[] | null;
+  evidenceBasis?: 'direct_visible_identity' | 'distinctive_visual_match' | 'contextual_or_memory_prior' | 'insufficient' | null;
+  evidenceProvenance?: readonly VayrinEvidenceProvenance[] | null;
+  recognitionConfidence?: number | null;
+  canonicalizationConfidence?: number | null;
+  canonicalizationOutcome?: 'CANONICAL_EXACT' | 'CANONICAL_NEAR_MATCH' | 'AMBIGUOUS_CANONICAL' | 'NO_CANONICAL_MATCH' | null;
+  explicitGeoConflict?: boolean;
+  semanticConflict?: boolean;
+  directSourceIdentity?: boolean;
+  singletonCandidate?: boolean;
+  hasTruthfulPartial?: boolean;
+};
+
+export type SelectiveEvidenceFirewallDecision = {
+  admissionOutcome: VayrinFirewallAdmission;
+  reasonCodes: string[];
+  independentIdentitySupport: boolean;
+  providerOnlyIdentity: boolean;
+  geoConflict: boolean;
+  semanticConflict: boolean;
+  recognitionConfidence: number | null;
+  canonicalizationConfidence: number | null;
+  canonicalizationOutcome: SelectiveEvidenceFirewallInput['canonicalizationOutcome'];
+};
+
+const PROVIDER_DERIVED_PROVENANCE = new Set<VayrinEvidenceProvenance>([
+  'PLACES_NAME', 'PLACES_ADDRESS', 'PLACES_CATEGORY', 'PLACES_GEOGRAPHY',
+  'PLACES_SEARCH_RANK', 'CANDIDATE_DERIVED',
+]);
+
+function boundedConfidence(value: number | null | undefined): number | null {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? Math.max(0, Math.min(1, value)) : null;
+}
+
+/**
+ * Final, pure V4 admission check. Provider data may canonicalize a source or
+ * blind multimodal hypothesis, but never becomes recognition evidence for its
+ * own identity. Recognition and canonicalization confidences remain separate.
+ *
+ * Unlike the failed P0 policy, a strong candidate-blind visual hypothesis is
+ * independent evidence: it does not need its exact name repeated in a caption.
+ */
+export function evaluateSelectiveEvidenceFirewall(
+  input: SelectiveEvidenceFirewallInput,
+): SelectiveEvidenceFirewallDecision {
+  const provenance = [...new Set(input.evidenceProvenance ?? [])];
+  const userConfirmed = input.hypothesisOrigin === 'user_confirmed' || provenance.includes('USER_CONFIRMED');
+  const independentByProvenance = provenance.some((item) => !PROVIDER_DERIVED_PROVENANCE.has(item));
+  const independentHypothesis = input.hypothesisOrigin === 'independent_multimodal' &&
+    (input.evidenceBasis === 'direct_visible_identity' || input.evidenceBasis === 'distinctive_visual_match');
+  const independentIdentitySupport = userConfirmed || independentByProvenance || independentHypothesis;
+  const providerOnlyIdentity = provenance.length > 0 && !independentIdentitySupport;
+  const recognitionConfidence = boundedConfidence(input.recognitionConfidence);
+  const canonicalizationConfidence = boundedConfidence(input.canonicalizationConfidence);
+  const reasonCodes: string[] = [];
+  let admissionOutcome: VayrinFirewallAdmission;
+
+  if (userConfirmed) {
+    admissionOutcome = 'ADMIT_AUTOSAVE';
+    reasonCodes.push('user_confirmed_truth');
+  } else if (input.explicitGeoConflict) {
+    admissionOutcome = 'REJECT';
+    reasonCodes.push('explicit_source_geo_conflict');
+  } else if (input.semanticConflict && !input.directSourceIdentity) {
+    admissionOutcome = 'REJECT';
+    reasonCodes.push('source_semantic_conflict');
+  } else if (!independentIdentitySupport) {
+    admissionOutcome = input.hasTruthfulPartial ? 'ADMIT_PARTIAL' : 'ADMIT_REVIEW';
+    reasonCodes.push('candidate_cannot_create_identity');
+    if (providerOnlyIdentity) reasonCodes.push('provider_data_is_canonicalization_only');
+    if (input.singletonCandidate) reasonCodes.push('singleton_cannot_autosave_without_independent_support');
+  } else if ((input.conflicts?.length ?? 0) > 0) {
+    admissionOutcome = 'ADMIT_REVIEW';
+    reasonCodes.push('independent_hypothesis_has_conflicts');
+  } else if (input.identitySupport !== 'exact' && input.identitySupport !== 'strong') {
+    admissionOutcome = 'ADMIT_REVIEW';
+    reasonCodes.push('independent_identity_support_not_strong');
+  } else if (input.canonicalizationOutcome !== 'CANONICAL_EXACT') {
+    admissionOutcome = 'ADMIT_REVIEW';
+    reasonCodes.push('canonicalization_not_exact');
+  } else if (
+    (recognitionConfidence ?? 0) < 0.70 &&
+    !(input.identitySupport === 'exact' && input.evidenceBasis === 'direct_visible_identity')
+  ) {
+    admissionOutcome = 'ADMIT_REVIEW';
+    reasonCodes.push('recognition_confidence_below_autosave_floor');
+  } else {
+    admissionOutcome = 'ADMIT_AUTOSAVE';
+    reasonCodes.push(
+      input.hypothesisOrigin === 'independent_multimodal'
+        ? 'strong_independent_visual_hypothesis_canonicalized'
+        : 'strong_source_identity_canonicalized',
+    );
+  }
+
+  return {
+    admissionOutcome,
+    reasonCodes,
+    independentIdentitySupport,
+    providerOnlyIdentity,
+    geoConflict: input.explicitGeoConflict === true,
+    semanticConflict: input.semanticConflict === true,
+    recognitionConfidence,
+    canonicalizationConfidence,
+    canonicalizationOutcome: input.canonicalizationOutcome ?? null,
+  };
 }
