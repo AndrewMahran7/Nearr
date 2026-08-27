@@ -52,6 +52,13 @@ export type PlaceCandidateEvidence = {
   logicalPlaceId?: string | null;
   identityEvidenceKind?: 'observable' | 'model_prior';
   hypothesisRank?: number;
+  hypothesisOrigin?: 'independent_multimodal';
+  hypothesisPathVersion?: string;
+  identitySupport?: 'exact' | 'strong' | 'weak' | 'none';
+  geoSupport?: 'explicit_source_geo' | 'strong_inferred_geo' | 'weak_inferred_geo' | 'none';
+  semanticCategory?: string | null;
+  conflicts?: string[];
+  evidenceBasis?: 'direct_visible_identity' | 'distinctive_visual_match' | 'contextual_or_memory_prior' | 'insufficient';
   name: string;
   category: NearrCategory | null;
   categoryConfidence?: number;
@@ -70,6 +77,13 @@ export type PlaceCandidateEvidence = {
 };
 
 export type PartialPlaceEvidence = {
+  hypothesisOrigin?: 'independent_multimodal';
+  hypothesisPathVersion?: string;
+  identitySupport?: 'exact' | 'strong' | 'weak' | 'none';
+  geoSupport?: 'explicit_source_geo' | 'strong_inferred_geo' | 'weak_inferred_geo' | 'none';
+  semanticCategory?: string | null;
+  conflicts?: string[];
+  evidenceBasis?: 'direct_visible_identity' | 'distinctive_visual_match' | 'contextual_or_memory_prior' | 'insufficient';
   nameHint: string | null;
   category: NearrCategory | null;
   categoryConfidence: number;
@@ -176,6 +190,18 @@ function parsePlace(raw: unknown): PlaceCandidateEvidence | null {
     logicalPlaceId: str(r.logicalPlaceId, 80),
     identityEvidenceKind: r.identityEvidenceKind === 'model_prior' ? 'model_prior' : 'observable',
     hypothesisRank: Math.max(0, Math.min(11, Math.floor(num(r.hypothesisRank) ?? 0))),
+    hypothesisOrigin: r.hypothesisOrigin === 'independent_multimodal' ? 'independent_multimodal' : undefined,
+    hypothesisPathVersion: str(r.hypothesisPathVersion, 100) ?? undefined,
+    identitySupport: r.identitySupport === 'exact' || r.identitySupport === 'strong' || r.identitySupport === 'weak' || r.identitySupport === 'none'
+      ? r.identitySupport : undefined,
+    geoSupport: r.geoSupport === 'explicit_source_geo' || r.geoSupport === 'strong_inferred_geo' || r.geoSupport === 'weak_inferred_geo' || r.geoSupport === 'none'
+      ? r.geoSupport : undefined,
+    semanticCategory: str(r.semanticCategory, 100),
+    conflicts: Array.isArray(r.conflicts)
+      ? r.conflicts.map((value) => str(value, 300)).filter((value): value is string => !!value).slice(0, 8)
+      : [],
+    evidenceBasis: r.evidenceBasis === 'direct_visible_identity' || r.evidenceBasis === 'distinctive_visual_match' || r.evidenceBasis === 'contextual_or_memory_prior' || r.evidenceBasis === 'insufficient'
+      ? r.evidenceBasis : undefined,
     name,
     category: isNearrCategory(r.category) ? r.category : null,
     categoryConfidence: Math.max(0, Math.min(1, num(r.categoryConfidence) ?? 0)),
@@ -211,6 +237,18 @@ function parsePartialPlace(raw: unknown): PartialPlaceEvidence | null {
     ? (r.role as PlaceRole)
     : 'primary';
   return {
+    hypothesisOrigin: r.hypothesisOrigin === 'independent_multimodal' ? 'independent_multimodal' : undefined,
+    hypothesisPathVersion: str(r.hypothesisPathVersion, 100) ?? undefined,
+    identitySupport: r.identitySupport === 'exact' || r.identitySupport === 'strong' || r.identitySupport === 'weak' || r.identitySupport === 'none'
+      ? r.identitySupport : undefined,
+    geoSupport: r.geoSupport === 'explicit_source_geo' || r.geoSupport === 'strong_inferred_geo' || r.geoSupport === 'weak_inferred_geo' || r.geoSupport === 'none'
+      ? r.geoSupport : undefined,
+    semanticCategory: str(r.semanticCategory, 100),
+    conflicts: Array.isArray(r.conflicts)
+      ? r.conflicts.map((value) => str(value, 300)).filter((value): value is string => !!value).slice(0, 8)
+      : [],
+    evidenceBasis: r.evidenceBasis === 'direct_visible_identity' || r.evidenceBasis === 'distinctive_visual_match' || r.evidenceBasis === 'contextual_or_memory_prior' || r.evidenceBasis === 'insufficient'
+      ? r.evidenceBasis : undefined,
     nameHint: str(r.nameHint, 200),
     category: isNearrCategory(r.category) ? r.category : null,
     categoryConfidence: Math.max(0, Math.min(1, num(r.categoryConfidence) ?? 0)),
@@ -805,6 +843,11 @@ export function mediaEvidenceAutoSaveEligible(
   const primary = selectRenderablePlaces(evidence)[0];
   if (!primary) return false;
   if (!(primary.confidence >= minConfidence)) return false;
+  if (primary.hypothesisOrigin === 'independent_multimodal') {
+    if (primary.identitySupport !== 'exact' && primary.identitySupport !== 'strong') return false;
+    if (primary.geoSupport !== 'explicit_source_geo' && primary.geoSupport !== 'strong_inferred_geo') return false;
+    if ((primary.conflicts?.length ?? 0) > 0) return false;
+  }
 
   // Built destinations require an explicit street address. Recognized natural
   // destinations may instead use explicit city+region grounding; the downstream

@@ -212,10 +212,10 @@ test('22 V3 alone can never authorize auto-save', () => {
   assert.equal(verificationV3AllowsAutoSave(record), false);
 });
 
-test('23 prompt requires tri-state evidence and necessary visibility', () => {
-  assert.match(VAYRIN_VISUAL_GEOLOCATION_SYSTEM_PROMPT, /SUPPORTS, CONTRADICTS, or UNKNOWN/);
-  assert.match(VAYRIN_VISUAL_GEOLOCATION_SYSTEM_PROMPT, /necessarily would show it/i);
-  assert.match(VAYRIN_VISUAL_GEOLOCATION_SYSTEM_PROMPT, /Prefer uncertainty over false\s+certainty/);
+test('23 global prompt is candidate-blind while legacy verification remains bounded', () => {
+  assert.match(VAYRIN_VISUAL_GEOLOCATION_SYSTEM_PROMPT, /blind to Google Places candidates/);
+  assert.match(VAYRIN_VISUAL_GEOLOCATION_SYSTEM_PROMPT, /First determine WHAT KIND OF PLACE/);
+  assert.doesNotMatch(VAYRIN_VISUAL_GEOLOCATION_SYSTEM_PROMPT, /retrieved candidate shortlist/i);
   assert.match(VAYRIN_CANDIDATE_VERIFICATION_SYSTEM_PROMPT, /at most three short/i);
   assert.equal(VAYRIN_CANDIDATE_VERIFICATION_SCHEMA.properties.retrieved_candidate_evaluations.items.properties.evidence.maxItems, 3);
 });

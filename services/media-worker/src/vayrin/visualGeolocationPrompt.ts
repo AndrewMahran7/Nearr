@@ -24,13 +24,20 @@
 // in the production prompt — a prompt that has been shown the answer key cannot
 // be measured.
 
-export const VAYRIN_PROMPT_VERSION = 'vayrin-verification-2026-08-24.v3.1';
+export const VAYRIN_PROMPT_VERSION = 'vayrin-hypothesis-first-2026-08-27.v1';
 
 export const VAYRIN_VISUAL_GEOLOCATION_SYSTEM_PROMPT = `
 You are a visual geolocation investigator. You are given timestamped frames
 from one short social video, plus whatever text evidence accompanied the post.
 Your job is to identify the REAL-WORLD PLACE the video shows, as specifically
 as the evidence responsibly permits.
+
+HYPOTHESIS-FIRST BOUNDARY
+You are blind to Google Places candidates, provider rankings, candidate
+addresses, cached machine identities, and prior shortlists. None are supplied.
+First determine WHAT KIND OF PLACE the source depicts. Only then propose up to
+three independently supported identities. A person, athlete, creator, activity,
+or generic scene phrase is not a place identity.
 
 WHAT COUNTS AS A PLACE
 A place is anywhere a person could travel to: a restaurant, cafe, bar, hotel,
@@ -83,32 +90,11 @@ additional_place_segments with the frame timestamps it occupies. Do NOT merge
 distinct places into one answer, and do not split one place into several just
 because the camera moved.
 
-RETRIEVED CANDIDATES: EVALUATE BEFORE GUESSING
-When retrieved_candidates are supplied, evaluate EVERY candidateId exactly
-once before considering anything outside the shortlist. Retrieval order and
-retrieval evidence are real evidence. Start with canonical identity and
-retrieval evidence, then assess visible support, region/category compatibility,
-and only then genuine contradictions.
-
-Classify every evidence statement as exactly SUPPORTS, CONTRADICTS, or UNKNOWN.
-"Not visible" defaults to UNKNOWN. An expected entrance, waterfall, enclosure,
-facade, mountain, beach, skyline, or other iconic feature may be behind the
-camera, cropped, occluded, distant, seasonally different, poorly lit, or absent
-from the selected frames. It is CONTRADICTS only when the observed viewpoint
-necessarily would show it and the visible geometry or identity is genuinely
-incompatible. Never hallucinate a camera position to justify rejection.
-
-Valid strong contradiction kinds are identity_conflict, geographic_conflict,
-or impossible_geometry backed by directly visible evidence. Missing expected
-features, crop/viewpoint uncertainty, weather, season, lighting, drone versus
-ground angle, and partial occlusion are UNKNOWN. Prefer uncertainty over false
-certainty.
-
-Use overallVerdict preserve for SUPPORTS + UNKNOWN and for UNKNOWN-only credible
-retrievals. Strong retrieval evidence requires correspondingly strong direct
-contradiction to reject. Outside proposals are allowed only after every
-shortlist candidate is weak or has strong direct contradiction. Do not restart
-freeform search while any credible shortlist candidate remains possible.
+SOURCE GEOGRAPHY
+Extract explicit source geography separately from visual inference. Explicit
+caption, hashtag, location metadata, transcript, or OCR geography must constrain
+hypotheses. Do not propose a cross-country identity without listing the conflict.
+Weak vegetation, architecture, or climate guesses are not hard geography.
 
 HONESTY
   - Separate what is DIRECTLY VISIBLE from what you INFERRED.
@@ -121,6 +107,8 @@ HONESTY
     genuinely have none.
   - Returning zero hypotheses is a valid, useful answer when the frames carry
     no geographic signal at all.
+  - Set no_exact_hypothesis=true when only a truthful region/category/activity
+    result is defensible. Do not force a POI to avoid an empty hypothesis list.
 
 IDENTITY EVIDENCE BASIS
 For every hypothesis classify evidence_basis using exactly one value:
@@ -186,6 +174,11 @@ export const VAYRIN_GEOLOCATION_SCHEMA = {
   type: 'object',
   additionalProperties: false,
   required: [
+    'scene_category',
+    'activity',
+    'source_geography',
+    'identity_clues',
+    'no_exact_hypothesis',
     'place_hypotheses',
     'multiple_distinct_places_visible',
     'additional_place_segments',
@@ -194,8 +187,63 @@ export const VAYRIN_GEOLOCATION_SCHEMA = {
     'outside_candidate_proposals',
   ],
   properties: {
+    scene_category: {
+      type: 'string',
+      description: 'Candidate-independent kind of scene/place shown, established before exact identity.',
+    },
+    activity: { type: ['string', 'null'] },
+    source_geography: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['country', 'region', 'city', 'confidence_class', 'evidence_provenance'],
+      properties: {
+        country: { type: ['string', 'null'] },
+        region: { type: ['string', 'null'] },
+        city: { type: ['string', 'null'] },
+        confidence_class: {
+          type: 'string',
+          enum: ['explicit_source_geo', 'strong_inferred_geo', 'weak_inferred_geo', 'none'],
+        },
+        evidence_provenance: {
+          type: 'array',
+          items: {
+            type: 'string',
+            enum: [
+              'source_location_metadata', 'source_caption', 'source_hashtags',
+              'source_transcript', 'source_ocr', 'source_visual',
+            ],
+          },
+        },
+      },
+    },
+    identity_clues: {
+      type: 'array',
+      maxItems: 16,
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['clue', 'kind', 'provenance', 'strength'],
+        properties: {
+          clue: { type: 'string' },
+          kind: {
+            type: 'string',
+            enum: ['exact_visible_name', 'alias', 'natural_feature', 'architectural', 'geological', 'activity', 'other'],
+          },
+          provenance: {
+            type: 'string',
+            enum: [
+              'source_location_metadata', 'source_caption', 'source_hashtags',
+              'source_transcript', 'source_ocr', 'source_visual',
+            ],
+          },
+          strength: { type: 'string', enum: ['strong', 'moderate', 'weak'] },
+        },
+      },
+    },
+    no_exact_hypothesis: { type: 'boolean' },
     place_hypotheses: {
       type: 'array',
+      maxItems: 3,
       description: 'Hypotheses for the PRIMARY place, best first. Empty when the frames carry no geographic signal.',
       items: {
         type: 'object',
@@ -268,6 +316,7 @@ export const VAYRIN_GEOLOCATION_SCHEMA = {
           },
           hypotheses: {
             type: 'array',
+            maxItems: 3,
             items: {
               type: 'object',
               additionalProperties: false,
@@ -477,6 +526,9 @@ export const VAYRIN_CANDIDATE_VERIFICATION_SCHEMA = {
 
 export type VayrinTextContext = {
   platform?: string | null;
+  durationSeconds?: number | null;
+  sourceCreatorHandle?: string | null;
+  sourceCreatorName?: string | null;
   caption?: string | null;
   transcript?: string | null;
   /** The platform's location tag / metadata, verbatim. */
@@ -495,6 +547,15 @@ export type VayrinTextContext = {
 export function buildVayrinUserContext(ctx: VayrinTextContext): string {
   const parts: string[] = [];
   if (ctx.platform) parts.push(`platform: ${ctx.platform}`);
+  if (typeof ctx.durationSeconds === 'number' && Number.isFinite(ctx.durationSeconds)) {
+    parts.push(`video_duration_seconds: ${Math.max(0, ctx.durationSeconds).toFixed(1)}`);
+  }
+  if (ctx.sourceCreatorHandle || ctx.sourceCreatorName) {
+    parts.push(`source_creator_provenance (a person/account, NEVER a place identity): ${[
+      ctx.sourceCreatorHandle,
+      ctx.sourceCreatorName,
+    ].filter(Boolean).join(' / ')}`);
+  }
 
   parts.push(
     ctx.locationMetadata
@@ -517,13 +578,11 @@ export function buildVayrinUserContext(ctx: VayrinTextContext): string {
 
   if (ctx.otherText?.trim()) parts.push(`other_textual_evidence:\n${ctx.otherText.trim()}`);
 
-  if (ctx.retrievedCandidatesJson?.trim()) {
-    parts.push(
-      `retrieved_candidates (evaluate every candidateId; missing expected features are UNKNOWN):\n${ctx.retrievedCandidatesJson.trim()}`,
-    );
-  } else {
-    parts.push('retrieved_candidates: (none; return empty candidate evaluation and outside-proposal arrays)');
-  }
+  parts.push(
+    ctx.retrievedCandidatesJson?.trim()
+      ? `retrieved_places_candidates (verification-only legacy tool; never used by the hypothesis-first hard path):\n${ctx.retrievedCandidatesJson.trim()}`
+      : 'places_candidates: deliberately withheld for independent hypothesis generation',
+  );
 
   parts.push(
     'The frames follow in chronological order, each preceded by its timestamp in seconds.',

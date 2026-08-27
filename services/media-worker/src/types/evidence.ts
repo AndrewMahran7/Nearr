@@ -74,6 +74,16 @@ export const PlaceCandidateEvidence = z.object({
   identityEvidenceKind: z.enum(['observable', 'model_prior']).optional(),
   /** Best-first rank within one logical place. */
   hypothesisRank: z.number().int().min(0).max(11).optional(),
+  hypothesisOrigin: z.enum(['independent_multimodal']).optional(),
+  hypothesisPathVersion: z.string().min(1).max(100).optional(),
+  identitySupport: z.enum(['exact', 'strong', 'weak', 'none']).optional(),
+  geoSupport: z.enum(['explicit_source_geo', 'strong_inferred_geo', 'weak_inferred_geo', 'none']).optional(),
+  semanticCategory: z.string().min(1).max(100).nullable().optional(),
+  conflicts: z.array(z.string().min(1).max(300)).max(8).optional(),
+  evidenceBasis: z.enum([
+    'direct_visible_identity', 'distinctive_visual_match',
+    'contextual_or_memory_prior', 'insufficient',
+  ]).optional(),
   /** All retained frame/evidence timestamps belonging to this raw moment. */
   momentTimestamps: z.array(z.number().finite().nonnegative()).max(24).default([]),
   sceneSignature: SceneSignature.optional(),
@@ -129,6 +139,16 @@ export const PartialPlaceEvidence = z.object({
   confidence: z.number().min(0).max(1).default(0),
   explicitEvidence: z.array(EvidenceItem).min(1).max(24),
   validationErrors: z.array(z.string().min(1).max(160)).max(8).default([]),
+  hypothesisOrigin: z.enum(['independent_multimodal']).optional(),
+  hypothesisPathVersion: z.string().min(1).max(100).optional(),
+  identitySupport: z.enum(['exact', 'strong', 'weak', 'none']).optional(),
+  geoSupport: z.enum(['explicit_source_geo', 'strong_inferred_geo', 'weak_inferred_geo', 'none']).optional(),
+  semanticCategory: z.string().min(1).max(100).nullable().optional(),
+  conflicts: z.array(z.string().min(1).max(300)).max(8).optional(),
+  evidenceBasis: z.enum([
+    'direct_visible_identity', 'distinctive_visual_match',
+    'contextual_or_memory_prior', 'insufficient',
+  ]).optional(),
 });
 export type PartialPlaceEvidence = z.infer<typeof PartialPlaceEvidence>;
 

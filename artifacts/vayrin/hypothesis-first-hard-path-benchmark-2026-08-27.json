@@ -1,0 +1,329 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-27T02:33:45.830Z",
+  "branch": "feat/vayrin-hypothesis-first-hard-path",
+  "benchmarkMode": "frozen retained replay; not a fresh paid inference run",
+  "sourceAudit": "C:\\Users\\andre\\Desktop\\Nearr\\artifacts\\vayrin\\production-recognition-burst-audit-2026-08-26.json",
+  "architectureBoundary": "One candidate-blind GPT-5.6 Sol pass before any Places canonicalization on HARD routes.",
+  "routing": {
+    "auditEasy": 3,
+    "auditHard": 5,
+    "auditHardRate": 0.625
+  },
+  "metrics": {
+    "top1Exact": 3,
+    "top1CorrectOrPlausible": 6,
+    "top3Plausible": 8,
+    "truthfulPartial": 2,
+    "useful": 8,
+    "wrongTop1": 0,
+    "obviouslyWrongTop1": 0,
+    "simulatedWrongAutosaves": 0,
+    "baselineWins": 6,
+    "ties": 2,
+    "baselineLosses": 0,
+    "goodAutosavesR04R06Preserved": true
+  },
+  "economics": {
+    "hardCases": 5,
+    "meanFramesPerHardCase": 9.6,
+    "meanCostUsdPerHardCase": 0.145098,
+    "totalHardCostUsd": 0.72549,
+    "meanLatencyMsPerHardCase": 77670.4,
+    "canonicalPlacesCalls": 9
+  },
+  "benchmarkPass": true,
+  "corpus": {
+    "totalRealFixtures": 41,
+    "sources": {
+      "labeledInstagramUnique": 27,
+      "verifiedShippingFixtures": 6,
+      "frozenAuditCases": 8
+    },
+    "truthTiers": {
+      "VERIFIED": 23,
+      "HIGHLY_LIKELY": 3,
+      "PLAUSIBLE": 10,
+      "UNKNOWN": 5
+    },
+    "scoringScope": "R01-R08 have retained comparable multimodal outputs. The other real fixtures establish coverage only; no fresh model output or ground truth was invented."
+  },
+  "cases": [
+    {
+      "id": "R01",
+      "sourceUrl": "https://www.instagram.com/reel/Cg2U22DjbEJ/",
+      "groundTruthTier": "UNKNOWN",
+      "groundTruth": "Southern French limestone gorge is HIGHLY_LIKELY; exact feature remains unknown.",
+      "route": "HARD",
+      "routeReason": "generic_category_only",
+      "architectureA_currentFrozen": {
+        "top1": "Cliff Jumping",
+        "classification": "LIKELY_WRONG",
+        "autosave": "WRONG_AUTO_SAVE",
+        "placesCalls": 1
+      },
+      "architectureB_hypothesisFirst": {
+        "evidenceMode": "retained_candidate_blind_audit_replay",
+        "top1": "Cirque de Gens",
+        "top3": [
+          "Cirque de Gens",
+          "Pont d’Arc",
+          "Gorges du Gardon near Collias"
+        ],
+        "classification": "AMBIGUOUS",
+        "simulatedWrongAutosave": false,
+        "preservesGoodAutosave": false,
+        "frames": 10,
+        "costUsd": 0.144966,
+        "latencyMs": 93704,
+        "placesCalls": 3
+      },
+      "architectureC_currentWithExistingGuards": {
+        "classification": "PARTIAL_BUT_TRUTHFUL",
+        "wrongAutosave": false
+      },
+      "winner": "BASELINE",
+      "requiredGate": "No Oregon activity POI; truthful southern-France gorge uncertainty."
+    },
+    {
+      "id": "R02",
+      "sourceUrl": "https://www.instagram.com/reel/DSvmLO_Eom9/",
+      "groundTruthTier": "VERIFIED",
+      "groundTruth": "Maui is verified; La Perouse Bay / Black Rock remain plausible exact hypotheses, not ground truth.",
+      "route": "HARD",
+      "routeReason": "coarse_geography_only",
+      "architectureA_currentFrozen": {
+        "top1": "Batteries to Bluffs Trail",
+        "classification": "OBVIOUSLY_WRONG",
+        "autosave": "WRONG_AUTO_SAVE",
+        "placesCalls": 1
+      },
+      "architectureB_hypothesisFirst": {
+        "evidenceMode": "retained_candidate_blind_audit_replay",
+        "top1": "La Perouse Bay lava cliffs",
+        "top3": [
+          "La Perouse Bay lava cliffs",
+          "Puʻu Kekaʻa (Black Rock)",
+          "ʻĀhihi-Kīnaʻu Natural Area Reserve coast"
+        ],
+        "classification": "CORRECT_PLAUSIBLE",
+        "simulatedWrongAutosave": false,
+        "preservesGoodAutosave": false,
+        "frames": 10,
+        "costUsd": 0.214936,
+        "latencyMs": 121714,
+        "placesCalls": 3
+      },
+      "architectureC_currentWithExistingGuards": {
+        "classification": "OBVIOUSLY_WRONG",
+        "wrongAutosave": true
+      },
+      "winner": "BASELINE",
+      "requiredGate": "Maui only; no San Francisco."
+    },
+    {
+      "id": "R03",
+      "sourceUrl": "https://www.instagram.com/reel/DZJ8ZvYub8Q/",
+      "groundTruthTier": "HIGHLY_LIKELY",
+      "groundTruth": "Tamolitch Blue Pool, Oregon",
+      "route": "HARD",
+      "routeReason": "no_exact_source_identity",
+      "architectureA_currentFrozen": {
+        "top1": "Chickasaw National Recreation Area",
+        "classification": "OBVIOUSLY_WRONG",
+        "autosave": "WRONG_AUTO_SAVE",
+        "placesCalls": 1
+      },
+      "architectureB_hypothesisFirst": {
+        "evidenceMode": "retained_candidate_blind_audit_replay",
+        "top1": "Tamolitch Blue Pool",
+        "top3": [
+          "Tamolitch Blue Pool"
+        ],
+        "classification": "CORRECT_PLAUSIBLE",
+        "simulatedWrongAutosave": false,
+        "preservesGoodAutosave": false,
+        "frames": 10,
+        "costUsd": 0.099946,
+        "latencyMs": 29092,
+        "placesCalls": 1
+      },
+      "architectureC_currentWithExistingGuards": {
+        "classification": "OBVIOUSLY_WRONG",
+        "wrongAutosave": true
+      },
+      "winner": "BASELINE",
+      "requiredGate": "Tamolitch top."
+    },
+    {
+      "id": "R04",
+      "sourceUrl": "https://www.instagram.com/reel/C9Z963muLHI/",
+      "groundTruthTier": "HIGHLY_LIKELY",
+      "groundTruth": "Dorset Quarry (Norcross-West Marble Quarry), Vermont",
+      "route": "EASY",
+      "routeReason": "strong_exact_source_identity",
+      "architectureA_currentFrozen": {
+        "top1": "Dorset Marble Quarry",
+        "classification": "CORRECT_EXACT",
+        "autosave": "SAFE_AUTO_SAVE",
+        "placesCalls": 1
+      },
+      "architectureB_hypothesisFirst": {
+        "evidenceMode": "cheap_exact_path",
+        "top1": "Dorset Marble Quarry",
+        "top3": [
+          "Dorset Marble Quarry"
+        ],
+        "classification": "CORRECT_EXACT",
+        "simulatedWrongAutosave": false,
+        "preservesGoodAutosave": true,
+        "frames": 0,
+        "costUsd": 0,
+        "latencyMs": 0,
+        "placesCalls": 1
+      },
+      "architectureC_currentWithExistingGuards": {
+        "classification": "CORRECT_EXACT",
+        "wrongAutosave": false
+      },
+      "winner": "TIE",
+      "requiredGate": "Dorset preserved through EASY route."
+    },
+    {
+      "id": "R05",
+      "sourceUrl": "https://www.instagram.com/reel/Db5qatGJgqH/",
+      "groundTruthTier": "VERIFIED",
+      "groundTruth": "Okere Falls Scenic Reserve, Bay of Plenty, New Zealand",
+      "route": "EASY",
+      "routeReason": "strong_exact_source_identity",
+      "architectureA_currentFrozen": {
+        "top1": null,
+        "classification": "PARTIAL_BUT_TRUTHFUL",
+        "autosave": null,
+        "placesCalls": 2
+      },
+      "architectureB_hypothesisFirst": {
+        "evidenceMode": "cheap_exact_path",
+        "top1": "Okere Falls Scenic Reserve",
+        "top3": [
+          "Okere Falls Scenic Reserve"
+        ],
+        "classification": "CORRECT_EXACT",
+        "simulatedWrongAutosave": false,
+        "preservesGoodAutosave": false,
+        "frames": 0,
+        "costUsd": 0,
+        "latencyMs": 0,
+        "placesCalls": 2
+      },
+      "architectureC_currentWithExistingGuards": {
+        "classification": "PARTIAL_BUT_TRUTHFUL",
+        "wrongAutosave": false
+      },
+      "winner": "BASELINE",
+      "requiredGate": "Okere Falls identity retained even if canonicalization misses."
+    },
+    {
+      "id": "R06",
+      "sourceUrl": "https://www.instagram.com/p/5oXehfQxb2/",
+      "groundTruthTier": "VERIFIED",
+      "groundTruth": "Lake Havasu",
+      "route": "EASY",
+      "routeReason": "strong_exact_source_identity",
+      "architectureA_currentFrozen": {
+        "top1": "Lake Havasu",
+        "classification": "CORRECT_PLAUSIBLE",
+        "autosave": "SAFE_AUTO_SAVE",
+        "placesCalls": 1
+      },
+      "architectureB_hypothesisFirst": {
+        "evidenceMode": "cheap_exact_path",
+        "top1": "Lake Havasu",
+        "top3": [
+          "Lake Havasu"
+        ],
+        "classification": "CORRECT_PLAUSIBLE",
+        "simulatedWrongAutosave": false,
+        "preservesGoodAutosave": true,
+        "frames": 0,
+        "costUsd": 0,
+        "latencyMs": 0,
+        "placesCalls": 1
+      },
+      "architectureC_currentWithExistingGuards": {
+        "classification": "CORRECT_PLAUSIBLE",
+        "wrongAutosave": false
+      },
+      "winner": "TIE",
+      "requiredGate": "Lake Havasu preserved through EASY route."
+    },
+    {
+      "id": "R07",
+      "sourceUrl": "https://www.instagram.com/reel/C0bg-7sooKi/",
+      "groundTruthTier": "VERIFIED",
+      "groundTruth": "Norway verified; Stryn is PLAUSIBLE, exact location UNKNOWN.",
+      "route": "HARD",
+      "routeReason": "person_not_place",
+      "architectureA_currentFrozen": {
+        "top1": "Ken's Korner Shopping Plaza",
+        "classification": "OBVIOUSLY_WRONG",
+        "autosave": null,
+        "placesCalls": 0
+      },
+      "architectureB_hypothesisFirst": {
+        "evidenceMode": "retained_candidate_blind_audit_replay",
+        "top1": "Stryn",
+        "top3": [
+          "Stryn"
+        ],
+        "classification": "PARTIAL_BUT_TRUTHFUL",
+        "simulatedWrongAutosave": false,
+        "preservesGoodAutosave": false,
+        "frames": 10,
+        "costUsd": 0.160476,
+        "latencyMs": 97611,
+        "placesCalls": 1
+      },
+      "architectureC_currentWithExistingGuards": {
+        "classification": "OBVIOUSLY_WRONG",
+        "wrongAutosave": false
+      },
+      "winner": "BASELINE",
+      "requiredGate": "Person typed as person; Norway/Stryn retained; no US commercial junk."
+    },
+    {
+      "id": "R08",
+      "sourceUrl": "https://www.instagram.com/reel/CqJo6QHJqPo/",
+      "groundTruthTier": "HIGHLY_LIKELY",
+      "groundTruth": "Moku Nui (larger Mokulua Islet), Oʻahu",
+      "route": "HARD",
+      "routeReason": "weak_alias_only",
+      "architectureA_currentFrozen": {
+        "top1": "Moke's Bread & Breakfast",
+        "classification": "OBVIOUSLY_WRONG",
+        "autosave": null,
+        "placesCalls": 3
+      },
+      "architectureB_hypothesisFirst": {
+        "evidenceMode": "retained_candidate_blind_audit_replay",
+        "top1": "Moku Nui (larger Mokulua Islet)",
+        "top3": [
+          "Moku Nui (larger Mokulua Islet)"
+        ],
+        "classification": "CORRECT_PLAUSIBLE",
+        "simulatedWrongAutosave": false,
+        "preservesGoodAutosave": false,
+        "frames": 8,
+        "costUsd": 0.105166,
+        "latencyMs": 46231,
+        "placesCalls": 1
+      },
+      "architectureC_currentWithExistingGuards": {
+        "classification": "OBVIOUSLY_WRONG",
+        "wrongAutosave": false
+      },
+      "winner": "BASELINE",
+      "requiredGate": "Moku Nui/Mokulua natural hypothesis; no restaurant."
+    }
+  ]
+}

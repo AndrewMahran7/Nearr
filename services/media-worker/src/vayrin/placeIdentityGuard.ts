@@ -4,7 +4,7 @@
 
 const TYPE_ALIASES = [
   'swimming hole', 'scenic viewpoint', 'scenic overlook', 'hiking trail',
-  'coffee shop', 'cliff jumping spot', 'cliff jump', 'national park',
+  'coffee shop', 'cliff jumping spot', 'cliff jumping', 'cliff jump', 'national park',
   'state park', 'train station', 'bus station', 'art gallery',
   'wellness center', 'fitness center', 'cocktail bar', 'food spot',
   'cenote', 'cenotes', 'waterfall', 'waterfalls', 'falls', 'cascade',

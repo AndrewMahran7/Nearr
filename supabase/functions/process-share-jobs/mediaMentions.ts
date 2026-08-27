@@ -141,6 +141,13 @@ export type VenueIdentity = {
   resolutionMode?: 'venue' | 'geographic';
   identityEvidenceKind?: 'observable' | 'model_prior';
   hypothesisRank?: number;
+  hypothesisOrigin?: 'independent_multimodal';
+  hypothesisPathVersion?: string;
+  identitySupport?: 'exact' | 'strong' | 'weak' | 'none';
+  geoSupport?: 'explicit_source_geo' | 'strong_inferred_geo' | 'weak_inferred_geo' | 'none';
+  semanticCategory?: string | null;
+  conflicts?: string[];
+  evidenceBasis?: 'direct_visible_identity' | 'distinctive_visual_match' | 'contextual_or_memory_prior' | 'insufficient';
 };
 
 export type VenueMention = VenueIdentity & {
@@ -827,6 +834,13 @@ export function buildVenueMentions(evidence: MediaPlaceEvidence): BuildMentionsR
         ? 'observable'
         : 'model_prior',
       hypothesisRank: Math.min(...g.places.map((place) => place.hypothesisRank ?? 0)),
+      hypothesisOrigin: g.places[0]?.hypothesisOrigin,
+      hypothesisPathVersion: g.places[0]?.hypothesisPathVersion,
+      identitySupport: g.places[0]?.identitySupport,
+      geoSupport: g.places[0]?.geoSupport,
+      semanticCategory: g.places[0]?.semanticCategory,
+      conflicts: g.places[0]?.conflicts,
+      evidenceBasis: g.places[0]?.evidenceBasis,
       identityAlternatives: [],
     };
     // A group is geographic when every place in it is a peer geographic

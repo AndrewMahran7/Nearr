@@ -2057,6 +2057,7 @@ async function finalizeMediaTask(
         hostVenueName: mention.hostVenueName ?? null,
         relationshipType: mention.relationshipType ?? null,
         outcome: mention.outcome,
+        canonicalizationOutcome: mention.canonicalizationOutcome ?? null,
         noNearbyMatch: mention.noNearbyMatch === true,
         identityHypotheses: mention.identityHypotheses ?? [],
         aiNote: aiNoteByMentionId.get(mention.mentionId) ?? null,
@@ -2070,6 +2071,8 @@ async function finalizeMediaTask(
       })),
     );
     candidatePayload.evidenceFrames = evidenceFrames;
+    (candidatePayload as any).canonicalPlacesCalls =
+      result.resolutionDiagnostics?.contextAware?.placesCallCount ?? result.requestCount ?? 0;
     candidatePayload.savedPlaceIds = allSavedPlaceIds;
     if (partialResult) (candidatePayload as any).partialResult = partialResult;
     const mediaResultSummary = {
@@ -2276,6 +2279,7 @@ async function finalizeMediaTask(
       hostVenueName: mention.hostVenueName ?? null,
       relationshipType: mention.relationshipType ?? null,
       outcome: mention.outcome,
+      canonicalizationOutcome: mention.canonicalizationOutcome ?? null,
       noNearbyMatch: mention.noNearbyMatch === true,
       sourceTimestamps: mediaMentions.mentions.find((item: any) => item.id === mention.mentionId)?.timestamps ?? [],
       identityHypotheses: mention.identityHypotheses ?? [],
@@ -2287,6 +2291,8 @@ async function finalizeMediaTask(
     })),
   );
   candidatePayload.evidenceFrames = evidenceFrames;
+  (candidatePayload as any).canonicalPlacesCalls =
+    result.resolutionDiagnostics?.contextAware?.placesCallCount ?? result.requestCount ?? 0;
   if (partialResult) (candidatePayload as any).partialResult = partialResult;
   const decisionForRow =
     mode === 'manual'

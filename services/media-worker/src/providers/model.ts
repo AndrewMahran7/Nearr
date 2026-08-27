@@ -51,6 +51,9 @@ export type AnalyzeInput = {
   metadataTitle?: string | null;
   metadataDescription?: string | null;
   metadataLocation?: string | null;
+  durationSeconds?: number | null;
+  sourceCreatorHandle?: string | null;
+  sourceCreatorName?: string | null;
   targetPlace?: {
     name: string;
     category?: string | null;

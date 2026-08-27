@@ -637,6 +637,9 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
           ? null
           : sourceDescriptionForModel(media.metadataDescription),
         metadataLocation: context.sceneScoped ? null : media.metadataLocation,
+        durationSeconds: media.durationSeconds ?? null,
+        sourceCreatorHandle: context.sceneScoped ? null : media.metadataCreatorHandle,
+        sourceCreatorName: context.sceneScoped ? null : media.metadataCreatorName,
         targetPlace: aiNoteTarget
           ? {
               name: aiNoteTarget.name,

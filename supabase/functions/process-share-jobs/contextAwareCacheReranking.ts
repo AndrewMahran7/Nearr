@@ -392,6 +392,27 @@ export function evaluateCachedSingletonAutoSave(
     };
   }
   const rawSlots = rawCandidates(payload?.mentionSlots);
+  const unsafeIndependentHypothesis = rawSlots.some((slot) => {
+    const identities = rawCandidates(slot.identityHypotheses);
+    const primary = identities[0];
+    if (primary?.hypothesisOrigin !== 'independent_multimodal') return false;
+    const identitySupport = text(primary.identitySupport);
+    const geoSupport = text(primary.geoSupport);
+    return !['exact', 'strong'].includes(identitySupport ?? '') ||
+      !['explicit_source_geo', 'strong_inferred_geo'].includes(geoSupport ?? '') ||
+      (Array.isArray(primary.conflicts) && primary.conflicts.length > 0) ||
+      slot.canonicalizationOutcome !== 'CANONICAL_EXACT';
+  });
+  if (unsafeIndependentHypothesis) {
+    return {
+      eligible: false,
+      candidate: null,
+      selectedProviderId: null,
+      viableCandidateCount: 0,
+      reason: 'independent_hypothesis_not_autosave_grade',
+      qualityReason: null,
+    };
+  }
   const multi = payload?.selectionMode === 'multi_independent' || slots.length > 1;
   if (multi) {
     return {
