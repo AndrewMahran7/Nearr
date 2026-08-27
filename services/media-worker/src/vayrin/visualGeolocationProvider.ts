@@ -243,7 +243,14 @@ export function hypothesisToPlace(
   hypothesisRank = 0,
   contract?: IndependentHypothesisContract,
 ): PlaceCandidateEvidence | null {
-  const name = hypothesis.name.trim();
+  // A trailing parenthetical is normally an alias/alternate official name,
+  // not part of the text query. Sending both aliases as one query can turn one
+  // destination into two plausible provider entities (Dorset Quarry is the
+  // frozen positive control). Canonicalize the primary model-proposed identity
+  // and retain the full wording in the hypothesis reasoning/evidence below.
+  const rawName = hypothesis.name.trim();
+  const primaryName = rawName.replace(/\s*\([^()]{2,120}\)\s*$/, '').trim();
+  const name = primaryName || rawName;
   if (!name) return null;
   if (PERSON_PLACE_TYPES.has(hypothesis.place_type.trim().toLowerCase())) return null;
   if (!SPECIFIC_LEVELS.has(hypothesis.specificity)) return null;

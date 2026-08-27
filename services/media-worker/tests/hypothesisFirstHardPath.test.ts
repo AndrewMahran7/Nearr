@@ -126,6 +126,23 @@ test('8/10 exact Dorset Quarry and Lake Havasu remain EASY', () => {
   ]) {
     assert.equal(classifyHypothesisFirstPath({ enabled: true, frameCount: 8, evidence: evidence([exact]) }).eligible, false);
   }
+
+  const compactCaption = place('Lake Havasu', {
+    explicitEvidence: [{ timestampSeconds: null, source: 'caption', value: '#LakeHavasu #parker' }],
+  });
+  assert.deepEqual(classifyHypothesisFirstPath({
+    enabled: true,
+    frameCount: 8,
+    evidence: evidence([compactCaption]),
+    sourceText: '#LakeHavasu #parker',
+  }).reason, 'strong_exact_source_identity');
+});
+
+test('8b compound model aliases canonicalize using the primary proposed identity', () => {
+  const mapped = payloadToEvidence(payload([
+    hypothesis('Dorset Quarry (Norcross-West Marble Quarry)'),
+  ])).evidence.places[0]!;
+  assert.equal(mapped.name, 'Dorset Quarry');
 });
 
 test('9 natural-feature hypothesis survives canonicalization failure as independent evidence', () => {

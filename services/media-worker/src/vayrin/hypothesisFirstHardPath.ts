@@ -59,6 +59,10 @@ function fold(value: string | null | undefined): string {
     .trim();
 }
 
+function compactFold(value: string | null | undefined): string {
+  return fold(value).replace(/\s+/g, '');
+}
+
 function distinctiveNameTokens(value: string): string[] {
   return fold(value).split(' ').filter((token) => token.length > 1 && !GENERIC_NAME_TOKENS.has(token));
 }
@@ -73,12 +77,19 @@ function evidenceNamesPlace(place: PlaceCandidateEvidence): {
   visibleText: boolean;
 } {
   const name = fold(place.name);
+  const compactName = compactFold(place.name);
   if (!name) return { exact: false, visibleText: false };
   let exact = false;
   let visibleText = false;
   for (const item of place.explicitEvidence) {
     const value = fold(item.value);
-    if (!value || (!value.includes(name) && !name.includes(value))) continue;
+    const compactValue = compactFold(item.value);
+    const ordinaryMatch = !!value && (value.includes(name) || name.includes(value));
+    // Provider captions commonly expose exact locations as compact hashtags
+    // (for example #LakeHavasu). Treat the compact spelling as the same source
+    // identity, but only when the entire proper-name token sequence is present.
+    const compactMatch = compactName.length >= 5 && compactValue.includes(compactName);
+    if (!ordinaryMatch && !compactMatch) continue;
     exact = true;
     if (item.source === 'visible_text') visibleText = true;
   }
@@ -113,7 +124,7 @@ function isEasyExactIdentity(
   if (place.address?.trim()) return true;
   const support = evidenceNamesPlace(place);
   if (support.visibleText) return true;
-  if (support.exact && distinctiveNameTokens(place.name).length >= 2) return true;
+  if (support.exact && distinctiveNameTokens(place.name).length >= 1) return true;
   const visualClues = place.explicitEvidence.filter((item) => item.source === 'frame');
   const geoFields = [place.city, place.region, place.country].filter((value) => !!value?.trim());
   return place.confidence >= 0.8 && visualClues.length >= 2 && geoFields.length >= 2;
