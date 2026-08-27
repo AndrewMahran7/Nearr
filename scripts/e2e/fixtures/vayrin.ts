@@ -338,6 +338,24 @@ export async function fixtureVayrinLiveCanary(
   const renderedDetail =
     `ui_logical_mentions=${renderedLogicalPlaces} Quick Check kind=${detailState.kind} ` +
     `candidates=${detailState.candidates.length}`;
+  const actualOutput = detailState.mentionSlots.map((slot) => ({
+    displayName: slot.displayName,
+    outcome: slot.outcome,
+    canonicalizationOutcome: (slot as any).canonicalizationOutcome ?? null,
+    hypotheses: (slot.identityHypotheses ?? []).slice(0, 3).map((hypothesis) => hypothesis.name),
+    canonicalCandidates: (slot.candidates ?? []).slice(0, 3).map((candidate) => candidate.name),
+    saveState: slot.saveState ?? null,
+  }));
+  reporter.pass(
+    `${name}: bounded actual output`,
+    0,
+    JSON.stringify({
+      output: actualOutput,
+      hardPath: recognition.vayrinInvocation ?? null,
+      jobStatus: finalized.value.status,
+      decision: finalized.value.decision ?? null,
+    }),
+  );
   if (options.expectedLogicalPlaces !== undefined && renderedLogicalPlaces !== options.expectedLogicalPlaces) {
     reporter.fail(
       `${name}: rendered logical-place count`,
