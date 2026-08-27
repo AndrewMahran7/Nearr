@@ -346,6 +346,15 @@ export async function fixtureVayrinLiveCanary(
     canonicalCandidates: (slot.candidates ?? []).slice(0, 3).map((candidate) => candidate.name),
     saveState: slot.saveState ?? null,
   }));
+  const resultReasons = Array.isArray(
+    (finalized.value as any).extraction_payload?.mediaResultSummary?.results,
+  )
+    ? (finalized.value as any).extraction_payload.mediaResultSummary.results.slice(0, 6).map((entry: any) => ({
+        logicalResultId: entry?.logicalResultId ?? null,
+        outcome: entry?.outcome ?? null,
+        reasonCodes: Array.isArray(entry?.reasonCodes) ? entry.reasonCodes.slice(0, 8) : [],
+      }))
+    : [];
   reporter.pass(
     `${name}: bounded actual output`,
     0,
@@ -354,6 +363,7 @@ export async function fixtureVayrinLiveCanary(
       hardPath: recognition.vayrinInvocation ?? null,
       jobStatus: finalized.value.status,
       decision: finalized.value.decision ?? null,
+      resultReasons,
     }),
   );
   if (options.expectedLogicalPlaces !== undefined && renderedLogicalPlaces !== options.expectedLogicalPlaces) {

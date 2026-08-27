@@ -145,6 +145,15 @@ test('8b compound model aliases canonicalize using the primary proposed identity
   assert.equal(mapped.name, 'Dorset Quarry');
 });
 
+test('8c descriptive quarry-area output remains partial while exact Dorset survives', () => {
+  const mapped = payloadToEvidence(payload([
+    hypothesis('West Rutland marble quarry area', { confidence: 0.86 }),
+    hypothesis('Dorset Marble Quarry', { confidence: 0.72 }),
+  ])).evidence;
+  assert.deepEqual(mapped.places.map((item) => item.name), ['Dorset Marble Quarry']);
+  assert.equal(mapped.partialPlaces?.[0]?.nameHint, 'West Rutland marble quarry area');
+});
+
 test('9 natural-feature hypothesis survives canonicalization failure as independent evidence', () => {
   const mapped = payloadToEvidence(payload([hypothesis('Okere Falls', { country: 'New Zealand' })])).evidence.places[0]!;
   assert.equal(canonicalizationOutcome({ candidateCount: 0, verifiedSingle: false, topNameMatchesHypothesis: false }), 'NO_CANONICAL_MATCH');

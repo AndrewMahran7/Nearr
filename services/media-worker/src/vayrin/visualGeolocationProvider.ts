@@ -180,6 +180,15 @@ function partialRecoveryField(place: NonNullable<MediaPlaceEvidence['partialPlac
 const SPECIFIC_LEVELS = new Set(['exact_location', 'venue', 'landmark', 'natural_feature']);
 const PERSON_PLACE_TYPES = new Set(['person', 'athlete', 'creator', 'individual', 'celebrity']);
 
+function isDescriptiveAreaHypothesis(name: string): boolean {
+  const normalized = name.trim().toLowerCase();
+  if (!normalized.endsWith(' area')) return false;
+  // Preserve established destination forms whose official identity genuinely
+  // ends in Area. A free-form feature description such as "West Rutland
+  // marble quarry area" is useful locality evidence, not an exact POI.
+  return !/\b(?:national recreation|recreation|conservation|natural|wildlife management|protected) area$/.test(normalized);
+}
+
 /** Conservative `place_type` -> Nearr category mapping. Deliberately partial:
  *  an unrecognized type maps to null, and the existing category pipeline fills
  *  it in from the verified Google result. Guessing here would put a model's
@@ -254,6 +263,7 @@ export function hypothesisToPlace(
   if (!name) return null;
   if (PERSON_PLACE_TYPES.has(hypothesis.place_type.trim().toLowerCase())) return null;
   if (!SPECIFIC_LEVELS.has(hypothesis.specificity)) return null;
+  if (isDescriptiveAreaHypothesis(name)) return null;
   if (isCategoryOnlyPlaceName(name)) return null;
 
   const firstTimestamp = timestamps.length > 0 ? timestamps[0]! : null;
@@ -325,7 +335,7 @@ function hypothesisToPartialPlace(
   timestamps: number[] = [],
   contract?: IndependentHypothesisContract,
 ): PartialPlaceEvidence | null {
-  const categoryOnly = isCategoryOnlyPlaceName(hypothesis.name);
+  const categoryOnly = isCategoryOnlyPlaceName(hypothesis.name) || isDescriptiveAreaHypothesis(hypothesis.name);
   if (PERSON_PLACE_TYPES.has(hypothesis.place_type.trim().toLowerCase())) return null;
   if (!categoryOnly && !['neighborhood', 'city', 'region', 'country'].includes(hypothesis.specificity)) return null;
   const firstTimestamp = timestamps[0] ?? null;
