@@ -2,9 +2,12 @@
   "releaseId": "2026-09-03-remove-user-facing-vayrin-branding",
   "previousMainSha": "75fd803fcc6f7c55a184c2632e49beba0736a969",
   "previousOtaGroup": "d383bb9c-9e46-4eea-bd14-0ef5a960ac19",
-  "currentOtaGroup": null,
+  "currentOtaGroup": "e7cf618a-09ad-4280-a532-e07fb2368385",
   "runtime": "1.3.52",
   "message": "Remove user-facing Vayrin branding",
+  "iosUpdate": "01a0697e-5aae-7d47-b140-0f5b01d91e24",
+  "androidUpdate": "01a0697e-5aae-7dae-a7c8-841a5f2764fa",
+  "sourceSha": "7ba7dbf39cf74e7c4aa88af2fb8c05aab3c362cf",
   "implementationSha": "e604b413e08b2ba8f1e19f968c042830a5361ece",
   "developmentOta": {
     "group": "0d55dce2-9c69-4127-9bca-022c8697dde1",
@@ -29,11 +32,12 @@
     "20260825000001"
   ],
   "rollbackProcedure": "Repeat the full concurrency guard, republish previousOtaGroup to production, redeploy process-share-jobs v89 and Railway deployment 3a9aa871-4ea5-4e76-8390-33a2a46c16bb if backend rollback is needed, and forward-revert implementation merge e604b413e08b2ba8f1e19f968c042830a5361ece on current main. No schema, cache, saved-place, or user-data rollback is required.",
-  "deploymentStatus": "PLANNED",
+  "deploymentStatus": "DEPLOYED",
   "physicalQa": {
     "signedOutColdLaunch": "PENDING",
     "signedInColdLaunch": "PENDING",
     "forceCloseRelaunch": "PENDING",
     "freshOnboardingLaunch": "PENDING"
-  }
+  },
+  "deployedAt": "2026-09-03T22:57:58.771Z"
 }
