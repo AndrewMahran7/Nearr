@@ -191,7 +191,7 @@ for (const viewportWidth of [320, 430, 768]) {
     ...Array.from({ length: 20 }, (_, index) =>
       saved(`outside-edge-${index}`, 0, west - degreesPerPoint * 55),
     ),
-    saved('center-control', 0, 0),
+    saved('center-control', 0.001, 0),
   ];
   const index = buildMapClusterIndex(places);
   const nodes = queryMapClusters(index, { region, zoom, viewportWidth });
@@ -511,8 +511,9 @@ for (let index = 0; index < 100; index += 1) {
 assert.equal(getMapReliabilityDiagnostics().length, 80);
 
 const mapSource = readFileSync(join(process.cwd(), 'app/(tabs)/map.tsx'), 'utf8');
-assert.match(mapSource, /viewportWidth: windowWidth/);
-assert.match(mapSource, /assertMarkerConservation\(args\)/);
+assert.match(mapSource, /const viewportWidth = mapAreaWidth \|\| windowWidth/);
+assert.match(mapSource, /assertMarkerConservation\(legacyArgs\)/);
+assert.match(mapSource, /buildMapConservationLedger\(/);
 assert.match(mapSource, /clusterWithoutSelectedMember\(node, selectedMarkerId/);
 assert.match(mapSource, /recordMapReliabilityDiagnostic\('map_pin_tap'/);
 assert.match(mapSource, /recordMapReliabilityDiagnostic\('map_cluster_tap'/);

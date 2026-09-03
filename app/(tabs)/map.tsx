@@ -149,7 +149,12 @@ import {
   type LocationSample,
 } from '@/lib/liveLocation';
 import { trackEvent } from '@/lib/analytics';
-import { isOnboardingV2Enabled, isOnboardingV2Phase1Only } from '@/lib/featureFlags';
+import {
+  isMapClusteringEnabled,
+  isMapPinRedesignEnabled,
+  isOnboardingV2Enabled,
+  isOnboardingV2Phase1Only,
+} from '@/lib/featureFlags';
 import { isOnboardingV2Phase2MapState } from '@/lib/onboardingV2Core';
 import {
   MAP_QUEUE_CLEARANCE,
@@ -166,10 +171,10 @@ import {
 } from '@/lib/onboardingV2';
 import { recordBreadcrumb } from '@/lib/breadcrumbs';
 import { setLocationWatcherState } from '@/lib/diagnosticContext';
-import { isMapPinRedesignEnabled } from '@/lib/featureFlags';
 import { mapMarkerDetailLevel } from '@/lib/mapMarkerPresentation';
 import {
   buildMapClusterIndex,
+  buildConservationFallbackCluster,
   clusterWithoutSelectedMember,
   clusterExpansionRegion,
   clusterExpansionZoom,
@@ -177,6 +182,7 @@ import {
   nextClusterZoom,
   queryMapClusters,
   regionToClusterZoom,
+  SAFE_RAW_MARKER_LIMIT,
   type MapClusterMarker as MapClusterMarkerModel,
 } from '@/lib/mapClustering';
 import {
@@ -191,8 +197,24 @@ import { recordMapClusterDiagnostic } from '@/lib/mapClusterDiagnostics';
 import {
   assertMarkerConservation,
   inspectMarkerConservation,
+  isCoordinateInsideRegion,
   recordMapReliabilityDiagnostic,
 } from '@/lib/mapReliability';
+import {
+  buildMapConservationLedger,
+  recordMapConservationLedger,
+} from '@/lib/mapConservation';
+import {
+  isClusterQuerySynchronized,
+  isUsableMapRegion,
+  nextCameraTransition,
+  nextMapViewportSnapshot,
+  regionFromMapBoundaries,
+  shouldCommitRegionCompletion,
+  type CameraTransitionSource,
+  type MapViewportSnapshot,
+  type MapViewportSource,
+} from '@/lib/mapViewportSync';
 import {
   decideSavedPlaceFocus,
   findSavedPlaceForOpen,
@@ -485,6 +507,8 @@ export default function MapScreen() {
   // Demo Mode wins if both flags are set (it doesn't render MapView at all).
   const mapPreview = !demo && isMapPreviewMode();
   const mapPinRedesignEnabled = isMapPinRedesignEnabled();
+  const configuredClusteringEnabled = isMapClusteringEnabled();
+  const [debugClusteringOverride, setDebugClusteringOverride] = useState<boolean | null>(null);
   const [mapPinGlyphsReady, setMapPinGlyphsReady] = useState(!mapPinRedesignEnabled);
   useEffect(() => {
     if (!mapPinRedesignEnabled) {
@@ -542,7 +566,12 @@ export default function MapScreen() {
           seen.has(s.id) ||
           !s.place ||
           !Number.isFinite(s.place.latitude) ||
-          !Number.isFinite(s.place.longitude)
+          !Number.isFinite(s.place.longitude) ||
+          s.place.latitude < -90 ||
+          s.place.latitude > 90 ||
+          s.place.longitude < -180 ||
+          s.place.longitude > 180 ||
+          (s.place.latitude === 0 && s.place.longitude === 0)
         ) return false;
         seen.add(s.id);
         return true;
@@ -602,11 +631,47 @@ export default function MapScreen() {
   const [markerLatitudeDelta, setMarkerLatitudeDelta] = useState(
     PREVIEW_INITIAL_REGION.latitudeDelta,
   );
-  // The completed camera, used ONLY to decide clustering. Like
-  // markerLatitudeDelta it updates after a gesture settles, never per frame,
-  // so clustering is recomputed a handful of times per interaction rather than
-  // dozens. `null` until the first region change; `initialRegion` stands in.
-  const [settledRegion, setSettledRegion] = useState<Region | null>(null);
+  // Camera and viewport revisions advance independently. While a movement has
+  // started but no native region sample has arrived, clustering is bypassed;
+  // a query can therefore never pretend an old viewport describes a new
+  // camera. onRegionChange samples are frame-coalesced below and completion is
+  // committed synchronously.
+  const [cameraRevision, setCameraRevision] = useState(0);
+  const cameraRevisionRef = useRef(0);
+  const [viewportSnapshot, setViewportSnapshot] = useState<MapViewportSnapshot | null>(null);
+  const viewportSnapshotRef = useRef<MapViewportSnapshot | null>(null);
+  const viewportFrameRef = useRef<number | null>(null);
+  const pendingViewportRegionRef = useRef<Region | null>(null);
+  const lastRegionRef = useRef<Region | null>(null);
+  const manualGestureActiveRef = useRef(false);
+  const cameraTransitionRef = useRef<ReturnType<typeof nextCameraTransition> | null>(null);
+  const cameraReadbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastConservationTelemetryRef = useRef('');
+  const syncViewportFromNativeRef = useRef<(source: MapViewportSource) => Promise<void>>(
+    async () => undefined,
+  );
+  const beginCameraMovement = useCallback((source: CameraTransitionSource = 'programmatic') => {
+    const transition = nextCameraTransition(cameraRevisionRef.current, source);
+    cameraTransitionRef.current = transition;
+    cameraRevisionRef.current = transition.revision;
+    setCameraRevision(transition.revision);
+    if (cameraReadbackTimerRef.current != null) {
+      clearTimeout(cameraReadbackTimerRef.current);
+      cameraReadbackTimerRef.current = null;
+    }
+    // react-native-maps does not guarantee region callbacks for every
+    // imperative camera command. Reconcile from native after the longest
+    // animation used on this screen; the revision guard in the readback drops
+    // this work if a newer command or gesture has already taken ownership.
+    if (source !== 'gesture') {
+      cameraReadbackTimerRef.current = setTimeout(() => {
+        cameraReadbackTimerRef.current = null;
+        if (cameraRevisionRef.current === transition.revision) {
+          void syncViewportFromNativeRef.current('native_readback');
+        }
+      }, 900);
+    }
+  }, []);
   // The committed integer clustering zoom. Held through small pans by the
   // hysteresis in nextClusterZoom so the map does not re-cluster on a nudge.
   const [clusterZoom, setClusterZoom] = useState<number | null>(null);
@@ -738,6 +803,7 @@ export default function MapScreen() {
     setSheetMinimizeSignal((n) => n + 1);
     const coords = allZoneBoundingCoords(visiblePlaces);
     if (coords.length === 0) return;
+    beginCameraMovement();
     try {
       // Camera center uses the average of coordinates (center of mass) so a
       // single distant outlier doesn't drag the camera into empty space
@@ -813,7 +879,7 @@ export default function MapScreen() {
     } catch (e) {
       if (__DEV__) console.debug('[map] fit skipped', e);
     }
-  }, [visiblePlaces]);
+  }, [beginCameraMovement, visiblePlaces]);
   // In-app search overlay (replaces the old native Alert on the search bar).
   const [searchVisible, setSearchVisible] = useState(false);
   // Post-save "Saved to your map" snackbar with optional Undo.
@@ -862,6 +928,7 @@ export default function MapScreen() {
   // windowHeight is only a first-paint fallback.
   const { height: windowHeight, width: windowWidth } = useWindowDimensions();
   const [mapAreaHeight, setMapAreaHeight] = useState(0);
+  const [mapAreaWidth, setMapAreaWidth] = useState(0);
   const [mapGroupSelectorHeight, setMapGroupSelectorHeight] = useState(0);
   const availableHeight = mapAreaHeight || windowHeight;
   const sheetPartialHeight = useMemo(
@@ -939,7 +1006,6 @@ export default function MapScreen() {
   // It used to feed a "restore the pre-open viewport" animation on dismiss,
   // which is exactly what yanked the camera back toward the user's location
   // when a place was closed. Closing UI does not move the camera.
-  const lastRegionRef = useRef<Region | null>(null);
   const fittedExplorerSessionRef = useRef<number | null>(null);
 
   const closeNearbyExplorer = useCallback(() => {
@@ -1035,12 +1101,13 @@ export default function MapScreen() {
         return;
       }
       try {
+        beginCameraMovement();
         mapRef.current?.animateToRegion(explorerSelectionRegion(lastRegionRef.current, item), 280);
       } catch (error) {
         if (__DEV__) console.debug('[nearby-explorer] selection recenter skipped', error);
       }
     },
-    [],
+    [beginCameraMovement],
   );
 
   const handleOpenExplorerDetails = useCallback(
@@ -1094,6 +1161,7 @@ export default function MapScreen() {
     const fitItems = explorerItemsForInitialFit(nearbyExplorer.items);
     if (fitItems.length === 0) return;
     try {
+      beginCameraMovement();
       if (fitItems.length === 1) {
         mapRef.current?.animateToRegion(explorerSinglePlaceRegion(fitItems[0]!), 350);
       } else {
@@ -1112,7 +1180,7 @@ export default function MapScreen() {
     } catch (error) {
       if (__DEV__) console.debug('[nearby-explorer] initial fit skipped', error);
     }
-  }, [explorerCarouselHeight, insets.bottom, mapAreaHeight, mapReady, nearbyExplorer, safeTopInset]);
+  }, [beginCameraMovement, explorerCarouselHeight, insets.bottom, mapAreaHeight, mapReady, nearbyExplorer, safeTopInset]);
 
   // ---- live foreground location tracking --------------------------------
   // A single `watchPositionAsync` subscription, its last-accepted reading (for
@@ -1283,6 +1351,7 @@ export default function MapScreen() {
             // delta.
             if (shouldFollowCamera(followModeRef.current, true)) {
               try {
+                beginCameraMovement();
                 mapRef.current?.animateCamera(
                   { center: { latitude: sample.latitude, longitude: sample.longitude } },
                   { duration: LIVE_LOCATION_FOLLOW_ANIMATION_MS },
@@ -1317,7 +1386,7 @@ export default function MapScreen() {
         recordBreadcrumb('location_watcher_stopped', { result: 'cleanup' });
       }
     };
-  }, [demo, mapPreview, screenFocused, appActive, permission]);
+  }, [appActive, beginCameraMovement, demo, mapPreview, permission, screenFocused]);
 
   // ---- mount / unmount breadcrumbs --------------------------------------
   useEffect(() => {
@@ -1335,6 +1404,7 @@ export default function MapScreen() {
       // transaction from the previously focused screen.
       resetClusterExpansionRef.current();
       setScreenFocused(true);
+      void syncViewportFromNativeRef.current('native_readback');
       void revalidate();
       void trackEvent('map_opened', {});
       return () => {
@@ -1358,9 +1428,13 @@ export default function MapScreen() {
       // the next explicit tap starts from the latest settled camera/index.
       resetClusterExpansionRef.current();
       setAppActive(state === 'active');
+      if (state === 'active') {
+        beginCameraMovement('foreground');
+        void syncViewportFromNativeRef.current('native_readback');
+      }
     });
     return () => sub.remove();
-  }, []);
+  }, [beginCameraMovement]);
 
   // ---- pick an initial region -------------------------------------------
   // Map Preview Mode uses the hoisted PREVIEW_INITIAL_REGION so the map
@@ -1404,7 +1478,14 @@ export default function MapScreen() {
   // Gated on the same flag as the pin redesign: the cluster marker is built
   // from the redesign's glyph set and visual language, so the legacy path
   // stays byte-for-byte the map that shipped.
-  const clusteringEnabled = mapPinRedesignActive;
+  const clusteringRequested = mapPinRedesignActive &&
+    (__DEV__ ? debugClusteringOverride ?? configuredClusteringEnabled : configuredClusteringEnabled);
+  const querySynchronized = viewportSnapshot
+    ? isClusterQuerySynchronized(cameraRevision, viewportSnapshot)
+    : cameraRevision === 0;
+  // A camera transaction without a matching viewport sample may never query
+  // Supercluster. The bounded direct/aggregate fallback below owns that gap.
+  const clusteringEnabled = clusteringRequested && querySynchronized;
 
   // Places that are NEVER folded into a cluster.
   //
@@ -1416,10 +1497,10 @@ export default function MapScreen() {
 
   const clusterCandidates = useMemo(
     () =>
-      clusteringEnabled
+      clusteringRequested
         ? visiblePlaces.filter((place) => !alwaysIndividualIds.has(place.id))
         : [],
-    [alwaysIndividualIds, clusteringEnabled, visiblePlaces],
+    [alwaysIndividualIds, clusteringRequested, visiblePlaces],
   );
 
   // The spatial index. Rebuilt only when the FILTERED set or the
@@ -1445,14 +1526,15 @@ export default function MapScreen() {
   }
   const datasetGeneration = datasetGenerationRef.current.value;
 
-  const clusterRegion = settledRegion ?? initialRegion;
+  const clusterRegion = viewportSnapshot?.region ?? initialRegion;
+  const viewportWidth = mapAreaWidth || windowWidth;
   const effectiveClusterZoom = useMemo(() => {
     const continuous = regionToClusterZoom({
       longitudeDelta: clusterRegion.longitudeDelta,
-      viewportWidth: windowWidth,
+      viewportWidth,
     });
     return nextClusterZoom(clusterZoom, continuous);
-  }, [clusterRegion.longitudeDelta, clusterZoom, windowWidth]);
+  }, [clusterRegion.longitudeDelta, clusterZoom, viewportWidth]);
   const clusterRegionRef = useRef(clusterRegion);
   clusterRegionRef.current = clusterRegion;
   const effectiveClusterZoomRef = useRef(effectiveClusterZoom);
@@ -1465,12 +1547,12 @@ export default function MapScreen() {
         ? queryMapClusters(clusterIndex, {
             region: clusterRegion,
             zoom: effectiveClusterZoom,
-            viewportWidth: windowWidth,
+            viewportWidth,
           })
         : [];
       return { nodes, durationMs: Date.now() - startedAt };
     },
-    [clusterIndex, clusterRegion, clusteringEnabled, effectiveClusterZoom, windowWidth],
+    [clusterIndex, clusterRegion, clusteringEnabled, effectiveClusterZoom, viewportWidth],
   );
   const clusterNodes = clusterQuery.nodes;
 
@@ -1488,7 +1570,7 @@ export default function MapScreen() {
   // Explorer saved/recommendation items share this SAME temporary spatial
   // cluster. A cluster is presentation, never semantic dedupe; its accessible
   // name reports the composition while individual pins/cards carry save state.
-  const clusterMarkers = useMemo(() => {
+  const primaryClusterMarkers = useMemo(() => {
     if (!nearbyExplorer) return selectedClusterProjection.clusters;
     return selectedClusterProjection.clusters.map((cluster) => {
       const savedCount = cluster.memberIds.filter(
@@ -1504,15 +1586,13 @@ export default function MapScreen() {
       return { ...cluster, accessibilityLabel: `${cluster.count} places: ${parts}` };
     });
   }, [explorerItemsById, nearbyExplorer, selectedClusterProjection.clusters]);
-  const clusterMarkersRef = useRef<MapClusterMarkerModel[]>(clusterMarkers);
-  clusterMarkersRef.current = clusterMarkers;
 
   /**
    * The places drawn as ordinary Nearr pins: the always-individual exceptions
    * plus whatever clustering left loose. Kept in `visiblePlaces` order so pin
    * identity and z-order are stable across pans.
    */
-  const individualPlaces = useMemo(() => {
+  const primaryIndividualPlaces = useMemo(() => {
     if (!clusteringEnabled) return visiblePlaces;
     const looseIds = new Set(
       clusterNodes.flatMap((node) => (node.kind === 'place' ? [node.id] : [])),
@@ -1525,6 +1605,74 @@ export default function MapScreen() {
         selectedClusterProjection.looseMemberIds.has(place.id),
     );
   }, [alwaysIndividualIds, clusterNodes, clusteringEnabled, selectedClusterProjection.looseMemberIds, selectedMarkerId, visiblePlaces]);
+
+  const primaryConservationLedger = useMemo(() => buildMapConservationLedger({
+    datasetRevision: datasetGeneration,
+    datasetKey: clusterIndex.datasetKey,
+    cameraRevision,
+    viewportRevision: viewportSnapshot?.viewportRevision ?? 0,
+    zoom: effectiveClusterZoom,
+    bounds: clusterRegion,
+    filterState: String(mapCategoryFilter),
+    selectedPlaceId: selectedMarkerId,
+    clusteringEnabled: clusteringRequested,
+    querySynchronized,
+    sourcePlaces: nearbyExplorer ? explorerMarkerPlaces : places,
+    eligiblePlaces: visiblePlaces,
+    clusterInputIds: clusterCandidates.map((place) => place.id),
+    individualIds: primaryIndividualPlaces.map((place) => place.id),
+    clusters: primaryClusterMarkers,
+  }), [cameraRevision, clusterCandidates, clusterIndex.datasetKey, clusterRegion, datasetGeneration, effectiveClusterZoom, explorerMarkerPlaces, mapCategoryFilter, nearbyExplorer, places, primaryClusterMarkers, primaryIndividualPlaces, querySynchronized, selectedMarkerId, clusteringRequested, viewportSnapshot?.viewportRevision, visiblePlaces]);
+
+  const conservationFallbackActive = clusteringRequested && !primaryConservationLedger.ok;
+  const rawMarkerLimitFallbackActive = !clusteringRequested &&
+    visiblePlaces.length > SAFE_RAW_MARKER_LIMIT;
+  const fallbackRepresentation = useMemo(() => {
+    if (!conservationFallbackActive && !rawMarkerLimitFallbackActive) return null;
+    if (conservationFallbackActive && visiblePlaces.length <= SAFE_RAW_MARKER_LIMIT) {
+      return { clusters: [] as MapClusterMarkerModel[], individuals: visiblePlaces };
+    }
+    const viewportPlaces = querySynchronized
+      ? visiblePlaces.filter((place) => isCoordinateInsideRegion(place.place, clusterRegion))
+      : visiblePlaces;
+    const individualIds = new Set(alwaysIndividualIds);
+    if (selectedMarkerId) individualIds.add(selectedMarkerId);
+    const aggregatePlaces = viewportPlaces.filter((place) => !individualIds.has(place.id));
+    const aggregate = buildConservationFallbackCluster({
+      places: aggregatePlaces,
+      datasetKey: clusterIndex.datasetKey,
+      zoom: effectiveClusterZoom,
+    });
+    if (!aggregate) {
+      aggregatePlaces.forEach((place) => individualIds.add(place.id));
+    }
+    return {
+      clusters: aggregate ? [aggregate] : [],
+      individuals: visiblePlaces.filter((place) => individualIds.has(place.id)),
+    };
+  }, [alwaysIndividualIds, clusterIndex.datasetKey, clusterRegion, conservationFallbackActive, effectiveClusterZoom, querySynchronized, rawMarkerLimitFallbackActive, selectedMarkerId, visiblePlaces]);
+
+  const clusterMarkers = fallbackRepresentation?.clusters ?? primaryClusterMarkers;
+  const individualPlaces = fallbackRepresentation?.individuals ?? primaryIndividualPlaces;
+  const conservationLedger = useMemo(() => buildMapConservationLedger({
+    datasetRevision: datasetGeneration,
+    datasetKey: clusterIndex.datasetKey,
+    cameraRevision,
+    viewportRevision: viewportSnapshot?.viewportRevision ?? 0,
+    zoom: effectiveClusterZoom,
+    bounds: clusterRegion,
+    filterState: String(mapCategoryFilter),
+    selectedPlaceId: selectedMarkerId,
+    clusteringEnabled: clusteringRequested,
+    querySynchronized,
+    sourcePlaces: nearbyExplorer ? explorerMarkerPlaces : places,
+    eligiblePlaces: visiblePlaces,
+    clusterInputIds: clusterCandidates.map((place) => place.id),
+    individualIds: individualPlaces.map((place) => place.id),
+    clusters: clusterMarkers,
+  }), [cameraRevision, clusterCandidates, clusterIndex.datasetKey, clusterMarkers, clusterRegion, datasetGeneration, effectiveClusterZoom, explorerMarkerPlaces, individualPlaces, mapCategoryFilter, nearbyExplorer, places, querySynchronized, selectedMarkerId, clusteringRequested, viewportSnapshot?.viewportRevision, visiblePlaces]);
+  const clusterMarkersRef = useRef<MapClusterMarkerModel[]>(clusterMarkers);
+  clusterMarkersRef.current = clusterMarkers;
   const individualPlacesRef = useRef<SavedPlaceWithPlace[]>(individualPlaces);
   individualPlacesRef.current = individualPlaces;
 
@@ -1570,26 +1718,52 @@ export default function MapScreen() {
   }, [clusterIndex.pointCount, clusterQuery.durationMs, datasetGeneration]);
 
   useEffect(() => {
-    const args = {
+    recordMapConservationLedger(conservationLedger);
+    const legacyArgs = {
       eligiblePlaces: visiblePlaces,
       individualIds: individualPlaces.map((place) => place.id),
       clusters: clusterMarkers,
       region: clusterRegion,
     };
-    const report = __DEV__
-      ? assertMarkerConservation(args)
-      : inspectMarkerConservation(args);
-    if (!report.ok) {
+    const report = __DEV__ && !conservationFallbackActive
+      ? assertMarkerConservation(legacyArgs)
+      : inspectMarkerConservation(legacyArgs);
+    if (!primaryConservationLedger.ok) {
+      const failedLedger = primaryConservationLedger;
       recordMapReliabilityDiagnostic('map_marker_conservation_failed', {
         datasetGeneration,
-        placeCount: report.eligibleIds.length,
-        visibleIndividualCount: report.individualIds.length,
+        placeCount: failedLedger.eligible_count,
+        visibleIndividualCount: failedLedger.rendered_individual_count,
         clusterCount: clusterMarkers.length,
-        clusterMemberCount: report.clusterMemberIds.length,
+        clusterMemberCount: failedLedger.rendered_cluster_member_count,
         zoom: effectiveClusterZoom,
         filter: String(mapCategoryFilter),
-        result: `missing=${report.missingOnscreenIds.length};duplicates=${report.duplicateIds.length}`,
+        result: `missing=${failedLedger.missing_ids.length};duplicates=${failedLedger.duplicate_ids.length};sync=${failedLedger.querySynchronized};fallback=${conservationFallbackActive}`,
       });
+      const hardFailure = failedLedger.missing_ids.length > 0 ||
+        failedLedger.duplicate_ids.length > 0 ||
+        failedLedger.invalid_cluster_ids.length > 0;
+      const telemetryKey = hardFailure ? [
+        failedLedger.datasetRevision,
+        failedLedger.cameraRevision,
+        failedLedger.viewportRevision,
+        failedLedger.missing_ids.length,
+        failedLedger.duplicate_ids.length,
+      ].join(':') : '';
+      if (hardFailure && lastConservationTelemetryRef.current !== telemetryKey) {
+        lastConservationTelemetryRef.current = telemetryKey;
+        void trackEvent('map_marker_conservation_failed', {
+          map_dataset_revision: failedLedger.datasetRevision,
+          map_viewport_revision: failedLedger.viewportRevision,
+          map_cluster_query_zoom: failedLedger.zoom,
+          map_cluster_count: failedLedger.rendered_cluster_count,
+          map_marker_count: failedLedger.rendered_individual_count,
+          map_represented_count: failedLedger.represented_in_viewport_count,
+          map_missing_count: failedLedger.missing_ids.length,
+          map_duplicate_count: failedLedger.duplicate_ids.length,
+          map_camera_sync_source: viewportSnapshot?.source ?? 'initial',
+        });
+      }
     }
     if (report.invalidClusterIds.length > 0) {
       recordMapReliabilityDiagnostic('map_cluster_membership_invalid', {
@@ -1598,7 +1772,7 @@ export default function MapScreen() {
         result: 'count_or_membership_mismatch',
       });
     }
-  }, [clusterMarkers, clusterRegion, datasetGeneration, effectiveClusterZoom, individualPlaces, mapCategoryFilter, visiblePlaces]);
+  }, [clusterMarkers, clusterRegion, conservationFallbackActive, conservationLedger, datasetGeneration, individualPlaces, primaryConservationLedger, viewportSnapshot?.source, visiblePlaces]);
 
   const clearClusterExpansionTimer = useCallback(() => {
     if (clusterExpansionTimerRef.current) {
@@ -1718,9 +1892,11 @@ export default function MapScreen() {
     clearClusterExpansionTimer();
     try {
       if (action.kind === 'primary_camera') {
+        beginCameraMovement();
         currentMap.animateToRegion(request.targetRegion, 350);
       } else {
         const coordinates = clusterMemberFitCoordinates(request.members);
+        beginCameraMovement();
         currentMap.fitToCoordinates(coordinates, {
           edgePadding: { top: 100, right: 80, bottom: 220, left: 80 },
           animated: true,
@@ -1761,7 +1937,7 @@ export default function MapScreen() {
       });
       executeClusterExpansionRef.current(clusterExpansionCoordinatorRef.current.cameraFailed());
     }
-  }, [clearClusterExpansionTimer, emitClusterDiagnostic]);
+  }, [beginCameraMovement, clearClusterExpansionTimer, emitClusterDiagnostic]);
   executeClusterExpansionRef.current = executeClusterExpansion;
 
   const expansionRegionFor = useCallback((args: {
@@ -1936,11 +2112,12 @@ export default function MapScreen() {
     if (hasUserMovedRef.current) return;
     didFitRef.current = true;
     try {
+      beginCameraMovement();
       mapRef.current?.animateToRegion(userRegion, 400);
     } catch (e) {
       if (__DEV__) console.debug('[map] animateToRegion skipped', e);
     }
-  }, [userRegion, mapReady, mapPreview]);
+  }, [beginCameraMovement, mapPreview, mapReady, userRegion]);
 
   // ---- deep-link target: focus a specific saved place -------------------
   // Triggered by the "Show on map" action elsewhere in the app. Runs once
@@ -2246,6 +2423,7 @@ export default function MapScreen() {
       effectiveRadiusMeters(item),
     );
     try {
+      beginCameraMovement();
       mapRef.current.fitToCoordinates(coords, {
         edgePadding: { top: 100, right: 100, bottom: 220, left: 100 },
         animated: true,
@@ -2274,6 +2452,7 @@ export default function MapScreen() {
       setPreviewExpanded(false);
     }
     try {
+      beginCameraMovement();
       mapRef.current.fitToCoordinates(
         coordinatePlaces.map((place) => ({
           latitude: place.place.latitude,
@@ -2535,6 +2714,11 @@ export default function MapScreen() {
   // sample (potentially dozens per second) so we early-out once the flag
   // is set instead of recreating closures or re-writing the ref.
   const handlePanDrag = useCallback(() => {
+    if (!manualGestureActiveRef.current) {
+      manualGestureActiveRef.current = true;
+      resetClusterExpansionRef.current();
+      beginCameraMovement('gesture');
+    }
     if (!hasUserMovedRef.current) hasUserMovedRef.current = true;
     if (nearbyExplorerRef.current) explorerUserMovedRef.current = true;
     // Manual pan/zoom hands navigation back to the user — stop the camera from
@@ -2542,28 +2726,127 @@ export default function MapScreen() {
     if (followModeRef.current) {
       setFollowMode((cur) => nextFollowMode(cur, 'user-gesture'));
     }
-  }, []);
-  const handleRegionChangeComplete = useCallback((region: Region) => {
+  }, [beginCameraMovement]);
+
+  const commitViewport = useCallback((region: Region, source: MapViewportSource) => {
+    if (!isUsableMapRegion(region)) return;
     lastRegionRef.current = region;
-    clusterExpansionCoordinatorRef.current.cameraSettled();
-    if (!mapPinRedesignEnabled) return;
     setMarkerLatitudeDelta(region.latitudeDelta);
-    // Clustering inputs settle here and ONLY here. Recording the camera is not
-    // a camera command: nothing in the clustering path may move the map back.
-    setSettledRegion(region);
+    setViewportSnapshot((previous) => {
+      const next = nextMapViewportSnapshot({
+        previous,
+        region,
+        cameraRevision: cameraRevisionRef.current,
+        source,
+        width: viewportWidth,
+        height: mapAreaHeight || windowHeight,
+      });
+      viewportSnapshotRef.current = next;
+      return next;
+    });
     setClusterZoom((current) =>
       nextClusterZoom(
         current,
         regionToClusterZoom({
           longitudeDelta: region.longitudeDelta,
-          viewportWidth: windowWidth,
+          viewportWidth,
         }),
       ),
     );
-  }, [mapPinRedesignEnabled, windowWidth]);
+  }, [mapAreaHeight, viewportWidth, windowHeight]);
+
+  const handleRegionChange = useCallback((region: Region, details?: { isGesture?: boolean }) => {
+    if (!isUsableMapRegion(region)) return;
+    if (details?.isGesture === true && !manualGestureActiveRef.current) {
+      manualGestureActiveRef.current = true;
+      beginCameraMovement('gesture');
+    }
+    // Keep the latest native sample immediately, then coalesce React work to a
+    // single commit per animation frame. A lost completion callback therefore
+    // cannot strand the query on the pre-move viewport.
+    lastRegionRef.current = region;
+    pendingViewportRegionRef.current = region;
+    if (viewportFrameRef.current != null) return;
+    viewportFrameRef.current = requestAnimationFrame(() => {
+      viewportFrameRef.current = null;
+      const pending = pendingViewportRegionRef.current;
+      pendingViewportRegionRef.current = null;
+      if (pending) commitViewport(pending, 'region_change');
+    });
+  }, [beginCameraMovement, commitViewport]);
+
+  const handleRegionChangeComplete = useCallback((
+    region: Region,
+    details?: { isGesture?: boolean },
+  ) => {
+    if (viewportFrameRef.current != null) {
+      cancelAnimationFrame(viewportFrameRef.current);
+      viewportFrameRef.current = null;
+    }
+    pendingViewportRegionRef.current = null;
+    const directCommit = shouldCommitRegionCompletion({
+      transition: cameraTransitionRef.current,
+      detailsIsGesture: details?.isGesture,
+      completionRegion: region,
+      latestObservedRegion: lastRegionRef.current,
+    });
+    manualGestureActiveRef.current = false;
+    if (directCommit) {
+      if (cameraReadbackTimerRef.current != null) {
+        clearTimeout(cameraReadbackTimerRef.current);
+        cameraReadbackTimerRef.current = null;
+      }
+      commitViewport(region, 'region_change_complete');
+      cameraTransitionRef.current = null;
+      clusterExpansionCoordinatorRef.current.cameraSettled();
+      return;
+    }
+    // Programmatic completion callbacks do not carry the command revision and
+    // can arrive after a newer gesture. Read the actual native boundaries;
+    // the captured revision below discards an obsolete asynchronous result.
+    void syncViewportFromNativeRef.current('native_readback').finally(() => {
+      clusterExpansionCoordinatorRef.current.cameraSettled();
+    });
+  }, [commitViewport]);
+
+  const synchronizeViewportFromNative = useCallback(async (source: MapViewportSource) => {
+    const currentMap = mapRef.current;
+    if (!mapReadyRef.current || !currentMap) return;
+    const requestedRevision = cameraRevisionRef.current;
+    try {
+      const boundaries = await currentMap.getMapBoundaries();
+      if (requestedRevision !== cameraRevisionRef.current) return;
+      const region = regionFromMapBoundaries(boundaries);
+      if (region) {
+        if (cameraReadbackTimerRef.current != null) {
+          clearTimeout(cameraReadbackTimerRef.current);
+          cameraReadbackTimerRef.current = null;
+        }
+        commitViewport(region, source);
+        if (cameraTransitionRef.current?.revision === requestedRevision) {
+          cameraTransitionRef.current = null;
+        }
+      }
+    } catch (error) {
+      if (__DEV__) console.debug('[map] native viewport readback skipped', error);
+    }
+  }, [commitViewport]);
+  syncViewportFromNativeRef.current = synchronizeViewportFromNative;
+
+  useEffect(() => () => {
+    if (viewportFrameRef.current != null) cancelAnimationFrame(viewportFrameRef.current);
+    if (cameraReadbackTimerRef.current != null) clearTimeout(cameraReadbackTimerRef.current);
+  }, []);
+
+  useEffect(() => {
+    const current = lastRegionRef.current;
+    if (current) commitViewport(current, 'layout');
+  }, [mapAreaHeight, mapAreaWidth, commitViewport]);
+
   const handleMapReady = useCallback(() => {
     mapReadyRef.current = true;
     setMapReady(true);
+    void syncViewportFromNativeRef.current('native_readback');
     executeClusterExpansionRef.current(
       clusterExpansionCoordinatorRef.current.mapBecameUsable(),
     );
@@ -2732,6 +3015,7 @@ export default function MapScreen() {
     setFollowMode((cur) => nextFollowMode(cur, 'recenter'));
     if (userRegion) {
       try {
+        beginCameraMovement();
         mapRef.current?.animateToRegion(userRegion, 400);
       } catch (e) {
         if (__DEV__) console.debug('[map] recenter skipped', e);
@@ -2772,6 +3056,7 @@ export default function MapScreen() {
       setUserRegion(region);
       setPermission('granted');
       try {
+        beginCameraMovement();
         mapRef.current?.animateToRegion(region, 400);
       } catch (e) {
         if (__DEV__) console.debug('[map] recenter animate skipped', e);
@@ -2779,7 +3064,7 @@ export default function MapScreen() {
     } catch (e) {
       if (__DEV__) console.debug('[map] recenter failed', e);
     }
-  }, [userRegion]);
+  }, [beginCameraMovement, userRegion]);
 
   // -----------------------------------------------------------------------
   if (demo) {
@@ -2807,7 +3092,10 @@ export default function MapScreen() {
   return (
     <View
       style={styles.container}
-      onLayout={(e) => setMapAreaHeight(e.nativeEvent.layout.height)}
+      onLayout={(e) => {
+        setMapAreaWidth(e.nativeEvent.layout.width);
+        setMapAreaHeight(e.nativeEvent.layout.height);
+      }}
     >
       {/* MapView ALWAYS mounts. Empty / loading / no-GPS states render as
           non-blocking overlays on top of the map — never as replacements
@@ -2827,6 +3115,7 @@ export default function MapScreen() {
         onMapReady={handleMapReady}
         onPress={handleMapPress}
         onPanDrag={handlePanDrag}
+        onRegionChange={handleRegionChange}
         onRegionChangeComplete={handleRegionChangeComplete}
       >
         {/* Life360-style zone bubbles. Rendered as a separate pass before
@@ -2899,6 +3188,25 @@ export default function MapScreen() {
           />
         ))}
       </MapView>
+
+      {__DEV__ ? (
+        <Pressable
+          style={[styles.mapDiagnostics, { top: safeTopInset + 6 }]}
+          onPress={() => setDebugClusteringOverride((current) =>
+            !(current ?? configuredClusteringEnabled))}
+          accessibilityRole="button"
+          accessibilityLabel="Toggle map clustering diagnostics"
+        >
+          <Text style={styles.mapDiagnosticsText}>
+            {`Saved ${conservationLedger.source_count}  Eligible ${conservationLedger.eligible_count}\n`}
+            {`In viewport ${conservationLedger.viewport_eligible_count}  Input ${conservationLedger.cluster_input_count}\n`}
+            {`Represented ${conservationLedger.represented_in_viewport_count}  Missing ${conservationLedger.missing_ids.length}\n`}
+            {`Zoom ${effectiveClusterZoom}  Camera ${cameraRevision}/${conservationLedger.viewportRevision}\n`}
+            {`Clustering ${clusteringRequested ? 'ON' : 'OFF'}${conservationFallbackActive ? ' · FALLBACK' : ''}${rawMarkerLimitFallbackActive ? ' · RAW LIMIT' : ''}\n`}
+            {`${clusterRegion.latitude.toFixed(2)},${clusterRegion.longitude.toFixed(2)} ±${(clusterRegion.latitudeDelta / 2).toFixed(2)},${(clusterRegion.longitudeDelta / 2).toFixed(2)}`}
+          </Text>
+        </Pressable>
+      ) : null}
 
       {/* Non-blocking empty/loading pill. The map keeps rendering underneath.
           A filter that matches nothing gets its own message plus a one-tap
@@ -3228,7 +3536,8 @@ export default function MapScreen() {
           real surface people sit in, and pending shares became unreachable
           without first closing the place. It keeps its exact previous position
           (below the filter row, left-aligned) so nothing else moves, and it
-          still hides behind the search dropdown, which owns the whole screen.
+          still hides behind the search dropdown or dedicated Nearby Explorer,
+          each of which owns the whole interaction surface.
           Regression covered by scripts/testMapQueueEntryPoint.ts. */}
       {!searchVisible && !nearbyExplorer ? (
         <View
@@ -3479,6 +3788,22 @@ function createStyles(
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
+  },
+  mapDiagnostics: {
+    position: 'absolute',
+    right: 6,
+    maxWidth: 230,
+    paddingHorizontal: 7,
+    paddingVertical: 5,
+    borderRadius: 7,
+    backgroundColor: 'rgba(0,0,0,0.78)',
+    zIndex: 100,
+  },
+  mapDiagnosticsText: {
+    color: '#FFFFFF',
+    fontSize: 9,
+    lineHeight: 12,
+    fontVariant: ['tabular-nums'],
   },
   emptyPillText: {
     ...typography.caption,

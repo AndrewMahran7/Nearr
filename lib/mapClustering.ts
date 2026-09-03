@@ -41,12 +41,13 @@ import type { SavedPlaceWithPlace } from '@/types';
 // ---------------------------------------------------------------------------
 
 /**
- * Cluster radius in DEVICE PIXELS (see `extent: 256` below). Two markers whose
- * screen distance is under this collapse. Chosen a little wider than the
- * largest cluster disc (54px) so a cluster never visually overlaps its
- * neighbour at the zoom that produced it.
+ * Cluster radius in DEVICE PIXELS (see `extent: 256` below). Deterministic
+ * 1,000-point tuning kept useful wide-area aggregation while 40px produced
+ * materially more neighborhood representations than the former 56px. Smaller
+ * candidates (32/24px) added substantially more native marker work at city
+ * zoom without improving camera correctness.
  */
-export const CLUSTER_RADIUS_PX = 56;
+export const CLUSTER_RADIUS_PX = 40;
 
 /**
  * Above this zoom nothing clusters and every place is its own marker. This is
@@ -59,6 +60,13 @@ export const CLUSTER_MAX_ZOOM = 16;
 
 /** A pair is already clutter at wide zoom, so two is a cluster. */
 export const CLUSTER_MIN_POINTS = 2;
+
+/**
+ * Direct-marker conservation fallback ceiling. The JS/native handoff is
+ * bounded here; larger failed queries use one deterministic aggregate marker.
+ * The benchmark harness measures this exact value on every release candidate.
+ */
+export const SAFE_RAW_MARKER_LIMIT = 500;
 
 /**
  * Extra viewport fraction (per side) queried beyond the visible region so a
@@ -416,13 +424,18 @@ export type MapClusterIndex<T> = {
   pointCount: number;
   /** Stable identity of the canonical id/coordinate/category input. */
   datasetKey: string;
+  radiusPx: number;
 };
 
 type Clusterable = Pick<SavedPlaceWithPlace, 'id' | 'place'>;
 
 function hasCoordinates(place: Clusterable): boolean {
   return (
-    Number.isFinite(place?.place?.latitude) && Number.isFinite(place?.place?.longitude)
+    Number.isFinite(place?.place?.latitude) &&
+    Number.isFinite(place?.place?.longitude) &&
+    place.place.latitude >= -90 && place.place.latitude <= 90 &&
+    place.place.longitude >= -180 && place.place.longitude <= 180 &&
+    !(place.place.latitude === 0 && place.place.longitude === 0)
   );
 }
 
@@ -507,6 +520,7 @@ function datasetIdentity<T extends Clusterable>(places: readonly T[]): string {
  */
 export function buildMapClusterIndex<T extends Clusterable>(
   places: readonly T[] | null | undefined,
+  options?: { radiusPx?: number },
 ): MapClusterIndex<T> {
   const byId = new Map<string, T>();
   const features: Supercluster.PointFeature<ClusterPointProperties>[] = [];
@@ -542,11 +556,21 @@ export function buildMapClusterIndex<T extends Clusterable>(
   }
 
   if (features.length === 0) {
-    return { index: null, byId, pointCount: 0, datasetKey: 'd0-empty' };
+    return {
+      index: null,
+      byId,
+      pointCount: 0,
+      datasetKey: 'd0-empty',
+      radiusPx: options?.radiusPx ?? CLUSTER_RADIUS_PX,
+    };
   }
 
+  const radiusPx = Number.isFinite(options?.radiusPx) && (options?.radiusPx ?? 0) > 0
+    ? options!.radiusPx!
+    : CLUSTER_RADIUS_PX;
+
   const index = new Supercluster<ClusterPointProperties, ClusterAggregateProperties>({
-    radius: CLUSTER_RADIUS_PX,
+    radius: radiusPx,
     // Device pixels, matching the 256px-tile zoom used everywhere here.
     extent: 256,
     maxZoom: CLUSTER_MAX_ZOOM,
@@ -568,6 +592,7 @@ export function buildMapClusterIndex<T extends Clusterable>(
     byId,
     pointCount: features.length,
     datasetKey: datasetIdentity([...byId.values()]),
+    radiusPx,
   };
 }
 
@@ -592,7 +617,7 @@ export function queryMapClusters<T extends Clusterable>(
   // Pad by at least the configured screen-space radius (plus a small native
   // camera rounding margin), so a member inside the visible viewport cannot
   // vanish merely because its cluster center sits just beyond an edge.
-  const radiusPadding = (CLUSTER_RADIUS_PX + 8) / viewportWidth;
+  const radiusPadding = (built.radiusPx + 8) / viewportWidth;
   const bbox = regionToClusterBbox(args.region, Math.max(CLUSTER_BBOX_PADDING, radiusPadding));
   const zoom = clamp(Math.round(args.zoom), 0, CLUSTER_MAX_ZOOM + 1);
 
@@ -717,4 +742,63 @@ export function clusterMemberPlaces<T extends Clusterable>(
   } catch {
     return [];
   }
+}
+
+/**
+ * Supercluster-independent aggregate used only when a query fails
+ * conservation above the bounded raw-marker ceiling. Membership is carried
+ * explicitly, so the marker count cannot lie and taps retain deterministic
+ * access to the same canonical rows.
+ */
+export function buildConservationFallbackCluster<T extends Clusterable>(args: {
+  places: readonly T[];
+  datasetKey: string;
+  zoom: number;
+}): MapClusterMarker | null {
+  const byId = new Map<string, T>();
+  for (const place of args.places) {
+    if (place?.id && hasCoordinates(place) && !byId.has(place.id)) byId.set(place.id, place);
+  }
+  const places = [...byId.values()].sort((left, right) => left.id.localeCompare(right.id));
+  if (places.length < 2) return null;
+  const memberIds = places.map((place) => place.id);
+  const counts: Record<string, number> = {};
+  for (const groupId of GROUP_IDS) counts[groupId] = 0;
+  let latitude = 0;
+  let sinLongitude = 0;
+  let cosLongitude = 0;
+  for (const place of places) {
+    latitude += place.place.latitude;
+    const radians = place.place.longitude * Math.PI / 180;
+    sinLongitude += Math.sin(radians);
+    cosLongitude += Math.cos(radians);
+    const group = mapFilterGroupForPlace(place as never);
+    counts[group] = (counts[group] ?? 0) + 1;
+  }
+  latitude /= places.length;
+  const longitude = Math.atan2(sinLongitude, cosLongitude) * 180 / Math.PI;
+  const dominant = dominantClusterGroup(counts, places.length);
+  const identity = mapClusterIdentity({
+    datasetKey: `fallback-${args.datasetKey}`,
+    zoom: args.zoom,
+    memberIds,
+  });
+  return {
+    kind: 'cluster',
+    ...identity,
+    clusterId: -1,
+    datasetKey: args.datasetKey,
+    latitude,
+    longitude,
+    count: places.length,
+    engineCount: places.length,
+    groupId: dominant?.groupId ?? null,
+    groupLabel: dominant?.label ?? null,
+    glyph: clusterGlyphForGroup(dominant?.groupId ?? null),
+    sizing: clusterSizing(places.length),
+    accessibilityLabel: clusterAccessibilityLabel({
+      count: places.length,
+      groupLabel: dominant?.label ?? null,
+    }),
+  };
 }

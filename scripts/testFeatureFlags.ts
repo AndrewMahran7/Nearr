@@ -70,6 +70,9 @@ const appConfigSource = readFileSync(join(process.cwd(), 'app.config.js'), 'utf8
 check('Vayrin Product UI flag reads build env', /EXPO_PUBLIC_VAYRIN_PRODUCT_UI_ENABLED/.test(featureFlagsSource));
 check('Vayrin Product UI flag has app config fallback', /readExtra\('vayrinProductUiEnabled'\)/.test(featureFlagsSource));
 check('app config exposes Vayrin Product UI flag', /vayrinProductUiEnabled/.test(appConfigSource));
+check('map clustering bypass reads build env', /EXPO_PUBLIC_MAP_CLUSTERING_ENABLED/.test(featureFlagsSource));
+check('map clustering bypass has app config fallback', /readExtra\('mapClusteringEnabled'\)/.test(featureFlagsSource));
+check('app config exposes map clustering bypass', /mapClusteringEnabled/.test(appConfigSource));
 
 // Onboarding V2 uses the same resolver and therefore inherits the same
 // production-safe default-off behavior.

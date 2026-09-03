@@ -245,6 +245,12 @@ for (const lifecycle of ['user_pan', 'selected_pin_dismissed', 'place_detail_ret
   assert.match(source, /clusterExpansionCoordinatorRef\.current\.mapBecameUsable\(\)/);
   assert.match(source, /clusterExpansionCoordinatorRef\.current\.cameraSettled\(\)/);
   assert.ok((source.match(/resetClusterExpansionRef\.current\(\)/g) ?? []).length >= 3);
+  const panStart = source.indexOf('const handlePanDrag = useCallback');
+  const panEnd = source.indexOf('const commitViewport', panStart);
+  assert.ok(
+    source.slice(panStart, panEnd).includes('resetClusterExpansionRef.current()'),
+    'a user pan interrupts cluster camera ownership',
+  );
 }
 
 // 12. Diagnostics are event-scoped, bounded, and round coordinates.

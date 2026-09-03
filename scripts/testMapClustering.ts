@@ -282,9 +282,9 @@ const distantNodes = queryMapClusters(distantIndex, {
 assert.equal(clustersOf(distantNodes).length, 0, 'distant places stay separate markers');
 assert.deepEqual(placesOf(distantNodes).sort(), ['oc', 'seattle']);
 
-// Zoomed all the way out to the continent they do collapse — that is the
-// point of the feature, and the count still tells the truth.
-const continentalNodes = queryMapClusters(distantIndex, { region: continentalBbox, zoom: 2 });
+// At the world/continent overview they do collapse, while the tighter 40px
+// radius deliberately keeps them separate by zoom 2.
+const continentalNodes = queryMapClusters(distantIndex, { region: continentalBbox, zoom: 1 });
 assert.equal(clustersOf(continentalNodes).length, 1);
 assert.equal(clustersOf(continentalNodes)[0]!.count, 2);
 assert.equal(
@@ -644,7 +644,9 @@ assert.match(mapSource, /visibleCount: individualPlaces\.length/);
 assert.match(mapSource, /\{individualPlaces\.map\(\(p\) => \(\s*\n\s*<NearrMapMarker/);
 assert.match(mapSource, /\{clusterMarkers\.map\(\(cluster\) => \(\s*\n\s*<NearrMapClusterMarker/);
 assert.match(mapSource, /onPress=\{handleClusterPress\}/);
-assert.match(mapSource, /setSettledRegion\(region\)/);
+assert.match(mapSource, /onRegionChange=\{handleRegionChange\}/);
+assert.match(mapSource, /commitViewport\(region, 'region_change_complete'\)/);
+assert.match(mapSource, /getMapBoundaries\(\)/);
 // Clustering must not be able to move the camera on its own.
 assert.equal(
   (mapSource.match(/clusterExpansionRegion\(/g) ?? []).length,

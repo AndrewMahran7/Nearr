@@ -1,0 +1,25 @@
+{
+  "releaseId": "2026-09-03-map-pin-camera-cluster-reliability",
+  "previousMainSha": "7ba1089be39916e9ba0ca3360f6cc6fa5e1de94a",
+  "previousOtaGroup": "bdacce64-6e18-4521-9b94-62ccc1f343e7",
+  "currentOtaGroup": null,
+  "edgeVersions": {
+    "process-share-link": 134,
+    "process-share-jobs": 89,
+    "create-share-job": 25,
+    "delete-account": 24,
+    "delete-share-job": 1
+  },
+  "railwayDeployment": "40f8a47a-8786-4d5f-961b-749631f7fa9d#sha256:b9f19a62b4373806d44b896610139c750b127dc216480eec7df197cc543d0e3d",
+  "migrationLedger": [
+    "20260825000001"
+  ],
+  "rollbackProcedure": "Repeat the full concurrency guard, then republish previousOtaGroup to the production channel. Forward-revert only the map viewport and clustering implementation commit on current main. No Railway, Edge Function, schema, saved-place, or user-data rollback is required for this client-only OTA.",
+  "deploymentStatus": "PLANNED",
+  "physicalQa": {
+    "signedOutColdLaunch": "PENDING",
+    "signedInColdLaunch": "PENDING",
+    "forceCloseRelaunch": "PENDING",
+    "freshOnboardingLaunch": "PENDING"
+  }
+}

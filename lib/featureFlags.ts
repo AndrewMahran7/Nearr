@@ -77,6 +77,18 @@ export function isMapPinRedesignEnabled(): boolean {
   );
 }
 
+/**
+ * Diagnostic Supercluster bypass. Default ON; an explicit false renders the
+ * canonical eligible marker set directly. This is intentionally not exposed
+ * as a user preference.
+ */
+export function isMapClusteringEnabled(): boolean {
+  const env = trim(process.env.EXPO_PUBLIC_MAP_CLUSTERING_ENABLED);
+  const extra = readExtra('mapClusteringEnabled');
+  if (/^(false|0|no|off)$/i.test(env || extra)) return false;
+  return true;
+}
+
 /** Enable the user-facing Vayrin presentation without changing recognition. */
 export function isVayrinProductUiEnabled(): boolean {
   return resolveBooleanFlag(

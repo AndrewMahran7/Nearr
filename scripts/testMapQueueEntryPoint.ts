@@ -132,8 +132,8 @@ const button = read('components/map/ShareQueueButton.tsx');
 
   assert.equal(
     renderGate.trim(),
-    '{!searchVisible ? (',
-    'the only thing that may hide the Queue is the full-screen search dropdown',
+    '{!searchVisible && !nearbyExplorer ? (',
+    'only full-screen search or the dedicated Nearby Explorer may hide the Queue',
   );
   assert.ok(
     !/shouldShowMapControls|previewExpanded|selected/.test(renderGate),
@@ -149,7 +149,10 @@ const button = read('components/map/ShareQueueButton.tsx');
     chromeBlock.includes('shouldShowMapControls'),
     'search + filters still yield to an expanded place, as they did before',
   );
-  assert.ok(map.includes('shouldShowMapControls = shouldRenderMapTopChrome({'));
+  assert.ok(
+    map.includes('shouldShowMapControls = !nearbyExplorer && shouldRenderMapTopChrome({'),
+    'Nearby Explorer owns the map chrome while active',
+  );
   assert.equal(
     shouldRenderMapTopChrome({ searchVisible: true, hasSelectedPlace: false, previewExpanded: false }),
     false,

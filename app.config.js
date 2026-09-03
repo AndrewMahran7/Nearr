@@ -223,6 +223,10 @@ module.exports = ({ config }) => {
       // this host-JS fallback does not mutate any EAS environment.
       mapPinRedesignEnabled:
         process.env.EXPO_PUBLIC_MAP_PIN_REDESIGN_ENABLED || 'true',
+      // Developer/OTA diagnostic control. Explicit false bypasses
+      // Supercluster while retaining the same canonical saved-place dataset.
+      mapClusteringEnabled:
+        process.env.EXPO_PUBLIC_MAP_CLUSTERING_ENABLED || 'true',
       // Physically validated Product UI release: enabled in production.
       placeRecommendationsEnabled:
         process.env.EXPO_PUBLIC_PLACE_RECOMMENDATIONS_ENABLED || 'true',
