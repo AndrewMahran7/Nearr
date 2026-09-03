@@ -2,7 +2,20 @@
   "releaseId": "2026-09-03-map-camera-transaction-conservation-hotfix",
   "previousMainSha": "3127c30fa946b9c1a3fbd076fb721c9bb0976a31",
   "previousOtaGroup": "30d26138-354f-4289-9009-927ff5d4ce3c",
-  "currentOtaGroup": null,
+  "currentOtaGroup": "476a3291-8a19-4c35-a398-30f3f668ce1b",
+  "iosUpdate": "01a06916-c8ea-7cc3-a13b-2410e23e9795",
+  "androidUpdate": "01a06916-c8ea-770a-8dff-c9203f1aa46c",
+  "runtime": "1.3.52",
+  "sourceSha": "1fb5691070eb58b23083c9e18a8e230ba0a179b8",
+  "implementationSha": "5cd21bc6b8dadf5a10d757558408ef4680b4da45",
+  "message": "Fix cluster camera transactions and live pin conservation",
+  "developmentOta": {
+    "group": "0a79a0ff-2caf-4ae9-b8c0-7436e1466ab4",
+    "iosUpdate": "01a06912-ffdb-7e5a-bf66-0190dc6a985a",
+    "androidUpdate": "01a06912-ffdb-7eeb-8bd0-6f430f131cc9",
+    "runtime": "1.3.52",
+    "sourceSha": "5cd21bc6b8dadf5a10d757558408ef4680b4da45"
+  },
   "edgeVersions": {
     "process-share-link": 134,
     "process-share-jobs": 89,
@@ -16,12 +29,13 @@
     "20260825000001"
   ],
   "rollbackProcedure": "Repeat the full concurrency guard, then republish previousOtaGroup to the production channel. Forward-revert only implementation commit 5cd21bc6b8dadf5a10d757558408ef4680b4da45 on current main. No Railway, Edge Function, schema, saved-place, or user-data rollback is required for this client-only OTA.",
-  "deploymentStatus": "PLANNED",
+  "deploymentStatus": "DEPLOYED",
   "physicalQa": {
     "signedOutColdLaunch": "PENDING",
     "signedInColdLaunch": "PENDING",
     "forceCloseRelaunch": "PENDING",
     "freshOnboardingLaunch": "PENDING",
     "founderMapSequence": "PENDING"
-  }
+  },
+  "deployedAt": "2026-09-03T21:04:50.919Z"
 }
