@@ -10,7 +10,8 @@
     "delete-account": 24,
     "delete-share-job": 1
   },
-  "railwayDeployment": "40f8a47a-8786-4d5f-961b-749631f7fa9d#sha256:b9f19a62b4373806d44b896610139c750b127dc216480eec7df197cc543d0e3d",
+  "previousRailwayDeployment": "40f8a47a-8786-4d5f-961b-749631f7fa9d#sha256:b9f19a62b4373806d44b896610139c750b127dc216480eec7df197cc543d0e3d",
+  "railwayDeployment": "3a9aa871-4ea5-4e76-8390-33a2a46c16bb#46b7f3b7665c734914a70938c4b851790aa69b18#sha256:c2996d2869a4e68bc38ebb727dee0801c309b445b35e563566920a2494615396",
   "migrationLedger": [
     "20260825000001"
   ],
