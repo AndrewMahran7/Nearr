@@ -178,7 +178,8 @@ import {
   clusterWithoutSelectedMember,
   clusterExpansionRegion,
   clusterExpansionZoom,
-  nextClusterZoom,
+  mapClusterQueryBbox,
+  nextClusterZoomDecision,
   queryMapClusters,
   regionToClusterZoom,
   CLUSTER_MAX_ZOOM,
@@ -212,7 +213,13 @@ import {
 import {
   buildMapConservationLedger,
   recordMapConservationLedger,
+  type MapConservationLedger,
 } from '@/lib/mapConservation';
+import {
+  createMapRepresentation,
+  decideMapRepresentationCommit,
+  type MapRepresentation,
+} from '@/lib/mapAtomicRepresentation';
 import {
   isClusterQuerySynchronized,
   isLatestMapRepresentation,
@@ -752,6 +759,8 @@ export default function MapScreen() {
   // The committed integer clustering zoom. Held through small pans by the
   // hysteresis in nextClusterZoom so the map does not re-cluster on a nudge.
   const [clusterZoom, setClusterZoom] = useState<number | null>(null);
+  const clusterZoomRef = useRef<number | null>(null);
+  clusterZoomRef.current = clusterZoom;
   const onboardingReconcileRunningRef = useRef(false);
   // Keep an already-open detail sheet attached to the live cached row. Media
   // enrichment updates ai_note asynchronously after the initial save.
@@ -1632,13 +1641,15 @@ export default function MapScreen() {
 
   const clusterRegion = viewportSnapshot?.region ?? initialRegion;
   const viewportWidth = mapAreaWidth || windowWidth;
-  const effectiveClusterZoom = useMemo(() => {
-    const continuous = regionToClusterZoom({
+  const continuousVisualZoom = useMemo(() => regionToClusterZoom({
       longitudeDelta: clusterRegion.longitudeDelta,
       viewportWidth,
-    });
-    return nextClusterZoom(clusterZoom, continuous);
-  }, [clusterRegion.longitudeDelta, clusterZoom, viewportWidth]);
+    }), [clusterRegion.longitudeDelta, viewportWidth]);
+  const clusterZoomDecision = useMemo(
+    () => nextClusterZoomDecision(clusterZoom, continuousVisualZoom),
+    [clusterZoom, continuousVisualZoom],
+  );
+  const effectiveClusterZoom = clusterZoomDecision.zoom;
   const clusterRegionRef = useRef(clusterRegion);
   clusterRegionRef.current = clusterRegion;
   const effectiveClusterZoomRef = useRef(effectiveClusterZoom);
@@ -1770,9 +1781,9 @@ export default function MapScreen() {
     };
   }, [alwaysIndividualIds, clusterIndex.datasetKey, clusterRegion, conservationFallbackActive, effectiveClusterZoom, querySynchronized, rawMarkerLimitFallbackActive, selectedMarkerId, visiblePlaces]);
 
-  const clusterMarkers = fallbackRepresentation?.clusters ?? primaryClusterMarkers;
-  const individualPlaces = fallbackRepresentation?.individuals ?? primaryIndividualPlaces;
-  const conservationLedger = useMemo(() => buildMapConservationLedger({
+  const candidateClusterMarkers = fallbackRepresentation?.clusters ?? primaryClusterMarkers;
+  const candidateIndividualPlaces = fallbackRepresentation?.individuals ?? primaryIndividualPlaces;
+  const candidateConservationLedger = useMemo(() => buildMapConservationLedger({
     datasetRevision: datasetGeneration,
     datasetKey: clusterIndex.datasetKey,
     cameraRevision,
@@ -1786,12 +1797,135 @@ export default function MapScreen() {
     sourcePlaces: nearbyExplorer ? explorerMarkerPlaces : places,
     eligiblePlaces: visiblePlaces,
     clusterInputIds: clusterCandidates.map((place) => place.id),
-    individualIds: individualPlaces.map((place) => place.id),
-    clusters: clusterMarkers,
-  }), [cameraRevision, clusterCandidates, clusterIndex.datasetKey, clusterMarkers, clusterRegion, datasetGeneration, effectiveClusterZoom, explorerMarkerPlaces, individualPlaces, mapCategoryFilter, nearbyExplorer, places, querySynchronized, representationSynchronized, selectedMarkerId, clusteringRequested, viewportSnapshot?.viewportRevision, visiblePlaces]);
-  const clusterMarkersRef = useRef<MapClusterMarkerModel[]>(clusterMarkers);
+    individualIds: candidateIndividualPlaces.map((place) => place.id),
+    clusters: candidateClusterMarkers,
+  }), [cameraRevision, candidateClusterMarkers, candidateIndividualPlaces, clusterCandidates, clusterIndex.datasetKey, clusterRegion, datasetGeneration, effectiveClusterZoom, explorerMarkerPlaces, mapCategoryFilter, nearbyExplorer, places, querySynchronized, representationSynchronized, selectedMarkerId, clusteringRequested, viewportSnapshot?.viewportRevision, visiblePlaces]);
+
+  type VisibleMapRepresentation = MapRepresentation<
+    SavedPlaceWithPlace,
+    MapClusterMarkerModel,
+    { ledger: MapConservationLedger; zoomTransitionReason: string }
+  >;
+  const candidateRepresentation = useMemo<VisibleMapRepresentation>(() =>
+    createMapRepresentation({
+      datasetRevision: datasetGeneration,
+      datasetKey: clusterIndex.datasetKey,
+      viewportRevision: viewportSnapshot?.viewportRevision ?? 0,
+      cameraRevision: viewportSnapshot?.cameraRevision ?? cameraRevision,
+      visualZoom: continuousVisualZoom,
+      queryZoom: effectiveClusterZoom,
+      bbox: mapClusterQueryBbox(clusterIndex, clusterRegion, viewportWidth),
+      region: clusterRegion,
+      markers: candidateIndividualPlaces,
+      clusters: candidateClusterMarkers,
+      representedIds: candidateConservationLedger.unique_represented_ids,
+      missingIds: candidateConservationLedger.missing_ids,
+      duplicateIds: candidateConservationLedger.duplicate_ids,
+      isConserved: candidateConservationLedger.ok,
+      source: viewportSnapshot?.source ?? 'initial',
+      metadata: {
+        ledger: candidateConservationLedger,
+        zoomTransitionReason: clusterZoomDecision.reason,
+      },
+    }), [cameraRevision, candidateClusterMarkers, candidateConservationLedger, candidateIndividualPlaces, clusterIndex, clusterRegion, clusterZoomDecision.reason, continuousVisualZoom, datasetGeneration, effectiveClusterZoom, viewportSnapshot?.cameraRevision, viewportSnapshot?.source, viewportSnapshot?.viewportRevision, viewportWidth]);
+  const latestCandidateRepresentationRef = useRef(candidateRepresentation);
+  latestCandidateRepresentationRef.current = candidateRepresentation;
+  const [visibleRepresentation, setVisibleRepresentation] = useState<VisibleMapRepresentation | null>(null);
+  const visibleRepresentationRef = useRef<VisibleMapRepresentation | null>(null);
+  const visibleCommitCountByViewportRef = useRef(new Map<string, number>());
+
+  useEffect(() => {
+    const validationStartedAt = Date.now();
+    const decision = decideMapRepresentationCommit({
+      candidate: candidateRepresentation,
+      visible: visibleRepresentationRef.current,
+      context: {
+        currentDatasetRevision: datasetGenerationRef.current.value,
+        currentCameraRevision: cameraRevisionRef.current,
+        latestCommitEligibleViewportRevision: viewportSnapshotRef.current?.viewportRevision ?? 0,
+        latestCandidateId: latestCandidateRepresentationRef.current.id,
+        cameraTransitionActive: cameraTransitionRef.current != null,
+      },
+    });
+    recordMapLiveLedger({
+      eventType: 'representation_candidate',
+      timestamp: Date.now(),
+      viewportRevision: candidateRepresentation.viewportRevision,
+      cameraRevision: candidateRepresentation.cameraRevision,
+      datasetRevision: candidateRepresentation.datasetRevision,
+      nativeBbox: candidateRepresentation.source === 'native_readback'
+        ? candidateRepresentation.bbox
+        : null,
+      jsBbox: candidateRepresentation.bbox,
+      derivedZoom: candidateRepresentation.visualZoom,
+      queryZoom: candidateRepresentation.queryZoom,
+      candidateRepresentationId: candidateRepresentation.id,
+      visibleRepresentationId: visibleRepresentationRef.current?.id ?? null,
+      candidateMarkerCount: candidateRepresentation.markers.length,
+      candidateClusterCount: candidateRepresentation.clusters.length,
+      representedCount: candidateRepresentation.representedIds.length,
+      missingCount: candidateRepresentation.missingIds.length,
+      duplicateCount: candidateRepresentation.duplicateIds.length,
+      commitAllowed: decision.allowed,
+      commitReason: decision.reason,
+      clusterZoomTransitionReason: clusterZoomDecision.reason,
+      candidateCalculationDurationMs: clusterBuild.durationMs + clusterQuery.durationMs,
+      validationDurationMs: Date.now() - validationStartedAt,
+      mapRenderCount: mapRenderCountRef.current,
+      result: decision.reason,
+    });
+    if (!decision.allowed) return;
+    const commitStartedAt = Date.now();
+    const settledViewportKey = [
+      candidateRepresentation.datasetRevision,
+      candidateRepresentation.cameraRevision,
+      candidateRepresentation.viewportRevision,
+    ].join(':');
+    const commitsForViewport = (visibleCommitCountByViewportRef.current.get(settledViewportKey) ?? 0) + 1;
+    visibleCommitCountByViewportRef.current.set(settledViewportKey, commitsForViewport);
+    if (visibleCommitCountByViewportRef.current.size > 100) {
+      const oldest = visibleCommitCountByViewportRef.current.keys().next().value;
+      if (oldest != null) visibleCommitCountByViewportRef.current.delete(oldest);
+    }
+    visibleRepresentationRef.current = candidateRepresentation;
+    setVisibleRepresentation(candidateRepresentation);
+    recordMapLiveLedger({
+      eventType: 'visible_representation_committed',
+      timestamp: Date.now(),
+      viewportRevision: candidateRepresentation.viewportRevision,
+      cameraRevision: candidateRepresentation.cameraRevision,
+      datasetRevision: candidateRepresentation.datasetRevision,
+      jsBbox: candidateRepresentation.bbox,
+      derivedZoom: candidateRepresentation.visualZoom,
+      queryZoom: candidateRepresentation.queryZoom,
+      candidateRepresentationId: candidateRepresentation.id,
+      visibleRepresentationId: candidateRepresentation.id,
+      individualMarkerCount: candidateRepresentation.markers.length,
+      clusterCount: candidateRepresentation.clusters.length,
+      representedCount: candidateRepresentation.representedIds.length,
+      missingCount: candidateRepresentation.missingIds.length,
+      duplicateCount: candidateRepresentation.duplicateIds.length,
+      commitAllowed: true,
+      commitReason: decision.reason,
+      clusterZoomTransitionReason: clusterZoomDecision.reason,
+      visibleCommitsForSettledViewport: commitsForViewport,
+      candidateCalculationDurationMs: clusterBuild.durationMs + clusterQuery.durationMs,
+      validationDurationMs: Date.now() - validationStartedAt,
+      commitDurationMs: Date.now() - commitStartedAt,
+      mapRenderCount: mapRenderCountRef.current,
+      result: 'atomic_visible_commit',
+    });
+  }, [candidateRepresentation, clusterBuild.durationMs, clusterQuery.durationMs, clusterZoomDecision.reason]);
+
+  // Only committed state reaches react-native-maps. Candidate arrays may
+  // change on every camera sample, but the previous valid marker tree remains
+  // mounted until an authoritative, conserved replacement is ready.
+  const clusterMarkers = visibleRepresentation?.clusters ?? [];
+  const individualPlaces = visibleRepresentation?.markers ?? [];
+  const conservationLedger = visibleRepresentation?.metadata.ledger ?? candidateConservationLedger;
+  const clusterMarkersRef = useRef<readonly MapClusterMarkerModel[]>(clusterMarkers);
   clusterMarkersRef.current = clusterMarkers;
-  const individualPlacesRef = useRef<SavedPlaceWithPlace[]>(individualPlaces);
+  const individualPlacesRef = useRef<readonly SavedPlaceWithPlace[]>(individualPlaces);
   individualPlacesRef.current = individualPlaces;
 
   const markerDetailLevel = useMemo(
@@ -1836,7 +1970,10 @@ export default function MapScreen() {
   }, [clusterIndex.pointCount, clusterQuery.durationMs, datasetGeneration]);
 
   useEffect(() => {
-    recordMapConservationLedger(conservationLedger);
+    // Candidate diagnostics stay attached to the candidate viewport. The
+    // visible tree may intentionally be older while movement is active, so
+    // validating it against a transient bbox would manufacture false losses.
+    recordMapConservationLedger(candidateConservationLedger);
     const settled = viewportSnapshot?.source === 'native_readback' ||
       viewportSnapshot?.source === 'region_change_complete';
     recordMapLiveLedger({
@@ -1855,18 +1992,20 @@ export default function MapScreen() {
       nativeZoom: settled ? viewportSnapshot?.zoom ?? null : null,
       derivedZoom: viewportSnapshot?.zoom ?? null,
       queryZoom: effectiveClusterZoom,
-      eligibleCount: conservationLedger.viewport_eligible_count,
-      individualMarkerCount: conservationLedger.rendered_individual_count,
-      clusterCount: conservationLedger.rendered_cluster_count,
-      representedCount: conservationLedger.represented_in_viewport_count,
-      missingCount: conservationLedger.missing_ids.length,
-      duplicateCount: conservationLedger.duplicate_ids.length,
-      result: conservationLedger.ok ? 'conserved' : 'fallback_or_failure',
+      candidateRepresentationId: candidateRepresentation.id,
+      visibleRepresentationId: visibleRepresentationRef.current?.id ?? null,
+      eligibleCount: candidateConservationLedger.viewport_eligible_count,
+      individualMarkerCount: candidateConservationLedger.rendered_individual_count,
+      clusterCount: candidateConservationLedger.rendered_cluster_count,
+      representedCount: candidateConservationLedger.represented_in_viewport_count,
+      missingCount: candidateConservationLedger.missing_ids.length,
+      duplicateCount: candidateConservationLedger.duplicate_ids.length,
+      result: candidateConservationLedger.ok ? 'conserved_candidate' : 'fallback_or_failure',
     });
     const legacyArgs = {
       eligiblePlaces: visiblePlaces,
-      individualIds: individualPlaces.map((place) => place.id),
-      clusters: clusterMarkers,
+      individualIds: candidateIndividualPlaces.map((place) => place.id),
+      clusters: candidateClusterMarkers,
       region: clusterRegion,
     };
     const report = __DEV__ && !conservationFallbackActive
@@ -1878,7 +2017,7 @@ export default function MapScreen() {
         datasetGeneration,
         placeCount: failedLedger.eligible_count,
         visibleIndividualCount: failedLedger.rendered_individual_count,
-        clusterCount: clusterMarkers.length,
+        clusterCount: candidateClusterMarkers.length,
         clusterMemberCount: failedLedger.rendered_cluster_member_count,
         zoom: effectiveClusterZoom,
         filter: String(mapCategoryFilter),
@@ -1916,7 +2055,7 @@ export default function MapScreen() {
         result: 'count_or_membership_mismatch',
       });
     }
-  }, [clusterIndex.datasetKey, clusterMarkers, clusterQuery.cameraRevision, clusterQuery.datasetRevision, clusterQuery.viewportRevision, clusterRegion, conservationFallbackActive, conservationLedger, datasetGeneration, effectiveClusterZoom, individualPlaces, primaryConservationLedger, viewportSnapshot, visiblePlaces]);
+  }, [candidateClusterMarkers, candidateConservationLedger, candidateIndividualPlaces, candidateRepresentation.id, clusterIndex.datasetKey, clusterQuery.cameraRevision, clusterQuery.datasetRevision, clusterQuery.viewportRevision, clusterRegion, conservationFallbackActive, datasetGeneration, effectiveClusterZoom, primaryConservationLedger, viewportSnapshot, visiblePlaces]);
 
   useEffect(() => {
     installMapLiveLedgerDevDump();
@@ -2913,15 +3052,24 @@ export default function MapScreen() {
     // immutable snapshot and no batched setter can reuse an older revision.
     viewportSnapshotRef.current = next;
     setViewportSnapshot(next);
-    setClusterZoom((current) =>
-      nextClusterZoom(
-        current,
-        regionToClusterZoom({
-          longitudeDelta: region.longitudeDelta,
-          viewportWidth,
-        }),
-      ),
-    );
+    const visualZoom = regionToClusterZoom({
+      longitudeDelta: region.longitudeDelta,
+      viewportWidth,
+    });
+    const zoomDecision = nextClusterZoomDecision(clusterZoomRef.current, visualZoom);
+    clusterZoomRef.current = zoomDecision.zoom;
+    setClusterZoom(zoomDecision.zoom);
+    recordMapLiveLedger({
+      eventType: 'cluster_zoom_observed',
+      timestamp: Date.now(),
+      viewportRevision: next.viewportRevision,
+      cameraRevision: next.cameraRevision,
+      nativeRegion: region,
+      derivedZoom: visualZoom,
+      queryZoom: zoomDecision.zoom,
+      clusterZoomTransitionReason: zoomDecision.reason,
+      result: zoomDecision.reason,
+    });
     return next;
   }, [mapAreaHeight, viewportWidth, windowHeight]);
 
