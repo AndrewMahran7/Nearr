@@ -1,0 +1,39 @@
+{
+  "releaseId": "2026-09-03-remove-user-facing-vayrin-branding",
+  "previousMainSha": "75fd803fcc6f7c55a184c2632e49beba0736a969",
+  "previousOtaGroup": "d383bb9c-9e46-4eea-bd14-0ef5a960ac19",
+  "currentOtaGroup": null,
+  "runtime": "1.3.52",
+  "message": "Remove user-facing Vayrin branding",
+  "implementationSha": "e604b413e08b2ba8f1e19f968c042830a5361ece",
+  "developmentOta": {
+    "group": "0d55dce2-9c69-4127-9bca-022c8697dde1",
+    "iosUpdate": "01a06970-ef6f-73fd-8685-9801a210687a",
+    "androidUpdate": "01a06970-ef6f-73ee-8b0a-bde23262b435",
+    "runtime": "1.3.52",
+    "sourceSha": "98e594122b7fe081bb4cb412717fc863e0a64f96"
+  },
+  "previousEdgeVersions": {
+    "process-share-jobs": 89
+  },
+  "edgeVersions": {
+    "process-share-link": 134,
+    "process-share-jobs": 90,
+    "create-share-job": 25,
+    "delete-account": 24,
+    "delete-share-job": 1
+  },
+  "previousRailwayDeployment": "3a9aa871-4ea5-4e76-8390-33a2a46c16bb#46b7f3b7665c734914a70938c4b851790aa69b18#sha256:c2996d2869a4e68bc38ebb727dee0801c309b445b35e563566920a2494615396",
+  "railwayDeployment": "7d38fe26-b875-4cea-b89e-e9af257e4719#e604b413e08b2ba8f1e19f968c042830a5361ece#sha256:1519f182133b947b2450ff30feee988f2c3c949210203450c5bd733c25551852",
+  "migrationLedger": [
+    "20260825000001"
+  ],
+  "rollbackProcedure": "Repeat the full concurrency guard, republish previousOtaGroup to production, redeploy process-share-jobs v89 and Railway deployment 3a9aa871-4ea5-4e76-8390-33a2a46c16bb if backend rollback is needed, and forward-revert implementation merge e604b413e08b2ba8f1e19f968c042830a5361ece on current main. No schema, cache, saved-place, or user-data rollback is required.",
+  "deploymentStatus": "PLANNED",
+  "physicalQa": {
+    "signedOutColdLaunch": "PENDING",
+    "signedInColdLaunch": "PENDING",
+    "forceCloseRelaunch": "PENDING",
+    "freshOnboardingLaunch": "PENDING"
+  }
+}
