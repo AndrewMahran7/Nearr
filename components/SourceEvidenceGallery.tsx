@@ -39,7 +39,7 @@ const COLORS = {
 export function SourceEvidenceGallery({
   frames,
   analysisAttempted = false,
-  title = 'Frames Vayrin checked',
+  title = 'Frames checked',
   subtitle = 'Evidence from the video',
   compact = false,
   dense = false,

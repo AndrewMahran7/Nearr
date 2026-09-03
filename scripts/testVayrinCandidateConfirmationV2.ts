@@ -101,7 +101,7 @@ const rawNotification = composeShareCompletionNotification({
 });
 assert.doesNotMatch(`${rawNotification.title} ${rawNotification.body}`, /Worlds Most Dangerous Waterfall Hole/);
 const resolvedNotification = composeShareCompletionNotification({ jobId: 'resolved', status: 'needs_help', candidateCount: 1, strongestCandidateName: 'Stari Most' });
-assert.equal(resolvedNotification.title, 'Vayrin found a possible place');
+assert.equal(resolvedNotification.title, 'Possible place found');
 
 assert.match(card, /CandidatePhotoCarousel/);
 assert.match(read('components/CandidatePhotoCarousel.tsx'), /height\s*=\s*220/);

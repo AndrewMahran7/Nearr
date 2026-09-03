@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 
 import type { EvidenceItem } from '../types/evidence.js';
 
-export const AI_NOTE_PROMPT_VERSION = 'vayrin-ai-note-voice-2026-08-24.v9';
+export const AI_NOTE_PROMPT_VERSION = 'vayrin-ai-note-voice-2026-08-24.v10';
 export const VAYRIN_VOICE_PATH = new URL('../../VOICE.md', import.meta.url);
 export const VAYRIN_VOICE = readFileSync(VAYRIN_VOICE_PATH, 'utf8').trim();
 

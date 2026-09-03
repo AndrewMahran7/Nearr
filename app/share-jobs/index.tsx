@@ -182,7 +182,7 @@ function jobSubtitle(job: ShareJob, stalled = false): string {
     case 'queued':
     case 'processing_metadata':
       return vayrin
-        ? stalled ? 'Still looking. You can leave while Nearr keeps working.' : 'Vayrin is looking…'
+        ? stalled ? 'Still finding the place. You can leave while Nearr keeps working.' : 'Finding the place…'
         : processingMessage(job.status, stalled ? STALE_PROCESSING_MS + 1 : 0);
     case 'needs_help':
       if (vayrin && normalizeVayrinIdentityLeads(job.candidate_payload).length > 0) {
@@ -795,12 +795,12 @@ function ShareJobsQueueScreen() {
               <Text style={[typography.body, styles.intro]}>
                 {vayrinEnabled
                   ? count === 1
-                    ? 'Vayrin found a place that needs a quick check.'
-                    : `Vayrin found ${count} places that need a quick check.`
+                    ? '1 place needs a quick check.'
+                    : `${count} places need a quick check.`
                   : queueIntro(count)}
               </Text>
             ) : null}
-            {renderSection(vayrinEnabled ? 'Vayrin is looking' : 'Working', processing)}
+            {renderSection(vayrinEnabled ? 'Finding places' : 'Working', processing)}
             {renderSection('Needs you', actionable)}
           </>
         )}

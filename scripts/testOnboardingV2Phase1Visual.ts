@@ -73,7 +73,7 @@ const resultEnd = activation.indexOf("stage === 'tutorial_ready'", resultStart);
 assert.ok(resultStart > -1 && resultEnd > resultStart, 'result branch exists');
 const resultBranch = activation.slice(resultStart, resultEnd);
 assert.match(resultBranch, /<FoundPlaceHero/);
-assert.match(resultBranch, /MATCHED BY VAYRIN/);
+assert.match(resultBranch, /PLACE FOUND/);
 assert.match(resultBranch, /title="Save to my map" onPress=\{\(\) => void savePlace\(\)\}/);
 assert.doesNotMatch(resultBranch, /OnboardingSavedPlacePreview|>Saved<|Saved badge/);
 assert.match(activation, /await saveOnboardingV2TutorialPlace\(content\)/);

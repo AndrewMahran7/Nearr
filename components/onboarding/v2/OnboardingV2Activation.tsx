@@ -91,8 +91,8 @@ export function OnboardingV2Activation() {
 
   if (stage === 'tutorial_processing') {
     return (
-      <Phase1Frame onBack={goBack} progress={progress} progressLabel="Vayrin is finding the place" scroll={false} contentStyle={styles.processingContent}>
-        <View style={styles.finderVisual} accessible accessibilityLabel="Vayrin is matching the post to the map">
+      <Phase1Frame onBack={goBack} progress={progress} progressLabel="Finding the place" scroll={false} contentStyle={styles.processingContent}>
+        <View style={styles.finderVisual} accessible accessibilityLabel="Matching the post to the map">
           <View style={styles.finderOrbitLarge} />
           <View style={styles.finderOrbitSmall} />
           <View style={styles.finderTrace} />
@@ -101,7 +101,7 @@ export function OnboardingV2Activation() {
           <ActivityIndicator style={styles.finderSpinner} color={Phase1Colors.orange} />
         </View>
         <View accessibilityLiveRegion="polite" style={styles.processingCopy}>
-          <Text style={styles.eyebrow}>VAYRIN</Text>
+          <Text style={styles.eyebrow}>NEARR</Text>
           <Text style={[styles.headline, styles.centerText]}>Finding the place</Text>
           <Text style={[styles.body, styles.centerText]}>Turning that post into a place on your map.</Text>
         </View>
@@ -119,7 +119,7 @@ export function OnboardingV2Activation() {
       <Phase1Frame onBack={goBack} progress={progress} progressLabel="Place found" footer={<Phase1PrimaryButton title="Save to my map" onPress={() => void savePlace()} loading={saving} />}>
         <FoundPlaceHero name={placeName} locality={locality} />
         <View style={styles.resultCopy} accessibilityLiveRegion="polite">
-          <Text style={styles.eyebrow}>MATCHED BY VAYRIN</Text>
+          <Text style={styles.eyebrow}>PLACE FOUND</Text>
           <Text style={styles.resultHeadline}>{placeName}</Text>
           <View style={styles.addressLine}>
             <Feather name="map-pin" size={16} color={Phase1Colors.orange} />

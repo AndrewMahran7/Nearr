@@ -131,8 +131,8 @@ export function ShareJobHandoff({ url, submissionId }: { url: string; submission
                 ...buildVayrinPresentation({ kind: 'looking', source: 'async' }),
                 headline: 'Sent to Nearr',
                 body: onboardingShare
-                  ? 'Vayrin is checking the post. Nearr will let you know when the result is ready.'
-                  : "Vayrin's on it. You can close this.",
+                  ? 'Checking the post. Nearr will let you know when the result is ready.'
+                  : 'Finding the place. You can close this.',
               }}
             />
           ) : (
@@ -209,10 +209,10 @@ export function ShareJobHandoff({ url, submissionId }: { url: string; submission
             compact
             presentation={{
               ...buildVayrinPresentation({ kind: 'looking', source: 'async' }),
-              headline: onboardingShare ? 'Vayrin is looking…' : 'Sending to Nearr',
+              headline: onboardingShare ? 'Finding the place…' : 'Sending to Nearr',
               body: onboardingShare
                 ? 'Nearr received the post.'
-                : 'Vayrin will start as soon as it arrives.',
+                : 'The search will start as soon as it arrives.',
             }}
           />
         ) : (

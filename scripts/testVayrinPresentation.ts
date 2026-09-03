@@ -33,7 +33,7 @@ const FIRST_PERSON_OR_WE = /\b(?:I|I['’](?:m|ve|ll)|me|my|we|we['’]re|our|le
   const row = job({ status: 'completed', decision: 'auto_save', saved_place_id: 's1', extraction_payload: { savedPlaceName: 'Griffith Observatory' } });
   const result = mapShareJobToVayrinPresentation(buildShareJobDetailState(row), row);
   assert.equal(result.kind, 'found');
-  assert.equal(result.headline, 'Found it.');
+  assert.equal(result.headline, 'Place found.');
 }
 
 // One uncertain candidate.
@@ -69,7 +69,7 @@ const leadPayload = {
   const result = mapShareJobToVayrinPresentation(buildShareJobDetailState(row), row);
   assert.equal(result.kind, 'leads_unverified');
   assert.match(result.body, /choose an exact place/i);
-  assert.notEqual(result.headline, 'Found it.');
+  assert.notEqual(result.headline, 'Place found.');
 }
 
 // Two distinct places and partial multi remain separate result classes.
@@ -99,7 +99,7 @@ const leadPayload = {
   assert.equal(mapShareJobToVayrinPresentation(buildShareJobDetailState(failed), failed).kind, 'technical_failure');
 }
 
-// Model-prior defense: even an inconsistent completed row cannot claim Found it.
+// Model-prior defense: even an inconsistent completed row cannot claim a found place.
 {
   const priorPayload = { candidates: [], mentionSlots: [{
     mentionId: 'm1', displayName: 'Famous Zoo', outcome: 'no_match', candidates: [],
@@ -108,12 +108,12 @@ const leadPayload = {
   const row = job({ status: 'completed', decision: 'auto_save', saved_place_id: 's1', candidate_payload: priorPayload });
   const result = mapShareJobToVayrinPresentation(buildShareJobDetailState(row), row);
   assert.notEqual(result.kind, 'found');
-  assert.notEqual(result.headline, 'Found it.');
+  assert.notEqual(result.headline, 'Place found.');
 }
 
 // Correction and saved handoff copy.
 assert.equal(buildVayrinPresentation({ kind: 'correcting', source: 'async' }).secondaryAction, 'Search again');
-assert.match(buildVayrinPresentation({ kind: 'saved', source: 'async' }).body, /Nearr has it/);
+assert.match(buildVayrinPresentation({ kind: 'saved', source: 'async' }).body, /on your map/);
 
 // Current production surfaces have no canonical character art. Every state
 // therefore defaults to neutral or third-person language, including long
@@ -143,16 +143,16 @@ assert.match(buildVayrinPresentation({ kind: 'saved', source: 'async' }).body, /
       `${presentation.kind} no-art copy is not first person`,
     );
   }
-  assert.equal(noArtStates[1]?.headline, 'Vayrin is looking…');
-  assert.equal(noArtStates[3]?.headline, 'Found it.');
+  assert.equal(noArtStates[1]?.headline, 'Finding the place…');
+  assert.equal(noArtStates[3]?.headline, 'Place found.');
   assert.equal(noArtStates[4]?.headline, 'Is this the place?');
   assert.equal(noArtStates[5]?.headline, 'Which one is it?');
-  assert.equal(noArtStates[7]?.headline, 'Vayrin found 3 places.');
-  assert.equal(noArtStates[8]?.headline, 'Vayrin found 2 places.');
+  assert.equal(noArtStates[7]?.headline, '3 places found.');
+  assert.equal(noArtStates[8]?.headline, '2 places found.');
 }
 
-// The future artwork ticket can enable first-person copy through one mapper
-// context; current product code does not opt into it.
+// Legacy artwork metadata remains compatible without reintroducing a separate
+// assistant voice.
 {
   const artStates = [
     buildVayrinPresentation({ kind: 'looking', source: 'async' }, ART_VISIBLE),
@@ -169,13 +169,13 @@ assert.match(buildVayrinPresentation({ kind: 'saved', source: 'async' }).body, /
   for (const presentation of artStates) {
     assert.equal(presentation.artVisible, true, `${presentation.kind} records visible art`);
   }
-  for (const presentation of [artStates[0]!, artStates[1]!, artStates[4]!, artStates[5]!, artStates[7]!, artStates[9]!]) {
-    assert.match(`${presentation.headline} ${presentation.body}`, FIRST_PERSON_OR_WE);
+  for (const presentation of artStates) {
+    assert.doesNotMatch(`${presentation.headline} ${presentation.body}`, FIRST_PERSON_OR_WE);
   }
-  assert.equal(artStates[0]?.headline, "I'm looking…");
+  assert.equal(artStates[0]?.headline, 'Finding the place…');
   assert.equal(artStates[2]?.headline, 'Is this the place?');
   assert.equal(artStates[3]?.headline, 'Which one is it?');
-  assert.equal(artStates[4]?.headline, 'I found 3 places.');
+  assert.equal(artStates[4]?.headline, '3 places found.');
 }
 
 // Both route adapters preserve the same explicit artwork context.

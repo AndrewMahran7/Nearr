@@ -1,5 +1,5 @@
 /**
- * Pure product-language adapter for Vayrin result surfaces.
+ * Pure product-language adapter for place-identification result surfaces.
  *
  * Recognition and persistence keep their existing enums. This module only
  * decides how an already-computed outcome should be explained to a person, so
@@ -44,9 +44,7 @@ export type VayrinPresentation = {
   body: string;
   primaryAction: string | null;
   secondaryAction: string | null;
-  /** Copy may speak in first person only when canonical Vayrin artwork is
-   * visibly rendered beside it. Current product call sites use the no-art
-   * default; the component never fabricates a mascot. */
+  /** Legacy presentation metadata retained for call-site compatibility. */
   artVisible: boolean;
   leads: VayrinIdentityLead[];
 };
@@ -89,7 +87,7 @@ function timestamps(input: unknown): number[] {
     .slice(0, 12);
 }
 
-/** Read the optional frozen Vayrin Core lead shape without requiring Core to
+/** Read the optional frozen recognition lead shape without requiring Core to
  * be merged into this isolated branch. Unknown/malformed data is ignored. */
 export function normalizeVayrinIdentityLeads(payload: unknown): VayrinIdentityLead[] {
   const slots = record(payload)?.mentionSlots;
@@ -148,10 +146,6 @@ function failureIsUnsupported(reason: string | null | undefined): boolean {
   return /unsupported|private_or_unavailable|duration_too_long|media_unavailable/i.test(reason ?? '');
 }
 
-function voiceCopy(artVisible: boolean, noArt: string, withArt: string): string {
-  return artVisible ? withArt : noArt;
-}
-
 export function buildVayrinPresentation(
   state: VayrinDomainState,
   context: VayrinPresentationContext = {},
@@ -167,13 +161,9 @@ export function buildVayrinPresentation(
       return {
         ...base,
         kind: 'ready',
-        headline: voiceCopy(artVisible, 'Just ask Vayrin.', 'Just ask me.'),
-        body: voiceCopy(
-          artVisible,
-          'Share a video or paste its link. Vayrin will find the place.',
-          "Share a video or paste its link. I'll find the place.",
-        ),
-        primaryAction: 'Ask Vayrin',
+        headline: 'Find a place from a video.',
+        body: 'Share a video or paste its link. Nearr finds the place.',
+        primaryAction: 'Find the place',
         secondaryAction: null,
       };
     case 'looking': {
@@ -181,9 +171,7 @@ export function buildVayrinPresentation(
       return {
         ...base,
         kind: 'looking',
-        headline: long
-          ? voiceCopy(artVisible, 'Vayrin is still looking.', "I'm still looking.")
-          : voiceCopy(artVisible, 'Vayrin is looking\u2026', "I'm looking\u2026"),
+        headline: long ? 'Still finding the place.' : 'Finding the place\u2026',
         body: long
           ? "This one's tricky. You can leave — Nearr will keep working."
           : state.source === 'async'
@@ -197,7 +185,7 @@ export function buildVayrinPresentation(
       return {
         ...base,
         kind: 'found',
-        headline: voiceCopy(artVisible, 'Found it.', 'I found it.'),
+        headline: 'Place found.',
         body: place
           ? `${place} — ${state.alreadySaved ? 'already on your map.' : 'saved to your map.'}`
           : state.alreadySaved ? 'This place is already on your map.' : 'Saved to your map.',
@@ -253,11 +241,7 @@ export function buildVayrinPresentation(
       return {
         ...base,
         kind: 'multi_found',
-        headline: voiceCopy(
-          artVisible,
-          `Vayrin found ${count} ${count === 1 ? 'place' : 'places'}.`,
-          `I found ${count} ${count === 1 ? 'place' : 'places'}.`,
-        ),
+        headline: `${count} ${count === 1 ? 'place' : 'places'} found.`,
         body: 'Save the ones you want.',
         primaryAction: 'Save selected',
         secondaryAction: 'Save all',
@@ -267,12 +251,8 @@ export function buildVayrinPresentation(
         ...base,
         kind: 'multi_partial',
         headline: count > 0
-          ? voiceCopy(
-              artVisible,
-              `Vayrin found ${count} ${count === 1 ? 'place' : 'places'}.`,
-              `I found ${count} ${count === 1 ? 'place' : 'places'}.`,
-            )
-          : voiceCopy(artVisible, 'Vayrin found a few leads.', "I've got a few leads."),
+          ? `${count} ${count === 1 ? 'place' : 'places'} found.`
+          : 'A few possible places.',
         body: count > 0
           ? 'Some are ready to save. Match each moment to the right place.'
           : 'Match each moment to the right place.',
@@ -283,7 +263,7 @@ export function buildVayrinPresentation(
       return {
         ...base,
         kind: 'technical_failure',
-        headline: voiceCopy(artVisible, 'Something went wrong.', "Sorry — that one's on me."),
+        headline: 'Something went wrong.',
         body: 'Nearr could not finish checking this video.',
         primaryAction: 'Try again',
         secondaryAction: 'Search manually',
@@ -301,8 +281,8 @@ export function buildVayrinPresentation(
       return {
         ...base,
         kind: 'saved',
-        headline: voiceCopy(artVisible, 'All set.', "I've got it."),
-        body: "It's on your map. Nearr has it from here.",
+        headline: 'All set.',
+        body: "It's on your map.",
         primaryAction: 'View on map',
         secondaryAction: 'Done',
       };
@@ -312,11 +292,7 @@ export function buildVayrinPresentation(
         ...base,
         kind: 'no_evidence',
         headline: "Couldn't find an exact place.",
-        body: voiceCopy(
-          artVisible,
-          'Search by name or location to choose the place.',
-          'There was not enough evidence in this video.',
-        ),
+        body: 'Search by name or location to choose the place.',
         primaryAction: 'Search manually',
         secondaryAction: 'Try another video',
       };
@@ -383,11 +359,7 @@ export function mapShareJobToVayrinPresentation(
   if (detail.kind === 'manual' && failureIsUnsupported(job?.failure_reason ?? job?.needs_help_reason)) {
     return {
       ...buildVayrinPresentation({ kind: 'no_evidence', source: 'async' }, context),
-      headline: voiceCopy(
-        context.hasVisibleVayrinArt === true,
-        "Vayrin can't open this one.",
-        "I can't open this one.",
-      ),
+      headline: "Can't open this one.",
       body: 'Try sharing the video itself, or a link to the post.',
       primaryAction: 'Try another video',
       secondaryAction: 'Search manually',

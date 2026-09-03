@@ -210,7 +210,7 @@ function resultCopy(
 
   if (candidateCount === 1) {
     return {
-      title: 'Vayrin found a possible place',
+      title: 'Possible place found',
       body: candidateName
         ? `Open Nearr to check ${candidateName}.`
         : 'Open Nearr to see if it matches.',
@@ -250,7 +250,7 @@ function resultCopy(
 
   if (leadName) {
     return {
-      title: 'Vayrin found something to check',
+      title: 'Place clue found',
       body: 'Open Nearr to search for the exact place.',
       resultClass: 'named_lead',
     };

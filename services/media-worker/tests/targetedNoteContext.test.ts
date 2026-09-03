@@ -268,8 +268,9 @@ for (const fixture of visualCases) {
       });
       assert.equal(evaluated.note, fixture.note);
       assert.equal(requestBody.contents[0].parts.filter((part: any) => part.inlineData).length, 1);
-      assert.match(requestBody.systemInstruction.parts[0].text, /Vayrin Voice/);
-      assert.match(requestBody.systemInstruction.parts[0].text, /does not summarize videos/i);
+      assert.match(requestBody.systemInstruction.parts[0].text, /Saved-place note voice/);
+      assert.doesNotMatch(requestBody.systemInstruction.parts[0].text, /\bVayrin\b/i);
+      assert.match(requestBody.systemInstruction.parts[0].text, /do not summarize videos/i);
       assert.match(requestBody.contents[0].parts[0].text, /untrusted_saved_post_evidence/);
       assert.equal(requestBody.generationConfig.temperature, 1);
       assert.equal(requestBody.generationConfig.maxOutputTokens, 256);
