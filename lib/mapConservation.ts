@@ -166,7 +166,7 @@ export function buildMapConservationLedger<T extends LedgerPlace>(args: {
   };
 }
 
-const MAX_MAP_CONSERVATION_LEDGERS = 30;
+const MAX_MAP_CONSERVATION_LEDGERS = 100;
 let recentLedgers: MapConservationLedger[] = [];
 
 export function recordMapConservationLedger(ledger: MapConservationLedger): void {

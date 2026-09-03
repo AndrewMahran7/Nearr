@@ -110,7 +110,7 @@ export function nextCameraTransition(
   return { revision: previousRevision + 1, source };
 }
 
-function regionsApproximatelyEqual(
+export function regionsApproximatelyEqual(
   left: ClusterRegion | null | undefined,
   right: ClusterRegion | null | undefined,
 ): boolean {
@@ -121,6 +121,26 @@ function regionsApproximatelyEqual(
     Math.abs(normalizedLongitude(left.longitude - right.longitude)) <= longitudeTolerance &&
     Math.abs(left.latitudeDelta - right.latitudeDelta) <= latitudeTolerance &&
     Math.abs(left.longitudeDelta - right.longitudeDelta) <= longitudeTolerance;
+}
+
+/**
+ * Programmatic continuous callbacks are observations, never query commits.
+ * Once native state is settled, an unowned late callback from the same camera
+ * revision may only repeat that settled state; it cannot replace it.
+ */
+export function shouldCommitContinuousRegion(args: {
+  transition: CameraTransition | null;
+  manualGestureActive: boolean;
+  region: ClusterRegion;
+  latestSettledSnapshot: MapViewportSnapshot | null;
+}): boolean {
+  if (!isUsableMapRegion(args.region)) return false;
+  if (args.manualGestureActive || args.transition?.source === 'gesture') return true;
+  if (args.transition) return false;
+  const settled = args.latestSettledSnapshot;
+  if (!settled) return true;
+  if (settled.source !== 'native_readback' && settled.source !== 'region_change_complete') return true;
+  return regionsApproximatelyEqual(settled.region, args.region);
 }
 
 /**
@@ -148,4 +168,17 @@ export function isClusterQuerySynchronized(
   snapshot: MapViewportSnapshot | null,
 ): boolean {
   return !!snapshot && snapshot.cameraRevision === cameraRevision;
+}
+
+export function isLatestMapRepresentation(args: {
+  resultViewportRevision: number;
+  resultCameraRevision: number;
+  resultDatasetRevision: number;
+  latestViewportRevision: number;
+  latestCameraRevision: number;
+  latestDatasetRevision: number;
+}): boolean {
+  return args.resultViewportRevision === args.latestViewportRevision &&
+    args.resultCameraRevision === args.latestCameraRevision &&
+    args.resultDatasetRevision === args.latestDatasetRevision;
 }

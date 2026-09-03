@@ -7,6 +7,7 @@ import { join } from 'node:path';
 import {
   MapClusterExpansionCoordinator,
   clusterMemberFitCoordinates,
+  clusterMembersHaveUsefulBounds,
   clusterMemberKey,
   resolveLatestClusterMarker,
   type ClusterExpansionAction,
@@ -91,6 +92,7 @@ function requestFor(
     latitude: cluster.latitude,
     longitude: cluster.longitude,
     targetRegion,
+    target: { kind: 'region' },
   };
 }
 
@@ -127,8 +129,8 @@ assert.ok(originalRequest.memberIds.length >= 2, 'rendered cluster resolves curr
 // 1. Render dense -> tap -> primary camera -> recompute -> split.
 {
   const coordinator = new MapClusterExpansionCoordinator();
-  expectKind(coordinator.tap(originalRequest, true), 'primary_camera');
-  coordinator.cameraSettled();
+  expectKind(coordinator.tap(originalRequest, true), 'camera');
+  assert.equal(coordinator.cameraCommandIssued(), true);
   const zoomed = clusters(queryMapClusters(index, {
     region: originalRequest.targetRegion,
     zoom: originalRequest.targetZoom,
@@ -144,8 +146,8 @@ assert.ok(originalRequest.memberIds.length >= 2, 'rendered cluster resolves curr
   let filter = 'all';
   for (let cycle = 0; cycle < 10; cycle += 1) {
     const request = requestFor(index, original, wideZoom, cycle + 1);
-    expectKind(coordinator.tap(request, true), 'primary_camera');
-    coordinator.cameraSettled();
+    expectKind(coordinator.tap(request, true), 'camera');
+    assert.equal(coordinator.cameraCommandIssued(), true);
     expectKind(coordinator.clustersRecomputed([]), 'completed');
     selectedId = request.memberIds[0]!; // select child
     assert.ok(selectedId);
@@ -164,18 +166,19 @@ assert.ok(originalRequest.memberIds.length >= 2, 'rendered cluster resolves curr
 {
   const coordinator = new MapClusterExpansionCoordinator();
   expectKind(coordinator.tap(originalRequest, false), 'queued');
-  expectKind(coordinator.mapBecameUsable(), 'primary_camera');
+  expectKind(coordinator.mapBecameUsable(), 'camera');
   expectKind(coordinator.mapBecameUsable(), 'none');
 }
 
-// 4. Rapid taps replace the in-flight request; timeout belongs to the latest.
+// 4. Rapid taps are ignored while the first transaction owns the camera.
 {
   const coordinator = new MapClusterExpansionCoordinator();
   const second = { ...originalRequest, token: 2 };
-  coordinator.tap(originalRequest, true);
-  coordinator.tap(second, true);
-  const fallback = expectKind(coordinator.timeout(), 'fallback_fit');
-  assert.equal(fallback.request.token, 2);
+  expectKind(coordinator.tap(originalRequest, true), 'camera');
+  assert.equal(coordinator.cameraCommandIssued(), true);
+  expectKind(coordinator.tap(second, true), 'ignored');
+  const failed = expectKind(coordinator.timeout(), 'failed');
+  assert.equal(failed.request.token, 1);
 }
 
 // 5. A stale cluster id resolves against the latest rendered marker.
@@ -202,12 +205,12 @@ assert.ok(originalRequest.memberIds.length >= 2, 'rendered cluster resolves curr
 // 7. Same/equal expansion zoom is forced to a meaningful level in.
 assert.ok(clusterTapZoom({ expansionZoom: wideZoom, currentZoom: wideZoom }) >= wideZoom + 1);
 
-// 8. First camera failure gets one fallback fit; second ends in selection.
+// 8. Camera failure closes the transaction and cannot stack a fallback.
 {
   const coordinator = new MapClusterExpansionCoordinator();
-  coordinator.tap(originalRequest, true);
-  expectKind(coordinator.cameraFailed(), 'fallback_fit');
-  expectKind(coordinator.timeout(), 'fallback_select');
+  expectKind(coordinator.tap(originalRequest, true), 'camera');
+  assert.equal(coordinator.cameraCommandIssued(), true);
+  expectKind(coordinator.cameraFailed(), 'failed');
   expectKind(coordinator.timeout(), 'none');
 }
 
@@ -219,6 +222,10 @@ assert.ok(clusterTapZoom({ expansionZoom: wideZoom, currentZoom: wideZoom }) >= 
   ]);
   assert.ok(coords[1]!.latitude > coords[0]!.latitude);
   assert.ok(coords[1]!.longitude > coords[0]!.longitude);
+  assert.equal(clusterMembersHaveUsefulBounds([
+    { id: 'a', latitude: 1, longitude: 2 },
+    { id: 'b', latitude: 1, longitude: 2 },
+  ]), false, 'coincident children stay as a stable cluster');
 }
 
 // 10. Pan, selected-pin dismissal, Place Detail return, and background/resume
@@ -228,7 +235,7 @@ for (const lifecycle of ['user_pan', 'selected_pin_dismissed', 'place_detail_ret
   coordinator.tap(originalRequest, true);
   coordinator.reset();
   assert.equal(coordinator.current(), null, `${lifecycle} clears transient expansion state`);
-  expectKind(coordinator.tap({ ...originalRequest, token: 3 }, true), 'primary_camera');
+  expectKind(coordinator.tap({ ...originalRequest, token: 3 }, true), 'camera');
 }
 
 // 11. Source contracts: selection clears before expansion; lifecycle hooks use
@@ -244,6 +251,9 @@ for (const lifecycle of ['user_pan', 'selected_pin_dismissed', 'place_detail_ret
   assert.ok(!handler.includes('mapRef.current?.animateToRegion'));
   assert.match(source, /clusterExpansionCoordinatorRef\.current\.mapBecameUsable\(\)/);
   assert.match(source, /clusterExpansionCoordinatorRef\.current\.cameraSettled\(\)/);
+  assert.ok(!source.includes("action.kind === 'fallback_select'"));
+  assert.ok(!source.includes('completeFallbackSelection'));
+  assert.match(handler, /target: expansionIsUseful/);
   assert.ok((source.match(/resetClusterExpansionRef\.current\(\)/g) ?? []).length >= 3);
   const panStart = source.indexOf('const handlePanDrag = useCallback');
   const panEnd = source.indexOf('const commitViewport', panStart);
@@ -293,5 +303,5 @@ for (const lifecycle of ['user_pan', 'selected_pin_dismissed', 'place_detail_ret
 
 console.log(
   'PASS cluster expansion: repeated taps, rapid taps, map readiness, filters, pan, selection, '
-  + 'navigation, lifecycle, stale ids, camera failure, one fallback, and no-loop invariant',
+  + 'navigation, lifecycle, stale ids, single-command failure, no selection fallback, and no-loop invariant',
 );

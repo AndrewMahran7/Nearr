@@ -645,7 +645,7 @@ assert.match(mapSource, /\{individualPlaces\.map\(\(p\) => \(\s*\n\s*<NearrMapMa
 assert.match(mapSource, /\{clusterMarkers\.map\(\(cluster\) => \(\s*\n\s*<NearrMapClusterMarker/);
 assert.match(mapSource, /onPress=\{handleClusterPress\}/);
 assert.match(mapSource, /onRegionChange=\{handleRegionChange\}/);
-assert.match(mapSource, /commitViewport\(region, 'region_change_complete'\)/);
+assert.match(mapSource, /commitViewport\(region, 'region_change_complete', cameraRevisionRef\.current\)/);
 assert.match(mapSource, /getMapBoundaries\(\)/);
 // Clustering must not be able to move the camera on its own.
 assert.equal(

@@ -331,17 +331,15 @@ const request = {
   latitude: firstCluster!.latitude,
   longitude: firstCluster!.longitude,
   targetRegion: { latitude: firstCluster!.latitude, longitude: firstCluster!.longitude, latitudeDelta: 0.1, longitudeDelta: 0.1 },
+  target: { kind: 'region' as const },
 };
-assert.equal(coordinator.tap(request, true).kind, 'primary_camera');
-assert.equal(coordinator.timeout().kind, 'fallback_fit');
+assert.equal(coordinator.tap(request, true).kind, 'camera');
+assert.equal(coordinator.cameraCommandIssued(), true);
 const terminal = coordinator.timeout();
-assert.equal(terminal.kind, 'fallback_select');
-const completed = coordinator.completeFallbackSelection(request);
-assert.equal(completed.kind, 'completed');
-assert.ok(completed.kind === 'completed');
-assert.equal(completed.result, 'fallback_selection');
+assert.equal(terminal.kind, 'failed');
+assert.equal(coordinator.timeout().kind, 'none');
 assert.match(MAP_SOURCE, /resolveLatestClusterMarker/);
-assert.match(MAP_SOURCE, /fallback_select/);
+assert.doesNotMatch(MAP_SOURCE, /action\.kind === 'fallback_select'/);
 
 // 14-17: back restores explorer, fitting is single-shot and respects manual
 // movement, AppState does not own/clear the session, and no explorer route or

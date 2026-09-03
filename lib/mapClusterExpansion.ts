@@ -1,11 +1,10 @@
 /**
  * Pure state machine for a cluster-tap camera request.
  *
- * React Native Maps camera calls are fire-and-forget.  This coordinator makes
- * that weak contract explicit: a tap is queued until the map is usable, the
- * resulting clustering is verified, one member-bounds fit is allowed, and a
- * member selection is the terminal fallback.  There is never an unbounded
- * retry and no state can remain "animating" forever.
+ * React Native Maps camera calls are fire-and-forget. This coordinator makes
+ * that weak contract explicit: the target is chosen before dispatch, a tap can
+ * issue at most one command, and watchdog/native failures only close the
+ * transaction. A cluster interaction never selects a place.
  */
 
 export type ClusterExpansionMember = {
@@ -31,6 +30,10 @@ export type ClusterExpansionRequest = {
     latitudeDelta: number;
     longitudeDelta: number;
   };
+  target:
+    | { kind: 'region' }
+    | { kind: 'fit'; coordinates: readonly { latitude: number; longitude: number }[] }
+    | { kind: 'none'; reason: 'max_zoom_overlap' | 'stale_cluster' | 'no_members' };
 };
 
 export type ClusterMembership = {
@@ -41,15 +44,15 @@ export type ClusterMembership = {
 export type ClusterExpansionAction =
   | { kind: 'none' }
   | { kind: 'queued'; request: ClusterExpansionRequest }
-  | { kind: 'primary_camera'; request: ClusterExpansionRequest }
-  | { kind: 'fallback_fit'; request: ClusterExpansionRequest }
-  | { kind: 'fallback_select'; request: ClusterExpansionRequest }
-  | { kind: 'completed'; request: ClusterExpansionRequest; result: 'split' | 'fallback_selection' };
+  | { kind: 'camera'; request: ClusterExpansionRequest }
+  | { kind: 'ignored'; request: ClusterExpansionRequest; result: 'busy' }
+  | { kind: 'failed'; request: ClusterExpansionRequest; result: 'timeout' | 'camera_exception' }
+  | { kind: 'completed'; request: ClusterExpansionRequest; result: 'split' | 'settled' | 'max_zoom_overlap' | 'stale_cluster' | 'no_members' };
 
 type ActiveExpansion = {
   request: ClusterExpansionRequest;
-  phase: 'queued' | 'primary' | 'fallback';
-  cameraSettled: boolean;
+  phase: 'queued' | 'commanding' | 'settling';
+  cameraCommandsIssued: number;
 };
 
 const NONE: ClusterExpansionAction = { kind: 'none' };
@@ -68,24 +71,37 @@ export class MapClusterExpansionCoordinator {
   }
 
   tap(request: ClusterExpansionRequest, mapUsable: boolean): ClusterExpansionAction {
+    if (this.active) return { kind: 'ignored', request, result: 'busy' };
+    if (request.target.kind === 'none') {
+      return { kind: 'completed', request, result: request.target.reason };
+    }
     this.active = {
       request,
-      phase: mapUsable ? 'primary' : 'queued',
-      cameraSettled: false,
+      phase: mapUsable ? 'commanding' : 'queued',
+      cameraCommandsIssued: 0,
     };
-    return mapUsable ? { kind: 'primary_camera', request } : { kind: 'queued', request };
+    return mapUsable ? { kind: 'camera', request } : { kind: 'queued', request };
   }
 
   mapBecameUsable(): ClusterExpansionAction {
     if (!this.active || this.active.phase !== 'queued') return NONE;
-    this.active = { ...this.active, phase: 'primary', cameraSettled: false };
-    return { kind: 'primary_camera', request: this.active.request };
+    this.active = { ...this.active, phase: 'commanding' };
+    return { kind: 'camera', request: this.active.request };
   }
 
-  cameraSettled(): void {
-    if (this.active && this.active.phase !== 'queued') {
-      this.active = { ...this.active, cameraSettled: true };
+  cameraCommandIssued(): boolean {
+    if (!this.active || this.active.phase !== 'commanding' || this.active.cameraCommandsIssued > 0) {
+      return false;
     }
+    this.active = { ...this.active, phase: 'settling', cameraCommandsIssued: 1 };
+    return true;
+  }
+
+  cameraSettled(): ClusterExpansionAction {
+    if (!this.active || this.active.phase !== 'settling') return NONE;
+    const request = this.active.request;
+    this.active = null;
+    return { kind: 'completed', request, result: 'settled' };
   }
 
   /**
@@ -94,7 +110,7 @@ export class MapClusterExpansionCoordinator {
    * legitimately removed it), which is the successful outcome.
    */
   clustersRecomputed(current: readonly ClusterMembership[]): ClusterExpansionAction {
-    if (!this.active || this.active.phase === 'queued' || !this.active.cameraSettled) return NONE;
+    if (!this.active || this.active.phase !== 'settling') return NONE;
     const unchanged = current.some((cluster) =>
       sameMembers(cluster.memberIds, this.active!.request.memberIds),
     );
@@ -105,26 +121,18 @@ export class MapClusterExpansionCoordinator {
   }
 
   cameraFailed(): ClusterExpansionAction {
-    return this.advanceAfterFailure();
+    return this.finishFailure('camera_exception');
   }
 
   timeout(): ClusterExpansionAction {
-    return this.advanceAfterFailure();
+    return this.finishFailure('timeout');
   }
 
-  private advanceAfterFailure(): ClusterExpansionAction {
-    if (!this.active || this.active.phase === 'queued') return NONE;
-    if (this.active.phase === 'primary') {
-      this.active = { ...this.active, phase: 'fallback', cameraSettled: false };
-      return { kind: 'fallback_fit', request: this.active.request };
-    }
+  private finishFailure(result: 'timeout' | 'camera_exception'): ClusterExpansionAction {
+    if (!this.active) return NONE;
     const request = this.active.request;
     this.active = null;
-    return { kind: 'fallback_select', request };
-  }
-
-  completeFallbackSelection(request: ClusterExpansionRequest): ClusterExpansionAction {
-    return { kind: 'completed', request, result: 'fallback_selection' };
+    return { kind: 'failed', request, result };
   }
 
   reset(): void {
@@ -193,4 +201,18 @@ export function clusterMemberFitCoordinates(
     { latitude: minLat - latPad, longitude: minLng - lngPad },
     { latitude: maxLat + latPad, longitude: maxLng + lngPad },
   ];
+}
+
+/** True only when a one-shot native fit can reveal spatially distinct points. */
+export function clusterMembersHaveUsefulBounds(
+  members: readonly ClusterExpansionMember[],
+  minimumSpan = 0.00002,
+): boolean {
+  if (members.length < 2) return false;
+  const unique = new Set(members.map((member) => `${member.latitude}:${member.longitude}`));
+  if (unique.size < 2) return false;
+  const latitudes = members.map((member) => member.latitude);
+  const longitudes = members.map((member) => member.longitude);
+  return Math.max(...latitudes) - Math.min(...latitudes) >= minimumSpan ||
+    Math.max(...longitudes) - Math.min(...longitudes) >= minimumSpan;
 }
