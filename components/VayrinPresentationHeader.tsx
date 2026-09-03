@@ -4,8 +4,8 @@ import { Radius, Spacing } from '@/constants';
 import { useTheme } from '@/lib/theme';
 import type { VayrinPresentation } from '@/lib/vayrinPresentation';
 
-/** Text-first Vayrin presence. Canonical production character renders are not
- * available in Vayrin-Brand yet, so this deliberately does not draw a proxy. */
+/** Text-first place-identification status. The legacy component name remains
+ * internal so this copy-only change does not churn imports. */
 export function VayrinPresentationHeader({
   presentation,
   compact = false,
@@ -28,7 +28,7 @@ export function VayrinPresentationHeader({
     >
       <View style={styles.eyebrowRow} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
         <View style={styles.orangeRule} />
-        <Text style={styles.eyebrow}>VAYRIN</Text>
+        <Text style={styles.eyebrow}>NEARR</Text>
         {looking ? <ActivityIndicator size="small" color={colors.primary} /> : null}
       </View>
       <Text style={[compact ? typography.heading : typography.title, styles.headline]}>

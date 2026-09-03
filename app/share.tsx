@@ -144,7 +144,7 @@ type Phase =
   | 'choose' // multiple candidates, user must pick
   | 'multi-choose' // ≥2 distinct places resolved, user multi-selects
   | 'failed' // parse/search failed → manual search
-  | 'saved'; // Vayrin handoff before normal Nearr resumes
+  | 'saved'; // Finder handoff before normal Nearr resumes
 
 const PLATFORM_LABELS: Record<ShareSource, string> = {
   tiktok: 'TikTok',
@@ -2506,7 +2506,7 @@ function LegacyShareScreen() {
 
   const primaryButtonTitle =
     phase === 'parsing' || phase === 'searching'
-      ? onboardingShare ? 'Vayrin is looking…' : 'Finding place…'
+      ? onboardingShare ? 'Finding the place…' : 'Finding place…'
       : phase === 'saving'
         ? 'Saving…'
         : 'Save place';
@@ -2619,14 +2619,14 @@ function LegacyShareScreen() {
             <>
               <Text style={[Typography.title, styles.headerTitle]}>
                 {onboardingShare
-                  ? 'Vayrin is looking…'
+                  ? 'Finding the place…'
                   : launchedFromShare
                     ? 'Saving from share…'
                     : 'Save from a link'}
               </Text>
               <Text style={[Typography.body, styles.muted, styles.headerBody]}>
                 {onboardingShare
-                  ? 'Nearr received the post. Vayrin is checking it for a real place.'
+                  ? 'Post received. Checking it for a real place.'
                   : launchedFromShare
                     ? 'Nearr received a link from another app. Finding the place now.'
                     : 'Paste a link to test. In production, this opens automatically from the share sheet.'}
@@ -2644,7 +2644,7 @@ function LegacyShareScreen() {
                 autoCorrect={false}
                 keyboardType="url"
                 editable={!busy}
-                accessibilityLabel="Video link for Vayrin"
+                accessibilityLabel="Video link"
                 onSubmitEditing={() => {
                   void runSaveFlow(url).catch((err) => {
                     console.warn('[share] save flow failed', (err as Error)?.message ?? err);
@@ -2655,8 +2655,8 @@ function LegacyShareScreen() {
               <View style={{ height: Spacing.md }} />
 
               <Button
-                title={vayrinEnabled ? 'Ask Vayrin' : primaryButtonTitle}
-                accessibilityLabel={vayrinEnabled ? 'Ask Vayrin to find this place' : undefined}
+                title={vayrinEnabled ? 'Find the place' : primaryButtonTitle}
+                accessibilityLabel={vayrinEnabled ? 'Find the place from this video' : undefined}
                 onPress={() => {
                   void runSaveFlow(url).catch((err) => {
                     console.warn('[share] save flow failed', (err as Error)?.message ?? err);

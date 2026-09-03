@@ -633,7 +633,7 @@ function ShareJobDetailScreen() {
   const candidateConfirmationPresentation = {
     ...vayrinPresentation,
     headline: candidateMode === 'multiple'
-      ? 'Vayrin found a few possibilities.'
+      ? 'A few places match this video.'
       : confirmationPrompt(candidateMode),
     body: candidateMode === 'broad'
       ? 'This is an area match. Search nearby to choose an exact destination.'

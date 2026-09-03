@@ -66,8 +66,8 @@ assert.match(
 );
 
 // 11. The compact evidence strip displays two thumbnails around 390pt and remains swipeable.
-for (const width of [375, 390, 430]) {
-  const frameWidth = Math.min(160, Math.max(148, (width - 72) / 2));
+for (const width of [320, 375, 390, 430]) {
+  const frameWidth = Math.min(160, Math.max(124, (width - 72) / 2));
   assert.ok(frameWidth * 2 + 8 <= width - 48, `${width}pt fits two evidence frames`);
 }
 assert.match(source, /horizontal[\s\S]{0,120}nestedScrollEnabled/);
@@ -89,8 +89,8 @@ assert.equal(compactThumbWidth, 118);
 assert.equal(compactPhotoHeight, 132);
 assert.equal(standardPhotoHeight, 220);
 assert.ok(3 * (compactPhotoHeight + 16) <= 480, 'three collapsed rows stay within a compact comparison budget');
-for (const width of [375, 390, 430]) {
-  assert.ok(width - 48 - compactThumbWidth - 10 >= 199, `${width}pt leaves useful comparison copy width`);
+for (const width of [320, 375, 390, 430]) {
+  assert.ok(width - 48 - compactThumbWidth - 10 >= 144, `${width}pt leaves useful comparison copy width`);
 }
 assert.match(card, /testID="compact-candidate-row"/);
 assert.match(card, /numberOfLines=\{2\}>\{candidate\.name\}/);

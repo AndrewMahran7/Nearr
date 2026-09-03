@@ -18,7 +18,7 @@ assert.equal(strong.resultClass, 'strong_exact');
 assert.deepEqual(routeShareJobNotification(strong.data), { kind: 'saved_place', savedPlaceId: 'saved-1', googlePlaceId: 'google-1' });
 
 const likely = note({ candidateCount: 1, strongestCandidateName: 'Es Pontas' });
-assert.equal(likely.title, 'Vayrin found a possible place');
+assert.equal(likely.title, 'Possible place found');
 assert.equal(likely.body, 'Open Nearr to check Es Pontas.');
 assert.equal(likely.resultClass, 'single_likely_candidate');
 assert.doesNotMatch(`${likely.title} ${likely.body}`, /Found it/);
@@ -43,7 +43,7 @@ for (const basis of ['model_prior', 'weak_context'] as const) {
 }
 
 const lead = note({ strongestLead: { name: 'Hidden Falls', evidenceKind: 'observable' }, observableLeadCount: 1 });
-assert.equal(lead.title, 'Vayrin found something to check');
+assert.equal(lead.title, 'Place clue found');
 assert.doesNotMatch(`${lead.title} ${lead.body}`, /Hidden Falls/);
 assert.equal(lead.resultClass, 'named_lead');
 assert.doesNotMatch(lead.title, /Found it/);

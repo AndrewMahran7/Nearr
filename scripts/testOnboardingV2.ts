@@ -76,14 +76,14 @@ const finderStart = activationSource.indexOf("if (stage === 'tutorial_processing
 const finderEnd = activationSource.indexOf("if (stage === 'tutorial_result_seen')", finderStart);
 assert.ok(finderStart > -1 && finderEnd > finderStart, 'the finder stage is explicit');
 const finderSource = activationSource.slice(finderStart, finderEnd);
-assert.match(finderSource, /\bVayrin\b/i, 'the finder identity appears while it is finding the place');
+assert.match(finderSource, />NEARR</, 'the product identity appears while it is finding the place');
 const payoffEnd = activationSource.indexOf("stage === 'tutorial_ready'", finderEnd);
 const payoffSource = activationSource.slice(finderEnd, payoffEnd);
-assert.match(payoffSource, /MATCHED BY VAYRIN/, 'the result credits Vayrin for the place match');
+assert.match(payoffSource, /PLACE FOUND/, 'the result describes the completed place match');
 assert.doesNotMatch(
-  `${activationSource.slice(0, finderStart)}\n${activationSource.slice(payoffEnd)}\n${preAuthSource}\n${mapCoachmarkSource}`,
+  `${activationSource}\n${preAuthSource}\n${mapCoachmarkSource}`,
   /\bVayrin\b/i,
-  'the finder identity remains scoped to processing and its result payoff',
+  'the retired character name is absent from onboarding',
 );
 assert.ok(tutorial.sourceUrl.startsWith('https://www.instagram.com/'));
 assert.ok(ONBOARDING_STARTER_CONTENT.every((item) => item.sourceUrl.startsWith('https://')));

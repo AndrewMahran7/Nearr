@@ -34,9 +34,9 @@ assert.equal(QUICK_CHECK_LAYOUT.evidenceFrameHeight, 96);
 assert.equal(QUICK_CHECK_LAYOUT.evidenceDotsHeight, 14);
 
 // 4. Evidence stays a bounded, horizontally swipeable row at all target widths.
-for (const width of [375, 390, 430]) {
+for (const width of [320, 375, 390, 430]) {
   const tileWidth = quickCheckCompactEvidenceFrameWidth(width);
-  assert.ok(tileWidth >= 148 && tileWidth <= 160, `${width}pt evidence tile stays bounded`);
+  assert.ok(tileWidth >= 124 && tileWidth <= 160, `${width}pt evidence tile stays bounded`);
   assert.ok(tileWidth * 2 + 8 <= width - 32, `${width}pt keeps two evidence tiles in the viewport`);
 }
 assert.match(source, /horizontal[\s\S]{0,140}nestedScrollEnabled/);

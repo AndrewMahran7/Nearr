@@ -50,7 +50,7 @@ type Props = {
   actingUserId: string | null;
   extractedName?: string | null;
   /** Keeps the finder present only when correction was opened directly from a
-   * Vayrin result. Ordinary saved-place correction remains Nearr-only. */
+   * finder result. Ordinary saved-place correction remains Nearr-only. */
   finderMode?: boolean;
   onClose: () => void;
   onCorrected: (updated: SavedPlaceWithPlace) => void;
@@ -235,9 +235,9 @@ export function WrongPlaceSheet({
         <SafeAreaView edges={['bottom']} style={styles.sheet}>
           <View style={styles.handle} />
           {finderMode ? (
-            <View style={styles.finderLabel} accessible accessibilityLabel="Vayrin correction">
+            <View style={styles.finderLabel} accessible accessibilityLabel="Place correction">
               <View style={styles.finderRule} />
-              <Text style={styles.finderLabelText}>VAYRIN</Text>
+              <Text style={styles.finderLabelText}>NEARR</Text>
             </View>
           ) : null}
           <View style={styles.header}>

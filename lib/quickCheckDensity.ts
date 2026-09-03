@@ -23,7 +23,7 @@ export const QUICK_CHECK_LAYOUT = {
 } as const;
 
 export function quickCheckCompactEvidenceFrameWidth(windowWidth: number): number {
-  return Math.min(160, Math.max(148, (Math.floor(windowWidth) - 72) / 2));
+  return Math.min(160, Math.max(124, (Math.floor(windowWidth) - 72) / 2));
 }
 
 export type QuickCheckLayoutAudit = {

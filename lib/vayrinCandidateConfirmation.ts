@@ -50,9 +50,9 @@ export type CandidateMatchStrength = 'high' | 'medium' | 'low';
 export const CONFIDENCE_SOURCE = 'resolver_normalized_evidence_strength';
 export const CONFIDENCE_INTERPRETATION = 'qualitative evidence-strength band; not a probability';
 
-/** Physical-layout contract for 375/390/430 pt iPhone widths. */
+/** Physical-layout contract for 320/375/390/430 pt iPhone widths. */
 export function quickCheckEvidenceFrameWidth(windowWidth: number): number {
-  return Math.max(280, Math.min(390, Math.floor(windowWidth) - 48));
+  return Math.max(240, Math.min(390, Math.floor(windowWidth) - 48));
 }
 
 /** The complete review taxonomy. Only provider-backed canonical values are saveable. */

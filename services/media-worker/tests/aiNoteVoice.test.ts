@@ -21,12 +21,13 @@ import { AI_NOTE_VOICE_FIXTURES } from '../src/evaluation/aiNoteVoiceFixtures.js
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 
 test('VOICE.md is the canonical runtime personality source', () => {
-  assert.equal(AI_NOTE_PROMPT_VERSION, 'vayrin-ai-note-voice-2026-08-24.v9');
+  assert.equal(AI_NOTE_PROMPT_VERSION, 'vayrin-ai-note-voice-2026-08-24.v10');
   assert.equal(VAYRIN_VOICE, readFileSync(VAYRIN_VOICE_PATH, 'utf8').trim());
-  assert.match(VAYRIN_AI_NOTE_SYSTEM_PROMPT, /He does not summarize videos\. He reacts to them\./);
+  assert.match(VAYRIN_AI_NOTE_SYSTEM_PROMPT, /Do not summarize videos\. React to them\./);
   assert.match(VAYRIN_AI_NOTE_SYSTEM_PROMPT, /Conversational fragments, rhetorical questions, and first-person reactions are fine/);
   assert.match(VAYRIN_VOICE, /does not need to restate an obvious subject/i);
   assert.match(VAYRIN_VOICE, /subject-verb-object sentence is neither required nor preferred/i);
+  assert.doesNotMatch(VAYRIN_AI_NOTE_SYSTEM_PROMPT, /\bVayrin\b/i);
   assert.doesNotMatch(VAYRIN_AI_NOTE_SYSTEM_PROMPT, /That \[thing\]|starts with That\/Those/i);
 });
 

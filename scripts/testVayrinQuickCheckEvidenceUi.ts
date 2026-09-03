@@ -64,8 +64,8 @@ assert.match(candidateCarousel, /<PhotoRolodexModal/);
 assert.match(sharedRolodex, /useSafeAreaInsets/);
 assert.doesNotMatch(sourceGallery, /<Modal\b/, 'source frames do not own a second fullscreen viewer');
 assert.match(sourceGallery, /formatCandidateTimestamp/);
-assert.deepEqual([375, 390, 430].map(quickCheckEvidenceFrameWidth), [327, 342, 382]);
-assert.ok([375, 390, 430].every((width) => quickCheckEvidenceFrameWidth(width) <= width - 48));
+assert.deepEqual([320, 375, 390, 430].map(quickCheckEvidenceFrameWidth), [272, 327, 342, 382]);
+assert.ok([320, 375, 390, 430].every((width) => quickCheckEvidenceFrameWidth(width) <= width - 48));
 
 // 4–5. Multiple candidate photos, lazy hydration, and hard request bounds.
 assert.equal(getVayrinCandidateFixture('vayrin-confirm-five-photos')?.candidates[0]?.photoUrls?.length, 5);
@@ -116,7 +116,7 @@ assert.equal(confirmationMode([exact('single')]), 'single');
 const supai = getVayrinCandidateFixture('vayrin-confirm-supai')!.candidates[0]!;
 assert.equal(isBroadCandidate(supai), true);
 assert.match(card, /AREA MATCH/);
-assert.match(card, /narrowed the video to this area/);
+assert.match(card, /The video was narrowed to this area/);
 assert.match(asyncDetail, /See places in this area/);
 
 // 18–20. Raw text cannot save/no-op; original post remains a secondary action.

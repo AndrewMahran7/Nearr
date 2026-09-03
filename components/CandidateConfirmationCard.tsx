@@ -157,7 +157,7 @@ export function CandidateConfirmationCard({
 
         {expanded ? (
           <View style={styles.whyPanelCompact}>
-            <Text style={styles.whyTitle}>Why Vayrin thinks this matches</Text>
+            <Text style={styles.whyTitle}>Why this matches</Text>
             {whyLines.map((line) => (
               <View key={line} style={styles.whyLine}>
                 <Text style={styles.bullet}>•</Text>
@@ -229,11 +229,11 @@ export function CandidateConfirmationCard({
 
       <View style={styles.evidenceBlock}>
         {broad ? (
-          <Text style={styles.areaDescription}>Vayrin narrowed the video to this area.</Text>
+          <Text style={styles.areaDescription}>The video was narrowed to this area.</Text>
         ) : null}
         {matchLabel ? (
           <View style={styles.evidenceRow}>
-            <Text style={styles.evidenceKey}>Vayrin match</Text>
+            <Text style={styles.evidenceKey}>Location match</Text>
             <Text style={styles.matchValue}>{matchLabel}</Text>
           </View>
         ) : null}
@@ -259,7 +259,7 @@ export function CandidateConfirmationCard({
             </Pressable>
             {expanded ? (
               <View style={styles.whyPanel}>
-                <Text style={styles.whyTitle}>Why Vayrin thinks this matches</Text>
+                <Text style={styles.whyTitle}>Why this matches</Text>
                 {whyLines.map((line) => (
                   <View key={line} style={styles.whyLine}>
                     <Text style={styles.bullet}>•</Text>

@@ -106,7 +106,7 @@ for (const count of [0, 1, 2, 3, 5]) {
 assert.deepEqual(decisionForPlausibleCandidates(1, true), {
   decision: 'candidate_confirmation', mode: 'single', autoSave: false,
 });
-assert.equal(composeShareCompletionNotification({ status: 'needs_help', jobId: 'blocked', candidateCount: 1 }).title, 'Vayrin found a possible place');
+assert.equal(composeShareCompletionNotification({ status: 'needs_help', jobId: 'blocked', candidateCount: 1 }).title, 'Possible place found');
 assert.equal(composeShareCompletionNotification({ status: 'needs_help', jobId: 'none' }).title, 'We couldn’t pin this one down');
 
 const pickerPlan = planFromResolverDecision({
