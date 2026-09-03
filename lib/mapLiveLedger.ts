@@ -17,6 +17,18 @@ export type MapLiveLedgerEntry = {
   nativeZoom?: number | null;
   derivedZoom?: number | null;
   queryZoom?: number | null;
+  candidateRepresentationId?: string | null;
+  visibleRepresentationId?: string | null;
+  candidateMarkerCount?: number;
+  candidateClusterCount?: number;
+  commitAllowed?: boolean;
+  commitReason?: string;
+  clusterZoomTransitionReason?: string;
+  visibleCommitsForSettledViewport?: number;
+  candidateCalculationDurationMs?: number;
+  validationDurationMs?: number;
+  commitDurationMs?: number;
+  mapRenderCount?: number;
   eligibleCount?: number;
   individualMarkerCount?: number;
   clusterCount?: number;

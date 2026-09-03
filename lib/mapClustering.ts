@@ -298,6 +298,28 @@ export function nextClusterZoom(
   return Math.round(target);
 }
 
+export type ClusterZoomTransitionReason =
+  | 'initial'
+  | 'stable'
+  | 'held_hysteresis'
+  | 'crossed_up'
+  | 'crossed_down';
+
+export function nextClusterZoomDecision(
+  currentZoom: number | null | undefined,
+  continuousZoom: number,
+): { zoom: number; reason: ClusterZoomTransitionReason } {
+  const zoom = nextClusterZoom(currentZoom, continuousZoom);
+  if (currentZoom == null || !Number.isFinite(currentZoom)) return { zoom, reason: 'initial' };
+  const current = clamp(Math.round(currentZoom), 0, CLUSTER_MAX_ZOOM + 1);
+  if (zoom > current) return { zoom, reason: 'crossed_up' };
+  if (zoom < current) return { zoom, reason: 'crossed_down' };
+  if (Math.round(clamp(continuousZoom, 0, CLUSTER_MAX_ZOOM + 1)) !== current) {
+    return { zoom, reason: 'held_hysteresis' };
+  }
+  return { zoom, reason: 'stable' };
+}
+
 /** `[west, south, east, north]`, padded. Supercluster normalizes longitudes. */
 export function regionToClusterBbox(
   region: ClusterRegion,
@@ -321,6 +343,17 @@ export function regionToClusterBbox(
     longitude + halfLng,
     clamp(latitude + halfLat, -90, 90),
   ];
+}
+
+/** The exact padded bbox used by the Supercluster query. */
+export function mapClusterQueryBbox<T extends Clusterable>(
+  built: MapClusterIndex<T>,
+  region: ClusterRegion,
+  viewportWidth = 320,
+): [number, number, number, number] {
+  const width = Number.isFinite(viewportWidth) && viewportWidth > 0 ? viewportWidth : 320;
+  const radiusPadding = (built.radiusPx + 8) / width;
+  return regionToClusterBbox(region, Math.max(CLUSTER_BBOX_PADDING, radiusPadding));
 }
 
 /**
@@ -617,8 +650,7 @@ export function queryMapClusters<T extends Clusterable>(
   // Pad by at least the configured screen-space radius (plus a small native
   // camera rounding margin), so a member inside the visible viewport cannot
   // vanish merely because its cluster center sits just beyond an edge.
-  const radiusPadding = (built.radiusPx + 8) / viewportWidth;
-  const bbox = regionToClusterBbox(args.region, Math.max(CLUSTER_BBOX_PADDING, radiusPadding));
+  const bbox = mapClusterQueryBbox(built, args.region, viewportWidth);
   const zoom = clamp(Math.round(args.zoom), 0, CLUSTER_MAX_ZOOM + 1);
 
   let features: ReturnType<typeof index.getClusters>;
