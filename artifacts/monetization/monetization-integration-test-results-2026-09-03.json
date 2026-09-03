@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-09-03",
+  "scope": "Nearr-Dev only",
+  "implementationCommit": "3a6d4d40bc4158c98a4c0f844bdea404351f0edf",
+  "baseOriginMain": "9950adf709f2b44dee069ec57b81bdece4ef87cf",
+  "monetizationSuite": {
+    "command": "npm run test:monetization-integration",
+    "passed": 25,
+    "failed": 0
+  },
+  "gates": [
+    { "name": "root typecheck", "status": "PASS" },
+    { "name": "monetization integration", "status": "PASS", "detail": "25/25" },
+    { "name": "current auth/account regressions", "status": "PASS" },
+    { "name": "current onboarding V2 regressions", "status": "PASS" },
+    { "name": "current share/queue/routing regressions", "status": "PASS" },
+    { "name": "current notification/failure regressions", "status": "PASS" },
+    { "name": "current recognition/cache regressions", "status": "PASS" },
+    { "name": "current multi-place/candidate regressions", "status": "PASS" },
+    { "name": "current map pin/cluster/camera regressions", "status": "PASS" },
+    { "name": "media-worker typecheck", "status": "PASS" },
+    { "name": "media-worker full tests", "status": "PASS", "detail": "450 total; 443 passed; 7 skipped; 0 failed" },
+    { "name": "media-worker build", "status": "PASS" },
+    { "name": "changed Edge function Deno checks", "status": "PASS" },
+    { "name": "startup smoke", "status": "PASS" },
+    { "name": "release gate", "status": "PASS" },
+    { "name": "deployment guards", "status": "PASS" },
+    { "name": "prebuild", "status": "PASS" },
+    { "name": "Expo iOS export", "status": "PASS" },
+    { "name": "git diff check", "status": "PASS" }
+  ],
+  "deployments": {
+    "supabaseProjectRef": "qnfxnmvxpjzfydgudtvs",
+    "schema": {
+      "status": "PASS",
+      "head": "20260903000001",
+      "productionChanged": false
+    },
+    "edge": {
+      "status": "PASS",
+      "functions": [
+        { "name": "monetization", "version": 1, "state": "ACTIVE", "verifyJwt": true },
+        { "name": "create-share-job", "version": 21, "state": "ACTIVE", "verifyJwt": true },
+        { "name": "process-share-jobs", "version": 60, "state": "ACTIVE", "verifyJwt": false },
+        { "name": "delete-account", "version": 18, "state": "ACTIVE", "verifyJwt": true }
+      ],
+      "unauthenticatedMonetizationProbe": 401
+    },
+    "railway": {
+      "deployedByTask": false,
+      "reason": "worker unchanged",
+      "deploymentId": "219fb783-3cbf-440a-875d-29f13010d6a8",
+      "state": "SUCCESS/RUNNING",
+      "healthHttpStatus": 200
+    },
+    "ota": {
+      "status": "PASS",
+      "channel": "development",
+      "runtime": "1.3.52",
+      "platforms": ["ios", "android"],
+      "groupId": "6d4a9f55-ab5f-4c23-b52c-5f0212498fe8",
+      "publishedCommit": "3fc5ed26e492fe35ea56e7837b34eccdb9df04d7",
+      "sourceAfterDocsOnlyMainRebase": "3a6d4d40bc4158c98a4c0f844bdea404351f0edf",
+      "productionChangedByTask": false
+    },
+    "easBuild": {
+      "createdByTask": false,
+      "nativeIapPresent": false,
+      "realStoreKitBuildRequired": true,
+      "existingBuildId": "4e118a76-9216-43ed-adf1-9069f9c69014",
+      "existingBuildExpired": true
+    }
+  },
+  "verdict": "MONETIZATION INTEGRATION UPDATED TO LATEST MAIN — READY FOR FOUNDER DEV QA"
+}
