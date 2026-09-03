@@ -1,0 +1,27 @@
+{
+  "releaseId": "2026-09-03-map-camera-transaction-conservation-hotfix",
+  "previousMainSha": "3127c30fa946b9c1a3fbd076fb721c9bb0976a31",
+  "previousOtaGroup": "30d26138-354f-4289-9009-927ff5d4ce3c",
+  "currentOtaGroup": null,
+  "edgeVersions": {
+    "process-share-link": 134,
+    "process-share-jobs": 89,
+    "create-share-job": 25,
+    "delete-account": 24,
+    "delete-share-job": 1
+  },
+  "previousRailwayDeployment": "3a9aa871-4ea5-4e76-8390-33a2a46c16bb#46b7f3b7665c734914a70938c4b851790aa69b18#sha256:c2996d2869a4e68bc38ebb727dee0801c309b445b35e563566920a2494615396",
+  "railwayDeployment": "3a9aa871-4ea5-4e76-8390-33a2a46c16bb#46b7f3b7665c734914a70938c4b851790aa69b18#sha256:c2996d2869a4e68bc38ebb727dee0801c309b445b35e563566920a2494615396",
+  "migrationLedger": [
+    "20260825000001"
+  ],
+  "rollbackProcedure": "Repeat the full concurrency guard, then republish previousOtaGroup to the production channel. Forward-revert only implementation commit 5cd21bc6b8dadf5a10d757558408ef4680b4da45 on current main. No Railway, Edge Function, schema, saved-place, or user-data rollback is required for this client-only OTA.",
+  "deploymentStatus": "PLANNED",
+  "physicalQa": {
+    "signedOutColdLaunch": "PENDING",
+    "signedInColdLaunch": "PENDING",
+    "forceCloseRelaunch": "PENDING",
+    "freshOnboardingLaunch": "PENDING",
+    "founderMapSequence": "PENDING"
+  }
+}
