@@ -36,16 +36,21 @@ const POLL_MS = 6_000;
 
 export type ShareJobSections = {
   processing: ShareJob[];
+  awaitingPurchase: ShareJob[];
   needsHelp: ShareJob[];
   failed: ShareJob[];
 };
 
 function sectionize(jobs: ShareJob[]): ShareJobSections {
   const processing: ShareJob[] = [];
+  const awaitingPurchase: ShareJob[] = [];
   const needsHelp: ShareJob[] = [];
   const failed: ShareJob[] = [];
   for (const job of jobs) {
     switch (job.status) {
+      case 'awaiting_purchase':
+        awaitingPurchase.push(job);
+        break;
       case 'queued':
       case 'processing_metadata':
         processing.push(job);
@@ -61,7 +66,7 @@ function sectionize(jobs: ShareJob[]): ShareJobSections {
         break;
     }
   }
-  return { processing, needsHelp, failed };
+  return { processing, awaitingPurchase, needsHelp, failed };
 }
 
 export function useShareJobs() {
@@ -220,7 +225,7 @@ export function useShareJobs() {
     refreshing,
     error,
     refresh,
-    needsHelpCount: visibleSections.needsHelp.length,
+    needsHelpCount: visibleSections.awaitingPurchase.length + visibleSections.needsHelp.length,
     activeQueueCount: visibleJobs.length,
     enabled,
     // True while the Supabase session is still being restored (cold start).

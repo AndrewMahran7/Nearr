@@ -1,0 +1,3 @@
+-- Migration-history compatibility marker.
+-- Nearr-Dev owns this historical version from its pre-main integration lane.
+-- The canonical main migrations remain authoritative; no schema runs here.

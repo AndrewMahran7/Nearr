@@ -10,7 +10,14 @@
  */
 
 export type CreateShareJobResult =
-  | { ok: true; jobId: string; status: string; duplicate: boolean }
+  | {
+      ok: true;
+      jobId: string;
+      status: string;
+      duplicate: boolean;
+      requiresPurchase: boolean;
+      availableUses: number | null;
+    }
   | {
       ok: false;
       reason:
@@ -48,6 +55,7 @@ export async function createShareJob(args: {
   url: string;
   accessToken: string;
   clientRequestId?: string;
+  forceRerun?: boolean;
   timeoutMs?: number;
 }): Promise<CreateShareJobResult> {
   const endpoint = (args.endpoint ?? '').trim();
@@ -72,6 +80,7 @@ export async function createShareJob(args: {
       body: JSON.stringify({
         url: args.url,
         clientRequestId: args.clientRequestId,
+        forceRerun: args.forceRerun === true,
       }),
       signal: controller.signal,
     });
@@ -85,7 +94,14 @@ export async function createShareJob(args: {
     }
 
     const json = (await res.json().catch(() => null)) as
-      | { jobId?: string; status?: string; duplicate?: boolean; error?: string }
+      | {
+          jobId?: string;
+          status?: string;
+          duplicate?: boolean;
+          requiresPurchase?: boolean;
+          availableUses?: number | null;
+          error?: string;
+        }
       | null;
     const diagnostic = {
       httpStatus: res.status,
@@ -110,6 +126,8 @@ export async function createShareJob(args: {
       jobId: json.jobId,
       status: typeof json.status === 'string' ? json.status : 'queued',
       duplicate: !!json.duplicate,
+      requiresPurchase: json.requiresPurchase === true || json.status === 'awaiting_purchase',
+      availableUses: typeof json.availableUses === 'number' ? json.availableUses : null,
     };
   } catch (err) {
     // React Native can surface an AbortController cancellation as either an

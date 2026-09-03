@@ -1,0 +1,4 @@
+-- Migration-history compatibility marker.
+-- Nearr-Dev applied the anonymous-onboarding migration under this earlier
+-- development-only version. Its byte-equivalent schema is now canonical at
+-- 20260822000001; this no-op keeps local and remote histories reconcilable.

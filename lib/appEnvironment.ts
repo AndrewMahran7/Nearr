@@ -84,6 +84,10 @@ export function getEnvironmentInputs(): EnvironmentInputs {
     demoMode: trim(process.env.EXPO_PUBLIC_DEMO_MODE),
     devPasswordLogin: trim(process.env.EXPO_PUBLIC_ENABLE_DEV_PASSWORD_LOGIN),
     debugLogs: trim(process.env.EXPO_PUBLIC_DEBUG_LOGS),
+    monetizationMode: pick(
+      process.env.EXPO_PUBLIC_MONETIZATION_MODE,
+      'monetizationMode',
+    ),
   };
 }
 

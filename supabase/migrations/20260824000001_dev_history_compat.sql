@@ -1,0 +1,3 @@
+-- Migration-history compatibility marker.
+-- Nearr-Dev owns this historical developer-dashboard version. The feature is
+-- not part of latest main, so this marker intentionally makes no schema change.

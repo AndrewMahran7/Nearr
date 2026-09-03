@@ -32,9 +32,11 @@ import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 
 import { Button, Card, DemoModeBanner, DevModeBanner, EmptyState, HowNearrWorksModal, Input, Screen, SetupChecklist } from '@/components';
+import { PlaceFindBalance } from '@/components/PlaceFindBalance';
 import { Radius, Spacing } from '@/constants';
 
 import { useAuth } from '@/hooks/useAuth';
+import { usePlaceFindBalance } from '@/hooks/usePlaceFindBalance';
 import { trackEvent } from '@/lib/analytics';
 import { disableDevAuth } from '@/lib/devAuth';
 import { isDemoMode } from '@/lib/demoMode';
@@ -111,6 +113,7 @@ export default function SettingsScreen() {
   const { user, isDevSession, isLocalUiSession } = useAuth();
   const { colors, typography, themePreference, setThemePreference } = useTheme();
   const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
+  const placeFindBalance = usePlaceFindBalance();
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -830,6 +833,34 @@ export default function SettingsScreen() {
           <>
             <View style={{ height: Spacing.lg }} />
             <Button title="Save changes" onPress={handleSave} loading={saving} />
+          </>
+        ) : null}
+
+        {placeFindBalance.enabled ? (
+          <>
+            <View style={{ height: Spacing.xxl }} />
+            <Text style={styles.sectionLabel}>Place finds</Text>
+            <Card style={styles.section}>
+              <Pressable
+                style={styles.helpRow}
+                onPress={() => router.push({ pathname: '/monetization', params: { entry: 'settings' } })}
+                accessibilityRole="button"
+                accessibilityLabel="View place find balance and packs"
+              >
+                <View style={styles.helpCopy}>
+                  <Text style={typography.bodyStrong}>Your place finds</Text>
+                  <Text style={[typography.caption, styles.muted, styles.helpBody]}>
+                    Each find covers one shared post that produces a useful place result.
+                  </Text>
+                  <View style={{ height: Spacing.sm }} />
+                  <PlaceFindBalance
+                    available={placeFindBalance.snapshot?.available ?? null}
+                    loading={placeFindBalance.loading}
+                  />
+                </View>
+                <Text style={[typography.bodyStrong, styles.helpChevron]}>›</Text>
+              </Pressable>
+            </Card>
           </>
         ) : null}
 

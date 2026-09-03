@@ -63,6 +63,7 @@ export type EnvironmentInputs = {
   demoMode?: unknown;
   devPasswordLogin?: unknown;
   debugLogs?: unknown;
+  monetizationMode?: unknown;
 };
 
 export type EnvironmentViolation = {
@@ -284,6 +285,12 @@ export function validateEnvironment(inputs: EnvironmentInputs): EnvironmentViola
         message: 'EXPO_PUBLIC_DEBUG_LOGS is enabled in a production build.',
       });
     }
+    if (str(inputs.monetizationMode) === 'dev_mock') {
+      violations.push({
+        code: 'PROD_DEV_MOCK_MONETIZATION',
+        message: 'EXPO_PUBLIC_MONETIZATION_MODE=dev_mock is forbidden in a production build.',
+      });
+    }
   }
 
   return violations;
@@ -307,6 +314,7 @@ const BLOCKING_CODES: ReadonlySet<string> = new Set([
   'PROD_DEMO_MODE',
   'PROD_DEV_PASSWORD_LOGIN',
   'PROD_DEBUG_LOGS',
+  'PROD_DEV_MOCK_MONETIZATION',
 ]);
 
 export function blockingViolations(

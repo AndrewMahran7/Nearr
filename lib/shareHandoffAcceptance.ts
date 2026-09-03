@@ -35,6 +35,8 @@ export async function reconcileDurableShareAcceptance(args: {
       // The response acknowledgement was lost, so created-vs-existing cannot
       // be distinguished. Treat it as an idempotent acceptance.
       duplicate: true,
+      requiresPurchase: durable.status === 'awaiting_purchase',
+      availableUses: null,
     };
   } catch {
     return args.result;

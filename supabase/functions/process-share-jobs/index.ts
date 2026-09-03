@@ -136,6 +136,7 @@ import {
   evaluateCachedSingletonAutoSave,
   rerankCachedCandidatePayload,
 } from './contextAwareCacheReranking.ts';
+import { placeFindSettlementForTerminalJob } from '../../../lib/placeFindSettlement.ts';
 
 const CORS_HEADERS: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
@@ -463,6 +464,9 @@ async function finalize(
     updatePatch.notification_receipts_checked_at = null;
     updatePatch.notification_payload = note;
   }
+  const plannedSettlement = placeFindSettlementForTerminalJob({ ...job, ...updatePatch });
+  updatePatch.billing_outcome = `pending_${plannedSettlement.action}:${plannedSettlement.reason}`;
+  updatePatch.billing_settled_at = null;
 
   const { data: updated } = await admin
     .from('share_jobs')
@@ -474,9 +478,38 @@ async function finalize(
 
   if (!updated) {
     console.log(`[share-job] finalize_skipped job_id=${job.id} already_terminal=true`);
+    // A prior invocation may have committed the terminal job transition and
+    // lost its response before the idempotent ledger settlement. Reconcile on
+    // every replay so a callback retry cannot strand a reservation.
+    const { data: terminal } = await admin
+      .from('share_jobs')
+      .select('id,status,saved_place_id,candidate_payload,failure_reason,needs_help_reason,billing_mode')
+      .eq('id', job.id)
+      .maybeSingle();
+    if (terminal && terminal.status !== 'queued' && terminal.status !== 'processing_metadata' && terminal.status !== 'awaiting_purchase') {
+      const settlement = placeFindSettlementForTerminalJob(terminal);
+      const { error: settlementError } = await admin.rpc('settle_place_find_use', {
+        p_share_job_id: job.id,
+        p_action: settlement.action,
+        p_reason_code: settlement.reason,
+      });
+      if (settlementError) throw new Error(`place_find_settlement_failed:${settlementError.code ?? 'unknown'}`);
+    }
     return;
   }
   console.log(`[share-job] status from=processing_metadata to=${patch.status} job_id=${job.id}`);
+
+  // The terminal value contract is shared by metadata, media, cache and
+  // multi-place paths. This RPC is idempotent; a worker/finalizer replay can
+  // never charge twice or release a consumed result.
+  const { error: settlementError } = await admin.rpc('settle_place_find_use', {
+    p_share_job_id: job.id,
+    p_action: plannedSettlement.action,
+    p_reason_code: plannedSettlement.reason,
+  });
+  if (settlementError) {
+    throw new Error(`place_find_settlement_failed:${settlementError.code ?? 'unknown'}`);
+  }
 
   // Auxiliary cache write after the user-facing transition commits. Cache
   // outages never roll back a save or candidate review.
@@ -3352,6 +3385,14 @@ serve(async (req) => {
   }
 
   const limit = Math.min(Math.max(Number(body.limit) || 5, 1), 25);
+
+  // Release only demonstrably dead technical reservations (missing/failed/
+  // cancelled jobs, or exhausted expired leases). Active long-running jobs
+  // are never released by wall-clock age alone.
+  const { error: reapError } = await admin.rpc('release_stale_place_find_reservations', {
+    p_limit: 100,
+  });
+  if (reapError) console.log(`[share-job] reservation_reap_failed code=${reapError.code ?? 'unknown'}`);
 
   const { data: claimed, error: claimErr } = await admin.rpc('claim_share_jobs', {
     p_limit: limit,

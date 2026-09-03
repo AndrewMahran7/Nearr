@@ -19,9 +19,10 @@
  *  or a failure they can still fix by hand (failed). needs_help first so the
  *  most-typical action leads. Order within a status is preserved from input. */
 export function actionableJobs<T extends { status: string }>(jobs: T[]): T[] {
+  const awaitingPurchase = jobs.filter((j) => j.status === 'awaiting_purchase');
   const needsHelp = jobs.filter((j) => j.status === 'needs_help');
   const failed = jobs.filter((j) => j.status === 'failed');
-  return [...needsHelp, ...failed];
+  return [...awaitingPurchase, ...needsHelp, ...failed];
 }
 
 /** Jobs still being worked by the durable worker (not tappable). */
@@ -32,7 +33,9 @@ export function processingJobs<T extends { status: string }>(jobs: T[]): T[] {
 /** The count shown in the header badge — the number of VISIBLE, ACTIONABLE
  *  jobs (processing jobs are visible but not actionable, so excluded). */
 export function actionableCount(jobs: { status: string }[]): number {
-  return jobs.filter((j) => j.status === 'needs_help' || j.status === 'failed').length;
+  return jobs.filter((j) =>
+    j.status === 'awaiting_purchase' || j.status === 'needs_help' || j.status === 'failed'
+  ).length;
 }
 
 /** True when nothing actionable and nothing processing is visible. */

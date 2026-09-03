@@ -761,6 +761,15 @@ function RootLayoutContent() {
                   contentStyle: { backgroundColor: 'transparent' },
                 }}
               />
+              <Stack.Screen
+                name="monetization"
+                options={{
+                  headerShown: false,
+                  title: 'Place find packs',
+                  presentation: 'modal',
+                  gestureEnabled: true,
+                }}
+              />
               <Stack.Screen name="legal/terms" options={{ headerShown: true, title: 'Terms of Service' }} />
               <Stack.Screen name="legal/privacy" options={{ headerShown: true, title: 'Privacy Policy' }} />
               <Stack.Screen name="place/[id]" options={{ headerShown: true, title: 'Place' }} />

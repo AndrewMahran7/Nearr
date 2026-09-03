@@ -23,6 +23,8 @@ export type GuardedSubmitResult = {
   httpStatus?: number;
   responseErrorCode?: string;
   requestId?: string;
+  requiresPurchase?: boolean;
+  availableUses?: number | null;
 };
 
 export type GuardedSubmitArgs = { url: string; submissionId: string };

@@ -80,6 +80,7 @@ export type ShareJobDetailCopy = { title: string; body: string };
 export type ShareJobDetailReason =
   | 'no_job'
   | 'invalid_status'
+  | 'purchase_required'
   | 'processing'
   | 'completed'
   | 'dismissed'
@@ -279,6 +280,16 @@ export function buildShareJobDetailState(
   };
 
   switch (classifyShareJobDetail({ status: job.status })) {
+    case 'purchase_required':
+      return {
+        ...base,
+        kind: 'dismissed',
+        copy: {
+          title: 'This post is waiting',
+          body: 'Choose a place find pack to continue.',
+        },
+        reason: 'purchase_required',
+      };
     case 'processing':
       return {
         ...base,

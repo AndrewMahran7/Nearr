@@ -5,7 +5,8 @@
 // Contract:
 //   Request  (POST): { "url": "...", "clientRequestId": "..." }
 //                    Authorization: Bearer <supabase access token>
-//   Response (200):  { "jobId": "...", "status": "queued", "duplicate": false }
+//   Response (200):  { "jobId": "...", "status": "queued", "duplicate": false,
+//                      "requiresPurchase": false, "availableUses": 4 }
 //
 // Responsibilities (and NOTHING more — this must return fast):
 //   1. Authenticate the user (no unauthenticated jobs). Supabase Anonymous
@@ -59,7 +60,7 @@ serve(async (req) => {
   }
 
   // ---- Parse body ------------------------------------------------
-  let body: { url?: string; clientRequestId?: string };
+  let body: { url?: string; clientRequestId?: string; forceRerun?: boolean };
   try {
     body = await req.json();
   } catch {
@@ -123,6 +124,10 @@ serve(async (req) => {
     p_source_platform: platform,
     p_idempotency_key: idempotencyKey,
     p_dedupe_window_seconds: dedupeWindowSeconds,
+    // Derived from the server-verified auth user. The client cannot choose the
+    // onboarding exemption. The database grants at most one anonymous run.
+    p_is_anonymous: userData.user.is_anonymous === true,
+    p_force_rerun: body.forceRerun === true,
   });
 
   if (createErr || !Array.isArray(created) || created.length === 0) {
@@ -136,5 +141,11 @@ serve(async (req) => {
   } else {
     console.log(`[share-job] created job_id=${row.job_id} platform=${platform}`);
   }
-  return json({ jobId: row.job_id, status: row.status, duplicate: !!row.duplicate });
+  return json({
+    jobId: row.job_id,
+    status: row.status,
+    duplicate: !!row.duplicate,
+    requiresPurchase: !!row.requires_purchase,
+    availableUses: Number.isFinite(Number(row.available_uses)) ? Number(row.available_uses) : null,
+  });
 });

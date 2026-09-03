@@ -94,6 +94,14 @@ function assertEnvironmentIsCoherent() {
         'development and preview builds may never reach production.',
     );
   }
+  if (
+    APP_ENV === 'production' &&
+    (process.env.EXPO_PUBLIC_MONETIZATION_MODE || '').trim() === 'dev_mock'
+  ) {
+    throw new Error(
+      '[APP_ENV] Refusing config: Dev mock monetization must never be included in a production build.',
+    );
+  }
 
   const rawSupabaseUrl = (process.env.EXPO_PUBLIC_SUPABASE_URL || '').trim();
   let configuredHost = '';
@@ -243,6 +251,8 @@ module.exports = ({ config }) => {
         process.env.EXPO_PUBLIC_ONBOARDING_V2_PHASE1_ONLY || (IS_DEVELOPMENT_APP ? 'false' : 'true'),
       onboardingV2BackendReady:
         process.env.EXPO_PUBLIC_ONBOARDING_V2_BACKEND_READY || (IS_DEVELOPMENT_APP ? 'true' : ''),
+      monetizationEnabled: process.env.EXPO_PUBLIC_MONETIZATION_ENABLED || '',
+      monetizationMode: process.env.EXPO_PUBLIC_MONETIZATION_MODE || '',
     },
   };
 };

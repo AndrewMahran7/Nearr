@@ -62,7 +62,13 @@ export const hostShareSubmitter = createShareSubmitter(
       console.log(`[share-job] durable_ack_reconciled=true reason=${requestResult.reason}`);
     }
     if (result.ok) {
-      return { ok: true, jobId: result.jobId, duplicate: result.duplicate };
+      return {
+        ok: true,
+        jobId: result.jobId,
+        duplicate: result.duplicate,
+        requiresPurchase: result.requiresPurchase,
+        availableUses: result.availableUses,
+      };
     }
     return {
       ok: false,

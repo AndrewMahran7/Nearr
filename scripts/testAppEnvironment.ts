@@ -215,6 +215,12 @@ check(
   codes({ ...PRODUCTION, debugLogs: 'true' }).includes('PROD_DEBUG_LOGS'),
 );
 check(
+  'dev mock monetization in production is blocked',
+  blockingCodes({ ...PRODUCTION, monetizationMode: 'dev_mock' }).includes(
+    'PROD_DEV_MOCK_MONETIZATION',
+  ),
+);
+check(
   'the same dev switches are fine in development',
   codes({ ...DEVELOPMENT, demoMode: 'true', debugLogs: 'true', devPasswordLogin: 'true' })
     .length === 0,

@@ -157,6 +157,7 @@ function relativeTime(iso: string): string {
 }
 
 function jobTitle(job: ShareJob): string {
+  if (job.status === 'awaiting_purchase') return 'Shared post waiting';
   if (job.status === 'completed') {
     const name = (job.extraction_payload as { savedPlaceName?: string } | null)?.savedPlaceName;
     return name || 'Saved place';
@@ -179,6 +180,8 @@ function jobTitle(job: ShareJob): string {
 function jobSubtitle(job: ShareJob, stalled = false): string {
   const vayrin = isVayrinProductUiEnabled();
   switch (job.status) {
+    case 'awaiting_purchase':
+      return 'Choose a place find pack to continue';
     case 'queued':
     case 'processing_metadata':
       return vayrin
@@ -600,6 +603,10 @@ function ShareJobsQueueScreen() {
 
   function openJob(job: ShareJob) {
     swipeCoordinator.closeActive();
+    if (job.status === 'awaiting_purchase') {
+      router.push({ pathname: '/monetization', params: { jobId: job.id, entry: 'queue' } });
+      return;
+    }
     // Processing jobs aren't actionable; a stalled one gets an honest escape hatch.
     if (job.status === 'queued' || job.status === 'processing_metadata') {
       if (isStalledProcessing(job)) openStalledActions(job);

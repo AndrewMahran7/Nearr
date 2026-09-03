@@ -22,6 +22,7 @@ import type { SavedPlaceWithPlace } from '@/types';
 import type { ShareFailureCategory } from '@/lib/shareFailurePresentation';
 
 export type ShareJobStatus =
+  | 'awaiting_purchase'
   | 'queued'
   | 'processing_metadata'
   | 'completed'
@@ -74,6 +75,9 @@ export type ShareJob = {
   updated_at: string;
   completed_at: string | null;
   queue_archived_at?: string | null;
+  billing_mode?: 'metered' | 'unmetered_onboarding' | 'unmetered_legacy' | null;
+  billing_outcome?: string | null;
+  billing_settled_at?: string | null;
 };
 
 export type RecentAutoSave = {
@@ -95,7 +99,7 @@ export type UndoAutoSaveResult = {
 };
 
 const JOB_COLUMNS =
-  'id, user_id, source_url, canonical_url, source_platform, status, progress_stage, decision, saved_place_id, candidate_payload, extraction_payload, suggested_query, needs_help_reason, failure_reason, failure_category, failure_code, analysis_attempted, notification_status, notification_attempts, notification_last_attempt_at, notification_ticket_ids, notification_error_code, notification_submitted_at, created_at, updated_at, completed_at, queue_archived_at';
+  'id, user_id, source_url, canonical_url, source_platform, status, progress_stage, decision, saved_place_id, candidate_payload, extraction_payload, suggested_query, needs_help_reason, failure_reason, failure_category, failure_code, analysis_attempted, notification_status, notification_attempts, notification_last_attempt_at, notification_ticket_ids, notification_error_code, notification_submitted_at, created_at, updated_at, completed_at, queue_archived_at, billing_mode, billing_outcome, billing_settled_at';
 
 /** List the current user's active/actionable jobs, newest first.
  *

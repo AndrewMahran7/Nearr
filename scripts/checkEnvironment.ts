@@ -127,6 +127,7 @@ function toInputs(env: Record<string, string | undefined>): EnvironmentInputs {
     demoMode: env.EXPO_PUBLIC_DEMO_MODE,
     devPasswordLogin: env.EXPO_PUBLIC_ENABLE_DEV_PASSWORD_LOGIN,
     debugLogs: env.EXPO_PUBLIC_DEBUG_LOGS,
+    monetizationMode: env.EXPO_PUBLIC_MONETIZATION_MODE,
   };
 }
 

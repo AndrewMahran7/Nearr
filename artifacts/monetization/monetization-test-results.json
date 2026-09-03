@@ -1,0 +1,32 @@
+{
+  "suite": "monetization-integration",
+  "passed": 25,
+  "failed": 0,
+  "cases": [
+    "pack economics stay 10/25/50 and lifetime grant stays 5",
+    "new permanent account gets the free grant exactly once",
+    "existing account initialization does not duplicate its grant",
+    "job creation reserves before work and duplicate creation is idempotent",
+    "durable result consumes once",
+    "technical/no-result settlement releases",
+    "retry creates a new reservation cycle without double debit",
+    "concurrent different jobs cannot overspend a zero balance",
+    "duplicate purchase transaction grants once",
+    "completed, cache-hit-shaped and multi-place results consume",
+    "candidate review consumes; empty/manual technical outcomes release",
+    "zero-balance jobs are visible, control-free, and cannot swipe-save",
+    "database is authoritative and grants are unique by account/version",
+    "anonymous onboarding is exempt once but cannot receive permanent balance",
+    "same completed URL is free unless force rerun is explicit",
+    "reservations and transaction replay keys are unique",
+    "central finalization settles every terminal path and runs stale recovery",
+    "dev mock grant is triple-gated and real verification fails closed",
+    "production configuration blocks dev mock monetization",
+    "clients cannot mutate balances or mint purchase grants",
+    "paywall uses server product metadata and labels mock prices",
+    "extension preserves an out-of-balance post and enters the paywall",
+    "account deletion closes the wallet while retaining replay ledgers",
+    "analytics cover reserve, consume, release and purchase funnel",
+    "new monetization surfaces use Nearr product language"
+  ]
+}

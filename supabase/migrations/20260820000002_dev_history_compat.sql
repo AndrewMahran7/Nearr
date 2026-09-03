@@ -1,0 +1,3 @@
+-- Migration-history compatibility marker.
+-- Nearr-Dev applied the failure-taxonomy migration under this earlier version.
+-- The same SQL is canonical at 20260821000003.

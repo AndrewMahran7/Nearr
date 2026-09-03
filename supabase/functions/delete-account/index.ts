@@ -172,6 +172,17 @@ serve(async (req) => {
     console.log(`[delete-account] cleared storage=${SHARE_EVIDENCE_BUCKET} ref=${userRef(userId)} count=${evidenceObjectsDeleted}`);
   }
 
+  // Release any in-flight debit and detach the spendable wallet before auth
+  // deletion. Immutable transaction and ledger rows remain pseudonymized for
+  // purchase replay/refund integrity; no balance remains reachable by a user.
+  const { error: walletCloseError } = await admin.rpc('close_place_find_wallet', {
+    p_user_id: userId,
+  });
+  if (walletCloseError) {
+    console.error(`[delete-account] failed step=place_find_wallet ref=${userRef(userId)} code=${walletCloseError.code ?? 'unknown'}`);
+    return json({ ok: false, error: 'deletion_failed', step: 'place_find_wallet' }, 500);
+  }
+
   // ---- Delete user-owned rows that do NOT cascade ------------------
   for (const table of EXPLICIT_DELETE_TABLES) {
     const { error } = await admin.from(table).delete().eq('user_id', userId);

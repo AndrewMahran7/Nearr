@@ -18,6 +18,7 @@
  */
 
 export type ShareJobStatus =
+  | 'awaiting_purchase'
   | 'queued'
   | 'processing_metadata'
   | 'needs_help'
@@ -35,6 +36,7 @@ export const PROCESSING_STATUSES = ['queued', 'processing_metadata'] as const;
  * (completed / already-saved) and dismissal (cancelled) are hidden immediately.
  */
 export const QUEUE_VISIBLE_STATUSES = [
+  'awaiting_purchase',
   'queued',
   'processing_metadata',
   'needs_help',
@@ -78,6 +80,7 @@ export function filterQueueVisible<T extends { status: string }>(jobs: T[]): T[]
 // ---------------------------------------------------------------------------
 
 export type ShareJobDetailMode =
+  | 'purchase_required'
   | 'processing' // queued / processing_metadata → live status, no controls
   | 'actionable' // needs_help / failed → candidate / search controls
   | 'completed' // terminal success → offer the saved place
@@ -89,6 +92,8 @@ export function classifyShareJobDetail(
 ): ShareJobDetailMode {
   if (!job || typeof job.status !== 'string') return 'missing';
   switch (job.status) {
+    case 'awaiting_purchase':
+      return 'purchase_required';
     case 'queued':
     case 'processing_metadata':
       return 'processing';
@@ -220,6 +225,7 @@ export function routeShareJobCard(
     }
     case 'processing':
     case 'actionable':
+    case 'purchase_required':
       return job?.id ? { kind: 'queue_item', jobId: job.id } : { kind: 'queue_root' };
     case 'dismissed':
     case 'missing':

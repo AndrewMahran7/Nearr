@@ -556,6 +556,11 @@ function ShareJobDetailScreen() {
     return () => clearInterval(id);
   }, [isProcessing, load]);
 
+  useEffect(() => {
+    if (job?.status !== 'awaiting_purchase') return;
+    router.replace({ pathname: '/monetization', params: { jobId: job.id, entry: 'job' } });
+  }, [job?.id, job?.status, router]);
+
   const platform = job?.source_platform ?? null;
   const sourceUrl = job?.canonical_url ?? job?.source_url ?? null;
   const extractionPayload = job?.extraction_payload && typeof job.extraction_payload === 'object'

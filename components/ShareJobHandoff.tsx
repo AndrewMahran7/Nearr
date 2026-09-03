@@ -33,6 +33,7 @@ import { isExpectedOnboardingSource } from '@/lib/onboardingV2Core';
 type UiState =
   | { kind: 'submitting' }
   | { kind: 'accepted'; duplicate: boolean }
+  | { kind: 'out_of_finds'; jobId: string }
   | { kind: 'signed_out' }
   | { kind: 'error' };
 
@@ -72,6 +73,11 @@ export function ShareJobHandoff({ url, submissionId }: { url: string; submission
       });
       if (result.ok) {
         console.log(`[share-job] job_accepted=true duplicate=${!!result.duplicate}`);
+        if (result.requiresPurchase && result.jobId) {
+          void trackEvent('balance_exhausted', { entry_point: 'share_handoff' });
+          setUi({ kind: 'out_of_finds', jobId: result.jobId });
+          return;
+        }
         setUi({ kind: 'accepted', duplicate: !!result.duplicate });
         closeTimerRef.current = setTimeout(() => router.replace('/(tabs)/map'), 1600);
       } else if (result.reason === 'unauthorized' || result.reason === 'missing_auth') {
@@ -118,6 +124,33 @@ export function ShareJobHandoff({ url, submissionId }: { url: string; submission
   }, []);
 
   const styles = createStyles(colors);
+
+  if (ui.kind === 'out_of_finds') {
+    return (
+      <Screen>
+        <View style={styles.centered}>
+          <Text style={[typography.heading, styles.title]}>Your shared post is safe</Text>
+          <Text style={[typography.body, styles.subtle]}>
+            {'You\u2019re out of place finds. Choose a pack and Nearr will continue this post automatically.'}
+          </Text>
+          <View style={{ height: Spacing.lg }} />
+          <Button
+            title="View place find packs"
+            onPress={() => router.replace({
+              pathname: '/monetization',
+              params: { jobId: ui.jobId, entry: 'share_handoff' },
+            })}
+          />
+          <Button
+            title="Not now"
+            variant="ghost"
+            onPress={() => router.replace('/share-jobs')}
+            style={{ marginTop: Spacing.sm }}
+          />
+        </View>
+      </Screen>
+    );
+  }
 
   if (ui.kind === 'accepted') {
     return (

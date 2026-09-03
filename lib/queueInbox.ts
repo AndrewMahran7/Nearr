@@ -17,6 +17,7 @@
  */
 
 export type QueueRowStatus =
+  | 'awaiting_purchase'
   | 'queued'
   | 'processing_metadata'
   | 'needs_help'
@@ -47,7 +48,7 @@ export const QUEUE_SECTION_TITLES: Readonly<Record<QueueSectionKey, string>> = {
 };
 
 const PROCESSING = new Set(['queued', 'processing_metadata']);
-const NEEDS_YOU = new Set(['needs_help', 'failed']);
+const NEEDS_YOU = new Set(['awaiting_purchase', 'needs_help', 'failed']);
 
 export function isProcessingRow(row: QueueRow): boolean {
   return PROCESSING.has(row.status);

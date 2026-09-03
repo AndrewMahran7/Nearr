@@ -39,6 +39,8 @@ async function main() {
       jobId: 'job-1',
       status: 'queued',
       duplicate: false,
+      requiresPurchase: false,
+      availableUses: null,
     });
 
     const duplicate = await runWithResponse(acceptedResponse(true));
@@ -47,6 +49,8 @@ async function main() {
       jobId: 'job-1',
       status: 'queued',
       duplicate: true,
+      requiresPurchase: false,
+      availableUses: null,
     });
 
     // A slow response that arrives before the network deadline is accepted.
@@ -137,6 +141,8 @@ async function main() {
       jobId: 'server-job-uuid',
       status: 'queued',
       duplicate: true,
+      requiresPurchase: false,
+      availableUses: null,
     });
 
     // A true pre-acceptance timeout remains a safe failure when no durable row
@@ -222,6 +228,8 @@ async function main() {
       jobId: 'network-job',
       status: 'completed',
       duplicate: true,
+      requiresPurchase: false,
+      availableUses: null,
     });
 
     console.log('PASS create-share-job response contract, timer lifecycle, and sanitized diagnostics');
