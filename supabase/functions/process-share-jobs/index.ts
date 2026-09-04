@@ -137,6 +137,10 @@ import {
   rerankCachedCandidatePayload,
 } from './contextAwareCacheReranking.ts';
 import { placeFindSettlementForTerminalJob } from '../../../lib/placeFindSettlement.ts';
+import {
+  isPremiumResultChargeable,
+  premiumEligibilityForResult,
+} from '../../../lib/premiumRequestMonetization.ts';
 
 const CORS_HEADERS: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
@@ -464,9 +468,24 @@ async function finalize(
     updatePatch.notification_receipts_checked_at = null;
     updatePatch.notification_payload = note;
   }
-  const plannedSettlement = placeFindSettlementForTerminalJob({ ...job, ...updatePatch });
-  updatePatch.billing_outcome = `pending_${plannedSettlement.action}:${plannedSettlement.reason}`;
-  updatePatch.billing_settled_at = null;
+  const finalFacts = { ...job, ...updatePatch };
+  const billingMode = job.billing_mode ?? 'unmetered_legacy';
+  const legacySettlement = placeFindSettlementForTerminalJob(finalFacts);
+  const premiumSettlement = isPremiumResultChargeable(finalFacts);
+  const eligibility = premiumEligibilityForResult(finalFacts);
+  const becamePremiumEligible = billingMode !== 'premium_request' && eligibility.eligible && job.premium_state !== 'eligible';
+  if (billingMode === 'premium_request') {
+    updatePatch.billing_outcome = `pending_${premiumSettlement.chargeable ? 'consume' : 'release'}:${premiumSettlement.reason}`;
+    updatePatch.billing_settled_at = null;
+  } else if (billingMode === 'metered') {
+    updatePatch.billing_outcome = `pending_${legacySettlement.action}:${legacySettlement.reason}`;
+    updatePatch.billing_settled_at = null;
+  } else {
+    updatePatch.billing_outcome = 'unmetered:normal_free';
+    updatePatch.billing_settled_at = job.billing_settled_at ?? nowIso();
+    updatePatch.premium_state = eligibility.eligible ? 'eligible' : 'not_eligible';
+    updatePatch.premium_eligibility_reason = eligibility.reason;
+  }
 
   const { data: updated } = await admin
     .from('share_jobs')
@@ -483,30 +502,74 @@ async function finalize(
     // every replay so a callback retry cannot strand a reservation.
     const { data: terminal } = await admin
       .from('share_jobs')
-      .select('id,status,saved_place_id,candidate_payload,failure_reason,needs_help_reason,billing_mode')
+      .select('id,status,decision,saved_place_id,candidate_payload,failure_reason,failure_category,failure_code,needs_help_reason,analysis_attempted,billing_mode,premium_request_id,premium_state,premium_cost_components')
       .eq('id', job.id)
       .maybeSingle();
     if (terminal && terminal.status !== 'queued' && terminal.status !== 'processing_metadata' && terminal.status !== 'awaiting_purchase') {
-      const settlement = placeFindSettlementForTerminalJob(terminal);
-      const { error: settlementError } = await admin.rpc('settle_place_find_use', {
-        p_share_job_id: job.id,
-        p_action: settlement.action,
-        p_reason_code: settlement.reason,
-      });
+      const premium = terminal.billing_mode === 'premium_request';
+      const settlement = premium
+        ? isPremiumResultChargeable(terminal)
+        : placeFindSettlementForTerminalJob(terminal);
+      const { error: settlementError } = premium
+        ? await admin.rpc('settle_premium_request', {
+            p_share_job_id: job.id,
+            p_action: settlement.chargeable ? 'consume' : 'release',
+            p_reason_code: settlement.reason,
+            p_terminal_state: settlement.chargeable
+              ? 'useful_result'
+              : terminal.status === 'cancelled'
+              ? 'cancelled'
+              : terminal.status === 'failed' || terminal.failure_category === 'technical_failure'
+              ? 'failed'
+              : 'no_useful_result',
+            p_chargeable: settlement.chargeable,
+            p_cost_components: terminal.premium_cost_components ?? {},
+          })
+        : terminal.billing_mode === 'metered'
+        ? await admin.rpc('settle_place_find_use', {
+            p_share_job_id: job.id,
+            p_action: settlement.action,
+            p_reason_code: settlement.reason,
+          })
+        : { error: null };
       if (settlementError) throw new Error(`place_find_settlement_failed:${settlementError.code ?? 'unknown'}`);
     }
     return;
   }
   console.log(`[share-job] status from=processing_metadata to=${patch.status} job_id=${job.id}`);
 
-  // The terminal value contract is shared by metadata, media, cache and
-  // multi-place paths. This RPC is idempotent; a worker/finalizer replay can
-  // never charge twice or release a consumed result.
-  const { error: settlementError } = await admin.rpc('settle_place_find_use', {
-    p_share_job_id: job.id,
-    p_action: plannedSettlement.action,
-    p_reason_code: plannedSettlement.reason,
-  });
+  if (becamePremiumEligible) {
+    await admin.from('analytics_events').insert({
+      user_id: job.user_id,
+      event_name: 'premium_request_offered',
+      properties: { share_job_id: job.id, reason: eligibility.reason },
+    });
+  }
+
+  // Legacy per-share reservations are reconciled for rollout safety. The new
+  // free lane never calls the ledger. Premium uses its own atomic settlement.
+  const { error: settlementError } = billingMode === 'premium_request'
+    ? await admin.rpc('settle_premium_request', {
+        p_share_job_id: job.id,
+        p_action: premiumSettlement.chargeable ? 'consume' : 'release',
+        p_reason_code: premiumSettlement.reason,
+        p_terminal_state: premiumSettlement.chargeable
+          ? 'useful_result'
+          : patch.status === 'cancelled'
+          ? 'cancelled'
+          : patch.status === 'failed' || patch.failure_category === 'technical_failure'
+          ? 'failed'
+          : 'no_useful_result',
+        p_chargeable: premiumSettlement.chargeable,
+        p_cost_components: job.premium_cost_components ?? {},
+      })
+    : billingMode === 'metered'
+    ? await admin.rpc('settle_place_find_use', {
+        p_share_job_id: job.id,
+        p_action: legacySettlement.action,
+        p_reason_code: legacySettlement.reason,
+      })
+    : { error: null };
   if (settlementError) {
     throw new Error(`place_find_settlement_failed:${settlementError.code ?? 'unknown'}`);
   }

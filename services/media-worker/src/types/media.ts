@@ -189,7 +189,8 @@ export type OcrSegment = {
 export type MediaTask = {
   id: string;
   /** Added by the video-AI-note migration; absent legacy/test rows are recognition. */
-  task_kind?: 'recognition' | 'ai_note_enrichment';
+  task_kind?: 'recognition' | 'premium_recognition' | 'ai_note_enrichment';
+  premium_request_id?: string | null;
   share_job_id: string | null;
   saved_place_id?: string | null;
   /** Internal public.places.id captured for this enrichment generation. */

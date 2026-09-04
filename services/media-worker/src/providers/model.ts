@@ -593,14 +593,20 @@ class GeminiModel implements ModelProvider {
   }
 }
 
-export function selectModelProvider(cfg: WorkerConfig): ModelProvider {
+export function selectModelProvider(
+  cfg: WorkerConfig,
+  options: { premiumRequest?: boolean } = {},
+): ModelProvider {
   const base = cfg.analysisProvider === 'gemini' ? new GeminiModel(cfg) : new HeuristicModel();
   // Vayrin WRAPS the configured provider rather than replacing it: the cheap
   // pass still runs first on every share and still decides every case it can
   // already decide. With VAYRIN_VISUAL_GEOLOCATION_ENABLED off (the default)
   // this returns `base` untouched — no wrapper, no OpenAI call, no behavior
   // change of any kind.
-  return new MomentConsolidationModel(withVayrinFallback(base, cfg));
+  const provider = options.premiumRequest
+    ? withVayrinFallback(base, cfg, { premiumRequest: true })
+    : base;
+  return new MomentConsolidationModel(provider);
 }
 
 /** Recognition-only structural stage. Both the cheap pass and Vayrin flow

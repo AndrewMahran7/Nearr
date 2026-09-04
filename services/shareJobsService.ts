@@ -20,6 +20,7 @@ import type {
 } from '@/lib/shareJobResult';
 import type { SavedPlaceWithPlace } from '@/types';
 import type { ShareFailureCategory } from '@/lib/shareFailurePresentation';
+import type { PremiumRequestState } from '@/lib/premiumRequestMonetization';
 
 export type ShareJobStatus =
   | 'awaiting_purchase'
@@ -75,9 +76,18 @@ export type ShareJob = {
   updated_at: string;
   completed_at: string | null;
   queue_archived_at?: string | null;
-  billing_mode?: 'metered' | 'unmetered_onboarding' | 'unmetered_legacy' | null;
+  billing_mode?: 'metered' | 'unmetered_onboarding' | 'onboarding_free' | 'unmetered_legacy' | 'normal_free' | 'premium_request' | null;
   billing_outcome?: string | null;
   billing_settled_at?: string | null;
+  premium_request_id?: string | null;
+  premium_state?: PremiumRequestState;
+  premium_eligibility_reason?: string | null;
+  premium_requested_at?: string | null;
+  premium_started_at?: string | null;
+  premium_completed_at?: string | null;
+  premium_settlement_reason?: string | null;
+  premium_result_chargeable?: boolean | null;
+  premium_cost_components?: Record<string, unknown>;
 };
 
 export type RecentAutoSave = {
@@ -99,7 +109,7 @@ export type UndoAutoSaveResult = {
 };
 
 const JOB_COLUMNS =
-  'id, user_id, source_url, canonical_url, source_platform, status, progress_stage, decision, saved_place_id, candidate_payload, extraction_payload, suggested_query, needs_help_reason, failure_reason, failure_category, failure_code, analysis_attempted, notification_status, notification_attempts, notification_last_attempt_at, notification_ticket_ids, notification_error_code, notification_submitted_at, created_at, updated_at, completed_at, queue_archived_at, billing_mode, billing_outcome, billing_settled_at';
+  'id, user_id, source_url, canonical_url, source_platform, status, progress_stage, decision, saved_place_id, candidate_payload, extraction_payload, suggested_query, needs_help_reason, failure_reason, failure_category, failure_code, analysis_attempted, notification_status, notification_attempts, notification_last_attempt_at, notification_ticket_ids, notification_error_code, notification_submitted_at, created_at, updated_at, completed_at, queue_archived_at, billing_mode, billing_outcome, billing_settled_at, premium_request_id, premium_state, premium_eligibility_reason, premium_requested_at, premium_started_at, premium_completed_at, premium_settlement_reason, premium_result_chargeable, premium_cost_components';
 
 /** List the current user's active/actionable jobs, newest first.
  *

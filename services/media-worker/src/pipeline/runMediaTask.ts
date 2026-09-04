@@ -64,6 +64,7 @@ export type TaskDeps = {
   resolvers: MediaResolver[];
   transcription: TranscriptionProvider;
   model: ModelProvider;
+  premiumModel?: ModelProvider;
   ocr: OcrProvider;
 };
 
@@ -647,7 +648,9 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
         retainedEvidence: context.evidence,
         signal: controller.signal,
       };
-      const rawAnalysis = await deps.model.analyze(analyzeInput);
+      const rawAnalysis = task.task_kind === 'premium_recognition' && deps.premiumModel
+        ? await deps.premiumModel.analyze(analyzeInput)
+        : await deps.model.analyze(analyzeInput);
       return {
         ...rawAnalysis,
         evidence: groundClaimedEvidence(rawAnalysis.evidence, analyzeInput),

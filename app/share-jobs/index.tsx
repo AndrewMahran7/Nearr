@@ -157,6 +157,8 @@ function relativeTime(iso: string): string {
 }
 
 function jobTitle(job: ShareJob): string {
+  if (job.premium_state === 'reserved' || job.premium_state === 'processing') return 'Premium Request';
+  if (job.premium_state === 'eligible' || job.premium_state === 'awaiting_token') return 'Premium Request available';
   if (job.status === 'awaiting_purchase') return 'Shared post waiting';
   if (job.status === 'completed') {
     const name = (job.extraction_payload as { savedPlaceName?: string } | null)?.savedPlaceName;
@@ -178,6 +180,12 @@ function jobTitle(job: ShareJob): string {
 }
 
 function jobSubtitle(job: ShareJob, stalled = false): string {
+  if (job.premium_state === 'reserved' || job.premium_state === 'processing') {
+    return stalled ? 'Still running deeper analysis. Your token remains reserved.' : 'Running deeper analysis on your original post…';
+  }
+  if (job.premium_state === 'eligible') return 'Normal recognition was free. Try deeper analysis for 1 token.';
+  if (job.premium_state === 'awaiting_token') return 'Choose tokens to resume this exact Premium Request.';
+  if (job.premium_state === 'no_useful_result' || job.premium_state === 'failed') return 'No useful Premium result. Your token was returned.';
   const vayrin = isVayrinProductUiEnabled();
   switch (job.status) {
     case 'awaiting_purchase':

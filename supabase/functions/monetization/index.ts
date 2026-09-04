@@ -63,7 +63,13 @@ serve(async (req) => {
   const mockEnabled = isDevProject && Deno.env.get('MONETIZATION_DEV_MOCK_ENABLED') === 'true';
   const mockAuthorized = mockEnabled && allowedMockUser(user.id) && !isAnonymous;
 
-  let body: { action?: string; productId?: string; clientPurchaseId?: string; jobId?: string };
+  let body: {
+    action?: string;
+    productId?: string;
+    clientPurchaseId?: string;
+    jobId?: string;
+    premiumJobId?: string;
+  };
   try {
     body = await req.json();
   } catch {
@@ -137,7 +143,17 @@ serve(async (req) => {
       return json({ ok: false, error: 'purchase_not_applied' }, 409);
     }
     let resumedJob = null;
-    if (typeof body.jobId === 'string' && body.jobId) {
+    if (typeof body.premiumJobId === 'string' && body.premiumJobId) {
+      const resumed = await admin.rpc('request_premium_recognition', {
+        p_user_id: user.id,
+        p_job_id: body.premiumJobId,
+      });
+      if (resumed.error) {
+        console.warn(`[monetization] premium_resume_after_purchase_failed code=${resumed.error.code ?? 'unknown'}`);
+      } else {
+        resumedJob = Array.isArray(resumed.data) ? resumed.data[0] ?? null : null;
+      }
+    } else if (typeof body.jobId === 'string' && body.jobId) {
       const resumed = await admin.rpc('resume_place_find_job', {
         p_user_id: user.id,
         p_job_id: body.jobId,
@@ -154,6 +170,34 @@ serve(async (req) => {
       grantedUses: data[0].granted_uses,
       replayed: data[0].replayed,
       resumedJob,
+    });
+  }
+
+  if (action === 'request_premium') {
+    if (isAnonymous) return json({ ok: false, error: 'permanent_account_required' }, 403);
+    if (typeof body.premiumJobId !== 'string' || !body.premiumJobId) {
+      return json({ ok: false, error: 'job_id_required' }, 400);
+    }
+    const { data, error } = await admin.rpc('request_premium_recognition', {
+      p_user_id: user.id,
+      p_job_id: body.premiumJobId,
+    });
+    if (error) {
+      const message = String(error.message ?? '');
+      const notEligible = message.includes('premium_job_not_eligible');
+      const notFound = message.includes('premium_job_not_found');
+      console.warn(`[monetization] premium_request_failed code=${error.code ?? 'unknown'}`);
+      return json(
+        { ok: false, error: notEligible ? 'premium_not_eligible' : notFound ? 'premium_job_not_found' : 'premium_request_failed' },
+        notEligible ? 409 : notFound ? 404 : 500,
+      );
+    }
+    const job = Array.isArray(data) ? data[0] ?? null : null;
+    return json({
+      ok: true,
+      job,
+      requiresPurchase: job?.requires_purchase === true,
+      balance: { available: job?.available_uses ?? null },
     });
   }
 

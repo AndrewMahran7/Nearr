@@ -42,6 +42,7 @@ function main(): void {
       ],
       transcription: selectTranscriptionProvider(cfg),
       model: selectModelProvider(cfg),
+      premiumModel: selectModelProvider(cfg, { premiumRequest: true }),
       ocr: selectOcrProvider(cfg),
     };
   } else {

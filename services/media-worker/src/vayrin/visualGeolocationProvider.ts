@@ -88,6 +88,7 @@ export type VayrinTriggerInput = {
 export type VayrinTriggerResult = { run: boolean; reason: VayrinTriggerReason };
 
 export type VayrinTriggerReason =
+  | 'premium_request'
   | 'flag_disabled'
   | 'no_frames'
   | 'no_specific_place_identified'
@@ -442,6 +443,8 @@ export function payloadToEvidence(payload: VayrinPayload): {
 
 export type VayrinProviderOptions = {
   enabled: boolean;
+  /** Explicit paid boundary. Forces the Sol pass after the normal baseline. */
+  premiumRequest?: boolean;
   model: string;
   frameBudget: number;
   frameStrategy: FrameStrategy;
@@ -619,18 +622,22 @@ export class VayrinFallbackModel implements ModelProvider {
     const usefulPartialPlaceCount = (baseline.evidence.partialPlaces ?? [])
       .filter((place) => partialRecoveryField(place) !== null).length;
 
-    const trigger = shouldRunVayrinFallback({
-      enabled: this.options.enabled,
-      frameCount: input.frames.length,
-      insufficientEvidence: baseline.evidence.insufficientEvidence,
-      explicitPlaceCount: baseline.evidence.places.filter((p) => p.explicitEvidence.length > 0)
-        .length,
-      geographicOnlyPlaceCount: baseline.evidence.places.filter(isCoarseGeographicPlace).length,
-      genericOnlyPlaceCount: baseline.evidence.places.filter((place) =>
-        place.explicitEvidence.length > 0 && isCategoryOnlyPlaceName(place.name)).length,
-      usefulPartialPlaceCount,
-      technicalFailure: baseline.recognitionFailureClass !== undefined,
-    });
+    const trigger: VayrinTriggerResult = this.options.premiumRequest
+      ? input.frames.length > 0
+        ? { run: true, reason: 'premium_request' }
+        : { run: false, reason: 'no_frames' }
+      : shouldRunVayrinFallback({
+          enabled: this.options.enabled,
+          frameCount: input.frames.length,
+          insufficientEvidence: baseline.evidence.insufficientEvidence,
+          explicitPlaceCount: baseline.evidence.places.filter((p) => p.explicitEvidence.length > 0)
+            .length,
+          geographicOnlyPlaceCount: baseline.evidence.places.filter(isCoarseGeographicPlace).length,
+          genericOnlyPlaceCount: baseline.evidence.places.filter((place) =>
+            place.explicitEvidence.length > 0 && isCategoryOnlyPlaceName(place.name)).length,
+          usefulPartialPlaceCount,
+          technicalFailure: baseline.recognitionFailureClass !== undefined,
+        });
 
     if (!trigger.run) {
       return {
@@ -888,10 +895,15 @@ export class VayrinFallbackModel implements ModelProvider {
 /** Wrap a provider with the Vayrin fallback. Returns the provider UNCHANGED
  *  when the flag is off, so a disabled build cannot construct an OpenAI call
  *  even by accident. */
-export function withVayrinFallback(inner: ModelProvider, cfg: WorkerConfig): ModelProvider {
-  if (!cfg.vayrinVisualGeolocationEnabled) return inner;
+export function withVayrinFallback(
+  inner: ModelProvider,
+  cfg: WorkerConfig,
+  options: { premiumRequest?: boolean } = {},
+): ModelProvider {
+  if (!cfg.vayrinVisualGeolocationEnabled && !options.premiumRequest) return inner;
   return new VayrinFallbackModel(inner, {
     enabled: true,
+    premiumRequest: options.premiumRequest === true,
     model: cfg.vayrinModel,
     frameBudget: Math.min(cfg.vayrinFrameBudget || DEFAULT_VAYRIN_FRAME_BUDGET, cfg.maxSelectedFrames),
     frameStrategy: cfg.vayrinFrameStrategy,

@@ -18,22 +18,22 @@ export const PLACE_FIND_DEV_PACKS: readonly PlaceFindPack[] = [
     key: 'small',
     uses: 10,
     mockProductId: 'dev.mock.nearr.place_finds.10',
-    mockDisplayPrice: '$3.99',
-    mockPriceCents: 399,
+    mockDisplayPrice: '$7.99',
+    mockPriceCents: 799,
   },
   {
     key: 'medium',
     uses: 30,
     mockProductId: 'dev.mock.nearr.place_finds.25',
-    mockDisplayPrice: '$8.99',
-    mockPriceCents: 899,
+    mockDisplayPrice: '$20.99',
+    mockPriceCents: 2099,
   },
   {
     key: 'large',
     uses: 75,
     mockProductId: 'dev.mock.nearr.place_finds.50',
-    mockDisplayPrice: '$15.99',
-    mockPriceCents: 1599,
+    mockDisplayPrice: '$44.99',
+    mockPriceCents: 4499,
   },
 ] as const;
 
@@ -50,7 +50,7 @@ export function tokenPackPresentation(uses: number): TokenPackPresentation {
   if (uses === 10) {
     return {
       name: 'Starter Pack',
-      description: 'For occasional saves and quick finds.',
+      description: 'For occasional Premium Requests.',
       icon: 'zap',
       recommended: false,
     };
@@ -58,14 +58,14 @@ export function tokenPackPresentation(uses: number): TokenPackPresentation {
   if (uses === 30) {
     return {
       name: 'Explorer Pack',
-      description: 'For regular saving and trip planning.',
+      description: 'For regular Premium Requests.',
       icon: 'compass',
       recommended: true,
     };
   }
   return {
     name: 'Treasure Pack',
-    description: 'Built for bigger trips and heavy saving.',
+    description: 'For frequent Premium Requests.',
     icon: 'map',
     recommended: false,
   };

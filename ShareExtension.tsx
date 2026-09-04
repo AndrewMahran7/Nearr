@@ -542,7 +542,6 @@ function LegacyShareExtension(props: ExtensionInitialProps) {
 type AsyncUi =
   | { kind: 'submitting' }
   | { kind: 'accepted'; duplicate: boolean }
-  | { kind: 'purchase_required'; jobId: string }
   | { kind: 'needs_setup' }
   | { kind: 'signed_out' }
   | { kind: 'session_expired' }
@@ -763,9 +762,7 @@ function AsyncShareExtension(props: ExtensionInitialProps) {
       // Keep the success screen up so the user can choose Done (stay in
       // Instagram) or View queue (open the host app). The durable job is
       // already persisted server-side, so no auto-dismiss is needed.
-      setUi(result.requiresPurchase
-        ? { kind: 'purchase_required', jobId: result.jobId }
-        : { kind: 'accepted', duplicate: result.duplicate });
+      setUi({ kind: 'accepted', duplicate: result.duplicate });
     } else if (result.reason === 'unauthorized' || result.reason === 'missing_auth') {
       // Server rejected the token we thought was valid (revoked / clock skew).
       // Recover through the host rather than looping on sign-in.
@@ -854,30 +851,6 @@ function AsyncShareExtension(props: ExtensionInitialProps) {
           accessibilityLabel={view.secondary ?? undefined}
         >
           <Text style={asyncStyles.secondaryText}>{view.secondary}</Text>
-        </Pressable>
-      </AsyncSurface>
-    );
-  }
-  if (ui.kind === 'purchase_required') {
-    return (
-      <AsyncSurface onClose={finish} showClose={false}>
-        <Text style={asyncStyles.eyebrow}>NEARR</Text>
-        <Text style={asyncStyles.title}>Your post is safe</Text>
-        <Text style={asyncStyles.subtle}>
-          You&apos;re out of tokens. Open Nearr to choose a pack and continue this video.
-        </Text>
-        <Pressable
-          style={asyncStyles.primaryBtn}
-          onPress={() => completionActionsRef.current?.openNearr(
-            `monetization?jobId=${encodeURIComponent(ui.jobId)}&entry=extension`,
-          )}
-          accessibilityRole="button"
-          accessibilityLabel="Open Nearr token packs"
-        >
-          <Text style={asyncStyles.primaryText}>View packs</Text>
-        </Pressable>
-        <Pressable style={asyncStyles.secondaryBtn} onPress={finish} accessibilityRole="button">
-          <Text style={asyncStyles.secondaryText}>Done</Text>
         </Pressable>
       </AsyncSurface>
     );

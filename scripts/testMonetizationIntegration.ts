@@ -14,6 +14,7 @@ import { PLACE_FIND_DEV_PACKS, PLACE_FIND_FREE_LIFETIME_USES } from '../lib/plac
 import { placeFindSettlementForTerminalJob } from '../lib/placeFindSettlement';
 import { classifyShareJobDetail, isQueueVisibleStatus } from '../lib/shareJobRouting';
 import { queueSwipeAvailability } from '../lib/queueInbox';
+import { isPremiumResultChargeable, premiumEligibilityForResult } from '../lib/premiumRequestMonetization';
 
 const passed: string[] = [];
 function test(name: string, run: () => void): void {
@@ -42,7 +43,7 @@ test('new permanent account gets the free grant exactly once', () => {
 test('existing account initialization does not duplicate its grant', () => {
   assert.equal(grantPlaceFinds(state, 'free:user-1:v1', 5).state.available, 5);
 });
-test('job creation reserves before work and duplicate creation is idempotent', () => {
+test('explicit Premium reservation primitive is idempotent', () => {
   const reserved = reservePlaceFind(state, 'job-useful');
   state = reserved.state;
   assert.deepEqual({ available: state.available, reserved: state.reserved }, { available: 4, reserved: 1 });
@@ -59,7 +60,7 @@ test('technical/no-result settlement releases', () => {
   assert.equal(state.available, 4);
   assert.equal(releasePlaceFind(state, 'job-failed').replayed, true);
 });
-test('retry creates a new reservation cycle without double debit', () => {
+test('legacy released reservation can still be reconciled idempotently', () => {
   state = reservePlaceFind(state, 'job-failed').state;
   assert.equal(state.reservations.get('job-failed')?.cycle, 2);
   assert.equal(state.available, 3);
@@ -94,6 +95,7 @@ test('zero-balance jobs are visible, control-free, and cannot swipe-save', () =>
 
 const migration = source('supabase/migrations/20260903000001_place_find_monetization.sql');
 const tokenPackConfig = source('supabase/migrations/20260903000004_dev_token_pack_quantities.sql');
+const premiumMigration = source('supabase/migrations/20260904000001_premium_request_monetization.sql');
 const monetizationEdge = source('supabase/functions/monetization/index.ts');
 const processor = source('supabase/functions/process-share-jobs/index.ts');
 const paywall = source('app/monetization.tsx');
@@ -105,9 +107,9 @@ test('database is authoritative and grants are unique by account/version', () =>
   assert.match(migration, /place_find_free_grant_claims[\s\S]*claim_key text primary key/);
   assert.match(migration, /perform \* from public\.ensure_place_find_wallet/);
 });
-test('anonymous onboarding is exempt once but cannot receive permanent balance', () => {
-  assert.match(migration, /place_find_onboarding_claims[\s\S]*anonymous_user_id uuid primary key/);
-  assert.match(migration, /p_is_anonymous[\s\S]*billing_mode='onboarding_free'/);
+test('normal recognition is free for permanent and anonymous users', () => {
+  assert.match(premiumMigration, /'normal_free','unmetered:normal_free'/);
+  assert.doesNotMatch(premiumMigration.match(/create or replace function public\.create_share_job_for_user[\s\S]*?end;\n\$\$;/)?.[0] ?? '', /reserve_place_find_use/);
 });
 test('same completed URL is free unless force rerun is explicit', () => {
   assert.match(migration, /if not p_force_rerun[\s\S]*sj\.status='completed'/);
@@ -118,9 +120,9 @@ test('reservations and transaction replay keys are unique', () => {
   assert.match(migration, /idempotency_key text not null unique/);
 });
 test('central finalization settles every terminal path and runs stale recovery', () => {
-  assert.match(processor, /placeFindSettlementForTerminalJob/);
-  assert.match(processor, /settle_place_find_use/);
-  assert.match(processor, /pending_\$\{plannedSettlement\.action\}/);
+  assert.match(processor, /isPremiumResultChargeable/);
+  assert.match(processor, /settle_premium_request/);
+  assert.match(processor, /billingMode === 'premium_request'/);
   assert.match(processor, /release_stale_place_find_reservations/);
 });
 test('dev mock grant is triple-gated and real verification fails closed', () => {
@@ -128,7 +130,7 @@ test('dev mock grant is triple-gated and real verification fails closed', () => 
   assert.match(monetizationEdge, /MONETIZATION_DEV_MOCK_ENABLED/);
   assert.match(monetizationEdge, /MONETIZATION_DEV_TEST_USER_IDS/);
   assert.match(monetizationEdge, /storekit_verification_not_configured/);
-  assert.match(migration, /dev\.mock\.nearr\.place_finds\.10',10,'dev_mock','\$3\.99',399,10,false/);
+  assert.match(premiumMigration, /mock_display_price='\$7\.99',mock_price_cents=799/);
   assert.match(tokenPackConfig, /use_count = 30[\s\S]*place_finds\.25'/);
   assert.match(tokenPackConfig, /use_count = 75[\s\S]*place_finds\.50'/);
 });
@@ -147,18 +149,23 @@ test('paywall uses server product metadata and labels Dev pricing honestly', () 
   assert.match(paywall, /Dev pricing preview/);
   assert.match(paywall, /Apple purchases are not available in this build/);
 });
-test('extension preserves an out-of-balance post and enters the paywall', () => {
-  assert.match(extension, /result\.requiresPurchase/);
-  assert.match(extension, /Your post is safe/);
-  assert.match(extension, /monetization\?jobId=/);
+test('normal share surfaces never enter the token store', () => {
+  assert.doesNotMatch(extension, /result\.requiresPurchase|purchase_required|monetization\?jobId=/);
+  assert.match(premiumMigration, /requires_purchase boolean/);
 });
 test('account deletion closes the wallet while retaining replay ledgers', () => {
   assert.match(deletion, /close_place_find_wallet/);
   assert.match(migration, /status='closed'/);
 });
-test('analytics cover reserve, consume, release and purchase funnel', () => {
-  for (const event of ['use_reserved', 'use_consumed', 'use_released']) assert.match(migration, new RegExp(event));
+test('analytics cover the canonical Premium and purchase funnels', () => {
+  for (const event of ['premium_request_reserved', 'premium_request_started', 'premium_request_useful_result', 'premium_request_no_useful_result', 'premium_request_token_consumed', 'premium_request_token_released']) assert.match(premiumMigration, new RegExp(event));
   for (const event of ['paywall_shown', 'pack_viewed', 'purchase_started', 'purchase_succeeded', 'purchase_failed']) assert.match(paywall, new RegExp(event));
+});
+test('structured eligibility and chargeability fail closed', () => {
+  assert.equal(premiumEligibilityForResult({ status: 'needs_help', analysis_attempted: true, failure_category: 'analysis_insufficient', candidate_payload: {} }).eligible, true);
+  assert.equal(premiumEligibilityForResult({ status: 'needs_help', analysis_attempted: false, failure_code: 'insufficient_evidence' }).eligible, false);
+  assert.equal(isPremiumResultChargeable({ status: 'completed', saved_place_id: 'saved' }).chargeable, true);
+  assert.equal(isPremiumResultChargeable({ status: 'needs_help', candidate_payload: { candidates: [{ name: 'Los Angeles' }] } }).chargeable, false);
 });
 test('new monetization surfaces use Nearr product language', () => {
   assert.doesNotMatch(paywall, /Vayrin/i);

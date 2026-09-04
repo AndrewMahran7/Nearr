@@ -84,6 +84,7 @@ export async function fetchPlaceFindSnapshot(): Promise<PlaceFindSnapshot> {
 export async function purchaseDevMockPack(args: {
   productId: string;
   jobId?: string | null;
+  premiumJobId?: string | null;
   clientPurchaseId?: string;
 }): Promise<{ available: number; grantedUses: number; replayed: boolean; resumed: boolean }> {
   if (monetizationMode() !== 'dev_mock') throw new Error('dev_mock_unavailable');
@@ -94,13 +95,14 @@ export async function purchaseDevMockPack(args: {
     balance?: { available?: number };
     grantedUses?: number;
     replayed?: boolean;
-    resumedJob?: { status?: string } | null;
+    resumedJob?: { status?: string; premium_state?: string } | null;
   }>('monetization', {
     body: {
       action: 'mock_purchase',
       productId: args.productId,
       clientPurchaseId,
       jobId: args.jobId ?? undefined,
+      premiumJobId: args.premiumJobId ?? undefined,
     },
   });
   if (error || !data?.ok) throw new Error(data?.error ?? 'purchase_failed');
@@ -108,7 +110,37 @@ export async function purchaseDevMockPack(args: {
     available: safeCount(data.balance?.available),
     grantedUses: safeCount(data.grantedUses),
     replayed: data.replayed === true,
-    resumed: data.resumedJob?.status === 'queued',
+    resumed: data.resumedJob?.status === 'queued' ||
+      data.resumedJob?.premium_state === 'reserved' ||
+      data.resumedJob?.premium_state === 'processing',
+  };
+}
+
+export async function requestPremiumRecognition(jobId: string): Promise<{
+  premiumRequestId: string | null;
+  premiumState: string;
+  available: number;
+  requiresPurchase: boolean;
+  replayed: boolean;
+}> {
+  const { data, error } = await supabase.functions.invoke<{
+    ok?: boolean;
+    error?: string;
+    requiresPurchase?: boolean;
+    balance?: { available?: number };
+    job?: {
+      premium_request_id?: string | null;
+      premium_state?: string;
+      replayed?: boolean;
+    } | null;
+  }>('monetization', { body: { action: 'request_premium', premiumJobId: jobId } });
+  if (error || !data?.ok || !data.job) throw new Error(data?.error ?? 'premium_request_failed');
+  return {
+    premiumRequestId: data.job.premium_request_id ?? null,
+    premiumState: data.job.premium_state ?? 'not_eligible',
+    available: safeCount(data.balance?.available),
+    requiresPurchase: data.requiresPurchase === true,
+    replayed: data.job.replayed === true,
   };
 }
 

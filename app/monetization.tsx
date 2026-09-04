@@ -13,6 +13,10 @@ import {
   resumePendingPlaceFindJob,
   type PlaceFindProduct,
 } from '@/lib/monetizationClient';
+import {
+  clearPendingPremiumRequestJobId,
+  getPendingPremiumRequestJobId,
+} from '@/lib/pendingPremiumRequest';
 
 const CREAM = '#F4F2EF';
 const CHARCOAL = '#0F1014';
@@ -45,20 +49,33 @@ function recommendedProduct(products: PlaceFindProduct[]): PlaceFindProduct | nu
 export default function MonetizationScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const params = useLocalSearchParams<{ jobId?: string; entry?: string }>();
+  const params = useLocalSearchParams<{ jobId?: string; premiumJobId?: string; entry?: string }>();
   const jobId = typeof params.jobId === 'string' ? params.jobId : null;
+  const routePremiumJobId = typeof params.premiumJobId === 'string' ? params.premiumJobId : null;
   const entry = typeof params.entry === 'string' ? params.entry : 'unknown';
   const { snapshot, loading, error, refresh, setSnapshot } = usePlaceFindBalance();
   const [purchase, setPurchase] = useState<PurchaseState>({ kind: 'idle' });
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [supportExpanded, setSupportExpanded] = useState(false);
+  const [pendingPremiumRequestJobId, setPendingPremiumRequestJobId] = useState<string | null>(routePremiumJobId);
   const trackedRef = useRef(false);
+
+  useEffect(() => {
+    if (routePremiumJobId) {
+      setPendingPremiumRequestJobId(routePremiumJobId);
+      return;
+    }
+    void getPendingPremiumRequestJobId().then(setPendingPremiumRequestJobId);
+  }, [routePremiumJobId]);
 
   useEffect(() => {
     if (trackedRef.current) return;
     trackedRef.current = true;
-    void trackEvent('paywall_shown', { entry_point: entry, pending_share: !!jobId });
-  }, [entry, jobId]);
+    void trackEvent('paywall_shown', { entry_point: entry, pending_premium_request: !!pendingPremiumRequestJobId });
+    if (pendingPremiumRequestJobId) {
+      void trackEvent('token_store_opened_from_premium_request', { job_id: pendingPremiumRequestJobId });
+    }
+  }, [entry, pendingPremiumRequestJobId]);
 
   useEffect(() => {
     if (!snapshot) return;
@@ -96,13 +113,13 @@ export default function MonetizationScreen() {
   async function buy(productId: string, uses: number) {
     if (purchase.kind === 'purchasing') return;
     setPurchase({ kind: 'purchasing', productId });
-    void trackEvent('purchase_started', { uses, mode: 'dev_mock', pending_share: !!jobId });
+    void trackEvent('purchase_started', { uses, mode: 'dev_mock', pending_premium_request: !!pendingPremiumRequestJobId });
     try {
-      const result = await purchaseDevMockPack({ productId, jobId });
+      const result = await purchaseDevMockPack({ productId, jobId, premiumJobId: pendingPremiumRequestJobId });
       setSnapshot((current) => current ? {
         ...current,
         available: result.available,
-        reserved: jobId && result.resumed ? current.reserved + 1 : current.reserved,
+        reserved: (jobId || pendingPremiumRequestJobId) && result.resumed ? current.reserved + 1 : current.reserved,
       } : current);
       setPurchase({
         kind: 'success',
@@ -114,14 +131,29 @@ export default function MonetizationScreen() {
         uses: result.grantedUses,
         mode: 'dev_mock',
         replayed: result.replayed,
-        pending_share_resumed: result.resumed,
+        pending_premium_request_resumed: !!pendingPremiumRequestJobId && result.resumed,
       });
+      void trackEvent('token_purchase_completed', {
+        uses: result.grantedUses,
+        pending_premium_request: !!pendingPremiumRequestJobId,
+      });
+      if (pendingPremiumRequestJobId && result.resumed) {
+        await clearPendingPremiumRequestJobId(pendingPremiumRequestJobId);
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'purchase_failed';
       setPurchase({ kind: 'error', message: friendlyPurchaseError(message) });
       void trackEvent('purchase_failed', { mode: 'dev_mock', reason: message.slice(0, 60) });
     }
   }
+
+  useEffect(() => {
+    if (purchase.kind !== 'success' || !purchase.resumed || !pendingPremiumRequestJobId) return;
+    const timer = setTimeout(() => {
+      router.replace(`/share-jobs/${pendingPremiumRequestJobId}`);
+    }, 900);
+    return () => clearTimeout(timer);
+  }, [pendingPremiumRequestJobId, purchase, router]);
 
   async function continuePendingVideo() {
     if (!jobId || purchase.kind === 'purchasing') return;
@@ -145,7 +177,7 @@ export default function MonetizationScreen() {
 
   if (purchase.kind === 'success') {
     const tokensAdded = purchase.grantedUses > 0;
-    const actionLabel = purchase.resumed ? 'Continue finding the place' : 'Continue';
+    const actionLabel = purchase.resumed ? 'View Premium Request' : 'Continue';
     return (
       <View style={[styles.screen, styles.successScreen, {
         paddingTop: Math.max(insets.top, 18),
@@ -156,7 +188,7 @@ export default function MonetizationScreen() {
           <View style={styles.successIcon}><Feather name="check" size={30} color={CREAM} /></View>
           <Text style={styles.eyebrow}>NEARR TOKENS</Text>
           <Text style={styles.title} accessibilityRole="header">
-            {tokensAdded ? `${purchase.grantedUses} tokens added` : 'Your video is queued'}
+            {tokensAdded ? `${purchase.grantedUses} tokens added` : 'Premium Request started'}
           </Text>
           <View
             style={styles.successBalance}
@@ -168,11 +200,15 @@ export default function MonetizationScreen() {
           </View>
           <Text style={styles.balanceCaption}>Your new balance</Text>
           {purchase.resumed ? (
-            <Text style={styles.successBody}>Your exact shared video is back in the queue.</Text>
+            <Text style={styles.successBody}>Your Premium Request resumed automatically on the original post.</Text>
           ) : null}
           <Pressable
             style={styles.primary}
-            onPress={() => router.replace(purchase.resumed ? '/share-jobs' : '/(tabs)/settings')}
+            onPress={() => router.replace(
+              purchase.resumed && pendingPremiumRequestJobId
+                ? `/share-jobs/${pendingPremiumRequestJobId}`
+                : purchase.resumed ? '/share-jobs' : '/(tabs)/settings',
+            )}
             accessibilityRole="button"
             accessibilityLabel={actionLabel}
           >
@@ -184,7 +220,7 @@ export default function MonetizationScreen() {
   }
 
   const currentBalance = snapshot?.available ?? 0;
-  const pendingNeedsTokens = !!jobId && currentBalance === 0;
+  const pendingNeedsTokens = !!pendingPremiumRequestJobId && currentBalance === 0;
   const purchasingSelected = purchase.kind === 'purchasing'
     && purchase.productId === selectedPack?.productId;
   const checkoutAvailable = snapshot?.mode === 'dev_mock'
@@ -204,12 +240,12 @@ export default function MonetizationScreen() {
         contentContainerStyle={[styles.content, { paddingBottom: Math.max(insets.bottom, 24) }]}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.eyebrow}>NEARR TOKENS</Text>
-        <Text style={styles.title} accessibilityRole="header">Keep discovering places</Text>
+        <Text style={styles.eyebrow}>PREMIUM REQUESTS</Text>
+        <Text style={styles.title} accessibilityRole="header">Nearr Tokens</Text>
         <Text style={styles.body}>
           {pendingNeedsTokens
-            ? 'You\u2019re out of tokens. Your shared video is safe\u2014choose a pack and Nearr will continue it automatically.'
-            : 'One shared video uses one token, even when it contains multiple places.'}
+            ? 'Your original post is safe. Choose a pack and Nearr will resume this Premium Request automatically.'
+            : 'Normal recognition is free. Tokens are used only for explicit Premium Requests that return a useful result.'}
         </Text>
 
         <View
@@ -270,7 +306,10 @@ export default function MonetizationScreen() {
             return (
               <Pressable
                 key={pack.productId}
-                onPress={() => setSelectedProductId(pack.productId)}
+                onPress={() => {
+                  setSelectedProductId(pack.productId);
+                  void trackEvent('token_pack_selected', { uses: pack.uses, price_source: pack.priceSource });
+                }}
                 disabled={disabled}
                 accessibilityRole="radio"
                 accessibilityLabel={accessibilityLabel}
@@ -302,7 +341,7 @@ export default function MonetizationScreen() {
           })}
         </View>
 
-        <Text style={styles.reassurance}>1 token identifies 1 shared video.</Text>
+        <Text style={styles.reassurance}>1 token unlocks one Premium Request.</Text>
 
         {selectedPack ? (
           <Pressable

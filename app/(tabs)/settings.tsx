@@ -856,7 +856,7 @@ export default function SettingsScreen() {
                 <View style={styles.helpCopy}>
                   <Text style={typography.bodyStrong}>Token balance</Text>
                   <Text style={[typography.caption, styles.muted, styles.helpBody]}>
-                    1 token per shared video.
+                    Used for Premium Requests.
                   </Text>
                 </View>
                 <View importantForAccessibility="no-hide-descendants">
