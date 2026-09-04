@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "run_id": "sol-parity-2026-09-04T18-25-39-739Z",
+  "scored_at": "2026-09-04T18:28:01.271Z",
+  "cases_requested": 1,
+  "model_attempts_persisted": 2,
+  "scores": [
+    {
+      "attempt_id": "R03-F1-M2-d9f8b168",
+      "case_id": "R03",
+      "frame_arm": "F1",
+      "model_arm": "M2",
+      "top1": "Tamolitch Blue Pool (Tamolitch Falls)",
+      "exact_top1": true,
+      "useful_top1": true,
+      "useful_top3": true,
+      "wrong_top1": false,
+      "truthful_partial": false,
+      "no_answer": false,
+      "semantic_nonsense": false,
+      "geography_contradiction": false,
+      "simulated_decision": "WOULD_SHOW_NAMED_LEAD",
+      "wrong_autosave": false
+    },
+    {
+      "attempt_id": "R03-F2-M2-700420dc",
+      "case_id": "R03",
+      "frame_arm": "F2",
+      "model_arm": "M2",
+      "top1": "Tamolitch Blue Pool (Tamolitch Falls)",
+      "exact_top1": true,
+      "useful_top1": true,
+      "useful_top3": true,
+      "wrong_top1": false,
+      "truthful_partial": false,
+      "no_answer": false,
+      "semantic_nonsense": false,
+      "geography_contradiction": false,
+      "simulated_decision": "WOULD_SHOW_NAMED_LEAD",
+      "wrong_autosave": false
+    }
+  ],
+  "summary": {
+    "F1:M2": {
+      "cases": 1,
+      "exact_top1": 1,
+      "useful_top1": 1,
+      "useful_top3": 1,
+      "wrong_top1": 0,
+      "wrong_autosave": 0,
+      "truthful_partial": 0,
+      "no_answer": 0,
+      "semantic_nonsense": 0,
+      "geography_contradiction": 0,
+      "median_latency_ms": 96121,
+      "p95_latency_ms": 96121,
+      "model_cost_usd": 0.320864,
+      "web_search_calls": 9
+    },
+    "F2:M2": {
+      "cases": 1,
+      "exact_top1": 1,
+      "useful_top1": 1,
+      "useful_top3": 1,
+      "wrong_top1": 0,
+      "wrong_autosave": 0,
+      "truthful_partial": 0,
+      "no_answer": 0,
+      "semantic_nonsense": 0,
+      "geography_contradiction": 0,
+      "median_latency_ms": 141074,
+      "p95_latency_ms": 141074,
+      "model_cost_usd": 0.184411,
+      "web_search_calls": 6
+    }
+  }
+}

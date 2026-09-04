@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "run_id": "sol-parity-2026-09-04T19-41-17-429Z",
+  "scored_at": "2026-09-04T19:42:15.534Z",
+  "cases_requested": 1,
+  "model_attempts_persisted": 1,
+  "scores": [
+    {
+      "attempt_id": "R03-F1-M1-b2fc3fad",
+      "case_id": "R03",
+      "frame_arm": "F1",
+      "model_arm": "M1",
+      "top1": "Tamolitch Blue Pool",
+      "exact_top1": true,
+      "useful_top1": true,
+      "useful_top3": true,
+      "wrong_top1": false,
+      "truthful_partial": false,
+      "no_answer": false,
+      "semantic_nonsense": false,
+      "geography_contradiction": false,
+      "simulated_decision": "WOULD_SHOW_NAMED_LEAD",
+      "wrong_autosave": false
+    }
+  ],
+  "summary": {
+    "F1:M1": {
+      "cases": 1,
+      "exact_top1": 1,
+      "useful_top1": 1,
+      "useful_top3": 1,
+      "wrong_top1": 0,
+      "wrong_autosave": 0,
+      "truthful_partial": 0,
+      "no_answer": 0,
+      "semantic_nonsense": 0,
+      "geography_contradiction": 0,
+      "median_latency_ms": 57484,
+      "p95_latency_ms": 57484,
+      "model_cost_usd": 0.075288,
+      "web_search_calls": 0
+    }
+  }
+}

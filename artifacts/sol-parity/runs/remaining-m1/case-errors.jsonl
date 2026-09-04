@@ -1,0 +1,4 @@
+{"case_id":"P10","source_url":"https://www.instagram.com/p/DSYfkivkiOA/","persisted_at":"2026-09-04T19:16:21.626Z","stage":"pre_model_or_case","error":"provider_changed: extractor_failed"}
+{"case_id":"C02","source_url":"https://www.snapchat.com/@chrismagee3/spotlight/W7_EDlXWTBiXAEEniNoMPwAAYYmdnaHlpb3l5AZ-_qdtxAZ-_qF1-AAAAAQ","persisted_at":"2026-09-04T19:23:57.490Z","stage":"pre_model_or_case","error":"resolver_not_available:snapchat"}
+{"case_id":"C03","source_url":"https://www.youtube.com/watch?v=dQw4w9WgXcQ","persisted_at":"2026-09-04T19:24:00.528Z","stage":"pre_model_or_case","error":"duration_too_long: 213s"}
+{"case_id":"C05","source_url":"https://youtube.com/shorts/zGDjyXh7t-w","persisted_at":"2026-09-04T19:25:07.364Z","stage":"pre_model_or_case","error":"provider_changed: yt_dlp_failed"}

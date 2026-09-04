@@ -1,0 +1,652 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-09-04T20:05:26.960Z",
+  "cases": [
+    {
+      "case_id": "R01",
+      "provenance": "FROZEN_RECENT",
+      "top1": "Cliff Jumping",
+      "top3": [
+        "Cliff Jumping"
+      ],
+      "decision": "auto_save",
+      "autosave": true,
+      "cache_status": "MISS",
+      "latency_ms": 69185,
+      "known_quality": "WRONG",
+      "note": null
+    },
+    {
+      "case_id": "R02",
+      "provenance": "FROZEN_RECENT",
+      "top1": "Mokulēʻia Beach Park",
+      "top3": [
+        "Mokulēʻia Beach Park"
+      ],
+      "decision": "auto_save",
+      "autosave": true,
+      "cache_status": "MISS",
+      "latency_ms": 156141,
+      "known_quality": "WRONG",
+      "note": null
+    },
+    {
+      "case_id": "R03",
+      "provenance": "FROZEN_RECENT",
+      "top1": null,
+      "top3": [],
+      "decision": "manual_fallback",
+      "autosave": false,
+      "cache_status": "MISS",
+      "latency_ms": 172476,
+      "known_quality": "NO_RESULT",
+      "note": null
+    },
+    {
+      "case_id": "R04",
+      "provenance": "FROZEN_RECENT",
+      "top1": "Dorset Marble Quarry",
+      "top3": [
+        "Dorset Marble Quarry",
+        "Marble Street Quarry"
+      ],
+      "decision": "multi_candidate_confirmation",
+      "autosave": false,
+      "cache_status": "MISS",
+      "latency_ms": 142542,
+      "known_quality": "CORRECT",
+      "note": null
+    },
+    {
+      "case_id": "R05",
+      "provenance": "FROZEN_RECENT",
+      "top1": "Okere Falls",
+      "top3": [
+        "Okere Falls"
+      ],
+      "decision": "auto_save",
+      "autosave": true,
+      "cache_status": "MISS",
+      "latency_ms": 36651,
+      "known_quality": "CORRECT",
+      "note": null
+    },
+    {
+      "case_id": "R06",
+      "provenance": "FROZEN_RECENT",
+      "top1": "Lake Havasu State Park",
+      "top3": [
+        "Lake Havasu State Park",
+        "Cattail Cove State Park"
+      ],
+      "decision": "multi_candidate_confirmation",
+      "autosave": false,
+      "cache_status": "MISS",
+      "latency_ms": 138648,
+      "known_quality": "PLAUSIBLE",
+      "note": null
+    },
+    {
+      "case_id": "R07",
+      "provenance": "FROZEN_RECENT",
+      "top1": "Kissner's",
+      "top3": [
+        "Kissner's",
+        "Karsyn's Korner"
+      ],
+      "decision": "candidate_picker",
+      "autosave": false,
+      "cache_status": "MISS",
+      "latency_ms": 164028,
+      "known_quality": "WRONG_ENTITY",
+      "note": null
+    },
+    {
+      "case_id": "R08",
+      "provenance": "FROZEN_RECENT",
+      "top1": "Na Mokulua",
+      "top3": [
+        "Na Mokulua"
+      ],
+      "decision": "auto_save",
+      "autosave": true,
+      "cache_status": "MISS",
+      "latency_ms": 93755,
+      "known_quality": "CORRECT",
+      "note": null
+    },
+    {
+      "case_id": "V02",
+      "provenance": "FROZEN_RECENT",
+      "top1": "Capone's Italian Cucina",
+      "top3": [
+        "Capone's Italian Cucina"
+      ],
+      "decision": "auto_save",
+      "autosave": true,
+      "cache_status": "MISS",
+      "latency_ms": 5199,
+      "known_quality": "CORRECT",
+      "note": null
+    },
+    {
+      "case_id": "V03",
+      "provenance": "FROZEN_RECENT",
+      "top1": "Brooklyn City Pizzeria & Market",
+      "top3": [
+        "Brooklyn City Pizzeria & Market"
+      ],
+      "decision": "auto_save",
+      "autosave": true,
+      "cache_status": "MISS",
+      "latency_ms": 8062,
+      "known_quality": "CORRECT",
+      "note": null
+    },
+    {
+      "case_id": "V04",
+      "provenance": "FROZEN_RECENT",
+      "top1": "Hellfire Bay",
+      "top3": [
+        "Hellfire Bay",
+        "Little Hellfire Bay"
+      ],
+      "decision": "multi_candidate_confirmation",
+      "autosave": false,
+      "cache_status": "MISS",
+      "latency_ms": 258032,
+      "known_quality": "CORRECT",
+      "note": null
+    },
+    {
+      "case_id": "V05",
+      "provenance": "FROZEN_RECENT",
+      "top1": "South Coast Plaza",
+      "top3": [
+        "South Coast Plaza",
+        "South Coast Plaza Village"
+      ],
+      "decision": "candidate_picker",
+      "autosave": false,
+      "cache_status": "MISS",
+      "latency_ms": 8527,
+      "known_quality": "WRONG_PARENT_COMPLEX",
+      "note": null
+    },
+    {
+      "case_id": "H01",
+      "provenance": "FROZEN_RECENT",
+      "top1": "2nd Floor",
+      "top3": [
+        "2nd Floor"
+      ],
+      "decision": "auto_save",
+      "autosave": true,
+      "cache_status": "MISS",
+      "latency_ms": 4761,
+      "known_quality": "CORRECT",
+      "note": null
+    },
+    {
+      "case_id": "H02",
+      "provenance": "FROZEN_RECENT",
+      "top1": "Glaum Egg Ranch",
+      "top3": [
+        "Glaum Egg Ranch"
+      ],
+      "decision": "candidate_confirmation",
+      "autosave": false,
+      "cache_status": "MISS",
+      "latency_ms": 5069,
+      "known_quality": "WRONG",
+      "note": null
+    },
+    {
+      "case_id": "H03",
+      "provenance": "FROZEN_RECENT",
+      "top1": "Las Palmas Taco Bar",
+      "top3": [
+        "Las Palmas Taco Bar"
+      ],
+      "decision": "auto_save",
+      "autosave": true,
+      "cache_status": "MISS",
+      "latency_ms": 5898,
+      "known_quality": "CORRECT",
+      "note": null
+    },
+    {
+      "case_id": "H04",
+      "provenance": "FROZEN_RECENT",
+      "top1": "Seabright Deli",
+      "top3": [
+        "Seabright Deli"
+      ],
+      "decision": "auto_save",
+      "autosave": true,
+      "cache_status": "MISS",
+      "latency_ms": 7364,
+      "known_quality": "CORRECT",
+      "note": null
+    },
+    {
+      "case_id": "H05",
+      "provenance": "FROZEN_RECENT",
+      "top1": "Glaum Egg Ranch",
+      "top3": [
+        "Glaum Egg Ranch"
+      ],
+      "decision": "candidate_confirmation",
+      "autosave": false,
+      "cache_status": "MISS",
+      "latency_ms": 5773,
+      "known_quality": "WRONG",
+      "note": null
+    },
+    {
+      "case_id": "H06",
+      "provenance": "FROZEN_RECENT",
+      "top1": "Baqba Mexican Grill",
+      "top3": [
+        "Baqba Mexican Grill"
+      ],
+      "decision": "multi_candidate_confirmation",
+      "autosave": false,
+      "cache_status": "MISS",
+      "latency_ms": 10927,
+      "known_quality": "CORRECT",
+      "note": null
+    },
+    {
+      "case_id": "H07",
+      "provenance": "FROZEN_RECENT",
+      "top1": "Famous Dave's Bar-B-Que",
+      "top3": [
+        "Famous Dave's Bar-B-Que"
+      ],
+      "decision": "auto_save",
+      "autosave": true,
+      "cache_status": "MISS",
+      "latency_ms": 2287,
+      "known_quality": "CORRECT",
+      "note": null
+    },
+    {
+      "case_id": "H08",
+      "provenance": "FROZEN_RECENT",
+      "top1": "Loaded Cafe - Orange",
+      "top3": [
+        "Loaded Cafe - Orange"
+      ],
+      "decision": "auto_save",
+      "autosave": true,
+      "cache_status": "MISS",
+      "latency_ms": 4574,
+      "known_quality": "CORRECT",
+      "note": null
+    },
+    {
+      "case_id": "H09",
+      "provenance": "FROZEN_RECENT",
+      "top1": "Pho Bamboo Vietnamese Restaurant",
+      "top3": [
+        "Pho Bamboo Vietnamese Restaurant"
+      ],
+      "decision": "auto_save",
+      "autosave": true,
+      "cache_status": "MISS",
+      "latency_ms": 1926,
+      "known_quality": "CORRECT",
+      "note": null
+    },
+    {
+      "case_id": "H10",
+      "provenance": "FROZEN_RECENT",
+      "top1": "Baja Sharkeez",
+      "top3": [
+        "Baja Sharkeez"
+      ],
+      "decision": "candidate_confirmation",
+      "autosave": false,
+      "cache_status": "MISS",
+      "latency_ms": 12127,
+      "known_quality": "CORRECT",
+      "note": null
+    },
+    {
+      "case_id": "H11",
+      "provenance": "FROZEN_RECENT",
+      "top1": "No Good Burger Joint Smashed",
+      "top3": [
+        "No Good Burger Joint Smashed"
+      ],
+      "decision": "candidate_confirmation",
+      "autosave": false,
+      "cache_status": "MISS",
+      "latency_ms": 122419,
+      "known_quality": "UNSCORED_FROZEN_RECENT",
+      "note": "Fresh recovery-branch live artifact."
+    },
+    {
+      "case_id": "H12",
+      "provenance": "FROZEN_RECENT",
+      "top1": "Old Fisherman’s Grotto",
+      "top3": [
+        "Old Fisherman’s Grotto"
+      ],
+      "decision": "auto_save",
+      "autosave": true,
+      "cache_status": "MISS",
+      "latency_ms": 125382,
+      "known_quality": "UNSCORED_FROZEN_RECENT",
+      "note": "Fresh recovery-branch live artifact."
+    },
+    {
+      "case_id": "P01",
+      "provenance": "FROZEN_RECENT",
+      "top1": "Aptos St. BBQ",
+      "top3": [
+        "Aptos St. BBQ"
+      ],
+      "decision": "candidate_confirmation",
+      "autosave": false,
+      "cache_status": "UNKNOWN",
+      "latency_ms": null,
+      "known_quality": "PASS",
+      "note": "Share-gold frozen backend result; latency/cache telemetry unavailable."
+    },
+    {
+      "case_id": "P02",
+      "provenance": "FROZEN_RECENT",
+      "top1": null,
+      "top3": [],
+      "decision": "manual_fallback",
+      "autosave": false,
+      "cache_status": "UNKNOWN",
+      "latency_ms": null,
+      "known_quality": "REVIEW",
+      "note": "Share-gold frozen backend result; latency/cache telemetry unavailable."
+    },
+    {
+      "case_id": "P03",
+      "provenance": "FROZEN_RECENT",
+      "top1": null,
+      "top3": [],
+      "decision": "manual_fallback",
+      "autosave": false,
+      "cache_status": "UNKNOWN",
+      "latency_ms": null,
+      "known_quality": "REVIEW",
+      "note": "Share-gold frozen backend result; latency/cache telemetry unavailable."
+    },
+    {
+      "case_id": "P04",
+      "provenance": "FROZEN_RECENT",
+      "top1": "Verde Media",
+      "top3": [
+        "Verde Media",
+        "Verde Media",
+        "New England Public Media"
+      ],
+      "decision": "candidate_confirmation",
+      "autosave": false,
+      "cache_status": "UNKNOWN",
+      "latency_ms": null,
+      "known_quality": "REVIEW",
+      "note": "Share-gold frozen backend result; latency/cache telemetry unavailable."
+    },
+    {
+      "case_id": "P05",
+      "provenance": "FROZEN_RECENT",
+      "top1": "OC Greek Fest",
+      "top3": [
+        "OC Greek Fest"
+      ],
+      "decision": "candidate_confirmation",
+      "autosave": false,
+      "cache_status": "UNKNOWN",
+      "latency_ms": null,
+      "known_quality": "PASS",
+      "note": "Share-gold frozen backend result; latency/cache telemetry unavailable."
+    },
+    {
+      "case_id": "P06",
+      "provenance": "FROZEN_RECENT",
+      "top1": "Old World Biergarten Festival Hall & Concert Venue",
+      "top3": [
+        "Old World Biergarten Festival Hall & Concert Venue",
+        "Old World Restaurant & Biergarten"
+      ],
+      "decision": "candidate_confirmation",
+      "autosave": false,
+      "cache_status": "UNKNOWN",
+      "latency_ms": null,
+      "known_quality": "PASS",
+      "note": "Share-gold frozen backend result; latency/cache telemetry unavailable."
+    },
+    {
+      "case_id": "P07",
+      "provenance": "FROZEN_RECENT",
+      "top1": null,
+      "top3": [],
+      "decision": "manual_fallback",
+      "autosave": false,
+      "cache_status": "UNKNOWN",
+      "latency_ms": null,
+      "known_quality": "REVIEW",
+      "note": "Share-gold frozen backend result; latency/cache telemetry unavailable."
+    },
+    {
+      "case_id": "P08",
+      "provenance": "FROZEN_RECENT",
+      "top1": null,
+      "top3": [],
+      "decision": "manual_fallback",
+      "autosave": false,
+      "cache_status": "UNKNOWN",
+      "latency_ms": null,
+      "known_quality": "REVIEW",
+      "note": "Share-gold frozen backend result; latency/cache telemetry unavailable."
+    },
+    {
+      "case_id": "P09",
+      "provenance": "FROZEN_RECENT",
+      "top1": null,
+      "top3": [],
+      "decision": "manual_fallback",
+      "autosave": false,
+      "cache_status": "UNKNOWN",
+      "latency_ms": null,
+      "known_quality": "REVIEW",
+      "note": "Share-gold frozen backend result; latency/cache telemetry unavailable."
+    },
+    {
+      "case_id": "P10",
+      "provenance": "FROZEN_RECENT",
+      "top1": null,
+      "top3": [],
+      "decision": "manual_fallback",
+      "autosave": false,
+      "cache_status": "UNKNOWN",
+      "latency_ms": null,
+      "known_quality": "REVIEW",
+      "note": "Share-gold frozen backend result; latency/cache telemetry unavailable."
+    },
+    {
+      "case_id": "S01",
+      "provenance": "FROZEN_RECENT",
+      "top1": "415 Seabright Ave",
+      "top3": [
+        "415 Seabright Ave"
+      ],
+      "decision": "manual_fallback",
+      "autosave": false,
+      "cache_status": "UNKNOWN",
+      "latency_ms": null,
+      "known_quality": "PASS",
+      "note": "Share-gold frozen backend result; latency/cache telemetry unavailable."
+    },
+    {
+      "case_id": "S02",
+      "provenance": "FROZEN_RECENT",
+      "top1": "Panera Bread",
+      "top3": [
+        "Panera Bread",
+        "Panera Bread",
+        "Panera Bread"
+      ],
+      "decision": "candidate_confirmation",
+      "autosave": false,
+      "cache_status": "UNKNOWN",
+      "latency_ms": null,
+      "known_quality": "REVIEW_FAIL",
+      "note": "Share-gold frozen backend result; latency/cache telemetry unavailable."
+    },
+    {
+      "case_id": "S03",
+      "provenance": "FROZEN_RECENT",
+      "top1": null,
+      "top3": [],
+      "decision": "manual_fallback",
+      "autosave": false,
+      "cache_status": "UNKNOWN",
+      "latency_ms": null,
+      "known_quality": "PASS",
+      "note": "Share-gold frozen backend result; latency/cache telemetry unavailable."
+    },
+    {
+      "case_id": "S04",
+      "provenance": "FROZEN_RECENT",
+      "top1": null,
+      "top3": [],
+      "decision": "manual_fallback",
+      "autosave": false,
+      "cache_status": "UNKNOWN",
+      "latency_ms": null,
+      "known_quality": "PASS",
+      "note": "Share-gold frozen backend result; latency/cache telemetry unavailable."
+    },
+    {
+      "case_id": "S05",
+      "provenance": "FROZEN_RECENT",
+      "top1": "Oswald Restaurant",
+      "top3": [
+        "Oswald Restaurant"
+      ],
+      "decision": "candidate_confirmation",
+      "autosave": false,
+      "cache_status": "UNKNOWN",
+      "latency_ms": null,
+      "known_quality": "REVIEW_FAIL",
+      "note": "Share-gold frozen backend result; latency/cache telemetry unavailable."
+    },
+    {
+      "case_id": "S06",
+      "provenance": "FROZEN_RECENT",
+      "top1": null,
+      "top3": [],
+      "decision": "manual_fallback",
+      "autosave": false,
+      "cache_status": "UNKNOWN",
+      "latency_ms": null,
+      "known_quality": "REVIEW",
+      "note": "Share-gold frozen backend result; latency/cache telemetry unavailable."
+    },
+    {
+      "case_id": "S07",
+      "provenance": "FROZEN_RECENT",
+      "top1": null,
+      "top3": [],
+      "decision": "manual_fallback",
+      "autosave": false,
+      "cache_status": "UNKNOWN",
+      "latency_ms": null,
+      "known_quality": "PASS",
+      "note": "Share-gold frozen backend result; latency/cache telemetry unavailable."
+    },
+    {
+      "case_id": "C01",
+      "provenance": "STALE_HISTORICAL",
+      "top1": null,
+      "top3": [],
+      "decision": null,
+      "autosave": null,
+      "cache_status": "UNKNOWN",
+      "latency_ms": null,
+      "known_quality": "NOT_AVAILABLE",
+      "note": "No attributable current Nearr result artifact was available."
+    },
+    {
+      "case_id": "C02",
+      "provenance": "STALE_HISTORICAL",
+      "top1": null,
+      "top3": [],
+      "decision": null,
+      "autosave": null,
+      "cache_status": "UNKNOWN",
+      "latency_ms": null,
+      "known_quality": "NOT_AVAILABLE",
+      "note": "No attributable current Nearr result artifact was available."
+    },
+    {
+      "case_id": "C03",
+      "provenance": "STALE_HISTORICAL",
+      "top1": null,
+      "top3": [],
+      "decision": null,
+      "autosave": null,
+      "cache_status": "UNKNOWN",
+      "latency_ms": null,
+      "known_quality": "NOT_AVAILABLE",
+      "note": "No attributable current Nearr result artifact was available."
+    },
+    {
+      "case_id": "C04",
+      "provenance": "STALE_HISTORICAL",
+      "top1": null,
+      "top3": [],
+      "decision": null,
+      "autosave": null,
+      "cache_status": "UNKNOWN",
+      "latency_ms": null,
+      "known_quality": "NOT_AVAILABLE",
+      "note": "No attributable current Nearr result artifact was available."
+    },
+    {
+      "case_id": "C05",
+      "provenance": "STALE_HISTORICAL",
+      "top1": null,
+      "top3": [],
+      "decision": null,
+      "autosave": null,
+      "cache_status": "UNKNOWN",
+      "latency_ms": null,
+      "known_quality": "NOT_AVAILABLE",
+      "note": "No attributable current Nearr result artifact was available."
+    },
+    {
+      "case_id": "C06",
+      "provenance": "STALE_HISTORICAL",
+      "top1": null,
+      "top3": [],
+      "decision": null,
+      "autosave": null,
+      "cache_status": "UNKNOWN",
+      "latency_ms": null,
+      "known_quality": "NOT_AVAILABLE",
+      "note": "No attributable current Nearr result artifact was available."
+    },
+    {
+      "case_id": "C07",
+      "provenance": "STALE_HISTORICAL",
+      "top1": null,
+      "top3": [],
+      "decision": null,
+      "autosave": null,
+      "cache_status": "UNKNOWN",
+      "latency_ms": null,
+      "known_quality": "NOT_AVAILABLE",
+      "note": "No attributable current Nearr result artifact was available."
+    }
+  ]
+}

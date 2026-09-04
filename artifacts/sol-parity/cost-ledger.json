@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-09-04T20:00:00.000Z",
+  "openai_model_attempts": 73,
+  "openai_attempts_with_known_token_cost": 71,
+  "openai_known_model_token_cost_usd": 8.961983,
+  "places_text_search_pro_requests": {
+    "initial_post_model": 122,
+    "diagnostic": 1,
+    "canonicalization_recheck_pass_1": 121,
+    "canonicalization_recheck_pass_2": 121,
+    "total": 365,
+    "list_price_per_1000_usd": 32,
+    "pre_free_cap_list_price_estimate_usd": 11.68,
+    "actual_billed_usd": null,
+    "note": "Actual bill is unknown because Google applies account-level free usage caps and pricing plans. Debug/recheck calls are included, not hidden."
+  },
+  "web_search_tool_cost_usd": null,
+  "transcription_cost_usd": null,
+  "all_in_actual_billed_usd": null
+}
