@@ -394,6 +394,7 @@ class GeminiModel implements ModelProvider {
       .join('\n');
     const userText = input.targetPlace
       ? buildAiNoteUserContext({
+          sourceKey: input.canonicalUrl,
           platform: input.platform,
           transcriptText,
           ocrText,

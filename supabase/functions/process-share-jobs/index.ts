@@ -785,7 +785,7 @@ async function persistBlockedPlaceResult(
 }
 
 const POST_SAVE_ENRICHMENT_RULE_VERSION = 'post-save-enrichment.v1';
-const VIDEO_AI_NOTE_RULE_VERSION = 'video-ai-note-voice.v2';
+const VIDEO_AI_NOTE_RULE_VERSION = 'video-ai-note-authenticity.v3';
 const MAX_AI_NOTE_GENERATION_RETRY_CYCLES = 1;
 
 /**
