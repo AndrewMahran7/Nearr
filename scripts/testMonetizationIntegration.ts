@@ -93,7 +93,7 @@ test('zero-balance jobs are visible, control-free, and cannot swipe-save', () =>
 });
 
 const migration = source('supabase/migrations/20260903000001_place_find_monetization.sql');
-const tokenPackConfig = source('supabase/migrations/20260903000002_dev_token_pack_quantities.sql');
+const tokenPackConfig = source('supabase/migrations/20260903000004_dev_token_pack_quantities.sql');
 const monetizationEdge = source('supabase/functions/monetization/index.ts');
 const processor = source('supabase/functions/process-share-jobs/index.ts');
 const paywall = source('app/monetization.tsx');

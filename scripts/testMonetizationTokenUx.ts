@@ -31,7 +31,7 @@ const jobDetailState = source('lib/shareJobDetailState.ts');
 const monetizationClient = source('lib/monetizationClient.ts');
 const monetizationEdge = source('supabase/functions/monetization/index.ts');
 const migration = source('supabase/migrations/20260903000001_place_find_monetization.sql');
-const packMigration = source('supabase/migrations/20260903000002_dev_token_pack_quantities.sql');
+const packMigration = source('supabase/migrations/20260903000004_dev_token_pack_quantities.sql');
 const userFacingMonetization = [settings, paywall, balance, extension, handoff, queue, jobDetailState].join('\n');
 
 test('Settings displays token terminology', () => {
