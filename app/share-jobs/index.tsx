@@ -181,7 +181,7 @@ function jobSubtitle(job: ShareJob, stalled = false): string {
   const vayrin = isVayrinProductUiEnabled();
   switch (job.status) {
     case 'awaiting_purchase':
-      return 'Choose a place find pack to continue';
+      return 'Choose a token pack to continue';
     case 'queued':
     case 'processing_metadata':
       return vayrin

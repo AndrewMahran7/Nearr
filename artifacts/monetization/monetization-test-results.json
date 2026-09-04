@@ -3,7 +3,7 @@
   "passed": 25,
   "failed": 0,
   "cases": [
-    "pack economics stay 10/25/50 and lifetime grant stays 5",
+    "pack economics stay 10/30/75 and lifetime grant stays 5",
     "new permanent account gets the free grant exactly once",
     "existing account initialization does not duplicate its grant",
     "job creation reserves before work and duplicate creation is idempotent",
@@ -23,7 +23,7 @@
     "dev mock grant is triple-gated and real verification fails closed",
     "production configuration blocks dev mock monetization",
     "clients cannot mutate balances or mint purchase grants",
-    "paywall uses server product metadata and labels mock prices",
+    "paywall uses server product metadata and labels Dev pricing honestly",
     "extension preserves an out-of-balance post and enters the paywall",
     "account deletion closes the wallet while retaining replay ledgers",
     "analytics cover reserve, consume, release and purchase funnel",

@@ -33,6 +33,7 @@ import { useRouter } from 'expo-router';
 
 import { Button, Card, DemoModeBanner, DevModeBanner, EmptyState, HowNearrWorksModal, Input, Screen, SetupChecklist } from '@/components';
 import { PlaceFindBalance } from '@/components/PlaceFindBalance';
+import { TokenSymbol } from '@/components/TokenSymbol';
 import { Radius, Spacing } from '@/constants';
 
 import { useAuth } from '@/hooks/useAuth';
@@ -839,20 +840,26 @@ export default function SettingsScreen() {
         {placeFindBalance.enabled ? (
           <>
             <View style={{ height: Spacing.xxl }} />
-            <Text style={styles.sectionLabel}>Place finds</Text>
+            <Text style={styles.sectionLabel}>Tokens</Text>
             <Card style={styles.section}>
               <Pressable
-                style={styles.helpRow}
+                style={styles.tokenRow}
                 onPress={() => router.push({ pathname: '/monetization', params: { entry: 'settings' } })}
                 accessibilityRole="button"
-                accessibilityLabel="View place find balance and packs"
+                accessibilityLabel={placeFindBalance.loading
+                  ? 'Token balance, loading'
+                  : `${placeFindBalance.snapshot?.available ?? 0} ${(placeFindBalance.snapshot?.available ?? 0) === 1 ? 'token' : 'tokens'}. Open token store`}
               >
+                <View style={styles.tokenIconWell} importantForAccessibility="no-hide-descendants">
+                  <TokenSymbol size={22} />
+                </View>
                 <View style={styles.helpCopy}>
-                  <Text style={typography.bodyStrong}>Your place finds</Text>
+                  <Text style={typography.bodyStrong}>Token balance</Text>
                   <Text style={[typography.caption, styles.muted, styles.helpBody]}>
-                    Each find covers one shared post that produces a useful place result.
+                    1 token per shared video.
                   </Text>
-                  <View style={{ height: Spacing.sm }} />
+                </View>
+                <View importantForAccessibility="no-hide-descendants">
                   <PlaceFindBalance
                     available={placeFindBalance.snapshot?.available ?? null}
                     loading={placeFindBalance.loading}
@@ -1203,6 +1210,22 @@ function createStyles(
     helpRow: {
       flexDirection: 'row',
       alignItems: 'center',
+    },
+    tokenRow: {
+      minHeight: 52,
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    tokenIconWell: {
+      width: 40,
+      height: 40,
+      marginRight: Spacing.md,
+      borderRadius: 20,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.accentSoft,
+      borderWidth: 1,
+      borderColor: colors.accentBorder,
     },
     helpCopy: {
       flex: 1,

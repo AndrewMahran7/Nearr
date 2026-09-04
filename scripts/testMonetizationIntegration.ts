@@ -25,9 +25,9 @@ function source(file: string): string {
   return fs.readFileSync(path.resolve(process.cwd(), file), 'utf8');
 }
 
-test('pack economics stay 10/25/50 and lifetime grant stays 5', () => {
+test('pack economics stay 10/30/75 and lifetime grant stays 5', () => {
   assert.equal(PLACE_FIND_FREE_LIFETIME_USES, 5);
-  assert.deepEqual(PLACE_FIND_DEV_PACKS.map((pack) => pack.uses), [10, 25, 50]);
+  assert.deepEqual(PLACE_FIND_DEV_PACKS.map((pack) => pack.uses), [10, 30, 75]);
 });
 
 let state = emptyPlaceFindLedger();
@@ -93,6 +93,7 @@ test('zero-balance jobs are visible, control-free, and cannot swipe-save', () =>
 });
 
 const migration = source('supabase/migrations/20260903000001_place_find_monetization.sql');
+const tokenPackConfig = source('supabase/migrations/20260903000002_dev_token_pack_quantities.sql');
 const monetizationEdge = source('supabase/functions/monetization/index.ts');
 const processor = source('supabase/functions/process-share-jobs/index.ts');
 const paywall = source('app/monetization.tsx');
@@ -128,6 +129,8 @@ test('dev mock grant is triple-gated and real verification fails closed', () => 
   assert.match(monetizationEdge, /MONETIZATION_DEV_TEST_USER_IDS/);
   assert.match(monetizationEdge, /storekit_verification_not_configured/);
   assert.match(migration, /dev\.mock\.nearr\.place_finds\.10',10,'dev_mock','\$3\.99',399,10,false/);
+  assert.match(tokenPackConfig, /use_count = 30[\s\S]*place_finds\.25'/);
+  assert.match(tokenPackConfig, /use_count = 75[\s\S]*place_finds\.50'/);
 });
 test('production configuration blocks dev mock monetization', () => {
   assert.match(environment, /PROD_DEV_MOCK_MONETIZATION/);
@@ -138,10 +141,11 @@ test('clients cannot mutate balances or mint purchase grants', () => {
   assert.match(migration, /revoke all on public\.place_find_products,public\.place_find_wallets/);
   assert.match(migration, /apply_dev_mock_place_find_purchase[\s\S]*to service_role/);
 });
-test('paywall uses server product metadata and labels mock prices', () => {
+test('paywall uses server product metadata and labels Dev pricing honestly', () => {
   assert.match(paywall, /snapshot\?\.products\.map/);
-  assert.match(paywall, /NEARR-DEV MOCK PRICING/);
-  assert.match(paywall, /Consumable packs do not restore/);
+  assert.match(paywall, /snapshot\?\.mode === 'dev_mock'/);
+  assert.match(paywall, /Dev pricing preview/);
+  assert.match(paywall, /Apple purchases are not available in this build/);
 });
 test('extension preserves an out-of-balance post and enters the paywall', () => {
   assert.match(extension, /result\.requiresPurchase/);

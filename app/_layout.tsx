@@ -765,7 +765,7 @@ function RootLayoutContent() {
                 name="monetization"
                 options={{
                   headerShown: false,
-                  title: 'Place find packs',
+                  title: 'Nearr Tokens',
                   presentation: 'modal',
                   gestureEnabled: true,
                 }}

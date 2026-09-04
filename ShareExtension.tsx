@@ -864,7 +864,7 @@ function AsyncShareExtension(props: ExtensionInitialProps) {
         <Text style={asyncStyles.eyebrow}>NEARR</Text>
         <Text style={asyncStyles.title}>Your post is safe</Text>
         <Text style={asyncStyles.subtle}>
-          You&apos;re out of place finds. Open Nearr to choose a pack and continue this post.
+          You&apos;re out of tokens. Open Nearr to choose a pack and continue this video.
         </Text>
         <Pressable
           style={asyncStyles.primaryBtn}
@@ -872,7 +872,7 @@ function AsyncShareExtension(props: ExtensionInitialProps) {
             `monetization?jobId=${encodeURIComponent(ui.jobId)}&entry=extension`,
           )}
           accessibilityRole="button"
-          accessibilityLabel="Open Nearr place find packs"
+          accessibilityLabel="Open Nearr token packs"
         >
           <Text style={asyncStyles.primaryText}>View packs</Text>
         </Pressable>

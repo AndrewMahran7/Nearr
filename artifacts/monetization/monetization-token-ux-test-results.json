@@ -1,0 +1,28 @@
+{
+  "suite": "monetization-token-ux",
+  "passed": 21,
+  "failed": 0,
+  "cases": [
+    "Settings displays token terminology",
+    "Settings displays a numeric balance with the token symbol",
+    "user-facing monetization copy never says tokens left",
+    "user-facing monetization copy has no stale place-find wording",
+    "map has no monetization balance UI",
+    "Starter Pack is 10 tokens at the existing Dev price",
+    "Explorer Pack is 30 tokens at the existing Dev price",
+    "Treasure Pack is 75 tokens at the existing Dev price",
+    "Explorer is the default recommended pack with BEST VALUE treatment",
+    "Dev mock price mapping is unchanged",
+    "pack selection drives the explicit token CTA",
+    "mock purchases credit the configured quantity exactly once",
+    "success shows tokens added and a numeric balance with the symbol",
+    "a purchase resumes the exact pending share without reshare",
+    "zero balance clearly preserves and continues the pending video",
+    "server balance remains authoritative",
+    "token balance and every pack have complete accessibility labels",
+    "Dev pricing badge is gated away from Production mode",
+    "responsive paywall uses scrolling and flexible non-overlapping pack copy",
+    "monetization surfaces contain no user-facing Vayrin branding",
+    "wallet, reserve, consume, release, and free-grant contracts are unchanged"
+  ]
+}

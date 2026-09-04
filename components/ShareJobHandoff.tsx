@@ -131,11 +131,11 @@ export function ShareJobHandoff({ url, submissionId }: { url: string; submission
         <View style={styles.centered}>
           <Text style={[typography.heading, styles.title]}>Your shared post is safe</Text>
           <Text style={[typography.body, styles.subtle]}>
-            {'You\u2019re out of place finds. Choose a pack and Nearr will continue this post automatically.'}
+            {'You\u2019re out of tokens. Choose a pack and Nearr will continue this video automatically.'}
           </Text>
           <View style={{ height: Spacing.lg }} />
           <Button
-            title="View place find packs"
+            title="View token packs"
             onPress={() => router.replace({
               pathname: '/monetization',
               params: { jobId: ui.jobId, entry: 'share_handoff' },

@@ -286,7 +286,7 @@ export function buildShareJobDetailState(
         kind: 'dismissed',
         copy: {
           title: 'This post is waiting',
-          body: 'Choose a place find pack to continue.',
+          body: 'Choose a token pack to continue.',
         },
         reason: 'purchase_required',
       };

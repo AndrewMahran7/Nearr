@@ -8,6 +8,7 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
+    "test:monetization-token-ux": "ts-node -P scripts/tsconfig.json scripts/testMonetizationTokenUx.ts",
     "test:monetization-integration": "ts-node -P scripts/tsconfig.json scripts/testMonetizationIntegration.ts",
     "postinstall": "patch-package",
     "media:inspect": "npm --prefix services/media-worker run media:inspect --",
