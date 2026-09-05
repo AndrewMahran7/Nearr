@@ -148,7 +148,8 @@ begin
   perform pg_advisory_xact_lock(v_lock_key);
   if not p_is_anonymous then
     perform * from public.ensure_place_find_wallet(p_user_id,false);
-    select available_uses into v_available from public.place_find_wallets where user_id=p_user_id;
+    select pfw.available_uses into v_available
+      from public.place_find_wallets as pfw where pfw.user_id=p_user_id;
   end if;
   if nullif(trim(p_idempotency_key),'') is not null then
     select sj.* into v_existing from public.share_jobs sj
@@ -192,7 +193,8 @@ begin
   select * into v_job from public.share_jobs where id=p_job_id and user_id=p_user_id for update;
   if not found then raise exception 'premium_job_not_found'; end if;
   perform * from public.ensure_place_find_wallet(p_user_id,false);
-  select available_uses into v_available from public.place_find_wallets where user_id=p_user_id;
+  select pfw.available_uses into v_available
+    from public.place_find_wallets as pfw where pfw.user_id=p_user_id;
 
   if v_job.premium_state in ('reserved','processing','useful_result','no_useful_result','failed','cancelled') then
     return query select v_job.id,v_job.premium_request_id,v_job.premium_state,v_available,false,true;
@@ -237,7 +239,8 @@ begin
       'premium_recognition',jsonb_build_object('tokens',1,'model','gpt-5.6-sol')
     ),updated_at=now()
     where id=v_job.id returning * into v_job;
-  select available_uses into v_available from public.place_find_wallets where user_id=p_user_id;
+  select pfw.available_uses into v_available
+    from public.place_find_wallets as pfw where pfw.user_id=p_user_id;
   insert into public.analytics_events(user_id,event_name,properties) values(
     p_user_id,'premium_request_reserved',jsonb_build_object('share_job_id',p_job_id,'token_cost',1)
   );

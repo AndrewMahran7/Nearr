@@ -1,0 +1,1221 @@
+{
+  "schemaVersion": 1,
+  "run": {
+    "startedAt": "2026-09-05T00:49:33.111Z",
+    "completedAt": "2026-09-05T01:05:52.974Z",
+    "correlationId": "nearr-e2e-20260905T004932-513af9fa",
+    "gitHead": "9bd8c9369c34323700c6774ce9920f7e1742f553",
+    "target": {
+      "supabaseProjectRef": "qnfxnmvxpjzfydgudtvs",
+      "railwayProject": "4037a3b5-d66f-409e-b734-56c22c244e3e",
+      "railwayEnvironment": "development",
+      "railwayService": "media-worker"
+    },
+    "freeLaneSetup": "terminal analysis-insufficient jobs seeded with real parity source URLs",
+    "premiumBoundary": "deployed authenticated monetization Edge endpoint onward",
+    "purchaseSetup": {
+      "productId": "dev.mock.nearr.place_finds.10",
+      "grantedUses": 10
+    },
+    "cleanupRequested": true
+  },
+  "wallet": {
+    "initial": {
+      "id": "22bb11db-74d2-4bdd-9468-7f28a3b1f7f3",
+      "available_uses": 5,
+      "reserved_uses": 0,
+      "version": 1
+    },
+    "funded": {
+      "id": "22bb11db-74d2-4bdd-9468-7f28a3b1f7f3",
+      "available_uses": 15,
+      "reserved_uses": 0,
+      "version": 2
+    },
+    "reserved": {
+      "id": "22bb11db-74d2-4bdd-9468-7f28a3b1f7f3",
+      "available_uses": 0,
+      "reserved_uses": 15,
+      "version": 17
+    },
+    "final": {
+      "id": "22bb11db-74d2-4bdd-9468-7f28a3b1f7f3",
+      "available_uses": 2,
+      "reserved_uses": 0,
+      "version": 32
+    }
+  },
+  "gates": {
+    "runCount": 15,
+    "priorityUseful": "8/9",
+    "wrongAutosaves": 0,
+    "c07UnsafeAutosave": false,
+    "machineCacheIdentityReads": 0,
+    "noResultTokenRelease": true,
+    "actionableReviewTokenConsume": true,
+    "duplicatePremiumTapSingleReservation": true
+  },
+  "cases": [
+    {
+      "caseId": "R01",
+      "sourceUrl": "https://www.instagram.com/reel/Cg2U22DjbEJ/",
+      "jobId": "c07f78ed-4564-4a32-97ed-353f6ae1cfdf",
+      "premiumRequestId": "6f10d3d7-4561-4647-ba73-a1ead39dbb65",
+      "premiumState": "useful_result",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "names": [
+        "Vallon-Pont-d'Arc",
+        "Cirque de Gens",
+        "La Baume, Gorges du Gardon",
+        "Pont d’Arc"
+      ],
+      "suggestedQuery": "Cirque de Gens",
+      "chargeable": true,
+      "settlementReason": "premium_specific_candidates",
+      "costs": {
+        "sol": {
+          "model": "gpt-5.6-sol",
+          "usage": {
+            "input_tokens": 3645,
+            "total_tokens": 7029,
+            "output_tokens": 3384,
+            "reasoning_tokens": 3106,
+            "cached_input_tokens": 0
+          },
+          "knownCostUsd": 0.08226
+        },
+        "places": {
+          "costUsd": "UNKNOWN",
+          "requestCount": 3,
+          "requestTypes": [
+            "PRIMARY_SPECIFIC_IDENTITY",
+            "PRIMARY_SPECIFIC_IDENTITY",
+            "PRIMARY_SPECIFIC_IDENTITY"
+          ]
+        },
+        "latencyMs": {
+          "sol": 57132,
+          "places": 873,
+          "evidencePrep": 10713,
+          "totalAfterEvidenceReady": 58006
+        },
+        "acquisition": "UNKNOWN",
+        "evidenceReuse": {
+          "ocr": "REACQUIRED",
+          "media": "REACQUIRED",
+          "frames": "REACQUIRED",
+          "caption": "REACQUIRED",
+          "transcript": "REACQUIRED"
+        },
+        "transcription": "UNKNOWN"
+      },
+      "requestedAt": "2026-09-05T00:49:38.055874+00:00",
+      "startedAt": "2026-09-05T00:49:38.304849+00:00",
+      "completedAt": "2026-09-05T00:50:50.881142+00:00",
+      "task": {
+        "id": "300fe33b-2d42-4814-8856-4d2670418ffb",
+        "status": "completed",
+        "attempts": 1,
+        "failureCode": null,
+        "resolverName": "premium-sol",
+        "analysisProvider": null,
+        "analysisModel": null,
+        "promptVersion": null,
+        "latencyMs": null,
+        "modelCalls": null,
+        "modelInputTokens": null,
+        "modelOutputTokens": null,
+        "modelThinkingTokens": null,
+        "modelLatencyMs": null
+      },
+      "mediaRun": {
+        "id": "0d1ba5ca-48c9-4d14-b06b-c990fbefae00",
+        "durationMs": 68719,
+        "frameCount": 7,
+        "transcriptSegments": 4,
+        "ocrSegments": 0,
+        "resolverName": "instagram/yt-dlp",
+        "modelProvider": "premium-sol"
+      },
+      "reservationCount": 1,
+      "reservationStatus": "consumed",
+      "priorityUseful": true
+    },
+    {
+      "caseId": "R02",
+      "sourceUrl": "https://www.instagram.com/reel/DSvmLO_Eom9/",
+      "jobId": "770d916f-b5bb-4519-86d2-7a0d193c3e8c",
+      "premiumRequestId": "237339a8-23ea-42ad-bc00-51e3a6ae3129",
+      "premiumState": "useful_result",
+      "status": "needs_help",
+      "decision": "candidate_picker",
+      "savedPlaceId": null,
+      "names": [
+        "Swami's Beach",
+        "North Beach",
+        "Ocean Beach"
+      ],
+      "suggestedQuery": null,
+      "chargeable": true,
+      "settlementReason": "premium_specific_candidates",
+      "costs": {
+        "premium_recognition": {
+          "model": "gpt-5.6-sol",
+          "tokens": 1
+        }
+      },
+      "requestedAt": "2026-09-05T00:49:38.831629+00:00",
+      "startedAt": "2026-09-05T00:51:00.668343+00:00",
+      "completedAt": "2026-09-05T00:52:01.913781+00:00",
+      "task": {
+        "id": "5fd036c4-fa19-4c4a-9b1e-1adcb187abd5",
+        "status": "completed",
+        "attempts": 1,
+        "failureCode": null,
+        "resolverName": "instagram/yt-dlp",
+        "analysisProvider": null,
+        "analysisModel": null,
+        "promptVersion": null,
+        "latencyMs": null,
+        "modelCalls": null,
+        "modelInputTokens": null,
+        "modelOutputTokens": null,
+        "modelThinkingTokens": null,
+        "modelLatencyMs": null
+      },
+      "mediaRun": {
+        "id": "eb549e9b-43ca-4350-9ffc-7636942dd83b",
+        "durationMs": 74043,
+        "frameCount": 14,
+        "transcriptSegments": 1,
+        "ocrSegments": 0,
+        "resolverName": "instagram/yt-dlp",
+        "modelProvider": "premium-sol"
+      },
+      "reservationCount": 1,
+      "reservationStatus": "consumed",
+      "priorityUseful": false
+    },
+    {
+      "caseId": "R03",
+      "sourceUrl": "https://www.instagram.com/reel/DZJ8ZvYub8Q/",
+      "jobId": "bf14a22e-8eab-434c-ab74-764cb5312be4",
+      "premiumRequestId": "63482369-6318-43d6-9286-8c2a6c467dde",
+      "premiumState": "useful_result",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "names": [
+        "Tamolitch Falls (Blue Pool)",
+        "Tamolitch Blue Pool"
+      ],
+      "suggestedQuery": "Tamolitch Blue Pool",
+      "chargeable": true,
+      "settlementReason": "premium_specific_candidates",
+      "costs": {
+        "sol": {
+          "model": "gpt-5.6-sol",
+          "usage": {
+            "input_tokens": 7357,
+            "total_tokens": 7628,
+            "output_tokens": 271,
+            "reasoning_tokens": 133,
+            "cached_input_tokens": 0
+          },
+          "knownCostUsd": 0.034848
+        },
+        "places": {
+          "costUsd": "UNKNOWN",
+          "requestCount": 1,
+          "requestTypes": [
+            "PRIMARY_SPECIFIC_IDENTITY"
+          ]
+        },
+        "latencyMs": {
+          "sol": 6507,
+          "places": 244,
+          "evidencePrep": 10574,
+          "totalAfterEvidenceReady": 6751
+        },
+        "acquisition": "UNKNOWN",
+        "evidenceReuse": {
+          "ocr": "REACQUIRED",
+          "media": "REACQUIRED",
+          "frames": "REACQUIRED",
+          "caption": "REACQUIRED",
+          "transcript": "REACQUIRED"
+        },
+        "transcription": "UNKNOWN"
+      },
+      "requestedAt": "2026-09-05T00:49:39.425112+00:00",
+      "startedAt": "2026-09-05T00:51:00.668343+00:00",
+      "completedAt": "2026-09-05T00:51:19.818649+00:00",
+      "task": {
+        "id": "4907107e-3163-4882-97fd-ea52a890ddf7",
+        "status": "completed",
+        "attempts": 1,
+        "failureCode": null,
+        "resolverName": "premium-sol",
+        "analysisProvider": null,
+        "analysisModel": null,
+        "promptVersion": null,
+        "latencyMs": null,
+        "modelCalls": null,
+        "modelInputTokens": null,
+        "modelOutputTokens": null,
+        "modelThinkingTokens": null,
+        "modelLatencyMs": null
+      },
+      "mediaRun": {
+        "id": "f7b50040-7f1f-459f-bd29-68559e0acaaf",
+        "durationMs": 17326,
+        "frameCount": 7,
+        "transcriptSegments": 5,
+        "ocrSegments": 0,
+        "resolverName": "instagram/yt-dlp",
+        "modelProvider": "premium-sol"
+      },
+      "reservationCount": 1,
+      "reservationStatus": "consumed",
+      "priorityUseful": true
+    },
+    {
+      "caseId": "R04",
+      "sourceUrl": "https://www.instagram.com/reel/C9Z963muLHI/",
+      "jobId": "6fba8620-c851-4923-a99f-fb83edb9b865",
+      "premiumRequestId": "9c316002-15db-4209-b5b8-da383ebcca10",
+      "premiumState": "useful_result",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "names": [
+        "Dorset Marble Quarry (Norcross-West Quarry)"
+      ],
+      "suggestedQuery": "Dorset Marble Quarry (Norcross-West Quarry)",
+      "chargeable": true,
+      "settlementReason": "premium_specific_candidates",
+      "costs": {
+        "sol": {
+          "model": "gpt-5.6-sol",
+          "usage": {
+            "input_tokens": 7295,
+            "total_tokens": 8297,
+            "output_tokens": 1002,
+            "reasoning_tokens": 834,
+            "cached_input_tokens": 0
+          },
+          "knownCostUsd": 0.04922
+        },
+        "places": {
+          "costUsd": "UNKNOWN",
+          "requestCount": 1,
+          "requestTypes": [
+            "PRIMARY_SPECIFIC_IDENTITY"
+          ]
+        },
+        "latencyMs": {
+          "sol": 21063,
+          "places": 356,
+          "evidencePrep": 12654,
+          "totalAfterEvidenceReady": 21419
+        },
+        "acquisition": "UNKNOWN",
+        "evidenceReuse": {
+          "ocr": "REACQUIRED",
+          "media": "REACQUIRED",
+          "frames": "REACQUIRED",
+          "caption": "REACQUIRED",
+          "transcript": "REACQUIRED"
+        },
+        "transcription": "UNKNOWN"
+      },
+      "requestedAt": "2026-09-05T00:49:39.880257+00:00",
+      "startedAt": "2026-09-05T00:51:00.668343+00:00",
+      "completedAt": "2026-09-05T00:51:36.715596+00:00",
+      "task": {
+        "id": "e2eb9b90-d199-45a1-b7ba-9d919406d185",
+        "status": "completed",
+        "attempts": 1,
+        "failureCode": null,
+        "resolverName": "premium-sol",
+        "analysisProvider": null,
+        "analysisModel": null,
+        "promptVersion": null,
+        "latencyMs": null,
+        "modelCalls": null,
+        "modelInputTokens": null,
+        "modelOutputTokens": null,
+        "modelThinkingTokens": null,
+        "modelLatencyMs": null
+      },
+      "mediaRun": {
+        "id": "b792b5c1-6b0e-4e72-8e66-0293aa903e9f",
+        "durationMs": 34073,
+        "frameCount": 7,
+        "transcriptSegments": 1,
+        "ocrSegments": 0,
+        "resolverName": "instagram/yt-dlp",
+        "modelProvider": "premium-sol"
+      },
+      "reservationCount": 1,
+      "reservationStatus": "consumed",
+      "priorityUseful": true
+    },
+    {
+      "caseId": "R05",
+      "sourceUrl": "https://www.instagram.com/reel/Db5qatGJgqH/",
+      "jobId": "b871a17c-4f4b-4328-878b-6f11b883f2a5",
+      "premiumRequestId": "b366e0e3-c00a-4d8b-ab2a-5b40888605a0",
+      "premiumState": "useful_result",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "names": [
+        "Kaituna River",
+        "Okere Falls, Kaituna River",
+        "Tutea Falls, Okere Falls Scenic Reserve"
+      ],
+      "suggestedQuery": "Okere Falls, Kaituna River",
+      "chargeable": true,
+      "settlementReason": "premium_specific_candidates",
+      "costs": {
+        "sol": {
+          "model": "gpt-5.6-sol",
+          "usage": {
+            "input_tokens": 7319,
+            "total_tokens": 8201,
+            "output_tokens": 882,
+            "reasoning_tokens": 654,
+            "cached_input_tokens": 0
+          },
+          "knownCostUsd": 0.046916
+        },
+        "places": {
+          "costUsd": "UNKNOWN",
+          "requestCount": 2,
+          "requestTypes": [
+            "PRIMARY_SPECIFIC_IDENTITY",
+            "PRIMARY_SPECIFIC_IDENTITY"
+          ]
+        },
+        "latencyMs": {
+          "sol": 14003,
+          "places": 468,
+          "evidencePrep": 13563,
+          "totalAfterEvidenceReady": 14472
+        },
+        "acquisition": "UNKNOWN",
+        "evidenceReuse": {
+          "ocr": "REACQUIRED",
+          "media": "REACQUIRED",
+          "frames": "REACQUIRED",
+          "caption": "REACQUIRED",
+          "transcript": "REACQUIRED"
+        },
+        "transcription": "UNKNOWN"
+      },
+      "requestedAt": "2026-09-05T00:49:40.305279+00:00",
+      "startedAt": "2026-09-05T00:53:00.256657+00:00",
+      "completedAt": "2026-09-05T00:53:29.945595+00:00",
+      "task": {
+        "id": "9e9d55b6-c960-4cc6-ae68-c76d5d887a7a",
+        "status": "completed",
+        "attempts": 1,
+        "failureCode": null,
+        "resolverName": "premium-sol",
+        "analysisProvider": null,
+        "analysisModel": null,
+        "promptVersion": null,
+        "latencyMs": null,
+        "modelCalls": null,
+        "modelInputTokens": null,
+        "modelOutputTokens": null,
+        "modelThinkingTokens": null,
+        "modelLatencyMs": null
+      },
+      "mediaRun": {
+        "id": "a00de3a0-b482-487c-8e08-39a2f22f291a",
+        "durationMs": 28035,
+        "frameCount": 13,
+        "transcriptSegments": 1,
+        "ocrSegments": 0,
+        "resolverName": "instagram/yt-dlp",
+        "modelProvider": "premium-sol"
+      },
+      "reservationCount": 1,
+      "reservationStatus": "consumed",
+      "priorityUseful": true
+    },
+    {
+      "caseId": "R06",
+      "sourceUrl": "https://www.instagram.com/p/5oXehfQxb2/",
+      "jobId": "21f991ff-d946-4117-959e-92081b72f6c4",
+      "premiumRequestId": "255a0ae5-ffa5-4978-a4ca-677c85cc4ae4",
+      "premiumState": "useful_result",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "names": [
+        "Parker Strip",
+        "Copper Canyon on Lake Havasu",
+        "Parker Strip, Colorado River",
+        "Lake Havasu"
+      ],
+      "suggestedQuery": "Copper Canyon on Lake Havasu",
+      "chargeable": true,
+      "settlementReason": "premium_specific_candidates",
+      "costs": {
+        "sol": {
+          "model": "gpt-5.6-sol",
+          "usage": {
+            "input_tokens": 3567,
+            "total_tokens": 5278,
+            "output_tokens": 1711,
+            "reasoning_tokens": 1470,
+            "cached_input_tokens": 0
+          },
+          "knownCostUsd": 0.048488
+        },
+        "places": {
+          "costUsd": "UNKNOWN",
+          "requestCount": 3,
+          "requestTypes": [
+            "PRIMARY_SPECIFIC_IDENTITY",
+            "PRIMARY_SPECIFIC_IDENTITY",
+            "PRIMARY_SPECIFIC_IDENTITY"
+          ]
+        },
+        "latencyMs": {
+          "sol": 29439,
+          "places": 814,
+          "evidencePrep": 13535,
+          "totalAfterEvidenceReady": 30254
+        },
+        "acquisition": "UNKNOWN",
+        "evidenceReuse": {
+          "ocr": "REACQUIRED",
+          "media": "REACQUIRED",
+          "frames": "REACQUIRED",
+          "caption": "REACQUIRED",
+          "transcript": "REACQUIRED"
+        },
+        "transcription": "UNKNOWN"
+      },
+      "requestedAt": "2026-09-05T00:49:40.758141+00:00",
+      "startedAt": "2026-09-05T00:53:00.256657+00:00",
+      "completedAt": "2026-09-05T00:53:45.78999+00:00",
+      "task": {
+        "id": "87843f0e-eaad-4ae3-9988-252f44af242d",
+        "status": "completed",
+        "attempts": 1,
+        "failureCode": null,
+        "resolverName": "premium-sol",
+        "analysisProvider": null,
+        "analysisModel": null,
+        "promptVersion": null,
+        "latencyMs": null,
+        "modelCalls": null,
+        "modelInputTokens": null,
+        "modelOutputTokens": null,
+        "modelThinkingTokens": null,
+        "modelLatencyMs": null
+      },
+      "mediaRun": {
+        "id": "6d56f367-c81c-4280-8b24-13531f13a3bc",
+        "durationMs": 43789,
+        "frameCount": 9,
+        "transcriptSegments": 5,
+        "ocrSegments": 0,
+        "resolverName": "instagram/yt-dlp",
+        "modelProvider": "premium-sol"
+      },
+      "reservationCount": 1,
+      "reservationStatus": "consumed",
+      "priorityUseful": true
+    },
+    {
+      "caseId": "R07",
+      "sourceUrl": "https://www.instagram.com/reel/C0bg-7sooKi/",
+      "jobId": "14cdfbbd-e787-43a2-8618-0b80b2d1ae8c",
+      "premiumRequestId": "a1f6f714-90ce-42b6-b510-54674863c1e8",
+      "premiumState": "useful_result",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "names": [
+        "Norway (exact cliff and waterbody unidentified)"
+      ],
+      "suggestedQuery": "Norway (exact cliff and waterbody unidentified)",
+      "chargeable": true,
+      "settlementReason": "premium_specific_candidates",
+      "costs": {
+        "sol": {
+          "model": "gpt-5.6-sol",
+          "usage": {
+            "input_tokens": 5317,
+            "total_tokens": 9145,
+            "output_tokens": 3828,
+            "reasoning_tokens": 3624,
+            "cached_input_tokens": 0
+          },
+          "knownCostUsd": 0.097828
+        },
+        "places": {
+          "costUsd": "UNKNOWN",
+          "requestCount": 2,
+          "requestTypes": [
+            "PRIMARY_SPECIFIC_IDENTITY",
+            "CONTROLLED_ALIAS_RETRY"
+          ]
+        },
+        "latencyMs": {
+          "sol": 65780,
+          "places": 376,
+          "evidencePrep": 16017,
+          "totalAfterEvidenceReady": 66156
+        },
+        "acquisition": "UNKNOWN",
+        "evidenceReuse": {
+          "ocr": "REACQUIRED",
+          "media": "REACQUIRED",
+          "frames": "REACQUIRED",
+          "caption": "REACQUIRED",
+          "transcript": "REACQUIRED"
+        },
+        "transcription": "UNKNOWN"
+      },
+      "requestedAt": "2026-09-05T00:49:41.222018+00:00",
+      "startedAt": "2026-09-05T00:53:00.256657+00:00",
+      "completedAt": "2026-09-05T00:54:24.326047+00:00",
+      "task": {
+        "id": "7e5adcd2-d263-41fb-9746-bcbf7133b1f1",
+        "status": "completed",
+        "attempts": 1,
+        "failureCode": null,
+        "resolverName": "premium-sol",
+        "analysisProvider": null,
+        "analysisModel": null,
+        "promptVersion": null,
+        "latencyMs": null,
+        "modelCalls": null,
+        "modelInputTokens": null,
+        "modelOutputTokens": null,
+        "modelThinkingTokens": null,
+        "modelLatencyMs": null
+      },
+      "mediaRun": {
+        "id": "68c4d91d-b569-4f6b-9174-3384a5902ce1",
+        "durationMs": 82173,
+        "frameCount": 13,
+        "transcriptSegments": 1,
+        "ocrSegments": 0,
+        "resolverName": "instagram/yt-dlp",
+        "modelProvider": "premium-sol"
+      },
+      "reservationCount": 1,
+      "reservationStatus": "consumed",
+      "priorityUseful": true
+    },
+    {
+      "caseId": "R08",
+      "sourceUrl": "https://www.instagram.com/reel/CqJo6QHJqPo/",
+      "jobId": "0d6f80b5-a770-40b5-b815-7939ab4381c2",
+      "premiumRequestId": "b3924bf4-5652-4219-aa28-690ea9deb73e",
+      "premiumState": "useful_result",
+      "status": "completed",
+      "decision": "auto_save",
+      "savedPlaceId": "8c0ac2d5-9362-42fe-83d3-4cb293343ec6",
+      "names": [
+        "Na Mokulua"
+      ],
+      "suggestedQuery": null,
+      "chargeable": true,
+      "settlementReason": "premium_saved_place",
+      "costs": {
+        "premium_recognition": {
+          "model": "gpt-5.6-sol",
+          "tokens": 1
+        }
+      },
+      "requestedAt": "2026-09-05T00:49:41.631036+00:00",
+      "startedAt": null,
+      "completedAt": "2026-09-05T00:52:01.353046+00:00",
+      "task": {
+        "id": "1c95da80-b6e6-4965-be17-c500aa4595f6",
+        "status": "queued",
+        "attempts": 0,
+        "failureCode": null,
+        "resolverName": null,
+        "analysisProvider": null,
+        "analysisModel": null,
+        "promptVersion": null,
+        "latencyMs": null,
+        "modelCalls": null,
+        "modelInputTokens": null,
+        "modelOutputTokens": null,
+        "modelThinkingTokens": null,
+        "modelLatencyMs": null
+      },
+      "mediaRun": null,
+      "reservationCount": 1,
+      "reservationStatus": "consumed",
+      "priorityUseful": true
+    },
+    {
+      "caseId": "V05",
+      "sourceUrl": "https://www.instagram.com/p/DX77lghIHeG/",
+      "jobId": "70e723e1-8b14-41fe-8572-c4dd88c5689e",
+      "premiumRequestId": "ce813c1e-9ff0-4a50-8d75-f38c348c86f7",
+      "premiumState": "useful_result",
+      "status": "needs_help",
+      "decision": "candidate_picker",
+      "savedPlaceId": null,
+      "names": [
+        "Paradise Dynasty",
+        "Paradise Dynasty at The Americana",
+        "Paradise Dynasty at South Coast Plaza",
+        "Paradise Dynasty at The Americana at Brand"
+      ],
+      "suggestedQuery": "Paradise Dynasty at South Coast Plaza",
+      "chargeable": true,
+      "settlementReason": "premium_specific_candidates",
+      "costs": {
+        "sol": {
+          "model": "gpt-5.6-sol",
+          "usage": {
+            "input_tokens": 7716,
+            "total_tokens": 8286,
+            "output_tokens": 570,
+            "reasoning_tokens": 348,
+            "cached_input_tokens": 0
+          },
+          "knownCostUsd": 0.042264
+        },
+        "places": {
+          "costUsd": "UNKNOWN",
+          "requestCount": 2,
+          "requestTypes": [
+            "PRIMARY_SPECIFIC_IDENTITY",
+            "PRIMARY_SPECIFIC_IDENTITY"
+          ]
+        },
+        "latencyMs": {
+          "sol": 10245,
+          "places": 584,
+          "evidencePrep": 16428,
+          "totalAfterEvidenceReady": 10829
+        },
+        "acquisition": "UNKNOWN",
+        "evidenceReuse": {
+          "ocr": "REACQUIRED",
+          "media": "REACQUIRED",
+          "frames": "REACQUIRED",
+          "caption": "REACQUIRED",
+          "transcript": "REACQUIRED"
+        },
+        "transcription": "UNKNOWN"
+      },
+      "requestedAt": "2026-09-05T00:49:42.237303+00:00",
+      "startedAt": "2026-09-05T00:53:00.256657+00:00",
+      "completedAt": "2026-09-05T00:53:29.117139+00:00",
+      "task": {
+        "id": "08a7a132-2cb5-4929-a7f9-1a5e60ce1833",
+        "status": "completed",
+        "attempts": 1,
+        "failureCode": null,
+        "resolverName": "premium-sol",
+        "analysisProvider": null,
+        "analysisModel": null,
+        "promptVersion": null,
+        "latencyMs": null,
+        "modelCalls": null,
+        "modelInputTokens": null,
+        "modelOutputTokens": null,
+        "modelThinkingTokens": null,
+        "modelLatencyMs": null
+      },
+      "mediaRun": {
+        "id": "445a8707-a0e7-4904-a2bb-c14f2a3464ad",
+        "durationMs": 27258,
+        "frameCount": 23,
+        "transcriptSegments": 11,
+        "ocrSegments": 0,
+        "resolverName": "instagram/yt-dlp",
+        "modelProvider": "premium-sol"
+      },
+      "reservationCount": 1,
+      "reservationStatus": "consumed",
+      "priorityUseful": true
+    },
+    {
+      "caseId": "C07",
+      "sourceUrl": "https://www.youtube.com/watch?v=jNQXAC9IVRw",
+      "jobId": "ec75c890-6552-4c5c-92a6-0992e22fea0c",
+      "premiumRequestId": "8c7195d4-8e46-4ed3-bdbe-fb4441376e2c",
+      "premiumState": "no_useful_result",
+      "status": "needs_help",
+      "decision": "manual_fallback",
+      "savedPlaceId": null,
+      "names": [],
+      "suggestedQuery": null,
+      "chargeable": false,
+      "settlementReason": "premium_no_useful_result",
+      "costs": {
+        "premium_recognition": {
+          "model": "gpt-5.6-sol",
+          "tokens": 1
+        }
+      },
+      "requestedAt": "2026-09-05T00:49:42.833654+00:00",
+      "startedAt": "2026-09-05T00:55:00.254062+00:00",
+      "completedAt": "2026-09-05T01:05:47.230727+00:00",
+      "task": {
+        "id": "72fb3556-e407-49c7-9dc1-fe7c87a6bd2f",
+        "status": "needs_help",
+        "attempts": 1,
+        "failureCode": "authentication_required",
+        "resolverName": null,
+        "analysisProvider": null,
+        "analysisModel": null,
+        "promptVersion": null,
+        "latencyMs": null,
+        "modelCalls": null,
+        "modelInputTokens": null,
+        "modelOutputTokens": null,
+        "modelThinkingTokens": null,
+        "modelLatencyMs": null
+      },
+      "mediaRun": {
+        "id": "ed12d807-e008-49b8-82f3-07228003036c",
+        "durationMs": null,
+        "frameCount": null,
+        "transcriptSegments": null,
+        "ocrSegments": null,
+        "resolverName": "youtube/yt-dlp",
+        "modelProvider": null
+      },
+      "reservationCount": 1,
+      "reservationStatus": "released",
+      "priorityUseful": null
+    },
+    {
+      "caseId": "C01",
+      "sourceUrl": "https://www.facebook.com/watch/?v=10153231379946729",
+      "jobId": "de10f434-097b-4bc9-9bbf-d491e9482813",
+      "premiumRequestId": "372cc456-285d-4e87-a631-aaa945ae7c34",
+      "premiumState": "no_useful_result",
+      "status": "needs_help",
+      "decision": "manual_fallback",
+      "savedPlaceId": null,
+      "names": [],
+      "suggestedQuery": null,
+      "chargeable": false,
+      "settlementReason": "premium_no_useful_result",
+      "costs": {
+        "sol": {
+          "model": "gpt-5.6-sol",
+          "usage": {
+            "input_tokens": 3316,
+            "total_tokens": 4219,
+            "output_tokens": 903,
+            "reasoning_tokens": 875,
+            "cached_input_tokens": 0
+          },
+          "knownCostUsd": 0.031324
+        },
+        "places": {
+          "costUsd": "UNKNOWN",
+          "requestCount": 0,
+          "requestTypes": []
+        },
+        "latencyMs": {
+          "sol": 15022,
+          "places": 0,
+          "evidencePrep": 18818,
+          "totalAfterEvidenceReady": 15022
+        },
+        "acquisition": "UNKNOWN",
+        "evidenceReuse": {
+          "ocr": "REACQUIRED",
+          "media": "REACQUIRED",
+          "frames": "REACQUIRED",
+          "caption": "REACQUIRED",
+          "transcript": "REACQUIRED"
+        },
+        "transcription": "UNKNOWN"
+      },
+      "requestedAt": "2026-09-05T00:49:43.33594+00:00",
+      "startedAt": "2026-09-05T00:55:00.254062+00:00",
+      "completedAt": "2026-09-05T00:55:35.211039+00:00",
+      "task": {
+        "id": "3367c00e-960b-4e36-be39-dac6b99773a6",
+        "status": "needs_help",
+        "attempts": 1,
+        "failureCode": "insufficient_evidence",
+        "resolverName": "facebook/yt-dlp",
+        "analysisProvider": null,
+        "analysisModel": null,
+        "promptVersion": null,
+        "latencyMs": null,
+        "modelCalls": null,
+        "modelInputTokens": null,
+        "modelOutputTokens": null,
+        "modelThinkingTokens": null,
+        "modelLatencyMs": null
+      },
+      "mediaRun": {
+        "id": "003d6149-afe4-4045-b735-77c6f376f881",
+        "durationMs": 33840,
+        "frameCount": 22,
+        "transcriptSegments": 20,
+        "ocrSegments": 0,
+        "resolverName": "facebook/yt-dlp",
+        "modelProvider": "premium-sol"
+      },
+      "reservationCount": 1,
+      "reservationStatus": "released",
+      "priorityUseful": null
+    },
+    {
+      "caseId": "C04",
+      "sourceUrl": "https://www.tiktok.com/@theviplist/video/7285850230342290731",
+      "jobId": "ed8e04b1-4f08-483e-8534-08cf420b960e",
+      "premiumRequestId": "4b0281ac-51d6-4167-a8c5-460263f2e80c",
+      "premiumState": "useful_result",
+      "status": "needs_help",
+      "decision": "candidate_picker",
+      "savedPlaceId": null,
+      "names": [
+        "4 Charles Prime Rib",
+        "Torrisi",
+        "Don Angie",
+        "Daniel",
+        "Torrisi Bar & Restaurant",
+        "COTE Korean Steakhouse"
+      ],
+      "suggestedQuery": "4 Charles Prime Rib | Torrisi Bar & Restaurant | Don Angie | Daniel | COTE Korean Steakhouse",
+      "chargeable": true,
+      "settlementReason": "premium_specific_candidates",
+      "costs": {
+        "sol": {
+          "model": "gpt-5.6-sol",
+          "usage": {
+            "input_tokens": 5186,
+            "total_tokens": 7261,
+            "output_tokens": 2075,
+            "reasoning_tokens": 1552,
+            "cached_input_tokens": 0
+          },
+          "knownCostUsd": 0.062244
+        },
+        "places": {
+          "costUsd": "UNKNOWN",
+          "requestCount": 5,
+          "requestTypes": [
+            "PRIMARY_SPECIFIC_IDENTITY",
+            "PRIMARY_SPECIFIC_IDENTITY",
+            "PRIMARY_SPECIFIC_IDENTITY",
+            "PRIMARY_SPECIFIC_IDENTITY",
+            "PRIMARY_SPECIFIC_IDENTITY"
+          ]
+        },
+        "latencyMs": {
+          "sol": 26891,
+          "places": 1400,
+          "evidencePrep": 21558,
+          "totalAfterEvidenceReady": 28292
+        },
+        "acquisition": "UNKNOWN",
+        "evidenceReuse": {
+          "ocr": "REACQUIRED",
+          "media": "REACQUIRED",
+          "frames": "REACQUIRED",
+          "caption": "REACQUIRED",
+          "transcript": "REACQUIRED"
+        },
+        "transcription": "UNKNOWN"
+      },
+      "requestedAt": "2026-09-05T00:49:43.754494+00:00",
+      "startedAt": "2026-09-05T00:55:00.254062+00:00",
+      "completedAt": "2026-09-05T00:55:51.947271+00:00",
+      "task": {
+        "id": "aa6f6cea-1e88-4ab5-bbf9-987d9f007528",
+        "status": "completed",
+        "attempts": 1,
+        "failureCode": null,
+        "resolverName": "premium-sol",
+        "analysisProvider": null,
+        "analysisModel": null,
+        "promptVersion": null,
+        "latencyMs": null,
+        "modelCalls": null,
+        "modelInputTokens": null,
+        "modelOutputTokens": null,
+        "modelThinkingTokens": null,
+        "modelLatencyMs": null
+      },
+      "mediaRun": {
+        "id": "88a7ba50-53ea-4c7b-b085-d35ce74f3a36",
+        "durationMs": 49850,
+        "frameCount": 23,
+        "transcriptSegments": 25,
+        "ocrSegments": 0,
+        "resolverName": "tiktok/scrapecreators",
+        "modelProvider": "premium-sol"
+      },
+      "reservationCount": 1,
+      "reservationStatus": "consumed",
+      "priorityUseful": null
+    },
+    {
+      "caseId": "C06",
+      "sourceUrl": "https://www.tiktok.com/@satexasfoodies/video/7433811014237326622",
+      "jobId": "8803e045-cb41-4de8-9692-0e25abeb6333",
+      "premiumRequestId": "18164f60-cccc-4ad1-b70c-8d6c88e3efcb",
+      "premiumState": "useful_result",
+      "status": "completed",
+      "decision": "auto_save",
+      "savedPlaceId": "255936a3-fe4a-433b-b112-702de924be7a",
+      "names": [
+        "Tuxedo Cat’s Coffee"
+      ],
+      "suggestedQuery": null,
+      "chargeable": true,
+      "settlementReason": "premium_saved_place",
+      "costs": {
+        "sol": {
+          "model": "gpt-5.6-sol",
+          "usage": {
+            "input_tokens": 5094,
+            "total_tokens": 5353,
+            "output_tokens": 259,
+            "reasoning_tokens": 109,
+            "cached_input_tokens": 0
+          },
+          "knownCostUsd": 0.025556
+        },
+        "places": {
+          "costUsd": "UNKNOWN",
+          "requestCount": 1,
+          "requestTypes": [
+            "PRIMARY_SPECIFIC_IDENTITY"
+          ]
+        },
+        "latencyMs": {
+          "sol": 4494,
+          "places": 314,
+          "evidencePrep": 19763,
+          "totalAfterEvidenceReady": 4809
+        },
+        "acquisition": "UNKNOWN",
+        "evidenceReuse": {
+          "ocr": "REACQUIRED",
+          "media": "REACQUIRED",
+          "frames": "REACQUIRED",
+          "caption": "REACQUIRED",
+          "transcript": "REACQUIRED"
+        },
+        "transcription": "UNKNOWN"
+      },
+      "requestedAt": "2026-09-05T00:49:44.077817+00:00",
+      "startedAt": "2026-09-05T00:55:00.254062+00:00",
+      "completedAt": "2026-09-05T00:55:27.593862+00:00",
+      "task": {
+        "id": "96d78b34-a57f-43ee-867e-af3f81ae9092",
+        "status": "completed",
+        "attempts": 1,
+        "failureCode": null,
+        "resolverName": "premium-sol",
+        "analysisProvider": null,
+        "analysisModel": null,
+        "promptVersion": null,
+        "latencyMs": null,
+        "modelCalls": null,
+        "modelInputTokens": null,
+        "modelOutputTokens": null,
+        "modelThinkingTokens": null,
+        "modelLatencyMs": null
+      },
+      "mediaRun": {
+        "id": "a9d12fca-93b2-4b6b-b2d7-8d860b47354b",
+        "durationMs": 24572,
+        "frameCount": 20,
+        "transcriptSegments": 5,
+        "ocrSegments": 0,
+        "resolverName": "tiktok/scrapecreators",
+        "modelProvider": "premium-sol"
+      },
+      "reservationCount": 1,
+      "reservationStatus": "consumed",
+      "priorityUseful": null
+    },
+    {
+      "caseId": "H01",
+      "sourceUrl": "https://www.instagram.com/reel/DYpcd2ZBTsZ/",
+      "jobId": "b5dffb65-6260-42f2-aa6b-d1eac844f0a4",
+      "premiumRequestId": "7f1b511c-58c1-4ec5-b4ac-56951b17ed31",
+      "premiumState": "useful_result",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "names": [
+        "2nd Floor",
+        "2nd Floor Gallery Bar & Grill"
+      ],
+      "suggestedQuery": "2nd Floor Gallery Bar & Grill",
+      "chargeable": true,
+      "settlementReason": "premium_specific_candidates",
+      "costs": {
+        "sol": {
+          "model": "gpt-5.6-sol",
+          "usage": {
+            "input_tokens": 7442,
+            "total_tokens": 7583,
+            "output_tokens": 141,
+            "reasoning_tokens": 0,
+            "cached_input_tokens": 0
+          },
+          "knownCostUsd": 0.032588
+        },
+        "places": {
+          "costUsd": "UNKNOWN",
+          "requestCount": 1,
+          "requestTypes": [
+            "PRIMARY_SPECIFIC_IDENTITY"
+          ]
+        },
+        "latencyMs": {
+          "sol": 2929,
+          "places": 297,
+          "evidencePrep": 13384,
+          "totalAfterEvidenceReady": 3227
+        },
+        "acquisition": "UNKNOWN",
+        "evidenceReuse": {
+          "ocr": "REACQUIRED",
+          "media": "REACQUIRED",
+          "frames": "REACQUIRED",
+          "caption": "REACQUIRED",
+          "transcript": "REACQUIRED"
+        },
+        "transcription": "UNKNOWN"
+      },
+      "requestedAt": "2026-09-05T00:49:44.513522+00:00",
+      "startedAt": "2026-09-05T00:56:00.376312+00:00",
+      "completedAt": "2026-09-05T00:56:19.055642+00:00",
+      "task": {
+        "id": "f9d7424e-b9b0-4228-ad69-6cc8ffb22d31",
+        "status": "completed",
+        "attempts": 1,
+        "failureCode": null,
+        "resolverName": "premium-sol",
+        "analysisProvider": null,
+        "analysisModel": null,
+        "promptVersion": null,
+        "latencyMs": null,
+        "modelCalls": null,
+        "modelInputTokens": null,
+        "modelOutputTokens": null,
+        "modelThinkingTokens": null,
+        "modelLatencyMs": null
+      },
+      "mediaRun": {
+        "id": "e0ddfd0b-b275-4a00-ad14-bc6363a1477c",
+        "durationMs": 16611,
+        "frameCount": 16,
+        "transcriptSegments": 4,
+        "ocrSegments": 0,
+        "resolverName": "instagram/yt-dlp",
+        "modelProvider": "premium-sol"
+      },
+      "reservationCount": 1,
+      "reservationStatus": "consumed",
+      "priorityUseful": null
+    },
+    {
+      "caseId": "V02",
+      "sourceUrl": "https://www.instagram.com/reel/DUWyZkfgbT4/",
+      "jobId": "ac257b90-27bc-4a4c-936f-4514af650cb4",
+      "premiumRequestId": "4927d184-f3c1-4bee-b585-e2ec8d800ea9",
+      "premiumState": "useful_result",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "names": [
+        "Capone's Italian Cucina",
+        "Capone's Cucina"
+      ],
+      "suggestedQuery": "Capone's Cucina",
+      "chargeable": true,
+      "settlementReason": "premium_specific_candidates",
+      "costs": {
+        "sol": {
+          "model": "gpt-5.6-sol",
+          "usage": {
+            "input_tokens": 7732,
+            "total_tokens": 7961,
+            "output_tokens": 229,
+            "reasoning_tokens": 97,
+            "cached_input_tokens": 0
+          },
+          "knownCostUsd": 0.035508
+        },
+        "places": {
+          "costUsd": "UNKNOWN",
+          "requestCount": 1,
+          "requestTypes": [
+            "PRIMARY_SPECIFIC_IDENTITY"
+          ]
+        },
+        "latencyMs": {
+          "sol": 4545,
+          "places": 324,
+          "evidencePrep": 17878,
+          "totalAfterEvidenceReady": 4870
+        },
+        "acquisition": "UNKNOWN",
+        "evidenceReuse": {
+          "ocr": "REACQUIRED",
+          "media": "REACQUIRED",
+          "frames": "REACQUIRED",
+          "caption": "REACQUIRED",
+          "transcript": "REACQUIRED"
+        },
+        "transcription": "UNKNOWN"
+      },
+      "requestedAt": "2026-09-05T00:49:44.93679+00:00",
+      "startedAt": "2026-09-05T00:56:00.376312+00:00",
+      "completedAt": "2026-09-05T00:56:24.934998+00:00",
+      "task": {
+        "id": "10fd50fa-f065-40fa-b5e3-75165757875c",
+        "status": "completed",
+        "attempts": 1,
+        "failureCode": null,
+        "resolverName": "premium-sol",
+        "analysisProvider": null,
+        "analysisModel": null,
+        "promptVersion": null,
+        "latencyMs": null,
+        "modelCalls": null,
+        "modelInputTokens": null,
+        "modelOutputTokens": null,
+        "modelThinkingTokens": null,
+        "modelLatencyMs": null
+      },
+      "mediaRun": {
+        "id": "caff35c8-a0a2-4885-8bc7-029da3811710",
+        "durationMs": 22748,
+        "frameCount": 22,
+        "transcriptSegments": 10,
+        "ocrSegments": 0,
+        "resolverName": "instagram/yt-dlp",
+        "modelProvider": "premium-sol"
+      },
+      "reservationCount": 1,
+      "reservationStatus": "consumed",
+      "priorityUseful": null
+    }
+  ]
+}

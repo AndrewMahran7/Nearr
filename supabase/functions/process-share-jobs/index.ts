@@ -1806,7 +1806,11 @@ async function finalizeMediaTask(
   const premium = task.task_kind === 'premium_recognition'
     ? premiumRuntimePlan(body.premiumRecognition)
     : null;
-  if (task.task_kind === 'premium_recognition' && pre.action !== 'parent_already_terminal') {
+  if (
+    task.task_kind === 'premium_recognition' &&
+    pre.action !== 'parent_already_terminal' &&
+    pre.action !== 'manual_fallback'
+  ) {
     if (!premium) {
       await markMediaTask(admin, taskId, 'failed', {
         failure_code: 'premium_model_failure', progress_stage: 'cleanup', completed_at: nowIso(),

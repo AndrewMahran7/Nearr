@@ -18,6 +18,7 @@
     "test:sol-parity-harness": "npm --prefix services/media-worker run test:sol-parity-harness",
     "test:premium-sol-recognition": "npm --prefix services/media-worker run test:premium-sol-recognition",
     "evaluate:premium-sol-recognition": "npm --prefix services/media-worker run evaluate:premium-sol-recognition --",
+    "proof:premium-sol-dev": "ts-node -P scripts/tsconfig.json scripts/e2e/runPremiumSolDevProof.ts",
     "eval:share-extraction": "ts-node --project scripts/tsconfig.json scripts/evalShareExtraction.ts",
     "eval:share-agent-shadow": "ts-node --project scripts/tsconfig.json scripts/evalShareAgentShadow.ts",
     "test:address-match": "ts-node -P scripts/tsconfig.json scripts/testAddressMatch.ts",

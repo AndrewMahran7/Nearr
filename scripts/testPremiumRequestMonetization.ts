@@ -153,6 +153,7 @@ test('pack economics and lifetime tokens match V2', () => {
 });
 
 const migration = source('supabase/migrations/20260904000001_premium_request_monetization.sql');
+const premiumRpcFix = source('supabase/migrations/20260905000001_fix_premium_request_available_uses.sql');
 const originalMigration = source('supabase/migrations/20260903000001_place_find_monetization.sql');
 const processor = source('supabase/functions/process-share-jobs/index.ts');
 const monetizationEdge = source('supabase/functions/monetization/index.ts');
@@ -174,6 +175,11 @@ const sourceTests: Array<[string, () => void]> = [
   ['premium request RPC is service-role only', () => assert.match(migration, /request_premium_recognition\(uuid,uuid\)[\s\S]*to service_role/)],
   ['premium request verifies owner in locked row', () => assert.match(migration, /where id=p_job_id and user_id=p_user_id for update/)],
   ['premium request reserves after explicit request', () => assert.match(migration, /request_premium_recognition[\s\S]*reserve_place_find_use/)],
+  ['Premium RPC wallet reads are qualified against OUT parameter ambiguity', () => assert.match(premiumRpcFix, /select pfw\.available_uses[\s\S]*from public\.place_find_wallets as pfw/g)],
+  ['forward migration repairs both normal-free and Premium request RPCs', () => {
+    assert.match(premiumRpcFix, /create or replace function public\.create_share_job_for_user/);
+    assert.match(premiumRpcFix, /create or replace function public\.request_premium_recognition/);
+  }],
   ['premium task has unique request identity', () => assert.match(migration, /share_media_tasks_premium_request_uidx/)],
   ['premium task has unique job obligation', () => assert.match(migration, /share_media_tasks_premium_job_uidx/)],
   ['zero balance persists awaiting_token', () => assert.match(migration, /premium_state='awaiting_token'/)],
@@ -188,6 +194,7 @@ const sourceTests: Array<[string, () => void]> = [
   ['central Edge chargeability policy is used', () => assert.match(processor, /isPremiumResultChargeable/)],
   ['premium settlement is atomic RPC', () => assert.match(processor, /settle_premium_request/)],
   ['technical Premium results release', () => assert.match(processor, /failure_category === 'technical_failure'[\s\S]*'failed'/)],
+  ['Premium acquisition failures reach settlement without a Sol payload', () => assert.match(processor, /pre\.action !== 'manual_fallback'/)],
   ['Premium no-result remains analysis-insufficient and releases', () => assert.match(source('lib/shareFailurePresentation.ts'), /INSUFFICIENT_CODES[\s\S]*premium_no_useful_result/)],
   ['normal settlement is unmetered', () => assert.match(processor, /billing_outcome = 'unmetered:normal_free'/)],
   ['offer copy states normal recognition was free', () => assert.match(detail, /Normal recognition was free/)],
