@@ -113,6 +113,20 @@ export type AnalyzeOutput = {
   /** Exact Premium executor wire result. It is forwarded to the finalizer so
    * canonical identities are not re-resolved by the legacy Places pipeline. */
   premium?: PremiumRecognitionExecution;
+  /** Shared Simple Sol engine result produced automatically for a weak normal
+   * result. This is intentionally distinct from `premium`: it is free,
+   * internal, and never enters reservation/settlement analytics. */
+  automaticDeepRecognition?: PremiumRecognitionExecution;
+  /** Low-cardinality automatic escalation telemetry. Never contains raw
+   * caption, transcript, OCR, or model prose. */
+  automaticDeep?: {
+    needed: boolean;
+    invoked: boolean;
+    rejectionReason: string | null;
+    normalResultSpecificity: string;
+    top3Count: number;
+    specificResult: boolean;
+  };
 };
 
 export interface ModelProvider {

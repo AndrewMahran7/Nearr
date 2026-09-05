@@ -164,7 +164,15 @@ function terminalWithoutResult(args: {
   };
 }
 
-export async function runPremiumRecognition(input: PremiumRecognitionInput): Promise<PremiumRecognitionExecution> {
+/**
+ * Billing-free recognition engine boundary.
+ *
+ * This function performs only evidence -> Sol -> bounded Places
+ * canonicalization -> safety. It does not reserve, consume, or release a
+ * token and it does not create a Premium task. Monetization lives in the Edge
+ * wrapper that creates and settles `premium_recognition` tasks.
+ */
+export async function runSimpleSolRecognition(input: PremiumRecognitionInput): Promise<PremiumRecognitionExecution> {
   const requestedAt = input.requestedAt ?? new Date();
   const evidenceReadyAt = input.evidenceReadyAt ?? new Date();
   const solStartedAt = new Date();
@@ -181,6 +189,13 @@ export async function runPremiumRecognition(input: PremiumRecognitionInput): Pro
   });
   const solCompletedAt = new Date();
   return completePremiumRecognition({ input, call, requestedAt, evidenceReadyAt, solStartedAt, solCompletedAt });
+}
+
+/** Paid compatibility wrapper. Keeping this very small makes it impossible
+ * for the automatic free path and the user-initiated Premium path to develop
+ * separate Sol implementations. */
+export async function runPremiumRecognition(input: PremiumRecognitionInput): Promise<PremiumRecognitionExecution> {
+  return runSimpleSolRecognition(input);
 }
 
 /** Complete the exact runtime canonicalization/safety path from an already

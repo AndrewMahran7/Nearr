@@ -1,0 +1,22 @@
+{
+  "artifact_version": 1,
+  "frozen_at": "2026-09-05",
+  "scope": "privacy-safe routing overlay for the audited 12-video production burst",
+  "production_rows_mutated": false,
+  "normal_summary": {"useful":3,"partial_or_coarse":6,"wrong":2,"empty":1},
+  "direct_simple_sol_summary": {"previously_non_useful_specific_named_leads":9,"attempted":9,"known_model_cost_usd":0.492476},
+  "cases": [
+    {"case_id":"B01","job_id":"d6f9272a-0334-4912-a7da-0b2294e39259","canonical_source_identity":"instagram:5oXehfQxb2","normal_class":"PARTIAL_BUT_NOT_USEFUL","expected_route":"AUTO_DEEP","recorded_sol_lead":"Copper Canyon on Lake Havasu"},
+    {"case_id":"B02","job_id":"647873dd-1e18-4425-abfc-042a2b30b12d","canonical_source_identity":"instagram:DZJ8ZvYub8Q","normal_class":"EMPTY","expected_route":"AUTO_DEEP","recorded_sol_lead":"Tamolitch Blue Pool"},
+    {"case_id":"B03","job_id":"b756b450-8356-4e3a-aa83-dfdd7cb5c16f","canonical_source_identity":"instagram:DX2FYClJWR5","normal_class":"PARTIAL_BUT_NOT_USEFUL","expected_route":"AUTO_DEEP","recorded_sol_lead":"Arch Rock at Little Corona del Mar Beach"},
+    {"case_id":"B04","job_id":"eb73b25f-4ab7-4901-85de-4d2e38352567","canonical_source_identity":"instagram:DbTxk5KOg0N","normal_class":"USEFUL","expected_route":"NORMAL_ONLY","recorded_normal_lead":"Sunset Cliffs Natural Park"},
+    {"case_id":"B05","job_id":"b699ba47-a413-47be-bcc1-e261bf44d497","canonical_source_identity":"instagram:Da8qiKkJupM","normal_class":"USEFUL","expected_route":"NORMAL_ONLY","recorded_normal_lead":"Upper Angora Lake"},
+    {"case_id":"B06","job_id":"8ebe542d-016f-44fc-98be-4e0420bcbc73","canonical_source_identity":"instagram:DaTCcpvIJWU","normal_class":"PARTIAL_BUT_NOT_USEFUL","expected_route":"AUTO_DEEP","recorded_sol_lead":"Ponta da Piedade"},
+    {"case_id":"B07","job_id":"011ca532-c1ca-4902-9c00-d917cd4efa3e","canonical_source_identity":"instagram:DFlnzJHy3hA","normal_class":"PARTIAL_BUT_NOT_USEFUL","expected_route":"AUTO_DEEP","recorded_sol_lead":"Cedar Creek Falls"},
+    {"case_id":"B08","job_id":"0c7f7de3-7048-4afc-9a20-69b63acb4bb7","canonical_source_identity":"instagram:DaKfoWjtFqT","normal_class":"PARTIAL_BUT_NOT_USEFUL","expected_route":"AUTO_DEEP","recorded_sol_lead":"Oeschinen Lake"},
+    {"case_id":"B09","job_id":"1c8e555d-74b9-41f4-ac1c-c6d79bde3a92","canonical_source_identity":"instagram:DZDZ4hQI1ih","normal_class":"USEFUL","expected_route":"NORMAL_ONLY","recorded_normal_lead":"Tanque Verde Falls"},
+    {"case_id":"B10","job_id":"09e6f031-855a-4308-a0ea-9d9da05cf42b","canonical_source_identity":"instagram:Db_26wNPuWb","normal_class":"WRONG","expected_route":"AUTO_DEEP","recorded_sol_lead":"God's Bath on the Clavey River"},
+    {"case_id":"B11","job_id":"a90dd4a8-2b34-40f9-bad6-d204864255fb","canonical_source_identity":"instagram:DZ34ib4siQL","normal_class":"WRONG","expected_route":"AUTO_DEEP","recorded_sol_lead":"Smith River"},
+    {"case_id":"B12","job_id":"794e956b-2f38-4f91-826d-d7e0613f50e5","canonical_source_identity":"instagram:DbTo6bsR-9U","normal_class":"PARTIAL_BUT_NOT_USEFUL","expected_route":"AUTO_DEEP","recorded_sol_lead":"Emerald Pools on South Yuba River"}
+  ]
+}

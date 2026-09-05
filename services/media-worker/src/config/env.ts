@@ -89,6 +89,8 @@ export type WorkerConfig = {
   scrapeCreatorsInstagramFallbackEnabled: boolean;
   /** Server-side Facebook tail fallback. Canonical public yt-dlp remains first. */
   scrapeCreatorsFacebookFallbackEnabled: boolean;
+  /** Accuracy-first free recovery. Defaults ON and is independent of Premium. */
+  automaticDeepRecognitionEnabled: boolean;
 
   // ---- Supabase (service-role, used INTERNALLY only) ----
   supabaseUrl: string;
@@ -263,6 +265,7 @@ export function loadConfig(): WorkerConfig {
     scrapeCreatorsTikTokFallbackEnabled: bool('SCRAPECREATORS_TIKTOK_FALLBACK_ENABLED', false),
     scrapeCreatorsInstagramFallbackEnabled: bool('SCRAPECREATORS_INSTAGRAM_FALLBACK_ENABLED', false),
     scrapeCreatorsFacebookFallbackEnabled: bool('SCRAPECREATORS_FACEBOOK_FALLBACK_ENABLED', false),
+    automaticDeepRecognitionEnabled: bool('AUTO_DEEP_RECOGNITION_ENABLED', true),
 
     supabaseUrl,
     supabaseServiceRoleKey: str('SUPABASE_SERVICE_ROLE_KEY'),
@@ -371,6 +374,7 @@ export function redactedConfigSummary(cfg: WorkerConfig): Record<string, unknown
       scrapeCreatorsTikTokFallbackEnabled: cfg.scrapeCreatorsTikTokFallbackEnabled,
       scrapeCreatorsInstagramFallbackEnabled: cfg.scrapeCreatorsInstagramFallbackEnabled,
       scrapeCreatorsFacebookFallbackEnabled: cfg.scrapeCreatorsFacebookFallbackEnabled,
+      automaticDeepRecognitionEnabled: cfg.automaticDeepRecognitionEnabled,
       vayrinVisualGeolocationEnabled: cfg.vayrinVisualGeolocationEnabled,
       vayrinVerificationV3Enabled: cfg.vayrinVerificationV3Enabled,
       premiumSolWebSearchEnabled: cfg.premiumSolWebSearchEnabled,

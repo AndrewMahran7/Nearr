@@ -13,7 +13,10 @@ type CanonicalizationResult = {
   calls: PremiumCanonicalizationCall[];
 };
 
-const GENERIC_ONLY = /^(?:waterfall|beach|cliff jumping|restaurant|hotel|scenic spot|park|zoo|lake|city|region)$/i;
+// Categories are evidence, never destination identities. Keep this bounded to
+// the product taxonomy and its common display aliases so Google can
+// canonicalize a named Sol hypothesis but can never invent one from a class.
+const GENERIC_ONLY = /^(?:a |an |the )?(?:waterfalls?|beaches?|cliff(?: |-)?jumping|hiking(?: trails?)?|trails?|restaurants?|cafes?|baker(?:y|ies)|bars?|brewer(?:y|ies)|winer(?:y|ies)|dessert(?: shops?)?|hotels?|resorts?|scenic spots?|viewpoints?|parks?|zoos?|lakes?|swimming holes?|mountains?|bridges?|marinas?|islands?|museums?|shopping(?: malls?)?|transportation|cities?|regions?|countries?)$/i;
 const ADMIN_TYPES = new Set(['country', 'administrative_area_level_1', 'administrative_area_level_2', 'locality']);
 
 function tokens(value: string): string[] {
