@@ -56,6 +56,8 @@ export type AnalyzeInput = {
   premiumRequestedAt?: Date;
   evidenceReadyAt?: Date;
   evidencePrepMs?: number;
+  premiumRequestId?: string | null;
+  shareJobId?: string | null;
   targetPlace?: {
     name: string;
     category?: string | null;

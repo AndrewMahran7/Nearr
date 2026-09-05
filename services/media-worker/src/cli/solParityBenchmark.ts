@@ -19,7 +19,12 @@ import { extractAudio } from '../pipeline/extractAudio.js';
 import { selectTranscriptionProvider } from '../providers/transcription.js';
 import { deduplicateOcrSegments, selectOcrProvider } from '../providers/ocr.js';
 import { buildAutomaticFrameSets, loadManualFrameSet } from '../solParity/frames.js';
-import { runPremiumRecognitionInference } from '../premium/premiumRecognition.js';
+import { completePremiumRecognition, runPremiumRecognitionInference } from '../premium/premiumRecognition.js';
+import {
+  PREMIUM_ENGINE_VERSION,
+  PREMIUM_EVIDENCE_VERSION,
+  PREMIUM_SAFETY_VERSION,
+} from '../premium/premiumInferenceFingerprint.js';
 import { persistModelAttempt, readPersistedAttempts, writeJsonAtomic } from '../solParity/persistence.js';
 import { canonicalizeDestination } from '../solParity/canonicalize.js';
 import { simulateDecision } from '../solParity/decision.js';
@@ -96,8 +101,9 @@ async function main(): Promise<void> {
   await mkdir(runDir, { recursive: true });
   const attemptsPath = path.join(runDir, 'model-attempts.jsonl');
   const canonicalPath = path.join(runDir, 'canonicalization.jsonl');
+  const runtimePath = path.join(runDir, 'local-runtime.jsonl');
   const errorsPath = path.join(runDir, 'case-errors.jsonl');
-  await Promise.all([rm(attemptsPath, { force: true }), rm(canonicalPath, { force: true }), rm(errorsPath, { force: true })]);
+  await Promise.all([rm(attemptsPath, { force: true }), rm(canonicalPath, { force: true }), rm(runtimePath, { force: true }), rm(errorsPath, { force: true })]);
   await writeJsonAtomic(path.join(runDir, 'run-manifest.json'), {
     schema_version: 1,
     run_id: runId,
@@ -110,6 +116,9 @@ async function main(): Promise<void> {
     production_target: false,
     model: 'gpt-5.6-sol',
     reasoning_effort: 'high',
+    premium_engine_version: PREMIUM_ENGINE_VERSION,
+    premium_evidence_version: PREMIUM_EVIDENCE_VERSION,
+    premium_safety_version: PREMIUM_SAFETY_VERSION,
     matrix: args.matrix,
     cases: cases.map((item) => item.case_id),
     manual_frame_arm: Object.values(manualAvailability).some(Boolean) ? 'MANUAL_FRAME_ARM_AVAILABLE' : 'MANUAL_FRAME_ARM_NOT_AVAILABLE',
@@ -162,6 +171,7 @@ async function main(): Promise<void> {
         const call = await runPremiumRecognitionInference({
           frameSet,
           platform: item.platform,
+          canonicalUrl: media.canonicalUrl,
           evidence,
           modelArm: matrix.model,
           signal: controller.signal,
@@ -182,6 +192,7 @@ async function main(): Promise<void> {
           web_search_enabled: call.web_search_enabled,
           images_only: call.images_only,
           input_manifest: { frame_count: call.frame_manifest.length, frames: call.frame_manifest, caption_characters: call.input_lengths.caption, transcript_characters: call.input_lengths.transcript, ocr_characters: call.input_lengths.ocr, source_location_characters: call.input_lengths.location },
+          inference_fingerprint: call.fingerprint,
           timings_ms: { acquisition: acquisitionMs, frame_extraction: frameMs, transcription: transcriptMs, ocr: ocrMs, sol: call.latency_ms, web_search: null, canonicalization: null, total: Date.now() - caseStarted },
           usage: call.usage,
           estimated_model_cost_usd: call.estimated_model_cost_usd,
@@ -196,6 +207,36 @@ async function main(): Promise<void> {
         };
         // Critical ordering boundary: durable raw response first, Places second, labels much later.
         await persistModelAttempt(attemptsPath, attempt);
+        const localSolCompletedAt = new Date();
+        const localSolStartedAt = new Date(localSolCompletedAt.getTime() - call.latency_ms);
+        const localRuntime = await completePremiumRecognition({
+          input: {
+            frameSet,
+            platform: item.platform,
+            canonicalUrl: media.canonicalUrl,
+            evidence,
+            premiumRequestId: 'local-' + attemptId,
+            shareJobId: 'local-' + item.case_id,
+            evidenceReuseState: 'EVIDENCE_REGENERATED',
+            googlePlacesApiKey: cfg.googlePlacesServerApiKey || null,
+            webSearchEnabled: matrix.model !== 'M1',
+            requestedAt: localSolStartedAt,
+            evidenceReadyAt: localSolStartedAt,
+          },
+          call,
+          requestedAt: localSolStartedAt,
+          evidenceReadyAt: localSolStartedAt,
+          solStartedAt: localSolStartedAt,
+          solCompletedAt: localSolCompletedAt,
+        });
+        await appendFile(runtimePath, JSON.stringify({
+          attempt_id: attemptId,
+          case_id: item.case_id,
+          frame_arm: matrix.frame,
+          model_arm: matrix.model,
+          inference_fingerprint: call.fingerprint,
+          execution: localRuntime,
+        }) + '\n', 'utf8');
         const canonicalStarted = Date.now();
         const destinations = [];
         for (const destination of call.payload?.results ?? []) destinations.push(await canonicalizeDestination({ destination, apiKey: cfg.googlePlacesServerApiKey || null }));

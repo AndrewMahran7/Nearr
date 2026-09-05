@@ -329,6 +329,16 @@ function premiumRuntimePlan(value: any): null | {
       transcription: 'UNKNOWN',
       latencyMs: telemetry.timingsMs ?? null,
       evidenceReuse: telemetry.evidenceReuse ?? null,
+      parityDiagnostics: {
+        engineVersion: telemetry.engineVersion ?? null,
+        safetyVersion: telemetry.safetyVersion ?? null,
+        evidenceVersion: telemetry.evidenceVersion ?? null,
+        evidenceReuseState: telemetry.evidenceReuseState ?? null,
+        inferenceFingerprint: telemetry.inferenceFingerprint ?? null,
+        solBoundary: telemetry.solBoundary ?? null,
+        canonicalizationFingerprint: telemetry.canonicalizationFingerprint ?? null,
+        finalFingerprint: telemetry.finalFingerprint ?? null,
+      },
     },
   };
 }
@@ -920,6 +930,15 @@ async function insertMediaRun(
   try {
     const d = body?.diagnostics && typeof body.diagnostics === 'object' ? body.diagnostics : {};
     const int = (v: unknown) => (Number.isFinite(v) ? Number(v) : null);
+    const premiumDiagnostics = body?.premiumRecognition?.telemetry &&
+      typeof body.premiumRecognition.telemetry === 'object'
+      ? {
+          inferenceFingerprint: body.premiumRecognition.telemetry.inferenceFingerprint ?? null,
+          solBoundary: body.premiumRecognition.telemetry.solBoundary ?? null,
+          canonicalizationFingerprint: body.premiumRecognition.telemetry.canonicalizationFingerprint ?? null,
+          finalFingerprint: body.premiumRecognition.telemetry.finalFingerprint ?? null,
+        }
+      : null;
     const { data, error } = await admin.from('share_media_runs').insert({
       share_media_task_id: task.id,
       share_job_id: job.id,
@@ -933,7 +952,10 @@ async function insertMediaRun(
       frame_count: int(d.frameCount),
       transcript_segment_count: int(d.transcriptSegmentCount),
       ocr_segment_count: int(d.ocrSegmentCount),
-      evidence: boundedJson(evidenceSummary),
+      evidence: boundedJson({
+        ...evidenceSummary,
+        ...(premiumDiagnostics ? { premiumDiagnostics } : {}),
+      }),
       model_output: boundedJson(d.modelOutput ?? null),
       warnings: Array.isArray(d.warnings) ? d.warnings.slice(0, 24) : [],
       errors: Array.isArray(d.errors) ? d.errors.slice(0, 24) : [],
@@ -1806,12 +1828,13 @@ async function finalizeMediaTask(
   const premium = task.task_kind === 'premium_recognition'
     ? premiumRuntimePlan(body.premiumRecognition)
     : null;
-  if (
-    task.task_kind === 'premium_recognition' &&
-    pre.action !== 'parent_already_terminal' &&
-    pre.action !== 'manual_fallback'
-  ) {
-    if (!premium) {
+  if (task.task_kind === 'premium_recognition' && pre.action !== 'parent_already_terminal') {
+    // A valid Premium payload is authoritative at this boundary. The legacy
+    // media-evidence pre-resolver is useful for normal recognition but cannot
+    // erase a typed, actionable Sol result merely because its lossy adapter
+    // rendered zero old-style places. Acquisition/transport failures still
+    // arrive without a Premium payload and retain the established release path.
+    if (!premium && pre.action !== 'manual_fallback') {
       await markMediaTask(admin, taskId, 'failed', {
         failure_code: 'premium_model_failure', progress_stage: 'cleanup', completed_at: nowIso(),
       });

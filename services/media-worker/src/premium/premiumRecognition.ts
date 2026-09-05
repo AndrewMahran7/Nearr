@@ -2,6 +2,14 @@ import { callSolParity, type SolCallResult } from '../solParity/model.js';
 import type { ModelArm, SolAlternative, SolDestination } from '../solParity/types.js';
 import { canonicalizePremiumHypothesis } from './premiumCanonicalization.js';
 import { evaluatePremiumRecognitionSafety, inferPremiumEvidenceBasis } from './premiumRecognitionSafety.js';
+import {
+  PREMIUM_ENGINE_VERSION,
+  PREMIUM_EVIDENCE_VERSION,
+  PREMIUM_SAFETY_VERSION,
+  sha256,
+  stableStringify,
+  structuredSolBoundary,
+} from './premiumInferenceFingerprint.js';
 import type {
   PremiumLogicalDestination,
   PremiumRecognitionExecution,
@@ -13,7 +21,9 @@ import type {
 export async function runPremiumRecognitionInference(args: {
   frameSet: PremiumRecognitionInput['frameSet'];
   platform: string;
+  canonicalUrl?: string;
   evidence: PremiumRecognitionInput['evidence'];
+  evidenceReuse?: PremiumRecognitionInput['evidenceReuseState'];
   modelArm?: ModelArm;
   webSearchEnabled?: boolean;
   signal?: AbortSignal;
@@ -24,7 +34,9 @@ export async function runPremiumRecognitionInference(args: {
     frameSet: args.frameSet,
     modelArm: args.modelArm ?? (args.webSearchEnabled === true ? 'M2' : 'M1'),
     platform: args.platform,
+    canonicalUrl: args.canonicalUrl,
     evidence: args.evidence,
+    evidenceReuse: args.evidenceReuse,
     signal: args.signal,
     fetchImpl: args.fetchImpl,
     env: args.env,
@@ -46,6 +58,44 @@ function iso(date: Date): string {
   return date.toISOString();
 }
 
+function canonicalFingerprint(destinations: PremiumLogicalDestination[]) {
+  const hypotheses = destinations.flatMap((destination) => destination.hypotheses.map((hypothesis) => ({
+    name: hypothesis.name,
+    entityType: hypothesis.entityType,
+    geography: { city: hypothesis.city, region: hypothesis.region, country: hypothesis.country },
+    calls: hypothesis.canonicalizationCalls,
+    selectedGooglePlaceId: hypothesis.canonical?.googlePlaceId ?? null,
+    selectedName: hypothesis.canonical?.name ?? null,
+    outcome: hypothesis.canonicalStatus,
+    rejectionReason: hypothesis.canonicalizationCalls.at(-1)?.rejectionReason ?? null,
+  })));
+  return {
+    version: 'premium-canonicalization-fingerprint.v1',
+    hash: sha256(stableStringify(hypotheses)),
+    hypotheses,
+  };
+}
+
+function finalFingerprint(args: {
+  call: SolCallResult;
+  destinations: PremiumLogicalDestination[];
+  outcome: PremiumRecognitionExecution['outcome'];
+  chargeability: PremiumRecognitionExecution['chargeability'];
+}) {
+  const canonical = canonicalFingerprint(args.destinations);
+  const value = {
+    solResultHash: args.call.payload ? sha256(stableStringify(args.call.payload)) : null,
+    canonicalResultHash: canonical.hash,
+    safetyDecision: args.destinations.map((destination) => destination.decision),
+    resultDecision: args.outcome,
+    chargeability: args.chargeability,
+    tokenSettlement: args.chargeability === 'CHARGEABLE_ACTIONABLE'
+      ? 'CONSUME' as const
+      : 'RELEASE' as const,
+  };
+  return { version: 'premium-final-fingerprint.v1', hash: sha256(stableStringify(value)), ...value };
+}
+
 function terminalWithoutResult(args: {
   input: PremiumRecognitionInput;
   call: SolCallResult;
@@ -56,19 +106,34 @@ function terminalWithoutResult(args: {
   failure: boolean;
 }): PremiumRecognitionExecution {
   const terminal = new Date();
+  const outcome = args.failure ? 'PREMIUM_TECHNICAL_FAILURE' as const : 'PREMIUM_NO_USEFUL_RESULT' as const;
+  const chargeability = args.failure ? 'NON_CHARGEABLE_TECHNICAL_FAILURE' as const : 'NON_CHARGEABLE_NO_RESULT' as const;
+  const canonicalizationFingerprint = canonicalFingerprint([]);
   return {
     schemaVersion: 1,
-    outcome: args.failure ? 'PREMIUM_TECHNICAL_FAILURE' : 'PREMIUM_NO_USEFUL_RESULT',
-    chargeability: args.failure ? 'NON_CHARGEABLE_TECHNICAL_FAILURE' : 'NON_CHARGEABLE_NO_RESULT',
+    outcome,
+    chargeability,
     destinationIntent: args.call.payload?.scene_class ?? 'UNKNOWN',
     destinations: [],
     failureCode: args.failure ? args.call.failure?.code ?? 'premium_model_failure' : null,
     telemetry: {
+      engineVersion: PREMIUM_ENGINE_VERSION,
+      safetyVersion: PREMIUM_SAFETY_VERSION,
+      evidenceVersion: PREMIUM_EVIDENCE_VERSION,
+      evidenceReuseState: args.input.evidenceReuseState ?? 'EVIDENCE_REGENERATED',
       model: args.call.model,
       promptVersion: args.call.prompt_version,
       webSearchEnabled: args.call.web_search_enabled,
       frameStrategy: args.input.frameSet.strategy,
       frameTimestampsSeconds: args.input.frameSet.frames.map((frame) => frame.timestampSeconds),
+      inferenceFingerprint: args.call.fingerprint,
+      solBoundary: structuredSolBoundary({
+        premiumRequestId: args.input.premiumRequestId,
+        shareJobId: args.input.shareJobId,
+        call: args.call,
+      }),
+      canonicalizationFingerprint,
+      finalFingerprint: finalFingerprint({ call: args.call, destinations: [], outcome, chargeability }),
       evidenceReuse: {
         media: args.input.evidenceReuse?.media ?? 'REACQUIRED',
         frames: args.input.evidenceReuse?.frames ?? 'REACQUIRED',
@@ -106,7 +171,9 @@ export async function runPremiumRecognition(input: PremiumRecognitionInput): Pro
   const call = await runPremiumRecognitionInference({
     frameSet: input.frameSet,
     platform: input.platform,
+    canonicalUrl: input.canonicalUrl,
     evidence: input.evidence,
+    evidenceReuse: input.evidenceReuseState,
     webSearchEnabled: input.webSearchEnabled === true,
     signal: input.signal,
     fetchImpl: input.fetchImpl,
@@ -195,19 +262,35 @@ export async function completePremiumRecognition(args: {
   const actionable = destinations.some((destination) => destination.decision !== 'REJECT');
   const terminal = new Date();
   const calls = destinations.flatMap((destination) => destination.hypotheses.flatMap((hypothesis) => hypothesis.canonicalizationCalls));
+  const outcome = actionable ? 'PREMIUM_ACTIONABLE_RESULT' as const : 'PREMIUM_NO_USEFUL_RESULT' as const;
+  const chargeability = actionable ? 'CHARGEABLE_ACTIONABLE' as const : 'NON_CHARGEABLE_NO_RESULT' as const;
+  const visibleDestinations = actionable ? destinations : [];
+  const canonicalizationFingerprint = canonicalFingerprint(destinations);
   return {
     schemaVersion: 1,
-    outcome: actionable ? 'PREMIUM_ACTIONABLE_RESULT' : 'PREMIUM_NO_USEFUL_RESULT',
-    chargeability: actionable ? 'CHARGEABLE_ACTIONABLE' : 'NON_CHARGEABLE_NO_RESULT',
+    outcome,
+    chargeability,
     destinationIntent: call.payload.scene_class,
-    destinations: actionable ? destinations : [],
+    destinations: visibleDestinations,
     failureCode: null,
     telemetry: {
+      engineVersion: PREMIUM_ENGINE_VERSION,
+      safetyVersion: PREMIUM_SAFETY_VERSION,
+      evidenceVersion: PREMIUM_EVIDENCE_VERSION,
+      evidenceReuseState: input.evidenceReuseState ?? 'EVIDENCE_REGENERATED',
       model: call.model,
       promptVersion: call.prompt_version,
       webSearchEnabled: call.web_search_enabled,
       frameStrategy: input.frameSet.strategy,
       frameTimestampsSeconds: input.frameSet.frames.map((frame) => frame.timestampSeconds),
+      inferenceFingerprint: call.fingerprint,
+      solBoundary: structuredSolBoundary({
+        premiumRequestId: input.premiumRequestId,
+        shareJobId: input.shareJobId,
+        call,
+      }),
+      canonicalizationFingerprint,
+      finalFingerprint: finalFingerprint({ call, destinations, outcome, chargeability }),
       evidenceReuse: {
         media: input.evidenceReuse?.media ?? 'REACQUIRED',
         frames: input.evidenceReuse?.frames ?? 'REACQUIRED',

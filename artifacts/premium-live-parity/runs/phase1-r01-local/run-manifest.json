@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "run_id": "sol-parity-2026-09-05T05-14-33-304Z",
+  "started_at": "2026-09-05T05:14:33.306Z",
+  "git_head": "cb9dd6f8193282009415c8a7cbe40ace779e32bc",
+  "corpus_path": "artifacts\\sol-parity\\inference-corpus.json",
+  "ground_truth_loaded_during_inference": false,
+  "cache_used": false,
+  "google_candidates_sent_to_sol": false,
+  "production_target": false,
+  "model": "gpt-5.6-sol",
+  "reasoning_effort": "high",
+  "premium_engine_version": "simple-sol-premium.v2",
+  "premium_evidence_version": "premium-evidence-2026-09-05.v1",
+  "premium_safety_version": "premium-recognition-safety.v2",
+  "matrix": [
+    {
+      "frame": "F1",
+      "model": "M1"
+    }
+  ],
+  "cases": [
+    "R01"
+  ],
+  "manual_frame_arm": "MANUAL_FRAME_ARM_NOT_AVAILABLE"
+}

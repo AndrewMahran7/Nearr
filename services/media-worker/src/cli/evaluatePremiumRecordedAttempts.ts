@@ -79,6 +79,7 @@ async function main(): Promise<void> {
           location: attempt.input_manifest.source_location_characters,
         },
         frame_manifest: attempt.input_manifest.frames,
+        fingerprint: null,
       },
       requestedAt: baseTime,
       evidenceReadyAt: baseTime,

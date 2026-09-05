@@ -1,5 +1,9 @@
 import type { SolCallResult } from '../solParity/model.js';
 import type { FrameSet, SourceEvidence } from '../solParity/types.js';
+import type {
+  PremiumEvidenceReuseState,
+  PremiumInferenceFingerprint,
+} from './premiumInferenceFingerprint.js';
 
 export type PremiumEvidenceBasis =
   | 'DIRECT_VISIBLE_IDENTITY'
@@ -30,9 +34,16 @@ export type PremiumCanonicalStatus =
 
 export type PremiumCanonicalizationCall = {
   query: string;
+  attemptNumber: number;
   reason: 'PRIMARY_SPECIFIC_IDENTITY' | 'CONTROLLED_ALIAS_RETRY';
   resultCount: number;
+  resultIds: string[];
+  resultNames: string[];
   matched: boolean;
+  selectedGooglePlaceId: string | null;
+  selectedName: string | null;
+  outcome: PremiumCanonicalStatus | 'NO_MATCH' | 'PROVIDER_FAILURE';
+  rejectionReason: string | null;
 };
 
 export type PremiumRuntimeHypothesis = {
@@ -61,11 +72,61 @@ export type PremiumLogicalDestination = {
 };
 
 export type PremiumRecognitionTelemetry = {
+  engineVersion: string;
+  safetyVersion: string;
+  evidenceVersion: string;
+  evidenceReuseState: PremiumEvidenceReuseState;
   model: string;
   promptVersion: string;
   webSearchEnabled: boolean;
   frameStrategy: string;
   frameTimestampsSeconds: number[];
+  inferenceFingerprint: PremiumInferenceFingerprint | null;
+  solBoundary: {
+    version: string;
+    premiumRequestId: string | null;
+    shareJobId: string | null;
+    fingerprintId: string | null;
+    model: string;
+    responseId: string | null;
+    latencyMs: number;
+    usage: SolCallResult['usage'];
+    structuredResultHash: string | null;
+    destinationCount: number;
+    hypotheses: Array<{
+      name: string;
+      entityType: string;
+      confidence: string;
+      evidenceBasis: string;
+      alternatives: string[];
+    }>;
+    parseSuccess: boolean;
+    parseFailureCode: string | null;
+  };
+  canonicalizationFingerprint: {
+    version: string;
+    hash: string;
+    hypotheses: Array<{
+      name: string;
+      entityType: string;
+      geography: { city: string | null; region: string | null; country: string | null };
+      calls: PremiumCanonicalizationCall[];
+      selectedGooglePlaceId: string | null;
+      selectedName: string | null;
+      outcome: PremiumCanonicalStatus;
+      rejectionReason: string | null;
+    }>;
+  };
+  finalFingerprint: {
+    version: string;
+    hash: string;
+    solResultHash: string | null;
+    canonicalResultHash: string;
+    safetyDecision: PremiumSafetyDecision[];
+    resultDecision: PremiumRecognitionExecution['outcome'];
+    chargeability: PremiumChargeability;
+    tokenSettlement: 'CONSUME' | 'RELEASE';
+  };
   evidenceReuse: {
     media: 'REUSED' | 'REACQUIRED';
     frames: 'REUSED' | 'REACQUIRED';
@@ -112,6 +173,9 @@ export type PremiumRecognitionInput = {
   requestedAt?: Date;
   evidenceReadyAt?: Date;
   evidencePrepMs?: number;
+  premiumRequestId?: string | null;
+  shareJobId?: string | null;
+  evidenceReuseState?: PremiumEvidenceReuseState;
   evidenceReuse?: Partial<PremiumRecognitionTelemetry['evidenceReuse']>;
   googlePlacesApiKey: string | null;
   webSearchEnabled?: boolean;

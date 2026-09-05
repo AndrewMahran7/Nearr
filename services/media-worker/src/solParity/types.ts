@@ -2,6 +2,7 @@ import type { SelectedFrame, TranscriptSegment, OcrSegment } from '../types/medi
 
 export const SOL_PARITY_MODEL = 'gpt-5.6-sol';
 export const SOL_PARITY_PROMPT_VERSION = 'sol-parity-natural-v1';
+export const SOL_PARITY_SCHEMA_VERSION = 'sol-parity-destination-schema-v1';
 export const SOL_PARITY_INPUT_BOUNDS = Object.freeze({
   captionCharacters: 4_000,
   transcriptCharacters: 8_000,
@@ -99,12 +100,14 @@ export type PersistedModelAttempt = {
   images_only: boolean;
   input_manifest: {
     frame_count: number;
-    frames: Array<{ timestamp_seconds: number; sha256: string; width: number; height: number; reason: string }>;
+    frames: Array<{ timestamp_seconds: number; sha256: string; width: number; height: number; byte_length?: number; reason: string }>;
     caption_characters: number;
     transcript_characters: number;
     ocr_characters: number;
     source_location_characters: number;
   };
+  /** Present for v1+ parity runs; absent in historical artifacts. */
+  inference_fingerprint?: unknown;
   timings_ms: {
     acquisition: number | null;
     frame_extraction: number | null;

@@ -4,6 +4,11 @@ import { createHash } from 'node:crypto';
 import { extractResponsesText, parseSolParityPayload } from './parser.js';
 import { buildSolParityContext, SOL_PARITY_INSTRUCTIONS, SOL_PARITY_PROMPT_VERSION, SOL_PARITY_SCHEMA } from './prompt.js';
 import { SOL_PARITY_MODEL, type FrameSet, type ModelArm, type SolParityPayload, type SolUsage, type SourceEvidence } from './types.js';
+import {
+  buildPremiumInferenceFingerprint,
+  type PremiumEvidenceReuseState,
+  type PremiumInferenceFingerprint,
+} from '../premium/premiumInferenceFingerprint.js';
 
 export const SOL_PARITY_KEY_VARIABLES = ['VAYRIN_OPENAI_API_KEY', 'OPENAI_API_KEY', 'MEDIA_TRANSCRIPTION_API_KEY'] as const;
 export const SOL_PARITY_PRICING = Object.freeze({
@@ -30,7 +35,9 @@ export type SolCallResult = {
   payload: SolParityPayload | null;
   failure: { kind: 'missing_key' | 'transport' | 'http' | 'malformed'; code: string } | null;
   input_lengths: { caption: number; transcript: number; ocr: number; location: number };
-  frame_manifest: Array<{ timestamp_seconds: number; sha256: string; width: number; height: number; reason: string }>;
+  frame_manifest: Array<{ timestamp_seconds: number; sha256: string; width: number; height: number; byte_length?: number; reason: string }>;
+  /** Null only when replaying a pre-fingerprint historical artifact. */
+  fingerprint: PremiumInferenceFingerprint | null;
 };
 
 function resolveKey(env: NodeJS.ProcessEnv): string | null {
@@ -104,7 +111,9 @@ export async function callSolParity(args: {
   frameSet: FrameSet;
   modelArm: ModelArm;
   platform: string;
+  canonicalUrl?: string;
   evidence: SourceEvidence;
+  evidenceReuse?: PremiumEvidenceReuseState;
   signal?: AbortSignal;
   env?: NodeJS.ProcessEnv;
   fetchImpl?: typeof fetch;
@@ -122,11 +131,31 @@ export async function callSolParity(args: {
       sha256: createHash('sha256').update(bytes).digest('hex'),
       width: frame.width,
       height: frame.height,
+      byte_length: bytes.byteLength,
       reason: frame.reason,
     });
     content.push({ type: 'input_text', text: `screenshot_timestamp_seconds: ${frame.timestampSeconds.toFixed(2)}` });
     content.push({ type: 'input_image', image_url: `data:${mime(frame.path)};base64,${bytes.toString('base64')}`, detail: 'high' });
   }
+  const requestPayload = {
+    model: SOL_PARITY_MODEL,
+    instructions: SOL_PARITY_INSTRUCTIONS,
+    input: [{ role: 'user', content }],
+    text: { format: { type: 'json_schema', name: 'sol_parity_destination', strict: true, schema: SOL_PARITY_SCHEMA } },
+    reasoning: { effort: 'high' },
+    store: false,
+    ...(webEnabled ? { tools: [{ type: 'web_search' }], include: ['web_search_call.action.sources'] } : {}),
+  };
+  const fingerprint = buildPremiumInferenceFingerprint({
+    platform: args.platform,
+    canonicalUrl: args.canonicalUrl ?? `unknown://${args.platform}`,
+    evidence: args.evidence,
+    modelArm: args.modelArm,
+    frameManifest,
+    inputText: context.text,
+    requestPayload,
+    evidenceReuse: args.evidenceReuse,
+  });
   const emptyUsage = usage(null);
   const base = {
     model: SOL_PARITY_MODEL,
@@ -135,6 +164,7 @@ export async function callSolParity(args: {
     images_only: args.modelArm === 'M3',
     input_lengths: context.lengths,
     frame_manifest: frameManifest,
+    fingerprint,
   };
   const key = resolveKey(env);
   if (!key) return { ...base, latency_ms: Date.now() - started, usage: emptyUsage, estimated_model_cost_usd: null, web_search_calls: 0, web_search_queries: [], web_search_sources: [], response_id: null, response_status: null, raw_model_output: null, payload: null, failure: { kind: 'missing_key', code: 'missing_openai_key' } };
@@ -144,15 +174,7 @@ export async function callSolParity(args: {
     response = await (args.fetchImpl ?? fetch)('https://api.openai.com/v1/responses', {
       method: 'POST',
       headers: { 'content-type': 'application/json', authorization: `Bearer ${key}` },
-      body: JSON.stringify({
-        model: SOL_PARITY_MODEL,
-        instructions: SOL_PARITY_INSTRUCTIONS,
-        input: [{ role: 'user', content }],
-        text: { format: { type: 'json_schema', name: 'sol_parity_destination', strict: true, schema: SOL_PARITY_SCHEMA } },
-        reasoning: { effort: 'high' },
-        store: false,
-        ...(webEnabled ? { tools: [{ type: 'web_search' }], include: ['web_search_call.action.sources'] } : {}),
-      }),
+      body: JSON.stringify(requestPayload),
       signal: args.signal,
     });
   } catch {

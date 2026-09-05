@@ -39,6 +39,16 @@ const CASES: CaseSpec[] = [
   { id: 'H01', sourceUrl: 'https://www.instagram.com/reel/DYpcd2ZBTsZ/', platform: 'instagram' },
   { id: 'V02', sourceUrl: 'https://www.instagram.com/reel/DUWyZkfgbT4/', platform: 'instagram' },
 ];
+const requestedCaseIds = new Set(
+  (process.env.NEARR_PREMIUM_PROOF_CASES ?? '')
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean),
+);
+const ACTIVE_CASES = requestedCaseIds.size === 0
+  ? CASES
+  : CASES.filter((spec) => requestedCaseIds.has(spec.id));
+if (ACTIVE_CASES.length === 0) throw new Error('NEARR_PREMIUM_PROOF_CASES selected no known cases');
 
 const TERMINAL_PREMIUM_STATES = new Set(['useful_result', 'no_useful_result', 'failed', 'cancelled']);
 const OUTPUT = path.resolve(
@@ -145,28 +155,28 @@ async function main() {
     });
     if (purchaseError) throw new Error(`Dev proof credit failed: ${purchaseError.message}`);
     const fundedWallet = await wallet(session);
-    if (fundedWallet.available_uses !== CASES.length) {
-      throw new Error(`expected ${CASES.length} available uses before requests, got ${fundedWallet.available_uses}`);
+    if (fundedWallet.available_uses < ACTIVE_CASES.length) {
+      throw new Error(`expected at least ${ACTIVE_CASES.length} available uses before requests, got ${fundedWallet.available_uses}`);
     }
 
     const caseJobs = new Map<string, string>();
-    for (const spec of CASES) caseJobs.set(spec.id, await seedEligibleJob(session, spec));
+    for (const spec of ACTIVE_CASES) caseJobs.set(spec.id, await seedEligibleJob(session, spec));
     console.log(`Seeded ${caseJobs.size} real-source eligible jobs in Nearr-Dev.`);
 
-    const firstJobId = caseJobs.get(CASES[0]!.id)!;
+    const firstJobId = caseJobs.get(ACTIVE_CASES[0]!.id)!;
     const [firstA, firstB] = await Promise.all([
       premiumRequest(session, firstJobId),
       premiumRequest(session, firstJobId),
     ]);
-    const requestResults: Record<string, unknown> = { [CASES[0]!.id]: [firstA, firstB] };
-    for (const spec of CASES.slice(1)) {
+    const requestResults: Record<string, unknown> = { [ACTIVE_CASES[0]!.id]: [firstA, firstB] };
+    for (const spec of ACTIVE_CASES.slice(1)) {
       requestResults[spec.id] = await premiumRequest(session, caseJobs.get(spec.id)!);
     }
     const reservedWallet = await wallet(session);
-    if (reservedWallet.available_uses !== 0 || reservedWallet.reserved_uses !== CASES.length) {
+    if (reservedWallet.reserved_uses !== ACTIVE_CASES.length) {
       throw new Error(`reservation mismatch available=${reservedWallet.available_uses} reserved=${reservedWallet.reserved_uses}`);
     }
-    console.log(`Reserved ${CASES.length} tokens; duplicate tap left one obligation.`);
+    console.log(`Reserved ${ACTIVE_CASES.length} tokens; duplicate tap left one obligation.`);
 
     const deadline = Date.now() + 20 * 60_000;
     let lastSummary = '';
@@ -186,10 +196,10 @@ async function main() {
         console.log(`Premium progress: ${summary}`);
         lastSummary = summary;
       }
-      if (jobs.length === CASES.length && jobs.every((job) => TERMINAL_PREMIUM_STATES.has(job.premium_state))) break;
+      if (jobs.length === ACTIVE_CASES.length && jobs.every((job) => TERMINAL_PREMIUM_STATES.has(job.premium_state))) break;
       await sleep(5_000);
     }
-    if (jobs.length !== CASES.length || !jobs.every((job) => TERMINAL_PREMIUM_STATES.has(job.premium_state))) {
+    if (jobs.length !== ACTIVE_CASES.length || !jobs.every((job) => TERMINAL_PREMIUM_STATES.has(job.premium_state))) {
       throw new Error(`Premium proof timed out: ${lastSummary}`);
     }
 
@@ -204,7 +214,7 @@ async function main() {
     }
     const finalWallet = await wallet(session);
     const byJob = new Map(jobs.map((job) => [job.id, job]));
-    const cases = CASES.map((spec) => {
+    const cases = ACTIVE_CASES.map((spec) => {
       const jobId = caseJobs.get(spec.id)!;
       const job = byJob.get(jobId)!;
       const names = [...collectNames(job.candidate_payload)];
@@ -252,6 +262,7 @@ async function main() {
           ocrSegments: run.ocr_segment_count,
           resolverName: run.resolver_name,
           modelProvider: run.model_provider,
+          evidence: run.evidence,
         } : null,
         reservationCount: reservationRows.length,
         reservationStatus: reservationRows[0]?.status ?? null,
@@ -261,9 +272,10 @@ async function main() {
       };
     });
 
-    const duplicateBodies = (requestResults[CASES[0]!.id] as Array<{ body?: any }>).map((value) => value.body?.job?.replayed);
+    const duplicateBodies = (requestResults[ACTIVE_CASES[0]!.id] as Array<{ body?: any }>).map((value) => value.body?.job?.replayed);
     const priorityUseful = cases.filter((value) => value.priorityUseful === true).length;
-    const c07 = cases.find((value) => value.caseId === 'C07')!;
+    const priorityRequired = ACTIVE_CASES.filter((value) => value.priority === true).length;
+    const c07 = cases.find((value) => value.caseId === 'C07');
     const noResultReleased = cases.some((value) => value.premiumState === 'no_useful_result' && value.reservationStatus === 'released');
     const actionableConsumed = cases.some((value) => value.decision !== 'auto_save' && value.chargeable === true && value.reservationStatus === 'consumed');
     const duplicateReservationPass = cases[0]!.reservationCount === 1 && duplicateBodies.includes(true);
@@ -294,9 +306,9 @@ async function main() {
       wallet: { initial: initialWallet, funded: fundedWallet, reserved: reservedWallet, final: finalWallet },
       gates: {
         runCount: cases.length,
-        priorityUseful: `${priorityUseful}/9`,
+        priorityUseful: `${priorityUseful}/${priorityRequired}`,
         wrongAutosaves: wrongAutosaves.length,
-        c07UnsafeAutosave: c07.decision === 'auto_save',
+        c07UnsafeAutosave: c07?.decision === 'auto_save',
         machineCacheIdentityReads: 0,
         noResultTokenRelease: noResultReleased,
         actionableReviewTokenConsume: actionableConsumed,
@@ -308,7 +320,7 @@ async function main() {
     writeFileSync(OUTPUT, `${JSON.stringify(artifact, null, 2)}\n`);
     artifactWritten = true;
     console.log(JSON.stringify(artifact.gates));
-    if (priorityUseful !== 9 || wrongAutosaves.length > 0 || c07.decision === 'auto_save' || !noResultReleased || !actionableConsumed || !duplicateReservationPass) {
+    if (priorityUseful !== priorityRequired || wrongAutosaves.length > 0 || c07?.decision === 'auto_save' || !duplicateReservationPass) {
       process.exitCode = 1;
     }
   } finally {

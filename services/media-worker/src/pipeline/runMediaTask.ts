@@ -645,6 +645,8 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
           : undefined,
         evidenceReadyAt: task.task_kind === 'premium_recognition' ? new Date() : undefined,
         evidencePrepMs: task.task_kind === 'premium_recognition' ? Date.now() - startedAt : undefined,
+        premiumRequestId: task.task_kind === 'premium_recognition' ? task.premium_request_id : undefined,
+        shareJobId: task.task_kind === 'premium_recognition' ? task.share_job_id : undefined,
         targetPlace: aiNoteTarget
           ? {
               name: aiNoteTarget.name,

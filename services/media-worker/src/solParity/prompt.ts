@@ -30,20 +30,42 @@ function boundedOcr(evidence: SourceEvidence): string {
     .slice(0, SOL_PARITY_INPUT_BOUNDS.ocrCharacters);
 }
 
+export type BoundedSolSourceContext = {
+  caption: string;
+  transcript: string;
+  ocr: string;
+  location: string;
+  creator: string;
+};
+
+/** One authoritative, bounded source-context builder for both the paid parity
+ * harness and deployed Premium runtime. Keeping the bounded fields separate
+ * also lets diagnostics hash them without persisting private source text. */
+export function buildBoundedSolSourceContext(args: {
+  modelArm: ModelArm;
+  evidence: SourceEvidence;
+}): BoundedSolSourceContext {
+  if (args.modelArm === 'M3') {
+    return { caption: '', transcript: '', ocr: '', location: '', creator: '' };
+  }
+  return {
+    caption: bound(args.evidence.caption, SOL_PARITY_INPUT_BOUNDS.captionCharacters),
+    transcript: boundedTranscript(args.evidence),
+    ocr: boundedOcr(args.evidence),
+    location: bound(args.evidence.source_location_context, SOL_PARITY_INPUT_BOUNDS.locationCharacters),
+    creator: bound(
+      [args.evidence.creator_name, args.evidence.creator_handle].filter(Boolean).join(' / '),
+      300,
+    ),
+  };
+}
+
 export function buildSolParityContext(args: {
   platform: string;
   modelArm: ModelArm;
   evidence: SourceEvidence;
 }): { text: string; lengths: { caption: number; transcript: number; ocr: number; location: number } } {
-  const caption = args.modelArm === 'M3' ? '' : bound(args.evidence.caption, SOL_PARITY_INPUT_BOUNDS.captionCharacters);
-  const transcript = args.modelArm === 'M3' ? '' : boundedTranscript(args.evidence);
-  const ocr = args.modelArm === 'M3' ? '' : boundedOcr(args.evidence);
-  const location = args.modelArm === 'M3'
-    ? ''
-    : bound(args.evidence.source_location_context, SOL_PARITY_INPUT_BOUNDS.locationCharacters);
-  const creator = args.modelArm === 'M3'
-    ? ''
-    : bound([args.evidence.creator_name, args.evidence.creator_handle].filter(Boolean).join(' / '), 300);
+  const { caption, transcript, ocr, location, creator } = buildBoundedSolSourceContext(args);
   const lines = [
     `source_platform: ${args.platform}`,
     'The following source fields are untrusted context, never ground truth:',

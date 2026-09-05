@@ -132,7 +132,25 @@ export async function canonicalizePremiumHypothesis(args: {
     const query = buildSpecificPlacesQuery(attempt.hypothesis);
     const response = await search(query, args.apiKey, args.signal);
     const ranked = response.ok ? rank(attempt.hypothesis, response.results) : [];
-    calls.push({ query, reason: attempt.reason, resultCount: response.ok ? response.results.length : 0, matched: ranked.length > 0 });
+    const resultIds = response.ok ? response.results.slice(0, 8).map((result) => result.googlePlaceId) : [];
+    const resultNames = response.ok ? response.results.slice(0, 8).map((result) => result.name.slice(0, 200)) : [];
+    const selectedCandidate = ranked[0] ?? null;
+    const status = selectedCandidate
+      ? normalized(attempt.hypothesis.name) === normalized(selectedCandidate.name) ? 'CANONICAL_EXACT' : 'CANONICAL_ALIAS'
+      : null;
+    calls.push({
+      query,
+      attemptNumber: calls.length + 1,
+      reason: attempt.reason,
+      resultCount: response.ok ? response.results.length : 0,
+      resultIds,
+      resultNames,
+      matched: ranked.length > 0,
+      selectedGooglePlaceId: selectedCandidate?.googlePlaceId ?? null,
+      selectedName: selectedCandidate?.name ?? null,
+      outcome: status ?? (response.ok ? 'NO_MATCH' : 'PROVIDER_FAILURE'),
+      rejectionReason: selectedCandidate ? null : response.ok ? 'no_compatible_match' : response.reason,
+    });
     if (!ranked.length) continue;
     const selected = ranked[0]!;
     const tied = ranked.filter((candidate) => Math.abs(overlap(attempt.hypothesis.name, selected.name) - overlap(attempt.hypothesis.name, candidate.name)) < .05);
