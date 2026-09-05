@@ -69,7 +69,7 @@ Purpose:
 Verify the current Premium fingerprint, model adapter, parsing, orchestration, canonicalization, and safety/result contracts.
 
 Cases:
-37 deterministic tests in `services/media-worker/tests/premiumSolRecognition.test.ts`; examples are focused contracts rather than a representative corpus.
+46 deterministic tests in `services/media-worker/tests/premiumSolRecognition.test.ts`; examples are focused contracts rather than a representative corpus.
 
 Case categories:
 Mixed natural places, restaurants, negative controls, and mocked result shapes; no explicit five-domain assignment.
@@ -116,7 +116,7 @@ Purpose:
 Check persisted-attempt integrity, inference boundary isolation, local-runtime normalization, and parity comparison behavior.
 
 Cases:
-28 deterministic tests in `services/media-worker/tests/premiumLiveParity.test.ts`, plus historical paid run artifacts in `artifacts/premium-live-parity/`.
+37 deterministic tests in `services/media-worker/tests/premiumLiveParity.test.ts`, plus historical paid run artifacts in `artifacts/premium-live-parity/`.
 
 Case categories:
 Priority natural-place cases and controls; no five-domain taxonomy.
