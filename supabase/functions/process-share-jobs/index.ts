@@ -553,7 +553,11 @@ async function finalize(
 ): Promise<void> {
   const updatePatch: Record<string, unknown> = { ...patch };
   const skipRecognitionCachePersist = updatePatch.__skipRecognitionCachePersist === true;
+  const premiumChargeabilityOverride = updatePatch.__premiumChargeability === 'CHARGEABLE_ACTIONABLE'
+    ? { chargeable: true, reason: 'premium_specific_candidates' as const }
+    : null;
   delete updatePatch.__skipRecognitionCachePersist;
+  delete updatePatch.__premiumChargeability;
   const finalUrl = typeof patch.canonical_url === 'string'
     ? patch.canonical_url
     : job.canonical_url || job.source_url;
@@ -577,7 +581,10 @@ async function finalize(
   const finalFacts = { ...job, ...updatePatch };
   const billingMode = job.billing_mode ?? 'unmetered_legacy';
   const legacySettlement = placeFindSettlementForTerminalJob(finalFacts);
-  const premiumSettlement = isPremiumResultChargeable(finalFacts);
+  // The authenticated Premium worker has already applied canonicalization and
+  // safety before emitting CHARGEABLE_ACTIONABLE. Preserve that typed decision
+  // for named review leads that intentionally have no single Places candidate.
+  const premiumSettlement = premiumChargeabilityOverride ?? isPremiumResultChargeable(finalFacts);
   const eligibility = premiumEligibilityForResult(finalFacts);
   const becamePremiumEligible = billingMode !== 'premium_request' && eligibility.eligible && job.premium_state !== 'eligible';
   if (billingMode === 'premium_request') {
@@ -1870,6 +1877,7 @@ async function finalizeMediaTask(
           canonical_url: taskCanonicalUrl,
           source_platform: task.platform,
           premium_cost_components: premium.costs,
+          __premiumChargeability: premium.chargeability,
           extraction_payload: {
             ...(job.extraction_payload ?? {}),
             premiumRecognition: { outcome: premium.outcome, chargeability: premium.chargeability },
@@ -1900,6 +1908,7 @@ async function finalizeMediaTask(
         canonical_url: taskCanonicalUrl,
         source_platform: task.platform,
         premium_cost_components: premium.costs,
+        __premiumChargeability: premium.chargeability,
         extraction_payload: {
           ...(job.extraction_payload ?? {}),
           premiumRecognition: { outcome: premium.outcome, chargeability: premium.chargeability },

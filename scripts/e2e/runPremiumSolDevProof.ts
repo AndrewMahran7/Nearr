@@ -147,14 +147,23 @@ async function main() {
       .eq('product_id', productId)
       .eq('product_kind', 'dev_mock');
     if (productError) throw new Error(`Dev mock product activation failed: ${productError.message}`);
-    const purchaseId = `${session.correlationId}-pack10`;
-    const { data: purchase, error: purchaseError } = await session.admin.rpc('apply_dev_mock_place_find_purchase', {
-      p_user_id: session.identity.userId,
-      p_product_id: productId,
-      p_client_purchase_id: purchaseId,
-    });
-    if (purchaseError) throw new Error(`Dev proof credit failed: ${purchaseError.message}`);
-    const fundedWallet = await wallet(session);
+    const purchases: any[] = [];
+    let fundedWallet = initialWallet;
+    for (let purchaseIndex = 1; fundedWallet.available_uses < ACTIVE_CASES.length; purchaseIndex += 1) {
+      const beforeAvailable = fundedWallet.available_uses;
+      const purchaseId = `${session.correlationId}-pack10-${purchaseIndex}`;
+      const { data: purchase, error: purchaseError } = await session.admin.rpc('apply_dev_mock_place_find_purchase', {
+        p_user_id: session.identity.userId,
+        p_product_id: productId,
+        p_client_purchase_id: purchaseId,
+      });
+      if (purchaseError) throw new Error(`Dev proof credit failed: ${purchaseError.message}`);
+      purchases.push(...(Array.isArray(purchase) ? purchase : [purchase]));
+      fundedWallet = await wallet(session);
+      if (fundedWallet.available_uses <= beforeAvailable) {
+        throw new Error('Dev proof purchase did not increase available uses.');
+      }
+    }
     if (fundedWallet.available_uses < ACTIVE_CASES.length) {
       throw new Error(`expected at least ${ACTIVE_CASES.length} available uses before requests, got ${fundedWallet.available_uses}`);
     }
@@ -300,7 +309,11 @@ async function main() {
         },
         freeLaneSetup: 'terminal analysis-insufficient jobs seeded with real parity source URLs',
         premiumBoundary: 'deployed authenticated monetization Edge endpoint onward',
-        purchaseSetup: { productId, grantedUses: (purchase as any)?.[0]?.granted_uses ?? 10 },
+        purchaseSetup: {
+          productId,
+          purchaseCount: purchases.length,
+          grantedUses: purchases.reduce((sum, purchase) => sum + Number(purchase?.granted_uses ?? 0), 0),
+        },
         cleanupRequested,
       },
       wallet: { initial: initialWallet, funded: fundedWallet, reserved: reservedWallet, final: finalWallet },

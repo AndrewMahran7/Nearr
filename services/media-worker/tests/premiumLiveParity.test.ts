@@ -245,6 +245,11 @@ test('23 chargeability cannot erase a visible review result', async () => {
   assert.equal(output.destinations.length, 1);
   assert.equal(output.chargeability, 'CHARGEABLE_ACTIONABLE');
 });
+test('23b Edge settlement preserves the typed Premium chargeability decision', async () => {
+  const source = await readFile(new URL('../../../supabase/functions/process-share-jobs/index.ts', import.meta.url), 'utf8');
+  assert.match(source, /__premiumChargeability: premium\.chargeability/);
+  assert.match(source, /premiumChargeabilityOverride \?\? isPremiumResultChargeable/);
+});
 test('24 acquisition failure retains the token-release finalizer path', async () => {
   const source = await readFile(new URL('../../../supabase/functions/process-share-jobs/index.ts', import.meta.url), 'utf8');
   assert.match(source, /!premium && pre\.action !== 'manual_fallback'/);
