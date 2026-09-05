@@ -1,12 +1,12 @@
 {
   "releaseId": "2026-09-05-broad-area-specificity-production",
-  "previousMainSha": "29e60f851e41ef7176c7bad504ac73ead56bf5dd",
+  "previousMainSha": "fe3aadb8147da818555ae791d22bece6b33124f4",
   "previousOtaGroup": "c2a75e27-d76f-45c5-98fa-fc757a7b96e3",
   "currentOtaGroup": null,
   "edgeVersions": {
-    "process-share-jobs": 94,
-    "process-share-link": 135,
-    "monetization": 3
+    "process-share-jobs": 96,
+    "process-share-link": 137,
+    "monetization": 4
   },
   "railwayDeployment": "2d4da2a4-c9b9-4d34-8894-15e8e8e6c407 (unchanged)",
   "migrationLedger": [
