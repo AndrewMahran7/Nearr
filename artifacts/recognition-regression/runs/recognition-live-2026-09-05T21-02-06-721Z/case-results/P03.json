@@ -1,0 +1,52 @@
+{
+  "caseId": "P03",
+  "category": "FOOD_RESTAURANT",
+  "groundTruth": "Chocolat",
+  "returnedTop3": [
+    {
+      "rank": 1,
+      "name": "Chocolate",
+      "identityType": "BUSINESS",
+      "locality": "Santa Cruz, California",
+      "country": "United States",
+      "latitude": 36.9756067,
+      "longitude": -122.02643870000001,
+      "evidenceType": "DISTINCTIVE_VISUAL_MATCH",
+      "canonicalizationStatus": "CANONICAL_EXACT",
+      "specificity": "SPECIFIC_PHYSICAL_PLACE"
+    }
+  ],
+  "recognitionVersion": "simple-sol-premium.v2",
+  "evidenceVersion": "premium-evidence-2026-09-05.v1",
+  "modelPath": "gpt-5.6-sol/F1:M1",
+  "frameManifest": [
+    {
+      "timestampSeconds": 0,
+      "sha256": "a5e617dc91ef1a1c10149ae7b35e10b79e59699e2715e8b20c0a6dbd7ce8be0e"
+    },
+    {
+      "timestampSeconds": 3,
+      "sha256": "7a209df18ee9453129bbd75579cf1782c559aa69fb351304838b2dd03053372e"
+    },
+    {
+      "timestampSeconds": 5,
+      "sha256": "8bb6b193400dc5be8fb7c5550549a7f7fe034a702510ed62b819478f9aff4eed"
+    },
+    {
+      "timestampSeconds": 9,
+      "sha256": "7ce75f7e1630819dfebae058d3c5ceb5f92a124ff25a48861b8102bea7f0e6ad"
+    },
+    {
+      "timestampSeconds": 11,
+      "sha256": "8636c77fa4abaafd5f0ca4b78748185b5095a2121d911a0a437099175ccee256"
+    },
+    {
+      "timestampSeconds": 14.133,
+      "sha256": "f2d7603314f4583b1744fe6ff28445c7000b8bf7e83b1da915e0d26ccff99d32"
+    }
+  ],
+  "placesCallCount": 1,
+  "classification": "WRONG",
+  "failureClass": "WRONG",
+  "cacheReadUsed": false
+}
