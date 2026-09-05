@@ -1,0 +1,9 @@
+# Keep the named baseline run; ignore timestamped local/paid scratch runs.
+runs/*
+!runs/current-live-baseline/
+!runs/current-live-baseline/**
+
+# Track only diagnostics for the currently recorded live failures.
+case-results/*.json
+!case-results/H10.json
+!case-results/P10.json

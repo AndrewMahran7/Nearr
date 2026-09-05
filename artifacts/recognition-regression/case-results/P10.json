@@ -1,0 +1,14 @@
+{
+  "caseId": "P10",
+  "category": "FOOD_RESTAURANT",
+  "groundTruth": "Taqueria Los Pericos",
+  "returnedTop3": [],
+  "recognitionVersion": "simple-sol-premium.v2",
+  "evidenceVersion": "premium-evidence-2026-09-05.v1",
+  "modelPath": "CURRENT_BACKEND_NO_MODEL_RESULT",
+  "frameManifest": [],
+  "placesCallCount": 0,
+  "classification": "TECHNICAL_FAILURE",
+  "failureClass": "TECHNICAL_FAILURE",
+  "cacheReadUsed": false
+}

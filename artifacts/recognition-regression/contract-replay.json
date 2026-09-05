@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "results": [
+    {"caseId":"LND02","candidates":[{"rank":1,"name":"Paris","identityType":"ADMIN_AREA","locality":"Paris","region":null,"country":"France","latitude":null,"longitude":null,"canonicalPlaceId":null,"evidenceType":"CONTRACT_CONTROL","canonicalizationStatus":"CANONICAL_EXACT"}],"safetyDecision":"REVIEW"},
+    {"caseId":"TRV-ATUH-CONTROL","candidates":[{"rank":1,"name":"Nusa Penida","identityType":"BROAD_AREA","locality":null,"region":"Bali","country":"Indonesia","latitude":null,"longitude":null,"canonicalPlaceId":null,"evidenceType":"CONTRACT_CONTROL","canonicalizationStatus":"CANONICAL_EXACT"},{"rank":2,"name":"Atuh Beach","identityType":"NAMED_NATURAL_FEATURE","locality":"Nusa Penida","region":"Bali","country":"Indonesia","latitude":-8.7734,"longitude":115.6205,"canonicalPlaceId":null,"evidenceType":"CONTRACT_CONTROL","canonicalizationStatus":"CANONICAL_EXACT"}],"safetyDecision":"REVIEW"},
+    {"caseId":"TRV-BALI-CONTROL","candidates":[{"rank":1,"name":"Bali","identityType":"BROAD_AREA","locality":null,"region":null,"country":"Indonesia","latitude":null,"longitude":null,"canonicalPlaceId":null,"evidenceType":"CONTRACT_CONTROL","canonicalizationStatus":"CANONICAL_EXACT"}],"safetyDecision":"REVIEW"}
+  ]
+}

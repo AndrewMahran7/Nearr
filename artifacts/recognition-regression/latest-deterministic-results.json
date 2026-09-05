@@ -1,0 +1,2351 @@
+{
+  "schemaVersion": 2,
+  "runId": "recognition-replay-2026-09-05T21-31-58-173Z",
+  "mode": "DETERMINISTIC_FROZEN_REPLAY",
+  "generatedAt": "2026-09-05T21:31:58.340Z",
+  "groundTruthLoadedAfterPersistence": true,
+  "cacheReadUsed": false,
+  "actualSavePerformed": false,
+  "casesRequested": 91,
+  "attemptsPersisted": 91,
+  "metrics": {
+    "perCategory": {
+      "FOOD_RESTAURANT": {
+        "caseCount": 35,
+        "acquired": 33,
+        "scorable": 25,
+        "exactAt1": 19,
+        "exactAt3": 19,
+        "areaOnly": 0,
+        "parentPlace": 0,
+        "genericType": 0,
+        "wrong": 5,
+        "empty": 0,
+        "technical": 1,
+        "wrongAutosaves": 0
+      },
+      "CLIFF_JUMPING": {
+        "caseCount": 48,
+        "acquired": 7,
+        "scorable": 3,
+        "exactAt1": 2,
+        "exactAt3": 2,
+        "areaOnly": 0,
+        "parentPlace": 0,
+        "genericType": 0,
+        "wrong": 1,
+        "empty": 0,
+        "technical": 0,
+        "wrongAutosaves": 0
+      },
+      "HIKING_TRAIL": {
+        "caseCount": 1,
+        "acquired": 1,
+        "scorable": 1,
+        "exactAt1": 1,
+        "exactAt3": 1,
+        "areaOnly": 0,
+        "parentPlace": 0,
+        "genericType": 0,
+        "wrong": 0,
+        "empty": 0,
+        "technical": 0,
+        "wrongAutosaves": 0
+      },
+      "LANDMARK": {
+        "caseCount": 4,
+        "acquired": 2,
+        "scorable": 1,
+        "exactAt1": 1,
+        "exactAt3": 1,
+        "areaOnly": 0,
+        "parentPlace": 0,
+        "genericType": 0,
+        "wrong": 0,
+        "empty": 0,
+        "technical": 0,
+        "wrongAutosaves": 0
+      },
+      "TRAVEL_DESTINATION": {
+        "caseCount": 3,
+        "acquired": 3,
+        "scorable": 3,
+        "exactAt1": 2,
+        "exactAt3": 3,
+        "areaOnly": 0,
+        "parentPlace": 0,
+        "genericType": 0,
+        "wrong": 0,
+        "empty": 0,
+        "technical": 0,
+        "wrongAutosaves": 0
+      }
+    },
+    "microExactAt1": 0.7575757575757576,
+    "microExactAt3": 0.7878787878787878,
+    "macroExactAt1": 0.8186666666666668,
+    "macroExactAt3": 0.8853333333333333
+  },
+  "diff": {
+    "summary": {
+      "NEWLY_FIXED": [],
+      "REGRESSED": [],
+      "UNCHANGED_PASS": [
+        "V02",
+        "V03",
+        "V04",
+        "H02",
+        "H03",
+        "H04",
+        "H05",
+        "H08",
+        "H12",
+        "P01",
+        "P02",
+        "P08",
+        "S01",
+        "S06",
+        "C06",
+        "TRV-ATUH-CONTROL",
+        "TRV-BALI-CONTROL"
+      ],
+      "UNCHANGED_FAIL": [],
+      "AREA_ONLY": [],
+      "TECHNICAL": [
+        "P10"
+      ]
+    },
+    "cases": [
+      {
+        "caseId": "R01",
+        "category": "CLIFF_JUMPING",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "",
+        "previousTop3": [
+          "Cirque de Gens",
+          "Pont d’Arc",
+          "Pont du Diable swimming area, Gorges de l’Hérault"
+        ],
+        "newTop3": [
+          "Cirque de Gens",
+          "Pont d’Arc",
+          "Pont du Diable swimming area, Gorges de l’Hérault"
+        ],
+        "classification": "UNSCORED"
+      },
+      {
+        "caseId": "R02",
+        "category": "CLIFF_JUMPING",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "",
+        "previousTop3": [
+          "Puʻu Kekaʻa (Black Rock)",
+          "Keoneʻōʻio (La Perouse Bay)",
+          "Puʻu Ōlaʻi / Little Beach lava point"
+        ],
+        "newTop3": [
+          "Puʻu Kekaʻa (Black Rock)",
+          "Keoneʻōʻio (La Perouse Bay)",
+          "Puʻu Ōlaʻi / Little Beach lava point"
+        ],
+        "classification": "UNSCORED"
+      },
+      {
+        "caseId": "R03",
+        "category": "HIKING_TRAIL",
+        "status": "UNCHANGED_PASS",
+        "groundTruth": "Tamolitch Blue Pool",
+        "previousTop3": [
+          "Tamolitch Blue Pool"
+        ],
+        "newTop3": [
+          "Tamolitch Blue Pool"
+        ],
+        "classification": "EXACT"
+      },
+      {
+        "caseId": "R04",
+        "category": "CLIFF_JUMPING",
+        "status": "UNCHANGED_PASS",
+        "groundTruth": "Dorset Marble Quarry",
+        "previousTop3": [
+          "Dorset Quarry",
+          "West Rutland marble quarries"
+        ],
+        "newTop3": [
+          "Dorset Quarry",
+          "West Rutland marble quarries"
+        ],
+        "classification": "ACCEPTABLE_ALIAS"
+      },
+      {
+        "caseId": "R05",
+        "category": "CLIFF_JUMPING",
+        "status": "UNCHANGED_PASS",
+        "groundTruth": "Okere Falls Scenic Reserve",
+        "previousTop3": [
+          "Ōkere Falls Scenic Reserve / Kaituna River",
+          "Tutea Falls"
+        ],
+        "newTop3": [
+          "Ōkere Falls Scenic Reserve / Kaituna River",
+          "Tutea Falls"
+        ],
+        "classification": "ACCEPTABLE_ALIAS"
+      },
+      {
+        "caseId": "R06",
+        "category": "CLIFF_JUMPING",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "Lake Havasu",
+        "previousTop3": [
+          "Lake Havasu",
+          "Copper Canyon (Lake Havasu)",
+          "Colorado River at the Parker Strip"
+        ],
+        "newTop3": [
+          "Lake Havasu",
+          "Copper Canyon (Lake Havasu)",
+          "Colorado River at the Parker Strip"
+        ],
+        "classification": "UNSCORED"
+      },
+      {
+        "caseId": "R07",
+        "category": "CLIFF_JUMPING",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "",
+        "previousTop3": [
+          "Stryn cliff-diving site",
+          "Oppstrynsvatnet",
+          "Lovatnet"
+        ],
+        "newTop3": [
+          "Stryn cliff-diving site",
+          "Oppstrynsvatnet",
+          "Lovatnet"
+        ],
+        "classification": "UNSCORED"
+      },
+      {
+        "caseId": "R08",
+        "category": "CLIFF_JUMPING",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "Moku Nui",
+        "previousTop3": [
+          "Queen’s Bath on Moku Nui, Mokulua Islands",
+          "Moku Nui cliff-jumping area, Mokulua Islands"
+        ],
+        "newTop3": [
+          "Queen’s Bath on Moku Nui, Mokulua Islands",
+          "Moku Nui cliff-jumping area, Mokulua Islands"
+        ],
+        "classification": "WRONG"
+      },
+      {
+        "caseId": "V02",
+        "category": "FOOD_RESTAURANT",
+        "status": "UNCHANGED_PASS",
+        "groundTruth": "Capone's Italian Cucina",
+        "previousTop3": [
+          "Capone's Cucina"
+        ],
+        "newTop3": [
+          "Capone's Cucina"
+        ],
+        "classification": "ACCEPTABLE_ALIAS"
+      },
+      {
+        "caseId": "V03",
+        "category": "FOOD_RESTAURANT",
+        "status": "UNCHANGED_PASS",
+        "groundTruth": "Brooklyn City Pizzeria & Market",
+        "previousTop3": [
+          "Brooklyn City Pizzeria & Market"
+        ],
+        "newTop3": [
+          "Brooklyn City Pizzeria & Market"
+        ],
+        "classification": "EXACT"
+      },
+      {
+        "caseId": "V04",
+        "category": "TRAVEL_DESTINATION",
+        "status": "UNCHANGED_PASS",
+        "groundTruth": "Hellfire Bay",
+        "previousTop3": [
+          "Hellfire Bay"
+        ],
+        "newTop3": [
+          "Hellfire Bay"
+        ],
+        "classification": "EXACT"
+      },
+      {
+        "caseId": "V05",
+        "category": "FOOD_RESTAURANT",
+        "status": "UNCHANGED_PASS",
+        "groundTruth": "Paradise Dynasty",
+        "previousTop3": [
+          "Paradise Dynasty at South Coast Plaza",
+          "Paradise Dynasty at The Americana at Brand"
+        ],
+        "newTop3": [
+          "Paradise Dynasty at South Coast Plaza",
+          "Paradise Dynasty at The Americana at Brand"
+        ],
+        "classification": "ACCEPTABLE_ALIAS"
+      },
+      {
+        "caseId": "H01",
+        "category": "FOOD_RESTAURANT",
+        "status": "UNCHANGED_PASS",
+        "groundTruth": "2nd Floor",
+        "previousTop3": [
+          "2nd Floor Gallery Bar & Grill"
+        ],
+        "newTop3": [
+          "2nd Floor Gallery Bar & Grill"
+        ],
+        "classification": "ACCEPTABLE_ALIAS"
+      },
+      {
+        "caseId": "H02",
+        "category": "FOOD_RESTAURANT",
+        "status": "UNCHANGED_PASS",
+        "groundTruth": "Mad Yolks",
+        "previousTop3": [
+          "Mad Yolks"
+        ],
+        "newTop3": [
+          "Mad Yolks"
+        ],
+        "classification": "EXACT"
+      },
+      {
+        "caseId": "H03",
+        "category": "FOOD_RESTAURANT",
+        "status": "UNCHANGED_PASS",
+        "groundTruth": "Las Palmas Taco Bar",
+        "previousTop3": [
+          "Las Palmas Taco Bar"
+        ],
+        "newTop3": [
+          "Las Palmas Taco Bar"
+        ],
+        "classification": "EXACT"
+      },
+      {
+        "caseId": "H04",
+        "category": "FOOD_RESTAURANT",
+        "status": "UNCHANGED_PASS",
+        "groundTruth": "Seabright Deli",
+        "previousTop3": [
+          "Seabright Deli"
+        ],
+        "newTop3": [
+          "Seabright Deli"
+        ],
+        "classification": "EXACT"
+      },
+      {
+        "caseId": "H05",
+        "category": "FOOD_RESTAURANT",
+        "status": "UNCHANGED_PASS",
+        "groundTruth": "Mad Yolks",
+        "previousTop3": [
+          "Mad Yolks"
+        ],
+        "newTop3": [
+          "Mad Yolks"
+        ],
+        "classification": "EXACT"
+      },
+      {
+        "caseId": "H06",
+        "category": "FOOD_RESTAURANT",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "Baqba Mexican Grill",
+        "previousTop3": [
+          "Baqba Mexican Grill – Montclair",
+          "Baqba Mexican Grill – Rialto"
+        ],
+        "newTop3": [
+          "Baqba Mexican Grill – Montclair",
+          "Baqba Mexican Grill – Rialto"
+        ],
+        "classification": "UNSCORED"
+      },
+      {
+        "caseId": "H07",
+        "category": "FOOD_RESTAURANT",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "Famous Dave's Bar-B-Que",
+        "previousTop3": [
+          "Famous Dave's Bar-B-Que, 300 S Pine Ave"
+        ],
+        "newTop3": [
+          "Famous Dave's Bar-B-Que, 300 S Pine Ave"
+        ],
+        "classification": "UNSCORED"
+      },
+      {
+        "caseId": "H08",
+        "category": "FOOD_RESTAURANT",
+        "status": "UNCHANGED_PASS",
+        "groundTruth": "Loaded Cafe - Orange",
+        "previousTop3": [
+          "Loaded Cafe – Orange"
+        ],
+        "newTop3": [
+          "Loaded Cafe – Orange"
+        ],
+        "classification": "EXACT"
+      },
+      {
+        "caseId": "H09",
+        "category": "FOOD_RESTAURANT",
+        "status": "UNCHANGED_PASS",
+        "groundTruth": "Pho Bamboo Vietnamese Restaurant",
+        "previousTop3": [
+          "Pho Bamboo"
+        ],
+        "newTop3": [
+          "Pho Bamboo"
+        ],
+        "classification": "ACCEPTABLE_ALIAS"
+      },
+      {
+        "caseId": "H10",
+        "category": "FOOD_RESTAURANT",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "Baja Sharkeez",
+        "previousTop3": [
+          "Baja Sharkeez Newport Beach"
+        ],
+        "newTop3": [
+          "Baja Sharkeez Newport Beach"
+        ],
+        "classification": "WRONG"
+      },
+      {
+        "caseId": "H11",
+        "category": "FOOD_RESTAURANT",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "No Good Burger Joint",
+        "previousTop3": [
+          "No Good Burger Joint",
+          "No Good Burger Joint – Rockville Centre location",
+          "No Good Burger Joint – Baldwin location"
+        ],
+        "newTop3": [
+          "No Good Burger Joint",
+          "No Good Burger Joint – Rockville Centre location",
+          "No Good Burger Joint – Baldwin location"
+        ],
+        "classification": "UNSCORED"
+      },
+      {
+        "caseId": "H12",
+        "category": "FOOD_RESTAURANT",
+        "status": "UNCHANGED_PASS",
+        "groundTruth": "Old Fisherman's Grotto",
+        "previousTop3": [
+          "Old Fisherman's Grotto"
+        ],
+        "newTop3": [
+          "Old Fisherman's Grotto"
+        ],
+        "classification": "EXACT"
+      },
+      {
+        "caseId": "P01",
+        "category": "FOOD_RESTAURANT",
+        "status": "UNCHANGED_PASS",
+        "groundTruth": "Aptos St. BBQ",
+        "previousTop3": [
+          "Aptos St. BBQ"
+        ],
+        "newTop3": [
+          "Aptos St. BBQ"
+        ],
+        "classification": "EXACT"
+      },
+      {
+        "caseId": "P02",
+        "category": "FOOD_RESTAURANT",
+        "status": "UNCHANGED_PASS",
+        "groundTruth": "BLK Earth Sea Spirits",
+        "previousTop3": [
+          "BLK Earth Sea Spirits"
+        ],
+        "newTop3": [
+          "BLK Earth Sea Spirits"
+        ],
+        "classification": "EXACT"
+      },
+      {
+        "caseId": "P03",
+        "category": "FOOD_RESTAURANT",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "Chocolat",
+        "previousTop3": [
+          "Chocolate"
+        ],
+        "newTop3": [
+          "Chocolate"
+        ],
+        "classification": "WRONG"
+      },
+      {
+        "caseId": "P04",
+        "category": "FOOD_RESTAURANT",
+        "status": "UNCHANGED_PASS",
+        "groundTruth": "Mesa Verde Farmers' Market",
+        "previousTop3": [
+          "Mesa Verde Farmers Market"
+        ],
+        "newTop3": [
+          "Mesa Verde Farmers Market"
+        ],
+        "classification": "EXACT"
+      },
+      {
+        "caseId": "P05",
+        "category": "FOOD_RESTAURANT",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "OC Greek Fest",
+        "previousTop3": [
+          "OC Greek Fest at St. John the Baptist Greek Orthodox Church"
+        ],
+        "newTop3": [
+          "OC Greek Fest at St. John the Baptist Greek Orthodox Church"
+        ],
+        "classification": "WRONG"
+      },
+      {
+        "caseId": "P06",
+        "category": "FOOD_RESTAURANT",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "Old World Biergarten Festival Hall & Concert Venue",
+        "previousTop3": [
+          "Biergarten at Old World Huntington Beach",
+          "Old World Village"
+        ],
+        "newTop3": [
+          "Biergarten at Old World Huntington Beach",
+          "Old World Village"
+        ],
+        "classification": "WRONG"
+      },
+      {
+        "caseId": "P07",
+        "category": "FOOD_RESTAURANT",
+        "status": "UNCHANGED_PASS",
+        "groundTruth": "Point Market",
+        "previousTop3": [
+          "The Point Market & Cafe"
+        ],
+        "newTop3": [
+          "The Point Market & Cafe"
+        ],
+        "classification": "ACCEPTABLE_ALIAS"
+      },
+      {
+        "caseId": "P08",
+        "category": "FOOD_RESTAURANT",
+        "status": "UNCHANGED_PASS",
+        "groundTruth": "Seabright Deli",
+        "previousTop3": [
+          "Seabright Deli"
+        ],
+        "newTop3": [
+          "Seabright Deli"
+        ],
+        "classification": "EXACT"
+      },
+      {
+        "caseId": "P09",
+        "category": "FOOD_RESTAURANT",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "Tacos El Chuy",
+        "previousTop3": [
+          "Tacos El Chuy Truck"
+        ],
+        "newTop3": [
+          "Tacos El Chuy Truck"
+        ],
+        "classification": "WRONG"
+      },
+      {
+        "caseId": "P10",
+        "category": "FOOD_RESTAURANT",
+        "status": "TECHNICAL",
+        "groundTruth": "Taqueria Los Pericos",
+        "previousTop3": [],
+        "newTop3": [],
+        "classification": "TECHNICAL_FAILURE"
+      },
+      {
+        "caseId": "S01",
+        "category": "FOOD_RESTAURANT",
+        "status": "UNCHANGED_PASS",
+        "groundTruth": "Seabright Deli",
+        "previousTop3": [
+          "Seabright Deli"
+        ],
+        "newTop3": [
+          "Seabright Deli"
+        ],
+        "classification": "EXACT"
+      },
+      {
+        "caseId": "S02",
+        "category": "FOOD_RESTAURANT",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "",
+        "previousTop3": [
+          "Panera Bread – Crossroads Shopping Center",
+          "Panera Bread – Woodbury Town Center",
+          "Panera Bread – Harbor Center"
+        ],
+        "newTop3": [
+          "Panera Bread – Crossroads Shopping Center",
+          "Panera Bread – Woodbury Town Center",
+          "Panera Bread – Harbor Center"
+        ],
+        "classification": "UNSCORED"
+      },
+      {
+        "caseId": "S03",
+        "category": "FOOD_RESTAURANT",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "",
+        "previousTop3": [
+          "Venus Pie Trap"
+        ],
+        "newTop3": [
+          "Venus Pie Trap"
+        ],
+        "classification": "UNSCORED"
+      },
+      {
+        "caseId": "S04",
+        "category": "FOOD_RESTAURANT",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "",
+        "previousTop3": [
+          "Hot Birds 831"
+        ],
+        "newTop3": [
+          "Hot Birds 831"
+        ],
+        "classification": "UNSCORED"
+      },
+      {
+        "caseId": "S05",
+        "category": "FOOD_RESTAURANT",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "",
+        "previousTop3": [
+          "Wooden Nickel Bar & Grill"
+        ],
+        "newTop3": [
+          "Wooden Nickel Bar & Grill"
+        ],
+        "classification": "UNSCORED"
+      },
+      {
+        "caseId": "S06",
+        "category": "FOOD_RESTAURANT",
+        "status": "UNCHANGED_PASS",
+        "groundTruth": "Seabright Deli",
+        "previousTop3": [
+          "Seabright Deli"
+        ],
+        "newTop3": [
+          "Seabright Deli"
+        ],
+        "classification": "EXACT"
+      },
+      {
+        "caseId": "S07",
+        "category": "FOOD_RESTAURANT",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "",
+        "previousTop3": [
+          "Tacos El Chuy at Santa Cruz Mountain Brewing"
+        ],
+        "newTop3": [
+          "Tacos El Chuy at Santa Cruz Mountain Brewing"
+        ],
+        "classification": "UNSCORED"
+      },
+      {
+        "caseId": "C01",
+        "category": "LANDMARK",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "",
+        "previousTop3": [],
+        "newTop3": [],
+        "classification": "UNSCORED"
+      },
+      {
+        "caseId": "C02",
+        "category": "LANDMARK",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "",
+        "previousTop3": [],
+        "newTop3": [],
+        "classification": "UNSCORED"
+      },
+      {
+        "caseId": "C03",
+        "category": "LANDMARK",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "",
+        "previousTop3": [],
+        "newTop3": [],
+        "classification": "UNSCORED"
+      },
+      {
+        "caseId": "C04",
+        "category": "FOOD_RESTAURANT",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "Carbone",
+        "previousTop3": [
+          "Carbone"
+        ],
+        "newTop3": [
+          "Carbone"
+        ],
+        "classification": "UNSCORED"
+      },
+      {
+        "caseId": "C05",
+        "category": "FOOD_RESTAURANT",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "",
+        "previousTop3": [],
+        "newTop3": [],
+        "classification": "UNSCORED"
+      },
+      {
+        "caseId": "C06",
+        "category": "FOOD_RESTAURANT",
+        "status": "UNCHANGED_PASS",
+        "groundTruth": "Tuxedo Cat's Coffee",
+        "previousTop3": [
+          "Tuxedo Cat's Coffee"
+        ],
+        "newTop3": [
+          "Tuxedo Cat's Coffee"
+        ],
+        "classification": "EXACT"
+      },
+      {
+        "caseId": "C07",
+        "category": "LANDMARK",
+        "status": "UNCHANGED_PASS",
+        "groundTruth": "San Diego Zoo",
+        "previousTop3": [
+          "San Diego Zoo"
+        ],
+        "newTop3": [
+          "San Diego Zoo"
+        ],
+        "classification": "EXACT"
+      },
+      {
+        "caseId": "TRV-ATUH-CONTROL",
+        "category": "TRAVEL_DESTINATION",
+        "status": "UNCHANGED_PASS",
+        "groundTruth": "Atuh Beach",
+        "previousTop3": [
+          "Nusa Penida",
+          "Atuh Beach"
+        ],
+        "newTop3": [
+          "Nusa Penida",
+          "Atuh Beach"
+        ],
+        "classification": "TOP3_EXACT"
+      },
+      {
+        "caseId": "TRV-BALI-CONTROL",
+        "category": "TRAVEL_DESTINATION",
+        "status": "UNCHANGED_PASS",
+        "groundTruth": "Bali",
+        "previousTop3": [
+          "Bali"
+        ],
+        "newTop3": [
+          "Bali"
+        ],
+        "classification": "EXACT"
+      },
+      {
+        "caseId": "FC01",
+        "category": "CLIFF_JUMPING",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "",
+        "previousTop3": [],
+        "newTop3": [],
+        "classification": "UNSCORED"
+      },
+      {
+        "caseId": "FC02",
+        "category": "CLIFF_JUMPING",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "",
+        "previousTop3": [],
+        "newTop3": [],
+        "classification": "UNSCORED"
+      },
+      {
+        "caseId": "FC03",
+        "category": "CLIFF_JUMPING",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "",
+        "previousTop3": [],
+        "newTop3": [],
+        "classification": "UNSCORED"
+      },
+      {
+        "caseId": "FC05",
+        "category": "CLIFF_JUMPING",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "",
+        "previousTop3": [],
+        "newTop3": [],
+        "classification": "UNSCORED"
+      },
+      {
+        "caseId": "FC06",
+        "category": "CLIFF_JUMPING",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "",
+        "previousTop3": [],
+        "newTop3": [],
+        "classification": "UNSCORED"
+      },
+      {
+        "caseId": "FC07",
+        "category": "CLIFF_JUMPING",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "",
+        "previousTop3": [],
+        "newTop3": [],
+        "classification": "UNSCORED"
+      },
+      {
+        "caseId": "FC08",
+        "category": "CLIFF_JUMPING",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "",
+        "previousTop3": [],
+        "newTop3": [],
+        "classification": "UNSCORED"
+      },
+      {
+        "caseId": "FC09",
+        "category": "CLIFF_JUMPING",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "",
+        "previousTop3": [],
+        "newTop3": [],
+        "classification": "UNSCORED"
+      },
+      {
+        "caseId": "FC10",
+        "category": "CLIFF_JUMPING",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "",
+        "previousTop3": [],
+        "newTop3": [],
+        "classification": "UNSCORED"
+      },
+      {
+        "caseId": "FC11",
+        "category": "CLIFF_JUMPING",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "",
+        "previousTop3": [],
+        "newTop3": [],
+        "classification": "UNSCORED"
+      },
+      {
+        "caseId": "FC12",
+        "category": "CLIFF_JUMPING",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "",
+        "previousTop3": [],
+        "newTop3": [],
+        "classification": "UNSCORED"
+      },
+      {
+        "caseId": "FC13",
+        "category": "CLIFF_JUMPING",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "",
+        "previousTop3": [],
+        "newTop3": [],
+        "classification": "UNSCORED"
+      },
+      {
+        "caseId": "FC14",
+        "category": "CLIFF_JUMPING",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "",
+        "previousTop3": [],
+        "newTop3": [],
+        "classification": "UNSCORED"
+      },
+      {
+        "caseId": "FC15",
+        "category": "CLIFF_JUMPING",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "",
+        "previousTop3": [],
+        "newTop3": [],
+        "classification": "UNSCORED"
+      },
+      {
+        "caseId": "FC16",
+        "category": "CLIFF_JUMPING",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "",
+        "previousTop3": [],
+        "newTop3": [],
+        "classification": "UNSCORED"
+      },
+      {
+        "caseId": "FC17",
+        "category": "CLIFF_JUMPING",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "",
+        "previousTop3": [],
+        "newTop3": [],
+        "classification": "UNSCORED"
+      },
+      {
+        "caseId": "FC18",
+        "category": "CLIFF_JUMPING",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "",
+        "previousTop3": [],
+        "newTop3": [],
+        "classification": "UNSCORED"
+      },
+      {
+        "caseId": "FC19",
+        "category": "CLIFF_JUMPING",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "",
+        "previousTop3": [],
+        "newTop3": [],
+        "classification": "UNSCORED"
+      },
+      {
+        "caseId": "FC20",
+        "category": "CLIFF_JUMPING",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "",
+        "previousTop3": [],
+        "newTop3": [],
+        "classification": "UNSCORED"
+      },
+      {
+        "caseId": "FC21",
+        "category": "CLIFF_JUMPING",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "",
+        "previousTop3": [],
+        "newTop3": [],
+        "classification": "UNSCORED"
+      },
+      {
+        "caseId": "FC22",
+        "category": "CLIFF_JUMPING",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "",
+        "previousTop3": [],
+        "newTop3": [],
+        "classification": "UNSCORED"
+      },
+      {
+        "caseId": "FC23",
+        "category": "CLIFF_JUMPING",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "",
+        "previousTop3": [],
+        "newTop3": [],
+        "classification": "UNSCORED"
+      },
+      {
+        "caseId": "FC24",
+        "category": "CLIFF_JUMPING",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "",
+        "previousTop3": [],
+        "newTop3": [],
+        "classification": "UNSCORED"
+      },
+      {
+        "caseId": "FC25",
+        "category": "CLIFF_JUMPING",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "",
+        "previousTop3": [],
+        "newTop3": [],
+        "classification": "UNSCORED"
+      },
+      {
+        "caseId": "FC26",
+        "category": "CLIFF_JUMPING",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "",
+        "previousTop3": [],
+        "newTop3": [],
+        "classification": "UNSCORED"
+      },
+      {
+        "caseId": "FC27",
+        "category": "CLIFF_JUMPING",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "",
+        "previousTop3": [],
+        "newTop3": [],
+        "classification": "UNSCORED"
+      },
+      {
+        "caseId": "FC28",
+        "category": "CLIFF_JUMPING",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "",
+        "previousTop3": [],
+        "newTop3": [],
+        "classification": "UNSCORED"
+      },
+      {
+        "caseId": "FC29",
+        "category": "CLIFF_JUMPING",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "",
+        "previousTop3": [],
+        "newTop3": [],
+        "classification": "UNSCORED"
+      },
+      {
+        "caseId": "FC30",
+        "category": "CLIFF_JUMPING",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "",
+        "previousTop3": [],
+        "newTop3": [],
+        "classification": "UNSCORED"
+      },
+      {
+        "caseId": "FC31",
+        "category": "CLIFF_JUMPING",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "",
+        "previousTop3": [],
+        "newTop3": [],
+        "classification": "UNSCORED"
+      },
+      {
+        "caseId": "FC32",
+        "category": "CLIFF_JUMPING",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "",
+        "previousTop3": [],
+        "newTop3": [],
+        "classification": "UNSCORED"
+      },
+      {
+        "caseId": "FC33",
+        "category": "CLIFF_JUMPING",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "",
+        "previousTop3": [],
+        "newTop3": [],
+        "classification": "UNSCORED"
+      },
+      {
+        "caseId": "FC34",
+        "category": "CLIFF_JUMPING",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "",
+        "previousTop3": [],
+        "newTop3": [],
+        "classification": "UNSCORED"
+      },
+      {
+        "caseId": "FC35",
+        "category": "CLIFF_JUMPING",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "",
+        "previousTop3": [],
+        "newTop3": [],
+        "classification": "UNSCORED"
+      },
+      {
+        "caseId": "FC36",
+        "category": "CLIFF_JUMPING",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "",
+        "previousTop3": [],
+        "newTop3": [],
+        "classification": "UNSCORED"
+      },
+      {
+        "caseId": "FC37",
+        "category": "CLIFF_JUMPING",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "",
+        "previousTop3": [],
+        "newTop3": [],
+        "classification": "UNSCORED"
+      },
+      {
+        "caseId": "FC38",
+        "category": "CLIFF_JUMPING",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "",
+        "previousTop3": [],
+        "newTop3": [],
+        "classification": "UNSCORED"
+      },
+      {
+        "caseId": "FC39",
+        "category": "CLIFF_JUMPING",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "",
+        "previousTop3": [],
+        "newTop3": [],
+        "classification": "UNSCORED"
+      },
+      {
+        "caseId": "FC40",
+        "category": "CLIFF_JUMPING",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "",
+        "previousTop3": [],
+        "newTop3": [],
+        "classification": "UNSCORED"
+      },
+      {
+        "caseId": "FC41",
+        "category": "CLIFF_JUMPING",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "",
+        "previousTop3": [],
+        "newTop3": [],
+        "classification": "UNSCORED"
+      },
+      {
+        "caseId": "FC42",
+        "category": "CLIFF_JUMPING",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "",
+        "previousTop3": [],
+        "newTop3": [],
+        "classification": "UNSCORED"
+      }
+    ]
+  },
+  "scores": [
+    {
+      "caseId": "R01",
+      "category": "CLIFF_JUMPING",
+      "scorable": false,
+      "classification": "UNSCORED",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "R02",
+      "category": "CLIFF_JUMPING",
+      "scorable": false,
+      "classification": "UNSCORED",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "R03",
+      "category": "HIKING_TRAIL",
+      "scorable": true,
+      "classification": "EXACT",
+      "exactAt1": true,
+      "exactAt3": true,
+      "matchedRank": 1,
+      "matchedBy": "CANONICAL",
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "R04",
+      "category": "CLIFF_JUMPING",
+      "scorable": true,
+      "classification": "ACCEPTABLE_ALIAS",
+      "exactAt1": true,
+      "exactAt3": true,
+      "matchedRank": 1,
+      "matchedBy": "ALIAS",
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "R05",
+      "category": "CLIFF_JUMPING",
+      "scorable": true,
+      "classification": "ACCEPTABLE_ALIAS",
+      "exactAt1": true,
+      "exactAt3": true,
+      "matchedRank": 1,
+      "matchedBy": "ALIAS",
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "R06",
+      "category": "CLIFF_JUMPING",
+      "scorable": false,
+      "classification": "UNSCORED",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "R07",
+      "category": "CLIFF_JUMPING",
+      "scorable": false,
+      "classification": "UNSCORED",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "R08",
+      "category": "CLIFF_JUMPING",
+      "scorable": true,
+      "classification": "WRONG",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "V02",
+      "category": "FOOD_RESTAURANT",
+      "scorable": true,
+      "classification": "ACCEPTABLE_ALIAS",
+      "exactAt1": true,
+      "exactAt3": true,
+      "matchedRank": 1,
+      "matchedBy": "ALIAS",
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "V03",
+      "category": "FOOD_RESTAURANT",
+      "scorable": true,
+      "classification": "EXACT",
+      "exactAt1": true,
+      "exactAt3": true,
+      "matchedRank": 1,
+      "matchedBy": "CANONICAL",
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "V04",
+      "category": "TRAVEL_DESTINATION",
+      "scorable": true,
+      "classification": "EXACT",
+      "exactAt1": true,
+      "exactAt3": true,
+      "matchedRank": 1,
+      "matchedBy": "CANONICAL",
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "V05",
+      "category": "FOOD_RESTAURANT",
+      "scorable": true,
+      "classification": "ACCEPTABLE_ALIAS",
+      "exactAt1": true,
+      "exactAt3": true,
+      "matchedRank": 1,
+      "matchedBy": "ALIAS",
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "H01",
+      "category": "FOOD_RESTAURANT",
+      "scorable": true,
+      "classification": "ACCEPTABLE_ALIAS",
+      "exactAt1": true,
+      "exactAt3": true,
+      "matchedRank": 1,
+      "matchedBy": "ALIAS",
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "H02",
+      "category": "FOOD_RESTAURANT",
+      "scorable": true,
+      "classification": "EXACT",
+      "exactAt1": true,
+      "exactAt3": true,
+      "matchedRank": 1,
+      "matchedBy": "CANONICAL",
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "H03",
+      "category": "FOOD_RESTAURANT",
+      "scorable": true,
+      "classification": "EXACT",
+      "exactAt1": true,
+      "exactAt3": true,
+      "matchedRank": 1,
+      "matchedBy": "CANONICAL",
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "H04",
+      "category": "FOOD_RESTAURANT",
+      "scorable": true,
+      "classification": "EXACT",
+      "exactAt1": true,
+      "exactAt3": true,
+      "matchedRank": 1,
+      "matchedBy": "CANONICAL",
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "H05",
+      "category": "FOOD_RESTAURANT",
+      "scorable": true,
+      "classification": "EXACT",
+      "exactAt1": true,
+      "exactAt3": true,
+      "matchedRank": 1,
+      "matchedBy": "CANONICAL",
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "H06",
+      "category": "FOOD_RESTAURANT",
+      "scorable": false,
+      "classification": "UNSCORED",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "H07",
+      "category": "FOOD_RESTAURANT",
+      "scorable": false,
+      "classification": "UNSCORED",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "H08",
+      "category": "FOOD_RESTAURANT",
+      "scorable": true,
+      "classification": "EXACT",
+      "exactAt1": true,
+      "exactAt3": true,
+      "matchedRank": 1,
+      "matchedBy": "CANONICAL",
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "H09",
+      "category": "FOOD_RESTAURANT",
+      "scorable": true,
+      "classification": "ACCEPTABLE_ALIAS",
+      "exactAt1": true,
+      "exactAt3": true,
+      "matchedRank": 1,
+      "matchedBy": "ALIAS",
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "H10",
+      "category": "FOOD_RESTAURANT",
+      "scorable": true,
+      "classification": "WRONG",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "H11",
+      "category": "FOOD_RESTAURANT",
+      "scorable": false,
+      "classification": "UNSCORED",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "H12",
+      "category": "FOOD_RESTAURANT",
+      "scorable": true,
+      "classification": "EXACT",
+      "exactAt1": true,
+      "exactAt3": true,
+      "matchedRank": 1,
+      "matchedBy": "CANONICAL",
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "P01",
+      "category": "FOOD_RESTAURANT",
+      "scorable": true,
+      "classification": "EXACT",
+      "exactAt1": true,
+      "exactAt3": true,
+      "matchedRank": 1,
+      "matchedBy": "CANONICAL",
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "P02",
+      "category": "FOOD_RESTAURANT",
+      "scorable": true,
+      "classification": "EXACT",
+      "exactAt1": true,
+      "exactAt3": true,
+      "matchedRank": 1,
+      "matchedBy": "CANONICAL",
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "P03",
+      "category": "FOOD_RESTAURANT",
+      "scorable": true,
+      "classification": "WRONG",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "P04",
+      "category": "FOOD_RESTAURANT",
+      "scorable": true,
+      "classification": "EXACT",
+      "exactAt1": true,
+      "exactAt3": true,
+      "matchedRank": 1,
+      "matchedBy": "CANONICAL",
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "P05",
+      "category": "FOOD_RESTAURANT",
+      "scorable": true,
+      "classification": "WRONG",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "P06",
+      "category": "FOOD_RESTAURANT",
+      "scorable": true,
+      "classification": "WRONG",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "P07",
+      "category": "FOOD_RESTAURANT",
+      "scorable": true,
+      "classification": "ACCEPTABLE_ALIAS",
+      "exactAt1": true,
+      "exactAt3": true,
+      "matchedRank": 1,
+      "matchedBy": "ALIAS",
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "P08",
+      "category": "FOOD_RESTAURANT",
+      "scorable": true,
+      "classification": "EXACT",
+      "exactAt1": true,
+      "exactAt3": true,
+      "matchedRank": 1,
+      "matchedBy": "CANONICAL",
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "P09",
+      "category": "FOOD_RESTAURANT",
+      "scorable": true,
+      "classification": "WRONG",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "P10",
+      "category": "FOOD_RESTAURANT",
+      "scorable": true,
+      "classification": "TECHNICAL_FAILURE",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "S01",
+      "category": "FOOD_RESTAURANT",
+      "scorable": true,
+      "classification": "EXACT",
+      "exactAt1": true,
+      "exactAt3": true,
+      "matchedRank": 1,
+      "matchedBy": "CANONICAL",
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "S02",
+      "category": "FOOD_RESTAURANT",
+      "scorable": false,
+      "classification": "UNSCORED",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "S03",
+      "category": "FOOD_RESTAURANT",
+      "scorable": false,
+      "classification": "UNSCORED",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "S04",
+      "category": "FOOD_RESTAURANT",
+      "scorable": false,
+      "classification": "UNSCORED",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "S05",
+      "category": "FOOD_RESTAURANT",
+      "scorable": false,
+      "classification": "UNSCORED",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "S06",
+      "category": "FOOD_RESTAURANT",
+      "scorable": true,
+      "classification": "EXACT",
+      "exactAt1": true,
+      "exactAt3": true,
+      "matchedRank": 1,
+      "matchedBy": "CANONICAL",
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "S07",
+      "category": "FOOD_RESTAURANT",
+      "scorable": false,
+      "classification": "UNSCORED",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "C01",
+      "category": "LANDMARK",
+      "scorable": false,
+      "classification": "UNSCORED",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "C02",
+      "category": "LANDMARK",
+      "scorable": false,
+      "classification": "UNSCORED",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "C03",
+      "category": "LANDMARK",
+      "scorable": false,
+      "classification": "UNSCORED",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "C04",
+      "category": "FOOD_RESTAURANT",
+      "scorable": false,
+      "classification": "UNSCORED",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "C05",
+      "category": "FOOD_RESTAURANT",
+      "scorable": false,
+      "classification": "UNSCORED",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "C06",
+      "category": "FOOD_RESTAURANT",
+      "scorable": true,
+      "classification": "EXACT",
+      "exactAt1": true,
+      "exactAt3": true,
+      "matchedRank": 1,
+      "matchedBy": "CANONICAL",
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "C07",
+      "category": "LANDMARK",
+      "scorable": true,
+      "classification": "EXACT",
+      "exactAt1": true,
+      "exactAt3": true,
+      "matchedRank": 1,
+      "matchedBy": "CANONICAL",
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "TRV-ATUH-CONTROL",
+      "category": "TRAVEL_DESTINATION",
+      "scorable": true,
+      "classification": "TOP3_EXACT",
+      "exactAt1": false,
+      "exactAt3": true,
+      "matchedRank": 2,
+      "matchedBy": "CANONICAL",
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": true
+    },
+    {
+      "caseId": "TRV-BALI-CONTROL",
+      "category": "TRAVEL_DESTINATION",
+      "scorable": true,
+      "classification": "EXACT",
+      "exactAt1": true,
+      "exactAt3": true,
+      "matchedRank": 1,
+      "matchedBy": "CANONICAL",
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": true
+    },
+    {
+      "caseId": "FC01",
+      "category": "CLIFF_JUMPING",
+      "scorable": false,
+      "classification": "UNSCORED",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "FC02",
+      "category": "CLIFF_JUMPING",
+      "scorable": false,
+      "classification": "UNSCORED",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "FC03",
+      "category": "CLIFF_JUMPING",
+      "scorable": false,
+      "classification": "UNSCORED",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "FC05",
+      "category": "CLIFF_JUMPING",
+      "scorable": false,
+      "classification": "UNSCORED",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "FC06",
+      "category": "CLIFF_JUMPING",
+      "scorable": false,
+      "classification": "UNSCORED",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "FC07",
+      "category": "CLIFF_JUMPING",
+      "scorable": false,
+      "classification": "UNSCORED",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "FC08",
+      "category": "CLIFF_JUMPING",
+      "scorable": false,
+      "classification": "UNSCORED",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "FC09",
+      "category": "CLIFF_JUMPING",
+      "scorable": false,
+      "classification": "UNSCORED",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "FC10",
+      "category": "CLIFF_JUMPING",
+      "scorable": false,
+      "classification": "UNSCORED",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "FC11",
+      "category": "CLIFF_JUMPING",
+      "scorable": false,
+      "classification": "UNSCORED",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "FC12",
+      "category": "CLIFF_JUMPING",
+      "scorable": false,
+      "classification": "UNSCORED",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "FC13",
+      "category": "CLIFF_JUMPING",
+      "scorable": false,
+      "classification": "UNSCORED",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "FC14",
+      "category": "CLIFF_JUMPING",
+      "scorable": false,
+      "classification": "UNSCORED",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "FC15",
+      "category": "CLIFF_JUMPING",
+      "scorable": false,
+      "classification": "UNSCORED",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "FC16",
+      "category": "CLIFF_JUMPING",
+      "scorable": false,
+      "classification": "UNSCORED",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "FC17",
+      "category": "CLIFF_JUMPING",
+      "scorable": false,
+      "classification": "UNSCORED",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "FC18",
+      "category": "CLIFF_JUMPING",
+      "scorable": false,
+      "classification": "UNSCORED",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "FC19",
+      "category": "CLIFF_JUMPING",
+      "scorable": false,
+      "classification": "UNSCORED",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "FC20",
+      "category": "CLIFF_JUMPING",
+      "scorable": false,
+      "classification": "UNSCORED",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "FC21",
+      "category": "CLIFF_JUMPING",
+      "scorable": false,
+      "classification": "UNSCORED",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "FC22",
+      "category": "CLIFF_JUMPING",
+      "scorable": false,
+      "classification": "UNSCORED",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "FC23",
+      "category": "CLIFF_JUMPING",
+      "scorable": false,
+      "classification": "UNSCORED",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "FC24",
+      "category": "CLIFF_JUMPING",
+      "scorable": false,
+      "classification": "UNSCORED",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "FC25",
+      "category": "CLIFF_JUMPING",
+      "scorable": false,
+      "classification": "UNSCORED",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "FC26",
+      "category": "CLIFF_JUMPING",
+      "scorable": false,
+      "classification": "UNSCORED",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "FC27",
+      "category": "CLIFF_JUMPING",
+      "scorable": false,
+      "classification": "UNSCORED",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "FC28",
+      "category": "CLIFF_JUMPING",
+      "scorable": false,
+      "classification": "UNSCORED",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "FC29",
+      "category": "CLIFF_JUMPING",
+      "scorable": false,
+      "classification": "UNSCORED",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "FC30",
+      "category": "CLIFF_JUMPING",
+      "scorable": false,
+      "classification": "UNSCORED",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "FC31",
+      "category": "CLIFF_JUMPING",
+      "scorable": false,
+      "classification": "UNSCORED",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "FC32",
+      "category": "CLIFF_JUMPING",
+      "scorable": false,
+      "classification": "UNSCORED",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "FC33",
+      "category": "CLIFF_JUMPING",
+      "scorable": false,
+      "classification": "UNSCORED",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "FC34",
+      "category": "CLIFF_JUMPING",
+      "scorable": false,
+      "classification": "UNSCORED",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "FC35",
+      "category": "CLIFF_JUMPING",
+      "scorable": false,
+      "classification": "UNSCORED",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "FC36",
+      "category": "CLIFF_JUMPING",
+      "scorable": false,
+      "classification": "UNSCORED",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "FC37",
+      "category": "CLIFF_JUMPING",
+      "scorable": false,
+      "classification": "UNSCORED",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "FC38",
+      "category": "CLIFF_JUMPING",
+      "scorable": false,
+      "classification": "UNSCORED",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "FC39",
+      "category": "CLIFF_JUMPING",
+      "scorable": false,
+      "classification": "UNSCORED",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "FC40",
+      "category": "CLIFF_JUMPING",
+      "scorable": false,
+      "classification": "UNSCORED",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "FC41",
+      "category": "CLIFF_JUMPING",
+      "scorable": false,
+      "classification": "UNSCORED",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "FC42",
+      "category": "CLIFF_JUMPING",
+      "scorable": false,
+      "classification": "UNSCORED",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    }
+  ],
+  "cost": {
+    "modelSpendUsd": null,
+    "otherProviderSpendUsd": null
+  },
+  "latency": {
+    "p50Ms": 21852,
+    "p95Ms": 93563
+  }
+}

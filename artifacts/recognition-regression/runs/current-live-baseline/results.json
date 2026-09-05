@@ -1,0 +1,3049 @@
+{
+  "schemaVersion": 2,
+  "runId": "recognition-live-2026-09-05T21-01-36-240Z",
+  "mode": "LIVE_CURRENT_BACKEND",
+  "generatedAt": "2026-09-05T21:14:44.645Z",
+  "category": "ALL",
+  "cacheReadUsed": false,
+  "modelRequests": 32,
+  "apiRequests": 72,
+  "knownCostUsd": null,
+  "attempts": [
+    {
+      "schemaVersion": 2,
+      "runId": "recognition-live-2026-09-05T21-01-36-240Z",
+      "caseId": "R03",
+      "category": "HIKING_TRAIL",
+      "sourceUrl": "https://www.instagram.com/reel/DZJ8ZvYub8Q/",
+      "recognitionVersion": "simple-sol-premium.v2",
+      "evidenceVersion": "premium-evidence-2026-09-05.v1",
+      "modelPath": "gpt-5.6-sol/F1:M1",
+      "acquisitionStatus": "ACQUIRED",
+      "status": "COMPLETED",
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Tamolitch Blue Pool (Tamolitch Falls)",
+          "identityType": "NAMED_NATURAL_FEATURE",
+          "locality": "McKenzie Bridge, Oregon",
+          "country": "United States",
+          "latitude": 44.3120373,
+          "longitude": -122.02704879999997,
+          "evidenceType": "CONTEXTUAL_OR_MEMORY_PRIOR",
+          "canonicalizationStatus": "CANONICAL_ALIAS",
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "safetyDecision": "REVIEW",
+      "frameManifest": [
+        {
+          "timestampSeconds": 0,
+          "sha256": "23c6299b0ee120ae38e4971f9a387fb9ca12973a58170adb0e12e2b1591ad718"
+        },
+        {
+          "timestampSeconds": 1,
+          "sha256": "d0c1d91c4c449e48c2de05f497c1d3b46fd3fe5ad58149f824cfa4c465e5f20c"
+        },
+        {
+          "timestampSeconds": 2,
+          "sha256": "24b1aa1192b5e3b27affb07d47e7197b884638af27b895b4bfb450b0e098cd3c"
+        },
+        {
+          "timestampSeconds": 3,
+          "sha256": "deabc0841b9f7191e1e57c51ccf5dc004f9b3983b195eed53e5cf2a053aa3675"
+        },
+        {
+          "timestampSeconds": 4,
+          "sha256": "29a858615688e897232ac73206cdf19254737693eb4d0835292238302f7c43f4"
+        },
+        {
+          "timestampSeconds": 6.533,
+          "sha256": "3e618d16fec9b32c9fb0b496b571e6cac0cff9b8307cabb2bc74efbf50f1d195"
+        }
+      ],
+      "placesCallCount": 1,
+      "cacheReadUsed": false,
+      "modelRequests": 1,
+      "apiRequests": 2,
+      "costUsd": 0.05936,
+      "latencyMs": 44647,
+      "failureCode": null,
+      "persistedAt": "2026-09-05T21:14:44.577Z"
+    },
+    {
+      "schemaVersion": 2,
+      "runId": "recognition-live-2026-09-05T21-01-36-240Z",
+      "caseId": "R04",
+      "category": "CLIFF_JUMPING",
+      "sourceUrl": "https://www.instagram.com/reel/C9Z963muLHI/",
+      "recognitionVersion": "simple-sol-premium.v2",
+      "evidenceVersion": "premium-evidence-2026-09-05.v1",
+      "modelPath": "gpt-5.6-sol/F1:M1",
+      "acquisitionStatus": "ACQUIRED",
+      "status": "COMPLETED",
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Dorset Marble Quarry (Norcross-West Marble Quarry)",
+          "identityType": "LANDMARK",
+          "locality": "Dorset, Vermont",
+          "country": "United States",
+          "latitude": null,
+          "longitude": null,
+          "evidenceType": "DISTINCTIVE_VISUAL_MATCH",
+          "canonicalizationStatus": "AMBIGUOUS_CANONICAL",
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "safetyDecision": "REVIEW",
+      "frameManifest": [
+        {
+          "timestampSeconds": 0,
+          "sha256": "a852b361589042d388a201103431183cf3920c2ce6689571d2777f90885b1489"
+        },
+        {
+          "timestampSeconds": 3,
+          "sha256": "a1e470a954d18c0911445528ffa2d24abbdaf074e7bef843e5e898514783707d"
+        },
+        {
+          "timestampSeconds": 4,
+          "sha256": "fd581240212b201734b007e33c07741298da887de3287e20dfb566ec7da393e0"
+        },
+        {
+          "timestampSeconds": 5,
+          "sha256": "1432f1e60e97cb7621f6d1a26510a7bc4e246ae95f6d88ebdae943a860688466"
+        },
+        {
+          "timestampSeconds": 6,
+          "sha256": "0f574e9b61b59b9828ed7ad1370e51b589db65a8b51a7288eba08544fccf5f8e"
+        },
+        {
+          "timestampSeconds": 8.933,
+          "sha256": "285a9c61e2a03be7e46badcb43a1f664c45229cc10d308cf110b9932be9c9857"
+        }
+      ],
+      "placesCallCount": 1,
+      "cacheReadUsed": false,
+      "modelRequests": 1,
+      "apiRequests": 2,
+      "costUsd": 0.04094,
+      "latencyMs": 23035,
+      "failureCode": null,
+      "persistedAt": "2026-09-05T21:14:44.580Z"
+    },
+    {
+      "schemaVersion": 2,
+      "runId": "recognition-live-2026-09-05T21-01-36-240Z",
+      "caseId": "R05",
+      "category": "CLIFF_JUMPING",
+      "sourceUrl": "https://www.instagram.com/reel/Db5qatGJgqH/",
+      "recognitionVersion": "simple-sol-premium.v2",
+      "evidenceVersion": "premium-evidence-2026-09-05.v1",
+      "modelPath": "gpt-5.6-sol/F1:M1",
+      "acquisitionStatus": "ACQUIRED",
+      "status": "COMPLETED",
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Okere Falls Scenic Reserve (Kaituna River)",
+          "identityType": "LANDMARK",
+          "locality": "Okere Falls, Bay of Plenty",
+          "country": "New Zealand",
+          "latitude": -38.0139116,
+          "longitude": 176.3445856,
+          "evidenceType": "DISTINCTIVE_VISUAL_MATCH",
+          "canonicalizationStatus": "CANONICAL_ALIAS",
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        },
+        {
+          "rank": 2,
+          "name": "Tutea Falls",
+          "identityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Okere Falls, Bay of Plenty",
+          "country": "New Zealand",
+          "latitude": -38.0119452,
+          "longitude": 176.3445132,
+          "evidenceType": "DISTINCTIVE_VISUAL_MATCH",
+          "canonicalizationStatus": "CANONICAL_EXACT",
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        },
+        {
+          "rank": 3,
+          "name": "Trout Pool Falls",
+          "identityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Okere Falls, Bay of Plenty",
+          "country": "New Zealand",
+          "latitude": -38.007756,
+          "longitude": 176.343095,
+          "evidenceType": "DISTINCTIVE_VISUAL_MATCH",
+          "canonicalizationStatus": "CANONICAL_EXACT",
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "safetyDecision": "REVIEW",
+      "frameManifest": [
+        {
+          "timestampSeconds": 0,
+          "sha256": "bc4e98fd38b7930eb59bb3b40b96cda722a6c4d851b8594d041dccce25fe7528"
+        },
+        {
+          "timestampSeconds": 5,
+          "sha256": "1e4d28ca820458139964fcedb9af9591d3b051d3f9e14359667b7adbd1099955"
+        },
+        {
+          "timestampSeconds": 9,
+          "sha256": "7df30cafc933b92759d73986b5b28d90f4c32bd796321950d6e95ce4cadea8df"
+        },
+        {
+          "timestampSeconds": 11,
+          "sha256": "377bcf9ee8796e329704f45713f8015aa43d8869b9d341fbc06588646341a345"
+        },
+        {
+          "timestampSeconds": 13,
+          "sha256": "fccc4b789b3572f514e86c32d0a7e8f2896d1aa8d0737ec3ad2b7c752e08c456"
+        },
+        {
+          "timestampSeconds": 15.467,
+          "sha256": "9ecb2434ff459d87c50e2f39c484fea739c19a1c35fbd9b9c3854e459d86160a"
+        }
+      ],
+      "placesCallCount": 3,
+      "cacheReadUsed": false,
+      "modelRequests": 1,
+      "apiRequests": 4,
+      "costUsd": 0.042836,
+      "latencyMs": 28289,
+      "failureCode": null,
+      "persistedAt": "2026-09-05T21:14:44.583Z"
+    },
+    {
+      "schemaVersion": 2,
+      "runId": "recognition-live-2026-09-05T21-01-36-240Z",
+      "caseId": "R08",
+      "category": "CLIFF_JUMPING",
+      "sourceUrl": "https://www.instagram.com/reel/CqJo6QHJqPo/",
+      "recognitionVersion": "simple-sol-premium.v2",
+      "evidenceVersion": "premium-evidence-2026-09-05.v1",
+      "modelPath": "gpt-5.6-sol/F1:M1",
+      "acquisitionStatus": "ACQUIRED",
+      "status": "COMPLETED",
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Moku Nui, Mokulua Islands",
+          "identityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Kailua, Hawaii",
+          "country": "United States",
+          "latitude": null,
+          "longitude": null,
+          "evidenceType": "DISTINCTIVE_VISUAL_MATCH",
+          "canonicalizationStatus": "NAMED_LEAD",
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        },
+        {
+          "rank": 2,
+          "name": "Queen's Bath cliff-jumping cove, Moku Nui",
+          "identityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Kailua, Hawaii",
+          "country": "United States",
+          "latitude": 21.3919154,
+          "longitude": -157.6986351,
+          "evidenceType": "DISTINCTIVE_VISUAL_MATCH",
+          "canonicalizationStatus": "CANONICAL_ALIAS",
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "safetyDecision": "REVIEW",
+      "frameManifest": [
+        {
+          "timestampSeconds": 0,
+          "sha256": "afe19698d3bec9f5a431e2707eed06fffe1dd89d1dfa103311850613eadfb7e7"
+        },
+        {
+          "timestampSeconds": 3,
+          "sha256": "f5ecab733643bdc1e8920fad0d46b1a96841ce94e3d02584e90dfb9dbabe4516"
+        },
+        {
+          "timestampSeconds": 4,
+          "sha256": "8555c3c15fd88e82d84970329b16ed85e57edc0727b0ef0a92999d6a6be7f680"
+        },
+        {
+          "timestampSeconds": 5,
+          "sha256": "ec4682e7a91b3d3fd00103761a15ca5af00e231101d0c9cc3ced6efcf281e260"
+        },
+        {
+          "timestampSeconds": 6,
+          "sha256": "1f2686689eb8efe6d892e8ed6bf470ea02d4b19914f0f645caf024127ccbee30"
+        },
+        {
+          "timestampSeconds": 7.733,
+          "sha256": "5709cbadb95e5f9b8ed9daf33fd231e989fcfaacccde1e591c7c4731891c399d"
+        }
+      ],
+      "placesCallCount": 2,
+      "cacheReadUsed": false,
+      "modelRequests": 1,
+      "apiRequests": 3,
+      "costUsd": 0.051056,
+      "latencyMs": 32969,
+      "failureCode": null,
+      "persistedAt": "2026-09-05T21:14:44.586Z"
+    },
+    {
+      "schemaVersion": 2,
+      "runId": "recognition-live-2026-09-05T21-01-36-240Z",
+      "caseId": "V02",
+      "category": "FOOD_RESTAURANT",
+      "sourceUrl": "https://www.instagram.com/reel/DUWyZkfgbT4/",
+      "recognitionVersion": "simple-sol-premium.v2",
+      "evidenceVersion": "premium-evidence-2026-09-05.v1",
+      "modelPath": "gpt-5.6-sol/F1:M1",
+      "acquisitionStatus": "ACQUIRED",
+      "status": "COMPLETED",
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Capone's Cucina",
+          "identityType": "BUSINESS",
+          "locality": "Huntington Beach, California",
+          "country": "United States",
+          "latitude": 33.6764542,
+          "longitude": -117.9870264,
+          "evidenceType": "DISTINCTIVE_VISUAL_MATCH",
+          "canonicalizationStatus": "CANONICAL_ALIAS",
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "safetyDecision": "REVIEW",
+      "frameManifest": [
+        {
+          "timestampSeconds": 0,
+          "sha256": "0773d15879ac0ed8dd706325cfe5b934445eec68b75ab0da40e0edd4ea5fe755"
+        },
+        {
+          "timestampSeconds": 7,
+          "sha256": "529e69fd4a000bd3851bcee53988512da8d3f943ffce3e3176790f8babf4721b"
+        },
+        {
+          "timestampSeconds": 14,
+          "sha256": "a87d7b65b055a8e210d747832ab354716a2180818b11fe5196a9531bac4a9673"
+        },
+        {
+          "timestampSeconds": 16,
+          "sha256": "e54f2038d39ee0d91efec20c393ef38b5466a7e7ab198f1236d251ce9bc6227f"
+        },
+        {
+          "timestampSeconds": 27,
+          "sha256": "d2a1b370754d5fca8c7f46cc6056d02b7dfe49c7e1437094e58d3a120b30867e"
+        },
+        {
+          "timestampSeconds": 32.333,
+          "sha256": "d58fa8788bae1ebbe819f74d10b618299b9888ed5ac044c67e09dc42415552f7"
+        }
+      ],
+      "placesCallCount": 1,
+      "cacheReadUsed": false,
+      "modelRequests": 1,
+      "apiRequests": 2,
+      "costUsd": 0.03724,
+      "latencyMs": 21820,
+      "failureCode": null,
+      "persistedAt": "2026-09-05T21:14:44.588Z"
+    },
+    {
+      "schemaVersion": 2,
+      "runId": "recognition-live-2026-09-05T21-01-36-240Z",
+      "caseId": "V03",
+      "category": "FOOD_RESTAURANT",
+      "sourceUrl": "https://www.instagram.com/reel/CxdY35frOrf/",
+      "recognitionVersion": "simple-sol-premium.v2",
+      "evidenceVersion": "premium-evidence-2026-09-05.v1",
+      "modelPath": "gpt-5.6-sol/F1:M1",
+      "acquisitionStatus": "ACQUIRED",
+      "status": "COMPLETED",
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Brooklyn City Pizzeria & Market",
+          "identityType": "BUSINESS",
+          "locality": "Laguna Niguel, California",
+          "country": "United States",
+          "latitude": 33.5262326,
+          "longitude": -117.71025859999999,
+          "evidenceType": "SOURCE_TEXT_IDENTITY",
+          "canonicalizationStatus": "CANONICAL_EXACT",
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "safetyDecision": "AUTO_SAVE",
+      "frameManifest": [
+        {
+          "timestampSeconds": 0,
+          "sha256": "d37adb13f64d87bfdea096f7c6f2b8bf7f5d2679979dc0d4b492bd1267404ffb"
+        },
+        {
+          "timestampSeconds": 9,
+          "sha256": "50450d27a1b41aa3627b2f6ecb0bb6b93af8e6fcf7cc30a2866d2f0cebb68f7c"
+        },
+        {
+          "timestampSeconds": 13,
+          "sha256": "42e0b31ffe2f48d8f34a8d2b2bfdb05b4523231a7ae6434008cea05f0bade0ef"
+        },
+        {
+          "timestampSeconds": 22,
+          "sha256": "81ac60fc46d93dcf1e07104dd1204c7eff77bb98ac11fa29648c011a07c161ca"
+        },
+        {
+          "timestampSeconds": 30,
+          "sha256": "b4ae15364d74f7116f214d7fb9430072bbb6ca5ec1e0e30995bccf612363bb12"
+        },
+        {
+          "timestampSeconds": 35.933,
+          "sha256": "49c214e310dd8fa5600470acc83fc4910d17005f4a5c982727ad9226115e02ce"
+        }
+      ],
+      "placesCallCount": 1,
+      "cacheReadUsed": false,
+      "modelRequests": 1,
+      "apiRequests": 2,
+      "costUsd": 0.035668,
+      "latencyMs": 24384,
+      "failureCode": null,
+      "persistedAt": "2026-09-05T21:14:44.590Z"
+    },
+    {
+      "schemaVersion": 2,
+      "runId": "recognition-live-2026-09-05T21-01-36-240Z",
+      "caseId": "V04",
+      "category": "TRAVEL_DESTINATION",
+      "sourceUrl": "https://www.instagram.com/reel/DYq7Q3Lza0G/",
+      "recognitionVersion": "simple-sol-premium.v2",
+      "evidenceVersion": "premium-evidence-2026-09-05.v1",
+      "modelPath": "gpt-5.6-sol/F1:M1",
+      "acquisitionStatus": "ACQUIRED",
+      "status": "COMPLETED",
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Hellfire Bay",
+          "identityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Esperance, Western Australia",
+          "country": "Australia",
+          "latitude": null,
+          "longitude": null,
+          "evidenceType": "SOURCE_TEXT_IDENTITY",
+          "canonicalizationStatus": "AMBIGUOUS_CANONICAL",
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "safetyDecision": "REVIEW",
+      "frameManifest": [
+        {
+          "timestampSeconds": 0,
+          "sha256": "bf5dd5ec468a6c7f4f8ac47f56058293c0f3c195c7c990db1a65daf7485aec0d"
+        },
+        {
+          "timestampSeconds": 1,
+          "sha256": "4108d41414ce359aa663753edbc9f573c788161338a89bca71c11a65b0282f92"
+        },
+        {
+          "timestampSeconds": 2,
+          "sha256": "066fd2ab47cfb72ba9e78c4c9fa248512b390125355b2a389e6a6bf1371e54d2"
+        },
+        {
+          "timestampSeconds": 3,
+          "sha256": "520f85c03a761937e3a69c8c0bc9e3a31e52bd3f1576cda95c7431ab663b5356"
+        },
+        {
+          "timestampSeconds": 6,
+          "sha256": "21cd6c3111b172ea7d3055be05ed2fccdad0c202251009c05ec7fc2148b8f53d"
+        },
+        {
+          "timestampSeconds": 8.567,
+          "sha256": "a3216d3f604c4ef08751c2980e06f9bf226f9d870b511ac56d4cbb9aa7d5e046"
+        }
+      ],
+      "placesCallCount": 1,
+      "cacheReadUsed": false,
+      "modelRequests": 1,
+      "apiRequests": 2,
+      "costUsd": 0.035112,
+      "latencyMs": 18737,
+      "failureCode": null,
+      "persistedAt": "2026-09-05T21:14:44.591Z"
+    },
+    {
+      "schemaVersion": 2,
+      "runId": "recognition-live-2026-09-05T21-01-36-240Z",
+      "caseId": "V05",
+      "category": "FOOD_RESTAURANT",
+      "sourceUrl": "https://www.instagram.com/p/DX77lghIHeG/",
+      "recognitionVersion": "simple-sol-premium.v2",
+      "evidenceVersion": "premium-evidence-2026-09-05.v1",
+      "modelPath": "gpt-5.6-sol/F1:M1",
+      "acquisitionStatus": "ACQUIRED",
+      "status": "COMPLETED",
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Paradise Dynasty at South Coast Plaza",
+          "identityType": "BUSINESS",
+          "locality": "Costa Mesa, California",
+          "country": "United States",
+          "latitude": 33.6887216,
+          "longitude": -117.8880952,
+          "evidenceType": "DISTINCTIVE_VISUAL_MATCH",
+          "canonicalizationStatus": "CANONICAL_ALIAS",
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        },
+        {
+          "rank": 2,
+          "name": "Paradise Dynasty at The Americana at Brand",
+          "identityType": "BUSINESS",
+          "locality": "Glendale, California",
+          "country": "United States",
+          "latitude": 34.1431247,
+          "longitude": -118.2552559,
+          "evidenceType": "DISTINCTIVE_VISUAL_MATCH",
+          "canonicalizationStatus": "CANONICAL_ALIAS",
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "safetyDecision": "REVIEW",
+      "frameManifest": [
+        {
+          "timestampSeconds": 0,
+          "sha256": "b9c1890e60010c3c8830e1fc9e0486de001421623ab395d1a6e3e3b97acea8dd"
+        },
+        {
+          "timestampSeconds": 5,
+          "sha256": "ae82a2b44cba5324758ae0b82a10d395a6a25ab2f2a0a080b50fbda4e2f2ba09"
+        },
+        {
+          "timestampSeconds": 13,
+          "sha256": "9366103d908423087da11bf159f01e21ae2f07fdcd559a21ace7e38aa89362ad"
+        },
+        {
+          "timestampSeconds": 18,
+          "sha256": "b2bc5ac3352f5aae301cc26e2b8294e63a7bc429003730e7cbc25a194d0f47d6"
+        },
+        {
+          "timestampSeconds": 27,
+          "sha256": "d52b536106b0f09b2813533d34de1014189c152cf698c91a3fd9c04fdeca4d83"
+        },
+        {
+          "timestampSeconds": 36.8,
+          "sha256": "97f90b1c1d3cb8bb8b518d249664adf380cc089d905fa09f5df3fb963d1b29cf"
+        }
+      ],
+      "placesCallCount": 2,
+      "cacheReadUsed": false,
+      "modelRequests": 1,
+      "apiRequests": 3,
+      "costUsd": 0.04362,
+      "latencyMs": 26049,
+      "failureCode": null,
+      "persistedAt": "2026-09-05T21:14:44.593Z"
+    },
+    {
+      "schemaVersion": 2,
+      "runId": "recognition-live-2026-09-05T21-01-36-240Z",
+      "caseId": "H01",
+      "category": "FOOD_RESTAURANT",
+      "sourceUrl": "https://www.instagram.com/reel/DYpcd2ZBTsZ/",
+      "recognitionVersion": "simple-sol-premium.v2",
+      "evidenceVersion": "premium-evidence-2026-09-05.v1",
+      "modelPath": "gpt-5.6-sol/F1:M1",
+      "acquisitionStatus": "ACQUIRED",
+      "status": "COMPLETED",
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "2nd Floor Gallery Bar & Grill",
+          "identityType": "BUSINESS",
+          "locality": "Huntington Beach, California",
+          "country": "United States",
+          "latitude": 33.6577917,
+          "longitude": -118.00094720000001,
+          "evidenceType": "DISTINCTIVE_VISUAL_MATCH",
+          "canonicalizationStatus": "CANONICAL_ALIAS",
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "safetyDecision": "REVIEW",
+      "frameManifest": [
+        {
+          "timestampSeconds": 0,
+          "sha256": "48d8b5132a0a4b6edab9bf47505ea83713a7891311c07b13abf287a65d4652ef"
+        },
+        {
+          "timestampSeconds": 2,
+          "sha256": "4873a192fb43c7e657edd5aad6668314431bfa1413c5f789bc4f36128f1997dc"
+        },
+        {
+          "timestampSeconds": 6,
+          "sha256": "3395c5662b25e4881705f4c62db4874e31fb979c0d8646e4ed6669b527110409"
+        },
+        {
+          "timestampSeconds": 8,
+          "sha256": "4dace7715e779c1a27437b4c3151697655ed519c804f792f6ee79f58136f6249"
+        },
+        {
+          "timestampSeconds": 12,
+          "sha256": "14cb8f5e03547d92377426fb119c964b3bdcb56c0871b85a9215847801c290d3"
+        },
+        {
+          "timestampSeconds": 14.8,
+          "sha256": "7652f0e24aea8692c894beea6f7f04a06dcaabf2390abd59e9bd0e812c5ef7fa"
+        }
+      ],
+      "placesCallCount": 1,
+      "cacheReadUsed": false,
+      "modelRequests": 1,
+      "apiRequests": 2,
+      "costUsd": 0.032712,
+      "latencyMs": 15032,
+      "failureCode": null,
+      "persistedAt": "2026-09-05T21:14:44.594Z"
+    },
+    {
+      "schemaVersion": 2,
+      "runId": "recognition-live-2026-09-05T21-01-36-240Z",
+      "caseId": "H02",
+      "category": "FOOD_RESTAURANT",
+      "sourceUrl": "https://www.instagram.com/reel/C-BEtdnyGdR/",
+      "recognitionVersion": "simple-sol-premium.v2",
+      "evidenceVersion": "premium-evidence-2026-09-05.v1",
+      "modelPath": "gpt-5.6-sol/F1:M1",
+      "acquisitionStatus": "ACQUIRED",
+      "status": "COMPLETED",
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Mad Yolks",
+          "identityType": "BUSINESS",
+          "locality": "Santa Cruz, California",
+          "country": "United States",
+          "latitude": 36.975037799999996,
+          "longitude": -122.0266371,
+          "evidenceType": "SOURCE_TEXT_IDENTITY",
+          "canonicalizationStatus": "CANONICAL_EXACT",
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "safetyDecision": "AUTO_SAVE",
+      "frameManifest": [
+        {
+          "timestampSeconds": 0,
+          "sha256": "ba70cc90e8b4631bdfd677ac0866c76f6effcb5b38fe267bbe9e35920f0b0aa5"
+        },
+        {
+          "timestampSeconds": 3,
+          "sha256": "d77a164231c71e5efb5801b382e639985b35a71af5e798be2f9e5e7af22a8e57"
+        },
+        {
+          "timestampSeconds": 5,
+          "sha256": "796d8c79e050c861b5ae81f69a329372d246b13e8739c3696fba494e8d945c57"
+        },
+        {
+          "timestampSeconds": 8,
+          "sha256": "8e3f02d2032dddeb87692b85d15d3d847ca8a4fbdc39650caa81a2e73f7ff7a6"
+        },
+        {
+          "timestampSeconds": 10,
+          "sha256": "1f8fa026a9f4a124e61f67c0e818cfd8c68ee0c474118c2496ad68aa9d65d95b"
+        },
+        {
+          "timestampSeconds": 11.5,
+          "sha256": "f880a7ef198fad4b58fa5d2aab84261c6de13512c1b0cfb29e6142d49a361d7b"
+        }
+      ],
+      "placesCallCount": 1,
+      "cacheReadUsed": false,
+      "modelRequests": 1,
+      "apiRequests": 2,
+      "costUsd": 0.035548,
+      "latencyMs": 16566,
+      "failureCode": null,
+      "persistedAt": "2026-09-05T21:14:44.596Z"
+    },
+    {
+      "schemaVersion": 2,
+      "runId": "recognition-live-2026-09-05T21-01-36-240Z",
+      "caseId": "H03",
+      "category": "FOOD_RESTAURANT",
+      "sourceUrl": "https://www.instagram.com/reel/DV_bi8LiaIz/",
+      "recognitionVersion": "simple-sol-premium.v2",
+      "evidenceVersion": "premium-evidence-2026-09-05.v1",
+      "modelPath": "gpt-5.6-sol/F1:M1",
+      "acquisitionStatus": "ACQUIRED",
+      "status": "COMPLETED",
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Las Palmas Taco Bar",
+          "identityType": "BUSINESS",
+          "locality": "Santa Cruz, California",
+          "country": "United States",
+          "latitude": 36.9639946,
+          "longitude": -122.0249135,
+          "evidenceType": "SOURCE_TEXT_IDENTITY",
+          "canonicalizationStatus": "CANONICAL_EXACT",
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "safetyDecision": "AUTO_SAVE",
+      "frameManifest": [
+        {
+          "timestampSeconds": 0,
+          "sha256": "58dda8fab162d32c565986d01bd7a887931eead20de6d889a8de8cd24de78a07"
+        },
+        {
+          "timestampSeconds": 13,
+          "sha256": "8427a86a6a8274f804ffcb51bce6e0c7e3bc4ffd0e94f448edcab9235bd13be9"
+        },
+        {
+          "timestampSeconds": 45,
+          "sha256": "3e384d9d789a235577842e61644e1d84138bc9a706e4d66a978e0ab19be78fec"
+        },
+        {
+          "timestampSeconds": 51,
+          "sha256": "b3cb1a7bb6f1d4960f5740a607806f76f5998fa8c45e022de3d054c95205f53f"
+        },
+        {
+          "timestampSeconds": 97,
+          "sha256": "33ea98cfeed95d85645b684f473db3b64f7234d39378ea2b2bb60534e3adcb10"
+        },
+        {
+          "timestampSeconds": 147.5,
+          "sha256": "b21644c062679e8240c0ab4a6fa1b737d0235c57bcd0c06fc849e04ccd584856"
+        }
+      ],
+      "placesCallCount": 1,
+      "cacheReadUsed": false,
+      "modelRequests": 1,
+      "apiRequests": 2,
+      "costUsd": 0.028512,
+      "latencyMs": 30766,
+      "failureCode": null,
+      "persistedAt": "2026-09-05T21:14:44.598Z"
+    },
+    {
+      "schemaVersion": 2,
+      "runId": "recognition-live-2026-09-05T21-01-36-240Z",
+      "caseId": "H04",
+      "category": "FOOD_RESTAURANT",
+      "sourceUrl": "https://www.instagram.com/reel/DWUI9fvDCck/",
+      "recognitionVersion": "simple-sol-premium.v2",
+      "evidenceVersion": "premium-evidence-2026-09-05.v1",
+      "modelPath": "gpt-5.6-sol/F1:M1",
+      "acquisitionStatus": "ACQUIRED",
+      "status": "COMPLETED",
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Seabright Deli",
+          "identityType": "BUSINESS",
+          "locality": "Santa Cruz, California",
+          "country": "United States",
+          "latitude": 36.9667854,
+          "longitude": -122.0079763,
+          "evidenceType": "SOURCE_TEXT_IDENTITY",
+          "canonicalizationStatus": "CANONICAL_EXACT",
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "safetyDecision": "AUTO_SAVE",
+      "frameManifest": [
+        {
+          "timestampSeconds": 0,
+          "sha256": "e4564eb13c464db0c30b22b431df91d85993b00f112aff01fd9dd805a78e9912"
+        },
+        {
+          "timestampSeconds": 7,
+          "sha256": "741dda9567d426e8031c2c3f00d510e5ca25aebb491670a610e4831c750e3eba"
+        },
+        {
+          "timestampSeconds": 10,
+          "sha256": "143517b47cdfecc1d09bb7063f3057c5f861e93c5ca5b880932027514aee03ad"
+        },
+        {
+          "timestampSeconds": 19,
+          "sha256": "e46dc16a3db9e082cf69fc295cf0e7c6e53b90f00f86369e1f8ecbcf126013c6"
+        },
+        {
+          "timestampSeconds": 26,
+          "sha256": "a99037eddeb726c861c746f90638cefebaea7b48cbc5e4db470fc4bb8362326c"
+        },
+        {
+          "timestampSeconds": 32.1,
+          "sha256": "ad7e9f7c0d074eaba75ec4425dcd0d88102d2fd462923a5ddc1c3e41f31348eb"
+        }
+      ],
+      "placesCallCount": 1,
+      "cacheReadUsed": false,
+      "modelRequests": 1,
+      "apiRequests": 2,
+      "costUsd": 0.0334,
+      "latencyMs": 18775,
+      "failureCode": null,
+      "persistedAt": "2026-09-05T21:14:44.599Z"
+    },
+    {
+      "schemaVersion": 2,
+      "runId": "recognition-live-2026-09-05T21-01-36-240Z",
+      "caseId": "H05",
+      "category": "FOOD_RESTAURANT",
+      "sourceUrl": "https://www.instagram.com/reel/C2QKOHuP6qG/",
+      "recognitionVersion": "simple-sol-premium.v2",
+      "evidenceVersion": "premium-evidence-2026-09-05.v1",
+      "modelPath": "gpt-5.6-sol/F1:M1",
+      "acquisitionStatus": "ACQUIRED",
+      "status": "COMPLETED",
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Mad Yolks",
+          "identityType": "BUSINESS",
+          "locality": "Santa Cruz, California",
+          "country": "United States",
+          "latitude": 36.975037799999996,
+          "longitude": -122.0266371,
+          "evidenceType": "SOURCE_TEXT_IDENTITY",
+          "canonicalizationStatus": "CANONICAL_EXACT",
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "safetyDecision": "AUTO_SAVE",
+      "frameManifest": [
+        {
+          "timestampSeconds": 0,
+          "sha256": "1bdf30c80487bb7b8f7ab56451004676f3be5d22d3aaec655a1d22858dc52fc3"
+        },
+        {
+          "timestampSeconds": 3,
+          "sha256": "3497b7f1c0131e1d46b75f9fe789952cbeadd91c5e4c769e7c5e3da894dbd9e7"
+        },
+        {
+          "timestampSeconds": 4,
+          "sha256": "c141ec8a1416644b326e5936bf7b40e0498dbcd986c2ee511c2ad6fab745ebe5"
+        },
+        {
+          "timestampSeconds": 7,
+          "sha256": "a1ad02c2878587dc092e62b5eb05bec19781ef46e1dff232ea6abb81442b2b5d"
+        },
+        {
+          "timestampSeconds": 8,
+          "sha256": "28db22509f24de9a0282b900212e2af7b1f9e7b44480b64dfe7c679167172f41"
+        },
+        {
+          "timestampSeconds": 11.633,
+          "sha256": "9fce91b01315d0c9fe85ef192204726d6432af17109db724fc8f7a194fa1e4e4"
+        }
+      ],
+      "placesCallCount": 1,
+      "cacheReadUsed": false,
+      "modelRequests": 1,
+      "apiRequests": 2,
+      "costUsd": 0.032556,
+      "latencyMs": 14873,
+      "failureCode": null,
+      "persistedAt": "2026-09-05T21:14:44.601Z"
+    },
+    {
+      "schemaVersion": 2,
+      "runId": "recognition-live-2026-09-05T21-01-36-240Z",
+      "caseId": "H06",
+      "category": "FOOD_RESTAURANT",
+      "sourceUrl": "https://www.instagram.com/reel/DYlLg3coKFw/",
+      "recognitionVersion": "simple-sol-premium.v2",
+      "evidenceVersion": "premium-evidence-2026-09-05.v1",
+      "modelPath": "gpt-5.6-sol/F1:M1",
+      "acquisitionStatus": "ACQUIRED",
+      "status": "COMPLETED",
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Baqba Mexican Grill – Rialto",
+          "identityType": "BUSINESS",
+          "locality": "Rialto, California",
+          "country": "United States",
+          "latitude": 34.1332126,
+          "longitude": -117.39309449999999,
+          "evidenceType": "DISTINCTIVE_VISUAL_MATCH",
+          "canonicalizationStatus": "CANONICAL_ALIAS",
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        },
+        {
+          "rank": 2,
+          "name": "Baqba Mexican Grill – Montclair",
+          "identityType": "BUSINESS",
+          "locality": "Montclair, California",
+          "country": "United States",
+          "latitude": 34.06348990000001,
+          "longitude": -117.71156579999999,
+          "evidenceType": "DISTINCTIVE_VISUAL_MATCH",
+          "canonicalizationStatus": "CANONICAL_ALIAS",
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "safetyDecision": "REVIEW",
+      "frameManifest": [
+        {
+          "timestampSeconds": 0,
+          "sha256": "b0582339d78c6e07eec619420afc9aeee0ee3b0e0cc10fd94dc823c380fb735e"
+        },
+        {
+          "timestampSeconds": 8,
+          "sha256": "4c2b1ff1232954881b0158ab5e7f2eb47bf54713a678b5ea32aa0aaca4d39c77"
+        },
+        {
+          "timestampSeconds": 15,
+          "sha256": "12fe299ab1d9fc2a65b274722ce5eb9a6fbd4a901d8242ab4ebe6d7343225b91"
+        },
+        {
+          "timestampSeconds": 19,
+          "sha256": "c06236a692e519329ed224ef24ec162655bb2ff900a06d1a57f7791038cb8393"
+        },
+        {
+          "timestampSeconds": 24,
+          "sha256": "ff2131f416816f4cfaea9ff740f215cbbbd4cc91646793b867bc2ee7364e9fb7"
+        },
+        {
+          "timestampSeconds": 31.067,
+          "sha256": "bcedc310cc1dcc2578efbbd58ddcd95418c2209895bb8fccdb843f90668f65bc"
+        }
+      ],
+      "placesCallCount": 2,
+      "cacheReadUsed": false,
+      "modelRequests": 1,
+      "apiRequests": 3,
+      "costUsd": 0.040856,
+      "latencyMs": 29133,
+      "failureCode": null,
+      "persistedAt": "2026-09-05T21:14:44.603Z"
+    },
+    {
+      "schemaVersion": 2,
+      "runId": "recognition-live-2026-09-05T21-01-36-240Z",
+      "caseId": "H08",
+      "category": "FOOD_RESTAURANT",
+      "sourceUrl": "https://www.instagram.com/reel/DYfr81GhvTS/",
+      "recognitionVersion": "simple-sol-premium.v2",
+      "evidenceVersion": "premium-evidence-2026-09-05.v1",
+      "modelPath": "gpt-5.6-sol/F1:M1",
+      "acquisitionStatus": "ACQUIRED",
+      "status": "COMPLETED",
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Loaded Cafe – Orange",
+          "identityType": "BUSINESS",
+          "locality": "Orange, California",
+          "country": "United States",
+          "latitude": 33.8182134,
+          "longitude": -117.8363484,
+          "evidenceType": "DISTINCTIVE_VISUAL_MATCH",
+          "canonicalizationStatus": "CANONICAL_EXACT",
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "safetyDecision": "REVIEW",
+      "frameManifest": [
+        {
+          "timestampSeconds": 0,
+          "sha256": "302eaaad482bdf2aa4ab4aa74f8976bd20ea4eb119bb50f760719d2435f3aafd"
+        },
+        {
+          "timestampSeconds": 9,
+          "sha256": "8de9245d153e2f0dc273f60292a4ed4184b33662f23e3231e17fde827eec84c2"
+        },
+        {
+          "timestampSeconds": 11,
+          "sha256": "dcb767d637b365c490acdda8d4e7887674867a4f3da3b263fbf0272efc061201"
+        },
+        {
+          "timestampSeconds": 15,
+          "sha256": "18d72bcd9ff6a5d8a8ac73e90b2693aa0edff86db65a9f60bb0eae53646740b7"
+        },
+        {
+          "timestampSeconds": 22,
+          "sha256": "60d4ccce1ba85cf332942b83c6cb363b90d2c056918c15644f4244cf9bbccae9"
+        },
+        {
+          "timestampSeconds": 27.433,
+          "sha256": "87393e72bbb76a78ef4e8a6bda1c0d266b3cccbcbedf98df5bd337c679b810f5"
+        }
+      ],
+      "placesCallCount": 1,
+      "cacheReadUsed": false,
+      "modelRequests": 1,
+      "apiRequests": 2,
+      "costUsd": 0.0354,
+      "latencyMs": 20879,
+      "failureCode": null,
+      "persistedAt": "2026-09-05T21:14:44.605Z"
+    },
+    {
+      "schemaVersion": 2,
+      "runId": "recognition-live-2026-09-05T21-01-36-240Z",
+      "caseId": "H09",
+      "category": "FOOD_RESTAURANT",
+      "sourceUrl": "https://www.instagram.com/reel/DYVn771vefW/",
+      "recognitionVersion": "simple-sol-premium.v2",
+      "evidenceVersion": "premium-evidence-2026-09-05.v1",
+      "modelPath": "gpt-5.6-sol/F1:M1",
+      "acquisitionStatus": "ACQUIRED",
+      "status": "COMPLETED",
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Pho Bamboo Restaurant",
+          "identityType": "BUSINESS",
+          "locality": "City of Industry, California",
+          "country": "United States",
+          "latitude": 33.9959372,
+          "longitude": -117.90680520000001,
+          "evidenceType": "DISTINCTIVE_VISUAL_MATCH",
+          "canonicalizationStatus": "CANONICAL_ALIAS",
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "safetyDecision": "REVIEW",
+      "frameManifest": [
+        {
+          "timestampSeconds": 0,
+          "sha256": "0c468adec026ec45b5c9fd255c9e9dacccf18fb76ca8e63f67a547d790a326ea"
+        },
+        {
+          "timestampSeconds": 5,
+          "sha256": "17e7dac35718f45b6db698f5851cf4b54d88cf75fbc1f17cef2cb30c365c85fe"
+        },
+        {
+          "timestampSeconds": 18,
+          "sha256": "71e7a2cf809be9d929e7dbb251d28ba159194ccf412b844ea459f552c424e23a"
+        },
+        {
+          "timestampSeconds": 20,
+          "sha256": "c38d46c35e3dc3f5c5cdfcea653a0e6af91759e489de2ffc0fe12d661a545526"
+        },
+        {
+          "timestampSeconds": 29,
+          "sha256": "5277398c8208da6fe2d816813368df7f42f7b1a9a2aa9d94f7a8a9b5683d9c43"
+        },
+        {
+          "timestampSeconds": 40.267,
+          "sha256": "f9c9608ddc93a3aa3401714ad661a6b6a810b68e454ab0077b0debe15d4b68d1"
+        }
+      ],
+      "placesCallCount": 1,
+      "cacheReadUsed": false,
+      "modelRequests": 1,
+      "apiRequests": 2,
+      "costUsd": 0.035032,
+      "latencyMs": 24929,
+      "failureCode": null,
+      "persistedAt": "2026-09-05T21:14:44.607Z"
+    },
+    {
+      "schemaVersion": 2,
+      "runId": "recognition-live-2026-09-05T21-01-36-240Z",
+      "caseId": "H10",
+      "category": "FOOD_RESTAURANT",
+      "sourceUrl": "https://www.instagram.com/reel/DYGvkJ0oDjA/",
+      "recognitionVersion": "simple-sol-premium.v2",
+      "evidenceVersion": "premium-evidence-2026-09-05.v1",
+      "modelPath": "gpt-5.6-sol/F1:M1",
+      "acquisitionStatus": "ACQUIRED",
+      "status": "COMPLETED",
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Baja Sharkeez Newport Beach",
+          "identityType": "BUSINESS",
+          "locality": "Newport Beach, California",
+          "country": "United States",
+          "latitude": 33.6083308,
+          "longitude": -117.92796609999999,
+          "evidenceType": "DISTINCTIVE_VISUAL_MATCH",
+          "canonicalizationStatus": "CANONICAL_ALIAS",
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "safetyDecision": "REVIEW",
+      "frameManifest": [
+        {
+          "timestampSeconds": 0,
+          "sha256": "7dea151308e2911c2efe8c5d4f5f2f70bedef627eb930991081a9088b8d80faa"
+        },
+        {
+          "timestampSeconds": 8,
+          "sha256": "690583b2f7c5748861c5d23e3276001cd4e648641b506c0bac5b8bf2500b93ee"
+        },
+        {
+          "timestampSeconds": 11,
+          "sha256": "eb4df790ab47b21222afbd108241a35a2e3e1771eaa7de7fc7b4d9abfcc918d8"
+        },
+        {
+          "timestampSeconds": 19,
+          "sha256": "b2f5eedcf889c1251b68728e30ca2bc96cde34962add97d93f36175f14d64328"
+        },
+        {
+          "timestampSeconds": 26,
+          "sha256": "76fd665247470e99b87c06307a050dae7b00a196242f9dad9436c7187aee063e"
+        },
+        {
+          "timestampSeconds": 31.467,
+          "sha256": "f47b7666c2bc04d1cd37938c4d7248bba17088aa89073382ab6baf1973d79b1d"
+        }
+      ],
+      "placesCallCount": 1,
+      "cacheReadUsed": false,
+      "modelRequests": 1,
+      "apiRequests": 2,
+      "costUsd": 0.035828,
+      "latencyMs": 22573,
+      "failureCode": null,
+      "persistedAt": "2026-09-05T21:14:44.609Z"
+    },
+    {
+      "schemaVersion": 2,
+      "runId": "recognition-live-2026-09-05T21-01-36-240Z",
+      "caseId": "H11",
+      "category": "FOOD_RESTAURANT",
+      "sourceUrl": "https://www.instagram.com/reel/DNT_wptv1K9/",
+      "recognitionVersion": "simple-sol-premium.v2",
+      "evidenceVersion": "premium-evidence-2026-09-05.v1",
+      "modelPath": "gpt-5.6-sol/F1:M1",
+      "acquisitionStatus": "ACQUIRED",
+      "status": "COMPLETED",
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "No Good Burger Joint",
+          "identityType": "BUSINESS",
+          "locality": "New York",
+          "country": "United States",
+          "latitude": 40.764215,
+          "longitude": -73.97855969999999,
+          "evidenceType": "DISTINCTIVE_VISUAL_MATCH",
+          "canonicalizationStatus": "CANONICAL_ALIAS",
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        },
+        {
+          "rank": 2,
+          "name": "No Good Burger Joint – Rockville Centre",
+          "identityType": "BUSINESS",
+          "locality": "Rockville Centre, New York",
+          "country": "United States",
+          "latitude": 40.6595539,
+          "longitude": -73.64833209999999,
+          "evidenceType": "DISTINCTIVE_VISUAL_MATCH",
+          "canonicalizationStatus": "CANONICAL_ALIAS",
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        },
+        {
+          "rank": 3,
+          "name": "No Good Burger Joint – Baldwin",
+          "identityType": "BUSINESS",
+          "locality": "Baldwin, New York",
+          "country": "United States",
+          "latitude": 40.639554,
+          "longitude": -73.607648,
+          "evidenceType": "DISTINCTIVE_VISUAL_MATCH",
+          "canonicalizationStatus": "CANONICAL_ALIAS",
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "safetyDecision": "REVIEW",
+      "frameManifest": [
+        {
+          "timestampSeconds": 0,
+          "sha256": "d209457a1ac57251c4cdbdf0a5a4a647d2870b4fa95168829582e48f8a86e08e"
+        },
+        {
+          "timestampSeconds": 2,
+          "sha256": "7c104a2f1cab9e9ddb8d5dede38e9addbbfc0500ace0e1ba4bfd067505d73e81"
+        },
+        {
+          "timestampSeconds": 4,
+          "sha256": "da48023673d7305de78563ed988130136a0fc60bcc4b74f37b2c2812b8d3a052"
+        },
+        {
+          "timestampSeconds": 7,
+          "sha256": "0ce04f5c0d96b4897d0de3c1f0d6ba4447708bcf88171d2362cb521c74614437"
+        },
+        {
+          "timestampSeconds": 9,
+          "sha256": "8173207e62f2e8d4c9ae5ca212008d6bbee0599c78323f39d75c4ef44d5e04e2"
+        },
+        {
+          "timestampSeconds": 11.567,
+          "sha256": "95f3859d6e3e92077f095ba131a89bd985aee50857e73885b91a14a51c2870e4"
+        }
+      ],
+      "placesCallCount": 3,
+      "cacheReadUsed": false,
+      "modelRequests": 1,
+      "apiRequests": 4,
+      "costUsd": 0.0418,
+      "latencyMs": 21658,
+      "failureCode": null,
+      "persistedAt": "2026-09-05T21:14:44.610Z"
+    },
+    {
+      "schemaVersion": 2,
+      "runId": "recognition-live-2026-09-05T21-01-36-240Z",
+      "caseId": "H12",
+      "category": "FOOD_RESTAURANT",
+      "sourceUrl": "https://www.instagram.com/p/DLfvZunSKRp/",
+      "recognitionVersion": "simple-sol-premium.v2",
+      "evidenceVersion": "premium-evidence-2026-09-05.v1",
+      "modelPath": "gpt-5.6-sol/F1:M1",
+      "acquisitionStatus": "ACQUIRED",
+      "status": "COMPLETED",
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Old Fisherman's Grotto",
+          "identityType": "BUSINESS",
+          "locality": "Monterey, California",
+          "country": "United States",
+          "latitude": 36.6043278,
+          "longitude": -121.8928631,
+          "evidenceType": "DISTINCTIVE_VISUAL_MATCH",
+          "canonicalizationStatus": "CANONICAL_EXACT",
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "safetyDecision": "REVIEW",
+      "frameManifest": [
+        {
+          "timestampSeconds": 0,
+          "sha256": "590c7a21e96bb2daacbab1c4bbb20206f78f1c8f549c6c36a5bc49a94a14455c"
+        },
+        {
+          "timestampSeconds": 12,
+          "sha256": "c70215649e304567ef7da06e1843af73005e8d06d8b0e75a950b515e1c374874"
+        },
+        {
+          "timestampSeconds": 39,
+          "sha256": "948289ba01dafdf6f116d8e861c03fd91c416d796982f4d0efab06491affdd3f"
+        },
+        {
+          "timestampSeconds": 50,
+          "sha256": "165bb75c2fe2ace1a1f23ef76daddd6d95c7a893d39f4fee740a5608947f2ff1"
+        },
+        {
+          "timestampSeconds": 58,
+          "sha256": "c9a951e2d2e97f7ef2bc84cb802705597dedd2e27dcddccfa0e98465a0abef9c"
+        },
+        {
+          "timestampSeconds": 88.333,
+          "sha256": "989b6335f795cd9ab08429c9eb2cd5a2d004411eaa73924dd2d810e24eed21dd"
+        }
+      ],
+      "placesCallCount": 1,
+      "cacheReadUsed": false,
+      "modelRequests": 1,
+      "apiRequests": 2,
+      "costUsd": 0.039264,
+      "latencyMs": 27900,
+      "failureCode": null,
+      "persistedAt": "2026-09-05T21:14:44.612Z"
+    },
+    {
+      "schemaVersion": 2,
+      "runId": "recognition-live-2026-09-05T21-01-36-240Z",
+      "caseId": "P01",
+      "category": "FOOD_RESTAURANT",
+      "sourceUrl": "https://www.instagram.com/p/DWZNJZ-EthD/",
+      "recognitionVersion": "simple-sol-premium.v2",
+      "evidenceVersion": "premium-evidence-2026-09-05.v1",
+      "modelPath": "gpt-5.6-sol/F1:M1",
+      "acquisitionStatus": "ACQUIRED",
+      "status": "COMPLETED",
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Aptos Street BBQ",
+          "identityType": "BUSINESS",
+          "locality": "Aptos, California",
+          "country": "United States",
+          "latitude": 36.9768124,
+          "longitude": -121.89949060000001,
+          "evidenceType": "DISTINCTIVE_VISUAL_MATCH",
+          "canonicalizationStatus": "CANONICAL_ALIAS",
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "safetyDecision": "REVIEW",
+      "frameManifest": [
+        {
+          "timestampSeconds": 0,
+          "sha256": "74bc9571e5d28eb001c908df505f9a0ec02da3751c66dc1e98bc41e832f86405"
+        },
+        {
+          "timestampSeconds": 1,
+          "sha256": "6d5d0325f4e0db111ec5699b8d027a7158ed9e7d69e22571abeffb69e5655bb6"
+        },
+        {
+          "timestampSeconds": 3,
+          "sha256": "de370df18382822cc15959f06dfad0173859f65c370018e62582465651727fa0"
+        },
+        {
+          "timestampSeconds": 4,
+          "sha256": "e5d4cf158745fe80f3dc47381645d681d3c07f79b4cb5c59da85c8433c9c4c74"
+        },
+        {
+          "timestampSeconds": 5,
+          "sha256": "77b0dacc628dbae767400d367d3c36a373cfa08d14f32eddcfabb171cd0ecf94"
+        },
+        {
+          "timestampSeconds": 7.8,
+          "sha256": "869d62dbbda2c99ca7cbc4544614a6c996df5e8f4923c691806a13b8016df75e"
+        }
+      ],
+      "placesCallCount": 1,
+      "cacheReadUsed": false,
+      "modelRequests": 1,
+      "apiRequests": 2,
+      "costUsd": 0.033568,
+      "latencyMs": 14779,
+      "failureCode": null,
+      "persistedAt": "2026-09-05T21:14:44.614Z"
+    },
+    {
+      "schemaVersion": 2,
+      "runId": "recognition-live-2026-09-05T21-01-36-240Z",
+      "caseId": "P02",
+      "category": "FOOD_RESTAURANT",
+      "sourceUrl": "https://www.instagram.com/p/DYbLVMBp_dY/",
+      "recognitionVersion": "simple-sol-premium.v2",
+      "evidenceVersion": "premium-evidence-2026-09-05.v1",
+      "modelPath": "gpt-5.6-sol/F1:M1",
+      "acquisitionStatus": "ACQUIRED",
+      "status": "COMPLETED",
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "BLK Earth Sea Spirits",
+          "identityType": "BUSINESS",
+          "locality": "Huntington Beach, California",
+          "country": "United States",
+          "latitude": 33.6571503,
+          "longitude": -118.00143279999999,
+          "evidenceType": "DISTINCTIVE_VISUAL_MATCH",
+          "canonicalizationStatus": "CANONICAL_EXACT",
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "safetyDecision": "REVIEW",
+      "frameManifest": [
+        {
+          "timestampSeconds": 0,
+          "sha256": "0cdb96ec54822305ff2514e29b777137976f9247ba4f2b02aa602d2fb09de477"
+        },
+        {
+          "timestampSeconds": 3,
+          "sha256": "e9daf9fe1d387f4f9ad523237d8e6a2b29970128ba1e63f8a77e1e6acfd350d9"
+        },
+        {
+          "timestampSeconds": 5,
+          "sha256": "91da5e70673f614cd8670ee50bdddaab01cec563a346b4785e3737119a0268de"
+        },
+        {
+          "timestampSeconds": 6,
+          "sha256": "26449e6953dce2ab9bd9e7a817d794be91968c9be815e328abe59361a8ff7ddc"
+        },
+        {
+          "timestampSeconds": 8,
+          "sha256": "20569d695803740652d27bf14832bb76d31a0d8c040d4be83e8d54ea14e32744"
+        },
+        {
+          "timestampSeconds": 9.233,
+          "sha256": "842b00c9ebc52ccdbf5d78e924931e4bad8417ab11e45936dca0888f1c7d2a9a"
+        }
+      ],
+      "placesCallCount": 1,
+      "cacheReadUsed": false,
+      "modelRequests": 1,
+      "apiRequests": 2,
+      "costUsd": 0.03484,
+      "latencyMs": 16516,
+      "failureCode": null,
+      "persistedAt": "2026-09-05T21:14:44.616Z"
+    },
+    {
+      "schemaVersion": 2,
+      "runId": "recognition-live-2026-09-05T21-01-36-240Z",
+      "caseId": "P03",
+      "category": "FOOD_RESTAURANT",
+      "sourceUrl": "https://www.instagram.com/p/DYx8S0PPy6b/",
+      "recognitionVersion": "simple-sol-premium.v2",
+      "evidenceVersion": "premium-evidence-2026-09-05.v1",
+      "modelPath": "gpt-5.6-sol/F1:M1",
+      "acquisitionStatus": "ACQUIRED",
+      "status": "COMPLETED",
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Chocolate (Chocolate the Restaurant)",
+          "identityType": "BUSINESS",
+          "locality": "Santa Cruz, California",
+          "country": "United States",
+          "latitude": 36.9756067,
+          "longitude": -122.02643870000001,
+          "evidenceType": "DISTINCTIVE_VISUAL_MATCH",
+          "canonicalizationStatus": "CANONICAL_ALIAS",
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "safetyDecision": "REVIEW",
+      "frameManifest": [
+        {
+          "timestampSeconds": 0,
+          "sha256": "a5e617dc91ef1a1c10149ae7b35e10b79e59699e2715e8b20c0a6dbd7ce8be0e"
+        },
+        {
+          "timestampSeconds": 3,
+          "sha256": "7a209df18ee9453129bbd75579cf1782c559aa69fb351304838b2dd03053372e"
+        },
+        {
+          "timestampSeconds": 5,
+          "sha256": "8bb6b193400dc5be8fb7c5550549a7f7fe034a702510ed62b819478f9aff4eed"
+        },
+        {
+          "timestampSeconds": 9,
+          "sha256": "7ce75f7e1630819dfebae058d3c5ceb5f92a124ff25a48861b8102bea7f0e6ad"
+        },
+        {
+          "timestampSeconds": 11,
+          "sha256": "8636c77fa4abaafd5f0ca4b78748185b5095a2121d911a0a437099175ccee256"
+        },
+        {
+          "timestampSeconds": 14.133,
+          "sha256": "f2d7603314f4583b1744fe6ff28445c7000b8bf7e83b1da915e0d26ccff99d32"
+        }
+      ],
+      "placesCallCount": 1,
+      "cacheReadUsed": false,
+      "modelRequests": 1,
+      "apiRequests": 2,
+      "costUsd": 0.038928,
+      "latencyMs": 19391,
+      "failureCode": null,
+      "persistedAt": "2026-09-05T21:14:44.618Z"
+    },
+    {
+      "schemaVersion": 2,
+      "runId": "recognition-live-2026-09-05T21-01-36-240Z",
+      "caseId": "P04",
+      "category": "FOOD_RESTAURANT",
+      "sourceUrl": "https://www.instagram.com/p/DYYfWR9oeYS/",
+      "recognitionVersion": "simple-sol-premium.v2",
+      "evidenceVersion": "premium-evidence-2026-09-05.v1",
+      "modelPath": "gpt-5.6-sol/F1:M1",
+      "acquisitionStatus": "ACQUIRED",
+      "status": "COMPLETED",
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Mesa Verde Farmers Market (Farm Habit Mesa Verde)",
+          "identityType": "EVENT",
+          "locality": "Costa Mesa, California",
+          "country": "United States",
+          "latitude": 33.6697513,
+          "longitude": -117.92106270000001,
+          "evidenceType": "DISTINCTIVE_VISUAL_MATCH",
+          "canonicalizationStatus": "CANONICAL_ALIAS",
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        },
+        {
+          "rank": 2,
+          "name": "Deli Nerds",
+          "identityType": "BUSINESS",
+          "locality": "Costa Mesa, California",
+          "country": "United States",
+          "latitude": 33.669763599999996,
+          "longitude": -117.9208274,
+          "evidenceType": "SOURCE_TEXT_IDENTITY",
+          "canonicalizationStatus": "CANONICAL_EXACT",
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "safetyDecision": "REVIEW",
+      "frameManifest": [
+        {
+          "timestampSeconds": 0,
+          "sha256": "5447c4c201ae2acc05460154b1effdf69325a4af8fed6cb5a46c04274fabed80"
+        },
+        {
+          "timestampSeconds": 9,
+          "sha256": "2d273ee45da24e31257436223d317833e1cbcb5516a45c31f51d1f5ae21d0d57"
+        },
+        {
+          "timestampSeconds": 17,
+          "sha256": "7245cce618991b0f11b41a91764353f9c8d52c718581f00bbed8a088f02d380d"
+        },
+        {
+          "timestampSeconds": 24,
+          "sha256": "eea8bd48e84eb76e5f1c7a9bcaca9f07450545728fbf0962f1f8e45e59139e68"
+        },
+        {
+          "timestampSeconds": 28,
+          "sha256": "c6cf10e1191e2aca852d08d7d455dec9919ebcc262dcd4de4450b49b22e6caa0"
+        },
+        {
+          "timestampSeconds": 42.433,
+          "sha256": "2f9aa2c8da3665ada1b74f99bb188c5af938b0961c5c3f6ba667297b3e6429f3"
+        }
+      ],
+      "placesCallCount": 2,
+      "cacheReadUsed": false,
+      "modelRequests": 1,
+      "apiRequests": 3,
+      "costUsd": 0.042108,
+      "latencyMs": 26325,
+      "failureCode": null,
+      "persistedAt": "2026-09-05T21:14:44.620Z"
+    },
+    {
+      "schemaVersion": 2,
+      "runId": "recognition-live-2026-09-05T21-01-36-240Z",
+      "caseId": "P05",
+      "category": "FOOD_RESTAURANT",
+      "sourceUrl": "https://www.instagram.com/p/DYOcSIkorkN/",
+      "recognitionVersion": "simple-sol-premium.v2",
+      "evidenceVersion": "premium-evidence-2026-09-05.v1",
+      "modelPath": "gpt-5.6-sol/F1:M1",
+      "acquisitionStatus": "ACQUIRED",
+      "status": "COMPLETED",
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Orange County Greek Festival (OC Greek Fest) at St. John the Baptist Greek Orthodox Church",
+          "identityType": "EVENT",
+          "locality": "Anaheim, California",
+          "country": "United States",
+          "latitude": null,
+          "longitude": null,
+          "evidenceType": "DISTINCTIVE_VISUAL_MATCH",
+          "canonicalizationStatus": "AMBIGUOUS_CANONICAL",
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "safetyDecision": "REVIEW",
+      "frameManifest": [
+        {
+          "timestampSeconds": 0,
+          "sha256": "ef3901f23c9f936dccd03ae19f7ce44395ef54ca1a8a8bba3292e9a1696671b5"
+        },
+        {
+          "timestampSeconds": 5,
+          "sha256": "c42e1f547bb4d4406d5a3d100532bfc32bc1f0f150ceea675416f99b5c551a5d"
+        },
+        {
+          "timestampSeconds": 9,
+          "sha256": "5baef80e2ca0f606245ddbe6d5816ec47006ee52426eb2449f53100a0cb1f0d3"
+        },
+        {
+          "timestampSeconds": 14,
+          "sha256": "76bee2bf54dbae25641bd60210859cda175f0d7bdaaf30e6ed99fed866753bdc"
+        },
+        {
+          "timestampSeconds": 21,
+          "sha256": "5201063ed8041cfd860d13eed6a4deb14731e11dc6c9fe37d6750dfe72f7f5af"
+        },
+        {
+          "timestampSeconds": 29.1,
+          "sha256": "240bb84bb865df94f36ba287e102e791c8ff6eff7d2f0b2ccd889fc0ec696660"
+        }
+      ],
+      "placesCallCount": 1,
+      "cacheReadUsed": false,
+      "modelRequests": 1,
+      "apiRequests": 2,
+      "costUsd": 0.039736,
+      "latencyMs": 24863,
+      "failureCode": null,
+      "persistedAt": "2026-09-05T21:14:44.622Z"
+    },
+    {
+      "schemaVersion": 2,
+      "runId": "recognition-live-2026-09-05T21-01-36-240Z",
+      "caseId": "P06",
+      "category": "FOOD_RESTAURANT",
+      "sourceUrl": "https://www.instagram.com/p/DYS8NLyh4Bq/",
+      "recognitionVersion": "simple-sol-premium.v2",
+      "evidenceVersion": "premium-evidence-2026-09-05.v1",
+      "modelPath": "gpt-5.6-sol/F1:M1",
+      "acquisitionStatus": "ACQUIRED",
+      "status": "COMPLETED",
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Biergarten at Old World Huntington Beach (Old World Village)",
+          "identityType": "BUSINESS",
+          "locality": "Huntington Beach, California",
+          "country": "United States",
+          "latitude": 33.7344453,
+          "longitude": -117.99652519999998,
+          "evidenceType": "DISTINCTIVE_VISUAL_MATCH",
+          "canonicalizationStatus": "CANONICAL_ALIAS",
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "safetyDecision": "REVIEW",
+      "frameManifest": [
+        {
+          "timestampSeconds": 0,
+          "sha256": "34bf9ec7aecc75963d8b964572f004ec3c8fcee2464d80158d49e4967879ce1c"
+        },
+        {
+          "timestampSeconds": 4,
+          "sha256": "0f5b5fc1ab5b7c7c647a2fa987d0be2af722513c1b1af31e308197504098e568"
+        },
+        {
+          "timestampSeconds": 9,
+          "sha256": "5ae37cbe27c94c94741b35059294150b24d1b4531a677695f828af7bdcfd7c83"
+        },
+        {
+          "timestampSeconds": 14,
+          "sha256": "4b8d320bd6740439a2d728f91d2ce7f19194cd91da9abdf3daf1a4cb27ebc44c"
+        },
+        {
+          "timestampSeconds": 17,
+          "sha256": "3a70f04d6ce2a665f4ffba44d55abb0f6ce3c4e5a8cce698041f9a3cd8712b62"
+        },
+        {
+          "timestampSeconds": 24.728,
+          "sha256": "d2e75dc999031d6c5d35a397df72e54a8c85c2d0591a8a6126dcfded0eed3705"
+        }
+      ],
+      "placesCallCount": 1,
+      "cacheReadUsed": false,
+      "modelRequests": 1,
+      "apiRequests": 2,
+      "costUsd": 0.037644,
+      "latencyMs": 21343,
+      "failureCode": null,
+      "persistedAt": "2026-09-05T21:14:44.624Z"
+    },
+    {
+      "schemaVersion": 2,
+      "runId": "recognition-live-2026-09-05T21-01-36-240Z",
+      "caseId": "P07",
+      "category": "FOOD_RESTAURANT",
+      "sourceUrl": "https://www.instagram.com/p/DOXJtDlgcoi/",
+      "recognitionVersion": "simple-sol-premium.v2",
+      "evidenceVersion": "premium-evidence-2026-09-05.v1",
+      "modelPath": "gpt-5.6-sol/F1:M1",
+      "acquisitionStatus": "ACQUIRED",
+      "status": "COMPLETED",
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "The Point Market",
+          "identityType": "BUSINESS",
+          "locality": "Santa Cruz, California",
+          "country": "United States",
+          "latitude": 36.9556647,
+          "longitude": -121.9724698,
+          "evidenceType": "SOURCE_TEXT_IDENTITY",
+          "canonicalizationStatus": "CANONICAL_EXACT",
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "safetyDecision": "AUTO_SAVE",
+      "frameManifest": [
+        {
+          "timestampSeconds": 0,
+          "sha256": "412fa6c2e6b46bef8a199fcfada9daf9a952f088ceaa48f1dfa6de3593d547f8"
+        },
+        {
+          "timestampSeconds": 13,
+          "sha256": "5bfba957a0891447bdbcc37b842db3836a4d2aaf5fbfa3cf95e4b4c0ba1cce5b"
+        },
+        {
+          "timestampSeconds": 22,
+          "sha256": "c657d3d6ae6e8cb9c50818a2aaa38f02b675fb0f5b3e2b47bc2019a417e86ef7"
+        },
+        {
+          "timestampSeconds": 34,
+          "sha256": "bef3b0cb889a80c58f96cd431d41e59ba49e763293976e1753825278a56badd2"
+        },
+        {
+          "timestampSeconds": 59,
+          "sha256": "c58641443f6ffb6fa157b670846c35e28ace890641d6a14e72320e68ced00739"
+        },
+        {
+          "timestampSeconds": 71.633,
+          "sha256": "83b60b661ac48e9add2625d8e499bee05ace4073003f90aa53782f5159ef6aa3"
+        }
+      ],
+      "placesCallCount": 1,
+      "cacheReadUsed": false,
+      "modelRequests": 1,
+      "apiRequests": 2,
+      "costUsd": 0.039512,
+      "latencyMs": 32156,
+      "failureCode": null,
+      "persistedAt": "2026-09-05T21:14:44.625Z"
+    },
+    {
+      "schemaVersion": 2,
+      "runId": "recognition-live-2026-09-05T21-01-36-240Z",
+      "caseId": "P08",
+      "category": "FOOD_RESTAURANT",
+      "sourceUrl": "https://www.instagram.com/p/DVUMt3DkmnK/",
+      "recognitionVersion": "simple-sol-premium.v2",
+      "evidenceVersion": "premium-evidence-2026-09-05.v1",
+      "modelPath": "gpt-5.6-sol/F1:M1",
+      "acquisitionStatus": "ACQUIRED",
+      "status": "COMPLETED",
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Seabright Deli",
+          "identityType": "BUSINESS",
+          "locality": "Santa Cruz, California",
+          "country": "United States",
+          "latitude": 36.9667854,
+          "longitude": -122.0079763,
+          "evidenceType": "SOURCE_TEXT_IDENTITY",
+          "canonicalizationStatus": "CANONICAL_EXACT",
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "safetyDecision": "REVIEW",
+      "frameManifest": [
+        {
+          "timestampSeconds": 0,
+          "sha256": "3c7c6da2fd3af7ce0d25621a92b38fdaac4ed86ee63e838efffe7f2e7bb8dc9d"
+        },
+        {
+          "timestampSeconds": 24,
+          "sha256": "f303e737f6b5b20ef3ede7ba59bb76028598fceea40283eeef21eb7791a0c4f4"
+        },
+        {
+          "timestampSeconds": 54,
+          "sha256": "4da363510560979c67dff36dfac8efe6f8d03487aee870fe5b592de2240b6027"
+        },
+        {
+          "timestampSeconds": 79,
+          "sha256": "71429f74a9d9a9cbd7bab0e1738656e637b5529186893017273beccf62992df3"
+        },
+        {
+          "timestampSeconds": 109,
+          "sha256": "36d8bb51ab1d9cd6370dc4c72fb875ea3ba0b5ce672b2248d8ecf5586f8e8c19"
+        },
+        {
+          "timestampSeconds": 138.933,
+          "sha256": "169cedd09d05f9b592bd01c0216dad37826eb4e1b13f66f5bb01d21b89f15a96"
+        }
+      ],
+      "placesCallCount": 1,
+      "cacheReadUsed": false,
+      "modelRequests": 1,
+      "apiRequests": 2,
+      "costUsd": 0.037828,
+      "latencyMs": 29456,
+      "failureCode": null,
+      "persistedAt": "2026-09-05T21:14:44.627Z"
+    },
+    {
+      "schemaVersion": 2,
+      "runId": "recognition-live-2026-09-05T21-01-36-240Z",
+      "caseId": "P09",
+      "category": "FOOD_RESTAURANT",
+      "sourceUrl": "https://www.instagram.com/p/CmwyLcshhwy/",
+      "recognitionVersion": "simple-sol-premium.v2",
+      "evidenceVersion": "premium-evidence-2026-09-05.v1",
+      "modelPath": "gpt-5.6-sol/F1:M1",
+      "acquisitionStatus": "ACQUIRED",
+      "status": "COMPLETED",
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Tacos El Chuy food truck",
+          "identityType": "BUSINESS",
+          "locality": "Santa Cruz, California",
+          "country": "United States",
+          "latitude": 36.958841299999996,
+          "longitude": -122.04804790000001,
+          "evidenceType": "DISTINCTIVE_VISUAL_MATCH",
+          "canonicalizationStatus": "CANONICAL_ALIAS",
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "safetyDecision": "REVIEW",
+      "frameManifest": [
+        {
+          "timestampSeconds": 0,
+          "sha256": "608486c079e47b724c3c771786f16f3bfad1c645a808f6f97c6818d24969f23f"
+        },
+        {
+          "timestampSeconds": 2,
+          "sha256": "42016e9e0d04b35d37d405b764fd94fb9f8d92573e99bba6c9844bc28a0a7b57"
+        },
+        {
+          "timestampSeconds": 3,
+          "sha256": "76ac44586313e756144d0ee7b7cff48c1f1f5a59b6d0bf1275d97dc33c59c7d7"
+        },
+        {
+          "timestampSeconds": 5,
+          "sha256": "1a6c0c282f0ba309a3f94548c5640ab607cfd0c1c8fe085aaff0a937f75a7520"
+        },
+        {
+          "timestampSeconds": 6.233,
+          "sha256": "6fd6ce4a6dd3b7f58335df9f9209ca81e5c7f4ba8d42687c64dae297b35f4f4f"
+        }
+      ],
+      "placesCallCount": 1,
+      "cacheReadUsed": false,
+      "modelRequests": 1,
+      "apiRequests": 2,
+      "costUsd": 0.038468,
+      "latencyMs": 28236,
+      "failureCode": null,
+      "persistedAt": "2026-09-05T21:14:44.629Z"
+    },
+    {
+      "schemaVersion": 2,
+      "runId": "recognition-live-2026-09-05T21-01-36-240Z",
+      "caseId": "P10",
+      "category": "FOOD_RESTAURANT",
+      "sourceUrl": "https://www.instagram.com/p/DSYfkivkiOA/",
+      "recognitionVersion": "simple-sol-premium.v2",
+      "evidenceVersion": "premium-evidence-2026-09-05.v1",
+      "modelPath": "CURRENT_BACKEND_NO_MODEL_RESULT",
+      "acquisitionStatus": "ACQUISITION_BLOCKED",
+      "status": "TECHNICAL_FAILURE",
+      "candidates": [],
+      "safetyDecision": "MANUAL_FALLBACK",
+      "frameManifest": [],
+      "placesCallCount": 0,
+      "cacheReadUsed": false,
+      "modelRequests": 0,
+      "apiRequests": 0,
+      "costUsd": null,
+      "latencyMs": 0,
+      "failureCode": "NO_PERSISTED_MODEL_ATTEMPT",
+      "persistedAt": "2026-09-05T21:14:44.631Z"
+    },
+    {
+      "schemaVersion": 2,
+      "runId": "recognition-live-2026-09-05T21-01-36-240Z",
+      "caseId": "S01",
+      "category": "FOOD_RESTAURANT",
+      "sourceUrl": "https://www.instagram.com/p/DV9RcvwAQ0P/",
+      "recognitionVersion": "simple-sol-premium.v2",
+      "evidenceVersion": "premium-evidence-2026-09-05.v1",
+      "modelPath": "gpt-5.6-sol/F1:M1",
+      "acquisitionStatus": "ACQUIRED",
+      "status": "COMPLETED",
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Seabright Deli",
+          "identityType": "BUSINESS",
+          "locality": "Santa Cruz, California",
+          "country": "United States",
+          "latitude": 36.9667854,
+          "longitude": -122.0079763,
+          "evidenceType": "SOURCE_TEXT_IDENTITY",
+          "canonicalizationStatus": "CANONICAL_EXACT",
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "safetyDecision": "AUTO_SAVE",
+      "frameManifest": [
+        {
+          "timestampSeconds": 0,
+          "sha256": "ecd9a31f87b0d29d97ed13ab8823b77580d801dcf193fbc775f48e856b9e9a90"
+        },
+        {
+          "timestampSeconds": 23,
+          "sha256": "c2a362804f3b43583b9414afef0b663661bd140d434e58fc338327f28c1fc0e6"
+        },
+        {
+          "timestampSeconds": 31,
+          "sha256": "fe33bde97bcc4891259ede4b4eba02fa34a9ad8411c9129f03ba15449d4e9237"
+        },
+        {
+          "timestampSeconds": 58,
+          "sha256": "8f715eaca0a1232ca59e318888f1e37084205f6595a5b463733a8368ff3f3508"
+        },
+        {
+          "timestampSeconds": 66,
+          "sha256": "0804aba772cedf0bf63354fb92e2d4ca0a07eb1ff1a36ccd433048807c6693d7"
+        },
+        {
+          "timestampSeconds": 88.8,
+          "sha256": "6d1d8129d72e3ab5631a4a1ac2efd000684a5fced62d1d26449c8867f329cce3"
+        }
+      ],
+      "placesCallCount": 1,
+      "cacheReadUsed": false,
+      "modelRequests": 1,
+      "apiRequests": 2,
+      "costUsd": 0.035416,
+      "latencyMs": 31477,
+      "failureCode": null,
+      "persistedAt": "2026-09-05T21:14:44.632Z"
+    },
+    {
+      "schemaVersion": 2,
+      "runId": "recognition-live-2026-09-05T21-01-36-240Z",
+      "caseId": "S06",
+      "category": "FOOD_RESTAURANT",
+      "sourceUrl": "https://www.instagram.com/p/DMV8LZ4hUoG/",
+      "recognitionVersion": "simple-sol-premium.v2",
+      "evidenceVersion": "premium-evidence-2026-09-05.v1",
+      "modelPath": "gpt-5.6-sol/F1:M1",
+      "acquisitionStatus": "ACQUIRED",
+      "status": "COMPLETED",
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Seabright Deli",
+          "identityType": "BUSINESS",
+          "locality": "Santa Cruz, California",
+          "country": "United States",
+          "latitude": 36.9667854,
+          "longitude": -122.0079763,
+          "evidenceType": "DISTINCTIVE_VISUAL_MATCH",
+          "canonicalizationStatus": "CANONICAL_EXACT",
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "safetyDecision": "REVIEW",
+      "frameManifest": [
+        {
+          "timestampSeconds": 0,
+          "sha256": "97bfa76463cb00bf61c7ece07d1ac67692253f7d173111f3b5481b2bb14241fa"
+        },
+        {
+          "timestampSeconds": 5,
+          "sha256": "dc05e425752aaa0beb757070ef8477ca62e882ed2bca2a8a85a71d8e032ee151"
+        },
+        {
+          "timestampSeconds": 7,
+          "sha256": "e3253e75b18ec5ff2279deeb1be534fa103a00125c3adc5e397c6f2e8707214b"
+        },
+        {
+          "timestampSeconds": 12,
+          "sha256": "3b6ebc4598a52ff43b1276dd9f0bcf9879cbcad696c50fedf96636732136190f"
+        },
+        {
+          "timestampSeconds": 14,
+          "sha256": "6184fc5f945b5dfed1558962b0690dbaa5c4cdf7b48daeb8a4f204fe5cfb8969"
+        },
+        {
+          "timestampSeconds": 18.525,
+          "sha256": "fa8bda10c94d8274e9462ffa811dd6818323e5574109a4118d72e8a6ed9648ea"
+        }
+      ],
+      "placesCallCount": 1,
+      "cacheReadUsed": false,
+      "modelRequests": 1,
+      "apiRequests": 2,
+      "costUsd": 0.03174,
+      "latencyMs": 18388,
+      "failureCode": null,
+      "persistedAt": "2026-09-05T21:14:44.634Z"
+    },
+    {
+      "schemaVersion": 2,
+      "runId": "recognition-live-2026-09-05T21-01-36-240Z",
+      "caseId": "C06",
+      "category": "FOOD_RESTAURANT",
+      "sourceUrl": "https://www.tiktok.com/@satexasfoodies/video/7433811014237326622",
+      "recognitionVersion": "simple-sol-premium.v2",
+      "evidenceVersion": "premium-evidence-2026-09-05.v1",
+      "modelPath": "gpt-5.6-sol/F1:M1",
+      "acquisitionStatus": "ACQUIRED",
+      "status": "COMPLETED",
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Tuxedo Cat's Coffee",
+          "identityType": "BUSINESS",
+          "locality": "San Antonio, Texas",
+          "country": "United States",
+          "latitude": 29.4887384,
+          "longitude": -98.64091669999999,
+          "evidenceType": "SOURCE_TEXT_IDENTITY",
+          "canonicalizationStatus": "CANONICAL_EXACT",
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "safetyDecision": "AUTO_SAVE",
+      "frameManifest": [
+        {
+          "timestampSeconds": 0,
+          "sha256": "5795aaaab34a6b3219992a570cfd6d293a0024bc9be4e8521b437ebd6fbea9a1"
+        },
+        {
+          "timestampSeconds": 9,
+          "sha256": "8aba64e7e87ae6afec0f1fff6d5f26c8afdf9189c4946fb1e1df049912e68283"
+        },
+        {
+          "timestampSeconds": 10,
+          "sha256": "de55c13b3d379b8718b1c108c082256abfb4d11896da44838d782cead3a01d2b"
+        },
+        {
+          "timestampSeconds": 15,
+          "sha256": "d78ec71fbf92e03c94eb06b8e64914d87c3ef8206b15406a21dc4e689ec2d81c"
+        },
+        {
+          "timestampSeconds": 21,
+          "sha256": "aadca299a369edaf20666405d91f635104b2c9a31d4ea055222085e1a4c44306"
+        },
+        {
+          "timestampSeconds": 24.6,
+          "sha256": "1fbd7d1e22c00752d6637d47b74c256aea0af0dff2cfca2bafd06517c621a350"
+        }
+      ],
+      "placesCallCount": 1,
+      "cacheReadUsed": false,
+      "modelRequests": 1,
+      "apiRequests": 2,
+      "costUsd": 0.036388,
+      "latencyMs": 19626,
+      "failureCode": null,
+      "persistedAt": "2026-09-05T21:14:44.637Z"
+    },
+    {
+      "schemaVersion": 2,
+      "runId": "recognition-live-2026-09-05T21-01-36-240Z",
+      "caseId": "C07",
+      "category": "LANDMARK",
+      "sourceUrl": "https://www.youtube.com/watch?v=jNQXAC9IVRw",
+      "recognitionVersion": "simple-sol-premium.v2",
+      "evidenceVersion": "premium-evidence-2026-09-05.v1",
+      "modelPath": "gpt-5.6-sol/F1:M1",
+      "acquisitionStatus": "ACQUIRED",
+      "status": "COMPLETED",
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "San Diego Zoo",
+          "identityType": "LANDMARK",
+          "locality": "San Diego, California",
+          "country": "United States",
+          "latitude": 32.7360353,
+          "longitude": -117.1509849,
+          "evidenceType": "CONTEXTUAL_OR_MEMORY_PRIOR",
+          "canonicalizationStatus": "CANONICAL_EXACT",
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "safetyDecision": "REVIEW",
+      "frameManifest": [
+        {
+          "timestampSeconds": 0,
+          "sha256": "ebf458c13d77c1e1b10dab4b68586be5ff805e42bd9da6d3088311f425fddb4c"
+        },
+        {
+          "timestampSeconds": 2,
+          "sha256": "0e3a5f2e34a3430d695b2d4f4cae8396889511e2d3a6aadb20fa39ebe8b25738"
+        },
+        {
+          "timestampSeconds": 4,
+          "sha256": "0dcd832c4fbcb8803bfc70b2880770565ce0da4d36beec06d19b0eb0db168710"
+        },
+        {
+          "timestampSeconds": 7,
+          "sha256": "4b1e17549819b43aa6a56269657167c68f86161e1471063aa86eedf5c857a0ab"
+        },
+        {
+          "timestampSeconds": 11,
+          "sha256": "7f229e464c9ca128a4503339f6eafbcc14c30d681e77dd0ef4bfeb482f38e053"
+        },
+        {
+          "timestampSeconds": 18.833,
+          "sha256": "cfbf4c19c4306e096b792835150f67fc998823f13068a318d550df7b748f64f5"
+        }
+      ],
+      "placesCallCount": 1,
+      "cacheReadUsed": false,
+      "modelRequests": 1,
+      "apiRequests": 2,
+      "costUsd": 0.007016,
+      "latencyMs": 15433,
+      "failureCode": null,
+      "persistedAt": "2026-09-05T21:14:44.639Z"
+    }
+  ],
+  "scores": [
+    {
+      "caseId": "R03",
+      "category": "HIKING_TRAIL",
+      "scorable": true,
+      "classification": "ACCEPTABLE_ALIAS",
+      "exactAt1": true,
+      "exactAt3": true,
+      "matchedRank": 1,
+      "matchedBy": "ALIAS",
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": true
+    },
+    {
+      "caseId": "R04",
+      "category": "CLIFF_JUMPING",
+      "scorable": true,
+      "classification": "ACCEPTABLE_ALIAS",
+      "exactAt1": true,
+      "exactAt3": true,
+      "matchedRank": 1,
+      "matchedBy": "ALIAS",
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": true
+    },
+    {
+      "caseId": "R05",
+      "category": "CLIFF_JUMPING",
+      "scorable": true,
+      "classification": "ACCEPTABLE_ALIAS",
+      "exactAt1": true,
+      "exactAt3": true,
+      "matchedRank": 1,
+      "matchedBy": "ALIAS",
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": true
+    },
+    {
+      "caseId": "R08",
+      "category": "CLIFF_JUMPING",
+      "scorable": true,
+      "classification": "ACCEPTABLE_ALIAS",
+      "exactAt1": true,
+      "exactAt3": true,
+      "matchedRank": 1,
+      "matchedBy": "ALIAS",
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": true
+    },
+    {
+      "caseId": "V02",
+      "category": "FOOD_RESTAURANT",
+      "scorable": true,
+      "classification": "ACCEPTABLE_ALIAS",
+      "exactAt1": true,
+      "exactAt3": true,
+      "matchedRank": 1,
+      "matchedBy": "ALIAS",
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": true
+    },
+    {
+      "caseId": "V03",
+      "category": "FOOD_RESTAURANT",
+      "scorable": true,
+      "classification": "EXACT",
+      "exactAt1": true,
+      "exactAt3": true,
+      "matchedRank": 1,
+      "matchedBy": "CANONICAL",
+      "autoSaveCorrect": true,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "V04",
+      "category": "TRAVEL_DESTINATION",
+      "scorable": true,
+      "classification": "EXACT",
+      "exactAt1": true,
+      "exactAt3": true,
+      "matchedRank": 1,
+      "matchedBy": "CANONICAL",
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": true
+    },
+    {
+      "caseId": "V05",
+      "category": "FOOD_RESTAURANT",
+      "scorable": true,
+      "classification": "ACCEPTABLE_ALIAS",
+      "exactAt1": true,
+      "exactAt3": true,
+      "matchedRank": 1,
+      "matchedBy": "ALIAS",
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": true
+    },
+    {
+      "caseId": "H01",
+      "category": "FOOD_RESTAURANT",
+      "scorable": true,
+      "classification": "ACCEPTABLE_ALIAS",
+      "exactAt1": true,
+      "exactAt3": true,
+      "matchedRank": 1,
+      "matchedBy": "ALIAS",
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": true
+    },
+    {
+      "caseId": "H02",
+      "category": "FOOD_RESTAURANT",
+      "scorable": true,
+      "classification": "EXACT",
+      "exactAt1": true,
+      "exactAt3": true,
+      "matchedRank": 1,
+      "matchedBy": "CANONICAL",
+      "autoSaveCorrect": true,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "H03",
+      "category": "FOOD_RESTAURANT",
+      "scorable": true,
+      "classification": "EXACT",
+      "exactAt1": true,
+      "exactAt3": true,
+      "matchedRank": 1,
+      "matchedBy": "CANONICAL",
+      "autoSaveCorrect": true,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "H04",
+      "category": "FOOD_RESTAURANT",
+      "scorable": true,
+      "classification": "EXACT",
+      "exactAt1": true,
+      "exactAt3": true,
+      "matchedRank": 1,
+      "matchedBy": "CANONICAL",
+      "autoSaveCorrect": true,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "H05",
+      "category": "FOOD_RESTAURANT",
+      "scorable": true,
+      "classification": "EXACT",
+      "exactAt1": true,
+      "exactAt3": true,
+      "matchedRank": 1,
+      "matchedBy": "CANONICAL",
+      "autoSaveCorrect": true,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "H06",
+      "category": "FOOD_RESTAURANT",
+      "scorable": false,
+      "classification": "UNSCORED",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "H08",
+      "category": "FOOD_RESTAURANT",
+      "scorable": true,
+      "classification": "EXACT",
+      "exactAt1": true,
+      "exactAt3": true,
+      "matchedRank": 1,
+      "matchedBy": "CANONICAL",
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": true
+    },
+    {
+      "caseId": "H09",
+      "category": "FOOD_RESTAURANT",
+      "scorable": true,
+      "classification": "ACCEPTABLE_ALIAS",
+      "exactAt1": true,
+      "exactAt3": true,
+      "matchedRank": 1,
+      "matchedBy": "ALIAS",
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": true
+    },
+    {
+      "caseId": "H10",
+      "category": "FOOD_RESTAURANT",
+      "scorable": true,
+      "classification": "WRONG",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": true
+    },
+    {
+      "caseId": "H11",
+      "category": "FOOD_RESTAURANT",
+      "scorable": false,
+      "classification": "UNSCORED",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "H12",
+      "category": "FOOD_RESTAURANT",
+      "scorable": true,
+      "classification": "EXACT",
+      "exactAt1": true,
+      "exactAt3": true,
+      "matchedRank": 1,
+      "matchedBy": "CANONICAL",
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": true
+    },
+    {
+      "caseId": "P01",
+      "category": "FOOD_RESTAURANT",
+      "scorable": true,
+      "classification": "ACCEPTABLE_ALIAS",
+      "exactAt1": true,
+      "exactAt3": true,
+      "matchedRank": 1,
+      "matchedBy": "ALIAS",
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": true
+    },
+    {
+      "caseId": "P02",
+      "category": "FOOD_RESTAURANT",
+      "scorable": true,
+      "classification": "EXACT",
+      "exactAt1": true,
+      "exactAt3": true,
+      "matchedRank": 1,
+      "matchedBy": "CANONICAL",
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": true
+    },
+    {
+      "caseId": "P03",
+      "category": "FOOD_RESTAURANT",
+      "scorable": true,
+      "classification": "ACCEPTABLE_ALIAS",
+      "exactAt1": true,
+      "exactAt3": true,
+      "matchedRank": 1,
+      "matchedBy": "ALIAS",
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": true
+    },
+    {
+      "caseId": "P04",
+      "category": "FOOD_RESTAURANT",
+      "scorable": true,
+      "classification": "ACCEPTABLE_ALIAS",
+      "exactAt1": true,
+      "exactAt3": true,
+      "matchedRank": 1,
+      "matchedBy": "ALIAS",
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": true
+    },
+    {
+      "caseId": "P05",
+      "category": "FOOD_RESTAURANT",
+      "scorable": true,
+      "classification": "ACCEPTABLE_ALIAS",
+      "exactAt1": true,
+      "exactAt3": true,
+      "matchedRank": 1,
+      "matchedBy": "ALIAS",
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": true
+    },
+    {
+      "caseId": "P06",
+      "category": "FOOD_RESTAURANT",
+      "scorable": true,
+      "classification": "ACCEPTABLE_ALIAS",
+      "exactAt1": true,
+      "exactAt3": true,
+      "matchedRank": 1,
+      "matchedBy": "ALIAS",
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": true
+    },
+    {
+      "caseId": "P07",
+      "category": "FOOD_RESTAURANT",
+      "scorable": true,
+      "classification": "ACCEPTABLE_ALIAS",
+      "exactAt1": true,
+      "exactAt3": true,
+      "matchedRank": 1,
+      "matchedBy": "ALIAS",
+      "autoSaveCorrect": true,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "P08",
+      "category": "FOOD_RESTAURANT",
+      "scorable": true,
+      "classification": "EXACT",
+      "exactAt1": true,
+      "exactAt3": true,
+      "matchedRank": 1,
+      "matchedBy": "CANONICAL",
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": true
+    },
+    {
+      "caseId": "P09",
+      "category": "FOOD_RESTAURANT",
+      "scorable": true,
+      "classification": "ACCEPTABLE_ALIAS",
+      "exactAt1": true,
+      "exactAt3": true,
+      "matchedRank": 1,
+      "matchedBy": "ALIAS",
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": true
+    },
+    {
+      "caseId": "P10",
+      "category": "FOOD_RESTAURANT",
+      "scorable": true,
+      "classification": "TECHNICAL_FAILURE",
+      "exactAt1": false,
+      "exactAt3": false,
+      "matchedRank": null,
+      "matchedBy": null,
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "S01",
+      "category": "FOOD_RESTAURANT",
+      "scorable": true,
+      "classification": "EXACT",
+      "exactAt1": true,
+      "exactAt3": true,
+      "matchedRank": 1,
+      "matchedBy": "CANONICAL",
+      "autoSaveCorrect": true,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "S06",
+      "category": "FOOD_RESTAURANT",
+      "scorable": true,
+      "classification": "EXACT",
+      "exactAt1": true,
+      "exactAt3": true,
+      "matchedRank": 1,
+      "matchedBy": "CANONICAL",
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": true
+    },
+    {
+      "caseId": "C06",
+      "category": "FOOD_RESTAURANT",
+      "scorable": true,
+      "classification": "EXACT",
+      "exactAt1": true,
+      "exactAt3": true,
+      "matchedRank": 1,
+      "matchedBy": "CANONICAL",
+      "autoSaveCorrect": true,
+      "wrongAutosave": false,
+      "reviewCorrect": false
+    },
+    {
+      "caseId": "C07",
+      "category": "LANDMARK",
+      "scorable": true,
+      "classification": "EXACT",
+      "exactAt1": true,
+      "exactAt3": true,
+      "matchedRank": 1,
+      "matchedBy": "CANONICAL",
+      "autoSaveCorrect": false,
+      "wrongAutosave": false,
+      "reviewCorrect": true
+    }
+  ],
+  "metrics": {
+    "perCategory": {
+      "FOOD_RESTAURANT": {
+        "caseCount": 27,
+        "acquired": 26,
+        "scorable": 25,
+        "exactAt1": 23,
+        "exactAt3": 23,
+        "areaOnly": 0,
+        "parentPlace": 0,
+        "genericType": 0,
+        "wrong": 1,
+        "empty": 0,
+        "technical": 1,
+        "wrongAutosaves": 0
+      },
+      "CLIFF_JUMPING": {
+        "caseCount": 3,
+        "acquired": 3,
+        "scorable": 3,
+        "exactAt1": 3,
+        "exactAt3": 3,
+        "areaOnly": 0,
+        "parentPlace": 0,
+        "genericType": 0,
+        "wrong": 0,
+        "empty": 0,
+        "technical": 0,
+        "wrongAutosaves": 0
+      },
+      "HIKING_TRAIL": {
+        "caseCount": 1,
+        "acquired": 1,
+        "scorable": 1,
+        "exactAt1": 1,
+        "exactAt3": 1,
+        "areaOnly": 0,
+        "parentPlace": 0,
+        "genericType": 0,
+        "wrong": 0,
+        "empty": 0,
+        "technical": 0,
+        "wrongAutosaves": 0
+      },
+      "LANDMARK": {
+        "caseCount": 1,
+        "acquired": 1,
+        "scorable": 1,
+        "exactAt1": 1,
+        "exactAt3": 1,
+        "areaOnly": 0,
+        "parentPlace": 0,
+        "genericType": 0,
+        "wrong": 0,
+        "empty": 0,
+        "technical": 0,
+        "wrongAutosaves": 0
+      },
+      "TRAVEL_DESTINATION": {
+        "caseCount": 1,
+        "acquired": 1,
+        "scorable": 1,
+        "exactAt1": 1,
+        "exactAt3": 1,
+        "areaOnly": 0,
+        "parentPlace": 0,
+        "genericType": 0,
+        "wrong": 0,
+        "empty": 0,
+        "technical": 0,
+        "wrongAutosaves": 0
+      }
+    },
+    "microExactAt1": 0.9354838709677419,
+    "microExactAt3": 0.9354838709677419,
+    "macroExactAt1": 0.984,
+    "macroExactAt3": 0.984
+  },
+  "rescoredAt": "2026-09-05T21:31:22.003Z",
+  "cost": {
+    "knownModelSpendUsd": 1.189932,
+    "attemptsWithUnknownModelCost": 1,
+    "otherProviderSpendUsd": null
+  },
+  "latency": {
+    "p50Ms": 22573,
+    "p95Ms": 32969
+  },
+  "safety": {
+    "correctAutosaves": 8,
+    "wrongAutosaves": 0,
+    "correctReviews": 22
+  },
+  "diff": {
+    "cases": [
+      {
+        "caseId": "R03",
+        "category": "HIKING_TRAIL",
+        "status": "UNCHANGED_PASS",
+        "groundTruth": "Tamolitch Blue Pool",
+        "previousTop3": [
+          "Tamolitch Blue Pool (Tamolitch Falls)"
+        ],
+        "newTop3": [
+          "Tamolitch Blue Pool (Tamolitch Falls)"
+        ],
+        "classification": "ACCEPTABLE_ALIAS"
+      },
+      {
+        "caseId": "R04",
+        "category": "CLIFF_JUMPING",
+        "status": "UNCHANGED_PASS",
+        "groundTruth": "Dorset Marble Quarry",
+        "previousTop3": [
+          "Dorset Marble Quarry (Norcross-West Marble Quarry)"
+        ],
+        "newTop3": [
+          "Dorset Marble Quarry (Norcross-West Marble Quarry)"
+        ],
+        "classification": "ACCEPTABLE_ALIAS"
+      },
+      {
+        "caseId": "R05",
+        "category": "CLIFF_JUMPING",
+        "status": "UNCHANGED_PASS",
+        "groundTruth": "Okere Falls Scenic Reserve",
+        "previousTop3": [
+          "Okere Falls Scenic Reserve (Kaituna River)",
+          "Tutea Falls",
+          "Trout Pool Falls"
+        ],
+        "newTop3": [
+          "Okere Falls Scenic Reserve (Kaituna River)",
+          "Tutea Falls",
+          "Trout Pool Falls"
+        ],
+        "classification": "ACCEPTABLE_ALIAS"
+      },
+      {
+        "caseId": "R08",
+        "category": "CLIFF_JUMPING",
+        "status": "UNCHANGED_PASS",
+        "groundTruth": "Moku Nui",
+        "previousTop3": [
+          "Moku Nui, Mokulua Islands",
+          "Queen's Bath cliff-jumping cove, Moku Nui"
+        ],
+        "newTop3": [
+          "Moku Nui, Mokulua Islands",
+          "Queen's Bath cliff-jumping cove, Moku Nui"
+        ],
+        "classification": "ACCEPTABLE_ALIAS"
+      },
+      {
+        "caseId": "V02",
+        "category": "FOOD_RESTAURANT",
+        "status": "UNCHANGED_PASS",
+        "groundTruth": "Capone's Italian Cucina",
+        "previousTop3": [
+          "Capone's Cucina"
+        ],
+        "newTop3": [
+          "Capone's Cucina"
+        ],
+        "classification": "ACCEPTABLE_ALIAS"
+      },
+      {
+        "caseId": "V03",
+        "category": "FOOD_RESTAURANT",
+        "status": "UNCHANGED_PASS",
+        "groundTruth": "Brooklyn City Pizzeria & Market",
+        "previousTop3": [
+          "Brooklyn City Pizzeria & Market"
+        ],
+        "newTop3": [
+          "Brooklyn City Pizzeria & Market"
+        ],
+        "classification": "EXACT"
+      },
+      {
+        "caseId": "V04",
+        "category": "TRAVEL_DESTINATION",
+        "status": "UNCHANGED_PASS",
+        "groundTruth": "Hellfire Bay",
+        "previousTop3": [
+          "Hellfire Bay"
+        ],
+        "newTop3": [
+          "Hellfire Bay"
+        ],
+        "classification": "EXACT"
+      },
+      {
+        "caseId": "V05",
+        "category": "FOOD_RESTAURANT",
+        "status": "UNCHANGED_PASS",
+        "groundTruth": "Paradise Dynasty",
+        "previousTop3": [
+          "Paradise Dynasty at South Coast Plaza",
+          "Paradise Dynasty at The Americana at Brand"
+        ],
+        "newTop3": [
+          "Paradise Dynasty at South Coast Plaza",
+          "Paradise Dynasty at The Americana at Brand"
+        ],
+        "classification": "ACCEPTABLE_ALIAS"
+      },
+      {
+        "caseId": "H01",
+        "category": "FOOD_RESTAURANT",
+        "status": "UNCHANGED_PASS",
+        "groundTruth": "2nd Floor",
+        "previousTop3": [
+          "2nd Floor Gallery Bar & Grill"
+        ],
+        "newTop3": [
+          "2nd Floor Gallery Bar & Grill"
+        ],
+        "classification": "ACCEPTABLE_ALIAS"
+      },
+      {
+        "caseId": "H02",
+        "category": "FOOD_RESTAURANT",
+        "status": "UNCHANGED_PASS",
+        "groundTruth": "Mad Yolks",
+        "previousTop3": [
+          "Mad Yolks"
+        ],
+        "newTop3": [
+          "Mad Yolks"
+        ],
+        "classification": "EXACT"
+      },
+      {
+        "caseId": "H03",
+        "category": "FOOD_RESTAURANT",
+        "status": "UNCHANGED_PASS",
+        "groundTruth": "Las Palmas Taco Bar",
+        "previousTop3": [
+          "Las Palmas Taco Bar"
+        ],
+        "newTop3": [
+          "Las Palmas Taco Bar"
+        ],
+        "classification": "EXACT"
+      },
+      {
+        "caseId": "H04",
+        "category": "FOOD_RESTAURANT",
+        "status": "UNCHANGED_PASS",
+        "groundTruth": "Seabright Deli",
+        "previousTop3": [
+          "Seabright Deli"
+        ],
+        "newTop3": [
+          "Seabright Deli"
+        ],
+        "classification": "EXACT"
+      },
+      {
+        "caseId": "H05",
+        "category": "FOOD_RESTAURANT",
+        "status": "UNCHANGED_PASS",
+        "groundTruth": "Mad Yolks",
+        "previousTop3": [
+          "Mad Yolks"
+        ],
+        "newTop3": [
+          "Mad Yolks"
+        ],
+        "classification": "EXACT"
+      },
+      {
+        "caseId": "H06",
+        "category": "FOOD_RESTAURANT",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "Baqba Mexican Grill",
+        "previousTop3": [
+          "Baqba Mexican Grill – Rialto",
+          "Baqba Mexican Grill – Montclair"
+        ],
+        "newTop3": [
+          "Baqba Mexican Grill – Rialto",
+          "Baqba Mexican Grill – Montclair"
+        ],
+        "classification": "UNSCORED"
+      },
+      {
+        "caseId": "H08",
+        "category": "FOOD_RESTAURANT",
+        "status": "UNCHANGED_PASS",
+        "groundTruth": "Loaded Cafe - Orange",
+        "previousTop3": [
+          "Loaded Cafe – Orange"
+        ],
+        "newTop3": [
+          "Loaded Cafe – Orange"
+        ],
+        "classification": "EXACT"
+      },
+      {
+        "caseId": "H09",
+        "category": "FOOD_RESTAURANT",
+        "status": "UNCHANGED_PASS",
+        "groundTruth": "Pho Bamboo Vietnamese Restaurant",
+        "previousTop3": [
+          "Pho Bamboo Restaurant"
+        ],
+        "newTop3": [
+          "Pho Bamboo Restaurant"
+        ],
+        "classification": "ACCEPTABLE_ALIAS"
+      },
+      {
+        "caseId": "H10",
+        "category": "FOOD_RESTAURANT",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "Baja Sharkeez",
+        "previousTop3": [
+          "Baja Sharkeez Newport Beach"
+        ],
+        "newTop3": [
+          "Baja Sharkeez Newport Beach"
+        ],
+        "classification": "WRONG"
+      },
+      {
+        "caseId": "H11",
+        "category": "FOOD_RESTAURANT",
+        "status": "UNCHANGED_FAIL",
+        "groundTruth": "No Good Burger Joint",
+        "previousTop3": [
+          "No Good Burger Joint",
+          "No Good Burger Joint – Rockville Centre",
+          "No Good Burger Joint – Baldwin"
+        ],
+        "newTop3": [
+          "No Good Burger Joint",
+          "No Good Burger Joint – Rockville Centre",
+          "No Good Burger Joint – Baldwin"
+        ],
+        "classification": "UNSCORED"
+      },
+      {
+        "caseId": "H12",
+        "category": "FOOD_RESTAURANT",
+        "status": "UNCHANGED_PASS",
+        "groundTruth": "Old Fisherman's Grotto",
+        "previousTop3": [
+          "Old Fisherman's Grotto"
+        ],
+        "newTop3": [
+          "Old Fisherman's Grotto"
+        ],
+        "classification": "EXACT"
+      },
+      {
+        "caseId": "P01",
+        "category": "FOOD_RESTAURANT",
+        "status": "UNCHANGED_PASS",
+        "groundTruth": "Aptos St. BBQ",
+        "previousTop3": [
+          "Aptos Street BBQ"
+        ],
+        "newTop3": [
+          "Aptos Street BBQ"
+        ],
+        "classification": "ACCEPTABLE_ALIAS"
+      },
+      {
+        "caseId": "P02",
+        "category": "FOOD_RESTAURANT",
+        "status": "UNCHANGED_PASS",
+        "groundTruth": "BLK Earth Sea Spirits",
+        "previousTop3": [
+          "BLK Earth Sea Spirits"
+        ],
+        "newTop3": [
+          "BLK Earth Sea Spirits"
+        ],
+        "classification": "EXACT"
+      },
+      {
+        "caseId": "P03",
+        "category": "FOOD_RESTAURANT",
+        "status": "UNCHANGED_PASS",
+        "groundTruth": "Chocolat",
+        "previousTop3": [
+          "Chocolate (Chocolate the Restaurant)"
+        ],
+        "newTop3": [
+          "Chocolate (Chocolate the Restaurant)"
+        ],
+        "classification": "ACCEPTABLE_ALIAS"
+      },
+      {
+        "caseId": "P04",
+        "category": "FOOD_RESTAURANT",
+        "status": "UNCHANGED_PASS",
+        "groundTruth": "Mesa Verde Farmers' Market",
+        "previousTop3": [
+          "Mesa Verde Farmers Market (Farm Habit Mesa Verde)",
+          "Deli Nerds"
+        ],
+        "newTop3": [
+          "Mesa Verde Farmers Market (Farm Habit Mesa Verde)",
+          "Deli Nerds"
+        ],
+        "classification": "ACCEPTABLE_ALIAS"
+      },
+      {
+        "caseId": "P05",
+        "category": "FOOD_RESTAURANT",
+        "status": "UNCHANGED_PASS",
+        "groundTruth": "OC Greek Fest",
+        "previousTop3": [
+          "Orange County Greek Festival (OC Greek Fest) at St. John the Baptist Greek Orthodox Church"
+        ],
+        "newTop3": [
+          "Orange County Greek Festival (OC Greek Fest) at St. John the Baptist Greek Orthodox Church"
+        ],
+        "classification": "ACCEPTABLE_ALIAS"
+      },
+      {
+        "caseId": "P06",
+        "category": "FOOD_RESTAURANT",
+        "status": "UNCHANGED_PASS",
+        "groundTruth": "Old World Biergarten Festival Hall & Concert Venue",
+        "previousTop3": [
+          "Biergarten at Old World Huntington Beach (Old World Village)"
+        ],
+        "newTop3": [
+          "Biergarten at Old World Huntington Beach (Old World Village)"
+        ],
+        "classification": "ACCEPTABLE_ALIAS"
+      },
+      {
+        "caseId": "P07",
+        "category": "FOOD_RESTAURANT",
+        "status": "UNCHANGED_PASS",
+        "groundTruth": "Point Market",
+        "previousTop3": [
+          "The Point Market"
+        ],
+        "newTop3": [
+          "The Point Market"
+        ],
+        "classification": "ACCEPTABLE_ALIAS"
+      },
+      {
+        "caseId": "P08",
+        "category": "FOOD_RESTAURANT",
+        "status": "UNCHANGED_PASS",
+        "groundTruth": "Seabright Deli",
+        "previousTop3": [
+          "Seabright Deli"
+        ],
+        "newTop3": [
+          "Seabright Deli"
+        ],
+        "classification": "EXACT"
+      },
+      {
+        "caseId": "P09",
+        "category": "FOOD_RESTAURANT",
+        "status": "UNCHANGED_PASS",
+        "groundTruth": "Tacos El Chuy",
+        "previousTop3": [
+          "Tacos El Chuy food truck"
+        ],
+        "newTop3": [
+          "Tacos El Chuy food truck"
+        ],
+        "classification": "ACCEPTABLE_ALIAS"
+      },
+      {
+        "caseId": "P10",
+        "category": "FOOD_RESTAURANT",
+        "status": "TECHNICAL",
+        "groundTruth": "Taqueria Los Pericos",
+        "previousTop3": [],
+        "newTop3": [],
+        "classification": "TECHNICAL_FAILURE"
+      },
+      {
+        "caseId": "S01",
+        "category": "FOOD_RESTAURANT",
+        "status": "UNCHANGED_PASS",
+        "groundTruth": "Seabright Deli",
+        "previousTop3": [
+          "Seabright Deli"
+        ],
+        "newTop3": [
+          "Seabright Deli"
+        ],
+        "classification": "EXACT"
+      },
+      {
+        "caseId": "S06",
+        "category": "FOOD_RESTAURANT",
+        "status": "UNCHANGED_PASS",
+        "groundTruth": "Seabright Deli",
+        "previousTop3": [
+          "Seabright Deli"
+        ],
+        "newTop3": [
+          "Seabright Deli"
+        ],
+        "classification": "EXACT"
+      },
+      {
+        "caseId": "C06",
+        "category": "FOOD_RESTAURANT",
+        "status": "UNCHANGED_PASS",
+        "groundTruth": "Tuxedo Cat's Coffee",
+        "previousTop3": [
+          "Tuxedo Cat's Coffee"
+        ],
+        "newTop3": [
+          "Tuxedo Cat's Coffee"
+        ],
+        "classification": "EXACT"
+      },
+      {
+        "caseId": "C07",
+        "category": "LANDMARK",
+        "status": "UNCHANGED_PASS",
+        "groundTruth": "San Diego Zoo",
+        "previousTop3": [
+          "San Diego Zoo"
+        ],
+        "newTop3": [
+          "San Diego Zoo"
+        ],
+        "classification": "EXACT"
+      }
+    ]
+  }
+}
