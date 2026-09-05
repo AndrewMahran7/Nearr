@@ -132,15 +132,23 @@ const multiRows = [
 assert.equal(getSavedPlaceShareTarget(multiRows[0]!).url, 'https://www.instagram.com/p/PostForRowOne/');
 assert.equal(getSavedPlaceShareTarget(multiRows[1]!).url, 'https://www.tiktok.com/@food/video/7300000000000000002');
 
-// Production integration: one resolver, URL passed to native Share, no share-time rediscovery.
+// Production integration: primary Share creates one canonical Nearr link, while
+// the original source resolver remains available only to the separate action.
 const detail = readFileSync(join(process.cwd(), 'components/map/SelectedPlaceDetails.tsx'), 'utf8');
 const worker = readFileSync(join(process.cwd(), 'supabase/functions/process-share-jobs/index.ts'), 'utf8');
-assert.match(detail, /buildSavedPlaceShareContent\(saved\)/);
+assert.match(detail, /createPublicPlaceShare\(saved\.place\.id/);
+assert.match(detail, /buildSavedPlaceShareContent\([\s\S]{0,160}referralId/);
 assert.match(detail, /url: content\.url/);
-assert.doesNotMatch(detail.slice(detail.indexOf('async function sharePlace'), detail.indexOf('async function handleSave')), /getShareJob|supabase|fetch\(/);
+assert.doesNotMatch(detail.slice(detail.indexOf('async function sharePlace'), detail.indexOf('async function handleSave')), /getShareJob|source_url/);
 assert.match(worker, /p_source_url: canonicalUrl/, 'Phase 2 auto-save persists its original public source');
 
-const content = buildSavedPlaceShareContent(saved('https://www.instagram.com/p/Public/'));
+const content = buildSavedPlaceShareContent({
+  ...saved('https://www.instagram.com/p/Public/'),
+  place: { ...place, id: '7b98ca4a-52be-4d48-9886-5d95e165b722' },
+});
+assert.equal(content.kind, 'nearr_place');
+assert.match(content.url ?? '', /^https:\/\/nearrapp\.com\/p\//);
+assert.ok(!content.message.includes('instagram.com'));
 assert.ok(!/note|confidence|job|transcript|prompt|location/i.test(content.message));
 
 console.log('PASS saved-place source priority, normalization, safety, correction, auto-save, and multi-place isolation');

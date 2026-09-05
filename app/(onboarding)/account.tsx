@@ -60,6 +60,7 @@ import {
   OnboardingSizes,
 } from '@/components/onboarding';
 import { NearrAppIcon } from '@/components/onboarding/demo';
+import { getPendingSharedPlaceIntent, type PendingSharedPlaceIntent } from '@/lib/sharedPlaceIntent';
 
 /**
  * Gate for the DEBUGGING-ONLY developer login panel.
@@ -115,6 +116,11 @@ export default function AccountAuthScreen() {
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [appleAvailable, setAppleAvailable] = useState<boolean | null>(null);
+  const [sharedPlaceIntent, setSharedPlaceIntent] = useState<PendingSharedPlaceIntent | null>(null);
+
+  useEffect(() => {
+    void getPendingSharedPlaceIntent().then(setSharedPlaceIntent);
+  }, []);
 
   // ONE in-flight auth request at a time. The ref is the authority (it updates
   // synchronously, so two taps in the same frame cannot both pass the guard);
@@ -528,9 +534,13 @@ export default function AccountAuthScreen() {
           CTA. The subtext covers returning users, since every email path here
           both signs in and creates an account.
         */}
-        <Text style={styles.headline}>{anonymousOnboarding ? 'Keep your Nearr map' : 'Create your map'}</Text>
+        <Text style={styles.headline}>
+          {sharedPlaceIntent ? `Save ${sharedPlaceIntent.placeName || 'this place'}` : anonymousOnboarding ? 'Keep your Nearr map' : 'Create your map'}
+        </Text>
         <Text style={styles.subtext}>
-          {anonymousOnboarding
+          {sharedPlaceIntent
+            ? 'Sign in or create an account, then Nearr will bring you back here and save it to your map.'
+            : anonymousOnboarding
             ? 'Nearr found your first place. Create or connect an account to preserve it and continue.'
             : 'Sign in or create an account to start saving the places you find online.'}
         </Text>

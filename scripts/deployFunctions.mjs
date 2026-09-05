@@ -40,7 +40,14 @@ const FUNCTIONS_DIR = path.join(REPO_ROOT, 'supabase', 'functions');
  * fixture, hard-refuse every non-development Supabase deployment.
  * Anything absent here keeps Supabase's default JWT verification.
  */
-const NO_VERIFY_JWT = new Set(['e2e-place-fixture', 'process-share-jobs', 'process-share-link']);
+const NO_VERIFY_JWT = new Set([
+  'e2e-place-fixture',
+  'process-share-jobs',
+  'process-share-link',
+  // Deliberately public, read-only place DTO + bounded acquisition events.
+  // The handler owns validation and uses the service role only server-side.
+  'public-place',
+]);
 const DEVELOPMENT_ONLY_FUNCTIONS = new Set(['e2e-place-fixture']);
 
 function fail(message) {

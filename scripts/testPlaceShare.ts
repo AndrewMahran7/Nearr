@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { buildSavedPlaceShareContent } from '../lib/placeShare';
 
 const providerPlace = {
+  id: '7b98ca4a-52be-4d48-9886-5d95e165b722',
   name: 'Blue Bottle Coffee',
   formatted_address: '66 Mint St, San Francisco, CA 94103',
   google_place_id: 'ChIJ-abc123',
@@ -17,10 +18,11 @@ const manual = buildSavedPlaceShareContent({
   place: providerPlace,
 });
 assert.equal(manual.title, 'Blue Bottle Coffee');
-assert.equal(manual.kind, 'provider');
-assert.ok(manual.url?.startsWith('https://www.google.com/maps'));
+assert.equal(manual.kind, 'nearr_place');
+assert.equal(manual.url, 'https://nearrapp.com/p/7b98ca4a-52be-4d48-9886-5d95e165b722');
 assert.ok(manual.message.includes('Blue Bottle Coffee'));
-assert.ok(manual.message.includes('ChIJ-abc123'));
+assert.ok(manual.message.includes('https://nearrapp.com/p/7b98ca4a-52be-4d48-9886-5d95e165b722'));
+assert.ok(!manual.message.includes('ChIJ-abc123'));
 assert.ok(!manual.message.includes('66 Mint St'), 'payload stays minimal');
 
 const polluted = buildSavedPlaceShareContent({
@@ -48,4 +50,4 @@ const unavailable = buildSavedPlaceShareContent({
 assert.equal(unavailable.kind, 'unavailable');
 assert.equal(unavailable.url, null);
 
-console.log('PASS minimal saved-place share payload, provider fallback, privacy, and unavailable state');
+console.log('PASS canonical Nearr share payload, privacy, and unavailable state');

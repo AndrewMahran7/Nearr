@@ -76,6 +76,11 @@ import {
   type NoteEditorState,
 } from '@/lib/noteEditor';
 import { buildSavedPlaceShareContent } from '@/lib/placeShare';
+import { createPublicPlaceShare } from '@/lib/publicPlace';
+import {
+  getUntrackedAcquisitionReferral,
+  markAcquisitionFirstShareTracked,
+} from '@/lib/sharedPlaceIntent';
 import {
   reminderDistanceLabel,
   reminderStatusLabel,
@@ -753,28 +758,47 @@ export function SelectedPlaceDetails({
     });
   }
 
-  // Sharing prefers the ORIGINAL public source the place came from — especially
-  // its social post — and only falls back to Google Maps when none is usable.
-  // Temporary media, internal endpoints, and
-  // signed URLs are rejected by lib/placeShare.ts. No private fields (notes,
-  // reminder settings, ids) are ever included.
+  // Sharing is about the canonical place. The original post stays available
+  // through the separate source action above, never as the primary payload.
   async function sharePlace() {
-    const content = buildSavedPlaceShareContent(saved);
+    let publicPlaceId = saved.place.id;
+    let referralId: string | null = null;
+    try {
+      const share = await createPublicPlaceShare(saved.place.id, 'place_detail');
+      publicPlaceId = share.publicPlaceId;
+      referralId = share.referralId;
+    } catch (error) {
+      if (__DEV__) console.debug('[map] referral creation failed; sharing canonical URL', error);
+    }
+    const content = buildSavedPlaceShareContent(
+      { ...saved, place: { ...saved.place, id: publicPlaceId } },
+      referralId,
+    );
     void trackEvent('place_shared', {
-      saved_place_id: saved.id,
-      google_place_id: saved.place.google_place_id ?? null,
+      public_place_id: publicPlaceId,
+      referral_id: referralId,
       has_url: !!content.url,
       share_kind: content.kind,
     });
     if (!content.url) {
-      Alert.alert("Couldn't share this place", 'No public source or map link is available.');
+      Alert.alert("Couldn't share this place", 'This place does not have a valid Nearr link yet.');
       return;
     }
     try {
-      await Share.share(
+      const result = await Share.share(
         { message: content.message, title: content.title, url: content.url },
         { subject: content.title },
       );
+      if (result.action === Share.sharedAction) {
+        const acquisitionRef = await getUntrackedAcquisitionReferral();
+        if (acquisitionRef) {
+          void trackEvent('shared_link_first_independent_share', {
+            acquisition_referral_id: acquisitionRef,
+            public_place_id: publicPlaceId,
+          });
+          await markAcquisitionFirstShareTracked();
+        }
+      }
     } catch (err) {
       // User cancellation on Android rejects the promise — treat as a no-op.
       if (__DEV__) console.debug('[map] share place dismissed', err);
