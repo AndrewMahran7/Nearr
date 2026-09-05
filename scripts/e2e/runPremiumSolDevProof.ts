@@ -106,47 +106,34 @@ async function premiumRequest(session: E2ESession, jobId: string) {
 
 async function seedEligibleJob(session: E2ESession, spec: CaseSpec): Promise<string> {
   if (!session.identity) throw new Error('ephemeral identity unavailable');
-  const { data, error } = await session.admin.rpc('create_share_job_for_user', {
-    p_user_id: session.identity.userId,
-    p_source_url: spec.sourceUrl,
-    p_canonical_url: spec.sourceUrl,
-    p_source_platform: spec.platform,
-    p_idempotency_key: correlationKeyFor(session.correlationId, `premium-${spec.id.toLowerCase()}`),
-    p_dedupe_window_seconds: 1,
-    p_is_anonymous: false,
-    p_force_rerun: true,
-  });
-  const job = Array.isArray(data) ? data[0] : null;
-  if (error || !job?.job_id) throw new Error(`${spec.id}: free job creation failed: ${error?.message ?? 'unknown'}`);
-  // The RPC creates a normal-lane media task. This proof starts at the Premium
-  // boundary, so cancel that task before making the job eligible; otherwise it
-  // can race the Premium task and replace its result with unrelated free-lane
-  // output while the proof incorrectly attributes the parent result to Sol.
-  const { error: cancelError } = await session.admin.from('share_media_tasks').update({
-    status: 'cancelled',
-    completed_at: new Date().toISOString(),
-    failure_code: 'cancelled',
-  }).eq('share_job_id', job.job_id).neq('task_kind', 'premium_recognition');
-  if (cancelError) throw new Error(`${spec.id}: normal task cancellation failed: ${cancelError.message}`);
-  const { error: updateError } = await session.admin.from('share_jobs').update({
+  const completedAt = new Date().toISOString();
+  // Start from the exact terminal state at which the product offers Premium.
+  // Inserting that fixture directly avoids ever exposing a queued normal-lane
+  // parent to the deployed poller, so only request_premium can create work.
+  const { data: job, error } = await session.admin.from('share_jobs').insert({
+    user_id: session.identity.userId,
+    source_url: spec.sourceUrl,
+    canonical_url: spec.sourceUrl,
+    source_platform: spec.platform,
     status: 'needs_help',
     progress_stage: 'manual',
+    idempotency_key: correlationKeyFor(session.correlationId, `premium-${spec.id.toLowerCase()}`),
+    billing_mode: 'normal_free',
+    billing_outcome: 'unmetered:normal_free',
+    billing_settled_at: completedAt,
     decision: 'manual_fallback',
-    saved_place_id: null,
-    candidate_payload: null,
-    suggested_query: null,
     needs_help_reason: 'insufficient_evidence',
     failure_reason: 'insufficient_evidence',
     failure_category: 'analysis_insufficient',
     failure_code: 'insufficient_evidence',
     analysis_attempted: true,
-    completed_at: new Date().toISOString(),
+    completed_at: completedAt,
     premium_state: 'eligible',
     premium_eligibility_reason: 'insufficient_evidence',
-  }).eq('id', job.job_id).eq('user_id', session.identity.userId);
-  if (updateError) throw new Error(`${spec.id}: eligibility setup failed: ${updateError.message}`);
-  session.trackedJobIds.push(job.job_id);
-  return job.job_id;
+  }).select('id').single();
+  if (error || !job?.id) throw new Error(`${spec.id}: terminal fixture insert failed: ${error?.message ?? 'unknown'}`);
+  session.trackedJobIds.push(job.id);
+  return job.id;
 }
 
 async function wallet(session: E2ESession) {
