@@ -1,0 +1,23 @@
+{
+  "releaseId": "2026-09-05-broad-area-premium-escalation",
+  "previousMainSha": "0635190763dbf6d504713c42d0aa257ef5317305",
+  "previousOtaGroup": "bb685ade-ae5a-4685-ada5-559cb70432a6",
+  "currentOtaGroup": null,
+  "edgeVersions": {
+    "process-share-jobs": 93,
+    "process-share-link": 134,
+    "monetization": 1
+  },
+  "railwayDeployment": "2d4da2a4-c9b9-4d34-8894-15e8e8e6c407 (unchanged)",
+  "migrationLedger": [
+    "20260905000001"
+  ],
+  "rollbackProcedure": "Redeploy process-share-jobs from 0635190763dbf6d504713c42d0aa257ef5317305 and republish previousOtaGroup after repeating the production concurrency guard.",
+  "deploymentStatus": "PLANNED",
+  "physicalQa": {
+    "signedOutColdLaunch": "PENDING",
+    "signedInColdLaunch": "PENDING",
+    "forceCloseRelaunch": "PENDING",
+    "freshOnboardingLaunch": "NOT_REQUIRED"
+  }
+}
