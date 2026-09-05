@@ -201,3 +201,60 @@ test('35 terminal-state idempotency prevents duplicate deep finalization', async
   await source('../../../supabase/functions/process-share-jobs/index.ts'),
   /automaticDeepPayload && pre\.action !== 'parent_already_terminal'/,
 ));
+
+test('36 a zero-specific F1 result gets exactly one independent F2 recovery attempt', async () => {
+  const calls: string[] = [];
+  const inner: ModelProvider = { name: 'normal', analyze: async () => output([]) };
+  const recovered = execution(['Atuh Beach', 'Diamond Beach']);
+  const result = await withAutomaticDeepRecognition(inner, cfg, async (args) => {
+    calls.push(args.frameSet.arm);
+    return calls.length === 1
+      ? { ...execution([]), outcome: 'PREMIUM_NO_USEFUL_RESULT', chargeability: 'NON_CHARGEABLE_NO_RESULT', destinations: [] }
+      : recovered;
+  }).analyze(input);
+  assert.deepEqual(calls, ['F1', 'F2']);
+  assert.equal(result.automaticDeep?.attempts, 2);
+  assert.equal(result.automaticDeep?.recoveryInvoked, true);
+  assert.equal(result.automaticDeep?.firstAttemptSpecificHypotheses, 0);
+  assert.equal(result.automaticDeep?.recoverySpecificHypotheses, 2);
+  assert.equal(result.automaticDeepRecognition?.telemetry.automaticRecovery?.attempts, 2);
+  assert.equal(result.automaticDeepRecognition?.telemetry.usage.total_tokens, 240);
+  assert.equal(result.automaticDeepRecognition?.telemetry.knownModelCostUsd, .02);
+});
+
+test('37 recovery is bounded at two attempts and generic hypotheses are never surfaced', async () => {
+  let calls = 0;
+  const inner: ModelProvider = { name: 'normal', analyze: async () => output([place('waterfall')]) };
+  const result = await withAutomaticDeepRecognition(inner, cfg, async () => {
+    calls += 1;
+    return execution(['waterfall']);
+  }).analyze(input);
+  assert.equal(calls, 2);
+  assert.equal(result.automaticDeepRecognition?.outcome, 'PREMIUM_NO_USEFUL_RESULT');
+  assert.deepEqual(result.automaticDeepRecognition?.destinations, []);
+  assert.equal(result.automaticDeep?.specificResult, false);
+});
+
+test('38 true zero source evidence is technical unresolved without model call or fabricated guess', async () => {
+  let calls = 0;
+  const inner: ModelProvider = { name: 'normal', analyze: async () => output([]) };
+  const result = await withAutomaticDeepRecognition(inner, cfg, async () => {
+    calls += 1;
+    return execution();
+  }).analyze({ ...input, frames: [] });
+  assert.equal(calls, 0);
+  assert.equal(result.recognitionFailureClass, 'source_evidence_unavailable');
+  assert.equal(result.automaticDeep?.noUsableSourceEvidence, true);
+  assert.deepEqual(result.evidence.places, []);
+  assert.equal(result.automaticDeepRecognition, undefined);
+});
+
+test('39 text-only legitimate evidence still receives the bounded deep attempts', async () => {
+  const arms: string[] = [];
+  const inner: ModelProvider = { name: 'normal', analyze: async () => output([]) };
+  await withAutomaticDeepRecognition(inner, cfg, async (args) => {
+    arms.push(args.frameSet.arm);
+    return { ...execution([]), outcome: 'PREMIUM_NO_USEFUL_RESULT', chargeability: 'NON_CHARGEABLE_NO_RESULT', destinations: [] };
+  }).analyze({ ...input, frames: [], metadataDescription: 'A signed destination appears in the source.' });
+  assert.deepEqual(arms, ['F1', 'F2']);
+});

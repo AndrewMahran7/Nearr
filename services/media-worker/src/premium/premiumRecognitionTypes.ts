@@ -153,6 +153,17 @@ export type PremiumRecognitionTelemetry = {
     canonicalizationCompletedAt: string;
     premiumTerminalAt: string;
   };
+  /** Content-free accounting for Automatic Deep's single bounded recovery
+   * attempt. Absent for Premium and for a successful first Simple Sol call. */
+  automaticRecovery?: {
+    invoked: true;
+    attempts: 2;
+    firstOutcome: PremiumRecognitionExecution['outcome'];
+    firstSpecificHypotheses: number;
+    recoveryOutcome: PremiumRecognitionExecution['outcome'];
+    recoverySpecificHypotheses: number;
+    recoveryFrameStrategy: string;
+  };
 };
 
 export type PremiumRecognitionExecution = {

@@ -29,7 +29,8 @@ export function classifyRecognitionFinalResult(
     analysis.recognitionFailureClass === 'candidate_field_invalid' ||
     analysis.recognitionFailureClass === 'model_schema_invalid' ||
     analysis.recognitionFailureClass === 'model_provider_failure' ||
-    analysis.recognitionFailureClass === 'recovery_invalid';
+    analysis.recognitionFailureClass === 'recovery_invalid' ||
+    analysis.recognitionFailureClass === 'source_evidence_unavailable';
 
   if (technical) {
     return {
