@@ -220,4 +220,3 @@ revoke all on function public.save_shared_place(uuid, text)
   from public, anon, authenticated;
 grant execute on function public.save_shared_place(uuid, text)
   to authenticated;
-
