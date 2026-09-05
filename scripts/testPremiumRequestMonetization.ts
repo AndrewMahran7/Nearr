@@ -160,7 +160,7 @@ const monetizationClient = source('lib/monetizationClient.ts');
 const workerModel = source('services/media-worker/src/providers/model.ts');
 const workerIndex = source('services/media-worker/src/index.ts');
 const workerPipeline = source('services/media-worker/src/pipeline/runMediaTask.ts');
-const workerPremium = source('services/media-worker/src/vayrin/visualGeolocationProvider.ts');
+const workerPremium = source('services/media-worker/src/premium/premiumRecognitionAdapter.ts');
 const detail = source('app/share-jobs/[jobId].tsx');
 const store = source('app/monetization.tsx');
 const settings = source('app/(tabs)/settings.tsx');
@@ -180,14 +180,15 @@ const sourceTests: Array<[string, () => void]> = [
   ['purchase resumes exact premium request', () => assert.match(monetizationEdge, /premiumJobId[\s\S]*request_premium_recognition/)],
   ['client stores pending premium job identity', () => assert.match(detail, /setPendingPremiumRequestJobId\(job\.id\)/)],
   ['store auto-resumes without a second request tap', () => assert.match(store, /resumed automatically on the original post/)],
-  ['normal worker model omits fallback wrapper', () => assert.match(workerModel, /options\.premiumRequest[\s\S]*\? withVayrinFallback[\s\S]*: base/)],
-  ['worker wires distinct premium model', () => assert.match(workerIndex, /premiumModel: selectModelProvider\(cfg, \{ premiumRequest: true \}\)/)],
+  ['normal worker model omits Premium Sol', () => assert.doesNotMatch(workerModel.match(/export function selectModelProvider[\s\S]*?\n\}/)?.[0] ?? '', /PremiumRecognition|premiumRequest/)],
+  ['worker wires distinct premium model', () => assert.match(workerIndex, /premiumModel: createPremiumRecognitionModel\(cfg\)/)],
   ['premium task selects premium model', () => assert.match(workerPipeline, /task\.task_kind === 'premium_recognition'[\s\S]*deps\.premiumModel/)],
-  ['premium path has explicit trigger reason', () => assert.match(workerPremium, /reason: 'premium_request'/)],
+  ['premium path invokes the explicit direct Sol engine', () => assert.match(workerPremium, /runPremiumRecognition\(/)],
   ['premium path contains no MCP integration', () => assert.doesNotMatch([workerModel, workerIndex, workerPipeline, workerPremium].join('\n'), /model context protocol|mcp__/i)],
   ['central Edge chargeability policy is used', () => assert.match(processor, /isPremiumResultChargeable/)],
   ['premium settlement is atomic RPC', () => assert.match(processor, /settle_premium_request/)],
   ['technical Premium results release', () => assert.match(processor, /failure_category === 'technical_failure'[\s\S]*'failed'/)],
+  ['Premium no-result remains analysis-insufficient and releases', () => assert.match(source('lib/shareFailurePresentation.ts'), /INSUFFICIENT_CODES[\s\S]*premium_no_useful_result/)],
   ['normal settlement is unmetered', () => assert.match(processor, /billing_outcome = 'unmetered:normal_free'/)],
   ['offer copy states normal recognition was free', () => assert.match(detail, /Normal recognition was free/)],
   ['offer displays one-token price', () => assert.match(detail, /Try Premium Request · 1 token/)],

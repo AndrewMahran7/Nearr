@@ -638,6 +638,13 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
           ? null
           : sourceDescriptionForModel(media.metadataDescription),
         metadataLocation: context.sceneScoped ? null : media.metadataLocation,
+        metadataCreatorHandle: context.sceneScoped ? null : media.metadataCreatorHandle,
+        metadataCreatorName: context.sceneScoped ? null : media.metadataCreatorName,
+        premiumRequestedAt: task.task_kind === 'premium_recognition' && task.created_at
+          ? new Date(task.created_at)
+          : undefined,
+        evidenceReadyAt: task.task_kind === 'premium_recognition' ? new Date() : undefined,
+        evidencePrepMs: task.task_kind === 'premium_recognition' ? Date.now() - startedAt : undefined,
         targetPlace: aiNoteTarget
           ? {
               name: aiNoteTarget.name,
@@ -648,10 +655,13 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
         retainedEvidence: context.evidence,
         signal: controller.signal,
       };
-      const rawAnalysis = task.task_kind === 'premium_recognition' && deps.premiumModel
-        ? await deps.premiumModel.analyze(analyzeInput)
+      if (task.task_kind === 'premium_recognition' && !deps.premiumModel) {
+        throw new MediaError('provider_unavailable', 'premium_model_unconfigured');
+      }
+      const rawAnalysis = task.task_kind === 'premium_recognition'
+        ? await deps.premiumModel!.analyze(analyzeInput)
         : await deps.model.analyze(analyzeInput);
-      return {
+      return task.task_kind === 'premium_recognition' ? rawAnalysis : {
         ...rawAnalysis,
         evidence: groundClaimedEvidence(rawAnalysis.evidence, analyzeInput),
       };
@@ -755,6 +765,7 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
       });
     }
     if (analysis.grouping) Object.assign(diagnostics, analysis.grouping);
+    if (analysis.premium) diagnostics.premiumRecognition = analysis.premium.telemetry;
     warnings.push(...analysis.evidence.warnings);
     diagnostics.durationMs = Date.now() - startedAt;
     diagnostics.warnings = warnings.slice(0, 24);
@@ -765,7 +776,13 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
     const noteHasEvidence = analysis.evidence.places.some(
       (place) => !!place.memoryCue?.trim() && place.memoryCueEvidence.length > 0,
     );
-    const recognitionFinal = classifyRecognitionFinalResult(analysis);
+    const recognitionFinal = analysis.premium
+      ? analysis.premium.outcome === 'PREMIUM_ACTIONABLE_RESULT'
+        ? { outcome: 'evidence' as const, resultClass: 'premium_actionable', failureCode: undefined }
+        : analysis.premium.outcome === 'PREMIUM_TECHNICAL_FAILURE'
+        ? { outcome: 'failed' as const, resultClass: 'premium_technical_failure', failureCode: analysis.premium.failureCode ?? 'premium_model_failure' }
+        : { outcome: 'insufficient_evidence' as const, resultClass: 'premium_no_useful_result', failureCode: 'premium_no_useful_result' }
+      : classifyRecognitionFinalResult(analysis);
     const outcome: FinalizeOutcome = task.task_kind === 'ai_note_enrichment'
       ? (noteHasEvidence ? 'evidence' : 'insufficient_evidence')
       : recognitionFinal.outcome;
@@ -817,6 +834,7 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
         },
         canonicalUrl: media.canonicalUrl,
         diagnostics,
+        premiumRecognition: analysis.premium,
         signal: controller.signal,
       }),
     );

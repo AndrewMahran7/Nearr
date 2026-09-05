@@ -154,6 +154,10 @@ export type WorkerConfig = {
   vayrinInputPricePerMillion: number;
   vayrinCachedInputPricePerMillion: number;
   vayrinOutputPricePerMillion: number;
+  /** Explicit future seam; direct M1 remains the default. */
+  premiumSolWebSearchEnabled?: boolean;
+  /** Conservative Dev default: visual-only recognition is review-only. */
+  premiumDistinctiveVisualAutoSaveEnabled?: boolean;
   // ---- Verification V3 + bounded region-to-POI expansion (default OFF) ----
   vayrinVerificationV3Enabled?: boolean;
   googlePlacesServerApiKey?: string;
@@ -301,6 +305,8 @@ export function loadConfig(): WorkerConfig {
     vayrinInputPricePerMillion: nonNegativeNumber('VAYRIN_PRICE_INPUT_PER_MILLION', 5),
     vayrinCachedInputPricePerMillion: nonNegativeNumber('VAYRIN_PRICE_CACHED_INPUT_PER_MILLION', 0.5),
     vayrinOutputPricePerMillion: nonNegativeNumber('VAYRIN_PRICE_OUTPUT_PER_MILLION', 30),
+    premiumSolWebSearchEnabled: bool('PREMIUM_SOL_WEB_SEARCH_ENABLED', false),
+    premiumDistinctiveVisualAutoSaveEnabled: bool('PREMIUM_DISTINCTIVE_VISUAL_AUTO_SAVE_ENABLED', false),
     vayrinVerificationV3Enabled: bool('VAYRIN_VERIFICATION_V3_ENABLED', false),
     googlePlacesServerApiKey: serverCredential('GOOGLE_PLACES_KEY'),
     vayrinRegionPoiCandidateLimit: int('VAYRIN_REGION_POI_CANDIDATE_LIMIT', 8, 1),
@@ -366,6 +372,8 @@ export function redactedConfigSummary(cfg: WorkerConfig): Record<string, unknown
       scrapeCreatorsFacebookFallbackEnabled: cfg.scrapeCreatorsFacebookFallbackEnabled,
       vayrinVisualGeolocationEnabled: cfg.vayrinVisualGeolocationEnabled,
       vayrinVerificationV3Enabled: cfg.vayrinVerificationV3Enabled,
+      premiumSolWebSearchEnabled: cfg.premiumSolWebSearchEnabled,
+      premiumDistinctiveVisualAutoSaveEnabled: cfg.premiumDistinctiveVisualAutoSaveEnabled,
     },
     limits: {
       maxDurationSeconds: cfg.maxDurationSeconds,

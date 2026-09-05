@@ -18,6 +18,7 @@ import { ScrapeCreatorsFacebookProvider } from './providers/ScrapeCreatorsFacebo
 import { SnapchatMediaResolver } from './resolvers/SnapchatMediaResolver.js';
 import { selectTranscriptionProvider } from './providers/transcription.js';
 import { selectModelProvider } from './providers/model.js';
+import { createPremiumRecognitionModel } from './premium/premiumRecognitionAdapter.js';
 import { selectOcrProvider } from './providers/ocr.js';
 import { startServer, type ServerContext } from './server/httpServer.js';
 import type { TaskDeps } from './pipeline/runMediaTask.js';
@@ -42,7 +43,7 @@ function main(): void {
       ],
       transcription: selectTranscriptionProvider(cfg),
       model: selectModelProvider(cfg),
-      premiumModel: selectModelProvider(cfg, { premiumRequest: true }),
+      premiumModel: createPremiumRecognitionModel(cfg),
       ocr: selectOcrProvider(cfg),
     };
   } else {

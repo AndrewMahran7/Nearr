@@ -235,7 +235,103 @@ const MEDIA_FAILURE_CODES = new Set([
   'insufficient_evidence',
   'recognition_recovery_exhausted',
   'partial_evidence_invalid',
+  'premium_no_useful_result',
+  'premium_model_failure',
 ]);
+
+function premiumRuntimeCandidate(hypothesis: any): any | null {
+  const canonical = hypothesis?.canonical;
+  if (!canonical || typeof canonical !== 'object') return null;
+  const googlePlaceId = typeof canonical.googlePlaceId === 'string' ? canonical.googlePlaceId.trim() : '';
+  const name = typeof canonical.name === 'string' ? canonical.name.trim() : '';
+  if (!googlePlaceId || !name) return null;
+  return safeCandidate({
+    googlePlaceId,
+    name,
+    formattedAddress: typeof canonical.formattedAddress === 'string' ? canonical.formattedAddress : null,
+    latitude: typeof canonical.latitude === 'number' && Number.isFinite(canonical.latitude) ? canonical.latitude : null,
+    longitude: typeof canonical.longitude === 'number' && Number.isFinite(canonical.longitude) ? canonical.longitude : null,
+    types: Array.isArray(canonical.types) ? canonical.types : [],
+    primaryType: Array.isArray(canonical.types) && typeof canonical.types[0] === 'string' ? canonical.types[0] : null,
+    confidenceScore: hypothesis.confidence === 'HIGH' ? 0.9 : hypothesis.confidence === 'MEDIUM' ? 0.65 : 0.35,
+    evidence: Array.isArray(hypothesis.supportingClues) ? hypothesis.supportingClues : [],
+    reasons: [hypothesis.evidenceBasis, hypothesis.canonicalStatus].filter(Boolean),
+    contextLabel: [hypothesis.city, hypothesis.region, hypothesis.country].filter(Boolean).join(', ') || null,
+  });
+}
+
+function premiumRuntimePlan(value: any): null | {
+  outcome: string;
+  chargeability: string;
+  autoSaveCandidate: any | null;
+  candidatePayload: any;
+  suggestedQuery: string | null;
+  costs: Record<string, unknown>;
+} {
+  if (!value || value.schemaVersion !== 1 || !Array.isArray(value.destinations)) return null;
+  const slots: any[] = [];
+  const aggregate: any[] = [];
+  for (const [destinationIndex, destination] of value.destinations.slice(0, 10).entries()) {
+    if (!destination || !Array.isArray(destination.hypotheses) || destination.hypotheses.length === 0) continue;
+    const hypotheses = destination.hypotheses.slice(0, 3);
+    const candidates = hypotheses.flatMap((hypothesis: any) => {
+      const candidate = premiumRuntimeCandidate(hypothesis);
+      return candidate ? [candidate] : [];
+    });
+    aggregate.push(...candidates);
+    const primary = hypotheses[0];
+    slots.push({
+      mentionId: typeof destination.logicalDestinationId === 'string'
+        ? destination.logicalDestinationId.slice(0, 80)
+        : `premium-destination-${destinationIndex + 1}`,
+      displayName: typeof primary?.name === 'string' ? primary.name.slice(0, 200) : 'Premium result',
+      contextLabel: [primary?.city, primary?.region, primary?.country].filter(Boolean).join(', ') || null,
+      primaryVenueName: typeof primary?.name === 'string' ? primary.name.slice(0, 200) : null,
+      hostVenueName: null,
+      relationshipType: null,
+      outcome: candidates.length === 1 ? 'verified_single' : candidates.length > 1 ? 'ambiguous_candidates' : 'no_match',
+      candidates,
+      sourceTimestamps: Array.isArray(primary?.timestamps) ? primary.timestamps : [],
+      identityHypotheses: hypotheses.map((hypothesis: any) => ({
+        name: typeof hypothesis?.name === 'string' ? hypothesis.name.slice(0, 200) : 'Unknown',
+        contextLabel: [hypothesis?.city, hypothesis?.region, hypothesis?.country].filter(Boolean).join(', ') || null,
+        confidence: hypothesis?.confidence === 'HIGH' ? 0.9 : hypothesis?.confidence === 'MEDIUM' ? 0.65 : 0.35,
+        evidenceKind: hypothesis?.evidenceBasis === 'CONTEXTUAL_OR_MEMORY_PRIOR' ? 'model_prior' : 'observable',
+        timestamps: Array.isArray(hypothesis?.timestamps) ? hypothesis.timestamps.slice(0, 12) : [],
+      })),
+    });
+  }
+  const candidatePayload = buildShareJobCandidatePayload(aggregate, slots);
+  const onlyDestination = value.destinations.length === 1 ? value.destinations[0] : null;
+  const solePrimary = onlyDestination?.hypotheses?.[0];
+  const autoSaveCandidate = onlyDestination?.decision === 'AUTO_SAVE'
+    ? premiumRuntimeCandidate(solePrimary)
+    : null;
+  const telemetry = value.telemetry && typeof value.telemetry === 'object' ? value.telemetry : {};
+  return {
+    outcome: typeof value.outcome === 'string' ? value.outcome : 'PREMIUM_TECHNICAL_FAILURE',
+    chargeability: typeof value.chargeability === 'string' ? value.chargeability : 'NON_CHARGEABLE_TECHNICAL_FAILURE',
+    autoSaveCandidate,
+    candidatePayload,
+    suggestedQuery: slots.map((slot) => slot.displayName).filter(Boolean).join(' | ') || null,
+    costs: {
+      sol: {
+        model: telemetry.model ?? 'gpt-5.6-sol',
+        usage: telemetry.usage ?? null,
+        knownCostUsd: typeof telemetry.knownModelCostUsd === 'number' ? telemetry.knownModelCostUsd : 'UNKNOWN',
+      },
+      places: {
+        requestCount: typeof telemetry.placesRequests === 'number' ? telemetry.placesRequests : 0,
+        requestTypes: Array.isArray(telemetry.placesRequestTypes) ? telemetry.placesRequestTypes : [],
+        costUsd: 'UNKNOWN',
+      },
+      acquisition: 'UNKNOWN',
+      transcription: 'UNKNOWN',
+      latencyMs: telemetry.timingsMs ?? null,
+      evidenceReuse: telemetry.evidenceReuse ?? null,
+    },
+  };
+}
 
 function safeMediaFailureCode(value: unknown): string | null {
   return typeof value === 'string' && MEDIA_FAILURE_CODES.has(value) ? value : null;
@@ -561,7 +657,7 @@ async function finalize(
           ? 'failed'
           : 'no_useful_result',
         p_chargeable: premiumSettlement.chargeable,
-        p_cost_components: job.premium_cost_components ?? {},
+        p_cost_components: finalFacts.premium_cost_components ?? {},
       })
     : billingMode === 'metered'
     ? await admin.rpc('settle_place_find_use', {
@@ -1446,6 +1542,8 @@ async function finalizeParentManual(
     notificationLocality?: NotificationLocality | null;
     hasWeakClues?: boolean;
     evidenceFrames?: unknown;
+    premiumCostComponents?: Record<string, unknown>;
+    skipRecognitionCachePersist?: boolean;
   } = {},
   sourceMetadata: MediaSourceMetadata | null = null,
 ): Promise<void> {
@@ -1489,6 +1587,12 @@ async function finalizeParentManual(
       failure_category: failureCategory,
       analysis_attempted: analysisAttempted,
       candidate_payload: candidatePayload,
+      ...(presentation.premiumCostComponents
+        ? { premium_cost_components: presentation.premiumCostComponents }
+        : {}),
+      ...(presentation.skipRecognitionCachePersist
+        ? { __skipRecognitionCachePersist: true }
+        : {}),
       ...(candidateCount === 0 ? { suggested_query: null } : {}),
       ...(sourceMetadata
         ? {
@@ -1696,6 +1800,94 @@ async function finalizeMediaTask(
     : { reason: outcome, ...buildRecognitionFunnel(body?.diagnostics, null, 0) };
   const mediaRunId = await insertMediaRun(admin, task, job, body, evidenceSummary);
 
+  // Premium Sol already formed the identity and performed its tightly bounded
+  // canonicalization. Map that typed result directly into the existing result
+  // contract; never run legacy Places discovery or publish a machine cache row.
+  const premium = task.task_kind === 'premium_recognition'
+    ? premiumRuntimePlan(body.premiumRecognition)
+    : null;
+  if (task.task_kind === 'premium_recognition' && pre.action !== 'parent_already_terminal') {
+    if (!premium) {
+      await markMediaTask(admin, taskId, 'failed', {
+        failure_code: 'premium_model_failure', progress_stage: 'cleanup', completed_at: nowIso(),
+      });
+      logFinalStatus('premium_payload_invalid', 'permanent_processing_error');
+      return json({ error: 'premium_payload_invalid' }, 400);
+    }
+    if (premium?.outcome === 'PREMIUM_ACTIONABLE_RESULT') {
+      const taskCanonicalUrl = task.canonical_url || task.source_url;
+      const candidates = premium.candidatePayload.candidates ?? [];
+      const mentionSlots = premium.candidatePayload.mentionSlots ?? [];
+      const canSave = premium.autoSaveCandidate &&
+        typeof premium.autoSaveCandidate.latitude === 'number' &&
+        typeof premium.autoSaveCandidate.longitude === 'number';
+      if (canSave) {
+        const saved = await saveForUser({
+          client: admin,
+          userId: job.user_id,
+          candidate: premium.autoSaveCandidate,
+          sourceUrl: taskCanonicalUrl,
+          source: legacySourceFor(task.platform),
+          sourceMetadata: {
+            resolvedUrl: taskCanonicalUrl,
+            creatorHandle: sourceMetadata?.creatorHandle ?? null,
+            creatorName: sourceMetadata?.creatorName ?? null,
+            caption: sourceMetadata?.description ?? null,
+          },
+        });
+        await finalize(admin, job, {
+          status: 'completed',
+          decision: 'auto_save',
+          saved_place_id: saved.savedPlaceId,
+          candidate_payload: premium.candidatePayload,
+          canonical_url: taskCanonicalUrl,
+          source_platform: task.platform,
+          premium_cost_components: premium.costs,
+          extraction_payload: {
+            ...(job.extraction_payload ?? {}),
+            premiumRecognition: { outcome: premium.outcome, chargeability: premium.chargeability },
+          },
+          __skipRecognitionCachePersist: true,
+          progress_stage: 'completed',
+          completed_at: nowIso(),
+        }, composeShareCompletionNotification({
+          status: 'completed', placeName: premium.autoSaveCandidate.name, jobId: job.id,
+          savedPlaceId: saved.savedPlaceId, googlePlaceId: premium.autoSaveCandidate.googlePlaceId,
+          alreadySaved: saved.reused,
+        }));
+        await markMediaTask(admin, taskId, 'completed', {
+          resolver_name: 'premium-sol', progress_stage: 'cleanup', completed_at: nowIso(),
+        });
+        logFinalStatus('premium_auto_save');
+        return json({ ok: true, route: 'auto_save', premium: true });
+      }
+
+      const hasCandidates = candidates.length > 0;
+      const mode = mentionSlots.length > 1 || candidates.length > 1 ? 'picker' : hasCandidates ? 'single' : 'manual';
+      await finalize(admin, job, {
+        status: 'needs_help',
+        decision: mentionSlots.length > 1 || candidates.length > 1 ? 'candidate_picker' : 'candidate_confirmation',
+        needs_help_reason: hasCandidates ? 'premium_review_required' : 'premium_named_lead',
+        suggested_query: premium.suggestedQuery,
+        candidate_payload: premium.candidatePayload,
+        canonical_url: taskCanonicalUrl,
+        source_platform: task.platform,
+        premium_cost_components: premium.costs,
+        extraction_payload: {
+          ...(job.extraction_payload ?? {}),
+          premiumRecognition: { outcome: premium.outcome, chargeability: premium.chargeability },
+        },
+        __skipRecognitionCachePersist: true,
+        progress_stage: mode,
+      }, reviewNotification({ jobId: job.id, mode, candidates, mentionResults: mentionSlots }));
+      await markMediaTask(admin, taskId, 'completed', {
+        resolver_name: 'premium-sol', progress_stage: 'cleanup', completed_at: nowIso(),
+      });
+      logFinalStatus('premium_review');
+      return json({ ok: true, route: 'needs_help', mode, premium: true });
+    }
+  }
+
   // Parent already terminal → mark task done, never revive the parent.
   if (pre.action === 'parent_already_terminal') {
     await markMediaTask(admin, taskId, 'completed', { progress_stage: 'cleanup', completed_at: nowIso() });
@@ -1715,6 +1907,8 @@ async function finalizeMediaTask(
           (place: any) => place?.identityEvidenceKind !== 'model_prior' && place?.explicitEvidence?.length > 0,
         ),
         evidenceFrames,
+        premiumCostComponents: premium?.costs,
+        skipRecognitionCachePersist: task.task_kind === 'premium_recognition',
       }, sourceMetadata);
     }
     await markMediaTask(admin, taskId, pre.taskTerminalStatus, {

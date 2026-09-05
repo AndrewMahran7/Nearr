@@ -9,6 +9,7 @@
 import { readFile } from 'node:fs/promises';
 import type { WorkerConfig } from '../config/env.js';
 import type { OcrSegment, SelectedFrame, TranscriptSegment } from '../types/media.js';
+import type { PremiumRecognitionExecution } from '../premium/premiumRecognitionTypes.js';
 import {
   EvidenceItem as EvidenceItemSchema,
   NearrCategory,
@@ -32,7 +33,6 @@ import {
 import { log } from '../util/logger.js';
 import { MediaError } from '../types/media.js';
 import { parseRetryAfterSeconds } from '../util/backoff.js';
-import { withVayrinFallback } from '../vayrin/visualGeolocationProvider.js';
 import {
   consolidatePlaceMoments,
   type MomentGroupingTelemetry,
@@ -51,6 +51,11 @@ export type AnalyzeInput = {
   metadataTitle?: string | null;
   metadataDescription?: string | null;
   metadataLocation?: string | null;
+  metadataCreatorHandle?: string | null;
+  metadataCreatorName?: string | null;
+  premiumRequestedAt?: Date;
+  evidenceReadyAt?: Date;
+  evidencePrepMs?: number;
   targetPlace?: {
     name: string;
     category?: string | null;
@@ -103,6 +108,9 @@ export type AnalyzeOutput = {
   };
   /** Wall-clock provider request latency, excluding local media extraction. */
   latencyMs?: number;
+  /** Exact Premium executor wire result. It is forwarded to the finalizer so
+   * canonical identities are not re-resolved by the legacy Places pipeline. */
+  premium?: PremiumRecognitionExecution;
 };
 
 export interface ModelProvider {
@@ -595,22 +603,13 @@ class GeminiModel implements ModelProvider {
 
 export function selectModelProvider(
   cfg: WorkerConfig,
-  options: { premiumRequest?: boolean } = {},
 ): ModelProvider {
   const base = cfg.analysisProvider === 'gemini' ? new GeminiModel(cfg) : new HeuristicModel();
-  // Vayrin WRAPS the configured provider rather than replacing it: the cheap
-  // pass still runs first on every share and still decides every case it can
-  // already decide. With VAYRIN_VISUAL_GEOLOCATION_ENABLED off (the default)
-  // this returns `base` untouched — no wrapper, no OpenAI call, no behavior
-  // change of any kind.
-  const provider = options.premiumRequest
-    ? withVayrinFallback(base, cfg, { premiumRequest: true })
-    : base;
-  return new MomentConsolidationModel(provider);
+  return new MomentConsolidationModel(base);
 }
 
-/** Recognition-only structural stage. Both the cheap pass and Vayrin flow
- * through this decorator, so temporal segments can never bypass grouping. */
+/** Recognition-only structural stage for the normal free provider. Premium
+ * preserves the Sol-authored logical destinations and bypasses this grouper. */
 class MomentConsolidationModel implements ModelProvider {
   readonly name: string;
 

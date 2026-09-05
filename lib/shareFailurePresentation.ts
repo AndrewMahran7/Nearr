@@ -48,6 +48,7 @@ const INSUFFICIENT_CODES = new Set([
   'insufficient_evidence',
   'no_result',
   'no_trustworthy_place',
+  'premium_no_useful_result',
 ]);
 
 function normalized(value: string | null | undefined): string {

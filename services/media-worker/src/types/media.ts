@@ -218,6 +218,7 @@ export type MediaTask = {
   progress_stage: string | null;
   attempts: number;
   max_attempts: number;
+  created_at?: string | null;
 };
 
 /** Progress stages persisted on the media task (mirrors the DB CHECK). */

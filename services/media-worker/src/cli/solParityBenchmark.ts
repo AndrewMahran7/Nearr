@@ -19,7 +19,7 @@ import { extractAudio } from '../pipeline/extractAudio.js';
 import { selectTranscriptionProvider } from '../providers/transcription.js';
 import { deduplicateOcrSegments, selectOcrProvider } from '../providers/ocr.js';
 import { buildAutomaticFrameSets, loadManualFrameSet } from '../solParity/frames.js';
-import { callSolParity } from '../solParity/model.js';
+import { runPremiumRecognitionInference } from '../premium/premiumRecognition.js';
 import { persistModelAttempt, readPersistedAttempts, writeJsonAtomic } from '../solParity/persistence.js';
 import { canonicalizeDestination } from '../solParity/canonicalize.js';
 import { simulateDecision } from '../solParity/decision.js';
@@ -159,7 +159,13 @@ async function main(): Promise<void> {
         const frameSet = frameSets[matrix.frame];
         if (!frameSet) continue;
         console.log(`[sol-parity] case=${item.case_id} arm=${matrix.frame}:${matrix.model} stage=sol`);
-        const call = await callSolParity({ frameSet, modelArm: matrix.model, platform: item.platform, evidence, signal: controller.signal });
+        const call = await runPremiumRecognitionInference({
+          frameSet,
+          platform: item.platform,
+          evidence,
+          modelArm: matrix.model,
+          signal: controller.signal,
+        });
         const attemptId = `${item.case_id}-${matrix.frame}-${matrix.model}-${randomUUID().slice(0, 8)}`;
         const attempt: PersistedModelAttempt = {
           schema_version: 1,

@@ -26,6 +26,8 @@
     "test:never-dead-end-research": "node --import tsx --test tests/neverDeadEndResearch.test.ts",
     "test:never-dead-end": "node --import tsx --test tests/neverDeadEnd.test.ts",
     "test:sol-parity-harness": "node --import tsx --test tests/solParityHarness.test.ts",
+    "test:premium-sol-recognition": "node --import tsx --test tests/premiumSolRecognition.test.ts",
+    "evaluate:premium-sol-recognition": "node --import tsx src/cli/evaluatePremiumRecordedAttempts.ts",
     "test:vayrin-region-poi-v3": "node --import tsx --test tests/regionPoiV3.test.ts",
     "media:inspect": "node --import tsx src/cli/inspectUrl.ts",
     "benchmark:sol-parity": "node --import tsx src/cli/solParityBenchmark.ts",

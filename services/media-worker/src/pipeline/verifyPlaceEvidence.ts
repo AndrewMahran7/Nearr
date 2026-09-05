@@ -12,6 +12,7 @@
 import type { WorkerConfig } from '../config/env.js';
 import type { MediaPlaceEvidence } from '../types/evidence.js';
 import type { PersistedEvidenceFrame } from './persistEvidenceFrames.js';
+import type { PremiumRecognitionExecution } from '../premium/premiumRecognitionTypes.js';
 
 export type FinalizeOutcome = 'evidence' | 'partial_evidence' | 'insufficient_evidence' | 'unavailable' | 'failed';
 
@@ -58,6 +59,7 @@ export type FinalizeArgs = {
   /** Stronger exact source URL discovered during public media retrieval. */
   canonicalUrl?: string | null;
   diagnostics?: Record<string, unknown>;
+  premiumRecognition?: PremiumRecognitionExecution;
   signal: AbortSignal;
 };
 
@@ -101,6 +103,7 @@ export async function verifyPlaceEvidence(
       sourceMetadata: args.sourceMetadata,
       canonicalUrl: args.canonicalUrl,
       diagnostics: args.diagnostics ?? {},
+      premiumRecognition: args.premiumRecognition,
     }),
     signal: args.signal,
   });
