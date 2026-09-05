@@ -1,0 +1,52 @@
+{
+  "caseId": "H10",
+  "category": "FOOD_RESTAURANT",
+  "groundTruth": "Baja Sharkeez",
+  "returnedTop3": [
+    {
+      "rank": 1,
+      "name": "Baja Sharkeez Newport Beach",
+      "identityType": "BUSINESS",
+      "locality": "Newport Beach, California",
+      "country": "United States",
+      "latitude": 33.6083308,
+      "longitude": -117.92796609999999,
+      "evidenceType": "DISTINCTIVE_VISUAL_MATCH",
+      "canonicalizationStatus": "CANONICAL_ALIAS",
+      "specificity": "SPECIFIC_PHYSICAL_PLACE"
+    }
+  ],
+  "recognitionVersion": "simple-sol-premium.v2",
+  "evidenceVersion": "premium-evidence-2026-09-05.v1",
+  "modelPath": "gpt-5.6-sol/F1:M1",
+  "frameManifest": [
+    {
+      "timestampSeconds": 0,
+      "sha256": "7dea151308e2911c2efe8c5d4f5f2f70bedef627eb930991081a9088b8d80faa"
+    },
+    {
+      "timestampSeconds": 8,
+      "sha256": "690583b2f7c5748861c5d23e3276001cd4e648641b506c0bac5b8bf2500b93ee"
+    },
+    {
+      "timestampSeconds": 11,
+      "sha256": "eb4df790ab47b21222afbd108241a35a2e3e1771eaa7de7fc7b4d9abfcc918d8"
+    },
+    {
+      "timestampSeconds": 19,
+      "sha256": "b2f5eedcf889c1251b68728e30ca2bc96cde34962add97d93f36175f14d64328"
+    },
+    {
+      "timestampSeconds": 26,
+      "sha256": "76fd665247470e99b87c06307a050dae7b00a196242f9dad9436c7187aee063e"
+    },
+    {
+      "timestampSeconds": 31.467,
+      "sha256": "f47b7666c2bc04d1cd37938c4d7248bba17088aa89073382ab6baf1973d79b1d"
+    }
+  ],
+  "placesCallCount": 1,
+  "classification": "WRONG",
+  "failureClass": "WRONG",
+  "cacheReadUsed": false
+}

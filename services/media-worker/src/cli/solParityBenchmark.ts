@@ -32,7 +32,7 @@ import { validateInferenceCase } from '../solParity/corpus.js';
 import type { FrameArm, InferenceCase, ModelArm, PersistedModelAttempt, SourceEvidence } from '../solParity/types.js';
 
 type MatrixEntry = { frame: FrameArm; model: ModelArm };
-type ParsedArgs = { dryRun: boolean; cases: string[] | null; limit: number | null; matrix: MatrixEntry[]; out: string | null };
+type ParsedArgs = { dryRun: boolean; cases: string[] | null; limit: number | null; matrix: MatrixEntry[]; out: string | null; corpus: string | null; skipScoring: boolean };
 function parseMatrix(value: string): MatrixEntry[] {
   return value.split(',').filter(Boolean).map((part) => {
     const [frame, model] = part.toUpperCase().split(':');
@@ -42,7 +42,7 @@ function parseMatrix(value: string): MatrixEntry[] {
 }
 
 function parseArgs(argv: string[]): ParsedArgs {
-  const parsed: ParsedArgs = { dryRun: false, cases: null, limit: null, matrix: parseMatrix('F1:M1,F1:M2,F2:M2'), out: null };
+  const parsed: ParsedArgs = { dryRun: false, cases: null, limit: null, matrix: parseMatrix('F1:M1,F1:M2,F2:M2'), out: null, corpus: null, skipScoring: false };
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index]!;
     if (arg === '--dry-run') parsed.dryRun = true;
@@ -50,6 +50,8 @@ function parseArgs(argv: string[]): ParsedArgs {
     else if (arg === '--limit') parsed.limit = Number(argv[++index]);
     else if (arg === '--matrix') parsed.matrix = parseMatrix(argv[++index] ?? '');
     else if (arg === '--out') parsed.out = argv[++index] ?? null;
+    else if (arg === '--corpus') parsed.corpus = argv[++index] ?? null;
+    else if (arg === '--skip-scoring') parsed.skipScoring = true;
     else throw new Error(`unknown_argument:${arg}`);
   }
   return parsed;
@@ -74,7 +76,7 @@ async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
   const envLoad = loadEnvFiles();
   const repoRoot = envLoad.repoRoot;
-  const corpusPath = path.join(repoRoot, 'artifacts', 'sol-parity', 'inference-corpus.json');
+  const corpusPath = args.corpus ? path.resolve(repoRoot, args.corpus) : path.join(repoRoot, 'artifacts', 'sol-parity', 'inference-corpus.json');
   const groundTruthPath = path.join(repoRoot, 'artifacts', 'sol-parity', 'ground-truth.json');
   const corpusRaw = JSON.parse(await readFile(corpusPath, 'utf8')) as { cases?: unknown[] };
   let cases = (corpusRaw.cases ?? []).map(validateInferenceCase);
@@ -251,6 +253,11 @@ async function main(): Promise<void> {
       clearTimeout(timeout);
       await temp.cleanup();
     }
+  }
+
+  if (args.skipScoring) {
+    console.log(`[sol-parity] complete run=${runId} requested_cases=${cases.length} scoring=SKIPPED output=${runDir}`);
+    return;
   }
 
   // Labels enter memory only now, after every raw model response is durable.

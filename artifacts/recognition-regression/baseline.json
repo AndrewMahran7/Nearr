@@ -1,0 +1,617 @@
+{
+  "schemaVersion": 2,
+  "recognitionVersion": "simple-sol-premium.v2",
+  "recordedAt": "2026-09-05T21:29:13.286Z",
+  "passingCaseIds": [
+    "R03",
+    "R04",
+    "R05",
+    "R08",
+    "V02",
+    "V03",
+    "V04",
+    "V05",
+    "H01",
+    "H02",
+    "H03",
+    "H04",
+    "H05",
+    "H08",
+    "H09",
+    "H12",
+    "P01",
+    "P02",
+    "P03",
+    "P04",
+    "P05",
+    "P06",
+    "P07",
+    "P08",
+    "P09",
+    "S01",
+    "S06",
+    "C06",
+    "C07"
+  ],
+  "perCategoryExactAt3Minimum": {
+    "FOOD_RESTAURANT": 23,
+    "CLIFF_JUMPING": 3,
+    "HIKING_TRAIL": 1,
+    "LANDMARK": 1,
+    "TRAVEL_DESTINATION": 1
+  },
+  "productTargetExactAt3Percent": {
+    "FOOD_RESTAURANT": 100,
+    "CLIFF_JUMPING": 100,
+    "HIKING_TRAIL": 100,
+    "LANDMARK": 100,
+    "TRAVEL_DESTINATION": 100
+  },
+  "wrongAutosavesMaximum": 0,
+  "fixtureCorrections": [
+    {
+      "caseId": "C07",
+      "oldGroundTruth": "multi_place_expectation=NONE; no exact identity",
+      "newGroundTruth": "San Diego Zoo; candidate recall is scorable but AUTO_SAVE remains prohibited",
+      "reason": "The legacy negative-control label conflicts with the public source identity and the intended landmark recall control.",
+      "evidence": [
+        "https://www.youtube.com/watch?v=jNQXAC9IVRw",
+        "artifacts/premium-sol-recognition/release-report.md#C07"
+      ],
+      "reviewedBy": "backend-recognition-regression-v2",
+      "reviewedAt": "2026-09-05T00:00:00.000-07:00"
+    },
+    {
+      "caseId": "R08",
+      "oldGroundTruth": "Moku Nui alias family omitted the backend's descriptive parenthetical form",
+      "newGroundTruth": "Accept the explicit Moku Nui / Na Mokulua / Mokes descriptive alias",
+      "reason": "The returned identity names the same physical island and only adds disambiguating parenthetical context.",
+      "evidence": [
+        "artifacts/sol-parity/ground-truth.json#R08",
+        "artifacts/recognition-regression/runs/recognition-live-2026-09-05T21-02-06-721Z/results.json#R08"
+      ],
+      "reviewedBy": "backend-recognition-regression-v2",
+      "reviewedAt": "2026-09-05T14:30:00.000-07:00"
+    },
+    {
+      "caseId": "V05",
+      "oldGroundTruth": "Paradise Dynasty without an accepted branch-qualified rendering",
+      "newGroundTruth": "Accept Paradise Dynasty at South Coast Plaza / Costa Mesa with South Coast Plaza locality required",
+      "reason": "The live output identified the exact restaurant tenant and correct branch, not merely its parent mall.",
+      "evidence": [
+        "scripts/shareRegressionFixtures.ts#instagram-paradise-dynasty-post",
+        "artifacts/recognition-regression/runs/recognition-live-2026-09-05T21-02-06-721Z/results.json#V05"
+      ],
+      "reviewedBy": "backend-recognition-regression-v2",
+      "reviewedAt": "2026-09-05T14:30:00.000-07:00"
+    },
+    {
+      "caseId": "H06",
+      "oldGroundTruth": "Baqba Mexican Grill treated as HIGH_CONFIDENCE without a branch",
+      "newGroundTruth": "PROVISIONAL until the depicted branch is independently established",
+      "reason": "Multiple branches exist and the legacy fixture proves the venue family but not the physical branch required by V2.",
+      "evidence": [
+        "artifacts/sol-parity/ground-truth.json#H06",
+        "artifacts/recognition-regression/runs/recognition-live-2026-09-05T21-02-06-721Z/results.json#H06"
+      ],
+      "reviewedBy": "backend-recognition-regression-v2",
+      "reviewedAt": "2026-09-05T14:30:00.000-07:00"
+    },
+    {
+      "caseId": "P04",
+      "oldGroundTruth": "Mesa Verde Farmers' Market without common operator rendering",
+      "newGroundTruth": "Accept Mesa Verde Farmers Market by Farm Habit",
+      "reason": "The operator-qualified name refers to the same exact market.",
+      "evidence": [
+        "artifacts/sol-parity/ground-truth.json#P04",
+        "artifacts/recognition-regression/runs/recognition-live-2026-09-05T21-02-06-721Z/results.json#P04"
+      ],
+      "reviewedBy": "backend-recognition-regression-v2",
+      "reviewedAt": "2026-09-05T14:30:00.000-07:00"
+    },
+    {
+      "caseId": "P05",
+      "oldGroundTruth": "OC Greek Fest abbreviation only",
+      "newGroundTruth": "Accept Orange County Greek Festival and its church-qualified form",
+      "reason": "The expansion and host-site qualifier preserve the event's exact identity.",
+      "evidence": [
+        "artifacts/sol-parity/ground-truth.json#P05",
+        "artifacts/recognition-regression/runs/recognition-live-2026-09-05T21-02-06-721Z/results.json#P05"
+      ],
+      "reviewedBy": "backend-recognition-regression-v2",
+      "reviewedAt": "2026-09-05T14:30:00.000-07:00"
+    },
+    {
+      "caseId": "P07",
+      "oldGroundTruth": "Point Market",
+      "newGroundTruth": "Accept The Point Market & Cafe with Santa Cruz locality required",
+      "reason": "The returned business name is the exact venue's expanded public name.",
+      "evidence": [
+        "artifacts/sol-parity/ground-truth.json#P07",
+        "artifacts/recognition-regression/runs/recognition-live-2026-09-05T21-02-06-721Z/results.json#P07"
+      ],
+      "reviewedBy": "backend-recognition-regression-v2",
+      "reviewedAt": "2026-09-05T14:30:00.000-07:00"
+    },
+    {
+      "caseId": "P09",
+      "oldGroundTruth": "Tacos El Chuy",
+      "newGroundTruth": "Accept Tacos El Chuy Food Truck with Santa Cruz locality required",
+      "reason": "The added entity-type suffix does not change the exact physical food venue.",
+      "evidence": [
+        "artifacts/sol-parity/ground-truth.json#P09",
+        "artifacts/recognition-regression/runs/recognition-live-2026-09-05T21-02-06-721Z/results.json#P09"
+      ],
+      "reviewedBy": "backend-recognition-regression-v2",
+      "reviewedAt": "2026-09-05T14:30:00.000-07:00"
+    },
+    {
+      "caseId": "H11",
+      "oldGroundTruth": "HIGH_CONFIDENCE No Good Burger Joint with New York locality",
+      "newGroundTruth": "PROVISIONAL until the exact branch is independently established",
+      "reason": "Two live attempts returned a venue family plus different possible branches; V2 requires the physical branch where applicable.",
+      "evidence": [
+        "artifacts/sol-parity/ground-truth.json#H11",
+        "artifacts/recognition-regression/runs/current-live-baseline/results.json#H11",
+        "artifacts/recognition-regression/runs/recognition-live-2026-09-05T21-02-06-721Z/results.json#H11"
+      ],
+      "reviewedBy": "backend-recognition-regression-v2",
+      "reviewedAt": "2026-09-05T14:35:00.000-07:00"
+    },
+    {
+      "caseId": "P06",
+      "oldGroundTruth": "Old World Biergarten alias family omitted a canonical provider rendering",
+      "newGroundTruth": "Accept Old World German Restaurant & Biergarten at Old World Village with Huntington Beach locality required",
+      "reason": "The canonical alias identifies the same exact venue and required locality.",
+      "evidence": [
+        "artifacts/sol-parity/ground-truth.json#P06",
+        "artifacts/recognition-regression/runs/recognition-live-2026-09-05T21-02-06-721Z/results.json#P06"
+      ],
+      "reviewedBy": "backend-recognition-regression-v2",
+      "reviewedAt": "2026-09-05T14:35:00.000-07:00"
+    },
+    {
+      "caseId": "R03",
+      "oldGroundTruth": "Tamolitch aliases listed separately",
+      "newGroundTruth": "Accept Tamolitch Blue Pool (Tamolitch Falls)",
+      "reason": "The provider rendering combines two already accepted names for the same natural feature.",
+      "evidence": [
+        "artifacts/sol-parity/ground-truth.json#R03",
+        "artifacts/recognition-regression/runs/current-live-baseline/results.json#R03"
+      ],
+      "reviewedBy": "backend-recognition-regression-v2",
+      "reviewedAt": "2026-09-05T14:35:00.000-07:00"
+    },
+    {
+      "caseId": "R04",
+      "oldGroundTruth": "Dorset Marble Quarry / Dorset Quarry",
+      "newGroundTruth": "Accept Dorset Marble Quarry (Norcross-West Marble Quarry)",
+      "reason": "The added historic quarry name qualifies the same physical site.",
+      "evidence": [
+        "artifacts/sol-parity/ground-truth.json#R04",
+        "artifacts/recognition-regression/runs/current-live-baseline/results.json#R04"
+      ],
+      "reviewedBy": "backend-recognition-regression-v2",
+      "reviewedAt": "2026-09-05T14:35:00.000-07:00"
+    },
+    {
+      "caseId": "R05",
+      "oldGroundTruth": "Okere Falls Scenic Reserve",
+      "newGroundTruth": "Accept Okere Falls Scenic Reserve (Kaituna River)",
+      "reason": "The river qualifier does not change the exact reserve identity.",
+      "evidence": [
+        "artifacts/sol-parity/ground-truth.json#R05",
+        "artifacts/recognition-regression/runs/current-live-baseline/results.json#R05"
+      ],
+      "reviewedBy": "backend-recognition-regression-v2",
+      "reviewedAt": "2026-09-05T14:35:00.000-07:00"
+    },
+    {
+      "caseId": "H01",
+      "oldGroundTruth": "2nd Floor alias family omitted provider display name",
+      "newGroundTruth": "Accept 2nd Floor Gallery Bar & Grill with Huntington Beach locality required",
+      "reason": "Pinned fixture and canonical alias identify the same branch.",
+      "evidence": [
+        "scripts/shareRegressionFixtures.ts#instagram-2nd-floor-post",
+        "artifacts/recognition-regression/runs/current-live-baseline/results.json#H01"
+      ],
+      "reviewedBy": "backend-recognition-regression-v2",
+      "reviewedAt": "2026-09-05T14:35:00.000-07:00"
+    },
+    {
+      "caseId": "H09",
+      "oldGroundTruth": "Pho Bamboo Vietnamese Restaurant / Pho Bamboo",
+      "newGroundTruth": "Accept Pho Bamboo Restaurant",
+      "reason": "The provider alias preserves the distinctive venue name.",
+      "evidence": [
+        "artifacts/sol-parity/ground-truth.json#H09",
+        "artifacts/recognition-regression/runs/current-live-baseline/results.json#H09"
+      ],
+      "reviewedBy": "backend-recognition-regression-v2",
+      "reviewedAt": "2026-09-05T14:35:00.000-07:00"
+    },
+    {
+      "caseId": "P03",
+      "oldGroundTruth": "Chocolate the Restaurant accepted alias",
+      "newGroundTruth": "Accept Chocolate (Chocolate the Restaurant) with Santa Cruz locality required",
+      "reason": "The existing accepted alias appears explicitly in the provider rendering.",
+      "evidence": [
+        "artifacts/sol-parity/ground-truth.json#P03",
+        "artifacts/recognition-regression/runs/current-live-baseline/results.json#P03"
+      ],
+      "reviewedBy": "backend-recognition-regression-v2",
+      "reviewedAt": "2026-09-05T14:35:00.000-07:00"
+    }
+  ],
+  "caseContracts": [
+    {
+      "caseId": "R03",
+      "category": "HIKING_TRAIL",
+      "groundTruth": "Tamolitch Blue Pool",
+      "exactAt1": true,
+      "exactAt3": true,
+      "top3": [
+        "Tamolitch Blue Pool (Tamolitch Falls)"
+      ],
+      "classification": "ACCEPTABLE_ALIAS"
+    },
+    {
+      "caseId": "R04",
+      "category": "CLIFF_JUMPING",
+      "groundTruth": "Dorset Marble Quarry",
+      "exactAt1": true,
+      "exactAt3": true,
+      "top3": [
+        "Dorset Marble Quarry (Norcross-West Marble Quarry)"
+      ],
+      "classification": "ACCEPTABLE_ALIAS"
+    },
+    {
+      "caseId": "R05",
+      "category": "CLIFF_JUMPING",
+      "groundTruth": "Okere Falls Scenic Reserve",
+      "exactAt1": true,
+      "exactAt3": true,
+      "top3": [
+        "Okere Falls Scenic Reserve (Kaituna River)",
+        "Tutea Falls",
+        "Trout Pool Falls"
+      ],
+      "classification": "ACCEPTABLE_ALIAS"
+    },
+    {
+      "caseId": "R08",
+      "category": "CLIFF_JUMPING",
+      "groundTruth": "Moku Nui",
+      "exactAt1": true,
+      "exactAt3": true,
+      "top3": [
+        "Moku Nui, Mokulua Islands",
+        "Queen's Bath cliff-jumping cove, Moku Nui"
+      ],
+      "classification": "ACCEPTABLE_ALIAS"
+    },
+    {
+      "caseId": "V02",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "Capone's Italian Cucina",
+      "exactAt1": true,
+      "exactAt3": true,
+      "top3": [
+        "Capone's Cucina"
+      ],
+      "classification": "ACCEPTABLE_ALIAS"
+    },
+    {
+      "caseId": "V03",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "Brooklyn City Pizzeria & Market",
+      "exactAt1": true,
+      "exactAt3": true,
+      "top3": [
+        "Brooklyn City Pizzeria & Market"
+      ],
+      "classification": "EXACT"
+    },
+    {
+      "caseId": "V04",
+      "category": "TRAVEL_DESTINATION",
+      "groundTruth": "Hellfire Bay",
+      "exactAt1": true,
+      "exactAt3": true,
+      "top3": [
+        "Hellfire Bay"
+      ],
+      "classification": "EXACT"
+    },
+    {
+      "caseId": "V05",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "Paradise Dynasty",
+      "exactAt1": true,
+      "exactAt3": true,
+      "top3": [
+        "Paradise Dynasty at South Coast Plaza",
+        "Paradise Dynasty at The Americana at Brand"
+      ],
+      "classification": "ACCEPTABLE_ALIAS"
+    },
+    {
+      "caseId": "H01",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "2nd Floor",
+      "exactAt1": true,
+      "exactAt3": true,
+      "top3": [
+        "2nd Floor Gallery Bar & Grill"
+      ],
+      "classification": "ACCEPTABLE_ALIAS"
+    },
+    {
+      "caseId": "H02",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "Mad Yolks",
+      "exactAt1": true,
+      "exactAt3": true,
+      "top3": [
+        "Mad Yolks"
+      ],
+      "classification": "EXACT"
+    },
+    {
+      "caseId": "H03",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "Las Palmas Taco Bar",
+      "exactAt1": true,
+      "exactAt3": true,
+      "top3": [
+        "Las Palmas Taco Bar"
+      ],
+      "classification": "EXACT"
+    },
+    {
+      "caseId": "H04",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "Seabright Deli",
+      "exactAt1": true,
+      "exactAt3": true,
+      "top3": [
+        "Seabright Deli"
+      ],
+      "classification": "EXACT"
+    },
+    {
+      "caseId": "H05",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "Mad Yolks",
+      "exactAt1": true,
+      "exactAt3": true,
+      "top3": [
+        "Mad Yolks"
+      ],
+      "classification": "EXACT"
+    },
+    {
+      "caseId": "H06",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "Baqba Mexican Grill",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [
+        "Baqba Mexican Grill – Rialto",
+        "Baqba Mexican Grill – Montclair"
+      ],
+      "classification": "UNSCORED"
+    },
+    {
+      "caseId": "H08",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "Loaded Cafe - Orange",
+      "exactAt1": true,
+      "exactAt3": true,
+      "top3": [
+        "Loaded Cafe – Orange"
+      ],
+      "classification": "EXACT"
+    },
+    {
+      "caseId": "H09",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "Pho Bamboo Vietnamese Restaurant",
+      "exactAt1": true,
+      "exactAt3": true,
+      "top3": [
+        "Pho Bamboo Restaurant"
+      ],
+      "classification": "ACCEPTABLE_ALIAS"
+    },
+    {
+      "caseId": "H10",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "Baja Sharkeez",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [
+        "Baja Sharkeez Newport Beach"
+      ],
+      "classification": "WRONG"
+    },
+    {
+      "caseId": "H11",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "No Good Burger Joint",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [
+        "No Good Burger Joint",
+        "No Good Burger Joint – Rockville Centre",
+        "No Good Burger Joint – Baldwin"
+      ],
+      "classification": "UNSCORED"
+    },
+    {
+      "caseId": "H12",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "Old Fisherman's Grotto",
+      "exactAt1": true,
+      "exactAt3": true,
+      "top3": [
+        "Old Fisherman's Grotto"
+      ],
+      "classification": "EXACT"
+    },
+    {
+      "caseId": "P01",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "Aptos St. BBQ",
+      "exactAt1": true,
+      "exactAt3": true,
+      "top3": [
+        "Aptos Street BBQ"
+      ],
+      "classification": "ACCEPTABLE_ALIAS"
+    },
+    {
+      "caseId": "P02",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "BLK Earth Sea Spirits",
+      "exactAt1": true,
+      "exactAt3": true,
+      "top3": [
+        "BLK Earth Sea Spirits"
+      ],
+      "classification": "EXACT"
+    },
+    {
+      "caseId": "P03",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "Chocolat",
+      "exactAt1": true,
+      "exactAt3": true,
+      "top3": [
+        "Chocolate (Chocolate the Restaurant)"
+      ],
+      "classification": "ACCEPTABLE_ALIAS"
+    },
+    {
+      "caseId": "P04",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "Mesa Verde Farmers' Market",
+      "exactAt1": true,
+      "exactAt3": true,
+      "top3": [
+        "Mesa Verde Farmers Market (Farm Habit Mesa Verde)",
+        "Deli Nerds"
+      ],
+      "classification": "ACCEPTABLE_ALIAS"
+    },
+    {
+      "caseId": "P05",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "OC Greek Fest",
+      "exactAt1": true,
+      "exactAt3": true,
+      "top3": [
+        "Orange County Greek Festival (OC Greek Fest) at St. John the Baptist Greek Orthodox Church"
+      ],
+      "classification": "ACCEPTABLE_ALIAS"
+    },
+    {
+      "caseId": "P06",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "Old World Biergarten Festival Hall & Concert Venue",
+      "exactAt1": true,
+      "exactAt3": true,
+      "top3": [
+        "Biergarten at Old World Huntington Beach (Old World Village)"
+      ],
+      "classification": "ACCEPTABLE_ALIAS"
+    },
+    {
+      "caseId": "P07",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "Point Market",
+      "exactAt1": true,
+      "exactAt3": true,
+      "top3": [
+        "The Point Market"
+      ],
+      "classification": "ACCEPTABLE_ALIAS"
+    },
+    {
+      "caseId": "P08",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "Seabright Deli",
+      "exactAt1": true,
+      "exactAt3": true,
+      "top3": [
+        "Seabright Deli"
+      ],
+      "classification": "EXACT"
+    },
+    {
+      "caseId": "P09",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "Tacos El Chuy",
+      "exactAt1": true,
+      "exactAt3": true,
+      "top3": [
+        "Tacos El Chuy food truck"
+      ],
+      "classification": "ACCEPTABLE_ALIAS"
+    },
+    {
+      "caseId": "P10",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "Taqueria Los Pericos",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [],
+      "classification": "TECHNICAL_FAILURE"
+    },
+    {
+      "caseId": "S01",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "Seabright Deli",
+      "exactAt1": true,
+      "exactAt3": true,
+      "top3": [
+        "Seabright Deli"
+      ],
+      "classification": "EXACT"
+    },
+    {
+      "caseId": "S06",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "Seabright Deli",
+      "exactAt1": true,
+      "exactAt3": true,
+      "top3": [
+        "Seabright Deli"
+      ],
+      "classification": "EXACT"
+    },
+    {
+      "caseId": "C06",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "Tuxedo Cat's Coffee",
+      "exactAt1": true,
+      "exactAt3": true,
+      "top3": [
+        "Tuxedo Cat's Coffee"
+      ],
+      "classification": "EXACT"
+    },
+    {
+      "caseId": "C07",
+      "category": "LANDMARK",
+      "groundTruth": "San Diego Zoo",
+      "exactAt1": true,
+      "exactAt3": true,
+      "top3": [
+        "San Diego Zoo"
+      ],
+      "classification": "EXACT"
+    }
+  ]
+}
