@@ -70,6 +70,22 @@ function collectNames(value: unknown, names = new Set<string>()): Set<string> {
   return names;
 }
 
+function collectUsefulEvidence(value: unknown, evidence = new Set<string>()): Set<string> {
+  if (Array.isArray(value)) {
+    for (const child of value) collectUsefulEvidence(child, evidence);
+    return evidence;
+  }
+  if (!value || typeof value !== 'object') return evidence;
+  for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
+    if (
+      typeof child === 'string' && child.trim() &&
+      ['name', 'displayName', 'primaryVenueName', 'contextLabel', 'formattedAddress'].includes(key)
+    ) evidence.add(child.trim());
+    collectUsefulEvidence(child, evidence);
+  }
+  return evidence;
+}
+
 async function premiumRequest(session: E2ESession, jobId: string) {
   if (!session.identity || !session.config.anonKey) throw new Error('authenticated E2E identity unavailable');
   const response = await fetch(`${session.config.supabaseUrl}/functions/v1/monetization`, {
@@ -227,6 +243,7 @@ async function main() {
       const jobId = caseJobs.get(spec.id)!;
       const job = byJob.get(jobId)!;
       const names = [...collectNames(job.candidate_payload)];
+      const usefulEvidence = [...collectUsefulEvidence(job.candidate_payload)];
       const task = (tasks ?? []).find((value) => value.share_job_id === jobId);
       const run = (runs ?? []).find((value) => value.share_job_id === jobId);
       const reservationRows = (reservations ?? []).filter((value) => value.share_job_id === jobId);
@@ -240,6 +257,7 @@ async function main() {
         decision: job.decision,
         savedPlaceId: job.saved_place_id,
         names,
+        usefulEvidence,
         suggestedQuery: job.suggested_query,
         chargeable: job.premium_result_chargeable,
         settlementReason: job.premium_settlement_reason,
@@ -276,7 +294,7 @@ async function main() {
         reservationCount: reservationRows.length,
         reservationStatus: reservationRows[0]?.status ?? null,
         priorityUseful: spec.priority === true
-          ? job.premium_state === 'useful_result' && spec.usefulPattern!.test(names.join(' | '))
+          ? job.premium_state === 'useful_result' && spec.usefulPattern!.test(usefulEvidence.join(' | '))
           : null,
       };
     });
