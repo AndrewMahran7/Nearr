@@ -1,0 +1,28 @@
+{
+  "releaseId": "2026-09-05-premium-simple-sol",
+  "previousMainSha": "1e0772971cda925227c7f677fc249b9c8e643b4f",
+  "previousOtaGroup": "e7cf618a-09ad-4280-a532-e07fb2368385",
+  "currentOtaGroup": null,
+  "edgeVersions": {
+    "create-share-job": 26,
+    "delete-account": 25,
+    "process-share-jobs": 92,
+    "monetization": 1
+  },
+  "railwayDeployment": "4e450df5-b425-437c-bd84-6b4f0f23e281 @ b3e536abcf89fafbfe81f07c5dc31c0e4f3d9a8f",
+  "migrationLedger": [
+    "20260903000001_place_find_monetization",
+    "20260903000002_qualify_place_find_balance_columns",
+    "20260903000003_preserve_place_find_ledger_on_account_deletion",
+    "20260904000001_premium_request_monetization",
+    "20260905000001_fix_premium_request_available_uses"
+  ],
+  "rollbackProcedure": "Republish OTA group e7cf618a-09ad-4280-a532-e07fb2368385 to production; set Railway MEDIA_WORKER_CLAIM_BATCH=2 and redeploy deployment 484ee97b-42bf-497b-8286-01236f17e282; from source 1e0772971cda925227c7f677fc249b9c8e643b4f redeploy create-share-job, delete-account, and process-share-jobs with the existing auth modes, then delete the new monetization function; retain the forward-compatible schema and verify /health, /ready, Edge auth, and normal-free sharing.",
+  "deploymentStatus": "PLANNED",
+  "physicalQa": {
+    "signedOutColdLaunch": "PENDING",
+    "signedInColdLaunch": "PENDING",
+    "forceCloseRelaunch": "PENDING",
+    "freshOnboardingLaunch": "PENDING"
+  }
+}
