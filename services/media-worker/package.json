@@ -27,6 +27,7 @@
     "test:never-dead-end": "node --import tsx --test tests/neverDeadEnd.test.ts",
     "test:sol-parity-harness": "node --import tsx --test tests/solParityHarness.test.ts",
     "test:premium-sol-recognition": "node --import tsx --test tests/premiumSolRecognition.test.ts",
+    "test:auto-deep-recognition": "node --import tsx --test tests/automaticDeepRecognition.test.ts",
     "test:premium-live-parity": "node --import tsx --test tests/premiumLiveParity.test.ts",
     "test:recognition-regression": "node --import tsx --test tests/recognitionRegressionV2.test.ts && node --import tsx src/cli/recognitionRegression.ts --all",
     "benchmark:recognition-live": "node --import tsx src/cli/recognitionLiveBenchmark.ts",

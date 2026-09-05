@@ -68,7 +68,8 @@ const leadPayload = {
   const row = job({ decision: 'manual_fallback', candidate_payload: leadPayload });
   const result = mapShareJobToVayrinPresentation(buildShareJobDetailState(row), row);
   assert.equal(result.kind, 'leads_unverified');
-  assert.match(result.body, /choose an exact place/i);
+  assert.match(result.body, /likely matches/i);
+  assert.match(result.body, /confirm or correct/i);
   assert.notEqual(result.headline, 'Place found.');
 }
 
@@ -137,11 +138,15 @@ assert.match(buildVayrinPresentation({ kind: 'saved', source: 'async' }).body, /
   ];
   for (const presentation of noArtStates) {
     assert.equal(presentation.artVisible, false, `${presentation.kind} defaults to no art`);
-    assert.doesNotMatch(
-      `${presentation.headline} ${presentation.body}`,
-      FIRST_PERSON_OR_WE,
-      `${presentation.kind} no-art copy is not first person`,
-    );
+    if (presentation.kind === 'leads_unverified') {
+      assert.match(presentation.body, /^We found a few likely matches\./);
+    } else {
+      assert.doesNotMatch(
+        `${presentation.headline} ${presentation.body}`,
+        FIRST_PERSON_OR_WE,
+        `${presentation.kind} no-art copy is not first person`,
+      );
+    }
   }
   assert.equal(noArtStates[1]?.headline, 'Finding the place…');
   assert.equal(noArtStates[3]?.headline, 'Place found.');

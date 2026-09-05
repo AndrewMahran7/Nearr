@@ -1,0 +1,12 @@
+{
+  "artifact_version": 1,
+  "frozen_at": "2026-09-05",
+  "scope": "privacy-safe read-only production regression manifest",
+  "production_rows_mutated": false,
+  "cases": [
+    {"case_id":"F4-01","job_id":"501edf8c-6ee3-4d67-97b5-e1e505ab1e43","canonical_source_identity":"instagram:DJ1CVA8vbfV","normal_result":"Sydney / waterfall / area_match_incomplete","expected_route":"AUTO_DEEP"},
+    {"case_id":"F4-02","job_id":"af2148d6-c23f-4964-bffc-c418d9d23de2","canonical_source_identity":"instagram:DWrKNRujq4X","normal_result":"scenic spot / manual_fallback","expected_route":"AUTO_DEEP"},
+    {"case_id":"F4-03","job_id":"8295be09-d819-44a9-998c-d371cef27940","canonical_source_identity":"instagram:DWJ2zaqEQOk","normal_result":"The Crack at Wet Beaver Creek","expected_route":"NORMAL_ONLY"},
+    {"case_id":"F4-04","job_id":"3f97bb5c-9e7d-4e39-b76a-1fc6a682c93c","canonical_source_identity":"instagram:DZbppj6IXOt","normal_result":"waterfall / manual_fallback","expected_route":"AUTO_DEEP"}
+  ]
+}
