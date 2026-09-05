@@ -18,6 +18,7 @@
 // No Deno globals, no I/O — unit-tested from Node (scripts/testMediaEvidenceAdapter.ts).
 
 import { classifyPlacePhrase } from '../../../lib/placeIdentityClassification.ts';
+import { classifyAreaMatchSpecificity } from '../../../lib/areaMatchPremium.ts';
 
 type NearrCategory =
   | 'restaurant' | 'cafe' | 'bakery' | 'bar' | 'brewery' | 'winery' | 'dessert'
@@ -366,7 +367,7 @@ export function partialPlaceToReviewOnlyCandidate(
 export type VayrinPartialResult = {
   version: 1;
   reviewOnly: true;
-  resultClass: 'area_match' | 'search_lead' | 'partial_result';
+  resultClass: 'area_match' | 'area_match_incomplete' | 'search_lead' | 'partial_result';
   locality: string | null;
   category: NearrCategory | null;
   searchQuery: string | null;
@@ -374,6 +375,17 @@ export type VayrinPartialResult = {
   placeType?: string | null;
   reasonCode?: 'category_only_candidate';
   discoveryOnly?: true;
+  area?: {
+    name: string;
+    city: string | null;
+    region: string | null;
+    country: string | null;
+  };
+  intendedSpecificity?: 'AREA_DESTINATION' | 'SPECIFIC_PHYSICAL_DESTINATION';
+  resolvedSpecificity?: 'CITY' | 'REGION' | 'COUNTRY' | 'AREA';
+  exactDestinationResolved?: false;
+  premiumEligible?: boolean;
+  intentSignal?: 'area_destination' | 'grounded_identity' | 'physical_category' | 'physical_place_type';
   provenance?: {
     identityEvidence: string[];
     categoryEvidence: string[];
@@ -396,14 +408,23 @@ export function buildVayrinPartialResult(evidence: MediaPlaceEvidence): VayrinPa
     if (!groundedName && !locality && !category) return [];
     const searchQuery = [groundedName, category?.replace(/_/g, ' '), locality]
       .filter(Boolean).join(' ').trim().slice(0, 240) || null;
+    const areaSpecificity = classifyAreaMatchSpecificity({
+      nameHint: groundedName,
+      category,
+      city: candidate?.city,
+      region: candidate?.region,
+      country: candidate?.country,
+    });
     return [{
       version: 1 as const,
       reviewOnly: true as const,
-      resultClass: locality ? 'area_match' as const : groundedName ? 'search_lead' as const : 'partial_result' as const,
+      resultClass: areaSpecificity?.resultClass ?? (groundedName ? 'search_lead' as const : 'partial_result' as const),
       locality,
       category,
       searchQuery,
       clueCount: partial.explicitEvidence.length,
+      ...(areaSpecificity ?? {}),
+      ...(areaSpecificity?.resultClass === 'area_match_incomplete' ? { discoveryOnly: true as const } : {}),
     }];
   });
   const categoryOnlyResults = evidence.places.flatMap((place) => {
@@ -415,10 +436,17 @@ export function buildVayrinPartialResult(evidence: MediaPlaceEvidence): VayrinPa
       .filter(Boolean).slice(0, 8);
     const geoEvidence = [place.city, place.region, place.country]
       .filter((value): value is string => !!value).slice(0, 3);
+    const areaSpecificity = classifyAreaMatchSpecificity({
+      category,
+      placeType: admission.placeType,
+      city: place.city,
+      region: place.region,
+      country: place.country,
+    });
     return [{
       version: 1 as const,
       reviewOnly: true as const,
-      resultClass: locality ? 'area_match' as const : 'partial_result' as const,
+      resultClass: areaSpecificity?.resultClass ?? 'partial_result' as const,
       locality,
       category,
       searchQuery: [admission.placeType?.replace(/_/g, ' '), locality].filter(Boolean).join(' ').slice(0, 240) || null,
@@ -426,11 +454,13 @@ export function buildVayrinPartialResult(evidence: MediaPlaceEvidence): VayrinPa
       placeType: admission.placeType,
       reasonCode: 'category_only_candidate' as const,
       discoveryOnly: true as const,
+      ...(areaSpecificity ?? {}),
       provenance: { identityEvidence: [], categoryEvidence, geoEvidence },
     }];
   });
   const results = [...partialResults, ...categoryOnlyResults];
   const priority: Record<VayrinPartialResult['resultClass'], number> = {
+    area_match_incomplete: 4,
     area_match: 3,
     search_lead: 2,
     partial_result: 1,

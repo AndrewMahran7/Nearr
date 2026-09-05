@@ -6,6 +6,8 @@
  * never a billing input.
  */
 
+import { areaMatchIncompleteFromPayload } from './areaMatchPremium.ts';
+
 export const PREMIUM_REQUEST_STATES = [
   'not_eligible',
   'eligible',
@@ -143,6 +145,9 @@ export function premiumEligibilityForResult(job: PremiumResultFacts): PremiumEli
   if (EXCLUDED_FAILURE_CODES.has(code)) return { eligible: false, reason: `excluded_${code}` };
   if (job.failure_category && job.failure_category !== 'analysis_insufficient') {
     return { eligible: false, reason: `excluded_${job.failure_category}` };
+  }
+  if (areaMatchIncompleteFromPayload(job.candidate_payload)) {
+    return { eligible: true, reason: 'area_match_incomplete' };
   }
   if (job.failure_category === 'analysis_insufficient' || ELIGIBLE_FAILURE_CODES.has(code)) {
     return { eligible: true, reason: code || 'analysis_insufficient' };

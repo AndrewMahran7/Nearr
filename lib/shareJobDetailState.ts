@@ -90,6 +90,7 @@ export type ShareJobDetailReason =
   | 'candidates_single'
   | ShareFailureCategory
   | 'area_match'
+  | 'area_match_incomplete'
   | 'search_lead'
   | 'partial_result'
   | 'no_candidates';
@@ -149,6 +150,10 @@ export const SHARE_JOB_DETAIL_COPY = {
   areaMatch: {
     title: 'We narrowed down the area',
     body: 'Use this area to check the place before saving it.',
+  },
+  areaMatchIncomplete: {
+    title: 'Area found',
+    body: "We narrowed down the area, but couldn't identify the exact spot.",
   },
   searchLead: {
     title: 'We found a useful lead',
@@ -388,7 +393,9 @@ export function buildShareJobDetailState(
   }
 
   if (partialResult) {
-    const copy = partialResult.resultClass === 'area_match'
+    const copy = partialResult.resultClass === 'area_match_incomplete'
+      ? SHARE_JOB_DETAIL_COPY.areaMatchIncomplete
+      : partialResult.resultClass === 'area_match'
       ? SHARE_JOB_DETAIL_COPY.areaMatch
       : partialResult.resultClass === 'search_lead'
         ? SHARE_JOB_DETAIL_COPY.searchLead

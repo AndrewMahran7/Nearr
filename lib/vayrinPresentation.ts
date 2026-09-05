@@ -18,6 +18,7 @@ export type VayrinPresentationKind =
   | 'leads_candidates'
   | 'leads_unverified'
   | 'area_match'
+  | 'area_match_incomplete'
   | 'partial_result'
   | 'multi_found'
   | 'multi_partial'
@@ -228,6 +229,17 @@ export function buildVayrinPresentation(
         primaryAction: 'Search this area',
         secondaryAction: 'Change location',
       };
+    case 'area_match_incomplete':
+      return {
+        ...base,
+        kind: 'area_match_incomplete',
+        headline: 'Area found.',
+        body: place
+          ? `We narrowed it down to ${place}, but couldn't identify the exact spot.`
+          : "We narrowed down the area, but couldn't identify the exact spot.",
+        primaryAction: 'Make Premium Request · 1 token',
+        secondaryAction: 'See places in this area',
+      };
     case 'partial_result':
       return {
         ...base,
@@ -343,6 +355,13 @@ export function mapShareJobToVayrinPresentation(
   }
   if (leads.length > 0 || hasModelPrior) {
     return buildVayrinPresentation({ kind: 'leads_unverified', source: 'async', leads }, context);
+  }
+  if (detail.partialResult?.resultClass === 'area_match_incomplete') {
+    return buildVayrinPresentation({
+      kind: 'area_match_incomplete',
+      source: 'async',
+      placeName: detail.partialResult.area?.name ?? detail.partialResult.locality,
+    }, context);
   }
   if (detail.partialResult?.resultClass === 'area_match') {
     return buildVayrinPresentation({ kind: 'area_match', source: 'async' }, context);
