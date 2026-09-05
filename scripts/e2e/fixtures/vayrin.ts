@@ -66,6 +66,33 @@ export type VayrinCanaryOptions = {
   groupingOnly?: boolean;
 };
 
+const PREMIUM_EVENT_NAMES = [
+  'premium_request_offered',
+  'premium_request_cta_tapped',
+  'premium_request_reserved',
+  'premium_request_consumed',
+  'premium_request_released',
+];
+
+async function readAutomaticDeepBillingFootprint(session: E2ESession, userId: string, jobId: string) {
+  const [wallet, reservations, premiumTasks, premiumEvents, deepEvents] = await Promise.all([
+    session.admin.from('place_find_wallets').select('available_uses,reserved_uses,version').eq('user_id', userId).maybeSingle(),
+    session.admin.from('place_find_reservations').select('id').eq('share_job_id', jobId),
+    session.admin.from('share_media_tasks').select('id').eq('share_job_id', jobId).eq('task_kind', 'premium_recognition'),
+    session.admin.from('analytics_events').select('event_name').eq('user_id', userId).in('event_name', PREMIUM_EVENT_NAMES),
+    session.admin.from('analytics_events').select('event_name').eq('user_id', userId).like('event_name', 'deep_recognition_%'),
+  ]);
+  const error = wallet.error ?? reservations.error ?? premiumTasks.error ?? premiumEvents.error ?? deepEvents.error;
+  if (error) throw new Error(`automatic deep billing footprint read failed: ${error.message}`);
+  return {
+    wallet: wallet.data ?? null,
+    reservations: reservations.data?.length ?? 0,
+    premiumTasks: premiumTasks.data?.length ?? 0,
+    premiumEvents: premiumEvents.data?.length ?? 0,
+    deepEvents: (deepEvents.data ?? []).map((row) => row.event_name),
+  };
+}
+
 function positiveIntegerEnv(name: string): number | undefined {
   const raw = (process.env[name] || '').trim();
   if (!raw) return undefined;
@@ -355,6 +382,29 @@ export async function fixtureVayrinLiveCanary(
     return false;
   }
   reporter.pass(`${name}: rendered logical-place count`, 0, renderedDetail);
+  const footprint = await readAutomaticDeepBillingFootprint(session, identity.userId, jobId);
+  const usedAutomaticDeep = String(run.model_provider).includes('simple-sol');
+  if (footprint.reservations !== 0 || footprint.premiumTasks !== 0 || footprint.premiumEvents !== 0) {
+    reporter.fail(
+      `${name}: automatic deep is free and internal`,
+      0,
+      `reservations=${footprint.reservations} premium_tasks=${footprint.premiumTasks} premium_events=${footprint.premiumEvents}`,
+    );
+    return false;
+  }
+  if (footprint.wallet !== null) {
+    reporter.fail(`${name}: automatic deep wallet untouched`, 0, 'the canary unexpectedly created or mutated a wallet');
+    return false;
+  }
+  if (usedAutomaticDeep && !footprint.deepEvents.includes('deep_recognition_specific_result')) {
+    reporter.fail(`${name}: automatic deep analytics`, 0, 'the deep path ran without its specific-result event');
+    return false;
+  }
+  reporter.pass(
+    `${name}: automatic deep billing isolation`,
+    0,
+    `wallet=absent reservations=0 premium_tasks=0 premium_events=0 deep_path=${usedAutomaticDeep ? 'yes' : 'no'}`,
+  );
   if (options.groupingOnly) return true;
 
   const evidenceFrames = detailState.evidenceFrames;
