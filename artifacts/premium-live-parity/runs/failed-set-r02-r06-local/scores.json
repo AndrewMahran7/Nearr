@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "run_id": "sol-parity-2026-09-05T05-25-35-949Z",
+  "scored_at": "2026-09-05T05:27:51.539Z",
+  "cases_requested": 2,
+  "model_attempts_persisted": 2,
+  "scores": [
+    {
+      "attempt_id": "R02-F1-M1-0f8f91a8",
+      "case_id": "R02",
+      "frame_arm": "F1",
+      "model_arm": "M1",
+      "top1": "Puʻu Kekaʻa (Black Rock)",
+      "exact_top1": false,
+      "useful_top1": true,
+      "useful_top3": true,
+      "wrong_top1": false,
+      "truthful_partial": true,
+      "no_answer": false,
+      "semantic_nonsense": false,
+      "geography_contradiction": false,
+      "simulated_decision": "WOULD_SHOW_NAMED_LEAD",
+      "wrong_autosave": false
+    },
+    {
+      "attempt_id": "R06-F1-M1-1e8d4de4",
+      "case_id": "R06",
+      "frame_arm": "F1",
+      "model_arm": "M1",
+      "top1": "Copper Canyon on Lake Havasu",
+      "exact_top1": true,
+      "useful_top1": true,
+      "useful_top3": true,
+      "wrong_top1": false,
+      "truthful_partial": false,
+      "no_answer": false,
+      "semantic_nonsense": false,
+      "geography_contradiction": false,
+      "simulated_decision": "WOULD_SHOW_OPTIONS",
+      "wrong_autosave": false
+    }
+  ],
+  "summary": {
+    "F1:M1": {
+      "cases": 2,
+      "exact_top1": 1,
+      "useful_top1": 2,
+      "useful_top3": 2,
+      "wrong_top1": 0,
+      "wrong_autosave": 0,
+      "truthful_partial": 1,
+      "no_answer": 0,
+      "semantic_nonsense": 0,
+      "geography_contradiction": 0,
+      "median_latency_ms": 38488,
+      "p95_latency_ms": 94818,
+      "model_cost_usd": 0.147328,
+      "web_search_calls": 0
+    }
+  }
+}

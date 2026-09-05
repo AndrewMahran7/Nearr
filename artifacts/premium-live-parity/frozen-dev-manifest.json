@@ -1,0 +1,31 @@
+{
+  "frozenAt": "2026-09-05T06:03:00Z",
+  "environment": "Nearr-Dev",
+  "candidateGitCommit": "d618b9047ca6b612b44cf511725d44c3bc8f6a80",
+  "proofHarnessGitCommit": "f3853fc7556a58fcbe6941cfd26f0fa94b2351e4",
+  "railway": {
+    "projectId": "4037a3b5-d66f-409e-b734-56c22c244e3e",
+    "environmentId": "57d055b7-5326-4f96-a7a9-70523ee0d3f0",
+    "serviceId": "3c8cd190-b118-4ee4-9338-407843ef4e1f",
+    "deploymentId": "fb400076-7d96-4a9e-9a9e-f22278625c2e",
+    "sourceGitCommit": "d618b9047ca6b612b44cf511725d44c3bc8f6a80",
+    "imageDigest": "sha256:13db7f951ac15f6377d68f659c2857f08cadfac656c898ba70c478a5227d589e",
+    "status": "SUCCESS"
+  },
+  "supabase": {
+    "projectRef": "qnfxnmvxpjzfydgudtvs",
+    "processShareJobsVersion": 98,
+    "processShareJobsDigest": "f380d18f1e56d2fb83e792add3caf1f0f17472e831bb6226340491f680dfd45a",
+    "processShareJobsSourceGitCommit": "566a3a4b11e7552109b1fe1f757fc90357826eb3",
+    "monetizationVersion": 30,
+    "monetizationDigest": "f795e67919f8f2f121798730ead638cae610c718aa19fddc6b40951f2aa57617",
+    "remoteMigrationHead": "20260905000002",
+    "tokenMonetizationVersion": "premium-request-v2@20260905000002"
+  },
+  "versions": {
+    "fingerprint": "premium-inference-fingerprint.v1",
+    "evidence": "premium-evidence-2026-09-05.v1",
+    "engine": "simple-sol-premium.v2",
+    "safety": "premium-recognition-safety.v2"
+  }
+}

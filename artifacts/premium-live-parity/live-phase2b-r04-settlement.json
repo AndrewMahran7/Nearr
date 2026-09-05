@@ -1,0 +1,561 @@
+{
+  "schemaVersion": 1,
+  "run": {
+    "startedAt": "2026-09-05T05:43:42.874Z",
+    "completedAt": "2026-09-05T05:44:34.092Z",
+    "correlationId": "nearr-e2e-20260905T054341-ce656242",
+    "gitHead": "566a3a4",
+    "target": {
+      "supabaseProjectRef": "qnfxnmvxpjzfydgudtvs",
+      "railwayProject": "4037a3b5-d66f-409e-b734-56c22c244e3e",
+      "railwayEnvironment": "development",
+      "railwayService": "media-worker"
+    },
+    "freeLaneSetup": "terminal analysis-insufficient jobs seeded with real parity source URLs",
+    "premiumBoundary": "deployed authenticated monetization Edge endpoint onward",
+    "purchaseSetup": {
+      "productId": "dev.mock.nearr.place_finds.10",
+      "purchaseCount": 0,
+      "grantedUses": 0
+    },
+    "cleanupRequested": true
+  },
+  "wallet": {
+    "initial": {
+      "id": "5d5e50fd-6f70-4c9c-b4da-cea500513b1e",
+      "available_uses": 5,
+      "reserved_uses": 0,
+      "version": 1
+    },
+    "funded": {
+      "id": "5d5e50fd-6f70-4c9c-b4da-cea500513b1e",
+      "available_uses": 5,
+      "reserved_uses": 0,
+      "version": 1
+    },
+    "reserved": {
+      "id": "5d5e50fd-6f70-4c9c-b4da-cea500513b1e",
+      "available_uses": 4,
+      "reserved_uses": 1,
+      "version": 2
+    },
+    "final": {
+      "id": "5d5e50fd-6f70-4c9c-b4da-cea500513b1e",
+      "available_uses": 4,
+      "reserved_uses": 0,
+      "version": 3
+    }
+  },
+  "gates": {
+    "runCount": 1,
+    "priorityUseful": "1/1",
+    "wrongAutosaves": 0,
+    "c07UnsafeAutosave": false,
+    "machineCacheIdentityReads": 0,
+    "noResultTokenRelease": false,
+    "actionableReviewTokenConsume": true,
+    "duplicatePremiumTapSingleReservation": true
+  },
+  "cases": [
+    {
+      "caseId": "R04",
+      "sourceUrl": "https://www.instagram.com/reel/C9Z963muLHI/",
+      "jobId": "660cc6d2-d935-4118-9c9b-26ed46b130e3",
+      "premiumRequestId": "3c2a359c-e214-496f-9c0a-8e992d1a7c7c",
+      "premiumState": "useful_result",
+      "status": "needs_help",
+      "decision": "candidate_picker",
+      "savedPlaceId": null,
+      "names": [
+        "Dorset Marble Quarry",
+        "Marble Street Quarry",
+        "West Rutland Marble Quarry"
+      ],
+      "suggestedQuery": "Dorset Marble Quarry",
+      "chargeable": true,
+      "settlementReason": "premium_specific_candidates",
+      "costs": {
+        "sol": {
+          "model": "gpt-5.6-sol",
+          "usage": {
+            "input_tokens": 7295,
+            "total_tokens": 8513,
+            "output_tokens": 1218,
+            "reasoning_tokens": 1034,
+            "cached_input_tokens": 7292
+          },
+          "knownCostUsd": 0.027289
+        },
+        "places": {
+          "costUsd": "UNKNOWN",
+          "requestCount": 2,
+          "requestTypes": [
+            "PRIMARY_SPECIFIC_IDENTITY",
+            "PRIMARY_SPECIFIC_IDENTITY"
+          ]
+        },
+        "latencyMs": {
+          "sol": 33201,
+          "places": 444,
+          "evidencePrep": 11856,
+          "totalAfterEvidenceReady": 33645
+        },
+        "acquisition": "UNKNOWN",
+        "evidenceReuse": {
+          "ocr": "REACQUIRED",
+          "media": "REACQUIRED",
+          "frames": "REACQUIRED",
+          "caption": "REACQUIRED",
+          "transcript": "REACQUIRED"
+        },
+        "transcription": "UNKNOWN",
+        "parityDiagnostics": {
+          "solBoundary": {
+            "model": "gpt-5.6-sol",
+            "usage": {
+              "input_tokens": 7295,
+              "total_tokens": 8513,
+              "output_tokens": 1218,
+              "reasoning_tokens": 1034,
+              "cached_input_tokens": 7292
+            },
+            "version": "premium-sol-boundary.v1",
+            "latencyMs": 33201,
+            "hypotheses": [
+              {
+                "name": "Dorset Marble Quarry",
+                "confidence": "MEDIUM",
+                "entityType": "LANDMARK",
+                "alternatives": [
+                  "West Rutland Marble Quarry"
+                ],
+                "evidenceBasis": "CONTEXTUAL_OR_MEMORY_PRIOR"
+              }
+            ],
+            "responseId": "resp_03c4b5f237562139016a9bac1d99d487d0bc157a642cc49ef1",
+            "shareJobId": "660cc6d2-d935-4118-9c9b-26ed46b130e3",
+            "parseSuccess": true,
+            "fingerprintId": "003c7a1e699e0c3931216d9f45b968b89823be62200de45592570fee0a056add",
+            "destinationCount": 1,
+            "parseFailureCode": null,
+            "premiumRequestId": "3c2a359c-e214-496f-9c0a-8e992d1a7c7c",
+            "structuredResultHash": "2942ee5e9654d03deadaf98dffe5cc1b5f52c0320f608a4bb807588e83df4108"
+          },
+          "engineVersion": "simple-sol-premium.v2",
+          "safetyVersion": "premium-recognition-safety.v2",
+          "evidenceVersion": "premium-evidence-2026-09-05.v1",
+          "finalFingerprint": {
+            "hash": "7a980b69be26039c10cb444fbf9360f8ae08d6ec8d57bbe6dd62f5ddd8de0e85",
+            "version": "premium-final-fingerprint.v1",
+            "chargeability": "CHARGEABLE_ACTIONABLE",
+            "solResultHash": "2942ee5e9654d03deadaf98dffe5cc1b5f52c0320f608a4bb807588e83df4108",
+            "resultDecision": "PREMIUM_ACTIONABLE_RESULT",
+            "safetyDecision": [
+              "REVIEW"
+            ],
+            "tokenSettlement": "CONSUME",
+            "canonicalResultHash": "158e71e6b59863ab258c36d67492d72f52b84f5c67bec365503de33b8b4ccab3"
+          },
+          "evidenceReuseState": "EVIDENCE_REGENERATED",
+          "inferenceFingerprint": {
+            "frames": [
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 250878,
+                "imageSha256": "63d0baad0a16ddd5e194f7c86decc58c150525b6f05201c2e106d62017caa871",
+                "timestampMs": 0
+              },
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 152121,
+                "imageSha256": "107c3d95a33c669b305e3d90c02f858979d37b6700ba5738362d053795e2325f",
+                "timestampMs": 3000
+              },
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 69784,
+                "imageSha256": "8f4596a7988867db398c5aad41271ad7ea27e0d9b74a2e8633c892c5b527ac30",
+                "timestampMs": 4000
+              },
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 77561,
+                "imageSha256": "f7c47f4ec3809868b8b00fd9433239003ac05fc2c34801e3460ab1e366f2f7d5",
+                "timestampMs": 5000
+              },
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 88593,
+                "imageSha256": "b8e2a7f874b59644e48052acb826158d0bef46734fee50c1bfb7ede997c86462",
+                "timestampMs": 6000
+              },
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 131232,
+                "imageSha256": "f1b882b2b4a25de9f71d6f7e516183cb851769299d43cb47843fb197cca685f1",
+                "timestampMs": 8933
+              }
+            ],
+            "prompt": {
+              "model": "gpt-5.6-sol",
+              "promptHash": "8132da97b952b5d93062ba9b7d915c1dc40b4033de869607a1274142e1580e9c",
+              "schemaHash": "6899fd09c3cc95b4d12263bec5d7028f605eab0eb77b9fdaa38877704c694cfa",
+              "promptVersion": "sol-parity-natural-v1",
+              "schemaVersion": "sol-parity-destination-schema-v1",
+              "reasoningConfig": {
+                "effort": "high"
+              }
+            },
+            "request": {
+              "imageCount": 6,
+              "inputTextHash": "7fd6789e8eea3ef8850023dae5ba67980fd8ddbde7685d1486d43c11e830394a",
+              "requestPayloadHash": "cebfdf36ce678397b72e080a4c92c1e630a80f6628688d34947445b98d43f811"
+            },
+            "version": "premium-inference-fingerprint.v1",
+            "evidenceReuse": "EVIDENCE_REGENERATED",
+            "fingerprintId": "003c7a1e699e0c3931216d9f45b968b89823be62200de45592570fee0a056add",
+            "sourceContext": {
+              "ocrHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "ocrLength": 0,
+              "captionHash": "46ef32510f2ec9c1f8f9c60d075402bb562a405daf1b7d41afbd32518682b530",
+              "creatorHash": "0c38d16bc8c55507746b402c0049fbb93a47019f6f8c295e8309318f8b437213",
+              "captionLength": 216,
+              "creatorLength": 10,
+              "transcriptHash": "94f1c107f81a08341d150e8645c8824ae5a7cbaf00c12761348f11b5cc45cf1a",
+              "transcriptLength": 9,
+              "sourceLocationHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "sourceLocationLength": 0,
+              "sourceLocationPresent": false
+            },
+            "sourceIdentity": {
+              "platform": "instagram",
+              "canonicalUrlHash": "e44b69bd6d8050f7a8244527f961251be19f7d95f5b1308be7c52a344805fd31",
+              "canonicalContentIdHash": "716e3039627691839a98bcb3e580d0f3a1b5bee71740d9e14d9c78cb298d9506"
+            },
+            "evidenceVersion": "premium-evidence-2026-09-05.v1"
+          },
+          "canonicalizationFingerprint": {
+            "hash": "158e71e6b59863ab258c36d67492d72f52b84f5c67bec365503de33b8b4ccab3",
+            "version": "premium-canonicalization-fingerprint.v1",
+            "hypotheses": [
+              {
+                "name": "Dorset Marble Quarry",
+                "calls": [
+                  {
+                    "query": "Dorset Marble Quarry, Dorset, Vermont, United States",
+                    "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                    "matched": true,
+                    "outcome": "CANONICAL_EXACT",
+                    "resultIds": [
+                      "ChIJG9E4hIhd4IkRwN0jnyQ9-F4"
+                    ],
+                    "resultCount": 1,
+                    "resultNames": [
+                      "Dorset Marble Quarry"
+                    ],
+                    "selectedName": "Dorset Marble Quarry",
+                    "attemptNumber": 1,
+                    "rejectionReason": null,
+                    "selectedGooglePlaceId": "ChIJG9E4hIhd4IkRwN0jnyQ9-F4"
+                  }
+                ],
+                "outcome": "CANONICAL_EXACT",
+                "geography": {
+                  "city": "Dorset",
+                  "region": "Vermont",
+                  "country": "United States"
+                },
+                "entityType": "LANDMARK",
+                "selectedName": "Dorset Marble Quarry",
+                "rejectionReason": null,
+                "selectedGooglePlaceId": "ChIJG9E4hIhd4IkRwN0jnyQ9-F4"
+              },
+              {
+                "name": "West Rutland Marble Quarry",
+                "calls": [
+                  {
+                    "query": "West Rutland Marble Quarry, West Rutland, Vermont, United States",
+                    "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                    "matched": true,
+                    "outcome": "CANONICAL_ALIAS",
+                    "resultIds": [
+                      "ChIJQ5cT_kcj4IkRHcayOugmexs"
+                    ],
+                    "resultCount": 1,
+                    "resultNames": [
+                      "Marble Street Quarry"
+                    ],
+                    "selectedName": "Marble Street Quarry",
+                    "attemptNumber": 1,
+                    "rejectionReason": null,
+                    "selectedGooglePlaceId": "ChIJQ5cT_kcj4IkRHcayOugmexs"
+                  }
+                ],
+                "outcome": "CANONICAL_ALIAS",
+                "geography": {
+                  "city": "West Rutland",
+                  "region": "Vermont",
+                  "country": "United States"
+                },
+                "entityType": "LANDMARK",
+                "selectedName": "Marble Street Quarry",
+                "rejectionReason": null,
+                "selectedGooglePlaceId": "ChIJQ5cT_kcj4IkRHcayOugmexs"
+              }
+            ]
+          }
+        }
+      },
+      "requestedAt": "2026-09-05T05:43:44.18402+00:00",
+      "startedAt": "2026-09-05T05:43:44.583185+00:00",
+      "completedAt": "2026-09-05T05:44:32.672142+00:00",
+      "task": {
+        "id": "b86287a5-eeb3-4c67-8e2d-809c44140370",
+        "status": "completed",
+        "attempts": 1,
+        "failureCode": null,
+        "resolverName": "premium-sol",
+        "analysisProvider": null,
+        "analysisModel": null,
+        "promptVersion": null,
+        "latencyMs": null,
+        "modelCalls": null,
+        "modelInputTokens": null,
+        "modelOutputTokens": null,
+        "modelThinkingTokens": null,
+        "modelLatencyMs": null
+      },
+      "mediaRun": {
+        "id": "16876a41-95e7-4db5-9b07-05b1591169d4",
+        "durationMs": 45501,
+        "frameCount": 7,
+        "transcriptSegments": 1,
+        "ocrSegments": 0,
+        "resolverName": "instagram/yt-dlp",
+        "modelProvider": "premium-sol",
+        "evidence": {
+          "multiple": false,
+          "placeCount": 2,
+          "insufficient": false,
+          "analysisAttempted": true,
+          "destinationPlaces": 0,
+          "partialPlaceCount": 0,
+          "explicitPlaceCount": 0,
+          "premiumDiagnostics": {
+            "solBoundary": {
+              "model": "gpt-5.6-sol",
+              "usage": {
+                "input_tokens": 7295,
+                "total_tokens": 8513,
+                "output_tokens": 1218,
+                "reasoning_tokens": 1034,
+                "cached_input_tokens": 7292
+              },
+              "version": "premium-sol-boundary.v1",
+              "latencyMs": 33201,
+              "hypotheses": [
+                {
+                  "name": "Dorset Marble Quarry",
+                  "confidence": "MEDIUM",
+                  "entityType": "LANDMARK",
+                  "alternatives": [
+                    "West Rutland Marble Quarry"
+                  ],
+                  "evidenceBasis": "CONTEXTUAL_OR_MEMORY_PRIOR"
+                }
+              ],
+              "responseId": "resp_03c4b5f237562139016a9bac1d99d487d0bc157a642cc49ef1",
+              "shareJobId": "660cc6d2-d935-4118-9c9b-26ed46b130e3",
+              "parseSuccess": true,
+              "fingerprintId": "003c7a1e699e0c3931216d9f45b968b89823be62200de45592570fee0a056add",
+              "destinationCount": 1,
+              "parseFailureCode": null,
+              "premiumRequestId": "3c2a359c-e214-496f-9c0a-8e992d1a7c7c",
+              "structuredResultHash": "2942ee5e9654d03deadaf98dffe5cc1b5f52c0320f608a4bb807588e83df4108"
+            },
+            "finalFingerprint": {
+              "hash": "7a980b69be26039c10cb444fbf9360f8ae08d6ec8d57bbe6dd62f5ddd8de0e85",
+              "version": "premium-final-fingerprint.v1",
+              "chargeability": "CHARGEABLE_ACTIONABLE",
+              "solResultHash": "2942ee5e9654d03deadaf98dffe5cc1b5f52c0320f608a4bb807588e83df4108",
+              "resultDecision": "PREMIUM_ACTIONABLE_RESULT",
+              "safetyDecision": [
+                "REVIEW"
+              ],
+              "tokenSettlement": "CONSUME",
+              "canonicalResultHash": "158e71e6b59863ab258c36d67492d72f52b84f5c67bec365503de33b8b4ccab3"
+            },
+            "inferenceFingerprint": {
+              "frames": [
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 250878,
+                  "imageSha256": "63d0baad0a16ddd5e194f7c86decc58c150525b6f05201c2e106d62017caa871",
+                  "timestampMs": 0
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 152121,
+                  "imageSha256": "107c3d95a33c669b305e3d90c02f858979d37b6700ba5738362d053795e2325f",
+                  "timestampMs": 3000
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 69784,
+                  "imageSha256": "8f4596a7988867db398c5aad41271ad7ea27e0d9b74a2e8633c892c5b527ac30",
+                  "timestampMs": 4000
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 77561,
+                  "imageSha256": "f7c47f4ec3809868b8b00fd9433239003ac05fc2c34801e3460ab1e366f2f7d5",
+                  "timestampMs": 5000
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 88593,
+                  "imageSha256": "b8e2a7f874b59644e48052acb826158d0bef46734fee50c1bfb7ede997c86462",
+                  "timestampMs": 6000
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 131232,
+                  "imageSha256": "f1b882b2b4a25de9f71d6f7e516183cb851769299d43cb47843fb197cca685f1",
+                  "timestampMs": 8933
+                }
+              ],
+              "prompt": {
+                "model": "gpt-5.6-sol",
+                "promptHash": "8132da97b952b5d93062ba9b7d915c1dc40b4033de869607a1274142e1580e9c",
+                "schemaHash": "6899fd09c3cc95b4d12263bec5d7028f605eab0eb77b9fdaa38877704c694cfa",
+                "promptVersion": "sol-parity-natural-v1",
+                "schemaVersion": "sol-parity-destination-schema-v1",
+                "reasoningConfig": {
+                  "effort": "high"
+                }
+              },
+              "request": {
+                "imageCount": 6,
+                "inputTextHash": "7fd6789e8eea3ef8850023dae5ba67980fd8ddbde7685d1486d43c11e830394a",
+                "requestPayloadHash": "cebfdf36ce678397b72e080a4c92c1e630a80f6628688d34947445b98d43f811"
+              },
+              "version": "premium-inference-fingerprint.v1",
+              "evidenceReuse": "EVIDENCE_REGENERATED",
+              "fingerprintId": "003c7a1e699e0c3931216d9f45b968b89823be62200de45592570fee0a056add",
+              "sourceContext": {
+                "ocrHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "ocrLength": 0,
+                "captionHash": "46ef32510f2ec9c1f8f9c60d075402bb562a405daf1b7d41afbd32518682b530",
+                "creatorHash": "0c38d16bc8c55507746b402c0049fbb93a47019f6f8c295e8309318f8b437213",
+                "captionLength": 216,
+                "creatorLength": 10,
+                "transcriptHash": "94f1c107f81a08341d150e8645c8824ae5a7cbaf00c12761348f11b5cc45cf1a",
+                "transcriptLength": 9,
+                "sourceLocationHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "sourceLocationLength": 0,
+                "sourceLocationPresent": false
+              },
+              "sourceIdentity": {
+                "platform": "instagram",
+                "canonicalUrlHash": "e44b69bd6d8050f7a8244527f961251be19f7d95f5b1308be7c52a344805fd31",
+                "canonicalContentIdHash": "716e3039627691839a98bcb3e580d0f3a1b5bee71740d9e14d9c78cb298d9506"
+              },
+              "evidenceVersion": "premium-evidence-2026-09-05.v1"
+            },
+            "canonicalizationFingerprint": {
+              "hash": "158e71e6b59863ab258c36d67492d72f52b84f5c67bec365503de33b8b4ccab3",
+              "version": "premium-canonicalization-fingerprint.v1",
+              "hypotheses": [
+                {
+                  "name": "Dorset Marble Quarry",
+                  "calls": [
+                    {
+                      "query": "Dorset Marble Quarry, Dorset, Vermont, United States",
+                      "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                      "matched": true,
+                      "outcome": "CANONICAL_EXACT",
+                      "resultIds": [
+                        "ChIJG9E4hIhd4IkRwN0jnyQ9-F4"
+                      ],
+                      "resultCount": 1,
+                      "resultNames": [
+                        "Dorset Marble Quarry"
+                      ],
+                      "selectedName": "Dorset Marble Quarry",
+                      "attemptNumber": 1,
+                      "rejectionReason": null,
+                      "selectedGooglePlaceId": "ChIJG9E4hIhd4IkRwN0jnyQ9-F4"
+                    }
+                  ],
+                  "outcome": "CANONICAL_EXACT",
+                  "geography": {
+                    "city": "Dorset",
+                    "region": "Vermont",
+                    "country": "United States"
+                  },
+                  "entityType": "LANDMARK",
+                  "selectedName": "Dorset Marble Quarry",
+                  "rejectionReason": null,
+                  "selectedGooglePlaceId": "ChIJG9E4hIhd4IkRwN0jnyQ9-F4"
+                },
+                {
+                  "name": "West Rutland Marble Quarry",
+                  "calls": [
+                    {
+                      "query": "West Rutland Marble Quarry, West Rutland, Vermont, United States",
+                      "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                      "matched": true,
+                      "outcome": "CANONICAL_ALIAS",
+                      "resultIds": [
+                        "ChIJQ5cT_kcj4IkRHcayOugmexs"
+                      ],
+                      "resultCount": 1,
+                      "resultNames": [
+                        "Marble Street Quarry"
+                      ],
+                      "selectedName": "Marble Street Quarry",
+                      "attemptNumber": 1,
+                      "rejectionReason": null,
+                      "selectedGooglePlaceId": "ChIJQ5cT_kcj4IkRHcayOugmexs"
+                    }
+                  ],
+                  "outcome": "CANONICAL_ALIAS",
+                  "geography": {
+                    "city": "West Rutland",
+                    "region": "Vermont",
+                    "country": "United States"
+                  },
+                  "entityType": "LANDMARK",
+                  "selectedName": "Marble Street Quarry",
+                  "rejectionReason": null,
+                  "selectedGooglePlaceId": "ChIJQ5cT_kcj4IkRHcayOugmexs"
+                }
+              ]
+            }
+          },
+          "recognitionFailureClass": "none",
+          "sharedGeoCountryApplied": false,
+          "sharedGeoCountryStrength": "none",
+          "peerGeographicDestinations": 0,
+          "sharedGeoCountryCandidates": 0,
+          "sourceGeographicContextDropped": 0
+        }
+      },
+      "reservationCount": 1,
+      "reservationStatus": "consumed",
+      "priorityUseful": true
+    }
+  ]
+}

@@ -1,0 +1,1537 @@
+{
+  "schemaVersion": 1,
+  "comparedAt": "2026-09-05T05:31:17.081Z",
+  "parityDirectory": "artifacts/premium-live-parity/runs/failed-set-r02-r06-local",
+  "liveArtifact": "artifacts/premium-live-parity/live-phase2-failed-set.json",
+  "comparisons": [
+    {
+      "caseId": "R02",
+      "parity": {
+        "fingerprint": {
+          "version": "premium-inference-fingerprint.v1",
+          "evidenceVersion": "premium-evidence-2026-09-05.v1",
+          "evidenceReuse": "EVIDENCE_REGENERATED",
+          "sourceIdentity": {
+            "platform": "instagram",
+            "canonicalContentIdHash": "d0e4a2209a033df03c01427ba00fec562702ed8f558fe745e7fbd0022fdffe9c",
+            "canonicalUrlHash": "967249c4a7dae0143dc1111de5ab2b040bd250c73aa10431853a72a407fff77b"
+          },
+          "prompt": {
+            "promptVersion": "sol-parity-natural-v1",
+            "promptHash": "8132da97b952b5d93062ba9b7d915c1dc40b4033de869607a1274142e1580e9c",
+            "schemaVersion": "sol-parity-destination-schema-v1",
+            "schemaHash": "6899fd09c3cc95b4d12263bec5d7028f605eab0eb77b9fdaa38877704c694cfa",
+            "model": "gpt-5.6-sol",
+            "reasoningConfig": {
+              "effort": "high"
+            }
+          },
+          "frames": [
+            {
+              "timestampMs": 0,
+              "imageSha256": "40b6bb5fce7e6e7778e188f38ee3c8f8a73e9865d0cd89f97b1c689eed8895e4",
+              "width": 720,
+              "height": 1280,
+              "byteLength": 140811
+            },
+            {
+              "timestampMs": 11000,
+              "imageSha256": "1babff59ed29c1b357135e40a9f6955a41ffde34b177624993b2251819e5f055",
+              "width": 720,
+              "height": 1280,
+              "byteLength": 117863
+            },
+            {
+              "timestampMs": 15000,
+              "imageSha256": "53b857dac726d97abf675db238caf78256f6bdbc5f4ce78c9ad2f82bed846bcd",
+              "width": 720,
+              "height": 1280,
+              "byteLength": 152880
+            },
+            {
+              "timestampMs": 17000,
+              "imageSha256": "da0ea3b2a45139e44bec32d65f91ff212e975cb2d80cff242b680d3c692adb5e",
+              "width": 720,
+              "height": 1280,
+              "byteLength": 129501
+            },
+            {
+              "timestampMs": 19000,
+              "imageSha256": "dd35dbc447b0b2e396663a887bc15bde106e7777d824948b296050d03f61cd25",
+              "width": 720,
+              "height": 1280,
+              "byteLength": 70999
+            },
+            {
+              "timestampMs": 23600,
+              "imageSha256": "31cf8c404545b9809bcdd8bbef48d486380768f4fa7a292ab09f05a07012c3d4",
+              "width": 720,
+              "height": 1280,
+              "byteLength": 65640
+            }
+          ],
+          "sourceContext": {
+            "captionHash": "a91b44cc4c79e98b4c018b2e7831738e80c9f2b54c8d3ca1a459c138dcbc7c9a",
+            "captionLength": 280,
+            "transcriptHash": "02c530ee7fb4ddb9ad2a5468abc3d4eb8bd17c11ac144d64fb495f8b932e4869",
+            "transcriptLength": 14,
+            "ocrHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "ocrLength": 0,
+            "sourceLocationHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "sourceLocationLength": 0,
+            "sourceLocationPresent": false,
+            "creatorHash": "c3844d07d6aa66678884163d6b5bb8f7cced527451d4bcc158ba8607e627279f",
+            "creatorLength": 10
+          },
+          "request": {
+            "imageCount": 6,
+            "inputTextHash": "bfabf782081e8b08439a5db3ad83bd00c2945a69bab3ac761449e0ca06ba1705",
+            "requestPayloadHash": "d029280b3a42c16ef3210eeb695ab247b31271407e4095b817c641369e1b8bee"
+          },
+          "fingerprintId": "a72443b72aae6a8946ddc769ef519993a0e066af52f95868a9afbe9dc934ec7b"
+        },
+        "sol": {
+          "version": "premium-sol-boundary.v1",
+          "premiumRequestId": "local-R02-F1-M1-0f8f91a8",
+          "shareJobId": "local-R02",
+          "fingerprintId": "a72443b72aae6a8946ddc769ef519993a0e066af52f95868a9afbe9dc934ec7b",
+          "model": "gpt-5.6-sol",
+          "responseId": "resp_0000e765f4d2db92016a9ba7e6cbcc87d0a054c42f2e865d6f",
+          "latencyMs": 72600,
+          "usage": {
+            "input_tokens": 7334,
+            "cached_input_tokens": 0,
+            "output_tokens": 3853,
+            "reasoning_tokens": 3578,
+            "total_tokens": 11187
+          },
+          "structuredResultHash": "e436c96a9d41cb2e10dc6fd433c3e58cc42f853d9f95e439c8b71d0c57754878",
+          "destinationCount": 1,
+          "hypotheses": [
+            {
+              "name": "Puʻu Kekaʻa (Black Rock)",
+              "entityType": "NAMED_NATURAL_FEATURE",
+              "confidence": "MEDIUM",
+              "evidenceBasis": "MODEL_OBSERVED",
+              "alternatives": [
+                "Puʻu Ōlaʻi coastal cliffs",
+                "La Perouse Bay (Keoneʻōʻio Bay)"
+              ]
+            }
+          ],
+          "parseSuccess": true,
+          "parseFailureCode": null
+        },
+        "canonical": {
+          "version": "premium-canonicalization-fingerprint.v1",
+          "hash": "838b930e5f6ac4efb6d0a9b9406511a1adb845e27ebacb1d7f70ffb323008670",
+          "hypotheses": [
+            {
+              "name": "Puʻu Kekaʻa (Black Rock)",
+              "entityType": "NAMED_NATURAL_FEATURE",
+              "geography": {
+                "city": "Kāʻanapali",
+                "region": "Hawaii",
+                "country": "United States"
+              },
+              "calls": [
+                {
+                  "query": "Puʻu Kekaʻa (Black Rock), Kāʻanapali, Hawaii, United States",
+                  "attemptNumber": 1,
+                  "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                  "resultCount": 4,
+                  "resultIds": [
+                    "ChIJvwHf8xArVXkRuR5fizSASVo",
+                    "ChIJDUc4tkUrVXkRgaX4krVuX7U",
+                    "ChIJs5zAIQArVXkReyWud97MXlw",
+                    "ChIJzwjkmk8rVXkRFfxW8JL1zNQ"
+                  ],
+                  "resultNames": [
+                    "Black Rock",
+                    "Black Rock Beach",
+                    "Keka’a Landing Pier (Black Rock Pier)",
+                    "Pu‘u Keka‘a"
+                  ],
+                  "matched": true,
+                  "selectedGooglePlaceId": "ChIJvwHf8xArVXkRuR5fizSASVo",
+                  "selectedName": "Black Rock",
+                  "outcome": "CANONICAL_ALIAS",
+                  "rejectionReason": null
+                }
+              ],
+              "selectedGooglePlaceId": null,
+              "selectedName": null,
+              "outcome": "AMBIGUOUS_CANONICAL",
+              "rejectionReason": null
+            },
+            {
+              "name": "Puʻu Ōlaʻi coastal cliffs",
+              "entityType": "NAMED_NATURAL_FEATURE",
+              "geography": {
+                "city": "Makena",
+                "region": "Hawaii",
+                "country": "United States"
+              },
+              "calls": [
+                {
+                  "query": "Puʻu Ōlaʻi coastal cliffs, Makena, Hawaii, United States",
+                  "attemptNumber": 1,
+                  "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                  "resultCount": 3,
+                  "resultIds": [
+                    "ChIJwbnXZePbVHkRjK0utVeFJxs",
+                    "ChIJvUdbXqDcVHkR_--SKJRV0C0",
+                    "ChIJ0_g9dKDcVHkR9gmOpWeLYr0"
+                  ],
+                  "resultNames": [
+                    "Puʻu Olai",
+                    "Mākena State Park",
+                    "Puu Olai"
+                  ],
+                  "matched": false,
+                  "selectedGooglePlaceId": null,
+                  "selectedName": null,
+                  "outcome": "NO_MATCH",
+                  "rejectionReason": "no_compatible_match"
+                }
+              ],
+              "selectedGooglePlaceId": null,
+              "selectedName": null,
+              "outcome": "NAMED_LEAD",
+              "rejectionReason": "no_compatible_match"
+            },
+            {
+              "name": "La Perouse Bay (Keoneʻōʻio Bay)",
+              "entityType": "NAMED_NATURAL_FEATURE",
+              "geography": {
+                "city": "Makena",
+                "region": "Hawaii",
+                "country": "United States"
+              },
+              "calls": [
+                {
+                  "query": "La Perouse Bay (Keoneʻōʻio Bay), Makena, Hawaii, United States",
+                  "attemptNumber": 1,
+                  "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                  "resultCount": 1,
+                  "resultIds": [
+                    "ChIJQf-mxTHDVHkRZn62FEGhCIA"
+                  ],
+                  "resultNames": [
+                    "La Perouse Bay"
+                  ],
+                  "matched": true,
+                  "selectedGooglePlaceId": "ChIJQf-mxTHDVHkRZn62FEGhCIA",
+                  "selectedName": "La Perouse Bay",
+                  "outcome": "CANONICAL_ALIAS",
+                  "rejectionReason": null
+                }
+              ],
+              "selectedGooglePlaceId": "ChIJQf-mxTHDVHkRZn62FEGhCIA",
+              "selectedName": "La Perouse Bay",
+              "outcome": "CANONICAL_ALIAS",
+              "rejectionReason": null
+            }
+          ]
+        },
+        "final": {
+          "version": "premium-final-fingerprint.v1",
+          "hash": "6d7524389307aebab9f6145cf0e1b45df3b6747eb9b04eaa177ecbeed54b4d4e",
+          "solResultHash": "e436c96a9d41cb2e10dc6fd433c3e58cc42f853d9f95e439c8b71d0c57754878",
+          "canonicalResultHash": "838b930e5f6ac4efb6d0a9b9406511a1adb845e27ebacb1d7f70ffb323008670",
+          "safetyDecision": [
+            "REVIEW"
+          ],
+          "resultDecision": "PREMIUM_ACTIONABLE_RESULT",
+          "chargeability": "CHARGEABLE_ACTIONABLE",
+          "tokenSettlement": "CONSUME"
+        }
+      },
+      "local": {
+        "fingerprint": {
+          "version": "premium-inference-fingerprint.v1",
+          "evidenceVersion": "premium-evidence-2026-09-05.v1",
+          "evidenceReuse": "EVIDENCE_REGENERATED",
+          "sourceIdentity": {
+            "platform": "instagram",
+            "canonicalContentIdHash": "d0e4a2209a033df03c01427ba00fec562702ed8f558fe745e7fbd0022fdffe9c",
+            "canonicalUrlHash": "967249c4a7dae0143dc1111de5ab2b040bd250c73aa10431853a72a407fff77b"
+          },
+          "prompt": {
+            "promptVersion": "sol-parity-natural-v1",
+            "promptHash": "8132da97b952b5d93062ba9b7d915c1dc40b4033de869607a1274142e1580e9c",
+            "schemaVersion": "sol-parity-destination-schema-v1",
+            "schemaHash": "6899fd09c3cc95b4d12263bec5d7028f605eab0eb77b9fdaa38877704c694cfa",
+            "model": "gpt-5.6-sol",
+            "reasoningConfig": {
+              "effort": "high"
+            }
+          },
+          "frames": [
+            {
+              "timestampMs": 0,
+              "imageSha256": "40b6bb5fce7e6e7778e188f38ee3c8f8a73e9865d0cd89f97b1c689eed8895e4",
+              "width": 720,
+              "height": 1280,
+              "byteLength": 140811
+            },
+            {
+              "timestampMs": 11000,
+              "imageSha256": "1babff59ed29c1b357135e40a9f6955a41ffde34b177624993b2251819e5f055",
+              "width": 720,
+              "height": 1280,
+              "byteLength": 117863
+            },
+            {
+              "timestampMs": 15000,
+              "imageSha256": "53b857dac726d97abf675db238caf78256f6bdbc5f4ce78c9ad2f82bed846bcd",
+              "width": 720,
+              "height": 1280,
+              "byteLength": 152880
+            },
+            {
+              "timestampMs": 17000,
+              "imageSha256": "da0ea3b2a45139e44bec32d65f91ff212e975cb2d80cff242b680d3c692adb5e",
+              "width": 720,
+              "height": 1280,
+              "byteLength": 129501
+            },
+            {
+              "timestampMs": 19000,
+              "imageSha256": "dd35dbc447b0b2e396663a887bc15bde106e7777d824948b296050d03f61cd25",
+              "width": 720,
+              "height": 1280,
+              "byteLength": 70999
+            },
+            {
+              "timestampMs": 23600,
+              "imageSha256": "31cf8c404545b9809bcdd8bbef48d486380768f4fa7a292ab09f05a07012c3d4",
+              "width": 720,
+              "height": 1280,
+              "byteLength": 65640
+            }
+          ],
+          "sourceContext": {
+            "captionHash": "a91b44cc4c79e98b4c018b2e7831738e80c9f2b54c8d3ca1a459c138dcbc7c9a",
+            "captionLength": 280,
+            "transcriptHash": "02c530ee7fb4ddb9ad2a5468abc3d4eb8bd17c11ac144d64fb495f8b932e4869",
+            "transcriptLength": 14,
+            "ocrHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "ocrLength": 0,
+            "sourceLocationHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "sourceLocationLength": 0,
+            "sourceLocationPresent": false,
+            "creatorHash": "c3844d07d6aa66678884163d6b5bb8f7cced527451d4bcc158ba8607e627279f",
+            "creatorLength": 10
+          },
+          "request": {
+            "imageCount": 6,
+            "inputTextHash": "bfabf782081e8b08439a5db3ad83bd00c2945a69bab3ac761449e0ca06ba1705",
+            "requestPayloadHash": "d029280b3a42c16ef3210eeb695ab247b31271407e4095b817c641369e1b8bee"
+          },
+          "fingerprintId": "a72443b72aae6a8946ddc769ef519993a0e066af52f95868a9afbe9dc934ec7b"
+        },
+        "sol": {
+          "version": "premium-sol-boundary.v1",
+          "premiumRequestId": "local-R02-F1-M1-0f8f91a8",
+          "shareJobId": "local-R02",
+          "fingerprintId": "a72443b72aae6a8946ddc769ef519993a0e066af52f95868a9afbe9dc934ec7b",
+          "model": "gpt-5.6-sol",
+          "responseId": "resp_0000e765f4d2db92016a9ba7e6cbcc87d0a054c42f2e865d6f",
+          "latencyMs": 72600,
+          "usage": {
+            "input_tokens": 7334,
+            "cached_input_tokens": 0,
+            "output_tokens": 3853,
+            "reasoning_tokens": 3578,
+            "total_tokens": 11187
+          },
+          "structuredResultHash": "e436c96a9d41cb2e10dc6fd433c3e58cc42f853d9f95e439c8b71d0c57754878",
+          "destinationCount": 1,
+          "hypotheses": [
+            {
+              "name": "Puʻu Kekaʻa (Black Rock)",
+              "entityType": "NAMED_NATURAL_FEATURE",
+              "confidence": "MEDIUM",
+              "evidenceBasis": "MODEL_OBSERVED",
+              "alternatives": [
+                "Puʻu Ōlaʻi coastal cliffs",
+                "La Perouse Bay (Keoneʻōʻio Bay)"
+              ]
+            }
+          ],
+          "parseSuccess": true,
+          "parseFailureCode": null
+        },
+        "canonical": {
+          "version": "premium-canonicalization-fingerprint.v1",
+          "hash": "838b930e5f6ac4efb6d0a9b9406511a1adb845e27ebacb1d7f70ffb323008670",
+          "hypotheses": [
+            {
+              "name": "Puʻu Kekaʻa (Black Rock)",
+              "entityType": "NAMED_NATURAL_FEATURE",
+              "geography": {
+                "city": "Kāʻanapali",
+                "region": "Hawaii",
+                "country": "United States"
+              },
+              "calls": [
+                {
+                  "query": "Puʻu Kekaʻa (Black Rock), Kāʻanapali, Hawaii, United States",
+                  "attemptNumber": 1,
+                  "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                  "resultCount": 4,
+                  "resultIds": [
+                    "ChIJvwHf8xArVXkRuR5fizSASVo",
+                    "ChIJDUc4tkUrVXkRgaX4krVuX7U",
+                    "ChIJs5zAIQArVXkReyWud97MXlw",
+                    "ChIJzwjkmk8rVXkRFfxW8JL1zNQ"
+                  ],
+                  "resultNames": [
+                    "Black Rock",
+                    "Black Rock Beach",
+                    "Keka’a Landing Pier (Black Rock Pier)",
+                    "Pu‘u Keka‘a"
+                  ],
+                  "matched": true,
+                  "selectedGooglePlaceId": "ChIJvwHf8xArVXkRuR5fizSASVo",
+                  "selectedName": "Black Rock",
+                  "outcome": "CANONICAL_ALIAS",
+                  "rejectionReason": null
+                }
+              ],
+              "selectedGooglePlaceId": null,
+              "selectedName": null,
+              "outcome": "AMBIGUOUS_CANONICAL",
+              "rejectionReason": null
+            },
+            {
+              "name": "Puʻu Ōlaʻi coastal cliffs",
+              "entityType": "NAMED_NATURAL_FEATURE",
+              "geography": {
+                "city": "Makena",
+                "region": "Hawaii",
+                "country": "United States"
+              },
+              "calls": [
+                {
+                  "query": "Puʻu Ōlaʻi coastal cliffs, Makena, Hawaii, United States",
+                  "attemptNumber": 1,
+                  "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                  "resultCount": 3,
+                  "resultIds": [
+                    "ChIJwbnXZePbVHkRjK0utVeFJxs",
+                    "ChIJvUdbXqDcVHkR_--SKJRV0C0",
+                    "ChIJ0_g9dKDcVHkR9gmOpWeLYr0"
+                  ],
+                  "resultNames": [
+                    "Puʻu Olai",
+                    "Mākena State Park",
+                    "Puu Olai"
+                  ],
+                  "matched": false,
+                  "selectedGooglePlaceId": null,
+                  "selectedName": null,
+                  "outcome": "NO_MATCH",
+                  "rejectionReason": "no_compatible_match"
+                }
+              ],
+              "selectedGooglePlaceId": null,
+              "selectedName": null,
+              "outcome": "NAMED_LEAD",
+              "rejectionReason": "no_compatible_match"
+            },
+            {
+              "name": "La Perouse Bay (Keoneʻōʻio Bay)",
+              "entityType": "NAMED_NATURAL_FEATURE",
+              "geography": {
+                "city": "Makena",
+                "region": "Hawaii",
+                "country": "United States"
+              },
+              "calls": [
+                {
+                  "query": "La Perouse Bay (Keoneʻōʻio Bay), Makena, Hawaii, United States",
+                  "attemptNumber": 1,
+                  "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                  "resultCount": 1,
+                  "resultIds": [
+                    "ChIJQf-mxTHDVHkRZn62FEGhCIA"
+                  ],
+                  "resultNames": [
+                    "La Perouse Bay"
+                  ],
+                  "matched": true,
+                  "selectedGooglePlaceId": "ChIJQf-mxTHDVHkRZn62FEGhCIA",
+                  "selectedName": "La Perouse Bay",
+                  "outcome": "CANONICAL_ALIAS",
+                  "rejectionReason": null
+                }
+              ],
+              "selectedGooglePlaceId": "ChIJQf-mxTHDVHkRZn62FEGhCIA",
+              "selectedName": "La Perouse Bay",
+              "outcome": "CANONICAL_ALIAS",
+              "rejectionReason": null
+            }
+          ]
+        },
+        "final": {
+          "version": "premium-final-fingerprint.v1",
+          "hash": "6d7524389307aebab9f6145cf0e1b45df3b6747eb9b04eaa177ecbeed54b4d4e",
+          "solResultHash": "e436c96a9d41cb2e10dc6fd433c3e58cc42f853d9f95e439c8b71d0c57754878",
+          "canonicalResultHash": "838b930e5f6ac4efb6d0a9b9406511a1adb845e27ebacb1d7f70ffb323008670",
+          "safetyDecision": [
+            "REVIEW"
+          ],
+          "resultDecision": "PREMIUM_ACTIONABLE_RESULT",
+          "chargeability": "CHARGEABLE_ACTIONABLE",
+          "tokenSettlement": "CONSUME"
+        }
+      },
+      "live": {
+        "fingerprint": {
+          "frames": [
+            {
+              "width": 720,
+              "height": 1280,
+              "byteLength": 140811,
+              "imageSha256": "203fee0a1951098d5df63dfaf1e92181f71472ab32ddb75bb04602b92edd25fb",
+              "timestampMs": 0
+            },
+            {
+              "width": 720,
+              "height": 1280,
+              "byteLength": 117863,
+              "imageSha256": "ccf10b53d13e95a25d275290fbd5a8d343caf34c4b4557565f03d937a5176403",
+              "timestampMs": 11000
+            },
+            {
+              "width": 720,
+              "height": 1280,
+              "byteLength": 152880,
+              "imageSha256": "b15e0411a288cd8b9dcf7f1cb8fabb16845792b9ae683b8cc25e73474352ee5c",
+              "timestampMs": 15000
+            },
+            {
+              "width": 720,
+              "height": 1280,
+              "byteLength": 129501,
+              "imageSha256": "d2816ba24f9fefd074e167682223dc4069de41fb8135e5fadec2a2a016ae1f09",
+              "timestampMs": 17000
+            },
+            {
+              "width": 720,
+              "height": 1280,
+              "byteLength": 70999,
+              "imageSha256": "35b571827456b06de928defc9d29345c07aacd5b0f17251486c6ce3c459aade3",
+              "timestampMs": 19000
+            },
+            {
+              "width": 720,
+              "height": 1280,
+              "byteLength": 65640,
+              "imageSha256": "1f92923859b6628c056819c7cf9616b4874f94e930d09f07db4b8b62b1bcbb35",
+              "timestampMs": 23600
+            }
+          ],
+          "prompt": {
+            "model": "gpt-5.6-sol",
+            "promptHash": "8132da97b952b5d93062ba9b7d915c1dc40b4033de869607a1274142e1580e9c",
+            "schemaHash": "6899fd09c3cc95b4d12263bec5d7028f605eab0eb77b9fdaa38877704c694cfa",
+            "promptVersion": "sol-parity-natural-v1",
+            "schemaVersion": "sol-parity-destination-schema-v1",
+            "reasoningConfig": {
+              "effort": "high"
+            }
+          },
+          "request": {
+            "imageCount": 6,
+            "inputTextHash": "6ec4af19737d2a88524d8770d5ef91bf2607fe237a846027b2b50540dc6ad345",
+            "requestPayloadHash": "3e0b7eb6eb6a72b8832522c64611c92a8dbd26ffd5d88aad562a8b39bbf700bb"
+          },
+          "version": "premium-inference-fingerprint.v1",
+          "evidenceReuse": "EVIDENCE_REGENERATED",
+          "fingerprintId": "de726d440352d74c128fcd20886b3d83fd9ffd26ff63b4f1487a59db3b9118a1",
+          "sourceContext": {
+            "ocrHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "ocrLength": 0,
+            "captionHash": "a91b44cc4c79e98b4c018b2e7831738e80c9f2b54c8d3ca1a459c138dcbc7c9a",
+            "creatorHash": "c3844d07d6aa66678884163d6b5bb8f7cced527451d4bcc158ba8607e627279f",
+            "captionLength": 280,
+            "creatorLength": 10,
+            "transcriptHash": "77296bbd375c245b264449f6639d07efe8f98085eda73d1c73c44508c2fc47af",
+            "transcriptLength": 23,
+            "sourceLocationHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "sourceLocationLength": 0,
+            "sourceLocationPresent": false
+          },
+          "sourceIdentity": {
+            "platform": "instagram",
+            "canonicalUrlHash": "967249c4a7dae0143dc1111de5ab2b040bd250c73aa10431853a72a407fff77b",
+            "canonicalContentIdHash": "d0e4a2209a033df03c01427ba00fec562702ed8f558fe745e7fbd0022fdffe9c"
+          },
+          "evidenceVersion": "premium-evidence-2026-09-05.v1"
+        },
+        "sol": {
+          "model": "gpt-5.6-sol",
+          "usage": {
+            "input_tokens": 7331,
+            "total_tokens": 9825,
+            "output_tokens": 2494,
+            "reasoning_tokens": 2205,
+            "cached_input_tokens": 0
+          },
+          "version": "premium-sol-boundary.v1",
+          "latencyMs": 74041,
+          "hypotheses": [
+            {
+              "name": "Black Rock (Puʻu Kekaʻa)",
+              "confidence": "MEDIUM",
+              "entityType": "NAMED_NATURAL_FEATURE",
+              "alternatives": [
+                "Cliff House, Kapalua",
+                "La Perouse Bay"
+              ],
+              "evidenceBasis": "CONTEXTUAL_OR_MEMORY_PRIOR"
+            }
+          ],
+          "responseId": "resp_0f5d55a27ff9e9a2016a9ba89c970087d090a7f242254e3497",
+          "shareJobId": "6e8905ae-4366-4550-960c-867717250605",
+          "parseSuccess": true,
+          "fingerprintId": "de726d440352d74c128fcd20886b3d83fd9ffd26ff63b4f1487a59db3b9118a1",
+          "destinationCount": 1,
+          "parseFailureCode": null,
+          "premiumRequestId": "882e6407-dfb2-46a3-bfea-2b1de8991a2b",
+          "structuredResultHash": "ebb18546793cefa683b22025eef09e01f9c3738736f8feeac5dd241a65f3fe51"
+        },
+        "canonical": {
+          "hash": "72223532582b6dd9a33ca6af1589e67e51e599afcd902ad869167b1ca50f4f2e",
+          "version": "premium-canonicalization-fingerprint.v1",
+          "hypotheses": [
+            {
+              "name": "Black Rock (Puʻu Kekaʻa)",
+              "calls": [
+                {
+                  "query": "Black Rock (Puʻu Kekaʻa), Kāʻanapali, Hawaii, United States",
+                  "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                  "matched": true,
+                  "outcome": "CANONICAL_ALIAS",
+                  "resultIds": [
+                    "ChIJvwHf8xArVXkRuR5fizSASVo",
+                    "ChIJIdyI9G8rVXkRwOZz82Z0Lzg",
+                    "ChIJd5joMAArVXkRBD9lKHGbMnk",
+                    "ChIJGVo9fEYrVXkR0EryRkWA2-o",
+                    "ChIJzwjkmk8rVXkRFfxW8JL1zNQ"
+                  ],
+                  "resultCount": 5,
+                  "resultNames": [
+                    "Black Rock",
+                    "Black Rock Scuba",
+                    "Black Rock Beach Cove",
+                    "The Spa at Black Rock",
+                    "Pu‘u Keka‘a"
+                  ],
+                  "selectedName": "Black Rock",
+                  "attemptNumber": 1,
+                  "rejectionReason": null,
+                  "selectedGooglePlaceId": "ChIJvwHf8xArVXkRuR5fizSASVo"
+                }
+              ],
+              "outcome": "AMBIGUOUS_CANONICAL",
+              "geography": {
+                "city": "Kāʻanapali",
+                "region": "Hawaii",
+                "country": "United States"
+              },
+              "entityType": "NAMED_NATURAL_FEATURE",
+              "selectedName": null,
+              "rejectionReason": null,
+              "selectedGooglePlaceId": null
+            },
+            {
+              "name": "Cliff House, Kapalua",
+              "calls": [
+                {
+                  "query": "Cliff House, Kapalua, Kapalua, Hawaii, United States",
+                  "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                  "matched": false,
+                  "outcome": "NO_MATCH",
+                  "resultIds": [
+                    "ChIJPbvbw0rUqn4R9q0UQVbS5Zk"
+                  ],
+                  "resultCount": 1,
+                  "resultNames": [
+                    "Kapalua Cliff House"
+                  ],
+                  "selectedName": null,
+                  "attemptNumber": 1,
+                  "rejectionReason": "no_compatible_match",
+                  "selectedGooglePlaceId": null
+                }
+              ],
+              "outcome": "NAMED_LEAD",
+              "geography": {
+                "city": "Kapalua",
+                "region": "Hawaii",
+                "country": "United States"
+              },
+              "entityType": "LANDMARK",
+              "selectedName": null,
+              "rejectionReason": "no_compatible_match",
+              "selectedGooglePlaceId": null
+            },
+            {
+              "name": "La Perouse Bay",
+              "calls": [
+                {
+                  "query": "La Perouse Bay, Makena, Hawaii, United States",
+                  "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                  "matched": true,
+                  "outcome": "CANONICAL_EXACT",
+                  "resultIds": [
+                    "ChIJQf-mxTHDVHkRZn62FEGhCIA"
+                  ],
+                  "resultCount": 1,
+                  "resultNames": [
+                    "La Perouse Bay"
+                  ],
+                  "selectedName": "La Perouse Bay",
+                  "attemptNumber": 1,
+                  "rejectionReason": null,
+                  "selectedGooglePlaceId": "ChIJQf-mxTHDVHkRZn62FEGhCIA"
+                }
+              ],
+              "outcome": "CANONICAL_EXACT",
+              "geography": {
+                "city": "Makena",
+                "region": "Hawaii",
+                "country": "United States"
+              },
+              "entityType": "NAMED_NATURAL_FEATURE",
+              "selectedName": "La Perouse Bay",
+              "rejectionReason": null,
+              "selectedGooglePlaceId": "ChIJQf-mxTHDVHkRZn62FEGhCIA"
+            }
+          ]
+        },
+        "final": {
+          "hash": "3e21a51e2f2a9bc51fc909428c188700198595f9f7595a25dc4fa15686b4b86b",
+          "version": "premium-final-fingerprint.v1",
+          "chargeability": "CHARGEABLE_ACTIONABLE",
+          "solResultHash": "ebb18546793cefa683b22025eef09e01f9c3738736f8feeac5dd241a65f3fe51",
+          "resultDecision": "PREMIUM_ACTIONABLE_RESULT",
+          "safetyDecision": [
+            "REVIEW"
+          ],
+          "tokenSettlement": "CONSUME",
+          "canonicalResultHash": "72223532582b6dd9a33ca6af1589e67e51e599afcd902ad869167b1ca50f4f2e"
+        }
+      },
+      "parityToLocalFirstDivergence": null,
+      "localToLiveFirstDivergence": {
+        "boundary": "request",
+        "field": "frames",
+        "left": [
+          {
+            "timestampMs": 0,
+            "imageSha256": "40b6bb5fce7e6e7778e188f38ee3c8f8a73e9865d0cd89f97b1c689eed8895e4",
+            "width": 720,
+            "height": 1280,
+            "byteLength": 140811
+          },
+          {
+            "timestampMs": 11000,
+            "imageSha256": "1babff59ed29c1b357135e40a9f6955a41ffde34b177624993b2251819e5f055",
+            "width": 720,
+            "height": 1280,
+            "byteLength": 117863
+          },
+          {
+            "timestampMs": 15000,
+            "imageSha256": "53b857dac726d97abf675db238caf78256f6bdbc5f4ce78c9ad2f82bed846bcd",
+            "width": 720,
+            "height": 1280,
+            "byteLength": 152880
+          },
+          {
+            "timestampMs": 17000,
+            "imageSha256": "da0ea3b2a45139e44bec32d65f91ff212e975cb2d80cff242b680d3c692adb5e",
+            "width": 720,
+            "height": 1280,
+            "byteLength": 129501
+          },
+          {
+            "timestampMs": 19000,
+            "imageSha256": "dd35dbc447b0b2e396663a887bc15bde106e7777d824948b296050d03f61cd25",
+            "width": 720,
+            "height": 1280,
+            "byteLength": 70999
+          },
+          {
+            "timestampMs": 23600,
+            "imageSha256": "31cf8c404545b9809bcdd8bbef48d486380768f4fa7a292ab09f05a07012c3d4",
+            "width": 720,
+            "height": 1280,
+            "byteLength": 65640
+          }
+        ],
+        "right": [
+          {
+            "width": 720,
+            "height": 1280,
+            "byteLength": 140811,
+            "imageSha256": "203fee0a1951098d5df63dfaf1e92181f71472ab32ddb75bb04602b92edd25fb",
+            "timestampMs": 0
+          },
+          {
+            "width": 720,
+            "height": 1280,
+            "byteLength": 117863,
+            "imageSha256": "ccf10b53d13e95a25d275290fbd5a8d343caf34c4b4557565f03d937a5176403",
+            "timestampMs": 11000
+          },
+          {
+            "width": 720,
+            "height": 1280,
+            "byteLength": 152880,
+            "imageSha256": "b15e0411a288cd8b9dcf7f1cb8fabb16845792b9ae683b8cc25e73474352ee5c",
+            "timestampMs": 15000
+          },
+          {
+            "width": 720,
+            "height": 1280,
+            "byteLength": 129501,
+            "imageSha256": "d2816ba24f9fefd074e167682223dc4069de41fb8135e5fadec2a2a016ae1f09",
+            "timestampMs": 17000
+          },
+          {
+            "width": 720,
+            "height": 1280,
+            "byteLength": 70999,
+            "imageSha256": "35b571827456b06de928defc9d29345c07aacd5b0f17251486c6ce3c459aade3",
+            "timestampMs": 19000
+          },
+          {
+            "width": 720,
+            "height": 1280,
+            "byteLength": 65640,
+            "imageSha256": "1f92923859b6628c056819c7cf9616b4874f94e930d09f07db4b8b62b1bcbb35",
+            "timestampMs": 23600
+          }
+        ]
+      },
+      "effectiveRequestIdentical": false
+    },
+    {
+      "caseId": "R06",
+      "parity": {
+        "fingerprint": {
+          "version": "premium-inference-fingerprint.v1",
+          "evidenceVersion": "premium-evidence-2026-09-05.v1",
+          "evidenceReuse": "EVIDENCE_REGENERATED",
+          "sourceIdentity": {
+            "platform": "instagram",
+            "canonicalContentIdHash": "97cf0cd5cdd9270414fd34528759e096721c22f1a01297584f068156233057f0",
+            "canonicalUrlHash": "b251de45e0206b452623dfaee40e3c78273bdb121edaf28ef69211a717b297e4"
+          },
+          "prompt": {
+            "promptVersion": "sol-parity-natural-v1",
+            "promptHash": "8132da97b952b5d93062ba9b7d915c1dc40b4033de869607a1274142e1580e9c",
+            "schemaVersion": "sol-parity-destination-schema-v1",
+            "schemaHash": "6899fd09c3cc95b4d12263bec5d7028f605eab0eb77b9fdaa38877704c694cfa",
+            "model": "gpt-5.6-sol",
+            "reasoningConfig": {
+              "effort": "high"
+            }
+          },
+          "frames": [
+            {
+              "timestampMs": 0,
+              "imageSha256": "1f0732969c97d184a790fb015ec245b8d927a21c4ba6144a75f79ae525d99d5a",
+              "width": 640,
+              "height": 640,
+              "byteLength": 21076
+            },
+            {
+              "timestampMs": 2000,
+              "imageSha256": "8921c7e3c68d3917ccc138615f4dbee8f9429c34a6eb09e4d4072d02fd4fa8a5",
+              "width": 640,
+              "height": 640,
+              "byteLength": 4982
+            },
+            {
+              "timestampMs": 3000,
+              "imageSha256": "89de5bea1986baaae7e04a08b249f4828da7b6ff724effad8bf64548ce4b73a5",
+              "width": 640,
+              "height": 640,
+              "byteLength": 4616
+            },
+            {
+              "timestampMs": 5000,
+              "imageSha256": "3b62b9e863899069332998823201ee4a2cfcbaddf0672acc04828215341cde25",
+              "width": 640,
+              "height": 640,
+              "byteLength": 10034
+            },
+            {
+              "timestampMs": 6000,
+              "imageSha256": "bc3ce1f751091ac6e08c7ca4d6cce155fe51dc7ab0f7f5592b3fa910e53cc40c",
+              "width": 640,
+              "height": 640,
+              "byteLength": 50089
+            },
+            {
+              "timestampMs": 10811,
+              "imageSha256": "02e76617eb3004e9c2797753d087c8fc7d559cbb85d410dd3e07405efe84df52",
+              "width": 640,
+              "height": 640,
+              "byteLength": 53643
+            }
+          ],
+          "sourceContext": {
+            "captionHash": "f122bce9f7be648b8e5d695ced554c425ec8b2207e0b50bd3df20b4040a2343d",
+            "captionLength": 63,
+            "transcriptHash": "6b637c2cf53f2faca294ee9d9d28d6af24398eae8d23bae17163a02b3cd7e486",
+            "transcriptLength": 105,
+            "ocrHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "ocrLength": 0,
+            "sourceLocationHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "sourceLocationLength": 0,
+            "sourceLocationPresent": false,
+            "creatorHash": "ab861200255320f8eb26a2314bce5a869c3e057f3187a80b8a522b5526016f35",
+            "creatorLength": 11
+          },
+          "request": {
+            "imageCount": 6,
+            "inputTextHash": "443df7ee96fe685fd1db491bd5b52f0cab7cd3458827fc9bfdbce26c5ff0c6cd",
+            "requestPayloadHash": "fceff92614ab96de9da7676aebfb6f5ac1e2d9250d279def7dae1393318221e7"
+          },
+          "fingerprintId": "6b3699ebd7b9be26464b456637e20df9762d2385811c85f06488ff185354907d"
+        },
+        "sol": {
+          "version": "premium-sol-boundary.v1",
+          "premiumRequestId": "local-R06-F1-M1-1e8d4de4",
+          "shareJobId": "local-R06",
+          "fingerprintId": "6b3699ebd7b9be26464b456637e20df9762d2385811c85f06488ff185354907d",
+          "model": "gpt-5.6-sol",
+          "responseId": "resp_0981aa4f074b6024016a9ba83e760887d0b4e3f427a12c6437",
+          "latencyMs": 24938,
+          "usage": {
+            "input_tokens": 3573,
+            "cached_input_tokens": 0,
+            "output_tokens": 1332,
+            "reasoning_tokens": 1123,
+            "total_tokens": 4905
+          },
+          "structuredResultHash": "c1ff0b312398bcd1e6ae8ab10a6c54ece78ee55cff60e1cd15e7aca2e6727e49",
+          "destinationCount": 1,
+          "hypotheses": [
+            {
+              "name": "Copper Canyon on Lake Havasu",
+              "entityType": "NAMED_NATURAL_FEATURE",
+              "confidence": "MEDIUM",
+              "evidenceBasis": "CONTEXTUAL_OR_MEMORY_PRIOR",
+              "alternatives": [
+                "Parker Strip cliff-jumping area"
+              ]
+            }
+          ],
+          "parseSuccess": true,
+          "parseFailureCode": null
+        },
+        "canonical": {
+          "version": "premium-canonicalization-fingerprint.v1",
+          "hash": "7d8e87a5cd657245789da10dfc37b3767224ffad581d9bd325dca7928a43dd70",
+          "hypotheses": [
+            {
+              "name": "Copper Canyon on Lake Havasu",
+              "entityType": "NAMED_NATURAL_FEATURE",
+              "geography": {
+                "city": null,
+                "region": "California",
+                "country": "United States"
+              },
+              "calls": [
+                {
+                  "query": "Copper Canyon on Lake Havasu, California, United States",
+                  "attemptNumber": 1,
+                  "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                  "resultCount": 4,
+                  "resultIds": [
+                    "ChIJcfIRGwCN0YARHWYcp8enAm8",
+                    "ChIJxY2OpjeN0YARvKfvltAi-WY",
+                    "ChIJf0rN7zfz0YARxe15fvu0F4k",
+                    "ChIJ99-MiFGN0YAReDiSY2oU7_w"
+                  ],
+                  "resultNames": [
+                    "Copper Canyon",
+                    "Copper Canyon",
+                    "Copper Canyon Realty LLC",
+                    "Copper Canyon"
+                  ],
+                  "matched": true,
+                  "selectedGooglePlaceId": "ChIJxY2OpjeN0YARvKfvltAi-WY",
+                  "selectedName": "Copper Canyon",
+                  "outcome": "CANONICAL_ALIAS",
+                  "rejectionReason": null
+                }
+              ],
+              "selectedGooglePlaceId": null,
+              "selectedName": null,
+              "outcome": "AMBIGUOUS_CANONICAL",
+              "rejectionReason": null
+            },
+            {
+              "name": "Parker Strip cliff-jumping area",
+              "entityType": "BROAD_AREA",
+              "geography": {
+                "city": "Parker",
+                "region": "Arizona",
+                "country": "United States"
+              },
+              "calls": [
+                {
+                  "query": "Parker Strip cliff-jumping area, Parker, Arizona, United States",
+                  "attemptNumber": 1,
+                  "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                  "resultCount": 3,
+                  "resultIds": [
+                    "ChIJLf7zAtQp0oARsU9j2_VnMKc",
+                    "ChIJh3VkeQAp0oARVq7ITFJy8tM",
+                    "ChIJ2Wuw5HWH0YARruQ-gMPlxzY"
+                  ],
+                  "resultNames": [
+                    "River Island State Park",
+                    "Parker Strip Recreation Area",
+                    "Buckskin Mountain State Park"
+                  ],
+                  "matched": true,
+                  "selectedGooglePlaceId": "ChIJh3VkeQAp0oARVq7ITFJy8tM",
+                  "selectedName": "Parker Strip Recreation Area",
+                  "outcome": "CANONICAL_ALIAS",
+                  "rejectionReason": null
+                }
+              ],
+              "selectedGooglePlaceId": "ChIJh3VkeQAp0oARVq7ITFJy8tM",
+              "selectedName": "Parker Strip Recreation Area",
+              "outcome": "CANONICAL_ALIAS",
+              "rejectionReason": null
+            }
+          ]
+        },
+        "final": {
+          "version": "premium-final-fingerprint.v1",
+          "hash": "758067c5441361ae75d306166c63ee52c2c895964894f0a66d27fd8d77b8885c",
+          "solResultHash": "c1ff0b312398bcd1e6ae8ab10a6c54ece78ee55cff60e1cd15e7aca2e6727e49",
+          "canonicalResultHash": "7d8e87a5cd657245789da10dfc37b3767224ffad581d9bd325dca7928a43dd70",
+          "safetyDecision": [
+            "REVIEW"
+          ],
+          "resultDecision": "PREMIUM_ACTIONABLE_RESULT",
+          "chargeability": "CHARGEABLE_ACTIONABLE",
+          "tokenSettlement": "CONSUME"
+        }
+      },
+      "local": {
+        "fingerprint": {
+          "version": "premium-inference-fingerprint.v1",
+          "evidenceVersion": "premium-evidence-2026-09-05.v1",
+          "evidenceReuse": "EVIDENCE_REGENERATED",
+          "sourceIdentity": {
+            "platform": "instagram",
+            "canonicalContentIdHash": "97cf0cd5cdd9270414fd34528759e096721c22f1a01297584f068156233057f0",
+            "canonicalUrlHash": "b251de45e0206b452623dfaee40e3c78273bdb121edaf28ef69211a717b297e4"
+          },
+          "prompt": {
+            "promptVersion": "sol-parity-natural-v1",
+            "promptHash": "8132da97b952b5d93062ba9b7d915c1dc40b4033de869607a1274142e1580e9c",
+            "schemaVersion": "sol-parity-destination-schema-v1",
+            "schemaHash": "6899fd09c3cc95b4d12263bec5d7028f605eab0eb77b9fdaa38877704c694cfa",
+            "model": "gpt-5.6-sol",
+            "reasoningConfig": {
+              "effort": "high"
+            }
+          },
+          "frames": [
+            {
+              "timestampMs": 0,
+              "imageSha256": "1f0732969c97d184a790fb015ec245b8d927a21c4ba6144a75f79ae525d99d5a",
+              "width": 640,
+              "height": 640,
+              "byteLength": 21076
+            },
+            {
+              "timestampMs": 2000,
+              "imageSha256": "8921c7e3c68d3917ccc138615f4dbee8f9429c34a6eb09e4d4072d02fd4fa8a5",
+              "width": 640,
+              "height": 640,
+              "byteLength": 4982
+            },
+            {
+              "timestampMs": 3000,
+              "imageSha256": "89de5bea1986baaae7e04a08b249f4828da7b6ff724effad8bf64548ce4b73a5",
+              "width": 640,
+              "height": 640,
+              "byteLength": 4616
+            },
+            {
+              "timestampMs": 5000,
+              "imageSha256": "3b62b9e863899069332998823201ee4a2cfcbaddf0672acc04828215341cde25",
+              "width": 640,
+              "height": 640,
+              "byteLength": 10034
+            },
+            {
+              "timestampMs": 6000,
+              "imageSha256": "bc3ce1f751091ac6e08c7ca4d6cce155fe51dc7ab0f7f5592b3fa910e53cc40c",
+              "width": 640,
+              "height": 640,
+              "byteLength": 50089
+            },
+            {
+              "timestampMs": 10811,
+              "imageSha256": "02e76617eb3004e9c2797753d087c8fc7d559cbb85d410dd3e07405efe84df52",
+              "width": 640,
+              "height": 640,
+              "byteLength": 53643
+            }
+          ],
+          "sourceContext": {
+            "captionHash": "f122bce9f7be648b8e5d695ced554c425ec8b2207e0b50bd3df20b4040a2343d",
+            "captionLength": 63,
+            "transcriptHash": "6b637c2cf53f2faca294ee9d9d28d6af24398eae8d23bae17163a02b3cd7e486",
+            "transcriptLength": 105,
+            "ocrHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "ocrLength": 0,
+            "sourceLocationHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "sourceLocationLength": 0,
+            "sourceLocationPresent": false,
+            "creatorHash": "ab861200255320f8eb26a2314bce5a869c3e057f3187a80b8a522b5526016f35",
+            "creatorLength": 11
+          },
+          "request": {
+            "imageCount": 6,
+            "inputTextHash": "443df7ee96fe685fd1db491bd5b52f0cab7cd3458827fc9bfdbce26c5ff0c6cd",
+            "requestPayloadHash": "fceff92614ab96de9da7676aebfb6f5ac1e2d9250d279def7dae1393318221e7"
+          },
+          "fingerprintId": "6b3699ebd7b9be26464b456637e20df9762d2385811c85f06488ff185354907d"
+        },
+        "sol": {
+          "version": "premium-sol-boundary.v1",
+          "premiumRequestId": "local-R06-F1-M1-1e8d4de4",
+          "shareJobId": "local-R06",
+          "fingerprintId": "6b3699ebd7b9be26464b456637e20df9762d2385811c85f06488ff185354907d",
+          "model": "gpt-5.6-sol",
+          "responseId": "resp_0981aa4f074b6024016a9ba83e760887d0b4e3f427a12c6437",
+          "latencyMs": 24938,
+          "usage": {
+            "input_tokens": 3573,
+            "cached_input_tokens": 0,
+            "output_tokens": 1332,
+            "reasoning_tokens": 1123,
+            "total_tokens": 4905
+          },
+          "structuredResultHash": "c1ff0b312398bcd1e6ae8ab10a6c54ece78ee55cff60e1cd15e7aca2e6727e49",
+          "destinationCount": 1,
+          "hypotheses": [
+            {
+              "name": "Copper Canyon on Lake Havasu",
+              "entityType": "NAMED_NATURAL_FEATURE",
+              "confidence": "MEDIUM",
+              "evidenceBasis": "CONTEXTUAL_OR_MEMORY_PRIOR",
+              "alternatives": [
+                "Parker Strip cliff-jumping area"
+              ]
+            }
+          ],
+          "parseSuccess": true,
+          "parseFailureCode": null
+        },
+        "canonical": {
+          "version": "premium-canonicalization-fingerprint.v1",
+          "hash": "7d8e87a5cd657245789da10dfc37b3767224ffad581d9bd325dca7928a43dd70",
+          "hypotheses": [
+            {
+              "name": "Copper Canyon on Lake Havasu",
+              "entityType": "NAMED_NATURAL_FEATURE",
+              "geography": {
+                "city": null,
+                "region": "California",
+                "country": "United States"
+              },
+              "calls": [
+                {
+                  "query": "Copper Canyon on Lake Havasu, California, United States",
+                  "attemptNumber": 1,
+                  "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                  "resultCount": 4,
+                  "resultIds": [
+                    "ChIJcfIRGwCN0YARHWYcp8enAm8",
+                    "ChIJxY2OpjeN0YARvKfvltAi-WY",
+                    "ChIJf0rN7zfz0YARxe15fvu0F4k",
+                    "ChIJ99-MiFGN0YAReDiSY2oU7_w"
+                  ],
+                  "resultNames": [
+                    "Copper Canyon",
+                    "Copper Canyon",
+                    "Copper Canyon Realty LLC",
+                    "Copper Canyon"
+                  ],
+                  "matched": true,
+                  "selectedGooglePlaceId": "ChIJxY2OpjeN0YARvKfvltAi-WY",
+                  "selectedName": "Copper Canyon",
+                  "outcome": "CANONICAL_ALIAS",
+                  "rejectionReason": null
+                }
+              ],
+              "selectedGooglePlaceId": null,
+              "selectedName": null,
+              "outcome": "AMBIGUOUS_CANONICAL",
+              "rejectionReason": null
+            },
+            {
+              "name": "Parker Strip cliff-jumping area",
+              "entityType": "BROAD_AREA",
+              "geography": {
+                "city": "Parker",
+                "region": "Arizona",
+                "country": "United States"
+              },
+              "calls": [
+                {
+                  "query": "Parker Strip cliff-jumping area, Parker, Arizona, United States",
+                  "attemptNumber": 1,
+                  "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                  "resultCount": 3,
+                  "resultIds": [
+                    "ChIJLf7zAtQp0oARsU9j2_VnMKc",
+                    "ChIJh3VkeQAp0oARVq7ITFJy8tM",
+                    "ChIJ2Wuw5HWH0YARruQ-gMPlxzY"
+                  ],
+                  "resultNames": [
+                    "River Island State Park",
+                    "Parker Strip Recreation Area",
+                    "Buckskin Mountain State Park"
+                  ],
+                  "matched": true,
+                  "selectedGooglePlaceId": "ChIJh3VkeQAp0oARVq7ITFJy8tM",
+                  "selectedName": "Parker Strip Recreation Area",
+                  "outcome": "CANONICAL_ALIAS",
+                  "rejectionReason": null
+                }
+              ],
+              "selectedGooglePlaceId": "ChIJh3VkeQAp0oARVq7ITFJy8tM",
+              "selectedName": "Parker Strip Recreation Area",
+              "outcome": "CANONICAL_ALIAS",
+              "rejectionReason": null
+            }
+          ]
+        },
+        "final": {
+          "version": "premium-final-fingerprint.v1",
+          "hash": "758067c5441361ae75d306166c63ee52c2c895964894f0a66d27fd8d77b8885c",
+          "solResultHash": "c1ff0b312398bcd1e6ae8ab10a6c54ece78ee55cff60e1cd15e7aca2e6727e49",
+          "canonicalResultHash": "7d8e87a5cd657245789da10dfc37b3767224ffad581d9bd325dca7928a43dd70",
+          "safetyDecision": [
+            "REVIEW"
+          ],
+          "resultDecision": "PREMIUM_ACTIONABLE_RESULT",
+          "chargeability": "CHARGEABLE_ACTIONABLE",
+          "tokenSettlement": "CONSUME"
+        }
+      },
+      "live": {
+        "fingerprint": {
+          "frames": [
+            {
+              "width": 640,
+              "height": 640,
+              "byteLength": 21076,
+              "imageSha256": "4cf4ecc689230fe24c65b7f9db3f2faea9a90e3d29b4983257a47a5d2d139d27",
+              "timestampMs": 0
+            },
+            {
+              "width": 640,
+              "height": 640,
+              "byteLength": 4982,
+              "imageSha256": "9ee3b0bf7bb2a0fe15d23d32b6d9108c2bcbeeaa20cff1d88d520157e1d5c436",
+              "timestampMs": 2000
+            },
+            {
+              "width": 640,
+              "height": 640,
+              "byteLength": 4616,
+              "imageSha256": "15d916fefb7cd97f17eb7dc81d9ece5f184ffc23856d734dc4cd09f74013951d",
+              "timestampMs": 3000
+            },
+            {
+              "width": 640,
+              "height": 640,
+              "byteLength": 10034,
+              "imageSha256": "b4d697b690f6a410665204f62137937e648c06457393be17f1506aa458621492",
+              "timestampMs": 5000
+            },
+            {
+              "width": 640,
+              "height": 640,
+              "byteLength": 50089,
+              "imageSha256": "e0030fc4c56f8e604ca0de2d04c2a7e156fb44adf3ab8733954452af324902c4",
+              "timestampMs": 6000
+            },
+            {
+              "width": 640,
+              "height": 640,
+              "byteLength": 53643,
+              "imageSha256": "fd4c54a5b6eac5146011827b19cbaf0bbe6ead3cb754674ea53e5565bbe08d23",
+              "timestampMs": 10811
+            }
+          ],
+          "prompt": {
+            "model": "gpt-5.6-sol",
+            "promptHash": "8132da97b952b5d93062ba9b7d915c1dc40b4033de869607a1274142e1580e9c",
+            "schemaHash": "6899fd09c3cc95b4d12263bec5d7028f605eab0eb77b9fdaa38877704c694cfa",
+            "promptVersion": "sol-parity-natural-v1",
+            "schemaVersion": "sol-parity-destination-schema-v1",
+            "reasoningConfig": {
+              "effort": "high"
+            }
+          },
+          "request": {
+            "imageCount": 6,
+            "inputTextHash": "b8bc4821265e9b131419856b138fedf90bbada18e91c9b21d6465ad0b384cf54",
+            "requestPayloadHash": "169a7c986a5003d989aaa7876638ba6c39f6b3a095be86537a9fb160503f3617"
+          },
+          "version": "premium-inference-fingerprint.v1",
+          "evidenceReuse": "EVIDENCE_REGENERATED",
+          "fingerprintId": "7e24f5722881fb64e059a9b55eb5dae0cb3bbe41db6e6825f00ccdc70bbe6131",
+          "sourceContext": {
+            "ocrHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "ocrLength": 0,
+            "captionHash": "f122bce9f7be648b8e5d695ced554c425ec8b2207e0b50bd3df20b4040a2343d",
+            "creatorHash": "ab861200255320f8eb26a2314bce5a869c3e057f3187a80b8a522b5526016f35",
+            "captionLength": 63,
+            "creatorLength": 11,
+            "transcriptHash": "a3ebc782871651fda15449f396e91d7efd25d5cc6c3cf15956add090f936272e",
+            "transcriptLength": 90,
+            "sourceLocationHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "sourceLocationLength": 0,
+            "sourceLocationPresent": false
+          },
+          "sourceIdentity": {
+            "platform": "instagram",
+            "canonicalUrlHash": "b251de45e0206b452623dfaee40e3c78273bdb121edaf28ef69211a717b297e4",
+            "canonicalContentIdHash": "97cf0cd5cdd9270414fd34528759e096721c22f1a01297584f068156233057f0"
+          },
+          "evidenceVersion": "premium-evidence-2026-09-05.v1"
+        },
+        "sol": {
+          "model": "gpt-5.6-sol",
+          "usage": {
+            "input_tokens": 3567,
+            "total_tokens": 4763,
+            "output_tokens": 1196,
+            "reasoning_tokens": 986,
+            "cached_input_tokens": 0
+          },
+          "version": "premium-sol-boundary.v1",
+          "latencyMs": 30751,
+          "hypotheses": [
+            {
+              "name": "Copper Canyon, Lake Havasu",
+              "confidence": "MEDIUM",
+              "entityType": "NAMED_NATURAL_FEATURE",
+              "alternatives": [
+                "Parker Strip"
+              ],
+              "evidenceBasis": "CONTEXTUAL_OR_MEMORY_PRIOR"
+            }
+          ],
+          "responseId": "resp_0127e50b50ab4658016a9ba899497087d0ac0dcf9209dc9052",
+          "shareJobId": "1ca59fbd-84b4-4ff9-9506-2b1b32c3192b",
+          "parseSuccess": true,
+          "fingerprintId": "7e24f5722881fb64e059a9b55eb5dae0cb3bbe41db6e6825f00ccdc70bbe6131",
+          "destinationCount": 1,
+          "parseFailureCode": null,
+          "premiumRequestId": "42c131ed-cd57-4448-812d-fdc72254d83d",
+          "structuredResultHash": "97b06c6e57e0e9b3f3987ade32206118acbf8bbf32ed37be15eddebd000c3b93"
+        },
+        "canonical": {
+          "hash": "67a14e006cc5e70f185db72e1f0e0d3e975ca887a3f3cd4e4cd6976850a79ed4",
+          "version": "premium-canonicalization-fingerprint.v1",
+          "hypotheses": [
+            {
+              "name": "Copper Canyon, Lake Havasu",
+              "calls": [
+                {
+                  "query": "Copper Canyon, Lake Havasu, Lake Havasu City, Arizona, United States",
+                  "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                  "matched": true,
+                  "outcome": "CANONICAL_ALIAS",
+                  "resultIds": [
+                    "ChIJi4Bk1Mfy0YARSPizNzplqzk"
+                  ],
+                  "resultCount": 1,
+                  "resultNames": [
+                    "Copper Canyon Drive"
+                  ],
+                  "selectedName": "Copper Canyon Drive",
+                  "attemptNumber": 1,
+                  "rejectionReason": null,
+                  "selectedGooglePlaceId": "ChIJi4Bk1Mfy0YARSPizNzplqzk"
+                }
+              ],
+              "outcome": "CANONICAL_ALIAS",
+              "geography": {
+                "city": "Lake Havasu City",
+                "region": "Arizona",
+                "country": "United States"
+              },
+              "entityType": "NAMED_NATURAL_FEATURE",
+              "selectedName": "Copper Canyon Drive",
+              "rejectionReason": null,
+              "selectedGooglePlaceId": "ChIJi4Bk1Mfy0YARSPizNzplqzk"
+            },
+            {
+              "name": "Parker Strip",
+              "calls": [
+                {
+                  "query": "Parker Strip, Parker, Arizona, United States",
+                  "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                  "matched": true,
+                  "outcome": "CANONICAL_EXACT",
+                  "resultIds": [
+                    "ChIJxb8pvmeH0YARWjA1XmaBBTw"
+                  ],
+                  "resultCount": 1,
+                  "resultNames": [
+                    "Parker Strip"
+                  ],
+                  "selectedName": "Parker Strip",
+                  "attemptNumber": 1,
+                  "rejectionReason": null,
+                  "selectedGooglePlaceId": "ChIJxb8pvmeH0YARWjA1XmaBBTw"
+                }
+              ],
+              "outcome": "CANONICAL_EXACT",
+              "geography": {
+                "city": "Parker",
+                "region": "Arizona",
+                "country": "United States"
+              },
+              "entityType": "BROAD_AREA",
+              "selectedName": "Parker Strip",
+              "rejectionReason": null,
+              "selectedGooglePlaceId": "ChIJxb8pvmeH0YARWjA1XmaBBTw"
+            }
+          ]
+        },
+        "final": {
+          "hash": "124a870971b260bca7c1bc43423309bf316638b1f2f54d0b4a2416e78f2edfb8",
+          "version": "premium-final-fingerprint.v1",
+          "chargeability": "CHARGEABLE_ACTIONABLE",
+          "solResultHash": "97b06c6e57e0e9b3f3987ade32206118acbf8bbf32ed37be15eddebd000c3b93",
+          "resultDecision": "PREMIUM_ACTIONABLE_RESULT",
+          "safetyDecision": [
+            "REVIEW"
+          ],
+          "tokenSettlement": "CONSUME",
+          "canonicalResultHash": "67a14e006cc5e70f185db72e1f0e0d3e975ca887a3f3cd4e4cd6976850a79ed4"
+        }
+      },
+      "parityToLocalFirstDivergence": null,
+      "localToLiveFirstDivergence": {
+        "boundary": "request",
+        "field": "frames",
+        "left": [
+          {
+            "timestampMs": 0,
+            "imageSha256": "1f0732969c97d184a790fb015ec245b8d927a21c4ba6144a75f79ae525d99d5a",
+            "width": 640,
+            "height": 640,
+            "byteLength": 21076
+          },
+          {
+            "timestampMs": 2000,
+            "imageSha256": "8921c7e3c68d3917ccc138615f4dbee8f9429c34a6eb09e4d4072d02fd4fa8a5",
+            "width": 640,
+            "height": 640,
+            "byteLength": 4982
+          },
+          {
+            "timestampMs": 3000,
+            "imageSha256": "89de5bea1986baaae7e04a08b249f4828da7b6ff724effad8bf64548ce4b73a5",
+            "width": 640,
+            "height": 640,
+            "byteLength": 4616
+          },
+          {
+            "timestampMs": 5000,
+            "imageSha256": "3b62b9e863899069332998823201ee4a2cfcbaddf0672acc04828215341cde25",
+            "width": 640,
+            "height": 640,
+            "byteLength": 10034
+          },
+          {
+            "timestampMs": 6000,
+            "imageSha256": "bc3ce1f751091ac6e08c7ca4d6cce155fe51dc7ab0f7f5592b3fa910e53cc40c",
+            "width": 640,
+            "height": 640,
+            "byteLength": 50089
+          },
+          {
+            "timestampMs": 10811,
+            "imageSha256": "02e76617eb3004e9c2797753d087c8fc7d559cbb85d410dd3e07405efe84df52",
+            "width": 640,
+            "height": 640,
+            "byteLength": 53643
+          }
+        ],
+        "right": [
+          {
+            "width": 640,
+            "height": 640,
+            "byteLength": 21076,
+            "imageSha256": "4cf4ecc689230fe24c65b7f9db3f2faea9a90e3d29b4983257a47a5d2d139d27",
+            "timestampMs": 0
+          },
+          {
+            "width": 640,
+            "height": 640,
+            "byteLength": 4982,
+            "imageSha256": "9ee3b0bf7bb2a0fe15d23d32b6d9108c2bcbeeaa20cff1d88d520157e1d5c436",
+            "timestampMs": 2000
+          },
+          {
+            "width": 640,
+            "height": 640,
+            "byteLength": 4616,
+            "imageSha256": "15d916fefb7cd97f17eb7dc81d9ece5f184ffc23856d734dc4cd09f74013951d",
+            "timestampMs": 3000
+          },
+          {
+            "width": 640,
+            "height": 640,
+            "byteLength": 10034,
+            "imageSha256": "b4d697b690f6a410665204f62137937e648c06457393be17f1506aa458621492",
+            "timestampMs": 5000
+          },
+          {
+            "width": 640,
+            "height": 640,
+            "byteLength": 50089,
+            "imageSha256": "e0030fc4c56f8e604ca0de2d04c2a7e156fb44adf3ab8733954452af324902c4",
+            "timestampMs": 6000
+          },
+          {
+            "width": 640,
+            "height": 640,
+            "byteLength": 53643,
+            "imageSha256": "fd4c54a5b6eac5146011827b19cbaf0bbe6ead3cb754674ea53e5565bbe08d23",
+            "timestampMs": 10811
+          }
+        ]
+      },
+      "effectiveRequestIdentical": false
+    }
+  ]
+}

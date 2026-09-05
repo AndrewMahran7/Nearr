@@ -1,0 +1,666 @@
+{
+  "schemaVersion": 1,
+  "run": {
+    "startedAt": "2026-09-05T06:22:52.638Z",
+    "completedAt": "2026-09-05T06:23:59.513Z",
+    "correlationId": "nearr-e2e-20260905T062251-00430496",
+    "gitHead": "d618b9047ca6b612b44cf511725d44c3bc8f6a80",
+    "target": {
+      "supabaseProjectRef": "qnfxnmvxpjzfydgudtvs",
+      "railwayProject": "4037a3b5-d66f-409e-b734-56c22c244e3e",
+      "railwayEnvironment": "development",
+      "railwayService": "media-worker"
+    },
+    "freeLaneSetup": "terminal analysis-insufficient jobs seeded with real parity source URLs",
+    "premiumBoundary": "deployed authenticated monetization Edge endpoint onward",
+    "purchaseSetup": {
+      "productId": "dev.mock.nearr.place_finds.10",
+      "purchaseCount": 0,
+      "grantedUses": 0
+    },
+    "cleanupRequested": true
+  },
+  "wallet": {
+    "initial": {
+      "id": "24a27c64-0a67-4d94-8ab9-d406ceae00b4",
+      "available_uses": 5,
+      "reserved_uses": 0,
+      "version": 1
+    },
+    "funded": {
+      "id": "24a27c64-0a67-4d94-8ab9-d406ceae00b4",
+      "available_uses": 5,
+      "reserved_uses": 0,
+      "version": 1
+    },
+    "reserved": {
+      "id": "24a27c64-0a67-4d94-8ab9-d406ceae00b4",
+      "available_uses": 4,
+      "reserved_uses": 1,
+      "version": 2
+    },
+    "final": {
+      "id": "24a27c64-0a67-4d94-8ab9-d406ceae00b4",
+      "available_uses": 4,
+      "reserved_uses": 0,
+      "version": 3
+    }
+  },
+  "gates": {
+    "runCount": 1,
+    "priorityUseful": "1/1",
+    "wrongAutosaves": 0,
+    "c07UnsafeAutosave": false,
+    "machineCacheIdentityReads": 0,
+    "noResultTokenRelease": false,
+    "actionableReviewTokenConsume": true,
+    "duplicatePremiumTapSingleReservation": true
+  },
+  "cases": [
+    {
+      "caseId": "R01",
+      "sourceUrl": "https://www.instagram.com/reel/Cg2U22DjbEJ/",
+      "jobId": "04b3db10-d3f8-4bc2-a864-e5102535853f",
+      "premiumRequestId": "977339b4-33be-4516-ab47-cf4f6feaa5b0",
+      "premiumState": "useful_result",
+      "status": "needs_help",
+      "decision": "candidate_picker",
+      "savedPlaceId": null,
+      "names": [
+        "Gorges du Gardon",
+        "Gorges du Chassezac",
+        "Gorges du Gardon near Collias",
+        "Gorges de l'Ardèche",
+        "Gorges du Chassezac near Casteljau"
+      ],
+      "usefulEvidence": [
+        "Gorges du Gardon",
+        "Collias, Occitanie, France",
+        "Gorges du Gardon, 30190 Sanilhac-Sagriès, France",
+        "Gorges du Chassezac",
+        "Berrias-et-Casteljau, Auvergne-Rhône-Alpes, France",
+        "Gorges du Chassezac, 48800 Prévenchères, France",
+        "Gorges du Gardon near Collias",
+        "Gorges de l'Ardèche",
+        "Vallon-Pont-d'Arc, Auvergne-Rhône-Alpes, France",
+        "Gorges du Chassezac near Casteljau"
+      ],
+      "suggestedQuery": "Gorges du Gardon near Collias",
+      "chargeable": true,
+      "settlementReason": "premium_specific_candidates",
+      "costs": {
+        "sol": {
+          "model": "gpt-5.6-sol",
+          "usage": {
+            "input_tokens": 3645,
+            "total_tokens": 6519,
+            "output_tokens": 2874,
+            "reasoning_tokens": 2588,
+            "cached_input_tokens": 3642
+          },
+          "knownCostUsd": 0.058949
+        },
+        "places": {
+          "costUsd": "UNKNOWN",
+          "requestCount": 3,
+          "requestTypes": [
+            "PRIMARY_SPECIFIC_IDENTITY",
+            "PRIMARY_SPECIFIC_IDENTITY",
+            "PRIMARY_SPECIFIC_IDENTITY"
+          ]
+        },
+        "latencyMs": {
+          "sol": 48065,
+          "places": 724,
+          "evidencePrep": 9041,
+          "totalAfterEvidenceReady": 48789
+        },
+        "acquisition": "UNKNOWN",
+        "evidenceReuse": {
+          "ocr": "REACQUIRED",
+          "media": "REACQUIRED",
+          "frames": "REACQUIRED",
+          "caption": "REACQUIRED",
+          "transcript": "REACQUIRED"
+        },
+        "transcription": "UNKNOWN",
+        "parityDiagnostics": {
+          "solBoundary": {
+            "model": "gpt-5.6-sol",
+            "usage": {
+              "input_tokens": 3645,
+              "total_tokens": 6519,
+              "output_tokens": 2874,
+              "reasoning_tokens": 2588,
+              "cached_input_tokens": 3642
+            },
+            "version": "premium-sol-boundary.v1",
+            "latencyMs": 48065,
+            "hypotheses": [
+              {
+                "name": "Gorges du Gardon near Collias",
+                "confidence": "MEDIUM",
+                "entityType": "NAMED_NATURAL_FEATURE",
+                "alternatives": [
+                  "Gorges de l'Ardèche",
+                  "Gorges du Chassezac near Casteljau"
+                ],
+                "evidenceBasis": "CONTEXTUAL_OR_MEMORY_PRIOR"
+              }
+            ],
+            "responseId": "resp_02871dcdc7172325016a9bb547ff0087d0982bda51127f00d2",
+            "shareJobId": "04b3db10-d3f8-4bc2-a864-e5102535853f",
+            "parseSuccess": true,
+            "fingerprintId": "20c98de1da4e63ef0825b0c0691a035c9ea21d79e2ec9b1f7de048cf3fd2b161",
+            "destinationCount": 1,
+            "parseFailureCode": null,
+            "premiumRequestId": "977339b4-33be-4516-ab47-cf4f6feaa5b0",
+            "structuredResultHash": "e793beb871288d049d3aad6960e214247abd8a1ecd4d33fd7732cdb4426a6513"
+          },
+          "engineVersion": "simple-sol-premium.v2",
+          "safetyVersion": "premium-recognition-safety.v2",
+          "evidenceVersion": "premium-evidence-2026-09-05.v1",
+          "finalFingerprint": {
+            "hash": "81857d5ec24419d3bac86f44143b2482edc5dfa2bef80a3068c06c8aa234f173",
+            "version": "premium-final-fingerprint.v1",
+            "chargeability": "CHARGEABLE_ACTIONABLE",
+            "solResultHash": "e793beb871288d049d3aad6960e214247abd8a1ecd4d33fd7732cdb4426a6513",
+            "resultDecision": "PREMIUM_ACTIONABLE_RESULT",
+            "safetyDecision": [
+              "REVIEW"
+            ],
+            "tokenSettlement": "CONSUME",
+            "canonicalResultHash": "41e017c9ab6d6cb11e90caf2851bec9e96bfae9e5fe5922493709b79d73c6d40"
+          },
+          "evidenceReuseState": "EVIDENCE_REGENERATED",
+          "inferenceFingerprint": {
+            "frames": [
+              {
+                "width": 480,
+                "height": 854,
+                "byteLength": 90977,
+                "imageSha256": "a41592d4c30b0df5ae2bcd8c3673fc389e94553c017360abcc8ecfa74c87905c",
+                "timestampMs": 0
+              },
+              {
+                "width": 480,
+                "height": 854,
+                "byteLength": 63137,
+                "imageSha256": "4403da7532fa871167ce7757bd393b8adbf3f7250d3339b188c480eb429dd5af",
+                "timestampMs": 1000
+              },
+              {
+                "width": 480,
+                "height": 854,
+                "byteLength": 62109,
+                "imageSha256": "3028c80ac7c9d0e7a9dcf467563f910f4fc0f8e5e41e7600f752e7b71912d4c1",
+                "timestampMs": 2000
+              },
+              {
+                "width": 480,
+                "height": 854,
+                "byteLength": 71024,
+                "imageSha256": "edb6be60b2a1f8bfb17bc2869bc3452c8a5a734db4966f277cc700c789711e9b",
+                "timestampMs": 3000
+              },
+              {
+                "width": 480,
+                "height": 854,
+                "byteLength": 73260,
+                "imageSha256": "0aa8eca6fbedf9bbbee32ff925acd48776052300be2c4e07b59aca81bce94c80",
+                "timestampMs": 4000
+              },
+              {
+                "width": 480,
+                "height": 854,
+                "byteLength": 54279,
+                "imageSha256": "2cd63be0b971e30492c8652ee89897e9dfe6178e9db9315c4853d90186dd4358",
+                "timestampMs": 5500
+              }
+            ],
+            "prompt": {
+              "model": "gpt-5.6-sol",
+              "promptHash": "8132da97b952b5d93062ba9b7d915c1dc40b4033de869607a1274142e1580e9c",
+              "schemaHash": "6899fd09c3cc95b4d12263bec5d7028f605eab0eb77b9fdaa38877704c694cfa",
+              "promptVersion": "sol-parity-natural-v1",
+              "schemaVersion": "sol-parity-destination-schema-v1",
+              "reasoningConfig": {
+                "effort": "high"
+              }
+            },
+            "request": {
+              "imageCount": 6,
+              "inputTextHash": "1b98c019e2aa37243105958613f3309e1ce09b1785649f594a463a5f9e800962",
+              "requestPayloadHash": "a838113498a8ec9d0ceb12c1164c6e649d4930608f1c5f92bab5053c95087e77"
+            },
+            "version": "premium-inference-fingerprint.v1",
+            "evidenceReuse": "EVIDENCE_REGENERATED",
+            "fingerprintId": "20c98de1da4e63ef0825b0c0691a035c9ea21d79e2ec9b1f7de048cf3fd2b161",
+            "sourceContext": {
+              "ocrHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "ocrLength": 0,
+              "captionHash": "21edb0782f2f99c6d8c31e3700a877f069ac4f3689ed9e8c2773780b86c844c4",
+              "creatorHash": "1bd11a40d110c4ca096e1e69f129406f9cd89c5d156dd579e39449e6a3bbc153",
+              "captionLength": 206,
+              "creatorLength": 11,
+              "transcriptHash": "7903f03b1c0dc4d61656ecac3c453ad21ee547b76e7e16d8e17c538e5be0d0c6",
+              "transcriptLength": 127,
+              "sourceLocationHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "sourceLocationLength": 0,
+              "sourceLocationPresent": false
+            },
+            "sourceIdentity": {
+              "platform": "instagram",
+              "canonicalUrlHash": "a41d6f97d9cf4286b1b6e4477e0901d095907f207b3e567359e8c70b8ffe8a00",
+              "canonicalContentIdHash": "44d061ef0cf0a7738de9c2967fc5484c3f42d82d4685042e76018a5ce50ab1a1"
+            },
+            "evidenceVersion": "premium-evidence-2026-09-05.v1"
+          },
+          "canonicalizationFingerprint": {
+            "hash": "41e017c9ab6d6cb11e90caf2851bec9e96bfae9e5fe5922493709b79d73c6d40",
+            "version": "premium-canonicalization-fingerprint.v1",
+            "hypotheses": [
+              {
+                "name": "Gorges du Gardon near Collias",
+                "calls": [
+                  {
+                    "query": "Gorges du Gardon near Collias, Collias, Occitanie, France",
+                    "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                    "matched": true,
+                    "outcome": "CANONICAL_ALIAS",
+                    "resultIds": [
+                      "ChIJGcwJAqnMtRIRmCN5tE-TRMM"
+                    ],
+                    "resultCount": 1,
+                    "resultNames": [
+                      "Gorges du Gardon"
+                    ],
+                    "selectedName": "Gorges du Gardon",
+                    "attemptNumber": 1,
+                    "rejectionReason": null,
+                    "selectedGooglePlaceId": "ChIJGcwJAqnMtRIRmCN5tE-TRMM"
+                  }
+                ],
+                "outcome": "CANONICAL_ALIAS",
+                "geography": {
+                  "city": "Collias",
+                  "region": "Occitanie",
+                  "country": "France"
+                },
+                "entityType": "NAMED_NATURAL_FEATURE",
+                "selectedName": "Gorges du Gardon",
+                "rejectionReason": null,
+                "selectedGooglePlaceId": "ChIJGcwJAqnMtRIRmCN5tE-TRMM"
+              },
+              {
+                "name": "Gorges de l'Ardèche",
+                "calls": [
+                  {
+                    "query": "Gorges de l'Ardèche, Vallon-Pont-d'Arc, Auvergne-Rhône-Alpes, France",
+                    "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                    "matched": true,
+                    "outcome": "CANONICAL_ALIAS",
+                    "resultIds": [
+                      "ChIJdaoq0SsHtRIRZin4VIpGhOE",
+                      "ChIJtSym8PIBtRIRTb7zGVPYPkw",
+                      "ChIJCexMfAABtRIRmF2qCYHmsb8",
+                      "ChIJU3cms34BtRIRw4e-nXVPQ0Y"
+                    ],
+                    "resultCount": 4,
+                    "resultNames": [
+                      "Réserve Naturelle Nationale des Gorges de l'Ardèche",
+                      "Le Pont d'Arc",
+                      "Gorges Ardèche",
+                      "canyon de l'Ardèche"
+                    ],
+                    "selectedName": "Gorges Ardèche",
+                    "attemptNumber": 1,
+                    "rejectionReason": null,
+                    "selectedGooglePlaceId": "ChIJCexMfAABtRIRmF2qCYHmsb8"
+                  }
+                ],
+                "outcome": "AMBIGUOUS_CANONICAL",
+                "geography": {
+                  "city": "Vallon-Pont-d'Arc",
+                  "region": "Auvergne-Rhône-Alpes",
+                  "country": "France"
+                },
+                "entityType": "NAMED_NATURAL_FEATURE",
+                "selectedName": null,
+                "rejectionReason": null,
+                "selectedGooglePlaceId": null
+              },
+              {
+                "name": "Gorges du Chassezac near Casteljau",
+                "calls": [
+                  {
+                    "query": "Gorges du Chassezac near Casteljau, Berrias-et-Casteljau, Auvergne-Rhône-Alpes, France",
+                    "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                    "matched": true,
+                    "outcome": "CANONICAL_ALIAS",
+                    "resultIds": [
+                      "ChIJJSj32waOtBIRHbc_rSeptsE",
+                      "ChIJKSvsOSiQtBIR9R6x1VoVBwc",
+                      "ChIJv8LxIVf3tBIRtTkPcxvj29Q",
+                      "ChIJ57c1g3bztBIRpT3FncBIpd4"
+                    ],
+                    "resultCount": 4,
+                    "resultNames": [
+                      "Les Gorges Du Chassezac",
+                      "Gorges du Chassezac",
+                      "Wood Païolive",
+                      "Vallée du Chassezac"
+                    ],
+                    "selectedName": "Gorges du Chassezac",
+                    "attemptNumber": 1,
+                    "rejectionReason": null,
+                    "selectedGooglePlaceId": "ChIJKSvsOSiQtBIR9R6x1VoVBwc"
+                  }
+                ],
+                "outcome": "CANONICAL_ALIAS",
+                "geography": {
+                  "city": "Berrias-et-Casteljau",
+                  "region": "Auvergne-Rhône-Alpes",
+                  "country": "France"
+                },
+                "entityType": "NAMED_NATURAL_FEATURE",
+                "selectedName": "Gorges du Chassezac",
+                "rejectionReason": null,
+                "selectedGooglePlaceId": "ChIJKSvsOSiQtBIR9R6x1VoVBwc"
+              }
+            ]
+          }
+        }
+      },
+      "requestedAt": "2026-09-05T06:22:54.507985+00:00",
+      "startedAt": "2026-09-05T06:22:54.665266+00:00",
+      "completedAt": "2026-09-05T06:23:54.728058+00:00",
+      "task": {
+        "id": "281103e8-ec90-4e81-a0b9-c6f47f86d04d",
+        "status": "completed",
+        "attempts": 1,
+        "failureCode": null,
+        "resolverName": "premium-sol",
+        "analysisProvider": null,
+        "analysisModel": null,
+        "promptVersion": null,
+        "latencyMs": null,
+        "modelCalls": null,
+        "modelInputTokens": null,
+        "modelOutputTokens": null,
+        "modelThinkingTokens": null,
+        "modelLatencyMs": null
+      },
+      "mediaRun": {
+        "id": "0c614417-dd6a-4aa1-9ff9-434974051970",
+        "durationMs": 57830,
+        "frameCount": 7,
+        "transcriptSegments": 4,
+        "ocrSegments": 0,
+        "resolverName": "instagram/yt-dlp",
+        "modelProvider": "premium-sol",
+        "evidence": {
+          "multiple": false,
+          "placeCount": 3,
+          "insufficient": false,
+          "analysisAttempted": true,
+          "destinationPlaces": 0,
+          "partialPlaceCount": 0,
+          "explicitPlaceCount": 0,
+          "premiumDiagnostics": {
+            "solBoundary": {
+              "model": "gpt-5.6-sol",
+              "usage": {
+                "input_tokens": 3645,
+                "total_tokens": 6519,
+                "output_tokens": 2874,
+                "reasoning_tokens": 2588,
+                "cached_input_tokens": 3642
+              },
+              "version": "premium-sol-boundary.v1",
+              "latencyMs": 48065,
+              "hypotheses": [
+                {
+                  "name": "Gorges du Gardon near Collias",
+                  "confidence": "MEDIUM",
+                  "entityType": "NAMED_NATURAL_FEATURE",
+                  "alternatives": [
+                    "Gorges de l'Ardèche",
+                    "Gorges du Chassezac near Casteljau"
+                  ],
+                  "evidenceBasis": "CONTEXTUAL_OR_MEMORY_PRIOR"
+                }
+              ],
+              "responseId": "resp_02871dcdc7172325016a9bb547ff0087d0982bda51127f00d2",
+              "shareJobId": "04b3db10-d3f8-4bc2-a864-e5102535853f",
+              "parseSuccess": true,
+              "fingerprintId": "20c98de1da4e63ef0825b0c0691a035c9ea21d79e2ec9b1f7de048cf3fd2b161",
+              "destinationCount": 1,
+              "parseFailureCode": null,
+              "premiumRequestId": "977339b4-33be-4516-ab47-cf4f6feaa5b0",
+              "structuredResultHash": "e793beb871288d049d3aad6960e214247abd8a1ecd4d33fd7732cdb4426a6513"
+            },
+            "finalFingerprint": {
+              "hash": "81857d5ec24419d3bac86f44143b2482edc5dfa2bef80a3068c06c8aa234f173",
+              "version": "premium-final-fingerprint.v1",
+              "chargeability": "CHARGEABLE_ACTIONABLE",
+              "solResultHash": "e793beb871288d049d3aad6960e214247abd8a1ecd4d33fd7732cdb4426a6513",
+              "resultDecision": "PREMIUM_ACTIONABLE_RESULT",
+              "safetyDecision": [
+                "REVIEW"
+              ],
+              "tokenSettlement": "CONSUME",
+              "canonicalResultHash": "41e017c9ab6d6cb11e90caf2851bec9e96bfae9e5fe5922493709b79d73c6d40"
+            },
+            "inferenceFingerprint": {
+              "frames": [
+                {
+                  "width": 480,
+                  "height": 854,
+                  "byteLength": 90977,
+                  "imageSha256": "a41592d4c30b0df5ae2bcd8c3673fc389e94553c017360abcc8ecfa74c87905c",
+                  "timestampMs": 0
+                },
+                {
+                  "width": 480,
+                  "height": 854,
+                  "byteLength": 63137,
+                  "imageSha256": "4403da7532fa871167ce7757bd393b8adbf3f7250d3339b188c480eb429dd5af",
+                  "timestampMs": 1000
+                },
+                {
+                  "width": 480,
+                  "height": 854,
+                  "byteLength": 62109,
+                  "imageSha256": "3028c80ac7c9d0e7a9dcf467563f910f4fc0f8e5e41e7600f752e7b71912d4c1",
+                  "timestampMs": 2000
+                },
+                {
+                  "width": 480,
+                  "height": 854,
+                  "byteLength": 71024,
+                  "imageSha256": "edb6be60b2a1f8bfb17bc2869bc3452c8a5a734db4966f277cc700c789711e9b",
+                  "timestampMs": 3000
+                },
+                {
+                  "width": 480,
+                  "height": 854,
+                  "byteLength": 73260,
+                  "imageSha256": "0aa8eca6fbedf9bbbee32ff925acd48776052300be2c4e07b59aca81bce94c80",
+                  "timestampMs": 4000
+                },
+                {
+                  "width": 480,
+                  "height": 854,
+                  "byteLength": 54279,
+                  "imageSha256": "2cd63be0b971e30492c8652ee89897e9dfe6178e9db9315c4853d90186dd4358",
+                  "timestampMs": 5500
+                }
+              ],
+              "prompt": {
+                "model": "gpt-5.6-sol",
+                "promptHash": "8132da97b952b5d93062ba9b7d915c1dc40b4033de869607a1274142e1580e9c",
+                "schemaHash": "6899fd09c3cc95b4d12263bec5d7028f605eab0eb77b9fdaa38877704c694cfa",
+                "promptVersion": "sol-parity-natural-v1",
+                "schemaVersion": "sol-parity-destination-schema-v1",
+                "reasoningConfig": {
+                  "effort": "high"
+                }
+              },
+              "request": {
+                "imageCount": 6,
+                "inputTextHash": "1b98c019e2aa37243105958613f3309e1ce09b1785649f594a463a5f9e800962",
+                "requestPayloadHash": "a838113498a8ec9d0ceb12c1164c6e649d4930608f1c5f92bab5053c95087e77"
+              },
+              "version": "premium-inference-fingerprint.v1",
+              "evidenceReuse": "EVIDENCE_REGENERATED",
+              "fingerprintId": "20c98de1da4e63ef0825b0c0691a035c9ea21d79e2ec9b1f7de048cf3fd2b161",
+              "sourceContext": {
+                "ocrHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "ocrLength": 0,
+                "captionHash": "21edb0782f2f99c6d8c31e3700a877f069ac4f3689ed9e8c2773780b86c844c4",
+                "creatorHash": "1bd11a40d110c4ca096e1e69f129406f9cd89c5d156dd579e39449e6a3bbc153",
+                "captionLength": 206,
+                "creatorLength": 11,
+                "transcriptHash": "7903f03b1c0dc4d61656ecac3c453ad21ee547b76e7e16d8e17c538e5be0d0c6",
+                "transcriptLength": 127,
+                "sourceLocationHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "sourceLocationLength": 0,
+                "sourceLocationPresent": false
+              },
+              "sourceIdentity": {
+                "platform": "instagram",
+                "canonicalUrlHash": "a41d6f97d9cf4286b1b6e4477e0901d095907f207b3e567359e8c70b8ffe8a00",
+                "canonicalContentIdHash": "44d061ef0cf0a7738de9c2967fc5484c3f42d82d4685042e76018a5ce50ab1a1"
+              },
+              "evidenceVersion": "premium-evidence-2026-09-05.v1"
+            },
+            "canonicalizationFingerprint": {
+              "hash": "41e017c9ab6d6cb11e90caf2851bec9e96bfae9e5fe5922493709b79d73c6d40",
+              "version": "premium-canonicalization-fingerprint.v1",
+              "hypotheses": [
+                {
+                  "name": "Gorges du Gardon near Collias",
+                  "calls": [
+                    {
+                      "query": "Gorges du Gardon near Collias, Collias, Occitanie, France",
+                      "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                      "matched": true,
+                      "outcome": "CANONICAL_ALIAS",
+                      "resultIds": [
+                        "ChIJGcwJAqnMtRIRmCN5tE-TRMM"
+                      ],
+                      "resultCount": 1,
+                      "resultNames": [
+                        "Gorges du Gardon"
+                      ],
+                      "selectedName": "Gorges du Gardon",
+                      "attemptNumber": 1,
+                      "rejectionReason": null,
+                      "selectedGooglePlaceId": "ChIJGcwJAqnMtRIRmCN5tE-TRMM"
+                    }
+                  ],
+                  "outcome": "CANONICAL_ALIAS",
+                  "geography": {
+                    "city": "Collias",
+                    "region": "Occitanie",
+                    "country": "France"
+                  },
+                  "entityType": "NAMED_NATURAL_FEATURE",
+                  "selectedName": "Gorges du Gardon",
+                  "rejectionReason": null,
+                  "selectedGooglePlaceId": "ChIJGcwJAqnMtRIRmCN5tE-TRMM"
+                },
+                {
+                  "name": "Gorges de l'Ardèche",
+                  "calls": [
+                    {
+                      "query": "Gorges de l'Ardèche, Vallon-Pont-d'Arc, Auvergne-Rhône-Alpes, France",
+                      "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                      "matched": true,
+                      "outcome": "CANONICAL_ALIAS",
+                      "resultIds": [
+                        "ChIJdaoq0SsHtRIRZin4VIpGhOE",
+                        "ChIJtSym8PIBtRIRTb7zGVPYPkw",
+                        "ChIJCexMfAABtRIRmF2qCYHmsb8",
+                        "ChIJU3cms34BtRIRw4e-nXVPQ0Y"
+                      ],
+                      "resultCount": 4,
+                      "resultNames": [
+                        "Réserve Naturelle Nationale des Gorges de l'Ardèche",
+                        "Le Pont d'Arc",
+                        "Gorges Ardèche",
+                        "canyon de l'Ardèche"
+                      ],
+                      "selectedName": "Gorges Ardèche",
+                      "attemptNumber": 1,
+                      "rejectionReason": null,
+                      "selectedGooglePlaceId": "ChIJCexMfAABtRIRmF2qCYHmsb8"
+                    }
+                  ],
+                  "outcome": "AMBIGUOUS_CANONICAL",
+                  "geography": {
+                    "city": "Vallon-Pont-d'Arc",
+                    "region": "Auvergne-Rhône-Alpes",
+                    "country": "France"
+                  },
+                  "entityType": "NAMED_NATURAL_FEATURE",
+                  "selectedName": null,
+                  "rejectionReason": null,
+                  "selectedGooglePlaceId": null
+                },
+                {
+                  "name": "Gorges du Chassezac near Casteljau",
+                  "calls": [
+                    {
+                      "query": "Gorges du Chassezac near Casteljau, Berrias-et-Casteljau, Auvergne-Rhône-Alpes, France",
+                      "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                      "matched": true,
+                      "outcome": "CANONICAL_ALIAS",
+                      "resultIds": [
+                        "ChIJJSj32waOtBIRHbc_rSeptsE",
+                        "ChIJKSvsOSiQtBIR9R6x1VoVBwc",
+                        "ChIJv8LxIVf3tBIRtTkPcxvj29Q",
+                        "ChIJ57c1g3bztBIRpT3FncBIpd4"
+                      ],
+                      "resultCount": 4,
+                      "resultNames": [
+                        "Les Gorges Du Chassezac",
+                        "Gorges du Chassezac",
+                        "Wood Païolive",
+                        "Vallée du Chassezac"
+                      ],
+                      "selectedName": "Gorges du Chassezac",
+                      "attemptNumber": 1,
+                      "rejectionReason": null,
+                      "selectedGooglePlaceId": "ChIJKSvsOSiQtBIR9R6x1VoVBwc"
+                    }
+                  ],
+                  "outcome": "CANONICAL_ALIAS",
+                  "geography": {
+                    "city": "Berrias-et-Casteljau",
+                    "region": "Auvergne-Rhône-Alpes",
+                    "country": "France"
+                  },
+                  "entityType": "NAMED_NATURAL_FEATURE",
+                  "selectedName": "Gorges du Chassezac",
+                  "rejectionReason": null,
+                  "selectedGooglePlaceId": "ChIJKSvsOSiQtBIR9R6x1VoVBwc"
+                }
+              ]
+            }
+          },
+          "recognitionFailureClass": "none",
+          "sharedGeoCountryApplied": false,
+          "sharedGeoCountryStrength": "none",
+          "peerGeographicDestinations": 0,
+          "sharedGeoCountryCandidates": 0,
+          "sourceGeographicContextDropped": 0
+        }
+      },
+      "reservationCount": 1,
+      "reservationStatus": "consumed",
+      "priorityUseful": true
+    }
+  ]
+}

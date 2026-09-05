@@ -1,0 +1,4394 @@
+{
+  "schemaVersion": 1,
+  "run": {
+    "startedAt": "2026-09-05T06:04:12.617Z",
+    "completedAt": "2026-09-05T06:09:28.879Z",
+    "correlationId": "nearr-e2e-20260905T060411-71532429",
+    "gitHead": "d618b9047ca6b612b44cf511725d44c3bc8f6a80",
+    "target": {
+      "supabaseProjectRef": "qnfxnmvxpjzfydgudtvs",
+      "railwayProject": "4037a3b5-d66f-409e-b734-56c22c244e3e",
+      "railwayEnvironment": "development",
+      "railwayService": "media-worker"
+    },
+    "freeLaneSetup": "terminal analysis-insufficient jobs seeded with real parity source URLs",
+    "premiumBoundary": "deployed authenticated monetization Edge endpoint onward",
+    "purchaseSetup": {
+      "productId": "dev.mock.nearr.place_finds.10",
+      "purchaseCount": 2,
+      "grantedUses": 6
+    },
+    "cleanupRequested": true
+  },
+  "wallet": {
+    "initial": {
+      "id": "6117a681-0527-4a61-867a-31f8e3a81c00",
+      "available_uses": 5,
+      "reserved_uses": 0,
+      "version": 1
+    },
+    "funded": {
+      "id": "6117a681-0527-4a61-867a-31f8e3a81c00",
+      "available_uses": 11,
+      "reserved_uses": 0,
+      "version": 3
+    },
+    "reserved": {
+      "id": "6117a681-0527-4a61-867a-31f8e3a81c00",
+      "available_uses": 2,
+      "reserved_uses": 9,
+      "version": 12
+    },
+    "final": {
+      "id": "6117a681-0527-4a61-867a-31f8e3a81c00",
+      "available_uses": 2,
+      "reserved_uses": 0,
+      "version": 21
+    }
+  },
+  "gates": {
+    "runCount": 9,
+    "priorityUseful": "8/9",
+    "wrongAutosaves": 0,
+    "c07UnsafeAutosave": false,
+    "machineCacheIdentityReads": 0,
+    "noResultTokenRelease": false,
+    "actionableReviewTokenConsume": true,
+    "duplicatePremiumTapSingleReservation": true
+  },
+  "cases": [
+    {
+      "caseId": "R01",
+      "sourceUrl": "https://www.instagram.com/reel/Cg2U22DjbEJ/",
+      "jobId": "f8a54d77-3190-4d43-b592-bc5bb275ec55",
+      "premiumRequestId": "e958e455-055b-43ff-a8bd-5e277c743cfd",
+      "premiumState": "useful_result",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "names": [
+        "Gorges du Gardon",
+        "Cirque de Gens on the Ardèche River",
+        "Gorges du Chassezac",
+        "Gorges du Gardon near Collias"
+      ],
+      "suggestedQuery": "Cirque de Gens on the Ardèche River",
+      "chargeable": true,
+      "settlementReason": "premium_specific_candidates",
+      "costs": {
+        "sol": {
+          "model": "gpt-5.6-sol",
+          "usage": {
+            "input_tokens": 3645,
+            "total_tokens": 5957,
+            "output_tokens": 2312,
+            "reasoning_tokens": 1981,
+            "cached_input_tokens": 3642
+          },
+          "knownCostUsd": 0.047709
+        },
+        "places": {
+          "costUsd": "UNKNOWN",
+          "requestCount": 3,
+          "requestTypes": [
+            "PRIMARY_SPECIFIC_IDENTITY",
+            "PRIMARY_SPECIFIC_IDENTITY",
+            "PRIMARY_SPECIFIC_IDENTITY"
+          ]
+        },
+        "latencyMs": {
+          "sol": 39633,
+          "places": 772,
+          "evidencePrep": 9316,
+          "totalAfterEvidenceReady": 40405
+        },
+        "acquisition": "UNKNOWN",
+        "evidenceReuse": {
+          "ocr": "REACQUIRED",
+          "media": "REACQUIRED",
+          "frames": "REACQUIRED",
+          "caption": "REACQUIRED",
+          "transcript": "REACQUIRED"
+        },
+        "transcription": "UNKNOWN",
+        "parityDiagnostics": {
+          "solBoundary": {
+            "model": "gpt-5.6-sol",
+            "usage": {
+              "input_tokens": 3645,
+              "total_tokens": 5957,
+              "output_tokens": 2312,
+              "reasoning_tokens": 1981,
+              "cached_input_tokens": 3642
+            },
+            "version": "premium-sol-boundary.v1",
+            "latencyMs": 39633,
+            "hypotheses": [
+              {
+                "name": "Cirque de Gens on the Ardèche River",
+                "confidence": "MEDIUM",
+                "entityType": "NAMED_NATURAL_FEATURE",
+                "alternatives": [
+                  "Gorges du Chassezac",
+                  "Gorges du Gardon near Collias"
+                ],
+                "evidenceBasis": "CONTEXTUAL_OR_MEMORY_PRIOR"
+              }
+            ],
+            "responseId": "resp_09a1651addec6193016a9bb0ea968c87d0971911947ee1bec1",
+            "shareJobId": "f8a54d77-3190-4d43-b592-bc5bb275ec55",
+            "parseSuccess": true,
+            "fingerprintId": "20c98de1da4e63ef0825b0c0691a035c9ea21d79e2ec9b1f7de048cf3fd2b161",
+            "destinationCount": 1,
+            "parseFailureCode": null,
+            "premiumRequestId": "e958e455-055b-43ff-a8bd-5e277c743cfd",
+            "structuredResultHash": "5af135ce63e39df130fb90cb19db1dc1df2f68b6e9f368bdf678a4c3e6344599"
+          },
+          "engineVersion": "simple-sol-premium.v2",
+          "safetyVersion": "premium-recognition-safety.v2",
+          "evidenceVersion": "premium-evidence-2026-09-05.v1",
+          "finalFingerprint": {
+            "hash": "359ee6a85ac47f43b41b3031dbe03f7efdfb477327e060aacd28af0c30e31d36",
+            "version": "premium-final-fingerprint.v1",
+            "chargeability": "CHARGEABLE_ACTIONABLE",
+            "solResultHash": "5af135ce63e39df130fb90cb19db1dc1df2f68b6e9f368bdf678a4c3e6344599",
+            "resultDecision": "PREMIUM_ACTIONABLE_RESULT",
+            "safetyDecision": [
+              "REVIEW"
+            ],
+            "tokenSettlement": "CONSUME",
+            "canonicalResultHash": "0aa5ee3763a1683d28d2c32a2dde9dfc6bbfd5cc3e98428878c68a4056b02e6a"
+          },
+          "evidenceReuseState": "EVIDENCE_REGENERATED",
+          "inferenceFingerprint": {
+            "frames": [
+              {
+                "width": 480,
+                "height": 854,
+                "byteLength": 90977,
+                "imageSha256": "a41592d4c30b0df5ae2bcd8c3673fc389e94553c017360abcc8ecfa74c87905c",
+                "timestampMs": 0
+              },
+              {
+                "width": 480,
+                "height": 854,
+                "byteLength": 63137,
+                "imageSha256": "4403da7532fa871167ce7757bd393b8adbf3f7250d3339b188c480eb429dd5af",
+                "timestampMs": 1000
+              },
+              {
+                "width": 480,
+                "height": 854,
+                "byteLength": 62109,
+                "imageSha256": "3028c80ac7c9d0e7a9dcf467563f910f4fc0f8e5e41e7600f752e7b71912d4c1",
+                "timestampMs": 2000
+              },
+              {
+                "width": 480,
+                "height": 854,
+                "byteLength": 71024,
+                "imageSha256": "edb6be60b2a1f8bfb17bc2869bc3452c8a5a734db4966f277cc700c789711e9b",
+                "timestampMs": 3000
+              },
+              {
+                "width": 480,
+                "height": 854,
+                "byteLength": 73260,
+                "imageSha256": "0aa8eca6fbedf9bbbee32ff925acd48776052300be2c4e07b59aca81bce94c80",
+                "timestampMs": 4000
+              },
+              {
+                "width": 480,
+                "height": 854,
+                "byteLength": 54279,
+                "imageSha256": "2cd63be0b971e30492c8652ee89897e9dfe6178e9db9315c4853d90186dd4358",
+                "timestampMs": 5500
+              }
+            ],
+            "prompt": {
+              "model": "gpt-5.6-sol",
+              "promptHash": "8132da97b952b5d93062ba9b7d915c1dc40b4033de869607a1274142e1580e9c",
+              "schemaHash": "6899fd09c3cc95b4d12263bec5d7028f605eab0eb77b9fdaa38877704c694cfa",
+              "promptVersion": "sol-parity-natural-v1",
+              "schemaVersion": "sol-parity-destination-schema-v1",
+              "reasoningConfig": {
+                "effort": "high"
+              }
+            },
+            "request": {
+              "imageCount": 6,
+              "inputTextHash": "1b98c019e2aa37243105958613f3309e1ce09b1785649f594a463a5f9e800962",
+              "requestPayloadHash": "a838113498a8ec9d0ceb12c1164c6e649d4930608f1c5f92bab5053c95087e77"
+            },
+            "version": "premium-inference-fingerprint.v1",
+            "evidenceReuse": "EVIDENCE_REGENERATED",
+            "fingerprintId": "20c98de1da4e63ef0825b0c0691a035c9ea21d79e2ec9b1f7de048cf3fd2b161",
+            "sourceContext": {
+              "ocrHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "ocrLength": 0,
+              "captionHash": "21edb0782f2f99c6d8c31e3700a877f069ac4f3689ed9e8c2773780b86c844c4",
+              "creatorHash": "1bd11a40d110c4ca096e1e69f129406f9cd89c5d156dd579e39449e6a3bbc153",
+              "captionLength": 206,
+              "creatorLength": 11,
+              "transcriptHash": "7903f03b1c0dc4d61656ecac3c453ad21ee547b76e7e16d8e17c538e5be0d0c6",
+              "transcriptLength": 127,
+              "sourceLocationHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "sourceLocationLength": 0,
+              "sourceLocationPresent": false
+            },
+            "sourceIdentity": {
+              "platform": "instagram",
+              "canonicalUrlHash": "a41d6f97d9cf4286b1b6e4477e0901d095907f207b3e567359e8c70b8ffe8a00",
+              "canonicalContentIdHash": "44d061ef0cf0a7738de9c2967fc5484c3f42d82d4685042e76018a5ce50ab1a1"
+            },
+            "evidenceVersion": "premium-evidence-2026-09-05.v1"
+          },
+          "canonicalizationFingerprint": {
+            "hash": "0aa5ee3763a1683d28d2c32a2dde9dfc6bbfd5cc3e98428878c68a4056b02e6a",
+            "version": "premium-canonicalization-fingerprint.v1",
+            "hypotheses": [
+              {
+                "name": "Cirque de Gens on the Ardèche River",
+                "calls": [
+                  {
+                    "query": "Cirque de Gens on the Ardèche River, Chauzon, Auvergne-Rhône-Alpes, France",
+                    "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                    "matched": true,
+                    "outcome": "CANONICAL_ALIAS",
+                    "resultIds": [
+                      "ChIJ056b5CTjtBIRDvwbt053tOQ",
+                      "ChIJh63uiMDjtBIRRXuMuWrIoyQ",
+                      "ChIJBVJdKgjjtBIRpzJN1_hncW4",
+                      "ChIJya62EADjtBIRQxj8dtptfYg"
+                    ],
+                    "resultCount": 4,
+                    "resultNames": [
+                      "Le Cirque de Gens",
+                      "Vue Cirque de Gens rando",
+                      "Plage du Cirque de Gens",
+                      "Vue cirque de gens"
+                    ],
+                    "selectedName": "Vue cirque de gens",
+                    "attemptNumber": 1,
+                    "rejectionReason": null,
+                    "selectedGooglePlaceId": "ChIJya62EADjtBIRQxj8dtptfYg"
+                  }
+                ],
+                "outcome": "AMBIGUOUS_CANONICAL",
+                "geography": {
+                  "city": "Chauzon",
+                  "region": "Auvergne-Rhône-Alpes",
+                  "country": "France"
+                },
+                "entityType": "NAMED_NATURAL_FEATURE",
+                "selectedName": null,
+                "rejectionReason": null,
+                "selectedGooglePlaceId": null
+              },
+              {
+                "name": "Gorges du Chassezac",
+                "calls": [
+                  {
+                    "query": "Gorges du Chassezac, Berrias-et-Casteljau, Auvergne-Rhône-Alpes, France",
+                    "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                    "matched": true,
+                    "outcome": "CANONICAL_ALIAS",
+                    "resultIds": [
+                      "ChIJJSj32waOtBIRHbc_rSeptsE",
+                      "ChIJKSvsOSiQtBIR9R6x1VoVBwc",
+                      "ChIJv8LxIVf3tBIRtTkPcxvj29Q",
+                      "ChIJU20ZhYj7tBIRYnbWBP6jkXU",
+                      "ChIJ57c1g3bztBIRpT3FncBIpd4"
+                    ],
+                    "resultCount": 5,
+                    "resultNames": [
+                      "Les Gorges Du Chassezac",
+                      "Gorges du Chassezac",
+                      "Wood Païolive",
+                      "Plage du Chassezac",
+                      "Vallée du Chassezac"
+                    ],
+                    "selectedName": "Les Gorges Du Chassezac",
+                    "attemptNumber": 1,
+                    "rejectionReason": null,
+                    "selectedGooglePlaceId": "ChIJJSj32waOtBIRHbc_rSeptsE"
+                  }
+                ],
+                "outcome": "AMBIGUOUS_CANONICAL",
+                "geography": {
+                  "city": "Berrias-et-Casteljau",
+                  "region": "Auvergne-Rhône-Alpes",
+                  "country": "France"
+                },
+                "entityType": "NAMED_NATURAL_FEATURE",
+                "selectedName": null,
+                "rejectionReason": null,
+                "selectedGooglePlaceId": null
+              },
+              {
+                "name": "Gorges du Gardon near Collias",
+                "calls": [
+                  {
+                    "query": "Gorges du Gardon near Collias, Collias, Occitanie, France",
+                    "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                    "matched": true,
+                    "outcome": "CANONICAL_ALIAS",
+                    "resultIds": [
+                      "ChIJGcwJAqnMtRIRmCN5tE-TRMM"
+                    ],
+                    "resultCount": 1,
+                    "resultNames": [
+                      "Gorges du Gardon"
+                    ],
+                    "selectedName": "Gorges du Gardon",
+                    "attemptNumber": 1,
+                    "rejectionReason": null,
+                    "selectedGooglePlaceId": "ChIJGcwJAqnMtRIRmCN5tE-TRMM"
+                  }
+                ],
+                "outcome": "CANONICAL_ALIAS",
+                "geography": {
+                  "city": "Collias",
+                  "region": "Occitanie",
+                  "country": "France"
+                },
+                "entityType": "NAMED_NATURAL_FEATURE",
+                "selectedName": "Gorges du Gardon",
+                "rejectionReason": null,
+                "selectedGooglePlaceId": "ChIJGcwJAqnMtRIRmCN5tE-TRMM"
+              }
+            ]
+          }
+        }
+      },
+      "requestedAt": "2026-09-05T06:04:16.333489+00:00",
+      "startedAt": "2026-09-05T06:04:16.989876+00:00",
+      "completedAt": "2026-09-05T06:05:09.0318+00:00",
+      "task": {
+        "id": "00300d59-108c-408f-b884-ec864d5457c6",
+        "status": "completed",
+        "attempts": 1,
+        "failureCode": null,
+        "resolverName": "premium-sol",
+        "analysisProvider": null,
+        "analysisModel": null,
+        "promptVersion": null,
+        "latencyMs": null,
+        "modelCalls": null,
+        "modelInputTokens": null,
+        "modelOutputTokens": null,
+        "modelThinkingTokens": null,
+        "modelLatencyMs": null
+      },
+      "mediaRun": {
+        "id": "8b9036dd-bc41-4572-9a13-b447dc670b07",
+        "durationMs": 49725,
+        "frameCount": 7,
+        "transcriptSegments": 4,
+        "ocrSegments": 0,
+        "resolverName": "instagram/yt-dlp",
+        "modelProvider": "premium-sol",
+        "evidence": {
+          "multiple": false,
+          "placeCount": 3,
+          "insufficient": false,
+          "analysisAttempted": true,
+          "destinationPlaces": 0,
+          "partialPlaceCount": 0,
+          "explicitPlaceCount": 0,
+          "premiumDiagnostics": {
+            "solBoundary": {
+              "model": "gpt-5.6-sol",
+              "usage": {
+                "input_tokens": 3645,
+                "total_tokens": 5957,
+                "output_tokens": 2312,
+                "reasoning_tokens": 1981,
+                "cached_input_tokens": 3642
+              },
+              "version": "premium-sol-boundary.v1",
+              "latencyMs": 39633,
+              "hypotheses": [
+                {
+                  "name": "Cirque de Gens on the Ardèche River",
+                  "confidence": "MEDIUM",
+                  "entityType": "NAMED_NATURAL_FEATURE",
+                  "alternatives": [
+                    "Gorges du Chassezac",
+                    "Gorges du Gardon near Collias"
+                  ],
+                  "evidenceBasis": "CONTEXTUAL_OR_MEMORY_PRIOR"
+                }
+              ],
+              "responseId": "resp_09a1651addec6193016a9bb0ea968c87d0971911947ee1bec1",
+              "shareJobId": "f8a54d77-3190-4d43-b592-bc5bb275ec55",
+              "parseSuccess": true,
+              "fingerprintId": "20c98de1da4e63ef0825b0c0691a035c9ea21d79e2ec9b1f7de048cf3fd2b161",
+              "destinationCount": 1,
+              "parseFailureCode": null,
+              "premiumRequestId": "e958e455-055b-43ff-a8bd-5e277c743cfd",
+              "structuredResultHash": "5af135ce63e39df130fb90cb19db1dc1df2f68b6e9f368bdf678a4c3e6344599"
+            },
+            "finalFingerprint": {
+              "hash": "359ee6a85ac47f43b41b3031dbe03f7efdfb477327e060aacd28af0c30e31d36",
+              "version": "premium-final-fingerprint.v1",
+              "chargeability": "CHARGEABLE_ACTIONABLE",
+              "solResultHash": "5af135ce63e39df130fb90cb19db1dc1df2f68b6e9f368bdf678a4c3e6344599",
+              "resultDecision": "PREMIUM_ACTIONABLE_RESULT",
+              "safetyDecision": [
+                "REVIEW"
+              ],
+              "tokenSettlement": "CONSUME",
+              "canonicalResultHash": "0aa5ee3763a1683d28d2c32a2dde9dfc6bbfd5cc3e98428878c68a4056b02e6a"
+            },
+            "inferenceFingerprint": {
+              "frames": [
+                {
+                  "width": 480,
+                  "height": 854,
+                  "byteLength": 90977,
+                  "imageSha256": "a41592d4c30b0df5ae2bcd8c3673fc389e94553c017360abcc8ecfa74c87905c",
+                  "timestampMs": 0
+                },
+                {
+                  "width": 480,
+                  "height": 854,
+                  "byteLength": 63137,
+                  "imageSha256": "4403da7532fa871167ce7757bd393b8adbf3f7250d3339b188c480eb429dd5af",
+                  "timestampMs": 1000
+                },
+                {
+                  "width": 480,
+                  "height": 854,
+                  "byteLength": 62109,
+                  "imageSha256": "3028c80ac7c9d0e7a9dcf467563f910f4fc0f8e5e41e7600f752e7b71912d4c1",
+                  "timestampMs": 2000
+                },
+                {
+                  "width": 480,
+                  "height": 854,
+                  "byteLength": 71024,
+                  "imageSha256": "edb6be60b2a1f8bfb17bc2869bc3452c8a5a734db4966f277cc700c789711e9b",
+                  "timestampMs": 3000
+                },
+                {
+                  "width": 480,
+                  "height": 854,
+                  "byteLength": 73260,
+                  "imageSha256": "0aa8eca6fbedf9bbbee32ff925acd48776052300be2c4e07b59aca81bce94c80",
+                  "timestampMs": 4000
+                },
+                {
+                  "width": 480,
+                  "height": 854,
+                  "byteLength": 54279,
+                  "imageSha256": "2cd63be0b971e30492c8652ee89897e9dfe6178e9db9315c4853d90186dd4358",
+                  "timestampMs": 5500
+                }
+              ],
+              "prompt": {
+                "model": "gpt-5.6-sol",
+                "promptHash": "8132da97b952b5d93062ba9b7d915c1dc40b4033de869607a1274142e1580e9c",
+                "schemaHash": "6899fd09c3cc95b4d12263bec5d7028f605eab0eb77b9fdaa38877704c694cfa",
+                "promptVersion": "sol-parity-natural-v1",
+                "schemaVersion": "sol-parity-destination-schema-v1",
+                "reasoningConfig": {
+                  "effort": "high"
+                }
+              },
+              "request": {
+                "imageCount": 6,
+                "inputTextHash": "1b98c019e2aa37243105958613f3309e1ce09b1785649f594a463a5f9e800962",
+                "requestPayloadHash": "a838113498a8ec9d0ceb12c1164c6e649d4930608f1c5f92bab5053c95087e77"
+              },
+              "version": "premium-inference-fingerprint.v1",
+              "evidenceReuse": "EVIDENCE_REGENERATED",
+              "fingerprintId": "20c98de1da4e63ef0825b0c0691a035c9ea21d79e2ec9b1f7de048cf3fd2b161",
+              "sourceContext": {
+                "ocrHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "ocrLength": 0,
+                "captionHash": "21edb0782f2f99c6d8c31e3700a877f069ac4f3689ed9e8c2773780b86c844c4",
+                "creatorHash": "1bd11a40d110c4ca096e1e69f129406f9cd89c5d156dd579e39449e6a3bbc153",
+                "captionLength": 206,
+                "creatorLength": 11,
+                "transcriptHash": "7903f03b1c0dc4d61656ecac3c453ad21ee547b76e7e16d8e17c538e5be0d0c6",
+                "transcriptLength": 127,
+                "sourceLocationHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "sourceLocationLength": 0,
+                "sourceLocationPresent": false
+              },
+              "sourceIdentity": {
+                "platform": "instagram",
+                "canonicalUrlHash": "a41d6f97d9cf4286b1b6e4477e0901d095907f207b3e567359e8c70b8ffe8a00",
+                "canonicalContentIdHash": "44d061ef0cf0a7738de9c2967fc5484c3f42d82d4685042e76018a5ce50ab1a1"
+              },
+              "evidenceVersion": "premium-evidence-2026-09-05.v1"
+            },
+            "canonicalizationFingerprint": {
+              "hash": "0aa5ee3763a1683d28d2c32a2dde9dfc6bbfd5cc3e98428878c68a4056b02e6a",
+              "version": "premium-canonicalization-fingerprint.v1",
+              "hypotheses": [
+                {
+                  "name": "Cirque de Gens on the Ardèche River",
+                  "calls": [
+                    {
+                      "query": "Cirque de Gens on the Ardèche River, Chauzon, Auvergne-Rhône-Alpes, France",
+                      "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                      "matched": true,
+                      "outcome": "CANONICAL_ALIAS",
+                      "resultIds": [
+                        "ChIJ056b5CTjtBIRDvwbt053tOQ",
+                        "ChIJh63uiMDjtBIRRXuMuWrIoyQ",
+                        "ChIJBVJdKgjjtBIRpzJN1_hncW4",
+                        "ChIJya62EADjtBIRQxj8dtptfYg"
+                      ],
+                      "resultCount": 4,
+                      "resultNames": [
+                        "Le Cirque de Gens",
+                        "Vue Cirque de Gens rando",
+                        "Plage du Cirque de Gens",
+                        "Vue cirque de gens"
+                      ],
+                      "selectedName": "Vue cirque de gens",
+                      "attemptNumber": 1,
+                      "rejectionReason": null,
+                      "selectedGooglePlaceId": "ChIJya62EADjtBIRQxj8dtptfYg"
+                    }
+                  ],
+                  "outcome": "AMBIGUOUS_CANONICAL",
+                  "geography": {
+                    "city": "Chauzon",
+                    "region": "Auvergne-Rhône-Alpes",
+                    "country": "France"
+                  },
+                  "entityType": "NAMED_NATURAL_FEATURE",
+                  "selectedName": null,
+                  "rejectionReason": null,
+                  "selectedGooglePlaceId": null
+                },
+                {
+                  "name": "Gorges du Chassezac",
+                  "calls": [
+                    {
+                      "query": "Gorges du Chassezac, Berrias-et-Casteljau, Auvergne-Rhône-Alpes, France",
+                      "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                      "matched": true,
+                      "outcome": "CANONICAL_ALIAS",
+                      "resultIds": [
+                        "ChIJJSj32waOtBIRHbc_rSeptsE",
+                        "ChIJKSvsOSiQtBIR9R6x1VoVBwc",
+                        "ChIJv8LxIVf3tBIRtTkPcxvj29Q",
+                        "ChIJU20ZhYj7tBIRYnbWBP6jkXU",
+                        "ChIJ57c1g3bztBIRpT3FncBIpd4"
+                      ],
+                      "resultCount": 5,
+                      "resultNames": [
+                        "Les Gorges Du Chassezac",
+                        "Gorges du Chassezac",
+                        "Wood Païolive",
+                        "Plage du Chassezac",
+                        "Vallée du Chassezac"
+                      ],
+                      "selectedName": "Les Gorges Du Chassezac",
+                      "attemptNumber": 1,
+                      "rejectionReason": null,
+                      "selectedGooglePlaceId": "ChIJJSj32waOtBIRHbc_rSeptsE"
+                    }
+                  ],
+                  "outcome": "AMBIGUOUS_CANONICAL",
+                  "geography": {
+                    "city": "Berrias-et-Casteljau",
+                    "region": "Auvergne-Rhône-Alpes",
+                    "country": "France"
+                  },
+                  "entityType": "NAMED_NATURAL_FEATURE",
+                  "selectedName": null,
+                  "rejectionReason": null,
+                  "selectedGooglePlaceId": null
+                },
+                {
+                  "name": "Gorges du Gardon near Collias",
+                  "calls": [
+                    {
+                      "query": "Gorges du Gardon near Collias, Collias, Occitanie, France",
+                      "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                      "matched": true,
+                      "outcome": "CANONICAL_ALIAS",
+                      "resultIds": [
+                        "ChIJGcwJAqnMtRIRmCN5tE-TRMM"
+                      ],
+                      "resultCount": 1,
+                      "resultNames": [
+                        "Gorges du Gardon"
+                      ],
+                      "selectedName": "Gorges du Gardon",
+                      "attemptNumber": 1,
+                      "rejectionReason": null,
+                      "selectedGooglePlaceId": "ChIJGcwJAqnMtRIRmCN5tE-TRMM"
+                    }
+                  ],
+                  "outcome": "CANONICAL_ALIAS",
+                  "geography": {
+                    "city": "Collias",
+                    "region": "Occitanie",
+                    "country": "France"
+                  },
+                  "entityType": "NAMED_NATURAL_FEATURE",
+                  "selectedName": "Gorges du Gardon",
+                  "rejectionReason": null,
+                  "selectedGooglePlaceId": "ChIJGcwJAqnMtRIRmCN5tE-TRMM"
+                }
+              ]
+            }
+          },
+          "recognitionFailureClass": "none",
+          "sharedGeoCountryApplied": false,
+          "sharedGeoCountryStrength": "none",
+          "peerGeographicDestinations": 0,
+          "sharedGeoCountryCandidates": 0,
+          "sourceGeographicContextDropped": 0
+        }
+      },
+      "reservationCount": 1,
+      "reservationStatus": "consumed",
+      "priorityUseful": true
+    },
+    {
+      "caseId": "R02",
+      "sourceUrl": "https://www.instagram.com/reel/DSvmLO_Eom9/",
+      "jobId": "6f6fb934-48b4-42da-bb32-74004d133ae9",
+      "premiumRequestId": "04d473ba-a8a4-4bde-8ce1-c11e5a658f3b",
+      "premiumState": "useful_result",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "names": [
+        "La Perouse Bay",
+        "Ahihi-Kinau Natural Area Reserve (Aquarium/Fishbowl area)",
+        "Hanamanioa Point"
+      ],
+      "suggestedQuery": "La Perouse Bay",
+      "chargeable": true,
+      "settlementReason": "premium_specific_candidates",
+      "costs": {
+        "sol": {
+          "model": "gpt-5.6-sol",
+          "usage": {
+            "input_tokens": 7331,
+            "total_tokens": 9679,
+            "output_tokens": 2348,
+            "reasoning_tokens": 2070,
+            "cached_input_tokens": 7328
+          },
+          "knownCostUsd": 0.049903
+        },
+        "places": {
+          "costUsd": "UNKNOWN",
+          "requestCount": 3,
+          "requestTypes": [
+            "PRIMARY_SPECIFIC_IDENTITY",
+            "PRIMARY_SPECIFIC_IDENTITY",
+            "PRIMARY_SPECIFIC_IDENTITY"
+          ]
+        },
+        "latencyMs": {
+          "sol": 41521,
+          "places": 626,
+          "evidencePrep": 14804,
+          "totalAfterEvidenceReady": 42148
+        },
+        "acquisition": "UNKNOWN",
+        "evidenceReuse": {
+          "ocr": "REACQUIRED",
+          "media": "REACQUIRED",
+          "frames": "REACQUIRED",
+          "caption": "REACQUIRED",
+          "transcript": "REACQUIRED"
+        },
+        "transcription": "UNKNOWN",
+        "parityDiagnostics": {
+          "solBoundary": {
+            "model": "gpt-5.6-sol",
+            "usage": {
+              "input_tokens": 7331,
+              "total_tokens": 9679,
+              "output_tokens": 2348,
+              "reasoning_tokens": 2070,
+              "cached_input_tokens": 7328
+            },
+            "version": "premium-sol-boundary.v1",
+            "latencyMs": 41521,
+            "hypotheses": [
+              {
+                "name": "La Perouse Bay",
+                "confidence": "MEDIUM",
+                "entityType": "NAMED_NATURAL_FEATURE",
+                "alternatives": [
+                  "Ahihi-Kinau Natural Area Reserve (Aquarium/Fishbowl area)",
+                  "Hanamanioa Point"
+                ],
+                "evidenceBasis": "MODEL_OBSERVED"
+              }
+            ],
+            "responseId": "resp_008aa3be42611221016a9bb157eb3087d0a6965c1e77695ef5",
+            "shareJobId": "6f6fb934-48b4-42da-bb32-74004d133ae9",
+            "parseSuccess": true,
+            "fingerprintId": "de726d440352d74c128fcd20886b3d83fd9ffd26ff63b4f1487a59db3b9118a1",
+            "destinationCount": 1,
+            "parseFailureCode": null,
+            "premiumRequestId": "04d473ba-a8a4-4bde-8ce1-c11e5a658f3b",
+            "structuredResultHash": "a8623c3f90fb95241934625d03b1af0fd8d9ee47478ee67d0efb13e8ec400f19"
+          },
+          "engineVersion": "simple-sol-premium.v2",
+          "safetyVersion": "premium-recognition-safety.v2",
+          "evidenceVersion": "premium-evidence-2026-09-05.v1",
+          "finalFingerprint": {
+            "hash": "38c5d729875a0b3fae1e22318116d6bbd962ca814d6a3757cdc0a6b5d7919643",
+            "version": "premium-final-fingerprint.v1",
+            "chargeability": "CHARGEABLE_ACTIONABLE",
+            "solResultHash": "a8623c3f90fb95241934625d03b1af0fd8d9ee47478ee67d0efb13e8ec400f19",
+            "resultDecision": "PREMIUM_ACTIONABLE_RESULT",
+            "safetyDecision": [
+              "REVIEW"
+            ],
+            "tokenSettlement": "CONSUME",
+            "canonicalResultHash": "64fe9d4534725baa52c5e8150e0361cecd3d9c68b6280dc7942fda86eff05033"
+          },
+          "evidenceReuseState": "EVIDENCE_REGENERATED",
+          "inferenceFingerprint": {
+            "frames": [
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 140811,
+                "imageSha256": "203fee0a1951098d5df63dfaf1e92181f71472ab32ddb75bb04602b92edd25fb",
+                "timestampMs": 0
+              },
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 117863,
+                "imageSha256": "ccf10b53d13e95a25d275290fbd5a8d343caf34c4b4557565f03d937a5176403",
+                "timestampMs": 11000
+              },
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 152880,
+                "imageSha256": "b15e0411a288cd8b9dcf7f1cb8fabb16845792b9ae683b8cc25e73474352ee5c",
+                "timestampMs": 15000
+              },
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 129501,
+                "imageSha256": "d2816ba24f9fefd074e167682223dc4069de41fb8135e5fadec2a2a016ae1f09",
+                "timestampMs": 17000
+              },
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 70999,
+                "imageSha256": "35b571827456b06de928defc9d29345c07aacd5b0f17251486c6ce3c459aade3",
+                "timestampMs": 19000
+              },
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 65640,
+                "imageSha256": "1f92923859b6628c056819c7cf9616b4874f94e930d09f07db4b8b62b1bcbb35",
+                "timestampMs": 23600
+              }
+            ],
+            "prompt": {
+              "model": "gpt-5.6-sol",
+              "promptHash": "8132da97b952b5d93062ba9b7d915c1dc40b4033de869607a1274142e1580e9c",
+              "schemaHash": "6899fd09c3cc95b4d12263bec5d7028f605eab0eb77b9fdaa38877704c694cfa",
+              "promptVersion": "sol-parity-natural-v1",
+              "schemaVersion": "sol-parity-destination-schema-v1",
+              "reasoningConfig": {
+                "effort": "high"
+              }
+            },
+            "request": {
+              "imageCount": 6,
+              "inputTextHash": "6ec4af19737d2a88524d8770d5ef91bf2607fe237a846027b2b50540dc6ad345",
+              "requestPayloadHash": "3e0b7eb6eb6a72b8832522c64611c92a8dbd26ffd5d88aad562a8b39bbf700bb"
+            },
+            "version": "premium-inference-fingerprint.v1",
+            "evidenceReuse": "EVIDENCE_REGENERATED",
+            "fingerprintId": "de726d440352d74c128fcd20886b3d83fd9ffd26ff63b4f1487a59db3b9118a1",
+            "sourceContext": {
+              "ocrHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "ocrLength": 0,
+              "captionHash": "a91b44cc4c79e98b4c018b2e7831738e80c9f2b54c8d3ca1a459c138dcbc7c9a",
+              "creatorHash": "c3844d07d6aa66678884163d6b5bb8f7cced527451d4bcc158ba8607e627279f",
+              "captionLength": 280,
+              "creatorLength": 10,
+              "transcriptHash": "77296bbd375c245b264449f6639d07efe8f98085eda73d1c73c44508c2fc47af",
+              "transcriptLength": 23,
+              "sourceLocationHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "sourceLocationLength": 0,
+              "sourceLocationPresent": false
+            },
+            "sourceIdentity": {
+              "platform": "instagram",
+              "canonicalUrlHash": "967249c4a7dae0143dc1111de5ab2b040bd250c73aa10431853a72a407fff77b",
+              "canonicalContentIdHash": "d0e4a2209a033df03c01427ba00fec562702ed8f558fe745e7fbd0022fdffe9c"
+            },
+            "evidenceVersion": "premium-evidence-2026-09-05.v1"
+          },
+          "canonicalizationFingerprint": {
+            "hash": "64fe9d4534725baa52c5e8150e0361cecd3d9c68b6280dc7942fda86eff05033",
+            "version": "premium-canonicalization-fingerprint.v1",
+            "hypotheses": [
+              {
+                "name": "La Perouse Bay",
+                "calls": [
+                  {
+                    "query": "La Perouse Bay, Makena, Hawaii, United States",
+                    "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                    "matched": true,
+                    "outcome": "CANONICAL_EXACT",
+                    "resultIds": [
+                      "ChIJQf-mxTHDVHkRZn62FEGhCIA"
+                    ],
+                    "resultCount": 1,
+                    "resultNames": [
+                      "La Perouse Bay"
+                    ],
+                    "selectedName": "La Perouse Bay",
+                    "attemptNumber": 1,
+                    "rejectionReason": null,
+                    "selectedGooglePlaceId": "ChIJQf-mxTHDVHkRZn62FEGhCIA"
+                  }
+                ],
+                "outcome": "CANONICAL_EXACT",
+                "geography": {
+                  "city": "Makena",
+                  "region": "Hawaii",
+                  "country": "United States"
+                },
+                "entityType": "NAMED_NATURAL_FEATURE",
+                "selectedName": "La Perouse Bay",
+                "rejectionReason": null,
+                "selectedGooglePlaceId": "ChIJQf-mxTHDVHkRZn62FEGhCIA"
+              },
+              {
+                "name": "Ahihi-Kinau Natural Area Reserve (Aquarium/Fishbowl area)",
+                "calls": [
+                  {
+                    "query": "Ahihi-Kinau Natural Area Reserve (Aquarium/Fishbowl area), Makena, Hawaii, United States",
+                    "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                    "matched": false,
+                    "outcome": "NO_MATCH",
+                    "resultIds": [
+                      "ChIJa0xF6THDVHkRoVIEMkMeLFs",
+                      "ChIJxddCLQzdVHkRgiQ7p0FlwKY",
+                      "ChIJ0ffjkcvcVHkRDwObFkmyM9Q",
+                      "ChIJcUUsO7TcVHkRyosx7G1rTqI",
+                      "ChIJlQfjv_3dVHkRslJ5dH3uod8"
+                    ],
+                    "resultCount": 5,
+                    "resultNames": [
+                      "Ahihi-Kinau Natural Reserve",
+                      "Ahihi-Kinau Marine Preserve",
+                      "‘Āhihi-Kīna‘U Natural Area Reserve",
+                      "Ahihi-Kinau Natural Area Reserve",
+                      "Ahihi Cove"
+                    ],
+                    "selectedName": null,
+                    "attemptNumber": 1,
+                    "rejectionReason": "no_compatible_match",
+                    "selectedGooglePlaceId": null
+                  }
+                ],
+                "outcome": "NAMED_LEAD",
+                "geography": {
+                  "city": "Makena",
+                  "region": "Hawaii",
+                  "country": "United States"
+                },
+                "entityType": "NAMED_NATURAL_FEATURE",
+                "selectedName": null,
+                "rejectionReason": "no_compatible_match",
+                "selectedGooglePlaceId": null
+              },
+              {
+                "name": "Hanamanioa Point",
+                "calls": [
+                  {
+                    "query": "Hanamanioa Point, Makena, Hawaii, United States",
+                    "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                    "matched": false,
+                    "outcome": "NO_MATCH",
+                    "resultIds": [
+                      "ChIJDdEkAdnCVHkRhwvnZ8YBNAc",
+                      "ChIJB1-mwifDVHkRbO1gNV2OC2s"
+                    ],
+                    "resultCount": 2,
+                    "resultNames": [
+                      "Hanomanioa Lighthouse",
+                      "Cape Hanamanioa"
+                    ],
+                    "selectedName": null,
+                    "attemptNumber": 1,
+                    "rejectionReason": "no_compatible_match",
+                    "selectedGooglePlaceId": null
+                  }
+                ],
+                "outcome": "NAMED_LEAD",
+                "geography": {
+                  "city": "Makena",
+                  "region": "Hawaii",
+                  "country": "United States"
+                },
+                "entityType": "NAMED_NATURAL_FEATURE",
+                "selectedName": null,
+                "rejectionReason": "no_compatible_match",
+                "selectedGooglePlaceId": null
+              }
+            ]
+          }
+        }
+      },
+      "requestedAt": "2026-09-05T06:04:17.212287+00:00",
+      "startedAt": "2026-09-05T06:06:00.4307+00:00",
+      "completedAt": "2026-09-05T06:06:59.190695+00:00",
+      "task": {
+        "id": "06a8d78d-a187-439b-b70b-e68faeaa194f",
+        "status": "completed",
+        "attempts": 1,
+        "failureCode": null,
+        "resolverName": "premium-sol",
+        "analysisProvider": null,
+        "analysisModel": null,
+        "promptVersion": null,
+        "latencyMs": null,
+        "modelCalls": null,
+        "modelInputTokens": null,
+        "modelOutputTokens": null,
+        "modelThinkingTokens": null,
+        "modelLatencyMs": null
+      },
+      "mediaRun": {
+        "id": "2626a383-5de4-4ee2-ba49-c1fe5e93afb9",
+        "durationMs": 56952,
+        "frameCount": 14,
+        "transcriptSegments": 1,
+        "ocrSegments": 0,
+        "resolverName": "instagram/yt-dlp",
+        "modelProvider": "premium-sol",
+        "evidence": {
+          "multiple": false,
+          "placeCount": 3,
+          "insufficient": false,
+          "analysisAttempted": true,
+          "destinationPlaces": 1,
+          "partialPlaceCount": 0,
+          "explicitPlaceCount": 3,
+          "premiumDiagnostics": {
+            "solBoundary": {
+              "model": "gpt-5.6-sol",
+              "usage": {
+                "input_tokens": 7331,
+                "total_tokens": 9679,
+                "output_tokens": 2348,
+                "reasoning_tokens": 2070,
+                "cached_input_tokens": 7328
+              },
+              "version": "premium-sol-boundary.v1",
+              "latencyMs": 41521,
+              "hypotheses": [
+                {
+                  "name": "La Perouse Bay",
+                  "confidence": "MEDIUM",
+                  "entityType": "NAMED_NATURAL_FEATURE",
+                  "alternatives": [
+                    "Ahihi-Kinau Natural Area Reserve (Aquarium/Fishbowl area)",
+                    "Hanamanioa Point"
+                  ],
+                  "evidenceBasis": "MODEL_OBSERVED"
+                }
+              ],
+              "responseId": "resp_008aa3be42611221016a9bb157eb3087d0a6965c1e77695ef5",
+              "shareJobId": "6f6fb934-48b4-42da-bb32-74004d133ae9",
+              "parseSuccess": true,
+              "fingerprintId": "de726d440352d74c128fcd20886b3d83fd9ffd26ff63b4f1487a59db3b9118a1",
+              "destinationCount": 1,
+              "parseFailureCode": null,
+              "premiumRequestId": "04d473ba-a8a4-4bde-8ce1-c11e5a658f3b",
+              "structuredResultHash": "a8623c3f90fb95241934625d03b1af0fd8d9ee47478ee67d0efb13e8ec400f19"
+            },
+            "finalFingerprint": {
+              "hash": "38c5d729875a0b3fae1e22318116d6bbd962ca814d6a3757cdc0a6b5d7919643",
+              "version": "premium-final-fingerprint.v1",
+              "chargeability": "CHARGEABLE_ACTIONABLE",
+              "solResultHash": "a8623c3f90fb95241934625d03b1af0fd8d9ee47478ee67d0efb13e8ec400f19",
+              "resultDecision": "PREMIUM_ACTIONABLE_RESULT",
+              "safetyDecision": [
+                "REVIEW"
+              ],
+              "tokenSettlement": "CONSUME",
+              "canonicalResultHash": "64fe9d4534725baa52c5e8150e0361cecd3d9c68b6280dc7942fda86eff05033"
+            },
+            "inferenceFingerprint": {
+              "frames": [
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 140811,
+                  "imageSha256": "203fee0a1951098d5df63dfaf1e92181f71472ab32ddb75bb04602b92edd25fb",
+                  "timestampMs": 0
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 117863,
+                  "imageSha256": "ccf10b53d13e95a25d275290fbd5a8d343caf34c4b4557565f03d937a5176403",
+                  "timestampMs": 11000
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 152880,
+                  "imageSha256": "b15e0411a288cd8b9dcf7f1cb8fabb16845792b9ae683b8cc25e73474352ee5c",
+                  "timestampMs": 15000
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 129501,
+                  "imageSha256": "d2816ba24f9fefd074e167682223dc4069de41fb8135e5fadec2a2a016ae1f09",
+                  "timestampMs": 17000
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 70999,
+                  "imageSha256": "35b571827456b06de928defc9d29345c07aacd5b0f17251486c6ce3c459aade3",
+                  "timestampMs": 19000
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 65640,
+                  "imageSha256": "1f92923859b6628c056819c7cf9616b4874f94e930d09f07db4b8b62b1bcbb35",
+                  "timestampMs": 23600
+                }
+              ],
+              "prompt": {
+                "model": "gpt-5.6-sol",
+                "promptHash": "8132da97b952b5d93062ba9b7d915c1dc40b4033de869607a1274142e1580e9c",
+                "schemaHash": "6899fd09c3cc95b4d12263bec5d7028f605eab0eb77b9fdaa38877704c694cfa",
+                "promptVersion": "sol-parity-natural-v1",
+                "schemaVersion": "sol-parity-destination-schema-v1",
+                "reasoningConfig": {
+                  "effort": "high"
+                }
+              },
+              "request": {
+                "imageCount": 6,
+                "inputTextHash": "6ec4af19737d2a88524d8770d5ef91bf2607fe237a846027b2b50540dc6ad345",
+                "requestPayloadHash": "3e0b7eb6eb6a72b8832522c64611c92a8dbd26ffd5d88aad562a8b39bbf700bb"
+              },
+              "version": "premium-inference-fingerprint.v1",
+              "evidenceReuse": "EVIDENCE_REGENERATED",
+              "fingerprintId": "de726d440352d74c128fcd20886b3d83fd9ffd26ff63b4f1487a59db3b9118a1",
+              "sourceContext": {
+                "ocrHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "ocrLength": 0,
+                "captionHash": "a91b44cc4c79e98b4c018b2e7831738e80c9f2b54c8d3ca1a459c138dcbc7c9a",
+                "creatorHash": "c3844d07d6aa66678884163d6b5bb8f7cced527451d4bcc158ba8607e627279f",
+                "captionLength": 280,
+                "creatorLength": 10,
+                "transcriptHash": "77296bbd375c245b264449f6639d07efe8f98085eda73d1c73c44508c2fc47af",
+                "transcriptLength": 23,
+                "sourceLocationHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "sourceLocationLength": 0,
+                "sourceLocationPresent": false
+              },
+              "sourceIdentity": {
+                "platform": "instagram",
+                "canonicalUrlHash": "967249c4a7dae0143dc1111de5ab2b040bd250c73aa10431853a72a407fff77b",
+                "canonicalContentIdHash": "d0e4a2209a033df03c01427ba00fec562702ed8f558fe745e7fbd0022fdffe9c"
+              },
+              "evidenceVersion": "premium-evidence-2026-09-05.v1"
+            },
+            "canonicalizationFingerprint": {
+              "hash": "64fe9d4534725baa52c5e8150e0361cecd3d9c68b6280dc7942fda86eff05033",
+              "version": "premium-canonicalization-fingerprint.v1",
+              "hypotheses": [
+                {
+                  "name": "La Perouse Bay",
+                  "calls": [
+                    {
+                      "query": "La Perouse Bay, Makena, Hawaii, United States",
+                      "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                      "matched": true,
+                      "outcome": "CANONICAL_EXACT",
+                      "resultIds": [
+                        "ChIJQf-mxTHDVHkRZn62FEGhCIA"
+                      ],
+                      "resultCount": 1,
+                      "resultNames": [
+                        "La Perouse Bay"
+                      ],
+                      "selectedName": "La Perouse Bay",
+                      "attemptNumber": 1,
+                      "rejectionReason": null,
+                      "selectedGooglePlaceId": "ChIJQf-mxTHDVHkRZn62FEGhCIA"
+                    }
+                  ],
+                  "outcome": "CANONICAL_EXACT",
+                  "geography": {
+                    "city": "Makena",
+                    "region": "Hawaii",
+                    "country": "United States"
+                  },
+                  "entityType": "NAMED_NATURAL_FEATURE",
+                  "selectedName": "La Perouse Bay",
+                  "rejectionReason": null,
+                  "selectedGooglePlaceId": "ChIJQf-mxTHDVHkRZn62FEGhCIA"
+                },
+                {
+                  "name": "Ahihi-Kinau Natural Area Reserve (Aquarium/Fishbowl area)",
+                  "calls": [
+                    {
+                      "query": "Ahihi-Kinau Natural Area Reserve (Aquarium/Fishbowl area), Makena, Hawaii, United States",
+                      "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                      "matched": false,
+                      "outcome": "NO_MATCH",
+                      "resultIds": [
+                        "ChIJa0xF6THDVHkRoVIEMkMeLFs",
+                        "ChIJxddCLQzdVHkRgiQ7p0FlwKY",
+                        "ChIJ0ffjkcvcVHkRDwObFkmyM9Q",
+                        "ChIJcUUsO7TcVHkRyosx7G1rTqI",
+                        "ChIJlQfjv_3dVHkRslJ5dH3uod8"
+                      ],
+                      "resultCount": 5,
+                      "resultNames": [
+                        "Ahihi-Kinau Natural Reserve",
+                        "Ahihi-Kinau Marine Preserve",
+                        "‘Āhihi-Kīna‘U Natural Area Reserve",
+                        "Ahihi-Kinau Natural Area Reserve",
+                        "Ahihi Cove"
+                      ],
+                      "selectedName": null,
+                      "attemptNumber": 1,
+                      "rejectionReason": "no_compatible_match",
+                      "selectedGooglePlaceId": null
+                    }
+                  ],
+                  "outcome": "NAMED_LEAD",
+                  "geography": {
+                    "city": "Makena",
+                    "region": "Hawaii",
+                    "country": "United States"
+                  },
+                  "entityType": "NAMED_NATURAL_FEATURE",
+                  "selectedName": null,
+                  "rejectionReason": "no_compatible_match",
+                  "selectedGooglePlaceId": null
+                },
+                {
+                  "name": "Hanamanioa Point",
+                  "calls": [
+                    {
+                      "query": "Hanamanioa Point, Makena, Hawaii, United States",
+                      "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                      "matched": false,
+                      "outcome": "NO_MATCH",
+                      "resultIds": [
+                        "ChIJDdEkAdnCVHkRhwvnZ8YBNAc",
+                        "ChIJB1-mwifDVHkRbO1gNV2OC2s"
+                      ],
+                      "resultCount": 2,
+                      "resultNames": [
+                        "Hanomanioa Lighthouse",
+                        "Cape Hanamanioa"
+                      ],
+                      "selectedName": null,
+                      "attemptNumber": 1,
+                      "rejectionReason": "no_compatible_match",
+                      "selectedGooglePlaceId": null
+                    }
+                  ],
+                  "outcome": "NAMED_LEAD",
+                  "geography": {
+                    "city": "Makena",
+                    "region": "Hawaii",
+                    "country": "United States"
+                  },
+                  "entityType": "NAMED_NATURAL_FEATURE",
+                  "selectedName": null,
+                  "rejectionReason": "no_compatible_match",
+                  "selectedGooglePlaceId": null
+                }
+              ]
+            }
+          },
+          "sharedGeoCountrySource": "multiple_places_agree",
+          "recognitionFailureClass": "none",
+          "sharedGeoCountryApplied": true,
+          "sharedGeoCountryStrength": "strong",
+          "peerGeographicDestinations": 0,
+          "sharedGeoCountryCandidates": 1,
+          "sourceGeographicContextDropped": 0
+        }
+      },
+      "reservationCount": 1,
+      "reservationStatus": "consumed",
+      "priorityUseful": false
+    },
+    {
+      "caseId": "R03",
+      "sourceUrl": "https://www.instagram.com/reel/DZJ8ZvYub8Q/",
+      "jobId": "e7cce9bd-ca9b-454f-97de-a6f8b1d6f68d",
+      "premiumRequestId": "235db151-f5ad-438e-bc56-eeefdeb49f4b",
+      "premiumState": "useful_result",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "names": [
+        "Tamolitch Falls (Blue Pool)",
+        "Tamolitch Blue Pool"
+      ],
+      "suggestedQuery": "Tamolitch Blue Pool",
+      "chargeable": true,
+      "settlementReason": "premium_specific_candidates",
+      "costs": {
+        "sol": {
+          "model": "gpt-5.6-sol",
+          "usage": {
+            "input_tokens": 7357,
+            "total_tokens": 7841,
+            "output_tokens": 484,
+            "reasoning_tokens": 331,
+            "cached_input_tokens": 7354
+          },
+          "knownCostUsd": 0.012634
+        },
+        "places": {
+          "costUsd": "UNKNOWN",
+          "requestCount": 1,
+          "requestTypes": [
+            "PRIMARY_SPECIFIC_IDENTITY"
+          ]
+        },
+        "latencyMs": {
+          "sol": 8992,
+          "places": 235,
+          "evidencePrep": 10689,
+          "totalAfterEvidenceReady": 9227
+        },
+        "acquisition": "UNKNOWN",
+        "evidenceReuse": {
+          "ocr": "REACQUIRED",
+          "media": "REACQUIRED",
+          "frames": "REACQUIRED",
+          "caption": "REACQUIRED",
+          "transcript": "REACQUIRED"
+        },
+        "transcription": "UNKNOWN",
+        "parityDiagnostics": {
+          "solBoundary": {
+            "model": "gpt-5.6-sol",
+            "usage": {
+              "input_tokens": 7357,
+              "total_tokens": 7841,
+              "output_tokens": 484,
+              "reasoning_tokens": 331,
+              "cached_input_tokens": 7354
+            },
+            "version": "premium-sol-boundary.v1",
+            "latencyMs": 8992,
+            "hypotheses": [
+              {
+                "name": "Tamolitch Blue Pool",
+                "confidence": "HIGH",
+                "entityType": "NAMED_NATURAL_FEATURE",
+                "alternatives": [],
+                "evidenceBasis": "MODEL_OBSERVED"
+              }
+            ],
+            "responseId": "resp_041e7f3ced115a06016a9bb153a0cc87d0971c71bd65850c03",
+            "shareJobId": "e7cce9bd-ca9b-454f-97de-a6f8b1d6f68d",
+            "parseSuccess": true,
+            "fingerprintId": "6788f52f85f3437f7a92a9523069af5cf5a3df80a36e9299d262ce9961b794f6",
+            "destinationCount": 1,
+            "parseFailureCode": null,
+            "premiumRequestId": "235db151-f5ad-438e-bc56-eeefdeb49f4b",
+            "structuredResultHash": "b58492bc97cd11618cf65449091f199f29f52768713bb44ed85169dd3b9e9da1"
+          },
+          "engineVersion": "simple-sol-premium.v2",
+          "safetyVersion": "premium-recognition-safety.v2",
+          "evidenceVersion": "premium-evidence-2026-09-05.v1",
+          "finalFingerprint": {
+            "hash": "441b26812d60c09f37c15efaeba184f5e72eaebe2005b2a1c3b1057af8796543",
+            "version": "premium-final-fingerprint.v1",
+            "chargeability": "CHARGEABLE_ACTIONABLE",
+            "solResultHash": "b58492bc97cd11618cf65449091f199f29f52768713bb44ed85169dd3b9e9da1",
+            "resultDecision": "PREMIUM_ACTIONABLE_RESULT",
+            "safetyDecision": [
+              "REVIEW"
+            ],
+            "tokenSettlement": "CONSUME",
+            "canonicalResultHash": "7197a8e7ced14ab8d2ea1cc7bc471c695f91c56be3f6c81a598df6de44e7ac01"
+          },
+          "evidenceReuseState": "EVIDENCE_REGENERATED",
+          "inferenceFingerprint": {
+            "frames": [
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 294015,
+                "imageSha256": "695808bc605888b9bcf359ec75f56260a1831e75ecf8665c06699528b047af58",
+                "timestampMs": 0
+              },
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 202493,
+                "imageSha256": "84e2f580dfff2be0524bcc25f966517864c7cd364374ea3744333525e8009de2",
+                "timestampMs": 1000
+              },
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 156468,
+                "imageSha256": "665b5252f9009582fb5eff1afefbb463e0bd1b6fd2c2270a761d0d88e948c967",
+                "timestampMs": 2000
+              },
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 206664,
+                "imageSha256": "30e307db6486353b87b6c053897ed374c57c3eb1b1bacf1eaab1becb76fe5366",
+                "timestampMs": 3000
+              },
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 231583,
+                "imageSha256": "64f71193b1adb02f10386b3fc37b4759fe9c14fdaaaf4006762bbbc9c8427c8b",
+                "timestampMs": 4000
+              },
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 211221,
+                "imageSha256": "8d99ad9b5957b0fa1947f5e2e42f1166fae305e9579a6efcdb71420db91e35c1",
+                "timestampMs": 6533
+              }
+            ],
+            "prompt": {
+              "model": "gpt-5.6-sol",
+              "promptHash": "8132da97b952b5d93062ba9b7d915c1dc40b4033de869607a1274142e1580e9c",
+              "schemaHash": "6899fd09c3cc95b4d12263bec5d7028f605eab0eb77b9fdaa38877704c694cfa",
+              "promptVersion": "sol-parity-natural-v1",
+              "schemaVersion": "sol-parity-destination-schema-v1",
+              "reasoningConfig": {
+                "effort": "high"
+              }
+            },
+            "request": {
+              "imageCount": 6,
+              "inputTextHash": "60985ac8cace68f086d503723e2e317127478bb64a3116ac68c4b88d9cb9006e",
+              "requestPayloadHash": "883af44411b9a7cdc38e758f3863104f6488d4b90dff647657178c49d82b08b7"
+            },
+            "version": "premium-inference-fingerprint.v1",
+            "evidenceReuse": "EVIDENCE_REGENERATED",
+            "fingerprintId": "6788f52f85f3437f7a92a9523069af5cf5a3df80a36e9299d262ce9961b794f6",
+            "sourceContext": {
+              "ocrHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "ocrLength": 0,
+              "captionHash": "f411497c15ef98ad4765d82174990059ab381bb279a178b1e3821625922812fc",
+              "creatorHash": "653156d7c764ea5f71094c882b7ecb0d1241b0c8c1e9fa0c24334913dc1a1dda",
+              "captionLength": 311,
+              "creatorLength": 6,
+              "transcriptHash": "30e9637efac792afe559f020a1981d9299a6d293036f4b85cece52c0a8fef6cb",
+              "transcriptLength": 64,
+              "sourceLocationHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "sourceLocationLength": 0,
+              "sourceLocationPresent": false
+            },
+            "sourceIdentity": {
+              "platform": "instagram",
+              "canonicalUrlHash": "9d4a4d5877fce30366eeca7809dc93a3cf0a5b41b92255b993a79cff12559439",
+              "canonicalContentIdHash": "151f6766fae9f4dc8c108b4afdb9b1942d3c0372bce0d2e5edb2fe265fea91d9"
+            },
+            "evidenceVersion": "premium-evidence-2026-09-05.v1"
+          },
+          "canonicalizationFingerprint": {
+            "hash": "7197a8e7ced14ab8d2ea1cc7bc471c695f91c56be3f6c81a598df6de44e7ac01",
+            "version": "premium-canonicalization-fingerprint.v1",
+            "hypotheses": [
+              {
+                "name": "Tamolitch Blue Pool",
+                "calls": [
+                  {
+                    "query": "Tamolitch Blue Pool, McKenzie Bridge, Oregon, United States",
+                    "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                    "matched": true,
+                    "outcome": "CANONICAL_ALIAS",
+                    "resultIds": [
+                      "ChIJebCqymldv1QR2ivpC1qxzWI"
+                    ],
+                    "resultCount": 1,
+                    "resultNames": [
+                      "Tamolitch Falls (Blue Pool)"
+                    ],
+                    "selectedName": "Tamolitch Falls (Blue Pool)",
+                    "attemptNumber": 1,
+                    "rejectionReason": null,
+                    "selectedGooglePlaceId": "ChIJebCqymldv1QR2ivpC1qxzWI"
+                  }
+                ],
+                "outcome": "CANONICAL_ALIAS",
+                "geography": {
+                  "city": "McKenzie Bridge",
+                  "region": "Oregon",
+                  "country": "United States"
+                },
+                "entityType": "NAMED_NATURAL_FEATURE",
+                "selectedName": "Tamolitch Falls (Blue Pool)",
+                "rejectionReason": null,
+                "selectedGooglePlaceId": "ChIJebCqymldv1QR2ivpC1qxzWI"
+              }
+            ]
+          }
+        }
+      },
+      "requestedAt": "2026-09-05T06:04:17.95759+00:00",
+      "startedAt": "2026-09-05T06:06:00.4307+00:00",
+      "completedAt": "2026-09-05T06:06:22.2837+00:00",
+      "task": {
+        "id": "eb2a146e-be49-4c6d-a2d4-98ef74841d34",
+        "status": "completed",
+        "attempts": 1,
+        "failureCode": null,
+        "resolverName": "premium-sol",
+        "analysisProvider": null,
+        "analysisModel": null,
+        "promptVersion": null,
+        "latencyMs": null,
+        "modelCalls": null,
+        "modelInputTokens": null,
+        "modelOutputTokens": null,
+        "modelThinkingTokens": null,
+        "modelLatencyMs": null
+      },
+      "mediaRun": {
+        "id": "28522bb8-73ec-419d-9073-84fbf5e2d64c",
+        "durationMs": 19917,
+        "frameCount": 7,
+        "transcriptSegments": 5,
+        "ocrSegments": 0,
+        "resolverName": "instagram/yt-dlp",
+        "modelProvider": "premium-sol",
+        "evidence": {
+          "multiple": false,
+          "placeCount": 1,
+          "insufficient": false,
+          "analysisAttempted": true,
+          "destinationPlaces": 1,
+          "partialPlaceCount": 0,
+          "explicitPlaceCount": 1,
+          "premiumDiagnostics": {
+            "solBoundary": {
+              "model": "gpt-5.6-sol",
+              "usage": {
+                "input_tokens": 7357,
+                "total_tokens": 7841,
+                "output_tokens": 484,
+                "reasoning_tokens": 331,
+                "cached_input_tokens": 7354
+              },
+              "version": "premium-sol-boundary.v1",
+              "latencyMs": 8992,
+              "hypotheses": [
+                {
+                  "name": "Tamolitch Blue Pool",
+                  "confidence": "HIGH",
+                  "entityType": "NAMED_NATURAL_FEATURE",
+                  "alternatives": [],
+                  "evidenceBasis": "MODEL_OBSERVED"
+                }
+              ],
+              "responseId": "resp_041e7f3ced115a06016a9bb153a0cc87d0971c71bd65850c03",
+              "shareJobId": "e7cce9bd-ca9b-454f-97de-a6f8b1d6f68d",
+              "parseSuccess": true,
+              "fingerprintId": "6788f52f85f3437f7a92a9523069af5cf5a3df80a36e9299d262ce9961b794f6",
+              "destinationCount": 1,
+              "parseFailureCode": null,
+              "premiumRequestId": "235db151-f5ad-438e-bc56-eeefdeb49f4b",
+              "structuredResultHash": "b58492bc97cd11618cf65449091f199f29f52768713bb44ed85169dd3b9e9da1"
+            },
+            "finalFingerprint": {
+              "hash": "441b26812d60c09f37c15efaeba184f5e72eaebe2005b2a1c3b1057af8796543",
+              "version": "premium-final-fingerprint.v1",
+              "chargeability": "CHARGEABLE_ACTIONABLE",
+              "solResultHash": "b58492bc97cd11618cf65449091f199f29f52768713bb44ed85169dd3b9e9da1",
+              "resultDecision": "PREMIUM_ACTIONABLE_RESULT",
+              "safetyDecision": [
+                "REVIEW"
+              ],
+              "tokenSettlement": "CONSUME",
+              "canonicalResultHash": "7197a8e7ced14ab8d2ea1cc7bc471c695f91c56be3f6c81a598df6de44e7ac01"
+            },
+            "inferenceFingerprint": {
+              "frames": [
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 294015,
+                  "imageSha256": "695808bc605888b9bcf359ec75f56260a1831e75ecf8665c06699528b047af58",
+                  "timestampMs": 0
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 202493,
+                  "imageSha256": "84e2f580dfff2be0524bcc25f966517864c7cd364374ea3744333525e8009de2",
+                  "timestampMs": 1000
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 156468,
+                  "imageSha256": "665b5252f9009582fb5eff1afefbb463e0bd1b6fd2c2270a761d0d88e948c967",
+                  "timestampMs": 2000
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 206664,
+                  "imageSha256": "30e307db6486353b87b6c053897ed374c57c3eb1b1bacf1eaab1becb76fe5366",
+                  "timestampMs": 3000
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 231583,
+                  "imageSha256": "64f71193b1adb02f10386b3fc37b4759fe9c14fdaaaf4006762bbbc9c8427c8b",
+                  "timestampMs": 4000
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 211221,
+                  "imageSha256": "8d99ad9b5957b0fa1947f5e2e42f1166fae305e9579a6efcdb71420db91e35c1",
+                  "timestampMs": 6533
+                }
+              ],
+              "prompt": {
+                "model": "gpt-5.6-sol",
+                "promptHash": "8132da97b952b5d93062ba9b7d915c1dc40b4033de869607a1274142e1580e9c",
+                "schemaHash": "6899fd09c3cc95b4d12263bec5d7028f605eab0eb77b9fdaa38877704c694cfa",
+                "promptVersion": "sol-parity-natural-v1",
+                "schemaVersion": "sol-parity-destination-schema-v1",
+                "reasoningConfig": {
+                  "effort": "high"
+                }
+              },
+              "request": {
+                "imageCount": 6,
+                "inputTextHash": "60985ac8cace68f086d503723e2e317127478bb64a3116ac68c4b88d9cb9006e",
+                "requestPayloadHash": "883af44411b9a7cdc38e758f3863104f6488d4b90dff647657178c49d82b08b7"
+              },
+              "version": "premium-inference-fingerprint.v1",
+              "evidenceReuse": "EVIDENCE_REGENERATED",
+              "fingerprintId": "6788f52f85f3437f7a92a9523069af5cf5a3df80a36e9299d262ce9961b794f6",
+              "sourceContext": {
+                "ocrHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "ocrLength": 0,
+                "captionHash": "f411497c15ef98ad4765d82174990059ab381bb279a178b1e3821625922812fc",
+                "creatorHash": "653156d7c764ea5f71094c882b7ecb0d1241b0c8c1e9fa0c24334913dc1a1dda",
+                "captionLength": 311,
+                "creatorLength": 6,
+                "transcriptHash": "30e9637efac792afe559f020a1981d9299a6d293036f4b85cece52c0a8fef6cb",
+                "transcriptLength": 64,
+                "sourceLocationHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "sourceLocationLength": 0,
+                "sourceLocationPresent": false
+              },
+              "sourceIdentity": {
+                "platform": "instagram",
+                "canonicalUrlHash": "9d4a4d5877fce30366eeca7809dc93a3cf0a5b41b92255b993a79cff12559439",
+                "canonicalContentIdHash": "151f6766fae9f4dc8c108b4afdb9b1942d3c0372bce0d2e5edb2fe265fea91d9"
+              },
+              "evidenceVersion": "premium-evidence-2026-09-05.v1"
+            },
+            "canonicalizationFingerprint": {
+              "hash": "7197a8e7ced14ab8d2ea1cc7bc471c695f91c56be3f6c81a598df6de44e7ac01",
+              "version": "premium-canonicalization-fingerprint.v1",
+              "hypotheses": [
+                {
+                  "name": "Tamolitch Blue Pool",
+                  "calls": [
+                    {
+                      "query": "Tamolitch Blue Pool, McKenzie Bridge, Oregon, United States",
+                      "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                      "matched": true,
+                      "outcome": "CANONICAL_ALIAS",
+                      "resultIds": [
+                        "ChIJebCqymldv1QR2ivpC1qxzWI"
+                      ],
+                      "resultCount": 1,
+                      "resultNames": [
+                        "Tamolitch Falls (Blue Pool)"
+                      ],
+                      "selectedName": "Tamolitch Falls (Blue Pool)",
+                      "attemptNumber": 1,
+                      "rejectionReason": null,
+                      "selectedGooglePlaceId": "ChIJebCqymldv1QR2ivpC1qxzWI"
+                    }
+                  ],
+                  "outcome": "CANONICAL_ALIAS",
+                  "geography": {
+                    "city": "McKenzie Bridge",
+                    "region": "Oregon",
+                    "country": "United States"
+                  },
+                  "entityType": "NAMED_NATURAL_FEATURE",
+                  "selectedName": "Tamolitch Falls (Blue Pool)",
+                  "rejectionReason": null,
+                  "selectedGooglePlaceId": "ChIJebCqymldv1QR2ivpC1qxzWI"
+                }
+              ]
+            }
+          },
+          "recognitionFailureClass": "none",
+          "sharedGeoCountryApplied": false,
+          "sharedGeoCountryStrength": "weak",
+          "peerGeographicDestinations": 0,
+          "sharedGeoCountryCandidates": 1,
+          "sourceGeographicContextDropped": 0
+        }
+      },
+      "reservationCount": 1,
+      "reservationStatus": "consumed",
+      "priorityUseful": true
+    },
+    {
+      "caseId": "R04",
+      "sourceUrl": "https://www.instagram.com/reel/C9Z963muLHI/",
+      "jobId": "2137f7ad-d884-436d-8aa8-22b4285ef0dc",
+      "premiumRequestId": "aa42b3b2-8709-4d0f-a5c0-34e8a02a9fd5",
+      "premiumState": "useful_result",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "names": [
+        "Dorset Quarry (Norcross-West Marble Quarry)"
+      ],
+      "suggestedQuery": "Dorset Quarry (Norcross-West Marble Quarry)",
+      "chargeable": true,
+      "settlementReason": "premium_specific_candidates",
+      "costs": {
+        "sol": {
+          "model": "gpt-5.6-sol",
+          "usage": {
+            "input_tokens": 7295,
+            "total_tokens": 7951,
+            "output_tokens": 656,
+            "reasoning_tokens": 516,
+            "cached_input_tokens": 7292
+          },
+          "knownCostUsd": 0.016049
+        },
+        "places": {
+          "costUsd": "UNKNOWN",
+          "requestCount": 1,
+          "requestTypes": [
+            "PRIMARY_SPECIFIC_IDENTITY"
+          ]
+        },
+        "latencyMs": {
+          "sol": 13612,
+          "places": 230,
+          "evidencePrep": 10046,
+          "totalAfterEvidenceReady": 13842
+        },
+        "acquisition": "UNKNOWN",
+        "evidenceReuse": {
+          "ocr": "REACQUIRED",
+          "media": "REACQUIRED",
+          "frames": "REACQUIRED",
+          "caption": "REACQUIRED",
+          "transcript": "REACQUIRED"
+        },
+        "transcription": "UNKNOWN",
+        "parityDiagnostics": {
+          "solBoundary": {
+            "model": "gpt-5.6-sol",
+            "usage": {
+              "input_tokens": 7295,
+              "total_tokens": 7951,
+              "output_tokens": 656,
+              "reasoning_tokens": 516,
+              "cached_input_tokens": 7292
+            },
+            "version": "premium-sol-boundary.v1",
+            "latencyMs": 13612,
+            "hypotheses": [
+              {
+                "name": "Dorset Quarry (Norcross-West Marble Quarry)",
+                "confidence": "HIGH",
+                "entityType": "LANDMARK",
+                "alternatives": [],
+                "evidenceBasis": "CONTEXTUAL_OR_MEMORY_PRIOR"
+              }
+            ],
+            "responseId": "resp_085b7e78019452c6016a9bb152e44087d0a1b97827ed0852dd",
+            "shareJobId": "2137f7ad-d884-436d-8aa8-22b4285ef0dc",
+            "parseSuccess": true,
+            "fingerprintId": "003c7a1e699e0c3931216d9f45b968b89823be62200de45592570fee0a056add",
+            "destinationCount": 1,
+            "parseFailureCode": null,
+            "premiumRequestId": "aa42b3b2-8709-4d0f-a5c0-34e8a02a9fd5",
+            "structuredResultHash": "963045437c54191bb2bbe8e637151abdcfb78fc487c042f46e44ab401d6226e8"
+          },
+          "engineVersion": "simple-sol-premium.v2",
+          "safetyVersion": "premium-recognition-safety.v2",
+          "evidenceVersion": "premium-evidence-2026-09-05.v1",
+          "finalFingerprint": {
+            "hash": "e2587a3cc0a4812c8ff26e1c34f87ca1dd6daa286a4498e2cdb492c5b2760229",
+            "version": "premium-final-fingerprint.v1",
+            "chargeability": "CHARGEABLE_ACTIONABLE",
+            "solResultHash": "963045437c54191bb2bbe8e637151abdcfb78fc487c042f46e44ab401d6226e8",
+            "resultDecision": "PREMIUM_ACTIONABLE_RESULT",
+            "safetyDecision": [
+              "REVIEW"
+            ],
+            "tokenSettlement": "CONSUME",
+            "canonicalResultHash": "af325f112aaa5a38a974a2fb89b6d390393ab7e2697ed7330377f4c3068061fa"
+          },
+          "evidenceReuseState": "EVIDENCE_REGENERATED",
+          "inferenceFingerprint": {
+            "frames": [
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 250878,
+                "imageSha256": "63d0baad0a16ddd5e194f7c86decc58c150525b6f05201c2e106d62017caa871",
+                "timestampMs": 0
+              },
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 152121,
+                "imageSha256": "107c3d95a33c669b305e3d90c02f858979d37b6700ba5738362d053795e2325f",
+                "timestampMs": 3000
+              },
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 69784,
+                "imageSha256": "8f4596a7988867db398c5aad41271ad7ea27e0d9b74a2e8633c892c5b527ac30",
+                "timestampMs": 4000
+              },
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 77561,
+                "imageSha256": "f7c47f4ec3809868b8b00fd9433239003ac05fc2c34801e3460ab1e366f2f7d5",
+                "timestampMs": 5000
+              },
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 88593,
+                "imageSha256": "b8e2a7f874b59644e48052acb826158d0bef46734fee50c1bfb7ede997c86462",
+                "timestampMs": 6000
+              },
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 131232,
+                "imageSha256": "f1b882b2b4a25de9f71d6f7e516183cb851769299d43cb47843fb197cca685f1",
+                "timestampMs": 8933
+              }
+            ],
+            "prompt": {
+              "model": "gpt-5.6-sol",
+              "promptHash": "8132da97b952b5d93062ba9b7d915c1dc40b4033de869607a1274142e1580e9c",
+              "schemaHash": "6899fd09c3cc95b4d12263bec5d7028f605eab0eb77b9fdaa38877704c694cfa",
+              "promptVersion": "sol-parity-natural-v1",
+              "schemaVersion": "sol-parity-destination-schema-v1",
+              "reasoningConfig": {
+                "effort": "high"
+              }
+            },
+            "request": {
+              "imageCount": 6,
+              "inputTextHash": "7fd6789e8eea3ef8850023dae5ba67980fd8ddbde7685d1486d43c11e830394a",
+              "requestPayloadHash": "cebfdf36ce678397b72e080a4c92c1e630a80f6628688d34947445b98d43f811"
+            },
+            "version": "premium-inference-fingerprint.v1",
+            "evidenceReuse": "EVIDENCE_REGENERATED",
+            "fingerprintId": "003c7a1e699e0c3931216d9f45b968b89823be62200de45592570fee0a056add",
+            "sourceContext": {
+              "ocrHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "ocrLength": 0,
+              "captionHash": "46ef32510f2ec9c1f8f9c60d075402bb562a405daf1b7d41afbd32518682b530",
+              "creatorHash": "0c38d16bc8c55507746b402c0049fbb93a47019f6f8c295e8309318f8b437213",
+              "captionLength": 216,
+              "creatorLength": 10,
+              "transcriptHash": "94f1c107f81a08341d150e8645c8824ae5a7cbaf00c12761348f11b5cc45cf1a",
+              "transcriptLength": 9,
+              "sourceLocationHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "sourceLocationLength": 0,
+              "sourceLocationPresent": false
+            },
+            "sourceIdentity": {
+              "platform": "instagram",
+              "canonicalUrlHash": "e44b69bd6d8050f7a8244527f961251be19f7d95f5b1308be7c52a344805fd31",
+              "canonicalContentIdHash": "716e3039627691839a98bcb3e580d0f3a1b5bee71740d9e14d9c78cb298d9506"
+            },
+            "evidenceVersion": "premium-evidence-2026-09-05.v1"
+          },
+          "canonicalizationFingerprint": {
+            "hash": "af325f112aaa5a38a974a2fb89b6d390393ab7e2697ed7330377f4c3068061fa",
+            "version": "premium-canonicalization-fingerprint.v1",
+            "hypotheses": [
+              {
+                "name": "Dorset Quarry (Norcross-West Marble Quarry)",
+                "calls": [
+                  {
+                    "query": "Dorset Quarry (Norcross-West Marble Quarry), Dorset, Vermont, United States",
+                    "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                    "matched": true,
+                    "outcome": "CANONICAL_ALIAS",
+                    "resultIds": [
+                      "ChIJQ3Rm6ohd4IkR3VZrUE70htI",
+                      "ChIJG9E4hIhd4IkRwN0jnyQ9-F4"
+                    ],
+                    "resultCount": 2,
+                    "resultNames": [
+                      "Norcross-West Marble Quarry",
+                      "Dorset Marble Quarry"
+                    ],
+                    "selectedName": "Norcross-West Marble Quarry",
+                    "attemptNumber": 1,
+                    "rejectionReason": null,
+                    "selectedGooglePlaceId": "ChIJQ3Rm6ohd4IkR3VZrUE70htI"
+                  }
+                ],
+                "outcome": "AMBIGUOUS_CANONICAL",
+                "geography": {
+                  "city": "Dorset",
+                  "region": "Vermont",
+                  "country": "United States"
+                },
+                "entityType": "LANDMARK",
+                "selectedName": null,
+                "rejectionReason": null,
+                "selectedGooglePlaceId": null
+              }
+            ]
+          }
+        }
+      },
+      "requestedAt": "2026-09-05T06:04:18.401682+00:00",
+      "startedAt": "2026-09-05T06:06:00.4307+00:00",
+      "completedAt": "2026-09-05T06:06:26.162405+00:00",
+      "task": {
+        "id": "8636513e-bef0-469a-ab9d-fbbc9c279d26",
+        "status": "completed",
+        "attempts": 1,
+        "failureCode": null,
+        "resolverName": "premium-sol",
+        "analysisProvider": null,
+        "analysisModel": null,
+        "promptVersion": null,
+        "latencyMs": null,
+        "modelCalls": null,
+        "modelInputTokens": null,
+        "modelOutputTokens": null,
+        "modelThinkingTokens": null,
+        "modelLatencyMs": null
+      },
+      "mediaRun": {
+        "id": "2f0ce0c8-594f-41e6-a23e-33b09fafa815",
+        "durationMs": 23888,
+        "frameCount": 7,
+        "transcriptSegments": 1,
+        "ocrSegments": 0,
+        "resolverName": "instagram/yt-dlp",
+        "modelProvider": "premium-sol",
+        "evidence": {
+          "multiple": false,
+          "placeCount": 1,
+          "insufficient": false,
+          "analysisAttempted": true,
+          "destinationPlaces": 0,
+          "partialPlaceCount": 0,
+          "explicitPlaceCount": 0,
+          "premiumDiagnostics": {
+            "solBoundary": {
+              "model": "gpt-5.6-sol",
+              "usage": {
+                "input_tokens": 7295,
+                "total_tokens": 7951,
+                "output_tokens": 656,
+                "reasoning_tokens": 516,
+                "cached_input_tokens": 7292
+              },
+              "version": "premium-sol-boundary.v1",
+              "latencyMs": 13612,
+              "hypotheses": [
+                {
+                  "name": "Dorset Quarry (Norcross-West Marble Quarry)",
+                  "confidence": "HIGH",
+                  "entityType": "LANDMARK",
+                  "alternatives": [],
+                  "evidenceBasis": "CONTEXTUAL_OR_MEMORY_PRIOR"
+                }
+              ],
+              "responseId": "resp_085b7e78019452c6016a9bb152e44087d0a1b97827ed0852dd",
+              "shareJobId": "2137f7ad-d884-436d-8aa8-22b4285ef0dc",
+              "parseSuccess": true,
+              "fingerprintId": "003c7a1e699e0c3931216d9f45b968b89823be62200de45592570fee0a056add",
+              "destinationCount": 1,
+              "parseFailureCode": null,
+              "premiumRequestId": "aa42b3b2-8709-4d0f-a5c0-34e8a02a9fd5",
+              "structuredResultHash": "963045437c54191bb2bbe8e637151abdcfb78fc487c042f46e44ab401d6226e8"
+            },
+            "finalFingerprint": {
+              "hash": "e2587a3cc0a4812c8ff26e1c34f87ca1dd6daa286a4498e2cdb492c5b2760229",
+              "version": "premium-final-fingerprint.v1",
+              "chargeability": "CHARGEABLE_ACTIONABLE",
+              "solResultHash": "963045437c54191bb2bbe8e637151abdcfb78fc487c042f46e44ab401d6226e8",
+              "resultDecision": "PREMIUM_ACTIONABLE_RESULT",
+              "safetyDecision": [
+                "REVIEW"
+              ],
+              "tokenSettlement": "CONSUME",
+              "canonicalResultHash": "af325f112aaa5a38a974a2fb89b6d390393ab7e2697ed7330377f4c3068061fa"
+            },
+            "inferenceFingerprint": {
+              "frames": [
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 250878,
+                  "imageSha256": "63d0baad0a16ddd5e194f7c86decc58c150525b6f05201c2e106d62017caa871",
+                  "timestampMs": 0
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 152121,
+                  "imageSha256": "107c3d95a33c669b305e3d90c02f858979d37b6700ba5738362d053795e2325f",
+                  "timestampMs": 3000
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 69784,
+                  "imageSha256": "8f4596a7988867db398c5aad41271ad7ea27e0d9b74a2e8633c892c5b527ac30",
+                  "timestampMs": 4000
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 77561,
+                  "imageSha256": "f7c47f4ec3809868b8b00fd9433239003ac05fc2c34801e3460ab1e366f2f7d5",
+                  "timestampMs": 5000
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 88593,
+                  "imageSha256": "b8e2a7f874b59644e48052acb826158d0bef46734fee50c1bfb7ede997c86462",
+                  "timestampMs": 6000
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 131232,
+                  "imageSha256": "f1b882b2b4a25de9f71d6f7e516183cb851769299d43cb47843fb197cca685f1",
+                  "timestampMs": 8933
+                }
+              ],
+              "prompt": {
+                "model": "gpt-5.6-sol",
+                "promptHash": "8132da97b952b5d93062ba9b7d915c1dc40b4033de869607a1274142e1580e9c",
+                "schemaHash": "6899fd09c3cc95b4d12263bec5d7028f605eab0eb77b9fdaa38877704c694cfa",
+                "promptVersion": "sol-parity-natural-v1",
+                "schemaVersion": "sol-parity-destination-schema-v1",
+                "reasoningConfig": {
+                  "effort": "high"
+                }
+              },
+              "request": {
+                "imageCount": 6,
+                "inputTextHash": "7fd6789e8eea3ef8850023dae5ba67980fd8ddbde7685d1486d43c11e830394a",
+                "requestPayloadHash": "cebfdf36ce678397b72e080a4c92c1e630a80f6628688d34947445b98d43f811"
+              },
+              "version": "premium-inference-fingerprint.v1",
+              "evidenceReuse": "EVIDENCE_REGENERATED",
+              "fingerprintId": "003c7a1e699e0c3931216d9f45b968b89823be62200de45592570fee0a056add",
+              "sourceContext": {
+                "ocrHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "ocrLength": 0,
+                "captionHash": "46ef32510f2ec9c1f8f9c60d075402bb562a405daf1b7d41afbd32518682b530",
+                "creatorHash": "0c38d16bc8c55507746b402c0049fbb93a47019f6f8c295e8309318f8b437213",
+                "captionLength": 216,
+                "creatorLength": 10,
+                "transcriptHash": "94f1c107f81a08341d150e8645c8824ae5a7cbaf00c12761348f11b5cc45cf1a",
+                "transcriptLength": 9,
+                "sourceLocationHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "sourceLocationLength": 0,
+                "sourceLocationPresent": false
+              },
+              "sourceIdentity": {
+                "platform": "instagram",
+                "canonicalUrlHash": "e44b69bd6d8050f7a8244527f961251be19f7d95f5b1308be7c52a344805fd31",
+                "canonicalContentIdHash": "716e3039627691839a98bcb3e580d0f3a1b5bee71740d9e14d9c78cb298d9506"
+              },
+              "evidenceVersion": "premium-evidence-2026-09-05.v1"
+            },
+            "canonicalizationFingerprint": {
+              "hash": "af325f112aaa5a38a974a2fb89b6d390393ab7e2697ed7330377f4c3068061fa",
+              "version": "premium-canonicalization-fingerprint.v1",
+              "hypotheses": [
+                {
+                  "name": "Dorset Quarry (Norcross-West Marble Quarry)",
+                  "calls": [
+                    {
+                      "query": "Dorset Quarry (Norcross-West Marble Quarry), Dorset, Vermont, United States",
+                      "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                      "matched": true,
+                      "outcome": "CANONICAL_ALIAS",
+                      "resultIds": [
+                        "ChIJQ3Rm6ohd4IkR3VZrUE70htI",
+                        "ChIJG9E4hIhd4IkRwN0jnyQ9-F4"
+                      ],
+                      "resultCount": 2,
+                      "resultNames": [
+                        "Norcross-West Marble Quarry",
+                        "Dorset Marble Quarry"
+                      ],
+                      "selectedName": "Norcross-West Marble Quarry",
+                      "attemptNumber": 1,
+                      "rejectionReason": null,
+                      "selectedGooglePlaceId": "ChIJQ3Rm6ohd4IkR3VZrUE70htI"
+                    }
+                  ],
+                  "outcome": "AMBIGUOUS_CANONICAL",
+                  "geography": {
+                    "city": "Dorset",
+                    "region": "Vermont",
+                    "country": "United States"
+                  },
+                  "entityType": "LANDMARK",
+                  "selectedName": null,
+                  "rejectionReason": null,
+                  "selectedGooglePlaceId": null
+                }
+              ]
+            }
+          },
+          "recognitionFailureClass": "none",
+          "sharedGeoCountryApplied": false,
+          "sharedGeoCountryStrength": "none",
+          "peerGeographicDestinations": 0,
+          "sharedGeoCountryCandidates": 0,
+          "sourceGeographicContextDropped": 0
+        }
+      },
+      "reservationCount": 1,
+      "reservationStatus": "consumed",
+      "priorityUseful": true
+    },
+    {
+      "caseId": "R05",
+      "sourceUrl": "https://www.instagram.com/reel/Db5qatGJgqH/",
+      "jobId": "31f25bf8-5aba-41c7-87a4-9e1d100a5893",
+      "premiumRequestId": "b15b3457-89dc-430e-ac3a-fc17ba6129c4",
+      "premiumState": "useful_result",
+      "status": "needs_help",
+      "decision": "candidate_picker",
+      "savedPlaceId": null,
+      "names": [
+        "Okere Falls",
+        "Tutea Falls",
+        "Okere Falls Scenic Reserve"
+      ],
+      "suggestedQuery": "Okere Falls Scenic Reserve",
+      "chargeable": true,
+      "settlementReason": "premium_specific_candidates",
+      "costs": {
+        "sol": {
+          "model": "gpt-5.6-sol",
+          "usage": {
+            "input_tokens": 7319,
+            "total_tokens": 8087,
+            "output_tokens": 768,
+            "reasoning_tokens": 516,
+            "cached_input_tokens": 7316
+          },
+          "knownCostUsd": 0.018298
+        },
+        "places": {
+          "costUsd": "UNKNOWN",
+          "requestCount": 3,
+          "requestTypes": [
+            "PRIMARY_SPECIFIC_IDENTITY",
+            "PRIMARY_SPECIFIC_IDENTITY",
+            "PRIMARY_SPECIFIC_IDENTITY"
+          ]
+        },
+        "latencyMs": {
+          "sol": 12022,
+          "places": 616,
+          "evidencePrep": 12946,
+          "totalAfterEvidenceReady": 12638
+        },
+        "acquisition": "UNKNOWN",
+        "evidenceReuse": {
+          "ocr": "REACQUIRED",
+          "media": "REACQUIRED",
+          "frames": "REACQUIRED",
+          "caption": "REACQUIRED",
+          "transcript": "REACQUIRED"
+        },
+        "transcription": "UNKNOWN",
+        "parityDiagnostics": {
+          "solBoundary": {
+            "model": "gpt-5.6-sol",
+            "usage": {
+              "input_tokens": 7319,
+              "total_tokens": 8087,
+              "output_tokens": 768,
+              "reasoning_tokens": 516,
+              "cached_input_tokens": 7316
+            },
+            "version": "premium-sol-boundary.v1",
+            "latencyMs": 12022,
+            "hypotheses": [
+              {
+                "name": "Okere Falls Scenic Reserve",
+                "confidence": "HIGH",
+                "entityType": "LANDMARK",
+                "alternatives": [
+                  "Okere Falls",
+                  "Tutea Falls"
+                ],
+                "evidenceBasis": "MODEL_OBSERVED"
+              }
+            ],
+            "responseId": "resp_017cec061ab5bbe6016a9bb19170ec87d0b5360a8e8967d2c1",
+            "shareJobId": "31f25bf8-5aba-41c7-87a4-9e1d100a5893",
+            "parseSuccess": true,
+            "fingerprintId": "86f400a12dabb02a6ed8c96c510483e2d540c260c219e9758b5d1ca7dd2abbfc",
+            "destinationCount": 1,
+            "parseFailureCode": null,
+            "premiumRequestId": "b15b3457-89dc-430e-ac3a-fc17ba6129c4",
+            "structuredResultHash": "8b16402fc772739894560e5b3d007aacb2afaf3872e00e73d63b3512d89dbfbb"
+          },
+          "engineVersion": "simple-sol-premium.v2",
+          "safetyVersion": "premium-recognition-safety.v2",
+          "evidenceVersion": "premium-evidence-2026-09-05.v1",
+          "finalFingerprint": {
+            "hash": "e372456c75e180faf15e6469e496a2ad8e26fe9d075e0b4b40554f779781d5ad",
+            "version": "premium-final-fingerprint.v1",
+            "chargeability": "CHARGEABLE_ACTIONABLE",
+            "solResultHash": "8b16402fc772739894560e5b3d007aacb2afaf3872e00e73d63b3512d89dbfbb",
+            "resultDecision": "PREMIUM_ACTIONABLE_RESULT",
+            "safetyDecision": [
+              "REVIEW"
+            ],
+            "tokenSettlement": "CONSUME",
+            "canonicalResultHash": "91df4c94e098acd34133d91bfb9373bcc406eaad81f7155f79412bc539d2a22d"
+          },
+          "evidenceReuseState": "EVIDENCE_REGENERATED",
+          "inferenceFingerprint": {
+            "frames": [
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 92674,
+                "imageSha256": "b297c364e6664d15b8fbbb88af669e35364836aad7c13b068b243fea52ddb595",
+                "timestampMs": 0
+              },
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 202205,
+                "imageSha256": "0f3f95c523bb9a05572a0731e8197e4ecb6a3bc0b1236eff194b0aa147abbc4d",
+                "timestampMs": 5000
+              },
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 233264,
+                "imageSha256": "2441edc54ff61e25a8b45f6d4a43bd9ab90a31bf11aa62b9a57c6d2f3d549416",
+                "timestampMs": 9000
+              },
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 154435,
+                "imageSha256": "125bfc221b5718304c4f24697413a98a1c68f70016f6530499d87ea17244fad5",
+                "timestampMs": 11000
+              },
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 155318,
+                "imageSha256": "2ab26e164fbc13244bb23b9ce8aaa99a8f34508e806070d1fae8cf40a74d542b",
+                "timestampMs": 13000
+              },
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 109088,
+                "imageSha256": "fa2b08d0471a708fc89d01db6cba9218e0bfe6e7b11460e80d73ddab3d73ce1d",
+                "timestampMs": 15467
+              }
+            ],
+            "prompt": {
+              "model": "gpt-5.6-sol",
+              "promptHash": "8132da97b952b5d93062ba9b7d915c1dc40b4033de869607a1274142e1580e9c",
+              "schemaHash": "6899fd09c3cc95b4d12263bec5d7028f605eab0eb77b9fdaa38877704c694cfa",
+              "promptVersion": "sol-parity-natural-v1",
+              "schemaVersion": "sol-parity-destination-schema-v1",
+              "reasoningConfig": {
+                "effort": "high"
+              }
+            },
+            "request": {
+              "imageCount": 6,
+              "inputTextHash": "f61f2b0a5a7ca365a221323cfcb179d94a6909698e305e681ebd8b35c9c608d0",
+              "requestPayloadHash": "ef05cf1c6eb62a48b4e5a47b19d7059edfdff58fc84c92a2c0045e1ec523f090"
+            },
+            "version": "premium-inference-fingerprint.v1",
+            "evidenceReuse": "EVIDENCE_REGENERATED",
+            "fingerprintId": "86f400a12dabb02a6ed8c96c510483e2d540c260c219e9758b5d1ca7dd2abbfc",
+            "sourceContext": {
+              "ocrHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "ocrLength": 0,
+              "captionHash": "803f37b3cb26f54ec6589a6141124fd69691e1ab7e26b0fea53ca447b1f67d4a",
+              "creatorHash": "4f64d3218d3a7a679ce482b59e853f7b4c5893b6b0a421594ccc26cac2ad5681",
+              "captionLength": 316,
+              "creatorLength": 10,
+              "transcriptHash": "730e1f0159471d7bee8226feb19fa158ae7878cd200cd3fee1f8604462671166",
+              "transcriptLength": 20,
+              "sourceLocationHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "sourceLocationLength": 0,
+              "sourceLocationPresent": false
+            },
+            "sourceIdentity": {
+              "platform": "instagram",
+              "canonicalUrlHash": "051869e3fdbe3e2e23327e5c1b9e352dd10da559743f04bcf234d3f6c929c515",
+              "canonicalContentIdHash": "ae0c0cbdaf91ea53751441e77f321828f0937d8bdabb58e3da16e10c721b1d06"
+            },
+            "evidenceVersion": "premium-evidence-2026-09-05.v1"
+          },
+          "canonicalizationFingerprint": {
+            "hash": "91df4c94e098acd34133d91bfb9373bcc406eaad81f7155f79412bc539d2a22d",
+            "version": "premium-canonicalization-fingerprint.v1",
+            "hypotheses": [
+              {
+                "name": "Okere Falls Scenic Reserve",
+                "calls": [
+                  {
+                    "query": "Okere Falls Scenic Reserve, Rotorua, Bay of Plenty, New Zealand",
+                    "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                    "matched": true,
+                    "outcome": "CANONICAL_ALIAS",
+                    "resultIds": [
+                      "ChIJxQs6domFbm0RKavBT0OORQM",
+                      "ChIJTQwskQWEbm0RMTFAiStkGl8"
+                    ],
+                    "resultCount": 2,
+                    "resultNames": [
+                      "Okere Falls Scenic Reserve Parking",
+                      "Okere Falls"
+                    ],
+                    "selectedName": "Okere Falls Scenic Reserve Parking",
+                    "attemptNumber": 1,
+                    "rejectionReason": null,
+                    "selectedGooglePlaceId": "ChIJxQs6domFbm0RKavBT0OORQM"
+                  }
+                ],
+                "outcome": "AMBIGUOUS_CANONICAL",
+                "geography": {
+                  "city": "Rotorua",
+                  "region": "Bay of Plenty",
+                  "country": "New Zealand"
+                },
+                "entityType": "LANDMARK",
+                "selectedName": null,
+                "rejectionReason": null,
+                "selectedGooglePlaceId": null
+              },
+              {
+                "name": "Okere Falls",
+                "calls": [
+                  {
+                    "query": "Okere Falls, Rotorua, Bay of Plenty, New Zealand",
+                    "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                    "matched": true,
+                    "outcome": "CANONICAL_EXACT",
+                    "resultIds": [
+                      "ChIJbWEWx6eIbm0RUO6iQ2HvAAU"
+                    ],
+                    "resultCount": 1,
+                    "resultNames": [
+                      "Okere Falls"
+                    ],
+                    "selectedName": "Okere Falls",
+                    "attemptNumber": 1,
+                    "rejectionReason": null,
+                    "selectedGooglePlaceId": "ChIJbWEWx6eIbm0RUO6iQ2HvAAU"
+                  }
+                ],
+                "outcome": "CANONICAL_EXACT",
+                "geography": {
+                  "city": "Rotorua",
+                  "region": "Bay of Plenty",
+                  "country": "New Zealand"
+                },
+                "entityType": "NAMED_NATURAL_FEATURE",
+                "selectedName": "Okere Falls",
+                "rejectionReason": null,
+                "selectedGooglePlaceId": "ChIJbWEWx6eIbm0RUO6iQ2HvAAU"
+              },
+              {
+                "name": "Tutea Falls",
+                "calls": [
+                  {
+                    "query": "Tutea Falls, Rotorua, Bay of Plenty, New Zealand",
+                    "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                    "matched": true,
+                    "outcome": "CANONICAL_EXACT",
+                    "resultIds": [
+                      "ChIJ-S7PTQKEbm0RYIRljW37IeA"
+                    ],
+                    "resultCount": 1,
+                    "resultNames": [
+                      "Tutea Falls"
+                    ],
+                    "selectedName": "Tutea Falls",
+                    "attemptNumber": 1,
+                    "rejectionReason": null,
+                    "selectedGooglePlaceId": "ChIJ-S7PTQKEbm0RYIRljW37IeA"
+                  }
+                ],
+                "outcome": "CANONICAL_EXACT",
+                "geography": {
+                  "city": "Rotorua",
+                  "region": "Bay of Plenty",
+                  "country": "New Zealand"
+                },
+                "entityType": "NAMED_NATURAL_FEATURE",
+                "selectedName": "Tutea Falls",
+                "rejectionReason": null,
+                "selectedGooglePlaceId": "ChIJ-S7PTQKEbm0RYIRljW37IeA"
+              }
+            ]
+          }
+        }
+      },
+      "requestedAt": "2026-09-05T06:04:18.860328+00:00",
+      "startedAt": "2026-09-05T06:07:00.200349+00:00",
+      "completedAt": "2026-09-05T06:07:27.452648+00:00",
+      "task": {
+        "id": "557da115-5e30-48db-866c-e21d50bb92a1",
+        "status": "completed",
+        "attempts": 1,
+        "failureCode": null,
+        "resolverName": "premium-sol",
+        "analysisProvider": null,
+        "analysisModel": null,
+        "promptVersion": null,
+        "latencyMs": null,
+        "modelCalls": null,
+        "modelInputTokens": null,
+        "modelOutputTokens": null,
+        "modelThinkingTokens": null,
+        "modelLatencyMs": null
+      },
+      "mediaRun": {
+        "id": "adc6b77a-f916-4df6-b0eb-1bdeb18c98f4",
+        "durationMs": 25584,
+        "frameCount": 13,
+        "transcriptSegments": 1,
+        "ocrSegments": 0,
+        "resolverName": "instagram/yt-dlp",
+        "modelProvider": "premium-sol",
+        "evidence": {
+          "multiple": false,
+          "placeCount": 3,
+          "insufficient": false,
+          "analysisAttempted": true,
+          "destinationPlaces": 1,
+          "partialPlaceCount": 0,
+          "explicitPlaceCount": 3,
+          "premiumDiagnostics": {
+            "solBoundary": {
+              "model": "gpt-5.6-sol",
+              "usage": {
+                "input_tokens": 7319,
+                "total_tokens": 8087,
+                "output_tokens": 768,
+                "reasoning_tokens": 516,
+                "cached_input_tokens": 7316
+              },
+              "version": "premium-sol-boundary.v1",
+              "latencyMs": 12022,
+              "hypotheses": [
+                {
+                  "name": "Okere Falls Scenic Reserve",
+                  "confidence": "HIGH",
+                  "entityType": "LANDMARK",
+                  "alternatives": [
+                    "Okere Falls",
+                    "Tutea Falls"
+                  ],
+                  "evidenceBasis": "MODEL_OBSERVED"
+                }
+              ],
+              "responseId": "resp_017cec061ab5bbe6016a9bb19170ec87d0b5360a8e8967d2c1",
+              "shareJobId": "31f25bf8-5aba-41c7-87a4-9e1d100a5893",
+              "parseSuccess": true,
+              "fingerprintId": "86f400a12dabb02a6ed8c96c510483e2d540c260c219e9758b5d1ca7dd2abbfc",
+              "destinationCount": 1,
+              "parseFailureCode": null,
+              "premiumRequestId": "b15b3457-89dc-430e-ac3a-fc17ba6129c4",
+              "structuredResultHash": "8b16402fc772739894560e5b3d007aacb2afaf3872e00e73d63b3512d89dbfbb"
+            },
+            "finalFingerprint": {
+              "hash": "e372456c75e180faf15e6469e496a2ad8e26fe9d075e0b4b40554f779781d5ad",
+              "version": "premium-final-fingerprint.v1",
+              "chargeability": "CHARGEABLE_ACTIONABLE",
+              "solResultHash": "8b16402fc772739894560e5b3d007aacb2afaf3872e00e73d63b3512d89dbfbb",
+              "resultDecision": "PREMIUM_ACTIONABLE_RESULT",
+              "safetyDecision": [
+                "REVIEW"
+              ],
+              "tokenSettlement": "CONSUME",
+              "canonicalResultHash": "91df4c94e098acd34133d91bfb9373bcc406eaad81f7155f79412bc539d2a22d"
+            },
+            "inferenceFingerprint": {
+              "frames": [
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 92674,
+                  "imageSha256": "b297c364e6664d15b8fbbb88af669e35364836aad7c13b068b243fea52ddb595",
+                  "timestampMs": 0
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 202205,
+                  "imageSha256": "0f3f95c523bb9a05572a0731e8197e4ecb6a3bc0b1236eff194b0aa147abbc4d",
+                  "timestampMs": 5000
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 233264,
+                  "imageSha256": "2441edc54ff61e25a8b45f6d4a43bd9ab90a31bf11aa62b9a57c6d2f3d549416",
+                  "timestampMs": 9000
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 154435,
+                  "imageSha256": "125bfc221b5718304c4f24697413a98a1c68f70016f6530499d87ea17244fad5",
+                  "timestampMs": 11000
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 155318,
+                  "imageSha256": "2ab26e164fbc13244bb23b9ce8aaa99a8f34508e806070d1fae8cf40a74d542b",
+                  "timestampMs": 13000
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 109088,
+                  "imageSha256": "fa2b08d0471a708fc89d01db6cba9218e0bfe6e7b11460e80d73ddab3d73ce1d",
+                  "timestampMs": 15467
+                }
+              ],
+              "prompt": {
+                "model": "gpt-5.6-sol",
+                "promptHash": "8132da97b952b5d93062ba9b7d915c1dc40b4033de869607a1274142e1580e9c",
+                "schemaHash": "6899fd09c3cc95b4d12263bec5d7028f605eab0eb77b9fdaa38877704c694cfa",
+                "promptVersion": "sol-parity-natural-v1",
+                "schemaVersion": "sol-parity-destination-schema-v1",
+                "reasoningConfig": {
+                  "effort": "high"
+                }
+              },
+              "request": {
+                "imageCount": 6,
+                "inputTextHash": "f61f2b0a5a7ca365a221323cfcb179d94a6909698e305e681ebd8b35c9c608d0",
+                "requestPayloadHash": "ef05cf1c6eb62a48b4e5a47b19d7059edfdff58fc84c92a2c0045e1ec523f090"
+              },
+              "version": "premium-inference-fingerprint.v1",
+              "evidenceReuse": "EVIDENCE_REGENERATED",
+              "fingerprintId": "86f400a12dabb02a6ed8c96c510483e2d540c260c219e9758b5d1ca7dd2abbfc",
+              "sourceContext": {
+                "ocrHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "ocrLength": 0,
+                "captionHash": "803f37b3cb26f54ec6589a6141124fd69691e1ab7e26b0fea53ca447b1f67d4a",
+                "creatorHash": "4f64d3218d3a7a679ce482b59e853f7b4c5893b6b0a421594ccc26cac2ad5681",
+                "captionLength": 316,
+                "creatorLength": 10,
+                "transcriptHash": "730e1f0159471d7bee8226feb19fa158ae7878cd200cd3fee1f8604462671166",
+                "transcriptLength": 20,
+                "sourceLocationHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "sourceLocationLength": 0,
+                "sourceLocationPresent": false
+              },
+              "sourceIdentity": {
+                "platform": "instagram",
+                "canonicalUrlHash": "051869e3fdbe3e2e23327e5c1b9e352dd10da559743f04bcf234d3f6c929c515",
+                "canonicalContentIdHash": "ae0c0cbdaf91ea53751441e77f321828f0937d8bdabb58e3da16e10c721b1d06"
+              },
+              "evidenceVersion": "premium-evidence-2026-09-05.v1"
+            },
+            "canonicalizationFingerprint": {
+              "hash": "91df4c94e098acd34133d91bfb9373bcc406eaad81f7155f79412bc539d2a22d",
+              "version": "premium-canonicalization-fingerprint.v1",
+              "hypotheses": [
+                {
+                  "name": "Okere Falls Scenic Reserve",
+                  "calls": [
+                    {
+                      "query": "Okere Falls Scenic Reserve, Rotorua, Bay of Plenty, New Zealand",
+                      "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                      "matched": true,
+                      "outcome": "CANONICAL_ALIAS",
+                      "resultIds": [
+                        "ChIJxQs6domFbm0RKavBT0OORQM",
+                        "ChIJTQwskQWEbm0RMTFAiStkGl8"
+                      ],
+                      "resultCount": 2,
+                      "resultNames": [
+                        "Okere Falls Scenic Reserve Parking",
+                        "Okere Falls"
+                      ],
+                      "selectedName": "Okere Falls Scenic Reserve Parking",
+                      "attemptNumber": 1,
+                      "rejectionReason": null,
+                      "selectedGooglePlaceId": "ChIJxQs6domFbm0RKavBT0OORQM"
+                    }
+                  ],
+                  "outcome": "AMBIGUOUS_CANONICAL",
+                  "geography": {
+                    "city": "Rotorua",
+                    "region": "Bay of Plenty",
+                    "country": "New Zealand"
+                  },
+                  "entityType": "LANDMARK",
+                  "selectedName": null,
+                  "rejectionReason": null,
+                  "selectedGooglePlaceId": null
+                },
+                {
+                  "name": "Okere Falls",
+                  "calls": [
+                    {
+                      "query": "Okere Falls, Rotorua, Bay of Plenty, New Zealand",
+                      "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                      "matched": true,
+                      "outcome": "CANONICAL_EXACT",
+                      "resultIds": [
+                        "ChIJbWEWx6eIbm0RUO6iQ2HvAAU"
+                      ],
+                      "resultCount": 1,
+                      "resultNames": [
+                        "Okere Falls"
+                      ],
+                      "selectedName": "Okere Falls",
+                      "attemptNumber": 1,
+                      "rejectionReason": null,
+                      "selectedGooglePlaceId": "ChIJbWEWx6eIbm0RUO6iQ2HvAAU"
+                    }
+                  ],
+                  "outcome": "CANONICAL_EXACT",
+                  "geography": {
+                    "city": "Rotorua",
+                    "region": "Bay of Plenty",
+                    "country": "New Zealand"
+                  },
+                  "entityType": "NAMED_NATURAL_FEATURE",
+                  "selectedName": "Okere Falls",
+                  "rejectionReason": null,
+                  "selectedGooglePlaceId": "ChIJbWEWx6eIbm0RUO6iQ2HvAAU"
+                },
+                {
+                  "name": "Tutea Falls",
+                  "calls": [
+                    {
+                      "query": "Tutea Falls, Rotorua, Bay of Plenty, New Zealand",
+                      "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                      "matched": true,
+                      "outcome": "CANONICAL_EXACT",
+                      "resultIds": [
+                        "ChIJ-S7PTQKEbm0RYIRljW37IeA"
+                      ],
+                      "resultCount": 1,
+                      "resultNames": [
+                        "Tutea Falls"
+                      ],
+                      "selectedName": "Tutea Falls",
+                      "attemptNumber": 1,
+                      "rejectionReason": null,
+                      "selectedGooglePlaceId": "ChIJ-S7PTQKEbm0RYIRljW37IeA"
+                    }
+                  ],
+                  "outcome": "CANONICAL_EXACT",
+                  "geography": {
+                    "city": "Rotorua",
+                    "region": "Bay of Plenty",
+                    "country": "New Zealand"
+                  },
+                  "entityType": "NAMED_NATURAL_FEATURE",
+                  "selectedName": "Tutea Falls",
+                  "rejectionReason": null,
+                  "selectedGooglePlaceId": "ChIJ-S7PTQKEbm0RYIRljW37IeA"
+                }
+              ]
+            }
+          },
+          "sharedGeoCountrySource": "multiple_places_agree",
+          "recognitionFailureClass": "none",
+          "sharedGeoCountryApplied": true,
+          "sharedGeoCountryStrength": "strong",
+          "peerGeographicDestinations": 0,
+          "sharedGeoCountryCandidates": 1,
+          "sourceGeographicContextDropped": 0
+        }
+      },
+      "reservationCount": 1,
+      "reservationStatus": "consumed",
+      "priorityUseful": true
+    },
+    {
+      "caseId": "R06",
+      "sourceUrl": "https://www.instagram.com/p/5oXehfQxb2/",
+      "jobId": "f20624ca-5f31-40ad-98ed-841e140c7423",
+      "premiumRequestId": "b3969f00-04f4-4da0-82fd-1f27fd524b44",
+      "premiumState": "useful_result",
+      "status": "completed",
+      "decision": "auto_save",
+      "savedPlaceId": "76960b7b-5ac0-41b4-a388-8fc577ffdb0f",
+      "names": [
+        "Lake Havasu"
+      ],
+      "suggestedQuery": null,
+      "chargeable": true,
+      "settlementReason": "premium_saved_place",
+      "costs": {
+        "premium_recognition": {
+          "model": "gpt-5.6-sol",
+          "tokens": 1
+        }
+      },
+      "requestedAt": "2026-09-05T06:04:19.311855+00:00",
+      "startedAt": "2026-09-05T06:07:00.200349+00:00",
+      "completedAt": "2026-09-05T06:07:01.060469+00:00",
+      "task": {
+        "id": "aa4897da-d725-48af-8e8c-75793a98d05a",
+        "status": "completed",
+        "attempts": 1,
+        "failureCode": null,
+        "resolverName": "premium-sol",
+        "analysisProvider": null,
+        "analysisModel": null,
+        "promptVersion": null,
+        "latencyMs": null,
+        "modelCalls": null,
+        "modelInputTokens": null,
+        "modelOutputTokens": null,
+        "modelThinkingTokens": null,
+        "modelLatencyMs": null
+      },
+      "mediaRun": {
+        "id": "92af1a95-ac8d-4738-93a8-554099be03ed",
+        "durationMs": 34432,
+        "frameCount": 9,
+        "transcriptSegments": 5,
+        "ocrSegments": 0,
+        "resolverName": "instagram/yt-dlp",
+        "modelProvider": "premium-sol",
+        "evidence": {
+          "multiple": false,
+          "placeCount": 2,
+          "insufficient": false,
+          "analysisAttempted": true,
+          "destinationPlaces": 0,
+          "partialPlaceCount": 0,
+          "explicitPlaceCount": 0,
+          "premiumDiagnostics": {
+            "solBoundary": {
+              "model": "gpt-5.6-sol",
+              "usage": {
+                "input_tokens": 3561,
+                "total_tokens": 4819,
+                "output_tokens": 1258,
+                "reasoning_tokens": 1034,
+                "cached_input_tokens": 0
+              },
+              "version": "premium-sol-boundary.v1",
+              "latencyMs": 22224,
+              "hypotheses": [
+                {
+                  "name": "Copper Canyon on Lake Havasu",
+                  "confidence": "MEDIUM",
+                  "entityType": "NAMED_NATURAL_FEATURE",
+                  "alternatives": [
+                    "Parker Strip on the Colorado River"
+                  ],
+                  "evidenceBasis": "CONTEXTUAL_OR_MEMORY_PRIOR"
+                }
+              ],
+              "responseId": "resp_013d94f119d293aa016a9bb190018487d08408b6f1c413d7f7",
+              "shareJobId": "f20624ca-5f31-40ad-98ed-841e140c7423",
+              "parseSuccess": true,
+              "fingerprintId": "6625b33d629f2f8d62887a16067a9b1b9554b1e321a08f6e7786152e1444e86f",
+              "destinationCount": 1,
+              "parseFailureCode": null,
+              "premiumRequestId": "b3969f00-04f4-4da0-82fd-1f27fd524b44",
+              "structuredResultHash": "cf05b3754ede13f5d808db1bf354a7b937a316d8bc3da0eb8a70611e99b78919"
+            },
+            "finalFingerprint": {
+              "hash": "e5f24ddaf7e3fab16417a727ceb7da2fc8f020413053551be73dd860b450d84d",
+              "version": "premium-final-fingerprint.v1",
+              "chargeability": "CHARGEABLE_ACTIONABLE",
+              "solResultHash": "cf05b3754ede13f5d808db1bf354a7b937a316d8bc3da0eb8a70611e99b78919",
+              "resultDecision": "PREMIUM_ACTIONABLE_RESULT",
+              "safetyDecision": [
+                "REVIEW"
+              ],
+              "tokenSettlement": "CONSUME",
+              "canonicalResultHash": "ee6a07b1a5b1d83310eac55532aeffceef6588030235622554448c7c67ad4faf"
+            },
+            "inferenceFingerprint": {
+              "frames": [
+                {
+                  "width": 640,
+                  "height": 640,
+                  "byteLength": 21076,
+                  "imageSha256": "4cf4ecc689230fe24c65b7f9db3f2faea9a90e3d29b4983257a47a5d2d139d27",
+                  "timestampMs": 0
+                },
+                {
+                  "width": 640,
+                  "height": 640,
+                  "byteLength": 4982,
+                  "imageSha256": "9ee3b0bf7bb2a0fe15d23d32b6d9108c2bcbeeaa20cff1d88d520157e1d5c436",
+                  "timestampMs": 2000
+                },
+                {
+                  "width": 640,
+                  "height": 640,
+                  "byteLength": 4616,
+                  "imageSha256": "15d916fefb7cd97f17eb7dc81d9ece5f184ffc23856d734dc4cd09f74013951d",
+                  "timestampMs": 3000
+                },
+                {
+                  "width": 640,
+                  "height": 640,
+                  "byteLength": 10034,
+                  "imageSha256": "b4d697b690f6a410665204f62137937e648c06457393be17f1506aa458621492",
+                  "timestampMs": 5000
+                },
+                {
+                  "width": 640,
+                  "height": 640,
+                  "byteLength": 50089,
+                  "imageSha256": "e0030fc4c56f8e604ca0de2d04c2a7e156fb44adf3ab8733954452af324902c4",
+                  "timestampMs": 6000
+                },
+                {
+                  "width": 640,
+                  "height": 640,
+                  "byteLength": 53643,
+                  "imageSha256": "fd4c54a5b6eac5146011827b19cbaf0bbe6ead3cb754674ea53e5565bbe08d23",
+                  "timestampMs": 10811
+                }
+              ],
+              "prompt": {
+                "model": "gpt-5.6-sol",
+                "promptHash": "8132da97b952b5d93062ba9b7d915c1dc40b4033de869607a1274142e1580e9c",
+                "schemaHash": "6899fd09c3cc95b4d12263bec5d7028f605eab0eb77b9fdaa38877704c694cfa",
+                "promptVersion": "sol-parity-natural-v1",
+                "schemaVersion": "sol-parity-destination-schema-v1",
+                "reasoningConfig": {
+                  "effort": "high"
+                }
+              },
+              "request": {
+                "imageCount": 6,
+                "inputTextHash": "bf2e97ecec18e35b4e8898b1b8f1959cc19903ca932acc66d91822ccc3f36ee0",
+                "requestPayloadHash": "2f80da8ce0cbf8da39b28001097ab41b8e3ec69b7e5a5004e5e5273361feaa87"
+              },
+              "version": "premium-inference-fingerprint.v1",
+              "evidenceReuse": "EVIDENCE_REGENERATED",
+              "fingerprintId": "6625b33d629f2f8d62887a16067a9b1b9554b1e321a08f6e7786152e1444e86f",
+              "sourceContext": {
+                "ocrHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "ocrLength": 0,
+                "captionHash": "f122bce9f7be648b8e5d695ced554c425ec8b2207e0b50bd3df20b4040a2343d",
+                "creatorHash": "ab861200255320f8eb26a2314bce5a869c3e057f3187a80b8a522b5526016f35",
+                "captionLength": 63,
+                "creatorLength": 11,
+                "transcriptHash": "e203ead8a71bf7a0e1d33705696538de1dfe0a5cdb4fe9ab4f8841409c3c2a26",
+                "transcriptLength": 78,
+                "sourceLocationHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "sourceLocationLength": 0,
+                "sourceLocationPresent": false
+              },
+              "sourceIdentity": {
+                "platform": "instagram",
+                "canonicalUrlHash": "b251de45e0206b452623dfaee40e3c78273bdb121edaf28ef69211a717b297e4",
+                "canonicalContentIdHash": "97cf0cd5cdd9270414fd34528759e096721c22f1a01297584f068156233057f0"
+              },
+              "evidenceVersion": "premium-evidence-2026-09-05.v1"
+            },
+            "canonicalizationFingerprint": {
+              "hash": "ee6a07b1a5b1d83310eac55532aeffceef6588030235622554448c7c67ad4faf",
+              "version": "premium-canonicalization-fingerprint.v1",
+              "hypotheses": [
+                {
+                  "name": "Copper Canyon on Lake Havasu",
+                  "calls": [
+                    {
+                      "query": "Copper Canyon on Lake Havasu, Lake Havasu City, Arizona, United States",
+                      "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                      "matched": true,
+                      "outcome": "CANONICAL_ALIAS",
+                      "resultIds": [
+                        "ChIJi4Bk1Mfy0YARSPizNzplqzk"
+                      ],
+                      "resultCount": 1,
+                      "resultNames": [
+                        "Copper Canyon Drive"
+                      ],
+                      "selectedName": "Copper Canyon Drive",
+                      "attemptNumber": 1,
+                      "rejectionReason": null,
+                      "selectedGooglePlaceId": "ChIJi4Bk1Mfy0YARSPizNzplqzk"
+                    }
+                  ],
+                  "outcome": "CANONICAL_ALIAS",
+                  "geography": {
+                    "city": "Lake Havasu City",
+                    "region": "Arizona",
+                    "country": "United States"
+                  },
+                  "entityType": "NAMED_NATURAL_FEATURE",
+                  "selectedName": "Copper Canyon Drive",
+                  "rejectionReason": null,
+                  "selectedGooglePlaceId": "ChIJi4Bk1Mfy0YARSPizNzplqzk"
+                },
+                {
+                  "name": "Parker Strip on the Colorado River",
+                  "calls": [
+                    {
+                      "query": "Parker Strip on the Colorado River, Parker, Arizona, United States",
+                      "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                      "matched": true,
+                      "outcome": "CANONICAL_ALIAS",
+                      "resultIds": [
+                        "ChIJxb8pvmeH0YARWjA1XmaBBTw"
+                      ],
+                      "resultCount": 1,
+                      "resultNames": [
+                        "Parker Strip"
+                      ],
+                      "selectedName": "Parker Strip",
+                      "attemptNumber": 1,
+                      "rejectionReason": null,
+                      "selectedGooglePlaceId": "ChIJxb8pvmeH0YARWjA1XmaBBTw"
+                    }
+                  ],
+                  "outcome": "CANONICAL_ALIAS",
+                  "geography": {
+                    "city": "Parker",
+                    "region": "Arizona",
+                    "country": "United States"
+                  },
+                  "entityType": "BROAD_AREA",
+                  "selectedName": "Parker Strip",
+                  "rejectionReason": null,
+                  "selectedGooglePlaceId": "ChIJxb8pvmeH0YARWjA1XmaBBTw"
+                }
+              ]
+            }
+          },
+          "recognitionFailureClass": "none",
+          "sharedGeoCountryApplied": false,
+          "sharedGeoCountryStrength": "none",
+          "peerGeographicDestinations": 0,
+          "sharedGeoCountryCandidates": 0,
+          "sourceGeographicContextDropped": 0
+        }
+      },
+      "reservationCount": 1,
+      "reservationStatus": "consumed",
+      "priorityUseful": true
+    },
+    {
+      "caseId": "R07",
+      "sourceUrl": "https://www.instagram.com/reel/C0bg-7sooKi/",
+      "jobId": "8cf880be-c122-4d7e-8096-ebae2af0b043",
+      "premiumRequestId": "8bac4eca-746e-4e8c-b2f5-75f9e7ee453e",
+      "premiumState": "useful_result",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "names": [
+        "Lovatnet",
+        "Oppstrynsvatnet",
+        "Oldevatnet"
+      ],
+      "suggestedQuery": "Oppstrynsvatnet",
+      "chargeable": true,
+      "settlementReason": "premium_specific_candidates",
+      "costs": {
+        "sol": {
+          "model": "gpt-5.6-sol",
+          "usage": {
+            "input_tokens": 5317,
+            "total_tokens": 9512,
+            "output_tokens": 4195,
+            "reasoning_tokens": 3934,
+            "cached_input_tokens": 5314
+          },
+          "knownCostUsd": 0.086038
+        },
+        "places": {
+          "costUsd": "UNKNOWN",
+          "requestCount": 3,
+          "requestTypes": [
+            "PRIMARY_SPECIFIC_IDENTITY",
+            "PRIMARY_SPECIFIC_IDENTITY",
+            "PRIMARY_SPECIFIC_IDENTITY"
+          ]
+        },
+        "latencyMs": {
+          "sol": 68585,
+          "places": 501,
+          "evidencePrep": 15187,
+          "totalAfterEvidenceReady": 69087
+        },
+        "acquisition": "UNKNOWN",
+        "evidenceReuse": {
+          "ocr": "REACQUIRED",
+          "media": "REACQUIRED",
+          "frames": "REACQUIRED",
+          "caption": "REACQUIRED",
+          "transcript": "REACQUIRED"
+        },
+        "transcription": "UNKNOWN",
+        "parityDiagnostics": {
+          "solBoundary": {
+            "model": "gpt-5.6-sol",
+            "usage": {
+              "input_tokens": 5317,
+              "total_tokens": 9512,
+              "output_tokens": 4195,
+              "reasoning_tokens": 3934,
+              "cached_input_tokens": 5314
+            },
+            "version": "premium-sol-boundary.v1",
+            "latencyMs": 68585,
+            "hypotheses": [
+              {
+                "name": "Oppstrynsvatnet",
+                "confidence": "MEDIUM",
+                "entityType": "NAMED_NATURAL_FEATURE",
+                "alternatives": [
+                  "Lovatnet",
+                  "Oldevatnet"
+                ],
+                "evidenceBasis": "MODEL_OBSERVED"
+              }
+            ],
+            "responseId": "resp_03c0989137e6a05d016a9bb193bde087d0b427a8c68812571b",
+            "shareJobId": "8cf880be-c122-4d7e-8096-ebae2af0b043",
+            "parseSuccess": true,
+            "fingerprintId": "6ac49d15b67db9de53497d340db9cc0ca7d8c2996c87b10de01fa0dc62a4e8ff",
+            "destinationCount": 1,
+            "parseFailureCode": null,
+            "premiumRequestId": "8bac4eca-746e-4e8c-b2f5-75f9e7ee453e",
+            "structuredResultHash": "93d92d4832e0edaaa6fb5a23c6df28c712e5b196349afe049e6a5d9b4d358725"
+          },
+          "engineVersion": "simple-sol-premium.v2",
+          "safetyVersion": "premium-recognition-safety.v2",
+          "evidenceVersion": "premium-evidence-2026-09-05.v1",
+          "finalFingerprint": {
+            "hash": "9a37b8f591fe45a79324e227e44e08b9a131fb20c9bdb3b95b67bf6ef0bc809a",
+            "version": "premium-final-fingerprint.v1",
+            "chargeability": "CHARGEABLE_ACTIONABLE",
+            "solResultHash": "93d92d4832e0edaaa6fb5a23c6df28c712e5b196349afe049e6a5d9b4d358725",
+            "resultDecision": "PREMIUM_ACTIONABLE_RESULT",
+            "safetyDecision": [
+              "NAMED_LEAD"
+            ],
+            "tokenSettlement": "CONSUME",
+            "canonicalResultHash": "b6b1e16d4c133876fa58f96ab224a15a33feb4e7414aa874c1f13747e3ca418d"
+          },
+          "evidenceReuseState": "EVIDENCE_REGENERATED",
+          "inferenceFingerprint": {
+            "frames": [
+              {
+                "width": 608,
+                "height": 1080,
+                "byteLength": 138116,
+                "imageSha256": "d0bb6f523bfdd7a780961b3356991f6be8bb33399767b55436dc895dce2446f3",
+                "timestampMs": 0
+              },
+              {
+                "width": 608,
+                "height": 1080,
+                "byteLength": 113543,
+                "imageSha256": "347e002671eba9837cd56a005758bb0e87fc3c416de91dab286d6eb44be3855f",
+                "timestampMs": 7000
+              },
+              {
+                "width": 608,
+                "height": 1080,
+                "byteLength": 125286,
+                "imageSha256": "2148f8aedc213f2e136b569fe0a533bb11d44f92c7aa53c82693ba83df8f041e",
+                "timestampMs": 8000
+              },
+              {
+                "width": 608,
+                "height": 1080,
+                "byteLength": 124105,
+                "imageSha256": "3a7f58faf949f560b6fa94621f76800048e04f639b1bde92c0060a9569bc81dc",
+                "timestampMs": 13000
+              },
+              {
+                "width": 608,
+                "height": 1080,
+                "byteLength": 121962,
+                "imageSha256": "ba54dedb5634ec80e903c4ecf1a9b2b8f78ba5214da29183bda8946d1af7cfea",
+                "timestampMs": 15000
+              },
+              {
+                "width": 608,
+                "height": 1080,
+                "byteLength": 82733,
+                "imageSha256": "0ffda754a4cac9ebca6c009472fa31145d631f06cf72570d81169aad73c84b73",
+                "timestampMs": 19073
+              }
+            ],
+            "prompt": {
+              "model": "gpt-5.6-sol",
+              "promptHash": "8132da97b952b5d93062ba9b7d915c1dc40b4033de869607a1274142e1580e9c",
+              "schemaHash": "6899fd09c3cc95b4d12263bec5d7028f605eab0eb77b9fdaa38877704c694cfa",
+              "promptVersion": "sol-parity-natural-v1",
+              "schemaVersion": "sol-parity-destination-schema-v1",
+              "reasoningConfig": {
+                "effort": "high"
+              }
+            },
+            "request": {
+              "imageCount": 6,
+              "inputTextHash": "6dd396454f0351f49da136b81511f1ddf1e4715612c07f984b7e09e82fecd182",
+              "requestPayloadHash": "632c09443dbdf8c770e58be99a89b9acf75b5845117d7208064018b1e8606c97"
+            },
+            "version": "premium-inference-fingerprint.v1",
+            "evidenceReuse": "EVIDENCE_REGENERATED",
+            "fingerprintId": "6ac49d15b67db9de53497d340db9cc0ca7d8c2996c87b10de01fa0dc62a4e8ff",
+            "sourceContext": {
+              "ocrHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "ocrLength": 0,
+              "captionHash": "e93a19985b659bb9cc012c8a5e42425ef6f6ce07bfb7795b7b27501b7f16f4b1",
+              "creatorHash": "c580577f66e5d0dd5df091924e9f7a635d91648f40c3cf710caac04910f2bd58",
+              "captionLength": 142,
+              "creatorLength": 15,
+              "transcriptHash": "94f1c107f81a08341d150e8645c8824ae5a7cbaf00c12761348f11b5cc45cf1a",
+              "transcriptLength": 9,
+              "sourceLocationHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "sourceLocationLength": 0,
+              "sourceLocationPresent": false
+            },
+            "sourceIdentity": {
+              "platform": "instagram",
+              "canonicalUrlHash": "40d3934c6fab4c81d3af10f61315c1b4df09cd1a45cb743c01ee60a542636238",
+              "canonicalContentIdHash": "6f30470989ef63401a412fccc5ad6e4210a9e4e44a1b25577a0c298f8cf217fb"
+            },
+            "evidenceVersion": "premium-evidence-2026-09-05.v1"
+          },
+          "canonicalizationFingerprint": {
+            "hash": "b6b1e16d4c133876fa58f96ab224a15a33feb4e7414aa874c1f13747e3ca418d",
+            "version": "premium-canonicalization-fingerprint.v1",
+            "hypotheses": [
+              {
+                "name": "Oppstrynsvatnet",
+                "calls": [
+                  {
+                    "query": "Oppstrynsvatnet, Stryn, Vestland, Norway",
+                    "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                    "matched": false,
+                    "outcome": "NO_MATCH",
+                    "resultIds": [
+                      "ChIJm5lN5l2AFkYReA7L6mfsZBY"
+                    ],
+                    "resultCount": 1,
+                    "resultNames": [
+                      "Oppstrynsvatn"
+                    ],
+                    "selectedName": null,
+                    "attemptNumber": 1,
+                    "rejectionReason": "no_compatible_match",
+                    "selectedGooglePlaceId": null
+                  }
+                ],
+                "outcome": "NAMED_LEAD",
+                "geography": {
+                  "city": "Stryn",
+                  "region": "Vestland",
+                  "country": "Norway"
+                },
+                "entityType": "NAMED_NATURAL_FEATURE",
+                "selectedName": null,
+                "rejectionReason": "no_compatible_match",
+                "selectedGooglePlaceId": null
+              },
+              {
+                "name": "Lovatnet",
+                "calls": [
+                  {
+                    "query": "Lovatnet, Loen, Vestland, Norway",
+                    "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                    "matched": true,
+                    "outcome": "CANONICAL_EXACT",
+                    "resultIds": [
+                      "ChIJR4mhkyV_FkYRgMVQo9Vwnf8"
+                    ],
+                    "resultCount": 1,
+                    "resultNames": [
+                      "Lovatnet"
+                    ],
+                    "selectedName": "Lovatnet",
+                    "attemptNumber": 1,
+                    "rejectionReason": null,
+                    "selectedGooglePlaceId": "ChIJR4mhkyV_FkYRgMVQo9Vwnf8"
+                  }
+                ],
+                "outcome": "CANONICAL_EXACT",
+                "geography": {
+                  "city": "Loen",
+                  "region": "Vestland",
+                  "country": "Norway"
+                },
+                "entityType": "NAMED_NATURAL_FEATURE",
+                "selectedName": "Lovatnet",
+                "rejectionReason": null,
+                "selectedGooglePlaceId": "ChIJR4mhkyV_FkYRgMVQo9Vwnf8"
+              },
+              {
+                "name": "Oldevatnet",
+                "calls": [
+                  {
+                    "query": "Oldevatnet, Olden, Vestland, Norway",
+                    "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                    "matched": false,
+                    "outcome": "NO_MATCH",
+                    "resultIds": [
+                      "ChIJSZ0cwWd8FkYR5cxazPeP05k"
+                    ],
+                    "resultCount": 1,
+                    "resultNames": [
+                      "Olden"
+                    ],
+                    "selectedName": null,
+                    "attemptNumber": 1,
+                    "rejectionReason": "no_compatible_match",
+                    "selectedGooglePlaceId": null
+                  }
+                ],
+                "outcome": "NAMED_LEAD",
+                "geography": {
+                  "city": "Olden",
+                  "region": "Vestland",
+                  "country": "Norway"
+                },
+                "entityType": "NAMED_NATURAL_FEATURE",
+                "selectedName": null,
+                "rejectionReason": "no_compatible_match",
+                "selectedGooglePlaceId": null
+              }
+            ]
+          }
+        }
+      },
+      "requestedAt": "2026-09-05T06:04:19.74067+00:00",
+      "startedAt": "2026-09-05T06:07:00.200349+00:00",
+      "completedAt": "2026-09-05T06:08:26.222832+00:00",
+      "task": {
+        "id": "6a914f69-0724-40b7-88e1-27f5a076c4e7",
+        "status": "completed",
+        "attempts": 1,
+        "failureCode": null,
+        "resolverName": "premium-sol",
+        "analysisProvider": null,
+        "analysisModel": null,
+        "promptVersion": null,
+        "latencyMs": null,
+        "modelCalls": null,
+        "modelInputTokens": null,
+        "modelOutputTokens": null,
+        "modelThinkingTokens": null,
+        "modelLatencyMs": null
+      },
+      "mediaRun": {
+        "id": "7d7b28c8-2cf2-4f8c-b586-e765afb80f07",
+        "durationMs": 84274,
+        "frameCount": 13,
+        "transcriptSegments": 1,
+        "ocrSegments": 0,
+        "resolverName": "instagram/yt-dlp",
+        "modelProvider": "premium-sol",
+        "evidence": {
+          "multiple": false,
+          "placeCount": 3,
+          "insufficient": false,
+          "analysisAttempted": true,
+          "destinationPlaces": 1,
+          "partialPlaceCount": 0,
+          "explicitPlaceCount": 3,
+          "premiumDiagnostics": {
+            "solBoundary": {
+              "model": "gpt-5.6-sol",
+              "usage": {
+                "input_tokens": 5317,
+                "total_tokens": 9512,
+                "output_tokens": 4195,
+                "reasoning_tokens": 3934,
+                "cached_input_tokens": 5314
+              },
+              "version": "premium-sol-boundary.v1",
+              "latencyMs": 68585,
+              "hypotheses": [
+                {
+                  "name": "Oppstrynsvatnet",
+                  "confidence": "MEDIUM",
+                  "entityType": "NAMED_NATURAL_FEATURE",
+                  "alternatives": [
+                    "Lovatnet",
+                    "Oldevatnet"
+                  ],
+                  "evidenceBasis": "MODEL_OBSERVED"
+                }
+              ],
+              "responseId": "resp_03c0989137e6a05d016a9bb193bde087d0b427a8c68812571b",
+              "shareJobId": "8cf880be-c122-4d7e-8096-ebae2af0b043",
+              "parseSuccess": true,
+              "fingerprintId": "6ac49d15b67db9de53497d340db9cc0ca7d8c2996c87b10de01fa0dc62a4e8ff",
+              "destinationCount": 1,
+              "parseFailureCode": null,
+              "premiumRequestId": "8bac4eca-746e-4e8c-b2f5-75f9e7ee453e",
+              "structuredResultHash": "93d92d4832e0edaaa6fb5a23c6df28c712e5b196349afe049e6a5d9b4d358725"
+            },
+            "finalFingerprint": {
+              "hash": "9a37b8f591fe45a79324e227e44e08b9a131fb20c9bdb3b95b67bf6ef0bc809a",
+              "version": "premium-final-fingerprint.v1",
+              "chargeability": "CHARGEABLE_ACTIONABLE",
+              "solResultHash": "93d92d4832e0edaaa6fb5a23c6df28c712e5b196349afe049e6a5d9b4d358725",
+              "resultDecision": "PREMIUM_ACTIONABLE_RESULT",
+              "safetyDecision": [
+                "NAMED_LEAD"
+              ],
+              "tokenSettlement": "CONSUME",
+              "canonicalResultHash": "b6b1e16d4c133876fa58f96ab224a15a33feb4e7414aa874c1f13747e3ca418d"
+            },
+            "inferenceFingerprint": {
+              "frames": [
+                {
+                  "width": 608,
+                  "height": 1080,
+                  "byteLength": 138116,
+                  "imageSha256": "d0bb6f523bfdd7a780961b3356991f6be8bb33399767b55436dc895dce2446f3",
+                  "timestampMs": 0
+                },
+                {
+                  "width": 608,
+                  "height": 1080,
+                  "byteLength": 113543,
+                  "imageSha256": "347e002671eba9837cd56a005758bb0e87fc3c416de91dab286d6eb44be3855f",
+                  "timestampMs": 7000
+                },
+                {
+                  "width": 608,
+                  "height": 1080,
+                  "byteLength": 125286,
+                  "imageSha256": "2148f8aedc213f2e136b569fe0a533bb11d44f92c7aa53c82693ba83df8f041e",
+                  "timestampMs": 8000
+                },
+                {
+                  "width": 608,
+                  "height": 1080,
+                  "byteLength": 124105,
+                  "imageSha256": "3a7f58faf949f560b6fa94621f76800048e04f639b1bde92c0060a9569bc81dc",
+                  "timestampMs": 13000
+                },
+                {
+                  "width": 608,
+                  "height": 1080,
+                  "byteLength": 121962,
+                  "imageSha256": "ba54dedb5634ec80e903c4ecf1a9b2b8f78ba5214da29183bda8946d1af7cfea",
+                  "timestampMs": 15000
+                },
+                {
+                  "width": 608,
+                  "height": 1080,
+                  "byteLength": 82733,
+                  "imageSha256": "0ffda754a4cac9ebca6c009472fa31145d631f06cf72570d81169aad73c84b73",
+                  "timestampMs": 19073
+                }
+              ],
+              "prompt": {
+                "model": "gpt-5.6-sol",
+                "promptHash": "8132da97b952b5d93062ba9b7d915c1dc40b4033de869607a1274142e1580e9c",
+                "schemaHash": "6899fd09c3cc95b4d12263bec5d7028f605eab0eb77b9fdaa38877704c694cfa",
+                "promptVersion": "sol-parity-natural-v1",
+                "schemaVersion": "sol-parity-destination-schema-v1",
+                "reasoningConfig": {
+                  "effort": "high"
+                }
+              },
+              "request": {
+                "imageCount": 6,
+                "inputTextHash": "6dd396454f0351f49da136b81511f1ddf1e4715612c07f984b7e09e82fecd182",
+                "requestPayloadHash": "632c09443dbdf8c770e58be99a89b9acf75b5845117d7208064018b1e8606c97"
+              },
+              "version": "premium-inference-fingerprint.v1",
+              "evidenceReuse": "EVIDENCE_REGENERATED",
+              "fingerprintId": "6ac49d15b67db9de53497d340db9cc0ca7d8c2996c87b10de01fa0dc62a4e8ff",
+              "sourceContext": {
+                "ocrHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "ocrLength": 0,
+                "captionHash": "e93a19985b659bb9cc012c8a5e42425ef6f6ce07bfb7795b7b27501b7f16f4b1",
+                "creatorHash": "c580577f66e5d0dd5df091924e9f7a635d91648f40c3cf710caac04910f2bd58",
+                "captionLength": 142,
+                "creatorLength": 15,
+                "transcriptHash": "94f1c107f81a08341d150e8645c8824ae5a7cbaf00c12761348f11b5cc45cf1a",
+                "transcriptLength": 9,
+                "sourceLocationHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "sourceLocationLength": 0,
+                "sourceLocationPresent": false
+              },
+              "sourceIdentity": {
+                "platform": "instagram",
+                "canonicalUrlHash": "40d3934c6fab4c81d3af10f61315c1b4df09cd1a45cb743c01ee60a542636238",
+                "canonicalContentIdHash": "6f30470989ef63401a412fccc5ad6e4210a9e4e44a1b25577a0c298f8cf217fb"
+              },
+              "evidenceVersion": "premium-evidence-2026-09-05.v1"
+            },
+            "canonicalizationFingerprint": {
+              "hash": "b6b1e16d4c133876fa58f96ab224a15a33feb4e7414aa874c1f13747e3ca418d",
+              "version": "premium-canonicalization-fingerprint.v1",
+              "hypotheses": [
+                {
+                  "name": "Oppstrynsvatnet",
+                  "calls": [
+                    {
+                      "query": "Oppstrynsvatnet, Stryn, Vestland, Norway",
+                      "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                      "matched": false,
+                      "outcome": "NO_MATCH",
+                      "resultIds": [
+                        "ChIJm5lN5l2AFkYReA7L6mfsZBY"
+                      ],
+                      "resultCount": 1,
+                      "resultNames": [
+                        "Oppstrynsvatn"
+                      ],
+                      "selectedName": null,
+                      "attemptNumber": 1,
+                      "rejectionReason": "no_compatible_match",
+                      "selectedGooglePlaceId": null
+                    }
+                  ],
+                  "outcome": "NAMED_LEAD",
+                  "geography": {
+                    "city": "Stryn",
+                    "region": "Vestland",
+                    "country": "Norway"
+                  },
+                  "entityType": "NAMED_NATURAL_FEATURE",
+                  "selectedName": null,
+                  "rejectionReason": "no_compatible_match",
+                  "selectedGooglePlaceId": null
+                },
+                {
+                  "name": "Lovatnet",
+                  "calls": [
+                    {
+                      "query": "Lovatnet, Loen, Vestland, Norway",
+                      "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                      "matched": true,
+                      "outcome": "CANONICAL_EXACT",
+                      "resultIds": [
+                        "ChIJR4mhkyV_FkYRgMVQo9Vwnf8"
+                      ],
+                      "resultCount": 1,
+                      "resultNames": [
+                        "Lovatnet"
+                      ],
+                      "selectedName": "Lovatnet",
+                      "attemptNumber": 1,
+                      "rejectionReason": null,
+                      "selectedGooglePlaceId": "ChIJR4mhkyV_FkYRgMVQo9Vwnf8"
+                    }
+                  ],
+                  "outcome": "CANONICAL_EXACT",
+                  "geography": {
+                    "city": "Loen",
+                    "region": "Vestland",
+                    "country": "Norway"
+                  },
+                  "entityType": "NAMED_NATURAL_FEATURE",
+                  "selectedName": "Lovatnet",
+                  "rejectionReason": null,
+                  "selectedGooglePlaceId": "ChIJR4mhkyV_FkYRgMVQo9Vwnf8"
+                },
+                {
+                  "name": "Oldevatnet",
+                  "calls": [
+                    {
+                      "query": "Oldevatnet, Olden, Vestland, Norway",
+                      "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                      "matched": false,
+                      "outcome": "NO_MATCH",
+                      "resultIds": [
+                        "ChIJSZ0cwWd8FkYR5cxazPeP05k"
+                      ],
+                      "resultCount": 1,
+                      "resultNames": [
+                        "Olden"
+                      ],
+                      "selectedName": null,
+                      "attemptNumber": 1,
+                      "rejectionReason": "no_compatible_match",
+                      "selectedGooglePlaceId": null
+                    }
+                  ],
+                  "outcome": "NAMED_LEAD",
+                  "geography": {
+                    "city": "Olden",
+                    "region": "Vestland",
+                    "country": "Norway"
+                  },
+                  "entityType": "NAMED_NATURAL_FEATURE",
+                  "selectedName": null,
+                  "rejectionReason": "no_compatible_match",
+                  "selectedGooglePlaceId": null
+                }
+              ]
+            }
+          },
+          "sharedGeoCountrySource": "multiple_places_agree",
+          "recognitionFailureClass": "none",
+          "sharedGeoCountryApplied": true,
+          "sharedGeoCountryStrength": "strong",
+          "peerGeographicDestinations": 0,
+          "sharedGeoCountryCandidates": 1,
+          "sourceGeographicContextDropped": 0
+        }
+      },
+      "reservationCount": 1,
+      "reservationStatus": "consumed",
+      "priorityUseful": true
+    },
+    {
+      "caseId": "R08",
+      "sourceUrl": "https://www.instagram.com/reel/CqJo6QHJqPo/",
+      "jobId": "9bb7a243-0725-469f-8902-c7073f75e240",
+      "premiumRequestId": "7be82e8a-4112-47a2-87e3-674d255dbdb9",
+      "premiumState": "useful_result",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "names": [
+        "Moku Nui",
+        "Queen’s Bath on Moku Nui, Mokulua Islands"
+      ],
+      "suggestedQuery": "Queen’s Bath on Moku Nui, Mokulua Islands",
+      "chargeable": true,
+      "settlementReason": "premium_specific_candidates",
+      "costs": {
+        "sol": {
+          "model": "gpt-5.6-sol",
+          "usage": {
+            "input_tokens": 7329,
+            "total_tokens": 8033,
+            "output_tokens": 704,
+            "reasoning_tokens": 516,
+            "cached_input_tokens": 0
+          },
+          "knownCostUsd": 0.043396
+        },
+        "places": {
+          "costUsd": "UNKNOWN",
+          "requestCount": 1,
+          "requestTypes": [
+            "PRIMARY_SPECIFIC_IDENTITY"
+          ]
+        },
+        "latencyMs": {
+          "sol": 13006,
+          "places": 295,
+          "evidencePrep": 9261,
+          "totalAfterEvidenceReady": 13301
+        },
+        "acquisition": "UNKNOWN",
+        "evidenceReuse": {
+          "ocr": "REACQUIRED",
+          "media": "REACQUIRED",
+          "frames": "REACQUIRED",
+          "caption": "REACQUIRED",
+          "transcript": "REACQUIRED"
+        },
+        "transcription": "UNKNOWN",
+        "parityDiagnostics": {
+          "solBoundary": {
+            "model": "gpt-5.6-sol",
+            "usage": {
+              "input_tokens": 7329,
+              "total_tokens": 8033,
+              "output_tokens": 704,
+              "reasoning_tokens": 516,
+              "cached_input_tokens": 0
+            },
+            "version": "premium-sol-boundary.v1",
+            "latencyMs": 13006,
+            "hypotheses": [
+              {
+                "name": "Queen’s Bath on Moku Nui, Mokulua Islands",
+                "confidence": "HIGH",
+                "entityType": "NAMED_NATURAL_FEATURE",
+                "alternatives": [],
+                "evidenceBasis": "MODEL_OBSERVED"
+              }
+            ],
+            "responseId": "resp_04cdb77e4cf82e02016a9bb18f8e3887d08c6fb8204bb4f5c8",
+            "shareJobId": "9bb7a243-0725-469f-8902-c7073f75e240",
+            "parseSuccess": true,
+            "fingerprintId": "819e0d3e42740b8aa3aacdb315c32822e3e4032f060efe513ae19e16c3b353dd",
+            "destinationCount": 1,
+            "parseFailureCode": null,
+            "premiumRequestId": "7be82e8a-4112-47a2-87e3-674d255dbdb9",
+            "structuredResultHash": "1892023d2d90d3ae72b8065865565937d80491bd1815d61cd6726f0c587f2584"
+          },
+          "engineVersion": "simple-sol-premium.v2",
+          "safetyVersion": "premium-recognition-safety.v2",
+          "evidenceVersion": "premium-evidence-2026-09-05.v1",
+          "finalFingerprint": {
+            "hash": "727def74f1d0414dd3eade89cf529d8626ed2ab7893a135747096686e9226d65",
+            "version": "premium-final-fingerprint.v1",
+            "chargeability": "CHARGEABLE_ACTIONABLE",
+            "solResultHash": "1892023d2d90d3ae72b8065865565937d80491bd1815d61cd6726f0c587f2584",
+            "resultDecision": "PREMIUM_ACTIONABLE_RESULT",
+            "safetyDecision": [
+              "REVIEW"
+            ],
+            "tokenSettlement": "CONSUME",
+            "canonicalResultHash": "f4a84ee72c37d2116a49ff0ad8dfc8b889ac332d537768fd1dadc8e193cf4ae3"
+          },
+          "evidenceReuseState": "EVIDENCE_REGENERATED",
+          "inferenceFingerprint": {
+            "frames": [
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 76901,
+                "imageSha256": "6f9b8219f6238ce3e5f34bf21db1a7c8ec7a671417b46e277b7d7d9f2f8a256e",
+                "timestampMs": 0
+              },
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 66825,
+                "imageSha256": "1ec0aa82a1230d3dd9a25aee90144a6871713ce8c1132c3048cc2b55f11b4488",
+                "timestampMs": 3000
+              },
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 95682,
+                "imageSha256": "d7e74ce19fb7b0ea0c4bd24b0155ad0d9cc06ce5f1257c95cc40cbd1fc2f451f",
+                "timestampMs": 4000
+              },
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 107512,
+                "imageSha256": "3bd64016fed4c26c4da7ddebe98a724736809de6b51069a9ceeecb2bd63476a5",
+                "timestampMs": 5000
+              },
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 97165,
+                "imageSha256": "64baa0a544881ca77737a9d6c11d01a0db3fc366e2a543978a2d4704fcf78a76",
+                "timestampMs": 6000
+              },
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 110725,
+                "imageSha256": "28ce5ae1a8f546491a15d1406249c617d855afd4d8b5359b3a5c9c6ae8f280ee",
+                "timestampMs": 7733
+              }
+            ],
+            "prompt": {
+              "model": "gpt-5.6-sol",
+              "promptHash": "8132da97b952b5d93062ba9b7d915c1dc40b4033de869607a1274142e1580e9c",
+              "schemaHash": "6899fd09c3cc95b4d12263bec5d7028f605eab0eb77b9fdaa38877704c694cfa",
+              "promptVersion": "sol-parity-natural-v1",
+              "schemaVersion": "sol-parity-destination-schema-v1",
+              "reasoningConfig": {
+                "effort": "high"
+              }
+            },
+            "request": {
+              "imageCount": 6,
+              "inputTextHash": "f7bc61933994042710af289f96134e530573e4447cf7f956bddab96a7372e36f",
+              "requestPayloadHash": "923c6de16f1fc1fe7de9bcd1ae42e330c4c69c9bf2758f3b156e3e6a37e24872"
+            },
+            "version": "premium-inference-fingerprint.v1",
+            "evidenceReuse": "EVIDENCE_REGENERATED",
+            "fingerprintId": "819e0d3e42740b8aa3aacdb315c32822e3e4032f060efe513ae19e16c3b353dd",
+            "sourceContext": {
+              "ocrHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "ocrLength": 0,
+              "captionHash": "4d54fb87803f21c6cedc635caad6866b439d7ca753656fed2cb0ffdcd9d29b82",
+              "creatorHash": "fbc55270fd9062b7b639fd4af4010f18ddeaf68381d9715a6b101c2724a20986",
+              "captionLength": 205,
+              "creatorLength": 13,
+              "transcriptHash": "d5af7e2694a04c20b01c605b14ba65eb7db7bf3e485ef506d5158c49109376be",
+              "transcriptLength": 25,
+              "sourceLocationHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "sourceLocationLength": 0,
+              "sourceLocationPresent": false
+            },
+            "sourceIdentity": {
+              "platform": "instagram",
+              "canonicalUrlHash": "368cb3ad28e8f5576214af9d61926f61f9e8ba4c9aedabaa8334e04caeebf132",
+              "canonicalContentIdHash": "a1f3cf44b755fa97703f5f31fc44d5bd3a94410d5a0dc457e77dff99f15f4b8f"
+            },
+            "evidenceVersion": "premium-evidence-2026-09-05.v1"
+          },
+          "canonicalizationFingerprint": {
+            "hash": "f4a84ee72c37d2116a49ff0ad8dfc8b889ac332d537768fd1dadc8e193cf4ae3",
+            "version": "premium-canonicalization-fingerprint.v1",
+            "hypotheses": [
+              {
+                "name": "Queen’s Bath on Moku Nui, Mokulua Islands",
+                "calls": [
+                  {
+                    "query": "Queen’s Bath on Moku Nui, Mokulua Islands, Kailua, Hawaii, United States",
+                    "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                    "matched": true,
+                    "outcome": "CANONICAL_ALIAS",
+                    "resultIds": [
+                      "ChIJCxN2GKF2VHkR3qbNBt6Jb38",
+                      "ChIJEye6FU8UAHwRBDaY6NSmUXI",
+                      "ChIJH8kIClgUAHwRdvDAYLLFFv0",
+                      "ChIJwx-q1FEUAHwRoyqaD18fq38",
+                      "ChIJXTpJ5eMUAHwR3xVi9PRK0ZM",
+                      "ChIJu39y7cIrUnkRlEWRe_O9XtY"
+                    ],
+                    "resultCount": 6,
+                    "resultNames": [
+                      "Queen’s Bath",
+                      "Mokulua Islets Seabird Sanctuary",
+                      "Na Mokulua",
+                      "Moku Nui",
+                      "Kailua Beach Adventures",
+                      "Queens Bath"
+                    ],
+                    "selectedName": "Moku Nui",
+                    "attemptNumber": 1,
+                    "rejectionReason": null,
+                    "selectedGooglePlaceId": "ChIJwx-q1FEUAHwRoyqaD18fq38"
+                  }
+                ],
+                "outcome": "CANONICAL_ALIAS",
+                "geography": {
+                  "city": "Kailua",
+                  "region": "Hawaii",
+                  "country": "United States"
+                },
+                "entityType": "NAMED_NATURAL_FEATURE",
+                "selectedName": "Moku Nui",
+                "rejectionReason": null,
+                "selectedGooglePlaceId": "ChIJwx-q1FEUAHwRoyqaD18fq38"
+              }
+            ]
+          }
+        }
+      },
+      "requestedAt": "2026-09-05T06:04:20.226976+00:00",
+      "startedAt": "2026-09-05T06:07:00.200349+00:00",
+      "completedAt": "2026-09-05T06:07:24.239328+00:00",
+      "task": {
+        "id": "d3ecfbfe-1120-4934-b462-ca343e816746",
+        "status": "completed",
+        "attempts": 1,
+        "failureCode": null,
+        "resolverName": "premium-sol",
+        "analysisProvider": null,
+        "analysisModel": null,
+        "promptVersion": null,
+        "latencyMs": null,
+        "modelCalls": null,
+        "modelInputTokens": null,
+        "modelOutputTokens": null,
+        "modelThinkingTokens": null,
+        "modelLatencyMs": null
+      },
+      "mediaRun": {
+        "id": "c2250606-6920-4da1-866f-30291be09fc3",
+        "durationMs": 22562,
+        "frameCount": 6,
+        "transcriptSegments": 2,
+        "ocrSegments": 0,
+        "resolverName": "instagram/yt-dlp",
+        "modelProvider": "premium-sol",
+        "evidence": {
+          "multiple": false,
+          "placeCount": 1,
+          "insufficient": false,
+          "analysisAttempted": true,
+          "destinationPlaces": 1,
+          "partialPlaceCount": 0,
+          "explicitPlaceCount": 1,
+          "premiumDiagnostics": {
+            "solBoundary": {
+              "model": "gpt-5.6-sol",
+              "usage": {
+                "input_tokens": 7329,
+                "total_tokens": 8033,
+                "output_tokens": 704,
+                "reasoning_tokens": 516,
+                "cached_input_tokens": 0
+              },
+              "version": "premium-sol-boundary.v1",
+              "latencyMs": 13006,
+              "hypotheses": [
+                {
+                  "name": "Queen’s Bath on Moku Nui, Mokulua Islands",
+                  "confidence": "HIGH",
+                  "entityType": "NAMED_NATURAL_FEATURE",
+                  "alternatives": [],
+                  "evidenceBasis": "MODEL_OBSERVED"
+                }
+              ],
+              "responseId": "resp_04cdb77e4cf82e02016a9bb18f8e3887d08c6fb8204bb4f5c8",
+              "shareJobId": "9bb7a243-0725-469f-8902-c7073f75e240",
+              "parseSuccess": true,
+              "fingerprintId": "819e0d3e42740b8aa3aacdb315c32822e3e4032f060efe513ae19e16c3b353dd",
+              "destinationCount": 1,
+              "parseFailureCode": null,
+              "premiumRequestId": "7be82e8a-4112-47a2-87e3-674d255dbdb9",
+              "structuredResultHash": "1892023d2d90d3ae72b8065865565937d80491bd1815d61cd6726f0c587f2584"
+            },
+            "finalFingerprint": {
+              "hash": "727def74f1d0414dd3eade89cf529d8626ed2ab7893a135747096686e9226d65",
+              "version": "premium-final-fingerprint.v1",
+              "chargeability": "CHARGEABLE_ACTIONABLE",
+              "solResultHash": "1892023d2d90d3ae72b8065865565937d80491bd1815d61cd6726f0c587f2584",
+              "resultDecision": "PREMIUM_ACTIONABLE_RESULT",
+              "safetyDecision": [
+                "REVIEW"
+              ],
+              "tokenSettlement": "CONSUME",
+              "canonicalResultHash": "f4a84ee72c37d2116a49ff0ad8dfc8b889ac332d537768fd1dadc8e193cf4ae3"
+            },
+            "inferenceFingerprint": {
+              "frames": [
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 76901,
+                  "imageSha256": "6f9b8219f6238ce3e5f34bf21db1a7c8ec7a671417b46e277b7d7d9f2f8a256e",
+                  "timestampMs": 0
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 66825,
+                  "imageSha256": "1ec0aa82a1230d3dd9a25aee90144a6871713ce8c1132c3048cc2b55f11b4488",
+                  "timestampMs": 3000
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 95682,
+                  "imageSha256": "d7e74ce19fb7b0ea0c4bd24b0155ad0d9cc06ce5f1257c95cc40cbd1fc2f451f",
+                  "timestampMs": 4000
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 107512,
+                  "imageSha256": "3bd64016fed4c26c4da7ddebe98a724736809de6b51069a9ceeecb2bd63476a5",
+                  "timestampMs": 5000
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 97165,
+                  "imageSha256": "64baa0a544881ca77737a9d6c11d01a0db3fc366e2a543978a2d4704fcf78a76",
+                  "timestampMs": 6000
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 110725,
+                  "imageSha256": "28ce5ae1a8f546491a15d1406249c617d855afd4d8b5359b3a5c9c6ae8f280ee",
+                  "timestampMs": 7733
+                }
+              ],
+              "prompt": {
+                "model": "gpt-5.6-sol",
+                "promptHash": "8132da97b952b5d93062ba9b7d915c1dc40b4033de869607a1274142e1580e9c",
+                "schemaHash": "6899fd09c3cc95b4d12263bec5d7028f605eab0eb77b9fdaa38877704c694cfa",
+                "promptVersion": "sol-parity-natural-v1",
+                "schemaVersion": "sol-parity-destination-schema-v1",
+                "reasoningConfig": {
+                  "effort": "high"
+                }
+              },
+              "request": {
+                "imageCount": 6,
+                "inputTextHash": "f7bc61933994042710af289f96134e530573e4447cf7f956bddab96a7372e36f",
+                "requestPayloadHash": "923c6de16f1fc1fe7de9bcd1ae42e330c4c69c9bf2758f3b156e3e6a37e24872"
+              },
+              "version": "premium-inference-fingerprint.v1",
+              "evidenceReuse": "EVIDENCE_REGENERATED",
+              "fingerprintId": "819e0d3e42740b8aa3aacdb315c32822e3e4032f060efe513ae19e16c3b353dd",
+              "sourceContext": {
+                "ocrHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "ocrLength": 0,
+                "captionHash": "4d54fb87803f21c6cedc635caad6866b439d7ca753656fed2cb0ffdcd9d29b82",
+                "creatorHash": "fbc55270fd9062b7b639fd4af4010f18ddeaf68381d9715a6b101c2724a20986",
+                "captionLength": 205,
+                "creatorLength": 13,
+                "transcriptHash": "d5af7e2694a04c20b01c605b14ba65eb7db7bf3e485ef506d5158c49109376be",
+                "transcriptLength": 25,
+                "sourceLocationHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "sourceLocationLength": 0,
+                "sourceLocationPresent": false
+              },
+              "sourceIdentity": {
+                "platform": "instagram",
+                "canonicalUrlHash": "368cb3ad28e8f5576214af9d61926f61f9e8ba4c9aedabaa8334e04caeebf132",
+                "canonicalContentIdHash": "a1f3cf44b755fa97703f5f31fc44d5bd3a94410d5a0dc457e77dff99f15f4b8f"
+              },
+              "evidenceVersion": "premium-evidence-2026-09-05.v1"
+            },
+            "canonicalizationFingerprint": {
+              "hash": "f4a84ee72c37d2116a49ff0ad8dfc8b889ac332d537768fd1dadc8e193cf4ae3",
+              "version": "premium-canonicalization-fingerprint.v1",
+              "hypotheses": [
+                {
+                  "name": "Queen’s Bath on Moku Nui, Mokulua Islands",
+                  "calls": [
+                    {
+                      "query": "Queen’s Bath on Moku Nui, Mokulua Islands, Kailua, Hawaii, United States",
+                      "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                      "matched": true,
+                      "outcome": "CANONICAL_ALIAS",
+                      "resultIds": [
+                        "ChIJCxN2GKF2VHkR3qbNBt6Jb38",
+                        "ChIJEye6FU8UAHwRBDaY6NSmUXI",
+                        "ChIJH8kIClgUAHwRdvDAYLLFFv0",
+                        "ChIJwx-q1FEUAHwRoyqaD18fq38",
+                        "ChIJXTpJ5eMUAHwR3xVi9PRK0ZM",
+                        "ChIJu39y7cIrUnkRlEWRe_O9XtY"
+                      ],
+                      "resultCount": 6,
+                      "resultNames": [
+                        "Queen’s Bath",
+                        "Mokulua Islets Seabird Sanctuary",
+                        "Na Mokulua",
+                        "Moku Nui",
+                        "Kailua Beach Adventures",
+                        "Queens Bath"
+                      ],
+                      "selectedName": "Moku Nui",
+                      "attemptNumber": 1,
+                      "rejectionReason": null,
+                      "selectedGooglePlaceId": "ChIJwx-q1FEUAHwRoyqaD18fq38"
+                    }
+                  ],
+                  "outcome": "CANONICAL_ALIAS",
+                  "geography": {
+                    "city": "Kailua",
+                    "region": "Hawaii",
+                    "country": "United States"
+                  },
+                  "entityType": "NAMED_NATURAL_FEATURE",
+                  "selectedName": "Moku Nui",
+                  "rejectionReason": null,
+                  "selectedGooglePlaceId": "ChIJwx-q1FEUAHwRoyqaD18fq38"
+                }
+              ]
+            }
+          },
+          "recognitionFailureClass": "none",
+          "sharedGeoCountryApplied": false,
+          "sharedGeoCountryStrength": "weak",
+          "peerGeographicDestinations": 0,
+          "sharedGeoCountryCandidates": 1,
+          "sourceGeographicContextDropped": 0
+        }
+      },
+      "reservationCount": 1,
+      "reservationStatus": "consumed",
+      "priorityUseful": true
+    },
+    {
+      "caseId": "V05",
+      "sourceUrl": "https://www.instagram.com/p/DX77lghIHeG/",
+      "jobId": "d408e409-e212-4d9b-abb3-08098bcdd507",
+      "premiumRequestId": "6a2340d8-7fd7-44d8-816c-d9573dd0d29c",
+      "premiumState": "useful_result",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "names": [
+        "Paradise Dynasty",
+        "Paradise Dynasty at South Coast Plaza"
+      ],
+      "suggestedQuery": "Paradise Dynasty at South Coast Plaza",
+      "chargeable": true,
+      "settlementReason": "premium_specific_candidates",
+      "costs": {
+        "sol": {
+          "model": "gpt-5.6-sol",
+          "usage": {
+            "input_tokens": 7713,
+            "total_tokens": 8228,
+            "output_tokens": 515,
+            "reasoning_tokens": 330,
+            "cached_input_tokens": 7710
+          },
+          "knownCostUsd": 0.013396
+        },
+        "places": {
+          "costUsd": "UNKNOWN",
+          "requestCount": 1,
+          "requestTypes": [
+            "PRIMARY_SPECIFIC_IDENTITY"
+          ]
+        },
+        "latencyMs": {
+          "sol": 9085,
+          "places": 224,
+          "evidencePrep": 14730,
+          "totalAfterEvidenceReady": 9310
+        },
+        "acquisition": "UNKNOWN",
+        "evidenceReuse": {
+          "ocr": "REACQUIRED",
+          "media": "REACQUIRED",
+          "frames": "REACQUIRED",
+          "caption": "REACQUIRED",
+          "transcript": "REACQUIRED"
+        },
+        "transcription": "UNKNOWN",
+        "parityDiagnostics": {
+          "solBoundary": {
+            "model": "gpt-5.6-sol",
+            "usage": {
+              "input_tokens": 7713,
+              "total_tokens": 8228,
+              "output_tokens": 515,
+              "reasoning_tokens": 330,
+              "cached_input_tokens": 7710
+            },
+            "version": "premium-sol-boundary.v1",
+            "latencyMs": 9085,
+            "hypotheses": [
+              {
+                "name": "Paradise Dynasty at South Coast Plaza",
+                "confidence": "HIGH",
+                "entityType": "BUSINESS",
+                "alternatives": [],
+                "evidenceBasis": "MODEL_OBSERVED"
+              }
+            ],
+            "responseId": "resp_065b79ac441ee747016a9bb20c5b5c87d0a1f626b7cced70b6",
+            "shareJobId": "d408e409-e212-4d9b-abb3-08098bcdd507",
+            "parseSuccess": true,
+            "fingerprintId": "5241b5b6f5cadaf242708ff38a7a8519853fe3d04fdc50590ed263c51ef0d5f5",
+            "destinationCount": 1,
+            "parseFailureCode": null,
+            "premiumRequestId": "6a2340d8-7fd7-44d8-816c-d9573dd0d29c",
+            "structuredResultHash": "00e27ca5def65de49409aca5a8831cf7f11e7702e3822cb31867a09bdae1529b"
+          },
+          "engineVersion": "simple-sol-premium.v2",
+          "safetyVersion": "premium-recognition-safety.v2",
+          "evidenceVersion": "premium-evidence-2026-09-05.v1",
+          "finalFingerprint": {
+            "hash": "c0f24d7c9612bfa046b9b302db7173685f3034b02f747791a6bf9defbd2d5609",
+            "version": "premium-final-fingerprint.v1",
+            "chargeability": "CHARGEABLE_ACTIONABLE",
+            "solResultHash": "00e27ca5def65de49409aca5a8831cf7f11e7702e3822cb31867a09bdae1529b",
+            "resultDecision": "PREMIUM_ACTIONABLE_RESULT",
+            "safetyDecision": [
+              "REVIEW"
+            ],
+            "tokenSettlement": "CONSUME",
+            "canonicalResultHash": "4f3295debef332a8c4bb728644edf2ff1f8b23a1e8a9f145e9fdd3f1cf5442b7"
+          },
+          "evidenceReuseState": "EVIDENCE_REGENERATED",
+          "inferenceFingerprint": {
+            "frames": [
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 83883,
+                "imageSha256": "3e46bbbdcbb2358298e5bd6053136a6d86b91e7d0798d76c6eb66030c986f6b6",
+                "timestampMs": 0
+              },
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 89506,
+                "imageSha256": "f86db16b61637e5001a8f2a2156696dfbc519dde6da82692f4a5c59b3aaa1d30",
+                "timestampMs": 5000
+              },
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 74807,
+                "imageSha256": "17dda9cff45b0315ae47f8ed3e67e68f55058aebb55fddf38c54bc7dc74f0cbc",
+                "timestampMs": 13000
+              },
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 95705,
+                "imageSha256": "35a49ca6ad23bb0cb6718737e28666adc6f5dfec063a87dea3b7884e0f1d40fd",
+                "timestampMs": 18000
+              },
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 57075,
+                "imageSha256": "27f0a7cda1383a7390feb88b7defaec7425c16df77c20fef2f923d7b3f23b8ce",
+                "timestampMs": 27000
+              },
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 75207,
+                "imageSha256": "89a40d4e66cb1868ca5f6922688b7509ab5c340c12817071a660314d08d4f53e",
+                "timestampMs": 36800
+              }
+            ],
+            "prompt": {
+              "model": "gpt-5.6-sol",
+              "promptHash": "8132da97b952b5d93062ba9b7d915c1dc40b4033de869607a1274142e1580e9c",
+              "schemaHash": "6899fd09c3cc95b4d12263bec5d7028f605eab0eb77b9fdaa38877704c694cfa",
+              "promptVersion": "sol-parity-natural-v1",
+              "schemaVersion": "sol-parity-destination-schema-v1",
+              "reasoningConfig": {
+                "effort": "high"
+              }
+            },
+            "request": {
+              "imageCount": 6,
+              "inputTextHash": "4af1c9f6f26aa84c3918a2acfc95c15b293123dc695c573ca5b1cbed5605c326",
+              "requestPayloadHash": "2616a1f96bb5f2882620e051033952afdb9682985e12b3dcffc5d69dfb590c36"
+            },
+            "version": "premium-inference-fingerprint.v1",
+            "evidenceReuse": "EVIDENCE_REGENERATED",
+            "fingerprintId": "5241b5b6f5cadaf242708ff38a7a8519853fe3d04fdc50590ed263c51ef0d5f5",
+            "sourceContext": {
+              "ocrHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "ocrLength": 0,
+              "captionHash": "c923c3a452e26389c7ed79dc107132f613792bb1ece6859e510be5a9f36b7296",
+              "creatorHash": "1101ced057ce4607c9fd85775f808f84b77c7b50e58a070c41f1d0eed8d6c3f8",
+              "captionLength": 972,
+              "creatorLength": 13,
+              "transcriptHash": "d28769b868ad932f005c66554b357d6b2c700fcc94f86929bafdf0d6f77643ca",
+              "transcriptLength": 775,
+              "sourceLocationHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "sourceLocationLength": 0,
+              "sourceLocationPresent": false
+            },
+            "sourceIdentity": {
+              "platform": "instagram",
+              "canonicalUrlHash": "25bc0bf8212747f7ab7ee73fccb47c97327890307e8e070deeb7a5fec2a1ec00",
+              "canonicalContentIdHash": "2192a8de106b42fa958041afcb824aac9bc9a29449bb9a7a5f4b7fa628402607"
+            },
+            "evidenceVersion": "premium-evidence-2026-09-05.v1"
+          },
+          "canonicalizationFingerprint": {
+            "hash": "4f3295debef332a8c4bb728644edf2ff1f8b23a1e8a9f145e9fdd3f1cf5442b7",
+            "version": "premium-canonicalization-fingerprint.v1",
+            "hypotheses": [
+              {
+                "name": "Paradise Dynasty at South Coast Plaza",
+                "calls": [
+                  {
+                    "query": "Paradise Dynasty at South Coast Plaza, Costa Mesa, California, United States",
+                    "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                    "matched": true,
+                    "outcome": "CANONICAL_ALIAS",
+                    "resultIds": [
+                      "ChIJl25h7GXf3IAR6OBs3e4cxrM"
+                    ],
+                    "resultCount": 1,
+                    "resultNames": [
+                      "Paradise Dynasty"
+                    ],
+                    "selectedName": "Paradise Dynasty",
+                    "attemptNumber": 1,
+                    "rejectionReason": null,
+                    "selectedGooglePlaceId": "ChIJl25h7GXf3IAR6OBs3e4cxrM"
+                  }
+                ],
+                "outcome": "CANONICAL_ALIAS",
+                "geography": {
+                  "city": "Costa Mesa",
+                  "region": "California",
+                  "country": "United States"
+                },
+                "entityType": "BUSINESS",
+                "selectedName": "Paradise Dynasty",
+                "rejectionReason": null,
+                "selectedGooglePlaceId": "ChIJl25h7GXf3IAR6OBs3e4cxrM"
+              }
+            ]
+          }
+        }
+      },
+      "requestedAt": "2026-09-05T06:04:20.622678+00:00",
+      "startedAt": "2026-09-05T06:09:01.322973+00:00",
+      "completedAt": "2026-09-05T06:09:27.287285+00:00",
+      "task": {
+        "id": "6d4e71fd-8975-4f48-a90f-04363624bde7",
+        "status": "completed",
+        "attempts": 1,
+        "failureCode": null,
+        "resolverName": "premium-sol",
+        "analysisProvider": null,
+        "analysisModel": null,
+        "promptVersion": null,
+        "latencyMs": null,
+        "modelCalls": null,
+        "modelInputTokens": null,
+        "modelOutputTokens": null,
+        "modelThinkingTokens": null,
+        "modelLatencyMs": null
+      },
+      "mediaRun": {
+        "id": "3981e325-58e1-482f-8a9c-7ed9ac662574",
+        "durationMs": 24041,
+        "frameCount": 23,
+        "transcriptSegments": 11,
+        "ocrSegments": 0,
+        "resolverName": "instagram/yt-dlp",
+        "modelProvider": "premium-sol",
+        "evidence": {
+          "multiple": false,
+          "placeCount": 1,
+          "insufficient": false,
+          "analysisAttempted": true,
+          "destinationPlaces": 1,
+          "partialPlaceCount": 0,
+          "explicitPlaceCount": 1,
+          "premiumDiagnostics": {
+            "solBoundary": {
+              "model": "gpt-5.6-sol",
+              "usage": {
+                "input_tokens": 7713,
+                "total_tokens": 8228,
+                "output_tokens": 515,
+                "reasoning_tokens": 330,
+                "cached_input_tokens": 7710
+              },
+              "version": "premium-sol-boundary.v1",
+              "latencyMs": 9085,
+              "hypotheses": [
+                {
+                  "name": "Paradise Dynasty at South Coast Plaza",
+                  "confidence": "HIGH",
+                  "entityType": "BUSINESS",
+                  "alternatives": [],
+                  "evidenceBasis": "MODEL_OBSERVED"
+                }
+              ],
+              "responseId": "resp_065b79ac441ee747016a9bb20c5b5c87d0a1f626b7cced70b6",
+              "shareJobId": "d408e409-e212-4d9b-abb3-08098bcdd507",
+              "parseSuccess": true,
+              "fingerprintId": "5241b5b6f5cadaf242708ff38a7a8519853fe3d04fdc50590ed263c51ef0d5f5",
+              "destinationCount": 1,
+              "parseFailureCode": null,
+              "premiumRequestId": "6a2340d8-7fd7-44d8-816c-d9573dd0d29c",
+              "structuredResultHash": "00e27ca5def65de49409aca5a8831cf7f11e7702e3822cb31867a09bdae1529b"
+            },
+            "finalFingerprint": {
+              "hash": "c0f24d7c9612bfa046b9b302db7173685f3034b02f747791a6bf9defbd2d5609",
+              "version": "premium-final-fingerprint.v1",
+              "chargeability": "CHARGEABLE_ACTIONABLE",
+              "solResultHash": "00e27ca5def65de49409aca5a8831cf7f11e7702e3822cb31867a09bdae1529b",
+              "resultDecision": "PREMIUM_ACTIONABLE_RESULT",
+              "safetyDecision": [
+                "REVIEW"
+              ],
+              "tokenSettlement": "CONSUME",
+              "canonicalResultHash": "4f3295debef332a8c4bb728644edf2ff1f8b23a1e8a9f145e9fdd3f1cf5442b7"
+            },
+            "inferenceFingerprint": {
+              "frames": [
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 83883,
+                  "imageSha256": "3e46bbbdcbb2358298e5bd6053136a6d86b91e7d0798d76c6eb66030c986f6b6",
+                  "timestampMs": 0
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 89506,
+                  "imageSha256": "f86db16b61637e5001a8f2a2156696dfbc519dde6da82692f4a5c59b3aaa1d30",
+                  "timestampMs": 5000
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 74807,
+                  "imageSha256": "17dda9cff45b0315ae47f8ed3e67e68f55058aebb55fddf38c54bc7dc74f0cbc",
+                  "timestampMs": 13000
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 95705,
+                  "imageSha256": "35a49ca6ad23bb0cb6718737e28666adc6f5dfec063a87dea3b7884e0f1d40fd",
+                  "timestampMs": 18000
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 57075,
+                  "imageSha256": "27f0a7cda1383a7390feb88b7defaec7425c16df77c20fef2f923d7b3f23b8ce",
+                  "timestampMs": 27000
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 75207,
+                  "imageSha256": "89a40d4e66cb1868ca5f6922688b7509ab5c340c12817071a660314d08d4f53e",
+                  "timestampMs": 36800
+                }
+              ],
+              "prompt": {
+                "model": "gpt-5.6-sol",
+                "promptHash": "8132da97b952b5d93062ba9b7d915c1dc40b4033de869607a1274142e1580e9c",
+                "schemaHash": "6899fd09c3cc95b4d12263bec5d7028f605eab0eb77b9fdaa38877704c694cfa",
+                "promptVersion": "sol-parity-natural-v1",
+                "schemaVersion": "sol-parity-destination-schema-v1",
+                "reasoningConfig": {
+                  "effort": "high"
+                }
+              },
+              "request": {
+                "imageCount": 6,
+                "inputTextHash": "4af1c9f6f26aa84c3918a2acfc95c15b293123dc695c573ca5b1cbed5605c326",
+                "requestPayloadHash": "2616a1f96bb5f2882620e051033952afdb9682985e12b3dcffc5d69dfb590c36"
+              },
+              "version": "premium-inference-fingerprint.v1",
+              "evidenceReuse": "EVIDENCE_REGENERATED",
+              "fingerprintId": "5241b5b6f5cadaf242708ff38a7a8519853fe3d04fdc50590ed263c51ef0d5f5",
+              "sourceContext": {
+                "ocrHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "ocrLength": 0,
+                "captionHash": "c923c3a452e26389c7ed79dc107132f613792bb1ece6859e510be5a9f36b7296",
+                "creatorHash": "1101ced057ce4607c9fd85775f808f84b77c7b50e58a070c41f1d0eed8d6c3f8",
+                "captionLength": 972,
+                "creatorLength": 13,
+                "transcriptHash": "d28769b868ad932f005c66554b357d6b2c700fcc94f86929bafdf0d6f77643ca",
+                "transcriptLength": 775,
+                "sourceLocationHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "sourceLocationLength": 0,
+                "sourceLocationPresent": false
+              },
+              "sourceIdentity": {
+                "platform": "instagram",
+                "canonicalUrlHash": "25bc0bf8212747f7ab7ee73fccb47c97327890307e8e070deeb7a5fec2a1ec00",
+                "canonicalContentIdHash": "2192a8de106b42fa958041afcb824aac9bc9a29449bb9a7a5f4b7fa628402607"
+              },
+              "evidenceVersion": "premium-evidence-2026-09-05.v1"
+            },
+            "canonicalizationFingerprint": {
+              "hash": "4f3295debef332a8c4bb728644edf2ff1f8b23a1e8a9f145e9fdd3f1cf5442b7",
+              "version": "premium-canonicalization-fingerprint.v1",
+              "hypotheses": [
+                {
+                  "name": "Paradise Dynasty at South Coast Plaza",
+                  "calls": [
+                    {
+                      "query": "Paradise Dynasty at South Coast Plaza, Costa Mesa, California, United States",
+                      "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                      "matched": true,
+                      "outcome": "CANONICAL_ALIAS",
+                      "resultIds": [
+                        "ChIJl25h7GXf3IAR6OBs3e4cxrM"
+                      ],
+                      "resultCount": 1,
+                      "resultNames": [
+                        "Paradise Dynasty"
+                      ],
+                      "selectedName": "Paradise Dynasty",
+                      "attemptNumber": 1,
+                      "rejectionReason": null,
+                      "selectedGooglePlaceId": "ChIJl25h7GXf3IAR6OBs3e4cxrM"
+                    }
+                  ],
+                  "outcome": "CANONICAL_ALIAS",
+                  "geography": {
+                    "city": "Costa Mesa",
+                    "region": "California",
+                    "country": "United States"
+                  },
+                  "entityType": "BUSINESS",
+                  "selectedName": "Paradise Dynasty",
+                  "rejectionReason": null,
+                  "selectedGooglePlaceId": "ChIJl25h7GXf3IAR6OBs3e4cxrM"
+                }
+              ]
+            }
+          },
+          "recognitionFailureClass": "none",
+          "sharedGeoCountryApplied": false,
+          "sharedGeoCountryStrength": "weak",
+          "peerGeographicDestinations": 0,
+          "sharedGeoCountryCandidates": 1,
+          "sourceGeographicContextDropped": 0
+        }
+      },
+      "reservationCount": 1,
+      "reservationStatus": "consumed",
+      "priorityUseful": true
+    }
+  ]
+}

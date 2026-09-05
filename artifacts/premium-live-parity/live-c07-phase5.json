@@ -1,0 +1,495 @@
+{
+  "schemaVersion": 1,
+  "run": {
+    "startedAt": "2026-09-05T06:45:23.480Z",
+    "completedAt": "2026-09-05T06:45:46.762Z",
+    "correlationId": "nearr-e2e-20260905T064522-bd438395",
+    "gitHead": "d618b9047ca6b612b44cf511725d44c3bc8f6a80",
+    "target": {
+      "supabaseProjectRef": "qnfxnmvxpjzfydgudtvs",
+      "railwayProject": "4037a3b5-d66f-409e-b734-56c22c244e3e",
+      "railwayEnvironment": "development",
+      "railwayService": "media-worker"
+    },
+    "freeLaneSetup": "terminal analysis-insufficient jobs seeded with real parity source URLs",
+    "premiumBoundary": "deployed authenticated monetization Edge endpoint onward",
+    "purchaseSetup": {
+      "productId": "dev.mock.nearr.place_finds.10",
+      "purchaseCount": 0,
+      "grantedUses": 0
+    },
+    "cleanupRequested": true
+  },
+  "wallet": {
+    "initial": {
+      "id": "ae8f1cea-abf8-4d2a-b25a-33c448f6d7d7",
+      "available_uses": 5,
+      "reserved_uses": 0,
+      "version": 1
+    },
+    "funded": {
+      "id": "ae8f1cea-abf8-4d2a-b25a-33c448f6d7d7",
+      "available_uses": 5,
+      "reserved_uses": 0,
+      "version": 1
+    },
+    "reserved": {
+      "id": "ae8f1cea-abf8-4d2a-b25a-33c448f6d7d7",
+      "available_uses": 4,
+      "reserved_uses": 1,
+      "version": 2
+    },
+    "final": {
+      "id": "ae8f1cea-abf8-4d2a-b25a-33c448f6d7d7",
+      "available_uses": 4,
+      "reserved_uses": 0,
+      "version": 3
+    }
+  },
+  "gates": {
+    "runCount": 1,
+    "priorityUseful": "0/0",
+    "wrongAutosaves": 0,
+    "c07UnsafeAutosave": false,
+    "machineCacheIdentityReads": 0,
+    "noResultTokenRelease": false,
+    "actionableReviewTokenConsume": true,
+    "duplicatePremiumTapSingleReservation": true
+  },
+  "cases": [
+    {
+      "caseId": "C07",
+      "sourceUrl": "https://www.youtube.com/watch?v=jNQXAC9IVRw",
+      "jobId": "5470113c-62e0-4efc-a4a0-0fb5b8b1f64e",
+      "premiumRequestId": "e29ae9f5-257a-4ba2-80c7-5b88b4ee6632",
+      "premiumState": "useful_result",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "names": [
+        "San Diego Zoo"
+      ],
+      "usefulEvidence": [
+        "San Diego Zoo",
+        "San Diego, California, United States",
+        "2920 Zoo Dr, San Diego, CA 92101, USA"
+      ],
+      "suggestedQuery": "San Diego Zoo",
+      "chargeable": true,
+      "settlementReason": "premium_specific_candidates",
+      "costs": {
+        "sol": {
+          "model": "gpt-5.6-sol",
+          "usage": {
+            "input_tokens": 1362,
+            "total_tokens": 1638,
+            "output_tokens": 276,
+            "reasoning_tokens": 147,
+            "cached_input_tokens": 0
+          },
+          "knownCostUsd": 0.010968
+        },
+        "places": {
+          "costUsd": "UNKNOWN",
+          "requestCount": 1,
+          "requestTypes": [
+            "PRIMARY_SPECIFIC_IDENTITY"
+          ]
+        },
+        "latencyMs": {
+          "sol": 4567,
+          "places": 239,
+          "evidencePrep": 10111,
+          "totalAfterEvidenceReady": 4806
+        },
+        "acquisition": "UNKNOWN",
+        "evidenceReuse": {
+          "ocr": "REACQUIRED",
+          "media": "REACQUIRED",
+          "frames": "REACQUIRED",
+          "caption": "REACQUIRED",
+          "transcript": "REACQUIRED"
+        },
+        "transcription": "UNKNOWN",
+        "parityDiagnostics": {
+          "solBoundary": {
+            "model": "gpt-5.6-sol",
+            "usage": {
+              "input_tokens": 1362,
+              "total_tokens": 1638,
+              "output_tokens": 276,
+              "reasoning_tokens": 147,
+              "cached_input_tokens": 0
+            },
+            "version": "premium-sol-boundary.v1",
+            "latencyMs": 4567,
+            "hypotheses": [
+              {
+                "name": "San Diego Zoo",
+                "confidence": "HIGH",
+                "entityType": "LANDMARK",
+                "alternatives": [],
+                "evidenceBasis": "CONTEXTUAL_OR_MEMORY_PRIOR"
+              }
+            ],
+            "responseId": "resp_0a3c6cc2fb1b2b7b016a9bba8fb59087d0b825e28521f537cf",
+            "shareJobId": "5470113c-62e0-4efc-a4a0-0fb5b8b1f64e",
+            "parseSuccess": true,
+            "fingerprintId": "3d14963db196113d265d0e16e39ff6509af3fb29aaad2bb234c92aaa0a86d9ad",
+            "destinationCount": 1,
+            "parseFailureCode": null,
+            "premiumRequestId": "e29ae9f5-257a-4ba2-80c7-5b88b4ee6632",
+            "structuredResultHash": "db6e833e9097b7e6d70348b7bc59a76590452489cca4f0fad4ffc825dff630e8"
+          },
+          "engineVersion": "simple-sol-premium.v2",
+          "safetyVersion": "premium-recognition-safety.v2",
+          "evidenceVersion": "premium-evidence-2026-09-05.v1",
+          "finalFingerprint": {
+            "hash": "3fa28fb845c6407253911d77efb0ac1caac5982888c98ff9b89f8a748ddbe1f0",
+            "version": "premium-final-fingerprint.v1",
+            "chargeability": "CHARGEABLE_ACTIONABLE",
+            "solResultHash": "db6e833e9097b7e6d70348b7bc59a76590452489cca4f0fad4ffc825dff630e8",
+            "resultDecision": "PREMIUM_ACTIONABLE_RESULT",
+            "safetyDecision": [
+              "REVIEW"
+            ],
+            "tokenSettlement": "CONSUME",
+            "canonicalResultHash": "813881e28024f17dbddb8cee68d26cbdbbbd05d96717aed030bd46d029e409cb"
+          },
+          "evidenceReuseState": "EVIDENCE_REGENERATED",
+          "inferenceFingerprint": {
+            "frames": [
+              {
+                "width": 320,
+                "height": 240,
+                "byteLength": 16985,
+                "imageSha256": "d028f087b843b7ae87fdf3aad4d1ffff329b741f751f0fae51e15e955aa9731b",
+                "timestampMs": 0
+              },
+              {
+                "width": 320,
+                "height": 240,
+                "byteLength": 16489,
+                "imageSha256": "5be11f0c07edd828d1dc61836b0ede54ddc95207cac9df2fbed4c22beec28f60",
+                "timestampMs": 2000
+              },
+              {
+                "width": 320,
+                "height": 240,
+                "byteLength": 15774,
+                "imageSha256": "508e539f79ffd65119e412f5bb1680835e700582a13d7204e00186c5dbcd1254",
+                "timestampMs": 4000
+              },
+              {
+                "width": 320,
+                "height": 240,
+                "byteLength": 17053,
+                "imageSha256": "950cc152a8bee37561ab6fd80f6d4efdfac6e48dcc4e341c12dbf255e3d137ec",
+                "timestampMs": 7000
+              },
+              {
+                "width": 320,
+                "height": 240,
+                "byteLength": 16941,
+                "imageSha256": "36f0eb76df021e6ca5d526eb747d983bbfa3abff84c60dda9618c1de58d3692d",
+                "timestampMs": 11000
+              },
+              {
+                "width": 320,
+                "height": 240,
+                "byteLength": 16106,
+                "imageSha256": "6b07e56fa06b97a5b65c55e37fc9d88cda467a1daa8ab93c7849d495b1a3307f",
+                "timestampMs": 18833
+              }
+            ],
+            "prompt": {
+              "model": "gpt-5.6-sol",
+              "promptHash": "8132da97b952b5d93062ba9b7d915c1dc40b4033de869607a1274142e1580e9c",
+              "schemaHash": "6899fd09c3cc95b4d12263bec5d7028f605eab0eb77b9fdaa38877704c694cfa",
+              "promptVersion": "sol-parity-natural-v1",
+              "schemaVersion": "sol-parity-destination-schema-v1",
+              "reasoningConfig": {
+                "effort": "high"
+              }
+            },
+            "request": {
+              "imageCount": 6,
+              "inputTextHash": "2542bec000d0e9d85d2979b844f3dee00cae6c73916eb5b0e58692723881dcec",
+              "requestPayloadHash": "6c4751baf1a06ea7a6e15d9b51c11f5141624384662558325c609c9b9ff3fba9"
+            },
+            "version": "premium-inference-fingerprint.v1",
+            "evidenceReuse": "EVIDENCE_REGENERATED",
+            "fingerprintId": "3d14963db196113d265d0e16e39ff6509af3fb29aaad2bb234c92aaa0a86d9ad",
+            "sourceContext": {
+              "ocrHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "ocrLength": 0,
+              "captionHash": "f13bdd84f9a9bd1d61655ba514643b98b4615fbccfb60a57091b686b39f85a9e",
+              "creatorHash": "a484f8469d3eec07bbfee12ee2b82efb1d355595306bbe0742c3096078e5d359",
+              "captionLength": 276,
+              "creatorLength": 5,
+              "transcriptHash": "efc0345437137aeb65256aa242e876eae636bfe8a7f08827d3881ffdbc946be1",
+              "transcriptLength": 262,
+              "sourceLocationHash": "cb67db8d4026d12f37f9cf13bd19b8c1ebe8321603247c4edaa07578c79027a2",
+              "sourceLocationLength": 13,
+              "sourceLocationPresent": true
+            },
+            "sourceIdentity": {
+              "platform": "youtube",
+              "canonicalUrlHash": "4b0f48e4f4ae6e02a1b61dcca3425e6db6f6db1a945c66857cccfdd4c5a95c8c",
+              "canonicalContentIdHash": "67454704342df24de2d91fae262fc75b3c9735d45135a6273239d4e68037d15c"
+            },
+            "evidenceVersion": "premium-evidence-2026-09-05.v1"
+          },
+          "canonicalizationFingerprint": {
+            "hash": "813881e28024f17dbddb8cee68d26cbdbbbd05d96717aed030bd46d029e409cb",
+            "version": "premium-canonicalization-fingerprint.v1",
+            "hypotheses": [
+              {
+                "name": "San Diego Zoo",
+                "calls": [
+                  {
+                    "query": "San Diego Zoo, San Diego, California, United States",
+                    "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                    "matched": true,
+                    "outcome": "CANONICAL_EXACT",
+                    "resultIds": [
+                      "ChIJyYB_SZVU2YARR-I1Jjf08F0"
+                    ],
+                    "resultCount": 1,
+                    "resultNames": [
+                      "San Diego Zoo"
+                    ],
+                    "selectedName": "San Diego Zoo",
+                    "attemptNumber": 1,
+                    "rejectionReason": null,
+                    "selectedGooglePlaceId": "ChIJyYB_SZVU2YARR-I1Jjf08F0"
+                  }
+                ],
+                "outcome": "CANONICAL_EXACT",
+                "geography": {
+                  "city": "San Diego",
+                  "region": "California",
+                  "country": "United States"
+                },
+                "entityType": "LANDMARK",
+                "selectedName": "San Diego Zoo",
+                "rejectionReason": null,
+                "selectedGooglePlaceId": "ChIJyYB_SZVU2YARR-I1Jjf08F0"
+              }
+            ]
+          }
+        }
+      },
+      "requestedAt": "2026-09-05T06:45:24.889453+00:00",
+      "startedAt": "2026-09-05T06:45:25.350385+00:00",
+      "completedAt": "2026-09-05T06:45:41.807286+00:00",
+      "task": {
+        "id": "8ea0f4c7-d6a7-4ba3-b458-b1d1799bd171",
+        "status": "completed",
+        "attempts": 1,
+        "failureCode": null,
+        "resolverName": "premium-sol",
+        "analysisProvider": null,
+        "analysisModel": null,
+        "promptVersion": null,
+        "latencyMs": null,
+        "modelCalls": null,
+        "modelInputTokens": null,
+        "modelOutputTokens": null,
+        "modelThinkingTokens": null,
+        "modelLatencyMs": null
+      },
+      "mediaRun": {
+        "id": "9dacaedf-263e-4dbd-bee2-bb24c32fffbc",
+        "durationMs": 14917,
+        "frameCount": 11,
+        "transcriptSegments": 6,
+        "ocrSegments": 0,
+        "resolverName": "youtube/yt-dlp",
+        "modelProvider": "premium-sol",
+        "evidence": {
+          "multiple": false,
+          "placeCount": 1,
+          "insufficient": false,
+          "analysisAttempted": true,
+          "destinationPlaces": 0,
+          "partialPlaceCount": 0,
+          "explicitPlaceCount": 0,
+          "premiumDiagnostics": {
+            "solBoundary": {
+              "model": "gpt-5.6-sol",
+              "usage": {
+                "input_tokens": 1362,
+                "total_tokens": 1638,
+                "output_tokens": 276,
+                "reasoning_tokens": 147,
+                "cached_input_tokens": 0
+              },
+              "version": "premium-sol-boundary.v1",
+              "latencyMs": 4567,
+              "hypotheses": [
+                {
+                  "name": "San Diego Zoo",
+                  "confidence": "HIGH",
+                  "entityType": "LANDMARK",
+                  "alternatives": [],
+                  "evidenceBasis": "CONTEXTUAL_OR_MEMORY_PRIOR"
+                }
+              ],
+              "responseId": "resp_0a3c6cc2fb1b2b7b016a9bba8fb59087d0b825e28521f537cf",
+              "shareJobId": "5470113c-62e0-4efc-a4a0-0fb5b8b1f64e",
+              "parseSuccess": true,
+              "fingerprintId": "3d14963db196113d265d0e16e39ff6509af3fb29aaad2bb234c92aaa0a86d9ad",
+              "destinationCount": 1,
+              "parseFailureCode": null,
+              "premiumRequestId": "e29ae9f5-257a-4ba2-80c7-5b88b4ee6632",
+              "structuredResultHash": "db6e833e9097b7e6d70348b7bc59a76590452489cca4f0fad4ffc825dff630e8"
+            },
+            "finalFingerprint": {
+              "hash": "3fa28fb845c6407253911d77efb0ac1caac5982888c98ff9b89f8a748ddbe1f0",
+              "version": "premium-final-fingerprint.v1",
+              "chargeability": "CHARGEABLE_ACTIONABLE",
+              "solResultHash": "db6e833e9097b7e6d70348b7bc59a76590452489cca4f0fad4ffc825dff630e8",
+              "resultDecision": "PREMIUM_ACTIONABLE_RESULT",
+              "safetyDecision": [
+                "REVIEW"
+              ],
+              "tokenSettlement": "CONSUME",
+              "canonicalResultHash": "813881e28024f17dbddb8cee68d26cbdbbbd05d96717aed030bd46d029e409cb"
+            },
+            "inferenceFingerprint": {
+              "frames": [
+                {
+                  "width": 320,
+                  "height": 240,
+                  "byteLength": 16985,
+                  "imageSha256": "d028f087b843b7ae87fdf3aad4d1ffff329b741f751f0fae51e15e955aa9731b",
+                  "timestampMs": 0
+                },
+                {
+                  "width": 320,
+                  "height": 240,
+                  "byteLength": 16489,
+                  "imageSha256": "5be11f0c07edd828d1dc61836b0ede54ddc95207cac9df2fbed4c22beec28f60",
+                  "timestampMs": 2000
+                },
+                {
+                  "width": 320,
+                  "height": 240,
+                  "byteLength": 15774,
+                  "imageSha256": "508e539f79ffd65119e412f5bb1680835e700582a13d7204e00186c5dbcd1254",
+                  "timestampMs": 4000
+                },
+                {
+                  "width": 320,
+                  "height": 240,
+                  "byteLength": 17053,
+                  "imageSha256": "950cc152a8bee37561ab6fd80f6d4efdfac6e48dcc4e341c12dbf255e3d137ec",
+                  "timestampMs": 7000
+                },
+                {
+                  "width": 320,
+                  "height": 240,
+                  "byteLength": 16941,
+                  "imageSha256": "36f0eb76df021e6ca5d526eb747d983bbfa3abff84c60dda9618c1de58d3692d",
+                  "timestampMs": 11000
+                },
+                {
+                  "width": 320,
+                  "height": 240,
+                  "byteLength": 16106,
+                  "imageSha256": "6b07e56fa06b97a5b65c55e37fc9d88cda467a1daa8ab93c7849d495b1a3307f",
+                  "timestampMs": 18833
+                }
+              ],
+              "prompt": {
+                "model": "gpt-5.6-sol",
+                "promptHash": "8132da97b952b5d93062ba9b7d915c1dc40b4033de869607a1274142e1580e9c",
+                "schemaHash": "6899fd09c3cc95b4d12263bec5d7028f605eab0eb77b9fdaa38877704c694cfa",
+                "promptVersion": "sol-parity-natural-v1",
+                "schemaVersion": "sol-parity-destination-schema-v1",
+                "reasoningConfig": {
+                  "effort": "high"
+                }
+              },
+              "request": {
+                "imageCount": 6,
+                "inputTextHash": "2542bec000d0e9d85d2979b844f3dee00cae6c73916eb5b0e58692723881dcec",
+                "requestPayloadHash": "6c4751baf1a06ea7a6e15d9b51c11f5141624384662558325c609c9b9ff3fba9"
+              },
+              "version": "premium-inference-fingerprint.v1",
+              "evidenceReuse": "EVIDENCE_REGENERATED",
+              "fingerprintId": "3d14963db196113d265d0e16e39ff6509af3fb29aaad2bb234c92aaa0a86d9ad",
+              "sourceContext": {
+                "ocrHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "ocrLength": 0,
+                "captionHash": "f13bdd84f9a9bd1d61655ba514643b98b4615fbccfb60a57091b686b39f85a9e",
+                "creatorHash": "a484f8469d3eec07bbfee12ee2b82efb1d355595306bbe0742c3096078e5d359",
+                "captionLength": 276,
+                "creatorLength": 5,
+                "transcriptHash": "efc0345437137aeb65256aa242e876eae636bfe8a7f08827d3881ffdbc946be1",
+                "transcriptLength": 262,
+                "sourceLocationHash": "cb67db8d4026d12f37f9cf13bd19b8c1ebe8321603247c4edaa07578c79027a2",
+                "sourceLocationLength": 13,
+                "sourceLocationPresent": true
+              },
+              "sourceIdentity": {
+                "platform": "youtube",
+                "canonicalUrlHash": "4b0f48e4f4ae6e02a1b61dcca3425e6db6f6db1a945c66857cccfdd4c5a95c8c",
+                "canonicalContentIdHash": "67454704342df24de2d91fae262fc75b3c9735d45135a6273239d4e68037d15c"
+              },
+              "evidenceVersion": "premium-evidence-2026-09-05.v1"
+            },
+            "canonicalizationFingerprint": {
+              "hash": "813881e28024f17dbddb8cee68d26cbdbbbd05d96717aed030bd46d029e409cb",
+              "version": "premium-canonicalization-fingerprint.v1",
+              "hypotheses": [
+                {
+                  "name": "San Diego Zoo",
+                  "calls": [
+                    {
+                      "query": "San Diego Zoo, San Diego, California, United States",
+                      "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                      "matched": true,
+                      "outcome": "CANONICAL_EXACT",
+                      "resultIds": [
+                        "ChIJyYB_SZVU2YARR-I1Jjf08F0"
+                      ],
+                      "resultCount": 1,
+                      "resultNames": [
+                        "San Diego Zoo"
+                      ],
+                      "selectedName": "San Diego Zoo",
+                      "attemptNumber": 1,
+                      "rejectionReason": null,
+                      "selectedGooglePlaceId": "ChIJyYB_SZVU2YARR-I1Jjf08F0"
+                    }
+                  ],
+                  "outcome": "CANONICAL_EXACT",
+                  "geography": {
+                    "city": "San Diego",
+                    "region": "California",
+                    "country": "United States"
+                  },
+                  "entityType": "LANDMARK",
+                  "selectedName": "San Diego Zoo",
+                  "rejectionReason": null,
+                  "selectedGooglePlaceId": "ChIJyYB_SZVU2YARR-I1Jjf08F0"
+                }
+              ]
+            }
+          },
+          "recognitionFailureClass": "none",
+          "sharedGeoCountryApplied": false,
+          "sharedGeoCountryStrength": "none",
+          "peerGeographicDestinations": 0,
+          "sharedGeoCountryCandidates": 0,
+          "sourceGeographicContextDropped": 0
+        }
+      },
+      "reservationCount": 1,
+      "reservationStatus": "consumed",
+      "priorityUseful": null
+    }
+  ]
+}

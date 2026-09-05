@@ -1,0 +1,640 @@
+{
+  "schemaVersion": 1,
+  "run": {
+    "startedAt": "2026-09-05T06:31:51.365Z",
+    "completedAt": "2026-09-05T06:33:07.887Z",
+    "correlationId": "nearr-e2e-20260905T063150-af814b35",
+    "gitHead": "d618b9047ca6b612b44cf511725d44c3bc8f6a80",
+    "target": {
+      "supabaseProjectRef": "qnfxnmvxpjzfydgudtvs",
+      "railwayProject": "4037a3b5-d66f-409e-b734-56c22c244e3e",
+      "railwayEnvironment": "development",
+      "railwayService": "media-worker"
+    },
+    "freeLaneSetup": "terminal analysis-insufficient jobs seeded with real parity source URLs",
+    "premiumBoundary": "deployed authenticated monetization Edge endpoint onward",
+    "purchaseSetup": {
+      "productId": "dev.mock.nearr.place_finds.10",
+      "purchaseCount": 0,
+      "grantedUses": 0
+    },
+    "cleanupRequested": true
+  },
+  "wallet": {
+    "initial": {
+      "id": "2a13bed5-054e-479f-82b9-10d6e3a8ea12",
+      "available_uses": 5,
+      "reserved_uses": 0,
+      "version": 1
+    },
+    "funded": {
+      "id": "2a13bed5-054e-479f-82b9-10d6e3a8ea12",
+      "available_uses": 5,
+      "reserved_uses": 0,
+      "version": 1
+    },
+    "reserved": {
+      "id": "2a13bed5-054e-479f-82b9-10d6e3a8ea12",
+      "available_uses": 4,
+      "reserved_uses": 1,
+      "version": 2
+    },
+    "final": {
+      "id": "2a13bed5-054e-479f-82b9-10d6e3a8ea12",
+      "available_uses": 4,
+      "reserved_uses": 0,
+      "version": 3
+    }
+  },
+  "gates": {
+    "runCount": 1,
+    "priorityUseful": "0/1",
+    "wrongAutosaves": 0,
+    "c07UnsafeAutosave": false,
+    "machineCacheIdentityReads": 0,
+    "noResultTokenRelease": false,
+    "actionableReviewTokenConsume": true,
+    "duplicatePremiumTapSingleReservation": true
+  },
+  "cases": [
+    {
+      "caseId": "R02",
+      "sourceUrl": "https://www.instagram.com/reel/DSvmLO_Eom9/",
+      "jobId": "bb2ce634-795a-42ea-a550-82da17aa6419",
+      "premiumRequestId": "6de8d5a9-5aec-4cdd-a83d-fe0f56a9c39c",
+      "premiumState": "useful_result",
+      "status": "needs_help",
+      "decision": "candidate_picker",
+      "savedPlaceId": null,
+      "names": [
+        "Molokini",
+        "La Perouse Bay",
+        "Molokini Crater",
+        "ʻĀhihi-Kīnaʻu Natural Area Reserve"
+      ],
+      "usefulEvidence": [
+        "Molokini",
+        "Hawaii, United States",
+        "Molokini, Hawaii, USA",
+        "La Perouse Bay",
+        "Makena, Hawaii, United States",
+        "La Perouse Bay, Hawaii 96753, USA",
+        "Molokini Crater",
+        "ʻĀhihi-Kīnaʻu Natural Area Reserve"
+      ],
+      "suggestedQuery": "Molokini Crater",
+      "chargeable": true,
+      "settlementReason": "premium_specific_candidates",
+      "costs": {
+        "sol": {
+          "model": "gpt-5.6-sol",
+          "usage": {
+            "input_tokens": 7331,
+            "total_tokens": 10642,
+            "output_tokens": 3311,
+            "reasoning_tokens": 3045,
+            "cached_input_tokens": 7328
+          },
+          "knownCostUsd": 0.069163
+        },
+        "places": {
+          "costUsd": "UNKNOWN",
+          "requestCount": 3,
+          "requestTypes": [
+            "PRIMARY_SPECIFIC_IDENTITY",
+            "PRIMARY_SPECIFIC_IDENTITY",
+            "PRIMARY_SPECIFIC_IDENTITY"
+          ]
+        },
+        "latencyMs": {
+          "sol": 54572,
+          "places": 545,
+          "evidencePrep": 14808,
+          "totalAfterEvidenceReady": 55117
+        },
+        "acquisition": "UNKNOWN",
+        "evidenceReuse": {
+          "ocr": "REACQUIRED",
+          "media": "REACQUIRED",
+          "frames": "REACQUIRED",
+          "caption": "REACQUIRED",
+          "transcript": "REACQUIRED"
+        },
+        "transcription": "UNKNOWN",
+        "parityDiagnostics": {
+          "solBoundary": {
+            "model": "gpt-5.6-sol",
+            "usage": {
+              "input_tokens": 7331,
+              "total_tokens": 10642,
+              "output_tokens": 3311,
+              "reasoning_tokens": 3045,
+              "cached_input_tokens": 7328
+            },
+            "version": "premium-sol-boundary.v1",
+            "latencyMs": 54572,
+            "hypotheses": [
+              {
+                "name": "Molokini Crater",
+                "confidence": "MEDIUM",
+                "entityType": "NAMED_NATURAL_FEATURE",
+                "alternatives": [
+                  "La Perouse Bay",
+                  "ʻĀhihi-Kīnaʻu Natural Area Reserve"
+                ],
+                "evidenceBasis": "MODEL_OBSERVED"
+              }
+            ],
+            "responseId": "resp_0af93141bb1e1635016a9bb768b7c087d086e989d9746dd734",
+            "shareJobId": "bb2ce634-795a-42ea-a550-82da17aa6419",
+            "parseSuccess": true,
+            "fingerprintId": "de726d440352d74c128fcd20886b3d83fd9ffd26ff63b4f1487a59db3b9118a1",
+            "destinationCount": 1,
+            "parseFailureCode": null,
+            "premiumRequestId": "6de8d5a9-5aec-4cdd-a83d-fe0f56a9c39c",
+            "structuredResultHash": "6ec05e5c1b9c053b63ad6ef86736c0604f3e358608423ee2000d70e6cb9e98ad"
+          },
+          "engineVersion": "simple-sol-premium.v2",
+          "safetyVersion": "premium-recognition-safety.v2",
+          "evidenceVersion": "premium-evidence-2026-09-05.v1",
+          "finalFingerprint": {
+            "hash": "534bc85d0c78083a12498d19c701693e2826b516a5c3bc89e523f18bb3802c4a",
+            "version": "premium-final-fingerprint.v1",
+            "chargeability": "CHARGEABLE_ACTIONABLE",
+            "solResultHash": "6ec05e5c1b9c053b63ad6ef86736c0604f3e358608423ee2000d70e6cb9e98ad",
+            "resultDecision": "PREMIUM_ACTIONABLE_RESULT",
+            "safetyDecision": [
+              "REVIEW"
+            ],
+            "tokenSettlement": "CONSUME",
+            "canonicalResultHash": "8136f47d7edf066fcddb690bfe8da8adb13ecda282412e0648893bbb3782625d"
+          },
+          "evidenceReuseState": "EVIDENCE_REGENERATED",
+          "inferenceFingerprint": {
+            "frames": [
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 140811,
+                "imageSha256": "203fee0a1951098d5df63dfaf1e92181f71472ab32ddb75bb04602b92edd25fb",
+                "timestampMs": 0
+              },
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 117863,
+                "imageSha256": "ccf10b53d13e95a25d275290fbd5a8d343caf34c4b4557565f03d937a5176403",
+                "timestampMs": 11000
+              },
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 152880,
+                "imageSha256": "b15e0411a288cd8b9dcf7f1cb8fabb16845792b9ae683b8cc25e73474352ee5c",
+                "timestampMs": 15000
+              },
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 129501,
+                "imageSha256": "d2816ba24f9fefd074e167682223dc4069de41fb8135e5fadec2a2a016ae1f09",
+                "timestampMs": 17000
+              },
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 70999,
+                "imageSha256": "35b571827456b06de928defc9d29345c07aacd5b0f17251486c6ce3c459aade3",
+                "timestampMs": 19000
+              },
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 65640,
+                "imageSha256": "1f92923859b6628c056819c7cf9616b4874f94e930d09f07db4b8b62b1bcbb35",
+                "timestampMs": 23600
+              }
+            ],
+            "prompt": {
+              "model": "gpt-5.6-sol",
+              "promptHash": "8132da97b952b5d93062ba9b7d915c1dc40b4033de869607a1274142e1580e9c",
+              "schemaHash": "6899fd09c3cc95b4d12263bec5d7028f605eab0eb77b9fdaa38877704c694cfa",
+              "promptVersion": "sol-parity-natural-v1",
+              "schemaVersion": "sol-parity-destination-schema-v1",
+              "reasoningConfig": {
+                "effort": "high"
+              }
+            },
+            "request": {
+              "imageCount": 6,
+              "inputTextHash": "6ec4af19737d2a88524d8770d5ef91bf2607fe237a846027b2b50540dc6ad345",
+              "requestPayloadHash": "3e0b7eb6eb6a72b8832522c64611c92a8dbd26ffd5d88aad562a8b39bbf700bb"
+            },
+            "version": "premium-inference-fingerprint.v1",
+            "evidenceReuse": "EVIDENCE_REGENERATED",
+            "fingerprintId": "de726d440352d74c128fcd20886b3d83fd9ffd26ff63b4f1487a59db3b9118a1",
+            "sourceContext": {
+              "ocrHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "ocrLength": 0,
+              "captionHash": "a91b44cc4c79e98b4c018b2e7831738e80c9f2b54c8d3ca1a459c138dcbc7c9a",
+              "creatorHash": "c3844d07d6aa66678884163d6b5bb8f7cced527451d4bcc158ba8607e627279f",
+              "captionLength": 280,
+              "creatorLength": 10,
+              "transcriptHash": "77296bbd375c245b264449f6639d07efe8f98085eda73d1c73c44508c2fc47af",
+              "transcriptLength": 23,
+              "sourceLocationHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "sourceLocationLength": 0,
+              "sourceLocationPresent": false
+            },
+            "sourceIdentity": {
+              "platform": "instagram",
+              "canonicalUrlHash": "967249c4a7dae0143dc1111de5ab2b040bd250c73aa10431853a72a407fff77b",
+              "canonicalContentIdHash": "d0e4a2209a033df03c01427ba00fec562702ed8f558fe745e7fbd0022fdffe9c"
+            },
+            "evidenceVersion": "premium-evidence-2026-09-05.v1"
+          },
+          "canonicalizationFingerprint": {
+            "hash": "8136f47d7edf066fcddb690bfe8da8adb13ecda282412e0648893bbb3782625d",
+            "version": "premium-canonicalization-fingerprint.v1",
+            "hypotheses": [
+              {
+                "name": "Molokini Crater",
+                "calls": [
+                  {
+                    "query": "Molokini Crater, Hawaii, United States",
+                    "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                    "matched": true,
+                    "outcome": "CANONICAL_ALIAS",
+                    "resultIds": [
+                      "ChIJ_W5FwHLcVHkRa9Bn4gWVZ6A"
+                    ],
+                    "resultCount": 1,
+                    "resultNames": [
+                      "Molokini"
+                    ],
+                    "selectedName": "Molokini",
+                    "attemptNumber": 1,
+                    "rejectionReason": null,
+                    "selectedGooglePlaceId": "ChIJ_W5FwHLcVHkRa9Bn4gWVZ6A"
+                  }
+                ],
+                "outcome": "CANONICAL_ALIAS",
+                "geography": {
+                  "city": null,
+                  "region": "Hawaii",
+                  "country": "United States"
+                },
+                "entityType": "NAMED_NATURAL_FEATURE",
+                "selectedName": "Molokini",
+                "rejectionReason": null,
+                "selectedGooglePlaceId": "ChIJ_W5FwHLcVHkRa9Bn4gWVZ6A"
+              },
+              {
+                "name": "La Perouse Bay",
+                "calls": [
+                  {
+                    "query": "La Perouse Bay, Makena, Hawaii, United States",
+                    "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                    "matched": true,
+                    "outcome": "CANONICAL_EXACT",
+                    "resultIds": [
+                      "ChIJQf-mxTHDVHkRZn62FEGhCIA"
+                    ],
+                    "resultCount": 1,
+                    "resultNames": [
+                      "La Perouse Bay"
+                    ],
+                    "selectedName": "La Perouse Bay",
+                    "attemptNumber": 1,
+                    "rejectionReason": null,
+                    "selectedGooglePlaceId": "ChIJQf-mxTHDVHkRZn62FEGhCIA"
+                  }
+                ],
+                "outcome": "CANONICAL_EXACT",
+                "geography": {
+                  "city": "Makena",
+                  "region": "Hawaii",
+                  "country": "United States"
+                },
+                "entityType": "NAMED_NATURAL_FEATURE",
+                "selectedName": "La Perouse Bay",
+                "rejectionReason": null,
+                "selectedGooglePlaceId": "ChIJQf-mxTHDVHkRZn62FEGhCIA"
+              },
+              {
+                "name": "ʻĀhihi-Kīnaʻu Natural Area Reserve",
+                "calls": [
+                  {
+                    "query": "ʻĀhihi-Kīnaʻu Natural Area Reserve, Makena, Hawaii, United States",
+                    "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                    "matched": false,
+                    "outcome": "NO_MATCH",
+                    "resultIds": [
+                      "ChIJcUUsO7TcVHkRyosx7G1rTqI"
+                    ],
+                    "resultCount": 1,
+                    "resultNames": [
+                      "Ahihi-Kinau Natural Area Reserve"
+                    ],
+                    "selectedName": null,
+                    "attemptNumber": 1,
+                    "rejectionReason": "no_compatible_match",
+                    "selectedGooglePlaceId": null
+                  }
+                ],
+                "outcome": "NAMED_LEAD",
+                "geography": {
+                  "city": "Makena",
+                  "region": "Hawaii",
+                  "country": "United States"
+                },
+                "entityType": "NAMED_NATURAL_FEATURE",
+                "selectedName": null,
+                "rejectionReason": "no_compatible_match",
+                "selectedGooglePlaceId": null
+              }
+            ]
+          }
+        }
+      },
+      "requestedAt": "2026-09-05T06:31:52.805732+00:00",
+      "startedAt": "2026-09-05T06:31:53.634745+00:00",
+      "completedAt": "2026-09-05T06:33:05.683187+00:00",
+      "task": {
+        "id": "f4abc665-088d-48c6-9bc0-602cb3a7752d",
+        "status": "completed",
+        "attempts": 1,
+        "failureCode": null,
+        "resolverName": "premium-sol",
+        "analysisProvider": null,
+        "analysisModel": null,
+        "promptVersion": null,
+        "latencyMs": null,
+        "modelCalls": null,
+        "modelInputTokens": null,
+        "modelOutputTokens": null,
+        "modelThinkingTokens": null,
+        "modelLatencyMs": null
+      },
+      "mediaRun": {
+        "id": "293933cb-6e2e-4c4b-949d-6933e1923c3d",
+        "durationMs": 69925,
+        "frameCount": 14,
+        "transcriptSegments": 1,
+        "ocrSegments": 0,
+        "resolverName": "instagram/yt-dlp",
+        "modelProvider": "premium-sol",
+        "evidence": {
+          "multiple": false,
+          "placeCount": 3,
+          "insufficient": false,
+          "analysisAttempted": true,
+          "destinationPlaces": 1,
+          "partialPlaceCount": 0,
+          "explicitPlaceCount": 3,
+          "premiumDiagnostics": {
+            "solBoundary": {
+              "model": "gpt-5.6-sol",
+              "usage": {
+                "input_tokens": 7331,
+                "total_tokens": 10642,
+                "output_tokens": 3311,
+                "reasoning_tokens": 3045,
+                "cached_input_tokens": 7328
+              },
+              "version": "premium-sol-boundary.v1",
+              "latencyMs": 54572,
+              "hypotheses": [
+                {
+                  "name": "Molokini Crater",
+                  "confidence": "MEDIUM",
+                  "entityType": "NAMED_NATURAL_FEATURE",
+                  "alternatives": [
+                    "La Perouse Bay",
+                    "ʻĀhihi-Kīnaʻu Natural Area Reserve"
+                  ],
+                  "evidenceBasis": "MODEL_OBSERVED"
+                }
+              ],
+              "responseId": "resp_0af93141bb1e1635016a9bb768b7c087d086e989d9746dd734",
+              "shareJobId": "bb2ce634-795a-42ea-a550-82da17aa6419",
+              "parseSuccess": true,
+              "fingerprintId": "de726d440352d74c128fcd20886b3d83fd9ffd26ff63b4f1487a59db3b9118a1",
+              "destinationCount": 1,
+              "parseFailureCode": null,
+              "premiumRequestId": "6de8d5a9-5aec-4cdd-a83d-fe0f56a9c39c",
+              "structuredResultHash": "6ec05e5c1b9c053b63ad6ef86736c0604f3e358608423ee2000d70e6cb9e98ad"
+            },
+            "finalFingerprint": {
+              "hash": "534bc85d0c78083a12498d19c701693e2826b516a5c3bc89e523f18bb3802c4a",
+              "version": "premium-final-fingerprint.v1",
+              "chargeability": "CHARGEABLE_ACTIONABLE",
+              "solResultHash": "6ec05e5c1b9c053b63ad6ef86736c0604f3e358608423ee2000d70e6cb9e98ad",
+              "resultDecision": "PREMIUM_ACTIONABLE_RESULT",
+              "safetyDecision": [
+                "REVIEW"
+              ],
+              "tokenSettlement": "CONSUME",
+              "canonicalResultHash": "8136f47d7edf066fcddb690bfe8da8adb13ecda282412e0648893bbb3782625d"
+            },
+            "inferenceFingerprint": {
+              "frames": [
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 140811,
+                  "imageSha256": "203fee0a1951098d5df63dfaf1e92181f71472ab32ddb75bb04602b92edd25fb",
+                  "timestampMs": 0
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 117863,
+                  "imageSha256": "ccf10b53d13e95a25d275290fbd5a8d343caf34c4b4557565f03d937a5176403",
+                  "timestampMs": 11000
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 152880,
+                  "imageSha256": "b15e0411a288cd8b9dcf7f1cb8fabb16845792b9ae683b8cc25e73474352ee5c",
+                  "timestampMs": 15000
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 129501,
+                  "imageSha256": "d2816ba24f9fefd074e167682223dc4069de41fb8135e5fadec2a2a016ae1f09",
+                  "timestampMs": 17000
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 70999,
+                  "imageSha256": "35b571827456b06de928defc9d29345c07aacd5b0f17251486c6ce3c459aade3",
+                  "timestampMs": 19000
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 65640,
+                  "imageSha256": "1f92923859b6628c056819c7cf9616b4874f94e930d09f07db4b8b62b1bcbb35",
+                  "timestampMs": 23600
+                }
+              ],
+              "prompt": {
+                "model": "gpt-5.6-sol",
+                "promptHash": "8132da97b952b5d93062ba9b7d915c1dc40b4033de869607a1274142e1580e9c",
+                "schemaHash": "6899fd09c3cc95b4d12263bec5d7028f605eab0eb77b9fdaa38877704c694cfa",
+                "promptVersion": "sol-parity-natural-v1",
+                "schemaVersion": "sol-parity-destination-schema-v1",
+                "reasoningConfig": {
+                  "effort": "high"
+                }
+              },
+              "request": {
+                "imageCount": 6,
+                "inputTextHash": "6ec4af19737d2a88524d8770d5ef91bf2607fe237a846027b2b50540dc6ad345",
+                "requestPayloadHash": "3e0b7eb6eb6a72b8832522c64611c92a8dbd26ffd5d88aad562a8b39bbf700bb"
+              },
+              "version": "premium-inference-fingerprint.v1",
+              "evidenceReuse": "EVIDENCE_REGENERATED",
+              "fingerprintId": "de726d440352d74c128fcd20886b3d83fd9ffd26ff63b4f1487a59db3b9118a1",
+              "sourceContext": {
+                "ocrHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "ocrLength": 0,
+                "captionHash": "a91b44cc4c79e98b4c018b2e7831738e80c9f2b54c8d3ca1a459c138dcbc7c9a",
+                "creatorHash": "c3844d07d6aa66678884163d6b5bb8f7cced527451d4bcc158ba8607e627279f",
+                "captionLength": 280,
+                "creatorLength": 10,
+                "transcriptHash": "77296bbd375c245b264449f6639d07efe8f98085eda73d1c73c44508c2fc47af",
+                "transcriptLength": 23,
+                "sourceLocationHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "sourceLocationLength": 0,
+                "sourceLocationPresent": false
+              },
+              "sourceIdentity": {
+                "platform": "instagram",
+                "canonicalUrlHash": "967249c4a7dae0143dc1111de5ab2b040bd250c73aa10431853a72a407fff77b",
+                "canonicalContentIdHash": "d0e4a2209a033df03c01427ba00fec562702ed8f558fe745e7fbd0022fdffe9c"
+              },
+              "evidenceVersion": "premium-evidence-2026-09-05.v1"
+            },
+            "canonicalizationFingerprint": {
+              "hash": "8136f47d7edf066fcddb690bfe8da8adb13ecda282412e0648893bbb3782625d",
+              "version": "premium-canonicalization-fingerprint.v1",
+              "hypotheses": [
+                {
+                  "name": "Molokini Crater",
+                  "calls": [
+                    {
+                      "query": "Molokini Crater, Hawaii, United States",
+                      "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                      "matched": true,
+                      "outcome": "CANONICAL_ALIAS",
+                      "resultIds": [
+                        "ChIJ_W5FwHLcVHkRa9Bn4gWVZ6A"
+                      ],
+                      "resultCount": 1,
+                      "resultNames": [
+                        "Molokini"
+                      ],
+                      "selectedName": "Molokini",
+                      "attemptNumber": 1,
+                      "rejectionReason": null,
+                      "selectedGooglePlaceId": "ChIJ_W5FwHLcVHkRa9Bn4gWVZ6A"
+                    }
+                  ],
+                  "outcome": "CANONICAL_ALIAS",
+                  "geography": {
+                    "city": null,
+                    "region": "Hawaii",
+                    "country": "United States"
+                  },
+                  "entityType": "NAMED_NATURAL_FEATURE",
+                  "selectedName": "Molokini",
+                  "rejectionReason": null,
+                  "selectedGooglePlaceId": "ChIJ_W5FwHLcVHkRa9Bn4gWVZ6A"
+                },
+                {
+                  "name": "La Perouse Bay",
+                  "calls": [
+                    {
+                      "query": "La Perouse Bay, Makena, Hawaii, United States",
+                      "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                      "matched": true,
+                      "outcome": "CANONICAL_EXACT",
+                      "resultIds": [
+                        "ChIJQf-mxTHDVHkRZn62FEGhCIA"
+                      ],
+                      "resultCount": 1,
+                      "resultNames": [
+                        "La Perouse Bay"
+                      ],
+                      "selectedName": "La Perouse Bay",
+                      "attemptNumber": 1,
+                      "rejectionReason": null,
+                      "selectedGooglePlaceId": "ChIJQf-mxTHDVHkRZn62FEGhCIA"
+                    }
+                  ],
+                  "outcome": "CANONICAL_EXACT",
+                  "geography": {
+                    "city": "Makena",
+                    "region": "Hawaii",
+                    "country": "United States"
+                  },
+                  "entityType": "NAMED_NATURAL_FEATURE",
+                  "selectedName": "La Perouse Bay",
+                  "rejectionReason": null,
+                  "selectedGooglePlaceId": "ChIJQf-mxTHDVHkRZn62FEGhCIA"
+                },
+                {
+                  "name": "ʻĀhihi-Kīnaʻu Natural Area Reserve",
+                  "calls": [
+                    {
+                      "query": "ʻĀhihi-Kīnaʻu Natural Area Reserve, Makena, Hawaii, United States",
+                      "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                      "matched": false,
+                      "outcome": "NO_MATCH",
+                      "resultIds": [
+                        "ChIJcUUsO7TcVHkRyosx7G1rTqI"
+                      ],
+                      "resultCount": 1,
+                      "resultNames": [
+                        "Ahihi-Kinau Natural Area Reserve"
+                      ],
+                      "selectedName": null,
+                      "attemptNumber": 1,
+                      "rejectionReason": "no_compatible_match",
+                      "selectedGooglePlaceId": null
+                    }
+                  ],
+                  "outcome": "NAMED_LEAD",
+                  "geography": {
+                    "city": "Makena",
+                    "region": "Hawaii",
+                    "country": "United States"
+                  },
+                  "entityType": "NAMED_NATURAL_FEATURE",
+                  "selectedName": null,
+                  "rejectionReason": "no_compatible_match",
+                  "selectedGooglePlaceId": null
+                }
+              ]
+            }
+          },
+          "sharedGeoCountrySource": "multiple_places_agree",
+          "recognitionFailureClass": "none",
+          "sharedGeoCountryApplied": true,
+          "sharedGeoCountryStrength": "strong",
+          "peerGeographicDestinations": 0,
+          "sharedGeoCountryCandidates": 1,
+          "sourceGeographicContextDropped": 0
+        }
+      },
+      "reservationCount": 1,
+      "reservationStatus": "consumed",
+      "priorityUseful": false
+    }
+  ]
+}

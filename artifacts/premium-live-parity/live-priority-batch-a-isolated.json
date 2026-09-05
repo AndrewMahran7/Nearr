@@ -1,0 +1,3586 @@
+{
+  "schemaVersion": 1,
+  "run": {
+    "startedAt": "2026-09-05T06:24:38.849Z",
+    "completedAt": "2026-09-05T06:29:09.543Z",
+    "correlationId": "nearr-e2e-20260905T062438-cff73c1d",
+    "gitHead": "d618b9047ca6b612b44cf511725d44c3bc8f6a80",
+    "target": {
+      "supabaseProjectRef": "qnfxnmvxpjzfydgudtvs",
+      "railwayProject": "4037a3b5-d66f-409e-b734-56c22c244e3e",
+      "railwayEnvironment": "development",
+      "railwayService": "media-worker"
+    },
+    "freeLaneSetup": "terminal analysis-insufficient jobs seeded with real parity source URLs",
+    "premiumBoundary": "deployed authenticated monetization Edge endpoint onward",
+    "purchaseSetup": {
+      "productId": "dev.mock.nearr.place_finds.10",
+      "purchaseCount": 2,
+      "grantedUses": 6
+    },
+    "cleanupRequested": true
+  },
+  "wallet": {
+    "initial": {
+      "id": "bdc03c8a-92dc-4230-9a61-5cd286b29f7f",
+      "available_uses": 5,
+      "reserved_uses": 0,
+      "version": 1
+    },
+    "funded": {
+      "id": "bdc03c8a-92dc-4230-9a61-5cd286b29f7f",
+      "available_uses": 11,
+      "reserved_uses": 0,
+      "version": 3
+    },
+    "reserved": {
+      "id": "bdc03c8a-92dc-4230-9a61-5cd286b29f7f",
+      "available_uses": 2,
+      "reserved_uses": 9,
+      "version": 12
+    },
+    "final": {
+      "id": "bdc03c8a-92dc-4230-9a61-5cd286b29f7f",
+      "available_uses": 2,
+      "reserved_uses": 0,
+      "version": 21
+    }
+  },
+  "gates": {
+    "runCount": 9,
+    "priorityUseful": "8/9",
+    "wrongAutosaves": 0,
+    "c07UnsafeAutosave": false,
+    "machineCacheIdentityReads": 3,
+    "noResultTokenRelease": false,
+    "actionableReviewTokenConsume": true,
+    "duplicatePremiumTapSingleReservation": true
+  },
+  "cases": [
+    {
+      "caseId": "R01",
+      "sourceUrl": "https://www.instagram.com/reel/Cg2U22DjbEJ/",
+      "jobId": "81791c10-4085-4021-9191-5b61faf4443b",
+      "premiumRequestId": "cc00b94c-6afb-4a06-9403-fd43d18fe70c",
+      "premiumState": "useful_result",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "names": [
+        "Pont d’Arc and the surrounding Ardèche Gorge",
+        "Gorges de l’Hérault at Pont du Diable",
+        "Cirque de Gens"
+      ],
+      "usefulEvidence": [
+        "Pont d’Arc and the surrounding Ardèche Gorge",
+        "Vallon-Pont-d’Arc, Auvergne-Rhône-Alpes, France",
+        "Gorges de l’Hérault at Pont du Diable",
+        "Saint-Jean-de-Fos, Occitanie, France",
+        "Cirque de Gens",
+        "Chauzon, Auvergne-Rhône-Alpes, France"
+      ],
+      "suggestedQuery": "Pont d’Arc and the surrounding Ardèche Gorge",
+      "chargeable": true,
+      "settlementReason": "premium_specific_candidates",
+      "costs": {
+        "sol": {
+          "model": "gpt-5.6-sol",
+          "usage": {
+            "input_tokens": 3645,
+            "total_tokens": 7579,
+            "output_tokens": 3934,
+            "reasoning_tokens": 3624,
+            "cached_input_tokens": 3642
+          },
+          "knownCostUsd": 0.080149
+        },
+        "places": {
+          "costUsd": "UNKNOWN",
+          "requestCount": 3,
+          "requestTypes": [
+            "PRIMARY_SPECIFIC_IDENTITY",
+            "PRIMARY_SPECIFIC_IDENTITY",
+            "PRIMARY_SPECIFIC_IDENTITY"
+          ]
+        },
+        "latencyMs": {
+          "sol": 64211,
+          "places": 1010,
+          "evidencePrep": 9001,
+          "totalAfterEvidenceReady": 65221
+        },
+        "acquisition": "UNKNOWN",
+        "evidenceReuse": {
+          "ocr": "REACQUIRED",
+          "media": "REACQUIRED",
+          "frames": "REACQUIRED",
+          "caption": "REACQUIRED",
+          "transcript": "REACQUIRED"
+        },
+        "transcription": "UNKNOWN",
+        "parityDiagnostics": {
+          "solBoundary": {
+            "model": "gpt-5.6-sol",
+            "usage": {
+              "input_tokens": 3645,
+              "total_tokens": 7579,
+              "output_tokens": 3934,
+              "reasoning_tokens": 3624,
+              "cached_input_tokens": 3642
+            },
+            "version": "premium-sol-boundary.v1",
+            "latencyMs": 64211,
+            "hypotheses": [
+              {
+                "name": "Pont d’Arc and the surrounding Ardèche Gorge",
+                "confidence": "MEDIUM",
+                "entityType": "LANDMARK",
+                "alternatives": [
+                  "Gorges de l’Hérault at Pont du Diable",
+                  "Cirque de Gens"
+                ],
+                "evidenceBasis": "MODEL_OBSERVED"
+              }
+            ],
+            "responseId": "resp_0f2de37edc8dbab1016a9bb5b56f2c87d0af96756f97f4603e",
+            "shareJobId": "81791c10-4085-4021-9191-5b61faf4443b",
+            "parseSuccess": true,
+            "fingerprintId": "20c98de1da4e63ef0825b0c0691a035c9ea21d79e2ec9b1f7de048cf3fd2b161",
+            "destinationCount": 1,
+            "parseFailureCode": null,
+            "premiumRequestId": "cc00b94c-6afb-4a06-9403-fd43d18fe70c",
+            "structuredResultHash": "d30eefb8235d98fc34eb67298a4f8a1f74034ddb5f7f1d342fd7e52d0bb0bb2a"
+          },
+          "engineVersion": "simple-sol-premium.v2",
+          "safetyVersion": "premium-recognition-safety.v2",
+          "evidenceVersion": "premium-evidence-2026-09-05.v1",
+          "finalFingerprint": {
+            "hash": "54c0c78bbe4d86de6c25a7222e606d3b9a6ad5cb18d4de6f548e6371738f1be0",
+            "version": "premium-final-fingerprint.v1",
+            "chargeability": "CHARGEABLE_ACTIONABLE",
+            "solResultHash": "d30eefb8235d98fc34eb67298a4f8a1f74034ddb5f7f1d342fd7e52d0bb0bb2a",
+            "resultDecision": "PREMIUM_ACTIONABLE_RESULT",
+            "safetyDecision": [
+              "REVIEW"
+            ],
+            "tokenSettlement": "CONSUME",
+            "canonicalResultHash": "c3c4a8ee3730392bff564d06d4ad95237613e799d27151e15f142ceb61f929cb"
+          },
+          "evidenceReuseState": "EVIDENCE_REGENERATED",
+          "inferenceFingerprint": {
+            "frames": [
+              {
+                "width": 480,
+                "height": 854,
+                "byteLength": 90977,
+                "imageSha256": "a41592d4c30b0df5ae2bcd8c3673fc389e94553c017360abcc8ecfa74c87905c",
+                "timestampMs": 0
+              },
+              {
+                "width": 480,
+                "height": 854,
+                "byteLength": 63137,
+                "imageSha256": "4403da7532fa871167ce7757bd393b8adbf3f7250d3339b188c480eb429dd5af",
+                "timestampMs": 1000
+              },
+              {
+                "width": 480,
+                "height": 854,
+                "byteLength": 62109,
+                "imageSha256": "3028c80ac7c9d0e7a9dcf467563f910f4fc0f8e5e41e7600f752e7b71912d4c1",
+                "timestampMs": 2000
+              },
+              {
+                "width": 480,
+                "height": 854,
+                "byteLength": 71024,
+                "imageSha256": "edb6be60b2a1f8bfb17bc2869bc3452c8a5a734db4966f277cc700c789711e9b",
+                "timestampMs": 3000
+              },
+              {
+                "width": 480,
+                "height": 854,
+                "byteLength": 73260,
+                "imageSha256": "0aa8eca6fbedf9bbbee32ff925acd48776052300be2c4e07b59aca81bce94c80",
+                "timestampMs": 4000
+              },
+              {
+                "width": 480,
+                "height": 854,
+                "byteLength": 54279,
+                "imageSha256": "2cd63be0b971e30492c8652ee89897e9dfe6178e9db9315c4853d90186dd4358",
+                "timestampMs": 5500
+              }
+            ],
+            "prompt": {
+              "model": "gpt-5.6-sol",
+              "promptHash": "8132da97b952b5d93062ba9b7d915c1dc40b4033de869607a1274142e1580e9c",
+              "schemaHash": "6899fd09c3cc95b4d12263bec5d7028f605eab0eb77b9fdaa38877704c694cfa",
+              "promptVersion": "sol-parity-natural-v1",
+              "schemaVersion": "sol-parity-destination-schema-v1",
+              "reasoningConfig": {
+                "effort": "high"
+              }
+            },
+            "request": {
+              "imageCount": 6,
+              "inputTextHash": "1b98c019e2aa37243105958613f3309e1ce09b1785649f594a463a5f9e800962",
+              "requestPayloadHash": "a838113498a8ec9d0ceb12c1164c6e649d4930608f1c5f92bab5053c95087e77"
+            },
+            "version": "premium-inference-fingerprint.v1",
+            "evidenceReuse": "EVIDENCE_REGENERATED",
+            "fingerprintId": "20c98de1da4e63ef0825b0c0691a035c9ea21d79e2ec9b1f7de048cf3fd2b161",
+            "sourceContext": {
+              "ocrHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "ocrLength": 0,
+              "captionHash": "21edb0782f2f99c6d8c31e3700a877f069ac4f3689ed9e8c2773780b86c844c4",
+              "creatorHash": "1bd11a40d110c4ca096e1e69f129406f9cd89c5d156dd579e39449e6a3bbc153",
+              "captionLength": 206,
+              "creatorLength": 11,
+              "transcriptHash": "7903f03b1c0dc4d61656ecac3c453ad21ee547b76e7e16d8e17c538e5be0d0c6",
+              "transcriptLength": 127,
+              "sourceLocationHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "sourceLocationLength": 0,
+              "sourceLocationPresent": false
+            },
+            "sourceIdentity": {
+              "platform": "instagram",
+              "canonicalUrlHash": "a41d6f97d9cf4286b1b6e4477e0901d095907f207b3e567359e8c70b8ffe8a00",
+              "canonicalContentIdHash": "44d061ef0cf0a7738de9c2967fc5484c3f42d82d4685042e76018a5ce50ab1a1"
+            },
+            "evidenceVersion": "premium-evidence-2026-09-05.v1"
+          },
+          "canonicalizationFingerprint": {
+            "hash": "c3c4a8ee3730392bff564d06d4ad95237613e799d27151e15f142ceb61f929cb",
+            "version": "premium-canonicalization-fingerprint.v1",
+            "hypotheses": [
+              {
+                "name": "Pont d’Arc and the surrounding Ardèche Gorge",
+                "calls": [
+                  {
+                    "query": "Pont d’Arc and the surrounding Ardèche Gorge, Vallon-Pont-d’Arc, Auvergne-Rhône-Alpes, France",
+                    "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                    "matched": true,
+                    "outcome": "CANONICAL_ALIAS",
+                    "resultIds": [
+                      "ChIJtSym8PIBtRIRTb7zGVPYPkw",
+                      "ChIJFxcI5PIBtRIRYdFsLut76eI"
+                    ],
+                    "resultCount": 2,
+                    "resultNames": [
+                      "Le Pont d'Arc",
+                      "Le Pont d'Arc"
+                    ],
+                    "selectedName": "Le Pont d'Arc",
+                    "attemptNumber": 1,
+                    "rejectionReason": null,
+                    "selectedGooglePlaceId": "ChIJtSym8PIBtRIRTb7zGVPYPkw"
+                  }
+                ],
+                "outcome": "AMBIGUOUS_CANONICAL",
+                "geography": {
+                  "city": "Vallon-Pont-d’Arc",
+                  "region": "Auvergne-Rhône-Alpes",
+                  "country": "France"
+                },
+                "entityType": "LANDMARK",
+                "selectedName": null,
+                "rejectionReason": null,
+                "selectedGooglePlaceId": null
+              },
+              {
+                "name": "Gorges de l’Hérault at Pont du Diable",
+                "calls": [
+                  {
+                    "query": "Gorges de l’Hérault at Pont du Diable, Saint-Jean-de-Fos, Occitanie, France",
+                    "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                    "matched": true,
+                    "outcome": "CANONICAL_ALIAS",
+                    "resultIds": [
+                      "ChIJEbn8PEZYsRIR0c-CnwMkZC8",
+                      "ChIJI56OHWlYsRIRS_Wlx7ZFhwQ",
+                      "ChIJ96BlZXRZsRIRSQSQZXqNJVM",
+                      "ChIJ5f2v8nJZsRIRHxqXdD0xaBA",
+                      "ChIJ26lQKDZZsRIR9Sfy2DfKeWo",
+                      "ChIJQxNnVh5ZsRIR7Js4m_Uml8I",
+                      "ChIJaSMcC4BfsRIR7qYdp2LULFM",
+                      "ChIJwRBnSfGQsRIRmn-Z40x9YYU"
+                    ],
+                    "resultCount": 8,
+                    "resultNames": [
+                      "Le Pont du Diable",
+                      "Gorges de l'Hérault",
+                      "Gorges de l'Hérault",
+                      "Rives de l'Hérault au Pont du Diable",
+                      "Promenade Pont du diable",
+                      "Plage du Pont du Diable",
+                      "Canyon du Diable",
+                      "Pont du Diable"
+                    ],
+                    "selectedName": "Gorges de l'Hérault",
+                    "attemptNumber": 1,
+                    "rejectionReason": null,
+                    "selectedGooglePlaceId": "ChIJI56OHWlYsRIRS_Wlx7ZFhwQ"
+                  }
+                ],
+                "outcome": "AMBIGUOUS_CANONICAL",
+                "geography": {
+                  "city": "Saint-Jean-de-Fos",
+                  "region": "Occitanie",
+                  "country": "France"
+                },
+                "entityType": "NAMED_NATURAL_FEATURE",
+                "selectedName": null,
+                "rejectionReason": null,
+                "selectedGooglePlaceId": null
+              },
+              {
+                "name": "Cirque de Gens",
+                "calls": [
+                  {
+                    "query": "Cirque de Gens, Chauzon, Auvergne-Rhône-Alpes, France",
+                    "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                    "matched": true,
+                    "outcome": "CANONICAL_ALIAS",
+                    "resultIds": [
+                      "ChIJh63uiMDjtBIRRXuMuWrIoyQ",
+                      "ChIJ056b5CTjtBIRDvwbt053tOQ",
+                      "ChIJya62EADjtBIRQxj8dtptfYg",
+                      "ChIJBVJdKgjjtBIRpzJN1_hncW4"
+                    ],
+                    "resultCount": 4,
+                    "resultNames": [
+                      "Vue Cirque de Gens rando",
+                      "Le Cirque de Gens",
+                      "Vue cirque de gens",
+                      "Plage du Cirque de Gens"
+                    ],
+                    "selectedName": "Vue Cirque de Gens rando",
+                    "attemptNumber": 1,
+                    "rejectionReason": null,
+                    "selectedGooglePlaceId": "ChIJh63uiMDjtBIRRXuMuWrIoyQ"
+                  }
+                ],
+                "outcome": "AMBIGUOUS_CANONICAL",
+                "geography": {
+                  "city": "Chauzon",
+                  "region": "Auvergne-Rhône-Alpes",
+                  "country": "France"
+                },
+                "entityType": "NAMED_NATURAL_FEATURE",
+                "selectedName": null,
+                "rejectionReason": null,
+                "selectedGooglePlaceId": null
+              }
+            ]
+          }
+        }
+      },
+      "requestedAt": "2026-09-05T06:24:43.842476+00:00",
+      "startedAt": "2026-09-05T06:24:44.043854+00:00",
+      "completedAt": "2026-09-05T06:26:00.253928+00:00",
+      "task": {
+        "id": "ab33ecbe-44ac-4c94-8db9-07c228658fa9",
+        "status": "completed",
+        "attempts": 1,
+        "failureCode": null,
+        "resolverName": "premium-sol",
+        "analysisProvider": null,
+        "analysisModel": null,
+        "promptVersion": null,
+        "latencyMs": null,
+        "modelCalls": null,
+        "modelInputTokens": null,
+        "modelOutputTokens": null,
+        "modelThinkingTokens": null,
+        "modelLatencyMs": null
+      },
+      "mediaRun": {
+        "id": "bac1ffe1-ea0c-48c9-acf7-2f25c4701aab",
+        "durationMs": 74222,
+        "frameCount": 7,
+        "transcriptSegments": 4,
+        "ocrSegments": 0,
+        "resolverName": "instagram/yt-dlp",
+        "modelProvider": "premium-sol",
+        "evidence": {
+          "multiple": false,
+          "placeCount": 3,
+          "insufficient": false,
+          "analysisAttempted": true,
+          "destinationPlaces": 1,
+          "partialPlaceCount": 0,
+          "explicitPlaceCount": 3,
+          "premiumDiagnostics": {
+            "solBoundary": {
+              "model": "gpt-5.6-sol",
+              "usage": {
+                "input_tokens": 3645,
+                "total_tokens": 7579,
+                "output_tokens": 3934,
+                "reasoning_tokens": 3624,
+                "cached_input_tokens": 3642
+              },
+              "version": "premium-sol-boundary.v1",
+              "latencyMs": 64211,
+              "hypotheses": [
+                {
+                  "name": "Pont d’Arc and the surrounding Ardèche Gorge",
+                  "confidence": "MEDIUM",
+                  "entityType": "LANDMARK",
+                  "alternatives": [
+                    "Gorges de l’Hérault at Pont du Diable",
+                    "Cirque de Gens"
+                  ],
+                  "evidenceBasis": "MODEL_OBSERVED"
+                }
+              ],
+              "responseId": "resp_0f2de37edc8dbab1016a9bb5b56f2c87d0af96756f97f4603e",
+              "shareJobId": "81791c10-4085-4021-9191-5b61faf4443b",
+              "parseSuccess": true,
+              "fingerprintId": "20c98de1da4e63ef0825b0c0691a035c9ea21d79e2ec9b1f7de048cf3fd2b161",
+              "destinationCount": 1,
+              "parseFailureCode": null,
+              "premiumRequestId": "cc00b94c-6afb-4a06-9403-fd43d18fe70c",
+              "structuredResultHash": "d30eefb8235d98fc34eb67298a4f8a1f74034ddb5f7f1d342fd7e52d0bb0bb2a"
+            },
+            "finalFingerprint": {
+              "hash": "54c0c78bbe4d86de6c25a7222e606d3b9a6ad5cb18d4de6f548e6371738f1be0",
+              "version": "premium-final-fingerprint.v1",
+              "chargeability": "CHARGEABLE_ACTIONABLE",
+              "solResultHash": "d30eefb8235d98fc34eb67298a4f8a1f74034ddb5f7f1d342fd7e52d0bb0bb2a",
+              "resultDecision": "PREMIUM_ACTIONABLE_RESULT",
+              "safetyDecision": [
+                "REVIEW"
+              ],
+              "tokenSettlement": "CONSUME",
+              "canonicalResultHash": "c3c4a8ee3730392bff564d06d4ad95237613e799d27151e15f142ceb61f929cb"
+            },
+            "inferenceFingerprint": {
+              "frames": [
+                {
+                  "width": 480,
+                  "height": 854,
+                  "byteLength": 90977,
+                  "imageSha256": "a41592d4c30b0df5ae2bcd8c3673fc389e94553c017360abcc8ecfa74c87905c",
+                  "timestampMs": 0
+                },
+                {
+                  "width": 480,
+                  "height": 854,
+                  "byteLength": 63137,
+                  "imageSha256": "4403da7532fa871167ce7757bd393b8adbf3f7250d3339b188c480eb429dd5af",
+                  "timestampMs": 1000
+                },
+                {
+                  "width": 480,
+                  "height": 854,
+                  "byteLength": 62109,
+                  "imageSha256": "3028c80ac7c9d0e7a9dcf467563f910f4fc0f8e5e41e7600f752e7b71912d4c1",
+                  "timestampMs": 2000
+                },
+                {
+                  "width": 480,
+                  "height": 854,
+                  "byteLength": 71024,
+                  "imageSha256": "edb6be60b2a1f8bfb17bc2869bc3452c8a5a734db4966f277cc700c789711e9b",
+                  "timestampMs": 3000
+                },
+                {
+                  "width": 480,
+                  "height": 854,
+                  "byteLength": 73260,
+                  "imageSha256": "0aa8eca6fbedf9bbbee32ff925acd48776052300be2c4e07b59aca81bce94c80",
+                  "timestampMs": 4000
+                },
+                {
+                  "width": 480,
+                  "height": 854,
+                  "byteLength": 54279,
+                  "imageSha256": "2cd63be0b971e30492c8652ee89897e9dfe6178e9db9315c4853d90186dd4358",
+                  "timestampMs": 5500
+                }
+              ],
+              "prompt": {
+                "model": "gpt-5.6-sol",
+                "promptHash": "8132da97b952b5d93062ba9b7d915c1dc40b4033de869607a1274142e1580e9c",
+                "schemaHash": "6899fd09c3cc95b4d12263bec5d7028f605eab0eb77b9fdaa38877704c694cfa",
+                "promptVersion": "sol-parity-natural-v1",
+                "schemaVersion": "sol-parity-destination-schema-v1",
+                "reasoningConfig": {
+                  "effort": "high"
+                }
+              },
+              "request": {
+                "imageCount": 6,
+                "inputTextHash": "1b98c019e2aa37243105958613f3309e1ce09b1785649f594a463a5f9e800962",
+                "requestPayloadHash": "a838113498a8ec9d0ceb12c1164c6e649d4930608f1c5f92bab5053c95087e77"
+              },
+              "version": "premium-inference-fingerprint.v1",
+              "evidenceReuse": "EVIDENCE_REGENERATED",
+              "fingerprintId": "20c98de1da4e63ef0825b0c0691a035c9ea21d79e2ec9b1f7de048cf3fd2b161",
+              "sourceContext": {
+                "ocrHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "ocrLength": 0,
+                "captionHash": "21edb0782f2f99c6d8c31e3700a877f069ac4f3689ed9e8c2773780b86c844c4",
+                "creatorHash": "1bd11a40d110c4ca096e1e69f129406f9cd89c5d156dd579e39449e6a3bbc153",
+                "captionLength": 206,
+                "creatorLength": 11,
+                "transcriptHash": "7903f03b1c0dc4d61656ecac3c453ad21ee547b76e7e16d8e17c538e5be0d0c6",
+                "transcriptLength": 127,
+                "sourceLocationHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "sourceLocationLength": 0,
+                "sourceLocationPresent": false
+              },
+              "sourceIdentity": {
+                "platform": "instagram",
+                "canonicalUrlHash": "a41d6f97d9cf4286b1b6e4477e0901d095907f207b3e567359e8c70b8ffe8a00",
+                "canonicalContentIdHash": "44d061ef0cf0a7738de9c2967fc5484c3f42d82d4685042e76018a5ce50ab1a1"
+              },
+              "evidenceVersion": "premium-evidence-2026-09-05.v1"
+            },
+            "canonicalizationFingerprint": {
+              "hash": "c3c4a8ee3730392bff564d06d4ad95237613e799d27151e15f142ceb61f929cb",
+              "version": "premium-canonicalization-fingerprint.v1",
+              "hypotheses": [
+                {
+                  "name": "Pont d’Arc and the surrounding Ardèche Gorge",
+                  "calls": [
+                    {
+                      "query": "Pont d’Arc and the surrounding Ardèche Gorge, Vallon-Pont-d’Arc, Auvergne-Rhône-Alpes, France",
+                      "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                      "matched": true,
+                      "outcome": "CANONICAL_ALIAS",
+                      "resultIds": [
+                        "ChIJtSym8PIBtRIRTb7zGVPYPkw",
+                        "ChIJFxcI5PIBtRIRYdFsLut76eI"
+                      ],
+                      "resultCount": 2,
+                      "resultNames": [
+                        "Le Pont d'Arc",
+                        "Le Pont d'Arc"
+                      ],
+                      "selectedName": "Le Pont d'Arc",
+                      "attemptNumber": 1,
+                      "rejectionReason": null,
+                      "selectedGooglePlaceId": "ChIJtSym8PIBtRIRTb7zGVPYPkw"
+                    }
+                  ],
+                  "outcome": "AMBIGUOUS_CANONICAL",
+                  "geography": {
+                    "city": "Vallon-Pont-d’Arc",
+                    "region": "Auvergne-Rhône-Alpes",
+                    "country": "France"
+                  },
+                  "entityType": "LANDMARK",
+                  "selectedName": null,
+                  "rejectionReason": null,
+                  "selectedGooglePlaceId": null
+                },
+                {
+                  "name": "Gorges de l’Hérault at Pont du Diable",
+                  "calls": [
+                    {
+                      "query": "Gorges de l’Hérault at Pont du Diable, Saint-Jean-de-Fos, Occitanie, France",
+                      "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                      "matched": true,
+                      "outcome": "CANONICAL_ALIAS",
+                      "resultIds": [
+                        "ChIJEbn8PEZYsRIR0c-CnwMkZC8",
+                        "ChIJI56OHWlYsRIRS_Wlx7ZFhwQ",
+                        "ChIJ96BlZXRZsRIRSQSQZXqNJVM",
+                        "ChIJ5f2v8nJZsRIRHxqXdD0xaBA",
+                        "ChIJ26lQKDZZsRIR9Sfy2DfKeWo",
+                        "ChIJQxNnVh5ZsRIR7Js4m_Uml8I",
+                        "ChIJaSMcC4BfsRIR7qYdp2LULFM",
+                        "ChIJwRBnSfGQsRIRmn-Z40x9YYU"
+                      ],
+                      "resultCount": 8,
+                      "resultNames": [
+                        "Le Pont du Diable",
+                        "Gorges de l'Hérault",
+                        "Gorges de l'Hérault",
+                        "Rives de l'Hérault au Pont du Diable",
+                        "Promenade Pont du diable",
+                        "Plage du Pont du Diable",
+                        "Canyon du Diable",
+                        "Pont du Diable"
+                      ],
+                      "selectedName": "Gorges de l'Hérault",
+                      "attemptNumber": 1,
+                      "rejectionReason": null,
+                      "selectedGooglePlaceId": "ChIJI56OHWlYsRIRS_Wlx7ZFhwQ"
+                    }
+                  ],
+                  "outcome": "AMBIGUOUS_CANONICAL",
+                  "geography": {
+                    "city": "Saint-Jean-de-Fos",
+                    "region": "Occitanie",
+                    "country": "France"
+                  },
+                  "entityType": "NAMED_NATURAL_FEATURE",
+                  "selectedName": null,
+                  "rejectionReason": null,
+                  "selectedGooglePlaceId": null
+                },
+                {
+                  "name": "Cirque de Gens",
+                  "calls": [
+                    {
+                      "query": "Cirque de Gens, Chauzon, Auvergne-Rhône-Alpes, France",
+                      "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                      "matched": true,
+                      "outcome": "CANONICAL_ALIAS",
+                      "resultIds": [
+                        "ChIJh63uiMDjtBIRRXuMuWrIoyQ",
+                        "ChIJ056b5CTjtBIRDvwbt053tOQ",
+                        "ChIJya62EADjtBIRQxj8dtptfYg",
+                        "ChIJBVJdKgjjtBIRpzJN1_hncW4"
+                      ],
+                      "resultCount": 4,
+                      "resultNames": [
+                        "Vue Cirque de Gens rando",
+                        "Le Cirque de Gens",
+                        "Vue cirque de gens",
+                        "Plage du Cirque de Gens"
+                      ],
+                      "selectedName": "Vue Cirque de Gens rando",
+                      "attemptNumber": 1,
+                      "rejectionReason": null,
+                      "selectedGooglePlaceId": "ChIJh63uiMDjtBIRRXuMuWrIoyQ"
+                    }
+                  ],
+                  "outcome": "AMBIGUOUS_CANONICAL",
+                  "geography": {
+                    "city": "Chauzon",
+                    "region": "Auvergne-Rhône-Alpes",
+                    "country": "France"
+                  },
+                  "entityType": "NAMED_NATURAL_FEATURE",
+                  "selectedName": null,
+                  "rejectionReason": null,
+                  "selectedGooglePlaceId": null
+                }
+              ]
+            }
+          },
+          "sharedGeoCountrySource": "multiple_places_agree",
+          "recognitionFailureClass": "none",
+          "sharedGeoCountryApplied": true,
+          "sharedGeoCountryStrength": "strong",
+          "peerGeographicDestinations": 0,
+          "sharedGeoCountryCandidates": 1,
+          "sourceGeographicContextDropped": 0
+        }
+      },
+      "reservationCount": 1,
+      "reservationStatus": "consumed",
+      "priorityUseful": true
+    },
+    {
+      "caseId": "R02",
+      "sourceUrl": "https://www.instagram.com/reel/DSvmLO_Eom9/",
+      "jobId": "882a2b02-60f4-4a7f-9fd2-d3b3f5ba4810",
+      "premiumRequestId": "632cc343-d931-4f48-b09e-840f38068a66",
+      "premiumState": "useful_result",
+      "status": "needs_help",
+      "decision": "candidate_picker",
+      "savedPlaceId": null,
+      "names": [
+        "Swami's Beach",
+        "North Beach",
+        "Ocean Beach"
+      ],
+      "usefulEvidence": [
+        "Swami's Beach",
+        "Encinitas, CA 92024, USA",
+        "North Beach",
+        "Avenida Estacion, San Clemente, CA 92672, USA",
+        "Ocean Beach",
+        "Ocean Beach, San Francisco, CA, USA",
+        "San Francisco, CA 94121, USA"
+      ],
+      "suggestedQuery": null,
+      "chargeable": true,
+      "settlementReason": "premium_specific_candidates",
+      "costs": {
+        "premium_recognition": {
+          "model": "gpt-5.6-sol",
+          "tokens": 1
+        }
+      },
+      "requestedAt": "2026-09-05T06:24:44.989631+00:00",
+      "startedAt": "2026-09-05T06:27:00.267301+00:00",
+      "completedAt": "2026-09-05T06:27:02.110414+00:00",
+      "task": {
+        "id": "044f5599-d7ca-4e7d-8e80-488e2e343aff",
+        "status": "completed",
+        "attempts": 1,
+        "failureCode": null,
+        "resolverName": "instagram/yt-dlp",
+        "analysisProvider": null,
+        "analysisModel": null,
+        "promptVersion": null,
+        "latencyMs": null,
+        "modelCalls": null,
+        "modelInputTokens": null,
+        "modelOutputTokens": null,
+        "modelThinkingTokens": null,
+        "modelLatencyMs": null
+      },
+      "mediaRun": {
+        "id": "2f20141e-a94f-4da1-ac7d-2d5ae1a360fd",
+        "durationMs": 52023,
+        "frameCount": 14,
+        "transcriptSegments": 1,
+        "ocrSegments": 0,
+        "resolverName": "instagram/yt-dlp",
+        "modelProvider": "premium-sol",
+        "evidence": {
+          "multiple": false,
+          "placeCount": 3,
+          "insufficient": false,
+          "analysisAttempted": true,
+          "destinationPlaces": 1,
+          "partialPlaceCount": 0,
+          "explicitPlaceCount": 3,
+          "premiumDiagnostics": {
+            "solBoundary": {
+              "model": "gpt-5.6-sol",
+              "usage": {
+                "input_tokens": 7331,
+                "total_tokens": 9410,
+                "output_tokens": 2079,
+                "reasoning_tokens": 1822,
+                "cached_input_tokens": 7328
+              },
+              "version": "premium-sol-boundary.v1",
+              "latencyMs": 36044,
+              "hypotheses": [
+                {
+                  "name": "Molokini Crater",
+                  "confidence": "MEDIUM",
+                  "entityType": "NAMED_NATURAL_FEATURE",
+                  "alternatives": [
+                    "La Perouse Bay",
+                    "Black Rock (Puʻu Kekaʻa)"
+                  ],
+                  "evidenceBasis": "MODEL_OBSERVED"
+                }
+              ],
+              "responseId": "resp_08f5b5d5ecfbbd99016a9bb643d9e087d08cdf879d35b64df7",
+              "shareJobId": "882a2b02-60f4-4a7f-9fd2-d3b3f5ba4810",
+              "parseSuccess": true,
+              "fingerprintId": "de726d440352d74c128fcd20886b3d83fd9ffd26ff63b4f1487a59db3b9118a1",
+              "destinationCount": 1,
+              "parseFailureCode": null,
+              "premiumRequestId": "632cc343-d931-4f48-b09e-840f38068a66",
+              "structuredResultHash": "12795ce8570bbcdbf9504c5b0dbe2f70e91597ffe0a9a8fc60af532e11c598a2"
+            },
+            "finalFingerprint": {
+              "hash": "8ebb4f6db8988662cf27501da703e0e9fc0ee8368db90d948a2df2f9588462ee",
+              "version": "premium-final-fingerprint.v1",
+              "chargeability": "CHARGEABLE_ACTIONABLE",
+              "solResultHash": "12795ce8570bbcdbf9504c5b0dbe2f70e91597ffe0a9a8fc60af532e11c598a2",
+              "resultDecision": "PREMIUM_ACTIONABLE_RESULT",
+              "safetyDecision": [
+                "REVIEW"
+              ],
+              "tokenSettlement": "CONSUME",
+              "canonicalResultHash": "0d1ad13ab3abd63a7f116d49b23067260e412a671f2406deb62226c6ce7ebe5e"
+            },
+            "inferenceFingerprint": {
+              "frames": [
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 140811,
+                  "imageSha256": "203fee0a1951098d5df63dfaf1e92181f71472ab32ddb75bb04602b92edd25fb",
+                  "timestampMs": 0
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 117863,
+                  "imageSha256": "ccf10b53d13e95a25d275290fbd5a8d343caf34c4b4557565f03d937a5176403",
+                  "timestampMs": 11000
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 152880,
+                  "imageSha256": "b15e0411a288cd8b9dcf7f1cb8fabb16845792b9ae683b8cc25e73474352ee5c",
+                  "timestampMs": 15000
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 129501,
+                  "imageSha256": "d2816ba24f9fefd074e167682223dc4069de41fb8135e5fadec2a2a016ae1f09",
+                  "timestampMs": 17000
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 70999,
+                  "imageSha256": "35b571827456b06de928defc9d29345c07aacd5b0f17251486c6ce3c459aade3",
+                  "timestampMs": 19000
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 65640,
+                  "imageSha256": "1f92923859b6628c056819c7cf9616b4874f94e930d09f07db4b8b62b1bcbb35",
+                  "timestampMs": 23600
+                }
+              ],
+              "prompt": {
+                "model": "gpt-5.6-sol",
+                "promptHash": "8132da97b952b5d93062ba9b7d915c1dc40b4033de869607a1274142e1580e9c",
+                "schemaHash": "6899fd09c3cc95b4d12263bec5d7028f605eab0eb77b9fdaa38877704c694cfa",
+                "promptVersion": "sol-parity-natural-v1",
+                "schemaVersion": "sol-parity-destination-schema-v1",
+                "reasoningConfig": {
+                  "effort": "high"
+                }
+              },
+              "request": {
+                "imageCount": 6,
+                "inputTextHash": "6ec4af19737d2a88524d8770d5ef91bf2607fe237a846027b2b50540dc6ad345",
+                "requestPayloadHash": "3e0b7eb6eb6a72b8832522c64611c92a8dbd26ffd5d88aad562a8b39bbf700bb"
+              },
+              "version": "premium-inference-fingerprint.v1",
+              "evidenceReuse": "EVIDENCE_REGENERATED",
+              "fingerprintId": "de726d440352d74c128fcd20886b3d83fd9ffd26ff63b4f1487a59db3b9118a1",
+              "sourceContext": {
+                "ocrHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "ocrLength": 0,
+                "captionHash": "a91b44cc4c79e98b4c018b2e7831738e80c9f2b54c8d3ca1a459c138dcbc7c9a",
+                "creatorHash": "c3844d07d6aa66678884163d6b5bb8f7cced527451d4bcc158ba8607e627279f",
+                "captionLength": 280,
+                "creatorLength": 10,
+                "transcriptHash": "77296bbd375c245b264449f6639d07efe8f98085eda73d1c73c44508c2fc47af",
+                "transcriptLength": 23,
+                "sourceLocationHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "sourceLocationLength": 0,
+                "sourceLocationPresent": false
+              },
+              "sourceIdentity": {
+                "platform": "instagram",
+                "canonicalUrlHash": "967249c4a7dae0143dc1111de5ab2b040bd250c73aa10431853a72a407fff77b",
+                "canonicalContentIdHash": "d0e4a2209a033df03c01427ba00fec562702ed8f558fe745e7fbd0022fdffe9c"
+              },
+              "evidenceVersion": "premium-evidence-2026-09-05.v1"
+            },
+            "canonicalizationFingerprint": {
+              "hash": "0d1ad13ab3abd63a7f116d49b23067260e412a671f2406deb62226c6ce7ebe5e",
+              "version": "premium-canonicalization-fingerprint.v1",
+              "hypotheses": [
+                {
+                  "name": "Molokini Crater",
+                  "calls": [
+                    {
+                      "query": "Molokini Crater, Hawaii, United States",
+                      "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                      "matched": true,
+                      "outcome": "CANONICAL_ALIAS",
+                      "resultIds": [
+                        "ChIJ_W5FwHLcVHkRa9Bn4gWVZ6A"
+                      ],
+                      "resultCount": 1,
+                      "resultNames": [
+                        "Molokini"
+                      ],
+                      "selectedName": "Molokini",
+                      "attemptNumber": 1,
+                      "rejectionReason": null,
+                      "selectedGooglePlaceId": "ChIJ_W5FwHLcVHkRa9Bn4gWVZ6A"
+                    }
+                  ],
+                  "outcome": "CANONICAL_ALIAS",
+                  "geography": {
+                    "city": null,
+                    "region": "Hawaii",
+                    "country": "United States"
+                  },
+                  "entityType": "NAMED_NATURAL_FEATURE",
+                  "selectedName": "Molokini",
+                  "rejectionReason": null,
+                  "selectedGooglePlaceId": "ChIJ_W5FwHLcVHkRa9Bn4gWVZ6A"
+                },
+                {
+                  "name": "La Perouse Bay",
+                  "calls": [
+                    {
+                      "query": "La Perouse Bay, Makena, Hawaii, United States",
+                      "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                      "matched": true,
+                      "outcome": "CANONICAL_EXACT",
+                      "resultIds": [
+                        "ChIJQf-mxTHDVHkRZn62FEGhCIA"
+                      ],
+                      "resultCount": 1,
+                      "resultNames": [
+                        "La Perouse Bay"
+                      ],
+                      "selectedName": "La Perouse Bay",
+                      "attemptNumber": 1,
+                      "rejectionReason": null,
+                      "selectedGooglePlaceId": "ChIJQf-mxTHDVHkRZn62FEGhCIA"
+                    }
+                  ],
+                  "outcome": "CANONICAL_EXACT",
+                  "geography": {
+                    "city": "Makena",
+                    "region": "Hawaii",
+                    "country": "United States"
+                  },
+                  "entityType": "NAMED_NATURAL_FEATURE",
+                  "selectedName": "La Perouse Bay",
+                  "rejectionReason": null,
+                  "selectedGooglePlaceId": "ChIJQf-mxTHDVHkRZn62FEGhCIA"
+                },
+                {
+                  "name": "Black Rock (Puʻu Kekaʻa)",
+                  "calls": [
+                    {
+                      "query": "Black Rock (Puʻu Kekaʻa), Kaanapali, Hawaii, United States",
+                      "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                      "matched": true,
+                      "outcome": "CANONICAL_ALIAS",
+                      "resultIds": [
+                        "ChIJDUc4tkUrVXkRgaX4krVuX7U",
+                        "ChIJvwHf8xArVXkRuR5fizSASVo",
+                        "ChIJs5zAIQArVXkReyWud97MXlw",
+                        "ChIJIdyI9G8rVXkRwOZz82Z0Lzg",
+                        "ChIJd5joMAArVXkRBD9lKHGbMnk",
+                        "ChIJGVo9fEYrVXkR0EryRkWA2-o",
+                        "ChIJzwjkmk8rVXkRFfxW8JL1zNQ"
+                      ],
+                      "resultCount": 7,
+                      "resultNames": [
+                        "Black Rock Beach",
+                        "Black Rock",
+                        "Keka’a Landing Pier (Black Rock Pier)",
+                        "Black Rock Scuba",
+                        "Black Rock Beach Cove",
+                        "The Spa at Black Rock",
+                        "Pu‘u Keka‘a"
+                      ],
+                      "selectedName": "Black Rock",
+                      "attemptNumber": 1,
+                      "rejectionReason": null,
+                      "selectedGooglePlaceId": "ChIJvwHf8xArVXkRuR5fizSASVo"
+                    }
+                  ],
+                  "outcome": "AMBIGUOUS_CANONICAL",
+                  "geography": {
+                    "city": "Kaanapali",
+                    "region": "Hawaii",
+                    "country": "United States"
+                  },
+                  "entityType": "NAMED_NATURAL_FEATURE",
+                  "selectedName": null,
+                  "rejectionReason": null,
+                  "selectedGooglePlaceId": null
+                }
+              ]
+            }
+          },
+          "sharedGeoCountrySource": "multiple_places_agree",
+          "recognitionFailureClass": "none",
+          "sharedGeoCountryApplied": true,
+          "sharedGeoCountryStrength": "strong",
+          "peerGeographicDestinations": 0,
+          "sharedGeoCountryCandidates": 1,
+          "sourceGeographicContextDropped": 0
+        }
+      },
+      "reservationCount": 1,
+      "reservationStatus": "consumed",
+      "priorityUseful": false
+    },
+    {
+      "caseId": "R03",
+      "sourceUrl": "https://www.instagram.com/reel/DZJ8ZvYub8Q/",
+      "jobId": "24d7f5ad-8fcf-4c29-b71d-2582c13e7ab6",
+      "premiumRequestId": "b6a8c01d-c2bc-49cb-8f4a-b60fa4f08831",
+      "premiumState": "useful_result",
+      "status": "needs_help",
+      "decision": "candidate_picker",
+      "savedPlaceId": null,
+      "names": [
+        "Tamolitch Falls (Blue Pool)",
+        "Devil's Punchbowl",
+        "Tamolitch Blue Pool (Tamolitch Falls)",
+        "Devil's Punchbowl at Lake Crescent"
+      ],
+      "usefulEvidence": [
+        "Tamolitch Falls (Blue Pool)",
+        "McKenzie Bridge, Oregon, United States",
+        "National Forest Road 2672-655, McKenzie Bridge, OR 97413, USA",
+        "Devil's Punchbowl",
+        "Port Angeles, Washington, United States",
+        "Port Angeles, WA 98363, USA",
+        "Tamolitch Blue Pool (Tamolitch Falls)",
+        "Devil's Punchbowl at Lake Crescent"
+      ],
+      "suggestedQuery": "Tamolitch Blue Pool (Tamolitch Falls)",
+      "chargeable": true,
+      "settlementReason": "premium_specific_candidates",
+      "costs": {
+        "sol": {
+          "model": "gpt-5.6-sol",
+          "usage": {
+            "input_tokens": 7357,
+            "total_tokens": 9013,
+            "output_tokens": 1656,
+            "reasoning_tokens": 1410,
+            "cached_input_tokens": 7354
+          },
+          "knownCostUsd": 0.036074
+        },
+        "places": {
+          "costUsd": "UNKNOWN",
+          "requestCount": 2,
+          "requestTypes": [
+            "PRIMARY_SPECIFIC_IDENTITY",
+            "PRIMARY_SPECIFIC_IDENTITY"
+          ]
+        },
+        "latencyMs": {
+          "sol": 28029,
+          "places": 468,
+          "evidencePrep": 10652,
+          "totalAfterEvidenceReady": 28497
+        },
+        "acquisition": "UNKNOWN",
+        "evidenceReuse": {
+          "ocr": "REACQUIRED",
+          "media": "REACQUIRED",
+          "frames": "REACQUIRED",
+          "caption": "REACQUIRED",
+          "transcript": "REACQUIRED"
+        },
+        "transcription": "UNKNOWN",
+        "parityDiagnostics": {
+          "solBoundary": {
+            "model": "gpt-5.6-sol",
+            "usage": {
+              "input_tokens": 7357,
+              "total_tokens": 9013,
+              "output_tokens": 1656,
+              "reasoning_tokens": 1410,
+              "cached_input_tokens": 7354
+            },
+            "version": "premium-sol-boundary.v1",
+            "latencyMs": 28029,
+            "hypotheses": [
+              {
+                "name": "Tamolitch Blue Pool (Tamolitch Falls)",
+                "confidence": "MEDIUM",
+                "entityType": "NAMED_NATURAL_FEATURE",
+                "alternatives": [
+                  "Devil's Punchbowl at Lake Crescent"
+                ],
+                "evidenceBasis": "MODEL_OBSERVED"
+              }
+            ],
+            "responseId": "resp_05068878854acaec016a9bb63f435087d0956b2f094aa671c4",
+            "shareJobId": "24d7f5ad-8fcf-4c29-b71d-2582c13e7ab6",
+            "parseSuccess": true,
+            "fingerprintId": "6788f52f85f3437f7a92a9523069af5cf5a3df80a36e9299d262ce9961b794f6",
+            "destinationCount": 1,
+            "parseFailureCode": null,
+            "premiumRequestId": "b6a8c01d-c2bc-49cb-8f4a-b60fa4f08831",
+            "structuredResultHash": "893544111bd91994c6ad2e7ea5e64dbf50f87de59bbe605cdd16e52ed7a85a9b"
+          },
+          "engineVersion": "simple-sol-premium.v2",
+          "safetyVersion": "premium-recognition-safety.v2",
+          "evidenceVersion": "premium-evidence-2026-09-05.v1",
+          "finalFingerprint": {
+            "hash": "1c0bed7fafd3a0c5455318a48c62ceb3b97bc49706e5d6e9ecc9c1e7d234d5f7",
+            "version": "premium-final-fingerprint.v1",
+            "chargeability": "CHARGEABLE_ACTIONABLE",
+            "solResultHash": "893544111bd91994c6ad2e7ea5e64dbf50f87de59bbe605cdd16e52ed7a85a9b",
+            "resultDecision": "PREMIUM_ACTIONABLE_RESULT",
+            "safetyDecision": [
+              "REVIEW"
+            ],
+            "tokenSettlement": "CONSUME",
+            "canonicalResultHash": "2b5550996713d0f2ad922343bd653ef740d0491d89b6de7fb92828aa1e561c7c"
+          },
+          "evidenceReuseState": "EVIDENCE_REGENERATED",
+          "inferenceFingerprint": {
+            "frames": [
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 294015,
+                "imageSha256": "695808bc605888b9bcf359ec75f56260a1831e75ecf8665c06699528b047af58",
+                "timestampMs": 0
+              },
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 202493,
+                "imageSha256": "84e2f580dfff2be0524bcc25f966517864c7cd364374ea3744333525e8009de2",
+                "timestampMs": 1000
+              },
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 156468,
+                "imageSha256": "665b5252f9009582fb5eff1afefbb463e0bd1b6fd2c2270a761d0d88e948c967",
+                "timestampMs": 2000
+              },
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 206664,
+                "imageSha256": "30e307db6486353b87b6c053897ed374c57c3eb1b1bacf1eaab1becb76fe5366",
+                "timestampMs": 3000
+              },
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 231583,
+                "imageSha256": "64f71193b1adb02f10386b3fc37b4759fe9c14fdaaaf4006762bbbc9c8427c8b",
+                "timestampMs": 4000
+              },
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 211221,
+                "imageSha256": "8d99ad9b5957b0fa1947f5e2e42f1166fae305e9579a6efcdb71420db91e35c1",
+                "timestampMs": 6533
+              }
+            ],
+            "prompt": {
+              "model": "gpt-5.6-sol",
+              "promptHash": "8132da97b952b5d93062ba9b7d915c1dc40b4033de869607a1274142e1580e9c",
+              "schemaHash": "6899fd09c3cc95b4d12263bec5d7028f605eab0eb77b9fdaa38877704c694cfa",
+              "promptVersion": "sol-parity-natural-v1",
+              "schemaVersion": "sol-parity-destination-schema-v1",
+              "reasoningConfig": {
+                "effort": "high"
+              }
+            },
+            "request": {
+              "imageCount": 6,
+              "inputTextHash": "60985ac8cace68f086d503723e2e317127478bb64a3116ac68c4b88d9cb9006e",
+              "requestPayloadHash": "883af44411b9a7cdc38e758f3863104f6488d4b90dff647657178c49d82b08b7"
+            },
+            "version": "premium-inference-fingerprint.v1",
+            "evidenceReuse": "EVIDENCE_REGENERATED",
+            "fingerprintId": "6788f52f85f3437f7a92a9523069af5cf5a3df80a36e9299d262ce9961b794f6",
+            "sourceContext": {
+              "ocrHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "ocrLength": 0,
+              "captionHash": "f411497c15ef98ad4765d82174990059ab381bb279a178b1e3821625922812fc",
+              "creatorHash": "653156d7c764ea5f71094c882b7ecb0d1241b0c8c1e9fa0c24334913dc1a1dda",
+              "captionLength": 311,
+              "creatorLength": 6,
+              "transcriptHash": "30e9637efac792afe559f020a1981d9299a6d293036f4b85cece52c0a8fef6cb",
+              "transcriptLength": 64,
+              "sourceLocationHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "sourceLocationLength": 0,
+              "sourceLocationPresent": false
+            },
+            "sourceIdentity": {
+              "platform": "instagram",
+              "canonicalUrlHash": "9d4a4d5877fce30366eeca7809dc93a3cf0a5b41b92255b993a79cff12559439",
+              "canonicalContentIdHash": "151f6766fae9f4dc8c108b4afdb9b1942d3c0372bce0d2e5edb2fe265fea91d9"
+            },
+            "evidenceVersion": "premium-evidence-2026-09-05.v1"
+          },
+          "canonicalizationFingerprint": {
+            "hash": "2b5550996713d0f2ad922343bd653ef740d0491d89b6de7fb92828aa1e561c7c",
+            "version": "premium-canonicalization-fingerprint.v1",
+            "hypotheses": [
+              {
+                "name": "Tamolitch Blue Pool (Tamolitch Falls)",
+                "calls": [
+                  {
+                    "query": "Tamolitch Blue Pool (Tamolitch Falls), McKenzie Bridge, Oregon, United States",
+                    "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                    "matched": true,
+                    "outcome": "CANONICAL_ALIAS",
+                    "resultIds": [
+                      "ChIJebCqymldv1QR2ivpC1qxzWI"
+                    ],
+                    "resultCount": 1,
+                    "resultNames": [
+                      "Tamolitch Falls (Blue Pool)"
+                    ],
+                    "selectedName": "Tamolitch Falls (Blue Pool)",
+                    "attemptNumber": 1,
+                    "rejectionReason": null,
+                    "selectedGooglePlaceId": "ChIJebCqymldv1QR2ivpC1qxzWI"
+                  }
+                ],
+                "outcome": "CANONICAL_ALIAS",
+                "geography": {
+                  "city": "McKenzie Bridge",
+                  "region": "Oregon",
+                  "country": "United States"
+                },
+                "entityType": "NAMED_NATURAL_FEATURE",
+                "selectedName": "Tamolitch Falls (Blue Pool)",
+                "rejectionReason": null,
+                "selectedGooglePlaceId": "ChIJebCqymldv1QR2ivpC1qxzWI"
+              },
+              {
+                "name": "Devil's Punchbowl at Lake Crescent",
+                "calls": [
+                  {
+                    "query": "Devil's Punchbowl at Lake Crescent, Port Angeles, Washington, United States",
+                    "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                    "matched": true,
+                    "outcome": "CANONICAL_ALIAS",
+                    "resultIds": [
+                      "ChIJESG0A3JRjlQRMbnWbY46N6Q"
+                    ],
+                    "resultCount": 1,
+                    "resultNames": [
+                      "Devil's Punchbowl"
+                    ],
+                    "selectedName": "Devil's Punchbowl",
+                    "attemptNumber": 1,
+                    "rejectionReason": null,
+                    "selectedGooglePlaceId": "ChIJESG0A3JRjlQRMbnWbY46N6Q"
+                  }
+                ],
+                "outcome": "CANONICAL_ALIAS",
+                "geography": {
+                  "city": "Port Angeles",
+                  "region": "Washington",
+                  "country": "United States"
+                },
+                "entityType": "NAMED_NATURAL_FEATURE",
+                "selectedName": "Devil's Punchbowl",
+                "rejectionReason": null,
+                "selectedGooglePlaceId": "ChIJESG0A3JRjlQRMbnWbY46N6Q"
+              }
+            ]
+          }
+        }
+      },
+      "requestedAt": "2026-09-05T06:24:45.399688+00:00",
+      "startedAt": "2026-09-05T06:27:00.267301+00:00",
+      "completedAt": "2026-09-05T06:27:41.594252+00:00",
+      "task": {
+        "id": "912331ba-2f65-4943-a6e4-af1273b62367",
+        "status": "completed",
+        "attempts": 1,
+        "failureCode": null,
+        "resolverName": "premium-sol",
+        "analysisProvider": null,
+        "analysisModel": null,
+        "promptVersion": null,
+        "latencyMs": null,
+        "modelCalls": null,
+        "modelInputTokens": null,
+        "modelOutputTokens": null,
+        "modelThinkingTokens": null,
+        "modelLatencyMs": null
+      },
+      "mediaRun": {
+        "id": "435ccfdb-0472-4929-b23c-0ad176b6a1d5",
+        "durationMs": 39149,
+        "frameCount": 7,
+        "transcriptSegments": 5,
+        "ocrSegments": 0,
+        "resolverName": "instagram/yt-dlp",
+        "modelProvider": "premium-sol",
+        "evidence": {
+          "multiple": false,
+          "placeCount": 2,
+          "insufficient": false,
+          "analysisAttempted": true,
+          "destinationPlaces": 1,
+          "partialPlaceCount": 0,
+          "explicitPlaceCount": 2,
+          "premiumDiagnostics": {
+            "solBoundary": {
+              "model": "gpt-5.6-sol",
+              "usage": {
+                "input_tokens": 7357,
+                "total_tokens": 9013,
+                "output_tokens": 1656,
+                "reasoning_tokens": 1410,
+                "cached_input_tokens": 7354
+              },
+              "version": "premium-sol-boundary.v1",
+              "latencyMs": 28029,
+              "hypotheses": [
+                {
+                  "name": "Tamolitch Blue Pool (Tamolitch Falls)",
+                  "confidence": "MEDIUM",
+                  "entityType": "NAMED_NATURAL_FEATURE",
+                  "alternatives": [
+                    "Devil's Punchbowl at Lake Crescent"
+                  ],
+                  "evidenceBasis": "MODEL_OBSERVED"
+                }
+              ],
+              "responseId": "resp_05068878854acaec016a9bb63f435087d0956b2f094aa671c4",
+              "shareJobId": "24d7f5ad-8fcf-4c29-b71d-2582c13e7ab6",
+              "parseSuccess": true,
+              "fingerprintId": "6788f52f85f3437f7a92a9523069af5cf5a3df80a36e9299d262ce9961b794f6",
+              "destinationCount": 1,
+              "parseFailureCode": null,
+              "premiumRequestId": "b6a8c01d-c2bc-49cb-8f4a-b60fa4f08831",
+              "structuredResultHash": "893544111bd91994c6ad2e7ea5e64dbf50f87de59bbe605cdd16e52ed7a85a9b"
+            },
+            "finalFingerprint": {
+              "hash": "1c0bed7fafd3a0c5455318a48c62ceb3b97bc49706e5d6e9ecc9c1e7d234d5f7",
+              "version": "premium-final-fingerprint.v1",
+              "chargeability": "CHARGEABLE_ACTIONABLE",
+              "solResultHash": "893544111bd91994c6ad2e7ea5e64dbf50f87de59bbe605cdd16e52ed7a85a9b",
+              "resultDecision": "PREMIUM_ACTIONABLE_RESULT",
+              "safetyDecision": [
+                "REVIEW"
+              ],
+              "tokenSettlement": "CONSUME",
+              "canonicalResultHash": "2b5550996713d0f2ad922343bd653ef740d0491d89b6de7fb92828aa1e561c7c"
+            },
+            "inferenceFingerprint": {
+              "frames": [
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 294015,
+                  "imageSha256": "695808bc605888b9bcf359ec75f56260a1831e75ecf8665c06699528b047af58",
+                  "timestampMs": 0
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 202493,
+                  "imageSha256": "84e2f580dfff2be0524bcc25f966517864c7cd364374ea3744333525e8009de2",
+                  "timestampMs": 1000
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 156468,
+                  "imageSha256": "665b5252f9009582fb5eff1afefbb463e0bd1b6fd2c2270a761d0d88e948c967",
+                  "timestampMs": 2000
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 206664,
+                  "imageSha256": "30e307db6486353b87b6c053897ed374c57c3eb1b1bacf1eaab1becb76fe5366",
+                  "timestampMs": 3000
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 231583,
+                  "imageSha256": "64f71193b1adb02f10386b3fc37b4759fe9c14fdaaaf4006762bbbc9c8427c8b",
+                  "timestampMs": 4000
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 211221,
+                  "imageSha256": "8d99ad9b5957b0fa1947f5e2e42f1166fae305e9579a6efcdb71420db91e35c1",
+                  "timestampMs": 6533
+                }
+              ],
+              "prompt": {
+                "model": "gpt-5.6-sol",
+                "promptHash": "8132da97b952b5d93062ba9b7d915c1dc40b4033de869607a1274142e1580e9c",
+                "schemaHash": "6899fd09c3cc95b4d12263bec5d7028f605eab0eb77b9fdaa38877704c694cfa",
+                "promptVersion": "sol-parity-natural-v1",
+                "schemaVersion": "sol-parity-destination-schema-v1",
+                "reasoningConfig": {
+                  "effort": "high"
+                }
+              },
+              "request": {
+                "imageCount": 6,
+                "inputTextHash": "60985ac8cace68f086d503723e2e317127478bb64a3116ac68c4b88d9cb9006e",
+                "requestPayloadHash": "883af44411b9a7cdc38e758f3863104f6488d4b90dff647657178c49d82b08b7"
+              },
+              "version": "premium-inference-fingerprint.v1",
+              "evidenceReuse": "EVIDENCE_REGENERATED",
+              "fingerprintId": "6788f52f85f3437f7a92a9523069af5cf5a3df80a36e9299d262ce9961b794f6",
+              "sourceContext": {
+                "ocrHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "ocrLength": 0,
+                "captionHash": "f411497c15ef98ad4765d82174990059ab381bb279a178b1e3821625922812fc",
+                "creatorHash": "653156d7c764ea5f71094c882b7ecb0d1241b0c8c1e9fa0c24334913dc1a1dda",
+                "captionLength": 311,
+                "creatorLength": 6,
+                "transcriptHash": "30e9637efac792afe559f020a1981d9299a6d293036f4b85cece52c0a8fef6cb",
+                "transcriptLength": 64,
+                "sourceLocationHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "sourceLocationLength": 0,
+                "sourceLocationPresent": false
+              },
+              "sourceIdentity": {
+                "platform": "instagram",
+                "canonicalUrlHash": "9d4a4d5877fce30366eeca7809dc93a3cf0a5b41b92255b993a79cff12559439",
+                "canonicalContentIdHash": "151f6766fae9f4dc8c108b4afdb9b1942d3c0372bce0d2e5edb2fe265fea91d9"
+              },
+              "evidenceVersion": "premium-evidence-2026-09-05.v1"
+            },
+            "canonicalizationFingerprint": {
+              "hash": "2b5550996713d0f2ad922343bd653ef740d0491d89b6de7fb92828aa1e561c7c",
+              "version": "premium-canonicalization-fingerprint.v1",
+              "hypotheses": [
+                {
+                  "name": "Tamolitch Blue Pool (Tamolitch Falls)",
+                  "calls": [
+                    {
+                      "query": "Tamolitch Blue Pool (Tamolitch Falls), McKenzie Bridge, Oregon, United States",
+                      "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                      "matched": true,
+                      "outcome": "CANONICAL_ALIAS",
+                      "resultIds": [
+                        "ChIJebCqymldv1QR2ivpC1qxzWI"
+                      ],
+                      "resultCount": 1,
+                      "resultNames": [
+                        "Tamolitch Falls (Blue Pool)"
+                      ],
+                      "selectedName": "Tamolitch Falls (Blue Pool)",
+                      "attemptNumber": 1,
+                      "rejectionReason": null,
+                      "selectedGooglePlaceId": "ChIJebCqymldv1QR2ivpC1qxzWI"
+                    }
+                  ],
+                  "outcome": "CANONICAL_ALIAS",
+                  "geography": {
+                    "city": "McKenzie Bridge",
+                    "region": "Oregon",
+                    "country": "United States"
+                  },
+                  "entityType": "NAMED_NATURAL_FEATURE",
+                  "selectedName": "Tamolitch Falls (Blue Pool)",
+                  "rejectionReason": null,
+                  "selectedGooglePlaceId": "ChIJebCqymldv1QR2ivpC1qxzWI"
+                },
+                {
+                  "name": "Devil's Punchbowl at Lake Crescent",
+                  "calls": [
+                    {
+                      "query": "Devil's Punchbowl at Lake Crescent, Port Angeles, Washington, United States",
+                      "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                      "matched": true,
+                      "outcome": "CANONICAL_ALIAS",
+                      "resultIds": [
+                        "ChIJESG0A3JRjlQRMbnWbY46N6Q"
+                      ],
+                      "resultCount": 1,
+                      "resultNames": [
+                        "Devil's Punchbowl"
+                      ],
+                      "selectedName": "Devil's Punchbowl",
+                      "attemptNumber": 1,
+                      "rejectionReason": null,
+                      "selectedGooglePlaceId": "ChIJESG0A3JRjlQRMbnWbY46N6Q"
+                    }
+                  ],
+                  "outcome": "CANONICAL_ALIAS",
+                  "geography": {
+                    "city": "Port Angeles",
+                    "region": "Washington",
+                    "country": "United States"
+                  },
+                  "entityType": "NAMED_NATURAL_FEATURE",
+                  "selectedName": "Devil's Punchbowl",
+                  "rejectionReason": null,
+                  "selectedGooglePlaceId": "ChIJESG0A3JRjlQRMbnWbY46N6Q"
+                }
+              ]
+            }
+          },
+          "sharedGeoCountrySource": "multiple_places_agree",
+          "recognitionFailureClass": "none",
+          "sharedGeoCountryApplied": true,
+          "sharedGeoCountryStrength": "strong",
+          "peerGeographicDestinations": 0,
+          "sharedGeoCountryCandidates": 1,
+          "sourceGeographicContextDropped": 0
+        }
+      },
+      "reservationCount": 1,
+      "reservationStatus": "consumed",
+      "priorityUseful": true
+    },
+    {
+      "caseId": "R04",
+      "sourceUrl": "https://www.instagram.com/reel/C9Z963muLHI/",
+      "jobId": "1f0b2729-176e-4143-bb55-9c994c8247c9",
+      "premiumRequestId": "4b6c7135-4481-4c42-a5fd-05ccd6163662",
+      "premiumState": "useful_result",
+      "status": "needs_help",
+      "decision": "candidate_picker",
+      "savedPlaceId": null,
+      "names": [
+        "Dorset Marble Quarry",
+        "Marble Street Quarry",
+        "West Rutland Marble Quarry"
+      ],
+      "usefulEvidence": [
+        "Dorset Marble Quarry",
+        "Dorset, Vermont, United States",
+        "1848 VT-30, Dorset, VT 05251, USA",
+        "Marble Street Quarry",
+        "West Rutland, Vermont, United States",
+        "2703-2135 Marble St, West Rutland, VT 05777, USA",
+        "West Rutland Marble Quarry"
+      ],
+      "suggestedQuery": "Dorset Marble Quarry",
+      "chargeable": true,
+      "settlementReason": "premium_specific_candidates",
+      "costs": {
+        "sol": {
+          "model": "gpt-5.6-sol",
+          "usage": {
+            "input_tokens": 7295,
+            "total_tokens": 8519,
+            "output_tokens": 1224,
+            "reasoning_tokens": 1034,
+            "cached_input_tokens": 7292
+          },
+          "knownCostUsd": 0.027409
+        },
+        "places": {
+          "costUsd": "UNKNOWN",
+          "requestCount": 2,
+          "requestTypes": [
+            "PRIMARY_SPECIFIC_IDENTITY",
+            "PRIMARY_SPECIFIC_IDENTITY"
+          ]
+        },
+        "latencyMs": {
+          "sol": 26685,
+          "places": 456,
+          "evidencePrep": 9442,
+          "totalAfterEvidenceReady": 27141
+        },
+        "acquisition": "UNKNOWN",
+        "evidenceReuse": {
+          "ocr": "REACQUIRED",
+          "media": "REACQUIRED",
+          "frames": "REACQUIRED",
+          "caption": "REACQUIRED",
+          "transcript": "REACQUIRED"
+        },
+        "transcription": "UNKNOWN",
+        "parityDiagnostics": {
+          "solBoundary": {
+            "model": "gpt-5.6-sol",
+            "usage": {
+              "input_tokens": 7295,
+              "total_tokens": 8519,
+              "output_tokens": 1224,
+              "reasoning_tokens": 1034,
+              "cached_input_tokens": 7292
+            },
+            "version": "premium-sol-boundary.v1",
+            "latencyMs": 26685,
+            "hypotheses": [
+              {
+                "name": "Dorset Marble Quarry",
+                "confidence": "MEDIUM",
+                "entityType": "LANDMARK",
+                "alternatives": [
+                  "West Rutland Marble Quarry"
+                ],
+                "evidenceBasis": "CONTEXTUAL_OR_MEMORY_PRIOR"
+              }
+            ],
+            "responseId": "resp_0e46b070cb813b8b016a9bb67a2fac87d0b9a2115f1781c23d",
+            "shareJobId": "1f0b2729-176e-4143-bb55-9c994c8247c9",
+            "parseSuccess": true,
+            "fingerprintId": "003c7a1e699e0c3931216d9f45b968b89823be62200de45592570fee0a056add",
+            "destinationCount": 1,
+            "parseFailureCode": null,
+            "premiumRequestId": "4b6c7135-4481-4c42-a5fd-05ccd6163662",
+            "structuredResultHash": "7b2e2b87f66b0a020a2dd7abd7ae299ca416caac3cfde6ef4885a6888d9a3378"
+          },
+          "engineVersion": "simple-sol-premium.v2",
+          "safetyVersion": "premium-recognition-safety.v2",
+          "evidenceVersion": "premium-evidence-2026-09-05.v1",
+          "finalFingerprint": {
+            "hash": "5e9682dc59690c6da3b4946273684ec9ca6bf9eaef77b87b093cb12dd21b357e",
+            "version": "premium-final-fingerprint.v1",
+            "chargeability": "CHARGEABLE_ACTIONABLE",
+            "solResultHash": "7b2e2b87f66b0a020a2dd7abd7ae299ca416caac3cfde6ef4885a6888d9a3378",
+            "resultDecision": "PREMIUM_ACTIONABLE_RESULT",
+            "safetyDecision": [
+              "REVIEW"
+            ],
+            "tokenSettlement": "CONSUME",
+            "canonicalResultHash": "158e71e6b59863ab258c36d67492d72f52b84f5c67bec365503de33b8b4ccab3"
+          },
+          "evidenceReuseState": "EVIDENCE_REGENERATED",
+          "inferenceFingerprint": {
+            "frames": [
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 250878,
+                "imageSha256": "63d0baad0a16ddd5e194f7c86decc58c150525b6f05201c2e106d62017caa871",
+                "timestampMs": 0
+              },
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 152121,
+                "imageSha256": "107c3d95a33c669b305e3d90c02f858979d37b6700ba5738362d053795e2325f",
+                "timestampMs": 3000
+              },
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 69784,
+                "imageSha256": "8f4596a7988867db398c5aad41271ad7ea27e0d9b74a2e8633c892c5b527ac30",
+                "timestampMs": 4000
+              },
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 77561,
+                "imageSha256": "f7c47f4ec3809868b8b00fd9433239003ac05fc2c34801e3460ab1e366f2f7d5",
+                "timestampMs": 5000
+              },
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 88593,
+                "imageSha256": "b8e2a7f874b59644e48052acb826158d0bef46734fee50c1bfb7ede997c86462",
+                "timestampMs": 6000
+              },
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 131232,
+                "imageSha256": "f1b882b2b4a25de9f71d6f7e516183cb851769299d43cb47843fb197cca685f1",
+                "timestampMs": 8933
+              }
+            ],
+            "prompt": {
+              "model": "gpt-5.6-sol",
+              "promptHash": "8132da97b952b5d93062ba9b7d915c1dc40b4033de869607a1274142e1580e9c",
+              "schemaHash": "6899fd09c3cc95b4d12263bec5d7028f605eab0eb77b9fdaa38877704c694cfa",
+              "promptVersion": "sol-parity-natural-v1",
+              "schemaVersion": "sol-parity-destination-schema-v1",
+              "reasoningConfig": {
+                "effort": "high"
+              }
+            },
+            "request": {
+              "imageCount": 6,
+              "inputTextHash": "7fd6789e8eea3ef8850023dae5ba67980fd8ddbde7685d1486d43c11e830394a",
+              "requestPayloadHash": "cebfdf36ce678397b72e080a4c92c1e630a80f6628688d34947445b98d43f811"
+            },
+            "version": "premium-inference-fingerprint.v1",
+            "evidenceReuse": "EVIDENCE_REGENERATED",
+            "fingerprintId": "003c7a1e699e0c3931216d9f45b968b89823be62200de45592570fee0a056add",
+            "sourceContext": {
+              "ocrHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "ocrLength": 0,
+              "captionHash": "46ef32510f2ec9c1f8f9c60d075402bb562a405daf1b7d41afbd32518682b530",
+              "creatorHash": "0c38d16bc8c55507746b402c0049fbb93a47019f6f8c295e8309318f8b437213",
+              "captionLength": 216,
+              "creatorLength": 10,
+              "transcriptHash": "94f1c107f81a08341d150e8645c8824ae5a7cbaf00c12761348f11b5cc45cf1a",
+              "transcriptLength": 9,
+              "sourceLocationHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "sourceLocationLength": 0,
+              "sourceLocationPresent": false
+            },
+            "sourceIdentity": {
+              "platform": "instagram",
+              "canonicalUrlHash": "e44b69bd6d8050f7a8244527f961251be19f7d95f5b1308be7c52a344805fd31",
+              "canonicalContentIdHash": "716e3039627691839a98bcb3e580d0f3a1b5bee71740d9e14d9c78cb298d9506"
+            },
+            "evidenceVersion": "premium-evidence-2026-09-05.v1"
+          },
+          "canonicalizationFingerprint": {
+            "hash": "158e71e6b59863ab258c36d67492d72f52b84f5c67bec365503de33b8b4ccab3",
+            "version": "premium-canonicalization-fingerprint.v1",
+            "hypotheses": [
+              {
+                "name": "Dorset Marble Quarry",
+                "calls": [
+                  {
+                    "query": "Dorset Marble Quarry, Dorset, Vermont, United States",
+                    "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                    "matched": true,
+                    "outcome": "CANONICAL_EXACT",
+                    "resultIds": [
+                      "ChIJG9E4hIhd4IkRwN0jnyQ9-F4"
+                    ],
+                    "resultCount": 1,
+                    "resultNames": [
+                      "Dorset Marble Quarry"
+                    ],
+                    "selectedName": "Dorset Marble Quarry",
+                    "attemptNumber": 1,
+                    "rejectionReason": null,
+                    "selectedGooglePlaceId": "ChIJG9E4hIhd4IkRwN0jnyQ9-F4"
+                  }
+                ],
+                "outcome": "CANONICAL_EXACT",
+                "geography": {
+                  "city": "Dorset",
+                  "region": "Vermont",
+                  "country": "United States"
+                },
+                "entityType": "LANDMARK",
+                "selectedName": "Dorset Marble Quarry",
+                "rejectionReason": null,
+                "selectedGooglePlaceId": "ChIJG9E4hIhd4IkRwN0jnyQ9-F4"
+              },
+              {
+                "name": "West Rutland Marble Quarry",
+                "calls": [
+                  {
+                    "query": "West Rutland Marble Quarry, West Rutland, Vermont, United States",
+                    "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                    "matched": true,
+                    "outcome": "CANONICAL_ALIAS",
+                    "resultIds": [
+                      "ChIJQ5cT_kcj4IkRHcayOugmexs"
+                    ],
+                    "resultCount": 1,
+                    "resultNames": [
+                      "Marble Street Quarry"
+                    ],
+                    "selectedName": "Marble Street Quarry",
+                    "attemptNumber": 1,
+                    "rejectionReason": null,
+                    "selectedGooglePlaceId": "ChIJQ5cT_kcj4IkRHcayOugmexs"
+                  }
+                ],
+                "outcome": "CANONICAL_ALIAS",
+                "geography": {
+                  "city": "West Rutland",
+                  "region": "Vermont",
+                  "country": "United States"
+                },
+                "entityType": "LANDMARK",
+                "selectedName": "Marble Street Quarry",
+                "rejectionReason": null,
+                "selectedGooglePlaceId": "ChIJQ5cT_kcj4IkRHcayOugmexs"
+              }
+            ]
+          }
+        }
+      },
+      "requestedAt": "2026-09-05T06:24:45.846924+00:00",
+      "startedAt": "2026-09-05T06:28:00.485559+00:00",
+      "completedAt": "2026-09-05T06:28:39.01382+00:00",
+      "task": {
+        "id": "5ac6a628-b8b7-4542-b84e-9a8f87913f45",
+        "status": "completed",
+        "attempts": 1,
+        "failureCode": null,
+        "resolverName": "premium-sol",
+        "analysisProvider": null,
+        "analysisModel": null,
+        "promptVersion": null,
+        "latencyMs": null,
+        "modelCalls": null,
+        "modelInputTokens": null,
+        "modelOutputTokens": null,
+        "modelThinkingTokens": null,
+        "modelLatencyMs": null
+      },
+      "mediaRun": {
+        "id": "8e048722-716a-4e52-82d4-29bd1455e8ea",
+        "durationMs": 36584,
+        "frameCount": 7,
+        "transcriptSegments": 1,
+        "ocrSegments": 0,
+        "resolverName": "instagram/yt-dlp",
+        "modelProvider": "premium-sol",
+        "evidence": {
+          "multiple": false,
+          "placeCount": 2,
+          "insufficient": false,
+          "analysisAttempted": true,
+          "destinationPlaces": 0,
+          "partialPlaceCount": 0,
+          "explicitPlaceCount": 0,
+          "premiumDiagnostics": {
+            "solBoundary": {
+              "model": "gpt-5.6-sol",
+              "usage": {
+                "input_tokens": 7295,
+                "total_tokens": 8519,
+                "output_tokens": 1224,
+                "reasoning_tokens": 1034,
+                "cached_input_tokens": 7292
+              },
+              "version": "premium-sol-boundary.v1",
+              "latencyMs": 26685,
+              "hypotheses": [
+                {
+                  "name": "Dorset Marble Quarry",
+                  "confidence": "MEDIUM",
+                  "entityType": "LANDMARK",
+                  "alternatives": [
+                    "West Rutland Marble Quarry"
+                  ],
+                  "evidenceBasis": "CONTEXTUAL_OR_MEMORY_PRIOR"
+                }
+              ],
+              "responseId": "resp_0e46b070cb813b8b016a9bb67a2fac87d0b9a2115f1781c23d",
+              "shareJobId": "1f0b2729-176e-4143-bb55-9c994c8247c9",
+              "parseSuccess": true,
+              "fingerprintId": "003c7a1e699e0c3931216d9f45b968b89823be62200de45592570fee0a056add",
+              "destinationCount": 1,
+              "parseFailureCode": null,
+              "premiumRequestId": "4b6c7135-4481-4c42-a5fd-05ccd6163662",
+              "structuredResultHash": "7b2e2b87f66b0a020a2dd7abd7ae299ca416caac3cfde6ef4885a6888d9a3378"
+            },
+            "finalFingerprint": {
+              "hash": "5e9682dc59690c6da3b4946273684ec9ca6bf9eaef77b87b093cb12dd21b357e",
+              "version": "premium-final-fingerprint.v1",
+              "chargeability": "CHARGEABLE_ACTIONABLE",
+              "solResultHash": "7b2e2b87f66b0a020a2dd7abd7ae299ca416caac3cfde6ef4885a6888d9a3378",
+              "resultDecision": "PREMIUM_ACTIONABLE_RESULT",
+              "safetyDecision": [
+                "REVIEW"
+              ],
+              "tokenSettlement": "CONSUME",
+              "canonicalResultHash": "158e71e6b59863ab258c36d67492d72f52b84f5c67bec365503de33b8b4ccab3"
+            },
+            "inferenceFingerprint": {
+              "frames": [
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 250878,
+                  "imageSha256": "63d0baad0a16ddd5e194f7c86decc58c150525b6f05201c2e106d62017caa871",
+                  "timestampMs": 0
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 152121,
+                  "imageSha256": "107c3d95a33c669b305e3d90c02f858979d37b6700ba5738362d053795e2325f",
+                  "timestampMs": 3000
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 69784,
+                  "imageSha256": "8f4596a7988867db398c5aad41271ad7ea27e0d9b74a2e8633c892c5b527ac30",
+                  "timestampMs": 4000
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 77561,
+                  "imageSha256": "f7c47f4ec3809868b8b00fd9433239003ac05fc2c34801e3460ab1e366f2f7d5",
+                  "timestampMs": 5000
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 88593,
+                  "imageSha256": "b8e2a7f874b59644e48052acb826158d0bef46734fee50c1bfb7ede997c86462",
+                  "timestampMs": 6000
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 131232,
+                  "imageSha256": "f1b882b2b4a25de9f71d6f7e516183cb851769299d43cb47843fb197cca685f1",
+                  "timestampMs": 8933
+                }
+              ],
+              "prompt": {
+                "model": "gpt-5.6-sol",
+                "promptHash": "8132da97b952b5d93062ba9b7d915c1dc40b4033de869607a1274142e1580e9c",
+                "schemaHash": "6899fd09c3cc95b4d12263bec5d7028f605eab0eb77b9fdaa38877704c694cfa",
+                "promptVersion": "sol-parity-natural-v1",
+                "schemaVersion": "sol-parity-destination-schema-v1",
+                "reasoningConfig": {
+                  "effort": "high"
+                }
+              },
+              "request": {
+                "imageCount": 6,
+                "inputTextHash": "7fd6789e8eea3ef8850023dae5ba67980fd8ddbde7685d1486d43c11e830394a",
+                "requestPayloadHash": "cebfdf36ce678397b72e080a4c92c1e630a80f6628688d34947445b98d43f811"
+              },
+              "version": "premium-inference-fingerprint.v1",
+              "evidenceReuse": "EVIDENCE_REGENERATED",
+              "fingerprintId": "003c7a1e699e0c3931216d9f45b968b89823be62200de45592570fee0a056add",
+              "sourceContext": {
+                "ocrHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "ocrLength": 0,
+                "captionHash": "46ef32510f2ec9c1f8f9c60d075402bb562a405daf1b7d41afbd32518682b530",
+                "creatorHash": "0c38d16bc8c55507746b402c0049fbb93a47019f6f8c295e8309318f8b437213",
+                "captionLength": 216,
+                "creatorLength": 10,
+                "transcriptHash": "94f1c107f81a08341d150e8645c8824ae5a7cbaf00c12761348f11b5cc45cf1a",
+                "transcriptLength": 9,
+                "sourceLocationHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "sourceLocationLength": 0,
+                "sourceLocationPresent": false
+              },
+              "sourceIdentity": {
+                "platform": "instagram",
+                "canonicalUrlHash": "e44b69bd6d8050f7a8244527f961251be19f7d95f5b1308be7c52a344805fd31",
+                "canonicalContentIdHash": "716e3039627691839a98bcb3e580d0f3a1b5bee71740d9e14d9c78cb298d9506"
+              },
+              "evidenceVersion": "premium-evidence-2026-09-05.v1"
+            },
+            "canonicalizationFingerprint": {
+              "hash": "158e71e6b59863ab258c36d67492d72f52b84f5c67bec365503de33b8b4ccab3",
+              "version": "premium-canonicalization-fingerprint.v1",
+              "hypotheses": [
+                {
+                  "name": "Dorset Marble Quarry",
+                  "calls": [
+                    {
+                      "query": "Dorset Marble Quarry, Dorset, Vermont, United States",
+                      "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                      "matched": true,
+                      "outcome": "CANONICAL_EXACT",
+                      "resultIds": [
+                        "ChIJG9E4hIhd4IkRwN0jnyQ9-F4"
+                      ],
+                      "resultCount": 1,
+                      "resultNames": [
+                        "Dorset Marble Quarry"
+                      ],
+                      "selectedName": "Dorset Marble Quarry",
+                      "attemptNumber": 1,
+                      "rejectionReason": null,
+                      "selectedGooglePlaceId": "ChIJG9E4hIhd4IkRwN0jnyQ9-F4"
+                    }
+                  ],
+                  "outcome": "CANONICAL_EXACT",
+                  "geography": {
+                    "city": "Dorset",
+                    "region": "Vermont",
+                    "country": "United States"
+                  },
+                  "entityType": "LANDMARK",
+                  "selectedName": "Dorset Marble Quarry",
+                  "rejectionReason": null,
+                  "selectedGooglePlaceId": "ChIJG9E4hIhd4IkRwN0jnyQ9-F4"
+                },
+                {
+                  "name": "West Rutland Marble Quarry",
+                  "calls": [
+                    {
+                      "query": "West Rutland Marble Quarry, West Rutland, Vermont, United States",
+                      "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                      "matched": true,
+                      "outcome": "CANONICAL_ALIAS",
+                      "resultIds": [
+                        "ChIJQ5cT_kcj4IkRHcayOugmexs"
+                      ],
+                      "resultCount": 1,
+                      "resultNames": [
+                        "Marble Street Quarry"
+                      ],
+                      "selectedName": "Marble Street Quarry",
+                      "attemptNumber": 1,
+                      "rejectionReason": null,
+                      "selectedGooglePlaceId": "ChIJQ5cT_kcj4IkRHcayOugmexs"
+                    }
+                  ],
+                  "outcome": "CANONICAL_ALIAS",
+                  "geography": {
+                    "city": "West Rutland",
+                    "region": "Vermont",
+                    "country": "United States"
+                  },
+                  "entityType": "LANDMARK",
+                  "selectedName": "Marble Street Quarry",
+                  "rejectionReason": null,
+                  "selectedGooglePlaceId": "ChIJQ5cT_kcj4IkRHcayOugmexs"
+                }
+              ]
+            }
+          },
+          "recognitionFailureClass": "none",
+          "sharedGeoCountryApplied": false,
+          "sharedGeoCountryStrength": "none",
+          "peerGeographicDestinations": 0,
+          "sharedGeoCountryCandidates": 0,
+          "sourceGeographicContextDropped": 0
+        }
+      },
+      "reservationCount": 1,
+      "reservationStatus": "consumed",
+      "priorityUseful": true
+    },
+    {
+      "caseId": "R05",
+      "sourceUrl": "https://www.instagram.com/reel/Db5qatGJgqH/",
+      "jobId": "75db7a85-fc19-4a20-ad03-bfb4e90e844b",
+      "premiumRequestId": "0cb8788b-f510-4ae5-bfe5-deb4e6a42549",
+      "premiumState": "useful_result",
+      "status": "completed",
+      "decision": "auto_save",
+      "savedPlaceId": "ac50f97d-e475-4917-a30b-53d85ef7fc12",
+      "names": [
+        "Okere Falls"
+      ],
+      "usefulEvidence": [
+        "Okere Falls",
+        "9 Trout Pool Road, Okere Falls 3074, New Zealand"
+      ],
+      "suggestedQuery": null,
+      "chargeable": true,
+      "settlementReason": "premium_saved_place",
+      "costs": {
+        "premium_recognition": {
+          "model": "gpt-5.6-sol",
+          "tokens": 1
+        }
+      },
+      "requestedAt": "2026-09-05T06:24:46.542835+00:00",
+      "startedAt": null,
+      "completedAt": "2026-09-05T06:27:01.052819+00:00",
+      "task": {
+        "id": "dba21c19-16b1-46b9-9739-3bac46ae354b",
+        "status": "queued",
+        "attempts": 0,
+        "failureCode": null,
+        "resolverName": null,
+        "analysisProvider": null,
+        "analysisModel": null,
+        "promptVersion": null,
+        "latencyMs": null,
+        "modelCalls": null,
+        "modelInputTokens": null,
+        "modelOutputTokens": null,
+        "modelThinkingTokens": null,
+        "modelLatencyMs": null
+      },
+      "mediaRun": null,
+      "reservationCount": 1,
+      "reservationStatus": "consumed",
+      "priorityUseful": true
+    },
+    {
+      "caseId": "R06",
+      "sourceUrl": "https://www.instagram.com/p/5oXehfQxb2/",
+      "jobId": "15d57671-b155-4b3d-b038-bd0cfd0e8f36",
+      "premiumRequestId": "c3ceb67b-0af7-4353-bd83-be42bc7fa775",
+      "premiumState": "useful_result",
+      "status": "completed",
+      "decision": "auto_save",
+      "savedPlaceId": "193b7210-b3d6-43ed-a5cf-1b5cc1f5ec8e",
+      "names": [
+        "Lake Havasu"
+      ],
+      "usefulEvidence": [
+        "Lake Havasu",
+        "Lake Havasu, United States"
+      ],
+      "suggestedQuery": null,
+      "chargeable": true,
+      "settlementReason": "premium_saved_place",
+      "costs": {
+        "premium_recognition": {
+          "model": "gpt-5.6-sol",
+          "tokens": 1
+        }
+      },
+      "requestedAt": "2026-09-05T06:24:46.980722+00:00",
+      "startedAt": null,
+      "completedAt": "2026-09-05T06:27:01.711268+00:00",
+      "task": {
+        "id": "618281ac-269d-4be0-b998-5d67fec7f9e6",
+        "status": "queued",
+        "attempts": 0,
+        "failureCode": null,
+        "resolverName": null,
+        "analysisProvider": null,
+        "analysisModel": null,
+        "promptVersion": null,
+        "latencyMs": null,
+        "modelCalls": null,
+        "modelInputTokens": null,
+        "modelOutputTokens": null,
+        "modelThinkingTokens": null,
+        "modelLatencyMs": null
+      },
+      "mediaRun": null,
+      "reservationCount": 1,
+      "reservationStatus": "consumed",
+      "priorityUseful": true
+    },
+    {
+      "caseId": "R07",
+      "sourceUrl": "https://www.instagram.com/reel/C0bg-7sooKi/",
+      "jobId": "991dc02b-ce5b-40ca-9fa9-2416cb17e92a",
+      "premiumRequestId": "471af31c-ec39-4fe8-9a03-19d5a8043b8c",
+      "premiumState": "useful_result",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "names": [
+        "Stryn"
+      ],
+      "usefulEvidence": [
+        "Stryn",
+        "Stryn, Vestland, Norway",
+        "Stryn, Norway"
+      ],
+      "suggestedQuery": "Stryn",
+      "chargeable": true,
+      "settlementReason": "premium_specific_candidates",
+      "costs": {
+        "sol": {
+          "model": "gpt-5.6-sol",
+          "usage": {
+            "input_tokens": 5317,
+            "total_tokens": 8096,
+            "output_tokens": 2779,
+            "reasoning_tokens": 2588,
+            "cached_input_tokens": 5314
+          },
+          "knownCostUsd": 0.057718
+        },
+        "places": {
+          "costUsd": "UNKNOWN",
+          "requestCount": 1,
+          "requestTypes": [
+            "PRIMARY_SPECIFIC_IDENTITY"
+          ]
+        },
+        "latencyMs": {
+          "sol": 48118,
+          "places": 178,
+          "evidencePrep": 14032,
+          "totalAfterEvidenceReady": 48296
+        },
+        "acquisition": "UNKNOWN",
+        "evidenceReuse": {
+          "ocr": "REACQUIRED",
+          "media": "REACQUIRED",
+          "frames": "REACQUIRED",
+          "caption": "REACQUIRED",
+          "transcript": "REACQUIRED"
+        },
+        "transcription": "UNKNOWN",
+        "parityDiagnostics": {
+          "solBoundary": {
+            "model": "gpt-5.6-sol",
+            "usage": {
+              "input_tokens": 5317,
+              "total_tokens": 8096,
+              "output_tokens": 2779,
+              "reasoning_tokens": 2588,
+              "cached_input_tokens": 5314
+            },
+            "version": "premium-sol-boundary.v1",
+            "latencyMs": 48118,
+            "hypotheses": [
+              {
+                "name": "Stryn",
+                "confidence": "MEDIUM",
+                "entityType": "ADMIN_AREA",
+                "alternatives": [],
+                "evidenceBasis": "MODEL_OBSERVED"
+              }
+            ],
+            "responseId": "resp_06fd9b8570cb8820016a9bb67ec97487d08f3c887cbbb4209b",
+            "shareJobId": "991dc02b-ce5b-40ca-9fa9-2416cb17e92a",
+            "parseSuccess": true,
+            "fingerprintId": "6ac49d15b67db9de53497d340db9cc0ca7d8c2996c87b10de01fa0dc62a4e8ff",
+            "destinationCount": 1,
+            "parseFailureCode": null,
+            "premiumRequestId": "471af31c-ec39-4fe8-9a03-19d5a8043b8c",
+            "structuredResultHash": "3d45c50cdbe3348733f43cff7aa91d4b78199bb2aa1503a226ff6ef48a296a67"
+          },
+          "engineVersion": "simple-sol-premium.v2",
+          "safetyVersion": "premium-recognition-safety.v2",
+          "evidenceVersion": "premium-evidence-2026-09-05.v1",
+          "finalFingerprint": {
+            "hash": "ba44629bf3871d747db7e96149915a552f2d90789d95523745069895a79c1f71",
+            "version": "premium-final-fingerprint.v1",
+            "chargeability": "CHARGEABLE_ACTIONABLE",
+            "solResultHash": "3d45c50cdbe3348733f43cff7aa91d4b78199bb2aa1503a226ff6ef48a296a67",
+            "resultDecision": "PREMIUM_ACTIONABLE_RESULT",
+            "safetyDecision": [
+              "REVIEW"
+            ],
+            "tokenSettlement": "CONSUME",
+            "canonicalResultHash": "edc75c4bafaa1cdd81747ad0b7242fb35c4a2bf290fd3efd2d1b12d9eb118eda"
+          },
+          "evidenceReuseState": "EVIDENCE_REGENERATED",
+          "inferenceFingerprint": {
+            "frames": [
+              {
+                "width": 608,
+                "height": 1080,
+                "byteLength": 138116,
+                "imageSha256": "d0bb6f523bfdd7a780961b3356991f6be8bb33399767b55436dc895dce2446f3",
+                "timestampMs": 0
+              },
+              {
+                "width": 608,
+                "height": 1080,
+                "byteLength": 113543,
+                "imageSha256": "347e002671eba9837cd56a005758bb0e87fc3c416de91dab286d6eb44be3855f",
+                "timestampMs": 7000
+              },
+              {
+                "width": 608,
+                "height": 1080,
+                "byteLength": 125286,
+                "imageSha256": "2148f8aedc213f2e136b569fe0a533bb11d44f92c7aa53c82693ba83df8f041e",
+                "timestampMs": 8000
+              },
+              {
+                "width": 608,
+                "height": 1080,
+                "byteLength": 124105,
+                "imageSha256": "3a7f58faf949f560b6fa94621f76800048e04f639b1bde92c0060a9569bc81dc",
+                "timestampMs": 13000
+              },
+              {
+                "width": 608,
+                "height": 1080,
+                "byteLength": 121962,
+                "imageSha256": "ba54dedb5634ec80e903c4ecf1a9b2b8f78ba5214da29183bda8946d1af7cfea",
+                "timestampMs": 15000
+              },
+              {
+                "width": 608,
+                "height": 1080,
+                "byteLength": 82733,
+                "imageSha256": "0ffda754a4cac9ebca6c009472fa31145d631f06cf72570d81169aad73c84b73",
+                "timestampMs": 19073
+              }
+            ],
+            "prompt": {
+              "model": "gpt-5.6-sol",
+              "promptHash": "8132da97b952b5d93062ba9b7d915c1dc40b4033de869607a1274142e1580e9c",
+              "schemaHash": "6899fd09c3cc95b4d12263bec5d7028f605eab0eb77b9fdaa38877704c694cfa",
+              "promptVersion": "sol-parity-natural-v1",
+              "schemaVersion": "sol-parity-destination-schema-v1",
+              "reasoningConfig": {
+                "effort": "high"
+              }
+            },
+            "request": {
+              "imageCount": 6,
+              "inputTextHash": "6dd396454f0351f49da136b81511f1ddf1e4715612c07f984b7e09e82fecd182",
+              "requestPayloadHash": "632c09443dbdf8c770e58be99a89b9acf75b5845117d7208064018b1e8606c97"
+            },
+            "version": "premium-inference-fingerprint.v1",
+            "evidenceReuse": "EVIDENCE_REGENERATED",
+            "fingerprintId": "6ac49d15b67db9de53497d340db9cc0ca7d8c2996c87b10de01fa0dc62a4e8ff",
+            "sourceContext": {
+              "ocrHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "ocrLength": 0,
+              "captionHash": "e93a19985b659bb9cc012c8a5e42425ef6f6ce07bfb7795b7b27501b7f16f4b1",
+              "creatorHash": "c580577f66e5d0dd5df091924e9f7a635d91648f40c3cf710caac04910f2bd58",
+              "captionLength": 142,
+              "creatorLength": 15,
+              "transcriptHash": "94f1c107f81a08341d150e8645c8824ae5a7cbaf00c12761348f11b5cc45cf1a",
+              "transcriptLength": 9,
+              "sourceLocationHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "sourceLocationLength": 0,
+              "sourceLocationPresent": false
+            },
+            "sourceIdentity": {
+              "platform": "instagram",
+              "canonicalUrlHash": "40d3934c6fab4c81d3af10f61315c1b4df09cd1a45cb743c01ee60a542636238",
+              "canonicalContentIdHash": "6f30470989ef63401a412fccc5ad6e4210a9e4e44a1b25577a0c298f8cf217fb"
+            },
+            "evidenceVersion": "premium-evidence-2026-09-05.v1"
+          },
+          "canonicalizationFingerprint": {
+            "hash": "edc75c4bafaa1cdd81747ad0b7242fb35c4a2bf290fd3efd2d1b12d9eb118eda",
+            "version": "premium-canonicalization-fingerprint.v1",
+            "hypotheses": [
+              {
+                "name": "Stryn",
+                "calls": [
+                  {
+                    "query": "Stryn, Stryn, Vestland, Norway",
+                    "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                    "matched": true,
+                    "outcome": "CANONICAL_EXACT",
+                    "resultIds": [
+                      "ChIJF_y-uaViFkYR8rXQ8hVk_NQ"
+                    ],
+                    "resultCount": 1,
+                    "resultNames": [
+                      "Stryn"
+                    ],
+                    "selectedName": "Stryn",
+                    "attemptNumber": 1,
+                    "rejectionReason": null,
+                    "selectedGooglePlaceId": "ChIJF_y-uaViFkYR8rXQ8hVk_NQ"
+                  }
+                ],
+                "outcome": "CANONICAL_EXACT",
+                "geography": {
+                  "city": "Stryn",
+                  "region": "Vestland",
+                  "country": "Norway"
+                },
+                "entityType": "ADMIN_AREA",
+                "selectedName": "Stryn",
+                "rejectionReason": null,
+                "selectedGooglePlaceId": "ChIJF_y-uaViFkYR8rXQ8hVk_NQ"
+              }
+            ]
+          }
+        }
+      },
+      "requestedAt": "2026-09-05T06:24:47.414351+00:00",
+      "startedAt": "2026-09-05T06:28:00.485559+00:00",
+      "completedAt": "2026-09-05T06:29:04.529059+00:00",
+      "task": {
+        "id": "dbfb1a4b-a0bc-4a78-a084-3debed2fbb29",
+        "status": "completed",
+        "attempts": 1,
+        "failureCode": null,
+        "resolverName": "premium-sol",
+        "analysisProvider": null,
+        "analysisModel": null,
+        "promptVersion": null,
+        "latencyMs": null,
+        "modelCalls": null,
+        "modelInputTokens": null,
+        "modelOutputTokens": null,
+        "modelThinkingTokens": null,
+        "modelLatencyMs": null
+      },
+      "mediaRun": {
+        "id": "564d37fb-14a3-4937-8e26-78a904701c0d",
+        "durationMs": 62328,
+        "frameCount": 13,
+        "transcriptSegments": 1,
+        "ocrSegments": 0,
+        "resolverName": "instagram/yt-dlp",
+        "modelProvider": "premium-sol",
+        "evidence": {
+          "multiple": false,
+          "placeCount": 1,
+          "insufficient": false,
+          "analysisAttempted": true,
+          "destinationPlaces": 1,
+          "partialPlaceCount": 0,
+          "explicitPlaceCount": 1,
+          "premiumDiagnostics": {
+            "solBoundary": {
+              "model": "gpt-5.6-sol",
+              "usage": {
+                "input_tokens": 5317,
+                "total_tokens": 8096,
+                "output_tokens": 2779,
+                "reasoning_tokens": 2588,
+                "cached_input_tokens": 5314
+              },
+              "version": "premium-sol-boundary.v1",
+              "latencyMs": 48118,
+              "hypotheses": [
+                {
+                  "name": "Stryn",
+                  "confidence": "MEDIUM",
+                  "entityType": "ADMIN_AREA",
+                  "alternatives": [],
+                  "evidenceBasis": "MODEL_OBSERVED"
+                }
+              ],
+              "responseId": "resp_06fd9b8570cb8820016a9bb67ec97487d08f3c887cbbb4209b",
+              "shareJobId": "991dc02b-ce5b-40ca-9fa9-2416cb17e92a",
+              "parseSuccess": true,
+              "fingerprintId": "6ac49d15b67db9de53497d340db9cc0ca7d8c2996c87b10de01fa0dc62a4e8ff",
+              "destinationCount": 1,
+              "parseFailureCode": null,
+              "premiumRequestId": "471af31c-ec39-4fe8-9a03-19d5a8043b8c",
+              "structuredResultHash": "3d45c50cdbe3348733f43cff7aa91d4b78199bb2aa1503a226ff6ef48a296a67"
+            },
+            "finalFingerprint": {
+              "hash": "ba44629bf3871d747db7e96149915a552f2d90789d95523745069895a79c1f71",
+              "version": "premium-final-fingerprint.v1",
+              "chargeability": "CHARGEABLE_ACTIONABLE",
+              "solResultHash": "3d45c50cdbe3348733f43cff7aa91d4b78199bb2aa1503a226ff6ef48a296a67",
+              "resultDecision": "PREMIUM_ACTIONABLE_RESULT",
+              "safetyDecision": [
+                "REVIEW"
+              ],
+              "tokenSettlement": "CONSUME",
+              "canonicalResultHash": "edc75c4bafaa1cdd81747ad0b7242fb35c4a2bf290fd3efd2d1b12d9eb118eda"
+            },
+            "inferenceFingerprint": {
+              "frames": [
+                {
+                  "width": 608,
+                  "height": 1080,
+                  "byteLength": 138116,
+                  "imageSha256": "d0bb6f523bfdd7a780961b3356991f6be8bb33399767b55436dc895dce2446f3",
+                  "timestampMs": 0
+                },
+                {
+                  "width": 608,
+                  "height": 1080,
+                  "byteLength": 113543,
+                  "imageSha256": "347e002671eba9837cd56a005758bb0e87fc3c416de91dab286d6eb44be3855f",
+                  "timestampMs": 7000
+                },
+                {
+                  "width": 608,
+                  "height": 1080,
+                  "byteLength": 125286,
+                  "imageSha256": "2148f8aedc213f2e136b569fe0a533bb11d44f92c7aa53c82693ba83df8f041e",
+                  "timestampMs": 8000
+                },
+                {
+                  "width": 608,
+                  "height": 1080,
+                  "byteLength": 124105,
+                  "imageSha256": "3a7f58faf949f560b6fa94621f76800048e04f639b1bde92c0060a9569bc81dc",
+                  "timestampMs": 13000
+                },
+                {
+                  "width": 608,
+                  "height": 1080,
+                  "byteLength": 121962,
+                  "imageSha256": "ba54dedb5634ec80e903c4ecf1a9b2b8f78ba5214da29183bda8946d1af7cfea",
+                  "timestampMs": 15000
+                },
+                {
+                  "width": 608,
+                  "height": 1080,
+                  "byteLength": 82733,
+                  "imageSha256": "0ffda754a4cac9ebca6c009472fa31145d631f06cf72570d81169aad73c84b73",
+                  "timestampMs": 19073
+                }
+              ],
+              "prompt": {
+                "model": "gpt-5.6-sol",
+                "promptHash": "8132da97b952b5d93062ba9b7d915c1dc40b4033de869607a1274142e1580e9c",
+                "schemaHash": "6899fd09c3cc95b4d12263bec5d7028f605eab0eb77b9fdaa38877704c694cfa",
+                "promptVersion": "sol-parity-natural-v1",
+                "schemaVersion": "sol-parity-destination-schema-v1",
+                "reasoningConfig": {
+                  "effort": "high"
+                }
+              },
+              "request": {
+                "imageCount": 6,
+                "inputTextHash": "6dd396454f0351f49da136b81511f1ddf1e4715612c07f984b7e09e82fecd182",
+                "requestPayloadHash": "632c09443dbdf8c770e58be99a89b9acf75b5845117d7208064018b1e8606c97"
+              },
+              "version": "premium-inference-fingerprint.v1",
+              "evidenceReuse": "EVIDENCE_REGENERATED",
+              "fingerprintId": "6ac49d15b67db9de53497d340db9cc0ca7d8c2996c87b10de01fa0dc62a4e8ff",
+              "sourceContext": {
+                "ocrHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "ocrLength": 0,
+                "captionHash": "e93a19985b659bb9cc012c8a5e42425ef6f6ce07bfb7795b7b27501b7f16f4b1",
+                "creatorHash": "c580577f66e5d0dd5df091924e9f7a635d91648f40c3cf710caac04910f2bd58",
+                "captionLength": 142,
+                "creatorLength": 15,
+                "transcriptHash": "94f1c107f81a08341d150e8645c8824ae5a7cbaf00c12761348f11b5cc45cf1a",
+                "transcriptLength": 9,
+                "sourceLocationHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "sourceLocationLength": 0,
+                "sourceLocationPresent": false
+              },
+              "sourceIdentity": {
+                "platform": "instagram",
+                "canonicalUrlHash": "40d3934c6fab4c81d3af10f61315c1b4df09cd1a45cb743c01ee60a542636238",
+                "canonicalContentIdHash": "6f30470989ef63401a412fccc5ad6e4210a9e4e44a1b25577a0c298f8cf217fb"
+              },
+              "evidenceVersion": "premium-evidence-2026-09-05.v1"
+            },
+            "canonicalizationFingerprint": {
+              "hash": "edc75c4bafaa1cdd81747ad0b7242fb35c4a2bf290fd3efd2d1b12d9eb118eda",
+              "version": "premium-canonicalization-fingerprint.v1",
+              "hypotheses": [
+                {
+                  "name": "Stryn",
+                  "calls": [
+                    {
+                      "query": "Stryn, Stryn, Vestland, Norway",
+                      "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                      "matched": true,
+                      "outcome": "CANONICAL_EXACT",
+                      "resultIds": [
+                        "ChIJF_y-uaViFkYR8rXQ8hVk_NQ"
+                      ],
+                      "resultCount": 1,
+                      "resultNames": [
+                        "Stryn"
+                      ],
+                      "selectedName": "Stryn",
+                      "attemptNumber": 1,
+                      "rejectionReason": null,
+                      "selectedGooglePlaceId": "ChIJF_y-uaViFkYR8rXQ8hVk_NQ"
+                    }
+                  ],
+                  "outcome": "CANONICAL_EXACT",
+                  "geography": {
+                    "city": "Stryn",
+                    "region": "Vestland",
+                    "country": "Norway"
+                  },
+                  "entityType": "ADMIN_AREA",
+                  "selectedName": "Stryn",
+                  "rejectionReason": null,
+                  "selectedGooglePlaceId": "ChIJF_y-uaViFkYR8rXQ8hVk_NQ"
+                }
+              ]
+            }
+          },
+          "sharedGeoCountrySource": "context_only_place",
+          "recognitionFailureClass": "none",
+          "sharedGeoCountryApplied": true,
+          "sharedGeoCountryStrength": "strong",
+          "peerGeographicDestinations": 1,
+          "sharedGeoCountryCandidates": 1,
+          "sourceGeographicContextLabels": [
+            "0:none:name_matches_city:peer_geographic_destination"
+          ],
+          "sourceGeographicContextDropped": 0
+        }
+      },
+      "reservationCount": 1,
+      "reservationStatus": "consumed",
+      "priorityUseful": true
+    },
+    {
+      "caseId": "R08",
+      "sourceUrl": "https://www.instagram.com/reel/CqJo6QHJqPo/",
+      "jobId": "ba1b07bb-2418-453b-95b3-fb7a43787d8d",
+      "premiumRequestId": "666a25bb-0919-4dde-8f24-493d10626cf2",
+      "premiumState": "useful_result",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "names": [
+        "Queen’s Bath on Moku Nui, Nā Mokulua (the Mokes)",
+        "Backside cliff-jumping cove on Moku Nui, Nā Mokulua"
+      ],
+      "usefulEvidence": [
+        "Queen’s Bath on Moku Nui, Nā Mokulua (the Mokes)",
+        "Kailua, Hawaii, United States",
+        "Backside cliff-jumping cove on Moku Nui, Nā Mokulua"
+      ],
+      "suggestedQuery": "Queen’s Bath on Moku Nui, Nā Mokulua (the Mokes)",
+      "chargeable": true,
+      "settlementReason": "premium_specific_candidates",
+      "costs": {
+        "sol": {
+          "model": "gpt-5.6-sol",
+          "usage": {
+            "input_tokens": 7319,
+            "total_tokens": 8878,
+            "output_tokens": 1559,
+            "reasoning_tokens": 1319,
+            "cached_input_tokens": 0
+          },
+          "knownCostUsd": 0.060456
+        },
+        "places": {
+          "costUsd": "UNKNOWN",
+          "requestCount": 2,
+          "requestTypes": [
+            "PRIMARY_SPECIFIC_IDENTITY",
+            "PRIMARY_SPECIFIC_IDENTITY"
+          ]
+        },
+        "latencyMs": {
+          "sol": 26741,
+          "places": 451,
+          "evidencePrep": 10400,
+          "totalAfterEvidenceReady": 27192
+        },
+        "acquisition": "UNKNOWN",
+        "evidenceReuse": {
+          "ocr": "REACQUIRED",
+          "media": "REACQUIRED",
+          "frames": "REACQUIRED",
+          "caption": "REACQUIRED",
+          "transcript": "REACQUIRED"
+        },
+        "transcription": "UNKNOWN",
+        "parityDiagnostics": {
+          "solBoundary": {
+            "model": "gpt-5.6-sol",
+            "usage": {
+              "input_tokens": 7319,
+              "total_tokens": 8878,
+              "output_tokens": 1559,
+              "reasoning_tokens": 1319,
+              "cached_input_tokens": 0
+            },
+            "version": "premium-sol-boundary.v1",
+            "latencyMs": 26741,
+            "hypotheses": [
+              {
+                "name": "Queen’s Bath on Moku Nui, Nā Mokulua (the Mokes)",
+                "confidence": "MEDIUM",
+                "entityType": "NAMED_NATURAL_FEATURE",
+                "alternatives": [
+                  "Backside cliff-jumping cove on Moku Nui, Nā Mokulua"
+                ],
+                "evidenceBasis": "MODEL_OBSERVED"
+              }
+            ],
+            "responseId": "resp_090615adf9793f19016a9bb67b3b3487d09d310a864e895f7a",
+            "shareJobId": "ba1b07bb-2418-453b-95b3-fb7a43787d8d",
+            "parseSuccess": true,
+            "fingerprintId": "4a0ba4e8943ae5d254871d4e63dc1ff6967df982f23cc008eff0ef30573c3741",
+            "destinationCount": 1,
+            "parseFailureCode": null,
+            "premiumRequestId": "666a25bb-0919-4dde-8f24-493d10626cf2",
+            "structuredResultHash": "c25f775c302a60548d34aa2244893aa0f8bd5b0c2b209135f64c6e7a471cfa0b"
+          },
+          "engineVersion": "simple-sol-premium.v2",
+          "safetyVersion": "premium-recognition-safety.v2",
+          "evidenceVersion": "premium-evidence-2026-09-05.v1",
+          "finalFingerprint": {
+            "hash": "8eb19eead904693f8bb138a661006e7ab2a47f341e5c4f29f511a9db97262a67",
+            "version": "premium-final-fingerprint.v1",
+            "chargeability": "CHARGEABLE_ACTIONABLE",
+            "solResultHash": "c25f775c302a60548d34aa2244893aa0f8bd5b0c2b209135f64c6e7a471cfa0b",
+            "resultDecision": "PREMIUM_ACTIONABLE_RESULT",
+            "safetyDecision": [
+              "NAMED_LEAD"
+            ],
+            "tokenSettlement": "CONSUME",
+            "canonicalResultHash": "38af47bbf51a1ef3833d3251afb4011818f4ae3abbaf7c8c57fe8a99ddd29bb5"
+          },
+          "evidenceReuseState": "EVIDENCE_REGENERATED",
+          "inferenceFingerprint": {
+            "frames": [
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 76901,
+                "imageSha256": "6f9b8219f6238ce3e5f34bf21db1a7c8ec7a671417b46e277b7d7d9f2f8a256e",
+                "timestampMs": 0
+              },
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 66825,
+                "imageSha256": "1ec0aa82a1230d3dd9a25aee90144a6871713ce8c1132c3048cc2b55f11b4488",
+                "timestampMs": 3000
+              },
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 95682,
+                "imageSha256": "d7e74ce19fb7b0ea0c4bd24b0155ad0d9cc06ce5f1257c95cc40cbd1fc2f451f",
+                "timestampMs": 4000
+              },
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 107512,
+                "imageSha256": "3bd64016fed4c26c4da7ddebe98a724736809de6b51069a9ceeecb2bd63476a5",
+                "timestampMs": 5000
+              },
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 97165,
+                "imageSha256": "64baa0a544881ca77737a9d6c11d01a0db3fc366e2a543978a2d4704fcf78a76",
+                "timestampMs": 6000
+              },
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 110725,
+                "imageSha256": "28ce5ae1a8f546491a15d1406249c617d855afd4d8b5359b3a5c9c6ae8f280ee",
+                "timestampMs": 7733
+              }
+            ],
+            "prompt": {
+              "model": "gpt-5.6-sol",
+              "promptHash": "8132da97b952b5d93062ba9b7d915c1dc40b4033de869607a1274142e1580e9c",
+              "schemaHash": "6899fd09c3cc95b4d12263bec5d7028f605eab0eb77b9fdaa38877704c694cfa",
+              "promptVersion": "sol-parity-natural-v1",
+              "schemaVersion": "sol-parity-destination-schema-v1",
+              "reasoningConfig": {
+                "effort": "high"
+              }
+            },
+            "request": {
+              "imageCount": 6,
+              "inputTextHash": "ce4ac1b88c5e79e187c6d7da8d81e44148c1112842158fa647fee3ad99658613",
+              "requestPayloadHash": "e13642d2dc12e16a7641fa4e6411497ffb3f00cd8297d95f46b5e11f6a95e222"
+            },
+            "version": "premium-inference-fingerprint.v1",
+            "evidenceReuse": "EVIDENCE_REGENERATED",
+            "fingerprintId": "4a0ba4e8943ae5d254871d4e63dc1ff6967df982f23cc008eff0ef30573c3741",
+            "sourceContext": {
+              "ocrHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "ocrLength": 0,
+              "captionHash": "4d54fb87803f21c6cedc635caad6866b439d7ca753656fed2cb0ffdcd9d29b82",
+              "creatorHash": "fbc55270fd9062b7b639fd4af4010f18ddeaf68381d9715a6b101c2724a20986",
+              "captionLength": 205,
+              "creatorLength": 13,
+              "transcriptHash": "7441d21a1bc2ab0d703f56ded63ad6943f32ec48b654231b70d1e0b10b9316a2",
+              "transcriptLength": 10,
+              "sourceLocationHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "sourceLocationLength": 0,
+              "sourceLocationPresent": false
+            },
+            "sourceIdentity": {
+              "platform": "instagram",
+              "canonicalUrlHash": "368cb3ad28e8f5576214af9d61926f61f9e8ba4c9aedabaa8334e04caeebf132",
+              "canonicalContentIdHash": "a1f3cf44b755fa97703f5f31fc44d5bd3a94410d5a0dc457e77dff99f15f4b8f"
+            },
+            "evidenceVersion": "premium-evidence-2026-09-05.v1"
+          },
+          "canonicalizationFingerprint": {
+            "hash": "38af47bbf51a1ef3833d3251afb4011818f4ae3abbaf7c8c57fe8a99ddd29bb5",
+            "version": "premium-canonicalization-fingerprint.v1",
+            "hypotheses": [
+              {
+                "name": "Queen’s Bath on Moku Nui, Nā Mokulua (the Mokes)",
+                "calls": [
+                  {
+                    "query": "Queen’s Bath on Moku Nui, Nā Mokulua (the Mokes), Kailua, Hawaii, United States",
+                    "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                    "matched": false,
+                    "outcome": "NO_MATCH",
+                    "resultIds": [
+                      "ChIJCxN2GKF2VHkR3qbNBt6Jb38",
+                      "ChIJEye6FU8UAHwRBDaY6NSmUXI",
+                      "ChIJc8x7ctsUAHwROZdsiYOCRI8"
+                    ],
+                    "resultCount": 3,
+                    "resultNames": [
+                      "Queen’s Bath",
+                      "Mokulua Islets Seabird Sanctuary",
+                      "Moke's Bread & Breakfast"
+                    ],
+                    "selectedName": null,
+                    "attemptNumber": 1,
+                    "rejectionReason": "no_compatible_match",
+                    "selectedGooglePlaceId": null
+                  }
+                ],
+                "outcome": "NAMED_LEAD",
+                "geography": {
+                  "city": "Kailua",
+                  "region": "Hawaii",
+                  "country": "United States"
+                },
+                "entityType": "NAMED_NATURAL_FEATURE",
+                "selectedName": null,
+                "rejectionReason": "no_compatible_match",
+                "selectedGooglePlaceId": null
+              },
+              {
+                "name": "Backside cliff-jumping cove on Moku Nui, Nā Mokulua",
+                "calls": [
+                  {
+                    "query": "Backside cliff-jumping cove on Moku Nui, Nā Mokulua, Kailua, Hawaii, United States",
+                    "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                    "matched": false,
+                    "outcome": "NO_MATCH",
+                    "resultIds": [
+                      "ChIJEye6FU8UAHwRBDaY6NSmUXI"
+                    ],
+                    "resultCount": 1,
+                    "resultNames": [
+                      "Mokulua Islets Seabird Sanctuary"
+                    ],
+                    "selectedName": null,
+                    "attemptNumber": 1,
+                    "rejectionReason": "no_compatible_match",
+                    "selectedGooglePlaceId": null
+                  }
+                ],
+                "outcome": "NAMED_LEAD",
+                "geography": {
+                  "city": "Kailua",
+                  "region": "Hawaii",
+                  "country": "United States"
+                },
+                "entityType": "NAMED_NATURAL_FEATURE",
+                "selectedName": null,
+                "rejectionReason": "no_compatible_match",
+                "selectedGooglePlaceId": null
+              }
+            ]
+          }
+        }
+      },
+      "requestedAt": "2026-09-05T06:24:47.82252+00:00",
+      "startedAt": "2026-09-05T06:28:00.485559+00:00",
+      "completedAt": "2026-09-05T06:28:40.04542+00:00",
+      "task": {
+        "id": "f78ffaf3-b8a5-41c5-9bdd-85f58587b360",
+        "status": "completed",
+        "attempts": 1,
+        "failureCode": null,
+        "resolverName": "premium-sol",
+        "analysisProvider": null,
+        "analysisModel": null,
+        "promptVersion": null,
+        "latencyMs": null,
+        "modelCalls": null,
+        "modelInputTokens": null,
+        "modelOutputTokens": null,
+        "modelThinkingTokens": null,
+        "modelLatencyMs": null
+      },
+      "mediaRun": {
+        "id": "15e48d0d-49eb-41be-ad7a-381235a5f3c5",
+        "durationMs": 37592,
+        "frameCount": 6,
+        "transcriptSegments": 1,
+        "ocrSegments": 0,
+        "resolverName": "instagram/yt-dlp",
+        "modelProvider": "premium-sol",
+        "evidence": {
+          "multiple": false,
+          "placeCount": 2,
+          "insufficient": false,
+          "analysisAttempted": true,
+          "destinationPlaces": 1,
+          "partialPlaceCount": 0,
+          "explicitPlaceCount": 2,
+          "premiumDiagnostics": {
+            "solBoundary": {
+              "model": "gpt-5.6-sol",
+              "usage": {
+                "input_tokens": 7319,
+                "total_tokens": 8878,
+                "output_tokens": 1559,
+                "reasoning_tokens": 1319,
+                "cached_input_tokens": 0
+              },
+              "version": "premium-sol-boundary.v1",
+              "latencyMs": 26741,
+              "hypotheses": [
+                {
+                  "name": "Queen’s Bath on Moku Nui, Nā Mokulua (the Mokes)",
+                  "confidence": "MEDIUM",
+                  "entityType": "NAMED_NATURAL_FEATURE",
+                  "alternatives": [
+                    "Backside cliff-jumping cove on Moku Nui, Nā Mokulua"
+                  ],
+                  "evidenceBasis": "MODEL_OBSERVED"
+                }
+              ],
+              "responseId": "resp_090615adf9793f19016a9bb67b3b3487d09d310a864e895f7a",
+              "shareJobId": "ba1b07bb-2418-453b-95b3-fb7a43787d8d",
+              "parseSuccess": true,
+              "fingerprintId": "4a0ba4e8943ae5d254871d4e63dc1ff6967df982f23cc008eff0ef30573c3741",
+              "destinationCount": 1,
+              "parseFailureCode": null,
+              "premiumRequestId": "666a25bb-0919-4dde-8f24-493d10626cf2",
+              "structuredResultHash": "c25f775c302a60548d34aa2244893aa0f8bd5b0c2b209135f64c6e7a471cfa0b"
+            },
+            "finalFingerprint": {
+              "hash": "8eb19eead904693f8bb138a661006e7ab2a47f341e5c4f29f511a9db97262a67",
+              "version": "premium-final-fingerprint.v1",
+              "chargeability": "CHARGEABLE_ACTIONABLE",
+              "solResultHash": "c25f775c302a60548d34aa2244893aa0f8bd5b0c2b209135f64c6e7a471cfa0b",
+              "resultDecision": "PREMIUM_ACTIONABLE_RESULT",
+              "safetyDecision": [
+                "NAMED_LEAD"
+              ],
+              "tokenSettlement": "CONSUME",
+              "canonicalResultHash": "38af47bbf51a1ef3833d3251afb4011818f4ae3abbaf7c8c57fe8a99ddd29bb5"
+            },
+            "inferenceFingerprint": {
+              "frames": [
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 76901,
+                  "imageSha256": "6f9b8219f6238ce3e5f34bf21db1a7c8ec7a671417b46e277b7d7d9f2f8a256e",
+                  "timestampMs": 0
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 66825,
+                  "imageSha256": "1ec0aa82a1230d3dd9a25aee90144a6871713ce8c1132c3048cc2b55f11b4488",
+                  "timestampMs": 3000
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 95682,
+                  "imageSha256": "d7e74ce19fb7b0ea0c4bd24b0155ad0d9cc06ce5f1257c95cc40cbd1fc2f451f",
+                  "timestampMs": 4000
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 107512,
+                  "imageSha256": "3bd64016fed4c26c4da7ddebe98a724736809de6b51069a9ceeecb2bd63476a5",
+                  "timestampMs": 5000
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 97165,
+                  "imageSha256": "64baa0a544881ca77737a9d6c11d01a0db3fc366e2a543978a2d4704fcf78a76",
+                  "timestampMs": 6000
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 110725,
+                  "imageSha256": "28ce5ae1a8f546491a15d1406249c617d855afd4d8b5359b3a5c9c6ae8f280ee",
+                  "timestampMs": 7733
+                }
+              ],
+              "prompt": {
+                "model": "gpt-5.6-sol",
+                "promptHash": "8132da97b952b5d93062ba9b7d915c1dc40b4033de869607a1274142e1580e9c",
+                "schemaHash": "6899fd09c3cc95b4d12263bec5d7028f605eab0eb77b9fdaa38877704c694cfa",
+                "promptVersion": "sol-parity-natural-v1",
+                "schemaVersion": "sol-parity-destination-schema-v1",
+                "reasoningConfig": {
+                  "effort": "high"
+                }
+              },
+              "request": {
+                "imageCount": 6,
+                "inputTextHash": "ce4ac1b88c5e79e187c6d7da8d81e44148c1112842158fa647fee3ad99658613",
+                "requestPayloadHash": "e13642d2dc12e16a7641fa4e6411497ffb3f00cd8297d95f46b5e11f6a95e222"
+              },
+              "version": "premium-inference-fingerprint.v1",
+              "evidenceReuse": "EVIDENCE_REGENERATED",
+              "fingerprintId": "4a0ba4e8943ae5d254871d4e63dc1ff6967df982f23cc008eff0ef30573c3741",
+              "sourceContext": {
+                "ocrHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "ocrLength": 0,
+                "captionHash": "4d54fb87803f21c6cedc635caad6866b439d7ca753656fed2cb0ffdcd9d29b82",
+                "creatorHash": "fbc55270fd9062b7b639fd4af4010f18ddeaf68381d9715a6b101c2724a20986",
+                "captionLength": 205,
+                "creatorLength": 13,
+                "transcriptHash": "7441d21a1bc2ab0d703f56ded63ad6943f32ec48b654231b70d1e0b10b9316a2",
+                "transcriptLength": 10,
+                "sourceLocationHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "sourceLocationLength": 0,
+                "sourceLocationPresent": false
+              },
+              "sourceIdentity": {
+                "platform": "instagram",
+                "canonicalUrlHash": "368cb3ad28e8f5576214af9d61926f61f9e8ba4c9aedabaa8334e04caeebf132",
+                "canonicalContentIdHash": "a1f3cf44b755fa97703f5f31fc44d5bd3a94410d5a0dc457e77dff99f15f4b8f"
+              },
+              "evidenceVersion": "premium-evidence-2026-09-05.v1"
+            },
+            "canonicalizationFingerprint": {
+              "hash": "38af47bbf51a1ef3833d3251afb4011818f4ae3abbaf7c8c57fe8a99ddd29bb5",
+              "version": "premium-canonicalization-fingerprint.v1",
+              "hypotheses": [
+                {
+                  "name": "Queen’s Bath on Moku Nui, Nā Mokulua (the Mokes)",
+                  "calls": [
+                    {
+                      "query": "Queen’s Bath on Moku Nui, Nā Mokulua (the Mokes), Kailua, Hawaii, United States",
+                      "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                      "matched": false,
+                      "outcome": "NO_MATCH",
+                      "resultIds": [
+                        "ChIJCxN2GKF2VHkR3qbNBt6Jb38",
+                        "ChIJEye6FU8UAHwRBDaY6NSmUXI",
+                        "ChIJc8x7ctsUAHwROZdsiYOCRI8"
+                      ],
+                      "resultCount": 3,
+                      "resultNames": [
+                        "Queen’s Bath",
+                        "Mokulua Islets Seabird Sanctuary",
+                        "Moke's Bread & Breakfast"
+                      ],
+                      "selectedName": null,
+                      "attemptNumber": 1,
+                      "rejectionReason": "no_compatible_match",
+                      "selectedGooglePlaceId": null
+                    }
+                  ],
+                  "outcome": "NAMED_LEAD",
+                  "geography": {
+                    "city": "Kailua",
+                    "region": "Hawaii",
+                    "country": "United States"
+                  },
+                  "entityType": "NAMED_NATURAL_FEATURE",
+                  "selectedName": null,
+                  "rejectionReason": "no_compatible_match",
+                  "selectedGooglePlaceId": null
+                },
+                {
+                  "name": "Backside cliff-jumping cove on Moku Nui, Nā Mokulua",
+                  "calls": [
+                    {
+                      "query": "Backside cliff-jumping cove on Moku Nui, Nā Mokulua, Kailua, Hawaii, United States",
+                      "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                      "matched": false,
+                      "outcome": "NO_MATCH",
+                      "resultIds": [
+                        "ChIJEye6FU8UAHwRBDaY6NSmUXI"
+                      ],
+                      "resultCount": 1,
+                      "resultNames": [
+                        "Mokulua Islets Seabird Sanctuary"
+                      ],
+                      "selectedName": null,
+                      "attemptNumber": 1,
+                      "rejectionReason": "no_compatible_match",
+                      "selectedGooglePlaceId": null
+                    }
+                  ],
+                  "outcome": "NAMED_LEAD",
+                  "geography": {
+                    "city": "Kailua",
+                    "region": "Hawaii",
+                    "country": "United States"
+                  },
+                  "entityType": "NAMED_NATURAL_FEATURE",
+                  "selectedName": null,
+                  "rejectionReason": "no_compatible_match",
+                  "selectedGooglePlaceId": null
+                }
+              ]
+            }
+          },
+          "sharedGeoCountrySource": "multiple_places_agree",
+          "recognitionFailureClass": "none",
+          "sharedGeoCountryApplied": true,
+          "sharedGeoCountryStrength": "strong",
+          "peerGeographicDestinations": 0,
+          "sharedGeoCountryCandidates": 1,
+          "sourceGeographicContextDropped": 0
+        }
+      },
+      "reservationCount": 1,
+      "reservationStatus": "consumed",
+      "priorityUseful": true
+    },
+    {
+      "caseId": "V05",
+      "sourceUrl": "https://www.instagram.com/p/DX77lghIHeG/",
+      "jobId": "35ff1784-e645-4053-9c3e-d1ea9e0049c3",
+      "premiumRequestId": "0102fdf7-32e2-4164-8e58-867715f1ddaf",
+      "premiumState": "useful_result",
+      "status": "needs_help",
+      "decision": "candidate_picker",
+      "savedPlaceId": null,
+      "names": [
+        "Paradise Dynasty",
+        "Paradise Dynasty at The Americana",
+        "Paradise Dynasty at South Coast Plaza",
+        "Paradise Dynasty at The Americana at Brand"
+      ],
+      "usefulEvidence": [
+        "Paradise Dynasty",
+        "Costa Mesa, California, United States",
+        "3333 Bristol Street, BLM, 1 Bloomingdale's, Costa Mesa, CA 92626, USA",
+        "Paradise Dynasty at The Americana",
+        "Glendale, California, United States",
+        "177 Caruso Ave, Glendale, CA 91210, USA",
+        "Paradise Dynasty at South Coast Plaza",
+        "Paradise Dynasty at The Americana at Brand"
+      ],
+      "suggestedQuery": "Paradise Dynasty at South Coast Plaza",
+      "chargeable": true,
+      "settlementReason": "premium_specific_candidates",
+      "costs": {
+        "sol": {
+          "model": "gpt-5.6-sol",
+          "usage": {
+            "input_tokens": 7713,
+            "total_tokens": 8244,
+            "output_tokens": 531,
+            "reasoning_tokens": 321,
+            "cached_input_tokens": 7710
+          },
+          "knownCostUsd": 0.013716
+        },
+        "places": {
+          "costUsd": "UNKNOWN",
+          "requestCount": 2,
+          "requestTypes": [
+            "PRIMARY_SPECIFIC_IDENTITY",
+            "PRIMARY_SPECIFIC_IDENTITY"
+          ]
+        },
+        "latencyMs": {
+          "sol": 7691,
+          "places": 406,
+          "evidencePrep": 17191,
+          "totalAfterEvidenceReady": 8098
+        },
+        "acquisition": "UNKNOWN",
+        "evidenceReuse": {
+          "ocr": "REACQUIRED",
+          "media": "REACQUIRED",
+          "frames": "REACQUIRED",
+          "caption": "REACQUIRED",
+          "transcript": "REACQUIRED"
+        },
+        "transcription": "UNKNOWN",
+        "parityDiagnostics": {
+          "solBoundary": {
+            "model": "gpt-5.6-sol",
+            "usage": {
+              "input_tokens": 7713,
+              "total_tokens": 8244,
+              "output_tokens": 531,
+              "reasoning_tokens": 321,
+              "cached_input_tokens": 7710
+            },
+            "version": "premium-sol-boundary.v1",
+            "latencyMs": 7691,
+            "hypotheses": [
+              {
+                "name": "Paradise Dynasty at South Coast Plaza",
+                "confidence": "HIGH",
+                "entityType": "BUSINESS",
+                "alternatives": [
+                  "Paradise Dynasty at The Americana at Brand"
+                ],
+                "evidenceBasis": "MODEL_OBSERVED"
+              }
+            ],
+            "responseId": "resp_0503590fb6916a19016a9bb681e26c87d0a7333e36eac9b449",
+            "shareJobId": "35ff1784-e645-4053-9c3e-d1ea9e0049c3",
+            "parseSuccess": true,
+            "fingerprintId": "5241b5b6f5cadaf242708ff38a7a8519853fe3d04fdc50590ed263c51ef0d5f5",
+            "destinationCount": 1,
+            "parseFailureCode": null,
+            "premiumRequestId": "0102fdf7-32e2-4164-8e58-867715f1ddaf",
+            "structuredResultHash": "68125703b9963f232bc842df00d17a9f3be169273ab5de9a8d74f0de27c31c01"
+          },
+          "engineVersion": "simple-sol-premium.v2",
+          "safetyVersion": "premium-recognition-safety.v2",
+          "evidenceVersion": "premium-evidence-2026-09-05.v1",
+          "finalFingerprint": {
+            "hash": "1713208aef71c1135a4cfec40ee15618b4bfaccb5af39f0670655488dfb390b5",
+            "version": "premium-final-fingerprint.v1",
+            "chargeability": "CHARGEABLE_ACTIONABLE",
+            "solResultHash": "68125703b9963f232bc842df00d17a9f3be169273ab5de9a8d74f0de27c31c01",
+            "resultDecision": "PREMIUM_ACTIONABLE_RESULT",
+            "safetyDecision": [
+              "REVIEW"
+            ],
+            "tokenSettlement": "CONSUME",
+            "canonicalResultHash": "4a9065ed6e91d9241407c9ba88e4a64453c78969e2eae63db378785441b3e065"
+          },
+          "evidenceReuseState": "EVIDENCE_REGENERATED",
+          "inferenceFingerprint": {
+            "frames": [
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 83883,
+                "imageSha256": "3e46bbbdcbb2358298e5bd6053136a6d86b91e7d0798d76c6eb66030c986f6b6",
+                "timestampMs": 0
+              },
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 89506,
+                "imageSha256": "f86db16b61637e5001a8f2a2156696dfbc519dde6da82692f4a5c59b3aaa1d30",
+                "timestampMs": 5000
+              },
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 74807,
+                "imageSha256": "17dda9cff45b0315ae47f8ed3e67e68f55058aebb55fddf38c54bc7dc74f0cbc",
+                "timestampMs": 13000
+              },
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 95705,
+                "imageSha256": "35a49ca6ad23bb0cb6718737e28666adc6f5dfec063a87dea3b7884e0f1d40fd",
+                "timestampMs": 18000
+              },
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 57075,
+                "imageSha256": "27f0a7cda1383a7390feb88b7defaec7425c16df77c20fef2f923d7b3f23b8ce",
+                "timestampMs": 27000
+              },
+              {
+                "width": 720,
+                "height": 1280,
+                "byteLength": 75207,
+                "imageSha256": "89a40d4e66cb1868ca5f6922688b7509ab5c340c12817071a660314d08d4f53e",
+                "timestampMs": 36800
+              }
+            ],
+            "prompt": {
+              "model": "gpt-5.6-sol",
+              "promptHash": "8132da97b952b5d93062ba9b7d915c1dc40b4033de869607a1274142e1580e9c",
+              "schemaHash": "6899fd09c3cc95b4d12263bec5d7028f605eab0eb77b9fdaa38877704c694cfa",
+              "promptVersion": "sol-parity-natural-v1",
+              "schemaVersion": "sol-parity-destination-schema-v1",
+              "reasoningConfig": {
+                "effort": "high"
+              }
+            },
+            "request": {
+              "imageCount": 6,
+              "inputTextHash": "4af1c9f6f26aa84c3918a2acfc95c15b293123dc695c573ca5b1cbed5605c326",
+              "requestPayloadHash": "2616a1f96bb5f2882620e051033952afdb9682985e12b3dcffc5d69dfb590c36"
+            },
+            "version": "premium-inference-fingerprint.v1",
+            "evidenceReuse": "EVIDENCE_REGENERATED",
+            "fingerprintId": "5241b5b6f5cadaf242708ff38a7a8519853fe3d04fdc50590ed263c51ef0d5f5",
+            "sourceContext": {
+              "ocrHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "ocrLength": 0,
+              "captionHash": "c923c3a452e26389c7ed79dc107132f613792bb1ece6859e510be5a9f36b7296",
+              "creatorHash": "1101ced057ce4607c9fd85775f808f84b77c7b50e58a070c41f1d0eed8d6c3f8",
+              "captionLength": 972,
+              "creatorLength": 13,
+              "transcriptHash": "d28769b868ad932f005c66554b357d6b2c700fcc94f86929bafdf0d6f77643ca",
+              "transcriptLength": 775,
+              "sourceLocationHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "sourceLocationLength": 0,
+              "sourceLocationPresent": false
+            },
+            "sourceIdentity": {
+              "platform": "instagram",
+              "canonicalUrlHash": "25bc0bf8212747f7ab7ee73fccb47c97327890307e8e070deeb7a5fec2a1ec00",
+              "canonicalContentIdHash": "2192a8de106b42fa958041afcb824aac9bc9a29449bb9a7a5f4b7fa628402607"
+            },
+            "evidenceVersion": "premium-evidence-2026-09-05.v1"
+          },
+          "canonicalizationFingerprint": {
+            "hash": "4a9065ed6e91d9241407c9ba88e4a64453c78969e2eae63db378785441b3e065",
+            "version": "premium-canonicalization-fingerprint.v1",
+            "hypotheses": [
+              {
+                "name": "Paradise Dynasty at South Coast Plaza",
+                "calls": [
+                  {
+                    "query": "Paradise Dynasty at South Coast Plaza, Costa Mesa, California, United States",
+                    "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                    "matched": true,
+                    "outcome": "CANONICAL_ALIAS",
+                    "resultIds": [
+                      "ChIJl25h7GXf3IAR6OBs3e4cxrM"
+                    ],
+                    "resultCount": 1,
+                    "resultNames": [
+                      "Paradise Dynasty"
+                    ],
+                    "selectedName": "Paradise Dynasty",
+                    "attemptNumber": 1,
+                    "rejectionReason": null,
+                    "selectedGooglePlaceId": "ChIJl25h7GXf3IAR6OBs3e4cxrM"
+                  }
+                ],
+                "outcome": "CANONICAL_ALIAS",
+                "geography": {
+                  "city": "Costa Mesa",
+                  "region": "California",
+                  "country": "United States"
+                },
+                "entityType": "BUSINESS",
+                "selectedName": "Paradise Dynasty",
+                "rejectionReason": null,
+                "selectedGooglePlaceId": "ChIJl25h7GXf3IAR6OBs3e4cxrM"
+              },
+              {
+                "name": "Paradise Dynasty at The Americana at Brand",
+                "calls": [
+                  {
+                    "query": "Paradise Dynasty at The Americana at Brand, Glendale, California, United States",
+                    "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                    "matched": true,
+                    "outcome": "CANONICAL_ALIAS",
+                    "resultIds": [
+                      "ChIJ__9LYP7AwoARbUN-XY5iVDs"
+                    ],
+                    "resultCount": 1,
+                    "resultNames": [
+                      "Paradise Dynasty at The Americana"
+                    ],
+                    "selectedName": "Paradise Dynasty at The Americana",
+                    "attemptNumber": 1,
+                    "rejectionReason": null,
+                    "selectedGooglePlaceId": "ChIJ__9LYP7AwoARbUN-XY5iVDs"
+                  }
+                ],
+                "outcome": "CANONICAL_ALIAS",
+                "geography": {
+                  "city": "Glendale",
+                  "region": "California",
+                  "country": "United States"
+                },
+                "entityType": "BUSINESS",
+                "selectedName": "Paradise Dynasty at The Americana",
+                "rejectionReason": null,
+                "selectedGooglePlaceId": "ChIJ__9LYP7AwoARbUN-XY5iVDs"
+              }
+            ]
+          }
+        }
+      },
+      "requestedAt": "2026-09-05T06:24:48.317396+00:00",
+      "startedAt": "2026-09-05T06:28:00.485559+00:00",
+      "completedAt": "2026-09-05T06:28:27.913501+00:00",
+      "task": {
+        "id": "42138bc2-071f-43cb-898d-e97dc0d724ea",
+        "status": "completed",
+        "attempts": 1,
+        "failureCode": null,
+        "resolverName": "premium-sol",
+        "analysisProvider": null,
+        "analysisModel": null,
+        "promptVersion": null,
+        "latencyMs": null,
+        "modelCalls": null,
+        "modelInputTokens": null,
+        "modelOutputTokens": null,
+        "modelThinkingTokens": null,
+        "modelLatencyMs": null
+      },
+      "mediaRun": {
+        "id": "14440349-5143-4276-ae82-393c93ba0fb4",
+        "durationMs": 25290,
+        "frameCount": 23,
+        "transcriptSegments": 11,
+        "ocrSegments": 0,
+        "resolverName": "instagram/yt-dlp",
+        "modelProvider": "premium-sol",
+        "evidence": {
+          "multiple": false,
+          "placeCount": 2,
+          "insufficient": false,
+          "analysisAttempted": true,
+          "destinationPlaces": 1,
+          "partialPlaceCount": 0,
+          "explicitPlaceCount": 2,
+          "premiumDiagnostics": {
+            "solBoundary": {
+              "model": "gpt-5.6-sol",
+              "usage": {
+                "input_tokens": 7713,
+                "total_tokens": 8244,
+                "output_tokens": 531,
+                "reasoning_tokens": 321,
+                "cached_input_tokens": 7710
+              },
+              "version": "premium-sol-boundary.v1",
+              "latencyMs": 7691,
+              "hypotheses": [
+                {
+                  "name": "Paradise Dynasty at South Coast Plaza",
+                  "confidence": "HIGH",
+                  "entityType": "BUSINESS",
+                  "alternatives": [
+                    "Paradise Dynasty at The Americana at Brand"
+                  ],
+                  "evidenceBasis": "MODEL_OBSERVED"
+                }
+              ],
+              "responseId": "resp_0503590fb6916a19016a9bb681e26c87d0a7333e36eac9b449",
+              "shareJobId": "35ff1784-e645-4053-9c3e-d1ea9e0049c3",
+              "parseSuccess": true,
+              "fingerprintId": "5241b5b6f5cadaf242708ff38a7a8519853fe3d04fdc50590ed263c51ef0d5f5",
+              "destinationCount": 1,
+              "parseFailureCode": null,
+              "premiumRequestId": "0102fdf7-32e2-4164-8e58-867715f1ddaf",
+              "structuredResultHash": "68125703b9963f232bc842df00d17a9f3be169273ab5de9a8d74f0de27c31c01"
+            },
+            "finalFingerprint": {
+              "hash": "1713208aef71c1135a4cfec40ee15618b4bfaccb5af39f0670655488dfb390b5",
+              "version": "premium-final-fingerprint.v1",
+              "chargeability": "CHARGEABLE_ACTIONABLE",
+              "solResultHash": "68125703b9963f232bc842df00d17a9f3be169273ab5de9a8d74f0de27c31c01",
+              "resultDecision": "PREMIUM_ACTIONABLE_RESULT",
+              "safetyDecision": [
+                "REVIEW"
+              ],
+              "tokenSettlement": "CONSUME",
+              "canonicalResultHash": "4a9065ed6e91d9241407c9ba88e4a64453c78969e2eae63db378785441b3e065"
+            },
+            "inferenceFingerprint": {
+              "frames": [
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 83883,
+                  "imageSha256": "3e46bbbdcbb2358298e5bd6053136a6d86b91e7d0798d76c6eb66030c986f6b6",
+                  "timestampMs": 0
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 89506,
+                  "imageSha256": "f86db16b61637e5001a8f2a2156696dfbc519dde6da82692f4a5c59b3aaa1d30",
+                  "timestampMs": 5000
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 74807,
+                  "imageSha256": "17dda9cff45b0315ae47f8ed3e67e68f55058aebb55fddf38c54bc7dc74f0cbc",
+                  "timestampMs": 13000
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 95705,
+                  "imageSha256": "35a49ca6ad23bb0cb6718737e28666adc6f5dfec063a87dea3b7884e0f1d40fd",
+                  "timestampMs": 18000
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 57075,
+                  "imageSha256": "27f0a7cda1383a7390feb88b7defaec7425c16df77c20fef2f923d7b3f23b8ce",
+                  "timestampMs": 27000
+                },
+                {
+                  "width": 720,
+                  "height": 1280,
+                  "byteLength": 75207,
+                  "imageSha256": "89a40d4e66cb1868ca5f6922688b7509ab5c340c12817071a660314d08d4f53e",
+                  "timestampMs": 36800
+                }
+              ],
+              "prompt": {
+                "model": "gpt-5.6-sol",
+                "promptHash": "8132da97b952b5d93062ba9b7d915c1dc40b4033de869607a1274142e1580e9c",
+                "schemaHash": "6899fd09c3cc95b4d12263bec5d7028f605eab0eb77b9fdaa38877704c694cfa",
+                "promptVersion": "sol-parity-natural-v1",
+                "schemaVersion": "sol-parity-destination-schema-v1",
+                "reasoningConfig": {
+                  "effort": "high"
+                }
+              },
+              "request": {
+                "imageCount": 6,
+                "inputTextHash": "4af1c9f6f26aa84c3918a2acfc95c15b293123dc695c573ca5b1cbed5605c326",
+                "requestPayloadHash": "2616a1f96bb5f2882620e051033952afdb9682985e12b3dcffc5d69dfb590c36"
+              },
+              "version": "premium-inference-fingerprint.v1",
+              "evidenceReuse": "EVIDENCE_REGENERATED",
+              "fingerprintId": "5241b5b6f5cadaf242708ff38a7a8519853fe3d04fdc50590ed263c51ef0d5f5",
+              "sourceContext": {
+                "ocrHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "ocrLength": 0,
+                "captionHash": "c923c3a452e26389c7ed79dc107132f613792bb1ece6859e510be5a9f36b7296",
+                "creatorHash": "1101ced057ce4607c9fd85775f808f84b77c7b50e58a070c41f1d0eed8d6c3f8",
+                "captionLength": 972,
+                "creatorLength": 13,
+                "transcriptHash": "d28769b868ad932f005c66554b357d6b2c700fcc94f86929bafdf0d6f77643ca",
+                "transcriptLength": 775,
+                "sourceLocationHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "sourceLocationLength": 0,
+                "sourceLocationPresent": false
+              },
+              "sourceIdentity": {
+                "platform": "instagram",
+                "canonicalUrlHash": "25bc0bf8212747f7ab7ee73fccb47c97327890307e8e070deeb7a5fec2a1ec00",
+                "canonicalContentIdHash": "2192a8de106b42fa958041afcb824aac9bc9a29449bb9a7a5f4b7fa628402607"
+              },
+              "evidenceVersion": "premium-evidence-2026-09-05.v1"
+            },
+            "canonicalizationFingerprint": {
+              "hash": "4a9065ed6e91d9241407c9ba88e4a64453c78969e2eae63db378785441b3e065",
+              "version": "premium-canonicalization-fingerprint.v1",
+              "hypotheses": [
+                {
+                  "name": "Paradise Dynasty at South Coast Plaza",
+                  "calls": [
+                    {
+                      "query": "Paradise Dynasty at South Coast Plaza, Costa Mesa, California, United States",
+                      "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                      "matched": true,
+                      "outcome": "CANONICAL_ALIAS",
+                      "resultIds": [
+                        "ChIJl25h7GXf3IAR6OBs3e4cxrM"
+                      ],
+                      "resultCount": 1,
+                      "resultNames": [
+                        "Paradise Dynasty"
+                      ],
+                      "selectedName": "Paradise Dynasty",
+                      "attemptNumber": 1,
+                      "rejectionReason": null,
+                      "selectedGooglePlaceId": "ChIJl25h7GXf3IAR6OBs3e4cxrM"
+                    }
+                  ],
+                  "outcome": "CANONICAL_ALIAS",
+                  "geography": {
+                    "city": "Costa Mesa",
+                    "region": "California",
+                    "country": "United States"
+                  },
+                  "entityType": "BUSINESS",
+                  "selectedName": "Paradise Dynasty",
+                  "rejectionReason": null,
+                  "selectedGooglePlaceId": "ChIJl25h7GXf3IAR6OBs3e4cxrM"
+                },
+                {
+                  "name": "Paradise Dynasty at The Americana at Brand",
+                  "calls": [
+                    {
+                      "query": "Paradise Dynasty at The Americana at Brand, Glendale, California, United States",
+                      "reason": "PRIMARY_SPECIFIC_IDENTITY",
+                      "matched": true,
+                      "outcome": "CANONICAL_ALIAS",
+                      "resultIds": [
+                        "ChIJ__9LYP7AwoARbUN-XY5iVDs"
+                      ],
+                      "resultCount": 1,
+                      "resultNames": [
+                        "Paradise Dynasty at The Americana"
+                      ],
+                      "selectedName": "Paradise Dynasty at The Americana",
+                      "attemptNumber": 1,
+                      "rejectionReason": null,
+                      "selectedGooglePlaceId": "ChIJ__9LYP7AwoARbUN-XY5iVDs"
+                    }
+                  ],
+                  "outcome": "CANONICAL_ALIAS",
+                  "geography": {
+                    "city": "Glendale",
+                    "region": "California",
+                    "country": "United States"
+                  },
+                  "entityType": "BUSINESS",
+                  "selectedName": "Paradise Dynasty at The Americana",
+                  "rejectionReason": null,
+                  "selectedGooglePlaceId": "ChIJ__9LYP7AwoARbUN-XY5iVDs"
+                }
+              ]
+            }
+          },
+          "sharedGeoCountrySource": "multiple_places_agree",
+          "recognitionFailureClass": "none",
+          "sharedGeoCountryApplied": true,
+          "sharedGeoCountryStrength": "strong",
+          "peerGeographicDestinations": 0,
+          "sharedGeoCountryCandidates": 1,
+          "sourceGeographicContextDropped": 0
+        }
+      },
+      "reservationCount": 1,
+      "reservationStatus": "consumed",
+      "priorityUseful": true
+    }
+  ]
+}
