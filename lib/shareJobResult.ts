@@ -123,7 +123,7 @@ export type ShareJobCandidatePayload = {
 export type ShareJobPartialResult = {
   version: 1;
   reviewOnly: true;
-  resultClass: 'area_match' | 'search_lead' | 'partial_result';
+  resultClass: 'area_match' | 'area_match_incomplete' | 'search_lead' | 'partial_result';
   locality: string | null;
   category: string | null;
   searchQuery: string | null;
@@ -131,6 +131,17 @@ export type ShareJobPartialResult = {
   placeType?: string | null;
   reasonCode?: 'category_only_candidate' | null;
   discoveryOnly?: boolean;
+  area?: {
+    name: string;
+    city: string | null;
+    region: string | null;
+    country: string | null;
+  };
+  intendedSpecificity?: 'AREA_DESTINATION' | 'SPECIFIC_PHYSICAL_DESTINATION';
+  resolvedSpecificity?: 'CITY' | 'REGION' | 'COUNTRY' | 'AREA';
+  exactDestinationResolved?: false;
+  premiumEligible?: boolean;
+  intentSignal?: 'area_destination' | 'grounded_identity' | 'physical_category' | 'physical_place_type';
   provenance?: {
     identityEvidence: string[];
     categoryEvidence: string[];
@@ -383,8 +394,13 @@ export function partialResultFromPayload(payload: unknown): ShareJobPartialResul
   const resultClass = row.resultClass;
   if (
     row.version !== 1 || row.reviewOnly !== true ||
-    (resultClass !== 'area_match' && resultClass !== 'search_lead' && resultClass !== 'partial_result')
+    (resultClass !== 'area_match' && resultClass !== 'area_match_incomplete' &&
+      resultClass !== 'search_lead' && resultClass !== 'partial_result')
   ) return null;
+  const rawArea = row.area && typeof row.area === 'object'
+    ? row.area as Record<string, unknown>
+    : null;
+  const areaName = text(rawArea?.name)?.slice(0, 160) ?? null;
   return {
     version: 1,
     reviewOnly: true,
@@ -398,6 +414,27 @@ export function partialResultFromPayload(payload: unknown): ShareJobPartialResul
     placeType: text(row.placeType)?.slice(0, 80) ?? null,
     reasonCode: row.reasonCode === 'category_only_candidate' ? row.reasonCode : null,
     discoveryOnly: row.discoveryOnly === true,
+    area: areaName ? {
+      name: areaName,
+      city: text(rawArea?.city)?.slice(0, 120) ?? null,
+      region: text(rawArea?.region)?.slice(0, 120) ?? null,
+      country: text(rawArea?.country)?.slice(0, 120) ?? null,
+    } : undefined,
+    intendedSpecificity: row.intendedSpecificity === 'SPECIFIC_PHYSICAL_DESTINATION'
+      ? row.intendedSpecificity
+      : row.intendedSpecificity === 'AREA_DESTINATION'
+        ? row.intendedSpecificity
+        : undefined,
+    resolvedSpecificity: row.resolvedSpecificity === 'CITY' || row.resolvedSpecificity === 'REGION' ||
+      row.resolvedSpecificity === 'COUNTRY' || row.resolvedSpecificity === 'AREA'
+      ? row.resolvedSpecificity
+      : undefined,
+    exactDestinationResolved: row.exactDestinationResolved === false ? false : undefined,
+    premiumEligible: row.premiumEligible === true,
+    intentSignal: row.intentSignal === 'area_destination' || row.intentSignal === 'grounded_identity' ||
+      row.intentSignal === 'physical_category' || row.intentSignal === 'physical_place_type'
+      ? row.intentSignal
+      : undefined,
     provenance: row.provenance && typeof row.provenance === 'object' ? {
       identityEvidence: normalizedStringList((row.provenance as Record<string, unknown>).identityEvidence),
       categoryEvidence: normalizedStringList((row.provenance as Record<string, unknown>).categoryEvidence),

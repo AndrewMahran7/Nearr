@@ -142,6 +142,7 @@ import {
   premiumEligibilityForResult,
 } from '../../../lib/premiumRequestMonetization.ts';
 import { premiumRequestsEnabled } from '../_shared/premiumRequests.ts';
+import { areaMatchIncompleteFromPayload } from '../../../lib/areaMatchPremium.ts';
 
 const CORS_HEADERS: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
@@ -587,6 +588,7 @@ async function finalize(
   // for named review leads that intentionally have no single Places candidate.
   const premiumSettlement = premiumChargeabilityOverride ?? isPremiumResultChargeable(finalFacts);
   const eligibility = premiumEligibilityForResult(finalFacts);
+  const incompleteArea = areaMatchIncompleteFromPayload(finalFacts.candidate_payload);
   const becamePremiumEligible = billingMode !== 'premium_request' && eligibility.eligible && job.premium_state !== 'eligible';
   if (billingMode === 'premium_request') {
     updatePatch.billing_outcome = `pending_${premiumSettlement.chargeable ? 'consume' : 'release'}:${premiumSettlement.reason}`;
@@ -658,7 +660,16 @@ async function finalize(
       event_name: premiumRequestsEnabled()
         ? 'premium_request_offered'
         : 'premium_eligible_while_suspended',
-      properties: { share_job_id: job.id, reason: eligibility.reason },
+      properties: {
+        share_job_id: job.id,
+        reason: eligibility.reason,
+        ...(incompleteArea ? {
+          resolved_specificity: incompleteArea.resolvedSpecificity,
+          intended_specificity: incompleteArea.intendedSpecificity,
+          source_platform: finalFacts.source_platform ?? null,
+          premium_eligible: true,
+        } : {}),
+      },
     });
   }
 
@@ -2498,6 +2509,7 @@ async function finalizeMediaTask(
           sourceMetadata,
         ),
         progress_stage: unresolvedWithCandidates > 0 ? 'multi' : 'manual',
+        analysis_attempted: analysisAttempted,
       },
       notification,
     );
@@ -2656,6 +2668,7 @@ async function finalizeMediaTask(
       source_platform: task.platform,
       extraction_payload: extractionPayload,
       progress_stage: mode,
+      analysis_attempted: analysisAttempted,
     },
     note,
   );

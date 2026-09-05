@@ -64,6 +64,7 @@ import {
 import {
   planShareSaveCompletion,
   normalizeResultCandidates,
+  partialResultFromPayload,
   saveSelectedLabel,
   sourceTimestampLabel,
   type ShareJobResultCandidate,
@@ -350,6 +351,7 @@ function ShareJobDetailScreen() {
   const [premiumBusy, setPremiumBusy] = useState(false);
   const [premiumOfferDismissed, setPremiumOfferDismissed] = useState(false);
   const premiumOfferTrackedRef = useRef<string | null>(null);
+  const areaMatchIncompleteTrackedRef = useRef<string | null>(null);
   const [manualQuery, setManualQuery] = useState('');
   const [manualSearchPhase, setManualSearchPhase] = useState<SearchPhase>('idle');
   const [manualSelectedIds, setManualSelectedIds] = useState<string[]>([]);
@@ -581,7 +583,17 @@ function ShareJobDetailScreen() {
   const startPremiumRequest = useCallback(async () => {
     if (!premiumRequestsAvailable || !job || premiumBusy) return;
     setPremiumBusy(true);
-    void trackEvent('premium_request_cta_tapped', { job_id: job.id, token_cost: 1 });
+    const partial = partialResultFromPayload(job.candidate_payload);
+    void trackEvent('premium_request_cta_tapped', {
+      job_id: job.id,
+      token_cost: 1,
+      ...(partial?.resultClass === 'area_match_incomplete' ? {
+        resolved_specificity: partial.resolvedSpecificity,
+        intended_specificity: partial.intendedSpecificity,
+        source_platform: job.source_platform ?? null,
+        premium_eligible: job.premium_state === 'eligible',
+      } : {}),
+    });
     try {
       const result = await requestPremiumRecognition(job.id);
       if (result.requiresPurchase) {
@@ -613,10 +625,30 @@ function ShareJobDetailScreen() {
   // renders (lib/shareJobDetailState). Nothing below re-interprets
   // candidate_payload, so a drifted/partial payload can never throw here.
   const detail = useMemo(() => buildShareJobDetailState(job), [job]);
+  const areaMatchIncomplete = detail.partialResult?.resultClass === 'area_match_incomplete';
+  const incompleteArea = areaMatchIncomplete ? detail.partialResult : null;
+  const areaName = incompleteArea?.area?.name ?? incompleteArea?.locality ?? null;
+  const areaLocation = incompleteArea
+    ? [areaName, incompleteArea.area?.country]
+      .filter((value, index, values): value is string => !!value && values.indexOf(value) === index)
+      .join(', ')
+    : null;
+  const premiumState = job?.premium_state ?? 'not_eligible';
   const vayrinPresentation = useMemo(
     () => mapShareJobToVayrinPresentation(detail, job),
     [detail, job],
   );
+  useEffect(() => {
+    if (!job || !areaMatchIncomplete || areaMatchIncompleteTrackedRef.current === job.id) return;
+    areaMatchIncompleteTrackedRef.current = job.id;
+    void trackEvent('area_match_incomplete_shown', {
+      job_id: job.id,
+      resolved_specificity: incompleteArea?.resolvedSpecificity,
+      intended_specificity: incompleteArea?.intendedSpecificity,
+      source_platform: job.source_platform ?? null,
+      premium_eligible: job.premium_state === 'eligible',
+    });
+  }, [areaMatchIncomplete, incompleteArea?.intendedSpecificity, incompleteArea?.resolvedSpecificity, job]);
   const onboardingShare = isExpectedOnboardingSource(
     onboardingV2?.pendingShare ?? null,
     sourceUrl,
@@ -1715,8 +1747,7 @@ function ShareJobDetailScreen() {
     );
   }
 
-  const premiumState = job.premium_state ?? 'not_eligible';
-  if (premiumRequestsAvailable && !premiumOfferDismissed && (premiumState === 'eligible' || premiumState === 'awaiting_token')) {
+  if (premiumRequestsAvailable && !areaMatchIncomplete && !premiumOfferDismissed && (premiumState === 'eligible' || premiumState === 'awaiting_token')) {
     return (
       <ShareJobsSheet onDismiss={backToQueue} size="detail">
         <ShareJobsHeader title="Premium Request" onBack={backToQueue} backLabel="Back to queue" />
@@ -2217,7 +2248,75 @@ function ShareJobDetailScreen() {
                   renderIdentityLead(lead, () => openIdentityLead(lead)))}
               </View>
             ) : null}
-            {detail.canSearchManually ? renderManualSearch() : null}
+            {areaMatchIncomplete && areaName ? (
+              <View style={styles.areaSummary} testID="area-match-incomplete">
+                <Text style={styles.areaResultLabel}>AREA FOUND</Text>
+                <Text style={[typography.heading, styles.areaName]}>{areaName}</Text>
+                {areaLocation ? <Text style={[typography.caption, styles.areaLocation]}>{areaLocation}</Text> : null}
+              </View>
+            ) : null}
+            {premiumRequestsAvailable && areaMatchIncomplete && (premiumState === 'eligible' || premiumState === 'awaiting_token') ? (
+              <View style={styles.premiumInlineCard} testID="area-match-premium-offer">
+                <View style={styles.premiumInlineHeading}>
+                  <TokenSymbol size={20} />
+                  <Text style={[typography.heading, styles.premiumInlineTitle]}>Want us to dig deeper?</Text>
+                </View>
+                <Text style={[typography.body, styles.premiumInlineBody]}>Use a Premium Request to look for the exact place.</Text>
+                <Button
+                  title={premiumState === 'awaiting_token' ? 'Choose tokens' : 'Make Premium Request · 1 token'}
+                  onPress={() => {
+                    if (premiumState === 'awaiting_token') {
+                      void setPendingPremiumRequestJobId(job.id);
+                      router.push({ pathname: '/monetization', params: { premiumJobId: job.id, entry: 'premium_request' } });
+                    } else {
+                      void startPremiumRequest();
+                    }
+                  }}
+                  disabled={premiumBusy}
+                  loading={premiumBusy}
+                  style={styles.primaryBtn}
+                />
+                <Text style={[typography.caption, styles.premiumInlineReassurance]}>Charged only if Premium finds a useful, specific result.</Text>
+              </View>
+            ) : null}
+            {areaMatchIncomplete ? (
+              !searchExpanded ? <>
+                <Button
+                  title="See places in this area"
+                  variant="secondary"
+                  onPress={() => {
+                    const query = incompleteArea?.searchQuery ?? areaName ?? '';
+                    void trackEvent('area_match_browse_tapped', {
+                      job_id: job.id,
+                      resolved_specificity: incompleteArea?.resolvedSpecificity,
+                      source_platform: job.source_platform ?? null,
+                    });
+                    changeManualQuery(query);
+                    revealSearch();
+                    void runManualSearch(query);
+                  }}
+                  style={styles.secondaryBtn}
+                />
+                <Pressable
+                  onPress={() => {
+                    void trackEvent('manual_search_from_area_match', {
+                      job_id: job.id,
+                      resolved_specificity: incompleteArea?.resolvedSpecificity,
+                      source_platform: job.source_platform ?? null,
+                    });
+                    revealSearch();
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel="Search manually"
+                  style={styles.searchForPlaceAction}
+                >
+                  <Feather name="search" size={17} color={colors.accent} />
+                  <Text style={styles.searchForPlaceText}>Search manually</Text>
+                </Pressable>
+              </> : detail.canSearchManually
+                ? renderManualSearch({ note: 'Search for the exact place and save it instead.', onCancel: hideSearch })
+                : null
+            ) : detail.canSearchManually ? renderManualSearch() : null}
           </View>
         ) : (
           <View style={styles.section}>
@@ -2392,6 +2491,29 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
     premiumBody: { textAlign: 'center', maxWidth: 340 },
     premiumReassurance: { color: colors.textMuted, textAlign: 'center', marginTop: Spacing.sm },
     premiumResultLabel: { color: colors.accent, fontSize: 11, fontWeight: '800', letterSpacing: 1.4, marginTop: Spacing.sm },
+    areaSummary: {
+      padding: Spacing.md,
+      borderRadius: Radius.md,
+      backgroundColor: colors.surfaceElevated,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.border,
+      marginBottom: Spacing.md,
+    },
+    areaResultLabel: { color: colors.accent, fontSize: 11, fontWeight: '800', letterSpacing: 1.4 },
+    areaName: { color: colors.text, marginTop: Spacing.xs },
+    areaLocation: { color: colors.textSecondary, marginTop: 2 },
+    premiumInlineCard: {
+      padding: Spacing.md,
+      borderRadius: Radius.lg,
+      backgroundColor: colors.surfaceElevated,
+      borderWidth: 1,
+      borderColor: 'rgba(255,106,26,0.3)',
+      marginBottom: Spacing.md,
+    },
+    premiumInlineHeading: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+    premiumInlineTitle: { color: colors.text, flex: 1 },
+    premiumInlineBody: { color: colors.textSecondary, marginTop: Spacing.sm },
+    premiumInlineReassurance: { color: colors.textMuted, marginTop: Spacing.sm },
     sourceRow: {
       flexDirection: 'row',
       alignItems: 'center',
