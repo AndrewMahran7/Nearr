@@ -1,23 +1,24 @@
 {
   "releaseId": "2026-09-05-broad-area-premium-escalation",
-  "previousMainSha": "0635190763dbf6d504713c42d0aa257ef5317305",
+  "previousMainSha": "57e745e8c1519babb111da2dc5509316b52d9e7f",
   "previousOtaGroup": "bb685ade-ae5a-4685-ada5-559cb70432a6",
   "currentOtaGroup": null,
   "edgeVersions": {
     "process-share-jobs": 93,
-    "process-share-link": 134,
-    "monetization": 1
+    "process-share-link": 135,
+    "monetization": 2
   },
   "railwayDeployment": "2d4da2a4-c9b9-4d34-8894-15e8e8e6c407 (unchanged)",
   "migrationLedger": [
     "20260905000001"
   ],
-  "rollbackProcedure": "Redeploy process-share-jobs from 0635190763dbf6d504713c42d0aa257ef5317305 and republish previousOtaGroup after repeating the production concurrency guard.",
-  "deploymentStatus": "PLANNED",
+  "rollbackProcedure": "No rollback required because this release was not promoted. Production main, Edge, OTA, Railway, and schema were not changed by this release.",
+  "deploymentStatus": "BLOCKED_BY_PRODUCTION_PREMIUM_REQUEST_SUSPENSION",
+  "deploymentBlocker": "origin/main added the intentional hotfix 'suspend production Premium requests' after this release was frozen. Promoting a visible Premium CTA would require explicit authorization to reverse that safety policy.",
   "physicalQa": {
-    "signedOutColdLaunch": "PENDING",
-    "signedInColdLaunch": "PENDING",
-    "forceCloseRelaunch": "PENDING",
+    "signedOutColdLaunch": "NOT_RUN_NO_DEPLOYMENT",
+    "signedInColdLaunch": "NOT_RUN_NO_DEPLOYMENT",
+    "forceCloseRelaunch": "NOT_RUN_NO_DEPLOYMENT",
     "freshOnboardingLaunch": "NOT_REQUIRED"
   }
 }

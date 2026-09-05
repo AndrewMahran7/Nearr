@@ -1747,7 +1747,7 @@ function ShareJobDetailScreen() {
     );
   }
 
-  if (premiumRequestsAvailable && !areaMatchIncomplete && !premiumOfferDismissed && (premiumState === 'eligible' || premiumState === 'awaiting_token')) {
+  if (premiumRequestsAvailable && !premiumOfferDismissed && !areaMatchIncomplete && (premiumState === 'eligible' || premiumState === 'awaiting_token')) {
     return (
       <ShareJobsSheet onDismiss={backToQueue} size="detail">
         <ShareJobsHeader title="Premium Request" onBack={backToQueue} backLabel="Back to queue" />
