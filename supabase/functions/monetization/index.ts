@@ -6,6 +6,8 @@
 // @ts-nocheck -- Supabase Edge/Deno runtime.
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'npm:@supabase/supabase-js@2.45.0';
+import { premiumRequestsEnabled } from '../_shared/premiumRequests.ts';
+import { PREMIUM_REQUESTS_SUSPENDED_REASON } from '../../../lib/premiumRequestsPolicy.ts';
 
 const NEARR_DEV_PROJECT_REF = 'qnfxnmvxpjzfydgudtvs';
 const CORS_HEADERS = {
@@ -76,6 +78,14 @@ serve(async (req) => {
     return json({ ok: false, error: 'invalid_json' }, 400);
   }
   const action = body.action ?? 'balance';
+
+  // The server is authoritative. Reject every monetization entry point before
+  // wallet creation, reservation, task creation, purchase, or Premium RPC work.
+  // Existing reserved/processing requests settle through process-share-jobs
+  // and never pass through this initiation endpoint.
+  if (!premiumRequestsEnabled()) {
+    return json({ ok: false, error: PREMIUM_REQUESTS_SUSPENDED_REASON }, 503);
+  }
 
   if (action === 'balance' || action === 'sync') {
     const { data, error } = await admin.rpc('ensure_place_find_wallet', {

@@ -141,6 +141,7 @@ import {
   isPremiumResultChargeable,
   premiumEligibilityForResult,
 } from '../../../lib/premiumRequestMonetization.ts';
+import { premiumRequestsEnabled } from '../_shared/premiumRequests.ts';
 
 const CORS_HEADERS: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
@@ -654,7 +655,9 @@ async function finalize(
   if (becamePremiumEligible) {
     await admin.from('analytics_events').insert({
       user_id: job.user_id,
-      event_name: 'premium_request_offered',
+      event_name: premiumRequestsEnabled()
+        ? 'premium_request_offered'
+        : 'premium_eligible_while_suspended',
       properties: { share_job_id: job.id, reason: eligibility.reason },
     });
   }

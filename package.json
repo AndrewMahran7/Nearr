@@ -11,6 +11,7 @@
     "test:monetization-token-ux": "ts-node -P scripts/tsconfig.json scripts/testMonetizationTokenUx.ts",
     "test:monetization-integration": "ts-node -P scripts/tsconfig.json scripts/testMonetizationIntegration.ts",
     "test:premium-request-monetization": "ts-node -P scripts/tsconfig.json scripts/testPremiumRequestMonetization.ts",
+    "test:premium-suspension": "ts-node -P scripts/tsconfig.json scripts/testPremiumSuspension.ts",
     "postinstall": "patch-package",
     "media:inspect": "npm --prefix services/media-worker run media:inspect --",
     "benchmark:sol-parity": "npm --prefix services/media-worker run benchmark:sol-parity --",

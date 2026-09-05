@@ -1,0 +1,29 @@
+{
+  "releaseId": "2026-09-05-suspend-production-premium-requests",
+  "previousMainSha": "0635190763dbf6d504713c42d0aa257ef5317305",
+  "previousOtaGroup": "bb685ade-ae5a-4685-ada5-559cb70432a6",
+  "currentOtaGroup": null,
+  "edgeVersions": {
+    "process-share-link": 134,
+    "create-share-job": 26,
+    "delete-account": 25,
+    "process-share-jobs": 92,
+    "monetization": 1
+  },
+  "railwayDeployment": "2d4da2a4-c9b9-4d34-8894-15e8e8e6c407 @ b3e536abcf89fafbfe81f07c5dc31c0e4f3d9a8f",
+  "migrationLedger": [
+    "20260903000001_place_find_monetization",
+    "20260903000002_qualify_place_find_balance_columns",
+    "20260903000003_preserve_place_find_ledger_on_account_deletion",
+    "20260904000001_premium_request_monetization",
+    "20260905000001_fix_premium_request_available_uses"
+  ],
+  "rollbackProcedure": "Set production Supabase secret PREMIUM_REQUESTS_ENABLED=true; set production EAS variable EXPO_PUBLIC_PREMIUM_REQUESTS_ENABLED=true; redeploy monetization and process-share-jobs from the hotfix source if needed; republish OTA group bb685ade-ae5a-4685-ada5-559cb70432a6 to production; verify direct Premium initiation, one-token reservation, Premium processing, settlement, Settings, and token store. Railway and schema remain unchanged.",
+  "deploymentStatus": "PLANNED",
+  "physicalQa": {
+    "signedOutColdLaunch": "PENDING",
+    "signedInColdLaunch": "PENDING",
+    "forceCloseRelaunch": "PENDING",
+    "freshOnboardingLaunch": "PENDING"
+  }
+}

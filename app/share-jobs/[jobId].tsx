@@ -154,6 +154,7 @@ import {
 } from '@/services/shareJobsService';
 import { CATEGORY_LABELS, resolvePlaceCategory } from '@/lib/placeCategory';
 import { requestPremiumRecognition } from '@/lib/monetizationClient';
+import { premiumRequestsEnabled } from '@/lib/premiumRequests';
 import {
   clearPendingPremiumRequestJobId,
   setPendingPremiumRequestJobId,
@@ -338,6 +339,7 @@ function ShareJobDetailScreen() {
   const routeJobId = typeof jobId === 'string' ? jobId.trim() : '';
   const { colors, typography } = useTheme();
   const vayrinEnabled = isVayrinProductUiEnabled();
+  const premiumRequestsAvailable = premiumRequestsEnabled();
   const { state: onboardingV2 } = useOnboardingV2();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
@@ -571,13 +573,13 @@ function ShareJobDetailScreen() {
   }, [job?.id, job?.status, router]);
 
   useEffect(() => {
-    if (job?.premium_state !== 'eligible' || premiumOfferTrackedRef.current === job.id) return;
+    if (!premiumRequestsAvailable || job?.premium_state !== 'eligible' || premiumOfferTrackedRef.current === job.id) return;
     premiumOfferTrackedRef.current = job.id;
     void trackEvent('premium_request_offer_viewed', { job_id: job.id });
-  }, [job?.id, job?.premium_state]);
+  }, [job?.id, job?.premium_state, premiumRequestsAvailable]);
 
   const startPremiumRequest = useCallback(async () => {
-    if (!job || premiumBusy) return;
+    if (!premiumRequestsAvailable || !job || premiumBusy) return;
     setPremiumBusy(true);
     void trackEvent('premium_request_cta_tapped', { job_id: job.id, token_cost: 1 });
     try {
@@ -595,7 +597,7 @@ function ShareJobDetailScreen() {
     } finally {
       if (mountedRef.current) setPremiumBusy(false);
     }
-  }, [job, load, premiumBusy, router]);
+  }, [job, load, premiumBusy, premiumRequestsAvailable, router]);
 
   const platform = job?.source_platform ?? null;
   const sourceUrl = job?.canonical_url ?? job?.source_url ?? null;
@@ -1714,7 +1716,7 @@ function ShareJobDetailScreen() {
   }
 
   const premiumState = job.premium_state ?? 'not_eligible';
-  if (!premiumOfferDismissed && (premiumState === 'eligible' || premiumState === 'awaiting_token')) {
+  if (premiumRequestsAvailable && !premiumOfferDismissed && (premiumState === 'eligible' || premiumState === 'awaiting_token')) {
     return (
       <ShareJobsSheet onDismiss={backToQueue} size="detail">
         <ShareJobsHeader title="Premium Request" onBack={backToQueue} backLabel="Back to queue" />

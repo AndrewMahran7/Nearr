@@ -253,6 +253,10 @@ module.exports = ({ config }) => {
         process.env.EXPO_PUBLIC_ONBOARDING_V2_BACKEND_READY || (IS_DEVELOPMENT_APP ? 'true' : ''),
       monetizationEnabled: process.env.EXPO_PUBLIC_MONETIZATION_ENABLED || '',
       monetizationMode: process.env.EXPO_PUBLIC_MONETIZATION_MODE || '',
+      // Reversible product kill switch. Runtime defaults remain production OFF
+      // and development/preview ON if an older environment omits the flag.
+      premiumRequestsEnabled:
+        process.env.EXPO_PUBLIC_PREMIUM_REQUESTS_ENABLED || '',
     },
   };
 };

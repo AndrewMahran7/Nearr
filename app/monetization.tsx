@@ -17,6 +17,7 @@ import {
   clearPendingPremiumRequestJobId,
   getPendingPremiumRequestJobId,
 } from '@/lib/pendingPremiumRequest';
+import { premiumRequestsEnabled } from '@/lib/premiumRequests';
 
 const CREAM = '#F4F2EF';
 const CHARCOAL = '#0F1014';
@@ -53,6 +54,7 @@ export default function MonetizationScreen() {
   const jobId = typeof params.jobId === 'string' ? params.jobId : null;
   const routePremiumJobId = typeof params.premiumJobId === 'string' ? params.premiumJobId : null;
   const entry = typeof params.entry === 'string' ? params.entry : 'unknown';
+  const premiumRequestsAvailable = premiumRequestsEnabled();
   const { snapshot, loading, error, refresh, setSnapshot } = usePlaceFindBalance();
   const [purchase, setPurchase] = useState<PurchaseState>({ kind: 'idle' });
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
@@ -61,23 +63,26 @@ export default function MonetizationScreen() {
   const trackedRef = useRef(false);
 
   useEffect(() => {
+    if (!premiumRequestsAvailable) return;
     if (routePremiumJobId) {
       setPendingPremiumRequestJobId(routePremiumJobId);
       return;
     }
     void getPendingPremiumRequestJobId().then(setPendingPremiumRequestJobId);
-  }, [routePremiumJobId]);
+  }, [premiumRequestsAvailable, routePremiumJobId]);
 
   useEffect(() => {
+    if (!premiumRequestsAvailable) return;
     if (trackedRef.current) return;
     trackedRef.current = true;
     void trackEvent('paywall_shown', { entry_point: entry, pending_premium_request: !!pendingPremiumRequestJobId });
     if (pendingPremiumRequestJobId) {
       void trackEvent('token_store_opened_from_premium_request', { job_id: pendingPremiumRequestJobId });
     }
-  }, [entry, pendingPremiumRequestJobId]);
+  }, [entry, pendingPremiumRequestJobId, premiumRequestsAvailable]);
 
   useEffect(() => {
+    if (!premiumRequestsAvailable) return;
     if (!snapshot) return;
     for (const pack of snapshot.products) {
       void trackEvent('pack_viewed', {
@@ -91,7 +96,7 @@ export default function MonetizationScreen() {
         ? current
         : recommendedProduct(snapshot.products)?.productId ?? null
     ));
-  }, [entry, snapshot]);
+  }, [entry, premiumRequestsAvailable, snapshot]);
 
   const selectedPack = useMemo(
     () => snapshot?.products.find((product) => product.productId === selectedProductId)
@@ -111,6 +116,7 @@ export default function MonetizationScreen() {
   }, [snapshot]);
 
   async function buy(productId: string, uses: number) {
+    if (!premiumRequestsAvailable) return;
     if (purchase.kind === 'purchasing') return;
     setPurchase({ kind: 'purchasing', productId });
     void trackEvent('purchase_started', { uses, mode: 'dev_mock', pending_premium_request: !!pendingPremiumRequestJobId });
@@ -156,6 +162,7 @@ export default function MonetizationScreen() {
   }, [pendingPremiumRequestJobId, purchase, router]);
 
   async function continuePendingVideo() {
+    if (!premiumRequestsAvailable) return;
     if (!jobId || purchase.kind === 'purchasing') return;
     setPurchase({ kind: 'purchasing', productId: '__resume__' });
     try {
@@ -173,6 +180,30 @@ export default function MonetizationScreen() {
   function close() {
     if (router.canGoBack()) router.back();
     else router.replace('/(tabs)/map');
+  }
+
+  if (!premiumRequestsAvailable) {
+    return (
+      <View style={[styles.screen, styles.successScreen, {
+        paddingTop: Math.max(insets.top, 18),
+        paddingBottom: Math.max(insets.bottom, 18),
+      }]}
+      >
+        <View style={styles.successWrap} testID="premium-requests-suspended">
+          <Text style={styles.title} accessibilityRole="header">
+            Premium Requests are temporarily unavailable.
+          </Text>
+          <Pressable
+            style={styles.primary}
+            onPress={close}
+            accessibilityRole="button"
+            accessibilityLabel="Done"
+          >
+            <Text style={styles.primaryText}>Done</Text>
+          </Pressable>
+        </View>
+      </View>
+    );
   }
 
   if (purchase.kind === 'success') {

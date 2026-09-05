@@ -2,6 +2,8 @@ import Constants from 'expo-constants';
 import * as Crypto from 'expo-crypto';
 
 import { areDeveloperToolsVisible } from '@/lib/appEnvironment';
+import { premiumRequestsEnabled } from '@/lib/premiumRequests';
+import { PREMIUM_REQUESTS_SUSPENDED_REASON } from '@/lib/premiumRequestsPolicy';
 import { supabase } from '@/lib/supabase';
 import type { PlaceFindPriceSource } from '@/lib/placeFindConfig';
 
@@ -41,7 +43,7 @@ export function monetizationMode(): MonetizationMode {
 }
 
 export function isMonetizationEnabled(): boolean {
-  return monetizationMode() !== 'disabled';
+  return premiumRequestsEnabled() && monetizationMode() !== 'disabled';
 }
 
 type BalanceResponse = {
@@ -87,6 +89,7 @@ export async function purchaseDevMockPack(args: {
   premiumJobId?: string | null;
   clientPurchaseId?: string;
 }): Promise<{ available: number; grantedUses: number; replayed: boolean; resumed: boolean }> {
+  if (!premiumRequestsEnabled()) throw new Error(PREMIUM_REQUESTS_SUSPENDED_REASON);
   if (monetizationMode() !== 'dev_mock') throw new Error('dev_mock_unavailable');
   const clientPurchaseId = args.clientPurchaseId ?? Crypto.randomUUID();
   const { data, error } = await supabase.functions.invoke<{
@@ -123,6 +126,7 @@ export async function requestPremiumRecognition(jobId: string): Promise<{
   requiresPurchase: boolean;
   replayed: boolean;
 }> {
+  if (!premiumRequestsEnabled()) throw new Error(PREMIUM_REQUESTS_SUSPENDED_REASON);
   const { data, error } = await supabase.functions.invoke<{
     ok?: boolean;
     error?: string;
@@ -145,6 +149,7 @@ export async function requestPremiumRecognition(jobId: string): Promise<{
 }
 
 export async function resumePendingPlaceFindJob(jobId: string): Promise<{ resumed: boolean; available: number }> {
+  if (!premiumRequestsEnabled()) throw new Error(PREMIUM_REQUESTS_SUSPENDED_REASON);
   const { data, error } = await supabase.functions.invoke<{
     ok?: boolean;
     error?: string;
