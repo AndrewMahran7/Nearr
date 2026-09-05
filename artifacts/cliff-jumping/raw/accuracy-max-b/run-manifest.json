@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "run_id": "sol-parity-2026-09-05T22-45-13-668Z",
+  "started_at": "2026-09-05T22:45:13.669Z",
+  "git_head": "c3389ab57f5ad96046d3fa68c5533ae5778984e9",
+  "corpus_path": "artifacts\\cliff-jumping\\inference-corpus.json",
+  "ground_truth_loaded_during_inference": false,
+  "cache_used": false,
+  "google_candidates_sent_to_sol": false,
+  "production_target": false,
+  "model": "gpt-5.6-sol",
+  "reasoning_effort": "high",
+  "premium_engine_version": "simple-sol-premium.v2",
+  "premium_evidence_version": "premium-evidence-2026-09-05.v1",
+  "premium_safety_version": "premium-recognition-safety.v2",
+  "matrix": [
+    {
+      "frame": "F2",
+      "model": "M2"
+    }
+  ],
+  "cases": [
+    "CJ026",
+    "CJ028",
+    "CJ033",
+    "CJ038",
+    "CJ039",
+    "CJ041",
+    "CJ042"
+  ],
+  "manual_frame_arm": "MANUAL_FRAME_ARM_NOT_AVAILABLE"
+}

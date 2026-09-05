@@ -1,0 +1,1240 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-09-05T23:11:31.611Z",
+  "arm": "AUTO_DEEP_SIMULATION",
+  "rule": "Keep an actionable exact/specific free result; otherwise use SIMPLE_SOL canonical top 3.",
+  "results": [
+    {
+      "caseId": "CJ001",
+      "routedArm": "SIMPLE_SOL",
+      "reason": "PRODUCTION_FREE_EMPTY_NON_ACTIONABLE",
+      "top3": [
+        {
+          "rank": 1,
+          "name": "Lac de Vouglans",
+          "rawName": "Lac de Vouglans",
+          "status": "CANONICAL_EXACT",
+          "latitude": 46.485,
+          "longitude": 5.680833
+        },
+        {
+          "rank": 2,
+          "name": "Gorges de l’Ardèche",
+          "rawName": "Gorges de l’Ardèche",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 3,
+          "name": "Gorges du Tarn",
+          "rawName": "Gorges du Tarn",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "exactAt1": false,
+      "exactAt3": false,
+      "specificReasonableAt3": true,
+      "recoveredOverFree": true,
+      "harmed": false
+    },
+    {
+      "caseId": "CJ002",
+      "routedArm": "SIMPLE_SOL",
+      "reason": "PRODUCTION_FREE_EMPTY_NON_ACTIONABLE",
+      "top3": [
+        {
+          "rank": 1,
+          "name": "La Vesse",
+          "rawName": "Calanque de la Vesse and the Côte Bleue railway cliffs",
+          "status": "CANONICAL_ALIAS",
+          "latitude": 43.343916,
+          "longitude": 5.257961
+        },
+        {
+          "rank": 2,
+          "name": "Fort Saint-Jean",
+          "rawName": "Fort Saint-Jean at Marseille’s Vieux-Port",
+          "status": "CANONICAL_ALIAS",
+          "latitude": 43.2953604,
+          "longitude": 5.3617108
+        },
+        {
+          "rank": 3,
+          "name": "Abandoned Piscine de Luminy",
+          "rawName": "Abandoned Piscine de Luminy",
+          "status": "NAMED_LEAD",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "exactAt1": false,
+      "exactAt3": false,
+      "specificReasonableAt3": true,
+      "recoveredOverFree": true,
+      "harmed": false
+    },
+    {
+      "caseId": "CJ003",
+      "routedArm": "SIMPLE_SOL",
+      "reason": "PRODUCTION_FREE_EMPTY_NON_ACTIONABLE",
+      "top3": [
+        {
+          "rank": 1,
+          "name": "Sooke Potholes Provincial Park",
+          "rawName": "Sooke Potholes Provincial Park",
+          "status": "CANONICAL_EXACT",
+          "latitude": 48.4279465,
+          "longitude": -123.71261109999998
+        },
+        {
+          "rank": 2,
+          "name": "Wally Creek (Kennedy River)",
+          "rawName": "Wally Creek (Kennedy River)",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 3,
+          "name": "Englishman River Falls Provincial Park",
+          "rawName": "Englishman River Falls Provincial Park",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "exactAt1": true,
+      "exactAt3": true,
+      "specificReasonableAt3": true,
+      "recoveredOverFree": true,
+      "harmed": false
+    },
+    {
+      "caseId": "CJ004",
+      "routedArm": "SIMPLE_SOL",
+      "reason": "PRODUCTION_FREE_EMPTY_NON_ACTIONABLE",
+      "top3": [
+        {
+          "rank": 1,
+          "name": "Na Mokulua",
+          "rawName": "Moku Nui, Nā Mokulua (the Mokulua Islands)",
+          "status": "CANONICAL_ALIAS",
+          "latitude": 21.386944399999997,
+          "longitude": -157.7138889
+        },
+        {
+          "rank": 2,
+          "name": "Queen’s Bath cliff-jumping cove, Moku Nui",
+          "rawName": "Queen’s Bath cliff-jumping cove, Moku Nui",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "exactAt1": false,
+      "exactAt3": true,
+      "specificReasonableAt3": true,
+      "recoveredOverFree": true,
+      "harmed": false
+    },
+    {
+      "caseId": "CJ005",
+      "routedArm": "SIMPLE_SOL",
+      "reason": "PRODUCTION_FREE_EMPTY_NON_ACTIONABLE",
+      "top3": [
+        {
+          "rank": 1,
+          "name": "Ponta da Piedade",
+          "rawName": "Ponta da Piedade sea caves",
+          "status": "CANONICAL_ALIAS",
+          "latitude": 37.0798758,
+          "longitude": -8.6685911
+        },
+        {
+          "rank": 2,
+          "name": "Captain's Cave (Gruta do Capitão)",
+          "rawName": "Captain's Cave (Gruta do Capitão)",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 3,
+          "name": "Algar da Albandeira",
+          "rawName": "Algar da Albandeira",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "exactAt1": true,
+      "exactAt3": true,
+      "specificReasonableAt3": true,
+      "recoveredOverFree": true,
+      "harmed": false
+    },
+    {
+      "caseId": "CJ006",
+      "routedArm": "SIMPLE_SOL",
+      "reason": "PRODUCTION_FREE_EMPTY_NON_ACTIONABLE",
+      "top3": [
+        {
+          "rank": 1,
+          "name": "Lido Galomar",
+          "rawName": "Lido Galomar (Galo Resort bathing complex)",
+          "status": "CANONICAL_ALIAS",
+          "latitude": 32.6410985,
+          "longitude": -16.8326288
+        }
+      ],
+      "exactAt1": true,
+      "exactAt3": true,
+      "specificReasonableAt3": true,
+      "recoveredOverFree": true,
+      "harmed": false
+    },
+    {
+      "caseId": "CJ007",
+      "routedArm": "SIMPLE_SOL",
+      "reason": "PRODUCTION_FREE_EMPTY_NON_ACTIONABLE",
+      "top3": [
+        {
+          "rank": 1,
+          "name": "Cala Varques",
+          "rawName": "Cala Varques",
+          "status": "AMBIGUOUS_CANONICAL",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 2,
+          "name": "Cala Mitjana",
+          "rawName": "Cala Mitjana",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 3,
+          "name": "Cala Sa Nau",
+          "rawName": "Cala Sa Nau",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "exactAt1": true,
+      "exactAt3": true,
+      "specificReasonableAt3": true,
+      "recoveredOverFree": true,
+      "harmed": false
+    },
+    {
+      "caseId": "CJ008",
+      "routedArm": "SIMPLE_SOL",
+      "reason": "PRODUCTION_FREE_EMPTY_NON_ACTIONABLE",
+      "top3": [
+        {
+          "rank": 1,
+          "name": "Cenote Zaci",
+          "rawName": "Cenote Zací",
+          "status": "CANONICAL_EXACT",
+          "latitude": 20.6916378,
+          "longitude": -88.19734629999999
+        },
+        {
+          "rank": 2,
+          "name": "Cenote Ik Kil",
+          "rawName": "Cenote Ik Kil",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 3,
+          "name": "Cenote Xux-Ha",
+          "rawName": "Cenote Xux-Ha",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "exactAt1": true,
+      "exactAt3": true,
+      "specificReasonableAt3": true,
+      "recoveredOverFree": true,
+      "harmed": false
+    },
+    {
+      "caseId": "CJ009",
+      "routedArm": "SIMPLE_SOL",
+      "reason": "PRODUCTION_FREE_EMPTY_NON_ACTIONABLE",
+      "top3": [
+        {
+          "rank": 1,
+          "name": "Waimea Bay Beach Park",
+          "rawName": "Waimea Bay Jump Rock at Waimea Bay Beach Park",
+          "status": "CANONICAL_ALIAS",
+          "latitude": 21.639827300000004,
+          "longitude": -158.0633594
+        }
+      ],
+      "exactAt1": false,
+      "exactAt3": false,
+      "specificReasonableAt3": false,
+      "recoveredOverFree": false,
+      "harmed": false
+    },
+    {
+      "caseId": "CJ010",
+      "routedArm": "SIMPLE_SOL",
+      "reason": "PRODUCTION_FREE_EMPTY_NON_ACTIONABLE",
+      "top3": [
+        {
+          "rank": 1,
+          "name": "Unidentified coastal sea cave or blowhole on Mallorca",
+          "rawName": "Unidentified coastal sea cave or blowhole on Mallorca",
+          "status": "NAMED_LEAD",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "exactAt1": false,
+      "exactAt3": false,
+      "specificReasonableAt3": false,
+      "recoveredOverFree": false,
+      "harmed": false
+    },
+    {
+      "caseId": "CJ011",
+      "routedArm": "SIMPLE_SOL",
+      "reason": "PRODUCTION_FREE_EMPTY_NON_ACTIONABLE",
+      "top3": [
+        {
+          "rank": 1,
+          "name": "Makapipi Falls",
+          "rawName": "Makapipi Falls",
+          "status": "CANONICAL_EXACT",
+          "latitude": 20.807594299999998,
+          "longitude": -156.09621210000003
+        },
+        {
+          "rank": 2,
+          "name": "Ching's Pond (Blue Sapphire Pool)",
+          "rawName": "Ching's Pond (Blue Sapphire Pool)",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 3,
+          "name": "Kopiliula Falls",
+          "rawName": "Kopiliula Falls",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "exactAt1": true,
+      "exactAt3": true,
+      "specificReasonableAt3": true,
+      "recoveredOverFree": true,
+      "harmed": false
+    },
+    {
+      "caseId": "CJ012",
+      "routedArm": "SIMPLE_SOL",
+      "reason": "PRODUCTION_FREE_EMPTY_NON_ACTIONABLE",
+      "top3": [
+        {
+          "rank": 1,
+          "name": "Tamolitch Falls (Blue Pool)",
+          "rawName": "Tamolitch Blue Pool",
+          "status": "CANONICAL_ALIAS",
+          "latitude": 44.3120373,
+          "longitude": -122.02704879999997
+        }
+      ],
+      "exactAt1": true,
+      "exactAt3": true,
+      "specificReasonableAt3": true,
+      "recoveredOverFree": true,
+      "harmed": false
+    },
+    {
+      "caseId": "CJ013",
+      "routedArm": "SIMPLE_SOL",
+      "reason": "PRODUCTION_FREE_EMPTY_NON_ACTIONABLE",
+      "top3": [
+        {
+          "rank": 1,
+          "name": "Ching's Pond (Blue Sapphire Pool)",
+          "rawName": "Ching's Pond (Blue Sapphire Pool)",
+          "status": "NAMED_LEAD",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "exactAt1": true,
+      "exactAt3": true,
+      "specificReasonableAt3": true,
+      "recoveredOverFree": true,
+      "harmed": false
+    },
+    {
+      "caseId": "CJ014",
+      "routedArm": "SIMPLE_SOL",
+      "reason": "PRODUCTION_FREE_EMPTY_NON_ACTIONABLE",
+      "top3": [
+        {
+          "rank": 1,
+          "name": "Spitting Cave",
+          "rawName": "Spitting Cave",
+          "status": "CANONICAL_EXACT",
+          "latitude": 21.2595075,
+          "longitude": -157.7076774
+        },
+        {
+          "rank": 2,
+          "name": "China Walls",
+          "rawName": "China Walls",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "exactAt1": true,
+      "exactAt3": true,
+      "specificReasonableAt3": true,
+      "recoveredOverFree": true,
+      "harmed": false
+    },
+    {
+      "caseId": "CJ015",
+      "routedArm": "SIMPLE_SOL",
+      "reason": "PRODUCTION_FREE_EMPTY_NON_ACTIONABLE",
+      "top3": [
+        {
+          "rank": 1,
+          "name": "Pont d'en Gil",
+          "rawName": "Pont d’en Gil",
+          "status": "CANONICAL_EXACT",
+          "latitude": 40.010919099999995,
+          "longitude": 3.7942378000000003
+        },
+        {
+          "rank": 2,
+          "name": "Pont Natural de Cala Varques",
+          "rawName": "Pont Natural de Cala Varques",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "exactAt1": true,
+      "exactAt3": true,
+      "specificReasonableAt3": true,
+      "recoveredOverFree": true,
+      "harmed": false
+    },
+    {
+      "caseId": "CJ016",
+      "routedArm": "SIMPLE_SOL",
+      "reason": "PRODUCTION_FREE_EMPTY_NON_ACTIONABLE",
+      "top3": [
+        {
+          "rank": 1,
+          "name": "Sunset Cliffs Natural Park",
+          "rawName": "Sunset Cliffs Natural Park",
+          "status": "CANONICAL_EXACT",
+          "latitude": 32.715915,
+          "longitude": -117.25516789999999
+        }
+      ],
+      "exactAt1": false,
+      "exactAt3": false,
+      "specificReasonableAt3": false,
+      "recoveredOverFree": false,
+      "harmed": false
+    },
+    {
+      "caseId": "CJ017",
+      "routedArm": "SIMPLE_SOL",
+      "reason": "PRODUCTION_FREE_EMPTY_NON_ACTIONABLE",
+      "top3": [
+        {
+          "rank": 1,
+          "name": "The Crack at Wet Beaver Creek",
+          "rawName": "The Crack at Wet Beaver Creek",
+          "status": "CANONICAL_EXACT",
+          "latitude": 34.6739472,
+          "longitude": -111.66018299999999
+        },
+        {
+          "rank": 2,
+          "name": "Bull Pen Swimming Hole on West Clear Creek",
+          "rawName": "Bull Pen Swimming Hole on West Clear Creek",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 3,
+          "name": "Grasshopper Point Swimming & Picnic Area",
+          "rawName": "Grasshopper Point Swimming & Picnic Area",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "exactAt1": true,
+      "exactAt3": true,
+      "specificReasonableAt3": true,
+      "recoveredOverFree": true,
+      "harmed": false
+    },
+    {
+      "caseId": "CJ018",
+      "routedArm": "SIMPLE_SOL",
+      "reason": "PRODUCTION_FREE_EMPTY_NON_ACTIONABLE",
+      "top3": [
+        {
+          "rank": 1,
+          "name": "Embalse de la Toba",
+          "rawName": "Embalse de La Toba",
+          "status": "CANONICAL_EXACT",
+          "latitude": 40.208281199999995,
+          "longitude": -1.9068707999999999
+        },
+        {
+          "rank": 2,
+          "name": "Embalse del Portillo",
+          "rawName": "Embalse del Portillo",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 3,
+          "name": "Embalse de Escales",
+          "rawName": "Embalse de Escales",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "exactAt1": false,
+      "exactAt3": false,
+      "specificReasonableAt3": true,
+      "recoveredOverFree": true,
+      "harmed": false
+    },
+    {
+      "caseId": "CJ019",
+      "routedArm": "SIMPLE_SOL",
+      "reason": "PRODUCTION_FREE_EMPTY_NON_ACTIONABLE",
+      "top3": [
+        {
+          "rank": 1,
+          "name": "Potem Falls",
+          "rawName": "Potem Falls",
+          "status": "CANONICAL_EXACT",
+          "latitude": 40.8387659,
+          "longitude": -122.0283326
+        },
+        {
+          "rank": 2,
+          "name": "Middle McCloud Falls",
+          "rawName": "Middle McCloud Falls",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 3,
+          "name": "Hatchet Creek Falls",
+          "rawName": "Hatchet Creek Falls",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "exactAt1": true,
+      "exactAt3": true,
+      "specificReasonableAt3": true,
+      "recoveredOverFree": true,
+      "harmed": false
+    },
+    {
+      "caseId": "CJ020",
+      "routedArm": "SIMPLE_SOL",
+      "reason": "PRODUCTION_FREE_EMPTY_NON_ACTIONABLE",
+      "top3": [
+        {
+          "rank": 1,
+          "name": "Cenote Maya park",
+          "rawName": "Cenote Maya (Cenote Maya Native Park)",
+          "status": "CANONICAL_ALIAS",
+          "latitude": 20.774475499999998,
+          "longitude": -87.9797936
+        },
+        {
+          "rank": 2,
+          "name": "Cenote Chukum",
+          "rawName": "Cenote Chukum",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 3,
+          "name": "Cenote Palomitas",
+          "rawName": "Cenote Palomitas",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "exactAt1": true,
+      "exactAt3": true,
+      "specificReasonableAt3": true,
+      "recoveredOverFree": true,
+      "harmed": false
+    },
+    {
+      "caseId": "CJ021",
+      "routedArm": "SIMPLE_SOL",
+      "reason": "PRODUCTION_FREE_EMPTY_NON_ACTIONABLE",
+      "top3": [
+        {
+          "rank": 1,
+          "name": "Unidentified jungle waterfall on Nahua Expeditions’ Tzotzil Expedition route",
+          "rawName": "Unidentified jungle waterfall on Nahua Expeditions’ Tzotzil Expedition route",
+          "status": "NAMED_LEAD",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 2,
+          "name": "Cascada El Aguacero",
+          "rawName": "Cascada El Aguacero",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "exactAt1": false,
+      "exactAt3": false,
+      "specificReasonableAt3": false,
+      "recoveredOverFree": false,
+      "harmed": false
+    },
+    {
+      "caseId": "CJ022",
+      "routedArm": "SIMPLE_SOL",
+      "reason": "PRODUCTION_FREE_EMPTY_NON_ACTIONABLE",
+      "top3": [
+        {
+          "rank": 1,
+          "name": "Área recreativa Chantre",
+          "rawName": "Área Recreativa El Chantre (Río Júcar)",
+          "status": "CANONICAL_ALIAS",
+          "latitude": 40.1424526,
+          "longitude": -2.1340885
+        },
+        {
+          "rank": 2,
+          "name": "Las Chorreras del Cabriel",
+          "rawName": "Las Chorreras del Cabriel",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 3,
+          "name": "Área Recreativa de Cañamares (Río Escabas)",
+          "rawName": "Área Recreativa de Cañamares (Río Escabas)",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "exactAt1": false,
+      "exactAt3": false,
+      "specificReasonableAt3": true,
+      "recoveredOverFree": true,
+      "harmed": false
+    },
+    {
+      "caseId": "CJ023",
+      "routedArm": "SIMPLE_SOL",
+      "reason": "PRODUCTION_FREE_EMPTY_NON_ACTIONABLE",
+      "top3": [
+        {
+          "rank": 1,
+          "name": "Bassin La Paix",
+          "rawName": "Bassin La Paix",
+          "status": "AMBIGUOUS_CANONICAL",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "exactAt1": true,
+      "exactAt3": true,
+      "specificReasonableAt3": true,
+      "recoveredOverFree": true,
+      "harmed": false
+    },
+    {
+      "caseId": "CJ024",
+      "routedArm": "SIMPLE_SOL",
+      "reason": "PRODUCTION_FREE_EMPTY_NON_ACTIONABLE",
+      "top3": [
+        {
+          "rank": 1,
+          "name": "Es Pontàs",
+          "rawName": "Es Pontàs",
+          "status": "AMBIGUOUS_CANONICAL",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "exactAt1": true,
+      "exactAt3": true,
+      "specificReasonableAt3": true,
+      "recoveredOverFree": true,
+      "harmed": false
+    },
+    {
+      "caseId": "CJ025",
+      "routedArm": "SIMPLE_SOL",
+      "reason": "PRODUCTION_FREE_EMPTY_NON_ACTIONABLE",
+      "top3": [
+        {
+          "rank": 1,
+          "name": "Fort Lauderdale Aquatic Center",
+          "rawName": "Fort Lauderdale Aquatic Center",
+          "status": "CANONICAL_EXACT",
+          "latitude": 26.116561500000003,
+          "longitude": -80.1058888
+        },
+        {
+          "rank": 2,
+          "name": "International Swimming Hall of Fame Aquatic Complex",
+          "rawName": "International Swimming Hall of Fame Aquatic Complex",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "exactAt1": true,
+      "exactAt3": true,
+      "specificReasonableAt3": true,
+      "recoveredOverFree": true,
+      "harmed": false
+    },
+    {
+      "caseId": "CJ026",
+      "routedArm": "SIMPLE_SOL",
+      "reason": "PRODUCTION_FREE_EMPTY_NON_ACTIONABLE",
+      "top3": [
+        {
+          "rank": 1,
+          "name": "Marble River Provincial Park",
+          "rawName": "Marble River Provincial Park",
+          "status": "CANONICAL_EXACT",
+          "latitude": 50.5276127,
+          "longitude": -127.43366199999998
+        },
+        {
+          "rank": 2,
+          "name": "Medicine Bowls (Browns River)",
+          "rawName": "Medicine Bowls (Browns River)",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 3,
+          "name": "Three Pools Recreation Area",
+          "rawName": "Three Pools Recreation Area",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "exactAt1": false,
+      "exactAt3": false,
+      "specificReasonableAt3": false,
+      "recoveredOverFree": false,
+      "harmed": false
+    },
+    {
+      "caseId": "CJ027",
+      "routedArm": "SIMPLE_SOL",
+      "reason": "PRODUCTION_FREE_EMPTY_NON_ACTIONABLE",
+      "top3": [
+        {
+          "rank": 1,
+          "name": "Koosah Falls",
+          "rawName": "Koosah Falls",
+          "status": "CANONICAL_EXACT",
+          "latitude": 44.3440102,
+          "longitude": -122.0006166
+        }
+      ],
+      "exactAt1": true,
+      "exactAt3": true,
+      "specificReasonableAt3": true,
+      "recoveredOverFree": true,
+      "harmed": false
+    },
+    {
+      "caseId": "CJ028",
+      "routedArm": "SIMPLE_SOL",
+      "reason": "PRODUCTION_FREE_EMPTY_NON_ACTIONABLE",
+      "top3": [
+        {
+          "rank": 1,
+          "name": "Koosah Falls",
+          "rawName": "Koosah Falls",
+          "status": "CANONICAL_EXACT",
+          "latitude": 44.3440102,
+          "longitude": -122.0006166
+        },
+        {
+          "rank": 2,
+          "name": "Sahalie Falls",
+          "rawName": "Sahalie Falls",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 3,
+          "name": "Lower Lewis River Falls",
+          "rawName": "Lower Lewis River Falls",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "exactAt1": false,
+      "exactAt3": false,
+      "specificReasonableAt3": true,
+      "recoveredOverFree": true,
+      "harmed": false
+    },
+    {
+      "caseId": "CJ029",
+      "routedArm": "SIMPLE_SOL",
+      "reason": "PRODUCTION_FREE_EMPTY_NON_ACTIONABLE",
+      "top3": [
+        {
+          "rank": 1,
+          "name": "Tamolitch Falls (Blue Pool)",
+          "rawName": "Tamolitch Blue Pool",
+          "status": "CANONICAL_ALIAS",
+          "latitude": 44.3120373,
+          "longitude": -122.02704879999997
+        }
+      ],
+      "exactAt1": true,
+      "exactAt3": true,
+      "specificReasonableAt3": true,
+      "recoveredOverFree": true,
+      "harmed": false
+    },
+    {
+      "caseId": "CJ030",
+      "routedArm": "SIMPLE_SOL",
+      "reason": "PRODUCTION_FREE_EMPTY_NON_ACTIONABLE",
+      "top3": [
+        {
+          "rank": 1,
+          "name": "Honeymoon Beach",
+          "rawName": "Honeymoon Beach cliff-jumping ledge",
+          "status": "CANONICAL_ALIAS",
+          "latitude": -8.7797316,
+          "longitude": 115.1439517
+        },
+        {
+          "rank": 2,
+          "name": "Pantai Plix",
+          "rawName": "Pantai Plix",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 3,
+          "name": "Tegal Wangi Beach",
+          "rawName": "Tegal Wangi Beach",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "exactAt1": true,
+      "exactAt3": true,
+      "specificReasonableAt3": true,
+      "recoveredOverFree": true,
+      "harmed": false
+    },
+    {
+      "caseId": "CJ031",
+      "routedArm": "SIMPLE_SOL",
+      "reason": "PRODUCTION_FREE_EMPTY_NON_ACTIONABLE",
+      "top3": [
+        {
+          "rank": 1,
+          "name": "Dorset Marble Quarry",
+          "rawName": "Dorset Marble Quarry (Dorset Quarry)",
+          "status": "CANONICAL_ALIAS",
+          "latitude": 43.235960399999996,
+          "longitude": -73.0834756
+        },
+        {
+          "rank": 2,
+          "name": "West Rutland Marble Quarry (The Deep Hole)",
+          "rawName": "West Rutland Marble Quarry (The Deep Hole)",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "exactAt1": true,
+      "exactAt3": true,
+      "specificReasonableAt3": true,
+      "recoveredOverFree": true,
+      "harmed": false
+    },
+    {
+      "caseId": "CJ032",
+      "routedArm": "SIMPLE_SOL",
+      "reason": "PRODUCTION_FREE_EMPTY_NON_ACTIONABLE",
+      "top3": [
+        {
+          "rank": 1,
+          "name": "Torre Incina",
+          "rawName": "Torre Incina at Cala Incina",
+          "status": "CANONICAL_ALIAS",
+          "latitude": 40.9791166,
+          "longitude": 17.258113899999998
+        }
+      ],
+      "exactAt1": true,
+      "exactAt3": true,
+      "specificReasonableAt3": true,
+      "recoveredOverFree": true,
+      "harmed": false
+    },
+    {
+      "caseId": "CJ033",
+      "routedArm": "SIMPLE_SOL",
+      "reason": "PRODUCTION_FREE_EMPTY_NON_ACTIONABLE",
+      "top3": [
+        {
+          "rank": 1,
+          "name": "Waimea Bay Beach Park",
+          "rawName": "Waimea Bay Jump Rock",
+          "status": "CANONICAL_ALIAS",
+          "latitude": 21.639827300000004,
+          "longitude": -158.0633594
+        },
+        {
+          "rank": 2,
+          "name": "Black Rock (Puʻu Kekaʻa)",
+          "rawName": "Black Rock (Puʻu Kekaʻa)",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "exactAt1": false,
+      "exactAt3": false,
+      "specificReasonableAt3": true,
+      "recoveredOverFree": true,
+      "harmed": false
+    },
+    {
+      "caseId": "CJ034",
+      "routedArm": "SIMPLE_SOL",
+      "reason": "PRODUCTION_FREE_EMPTY_NON_ACTIONABLE",
+      "top3": [
+        {
+          "rank": 1,
+          "name": "New River Gorge Bridge",
+          "rawName": "New River Gorge Bridge",
+          "status": "CANONICAL_EXACT",
+          "latitude": 38.0679835,
+          "longitude": -81.0843062
+        }
+      ],
+      "exactAt1": true,
+      "exactAt3": true,
+      "specificReasonableAt3": true,
+      "recoveredOverFree": true,
+      "harmed": false
+    },
+    {
+      "caseId": "CJ035",
+      "routedArm": "SIMPLE_SOL",
+      "reason": "PRODUCTION_FREE_EMPTY_NON_ACTIONABLE",
+      "top3": [
+        {
+          "rank": 1,
+          "name": "Lake Powell",
+          "rawName": "The Toilet Bowl at Lake Powell",
+          "status": "CANONICAL_ALIAS",
+          "latitude": 37.068261899999996,
+          "longitude": -111.24331079999999
+        },
+        {
+          "rank": 2,
+          "name": "Lake Powell",
+          "rawName": "Lake Powell",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "exactAt1": false,
+      "exactAt3": false,
+      "specificReasonableAt3": false,
+      "recoveredOverFree": false,
+      "harmed": false
+    },
+    {
+      "caseId": "CJ036",
+      "routedArm": "SIMPLE_SOL",
+      "reason": "PRODUCTION_FREE_EMPTY_NON_ACTIONABLE",
+      "top3": [
+        {
+          "rank": 1,
+          "name": "Balangan Beach cliffs",
+          "rawName": "Balangan Beach cliffs",
+          "status": "AMBIGUOUS_CANONICAL",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 2,
+          "name": "Tegal Wangi Beach cliffs",
+          "rawName": "Tegal Wangi Beach cliffs",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 3,
+          "name": "Honeymoon Beach cliffs",
+          "rawName": "Honeymoon Beach cliffs",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "exactAt1": true,
+      "exactAt3": true,
+      "specificReasonableAt3": true,
+      "recoveredOverFree": true,
+      "harmed": false
+    },
+    {
+      "caseId": "CJ037",
+      "routedArm": "SIMPLE_SOL",
+      "reason": "PRODUCTION_FREE_EMPTY_NON_ACTIONABLE",
+      "top3": [
+        {
+          "rank": 1,
+          "name": "Cascade des Baumes",
+          "rawName": "Cascade des Baumes (Cascade de Saint-Rome-de-Tarn)",
+          "status": "CANONICAL_ALIAS",
+          "latitude": 44.051342999999996,
+          "longitude": 2.8943749999999997
+        }
+      ],
+      "exactAt1": true,
+      "exactAt3": true,
+      "specificReasonableAt3": true,
+      "recoveredOverFree": true,
+      "harmed": false
+    },
+    {
+      "caseId": "CJ038",
+      "routedArm": "SIMPLE_SOL",
+      "reason": "PRODUCTION_FREE_EMPTY_NON_ACTIONABLE",
+      "top3": [
+        {
+          "rank": 1,
+          "name": "Gunlock Falls",
+          "rawName": "Gunlock Falls",
+          "status": "NAMED_LEAD",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "exactAt1": false,
+      "exactAt3": false,
+      "specificReasonableAt3": true,
+      "recoveredOverFree": true,
+      "harmed": false
+    },
+    {
+      "caseId": "CJ039",
+      "routedArm": "SIMPLE_SOL",
+      "reason": "PRODUCTION_FREE_EMPTY_NON_ACTIONABLE",
+      "top3": [
+        {
+          "rank": 1,
+          "name": "Potholes Recreation Site",
+          "rawName": "Escalante Potholes Recreation Site",
+          "status": "CANONICAL_ALIAS",
+          "latitude": 38.6698802,
+          "longitude": -108.3281999
+        },
+        {
+          "rank": 2,
+          "name": "Cauldron Linn",
+          "rawName": "Cauldron Linn",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 3,
+          "name": "White River Falls",
+          "rawName": "White River Falls",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "exactAt1": false,
+      "exactAt3": false,
+      "specificReasonableAt3": true,
+      "recoveredOverFree": true,
+      "harmed": false
+    },
+    {
+      "caseId": "CJ040",
+      "routedArm": "SIMPLE_SOL",
+      "reason": "PRODUCTION_FREE_EMPTY_NON_ACTIONABLE",
+      "top3": [
+        {
+          "rank": 1,
+          "name": "Koosah Falls",
+          "rawName": "Koosah Falls",
+          "status": "CANONICAL_EXACT",
+          "latitude": 44.3440102,
+          "longitude": -122.0006166
+        },
+        {
+          "rank": 2,
+          "name": "Sahalie Falls",
+          "rawName": "Sahalie Falls",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 3,
+          "name": "Lower Lewis River Falls",
+          "rawName": "Lower Lewis River Falls",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "exactAt1": true,
+      "exactAt3": true,
+      "specificReasonableAt3": true,
+      "recoveredOverFree": true,
+      "harmed": false
+    },
+    {
+      "caseId": "CJ041",
+      "routedArm": "SIMPLE_SOL",
+      "reason": "PRODUCTION_FREE_EMPTY_NON_ACTIONABLE",
+      "top3": [
+        {
+          "rank": 1,
+          "name": "Cenote Zaci",
+          "rawName": "Cenote Zací",
+          "status": "CANONICAL_EXACT",
+          "latitude": 20.6916378,
+          "longitude": -88.19734629999999
+        },
+        {
+          "rank": 2,
+          "name": "Cenote Ik Kil",
+          "rawName": "Cenote Ik Kil",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 3,
+          "name": "Cenote San Lorenzo Oxman",
+          "rawName": "Cenote San Lorenzo Oxman",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "exactAt1": false,
+      "exactAt3": false,
+      "specificReasonableAt3": true,
+      "recoveredOverFree": true,
+      "harmed": false
+    },
+    {
+      "caseId": "CJ042",
+      "routedArm": "SIMPLE_SOL",
+      "reason": "PRODUCTION_FREE_EMPTY_NON_ACTIONABLE",
+      "top3": [
+        {
+          "rank": 1,
+          "name": "Lake Atitlán",
+          "rawName": "Lake Atitlán",
+          "status": "CANONICAL_EXACT",
+          "latitude": 14.6906713,
+          "longitude": -91.20252070000001
+        },
+        {
+          "rank": 2,
+          "name": "Furore Fjord",
+          "rawName": "Fiordo di Furore",
+          "status": "CANONICAL_ALIAS",
+          "latitude": 40.6146163,
+          "longitude": 14.5547129
+        },
+        {
+          "rank": 3,
+          "name": "Ho'opi'i Falls",
+          "rawName": "Ho'opi'i Falls",
+          "status": "CANONICAL_EXACT",
+          "latitude": 22.107264,
+          "longitude": -159.3438715
+        }
+      ],
+      "exactAt1": false,
+      "exactAt3": false,
+      "specificReasonableAt3": true,
+      "recoveredOverFree": true,
+      "harmed": false
+    }
+  ],
+  "metrics": {
+    "denominator": 28,
+    "exactAt1": 25,
+    "exactAt3": 26,
+    "specificReasonableAt3": 36,
+    "casesRecoveredOverFree": 36,
+    "casesHarmed": 0
+  }
+}

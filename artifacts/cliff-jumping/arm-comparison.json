@@ -1,0 +1,648 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-09-05T23:11:31.611Z",
+  "rows": [
+    {
+      "caseId": "CJ001",
+      "truth": "Lac de Vouglans",
+      "productionFreeTop3": [],
+      "simpleSolTop3": [
+        "Lac de Vouglans",
+        "Gorges de l’Ardèche",
+        "Gorges du Tarn"
+      ],
+      "productionExactAt3": false,
+      "solExactAt3": false,
+      "productionSpecific": false,
+      "solSpecific": true,
+      "winner": "SIMPLE_SOL",
+      "classification": "UNKNOWN_TRUTH_BUT_SOL_MORE_SPECIFIC"
+    },
+    {
+      "caseId": "CJ002",
+      "truth": "Marseille multi-location montage (individual clips unresolved)",
+      "productionFreeTop3": [],
+      "simpleSolTop3": [
+        "La Vesse",
+        "Fort Saint-Jean",
+        "Abandoned Piscine de Luminy"
+      ],
+      "productionExactAt3": false,
+      "solExactAt3": false,
+      "productionSpecific": false,
+      "solSpecific": true,
+      "winner": "SIMPLE_SOL",
+      "classification": "UNKNOWN_TRUTH_BUT_SOL_MORE_SPECIFIC"
+    },
+    {
+      "caseId": "CJ003",
+      "truth": "Sooke Potholes",
+      "productionFreeTop3": [],
+      "simpleSolTop3": [
+        "Sooke Potholes Provincial Park",
+        "Wally Creek (Kennedy River)",
+        "Englishman River Falls Provincial Park"
+      ],
+      "productionExactAt3": false,
+      "solExactAt3": true,
+      "productionSpecific": false,
+      "solSpecific": true,
+      "winner": "SIMPLE_SOL",
+      "classification": "SOL_RECOVERED_FREE_FAILURE"
+    },
+    {
+      "caseId": "CJ004",
+      "truth": "Moku Nui",
+      "productionFreeTop3": [],
+      "simpleSolTop3": [
+        "Na Mokulua",
+        "Queen’s Bath cliff-jumping cove, Moku Nui"
+      ],
+      "productionExactAt3": false,
+      "solExactAt3": true,
+      "productionSpecific": false,
+      "solSpecific": true,
+      "winner": "SIMPLE_SOL",
+      "classification": "SOL_RECOVERED_FREE_FAILURE"
+    },
+    {
+      "caseId": "CJ005",
+      "truth": "Ponta da Piedade sea-cave complex",
+      "productionFreeTop3": [],
+      "simpleSolTop3": [
+        "Ponta da Piedade",
+        "Captain's Cave (Gruta do Capitão)",
+        "Algar da Albandeira"
+      ],
+      "productionExactAt3": false,
+      "solExactAt3": true,
+      "productionSpecific": false,
+      "solSpecific": true,
+      "winner": "SIMPLE_SOL",
+      "classification": "SOL_RECOVERED_FREE_FAILURE"
+    },
+    {
+      "caseId": "CJ006",
+      "truth": "Lido Galomar",
+      "productionFreeTop3": [],
+      "simpleSolTop3": [
+        "Lido Galomar"
+      ],
+      "productionExactAt3": false,
+      "solExactAt3": true,
+      "productionSpecific": false,
+      "solSpecific": true,
+      "winner": "SIMPLE_SOL",
+      "classification": "SOL_RECOVERED_FREE_FAILURE"
+    },
+    {
+      "caseId": "CJ007",
+      "truth": "Cala Varques",
+      "productionFreeTop3": [],
+      "simpleSolTop3": [
+        "Cala Varques",
+        "Cala Mitjana",
+        "Cala Sa Nau"
+      ],
+      "productionExactAt3": false,
+      "solExactAt3": true,
+      "productionSpecific": false,
+      "solSpecific": true,
+      "winner": "SIMPLE_SOL",
+      "classification": "SOL_RECOVERED_FREE_FAILURE"
+    },
+    {
+      "caseId": "CJ008",
+      "truth": "Cenote Zaci",
+      "productionFreeTop3": [],
+      "simpleSolTop3": [
+        "Cenote Zaci",
+        "Cenote Ik Kil",
+        "Cenote Xux-Ha"
+      ],
+      "productionExactAt3": false,
+      "solExactAt3": true,
+      "productionSpecific": false,
+      "solSpecific": true,
+      "winner": "SIMPLE_SOL",
+      "classification": "SOL_RECOVERED_FREE_FAILURE"
+    },
+    {
+      "caseId": "CJ009",
+      "truth": "Waimea Bay Jump Rock",
+      "productionFreeTop3": [],
+      "simpleSolTop3": [
+        "Waimea Bay Beach Park"
+      ],
+      "productionExactAt3": false,
+      "solExactAt3": false,
+      "productionSpecific": false,
+      "solSpecific": false,
+      "winner": "SIMPLE_SOL",
+      "classification": "FREE_AND_SOL_FAIL"
+    },
+    {
+      "caseId": "CJ010",
+      "truth": "Unidentified Mallorca coastal sea hole",
+      "productionFreeTop3": [],
+      "simpleSolTop3": [
+        "Unidentified coastal sea cave or blowhole on Mallorca"
+      ],
+      "productionExactAt3": false,
+      "solExactAt3": false,
+      "productionSpecific": false,
+      "solSpecific": false,
+      "winner": "SIMPLE_SOL",
+      "classification": "FREE_AND_SOL_FAIL"
+    },
+    {
+      "caseId": "CJ011",
+      "truth": "Makapipi Falls",
+      "productionFreeTop3": [],
+      "simpleSolTop3": [
+        "Makapipi Falls",
+        "Ching's Pond (Blue Sapphire Pool)",
+        "Kopiliula Falls"
+      ],
+      "productionExactAt3": false,
+      "solExactAt3": true,
+      "productionSpecific": false,
+      "solSpecific": true,
+      "winner": "SIMPLE_SOL",
+      "classification": "SOL_RECOVERED_FREE_FAILURE"
+    },
+    {
+      "caseId": "CJ012",
+      "truth": "Tamolitch Blue Pool",
+      "productionFreeTop3": [],
+      "simpleSolTop3": [
+        "Tamolitch Falls (Blue Pool)"
+      ],
+      "productionExactAt3": false,
+      "solExactAt3": true,
+      "productionSpecific": false,
+      "solSpecific": true,
+      "winner": "SIMPLE_SOL",
+      "classification": "SOL_RECOVERED_FREE_FAILURE"
+    },
+    {
+      "caseId": "CJ013",
+      "truth": "Ching’s Pond (Blue Sapphire Pool)",
+      "productionFreeTop3": [],
+      "simpleSolTop3": [
+        "Ching's Pond (Blue Sapphire Pool)"
+      ],
+      "productionExactAt3": false,
+      "solExactAt3": true,
+      "productionSpecific": false,
+      "solSpecific": true,
+      "winner": "SIMPLE_SOL",
+      "classification": "SOL_RECOVERED_FREE_FAILURE"
+    },
+    {
+      "caseId": "CJ014",
+      "truth": "Spitting Cave",
+      "productionFreeTop3": [],
+      "simpleSolTop3": [
+        "Spitting Cave",
+        "China Walls"
+      ],
+      "productionExactAt3": false,
+      "solExactAt3": true,
+      "productionSpecific": false,
+      "solSpecific": true,
+      "winner": "SIMPLE_SOL",
+      "classification": "SOL_RECOVERED_FREE_FAILURE"
+    },
+    {
+      "caseId": "CJ015",
+      "truth": "Pont d’en Gil",
+      "productionFreeTop3": [],
+      "simpleSolTop3": [
+        "Pont d'en Gil",
+        "Pont Natural de Cala Varques"
+      ],
+      "productionExactAt3": false,
+      "solExactAt3": true,
+      "productionSpecific": false,
+      "solSpecific": true,
+      "winner": "SIMPLE_SOL",
+      "classification": "SOL_RECOVERED_FREE_FAILURE"
+    },
+    {
+      "caseId": "CJ016",
+      "truth": "The Arch at Pappy’s Point",
+      "productionFreeTop3": [],
+      "simpleSolTop3": [
+        "Sunset Cliffs Natural Park"
+      ],
+      "productionExactAt3": false,
+      "solExactAt3": false,
+      "productionSpecific": false,
+      "solSpecific": false,
+      "winner": "SIMPLE_SOL",
+      "classification": "FREE_AND_SOL_FAIL"
+    },
+    {
+      "caseId": "CJ017",
+      "truth": "The Crack at Wet Beaver Creek",
+      "productionFreeTop3": [],
+      "simpleSolTop3": [
+        "The Crack at Wet Beaver Creek",
+        "Bull Pen Swimming Hole on West Clear Creek",
+        "Grasshopper Point Swimming & Picnic Area"
+      ],
+      "productionExactAt3": false,
+      "solExactAt3": true,
+      "productionSpecific": false,
+      "solSpecific": true,
+      "winner": "SIMPLE_SOL",
+      "classification": "SOL_RECOVERED_FREE_FAILURE"
+    },
+    {
+      "caseId": "CJ018",
+      "truth": "Embalse de La Toba",
+      "productionFreeTop3": [],
+      "simpleSolTop3": [
+        "Embalse de la Toba",
+        "Embalse del Portillo",
+        "Embalse de Escales"
+      ],
+      "productionExactAt3": false,
+      "solExactAt3": false,
+      "productionSpecific": false,
+      "solSpecific": true,
+      "winner": "SIMPLE_SOL",
+      "classification": "UNKNOWN_TRUTH_BUT_SOL_MORE_SPECIFIC"
+    },
+    {
+      "caseId": "CJ019",
+      "truth": "Potem Falls",
+      "productionFreeTop3": [],
+      "simpleSolTop3": [
+        "Potem Falls",
+        "Middle McCloud Falls",
+        "Hatchet Creek Falls"
+      ],
+      "productionExactAt3": false,
+      "solExactAt3": true,
+      "productionSpecific": false,
+      "solSpecific": true,
+      "winner": "SIMPLE_SOL",
+      "classification": "SOL_RECOVERED_FREE_FAILURE"
+    },
+    {
+      "caseId": "CJ020",
+      "truth": "Cenote Maya Native Park",
+      "productionFreeTop3": [],
+      "simpleSolTop3": [
+        "Cenote Maya park",
+        "Cenote Chukum",
+        "Cenote Palomitas"
+      ],
+      "productionExactAt3": false,
+      "solExactAt3": true,
+      "productionSpecific": false,
+      "solSpecific": true,
+      "winner": "SIMPLE_SOL",
+      "classification": "SOL_RECOVERED_FREE_FAILURE"
+    },
+    {
+      "caseId": "CJ021",
+      "truth": "Unnamed waterfall on Nahua Expeditions’ Tzotzil route",
+      "productionFreeTop3": [],
+      "simpleSolTop3": [
+        "Unidentified jungle waterfall on Nahua Expeditions’ Tzotzil Expedition route",
+        "Cascada El Aguacero"
+      ],
+      "productionExactAt3": false,
+      "solExactAt3": false,
+      "productionSpecific": false,
+      "solSpecific": false,
+      "winner": "SIMPLE_SOL",
+      "classification": "FREE_AND_SOL_FAIL"
+    },
+    {
+      "caseId": "CJ022",
+      "truth": "Area Recreativa El Chantre (Rio Jucar)",
+      "productionFreeTop3": [],
+      "simpleSolTop3": [
+        "Área recreativa Chantre",
+        "Las Chorreras del Cabriel",
+        "Área Recreativa de Cañamares (Río Escabas)"
+      ],
+      "productionExactAt3": false,
+      "solExactAt3": false,
+      "productionSpecific": false,
+      "solSpecific": true,
+      "winner": "SIMPLE_SOL",
+      "classification": "UNKNOWN_TRUTH_BUT_SOL_MORE_SPECIFIC"
+    },
+    {
+      "caseId": "CJ023",
+      "truth": "Bassin la Paix",
+      "productionFreeTop3": [],
+      "simpleSolTop3": [
+        "Bassin La Paix"
+      ],
+      "productionExactAt3": false,
+      "solExactAt3": true,
+      "productionSpecific": false,
+      "solSpecific": true,
+      "winner": "SIMPLE_SOL",
+      "classification": "SOL_RECOVERED_FREE_FAILURE"
+    },
+    {
+      "caseId": "CJ024",
+      "truth": "Es Pontas",
+      "productionFreeTop3": [],
+      "simpleSolTop3": [
+        "Es Pontàs"
+      ],
+      "productionExactAt3": false,
+      "solExactAt3": true,
+      "productionSpecific": false,
+      "solSpecific": true,
+      "winner": "SIMPLE_SOL",
+      "classification": "SOL_RECOVERED_FREE_FAILURE"
+    },
+    {
+      "caseId": "CJ025",
+      "truth": "Fort Lauderdale Aquatic Center",
+      "productionFreeTop3": [],
+      "simpleSolTop3": [
+        "Fort Lauderdale Aquatic Center",
+        "International Swimming Hall of Fame Aquatic Complex"
+      ],
+      "productionExactAt3": false,
+      "solExactAt3": true,
+      "productionSpecific": false,
+      "solSpecific": true,
+      "winner": "SIMPLE_SOL",
+      "classification": "SOL_RECOVERED_FREE_FAILURE"
+    },
+    {
+      "caseId": "CJ026",
+      "truth": "Marble River Provincial Park",
+      "productionFreeTop3": [],
+      "simpleSolTop3": [
+        "Marble River Provincial Park",
+        "Medicine Bowls (Browns River)",
+        "Three Pools Recreation Area"
+      ],
+      "productionExactAt3": false,
+      "solExactAt3": false,
+      "productionSpecific": false,
+      "solSpecific": false,
+      "winner": "SIMPLE_SOL",
+      "classification": "FREE_AND_SOL_FAIL"
+    },
+    {
+      "caseId": "CJ027",
+      "truth": "Koosah Falls",
+      "productionFreeTop3": [],
+      "simpleSolTop3": [
+        "Koosah Falls"
+      ],
+      "productionExactAt3": false,
+      "solExactAt3": true,
+      "productionSpecific": false,
+      "solSpecific": true,
+      "winner": "SIMPLE_SOL",
+      "classification": "SOL_RECOVERED_FREE_FAILURE"
+    },
+    {
+      "caseId": "CJ028",
+      "truth": "Koosah Falls",
+      "productionFreeTop3": [],
+      "simpleSolTop3": [
+        "Koosah Falls",
+        "Sahalie Falls",
+        "Lower Lewis River Falls"
+      ],
+      "productionExactAt3": false,
+      "solExactAt3": false,
+      "productionSpecific": false,
+      "solSpecific": true,
+      "winner": "SIMPLE_SOL",
+      "classification": "UNKNOWN_TRUTH_BUT_SOL_MORE_SPECIFIC"
+    },
+    {
+      "caseId": "CJ029",
+      "truth": "Tamolitch Blue Pool",
+      "productionFreeTop3": [],
+      "simpleSolTop3": [
+        "Tamolitch Falls (Blue Pool)"
+      ],
+      "productionExactAt3": false,
+      "solExactAt3": true,
+      "productionSpecific": false,
+      "solSpecific": true,
+      "winner": "SIMPLE_SOL",
+      "classification": "SOL_RECOVERED_FREE_FAILURE"
+    },
+    {
+      "caseId": "CJ030",
+      "truth": "Honeymoon Beach cliff-jumping ledge",
+      "productionFreeTop3": [],
+      "simpleSolTop3": [
+        "Honeymoon Beach",
+        "Pantai Plix",
+        "Tegal Wangi Beach"
+      ],
+      "productionExactAt3": false,
+      "solExactAt3": true,
+      "productionSpecific": false,
+      "solSpecific": true,
+      "winner": "SIMPLE_SOL",
+      "classification": "SOL_RECOVERED_FREE_FAILURE"
+    },
+    {
+      "caseId": "CJ031",
+      "truth": "Dorset Marble Quarry",
+      "productionFreeTop3": [],
+      "simpleSolTop3": [
+        "Dorset Marble Quarry",
+        "West Rutland Marble Quarry (The Deep Hole)"
+      ],
+      "productionExactAt3": false,
+      "solExactAt3": true,
+      "productionSpecific": false,
+      "solSpecific": true,
+      "winner": "SIMPLE_SOL",
+      "classification": "SOL_RECOVERED_FREE_FAILURE"
+    },
+    {
+      "caseId": "CJ032",
+      "truth": "Torre Incina at Cala Incina",
+      "productionFreeTop3": [],
+      "simpleSolTop3": [
+        "Torre Incina"
+      ],
+      "productionExactAt3": false,
+      "solExactAt3": true,
+      "productionSpecific": false,
+      "solSpecific": true,
+      "winner": "SIMPLE_SOL",
+      "classification": "SOL_RECOVERED_FREE_FAILURE"
+    },
+    {
+      "caseId": "CJ033",
+      "truth": "Waimea Bay Jump Rock",
+      "productionFreeTop3": [],
+      "simpleSolTop3": [
+        "Waimea Bay Beach Park",
+        "Black Rock (Puʻu Kekaʻa)"
+      ],
+      "productionExactAt3": false,
+      "solExactAt3": false,
+      "productionSpecific": false,
+      "solSpecific": true,
+      "winner": "SIMPLE_SOL",
+      "classification": "UNKNOWN_TRUTH_BUT_SOL_MORE_SPECIFIC"
+    },
+    {
+      "caseId": "CJ034",
+      "truth": "New River Gorge Bridge",
+      "productionFreeTop3": [],
+      "simpleSolTop3": [
+        "New River Gorge Bridge"
+      ],
+      "productionExactAt3": false,
+      "solExactAt3": true,
+      "productionSpecific": false,
+      "solSpecific": true,
+      "winner": "SIMPLE_SOL",
+      "classification": "SOL_RECOVERED_FREE_FAILURE"
+    },
+    {
+      "caseId": "CJ035",
+      "truth": "The Toilet Bowl at Lake Powell",
+      "productionFreeTop3": [],
+      "simpleSolTop3": [
+        "Lake Powell",
+        "Lake Powell"
+      ],
+      "productionExactAt3": false,
+      "solExactAt3": false,
+      "productionSpecific": false,
+      "solSpecific": false,
+      "winner": "SIMPLE_SOL",
+      "classification": "FREE_AND_SOL_FAIL"
+    },
+    {
+      "caseId": "CJ036",
+      "truth": "Balangan Beach cliffs",
+      "productionFreeTop3": [],
+      "simpleSolTop3": [
+        "Balangan Beach cliffs",
+        "Tegal Wangi Beach cliffs",
+        "Honeymoon Beach cliffs"
+      ],
+      "productionExactAt3": false,
+      "solExactAt3": true,
+      "productionSpecific": false,
+      "solSpecific": true,
+      "winner": "SIMPLE_SOL",
+      "classification": "SOL_RECOVERED_FREE_FAILURE"
+    },
+    {
+      "caseId": "CJ037",
+      "truth": "Cascade des Baumes",
+      "productionFreeTop3": [],
+      "simpleSolTop3": [
+        "Cascade des Baumes"
+      ],
+      "productionExactAt3": false,
+      "solExactAt3": true,
+      "productionSpecific": false,
+      "solSpecific": true,
+      "winner": "SIMPLE_SOL",
+      "classification": "SOL_RECOVERED_FREE_FAILURE"
+    },
+    {
+      "caseId": "CJ038",
+      "truth": "Gunlock Falls",
+      "productionFreeTop3": [],
+      "simpleSolTop3": [
+        "Gunlock Falls"
+      ],
+      "productionExactAt3": false,
+      "solExactAt3": false,
+      "productionSpecific": false,
+      "solSpecific": true,
+      "winner": "SIMPLE_SOL",
+      "classification": "UNKNOWN_TRUTH_BUT_SOL_MORE_SPECIFIC"
+    },
+    {
+      "caseId": "CJ039",
+      "truth": "Escalante Potholes Recreation Site",
+      "productionFreeTop3": [],
+      "simpleSolTop3": [
+        "Potholes Recreation Site",
+        "Cauldron Linn",
+        "White River Falls"
+      ],
+      "productionExactAt3": false,
+      "solExactAt3": false,
+      "productionSpecific": false,
+      "solSpecific": true,
+      "winner": "SIMPLE_SOL",
+      "classification": "UNKNOWN_TRUTH_BUT_SOL_MORE_SPECIFIC"
+    },
+    {
+      "caseId": "CJ040",
+      "truth": "Koosah Falls",
+      "productionFreeTop3": [],
+      "simpleSolTop3": [
+        "Koosah Falls",
+        "Sahalie Falls",
+        "Lower Lewis River Falls"
+      ],
+      "productionExactAt3": false,
+      "solExactAt3": true,
+      "productionSpecific": false,
+      "solSpecific": true,
+      "winner": "SIMPLE_SOL",
+      "classification": "SOL_RECOVERED_FREE_FAILURE"
+    },
+    {
+      "caseId": "CJ041",
+      "truth": "Cenote Zaci",
+      "productionFreeTop3": [],
+      "simpleSolTop3": [
+        "Cenote Zaci",
+        "Cenote Ik Kil",
+        "Cenote San Lorenzo Oxman"
+      ],
+      "productionExactAt3": false,
+      "solExactAt3": false,
+      "productionSpecific": false,
+      "solSpecific": true,
+      "winner": "SIMPLE_SOL",
+      "classification": "UNKNOWN_TRUTH_BUT_SOL_MORE_SPECIFIC"
+    },
+    {
+      "caseId": "CJ042",
+      "truth": "Three-location montage (individual clips unresolved)",
+      "productionFreeTop3": [],
+      "simpleSolTop3": [
+        "Lake Atitlán",
+        "Furore Fjord",
+        "Ho'opi'i Falls"
+      ],
+      "productionExactAt3": false,
+      "solExactAt3": false,
+      "productionSpecific": false,
+      "solSpecific": true,
+      "winner": "SIMPLE_SOL",
+      "classification": "UNKNOWN_TRUTH_BUT_SOL_MORE_SPECIFIC"
+    }
+  ],
+  "summary": {
+    "freeFailuresTested": 42,
+    "strictScorableRecoveredBySol": 26,
+    "specificOrExactRecoveredBySol": 36,
+    "recoveryPercentage": 85.7
+  }
+}

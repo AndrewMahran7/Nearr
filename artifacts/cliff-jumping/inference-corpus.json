@@ -1,0 +1,426 @@
+{
+  "schema_version": 1,
+  "note": "Frozen 42-case founder cliff-jumping inference corpus. No labels, aliases, coordinates, ground truth, notes, or prior hypotheses.",
+  "cases": [
+    {
+      "case_id": "CJ001",
+      "source": "founder_cliff_corpus",
+      "platform": "instagram",
+      "source_url": "https://www.instagram.com/p/Da2Rb92NKGw/",
+      "categories": [
+        "cliff_jumping"
+      ],
+      "manual_frames_directory": "artifacts/cliff-jumping/manual-frames/CJ001"
+    },
+    {
+      "case_id": "CJ002",
+      "source": "founder_cliff_corpus",
+      "platform": "instagram",
+      "source_url": "https://www.instagram.com/p/DZIXov9tVu7/",
+      "categories": [
+        "cliff_jumping"
+      ],
+      "manual_frames_directory": "artifacts/cliff-jumping/manual-frames/CJ002"
+    },
+    {
+      "case_id": "CJ003",
+      "source": "founder_cliff_corpus",
+      "platform": "instagram",
+      "source_url": "https://www.instagram.com/p/DbB3ZOUya93/",
+      "categories": [
+        "cliff_jumping"
+      ],
+      "manual_frames_directory": "artifacts/cliff-jumping/manual-frames/CJ003"
+    },
+    {
+      "case_id": "CJ004",
+      "source": "founder_cliff_corpus",
+      "platform": "instagram",
+      "source_url": "https://www.instagram.com/p/CqJo6QHJqPo/",
+      "categories": [
+        "cliff_jumping"
+      ],
+      "manual_frames_directory": "artifacts/cliff-jumping/manual-frames/CJ004"
+    },
+    {
+      "case_id": "CJ005",
+      "source": "founder_cliff_corpus",
+      "platform": "instagram",
+      "source_url": "https://www.instagram.com/p/Dbh90croV4d/",
+      "categories": [
+        "cliff_jumping"
+      ],
+      "manual_frames_directory": "artifacts/cliff-jumping/manual-frames/CJ005"
+    },
+    {
+      "case_id": "CJ006",
+      "source": "founder_cliff_corpus",
+      "platform": "instagram",
+      "source_url": "https://www.instagram.com/p/DcekCtbStlP/",
+      "categories": [
+        "cliff_jumping"
+      ],
+      "manual_frames_directory": "artifacts/cliff-jumping/manual-frames/CJ006"
+    },
+    {
+      "case_id": "CJ007",
+      "source": "founder_cliff_corpus",
+      "platform": "instagram",
+      "source_url": "https://www.instagram.com/p/DcVUFxntIKW/",
+      "categories": [
+        "cliff_jumping"
+      ],
+      "manual_frames_directory": "artifacts/cliff-jumping/manual-frames/CJ007"
+    },
+    {
+      "case_id": "CJ008",
+      "source": "founder_cliff_corpus",
+      "platform": "instagram",
+      "source_url": "https://www.instagram.com/p/DWrKNRujq4X/",
+      "categories": [
+        "cliff_jumping"
+      ],
+      "manual_frames_directory": "artifacts/cliff-jumping/manual-frames/CJ008"
+    },
+    {
+      "case_id": "CJ009",
+      "source": "founder_cliff_corpus",
+      "platform": "instagram",
+      "source_url": "https://www.instagram.com/p/C6pIphxy4qr/",
+      "categories": [
+        "cliff_jumping"
+      ],
+      "manual_frames_directory": "artifacts/cliff-jumping/manual-frames/CJ009"
+    },
+    {
+      "case_id": "CJ010",
+      "source": "founder_cliff_corpus",
+      "platform": "instagram",
+      "source_url": "https://www.instagram.com/p/DAvJrtQIGVU/",
+      "categories": [
+        "cliff_jumping"
+      ],
+      "manual_frames_directory": "artifacts/cliff-jumping/manual-frames/CJ010"
+    },
+    {
+      "case_id": "CJ011",
+      "source": "founder_cliff_corpus",
+      "platform": "instagram",
+      "source_url": "https://www.instagram.com/p/DCfD1bFIsuE/",
+      "categories": [
+        "cliff_jumping"
+      ],
+      "manual_frames_directory": "artifacts/cliff-jumping/manual-frames/CJ011"
+    },
+    {
+      "case_id": "CJ012",
+      "source": "founder_cliff_corpus",
+      "platform": "instagram",
+      "source_url": "https://www.instagram.com/p/DBW35nppVUS/",
+      "categories": [
+        "cliff_jumping"
+      ],
+      "manual_frames_directory": "artifacts/cliff-jumping/manual-frames/CJ012"
+    },
+    {
+      "case_id": "CJ013",
+      "source": "founder_cliff_corpus",
+      "platform": "instagram",
+      "source_url": "https://www.instagram.com/p/DFyZwBJT_Xy/",
+      "categories": [
+        "cliff_jumping"
+      ],
+      "manual_frames_directory": "artifacts/cliff-jumping/manual-frames/CJ013"
+    },
+    {
+      "case_id": "CJ014",
+      "source": "founder_cliff_corpus",
+      "platform": "instagram",
+      "source_url": "https://www.instagram.com/p/DB6yxXwSgU7/",
+      "categories": [
+        "cliff_jumping"
+      ],
+      "manual_frames_directory": "artifacts/cliff-jumping/manual-frames/CJ014"
+    },
+    {
+      "case_id": "CJ015",
+      "source": "founder_cliff_corpus",
+      "platform": "instagram",
+      "source_url": "https://www.instagram.com/p/DbtjWEKIjn9/",
+      "categories": [
+        "cliff_jumping"
+      ],
+      "manual_frames_directory": "artifacts/cliff-jumping/manual-frames/CJ015"
+    },
+    {
+      "case_id": "CJ016",
+      "source": "founder_cliff_corpus",
+      "platform": "instagram",
+      "source_url": "https://www.instagram.com/p/DaW06-bujG_/",
+      "categories": [
+        "cliff_jumping"
+      ],
+      "manual_frames_directory": "artifacts/cliff-jumping/manual-frames/CJ016"
+    },
+    {
+      "case_id": "CJ017",
+      "source": "founder_cliff_corpus",
+      "platform": "instagram",
+      "source_url": "https://www.instagram.com/p/CJUBgodgdUV/",
+      "categories": [
+        "cliff_jumping"
+      ],
+      "manual_frames_directory": "artifacts/cliff-jumping/manual-frames/CJ017"
+    },
+    {
+      "case_id": "CJ018",
+      "source": "founder_cliff_corpus",
+      "platform": "instagram",
+      "source_url": "https://www.instagram.com/p/CvsmEqhKIeO/",
+      "categories": [
+        "cliff_jumping"
+      ],
+      "manual_frames_directory": "artifacts/cliff-jumping/manual-frames/CJ018"
+    },
+    {
+      "case_id": "CJ019",
+      "source": "founder_cliff_corpus",
+      "platform": "instagram",
+      "source_url": "https://www.instagram.com/p/DbzakoPumeL/",
+      "categories": [
+        "cliff_jumping"
+      ],
+      "manual_frames_directory": "artifacts/cliff-jumping/manual-frames/CJ019"
+    },
+    {
+      "case_id": "CJ020",
+      "source": "founder_cliff_corpus",
+      "platform": "instagram",
+      "source_url": "https://www.instagram.com/p/CV8GaG8LHbK/",
+      "categories": [
+        "cliff_jumping"
+      ],
+      "manual_frames_directory": "artifacts/cliff-jumping/manual-frames/CJ020"
+    },
+    {
+      "case_id": "CJ021",
+      "source": "founder_cliff_corpus",
+      "platform": "instagram",
+      "source_url": "https://www.instagram.com/p/C_voKVguTuR/",
+      "categories": [
+        "cliff_jumping"
+      ],
+      "manual_frames_directory": "artifacts/cliff-jumping/manual-frames/CJ021"
+    },
+    {
+      "case_id": "CJ022",
+      "source": "founder_cliff_corpus",
+      "platform": "instagram",
+      "source_url": "https://www.instagram.com/p/DNKwgA6MQ9m/",
+      "categories": [
+        "cliff_jumping"
+      ],
+      "manual_frames_directory": "artifacts/cliff-jumping/manual-frames/CJ022"
+    },
+    {
+      "case_id": "CJ023",
+      "source": "founder_cliff_corpus",
+      "platform": "instagram",
+      "source_url": "https://www.instagram.com/p/DCtiKTyIkxN/",
+      "categories": [
+        "cliff_jumping"
+      ],
+      "manual_frames_directory": "artifacts/cliff-jumping/manual-frames/CJ023"
+    },
+    {
+      "case_id": "CJ024",
+      "source": "founder_cliff_corpus",
+      "platform": "instagram",
+      "source_url": "https://www.instagram.com/p/Db3bZ_-Nz3R/",
+      "categories": [
+        "cliff_jumping"
+      ],
+      "manual_frames_directory": "artifacts/cliff-jumping/manual-frames/CJ024"
+    },
+    {
+      "case_id": "CJ025",
+      "source": "founder_cliff_corpus",
+      "platform": "instagram",
+      "source_url": "https://www.instagram.com/p/C-VuDm0PmCH/",
+      "categories": [
+        "cliff_jumping"
+      ],
+      "manual_frames_directory": "artifacts/cliff-jumping/manual-frames/CJ025"
+    },
+    {
+      "case_id": "CJ026",
+      "source": "founder_cliff_corpus",
+      "platform": "instagram",
+      "source_url": "https://www.instagram.com/p/Davq4ZDvO7f/",
+      "categories": [
+        "cliff_jumping"
+      ],
+      "manual_frames_directory": "artifacts/cliff-jumping/manual-frames/CJ026"
+    },
+    {
+      "case_id": "CJ027",
+      "source": "founder_cliff_corpus",
+      "platform": "instagram",
+      "source_url": "https://www.instagram.com/p/C9NorfaPN3T/",
+      "categories": [
+        "cliff_jumping"
+      ],
+      "manual_frames_directory": "artifacts/cliff-jumping/manual-frames/CJ027"
+    },
+    {
+      "case_id": "CJ028",
+      "source": "founder_cliff_corpus",
+      "platform": "instagram",
+      "source_url": "https://www.instagram.com/p/C87QU_LJNCK/",
+      "categories": [
+        "cliff_jumping"
+      ],
+      "manual_frames_directory": "artifacts/cliff-jumping/manual-frames/CJ028"
+    },
+    {
+      "case_id": "CJ029",
+      "source": "founder_cliff_corpus",
+      "platform": "instagram",
+      "source_url": "https://www.instagram.com/p/DGRIr0SvMMX/",
+      "categories": [
+        "cliff_jumping"
+      ],
+      "manual_frames_directory": "artifacts/cliff-jumping/manual-frames/CJ029"
+    },
+    {
+      "case_id": "CJ030",
+      "source": "founder_cliff_corpus",
+      "platform": "instagram",
+      "source_url": "https://www.instagram.com/p/DWTZd0IEZSA/",
+      "categories": [
+        "cliff_jumping"
+      ],
+      "manual_frames_directory": "artifacts/cliff-jumping/manual-frames/CJ030"
+    },
+    {
+      "case_id": "CJ031",
+      "source": "founder_cliff_corpus",
+      "platform": "instagram",
+      "source_url": "https://www.instagram.com/p/C9sIk72u5PM/",
+      "categories": [
+        "cliff_jumping"
+      ],
+      "manual_frames_directory": "artifacts/cliff-jumping/manual-frames/CJ031"
+    },
+    {
+      "case_id": "CJ032",
+      "source": "founder_cliff_corpus",
+      "platform": "instagram",
+      "source_url": "https://www.instagram.com/p/CvQED2QtBZe/",
+      "categories": [
+        "cliff_jumping"
+      ],
+      "manual_frames_directory": "artifacts/cliff-jumping/manual-frames/CJ032"
+    },
+    {
+      "case_id": "CJ033",
+      "source": "founder_cliff_corpus",
+      "platform": "instagram",
+      "source_url": "https://www.instagram.com/p/CaB4Ve1NIW_/",
+      "categories": [
+        "cliff_jumping"
+      ],
+      "manual_frames_directory": "artifacts/cliff-jumping/manual-frames/CJ033"
+    },
+    {
+      "case_id": "CJ034",
+      "source": "founder_cliff_corpus",
+      "platform": "instagram",
+      "source_url": "https://www.instagram.com/p/Cj80H_jAXkm/",
+      "categories": [
+        "cliff_jumping"
+      ],
+      "manual_frames_directory": "artifacts/cliff-jumping/manual-frames/CJ034"
+    },
+    {
+      "case_id": "CJ035",
+      "source": "founder_cliff_corpus",
+      "platform": "instagram",
+      "source_url": "https://www.instagram.com/p/CxVz9cQxiGW/",
+      "categories": [
+        "cliff_jumping"
+      ],
+      "manual_frames_directory": "artifacts/cliff-jumping/manual-frames/CJ035"
+    },
+    {
+      "case_id": "CJ036",
+      "source": "founder_cliff_corpus",
+      "platform": "instagram",
+      "source_url": "https://www.instagram.com/p/DUppjPgEngm/",
+      "categories": [
+        "cliff_jumping"
+      ],
+      "manual_frames_directory": "artifacts/cliff-jumping/manual-frames/CJ036"
+    },
+    {
+      "case_id": "CJ037",
+      "source": "founder_cliff_corpus",
+      "platform": "instagram",
+      "source_url": "https://www.instagram.com/p/DKPf-PjI1Rq/",
+      "categories": [
+        "cliff_jumping"
+      ],
+      "manual_frames_directory": "artifacts/cliff-jumping/manual-frames/CJ037"
+    },
+    {
+      "case_id": "CJ038",
+      "source": "founder_cliff_corpus",
+      "platform": "instagram",
+      "source_url": "https://www.instagram.com/p/CsjqggyA2qu/",
+      "categories": [
+        "cliff_jumping"
+      ],
+      "manual_frames_directory": "artifacts/cliff-jumping/manual-frames/CJ038"
+    },
+    {
+      "case_id": "CJ039",
+      "source": "founder_cliff_corpus",
+      "platform": "instagram",
+      "source_url": "https://www.instagram.com/p/C9cvc9Xveub/",
+      "categories": [
+        "cliff_jumping"
+      ],
+      "manual_frames_directory": "artifacts/cliff-jumping/manual-frames/CJ039"
+    },
+    {
+      "case_id": "CJ040",
+      "source": "founder_cliff_corpus",
+      "platform": "instagram",
+      "source_url": "https://www.instagram.com/p/Cty5hdxA-dx/",
+      "categories": [
+        "cliff_jumping"
+      ],
+      "manual_frames_directory": "artifacts/cliff-jumping/manual-frames/CJ040"
+    },
+    {
+      "case_id": "CJ041",
+      "source": "founder_cliff_corpus",
+      "platform": "instagram",
+      "source_url": "https://www.instagram.com/p/CoDBylYjjTH/",
+      "categories": [
+        "cliff_jumping"
+      ],
+      "manual_frames_directory": "artifacts/cliff-jumping/manual-frames/CJ041"
+    },
+    {
+      "case_id": "CJ042",
+      "source": "founder_cliff_corpus",
+      "platform": "instagram",
+      "source_url": "https://www.instagram.com/p/Dc1-OPBBGEP/",
+      "categories": [
+        "cliff_jumping"
+      ],
+      "manual_frames_directory": "artifacts/cliff-jumping/manual-frames/CJ042"
+    }
+  ]
+}

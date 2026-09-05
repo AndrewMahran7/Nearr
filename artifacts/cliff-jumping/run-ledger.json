@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-09-05T23:11:31.611Z",
+  "branch": "research/cliff-jumping-exact-location",
+  "productionMutations": "NONE",
+  "deployments": "NONE",
+  "corpus": {
+    "founderVideos": 42,
+    "rawUrls": 42,
+    "uniqueContent": 42,
+    "historicalDuplicateRelationships": [
+      {
+        "caseId": "CJ004",
+        "historicalCaseId": "R08",
+        "canonicalSourceId": "CqJo6QHJqPo"
+      }
+    ]
+  },
+  "runs": [
+    {
+      "arm": "PRODUCTION_FREE",
+      "cases": 42,
+      "acquired": 42,
+      "technicalFailures": 0,
+      "cacheUsed": false,
+      "productionTarget": false
+    },
+    {
+      "arm": "SIMPLE_SOL",
+      "cases": 42,
+      "acquired": 42,
+      "technicalFailures": 0,
+      "cacheUsed": false,
+      "productionTarget": false
+    },
+    {
+      "arm": "ACCURACY_MAX_F2_M2",
+      "cases": 14,
+      "acquired": 14,
+      "technicalFailures": 0,
+      "cacheUsed": false,
+      "productionTarget": false
+    }
+  ],
+  "cost": {
+    "groundTruthResearchUsd": null,
+    "productionFreeUsd": null,
+    "simpleSolModelUsd": 3.077452,
+    "accuracyMaxModelUsd": 6.797951,
+    "note": "Only model-token estimates emitted by the Sol harness are measurable; external browsing and free-path provider costs were not instrumented."
+  }
+}
