@@ -1,12 +1,12 @@
 {
   "releaseId": "2026-09-05-broad-area-premium-escalation",
   "previousMainSha": "57e745e8c1519babb111da2dc5509316b52d9e7f",
-  "previousOtaGroup": "bb685ade-ae5a-4685-ada5-559cb70432a6",
+  "previousOtaGroup": "c2a75e27-d76f-45c5-98fa-fc757a7b96e3",
   "currentOtaGroup": null,
   "edgeVersions": {
-    "process-share-jobs": 93,
+    "process-share-jobs": 94,
     "process-share-link": 135,
-    "monetization": 2
+    "monetization": 3
   },
   "railwayDeployment": "2d4da2a4-c9b9-4d34-8894-15e8e8e6c407 (unchanged)",
   "migrationLedger": [
