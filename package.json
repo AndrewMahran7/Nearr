@@ -146,6 +146,8 @@
     "test:vayrin-never-dead-end": "npm --prefix services/media-worker run test:never-dead-end && ts-node -P scripts/tsconfig.json scripts/testVayrinNeverDeadEnd.ts",
     "test:vayrin-generic-place-type-guard": "ts-node -P scripts/tsconfig.json scripts/testVayrinGenericPlaceTypeGuard.ts && cd services/media-worker && node --import tsx --test tests/vayrin.test.ts",
     "test:recognition-cache": "ts-node -P scripts/tsconfig.json scripts/testRecognitionCache.ts",
+    "test:recognition-cache-suspension": "ts-node -P scripts/tsconfig.json scripts/testRecognitionCacheSuspension.ts",
+    "test:context-aware-cache": "npm run test:context-aware-cache-reranking",
     "proof:recognition-cache:dev": "ts-node -P scripts/tsconfig.json scripts/proveRecognitionCacheIntegration.ts",
     "proof:canonical-save-return-contract:dev": "ts-node -P scripts/tsconfig.json scripts/proveCanonicalSaveReturnContractDev.ts",
     "proof:context-aware-cache-reranking:dev": "ts-node -P scripts/tsconfig.json scripts/proveContextAwareCacheReranking.ts",

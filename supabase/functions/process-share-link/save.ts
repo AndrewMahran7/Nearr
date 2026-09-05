@@ -19,6 +19,10 @@ import { resolvePlaceCategory } from '../../../lib/placeCategory.ts';
 import { planSavedPlaceEnrichment } from '../../../lib/savedPlaceSourceMerge.ts';
 import { normalizeShareUrl } from '../../../lib/shareAgent/tiktokUrl.ts';
 import { attachSavedPlaceSource } from '../process-share-jobs/recognitionCache.ts';
+import {
+  readRecognitionCachePolicy,
+  reuseSavedPlaceBySourceOnly,
+} from '../_shared/recognitionCachePolicy.ts';
 
 const shareUrlKey = (url: string): string => normalizeShareUrl(url).url;
 
@@ -111,6 +115,7 @@ async function findExistingSavedPlaceForUser(
   userId: string,
   candidate: ResolvedCandidate,
   sourceUrl: string,
+  allowSourceOnlyReuse: boolean,
 ): Promise<ExistingSavedPlaceRow | null> {
   const { data, error } = await client
     .from('saved_places')
@@ -123,11 +128,23 @@ async function findExistingSavedPlaceForUser(
     return null;
   }
   const rows = (data ?? []) as ExistingSavedPlaceRow[];
+  return selectExistingSavedPlaceForUser(rows, candidate, sourceUrl, allowSourceOnlyReuse);
+}
+
+export function selectExistingSavedPlaceForUser(
+  rows: ExistingSavedPlaceRow[],
+  candidate: ResolvedCandidate,
+  sourceUrl: string,
+  allowSourceOnlyReuse: boolean,
+): ExistingSavedPlaceRow | null {
   if (rows.length === 0) return null;
-  const exactSourceMatch = rows.find(
-    (row) => row.source_url && row.source_url === sourceUrl,
-  );
-  if (exactSourceMatch) return exactSourceMatch;
+  if (allowSourceOnlyReuse) {
+    const exactSourceMatch = rows.find(
+      (row) => row.source_url && row.source_url === sourceUrl,
+    );
+    if (exactSourceMatch) return exactSourceMatch;
+  }
+  // Canonical place/nearby dedupe remains active in both policy states.
   return rows.find((row) => isNearbySavedPlaceMatch(candidate, row)) ?? null;
 }
 
@@ -215,6 +232,7 @@ export async function saveForUser(args: {
   } | null;
 }): Promise<SaveResult> {
   const { client, userId, candidate, sourceUrl, source, autoNote, sourceMetadata } = args;
+  const allowSourceOnlyReuse = reuseSavedPlaceBySourceOnly(readRecognitionCachePolicy());
   const attachSource = async (savedPlaceId: string) => attachSavedPlaceSource({
     admin: client,
     userId,
@@ -235,7 +253,7 @@ export async function saveForUser(args: {
   });
 
   const existingForUser = await findExistingSavedPlaceForUser(
-    client, userId, candidate, sourceUrl,
+    client, userId, candidate, sourceUrl, allowSourceOnlyReuse,
   );
   if (existingForUser?.source_url === sourceUrl) {
     console.log(

@@ -33,7 +33,17 @@ import { resolveSharedPlace } from '../process-share-link/resolver/resolveShared
 import { isRetryableNameDrivenProviderFailure } from '../process-share-link/resolver/nameDrivenResolver.ts';
 import { saveForUser } from '../process-share-link/save.ts';
 import { normalizeShareUrl } from '../../../lib/shareAgent/tiktokUrl.ts';
-import { canonicalContentIdentity, type CanonicalContentIdentity } from '../../../lib/shareAgent/contentIdentity.ts';
+import {
+  RECOGNITION_VERSION,
+  canonicalContentIdentity,
+  type CanonicalContentIdentity,
+} from '../../../lib/shareAgent/contentIdentity.ts';
+import {
+  logRecognitionCachePolicy,
+  readRecognitionCachePolicy,
+  recognitionCacheDiagnostics,
+  type RecognitionCachePolicy,
+} from '../_shared/recognitionCachePolicy.ts';
 import {
   inspectFacebookUrl,
   planFacebookDiscoveredCanonicalUrl,
@@ -815,6 +825,21 @@ function readMediaFlags(): {
     autoSaveThreshold: threshold.value,
     autoSaveThresholdValid: threshold.valid,
   };
+}
+
+function mediaResolverEnabledForPlatform(
+  flags: ReturnType<typeof effectiveMediaFlags>,
+  platform: string,
+): boolean {
+  if (!flags.mediaFallbackEnabled) return false;
+  switch (platform.toLowerCase()) {
+    case 'instagram': return flags.instagramResolverEnabled;
+    case 'tiktok': return flags.tiktokResolverEnabled;
+    case 'youtube': return flags.youtubeResolverEnabled;
+    case 'facebook': return flags.facebookResolverEnabled;
+    case 'snapchat': return flags.snapchatResolverEnabled;
+    default: return false;
+  }
 }
 
 function mediaAutoSaveEnabledForUser(
@@ -1695,6 +1720,7 @@ async function finalizeMediaTask(
   env: any,
   body: any,
   invocation: { id: string; startedAt: number },
+  policy: RecognitionCachePolicy,
 ): Promise<Response> {
   const taskId = typeof body.taskId === 'string' ? body.taskId : '';
   if (!taskId) return json({ error: 'missing_task_id' }, 400);
@@ -1768,6 +1794,39 @@ async function finalizeMediaTask(
     return json({ error: 'parent_job_missing' }, 404);
   }
 
+  if (!policy.readsEnabled) {
+    const diagnostics = suspendedRecognitionDiagnostics(policy);
+    const existing = job.extraction_payload?.recognitionCache;
+    job.extraction_payload = {
+      ...(job.extraction_payload ?? {}),
+      recognitionCache: {
+        ...(existing && typeof existing === 'object' ? existing : {}),
+        hit: false,
+        ...diagnostics,
+        modelProvider: typeof body?.diagnostics?.modelProvider === 'string'
+          ? body.diagnostics.modelProvider.slice(0, 120)
+          : null,
+        modelName: typeof body?.diagnostics?.modelName === 'string'
+          ? body.diagnostics.modelName.slice(0, 160)
+          : null,
+      },
+    };
+    // Premium tasks enter through the media queue directly rather than the
+    // metadata dispatcher. Record the same bounded bypass event here only when
+    // the dispatcher did not already record it for this job.
+    if (existing?.cacheReadSuspended !== true) {
+      const identity = canonicalContentIdentity(
+        job.source_url,
+        task.canonical_url || task.source_url,
+      );
+      await recordRecognitionEvent(admin, 'recognition_cache_miss', identity, {
+        ...diagnostics,
+        reason: 'read_suspended',
+        path: task.task_kind === 'premium_recognition' ? 'premium' : 'media',
+      });
+    }
+  }
+
   // A TikTok short link may resolve only inside yt-dlp. Accept that discovery
   // at this trust boundary only when it is an exact TikTok post and does not
   // contradict a post id already known from the task input.
@@ -1828,8 +1887,13 @@ async function finalizeMediaTask(
           rendered.renderedPlaces,
           sharedCountryForEvidence(parsed.value),
         ),
+        ...suspendedRecognitionDiagnostics(policy),
       }
-    : { reason: outcome, ...buildRecognitionFunnel(body?.diagnostics, null, 0) };
+    : {
+        reason: outcome,
+        ...buildRecognitionFunnel(body?.diagnostics, null, 0),
+        ...suspendedRecognitionDiagnostics(policy),
+      };
   const mediaRunId = await insertMediaRun(admin, task, job, body, evidenceSummary);
 
   // Premium Sol already formed the identity and performed its tightly bounded
@@ -2901,16 +2965,60 @@ async function useRecognitionCache(args: {
   return true;
 }
 
+function suspendedRecognitionDiagnostics(policy: RecognitionCachePolicy): Record<string, unknown> {
+  return {
+    ...recognitionCacheDiagnostics(policy),
+    recognitionVersion: RECOGNITION_VERSION,
+    modelPath: 'current_fresh_recognition',
+  };
+}
+
+async function recordSuspendedRecognitionRead(
+  admin: any,
+  job: any,
+  identity: CanonicalContentIdentity,
+  policy: RecognitionCachePolicy,
+): Promise<void> {
+  const diagnostics = suspendedRecognitionDiagnostics(policy);
+  job.extraction_payload = {
+    ...(job.extraction_payload ?? {}),
+    recognitionCache: {
+      ...((job.extraction_payload as any)?.recognitionCache ?? {}),
+      hit: false,
+      ...diagnostics,
+    },
+  };
+  // This records policy state only. It never selects a recognition/cache row,
+  // prior share result, candidate, hypothesis, or Places result.
+  await admin.from('share_jobs').update({
+    extraction_payload: job.extraction_payload,
+  }).eq('id', job.id).eq('status', 'processing_metadata');
+  // Use the schema's existing low-cardinality event vocabulary. The detail
+  // distinguishes a deliberate bypass from a real lookup miss.
+  await recordRecognitionEvent(admin, 'recognition_cache_miss', identity, {
+    ...diagnostics,
+    reason: 'read_suspended',
+  });
+}
+
 async function prepareRecognitionIdentity(
   admin: any,
   job: any,
   identity: CanonicalContentIdentity,
+  policy: RecognitionCachePolicy,
 ): Promise<'owner' | 'parked' | 'continue'> {
   job.recognition_identity_key = identity.key;
   job.recognition_identity_version = identity.identityVersion;
   job.recognition_content_id = identity.contentId;
   job.canonical_url = identity.canonicalUrl;
   await recordIdentityOnJob(admin, job.id, identity);
+  if (!policy.readsEnabled) {
+    await recordSuspendedRecognitionRead(admin, job, identity, policy);
+    // Singleflight joins are also answer reuse: a joined request would wake
+    // after another job writes the cache and then consume that answer. While
+    // suspended, every distinct logical submission owns its fresh run.
+    return 'continue';
+  }
   const decision = await lookupRecognition(admin, identity, job.user_id);
   if (await useRecognitionCache({ admin, job, identity, decision })) return 'parked';
   if (decision.kind === 'disputed') {
@@ -2934,7 +3042,12 @@ async function prepareRecognitionIdentity(
   return claim === 'owner' ? 'owner' : 'continue';
 }
 
-async function processOne(admin: any, env: any, job: any): Promise<void> {
+async function processOne(
+  admin: any,
+  env: any,
+  job: any,
+  policy: RecognitionCachePolicy,
+): Promise<void> {
   const rawUrl = job.canonical_url || job.source_url;
   const normalized = normalizeShareUrl(rawUrl);
   const requestUrl = normalized.url || rawUrl;
@@ -2942,7 +3055,7 @@ async function processOne(admin: any, env: any, job: any): Promise<void> {
 
   let activeIdentity = canonicalContentIdentity(job.source_url, requestUrl);
   if (activeIdentity) {
-    const preparation = await prepareRecognitionIdentity(admin, job, activeIdentity);
+    const preparation = await prepareRecognitionIdentity(admin, job, activeIdentity, policy);
     if (preparation === 'parked') return;
   }
 
@@ -2966,6 +3079,79 @@ async function processOne(admin: any, env: any, job: any): Promise<void> {
 
   const meta = await fetchPostMetadata(requestUrl, platform);
   if (!meta.ok) {
+    if (!policy.readsEnabled) {
+      const freshFlags = effectiveMediaFlags(readMediaFlags(), job.user_id);
+      const resolverEnabled = mediaResolverEnabledForPlatform(freshFlags, platform);
+      if (resolverEnabled) {
+        const extractionPayload = {
+          ...(job.extraction_payload ?? {}),
+          platform,
+          reason: meta.reason,
+          freshInference: {
+            forced: true,
+            modelExecutionRequired: true,
+            sourceMetadataAvailable: false,
+          },
+        };
+        await enqueueMediaTask(admin, job, platform, requestUrl, requestUrl, {
+          parkPatch: {
+            decision: null,
+            needs_help_reason: 'fresh_recognition_media_pending',
+            suggested_query: null,
+            candidate_payload: null,
+            extraction_payload: extractionPayload,
+            canonical_url: requestUrl,
+            source_platform: platform,
+          },
+        });
+        console.log(JSON.stringify({
+          event: 'fresh_recognition_enqueued',
+          jobId: job.id,
+          platform,
+          metadataAvailable: false,
+          cacheReadUsed: false,
+        }));
+        return;
+      }
+      await finalize(
+        admin,
+        job,
+        {
+          status: 'failed',
+          decision: 'failed',
+          needs_help_reason: 'fresh_recognition_unavailable',
+          failure_reason: 'fresh_recognition_unavailable',
+          failure_code: 'fresh_recognition_unavailable',
+          failure_category: 'technical_failure',
+          analysis_attempted: false,
+          suggested_query: null,
+          candidate_payload: null,
+          canonical_url: requestUrl,
+          source_platform: platform,
+          extraction_payload: {
+            ...(job.extraction_payload ?? {}),
+            platform,
+            reason: meta.reason,
+            freshInference: {
+              forced: true,
+              modelExecutionRequired: true,
+              resolverEnabled: false,
+            },
+          },
+          progress_stage: 'manual',
+        },
+        composeShareCompletionNotification({
+          jobId: job.id,
+          status: 'failed',
+          failureCategory: 'technical_failure',
+          failureCode: 'fresh_recognition_unavailable',
+          provider: platform,
+          analysisAttempted: false,
+          reviewMode: 'manual',
+        }),
+      );
+      return;
+    }
     // Metadata unavailable is NOT the same as "this place cannot be
     // identified". It is the case where the video is the only evidence left,
     // so try durable media fallback BEFORE giving up. Without this the job
@@ -3065,7 +3251,7 @@ async function processOne(admin: any, env: any, job: any): Promise<void> {
   if (resolvedIdentity && resolvedIdentity.key !== activeIdentity?.key) {
     if (activeIdentity) await releaseRecognition(admin, activeIdentity.key, job.id);
     activeIdentity = resolvedIdentity;
-    const preparation = await prepareRecognitionIdentity(admin, job, resolvedIdentity);
+    const preparation = await prepareRecognitionIdentity(admin, job, resolvedIdentity, policy);
     if (preparation === 'parked') return;
   }
   const handles = extractHandles({ platform, title, description, html });
@@ -3151,6 +3337,85 @@ async function processOne(admin: any, env: any, job: any): Promise<void> {
     },
     metadataSourceMetadata,
   );
+
+  // Accuracy-phase invariant: current metadata remains legitimate source
+  // evidence, but it cannot terminate a new video submission before model
+  // execution. The media task receives only source media/evidence fields; the
+  // current candidate payload is parked on the parent and is never a model
+  // input. Historical recognition rows were not queried above.
+  if (!policy.readsEnabled) {
+    const freshFlags = effectiveMediaFlags(readMediaFlags(), job.user_id);
+    const resolverEnabled = mediaResolverEnabledForPlatform(freshFlags, platform);
+    if (resolverEnabled) {
+      const mediaTaskExists = await mediaTaskExistsFor(admin, job.id);
+      (extractionPayload as any).freshInference = {
+        forced: true,
+        modelExecutionRequired: true,
+        sourceMetadataAvailable: true,
+        mediaTaskAlreadyExisted: mediaTaskExists,
+      };
+      await enqueueMediaTask(admin, job, platform, canonicalUrl, requestUrl, {
+        parkPatch: {
+          decision: null,
+          needs_help_reason: 'fresh_recognition_media_pending',
+          suggested_query: null,
+          candidate_payload: buildCandidateReviewSnapshot(
+            metadataResult.candidates.map(safeCandidate),
+            10,
+            metadataSelectionMode,
+          ),
+          extraction_payload: extractionPayload,
+          canonical_url: canonicalUrl,
+          source_platform: platform,
+        },
+      });
+      console.log(JSON.stringify({
+        event: 'fresh_recognition_enqueued',
+        jobId: job.id,
+        platform,
+        metadataAvailable: true,
+        cacheReadUsed: false,
+        mediaTaskAlreadyExisted: mediaTaskExists,
+      }));
+      return;
+    }
+    await finalize(
+      admin,
+      job,
+      {
+        status: 'failed',
+        decision: 'failed',
+        needs_help_reason: 'fresh_recognition_unavailable',
+        failure_reason: 'fresh_recognition_unavailable',
+        failure_code: 'fresh_recognition_unavailable',
+        failure_category: 'technical_failure',
+        analysis_attempted: false,
+        suggested_query: null,
+        candidate_payload: null,
+        canonical_url: canonicalUrl,
+        source_platform: platform,
+        extraction_payload: {
+          ...extractionPayload,
+          freshInference: {
+            forced: true,
+            modelExecutionRequired: true,
+            resolverEnabled: false,
+          },
+        },
+        progress_stage: 'manual',
+      },
+      composeShareCompletionNotification({
+        jobId: job.id,
+        status: 'failed',
+        failureCategory: 'technical_failure',
+        failureCode: 'fresh_recognition_unavailable',
+        provider: platform,
+        analysisAttempted: false,
+        reviewMode: 'manual',
+      }),
+    );
+    return;
+  }
 
   // ---- transient provider failure -> retry, don't blame the user ----------
   // A Google Places 429/5xx/timeout previously fell straight through to
@@ -3616,6 +3881,8 @@ serve(async (req) => {
     return json({ error: envCheck.reason }, 500);
   }
   const env = envCheck.env;
+  const recognitionCachePolicy = readRecognitionCachePolicy();
+  logRecognitionCachePolicy('process-share-jobs', recognitionCachePolicy);
 
   let body: any = {};
   try {
@@ -3648,7 +3915,13 @@ serve(async (req) => {
       errorClass: null,
     }));
     try {
-      const response = await finalizeMediaTask(admin, env, body, invocation);
+      const response = await finalizeMediaTask(
+        admin,
+        env,
+        body,
+        invocation,
+        recognitionCachePolicy,
+      );
       console.log(JSON.stringify({
         marker: 'phase2_reliability',
         invocationId: invocation.id,
@@ -3704,7 +3977,7 @@ serve(async (req) => {
   for (const job of jobs) {
     console.log(`[share-job] claimed job_id=${job.id} platform=${job.source_platform ?? 'unknown'}`);
     try {
-      await processOne(admin, env, job);
+      await processOne(admin, env, job, recognitionCachePolicy);
       processed += 1;
     } catch (err) {
       console.log(`[share-job] processing_error job_id=${job.id} msg=${truncate((err as Error)?.message)}`);
@@ -3731,6 +4004,11 @@ serve(async (req) => {
     },
     metadataAutoSave: {
       ruleVersion: METADATA_AUTO_SAVE_RULE_VERSION,
+    },
+    recognitionCache: {
+      readsEnabled: recognitionCachePolicy.readsEnabled,
+      writesEnabled: recognitionCachePolicy.writesEnabled,
+      cacheReadSuspended: recognitionCachePolicy.cacheReadSuspended,
     },
   });
 }, standaloneServeOptions);

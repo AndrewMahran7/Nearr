@@ -29,6 +29,12 @@ import { normalizeShareUrl } from '../../../lib/shareAgent/tiktokUrl.ts';
 import { inspectFacebookUrl } from '../../../lib/shareAgent/facebookUrl.ts';
 import { detectPlatform } from '../process-share-link/platform/detectPlatform.ts';
 import { validateShareUrl } from './urlValidation.ts';
+import {
+  forceFreshRecognitionSubmission,
+  logRecognitionCachePolicy,
+  readRecognitionCachePolicy,
+  recognitionCacheDiagnostics,
+} from '../_shared/recognitionCachePolicy.ts';
 
 const CORS_HEADERS: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
@@ -117,6 +123,8 @@ serve(async (req) => {
       : null;
 
   const dedupeWindowSeconds = 90;
+  const recognitionCachePolicy = readRecognitionCachePolicy();
+  logRecognitionCachePolicy('create-share-job', recognitionCachePolicy);
   const { data: created, error: createErr } = await admin.rpc('create_share_job_for_user', {
     p_user_id: userId,
     p_source_url: originalUrl,
@@ -127,7 +135,10 @@ serve(async (req) => {
     // Derived from the server-verified auth user. The client cannot choose the
     // onboarding exemption. The database grants at most one anonymous run.
     p_is_anonymous: userData.user.is_anonymous === true,
-    p_force_rerun: body.forceRerun === true,
+    // Idempotency-key and in-flight dedupe remain intact. Only the historical
+    // completed-result shortcut is bypassed while answer-cache reads are off.
+    p_force_rerun:
+      forceFreshRecognitionSubmission(recognitionCachePolicy) || body.forceRerun === true,
   });
 
   if (createErr || !Array.isArray(created) || created.length === 0) {
@@ -147,5 +158,8 @@ serve(async (req) => {
     duplicate: !!row.duplicate,
     requiresPurchase: !!row.requires_purchase,
     availableUses: Number.isFinite(Number(row.available_uses)) ? Number(row.available_uses) : null,
+    ...(recognitionCachePolicy.cacheReadSuspended
+      ? { diagnostics: recognitionCacheDiagnostics(recognitionCachePolicy) }
+      : {}),
   });
 });
