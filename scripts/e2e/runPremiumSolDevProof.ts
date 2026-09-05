@@ -118,10 +118,23 @@ async function seedEligibleJob(session: E2ESession, spec: CaseSpec): Promise<str
   });
   const job = Array.isArray(data) ? data[0] : null;
   if (error || !job?.job_id) throw new Error(`${spec.id}: free job creation failed: ${error?.message ?? 'unknown'}`);
+  // The RPC creates a normal-lane media task. This proof starts at the Premium
+  // boundary, so cancel that task before making the job eligible; otherwise it
+  // can race the Premium task and replace its result with unrelated free-lane
+  // output while the proof incorrectly attributes the parent result to Sol.
+  const { error: cancelError } = await session.admin.from('share_media_tasks').update({
+    status: 'cancelled',
+    completed_at: new Date().toISOString(),
+    failure_code: 'cancelled',
+  }).eq('share_job_id', job.job_id).neq('task_kind', 'premium_recognition');
+  if (cancelError) throw new Error(`${spec.id}: normal task cancellation failed: ${cancelError.message}`);
   const { error: updateError } = await session.admin.from('share_jobs').update({
     status: 'needs_help',
     progress_stage: 'manual',
     decision: 'manual_fallback',
+    saved_place_id: null,
+    candidate_payload: null,
+    suggested_query: null,
     needs_help_reason: 'insufficient_evidence',
     failure_reason: 'insufficient_evidence',
     failure_category: 'analysis_insufficient',
@@ -306,6 +319,9 @@ async function main() {
     const noResultReleased = cases.some((value) => value.premiumState === 'no_useful_result' && value.reservationStatus === 'released');
     const actionableConsumed = cases.some((value) => value.decision !== 'auto_save' && value.chargeable === true && value.reservationStatus === 'consumed');
     const duplicateReservationPass = cases[0]!.reservationCount === 1 && duplicateBodies.includes(true);
+    const premiumBoundaryMisses = cases.filter((value) =>
+      value.task?.attempts !== 1 || !value.costs?.parityDiagnostics?.solBoundary,
+    );
     const wrongAutosaves = cases.filter((value) => {
       if (value.decision !== 'auto_save') return false;
       const spec = CASES.find((candidate) => candidate.id === value.caseId)!;
@@ -340,7 +356,7 @@ async function main() {
         priorityUseful: `${priorityUseful}/${priorityRequired}`,
         wrongAutosaves: wrongAutosaves.length,
         c07UnsafeAutosave: c07?.decision === 'auto_save',
-        machineCacheIdentityReads: 0,
+        machineCacheIdentityReads: premiumBoundaryMisses.length,
         noResultTokenRelease: noResultReleased,
         actionableReviewTokenConsume: actionableConsumed,
         duplicatePremiumTapSingleReservation: duplicateReservationPass,
@@ -351,7 +367,10 @@ async function main() {
     writeFileSync(OUTPUT, `${JSON.stringify(artifact, null, 2)}\n`);
     artifactWritten = true;
     console.log(JSON.stringify(artifact.gates));
-    if (priorityUseful !== priorityRequired || wrongAutosaves.length > 0 || c07?.decision === 'auto_save' || !duplicateReservationPass) {
+    if (
+      priorityUseful !== priorityRequired || wrongAutosaves.length > 0 || c07?.decision === 'auto_save' ||
+      !duplicateReservationPass || premiumBoundaryMisses.length > 0
+    ) {
       process.exitCode = 1;
     }
   } finally {
