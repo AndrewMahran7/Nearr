@@ -2,9 +2,16 @@
   "releaseId": "2026-09-05-broad-area-specificity-production",
   "previousMainSha": "fe3aadb8147da818555ae791d22bece6b33124f4",
   "previousOtaGroup": "c2a75e27-d76f-45c5-98fa-fc757a7b96e3",
-  "currentOtaGroup": null,
+  "currentOtaGroup": "4f92cf79-6c8e-479d-9166-1c1d16f4afaa",
+  "featureSourceSha": "8754b473b2fc56f3398a1ac3e48df7974077b229",
+  "releaseSha": "75d733996c99f76ef99b80ee4ba12d4ad1e385a9",
   "edgeVersions": {
     "process-share-jobs": 96,
+    "process-share-link": 137,
+    "monetization": 4
+  },
+  "deployedEdgeVersions": {
+    "process-share-jobs": 97,
     "process-share-link": 137,
     "monetization": 4
   },
@@ -13,11 +20,19 @@
     "20260905000001"
   ],
   "rollbackProcedure": "From previousMainSha, redeploy only process-share-jobs to Production with --no-verify-jwt, then republish previousOtaGroup to the production channel. Keep PREMIUM_REQUESTS_ENABLED=false and EXPO_PUBLIC_PREMIUM_REQUESTS_ENABLED=false throughout, and repeat the suspension smoke.",
-  "deploymentStatus": "PLANNED",
+  "deploymentStatus": "DEPLOYED",
   "physicalQa": {
     "signedOutColdLaunch": "PENDING",
     "signedInColdLaunch": "PENDING",
     "forceCloseRelaunch": "PENDING",
     "freshOnboardingLaunch": "NOT_REQUIRED"
-  }
+  },
+  "productionSmoke": {
+    "specificDestinationAreaOnly": "PASS: Bali is preserved as area_match_incomplete; exact destination unresolved; no silent save; truthful AREA FOUND presentation; free browse/manual/original-post recovery available",
+    "legitimateBroadDestination": "PASS: Bali-as-destination remains terminal area_match",
+    "premiumSuspension": "PASS: CTA and token store hidden; live direct initiation returned HTTP 503 premium_requests_suspended before mutation; zero reservation, Premium task, and Sol invocation",
+    "analytics": "PASS: area_match_incomplete_shown is emitted; premium_request_offered is not emitted while suspended",
+    "recognitionCacheReads": "PASS: suspension preserved"
+  },
+  "deployedAt": "2026-09-05T20:58:51.953Z"
 }
