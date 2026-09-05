@@ -171,6 +171,6 @@ The high macro result is therefore not evidence that every domain is mature. It 
 
 ## Production safety
 
-The live baseline used Railway's development-scoped environment injection to execute the benchmark locally. Railway configuration was read only. There were no Railway deployments, Edge deployments, OTA publishes, migrations, flag changes, job mutations, cache-answer mutations, or Production calls/mutations.
+The live baseline executed locally with the worktree's existing local environment configuration. Railway project and deployment metadata was inspected read only. There were no Railway deployments, Edge deployments, OTA publishes, migrations, flag changes, job mutations, cache-answer mutations, or Production calls/mutations.
 
 BACKEND RECOGNITION REGRESSION V2 ESTABLISHED — BASELINE RECORDED
