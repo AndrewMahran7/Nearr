@@ -24,7 +24,7 @@ type CaseSpec = {
 
 const CASES: CaseSpec[] = [
   { id: 'R01', sourceUrl: 'https://www.instagram.com/reel/Cg2U22DjbEJ/', platform: 'instagram', priority: true, usefulPattern: /Cirque|Pont|Gorges/i },
-  { id: 'R02', sourceUrl: 'https://www.instagram.com/reel/DSvmLO_Eom9/', platform: 'instagram', priority: true, usefulPattern: /Keka|Black Rock|Maui|Ka.anapali/i },
+  { id: 'R02', sourceUrl: 'https://www.instagram.com/reel/DSvmLO_Eom9/', platform: 'instagram', priority: true, usefulPattern: /Keka|Black Rock|Maui|Hawaii|Ka.anapali/i },
   { id: 'R03', sourceUrl: 'https://www.instagram.com/reel/DZJ8ZvYub8Q/', platform: 'instagram', priority: true, usefulPattern: /Tamolitch|Blue Pool/i },
   { id: 'R04', sourceUrl: 'https://www.instagram.com/reel/C9Z963muLHI/', platform: 'instagram', priority: true, usefulPattern: /Dorset/i },
   { id: 'R05', sourceUrl: 'https://www.instagram.com/reel/Db5qatGJgqH/', platform: 'instagram', priority: true, usefulPattern: /Okere|Ōkere|Kaituna|Tutea/i },
