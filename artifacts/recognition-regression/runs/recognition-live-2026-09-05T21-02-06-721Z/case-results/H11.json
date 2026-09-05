@@ -1,0 +1,76 @@
+{
+  "caseId": "H11",
+  "category": "FOOD_RESTAURANT",
+  "groundTruth": "No Good Burger Joint",
+  "returnedTop3": [
+    {
+      "rank": 1,
+      "name": "No Good Burger Joint (branch undetermined)",
+      "identityType": "BUSINESS",
+      "locality": "New York",
+      "country": "United States",
+      "latitude": null,
+      "longitude": null,
+      "evidenceType": "DISTINCTIVE_VISUAL_MATCH",
+      "canonicalizationStatus": "NAMED_LEAD",
+      "specificity": "SPECIFIC_PHYSICAL_PLACE"
+    },
+    {
+      "rank": 2,
+      "name": "No Good Burger Joint – Rockville Centre",
+      "identityType": "BUSINESS",
+      "locality": "Rockville Centre, New York",
+      "country": "United States",
+      "latitude": 40.6595539,
+      "longitude": -73.64833209999999,
+      "evidenceType": "DISTINCTIVE_VISUAL_MATCH",
+      "canonicalizationStatus": "CANONICAL_ALIAS",
+      "specificity": "SPECIFIC_PHYSICAL_PLACE"
+    },
+    {
+      "rank": 3,
+      "name": "No Good Burger Joint – Baldwin",
+      "identityType": "BUSINESS",
+      "locality": "Baldwin, New York",
+      "country": "United States",
+      "latitude": 40.639554,
+      "longitude": -73.607648,
+      "evidenceType": "DISTINCTIVE_VISUAL_MATCH",
+      "canonicalizationStatus": "CANONICAL_ALIAS",
+      "specificity": "SPECIFIC_PHYSICAL_PLACE"
+    }
+  ],
+  "recognitionVersion": "simple-sol-premium.v2",
+  "evidenceVersion": "premium-evidence-2026-09-05.v1",
+  "modelPath": "gpt-5.6-sol/F1:M1",
+  "frameManifest": [
+    {
+      "timestampSeconds": 0,
+      "sha256": "d209457a1ac57251c4cdbdf0a5a4a647d2870b4fa95168829582e48f8a86e08e"
+    },
+    {
+      "timestampSeconds": 2,
+      "sha256": "7c104a2f1cab9e9ddb8d5dede38e9addbbfc0500ace0e1ba4bfd067505d73e81"
+    },
+    {
+      "timestampSeconds": 4,
+      "sha256": "da48023673d7305de78563ed988130136a0fc60bcc4b74f37b2c2812b8d3a052"
+    },
+    {
+      "timestampSeconds": 7,
+      "sha256": "0ce04f5c0d96b4897d0de3c1f0d6ba4447708bcf88171d2362cb521c74614437"
+    },
+    {
+      "timestampSeconds": 9,
+      "sha256": "8173207e62f2e8d4c9ae5ca212008d6bbee0599c78323f39d75c4ef44d5e04e2"
+    },
+    {
+      "timestampSeconds": 11.567,
+      "sha256": "95f3859d6e3e92077f095ba131a89bd985aee50857e73885b91a14a51c2870e4"
+    }
+  ],
+  "placesCallCount": 3,
+  "classification": "WRONG",
+  "failureClass": "WRONG",
+  "cacheReadUsed": false
+}
