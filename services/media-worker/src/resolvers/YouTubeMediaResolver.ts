@@ -18,12 +18,16 @@
 // are fetched — an ordinary long-form YouTube video never becomes a
 // multi-gigabyte download attempt.
 
+import path from 'node:path';
+import { stat } from 'node:fs/promises';
 import type { MediaResolver, ResolveInput } from './MediaResolver.js';
 import type { ResolvedMedia, TranscriptSegment } from '../types/media.js';
+import { isMediaError } from '../types/media.js';
 import type { WorkerConfig } from '../config/env.js';
-import { safeFetchText, sanitizeUrlForLog } from '../security/ssrf.js';
+import { safeDownloadToFile, safeFetchText, sanitizeUrlForLog } from '../security/ssrf.js';
 import { parseVttToSegments, normalizeTranscriptSegments } from '../util/subtitles.js';
 import { log } from '../util/logger.js';
+import { execBinary } from '../util/exec.js';
 import {
   boundedMetadata,
   pickLocationMetadata,
@@ -58,6 +62,83 @@ const PREFERRED_CAPTION_LANGS = ['en', 'en-US', 'en-GB', 'en-orig'];
 
 const CAPTIONS_MAX_BYTES = 2 * 1024 * 1024; // 2MB — captions are plain text, generous cap
 const CAPTIONS_FETCH_TIMEOUT_MS = 10_000;
+const THUMBNAIL_MAX_BYTES = 5 * 1024 * 1024;
+
+export function youtubeVideoId(rawUrl: string): string | null {
+  try {
+    const parsed = new URL(rawUrl);
+    const host = parsed.hostname.toLowerCase().replace(/^www\./, '');
+    const candidate = host === 'youtu.be'
+      ? parsed.pathname.split('/').filter(Boolean)[0]
+      : parsed.searchParams.get('v') ?? parsed.pathname.match(/^\/(?:shorts|embed)\/([^/?]+)/)?.[1];
+    return candidate && /^[A-Za-z0-9_-]{11}$/.test(candidate) ? candidate : null;
+  } catch {
+    return null;
+  }
+}
+
+async function publicThumbnailFallback(
+  cfg: WorkerConfig,
+  url: string,
+  input: ResolveInput,
+): Promise<ResolvedMedia> {
+  const videoId = youtubeVideoId(url);
+  if (!videoId) throw new Error('youtube_thumbnail_fallback_missing_video_id');
+
+  let title: string | null = null;
+  let creatorName: string | null = null;
+  try {
+    const oembed = await safeFetchText({
+      url: `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`,
+      maxBytes: 64 * 1024,
+      timeoutMs: 10_000,
+      redirectLimit: cfg.redirectLimit,
+      allowlist: cfg.allowedMediaHosts,
+      signal: input.signal,
+    });
+    const parsed = JSON.parse(oembed.text) as { title?: unknown; author_name?: unknown };
+    title = typeof parsed.title === 'string' ? boundedMetadata(parsed.title, 500) : null;
+    creatorName = typeof parsed.author_name === 'string' ? boundedMetadata(parsed.author_name, 200) : null;
+  } catch {
+    // The public thumbnail remains useful visual evidence without oEmbed text.
+  }
+
+  const thumbnailPath = path.join(input.workDir, 'youtube-thumbnail.jpg');
+  await safeDownloadToFile({
+    url: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+    destPath: thumbnailPath,
+    maxBytes: THUMBNAIL_MAX_BYTES,
+    timeoutMs: 15_000,
+    redirectLimit: cfg.redirectLimit,
+    allowlist: cfg.allowedMediaHosts,
+    signal: input.signal,
+  });
+  const videoPath = path.join(input.workDir, 'youtube-thumbnail.mp4');
+  const rendered = await execBinary(cfg.ffmpegPath, [
+    '-y', '-loop', '1', '-framerate', '1', '-i', thumbnailPath,
+    '-t', '1', '-c:v', 'libx264', '-preset', 'veryfast', '-pix_fmt', 'yuv420p',
+    '-movflags', '+faststart', videoPath,
+  ], { timeoutMs: 30_000, signal: input.signal, cwd: input.workDir });
+  if (rendered.code !== 0 || rendered.timedOut) throw new Error('youtube_thumbnail_fallback_render_failed');
+  const videoStat = await stat(videoPath);
+  log.info('youtube_public_thumbnail_fallback', { jobId: input.jobId, videoId });
+  return {
+    canonicalUrl: url,
+    localFilePath: videoPath,
+    mimeType: 'video/mp4',
+    sizeBytes: videoStat.size,
+    durationSeconds: 1,
+    metadataTitle: title,
+    metadataDescription: null,
+    metadataLocation: null,
+    metadataCreatorHandle: null,
+    metadataPostId: videoId,
+    sourceId: videoId,
+    metadataCreatorName: creatorName,
+    source: 'youtube/public-thumbnail',
+    warnings: ['youtube_video_authentication_required', 'public_thumbnail_only'],
+  };
+}
 
 function pickCaptionTrack(
   tracks: Record<string, YtSubtitleTrack[]> | undefined,
@@ -144,7 +225,17 @@ export class YouTubeMediaResolver implements MediaResolver {
     // `yt-dlp -j` already includes full `subtitles` / `automatic_captions`
     // metadata (language â†’ available track formats, incl. `vtt`) with no
     // extra flags needed — verified against live YouTube responses.
-    const info = await probeWithYtDlp(this.cfg, url, { workDir: input.workDir, signal: input.signal });
+    let info: YtInfo;
+    try {
+      info = await probeWithYtDlp(this.cfg, url, { workDir: input.workDir, signal: input.signal });
+    } catch (error) {
+      if (!isMediaError(error) || error.code !== 'authentication_required') throw error;
+      try {
+        return await publicThumbnailFallback(this.cfg, url, input);
+      } catch {
+        throw error;
+      }
+    }
     const duration = enforceDurationLimit(this.cfg, info);
 
     const captions = await fetchCaptions(this.cfg, info, input.signal, input.jobId);

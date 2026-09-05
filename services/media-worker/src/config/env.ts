@@ -202,6 +202,7 @@ const DEFAULT_ALLOWED_HOSTS = [
   // endpoint (both verified live).
   'googlevideo.com',
   'youtube.com',
+  'ytimg.com',
   // TikTok — publicly documented CDN hosts, PLUS `tiktok.com` itself. Added
   // 2026-08-15: a live production sample (7 real TikTok shares) showed
   // `ssrf_blocked`/`host_not_allowlisted` as the dominant media-acquisition

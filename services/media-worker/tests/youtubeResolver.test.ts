@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { YouTubeMediaResolver } from '../src/resolvers/YouTubeMediaResolver.js';
+import { YouTubeMediaResolver, youtubeVideoId } from '../src/resolvers/YouTubeMediaResolver.js';
 import { isMediaError } from '../src/types/media.js';
 import type { WorkerConfig } from '../src/config/env.js';
 
@@ -21,6 +21,13 @@ test('supports(): youtube host family (watch/shorts/youtu.be) + flag only', () =
 test('supports(): flag OFF => never supports', () => {
   const r = resolver(false);
   assert.equal(r.supports({ platform: 'youtube', url: new URL('https://www.youtube.com/watch?v=abc') }), false);
+});
+
+test('public thumbnail fallback derives only a strict public video id', () => {
+  assert.equal(youtubeVideoId('https://www.youtube.com/watch?v=jNQXAC9IVRw'), 'jNQXAC9IVRw');
+  assert.equal(youtubeVideoId('https://youtu.be/jNQXAC9IVRw'), 'jNQXAC9IVRw');
+  assert.equal(youtubeVideoId('https://www.youtube.com/shorts/jNQXAC9IVRw'), 'jNQXAC9IVRw');
+  assert.equal(youtubeVideoId('https://www.youtube.com/watch?v=../../secret'), null);
 });
 
 test('resolve(): rejects non-HTTPS source before yt-dlp', async () => {
