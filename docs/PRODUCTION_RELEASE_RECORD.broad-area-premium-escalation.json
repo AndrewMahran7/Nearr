@@ -1,6 +1,6 @@
 {
-  "releaseId": "2026-09-05-broad-area-premium-escalation",
-  "previousMainSha": "57e745e8c1519babb111da2dc5509316b52d9e7f",
+  "releaseId": "2026-09-05-broad-area-specificity-production",
+  "previousMainSha": "29e60f851e41ef7176c7bad504ac73ead56bf5dd",
   "previousOtaGroup": "c2a75e27-d76f-45c5-98fa-fc757a7b96e3",
   "currentOtaGroup": null,
   "edgeVersions": {
@@ -12,13 +12,12 @@
   "migrationLedger": [
     "20260905000001"
   ],
-  "rollbackProcedure": "No rollback required because this release was not promoted. Production main, Edge, OTA, Railway, and schema were not changed by this release.",
-  "deploymentStatus": "BLOCKED_BY_PRODUCTION_PREMIUM_REQUEST_SUSPENSION",
-  "deploymentBlocker": "origin/main added the intentional hotfix 'suspend production Premium requests' after this release was frozen. Promoting a visible Premium CTA would require explicit authorization to reverse that safety policy.",
+  "rollbackProcedure": "From previousMainSha, redeploy only process-share-jobs to Production with --no-verify-jwt, then republish previousOtaGroup to the production channel. Keep PREMIUM_REQUESTS_ENABLED=false and EXPO_PUBLIC_PREMIUM_REQUESTS_ENABLED=false throughout, and repeat the suspension smoke.",
+  "deploymentStatus": "PLANNED",
   "physicalQa": {
-    "signedOutColdLaunch": "NOT_RUN_NO_DEPLOYMENT",
-    "signedInColdLaunch": "NOT_RUN_NO_DEPLOYMENT",
-    "forceCloseRelaunch": "NOT_RUN_NO_DEPLOYMENT",
+    "signedOutColdLaunch": "PENDING",
+    "signedInColdLaunch": "PENDING",
+    "forceCloseRelaunch": "PENDING",
     "freshOnboardingLaunch": "NOT_REQUIRED"
   }
 }

@@ -57,6 +57,7 @@ test('3. Production Premium eligibility may still compute', () => {
 });
 test('4. Production Premium CTA hidden', () => {
   assert.match(detail, /premiumRequestsAvailable && !premiumOfferDismissed/);
+  assert.match(detail, /premiumRequestsAvailable && areaMatchIncomplete/);
   assert.equal(premiumRequestsEnabledForEnvironment({ environment: 'production' }), false);
 });
 test('5. Production Premium offer event not emitted', () => {
@@ -91,20 +92,28 @@ test('12. Production zero-balance user still uses free Nearr', () => {
   assert.match(normalCreate, /'normal_free','unmetered:normal_free'/);
   assert.match(normalCreate, /return query select v_job\.id,v_job\.status,false,false,v_available/);
 });
-test('13. Production area partial remains usable', () => {
+test('13. Production incomplete area remains truthful and usable without Premium', () => {
   const state = buildShareJobDetailState({
     status: 'needs_help',
     candidate_payload: { partialResult: {
       version: 1,
       reviewOnly: true,
-      resultClass: 'area_match',
+      resultClass: 'area_match_incomplete',
+      area: { name: 'Bali', region: 'Bali', country: 'Indonesia' },
+      intendedSpecificity: 'SPECIFIC_PHYSICAL_DESTINATION',
+      resolvedSpecificity: 'REGION',
+      exactDestinationResolved: false,
+      premiumEligible: true,
       searchQuery: 'Bali',
       clueCount: 2,
     } },
   });
   assert.equal(state.kind, 'manual');
   assert.equal(state.canSearchManually, true);
-  assert.equal(state.reason, 'area_match');
+  assert.equal(state.reason, 'area_match_incomplete');
+  assert.equal(state.partialResult?.area?.name, 'Bali');
+  assert.match(state.copy.body, /exact spot/);
+  assert.equal(premiumRequestsEnabledForEnvironment({ environment: 'production' }), false);
 });
 test('14. Production manual search still works', () => {
   assert.match(detail, /Search manually/);
