@@ -141,6 +141,7 @@
     "test:long-caption-preservation": "ts-node -P scripts/tsconfig.json scripts/testLongCaptionPreservation.ts",
     "test:map-group-focus": "ts-node -P scripts/tsconfig.json scripts/testMapGroupFocus.ts",
     "test:source-place-group": "ts-node -P scripts/tsconfig.json scripts/testSourcePlaceGroup.ts",
+    "test:source-media-integration": "ts-node -P scripts/tsconfig.json scripts/testSourceMediaIntegration.ts",
     "test:multi-save-tray-dismiss": "ts-node -P scripts/tsconfig.json scripts/testMultiSaveTrayDismiss.ts",
     "test:phase2-ui-render": "ts-node -P scripts/tsconfig.json scripts/testPhase2UiRenderContracts.ts",
     "test:share-phase1-ui": "ts-node -P scripts/tsconfig.json scripts/testSharePhase1Ui.ts",

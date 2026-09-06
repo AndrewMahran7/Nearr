@@ -10,25 +10,11 @@
 
 import { canonicalContentIdentity } from './shareAgent/contentIdentity';
 
-export type SourceGroupMembershipState =
-  | 'primary_auto_saved'
-  | 'secondary_soft_saved'
-  | 'user_confirmed'
-  | 'manually_saved_from_source'
-  | 'promoted_alternative'
-  | 'current'
-  | 'removed'
-  | 'unlinked'
-  | 'deleted';
-
 type SourceRelationshipLike = {
   identity_key?: string | null;
   canonical_url?: string | null;
   first_attached_at?: string | null;
   is_primary?: boolean | null;
-  membership_state?: SourceGroupMembershipState | string | null;
-  removed_at?: string | null;
-  deleted_at?: string | null;
 };
 
 export type SourceGroupPlaceLike = {
@@ -36,7 +22,6 @@ export type SourceGroupPlaceLike = {
   place_id?: string | null;
   source_url?: string | null;
   created_at?: string | null;
-  deleted_at?: string | null;
   sources?: readonly SourceRelationshipLike[] | null;
   place?: {
     id?: string | null;
@@ -49,17 +34,10 @@ export type SourcePlaceGroup<T> = {
   places: T[];
 };
 
-const INACTIVE_STATES = new Set(['removed', 'unlinked', 'deleted']);
-
 function clean(value: unknown): string | null {
   if (typeof value !== 'string') return null;
   const trimmed = value.trim();
   return trimmed ? trimmed : null;
-}
-
-function relationshipIsActive(source: SourceRelationshipLike): boolean {
-  const state = clean(source.membership_state)?.toLowerCase() ?? 'current';
-  return !INACTIVE_STATES.has(state) && !clean(source.removed_at) && !clean(source.deleted_at);
 }
 
 function legacyIdentityKey(sourceUrl: string | null | undefined): string | null {
@@ -81,7 +59,6 @@ export function activeSourceRelationships(place: SourceGroupPlaceLike): ActiveRe
     const seen = new Set<string>();
     const active: ActiveRelationship[] = [];
     for (const source of sources) {
-      if (!relationshipIsActive(source)) continue;
       const identityKey = clean(source.identity_key) ?? legacyIdentityKey(source.canonical_url);
       if (!identityKey || seen.has(identityKey)) continue;
       seen.add(identityKey);
@@ -116,7 +93,11 @@ function groupForIdentity<T extends SourceGroupPlaceLike>(
   preferredSavedPlaceId?: string | null,
 ): SourcePlaceGroup<T> {
   const candidates = allPlaces
-    .filter((place) => !!place?.id && !clean(place.deleted_at))
+    // Current production has no state column on saved_place_sources: a child
+    // row exists only while the owned save/source association exists. Soft
+    // alternatives live in share_job_place_results and become group members
+    // only when Keep/Make primary materializes a saved place + source row.
+    .filter((place) => !!place?.id)
     .map((place) => ({
       place,
       relation: activeSourceRelationships(place).find((source) => source.identityKey === identityKey),

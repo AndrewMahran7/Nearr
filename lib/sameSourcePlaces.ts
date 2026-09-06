@@ -15,9 +15,6 @@ type SourceCandidate = {
     canonical_url?: string | null;
     first_attached_at?: string | null;
     is_primary?: boolean | null;
-    membership_state?: string | null;
-    removed_at?: string | null;
-    deleted_at?: string | null;
   }> | null;
 };
 

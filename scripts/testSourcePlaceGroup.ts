@@ -7,7 +7,6 @@ import {
   sourceGroupPosition,
   sourcePlaceGroupForAnchor,
   sourcePlaceGroupFromSeeds,
-  type SourceGroupMembershipState,
 } from '../lib/sourcePlaceGroup';
 
 const SOURCE_A = 'v1:instagram:video-a';
@@ -18,21 +17,18 @@ type Fixture = {
   place_id: string;
   source_url: string | null;
   created_at: string;
-  deleted_at?: string | null;
   place: { id: string; google_place_id: string; latitude: number; longitude: number; name: string };
   sources: Array<{
     identity_key: string;
     canonical_url: string;
     first_attached_at: string;
     is_primary: boolean;
-    membership_state: SourceGroupMembershipState;
   }>;
 };
 
 function place(
   id: string,
   source = SOURCE_A,
-  state: SourceGroupMembershipState = 'primary_auto_saved',
   placeId = `place-${id}`,
 ): Fixture {
   const order = (id.charCodeAt(id.length - 1) || 1) % 60;
@@ -55,7 +51,6 @@ function place(
         : 'https://www.tiktok.com/@creator/video/123456789/',
       first_attached_at: `2026-09-05T00:00:${String(order).padStart(2, '0')}Z`,
       is_primary: true,
-      membership_state: state,
     }],
   };
 }
@@ -72,7 +67,7 @@ check('initial three auto-saves resolve to group 3', () => {
   assert.equal(sourcePlaceGroupFromSeeds(initial, ['a', 'b', 'c'])?.places.length, 3);
 });
 
-const manualFourth = place('d', SOURCE_A, 'manually_saved_from_source');
+const manualFourth = place('d', SOURCE_A);
 const four = [...initial, manualFourth];
 check('manual save fourth joins current durable group immediately', () => {
   const resolved = resolveMapGroupPlaces(four, ['a', 'b', 'c']);
@@ -89,7 +84,7 @@ check('removing one updates membership to three', () => {
 });
 
 check('canonical duplicate renders one entry', () => {
-  const duplicate = place('d-copy', SOURCE_A, 'current', manualFourth.place_id);
+  const duplicate = place('d-copy', SOURCE_A, manualFourth.place_id);
   assert.equal(sourcePlaceGroupForAnchor(initial[0], [...four, duplicate])?.places.length, 4);
 });
 
@@ -100,21 +95,21 @@ check('primary metadata change does not alter membership', () => {
   assert.equal(sourcePlaceGroupFromSeeds(changed, ['a', 'b', 'c'])?.places.length, 4);
 });
 
-const soft = place('soft', SOURCE_A, 'secondary_soft_saved');
-check('soft save is included while active', () => {
-  assert.equal(sourcePlaceGroupForAnchor(initial[0], [...initial, soft])?.places.length, 4);
+check('unmaterialized soft alternatives do not fabricate map saves', () => {
+  const softLedger = [{ outcome: 'secondary_soft_saved', saved_place_id: null }];
+  assert.equal(softLedger[0]?.saved_place_id, null);
+  assert.equal(sourcePlaceGroupForAnchor(initial[0], initial)?.places.length, 3);
 });
 
-check('promoted soft save does not duplicate', () => {
-  const promoted = structuredClone(soft);
-  promoted.sources[0]!.membership_state = 'promoted_alternative';
+const promoted = place('soft', SOURCE_A);
+check('promoted soft alternative joins through its real saved source once', () => {
   assert.equal(sourcePlaceGroupForAnchor(initial[0], [...initial, promoted, promoted])?.places.length, 4);
 });
 
-check('removed soft save is excluded', () => {
-  const removed = structuredClone(soft);
-  removed.sources[0]!.membership_state = 'removed';
-  assert.equal(sourcePlaceGroupForAnchor(initial[0], [...initial, removed])?.places.length, 3);
+check('removed soft alternative remains absent because it never creates a source row', () => {
+  const removedLedger = [{ outcome: 'secondary_removed', saved_place_id: null }];
+  assert.equal(removedLedger[0]?.saved_place_id, null);
+  assert.equal(sourcePlaceGroupForAnchor(initial[0], initial)?.places.length, 3);
 });
 
 check('source groups remain isolated between videos', () => {
@@ -130,14 +125,12 @@ check('one canonical place can belong to different source groups', () => {
   assert.ok(sourcePlaceGroupForAnchor(shared, dataset, SOURCE_B)?.places.some((entry) => entry.id === 'shared'));
 });
 
-check('deleted save does not linger', () => {
-  const deleted = structuredClone(manualFourth);
-  deleted.deleted_at = '2026-09-05T01:00:00Z';
-  assert.equal(sourcePlaceGroupForAnchor(initial[0], [...initial, deleted])?.places.length, 3);
+check('deleted save does not linger once absent from the authoritative collection', () => {
+  assert.equal(sourcePlaceGroupForAnchor(initial[0], four.filter((entry) => entry.id !== manualFourth.id))?.places.length, 3);
 });
 
 check('alias/merged rows resolve to one canonical place', () => {
-  const alias = place('alias', SOURCE_A, 'current', initial[0]!.place_id);
+  const alias = place('alias', SOURCE_A, initial[0]!.place_id);
   assert.equal(sourcePlaceGroupForAnchor(initial[0], [...initial, alias])?.places.length, 3);
 });
 
