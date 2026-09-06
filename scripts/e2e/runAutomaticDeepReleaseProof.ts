@@ -302,7 +302,11 @@ async function main(): Promise<void> {
         zeroWrongAutosaves: observations.every((item) => !item.savedPlaceId),
         systemIsolation: system === 'PRODUCTION_FREE'
           ? observations.every((item) => item.automaticDeep?.invoked !== true)
-          : true,
+          : observations.every((item) => {
+              if (item.status === 'failed') return true;
+              const providerShowsDeep = typeof item.modelProvider === 'string' && item.modelProvider.includes('simple-sol');
+              return providerShowsDeep === (item.automaticDeep?.invoked === true);
+            }),
       },
     };
     await writeFile(path.join(outputDir, 'results.json'), `${JSON.stringify(report, null, 2)}\n`, 'utf8');

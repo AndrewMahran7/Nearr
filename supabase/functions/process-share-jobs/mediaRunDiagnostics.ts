@@ -275,8 +275,8 @@ export function buildRecognitionFunnel(
           .slice(0, 3)
       : [];
     const rejectionReasons = new Set([
-      'no_place_candidates', 'only_generic_or_administrative_candidates',
-      'all_candidates_low_confidence', 'insufficient_evidence',
+      'GENERIC_DESCRIPTOR', 'BROAD_GEOGRAPHY', 'BROAD_PARENT', 'NO_IDENTITY',
+      'IDENTITY_DIVERGENCE', 'NO_ACTIONABLE_CANDIDATE', 'TECHNICAL_RECOVERY',
     ]);
     out.automaticDeep = {
       ...(boundedString(a.version, 80) ? { version: boundedString(a.version, 80) } : {}),

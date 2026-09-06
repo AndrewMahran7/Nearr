@@ -2,11 +2,12 @@ import type { AnalyzeOutput } from '../providers/model.js';
 import type { PlaceCandidateEvidence, SceneEnvironmentType } from '../types/evidence.js';
 import { isCategoryOnlyPlaceName } from '../vayrin/placeIdentityGuard.js';
 
-export const NORMAL_RESULT_SPECIFICITY_VERSION = 'normal-result-specificity.v1';
+export const NORMAL_RESULT_SPECIFICITY_VERSION = 'normal-result-specificity.v2';
 
 export type NormalResultRejectionReason =
   | 'GENERIC_DESCRIPTOR'
   | 'BROAD_GEOGRAPHY'
+  | 'BROAD_PARENT'
   | 'NO_IDENTITY'
   | 'IDENTITY_DIVERGENCE'
   | 'NO_ACTIONABLE_CANDIDATE'
@@ -74,6 +75,20 @@ function hasIdentityDivergence(place: PlaceCandidateEvidence): boolean {
   return Array.isArray(compatible) && !compatible.includes(observed);
 }
 
+const SPECIFIC_CHILD_MARKER = /\b(?:arch|cave|cavern|cenote|falls?|waterfall|ledge|pool|hole|grotto|rock|trail|trailhead|crack|plunge|restaurant|cafe|bakery|bar|winery|brewery)\b/i;
+const BROAD_PARENT_MARKER = /\b(?:national park|natural park|state park|regional park|beach park|recreation(?:al)? area|national forest|state forest|shopping mall|shopping center|island group|islands?|lake|river|complex)\b/i;
+
+/** A named container can be real while still being too broad to end exact
+ * recognition. Preserve it as evidence, but ask Sol for the child feature.
+ * A child marker wins, so names such as Roaring River Falls and Waimea Bay
+ * Jump Rock remain specific. This is lexical/type based and contains no case
+ * IDs, ground truth, provider identities or coordinates. */
+export function isBroadParentIdentity(place: PlaceCandidateEvidence): boolean {
+  if (!BROAD_PARENT_MARKER.test(place.name)) return false;
+  if (SPECIFIC_CHILD_MARKER.test(place.name)) return false;
+  return !['restaurant', 'cafe', 'bakery', 'bar', 'brewery', 'winery', 'dessert'].includes(place.category ?? '');
+}
+
 function specificPlaceIntent(places: readonly PlaceCandidateEvidence[]): boolean {
   if (places.length === 0) return true;
   return places.some((place) =>
@@ -120,6 +135,9 @@ export function evaluateNormalResultSpecificity(input: Pick<
   if (places.some((place) => isCategoryOnlyPlaceName(place.name))) {
     return { ...base, specific: false, rejectionReason: 'GENERIC_DESCRIPTOR' };
   }
+  if (places.length > 0 && places.every(isBroadParentIdentity)) {
+    return { ...base, specific: false, rejectionReason: 'BROAD_PARENT' };
+  }
   if (places.some(hasIdentityDivergence)) {
     return { ...base, specific: false, rejectionReason: 'IDENTITY_DIVERGENCE' };
   }
@@ -129,6 +147,7 @@ export function evaluateNormalResultSpecificity(input: Pick<
   }
   const actionable = places.filter((place) =>
     !isCategoryOnlyPlaceName(place.name) &&
+    !isBroadParentIdentity(place) &&
     (!isBroadGeographyIdentity(place) || AREA_DESTINATION_CATEGORIES.has(place.category ?? '')) &&
     !hasIdentityDivergence(place));
   if (actionable.length === 0) {

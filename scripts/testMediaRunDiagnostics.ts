@@ -347,7 +347,7 @@ check(
 const automaticDeep = buildRecognitionFunnel({
   automaticDeep: {
     version: 'automatic-deep-recognition.v2', needed: true, invoked: true, attempts: 2,
-    recoveryInvoked: true, noUsableSourceEvidence: false, rejectionReason: 'no_place_candidates',
+    recoveryInvoked: true, noUsableSourceEvidence: false, rejectionReason: 'BROAD_PARENT',
     normalResultSpecificity: 'WEAK',
     normalCandidates: [
       { name: 'Waimea Bay Jump Rock', category: 'jump_rock', city: 'Haleiwa', region: 'Hawaii', country: 'United States' },

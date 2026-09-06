@@ -68,6 +68,23 @@ test('10 broad Bali for a specific cliff triggers deep', () => assert.equal(spec
 test('11 broad California for a specific beach triggers deep', () => assert.equal(specific(output([place('California', { region: 'California', category: 'beach' })])), false));
 test('12 legitimate Bali destination does not trigger', () => assert.equal(specific(output([place('Bali', { region: 'Bali', country: 'Indonesia', category: 'island' })])), true));
 test('13 exact restaurant does not trigger', () => assert.equal(specific(output([place('Din Tai Fung — South Coast Plaza', { category: 'restaurant', sceneSignature: { environmentType: 'food_venue', setting: 'indoor', visualAnchors: [], activity: null, regionClue: null } })])), true));
+for (const name of [
+  'Lake Havasu',
+  'Sunset Cliffs Natural Park',
+  'Upper Angora Lake',
+  'Cruzado National Forest',
+  "California's Clearest River",
+  'Mokulua Islands',
+]) {
+  test(`named broad parent ${name} triggers deep`, () => assert.equal(specific(output([place(name, { category: 'scenic_spot' })])), false));
+}
+for (const name of ['Roaring River Falls', 'Waimea Bay Jump Rock at Waimea Bay Beach Park', 'The Crack at Wet Beaver Creek']) {
+  test(`specific child ${name} remains normal-actionable`, () => assert.equal(specific(output([place(name, { category: 'scenic_spot' })])), true));
+}
+test('specific restaurant tenant remains actionable even when its name includes a parent plaza', () => assert.equal(
+  specific(output([place('Din Tai Fung — South Coast Plaza', { category: 'restaurant' })])),
+  true,
+));
 test('14 wrong entity type triggers deep', () => assert.equal(specific(output([place('Breakfast Republic', { category: 'restaurant', sceneSignature: { environmentType: 'natural_water', setting: 'outdoor', visualAnchors: [], activity: 'cliff jumping', regionClue: null } })])), false));
 test('15 empty normal result triggers deep', () => assert.equal(specific(output([])), false));
 test('16 needs_help triggers deep', () => assert.equal(specific(output([]), 'needs_help'), false));
