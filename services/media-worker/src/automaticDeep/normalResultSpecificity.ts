@@ -2,7 +2,7 @@ import type { AnalyzeOutput } from '../providers/model.js';
 import type { PlaceCandidateEvidence, SceneEnvironmentType } from '../types/evidence.js';
 import { isCategoryOnlyPlaceName } from '../vayrin/placeIdentityGuard.js';
 
-export const NORMAL_RESULT_SPECIFICITY_VERSION = 'normal-result-specificity.v2';
+export const NORMAL_RESULT_SPECIFICITY_VERSION = 'normal-result-specificity.v3';
 
 export type NormalResultRejectionReason =
   | 'GENERIC_DESCRIPTOR'
@@ -68,15 +68,29 @@ export function isBroadGeographyIdentity(place: PlaceCandidateEvidence): boolean
   return [place.city, place.region, place.country].some((value) => fold(value) === name);
 }
 
-function hasIdentityDivergence(place: PlaceCandidateEvidence): boolean {
-  const observed = place.sceneSignature?.environmentType;
-  if (!observed || observed === 'unknown' || observed === 'other' || !place.category) return false;
-  const compatible = CATEGORY_ENVIRONMENTS[place.category];
-  return Array.isArray(compatible) && !compatible.includes(observed);
-}
-
 const SPECIFIC_CHILD_MARKER = /\b(?:arch|cave|cavern|cenote|falls?|waterfall|ledge|pool|hole|grotto|rock|trail|trailhead|crack|plunge|restaurant|cafe|bakery|bar|winery|brewery)\b/i;
 const BROAD_PARENT_MARKER = /\b(?:national park|natural park|state park|regional park|beach park|recreation(?:al)? area|national forest|state forest|shopping mall|shopping center|island group|islands?|lake|river|complex)\b/i;
+
+function hasIdentityDivergence(place: PlaceCandidateEvidence): boolean {
+  // `other` is the recognizer's untyped escape hatch, not a defensible exact
+  // destination class. A named physical child marker can still carry its own
+  // specificity; otherwise Sol must resolve the identity regardless of whether
+  // scene classification happened to succeed.
+  if (place.category === 'other' && !SPECIFIC_CHILD_MARKER.test(place.name)) return true;
+
+  const observed = place.sceneSignature?.environmentType;
+  if (!observed || observed === 'unknown' || observed === 'other') return false;
+
+  const compatible = place.category ? CATEGORY_ENVIRONMENTS[place.category] : undefined;
+  if (Array.isArray(compatible)) return !compatible.includes(observed);
+
+  // A bare geographic-looking name with no useful category is not a defensible
+  // exact feature identity for a natural scene.
+  // Keep it as evidence and let Sol identify the physical destination. Named
+  // child features remain actionable even when the category taxonomy is weak.
+  return (observed === 'natural_water' || observed === 'natural_land') &&
+    !SPECIFIC_CHILD_MARKER.test(place.name);
+}
 
 /** A named container can be real while still being too broad to end exact
  * recognition. Preserve it as evidence, but ask Sol for the child feature.

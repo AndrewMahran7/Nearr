@@ -86,6 +86,19 @@ test('specific restaurant tenant remains actionable even when its name includes 
   true,
 ));
 test('14 wrong entity type triggers deep', () => assert.equal(specific(output([place('Breakfast Republic', { category: 'restaurant', sceneSignature: { environmentType: 'natural_water', setting: 'outdoor', visualAnchors: [], activity: 'cliff jumping', regionClue: null } })])), false));
+test('ambiguous other-category label in a natural scene triggers deep', () => assert.equal(specific(output([
+  place('Riverside', { category: 'other', sceneSignature: { environmentType: 'natural_water', setting: 'outdoor', visualAnchors: [], activity: 'swimming', regionClue: null } }),
+])), false));
+test('ambiguous other-category label triggers deep even without scene classification', () => assert.equal(specific(output([
+  place('Riverside', { category: 'other' }),
+])), false));
+test('named child feature survives an other-category natural scene', () => assert.equal(specific(output([
+  place('Eagle Rock Ledge', { category: 'other', sceneSignature: { environmentType: 'natural_water', setting: 'outdoor', visualAnchors: [], activity: 'cliff jumping', regionClue: null } }),
+])), true));
+for (const name of ['zoo', 'the zoo', 'aquarium', 'the aquarium']) {
+  test(`generic attraction ${name} triggers deep`, () => assert.equal(specific(output([place(name, { category: 'attraction' })])), false));
+}
+test('specific named zoo remains actionable', () => assert.equal(specific(output([place('San Diego Zoo', { category: 'attraction' })])), true));
 test('15 empty normal result triggers deep', () => assert.equal(specific(output([])), false));
 test('16 needs_help triggers deep', () => assert.equal(specific(output([]), 'needs_help'), false));
 test('17 manual_fallback triggers deep', () => assert.equal(specific(output([]), 'manual_fallback'), false));

@@ -16,7 +16,7 @@ const TYPE_ALIASES = [
   'islands', 'marina', 'harbor', 'harbour', 'pier', 'restaurant', 'restaurants',
   'eatery', 'diner', 'bistro', 'cafe', 'bar', 'bars', 'pub', 'bakery',
   'brewery', 'winery', 'hotel', 'hotels', 'hostel', 'motel', 'inn', 'resort',
-  'museum', 'gallery', 'landmark', 'monument', 'attraction', 'bridge',
+  'museum', 'gallery', 'zoo', 'aquarium', 'landmark', 'monument', 'attraction', 'bridge',
   'station', 'airport', 'store', 'shop', 'market', 'mall', 'spa', 'gym',
 ].sort((a, b) => b.length - a.length);
 
