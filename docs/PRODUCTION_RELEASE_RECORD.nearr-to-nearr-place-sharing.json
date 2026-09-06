@@ -1,0 +1,24 @@
+{
+  "releaseId": "2026-09-05-nearr-to-nearr-place-sharing-production",
+  "previousMainSha": "e44d9191a41083759e147441c4f83690eebd1c82",
+  "previousOtaGroup": "4f92cf79-6c8e-479d-9166-1c1d16f4afaa",
+  "currentOtaGroup": null,
+  "featureSourceSha": "8833ad1357187c212c4ac1fa4bef28e4c2cdda9e",
+  "releaseSha": "31f21601d5b8209f64ac724bdab99d5b387753a3",
+  "edgeVersions": {
+    "public-place": 1
+  },
+  "railwayDeployment": "2d4da2a4-c9b9-4d34-8894-15e8e8e6c407 (unchanged; SUCCESS/RUNNING)",
+  "migrationLedger": [
+    "20260905000003",
+    "20260905000004"
+  ],
+  "rollbackProcedure": "Repeat the concurrency guard; republish previousOtaGroup to the production channel; forward-revert the Nearr-to-Nearr sharing integration on main; redeploy the previous Vercel production deployment dpl_75vXRrMCw8aoifya5g15LTDSXFUV; disable or redeploy the public-place Edge Function from previousMainSha if required. Keep the additive sharing schema in place so existing saved places and referral analytics remain intact.",
+  "deploymentStatus": "PLANNED",
+  "physicalQa": {
+    "signedOutColdLaunch": "PENDING",
+    "signedInColdLaunch": "PENDING",
+    "forceCloseRelaunch": "PENDING",
+    "freshOnboardingLaunch": "PENDING"
+  }
+}
