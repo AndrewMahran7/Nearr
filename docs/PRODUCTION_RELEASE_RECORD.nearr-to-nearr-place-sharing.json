@@ -21,5 +21,24 @@
     "forceCloseRelaunch": "PENDING",
     "freshOnboardingLaunch": "PENDING"
   },
+  "nativeProduction": {
+    "buildId": "1ea9b130-0087-4057-8e2f-8013beb8525a",
+    "appVersion": "1.3.52",
+    "buildNumber": "54",
+    "runtimeVersion": "1.3.52",
+    "sourceCommit": "6a8733c33c36788991051f1ae710152bee0cd6dd",
+    "associatedDomains": "PASS: com.apple.developer.associated-domains and applinks:nearrapp.com found in the signed IPA",
+    "shareExtension": "PASS: signed com.nearr.ios.ShareExtension with group.com.nearr.ios found in the IPA",
+    "submissionId": "3359a4cb-f1d4-4a3b-9043-e80ddff1cc08",
+    "submissionStatus": "UPLOADED_TO_APP_STORE_CONNECT_PROCESSING"
+  },
+  "productionSmoke": {
+    "publicApi": "PASS: canonical place 200; invalid and missing UUIDs 404; bounded DTO; malformed and missing referrals safely ignored",
+    "save": "PASS: controlled recipient created one canonical saved relation; retry reused it; sender-private fields were not copied",
+    "alias": "PASS: temporary merged alias resolved and saved the surviving canonical place; fixture removed",
+    "website": "PASS: apex place page, metadata, AASA, and assetlinks returned 200; www permanently redirects to apex",
+    "analytics": "PASS: created, opened, web-opened, viewed, CTA, and saved events observed without sender PII",
+    "universalLink": "MECHANICAL PASS: AASA plus signed IPA entitlement plus app route; physical device tap remains PENDING"
+  },
   "deployedAt": "2026-09-06T00:41:40.779Z"
 }
