@@ -202,6 +202,8 @@ type Props = {
   savedProviderPlaceIds?: string[];
   /** Select another saved place by its exact row (map owns the selection). */
   onSelectNearby?: (next: SavedPlaceWithPlace) => void;
+  /** Expands the current source group inside the owning selected-place sheet. */
+  onViewSourceGroup?: () => void;
   /** Explicit save from an opened (still-unsaved) recommendation detail. */
   onSaveRecommendation?: (candidate: PlaceCandidate) => Promise<boolean>;
   /** Open the platform maps app for this place (map screen owns this). */
@@ -225,6 +227,7 @@ export function SelectedPlaceDetails({
   allSavedPlaces,
   savedProviderPlaceIds,
   onSelectNearby,
+  onViewSourceGroup,
   onSaveRecommendation,
   onGetDirections,
   onSeeMap,
@@ -1449,6 +1452,8 @@ export function SelectedPlaceDetails({
         <PlaceCardRow
           title={`${sourceAttribution.siblingSectionTitle} · ${sameSourceEntries.length + 1}`}
           entries={sameSourceEntries}
+          actionLabel={onViewSourceGroup ? 'See all' : undefined}
+          onAction={onViewSourceGroup}
         />
       ) : null}
 

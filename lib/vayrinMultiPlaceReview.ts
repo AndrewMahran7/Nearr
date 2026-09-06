@@ -39,13 +39,13 @@ export function mentionSummaryStatus(row: MultiPlaceBatchRow): string {
   if (row.persistence === 'already_saved') return 'Already saved · source attached';
   if (row.persistence === 'saved') return 'Saved · source attached';
   if (row.userDismissed) return 'No place selected';
-  if (row.search.phase === 'searching') return 'Searching…';
+  if (row.search.phase === 'searching') return 'Finding the right place…';
   if (row.selectedForSave && row.savedPlaceId) return 'Selected · attach source';
   if (row.selectedForSave) return 'Selected';
   if (row.savedPlaceId) return 'Already saved';
   const candidateCount = visibleMentionCandidates(row).length;
   if (candidateCount > 0) return `${candidateCount} possible ${candidateCount === 1 ? 'match' : 'matches'}`;
-  return 'Needs search';
+  return 'Find the right place';
 }
 
 export function estimatedDisclosureContentHeight(args: {

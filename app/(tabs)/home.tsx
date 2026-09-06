@@ -284,7 +284,7 @@ export default function Home() {
             </View>
             <View style={styles.inlineActionRow}>
               <Button
-                title="Search manually"
+                title="Find the right place"
                 variant="ghost"
                 onPress={() => {
                   handleActivationTap('search_manually');
@@ -310,7 +310,7 @@ export default function Home() {
             </View>
             <View style={styles.inlineActionRow}>
               <Button
-                title="Search manually"
+                title="Find the right place"
                 variant="ghost"
                 onPress={() => router.push('/add-place')}
               />

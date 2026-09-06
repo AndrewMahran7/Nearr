@@ -96,7 +96,8 @@ check('View all opens the unified grouped detail', () => {
   assert.match(mapSource, /onViewAll=\{viewAllSourceGroup\}/);
 });
 check('individual saved cards remain wired to selection', () => {
-  assert.match(selectorSource, /onPress=\{\(\) => onSelect\(place\)\}/);
+  assert.match(selectorSource, /<PlaceBrowseCarousel/);
+  assert.match(selectorSource, /if \(place\) onSelect\(place, interaction\)/);
   assert.match(mapSource, /onSelect=\{selectMapGroupPlace\}/);
 });
 check('close control has a real 44pt target and accessible semantics', () => {

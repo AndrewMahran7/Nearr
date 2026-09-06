@@ -21,7 +21,7 @@ assert.match(detail, /styles\.batchFooter/, 'final batch action is sticky outsid
 assert.doesNotMatch(detail, /batch\.order\.slice\(/, 'UI does not slice logical rows to five');
 assert.doesNotMatch(detail, /Choose the right place/, 'candidate accordions are removed');
 assert.match(detail, /None of these/);
-assert.match(detail, /Search another place/);
+assert.match(detail, /Find the right place/);
 assert.match(detail, /void runBatchSearch\(row\.logicalPlaceId/, 'opening unmatched search runs its prefilled query');
 
 const batchSearchStart = detail.indexOf('function renderBatchSearch');

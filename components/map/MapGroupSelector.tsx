@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
-import { PlaceImage } from '@/components/PlaceImage';
+import { PlaceBrowseCarousel } from '@/components/PlaceBrowseCarousel';
 import { Radius, Spacing } from '@/constants';
 import {
   MAP_GROUP_TRAY_CLOSE_HIT_SLOP,
@@ -15,13 +15,10 @@ type Props = {
   places: SavedPlaceWithPlace[];
   missingCoordinateIds: ReadonlySet<string>;
   failedCount: number;
-  onSelect: (place: SavedPlaceWithPlace) => void;
+  onSelect: (place: SavedPlaceWithPlace, interaction: 'tap' | 'swipe') => void;
   onViewAll: () => void;
   onClose: () => void;
 };
-
-const CARD_WIDTH = 224;
-const CARD_GAP = 10;
 
 export function MapGroupSelector({
   places,
@@ -33,6 +30,15 @@ export function MapGroupSelector({
 }: Props) {
   const { colors, typography } = useTheme();
   const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
+  const carouselItems = useMemo(() => places.map((place) => ({
+    id: place.id,
+    name: place.place.name,
+    subtitle: missingCoordinateIds.has(place.id)
+      ? 'Location unavailable'
+      : place.place.formatted_address || 'Saved to your map',
+    googlePlaceId: place.place.google_place_id,
+    disabled: missingCoordinateIds.has(place.id),
+  })), [missingCoordinateIds, places]);
   return (
     <View style={styles.container} pointerEvents="auto" testID="source-group-tray">
       <View style={styles.header}>
@@ -63,41 +69,14 @@ export function MapGroupSelector({
           <Feather name="x" size={18} color={colors.textSecondary} />
         </Pressable>
       </View>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.list}
-        snapToInterval={CARD_WIDTH + CARD_GAP}
-        decelerationRate="fast"
-      >
-        {places.map((place) => {
-          const missingLocation = missingCoordinateIds.has(place.id);
-          return (
-            <Pressable
-              key={place.id}
-              onPress={() => onSelect(place)}
-              accessibilityRole="button"
-              accessibilityLabel={`${place.place.name}${missingLocation ? ', location unavailable' : ''}`}
-              style={styles.card}
-            >
-              <PlaceImage
-                googlePlaceId={place.place.google_place_id}
-                size={48}
-                borderRadius={8}
-                accessibilityLabel={`Photo of ${place.place.name}`}
-              />
-              <View style={styles.cardCopy}>
-                <Text style={styles.name} numberOfLines={1}>{place.place.name}</Text>
-                <Text style={missingLocation ? styles.missing : styles.address} numberOfLines={1}>
-                  {missingLocation
-                    ? 'Location unavailable'
-                    : place.place.formatted_address || 'Saved to your map'}
-                </Text>
-              </View>
-            </Pressable>
-          );
-        })}
-      </ScrollView>
+      <PlaceBrowseCarousel
+        items={carouselItems}
+        onSelect={(item, interaction) => {
+          const place = places.find((candidate) => candidate.id === item.id);
+          if (place) onSelect(place, interaction);
+        }}
+        testID="source-group-tray-carousel"
+      />
     </View>
   );
 }
@@ -149,26 +128,5 @@ function createStyles(
       zIndex: 2,
     },
     closeButtonPressed: { opacity: 0.65 },
-    list: {
-      paddingHorizontal: Spacing.md,
-      paddingTop: Spacing.sm,
-      gap: CARD_GAP,
-    },
-    card: {
-      width: CARD_WIDTH,
-      height: 66,
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: Spacing.sm,
-      padding: Spacing.sm,
-      borderRadius: Radius.md,
-      borderWidth: 1,
-      borderColor: colors.border,
-      backgroundColor: colors.surface,
-    },
-    cardCopy: { flex: 1, minWidth: 0 },
-    name: { ...typography.label, color: colors.text },
-    address: { ...typography.caption, color: colors.textSecondary, marginTop: 3 },
-    missing: { ...typography.caption, color: colors.danger, marginTop: 3 },
   });
 }

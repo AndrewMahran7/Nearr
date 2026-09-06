@@ -491,10 +491,17 @@ for (const fx of CONTEXT_ONLY) {
 
 // Case C at the gate — two real destinations stay a picker, never auto-save.
 {
-  const croatia = { ...DESTINATIONS[9], googlePlaceId: 'dest-blue-cave-hr' };
+  const croatia = {
+    ...DESTINATIONS[9],
+    googlePlaceId: 'dest-blue-cave-hr',
+    formattedAddress: 'BiÅ¡evo, Croatia',
+    latitude: 42.9833,
+    longitude: 16.0167,
+  };
   const decision = gate([DESTINATIONS[9], croatia]);
   assert.equal(decision.plausibleCandidateCount, 2);
-  assert.equal(decision.eligible, false);
+  assert.equal(decision.eligible, true, 'current save-first semantics persist top-1');
+  assert.equal(decision.selectedProviderId, 'dest-blue-cave-me');
   assert.deepEqual(decisionForPlausibleCandidates(2, false), {
     decision: 'candidate_picker',
     mode: 'picker',
@@ -553,7 +560,8 @@ for (const fx of CONTEXT_ONLY) {
   assert.equal(decision.rawCandidateCount, 6);
   assert.equal(decision.plausibleCandidateCount, 5, 'New York is excluded, the 5 venues remain');
   assert.ok(!decision.plausibleProviderIds.includes('ctx-new-york'));
-  assert.equal(decision.eligible, false, '5 candidates is a picker, never an auto-save');
+  assert.equal(decision.eligible, true, 'save-first selects top-1 and retains alternatives');
+  assert.equal(decision.selectedProviderId, 'dest-nyc-0');
 }
 
 // ---------------------------------------------------------------------------
@@ -578,7 +586,7 @@ for (const fx of CONTEXT_ONLY) {
     addresses: [{ raw: '12430 Seal Beach Blvd B' }, { raw: '1401 Santa Fe Ave' }],
   });
   assert.equal(decision.eligible, true, 'a candidate with no types is untouched by this rule');
-  assert.deepEqual(decision.reasonCodes, ['single_plausible_candidate']);
+  assert.deepEqual(decision.reasonCodes, ['top1_plausible_candidate']);
 }
 
 // A resolver-labelled geographic rejection persisted from an earlier attempt

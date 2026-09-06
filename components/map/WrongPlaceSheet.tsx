@@ -29,10 +29,10 @@ import {
   CORRECTION_COPY,
   correctionInitialQuery,
   correctionRejectionMessage,
-  correctionResultMode,
   planWrongPlaceCorrection,
   reconcileCorrectedSavedPlaces,
 } from '@/lib/wrongPlaceCorrection';
+import { planFindRightPlace } from '@/lib/findRightPlace';
 import { correctSavedPlace, rejectSavedPlaceRecognition } from '@/services/savedPlacesService';
 import {
   getSavedPlacesCacheSnapshot,
@@ -74,6 +74,8 @@ export function WrongPlaceSheet({
   const [selected, setSelected] = useState<PlaceCandidate | null>(null);
   const [saving, setSaving] = useState(false);
   const seededRef = useRef(false);
+  const autoResolutionRef = useRef<string | null>(null);
+  const resolutionEventRef = useRef<string | null>(null);
 
   const initialQuery = useMemo(
     () => correctionInitialQuery({
@@ -86,6 +88,7 @@ export function WrongPlaceSheet({
 
   const runSearch = useCallback(async (value: string) => {
     setSelected(null);
+    void trackEvent('find_right_place_started', { source: 'saved_place_correction' });
     await search(value);
   }, [search]);
 
@@ -95,6 +98,8 @@ export function WrongPlaceSheet({
       reset();
       setQuery('');
       setSelected(null);
+      autoResolutionRef.current = null;
+      resolutionEventRef.current = null;
       return;
     }
     if (seededRef.current || !initialQuery) return;
@@ -103,8 +108,12 @@ export function WrongPlaceSheet({
     void runSearch(initialQuery);
   }, [visible, initialQuery, reset, runSearch]);
 
-  const mode = correctionResultMode(lastQuery ?? query, results);
-  const strongCandidate = mode === 'strong_single' ? results[0] ?? null : null;
+  const resolutionPlan = useMemo(() => planFindRightPlace({
+    query: lastQuery ?? query,
+    expectedName: extractedName ?? saved.place.name,
+    candidates: results.filter((candidate) => candidate.googlePlaceId !== saved.place.google_place_id),
+  }), [extractedName, lastQuery, query, results, saved.place.google_place_id, saved.place.name]);
+  const strongCandidate = resolutionPlan.action === 'auto_resolve' ? resolutionPlan.candidate : null;
   const chosen = strongCandidate ?? selected;
 
   const apply = useCallback(async (candidate: PlaceCandidate) => {
@@ -165,6 +174,27 @@ export function WrongPlaceSheet({
     }
   }, [actingUserId, onClose, onCorrected, saved, saving]);
 
+  useEffect(() => {
+    if (!visible || loading || !lastQuery) return;
+    const eventKey = `${lastQuery}:${results.map((candidate) => candidate.googlePlaceId).join(',')}`;
+    if (resolutionEventRef.current !== eventKey) {
+      resolutionEventRef.current = eventKey;
+      void trackEvent(
+        resolutionPlan.action === 'auto_resolve'
+          ? 'find_right_place_auto_resolved'
+          : resolutionPlan.action === 'choose'
+            ? 'find_right_place_multiple_matches'
+            : 'find_right_place_no_match',
+        { source: 'saved_place_correction', candidate_count: resolutionPlan.defensible.length },
+      );
+    }
+    if (resolutionPlan.action !== 'auto_resolve' || saving) return;
+    const key = `${lastQuery}:${resolutionPlan.candidate.googlePlaceId}`;
+    if (autoResolutionRef.current === key) return;
+    autoResolutionRef.current = key;
+    void apply(resolutionPlan.candidate);
+  }, [apply, lastQuery, loading, resolutionPlan, results, saving, visible]);
+
   async function openOriginalPost() {
     const original = planOpenOriginal(saved.source_url);
     if (original.kind !== 'open') {
@@ -218,7 +248,7 @@ export function WrongPlaceSheet({
     : null;
   const title = finderPresentation
     ? finderPresentation.headline
-    : mode === 'strong_single' ? 'Is this the right place?' : 'Which place is it?';
+    : loading || saving ? 'Finding the right place…' : 'Find the right place';
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
@@ -269,7 +299,7 @@ export function WrongPlaceSheet({
           {loading ? (
             <View style={styles.loading} accessibilityLiveRegion="polite">
               <ActivityIndicator color={colors.primary} />
-              <Text style={[typography.caption, styles.loadingText]}>Searching places…</Text>
+              <Text style={[typography.caption, styles.loadingText]}>Finding the right place…</Text>
             </View>
           ) : (
             <ScrollView
@@ -285,7 +315,7 @@ export function WrongPlaceSheet({
                   <Pressable
                     key={candidate.googlePlaceId}
                     onPress={() => setSelected(candidate)}
-                    disabled={current || saving || mode === 'strong_single'}
+                    disabled={current || saving || resolutionPlan.action === 'auto_resolve'}
                     style={({ pressed }) => [
                       styles.row,
                       isSelected ? styles.rowSelected : null,
@@ -293,7 +323,7 @@ export function WrongPlaceSheet({
                     ]}
                     accessibilityRole="radio"
                     accessibilityState={{
-                      disabled: current || saving || mode === 'strong_single',
+                      disabled: current || saving || resolutionPlan.action === 'auto_resolve',
                       checked: isSelected,
                     }}
                     accessibilityLabel={`Choose ${candidate.name} as the correct place${locality ? `, ${locality}` : ''}`}
@@ -335,7 +365,7 @@ export function WrongPlaceSheet({
             </ScrollView>
           )}
 
-          {chosen && chosen.googlePlaceId !== saved.place.google_place_id ? (
+          {resolutionPlan.action === 'choose' && chosen && chosen.googlePlaceId !== saved.place.google_place_id ? (
             <Button
               title="Use this place"
               onPress={() => void apply(chosen)}

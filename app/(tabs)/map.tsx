@@ -629,6 +629,9 @@ export default function MapScreen() {
   const followModeRef = useRef(true);
   followModeRef.current = followMode;
   const [selected, setSelected] = useState<SavedPlaceWithPlace | null>(null);
+  // View-all is a mode of the one selected-place sheet, never a second modal.
+  // It stays open while cards change selection and collapses with the sheet.
+  const [sourceGroupExpanded, setSourceGroupExpanded] = useState(false);
   const selectedRef = useRef<SavedPlaceWithPlace | null>(null);
   selectedRef.current = selected;
   const selectedSourceGroup = useMemo(
@@ -644,6 +647,10 @@ export default function MapScreen() {
   const activeSourceGroupIdentity = selected && (selectedSourceGroup?.places.length ?? 0) > 1
     ? selectedSourceGroup?.identityKey ?? null
     : requestedSourceGroup?.identityKey ?? null;
+  useEffect(() => {
+    if (!sourceGroupExpanded) return;
+    if (!selected || activeSourceGroupPlaces.length < 2) setSourceGroupExpanded(false);
+  }, [activeSourceGroupPlaces.length, selected, sourceGroupExpanded]);
   const mapGroupCoordinateIds = useMemo(
     () => new Set(activeSourceGroupPlaces
       .filter((place) => Number.isFinite(place.place?.latitude) && Number.isFinite(place.place?.longitude))
@@ -1084,6 +1091,17 @@ export default function MapScreen() {
   const [previewExpanded, setPreviewExpanded] = useState(false);
   const previewExpandedRef = useRef(false);
   previewExpandedRef.current = previewExpanded;
+  useEffect(() => {
+    if (!previewExpanded && sourceGroupExpanded) setSourceGroupExpanded(false);
+  }, [previewExpanded, sourceGroupExpanded]);
+  useEffect(() => {
+    if (!sourceGroupExpanded) return;
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      setSourceGroupExpanded(false);
+      return true;
+    });
+    return () => subscription.remove();
+  }, [sourceGroupExpanded]);
   const shouldShowMapControls = !nearbyExplorer && shouldRenderMapTopChrome({
     searchVisible,
     hasSelectedPlace: !!selected,
@@ -2804,7 +2822,10 @@ export default function MapScreen() {
     }
   }
 
-  function selectMapGroupPlace(item: SavedPlaceWithPlace) {
+  function selectMapGroupPlace(
+    item: SavedPlaceWithPlace,
+    interaction: 'tap' | 'swipe' = 'tap',
+  ) {
     if (!mapGroupCoordinateIds.has(item.id)) {
       showSnackbar(`${item.place.name} does not have a map location yet.`, null);
       return;
@@ -2814,7 +2835,14 @@ export default function MapScreen() {
       saved_place_id: item.id,
       place_count: activeSourceGroupPlaces.length,
     });
+    void trackEvent(interaction === 'swipe' ? 'source_group_swiped' : 'source_group_card_selected', {
+      source_identity_key: activeSourceGroupIdentity,
+      saved_place_id: item.id,
+      place_count: activeSourceGroupPlaces.length,
+    });
+    const keepExpanded = previewExpandedRef.current;
     selectPlace(item);
+    if (keepExpanded) setPreviewExpanded(true);
   }
 
   function viewAllSourceGroup() {
@@ -2823,9 +2851,15 @@ export default function MapScreen() {
       source_identity_key: activeSourceGroupIdentity,
       place_count: activeSourceGroupPlaces.length,
     });
+    void trackEvent('source_group_see_all_opened', {
+      source_identity_key: activeSourceGroupIdentity,
+      place_count: activeSourceGroupPlaces.length,
+      saved_place_id: selected?.id ?? null,
+    });
     const target = selected ?? activeSourceGroupPlaces.find((place) => mapGroupCoordinateIds.has(place.id));
     if (target && target.id !== selected?.id) selectPlace(target);
     setPreviewExpanded(true);
+    setSourceGroupExpanded(true);
   }
 
   function handleSelectedSourceGroupMemberRemoved(removedId: string) {
@@ -3769,8 +3803,10 @@ export default function MapScreen() {
                 <SourceGroupSwitcher
                   places={activeSourceGroupPlaces}
                   selectedId={selected.id}
+                  expanded={sourceGroupExpanded}
                   onSelect={selectMapGroupPlace}
                   onViewAll={viewAllSourceGroup}
+                  onCollapse={() => setSourceGroupExpanded(false)}
                 />
               ) : null}
               {previewExpanded ? null : (
@@ -3850,6 +3886,7 @@ export default function MapScreen() {
                     selectPlace(next);
                     setPreviewExpanded(true);
                   }}
+                  onViewSourceGroup={viewAllSourceGroup}
                   onSaveRecommendation={async (candidate) =>
                     !!(await handleSavePlaceCandidate(candidate, 'recommendation'))
                   }

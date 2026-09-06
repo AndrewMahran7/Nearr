@@ -201,7 +201,7 @@ const sourceTests: Array<[string, () => void]> = [
   ['offer displays one-token price', () => assert.match(detail, /Try Premium Request · 1 token/)],
   ['failure explicitly says token returned', () => assert.match(detail, /Your token was returned\./)],
   ['failure offers manual search and Done', () => {
-    assert.match(detail, /title="Search manually"/);
+    assert.match(detail, /title="Find the right place"/);
     assert.match(detail, /title="Done"/);
   }],
   ['Premium offer uses the token mark', () => assert.match(detail, /<TokenSymbol size=\{26\}/)],

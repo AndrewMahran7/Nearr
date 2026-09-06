@@ -22,7 +22,7 @@ assert.match(extension, /completionActionsRef\.current\?\.openNearr\(SHARE_JOBS_
 assert.match(extension, /createCompletionActions/, 'Done and Open Nearr are once-latched');
 assert.match(extension, /<AsyncSurface onClose=\{finish\} showClose=\{false\}>/);
 
-assert.match(queue, /title="Your queue"/);
+assert.match(queue, /title="Recent finds"/);
 assert.equal((queue.match(/queueIntro\(count\)/g) ?? []).length, 1, 'queue count appears once');
 assert.match(queue, /splitPlaceAddress/);
 assert.match(queue, /Needs you/);
@@ -31,7 +31,7 @@ assert.match(queue, /QUEUE_EMPTY_COPY\.title/);
 assert.match(queue, /numberOfLines=\{2\}[\s\S]*?jobTitle/);
 assert.match(queue, /<PlaceImage/);
 assert.match(queue, /size=\{hasContent \? 'queue' : 'compact'\}/);
-assert.match(queue, /Recently completed/);
+assert.match(queue, /Recent finds/);
 assert.match(queue, /Clear completed/);
 assert.match(queue, /icon="close"/);
 

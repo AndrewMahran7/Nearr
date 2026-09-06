@@ -50,7 +50,7 @@ export const PHASE_1_COPY = {
   alreadySavedBody: "It's ready on your map.",
   viewOnMap: 'View on map',
   alternativeAction: 'Not the right place?',
-  searchLabel: 'Search for the place',
+  searchLabel: 'Find the right place',
   removeTitle: 'Remove this save?',
   removeMessage: 'This post will leave your queue.',
 } as const;

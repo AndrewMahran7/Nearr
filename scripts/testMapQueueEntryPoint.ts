@@ -247,7 +247,7 @@ const button = read('components/map/ShareQueueButton.tsx');
   const detailScreen = read('app/share-jobs/[jobId].tsx');
 
   assert.ok(queueScreen.includes('<ShareJobsSheet'), 'the queue sheet is unchanged');
-  assert.ok(queueScreen.includes('Your queue'), 'and keeps its title');
+  assert.ok(queueScreen.includes('Recent finds'), 'and keeps its title');
   // Exact-place navigation out of the queue (82eac44) still goes through the
   // validated contract, by canonical saved_places.id.
   assert.ok(

@@ -2786,10 +2786,10 @@ function LegacyShareScreen() {
                   setPhase('failed');
                 }}
                 accessibilityRole="button"
-                accessibilityLabel="Search for the place"
+                accessibilityLabel="Find the right place"
                 style={styles.manualLink}
               >
-                <Text style={[Typography.caption, styles.searchPlaceText]}>Search for the place</Text>
+                <Text style={[Typography.caption, styles.searchPlaceText]}>Find the right place</Text>
               </Pressable>
               <Pressable
                 onPress={openOriginalPost}
@@ -2972,7 +2972,7 @@ function LegacyShareScreen() {
           {phase === 'failed' ? (
             <Card style={styles.section}>
               <Text style={Typography.heading}>
-                {vayrinEnabled ? 'Search for the place' : onboardingShare ? 'Not enough to go on.' : 'Search manually'}
+                {vayrinEnabled ? 'Find the right place' : onboardingShare ? 'Not enough to go on.' : 'Find the right place'}
               </Text>
               {!vayrinEnabled ? (
                 <Text

@@ -116,7 +116,7 @@ test('13. Production incomplete area remains truthful and usable without Premium
   assert.equal(premiumRequestsEnabledForEnvironment({ environment: 'production' }), false);
 });
 test('14. Production manual search still works', () => {
-  assert.match(detail, /Search manually/);
+  assert.match(detail, /Find the right place/);
   assert.match(detail, /manualSearch/);
 });
 test('15. Existing completed Premium result still opens', () => {

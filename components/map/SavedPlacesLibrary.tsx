@@ -210,7 +210,7 @@ export function SavedPlacesLibrary({
           <Text style={[typography.heading, styles.emptyTitle]}>No saved places yet</Text>
           <Text style={[typography.body, styles.emptyBody]}>Share a place to Nearr or add one from search.</Text>
           <Button title="Save from link" onPress={onSaveFromLink} style={styles.emptyAction} />
-          <Button title="Search manually" variant="secondary" onPress={onSearchManually} style={styles.emptySecondary} />
+          <Button title="Find the right place" variant="secondary" onPress={onSearchManually} style={styles.emptySecondary} />
         </View>
       );
     }

@@ -32,6 +32,7 @@ import * as Location from 'expo-location';
 
 import { Button, ErrorBoundary, Input, ShareJobsHeader } from '@/components';
 import { CandidateConfirmationCard } from '@/components/CandidateConfirmationCard';
+import { PlaceBrowseCarousel, type PlaceBrowseCarouselItem } from '@/components/PlaceBrowseCarousel';
 import { PlaceImage } from '@/components/PlaceImage';
 import { SourceEvidenceGallery } from '@/components/SourceEvidenceGallery';
 import { ShareJobsSheet } from '@/components/ShareJobsSheet';
@@ -175,6 +176,7 @@ import {
   type CandidateConfirmationPlace,
 } from '@/lib/vayrinCandidateConfirmation';
 import { QUICK_CHECK_LAYOUT } from '@/lib/quickCheckDensity';
+import { planFindRightPlace } from '@/lib/findRightPlace';
 import {
   geographicFieldsFromLabel,
   normalizeResolutionName,
@@ -421,6 +423,7 @@ function ShareJobDetailScreen() {
     const trimmed = query.trim();
     if (!trimmed) return;
     void trackEvent('manual_search_used', { job_id: job?.id ?? routeJobId, source: 'correction' });
+    void trackEvent('find_right_place_started', { source: 'share_job', job_id: job?.id ?? routeJobId });
     const requestId = ++manualRequestRef.current;
     if (vayrinEnabled) {
       void trackEvent('vayrin_manual_fallback', { source: 'async' });
@@ -468,6 +471,33 @@ function ShareJobDetailScreen() {
       ? fixture.manualResults.map((candidate) => shareJobCandidateToPlaceCandidate(candidate))
       : await search(trimmed, searchBias, resolutionContext);
     if (!mountedRef.current || requestId !== manualRequestRef.current) return;
+    const resolutionPlan = planFindRightPlace({
+      query: trimmed,
+      expectedName: rawResolutionQueryRef.current ?? job?.suggested_query ?? trimmed,
+      candidates: found,
+      sourceCoordinates,
+    });
+    if (resolutionPlan.action === 'auto_resolve') {
+      setManualSelectedIds([]);
+      setManualSearchPhase('results');
+      void trackEvent('find_right_place_auto_resolved', {
+        source: 'share_job',
+        job_id: job?.id ?? routeJobId,
+        candidate_count: 1,
+      });
+      await handleSaveManual(resolutionPlan.candidate, true);
+      return;
+    }
+    void trackEvent(
+      resolutionPlan.action === 'choose'
+        ? 'find_right_place_multiple_matches'
+        : 'find_right_place_no_match',
+      {
+        source: 'share_job',
+        job_id: job?.id ?? routeJobId,
+        candidate_count: resolutionPlan.defensible.length,
+      },
+    );
     const initial = selectedQuickCheckCandidate(trimmed, found);
     setManualSelectedIds(initial ? [initial.googlePlaceId] : []);
     setManualSearchPhase(found.length > 0 ? 'results' : 'empty');
@@ -999,7 +1029,7 @@ function ShareJobDetailScreen() {
   async function handleSaveStored(candidate: ShareJobCandidate) {
     if (!job || resolvingRef.current) return;
     if (!candidate.googlePlaceId) {
-      Alert.alert('Search for it', 'Use the search below to pick the exact place.');
+      Alert.alert('Find the right place', 'Nearr will look up the exact place.');
       return;
     }
     resolvingRef.current = true;
@@ -1031,12 +1061,19 @@ function ShareJobDetailScreen() {
     }
   }
 
-  async function handleSaveManual(candidate: PlaceCandidate) {
+  async function handleSaveManual(candidate: PlaceCandidate, autoResolved = false) {
     if (!job || resolvingRef.current) return;
     resolvingRef.current = true;
     if (mountedRef.current) setBusy(true);
     try {
       const { savedPlaceId, duplicate } = await persistCandidate(candidate);
+      if (autoResolved && duplicate) {
+        void trackEvent('existing_place_source_attached', {
+          job_id: job.id,
+          saved_place_id: savedPlaceId,
+          source: 'find_right_place',
+        });
+      }
       await resolveJobWith(job.id, savedPlaceId, duplicate);
     } catch (err) {
       Alert.alert('Could not save', err instanceof Error ? err.message : 'Please try again.');
@@ -1323,6 +1360,11 @@ function ShareJobDetailScreen() {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setExpandedMentionId(row.logicalPlaceId);
     setBatch(openBatchSearch(batch, row.logicalPlaceId));
+    void trackEvent('find_right_place_started', {
+      source: 'multi_place_review',
+      job_id: job?.id ?? null,
+      logical_place_id: row.logicalPlaceId,
+    });
     if (row.search.phase === 'closed' || row.search.phase === 'idle') {
       void runBatchSearch(row.logicalPlaceId, row.search.query || row.primaryVenueName || row.extractedName);
     }
@@ -1340,6 +1382,7 @@ function ShareJobDetailScreen() {
         ? getVayrinCandidateFixture(job.id)
         : null;
       let found: ShareJobResultCandidate[];
+      let sourceCoordinates: LocationBias | null = null;
       if (fixture?.manualResults) {
         found = fixture.manualResults;
       } else {
@@ -1347,6 +1390,7 @@ function ShareJobDetailScreen() {
         const coordinates = current.contextLabel
           ? await geocodeContextText(current.contextLabel)
           : null;
+        sourceCoordinates = coordinates;
         const nearbyResolvedMentions: NearbyResolvedMention[] = batch.order
           .filter((id) => id !== logicalPlaceId)
           .flatMap((id) => {
@@ -1384,6 +1428,82 @@ function ShareJobDetailScreen() {
         found = (await searchPlaces(query, bias, context)).map(toResultCandidate);
       }
       if (!mountedRef.current || batchSearchRequestsRef.current[logicalPlaceId] !== requestId) return;
+      const resolutionPlan = planFindRightPlace({
+        query,
+        expectedName: current.primaryVenueName ?? current.extractedName,
+        candidates: found,
+        sourceCoordinates,
+      });
+      if (resolutionPlan.action === 'auto_resolve') {
+        const candidate = resolutionPlan.candidate;
+        let nextBatch = chooseBatchCandidate(
+          finishBatchSearch(batch, logicalPlaceId, found),
+          logicalPlaceId,
+          candidate,
+          savedByGoogleId[candidate.googlePlaceId] ?? null,
+        );
+        setBatch(nextBatch);
+        resolvingRef.current = true;
+        if (mountedRef.current) setBusy(true);
+        void trackEvent('find_right_place_auto_resolved', {
+          source: 'multi_place_review',
+          job_id: job?.id ?? null,
+          logical_place_id: logicalPlaceId,
+          candidate_count: 1,
+        });
+        try {
+          const persisted = await persistCandidate(
+            shareJobCandidateToPlaceCandidate(candidate),
+            current.aiNote ?? candidate.aiNote ?? null,
+          );
+          const outcome: SharePlaceSaveOutcome = {
+            logicalPlaceId,
+            candidateId: candidate.googlePlaceId,
+            status: persisted.duplicate ? 'duplicate' : 'saved',
+            savedPlaceId: persisted.savedPlaceId,
+          };
+          nextBatch = applyBatchSaveOutcomes(nextBatch, [outcome]);
+          if (mountedRef.current) {
+            setBatch(nextBatch);
+            setExpandedMentionId(logicalPlaceId);
+          }
+          if (persisted.duplicate) {
+            void trackEvent('existing_place_source_attached', {
+              source: 'multi_place_review',
+              job_id: job?.id ?? null,
+              saved_place_id: persisted.savedPlaceId,
+            });
+          }
+          if (job && recoverableBatchRowCount(nextBatch) === 0) {
+            const completed = batchCompletionSavedPlaceIds(nextBatch);
+            const resolutionId = completed.createdSavedPlaceIds[0] ?? completed.duplicateSavedPlaceIds[0];
+            if (resolutionId) {
+              await markShareJobResolved(job.id, resolutionId);
+              completeManualSave(completed.createdSavedPlaceIds, completed.duplicateSavedPlaceIds);
+            }
+          }
+        } catch (error) {
+          if (mountedRef.current) {
+            setBatch(failBatchSearch(nextBatch, logicalPlaceId));
+            Alert.alert('Could not save', error instanceof Error ? error.message : 'Please try again.');
+          }
+        } finally {
+          resolvingRef.current = false;
+          if (mountedRef.current) setBusy(false);
+        }
+        return;
+      }
+      void trackEvent(
+        resolutionPlan.action === 'choose'
+          ? 'find_right_place_multiple_matches'
+          : 'find_right_place_no_match',
+        {
+          source: 'multi_place_review',
+          job_id: job?.id ?? null,
+          logical_place_id: logicalPlaceId,
+          candidate_count: resolutionPlan.defensible.length,
+        },
+      );
       setBatch((value) => value ? finishBatchSearch(value, logicalPlaceId, found) : value);
     } catch {
       if (!mountedRef.current || batchSearchRequestsRef.current[logicalPlaceId] !== requestId) return;
@@ -1506,7 +1626,7 @@ function ShareJobDetailScreen() {
         {manualSearchPhase === 'empty' ? (
           emptyContext.noNearbyMatch && emptyContext.contextLabel ? (
             <Text style={[typography.caption, styles.help]}>
-              {`No matching location found near ${emptyContext.contextLabel}. Search manually or edit the area to widen it.`}
+              {`No matching location found near ${emptyContext.contextLabel}. Find the right place or edit the area to widen it.`}
             </Text>
           ) : (
             <Text style={[typography.caption, styles.help]}>Couldn&apos;t find an exact place.</Text>
@@ -1588,7 +1708,7 @@ function ShareJobDetailScreen() {
         key={`${lead.mentionId}:${lead.displayName}:${lead.contextLabel ?? ''}`}
         onPress={onPress}
         accessibilityRole="button"
-        accessibilityLabel={`${lead.displayName}${lead.contextLabel ? `, ${lead.contextLabel}` : ''}. Search for this place.`}
+        accessibilityLabel={`${lead.displayName}${lead.contextLabel ? `, ${lead.contextLabel}` : ''}. Find the right place.`}
         style={({ pressed }) => [styles.leadCard, pressed && styles.candidatePressed]}
       >
         <View style={styles.leadIcon} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
@@ -1601,7 +1721,7 @@ function ShareJobDetailScreen() {
             <Text style={[typography.caption, styles.candidateAddr]} numberOfLines={2}>{lead.contextLabel}</Text>
           ) : null}
           {timeLabel ? <Text style={[typography.caption, styles.leadTime]}>{timeLabel}</Text> : null}
-          <Text style={[typography.caption, styles.leadCaveat]}>Search places</Text>
+          <Text style={[typography.caption, styles.leadCaveat]}>Find the right place</Text>
         </View>
         <Feather name="chevron-right" size={18} color={colors.textMuted} />
       </Pressable>
@@ -1648,7 +1768,7 @@ function ShareJobDetailScreen() {
     return (
       <View style={styles.batchSearch}>
         <View style={styles.searchHeaderRow}>
-          <Text style={[typography.label, styles.searchLabel]}>Search for this place</Text>
+          <Text style={[typography.label, styles.searchLabel]}>Find the right place</Text>
           <Pressable
             onPress={() => setBatch((value) => value ? closeBatchSearch(value, row.logicalPlaceId) : value)}
             hitSlop={10}
@@ -1683,7 +1803,7 @@ function ShareJobDetailScreen() {
         {row.search.phase === 'searching' ? (
           <View style={styles.processingRow}>
             <ActivityIndicator color={colors.primary} />
-            <Text style={[typography.caption, styles.helpCompact]}>Searching…</Text>
+            <Text style={[typography.caption, styles.helpCompact]}>Finding the right place…</Text>
           </View>
         ) : null}
         {row.search.phase === 'empty' ? (
@@ -1726,9 +1846,6 @@ function ShareJobDetailScreen() {
           style={({ pressed }) => [styles.mentionSummary, pressed && styles.mentionSummaryPressed]}
           testID="mention-summary"
         >
-          <View style={styles.mentionSequence} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-            <Text style={styles.mentionSequenceText}>{index + 1}</Text>
-          </View>
           <View style={styles.flex}>
             <Text style={styles.mentionSummaryName} numberOfLines={2}>{mentionName}</Text>
             <Text style={styles.mentionSummaryStatus} numberOfLines={1}>{status}</Text>
@@ -1760,9 +1877,9 @@ function ShareJobDetailScreen() {
             {row.userDismissed ? <Text style={[typography.caption, styles.unresolvedCopy]}>No place selected. Other selections are unchanged.</Text> : null}
             {!persisted && row.search.phase === 'closed' ? (
               <View style={styles.mentionActions}>
-                <Pressable onPress={() => openSearchForBatchRow(row)} accessibilityRole="button" accessibilityLabel={`Search another place for ${row.extractedName}`} style={styles.inlineAction}>
+                <Pressable onPress={() => openSearchForBatchRow(row)} accessibilityRole="button" accessibilityLabel={`Find the right place for ${row.extractedName}`} style={styles.inlineAction}>
                   <Feather name="search" size={16} color={colors.accent} />
-                  <Text style={styles.inlineActionText}>Search another place</Text>
+                  <Text style={styles.inlineActionText}>Find the right place</Text>
                 </Pressable>
                 <Pressable
                   onPress={() => dismissMention(row)}
@@ -1851,7 +1968,7 @@ function ShareJobDetailScreen() {
             style={styles.centeredPrimary}
           />
           <Text style={[typography.caption, styles.premiumReassurance]}>Charged only if Premium finds a useful, specific result.</Text>
-          <Button title="Search manually" variant="secondary" onPress={() => setPremiumOfferDismissed(true)} style={styles.secondaryBtn} />
+          <Button title="Find the right place" variant="secondary" onPress={() => setPremiumOfferDismissed(true)} style={styles.secondaryBtn} />
         </View>
       </ShareJobsSheet>
     );
@@ -1880,7 +1997,7 @@ function ShareJobDetailScreen() {
           <Text style={[typography.body, styles.help, styles.premiumBody]}>
             Premium didn&apos;t produce a useful, specific place. Your token was returned.
           </Text>
-          <Button title="Search manually" onPress={() => setPremiumOfferDismissed(true)} style={styles.centeredPrimary} />
+          <Button title="Find the right place" onPress={() => setPremiumOfferDismissed(true)} style={styles.centeredPrimary} />
           <Button title="Done" variant="secondary" onPress={backToQueue} style={styles.secondaryBtn} />
         </View>
       </ShareJobsSheet>
@@ -2067,6 +2184,19 @@ function ShareJobDetailScreen() {
   const selectedPendingCount = batch ? selectedBatchTargets(batch).length : 0;
   const batchCounts = batch ? batchActionCounts(batch) : { total: 0, newPlaces: 0, sourceAttachments: 0 };
   const batchProgress = batch ? batchResolutionProgress(batch) : { resolved: 0, total: 0 };
+  const batchBrowseItems: PlaceBrowseCarouselItem[] = batch
+    ? batch.order.map((id) => {
+        const row = batch.rows[id]!;
+        const candidate = rowCandidate(row);
+        return {
+          id,
+          name: row.primaryVenueName ?? row.extractedName,
+          subtitle: mentionSummaryStatus(row),
+          googlePlaceId: candidate?.googlePlaceId ?? null,
+          fallbackSourceUri: row.sourceFrameUrl,
+        };
+      })
+    : [];
   const single = candidates[0];
   const confirmationSingle = confirmationCandidates[0] ?? null;
   const broadSingle = confirmationSingle ? isBroadCandidate(confirmationSingle) : false;
@@ -2139,10 +2269,23 @@ function ShareJobDetailScreen() {
                     <Text style={[typography.caption, styles.sourceText]} numberOfLines={1}>{platformName(platform)} · From the original post</Text>
                   </View>
                   <Text style={[typography.title, styles.batchTitle]}>{batch.order.length} places found</Text>
-                  <Text style={[typography.caption, styles.batchHelp]}>Open one place at a time to review its matches.</Text>
+                  <Text style={[typography.caption, styles.batchHelp]}>Swipe to browse places from this video.</Text>
                   <Text accessibilityLiveRegion="polite" style={styles.batchProgress}>
                     {batchProgress.resolved} of {batchProgress.total} places resolved
                   </Text>
+                  <PlaceBrowseCarousel
+                    items={batchBrowseItems}
+                    selectedId={expandedMentionId ?? batch.order[0] ?? null}
+                    onSelect={(item, interaction) => {
+                      setExpandedMentionId(item.id);
+                      void trackEvent(
+                        interaction === 'swipe' ? 'source_group_swiped' : 'source_group_card_selected',
+                        { source: 'multi_place_review', job_id: job?.id ?? null },
+                      );
+                    }}
+                    testID="multi-place-review-carousel"
+                  />
+                  <Text style={styles.fullListLabel}>All places</Text>
                 </View>
               )}
               ListEmptyComponent={<View style={styles.emptyBatch}><Text style={[typography.body, styles.help]}>No places were available to review.</Text></View>}
@@ -2279,11 +2422,11 @@ function ShareJobDetailScreen() {
               <Pressable
                 onPress={revealSearch}
                 accessibilityRole="button"
-                accessibilityLabel="Search for the place"
+                accessibilityLabel="Find the right place"
                 style={styles.searchForPlaceAction}
               >
                 <Feather name="search" size={17} color={colors.accent} />
-                <Text style={styles.searchForPlaceText}>Search for the place</Text>
+                <Text style={styles.searchForPlaceText}>Find the right place</Text>
               </Pressable>
             </>
           )}
@@ -2452,11 +2595,11 @@ function ShareJobDetailScreen() {
                     revealSearch();
                   }}
                   accessibilityRole="button"
-                  accessibilityLabel="Search manually"
+                  accessibilityLabel="Find the right place"
                   style={styles.searchForPlaceAction}
                 >
                   <Feather name="search" size={17} color={colors.accent} />
-                  <Text style={styles.searchForPlaceText}>Search manually</Text>
+                  <Text style={styles.searchForPlaceText}>Find the right place</Text>
                 </Pressable>
               </> : detail.canSearchManually
                 ? renderManualSearch({ note: 'Search for the exact place and save it instead.', onCancel: hideSearch })
@@ -2531,11 +2674,11 @@ function ShareJobDetailScreen() {
                 <Pressable
                   onPress={revealSearch}
                   accessibilityRole="button"
-                  accessibilityLabel="Search for the place"
+                  accessibilityLabel="Find the right place"
                   style={styles.searchForPlaceAction}
                 >
                   <Feather name="search" size={17} color={colors.accent} />
-                  <Text style={styles.searchForPlaceText}>Search for the place</Text>
+                  <Text style={styles.searchForPlaceText}>Find the right place</Text>
                 </Pressable>
               </>
             )}
@@ -2587,6 +2730,7 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
     batchHelp: { color: colors.textSecondary, marginTop: 2, lineHeight: 18 },
     vayrinLabel: { color: colors.accent, fontSize: 11, lineHeight: 16, fontWeight: '800', letterSpacing: 1.6, marginTop: Spacing.lg },
     batchProgress: { color: colors.textSecondary, fontSize: 13, lineHeight: 18, fontWeight: '700', marginTop: Spacing.xs },
+    fullListLabel: { color: colors.text, fontSize: 15, fontWeight: '700', marginTop: Spacing.lg, marginBottom: Spacing.xs },
     batchFooter: {
       paddingHorizontal: Spacing.lg,
       paddingTop: Spacing.sm,

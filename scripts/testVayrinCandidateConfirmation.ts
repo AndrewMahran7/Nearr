@@ -96,7 +96,7 @@ assert.match(card, /accessibilityRole=\{selectionRole\}/);
 assert.match(card, /accessibilityState=\{\{ checked: selected \}\}/);
 assert.match(card, /AREA MATCH/);
 assert.match(asyncDetail, /See places in this area/);
-assert.match(asyncDetail, /Search for the place/);
+assert.match(asyncDetail, /Find the right place/);
 assert.match(asyncDetail, /None of these/);
 assert.match(asyncDetail, /View original post/);
 assert.match(syncShare, /View original post/);

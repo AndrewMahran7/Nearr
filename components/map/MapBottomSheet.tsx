@@ -416,7 +416,7 @@ export function MapBottomSheet({
               </Text>
               <Button title="Save from link" onPress={onSaveFromLink} style={styles.emptyPrimary} />
               <Button
-                title="Search manually"
+                title="Find the right place"
                 variant="secondary"
                 onPress={onSearchManually}
                 style={styles.emptySecondary}

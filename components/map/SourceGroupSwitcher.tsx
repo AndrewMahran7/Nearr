@@ -1,8 +1,8 @@
-import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
-import { Radius, Spacing } from '@/constants';
+import { PlaceBrowseCarousel } from '@/components/PlaceBrowseCarousel';
+import { Spacing } from '@/constants';
 import { sourceGroupPosition } from '@/lib/sourcePlaceGroup';
 import { useTheme } from '@/lib/theme';
 import type { SavedPlaceWithPlace } from '@/types';
@@ -10,85 +10,67 @@ import type { SavedPlaceWithPlace } from '@/types';
 type Props = {
   places: SavedPlaceWithPlace[];
   selectedId: string;
-  onSelect: (place: SavedPlaceWithPlace) => void;
+  expanded: boolean;
+  onSelect: (place: SavedPlaceWithPlace, interaction: 'tap' | 'swipe') => void;
   onViewAll: () => void;
+  onCollapse: () => void;
 };
 
-const MAX_NUMBERED_CHIPS = 5;
-
-export function SourceGroupSwitcher({ places, selectedId, onSelect, onViewAll }: Props) {
+export function SourceGroupSwitcher({
+  places,
+  selectedId,
+  expanded,
+  onSelect,
+  onViewAll,
+  onCollapse,
+}: Props) {
   const { colors, typography } = useTheme();
-  const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
+  const styles = createStyles(colors, typography);
   const position = sourceGroupPosition(places, selectedId);
   if (!position) return null;
-
-  const previous = places[(position.index - 1 + places.length) % places.length]!;
-  const next = places[(position.index + 1) % places.length]!;
+  const carouselItems = places.map((place) => ({
+    id: place.id,
+    name: place.place.name,
+    subtitle: place.place.formatted_address || 'Saved to your map',
+    googlePlaceId: place.place.google_place_id,
+  }));
 
   return (
     <View
       style={styles.wrap}
       testID="source-group-switcher"
-      accessibilityLabel={`Place ${position.index + 1} of ${position.count} from this video`}
+      accessibilityLabel={`${expanded ? 'All places' : 'Places'} from this video. ${position.label}.`}
     >
-      {places.length <= MAX_NUMBERED_CHIPS ? (
-        <View style={styles.chips}>
-          {places.map((place, index) => {
-            const selected = place.id === selectedId;
-            return (
-              <Pressable
-                key={place.id}
-                onPress={() => onSelect(place)}
-                accessibilityRole="button"
-                accessibilityState={{ selected }}
-                accessibilityLabel={`${place.place.name}, ${index + 1} of ${places.length}`}
-                hitSlop={6}
-                style={[styles.chip, selected && styles.chipSelected]}
-              >
-                <Text style={[styles.chipText, selected && styles.chipTextSelected]}>{index + 1}</Text>
-              </Pressable>
-            );
-          })}
-        </View>
-      ) : (
-        <View style={styles.pager}>
-          <Pressable
-            onPress={() => onSelect(previous)}
-            accessibilityRole="button"
-            accessibilityLabel={`Previous place, ${previous.place.name}`}
-            hitSlop={8}
-            style={styles.arrow}
-          >
-            <Feather name="chevron-left" size={18} color={colors.textSecondary} />
-          </Pressable>
-          <Text style={styles.count} accessibilityLiveRegion="polite">
-            {position.index + 1} / {position.count}
+      <View style={styles.header}>
+        <View style={styles.headerCopy}>
+          <Text style={styles.title}>
+            {expanded ? 'All places from this video' : `${position.count} places from this video`}
           </Text>
-          <Pressable
-            onPress={() => onSelect(next)}
-            accessibilityRole="button"
-            accessibilityLabel={`Next place, ${next.place.name}`}
-            hitSlop={8}
-            style={styles.arrow}
-          >
-            <Feather name="chevron-right" size={18} color={colors.textSecondary} />
-          </Pressable>
+          <Text style={styles.position} accessibilityLiveRegion="polite">{position.label}</Text>
         </View>
-      )}
-      {places.length <= MAX_NUMBERED_CHIPS ? (
-        <Text style={styles.position} accessibilityLiveRegion="polite">
-          {position.index + 1} / {position.count}
-        </Text>
-      ) : null}
-      <Pressable
-        onPress={onViewAll}
-        accessibilityRole="button"
-        accessibilityLabel={`View all ${position.count} places from this video`}
-        hitSlop={6}
-        style={styles.viewAll}
-      >
-        <Text style={styles.viewAllText}>View all</Text>
-      </Pressable>
+        <Pressable
+          onPress={expanded ? onCollapse : onViewAll}
+          accessibilityRole="button"
+          accessibilityLabel={expanded
+            ? 'Collapse all places from this video'
+            : `See all ${position.count} places from this video`}
+          hitSlop={6}
+          style={styles.viewAll}
+        >
+          <Text style={styles.viewAllText}>{expanded ? 'Done' : 'See all'}</Text>
+          {!expanded ? <Feather name="arrow-right" size={14} color={colors.accent} /> : null}
+        </Pressable>
+      </View>
+      <PlaceBrowseCarousel
+        items={carouselItems}
+        selectedId={selectedId}
+        presentation={expanded ? 'expanded' : 'compact'}
+        onSelect={(item, interaction) => {
+          const place = places.find((candidate) => candidate.id === item.id);
+          if (place) onSelect(place, interaction);
+        }}
+        testID={expanded ? 'source-group-full-view' : 'source-group-selected-carousel'}
+      />
     </View>
   );
 }
@@ -98,33 +80,23 @@ function createStyles(
   typography: ReturnType<typeof useTheme>['typography'],
 ) {
   return StyleSheet.create({
-    wrap: {
+    wrap: { marginBottom: Spacing.sm, paddingBottom: Spacing.xs },
+    header: {
+      minHeight: 42,
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: Spacing.md,
+    },
+    headerCopy: { flex: 1 },
+    title: { ...typography.label, color: colors.text },
+    position: { ...typography.caption, color: colors.textSecondary, marginTop: 2 },
+    viewAll: {
       minHeight: 40,
       flexDirection: 'row',
       alignItems: 'center',
-      gap: Spacing.sm,
-      marginBottom: Spacing.sm,
+      gap: 5,
       paddingHorizontal: Spacing.xs,
     },
-    chips: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 7 },
-    chip: {
-      width: 32,
-      height: 32,
-      borderRadius: Radius.pill,
-      alignItems: 'center',
-      justifyContent: 'center',
-      borderWidth: 1,
-      borderColor: colors.border,
-      backgroundColor: colors.surface,
-    },
-    chipSelected: { borderColor: colors.accent, backgroundColor: colors.accent },
-    chipText: { ...typography.caption, color: colors.textSecondary, fontWeight: '700' },
-    chipTextSelected: { color: colors.textInverse },
-    pager: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-    arrow: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
-    count: { ...typography.label, color: colors.text },
-    position: { ...typography.caption, color: colors.textSecondary },
-    viewAll: { minHeight: 36, justifyContent: 'center', paddingHorizontal: Spacing.xs },
     viewAllText: { ...typography.caption, color: colors.accent, fontWeight: '700' },
   });
 }

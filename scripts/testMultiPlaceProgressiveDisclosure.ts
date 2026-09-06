@@ -125,7 +125,7 @@ assert.match(detailSource, /keyExtractor=\{\(id\) => id\}/);
 // 16. Summary disclosure, thumbnails, local actions, and footer all expose accessible controls.
 assert.match(rowRenderer, /accessibilityLabel=\{`Place \$\{index \+ 1\} of \$\{total\}/);
 assert.match(rowRenderer, /accessibilityState=\{\{ expanded \}\}/);
-assert.match(rowRenderer, /accessibilityLabel=\{`Search another place for/);
+assert.match(rowRenderer, /accessibilityLabel=\{`Find the right place for/);
 assert.match(rowRenderer, /accessibilityLabel=\{`None of these for/);
 assert.ok(MULTI_PLACE_DISCLOSURE_LAYOUT.collapsedMentionMinHeight >= 44);
 assert.match(candidateSource, /width: 44, height: 44/);

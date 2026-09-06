@@ -278,13 +278,13 @@ export function buildVayrinPresentation(
         headline: 'Something went wrong.',
         body: 'Nearr could not finish checking this video.',
         primaryAction: 'Try again',
-        secondaryAction: 'Search manually',
+        secondaryAction: 'Find the right place',
       };
     case 'correcting':
       return {
         ...base,
         kind: 'correcting',
-        headline: 'Search for the place.',
+        headline: 'Find the right place.',
         body: 'Choose the result that matches the video.',
         primaryAction: 'Use this place',
         secondaryAction: 'Search again',
@@ -305,7 +305,7 @@ export function buildVayrinPresentation(
         kind: 'no_evidence',
         headline: "Couldn't find an exact place.",
         body: 'Search by name or location to choose the place.',
-        primaryAction: 'Search manually',
+        primaryAction: 'Find the right place',
         secondaryAction: 'Try another video',
       };
   }
@@ -381,7 +381,7 @@ export function mapShareJobToVayrinPresentation(
       headline: "Can't open this one.",
       body: 'Try sharing the video itself, or a link to the post.',
       primaryAction: 'Try another video',
-      secondaryAction: 'Search manually',
+      secondaryAction: 'Find the right place',
     };
   }
   return buildVayrinPresentation({ kind: 'no_evidence', source: 'async' }, context);

@@ -137,7 +137,7 @@ assert.equal(buildShareJobDetailState(buildVayrinCandidateFixtureJob('vayrin-con
 assert.match(sourceGallery, /Analyzed frames weren’t retained/);
 
 // 24–25. No dead end and safe-area-aware persistent CTA.
-assert.match(asyncDetail, /Search for the place/);
+assert.match(asyncDetail, /Find the right place/);
 assert.match(asyncDetail, /None of these|Not this place/);
 assert.match(asyncDetail, /stickySaveBar/);
 assert.match(asyncDetail, /Math\.max\(safeAreaInsets\.bottom, Spacing\.sm\)/);

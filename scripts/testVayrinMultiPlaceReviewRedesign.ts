@@ -114,7 +114,7 @@ assert.match(app, /persistShareJobCandidate/); // 18
 assert.match(read('supabase/functions/process-share-jobs/recognitionCache.ts'), /candidate_payload|candidatePayload/); // 19
 assert.match(enrichment, /saved_place_sources|source_url|sourceUrl/); // 20
 assert.doesNotMatch(app, /Choose the right place/);
-assert.match(app, /Search another place/);
+assert.match(app, /Find the right place/);
 assert.match(app, /None of these/);
 assert.match(app, /backToQueue/); // 24
 

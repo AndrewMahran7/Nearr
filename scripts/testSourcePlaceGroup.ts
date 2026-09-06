@@ -163,7 +163,8 @@ check('other source-group pins receive related styling', () => {
 });
 check('unrelated pins remain normal', () => assert.match(map, /dimmed=\{false\}/));
 check('switcher changes selected place by tap', () => {
-  assert.match(switcher, /onPress=\{\(\) => onSelect\(place\)\}/);
+  assert.match(switcher, /<PlaceBrowseCarousel/);
+  assert.match(switcher, /if \(place\) onSelect\(place, interaction\)/);
   assert.match(map, /onSelect=\{selectMapGroupPlace\}/);
 });
 check('switching selection updates the canonical detail input', () => assert.match(map, /saved=\{selected\}/));
@@ -178,8 +179,10 @@ check('expanded detail exposes From this video context', () => {
 });
 check('one-place source hides group UI', () => assert.match(map, /activeSourceGroupPlaces\.length > 1/));
 check('large groups use bounded pager plus count', () => {
-  assert.match(switcher, /MAX_NUMBERED_CHIPS = 5/);
-  assert.match(switcher, /position\.index \+ 1} \/ \{position\.count/);
+  assert.match(switcher, /\{position\.label\}/);
+  assert.match(switcher, /testID=\{expanded \? 'source-group-full-view' : 'source-group-selected-carousel'\}/);
+  const carousel = readFileSync(join(process.cwd(), 'components/PlaceBrowseCarousel.tsx'), 'utf8');
+  assert.match(carousel, /maxToRenderPerBatch=\{PLACE_BROWSE_MAX_RENDER_BATCH\}/);
 });
 check('removing selected member safely selects next or closes', () => {
   assert.match(details, /onRemoved\?: \(removedSavedPlaceId/);
