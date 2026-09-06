@@ -31,7 +31,7 @@ assert.deepEqual(
   { kind: 'nearby_group', savedPlaceIds: ['sp-a', 'sp-b', 'sp-c'] },
 );
 
-// C. Auto-saved/already-saved result -> saved place.
+// C. Auto-saved/already-saved result -> saved-result detail.
 assert.deepEqual(
   resolve({
     type: 'share_job_completed',
@@ -40,12 +40,7 @@ assert.deepEqual(
     savedPlaceId: 'sp-auto',
     googlePlaceId: 'gp-auto',
   }),
-  {
-    kind: 'saved_place',
-    savedPlaceId: 'sp-auto',
-    googlePlaceId: 'gp-auto',
-    reminder: false,
-  },
+  { kind: 'share_job', jobId: 'job-auto' },
 );
 
 // D/E/G. Every actionable result uses the existing job review/detail route.
@@ -149,9 +144,8 @@ const legacyShare = resolveNotificationDestination({
 });
 assert.equal(legacyShare.payloadVersion, 'unversioned');
 assert.deepEqual(legacyShare.destination, {
-  kind: 'saved_place',
-  savedPlaceId: 'old-sp',
-  reminder: false,
+  kind: 'share_job',
+  jobId: 'old',
 });
 assert.deepEqual(resolve({ savedPlaceId: 'legacy-near', placeId: 'legacy-place' }), {
   kind: 'saved_place',

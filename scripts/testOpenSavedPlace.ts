@@ -122,12 +122,10 @@ function openFromAlreadySavedNotification(
 }
 
 // New payload (savedPlaceId + googlePlaceId) → opens the exact row.
-const e1 = openFromAlreadySavedNotification(
+const e1 = routeShareJobNotification(
   { type: 'share_job_completed', outcome: 'already_saved', jobId: 'j1', savedPlaceId: 'sp1', googlePlaceId: 'gp1' },
-  savedList,
 );
-check('already-saved notification navigates to the map', e1.navigatedTo === '/(tabs)/map');
-check('already-saved notification OPENS the existing saved place', e1.opened?.id === 'sp1');
+check('already-saved notification opens the saved-result detail', e1?.kind === 'queue_item' && e1.jobId === 'j1');
 
 // Stale saved_places id, but the google_place_id still identifies the row.
 const e2 = openFromAlreadySavedNotification(

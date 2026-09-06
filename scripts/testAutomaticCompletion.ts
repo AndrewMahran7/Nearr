@@ -68,12 +68,13 @@ const singleNotification = composeShareCompletionNotification({
   savedPlaceId: 'saved-2', googlePlaceId: 'google-2', alternativeCount: 0,
 });
 assert.deepEqual(routeShareJobNotification(singleNotification.data), {
-  kind: 'saved_place', savedPlaceId: 'saved-2', googlePlaceId: 'google-2',
+  kind: 'queue_item', jobId: 'job-2',
 }); // 18
 
 const worker = source('supabase/functions/process-share-jobs/index.ts');
 const migration = source('supabase/migrations/20260906000001_automatic_completion_soft_alternatives.sql');
 const detail = source('app/share-jobs/[jobId].tsx');
+const savedResult = source('components/SavedPlaceResult.tsx');
 const queue = source('app/share-jobs/index.tsx');
 assert.match(worker, /automaticDeepCandidates[\s\S]*nativeNearrPlaceId/); // 19 named lead native save
 assert.match(worker, /status: 'completed'[\s\S]*automatic_deep_auto_completion/); // 20 no Search task
@@ -81,9 +82,9 @@ assert.match(migration, /secondary_soft_saved/); // 21 durable soft state
 assert.match(migration, /promote_share_job_soft_alternative/); // 22 promote
 assert.match(migration, /remove_share_job_soft_alternative/); // 23 remove
 assert.match(migration, /primary_replaced/); // 24 replace
-assert.match(detail, /Keep \/ Save/); // 25 optional keep
-assert.match(detail, /Make primary/); // 26 correction
-assert.match(detail, /View original post/); // 27 source relationship UI
+assert.match(savedResult, /Save too/); // 25 optional keep
+assert.match(savedResult, /Use instead/); // 26 correction
+assert.match(savedResult, /Watch post|actionLabel/); // 27 source relationship UI
 assert.doesNotMatch(queue, /renderSection\('Needs you'/); // 28
 assert.doesNotMatch(queue, /return 'Search needed'/); // 29
 assert.match(worker, /__skipPremiumEligibility: true/); // 30 Automatic Deep does not touch Premium

@@ -34,6 +34,10 @@ import { Button, ErrorBoundary, Input, ShareJobsHeader } from '@/components';
 import { CandidateConfirmationCard } from '@/components/CandidateConfirmationCard';
 import { PlaceBrowseCarousel, type PlaceBrowseCarouselItem } from '@/components/PlaceBrowseCarousel';
 import { PlaceImage } from '@/components/PlaceImage';
+import {
+  SavedPlaceResult,
+  type SavedPlaceAlternativeAction,
+} from '@/components/SavedPlaceResult';
 import { SourceEvidenceGallery } from '@/components/SourceEvidenceGallery';
 import { ShareJobsSheet } from '@/components/ShareJobsSheet';
 import { TokenSymbol } from '@/components/TokenSymbol';
@@ -50,6 +54,7 @@ import { sanitizeErrorText } from '@/lib/sanitizeError';
 import { logDebug } from '@/lib/logger';
 import { alreadySavedActionCopy } from '@/lib/savedPlaceSourceMerge';
 import { normalizeShareUrl } from '@/lib/shareAgent/tiktokUrl';
+import { buildSavedPlaceResultViewModel } from '@/lib/savedPlaceResult';
 import { PHASE_1_COPY, splitPlaceAddress } from '@/lib/sharePhase1Ui';
 import {
   buildVayrinPresentation,
@@ -149,6 +154,7 @@ import {
 import {
   archiveShareJob,
   getShareJob,
+  getShareJobPrimaryResult,
   listShareJobSoftAlternatives,
   markShareJobResolved,
   promoteShareJobSoftAlternative,
@@ -352,7 +358,11 @@ function ShareJobDetailScreen() {
 
   const [job, setJob] = useState<ShareJob | null>(null);
   const [softAlternatives, setSoftAlternatives] = useState<ShareJobSoftAlternative[]>([]);
-  const [keptAlternativeSavedPlaceIds, setKeptAlternativeSavedPlaceIds] = useState<string[]>([]);
+  const [primaryResultOrigin, setPrimaryResultOrigin] = useState<string | null>(null);
+  const [softAlternativePending, setSoftAlternativePending] = useState<
+    Record<string, SavedPlaceAlternativeAction | undefined>
+  >({});
+  const [hydratedPrimarySaved, setHydratedPrimarySaved] = useState<SavedPlaceWithPlace | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadFailure, setLoadFailure] = useState<DetailLoadFailure | null>(null);
   const [busy, setBusy] = useState(false);
@@ -392,6 +402,7 @@ function ShareJobDetailScreen() {
   const batchSearchRequestsRef = useRef<Record<string, number>>({});
   const disclosureInitializedJobRef = useRef<string | null>(null);
   const softAlternativesOpenedJobRef = useRef<string | null>(null);
+  const softAlternativeLocksRef = useRef(new Set<string>());
   const userLocationRef = useRef<LocationBias | null>(null);
   useEffect(() => {
     mountedRef.current = true;
@@ -558,10 +569,19 @@ function ShareJobDetailScreen() {
       if (!mountedRef.current) return;
       setJob(j);
       if (j?.status === 'completed' && !isVayrinCandidateFixtureId(id) && !isPhase2PreviewId(id)) {
-        const alternatives = await listShareJobSoftAlternatives(id).catch(() => []);
-        if (mountedRef.current) setSoftAlternatives(alternatives);
+        const [alternativesResult, primaryResult] = await Promise.allSettled([
+          listShareJobSoftAlternatives(id),
+          getShareJobPrimaryResult(id),
+        ]);
+        if (mountedRef.current) {
+          setSoftAlternatives(alternativesResult.status === 'fulfilled' ? alternativesResult.value : []);
+          setPrimaryResultOrigin(primaryResult.status === 'fulfilled'
+            ? primaryResult.value?.origin ?? null
+            : 'unknown');
+        }
       } else {
         setSoftAlternatives([]);
+        setPrimaryResultOrigin(null);
       }
       // A row the user can no longer read (deleted, or RLS-scoped away) comes
       // back as null rather than an error — that is "not found", not a crash.
@@ -593,58 +613,66 @@ function ShareJobDetailScreen() {
 
   const actOnSoftAlternative = useCallback(async (
     alternative: ShareJobSoftAlternative,
-    action: 'promote' | 'keep' | 'remove',
+    action: SavedPlaceAlternativeAction,
   ) => {
-    if (busy) return;
-    setBusy(true);
+    if (softAlternativeLocksRef.current.has(alternative.resultId)) return;
+    softAlternativeLocksRef.current.add(alternative.resultId);
+    setSoftAlternativePending((current) => ({ ...current, [alternative.resultId]: action }));
     try {
       if (action === 'remove') {
         await removeShareJobSoftAlternative(alternative.resultId);
         void trackEvent('secondary_removed', { job_id: alternative.shareJobId, candidate_rank: alternative.rank });
+        if (mountedRef.current) {
+          setSoftAlternatives((current) => current.filter((item) => item.resultId !== alternative.resultId));
+        }
       } else {
         const result = await promoteShareJobSoftAlternative(alternative.resultId, action === 'promote');
-        setKeptAlternativeSavedPlaceIds((current) => [...new Set([...current, result.savedPlaceId])]);
         void trackEvent(action === 'promote' ? 'primary_replaced' : 'secondary_promoted', {
           job_id: alternative.shareJobId,
           candidate_rank: alternative.rank,
         });
+        if (action === 'keep') {
+          if (mountedRef.current) {
+            setSoftAlternatives((current) => current.map((item) =>
+              item.resultId === alternative.resultId
+                ? { ...item, savedPlaceId: result.savedPlaceId }
+                : item));
+          }
+        } else {
+          if (mountedRef.current) {
+            setPrimaryResultOrigin('user_confirmed');
+            setJob((current) => current && current.id === alternative.shareJobId
+              ? {
+                  ...current,
+                  saved_place_id: result.savedPlaceId,
+                  extraction_payload: {
+                    ...(current.extraction_payload ?? {}),
+                    savedPlaceName: alternative.candidate.name,
+                  },
+                  candidate_payload: {
+                    ...(current.candidate_payload ?? {}),
+                    candidates: [alternative.candidate],
+                  },
+                }
+              : current);
+            setSoftAlternatives((current) => current.filter((item) => item.resultId !== alternative.resultId));
+          }
+          await load();
+        }
       }
-      setSoftAlternatives((current) => current.filter((item) => item.resultId !== alternative.resultId));
-      if (action === 'promote') await load();
     } catch (error) {
       Alert.alert('Could not update this result', sanitizeErrorText(error));
     } finally {
-      if (mountedRef.current) setBusy(false);
-    }
-  }, [busy, load]);
-
-  const keepAllSoftAlternatives = useCallback(async () => {
-    if (busy || softAlternatives.length === 0) return;
-    setBusy(true);
-    try {
-      const settled = await Promise.allSettled(
-        softAlternatives.map((alternative) => promoteShareJobSoftAlternative(alternative.resultId, false)),
-      );
-      const savedIds = settled.flatMap((result) => result.status === 'fulfilled' ? [result.value.savedPlaceId] : []);
-      const keptResultIds = new Set(softAlternatives.flatMap((alternative, index) =>
-        settled[index]?.status === 'fulfilled' ? [alternative.resultId] : []));
-      setKeptAlternativeSavedPlaceIds((current) => [...new Set([...current, ...savedIds])]);
-      setSoftAlternatives((current) => current.filter((alternative) => !keptResultIds.has(alternative.resultId)));
-      void trackEvent('secondary_promoted', {
-        job_id: job?.id ?? routeJobId,
-        action: 'keep_all',
-        saved_count: savedIds.length,
-        failed_count: settled.length - savedIds.length,
-      });
-      if (savedIds.length !== settled.length) {
-        Alert.alert('Some results could not be saved', `${savedIds.length} of ${settled.length} similar results were saved.`);
+      softAlternativeLocksRef.current.delete(alternative.resultId);
+      if (mountedRef.current) {
+        setSoftAlternativePending((current) => {
+          const next = { ...current };
+          delete next[alternative.resultId];
+          return next;
+        });
       }
-    } catch (error) {
-      Alert.alert('Could not save similar results', sanitizeErrorText(error));
-    } finally {
-      if (mountedRef.current) setBusy(false);
     }
-  }, [busy, job?.id, routeJobId, softAlternatives]);
+  }, [load]);
 
   useEffect(() => {
     void load();
@@ -857,6 +885,30 @@ function ShareJobDetailScreen() {
     () => savedPlaces.length > 0 ? savedPlaces : getSavedPlacesCacheSnapshot() ?? [],
     [savedPlaces],
   );
+  const completedPrimarySavedId = detail.kind === 'completed' ? detail.savedPlaceId : null;
+  const cachedCompletedPrimary = completedPrimarySavedId
+    ? savedSnapshot.find((saved) => saved.id === completedPrimarySavedId) ?? null
+    : null;
+  useEffect(() => {
+    let cancelled = false;
+    if (!completedPrimarySavedId) {
+      setHydratedPrimarySaved(null);
+      return () => { cancelled = true; };
+    }
+    if (cachedCompletedPrimary) {
+      setHydratedPrimarySaved(cachedCompletedPrimary);
+      return () => { cancelled = true; };
+    }
+    setHydratedPrimarySaved(null);
+    void getSavedPlace(completedPrimarySavedId)
+      .then((saved) => {
+        if (!cancelled && mountedRef.current) setHydratedPrimarySaved(saved);
+      })
+      .catch(() => {
+        // Candidate data keeps the result usable if hydration is unavailable.
+      });
+    return () => { cancelled = true; };
+  }, [cachedCompletedPrimary, completedPrimarySavedId]);
   const fixtureAlreadySavedGooglePlaceIds = useMemo(
     () => Array.isArray(extractionPayload?.fixtureAlreadySavedGooglePlaceIds)
       ? extractionPayload.fixtureAlreadySavedGooglePlaceIds.filter((value): value is string => typeof value === 'string')
@@ -2007,142 +2059,69 @@ function ShareJobDetailScreen() {
   // Terminal success (incl. already-saved) — offer the saved place. NEVER render
   // candidate/save controls for a job that is already resolved.
   if (detail.kind === 'completed') {
-    const name = detail.savedPlaceName;
-    const originalPlan = planOpenOriginal(job.source_url);
-    const completedSavedId = automaticallySavedPlaceIds[0] ?? detail.savedPlaceId;
-    const completedSaved = completedSavedId
-      ? savedSnapshot.find((saved) => saved.id === completedSavedId) ?? null
-      : null;
+    const completedSaved = cachedCompletedPrimary
+      ?? (hydratedPrimarySaved?.id === completedPrimarySavedId ? hydratedPrimarySaved : null);
+    const primaryCandidate = detail.candidates[0] ?? null;
+    const resultModel = buildSavedPlaceResultViewModel({
+      status: job.status,
+      savedPlaceId: detail.savedPlaceId,
+      decision: job.decision,
+      primaryOrigin: primaryResultOrigin,
+      saved: completedSaved,
+      candidate: primaryCandidate,
+      sourcePlatform: platform,
+      sourceUrl,
+    });
+    if (!resultModel) {
+      return (
+        <ShareJobsSheet onDismiss={backToQueue} size="detail">
+          <ShareJobsHeader title="Saved place" onBack={backToQueue} backLabel="Back to queue" />
+          <View style={styles.centered} testID="saved-place-unavailable">
+            <Text style={[typography.heading, styles.centeredTitle]}>This save is no longer available</Text>
+            <Text style={[typography.body, styles.help, { textAlign: 'center' }]}>It may have been removed from your map.</Text>
+            <Button title="Back" variant="secondary" onPress={backToQueue} style={styles.secondaryBtn} />
+          </View>
+        </ShareJobsSheet>
+      );
+    }
     const correctionTarget = correctionSaved ?? completedSaved;
-    const completedMapPlaceIds = [...new Set([...automaticallySavedPlaceIds, ...keptAlternativeSavedPlaceIds])];
+    const originalPlan = planOpenOriginal(sourceUrl);
     return (
       <ShareJobsSheet onDismiss={backToQueue} size="detail">
-        <ShareJobsHeader title={PHASE_1_COPY.detailTitle} onBack={backToQueue} backLabel="Back to queue" />
-        <ScrollView contentContainerStyle={styles.completedScrollContent}>
-          {vayrinEnabled ? (
-            <VayrinPresentationHeader presentation={vayrinPresentation} />
-          ) : (
-            <>
-              <View style={styles.savedBadge}>
-                <Feather name="check" size={26} color={colors.primary} />
-              </View>
-              <Text style={[typography.heading, styles.centeredTitle]}>{detail.copy.title}</Text>
-              <Text style={[typography.body, styles.help, { textAlign: 'center' }]}>
-                {detail.copy.body}
-              </Text>
-            </>
-          )}
-          {premiumState === 'useful_result' ? <Text style={styles.premiumResultLabel}>PREMIUM REQUEST COMPLETE</Text> : null}
-          <View style={[styles.candidateCard, styles.completedCard]}>
-            <PlaceImage
-              googlePlaceId={detail.candidates[0]?.googlePlaceId?.startsWith('nearr-native:')
-                ? undefined
-                : detail.candidates[0]?.googlePlaceId}
-              size={72}
-              borderRadius={12}
-              accessibilityLabel={name ? `Photo of ${name}` : undefined}
-            />
-            <Text style={[typography.heading, styles.completedPlaceName]} numberOfLines={2}>
-              {name || 'Saved place'}
-            </Text>
-          </View>
-          {softAlternatives.length > 0 ? (
-            <View style={styles.softResultsSection} testID="soft-alternatives-review">
-              <Text style={styles.softSectionLabel}>SIMILAR RESULTS</Text>
-              <Text style={[typography.body, styles.softSectionHelp]}>
-                We saved the best match. These suggestions stay here until you keep or remove them.
-              </Text>
-              {softAlternatives.length > 1 ? (
-                <Pressable
-                  accessibilityRole="button"
-                  disabled={busy}
-                  onPress={() => void keepAllSoftAlternatives()}
-                  style={styles.keepAllAction}
-                >
-                  <Feather name="check-circle" size={16} color={colors.accent} />
-                  <Text style={styles.softAction}>Keep all</Text>
-                </Pressable>
-              ) : null}
-              {softAlternatives.map((alternative) => (
-                <View key={alternative.resultId} style={styles.softAlternativeCard}>
-                  <PlaceImage
-                    googlePlaceId={alternative.candidate.googlePlaceId.startsWith('nearr-native:')
-                      ? undefined
-                      : alternative.candidate.googlePlaceId}
-                    size={56}
-                    borderRadius={10}
-                  />
-                  <View style={styles.softAlternativeBody}>
-                    <Text style={[typography.bodyStrong, styles.softAlternativeName]} numberOfLines={2}>
-                      {alternative.candidate.name}
-                    </Text>
-                    {alternative.candidate.formattedAddress ? (
-                      <Text style={[typography.caption, styles.softAlternativeAddress]} numberOfLines={2}>
-                        {alternative.candidate.formattedAddress}
-                      </Text>
-                    ) : null}
-                    <View style={styles.softAlternativeActions}>
-                      <Pressable disabled={busy} onPress={() => void actOnSoftAlternative(alternative, 'keep')}>
-                        <Text style={styles.softAction}>Keep / Save</Text>
-                      </Pressable>
-                      <Pressable disabled={busy} onPress={() => void actOnSoftAlternative(alternative, 'promote')}>
-                        <Text style={styles.softAction}>Make primary</Text>
-                      </Pressable>
-                      <Pressable disabled={busy} onPress={() => void actOnSoftAlternative(alternative, 'remove')}>
-                        <Text style={styles.softRemoveAction}>Remove</Text>
-                      </Pressable>
-                    </View>
-                  </View>
-                </View>
-              ))}
-              {originalPlan.kind === 'open' ? <Pressable
-                accessibilityRole="button"
-                onPress={() => {
-                  void Linking.openURL(originalPlan.url);
-                }}
-                style={styles.viewOriginalAction}
-              >
-                <Feather name="external-link" size={15} color={colors.accent} />
-                <Text style={styles.softAction}>View original post</Text>
-              </Pressable> : null}
-            </View>
-          ) : null}
-          <Button
-            title={PHASE_1_COPY.viewOnMap}
-            onPress={() =>
-              completedMapPlaceIds.length > 1
-                ? openNewlySavedPlaces(completedMapPlaceIds)
-                : openExistingPlace({
-                    savedPlaceId: completedMapPlaceIds[0] ?? detail.savedPlaceId,
-                    source: 'share_job_completed',
-                  })
-            }
-            style={styles.centeredPrimary}
-          />
-          {vayrinEnabled ? (
-            <Button
-              title="Not it"
-              variant="secondary"
-              onPress={async () => {
-                void trackEvent('vayrin_not_it', { job_id: job.id, source: 'async_found' });
-                const saved = completedSaved ?? (completedSavedId ? await getSavedPlace(completedSavedId).catch(() => null) : null);
-                if (saved) {
-                  setCorrectionSaved(saved);
-                  setCorrectionOpen(true);
-                } else {
-                  openExistingPlace({ savedPlaceId: completedSavedId, source: 'share_job_completed' });
-                }
-              }}
-              style={styles.secondaryBtn}
-            />
-          ) : null}
-        </ScrollView>
+        <ShareJobsHeader title="Saved place" onBack={backToQueue} backLabel="Back to queue" />
+        <SavedPlaceResult
+          primary={resultModel}
+          sourceAvailable={originalPlan.kind === 'open'}
+          alternatives={softAlternatives}
+          pendingByResultId={softAlternativePending}
+          openMessage={openMsg}
+          onWatchPost={() => void openOriginalPost()}
+          onAlternativeAction={(alternative, action) => void actOnSoftAlternative(alternative, action)}
+          onViewOnMap={() => openExistingPlace({
+            savedPlaceId: resultModel.savedPlaceId,
+            googlePlaceId: resultModel.googlePlaceId,
+            source: 'share_job_completed',
+          })}
+          onWrongPlace={() => {
+            void (async () => {
+              void trackEvent('vayrin_not_it', { job_id: job.id, source: 'async_found' });
+              const saved = correctionTarget
+                ?? await getSavedPlace(resultModel.savedPlaceId).catch(() => null);
+              if (!saved || !mountedRef.current) {
+                Alert.alert('Place unavailable', 'This saved place could not be loaded. Please try again.');
+                return;
+              }
+              setCorrectionSaved(saved);
+              setCorrectionOpen(true);
+            })();
+          }}
+        />
         {correctionTarget ? (
           <WrongPlaceSheet
             visible={correctionOpen}
             saved={correctionTarget}
             actingUserId={job.user_id}
-            extractedName={name ?? correctionTarget.place.name}
+            extractedName={resultModel.name}
             finderMode={vayrinEnabled}
             onClose={() => setCorrectionOpen(false)}
             onCorrected={(updated) => {
