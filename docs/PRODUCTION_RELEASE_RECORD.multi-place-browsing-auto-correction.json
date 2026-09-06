@@ -2,7 +2,7 @@
   "releaseId": "2026-09-06-multi-place-browsing-auto-correction",
   "previousMainSha": "e55b89befd73009321ebdae2a9d3981255e117f5",
   "previousOtaGroup": "6715ba8e-0c25-4dc8-ba07-3ccb1e632c03",
-  "currentOtaGroup": null,
+  "currentOtaGroup": "d74170da-410c-410d-bb8a-55ff38a1a75c",
   "implementationSha": "0cc6f7b19af5a7e24bd632342f8634c7683cef37",
   "reconciledDevSha": "85ace5a7afd52e606e4e610b4d8cd13ba1cec989",
   "reconciledDevOtaGroup": "ffffed06-4ea2-428c-966e-e94b63ce0cd0",
@@ -26,11 +26,12 @@
     "ota"
   ],
   "rollbackProcedure": "Repeat the production concurrency guard, then republish previousOtaGroup 6715ba8e-0c25-4dc8-ba07-3ccb1e632c03. No database, Edge, or Railway rollback belongs to this OTA-only release.",
-  "deploymentStatus": "PLANNED",
+  "deploymentStatus": "DEPLOYED",
   "physicalQa": {
     "signedOutColdLaunch": "PENDING",
     "signedInColdLaunch": "PENDING",
     "forceCloseRelaunch": "PENDING",
     "freshOnboardingLaunch": "NOT_REQUIRED"
-  }
+  },
+  "deployedAt": "2026-09-06T23:27:20.672Z"
 }
