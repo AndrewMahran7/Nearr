@@ -16,6 +16,7 @@ const migration = [
   read('supabase/migrations/20260906000004_recognition_cache_v2.sql'),
   read('supabase/migrations/20260906000005_recognition_cache_v2_saved_category.sql'),
   read('supabase/migrations/20260906000006_recognition_revalidation_failure_quarantine.sql'),
+  read('supabase/migrations/20260906000007_recognition_revalidation_failure_quarantine_repair.sql'),
 ].join('\n');
 const cache = read('supabase/functions/process-share-jobs/recognitionCache.ts');
 const worker = read('supabase/functions/process-share-jobs/index.ts');

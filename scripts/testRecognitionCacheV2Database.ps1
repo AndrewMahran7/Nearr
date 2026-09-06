@@ -194,6 +194,9 @@ end $$;
   & "$pgBin\psql.exe" -X -w -v ON_ERROR_STOP=1 -h 127.0.0.1 -p $taskPort -U postgres -d postgres `
     -f 'supabase\migrations\20260906000006_recognition_revalidation_failure_quarantine.sql' | Out-Null
   if ($LASTEXITCODE -ne 0) { throw 'Recognition Cache V2 technical-failure quarantine migration failed' }
+  & "$pgBin\psql.exe" -X -w -v ON_ERROR_STOP=1 -h 127.0.0.1 -p $taskPort -U postgres -d postgres `
+    -f 'supabase\migrations\20260906000007_recognition_revalidation_failure_quarantine_repair.sql' | Out-Null
+  if ($LASTEXITCODE -ne 0) { throw 'Recognition Cache V2 technical-failure quarantine repair migration failed' }
   Write-Host 'DB_V2_STAGE migration_applied'
 
   $fixtureSql = @'
