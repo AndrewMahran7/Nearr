@@ -1,0 +1,25 @@
+{
+  "releaseId": "2026-09-06-source-groups-place-video-gallery",
+  "previousMainSha": "8a9e751ad97e0e3a96957fdf5de96558d1e7fbe0",
+  "previousOtaGroup": "48294022-214b-4862-85ef-d4f6b41ff1f2",
+  "currentOtaGroup": null,
+  "implementationSha": "06d7456842ad65559e9deb9988989c6cc6f5938e",
+  "edgeVersions": {
+    "process-share-jobs": 104,
+    "get-place-videos": 0
+  },
+  "railwayDeployment": "afc8306e-92bb-4622-9917-a3c032957be4 @ 85587b621d3fde73a0193497077a712b4cd82eba; sha256:4264c9120a4074d2b55b72b67596f3ada4d68b73e2c4e6c8bac8430735ed3757",
+  "migrationLedger": [
+    "20260906000002",
+    "20260906000003_place_video_gallery_v1"
+  ],
+  "galleryServerFlagBefore": "ABSENT_OFF",
+  "rollbackProcedure": "Repeat the concurrency guard. For gallery regressions, set PLACE_VIDEO_GALLERY_ENABLED=false immediately; for client or source-group regressions, republish previousOtaGroup. Restore Railway deployment afc8306e-92bb-4622-9917-a3c032957be4 for worker regressions and redeploy process-share-jobs v104 if required. Keep the additive gallery migration in place.",
+  "deploymentStatus": "PLANNED",
+  "physicalQa": {
+    "signedOutColdLaunch": "PENDING",
+    "signedInColdLaunch": "PENDING",
+    "forceCloseRelaunch": "PENDING",
+    "freshOnboardingLaunch": "NOT_REQUIRED"
+  }
+}
