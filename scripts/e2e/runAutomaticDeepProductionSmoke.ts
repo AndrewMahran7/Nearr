@@ -16,7 +16,7 @@ import { isCategoryOnlyPlaceName } from '../../services/media-worker/src/vayrin/
 import { cleanupSession } from './session';
 
 const PRODUCTION_REF = 'rlqvxdwtetxsqxhqztkw';
-const TERMINAL = new Set(['saved', 'needs_help', 'failed', 'unavailable']);
+const TERMINAL = new Set(['saved', 'completed', 'needs_help', 'failed', 'unavailable']);
 const PREMIUM_EVENTS = [
   'premium_request_offered',
   'premium_request_cta_tapped',
