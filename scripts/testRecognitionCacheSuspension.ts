@@ -154,15 +154,16 @@ const cases: Array<[string, () => void]> = [
       cacheReadUsed: false,
       cacheReadSuspended: true,
       recognitionCacheWritesEnabled: true,
+      recognitionCachePolicyVersion: 'recognition-cache-v2.1',
     });
     assert.match(edge, /recognitionVersion:\s*RECOGNITION_VERSION/);
     assert.match(edge, /recognition_cache_miss[\s\S]{0,400}reason: 'read_suspended'/);
     assert.match(migration, /recognition_cache_miss/);
   }],
-  ['22 re-enable switch restores normal cache reads', () => {
+  ['22 re-enable switch restores only V2 answer reads', () => {
     assert.equal(enabled.readsEnabled, true);
     assert.equal(forceFreshRecognitionSubmission(enabled), false);
-    assert.equal(reuseSavedPlaceBySourceOnly(enabled), true);
+    assert.equal(reuseSavedPlaceBySourceOnly(enabled), false);
   }],
   ['23 no raw cached answer enters a model prompt', () => {
     assert.doesNotMatch([premiumPrompt, read('services/media-worker/src/prompts/placeEvidencePrompt.ts')].join('\n'), /recognition_cache|candidate_payload|cached answer/i);
@@ -177,7 +178,8 @@ const cases: Array<[string, () => void]> = [
   }],
   ['26 completed-job reuse is bypassed but request idempotency remains', () => {
     assert.match(create, /p_idempotency_key:\s*idempotencyKey/);
-    assert.match(create, /p_force_rerun:[\s\S]{0,160}forceFreshRecognitionSubmission/);
+    assert.match(create, /p_force_rerun:\s*true/);
+    assert.match(create, /new logical submission always gets a new job/i);
   }],
   ['27 USER_CONFIRMED preservation remains in the cache upsert contract', () => {
     assert.match(migration, /old\.trust_level = 'USER_CONFIRMED'[\s\S]+new\.canonical_place_id := old\.canonical_place_id/);

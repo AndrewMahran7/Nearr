@@ -6,6 +6,7 @@
 // are deliberately independent and remain enabled in recognitionCache.ts.
 
 export const RECOGNITION_CACHE_READS_FLAG = 'RECOGNITION_CACHE_READS_ENABLED';
+export const RECOGNITION_CACHE_POLICY_VERSION = 'recognition-cache-v2.1';
 
 export type RecognitionCachePolicy = Readonly<{
   readsEnabled: boolean;
@@ -48,7 +49,8 @@ export function forceFreshRecognitionSubmission(policy: RecognitionCachePolicy):
 
 /** A source-only saved-place match is a historical answer, not place dedupe. */
 export function reuseSavedPlaceBySourceOnly(policy: RecognitionCachePolicy): boolean {
-  return policy.readsEnabled;
+  void policy;
+  return false;
 }
 
 export function recognitionCacheDiagnostics(policy: RecognitionCachePolicy): Readonly<{
@@ -56,12 +58,14 @@ export function recognitionCacheDiagnostics(policy: RecognitionCachePolicy): Rea
   cacheReadUsed: false;
   cacheReadSuspended: boolean;
   recognitionCacheWritesEnabled: true;
+  recognitionCachePolicyVersion: string;
 }> {
   return Object.freeze({
     recognitionCacheRead: false,
     cacheReadUsed: false,
     cacheReadSuspended: policy.cacheReadSuspended,
     recognitionCacheWritesEnabled: true,
+    recognitionCachePolicyVersion: RECOGNITION_CACHE_POLICY_VERSION,
   });
 }
 
@@ -82,5 +86,6 @@ export function logRecognitionCachePolicy(
     recognitionCacheWritesEnabled: policy.writesEnabled,
     cacheReadSuspended: policy.cacheReadSuspended,
     source: policy.source,
+    policyVersion: RECOGNITION_CACHE_POLICY_VERSION,
   }));
 }
