@@ -103,6 +103,7 @@
     "test:place-detail-ui": "ts-node -P scripts/tsconfig.json scripts/testSavedPlaceDetailUi.ts",
     "test:photo-carousel": "ts-node -P scripts/tsconfig.json scripts/testPhotoCarousel.ts",
     "test:place-video-gallery": "ts-node -P scripts/tsconfig.json scripts/testPlaceVideoGallery.ts",
+    "test:place-video-gallery:dev": "ts-node -P scripts/tsconfig.json scripts/e2e/verifyPlaceVideoGalleryDev.ts",
     "test:quick-check-density": "ts-node -P scripts/tsconfig.json scripts/testQuickCheckDensity.ts",
     "test:quick-check-rolodex-ux": "ts-node -P scripts/tsconfig.json scripts/testQuickCheckRolodexUx.ts",
     "test:map-visibility": "ts-node -P scripts/tsconfig.json scripts/testMapVisibility.ts",
