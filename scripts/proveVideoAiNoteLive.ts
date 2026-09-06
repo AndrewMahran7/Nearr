@@ -8,6 +8,7 @@ type Row = Record<string, any>;
 
 const SOURCE_URL = (process.env.NEARR_E2E_VIDEO_AI_NOTE_URL ||
   'https://www.instagram.com/reel/DUWyZkfgbT4/').trim();
+const EXPECTED_USER_NOTE = (process.env.NEARR_E2E_VIDEO_AI_USER_NOTE || '').trim();
 const TERMINAL_JOB = new Set(['completed', 'needs_help', 'failed', 'cancelled']);
 const TERMINAL_TASK = new Set(['completed', 'needs_help', 'failed', 'cancelled']);
 
@@ -42,6 +43,14 @@ async function main(): Promise<void> {
       throw new Error(`real video was not saved: status=${job.status} decision=${job.decision}`);
     }
     console.log(`LIVE_PROOF_STAGE saved job=${job.id} savedPlace=${job.saved_place_id}`);
+    if (EXPECTED_USER_NOTE) {
+      const { error } = await session.admin.from('saved_places')
+        .update({ notes: EXPECTED_USER_NOTE })
+        .eq('id', job.saved_place_id)
+        .eq('user_id', session.identity!.userId);
+      if (error) throw error;
+      console.log('LIVE_PROOF_STAGE user-note-written');
+    }
 
     const aiTaskResult = await pollUntil<Row>(
       async () => {
@@ -126,7 +135,10 @@ async function main(): Promise<void> {
       modelOutputTokens: task.model_output_tokens,
       modelThinkingTokens: task.model_thinking_tokens,
       aiNoteNonempty: nonEmpty(saved.ai_note),
-      userNoteUntouched: !nonEmpty(saved.notes),
+      aiNote: nonEmpty(saved.ai_note) ? String(saved.ai_note).slice(0, 220) : null,
+      userNoteUntouched: EXPECTED_USER_NOTE
+        ? saved.notes === EXPECTED_USER_NOTE
+        : !nonEmpty(saved.notes),
       readbackSucceeded: saved.id === job.saved_place_id && nonEmpty(saved.ai_note),
       realPhysicalLikeSavePathUsed:
         job.source_platform === 'instagram' && job.decision === 'auto_save',
@@ -140,6 +152,7 @@ async function main(): Promise<void> {
       !proof.taskClaimed ||
       !['accepted', 'accepted_after_retry'].includes(String(proof.taskOutcome)) ||
       !proof.aiNoteNonempty ||
+      !proof.userNoteUntouched ||
       !proof.readbackSucceeded ||
       !proof.realPhysicalLikeSavePathUsed ||
       !proof.coldStartQueryReturnsAiNote ||
