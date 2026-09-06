@@ -7,8 +7,23 @@ import {
   canonicalContentIdentity,
   type CanonicalContentIdentity,
 } from '../../../lib/shareAgent/contentIdentity.ts';
+import { RECOGNITION_CACHE_POLICY_VERSION } from '../_shared/recognitionCachePolicy.ts';
 
 export type RecognitionTrust = 'USER_CONFIRMED' | 'VERIFIED_AUTO_SAVE' | 'CANDIDATE_SET';
+
+export const RECOGNITION_CACHE_V2_POLICY_VERSION = RECOGNITION_CACHE_POLICY_VERSION;
+
+export type RecognitionCacheV2Answer = {
+  answer_id: string;
+  slot_key: string;
+  place_id: string;
+  answer_revision: number;
+  feedback_revision: number;
+  evidence_revision: number;
+  source_fingerprint: string | null;
+  candidate_snapshot: Record<string, unknown> | null;
+  source_ai_note: string | null;
+};
 
 export type RecognitionCacheRow = {
   id: string;
@@ -36,6 +51,11 @@ export type RecognitionRejection = {
 };
 
 export type RecognitionCacheDecision =
+  | {
+      kind: 'v2_answers';
+      answers: RecognitionCacheV2Answer[];
+      expectedFeedbackRevision: number;
+    }
   | { kind: 'trusted_place'; row: RecognitionCacheRow }
   | { kind: 'candidate_set'; row: RecognitionCacheRow }
   | {
@@ -139,31 +159,91 @@ export async function lookupRecognition(
   userId?: string | null,
 ): Promise<RecognitionCacheDecision> {
   try {
-    const { data, error } = await admin
-      .from('recognition_cache')
-      .select('id,identity_key,platform,content_id,canonical_url,identity_version,recognition_version,result_type,trust_level,canonical_place_id,candidate_payload,evidence_summary,invalidated_at,confirmed_at')
-      .eq('identity_key', identity.key)
-      .maybeSingle();
+    // V2 is a hard boundary: historical recognition_cache trust labels and
+    // candidate rows are audit-only and can never short-circuit inference.
+    const { data, error } = await admin.rpc('read_recognition_answers_v2', {
+      p_identity_key: identity.key,
+      p_identity_version: identity.identityVersion,
+      p_policy_version: RECOGNITION_CACHE_V2_POLICY_VERSION,
+      p_recognition_version: RECOGNITION_VERSION,
+      p_user_id: userId ?? null,
+    });
     if (error) throw error;
-    let rejections: RecognitionRejection[] = [];
-    if (userId && data) {
-      const rejectionResult = await admin
-        .from('recognition_rejections')
-        .select('user_id,identity_key,canonical_place_id,google_place_id,rejected_at')
-        .eq('user_id', userId)
-        .eq('identity_key', identity.key);
-      if (!rejectionResult.error && Array.isArray(rejectionResult.data)) {
-        rejections = rejectionResult.data as RecognitionRejection[];
-      }
-    }
-    const decision = recognitionCacheDecisionForUser(data as RecognitionCacheRow | null, rejections);
-    if (data?.id) {
-      void admin.from('recognition_cache').update({ last_seen_at: new Date().toISOString() }).eq('id', data.id);
-    }
-    return decision;
+    const answers = Array.isArray(data) ? data as RecognitionCacheV2Answer[] : [];
+    if (answers.length === 0) return { kind: 'miss', reason: 'v2_not_eligible' };
+    const revisions = new Set(answers.map((answer) => Number(answer.feedback_revision)));
+    if (revisions.size !== 1) return { kind: 'miss', reason: 'v2_revision_mismatch' };
+    return {
+      kind: 'v2_answers',
+      answers,
+      expectedFeedbackRevision: Number(answers[0]!.feedback_revision),
+    };
   } catch (error) {
     console.log(`[recognition-cache] lookup_failed code=${(error as any)?.code ?? 'unknown'}`);
     return { kind: 'miss', reason: 'lookup_failed' };
+  }
+}
+
+export async function commitRecognitionCacheSaveV2(args: {
+  admin: any;
+  identity: CanonicalContentIdentity;
+  userId: string;
+  answers: readonly RecognitionCacheV2Answer[];
+  expectedFeedbackRevision: number;
+}): Promise<{
+  ok: true;
+  rows: Array<{ answer_id: string; slot_key: string; saved_place_id: string; place_id: string; reused: boolean }>;
+} | { ok: false; stale: boolean; reason: string }> {
+  try {
+    const { data, error } = await args.admin.rpc('commit_recognition_cache_save_v2', {
+      p_user_id: args.userId,
+      p_identity_key: args.identity.key,
+      p_answer_ids: args.answers.map((answer) => answer.answer_id),
+      p_expected_feedback_revision: args.expectedFeedbackRevision,
+      p_policy_version: RECOGNITION_CACHE_V2_POLICY_VERSION,
+      p_recognition_version: RECOGNITION_VERSION,
+    });
+    if (error) {
+      const message = String(error.message ?? error.code ?? 'cache_save_failed');
+      const stale = /recognition_cache_stale|user_identity_conflict/i.test(message);
+      return { ok: false, stale, reason: stale ? 'stale_or_user_conflict' : 'cache_save_failed' };
+    }
+    const rows = Array.isArray(data) ? data : [];
+    if (rows.length !== args.answers.length) {
+      return { ok: false, stale: true, reason: 'partial_cache_save_rejected' };
+    }
+    return { ok: true, rows };
+  } catch {
+    return { ok: false, stale: false, reason: 'cache_save_unavailable' };
+  }
+}
+
+/**
+ * Ask the database to admit only independently durable, high-evidence primary
+ * results from this completed job. The RPC inspects the result ledger and a
+ * successful media fingerprint; caller-supplied trust is never authoritative.
+ */
+export async function admitRecognitionAnswersV2(
+  admin: any,
+  identity: CanonicalContentIdentity,
+  jobId: string,
+): Promise<number> {
+  try {
+    const { data, error } = await admin.rpc('admit_recognition_answers_v2', {
+      p_job_id: jobId,
+      p_identity_key: identity.key,
+      p_platform: identity.platform,
+      p_content_id: identity.contentId,
+      p_canonical_url: identity.canonicalUrl,
+      p_identity_version: identity.identityVersion,
+      p_policy_version: RECOGNITION_CACHE_V2_POLICY_VERSION,
+      p_recognition_version: RECOGNITION_VERSION,
+    });
+    if (error) throw error;
+    return Number.isFinite(Number(data)) ? Number(data) : 0;
+  } catch (error) {
+    console.log(`[recognition-cache-v2] admission_failed code=${(error as any)?.code ?? 'unknown'}`);
+    return 0;
   }
 }
 

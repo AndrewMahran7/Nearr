@@ -41,6 +41,7 @@ import {
 import {
   logRecognitionCachePolicy,
   readRecognitionCachePolicy,
+  RECOGNITION_CACHE_POLICY_VERSION,
   recognitionCacheDiagnostics,
   type RecognitionCachePolicy,
 } from '../_shared/recognitionCachePolicy.ts';
@@ -135,6 +136,7 @@ import {
 import {
   attachSavedPlaceSource,
   claimRecognition,
+  commitRecognitionCacheSaveV2,
   lookupRecognition,
   persistRecognition,
   recordIdentityOnJob,
@@ -2004,6 +2006,130 @@ async function recoverStrandedMediaJobs(admin: any): Promise<void> {
   }
 }
 
+async function finalizeRecognitionRevalidationTask(
+  admin: any,
+  env: any,
+  task: any,
+  body: any,
+  parsed: ReturnType<typeof parseMediaEvidence>,
+  rendered: { title: string; description: string; renderedPlaces: number },
+): Promise<Response> {
+  const revalidationId = typeof task.recognition_revalidation_task_id === 'string'
+    ? task.recognition_revalidation_task_id
+    : '';
+  if (!revalidationId) return json({ error: 'revalidation_target_missing' }, 400);
+  const { data: revalidation, error: loadError } = await admin
+    .from('recognition_revalidation_tasks')
+    .select('id,state,previous_place_id,replacement_place_id,feedback_revision,evidence_revision')
+    .eq('id', revalidationId)
+    .maybeSingle();
+  if (loadError || !revalidation) return json({ error: 'revalidation_not_found' }, 404);
+  if (['COMPLETED', 'FAILED', 'STALE'].includes(revalidation.state)) {
+    return json({ ok: true, idempotent: true, disposition: revalidation.state.toLowerCase() });
+  }
+
+  const outcome = typeof body.outcome === 'string' ? body.outcome : 'failed';
+  let decision = 'INSUFFICIENT_EVIDENCE';
+  let supportedPlaceId: string | null = null;
+  let errorCode: string | null = null;
+  const diagnostics: Record<string, unknown> = {
+    feedbackRevision: revalidation.feedback_revision,
+    evidenceRevision: revalidation.evidence_revision,
+    modelProvider: typeof body?.diagnostics?.modelProvider === 'string'
+      ? body.diagnostics.modelProvider.slice(0, 120)
+      : null,
+    modelName: typeof body?.diagnostics?.modelName === 'string'
+      ? body.diagnostics.modelName.slice(0, 160)
+      : null,
+    modelCalls: Number(body?.diagnostics?.modelCalls) || null,
+    solInvoked: body?.diagnostics?.solInvoked === true,
+    totalModelCostUsd: typeof body?.diagnostics?.totalModelCostUsd === 'number'
+      ? body.diagnostics.totalModelCostUsd
+      : null,
+  };
+
+  if (outcome === 'failed' || outcome === 'unavailable') {
+    decision = 'TECHNICAL_FAILURE';
+    errorCode = typeof body.failureCode === 'string' ? body.failureCode.slice(0, 160) : outcome;
+  } else if (parsed.ok) {
+    const sourceMetadata = parseMediaSourceMetadata(body.sourceMetadata);
+    const handles = sourceMetadata
+      ? extractHandles({
+          platform: task.platform,
+          title: sourceMetadata.title,
+          description: sourceMetadata.description,
+          html: null,
+          knownPosterHandle: sourceMetadata.creatorHandle,
+        })
+      : { posterHandle: null, taggedHandles: [], venueHandles: [], posterNameHint: null };
+    const mergedCaption = mergeMediaCaption(sourceMetadata, rendered);
+    const evidence = extractEvidence({
+      platform: task.platform,
+      title: mergedCaption.title,
+      description: mergedCaption.description,
+      handles,
+      taggedLocation: null,
+    });
+    const mentions = buildVenueMentions(parsed.value);
+    const resolved = await resolveSharedPlace({
+      evidence,
+      env,
+      mentions: mentions.mentions,
+      geoContext: mentions.geoContext,
+      relationships: mentions.relationships,
+    });
+    const providerIds = [...new Set((resolved.candidates ?? [])
+      .map((candidate: any) => candidate?.googlePlaceId)
+      .filter((value: unknown): value is string => typeof value === 'string' && !!value))];
+    const placeIds = [revalidation.previous_place_id, revalidation.replacement_place_id].filter(Boolean);
+    const { data: hypotheses } = placeIds.length
+      ? await admin.from('places').select('id,google_place_id').in('id', placeIds)
+      : { data: [] };
+    const previousGoogleId = hypotheses?.find((place: any) => place.id === revalidation.previous_place_id)?.google_place_id ?? null;
+    const replacementGoogleId = hypotheses?.find((place: any) => place.id === revalidation.replacement_place_id)?.google_place_id ?? null;
+    const supportsPrevious = !!previousGoogleId && providerIds.includes(previousGoogleId);
+    const supportsReplacement = !!replacementGoogleId && providerIds.includes(replacementGoogleId);
+    diagnostics.candidateCount = providerIds.length;
+    diagnostics.hypothesisMatch = supportsPrevious && supportsReplacement
+      ? 'both_scope_ambiguous'
+      : supportsReplacement ? 'replacement' : supportsPrevious ? 'previous' : providerIds.length ? 'other' : 'none';
+    // resolveSharedPlace has already applied the current semantic/geographic
+    // contradiction filters. Only a surviving exact hypothesis can reach an
+    // agreement decision; the database independently rejects an explicit hard
+    // contradiction marker as a final guard.
+    diagnostics.strongContradiction = false;
+    if (supportsReplacement && !supportsPrevious) {
+      decision = 'AGREES_WITH_REPLACEMENT';
+      supportedPlaceId = revalidation.replacement_place_id;
+    } else if (supportsPrevious && !supportsReplacement) {
+      decision = 'SUPPORTS_PREVIOUS';
+      supportedPlaceId = revalidation.previous_place_id;
+    } else if (providerIds.length > 0 && !supportsPrevious && !supportsReplacement) {
+      decision = 'SUPPORTS_OTHER';
+    }
+  }
+
+  const { data: disposition, error } = await admin.rpc('complete_recognition_revalidation_v2', {
+    p_revalidation_task_id: revalidationId,
+    p_decision: decision,
+    p_supported_place_id: supportedPlaceId,
+    p_diagnostics: diagnostics,
+    p_error_code: errorCode,
+  });
+  if (error) throw new Error(`revalidation_completion_failed:${error.code ?? 'unknown'}`);
+  await recordRecognitionEvent(
+    admin,
+    'recognition_revalidation_completed',
+    canonicalContentIdentity(task.source_url, task.canonical_url),
+    {
+    decision,
+    disposition,
+    feedbackRevision: revalidation.feedback_revision,
+    },
+  );
+  return json({ ok: true, route: 'recognition_revalidation', disposition, decision });
+}
+
 // Media worker callback. Converts proposed evidence into the SAME deterministic
 // resolver + safeToAutoSave + save path used by the metadata flow. The video
 // model never picks a Place ID, never decides safeToAutoSave, and never saves.
@@ -2061,6 +2187,9 @@ async function finalizeMediaTask(
     ? renderMediaEvidenceCaption(parsed.value)
     : { title: '', description: '', renderedPlaces: 0 };
   const partialResult = parsed.ok ? buildVayrinPartialResult(parsed.value) : null;
+  if (task.task_kind === 'recognition_revalidation') {
+    return await finalizeRecognitionRevalidationTask(admin, env, task, body, parsed, rendered);
+  }
   const notificationLocality = trustedMediaNotificationLocality(parsed) ?? (
     partialResult?.locality
       ? { label: partialResult.locality, basis: 'observable_corroborated' as const }
@@ -3308,6 +3437,102 @@ async function useRecognitionCache(args: {
   const { admin, job, identity } = args;
   let decision = args.decision;
   let disputedHit = false;
+  if (decision.kind === 'v2_answers') {
+    const placeIds = [...new Set(decision.answers.map((answer) => answer.place_id))];
+    const { data: places, error: placesError } = await admin
+      .from('places')
+      .select('id,google_place_id,name,formatted_address,latitude,longitude,short_formatted_address,google_primary_type,google_types,google_type_label,business_status')
+      .in('id', placeIds);
+    if (placesError || !Array.isArray(places) || places.length !== placeIds.length) return false;
+    const placeById = new Map(places.map((place: any) => [place.id, place]));
+    const ordered = decision.answers.map((answer) => ({
+      answer,
+      candidate: cacheCandidateFromPlace(placeById.get(answer.place_id)),
+    }));
+    if (ordered.some((entry) => !entry.candidate ||
+      !Number.isFinite(entry.candidate.latitude) || !Number.isFinite(entry.candidate.longitude))) return false;
+
+    // One short transaction locks the source revision, verifies every answer,
+    // and creates all recipient-owned saves. A correction that wins this race
+    // makes the complete set fail before any save is committed.
+    const committed = await commitRecognitionCacheSaveV2({
+      admin,
+      identity,
+      userId: job.user_id,
+      answers: decision.answers,
+      expectedFeedbackRevision: decision.expectedFeedbackRevision,
+    });
+    if (!committed.ok) {
+      if (committed.stale) {
+        await recordRecognitionEvent(admin, 'recognition_cache_v2_stale_commit_prevented', identity, {
+          expectedFeedbackRevision: decision.expectedFeedbackRevision,
+          reason: committed.reason,
+        });
+      }
+      return false;
+    }
+    const savedByAnswer = new Map(committed.rows.map((row) => [row.answer_id, row]));
+    const candidates = ordered.map((entry) => entry.candidate);
+    const savedRows = decision.answers.map((answer) => savedByAnswer.get(answer.answer_id)!);
+    const multi = candidates.length > 1;
+    const candidatePayload = multi
+      ? buildShareJobCandidatePayload(
+          candidates.map((candidate: any) => safeCandidate(candidate)),
+          ordered.map(({ answer, candidate }) => ({
+            mentionId: answer.slot_key,
+            displayName: candidate.name,
+            outcome: 'verified_single',
+            candidates: [safeCandidate(candidate)],
+            saveState: savedByAnswer.get(answer.answer_id)?.reused ? 'already_saved' : 'auto_saved',
+            savedPlaceId: savedByAnswer.get(answer.answer_id)?.saved_place_id,
+          })),
+        )
+      : buildCandidateReviewSnapshot(candidates.map((candidate: any) => safeCandidate(candidate)), 10, 'single');
+    if (multi) (candidatePayload as any).savedPlaceIds = savedRows.map((row) => row.saved_place_id);
+    const allReused = savedRows.every((row) => row.reused);
+    await recordRecognitionEvent(admin, 'recognition_cache_v2_hit', identity, {
+      mediaDownloadAvoided: true,
+      geminiCallsAvoided: 1,
+      // The normal lane always invokes Gemini. Sol is conditional, so a cache
+      // hit cannot honestly claim that it avoided a Sol call.
+      solCallsAvoided: 0,
+      answerCount: decision.answers.length,
+      feedbackRevision: decision.expectedFeedbackRevision,
+    });
+    await finalize(admin, job, {
+      status: 'completed',
+      decision: 'auto_save',
+      saved_place_id: savedRows[0]!.saved_place_id,
+      candidate_payload: candidatePayload,
+      canonical_url: identity.canonicalUrl,
+      source_platform: identity.platform,
+      extraction_payload: {
+        ...(job.extraction_payload ?? {}),
+        savedPlaceName: candidates[0]!.name,
+        alreadySaved: allReused,
+        recognitionCache: {
+          hit: true,
+          version: 2,
+          answerCount: decision.answers.length,
+          feedbackRevision: decision.expectedFeedbackRevision,
+        },
+      },
+      __skipRecognitionCachePersist: true,
+      progress_stage: 'completed',
+      completed_at: nowIso(),
+    }, composeShareCompletionNotification({
+      status: 'completed',
+      jobId: job.id,
+      placeName: candidates[0]!.name,
+      savedPlaceId: savedRows[0]!.saved_place_id,
+      savedPlaceIds: savedRows.map((row) => row.saved_place_id),
+      createdSavedPlaceIds: savedRows.filter((row) => !row.reused).map((row) => row.saved_place_id),
+      googlePlaceId: candidates[0]!.googlePlaceId,
+      alreadySaved: allReused,
+      multiPlace: multi ? { totalCount: candidates.length, savedCount: candidates.length } : null,
+    }));
+    return true;
+  }
   if (decision.kind === 'disputed') {
     disputedHit = true;
     await recordRecognitionEvent(admin, 'cache_hit_disputed_result', identity, {
@@ -4554,6 +4779,24 @@ serve(async (req) => {
     p_limit: 100,
   });
   if (reapError) console.log(`[share-job] reservation_reap_failed code=${reapError.code ?? 'unknown'}`);
+  // Expire exhausted worker leases before recovering their durable validation
+  // rows. Ordinary recognition/AI-note parent recovery remains below.
+  const { error: mediaExpireError } = await admin.rpc('expire_media_tasks', { p_limit: 25 });
+  if (mediaExpireError) console.log(`[media-task] expiry_failed code=${mediaExpireError.code ?? 'unknown'}`);
+  const { data: abandonedRevalidations, error: revalidationRecoveryError } = await admin.rpc(
+    'recover_abandoned_recognition_revalidations_v2',
+    { p_limit: 25 },
+  );
+  if (revalidationRecoveryError) {
+    console.log(`[recognition-cache-v2] revalidation_recovery_failed code=${revalidationRecoveryError.code ?? 'unknown'}`);
+  }
+  const { data: queuedRevalidations, error: revalidationQueueError } = await admin.rpc(
+    'queue_ready_recognition_revalidations',
+    { p_limit: Math.min(limit, 10) },
+  );
+  if (revalidationQueueError) {
+    console.log(`[recognition-cache-v2] revalidation_queue_failed code=${revalidationQueueError.code ?? 'unknown'}`);
+  }
 
   const { data: claimed, error: claimErr } = await admin.rpc('claim_share_jobs', {
     p_limit: limit,
@@ -4601,6 +4844,9 @@ serve(async (req) => {
       readsEnabled: recognitionCachePolicy.readsEnabled,
       writesEnabled: recognitionCachePolicy.writesEnabled,
       cacheReadSuspended: recognitionCachePolicy.cacheReadSuspended,
+      policyVersion: RECOGNITION_CACHE_POLICY_VERSION,
+      revalidationsQueued: Number(queuedRevalidations) || 0,
+      revalidationsRecovered: Number(abandonedRevalidations) || 0,
     },
   });
 }, standaloneServeOptions);

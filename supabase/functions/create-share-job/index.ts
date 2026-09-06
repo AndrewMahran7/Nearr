@@ -30,7 +30,6 @@ import { inspectFacebookUrl } from '../../../lib/shareAgent/facebookUrl.ts';
 import { detectPlatform } from '../process-share-link/platform/detectPlatform.ts';
 import { validateShareUrl } from './urlValidation.ts';
 import {
-  forceFreshRecognitionSubmission,
   logRecognitionCachePolicy,
   readRecognitionCachePolicy,
   recognitionCacheDiagnostics,
@@ -135,10 +134,11 @@ serve(async (req) => {
     // Derived from the server-verified auth user. The client cannot choose the
     // onboarding exemption. The database grants at most one anonymous run.
     p_is_anonymous: userData.user.is_anonymous === true,
-    // Idempotency-key and in-flight dedupe remain intact. Only the historical
-    // completed-result shortcut is bypassed while answer-cache reads are off.
-    p_force_rerun:
-      forceFreshRecognitionSubmission(recognitionCachePolicy) || body.forceRerun === true,
+    // Idempotency-key and in-flight dedupe are handled before this switch in
+    // the RPC. A new logical submission always gets a new job: validated V2
+    // source answers may satisfy that job, but an old completed user job never
+    // acts as recognition truth.
+    p_force_rerun: true,
   });
 
   if (createErr || !Array.isArray(created) || created.length === 0) {

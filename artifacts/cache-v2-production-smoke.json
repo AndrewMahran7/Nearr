@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "environment": "Production",
+  "status": "pending",
+  "readsInitiallyOff": true,
+  "liveSources": 0,
+  "paidModelCalls": 0,
+  "knownIncrementalSpendUsd": 0,
+  "unknownProviderCosts": true,
+  "scenarios": []
+}
