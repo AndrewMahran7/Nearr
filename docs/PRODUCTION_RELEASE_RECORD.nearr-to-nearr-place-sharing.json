@@ -22,15 +22,22 @@
     "freshOnboardingLaunch": "PENDING"
   },
   "nativeProduction": {
+    "buildId": "a61830e1-432d-4fec-b0e9-11ea7a69826a",
+    "appVersion": "1.4.55",
+    "buildNumber": "55",
+    "runtimeVersion": "1.4.55",
+    "sourceCommit": "4e6b60e9b6e727381eeac98d8361d01423e95210",
+    "associatedDomains": "PASS: com.apple.developer.associated-domains and applinks:nearrapp.com found in the signed IPA",
+    "shareExtension": "PASS: signed com.nearr.ios.ShareExtension with group.com.nearr.ios found in the IPA",
+    "submissionId": "5eba06d7-40fc-4f21-8fd6-64a64629d523",
+    "submissionStatus": "UPLOADED_TO_APP_STORE_CONNECT_PROCESSING"
+  },
+  "supersededNativeProduction": {
     "buildId": "1ea9b130-0087-4057-8e2f-8013beb8525a",
     "appVersion": "1.3.52",
     "buildNumber": "54",
-    "runtimeVersion": "1.3.52",
-    "sourceCommit": "6a8733c33c36788991051f1ae710152bee0cd6dd",
-    "associatedDomains": "PASS: com.apple.developer.associated-domains and applinks:nearrapp.com found in the signed IPA",
-    "shareExtension": "PASS: signed com.nearr.ios.ShareExtension with group.com.nearr.ios found in the IPA",
     "submissionId": "3359a4cb-f1d4-4a3b-9043-e80ddff1cc08",
-    "submissionStatus": "UPLOADED_TO_APP_STORE_CONNECT_PROCESSING"
+    "status": "DO_NOT_RELEASE: superseded by 1.4.55 (55) to conform to the stage.version.build_number convention"
   },
   "productionSmoke": {
     "publicApi": "PASS: canonical place 200; invalid and missing UUIDs 404; bounded DTO; malformed and missing referrals safely ignored",
