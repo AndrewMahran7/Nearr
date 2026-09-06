@@ -10,6 +10,9 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.nearr.ios",
+      "associatedDomains": [
+        "applinks:nearrapp.com"
+      ],
       "usesAppleSignIn": true,
       "icon": "./assets/icon.png",
       "infoPlist": {
@@ -39,13 +42,16 @@
       "intentFilters": [
         {
           "action": "VIEW",
+          "autoVerify": true,
           "category": [
             "DEFAULT",
             "BROWSABLE"
           ],
           "data": [
             {
-              "scheme": "https"
+              "scheme": "https",
+              "host": "nearrapp.com",
+              "pathPrefix": "/p/"
             }
           ]
         },

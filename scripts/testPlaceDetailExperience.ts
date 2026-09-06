@@ -125,7 +125,7 @@ assert.match(
   /sourceAttribution\.actionLabel/,
   'source-post access is a first-class action',
 );
-assert.match(detail, /buildSavedPlaceShareContent\(saved\)/);
+assert.match(detail, /buildSavedPlaceShareContent\([\s\S]{0,160}referralId/);
 assert.match(detail, /void openSource\(\)/);
 assert.match(detail, /actionButton: \{[\s\S]*minHeight: 48/, 'comfortable touch targets');
 
