@@ -412,10 +412,10 @@ function selectedId(map: MapScreen): string | null {
   const queue = readFileSync(join(process.cwd(), 'app/share-jobs/index.tsx'), 'utf8');
   assert.match(
     queue,
-    /upsertSavedPlaceIntoCache\(item\.savedPlace\)[\s\S]{0,200}leaveQueueForMap\(\{ savedPlaceId: item\.savedPlaceId/,
-    'the queue seeds the exact row it already holds, then navigates by its id',
+    /upsertSavedPlaceIntoCache\(item\.savedPlace\)[\s\S]{0,200}pathname: '\/share-jobs\/\[jobId\]'[\s\S]{0,100}jobId: item\.shareJobId/,
+    'the queue seeds the exact row it already holds, then opens its completed-result detail',
   );
   assert.doesNotMatch(queue, /savedPlace\.place\.name[^\n]*navigat/i, 'never navigates by name');
 }
 
-console.log('PASS completed queue row -> exact saved place opens on the map');
+console.log('PASS completed queue row -> exact saved place opens in completed-result detail');
