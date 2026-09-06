@@ -69,6 +69,8 @@ async function main(): Promise<void> {
       { ...answerBase, slot_key: 'destination-b', place_id: places[1].id },
     ]);
     if (answersError) throw answersError;
+    const walletSetup = await admin.rpc('ensure_place_find_wallet', { p_user_id: user.userId, p_is_anonymous: false });
+    if (walletSetup.error) throw walletSetup.error;
     const { data: walletBefore, error: walletBeforeError } = await admin.from('place_find_wallets')
       .select('available_uses,reserved_uses,version').eq('user_id', user.userId).limit(1);
     if (walletBeforeError) throw walletBeforeError;

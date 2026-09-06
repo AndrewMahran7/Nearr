@@ -175,6 +175,11 @@ async function main(): Promise<void> {
     const secondFloor = places?.find((row: Place) => /2nd Floor/.test(row.name)) as Place | undefined;
     assert.ok(capone && secondFloor, 'controlled canonical places are missing');
     for (let i = 0; i < 3; i += 1) users.push(await createIdentity(admin, supabaseUrl, serviceRoleKey, runKey));
+    const walletSetup = await Promise.all(users.map((user) => admin.rpc('ensure_place_find_wallet', {
+      p_user_id: user.userId, p_is_anonymous: false,
+    })));
+    const walletSetupError = walletSetup.find((result) => result.error)?.error;
+    if (walletSetupError) throw walletSetupError;
     const walletsBefore = await Promise.all(users.map((user) => wallet(admin, user.userId)));
 
     const seeded = await seedAnswer(admin, H01, capone.id, 'media-primary', 'Controlled source-grounded Production V2 note.');

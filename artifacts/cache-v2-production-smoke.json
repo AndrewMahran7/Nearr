@@ -1,11 +1,42 @@
 {
   "schemaVersion": 1,
   "environment": "Production",
-  "status": "pending",
+  "status": "pass",
   "readsInitiallyOff": true,
-  "liveSources": 0,
-  "paidModelCalls": 0,
-  "knownIncrementalSpendUsd": 0,
+  "liveSources": 1,
+  "controlledSourceIdentities": 2,
+  "paidModelCallsConservativeUpperBound": 3,
+  "knownIncrementalSpendUsd": null,
   "unknownProviderCosts": true,
-  "scenarios": []
+  "unknownCostDetail": "Production revalidation model/provider cost rows were deleted with the ephemeral fixtures before a complete report line was emitted; cost is unknown, not zero.",
+  "deployments": {
+    "migrations": ["20260906000004", "20260906000005", "20260906000006", "20260906000007"],
+    "createShareJob": { "version": 32, "digest": "d8f2e4a35d8a5c9f9dbcfc0795343a586c319042eb0c9df3fac96c7b801e0451" },
+    "processShareJobs": { "version": 108, "digest": "1a64c9953c3ce3a0f6e497ac1869e5347b4bf6411ef44831044f68d28019abdc" },
+    "railwayDeploymentId": "7379e5d4-8646-42e3-998d-73b5b77c132f",
+    "railwaySourceSha": "f4793b721b32256d7b123049d993c491fbb9dc4d",
+    "railwayImageDigest": "sha256:9b16f183cea9e5829064e24cded63fb67889a14b026089ab4aaa9299492f763e",
+    "health": "ok",
+    "readyChecks": "all_true",
+    "runtimeReadsEnabled": true,
+    "runtimeWritesEnabled": true,
+    "premiumEnabled": false,
+    "automaticDeepEnabled": true
+  },
+  "scenarios": [
+    { "name": "eligible_hit_and_independent_save", "status": "pass", "recognitionModelCallsOnHit": 0 },
+    { "name": "correction_and_stale_commit", "status": "pass", "ownerSaveImmediate": true, "staleRpcResult": "recognition_cache_stale", "postCorrectionReadCount": 0 },
+    { "name": "fresh_supported_replacement", "status": "pass", "decision": "AGREES_WITH_REPLACEMENT", "replacementCacheHit": true },
+    { "name": "source_and_ai_note", "status": "pass", "recipientPrivateBoundaryPreserved": true },
+    { "name": "multi_location", "status": "pass", "savedPlaceCount": 2, "correctedSlotQuarantined": true, "siblingEligible": true, "alternativesCountedAsLocations": 0 },
+    { "name": "technical_failure", "status": "pass", "disposition": "retry_wait", "answerCountBeforeAndAfter": 2, "paidModelCalls": 0 },
+    { "name": "billing_and_support", "status": "pass", "walletDelta": 0, "premiumEvents": 0, "passiveCacheSupport": 0 }
+  ],
+  "harnessFindingsResolved": [
+    "accepted the RPC's explicit recognition_cache_stale exception as the intended stale-write rejection",
+    "corrected the saved-place source assertion from legacy source_url to canonical_url",
+    "moved the technical-failure snapshot after deterministic task completion",
+    "established the existing default wallet before measuring cache-flow balance deltas"
+  ],
+  "cleanup": { "ephemeralUsersDeleted": 12, "controlledSourceStateRunsDeleted": 7, "errors": [] }
 }

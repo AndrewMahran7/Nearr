@@ -1,14 +1,15 @@
 {
   "schemaVersion": 1,
-  "status": "candidate",
+  "status": "deployed",
   "startingMainSha": "ceb1010485e10a77dfac2759028c1a3fc861899a",
   "newerOriginMainObserved": "d52794c",
-  "implementationSha": null,
-  "releaseSha": null,
+  "implementationSha": "1d5b4d6ba3f54b9a0624f1861c676813d4602c60",
+  "releaseSha": "8f656d02428eae68758752d5fcd6c979ebb4f417",
   "finalMainSha": null,
   "otaPublished": false,
   "otaReason": "No client JavaScript change",
   "physicalQaPerformed": false,
-  "cleanupStatus": "pending",
+  "finalMainResolution": "the commit containing this record; reported after push to avoid a self-referential hash",
+  "cleanupStatus": "complete",
   "rollbackStatus": "not_needed"
 }

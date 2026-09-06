@@ -22,14 +22,16 @@
     { "name": "gallery", "status": "pass" },
     { "name": "ai_note_user_note_preservation", "status": "pass" },
     { "name": "save_notification_auth_startup", "status": "pass" },
-    { "name": "worker_typecheck_tests_build", "status": "pass", "testsPassed": 637, "testsSkipped": 8 },
+    { "name": "worker_typecheck_tests_build", "status": "pass", "testsPassed": 638, "testsSkipped": 7 },
     { "name": "affected_edge_deno_check", "status": "pass" },
     { "name": "migration_release_deployment_guards", "status": "pass" },
     { "name": "git_diff_check", "status": "pass" },
     { "name": "credential_scan", "status": "pass", "scanner": "secretlint recommended preset" }
   ],
   "resolvedFindings": [
-    "isolated worktree initially lacked the ignored .env.local required by dev-db-guard; copied the existing local file without exposing values and reran successfully"
+    "isolated worktree initially lacked the ignored .env.local required by dev-db-guard; copied the existing local file without exposing values and reran successfully",
+    "live technical failure left a claimed answer REVALIDATING; additive trigger migration now returns the affected answer to QUARANTINED and passed local plus Dev database proof",
+    "Dev already recorded migration version 20260906000006 without the expected trigger effect; the idempotent repair was reissued as 20260906000007 and live-proven"
   ],
   "preexistingFindings": [
     {
