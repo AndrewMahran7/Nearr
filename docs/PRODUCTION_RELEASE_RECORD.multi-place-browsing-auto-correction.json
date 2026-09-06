@@ -1,0 +1,36 @@
+{
+  "releaseId": "2026-09-06-multi-place-browsing-auto-correction",
+  "previousMainSha": "e55b89befd73009321ebdae2a9d3981255e117f5",
+  "previousOtaGroup": "6715ba8e-0c25-4dc8-ba07-3ccb1e632c03",
+  "currentOtaGroup": null,
+  "implementationSha": "0cc6f7b19af5a7e24bd632342f8634c7683cef37",
+  "reconciledDevSha": "85ace5a7afd52e606e4e610b4d8cd13ba1cec989",
+  "reconciledDevOtaGroup": "ffffed06-4ea2-428c-966e-e94b63ce0cd0",
+  "edgeVersions": {
+    "process-share-link": 152,
+    "create-share-job": 45,
+    "process-share-jobs": 121,
+    "get-place-videos": 16
+  },
+  "railwayDeployment": "7379e5d4-8646-42e3-998d-73b5b77c132f @ f4793b721b32256d7b123049d993c491fbb9dc4d; sha256:9b16f183cea9e5829064e24cded63fb67889a14b026089ab4aaa9299492f763e",
+  "migrationLedger": [
+    "20260906000007_recognition_revalidation_failure_quarantine_repair"
+  ],
+  "productionFlags": {
+    "recognitionCacheReads": true,
+    "premiumRequests": false,
+    "placeVideoGallery": true,
+    "geminiModel": "gemini-3.5-flash-lite"
+  },
+  "changedSurfaces": [
+    "ota"
+  ],
+  "rollbackProcedure": "Repeat the production concurrency guard, then republish previousOtaGroup 6715ba8e-0c25-4dc8-ba07-3ccb1e632c03. No database, Edge, or Railway rollback belongs to this OTA-only release.",
+  "deploymentStatus": "PLANNED",
+  "physicalQa": {
+    "signedOutColdLaunch": "PENDING",
+    "signedInColdLaunch": "PENDING",
+    "forceCloseRelaunch": "PENDING",
+    "freshOnboardingLaunch": "NOT_REQUIRED"
+  }
+}
