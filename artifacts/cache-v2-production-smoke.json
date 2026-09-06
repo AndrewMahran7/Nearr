@@ -11,8 +11,8 @@
   "unknownCostDetail": "Production revalidation model/provider cost rows were deleted with the ephemeral fixtures before a complete report line was emitted; cost is unknown, not zero.",
   "deployments": {
     "migrations": ["20260906000004", "20260906000005", "20260906000006", "20260906000007"],
-    "createShareJob": { "version": 32, "digest": "d8f2e4a35d8a5c9f9dbcfc0795343a586c319042eb0c9df3fac96c7b801e0451" },
-    "processShareJobs": { "version": 108, "digest": "1a64c9953c3ce3a0f6e497ac1869e5347b4bf6411ef44831044f68d28019abdc" },
+    "createShareJob": { "version": 45, "digest": "d8f2e4a35d8a5c9f9dbcfc0795343a586c319042eb0c9df3fac96c7b801e0451" },
+    "processShareJobs": { "version": 121, "digest": "1a64c9953c3ce3a0f6e497ac1869e5347b4bf6411ef44831044f68d28019abdc" },
     "railwayDeploymentId": "7379e5d4-8646-42e3-998d-73b5b77c132f",
     "railwaySourceSha": "f4793b721b32256d7b123049d993c491fbb9dc4d",
     "railwayImageDigest": "sha256:9b16f183cea9e5829064e24cded63fb67889a14b026089ab4aaa9299492f763e",
