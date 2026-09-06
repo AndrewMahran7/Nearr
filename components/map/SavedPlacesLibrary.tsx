@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -8,6 +8,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
@@ -55,7 +56,13 @@ export function SavedPlacesLibrary({
   const { colors, typography } = useTheme();
   const insets = useSafeAreaInsets();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const [query, setQuery] = useState('');
+  const searchInputRef = useRef<TextInput>(null);
+  // iOS owns the visible text and selection while the user is editing. In
+  // particular, never feed this state back through TextInput.value: RN 0.74's
+  // controlled-value commits can arrive behind native predictive/composition
+  // edits and move the caret before the next key lands. Search is downstream.
+  const [inputText, setInputText] = useState('');
+  const searchQuery = useDeferredValue(inputText);
   const [sort, setSort] = useState<SavedBrowseSort>('recent');
   const [filters, setFilters] = useState<SavedBrowseFilters>(EMPTY_FILTERS);
   const [draftFilters, setDraftFilters] = useState<SavedBrowseFilters>(EMPTY_FILTERS);
@@ -69,11 +76,11 @@ export function SavedPlacesLibrary({
       places: savedPlaces,
       nearbyPlaces,
       nearbyReady: locationState === 'ready',
-      query,
+      query: searchQuery,
       filters,
       sort,
     }),
-    [filters, locationState, nearbyPlaces, query, savedPlaces, sort],
+    [filters, locationState, nearbyPlaces, savedPlaces, searchQuery, sort],
   );
   const filterCount = browseFilterCount(filters);
 
@@ -121,6 +128,15 @@ export function SavedPlacesLibrary({
     setDraftFilters(EMPTY_FILTERS);
   }, []);
 
+  const clearSearch = useCallback(() => {
+    // This is an explicit user action, so it is the one allowed imperative
+    // mutation of the native field. clear() preserves native cursor ownership;
+    // focus() keeps the existing search-again behavior intentional.
+    searchInputRef.current?.clear();
+    setInputText('');
+    searchInputRef.current?.focus();
+  }, []);
+
   const renderCard = useCallback(
     ({ item }: { item: SavedBrowsePlace }) => (
       <SavedPlaceBrowseCard saved={item} onPress={onSelectPlace} />
@@ -133,8 +149,9 @@ export function SavedPlacesLibrary({
       <View style={styles.searchWrap}>
         <Feather name="search" size={19} color={colors.textMuted} style={styles.searchIcon} />
         <Input
-          value={query}
-          onChangeText={setQuery}
+          ref={searchInputRef}
+          defaultValue=""
+          onChangeText={setInputText}
           placeholder="Search saved places"
           accessibilityLabel="Search saved places"
           autoCapitalize="none"
@@ -214,12 +231,12 @@ export function SavedPlacesLibrary({
         </View>
       );
     }
-    if (query.trim()) {
+    if (inputText.trim()) {
       return (
         <View style={styles.empty}>
           <Text style={typography.heading}>No matches</Text>
           <Text style={[typography.body, styles.emptyBody]}>Try another search.</Text>
-          <Button title="Clear search" variant="secondary" onPress={() => setQuery('')} style={styles.emptyAction} />
+          <Button title="Clear search" variant="secondary" onPress={clearSearch} style={styles.emptyAction} />
         </View>
       );
     }
