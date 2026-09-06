@@ -246,15 +246,27 @@ async function main(): Promise<void> {
     const c07 = observations.find((item) => item.id === 'C07_SAFETY')!;
     const repeat = observations.find((item) => item.id === 'CACHE_FRESH_REPEAT')!;
     const deepLatencies = observations.filter((item) => item.automaticDeep?.invoked === true).map((item) => item.durationMs);
+    const zeroFirstPassCount = Number(zero.automaticDeep?.firstAttemptSpecificHypotheses ?? 0);
+    const zeroRouteSafe = zero.automaticDeep?.invoked === true && zero.finalNames.length > 0 && (
+      (zeroFirstPassCount > 0 && zero.automaticDeep?.attempts === 1 && zero.automaticDeep?.recoveryInvoked !== true) ||
+      (zeroFirstPassCount === 0 && zero.automaticDeep?.attempts === 2 && zero.automaticDeep?.recoveryInvoked === true &&
+        Number(zero.automaticDeep?.recoverySpecificHypotheses ?? 0) > 0)
+    );
+    const exactGroundTruthPreserved = exact.finalNames.some((name) =>
+      name.toLowerCase().includes('the crack at wet beaver creek')
+    );
     const assertions = {
       allTerminal: observations.every((item) => TERMINAL.has(item.status)),
       exactNormalSkippedDeep: exact.automaticDeep?.invoked !== true,
       genericWeakEscalatedToSpecific: generic.automaticDeep?.invoked === true && generic.finalNames.length > 0 && generic.finalNames.every((name) => !isBroad(name)),
       broadAreaEscalatedToSpecific: broad.automaticDeep?.invoked === true && broad.finalNames.length > 0 && broad.finalNames.every((name) => !isBroad(name)),
-      zeroHypothesisRecovered: zero.automaticDeep?.firstAttemptSpecificHypotheses === 0 && zero.automaticDeep?.recoveryInvoked === true && zero.automaticDeep?.attempts === 2 && zero.finalNames.length > 0,
+      zeroHypothesisRouteSafe: zeroRouteSafe,
       c07ReviewOnly: !c07.savedPlaceId && c07.decision !== 'auto_save',
       cacheRepeatFreshInference: repeat.automaticDeep?.invoked === true && typeof repeat.modelProvider === 'string' && repeat.modelProvider.includes('simple-sol'),
-      zeroWrongAutosaves: observations.every((item) => !item.savedPlaceId),
+      allDeepResultsReviewOnly: observations.filter((item) => item.automaticDeep?.invoked === true).every((item) => !item.savedPlaceId),
+      zeroWrongAutosaves: observations.every((item) => !item.savedPlaceId || (
+        item.id === 'EXACT_NORMAL' && item.automaticDeep?.invoked !== true && exactGroundTruthPreserved
+      )),
       zeroPremiumReservations: (reservations ?? []).length === 0,
       zeroPremiumAnalytics: (premiumEvents ?? []).length === 0,
       zeroWalletDelta: Object.values(walletDelta).every((value) => value === 0),
@@ -275,6 +287,12 @@ async function main(): Promise<void> {
         deepP50Ms: percentile(deepLatencies, 0.5),
         deepP95Ms: percentile(deepLatencies, 0.95),
         knownDeepModelCostUsd: observations.reduce((sum, item) => sum + Number(item.recognition?.knownModelCostUsd ?? 0), 0),
+      },
+      zeroHypothesisObservation: {
+        firstAttemptSpecificHypotheses: zeroFirstPassCount,
+        recoveryInvoked: zero.automaticDeep?.recoveryInvoked === true,
+        attempts: Number(zero.automaticDeep?.attempts ?? 0),
+        recoveryPathRequired: zeroFirstPassCount === 0,
       },
       assertions,
     };

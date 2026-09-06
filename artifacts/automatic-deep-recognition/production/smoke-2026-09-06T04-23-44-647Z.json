@@ -1,0 +1,324 @@
+{
+  "schemaVersion": 1,
+  "runKey": "nearr-prod-auto-deep-smoke-2026-09-06T04-23-44-647Z-efe54143",
+  "target": {
+    "supabaseRef": "rlqvxdwtetxsqxhqztkw",
+    "railwayEnvironment": "production",
+    "railwayService": "Nearr"
+  },
+  "deployedFlags": {
+    "automaticDeep": true,
+    "premium": false,
+    "cacheReads": false,
+    "concurrency": 4,
+    "claimBatch": 4
+  },
+  "observations": [
+    {
+      "id": "EXACT_NORMAL",
+      "purpose": "exact normal control",
+      "status": "completed",
+      "decision": "auto_save",
+      "savedPlaceId": "7d073ff9-4a63-46c9-83bc-b377807d8844",
+      "finalNames": [
+        "The Crack at Wet Beaver Creek",
+        "The Crack via Bell Trail"
+      ],
+      "modelProvider": "gemini",
+      "durationMs": 34214,
+      "taskStatus": "completed",
+      "automaticDeep": {
+        "needed": false,
+        "invoked": false,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 0,
+        "top3Count": 0,
+        "specificResult": false,
+        "recoveryInvoked": false,
+        "rejectionReason": null,
+        "normalCandidates": [
+          {
+            "city": "Sedona",
+            "name": "The Crack via Bell Trail",
+            "region": "Arizona",
+            "country": "USA",
+            "category": "hiking_trail"
+          }
+        ],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "SPECIFIC_ACTIONABLE",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 0
+      },
+      "recognition": null
+    },
+    {
+      "id": "GENERIC_WEAK",
+      "purpose": "generic/weak waterfall escalation",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "finalNames": [
+        "Toketee Falls"
+      ],
+      "modelProvider": "gemini+simple-sol",
+      "durationMs": 37298,
+      "taskStatus": "completed",
+      "automaticDeep": {
+        "needed": true,
+        "invoked": true,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 1,
+        "top3Count": 1,
+        "specificResult": true,
+        "recoveryInvoked": false,
+        "rejectionReason": "TECHNICAL_RECOVERY",
+        "normalCandidates": [
+          {
+            "city": null,
+            "name": "KELOLAND dot com",
+            "region": null,
+            "country": null,
+            "category": null
+          }
+        ],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "WEAK",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 1
+      },
+      "recognition": {
+        "model": "gpt-5.6-sol",
+        "timingsMs": {
+          "sol": 14377
+        },
+        "engineVersion": "simple-sol-premium.v2",
+        "placesRequests": 1,
+        "knownModelCostUsd": 0.04272
+      }
+    },
+    {
+      "id": "BROAD_AREA",
+      "purpose": "Lake Havasu parent escalation",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "finalNames": [
+        "Copper Canyon on Lake Havasu"
+      ],
+      "modelProvider": "gemini+simple-sol",
+      "durationMs": 60227,
+      "taskStatus": "completed",
+      "automaticDeep": {
+        "needed": true,
+        "invoked": true,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 1,
+        "top3Count": 1,
+        "specificResult": true,
+        "recoveryInvoked": false,
+        "rejectionReason": "BROAD_PARENT",
+        "normalCandidates": [
+          {
+            "city": null,
+            "name": "Lake Havasu",
+            "region": null,
+            "country": null,
+            "category": "lake"
+          }
+        ],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "WEAK",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 1
+      },
+      "recognition": {
+        "model": "gpt-5.6-sol",
+        "timingsMs": {
+          "sol": 28007
+        },
+        "engineVersion": "simple-sol-premium.v2",
+        "placesRequests": 1,
+        "knownModelCostUsd": 0.038376
+      }
+    },
+    {
+      "id": "ZERO_HYPOTHESIS",
+      "purpose": "first-pass zero, bounded recovery",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "finalNames": [
+        "Wangat Falls",
+        "Unnamed waterfall in the Chichester–Barrington Tops area",
+        "Wangat Lodge and Cottages"
+      ],
+      "modelProvider": "gemini+simple-sol",
+      "durationMs": 94923,
+      "taskStatus": "completed",
+      "automaticDeep": {
+        "needed": true,
+        "invoked": true,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 1,
+        "top3Count": 2,
+        "specificResult": true,
+        "recoveryInvoked": false,
+        "rejectionReason": "TECHNICAL_RECOVERY",
+        "normalCandidates": [],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "WEAK",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 2
+      },
+      "recognition": {
+        "model": "gpt-5.6-sol",
+        "timingsMs": {
+          "sol": 75924
+        },
+        "engineVersion": "simple-sol-premium.v2",
+        "placesRequests": 2,
+        "knownModelCostUsd": 0.069599
+      }
+    },
+    {
+      "id": "C07_SAFETY",
+      "purpose": "review-only memory-prior safety",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "finalNames": [
+        "San Diego Zoo"
+      ],
+      "modelProvider": "gemini+simple-sol",
+      "durationMs": 15172,
+      "taskStatus": "completed",
+      "automaticDeep": {
+        "needed": true,
+        "invoked": true,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 1,
+        "top3Count": 1,
+        "specificResult": true,
+        "recoveryInvoked": false,
+        "rejectionReason": "GENERIC_DESCRIPTOR",
+        "normalCandidates": [
+          {
+            "city": null,
+            "name": "the zoo",
+            "region": null,
+            "country": null,
+            "category": "attraction"
+          }
+        ],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "WEAK",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 1
+      },
+      "recognition": {
+        "model": "gpt-5.6-sol",
+        "timingsMs": {
+          "sol": 5266
+        },
+        "engineVersion": "simple-sol-premium.v2",
+        "placesRequests": 1,
+        "knownModelCostUsd": 0.007684
+      }
+    },
+    {
+      "id": "CACHE_FRESH_REPEAT",
+      "purpose": "generic/weak waterfall escalation",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "finalNames": [
+        "Toketee Falls",
+        "Abiqua Falls"
+      ],
+      "modelProvider": "gemini+simple-sol",
+      "durationMs": 67962,
+      "taskStatus": "completed",
+      "automaticDeep": {
+        "needed": true,
+        "invoked": true,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 1,
+        "top3Count": 2,
+        "specificResult": true,
+        "recoveryInvoked": false,
+        "rejectionReason": "TECHNICAL_RECOVERY",
+        "normalCandidates": [],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "WEAK",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 2
+      },
+      "recognition": {
+        "model": "gpt-5.6-sol",
+        "timingsMs": {
+          "sol": 49047
+        },
+        "engineVersion": "simple-sol-premium.v2",
+        "placesRequests": 2,
+        "knownModelCostUsd": 0.072908
+      }
+    }
+  ],
+  "billing": {
+    "walletBefore": {
+      "present": false,
+      "availableUses": 0,
+      "reservedUses": 0,
+      "version": 0
+    },
+    "walletAfter": {
+      "present": false,
+      "availableUses": 0,
+      "reservedUses": 0,
+      "version": 0
+    },
+    "walletDelta": {
+      "availableUses": 0,
+      "reservedUses": 0,
+      "version": 0
+    },
+    "premiumReservations": 0,
+    "premiumAnalytics": 0
+  },
+  "analytics": {
+    "deepEventCount": 25,
+    "deepEventNames": [
+      "deep_recognition_needed",
+      "deep_recognition_started",
+      "deep_recognition_completed",
+      "deep_recognition_specific_result",
+      "deep_recognition_top3_count"
+    ]
+  },
+  "premiumEndpoint": {
+    "status": 503,
+    "error": "premium_requests_suspended"
+  },
+  "performance": {
+    "escalationRate": 0.8333333333333334,
+    "normalOnlyLatencyMs": 34214,
+    "deepP50Ms": 60227,
+    "deepP95Ms": 94923,
+    "knownDeepModelCostUsd": 0.231287
+  },
+  "assertions": {
+    "allTerminal": true,
+    "exactNormalSkippedDeep": true,
+    "genericWeakEscalatedToSpecific": true,
+    "broadAreaEscalatedToSpecific": true,
+    "zeroHypothesisRecovered": false,
+    "c07ReviewOnly": true,
+    "cacheRepeatFreshInference": true,
+    "zeroWrongAutosaves": false,
+    "zeroPremiumReservations": true,
+    "zeroPremiumAnalytics": true,
+    "zeroWalletDelta": true,
+    "premiumSuspended503": true
+  }
+}
