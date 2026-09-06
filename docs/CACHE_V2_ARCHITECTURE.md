@@ -48,7 +48,10 @@ revalidation worker (outside transaction)
 - `recognition_source_states` owns the source-wide state and feedback/evidence
   revisions.
 - `recognition_cache_answers_v2` owns stable slot answers, exact canonical place
-  identity, provenance, source fingerprint, and validated revision.
+  identity, provenance, source fingerprint, validated revision, and the
+  normalized saved-place category captured from the admitted result. Cache
+  commits never copy provider-facing free-form place categories into the
+  constrained user-save category field.
 - `recognition_correction_events` is immutable client-visible feedback history.
 - `recognition_identity_support` keeps at most one current explicit assertion per
   user/source/slot. Passive model and cache autosaves never write it.

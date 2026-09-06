@@ -1,11 +1,31 @@
 {
   "schemaVersion": 1,
   "environment": "Nearr Phase 2 Dev",
-  "status": "pending",
+  "status": "pass",
   "readsInitiallyOff": true,
-  "liveSources": 0,
-  "paidModelCalls": 0,
-  "knownIncrementalSpendUsd": 0,
+  "liveSources": 2,
+  "controlledSourceIdentities": 3,
+  "paidModelCallsConservativeUpperBound": 4,
+  "knownIncrementalSpendUsd": 0.0169131,
   "unknownProviderCosts": true,
-  "scenarios": []
+  "unknownCostDetail": "Cold media recognition and a disputed-source follow-up AI-note/provider path were not fully priced; provider acquisition fees were unavailable.",
+  "deployments": {
+    "migrations": ["20260906000004", "20260906000005"],
+    "createShareJob": { "version": 59, "digest": "3abc1a9ef2b3ec93ddb98dbda6f6dc9a4fcde10ab989056869c4a5d5bda5f6e6" },
+    "processShareJobs": { "version": 116, "digest": "335e98a4c0019773515bb7022ef0f662710c8a07161dfebc2ef797109c2d2234" },
+    "railwayDeploymentId": "33625221-e1a9-4cb9-af24-f02e45cfe22d",
+    "railwayImageDigest": "sha256:a678c034d66907efc2d8b08d0d84032669421464400b7630ae29ee0664789654",
+    "runtimeReadsEnabled": true,
+    "runtimeWritesEnabled": true,
+    "policyVersion": "recognition-cache-v2.1"
+  },
+  "scenarios": [
+    { "name": "weak_personal_result", "status": "pass", "detail": "completed personal autosave remained cache-ineligible" },
+    { "name": "eligible_answer_two_recipients", "status": "pass", "cacheHits": 2, "recognitionModelCalls": 0, "independentSaves": true, "passiveSupport": 0 },
+    { "name": "correction_model_disagrees", "status": "pass", "decision": "SUPPORTS_PREVIOUS", "finalState": "DISPUTED", "nextSubmissionCacheHit": false },
+    { "name": "correction_model_agrees", "status": "pass", "decision": "AGREES_WITH_REPLACEMENT", "finalState": "ELIGIBLE", "replacementCacheHit": true },
+    { "name": "multi_location_and_technical_failure", "status": "pass", "savedPlaces": 2, "siblingPreserved": true, "technicalFailureAnswerCountUnchanged": true, "paidModelCalls": 0 },
+    { "name": "real_database_races", "status": "pass", "staleSavePrevented": true, "staleValidationPrevented": true, "workerDeduped": true }
+  ],
+  "cleanup": { "ephemeralUsersDeleted": 7, "evidenceObjectsDeleted": 10, "controlledSourceStatesDeleted": 3, "errors": [] }
 }

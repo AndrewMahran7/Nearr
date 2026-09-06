@@ -12,7 +12,10 @@ import {
 
 const root = path.resolve(__dirname, '..');
 const read = (relative: string) => fs.readFileSync(path.join(root, relative), 'utf8');
-const migration = read('supabase/migrations/20260906000004_recognition_cache_v2.sql');
+const migration = [
+  read('supabase/migrations/20260906000004_recognition_cache_v2.sql'),
+  read('supabase/migrations/20260906000005_recognition_cache_v2_saved_category.sql'),
+].join('\n');
 const cache = read('supabase/functions/process-share-jobs/recognitionCache.ts');
 const worker = read('supabase/functions/process-share-jobs/index.ts');
 const createJob = read('supabase/functions/create-share-job/index.ts');
@@ -101,6 +104,11 @@ const tests: Array<[string, () => void]> = [
     assert.match(commit, /insert into public\.saved_places\(user_id,place_id/);
     assert.match(commit, /perform public\.attach_saved_place_source/);
     assert.doesNotMatch(commit, /insert into public\.recognition_identity_support/);
+  }],
+  ['cache saves preserve only the normalized admitted category', () => {
+    assert.match(migration, /saved_category is null or saved_category in/);
+    assert.match(migration, /not sp\.category_user_overridden/);
+    assert.match(migration, /v_answer\.saved_category,v_answer\.saved_category_source/);
   }],
   ['only source AI notes cross the reuse boundary', () => {
     assert.match(migration, /source_ai_note/);

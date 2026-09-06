@@ -188,6 +188,9 @@ end $$;
   & "$pgBin\psql.exe" -X -w -v ON_ERROR_STOP=1 -h 127.0.0.1 -p $taskPort -U postgres -d postgres `
     -f 'supabase\migrations\20260906000004_recognition_cache_v2.sql' | Out-Null
   if ($LASTEXITCODE -ne 0) { throw 'Recognition Cache V2 migration failed' }
+  & "$pgBin\psql.exe" -X -w -v ON_ERROR_STOP=1 -h 127.0.0.1 -p $taskPort -U postgres -d postgres `
+    -f 'supabase\migrations\20260906000005_recognition_cache_v2_saved_category.sql' | Out-Null
+  if ($LASTEXITCODE -ne 0) { throw 'Recognition Cache V2 saved-category migration failed' }
   Write-Host 'DB_V2_STAGE migration_applied'
 
   $fixtureSql = @'
@@ -198,9 +201,9 @@ insert into public.places(id,google_place_id,name,latitude,longitude,category) v
  ('10000000-0000-0000-0000-000000000003','g-c','Place C',33.3,-117.3,'restaurant'),
  ('10000000-0000-0000-0000-000000000004','g-sibling','Sibling',33.4,-117.4,'park'),
  ('10000000-0000-0000-0000-000000000005','g-parent','Broad Parent',33.5,-117.5,'establishment');
-insert into public.saved_places(id,user_id,place_id,source_type,source_url,notes,ai_note) values
- ('20000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000001','tiktok','https://www.tiktok.com/@proof/video/111','PRIVATE USER NOTE','Source-grounded AI note'),
- ('20000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000004','tiktok','https://www.tiktok.com/@proof/video/111',null,'Sibling note');
+insert into public.saved_places(id,user_id,place_id,source_type,source_url,notes,ai_note,category,category_source,category_confidence,category_model_version) values
+ ('20000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000001','tiktok','https://www.tiktok.com/@proof/video/111','PRIVATE USER NOTE','Source-grounded AI note','restaurant','google_primary_type',1,'test-category'),
+ ('20000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000004','tiktok','https://www.tiktok.com/@proof/video/111',null,'Sibling note','park','google_primary_type',1,'test-category');
 select public.attach_saved_place_source('00000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001','v1:tiktok:111',1,'tiktok','111','https://www.tiktok.com/@proof/video/111',null,null,null,'caption','Source-grounded AI note',null);
 select public.attach_saved_place_source('00000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000002','v1:tiktok:111',1,'tiktok','111','https://www.tiktok.com/@proof/video/111',null,null,null,'caption','Sibling note',null);
 insert into public.share_jobs(id,user_id,source_url,canonical_url,source_platform,status,saved_place_id,decision,
@@ -279,6 +282,7 @@ do $$ begin
  if (select count(*) from public.saved_place_sources s join public.saved_places sp on sp.id=s.saved_place_id where sp.user_id='00000000-0000-0000-0000-000000000002' and s.identity_key='v1:tiktok:111')<>2 then raise exception 'recipient source count'; end if;
  if (select count(*) from public.recognition_identity_support where identity_key='v1:tiktok:111')<>1 then raise exception 'cache feedback loop'; end if;
  if exists(select 1 from public.saved_places where user_id='00000000-0000-0000-0000-000000000002' and notes is not null) then raise exception 'private note crossed account'; end if;
+ if exists(select 1 from public.saved_places where user_id='00000000-0000-0000-0000-000000000002' and category not in ('restaurant','park')) then raise exception 'normalized category not preserved'; end if;
 end $$;
 
 create table public.cache_v2_race_results(name text primary key,passed boolean not null);

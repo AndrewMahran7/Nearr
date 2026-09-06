@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-09-06T21:47:00Z",
+  "generatedAt": "2026-09-06T23:05:00Z",
   "candidateStartSha": "ceb1010485e10a77dfac2759028c1a3fc861899a",
   "status": "pass_with_preexisting_finding",
   "focused": {
     "command": "npm run test:recognition-cache-v2",
-    "contractCasesPassed": 21,
+    "contractCasesPassed": 22,
     "databaseCore": "DATABASE_CORE_PASS",
     "databaseConcurrency": "DATABASE_CONCURRENCY_PASS",
     "realConcurrentTransactions": true
@@ -25,7 +25,8 @@
     { "name": "worker_typecheck_tests_build", "status": "pass", "testsPassed": 637, "testsSkipped": 8 },
     { "name": "affected_edge_deno_check", "status": "pass" },
     { "name": "migration_release_deployment_guards", "status": "pass" },
-    { "name": "git_diff_check", "status": "pass" }
+    { "name": "git_diff_check", "status": "pass" },
+    { "name": "credential_scan", "status": "pass", "scanner": "secretlint recommended preset" }
   ],
   "resolvedFindings": [
     "isolated worktree initially lacked the ignored .env.local required by dev-db-guard; copied the existing local file without exposing values and reran successfully"
