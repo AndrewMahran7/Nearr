@@ -24,7 +24,11 @@ const content = buildSavedPlaceShareContent({
 }, referralId);
 assert.equal(content.kind, 'nearr_place');
 assert.equal(content.url, canonical);
-assert.equal(content.message, `Check out Night + Market on Nearr\n${canonical}`);
+assert.equal(
+  content.message,
+  'Night + Market 📍\nFound this on Nearr — tap to see it and save it to your map.',
+);
+assert.ok(!content.message.includes(canonical));
 assert.doesNotMatch(content.message, /instagram|provider-secret|Private-ish/);
 
 const root = process.cwd();

@@ -138,7 +138,7 @@ const detail = readFileSync(join(process.cwd(), 'components/map/SelectedPlaceDet
 const worker = readFileSync(join(process.cwd(), 'supabase/functions/process-share-jobs/index.ts'), 'utf8');
 assert.match(detail, /createPublicPlaceShare\(saved\.place\.id/);
 assert.match(detail, /buildSavedPlaceShareContent\([\s\S]{0,160}referralId/);
-assert.match(detail, /url: content\.url/);
+assert.match(detail, /buildNativePlaceSharePayload\(content, Platform\.OS\)/);
 assert.doesNotMatch(detail.slice(detail.indexOf('async function sharePlace'), detail.indexOf('async function handleSave')), /getShareJob|source_url/);
 assert.match(worker, /p_source_url: canonicalUrl/, 'Phase 2 auto-save persists its original public source');
 
