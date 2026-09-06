@@ -12,7 +12,7 @@ import {
   type SemanticCompatibility,
 } from '../../../lib/recognitionTruth.ts';
 
-export const MEDIA_AUTO_SAVE_RULE_VERSION = 'media-autosave-2026-08-26.v9';
+export const MEDIA_AUTO_SAVE_RULE_VERSION = 'media-autosave-2026-09-06.v10-save-first';
 
 // Retained for configuration compatibility and diagnostics. The v7 decision
 // does not apply this value as a second confirmation threshold: the resolver's
@@ -54,6 +54,7 @@ export type MediaAutoSaveGateDecision = {
   rawCandidateCount: number;
   plausibleCandidateCount: number;
   selectedProviderId: string | null;
+  plausibleProviderIds: string[];
   candidateRejectionReasons: string[];
   explicitConflictFlags: string[];
   semanticCompatibility: SemanticCompatibility;
@@ -268,6 +269,7 @@ export function evaluateMediaAutoSave(
       rawCandidateCount: input.result.scoring.length,
       plausibleCandidateCount: 0,
       selectedProviderId: null,
+      plausibleProviderIds: [],
       candidateRejectionReasons: ['category_only_candidate'],
       explicitConflictFlags: ['category_only_candidate'],
       semanticCompatibility: 'UNKNOWN',
@@ -301,16 +303,6 @@ export function evaluateMediaAutoSave(
   if (input.mention.identityEvidenceKind === 'model_prior') {
     reasonCode = 'model_prior_unverified';
     explicitConflictFlags.push('model_prior_unverified');
-  } else if ((input.mention.identityAlternatives?.length ?? 0) > 0 && plausible.length <= 1) {
-    // A second surviving model identity that Places could not independently
-    // eliminate is real uncertainty, never permission to silently choose the
-    // only listed candidate. Two canonical candidates are handled below by the
-    // ordinary ambiguity branch.
-    reasonCode = 'identity_hypothesis_uncertainty';
-    explicitConflictFlags.push('identity_hypothesis_uncertainty');
-  } else if (input.mention.hostVenueName || input.mention.relationshipType) {
-    reasonCode = 'host_relationship';
-    explicitConflictFlags.push('host_relationship');
   } else if (plausible.length === 0) {
     if (explicitConflictFlags.includes('location_conflict')) reasonCode = 'location_conflict';
     else if (
@@ -319,9 +311,6 @@ export function evaluateMediaAutoSave(
     ) {
       reasonCode = 'provider_identity_invalid';
     } else reasonCode = 'no_plausible_candidate';
-  } else if (plausible.length > 1) {
-    reasonCode = ambiguityReason(plausible);
-    explicitConflictFlags.push(reasonCode);
   } else {
     const selected = plausible[0]!;
     if (duplicateCanonicalCount(selected.candidate.googlePlaceId, input.allResults) !== 1) {
@@ -352,21 +341,24 @@ export function evaluateMediaAutoSave(
         candidateRejectionReasons.push('candidate_semantic_mismatch');
         explicitConflictFlags.push('candidate_semantic_mismatch');
       } else {
-        reasonCode = 'single_plausible_candidate';
+        reasonCode = plausible.length > 1
+          ? 'top1_of_multiple_plausible_candidates'
+          : 'single_plausible_candidate';
         if (semantic.overridden) explicitConflictFlags.push('candidate_semantic_override');
       }
     }
   }
 
-  const selected = plausible.length === 1 ? plausible[0]! : null;
+  const selected = plausible[0] ?? null;
   return {
-    eligible: reasonCode === 'single_plausible_candidate',
+    eligible: reasonCode === 'single_plausible_candidate' || reasonCode === 'top1_of_multiple_plausible_candidates',
     confidenceScore: selected?.score.normalizedScore ?? null,
     ruleVersion: MEDIA_AUTO_SAVE_RULE_VERSION,
     reasonCodes: [reasonCode],
     rawCandidateCount,
     plausibleCandidateCount: plausible.length,
     selectedProviderId: selected?.candidate.googlePlaceId ?? null,
+    plausibleProviderIds: plausible.map(({ candidate }) => candidate.googlePlaceId).slice(0, 3),
     candidateRejectionReasons: [...new Set(candidateRejectionReasons)],
     explicitConflictFlags: [...new Set(explicitConflictFlags)],
     semanticCompatibility,

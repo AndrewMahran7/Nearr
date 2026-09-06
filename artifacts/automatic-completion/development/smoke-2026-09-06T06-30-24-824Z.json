@@ -1,0 +1,421 @@
+{
+  "schemaVersion": 1,
+  "runKey": "nearr-prod-auto-deep-smoke-2026-09-06T06-30-24-824Z-37a3669c",
+  "target": {
+    "supabaseRef": "qnfxnmvxpjzfydgudtvs",
+    "railwayEnvironment": "development",
+    "railwayService": "media-worker"
+  },
+  "deployedFlags": {
+    "automaticDeep": true,
+    "premium": false,
+    "cacheReads": false,
+    "concurrency": 4,
+    "claimBatch": 4
+  },
+  "observations": [
+    {
+      "id": "EASY_RESTAURANT",
+      "purpose": "easy restaurant; Gemini-only completion",
+      "status": "completed",
+      "decision": "auto_save",
+      "savedPlaceId": "ae0c3f68-c956-496e-85fd-bcd5ef2c0ccd",
+      "finalNames": [
+        "Capone's Italian Cucina"
+      ],
+      "modelProvider": "gemini",
+      "durationMs": 79395,
+      "taskStatus": "completed",
+      "automaticDeep": {
+        "needed": false,
+        "invoked": false,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 0,
+        "top3Count": 0,
+        "specificResult": false,
+        "recoveryInvoked": false,
+        "rejectionReason": null,
+        "normalCandidates": [
+          {
+            "city": "Huntington Beach",
+            "name": "Capone's Italian Cucina",
+            "region": "California",
+            "country": "United States",
+            "category": "restaurant"
+          }
+        ],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "SPECIFIC_ACTIONABLE",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 0
+      },
+      "recognition": null,
+      "costTelemetry": {
+        "cheapModel": "gemini-3.5-flash-lite",
+        "cheapModelCostUsd": 0.0097438,
+        "solInvoked": false,
+        "solCostUsd": null,
+        "placesRequests": 0,
+        "totalModelCostUsd": 0.0097438,
+        "totalInferenceLatencyMs": 25947
+      },
+      "resultRows": [
+        {
+          "share_job_id": "27950631-2d34-4a21-b340-e65a5a755817",
+          "outcome": "auto_saved",
+          "result_role": "primary",
+          "candidate_rank": 1,
+          "saved_place_id": "ae0c3f68-c956-496e-85fd-bcd5ef2c0ccd"
+        }
+      ]
+    },
+    {
+      "id": "GENERIC_WEAK",
+      "purpose": "generic/weak waterfall escalation",
+      "status": "completed",
+      "decision": "auto_save",
+      "savedPlaceId": "845570ca-2866-4136-b1d3-d57917d3f574",
+      "finalNames": [
+        "Toketee Falls"
+      ],
+      "modelProvider": "gemini+simple-sol",
+      "durationMs": 56150,
+      "taskStatus": "completed",
+      "automaticDeep": {
+        "needed": true,
+        "invoked": true,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 1,
+        "top3Count": 1,
+        "specificResult": true,
+        "recoveryInvoked": false,
+        "rejectionReason": "TECHNICAL_RECOVERY",
+        "normalCandidates": [],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "WEAK",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 1
+      },
+      "recognition": {
+        "model": "gpt-5.6-sol",
+        "timingsMs": {
+          "sol": 19040
+        },
+        "engineVersion": "simple-sol-premium.v2",
+        "placesRequests": 1,
+        "knownModelCostUsd": 0.042364
+      },
+      "costTelemetry": {
+        "cheapModel": "gemini-3.5-flash-lite",
+        "cheapModelCostUsd": 0.0036868,
+        "solInvoked": true,
+        "solCostUsd": 0.042364,
+        "placesRequests": 1,
+        "totalModelCostUsd": 0.0460508,
+        "totalInferenceLatencyMs": 43563
+      },
+      "resultRows": [
+        {
+          "share_job_id": "c1a9afdb-d439-44a2-ac44-ee0d4a6172e2",
+          "outcome": "auto_saved",
+          "result_role": "primary",
+          "candidate_rank": 1,
+          "saved_place_id": "845570ca-2866-4136-b1d3-d57917d3f574"
+        }
+      ]
+    },
+    {
+      "id": "SEARCH_SUGGESTION_SHAPE",
+      "purpose": "named broad lead resolves to a specific place",
+      "status": "completed",
+      "decision": "auto_save",
+      "savedPlaceId": "5a090dd4-8e5f-443b-9c1d-af1b17f76193",
+      "finalNames": [
+        "Copper Canyon Drive",
+        "Copper Canyon on Lake Havasu"
+      ],
+      "modelProvider": "gemini+simple-sol",
+      "durationMs": 103374,
+      "taskStatus": "completed",
+      "automaticDeep": {
+        "needed": true,
+        "invoked": true,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 1,
+        "top3Count": 1,
+        "specificResult": true,
+        "recoveryInvoked": false,
+        "rejectionReason": "BROAD_PARENT",
+        "normalCandidates": [
+          {
+            "city": "Lake Havasu City",
+            "name": "Lake Havasu",
+            "region": "Arizona",
+            "country": "United States",
+            "category": "lake"
+          }
+        ],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "WEAK",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 1
+      },
+      "recognition": {
+        "model": "gpt-5.6-sol",
+        "timingsMs": {
+          "sol": 33692
+        },
+        "engineVersion": "simple-sol-premium.v2",
+        "placesRequests": 1,
+        "knownModelCostUsd": 0.038848
+      },
+      "costTelemetry": {
+        "cheapModel": "gemini-3.5-flash-lite",
+        "cheapModelCostUsd": 0.0045168,
+        "solInvoked": true,
+        "solCostUsd": 0.038848,
+        "placesRequests": 1,
+        "totalModelCostUsd": 0.0433648,
+        "totalInferenceLatencyMs": 89225
+      },
+      "resultRows": [
+        {
+          "share_job_id": "aa6f0fa6-d3ce-4713-a736-efad5bdd3ecd",
+          "outcome": "auto_saved",
+          "result_role": "primary",
+          "candidate_rank": 1,
+          "saved_place_id": "5a090dd4-8e5f-443b-9c1d-af1b17f76193"
+        }
+      ]
+    },
+    {
+      "id": "HARD_NATURAL",
+      "purpose": "hard natural destination uses Sol when necessary",
+      "status": "completed",
+      "decision": "auto_save",
+      "savedPlaceId": "2e19a90a-8e63-4587-a8d9-6781f747a105",
+      "finalNames": [
+        "Tamolitch Falls (Blue Pool)",
+        "Tamolitch Blue Pool (Tamolitch Falls)"
+      ],
+      "modelProvider": "gemini+simple-sol",
+      "durationMs": 51789,
+      "taskStatus": "completed",
+      "automaticDeep": {
+        "needed": true,
+        "invoked": true,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 1,
+        "top3Count": 1,
+        "specificResult": true,
+        "recoveryInvoked": false,
+        "rejectionReason": "NO_IDENTITY",
+        "normalCandidates": [],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "WEAK",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 1
+      },
+      "recognition": {
+        "model": "gpt-5.6-sol",
+        "timingsMs": {
+          "sol": 19591
+        },
+        "engineVersion": "simple-sol-premium.v2",
+        "placesRequests": 1,
+        "knownModelCostUsd": 0.015614
+      },
+      "costTelemetry": {
+        "cheapModel": "gemini-3.5-flash-lite",
+        "cheapModelCostUsd": 0.0029143,
+        "solInvoked": true,
+        "solCostUsd": 0.015614,
+        "placesRequests": 1,
+        "totalModelCostUsd": 0.0185283,
+        "totalInferenceLatencyMs": 41245
+      },
+      "resultRows": [
+        {
+          "share_job_id": "1a4bc6b3-9b4e-4069-b1f7-d1db589dedb5",
+          "outcome": "auto_saved",
+          "result_role": "primary",
+          "candidate_rank": 1,
+          "saved_place_id": "2e19a90a-8e63-4587-a8d9-6781f747a105"
+        }
+      ]
+    },
+    {
+      "id": "NO_DEFENSIBLE_SPECIFIC",
+      "purpose": "descriptor-only result may remain unsaved",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "finalNames": [
+        "Waterfall north of Sydney"
+      ],
+      "modelProvider": "gemini",
+      "durationMs": 14260,
+      "taskStatus": "completed",
+      "automaticDeep": {
+        "needed": false,
+        "invoked": false,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 0,
+        "top3Count": 0,
+        "specificResult": false,
+        "recoveryInvoked": false,
+        "rejectionReason": null,
+        "normalCandidates": [
+          {
+            "city": null,
+            "name": "Waterfall north of Sydney",
+            "region": "New South Wales",
+            "country": "Australia",
+            "category": "waterfall"
+          }
+        ],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "SPECIFIC_ACTIONABLE",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 0
+      },
+      "recognition": null,
+      "costTelemetry": {
+        "cheapModel": "gemini-3.5-flash-lite",
+        "cheapModelCostUsd": 0.005688,
+        "solInvoked": false,
+        "solCostUsd": null,
+        "placesRequests": 0,
+        "totalModelCostUsd": 0.005688,
+        "totalInferenceLatencyMs": 2208
+      },
+      "resultRows": [
+        {
+          "share_job_id": "85bf16f5-aa42-4885-84c0-f84814281778",
+          "outcome": "manual_fallback",
+          "result_role": null,
+          "candidate_rank": null,
+          "saved_place_id": null
+        }
+      ]
+    },
+    {
+      "id": "SUPPORTED_SPECIFIC",
+      "purpose": "source-supported specific identity",
+      "status": "completed",
+      "decision": "auto_save",
+      "savedPlaceId": "9c91901d-5619-44a1-8442-ef8e0cef4b28",
+      "finalNames": [
+        "San Diego Zoo"
+      ],
+      "modelProvider": "gemini+simple-sol",
+      "durationMs": 13284,
+      "taskStatus": "completed",
+      "automaticDeep": {
+        "needed": true,
+        "invoked": true,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 1,
+        "top3Count": 1,
+        "specificResult": true,
+        "recoveryInvoked": false,
+        "rejectionReason": "NO_IDENTITY",
+        "normalCandidates": [],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "WEAK",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 1
+      },
+      "recognition": {
+        "model": "gpt-5.6-sol",
+        "timingsMs": {
+          "sol": 7338
+        },
+        "engineVersion": "simple-sol-premium.v2",
+        "placesRequests": 1,
+        "knownModelCostUsd": 0.008344
+      },
+      "costTelemetry": {
+        "cheapModel": "gemini-3.5-flash-lite",
+        "cheapModelCostUsd": 0.0008674,
+        "solInvoked": true,
+        "solCostUsd": 0.008344,
+        "placesRequests": 1,
+        "totalModelCostUsd": 0.0092114,
+        "totalInferenceLatencyMs": 8112
+      },
+      "resultRows": [
+        {
+          "share_job_id": "5044537d-0b25-48dd-9c9a-422b8bb77598",
+          "outcome": "auto_saved",
+          "result_role": "primary",
+          "candidate_rank": 1,
+          "saved_place_id": "9c91901d-5619-44a1-8442-ef8e0cef4b28"
+        }
+      ]
+    }
+  ],
+  "billing": {
+    "walletBefore": {
+      "present": false,
+      "availableUses": 0,
+      "reservedUses": 0,
+      "version": 0
+    },
+    "walletAfter": {
+      "present": false,
+      "availableUses": 0,
+      "reservedUses": 0,
+      "version": 0
+    },
+    "walletDelta": {
+      "availableUses": 0,
+      "reservedUses": 0,
+      "version": 0
+    },
+    "premiumReservations": 0,
+    "premiumAnalytics": 0
+  },
+  "analytics": {
+    "deepEventCount": 20,
+    "deepEventNames": [
+      "deep_recognition_needed",
+      "deep_recognition_started",
+      "deep_recognition_completed",
+      "deep_recognition_specific_result",
+      "deep_recognition_top3_count"
+    ]
+  },
+  "premiumEndpoint": {
+    "status": 409,
+    "error": "premium_not_eligible"
+  },
+  "performance": {
+    "escalationRate": 0.6666666666666666,
+    "normalOnlyLatencyMs": 79395,
+    "deepP50Ms": 51789,
+    "deepP95Ms": 103374,
+    "knownDeepModelCostUsd": 0.10517000000000001
+  },
+  "zeroHypothesisObservation": {
+    "firstAttemptSpecificHypotheses": 0,
+    "recoveryInvoked": false,
+    "attempts": 0,
+    "recoveryPathRequired": true
+  },
+  "assertions": {
+    "allTerminal": true,
+    "easyRestaurantGeminiOnly": true,
+    "genericSpecificAutoCompleted": true,
+    "searchSuggestionShapeAutoCompleted": true,
+    "hardNaturalEscalatedAndCompleted": true,
+    "noDefensibleSpecificRemainsUnsaved": true,
+    "supportedSpecificAutoCompleted": true,
+    "ordinaryPlausibleResultsCreateNoTask": true,
+    "costTelemetryPersisted": true,
+    "zeroPremiumReservations": true,
+    "zeroPremiumAnalytics": true,
+    "zeroWalletDelta": true,
+    "premiumGuarded": true
+  }
+}

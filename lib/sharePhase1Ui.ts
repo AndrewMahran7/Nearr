@@ -10,8 +10,8 @@ export const SHARE_EXTENSION_SUCCESS_LAYOUT = {
 
 export function queueIntro(count: number): string {
   return count === 1
-    ? 'I found a place that needs a quick check.'
-    : `I found ${count} places that need a quick check.`;
+    ? '1 earlier find has optional correction tools.'
+    : `${count} earlier finds have optional correction tools.`;
 }
 
 export function splitPlaceAddress(address: string | null | undefined): {

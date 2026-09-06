@@ -8,7 +8,7 @@
 import { addressesMatch } from '../../../lib/shareAgent/tools.ts';
 import { geographicContextTypeOf } from '../process-share-link/places/placeNormalization.ts';
 
-export const METADATA_AUTO_SAVE_RULE_VERSION = 'metadata-autosave-2026-08-25.v6';
+export const METADATA_AUTO_SAVE_RULE_VERSION = 'metadata-autosave-2026-09-06.v7-save-first';
 
 // Keep this aligned with decisionPolicy's confirmation floor. A singleton
 // still has to be independently good enough to show as a real place match;
@@ -295,11 +295,11 @@ export function evaluateMetadataAutoSave(input: {
     !text(input.evidence.address?.raw) && independentCaptionHints.length === 0;
   if (tagOnlyIdentity) explicitConflictFlags.push('tagged_location_requires_media_verification');
 
-  const selected = viable.length === 1
-    ? viable[0]!
-    : plausible.length === 1
-    ? plausible[0]!
-    : null;
+  // Ranking is authoritative once the deterministic contradiction filters
+  // have run. Medium/low confidence and ordinary 2â€“3 way ambiguity are not a
+  // reason to manufacture work for the user: #1 is the primary save and the
+  // next two rows are retained as soft alternatives by the finalizer.
+  const selected = viable[0] ?? plausible[0] ?? null;
   const expectedAddress = text(input.evidence.address?.raw);
   if (
     selected &&
@@ -316,12 +316,11 @@ export function evaluateMetadataAutoSave(input: {
   let reasonCode: string;
   if (explicitConflictFlags.length > 0) reasonCode = explicitConflictFlags[0]!;
   else if (plausible.length === 0) reasonCode = candidateRejectionReasons[0] ?? 'no_plausible_candidate';
-  else if (viable.length > 1) reasonCode = 'multiple_plausible_candidates';
-  else if (viable.length === 0) reasonCode = plausible.length === 1 ? 'weak_singleton' : 'multiple_weak_candidates';
-  else reasonCode = 'single_plausible_candidate';
+  else if (plausible.length > 0) reasonCode = 'top1_plausible_candidate';
+  else reasonCode = 'no_plausible_candidate';
 
   return {
-    eligible: reasonCode === 'single_plausible_candidate',
+    eligible: reasonCode === 'top1_plausible_candidate',
     ruleVersion: METADATA_AUTO_SAVE_RULE_VERSION,
     rawCandidateCount: raw.length,
     plausibleCandidateCount: plausible.length,

@@ -1,0 +1,4 @@
+-- Migration-history compatibility marker.
+-- Nearr-Dev owns this historical right-sized mock token-pack catalog version.
+-- Premium remains suspended and the development-only catalog is outside this
+-- release, so this marker intentionally makes no schema or data change.

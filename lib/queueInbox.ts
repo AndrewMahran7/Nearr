@@ -42,9 +42,9 @@ export type QueueRow = {
 export type QueueSectionKey = 'working' | 'needs_you' | 'recently_completed';
 
 export const QUEUE_SECTION_TITLES: Readonly<Record<QueueSectionKey, string>> = {
-  working: 'Working',
-  needs_you: 'Needs you',
-  recently_completed: 'Recently completed',
+  working: 'Still processing',
+  needs_you: 'Other finds',
+  recently_completed: 'Recent finds',
 };
 
 const PROCESSING = new Set(['queued', 'processing_metadata']);

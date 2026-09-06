@@ -62,9 +62,9 @@ assert.deepEqual(sections.map((s) => s.key), ['working', 'needs_you', 'recently_
 assert.deepEqual(sections[0]!.rows.map((r) => r.id), ['p1', 'p2']);
 assert.deepEqual(sections[1]!.rows.map((r) => r.id), ['n1', 'n2', 'f1']);
 assert.deepEqual(sections[2]!.rows.map((r) => r.id), ['c1']);
-assert.equal(sections[0]!.title, 'Working');
-assert.equal(sections[1]!.title, 'Needs you');
-assert.equal(sections[2]!.title, 'Recently completed');
+assert.equal(sections[0]!.title, 'Still processing');
+assert.equal(sections[1]!.title, 'Other finds');
+assert.equal(sections[2]!.title, 'Recent finds');
 assert.ok(!JSON.stringify(sections).includes('x1'), 'cancelled rows are not listed');
 assert.deepEqual(buildQueueSections([]), [], 'no empty sections are emitted');
 

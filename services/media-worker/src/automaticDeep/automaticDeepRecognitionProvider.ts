@@ -231,6 +231,11 @@ class AutomaticDeepRecognitionModel implements ModelProvider {
         totalTokens: (normal.usage?.totalTokens ?? 0) + (execution.telemetry.usage.total_tokens ?? 0),
       },
       latencyMs: (normal.latencyMs ?? 0) + execution.telemetry.timingsMs.sol,
+      cheapPass: {
+        model: normal.modelName ?? null,
+        usage: normal.usage,
+        latencyMs: normal.latencyMs ?? 0,
+      },
       automaticDeepRecognition: execution,
       automaticDeep: {
         ...diagnostics,

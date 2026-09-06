@@ -55,6 +55,7 @@ export type ShareCompletionNotificationContext = {
   googlePlaceId?: string | null;
   reviewMode?: string | null;
   reviewCount?: number;
+  alternativeCount?: number;
 };
 
 export type ShareCompletionNotificationResultClass =
@@ -192,19 +193,16 @@ function resultCopy(
     }
   }
 
-  if (context.status === 'completed' && context.alreadySaved) {
-    return {
-      title: 'Already saved',
-      body: placeName ? `${placeName} is already in Nearr.` : 'This place is already in Nearr.',
-      resultClass: 'already_saved',
-    };
-  }
-
   if (context.status === 'completed' && (context.savedPlaceId || context.savedPlaceIds?.length)) {
+    const alternativeCount = boundedCount(context.alternativeCount);
     return {
-      title: 'Found it',
-      body: placeName ? `${placeName} is saved to your map.` : 'It\u2019s saved to your map.',
-      resultClass: 'strong_exact',
+      title: placeName ? `Saved ${placeName} to your map` : 'Saved to your map',
+      body: context.alreadySaved
+        ? (placeName ? `${placeName} was already on your map.` : 'This place was already on your map.')
+        : alternativeCount > 0
+        ? `We also found ${alternativeCount} similar ${alternativeCount === 1 ? 'result' : 'results'} you can keep or remove.`
+        : 'Open Nearr to view your new find.',
+      resultClass: context.alreadySaved ? 'already_saved' : 'strong_exact',
     };
   }
 
@@ -316,6 +314,9 @@ function notificationData(
       : {}),
     ...(boundedCount(context.reviewCount) > 0
       ? { reviewCount: boundedCount(context.reviewCount) }
+      : {}),
+    ...(boundedCount(context.alternativeCount) > 0
+      ? { alternativeCount: boundedCount(context.alternativeCount), reviewMode: 'soft_alternatives' }
       : {}),
   };
 }

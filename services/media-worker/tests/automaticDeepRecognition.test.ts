@@ -127,7 +127,11 @@ for (const name of [
 test('18 automatic deep reserves, consumes, and releases zero tokens and creates no Premium task', async () => {
   let calls = 0;
   let captured: any;
-  const inner: ModelProvider = { name: 'normal', analyze: async () => output([place('waterfall')]) };
+  const inner: ModelProvider = { name: 'normal', analyze: async () => output([place('waterfall')], {
+    modelName: 'gemini-2.5-flash',
+    usage: { inputTokens: 500, outputTokens: 50, thinkingTokens: 0, totalTokens: 550 },
+    latencyMs: 125,
+  }) };
   const wrapped = withAutomaticDeepRecognition(inner, cfg, async (args) => { calls += 1; captured = args; return execution(); });
   const result = await wrapped.analyze(input);
   assert.equal(calls, 1, '19 shared Simple Sol engine called exactly once');
@@ -168,6 +172,9 @@ test('18 automatic deep reserves, consumes, and releases zero tokens and creates
   assert.equal(result.automaticDeepRecognition?.telemetry.evidenceReuse.frames, 'REACQUIRED', 'evidence reuse telemetry available');
   assert.equal(result.automaticDeepRecognition?.telemetry.knownModelCostUsd, .01, 'cost tracked independently');
   assert.equal(result.automaticDeepRecognition?.telemetry.timingsMs.sol, 20, 'latency tracked independently');
+  assert.equal(result.cheapPass?.model, 'gemini-2.5-flash', 'cheap model identity survives Sol result replacement');
+  assert.equal(result.cheapPass?.usage?.totalTokens, 550, 'cheap usage remains independently costable');
+  assert.equal(result.cheapPass?.latencyMs, 125, 'cheap latency remains independently measurable');
 });
 
 async function source(relative: string): Promise<string> {

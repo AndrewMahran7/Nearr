@@ -108,7 +108,7 @@ check('configured threshold rejects non-number', !resolveMediaAutoSaveThreshold(
 {
   const alternative = mention({ displayName: 'South Cove', normalizedName: 'south cove' });
   const d = decide(mention({ identityAlternatives: [alternative] }));
-  check('unresolved same-scene identity uncertainty blocks auto-save', !d.eligible && d.reasonCodes.includes('identity_hypothesis_uncertainty'));
+  check('unresolved same-scene identity uncertainty saves the plausible top1', d.eligible);
 }
 {
   const naturalMention = mention({
@@ -237,8 +237,8 @@ check('configured threshold rejects non-number', !resolveMediaAutoSaveThreshold(
   });
   const d = decide(mention(), r, [r]);
   check(
-    'gate score 0.95 with a competing candidate remains blocked',
-    !d.eligible && d.reasonCodes.includes('multiple_plausible_candidates'),
+    'gate score 0.95 with a competing candidate saves top1',
+    d.eligible && d.plausibleProviderIds.length === 2,
   );
 }
 {
@@ -257,8 +257,8 @@ check('configured threshold rejects non-number', !resolveMediaAutoSaveThreshold(
   });
   const d = decide(mention(), r, [r]);
   check(
-    'two close same-name branches remain blocked',
-    !d.eligible && d.reasonCodes.includes('branch_ambiguity'),
+    'two close same-name branches save the ranked top1 and retain both',
+    d.eligible && d.selectedProviderId === 'google-parlor' && d.plausibleProviderIds.length === 2,
   );
 }
 for (const source of ['speech', 'visible_text', 'caption'] as const) {
@@ -307,10 +307,10 @@ check('model confidence is diagnostic only', decide(mention({ confidence: 0.01 }
   const r = result();
   r.scoring[0]!.normalizedScore = 0.95;
   check(
-    'gate score 0.95 with host-only confusion remains blocked',
+    'host context does not overwrite or block the named child identity',
     (() => {
       const d = decide(mention({ hostVenueName: 'Brewery X', relationshipType: 'located_at' }), r, [r]);
-      return !d.eligible && d.reasonCodes.includes('host_relationship');
+      return d.eligible && d.selectedProviderId === 'google-parlor';
     })(),
   );
 }

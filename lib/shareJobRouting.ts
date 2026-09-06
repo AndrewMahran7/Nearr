@@ -168,9 +168,16 @@ export function routeShareJobNotification(
   const savedPlaceIds = ids(data?.savedPlaceIds);
   const googlePlaceId = str(data?.googlePlaceId);
   const outcome = str(data?.outcome);
+  const alternativeCount = typeof data?.alternativeCount === 'number' && Number.isFinite(data.alternativeCount)
+    ? Math.max(0, Math.floor(data.alternativeCount))
+    : 0;
+  const reviewMode = str(data?.reviewMode);
 
   // Terminal success (incl. already-saved) → the saved place, not the queue.
   if (type === 'share_job_completed' || outcome === 'completed' || outcome === 'already_saved') {
+    if ((alternativeCount > 0 || reviewMode === 'soft_alternatives') && jobId) {
+      return { kind: 'queue_item', jobId };
+    }
     if (savedPlaceIds.length > 1) return { kind: 'saved_group', savedPlaceIds };
     if (savedPlaceId) {
       // `googlePlaceId` (when the server includes it) is a stable fallback so

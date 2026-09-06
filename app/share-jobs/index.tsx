@@ -1,7 +1,7 @@
 /**
  * app/share-jobs/index.tsx — the in-app share-job queue (source of truth).
  *
- * Sections: Processing, Needs your help, Recently found, Failed. Works with
+ * Sections: Still processing, Other finds, Recent finds. Works with
  * notifications disabled (it reads Supabase directly via useShareJobs).
  * Reachable from the map/home entry point; also the deep-link target for
  * `share_job_needs_help` notifications routes to the per-job detail screen.
@@ -170,7 +170,7 @@ function jobTitle(job: ShareJob): string {
   const firstLead = normalizeVayrinIdentityLeads(job.candidate_payload)[0];
   const detail = buildShareJobDetailState(job);
   if (job.status === 'needs_help') {
-    if (isVayrinProductUiEnabled() && firstLead && candidateCount === 0) return 'Search needed';
+    if (isVayrinProductUiEnabled() && firstLead && candidateCount === 0) return firstLead.displayName;
     if (candidateCount > 1) return `${candidateCount} possible places`;
     if (first) return first;
     return detail.copy.title;
@@ -752,7 +752,7 @@ function ShareJobsQueueScreen() {
   // available — even while auth restores, when the flag is off, or when empty.
   const header = (
     <ShareJobsHeader
-      title="Your queue"
+      title="Recent finds"
       onBack={goBack}
       backLabel="Close queue"
       icon="close"
@@ -810,19 +810,19 @@ function ShareJobsQueueScreen() {
               <Text style={[typography.body, styles.intro]}>
                 {vayrinEnabled
                   ? count === 1
-                    ? '1 place needs a quick check.'
-                    : `${count} places need a quick check.`
+                    ? '1 earlier find has optional correction tools.'
+                    : `${count} earlier finds have optional correction tools.`
                   : queueIntro(count)}
               </Text>
             ) : null}
-            {renderSection(vayrinEnabled ? 'Finding places' : 'Working', processing)}
-            {renderSection('Needs you', actionable)}
+            {renderSection(vayrinEnabled ? 'Finding places' : 'Still processing', processing)}
+            {renderSection('Other finds', actionable)}
           </>
         )}
         {completedRows.length > 0 ? (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={[typography.label, styles.sectionTitle]}>Recently completed</Text>
+              <Text style={[typography.label, styles.sectionTitle]}>Recent finds</Text>
               <Pressable
                 onPress={() => void clearCompleted()}
                 disabled={!!actingId}
@@ -849,7 +849,7 @@ function ShareJobsQueueScreen() {
                       actingId === `completed:${item.resultId}` ||
                       actingId === 'clear-completed'
                     }
-                    accessibilityLabel={`${item.savedPlace.place.name}. Recently completed`}
+                    accessibilityLabel={`${item.savedPlace.place.name}. Saved automatically`}
                   >
                     {renderRecentAutoSave(item)}
                   </SwipeableRow>

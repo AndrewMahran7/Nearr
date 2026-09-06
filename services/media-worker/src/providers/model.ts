@@ -37,6 +37,7 @@ import {
   consolidatePlaceMoments,
   type MomentGroupingTelemetry,
 } from '../pipeline/consolidatePlaceMoments.js';
+import { geminiGenerationConfig } from './geminiPricing.js';
 
 export type AnalyzeInput = {
   platform: string;
@@ -113,6 +114,14 @@ export type AnalyzeOutput = {
   };
   /** Wall-clock provider request latency, excluding local media extraction. */
   latencyMs?: number;
+  /** Baseline Gemini-only counters retained when Automatic Deep replaces the
+   * user-facing evidence with a Sol result. This keeps cost accounting split
+   * by lane without persisting model prose. */
+  cheapPass?: {
+    model: string | null;
+    usage?: AnalyzeOutput['usage'];
+    latencyMs: number;
+  };
   /** Exact Premium executor wire result. It is forwarded to the finalizer so
    * canonical identities are not re-resolved by the legacy Places pipeline. */
   premium?: PremiumRecognitionExecution;
@@ -514,17 +523,7 @@ class GeminiModel implements ModelProvider {
             ? { systemInstruction: { parts: [{ text: AI_SAVE_NOTE_SYSTEM_PROMPT }] } }
             : {}),
           contents: [{ role: 'user', parts }],
-          generationConfig: input.targetPlace
-            ? {
-                responseMimeType: 'text/plain',
-                temperature: 0.7,
-                maxOutputTokens: 96,
-                // A short grounded reaction does not benefit from hidden
-                // reasoning. On Gemini 2.5 Flash the dynamic default can spend
-                // the entire response budget thinking and emit zero JSON.
-                thinkingConfig: { thinkingBudget: 0 },
-              }
-            : { responseMimeType: 'application/json', temperature: 0 },
+          generationConfig: geminiGenerationConfig(this.cfg.geminiModel, !!input.targetPlace),
         }),
         signal: input.signal,
       });

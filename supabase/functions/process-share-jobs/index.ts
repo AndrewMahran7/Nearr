@@ -148,6 +148,11 @@ import {
 } from './contextAwareCacheReranking.ts';
 import { placeFindSettlementForTerminalJob } from '../../../lib/placeFindSettlement.ts';
 import {
+  AUTOMATIC_COMPLETION_RULE_VERSION,
+  nativeNearrPlaceId,
+  planAutomaticCompletion,
+} from '../../../lib/automaticCompletion.ts';
+import {
   isPremiumResultChargeable,
   premiumEligibilityForResult,
 } from '../../../lib/premiumRequestMonetization.ts';
@@ -320,6 +325,13 @@ function premiumRuntimePlan(value: any): null | {
         canonicalizationStatus: typeof hypothesis?.canonicalStatus === 'string' ? hypothesis.canonicalStatus.slice(0, 80) : null,
         candidateType: typeof hypothesis?.entityType === 'string' ? hypothesis.entityType.slice(0, 80) : 'UNKNOWN',
         evidenceClass: typeof hypothesis?.evidenceBasis === 'string' ? hypothesis.evidenceBasis.slice(0, 80) : 'UNKNOWN',
+        contradictions: Array.isArray(hypothesis?.contradictions)
+          ? hypothesis.contradictions.filter((value: unknown) => typeof value === 'string').slice(0, 8)
+          : [],
+        safetyDecision: typeof destination?.decision === 'string' ? destination.decision : null,
+        safetyReasons: Array.isArray(destination?.safetyReasons)
+          ? destination.safetyReasons.filter((value: unknown) => typeof value === 'string').slice(0, 8)
+          : [],
       });
     }
     const candidates = hypotheses.flatMap((hypothesis: any) => {
@@ -430,6 +442,7 @@ async function recordAutomaticDeepAnalytics(
     normal_result_rejection_reason: rejectionReason,
   };
   const events = [
+    ['sol_escalation', common],
     ['deep_recognition_needed', common],
     ['deep_recognition_started', common],
     ['deep_recognition_completed', { ...common, top3_count: count }],
@@ -1109,6 +1122,13 @@ async function insertMediaRun(
       frame_count: int(d.frameCount),
       transcript_segment_count: int(d.transcriptSegmentCount),
       ocr_segment_count: int(d.ocrSegmentCount),
+      cheap_model: typeof d.cheapModel === 'string' ? d.cheapModel : null,
+      cheap_model_cost_usd: typeof d.cheapModelCostUsd === 'number' ? d.cheapModelCostUsd : null,
+      sol_invoked: d.solInvoked === true,
+      sol_cost_usd: typeof d.solCostUsd === 'number' ? d.solCostUsd : null,
+      places_request_count: int(d.placesRequestCount),
+      total_model_cost_usd: typeof d.totalModelCostUsd === 'number' ? d.totalModelCostUsd : null,
+      total_inference_latency_ms: int(d.totalInferenceLatencyMs),
       evidence: boundedJson({
         ...evidenceSummary,
         ...(premiumDiagnostics ? { premiumDiagnostics } : {}),
@@ -1153,6 +1173,119 @@ async function persistBlockedPlaceResult(
     finalized_at: nowIso(),
   }, { onConflict: 'share_job_id,logical_result_id' });
   if (error) throw new Error(`place_result_upsert_failed: ${error.message}`);
+}
+
+async function persistAutomaticCompletionResults(
+  admin: any,
+  args: {
+    job: any;
+    task?: any | null;
+    mediaRunId?: string | null;
+    logicalResultId: string;
+    primary: any;
+    saved: { savedPlaceId: string; placeId: string; reused: boolean };
+    alternatives: any[];
+    confidenceScore?: number | null;
+    ruleVersion?: string;
+    reasonCodes?: string[];
+  },
+): Promise<void> {
+  const now = nowIso();
+  const ruleVersion = args.ruleVersion ?? AUTOMATIC_COMPLETION_RULE_VERSION;
+  const primarySnapshot = safeCandidate(args.primary);
+  const rows = [{
+    share_job_id: args.job.id,
+    share_media_task_id: args.task?.id ?? null,
+    share_media_run_id: args.mediaRunId ?? null,
+    user_id: args.job.user_id,
+    logical_result_id: args.logicalResultId,
+    google_place_id: args.primary.googlePlaceId,
+    place_id: args.saved.placeId,
+    saved_place_id: args.saved.savedPlaceId,
+    original_saved_place_id: args.saved.savedPlaceId,
+    outcome: args.saved.reused ? 'already_saved' : 'auto_saved',
+    origin: 'automatic',
+    confidence_score: args.confidenceScore ?? args.primary.matchScore ?? 0.5,
+    rule_version: ruleVersion,
+    reason_codes: args.reasonCodes ?? ['top1_plausible'],
+    result_role: 'primary',
+    candidate_rank: 1,
+    candidate_snapshot: primarySnapshot,
+    finalized_at: now,
+  }];
+  for (const [index, candidate] of args.alternatives.slice(0, 2).entries()) {
+    rows.push({
+      share_job_id: args.job.id,
+      share_media_task_id: args.task?.id ?? null,
+      share_media_run_id: args.mediaRunId ?? null,
+      user_id: args.job.user_id,
+      logical_result_id: `${args.logicalResultId}:alternative:${index + 2}`.slice(0, 160),
+      google_place_id: candidate.googlePlaceId,
+      place_id: null,
+      saved_place_id: null,
+      original_saved_place_id: null,
+      outcome: 'secondary_soft_saved',
+      origin: 'automatic',
+      confidence_score: candidate.matchScore ?? candidate.confidenceScore ?? 0.35,
+      rule_version: ruleVersion,
+      reason_codes: ['ranked_plausible_alternative'],
+      result_role: 'secondary',
+      candidate_rank: index + 2,
+      candidate_snapshot: safeCandidate(candidate),
+      finalized_at: now,
+    });
+  }
+  const { error } = await admin.from('share_job_place_results').upsert(rows, {
+    onConflict: 'share_job_id,logical_result_id',
+  });
+  if (error) throw new Error(`automatic_completion_ledger_failed: ${error.message}`);
+  const events = [
+    ['automatic_completion', { share_job_id: args.job.id, alternative_count: args.alternatives.length }],
+    ['primary_auto_saved', { share_job_id: args.job.id, candidate_rank: 1 }],
+    ...(args.task && !args.reasonCodes?.includes('automatic_deep_top1_plausible')
+      ? [['gemini_only_completion', { share_job_id: args.job.id }]]
+      : []),
+    ...args.alternatives.slice(0, 2).map((_: any, index: number) =>
+      ['secondary_soft_saved', { share_job_id: args.job.id, candidate_rank: index + 2 }]),
+  ].map(([event_name, properties]) => ({ user_id: args.job.user_id, event_name, properties }));
+  const { error: analyticsError } = await admin.from('analytics_events').insert(events);
+  if (analyticsError) console.log(`[automatic-completion] analytics_insert_failed job_id=${args.job.id}`);
+}
+
+function automaticDeepCandidates(plan: NonNullable<ReturnType<typeof premiumRuntimePlan>>): any[] {
+  const canonicalById = new Map(
+    (plan.candidatePayload?.candidates ?? []).map((candidate: any) => [candidate.googlePlaceId, candidate]),
+  );
+  return plan.rankedCandidates.flatMap((ranked: any) => {
+    const canonical = ranked.canonicalPlaceId ? canonicalById.get(ranked.canonicalPlaceId) : null;
+    if (canonical) {
+      return [{
+        ...canonical,
+        reasons: [
+          ...(Array.isArray(canonical.reasons) ? canonical.reasons : []),
+          ...(ranked.safetyDecision === 'REJECT' ? ['semantic_contradiction'] : []),
+        ],
+      }];
+    }
+    if (!ranked.name || !Number.isFinite(ranked.latitude) || !Number.isFinite(ranked.longitude)) return [];
+    return [safeCandidate({
+      googlePlaceId: nativeNearrPlaceId(ranked.name, ranked.latitude, ranked.longitude),
+      name: ranked.name,
+      formattedAddress: ranked.providerParent?.formattedAddress ??
+        [ranked.locality, ranked.region, ranked.country].filter(Boolean).join(', ') ?? null,
+      latitude: ranked.latitude,
+      longitude: ranked.longitude,
+      types: ['nearr_native_identity'],
+      primaryType: 'nearr_native_identity',
+      confidenceScore: ranked.evidenceClass === 'CONTEXTUAL_OR_MEMORY_PRIOR' ? 0.35 : 0.6,
+      evidence: [ranked.evidenceClass],
+      reasons: [
+        'specificity_preserved_provider_parent_metadata_only',
+        ...(ranked.safetyDecision === 'REJECT' ? ['semantic_contradiction'] : []),
+      ],
+      contextLabel: [ranked.locality, ranked.region, ranked.country].filter(Boolean).join(', ') || null,
+    })];
+  });
 }
 
 const POST_SAVE_ENRICHMENT_RULE_VERSION = 'post-save-enrichment.v1';
@@ -2164,6 +2297,84 @@ async function finalizeMediaTask(
     const mentionSlots = automaticDeep.candidatePayload.mentionSlots ?? [];
     automaticDeep.candidatePayload.evidenceFrames = evidenceFrames;
     if (automaticDeep.outcome === 'PREMIUM_ACTIONABLE_RESULT' && automaticDeep.rankedCandidates.length > 0) {
+      const completion = planAutomaticCompletion(automaticDeepCandidates(automaticDeep));
+      if (completion.action === 'save' && mentionSlots.length <= 1) {
+        const saved = await saveForUser({
+          client: admin,
+          userId: job.user_id,
+          candidate: completion.primary,
+          sourceUrl: taskCanonicalUrl,
+          source: legacySourceFor(task.platform),
+          sourceMetadata: {
+            resolvedUrl: taskCanonicalUrl,
+            creatorHandle: sourceMetadata?.creatorHandle ?? null,
+            creatorName: sourceMetadata?.creatorName ?? null,
+            caption: sourceMetadata?.description ?? null,
+          },
+        });
+        await persistAutomaticCompletionResults(admin, {
+          job,
+          task,
+          mediaRunId,
+          logicalResultId: mentionSlots[0]?.mentionId ?? 'automatic-deep-primary',
+          primary: completion.primary,
+          saved,
+          alternatives: completion.alternatives,
+          confidenceScore: completion.primary.matchScore ?? 0.5,
+          ruleVersion: AUTOMATIC_COMPLETION_RULE_VERSION,
+          reasonCodes: ['automatic_deep_top1_plausible'],
+        });
+        automaticDeep.candidatePayload.candidates = [completion.primary, ...completion.alternatives];
+        automaticDeep.candidatePayload.savedPlaceIds = [saved.savedPlaceId];
+        (automaticDeep.candidatePayload as any).automaticCompletion = {
+          version: 1,
+          primaryGooglePlaceId: completion.primary.googlePlaceId,
+          alternativeCount: completion.alternatives.length,
+        };
+        if (mentionSlots[0]) {
+          mentionSlots[0].candidates = [completion.primary, ...completion.alternatives];
+          mentionSlots[0].saveState = saved.reused ? 'already_saved' : 'auto_saved';
+          mentionSlots[0].savedPlaceId = saved.savedPlaceId;
+        }
+        await finalize(admin, job, {
+          status: 'completed',
+          decision: 'auto_save',
+          saved_place_id: saved.savedPlaceId,
+          suggested_query: null,
+          needs_help_reason: null,
+          candidate_payload: automaticDeep.candidatePayload,
+          canonical_url: taskCanonicalUrl,
+          source_platform: task.platform,
+          extraction_payload: {
+            ...(job.extraction_payload ?? {}),
+            savedPlaceName: completion.primary.name,
+            alreadySaved: saved.reused,
+            automaticDeepRecognition: {
+              version: 'automatic-deep-recognition.v2-save-first',
+              outcome: automaticDeep.outcome,
+              top3Count: automaticDeep.rankedCandidates.length,
+              costs: automaticDeep.costs,
+            },
+          },
+          __skipPremiumEligibility: true,
+          progress_stage: 'completed',
+          completed_at: nowIso(),
+          analysis_attempted: true,
+        }, composeShareCompletionNotification({
+          jobId: job.id,
+          status: 'completed',
+          placeName: completion.primary.name,
+          savedPlaceId: saved.savedPlaceId,
+          googlePlaceId: completion.primary.googlePlaceId,
+          alreadySaved: saved.reused,
+          alternativeCount: completion.alternatives.length,
+        }));
+        await markMediaTask(admin, taskId, 'completed', {
+          resolver_name: 'automatic-deep-simple-sol', progress_stage: 'cleanup', completed_at: nowIso(),
+        });
+        logFinalStatus('automatic_deep_auto_completion');
+        return json({ ok: true, route: 'auto_save', automaticDeep: true, alternativeCount: completion.alternatives.length });
+      }
       const mode = candidates.length > 1 || mentionSlots.length > 1 ? 'picker' : 'single';
       await finalize(admin, job, {
         status: 'needs_help',
@@ -2451,7 +2662,9 @@ async function finalizeMediaTask(
     const alreadySavedPlaceIds: string[] = [];
     const unresolvedResults: any[] = [];
     const savedResultByMentionId = new Map<string, { savedPlaceId: string; saveState: 'auto_saved' | 'already_saved' }>();
+    const savedCandidateByMentionId = new Map<string, any>();
     const perPlaceSummary: Array<Record<string, unknown>> = [];
+    let softAlternativeCount = 0;
     const source = legacySourceFor(task.platform);
 
     for (const mentionResult of mentionResults) {
@@ -2471,6 +2684,7 @@ async function finalizeMediaTask(
               : 0,
             plausibleCandidateCount: 0,
             selectedProviderId: null,
+            plausibleProviderIds: [],
             candidateRejectionReasons: ['mention_evidence_missing'],
             explicitConflictFlags: [],
             semanticCompatibility: 'UNKNOWN',
@@ -2559,6 +2773,32 @@ async function finalizeMediaTask(
         if (saveError) throw new Error(`media_auto_save_failed: ${saveError.message}`);
         const saved = Array.isArray(savedRows) ? savedRows[0] : savedRows;
         if (!saved?.saved_place_id) throw new Error('media_auto_save_missing_saved_place_id');
+        const softAlternatives = (gate.plausibleProviderIds ?? [])
+          .filter((providerId: string) => providerId !== candidate.googlePlaceId)
+          .flatMap((providerId: string) => {
+            const alternative = mentionResult.candidates?.find(
+              (entry: any) => entry.googlePlaceId === providerId,
+            );
+            return alternative ? [alternative] : [];
+          })
+          .slice(0, 2);
+        await persistAutomaticCompletionResults(admin, {
+          job,
+          task,
+          mediaRunId,
+          logicalResultId: mentionResult.mentionId,
+          primary: candidate,
+          saved: {
+            savedPlaceId: saved.saved_place_id,
+            placeId: saved.place_id,
+            reused: saved.reused === true,
+          },
+          alternatives: softAlternatives,
+          confidenceScore: gate.confidenceScore,
+          ruleVersion: gate.ruleVersion,
+          reasonCodes: gate.reasonCodes,
+        });
+        softAlternativeCount += softAlternatives.length;
         await attachSavedPlaceSource({
           admin,
           userId: job.user_id,
@@ -2618,6 +2858,7 @@ async function finalizeMediaTask(
           savedPlaceId: saved.saved_place_id,
           saveState: saved.reused ? 'already_saved' : 'auto_saved',
         });
+        savedCandidateByMentionId.set(mentionResult.mentionId, candidate);
         perPlaceSummary.push({
           logicalResultId: mentionResult.mentionId,
           outcome: saved.reused ? 'already_saved' : 'auto_saved',
@@ -2697,11 +2938,23 @@ async function finalizeMediaTask(
     );
     candidatePayload.evidenceFrames = evidenceFrames;
     candidatePayload.savedPlaceIds = allSavedPlaceIds;
+    if (unresolvedResults.length === 0) {
+      candidatePayload.candidates = mentionResults.flatMap((mention: any) => {
+        const savedCandidate = savedCandidateByMentionId.get(mention.mentionId);
+        return savedCandidate ? [safeCandidate(savedCandidate)] : [];
+      });
+      (candidatePayload as any).automaticCompletion = {
+        version: 1,
+        primaryGooglePlaceId: candidatePayload.candidates[0]?.googlePlaceId ?? null,
+        alternativeCount: softAlternativeCount,
+      };
+    }
     if (partialResult) (candidatePayload as any).partialResult = partialResult;
     const mediaResultSummary = {
       createdCount: createdSavedPlaceIds.length,
       alreadySavedCount: alreadySavedPlaceIds.length,
       reviewCount: unresolvedResults.length,
+      alternativeCount: softAlternativeCount,
       savedPlaceIds: allSavedPlaceIds,
       results: perPlaceSummary,
     };
@@ -2710,7 +2963,9 @@ async function finalizeMediaTask(
           jobId: job.id,
           status: 'completed',
           alreadySaved: createdSavedPlaceIds.length === 0,
-          placeName: mentionResults.length === 1 ? mentionResults[0]?.candidates?.[0]?.name ?? null : null,
+          placeName: mentionResults.length === 1
+            ? savedCandidateByMentionId.get(mentionResults[0]?.mentionId)?.name ?? null
+            : null,
           multiPlace: mentionResults.length > 1
             ? {
                 totalCount: mentionResults.length,
@@ -2721,6 +2976,7 @@ async function finalizeMediaTask(
           savedPlaceId: allSavedPlaceIds[0] ?? null,
           savedPlaceIds: allSavedPlaceIds,
           createdSavedPlaceIds,
+          alternativeCount: softAlternativeCount,
         })
       : reviewNotification({
           jobId: job.id,
@@ -2747,7 +3003,10 @@ async function finalizeMediaTask(
           canonical_url: canonicalUrl,
           source_platform: task.platform,
           extraction_payload: withRetainedSourceMetadata(
-            job.extraction_payload,
+            {
+              ...(job.extraction_payload ?? {}),
+              savedPlaceName: candidatePayload.candidates[0]?.name ?? null,
+            },
             {
               platform: task.platform,
               via: 'media',
@@ -2826,16 +3085,19 @@ async function finalizeMediaTask(
     cleanSearchQuery: result.cleanSearchQuery,
     failureReason: result.failureReason,
   });
+  const legacyMediaCompletion = planAutomaticCompletion(result.candidates ?? []);
   // Post-resolve routing + the EXTRA media auto-save gate (never loosens
   // safeToAutoSave; can only downgrade a resolver auto_save to a confirmation).
   const post = planPostResolve({
-    route: plan.route === 'auto_save' ? 'auto_save' : 'needs_help',
+    route: legacyMediaCompletion.action === 'save' ? 'auto_save' : 'needs_help',
     needsHelpMode: plan.route === 'needs_help' ? plan.mode : 'manual',
-    autoSaveEligible: plan.route === 'auto_save' && mediaEvidenceAutoSaveEligible(parsed.value),
+    autoSaveEligible: legacyMediaCompletion.action === 'save' && mediaEvidenceAutoSaveEligible(parsed.value),
   });
 
   if (post.action === 'auto_save') {
-    const candidate = result.primaryCandidate;
+    const candidate = legacyMediaCompletion.action === 'save'
+      ? legacyMediaCompletion.primary
+      : result.primaryCandidate;
     const source = legacySourceFor(task.platform);
     const saved = await saveForUser({
       client: admin,
@@ -2850,6 +3112,21 @@ async function finalizeMediaTask(
         caption: sourceMetadata?.description ?? null,
       },
     });
+    const mediaAlternatives = legacyMediaCompletion.action === 'save'
+      ? legacyMediaCompletion.alternatives
+      : [];
+    await persistAutomaticCompletionResults(admin, {
+      job,
+      task,
+      mediaRunId,
+      logicalResultId: 'media-primary',
+      primary: candidate,
+      saved,
+      alternatives: mediaAlternatives,
+      confidenceScore: candidate.matchScore ?? candidate.confidenceScore ?? 0.5,
+      ruleVersion: AUTOMATIC_COMPLETION_RULE_VERSION,
+      reasonCodes: ['media_top1_plausible'],
+    });
     await finalize(
       admin,
       job,
@@ -2857,7 +3134,18 @@ async function finalizeMediaTask(
         status: 'completed',
         decision: 'auto_save',
         saved_place_id: saved.savedPlaceId,
-        candidate_payload: buildCandidateReviewSnapshot([safeCandidate(candidate)], 10, 'single'),
+        candidate_payload: {
+          ...buildCandidateReviewSnapshot(
+            [candidate, ...mediaAlternatives].map((entry: any) => safeCandidate(entry)),
+            10,
+            mediaAlternatives.length > 0 ? 'one_of_many' : 'single',
+          ),
+          automaticCompletion: {
+            version: 1,
+            primaryGooglePlaceId: candidate.googlePlaceId,
+            alternativeCount: mediaAlternatives.length,
+          },
+        },
         canonical_url: canonicalUrl,
         source_platform: task.platform,
         extraction_payload: { ...extractionPayload, savedPlaceName: candidate.name },
@@ -2871,6 +3159,7 @@ async function finalizeMediaTask(
         savedPlaceId: saved.savedPlaceId,
         googlePlaceId: candidate.googlePlaceId,
         alreadySaved: saved.reused,
+        alternativeCount: mediaAlternatives.length,
       }),
     );
     await markMediaTask(admin, taskId, 'completed', { resolver_name: 'media', progress_stage: 'cleanup', completed_at: nowIso() });
@@ -3513,7 +3802,7 @@ async function processOne(
   const viableCandidates = result.candidates.filter((candidate: any) =>
     viableProviderIds.has(candidate.googlePlaceId)
   );
-  const routingCandidates = metadataAutoSave.eligible ? viableCandidates : plausibleCandidates;
+  const routingCandidates = plausibleCandidates;
   const hasConcreteBlocker = metadataAutoSave.explicitConflictFlags.length > 0 ||
     (routingCandidates.length === 1 && !metadataAutoSave.eligible);
   const metadataSelectionMode = selectionModeForPlaceResult({
@@ -3525,7 +3814,7 @@ async function processOne(
     metadataSelectionMode,
     hasConcreteBlocker,
   );
-  const effectiveDecision = countDecision.decision;
+  const effectiveDecision = metadataAutoSave.eligible ? 'auto_save' : countDecision.decision;
   const metadataResult = {
     ...result,
     decision: effectiveDecision,
@@ -3752,6 +4041,19 @@ async function processOne(
         caption: description,
       },
     });
+    const metadataAlternatives = metadataResult.candidates
+      .filter((entry: any) => entry.googlePlaceId !== candidate.googlePlaceId)
+      .slice(0, 2);
+    await persistAutomaticCompletionResults(admin, {
+      job,
+      logicalResultId: 'metadata-primary',
+      primary: candidate,
+      saved,
+      alternatives: metadataAlternatives,
+      confidenceScore: metadataAutoSave.confidenceScore,
+      ruleVersion: METADATA_AUTO_SAVE_RULE_VERSION,
+      reasonCodes: metadataAutoSave.reasonCodes,
+    });
     await finalize(
       admin,
       job,
@@ -3759,7 +4061,18 @@ async function processOne(
         status: 'completed',
         decision: 'auto_save',
         saved_place_id: saved.savedPlaceId,
-        candidate_payload: buildCandidateReviewSnapshot([safeCandidate(candidate)], 10, 'single'),
+        candidate_payload: {
+          ...buildCandidateReviewSnapshot(
+            [candidate, ...metadataAlternatives].map((entry: any) => safeCandidate(entry)),
+            10,
+            metadataAlternatives.length > 0 ? 'one_of_many' : 'single',
+          ),
+          automaticCompletion: {
+            version: 1,
+            primaryGooglePlaceId: candidate.googlePlaceId,
+            alternativeCount: metadataAlternatives.length,
+          },
+        },
         canonical_url: canonicalUrl,
         source_platform: platform,
         extraction_payload: {
@@ -3777,6 +4090,7 @@ async function processOne(
         savedPlaceId: saved.savedPlaceId,
         googlePlaceId: candidate.googlePlaceId,
         alreadySaved: saved.reused,
+        alternativeCount: metadataAlternatives.length,
       }),
     );
 
@@ -3986,6 +4300,19 @@ async function processPendingNotifications(admin: any, limit = 25): Promise<void
         })
         .eq('id', row.id)
         .eq('notification_status', 'sending');
+      if (payload.data?.type === 'share_job_completed') {
+        const { error: analyticsError } = await admin.from('analytics_events').insert({
+          user_id: row.user_id,
+          event_name: 'notification_primary_save',
+          properties: {
+            share_job_id: row.id,
+            alternative_count: typeof payload.data.alternativeCount === 'number'
+              ? Math.max(0, Math.floor(payload.data.alternativeCount))
+              : 0,
+          },
+        });
+        if (analyticsError) console.log(`[share-job] notification_analytics_failed job_id=${row.id}`);
+      }
       console.log(`[share-job] notification_submitted job_id=${row.id} tickets=${result.ticketRefs.length}`);
       continue;
     }

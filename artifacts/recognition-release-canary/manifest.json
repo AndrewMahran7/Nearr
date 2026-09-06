@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "note": "Inference-only permanent release gate. Labels remain in the separate frozen ground-truth manifest and are loaded only after all model outputs are persisted.",
+  "case_count": 16,
+  "cases": [
+    {"case_id":"V02","lane":"easy_business"},
+    {"case_id":"V03","lane":"easy_business"},
+    {"case_id":"H01","lane":"easy_business"},
+    {"case_id":"H08","lane":"easy_business"},
+    {"case_id":"H09","lane":"easy_business"},
+    {"case_id":"R03","lane":"hard_natural"},
+    {"case_id":"R04","lane":"hard_natural"},
+    {"case_id":"R05","lane":"hard_natural"},
+    {"case_id":"R08","lane":"hard_natural"},
+    {"case_id":"H11","lane":"ambiguous"},
+    {"case_id":"P02","lane":"ambiguous"},
+    {"case_id":"S03","lane":"ambiguous"},
+    {"case_id":"V05","lane":"parent_child"},
+    {"case_id":"R06","lane":"parent_child"},
+    {"case_id":"C02","lane":"zero_recovery"},
+    {"case_id":"C07","lane":"zero_recovery"}
+  ]
+}

@@ -58,6 +58,7 @@ import {
   restoreRetainedFrameSnapshot,
 } from './retainedFrameSnapshot.js';
 import { generateAiSaveNoteWithRetry } from './aiSaveNoteGeneration.js';
+import { estimateGeminiCostUsd } from '../providers/geminiPricing.js';
 
 export type TaskDeps = {
   cfg: WorkerConfig;
@@ -758,6 +759,24 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
         timingsMs: analysis.automaticDeepRecognition.telemetry.timingsMs,
       };
     }
+    const cheapUsage = analysis.cheapPass?.usage ?? analysis.usage;
+    const cheapModel = analysis.cheapPass?.model ?? analysis.modelName ?? null;
+    const cheapModelCostUsd = estimateGeminiCostUsd({
+      model: cheapModel,
+      inputTokens: cheapUsage?.inputTokens ?? 0,
+      outputTokens: cheapUsage?.outputTokens ?? 0,
+      thinkingTokens: cheapUsage?.thinkingTokens ?? 0,
+    });
+    const solCostUsd = analysis.automaticDeepRecognition?.telemetry.knownModelCostUsd ?? null;
+    diagnostics.cheapModel = cheapModel;
+    diagnostics.cheapModelCostUsd = cheapModelCostUsd;
+    diagnostics.solInvoked = !!analysis.automaticDeepRecognition;
+    diagnostics.solCostUsd = solCostUsd;
+    diagnostics.placesRequestCount = analysis.automaticDeepRecognition?.telemetry.placesRequests ?? 0;
+    diagnostics.totalModelCostUsd = cheapModelCostUsd == null || (analysis.automaticDeepRecognition && solCostUsd == null)
+      ? null
+      : Number((cheapModelCostUsd + (solCostUsd ?? 0)).toFixed(8));
+    diagnostics.totalInferenceLatencyMs = Number(diagnostics.modelLatencyMs) || 0;
     warnings.push(...analysis.evidence.warnings);
     diagnostics.durationMs = Date.now() - startedAt;
     diagnostics.warnings = warnings.slice(0, 24);

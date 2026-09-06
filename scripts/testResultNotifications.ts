@@ -12,10 +12,17 @@ function note(overrides: Partial<ShareCompletionNotificationContext> = {}) {
 }
 
 const strong = note({ status: 'completed', placeName: 'Es Pontas', savedPlaceId: 'saved-1', googlePlaceId: 'google-1' });
-assert.equal(strong.title, 'Found it');
-assert.equal(strong.body, 'Es Pontas is saved to your map.');
+assert.equal(strong.title, 'Saved Es Pontas to your map');
+assert.equal(strong.body, 'Open Nearr to view your new find.');
 assert.equal(strong.resultClass, 'strong_exact');
 assert.deepEqual(routeShareJobNotification(strong.data), { kind: 'saved_place', savedPlaceId: 'saved-1', googlePlaceId: 'google-1' });
+
+const withAlternatives = note({
+  status: 'completed', placeName: 'Pont du Diable', savedPlaceId: 'saved-primary',
+  googlePlaceId: 'google-primary', alternativeCount: 2,
+});
+assert.equal(withAlternatives.title, 'Saved Pont du Diable to your map');
+assert.deepEqual(routeShareJobNotification(withAlternatives.data), { kind: 'queue_item', jobId: 'job-1' });
 
 const likely = note({ candidateCount: 1, strongestCandidateName: 'Es Pontas' });
 assert.equal(likely.title, 'Possible place found');
@@ -95,8 +102,8 @@ assert.doesNotMatch(`${technical.title} ${technical.body}`, /clues|possible|foun
 assert.deepEqual(routeShareJobNotification(technical.data), { kind: 'queue_item', jobId: 'job-1' });
 
 const alreadySaved = note({ status: 'completed', alreadySaved: true, placeName: 'NOVA Kitchen', savedPlaceId: 'saved-existing' });
-assert.equal(alreadySaved.title, 'Already saved');
-assert.equal(alreadySaved.body, 'NOVA Kitchen is already in Nearr.');
+assert.equal(alreadySaved.title, 'Saved NOVA Kitchen to your map');
+assert.equal(alreadySaved.body, 'NOVA Kitchen was already on your map.');
 assert.equal(alreadySaved.data.outcome, 'already_saved');
 
 const privacy = composeShareCompletionNotification({

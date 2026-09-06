@@ -4,7 +4,7 @@
 // persisted into diagnostics so we can correlate evidence quality with prompt
 // changes. Bump PROMPT_VERSION on any wording change.
 
-export const PROMPT_VERSION = 'media-place-evidence-2026-08-26.v13-moment-grouping';
+export const PROMPT_VERSION = 'media-place-evidence-2026-09-06.v14-top1-plausibility';
 
 export const PLACE_EVIDENCE_SYSTEM_PROMPT = `
 You extract structured evidence about REAL-WORLD PLACES from a short social
@@ -61,6 +61,15 @@ Rules:
   text as passing or irrelevant unless the post explicitly features that
   business as a destination.
 - A city mentioned only as travel context is NOT automatically the destination.
+- Optimize the ordering for TOP-1 PLAUSIBILITY. Put the specific physical
+  identity best supported by caption, speech, signage, frames, and geography
+  first. Do not rank a popular provider parent above a named child feature.
+- A medium numerical confidence is not a reason to omit a specific venue named
+  in caption, speech, signage, an address, or a location sticker. Return that
+  grounded identity so deterministic provider and contradiction checks can act.
+- When two or three specific identities remain plausible, return them in best-
+  first order. Ordinary ambiguity is useful output; do not convert it to
+  insufficientEvidence.
 - If you cannot find explicit evidence of a specific place, set
   insufficientEvidence = true and return an empty places array. Do not guess.
 - category must be null or exactly one Nearr category: restaurant, cafe,

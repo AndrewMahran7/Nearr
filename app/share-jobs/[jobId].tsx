@@ -148,10 +148,14 @@ import {
 import {
   archiveShareJob,
   getShareJob,
+  listShareJobSoftAlternatives,
   markShareJobResolved,
+  promoteShareJobSoftAlternative,
+  removeShareJobSoftAlternative,
   retryShareJob,
   type ShareJob,
   type ShareJobCandidate,
+  type ShareJobSoftAlternative,
 } from '@/services/shareJobsService';
 import { CATEGORY_LABELS, resolvePlaceCategory } from '@/lib/placeCategory';
 import { requestPremiumRecognition } from '@/lib/monetizationClient';
@@ -345,6 +349,8 @@ function ShareJobDetailScreen() {
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   const [job, setJob] = useState<ShareJob | null>(null);
+  const [softAlternatives, setSoftAlternatives] = useState<ShareJobSoftAlternative[]>([]);
+  const [keptAlternativeSavedPlaceIds, setKeptAlternativeSavedPlaceIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadFailure, setLoadFailure] = useState<DetailLoadFailure | null>(null);
   const [busy, setBusy] = useState(false);
@@ -383,6 +389,7 @@ function ShareJobDetailScreen() {
   const rawResolutionQueryRef = useRef<string | null>(null);
   const batchSearchRequestsRef = useRef<Record<string, number>>({});
   const disclosureInitializedJobRef = useRef<string | null>(null);
+  const softAlternativesOpenedJobRef = useRef<string | null>(null);
   const userLocationRef = useRef<LocationBias | null>(null);
   useEffect(() => {
     mountedRef.current = true;
@@ -413,6 +420,7 @@ function ShareJobDetailScreen() {
   const runManualSearch = useCallback(async (query: string) => {
     const trimmed = query.trim();
     if (!trimmed) return;
+    void trackEvent('manual_search_used', { job_id: job?.id ?? routeJobId, source: 'correction' });
     const requestId = ++manualRequestRef.current;
     if (vayrinEnabled) {
       void trackEvent('vayrin_manual_fallback', { source: 'async' });
@@ -472,7 +480,7 @@ function ShareJobDetailScreen() {
         candidate_count_shown: Math.min(found.length, 3),
       });
     }
-  }, [job, search, vayrinEnabled]);
+  }, [job, routeJobId, search, vayrinEnabled]);
 
   function changeManualQuery(value: string) {
     manualRequestRef.current += 1;
@@ -519,6 +527,12 @@ function ShareJobDetailScreen() {
           : await getShareJob(id);
       if (!mountedRef.current) return;
       setJob(j);
+      if (j?.status === 'completed' && !isVayrinCandidateFixtureId(id) && !isPhase2PreviewId(id)) {
+        const alternatives = await listShareJobSoftAlternatives(id).catch(() => []);
+        if (mountedRef.current) setSoftAlternatives(alternatives);
+      } else {
+        setSoftAlternatives([]);
+      }
       // A row the user can no longer read (deleted, or RLS-scoped away) comes
       // back as null rather than an error — that is "not found", not a crash.
       setLoadFailure(j ? null : 'not_found');
@@ -547,9 +561,74 @@ function ShareJobDetailScreen() {
     }
   }, [routeJobId]);
 
+  const actOnSoftAlternative = useCallback(async (
+    alternative: ShareJobSoftAlternative,
+    action: 'promote' | 'keep' | 'remove',
+  ) => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      if (action === 'remove') {
+        await removeShareJobSoftAlternative(alternative.resultId);
+        void trackEvent('secondary_removed', { job_id: alternative.shareJobId, candidate_rank: alternative.rank });
+      } else {
+        const result = await promoteShareJobSoftAlternative(alternative.resultId, action === 'promote');
+        setKeptAlternativeSavedPlaceIds((current) => [...new Set([...current, result.savedPlaceId])]);
+        void trackEvent(action === 'promote' ? 'primary_replaced' : 'secondary_promoted', {
+          job_id: alternative.shareJobId,
+          candidate_rank: alternative.rank,
+        });
+      }
+      setSoftAlternatives((current) => current.filter((item) => item.resultId !== alternative.resultId));
+      if (action === 'promote') await load();
+    } catch (error) {
+      Alert.alert('Could not update this result', sanitizeErrorText(error));
+    } finally {
+      if (mountedRef.current) setBusy(false);
+    }
+  }, [busy, load]);
+
+  const keepAllSoftAlternatives = useCallback(async () => {
+    if (busy || softAlternatives.length === 0) return;
+    setBusy(true);
+    try {
+      const settled = await Promise.allSettled(
+        softAlternatives.map((alternative) => promoteShareJobSoftAlternative(alternative.resultId, false)),
+      );
+      const savedIds = settled.flatMap((result) => result.status === 'fulfilled' ? [result.value.savedPlaceId] : []);
+      const keptResultIds = new Set(softAlternatives.flatMap((alternative, index) =>
+        settled[index]?.status === 'fulfilled' ? [alternative.resultId] : []));
+      setKeptAlternativeSavedPlaceIds((current) => [...new Set([...current, ...savedIds])]);
+      setSoftAlternatives((current) => current.filter((alternative) => !keptResultIds.has(alternative.resultId)));
+      void trackEvent('secondary_promoted', {
+        job_id: job?.id ?? routeJobId,
+        action: 'keep_all',
+        saved_count: savedIds.length,
+        failed_count: settled.length - savedIds.length,
+      });
+      if (savedIds.length !== settled.length) {
+        Alert.alert('Some results could not be saved', `${savedIds.length} of ${settled.length} similar results were saved.`);
+      }
+    } catch (error) {
+      Alert.alert('Could not save similar results', sanitizeErrorText(error));
+    } finally {
+      if (mountedRef.current) setBusy(false);
+    }
+  }, [busy, job?.id, routeJobId, softAlternatives]);
+
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    if (!job?.id || softAlternatives.length === 0 || softAlternativesOpenedJobRef.current === job.id) return;
+    softAlternativesOpenedJobRef.current = job.id;
+    void trackEvent('notification_alternatives_opened', {
+      job_id: job.id,
+      alternative_count: softAlternatives.length,
+      source: 'grouped_result_review',
+    });
+  }, [job?.id, softAlternatives.length]);
 
   // Track the current share-job id + queue-opened breadcrumb for diagnostics.
   useEffect(() => {
@@ -1812,15 +1891,17 @@ function ShareJobDetailScreen() {
   // candidate/save controls for a job that is already resolved.
   if (detail.kind === 'completed') {
     const name = detail.savedPlaceName;
+    const originalPlan = planOpenOriginal(job.source_url);
     const completedSavedId = automaticallySavedPlaceIds[0] ?? detail.savedPlaceId;
     const completedSaved = completedSavedId
       ? savedSnapshot.find((saved) => saved.id === completedSavedId) ?? null
       : null;
     const correctionTarget = correctionSaved ?? completedSaved;
+    const completedMapPlaceIds = [...new Set([...automaticallySavedPlaceIds, ...keptAlternativeSavedPlaceIds])];
     return (
       <ShareJobsSheet onDismiss={backToQueue} size="detail">
         <ShareJobsHeader title={PHASE_1_COPY.detailTitle} onBack={backToQueue} backLabel="Back to queue" />
-        <View style={styles.centered}>
+        <ScrollView contentContainerStyle={styles.completedScrollContent}>
           {vayrinEnabled ? (
             <VayrinPresentationHeader presentation={vayrinPresentation} />
           ) : (
@@ -1837,7 +1918,9 @@ function ShareJobDetailScreen() {
           {premiumState === 'useful_result' ? <Text style={styles.premiumResultLabel}>PREMIUM REQUEST COMPLETE</Text> : null}
           <View style={[styles.candidateCard, styles.completedCard]}>
             <PlaceImage
-              googlePlaceId={detail.candidates[0]?.googlePlaceId}
+              googlePlaceId={detail.candidates[0]?.googlePlaceId?.startsWith('nearr-native:')
+                ? undefined
+                : detail.candidates[0]?.googlePlaceId}
               size={72}
               borderRadius={12}
               accessibilityLabel={name ? `Photo of ${name}` : undefined}
@@ -1846,13 +1929,74 @@ function ShareJobDetailScreen() {
               {name || 'Saved place'}
             </Text>
           </View>
+          {softAlternatives.length > 0 ? (
+            <View style={styles.softResultsSection} testID="soft-alternatives-review">
+              <Text style={styles.softSectionLabel}>SIMILAR RESULTS</Text>
+              <Text style={[typography.body, styles.softSectionHelp]}>
+                We saved the best match. These suggestions stay here until you keep or remove them.
+              </Text>
+              {softAlternatives.length > 1 ? (
+                <Pressable
+                  accessibilityRole="button"
+                  disabled={busy}
+                  onPress={() => void keepAllSoftAlternatives()}
+                  style={styles.keepAllAction}
+                >
+                  <Feather name="check-circle" size={16} color={colors.accent} />
+                  <Text style={styles.softAction}>Keep all</Text>
+                </Pressable>
+              ) : null}
+              {softAlternatives.map((alternative) => (
+                <View key={alternative.resultId} style={styles.softAlternativeCard}>
+                  <PlaceImage
+                    googlePlaceId={alternative.candidate.googlePlaceId.startsWith('nearr-native:')
+                      ? undefined
+                      : alternative.candidate.googlePlaceId}
+                    size={56}
+                    borderRadius={10}
+                  />
+                  <View style={styles.softAlternativeBody}>
+                    <Text style={[typography.bodyStrong, styles.softAlternativeName]} numberOfLines={2}>
+                      {alternative.candidate.name}
+                    </Text>
+                    {alternative.candidate.formattedAddress ? (
+                      <Text style={[typography.caption, styles.softAlternativeAddress]} numberOfLines={2}>
+                        {alternative.candidate.formattedAddress}
+                      </Text>
+                    ) : null}
+                    <View style={styles.softAlternativeActions}>
+                      <Pressable disabled={busy} onPress={() => void actOnSoftAlternative(alternative, 'keep')}>
+                        <Text style={styles.softAction}>Keep / Save</Text>
+                      </Pressable>
+                      <Pressable disabled={busy} onPress={() => void actOnSoftAlternative(alternative, 'promote')}>
+                        <Text style={styles.softAction}>Make primary</Text>
+                      </Pressable>
+                      <Pressable disabled={busy} onPress={() => void actOnSoftAlternative(alternative, 'remove')}>
+                        <Text style={styles.softRemoveAction}>Remove</Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                </View>
+              ))}
+              {originalPlan.kind === 'open' ? <Pressable
+                accessibilityRole="button"
+                onPress={() => {
+                  void Linking.openURL(originalPlan.url);
+                }}
+                style={styles.viewOriginalAction}
+              >
+                <Feather name="external-link" size={15} color={colors.accent} />
+                <Text style={styles.softAction}>View original post</Text>
+              </Pressable> : null}
+            </View>
+          ) : null}
           <Button
             title={PHASE_1_COPY.viewOnMap}
             onPress={() =>
-              automaticallySavedPlaceIds.length > 1
-                ? openNewlySavedPlaces(automaticallySavedPlaceIds)
+              completedMapPlaceIds.length > 1
+                ? openNewlySavedPlaces(completedMapPlaceIds)
                 : openExistingPlace({
-                    savedPlaceId: automaticallySavedPlaceIds[0] ?? detail.savedPlaceId,
+                    savedPlaceId: completedMapPlaceIds[0] ?? detail.savedPlaceId,
                     source: 'share_job_completed',
                   })
             }
@@ -1875,7 +2019,7 @@ function ShareJobDetailScreen() {
               style={styles.secondaryBtn}
             />
           ) : null}
-        </View>
+        </ScrollView>
         {correctionTarget ? (
           <WrongPlaceSheet
             visible={correctionOpen}
@@ -1886,6 +2030,7 @@ function ShareJobDetailScreen() {
             onClose={() => setCorrectionOpen(false)}
             onCorrected={(updated) => {
               void trackEvent('vayrin_saved', { job_id: job.id, source: 'correction' });
+              void trackEvent('manual_correction_used', { job_id: job.id, source: 'grouped_result_review' });
               if (premiumState === 'useful_result') {
                 void trackEvent('premium_result_corrected', { job_id: job.id });
               }
@@ -2467,7 +2612,24 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
     centeredTitle: { color: colors.text, textAlign: 'center', marginTop: Spacing.md },
     centeredPrimary: { marginTop: Spacing.lg, minHeight: 52, alignSelf: 'stretch' },
     completedCard: { alignSelf: 'stretch', alignItems: 'center', marginTop: Spacing.sm },
+    completedScrollContent: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing.lg },
     completedPlaceName: { color: colors.text, flex: 1 },
+    softResultsSection: { alignSelf: 'stretch', marginTop: Spacing.lg },
+    softSectionLabel: { color: colors.accent, fontSize: 11, fontWeight: '800', letterSpacing: 1.4 },
+    softSectionHelp: { color: colors.textSecondary, marginTop: Spacing.xs, marginBottom: Spacing.sm },
+    softAlternativeCard: {
+      flexDirection: 'row', alignItems: 'center', gap: Spacing.md, padding: Spacing.md,
+      borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border,
+      borderRadius: Radius.md, backgroundColor: colors.surface, marginTop: Spacing.sm,
+    },
+    softAlternativeBody: { flex: 1 },
+    softAlternativeName: { color: colors.text },
+    softAlternativeAddress: { color: colors.textMuted, marginTop: 2 },
+    softAlternativeActions: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.md, marginTop: Spacing.sm },
+    softAction: { color: colors.accent, fontSize: 13, fontWeight: '700' },
+    softRemoveAction: { color: colors.textMuted, fontSize: 13, fontWeight: '700' },
+    keepAllAction: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, alignSelf: 'flex-start', marginBottom: Spacing.xs },
+    viewOriginalAction: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, marginTop: Spacing.md },
     savedBadge: {
       width: 60,
       height: 60,

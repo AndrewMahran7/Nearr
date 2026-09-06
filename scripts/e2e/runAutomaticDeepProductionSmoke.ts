@@ -1,5 +1,5 @@
 /**
- * One-shot, self-cleaning Production smoke for the Automatic Deep release.
+ * One-shot, self-cleaning Dev/Production smoke for automatic completion.
  *
  * Run only through `railway run` scoped to the Production Nearr worker so the
  * script receives the deployed service environment without copying secrets to
@@ -12,10 +12,12 @@ import path from 'node:path';
 
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
-import { isCategoryOnlyPlaceName } from '../../services/media-worker/src/vayrin/placeIdentityGuard';
 import { cleanupSession } from './session';
 
-const PRODUCTION_REF = 'rlqvxdwtetxsqxhqztkw';
+const TARGET = process.env.NEARR_AUTOMATIC_COMPLETION_SMOKE_TARGET === 'development'
+  ? 'development'
+  : 'production';
+const TARGET_REF = TARGET === 'development' ? 'qnfxnmvxpjzfydgudtvs' : 'rlqvxdwtetxsqxhqztkw';
 const TERMINAL = new Set(['saved', 'completed', 'needs_help', 'failed', 'unavailable']);
 const PREMIUM_EVENTS = [
   'premium_request_offered',
@@ -34,11 +36,12 @@ type CaseSpec = { id: string; sourceUrl: string; purpose: string };
 type Wallet = { present: boolean; availableUses: number; reservedUses: number; version: number };
 
 const cases: CaseSpec[] = [
-  { id: 'EXACT_NORMAL', sourceUrl: 'https://www.instagram.com/reel/DWJ2zaqEQOk/', purpose: 'exact normal control' },
+  { id: 'EASY_RESTAURANT', sourceUrl: 'https://www.instagram.com/reel/DUWyZkfgbT4/', purpose: 'easy restaurant; Gemini-only completion' },
   { id: 'GENERIC_WEAK', sourceUrl: 'https://www.instagram.com/reel/DZbppj6IXOt/', purpose: 'generic/weak waterfall escalation' },
-  { id: 'BROAD_AREA', sourceUrl: 'https://www.instagram.com/p/5oXehfQxb2/', purpose: 'Lake Havasu parent escalation' },
-  { id: 'ZERO_HYPOTHESIS', sourceUrl: 'https://www.instagram.com/reel/DJ1CVA8vbfV/', purpose: 'first-pass zero, bounded recovery' },
-  { id: 'C07_SAFETY', sourceUrl: 'https://www.youtube.com/watch?v=jNQXAC9IVRw', purpose: 'review-only memory-prior safety' },
+  { id: 'SEARCH_SUGGESTION_SHAPE', sourceUrl: 'https://www.instagram.com/p/5oXehfQxb2/', purpose: 'named broad lead resolves to a specific place' },
+  { id: 'HARD_NATURAL', sourceUrl: 'https://www.instagram.com/reel/DZJ8ZvYub8Q/', purpose: 'hard natural destination uses Sol when necessary' },
+  { id: 'NO_DEFENSIBLE_SPECIFIC', sourceUrl: 'https://www.instagram.com/reel/DJ1CVA8vbfV/', purpose: 'descriptor-only result may remain unsaved' },
+  { id: 'SUPPORTED_SPECIFIC', sourceUrl: 'https://www.youtube.com/watch?v=jNQXAC9IVRw', purpose: 'source-supported specific identity' },
 ];
 
 function productionRef(url: string): string | null {
@@ -67,7 +70,7 @@ function namesOf(payload: unknown): string[] {
 
 function isBroad(name: string): boolean {
   const normalized = name.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
-  return isCategoryOnlyPlaceName(name) || [
+  return /^(a |an |the )?(waterfall|cliff|beach|restaurant|cafe|hotel|trail|park|lake|zoo)$/.test(normalized) || [
     'bali', 'california', 'maui', 'oregon', 'norway', 'hawaii', 'croatia',
     'los angeles', 'san diego', 'paris', 'lake havasu',
   ].includes(normalized);
@@ -139,7 +142,7 @@ function percentile(values: number[], p: number): number | null {
 async function main(): Promise<void> {
   const supabaseUrl = (process.env.SUPABASE_URL ?? '').trim();
   const serviceRoleKey = (process.env.SUPABASE_SERVICE_ROLE_KEY ?? '').trim();
-  if (productionRef(supabaseUrl) !== PRODUCTION_REF) throw new Error('refusing non-Production or ambiguous target');
+  if (productionRef(supabaseUrl) !== TARGET_REF) throw new Error(`refusing unexpected ${TARGET} target`);
   if (!serviceRoleKey) throw new Error('missing service role key');
   if (process.env.AUTOMATIC_DEEP_RECOGNITION_ENABLED !== 'true') throw new Error('Automatic Deep is not explicitly true');
   if (process.env.PREMIUM_REQUESTS_ENABLED !== 'false') throw new Error('Premium is not explicitly false');
@@ -177,23 +180,16 @@ async function main(): Promise<void> {
     }
     const firstJobs = await waitForJobs(admin, jobIds, 'primary');
 
-    // Repeat one broad-parent source after its first result is terminal. The
-    // second run must still show a fresh Simple Sol attempt while answer-cache
-    // reads are disabled.
-    const cacheSpec: CaseSpec = { ...cases.find((item) => item.id === 'GENERIC_WEAK')!, id: 'CACHE_FRESH_REPEAT' };
-    const repeatId = await seed(admin, identity.userId, runKey, cacheSpec);
-    ids.set(cacheSpec.id, repeatId);
-    jobIds.push(repeatId);
-    const repeatJobs = await waitForJobs(admin, [repeatId], 'cache-repeat');
-    const jobs = [...firstJobs, ...repeatJobs];
+    const jobs = firstJobs;
 
     console.log('post-run: reading tasks, runs, and reservations');
-    const [{ data: tasks, error: taskError }, { data: runs, error: runError }, { data: reservations, error: reservationError }] = await Promise.all([
+    const [{ data: tasks, error: taskError }, { data: runs, error: runError }, { data: results, error: resultError }, { data: reservations, error: reservationError }] = await Promise.all([
       admin.from('share_media_tasks').select('*').in('share_job_id', jobIds),
       admin.from('share_media_runs').select('*').in('share_job_id', jobIds),
+      admin.from('share_job_place_results').select('share_job_id,outcome,result_role,candidate_rank,saved_place_id').in('share_job_id', jobIds),
       admin.from('place_find_reservations').select('id,status,share_job_id').in('share_job_id', jobIds),
     ]);
-    if (taskError || runError || reservationError) throw new Error(taskError?.message ?? runError?.message ?? reservationError?.message);
+    if (taskError || runError || resultError || reservationError) throw new Error(taskError?.message ?? runError?.message ?? resultError?.message ?? reservationError?.message);
     const after = await wallet(admin, identity.userId);
     const walletDelta = {
       availableUses: after.availableUses - before.availableUses,
@@ -202,7 +198,7 @@ async function main(): Promise<void> {
     };
     const byRun = new Map((runs ?? []).map((row: any) => [row.share_job_id, row]));
     const byTask = new Map((tasks ?? []).map((row: any) => [row.share_job_id, row]));
-    const observations = [...cases, cacheSpec].map((spec) => {
+    const observations = cases.map((spec) => {
       const jobId = ids.get(spec.id)!;
       const job = jobs.find((row) => row.id === jobId)!;
       const run: any = byRun.get(jobId);
@@ -221,6 +217,16 @@ async function main(): Promise<void> {
         taskStatus: (byTask.get(jobId) as any)?.status ?? null,
         automaticDeep,
         recognition,
+        costTelemetry: {
+          cheapModel: run?.cheap_model ?? null,
+          cheapModelCostUsd: run?.cheap_model_cost_usd ?? null,
+          solInvoked: run?.sol_invoked ?? null,
+          solCostUsd: run?.sol_cost_usd ?? null,
+          placesRequests: run?.places_request_count ?? null,
+          totalModelCostUsd: run?.total_model_cost_usd ?? null,
+          totalInferenceLatencyMs: run?.total_inference_latency_ms ?? null,
+        },
+        resultRows: (results ?? []).filter((row: any) => row.share_job_id === jobId),
       };
     });
 
@@ -239,12 +245,12 @@ async function main(): Promise<void> {
     ]);
     if (premiumEventError || deepEventError) throw new Error(premiumEventError?.message ?? deepEventError?.message);
 
-    const exact = observations.find((item) => item.id === 'EXACT_NORMAL')!;
+    const easy = observations.find((item) => item.id === 'EASY_RESTAURANT')!;
     const generic = observations.find((item) => item.id === 'GENERIC_WEAK')!;
-    const broad = observations.find((item) => item.id === 'BROAD_AREA')!;
-    const zero = observations.find((item) => item.id === 'ZERO_HYPOTHESIS')!;
-    const c07 = observations.find((item) => item.id === 'C07_SAFETY')!;
-    const repeat = observations.find((item) => item.id === 'CACHE_FRESH_REPEAT')!;
+    const search = observations.find((item) => item.id === 'SEARCH_SUGGESTION_SHAPE')!;
+    const hard = observations.find((item) => item.id === 'HARD_NATURAL')!;
+    const zero = observations.find((item) => item.id === 'NO_DEFENSIBLE_SPECIFIC')!;
+    const supported = observations.find((item) => item.id === 'SUPPORTED_SPECIFIC')!;
     const deepLatencies = observations.filter((item) => item.automaticDeep?.invoked === true).map((item) => item.durationMs);
     const zeroFirstPassCount = Number(zero.automaticDeep?.firstAttemptSpecificHypotheses ?? 0);
     const zeroRouteSafe = zero.automaticDeep?.invoked === true && zero.finalNames.length > 0 && (
@@ -252,30 +258,30 @@ async function main(): Promise<void> {
       (zeroFirstPassCount === 0 && zero.automaticDeep?.attempts === 2 && zero.automaticDeep?.recoveryInvoked === true &&
         Number(zero.automaticDeep?.recoverySpecificHypotheses ?? 0) > 0)
     );
-    const exactGroundTruthPreserved = exact.finalNames.some((name) =>
-      name.toLowerCase().includes('the crack at wet beaver creek')
-    );
     const assertions = {
       allTerminal: observations.every((item) => TERMINAL.has(item.status)),
-      exactNormalSkippedDeep: exact.automaticDeep?.invoked !== true,
-      genericWeakEscalatedToSpecific: generic.automaticDeep?.invoked === true && generic.finalNames.length > 0 && generic.finalNames.every((name) => !isBroad(name)),
-      broadAreaEscalatedToSpecific: broad.automaticDeep?.invoked === true && broad.finalNames.length > 0 && broad.finalNames.every((name) => !isBroad(name)),
-      zeroHypothesisRouteSafe: zeroRouteSafe,
-      c07ReviewOnly: !c07.savedPlaceId && c07.decision !== 'auto_save',
-      cacheRepeatFreshInference: repeat.automaticDeep?.invoked === true && typeof repeat.modelProvider === 'string' && repeat.modelProvider.includes('simple-sol'),
-      allDeepResultsReviewOnly: observations.filter((item) => item.automaticDeep?.invoked === true).every((item) => !item.savedPlaceId),
-      zeroWrongAutosaves: observations.every((item) => !item.savedPlaceId || (
-        item.id === 'EXACT_NORMAL' && item.automaticDeep?.invoked !== true && exactGroundTruthPreserved
-      )),
+      easyRestaurantGeminiOnly: easy.status === 'completed' && !!easy.savedPlaceId && easy.automaticDeep?.invoked !== true && easy.finalNames.some((name) => /capone/i.test(name)),
+      genericSpecificAutoCompleted: generic.status === 'completed' && !!generic.savedPlaceId && generic.finalNames.length > 0 && generic.finalNames.every((name) => !isBroad(name)),
+      searchSuggestionShapeAutoCompleted: search.status === 'completed' && !!search.savedPlaceId && search.finalNames.length > 0 && search.finalNames.every((name) => !isBroad(name)),
+      hardNaturalEscalatedAndCompleted: hard.status === 'completed' && !!hard.savedPlaceId && hard.automaticDeep?.invoked === true,
+      noDefensibleSpecificRemainsUnsaved: !zero.savedPlaceId && zero.status === 'needs_help',
+      supportedSpecificAutoCompleted: supported.status === 'completed' && !!supported.savedPlaceId && supported.finalNames.some((name) => /san diego zoo/i.test(name)),
+      ordinaryPlausibleResultsCreateNoTask: [easy, generic, search, hard, supported].every((item) => item.status !== 'needs_help'),
+      costTelemetryPersisted: observations.every((item) =>
+        typeof item.costTelemetry.cheapModel === 'string' &&
+        item.costTelemetry.totalInferenceLatencyMs != null &&
+        item.costTelemetry.placesRequests != null),
       zeroPremiumReservations: (reservations ?? []).length === 0,
       zeroPremiumAnalytics: (premiumEvents ?? []).length === 0,
       zeroWalletDelta: Object.values(walletDelta).every((value) => value === 0),
-      premiumSuspended503: premiumResponse.status === 503 && premiumBody?.error === 'premium_requests_suspended',
+      premiumGuarded: TARGET === 'production'
+        ? premiumResponse.status === 503 && premiumBody?.error === 'premium_requests_suspended'
+        : [409, 503].includes(premiumResponse.status),
     };
     const report = {
       schemaVersion: 1,
       runKey,
-      target: { supabaseRef: PRODUCTION_REF, railwayEnvironment: 'production', railwayService: 'Nearr' },
+      target: { supabaseRef: TARGET_REF, railwayEnvironment: TARGET, railwayService: TARGET === 'development' ? 'media-worker' : 'Nearr' },
       deployedFlags: { automaticDeep: true, premium: false, cacheReads: false, concurrency: 4, claimBatch: 4 },
       observations,
       billing: { walletBefore: before, walletAfter: after, walletDelta, premiumReservations: (reservations ?? []).length, premiumAnalytics: (premiumEvents ?? []).length },
@@ -283,7 +289,7 @@ async function main(): Promise<void> {
       premiumEndpoint: { status: premiumResponse.status, error: premiumBody?.error ?? null },
       performance: {
         escalationRate: observations.filter((item) => item.automaticDeep?.invoked === true).length / observations.length,
-        normalOnlyLatencyMs: exact.durationMs,
+        normalOnlyLatencyMs: easy.durationMs,
         deepP50Ms: percentile(deepLatencies, 0.5),
         deepP95Ms: percentile(deepLatencies, 0.95),
         knownDeepModelCostUsd: observations.reduce((sum, item) => sum + Number(item.recognition?.knownModelCostUsd ?? 0), 0),
@@ -296,7 +302,7 @@ async function main(): Promise<void> {
       },
       assertions,
     };
-    const outputDir = path.resolve('artifacts', 'automatic-deep-recognition', 'production');
+    const outputDir = path.resolve('artifacts', 'automatic-completion', TARGET);
     await mkdir(outputDir, { recursive: true });
     const outputPath = path.join(outputDir, `smoke-${stamp}.json`);
     await writeFile(outputPath, `${JSON.stringify(report, null, 2)}\n`, 'utf8');

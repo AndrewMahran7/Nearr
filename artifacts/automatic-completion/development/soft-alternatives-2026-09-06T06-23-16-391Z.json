@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "target": "development",
+  "runId": "soft-alternatives-1788675793672-49c92324",
+  "assertions": {
+    "threeDurableRankedRows": true,
+    "oldPrimaryRetainedAsSecondary": true,
+    "rank2PromotedPrimary": true,
+    "rank3Removed": true,
+    "promotionIdempotentShape": true
+  }
+}

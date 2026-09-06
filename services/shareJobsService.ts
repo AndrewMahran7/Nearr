@@ -99,6 +99,53 @@ export type RecentAutoSave = {
   savedPlace: SavedPlaceWithPlace;
 };
 
+export type ShareJobSoftAlternative = {
+  resultId: string;
+  shareJobId: string;
+  rank: 2 | 3;
+  candidate: ShareJobCandidate;
+};
+
+export async function listShareJobSoftAlternatives(jobId: string): Promise<ShareJobSoftAlternative[]> {
+  if (isDemoMode() || isMapPreviewMode()) return [];
+  const { data, error } = await supabase
+    .from('share_job_place_results')
+    .select('id, share_job_id, candidate_rank, candidate_snapshot')
+    .eq('share_job_id', jobId)
+    .eq('result_role', 'secondary')
+    .eq('outcome', 'secondary_soft_saved')
+    .order('candidate_rank', { ascending: true });
+  if (error) throw new Error(error.message);
+  return (data ?? []).flatMap((row: any) => {
+    const candidate = row?.candidate_snapshot as ShareJobCandidate | null;
+    const rank = row?.candidate_rank;
+    if (!row?.id || !candidate?.googlePlaceId || !candidate?.name || (rank !== 2 && rank !== 3)) return [];
+    return [{ resultId: row.id, shareJobId: row.share_job_id, rank, candidate }];
+  });
+}
+
+export async function promoteShareJobSoftAlternative(
+  resultId: string,
+  makePrimary = true,
+): Promise<{ savedPlaceId: string; primaryReplaced: boolean }> {
+  const { data, error } = await supabase.rpc('promote_share_job_soft_alternative', {
+    p_result_id: resultId,
+    p_make_primary: makePrimary,
+  });
+  if (error) throw new Error(error.message);
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row?.saved_place_id) throw new Error('Alternative promotion returned no saved place.');
+  return { savedPlaceId: row.saved_place_id, primaryReplaced: row.primary_replaced === true };
+}
+
+export async function removeShareJobSoftAlternative(resultId: string): Promise<void> {
+  const { data, error } = await supabase.rpc('remove_share_job_soft_alternative', {
+    p_result_id: resultId,
+  });
+  if (error) throw new Error(error.message);
+  if (data !== true) throw new Error('Alternative is no longer available.');
+}
+
 export type UndoAutoSaveResult = {
   undone: boolean;
   alreadyUndone: boolean;
@@ -211,7 +258,6 @@ export async function getShareJob(jobId: string): Promise<ShareJob | null> {
     .from('share_jobs')
     .select(JOB_COLUMNS)
     .eq('id', jobId)
-    .is('queue_archived_at', null)
     .maybeSingle();
   if (error) {
     logDebug('share-jobs', `get failed: ${error.message}`);
