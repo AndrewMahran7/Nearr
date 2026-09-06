@@ -1,8 +1,8 @@
 {
   "schemaVersion": 2,
-  "runId": "recognition-replay-2026-09-05T21-34-01-456Z",
+  "runId": "recognition-replay-2026-09-06T01-18-19-958Z",
   "mode": "DETERMINISTIC_FROZEN_REPLAY",
-  "generatedAt": "2026-09-05T21:34:01.753Z",
+  "generatedAt": "2026-09-06T01:18:20.168Z",
   "groundTruthLoadedAfterPersistence": true,
   "cacheReadUsed": false,
   "actualSavePerformed": false,
