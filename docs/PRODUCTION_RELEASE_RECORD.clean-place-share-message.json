@@ -1,0 +1,35 @@
+{
+  "releaseId": "2026-09-05-clean-place-share-message",
+  "previousMainSha": "a7ae5a18ac590259066b7214f0800637c1c62d32",
+  "previousOtaGroup": "c9bb5915-96ac-43db-a5d5-a1c57d8c88f0",
+  "currentOtaGroup": null,
+  "edgeVersions": {
+    "process-share-link": 137,
+    "create-share-job": 29,
+    "process-share-jobs": 103,
+    "public-place": 1
+  },
+  "railwayDeployment": "31761710-5ecd-4571-9152-c4cdfc1fd5bb (unchanged; SUCCESS/RUNNING; source a7ae5a18ac590259066b7214f0800637c1c62d32)",
+  "migrationLedger": [
+    "20260905000004"
+  ],
+  "rollbackProcedure": "Repeat the concurrency guard; republish previousOtaGroup to the production channel; forward-revert the clean place-share message implementation on current main. DB, Edge Functions, Railway, website, native builds, referrals, and existing shared-place data remain unchanged.",
+  "deploymentStatus": "PLANNED",
+  "physicalQa": {
+    "signedOutColdLaunch": "PENDING",
+    "signedInColdLaunch": "PENDING",
+    "forceCloseRelaunch": "PENDING",
+    "freshOnboardingLaunch": "NOT_REQUIRED"
+  },
+  "nativeProduction": {
+    "buildId": "e0aea8d9-b89c-442b-8ee6-c880d5763385",
+    "appVersion": "1.4.55",
+    "buildNumber": "56",
+    "runtimeVersion": "1.4.55",
+    "sourceCommit": "627ad618d57c99faa280fb085e7b0692fc0bd58f"
+  },
+  "productionSmoke": {
+    "sharePayload": "PENDING",
+    "physicalMessages": "PENDING"
+  }
+}
