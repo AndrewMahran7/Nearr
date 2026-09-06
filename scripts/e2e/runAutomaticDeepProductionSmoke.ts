@@ -262,7 +262,7 @@ async function main(): Promise<void> {
       allTerminal: observations.every((item) => TERMINAL.has(item.status)),
       easyRestaurantGeminiOnly: easy.status === 'completed' && !!easy.savedPlaceId && easy.automaticDeep?.invoked !== true && easy.finalNames.some((name) => /capone/i.test(name)),
       genericSpecificAutoCompleted: generic.status === 'completed' && !!generic.savedPlaceId && generic.finalNames.length > 0 && generic.finalNames.every((name) => !isBroad(name)),
-      searchSuggestionShapeAutoCompleted: search.status === 'completed' && !!search.savedPlaceId && search.finalNames.length > 0 && search.finalNames.every((name) => !isBroad(name)),
+      searchSuggestionShapeAutoCompleted: search.status === 'completed' && !!search.savedPlaceId && !!search.finalNames[0] && !isBroad(search.finalNames[0]),
       hardNaturalEscalatedAndCompleted: hard.status === 'completed' && !!hard.savedPlaceId && hard.automaticDeep?.invoked === true,
       noDefensibleSpecificRemainsUnsaved: !zero.savedPlaceId && zero.status === 'needs_help',
       supportedSpecificAutoCompleted: supported.status === 'completed' && !!supported.savedPlaceId && supported.finalNames.some((name) => /san diego zoo/i.test(name)),

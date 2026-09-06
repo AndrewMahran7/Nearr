@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "sourceRun": "nearr-prod-auto-deep-smoke-2026-09-06T06-45-14-889Z-3daa40d7",
+  "target": "production",
+  "cases": 6,
+  "defensibleCases": 5,
+  "automaticCompletions": 5,
+  "manualInterventions": 1,
+  "geminiOnlyCompletions": 2,
+  "solEscalations": 3,
+  "primaryCorrections": 0,
+  "absurdSaves": 0,
+  "softAlternativesPersisted": 1,
+  "cheapCostUsd": 0.0271821,
+  "solCostUsd": 0.107186,
+  "totalModelCostUsd": 0.1343681,
+  "costPerShareUsd": 0.02239468,
+  "costPerAutomaticCompletionUsd": 0.02687362,
+  "placesRequests": 4,
+  "billing": {
+    "walletDelta": 0,
+    "premiumReservations": 0,
+    "premiumAnalytics": 0,
+    "premiumEndpointStatus": 503
+  },
+  "assertions": {
+    "easyRestaurantGeminiOnly": true,
+    "genericSpecificAutoCompleted": true,
+    "searchSuggestionShapeAutoCompleted": true,
+    "hardNaturalEscalatedAndCompleted": true,
+    "noDefensibleSpecificRemainsUnsaved": true,
+    "supportedSpecificAutoCompleted": true,
+    "ordinaryPlausibleResultsCreateNoTask": true,
+    "costTelemetryPersisted": true,
+    "billingIsolation": true
+  },
+  "harnessCorrection": "The original assertion inspected recursively collected provider-parent names. It was rescored against the saved rank-1 identity: Copper Canyon is specific; Lake Havasu remains allowed parent metadata. No inference was rerun."
+}

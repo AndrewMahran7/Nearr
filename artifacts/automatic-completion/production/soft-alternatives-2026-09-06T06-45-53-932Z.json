@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "target": "production",
+  "assertions": {
+    "threeDurableRankedRows": true,
+    "oldPrimaryRetainedAsSecondary": true,
+    "rank2PromotedPrimary": true,
+    "rank3Removed": true,
+    "promotionIdempotentShape": true
+  },
+  "cleanup": "PASS"
+}
