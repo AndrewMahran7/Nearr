@@ -195,13 +195,16 @@ async function main(): Promise<void> {
     const savedRows = (savedPlaces ?? []) as Array<Record<string, any>>;
     const byJob = new Map<string, Record<string, any>>(jobs.map((job) => [job.id, job]));
     const byTask = new Map<string, Record<string, any>>(taskRows.map((task) => [task.share_job_id, task]));
+    const byRun = new Map<string, Record<string, any>>((runs ?? []).map((run: Record<string, any>) => [run.share_job_id, run]));
     const bySaved = new Map<string, Record<string, unknown>>(savedRows.map((place) => [place.id, place]));
     const observations = cases.map((spec) => {
       const jobId = ids.get(`${spec.suite}:${spec.caseId}`)!;
       const job = byJob.get(jobId)!;
       const task = byTask.get(jobId);
-      const diagnostics = object(task?.diagnostics);
+      const run = byRun.get(jobId);
+      const diagnostics = object(run?.evidence);
       const automaticDeep = object(diagnostics?.automaticDeep);
+      const automaticDeepRecognition = object(diagnostics?.automaticDeepRecognition);
       const normalCandidates = Array.isArray(automaticDeep?.normalCandidates) ? automaticDeep!.normalCandidates : [];
       const candidates = uniqueCandidates(job.candidate_payload, bySaved.get(job.saved_place_id) ?? null);
       return {
@@ -220,7 +223,9 @@ async function main(): Promise<void> {
         candidates,
         normalCandidates,
         automaticDeep,
-        modelProvider: task?.model_provider ?? null,
+        automaticDeepRecognition,
+        modelProvider: run?.model_provider ?? null,
+        durationMs: run?.duration_ms ?? null,
         taskStatus: task?.status ?? null,
         taskFailureCode: task?.failure_code ?? null,
         diagnostics,
@@ -247,10 +252,10 @@ async function main(): Promise<void> {
         evidenceVersion: 'deployed-integrated-source-evidence', modelPath: observation.modelProvider ?? 'unknown',
         acquisitionStatus: technical ? 'ACQUISITION_BLOCKED' : 'ACQUIRED', status: technical ? 'TECHNICAL_FAILURE' : 'COMPLETED',
         candidates: observation.candidates, safetyDecision: observation.savedPlaceId ? 'AUTO_SAVE' : technical ? 'MANUAL_FALLBACK' : 'REVIEW',
-        frameManifest: [], placesCallCount: Number(object(observation.diagnostics?.automaticDeepRecognition)?.placesRequests ?? 0),
+        frameManifest: [], placesCallCount: Number(observation.automaticDeepRecognition?.placesRequests ?? 0),
         cacheReadUsed: false, modelRequests: Number(observation.automaticDeep?.attempts ?? 0) + 1, apiRequests: Number(observation.automaticDeep?.attempts ?? 0) + 1,
-        costUsd: typeof object(observation.diagnostics?.automaticDeepRecognition)?.knownModelCostUsd === 'number' ? object(observation.diagnostics?.automaticDeepRecognition)!.knownModelCostUsd as number : null,
-        latencyMs: Number(observation.diagnostics?.durationMs ?? 0), failureCode: observation.failureCode ?? observation.taskFailureCode ?? null,
+        costUsd: typeof observation.automaticDeepRecognition?.knownModelCostUsd === 'number' ? observation.automaticDeepRecognition.knownModelCostUsd as number : null,
+        latencyMs: Number(observation.durationMs ?? 0), failureCode: observation.failureCode ?? observation.taskFailureCode ?? null,
         persistedAt: new Date().toISOString(),
       };
     });

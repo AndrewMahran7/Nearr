@@ -130,11 +130,19 @@ export type PersistedModelAttempt = {
   failure: { kind: 'missing_key' | 'transport' | 'http' | 'malformed'; code: string } | null;
 };
 
-export type CanonicalStatus = 'CANONICAL_EXACT' | 'CANONICAL_ALIAS' | 'AMBIGUOUS_CANONICAL' | 'NAMED_LEAD';
+export type CanonicalStatus = 'CANONICAL_EXACT' | 'CANONICAL_ALIAS' | 'AMBIGUOUS_CANONICAL' | 'PARENT_ONLY_MATCH' | 'NAMED_LEAD';
 export type CanonicalizedDestination = {
   model_identity: SolDestination;
   status: CanonicalStatus;
   selected: null | {
+    google_place_id: string;
+    name: string;
+    formatted_address: string | null;
+    latitude: number | null;
+    longitude: number | null;
+    provider_types: string[];
+  };
+  provider_parent?: null | {
     google_place_id: string;
     name: string;
     formatted_address: string | null;

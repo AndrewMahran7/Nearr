@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-09-05T23:11:31.611Z",
+  "generatedAt": "2026-09-06T00:04:53.050Z",
   "arm": "ACCURACY_MAX",
   "architecture": "Composite: SIMPLE_SOL F1:M1 baseline plus F2:M2 dense-frame, native-web escalation on 14 initially weak cases (13 remain unscored; CJ016 was independently promoted to HIGH_CONFIDENCE_EXACT after the blind run).",
   "executed": true,
@@ -909,19 +909,19 @@
       "top3": [
         {
           "rank": 1,
-          "name": "Waimea Bay Beach Park",
+          "name": "Waimea Bay Jump Rock at Waimea Bay Beach Park",
           "rawName": "Waimea Bay Jump Rock at Waimea Bay Beach Park",
-          "status": "CANONICAL_ALIAS",
-          "latitude": 21.639827300000004,
-          "longitude": -158.0633594
+          "status": "PARENT_ONLY_MATCH",
+          "latitude": null,
+          "longitude": null
         }
       ],
       "rawExactAt1": true,
       "rawExactAt3": true,
-      "exactAt1": false,
-      "exactAt3": false,
+      "exactAt1": true,
+      "exactAt3": true,
       "specificReasonableAt3": false,
-      "canonicalizationEffect": "CORRECT_IDENTITY_LOST_BY_CANONICALIZATION",
+      "canonicalizationEffect": "NO_EXACT_IDENTITY_LOSS",
       "latencyMs": 18612,
       "costUsd": 0.035828
     },
@@ -1417,19 +1417,19 @@
       "top3": [
         {
           "rank": 1,
-          "name": "Sunset Cliffs Natural Park",
+          "name": "The Arch at Pappy’s Point, Sunset Cliffs Natural Park",
           "rawName": "The Arch at Pappy’s Point, Sunset Cliffs Natural Park",
-          "status": "CANONICAL_ALIAS",
-          "latitude": 32.715915,
-          "longitude": -117.25516789999999
+          "status": "PARENT_ONLY_MATCH",
+          "latitude": null,
+          "longitude": null
         }
       ],
       "rawExactAt1": true,
       "rawExactAt3": true,
-      "exactAt1": false,
-      "exactAt3": false,
+      "exactAt1": true,
+      "exactAt3": true,
       "specificReasonableAt3": false,
-      "canonicalizationEffect": "CORRECT_IDENTITY_LOST_BY_CANONICALIZATION",
+      "canonicalizationEffect": "NO_EXACT_IDENTITY_LOSS",
       "latencyMs": 64226,
       "costUsd": 0.212755,
       "webSearchCalls": 7,
@@ -2325,11 +2325,11 @@
       "top3": [
         {
           "rank": 1,
-          "name": "Área recreativa La Falaguera",
+          "name": "Área Recreativa La Falaguera II",
           "rawName": "Área Recreativa La Falaguera II",
-          "status": "CANONICAL_ALIAS",
-          "latitude": 40.782688,
-          "longitude": -2.1289176999999997
+          "status": "PARENT_ONLY_MATCH",
+          "latitude": null,
+          "longitude": null
         },
         {
           "rank": 2,
@@ -3297,11 +3297,11 @@
       "top3": [
         {
           "rank": 1,
-          "name": "Honeymoon Beach",
+          "name": "Honeymoon Beach cliff-jumping ledge",
           "rawName": "Honeymoon Beach cliff-jumping ledge",
-          "status": "CANONICAL_ALIAS",
-          "latitude": -8.7797316,
-          "longitude": 115.1439517
+          "status": "PARENT_ONLY_MATCH",
+          "latitude": null,
+          "longitude": null
         },
         {
           "rank": 2,
@@ -3717,11 +3717,11 @@
       "top3": [
         {
           "rank": 1,
-          "name": "Lake Powell",
+          "name": "The Toilet Bowl at Lake Powell",
           "rawName": "The Toilet Bowl at Lake Powell",
-          "status": "CANONICAL_ALIAS",
-          "latitude": 37.068261899999996,
-          "longitude": -111.24331079999999
+          "status": "PARENT_ONLY_MATCH",
+          "latitude": null,
+          "longitude": null
         },
         {
           "rank": 2,
@@ -3853,11 +3853,11 @@
       "top3": [
         {
           "rank": 1,
-          "name": "Gunlock State Park",
+          "name": "Gunlock Falls at Gunlock State Park",
           "rawName": "Gunlock Falls at Gunlock State Park",
-          "status": "CANONICAL_ALIAS",
-          "latitude": 37.254683,
-          "longitude": -113.77057459999999
+          "status": "PARENT_ONLY_MATCH",
+          "latitude": null,
+          "longitude": null
         }
       ],
       "rawExactAt1": false,
@@ -4637,11 +4637,11 @@
         },
         {
           "rank": 3,
-          "name": "Shipwreck Beach",
+          "name": "Shipwreck Beach (Keoneloa Bay), Makawehi Point cliff",
           "rawName": "Shipwreck Beach (Keoneloa Bay), Makawehi Point cliff",
-          "status": "CANONICAL_ALIAS",
-          "latitude": 21.8747911,
-          "longitude": -159.4369036
+          "status": "PARENT_ONLY_MATCH",
+          "latitude": null,
+          "longitude": null
         }
       ],
       "rawExactAt1": false,
@@ -4862,22 +4862,14 @@
     "denominator": 28,
     "rawExactAt1": 28,
     "rawExactAt3": 28,
-    "exactAt1": 25,
-    "exactAt3": 26,
+    "exactAt1": 27,
+    "exactAt3": 28,
     "specificReasonableAt3": 38,
     "canonicalizationTop1Losses": [
-      "CJ004",
-      "CJ009",
-      "CJ016"
+      "CJ004"
     ],
-    "canonicalizationTop3Losses": [
-      "CJ009",
-      "CJ016"
-    ],
-    "remainingScorableMisses": [
-      "CJ009",
-      "CJ016"
-    ],
+    "canonicalizationTop3Losses": [],
+    "remainingScorableMisses": [],
     "escalationLatencyMs": {
       "p50": 141174,
       "p95": 236155,

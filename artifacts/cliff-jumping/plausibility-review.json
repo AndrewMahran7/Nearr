@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-09-05T23:11:31.611Z",
+  "generatedAt": "2026-09-06T00:04:53.050Z",
   "reviewer": "Independent post-inference evidence review",
   "results": [
     {
@@ -286,11 +286,11 @@
       "accuracyMaxCandidates": [
         {
           "rank": 1,
-          "name": "Área recreativa La Falaguera",
+          "name": "Área Recreativa La Falaguera II",
           "rawName": "Área Recreativa La Falaguera II",
-          "status": "CANONICAL_ALIAS",
-          "latitude": 40.782688,
-          "longitude": -2.1289176999999997
+          "status": "PARENT_ONLY_MATCH",
+          "latitude": null,
+          "longitude": null
         },
         {
           "rank": 2,
@@ -435,11 +435,11 @@
       "simpleSolCandidates": [
         {
           "rank": 1,
-          "name": "Waimea Bay Beach Park",
+          "name": "Waimea Bay Jump Rock",
           "rawName": "Waimea Bay Jump Rock",
-          "status": "CANONICAL_ALIAS",
-          "latitude": 21.639827300000004,
-          "longitude": -158.0633594
+          "status": "PARENT_ONLY_MATCH",
+          "latitude": null,
+          "longitude": null
         },
         {
           "rank": 2,
@@ -452,7 +452,7 @@
       ],
       "topCandidatePlausibility": "STRONGLY_PLAUSIBLE",
       "finding": "The boulder and shore geometry match Waimea Jump Rock, but the source contains no geographic clue and no same-clip naming source was found.",
-      "reviewedCandidate": "Waimea Bay Beach Park",
+      "reviewedCandidate": "Waimea Bay Jump Rock",
       "accuracyMaxCandidates": [
         {
           "rank": 1,
@@ -481,11 +481,11 @@
       "simpleSolCandidates": [
         {
           "rank": 1,
-          "name": "Lake Powell",
+          "name": "The Toilet Bowl at Lake Powell",
           "rawName": "The Toilet Bowl at Lake Powell",
-          "status": "CANONICAL_ALIAS",
-          "latitude": 37.068261899999996,
-          "longitude": -111.24331079999999
+          "status": "PARENT_ONLY_MATCH",
+          "latitude": null,
+          "longitude": null
         },
         {
           "rank": 2,
@@ -498,7 +498,7 @@
       ],
       "topCandidatePlausibility": "STRONGLY_PLAUSIBLE",
       "finding": "The source identifies Lake Powell and the enclosed slickrock hole is plausible, but public sources use Toilet Bowl/Hole in the Roof inconsistently and publish competing coordinates.",
-      "reviewedCandidate": "Lake Powell",
+      "reviewedCandidate": "The Toilet Bowl at Lake Powell",
       "accuracyMaxCandidates": [],
       "accuracyMaxPlausibility": "NOT_RUN"
     },
@@ -523,11 +523,11 @@
       "accuracyMaxCandidates": [
         {
           "rank": 1,
-          "name": "Gunlock State Park",
+          "name": "Gunlock Falls at Gunlock State Park",
           "rawName": "Gunlock Falls at Gunlock State Park",
-          "status": "CANONICAL_ALIAS",
-          "latitude": 37.254683,
-          "longitude": -113.77057459999999
+          "status": "PARENT_ONLY_MATCH",
+          "latitude": null,
+          "longitude": null
         }
       ],
       "accuracyMaxPlausibility": "PLAUSIBLE"
@@ -540,11 +540,11 @@
       "simpleSolCandidates": [
         {
           "rank": 1,
-          "name": "Potholes Recreation Site",
+          "name": "Escalante Potholes Recreation Site",
           "rawName": "Escalante Potholes Recreation Site",
-          "status": "CANONICAL_ALIAS",
-          "latitude": 38.6698802,
-          "longitude": -108.3281999
+          "status": "PARENT_ONLY_MATCH",
+          "latitude": null,
+          "longitude": null
         },
         {
           "rank": 2,
@@ -565,7 +565,7 @@
       ],
       "topCandidatePlausibility": "STRONGLY_PLAUSIBLE",
       "finding": "The carved granite pools fit the BLM-described Escalante Potholes cliff-jumping site, but the source has no location clue and no same-clip match.",
-      "reviewedCandidate": "Potholes Recreation Site",
+      "reviewedCandidate": "Escalante Potholes Recreation Site",
       "accuracyMaxCandidates": [
         {
           "rank": 1,
@@ -693,11 +693,11 @@
         },
         {
           "rank": 3,
-          "name": "Shipwreck Beach",
+          "name": "Shipwreck Beach (Keoneloa Bay), Makawehi Point cliff",
           "rawName": "Shipwreck Beach (Keoneloa Bay), Makawehi Point cliff",
-          "status": "CANONICAL_ALIAS",
-          "latitude": 21.8747911,
-          "longitude": -159.4369036
+          "status": "PARENT_ONLY_MATCH",
+          "latitude": null,
+          "longitude": null
         }
       ],
       "accuracyMaxPlausibility": "PLAUSIBLE"

@@ -81,6 +81,19 @@ test('high-confidence exact canonical result is simulated only, never saved', as
   assert.equal(simulateDecision(payload, [result]), 'WOULD_AUTO_SAVE');
 });
 
+test('persisted parity canonicalization retains an exact feature and annotates a provider parent', async () => {
+  const child = { ...destination, name: 'Waimea Bay Jump Rock', region: 'Hawaii', country: 'US' };
+  const result = await canonicalizeDestination({ destination: child, apiKey: 'test', search: async () => ({ ok: true, results: [{
+    googlePlaceId: 'waimea-parent', name: 'Waimea Bay Beach Park', formattedAddress: 'Haleiwa, Hawaii, US',
+    latitude: 21.64, longitude: -158.06, types: ['park', 'tourist_attraction'],
+  }] }) });
+  assert.equal(result.status, 'PARENT_ONLY_MATCH');
+  assert.equal(result.selected, null);
+  assert.equal(result.model_identity.name, 'Waimea Bay Jump Rock');
+  assert.equal(result.provider_parent?.name, 'Waimea Bay Beach Park');
+  assert.notEqual(simulateDecision(payload, [result]), 'WOULD_AUTO_SAVE');
+});
+
 test('cost accounting returns unknown for missing usage and prices cached tokens separately', () => {
   assert.equal(estimateSolModelCostUsd({ input_tokens: null, cached_input_tokens: null, output_tokens: 1, reasoning_tokens: null, total_tokens: null }), null);
   assert.equal(estimateSolModelCostUsd({ input_tokens: 1_000_000, cached_input_tokens: 500_000, output_tokens: 1_000_000, reasoning_tokens: 0, total_tokens: 2_000_000 }), 22.2);

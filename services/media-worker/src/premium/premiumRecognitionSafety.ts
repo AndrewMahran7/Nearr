@@ -67,8 +67,12 @@ export function evaluatePremiumRecognitionSafety(args: {
   if (!hypothesis.name.trim()) {
     return { decision: 'REJECT', permissiveWouldAutoSave, reasons: ['missing_identity'] };
   }
-  if (args.canonicalStatus === 'NAMED_LEAD') {
-    return { decision: 'NAMED_LEAD', permissiveWouldAutoSave, reasons: ['provider_no_match_preserves_identity'] };
+  if (args.canonicalStatus === 'NAMED_LEAD' || args.canonicalStatus === 'PARENT_ONLY_MATCH') {
+    return { decision: 'NAMED_LEAD', permissiveWouldAutoSave, reasons: [
+      args.canonicalStatus === 'PARENT_ONLY_MATCH'
+        ? 'provider_parent_only_preserves_identity'
+        : 'provider_no_match_preserves_identity',
+    ] };
   }
   if (!canonical || !args.canonical) {
     return { decision: 'REVIEW', permissiveWouldAutoSave, reasons: ['canonicalization_ambiguous'] };

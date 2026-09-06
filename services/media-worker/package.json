@@ -39,6 +39,7 @@
     "media:inspect": "node --import tsx src/cli/inspectUrl.ts",
     "benchmark:sol-parity": "node --import tsx src/cli/solParityBenchmark.ts",
     "report:sol-parity": "node --import tsx src/cli/compileSolParityReport.ts",
+    "recanonicalize:cliff-persisted": "node --import tsx src/cli/recanonicalizeCliffPersisted.ts",
     "canonicalize:sol-parity": "node --import tsx src/cli/recanonicalizeSolParity.ts",
     "vayrin:geo": "node --import tsx src/cli/vayrinGeolocate.ts",
     "vayrin:baseline": "node --import tsx src/cli/vayrinBaseline.ts",

@@ -30,7 +30,7 @@ function execution(names = ['Tamolitch Blue Pool', 'Blue Pool', 'Tamolitch Falls
     name, entityType: 'NAMED_NATURAL_FEATURE', city: null, region: 'Oregon', country: 'US',
     confidence: index === 0 ? 'HIGH' as const : 'MEDIUM' as const,
     evidenceBasis: 'DISTINCTIVE_VISUAL_MATCH' as const, supportingClues: ['distinctive basalt pool'],
-    contradictions: [], timestamps: [1], canonicalStatus: 'NAMED_LEAD' as const, canonical: null,
+    contradictions: [], timestamps: [1], canonicalStatus: 'NAMED_LEAD' as const, canonical: null, providerParent: null,
     canonicalAlternatives: [], canonicalizationCalls: [],
   }));
   return {

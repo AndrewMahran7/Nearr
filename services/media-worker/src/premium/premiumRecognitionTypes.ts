@@ -30,6 +30,7 @@ export type PremiumCanonicalStatus =
   | 'CANONICAL_EXACT'
   | 'CANONICAL_ALIAS'
   | 'AMBIGUOUS_CANONICAL'
+  | 'PARENT_ONLY_MATCH'
   | 'NAMED_LEAD';
 
 export type PremiumCanonicalizationCall = {
@@ -59,6 +60,9 @@ export type PremiumRuntimeHypothesis = {
   timestamps: number[];
   canonicalStatus: PremiumCanonicalStatus;
   canonical: PremiumCanonicalCandidate | null;
+  /** Map-provider container retained only as enrichment. It never replaces
+   * the recognizer-owned exact identity. */
+  providerParent: PremiumCanonicalCandidate | null;
   canonicalAlternatives: PremiumCanonicalCandidate[];
   canonicalizationCalls: PremiumCanonicalizationCall[];
 };
@@ -113,6 +117,8 @@ export type PremiumRecognitionTelemetry = {
       calls: PremiumCanonicalizationCall[];
       selectedGooglePlaceId: string | null;
       selectedName: string | null;
+      providerParentGooglePlaceId: string | null;
+      providerParentName: string | null;
       outcome: PremiumCanonicalStatus;
       rejectionReason: string | null;
     }>;

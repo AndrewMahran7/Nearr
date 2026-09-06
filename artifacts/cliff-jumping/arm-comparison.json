@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-09-05T23:11:31.611Z",
+  "generatedAt": "2026-09-06T00:04:53.050Z",
   "rows": [
     {
       "caseId": "CJ001",
@@ -132,14 +132,14 @@
       "truth": "Waimea Bay Jump Rock",
       "productionFreeTop3": [],
       "simpleSolTop3": [
-        "Waimea Bay Beach Park"
+        "Waimea Bay Jump Rock at Waimea Bay Beach Park"
       ],
       "productionExactAt3": false,
-      "solExactAt3": false,
+      "solExactAt3": true,
       "productionSpecific": false,
       "solSpecific": false,
       "winner": "SIMPLE_SOL",
-      "classification": "FREE_AND_SOL_FAIL"
+      "classification": "SOL_RECOVERED_FREE_FAILURE"
     },
     {
       "caseId": "CJ010",
@@ -446,7 +446,7 @@
       "truth": "Honeymoon Beach cliff-jumping ledge",
       "productionFreeTop3": [],
       "simpleSolTop3": [
-        "Honeymoon Beach",
+        "Honeymoon Beach cliff-jumping ledge",
         "Pantai Plix",
         "Tegal Wangi Beach"
       ],
@@ -491,7 +491,7 @@
       "truth": "Waimea Bay Jump Rock",
       "productionFreeTop3": [],
       "simpleSolTop3": [
-        "Waimea Bay Beach Park",
+        "Waimea Bay Jump Rock",
         "Black Rock (Puʻu Kekaʻa)"
       ],
       "productionExactAt3": false,
@@ -520,7 +520,7 @@
       "truth": "The Toilet Bowl at Lake Powell",
       "productionFreeTop3": [],
       "simpleSolTop3": [
-        "Lake Powell",
+        "The Toilet Bowl at Lake Powell",
         "Lake Powell"
       ],
       "productionExactAt3": false,
@@ -579,7 +579,7 @@
       "truth": "Escalante Potholes Recreation Site",
       "productionFreeTop3": [],
       "simpleSolTop3": [
-        "Potholes Recreation Site",
+        "Escalante Potholes Recreation Site",
         "Cauldron Linn",
         "White River Falls"
       ],
@@ -641,8 +641,8 @@
   ],
   "summary": {
     "freeFailuresTested": 42,
-    "strictScorableRecoveredBySol": 26,
-    "specificOrExactRecoveredBySol": 36,
-    "recoveryPercentage": 85.7
+    "strictScorableRecoveredBySol": 27,
+    "specificOrExactRecoveredBySol": 37,
+    "recoveryPercentage": 88.1
   }
 }

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-09-05T23:11:31.611Z",
+  "generatedAt": "2026-09-06T00:04:53.050Z",
   "rows": [
     {
       "caseId": "CJ001",
@@ -45,7 +45,7 @@
     {
       "caseId": "CJ009",
       "productionFreePrimaryCause": "EVIDENCE_TOO_WEAK",
-      "simpleSolPrimaryCause": "CORRECT_IDENTITY_LOST_BY_CANONICALIZATION"
+      "simpleSolPrimaryCause": "NONE"
     },
     {
       "caseId": "CJ010",
@@ -219,8 +219,7 @@
   },
   "simpleSolCounts": {
     "GROUND_TRUTH_UNRESOLVED": 14,
-    "NONE": 26,
-    "CORRECT_IDENTITY_LOST_BY_CANONICALIZATION": 1,
+    "NONE": 27,
     "MODEL_WRONG_EXACT_IDENTITY": 1
   }
 }

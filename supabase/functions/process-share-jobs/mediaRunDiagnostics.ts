@@ -17,8 +17,10 @@
 // so places #4-#6 could not even be named. The parser counts existed in worker
 // memory and were already being TRANSPORTED — they were simply not persisted.
 //
-// PRIVACY: every value here is either an integer or a closed-vocabulary label.
-// No place names, no addresses, no caption/transcript text, no model prose.
+// PRIVACY: source inputs (addresses, captions, transcripts, OCR and model prose)
+// never enter this summary. Automatic Deep additionally retains at most three
+// bounded normal-recognition place candidates: these are recognition outputs,
+// needed to audit the conditional escalation decision against the final result.
 //
 // No I/O, no Deno globals — unit-tested from Node (scripts/testMediaRunDiagnostics.ts).
 
@@ -71,6 +73,34 @@ export type RecognitionFunnel = {
   sharedGeoCountryApplied?: boolean;
   /** Geographic places admitted as destinations in their own right (peer cities). */
   peerGeographicDestinations?: number;
+  automaticDeep?: {
+    version?: string;
+    needed: boolean;
+    invoked: boolean;
+    attempts: number;
+    recoveryInvoked: boolean;
+    noUsableSourceEvidence: boolean;
+    rejectionReason?: string | null;
+    normalResultSpecificity?: string;
+    normalCandidates: Array<{
+      name: string;
+      category: string | null;
+      city: string | null;
+      region: string | null;
+      country: string | null;
+    }>;
+    firstAttemptSpecificHypotheses: number;
+    recoverySpecificHypotheses: number;
+    top3Count: number;
+    specificResult: boolean;
+  };
+  automaticDeepRecognition?: {
+    engineVersion?: string;
+    model?: string;
+    knownModelCostUsd?: number | null;
+    placesRequests?: number;
+    timingsMs?: { sol?: number; canonicalization?: number; total?: number };
+  };
   /** One bounded, content-free record of the Vayrin invocation. The job/task
    * IDs and media duration already live in columns on the same run row. */
   vayrinInvocation?: {
@@ -219,13 +249,86 @@ export function buildRecognitionFunnel(
     }
   }
 
+  const boundedString = (value: unknown, max = 100): string | undefined =>
+    typeof value === 'string' && value.trim().length > 0 ? value.trim().slice(0, max) : undefined;
+  const finite = (value: unknown): number | undefined =>
+    typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : undefined;
+
+  const rawAutomaticDeep = d.automaticDeep;
+  if (rawAutomaticDeep && typeof rawAutomaticDeep === 'object') {
+    const a = rawAutomaticDeep as Record<string, unknown>;
+    const normalCandidates = Array.isArray(a.normalCandidates)
+      ? a.normalCandidates
+          .filter((item): item is Record<string, unknown> => !!item && typeof item === 'object')
+          .flatMap((item) => {
+            const name = boundedString(item.name, 200);
+            if (!name) return [];
+            const nullable = (value: unknown, max: number): string | null => boundedString(value, max) ?? null;
+            return [{
+              name,
+              category: nullable(item.category, 80),
+              city: nullable(item.city, 120),
+              region: nullable(item.region, 120),
+              country: nullable(item.country, 120),
+            }];
+          })
+          .slice(0, 3)
+      : [];
+    const rejectionReasons = new Set([
+      'no_place_candidates', 'only_generic_or_administrative_candidates',
+      'all_candidates_low_confidence', 'insufficient_evidence',
+    ]);
+    out.automaticDeep = {
+      ...(boundedString(a.version, 80) ? { version: boundedString(a.version, 80) } : {}),
+      needed: a.needed === true,
+      invoked: a.invoked === true,
+      attempts: count(a.attempts) ?? 0,
+      recoveryInvoked: a.recoveryInvoked === true,
+      noUsableSourceEvidence: a.noUsableSourceEvidence === true,
+      ...(a.rejectionReason === null
+        ? { rejectionReason: null }
+        : typeof a.rejectionReason === 'string' && rejectionReasons.has(a.rejectionReason)
+        ? { rejectionReason: a.rejectionReason }
+        : {}),
+      ...(boundedString(a.normalResultSpecificity, 48)
+        ? { normalResultSpecificity: boundedString(a.normalResultSpecificity, 48) }
+        : {}),
+      normalCandidates,
+      firstAttemptSpecificHypotheses: count(a.firstAttemptSpecificHypotheses) ?? 0,
+      recoverySpecificHypotheses: count(a.recoverySpecificHypotheses) ?? 0,
+      top3Count: count(a.top3Count) ?? 0,
+      specificResult: a.specificResult === true,
+    };
+  }
+
+  const rawAutomaticRecognition = d.automaticDeepRecognition;
+  if (rawAutomaticRecognition && typeof rawAutomaticRecognition === 'object') {
+    const a = rawAutomaticRecognition as Record<string, unknown>;
+    const rawTimings = a.timingsMs && typeof a.timingsMs === 'object'
+      ? a.timingsMs as Record<string, unknown>
+      : null;
+    const timingsMs = rawTimings
+      ? Object.fromEntries(['sol', 'canonicalization', 'total'].flatMap((key) => {
+          const value = finite(rawTimings[key]);
+          return value === undefined ? [] : [[key, value]];
+        })) as { sol?: number; canonicalization?: number; total?: number }
+      : undefined;
+    out.automaticDeepRecognition = {
+      ...(boundedString(a.engineVersion, 80) ? { engineVersion: boundedString(a.engineVersion, 80) } : {}),
+      ...(boundedString(a.model, 100) ? { model: boundedString(a.model, 100) } : {}),
+      ...(a.knownModelCostUsd === null
+        ? { knownModelCostUsd: null }
+        : finite(a.knownModelCostUsd) !== undefined
+        ? { knownModelCostUsd: finite(a.knownModelCostUsd) }
+        : {}),
+      ...(count(a.placesRequests) !== undefined ? { placesRequests: count(a.placesRequests) } : {}),
+      ...(timingsMs && Object.keys(timingsMs).length > 0 ? { timingsMs } : {}),
+    };
+  }
+
   const rawVayrin = d.vayrin;
   if (rawVayrin && typeof rawVayrin === 'object' && (rawVayrin as Record<string, unknown>).invoked === true) {
     const v = rawVayrin as Record<string, unknown>;
-    const finite = (value: unknown): number | undefined =>
-      typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : undefined;
-    const boundedString = (value: unknown, max = 100): string | undefined =>
-      typeof value === 'string' && value.length > 0 ? value.slice(0, max) : undefined;
     const timestamps = (value: unknown): number[] | undefined => {
       if (!Array.isArray(value)) return undefined;
       const values = value

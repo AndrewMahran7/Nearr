@@ -1,5 +1,6 @@
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import type { CanonicalizedDestination, SolDestination } from './types.js';
+import { classifyCanonicalizationRelation, modelIdentityIsSpecific } from './canonicalizationSpecificity.js';
 
 type PlacesCandidate = {
   googlePlaceId: string;
@@ -45,12 +46,14 @@ function geographyScore(destination: SolDestination, candidate: PlacesCandidate)
   return expected.filter((item) => haystack.includes(item.toLowerCase())).length / expected.length;
 }
 
-function rank(destination: SolDestination, candidates: PlacesCandidate[]): Array<{ candidate: PlacesCandidate; name: number; geo: number; total: number }> {
+function rank(destination: SolDestination, candidates: PlacesCandidate[]): Array<{ candidate: PlacesCandidate; name: number; geo: number; total: number; relation: 'EXACT' | 'ALIAS' }> {
   return candidates.map((candidate) => {
     const name = overlap(destination.name, candidate.name);
     const geo = geographyScore(destination, candidate);
-    return { candidate, name, geo, total: name * 0.8 + geo * 0.2 };
-  }).sort((a, b) => b.total - a.total);
+    const relation = classifyCanonicalizationRelation({ modelName: destination.name, modelEntityType: destination.entity_type, providerName: candidate.name, providerTypes: candidate.types });
+    return { candidate, name, geo, total: name * 0.8 + geo * 0.2, relation };
+  }).filter((item): item is typeof item & { relation: 'EXACT' | 'ALIAS' } => item.relation === 'EXACT' || item.relation === 'ALIAS')
+    .sort((a, b) => b.total - a.total);
 }
 
 export async function canonicalizeDestination(args: {
@@ -59,8 +62,8 @@ export async function canonicalizeDestination(args: {
   search?: SearchPlaces;
 }): Promise<CanonicalizedDestination> {
   const query = [args.destination.name, args.destination.city, args.destination.region, args.destination.country].filter(Boolean).join(', ');
-  const lead = (calls: number): CanonicalizedDestination => ({ model_identity: args.destination, status: 'NAMED_LEAD', selected: null, alternatives: [], places_calls: calls, query });
-  if (!args.apiKey || !query.trim()) return lead(0);
+  const lead = (calls: number): CanonicalizedDestination => ({ model_identity: args.destination, status: 'NAMED_LEAD', selected: null, provider_parent: null, alternatives: [], places_calls: calls, query });
+  if (!args.apiKey || !query.trim() || !modelIdentityIsSpecific(args.destination.entity_type)) return lead(0);
   const response = await (args.search ?? existingSearchPlaces)(query, args.apiKey);
   if (!response.ok || response.results.length === 0) return lead(1);
   const ranked = rank(args.destination, response.results);
@@ -68,7 +71,27 @@ export async function canonicalizeDestination(args: {
   // geographic compatibility (Google commonly renders CA/USA while the model
   // emits California/United States). The name must still match strongly.
   const plausible = ranked.filter((item) => item.name >= 0.45 && item.geo >= 0.3);
-  if (plausible.length === 0) return lead(1);
+  const parent = response.results.find((candidate) =>
+    geographyScore(args.destination, candidate) >= 0.3 &&
+    classifyCanonicalizationRelation({ modelName: args.destination.name, modelEntityType: args.destination.entity_type, providerName: candidate.name, providerTypes: candidate.types }) === 'PARENT_ONLY') ?? null;
+  if (plausible.length === 0) {
+    return parent ? {
+      model_identity: args.destination,
+      status: 'PARENT_ONLY_MATCH',
+      selected: null,
+      provider_parent: {
+        google_place_id: parent.googlePlaceId,
+        name: parent.name,
+        formatted_address: parent.formattedAddress ?? null,
+        latitude: parent.latitude ?? null,
+        longitude: parent.longitude ?? null,
+        provider_types: parent.types ?? [],
+      },
+      alternatives: [],
+      places_calls: 1,
+      query,
+    } : lead(1);
+  }
   const top = plausible[0]!;
   const tied = plausible.filter((item) => top.total - item.total < 0.08);
   if (tied.length > 1) {
@@ -76,15 +99,21 @@ export async function canonicalizeDestination(args: {
       model_identity: args.destination,
       status: 'AMBIGUOUS_CANONICAL',
       selected: null,
+      provider_parent: parent ? {
+        google_place_id: parent.googlePlaceId,
+        name: parent.name,
+        formatted_address: parent.formattedAddress ?? null,
+        latitude: parent.latitude ?? null,
+        longitude: parent.longitude ?? null,
+        provider_types: parent.types ?? [],
+      } : null,
       alternatives: tied.slice(0, 5).map(({ candidate }) => ({ google_place_id: candidate.googlePlaceId, name: candidate.name, formatted_address: candidate.formattedAddress ?? null })),
       places_calls: 1,
       query,
     };
   }
   const candidate = top.candidate;
-  const status = normalized(args.destination.name).join(' ') === normalized(candidate.name).join(' ')
-    ? 'CANONICAL_EXACT'
-    : 'CANONICAL_ALIAS';
+  const status = top.relation === 'EXACT' ? 'CANONICAL_EXACT' : 'CANONICAL_ALIAS';
   return {
     model_identity: args.destination,
     status,
@@ -96,6 +125,14 @@ export async function canonicalizeDestination(args: {
       longitude: candidate.longitude ?? null,
       provider_types: candidate.types ?? [],
     },
+    provider_parent: parent ? {
+      google_place_id: parent.googlePlaceId,
+      name: parent.name,
+      formatted_address: parent.formattedAddress ?? null,
+      latitude: parent.latitude ?? null,
+      longitude: parent.longitude ?? null,
+      provider_types: parent.types ?? [],
+    } : null,
     alternatives: [],
     places_calls: 1,
     query,

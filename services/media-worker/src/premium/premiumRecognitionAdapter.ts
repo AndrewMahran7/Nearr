@@ -59,12 +59,13 @@ export function premiumExecutionToEvidence(execution: PremiumRecognitionExecutio
         category: null,
         categoryConfidence: 0,
         categoryEvidenceTags: [],
-        address: hypothesis.canonical?.formattedAddress ?? null,
+        address: hypothesis.canonical?.formattedAddress ?? hypothesis.providerParent?.formattedAddress ?? null,
         city: hypothesis.city,
         region: hypothesis.region,
         country: hypothesis.country,
-        coordinates: hypothesis.canonical?.latitude != null && hypothesis.canonical.longitude != null
-          ? { lat: hypothesis.canonical.latitude, lng: hypothesis.canonical.longitude }
+        coordinates: (hypothesis.canonical ?? hypothesis.providerParent)?.latitude != null &&
+          (hypothesis.canonical ?? hypothesis.providerParent)?.longitude != null
+          ? { lat: (hypothesis.canonical ?? hypothesis.providerParent)!.latitude!, lng: (hypothesis.canonical ?? hypothesis.providerParent)!.longitude! }
           : null,
         role: index === 0 ? 'primary' : 'secondary',
         confidence: confidence(hypothesis.confidence),

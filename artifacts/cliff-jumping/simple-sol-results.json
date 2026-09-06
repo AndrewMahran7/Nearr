@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-05T23:11:31.611Z",
+  "generatedAt": "2026-09-06T00:04:53.050Z",
   "arm": "SIMPLE_SOL",
   "model": "gpt-5.6-sol",
   "reasoningEffort": "high",
@@ -534,22 +534,22 @@
       "canonicalTop3": [
         {
           "rank": 1,
-          "name": "Waimea Bay Beach Park",
+          "name": "Waimea Bay Jump Rock at Waimea Bay Beach Park",
           "rawName": "Waimea Bay Jump Rock at Waimea Bay Beach Park",
-          "status": "CANONICAL_ALIAS",
-          "latitude": 21.639827300000004,
-          "longitude": -158.0633594
+          "status": "PARENT_ONLY_MATCH",
+          "latitude": null,
+          "longitude": null
         }
       ],
       "rawExactAt1": true,
       "rawExactAt3": true,
-      "exactAt1": false,
-      "exactAt3": false,
+      "exactAt1": true,
+      "exactAt3": true,
       "specificReasonableAt3": false,
       "broadGeographyOnly": false,
       "genericDescriptorEmitted": false,
       "genericDescriptorDisposition": "NOT_EMITTED",
-      "canonicalizationEffect": "CORRECT_IDENTITY_LOST_BY_CANONICALIZATION",
+      "canonicalizationEffect": "NO_EXACT_IDENTITY_LOSS",
       "latencyMs": 18612,
       "modelCostUsd": 0.035828,
       "webSearchCalls": 0,
@@ -1647,11 +1647,11 @@
       "canonicalTop3": [
         {
           "rank": 1,
-          "name": "Honeymoon Beach",
+          "name": "Honeymoon Beach cliff-jumping ledge",
           "rawName": "Honeymoon Beach cliff-jumping ledge",
-          "status": "CANONICAL_ALIAS",
-          "latitude": -8.7797316,
-          "longitude": 115.1439517
+          "status": "PARENT_ONLY_MATCH",
+          "latitude": null,
+          "longitude": null
         },
         {
           "rank": 2,
@@ -1798,11 +1798,11 @@
       "canonicalTop3": [
         {
           "rank": 1,
-          "name": "Waimea Bay Beach Park",
+          "name": "Waimea Bay Jump Rock",
           "rawName": "Waimea Bay Jump Rock",
-          "status": "CANONICAL_ALIAS",
-          "latitude": 21.639827300000004,
-          "longitude": -158.0633594
+          "status": "PARENT_ONLY_MATCH",
+          "latitude": null,
+          "longitude": null
         },
         {
           "rank": 2,
@@ -1888,11 +1888,11 @@
       "canonicalTop3": [
         {
           "rank": 1,
-          "name": "Lake Powell",
+          "name": "The Toilet Bowl at Lake Powell",
           "rawName": "The Toilet Bowl at Lake Powell",
-          "status": "CANONICAL_ALIAS",
-          "latitude": 37.068261899999996,
-          "longitude": -111.24331079999999
+          "status": "PARENT_ONLY_MATCH",
+          "latitude": null,
+          "longitude": null
         },
         {
           "rank": 2,
@@ -2092,11 +2092,11 @@
       "canonicalTop3": [
         {
           "rank": 1,
-          "name": "Potholes Recreation Site",
+          "name": "Escalante Potholes Recreation Site",
           "rawName": "Escalante Potholes Recreation Site",
-          "status": "CANONICAL_ALIAS",
-          "latitude": 38.6698802,
-          "longitude": -108.3281999
+          "status": "PARENT_ONLY_MATCH",
+          "latitude": null,
+          "longitude": null
         },
         {
           "rank": 2,
@@ -2341,19 +2341,16 @@
     "denominator": 28,
     "rawExactAt1": 27,
     "rawExactAt3": 27,
-    "canonicalExactAt1": 25,
-    "canonicalExactAt3": 26,
+    "canonicalExactAt1": 26,
+    "canonicalExactAt3": 27,
     "specificReasonableAt3": 36,
     "broadGeographyOnly": 0,
     "genericDescriptor": 2,
     "wrongExactIdentity": 1,
     "canonicalizationTop1Losses": [
-      "CJ004",
-      "CJ009"
+      "CJ004"
     ],
-    "canonicalizationTop3Losses": [
-      "CJ009"
-    ],
+    "canonicalizationTop3Losses": [],
     "latencyMs": {
       "p50": 42077,
       "p95": 132934,

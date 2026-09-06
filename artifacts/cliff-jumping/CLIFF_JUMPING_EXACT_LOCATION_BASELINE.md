@@ -1,6 +1,6 @@
 # Nearr 42-video cliff-jumping exact-location benchmark
 
-Generated 2026-09-05T23:11:31.611Z. Primary exact metrics use only VERIFIED_EXACT and HIGH_CONFIDENCE_EXACT cases. Provisional and unresolved cases are reviewed for plausibility but excluded from Exact@k. All inference was persisted before ground-truth research; the runner manifest confirms ground truth was not loaded.
+Generated 2026-09-06T00:04:53.050Z. Primary exact metrics use only VERIFIED_EXACT and HIGH_CONFIDENCE_EXACT cases. Provisional and unresolved cases are reviewed for plausibility but excluded from Exact@k. All inference was persisted before ground-truth research; the runner manifest confirms ground truth was not loaded.
 
 ## A. Corpus
 
@@ -33,21 +33,21 @@ The current free path acquired every public clip, but its evidence extractor ret
 
 Raw Sol Exact@1: 27 / 28
 Raw Sol Exact@3: 27 / 28
-Canonical Exact@1: 25 / 28
-Canonical Exact@3: 26 / 28
+Canonical Exact@1: 26 / 28
+Canonical Exact@3: 27 / 28
 Specific reasonable@3: 36 / 42
 Broad-area-only: 0
 Generic descriptor shown as identity: 2
 Wrong raw exact: 1
 Technical: 0
 
-Canonicalization broadened the raw top identity on CJ004, CJ009. At top 3, only CJ009 was fully lost; CJ004 retained a Moku Nui alternative at rank 2.
+The specificity-preserving canonicalizer loses no raw exact identity at top 3. Top-1 ranking still changes on CJ004, while an exact alias remains inside the final top 3.
 
 ## E. Auto Deep simulation
 
-Exact@1: 25 / 28
-Exact@3: 26 / 28
-Cases recovered from free: 36
+Exact@1: 26 / 28
+Exact@3: 27 / 28
+Cases recovered from free: 37
 Cases harmed: 0
 
 ## F. Every case
@@ -62,7 +62,7 @@ Cases harmed: 0
 | CJ006 | HIGH_CONFIDENCE_EXACT | Lido Galomar | — | Lido Galomar | Y | Y | Y | NONE | The source tags Madeira; the built volcanic-rock lido, platforms and pool geometry match Galomar. |
 | CJ007 | HIGH_CONFIDENCE_EXACT | Cala Varques | — | Cala Varques; Cala Mitjana; Cala Sa Nau | Y | Y | Y | NONE | The source says Mallorca and 13.5 m; independent cliff-jumping media documents the natural arch/ledge at Cala Varques. |
 | CJ008 | HIGH_CONFIDENCE_EXACT | Cenote Zaci | — | Cenote Zaci; Cenote Ik Kil; Cenote Xux-Ha | Y | Y | Y | NONE | The source says Mexico and cenote; the large open urban cenote, walls and established jump platform match Zaci. |
-| CJ009 | HIGH_CONFIDENCE_EXACT | Waimea Bay Jump Rock | — | Waimea Bay Beach Park | N | N | N | CORRECT_IDENTITY_LOST_BY_CANONICALIZATION | The source tags Hawaii and Oahu; the isolated beach boulder and shore profile match Waimea Bay’s named Jump Rock. |
+| CJ009 | HIGH_CONFIDENCE_EXACT | Waimea Bay Jump Rock | — | Waimea Bay Jump Rock at Waimea Bay Beach Park | Y | Y | N | NONE | The source tags Hawaii and Oahu; the isolated beach boulder and shore profile match Waimea Bay’s named Jump Rock. |
 | CJ010 | UNRESOLVED | Unidentified Mallorca coastal sea hole | — | Unidentified coastal sea cave or blowhole on Mallorca | NS | NS | N | GROUND_TRUTH_UNRESOLVED | The source calls it a secret hole in Mallorca. No public same-clip match or responsibly named exact feature was found. |
 | CJ011 | HIGH_CONFIDENCE_EXACT | Makapipi Falls | — | Makapipi Falls; Ching's Pond (Blue Sapphire Pool); Kopiliula Falls | Y | Y | Y | NONE | The source tags Maui, Hana and Road to Hana; the bridge-above-waterfall geometry matches Makapipi Falls below Hana Highway. |
 | CJ012 | HIGH_CONFIDENCE_EXACT | Tamolitch Blue Pool | — | Tamolitch Falls (Blue Pool) | Y | Y | Y | NONE | The source says PNW; the exceptionally clear blue pool, forested basalt rim and documented jump height match Tamolitch. |
@@ -83,16 +83,16 @@ Cases harmed: 0
 | CJ027 | VERIFIED_EXACT | Koosah Falls | — | Koosah Falls | Y | Y | Y | NONE | The original caption explicitly says Koosah Falls and Oregon; public waterfall measurements and imagery match. |
 | CJ028 | PROVISIONAL_BEST_GUESS | Koosah Falls | — | Koosah Falls; Sahalie Falls; Lower Lewis River Falls | NS | NS | Y | GROUND_TRUTH_UNRESOLVED | The broad undercut basalt waterfall strongly resembles Koosah, but the source supplies no geographic clue and no same-clip match was found. |
 | CJ029 | HIGH_CONFIDENCE_EXACT | Tamolitch Blue Pool | — | Tamolitch Falls (Blue Pool) | Y | Y | Y | NONE | The source states a 57 ft jump into exceptionally blue water; independent cliff-jumping media reports about 54 ft at Tamolitch and imagery matches. |
-| CJ030 | HIGH_CONFIDENCE_EXACT | Honeymoon Beach cliff-jumping ledge | — | Honeymoon Beach; Pantai Plix; Tegal Wangi Beach | Y | Y | Y | NONE | The source says Bali; independent Bali cliff-jumping guides identify and map this distinctive ledge at Honeymoon Beach/Jimbaran Panorama Point. |
+| CJ030 | HIGH_CONFIDENCE_EXACT | Honeymoon Beach cliff-jumping ledge | — | Honeymoon Beach cliff-jumping ledge; Pantai Plix; Tegal Wangi Beach | Y | Y | Y | NONE | The source says Bali; independent Bali cliff-jumping guides identify and map this distinctive ledge at Honeymoon Beach/Jimbaran Panorama Point. |
 | CJ031 | HIGH_CONFIDENCE_EXACT | Dorset Marble Quarry | — | Dorset Marble Quarry; West Rutland Marble Quarry (The Deep Hole) | Y | Y | Y | NONE | The source says Vermont and 81 ft/25 m; the flooded white-marble quarry walls match Dorset, which is independently documented for cliff jumping. |
 | CJ032 | HIGH_CONFIDENCE_EXACT | Torre Incina at Cala Incina | — | Torre Incina | Y | Y | Y | NONE | The source tags Italy and Polignano a Mare; public local sources document high-rock diving beside Torre Incina and the coastal tower/ledge morphology matches. |
-| CJ033 | PROVISIONAL_BEST_GUESS | Waimea Bay Jump Rock | — | Waimea Bay Beach Park; Black Rock (Puʻu Kekaʻa) | NS | NS | Y | GROUND_TRUTH_UNRESOLVED | The boulder and shore geometry match Waimea Jump Rock, but the source contains no geographic clue and no same-clip naming source was found. |
+| CJ033 | PROVISIONAL_BEST_GUESS | Waimea Bay Jump Rock | — | Waimea Bay Jump Rock; Black Rock (Puʻu Kekaʻa) | NS | NS | Y | GROUND_TRUTH_UNRESOLVED | The boulder and shore geometry match Waimea Jump Rock, but the source contains no geographic clue and no same-clip naming source was found. |
 | CJ034 | VERIFIED_EXACT | New River Gorge Bridge | — | New River Gorge Bridge | Y | Y | Y | NONE | The source explicitly tags Bridge Day, New River Gorge and West Virginia; the bridge is unmistakable. This is BASE jumping, not a water cliff jump. |
-| CJ035 | PROVISIONAL_BEST_GUESS | The Toilet Bowl at Lake Powell | — | Lake Powell; Lake Powell | NS | NS | N | GROUND_TRUTH_UNRESOLVED | The source identifies Lake Powell and the enclosed slickrock hole is plausible, but public sources use Toilet Bowl/Hole in the Roof inconsistently and publish competing coordinates. |
+| CJ035 | PROVISIONAL_BEST_GUESS | The Toilet Bowl at Lake Powell | — | The Toilet Bowl at Lake Powell; Lake Powell | NS | NS | N | GROUND_TRUTH_UNRESOLVED | The source identifies Lake Powell and the enclosed slickrock hole is plausible, but public sources use Toilet Bowl/Hole in the Roof inconsistently and publish competing coordinates. |
 | CJ036 | VERIFIED_EXACT | Balangan Beach cliffs | — | Balangan Beach cliffs; Tegal Wangi Beach cliffs; Honeymoon Beach cliffs | Y | Y | Y | NONE | The original source explicitly tags Bali, Balangan and Balangan Beach; public cliff-jumping guides describe the same cliffs. |
 | CJ037 | HIGH_CONFIDENCE_EXACT | Cascade des Baumes | — | Cascade des Baumes | Y | Y | Y | NONE | The source says a 20 m championship spot near Millau; the tourism office describes the 18 m Cascade des Baumes dropping into the Tarn and public imagery matches. |
 | CJ038 | PROVISIONAL_BEST_GUESS | Gunlock Falls | — | Gunlock Falls | NS | NS | Y | GROUND_TRUTH_UNRESOLVED | The stepped red-rock seasonal falls are consistent and independently documented as a cliff-jumping site, but the source supplies no location clue. |
-| CJ039 | PROVISIONAL_BEST_GUESS | Escalante Potholes Recreation Site | — | Potholes Recreation Site; Cauldron Linn; White River Falls | NS | NS | Y | GROUND_TRUTH_UNRESOLVED | The carved granite pools fit the BLM-described Escalante Potholes cliff-jumping site, but the source has no location clue and no same-clip match. |
+| CJ039 | PROVISIONAL_BEST_GUESS | Escalante Potholes Recreation Site | — | Escalante Potholes Recreation Site; Cauldron Linn; White River Falls | NS | NS | Y | GROUND_TRUTH_UNRESOLVED | The carved granite pools fit the BLM-described Escalante Potholes cliff-jumping site, but the source has no location clue and no same-clip match. |
 | CJ040 | HIGH_CONFIDENCE_EXACT | Koosah Falls | — | Koosah Falls; Sahalie Falls; Lower Lewis River Falls | Y | Y | Y | NONE | The source tags Oregon/PNW; the 74 ft broad undercut basalt drop and pool match Koosah across multiple public cliff-jumping videos. |
 | CJ041 | PROVISIONAL_BEST_GUESS | Cenote Zaci | — | Cenote Zaci; Cenote Ik Kil; Cenote San Lorenzo Oxman | NS | NS | Y | GROUND_TRUTH_UNRESOLVED | The large open cenote and urban masonry are consistent with Zaci, but the source provides no location clue and no same-clip match was found. |
 | CJ042 | UNRESOLVED | Three-location montage (individual clips unresolved) | — | Lake Atitlán; Furore Fjord; Ho'opi'i Falls | NS | NS | Y | GROUND_TRUTH_UNRESOLVED | The source asks which jump was favorite but names none. Sol proposed Lake Atitlan, Fiordo di Furore and Ho’opi’i Falls; none was independently tied to a specific segment. |
@@ -134,25 +134,25 @@ Cases harmed: 0
 ## H. Free → Sol recovery
 
 Free failures tested: 42
-Strict scorable cases recovered by canonical Sol: 26/28
-Specific-or-exact cases recovered across all 42: 36/42
-Recovery percentage: 85.7%
+Strict scorable cases recovered by canonical Sol: 27/28
+Specific-or-exact cases recovered across all 42: 37/42
+Recovery percentage: 88.1%
 
 ## I. Failure causes
 
 Production: acquisition 0; frames 1; evidence-too-weak 41; descriptor-only 0; broad geography 0; wrong identity 0; ranking 0; canonicalization 0; technical 0.
-Simple Sol on the strict denominator: acquisition 0; frames 0; descriptor-only 0; broad geography 0; wrong raw identity 1; ranking 0; canonicalization-at-top3 1; technical 0. The 14 non-scorable cases remain ground-truth-limited.
+Simple Sol on the strict denominator: acquisition 0; frames 0; descriptor-only 0; broad geography 0; wrong raw identity 1; ranking 0; canonicalization-at-top3 0; technical 0. The 14 non-scorable cases remain ground-truth-limited.
 
 ## J. Accuracy-max
 
 Executed: YES
 Architecture: Composite: SIMPLE_SOL F1:M1 baseline plus F2:M2 dense-frame, native-web escalation on 14 initially weak cases (13 remain unscored; CJ016 was independently promoted to HIGH_CONFIDENCE_EXACT after the blind run).
 Raw Sol Exact@3: 28 / 28
-Canonical Exact@3: 26 / 28
+Canonical Exact@3: 28 / 28
 Reasonable@3: 38 / 42
-Remaining strict canonical misses: CJ009, CJ016
+Remaining strict canonical misses: none
 
-Dense-frame web Sol recovered the raw exact identity for CJ016, but canonicalization broadened it back to the park. Results on provisional/unresolved cases remain plausibility evidence and cannot increase the strict Exact@k numerator without new external ground truth.
+Dense-frame web Sol recovered the raw exact identity for CJ016, and specificity-preserving canonicalization retains it while attaching Sunset Cliffs Natural Park only as provider-parent metadata. Results on provisional/unresolved cases remain plausibility evidence and cannot increase the strict Exact@k numerator without new external ground truth.
 
 ## K. Recommended recognition architecture
 
@@ -171,9 +171,9 @@ See `recommended-architecture.md` for the implementation contract.
 ## L. Product requirement
 
 Can current Nearr get effectively every cliff-jumping spot into top 3? **NO**
-Can Simple Sol? **NO** — raw 27/28, but canonicalization and an exact-feature miss reduce final exact results.
-Can Auto Deep? **NO**
-Can Accuracy Max? **NOT YET PROVEN**
+Can Simple Sol? **NEARLY** — raw and final 27/28; canonicalization introduces no top-3 loss.
+Can Auto Deep? **NEARLY on the persisted Simple Sol arm** — 27/28.
+Can Accuracy Max? **YES on this persisted benchmark** — raw and final 28/28, with no new model calls in this rescore.
 
 ## M. Cost
 

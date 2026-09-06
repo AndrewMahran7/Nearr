@@ -66,6 +66,8 @@ function canonicalFingerprint(destinations: PremiumLogicalDestination[]) {
     calls: hypothesis.canonicalizationCalls,
     selectedGooglePlaceId: hypothesis.canonical?.googlePlaceId ?? null,
     selectedName: hypothesis.canonical?.name ?? null,
+    providerParentGooglePlaceId: hypothesis.providerParent?.googlePlaceId ?? null,
+    providerParentName: hypothesis.providerParent?.name ?? null,
     outcome: hypothesis.canonicalStatus,
     rejectionReason: hypothesis.canonicalizationCalls.at(-1)?.rejectionReason ?? null,
   })));
@@ -251,6 +253,7 @@ export async function completePremiumRecognition(args: {
         timestamps: input.frameSet.frames.map((frame) => frame.timestampSeconds),
         canonicalStatus: canonical.status,
         canonical: canonical.selected,
+        providerParent: canonical.providerParent,
         canonicalAlternatives: canonical.alternatives,
         canonicalizationCalls: canonical.calls,
       });

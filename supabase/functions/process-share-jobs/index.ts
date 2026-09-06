@@ -292,6 +292,9 @@ function premiumRuntimePlan(value: any): null | {
       const canonical = hypothesis?.canonical && typeof hypothesis.canonical === 'object'
         ? hypothesis.canonical
         : null;
+      const providerParent = hypothesis?.providerParent && typeof hypothesis.providerParent === 'object'
+        ? hypothesis.providerParent
+        : null;
       const name = typeof hypothesis?.name === 'string' ? hypothesis.name.trim() : '';
       if (!name) continue;
       rankedCandidates.push({
@@ -300,9 +303,21 @@ function premiumRuntimePlan(value: any): null | {
         locality: typeof hypothesis?.city === 'string' ? hypothesis.city.slice(0, 120) : null,
         region: typeof hypothesis?.region === 'string' ? hypothesis.region.slice(0, 120) : null,
         country: typeof hypothesis?.country === 'string' ? hypothesis.country.slice(0, 120) : null,
-        latitude: typeof canonical?.latitude === 'number' ? canonical.latitude : null,
-        longitude: typeof canonical?.longitude === 'number' ? canonical.longitude : null,
+        latitude: typeof canonical?.latitude === 'number' ? canonical.latitude
+          : typeof providerParent?.latitude === 'number' ? providerParent.latitude : null,
+        longitude: typeof canonical?.longitude === 'number' ? canonical.longitude
+          : typeof providerParent?.longitude === 'number' ? providerParent.longitude : null,
         canonicalPlaceId: typeof canonical?.googlePlaceId === 'string' ? canonical.googlePlaceId : null,
+        providerParent: providerParent && typeof providerParent.googlePlaceId === 'string' && typeof providerParent.name === 'string'
+          ? {
+              name: providerParent.name.slice(0, 200),
+              placeId: providerParent.googlePlaceId.slice(0, 200),
+              formattedAddress: typeof providerParent.formattedAddress === 'string' ? providerParent.formattedAddress.slice(0, 300) : null,
+              latitude: typeof providerParent.latitude === 'number' ? providerParent.latitude : null,
+              longitude: typeof providerParent.longitude === 'number' ? providerParent.longitude : null,
+            }
+          : null,
+        canonicalizationStatus: typeof hypothesis?.canonicalStatus === 'string' ? hypothesis.canonicalStatus.slice(0, 80) : null,
         candidateType: typeof hypothesis?.entityType === 'string' ? hypothesis.entityType.slice(0, 80) : 'UNKNOWN',
         evidenceClass: typeof hypothesis?.evidenceBasis === 'string' ? hypothesis.evidenceBasis.slice(0, 80) : 'UNKNOWN',
       });
@@ -331,6 +346,12 @@ function premiumRuntimePlan(value: any): null | {
         confidence: hypothesis?.confidence === 'HIGH' ? 0.9 : hypothesis?.confidence === 'MEDIUM' ? 0.65 : 0.35,
         evidenceKind: hypothesis?.evidenceBasis === 'CONTEXTUAL_OR_MEMORY_PRIOR' ? 'model_prior' : 'observable',
         timestamps: Array.isArray(hypothesis?.timestamps) ? hypothesis.timestamps.slice(0, 12) : [],
+        providerParent: hypothesis?.providerParent && typeof hypothesis.providerParent === 'object'
+          ? {
+              name: typeof hypothesis.providerParent.name === 'string' ? hypothesis.providerParent.name.slice(0, 200) : null,
+              placeId: typeof hypothesis.providerParent.googlePlaceId === 'string' ? hypothesis.providerParent.googlePlaceId.slice(0, 200) : null,
+            }
+          : null,
       })),
     });
   }

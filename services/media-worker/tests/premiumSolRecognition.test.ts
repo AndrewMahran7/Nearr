@@ -161,6 +161,56 @@ test('19 primary canonicalization stops after success', async () => { const call
 test('20 canonicalization performs at most two calls per strong hypothesis', async () => { const calls: string[] = []; await canonicalizePremiumHypothesis({ hypothesis: destination('Blue Pool (Tamolitch Falls)'), apiKey: 'k', maxCalls: 2, search: searchFor([], calls) }); assert.equal(calls.length, 2); });
 test('21 exact names produce exact canonicalization', async () => { const out = await canonicalizePremiumHypothesis({ hypothesis: destination('Okere Falls'), apiKey: 'k', search: searchFor([canonical('Okere Falls')]) }); assert.equal(out.status, 'CANONICAL_EXACT'); });
 test('22 a controlled parenthetical alias can canonicalize', async () => { let n = 0; const out = await canonicalizePremiumHypothesis({ hypothesis: destination('Tamolitch Blue Pool (Tamolitch Falls)'), apiKey: 'k', search: async () => ({ ok: true, results: ++n === 1 ? [] : [canonical('Tamolitch Falls')] }) }); assert.equal(out.status, 'CANONICAL_EXACT'); assert.equal(out.calls.length, 2); });
+test('22a Waimea Bay parent enriches but never replaces Jump Rock', async () => {
+  const d = destination('Waimea Bay Jump Rock', { region: 'Hawaii', country: 'US' });
+  const out = await canonicalizePremiumHypothesis({ hypothesis: d, apiKey: 'k', search: searchFor([canonical('Waimea Bay Beach Park', 'Haleiwa, Hawaii, US', ['park', 'tourist_attraction'])]) });
+  assert.equal(out.status, 'PARENT_ONLY_MATCH'); assert.equal(out.selected, null); assert.equal(out.providerParent?.name, 'Waimea Bay Beach Park');
+});
+test("22b Sunset Cliffs parent enriches but never replaces The Arch at Pappy's Point", async () => {
+  const d = destination("The Arch at Pappy's Point, Sunset Cliffs Natural Park", { region: 'California', country: 'US' });
+  const out = await canonicalizePremiumHypothesis({ hypothesis: d, apiKey: 'k', search: searchFor([canonical('Sunset Cliffs Natural Park', 'San Diego, California, US', ['park'])]) });
+  assert.equal(out.status, 'PARENT_ONLY_MATCH'); assert.equal(out.selected, null); assert.equal(out.providerParent?.name, 'Sunset Cliffs Natural Park');
+});
+test('22c exact waterfall is preserved over its parent park', async () => {
+  const out = await canonicalizePremiumHypothesis({ hypothesis: destination('Bridal Veil Falls'), apiKey: 'k', search: searchFor([canonical('Bridal Veil Falls State Park', 'Oregon, US', ['park'])]) });
+  assert.equal(out.status, 'PARENT_ONLY_MATCH'); assert.equal(out.providerParent?.name, 'Bridal Veil Falls State Park');
+});
+test('22d exact swimming hole is preserved over its recreation area', async () => {
+  const out = await canonicalizePremiumHypothesis({ hypothesis: destination('The Crack Swimming Hole'), apiKey: 'k', search: searchFor([canonical('Wet Beaver Creek Recreation Area', 'Oregon, US', ['park'])]) });
+  assert.equal(out.status, 'PARENT_ONLY_MATCH'); assert.equal(out.providerParent?.name, 'Wet Beaver Creek Recreation Area');
+});
+test('22e restaurant tenant is preserved over a mall parent', async () => {
+  const d = destination('Paradise Dynasty', { entity_type: 'BUSINESS', city: 'Costa Mesa', region: 'CA' });
+  const out = await canonicalizePremiumHypothesis({ hypothesis: d, apiKey: 'k', search: searchFor([canonical('South Coast Plaza', 'Costa Mesa, CA', ['shopping_mall'])]) });
+  assert.equal(out.status, 'PARENT_ONLY_MATCH'); assert.equal(out.selected, null); assert.equal(out.providerParent?.name, 'South Coast Plaza');
+});
+test('22f provider exact same feature canonicalizes normally', async () => {
+  const out = await canonicalizePremiumHypothesis({ hypothesis: destination('Spitting Cave'), apiKey: 'k', search: searchFor([canonical('Spitting Cave')]) });
+  assert.equal(out.status, 'CANONICAL_EXACT'); assert.equal(out.selected?.name, 'Spitting Cave'); assert.equal(out.providerParent, null);
+});
+test('22g provider same-feature alias canonicalizes normally', async () => {
+  const out = await canonicalizePremiumHypothesis({ hypothesis: destination('Black Rock (Puu Kekaa)', { region: 'Hawaii' }), apiKey: 'k', search: searchFor([canonical('Black Rock', 'Maui, Hawaii, US', ['natural_feature'])]) });
+  assert.equal(out.status, 'CANONICAL_ALIAS'); assert.equal(out.selected?.name, 'Black Rock');
+});
+test('22h no provider match preserves the named lead', async () => {
+  const out = await canonicalizePremiumHypothesis({ hypothesis: destination('Secret Canyon Ledge'), apiKey: 'k', search: searchFor([]) });
+  assert.equal(out.status, 'NAMED_LEAD'); assert.equal(out.selected, null); assert.equal(out.providerParent, null);
+});
+test('22i broad model identity never searches Places to invent specificity', async () => {
+  let calls = 0;
+  const d = destination('Bali', { entity_type: 'BROAD_AREA', region: 'Bali', country: 'Indonesia' });
+  const out = await canonicalizePremiumHypothesis({ hypothesis: d, apiKey: 'k', search: async () => { calls += 1; return { ok: true, results: [canonical('Uluwatu Cliff')] }; } });
+  assert.equal(calls, 0); assert.equal(out.status, 'NAMED_LEAD');
+  assert.throws(() => buildSpecificPlacesQuery(d), /non_specific_places_query_forbidden/);
+});
+test('22j parent metadata survives the shared runtime for mapping while model identity remains primary', async () => {
+  const d = destination('Waimea Bay Jump Rock', { region: 'Hawaii', country: 'US' });
+  const out = await engine(payload([d]), { places: [canonical('Waimea Bay Beach Park', 'Haleiwa, Hawaii, US', ['park'])] });
+  const hypothesis = out.destinations[0]?.hypotheses[0];
+  assert.equal(hypothesis?.name, 'Waimea Bay Jump Rock'); assert.equal(hypothesis?.canonical, null);
+  assert.equal(hypothesis?.providerParent?.name, 'Waimea Bay Beach Park'); assert.equal(hypothesis?.canonicalStatus, 'PARENT_ONLY_MATCH');
+  assert.equal(out.destinations[0]?.decision, 'NAMED_LEAD');
+});
 test('23 C07 famous-clip prior cannot unsafe-autosave', () => { const d = destination('San Diego Zoo', { entity_type: 'LANDMARK', supporting_clues: ["Matches the well-known first YouTube elephant video"] }); const basis = inferPremiumEvidenceBasis(d, { ...emptyEvidence, source_location_context: 'San Diego Zoo' }); const out = evaluatePremiumRecognitionSafety({ hypothesis: d, evidenceBasis: basis, canonicalStatus: 'CANONICAL_EXACT', canonical: canonical('San Diego Zoo', 'San Diego, CA'), hypothesisCount: 1, destinationCount: 1 }); assert.equal(basis, 'CONTEXTUAL_OR_MEMORY_PRIOR'); assert.equal(out.decision, 'REVIEW'); });
 test('24 memory priors never auto-save', () => { const out = evaluatePremiumRecognitionSafety({ hypothesis: destination('Famous Place'), evidenceBasis: 'CONTEXTUAL_OR_MEMORY_PRIOR', canonicalStatus: 'CANONICAL_EXACT', canonical: canonical('Famous Place'), hypothesisCount: 1, destinationCount: 1, allowDistinctiveVisualAutoSave: true }); assert.equal(out.decision, 'REVIEW'); });
 test('25 a safety downgrade preserves a review result, including low confidence', async () => { const out = await engine(payload([destination('Tamolitch Blue Pool', { confidence: 'LOW' })])); assert.equal(out.destinations[0]?.decision, 'REVIEW'); assert.equal(out.destinations.length, 1); });
