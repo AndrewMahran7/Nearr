@@ -1,0 +1,23 @@
+{
+  "releaseId": "2026-09-06-automatic-completion-soft-alternatives",
+  "previousMainSha": "53d8587b9608dc9e9f040dd33fba1327e931303d",
+  "previousOtaGroup": "249cc5b0-bf2a-48a9-a7f1-48089149b4c3",
+  "currentOtaGroup": null,
+  "implementationSha": "78336d8475b549415a7ecd9171d80b2920e176e6",
+  "edgeVersions": {
+    "process-share-jobs": 104
+  },
+  "railwayDeployment": "f92f7abc-b6fa-450c-9545-7eebddf46675 @ 78336d8475b549415a7ecd9171d80b2920e176e6; sha256:b41e86c88d69c9efa31ed10a40ecb4af13cd3d1720756f6f18799530cd75ecd9",
+  "migrationLedger": [
+    "20260906000001",
+    "20260906000002"
+  ],
+  "rollbackProcedure": "Repeat the concurrency guard, restore GEMINI_MODEL=gemini-2.5-flash, redeploy process-share-jobs and the worker from previousMainSha, and republish previousOtaGroup. Keep the additive ranked-result columns and telemetry columns in place; disable MEDIA_AUTO_SAVE_ENABLED only if an immediate completion kill switch is required.",
+  "deploymentStatus": "PLANNED",
+  "physicalQa": {
+    "signedOutColdLaunch": "PENDING",
+    "signedInColdLaunch": "PENDING",
+    "forceCloseRelaunch": "PENDING",
+    "freshOnboardingLaunch": "NOT_REQUIRED"
+  }
+}
