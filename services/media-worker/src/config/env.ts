@@ -265,7 +265,7 @@ export function loadConfig(): WorkerConfig {
     scrapeCreatorsTikTokFallbackEnabled: bool('SCRAPECREATORS_TIKTOK_FALLBACK_ENABLED', false),
     scrapeCreatorsInstagramFallbackEnabled: bool('SCRAPECREATORS_INSTAGRAM_FALLBACK_ENABLED', false),
     scrapeCreatorsFacebookFallbackEnabled: bool('SCRAPECREATORS_FACEBOOK_FALLBACK_ENABLED', false),
-    automaticDeepRecognitionEnabled: bool('AUTO_DEEP_RECOGNITION_ENABLED', true),
+    automaticDeepRecognitionEnabled: bool('AUTOMATIC_DEEP_RECOGNITION_ENABLED', false),
 
     supabaseUrl,
     supabaseServiceRoleKey: str('SUPABASE_SERVICE_ROLE_KEY'),

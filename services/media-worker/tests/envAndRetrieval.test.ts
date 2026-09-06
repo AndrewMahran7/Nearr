@@ -38,6 +38,27 @@ function cfg(over: Partial<WorkerConfig>): WorkerConfig {
   return { ...loadConfig(), ...over } as WorkerConfig;
 }
 
+test('automatic deep uses the canonical explicit flag and defaults denied', () => {
+  const canonicalBefore = process.env.AUTOMATIC_DEEP_RECOGNITION_ENABLED;
+  const obsoleteBefore = process.env.AUTO_DEEP_RECOGNITION_ENABLED;
+  try {
+    delete process.env.AUTOMATIC_DEEP_RECOGNITION_ENABLED;
+    process.env.AUTO_DEEP_RECOGNITION_ENABLED = 'true';
+    assert.equal(loadConfig().automaticDeepRecognitionEnabled, false);
+
+    process.env.AUTOMATIC_DEEP_RECOGNITION_ENABLED = 'true';
+    assert.equal(loadConfig().automaticDeepRecognitionEnabled, true);
+
+    process.env.AUTOMATIC_DEEP_RECOGNITION_ENABLED = 'false';
+    assert.equal(loadConfig().automaticDeepRecognitionEnabled, false);
+  } finally {
+    if (canonicalBefore === undefined) delete process.env.AUTOMATIC_DEEP_RECOGNITION_ENABLED;
+    else process.env.AUTOMATIC_DEEP_RECOGNITION_ENABLED = canonicalBefore;
+    if (obsoleteBefore === undefined) delete process.env.AUTO_DEEP_RECOGNITION_ENABLED;
+    else process.env.AUTO_DEEP_RECOGNITION_ENABLED = obsoleteBefore;
+  }
+});
+
 // ---- .env parsing ---------------------------------------------------------
 test('parseEnvContent: export, comments, quotes, inline comments', () => {
   const parsed = parseEnvContent(
