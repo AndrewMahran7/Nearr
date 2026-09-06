@@ -35,6 +35,12 @@ export type SavedPlaceShareContent = SavedPlaceShareTarget & {
   message: string;
 };
 
+export type NativePlaceSharePayload = {
+  title: string;
+  message: string;
+  url?: string;
+};
+
 const BLOCKED_HOST_SUFFIXES = [
   'cdninstagram.com',
   'fbcdn.net',
@@ -236,6 +242,26 @@ export function buildSavedPlaceShareContent(
   return {
     ...target,
     title,
-    message: target.url ? `Check out ${title} on Nearr\n${target.url}` : title,
+    message: target.url
+      ? `${title} 📍\nFound this on Nearr — tap to see it and save it to your map.`
+      : title,
   };
+}
+
+/**
+ * Build the platform-native share contract with one canonical URL total.
+ *
+ * iOS Messages consumes `url` as a separate attachment and may duplicate it
+ * when the same value is also embedded in `message`. React Native's Android
+ * Share implementation only sends `message`, so Android receives the URL once
+ * in that field instead.
+ */
+export function buildNativePlaceSharePayload(
+  content: SavedPlaceShareContent,
+  platform: string,
+): NativePlaceSharePayload {
+  const payload = { title: content.title, message: content.message };
+  if (!content.url) return payload;
+  if (platform === 'ios') return { ...payload, url: content.url };
+  return { ...payload, message: `${content.message}\n\n${content.url}` };
 }

@@ -137,7 +137,11 @@ export default function SharedPlaceScreen() {
     try {
       const pending = await getPendingSharedPlaceIntent();
       const result = await saveSharedPlace(place.publicId, referralId);
-      setOwnedSave({ id: result.savedPlaceId, sourceUrl: null });
+      // The save RPC may have restored a server-authoritative shared source.
+      // Re-read the owned row so Original video is available immediately;
+      // the public place response itself remains intentionally source-free.
+      const restored = await getOwnedSaveForPublicPlace(result.publicPlaceId).catch(() => null);
+      setOwnedSave(restored ?? { id: result.savedPlaceId, sourceUrl: null });
       if (pending?.authRequired) {
         void trackEvent('shared_link_signup', {
           public_place_id: result.publicPlaceId,

@@ -43,6 +43,7 @@ import {
   FlatList,
   Image,
   Linking,
+  Platform,
   Pressable,
   Share,
   StyleSheet,
@@ -75,7 +76,10 @@ import {
   openNoteEditor,
   type NoteEditorState,
 } from '@/lib/noteEditor';
-import { buildSavedPlaceShareContent } from '@/lib/placeShare';
+import {
+  buildNativePlaceSharePayload,
+  buildSavedPlaceShareContent,
+} from '@/lib/placeShare';
 import { createPublicPlaceShare } from '@/lib/publicPlace';
 import {
   getUntrackedAcquisitionReferral,
@@ -786,7 +790,7 @@ export function SelectedPlaceDetails({
     }
     try {
       const result = await Share.share(
-        { message: content.message, title: content.title, url: content.url },
+        buildNativePlaceSharePayload(content, Platform.OS),
         { subject: content.title },
       );
       if (result.action === Share.sharedAction) {

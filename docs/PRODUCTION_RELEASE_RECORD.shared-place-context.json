@@ -1,0 +1,42 @@
+{
+  "releaseId": "2026-09-05-shared-place-source-context",
+  "previousMainSha": "6b2d27337f9090fcbc7621912ff154c2b40f7ce8",
+  "previousOtaGroup": "2373be97-07af-4bc9-a569-f6496a85771d",
+  "currentOtaGroup": "249cc5b0-bf2a-48a9-a7f1-48089149b4c3",
+  "implementationSha": "e9bf6e50b208635ea1eb873add57316e474f970c",
+  "edgeVersions": {
+    "process-share-link": 137,
+    "create-share-job": 29,
+    "process-share-jobs": 103,
+    "public-place": 1
+  },
+  "railwayDeployment": "31761710-5ecd-4571-9152-c4cdfc1fd5bb (unchanged; SUCCESS/RUNNING; source a7ae5a18ac590259066b7214f0800637c1c62d32)",
+  "migrationLedger": [
+    "20260905000010"
+  ],
+  "rollbackProcedure": "Repeat the concurrency guard; republish previousOtaGroup to production; forward-revert the shared-place source-context commits on current main. Keep the additive share snapshots and attribution rows in place, and set source_context_revoked_at for any context requiring immediate suppression. Edge, Railway, native builds, and hosted video remain unchanged.",
+  "deploymentStatus": "DEPLOYED",
+  "physicalQa": {
+    "signedOutColdLaunch": "PENDING",
+    "signedInColdLaunch": "PENDING",
+    "forceCloseRelaunch": "PENDING",
+    "freshOnboardingLaunch": "NOT_REQUIRED"
+  },
+  "nativeProduction": {
+    "buildId": "e0aea8d9-b89c-442b-8ee6-c880d5763385",
+    "appVersion": "1.4.55",
+    "buildNumber": "56",
+    "runtimeVersion": "1.4.55",
+    "sourceCommit": "627ad618d57c99faa280fb085e7b0692fc0bd58f"
+  },
+  "productionSmoke": {
+    "database": "PASS: additive versions 20260905000005 through 20260905000010 are applied; unrelated Dev/Premium migration histories remain unapplied; public schema lint has zero errors",
+    "sameUserRestore": "PASS: transactional controlled account share, delete, alias reopen, and save restored the exact Instagram source identity, URL, and AI note with one source row",
+    "crossUser": "PASS: transactional controlled recipient received the public source and exact source AI note; sender-authored notes and sender identity were absent",
+    "existingSave": "PASS: existing saved_places row reused; recipient note and existing AI note preserved; distinct incoming source attached; repeat save remained deduped",
+    "privacy": "PASS: unknown/client-only context omitted, revocation blocks transfer, share tables have no anon/authenticated SELECT, and save_shared_place accepts no source or note input",
+    "referral": "PASS: one durable public_place_share_saves conversion per share/user, including existing-save flow",
+    "infrastructure": "PASS: Railway deployment 31761710-5ecd-4571-9152-c4cdfc1fd5bb remains SUCCESS/RUNNING; public-place Edge remains v1; no EAS Build"
+  },
+  "deployedAt": "2026-09-06T06:26:53.791Z"
+}

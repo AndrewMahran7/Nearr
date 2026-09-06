@@ -1,0 +1,42 @@
+{
+  "releaseId": "2026-09-05-clean-place-share-message",
+  "previousMainSha": "a7ae5a18ac590259066b7214f0800637c1c62d32",
+  "previousOtaGroup": "c9bb5915-96ac-43db-a5d5-a1c57d8c88f0",
+  "currentOtaGroup": "2373be97-07af-4bc9-a569-f6496a85771d",
+  "implementationSha": "0954e5d050446f6926b94362fdd704de5fce24f9",
+  "releaseSha": "cc98cbc186a9599c1c475ef95a39e170dcc4a63f",
+  "edgeVersions": {
+    "process-share-link": 137,
+    "create-share-job": 29,
+    "process-share-jobs": 103,
+    "public-place": 1
+  },
+  "railwayDeployment": "31761710-5ecd-4571-9152-c4cdfc1fd5bb (unchanged; SUCCESS/RUNNING; source a7ae5a18ac590259066b7214f0800637c1c62d32)",
+  "migrationLedger": [
+    "20260905000004"
+  ],
+  "rollbackProcedure": "Repeat the concurrency guard; republish previousOtaGroup to the production channel; forward-revert the clean place-share message implementation on current main. DB, Edge Functions, Railway, website, native builds, referrals, and existing shared-place data remain unchanged.",
+  "deploymentStatus": "DEPLOYED",
+  "physicalQa": {
+    "signedOutColdLaunch": "PENDING",
+    "signedInColdLaunch": "PENDING",
+    "forceCloseRelaunch": "PENDING",
+    "freshOnboardingLaunch": "NOT_REQUIRED"
+  },
+  "nativeProduction": {
+    "buildId": "e0aea8d9-b89c-442b-8ee6-c880d5763385",
+    "appVersion": "1.4.55",
+    "buildNumber": "56",
+    "runtimeVersion": "1.4.55",
+    "sourceCommit": "627ad618d57c99faa280fb085e7b0692fc0bd58f"
+  },
+  "productionSmoke": {
+    "ota": "PASS: production head is group 2373be97-07af-4bc9-a569-f6496a85771d; runtime 1.4.55; Android and iOS; source cc98cbc186a9599c1c475ef95a39e170dcc4a63f",
+    "sharePayload": "MECHANICAL PASS: Mirador es Vedrà and its diacritic are preserved; iOS message contains the exact requested copy and no URL; url contains one canonical nearrapp.com /p/<places.id>?ref=<opaque> link; Android fallback contains that URL once in message",
+    "privacy": "PASS: no sender PII, saved_places.id, provider fields, or source social URL in the native payload",
+    "analytics": "MECHANICAL PASS: one share action calls create_public_place_share once; the deployed migration inserts one public_place_shares row and one place_link_created event",
+    "infrastructure": "PASS: Railway deployment 31761710-5ecd-4571-9152-c4cdfc1fd5bb remains SUCCESS/RUNNING; Edge versions and latest migration 20260905000004 remain unchanged",
+    "physicalMessages": "PENDING: no automated or attached physical iOS Messages session was available"
+  },
+  "deployedAt": "2026-09-06T05:34:34.537Z"
+}
