@@ -95,6 +95,8 @@ assert.equal(contextFree.aiNote, null);
 const root = process.cwd();
 const migration = readFileSync(join(root,
   'supabase/migrations/20260905000005_shared_place_source_context.sql'), 'utf8');
+const correctionMigration = readFileSync(join(root,
+  'supabase/migrations/20260905000009_qualify_corrected_place_source_merge.sql'), 'utf8');
 const publicEdge = readFileSync(join(root, 'supabase/functions/public-place/index.ts'), 'utf8');
 const publicClient = readFileSync(join(root, 'lib/publicPlace.ts'), 'utf8');
 const publicRoute = readFileSync(join(root, 'app/p/[publicPlaceId].tsx'), 'utf8');
@@ -135,6 +137,8 @@ assert.match(migration, /unique \(public_place_share_id, user_id\)/);
 assert.match(migration, /on conflict \(public_place_share_id, user_id\) do nothing/);
 assert.match(migration, /'place_saved_from_shared_link'/);
 assert.match(migration, /'shared_source_attached'/);
+assert.match(correctionMigration,
+  /on conflict on constraint saved_place_sources_saved_place_id_identity_key_key do update set/);
 
 // The anonymous/public DTO stays source-free. Source becomes visible only
 // after authenticated save and an owner-scoped row reload.
