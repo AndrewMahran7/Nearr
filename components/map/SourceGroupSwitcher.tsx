@@ -42,7 +42,7 @@ export function SourceGroupSwitcher({ places, selectedId, onSelect, onViewAll }:
                 accessibilityRole="button"
                 accessibilityState={{ selected }}
                 accessibilityLabel={`${place.place.name}, ${index + 1} of ${places.length}`}
-                hitSlop={5}
+                hitSlop={6}
                 style={[styles.chip, selected && styles.chipSelected]}
               >
                 <Text style={[styles.chipText, selected && styles.chipTextSelected]}>{index + 1}</Text>
@@ -61,7 +61,9 @@ export function SourceGroupSwitcher({ places, selectedId, onSelect, onViewAll }:
           >
             <Feather name="chevron-left" size={18} color={colors.textSecondary} />
           </Pressable>
-          <Text style={styles.count}>{position.index + 1} / {position.count}</Text>
+          <Text style={styles.count} accessibilityLiveRegion="polite">
+            {position.index + 1} / {position.count}
+          </Text>
           <Pressable
             onPress={() => onSelect(next)}
             accessibilityRole="button"
@@ -74,7 +76,9 @@ export function SourceGroupSwitcher({ places, selectedId, onSelect, onViewAll }:
         </View>
       )}
       {places.length <= MAX_NUMBERED_CHIPS ? (
-        <Text style={styles.position}>{position.index + 1} / {position.count}</Text>
+        <Text style={styles.position} accessibilityLiveRegion="polite">
+          {position.index + 1} / {position.count}
+        </Text>
       ) : null}
       <Pressable
         onPress={onViewAll}
@@ -104,8 +108,8 @@ function createStyles(
     },
     chips: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 7 },
     chip: {
-      width: 30,
-      height: 30,
+      width: 32,
+      height: 32,
       borderRadius: Radius.pill,
       alignItems: 'center',
       justifyContent: 'center',
