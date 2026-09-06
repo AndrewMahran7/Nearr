@@ -100,4 +100,5 @@ export const AI_NOTE_VOICE_FIXTURES: AiNoteVoiceFixture[] = [
   { id: 'misc-market', group: 'miscellaneous', label: 'Night market', placeName: 'Lantern Market', category: 'shopping', evidence: [frame('narrow market lane covered by rows of red lanterns', 9), frame('vendors cooking over open grills along both sides', 13)] },
   { id: 'misc-records', group: 'miscellaneous', label: 'Record shop', placeName: 'Needle Drop', category: 'shopping', evidence: [frame('listening booth built into a wall of vinyl records', 5), visible('LISTEN BEFORE YOU BUY', 5)] },
   { id: 'misc-observatory', group: 'miscellaneous', label: 'Observatory', placeName: 'Hill Observatory', category: 'attraction', evidence: [frame('large telescope rotating beneath an open dome', 11), speech('public viewing starts after the sky gets dark', 14)] },
+  { id: 'misc-multi-place-target', group: 'miscellaneous', label: 'Multi-place selected cafe', placeName: 'Courtyard Coffee', category: 'cafe', evidence: [frame('the selected cafe has a tiled courtyard and orange trees', 21), speech('the next stop is a separate museum across town', 30)] },
 ];

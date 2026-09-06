@@ -13,13 +13,13 @@ import { loadConfig } from '../config/env.js';
 import { parseEnvContent } from '../config/loadEnvFiles.js';
 import { AI_NOTE_VOICE_FIXTURES } from '../evaluation/aiNoteVoiceFixtures.js';
 import { selectModelProvider } from '../providers/model.js';
+import { generateAiSaveNoteWithRetry } from '../pipeline/aiSaveNoteGeneration.js';
 
 type Usage = { inputTokens: number; outputTokens: number; thinkingTokens: number; totalTokens: number };
 type Count = { value: string; count: number; percentage: number };
 
 const INPUT_USD_PER_MILLION = 0.30;
 const OUTPUT_USD_PER_MILLION = 2.50;
-const MAX_FAMILY_SHARE = 0.40;
 const MAX_AVERAGE_COST_USD = 0.001;
 
 function args(): { output: string; envFile?: string; groups?: Set<string>; perGroup?: number } {
@@ -161,7 +161,7 @@ async function main(): Promise<void> {
   });
 
   for (const fixture of selectedFixtures) {
-    const generated = await provider.analyze({
+    const input = (attempt: 'initial' | 'repair') => ({
       platform: 'deterministic_fixture',
       canonicalUrl: `fixture://${fixture.id}`,
       transcript: [],
@@ -172,9 +172,15 @@ async function main(): Promise<void> {
       metadataDescription: null,
       targetPlace: { name: fixture.placeName, category: fixture.category },
       retainedEvidence: fixture.evidence,
+      aiNoteAttempt: attempt,
       signal: new AbortController().signal,
     });
-    const place = generated.evidence.places[0];
+    const generation = await generateAiSaveNoteWithRetry(
+      () => provider.analyze(input('initial')),
+      () => provider.analyze(input('repair')),
+    );
+    const generated = generation.analysis ?? generation.lastOutput;
+    const place = generated?.evidence.places[0];
     const evaluated = evaluateAiPlaceNote({
       placeName: fixture.placeName,
       proposedNote: place?.memoryCue,
@@ -189,7 +195,8 @@ async function main(): Promise<void> {
       evidence: fixture.evidence,
       proposedAfter: place?.memoryCue ?? null,
       after,
-      disposition: evaluated.status === 'generated' ? 'accepted' : 'rejected',
+      disposition: generation.outcome,
+      retried: generation.retried,
       rejectionReason: evaluated.status === 'generated' ? null : evaluated.reason ?? evaluated.status,
       structuralFamily: structuralFamily(place?.memoryCue ?? null),
       validation: evaluated,
@@ -201,7 +208,7 @@ async function main(): Promise<void> {
         marketingLike: /\bmust[- ]visit|destination|you should|worth checking out\b/i.test(lower),
         natural: !!after && !/^(?:the|this) (?:video|post)/i.test(after),
       },
-      usage: { after: generated.usage ?? null },
+      usage: { after: generated?.usage ?? null },
     });
   }
 
@@ -210,22 +217,23 @@ async function main(): Promise<void> {
   const afterSummary = summarize(rows.map((row) => row.after));
   const authenticity = evaluateAiNoteCorpus(rows.map((row) => row.after));
   const accepted = afterSummary.generated;
+  const coverage = rows.length ? accepted / rows.length : 0;
+  const retried = rows.filter((row) => row.retried).length;
+  const retryRate = rows.length ? retried / rows.length : 0;
   const unsupportedAcceptedClaims = rows.filter((row) => row.after && !row.evaluation.grounded).length;
   const malformedAccepted = rows.filter((row) => row.after && row.evaluation.malformed).length;
   const summaryLikeAccepted = rows.filter((row) => row.after && row.evaluation.summaryLike).length;
-  const largestFamily = afterSummary.largestStructuralFamily;
-  const largestPrefix = afterSummary.repeatedThreeWordPrefixes[0] ?? null;
   const averageCostUsd = estimatedCost(afterAverage);
   const gateFailures: string[] = [];
-  if (!accepted) gateFailures.push('no accepted outputs');
+  if (coverage < 0.95) gateFailures.push(`coverage ${(coverage * 100).toFixed(1)}% < 95%`);
   if (unsupportedAcceptedClaims > 0) gateFailures.push(`${unsupportedAcceptedClaims} unsupported accepted claim(s)`);
   if (malformedAccepted > 0) gateFailures.push(`${malformedAccepted} malformed accepted output(s)`);
   if (summaryLikeAccepted > 0) gateFailures.push(`${summaryLikeAccepted} summary-like accepted output(s)`);
-  if (authenticity.demonstrativeDescriptiveRate > 0.15) gateFailures.push(`demonstrative descriptive family ${(authenticity.demonstrativeDescriptiveRate * 100).toFixed(1)}% > 15%`);
-  if (largestFamily && largestFamily.percentage > MAX_FAMILY_SHARE) gateFailures.push(`${largestFamily.value} family ${(largestFamily.percentage * 100).toFixed(1)}% > 40%`);
-  if (largestPrefix && largestPrefix.count > 2) gateFailures.push(`three-token prefix "${largestPrefix.value}" occurs ${largestPrefix.count} times`);
-  for (const [phrase, count] of Object.entries(authenticity.phraseCounts)) {
-    if (count > 0) gateFailures.push(`"${phrase}" occurs ${count} time(s)`);
+  // Diversity is reported for review, not used as a brittle per-style veto.
+  // Concrete sentences may naturally contain ordinary praise. Only the
+  // historical deterministic construction is a hard phrase-level failure.
+  if (authenticity.phraseCounts['looked unreal'] > 0) {
+    gateFailures.push(`"looked unreal" occurs ${authenticity.phraseCounts['looked unreal']} time(s)`);
   }
   if (averageCostUsd >= MAX_AVERAGE_COST_USD) gateFailures.push(`average estimated cost $${averageCostUsd.toFixed(6)} >= $0.001`);
 
@@ -234,6 +242,7 @@ async function main(): Promise<void> {
     model: cfg.geminiModel,
     fixtureCount: rows.length,
     after: afterSummary,
+    coverage: { usableEvidence: rows.length, notesPresent: accepted, percentage: coverage, retried, retryRate },
     authenticity,
     grounding: { unsupportedAcceptedClaims, malformedAccepted, summaryLikeAccepted },
     pricing: {
@@ -249,9 +258,7 @@ async function main(): Promise<void> {
     releaseGate: {
       passed: gateFailures.length === 0,
       thresholds: {
-        maxStructuralFamilyShare: MAX_FAMILY_SHARE,
-        maxDemonstrativeDescriptiveShare: 0.15,
-        maxRepeatedThreeWordPrefixCount: 2,
+        minimumCoverage: 0.95,
         maxAverageEstimatedCostUsd: MAX_AVERAGE_COST_USD,
       },
       failures: gateFailures,

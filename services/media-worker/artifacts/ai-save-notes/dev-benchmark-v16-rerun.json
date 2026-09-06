@@ -1,0 +1,2688 @@
+{
+  "generatedAt": "2026-09-06T03:00:18.088Z",
+  "model": "gemini-2.5-flash",
+  "fixtureCount": 51,
+  "after": {
+    "generated": 51,
+    "omitted": 0,
+    "phraseFrequency": {
+      "looked unreal": 0,
+      "caught your eye": 0,
+      "looks amazing": 0,
+      "looks incredible": 3,
+      "I want to": 2,
+      "need to": 0
+    },
+    "openerTokens": [
+      {
+        "value": "the",
+        "count": 36,
+        "percentage": 0.7058823529411765
+      },
+      {
+        "value": "you",
+        "count": 3,
+        "percentage": 0.058823529411764705
+      },
+      {
+        "value": "i",
+        "count": 2,
+        "percentage": 0.0392156862745098
+      },
+      {
+        "value": "it's",
+        "count": 2,
+        "percentage": 0.0392156862745098
+      },
+      {
+        "value": "that",
+        "count": 2,
+        "percentage": 0.0392156862745098
+      },
+      {
+        "value": "this",
+        "count": 2,
+        "percentage": 0.0392156862745098
+      },
+      {
+        "value": "paddling",
+        "count": 1,
+        "percentage": 0.0196078431372549
+      },
+      {
+        "value": "sleeping",
+        "count": 1,
+        "percentage": 0.0196078431372549
+      },
+      {
+        "value": "watching",
+        "count": 1,
+        "percentage": 0.0196078431372549
+      },
+      {
+        "value": "you'll",
+        "count": 1,
+        "percentage": 0.0196078431372549
+      }
+    ],
+    "firstTwoTokenOpeners": [
+      {
+        "value": "the narrow",
+        "count": 4,
+        "percentage": 0.0784313725490196
+      },
+      {
+        "value": "you can",
+        "count": 3,
+        "percentage": 0.058823529411764705
+      },
+      {
+        "value": "i want",
+        "count": 2,
+        "percentage": 0.0392156862745098
+      },
+      {
+        "value": "the deep",
+        "count": 2,
+        "percentage": 0.0392156862745098
+      },
+      {
+        "value": "this looks",
+        "count": 2,
+        "percentage": 0.0392156862745098
+      },
+      {
+        "value": "it's a",
+        "count": 1,
+        "percentage": 0.0196078431372549
+      },
+      {
+        "value": "it's so",
+        "count": 1,
+        "percentage": 0.0196078431372549
+      },
+      {
+        "value": "paddling through",
+        "count": 1,
+        "percentage": 0.0196078431372549
+      },
+      {
+        "value": "sleeping in",
+        "count": 1,
+        "percentage": 0.0196078431372549
+      },
+      {
+        "value": "that smoked",
+        "count": 1,
+        "percentage": 0.0196078431372549
+      },
+      {
+        "value": "that tall",
+        "count": 1,
+        "percentage": 0.0196078431372549
+      },
+      {
+        "value": "the arched",
+        "count": 1,
+        "percentage": 0.0196078431372549
+      },
+      {
+        "value": "the barista",
+        "count": 1,
+        "percentage": 0.0196078431372549
+      },
+      {
+        "value": "the black",
+        "count": 1,
+        "percentage": 0.0196078431372549
+      },
+      {
+        "value": "the boardwalk",
+        "count": 1,
+        "percentage": 0.0196078431372549
+      },
+      {
+        "value": "the bright",
+        "count": 1,
+        "percentage": 0.0196078431372549
+      },
+      {
+        "value": "the cafe's",
+        "count": 1,
+        "percentage": 0.0196078431372549
+      },
+      {
+        "value": "the chapel's",
+        "count": 1,
+        "percentage": 0.0196078431372549
+      },
+      {
+        "value": "the chef",
+        "count": 1,
+        "percentage": 0.0196078431372549
+      },
+      {
+        "value": "the circular",
+        "count": 1,
+        "percentage": 0.0196078431372549
+      },
+      {
+        "value": "the crisp",
+        "count": 1,
+        "percentage": 0.0196078431372549
+      },
+      {
+        "value": "the croissant",
+        "count": 1,
+        "percentage": 0.0196078431372549
+      },
+      {
+        "value": "the dark",
+        "count": 1,
+        "percentage": 0.0196078431372549
+      },
+      {
+        "value": "the endless",
+        "count": 1,
+        "percentage": 0.0196078431372549
+      },
+      {
+        "value": "the glass",
+        "count": 1,
+        "percentage": 0.0196078431372549
+      },
+      {
+        "value": "the hidden",
+        "count": 1,
+        "percentage": 0.0196078431372549
+      },
+      {
+        "value": "the hotel",
+        "count": 1,
+        "percentage": 0.0196078431372549
+      },
+      {
+        "value": "the layered",
+        "count": 1,
+        "percentage": 0.0196078431372549
+      },
+      {
+        "value": "the limestone",
+        "count": 1,
+        "percentage": 0.0196078431372549
+      },
+      {
+        "value": "the long",
+        "count": 1,
+        "percentage": 0.0196078431372549
+      },
+      {
+        "value": "the loungers",
+        "count": 1,
+        "percentage": 0.0196078431372549
+      },
+      {
+        "value": "the mirrored",
+        "count": 1,
+        "percentage": 0.0196078431372549
+      },
+      {
+        "value": "the ornate",
+        "count": 1,
+        "percentage": 0.0196078431372549
+      },
+      {
+        "value": "the pasta",
+        "count": 1,
+        "percentage": 0.0196078431372549
+      },
+      {
+        "value": "the perfectly",
+        "count": 1,
+        "percentage": 0.0196078431372549
+      },
+      {
+        "value": "the red",
+        "count": 1,
+        "percentage": 0.0196078431372549
+      },
+      {
+        "value": "the spiral",
+        "count": 1,
+        "percentage": 0.0196078431372549
+      },
+      {
+        "value": "the tall",
+        "count": 1,
+        "percentage": 0.0196078431372549
+      },
+      {
+        "value": "the tiny",
+        "count": 1,
+        "percentage": 0.0196078431372549
+      },
+      {
+        "value": "the trail",
+        "count": 1,
+        "percentage": 0.0196078431372549
+      },
+      {
+        "value": "the warm",
+        "count": 1,
+        "percentage": 0.0196078431372549
+      },
+      {
+        "value": "watching the",
+        "count": 1,
+        "percentage": 0.0196078431372549
+      },
+      {
+        "value": "you'll want",
+        "count": 1,
+        "percentage": 0.0196078431372549
+      }
+    ],
+    "repeatedThreeWordPrefixes": [
+      {
+        "value": "i want to",
+        "count": 2,
+        "percentage": 0.0392156862745098
+      },
+      {
+        "value": "this looks like",
+        "count": 2,
+        "percentage": 0.0392156862745098
+      }
+    ],
+    "constructionFrequency": {
+      "That ... looks/looked/is/was ...": 2,
+      "This ...": 2,
+      "Looks like ...": 0,
+      "first-person openers": 2,
+      "fragments": 11,
+      "questions": 0,
+      "imperative or verb-led": 0
+    },
+    "structuralFamilies": [
+      {
+        "value": "OTHER",
+        "count": 20,
+        "percentage": 0.39215686274509803
+      },
+      {
+        "value": "FRAGMENT",
+        "count": 13,
+        "percentage": 0.2549019607843137
+      },
+      {
+        "value": "COMPARISON",
+        "count": 10,
+        "percentage": 0.19607843137254902
+      },
+      {
+        "value": "DEMONSTRATIVE_DECLARATIVE",
+        "count": 4,
+        "percentage": 0.0784313725490196
+      },
+      {
+        "value": "FIRST_PERSON",
+        "count": 2,
+        "percentage": 0.0392156862745098
+      },
+      {
+        "value": "VERB_LED",
+        "count": 2,
+        "percentage": 0.0392156862745098
+      }
+    ],
+    "largestStructuralFamily": {
+      "value": "OTHER",
+      "count": 20,
+      "percentage": 0.39215686274509803
+    }
+  },
+  "coverage": {
+    "usableEvidence": 51,
+    "notesPresent": 51,
+    "percentage": 1,
+    "retried": 1,
+    "retryRate": 0.0196078431372549
+  },
+  "authenticity": {
+    "accepted": 51,
+    "omitted": 0,
+    "averageWords": 13.784313725490197,
+    "medianWords": 14,
+    "structuralFamilies": {
+      "DEMONSTRATIVE_DECLARATIVE": 4,
+      "FIRST_PERSON": 2,
+      "QUESTION": 0,
+      "FRAGMENT": 13,
+      "ACTION_INTENT": 0,
+      "VERB_LED": 2,
+      "COMPARISON": 10,
+      "OTHER": 20
+    },
+    "exactOpeners": {
+      "the crisp": 1,
+      "that tall": 1,
+      "the warm": 1,
+      "the barista": 1,
+      "the tiny": 1,
+      "that smoked": 1,
+      "the croissant": 1,
+      "the chef": 1,
+      "the pasta": 1,
+      "the perfectly": 1,
+      "you can": 3,
+      "the layered": 1,
+      "the narrow": 4,
+      "the boardwalk": 1,
+      "the trail": 1,
+      "the deep": 2,
+      "the arched": 1,
+      "the hotel": 1,
+      "the glass": 1,
+      "the loungers": 1,
+      "sleeping in": 1,
+      "the spiral": 1,
+      "the circular": 1,
+      "the bright": 1,
+      "the ornate": 1,
+      "the chapel's": 1,
+      "you'll want": 1,
+      "the dark": 1,
+      "the tall": 1,
+      "the black": 1,
+      "the limestone": 1,
+      "i want": 2,
+      "it's so": 1,
+      "paddling through": 1,
+      "the mirrored": 1,
+      "watching the": 1,
+      "it's a": 1,
+      "this looks": 2,
+      "the endless": 1,
+      "the long": 1,
+      "the hidden": 1,
+      "the red": 1,
+      "the cafe's": 1
+    },
+    "repeatedThreeWordPrefixes": {},
+    "demonstrativeDescriptiveCount": 4,
+    "demonstrativeDescriptiveRate": 0.0784313725490196,
+    "largestFamily": {
+      "family": "OTHER",
+      "count": 20,
+      "rate": 0.39215686274509803
+    },
+    "malformedCount": 0,
+    "summaryLikeCount": 0,
+    "phraseCounts": {
+      "looked unreal": 0,
+      "looks amazing": 0,
+      "looks incredible": 3
+    },
+    "passed": true,
+    "failures": []
+  },
+  "grounding": {
+    "unsupportedAcceptedClaims": 0,
+    "malformedAccepted": 0,
+    "summaryLikeAccepted": 0
+  },
+  "pricing": {
+    "assumption": "Gemini 2.5 Flash standard paid tier, USD per 1M tokens",
+    "inputUsdPerMillion": 0.3,
+    "outputIncludingThinkingUsdPerMillion": 2.5
+  },
+  "usage": {
+    "afterTotal": {
+      "inputTokens": 19874,
+      "outputTokens": 797,
+      "thinkingTokens": 0,
+      "totalTokens": 20671
+    },
+    "afterAverage": {
+      "inputTokens": 389.6862745098039,
+      "outputTokens": 15.627450980392156,
+      "thinkingTokens": 0,
+      "totalTokens": 405.3137254901961
+    },
+    "afterAverageEstimatedCostUsd": 0.00015597450980392157
+  },
+  "releaseGate": {
+    "passed": true,
+    "thresholds": {
+      "minimumCoverage": 0.95,
+      "maxAverageEstimatedCostUsd": 0.001
+    },
+    "failures": []
+  },
+  "rows": [
+    {
+      "id": "food-pizza",
+      "group": "food",
+      "label": "Pizza",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "thin pizza slice with blistered crust and crisp pepperoni cups",
+          "timestampSeconds": 3
+        },
+        {
+          "source": "speech",
+          "value": "listen to that crust crack",
+          "timestampSeconds": 5
+        }
+      ],
+      "proposedAfter": "The crisp pepperoni cups and blistered crust on this thin pizza look amazing.",
+      "after": "The crisp pepperoni cups and blistered crust on this thin pizza look amazing.",
+      "disposition": "accepted_after_retry",
+      "retried": true,
+      "rejectionReason": null,
+      "structuralFamily": "OTHER",
+      "validation": {
+        "note": "The crisp pepperoni cups and blistered crust on this thin pizza look amazing.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "malformed": false,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "after": {
+          "inputTokens": 405,
+          "outputTokens": 15,
+          "thinkingTokens": 0,
+          "totalTokens": 420
+        }
+      }
+    },
+    {
+      "id": "food-burger",
+      "group": "food",
+      "label": "Burger",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "double smashburger with deeply browned edges and melted cheese",
+          "timestampSeconds": 4
+        },
+        {
+          "source": "frame",
+          "value": "hands lifting the tall smashburger from a tray",
+          "timestampSeconds": 7
+        }
+      ],
+      "proposedAfter": "That tall double smashburger with its deeply browned edges and melted cheese looks incredible.",
+      "after": "That tall double smashburger with its deeply browned edges and melted cheese looks incredible.",
+      "disposition": "accepted",
+      "retried": false,
+      "rejectionReason": null,
+      "structuralFamily": "DEMONSTRATIVE_DECLARATIVE",
+      "validation": {
+        "note": "That tall double smashburger with its deeply browned edges and melted cheese looks incredible.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "malformed": false,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "after": {
+          "inputTokens": 391,
+          "outputTokens": 16,
+          "thinkingTokens": 0,
+          "totalTokens": 407
+        }
+      }
+    },
+    {
+      "id": "food-dessert",
+      "group": "food",
+      "label": "Dessert",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "warm chocolate cake split open with a liquid center",
+          "timestampSeconds": 8
+        },
+        {
+          "source": "frame",
+          "value": "vanilla ice cream melting against the warm cake",
+          "timestampSeconds": 10
+        }
+      ],
+      "proposedAfter": "The warm chocolate cake with its liquid center and melting ice cream looks so good.",
+      "after": "The warm chocolate cake with its liquid center and melting ice cream looks so good.",
+      "disposition": "accepted",
+      "retried": false,
+      "rejectionReason": null,
+      "structuralFamily": "OTHER",
+      "validation": {
+        "note": "The warm chocolate cake with its liquid center and melting ice cream looks so good.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "malformed": false,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "after": {
+          "inputTokens": 392,
+          "outputTokens": 16,
+          "thinkingTokens": 0,
+          "totalTokens": 408
+        }
+      }
+    },
+    {
+      "id": "food-coffee",
+      "group": "food",
+      "label": "Coffee",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "barista pouring a precise leaf pattern into a small latte",
+          "timestampSeconds": 6
+        },
+        {
+          "source": "speech",
+          "value": "they roast the beans in the back room",
+          "timestampSeconds": 9
+        }
+      ],
+      "proposedAfter": "The barista pours an incredibly precise leaf pattern into the latte.",
+      "after": "The barista pours an incredibly precise leaf pattern into the latte.",
+      "disposition": "accepted",
+      "retried": false,
+      "rejectionReason": null,
+      "structuralFamily": "FRAGMENT",
+      "validation": {
+        "note": "The barista pours an incredibly precise leaf pattern into the latte.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "malformed": false,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "after": {
+          "inputTokens": 392,
+          "outputTokens": 12,
+          "thinkingTokens": 0,
+          "totalTokens": 404
+        }
+      }
+    },
+    {
+      "id": "food-restaurant-interior",
+      "group": "food",
+      "label": "Restaurant interior",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "tiny candlelit dining room with closely packed tables",
+          "timestampSeconds": 4
+        },
+        {
+          "source": "frame",
+          "value": "open kitchen visible from nearly every table",
+          "timestampSeconds": 8
+        }
+      ],
+      "proposedAfter": "The tiny candlelit dining room with closely packed tables looks like a cozy spot.",
+      "after": "The tiny candlelit dining room with closely packed tables looks like a cozy spot.",
+      "disposition": "accepted",
+      "retried": false,
+      "rejectionReason": null,
+      "structuralFamily": "COMPARISON",
+      "validation": {
+        "note": "The tiny candlelit dining room with closely packed tables looks like a cozy spot.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "malformed": false,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "after": {
+          "inputTokens": 388,
+          "outputTokens": 16,
+          "thinkingTokens": 0,
+          "totalTokens": 404
+        }
+      }
+    },
+    {
+      "id": "food-cocktail",
+      "group": "food",
+      "label": "Cocktail",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "bartender smoking a rosemary sprig over an amber cocktail",
+          "timestampSeconds": 11
+        },
+        {
+          "source": "frame",
+          "value": "smoke trapped beneath a glass dome over the cocktail",
+          "timestampSeconds": 13
+        }
+      ],
+      "proposedAfter": "That smoked rosemary sprig trapped under the glass dome looks like a unique cocktail experience.",
+      "after": "That smoked rosemary sprig trapped under the glass dome looks like a unique cocktail experience.",
+      "disposition": "accepted",
+      "retried": false,
+      "rejectionReason": null,
+      "structuralFamily": "DEMONSTRATIVE_DECLARATIVE",
+      "validation": {
+        "note": "That smoked rosemary sprig trapped under the glass dome looks like a unique cocktail experience.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "malformed": false,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "after": {
+          "inputTokens": 394,
+          "outputTokens": 17,
+          "thinkingTokens": 0,
+          "totalTokens": 411
+        }
+      }
+    },
+    {
+      "id": "food-bakery",
+      "group": "food",
+      "label": "Bakery",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "croissant pulled apart into many crisp flaky layers",
+          "timestampSeconds": 5
+        },
+        {
+          "source": "speech",
+          "value": "the laminated dough takes three days",
+          "timestampSeconds": 7
+        }
+      ],
+      "proposedAfter": "The croissant pulled apart into so many crisp, flaky layers is incredible.",
+      "after": "The croissant pulled apart into so many crisp, flaky layers is incredible.",
+      "disposition": "accepted",
+      "retried": false,
+      "rejectionReason": null,
+      "structuralFamily": "OTHER",
+      "validation": {
+        "note": "The croissant pulled apart into so many crisp, flaky layers is incredible.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "malformed": false,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "after": {
+          "inputTokens": 388,
+          "outputTokens": 14,
+          "thinkingTokens": 0,
+          "totalTokens": 402
+        }
+      }
+    },
+    {
+      "id": "food-sushi",
+      "group": "food",
+      "label": "Sushi",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "chef brushing sauce onto one piece of tuna nigiri",
+          "timestampSeconds": 15
+        },
+        {
+          "source": "speech",
+          "value": "the tuna was aged for twelve days",
+          "timestampSeconds": 16
+        }
+      ],
+      "proposedAfter": "The chef brushing sauce onto the twelve-day-aged tuna nigiri looks incredible.",
+      "after": "The chef brushing sauce onto the twelve-day-aged tuna nigiri looks incredible.",
+      "disposition": "accepted",
+      "retried": false,
+      "rejectionReason": null,
+      "structuralFamily": "OTHER",
+      "validation": {
+        "note": "The chef brushing sauce onto the twelve-day-aged tuna nigiri looks incredible.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "malformed": false,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "after": {
+          "inputTokens": 391,
+          "outputTokens": 17,
+          "thinkingTokens": 0,
+          "totalTokens": 408
+        }
+      }
+    },
+    {
+      "id": "food-pasta",
+      "group": "food",
+      "label": "Pasta",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "wide ribbons of pasta tossed in a wheel of cheese",
+          "timestampSeconds": 12
+        },
+        {
+          "source": "frame",
+          "value": "pepper ground directly over the glossy pasta",
+          "timestampSeconds": 14
+        }
+      ],
+      "proposedAfter": "The pasta gets tossed in a giant wheel of cheese, then topped with fresh-ground pepper.",
+      "after": "The pasta gets tossed in a giant wheel of cheese, then topped with fresh-ground pepper.",
+      "disposition": "accepted",
+      "retried": false,
+      "rejectionReason": null,
+      "structuralFamily": "FRAGMENT",
+      "validation": {
+        "note": "The pasta gets tossed in a giant wheel of cheese, then topped with fresh-ground pepper.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "malformed": false,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "after": {
+          "inputTokens": 391,
+          "outputTokens": 19,
+          "thinkingTokens": 0,
+          "totalTokens": 410
+        }
+      }
+    },
+    {
+      "id": "food-steak",
+      "group": "food",
+      "label": "Steak",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "thick steak sliced to show a pink center and dark crust",
+          "timestampSeconds": 9
+        },
+        {
+          "source": "speech",
+          "value": "they baste it with butter and thyme",
+          "timestampSeconds": 10
+        }
+      ],
+      "proposedAfter": "The perfectly cooked steak with a pink center and dark crust looks delicious.",
+      "after": "The perfectly cooked steak with a pink center and dark crust looks delicious.",
+      "disposition": "accepted",
+      "retried": false,
+      "rejectionReason": null,
+      "structuralFamily": "OTHER",
+      "validation": {
+        "note": "The perfectly cooked steak with a pink center and dark crust looks delicious.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "malformed": false,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "after": {
+          "inputTokens": 392,
+          "outputTokens": 14,
+          "thinkingTokens": 0,
+          "totalTokens": 406
+        }
+      }
+    },
+    {
+      "id": "outdoors-hike",
+      "group": "outdoors",
+      "label": "Hike",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "hikers climbing a long exposed staircase cut into the canyon",
+          "timestampSeconds": 18
+        },
+        {
+          "source": "speech",
+          "value": "we still have 2,000 feet to climb",
+          "timestampSeconds": 19
+        }
+      ],
+      "proposedAfter": "You can climb a long, exposed staircase cut right into the canyon wall.",
+      "after": "You can climb a long, exposed staircase cut right into the canyon wall.",
+      "disposition": "accepted",
+      "retried": false,
+      "rejectionReason": null,
+      "structuralFamily": "OTHER",
+      "validation": {
+        "note": "You can climb a long, exposed staircase cut right into the canyon wall.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "malformed": false,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "after": {
+          "inputTokens": 400,
+          "outputTokens": 15,
+          "thinkingTokens": 0,
+          "totalTokens": 415
+        }
+      }
+    },
+    {
+      "id": "outdoors-viewpoint",
+      "group": "outdoors",
+      "label": "Mountain viewpoint",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "layered mountain ridges extending above a low cloud deck",
+          "timestampSeconds": 22
+        },
+        {
+          "source": "frame",
+          "value": "small lookout platform facing the mountain panorama",
+          "timestampSeconds": 25
+        }
+      ],
+      "proposedAfter": "The layered mountain ridges extending above the clouds from the lookout platform are breathtaking.",
+      "after": "The layered mountain ridges extending above the clouds from the lookout platform are breathtaking.",
+      "disposition": "accepted",
+      "retried": false,
+      "rejectionReason": null,
+      "structuralFamily": "OTHER",
+      "validation": {
+        "note": "The layered mountain ridges extending above the clouds from the lookout platform are breathtaking.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "malformed": false,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "after": {
+          "inputTokens": 393,
+          "outputTokens": 15,
+          "thinkingTokens": 0,
+          "totalTokens": 408
+        }
+      }
+    },
+    {
+      "id": "outdoors-cave",
+      "group": "outdoors",
+      "label": "Cave",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "person squeezing sideways through a narrow cave passage",
+          "timestampSeconds": 9
+        },
+        {
+          "source": "frame",
+          "value": "underground chamber filled with jagged rock columns",
+          "timestampSeconds": 14
+        }
+      ],
+      "proposedAfter": "The narrow cave passage looks like a thrilling squeeze to get through.",
+      "after": "The narrow cave passage looks like a thrilling squeeze to get through.",
+      "disposition": "accepted",
+      "retried": false,
+      "rejectionReason": null,
+      "structuralFamily": "COMPARISON",
+      "validation": {
+        "note": "The narrow cave passage looks like a thrilling squeeze to get through.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "malformed": false,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "after": {
+          "inputTokens": 391,
+          "outputTokens": 13,
+          "thinkingTokens": 0,
+          "totalTokens": 404
+        }
+      }
+    },
+    {
+      "id": "outdoors-forest",
+      "group": "outdoors",
+      "label": "Forest trail",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "boardwalk passing between enormous redwood trunks",
+          "timestampSeconds": 5
+        },
+        {
+          "source": "frame",
+          "value": "sunlight reaching the trail in narrow beams",
+          "timestampSeconds": 8
+        }
+      ],
+      "proposedAfter": "The boardwalk path through the enormous redwood trunks with sunbeams is stunning.",
+      "after": "The boardwalk path through the enormous redwood trunks with sunbeams is stunning.",
+      "disposition": "accepted",
+      "retried": false,
+      "rejectionReason": null,
+      "structuralFamily": "OTHER",
+      "validation": {
+        "note": "The boardwalk path through the enormous redwood trunks with sunbeams is stunning.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "malformed": false,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "after": {
+          "inputTokens": 390,
+          "outputTokens": 14,
+          "thinkingTokens": 0,
+          "totalTokens": 404
+        }
+      }
+    },
+    {
+      "id": "outdoors-desert",
+      "group": "outdoors",
+      "label": "Desert overlook",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "red sandstone ledge above a maze of desert canyons",
+          "timestampSeconds": 7
+        },
+        {
+          "source": "frame",
+          "value": "single narrow trail following the exposed rim",
+          "timestampSeconds": 10
+        }
+      ],
+      "proposedAfter": "The narrow trail following the rim above a maze of red canyons looks incredible.",
+      "after": "The narrow trail following the rim above a maze of red canyons looks incredible.",
+      "disposition": "accepted",
+      "retried": false,
+      "rejectionReason": null,
+      "structuralFamily": "OTHER",
+      "validation": {
+        "note": "The narrow trail following the rim above a maze of red canyons looks incredible.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "malformed": false,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "after": {
+          "inputTokens": 393,
+          "outputTokens": 15,
+          "thinkingTokens": 0,
+          "totalTokens": 408
+        }
+      }
+    },
+    {
+      "id": "outdoors-waterfall-trail",
+      "group": "outdoors",
+      "label": "Waterfall trail",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "muddy trail ending directly behind a narrow waterfall",
+          "timestampSeconds": 16
+        },
+        {
+          "source": "speech",
+          "value": "the last mile has four stream crossings",
+          "timestampSeconds": 12
+        }
+      ],
+      "proposedAfter": "The trail ends right behind a narrow waterfall, which looks really cool.",
+      "after": "The trail ends right behind a narrow waterfall, which looks really cool.",
+      "disposition": "accepted",
+      "retried": false,
+      "rejectionReason": null,
+      "structuralFamily": "OTHER",
+      "validation": {
+        "note": "The trail ends right behind a narrow waterfall, which looks really cool.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "malformed": false,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "after": {
+          "inputTokens": 393,
+          "outputTokens": 14,
+          "thinkingTokens": 0,
+          "totalTokens": 407
+        }
+      }
+    },
+    {
+      "id": "outdoors-snow",
+      "group": "outdoors",
+      "label": "Snow walk",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "snow-covered path between tall pine trees",
+          "timestampSeconds": 4
+        },
+        {
+          "source": "frame",
+          "value": "boots sinking deeply into fresh snow",
+          "timestampSeconds": 6
+        }
+      ],
+      "proposedAfter": "The deep fresh snow and tall pine trees make this a beautiful winter hike.",
+      "after": "The deep fresh snow and tall pine trees make this a beautiful winter hike.",
+      "disposition": "accepted",
+      "retried": false,
+      "rejectionReason": null,
+      "structuralFamily": "FRAGMENT",
+      "validation": {
+        "note": "The deep fresh snow and tall pine trees make this a beautiful winter hike.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "malformed": false,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "after": {
+          "inputTokens": 388,
+          "outputTokens": 15,
+          "thinkingTokens": 0,
+          "totalTokens": 403
+        }
+      }
+    },
+    {
+      "id": "outdoors-garden",
+      "group": "outdoors",
+      "label": "Botanical garden",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "arched walkway completely covered by purple flowers",
+          "timestampSeconds": 8
+        },
+        {
+          "source": "frame",
+          "value": "small benches tucked beneath the flower canopy",
+          "timestampSeconds": 11
+        }
+      ],
+      "proposedAfter": "The arched walkway completely covered in purple flowers looks like a magical place to sit.",
+      "after": "The arched walkway completely covered in purple flowers looks like a magical place to sit.",
+      "disposition": "accepted",
+      "retried": false,
+      "rejectionReason": null,
+      "structuralFamily": "COMPARISON",
+      "validation": {
+        "note": "The arched walkway completely covered in purple flowers looks like a magical place to sit.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "malformed": false,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "after": {
+          "inputTokens": 389,
+          "outputTokens": 16,
+          "thinkingTokens": 0,
+          "totalTokens": 405
+        }
+      }
+    },
+    {
+      "id": "outdoors-cliff-path",
+      "group": "outdoors",
+      "label": "Cliff path",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "narrow dirt path tracing a steep green ocean cliff",
+          "timestampSeconds": 13
+        },
+        {
+          "source": "frame",
+          "value": "wooden steps descending around the cliff corner",
+          "timestampSeconds": 16
+        }
+      ],
+      "proposedAfter": "The narrow dirt path and wooden steps offer incredible views around the steep ocean cliff.",
+      "after": "The narrow dirt path and wooden steps offer incredible views around the steep ocean cliff.",
+      "disposition": "accepted",
+      "retried": false,
+      "rejectionReason": null,
+      "structuralFamily": "FRAGMENT",
+      "validation": {
+        "note": "The narrow dirt path and wooden steps offer incredible views around the steep ocean cliff.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "malformed": false,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "after": {
+          "inputTokens": 393,
+          "outputTokens": 16,
+          "thinkingTokens": 0,
+          "totalTokens": 409
+        }
+      }
+    },
+    {
+      "id": "outdoors-geyser",
+      "group": "outdoors",
+      "label": "Geyser",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "geyser sending a tall column of water above a wooden boardwalk",
+          "timestampSeconds": 17
+        },
+        {
+          "source": "frame",
+          "value": "steam drifting across the boardwalk immediately afterward",
+          "timestampSeconds": 20
+        }
+      ],
+      "proposedAfter": "You can get surprisingly close to an active geyser sending water high above a boardwalk.",
+      "after": "You can get surprisingly close to an active geyser sending water high above a boardwalk.",
+      "disposition": "accepted",
+      "retried": false,
+      "rejectionReason": null,
+      "structuralFamily": "OTHER",
+      "validation": {
+        "note": "You can get surprisingly close to an active geyser sending water high above a boardwalk.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "malformed": false,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "after": {
+          "inputTokens": 393,
+          "outputTokens": 17,
+          "thinkingTokens": 0,
+          "totalTokens": 410
+        }
+      }
+    },
+    {
+      "id": "stay-harbor-room",
+      "group": "hotel_stay",
+      "label": "Harbor hotel",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "hotel room window opening directly onto a busy harbor",
+          "timestampSeconds": 7
+        },
+        {
+          "source": "frame",
+          "value": "bed positioned to face the floor-to-ceiling harbor window",
+          "timestampSeconds": 10
+        }
+      ],
+      "proposedAfter": "The hotel room's floor-to-ceiling window has a perfect view of the busy harbor.",
+      "after": "The hotel room's floor-to-ceiling window has a perfect view of the busy harbor.",
+      "disposition": "accepted",
+      "retried": false,
+      "rejectionReason": null,
+      "structuralFamily": "FRAGMENT",
+      "validation": {
+        "note": "The hotel room's floor-to-ceiling window has a perfect view of the busy harbor.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "malformed": false,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "after": {
+          "inputTokens": 395,
+          "outputTokens": 20,
+          "thinkingTokens": 0,
+          "totalTokens": 415
+        }
+      }
+    },
+    {
+      "id": "stay-cabin",
+      "group": "hotel_stay",
+      "label": "Forest cabin",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "small cabin bedroom with a wood stove beside the bed",
+          "timestampSeconds": 6
+        },
+        {
+          "source": "frame",
+          "value": "glass wall facing dense cedar trees",
+          "timestampSeconds": 9
+        }
+      ],
+      "proposedAfter": "The glass wall facing dense cedar trees from the bedroom looks so peaceful.",
+      "after": "The glass wall facing dense cedar trees from the bedroom looks so peaceful.",
+      "disposition": "accepted",
+      "retried": false,
+      "rejectionReason": null,
+      "structuralFamily": "OTHER",
+      "validation": {
+        "note": "The glass wall facing dense cedar trees from the bedroom looks so peaceful.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "malformed": false,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "after": {
+          "inputTokens": 388,
+          "outputTokens": 14,
+          "thinkingTokens": 0,
+          "totalTokens": 402
+        }
+      }
+    },
+    {
+      "id": "stay-pool",
+      "group": "hotel_stay",
+      "label": "Hotel pool",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "long pool running between white hotel buildings and palm trees",
+          "timestampSeconds": 12
+        },
+        {
+          "source": "frame",
+          "value": "shaded loungers built into shallow water",
+          "timestampSeconds": 15
+        }
+      ],
+      "proposedAfter": "The loungers built right into the shallow end of the pool look so relaxing.",
+      "after": "The loungers built right into the shallow end of the pool look so relaxing.",
+      "disposition": "accepted",
+      "retried": false,
+      "rejectionReason": null,
+      "structuralFamily": "OTHER",
+      "validation": {
+        "note": "The loungers built right into the shallow end of the pool look so relaxing.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "malformed": false,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "after": {
+          "inputTokens": 392,
+          "outputTokens": 16,
+          "thinkingTokens": 0,
+          "totalTokens": 408
+        }
+      }
+    },
+    {
+      "id": "stay-bath",
+      "group": "hotel_stay",
+      "label": "Hotel bath",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "deep stone bathtub beside a window overlooking mountains",
+          "timestampSeconds": 5
+        },
+        {
+          "source": "frame",
+          "value": "bathroom wall sliding open toward the bedroom",
+          "timestampSeconds": 8
+        }
+      ],
+      "proposedAfter": "The deep stone bathtub beside a window overlooking mountains looks like a perfect escape.",
+      "after": "The deep stone bathtub beside a window overlooking mountains looks like a perfect escape.",
+      "disposition": "accepted",
+      "retried": false,
+      "rejectionReason": null,
+      "structuralFamily": "COMPARISON",
+      "validation": {
+        "note": "The deep stone bathtub beside a window overlooking mountains looks like a perfect escape.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "malformed": false,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "after": {
+          "inputTokens": 387,
+          "outputTokens": 15,
+          "thinkingTokens": 0,
+          "totalTokens": 402
+        }
+      }
+    },
+    {
+      "id": "stay-treehouse",
+      "group": "hotel_stay",
+      "label": "Treehouse stay",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "suspended bedroom reached by a rope bridge among trees",
+          "timestampSeconds": 10
+        },
+        {
+          "source": "frame",
+          "value": "round window looking directly into the tree canopy",
+          "timestampSeconds": 13
+        }
+      ],
+      "proposedAfter": "Sleeping in a suspended bedroom among the trees with a rope bridge looks like a unique experience.",
+      "after": "Sleeping in a suspended bedroom among the trees with a rope bridge looks like a unique experience.",
+      "disposition": "accepted",
+      "retried": false,
+      "rejectionReason": null,
+      "structuralFamily": "COMPARISON",
+      "validation": {
+        "note": "Sleeping in a suspended bedroom among the trees with a rope bridge looks like a unique experience.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "malformed": false,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "after": {
+          "inputTokens": 392,
+          "outputTokens": 18,
+          "thinkingTokens": 0,
+          "totalTokens": 410
+        }
+      }
+    },
+    {
+      "id": "architecture-spiral",
+      "group": "architecture_interior",
+      "label": "Spiral building",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "building exterior formed from stacked curved concrete terraces",
+          "timestampSeconds": 5
+        },
+        {
+          "source": "frame",
+          "value": "spiral ramp continuing around the building interior",
+          "timestampSeconds": 13
+        }
+      ],
+      "proposedAfter": "The spiral ramp continuing around the building interior makes this place unique.",
+      "after": "The spiral ramp continuing around the building interior makes this place unique.",
+      "disposition": "accepted",
+      "retried": false,
+      "rejectionReason": null,
+      "structuralFamily": "FRAGMENT",
+      "validation": {
+        "note": "The spiral ramp continuing around the building interior makes this place unique.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "malformed": false,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "after": {
+          "inputTokens": 389,
+          "outputTokens": 13,
+          "thinkingTokens": 0,
+          "totalTokens": 402
+        }
+      }
+    },
+    {
+      "id": "architecture-library",
+      "group": "architecture_interior",
+      "label": "Library",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "circular reading room lined by three levels of books",
+          "timestampSeconds": 7
+        },
+        {
+          "source": "frame",
+          "value": "single skylight centered above the reading tables",
+          "timestampSeconds": 10
+        }
+      ],
+      "proposedAfter": "The circular room with three levels of books and a skylight is absolutely stunning.",
+      "after": "The circular room with three levels of books and a skylight is absolutely stunning.",
+      "disposition": "accepted",
+      "retried": false,
+      "rejectionReason": null,
+      "structuralFamily": "OTHER",
+      "validation": {
+        "note": "The circular room with three levels of books and a skylight is absolutely stunning.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "malformed": false,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "after": {
+          "inputTokens": 391,
+          "outputTokens": 16,
+          "thinkingTokens": 0,
+          "totalTokens": 407
+        }
+      }
+    },
+    {
+      "id": "architecture-museum",
+      "group": "architecture_interior",
+      "label": "Museum interior",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "white gallery crossed by a bright diagonal shaft of sunlight",
+          "timestampSeconds": 6
+        },
+        {
+          "source": "frame",
+          "value": "visitors walking beneath a suspended mirrored sculpture",
+          "timestampSeconds": 9
+        }
+      ],
+      "proposedAfter": "The bright diagonal shaft of sunlight cutting across the white gallery looks really cool.",
+      "after": "The bright diagonal shaft of sunlight cutting across the white gallery looks really cool.",
+      "disposition": "accepted",
+      "retried": false,
+      "rejectionReason": null,
+      "structuralFamily": "OTHER",
+      "validation": {
+        "note": "The bright diagonal shaft of sunlight cutting across the white gallery looks really cool.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "malformed": false,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "after": {
+          "inputTokens": 389,
+          "outputTokens": 15,
+          "thinkingTokens": 0,
+          "totalTokens": 404
+        }
+      }
+    },
+    {
+      "id": "architecture-staircase",
+      "group": "architecture_interior",
+      "label": "Historic staircase",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "ornate iron staircase curling through a tall tiled atrium",
+          "timestampSeconds": 4
+        },
+        {
+          "source": "frame",
+          "value": "glass ceiling reflected in the polished tile floor",
+          "timestampSeconds": 8
+        }
+      ],
+      "proposedAfter": "The ornate iron staircase curling through the tall tiled atrium looked beautiful.",
+      "after": "The ornate iron staircase curling through the tall tiled atrium looked beautiful.",
+      "disposition": "accepted",
+      "retried": false,
+      "rejectionReason": null,
+      "structuralFamily": "FRAGMENT",
+      "validation": {
+        "note": "The ornate iron staircase curling through the tall tiled atrium looked beautiful.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "malformed": false,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "after": {
+          "inputTokens": 391,
+          "outputTokens": 13,
+          "thinkingTokens": 0,
+          "totalTokens": 404
+        }
+      }
+    },
+    {
+      "id": "architecture-chapel",
+      "group": "architecture_interior",
+      "label": "Modern chapel",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "narrow wooden chapel framed by tall windows on both sides",
+          "timestampSeconds": 11
+        },
+        {
+          "source": "frame",
+          "value": "trees visible through every wall behind the altar",
+          "timestampSeconds": 14
+        }
+      ],
+      "proposedAfter": "The chapel's tall windows make it feel like you're worshipping right in the middle of the trees.",
+      "after": "The chapel's tall windows make it feel like you're worshipping right in the middle of the trees.",
+      "disposition": "accepted",
+      "retried": false,
+      "rejectionReason": null,
+      "structuralFamily": "COMPARISON",
+      "validation": {
+        "note": "The chapel's tall windows make it feel like you're worshipping right in the middle of the trees.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": false,
+        "malformed": false,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "after": {
+          "inputTokens": 393,
+          "outputTokens": 23,
+          "thinkingTokens": 0,
+          "totalTokens": 416
+        }
+      }
+    },
+    {
+      "id": "water-surf",
+      "group": "beaches_water",
+      "label": "Surfing beach",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "surfer dropping down the face of a very large curling wave",
+          "timestampSeconds": 12
+        },
+        {
+          "source": "frame",
+          "value": "several large waves breaking hard close together",
+          "timestampSeconds": 15
+        }
+      ],
+      "proposedAfter": "You'll want to remember these incredible surfers dropping into huge, curling waves.",
+      "after": "You'll want to remember these incredible surfers dropping into huge, curling waves.",
+      "disposition": "accepted",
+      "retried": false,
+      "rejectionReason": null,
+      "structuralFamily": "OTHER",
+      "validation": {
+        "note": "You'll want to remember these incredible surfers dropping into huge, curling waves.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "malformed": false,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "after": {
+          "inputTokens": 393,
+          "outputTokens": 16,
+          "thinkingTokens": 0,
+          "totalTokens": 409
+        }
+      }
+    },
+    {
+      "id": "water-hole",
+      "group": "beaches_water",
+      "label": "Swimming hole",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "dark blue swimming hole shaded by tall granite walls",
+          "timestampSeconds": 6
+        },
+        {
+          "source": "frame",
+          "value": "swimmer entering the water from a low rock",
+          "timestampSeconds": 9
+        }
+      ],
+      "proposedAfter": "The dark blue water and tall granite walls make this a stunning swimming hole.",
+      "after": "The dark blue water and tall granite walls make this a stunning swimming hole.",
+      "disposition": "accepted",
+      "retried": false,
+      "rejectionReason": null,
+      "structuralFamily": "FRAGMENT",
+      "validation": {
+        "note": "The dark blue water and tall granite walls make this a stunning swimming hole.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "malformed": false,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "after": {
+          "inputTokens": 391,
+          "outputTokens": 15,
+          "thinkingTokens": 0,
+          "totalTokens": 406
+        }
+      }
+    },
+    {
+      "id": "water-falls",
+      "group": "beaches_water",
+      "label": "Waterfall",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "narrow waterfall dropping into a bright clear pool",
+          "timestampSeconds": 11
+        },
+        {
+          "source": "frame",
+          "value": "people standing tiny beside the tall waterfall",
+          "timestampSeconds": 14
+        }
+      ],
+      "proposedAfter": "The tall, narrow waterfall drops into a bright, clear pool perfect for swimming.",
+      "after": "The tall, narrow waterfall drops into a bright, clear pool perfect for swimming.",
+      "disposition": "accepted",
+      "retried": false,
+      "rejectionReason": null,
+      "structuralFamily": "FRAGMENT",
+      "validation": {
+        "note": "The tall, narrow waterfall drops into a bright, clear pool perfect for swimming.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "malformed": false,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "after": {
+          "inputTokens": 390,
+          "outputTokens": 16,
+          "thinkingTokens": 0,
+          "totalTokens": 406
+        }
+      }
+    },
+    {
+      "id": "water-black-beach",
+      "group": "beaches_water",
+      "label": "Black beach",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "empty crescent beach bordered by black volcanic cliffs",
+          "timestampSeconds": 3
+        },
+        {
+          "source": "frame",
+          "value": "waves washing over smooth black pebbles",
+          "timestampSeconds": 6
+        }
+      ],
+      "proposedAfter": "The black volcanic cliffs and smooth black pebbles on the crescent beach are so unique.",
+      "after": "The black volcanic cliffs and smooth black pebbles on the crescent beach are so unique.",
+      "disposition": "accepted",
+      "retried": false,
+      "rejectionReason": null,
+      "structuralFamily": "OTHER",
+      "validation": {
+        "note": "The black volcanic cliffs and smooth black pebbles on the crescent beach are so unique.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "malformed": false,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "after": {
+          "inputTokens": 386,
+          "outputTokens": 16,
+          "thinkingTokens": 0,
+          "totalTokens": 402
+        }
+      }
+    },
+    {
+      "id": "water-cenote",
+      "group": "beaches_water",
+      "label": "Cenote",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "circular limestone opening above deep blue water",
+          "timestampSeconds": 8
+        },
+        {
+          "source": "frame",
+          "value": "wood ladder descending from the rock shelf into the water",
+          "timestampSeconds": 11
+        }
+      ],
+      "proposedAfter": "The limestone opening above deep blue water with a ladder looks like an amazing swim spot.",
+      "after": "The limestone opening above deep blue water with a ladder looks like an amazing swim spot.",
+      "disposition": "accepted",
+      "retried": false,
+      "rejectionReason": null,
+      "structuralFamily": "COMPARISON",
+      "validation": {
+        "note": "The limestone opening above deep blue water with a ladder looks like an amazing swim spot.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "malformed": false,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "after": {
+          "inputTokens": 391,
+          "outputTokens": 17,
+          "thinkingTokens": 0,
+          "totalTokens": 408
+        }
+      }
+    },
+    {
+      "id": "action-cliff-jump",
+      "group": "activity_action",
+      "label": "Cliff jump",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "person hesitating at the edge of a high rock ledge over water",
+          "timestampSeconds": 5
+        },
+        {
+          "source": "frame",
+          "value": "same person jumping from the ledge into the water",
+          "timestampSeconds": 7
+        }
+      ],
+      "proposedAfter": "I want to remember this amazing cliff jump into the water.",
+      "after": "I want to remember this amazing cliff jump into the water.",
+      "disposition": "accepted",
+      "retried": false,
+      "rejectionReason": null,
+      "structuralFamily": "FIRST_PERSON",
+      "validation": {
+        "note": "I want to remember this amazing cliff jump into the water.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "malformed": false,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "after": {
+          "inputTokens": 396,
+          "outputTokens": 12,
+          "thinkingTokens": 0,
+          "totalTokens": 408
+        }
+      }
+    },
+    {
+      "id": "action-pottery",
+      "group": "activity_action",
+      "label": "Pottery class",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "hands centering wet clay on a spinning pottery wheel",
+          "timestampSeconds": 8
+        },
+        {
+          "source": "frame",
+          "value": "finished blue bowls lined up beside the wheel",
+          "timestampSeconds": 13
+        }
+      ],
+      "proposedAfter": "It's so satisfying to watch the clay become perfectly centered on the wheel.",
+      "after": "It's so satisfying to watch the clay become perfectly centered on the wheel.",
+      "disposition": "accepted",
+      "retried": false,
+      "rejectionReason": null,
+      "structuralFamily": "FRAGMENT",
+      "validation": {
+        "note": "It's so satisfying to watch the clay become perfectly centered on the wheel.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "malformed": false,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "after": {
+          "inputTokens": 390,
+          "outputTokens": 16,
+          "thinkingTokens": 0,
+          "totalTokens": 406
+        }
+      }
+    },
+    {
+      "id": "action-kayak",
+      "group": "activity_action",
+      "label": "Kayaking",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "two kayaks moving through a narrow tunnel of mangroves",
+          "timestampSeconds": 9
+        },
+        {
+          "source": "frame",
+          "value": "paddles passing inches beneath low branches",
+          "timestampSeconds": 12
+        }
+      ],
+      "proposedAfter": "Paddling through a narrow tunnel of mangroves with branches inches overhead would be an amazing experience.",
+      "after": "Paddling through a narrow tunnel of mangroves with branches inches overhead would be an amazing experience.",
+      "disposition": "accepted",
+      "retried": false,
+      "rejectionReason": null,
+      "structuralFamily": "VERB_LED",
+      "validation": {
+        "note": "Paddling through a narrow tunnel of mangroves with branches inches overhead would be an amazing experience.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "malformed": false,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "after": {
+          "inputTokens": 391,
+          "outputTokens": 18,
+          "thinkingTokens": 0,
+          "totalTokens": 409
+        }
+      }
+    },
+    {
+      "id": "action-dance",
+      "group": "activity_action",
+      "label": "Dance lesson",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "pairs practicing the same fast turn in a mirrored studio",
+          "timestampSeconds": 6
+        },
+        {
+          "source": "speech",
+          "value": "beginners rotate partners every song",
+          "timestampSeconds": 8
+        }
+      ],
+      "proposedAfter": "The mirrored studio would be a great place to practice your fast turns.",
+      "after": "The mirrored studio would be a great place to practice your fast turns.",
+      "disposition": "accepted",
+      "retried": false,
+      "rejectionReason": null,
+      "structuralFamily": "OTHER",
+      "validation": {
+        "note": "The mirrored studio would be a great place to practice your fast turns.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "malformed": false,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "after": {
+          "inputTokens": 388,
+          "outputTokens": 14,
+          "thinkingTokens": 0,
+          "totalTokens": 402
+        }
+      }
+    },
+    {
+      "id": "action-glass",
+      "group": "activity_action",
+      "label": "Glass blowing",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "person shaping glowing orange glass at the end of a pipe",
+          "timestampSeconds": 10
+        },
+        {
+          "source": "frame",
+          "value": "finished glass cup cooling inside a kiln",
+          "timestampSeconds": 15
+        }
+      ],
+      "proposedAfter": "Watching the person blow and shape the glowing orange glass would be mesmerizing to see in person.",
+      "after": "Watching the person blow and shape the glowing orange glass would be mesmerizing to see in person.",
+      "disposition": "accepted",
+      "retried": false,
+      "rejectionReason": null,
+      "structuralFamily": "VERB_LED",
+      "validation": {
+        "note": "Watching the person blow and shape the glowing orange glass would be mesmerizing to see in person.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "malformed": false,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "after": {
+          "inputTokens": 392,
+          "outputTokens": 18,
+          "thinkingTokens": 0,
+          "totalTokens": 410
+        }
+      }
+    },
+    {
+      "id": "ordinary-storefront",
+      "group": "ordinary_low_interest",
+      "label": "Storefront",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "small neighborhood storefront with two bicycles outside",
+          "timestampSeconds": 3
+        },
+        {
+          "source": "visible_text",
+          "value": "MORI MARKET",
+          "timestampSeconds": 3
+        }
+      ],
+      "proposedAfter": "It's a cute corner market with two bikes parked right outside.",
+      "after": "It's a cute corner market with two bikes parked right outside.",
+      "disposition": "accepted",
+      "retried": false,
+      "rejectionReason": null,
+      "structuralFamily": "FRAGMENT",
+      "validation": {
+        "note": "It's a cute corner market with two bikes parked right outside.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "malformed": false,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "after": {
+          "inputTokens": 385,
+          "outputTokens": 14,
+          "thinkingTokens": 0,
+          "totalTokens": 399
+        }
+      }
+    },
+    {
+      "id": "ordinary-parking",
+      "group": "ordinary_low_interest",
+      "label": "Parking lot",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "mostly empty parking lot in front of a strip mall",
+          "timestampSeconds": 4
+        }
+      ],
+      "proposedAfter": "This looks like a good spot to remember for easy parking and quick errands.",
+      "after": "This looks like a good spot to remember for easy parking and quick errands.",
+      "disposition": "accepted",
+      "retried": false,
+      "rejectionReason": null,
+      "structuralFamily": "DEMONSTRATIVE_DECLARATIVE",
+      "validation": {
+        "note": "This looks like a good spot to remember for easy parking and quick errands.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "malformed": false,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "after": {
+          "inputTokens": 370,
+          "outputTokens": 15,
+          "thinkingTokens": 0,
+          "totalTokens": 385
+        }
+      }
+    },
+    {
+      "id": "ordinary-lobby",
+      "group": "ordinary_low_interest",
+      "label": "Office lobby",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "plain office lobby with gray chairs and a reception desk",
+          "timestampSeconds": 5
+        }
+      ],
+      "proposedAfter": "This looks like a pretty typical office lobby with gray chairs and a reception desk.",
+      "after": "This looks like a pretty typical office lobby with gray chairs and a reception desk.",
+      "disposition": "accepted",
+      "retried": false,
+      "rejectionReason": null,
+      "structuralFamily": "DEMONSTRATIVE_DECLARATIVE",
+      "validation": {
+        "note": "This looks like a pretty typical office lobby with gray chairs and a reception desk.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "malformed": false,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "after": {
+          "inputTokens": 370,
+          "outputTokens": 16,
+          "thinkingTokens": 0,
+          "totalTokens": 386
+        }
+      }
+    },
+    {
+      "id": "ordinary-road",
+      "group": "ordinary_low_interest",
+      "label": "Road",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "straight two-lane road crossing a flat grassy field",
+          "timestampSeconds": 6
+        }
+      ],
+      "proposedAfter": "The endless straight road through the flat grassy field makes for a peaceful drive.",
+      "after": "The endless straight road through the flat grassy field makes for a peaceful drive.",
+      "disposition": "accepted",
+      "retried": false,
+      "rejectionReason": null,
+      "structuralFamily": "FRAGMENT",
+      "validation": {
+        "note": "The endless straight road through the flat grassy field makes for a peaceful drive.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "malformed": false,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "after": {
+          "inputTokens": 371,
+          "outputTokens": 15,
+          "thinkingTokens": 0,
+          "totalTokens": 386
+        }
+      }
+    },
+    {
+      "id": "ordinary-hallway",
+      "group": "ordinary_low_interest",
+      "label": "Hallway",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "beige hallway with closed doors and overhead lights",
+          "timestampSeconds": 4
+        }
+      ],
+      "proposedAfter": "The long, empty hallway with closed doors feels like the perfect place for quiet focus.",
+      "after": "The long, empty hallway with closed doors feels like the perfect place for quiet focus.",
+      "disposition": "accepted",
+      "retried": false,
+      "rejectionReason": null,
+      "structuralFamily": "COMPARISON",
+      "validation": {
+        "note": "The long, empty hallway with closed doors feels like the perfect place for quiet focus.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "malformed": false,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "after": {
+          "inputTokens": 369,
+          "outputTokens": 17,
+          "thinkingTokens": 0,
+          "totalTokens": 386
+        }
+      }
+    },
+    {
+      "id": "misc-bookshop",
+      "group": "miscellaneous",
+      "label": "Bookshop",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "floor-to-ceiling shelves reached by a rolling wooden ladder",
+          "timestampSeconds": 7
+        },
+        {
+          "source": "frame",
+          "value": "narrow reading nook hidden between two shelves",
+          "timestampSeconds": 10
+        }
+      ],
+      "proposedAfter": "The hidden reading nook between the shelves looks like a cozy spot to relax.",
+      "after": "The hidden reading nook between the shelves looks like a cozy spot to relax.",
+      "disposition": "accepted",
+      "retried": false,
+      "rejectionReason": null,
+      "structuralFamily": "COMPARISON",
+      "validation": {
+        "note": "The hidden reading nook between the shelves looks like a cozy spot to relax.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "malformed": false,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "after": {
+          "inputTokens": 392,
+          "outputTokens": 15,
+          "thinkingTokens": 0,
+          "totalTokens": 407
+        }
+      }
+    },
+    {
+      "id": "misc-train",
+      "group": "miscellaneous",
+      "label": "Scenic train",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "red train crossing a high stone bridge above a valley",
+          "timestampSeconds": 12
+        },
+        {
+          "source": "frame",
+          "value": "open train window beside the same valley view",
+          "timestampSeconds": 15
+        }
+      ],
+      "proposedAfter": "The red train crossing the high stone bridge over the valley is an incredible sight.",
+      "after": "The red train crossing the high stone bridge over the valley is an incredible sight.",
+      "disposition": "accepted",
+      "retried": false,
+      "rejectionReason": null,
+      "structuralFamily": "OTHER",
+      "validation": {
+        "note": "The red train crossing the high stone bridge over the valley is an incredible sight.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "malformed": false,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "after": {
+          "inputTokens": 393,
+          "outputTokens": 16,
+          "thinkingTokens": 0,
+          "totalTokens": 409
+        }
+      }
+    },
+    {
+      "id": "misc-market",
+      "group": "miscellaneous",
+      "label": "Night market",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "narrow market lane covered by rows of red lanterns",
+          "timestampSeconds": 9
+        },
+        {
+          "source": "frame",
+          "value": "vendors cooking over open grills along both sides",
+          "timestampSeconds": 13
+        }
+      ],
+      "proposedAfter": "The narrow market lane covered in red lanterns and vendors grilling food looks like a great experience.",
+      "after": "The narrow market lane covered in red lanterns and vendors grilling food looks like a great experience.",
+      "disposition": "accepted",
+      "retried": false,
+      "rejectionReason": null,
+      "structuralFamily": "COMPARISON",
+      "validation": {
+        "note": "The narrow market lane covered in red lanterns and vendors grilling food looks like a great experience.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "malformed": false,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "after": {
+          "inputTokens": 390,
+          "outputTokens": 18,
+          "thinkingTokens": 0,
+          "totalTokens": 408
+        }
+      }
+    },
+    {
+      "id": "misc-records",
+      "group": "miscellaneous",
+      "label": "Record shop",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "listening booth built into a wall of vinyl records",
+          "timestampSeconds": 5
+        },
+        {
+          "source": "visible_text",
+          "value": "LISTEN BEFORE YOU BUY",
+          "timestampSeconds": 5
+        }
+      ],
+      "proposedAfter": "I want to visit that listening booth built into a wall of vinyl records.",
+      "after": "I want to visit that listening booth built into a wall of vinyl records.",
+      "disposition": "accepted",
+      "retried": false,
+      "rejectionReason": null,
+      "structuralFamily": "FIRST_PERSON",
+      "validation": {
+        "note": "I want to visit that listening booth built into a wall of vinyl records.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "malformed": false,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "after": {
+          "inputTokens": 388,
+          "outputTokens": 15,
+          "thinkingTokens": 0,
+          "totalTokens": 403
+        }
+      }
+    },
+    {
+      "id": "misc-observatory",
+      "group": "miscellaneous",
+      "label": "Observatory",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "large telescope rotating beneath an open dome",
+          "timestampSeconds": 11
+        },
+        {
+          "source": "speech",
+          "value": "public viewing starts after the sky gets dark",
+          "timestampSeconds": 14
+        }
+      ],
+      "proposedAfter": "You can see a massive telescope rotating beneath an open dome after dark.",
+      "after": "You can see a massive telescope rotating beneath an open dome after dark.",
+      "disposition": "accepted",
+      "retried": false,
+      "rejectionReason": null,
+      "structuralFamily": "OTHER",
+      "validation": {
+        "note": "You can see a massive telescope rotating beneath an open dome after dark.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "malformed": false,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "after": {
+          "inputTokens": 390,
+          "outputTokens": 14,
+          "thinkingTokens": 0,
+          "totalTokens": 404
+        }
+      }
+    },
+    {
+      "id": "misc-multi-place-target",
+      "group": "miscellaneous",
+      "label": "Multi-place selected cafe",
+      "evidence": [
+        {
+          "source": "frame",
+          "value": "the selected cafe has a tiled courtyard and orange trees",
+          "timestampSeconds": 21
+        },
+        {
+          "source": "speech",
+          "value": "the next stop is a separate museum across town",
+          "timestampSeconds": 30
+        }
+      ],
+      "proposedAfter": "The cafe's tiled courtyard and orange trees make for a beautiful spot.",
+      "after": "The cafe's tiled courtyard and orange trees make for a beautiful spot.",
+      "disposition": "accepted",
+      "retried": false,
+      "rejectionReason": null,
+      "structuralFamily": "FRAGMENT",
+      "validation": {
+        "note": "The cafe's tiled courtyard and orange trees make for a beautiful spot.",
+        "status": "generated",
+        "reason": null
+      },
+      "evaluation": {
+        "grounded": true,
+        "concise": true,
+        "malformed": false,
+        "summaryLike": false,
+        "marketingLike": false,
+        "natural": true
+      },
+      "usage": {
+        "after": {
+          "inputTokens": 394,
+          "outputTokens": 15,
+          "thinkingTokens": 0,
+          "totalTokens": 409
+        }
+      }
+    }
+  ]
+}
