@@ -3,7 +3,8 @@
  * worker package self-contained while enforcing the same closed boundary. */
 
 const TYPE_ALIASES = [
-  'swimming hole', 'scenic viewpoint', 'scenic overlook', 'hiking trail',
+  'swimming hole', 'scenic viewpoint', 'scenic overlook', 'scenic spot', 'hiking trail',
+  'mountain', 'mountains',
   'coffee shop', 'cliff jumping spot', 'cliff jump', 'national park',
   'state park', 'train station', 'bus station', 'art gallery',
   'wellness center', 'fitness center', 'cocktail bar', 'food spot',

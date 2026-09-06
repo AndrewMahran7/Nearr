@@ -748,6 +748,16 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
     }
     if (analysis.grouping) Object.assign(diagnostics, analysis.grouping);
     if (analysis.premium) diagnostics.premiumRecognition = analysis.premium.telemetry;
+    if (analysis.automaticDeep) diagnostics.automaticDeep = analysis.automaticDeep;
+    if (analysis.automaticDeepRecognition) {
+      diagnostics.automaticDeepRecognition = {
+        engineVersion: analysis.automaticDeepRecognition.telemetry.engineVersion,
+        model: analysis.automaticDeepRecognition.telemetry.model,
+        knownModelCostUsd: analysis.automaticDeepRecognition.telemetry.knownModelCostUsd,
+        placesRequests: analysis.automaticDeepRecognition.telemetry.placesRequests,
+        timingsMs: analysis.automaticDeepRecognition.telemetry.timingsMs,
+      };
+    }
     warnings.push(...analysis.evidence.warnings);
     diagnostics.durationMs = Date.now() - startedAt;
     diagnostics.warnings = warnings.slice(0, 24);
@@ -764,6 +774,12 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
         : analysis.premium.outcome === 'PREMIUM_TECHNICAL_FAILURE'
         ? { outcome: 'failed' as const, resultClass: 'premium_technical_failure', failureCode: analysis.premium.failureCode ?? 'premium_model_failure' }
         : { outcome: 'insufficient_evidence' as const, resultClass: 'premium_no_useful_result', failureCode: 'premium_no_useful_result' }
+      : analysis.automaticDeepRecognition
+      ? analysis.automaticDeepRecognition.outcome === 'PREMIUM_ACTIONABLE_RESULT'
+        ? { outcome: 'evidence' as const, resultClass: 'automatic_deep_actionable', failureCode: undefined }
+        : analysis.automaticDeepRecognition.outcome === 'PREMIUM_TECHNICAL_FAILURE'
+        ? { outcome: 'failed' as const, resultClass: 'automatic_deep_technical_failure', failureCode: analysis.automaticDeepRecognition.failureCode ?? 'automatic_deep_model_failure' }
+        : { outcome: 'insufficient_evidence' as const, resultClass: 'automatic_deep_no_useful_result', failureCode: 'automatic_deep_no_useful_result' }
       : classifyRecognitionFinalResult(analysis);
     const outcome: FinalizeOutcome = task.task_kind === 'ai_note_enrichment'
       ? (noteHasEvidence ? 'evidence' : 'insufficient_evidence')
@@ -817,6 +833,7 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
         canonicalUrl: media.canonicalUrl,
         diagnostics,
         premiumRecognition: analysis.premium,
+        automaticDeepRecognition: analysis.automaticDeepRecognition,
         signal: controller.signal,
       }),
     );

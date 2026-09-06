@@ -1,0 +1,225 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-09-06T00:04:53.050Z",
+  "rows": [
+    {
+      "caseId": "CJ001",
+      "productionFreePrimaryCause": "FRAME_SELECTION_FAILURE",
+      "simpleSolPrimaryCause": "GROUND_TRUTH_UNRESOLVED"
+    },
+    {
+      "caseId": "CJ002",
+      "productionFreePrimaryCause": "EVIDENCE_TOO_WEAK",
+      "simpleSolPrimaryCause": "GROUND_TRUTH_UNRESOLVED"
+    },
+    {
+      "caseId": "CJ003",
+      "productionFreePrimaryCause": "EVIDENCE_TOO_WEAK",
+      "simpleSolPrimaryCause": "NONE"
+    },
+    {
+      "caseId": "CJ004",
+      "productionFreePrimaryCause": "EVIDENCE_TOO_WEAK",
+      "simpleSolPrimaryCause": "NONE"
+    },
+    {
+      "caseId": "CJ005",
+      "productionFreePrimaryCause": "EVIDENCE_TOO_WEAK",
+      "simpleSolPrimaryCause": "NONE"
+    },
+    {
+      "caseId": "CJ006",
+      "productionFreePrimaryCause": "EVIDENCE_TOO_WEAK",
+      "simpleSolPrimaryCause": "NONE"
+    },
+    {
+      "caseId": "CJ007",
+      "productionFreePrimaryCause": "EVIDENCE_TOO_WEAK",
+      "simpleSolPrimaryCause": "NONE"
+    },
+    {
+      "caseId": "CJ008",
+      "productionFreePrimaryCause": "EVIDENCE_TOO_WEAK",
+      "simpleSolPrimaryCause": "NONE"
+    },
+    {
+      "caseId": "CJ009",
+      "productionFreePrimaryCause": "EVIDENCE_TOO_WEAK",
+      "simpleSolPrimaryCause": "NONE"
+    },
+    {
+      "caseId": "CJ010",
+      "productionFreePrimaryCause": "EVIDENCE_TOO_WEAK",
+      "simpleSolPrimaryCause": "GROUND_TRUTH_UNRESOLVED"
+    },
+    {
+      "caseId": "CJ011",
+      "productionFreePrimaryCause": "EVIDENCE_TOO_WEAK",
+      "simpleSolPrimaryCause": "NONE"
+    },
+    {
+      "caseId": "CJ012",
+      "productionFreePrimaryCause": "EVIDENCE_TOO_WEAK",
+      "simpleSolPrimaryCause": "NONE"
+    },
+    {
+      "caseId": "CJ013",
+      "productionFreePrimaryCause": "EVIDENCE_TOO_WEAK",
+      "simpleSolPrimaryCause": "NONE"
+    },
+    {
+      "caseId": "CJ014",
+      "productionFreePrimaryCause": "EVIDENCE_TOO_WEAK",
+      "simpleSolPrimaryCause": "NONE"
+    },
+    {
+      "caseId": "CJ015",
+      "productionFreePrimaryCause": "EVIDENCE_TOO_WEAK",
+      "simpleSolPrimaryCause": "NONE"
+    },
+    {
+      "caseId": "CJ016",
+      "productionFreePrimaryCause": "EVIDENCE_TOO_WEAK",
+      "simpleSolPrimaryCause": "MODEL_WRONG_EXACT_IDENTITY"
+    },
+    {
+      "caseId": "CJ017",
+      "productionFreePrimaryCause": "EVIDENCE_TOO_WEAK",
+      "simpleSolPrimaryCause": "NONE"
+    },
+    {
+      "caseId": "CJ018",
+      "productionFreePrimaryCause": "EVIDENCE_TOO_WEAK",
+      "simpleSolPrimaryCause": "GROUND_TRUTH_UNRESOLVED"
+    },
+    {
+      "caseId": "CJ019",
+      "productionFreePrimaryCause": "EVIDENCE_TOO_WEAK",
+      "simpleSolPrimaryCause": "NONE"
+    },
+    {
+      "caseId": "CJ020",
+      "productionFreePrimaryCause": "EVIDENCE_TOO_WEAK",
+      "simpleSolPrimaryCause": "NONE"
+    },
+    {
+      "caseId": "CJ021",
+      "productionFreePrimaryCause": "EVIDENCE_TOO_WEAK",
+      "simpleSolPrimaryCause": "GROUND_TRUTH_UNRESOLVED"
+    },
+    {
+      "caseId": "CJ022",
+      "productionFreePrimaryCause": "EVIDENCE_TOO_WEAK",
+      "simpleSolPrimaryCause": "GROUND_TRUTH_UNRESOLVED"
+    },
+    {
+      "caseId": "CJ023",
+      "productionFreePrimaryCause": "EVIDENCE_TOO_WEAK",
+      "simpleSolPrimaryCause": "NONE"
+    },
+    {
+      "caseId": "CJ024",
+      "productionFreePrimaryCause": "EVIDENCE_TOO_WEAK",
+      "simpleSolPrimaryCause": "NONE"
+    },
+    {
+      "caseId": "CJ025",
+      "productionFreePrimaryCause": "EVIDENCE_TOO_WEAK",
+      "simpleSolPrimaryCause": "NONE"
+    },
+    {
+      "caseId": "CJ026",
+      "productionFreePrimaryCause": "EVIDENCE_TOO_WEAK",
+      "simpleSolPrimaryCause": "GROUND_TRUTH_UNRESOLVED"
+    },
+    {
+      "caseId": "CJ027",
+      "productionFreePrimaryCause": "EVIDENCE_TOO_WEAK",
+      "simpleSolPrimaryCause": "NONE"
+    },
+    {
+      "caseId": "CJ028",
+      "productionFreePrimaryCause": "EVIDENCE_TOO_WEAK",
+      "simpleSolPrimaryCause": "GROUND_TRUTH_UNRESOLVED"
+    },
+    {
+      "caseId": "CJ029",
+      "productionFreePrimaryCause": "EVIDENCE_TOO_WEAK",
+      "simpleSolPrimaryCause": "NONE"
+    },
+    {
+      "caseId": "CJ030",
+      "productionFreePrimaryCause": "EVIDENCE_TOO_WEAK",
+      "simpleSolPrimaryCause": "NONE"
+    },
+    {
+      "caseId": "CJ031",
+      "productionFreePrimaryCause": "EVIDENCE_TOO_WEAK",
+      "simpleSolPrimaryCause": "NONE"
+    },
+    {
+      "caseId": "CJ032",
+      "productionFreePrimaryCause": "EVIDENCE_TOO_WEAK",
+      "simpleSolPrimaryCause": "NONE"
+    },
+    {
+      "caseId": "CJ033",
+      "productionFreePrimaryCause": "EVIDENCE_TOO_WEAK",
+      "simpleSolPrimaryCause": "GROUND_TRUTH_UNRESOLVED"
+    },
+    {
+      "caseId": "CJ034",
+      "productionFreePrimaryCause": "EVIDENCE_TOO_WEAK",
+      "simpleSolPrimaryCause": "NONE"
+    },
+    {
+      "caseId": "CJ035",
+      "productionFreePrimaryCause": "EVIDENCE_TOO_WEAK",
+      "simpleSolPrimaryCause": "GROUND_TRUTH_UNRESOLVED"
+    },
+    {
+      "caseId": "CJ036",
+      "productionFreePrimaryCause": "EVIDENCE_TOO_WEAK",
+      "simpleSolPrimaryCause": "NONE"
+    },
+    {
+      "caseId": "CJ037",
+      "productionFreePrimaryCause": "EVIDENCE_TOO_WEAK",
+      "simpleSolPrimaryCause": "NONE"
+    },
+    {
+      "caseId": "CJ038",
+      "productionFreePrimaryCause": "EVIDENCE_TOO_WEAK",
+      "simpleSolPrimaryCause": "GROUND_TRUTH_UNRESOLVED"
+    },
+    {
+      "caseId": "CJ039",
+      "productionFreePrimaryCause": "EVIDENCE_TOO_WEAK",
+      "simpleSolPrimaryCause": "GROUND_TRUTH_UNRESOLVED"
+    },
+    {
+      "caseId": "CJ040",
+      "productionFreePrimaryCause": "EVIDENCE_TOO_WEAK",
+      "simpleSolPrimaryCause": "NONE"
+    },
+    {
+      "caseId": "CJ041",
+      "productionFreePrimaryCause": "EVIDENCE_TOO_WEAK",
+      "simpleSolPrimaryCause": "GROUND_TRUTH_UNRESOLVED"
+    },
+    {
+      "caseId": "CJ042",
+      "productionFreePrimaryCause": "EVIDENCE_TOO_WEAK",
+      "simpleSolPrimaryCause": "GROUND_TRUTH_UNRESOLVED"
+    }
+  ],
+  "productionFreeCounts": {
+    "FRAME_SELECTION_FAILURE": 1,
+    "EVIDENCE_TOO_WEAK": 41
+  },
+  "simpleSolCounts": {
+    "GROUND_TRUTH_UNRESOLVED": 14,
+    "NONE": 27,
+    "MODEL_WRONG_EXACT_IDENTITY": 1
+  }
+}

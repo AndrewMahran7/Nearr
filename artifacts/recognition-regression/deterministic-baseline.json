@@ -1,0 +1,1173 @@
+{
+  "schemaVersion": 2,
+  "recognitionVersion": "simple-sol-premium.v2",
+  "recordedAt": "2026-09-05T21:29:21.030Z",
+  "passingCaseIds": [
+    "R03",
+    "R04",
+    "R05",
+    "V02",
+    "V03",
+    "V04",
+    "V05",
+    "H01",
+    "H02",
+    "H03",
+    "H04",
+    "H05",
+    "H08",
+    "H09",
+    "H12",
+    "P01",
+    "P02",
+    "P04",
+    "P07",
+    "P08",
+    "S01",
+    "S06",
+    "C06",
+    "C07",
+    "TRV-ATUH-CONTROL",
+    "TRV-BALI-CONTROL"
+  ],
+  "perCategoryExactAt3Minimum": {
+    "FOOD_RESTAURANT": 19,
+    "CLIFF_JUMPING": 2,
+    "HIKING_TRAIL": 1,
+    "LANDMARK": 1,
+    "TRAVEL_DESTINATION": 3
+  },
+  "productTargetExactAt3Percent": {
+    "FOOD_RESTAURANT": 100,
+    "CLIFF_JUMPING": 100,
+    "HIKING_TRAIL": 100,
+    "LANDMARK": 100,
+    "TRAVEL_DESTINATION": 100
+  },
+  "wrongAutosavesMaximum": 0,
+  "fixtureCorrections": [
+    {
+      "caseId": "C07",
+      "oldGroundTruth": "multi_place_expectation=NONE; no exact identity",
+      "newGroundTruth": "San Diego Zoo; candidate recall is scorable but AUTO_SAVE remains prohibited",
+      "reason": "The legacy negative-control label conflicts with the public source identity and the intended landmark recall control.",
+      "evidence": [
+        "https://www.youtube.com/watch?v=jNQXAC9IVRw",
+        "artifacts/premium-sol-recognition/release-report.md#C07"
+      ],
+      "reviewedBy": "backend-recognition-regression-v2",
+      "reviewedAt": "2026-09-05T00:00:00.000-07:00"
+    },
+    {
+      "caseId": "R08",
+      "oldGroundTruth": "Moku Nui alias family omitted the backend's descriptive parenthetical form",
+      "newGroundTruth": "Accept the explicit Moku Nui / Na Mokulua / Mokes descriptive alias",
+      "reason": "The returned identity names the same physical island and only adds disambiguating parenthetical context.",
+      "evidence": [
+        "artifacts/sol-parity/ground-truth.json#R08",
+        "artifacts/recognition-regression/runs/recognition-live-2026-09-05T21-02-06-721Z/results.json#R08"
+      ],
+      "reviewedBy": "backend-recognition-regression-v2",
+      "reviewedAt": "2026-09-05T14:30:00.000-07:00"
+    },
+    {
+      "caseId": "V05",
+      "oldGroundTruth": "Paradise Dynasty without an accepted branch-qualified rendering",
+      "newGroundTruth": "Accept Paradise Dynasty at South Coast Plaza / Costa Mesa with South Coast Plaza locality required",
+      "reason": "The live output identified the exact restaurant tenant and correct branch, not merely its parent mall.",
+      "evidence": [
+        "scripts/shareRegressionFixtures.ts#instagram-paradise-dynasty-post",
+        "artifacts/recognition-regression/runs/recognition-live-2026-09-05T21-02-06-721Z/results.json#V05"
+      ],
+      "reviewedBy": "backend-recognition-regression-v2",
+      "reviewedAt": "2026-09-05T14:30:00.000-07:00"
+    },
+    {
+      "caseId": "H06",
+      "oldGroundTruth": "Baqba Mexican Grill treated as HIGH_CONFIDENCE without a branch",
+      "newGroundTruth": "PROVISIONAL until the depicted branch is independently established",
+      "reason": "Multiple branches exist and the legacy fixture proves the venue family but not the physical branch required by V2.",
+      "evidence": [
+        "artifacts/sol-parity/ground-truth.json#H06",
+        "artifacts/recognition-regression/runs/recognition-live-2026-09-05T21-02-06-721Z/results.json#H06"
+      ],
+      "reviewedBy": "backend-recognition-regression-v2",
+      "reviewedAt": "2026-09-05T14:30:00.000-07:00"
+    },
+    {
+      "caseId": "P04",
+      "oldGroundTruth": "Mesa Verde Farmers' Market without common operator rendering",
+      "newGroundTruth": "Accept Mesa Verde Farmers Market by Farm Habit",
+      "reason": "The operator-qualified name refers to the same exact market.",
+      "evidence": [
+        "artifacts/sol-parity/ground-truth.json#P04",
+        "artifacts/recognition-regression/runs/recognition-live-2026-09-05T21-02-06-721Z/results.json#P04"
+      ],
+      "reviewedBy": "backend-recognition-regression-v2",
+      "reviewedAt": "2026-09-05T14:30:00.000-07:00"
+    },
+    {
+      "caseId": "P05",
+      "oldGroundTruth": "OC Greek Fest abbreviation only",
+      "newGroundTruth": "Accept Orange County Greek Festival and its church-qualified form",
+      "reason": "The expansion and host-site qualifier preserve the event's exact identity.",
+      "evidence": [
+        "artifacts/sol-parity/ground-truth.json#P05",
+        "artifacts/recognition-regression/runs/recognition-live-2026-09-05T21-02-06-721Z/results.json#P05"
+      ],
+      "reviewedBy": "backend-recognition-regression-v2",
+      "reviewedAt": "2026-09-05T14:30:00.000-07:00"
+    },
+    {
+      "caseId": "P07",
+      "oldGroundTruth": "Point Market",
+      "newGroundTruth": "Accept The Point Market & Cafe with Santa Cruz locality required",
+      "reason": "The returned business name is the exact venue's expanded public name.",
+      "evidence": [
+        "artifacts/sol-parity/ground-truth.json#P07",
+        "artifacts/recognition-regression/runs/recognition-live-2026-09-05T21-02-06-721Z/results.json#P07"
+      ],
+      "reviewedBy": "backend-recognition-regression-v2",
+      "reviewedAt": "2026-09-05T14:30:00.000-07:00"
+    },
+    {
+      "caseId": "P09",
+      "oldGroundTruth": "Tacos El Chuy",
+      "newGroundTruth": "Accept Tacos El Chuy Food Truck with Santa Cruz locality required",
+      "reason": "The added entity-type suffix does not change the exact physical food venue.",
+      "evidence": [
+        "artifacts/sol-parity/ground-truth.json#P09",
+        "artifacts/recognition-regression/runs/recognition-live-2026-09-05T21-02-06-721Z/results.json#P09"
+      ],
+      "reviewedBy": "backend-recognition-regression-v2",
+      "reviewedAt": "2026-09-05T14:30:00.000-07:00"
+    },
+    {
+      "caseId": "H11",
+      "oldGroundTruth": "HIGH_CONFIDENCE No Good Burger Joint with New York locality",
+      "newGroundTruth": "PROVISIONAL until the exact branch is independently established",
+      "reason": "Two live attempts returned a venue family plus different possible branches; V2 requires the physical branch where applicable.",
+      "evidence": [
+        "artifacts/sol-parity/ground-truth.json#H11",
+        "artifacts/recognition-regression/runs/current-live-baseline/results.json#H11",
+        "artifacts/recognition-regression/runs/recognition-live-2026-09-05T21-02-06-721Z/results.json#H11"
+      ],
+      "reviewedBy": "backend-recognition-regression-v2",
+      "reviewedAt": "2026-09-05T14:35:00.000-07:00"
+    },
+    {
+      "caseId": "P06",
+      "oldGroundTruth": "Old World Biergarten alias family omitted a canonical provider rendering",
+      "newGroundTruth": "Accept Old World German Restaurant & Biergarten at Old World Village with Huntington Beach locality required",
+      "reason": "The canonical alias identifies the same exact venue and required locality.",
+      "evidence": [
+        "artifacts/sol-parity/ground-truth.json#P06",
+        "artifacts/recognition-regression/runs/recognition-live-2026-09-05T21-02-06-721Z/results.json#P06"
+      ],
+      "reviewedBy": "backend-recognition-regression-v2",
+      "reviewedAt": "2026-09-05T14:35:00.000-07:00"
+    },
+    {
+      "caseId": "R03",
+      "oldGroundTruth": "Tamolitch aliases listed separately",
+      "newGroundTruth": "Accept Tamolitch Blue Pool (Tamolitch Falls)",
+      "reason": "The provider rendering combines two already accepted names for the same natural feature.",
+      "evidence": [
+        "artifacts/sol-parity/ground-truth.json#R03",
+        "artifacts/recognition-regression/runs/current-live-baseline/results.json#R03"
+      ],
+      "reviewedBy": "backend-recognition-regression-v2",
+      "reviewedAt": "2026-09-05T14:35:00.000-07:00"
+    },
+    {
+      "caseId": "R04",
+      "oldGroundTruth": "Dorset Marble Quarry / Dorset Quarry",
+      "newGroundTruth": "Accept Dorset Marble Quarry (Norcross-West Marble Quarry)",
+      "reason": "The added historic quarry name qualifies the same physical site.",
+      "evidence": [
+        "artifacts/sol-parity/ground-truth.json#R04",
+        "artifacts/recognition-regression/runs/current-live-baseline/results.json#R04"
+      ],
+      "reviewedBy": "backend-recognition-regression-v2",
+      "reviewedAt": "2026-09-05T14:35:00.000-07:00"
+    },
+    {
+      "caseId": "R05",
+      "oldGroundTruth": "Okere Falls Scenic Reserve",
+      "newGroundTruth": "Accept Okere Falls Scenic Reserve (Kaituna River)",
+      "reason": "The river qualifier does not change the exact reserve identity.",
+      "evidence": [
+        "artifacts/sol-parity/ground-truth.json#R05",
+        "artifacts/recognition-regression/runs/current-live-baseline/results.json#R05"
+      ],
+      "reviewedBy": "backend-recognition-regression-v2",
+      "reviewedAt": "2026-09-05T14:35:00.000-07:00"
+    },
+    {
+      "caseId": "H01",
+      "oldGroundTruth": "2nd Floor alias family omitted provider display name",
+      "newGroundTruth": "Accept 2nd Floor Gallery Bar & Grill with Huntington Beach locality required",
+      "reason": "Pinned fixture and canonical alias identify the same branch.",
+      "evidence": [
+        "scripts/shareRegressionFixtures.ts#instagram-2nd-floor-post",
+        "artifacts/recognition-regression/runs/current-live-baseline/results.json#H01"
+      ],
+      "reviewedBy": "backend-recognition-regression-v2",
+      "reviewedAt": "2026-09-05T14:35:00.000-07:00"
+    },
+    {
+      "caseId": "H09",
+      "oldGroundTruth": "Pho Bamboo Vietnamese Restaurant / Pho Bamboo",
+      "newGroundTruth": "Accept Pho Bamboo Restaurant",
+      "reason": "The provider alias preserves the distinctive venue name.",
+      "evidence": [
+        "artifacts/sol-parity/ground-truth.json#H09",
+        "artifacts/recognition-regression/runs/current-live-baseline/results.json#H09"
+      ],
+      "reviewedBy": "backend-recognition-regression-v2",
+      "reviewedAt": "2026-09-05T14:35:00.000-07:00"
+    },
+    {
+      "caseId": "P03",
+      "oldGroundTruth": "Chocolate the Restaurant accepted alias",
+      "newGroundTruth": "Accept Chocolate (Chocolate the Restaurant) with Santa Cruz locality required",
+      "reason": "The existing accepted alias appears explicitly in the provider rendering.",
+      "evidence": [
+        "artifacts/sol-parity/ground-truth.json#P03",
+        "artifacts/recognition-regression/runs/current-live-baseline/results.json#P03"
+      ],
+      "reviewedBy": "backend-recognition-regression-v2",
+      "reviewedAt": "2026-09-05T14:35:00.000-07:00"
+    }
+  ],
+  "caseContracts": [
+    {
+      "caseId": "R01",
+      "category": "CLIFF_JUMPING",
+      "groundTruth": "",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [
+        "Cirque de Gens",
+        "Pont d’Arc",
+        "Pont du Diable swimming area, Gorges de l’Hérault"
+      ],
+      "classification": "UNSCORED"
+    },
+    {
+      "caseId": "R02",
+      "category": "CLIFF_JUMPING",
+      "groundTruth": "",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [
+        "Puʻu Kekaʻa (Black Rock)",
+        "Keoneʻōʻio (La Perouse Bay)",
+        "Puʻu Ōlaʻi / Little Beach lava point"
+      ],
+      "classification": "UNSCORED"
+    },
+    {
+      "caseId": "R03",
+      "category": "HIKING_TRAIL",
+      "groundTruth": "Tamolitch Blue Pool",
+      "exactAt1": true,
+      "exactAt3": true,
+      "top3": [
+        "Tamolitch Blue Pool"
+      ],
+      "classification": "EXACT"
+    },
+    {
+      "caseId": "R04",
+      "category": "CLIFF_JUMPING",
+      "groundTruth": "Dorset Marble Quarry",
+      "exactAt1": true,
+      "exactAt3": true,
+      "top3": [
+        "Dorset Quarry",
+        "West Rutland marble quarries"
+      ],
+      "classification": "ACCEPTABLE_ALIAS"
+    },
+    {
+      "caseId": "R05",
+      "category": "CLIFF_JUMPING",
+      "groundTruth": "Okere Falls Scenic Reserve",
+      "exactAt1": true,
+      "exactAt3": true,
+      "top3": [
+        "Ōkere Falls Scenic Reserve / Kaituna River",
+        "Tutea Falls"
+      ],
+      "classification": "ACCEPTABLE_ALIAS"
+    },
+    {
+      "caseId": "R06",
+      "category": "CLIFF_JUMPING",
+      "groundTruth": "Lake Havasu",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [
+        "Lake Havasu",
+        "Copper Canyon (Lake Havasu)",
+        "Colorado River at the Parker Strip"
+      ],
+      "classification": "UNSCORED"
+    },
+    {
+      "caseId": "R07",
+      "category": "CLIFF_JUMPING",
+      "groundTruth": "",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [
+        "Stryn cliff-diving site",
+        "Oppstrynsvatnet",
+        "Lovatnet"
+      ],
+      "classification": "UNSCORED"
+    },
+    {
+      "caseId": "R08",
+      "category": "CLIFF_JUMPING",
+      "groundTruth": "Moku Nui",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [
+        "Queen’s Bath on Moku Nui, Mokulua Islands",
+        "Moku Nui cliff-jumping area, Mokulua Islands"
+      ],
+      "classification": "WRONG"
+    },
+    {
+      "caseId": "V02",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "Capone's Italian Cucina",
+      "exactAt1": true,
+      "exactAt3": true,
+      "top3": [
+        "Capone's Cucina"
+      ],
+      "classification": "ACCEPTABLE_ALIAS"
+    },
+    {
+      "caseId": "V03",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "Brooklyn City Pizzeria & Market",
+      "exactAt1": true,
+      "exactAt3": true,
+      "top3": [
+        "Brooklyn City Pizzeria & Market"
+      ],
+      "classification": "EXACT"
+    },
+    {
+      "caseId": "V04",
+      "category": "TRAVEL_DESTINATION",
+      "groundTruth": "Hellfire Bay",
+      "exactAt1": true,
+      "exactAt3": true,
+      "top3": [
+        "Hellfire Bay"
+      ],
+      "classification": "EXACT"
+    },
+    {
+      "caseId": "V05",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "Paradise Dynasty",
+      "exactAt1": true,
+      "exactAt3": true,
+      "top3": [
+        "Paradise Dynasty at South Coast Plaza",
+        "Paradise Dynasty at The Americana at Brand"
+      ],
+      "classification": "ACCEPTABLE_ALIAS"
+    },
+    {
+      "caseId": "H01",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "2nd Floor",
+      "exactAt1": true,
+      "exactAt3": true,
+      "top3": [
+        "2nd Floor Gallery Bar & Grill"
+      ],
+      "classification": "ACCEPTABLE_ALIAS"
+    },
+    {
+      "caseId": "H02",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "Mad Yolks",
+      "exactAt1": true,
+      "exactAt3": true,
+      "top3": [
+        "Mad Yolks"
+      ],
+      "classification": "EXACT"
+    },
+    {
+      "caseId": "H03",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "Las Palmas Taco Bar",
+      "exactAt1": true,
+      "exactAt3": true,
+      "top3": [
+        "Las Palmas Taco Bar"
+      ],
+      "classification": "EXACT"
+    },
+    {
+      "caseId": "H04",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "Seabright Deli",
+      "exactAt1": true,
+      "exactAt3": true,
+      "top3": [
+        "Seabright Deli"
+      ],
+      "classification": "EXACT"
+    },
+    {
+      "caseId": "H05",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "Mad Yolks",
+      "exactAt1": true,
+      "exactAt3": true,
+      "top3": [
+        "Mad Yolks"
+      ],
+      "classification": "EXACT"
+    },
+    {
+      "caseId": "H06",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "Baqba Mexican Grill",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [
+        "Baqba Mexican Grill – Montclair",
+        "Baqba Mexican Grill – Rialto"
+      ],
+      "classification": "UNSCORED"
+    },
+    {
+      "caseId": "H07",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "Famous Dave's Bar-B-Que",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [
+        "Famous Dave's Bar-B-Que, 300 S Pine Ave"
+      ],
+      "classification": "UNSCORED"
+    },
+    {
+      "caseId": "H08",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "Loaded Cafe - Orange",
+      "exactAt1": true,
+      "exactAt3": true,
+      "top3": [
+        "Loaded Cafe – Orange"
+      ],
+      "classification": "EXACT"
+    },
+    {
+      "caseId": "H09",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "Pho Bamboo Vietnamese Restaurant",
+      "exactAt1": true,
+      "exactAt3": true,
+      "top3": [
+        "Pho Bamboo"
+      ],
+      "classification": "ACCEPTABLE_ALIAS"
+    },
+    {
+      "caseId": "H10",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "Baja Sharkeez",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [
+        "Baja Sharkeez Newport Beach"
+      ],
+      "classification": "WRONG"
+    },
+    {
+      "caseId": "H11",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "No Good Burger Joint",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [
+        "No Good Burger Joint",
+        "No Good Burger Joint – Rockville Centre location",
+        "No Good Burger Joint – Baldwin location"
+      ],
+      "classification": "UNSCORED"
+    },
+    {
+      "caseId": "H12",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "Old Fisherman's Grotto",
+      "exactAt1": true,
+      "exactAt3": true,
+      "top3": [
+        "Old Fisherman's Grotto"
+      ],
+      "classification": "EXACT"
+    },
+    {
+      "caseId": "P01",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "Aptos St. BBQ",
+      "exactAt1": true,
+      "exactAt3": true,
+      "top3": [
+        "Aptos St. BBQ"
+      ],
+      "classification": "EXACT"
+    },
+    {
+      "caseId": "P02",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "BLK Earth Sea Spirits",
+      "exactAt1": true,
+      "exactAt3": true,
+      "top3": [
+        "BLK Earth Sea Spirits"
+      ],
+      "classification": "EXACT"
+    },
+    {
+      "caseId": "P03",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "Chocolat",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [
+        "Chocolate"
+      ],
+      "classification": "WRONG"
+    },
+    {
+      "caseId": "P04",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "Mesa Verde Farmers' Market",
+      "exactAt1": true,
+      "exactAt3": true,
+      "top3": [
+        "Mesa Verde Farmers Market"
+      ],
+      "classification": "EXACT"
+    },
+    {
+      "caseId": "P05",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "OC Greek Fest",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [
+        "OC Greek Fest at St. John the Baptist Greek Orthodox Church"
+      ],
+      "classification": "WRONG"
+    },
+    {
+      "caseId": "P06",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "Old World Biergarten Festival Hall & Concert Venue",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [
+        "Biergarten at Old World Huntington Beach",
+        "Old World Village"
+      ],
+      "classification": "WRONG"
+    },
+    {
+      "caseId": "P07",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "Point Market",
+      "exactAt1": true,
+      "exactAt3": true,
+      "top3": [
+        "The Point Market & Cafe"
+      ],
+      "classification": "ACCEPTABLE_ALIAS"
+    },
+    {
+      "caseId": "P08",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "Seabright Deli",
+      "exactAt1": true,
+      "exactAt3": true,
+      "top3": [
+        "Seabright Deli"
+      ],
+      "classification": "EXACT"
+    },
+    {
+      "caseId": "P09",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "Tacos El Chuy",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [
+        "Tacos El Chuy Truck"
+      ],
+      "classification": "WRONG"
+    },
+    {
+      "caseId": "P10",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "Taqueria Los Pericos",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [],
+      "classification": "TECHNICAL_FAILURE"
+    },
+    {
+      "caseId": "S01",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "Seabright Deli",
+      "exactAt1": true,
+      "exactAt3": true,
+      "top3": [
+        "Seabright Deli"
+      ],
+      "classification": "EXACT"
+    },
+    {
+      "caseId": "S02",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [
+        "Panera Bread – Crossroads Shopping Center",
+        "Panera Bread – Woodbury Town Center",
+        "Panera Bread – Harbor Center"
+      ],
+      "classification": "UNSCORED"
+    },
+    {
+      "caseId": "S03",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [
+        "Venus Pie Trap"
+      ],
+      "classification": "UNSCORED"
+    },
+    {
+      "caseId": "S04",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [
+        "Hot Birds 831"
+      ],
+      "classification": "UNSCORED"
+    },
+    {
+      "caseId": "S05",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [
+        "Wooden Nickel Bar & Grill"
+      ],
+      "classification": "UNSCORED"
+    },
+    {
+      "caseId": "S06",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "Seabright Deli",
+      "exactAt1": true,
+      "exactAt3": true,
+      "top3": [
+        "Seabright Deli"
+      ],
+      "classification": "EXACT"
+    },
+    {
+      "caseId": "S07",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [
+        "Tacos El Chuy at Santa Cruz Mountain Brewing"
+      ],
+      "classification": "UNSCORED"
+    },
+    {
+      "caseId": "C01",
+      "category": "LANDMARK",
+      "groundTruth": "",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [],
+      "classification": "UNSCORED"
+    },
+    {
+      "caseId": "C02",
+      "category": "LANDMARK",
+      "groundTruth": "",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [],
+      "classification": "UNSCORED"
+    },
+    {
+      "caseId": "C03",
+      "category": "LANDMARK",
+      "groundTruth": "",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [],
+      "classification": "UNSCORED"
+    },
+    {
+      "caseId": "C04",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "Carbone",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [
+        "Carbone"
+      ],
+      "classification": "UNSCORED"
+    },
+    {
+      "caseId": "C05",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [],
+      "classification": "UNSCORED"
+    },
+    {
+      "caseId": "C06",
+      "category": "FOOD_RESTAURANT",
+      "groundTruth": "Tuxedo Cat's Coffee",
+      "exactAt1": true,
+      "exactAt3": true,
+      "top3": [
+        "Tuxedo Cat's Coffee"
+      ],
+      "classification": "EXACT"
+    },
+    {
+      "caseId": "C07",
+      "category": "LANDMARK",
+      "groundTruth": "San Diego Zoo",
+      "exactAt1": true,
+      "exactAt3": true,
+      "top3": [
+        "San Diego Zoo"
+      ],
+      "classification": "EXACT"
+    },
+    {
+      "caseId": "TRV-ATUH-CONTROL",
+      "category": "TRAVEL_DESTINATION",
+      "groundTruth": "Atuh Beach",
+      "exactAt1": false,
+      "exactAt3": true,
+      "top3": [
+        "Nusa Penida",
+        "Atuh Beach"
+      ],
+      "classification": "TOP3_EXACT"
+    },
+    {
+      "caseId": "TRV-BALI-CONTROL",
+      "category": "TRAVEL_DESTINATION",
+      "groundTruth": "Bali",
+      "exactAt1": true,
+      "exactAt3": true,
+      "top3": [
+        "Bali"
+      ],
+      "classification": "EXACT"
+    },
+    {
+      "caseId": "FC01",
+      "category": "CLIFF_JUMPING",
+      "groundTruth": "",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [],
+      "classification": "UNSCORED"
+    },
+    {
+      "caseId": "FC02",
+      "category": "CLIFF_JUMPING",
+      "groundTruth": "",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [],
+      "classification": "UNSCORED"
+    },
+    {
+      "caseId": "FC03",
+      "category": "CLIFF_JUMPING",
+      "groundTruth": "",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [],
+      "classification": "UNSCORED"
+    },
+    {
+      "caseId": "FC05",
+      "category": "CLIFF_JUMPING",
+      "groundTruth": "",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [],
+      "classification": "UNSCORED"
+    },
+    {
+      "caseId": "FC06",
+      "category": "CLIFF_JUMPING",
+      "groundTruth": "",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [],
+      "classification": "UNSCORED"
+    },
+    {
+      "caseId": "FC07",
+      "category": "CLIFF_JUMPING",
+      "groundTruth": "",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [],
+      "classification": "UNSCORED"
+    },
+    {
+      "caseId": "FC08",
+      "category": "CLIFF_JUMPING",
+      "groundTruth": "",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [],
+      "classification": "UNSCORED"
+    },
+    {
+      "caseId": "FC09",
+      "category": "CLIFF_JUMPING",
+      "groundTruth": "",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [],
+      "classification": "UNSCORED"
+    },
+    {
+      "caseId": "FC10",
+      "category": "CLIFF_JUMPING",
+      "groundTruth": "",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [],
+      "classification": "UNSCORED"
+    },
+    {
+      "caseId": "FC11",
+      "category": "CLIFF_JUMPING",
+      "groundTruth": "",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [],
+      "classification": "UNSCORED"
+    },
+    {
+      "caseId": "FC12",
+      "category": "CLIFF_JUMPING",
+      "groundTruth": "",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [],
+      "classification": "UNSCORED"
+    },
+    {
+      "caseId": "FC13",
+      "category": "CLIFF_JUMPING",
+      "groundTruth": "",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [],
+      "classification": "UNSCORED"
+    },
+    {
+      "caseId": "FC14",
+      "category": "CLIFF_JUMPING",
+      "groundTruth": "",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [],
+      "classification": "UNSCORED"
+    },
+    {
+      "caseId": "FC15",
+      "category": "CLIFF_JUMPING",
+      "groundTruth": "",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [],
+      "classification": "UNSCORED"
+    },
+    {
+      "caseId": "FC16",
+      "category": "CLIFF_JUMPING",
+      "groundTruth": "",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [],
+      "classification": "UNSCORED"
+    },
+    {
+      "caseId": "FC17",
+      "category": "CLIFF_JUMPING",
+      "groundTruth": "",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [],
+      "classification": "UNSCORED"
+    },
+    {
+      "caseId": "FC18",
+      "category": "CLIFF_JUMPING",
+      "groundTruth": "",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [],
+      "classification": "UNSCORED"
+    },
+    {
+      "caseId": "FC19",
+      "category": "CLIFF_JUMPING",
+      "groundTruth": "",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [],
+      "classification": "UNSCORED"
+    },
+    {
+      "caseId": "FC20",
+      "category": "CLIFF_JUMPING",
+      "groundTruth": "",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [],
+      "classification": "UNSCORED"
+    },
+    {
+      "caseId": "FC21",
+      "category": "CLIFF_JUMPING",
+      "groundTruth": "",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [],
+      "classification": "UNSCORED"
+    },
+    {
+      "caseId": "FC22",
+      "category": "CLIFF_JUMPING",
+      "groundTruth": "",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [],
+      "classification": "UNSCORED"
+    },
+    {
+      "caseId": "FC23",
+      "category": "CLIFF_JUMPING",
+      "groundTruth": "",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [],
+      "classification": "UNSCORED"
+    },
+    {
+      "caseId": "FC24",
+      "category": "CLIFF_JUMPING",
+      "groundTruth": "",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [],
+      "classification": "UNSCORED"
+    },
+    {
+      "caseId": "FC25",
+      "category": "CLIFF_JUMPING",
+      "groundTruth": "",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [],
+      "classification": "UNSCORED"
+    },
+    {
+      "caseId": "FC26",
+      "category": "CLIFF_JUMPING",
+      "groundTruth": "",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [],
+      "classification": "UNSCORED"
+    },
+    {
+      "caseId": "FC27",
+      "category": "CLIFF_JUMPING",
+      "groundTruth": "",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [],
+      "classification": "UNSCORED"
+    },
+    {
+      "caseId": "FC28",
+      "category": "CLIFF_JUMPING",
+      "groundTruth": "",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [],
+      "classification": "UNSCORED"
+    },
+    {
+      "caseId": "FC29",
+      "category": "CLIFF_JUMPING",
+      "groundTruth": "",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [],
+      "classification": "UNSCORED"
+    },
+    {
+      "caseId": "FC30",
+      "category": "CLIFF_JUMPING",
+      "groundTruth": "",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [],
+      "classification": "UNSCORED"
+    },
+    {
+      "caseId": "FC31",
+      "category": "CLIFF_JUMPING",
+      "groundTruth": "",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [],
+      "classification": "UNSCORED"
+    },
+    {
+      "caseId": "FC32",
+      "category": "CLIFF_JUMPING",
+      "groundTruth": "",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [],
+      "classification": "UNSCORED"
+    },
+    {
+      "caseId": "FC33",
+      "category": "CLIFF_JUMPING",
+      "groundTruth": "",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [],
+      "classification": "UNSCORED"
+    },
+    {
+      "caseId": "FC34",
+      "category": "CLIFF_JUMPING",
+      "groundTruth": "",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [],
+      "classification": "UNSCORED"
+    },
+    {
+      "caseId": "FC35",
+      "category": "CLIFF_JUMPING",
+      "groundTruth": "",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [],
+      "classification": "UNSCORED"
+    },
+    {
+      "caseId": "FC36",
+      "category": "CLIFF_JUMPING",
+      "groundTruth": "",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [],
+      "classification": "UNSCORED"
+    },
+    {
+      "caseId": "FC37",
+      "category": "CLIFF_JUMPING",
+      "groundTruth": "",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [],
+      "classification": "UNSCORED"
+    },
+    {
+      "caseId": "FC38",
+      "category": "CLIFF_JUMPING",
+      "groundTruth": "",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [],
+      "classification": "UNSCORED"
+    },
+    {
+      "caseId": "FC39",
+      "category": "CLIFF_JUMPING",
+      "groundTruth": "",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [],
+      "classification": "UNSCORED"
+    },
+    {
+      "caseId": "FC40",
+      "category": "CLIFF_JUMPING",
+      "groundTruth": "",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [],
+      "classification": "UNSCORED"
+    },
+    {
+      "caseId": "FC41",
+      "category": "CLIFF_JUMPING",
+      "groundTruth": "",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [],
+      "classification": "UNSCORED"
+    },
+    {
+      "caseId": "FC42",
+      "category": "CLIFF_JUMPING",
+      "groundTruth": "",
+      "exactAt1": false,
+      "exactAt3": false,
+      "top3": [],
+      "classification": "UNSCORED"
+    }
+  ]
+}

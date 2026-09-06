@@ -1,0 +1,2361 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-06T00:04:53.050Z",
+  "arm": "SIMPLE_SOL",
+  "model": "gpt-5.6-sol",
+  "reasoningEffort": "high",
+  "frameArm": "F1",
+  "modelArm": "M1",
+  "inferenceGroundTruthLoaded": false,
+  "cacheUsed": false,
+  "googleCandidatesSentToSol": false,
+  "productionTarget": false,
+  "attemptedCases": 42,
+  "acquiredCases": 42,
+  "technicalFailures": 0,
+  "results": [
+    {
+      "caseId": "CJ001",
+      "outcome": "PLAUSIBILITY_ONLY",
+      "rawSolTop3": [
+        {
+          "rank": 1,
+          "name": "Lac de Vouglans",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": null,
+          "region": "Jura, Bourgogne-Franche-Comté",
+          "country": "France"
+        },
+        {
+          "rank": 2,
+          "name": "Gorges de l’Ardèche",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": null,
+          "region": "Ardèche, Auvergne-Rhône-Alpes",
+          "country": "France"
+        },
+        {
+          "rank": 3,
+          "name": "Gorges du Tarn",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": null,
+          "region": "Lozère, Occitanie",
+          "country": "France"
+        }
+      ],
+      "canonicalTop3": [
+        {
+          "rank": 1,
+          "name": "Lac de Vouglans",
+          "rawName": "Lac de Vouglans",
+          "status": "CANONICAL_EXACT",
+          "latitude": 46.485,
+          "longitude": 5.680833
+        },
+        {
+          "rank": 2,
+          "name": "Gorges de l’Ardèche",
+          "rawName": "Gorges de l’Ardèche",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 3,
+          "name": "Gorges du Tarn",
+          "rawName": "Gorges du Tarn",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "rawExactAt1": false,
+      "rawExactAt3": false,
+      "exactAt1": false,
+      "exactAt3": false,
+      "specificReasonableAt3": true,
+      "broadGeographyOnly": false,
+      "genericDescriptorEmitted": false,
+      "genericDescriptorDisposition": "NOT_EMITTED",
+      "canonicalizationEffect": "NO_EXACT_IDENTITY_LOSS",
+      "latencyMs": 67615,
+      "modelCostUsd": 0.067204,
+      "webSearchCalls": 0,
+      "failure": null
+    },
+    {
+      "caseId": "CJ002",
+      "outcome": "PLAUSIBILITY_ONLY",
+      "rawSolTop3": [
+        {
+          "rank": 1,
+          "name": "Calanque de la Vesse and the Côte Bleue railway cliffs",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Le Rove",
+          "region": "Provence-Alpes-Côte d’Azur",
+          "country": "France"
+        },
+        {
+          "rank": 2,
+          "name": "Fort Saint-Jean at Marseille’s Vieux-Port",
+          "entityType": "LANDMARK",
+          "locality": "Marseille",
+          "region": "Provence-Alpes-Côte d’Azur",
+          "country": "France"
+        },
+        {
+          "rank": 3,
+          "name": "Abandoned Piscine de Luminy",
+          "entityType": "LANDMARK",
+          "locality": "Marseille",
+          "region": "Provence-Alpes-Côte d’Azur",
+          "country": "France"
+        }
+      ],
+      "canonicalTop3": [
+        {
+          "rank": 1,
+          "name": "La Vesse",
+          "rawName": "Calanque de la Vesse and the Côte Bleue railway cliffs",
+          "status": "CANONICAL_ALIAS",
+          "latitude": 43.343916,
+          "longitude": 5.257961
+        },
+        {
+          "rank": 2,
+          "name": "Fort Saint-Jean",
+          "rawName": "Fort Saint-Jean at Marseille’s Vieux-Port",
+          "status": "CANONICAL_ALIAS",
+          "latitude": 43.2953604,
+          "longitude": 5.3617108
+        },
+        {
+          "rank": 3,
+          "name": "Abandoned Piscine de Luminy",
+          "rawName": "Abandoned Piscine de Luminy",
+          "status": "NAMED_LEAD",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "rawExactAt1": false,
+      "rawExactAt3": false,
+      "exactAt1": false,
+      "exactAt3": false,
+      "specificReasonableAt3": true,
+      "broadGeographyOnly": false,
+      "genericDescriptorEmitted": false,
+      "genericDescriptorDisposition": "NOT_EMITTED",
+      "canonicalizationEffect": "NO_EXACT_IDENTITY_LOSS",
+      "latencyMs": 156413,
+      "modelCostUsd": 0.187208,
+      "webSearchCalls": 0,
+      "failure": null
+    },
+    {
+      "caseId": "CJ003",
+      "outcome": "EXACT_SCORED",
+      "rawSolTop3": [
+        {
+          "rank": 1,
+          "name": "Sooke Potholes Provincial Park",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Sooke",
+          "region": "British Columbia",
+          "country": "Canada"
+        },
+        {
+          "rank": 2,
+          "name": "Wally Creek (Kennedy River)",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": null,
+          "region": "British Columbia",
+          "country": "Canada"
+        },
+        {
+          "rank": 3,
+          "name": "Englishman River Falls Provincial Park",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Errington",
+          "region": "British Columbia",
+          "country": "Canada"
+        }
+      ],
+      "canonicalTop3": [
+        {
+          "rank": 1,
+          "name": "Sooke Potholes Provincial Park",
+          "rawName": "Sooke Potholes Provincial Park",
+          "status": "CANONICAL_EXACT",
+          "latitude": 48.4279465,
+          "longitude": -123.71261109999998
+        },
+        {
+          "rank": 2,
+          "name": "Wally Creek (Kennedy River)",
+          "rawName": "Wally Creek (Kennedy River)",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 3,
+          "name": "Englishman River Falls Provincial Park",
+          "rawName": "Englishman River Falls Provincial Park",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "rawExactAt1": true,
+      "rawExactAt3": true,
+      "exactAt1": true,
+      "exactAt3": true,
+      "specificReasonableAt3": true,
+      "broadGeographyOnly": false,
+      "genericDescriptorEmitted": false,
+      "genericDescriptorDisposition": "NOT_EMITTED",
+      "canonicalizationEffect": "NO_EXACT_IDENTITY_LOSS",
+      "latencyMs": 75611,
+      "modelCostUsd": 0.095344,
+      "webSearchCalls": 0,
+      "failure": null
+    },
+    {
+      "caseId": "CJ004",
+      "outcome": "EXACT_SCORED",
+      "rawSolTop3": [
+        {
+          "rank": 1,
+          "name": "Moku Nui, Nā Mokulua (the Mokulua Islands)",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Kailua",
+          "region": "Hawaii",
+          "country": "United States"
+        },
+        {
+          "rank": 2,
+          "name": "Queen’s Bath cliff-jumping cove, Moku Nui",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Kailua",
+          "region": "Hawaii",
+          "country": "United States"
+        }
+      ],
+      "canonicalTop3": [
+        {
+          "rank": 1,
+          "name": "Na Mokulua",
+          "rawName": "Moku Nui, Nā Mokulua (the Mokulua Islands)",
+          "status": "CANONICAL_ALIAS",
+          "latitude": 21.386944399999997,
+          "longitude": -157.7138889
+        },
+        {
+          "rank": 2,
+          "name": "Queen’s Bath cliff-jumping cove, Moku Nui",
+          "rawName": "Queen’s Bath cliff-jumping cove, Moku Nui",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "rawExactAt1": true,
+      "rawExactAt3": true,
+      "exactAt1": false,
+      "exactAt3": true,
+      "specificReasonableAt3": true,
+      "broadGeographyOnly": false,
+      "genericDescriptorEmitted": false,
+      "genericDescriptorDisposition": "NOT_EMITTED",
+      "canonicalizationEffect": "NO_EXACT_IDENTITY_LOSS",
+      "latencyMs": 33491,
+      "modelCostUsd": 0.054656,
+      "webSearchCalls": 0,
+      "failure": null
+    },
+    {
+      "caseId": "CJ005",
+      "outcome": "EXACT_SCORED",
+      "rawSolTop3": [
+        {
+          "rank": 1,
+          "name": "Ponta da Piedade sea caves",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Lagos",
+          "region": "Algarve",
+          "country": "Portugal"
+        },
+        {
+          "rank": 2,
+          "name": "Captain's Cave (Gruta do Capitão)",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Lagoa",
+          "region": "Algarve",
+          "country": "Portugal"
+        },
+        {
+          "rank": 3,
+          "name": "Algar da Albandeira",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Lagoa",
+          "region": "Algarve",
+          "country": "Portugal"
+        }
+      ],
+      "canonicalTop3": [
+        {
+          "rank": 1,
+          "name": "Ponta da Piedade",
+          "rawName": "Ponta da Piedade sea caves",
+          "status": "CANONICAL_ALIAS",
+          "latitude": 37.0798758,
+          "longitude": -8.6685911
+        },
+        {
+          "rank": 2,
+          "name": "Captain's Cave (Gruta do Capitão)",
+          "rawName": "Captain's Cave (Gruta do Capitão)",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 3,
+          "name": "Algar da Albandeira",
+          "rawName": "Algar da Albandeira",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "rawExactAt1": true,
+      "rawExactAt3": true,
+      "exactAt1": true,
+      "exactAt3": true,
+      "specificReasonableAt3": true,
+      "broadGeographyOnly": false,
+      "genericDescriptorEmitted": false,
+      "genericDescriptorDisposition": "NOT_EMITTED",
+      "canonicalizationEffect": "NO_EXACT_IDENTITY_LOSS",
+      "latencyMs": 69616,
+      "modelCostUsd": 0.092436,
+      "webSearchCalls": 0,
+      "failure": null
+    },
+    {
+      "caseId": "CJ006",
+      "outcome": "EXACT_SCORED",
+      "rawSolTop3": [
+        {
+          "rank": 1,
+          "name": "Lido Galomar (Galo Resort bathing complex)",
+          "entityType": "BUSINESS",
+          "locality": "Caniço",
+          "region": "Madeira",
+          "country": "Portugal"
+        }
+      ],
+      "canonicalTop3": [
+        {
+          "rank": 1,
+          "name": "Lido Galomar",
+          "rawName": "Lido Galomar (Galo Resort bathing complex)",
+          "status": "CANONICAL_ALIAS",
+          "latitude": 32.6410985,
+          "longitude": -16.8326288
+        }
+      ],
+      "rawExactAt1": true,
+      "rawExactAt3": true,
+      "exactAt1": true,
+      "exactAt3": true,
+      "specificReasonableAt3": true,
+      "broadGeographyOnly": false,
+      "genericDescriptorEmitted": false,
+      "genericDescriptorDisposition": "NOT_EMITTED",
+      "canonicalizationEffect": "NO_EXACT_IDENTITY_LOSS",
+      "latencyMs": 34110,
+      "modelCostUsd": 0.053076,
+      "webSearchCalls": 0,
+      "failure": null
+    },
+    {
+      "caseId": "CJ007",
+      "outcome": "EXACT_SCORED",
+      "rawSolTop3": [
+        {
+          "rank": 1,
+          "name": "Cala Varques",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Manacor",
+          "region": "Balearic Islands",
+          "country": "Spain"
+        },
+        {
+          "rank": 2,
+          "name": "Cala Mitjana",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Felanitx",
+          "region": "Balearic Islands",
+          "country": "Spain"
+        },
+        {
+          "rank": 3,
+          "name": "Cala Sa Nau",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Felanitx",
+          "region": "Balearic Islands",
+          "country": "Spain"
+        }
+      ],
+      "canonicalTop3": [
+        {
+          "rank": 1,
+          "name": "Cala Varques",
+          "rawName": "Cala Varques",
+          "status": "AMBIGUOUS_CANONICAL",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 2,
+          "name": "Cala Mitjana",
+          "rawName": "Cala Mitjana",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 3,
+          "name": "Cala Sa Nau",
+          "rawName": "Cala Sa Nau",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "rawExactAt1": true,
+      "rawExactAt3": true,
+      "exactAt1": true,
+      "exactAt3": true,
+      "specificReasonableAt3": true,
+      "broadGeographyOnly": false,
+      "genericDescriptorEmitted": false,
+      "genericDescriptorDisposition": "NOT_EMITTED",
+      "canonicalizationEffect": "NO_EXACT_IDENTITY_LOSS",
+      "latencyMs": 44425,
+      "modelCostUsd": 0.0647,
+      "webSearchCalls": 0,
+      "failure": null
+    },
+    {
+      "caseId": "CJ008",
+      "outcome": "EXACT_SCORED",
+      "rawSolTop3": [
+        {
+          "rank": 1,
+          "name": "Cenote Zací",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Valladolid",
+          "region": "Yucatán",
+          "country": "Mexico"
+        },
+        {
+          "rank": 2,
+          "name": "Cenote Ik Kil",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Pisté",
+          "region": "Yucatán",
+          "country": "Mexico"
+        },
+        {
+          "rank": 3,
+          "name": "Cenote Xux-Ha",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Chemax",
+          "region": "Yucatán",
+          "country": "Mexico"
+        }
+      ],
+      "canonicalTop3": [
+        {
+          "rank": 1,
+          "name": "Cenote Zaci",
+          "rawName": "Cenote Zací",
+          "status": "CANONICAL_EXACT",
+          "latitude": 20.6916378,
+          "longitude": -88.19734629999999
+        },
+        {
+          "rank": 2,
+          "name": "Cenote Ik Kil",
+          "rawName": "Cenote Ik Kil",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 3,
+          "name": "Cenote Xux-Ha",
+          "rawName": "Cenote Xux-Ha",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "rawExactAt1": true,
+      "rawExactAt3": true,
+      "exactAt1": true,
+      "exactAt3": true,
+      "specificReasonableAt3": true,
+      "broadGeographyOnly": false,
+      "genericDescriptorEmitted": false,
+      "genericDescriptorDisposition": "NOT_EMITTED",
+      "canonicalizationEffect": "NO_EXACT_IDENTITY_LOSS",
+      "latencyMs": 51494,
+      "modelCostUsd": 0.068228,
+      "webSearchCalls": 0,
+      "failure": null
+    },
+    {
+      "caseId": "CJ009",
+      "outcome": "EXACT_SCORED",
+      "rawSolTop3": [
+        {
+          "rank": 1,
+          "name": "Waimea Bay Jump Rock at Waimea Bay Beach Park",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Haleiwa",
+          "region": "Hawaii",
+          "country": "United States"
+        }
+      ],
+      "canonicalTop3": [
+        {
+          "rank": 1,
+          "name": "Waimea Bay Jump Rock at Waimea Bay Beach Park",
+          "rawName": "Waimea Bay Jump Rock at Waimea Bay Beach Park",
+          "status": "PARENT_ONLY_MATCH",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "rawExactAt1": true,
+      "rawExactAt3": true,
+      "exactAt1": true,
+      "exactAt3": true,
+      "specificReasonableAt3": false,
+      "broadGeographyOnly": false,
+      "genericDescriptorEmitted": false,
+      "genericDescriptorDisposition": "NOT_EMITTED",
+      "canonicalizationEffect": "NO_EXACT_IDENTITY_LOSS",
+      "latencyMs": 18612,
+      "modelCostUsd": 0.035828,
+      "webSearchCalls": 0,
+      "failure": null
+    },
+    {
+      "caseId": "CJ010",
+      "outcome": "PLAUSIBILITY_ONLY",
+      "rawSolTop3": [
+        {
+          "rank": 1,
+          "name": "Unidentified coastal sea cave or blowhole on Mallorca",
+          "entityType": "UNKNOWN",
+          "locality": null,
+          "region": "Balearic Islands",
+          "country": "Spain"
+        }
+      ],
+      "canonicalTop3": [
+        {
+          "rank": 1,
+          "name": "Unidentified coastal sea cave or blowhole on Mallorca",
+          "rawName": "Unidentified coastal sea cave or blowhole on Mallorca",
+          "status": "NAMED_LEAD",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "rawExactAt1": false,
+      "rawExactAt3": false,
+      "exactAt1": false,
+      "exactAt3": false,
+      "specificReasonableAt3": false,
+      "broadGeographyOnly": false,
+      "genericDescriptorEmitted": true,
+      "genericDescriptorDisposition": "INCORRECTLY_SHOWN_AS_ANSWER",
+      "canonicalizationEffect": "NO_EXACT_IDENTITY_LOSS",
+      "latencyMs": 34932,
+      "modelCostUsd": 0.053716,
+      "webSearchCalls": 0,
+      "failure": null
+    },
+    {
+      "caseId": "CJ011",
+      "outcome": "EXACT_SCORED",
+      "rawSolTop3": [
+        {
+          "rank": 1,
+          "name": "Makapipi Falls",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Hana",
+          "region": "Maui, Hawaii",
+          "country": "United States"
+        },
+        {
+          "rank": 2,
+          "name": "Ching's Pond (Blue Sapphire Pool)",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Hana",
+          "region": "Maui, Hawaii",
+          "country": "United States"
+        },
+        {
+          "rank": 3,
+          "name": "Kopiliula Falls",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Hana",
+          "region": "Maui, Hawaii",
+          "country": "United States"
+        }
+      ],
+      "canonicalTop3": [
+        {
+          "rank": 1,
+          "name": "Makapipi Falls",
+          "rawName": "Makapipi Falls",
+          "status": "CANONICAL_EXACT",
+          "latitude": 20.807594299999998,
+          "longitude": -156.09621210000003
+        },
+        {
+          "rank": 2,
+          "name": "Ching's Pond (Blue Sapphire Pool)",
+          "rawName": "Ching's Pond (Blue Sapphire Pool)",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 3,
+          "name": "Kopiliula Falls",
+          "rawName": "Kopiliula Falls",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "rawExactAt1": true,
+      "rawExactAt3": true,
+      "exactAt1": true,
+      "exactAt3": true,
+      "specificReasonableAt3": true,
+      "broadGeographyOnly": false,
+      "genericDescriptorEmitted": false,
+      "genericDescriptorDisposition": "NOT_EMITTED",
+      "canonicalizationEffect": "NO_EXACT_IDENTITY_LOSS",
+      "latencyMs": 56364,
+      "modelCostUsd": 0.084652,
+      "webSearchCalls": 0,
+      "failure": null
+    },
+    {
+      "caseId": "CJ012",
+      "outcome": "EXACT_SCORED",
+      "rawSolTop3": [
+        {
+          "rank": 1,
+          "name": "Tamolitch Blue Pool",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "McKenzie Bridge",
+          "region": "Oregon",
+          "country": "United States"
+        }
+      ],
+      "canonicalTop3": [
+        {
+          "rank": 1,
+          "name": "Tamolitch Falls (Blue Pool)",
+          "rawName": "Tamolitch Blue Pool",
+          "status": "CANONICAL_ALIAS",
+          "latitude": 44.3120373,
+          "longitude": -122.02704879999997
+        }
+      ],
+      "rawExactAt1": true,
+      "rawExactAt3": true,
+      "exactAt1": true,
+      "exactAt3": true,
+      "specificReasonableAt3": true,
+      "broadGeographyOnly": false,
+      "genericDescriptorEmitted": false,
+      "genericDescriptorDisposition": "NOT_EMITTED",
+      "canonicalizationEffect": "NO_EXACT_IDENTITY_LOSS",
+      "latencyMs": 25620,
+      "modelCostUsd": 0.042864,
+      "webSearchCalls": 0,
+      "failure": null
+    },
+    {
+      "caseId": "CJ013",
+      "outcome": "EXACT_SCORED",
+      "rawSolTop3": [
+        {
+          "rank": 1,
+          "name": "Ching's Pond (Blue Sapphire Pool)",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Keʻanae",
+          "region": "Maui, Hawaii",
+          "country": "United States"
+        }
+      ],
+      "canonicalTop3": [
+        {
+          "rank": 1,
+          "name": "Ching's Pond (Blue Sapphire Pool)",
+          "rawName": "Ching's Pond (Blue Sapphire Pool)",
+          "status": "NAMED_LEAD",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "rawExactAt1": true,
+      "rawExactAt3": true,
+      "exactAt1": true,
+      "exactAt3": true,
+      "specificReasonableAt3": true,
+      "broadGeographyOnly": false,
+      "genericDescriptorEmitted": false,
+      "genericDescriptorDisposition": "NOT_EMITTED",
+      "canonicalizationEffect": "NO_EXACT_IDENTITY_LOSS",
+      "latencyMs": 43583,
+      "modelCostUsd": 0.064312,
+      "webSearchCalls": 0,
+      "failure": null
+    },
+    {
+      "caseId": "CJ014",
+      "outcome": "EXACT_SCORED",
+      "rawSolTop3": [
+        {
+          "rank": 1,
+          "name": "Spitting Cave",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Honolulu",
+          "region": "Hawaii",
+          "country": "United States"
+        },
+        {
+          "rank": 2,
+          "name": "China Walls",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Honolulu",
+          "region": "Hawaii",
+          "country": "United States"
+        }
+      ],
+      "canonicalTop3": [
+        {
+          "rank": 1,
+          "name": "Spitting Cave",
+          "rawName": "Spitting Cave",
+          "status": "CANONICAL_EXACT",
+          "latitude": 21.2595075,
+          "longitude": -157.7076774
+        },
+        {
+          "rank": 2,
+          "name": "China Walls",
+          "rawName": "China Walls",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "rawExactAt1": true,
+      "rawExactAt3": true,
+      "exactAt1": true,
+      "exactAt3": true,
+      "specificReasonableAt3": true,
+      "broadGeographyOnly": false,
+      "genericDescriptorEmitted": false,
+      "genericDescriptorDisposition": "NOT_EMITTED",
+      "canonicalizationEffect": "NO_EXACT_IDENTITY_LOSS",
+      "latencyMs": 41696,
+      "modelCostUsd": 0.062424,
+      "webSearchCalls": 0,
+      "failure": null
+    },
+    {
+      "caseId": "CJ015",
+      "outcome": "EXACT_SCORED",
+      "rawSolTop3": [
+        {
+          "rank": 1,
+          "name": "Pont d’en Gil",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Ciutadella de Menorca",
+          "region": "Balearic Islands",
+          "country": "Spain"
+        },
+        {
+          "rank": 2,
+          "name": "Pont Natural de Cala Varques",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Manacor",
+          "region": "Mallorca, Balearic Islands",
+          "country": "Spain"
+        }
+      ],
+      "canonicalTop3": [
+        {
+          "rank": 1,
+          "name": "Pont d'en Gil",
+          "rawName": "Pont d’en Gil",
+          "status": "CANONICAL_EXACT",
+          "latitude": 40.010919099999995,
+          "longitude": 3.7942378000000003
+        },
+        {
+          "rank": 2,
+          "name": "Pont Natural de Cala Varques",
+          "rawName": "Pont Natural de Cala Varques",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "rawExactAt1": true,
+      "rawExactAt3": true,
+      "exactAt1": true,
+      "exactAt3": true,
+      "specificReasonableAt3": true,
+      "broadGeographyOnly": false,
+      "genericDescriptorEmitted": false,
+      "genericDescriptorDisposition": "NOT_EMITTED",
+      "canonicalizationEffect": "NO_EXACT_IDENTITY_LOSS",
+      "latencyMs": 82428,
+      "modelCostUsd": 0.094664,
+      "webSearchCalls": 0,
+      "failure": null
+    },
+    {
+      "caseId": "CJ016",
+      "outcome": "EXACT_SCORED",
+      "rawSolTop3": [
+        {
+          "rank": 1,
+          "name": "Sunset Cliffs Natural Park",
+          "entityType": "LANDMARK",
+          "locality": "San Diego",
+          "region": "California",
+          "country": "United States"
+        }
+      ],
+      "canonicalTop3": [
+        {
+          "rank": 1,
+          "name": "Sunset Cliffs Natural Park",
+          "rawName": "Sunset Cliffs Natural Park",
+          "status": "CANONICAL_EXACT",
+          "latitude": 32.715915,
+          "longitude": -117.25516789999999
+        }
+      ],
+      "rawExactAt1": false,
+      "rawExactAt3": false,
+      "exactAt1": false,
+      "exactAt3": false,
+      "specificReasonableAt3": false,
+      "broadGeographyOnly": false,
+      "genericDescriptorEmitted": false,
+      "genericDescriptorDisposition": "NOT_EMITTED",
+      "canonicalizationEffect": "NO_EXACT_IDENTITY_LOSS",
+      "latencyMs": 36324,
+      "modelCostUsd": 0.05288,
+      "webSearchCalls": 0,
+      "failure": null
+    },
+    {
+      "caseId": "CJ017",
+      "outcome": "EXACT_SCORED",
+      "rawSolTop3": [
+        {
+          "rank": 1,
+          "name": "The Crack at Wet Beaver Creek",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Rimrock",
+          "region": "Arizona",
+          "country": "United States"
+        },
+        {
+          "rank": 2,
+          "name": "Bull Pen Swimming Hole on West Clear Creek",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Camp Verde",
+          "region": "Arizona",
+          "country": "United States"
+        },
+        {
+          "rank": 3,
+          "name": "Grasshopper Point Swimming & Picnic Area",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Sedona",
+          "region": "Arizona",
+          "country": "United States"
+        }
+      ],
+      "canonicalTop3": [
+        {
+          "rank": 1,
+          "name": "The Crack at Wet Beaver Creek",
+          "rawName": "The Crack at Wet Beaver Creek",
+          "status": "CANONICAL_EXACT",
+          "latitude": 34.6739472,
+          "longitude": -111.66018299999999
+        },
+        {
+          "rank": 2,
+          "name": "Bull Pen Swimming Hole on West Clear Creek",
+          "rawName": "Bull Pen Swimming Hole on West Clear Creek",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 3,
+          "name": "Grasshopper Point Swimming & Picnic Area",
+          "rawName": "Grasshopper Point Swimming & Picnic Area",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "rawExactAt1": true,
+      "rawExactAt3": true,
+      "exactAt1": true,
+      "exactAt3": true,
+      "specificReasonableAt3": true,
+      "broadGeographyOnly": false,
+      "genericDescriptorEmitted": false,
+      "genericDescriptorDisposition": "NOT_EMITTED",
+      "canonicalizationEffect": "NO_EXACT_IDENTITY_LOSS",
+      "latencyMs": 25199,
+      "modelCostUsd": 0.035252,
+      "webSearchCalls": 0,
+      "failure": null
+    },
+    {
+      "caseId": "CJ018",
+      "outcome": "PLAUSIBILITY_ONLY",
+      "rawSolTop3": [
+        {
+          "rank": 1,
+          "name": "Embalse de La Toba",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Uña",
+          "region": "Castilla-La Mancha",
+          "country": "Spain"
+        },
+        {
+          "rank": 2,
+          "name": "Embalse del Portillo",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Castril",
+          "region": "Andalusia",
+          "country": "Spain"
+        },
+        {
+          "rank": 3,
+          "name": "Embalse de Escales",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Sopeira",
+          "region": "Aragon",
+          "country": "Spain"
+        }
+      ],
+      "canonicalTop3": [
+        {
+          "rank": 1,
+          "name": "Embalse de la Toba",
+          "rawName": "Embalse de La Toba",
+          "status": "CANONICAL_EXACT",
+          "latitude": 40.208281199999995,
+          "longitude": -1.9068707999999999
+        },
+        {
+          "rank": 2,
+          "name": "Embalse del Portillo",
+          "rawName": "Embalse del Portillo",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 3,
+          "name": "Embalse de Escales",
+          "rawName": "Embalse de Escales",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "rawExactAt1": false,
+      "rawExactAt3": false,
+      "exactAt1": false,
+      "exactAt3": false,
+      "specificReasonableAt3": true,
+      "broadGeographyOnly": false,
+      "genericDescriptorEmitted": false,
+      "genericDescriptorDisposition": "NOT_EMITTED",
+      "canonicalizationEffect": "NO_EXACT_IDENTITY_LOSS",
+      "latencyMs": 62815,
+      "modelCostUsd": 0.0753,
+      "webSearchCalls": 0,
+      "failure": null
+    },
+    {
+      "caseId": "CJ019",
+      "outcome": "EXACT_SCORED",
+      "rawSolTop3": [
+        {
+          "rank": 1,
+          "name": "Potem Falls",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Montgomery Creek",
+          "region": "California",
+          "country": "United States"
+        },
+        {
+          "rank": 2,
+          "name": "Middle McCloud Falls",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "McCloud",
+          "region": "California",
+          "country": "United States"
+        },
+        {
+          "rank": 3,
+          "name": "Hatchet Creek Falls",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Montgomery Creek",
+          "region": "California",
+          "country": "United States"
+        }
+      ],
+      "canonicalTop3": [
+        {
+          "rank": 1,
+          "name": "Potem Falls",
+          "rawName": "Potem Falls",
+          "status": "CANONICAL_EXACT",
+          "latitude": 40.8387659,
+          "longitude": -122.0283326
+        },
+        {
+          "rank": 2,
+          "name": "Middle McCloud Falls",
+          "rawName": "Middle McCloud Falls",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 3,
+          "name": "Hatchet Creek Falls",
+          "rawName": "Hatchet Creek Falls",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "rawExactAt1": true,
+      "rawExactAt3": true,
+      "exactAt1": true,
+      "exactAt3": true,
+      "specificReasonableAt3": true,
+      "broadGeographyOnly": false,
+      "genericDescriptorEmitted": false,
+      "genericDescriptorDisposition": "NOT_EMITTED",
+      "canonicalizationEffect": "NO_EXACT_IDENTITY_LOSS",
+      "latencyMs": 69473,
+      "modelCostUsd": 0.081308,
+      "webSearchCalls": 0,
+      "failure": null
+    },
+    {
+      "caseId": "CJ020",
+      "outcome": "EXACT_SCORED",
+      "rawSolTop3": [
+        {
+          "rank": 1,
+          "name": "Cenote Maya (Cenote Maya Native Park)",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Valladolid",
+          "region": "Yucatán",
+          "country": "Mexico"
+        },
+        {
+          "rank": 2,
+          "name": "Cenote Chukum",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Valladolid",
+          "region": "Yucatán",
+          "country": "Mexico"
+        },
+        {
+          "rank": 3,
+          "name": "Cenote Palomitas",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Yalcobá",
+          "region": "Yucatán",
+          "country": "Mexico"
+        }
+      ],
+      "canonicalTop3": [
+        {
+          "rank": 1,
+          "name": "Cenote Maya park",
+          "rawName": "Cenote Maya (Cenote Maya Native Park)",
+          "status": "CANONICAL_ALIAS",
+          "latitude": 20.774475499999998,
+          "longitude": -87.9797936
+        },
+        {
+          "rank": 2,
+          "name": "Cenote Chukum",
+          "rawName": "Cenote Chukum",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 3,
+          "name": "Cenote Palomitas",
+          "rawName": "Cenote Palomitas",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "rawExactAt1": true,
+      "rawExactAt3": true,
+      "exactAt1": true,
+      "exactAt3": true,
+      "specificReasonableAt3": true,
+      "broadGeographyOnly": false,
+      "genericDescriptorEmitted": false,
+      "genericDescriptorDisposition": "NOT_EMITTED",
+      "canonicalizationEffect": "NO_EXACT_IDENTITY_LOSS",
+      "latencyMs": 94712,
+      "modelCostUsd": 0.115088,
+      "webSearchCalls": 0,
+      "failure": null
+    },
+    {
+      "caseId": "CJ021",
+      "outcome": "PLAUSIBILITY_ONLY",
+      "rawSolTop3": [
+        {
+          "rank": 1,
+          "name": "Unidentified jungle waterfall on Nahua Expeditions’ Tzotzil Expedition route",
+          "entityType": "UNKNOWN",
+          "locality": null,
+          "region": "Chiapas",
+          "country": "Mexico"
+        },
+        {
+          "rank": 2,
+          "name": "Cascada El Aguacero",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Ocozocoautla de Espinosa",
+          "region": "Chiapas",
+          "country": "Mexico"
+        }
+      ],
+      "canonicalTop3": [
+        {
+          "rank": 1,
+          "name": "Unidentified jungle waterfall on Nahua Expeditions’ Tzotzil Expedition route",
+          "rawName": "Unidentified jungle waterfall on Nahua Expeditions’ Tzotzil Expedition route",
+          "status": "NAMED_LEAD",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 2,
+          "name": "Cascada El Aguacero",
+          "rawName": "Cascada El Aguacero",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "rawExactAt1": false,
+      "rawExactAt3": false,
+      "exactAt1": false,
+      "exactAt3": false,
+      "specificReasonableAt3": false,
+      "broadGeographyOnly": false,
+      "genericDescriptorEmitted": true,
+      "genericDescriptorDisposition": "INCORRECTLY_SHOWN_AS_ANSWER",
+      "canonicalizationEffect": "NO_EXACT_IDENTITY_LOSS",
+      "latencyMs": 69682,
+      "modelCostUsd": 0.097696,
+      "webSearchCalls": 0,
+      "failure": null
+    },
+    {
+      "caseId": "CJ022",
+      "outcome": "PLAUSIBILITY_ONLY",
+      "rawSolTop3": [
+        {
+          "rank": 1,
+          "name": "Área Recreativa El Chantre (Río Júcar)",
+          "entityType": "LANDMARK",
+          "locality": "Cuenca",
+          "region": "Castilla-La Mancha",
+          "country": "Spain"
+        },
+        {
+          "rank": 2,
+          "name": "Las Chorreras del Cabriel",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Enguídanos",
+          "region": "Castilla-La Mancha",
+          "country": "Spain"
+        },
+        {
+          "rank": 3,
+          "name": "Área Recreativa de Cañamares (Río Escabas)",
+          "entityType": "LANDMARK",
+          "locality": "Cañamares",
+          "region": "Castilla-La Mancha",
+          "country": "Spain"
+        }
+      ],
+      "canonicalTop3": [
+        {
+          "rank": 1,
+          "name": "Área recreativa Chantre",
+          "rawName": "Área Recreativa El Chantre (Río Júcar)",
+          "status": "CANONICAL_ALIAS",
+          "latitude": 40.1424526,
+          "longitude": -2.1340885
+        },
+        {
+          "rank": 2,
+          "name": "Las Chorreras del Cabriel",
+          "rawName": "Las Chorreras del Cabriel",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 3,
+          "name": "Área Recreativa de Cañamares (Río Escabas)",
+          "rawName": "Área Recreativa de Cañamares (Río Escabas)",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "rawExactAt1": false,
+      "rawExactAt3": false,
+      "exactAt1": false,
+      "exactAt3": false,
+      "specificReasonableAt3": true,
+      "broadGeographyOnly": false,
+      "genericDescriptorEmitted": false,
+      "genericDescriptorDisposition": "NOT_EMITTED",
+      "canonicalizationEffect": "NO_EXACT_IDENTITY_LOSS",
+      "latencyMs": 98030,
+      "modelCostUsd": 0.11666,
+      "webSearchCalls": 0,
+      "failure": null
+    },
+    {
+      "caseId": "CJ023",
+      "outcome": "EXACT_SCORED",
+      "rawSolTop3": [
+        {
+          "rank": 1,
+          "name": "Bassin La Paix",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Bras-Panon",
+          "region": "Réunion",
+          "country": "France"
+        }
+      ],
+      "canonicalTop3": [
+        {
+          "rank": 1,
+          "name": "Bassin La Paix",
+          "rawName": "Bassin La Paix",
+          "status": "AMBIGUOUS_CANONICAL",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "rawExactAt1": true,
+      "rawExactAt3": true,
+      "exactAt1": true,
+      "exactAt3": true,
+      "specificReasonableAt3": true,
+      "broadGeographyOnly": false,
+      "genericDescriptorEmitted": false,
+      "genericDescriptorDisposition": "NOT_EMITTED",
+      "canonicalizationEffect": "NO_EXACT_IDENTITY_LOSS",
+      "latencyMs": 19660,
+      "modelCostUsd": 0.03904,
+      "webSearchCalls": 0,
+      "failure": null
+    },
+    {
+      "caseId": "CJ024",
+      "outcome": "EXACT_SCORED",
+      "rawSolTop3": [
+        {
+          "rank": 1,
+          "name": "Es Pontàs",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Santanyí",
+          "region": "Mallorca, Balearic Islands",
+          "country": "Spain"
+        }
+      ],
+      "canonicalTop3": [
+        {
+          "rank": 1,
+          "name": "Es Pontàs",
+          "rawName": "Es Pontàs",
+          "status": "AMBIGUOUS_CANONICAL",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "rawExactAt1": true,
+      "rawExactAt3": true,
+      "exactAt1": true,
+      "exactAt3": true,
+      "specificReasonableAt3": true,
+      "broadGeographyOnly": false,
+      "genericDescriptorEmitted": false,
+      "genericDescriptorDisposition": "NOT_EMITTED",
+      "canonicalizationEffect": "NO_EXACT_IDENTITY_LOSS",
+      "latencyMs": 14713,
+      "modelCostUsd": 0.0221,
+      "webSearchCalls": 0,
+      "failure": null
+    },
+    {
+      "caseId": "CJ025",
+      "outcome": "EXACT_SCORED",
+      "rawSolTop3": [
+        {
+          "rank": 1,
+          "name": "Fort Lauderdale Aquatic Center",
+          "entityType": "LANDMARK",
+          "locality": "Fort Lauderdale",
+          "region": "Florida",
+          "country": "United States"
+        },
+        {
+          "rank": 2,
+          "name": "International Swimming Hall of Fame Aquatic Complex",
+          "entityType": "LANDMARK",
+          "locality": "Fort Lauderdale",
+          "region": "Florida",
+          "country": "United States"
+        }
+      ],
+      "canonicalTop3": [
+        {
+          "rank": 1,
+          "name": "Fort Lauderdale Aquatic Center",
+          "rawName": "Fort Lauderdale Aquatic Center",
+          "status": "CANONICAL_EXACT",
+          "latitude": 26.116561500000003,
+          "longitude": -80.1058888
+        },
+        {
+          "rank": 2,
+          "name": "International Swimming Hall of Fame Aquatic Complex",
+          "rawName": "International Swimming Hall of Fame Aquatic Complex",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "rawExactAt1": true,
+      "rawExactAt3": true,
+      "exactAt1": true,
+      "exactAt3": true,
+      "specificReasonableAt3": true,
+      "broadGeographyOnly": false,
+      "genericDescriptorEmitted": false,
+      "genericDescriptorDisposition": "NOT_EMITTED",
+      "canonicalizationEffect": "NO_EXACT_IDENTITY_LOSS",
+      "latencyMs": 25349,
+      "modelCostUsd": 0.039216,
+      "webSearchCalls": 0,
+      "failure": null
+    },
+    {
+      "caseId": "CJ026",
+      "outcome": "PLAUSIBILITY_ONLY",
+      "rawSolTop3": [
+        {
+          "rank": 1,
+          "name": "Marble River Provincial Park",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Port Alice",
+          "region": "British Columbia",
+          "country": "Canada"
+        },
+        {
+          "rank": 2,
+          "name": "Medicine Bowls (Browns River)",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Cumberland",
+          "region": "British Columbia",
+          "country": "Canada"
+        },
+        {
+          "rank": 3,
+          "name": "Three Pools Recreation Area",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Lyons",
+          "region": "Oregon",
+          "country": "United States"
+        }
+      ],
+      "canonicalTop3": [
+        {
+          "rank": 1,
+          "name": "Marble River Provincial Park",
+          "rawName": "Marble River Provincial Park",
+          "status": "CANONICAL_EXACT",
+          "latitude": 50.5276127,
+          "longitude": -127.43366199999998
+        },
+        {
+          "rank": 2,
+          "name": "Medicine Bowls (Browns River)",
+          "rawName": "Medicine Bowls (Browns River)",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 3,
+          "name": "Three Pools Recreation Area",
+          "rawName": "Three Pools Recreation Area",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "rawExactAt1": false,
+      "rawExactAt3": false,
+      "exactAt1": false,
+      "exactAt3": false,
+      "specificReasonableAt3": false,
+      "broadGeographyOnly": false,
+      "genericDescriptorEmitted": false,
+      "genericDescriptorDisposition": "NOT_EMITTED",
+      "canonicalizationEffect": "NO_EXACT_IDENTITY_LOSS",
+      "latencyMs": 98250,
+      "modelCostUsd": 0.116852,
+      "webSearchCalls": 0,
+      "failure": null
+    },
+    {
+      "caseId": "CJ027",
+      "outcome": "EXACT_SCORED",
+      "rawSolTop3": [
+        {
+          "rank": 1,
+          "name": "Koosah Falls",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "McKenzie Bridge",
+          "region": "Oregon",
+          "country": "United States"
+        }
+      ],
+      "canonicalTop3": [
+        {
+          "rank": 1,
+          "name": "Koosah Falls",
+          "rawName": "Koosah Falls",
+          "status": "CANONICAL_EXACT",
+          "latitude": 44.3440102,
+          "longitude": -122.0006166
+        }
+      ],
+      "rawExactAt1": true,
+      "rawExactAt3": true,
+      "exactAt1": true,
+      "exactAt3": true,
+      "specificReasonableAt3": true,
+      "broadGeographyOnly": false,
+      "genericDescriptorEmitted": false,
+      "genericDescriptorDisposition": "NOT_EMITTED",
+      "canonicalizationEffect": "NO_EXACT_IDENTITY_LOSS",
+      "latencyMs": 20240,
+      "modelCostUsd": 0.038096,
+      "webSearchCalls": 0,
+      "failure": null
+    },
+    {
+      "caseId": "CJ028",
+      "outcome": "PLAUSIBILITY_ONLY",
+      "rawSolTop3": [
+        {
+          "rank": 1,
+          "name": "Koosah Falls",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "McKenzie Bridge",
+          "region": "Oregon",
+          "country": "United States"
+        },
+        {
+          "rank": 2,
+          "name": "Sahalie Falls",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "McKenzie Bridge",
+          "region": "Oregon",
+          "country": "United States"
+        },
+        {
+          "rank": 3,
+          "name": "Lower Lewis River Falls",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Cougar",
+          "region": "Washington",
+          "country": "United States"
+        }
+      ],
+      "canonicalTop3": [
+        {
+          "rank": 1,
+          "name": "Koosah Falls",
+          "rawName": "Koosah Falls",
+          "status": "CANONICAL_EXACT",
+          "latitude": 44.3440102,
+          "longitude": -122.0006166
+        },
+        {
+          "rank": 2,
+          "name": "Sahalie Falls",
+          "rawName": "Sahalie Falls",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 3,
+          "name": "Lower Lewis River Falls",
+          "rawName": "Lower Lewis River Falls",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "rawExactAt1": false,
+      "rawExactAt3": false,
+      "exactAt1": false,
+      "exactAt3": false,
+      "specificReasonableAt3": true,
+      "broadGeographyOnly": false,
+      "genericDescriptorEmitted": false,
+      "genericDescriptorDisposition": "NOT_EMITTED",
+      "canonicalizationEffect": "NO_EXACT_IDENTITY_LOSS",
+      "latencyMs": 42077,
+      "modelCostUsd": 0.063852,
+      "webSearchCalls": 0,
+      "failure": null
+    },
+    {
+      "caseId": "CJ029",
+      "outcome": "EXACT_SCORED",
+      "rawSolTop3": [
+        {
+          "rank": 1,
+          "name": "Tamolitch Blue Pool",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "McKenzie Bridge",
+          "region": "Oregon",
+          "country": "United States"
+        }
+      ],
+      "canonicalTop3": [
+        {
+          "rank": 1,
+          "name": "Tamolitch Falls (Blue Pool)",
+          "rawName": "Tamolitch Blue Pool",
+          "status": "CANONICAL_ALIAS",
+          "latitude": 44.3120373,
+          "longitude": -122.02704879999997
+        }
+      ],
+      "rawExactAt1": true,
+      "rawExactAt3": true,
+      "exactAt1": true,
+      "exactAt3": true,
+      "specificReasonableAt3": true,
+      "broadGeographyOnly": false,
+      "genericDescriptorEmitted": false,
+      "genericDescriptorDisposition": "NOT_EMITTED",
+      "canonicalizationEffect": "NO_EXACT_IDENTITY_LOSS",
+      "latencyMs": 28248,
+      "modelCostUsd": 0.040568,
+      "webSearchCalls": 0,
+      "failure": null
+    },
+    {
+      "caseId": "CJ030",
+      "outcome": "EXACT_SCORED",
+      "rawSolTop3": [
+        {
+          "rank": 1,
+          "name": "Honeymoon Beach cliff-jumping ledge",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Jimbaran",
+          "region": "Bali",
+          "country": "Indonesia"
+        },
+        {
+          "rank": 2,
+          "name": "Pantai Plix",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Jimbaran",
+          "region": "Bali",
+          "country": "Indonesia"
+        },
+        {
+          "rank": 3,
+          "name": "Tegal Wangi Beach",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Jimbaran",
+          "region": "Bali",
+          "country": "Indonesia"
+        }
+      ],
+      "canonicalTop3": [
+        {
+          "rank": 1,
+          "name": "Honeymoon Beach cliff-jumping ledge",
+          "rawName": "Honeymoon Beach cliff-jumping ledge",
+          "status": "PARENT_ONLY_MATCH",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 2,
+          "name": "Pantai Plix",
+          "rawName": "Pantai Plix",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 3,
+          "name": "Tegal Wangi Beach",
+          "rawName": "Tegal Wangi Beach",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "rawExactAt1": true,
+      "rawExactAt3": true,
+      "exactAt1": true,
+      "exactAt3": true,
+      "specificReasonableAt3": true,
+      "broadGeographyOnly": false,
+      "genericDescriptorEmitted": false,
+      "genericDescriptorDisposition": "NOT_EMITTED",
+      "canonicalizationEffect": "NO_EXACT_IDENTITY_LOSS",
+      "latencyMs": 57835,
+      "modelCostUsd": 0.083748,
+      "webSearchCalls": 0,
+      "failure": null
+    },
+    {
+      "caseId": "CJ031",
+      "outcome": "EXACT_SCORED",
+      "rawSolTop3": [
+        {
+          "rank": 1,
+          "name": "Dorset Marble Quarry (Dorset Quarry)",
+          "entityType": "LANDMARK",
+          "locality": "Dorset",
+          "region": "Vermont",
+          "country": "United States"
+        },
+        {
+          "rank": 2,
+          "name": "West Rutland Marble Quarry (The Deep Hole)",
+          "entityType": "LANDMARK",
+          "locality": "West Rutland",
+          "region": "Vermont",
+          "country": "United States"
+        }
+      ],
+      "canonicalTop3": [
+        {
+          "rank": 1,
+          "name": "Dorset Marble Quarry",
+          "rawName": "Dorset Marble Quarry (Dorset Quarry)",
+          "status": "CANONICAL_ALIAS",
+          "latitude": 43.235960399999996,
+          "longitude": -73.0834756
+        },
+        {
+          "rank": 2,
+          "name": "West Rutland Marble Quarry (The Deep Hole)",
+          "rawName": "West Rutland Marble Quarry (The Deep Hole)",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "rawExactAt1": true,
+      "rawExactAt3": true,
+      "exactAt1": true,
+      "exactAt3": true,
+      "specificReasonableAt3": true,
+      "broadGeographyOnly": false,
+      "genericDescriptorEmitted": false,
+      "genericDescriptorDisposition": "NOT_EMITTED",
+      "canonicalizationEffect": "NO_EXACT_IDENTITY_LOSS",
+      "latencyMs": 51075,
+      "modelCostUsd": 0.070792,
+      "webSearchCalls": 0,
+      "failure": null
+    },
+    {
+      "caseId": "CJ032",
+      "outcome": "EXACT_SCORED",
+      "rawSolTop3": [
+        {
+          "rank": 1,
+          "name": "Torre Incina at Cala Incina",
+          "entityType": "LANDMARK",
+          "locality": "Polignano a Mare",
+          "region": "Apulia",
+          "country": "Italy"
+        }
+      ],
+      "canonicalTop3": [
+        {
+          "rank": 1,
+          "name": "Torre Incina",
+          "rawName": "Torre Incina at Cala Incina",
+          "status": "CANONICAL_ALIAS",
+          "latitude": 40.9791166,
+          "longitude": 17.258113899999998
+        }
+      ],
+      "rawExactAt1": true,
+      "rawExactAt3": true,
+      "exactAt1": true,
+      "exactAt3": true,
+      "specificReasonableAt3": true,
+      "broadGeographyOnly": false,
+      "genericDescriptorEmitted": false,
+      "genericDescriptorDisposition": "NOT_EMITTED",
+      "canonicalizationEffect": "NO_EXACT_IDENTITY_LOSS",
+      "latencyMs": 34248,
+      "modelCostUsd": 0.05356,
+      "webSearchCalls": 0,
+      "failure": null
+    },
+    {
+      "caseId": "CJ033",
+      "outcome": "PLAUSIBILITY_ONLY",
+      "rawSolTop3": [
+        {
+          "rank": 1,
+          "name": "Waimea Bay Jump Rock",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Haleiwa",
+          "region": "Hawaii",
+          "country": "United States"
+        },
+        {
+          "rank": 2,
+          "name": "Black Rock (Puʻu Kekaʻa)",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Kaanapali",
+          "region": "Hawaii",
+          "country": "United States"
+        }
+      ],
+      "canonicalTop3": [
+        {
+          "rank": 1,
+          "name": "Waimea Bay Jump Rock",
+          "rawName": "Waimea Bay Jump Rock",
+          "status": "PARENT_ONLY_MATCH",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 2,
+          "name": "Black Rock (Puʻu Kekaʻa)",
+          "rawName": "Black Rock (Puʻu Kekaʻa)",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "rawExactAt1": false,
+      "rawExactAt3": false,
+      "exactAt1": false,
+      "exactAt3": false,
+      "specificReasonableAt3": true,
+      "broadGeographyOnly": false,
+      "genericDescriptorEmitted": false,
+      "genericDescriptorDisposition": "NOT_EMITTED",
+      "canonicalizationEffect": "NO_EXACT_IDENTITY_LOSS",
+      "latencyMs": 35631,
+      "modelCostUsd": 0.042824,
+      "webSearchCalls": 0,
+      "failure": null
+    },
+    {
+      "caseId": "CJ034",
+      "outcome": "EXACT_SCORED",
+      "rawSolTop3": [
+        {
+          "rank": 1,
+          "name": "New River Gorge Bridge",
+          "entityType": "LANDMARK",
+          "locality": "Fayetteville",
+          "region": "West Virginia",
+          "country": "United States"
+        }
+      ],
+      "canonicalTop3": [
+        {
+          "rank": 1,
+          "name": "New River Gorge Bridge",
+          "rawName": "New River Gorge Bridge",
+          "status": "CANONICAL_EXACT",
+          "latitude": 38.0679835,
+          "longitude": -81.0843062
+        }
+      ],
+      "rawExactAt1": true,
+      "rawExactAt3": true,
+      "exactAt1": true,
+      "exactAt3": true,
+      "specificReasonableAt3": true,
+      "broadGeographyOnly": false,
+      "genericDescriptorEmitted": false,
+      "genericDescriptorDisposition": "NOT_EMITTED",
+      "canonicalizationEffect": "NO_EXACT_IDENTITY_LOSS",
+      "latencyMs": 19925,
+      "modelCostUsd": 0.0364,
+      "webSearchCalls": 0,
+      "failure": null
+    },
+    {
+      "caseId": "CJ035",
+      "outcome": "PLAUSIBILITY_ONLY",
+      "rawSolTop3": [
+        {
+          "rank": 1,
+          "name": "The Toilet Bowl at Lake Powell",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": null,
+          "region": "Arizona–Utah border area",
+          "country": "United States"
+        },
+        {
+          "rank": 2,
+          "name": "Lake Powell",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Page",
+          "region": "Arizona–Utah border area",
+          "country": "United States"
+        }
+      ],
+      "canonicalTop3": [
+        {
+          "rank": 1,
+          "name": "The Toilet Bowl at Lake Powell",
+          "rawName": "The Toilet Bowl at Lake Powell",
+          "status": "PARENT_ONLY_MATCH",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 2,
+          "name": "Lake Powell",
+          "rawName": "Lake Powell",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "rawExactAt1": false,
+      "rawExactAt3": false,
+      "exactAt1": false,
+      "exactAt3": false,
+      "specificReasonableAt3": false,
+      "broadGeographyOnly": false,
+      "genericDescriptorEmitted": false,
+      "genericDescriptorDisposition": "NOT_EMITTED",
+      "canonicalizationEffect": "NO_EXACT_IDENTITY_LOSS",
+      "latencyMs": 34988,
+      "modelCostUsd": 0.050472,
+      "webSearchCalls": 0,
+      "failure": null
+    },
+    {
+      "caseId": "CJ036",
+      "outcome": "EXACT_SCORED",
+      "rawSolTop3": [
+        {
+          "rank": 1,
+          "name": "Balangan Beach cliffs",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Ungasan",
+          "region": "Bali",
+          "country": "Indonesia"
+        },
+        {
+          "rank": 2,
+          "name": "Tegal Wangi Beach cliffs",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Jimbaran",
+          "region": "Bali",
+          "country": "Indonesia"
+        },
+        {
+          "rank": 3,
+          "name": "Honeymoon Beach cliffs",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Jimbaran",
+          "region": "Bali",
+          "country": "Indonesia"
+        }
+      ],
+      "canonicalTop3": [
+        {
+          "rank": 1,
+          "name": "Balangan Beach cliffs",
+          "rawName": "Balangan Beach cliffs",
+          "status": "AMBIGUOUS_CANONICAL",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 2,
+          "name": "Tegal Wangi Beach cliffs",
+          "rawName": "Tegal Wangi Beach cliffs",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 3,
+          "name": "Honeymoon Beach cliffs",
+          "rawName": "Honeymoon Beach cliffs",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "rawExactAt1": true,
+      "rawExactAt3": true,
+      "exactAt1": true,
+      "exactAt3": true,
+      "specificReasonableAt3": true,
+      "broadGeographyOnly": false,
+      "genericDescriptorEmitted": false,
+      "genericDescriptorDisposition": "NOT_EMITTED",
+      "canonicalizationEffect": "NO_EXACT_IDENTITY_LOSS",
+      "latencyMs": 33800,
+      "modelCostUsd": 0.050464,
+      "webSearchCalls": 0,
+      "failure": null
+    },
+    {
+      "caseId": "CJ037",
+      "outcome": "EXACT_SCORED",
+      "rawSolTop3": [
+        {
+          "rank": 1,
+          "name": "Cascade des Baumes (Cascade de Saint-Rome-de-Tarn)",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Saint-Rome-de-Tarn",
+          "region": "Aveyron, Occitanie",
+          "country": "France"
+        }
+      ],
+      "canonicalTop3": [
+        {
+          "rank": 1,
+          "name": "Cascade des Baumes",
+          "rawName": "Cascade des Baumes (Cascade de Saint-Rome-de-Tarn)",
+          "status": "CANONICAL_ALIAS",
+          "latitude": 44.051342999999996,
+          "longitude": 2.8943749999999997
+        }
+      ],
+      "rawExactAt1": true,
+      "rawExactAt3": true,
+      "exactAt1": true,
+      "exactAt3": true,
+      "specificReasonableAt3": true,
+      "broadGeographyOnly": false,
+      "genericDescriptorEmitted": false,
+      "genericDescriptorDisposition": "NOT_EMITTED",
+      "canonicalizationEffect": "NO_EXACT_IDENTITY_LOSS",
+      "latencyMs": 36011,
+      "modelCostUsd": 0.050876,
+      "webSearchCalls": 0,
+      "failure": null
+    },
+    {
+      "caseId": "CJ038",
+      "outcome": "PLAUSIBILITY_ONLY",
+      "rawSolTop3": [
+        {
+          "rank": 1,
+          "name": "Gunlock Falls",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Gunlock",
+          "region": "Utah",
+          "country": "United States"
+        }
+      ],
+      "canonicalTop3": [
+        {
+          "rank": 1,
+          "name": "Gunlock Falls",
+          "rawName": "Gunlock Falls",
+          "status": "NAMED_LEAD",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "rawExactAt1": false,
+      "rawExactAt3": false,
+      "exactAt1": false,
+      "exactAt3": false,
+      "specificReasonableAt3": true,
+      "broadGeographyOnly": false,
+      "genericDescriptorEmitted": false,
+      "genericDescriptorDisposition": "NOT_EMITTED",
+      "canonicalizationEffect": "NO_EXACT_IDENTITY_LOSS",
+      "latencyMs": 23319,
+      "modelCostUsd": 0.036296,
+      "webSearchCalls": 0,
+      "failure": null
+    },
+    {
+      "caseId": "CJ039",
+      "outcome": "PLAUSIBILITY_ONLY",
+      "rawSolTop3": [
+        {
+          "rank": 1,
+          "name": "Escalante Potholes Recreation Site",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Delta",
+          "region": "Colorado",
+          "country": "United States"
+        },
+        {
+          "rank": 2,
+          "name": "Cauldron Linn",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Murtaugh",
+          "region": "Idaho",
+          "country": "United States"
+        },
+        {
+          "rank": 3,
+          "name": "White River Falls",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Tygh Valley",
+          "region": "Oregon",
+          "country": "United States"
+        }
+      ],
+      "canonicalTop3": [
+        {
+          "rank": 1,
+          "name": "Escalante Potholes Recreation Site",
+          "rawName": "Escalante Potholes Recreation Site",
+          "status": "PARENT_ONLY_MATCH",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 2,
+          "name": "Cauldron Linn",
+          "rawName": "Cauldron Linn",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 3,
+          "name": "White River Falls",
+          "rawName": "White River Falls",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "rawExactAt1": false,
+      "rawExactAt3": false,
+      "exactAt1": false,
+      "exactAt3": false,
+      "specificReasonableAt3": true,
+      "broadGeographyOnly": false,
+      "genericDescriptorEmitted": false,
+      "genericDescriptorDisposition": "NOT_EMITTED",
+      "canonicalizationEffect": "NO_EXACT_IDENTITY_LOSS",
+      "latencyMs": 132934,
+      "modelCostUsd": 0.15,
+      "webSearchCalls": 0,
+      "failure": null
+    },
+    {
+      "caseId": "CJ040",
+      "outcome": "EXACT_SCORED",
+      "rawSolTop3": [
+        {
+          "rank": 1,
+          "name": "Koosah Falls",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "McKenzie Bridge",
+          "region": "Oregon",
+          "country": "United States"
+        },
+        {
+          "rank": 2,
+          "name": "Sahalie Falls",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "McKenzie Bridge",
+          "region": "Oregon",
+          "country": "United States"
+        },
+        {
+          "rank": 3,
+          "name": "Lower Lewis River Falls",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Cougar",
+          "region": "Washington",
+          "country": "United States"
+        }
+      ],
+      "canonicalTop3": [
+        {
+          "rank": 1,
+          "name": "Koosah Falls",
+          "rawName": "Koosah Falls",
+          "status": "CANONICAL_EXACT",
+          "latitude": 44.3440102,
+          "longitude": -122.0006166
+        },
+        {
+          "rank": 2,
+          "name": "Sahalie Falls",
+          "rawName": "Sahalie Falls",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 3,
+          "name": "Lower Lewis River Falls",
+          "rawName": "Lower Lewis River Falls",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "rawExactAt1": true,
+      "rawExactAt3": true,
+      "exactAt1": true,
+      "exactAt3": true,
+      "specificReasonableAt3": true,
+      "broadGeographyOnly": false,
+      "genericDescriptorEmitted": false,
+      "genericDescriptorDisposition": "NOT_EMITTED",
+      "canonicalizationEffect": "NO_EXACT_IDENTITY_LOSS",
+      "latencyMs": 91818,
+      "modelCostUsd": 0.10426,
+      "webSearchCalls": 0,
+      "failure": null
+    },
+    {
+      "caseId": "CJ041",
+      "outcome": "PLAUSIBILITY_ONLY",
+      "rawSolTop3": [
+        {
+          "rank": 1,
+          "name": "Cenote Zací",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Valladolid",
+          "region": "Yucatán",
+          "country": "Mexico"
+        },
+        {
+          "rank": 2,
+          "name": "Cenote Ik Kil",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Pisté",
+          "region": "Yucatán",
+          "country": "Mexico"
+        },
+        {
+          "rank": 3,
+          "name": "Cenote San Lorenzo Oxman",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Valladolid",
+          "region": "Yucatán",
+          "country": "Mexico"
+        }
+      ],
+      "canonicalTop3": [
+        {
+          "rank": 1,
+          "name": "Cenote Zaci",
+          "rawName": "Cenote Zací",
+          "status": "CANONICAL_EXACT",
+          "latitude": 20.6916378,
+          "longitude": -88.19734629999999
+        },
+        {
+          "rank": 2,
+          "name": "Cenote Ik Kil",
+          "rawName": "Cenote Ik Kil",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 3,
+          "name": "Cenote San Lorenzo Oxman",
+          "rawName": "Cenote San Lorenzo Oxman",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "rawExactAt1": false,
+      "rawExactAt3": false,
+      "exactAt1": false,
+      "exactAt3": false,
+      "specificReasonableAt3": true,
+      "broadGeographyOnly": false,
+      "genericDescriptorEmitted": false,
+      "genericDescriptorDisposition": "NOT_EMITTED",
+      "canonicalizationEffect": "NO_EXACT_IDENTITY_LOSS",
+      "latencyMs": 70133,
+      "modelCostUsd": 0.09642,
+      "webSearchCalls": 0,
+      "failure": null
+    },
+    {
+      "caseId": "CJ042",
+      "outcome": "PLAUSIBILITY_ONLY",
+      "rawSolTop3": [
+        {
+          "rank": 1,
+          "name": "Lake Atitlán",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": null,
+          "region": "Sololá Department",
+          "country": "Guatemala"
+        },
+        {
+          "rank": 2,
+          "name": "Fiordo di Furore",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Furore",
+          "region": "Campania",
+          "country": "Italy"
+        },
+        {
+          "rank": 3,
+          "name": "Ho'opi'i Falls",
+          "entityType": "NAMED_NATURAL_FEATURE",
+          "locality": "Kapaʻa",
+          "region": "Hawaii",
+          "country": "United States"
+        }
+      ],
+      "canonicalTop3": [
+        {
+          "rank": 1,
+          "name": "Lake Atitlán",
+          "rawName": "Lake Atitlán",
+          "status": "CANONICAL_EXACT",
+          "latitude": 14.6906713,
+          "longitude": -91.20252070000001
+        },
+        {
+          "rank": 2,
+          "name": "Furore Fjord",
+          "rawName": "Fiordo di Furore",
+          "status": "CANONICAL_ALIAS",
+          "latitude": 40.6146163,
+          "longitude": 14.5547129
+        },
+        {
+          "rank": 3,
+          "name": "Ho'opi'i Falls",
+          "rawName": "Ho'opi'i Falls",
+          "status": "CANONICAL_EXACT",
+          "latitude": 22.107264,
+          "longitude": -159.3438715
+        }
+      ],
+      "rawExactAt1": false,
+      "rawExactAt3": false,
+      "exactAt1": false,
+      "exactAt3": false,
+      "specificReasonableAt3": true,
+      "broadGeographyOnly": false,
+      "genericDescriptorEmitted": false,
+      "genericDescriptorDisposition": "NOT_EMITTED",
+      "canonicalizationEffect": "NO_EXACT_IDENTITY_LOSS",
+      "latencyMs": 156499,
+      "modelCostUsd": 0.19612,
+      "webSearchCalls": 0,
+      "failure": null
+    }
+  ],
+  "metrics": {
+    "denominator": 28,
+    "rawExactAt1": 27,
+    "rawExactAt3": 27,
+    "canonicalExactAt1": 26,
+    "canonicalExactAt3": 27,
+    "specificReasonableAt3": 36,
+    "broadGeographyOnly": 0,
+    "genericDescriptor": 2,
+    "wrongExactIdentity": 1,
+    "canonicalizationTop1Losses": [
+      "CJ004"
+    ],
+    "canonicalizationTop3Losses": [],
+    "latencyMs": {
+      "p50": 42077,
+      "p95": 132934,
+      "max": 156499
+    },
+    "measuredModelCostUsd": 3.077452
+  }
+}

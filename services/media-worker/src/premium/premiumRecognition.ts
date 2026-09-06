@@ -29,6 +29,7 @@ export async function runPremiumRecognitionInference(args: {
   signal?: AbortSignal;
   fetchImpl?: typeof fetch;
   env?: NodeJS.ProcessEnv;
+  recognitionPass?: PremiumRecognitionInput['recognitionPass'];
 }): Promise<SolCallResult> {
   return callSolParity({
     frameSet: args.frameSet,
@@ -40,6 +41,7 @@ export async function runPremiumRecognitionInference(args: {
     signal: args.signal,
     fetchImpl: args.fetchImpl,
     env: args.env,
+    recognitionPass: args.recognitionPass,
   });
 }
 
@@ -66,6 +68,8 @@ function canonicalFingerprint(destinations: PremiumLogicalDestination[]) {
     calls: hypothesis.canonicalizationCalls,
     selectedGooglePlaceId: hypothesis.canonical?.googlePlaceId ?? null,
     selectedName: hypothesis.canonical?.name ?? null,
+    providerParentGooglePlaceId: hypothesis.providerParent?.googlePlaceId ?? null,
+    providerParentName: hypothesis.providerParent?.name ?? null,
     outcome: hypothesis.canonicalStatus,
     rejectionReason: hypothesis.canonicalizationCalls.at(-1)?.rejectionReason ?? null,
   })));
@@ -164,7 +168,15 @@ function terminalWithoutResult(args: {
   };
 }
 
-export async function runPremiumRecognition(input: PremiumRecognitionInput): Promise<PremiumRecognitionExecution> {
+/**
+ * Billing-free recognition engine boundary.
+ *
+ * This function performs only evidence -> Sol -> bounded Places
+ * canonicalization -> safety. It does not reserve, consume, or release a
+ * token and it does not create a Premium task. Monetization lives in the Edge
+ * wrapper that creates and settles `premium_recognition` tasks.
+ */
+export async function runSimpleSolRecognition(input: PremiumRecognitionInput): Promise<PremiumRecognitionExecution> {
   const requestedAt = input.requestedAt ?? new Date();
   const evidenceReadyAt = input.evidenceReadyAt ?? new Date();
   const solStartedAt = new Date();
@@ -178,9 +190,17 @@ export async function runPremiumRecognition(input: PremiumRecognitionInput): Pro
     signal: input.signal,
     fetchImpl: input.fetchImpl,
     env: input.env,
+    recognitionPass: input.recognitionPass,
   });
   const solCompletedAt = new Date();
   return completePremiumRecognition({ input, call, requestedAt, evidenceReadyAt, solStartedAt, solCompletedAt });
+}
+
+/** Paid compatibility wrapper. Keeping this very small makes it impossible
+ * for the automatic free path and the user-initiated Premium path to develop
+ * separate Sol implementations. */
+export async function runPremiumRecognition(input: PremiumRecognitionInput): Promise<PremiumRecognitionExecution> {
+  return runSimpleSolRecognition(input);
 }
 
 /** Complete the exact runtime canonicalization/safety path from an already
@@ -236,6 +256,7 @@ export async function completePremiumRecognition(args: {
         timestamps: input.frameSet.frames.map((frame) => frame.timestampSeconds),
         canonicalStatus: canonical.status,
         canonical: canonical.selected,
+        providerParent: canonical.providerParent,
         canonicalAlternatives: canonical.alternatives,
         canonicalizationCalls: canonical.calls,
       });

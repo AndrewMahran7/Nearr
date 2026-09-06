@@ -215,10 +215,10 @@ export function buildVayrinPresentation(
       return {
         ...base,
         kind: 'leads_unverified',
-        headline: 'A few names may match.',
-        body: 'Search them to choose an exact place.',
-        primaryAction: 'Search places',
-        secondaryAction: 'Search for the place',
+        headline: 'Quick check',
+        body: 'We found a few likely matches. Review them, then confirm or correct the result.',
+        primaryAction: 'Review matches',
+        secondaryAction: 'Correct the result',
       };
     case 'area_match':
       return {
@@ -244,10 +244,10 @@ export function buildVayrinPresentation(
       return {
         ...base,
         kind: 'partial_result',
-        headline: 'A few useful clues.',
-        body: 'Use the name, category, or location clue to continue the search.',
-        primaryAction: 'Continue search',
-        secondaryAction: 'Search manually',
+        headline: 'Still looking closely.',
+        body: 'Nearr is checking the best specific matches available.',
+        primaryAction: 'Try again',
+        secondaryAction: 'Correct the result',
       };
     case 'multi_found':
       return {

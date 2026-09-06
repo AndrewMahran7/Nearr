@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { extractResponsesText, parseSolParityPayload } from './parser.js';
-import { buildSolParityContext, SOL_PARITY_INSTRUCTIONS, SOL_PARITY_PROMPT_VERSION, SOL_PARITY_SCHEMA } from './prompt.js';
+import { buildSolParityContext, SOL_PARITY_INSTRUCTIONS, SOL_PARITY_PROMPT_VERSION, SOL_PARITY_RECOVERY_INSTRUCTIONS, SOL_PARITY_RECOVERY_PROMPT_VERSION, SOL_PARITY_SCHEMA } from './prompt.js';
 import { SOL_PARITY_MODEL, type FrameSet, type ModelArm, type SolParityPayload, type SolUsage, type SourceEvidence } from './types.js';
 import {
   buildPremiumInferenceFingerprint,
@@ -117,6 +117,7 @@ export async function callSolParity(args: {
   signal?: AbortSignal;
   env?: NodeJS.ProcessEnv;
   fetchImpl?: typeof fetch;
+  recognitionPass?: 'PRIMARY' | 'ZERO_HYPOTHESIS_RECOVERY';
 }): Promise<SolCallResult> {
   const started = Date.now();
   const env = args.env ?? process.env;
@@ -137,9 +138,12 @@ export async function callSolParity(args: {
     content.push({ type: 'input_text', text: `screenshot_timestamp_seconds: ${frame.timestampSeconds.toFixed(2)}` });
     content.push({ type: 'input_image', image_url: `data:${mime(frame.path)};base64,${bytes.toString('base64')}`, detail: 'high' });
   }
+  const recovery = args.recognitionPass === 'ZERO_HYPOTHESIS_RECOVERY';
+  const instructions = recovery ? SOL_PARITY_RECOVERY_INSTRUCTIONS : SOL_PARITY_INSTRUCTIONS;
+  const promptVersion = recovery ? SOL_PARITY_RECOVERY_PROMPT_VERSION : SOL_PARITY_PROMPT_VERSION;
   const requestPayload = {
     model: SOL_PARITY_MODEL,
-    instructions: SOL_PARITY_INSTRUCTIONS,
+    instructions,
     input: [{ role: 'user', content }],
     text: { format: { type: 'json_schema', name: 'sol_parity_destination', strict: true, schema: SOL_PARITY_SCHEMA } },
     reasoning: { effort: 'high' },
@@ -155,11 +159,13 @@ export async function callSolParity(args: {
     inputText: context.text,
     requestPayload,
     evidenceReuse: args.evidenceReuse,
+    promptVersion,
+    promptInstructions: instructions,
   });
   const emptyUsage = usage(null);
   const base = {
     model: SOL_PARITY_MODEL,
-    prompt_version: SOL_PARITY_PROMPT_VERSION,
+    prompt_version: promptVersion,
     web_search_enabled: webEnabled,
     images_only: args.modelArm === 'M3',
     input_lengths: context.lengths,

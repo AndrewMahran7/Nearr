@@ -156,12 +156,12 @@ export const SHARE_JOB_DETAIL_COPY = {
     body: "We narrowed down the area, but couldn't identify the exact spot.",
   },
   searchLead: {
-    title: 'We found a useful lead',
-    body: 'Search this lead and confirm the place you meant.',
+    title: 'Quick check',
+    body: 'We found a likely match. Review it, then confirm or correct it.',
   },
   partialResult: {
-    title: 'We found a few useful clues',
-    body: 'Use these clues to continue the search in Nearr.',
+    title: 'Still looking closely',
+    body: 'Nearr is checking the best specific matches available.',
   },
   multi: {
     body: 'Pick the ones you meant and we’ll save them together.',
@@ -364,6 +364,7 @@ export function buildShareJobDetailState(
   // `decision: manual_fallback` deliberately do NOT force manual search —
   // media fallback can fail long after good metadata candidates were parked.
   if (candidates.length > 1) {
+    const automaticDeep = text(job.needs_help_reason)?.startsWith('automatic_deep') === true;
     return {
       ...base,
       canRetry,
@@ -371,14 +372,15 @@ export function buildShareJobDetailState(
       failureCategory: null,
       kind: 'picker',
       copy: {
-        title: `We found ${pluralPlaces(candidates.length)}`,
-        body: SHARE_JOB_DETAIL_COPY.picker.body,
+        title: automaticDeep ? 'Quick check' : `We found ${pluralPlaces(candidates.length)}`,
+        body: automaticDeep ? 'We found a few likely matches.' : SHARE_JOB_DETAIL_COPY.picker.body,
       },
       reason: 'candidates_multiple',
     };
   }
 
   if (candidates.length === 1) {
+    const automaticDeep = text(job.needs_help_reason)?.startsWith('automatic_deep') === true;
     return {
       ...base,
       canRetry,
@@ -387,7 +389,9 @@ export function buildShareJobDetailState(
       kind: 'confirm',
       // A known backend contradiction (closed, address conflict, …) gets its
       // own honest wording instead of an unqualified "we found it".
-      copy: quickCheckReviewCopy(job.needs_help_reason, SHARE_JOB_DETAIL_COPY.confirm),
+      copy: automaticDeep
+        ? { title: 'Quick check', body: 'We found a likely match.' }
+        : quickCheckReviewCopy(job.needs_help_reason, SHARE_JOB_DETAIL_COPY.confirm),
       reason: 'candidates_single',
     };
   }

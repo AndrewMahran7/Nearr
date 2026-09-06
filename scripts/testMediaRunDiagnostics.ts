@@ -344,6 +344,28 @@ check(
   privacy,
 );
 
+const automaticDeep = buildRecognitionFunnel({
+  automaticDeep: {
+    version: 'automatic-deep-recognition.v2', needed: true, invoked: true, attempts: 2,
+    recoveryInvoked: true, noUsableSourceEvidence: false, rejectionReason: 'BROAD_PARENT',
+    normalResultSpecificity: 'WEAK',
+    normalCandidates: [
+      { name: 'Waimea Bay Jump Rock', category: 'jump_rock', city: 'Haleiwa', region: 'Hawaii', country: 'United States' },
+      { name: 'Second', category: null, city: null, region: null, country: null },
+      { name: 'Third', category: null, city: null, region: null, country: null },
+      { name: 'Fourth must be dropped', category: null, city: null, region: null, country: null },
+    ],
+    firstAttemptSpecificHypotheses: 0, recoverySpecificHypotheses: 1, top3Count: 1, specificResult: true,
+  },
+  automaticDeepRecognition: {
+    engineVersion: 'simple-sol.v2', model: 'gpt-5.6-sol', knownModelCostUsd: 0.03,
+    placesRequests: 0, timingsMs: { sol: 1200, canonicalization: 50, total: 1250 },
+  },
+}, null, 0);
+check('automatic deep: invocation decision persisted', automaticDeep.automaticDeep?.invoked === true && automaticDeep.automaticDeep.attempts === 2);
+check('automatic deep: bounded normal outputs persisted', automaticDeep.automaticDeep?.normalCandidates.length === 3 && automaticDeep.automaticDeep.normalCandidates[0]?.name === 'Waimea Bay Jump Rock');
+check('automatic deep: costs and provider calls persisted', automaticDeep.automaticDeepRecognition?.knownModelCostUsd === 0.03 && automaticDeep.automaticDeepRecognition.placesRequests === 0);
+
 // ---------------------------------------------------------------------------
 // 9. The reason helper must agree with the boolean guard on every case — the
 //    guard is DEFINED in terms of it, and this pins that they cannot drift.

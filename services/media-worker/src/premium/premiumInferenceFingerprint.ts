@@ -147,6 +147,8 @@ export function buildPremiumInferenceFingerprint(args: {
   inputText: string;
   requestPayload: unknown;
   evidenceReuse?: PremiumEvidenceReuseState;
+  promptVersion?: string;
+  promptInstructions?: string;
 }): PremiumInferenceFingerprint {
   const source = canonicalContentIdentity(args.canonicalUrl);
   const context = buildBoundedSolSourceContext({ modelArm: args.modelArm, evidence: args.evidence });
@@ -160,8 +162,8 @@ export function buildPremiumInferenceFingerprint(args: {
       canonicalUrlHash: sha256(args.canonicalUrl.trim()),
     },
     prompt: {
-      promptVersion: SOL_PARITY_PROMPT_VERSION,
-      promptHash: sha256(SOL_PARITY_INSTRUCTIONS),
+      promptVersion: args.promptVersion ?? SOL_PARITY_PROMPT_VERSION,
+      promptHash: sha256(args.promptInstructions ?? SOL_PARITY_INSTRUCTIONS),
       schemaVersion: SOL_PARITY_SCHEMA_VERSION,
       schemaHash: sha256(stableStringify(SOL_PARITY_SCHEMA)),
       model: SOL_PARITY_MODEL,

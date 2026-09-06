@@ -1,0 +1,4026 @@
+{
+  "schemaVersion": 1,
+  "runId": "automatic-deep-auto_deep_candidate-2026-09-06T02-17-37-160Z",
+  "system": "AUTO_DEEP_CANDIDATE",
+  "startedAt": "2026-09-06T02:17:38.881Z",
+  "completedAt": "2026-09-06T02:26:46.227Z",
+  "target": {
+    "supabaseRef": "qnfxnmvxpjzfydgudtvs",
+    "railwayEnvironment": "development",
+    "railwayService": "media-worker"
+  },
+  "deployedFlags": {
+    "automaticDeepRecognitionEnabled": "true",
+    "premiumRequestsEnabled": false,
+    "recognitionCacheReadsEnabled": false
+  },
+  "correlationId": "nearr-e2e-20260906T021737-1233d916",
+  "productionRowsMutated": false,
+  "observations": [
+    {
+      "caseId": "R03",
+      "suite": "REGRESSION_V2",
+      "category": "HIKING_TRAIL",
+      "sourceUrl": "https://www.instagram.com/reel/DZJ8ZvYub8Q/",
+      "expectedRoute": null,
+      "recordedLead": null,
+      "jobId": "8257babf-a45f-4d97-b91f-4f5d3fbe84d1",
+      "status": "needs_help",
+      "decision": "candidate_picker",
+      "savedPlaceId": null,
+      "failureCategory": null,
+      "failureCode": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Tamolitch Falls (Blue Pool)",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 44.3120373,
+          "longitude": -122.02704879999997,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        },
+        {
+          "rank": 2,
+          "name": "Devil's Punchbowl",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 48.0830359,
+          "longitude": -123.7876904,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        },
+        {
+          "rank": 3,
+          "name": "Devil’s Punchbowl at Lake Crescent",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": null,
+          "longitude": null,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "normalCandidates": [],
+      "automaticDeep": {
+        "needed": true,
+        "invoked": true,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 1,
+        "top3Count": 2,
+        "specificResult": true,
+        "recoveryInvoked": false,
+        "rejectionReason": "NO_IDENTITY",
+        "normalCandidates": [],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "WEAK",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 2
+      },
+      "automaticDeepRecognition": {
+        "model": "gpt-5.6-sol",
+        "timingsMs": {
+          "sol": 38840
+        },
+        "engineVersion": "simple-sol-premium.v2",
+        "placesRequests": 2,
+        "knownModelCostUsd": 0.064908
+      },
+      "modelProvider": "gemini+simple-sol",
+      "durationMs": 57489,
+      "taskStatus": "completed",
+      "taskFailureCode": null,
+      "diagnostics": {
+        "multiple": false,
+        "modelPath": "current_fresh_recognition",
+        "placeCount": 2,
+        "insufficient": false,
+        "automaticDeep": {
+          "needed": true,
+          "invoked": true,
+          "version": "automatic-deep-recognition.v2",
+          "attempts": 1,
+          "top3Count": 2,
+          "specificResult": true,
+          "recoveryInvoked": false,
+          "rejectionReason": "NO_IDENTITY",
+          "normalCandidates": [],
+          "noUsableSourceEvidence": false,
+          "normalResultSpecificity": "WEAK",
+          "recoverySpecificHypotheses": 0,
+          "firstAttemptSpecificHypotheses": 2
+        },
+        "cacheReadUsed": false,
+        "moments_split": 0,
+        "moments_merged": 0,
+        "modelPlacesValid": 0,
+        "raw_moment_count": 0,
+        "analysisAttempted": true,
+        "destinationPlaces": 1,
+        "partialPlaceCount": 0,
+        "cacheReadSuspended": true,
+        "explicitPlaceCount": 2,
+        "modelPlacesEmitted": 0,
+        "recognitionVersion": "vayrin-recognition-2026-08-26.v3-generic-guard-same-place-groups",
+        "logical_place_count": 0,
+        "modelPlacesRejected": 0,
+        "recognitionCacheRead": false,
+        "grouping_reason_codes": [],
+        "sharedGeoCountrySource": "multiple_places_agree",
+        "recognitionFailureClass": "none",
+        "sharedGeoCountryApplied": true,
+        "automaticDeepRecognition": {
+          "model": "gpt-5.6-sol",
+          "timingsMs": {
+            "sol": 38840
+          },
+          "engineVersion": "simple-sol-premium.v2",
+          "placesRequests": 2,
+          "knownModelCostUsd": 0.064908
+        },
+        "sharedGeoCountryStrength": "strong",
+        "modelValidationErrorClass": "none",
+        "peerGeographicDestinations": 0,
+        "same_place_confidence_band": "none",
+        "sharedGeoCountryCandidates": 1,
+        "modelPartialPlacesPreserved": 0,
+        "recognitionCacheWritesEnabled": true,
+        "sourceGeographicContextDropped": 0,
+        "distinct_place_evidence_present": false
+      }
+    },
+    {
+      "caseId": "R04",
+      "suite": "REGRESSION_V2",
+      "category": "CLIFF_JUMPING",
+      "sourceUrl": "https://www.instagram.com/reel/C9Z963muLHI/",
+      "expectedRoute": null,
+      "recordedLead": null,
+      "jobId": "3d976b21-73eb-473c-a333-74b679460b63",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "failureCategory": null,
+      "failureCode": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Dorset Marble Quarry",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 43.235960399999996,
+          "longitude": -73.0834756,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "normalCandidates": [],
+      "automaticDeep": {
+        "needed": true,
+        "invoked": true,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 1,
+        "top3Count": 1,
+        "specificResult": true,
+        "recoveryInvoked": false,
+        "rejectionReason": "TECHNICAL_RECOVERY",
+        "normalCandidates": [],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "WEAK",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 1
+      },
+      "automaticDeepRecognition": {
+        "model": "gpt-5.6-sol",
+        "timingsMs": {
+          "sol": 16439
+        },
+        "engineVersion": "simple-sol-premium.v2",
+        "placesRequests": 1,
+        "knownModelCostUsd": 0.04274
+      },
+      "modelProvider": "gemini+simple-sol",
+      "durationMs": 40291,
+      "taskStatus": "completed",
+      "taskFailureCode": null,
+      "diagnostics": {
+        "multiple": false,
+        "modelPath": "current_fresh_recognition",
+        "placeCount": 1,
+        "insufficient": true,
+        "automaticDeep": {
+          "needed": true,
+          "invoked": true,
+          "version": "automatic-deep-recognition.v2",
+          "attempts": 1,
+          "top3Count": 1,
+          "specificResult": true,
+          "recoveryInvoked": false,
+          "rejectionReason": "TECHNICAL_RECOVERY",
+          "normalCandidates": [],
+          "noUsableSourceEvidence": false,
+          "normalResultSpecificity": "WEAK",
+          "recoverySpecificHypotheses": 0,
+          "firstAttemptSpecificHypotheses": 1
+        },
+        "cacheReadUsed": false,
+        "moments_split": 0,
+        "moments_merged": 0,
+        "modelPlacesValid": 0,
+        "raw_moment_count": 0,
+        "analysisAttempted": true,
+        "destinationPlaces": 0,
+        "partialPlaceCount": 0,
+        "cacheReadSuspended": true,
+        "explicitPlaceCount": 0,
+        "modelPlacesEmitted": 1,
+        "recognitionVersion": "vayrin-recognition-2026-08-26.v3-generic-guard-same-place-groups",
+        "logical_place_count": 0,
+        "modelPlacesRejected": 1,
+        "recognitionCacheRead": false,
+        "grouping_reason_codes": [],
+        "evidenceRejectionPaths": [
+          "places.0.name:invalid_type"
+        ],
+        "recognitionFailureClass": "none",
+        "sharedGeoCountryApplied": false,
+        "automaticDeepRecognition": {
+          "model": "gpt-5.6-sol",
+          "timingsMs": {
+            "sol": 16439
+          },
+          "engineVersion": "simple-sol-premium.v2",
+          "placesRequests": 1,
+          "knownModelCostUsd": 0.04274
+        },
+        "sharedGeoCountryStrength": "none",
+        "modelValidationErrorClass": "candidate_field_invalid",
+        "peerGeographicDestinations": 0,
+        "same_place_confidence_band": "none",
+        "sharedGeoCountryCandidates": 0,
+        "modelPartialPlacesPreserved": 1,
+        "recognitionCacheWritesEnabled": true,
+        "sourceGeographicContextDropped": 0,
+        "distinct_place_evidence_present": false
+      }
+    },
+    {
+      "caseId": "R05",
+      "suite": "REGRESSION_V2",
+      "category": "CLIFF_JUMPING",
+      "sourceUrl": "https://www.instagram.com/reel/Db5qatGJgqH/",
+      "expectedRoute": null,
+      "recordedLead": null,
+      "jobId": "66c41d99-5a0e-4295-9f70-679d9adc7e28",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "failureCategory": null,
+      "failureCode": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Okere Falls",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": null,
+          "longitude": null,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "normalCandidates": [
+        {
+          "city": "Rotorua",
+          "name": "Okere Falls",
+          "region": null,
+          "country": "New Zealand",
+          "category": "waterfall"
+        }
+      ],
+      "automaticDeep": {
+        "needed": false,
+        "invoked": false,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 0,
+        "top3Count": 0,
+        "specificResult": false,
+        "recoveryInvoked": false,
+        "rejectionReason": null,
+        "normalCandidates": [
+          {
+            "city": "Rotorua",
+            "name": "Okere Falls",
+            "region": null,
+            "country": "New Zealand",
+            "category": "waterfall"
+          }
+        ],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "SPECIFIC_ACTIONABLE",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 0
+      },
+      "automaticDeepRecognition": null,
+      "modelProvider": "gemini",
+      "durationMs": 29896,
+      "taskStatus": "completed",
+      "taskFailureCode": null,
+      "diagnostics": {
+        "multiple": false,
+        "modelPath": "current_fresh_recognition",
+        "placeCount": 1,
+        "insufficient": false,
+        "automaticDeep": {
+          "needed": false,
+          "invoked": false,
+          "version": "automatic-deep-recognition.v2",
+          "attempts": 0,
+          "top3Count": 0,
+          "specificResult": false,
+          "recoveryInvoked": false,
+          "rejectionReason": null,
+          "normalCandidates": [
+            {
+              "city": "Rotorua",
+              "name": "Okere Falls",
+              "region": null,
+              "country": "New Zealand",
+              "category": "waterfall"
+            }
+          ],
+          "noUsableSourceEvidence": false,
+          "normalResultSpecificity": "SPECIFIC_ACTIONABLE",
+          "recoverySpecificHypotheses": 0,
+          "firstAttemptSpecificHypotheses": 0
+        },
+        "cacheReadUsed": false,
+        "moments_split": 0,
+        "moments_merged": 0,
+        "finalResultClass": "canonical_evidence",
+        "modelPlacesValid": 1,
+        "raw_moment_count": 1,
+        "analysisAttempted": true,
+        "destinationPlaces": 1,
+        "partialPlaceCount": 0,
+        "cacheReadSuspended": true,
+        "explicitPlaceCount": 1,
+        "modelPlacesEmitted": 1,
+        "recognitionVersion": "vayrin-recognition-2026-08-26.v3-generic-guard-same-place-groups",
+        "logical_place_count": 1,
+        "modelPlacesRejected": 0,
+        "recognitionCacheRead": false,
+        "grouping_reason_codes": [],
+        "recognitionFailureClass": "none",
+        "sharedGeoCountryApplied": false,
+        "sharedGeoCountryStrength": "weak",
+        "modelValidationErrorClass": "none",
+        "peerGeographicDestinations": 0,
+        "same_place_confidence_band": "none",
+        "sharedGeoCountryCandidates": 1,
+        "modelPartialPlacesPreserved": 0,
+        "recognitionCacheWritesEnabled": true,
+        "sourceGeographicContextDropped": 0,
+        "distinct_place_evidence_present": false
+      }
+    },
+    {
+      "caseId": "R08",
+      "suite": "REGRESSION_V2",
+      "category": "CLIFF_JUMPING",
+      "sourceUrl": "https://www.instagram.com/reel/CqJo6QHJqPo/",
+      "expectedRoute": null,
+      "recordedLead": null,
+      "jobId": "e067e945-da11-4863-bca9-c47e9b2c5d30",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "failureCategory": null,
+      "failureCode": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Na Mokulua",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 21.386944399999997,
+          "longitude": -157.7138889,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        },
+        {
+          "rank": 2,
+          "name": "Queen's Bath on Moku Nui (Nā Mokulua)",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": null,
+          "longitude": null,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        },
+        {
+          "rank": 3,
+          "name": "Moku Nui, Nā Mokulua Islands",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": null,
+          "longitude": null,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "normalCandidates": [
+        {
+          "city": "Kailua",
+          "name": "Mokulua Islands",
+          "region": "Hawaii",
+          "country": "USA",
+          "category": "island"
+        }
+      ],
+      "automaticDeep": {
+        "needed": true,
+        "invoked": true,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 1,
+        "top3Count": 2,
+        "specificResult": true,
+        "recoveryInvoked": false,
+        "rejectionReason": "BROAD_PARENT",
+        "normalCandidates": [
+          {
+            "city": "Kailua",
+            "name": "Mokulua Islands",
+            "region": "Hawaii",
+            "country": "USA",
+            "category": "island"
+          }
+        ],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "WEAK",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 2
+      },
+      "automaticDeepRecognition": {
+        "model": "gpt-5.6-sol",
+        "timingsMs": {
+          "sol": 17369
+        },
+        "engineVersion": "simple-sol-premium.v2",
+        "placesRequests": 2,
+        "knownModelCostUsd": 0.045396
+      },
+      "modelProvider": "gemini+simple-sol",
+      "durationMs": 47531,
+      "taskStatus": "completed",
+      "taskFailureCode": null,
+      "diagnostics": {
+        "multiple": false,
+        "modelPath": "current_fresh_recognition",
+        "placeCount": 2,
+        "insufficient": false,
+        "automaticDeep": {
+          "needed": true,
+          "invoked": true,
+          "version": "automatic-deep-recognition.v2",
+          "attempts": 1,
+          "top3Count": 2,
+          "specificResult": true,
+          "recoveryInvoked": false,
+          "rejectionReason": "BROAD_PARENT",
+          "normalCandidates": [
+            {
+              "city": "Kailua",
+              "name": "Mokulua Islands",
+              "region": "Hawaii",
+              "country": "USA",
+              "category": "island"
+            }
+          ],
+          "noUsableSourceEvidence": false,
+          "normalResultSpecificity": "WEAK",
+          "recoverySpecificHypotheses": 0,
+          "firstAttemptSpecificHypotheses": 2
+        },
+        "cacheReadUsed": false,
+        "moments_split": 0,
+        "moments_merged": 0,
+        "modelPlacesValid": 1,
+        "raw_moment_count": 1,
+        "analysisAttempted": true,
+        "destinationPlaces": 1,
+        "partialPlaceCount": 0,
+        "cacheReadSuspended": true,
+        "explicitPlaceCount": 2,
+        "modelPlacesEmitted": 1,
+        "recognitionVersion": "vayrin-recognition-2026-08-26.v3-generic-guard-same-place-groups",
+        "logical_place_count": 1,
+        "modelPlacesRejected": 0,
+        "recognitionCacheRead": false,
+        "grouping_reason_codes": [],
+        "sharedGeoCountrySource": "multiple_places_agree",
+        "recognitionFailureClass": "none",
+        "sharedGeoCountryApplied": true,
+        "automaticDeepRecognition": {
+          "model": "gpt-5.6-sol",
+          "timingsMs": {
+            "sol": 17369
+          },
+          "engineVersion": "simple-sol-premium.v2",
+          "placesRequests": 2,
+          "knownModelCostUsd": 0.045396
+        },
+        "sharedGeoCountryStrength": "strong",
+        "modelValidationErrorClass": "none",
+        "peerGeographicDestinations": 0,
+        "same_place_confidence_band": "none",
+        "sharedGeoCountryCandidates": 1,
+        "modelPartialPlacesPreserved": 0,
+        "recognitionCacheWritesEnabled": true,
+        "sourceGeographicContextDropped": 0,
+        "distinct_place_evidence_present": false
+      }
+    },
+    {
+      "caseId": "V02",
+      "suite": "REGRESSION_V2",
+      "category": "FOOD_RESTAURANT",
+      "sourceUrl": "https://www.instagram.com/reel/DUWyZkfgbT4/",
+      "expectedRoute": null,
+      "recordedLead": null,
+      "jobId": "acf4dc1c-c529-4e29-a0ac-c833c49c5fac",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "failureCategory": null,
+      "failureCode": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Capone's Italian Cucina",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 33.6764542,
+          "longitude": -117.9870264,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "normalCandidates": [
+        {
+          "city": "Huntington Beach",
+          "name": "Capone's Italian Cucina",
+          "region": "California",
+          "country": null,
+          "category": "restaurant"
+        }
+      ],
+      "automaticDeep": {
+        "needed": false,
+        "invoked": false,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 0,
+        "top3Count": 0,
+        "specificResult": false,
+        "recoveryInvoked": false,
+        "rejectionReason": null,
+        "normalCandidates": [
+          {
+            "city": "Huntington Beach",
+            "name": "Capone's Italian Cucina",
+            "region": "California",
+            "country": null,
+            "category": "restaurant"
+          }
+        ],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "SPECIFIC_ACTIONABLE",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 0
+      },
+      "automaticDeepRecognition": null,
+      "modelProvider": "gemini",
+      "durationMs": 39952,
+      "taskStatus": "completed",
+      "taskFailureCode": null,
+      "diagnostics": {
+        "multiple": false,
+        "modelPath": "current_fresh_recognition",
+        "placeCount": 1,
+        "insufficient": false,
+        "automaticDeep": {
+          "needed": false,
+          "invoked": false,
+          "version": "automatic-deep-recognition.v2",
+          "attempts": 0,
+          "top3Count": 0,
+          "specificResult": false,
+          "recoveryInvoked": false,
+          "rejectionReason": null,
+          "normalCandidates": [
+            {
+              "city": "Huntington Beach",
+              "name": "Capone's Italian Cucina",
+              "region": "California",
+              "country": null,
+              "category": "restaurant"
+            }
+          ],
+          "noUsableSourceEvidence": false,
+          "normalResultSpecificity": "SPECIFIC_ACTIONABLE",
+          "recoverySpecificHypotheses": 0,
+          "firstAttemptSpecificHypotheses": 0
+        },
+        "cacheReadUsed": false,
+        "moments_split": 0,
+        "moments_merged": 0,
+        "finalResultClass": "canonical_evidence",
+        "modelPlacesValid": 1,
+        "raw_moment_count": 1,
+        "analysisAttempted": true,
+        "destinationPlaces": 1,
+        "partialPlaceCount": 0,
+        "cacheReadSuspended": true,
+        "explicitPlaceCount": 1,
+        "modelPlacesEmitted": 1,
+        "recognitionVersion": "vayrin-recognition-2026-08-26.v3-generic-guard-same-place-groups",
+        "logical_place_count": 1,
+        "modelPlacesRejected": 0,
+        "recognitionCacheRead": false,
+        "grouping_reason_codes": [],
+        "recognitionFailureClass": "none",
+        "sharedGeoCountryApplied": false,
+        "sharedGeoCountryStrength": "none",
+        "modelValidationErrorClass": "none",
+        "peerGeographicDestinations": 0,
+        "same_place_confidence_band": "none",
+        "sharedGeoCountryCandidates": 0,
+        "modelPartialPlacesPreserved": 0,
+        "recognitionCacheWritesEnabled": true,
+        "sourceGeographicContextDropped": 0,
+        "distinct_place_evidence_present": false
+      }
+    },
+    {
+      "caseId": "V03",
+      "suite": "REGRESSION_V2",
+      "category": "FOOD_RESTAURANT",
+      "sourceUrl": "https://www.instagram.com/reel/CxdY35frOrf/",
+      "expectedRoute": null,
+      "recordedLead": null,
+      "jobId": "8b8c93b7-4301-4f0d-828d-ec4f5fb4de40",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "failureCategory": null,
+      "failureCode": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Brooklyn City Pizzeria & Market",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 33.5262326,
+          "longitude": -117.71025859999999,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "normalCandidates": [
+        {
+          "city": "Laguna Niguel",
+          "name": "Brooklyn City Pizzeria & Market",
+          "region": "CA",
+          "country": null,
+          "category": "restaurant"
+        }
+      ],
+      "automaticDeep": {
+        "needed": false,
+        "invoked": false,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 0,
+        "top3Count": 0,
+        "specificResult": false,
+        "recoveryInvoked": false,
+        "rejectionReason": null,
+        "normalCandidates": [
+          {
+            "city": "Laguna Niguel",
+            "name": "Brooklyn City Pizzeria & Market",
+            "region": "CA",
+            "country": null,
+            "category": "restaurant"
+          }
+        ],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "SPECIFIC_ACTIONABLE",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 0
+      },
+      "automaticDeepRecognition": null,
+      "modelProvider": "gemini",
+      "durationMs": 41373,
+      "taskStatus": "completed",
+      "taskFailureCode": null,
+      "diagnostics": {
+        "multiple": false,
+        "modelPath": "current_fresh_recognition",
+        "placeCount": 1,
+        "insufficient": false,
+        "automaticDeep": {
+          "needed": false,
+          "invoked": false,
+          "version": "automatic-deep-recognition.v2",
+          "attempts": 0,
+          "top3Count": 0,
+          "specificResult": false,
+          "recoveryInvoked": false,
+          "rejectionReason": null,
+          "normalCandidates": [
+            {
+              "city": "Laguna Niguel",
+              "name": "Brooklyn City Pizzeria & Market",
+              "region": "CA",
+              "country": null,
+              "category": "restaurant"
+            }
+          ],
+          "noUsableSourceEvidence": false,
+          "normalResultSpecificity": "SPECIFIC_ACTIONABLE",
+          "recoverySpecificHypotheses": 0,
+          "firstAttemptSpecificHypotheses": 0
+        },
+        "cacheReadUsed": false,
+        "moments_split": 0,
+        "moments_merged": 0,
+        "finalResultClass": "canonical_evidence",
+        "modelPlacesValid": 1,
+        "raw_moment_count": 1,
+        "analysisAttempted": true,
+        "destinationPlaces": 1,
+        "partialPlaceCount": 0,
+        "cacheReadSuspended": true,
+        "explicitPlaceCount": 1,
+        "modelPlacesEmitted": 1,
+        "recognitionVersion": "vayrin-recognition-2026-08-26.v3-generic-guard-same-place-groups",
+        "logical_place_count": 1,
+        "modelPlacesRejected": 0,
+        "recognitionCacheRead": false,
+        "grouping_reason_codes": [],
+        "recognitionFailureClass": "none",
+        "sharedGeoCountryApplied": false,
+        "sharedGeoCountryStrength": "none",
+        "modelValidationErrorClass": "none",
+        "peerGeographicDestinations": 0,
+        "same_place_confidence_band": "none",
+        "sharedGeoCountryCandidates": 0,
+        "modelPartialPlacesPreserved": 0,
+        "recognitionCacheWritesEnabled": true,
+        "sourceGeographicContextDropped": 0,
+        "distinct_place_evidence_present": false
+      }
+    },
+    {
+      "caseId": "V04",
+      "suite": "REGRESSION_V2",
+      "category": "TRAVEL_DESTINATION",
+      "sourceUrl": "https://www.instagram.com/reel/DYq7Q3Lza0G/",
+      "expectedRoute": null,
+      "recordedLead": null,
+      "jobId": "aadd7115-0316-4a2d-b389-3aa4e36c87e3",
+      "status": "needs_help",
+      "decision": "multi_candidate_confirmation",
+      "savedPlaceId": null,
+      "failureCategory": null,
+      "failureCode": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Hellfire Bay",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": -34.0034813,
+          "longitude": 122.16909160000002,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        },
+        {
+          "rank": 2,
+          "name": "Little Hellfire Bay",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": -34.005046899999996,
+          "longitude": 122.17336099999999,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "normalCandidates": [
+        {
+          "city": "Esperance",
+          "name": "Hellfire bay",
+          "region": "Western Australia",
+          "country": "Australia",
+          "category": "beach"
+        }
+      ],
+      "automaticDeep": {
+        "needed": false,
+        "invoked": false,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 0,
+        "top3Count": 0,
+        "specificResult": false,
+        "recoveryInvoked": false,
+        "rejectionReason": null,
+        "normalCandidates": [
+          {
+            "city": "Esperance",
+            "name": "Hellfire bay",
+            "region": "Western Australia",
+            "country": "Australia",
+            "category": "beach"
+          }
+        ],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "SPECIFIC_ACTIONABLE",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 0
+      },
+      "automaticDeepRecognition": null,
+      "modelProvider": "gemini",
+      "durationMs": 23937,
+      "taskStatus": "completed",
+      "taskFailureCode": null,
+      "diagnostics": {
+        "multiple": false,
+        "modelPath": "current_fresh_recognition",
+        "placeCount": 1,
+        "insufficient": false,
+        "automaticDeep": {
+          "needed": false,
+          "invoked": false,
+          "version": "automatic-deep-recognition.v2",
+          "attempts": 0,
+          "top3Count": 0,
+          "specificResult": false,
+          "recoveryInvoked": false,
+          "rejectionReason": null,
+          "normalCandidates": [
+            {
+              "city": "Esperance",
+              "name": "Hellfire bay",
+              "region": "Western Australia",
+              "country": "Australia",
+              "category": "beach"
+            }
+          ],
+          "noUsableSourceEvidence": false,
+          "normalResultSpecificity": "SPECIFIC_ACTIONABLE",
+          "recoverySpecificHypotheses": 0,
+          "firstAttemptSpecificHypotheses": 0
+        },
+        "cacheReadUsed": false,
+        "moments_split": 0,
+        "moments_merged": 0,
+        "finalResultClass": "canonical_evidence",
+        "modelPlacesValid": 1,
+        "raw_moment_count": 1,
+        "analysisAttempted": true,
+        "destinationPlaces": 1,
+        "partialPlaceCount": 0,
+        "cacheReadSuspended": true,
+        "explicitPlaceCount": 1,
+        "modelPlacesEmitted": 1,
+        "recognitionVersion": "vayrin-recognition-2026-08-26.v3-generic-guard-same-place-groups",
+        "logical_place_count": 1,
+        "modelPlacesRejected": 0,
+        "recognitionCacheRead": false,
+        "grouping_reason_codes": [],
+        "sharedGeoCountrySource": "explicit_evidence_text",
+        "recognitionFailureClass": "none",
+        "sharedGeoCountryApplied": true,
+        "sharedGeoCountryStrength": "strong",
+        "modelValidationErrorClass": "none",
+        "peerGeographicDestinations": 0,
+        "same_place_confidence_band": "none",
+        "sharedGeoCountryCandidates": 1,
+        "modelPartialPlacesPreserved": 0,
+        "recognitionCacheWritesEnabled": true,
+        "sourceGeographicContextDropped": 0,
+        "distinct_place_evidence_present": false
+      }
+    },
+    {
+      "caseId": "V05",
+      "suite": "REGRESSION_V2",
+      "category": "FOOD_RESTAURANT",
+      "sourceUrl": "https://www.instagram.com/p/DX77lghIHeG/",
+      "expectedRoute": null,
+      "recordedLead": null,
+      "jobId": "c8f59a01-d06e-4cfe-a672-09924d110b5a",
+      "status": "needs_help",
+      "decision": "multi_candidate_confirmation",
+      "savedPlaceId": null,
+      "failureCategory": null,
+      "failureCode": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Paradise Dynasty",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 33.6887216,
+          "longitude": -117.8880952,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        },
+        {
+          "rank": 2,
+          "name": "South Coast Plaza",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 33.691002999999995,
+          "longitude": -117.8889767,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        },
+        {
+          "rank": 3,
+          "name": "The Americana at Brand",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 34.1448204,
+          "longitude": -118.25645569999999,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "normalCandidates": [
+        {
+          "city": "Costa Mesa",
+          "name": "Paradise Dynasty",
+          "region": "CA",
+          "country": "USA",
+          "category": "restaurant"
+        },
+        {
+          "city": null,
+          "name": "Burritos La Palma",
+          "region": null,
+          "country": null,
+          "category": "restaurant"
+        },
+        {
+          "city": "Costa Mesa",
+          "name": "South Coast Plaza",
+          "region": "CA",
+          "country": "USA",
+          "category": "shopping"
+        }
+      ],
+      "automaticDeep": {
+        "needed": false,
+        "invoked": false,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 0,
+        "top3Count": 0,
+        "specificResult": false,
+        "recoveryInvoked": false,
+        "rejectionReason": null,
+        "normalCandidates": [
+          {
+            "city": "Costa Mesa",
+            "name": "Paradise Dynasty",
+            "region": "CA",
+            "country": "USA",
+            "category": "restaurant"
+          },
+          {
+            "city": null,
+            "name": "Burritos La Palma",
+            "region": null,
+            "country": null,
+            "category": "restaurant"
+          },
+          {
+            "city": "Costa Mesa",
+            "name": "South Coast Plaza",
+            "region": "CA",
+            "country": "USA",
+            "category": "shopping"
+          }
+        ],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "SPECIFIC_ACTIONABLE",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 0
+      },
+      "automaticDeepRecognition": null,
+      "modelProvider": "gemini",
+      "durationMs": 49051,
+      "taskStatus": "completed",
+      "taskFailureCode": null,
+      "diagnostics": {
+        "multiple": true,
+        "modelPath": "current_fresh_recognition",
+        "placeCount": 4,
+        "insufficient": false,
+        "automaticDeep": {
+          "needed": false,
+          "invoked": false,
+          "version": "automatic-deep-recognition.v2",
+          "attempts": 0,
+          "top3Count": 0,
+          "specificResult": false,
+          "recoveryInvoked": false,
+          "rejectionReason": null,
+          "normalCandidates": [
+            {
+              "city": "Costa Mesa",
+              "name": "Paradise Dynasty",
+              "region": "CA",
+              "country": "USA",
+              "category": "restaurant"
+            },
+            {
+              "city": null,
+              "name": "Burritos La Palma",
+              "region": null,
+              "country": null,
+              "category": "restaurant"
+            },
+            {
+              "city": "Costa Mesa",
+              "name": "South Coast Plaza",
+              "region": "CA",
+              "country": "USA",
+              "category": "shopping"
+            }
+          ],
+          "noUsableSourceEvidence": false,
+          "normalResultSpecificity": "SPECIFIC_ACTIONABLE",
+          "recoverySpecificHypotheses": 0,
+          "firstAttemptSpecificHypotheses": 0
+        },
+        "cacheReadUsed": false,
+        "moments_split": 3,
+        "moments_merged": 0,
+        "finalResultClass": "canonical_evidence",
+        "modelPlacesValid": 4,
+        "raw_moment_count": 4,
+        "analysisAttempted": true,
+        "destinationPlaces": 4,
+        "partialPlaceCount": 0,
+        "cacheReadSuspended": true,
+        "explicitPlaceCount": 4,
+        "modelPlacesEmitted": 4,
+        "recognitionVersion": "vayrin-recognition-2026-08-26.v3-generic-guard-same-place-groups",
+        "logical_place_count": 4,
+        "modelPlacesRejected": 0,
+        "recognitionCacheRead": false,
+        "grouping_reason_codes": [
+          "distinct_named_venues",
+          "different_city"
+        ],
+        "sharedGeoCountrySource": "multiple_places_agree",
+        "recognitionFailureClass": "none",
+        "sharedGeoCountryApplied": true,
+        "sharedGeoCountryStrength": "strong",
+        "modelValidationErrorClass": "none",
+        "peerGeographicDestinations": 0,
+        "same_place_confidence_band": "none",
+        "sharedGeoCountryCandidates": 1,
+        "modelPartialPlacesPreserved": 0,
+        "recognitionCacheWritesEnabled": true,
+        "sourceGeographicContextDropped": 0,
+        "distinct_place_evidence_present": true
+      }
+    },
+    {
+      "caseId": "H01",
+      "suite": "REGRESSION_V2",
+      "category": "FOOD_RESTAURANT",
+      "sourceUrl": "https://www.instagram.com/reel/DYpcd2ZBTsZ/",
+      "expectedRoute": null,
+      "recordedLead": null,
+      "jobId": "b7938566-0f23-48e1-be7d-d650d5729aee",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "failureCategory": null,
+      "failureCode": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "2nd Floor",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 33.6577917,
+          "longitude": -118.00094720000001,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "normalCandidates": [
+        {
+          "city": "Huntington Beach",
+          "name": "2nd Floor Gallery Bar & Grill",
+          "region": "CA",
+          "country": null,
+          "category": "restaurant"
+        }
+      ],
+      "automaticDeep": {
+        "needed": false,
+        "invoked": false,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 0,
+        "top3Count": 0,
+        "specificResult": false,
+        "recoveryInvoked": false,
+        "rejectionReason": null,
+        "normalCandidates": [
+          {
+            "city": "Huntington Beach",
+            "name": "2nd Floor Gallery Bar & Grill",
+            "region": "CA",
+            "country": null,
+            "category": "restaurant"
+          }
+        ],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "SPECIFIC_ACTIONABLE",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 0
+      },
+      "automaticDeepRecognition": null,
+      "modelProvider": "gemini",
+      "durationMs": 46284,
+      "taskStatus": "completed",
+      "taskFailureCode": null,
+      "diagnostics": {
+        "multiple": false,
+        "modelPath": "current_fresh_recognition",
+        "placeCount": 1,
+        "insufficient": false,
+        "automaticDeep": {
+          "needed": false,
+          "invoked": false,
+          "version": "automatic-deep-recognition.v2",
+          "attempts": 0,
+          "top3Count": 0,
+          "specificResult": false,
+          "recoveryInvoked": false,
+          "rejectionReason": null,
+          "normalCandidates": [
+            {
+              "city": "Huntington Beach",
+              "name": "2nd Floor Gallery Bar & Grill",
+              "region": "CA",
+              "country": null,
+              "category": "restaurant"
+            }
+          ],
+          "noUsableSourceEvidence": false,
+          "normalResultSpecificity": "SPECIFIC_ACTIONABLE",
+          "recoverySpecificHypotheses": 0,
+          "firstAttemptSpecificHypotheses": 0
+        },
+        "cacheReadUsed": false,
+        "moments_split": 0,
+        "moments_merged": 0,
+        "finalResultClass": "canonical_evidence",
+        "modelPlacesValid": 1,
+        "raw_moment_count": 1,
+        "analysisAttempted": true,
+        "destinationPlaces": 1,
+        "partialPlaceCount": 0,
+        "cacheReadSuspended": true,
+        "explicitPlaceCount": 1,
+        "modelPlacesEmitted": 1,
+        "recognitionVersion": "vayrin-recognition-2026-08-26.v3-generic-guard-same-place-groups",
+        "logical_place_count": 1,
+        "modelPlacesRejected": 0,
+        "recognitionCacheRead": false,
+        "grouping_reason_codes": [],
+        "recognitionFailureClass": "none",
+        "sharedGeoCountryApplied": false,
+        "sharedGeoCountryStrength": "none",
+        "modelValidationErrorClass": "none",
+        "peerGeographicDestinations": 0,
+        "same_place_confidence_band": "none",
+        "sharedGeoCountryCandidates": 0,
+        "modelPartialPlacesPreserved": 0,
+        "recognitionCacheWritesEnabled": true,
+        "sourceGeographicContextDropped": 0,
+        "distinct_place_evidence_present": false
+      }
+    },
+    {
+      "caseId": "H02",
+      "suite": "REGRESSION_V2",
+      "category": "FOOD_RESTAURANT",
+      "sourceUrl": "https://www.instagram.com/reel/C-BEtdnyGdR/",
+      "expectedRoute": null,
+      "recordedLead": null,
+      "jobId": "e572ee37-69c4-4b12-803f-d0f54550d6e4",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "failureCategory": null,
+      "failureCode": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Mad Yolks",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 36.975037799999996,
+          "longitude": -122.0266371,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "normalCandidates": [
+        {
+          "city": "Santa Cruz",
+          "name": "Mad Yolks",
+          "region": "CA",
+          "country": "USA",
+          "category": "restaurant"
+        }
+      ],
+      "automaticDeep": {
+        "needed": false,
+        "invoked": false,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 0,
+        "top3Count": 0,
+        "specificResult": false,
+        "recoveryInvoked": false,
+        "rejectionReason": null,
+        "normalCandidates": [
+          {
+            "city": "Santa Cruz",
+            "name": "Mad Yolks",
+            "region": "CA",
+            "country": "USA",
+            "category": "restaurant"
+          }
+        ],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "SPECIFIC_ACTIONABLE",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 0
+      },
+      "automaticDeepRecognition": null,
+      "modelProvider": "gemini",
+      "durationMs": 32801,
+      "taskStatus": "completed",
+      "taskFailureCode": null,
+      "diagnostics": {
+        "multiple": false,
+        "modelPath": "current_fresh_recognition",
+        "placeCount": 1,
+        "insufficient": false,
+        "automaticDeep": {
+          "needed": false,
+          "invoked": false,
+          "version": "automatic-deep-recognition.v2",
+          "attempts": 0,
+          "top3Count": 0,
+          "specificResult": false,
+          "recoveryInvoked": false,
+          "rejectionReason": null,
+          "normalCandidates": [
+            {
+              "city": "Santa Cruz",
+              "name": "Mad Yolks",
+              "region": "CA",
+              "country": "USA",
+              "category": "restaurant"
+            }
+          ],
+          "noUsableSourceEvidence": false,
+          "normalResultSpecificity": "SPECIFIC_ACTIONABLE",
+          "recoverySpecificHypotheses": 0,
+          "firstAttemptSpecificHypotheses": 0
+        },
+        "cacheReadUsed": false,
+        "moments_split": 0,
+        "moments_merged": 0,
+        "finalResultClass": "canonical_evidence",
+        "modelPlacesValid": 1,
+        "raw_moment_count": 1,
+        "analysisAttempted": true,
+        "destinationPlaces": 1,
+        "partialPlaceCount": 0,
+        "cacheReadSuspended": true,
+        "explicitPlaceCount": 1,
+        "modelPlacesEmitted": 1,
+        "recognitionVersion": "vayrin-recognition-2026-08-26.v3-generic-guard-same-place-groups",
+        "logical_place_count": 1,
+        "modelPlacesRejected": 0,
+        "recognitionCacheRead": false,
+        "grouping_reason_codes": [],
+        "recognitionFailureClass": "none",
+        "sharedGeoCountryApplied": false,
+        "sharedGeoCountryStrength": "weak",
+        "modelValidationErrorClass": "none",
+        "peerGeographicDestinations": 0,
+        "same_place_confidence_band": "none",
+        "sharedGeoCountryCandidates": 1,
+        "modelPartialPlacesPreserved": 0,
+        "recognitionCacheWritesEnabled": true,
+        "sourceGeographicContextDropped": 0,
+        "distinct_place_evidence_present": false
+      }
+    },
+    {
+      "caseId": "H03",
+      "suite": "REGRESSION_V2",
+      "category": "FOOD_RESTAURANT",
+      "sourceUrl": "https://www.instagram.com/reel/DV_bi8LiaIz/",
+      "expectedRoute": null,
+      "recordedLead": null,
+      "jobId": "a95d7c97-5336-4a7f-86a6-6b5d55ef8533",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "failureCategory": null,
+      "failureCode": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Las Palmas Taco Bar",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 36.9639946,
+          "longitude": -122.0249135,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "normalCandidates": [],
+      "automaticDeep": {
+        "needed": true,
+        "invoked": true,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 1,
+        "top3Count": 1,
+        "specificResult": true,
+        "recoveryInvoked": false,
+        "rejectionReason": "TECHNICAL_RECOVERY",
+        "normalCandidates": [],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "WEAK",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 1
+      },
+      "automaticDeepRecognition": {
+        "model": "gpt-5.6-sol",
+        "timingsMs": {
+          "sol": 6517
+        },
+        "engineVersion": "simple-sol-premium.v2",
+        "placesRequests": 1,
+        "knownModelCostUsd": 0.030776
+      },
+      "modelProvider": "gemini+simple-sol",
+      "durationMs": 51136,
+      "taskStatus": "completed",
+      "taskFailureCode": null,
+      "diagnostics": {
+        "multiple": false,
+        "modelPath": "current_fresh_recognition",
+        "placeCount": 1,
+        "insufficient": false,
+        "automaticDeep": {
+          "needed": true,
+          "invoked": true,
+          "version": "automatic-deep-recognition.v2",
+          "attempts": 1,
+          "top3Count": 1,
+          "specificResult": true,
+          "recoveryInvoked": false,
+          "rejectionReason": "TECHNICAL_RECOVERY",
+          "normalCandidates": [],
+          "noUsableSourceEvidence": false,
+          "normalResultSpecificity": "WEAK",
+          "recoverySpecificHypotheses": 0,
+          "firstAttemptSpecificHypotheses": 1
+        },
+        "cacheReadUsed": false,
+        "moments_split": 0,
+        "moments_merged": 0,
+        "modelPlacesValid": 0,
+        "raw_moment_count": 0,
+        "analysisAttempted": true,
+        "destinationPlaces": 1,
+        "partialPlaceCount": 0,
+        "cacheReadSuspended": true,
+        "explicitPlaceCount": 1,
+        "modelPlacesEmitted": 1,
+        "recognitionVersion": "vayrin-recognition-2026-08-26.v3-generic-guard-same-place-groups",
+        "logical_place_count": 0,
+        "modelPlacesRejected": 1,
+        "recognitionCacheRead": false,
+        "grouping_reason_codes": [],
+        "evidenceRejectionPaths": [
+          "places.0.momentTimestamps:too_big"
+        ],
+        "recognitionFailureClass": "none",
+        "sharedGeoCountryApplied": false,
+        "automaticDeepRecognition": {
+          "model": "gpt-5.6-sol",
+          "timingsMs": {
+            "sol": 6517
+          },
+          "engineVersion": "simple-sol-premium.v2",
+          "placesRequests": 1,
+          "knownModelCostUsd": 0.030776
+        },
+        "sharedGeoCountryStrength": "weak",
+        "modelValidationErrorClass": "candidate_field_invalid",
+        "peerGeographicDestinations": 0,
+        "same_place_confidence_band": "none",
+        "sharedGeoCountryCandidates": 1,
+        "modelPartialPlacesPreserved": 1,
+        "recognitionCacheWritesEnabled": true,
+        "sourceGeographicContextDropped": 0,
+        "distinct_place_evidence_present": false
+      }
+    },
+    {
+      "caseId": "H04",
+      "suite": "REGRESSION_V2",
+      "category": "FOOD_RESTAURANT",
+      "sourceUrl": "https://www.instagram.com/reel/DWUI9fvDCck/",
+      "expectedRoute": null,
+      "recordedLead": null,
+      "jobId": "c9da6702-4489-4941-80e9-eb5d8ca212d8",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "failureCategory": null,
+      "failureCode": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Seabright Deli",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 36.9667854,
+          "longitude": -122.0079763,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "normalCandidates": [
+        {
+          "city": "Santa Cruz",
+          "name": "Seabright Deli",
+          "region": "CA",
+          "country": "USA",
+          "category": "restaurant"
+        }
+      ],
+      "automaticDeep": {
+        "needed": false,
+        "invoked": false,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 0,
+        "top3Count": 0,
+        "specificResult": false,
+        "recoveryInvoked": false,
+        "rejectionReason": null,
+        "normalCandidates": [
+          {
+            "city": "Santa Cruz",
+            "name": "Seabright Deli",
+            "region": "CA",
+            "country": "USA",
+            "category": "restaurant"
+          }
+        ],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "SPECIFIC_ACTIONABLE",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 0
+      },
+      "automaticDeepRecognition": null,
+      "modelProvider": "gemini",
+      "durationMs": 40461,
+      "taskStatus": "completed",
+      "taskFailureCode": null,
+      "diagnostics": {
+        "multiple": false,
+        "modelPath": "current_fresh_recognition",
+        "placeCount": 1,
+        "insufficient": false,
+        "automaticDeep": {
+          "needed": false,
+          "invoked": false,
+          "version": "automatic-deep-recognition.v2",
+          "attempts": 0,
+          "top3Count": 0,
+          "specificResult": false,
+          "recoveryInvoked": false,
+          "rejectionReason": null,
+          "normalCandidates": [
+            {
+              "city": "Santa Cruz",
+              "name": "Seabright Deli",
+              "region": "CA",
+              "country": "USA",
+              "category": "restaurant"
+            }
+          ],
+          "noUsableSourceEvidence": false,
+          "normalResultSpecificity": "SPECIFIC_ACTIONABLE",
+          "recoverySpecificHypotheses": 0,
+          "firstAttemptSpecificHypotheses": 0
+        },
+        "cacheReadUsed": false,
+        "moments_split": 0,
+        "moments_merged": 0,
+        "finalResultClass": "canonical_evidence",
+        "modelPlacesValid": 1,
+        "raw_moment_count": 1,
+        "analysisAttempted": true,
+        "destinationPlaces": 1,
+        "partialPlaceCount": 0,
+        "cacheReadSuspended": true,
+        "explicitPlaceCount": 1,
+        "modelPlacesEmitted": 1,
+        "recognitionVersion": "vayrin-recognition-2026-08-26.v3-generic-guard-same-place-groups",
+        "logical_place_count": 1,
+        "modelPlacesRejected": 0,
+        "recognitionCacheRead": false,
+        "grouping_reason_codes": [],
+        "recognitionFailureClass": "none",
+        "sharedGeoCountryApplied": false,
+        "sharedGeoCountryStrength": "weak",
+        "modelValidationErrorClass": "none",
+        "peerGeographicDestinations": 0,
+        "same_place_confidence_band": "none",
+        "sharedGeoCountryCandidates": 1,
+        "modelPartialPlacesPreserved": 0,
+        "recognitionCacheWritesEnabled": true,
+        "sourceGeographicContextDropped": 0,
+        "distinct_place_evidence_present": false
+      }
+    },
+    {
+      "caseId": "H05",
+      "suite": "REGRESSION_V2",
+      "category": "FOOD_RESTAURANT",
+      "sourceUrl": "https://www.instagram.com/reel/C2QKOHuP6qG/",
+      "expectedRoute": null,
+      "recordedLead": null,
+      "jobId": "55072416-cc3c-4189-bfbc-67effea5d011",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "failureCategory": null,
+      "failureCode": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Mad Yolks",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 36.975037799999996,
+          "longitude": -122.0266371,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "normalCandidates": [
+        {
+          "city": "Santa Cruz",
+          "name": "Mad Yolks",
+          "region": "CA",
+          "country": "USA",
+          "category": "restaurant"
+        }
+      ],
+      "automaticDeep": {
+        "needed": false,
+        "invoked": false,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 0,
+        "top3Count": 0,
+        "specificResult": false,
+        "recoveryInvoked": false,
+        "rejectionReason": null,
+        "normalCandidates": [
+          {
+            "city": "Santa Cruz",
+            "name": "Mad Yolks",
+            "region": "CA",
+            "country": "USA",
+            "category": "restaurant"
+          }
+        ],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "SPECIFIC_ACTIONABLE",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 0
+      },
+      "automaticDeepRecognition": null,
+      "modelProvider": "gemini",
+      "durationMs": 29807,
+      "taskStatus": "completed",
+      "taskFailureCode": null,
+      "diagnostics": {
+        "multiple": false,
+        "modelPath": "current_fresh_recognition",
+        "placeCount": 1,
+        "insufficient": false,
+        "automaticDeep": {
+          "needed": false,
+          "invoked": false,
+          "version": "automatic-deep-recognition.v2",
+          "attempts": 0,
+          "top3Count": 0,
+          "specificResult": false,
+          "recoveryInvoked": false,
+          "rejectionReason": null,
+          "normalCandidates": [
+            {
+              "city": "Santa Cruz",
+              "name": "Mad Yolks",
+              "region": "CA",
+              "country": "USA",
+              "category": "restaurant"
+            }
+          ],
+          "noUsableSourceEvidence": false,
+          "normalResultSpecificity": "SPECIFIC_ACTIONABLE",
+          "recoverySpecificHypotheses": 0,
+          "firstAttemptSpecificHypotheses": 0
+        },
+        "cacheReadUsed": false,
+        "moments_split": 0,
+        "moments_merged": 0,
+        "finalResultClass": "canonical_evidence",
+        "modelPlacesValid": 1,
+        "raw_moment_count": 1,
+        "analysisAttempted": true,
+        "destinationPlaces": 1,
+        "partialPlaceCount": 0,
+        "cacheReadSuspended": true,
+        "explicitPlaceCount": 1,
+        "modelPlacesEmitted": 1,
+        "recognitionVersion": "vayrin-recognition-2026-08-26.v3-generic-guard-same-place-groups",
+        "logical_place_count": 1,
+        "modelPlacesRejected": 0,
+        "recognitionCacheRead": false,
+        "grouping_reason_codes": [],
+        "recognitionFailureClass": "none",
+        "sharedGeoCountryApplied": false,
+        "sharedGeoCountryStrength": "weak",
+        "modelValidationErrorClass": "none",
+        "peerGeographicDestinations": 0,
+        "same_place_confidence_band": "none",
+        "sharedGeoCountryCandidates": 1,
+        "modelPartialPlacesPreserved": 0,
+        "recognitionCacheWritesEnabled": true,
+        "sourceGeographicContextDropped": 0,
+        "distinct_place_evidence_present": false
+      }
+    },
+    {
+      "caseId": "H08",
+      "suite": "REGRESSION_V2",
+      "category": "FOOD_RESTAURANT",
+      "sourceUrl": "https://www.instagram.com/reel/DYfr81GhvTS/",
+      "expectedRoute": null,
+      "recordedLead": null,
+      "jobId": "602f7b00-84e5-49aa-9fd6-d5c47d33d131",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "failureCategory": null,
+      "failureCode": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Loaded Cafe - Orange",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 33.8182134,
+          "longitude": -117.8363484,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "normalCandidates": [
+        {
+          "city": "Orange",
+          "name": "Loaded Cafe",
+          "region": "CA",
+          "country": "USA",
+          "category": "restaurant"
+        }
+      ],
+      "automaticDeep": {
+        "needed": false,
+        "invoked": false,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 0,
+        "top3Count": 0,
+        "specificResult": false,
+        "recoveryInvoked": false,
+        "rejectionReason": null,
+        "normalCandidates": [
+          {
+            "city": "Orange",
+            "name": "Loaded Cafe",
+            "region": "CA",
+            "country": "USA",
+            "category": "restaurant"
+          }
+        ],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "SPECIFIC_ACTIONABLE",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 0
+      },
+      "automaticDeepRecognition": null,
+      "modelProvider": "gemini",
+      "durationMs": 47238,
+      "taskStatus": "completed",
+      "taskFailureCode": null,
+      "diagnostics": {
+        "multiple": false,
+        "modelPath": "current_fresh_recognition",
+        "placeCount": 1,
+        "insufficient": false,
+        "automaticDeep": {
+          "needed": false,
+          "invoked": false,
+          "version": "automatic-deep-recognition.v2",
+          "attempts": 0,
+          "top3Count": 0,
+          "specificResult": false,
+          "recoveryInvoked": false,
+          "rejectionReason": null,
+          "normalCandidates": [
+            {
+              "city": "Orange",
+              "name": "Loaded Cafe",
+              "region": "CA",
+              "country": "USA",
+              "category": "restaurant"
+            }
+          ],
+          "noUsableSourceEvidence": false,
+          "normalResultSpecificity": "SPECIFIC_ACTIONABLE",
+          "recoverySpecificHypotheses": 0,
+          "firstAttemptSpecificHypotheses": 0
+        },
+        "cacheReadUsed": false,
+        "moments_split": 0,
+        "moments_merged": 0,
+        "finalResultClass": "canonical_evidence",
+        "modelPlacesValid": 1,
+        "raw_moment_count": 1,
+        "analysisAttempted": true,
+        "destinationPlaces": 1,
+        "partialPlaceCount": 0,
+        "cacheReadSuspended": true,
+        "explicitPlaceCount": 1,
+        "modelPlacesEmitted": 1,
+        "recognitionVersion": "vayrin-recognition-2026-08-26.v3-generic-guard-same-place-groups",
+        "logical_place_count": 1,
+        "modelPlacesRejected": 0,
+        "recognitionCacheRead": false,
+        "grouping_reason_codes": [],
+        "recognitionFailureClass": "none",
+        "sharedGeoCountryApplied": false,
+        "sharedGeoCountryStrength": "weak",
+        "modelValidationErrorClass": "none",
+        "peerGeographicDestinations": 0,
+        "same_place_confidence_band": "none",
+        "sharedGeoCountryCandidates": 1,
+        "modelPartialPlacesPreserved": 0,
+        "recognitionCacheWritesEnabled": true,
+        "sourceGeographicContextDropped": 0,
+        "distinct_place_evidence_present": false
+      }
+    },
+    {
+      "caseId": "H09",
+      "suite": "REGRESSION_V2",
+      "category": "FOOD_RESTAURANT",
+      "sourceUrl": "https://www.instagram.com/reel/DYVn771vefW/",
+      "expectedRoute": null,
+      "recordedLead": null,
+      "jobId": "5ed65db3-7526-492e-bad3-e42a6d1e2245",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "failureCategory": null,
+      "failureCode": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Pho Bamboo Vietnamese Restaurant",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 33.9959372,
+          "longitude": -117.90680520000001,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        },
+        {
+          "rank": 2,
+          "name": "Pho Bamboo Restaurant",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": null,
+          "longitude": null,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "normalCandidates": [
+        {
+          "city": "City Of Industry",
+          "name": "Pho Bamboo Restaurant",
+          "region": "CA",
+          "country": null,
+          "category": "restaurant"
+        }
+      ],
+      "automaticDeep": {
+        "needed": false,
+        "invoked": false,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 0,
+        "top3Count": 0,
+        "specificResult": false,
+        "recoveryInvoked": false,
+        "rejectionReason": null,
+        "normalCandidates": [
+          {
+            "city": "City Of Industry",
+            "name": "Pho Bamboo Restaurant",
+            "region": "CA",
+            "country": null,
+            "category": "restaurant"
+          }
+        ],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "SPECIFIC_ACTIONABLE",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 0
+      },
+      "automaticDeepRecognition": null,
+      "modelProvider": "gemini",
+      "durationMs": 49440,
+      "taskStatus": "completed",
+      "taskFailureCode": null,
+      "diagnostics": {
+        "multiple": false,
+        "modelPath": "current_fresh_recognition",
+        "placeCount": 1,
+        "insufficient": false,
+        "automaticDeep": {
+          "needed": false,
+          "invoked": false,
+          "version": "automatic-deep-recognition.v2",
+          "attempts": 0,
+          "top3Count": 0,
+          "specificResult": false,
+          "recoveryInvoked": false,
+          "rejectionReason": null,
+          "normalCandidates": [
+            {
+              "city": "City Of Industry",
+              "name": "Pho Bamboo Restaurant",
+              "region": "CA",
+              "country": null,
+              "category": "restaurant"
+            }
+          ],
+          "noUsableSourceEvidence": false,
+          "normalResultSpecificity": "SPECIFIC_ACTIONABLE",
+          "recoverySpecificHypotheses": 0,
+          "firstAttemptSpecificHypotheses": 0
+        },
+        "cacheReadUsed": false,
+        "moments_split": 0,
+        "moments_merged": 0,
+        "finalResultClass": "canonical_evidence",
+        "modelPlacesValid": 1,
+        "raw_moment_count": 1,
+        "analysisAttempted": true,
+        "destinationPlaces": 1,
+        "partialPlaceCount": 0,
+        "cacheReadSuspended": true,
+        "explicitPlaceCount": 1,
+        "modelPlacesEmitted": 1,
+        "recognitionVersion": "vayrin-recognition-2026-08-26.v3-generic-guard-same-place-groups",
+        "logical_place_count": 1,
+        "modelPlacesRejected": 0,
+        "recognitionCacheRead": false,
+        "grouping_reason_codes": [],
+        "recognitionFailureClass": "none",
+        "sharedGeoCountryApplied": false,
+        "sharedGeoCountryStrength": "none",
+        "modelValidationErrorClass": "none",
+        "peerGeographicDestinations": 0,
+        "same_place_confidence_band": "none",
+        "sharedGeoCountryCandidates": 0,
+        "modelPartialPlacesPreserved": 0,
+        "recognitionCacheWritesEnabled": true,
+        "sourceGeographicContextDropped": 0,
+        "distinct_place_evidence_present": false
+      }
+    },
+    {
+      "caseId": "H10",
+      "suite": "REGRESSION_V2",
+      "category": "FOOD_RESTAURANT",
+      "sourceUrl": "https://www.instagram.com/reel/DYGvkJ0oDjA/",
+      "expectedRoute": null,
+      "recordedLead": null,
+      "jobId": "ba4af168-5c20-425e-8787-21b21e2e3670",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "failureCategory": null,
+      "failureCode": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Baja Sharkeez",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 33.6083308,
+          "longitude": -117.92796609999999,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "normalCandidates": [
+        {
+          "city": "Newport Beach",
+          "name": "Baja Sharkeez",
+          "region": "CA",
+          "country": "USA",
+          "category": "restaurant"
+        }
+      ],
+      "automaticDeep": {
+        "needed": false,
+        "invoked": false,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 0,
+        "top3Count": 0,
+        "specificResult": false,
+        "recoveryInvoked": false,
+        "rejectionReason": null,
+        "normalCandidates": [
+          {
+            "city": "Newport Beach",
+            "name": "Baja Sharkeez",
+            "region": "CA",
+            "country": "USA",
+            "category": "restaurant"
+          }
+        ],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "SPECIFIC_ACTIONABLE",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 0
+      },
+      "automaticDeepRecognition": null,
+      "modelProvider": "gemini",
+      "durationMs": 47892,
+      "taskStatus": "completed",
+      "taskFailureCode": null,
+      "diagnostics": {
+        "multiple": false,
+        "modelPath": "current_fresh_recognition",
+        "placeCount": 1,
+        "insufficient": false,
+        "automaticDeep": {
+          "needed": false,
+          "invoked": false,
+          "version": "automatic-deep-recognition.v2",
+          "attempts": 0,
+          "top3Count": 0,
+          "specificResult": false,
+          "recoveryInvoked": false,
+          "rejectionReason": null,
+          "normalCandidates": [
+            {
+              "city": "Newport Beach",
+              "name": "Baja Sharkeez",
+              "region": "CA",
+              "country": "USA",
+              "category": "restaurant"
+            }
+          ],
+          "noUsableSourceEvidence": false,
+          "normalResultSpecificity": "SPECIFIC_ACTIONABLE",
+          "recoverySpecificHypotheses": 0,
+          "firstAttemptSpecificHypotheses": 0
+        },
+        "cacheReadUsed": false,
+        "moments_split": 0,
+        "moments_merged": 0,
+        "finalResultClass": "canonical_evidence",
+        "modelPlacesValid": 1,
+        "raw_moment_count": 1,
+        "analysisAttempted": true,
+        "destinationPlaces": 1,
+        "partialPlaceCount": 0,
+        "cacheReadSuspended": true,
+        "explicitPlaceCount": 1,
+        "modelPlacesEmitted": 1,
+        "recognitionVersion": "vayrin-recognition-2026-08-26.v3-generic-guard-same-place-groups",
+        "logical_place_count": 1,
+        "modelPlacesRejected": 0,
+        "recognitionCacheRead": false,
+        "grouping_reason_codes": [],
+        "recognitionFailureClass": "none",
+        "sharedGeoCountryApplied": false,
+        "sharedGeoCountryStrength": "weak",
+        "modelValidationErrorClass": "none",
+        "peerGeographicDestinations": 0,
+        "same_place_confidence_band": "none",
+        "sharedGeoCountryCandidates": 1,
+        "modelPartialPlacesPreserved": 0,
+        "recognitionCacheWritesEnabled": true,
+        "sourceGeographicContextDropped": 0,
+        "distinct_place_evidence_present": false
+      }
+    },
+    {
+      "caseId": "H12",
+      "suite": "REGRESSION_V2",
+      "category": "FOOD_RESTAURANT",
+      "sourceUrl": "https://www.instagram.com/p/DLfvZunSKRp/",
+      "expectedRoute": null,
+      "recordedLead": null,
+      "jobId": "4f3d8a29-76d8-4fe9-bed4-f2c08a898d75",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "failureCategory": null,
+      "failureCode": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Old Fisherman’s Grotto",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 36.6043278,
+          "longitude": -121.8928631,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        },
+        {
+          "rank": 2,
+          "name": "Old Fisherman's Grotto",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": null,
+          "longitude": null,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "normalCandidates": [
+        {
+          "city": "Monterey",
+          "name": "Old Fisherman's Grotto",
+          "region": "California",
+          "country": null,
+          "category": "restaurant"
+        }
+      ],
+      "automaticDeep": {
+        "needed": false,
+        "invoked": false,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 0,
+        "top3Count": 0,
+        "specificResult": false,
+        "recoveryInvoked": false,
+        "rejectionReason": null,
+        "normalCandidates": [
+          {
+            "city": "Monterey",
+            "name": "Old Fisherman's Grotto",
+            "region": "California",
+            "country": null,
+            "category": "restaurant"
+          }
+        ],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "SPECIFIC_ACTIONABLE",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 0
+      },
+      "automaticDeepRecognition": null,
+      "modelProvider": "gemini",
+      "durationMs": 39840,
+      "taskStatus": "completed",
+      "taskFailureCode": null,
+      "diagnostics": {
+        "multiple": false,
+        "modelPath": "current_fresh_recognition",
+        "placeCount": 1,
+        "insufficient": false,
+        "automaticDeep": {
+          "needed": false,
+          "invoked": false,
+          "version": "automatic-deep-recognition.v2",
+          "attempts": 0,
+          "top3Count": 0,
+          "specificResult": false,
+          "recoveryInvoked": false,
+          "rejectionReason": null,
+          "normalCandidates": [
+            {
+              "city": "Monterey",
+              "name": "Old Fisherman's Grotto",
+              "region": "California",
+              "country": null,
+              "category": "restaurant"
+            }
+          ],
+          "noUsableSourceEvidence": false,
+          "normalResultSpecificity": "SPECIFIC_ACTIONABLE",
+          "recoverySpecificHypotheses": 0,
+          "firstAttemptSpecificHypotheses": 0
+        },
+        "cacheReadUsed": false,
+        "moments_split": 0,
+        "moments_merged": 0,
+        "finalResultClass": "canonical_evidence",
+        "modelPlacesValid": 1,
+        "raw_moment_count": 1,
+        "analysisAttempted": true,
+        "destinationPlaces": 1,
+        "partialPlaceCount": 0,
+        "cacheReadSuspended": true,
+        "explicitPlaceCount": 1,
+        "modelPlacesEmitted": 1,
+        "recognitionVersion": "vayrin-recognition-2026-08-26.v3-generic-guard-same-place-groups",
+        "logical_place_count": 1,
+        "modelPlacesRejected": 0,
+        "recognitionCacheRead": false,
+        "grouping_reason_codes": [],
+        "recognitionFailureClass": "none",
+        "sharedGeoCountryApplied": false,
+        "sharedGeoCountryStrength": "none",
+        "modelValidationErrorClass": "none",
+        "peerGeographicDestinations": 0,
+        "same_place_confidence_band": "none",
+        "sharedGeoCountryCandidates": 0,
+        "modelPartialPlacesPreserved": 0,
+        "recognitionCacheWritesEnabled": true,
+        "sourceGeographicContextDropped": 0,
+        "distinct_place_evidence_present": false
+      }
+    },
+    {
+      "caseId": "P01",
+      "suite": "REGRESSION_V2",
+      "category": "FOOD_RESTAURANT",
+      "sourceUrl": "https://www.instagram.com/p/DWZNJZ-EthD/",
+      "expectedRoute": null,
+      "recordedLead": null,
+      "jobId": "1af7d545-bbc3-4c04-8e28-c3b2522c9c14",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "failureCategory": null,
+      "failureCode": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Aptos St. BBQ",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 36.9768124,
+          "longitude": -121.89949060000001,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "normalCandidates": [
+        {
+          "city": "Aptos",
+          "name": "Aptos Street Barbecue",
+          "region": "CA",
+          "country": "USA",
+          "category": "restaurant"
+        }
+      ],
+      "automaticDeep": {
+        "needed": false,
+        "invoked": false,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 0,
+        "top3Count": 0,
+        "specificResult": false,
+        "recoveryInvoked": false,
+        "rejectionReason": null,
+        "normalCandidates": [
+          {
+            "city": "Aptos",
+            "name": "Aptos Street Barbecue",
+            "region": "CA",
+            "country": "USA",
+            "category": "restaurant"
+          }
+        ],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "SPECIFIC_ACTIONABLE",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 0
+      },
+      "automaticDeepRecognition": null,
+      "modelProvider": "gemini",
+      "durationMs": 32353,
+      "taskStatus": "completed",
+      "taskFailureCode": null,
+      "diagnostics": {
+        "multiple": false,
+        "modelPath": "current_fresh_recognition",
+        "placeCount": 1,
+        "insufficient": false,
+        "automaticDeep": {
+          "needed": false,
+          "invoked": false,
+          "version": "automatic-deep-recognition.v2",
+          "attempts": 0,
+          "top3Count": 0,
+          "specificResult": false,
+          "recoveryInvoked": false,
+          "rejectionReason": null,
+          "normalCandidates": [
+            {
+              "city": "Aptos",
+              "name": "Aptos Street Barbecue",
+              "region": "CA",
+              "country": "USA",
+              "category": "restaurant"
+            }
+          ],
+          "noUsableSourceEvidence": false,
+          "normalResultSpecificity": "SPECIFIC_ACTIONABLE",
+          "recoverySpecificHypotheses": 0,
+          "firstAttemptSpecificHypotheses": 0
+        },
+        "cacheReadUsed": false,
+        "moments_split": 0,
+        "moments_merged": 0,
+        "finalResultClass": "canonical_evidence",
+        "modelPlacesValid": 1,
+        "raw_moment_count": 1,
+        "analysisAttempted": true,
+        "destinationPlaces": 1,
+        "partialPlaceCount": 0,
+        "cacheReadSuspended": true,
+        "explicitPlaceCount": 1,
+        "modelPlacesEmitted": 1,
+        "recognitionVersion": "vayrin-recognition-2026-08-26.v3-generic-guard-same-place-groups",
+        "logical_place_count": 1,
+        "modelPlacesRejected": 0,
+        "recognitionCacheRead": false,
+        "grouping_reason_codes": [],
+        "recognitionFailureClass": "none",
+        "sharedGeoCountryApplied": false,
+        "sharedGeoCountryStrength": "weak",
+        "modelValidationErrorClass": "none",
+        "peerGeographicDestinations": 0,
+        "same_place_confidence_band": "none",
+        "sharedGeoCountryCandidates": 1,
+        "modelPartialPlacesPreserved": 0,
+        "recognitionCacheWritesEnabled": true,
+        "sourceGeographicContextDropped": 0,
+        "distinct_place_evidence_present": false
+      }
+    },
+    {
+      "caseId": "P02",
+      "suite": "REGRESSION_V2",
+      "category": "FOOD_RESTAURANT",
+      "sourceUrl": "https://www.instagram.com/p/DYbLVMBp_dY/",
+      "expectedRoute": null,
+      "recordedLead": null,
+      "jobId": "2b30b0c2-5036-4418-a04e-66dc1840bf09",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "failureCategory": null,
+      "failureCode": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "BLK Earth Sea Spirits",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 33.6571503,
+          "longitude": -118.00143279999999,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "normalCandidates": [],
+      "automaticDeep": {
+        "needed": true,
+        "invoked": true,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 1,
+        "top3Count": 1,
+        "specificResult": true,
+        "recoveryInvoked": false,
+        "rejectionReason": "NO_IDENTITY",
+        "normalCandidates": [],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "WEAK",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 1
+      },
+      "automaticDeepRecognition": {
+        "model": "gpt-5.6-sol",
+        "timingsMs": {
+          "sol": 10546
+        },
+        "engineVersion": "simple-sol-premium.v2",
+        "placesRequests": 1,
+        "knownModelCostUsd": 0.0379
+      },
+      "modelProvider": "gemini+simple-sol",
+      "durationMs": 38916,
+      "taskStatus": "completed",
+      "taskFailureCode": null,
+      "diagnostics": {
+        "multiple": false,
+        "modelPath": "current_fresh_recognition",
+        "placeCount": 1,
+        "insufficient": true,
+        "automaticDeep": {
+          "needed": true,
+          "invoked": true,
+          "version": "automatic-deep-recognition.v2",
+          "attempts": 1,
+          "top3Count": 1,
+          "specificResult": true,
+          "recoveryInvoked": false,
+          "rejectionReason": "NO_IDENTITY",
+          "normalCandidates": [],
+          "noUsableSourceEvidence": false,
+          "normalResultSpecificity": "WEAK",
+          "recoverySpecificHypotheses": 0,
+          "firstAttemptSpecificHypotheses": 1
+        },
+        "cacheReadUsed": false,
+        "moments_split": 0,
+        "moments_merged": 0,
+        "modelPlacesValid": 0,
+        "raw_moment_count": 0,
+        "analysisAttempted": true,
+        "destinationPlaces": 0,
+        "partialPlaceCount": 0,
+        "cacheReadSuspended": true,
+        "explicitPlaceCount": 0,
+        "modelPlacesEmitted": 0,
+        "recognitionVersion": "vayrin-recognition-2026-08-26.v3-generic-guard-same-place-groups",
+        "logical_place_count": 0,
+        "modelPlacesRejected": 0,
+        "recognitionCacheRead": false,
+        "grouping_reason_codes": [],
+        "recognitionFailureClass": "none",
+        "sharedGeoCountryApplied": false,
+        "automaticDeepRecognition": {
+          "model": "gpt-5.6-sol",
+          "timingsMs": {
+            "sol": 10546
+          },
+          "engineVersion": "simple-sol-premium.v2",
+          "placesRequests": 1,
+          "knownModelCostUsd": 0.0379
+        },
+        "sharedGeoCountryStrength": "none",
+        "modelValidationErrorClass": "none",
+        "peerGeographicDestinations": 0,
+        "same_place_confidence_band": "none",
+        "sharedGeoCountryCandidates": 0,
+        "modelPartialPlacesPreserved": 0,
+        "recognitionCacheWritesEnabled": true,
+        "sourceGeographicContextDropped": 0,
+        "distinct_place_evidence_present": false
+      }
+    },
+    {
+      "caseId": "P03",
+      "suite": "REGRESSION_V2",
+      "category": "FOOD_RESTAURANT",
+      "sourceUrl": "https://www.instagram.com/p/DYx8S0PPy6b/",
+      "expectedRoute": null,
+      "recordedLead": null,
+      "jobId": "6565b614-ebd1-4ba2-9b93-4cbbcfac146e",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "failureCategory": null,
+      "failureCode": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Chocolate",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 36.9756067,
+          "longitude": -122.02643870000001,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "normalCandidates": [],
+      "automaticDeep": {
+        "needed": true,
+        "invoked": true,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 1,
+        "top3Count": 1,
+        "specificResult": true,
+        "recoveryInvoked": false,
+        "rejectionReason": "TECHNICAL_RECOVERY",
+        "normalCandidates": [],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "WEAK",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 1
+      },
+      "automaticDeepRecognition": {
+        "model": "gpt-5.6-sol",
+        "timingsMs": {
+          "sol": 7162
+        },
+        "engineVersion": "simple-sol-premium.v2",
+        "placesRequests": 1,
+        "knownModelCostUsd": 0.009122
+      },
+      "modelProvider": "gemini+simple-sol",
+      "durationMs": 35068,
+      "taskStatus": "completed",
+      "taskFailureCode": null,
+      "diagnostics": {
+        "multiple": false,
+        "modelPath": "current_fresh_recognition",
+        "placeCount": 1,
+        "insufficient": false,
+        "automaticDeep": {
+          "needed": true,
+          "invoked": true,
+          "version": "automatic-deep-recognition.v2",
+          "attempts": 1,
+          "top3Count": 1,
+          "specificResult": true,
+          "recoveryInvoked": false,
+          "rejectionReason": "TECHNICAL_RECOVERY",
+          "normalCandidates": [],
+          "noUsableSourceEvidence": false,
+          "normalResultSpecificity": "WEAK",
+          "recoverySpecificHypotheses": 0,
+          "firstAttemptSpecificHypotheses": 1
+        },
+        "cacheReadUsed": false,
+        "moments_split": 0,
+        "moments_merged": 0,
+        "modelPlacesValid": 0,
+        "raw_moment_count": 0,
+        "analysisAttempted": true,
+        "destinationPlaces": 1,
+        "partialPlaceCount": 0,
+        "cacheReadSuspended": true,
+        "explicitPlaceCount": 1,
+        "modelPlacesEmitted": 1,
+        "recognitionVersion": "vayrin-recognition-2026-08-26.v3-generic-guard-same-place-groups",
+        "logical_place_count": 0,
+        "modelPlacesRejected": 1,
+        "recognitionCacheRead": false,
+        "grouping_reason_codes": [],
+        "evidenceRejectionPaths": [
+          "places.0.sceneSignature.visualAnchors:too_big"
+        ],
+        "recognitionFailureClass": "none",
+        "sharedGeoCountryApplied": false,
+        "automaticDeepRecognition": {
+          "model": "gpt-5.6-sol",
+          "timingsMs": {
+            "sol": 7162
+          },
+          "engineVersion": "simple-sol-premium.v2",
+          "placesRequests": 1,
+          "knownModelCostUsd": 0.009122
+        },
+        "sharedGeoCountryStrength": "weak",
+        "modelValidationErrorClass": "candidate_field_invalid",
+        "peerGeographicDestinations": 0,
+        "same_place_confidence_band": "none",
+        "sharedGeoCountryCandidates": 1,
+        "modelPartialPlacesPreserved": 1,
+        "recognitionCacheWritesEnabled": true,
+        "sourceGeographicContextDropped": 0,
+        "distinct_place_evidence_present": false
+      }
+    },
+    {
+      "caseId": "P04",
+      "suite": "REGRESSION_V2",
+      "category": "FOOD_RESTAURANT",
+      "sourceUrl": "https://www.instagram.com/p/DYYfWR9oeYS/",
+      "expectedRoute": null,
+      "recordedLead": null,
+      "jobId": "3e769d87-bb64-4ccb-9a1d-0cc67a48a754",
+      "status": "needs_help",
+      "decision": "candidate_picker",
+      "savedPlaceId": null,
+      "failureCategory": null,
+      "failureCode": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Mesa Verde Farmers' Market",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 33.6697513,
+          "longitude": -117.92106270000001,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        },
+        {
+          "rank": 2,
+          "name": "Deli Nerds",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 33.669763599999996,
+          "longitude": -117.9208274,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        },
+        {
+          "rank": 3,
+          "name": "Mesa Verde Farmers Market (Farm Habit Mesa Verde)",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": null,
+          "longitude": null,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "normalCandidates": [
+        {
+          "city": "Costa Mesa",
+          "name": "Mesa Verde Farmers Market",
+          "region": "CA",
+          "country": "USA",
+          "category": "shopping"
+        }
+      ],
+      "automaticDeep": {
+        "needed": true,
+        "invoked": true,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 1,
+        "top3Count": 2,
+        "specificResult": true,
+        "recoveryInvoked": false,
+        "rejectionReason": "TECHNICAL_RECOVERY",
+        "normalCandidates": [
+          {
+            "city": "Costa Mesa",
+            "name": "Mesa Verde Farmers Market",
+            "region": "CA",
+            "country": "USA",
+            "category": "shopping"
+          }
+        ],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "WEAK",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 2
+      },
+      "automaticDeepRecognition": {
+        "model": "gpt-5.6-sol",
+        "timingsMs": {
+          "sol": 12338
+        },
+        "engineVersion": "simple-sol-premium.v2",
+        "placesRequests": 2,
+        "knownModelCostUsd": 0.048144
+      },
+      "modelProvider": "gemini+simple-sol",
+      "durationMs": 58837,
+      "taskStatus": "completed",
+      "taskFailureCode": null,
+      "diagnostics": {
+        "multiple": true,
+        "modelPath": "current_fresh_recognition",
+        "placeCount": 2,
+        "insufficient": false,
+        "automaticDeep": {
+          "needed": true,
+          "invoked": true,
+          "version": "automatic-deep-recognition.v2",
+          "attempts": 1,
+          "top3Count": 2,
+          "specificResult": true,
+          "recoveryInvoked": false,
+          "rejectionReason": "TECHNICAL_RECOVERY",
+          "normalCandidates": [
+            {
+              "city": "Costa Mesa",
+              "name": "Mesa Verde Farmers Market",
+              "region": "CA",
+              "country": "USA",
+              "category": "shopping"
+            }
+          ],
+          "noUsableSourceEvidence": false,
+          "normalResultSpecificity": "WEAK",
+          "recoverySpecificHypotheses": 0,
+          "firstAttemptSpecificHypotheses": 2
+        },
+        "cacheReadUsed": false,
+        "moments_split": 0,
+        "moments_merged": 0,
+        "modelPlacesValid": 1,
+        "raw_moment_count": 1,
+        "analysisAttempted": true,
+        "destinationPlaces": 2,
+        "partialPlaceCount": 0,
+        "cacheReadSuspended": true,
+        "explicitPlaceCount": 2,
+        "modelPlacesEmitted": 2,
+        "recognitionVersion": "vayrin-recognition-2026-08-26.v3-generic-guard-same-place-groups",
+        "logical_place_count": 1,
+        "modelPlacesRejected": 1,
+        "recognitionCacheRead": false,
+        "grouping_reason_codes": [],
+        "evidenceRejectionPaths": [
+          "places.1.distinctPlaceSignals.0:invalid_enum_value",
+          "places.1.distinctPlaceSignals.1:invalid_enum_value"
+        ],
+        "sharedGeoCountrySource": "multiple_places_agree",
+        "recognitionFailureClass": "none",
+        "sharedGeoCountryApplied": true,
+        "automaticDeepRecognition": {
+          "model": "gpt-5.6-sol",
+          "timingsMs": {
+            "sol": 12338
+          },
+          "engineVersion": "simple-sol-premium.v2",
+          "placesRequests": 2,
+          "knownModelCostUsd": 0.048144
+        },
+        "sharedGeoCountryStrength": "strong",
+        "modelValidationErrorClass": "candidate_field_invalid",
+        "peerGeographicDestinations": 0,
+        "same_place_confidence_band": "none",
+        "sharedGeoCountryCandidates": 1,
+        "modelPartialPlacesPreserved": 1,
+        "recognitionCacheWritesEnabled": true,
+        "sourceGeographicContextDropped": 0,
+        "distinct_place_evidence_present": false
+      }
+    },
+    {
+      "caseId": "P05",
+      "suite": "REGRESSION_V2",
+      "category": "FOOD_RESTAURANT",
+      "sourceUrl": "https://www.instagram.com/p/DYOcSIkorkN/",
+      "expectedRoute": null,
+      "recordedLead": null,
+      "jobId": "65ddf0e8-fe07-41f9-beb7-c0db1da0839b",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "failureCategory": null,
+      "failureCode": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "OC Greek Fest",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 33.8364153,
+          "longitude": -117.9851453,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "normalCandidates": [
+        {
+          "city": "Anaheim",
+          "name": "OC Greek Fest",
+          "region": "CA",
+          "country": "USA",
+          "category": "attraction"
+        }
+      ],
+      "automaticDeep": {
+        "needed": false,
+        "invoked": false,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 0,
+        "top3Count": 0,
+        "specificResult": false,
+        "recoveryInvoked": false,
+        "rejectionReason": null,
+        "normalCandidates": [
+          {
+            "city": "Anaheim",
+            "name": "OC Greek Fest",
+            "region": "CA",
+            "country": "USA",
+            "category": "attraction"
+          }
+        ],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "SPECIFIC_ACTIONABLE",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 0
+      },
+      "automaticDeepRecognition": null,
+      "modelProvider": "gemini",
+      "durationMs": 51986,
+      "taskStatus": "completed",
+      "taskFailureCode": null,
+      "diagnostics": {
+        "multiple": false,
+        "modelPath": "current_fresh_recognition",
+        "placeCount": 1,
+        "insufficient": false,
+        "automaticDeep": {
+          "needed": false,
+          "invoked": false,
+          "version": "automatic-deep-recognition.v2",
+          "attempts": 0,
+          "top3Count": 0,
+          "specificResult": false,
+          "recoveryInvoked": false,
+          "rejectionReason": null,
+          "normalCandidates": [
+            {
+              "city": "Anaheim",
+              "name": "OC Greek Fest",
+              "region": "CA",
+              "country": "USA",
+              "category": "attraction"
+            }
+          ],
+          "noUsableSourceEvidence": false,
+          "normalResultSpecificity": "SPECIFIC_ACTIONABLE",
+          "recoverySpecificHypotheses": 0,
+          "firstAttemptSpecificHypotheses": 0
+        },
+        "cacheReadUsed": false,
+        "moments_split": 0,
+        "moments_merged": 0,
+        "finalResultClass": "canonical_evidence",
+        "modelPlacesValid": 1,
+        "raw_moment_count": 1,
+        "analysisAttempted": true,
+        "destinationPlaces": 1,
+        "partialPlaceCount": 0,
+        "cacheReadSuspended": true,
+        "explicitPlaceCount": 1,
+        "modelPlacesEmitted": 1,
+        "recognitionVersion": "vayrin-recognition-2026-08-26.v3-generic-guard-same-place-groups",
+        "logical_place_count": 1,
+        "modelPlacesRejected": 0,
+        "recognitionCacheRead": false,
+        "grouping_reason_codes": [],
+        "recognitionFailureClass": "none",
+        "sharedGeoCountryApplied": false,
+        "sharedGeoCountryStrength": "weak",
+        "modelValidationErrorClass": "none",
+        "peerGeographicDestinations": 0,
+        "same_place_confidence_band": "none",
+        "sharedGeoCountryCandidates": 1,
+        "modelPartialPlacesPreserved": 0,
+        "recognitionCacheWritesEnabled": true,
+        "sourceGeographicContextDropped": 0,
+        "distinct_place_evidence_present": false
+      }
+    },
+    {
+      "caseId": "P06",
+      "suite": "REGRESSION_V2",
+      "category": "FOOD_RESTAURANT",
+      "sourceUrl": "https://www.instagram.com/p/DYS8NLyh4Bq/",
+      "expectedRoute": null,
+      "recordedLead": null,
+      "jobId": "a660554a-8a48-4c2f-809a-da110dffa384",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "failureCategory": null,
+      "failureCode": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Old World Village",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 33.7348253,
+          "longitude": -117.9961953,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "normalCandidates": [
+        {
+          "city": "Huntington Beach",
+          "name": "Old World Village",
+          "region": "CA",
+          "country": "USA",
+          "category": "attraction"
+        }
+      ],
+      "automaticDeep": {
+        "needed": false,
+        "invoked": false,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 0,
+        "top3Count": 0,
+        "specificResult": false,
+        "recoveryInvoked": false,
+        "rejectionReason": null,
+        "normalCandidates": [
+          {
+            "city": "Huntington Beach",
+            "name": "Old World Village",
+            "region": "CA",
+            "country": "USA",
+            "category": "attraction"
+          }
+        ],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "SPECIFIC_ACTIONABLE",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 0
+      },
+      "automaticDeepRecognition": null,
+      "modelProvider": "gemini",
+      "durationMs": 65458,
+      "taskStatus": "completed",
+      "taskFailureCode": null,
+      "diagnostics": {
+        "multiple": false,
+        "modelPath": "current_fresh_recognition",
+        "placeCount": 1,
+        "insufficient": false,
+        "automaticDeep": {
+          "needed": false,
+          "invoked": false,
+          "version": "automatic-deep-recognition.v2",
+          "attempts": 0,
+          "top3Count": 0,
+          "specificResult": false,
+          "recoveryInvoked": false,
+          "rejectionReason": null,
+          "normalCandidates": [
+            {
+              "city": "Huntington Beach",
+              "name": "Old World Village",
+              "region": "CA",
+              "country": "USA",
+              "category": "attraction"
+            }
+          ],
+          "noUsableSourceEvidence": false,
+          "normalResultSpecificity": "SPECIFIC_ACTIONABLE",
+          "recoverySpecificHypotheses": 0,
+          "firstAttemptSpecificHypotheses": 0
+        },
+        "cacheReadUsed": false,
+        "moments_split": 0,
+        "moments_merged": 1,
+        "finalResultClass": "canonical_evidence",
+        "modelPlacesValid": 2,
+        "raw_moment_count": 2,
+        "analysisAttempted": true,
+        "destinationPlaces": 1,
+        "partialPlaceCount": 0,
+        "cacheReadSuspended": true,
+        "explicitPlaceCount": 1,
+        "modelPlacesEmitted": 2,
+        "recognitionVersion": "vayrin-recognition-2026-08-26.v3-generic-guard-same-place-groups",
+        "logical_place_count": 1,
+        "modelPlacesRejected": 0,
+        "recognitionCacheRead": false,
+        "grouping_reason_codes": [
+          "conservative_unknown_merged"
+        ],
+        "sharedGeoCountrySource": "explicit_evidence_text",
+        "recognitionFailureClass": "none",
+        "sharedGeoCountryApplied": true,
+        "sharedGeoCountryStrength": "strong",
+        "modelValidationErrorClass": "none",
+        "peerGeographicDestinations": 0,
+        "same_place_confidence_band": "medium",
+        "sharedGeoCountryCandidates": 1,
+        "modelPartialPlacesPreserved": 0,
+        "recognitionCacheWritesEnabled": true,
+        "sourceGeographicContextDropped": 0,
+        "distinct_place_evidence_present": false
+      }
+    },
+    {
+      "caseId": "P07",
+      "suite": "REGRESSION_V2",
+      "category": "FOOD_RESTAURANT",
+      "sourceUrl": "https://www.instagram.com/p/DOXJtDlgcoi/",
+      "expectedRoute": null,
+      "recordedLead": null,
+      "jobId": "cfdb780b-fe79-42dc-b069-1eae5aeb56de",
+      "status": "needs_help",
+      "decision": "multi_candidate_confirmation",
+      "savedPlaceId": null,
+      "failureCategory": null,
+      "failureCode": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Pacific Point Market & Cafe",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 36.9650661,
+          "longitude": -122.0257802,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        },
+        {
+          "rank": 2,
+          "name": "Point Market",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 36.9556647,
+          "longitude": -121.9724698,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        },
+        {
+          "rank": 3,
+          "name": "POINT MARKET AND CAFE",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": null,
+          "longitude": null,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "normalCandidates": [
+        {
+          "city": "Santa Cruz",
+          "name": "POINT MARKET AND CAFE",
+          "region": "CA",
+          "country": "USA",
+          "category": "cafe"
+        }
+      ],
+      "automaticDeep": {
+        "needed": false,
+        "invoked": false,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 0,
+        "top3Count": 0,
+        "specificResult": false,
+        "recoveryInvoked": false,
+        "rejectionReason": null,
+        "normalCandidates": [
+          {
+            "city": "Santa Cruz",
+            "name": "POINT MARKET AND CAFE",
+            "region": "CA",
+            "country": "USA",
+            "category": "cafe"
+          }
+        ],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "SPECIFIC_ACTIONABLE",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 0
+      },
+      "automaticDeepRecognition": null,
+      "modelProvider": "gemini",
+      "durationMs": 38403,
+      "taskStatus": "completed",
+      "taskFailureCode": null,
+      "diagnostics": {
+        "multiple": false,
+        "modelPath": "current_fresh_recognition",
+        "placeCount": 1,
+        "insufficient": false,
+        "automaticDeep": {
+          "needed": false,
+          "invoked": false,
+          "version": "automatic-deep-recognition.v2",
+          "attempts": 0,
+          "top3Count": 0,
+          "specificResult": false,
+          "recoveryInvoked": false,
+          "rejectionReason": null,
+          "normalCandidates": [
+            {
+              "city": "Santa Cruz",
+              "name": "POINT MARKET AND CAFE",
+              "region": "CA",
+              "country": "USA",
+              "category": "cafe"
+            }
+          ],
+          "noUsableSourceEvidence": false,
+          "normalResultSpecificity": "SPECIFIC_ACTIONABLE",
+          "recoverySpecificHypotheses": 0,
+          "firstAttemptSpecificHypotheses": 0
+        },
+        "cacheReadUsed": false,
+        "moments_split": 0,
+        "moments_merged": 0,
+        "finalResultClass": "canonical_evidence",
+        "modelPlacesValid": 1,
+        "raw_moment_count": 1,
+        "analysisAttempted": true,
+        "destinationPlaces": 1,
+        "partialPlaceCount": 0,
+        "cacheReadSuspended": true,
+        "explicitPlaceCount": 1,
+        "modelPlacesEmitted": 1,
+        "recognitionVersion": "vayrin-recognition-2026-08-26.v3-generic-guard-same-place-groups",
+        "logical_place_count": 1,
+        "modelPlacesRejected": 0,
+        "recognitionCacheRead": false,
+        "grouping_reason_codes": [],
+        "recognitionFailureClass": "none",
+        "sharedGeoCountryApplied": false,
+        "sharedGeoCountryStrength": "weak",
+        "modelValidationErrorClass": "none",
+        "peerGeographicDestinations": 0,
+        "same_place_confidence_band": "none",
+        "sharedGeoCountryCandidates": 1,
+        "modelPartialPlacesPreserved": 0,
+        "recognitionCacheWritesEnabled": true,
+        "sourceGeographicContextDropped": 0,
+        "distinct_place_evidence_present": false
+      }
+    },
+    {
+      "caseId": "P08",
+      "suite": "REGRESSION_V2",
+      "category": "FOOD_RESTAURANT",
+      "sourceUrl": "https://www.instagram.com/p/DVUMt3DkmnK/",
+      "expectedRoute": null,
+      "recordedLead": null,
+      "jobId": "206fc638-7d90-4732-b775-288d3f160dd4",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "failureCategory": null,
+      "failureCode": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Seabright Deli",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 36.9667854,
+          "longitude": -122.0079763,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "normalCandidates": [
+        {
+          "city": "Santa Cruz",
+          "name": "Seabright Deli",
+          "region": "California",
+          "country": null,
+          "category": "restaurant"
+        }
+      ],
+      "automaticDeep": {
+        "needed": false,
+        "invoked": false,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 0,
+        "top3Count": 0,
+        "specificResult": false,
+        "recoveryInvoked": false,
+        "rejectionReason": null,
+        "normalCandidates": [
+          {
+            "city": "Santa Cruz",
+            "name": "Seabright Deli",
+            "region": "California",
+            "country": null,
+            "category": "restaurant"
+          }
+        ],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "SPECIFIC_ACTIONABLE",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 0
+      },
+      "automaticDeepRecognition": null,
+      "modelProvider": "gemini",
+      "durationMs": 39072,
+      "taskStatus": "completed",
+      "taskFailureCode": null,
+      "diagnostics": {
+        "multiple": false,
+        "modelPath": "current_fresh_recognition",
+        "placeCount": 1,
+        "insufficient": false,
+        "automaticDeep": {
+          "needed": false,
+          "invoked": false,
+          "version": "automatic-deep-recognition.v2",
+          "attempts": 0,
+          "top3Count": 0,
+          "specificResult": false,
+          "recoveryInvoked": false,
+          "rejectionReason": null,
+          "normalCandidates": [
+            {
+              "city": "Santa Cruz",
+              "name": "Seabright Deli",
+              "region": "California",
+              "country": null,
+              "category": "restaurant"
+            }
+          ],
+          "noUsableSourceEvidence": false,
+          "normalResultSpecificity": "SPECIFIC_ACTIONABLE",
+          "recoverySpecificHypotheses": 0,
+          "firstAttemptSpecificHypotheses": 0
+        },
+        "cacheReadUsed": false,
+        "moments_split": 0,
+        "moments_merged": 0,
+        "finalResultClass": "canonical_evidence",
+        "modelPlacesValid": 1,
+        "raw_moment_count": 1,
+        "analysisAttempted": true,
+        "destinationPlaces": 1,
+        "partialPlaceCount": 0,
+        "cacheReadSuspended": true,
+        "explicitPlaceCount": 1,
+        "modelPlacesEmitted": 1,
+        "recognitionVersion": "vayrin-recognition-2026-08-26.v3-generic-guard-same-place-groups",
+        "logical_place_count": 1,
+        "modelPlacesRejected": 0,
+        "recognitionCacheRead": false,
+        "grouping_reason_codes": [],
+        "recognitionFailureClass": "none",
+        "sharedGeoCountryApplied": false,
+        "sharedGeoCountryStrength": "none",
+        "modelValidationErrorClass": "none",
+        "peerGeographicDestinations": 0,
+        "same_place_confidence_band": "none",
+        "sharedGeoCountryCandidates": 0,
+        "modelPartialPlacesPreserved": 0,
+        "recognitionCacheWritesEnabled": true,
+        "sourceGeographicContextDropped": 0,
+        "distinct_place_evidence_present": false
+      }
+    },
+    {
+      "caseId": "P09",
+      "suite": "REGRESSION_V2",
+      "category": "FOOD_RESTAURANT",
+      "sourceUrl": "https://www.instagram.com/p/CmwyLcshhwy/",
+      "expectedRoute": null,
+      "recordedLead": null,
+      "jobId": "8963aa19-a128-4dc3-844a-25f054317ecf",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "failureCategory": null,
+      "failureCode": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Tacos El Chuy",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 36.958841299999996,
+          "longitude": -122.04804790000001,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        },
+        {
+          "rank": 2,
+          "name": "Tacos El Chuy Truck",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": null,
+          "longitude": null,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "normalCandidates": [
+        {
+          "city": "Santa Cruz",
+          "name": "Tacos El Chuy Truck",
+          "region": null,
+          "country": null,
+          "category": "restaurant"
+        }
+      ],
+      "automaticDeep": {
+        "needed": false,
+        "invoked": false,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 0,
+        "top3Count": 0,
+        "specificResult": false,
+        "recoveryInvoked": false,
+        "rejectionReason": null,
+        "normalCandidates": [
+          {
+            "city": "Santa Cruz",
+            "name": "Tacos El Chuy Truck",
+            "region": null,
+            "country": null,
+            "category": "restaurant"
+          }
+        ],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "SPECIFIC_ACTIONABLE",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 0
+      },
+      "automaticDeepRecognition": null,
+      "modelProvider": "gemini",
+      "durationMs": 22285,
+      "taskStatus": "completed",
+      "taskFailureCode": null,
+      "diagnostics": {
+        "multiple": false,
+        "modelPath": "current_fresh_recognition",
+        "placeCount": 1,
+        "insufficient": false,
+        "automaticDeep": {
+          "needed": false,
+          "invoked": false,
+          "version": "automatic-deep-recognition.v2",
+          "attempts": 0,
+          "top3Count": 0,
+          "specificResult": false,
+          "recoveryInvoked": false,
+          "rejectionReason": null,
+          "normalCandidates": [
+            {
+              "city": "Santa Cruz",
+              "name": "Tacos El Chuy Truck",
+              "region": null,
+              "country": null,
+              "category": "restaurant"
+            }
+          ],
+          "noUsableSourceEvidence": false,
+          "normalResultSpecificity": "SPECIFIC_ACTIONABLE",
+          "recoverySpecificHypotheses": 0,
+          "firstAttemptSpecificHypotheses": 0
+        },
+        "cacheReadUsed": false,
+        "moments_split": 0,
+        "moments_merged": 0,
+        "finalResultClass": "canonical_evidence",
+        "modelPlacesValid": 1,
+        "raw_moment_count": 1,
+        "analysisAttempted": true,
+        "destinationPlaces": 1,
+        "partialPlaceCount": 0,
+        "cacheReadSuspended": true,
+        "explicitPlaceCount": 1,
+        "modelPlacesEmitted": 1,
+        "recognitionVersion": "vayrin-recognition-2026-08-26.v3-generic-guard-same-place-groups",
+        "logical_place_count": 1,
+        "modelPlacesRejected": 0,
+        "recognitionCacheRead": false,
+        "grouping_reason_codes": [],
+        "recognitionFailureClass": "none",
+        "sharedGeoCountryApplied": false,
+        "sharedGeoCountryStrength": "none",
+        "modelValidationErrorClass": "none",
+        "peerGeographicDestinations": 0,
+        "same_place_confidence_band": "none",
+        "sharedGeoCountryCandidates": 0,
+        "modelPartialPlacesPreserved": 0,
+        "recognitionCacheWritesEnabled": true,
+        "sourceGeographicContextDropped": 0,
+        "distinct_place_evidence_present": false
+      }
+    },
+    {
+      "caseId": "P10",
+      "suite": "REGRESSION_V2",
+      "category": "FOOD_RESTAURANT",
+      "sourceUrl": "https://www.instagram.com/p/DSYfkivkiOA/",
+      "expectedRoute": null,
+      "recordedLead": null,
+      "jobId": "96b8619e-a9bc-4117-9674-5637f984ae99",
+      "status": "failed",
+      "decision": "failed",
+      "savedPlaceId": null,
+      "failureCategory": "technical_failure",
+      "failureCode": "missing_video",
+      "candidates": [],
+      "normalCandidates": [],
+      "automaticDeep": null,
+      "automaticDeepRecognition": null,
+      "modelProvider": null,
+      "durationMs": null,
+      "taskStatus": "needs_help",
+      "taskFailureCode": "missing_video",
+      "diagnostics": {
+        "reason": "unavailable",
+        "modelPath": "current_fresh_recognition",
+        "cacheReadUsed": false,
+        "analysisAttempted": false,
+        "cacheReadSuspended": true,
+        "recognitionVersion": "vayrin-recognition-2026-08-26.v3-generic-guard-same-place-groups",
+        "recognitionCacheRead": false,
+        "recognitionCacheWritesEnabled": true
+      }
+    },
+    {
+      "caseId": "S01",
+      "suite": "REGRESSION_V2",
+      "category": "FOOD_RESTAURANT",
+      "sourceUrl": "https://www.instagram.com/p/DV9RcvwAQ0P/",
+      "expectedRoute": null,
+      "recordedLead": null,
+      "jobId": "16c1d3fe-d7a4-4187-8d5c-05f9f9ff4771",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "failureCategory": null,
+      "failureCode": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Seabright Deli",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 36.9667854,
+          "longitude": -122.0079763,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "normalCandidates": [
+        {
+          "city": "Santa Cruz",
+          "name": "Seabright Deli",
+          "region": "CA",
+          "country": null,
+          "category": "restaurant"
+        }
+      ],
+      "automaticDeep": {
+        "needed": false,
+        "invoked": false,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 0,
+        "top3Count": 0,
+        "specificResult": false,
+        "recoveryInvoked": false,
+        "rejectionReason": null,
+        "normalCandidates": [
+          {
+            "city": "Santa Cruz",
+            "name": "Seabright Deli",
+            "region": "CA",
+            "country": null,
+            "category": "restaurant"
+          }
+        ],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "SPECIFIC_ACTIONABLE",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 0
+      },
+      "automaticDeepRecognition": null,
+      "modelProvider": "gemini",
+      "durationMs": 38801,
+      "taskStatus": "completed",
+      "taskFailureCode": null,
+      "diagnostics": {
+        "multiple": false,
+        "modelPath": "current_fresh_recognition",
+        "placeCount": 1,
+        "insufficient": false,
+        "automaticDeep": {
+          "needed": false,
+          "invoked": false,
+          "version": "automatic-deep-recognition.v2",
+          "attempts": 0,
+          "top3Count": 0,
+          "specificResult": false,
+          "recoveryInvoked": false,
+          "rejectionReason": null,
+          "normalCandidates": [
+            {
+              "city": "Santa Cruz",
+              "name": "Seabright Deli",
+              "region": "CA",
+              "country": null,
+              "category": "restaurant"
+            }
+          ],
+          "noUsableSourceEvidence": false,
+          "normalResultSpecificity": "SPECIFIC_ACTIONABLE",
+          "recoverySpecificHypotheses": 0,
+          "firstAttemptSpecificHypotheses": 0
+        },
+        "cacheReadUsed": false,
+        "moments_split": 0,
+        "moments_merged": 0,
+        "finalResultClass": "canonical_evidence",
+        "modelPlacesValid": 1,
+        "raw_moment_count": 1,
+        "analysisAttempted": true,
+        "destinationPlaces": 1,
+        "partialPlaceCount": 0,
+        "cacheReadSuspended": true,
+        "explicitPlaceCount": 1,
+        "modelPlacesEmitted": 1,
+        "recognitionVersion": "vayrin-recognition-2026-08-26.v3-generic-guard-same-place-groups",
+        "logical_place_count": 1,
+        "modelPlacesRejected": 0,
+        "recognitionCacheRead": false,
+        "grouping_reason_codes": [],
+        "recognitionFailureClass": "none",
+        "sharedGeoCountryApplied": false,
+        "sharedGeoCountryStrength": "none",
+        "modelValidationErrorClass": "none",
+        "peerGeographicDestinations": 0,
+        "same_place_confidence_band": "none",
+        "sharedGeoCountryCandidates": 0,
+        "modelPartialPlacesPreserved": 0,
+        "recognitionCacheWritesEnabled": true,
+        "sourceGeographicContextDropped": 0,
+        "distinct_place_evidence_present": false
+      }
+    },
+    {
+      "caseId": "S06",
+      "suite": "REGRESSION_V2",
+      "category": "FOOD_RESTAURANT",
+      "sourceUrl": "https://www.instagram.com/p/DMV8LZ4hUoG/",
+      "expectedRoute": null,
+      "recordedLead": null,
+      "jobId": "f38c599f-e32f-4cb2-8855-bd348ec692d4",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "failureCategory": null,
+      "failureCode": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Seabright Deli",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 36.9667854,
+          "longitude": -122.0079763,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "normalCandidates": [
+        {
+          "city": "Santa Cruz",
+          "name": "Seabright Deli",
+          "region": "CA",
+          "country": "USA",
+          "category": "restaurant"
+        }
+      ],
+      "automaticDeep": {
+        "needed": false,
+        "invoked": false,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 0,
+        "top3Count": 0,
+        "specificResult": false,
+        "recoveryInvoked": false,
+        "rejectionReason": null,
+        "normalCandidates": [
+          {
+            "city": "Santa Cruz",
+            "name": "Seabright Deli",
+            "region": "CA",
+            "country": "USA",
+            "category": "restaurant"
+          }
+        ],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "SPECIFIC_ACTIONABLE",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 0
+      },
+      "automaticDeepRecognition": null,
+      "modelProvider": "gemini",
+      "durationMs": 30825,
+      "taskStatus": "completed",
+      "taskFailureCode": null,
+      "diagnostics": {
+        "multiple": false,
+        "modelPath": "current_fresh_recognition",
+        "placeCount": 1,
+        "insufficient": false,
+        "automaticDeep": {
+          "needed": false,
+          "invoked": false,
+          "version": "automatic-deep-recognition.v2",
+          "attempts": 0,
+          "top3Count": 0,
+          "specificResult": false,
+          "recoveryInvoked": false,
+          "rejectionReason": null,
+          "normalCandidates": [
+            {
+              "city": "Santa Cruz",
+              "name": "Seabright Deli",
+              "region": "CA",
+              "country": "USA",
+              "category": "restaurant"
+            }
+          ],
+          "noUsableSourceEvidence": false,
+          "normalResultSpecificity": "SPECIFIC_ACTIONABLE",
+          "recoverySpecificHypotheses": 0,
+          "firstAttemptSpecificHypotheses": 0
+        },
+        "cacheReadUsed": false,
+        "moments_split": 0,
+        "moments_merged": 0,
+        "finalResultClass": "canonical_evidence",
+        "modelPlacesValid": 1,
+        "raw_moment_count": 1,
+        "analysisAttempted": true,
+        "destinationPlaces": 1,
+        "partialPlaceCount": 0,
+        "cacheReadSuspended": true,
+        "explicitPlaceCount": 1,
+        "modelPlacesEmitted": 1,
+        "recognitionVersion": "vayrin-recognition-2026-08-26.v3-generic-guard-same-place-groups",
+        "logical_place_count": 1,
+        "modelPlacesRejected": 0,
+        "recognitionCacheRead": false,
+        "grouping_reason_codes": [],
+        "recognitionFailureClass": "none",
+        "sharedGeoCountryApplied": false,
+        "sharedGeoCountryStrength": "weak",
+        "modelValidationErrorClass": "none",
+        "peerGeographicDestinations": 0,
+        "same_place_confidence_band": "none",
+        "sharedGeoCountryCandidates": 1,
+        "modelPartialPlacesPreserved": 0,
+        "recognitionCacheWritesEnabled": true,
+        "sourceGeographicContextDropped": 0,
+        "distinct_place_evidence_present": false
+      }
+    },
+    {
+      "caseId": "C06",
+      "suite": "REGRESSION_V2",
+      "category": "FOOD_RESTAURANT",
+      "sourceUrl": "https://www.tiktok.com/@satexasfoodies/video/7433811014237326622",
+      "expectedRoute": null,
+      "recordedLead": null,
+      "jobId": "ee9c1407-4144-4a6d-a5fb-3bdbf351c8a7",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "failureCategory": null,
+      "failureCode": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Tuxedo Cat’s Coffee",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 29.4887384,
+          "longitude": -98.64091669999999,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "normalCandidates": [
+        {
+          "city": "San Antonio",
+          "name": "Tuxedo Cat's Coffee",
+          "region": "TX",
+          "country": "US",
+          "category": "cafe"
+        },
+        {
+          "city": "San Antonio",
+          "name": "Palm Buddha Plant Nursery",
+          "region": "TX",
+          "country": "US",
+          "category": "shopping"
+        }
+      ],
+      "automaticDeep": {
+        "needed": true,
+        "invoked": true,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 1,
+        "top3Count": 1,
+        "specificResult": true,
+        "recoveryInvoked": false,
+        "rejectionReason": "IDENTITY_DIVERGENCE",
+        "normalCandidates": [
+          {
+            "city": "San Antonio",
+            "name": "Tuxedo Cat's Coffee",
+            "region": "TX",
+            "country": "US",
+            "category": "cafe"
+          },
+          {
+            "city": "San Antonio",
+            "name": "Palm Buddha Plant Nursery",
+            "region": "TX",
+            "country": "US",
+            "category": "shopping"
+          }
+        ],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "WEAK",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 1
+      },
+      "automaticDeepRecognition": {
+        "model": "gpt-5.6-sol",
+        "timingsMs": {
+          "sol": 3981
+        },
+        "engineVersion": "simple-sol-premium.v2",
+        "placesRequests": 1,
+        "knownModelCostUsd": 0.023216
+      },
+      "modelProvider": "gemini+simple-sol",
+      "durationMs": 41719,
+      "taskStatus": "completed",
+      "taskFailureCode": null,
+      "diagnostics": {
+        "multiple": false,
+        "modelPath": "current_fresh_recognition",
+        "placeCount": 1,
+        "insufficient": false,
+        "automaticDeep": {
+          "needed": true,
+          "invoked": true,
+          "version": "automatic-deep-recognition.v2",
+          "attempts": 1,
+          "top3Count": 1,
+          "specificResult": true,
+          "recoveryInvoked": false,
+          "rejectionReason": "IDENTITY_DIVERGENCE",
+          "normalCandidates": [
+            {
+              "city": "San Antonio",
+              "name": "Tuxedo Cat's Coffee",
+              "region": "TX",
+              "country": "US",
+              "category": "cafe"
+            },
+            {
+              "city": "San Antonio",
+              "name": "Palm Buddha Plant Nursery",
+              "region": "TX",
+              "country": "US",
+              "category": "shopping"
+            }
+          ],
+          "noUsableSourceEvidence": false,
+          "normalResultSpecificity": "WEAK",
+          "recoverySpecificHypotheses": 0,
+          "firstAttemptSpecificHypotheses": 1
+        },
+        "cacheReadUsed": false,
+        "moments_split": 1,
+        "moments_merged": 0,
+        "modelPlacesValid": 2,
+        "raw_moment_count": 2,
+        "analysisAttempted": true,
+        "destinationPlaces": 1,
+        "partialPlaceCount": 0,
+        "cacheReadSuspended": true,
+        "explicitPlaceCount": 1,
+        "modelPlacesEmitted": 2,
+        "recognitionVersion": "vayrin-recognition-2026-08-26.v3-generic-guard-same-place-groups",
+        "logical_place_count": 2,
+        "modelPlacesRejected": 0,
+        "recognitionCacheRead": false,
+        "grouping_reason_codes": [
+          "distinct_named_venues"
+        ],
+        "recognitionFailureClass": "none",
+        "sharedGeoCountryApplied": false,
+        "automaticDeepRecognition": {
+          "model": "gpt-5.6-sol",
+          "timingsMs": {
+            "sol": 3981
+          },
+          "engineVersion": "simple-sol-premium.v2",
+          "placesRequests": 1,
+          "knownModelCostUsd": 0.023216
+        },
+        "sharedGeoCountryStrength": "weak",
+        "modelValidationErrorClass": "none",
+        "peerGeographicDestinations": 0,
+        "same_place_confidence_band": "none",
+        "sharedGeoCountryCandidates": 1,
+        "modelPartialPlacesPreserved": 0,
+        "recognitionCacheWritesEnabled": true,
+        "sourceGeographicContextDropped": 0,
+        "distinct_place_evidence_present": true
+      }
+    },
+    {
+      "caseId": "C07",
+      "suite": "REGRESSION_V2",
+      "category": "LANDMARK",
+      "sourceUrl": "https://www.youtube.com/watch?v=jNQXAC9IVRw",
+      "expectedRoute": null,
+      "recordedLead": null,
+      "jobId": "b621f6cd-2fa6-4ea7-8327-5c86219990a7",
+      "status": "needs_help",
+      "decision": "multi_candidate_confirmation",
+      "savedPlaceId": null,
+      "failureCategory": null,
+      "failureCode": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "The Jackson Zoo",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 32.321914299999996,
+          "longitude": -90.2234991,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        },
+        {
+          "rank": 2,
+          "name": "Omaha's Henry Doorly Zoo and Aquarium",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 41.2258648,
+          "longitude": -95.9271093,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        },
+        {
+          "rank": 3,
+          "name": "Los Angeles Zoo",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 34.1482153,
+          "longitude": -118.28826009999999,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "normalCandidates": [
+        {
+          "city": null,
+          "name": "The zoo",
+          "region": null,
+          "country": null,
+          "category": "attraction"
+        }
+      ],
+      "automaticDeep": {
+        "needed": false,
+        "invoked": false,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 0,
+        "top3Count": 0,
+        "specificResult": false,
+        "recoveryInvoked": false,
+        "rejectionReason": null,
+        "normalCandidates": [
+          {
+            "city": null,
+            "name": "The zoo",
+            "region": null,
+            "country": null,
+            "category": "attraction"
+          }
+        ],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "SPECIFIC_ACTIONABLE",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 0
+      },
+      "automaticDeepRecognition": null,
+      "modelProvider": "gemini",
+      "durationMs": 11892,
+      "taskStatus": "completed",
+      "taskFailureCode": null,
+      "diagnostics": {
+        "multiple": false,
+        "modelPath": "current_fresh_recognition",
+        "placeCount": 1,
+        "insufficient": false,
+        "automaticDeep": {
+          "needed": false,
+          "invoked": false,
+          "version": "automatic-deep-recognition.v2",
+          "attempts": 0,
+          "top3Count": 0,
+          "specificResult": false,
+          "recoveryInvoked": false,
+          "rejectionReason": null,
+          "normalCandidates": [
+            {
+              "city": null,
+              "name": "The zoo",
+              "region": null,
+              "country": null,
+              "category": "attraction"
+            }
+          ],
+          "noUsableSourceEvidence": false,
+          "normalResultSpecificity": "SPECIFIC_ACTIONABLE",
+          "recoverySpecificHypotheses": 0,
+          "firstAttemptSpecificHypotheses": 0
+        },
+        "cacheReadUsed": false,
+        "moments_split": 0,
+        "moments_merged": 0,
+        "finalResultClass": "canonical_evidence",
+        "modelPlacesValid": 1,
+        "raw_moment_count": 1,
+        "analysisAttempted": true,
+        "destinationPlaces": 1,
+        "partialPlaceCount": 0,
+        "cacheReadSuspended": true,
+        "explicitPlaceCount": 1,
+        "modelPlacesEmitted": 1,
+        "recognitionVersion": "vayrin-recognition-2026-08-26.v3-generic-guard-same-place-groups",
+        "logical_place_count": 1,
+        "modelPlacesRejected": 0,
+        "recognitionCacheRead": false,
+        "grouping_reason_codes": [],
+        "recognitionFailureClass": "none",
+        "sharedGeoCountryApplied": false,
+        "sharedGeoCountryStrength": "none",
+        "modelValidationErrorClass": "none",
+        "peerGeographicDestinations": 0,
+        "same_place_confidence_band": "none",
+        "sharedGeoCountryCandidates": 0,
+        "modelPartialPlacesPreserved": 0,
+        "recognitionCacheWritesEnabled": true,
+        "sourceGeographicContextDropped": 0,
+        "distinct_place_evidence_present": false
+      }
+    }
+  ],
+  "infrastructure": {
+    "taskCount": 31,
+    "runCount": 31,
+    "premiumReservations": 0
+  },
+  "tokenIsolation": {
+    "walletBefore": {
+      "present": false,
+      "availableUses": 0,
+      "reservedUses": 0,
+      "version": 0
+    },
+    "walletAfter": {
+      "present": false,
+      "availableUses": 0,
+      "reservedUses": 0,
+      "version": 0
+    },
+    "walletDelta": {
+      "availableUses": 0,
+      "reservedUses": 0,
+      "version": 0
+    }
+  }
+}

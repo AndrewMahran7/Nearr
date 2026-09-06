@@ -1,0 +1,399 @@
+{
+  "schemaVersion": 1,
+  "frozenAt": "2026-09-05T00:00:00.000-07:00",
+  "sourceFile": "artifacts/recognition-regression/cliff-corpus.json",
+  "expectedRawLinks": 42,
+  "rawLines": 42,
+  "rawLinks": 42,
+  "uniquePosts": 42,
+  "malformedUrls": 0,
+  "duplicateCanonicalContentIds": 0,
+  "status": "READY",
+  "canonicalDuplicateRelationships": [
+    {
+      "caseId": "CJ004",
+      "canonicalSourceId": "R08",
+      "reason": "Same Instagram shortcode; Regression V2 maps founder FC04 to historical R08."
+    }
+  ],
+  "cases": [
+    {
+      "caseId": "CJ001",
+      "sourceUrl": "https://www.instagram.com/p/Da2Rb92NKGw/",
+      "canonicalUrl": "https://www.instagram.com/p/Da2Rb92NKGw/",
+      "instagramContentId": "Da2Rb92NKGw",
+      "mediaType": "POST_OR_CAROUSEL",
+      "acquisitionStatus": "ACQUIRED_PRIMARY",
+      "canonicalSourceId": "CJ001"
+    },
+    {
+      "caseId": "CJ002",
+      "sourceUrl": "https://www.instagram.com/p/DZIXov9tVu7/",
+      "canonicalUrl": "https://www.instagram.com/p/DZIXov9tVu7/",
+      "instagramContentId": "DZIXov9tVu7",
+      "mediaType": "POST_OR_CAROUSEL",
+      "acquisitionStatus": "ACQUIRED_PRIMARY",
+      "canonicalSourceId": "CJ002"
+    },
+    {
+      "caseId": "CJ003",
+      "sourceUrl": "https://www.instagram.com/p/DbB3ZOUya93/",
+      "canonicalUrl": "https://www.instagram.com/p/DbB3ZOUya93/",
+      "instagramContentId": "DbB3ZOUya93",
+      "mediaType": "POST_OR_CAROUSEL",
+      "acquisitionStatus": "ACQUIRED_PRIMARY",
+      "canonicalSourceId": "CJ003"
+    },
+    {
+      "caseId": "CJ004",
+      "sourceUrl": "https://www.instagram.com/p/CqJo6QHJqPo/",
+      "canonicalUrl": "https://www.instagram.com/p/CqJo6QHJqPo/",
+      "instagramContentId": "CqJo6QHJqPo",
+      "mediaType": "POST_OR_CAROUSEL",
+      "acquisitionStatus": "ACQUIRED_PRIMARY",
+      "canonicalSourceId": "R08"
+    },
+    {
+      "caseId": "CJ005",
+      "sourceUrl": "https://www.instagram.com/p/Dbh90croV4d/",
+      "canonicalUrl": "https://www.instagram.com/p/Dbh90croV4d/",
+      "instagramContentId": "Dbh90croV4d",
+      "mediaType": "POST_OR_CAROUSEL",
+      "acquisitionStatus": "ACQUIRED_PRIMARY",
+      "canonicalSourceId": "CJ005"
+    },
+    {
+      "caseId": "CJ006",
+      "sourceUrl": "https://www.instagram.com/p/DcekCtbStlP/",
+      "canonicalUrl": "https://www.instagram.com/p/DcekCtbStlP/",
+      "instagramContentId": "DcekCtbStlP",
+      "mediaType": "POST_OR_CAROUSEL",
+      "acquisitionStatus": "ACQUIRED_PRIMARY",
+      "canonicalSourceId": "CJ006"
+    },
+    {
+      "caseId": "CJ007",
+      "sourceUrl": "https://www.instagram.com/p/DcVUFxntIKW/",
+      "canonicalUrl": "https://www.instagram.com/p/DcVUFxntIKW/",
+      "instagramContentId": "DcVUFxntIKW",
+      "mediaType": "POST_OR_CAROUSEL",
+      "acquisitionStatus": "ACQUIRED_PRIMARY",
+      "canonicalSourceId": "CJ007"
+    },
+    {
+      "caseId": "CJ008",
+      "sourceUrl": "https://www.instagram.com/p/DWrKNRujq4X/",
+      "canonicalUrl": "https://www.instagram.com/p/DWrKNRujq4X/",
+      "instagramContentId": "DWrKNRujq4X",
+      "mediaType": "POST_OR_CAROUSEL",
+      "acquisitionStatus": "ACQUIRED_PRIMARY",
+      "canonicalSourceId": "CJ008"
+    },
+    {
+      "caseId": "CJ009",
+      "sourceUrl": "https://www.instagram.com/p/C6pIphxy4qr/",
+      "canonicalUrl": "https://www.instagram.com/p/C6pIphxy4qr/",
+      "instagramContentId": "C6pIphxy4qr",
+      "mediaType": "POST_OR_CAROUSEL",
+      "acquisitionStatus": "ACQUIRED_PRIMARY",
+      "canonicalSourceId": "CJ009"
+    },
+    {
+      "caseId": "CJ010",
+      "sourceUrl": "https://www.instagram.com/p/DAvJrtQIGVU/",
+      "canonicalUrl": "https://www.instagram.com/p/DAvJrtQIGVU/",
+      "instagramContentId": "DAvJrtQIGVU",
+      "mediaType": "POST_OR_CAROUSEL",
+      "acquisitionStatus": "ACQUIRED_PRIMARY",
+      "canonicalSourceId": "CJ010"
+    },
+    {
+      "caseId": "CJ011",
+      "sourceUrl": "https://www.instagram.com/p/DCfD1bFIsuE/",
+      "canonicalUrl": "https://www.instagram.com/p/DCfD1bFIsuE/",
+      "instagramContentId": "DCfD1bFIsuE",
+      "mediaType": "POST_OR_CAROUSEL",
+      "acquisitionStatus": "ACQUIRED_PRIMARY",
+      "canonicalSourceId": "CJ011"
+    },
+    {
+      "caseId": "CJ012",
+      "sourceUrl": "https://www.instagram.com/p/DBW35nppVUS/",
+      "canonicalUrl": "https://www.instagram.com/p/DBW35nppVUS/",
+      "instagramContentId": "DBW35nppVUS",
+      "mediaType": "POST_OR_CAROUSEL",
+      "acquisitionStatus": "ACQUIRED_PRIMARY",
+      "canonicalSourceId": "CJ012"
+    },
+    {
+      "caseId": "CJ013",
+      "sourceUrl": "https://www.instagram.com/p/DFyZwBJT_Xy/",
+      "canonicalUrl": "https://www.instagram.com/p/DFyZwBJT_Xy/",
+      "instagramContentId": "DFyZwBJT_Xy",
+      "mediaType": "POST_OR_CAROUSEL",
+      "acquisitionStatus": "ACQUIRED_PRIMARY",
+      "canonicalSourceId": "CJ013"
+    },
+    {
+      "caseId": "CJ014",
+      "sourceUrl": "https://www.instagram.com/p/DB6yxXwSgU7/",
+      "canonicalUrl": "https://www.instagram.com/p/DB6yxXwSgU7/",
+      "instagramContentId": "DB6yxXwSgU7",
+      "mediaType": "POST_OR_CAROUSEL",
+      "acquisitionStatus": "ACQUIRED_PRIMARY",
+      "canonicalSourceId": "CJ014"
+    },
+    {
+      "caseId": "CJ015",
+      "sourceUrl": "https://www.instagram.com/p/DbtjWEKIjn9/",
+      "canonicalUrl": "https://www.instagram.com/p/DbtjWEKIjn9/",
+      "instagramContentId": "DbtjWEKIjn9",
+      "mediaType": "POST_OR_CAROUSEL",
+      "acquisitionStatus": "ACQUIRED_PRIMARY",
+      "canonicalSourceId": "CJ015"
+    },
+    {
+      "caseId": "CJ016",
+      "sourceUrl": "https://www.instagram.com/p/DaW06-bujG_/",
+      "canonicalUrl": "https://www.instagram.com/p/DaW06-bujG_/",
+      "instagramContentId": "DaW06-bujG_",
+      "mediaType": "POST_OR_CAROUSEL",
+      "acquisitionStatus": "ACQUIRED_PRIMARY",
+      "canonicalSourceId": "CJ016"
+    },
+    {
+      "caseId": "CJ017",
+      "sourceUrl": "https://www.instagram.com/p/CJUBgodgdUV/",
+      "canonicalUrl": "https://www.instagram.com/p/CJUBgodgdUV/",
+      "instagramContentId": "CJUBgodgdUV",
+      "mediaType": "POST_OR_CAROUSEL",
+      "acquisitionStatus": "ACQUIRED_PRIMARY",
+      "canonicalSourceId": "CJ017"
+    },
+    {
+      "caseId": "CJ018",
+      "sourceUrl": "https://www.instagram.com/p/CvsmEqhKIeO/",
+      "canonicalUrl": "https://www.instagram.com/p/CvsmEqhKIeO/",
+      "instagramContentId": "CvsmEqhKIeO",
+      "mediaType": "POST_OR_CAROUSEL",
+      "acquisitionStatus": "ACQUIRED_PRIMARY",
+      "canonicalSourceId": "CJ018"
+    },
+    {
+      "caseId": "CJ019",
+      "sourceUrl": "https://www.instagram.com/p/DbzakoPumeL/",
+      "canonicalUrl": "https://www.instagram.com/p/DbzakoPumeL/",
+      "instagramContentId": "DbzakoPumeL",
+      "mediaType": "POST_OR_CAROUSEL",
+      "acquisitionStatus": "ACQUIRED_PRIMARY",
+      "canonicalSourceId": "CJ019"
+    },
+    {
+      "caseId": "CJ020",
+      "sourceUrl": "https://www.instagram.com/p/CV8GaG8LHbK/",
+      "canonicalUrl": "https://www.instagram.com/p/CV8GaG8LHbK/",
+      "instagramContentId": "CV8GaG8LHbK",
+      "mediaType": "POST_OR_CAROUSEL",
+      "acquisitionStatus": "ACQUIRED_PRIMARY",
+      "canonicalSourceId": "CJ020"
+    },
+    {
+      "caseId": "CJ021",
+      "sourceUrl": "https://www.instagram.com/p/C_voKVguTuR/",
+      "canonicalUrl": "https://www.instagram.com/p/C_voKVguTuR/",
+      "instagramContentId": "C_voKVguTuR",
+      "mediaType": "POST_OR_CAROUSEL",
+      "acquisitionStatus": "ACQUIRED_PRIMARY",
+      "canonicalSourceId": "CJ021"
+    },
+    {
+      "caseId": "CJ022",
+      "sourceUrl": "https://www.instagram.com/p/DNKwgA6MQ9m/",
+      "canonicalUrl": "https://www.instagram.com/p/DNKwgA6MQ9m/",
+      "instagramContentId": "DNKwgA6MQ9m",
+      "mediaType": "POST_OR_CAROUSEL",
+      "acquisitionStatus": "ACQUIRED_PRIMARY",
+      "canonicalSourceId": "CJ022"
+    },
+    {
+      "caseId": "CJ023",
+      "sourceUrl": "https://www.instagram.com/p/DCtiKTyIkxN/",
+      "canonicalUrl": "https://www.instagram.com/p/DCtiKTyIkxN/",
+      "instagramContentId": "DCtiKTyIkxN",
+      "mediaType": "POST_OR_CAROUSEL",
+      "acquisitionStatus": "ACQUIRED_PRIMARY",
+      "canonicalSourceId": "CJ023"
+    },
+    {
+      "caseId": "CJ024",
+      "sourceUrl": "https://www.instagram.com/p/Db3bZ_-Nz3R/",
+      "canonicalUrl": "https://www.instagram.com/p/Db3bZ_-Nz3R/",
+      "instagramContentId": "Db3bZ_-Nz3R",
+      "mediaType": "POST_OR_CAROUSEL",
+      "acquisitionStatus": "ACQUIRED_PRIMARY",
+      "canonicalSourceId": "CJ024"
+    },
+    {
+      "caseId": "CJ025",
+      "sourceUrl": "https://www.instagram.com/p/C-VuDm0PmCH/",
+      "canonicalUrl": "https://www.instagram.com/p/C-VuDm0PmCH/",
+      "instagramContentId": "C-VuDm0PmCH",
+      "mediaType": "POST_OR_CAROUSEL",
+      "acquisitionStatus": "ACQUIRED_PRIMARY",
+      "canonicalSourceId": "CJ025"
+    },
+    {
+      "caseId": "CJ026",
+      "sourceUrl": "https://www.instagram.com/p/Davq4ZDvO7f/",
+      "canonicalUrl": "https://www.instagram.com/p/Davq4ZDvO7f/",
+      "instagramContentId": "Davq4ZDvO7f",
+      "mediaType": "POST_OR_CAROUSEL",
+      "acquisitionStatus": "ACQUIRED_PRIMARY",
+      "canonicalSourceId": "CJ026"
+    },
+    {
+      "caseId": "CJ027",
+      "sourceUrl": "https://www.instagram.com/p/C9NorfaPN3T/",
+      "canonicalUrl": "https://www.instagram.com/p/C9NorfaPN3T/",
+      "instagramContentId": "C9NorfaPN3T",
+      "mediaType": "POST_OR_CAROUSEL",
+      "acquisitionStatus": "ACQUIRED_PRIMARY",
+      "canonicalSourceId": "CJ027"
+    },
+    {
+      "caseId": "CJ028",
+      "sourceUrl": "https://www.instagram.com/p/C87QU_LJNCK/",
+      "canonicalUrl": "https://www.instagram.com/p/C87QU_LJNCK/",
+      "instagramContentId": "C87QU_LJNCK",
+      "mediaType": "POST_OR_CAROUSEL",
+      "acquisitionStatus": "ACQUIRED_PRIMARY",
+      "canonicalSourceId": "CJ028"
+    },
+    {
+      "caseId": "CJ029",
+      "sourceUrl": "https://www.instagram.com/p/DGRIr0SvMMX/",
+      "canonicalUrl": "https://www.instagram.com/p/DGRIr0SvMMX/",
+      "instagramContentId": "DGRIr0SvMMX",
+      "mediaType": "POST_OR_CAROUSEL",
+      "acquisitionStatus": "ACQUIRED_PRIMARY",
+      "canonicalSourceId": "CJ029"
+    },
+    {
+      "caseId": "CJ030",
+      "sourceUrl": "https://www.instagram.com/p/DWTZd0IEZSA/",
+      "canonicalUrl": "https://www.instagram.com/p/DWTZd0IEZSA/",
+      "instagramContentId": "DWTZd0IEZSA",
+      "mediaType": "POST_OR_CAROUSEL",
+      "acquisitionStatus": "ACQUIRED_PRIMARY",
+      "canonicalSourceId": "CJ030"
+    },
+    {
+      "caseId": "CJ031",
+      "sourceUrl": "https://www.instagram.com/p/C9sIk72u5PM/",
+      "canonicalUrl": "https://www.instagram.com/p/C9sIk72u5PM/",
+      "instagramContentId": "C9sIk72u5PM",
+      "mediaType": "POST_OR_CAROUSEL",
+      "acquisitionStatus": "ACQUIRED_PRIMARY",
+      "canonicalSourceId": "CJ031"
+    },
+    {
+      "caseId": "CJ032",
+      "sourceUrl": "https://www.instagram.com/p/CvQED2QtBZe/",
+      "canonicalUrl": "https://www.instagram.com/p/CvQED2QtBZe/",
+      "instagramContentId": "CvQED2QtBZe",
+      "mediaType": "POST_OR_CAROUSEL",
+      "acquisitionStatus": "ACQUIRED_PRIMARY",
+      "canonicalSourceId": "CJ032"
+    },
+    {
+      "caseId": "CJ033",
+      "sourceUrl": "https://www.instagram.com/p/CaB4Ve1NIW_/",
+      "canonicalUrl": "https://www.instagram.com/p/CaB4Ve1NIW_/",
+      "instagramContentId": "CaB4Ve1NIW_",
+      "mediaType": "POST_OR_CAROUSEL",
+      "acquisitionStatus": "ACQUIRED_PRIMARY",
+      "canonicalSourceId": "CJ033"
+    },
+    {
+      "caseId": "CJ034",
+      "sourceUrl": "https://www.instagram.com/p/Cj80H_jAXkm/",
+      "canonicalUrl": "https://www.instagram.com/p/Cj80H_jAXkm/",
+      "instagramContentId": "Cj80H_jAXkm",
+      "mediaType": "POST_OR_CAROUSEL",
+      "acquisitionStatus": "ACQUIRED_PRIMARY",
+      "canonicalSourceId": "CJ034"
+    },
+    {
+      "caseId": "CJ035",
+      "sourceUrl": "https://www.instagram.com/p/CxVz9cQxiGW/",
+      "canonicalUrl": "https://www.instagram.com/p/CxVz9cQxiGW/",
+      "instagramContentId": "CxVz9cQxiGW",
+      "mediaType": "POST_OR_CAROUSEL",
+      "acquisitionStatus": "ACQUIRED_PRIMARY",
+      "canonicalSourceId": "CJ035"
+    },
+    {
+      "caseId": "CJ036",
+      "sourceUrl": "https://www.instagram.com/p/DUppjPgEngm/",
+      "canonicalUrl": "https://www.instagram.com/p/DUppjPgEngm/",
+      "instagramContentId": "DUppjPgEngm",
+      "mediaType": "POST_OR_CAROUSEL",
+      "acquisitionStatus": "ACQUIRED_PRIMARY",
+      "canonicalSourceId": "CJ036"
+    },
+    {
+      "caseId": "CJ037",
+      "sourceUrl": "https://www.instagram.com/p/DKPf-PjI1Rq/",
+      "canonicalUrl": "https://www.instagram.com/p/DKPf-PjI1Rq/",
+      "instagramContentId": "DKPf-PjI1Rq",
+      "mediaType": "POST_OR_CAROUSEL",
+      "acquisitionStatus": "ACQUIRED_PRIMARY",
+      "canonicalSourceId": "CJ037"
+    },
+    {
+      "caseId": "CJ038",
+      "sourceUrl": "https://www.instagram.com/p/CsjqggyA2qu/",
+      "canonicalUrl": "https://www.instagram.com/p/CsjqggyA2qu/",
+      "instagramContentId": "CsjqggyA2qu",
+      "mediaType": "POST_OR_CAROUSEL",
+      "acquisitionStatus": "ACQUIRED_PRIMARY",
+      "canonicalSourceId": "CJ038"
+    },
+    {
+      "caseId": "CJ039",
+      "sourceUrl": "https://www.instagram.com/p/C9cvc9Xveub/",
+      "canonicalUrl": "https://www.instagram.com/p/C9cvc9Xveub/",
+      "instagramContentId": "C9cvc9Xveub",
+      "mediaType": "POST_OR_CAROUSEL",
+      "acquisitionStatus": "ACQUIRED_PRIMARY",
+      "canonicalSourceId": "CJ039"
+    },
+    {
+      "caseId": "CJ040",
+      "sourceUrl": "https://www.instagram.com/p/Cty5hdxA-dx/",
+      "canonicalUrl": "https://www.instagram.com/p/Cty5hdxA-dx/",
+      "instagramContentId": "Cty5hdxA-dx",
+      "mediaType": "POST_OR_CAROUSEL",
+      "acquisitionStatus": "ACQUIRED_PRIMARY",
+      "canonicalSourceId": "CJ040"
+    },
+    {
+      "caseId": "CJ041",
+      "sourceUrl": "https://www.instagram.com/p/CoDBylYjjTH/",
+      "canonicalUrl": "https://www.instagram.com/p/CoDBylYjjTH/",
+      "instagramContentId": "CoDBylYjjTH",
+      "mediaType": "POST_OR_CAROUSEL",
+      "acquisitionStatus": "ACQUIRED_PRIMARY",
+      "canonicalSourceId": "CJ041"
+    },
+    {
+      "caseId": "CJ042",
+      "sourceUrl": "https://www.instagram.com/p/Dc1-OPBBGEP/",
+      "canonicalUrl": "https://www.instagram.com/p/Dc1-OPBBGEP/",
+      "instagramContentId": "Dc1-OPBBGEP",
+      "mediaType": "POST_OR_CAROUSEL",
+      "acquisitionStatus": "ACQUIRED_PRIMARY",
+      "canonicalSourceId": "CJ042"
+    }
+  ]
+}

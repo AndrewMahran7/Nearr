@@ -88,7 +88,8 @@ export type AnalyzeOutput = {
     | 'model_schema_invalid'
     | 'model_provider_failure'
     | 'recovery_invalid'
-    | 'recovery_empty';
+    | 'recovery_empty'
+    | 'source_evidence_unavailable';
   /** Bounded, secret-free record of the Vayrin visual-geolocation escalation:
    *  whether it ran, why, what it cost, and what it produced. Absent when the
    *  provider is not wrapped. Typed loosely so this module does not have to
@@ -115,6 +116,33 @@ export type AnalyzeOutput = {
   /** Exact Premium executor wire result. It is forwarded to the finalizer so
    * canonical identities are not re-resolved by the legacy Places pipeline. */
   premium?: PremiumRecognitionExecution;
+  /** Shared Simple Sol engine result produced automatically for a weak normal
+   * result. This is intentionally distinct from `premium`: it is free,
+   * internal, and never enters reservation/settlement analytics. */
+  automaticDeepRecognition?: PremiumRecognitionExecution;
+  /** Low-cardinality automatic escalation telemetry. Never contains raw
+   * caption, transcript, OCR, or model prose. */
+  automaticDeep?: {
+    version: string;
+    needed: boolean;
+    invoked: boolean;
+    attempts: number;
+    recoveryInvoked: boolean;
+    noUsableSourceEvidence: boolean;
+    rejectionReason: string | null;
+    normalResultSpecificity: string;
+    normalCandidates: Array<{
+      name: string;
+      category: string | null;
+      city: string | null;
+      region: string | null;
+      country: string | null;
+    }>;
+    firstAttemptSpecificHypotheses: number;
+    recoverySpecificHypotheses: number;
+    top3Count: number;
+    specificResult: boolean;
+  };
 };
 
 export interface ModelProvider {

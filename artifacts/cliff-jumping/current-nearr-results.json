@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 2,
+  "deprecatedArmLabel": "CURRENT_NEARR",
+  "canonicalArmLabel": "PRODUCTION_FREE",
+  "status": "SUPERSEDED_BY_EXPLICIT_ARM_ARTIFACT",
+  "resultArtifact": "artifacts/cliff-jumping/production-free-results.json",
+  "attemptedCases": 42,
+  "note": "Retained for historical artifact continuity. Use production-free-results.json; it contains the actual current normal/free run and is not a Simple Sol run.",
+  "productionWrites": 0,
+  "userTokenAccountingEvents": 0,
+  "machineCacheUsed": false
+}

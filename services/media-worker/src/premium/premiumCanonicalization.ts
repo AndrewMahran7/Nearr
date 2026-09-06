@@ -1,4 +1,8 @@
 import type { SolAlternative, SolDestination } from '../solParity/types.js';
+import {
+  classifyCanonicalizationRelation,
+  modelIdentityIsSpecific,
+} from '../solParity/canonicalizationSpecificity.js';
 import type {
   PremiumCanonicalCandidate,
   PremiumCanonicalizationCall,
@@ -9,20 +13,20 @@ import type {
 type CanonicalizationResult = {
   status: PremiumCanonicalStatus;
   selected: PremiumCanonicalCandidate | null;
+  providerParent: PremiumCanonicalCandidate | null;
   alternatives: PremiumCanonicalCandidate[];
   calls: PremiumCanonicalizationCall[];
 };
 
-const GENERIC_ONLY = /^(?:waterfall|beach|cliff jumping|restaurant|hotel|scenic spot|park|zoo|lake|city|region)$/i;
+// Categories are evidence, never destination identities. Keep this bounded to
+// the product taxonomy and its common display aliases so Google can
+// canonicalize a named Sol hypothesis but can never invent one from a class.
+const GENERIC_ONLY = /^(?:a |an |the )?(?:waterfalls?|beaches?|cliff(?: |-)?jumping|hiking(?: trails?)?|trails?|restaurants?|cafes?|baker(?:y|ies)|bars?|brewer(?:y|ies)|winer(?:y|ies)|dessert(?: shops?)?|hotels?|resorts?|scenic spots?|viewpoints?|parks?|zoos?|lakes?|swimming holes?|mountains?|bridges?|marinas?|islands?|museums?|shopping(?: malls?)?|transportation|cities?|regions?|countries?)$/i;
 const ADMIN_TYPES = new Set(['country', 'administrative_area_level_1', 'administrative_area_level_2', 'locality']);
 
 function tokens(value: string): string[] {
   return value.toLowerCase().normalize('NFKD').replace(/[^a-z0-9 ]/g, ' ')
     .split(/\s+/).filter((token) => token.length > 1 && !['the', 'and', 'at', 'of'].includes(token));
-}
-
-function normalized(value: string): string {
-  return tokens(value).join(' ');
 }
 
 function overlap(left: string, right: string): number {
@@ -38,8 +42,7 @@ function physicalIdentity(type: string): boolean {
   return !['ADMIN_AREA', 'BROAD_AREA', 'CITY', 'REGION', 'COUNTRY'].includes(type);
 }
 
-function candidateCompatible(hypothesis: SolAlternative, candidate: PremiumCanonicalCandidate): boolean {
-  if (overlap(hypothesis.name, candidate.name) < 0.55) return false;
+function geographyCompatible(hypothesis: SolAlternative, candidate: PremiumCanonicalCandidate): boolean {
   if (physicalIdentity(hypothesis.entity_type) && candidate.types.length > 0 && candidate.types.every((type) => ADMIN_TYPES.has(type))) return false;
   const expected = [hypothesis.city, hypothesis.region, hypothesis.country].filter((value): value is string => !!value);
   if (!expected.length) return true;
@@ -47,13 +50,24 @@ function candidateCompatible(hypothesis: SolAlternative, candidate: PremiumCanon
   return expected.some((value) => address.includes(value.toLowerCase()) || tokens(value).some((token) => address.includes(token)));
 }
 
-function rank(hypothesis: SolAlternative, candidates: PremiumCanonicalCandidate[]): PremiumCanonicalCandidate[] {
-  return candidates.filter((candidate) => candidateCompatible(hypothesis, candidate)).sort((a, b) => {
+function rank(hypothesis: SolAlternative, candidates: PremiumCanonicalCandidate[]): Array<{
+  candidate: PremiumCanonicalCandidate;
+  relation: 'EXACT' | 'ALIAS';
+  score: number;
+}> {
+  return candidates.flatMap((candidate) => {
+    const relation = classifyCanonicalizationRelation({
+      modelName: hypothesis.name,
+      modelEntityType: hypothesis.entity_type,
+      providerName: candidate.name,
+      providerTypes: candidate.types,
+    });
+    if ((relation !== 'EXACT' && relation !== 'ALIAS') || overlap(hypothesis.name, candidate.name) < 0.55 || !geographyCompatible(hypothesis, candidate)) return [];
     const score = (candidate: PremiumCanonicalCandidate) => overlap(hypothesis.name, candidate.name) * .85 +
       ([hypothesis.city, hypothesis.region, hypothesis.country].filter((value): value is string => !!value)
         .filter((value) => (candidate.formattedAddress ?? '').toLowerCase().includes(value.toLowerCase())).length * .05);
-    return score(b) - score(a);
-  });
+    return [{ candidate, relation, score: score(candidate) }];
+  }).sort((a, b) => b.score - a.score);
 }
 
 export function buildSpecificPlacesQuery(hypothesis: SolAlternative): string {
@@ -62,6 +76,7 @@ export function buildSpecificPlacesQuery(hypothesis: SolAlternative): string {
   // host rather than issuing a blended tenant/complex query.
   const identity = hypothesis.name.split('|', 1)[0]!.replace(/\s+/g, ' ').trim();
   if (!identity || GENERIC_ONLY.test(identity)) throw new Error('generic_places_query_forbidden');
+  if (!modelIdentityIsSpecific(hypothesis.entity_type)) throw new Error('non_specific_places_query_forbidden');
   return [identity, hypothesis.city, hypothesis.region, hypothesis.country]
     .filter((value): value is string => !!value?.trim())
     .map((value) => value.replace(/\|/g, ' ').replace(/\s+/g, ' ').trim())
@@ -120,13 +135,16 @@ export async function canonicalizePremiumHypothesis(args: {
   maxCalls?: 1 | 2;
 }): Promise<CanonicalizationResult> {
   const calls: PremiumCanonicalizationCall[] = [];
-  if (!args.apiKey) return { status: 'NAMED_LEAD', selected: null, alternatives: [], calls };
+  if (!args.apiKey || !modelIdentityIsSpecific(args.hypothesis.entity_type)) {
+    return { status: 'NAMED_LEAD', selected: null, providerParent: null, alternatives: [], calls };
+  }
   const search = args.search ?? searchGooglePlacesText;
   const attempts: Array<{ hypothesis: SolAlternative; reason: PremiumCanonicalizationCall['reason'] }> = [
     { hypothesis: args.hypothesis, reason: 'PRIMARY_SPECIFIC_IDENTITY' },
   ];
   const alias = controlledAlias(args.hypothesis);
   if ((args.maxCalls ?? 2) === 2 && alias) attempts.push({ hypothesis: alias, reason: 'CONTROLLED_ALIAS_RETRY' });
+  let providerParent: PremiumCanonicalCandidate | null = null;
 
   for (const attempt of attempts.slice(0, args.maxCalls ?? 2)) {
     const query = buildSpecificPlacesQuery(attempt.hypothesis);
@@ -134,10 +152,15 @@ export async function canonicalizePremiumHypothesis(args: {
     const ranked = response.ok ? rank(attempt.hypothesis, response.results) : [];
     const resultIds = response.ok ? response.results.slice(0, 8).map((result) => result.googlePlaceId) : [];
     const resultNames = response.ok ? response.results.slice(0, 8).map((result) => result.name.slice(0, 200)) : [];
-    const selectedCandidate = ranked[0] ?? null;
-    const status = selectedCandidate
-      ? normalized(attempt.hypothesis.name) === normalized(selectedCandidate.name) ? 'CANONICAL_EXACT' : 'CANONICAL_ALIAS'
-      : null;
+    const parent = response.ok ? response.results.find((candidate) =>
+      geographyCompatible(attempt.hypothesis, candidate) &&
+      classifyCanonicalizationRelation({ modelName: attempt.hypothesis.name, modelEntityType: attempt.hypothesis.entity_type, providerName: candidate.name, providerTypes: candidate.types }) === 'PARENT_ONLY') ?? null : null;
+    providerParent ??= parent;
+    const selected = ranked[0] ?? null;
+    const selectedCandidate = selected?.candidate ?? parent;
+    const status: PremiumCanonicalStatus | null = selected
+      ? selected.relation === 'EXACT' ? 'CANONICAL_EXACT' : 'CANONICAL_ALIAS'
+      : parent ? 'PARENT_ONLY_MATCH' : null;
     calls.push({
       query,
       attemptNumber: calls.length + 1,
@@ -145,22 +168,24 @@ export async function canonicalizePremiumHypothesis(args: {
       resultCount: response.ok ? response.results.length : 0,
       resultIds,
       resultNames,
-      matched: ranked.length > 0,
+      matched: !!selected,
       selectedGooglePlaceId: selectedCandidate?.googlePlaceId ?? null,
       selectedName: selectedCandidate?.name ?? null,
       outcome: status ?? (response.ok ? 'NO_MATCH' : 'PROVIDER_FAILURE'),
-      rejectionReason: selectedCandidate ? null : response.ok ? 'no_compatible_match' : response.reason,
+      rejectionReason: selected ? null : parent ? 'provider_parent_cannot_replace_specific_identity' : response.ok ? 'no_compatible_match' : response.reason,
     });
-    if (!ranked.length) continue;
-    const selected = ranked[0]!;
-    const tied = ranked.filter((candidate) => Math.abs(overlap(attempt.hypothesis.name, selected.name) - overlap(attempt.hypothesis.name, candidate.name)) < .05);
-    if (tied.length > 1) return { status: 'AMBIGUOUS_CANONICAL', selected: null, alternatives: tied.slice(0, 3), calls };
+    if (!selected) continue;
+    const tied = ranked.filter((candidate) => Math.abs(selected.score - candidate.score) < .05);
+    if (tied.length > 1) return { status: 'AMBIGUOUS_CANONICAL', selected: null, providerParent, alternatives: tied.slice(0, 3).map((item) => item.candidate), calls };
     return {
-      status: normalized(attempt.hypothesis.name) === normalized(selected.name) ? 'CANONICAL_EXACT' : 'CANONICAL_ALIAS',
-      selected,
+      status: selected.relation === 'EXACT' ? 'CANONICAL_EXACT' : 'CANONICAL_ALIAS',
+      selected: selected.candidate,
+      providerParent,
       alternatives: [],
       calls,
     };
   }
-  return { status: 'NAMED_LEAD', selected: null, alternatives: [], calls };
+  return providerParent
+    ? { status: 'PARENT_ONLY_MATCH', selected: null, providerParent, alternatives: [], calls }
+    : { status: 'NAMED_LEAD', selected: null, providerParent: null, alternatives: [], calls };
 }

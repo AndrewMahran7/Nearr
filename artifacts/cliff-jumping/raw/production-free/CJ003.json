@@ -1,0 +1,383 @@
+{
+  "generatedAt": "2026-09-05T21:58:10.558Z",
+  "tool": "media:inspect (local-only, no DB / no finalizer / no save)",
+  "mode": "url",
+  "input": {
+    "urlHost": "www.instagram.com"
+  },
+  "flags": {
+    "mediaFallbackEnabled": false,
+    "instagramResolverEnabled": true,
+    "nativeVideoAnalysisEnabled": false
+  },
+  "providers": {
+    "transcription": "openai",
+    "model": "gemini",
+    "ocr": "noop"
+  },
+  "providerChecklist": {
+    "capabilities": [
+      {
+        "capability": "transcription",
+        "provider": "openai",
+        "configured": true,
+        "required": false,
+        "envVars": [
+          "MEDIA_TRANSCRIPTION_PROVIDER (openai) + MEDIA_TRANSCRIPTION_API_KEY",
+          "or TRANSCRIPTION_PROVIDER=self_hosted + SELF_HOSTED_TRANSCRIPTION_URL + TRANSCRIPTION_SERVICE_API_KEY"
+        ]
+      },
+      {
+        "capability": "visual_analysis",
+        "provider": "gemini",
+        "configured": true,
+        "required": true,
+        "envVars": [
+          "GEMINI_API_KEY",
+          "MEDIA_ANALYSIS_PROVIDER=gemini (auto when GEMINI_API_KEY is set)",
+          "GEMINI_MODEL (optional)"
+        ]
+      },
+      {
+        "capability": "ocr",
+        "provider": "model",
+        "configured": true,
+        "required": false,
+        "envVars": [
+          "MEDIA_OCR_PROVIDER (optional; default noop — the visual model reads frames)"
+        ]
+      },
+      {
+        "capability": "google_places_verification",
+        "provider": "google_places",
+        "configured": true,
+        "required": false,
+        "envVars": [
+          "GOOGLE_PLACES_KEY (server-side; EXPO_PUBLIC_* is intentionally ignored here)"
+        ]
+      }
+    ],
+    "transcriptionReady": true,
+    "visualReady": true,
+    "placesVerificationConfigured": true,
+    "ocrReady": true,
+    "genuineContentTest": true,
+    "missingRequired": [],
+    "blockers": []
+  },
+  "envAutoLoad": {
+    "checkedFiles": [
+      {
+        "file": "media-worker/.env.local",
+        "exists": false,
+        "loadedKeys": 0
+      },
+      {
+        "file": "cliff-jumping-exact-location/.env.local",
+        "exists": false,
+        "loadedKeys": 0
+      },
+      {
+        "file": "media-worker/.env",
+        "exists": false,
+        "loadedKeys": 0
+      },
+      {
+        "file": "cliff-jumping-exact-location/.env",
+        "exists": false,
+        "loadedKeys": 0
+      }
+    ]
+  },
+  "readiness": [
+    "media retrieval: yt-dlp / ready",
+    "transcription: openai / ready",
+    "visual analysis: gemini / ready",
+    "places verification: ready"
+  ],
+  "retrieval": {
+    "direct": "yt-dlp",
+    "ytDlpVersion": "2026.07.04",
+    "fallbackProviderConfigured": false
+  },
+  "limits": {
+    "maxDurationSeconds": 180,
+    "maxDownloadBytes": 157286400,
+    "maxSelectedFrames": 24
+  },
+  "steps": {
+    "retrieveAttempts": [
+      {
+        "provider": "instagram/yt-dlp",
+        "ok": true
+      }
+    ],
+    "retrieve": {
+      "ok": true,
+      "classification": "retrieved_publicly",
+      "source": "instagram/yt-dlp-merged",
+      "canonicalUrlSanitized": "https://www.instagram.com",
+      "sizeBytes": 10303293,
+      "approxSizeMB": 9.83,
+      "mimeType": "video/mp4",
+      "warnings": [
+        "no_progressive_url_used_ytdlp_download"
+      ]
+    },
+    "inspect": {
+      "hasVideo": true,
+      "hasAudio": true,
+      "durationSeconds": 16.666667,
+      "container": "mov,mp4,m4a,3gp,3g2,mj2",
+      "videoCodec": "h264",
+      "audioCodec": "aac",
+      "width": 720,
+      "height": 1280,
+      "frameRate": 30
+    },
+    "frames": {
+      "rawCount": 18,
+      "dedupedCount": 17,
+      "manifest": [
+        {
+          "timestampSeconds": 0,
+          "reason": "first",
+          "width": 720,
+          "height": 1280,
+          "aHash": "3c3000e0f8f8f8ff"
+        },
+        {
+          "timestampSeconds": 1,
+          "reason": "interval",
+          "width": 720,
+          "height": 1280,
+          "aHash": "e0c000c0e0f0fcff"
+        },
+        {
+          "timestampSeconds": 2,
+          "reason": "interval",
+          "width": 720,
+          "height": 1280,
+          "aHash": "47000000073fffff"
+        },
+        {
+          "timestampSeconds": 3,
+          "reason": "interval",
+          "width": 720,
+          "height": 1280,
+          "aHash": "0e0101031f3fffff"
+        },
+        {
+          "timestampSeconds": 5,
+          "reason": "interval",
+          "width": 720,
+          "height": 1280,
+          "aHash": "010e1fff7e7eff3f"
+        },
+        {
+          "timestampSeconds": 6,
+          "reason": "interval",
+          "width": 720,
+          "height": 1280,
+          "aHash": "0e3f3f7f370f1f19"
+        },
+        {
+          "timestampSeconds": 7,
+          "reason": "interval",
+          "width": 720,
+          "height": 1280,
+          "aHash": "fefe7f3f1f010706"
+        },
+        {
+          "timestampSeconds": 8,
+          "reason": "interval",
+          "width": 720,
+          "height": 1280,
+          "aHash": "fcfffefefc780000"
+        },
+        {
+          "timestampSeconds": 9,
+          "reason": "interval",
+          "width": 720,
+          "height": 1280,
+          "aHash": "fff39086c0f0e4e0"
+        },
+        {
+          "timestampSeconds": 10,
+          "reason": "interval",
+          "width": 720,
+          "height": 1280,
+          "aHash": "008080917ffffff9"
+        },
+        {
+          "timestampSeconds": 11,
+          "reason": "interval",
+          "width": 720,
+          "height": 1280,
+          "aHash": "0000000038ffffff"
+        },
+        {
+          "timestampSeconds": 12,
+          "reason": "interval",
+          "width": 720,
+          "height": 1280,
+          "aHash": "030302001c3ffdff"
+        },
+        {
+          "timestampSeconds": 13,
+          "reason": "interval",
+          "width": 720,
+          "height": 1280,
+          "aHash": "070f0f06000c3f7f"
+        },
+        {
+          "timestampSeconds": 14,
+          "reason": "interval",
+          "width": 720,
+          "height": 1280,
+          "aHash": "ff7f1f0f0f000000"
+        },
+        {
+          "timestampSeconds": 15,
+          "reason": "interval",
+          "width": 720,
+          "height": 1280,
+          "aHash": "fe7e7f1f1f1e0000"
+        },
+        {
+          "timestampSeconds": 16,
+          "reason": "interval",
+          "width": 720,
+          "height": 1280,
+          "aHash": "ffffff7f00000000"
+        },
+        {
+          "timestampSeconds": 16.567,
+          "reason": "last",
+          "width": 720,
+          "height": 1280,
+          "aHash": "fffffff705000000"
+        }
+      ]
+    },
+    "transcript": {
+      "provider": "openai",
+      "status": "unavailable",
+      "reason": null,
+      "language": null,
+      "segmentCount": 0,
+      "segments": []
+    },
+    "visibleText": {
+      "provider": "noop",
+      "segmentCount": 0,
+      "segments": []
+    },
+    "evidence": {
+      "provider": "gemini",
+      "promptVersion": "media-place-evidence-2026-08-26.v13-moment-grouping",
+      "modelRawPreview": "{\n  \"places\": [],\n  \"multipleIntentionalPlaces\": false,\n  \"insufficientEvidence\": true,\n  \"warnings\": [\n    \"No spoken transcript, visible text, or caption metadata identifying the location.\"\n  ]\n}",
+      "multipleIntentionalPlaces": false,
+      "insufficientEvidence": true,
+      "warnings": [
+        "No spoken transcript, visible text, or caption metadata identifying the location."
+      ],
+      "placeCount": 0,
+      "grouping": {
+        "raw_moment_count": 0,
+        "logical_place_count": 0,
+        "moments_merged": 0,
+        "moments_split": 0,
+        "grouping_reason_codes": [],
+        "same_place_confidence_band": "none",
+        "distinct_place_evidence_present": false
+      },
+      "explicitMentions": [],
+      "inferredOnlyMentions": [],
+      "distinctProposedPlaces": 0
+    },
+    "verification": {
+      "ran": true,
+      "result": {
+        "ok": true,
+        "renderedPlaces": 0,
+        "decision": "manual_fallback",
+        "safeToAutoSave": false,
+        "confidence": "low",
+        "cleanSearchQuery": null,
+        "resolverPath": "manual_fallback",
+        "resolutionDiagnostics": null,
+        "evidenceUsed": [],
+        "mentionCount": 0,
+        "geoContext": {
+          "city": null,
+          "region": null,
+          "country": null
+        },
+        "nameDriven": null,
+        "relationships": [],
+        "rejectedCandidates": [],
+        "mentionResults": [],
+        "candidateCount": 0,
+        "candidates": []
+      }
+    }
+  },
+  "result": "insufficient_evidence",
+  "nameDrivenMultiPlace": {
+    "proposedPlaceNames": [],
+    "distinctProposedPlaces": 0,
+    "withExplicitStreetAddress": 0,
+    "verifiableByCurrentAddressOnlyResolver": 0,
+    "lostForLackOfAddress": [],
+    "multipleIntentionalPlaces": false,
+    "note": "Name-driven verification runs for ONE OR MORE eligible explicit venue names (no ≥2-name minimum). Each name is individually searched + scored against Google Places and surfaced as a candidate_confirmation (single) or multi_candidate_confirmation (multiple/ambiguous). The address-driven multi path still handles captions with ≥2 explicit street addresses. withExplicitStreetAddress counts places the ADDRESS path alone could verify; the rest are covered by the NAME path."
+  },
+  "contentBreakdown": {
+    "spokenPlaceMentions": [],
+    "visiblePlaceMentions": [],
+    "explicitAddresses": [],
+    "inferredGeographicContext": [],
+    "proposedVenueNames": [],
+    "distinctProposedPlaces": 0
+  },
+  "transcription": {
+    "provider": "openai",
+    "status": "unavailable",
+    "reason": null,
+    "ran": false,
+    "segmentCount": 0
+  },
+  "transcriptionRan": false,
+  "visualAnalysisRan": true,
+  "verification": {
+    "ran": true,
+    "decision": "manual_fallback",
+    "resolverPath": "manual_fallback",
+    "safeToAutoSave": false,
+    "confidence": "low",
+    "geoContext": {
+      "city": null,
+      "region": null,
+      "country": null
+    },
+    "resolutionDiagnostics": null,
+    "venueRelationships": [],
+    "googleQueries": [],
+    "mentionSlotCount": 0,
+    "mentionSlots": [],
+    "verifiedMentionCount": 0,
+    "ambiguousMentionCount": 0,
+    "noMatchMentionCount": 0,
+    "verifiedCanonicalPlaces": [],
+    "ambiguousCandidates": 0,
+    "rejectedCandidates": [],
+    "placesLostByAddressOnlyResolver": []
+  },
+  "genuineContentTest": true,
+  "note": "Evidence is PROPOSED by the model; verification uses the SAME deterministic resolver + Google Places as production (no save, no Supabase). safeToAutoSave is reported as-is.",
+  "cleanup": {
+    "tempDeleted": true,
+    "originalFileModified": false
+  }
+}

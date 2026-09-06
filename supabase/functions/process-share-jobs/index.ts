@@ -279,13 +279,49 @@ function premiumRuntimePlan(value: any): null | {
   candidatePayload: any;
   suggestedQuery: string | null;
   costs: Record<string, unknown>;
+  rankedCandidates: any[];
 } {
   if (!value || value.schemaVersion !== 1 || !Array.isArray(value.destinations)) return null;
   const slots: any[] = [];
   const aggregate: any[] = [];
+  const rankedCandidates: any[] = [];
   for (const [destinationIndex, destination] of value.destinations.slice(0, 10).entries()) {
     if (!destination || !Array.isArray(destination.hypotheses) || destination.hypotheses.length === 0) continue;
     const hypotheses = destination.hypotheses.slice(0, 3);
+    for (const hypothesis of hypotheses) {
+      const canonical = hypothesis?.canonical && typeof hypothesis.canonical === 'object'
+        ? hypothesis.canonical
+        : null;
+      const providerParent = hypothesis?.providerParent && typeof hypothesis.providerParent === 'object'
+        ? hypothesis.providerParent
+        : null;
+      const name = typeof hypothesis?.name === 'string' ? hypothesis.name.trim() : '';
+      if (!name) continue;
+      rankedCandidates.push({
+        rank: rankedCandidates.length + 1,
+        name: name.slice(0, 200),
+        locality: typeof hypothesis?.city === 'string' ? hypothesis.city.slice(0, 120) : null,
+        region: typeof hypothesis?.region === 'string' ? hypothesis.region.slice(0, 120) : null,
+        country: typeof hypothesis?.country === 'string' ? hypothesis.country.slice(0, 120) : null,
+        latitude: typeof canonical?.latitude === 'number' ? canonical.latitude
+          : typeof providerParent?.latitude === 'number' ? providerParent.latitude : null,
+        longitude: typeof canonical?.longitude === 'number' ? canonical.longitude
+          : typeof providerParent?.longitude === 'number' ? providerParent.longitude : null,
+        canonicalPlaceId: typeof canonical?.googlePlaceId === 'string' ? canonical.googlePlaceId : null,
+        providerParent: providerParent && typeof providerParent.googlePlaceId === 'string' && typeof providerParent.name === 'string'
+          ? {
+              name: providerParent.name.slice(0, 200),
+              placeId: providerParent.googlePlaceId.slice(0, 200),
+              formattedAddress: typeof providerParent.formattedAddress === 'string' ? providerParent.formattedAddress.slice(0, 300) : null,
+              latitude: typeof providerParent.latitude === 'number' ? providerParent.latitude : null,
+              longitude: typeof providerParent.longitude === 'number' ? providerParent.longitude : null,
+            }
+          : null,
+        canonicalizationStatus: typeof hypothesis?.canonicalStatus === 'string' ? hypothesis.canonicalStatus.slice(0, 80) : null,
+        candidateType: typeof hypothesis?.entityType === 'string' ? hypothesis.entityType.slice(0, 80) : 'UNKNOWN',
+        evidenceClass: typeof hypothesis?.evidenceBasis === 'string' ? hypothesis.evidenceBasis.slice(0, 80) : 'UNKNOWN',
+      });
+    }
     const candidates = hypotheses.flatMap((hypothesis: any) => {
       const candidate = premiumRuntimeCandidate(hypothesis);
       return candidate ? [candidate] : [];
@@ -310,10 +346,29 @@ function premiumRuntimePlan(value: any): null | {
         confidence: hypothesis?.confidence === 'HIGH' ? 0.9 : hypothesis?.confidence === 'MEDIUM' ? 0.65 : 0.35,
         evidenceKind: hypothesis?.evidenceBasis === 'CONTEXTUAL_OR_MEMORY_PRIOR' ? 'model_prior' : 'observable',
         timestamps: Array.isArray(hypothesis?.timestamps) ? hypothesis.timestamps.slice(0, 12) : [],
+        providerParent: hypothesis?.providerParent && typeof hypothesis.providerParent === 'object'
+          ? {
+              name: typeof hypothesis.providerParent.name === 'string' ? hypothesis.providerParent.name.slice(0, 200) : null,
+              placeId: typeof hypothesis.providerParent.googlePlaceId === 'string' ? hypothesis.providerParent.googlePlaceId.slice(0, 200) : null,
+            }
+          : null,
       })),
     });
   }
   const candidatePayload = buildShareJobCandidatePayload(aggregate, slots);
+  (candidatePayload as any).rankedCandidates = rankedCandidates.slice(0, 3);
+  if (aggregate.length === 0 && rankedCandidates.length > 0) {
+    const first = rankedCandidates[0];
+    (candidatePayload as any).partialResult = {
+      version: 1,
+      reviewOnly: true,
+      resultClass: 'search_lead',
+      locality: [first.locality, first.region, first.country].filter(Boolean).join(', ') || null,
+      category: first.candidateType,
+      searchQuery: first.name,
+      clueCount: rankedCandidates.length,
+    };
+  }
   const onlyDestination = value.destinations.length === 1 ? value.destinations[0] : null;
   const solePrimary = onlyDestination?.hypotheses?.[0];
   const autoSaveCandidate = onlyDestination?.decision === 'AUTO_SAVE'
@@ -352,7 +407,59 @@ function premiumRuntimePlan(value: any): null | {
         finalFingerprint: telemetry.finalFingerprint ?? null,
       },
     },
+    rankedCandidates: rankedCandidates.slice(0, 3),
   };
+}
+
+async function recordAutomaticDeepAnalytics(
+  admin: any,
+  job: any,
+  body: any,
+  plan: ReturnType<typeof premiumRuntimePlan>,
+): Promise<void> {
+  const diagnostics = body?.diagnostics?.automaticDeep && typeof body.diagnostics.automaticDeep === 'object'
+    ? body.diagnostics.automaticDeep
+    : {};
+  const rejectionReason = typeof diagnostics.rejectionReason === 'string'
+    ? diagnostics.rejectionReason.slice(0, 80)
+    : 'NO_ACTIONABLE_CANDIDATE';
+  const count = plan?.rankedCandidates.length ?? 0;
+  const common = {
+    share_job_id: job.id,
+    recognition_path: 'automatic_deep',
+    normal_result_rejection_reason: rejectionReason,
+  };
+  const events = [
+    ['deep_recognition_needed', common],
+    ['deep_recognition_started', common],
+    ['deep_recognition_completed', { ...common, top3_count: count }],
+    [count > 0 ? 'deep_recognition_specific_result' : 'deep_recognition_no_exact_result', { ...common, top3_count: count }],
+    ['deep_recognition_top3_count', { ...common, count }],
+  ].map(([event_name, properties]) => ({ user_id: job.user_id, event_name, properties }));
+  const { error } = await admin.from('analytics_events').insert(events);
+  if (error) console.log(`[automatic-deep] analytics_insert_failed job_id=${job.id}`);
+}
+
+async function recordNormalResultSpecificityAnalytics(admin: any, job: any, body: any): Promise<void> {
+  const diagnostics = body?.diagnostics?.automaticDeep && typeof body.diagnostics.automaticDeep === 'object'
+    ? body.diagnostics.automaticDeep
+    : null;
+  if (!diagnostics) return;
+  const specificity = diagnostics.normalResultSpecificity === 'SPECIFIC_ACTIONABLE'
+    ? 'SPECIFIC_ACTIONABLE'
+    : 'WEAK';
+  const rejectionReason = typeof diagnostics.rejectionReason === 'string'
+    ? diagnostics.rejectionReason.slice(0, 80)
+    : null;
+  const common = { share_job_id: job.id, recognition_path: 'normal_then_gate', specificity };
+  const events = [{ user_id: job.user_id, event_name: 'normal_result_specificity', properties: common }];
+  if (rejectionReason) events.push({
+    user_id: job.user_id,
+    event_name: 'normal_result_rejection_reason',
+    properties: { ...common, normal_result_rejection_reason: rejectionReason },
+  });
+  const { error } = await admin.from('analytics_events').insert(events);
+  if (error) console.log(`[automatic-deep] specificity_analytics_insert_failed job_id=${job.id}`);
 }
 
 function safeMediaFailureCode(value: unknown): string | null {
@@ -565,11 +672,13 @@ async function finalize(
 ): Promise<void> {
   const updatePatch: Record<string, unknown> = { ...patch };
   const skipRecognitionCachePersist = updatePatch.__skipRecognitionCachePersist === true;
+  const skipPremiumEligibility = updatePatch.__skipPremiumEligibility === true;
   const premiumChargeabilityOverride = updatePatch.__premiumChargeability === 'CHARGEABLE_ACTIONABLE'
     ? { chargeable: true, reason: 'premium_specific_candidates' as const }
     : null;
   delete updatePatch.__skipRecognitionCachePersist;
   delete updatePatch.__premiumChargeability;
+  delete updatePatch.__skipPremiumEligibility;
   const finalUrl = typeof patch.canonical_url === 'string'
     ? patch.canonical_url
     : job.canonical_url || job.source_url;
@@ -597,7 +706,9 @@ async function finalize(
   // safety before emitting CHARGEABLE_ACTIONABLE. Preserve that typed decision
   // for named review leads that intentionally have no single Places candidate.
   const premiumSettlement = premiumChargeabilityOverride ?? isPremiumResultChargeable(finalFacts);
-  const eligibility = premiumEligibilityForResult(finalFacts);
+  const eligibility = skipPremiumEligibility
+    ? { eligible: false, reason: 'specific_result' as const }
+    : premiumEligibilityForResult(finalFacts);
   const incompleteArea = areaMatchIncompleteFromPayload(finalFacts.candidate_payload);
   const becamePremiumEligible = billingMode !== 'premium_request' && eligibility.eligible && job.premium_state !== 'eligible';
   if (billingMode === 'premium_request') {
@@ -2027,6 +2138,91 @@ async function finalizeMediaTask(
   }
 
   // Parent already terminal → mark task done, never revive the parent.
+  // Automatic Deep Recognition uses the same Simple Sol executor but remains
+  // an ordinary free recognition task. It never enters token settlement,
+  // Premium eligibility/offering, or Premium analytics.
+  const automaticDeepPayload = task.task_kind !== 'premium_recognition'
+    ? body.automaticDeepRecognition
+    : null;
+  if (task.task_kind !== 'premium_recognition') {
+    await recordNormalResultSpecificityAnalytics(admin, job, body);
+  }
+  const automaticDeep = automaticDeepPayload ? premiumRuntimePlan(automaticDeepPayload) : null;
+  if (automaticDeepPayload && pre.action !== 'parent_already_terminal') {
+    if (!automaticDeep) {
+      await markMediaTask(admin, taskId, 'failed', {
+        failure_code: 'premium_model_failure', progress_stage: 'cleanup', completed_at: nowIso(),
+      });
+      logFinalStatus('automatic_deep_payload_invalid', 'permanent_processing_error');
+      return json({ error: 'automatic_deep_payload_invalid' }, 400);
+    }
+    await recordAutomaticDeepAnalytics(admin, job, body, automaticDeep);
+    const taskCanonicalUrl = task.canonical_url || task.source_url;
+    const candidates = automaticDeep.candidatePayload.candidates ?? [];
+    const mentionSlots = automaticDeep.candidatePayload.mentionSlots ?? [];
+    automaticDeep.candidatePayload.evidenceFrames = evidenceFrames;
+    if (automaticDeep.outcome === 'PREMIUM_ACTIONABLE_RESULT' && automaticDeep.rankedCandidates.length > 0) {
+      const mode = candidates.length > 1 || mentionSlots.length > 1 ? 'picker' : 'single';
+      await finalize(admin, job, {
+        status: 'needs_help',
+        decision: candidates.length > 1 || mentionSlots.length > 1 ? 'candidate_picker' : 'candidate_confirmation',
+        needs_help_reason: candidates.length > 0 ? 'automatic_deep_review' : 'automatic_deep_named_lead',
+        suggested_query: automaticDeep.suggestedQuery,
+        candidate_payload: automaticDeep.candidatePayload,
+        canonical_url: taskCanonicalUrl,
+        source_platform: task.platform,
+        extraction_payload: {
+          ...(job.extraction_payload ?? {}),
+          automaticDeepRecognition: {
+            version: 'automatic-deep-recognition.v1',
+            outcome: automaticDeep.outcome,
+            top3Count: automaticDeep.rankedCandidates.length,
+            rejectionReason: body?.diagnostics?.automaticDeep?.rejectionReason ?? null,
+            costs: automaticDeep.costs,
+          },
+        },
+        __skipPremiumEligibility: true,
+        progress_stage: mode,
+        analysis_attempted: true,
+      }, reviewNotification({ jobId: job.id, mode, candidates, mentionResults: mentionSlots }));
+      await markMediaTask(admin, taskId, 'completed', {
+        resolver_name: 'automatic-deep-simple-sol', progress_stage: 'cleanup', completed_at: nowIso(),
+      });
+      logFinalStatus('automatic_deep_review');
+      return json({ ok: true, route: 'needs_help', mode, automaticDeep: true });
+    }
+
+    await finalize(admin, job, {
+      status: 'failed',
+      decision: 'failed',
+      needs_help_reason: 'recognition_recovery_exhausted',
+      failure_reason: 'recognition_recovery_exhausted',
+      failure_code: 'recognition_recovery_exhausted',
+      failure_category: 'technical_failure',
+      candidate_payload: automaticDeep.candidatePayload,
+      canonical_url: taskCanonicalUrl,
+      source_platform: task.platform,
+      __skipPremiumEligibility: true,
+      progress_stage: 'failed',
+      analysis_attempted: true,
+    }, reviewNotification({
+      jobId: job.id,
+      status: 'failed',
+      mode: 'retry',
+      technicalFailure: true,
+      failureCategory: 'technical_failure',
+      failureCode: 'recognition_recovery_exhausted',
+    }));
+    await markMediaTask(admin, taskId, 'failed', {
+      resolver_name: 'automatic-deep-simple-sol',
+      failure_code: 'recognition_recovery_exhausted',
+      progress_stage: 'cleanup',
+      completed_at: nowIso(),
+    });
+    logFinalStatus('automatic_deep_no_exact_result', 'provider_failure');
+    return json({ ok: true, route: 'retry', automaticDeep: true });
+  }
+
   if (pre.action === 'parent_already_terminal') {
     await markMediaTask(admin, taskId, 'completed', { progress_stage: 'cleanup', completed_at: nowIso() });
     logFinalStatus('parent_already_terminal');

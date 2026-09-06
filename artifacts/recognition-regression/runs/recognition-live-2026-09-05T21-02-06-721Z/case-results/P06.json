@@ -1,0 +1,52 @@
+{
+  "caseId": "P06",
+  "category": "TRAVEL_DESTINATION",
+  "groundTruth": "Old World Biergarten Festival Hall & Concert Venue",
+  "returnedTop3": [
+    {
+      "rank": 1,
+      "name": "Old World German Restaurant & Biergarten at Old World Village",
+      "identityType": "BUSINESS",
+      "locality": "Huntington Beach, California",
+      "country": "United States",
+      "latitude": 33.7344453,
+      "longitude": -117.99652519999998,
+      "evidenceType": "DISTINCTIVE_VISUAL_MATCH",
+      "canonicalizationStatus": "CANONICAL_ALIAS",
+      "specificity": "SPECIFIC_PHYSICAL_PLACE"
+    }
+  ],
+  "recognitionVersion": "simple-sol-premium.v2",
+  "evidenceVersion": "premium-evidence-2026-09-05.v1",
+  "modelPath": "gpt-5.6-sol/F1:M1",
+  "frameManifest": [
+    {
+      "timestampSeconds": 0,
+      "sha256": "34bf9ec7aecc75963d8b964572f004ec3c8fcee2464d80158d49e4967879ce1c"
+    },
+    {
+      "timestampSeconds": 4,
+      "sha256": "0f5b5fc1ab5b7c7c647a2fa987d0be2af722513c1b1af31e308197504098e568"
+    },
+    {
+      "timestampSeconds": 9,
+      "sha256": "5ae37cbe27c94c94741b35059294150b24d1b4531a677695f828af7bdcfd7c83"
+    },
+    {
+      "timestampSeconds": 14,
+      "sha256": "4b8d320bd6740439a2d728f91d2ce7f19194cd91da9abdf3daf1a4cb27ebc44c"
+    },
+    {
+      "timestampSeconds": 17,
+      "sha256": "3a70f04d6ce2a665f4ffba44d55abb0f6ce3c4e5a8cce698041f9a3cd8712b62"
+    },
+    {
+      "timestampSeconds": 24.728,
+      "sha256": "d2e75dc999031d6c5d35a397df72e54a8c85c2d0591a8a6126dcfded0eed3705"
+    }
+  ],
+  "placesCallCount": 1,
+  "classification": "WRONG",
+  "failureClass": "WRONG",
+  "cacheReadUsed": false
+}

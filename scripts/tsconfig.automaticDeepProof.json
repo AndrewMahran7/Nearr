@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": "../services/media-worker/node_modules",
+    "paths": {
+      "@supabase/supabase-js": ["@supabase/supabase-js"]
+    },
+    "typeRoots": ["../services/media-worker/node_modules/@types"]
+  },
+  "include": [
+    "e2e/runAutomaticDeepReleaseProof.ts",
+    "e2e/session.ts",
+    "e2e/config.ts",
+    "e2e/target.ts",
+    "e2e/poll.ts"
+  ]
+}

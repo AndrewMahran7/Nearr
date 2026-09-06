@@ -1,0 +1,1351 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-06T00:04:53.050Z",
+  "lane": "GROUND_TRUTH_ONLY_POST_INFERENCE",
+  "blindness": {
+    "inferenceCompletedBeforeGroundTruthResearch": true,
+    "inferenceCorpusPath": "artifacts/cliff-jumping/inference-corpus.json",
+    "groundTruthNotLoadedByRunner": true
+  },
+  "methodology": {
+    "primaryMetricStatuses": [
+      "VERIFIED_EXACT",
+      "HIGH_CONFIDENCE_EXACT"
+    ],
+    "nonPrimaryStatuses": [
+      "PROVISIONAL_BEST_GUESS",
+      "UNRESOLVED"
+    ],
+    "modelOutputAloneIsTruth": false
+  },
+  "summary": {
+    "VERIFIED_EXACT": 7,
+    "HIGH_CONFIDENCE_EXACT": 21,
+    "PROVISIONAL_BEST_GUESS": 10,
+    "UNRESOLVED": 4
+  },
+  "destinations": [
+    {
+      "caseId": "CJ001",
+      "sourceUrl": "https://www.instagram.com/p/Da2Rb92NKGw/",
+      "canonicalSourceId": "CJ001",
+      "canonicalContentId": "Da2Rb92NKGw",
+      "groundTruthStatus": "PROVISIONAL_BEST_GUESS",
+      "canonicalName": "Lac de Vouglans",
+      "acceptedAliases": [],
+      "latitude": 46.485,
+      "longitude": 5.680833,
+      "acceptableRadiusMeters": 600,
+      "locality": "Orgelet",
+      "region": "Bourgogne-Franche-Comte",
+      "country": "France",
+      "evidence": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/Da2Rb92NKGw/",
+          "shortFinding": "Creator caption reports a 22.5 m double gainer; no location is named."
+        }
+      ],
+      "visualCorroboration": "Source frames and public feature descriptions were compared for terrain, water, structures, scale, and surrounding morphology; the degree of match is reflected in the status.",
+      "contradictions": [],
+      "confidenceNotes": "A 22.5 m jump and wooded, horizontally bedded limestone reservoir fit Vouglans, but no public post or independent same-clip source names it."
+    },
+    {
+      "caseId": "CJ002",
+      "sourceUrl": "https://www.instagram.com/p/DZIXov9tVu7/",
+      "canonicalSourceId": "CJ002",
+      "canonicalContentId": "DZIXov9tVu7",
+      "groundTruthStatus": "UNRESOLVED",
+      "canonicalName": "Marseille multi-location montage (individual clips unresolved)",
+      "acceptedAliases": [],
+      "latitude": null,
+      "longitude": null,
+      "acceptableRadiusMeters": null,
+      "locality": "Marseille",
+      "region": "Provence-Alpes-Cote d’Azur",
+      "country": "France",
+      "evidence": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/DZIXov9tVu7/",
+          "shortFinding": "Creator hashtags identify Marseille; the post is a multi-location montage."
+        }
+      ],
+      "visualCorroboration": "The available scene supports only the bounded regional or multi-location statement; it does not uniquely identify a named feature.",
+      "contradictions": [],
+      "confidenceNotes": "The source supplies Marseille only; the five exact clip identities proposed by Sol could not be independently tied to the individual montage segments."
+    },
+    {
+      "caseId": "CJ003",
+      "sourceUrl": "https://www.instagram.com/p/DbB3ZOUya93/",
+      "canonicalSourceId": "CJ003",
+      "canonicalContentId": "DbB3ZOUya93",
+      "groundTruthStatus": "HIGH_CONFIDENCE_EXACT",
+      "canonicalName": "Sooke Potholes",
+      "acceptedAliases": [
+        "Sooke Potholes Provincial Park",
+        "Sooke Potholes Regional Park"
+      ],
+      "latitude": 48.4279465,
+      "longitude": -123.7126111,
+      "acceptableRadiusMeters": 600,
+      "locality": "Sooke",
+      "region": "British Columbia",
+      "country": "Canada",
+      "evidence": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/DbB3ZOUya93/",
+          "shortFinding": "Caption is generic and names no location."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://www.youtube.com/watch?v=PYUoA19ZXcs",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "visualCorroboration": "Source frames and public feature descriptions were compared for terrain, water, structures, scale, and surrounding morphology; the degree of match is reflected in the status.",
+      "contradictions": [],
+      "confidenceNotes": "Distinctive river potholes and cliff geometry match public cliff-jumping media from Sooke; no same-clip naming source was found."
+    },
+    {
+      "caseId": "CJ004",
+      "sourceUrl": "https://www.instagram.com/p/CqJo6QHJqPo/",
+      "canonicalSourceId": "R08",
+      "canonicalContentId": "CqJo6QHJqPo",
+      "groundTruthStatus": "VERIFIED_EXACT",
+      "canonicalName": "Moku Nui",
+      "acceptedAliases": [
+        "Moku Nui",
+        "Mokulua Moku Nui"
+      ],
+      "latitude": 21.391667,
+      "longitude": -157.698889,
+      "acceptableRadiusMeters": 300,
+      "locality": "Kailua",
+      "region": "Hawaii",
+      "country": "United States",
+      "evidence": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/CqJo6QHJqPo/",
+          "shortFinding": "Caption says Hawaii and hashtags identify Kailua and the Mokes."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://dlnr.hawaii.gov/wp-content/uploads/2024/07/C-1.pdf",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "visualCorroboration": "Source frames and public feature descriptions were compared for terrain, water, structures, scale, and surrounding morphology; the degree of match is reflected in the status.",
+      "contradictions": [],
+      "confidenceNotes": "The source says Hawaii and tags Kailua and the Mokes; the shortcode is the historical R08 duplicate, and public sources distinguish larger Moku Nui from Moku Iki."
+    },
+    {
+      "caseId": "CJ005",
+      "sourceUrl": "https://www.instagram.com/p/Dbh90croV4d/",
+      "canonicalSourceId": "CJ005",
+      "canonicalContentId": "Dbh90croV4d",
+      "groundTruthStatus": "HIGH_CONFIDENCE_EXACT",
+      "canonicalName": "Ponta da Piedade sea-cave complex",
+      "acceptedAliases": [
+        "Ponta da Piedade",
+        "Ponta da Piedade sea caves"
+      ],
+      "latitude": 37.0798758,
+      "longitude": -8.6685911,
+      "acceptableRadiusMeters": 600,
+      "locality": "Lagos",
+      "region": "Algarve",
+      "country": "Portugal",
+      "evidence": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/Dbh90croV4d/",
+          "shortFinding": "Caption identifies Portugal but not the exact formation."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://www.cm-lagos.pt/images/site/cliente/AF_LAGOS_PRAIAS_E_COSTA.pdf",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "visualCorroboration": "Source frames and public feature descriptions were compared for terrain, water, structures, scale, and surrounding morphology; the degree of match is reflected in the status.",
+      "contradictions": [],
+      "confidenceNotes": "The source identifies Portugal; golden limestone stacks, arches and grottos match the Ponta da Piedade complex."
+    },
+    {
+      "caseId": "CJ006",
+      "sourceUrl": "https://www.instagram.com/p/DcekCtbStlP/",
+      "canonicalSourceId": "CJ006",
+      "canonicalContentId": "DcekCtbStlP",
+      "groundTruthStatus": "HIGH_CONFIDENCE_EXACT",
+      "canonicalName": "Lido Galomar",
+      "acceptedAliases": [
+        "Galomar Lido",
+        "Galo Resort bathing complex"
+      ],
+      "latitude": 32.6410985,
+      "longitude": -16.8326288,
+      "acceptableRadiusMeters": 600,
+      "locality": "Canico",
+      "region": "Madeira",
+      "country": "Portugal",
+      "evidence": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/DcekCtbStlP/",
+          "shortFinding": "Caption hashtags identify Madeira (misspelled in source)."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://www.visitmadeira.com/en/where-to-go/madeira/east-coast/santa-cruz/lido-galomar-bathing-complex/",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "visualCorroboration": "Source frames and public feature descriptions were compared for terrain, water, structures, scale, and surrounding morphology; the degree of match is reflected in the status.",
+      "contradictions": [],
+      "confidenceNotes": "The source tags Madeira; the built volcanic-rock lido, platforms and pool geometry match Galomar."
+    },
+    {
+      "caseId": "CJ007",
+      "sourceUrl": "https://www.instagram.com/p/DcVUFxntIKW/",
+      "canonicalSourceId": "CJ007",
+      "canonicalContentId": "DcVUFxntIKW",
+      "groundTruthStatus": "HIGH_CONFIDENCE_EXACT",
+      "canonicalName": "Cala Varques",
+      "acceptedAliases": [
+        "Cala Varques cliff-jump arch"
+      ],
+      "latitude": 39.4991,
+      "longitude": 3.2986,
+      "acceptableRadiusMeters": 600,
+      "locality": "Manacor",
+      "region": "Mallorca",
+      "country": "Spain",
+      "evidence": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/DcVUFxntIKW/",
+          "shortFinding": "Caption identifies Mallorca and describes 13.5 m jumps."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://www.youtube.com/watch?v=YC2NywBTsQ4",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "visualCorroboration": "Source frames and public feature descriptions were compared for terrain, water, structures, scale, and surrounding morphology; the degree of match is reflected in the status.",
+      "contradictions": [],
+      "confidenceNotes": "The source says Mallorca and 13.5 m; independent cliff-jumping media documents the natural arch/ledge at Cala Varques."
+    },
+    {
+      "caseId": "CJ008",
+      "sourceUrl": "https://www.instagram.com/p/DWrKNRujq4X/",
+      "canonicalSourceId": "CJ008",
+      "canonicalContentId": "DWrKNRujq4X",
+      "groundTruthStatus": "HIGH_CONFIDENCE_EXACT",
+      "canonicalName": "Cenote Zaci",
+      "acceptedAliases": [
+        "Cenote Zací",
+        "Zací Cenote"
+      ],
+      "latitude": 20.6916378,
+      "longitude": -88.1973463,
+      "acceptableRadiusMeters": 600,
+      "locality": "Valladolid",
+      "region": "Yucatan",
+      "country": "Mexico",
+      "evidence": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/DWrKNRujq4X/",
+          "shortFinding": "Caption identifies Mexico and a cenote, without naming the cenote."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://en.wikipedia.org/wiki/Cenote_Zac%C3%AD",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "visualCorroboration": "Source frames and public feature descriptions were compared for terrain, water, structures, scale, and surrounding morphology; the degree of match is reflected in the status.",
+      "contradictions": [],
+      "confidenceNotes": "The source says Mexico and cenote; the large open urban cenote, walls and established jump platform match Zaci."
+    },
+    {
+      "caseId": "CJ009",
+      "sourceUrl": "https://www.instagram.com/p/C6pIphxy4qr/",
+      "canonicalSourceId": "CJ009",
+      "canonicalContentId": "C6pIphxy4qr",
+      "groundTruthStatus": "HIGH_CONFIDENCE_EXACT",
+      "canonicalName": "Waimea Bay Jump Rock",
+      "acceptedAliases": [
+        "Waimea Bay Jump Rock",
+        "Jump Rock at Waimea Bay"
+      ],
+      "latitude": 21.6405,
+      "longitude": -158.064,
+      "acceptableRadiusMeters": 600,
+      "locality": "Haleiwa",
+      "region": "Hawaii",
+      "country": "United States",
+      "evidence": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/C6pIphxy4qr/",
+          "shortFinding": "Hashtags identify Hawaii and Oahu, without naming the rock."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://cliffscout.com/spots/hawaii",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "visualCorroboration": "Source frames and public feature descriptions were compared for terrain, water, structures, scale, and surrounding morphology; the degree of match is reflected in the status.",
+      "contradictions": [],
+      "confidenceNotes": "The source tags Hawaii and Oahu; the isolated beach boulder and shore profile match Waimea Bay’s named Jump Rock."
+    },
+    {
+      "caseId": "CJ010",
+      "sourceUrl": "https://www.instagram.com/p/DAvJrtQIGVU/",
+      "canonicalSourceId": "CJ010",
+      "canonicalContentId": "DAvJrtQIGVU",
+      "groundTruthStatus": "UNRESOLVED",
+      "canonicalName": "Unidentified Mallorca coastal sea hole",
+      "acceptedAliases": [],
+      "latitude": null,
+      "longitude": null,
+      "acceptableRadiusMeters": null,
+      "locality": null,
+      "region": "Mallorca",
+      "country": "Spain",
+      "evidence": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/DAvJrtQIGVU/",
+          "shortFinding": "Caption says “Secret hole in Mallorca” and gives no formal feature name."
+        }
+      ],
+      "visualCorroboration": "The available scene supports only the bounded regional or multi-location statement; it does not uniquely identify a named feature.",
+      "contradictions": [],
+      "confidenceNotes": "The source calls it a secret hole in Mallorca. No public same-clip match or responsibly named exact feature was found."
+    },
+    {
+      "caseId": "CJ011",
+      "sourceUrl": "https://www.instagram.com/p/DCfD1bFIsuE/",
+      "canonicalSourceId": "CJ011",
+      "canonicalContentId": "DCfD1bFIsuE",
+      "groundTruthStatus": "HIGH_CONFIDENCE_EXACT",
+      "canonicalName": "Makapipi Falls",
+      "acceptedAliases": [
+        "Makapipi Falls"
+      ],
+      "latitude": 20.8075943,
+      "longitude": -156.0962121,
+      "acceptableRadiusMeters": 600,
+      "locality": "Hana",
+      "region": "Hawaii",
+      "country": "United States",
+      "evidence": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/DCfD1bFIsuE/",
+          "shortFinding": "Hashtags identify Maui, Hana and Road to Hana and state an 80 ft waterfall jump."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://files.hawaii.gov/dlnr/cwrm/cch/cchma1301/CCHMA1301-20180620-CWRM.pdf",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "visualCorroboration": "Source frames and public feature descriptions were compared for terrain, water, structures, scale, and surrounding morphology; the degree of match is reflected in the status.",
+      "contradictions": [],
+      "confidenceNotes": "The source tags Maui, Hana and Road to Hana; the bridge-above-waterfall geometry matches Makapipi Falls below Hana Highway."
+    },
+    {
+      "caseId": "CJ012",
+      "sourceUrl": "https://www.instagram.com/p/DBW35nppVUS/",
+      "canonicalSourceId": "CJ012",
+      "canonicalContentId": "DBW35nppVUS",
+      "groundTruthStatus": "HIGH_CONFIDENCE_EXACT",
+      "canonicalName": "Tamolitch Blue Pool",
+      "acceptedAliases": [
+        "Tamolitch Falls",
+        "Blue Pool",
+        "Tamolitch Falls (Blue Pool)"
+      ],
+      "latitude": 44.3120373,
+      "longitude": -122.0270488,
+      "acceptableRadiusMeters": 600,
+      "locality": "McKenzie Bridge",
+      "region": "Oregon",
+      "country": "United States",
+      "evidence": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/DBW35nppVUS/",
+          "shortFinding": "Caption identifies the Pacific Northwest only."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://www.linnsheriff.org/2026/06/linn-county-sheriffs-office-investigates-drowning/",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "visualCorroboration": "Source frames and public feature descriptions were compared for terrain, water, structures, scale, and surrounding morphology; the degree of match is reflected in the status.",
+      "contradictions": [],
+      "confidenceNotes": "The source says PNW; the exceptionally clear blue pool, forested basalt rim and documented jump height match Tamolitch."
+    },
+    {
+      "caseId": "CJ013",
+      "sourceUrl": "https://www.instagram.com/p/DFyZwBJT_Xy/",
+      "canonicalSourceId": "CJ013",
+      "canonicalContentId": "DFyZwBJT_Xy",
+      "groundTruthStatus": "HIGH_CONFIDENCE_EXACT",
+      "canonicalName": "Ching’s Pond (Blue Sapphire Pool)",
+      "acceptedAliases": [
+        "Ching's Pond",
+        "Blue Sapphire Pool",
+        "Blue Sapphire Pools"
+      ],
+      "latitude": 20.856691,
+      "longitude": -156.146638,
+      "acceptableRadiusMeters": 600,
+      "locality": "Keanae",
+      "region": "Hawaii",
+      "country": "United States",
+      "evidence": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/DFyZwBJT_Xy/",
+          "shortFinding": "Hashtags identify Hawaii, waterfall and bridge jumping."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://mauiguidebook.com/road-to-hana-maui/chings-pond/",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "visualCorroboration": "Source frames and public feature descriptions were compared for terrain, water, structures, scale, and surrounding morphology; the degree of match is reflected in the status.",
+      "contradictions": [],
+      "confidenceNotes": "The source tags Hawaii, waterfall and bridge jumping; Ching’s has the matching highway bridge, concrete platform and turquoise pool."
+    },
+    {
+      "caseId": "CJ014",
+      "sourceUrl": "https://www.instagram.com/p/DB6yxXwSgU7/",
+      "canonicalSourceId": "CJ014",
+      "canonicalContentId": "DB6yxXwSgU7",
+      "groundTruthStatus": "HIGH_CONFIDENCE_EXACT",
+      "canonicalName": "Spitting Cave",
+      "acceptedAliases": [
+        "Spitting Cave"
+      ],
+      "latitude": 21.2595075,
+      "longitude": -157.7076774,
+      "acceptableRadiusMeters": 600,
+      "locality": "Honolulu",
+      "region": "Hawaii",
+      "country": "United States",
+      "evidence": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/DB6yxXwSgU7/",
+          "shortFinding": "Caption calls it an iconic spot but gives no geography."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://www.lonelyplanet.com/points-of-interest/spitting-cave/1632563",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "visualCorroboration": "Source frames and public feature descriptions were compared for terrain, water, structures, scale, and surrounding morphology; the degree of match is reflected in the status.",
+      "contradictions": [],
+      "confidenceNotes": "The source calls the spot iconic; the cave mouth, surge and high ledges match extensive public Spitting Cave cliff-jumping imagery."
+    },
+    {
+      "caseId": "CJ015",
+      "sourceUrl": "https://www.instagram.com/p/DbtjWEKIjn9/",
+      "canonicalSourceId": "CJ015",
+      "canonicalContentId": "DbtjWEKIjn9",
+      "groundTruthStatus": "HIGH_CONFIDENCE_EXACT",
+      "canonicalName": "Pont d’en Gil",
+      "acceptedAliases": [
+        "Pont d'en Gil"
+      ],
+      "latitude": 40.0109191,
+      "longitude": 3.7942378,
+      "acceptableRadiusMeters": 600,
+      "locality": "Ciutadella de Menorca",
+      "region": "Balearic Islands",
+      "country": "Spain",
+      "evidence": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/DbtjWEKIjn9/",
+          "shortFinding": "Caption is generic and gives no location."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://www.padi.com/dive-site/spain/pont-den-gil/",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "visualCorroboration": "Source frames and public feature descriptions were compared for terrain, water, structures, scale, and surrounding morphology; the degree of match is reflected in the status.",
+      "contradictions": [],
+      "confidenceNotes": "The limestone sea arch, cavern opening and ledges match Pont d’en Gil across independent dive and travel imagery."
+    },
+    {
+      "caseId": "CJ016",
+      "sourceUrl": "https://www.instagram.com/p/DaW06-bujG_/",
+      "canonicalSourceId": "CJ016",
+      "canonicalContentId": "DaW06-bujG_",
+      "groundTruthStatus": "HIGH_CONFIDENCE_EXACT",
+      "canonicalName": "The Arch at Pappy’s Point",
+      "acceptedAliases": [
+        "The Arch at Pappy's Point",
+        "Pappy's Point",
+        "The Arch, Pappy's Point"
+      ],
+      "latitude": 32.73195,
+      "longitude": -117.25889,
+      "acceptableRadiusMeters": 600,
+      "locality": "San Diego",
+      "region": "California",
+      "country": "United States",
+      "evidence": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/DaW06-bujG_/",
+          "shortFinding": "Caption identifies San Diego but not the ledge."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://www.kpbs.org/news/public-safety/2026/08/05/san-diego-police-increase-enforcement-at-sunset-cliffs-following-cliff-jumper-injuries",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "visualCorroboration": "Source frames and public feature descriptions were compared for terrain, water, structures, scale, and surrounding morphology; the degree of match is reflected in the status.",
+      "contradictions": [],
+      "confidenceNotes": "The source says San Diego; independent local reporting identifies Pappy’s Point and The Arch as the active Sunset Cliffs jump feature, matching the sea-arch scene."
+    },
+    {
+      "caseId": "CJ017",
+      "sourceUrl": "https://www.instagram.com/p/CJUBgodgdUV/",
+      "canonicalSourceId": "CJ017",
+      "canonicalContentId": "CJUBgodgdUV",
+      "groundTruthStatus": "HIGH_CONFIDENCE_EXACT",
+      "canonicalName": "The Crack at Wet Beaver Creek",
+      "acceptedAliases": [
+        "The Crack",
+        "Wet Beaver Creek Crack"
+      ],
+      "latitude": 34.6739472,
+      "longitude": -111.660183,
+      "acceptableRadiusMeters": 600,
+      "locality": "Rimrock",
+      "region": "Arizona",
+      "country": "United States",
+      "evidence": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/CJUBgodgdUV/",
+          "shortFinding": "Caption identifies Arizona but not the swimming hole."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://wildpathsaz.com/the-crack-on-bell-trail/",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "visualCorroboration": "Source frames and public feature descriptions were compared for terrain, water, structures, scale, and surrounding morphology; the degree of match is reflected in the status.",
+      "contradictions": [],
+      "confidenceNotes": "The source says Arizona; the narrow red-rock swimming cleft and jumping ledges match The Crack."
+    },
+    {
+      "caseId": "CJ018",
+      "sourceUrl": "https://www.instagram.com/p/CvsmEqhKIeO/",
+      "canonicalSourceId": "CJ018",
+      "canonicalContentId": "CvsmEqhKIeO",
+      "groundTruthStatus": "PROVISIONAL_BEST_GUESS",
+      "canonicalName": "Embalse de La Toba",
+      "acceptedAliases": [],
+      "latitude": 40.2082812,
+      "longitude": -1.9068708,
+      "acceptableRadiusMeters": 600,
+      "locality": "Cuenca",
+      "region": "Castilla-La Mancha",
+      "country": "Spain",
+      "evidence": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/CvsmEqhKIeO/",
+          "shortFinding": "Caption is generic Spanish-language content with no exact location."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://jucaraventura.es/embalse-toba/",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "visualCorroboration": "Source frames and public feature descriptions were compared for terrain, water, structures, scale, and surrounding morphology; the degree of match is reflected in the status.",
+      "contradictions": [],
+      "confidenceNotes": "The reservoir setting is visually consistent, but the source is generic and no same-clip or creator evidence tied it to La Toba."
+    },
+    {
+      "caseId": "CJ019",
+      "sourceUrl": "https://www.instagram.com/p/DbzakoPumeL/",
+      "canonicalSourceId": "CJ019",
+      "canonicalContentId": "DbzakoPumeL",
+      "groundTruthStatus": "HIGH_CONFIDENCE_EXACT",
+      "canonicalName": "Potem Falls",
+      "acceptedAliases": [
+        "Potem Creek Falls"
+      ],
+      "latitude": 40.8387659,
+      "longitude": -122.0283326,
+      "acceptableRadiusMeters": 600,
+      "locality": "Montgomery Creek",
+      "region": "California",
+      "country": "United States",
+      "evidence": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/DbzakoPumeL/",
+          "shortFinding": "Caption describes a 72 ft waterfall but gives no region."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://www.world-of-waterfalls.com/waterfalls/california-potem-falls/",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "visualCorroboration": "Source frames and public feature descriptions were compared for terrain, water, structures, scale, and surrounding morphology; the degree of match is reflected in the status.",
+      "contradictions": [],
+      "confidenceNotes": "The source states a 72 ft waterfall; public sources describe Potem as a roughly 70 ft single plunge into a broad teal pool matching the scene."
+    },
+    {
+      "caseId": "CJ020",
+      "sourceUrl": "https://www.instagram.com/p/CV8GaG8LHbK/",
+      "canonicalSourceId": "CJ020",
+      "canonicalContentId": "CV8GaG8LHbK",
+      "groundTruthStatus": "HIGH_CONFIDENCE_EXACT",
+      "canonicalName": "Cenote Maya Native Park",
+      "acceptedAliases": [
+        "Cenote Maya",
+        "Cenote Maya Park"
+      ],
+      "latitude": 20.7744755,
+      "longitude": -87.9797936,
+      "acceptableRadiusMeters": 600,
+      "locality": "Valladolid",
+      "region": "Yucatan",
+      "country": "Mexico",
+      "evidence": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/CV8GaG8LHbK/",
+          "shortFinding": "Hashtags identify Mexico and a cenote and describe an 80 ft jump."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://www.chichenitza.com/cenotes/cenote-maya",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "visualCorroboration": "Source frames and public feature descriptions were compared for terrain, water, structures, scale, and surrounding morphology; the degree of match is reflected in the status.",
+      "contradictions": [],
+      "confidenceNotes": "The source tags Mexico and cenote and states 80 ft; the immense enclosed vault, wooden access and jumping setup match Cenote Maya."
+    },
+    {
+      "caseId": "CJ021",
+      "sourceUrl": "https://www.instagram.com/p/C_voKVguTuR/",
+      "canonicalSourceId": "CJ021",
+      "canonicalContentId": "C_voKVguTuR",
+      "groundTruthStatus": "UNRESOLVED",
+      "canonicalName": "Unnamed waterfall on Nahua Expeditions’ Tzotzil route",
+      "acceptedAliases": [],
+      "latitude": null,
+      "longitude": null,
+      "acceptableRadiusMeters": null,
+      "locality": null,
+      "region": "Chiapas",
+      "country": "Mexico",
+      "evidence": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/C_voKVguTuR/",
+          "shortFinding": "Nahua Expeditions identifies its Tzotzil route in the Mexican jungle but does not name the waterfall."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://nahuaexpeditions.com/tzotzil/",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "visualCorroboration": "The available scene supports only the bounded regional or multi-location statement; it does not uniquely identify a named feature.",
+      "contradictions": [],
+      "confidenceNotes": "The creator and official itinerary establish the Tzotzil expedition route, but neither publishes a canonical name or coordinates for this waterfall."
+    },
+    {
+      "caseId": "CJ022",
+      "sourceUrl": "https://www.instagram.com/p/DNKwgA6MQ9m/",
+      "canonicalSourceId": "CJ022",
+      "canonicalContentId": "DNKwgA6MQ9m",
+      "groundTruthStatus": "PROVISIONAL_BEST_GUESS",
+      "canonicalName": "Area Recreativa El Chantre (Rio Jucar)",
+      "acceptedAliases": [],
+      "latitude": 40.1424526,
+      "longitude": -2.1340885,
+      "acceptableRadiusMeters": 600,
+      "locality": "Cuenca",
+      "region": "Castilla-La Mancha",
+      "country": "Spain",
+      "evidence": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/DNKwgA6MQ9m/",
+          "shortFinding": "Caption is generic and names no location."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://caminosnaturales.es/es/red-de-caminos-naturales/poi-detalle/ID.06.33.05.09/72cf72e6-0ad9-4787-8440-ec137ae318bc",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "visualCorroboration": "Source frames and public feature descriptions were compared for terrain, water, structures, scale, and surrounding morphology; the degree of match is reflected in the status.",
+      "contradictions": [],
+      "confidenceNotes": "The cliff-lined river recreation area is consistent with the footage, but the source is generic and no same-clip proof was found."
+    },
+    {
+      "caseId": "CJ023",
+      "sourceUrl": "https://www.instagram.com/p/DCtiKTyIkxN/",
+      "canonicalSourceId": "CJ023",
+      "canonicalContentId": "DCtiKTyIkxN",
+      "groundTruthStatus": "VERIFIED_EXACT",
+      "canonicalName": "Bassin la Paix",
+      "acceptedAliases": [
+        "Bassin La Paix"
+      ],
+      "latitude": -21.0225,
+      "longitude": 55.669722,
+      "acceptableRadiusMeters": 300,
+      "locality": "Saint-Benoit",
+      "region": "La Reunion",
+      "country": "France",
+      "evidence": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/DCtiKTyIkxN/",
+          "shortFinding": "Caption explicitly names Bassin la Paix on La Reunion."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://fr.wikipedia.org/wiki/Bassin_la_Paix",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "visualCorroboration": "Source frames and public feature descriptions were compared for terrain, water, structures, scale, and surrounding morphology; the degree of match is reflected in the status.",
+      "contradictions": [],
+      "confidenceNotes": "The original caption explicitly names Bassin la Paix and Reunion; public mapping and waterfall descriptions match."
+    },
+    {
+      "caseId": "CJ024",
+      "sourceUrl": "https://www.instagram.com/p/Db3bZ_-Nz3R/",
+      "canonicalSourceId": "CJ024",
+      "canonicalContentId": "Db3bZ_-Nz3R",
+      "groundTruthStatus": "VERIFIED_EXACT",
+      "canonicalName": "Es Pontas",
+      "acceptedAliases": [
+        "Es Pontàs",
+        "Es Pontas"
+      ],
+      "latitude": 39.325556,
+      "longitude": 3.144722,
+      "acceptableRadiusMeters": 300,
+      "locality": "Santanyi",
+      "region": "Mallorca",
+      "country": "Spain",
+      "evidence": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/Db3bZ_-Nz3R/",
+          "shortFinding": "Caption explicitly hashtags Es Pontas and Mallorca and states 24 m."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://intranet.caib.es/geoturfront/es/puntos_interes/23/general.html",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "visualCorroboration": "Source frames and public feature descriptions were compared for terrain, water, structures, scale, and surrounding morphology; the degree of match is reflected in the status.",
+      "contradictions": [],
+      "confidenceNotes": "The original caption explicitly names #espontas and Mallorca and states 24 m; government geology mapping identifies the same 20 m sea arch."
+    },
+    {
+      "caseId": "CJ025",
+      "sourceUrl": "https://www.instagram.com/p/C-VuDm0PmCH/",
+      "canonicalSourceId": "CJ025",
+      "canonicalContentId": "C-VuDm0PmCH",
+      "groundTruthStatus": "VERIFIED_EXACT",
+      "canonicalName": "Fort Lauderdale Aquatic Center",
+      "acceptedAliases": [
+        "Fort Lauderdale Aquatic Center"
+      ],
+      "latitude": 26.1165615,
+      "longitude": -80.1058888,
+      "acceptableRadiusMeters": 300,
+      "locality": "Fort Lauderdale",
+      "region": "Florida",
+      "country": "United States",
+      "evidence": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/C-VuDm0PmCH/",
+          "shortFinding": "Caption identifies a 27 m High Dive Global competition, first place, and 2024 timing."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://ishof.org/inaugural-high-dive-live-show-who-will-becrowned-the-first-champion/",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "visualCorroboration": "Source frames and public feature descriptions were compared for terrain, water, structures, scale, and surrounding morphology; the degree of match is reflected in the status.",
+      "contradictions": [],
+      "confidenceNotes": "The source identifies a High Dive Global 27 m competition and timing; the documented 2024 event used the permanent 27 m Fort Lauderdale tower."
+    },
+    {
+      "caseId": "CJ026",
+      "sourceUrl": "https://www.instagram.com/p/Davq4ZDvO7f/",
+      "canonicalSourceId": "CJ026",
+      "canonicalContentId": "Davq4ZDvO7f",
+      "groundTruthStatus": "PROVISIONAL_BEST_GUESS",
+      "canonicalName": "Marble River Provincial Park",
+      "acceptedAliases": [],
+      "latitude": 50.5276127,
+      "longitude": -127.433662,
+      "acceptableRadiusMeters": 600,
+      "locality": "Port Alice",
+      "region": "British Columbia",
+      "country": "Canada",
+      "evidence": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/Davq4ZDvO7f/",
+          "shortFinding": "Caption is generic and names no location."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://bcparks.ca/marble-river-park/",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "visualCorroboration": "Source frames and public feature descriptions were compared for terrain, water, structures, scale, and surrounding morphology; the degree of match is reflected in the status.",
+      "contradictions": [
+        "BC Parks describes no designated river swimming, weakening a cliff-jump identification."
+      ],
+      "confidenceNotes": "The limestone canyon is plausible, but BC Parks says river swimming is not designated and no same-clip or creator location evidence was found."
+    },
+    {
+      "caseId": "CJ027",
+      "sourceUrl": "https://www.instagram.com/p/C9NorfaPN3T/",
+      "canonicalSourceId": "CJ027",
+      "canonicalContentId": "C9NorfaPN3T",
+      "groundTruthStatus": "VERIFIED_EXACT",
+      "canonicalName": "Koosah Falls",
+      "acceptedAliases": [
+        "Koosah Falls"
+      ],
+      "latitude": 44.3440102,
+      "longitude": -122.0006166,
+      "acceptableRadiusMeters": 300,
+      "locality": "McKenzie Bridge",
+      "region": "Oregon",
+      "country": "United States",
+      "evidence": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/C9NorfaPN3T/",
+          "shortFinding": "Caption explicitly names Koosah Falls and Oregon."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://www.youtube.com/watch?v=uVrXc6k80Xc",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "visualCorroboration": "Source frames and public feature descriptions were compared for terrain, water, structures, scale, and surrounding morphology; the degree of match is reflected in the status.",
+      "contradictions": [],
+      "confidenceNotes": "The original caption explicitly says Koosah Falls and Oregon; public waterfall measurements and imagery match."
+    },
+    {
+      "caseId": "CJ028",
+      "sourceUrl": "https://www.instagram.com/p/C87QU_LJNCK/",
+      "canonicalSourceId": "CJ028",
+      "canonicalContentId": "C87QU_LJNCK",
+      "groundTruthStatus": "PROVISIONAL_BEST_GUESS",
+      "canonicalName": "Koosah Falls",
+      "acceptedAliases": [],
+      "latitude": 44.3440102,
+      "longitude": -122.0006166,
+      "acceptableRadiusMeters": 600,
+      "locality": "McKenzie Bridge",
+      "region": "Oregon",
+      "country": "United States",
+      "evidence": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/C87QU_LJNCK/",
+          "shortFinding": "Caption is generic and names no location."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://www.waterfallsnorthwest.com/waterfall/Koosah-Falls-4270",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "visualCorroboration": "Source frames and public feature descriptions were compared for terrain, water, structures, scale, and surrounding morphology; the degree of match is reflected in the status.",
+      "contradictions": [],
+      "confidenceNotes": "The broad undercut basalt waterfall strongly resembles Koosah, but the source supplies no geographic clue and no same-clip match was found."
+    },
+    {
+      "caseId": "CJ029",
+      "sourceUrl": "https://www.instagram.com/p/DGRIr0SvMMX/",
+      "canonicalSourceId": "CJ029",
+      "canonicalContentId": "DGRIr0SvMMX",
+      "groundTruthStatus": "HIGH_CONFIDENCE_EXACT",
+      "canonicalName": "Tamolitch Blue Pool",
+      "acceptedAliases": [
+        "Tamolitch Falls",
+        "Blue Pool",
+        "Tamolitch Falls (Blue Pool)"
+      ],
+      "latitude": 44.3120373,
+      "longitude": -122.0270488,
+      "acceptableRadiusMeters": 600,
+      "locality": "McKenzie Bridge",
+      "region": "Oregon",
+      "country": "United States",
+      "evidence": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/DGRIr0SvMMX/",
+          "shortFinding": "Caption describes exceptionally blue water and a 57 ft jump but gives no geography."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://visitmckenzieriver.com/places/tamolitch-blue-pool/",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "visualCorroboration": "Source frames and public feature descriptions were compared for terrain, water, structures, scale, and surrounding morphology; the degree of match is reflected in the status.",
+      "contradictions": [],
+      "confidenceNotes": "The source states a 57 ft jump into exceptionally blue water; independent cliff-jumping media reports about 54 ft at Tamolitch and imagery matches."
+    },
+    {
+      "caseId": "CJ030",
+      "sourceUrl": "https://www.instagram.com/p/DWTZd0IEZSA/",
+      "canonicalSourceId": "CJ030",
+      "canonicalContentId": "DWTZd0IEZSA",
+      "groundTruthStatus": "HIGH_CONFIDENCE_EXACT",
+      "canonicalName": "Honeymoon Beach cliff-jumping ledge",
+      "acceptedAliases": [
+        "Honeymoon Beach",
+        "Jimbaran Panorama Point"
+      ],
+      "latitude": -8.7797316,
+      "longitude": 115.1439517,
+      "acceptableRadiusMeters": 600,
+      "locality": "Jimbaran",
+      "region": "Bali",
+      "country": "Indonesia",
+      "evidence": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/DWTZd0IEZSA/",
+          "shortFinding": "Caption identifies Bali but not the beach."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://bali.live/p/cliff-jumping-in-bali-where-can-you-go-cliff-jumping-in-bali",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "visualCorroboration": "Source frames and public feature descriptions were compared for terrain, water, structures, scale, and surrounding morphology; the degree of match is reflected in the status.",
+      "contradictions": [],
+      "confidenceNotes": "The source says Bali; independent Bali cliff-jumping guides identify and map this distinctive ledge at Honeymoon Beach/Jimbaran Panorama Point."
+    },
+    {
+      "caseId": "CJ031",
+      "sourceUrl": "https://www.instagram.com/p/C9sIk72u5PM/",
+      "canonicalSourceId": "CJ031",
+      "canonicalContentId": "C9sIk72u5PM",
+      "groundTruthStatus": "HIGH_CONFIDENCE_EXACT",
+      "canonicalName": "Dorset Marble Quarry",
+      "acceptedAliases": [
+        "Dorset Quarry",
+        "Dorset Marble Quarry"
+      ],
+      "latitude": 43.2359604,
+      "longitude": -73.0834756,
+      "acceptableRadiusMeters": 600,
+      "locality": "Dorset",
+      "region": "Vermont",
+      "country": "United States",
+      "evidence": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/C9sIk72u5PM/",
+          "shortFinding": "Caption identifies Vermont and an 81 ft/25 m jump."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://www.nhpr.org/national/2015-08-07/vermonts-marble-mecca-a-worthy-swimming-hole-for-cliff-jumping-pilgrims",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "visualCorroboration": "Source frames and public feature descriptions were compared for terrain, water, structures, scale, and surrounding morphology; the degree of match is reflected in the status.",
+      "contradictions": [],
+      "confidenceNotes": "The source says Vermont and 81 ft/25 m; the flooded white-marble quarry walls match Dorset, which is independently documented for cliff jumping."
+    },
+    {
+      "caseId": "CJ032",
+      "sourceUrl": "https://www.instagram.com/p/CvQED2QtBZe/",
+      "canonicalSourceId": "CJ032",
+      "canonicalContentId": "CvQED2QtBZe",
+      "groundTruthStatus": "HIGH_CONFIDENCE_EXACT",
+      "canonicalName": "Torre Incina at Cala Incina",
+      "acceptedAliases": [
+        "Torre Incina",
+        "Cala Incina"
+      ],
+      "latitude": 40.9791166,
+      "longitude": 17.2581139,
+      "acceptableRadiusMeters": 600,
+      "locality": "Monopoli",
+      "region": "Apulia",
+      "country": "Italy",
+      "evidence": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/CvQED2QtBZe/",
+          "shortFinding": "Hashtags identify Italy and Polignano a Mare."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://www.comune.monopoli.ba.it/Vivere-il-comune/Luoghi/Torre-Incina",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "visualCorroboration": "Source frames and public feature descriptions were compared for terrain, water, structures, scale, and surrounding morphology; the degree of match is reflected in the status.",
+      "contradictions": [],
+      "confidenceNotes": "The source tags Italy and Polignano a Mare; public local sources document high-rock diving beside Torre Incina and the coastal tower/ledge morphology matches."
+    },
+    {
+      "caseId": "CJ033",
+      "sourceUrl": "https://www.instagram.com/p/CaB4Ve1NIW_/",
+      "canonicalSourceId": "CJ033",
+      "canonicalContentId": "CaB4Ve1NIW_",
+      "groundTruthStatus": "PROVISIONAL_BEST_GUESS",
+      "canonicalName": "Waimea Bay Jump Rock",
+      "acceptedAliases": [],
+      "latitude": 21.6405,
+      "longitude": -158.064,
+      "acceptableRadiusMeters": 600,
+      "locality": "Haleiwa",
+      "region": "Hawaii",
+      "country": "United States",
+      "evidence": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/CaB4Ve1NIW_/",
+          "shortFinding": "Caption is generic and names no location."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://cliffscout.com/spots/hawaii",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "visualCorroboration": "Source frames and public feature descriptions were compared for terrain, water, structures, scale, and surrounding morphology; the degree of match is reflected in the status.",
+      "contradictions": [],
+      "confidenceNotes": "The boulder and shore geometry match Waimea Jump Rock, but the source contains no geographic clue and no same-clip naming source was found."
+    },
+    {
+      "caseId": "CJ034",
+      "sourceUrl": "https://www.instagram.com/p/Cj80H_jAXkm/",
+      "canonicalSourceId": "CJ034",
+      "canonicalContentId": "Cj80H_jAXkm",
+      "groundTruthStatus": "VERIFIED_EXACT",
+      "canonicalName": "New River Gorge Bridge",
+      "acceptedAliases": [
+        "New River Gorge Bridge"
+      ],
+      "latitude": 38.0679835,
+      "longitude": -81.0843062,
+      "acceptableRadiusMeters": 300,
+      "locality": "Fayetteville",
+      "region": "West Virginia",
+      "country": "United States",
+      "evidence": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/Cj80H_jAXkm/",
+          "shortFinding": "Hashtags explicitly identify Bridge Day, New River Gorge and West Virginia."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://officialbridgeday.com/",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "visualCorroboration": "Source frames and public feature descriptions were compared for terrain, water, structures, scale, and surrounding morphology; the degree of match is reflected in the status.",
+      "contradictions": [],
+      "confidenceNotes": "The source explicitly tags Bridge Day, New River Gorge and West Virginia; the bridge is unmistakable. This is BASE jumping, not a water cliff jump."
+    },
+    {
+      "caseId": "CJ035",
+      "sourceUrl": "https://www.instagram.com/p/CxVz9cQxiGW/",
+      "canonicalSourceId": "CJ035",
+      "canonicalContentId": "CxVz9cQxiGW",
+      "groundTruthStatus": "PROVISIONAL_BEST_GUESS",
+      "canonicalName": "The Toilet Bowl at Lake Powell",
+      "acceptedAliases": [],
+      "latitude": 37.0740541,
+      "longitude": -111.3137875,
+      "acceptableRadiusMeters": 600,
+      "locality": null,
+      "region": "Utah/Arizona",
+      "country": "United States",
+      "evidence": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/CxVz9cQxiGW/",
+          "shortFinding": "Caption says Powell and hashtags identify Lake Powell."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://www.reddit.com/r/LakePowell/comments/1eo5llm",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "visualCorroboration": "Source frames and public feature descriptions were compared for terrain, water, structures, scale, and surrounding morphology; the degree of match is reflected in the status.",
+      "contradictions": [
+        "Public sources conflict over Toilet Bowl versus Hole in the Roof and publish multiple coordinates."
+      ],
+      "confidenceNotes": "The source identifies Lake Powell and the enclosed slickrock hole is plausible, but public sources use Toilet Bowl/Hole in the Roof inconsistently and publish competing coordinates."
+    },
+    {
+      "caseId": "CJ036",
+      "sourceUrl": "https://www.instagram.com/p/DUppjPgEngm/",
+      "canonicalSourceId": "CJ036",
+      "canonicalContentId": "DUppjPgEngm",
+      "groundTruthStatus": "VERIFIED_EXACT",
+      "canonicalName": "Balangan Beach cliffs",
+      "acceptedAliases": [
+        "Balangan Beach",
+        "Balangan cliffs"
+      ],
+      "latitude": -8.7924,
+      "longitude": 115.1247,
+      "acceptableRadiusMeters": 300,
+      "locality": "South Kuta",
+      "region": "Bali",
+      "country": "Indonesia",
+      "evidence": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/DUppjPgEngm/",
+          "shortFinding": "Hashtags explicitly identify Bali, Balangan and Balangan Beach."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://finnsbeachclub.com/guides/best-cliff-jumping-spots-bali/",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "visualCorroboration": "Source frames and public feature descriptions were compared for terrain, water, structures, scale, and surrounding morphology; the degree of match is reflected in the status.",
+      "contradictions": [],
+      "confidenceNotes": "The original source explicitly tags Bali, Balangan and Balangan Beach; public cliff-jumping guides describe the same cliffs."
+    },
+    {
+      "caseId": "CJ037",
+      "sourceUrl": "https://www.instagram.com/p/DKPf-PjI1Rq/",
+      "canonicalSourceId": "CJ037",
+      "canonicalContentId": "DKPf-PjI1Rq",
+      "groundTruthStatus": "HIGH_CONFIDENCE_EXACT",
+      "canonicalName": "Cascade des Baumes",
+      "acceptedAliases": [
+        "Cascade de Saint-Rome-de-Tarn",
+        "Cascade des Baumes"
+      ],
+      "latitude": 44.051343,
+      "longitude": 2.894375,
+      "acceptableRadiusMeters": 600,
+      "locality": "Saint-Rome-de-Tarn",
+      "region": "Occitanie",
+      "country": "France",
+      "evidence": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/DKPf-PjI1Rq/",
+          "shortFinding": "Caption describes a 20 m competition spot near Millau."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://www.tourisme-muse-raspes.com/diffusio/fr/visiter/sites-naturels/st-rome-de-tarn/cascade-des-baumes_TFO392116792284.php",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "visualCorroboration": "Source frames and public feature descriptions were compared for terrain, water, structures, scale, and surrounding morphology; the degree of match is reflected in the status.",
+      "contradictions": [],
+      "confidenceNotes": "The source says a 20 m championship spot near Millau; the tourism office describes the 18 m Cascade des Baumes dropping into the Tarn and public imagery matches."
+    },
+    {
+      "caseId": "CJ038",
+      "sourceUrl": "https://www.instagram.com/p/CsjqggyA2qu/",
+      "canonicalSourceId": "CJ038",
+      "canonicalContentId": "CsjqggyA2qu",
+      "groundTruthStatus": "PROVISIONAL_BEST_GUESS",
+      "canonicalName": "Gunlock Falls",
+      "acceptedAliases": [],
+      "latitude": 37.258,
+      "longitude": -113.77,
+      "acceptableRadiusMeters": 600,
+      "locality": "Gunlock",
+      "region": "Utah",
+      "country": "United States",
+      "evidence": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/CsjqggyA2qu/",
+          "shortFinding": "Caption is generic and names no location."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://stateparks.utah.gov/parks/gunlock/gunlock-falls/",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "visualCorroboration": "Source frames and public feature descriptions were compared for terrain, water, structures, scale, and surrounding morphology; the degree of match is reflected in the status.",
+      "contradictions": [],
+      "confidenceNotes": "The stepped red-rock seasonal falls are consistent and independently documented as a cliff-jumping site, but the source supplies no location clue."
+    },
+    {
+      "caseId": "CJ039",
+      "sourceUrl": "https://www.instagram.com/p/C9cvc9Xveub/",
+      "canonicalSourceId": "CJ039",
+      "canonicalContentId": "C9cvc9Xveub",
+      "groundTruthStatus": "PROVISIONAL_BEST_GUESS",
+      "canonicalName": "Escalante Potholes Recreation Site",
+      "acceptedAliases": [],
+      "latitude": 38.6698802,
+      "longitude": -108.3281999,
+      "acceptableRadiusMeters": 600,
+      "locality": "Delta",
+      "region": "Colorado",
+      "country": "United States",
+      "evidence": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/C9cvc9Xveub/",
+          "shortFinding": "Caption is generic and names no location."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://www.blm.gov/press-release/heavy-snowpack-increases-safety-concerns-blm-uncompahgre-recreational-users",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "visualCorroboration": "Source frames and public feature descriptions were compared for terrain, water, structures, scale, and surrounding morphology; the degree of match is reflected in the status.",
+      "contradictions": [],
+      "confidenceNotes": "The carved granite pools fit the BLM-described Escalante Potholes cliff-jumping site, but the source has no location clue and no same-clip match."
+    },
+    {
+      "caseId": "CJ040",
+      "sourceUrl": "https://www.instagram.com/p/Cty5hdxA-dx/",
+      "canonicalSourceId": "CJ040",
+      "canonicalContentId": "Cty5hdxA-dx",
+      "groundTruthStatus": "HIGH_CONFIDENCE_EXACT",
+      "canonicalName": "Koosah Falls",
+      "acceptedAliases": [
+        "Koosah Falls"
+      ],
+      "latitude": 44.3440102,
+      "longitude": -122.0006166,
+      "acceptableRadiusMeters": 600,
+      "locality": "McKenzie Bridge",
+      "region": "Oregon",
+      "country": "United States",
+      "evidence": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/Cty5hdxA-dx/",
+          "shortFinding": "Hashtags identify Oregon and the Pacific Northwest."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://www.youtube.com/watch?v=7YPT9bs7JIY",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "visualCorroboration": "Source frames and public feature descriptions were compared for terrain, water, structures, scale, and surrounding morphology; the degree of match is reflected in the status.",
+      "contradictions": [],
+      "confidenceNotes": "The source tags Oregon/PNW; the 74 ft broad undercut basalt drop and pool match Koosah across multiple public cliff-jumping videos."
+    },
+    {
+      "caseId": "CJ041",
+      "sourceUrl": "https://www.instagram.com/p/CoDBylYjjTH/",
+      "canonicalSourceId": "CJ041",
+      "canonicalContentId": "CoDBylYjjTH",
+      "groundTruthStatus": "PROVISIONAL_BEST_GUESS",
+      "canonicalName": "Cenote Zaci",
+      "acceptedAliases": [],
+      "latitude": 20.6916378,
+      "longitude": -88.1973463,
+      "acceptableRadiusMeters": 600,
+      "locality": "Valladolid",
+      "region": "Yucatan",
+      "country": "Mexico",
+      "evidence": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/CoDBylYjjTH/",
+          "shortFinding": "Caption is generic and names no location."
+        },
+        {
+          "type": "INDEPENDENT_PUBLIC_SOURCE",
+          "source": "https://en.wikipedia.org/wiki/Cenote_Zac%C3%AD",
+          "shortFinding": "Confirms the candidate feature, geography, morphology, event, or cliff-jumping use described in the confidence note."
+        }
+      ],
+      "visualCorroboration": "Source frames and public feature descriptions were compared for terrain, water, structures, scale, and surrounding morphology; the degree of match is reflected in the status.",
+      "contradictions": [],
+      "confidenceNotes": "The large open cenote and urban masonry are consistent with Zaci, but the source provides no location clue and no same-clip match was found."
+    },
+    {
+      "caseId": "CJ042",
+      "sourceUrl": "https://www.instagram.com/p/Dc1-OPBBGEP/",
+      "canonicalSourceId": "CJ042",
+      "canonicalContentId": "Dc1-OPBBGEP",
+      "groundTruthStatus": "UNRESOLVED",
+      "canonicalName": "Three-location montage (individual clips unresolved)",
+      "acceptedAliases": [],
+      "latitude": null,
+      "longitude": null,
+      "acceptableRadiusMeters": null,
+      "locality": null,
+      "region": null,
+      "country": null,
+      "evidence": [
+        {
+          "type": "ORIGINAL_SOURCE",
+          "source": "https://www.instagram.com/p/Dc1-OPBBGEP/",
+          "shortFinding": "Caption identifies a montage and asks which jump was favorite; no locations are named."
+        }
+      ],
+      "visualCorroboration": "The available scene supports only the bounded regional or multi-location statement; it does not uniquely identify a named feature.",
+      "contradictions": [],
+      "confidenceNotes": "The source asks which jump was favorite but names none. Sol proposed Lake Atitlan, Fiordo di Furore and Ho’opi’i Falls; none was independently tied to a specific segment."
+    }
+  ]
+}

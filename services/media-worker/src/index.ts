@@ -19,6 +19,7 @@ import { SnapchatMediaResolver } from './resolvers/SnapchatMediaResolver.js';
 import { selectTranscriptionProvider } from './providers/transcription.js';
 import { selectModelProvider } from './providers/model.js';
 import { createPremiumRecognitionModel } from './premium/premiumRecognitionAdapter.js';
+import { withAutomaticDeepRecognition } from './automaticDeep/automaticDeepRecognitionProvider.js';
 import { selectOcrProvider } from './providers/ocr.js';
 import { startServer, type ServerContext } from './server/httpServer.js';
 import type { TaskDeps } from './pipeline/runMediaTask.js';
@@ -42,7 +43,7 @@ function main(): void {
         new SnapchatMediaResolver(cfg),
       ],
       transcription: selectTranscriptionProvider(cfg),
-      model: selectModelProvider(cfg),
+      model: withAutomaticDeepRecognition(selectModelProvider(cfg), cfg),
       premiumModel: createPremiumRecognitionModel(cfg),
       ocr: selectOcrProvider(cfg),
     };

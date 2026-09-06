@@ -1,0 +1,706 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-09-06T00:04:53.050Z",
+  "reviewer": "Independent post-inference evidence review",
+  "results": [
+    {
+      "caseId": "CJ001",
+      "groundTruthStatus": "PROVISIONAL_BEST_GUESS",
+      "bestResearchedHypothesis": "Lac de Vouglans",
+      "productionCandidates": [],
+      "simpleSolCandidates": [
+        {
+          "rank": 1,
+          "name": "Lac de Vouglans",
+          "rawName": "Lac de Vouglans",
+          "status": "CANONICAL_EXACT",
+          "latitude": 46.485,
+          "longitude": 5.680833
+        },
+        {
+          "rank": 2,
+          "name": "Gorges de l’Ardèche",
+          "rawName": "Gorges de l’Ardèche",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 3,
+          "name": "Gorges du Tarn",
+          "rawName": "Gorges du Tarn",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "topCandidatePlausibility": "STRONGLY_PLAUSIBLE",
+      "finding": "A 22.5 m jump and wooded, horizontally bedded limestone reservoir fit Vouglans, but no public post or independent same-clip source names it.",
+      "reviewedCandidate": "Lac de Vouglans",
+      "accuracyMaxCandidates": [
+        {
+          "rank": 1,
+          "name": "Gorges de l’Hérault — Causse-de-la-Selle sector",
+          "rawName": "Gorges de l’Hérault — Causse-de-la-Selle sector",
+          "status": "AMBIGUOUS_CANONICAL",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 2,
+          "name": "Pont du Diable and the lower Gorges de l’Hérault",
+          "rawName": "Pont du Diable and the lower Gorges de l’Hérault",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 3,
+          "name": "Gorges du Chassezac",
+          "rawName": "Gorges du Chassezac",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "accuracyMaxPlausibility": "PLAUSIBLE"
+    },
+    {
+      "caseId": "CJ002",
+      "groundTruthStatus": "UNRESOLVED",
+      "bestResearchedHypothesis": "Marseille multi-location montage (individual clips unresolved)",
+      "productionCandidates": [],
+      "simpleSolCandidates": [
+        {
+          "rank": 1,
+          "name": "La Vesse",
+          "rawName": "Calanque de la Vesse and the Côte Bleue railway cliffs",
+          "status": "CANONICAL_ALIAS",
+          "latitude": 43.343916,
+          "longitude": 5.257961
+        },
+        {
+          "rank": 2,
+          "name": "Fort Saint-Jean",
+          "rawName": "Fort Saint-Jean at Marseille’s Vieux-Port",
+          "status": "CANONICAL_ALIAS",
+          "latitude": 43.2953604,
+          "longitude": 5.3617108
+        },
+        {
+          "rank": 3,
+          "name": "Abandoned Piscine de Luminy",
+          "rawName": "Abandoned Piscine de Luminy",
+          "status": "NAMED_LEAD",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "topCandidatePlausibility": "STRONGLY_PLAUSIBLE",
+      "finding": "The source supplies Marseille only; the five exact clip identities proposed by Sol could not be independently tied to the individual montage segments.",
+      "reviewedCandidate": "La Vesse",
+      "accuracyMaxCandidates": [
+        {
+          "rank": 1,
+          "name": "Viaduc du Jonquier / Calanque du Jonquier",
+          "rawName": "Viaduc du Jonquier / Calanque du Jonquier",
+          "status": "AMBIGUOUS_CANONICAL",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 2,
+          "name": "Tour du Roi René",
+          "rawName": "Tour du Roi René, Fort Saint-Jean",
+          "status": "CANONICAL_ALIAS",
+          "latitude": 43.2946546,
+          "longitude": 5.3629587999999995
+        },
+        {
+          "rank": 3,
+          "name": "Campus Luminy",
+          "rawName": "Former Luminy swimming pool",
+          "status": "CANONICAL_ALIAS",
+          "latitude": 43.2342075,
+          "longitude": 5.4403893
+        }
+      ],
+      "accuracyMaxPlausibility": "PLAUSIBLE"
+    },
+    {
+      "caseId": "CJ010",
+      "groundTruthStatus": "UNRESOLVED",
+      "bestResearchedHypothesis": "Unidentified Mallorca coastal sea hole",
+      "productionCandidates": [],
+      "simpleSolCandidates": [
+        {
+          "rank": 1,
+          "name": "Unidentified coastal sea cave or blowhole on Mallorca",
+          "rawName": "Unidentified coastal sea cave or blowhole on Mallorca",
+          "status": "NAMED_LEAD",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "topCandidatePlausibility": "WEAK",
+      "finding": "The answer is regionally bounded but is not a named physical destination.",
+      "reviewedCandidate": "Unidentified coastal sea cave or blowhole on Mallorca",
+      "accuracyMaxCandidates": [
+        {
+          "rank": 1,
+          "name": "Cala s’Almunia natural rock pool/blowhole",
+          "rawName": "Cala s’Almunia natural rock pool/blowhole",
+          "status": "NAMED_LEAD",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 2,
+          "name": "Caló des Moro (Cala de sa Comuna)",
+          "rawName": "Caló des Moro (Cala de sa Comuna)",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "accuracyMaxPlausibility": "PLAUSIBLE"
+    },
+    {
+      "caseId": "CJ018",
+      "groundTruthStatus": "PROVISIONAL_BEST_GUESS",
+      "bestResearchedHypothesis": "Embalse de La Toba",
+      "productionCandidates": [],
+      "simpleSolCandidates": [
+        {
+          "rank": 1,
+          "name": "Embalse de la Toba",
+          "rawName": "Embalse de La Toba",
+          "status": "CANONICAL_EXACT",
+          "latitude": 40.208281199999995,
+          "longitude": -1.9068707999999999
+        },
+        {
+          "rank": 2,
+          "name": "Embalse del Portillo",
+          "rawName": "Embalse del Portillo",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 3,
+          "name": "Embalse de Escales",
+          "rawName": "Embalse de Escales",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "topCandidatePlausibility": "STRONGLY_PLAUSIBLE",
+      "finding": "The reservoir setting is visually consistent, but the source is generic and no same-clip or creator evidence tied it to La Toba.",
+      "reviewedCandidate": "Embalse de la Toba",
+      "accuracyMaxCandidates": [
+        {
+          "rank": 1,
+          "name": "Caminito del Rey . North Access",
+          "rawName": "Embalse de Gaitanejo, at the northern entrance to Caminito del Rey",
+          "status": "CANONICAL_ALIAS",
+          "latitude": 36.931809699999995,
+          "longitude": -4.7899538
+        }
+      ],
+      "accuracyMaxPlausibility": "PLAUSIBLE"
+    },
+    {
+      "caseId": "CJ021",
+      "groundTruthStatus": "UNRESOLVED",
+      "bestResearchedHypothesis": "Unnamed waterfall on Nahua Expeditions’ Tzotzil route",
+      "productionCandidates": [],
+      "simpleSolCandidates": [
+        {
+          "rank": 1,
+          "name": "Unidentified jungle waterfall on Nahua Expeditions’ Tzotzil Expedition route",
+          "rawName": "Unidentified jungle waterfall on Nahua Expeditions’ Tzotzil Expedition route",
+          "status": "NAMED_LEAD",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 2,
+          "name": "Cascada El Aguacero",
+          "rawName": "Cascada El Aguacero",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "topCandidatePlausibility": "WEAK",
+      "finding": "The answer is regionally bounded but is not a named physical destination.",
+      "reviewedCandidate": "Unidentified jungle waterfall on Nahua Expeditions’ Tzotzil Expedition route",
+      "accuracyMaxCandidates": [
+        {
+          "rank": 1,
+          "name": "Cascada el ensueño",
+          "rawName": "Cascada El Ensueño, Cañón del Río La Venta",
+          "status": "CANONICAL_ALIAS",
+          "latitude": 16.9517842,
+          "longitude": -93.7249949
+        }
+      ],
+      "accuracyMaxPlausibility": "PLAUSIBLE"
+    },
+    {
+      "caseId": "CJ022",
+      "groundTruthStatus": "PROVISIONAL_BEST_GUESS",
+      "bestResearchedHypothesis": "Area Recreativa El Chantre (Rio Jucar)",
+      "productionCandidates": [],
+      "simpleSolCandidates": [
+        {
+          "rank": 1,
+          "name": "Área recreativa Chantre",
+          "rawName": "Área Recreativa El Chantre (Río Júcar)",
+          "status": "CANONICAL_ALIAS",
+          "latitude": 40.1424526,
+          "longitude": -2.1340885
+        },
+        {
+          "rank": 2,
+          "name": "Las Chorreras del Cabriel",
+          "rawName": "Las Chorreras del Cabriel",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 3,
+          "name": "Área Recreativa de Cañamares (Río Escabas)",
+          "rawName": "Área Recreativa de Cañamares (Río Escabas)",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "topCandidatePlausibility": "STRONGLY_PLAUSIBLE",
+      "finding": "The cliff-lined river recreation area is consistent with the footage, but the source is generic and no same-clip proof was found.",
+      "reviewedCandidate": "Área recreativa Chantre",
+      "accuracyMaxCandidates": [
+        {
+          "rank": 1,
+          "name": "Área Recreativa La Falaguera II",
+          "rawName": "Área Recreativa La Falaguera II",
+          "status": "PARENT_ONLY_MATCH",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 2,
+          "name": "Área Recreativa Fuente La Falaguera I",
+          "rawName": "Área Recreativa Fuente La Falaguera I",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "accuracyMaxPlausibility": "PLAUSIBLE"
+    },
+    {
+      "caseId": "CJ026",
+      "groundTruthStatus": "PROVISIONAL_BEST_GUESS",
+      "bestResearchedHypothesis": "Marble River Provincial Park",
+      "productionCandidates": [],
+      "simpleSolCandidates": [
+        {
+          "rank": 1,
+          "name": "Marble River Provincial Park",
+          "rawName": "Marble River Provincial Park",
+          "status": "CANONICAL_EXACT",
+          "latitude": 50.5276127,
+          "longitude": -127.43366199999998
+        },
+        {
+          "rank": 2,
+          "name": "Medicine Bowls (Browns River)",
+          "rawName": "Medicine Bowls (Browns River)",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 3,
+          "name": "Three Pools Recreation Area",
+          "rawName": "Three Pools Recreation Area",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "topCandidatePlausibility": "CONTRADICTED",
+      "finding": "The park identity is geographically possible, but the managing authority’s no-river-swimming statement conflicts with the depicted use.",
+      "reviewedCandidate": "Marble River Provincial Park",
+      "accuracyMaxCandidates": [
+        {
+          "rank": 1,
+          "name": "Emerald Pools Recreational Area (South Yuba River)",
+          "rawName": "Emerald Pools Recreational Area (South Yuba River)",
+          "status": "NAMED_LEAD",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 2,
+          "name": "North Fork Falls",
+          "rawName": "North Fork Falls",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 3,
+          "name": "Sooke Potholes",
+          "rawName": "Sooke Potholes",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "accuracyMaxPlausibility": "PLAUSIBLE"
+    },
+    {
+      "caseId": "CJ028",
+      "groundTruthStatus": "PROVISIONAL_BEST_GUESS",
+      "bestResearchedHypothesis": "Koosah Falls",
+      "productionCandidates": [],
+      "simpleSolCandidates": [
+        {
+          "rank": 1,
+          "name": "Koosah Falls",
+          "rawName": "Koosah Falls",
+          "status": "CANONICAL_EXACT",
+          "latitude": 44.3440102,
+          "longitude": -122.0006166
+        },
+        {
+          "rank": 2,
+          "name": "Sahalie Falls",
+          "rawName": "Sahalie Falls",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 3,
+          "name": "Lower Lewis River Falls",
+          "rawName": "Lower Lewis River Falls",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "topCandidatePlausibility": "STRONGLY_PLAUSIBLE",
+      "finding": "The broad undercut basalt waterfall strongly resembles Koosah, but the source supplies no geographic clue and no same-clip match was found.",
+      "reviewedCandidate": "Koosah Falls",
+      "accuracyMaxCandidates": [
+        {
+          "rank": 1,
+          "name": "Koosah Falls",
+          "rawName": "Koosah Falls",
+          "status": "CANONICAL_EXACT",
+          "latitude": 44.3440102,
+          "longitude": -122.0006166
+        },
+        {
+          "rank": 2,
+          "name": "Middle McCloud Falls",
+          "rawName": "Middle McCloud Falls",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 3,
+          "name": "Toketee Falls",
+          "rawName": "Toketee Falls",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "accuracyMaxPlausibility": "PLAUSIBLE"
+    },
+    {
+      "caseId": "CJ033",
+      "groundTruthStatus": "PROVISIONAL_BEST_GUESS",
+      "bestResearchedHypothesis": "Waimea Bay Jump Rock",
+      "productionCandidates": [],
+      "simpleSolCandidates": [
+        {
+          "rank": 1,
+          "name": "Waimea Bay Jump Rock",
+          "rawName": "Waimea Bay Jump Rock",
+          "status": "PARENT_ONLY_MATCH",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 2,
+          "name": "Black Rock (Puʻu Kekaʻa)",
+          "rawName": "Black Rock (Puʻu Kekaʻa)",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "topCandidatePlausibility": "STRONGLY_PLAUSIBLE",
+      "finding": "The boulder and shore geometry match Waimea Jump Rock, but the source contains no geographic clue and no same-clip naming source was found.",
+      "reviewedCandidate": "Waimea Bay Jump Rock",
+      "accuracyMaxCandidates": [
+        {
+          "rank": 1,
+          "name": "Jump Rock at Waimea Bay",
+          "rawName": "Jump Rock at Waimea Bay",
+          "status": "NAMED_LEAD",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 2,
+          "name": "Black Rock (Puʻu Kekaʻa)",
+          "rawName": "Black Rock (Puʻu Kekaʻa)",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "accuracyMaxPlausibility": "PLAUSIBLE"
+    },
+    {
+      "caseId": "CJ035",
+      "groundTruthStatus": "PROVISIONAL_BEST_GUESS",
+      "bestResearchedHypothesis": "The Toilet Bowl at Lake Powell",
+      "productionCandidates": [],
+      "simpleSolCandidates": [
+        {
+          "rank": 1,
+          "name": "The Toilet Bowl at Lake Powell",
+          "rawName": "The Toilet Bowl at Lake Powell",
+          "status": "PARENT_ONLY_MATCH",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 2,
+          "name": "Lake Powell",
+          "rawName": "Lake Powell",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "topCandidatePlausibility": "STRONGLY_PLAUSIBLE",
+      "finding": "The source identifies Lake Powell and the enclosed slickrock hole is plausible, but public sources use Toilet Bowl/Hole in the Roof inconsistently and publish competing coordinates.",
+      "reviewedCandidate": "The Toilet Bowl at Lake Powell",
+      "accuracyMaxCandidates": [],
+      "accuracyMaxPlausibility": "NOT_RUN"
+    },
+    {
+      "caseId": "CJ038",
+      "groundTruthStatus": "PROVISIONAL_BEST_GUESS",
+      "bestResearchedHypothesis": "Gunlock Falls",
+      "productionCandidates": [],
+      "simpleSolCandidates": [
+        {
+          "rank": 1,
+          "name": "Gunlock Falls",
+          "rawName": "Gunlock Falls",
+          "status": "NAMED_LEAD",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "topCandidatePlausibility": "STRONGLY_PLAUSIBLE",
+      "finding": "The stepped red-rock seasonal falls are consistent and independently documented as a cliff-jumping site, but the source supplies no location clue.",
+      "reviewedCandidate": "Gunlock Falls",
+      "accuracyMaxCandidates": [
+        {
+          "rank": 1,
+          "name": "Gunlock Falls at Gunlock State Park",
+          "rawName": "Gunlock Falls at Gunlock State Park",
+          "status": "PARENT_ONLY_MATCH",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "accuracyMaxPlausibility": "PLAUSIBLE"
+    },
+    {
+      "caseId": "CJ039",
+      "groundTruthStatus": "PROVISIONAL_BEST_GUESS",
+      "bestResearchedHypothesis": "Escalante Potholes Recreation Site",
+      "productionCandidates": [],
+      "simpleSolCandidates": [
+        {
+          "rank": 1,
+          "name": "Escalante Potholes Recreation Site",
+          "rawName": "Escalante Potholes Recreation Site",
+          "status": "PARENT_ONLY_MATCH",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 2,
+          "name": "Cauldron Linn",
+          "rawName": "Cauldron Linn",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 3,
+          "name": "White River Falls",
+          "rawName": "White River Falls",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "topCandidatePlausibility": "STRONGLY_PLAUSIBLE",
+      "finding": "The carved granite pools fit the BLM-described Escalante Potholes cliff-jumping site, but the source has no location clue and no same-clip match.",
+      "reviewedCandidate": "Escalante Potholes Recreation Site",
+      "accuracyMaxCandidates": [
+        {
+          "rank": 1,
+          "name": "Cline Falls Viewpoint",
+          "rawName": "Cline Falls and the former Cline Falls hydroelectric site",
+          "status": "CANONICAL_ALIAS",
+          "latitude": 44.2782815,
+          "longitude": -121.2584649
+        },
+        {
+          "rank": 2,
+          "name": "Steelhead Falls",
+          "rawName": "Steelhead Falls",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 3,
+          "name": "White River Falls",
+          "rawName": "White River Falls",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "accuracyMaxPlausibility": "PLAUSIBLE"
+    },
+    {
+      "caseId": "CJ041",
+      "groundTruthStatus": "PROVISIONAL_BEST_GUESS",
+      "bestResearchedHypothesis": "Cenote Zaci",
+      "productionCandidates": [],
+      "simpleSolCandidates": [
+        {
+          "rank": 1,
+          "name": "Cenote Zaci",
+          "rawName": "Cenote Zací",
+          "status": "CANONICAL_EXACT",
+          "latitude": 20.6916378,
+          "longitude": -88.19734629999999
+        },
+        {
+          "rank": 2,
+          "name": "Cenote Ik Kil",
+          "rawName": "Cenote Ik Kil",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "rank": 3,
+          "name": "Cenote San Lorenzo Oxman",
+          "rawName": "Cenote San Lorenzo Oxman",
+          "status": "NOT_CANONICALIZED",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "topCandidatePlausibility": "STRONGLY_PLAUSIBLE",
+      "finding": "The large open cenote and urban masonry are consistent with Zaci, but the source provides no location clue and no same-clip match was found.",
+      "reviewedCandidate": "Cenote Zaci",
+      "accuracyMaxCandidates": [
+        {
+          "rank": 1,
+          "name": "Xcajum Cenote",
+          "rawName": "Cenote X-Cajum",
+          "status": "CANONICAL_ALIAS",
+          "latitude": 20.826623599999998,
+          "longitude": -88.5422901
+        }
+      ],
+      "accuracyMaxPlausibility": "PLAUSIBLE"
+    },
+    {
+      "caseId": "CJ042",
+      "groundTruthStatus": "UNRESOLVED",
+      "bestResearchedHypothesis": "Three-location montage (individual clips unresolved)",
+      "productionCandidates": [],
+      "simpleSolCandidates": [
+        {
+          "rank": 1,
+          "name": "Lake Atitlán",
+          "rawName": "Lake Atitlán",
+          "status": "CANONICAL_EXACT",
+          "latitude": 14.6906713,
+          "longitude": -91.20252070000001
+        },
+        {
+          "rank": 2,
+          "name": "Furore Fjord",
+          "rawName": "Fiordo di Furore",
+          "status": "CANONICAL_ALIAS",
+          "latitude": 40.6146163,
+          "longitude": 14.5547129
+        },
+        {
+          "rank": 3,
+          "name": "Ho'opi'i Falls",
+          "rawName": "Ho'opi'i Falls",
+          "status": "CANONICAL_EXACT",
+          "latitude": 22.107264,
+          "longitude": -159.3438715
+        }
+      ],
+      "topCandidatePlausibility": "PLAUSIBLE",
+      "finding": "The source asks which jump was favorite but names none. Sol proposed Lake Atitlan, Fiordo di Furore and Ho’opi’i Falls; none was independently tied to a specific segment.",
+      "reviewedCandidate": "Lake Atitlán",
+      "accuracyMaxCandidates": [
+        {
+          "rank": 1,
+          "name": "Reserva Natural Cerro Tzankujil",
+          "rawName": "Cerro Tzankujil Nature Reserve cliff-jump platform, Lake Atitlán",
+          "status": "CANONICAL_ALIAS",
+          "latitude": 14.7210187,
+          "longitude": -91.26003209999999
+        },
+        {
+          "rank": 2,
+          "name": "Furore Fjord",
+          "rawName": "Fiordo di Furore",
+          "status": "CANONICAL_ALIAS",
+          "latitude": 40.6146163,
+          "longitude": 14.5547129
+        },
+        {
+          "rank": 3,
+          "name": "Shipwreck Beach (Keoneloa Bay), Makawehi Point cliff",
+          "rawName": "Shipwreck Beach (Keoneloa Bay), Makawehi Point cliff",
+          "status": "PARENT_ONLY_MATCH",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "accuracyMaxPlausibility": "PLAUSIBLE"
+    }
+  ]
+}

@@ -22,6 +22,7 @@ function config(): WorkerConfig {
     scrapeCreatorsTikTokFallbackEnabled: false,
     scrapeCreatorsInstagramFallbackEnabled: false,
     scrapeCreatorsFacebookFallbackEnabled: false,
+    automaticDeepRecognitionEnabled: true,
     supabaseUrl: 'http://localhost', supabaseServiceRoleKey: 'benchmark', finalizeUrl: 'http://localhost/finalize',
     mediaFinalizeSecret: 'benchmark',
     maxConcurrency: 1, claimBatchSize: 1, claimLockSeconds: 600, retryBaseSeconds: 30, retryMaxSeconds: 900,

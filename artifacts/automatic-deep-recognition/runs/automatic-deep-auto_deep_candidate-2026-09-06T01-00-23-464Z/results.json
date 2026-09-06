@@ -1,0 +1,688 @@
+{
+  "schemaVersion": 1,
+  "runId": "automatic-deep-auto_deep_candidate-2026-09-06T01-00-23-464Z",
+  "system": "AUTO_DEEP_CANDIDATE",
+  "startedAt": "2026-09-06T01:00:25.818Z",
+  "completedAt": "2026-09-06T01:04:59.335Z",
+  "target": {
+    "supabaseRef": "qnfxnmvxpjzfydgudtvs",
+    "railwayEnvironment": "development",
+    "railwayService": "media-worker"
+  },
+  "deployedFlags": {
+    "automaticDeepRecognitionEnabled": "true",
+    "premiumRequestsEnabled": false,
+    "recognitionCacheReadsEnabled": false
+  },
+  "correlationId": "nearr-e2e-20260906T010024-242cf56f",
+  "productionRowsMutated": false,
+  "observations": [
+    {
+      "caseId": "F4-01",
+      "suite": "FOUNDER_4",
+      "category": null,
+      "sourceUrl": "https://www.instagram.com/reel/DJ1CVA8vbfV/",
+      "expectedRoute": "AUTO_DEEP",
+      "recordedLead": null,
+      "jobId": "bca65c87-c6fe-4a17-a5a0-4c68fec27741",
+      "status": "failed",
+      "decision": "failed",
+      "savedPlaceId": null,
+      "failureCategory": "technical_failure",
+      "failureCode": "recognition_recovery_exhausted",
+      "candidates": [],
+      "normalCandidates": [],
+      "automaticDeep": {
+        "needed": true,
+        "invoked": true,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 2,
+        "top3Count": 0,
+        "specificResult": false,
+        "recoveryInvoked": true,
+        "rejectionReason": "TECHNICAL_RECOVERY",
+        "normalCandidates": [],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "WEAK",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 0
+      },
+      "automaticDeepRecognition": {
+        "model": "gpt-5.6-sol",
+        "timingsMs": {
+          "sol": 234384
+        },
+        "engineVersion": "simple-sol-premium.v2",
+        "placesRequests": 0,
+        "knownModelCostUsd": 0.182651
+      },
+      "modelProvider": "gemini+simple-sol",
+      "durationMs": 265751,
+      "taskStatus": "failed",
+      "taskFailureCode": "recognition_recovery_exhausted",
+      "diagnostics": {
+        "reason": "insufficient_evidence",
+        "modelPath": "current_fresh_recognition",
+        "automaticDeep": {
+          "needed": true,
+          "invoked": true,
+          "version": "automatic-deep-recognition.v2",
+          "attempts": 2,
+          "top3Count": 0,
+          "specificResult": false,
+          "recoveryInvoked": true,
+          "rejectionReason": "TECHNICAL_RECOVERY",
+          "normalCandidates": [],
+          "noUsableSourceEvidence": false,
+          "normalResultSpecificity": "WEAK",
+          "recoverySpecificHypotheses": 0,
+          "firstAttemptSpecificHypotheses": 0
+        },
+        "cacheReadUsed": false,
+        "moments_split": 0,
+        "moments_merged": 0,
+        "modelPlacesValid": 0,
+        "raw_moment_count": 0,
+        "analysisAttempted": true,
+        "cacheReadSuspended": true,
+        "modelPlacesEmitted": 1,
+        "recognitionVersion": "vayrin-recognition-2026-08-26.v3-generic-guard-same-place-groups",
+        "logical_place_count": 0,
+        "modelPlacesRejected": 1,
+        "recognitionCacheRead": false,
+        "grouping_reason_codes": [],
+        "evidenceRejectionPaths": [
+          "places.0.name:invalid_type"
+        ],
+        "recognitionFailureClass": "recovery_empty",
+        "automaticDeepRecognition": {
+          "model": "gpt-5.6-sol",
+          "timingsMs": {
+            "sol": 234384
+          },
+          "engineVersion": "simple-sol-premium.v2",
+          "placesRequests": 0,
+          "knownModelCostUsd": 0.182651
+        },
+        "modelValidationErrorClass": "candidate_field_invalid",
+        "same_place_confidence_band": "none",
+        "modelPartialPlacesPreserved": 1,
+        "recognitionCacheWritesEnabled": true,
+        "distinct_place_evidence_present": false
+      }
+    },
+    {
+      "caseId": "F4-02",
+      "suite": "FOUNDER_4",
+      "category": null,
+      "sourceUrl": "https://www.instagram.com/reel/DWrKNRujq4X/",
+      "expectedRoute": "AUTO_DEEP",
+      "recordedLead": null,
+      "jobId": "0e06fa84-f706-47b4-8ff0-466cfd367a13",
+      "status": "needs_help",
+      "decision": "candidate_picker",
+      "savedPlaceId": null,
+      "failureCategory": null,
+      "failureCode": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Cenote Zaci",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 20.6916378,
+          "longitude": -88.19734629999999,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        },
+        {
+          "rank": 2,
+          "name": "Cenote San Lorenzo Oxman",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 20.667570599999998,
+          "longitude": -88.23013209999999,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        },
+        {
+          "rank": 3,
+          "name": "Cenote Zací",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": null,
+          "longitude": null,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "normalCandidates": [],
+      "automaticDeep": {
+        "needed": true,
+        "invoked": true,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 1,
+        "top3Count": 3,
+        "specificResult": true,
+        "recoveryInvoked": false,
+        "rejectionReason": "TECHNICAL_RECOVERY",
+        "normalCandidates": [],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "WEAK",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 3
+      },
+      "automaticDeepRecognition": {
+        "model": "gpt-5.6-sol",
+        "timingsMs": {
+          "sol": 103032
+        },
+        "engineVersion": "simple-sol-premium.v2",
+        "placesRequests": 3,
+        "knownModelCostUsd": 0.087648
+      },
+      "modelProvider": "gemini+simple-sol",
+      "durationMs": 130923,
+      "taskStatus": "completed",
+      "taskFailureCode": null,
+      "diagnostics": {
+        "multiple": false,
+        "modelPath": "current_fresh_recognition",
+        "placeCount": 3,
+        "insufficient": false,
+        "automaticDeep": {
+          "needed": true,
+          "invoked": true,
+          "version": "automatic-deep-recognition.v2",
+          "attempts": 1,
+          "top3Count": 3,
+          "specificResult": true,
+          "recoveryInvoked": false,
+          "rejectionReason": "TECHNICAL_RECOVERY",
+          "normalCandidates": [],
+          "noUsableSourceEvidence": false,
+          "normalResultSpecificity": "WEAK",
+          "recoverySpecificHypotheses": 0,
+          "firstAttemptSpecificHypotheses": 3
+        },
+        "cacheReadUsed": false,
+        "moments_split": 0,
+        "moments_merged": 0,
+        "modelPlacesValid": 0,
+        "raw_moment_count": 0,
+        "analysisAttempted": true,
+        "destinationPlaces": 1,
+        "partialPlaceCount": 0,
+        "cacheReadSuspended": true,
+        "explicitPlaceCount": 3,
+        "modelPlacesEmitted": 1,
+        "recognitionVersion": "vayrin-recognition-2026-08-26.v3-generic-guard-same-place-groups",
+        "logical_place_count": 0,
+        "modelPlacesRejected": 1,
+        "recognitionCacheRead": false,
+        "grouping_reason_codes": [],
+        "evidenceRejectionPaths": [
+          "places.0.name:invalid_type"
+        ],
+        "sharedGeoCountrySource": "multiple_places_agree",
+        "recognitionFailureClass": "none",
+        "sharedGeoCountryApplied": true,
+        "automaticDeepRecognition": {
+          "model": "gpt-5.6-sol",
+          "timingsMs": {
+            "sol": 103032
+          },
+          "engineVersion": "simple-sol-premium.v2",
+          "placesRequests": 3,
+          "knownModelCostUsd": 0.087648
+        },
+        "sharedGeoCountryStrength": "strong",
+        "modelValidationErrorClass": "candidate_field_invalid",
+        "peerGeographicDestinations": 0,
+        "same_place_confidence_band": "none",
+        "sharedGeoCountryCandidates": 1,
+        "modelPartialPlacesPreserved": 1,
+        "recognitionCacheWritesEnabled": true,
+        "sourceGeographicContextDropped": 0,
+        "distinct_place_evidence_present": false
+      }
+    },
+    {
+      "caseId": "F4-03",
+      "suite": "FOUNDER_4",
+      "category": null,
+      "sourceUrl": "https://www.instagram.com/reel/DWJ2zaqEQOk/",
+      "expectedRoute": "NORMAL_ONLY",
+      "recordedLead": null,
+      "jobId": "9a23d4dc-76d9-4a7a-8778-b755bf9f04e5",
+      "status": "needs_help",
+      "decision": "multi_candidate_confirmation",
+      "savedPlaceId": null,
+      "failureCategory": null,
+      "failureCode": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Bell Trail",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 34.674374199999995,
+          "longitude": -111.71344,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        },
+        {
+          "rank": 2,
+          "name": "Devil's Bridge",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 34.8976271,
+          "longitude": -111.80769839999999,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        },
+        {
+          "rank": 3,
+          "name": "Bell Rock Pathway",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 34.8243217,
+          "longitude": -111.7755041,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "normalCandidates": [
+        {
+          "city": "Sedona",
+          "name": "The Crack via Bell Trail",
+          "region": "Arizona",
+          "country": "USA",
+          "category": "scenic_spot"
+        }
+      ],
+      "automaticDeep": {
+        "needed": false,
+        "invoked": false,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 0,
+        "top3Count": 0,
+        "specificResult": false,
+        "recoveryInvoked": false,
+        "rejectionReason": null,
+        "normalCandidates": [
+          {
+            "city": "Sedona",
+            "name": "The Crack via Bell Trail",
+            "region": "Arizona",
+            "country": "USA",
+            "category": "scenic_spot"
+          }
+        ],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "SPECIFIC_ACTIONABLE",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 0
+      },
+      "automaticDeepRecognition": null,
+      "modelProvider": "gemini",
+      "durationMs": 54244,
+      "taskStatus": "completed",
+      "taskFailureCode": null,
+      "diagnostics": {
+        "multiple": false,
+        "modelPath": "current_fresh_recognition",
+        "placeCount": 1,
+        "insufficient": false,
+        "automaticDeep": {
+          "needed": false,
+          "invoked": false,
+          "version": "automatic-deep-recognition.v2",
+          "attempts": 0,
+          "top3Count": 0,
+          "specificResult": false,
+          "recoveryInvoked": false,
+          "rejectionReason": null,
+          "normalCandidates": [
+            {
+              "city": "Sedona",
+              "name": "The Crack via Bell Trail",
+              "region": "Arizona",
+              "country": "USA",
+              "category": "scenic_spot"
+            }
+          ],
+          "noUsableSourceEvidence": false,
+          "normalResultSpecificity": "SPECIFIC_ACTIONABLE",
+          "recoverySpecificHypotheses": 0,
+          "firstAttemptSpecificHypotheses": 0
+        },
+        "cacheReadUsed": false,
+        "moments_split": 0,
+        "moments_merged": 0,
+        "finalResultClass": "canonical_evidence",
+        "modelPlacesValid": 1,
+        "raw_moment_count": 1,
+        "analysisAttempted": true,
+        "destinationPlaces": 1,
+        "partialPlaceCount": 0,
+        "cacheReadSuspended": true,
+        "explicitPlaceCount": 1,
+        "modelPlacesEmitted": 1,
+        "recognitionVersion": "vayrin-recognition-2026-08-26.v3-generic-guard-same-place-groups",
+        "logical_place_count": 1,
+        "modelPlacesRejected": 0,
+        "recognitionCacheRead": false,
+        "grouping_reason_codes": [],
+        "recognitionFailureClass": "none",
+        "sharedGeoCountryApplied": false,
+        "sharedGeoCountryStrength": "weak",
+        "modelValidationErrorClass": "none",
+        "peerGeographicDestinations": 0,
+        "same_place_confidence_band": "none",
+        "sharedGeoCountryCandidates": 1,
+        "modelPartialPlacesPreserved": 0,
+        "recognitionCacheWritesEnabled": true,
+        "sourceGeographicContextDropped": 0,
+        "distinct_place_evidence_present": false
+      }
+    },
+    {
+      "caseId": "F4-04",
+      "suite": "FOUNDER_4",
+      "category": null,
+      "sourceUrl": "https://www.instagram.com/reel/DZbppj6IXOt/",
+      "expectedRoute": "AUTO_DEEP",
+      "recordedLead": null,
+      "jobId": "7125c6c9-acfe-40aa-b146-d7c9c22c1b2b",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "failureCategory": null,
+      "failureCode": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Toketee Falls",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 43.2633418,
+          "longitude": -122.4337113,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "normalCandidates": [],
+      "automaticDeep": {
+        "needed": true,
+        "invoked": true,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 1,
+        "top3Count": 1,
+        "specificResult": true,
+        "recoveryInvoked": false,
+        "rejectionReason": "TECHNICAL_RECOVERY",
+        "normalCandidates": [],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "WEAK",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 1
+      },
+      "automaticDeepRecognition": {
+        "model": "gpt-5.6-sol",
+        "timingsMs": {
+          "sol": 15013
+        },
+        "engineVersion": "simple-sol-premium.v2",
+        "placesRequests": 1,
+        "knownModelCostUsd": 0.042044
+      },
+      "modelProvider": "gemini+simple-sol",
+      "durationMs": 44333,
+      "taskStatus": "completed",
+      "taskFailureCode": null,
+      "diagnostics": {
+        "multiple": false,
+        "modelPath": "current_fresh_recognition",
+        "placeCount": 1,
+        "insufficient": false,
+        "automaticDeep": {
+          "needed": true,
+          "invoked": true,
+          "version": "automatic-deep-recognition.v2",
+          "attempts": 1,
+          "top3Count": 1,
+          "specificResult": true,
+          "recoveryInvoked": false,
+          "rejectionReason": "TECHNICAL_RECOVERY",
+          "normalCandidates": [],
+          "noUsableSourceEvidence": false,
+          "normalResultSpecificity": "WEAK",
+          "recoverySpecificHypotheses": 0,
+          "firstAttemptSpecificHypotheses": 1
+        },
+        "cacheReadUsed": false,
+        "moments_split": 0,
+        "moments_merged": 0,
+        "modelPlacesValid": 0,
+        "raw_moment_count": 0,
+        "analysisAttempted": true,
+        "destinationPlaces": 1,
+        "partialPlaceCount": 0,
+        "cacheReadSuspended": true,
+        "explicitPlaceCount": 1,
+        "modelPlacesEmitted": 1,
+        "recognitionVersion": "vayrin-recognition-2026-08-26.v3-generic-guard-same-place-groups",
+        "logical_place_count": 0,
+        "modelPlacesRejected": 1,
+        "recognitionCacheRead": false,
+        "grouping_reason_codes": [],
+        "evidenceRejectionPaths": [
+          "places.0.name:too_small"
+        ],
+        "recognitionFailureClass": "none",
+        "sharedGeoCountryApplied": false,
+        "automaticDeepRecognition": {
+          "model": "gpt-5.6-sol",
+          "timingsMs": {
+            "sol": 15013
+          },
+          "engineVersion": "simple-sol-premium.v2",
+          "placesRequests": 1,
+          "knownModelCostUsd": 0.042044
+        },
+        "sharedGeoCountryStrength": "weak",
+        "modelValidationErrorClass": "candidate_field_invalid",
+        "peerGeographicDestinations": 0,
+        "same_place_confidence_band": "none",
+        "sharedGeoCountryCandidates": 1,
+        "modelPartialPlacesPreserved": 1,
+        "recognitionCacheWritesEnabled": true,
+        "sourceGeographicContextDropped": 0,
+        "distinct_place_evidence_present": false
+      }
+    }
+  ],
+  "infrastructure": {
+    "taskCount": 4,
+    "runCount": 4,
+    "premiumReservations": 0
+  },
+  "regression": null,
+  "founder": {
+    "cases": [
+      {
+        "caseId": "F4-01",
+        "suite": "FOUNDER_4",
+        "expectedRoute": "AUTO_DEEP",
+        "normalCandidates": [],
+        "deepInvoked": true,
+        "attempts": 2,
+        "candidates": [],
+        "recovered": false,
+        "wrongAutosave": false,
+        "manualFallback": false,
+        "technical": true
+      },
+      {
+        "caseId": "F4-02",
+        "suite": "FOUNDER_4",
+        "expectedRoute": "AUTO_DEEP",
+        "normalCandidates": [],
+        "deepInvoked": true,
+        "attempts": 1,
+        "candidates": [
+          {
+            "rank": 1,
+            "name": "Cenote Zaci",
+            "identityType": "UNKNOWN",
+            "locality": null,
+            "country": null,
+            "latitude": 20.6916378,
+            "longitude": -88.19734629999999,
+            "evidenceType": null,
+            "canonicalizationStatus": null,
+            "specificity": "SPECIFIC_PHYSICAL_PLACE"
+          },
+          {
+            "rank": 2,
+            "name": "Cenote San Lorenzo Oxman",
+            "identityType": "UNKNOWN",
+            "locality": null,
+            "country": null,
+            "latitude": 20.667570599999998,
+            "longitude": -88.23013209999999,
+            "evidenceType": null,
+            "canonicalizationStatus": null,
+            "specificity": "SPECIFIC_PHYSICAL_PLACE"
+          },
+          {
+            "rank": 3,
+            "name": "Cenote Zací",
+            "identityType": "UNKNOWN",
+            "locality": null,
+            "country": null,
+            "latitude": null,
+            "longitude": null,
+            "evidenceType": null,
+            "canonicalizationStatus": null,
+            "specificity": "SPECIFIC_PHYSICAL_PLACE"
+          }
+        ],
+        "recovered": true,
+        "wrongAutosave": false,
+        "manualFallback": false,
+        "technical": false
+      },
+      {
+        "caseId": "F4-03",
+        "suite": "FOUNDER_4",
+        "expectedRoute": "NORMAL_ONLY",
+        "normalCandidates": [
+          {
+            "city": "Sedona",
+            "name": "The Crack via Bell Trail",
+            "region": "Arizona",
+            "country": "USA",
+            "category": "scenic_spot"
+          }
+        ],
+        "deepInvoked": false,
+        "attempts": 0,
+        "candidates": [
+          {
+            "rank": 1,
+            "name": "Bell Trail",
+            "identityType": "UNKNOWN",
+            "locality": null,
+            "country": null,
+            "latitude": 34.674374199999995,
+            "longitude": -111.71344,
+            "evidenceType": null,
+            "canonicalizationStatus": null,
+            "specificity": "SPECIFIC_PHYSICAL_PLACE"
+          },
+          {
+            "rank": 2,
+            "name": "Devil's Bridge",
+            "identityType": "UNKNOWN",
+            "locality": null,
+            "country": null,
+            "latitude": 34.8976271,
+            "longitude": -111.80769839999999,
+            "evidenceType": null,
+            "canonicalizationStatus": null,
+            "specificity": "SPECIFIC_PHYSICAL_PLACE"
+          },
+          {
+            "rank": 3,
+            "name": "Bell Rock Pathway",
+            "identityType": "UNKNOWN",
+            "locality": null,
+            "country": null,
+            "latitude": 34.8243217,
+            "longitude": -111.7755041,
+            "evidenceType": null,
+            "canonicalizationStatus": null,
+            "specificity": "SPECIFIC_PHYSICAL_PLACE"
+          }
+        ],
+        "recovered": true,
+        "wrongAutosave": false,
+        "manualFallback": false,
+        "technical": false
+      },
+      {
+        "caseId": "F4-04",
+        "suite": "FOUNDER_4",
+        "expectedRoute": "AUTO_DEEP",
+        "normalCandidates": [],
+        "deepInvoked": true,
+        "attempts": 1,
+        "candidates": [
+          {
+            "rank": 1,
+            "name": "Toketee Falls",
+            "identityType": "UNKNOWN",
+            "locality": null,
+            "country": null,
+            "latitude": 43.2633418,
+            "longitude": -122.4337113,
+            "evidenceType": null,
+            "canonicalizationStatus": null,
+            "specificity": "SPECIFIC_PHYSICAL_PLACE"
+          }
+        ],
+        "recovered": true,
+        "wrongAutosave": false,
+        "manualFallback": false,
+        "technical": false
+      }
+    ],
+    "expectedDeep": 3,
+    "recovered": 2,
+    "manualFallbacks": 0,
+    "technicalFailures": 1,
+    "wrongAutosaves": 0
+  },
+  "assertions": {
+    "allTerminal": true,
+    "zeroPremiumReservations": true,
+    "zeroWrongAutosaves": true,
+    "systemIsolation": true
+  }
+}

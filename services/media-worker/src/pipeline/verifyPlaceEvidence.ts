@@ -60,6 +60,7 @@ export type FinalizeArgs = {
   canonicalUrl?: string | null;
   diagnostics?: Record<string, unknown>;
   premiumRecognition?: PremiumRecognitionExecution;
+  automaticDeepRecognition?: PremiumRecognitionExecution;
   signal: AbortSignal;
 };
 
@@ -104,6 +105,7 @@ export async function verifyPlaceEvidence(
       canonicalUrl: args.canonicalUrl,
       diagnostics: args.diagnostics ?? {},
       premiumRecognition: args.premiumRecognition,
+      automaticDeepRecognition: args.automaticDeepRecognition,
     }),
     signal: args.signal,
   });

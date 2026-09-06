@@ -33,6 +33,7 @@ function testCfg(over: Partial<WorkerConfig> = {}): WorkerConfig {
     scrapeCreatorsTikTokFallbackEnabled: false,
     scrapeCreatorsInstagramFallbackEnabled: false,
     scrapeCreatorsFacebookFallbackEnabled: false,
+    automaticDeepRecognitionEnabled: true,
     supabaseUrl: 'http://localhost',
     supabaseServiceRoleKey: 'k',
     finalizeUrl: 'http://localhost/f',

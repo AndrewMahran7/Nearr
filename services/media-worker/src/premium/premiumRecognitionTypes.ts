@@ -30,6 +30,7 @@ export type PremiumCanonicalStatus =
   | 'CANONICAL_EXACT'
   | 'CANONICAL_ALIAS'
   | 'AMBIGUOUS_CANONICAL'
+  | 'PARENT_ONLY_MATCH'
   | 'NAMED_LEAD';
 
 export type PremiumCanonicalizationCall = {
@@ -59,6 +60,9 @@ export type PremiumRuntimeHypothesis = {
   timestamps: number[];
   canonicalStatus: PremiumCanonicalStatus;
   canonical: PremiumCanonicalCandidate | null;
+  /** Map-provider container retained only as enrichment. It never replaces
+   * the recognizer-owned exact identity. */
+  providerParent: PremiumCanonicalCandidate | null;
   canonicalAlternatives: PremiumCanonicalCandidate[];
   canonicalizationCalls: PremiumCanonicalizationCall[];
 };
@@ -113,6 +117,8 @@ export type PremiumRecognitionTelemetry = {
       calls: PremiumCanonicalizationCall[];
       selectedGooglePlaceId: string | null;
       selectedName: string | null;
+      providerParentGooglePlaceId: string | null;
+      providerParentName: string | null;
       outcome: PremiumCanonicalStatus;
       rejectionReason: string | null;
     }>;
@@ -153,6 +159,17 @@ export type PremiumRecognitionTelemetry = {
     canonicalizationCompletedAt: string;
     premiumTerminalAt: string;
   };
+  /** Content-free accounting for Automatic Deep's single bounded recovery
+   * attempt. Absent for Premium and for a successful first Simple Sol call. */
+  automaticRecovery?: {
+    invoked: true;
+    attempts: 2;
+    firstOutcome: PremiumRecognitionExecution['outcome'];
+    firstSpecificHypotheses: number;
+    recoveryOutcome: PremiumRecognitionExecution['outcome'];
+    recoverySpecificHypotheses: number;
+    recoveryFrameStrategy: string;
+  };
 };
 
 export type PremiumRecognitionExecution = {
@@ -179,6 +196,9 @@ export type PremiumRecognitionInput = {
   evidenceReuse?: Partial<PremiumRecognitionTelemetry['evidenceReuse']>;
   googlePlacesApiKey: string | null;
   webSearchEnabled?: boolean;
+  /** Internal Automatic Deep retry mode. It changes only the shared Sol
+   * instruction/fingerprint; it never enables web search or billing. */
+  recognitionPass?: 'PRIMARY' | 'ZERO_HYPOTHESIS_RECOVERY';
   allowDistinctiveVisualAutoSave?: boolean;
   signal?: AbortSignal;
   fetchImpl?: typeof fetch;
