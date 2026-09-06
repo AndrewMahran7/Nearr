@@ -1,0 +1,51 @@
+{
+  "releaseId": "2026-09-05-nearr-to-nearr-place-sharing-production",
+  "previousMainSha": "e44d9191a41083759e147441c4f83690eebd1c82",
+  "previousOtaGroup": "4f92cf79-6c8e-479d-9166-1c1d16f4afaa",
+  "currentOtaGroup": "38e6d854-333c-4b4a-9c44-adeb898aae1f",
+  "featureSourceSha": "8833ad1357187c212c4ac1fa4bef28e4c2cdda9e",
+  "releaseSha": "31f21601d5b8209f64ac724bdab99d5b387753a3",
+  "edgeVersions": {
+    "public-place": 1
+  },
+  "railwayDeployment": "2d4da2a4-c9b9-4d34-8894-15e8e8e6c407 (unchanged; SUCCESS/RUNNING)",
+  "migrationLedger": [
+    "20260905000003",
+    "20260905000004"
+  ],
+  "rollbackProcedure": "Repeat the concurrency guard; republish previousOtaGroup to the production channel; forward-revert the Nearr-to-Nearr sharing integration on main; redeploy the previous Vercel production deployment dpl_75vXRrMCw8aoifya5g15LTDSXFUV; disable or redeploy the public-place Edge Function from previousMainSha if required. Keep the additive sharing schema in place so existing saved places and referral analytics remain intact.",
+  "deploymentStatus": "DEPLOYED",
+  "physicalQa": {
+    "signedOutColdLaunch": "PENDING",
+    "signedInColdLaunch": "PENDING",
+    "forceCloseRelaunch": "PENDING",
+    "freshOnboardingLaunch": "PENDING"
+  },
+  "nativeProduction": {
+    "buildId": "a61830e1-432d-4fec-b0e9-11ea7a69826a",
+    "appVersion": "1.4.55",
+    "buildNumber": "55",
+    "runtimeVersion": "1.4.55",
+    "sourceCommit": "4e6b60e9b6e727381eeac98d8361d01423e95210",
+    "associatedDomains": "PASS: com.apple.developer.associated-domains and applinks:nearrapp.com found in the signed IPA",
+    "shareExtension": "PASS: signed com.nearr.ios.ShareExtension with group.com.nearr.ios found in the IPA",
+    "submissionId": "5eba06d7-40fc-4f21-8fd6-64a64629d523",
+    "submissionStatus": "UPLOADED_TO_APP_STORE_CONNECT_PROCESSING"
+  },
+  "supersededNativeProduction": {
+    "buildId": "1ea9b130-0087-4057-8e2f-8013beb8525a",
+    "appVersion": "1.3.52",
+    "buildNumber": "54",
+    "submissionId": "3359a4cb-f1d4-4a3b-9043-e80ddff1cc08",
+    "status": "DO_NOT_RELEASE: superseded by 1.4.55 (55) to conform to the stage.version.build_number convention"
+  },
+  "productionSmoke": {
+    "publicApi": "PASS: canonical place 200; invalid and missing UUIDs 404; bounded DTO; malformed and missing referrals safely ignored",
+    "save": "PASS: controlled recipient created one canonical saved relation; retry reused it; sender-private fields were not copied",
+    "alias": "PASS: temporary merged alias resolved and saved the surviving canonical place; fixture removed",
+    "website": "PASS: apex place page, metadata, AASA, and assetlinks returned 200; www permanently redirects to apex",
+    "analytics": "PASS: created, opened, web-opened, viewed, CTA, and saved events observed without sender PII",
+    "universalLink": "MECHANICAL PASS: AASA plus signed IPA entitlement plus app route; physical device tap remains PENDING"
+  },
+  "deployedAt": "2026-09-06T00:41:40.779Z"
+}

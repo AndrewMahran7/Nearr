@@ -1,15 +1,15 @@
 /**
  * Authoritative saved-place share-target resolution.
  *
- * A saved place's original public source is the valuable payload. Provider
- * maps are only a fallback. This module is pure and deliberately accepts only
- * the public fields needed by the native share sheet.
+ * The primary share payload is the canonical Nearr place URL. The original
+ * social post remains a separate secondary action in Place Detail.
  */
 
 import { buildExternalMapsUrl } from './externalMapsUrl';
 import { normalizeShareUrl } from './shareAgent/tiktokUrl';
 
 export type ShareablePlace = {
+  id?: string | null;
   name?: string | null;
   formatted_address?: string | null;
   google_place_id?: string | null;
@@ -25,7 +25,7 @@ export type SavedPlaceShareContext = {
 };
 
 export type SavedPlaceShareTarget = {
-  kind: 'original_post' | 'original_source' | 'provider' | 'unavailable';
+  kind: 'nearr_place' | 'original_post' | 'original_source' | 'provider' | 'unavailable';
   url: string | null;
   platform: 'instagram' | 'tiktok' | 'youtube' | 'twitter' | 'link' | null;
 };
@@ -60,6 +60,23 @@ const BLOCKED_HOST_SUFFIXES = [
 const SECRET_QUERY_KEY = /(^|[-_])(access[-_]?token|auth|authorization|credential|exp|expires|expiry|jwt|key|policy|secret|session|signature|signed|sig|token)([-_]|$)/i;
 const INTERNAL_PATH = /^\/(api|functions\/v1|rest\/v1|storage\/v1)(\/|$)/i;
 const TEMPORARY_MEDIA_PATH = /\.(m3u8|m4a|m4v|mov|mp3|mp4|webm)(?:$|\/)/i;
+const PUBLIC_PLACE_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const REFERRAL_ID = /^r_[A-Za-z0-9_-]{20,64}$/;
+
+export const NEARR_PUBLIC_ORIGIN = 'https://nearrapp.com';
+
+/** The only URL constructor used by saved-place sharing. */
+export function buildNearrPlaceUrl(
+  publicPlaceId: string | null | undefined,
+  referralId?: string | null,
+): string | null {
+  const id = (publicPlaceId ?? '').trim().toLowerCase();
+  if (!PUBLIC_PLACE_ID.test(id)) return null;
+  const url = new URL(`/p/${id}`, NEARR_PUBLIC_ORIGIN);
+  const ref = (referralId ?? '').trim();
+  if (REFERRAL_ID.test(ref)) url.searchParams.set('ref', ref);
+  return url.toString();
+}
 
 function isHostOrSubdomain(host: string, domain: string): boolean {
   return host === domain || host.endsWith(`.${domain}`);
@@ -207,12 +224,18 @@ export function getSavedPlaceShareTarget(savedPlace: SavedPlaceShareContext): Sa
 }
 
 /** Minimal, private-field-free native share payload. */
-export function buildSavedPlaceShareContent(savedPlace: SavedPlaceShareContext): SavedPlaceShareContent {
+export function buildSavedPlaceShareContent(
+  savedPlace: SavedPlaceShareContext,
+  referralId?: string | null,
+): SavedPlaceShareContent {
   const title = (savedPlace.place.name ?? '').trim() || 'A place';
-  const target = getSavedPlaceShareTarget(savedPlace);
+  const url = buildNearrPlaceUrl(savedPlace.place.id, referralId);
+  const target: SavedPlaceShareTarget = url
+    ? { kind: 'nearr_place', url, platform: null }
+    : { kind: 'unavailable', url: null, platform: null };
   return {
     ...target,
     title,
-    message: target.url ? `${title}\n${target.url}` : title,
+    message: target.url ? `Check out ${title} on Nearr\n${target.url}` : title,
   };
 }

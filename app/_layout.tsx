@@ -252,6 +252,7 @@ function AuthGate({
   const inAuth = currentRoute.startsWith('/(auth)');
   const inAuthCallback = currentRoute === '/auth-callback';
   const inResetPassword = currentRoute === '/reset-password';
+  const inSharedPlace = currentRoute.startsWith('/p/');
   const inTabs = currentRoute.startsWith('/(tabs)');
   const pendingOnboardingNavigationRef = useRef<PendingOnboardingNavigation>(null);
   if (pendingOnboardingNavigationRef.current?.to === currentRoute) {
@@ -429,6 +430,9 @@ function AuthGate({
       // A recovery link whose session has already lapsed must be able to say so
       // on the reset screen rather than being bounced back to the intro.
       if (inResetPassword) return;
+      // Canonical shared places are public. Authentication is requested only
+      // if the recipient chooses Save to my map.
+      if (inSharedPlace) return;
       if (!inAuth && !inOnboarding) {
         replaceOnce('/(onboarding)');
       }
@@ -440,6 +444,7 @@ function AuthGate({
     // of automatic V2 routing: screens mutate durable stage only, then this
     // guarded edge moves at most once to the route that owns that stage.
     if (isAnonymousSession) {
+      if (inSharedPlace) return;
       if (!isOnboardingV2Enabled() || onboardingV2?.cohort !== 'new_user_v2') {
         replaceOnce('/(onboarding)');
         return;
@@ -476,6 +481,7 @@ function AuthGate({
     inOnboarding,
     inAuthCallback,
     inResetPassword,
+    inSharedPlace,
     authLinkPending,
     isAnonymousSession,
     onboardingV2?.boundUserId,
@@ -773,6 +779,7 @@ function RootLayoutContent() {
               <Stack.Screen name="legal/terms" options={{ headerShown: true, title: 'Terms of Service' }} />
               <Stack.Screen name="legal/privacy" options={{ headerShown: true, title: 'Privacy Policy' }} />
               <Stack.Screen name="place/[id]" options={{ headerShown: true, title: 'Place' }} />
+              <Stack.Screen name="p/[publicPlaceId]" options={{ headerShown: true, title: 'Nearr place' }} />
             </Stack>
           </AuthGate>
           </AuthLinkStatusContext.Provider>

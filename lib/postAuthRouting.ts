@@ -8,8 +8,9 @@ import {
 import { finishOnboardingAccountTransition } from '@/lib/anonymousOnboarding';
 import { resolveOpenSavedPlaceRoute, type MapRouteTarget } from '@/lib/openSavedPlace';
 import { supabase } from '@/lib/supabase';
+import { pendingSharedPlaceRoute } from '@/lib/sharedPlaceIntent';
 
-export type PostAuthRoute = '/activate' | '/(tabs)/map' | MapRouteTarget;
+export type PostAuthRoute = '/activate' | '/(tabs)/map' | MapRouteTarget | `/p/${string}`;
 
 /**
  * THE post-authentication resolver.
@@ -26,6 +27,7 @@ export type PostAuthRoute = '/activate' | '/(tabs)/map' | MapRouteTarget;
  * V2 transition finalizes the existing row, then routes by its returned id.
  */
 export async function resolvePostAuthRoute(userId: string): Promise<PostAuthRoute> {
+  let onboardingTransferRoute: MapRouteTarget | null = null;
   if (isOnboardingV2Enabled()) {
     const state = await getOnboardingV2State();
     if (state.tutorialSave && state.identityLifecycle !== 'permanent_account') {
@@ -34,12 +36,21 @@ export async function resolvePostAuthRoute(userId: string): Promise<PostAuthRout
         throw new Error('permanent_onboarding_session_not_ready');
       }
       const transition = await finishOnboardingAccountTransition(session.user);
-      return resolveOpenSavedPlaceRoute({
+      onboardingTransferRoute = resolveOpenSavedPlaceRoute({
         savedPlaceId: transition.tutorialSavedPlaceId,
         source: 'onboarding_tutorial',
       });
     }
   }
+
+  // A shared-place Save CTA owns the post-auth destination. The durable
+  // intent carries only the canonical public id + opaque ref, and the target
+  // screen performs an idempotent save. Any anonymous onboarding transfer
+  // above still completes first so an existing tutorial row is never orphaned.
+  const sharedPlaceRoute = await pendingSharedPlaceRoute();
+  if (sharedPlaceRoute) return sharedPlaceRoute;
+  if (onboardingTransferRoute) return onboardingTransferRoute;
+
   const status = await getOnboardingStatus(userId);
   if (isOnboardingV2Enabled() && status === 'complete') {
     // Signing into an established account must never layer a fresh-user tour
