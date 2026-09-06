@@ -524,7 +524,7 @@ async function main() {
   }
   assert.match(
     detail,
-    /selectSameSourcePlaces\(saved, allSavedPlaces \?\? \[\], \{/,
+    /selectSameSourcePlaces\(saved, allSavedPlaces \?\? \[\]\)/,
     '"From this video" derives siblings from the cached saved-place collection',
   );
   assert.match(
