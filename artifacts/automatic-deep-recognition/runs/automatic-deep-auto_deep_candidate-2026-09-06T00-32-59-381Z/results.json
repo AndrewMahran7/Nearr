@@ -1,0 +1,2856 @@
+{
+  "schemaVersion": 1,
+  "runId": "automatic-deep-auto_deep_candidate-2026-09-06T00-32-59-381Z",
+  "system": "AUTO_DEEP_CANDIDATE",
+  "startedAt": "2026-09-06T00:33:01.431Z",
+  "completedAt": "2026-09-06T00:41:59.514Z",
+  "target": {
+    "supabaseRef": "qnfxnmvxpjzfydgudtvs",
+    "railwayEnvironment": "development",
+    "railwayService": "media-worker"
+  },
+  "deployedFlags": {
+    "automaticDeepRecognitionEnabled": "true",
+    "premiumRequestsEnabled": false,
+    "recognitionCacheReadsEnabled": false
+  },
+  "correlationId": "nearr-e2e-20260906T003300-f612357b",
+  "productionRowsMutated": false,
+  "observations": [
+    {
+      "caseId": "B01",
+      "suite": "FOUNDER_12",
+      "category": null,
+      "sourceUrl": "https://www.instagram.com/p/5oXehfQxb2/",
+      "expectedRoute": "AUTO_DEEP",
+      "recordedLead": "Copper Canyon on Lake Havasu",
+      "jobId": "2c0e707a-c977-43ec-9e45-c666a4797a81",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "failureCategory": null,
+      "failureCode": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Lake Havasu",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 34.4673498,
+          "longitude": -114.3757397,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "normalCandidates": [
+        {
+          "city": null,
+          "name": "Lake Havasu",
+          "region": null,
+          "country": null,
+          "category": "lake"
+        },
+        {
+          "city": null,
+          "name": "Parker",
+          "region": null,
+          "country": null,
+          "category": null
+        }
+      ],
+      "automaticDeep": {
+        "needed": false,
+        "invoked": false,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 0,
+        "top3Count": 0,
+        "specificResult": false,
+        "recoveryInvoked": false,
+        "rejectionReason": null,
+        "normalCandidates": [
+          {
+            "city": null,
+            "name": "Lake Havasu",
+            "region": null,
+            "country": null,
+            "category": "lake"
+          },
+          {
+            "city": null,
+            "name": "Parker",
+            "region": null,
+            "country": null,
+            "category": null
+          }
+        ],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "SPECIFIC_ACTIONABLE",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 0
+      },
+      "automaticDeepRecognition": null,
+      "modelProvider": "gemini",
+      "durationMs": 34564,
+      "taskStatus": "completed",
+      "taskFailureCode": null,
+      "diagnostics": {
+        "multiple": false,
+        "modelPath": "current_fresh_recognition",
+        "placeCount": 2,
+        "insufficient": false,
+        "automaticDeep": {
+          "needed": false,
+          "invoked": false,
+          "version": "automatic-deep-recognition.v2",
+          "attempts": 0,
+          "top3Count": 0,
+          "specificResult": false,
+          "recoveryInvoked": false,
+          "rejectionReason": null,
+          "normalCandidates": [
+            {
+              "city": null,
+              "name": "Lake Havasu",
+              "region": null,
+              "country": null,
+              "category": "lake"
+            },
+            {
+              "city": null,
+              "name": "Parker",
+              "region": null,
+              "country": null,
+              "category": null
+            }
+          ],
+          "noUsableSourceEvidence": false,
+          "normalResultSpecificity": "SPECIFIC_ACTIONABLE",
+          "recoverySpecificHypotheses": 0,
+          "firstAttemptSpecificHypotheses": 0
+        },
+        "cacheReadUsed": false,
+        "moments_split": 0,
+        "moments_merged": 0,
+        "finalResultClass": "canonical_evidence",
+        "modelPlacesValid": 2,
+        "raw_moment_count": 1,
+        "analysisAttempted": true,
+        "destinationPlaces": 1,
+        "partialPlaceCount": 0,
+        "cacheReadSuspended": true,
+        "explicitPlaceCount": 2,
+        "modelPlacesEmitted": 2,
+        "recognitionVersion": "vayrin-recognition-2026-08-26.v3-generic-guard-same-place-groups",
+        "logical_place_count": 1,
+        "modelPlacesRejected": 0,
+        "recognitionCacheRead": false,
+        "grouping_reason_codes": [],
+        "recognitionFailureClass": "none",
+        "sharedGeoCountryApplied": false,
+        "sharedGeoCountryStrength": "none",
+        "modelValidationErrorClass": "none",
+        "peerGeographicDestinations": 0,
+        "same_place_confidence_band": "none",
+        "sharedGeoCountryCandidates": 0,
+        "modelPartialPlacesPreserved": 0,
+        "recognitionCacheWritesEnabled": true,
+        "sourceGeographicContextDropped": 0,
+        "distinct_place_evidence_present": false
+      }
+    },
+    {
+      "caseId": "B02",
+      "suite": "FOUNDER_12",
+      "category": null,
+      "sourceUrl": "https://www.instagram.com/reel/DZJ8ZvYub8Q/",
+      "expectedRoute": "AUTO_DEEP",
+      "recordedLead": "Tamolitch Blue Pool",
+      "jobId": "15539505-700a-4f66-bec4-0e4659774807",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "failureCategory": null,
+      "failureCode": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Tamolitch Falls (Blue Pool)",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 44.3120373,
+          "longitude": -122.02704879999997,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        },
+        {
+          "rank": 2,
+          "name": "Tamolitch Blue Pool (Tamolitch Falls)",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": null,
+          "longitude": null,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "normalCandidates": [],
+      "automaticDeep": {
+        "needed": true,
+        "invoked": true,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 1,
+        "top3Count": 1,
+        "specificResult": true,
+        "recoveryInvoked": false,
+        "normalCandidates": [],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "WEAK",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 1
+      },
+      "automaticDeepRecognition": {
+        "model": "gpt-5.6-sol",
+        "timingsMs": {
+          "sol": 29703
+        },
+        "engineVersion": "simple-sol-premium.v2",
+        "placesRequests": 1,
+        "knownModelCostUsd": 0.026114
+      },
+      "modelProvider": "gemini+simple-sol",
+      "durationMs": 47691,
+      "taskStatus": "completed",
+      "taskFailureCode": null,
+      "diagnostics": {
+        "multiple": false,
+        "modelPath": "current_fresh_recognition",
+        "placeCount": 1,
+        "insufficient": false,
+        "automaticDeep": {
+          "needed": true,
+          "invoked": true,
+          "version": "automatic-deep-recognition.v2",
+          "attempts": 1,
+          "top3Count": 1,
+          "specificResult": true,
+          "recoveryInvoked": false,
+          "normalCandidates": [],
+          "noUsableSourceEvidence": false,
+          "normalResultSpecificity": "WEAK",
+          "recoverySpecificHypotheses": 0,
+          "firstAttemptSpecificHypotheses": 1
+        },
+        "cacheReadUsed": false,
+        "moments_split": 0,
+        "moments_merged": 0,
+        "modelPlacesValid": 0,
+        "raw_moment_count": 0,
+        "analysisAttempted": true,
+        "destinationPlaces": 1,
+        "partialPlaceCount": 0,
+        "cacheReadSuspended": true,
+        "explicitPlaceCount": 1,
+        "modelPlacesEmitted": 0,
+        "recognitionVersion": "vayrin-recognition-2026-08-26.v3-generic-guard-same-place-groups",
+        "logical_place_count": 0,
+        "modelPlacesRejected": 0,
+        "recognitionCacheRead": false,
+        "grouping_reason_codes": [],
+        "recognitionFailureClass": "none",
+        "sharedGeoCountryApplied": false,
+        "automaticDeepRecognition": {
+          "model": "gpt-5.6-sol",
+          "timingsMs": {
+            "sol": 29703
+          },
+          "engineVersion": "simple-sol-premium.v2",
+          "placesRequests": 1,
+          "knownModelCostUsd": 0.026114
+        },
+        "sharedGeoCountryStrength": "weak",
+        "modelValidationErrorClass": "none",
+        "peerGeographicDestinations": 0,
+        "same_place_confidence_band": "none",
+        "sharedGeoCountryCandidates": 1,
+        "modelPartialPlacesPreserved": 0,
+        "recognitionCacheWritesEnabled": true,
+        "sourceGeographicContextDropped": 0,
+        "distinct_place_evidence_present": false
+      }
+    },
+    {
+      "caseId": "B03",
+      "suite": "FOUNDER_12",
+      "category": null,
+      "sourceUrl": "https://www.instagram.com/reel/DX2FYClJWR5/",
+      "expectedRoute": "AUTO_DEEP",
+      "recordedLead": "Arch Rock at Little Corona del Mar Beach",
+      "jobId": "b1c3dc53-819e-4d80-85b0-7bd3cf562d4d",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "failureCategory": null,
+      "failureCode": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Arch Rock at Little Corona del Mar Beach",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": null,
+          "longitude": null,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        },
+        {
+          "rank": 2,
+          "name": "Little Corona del Mar Beach",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 33.5899729,
+          "longitude": -117.86873589999999,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "normalCandidates": [],
+      "automaticDeep": {
+        "needed": true,
+        "invoked": true,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 1,
+        "top3Count": 1,
+        "specificResult": true,
+        "recoveryInvoked": false,
+        "normalCandidates": [],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "WEAK",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 1
+      },
+      "automaticDeepRecognition": {
+        "model": "gpt-5.6-sol",
+        "timingsMs": {
+          "sol": 48518
+        },
+        "engineVersion": "simple-sol-premium.v2",
+        "placesRequests": 1,
+        "knownModelCostUsd": 0.07704
+      },
+      "modelProvider": "gemini+simple-sol",
+      "durationMs": 85330,
+      "taskStatus": "completed",
+      "taskFailureCode": null,
+      "diagnostics": {
+        "multiple": false,
+        "modelPath": "current_fresh_recognition",
+        "placeCount": 1,
+        "insufficient": false,
+        "automaticDeep": {
+          "needed": true,
+          "invoked": true,
+          "version": "automatic-deep-recognition.v2",
+          "attempts": 1,
+          "top3Count": 1,
+          "specificResult": true,
+          "recoveryInvoked": false,
+          "normalCandidates": [],
+          "noUsableSourceEvidence": false,
+          "normalResultSpecificity": "WEAK",
+          "recoverySpecificHypotheses": 0,
+          "firstAttemptSpecificHypotheses": 1
+        },
+        "cacheReadUsed": false,
+        "moments_split": 0,
+        "moments_merged": 0,
+        "modelPlacesValid": 0,
+        "raw_moment_count": 0,
+        "analysisAttempted": true,
+        "destinationPlaces": 1,
+        "partialPlaceCount": 0,
+        "cacheReadSuspended": true,
+        "explicitPlaceCount": 1,
+        "modelPlacesEmitted": 1,
+        "recognitionVersion": "vayrin-recognition-2026-08-26.v3-generic-guard-same-place-groups",
+        "logical_place_count": 0,
+        "modelPlacesRejected": 1,
+        "recognitionCacheRead": false,
+        "grouping_reason_codes": [],
+        "evidenceRejectionPaths": [
+          "places.0.name:too_small"
+        ],
+        "recognitionFailureClass": "none",
+        "sharedGeoCountryApplied": false,
+        "automaticDeepRecognition": {
+          "model": "gpt-5.6-sol",
+          "timingsMs": {
+            "sol": 48518
+          },
+          "engineVersion": "simple-sol-premium.v2",
+          "placesRequests": 1,
+          "knownModelCostUsd": 0.07704
+        },
+        "sharedGeoCountryStrength": "weak",
+        "modelValidationErrorClass": "candidate_field_invalid",
+        "peerGeographicDestinations": 0,
+        "same_place_confidence_band": "none",
+        "sharedGeoCountryCandidates": 1,
+        "modelPartialPlacesPreserved": 1,
+        "recognitionCacheWritesEnabled": true,
+        "sourceGeographicContextDropped": 0,
+        "distinct_place_evidence_present": false
+      }
+    },
+    {
+      "caseId": "B04",
+      "suite": "FOUNDER_12",
+      "category": null,
+      "sourceUrl": "https://www.instagram.com/reel/DbTxk5KOg0N/",
+      "expectedRoute": "NORMAL_ONLY",
+      "recordedLead": "Sunset Cliffs Natural Park",
+      "jobId": "3c7eec91-d43c-43b1-8692-6223783bed48",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "failureCategory": null,
+      "failureCode": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Sunset Cliffs Natural Park",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 32.715915,
+          "longitude": -117.25516789999999,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        },
+        {
+          "rank": 2,
+          "name": "The Clam cliff-jumping spot, La Jolla",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": null,
+          "longitude": null,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "normalCandidates": [],
+      "automaticDeep": {
+        "needed": true,
+        "invoked": true,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 1,
+        "top3Count": 2,
+        "specificResult": true,
+        "recoveryInvoked": false,
+        "normalCandidates": [],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "WEAK",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 2
+      },
+      "automaticDeepRecognition": {
+        "model": "gpt-5.6-sol",
+        "timingsMs": {
+          "sol": 43162
+        },
+        "engineVersion": "simple-sol-premium.v2",
+        "placesRequests": 2,
+        "knownModelCostUsd": 0.0534
+      },
+      "modelProvider": "gemini+simple-sol",
+      "durationMs": 72803,
+      "taskStatus": "completed",
+      "taskFailureCode": null,
+      "diagnostics": {
+        "multiple": false,
+        "modelPath": "current_fresh_recognition",
+        "placeCount": 2,
+        "insufficient": false,
+        "automaticDeep": {
+          "needed": true,
+          "invoked": true,
+          "version": "automatic-deep-recognition.v2",
+          "attempts": 1,
+          "top3Count": 2,
+          "specificResult": true,
+          "recoveryInvoked": false,
+          "normalCandidates": [],
+          "noUsableSourceEvidence": false,
+          "normalResultSpecificity": "WEAK",
+          "recoverySpecificHypotheses": 0,
+          "firstAttemptSpecificHypotheses": 2
+        },
+        "cacheReadUsed": false,
+        "moments_split": 0,
+        "moments_merged": 0,
+        "modelPlacesValid": 0,
+        "raw_moment_count": 0,
+        "analysisAttempted": true,
+        "destinationPlaces": 1,
+        "partialPlaceCount": 0,
+        "cacheReadSuspended": true,
+        "explicitPlaceCount": 2,
+        "modelPlacesEmitted": 0,
+        "recognitionVersion": "vayrin-recognition-2026-08-26.v3-generic-guard-same-place-groups",
+        "logical_place_count": 0,
+        "modelPlacesRejected": 0,
+        "recognitionCacheRead": false,
+        "grouping_reason_codes": [],
+        "sharedGeoCountrySource": "multiple_places_agree",
+        "recognitionFailureClass": "none",
+        "sharedGeoCountryApplied": true,
+        "automaticDeepRecognition": {
+          "model": "gpt-5.6-sol",
+          "timingsMs": {
+            "sol": 43162
+          },
+          "engineVersion": "simple-sol-premium.v2",
+          "placesRequests": 2,
+          "knownModelCostUsd": 0.0534
+        },
+        "sharedGeoCountryStrength": "strong",
+        "modelValidationErrorClass": "none",
+        "peerGeographicDestinations": 0,
+        "same_place_confidence_band": "none",
+        "sharedGeoCountryCandidates": 1,
+        "modelPartialPlacesPreserved": 0,
+        "recognitionCacheWritesEnabled": true,
+        "sourceGeographicContextDropped": 0,
+        "distinct_place_evidence_present": false
+      }
+    },
+    {
+      "caseId": "B05",
+      "suite": "FOUNDER_12",
+      "category": null,
+      "sourceUrl": "https://www.instagram.com/reel/Da8qiKkJupM/",
+      "expectedRoute": "NORMAL_ONLY",
+      "recordedLead": "Upper Angora Lake",
+      "jobId": "88c54797-b240-4533-ad08-a6458f42bb37",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "failureCategory": null,
+      "failureCode": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Upper Angora Lake",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": null,
+          "longitude": null,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        },
+        {
+          "rank": 2,
+          "name": "Lake Alpine",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": null,
+          "longitude": null,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "normalCandidates": [],
+      "automaticDeep": {
+        "needed": true,
+        "invoked": true,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 1,
+        "top3Count": 2,
+        "specificResult": true,
+        "recoveryInvoked": false,
+        "normalCandidates": [],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "WEAK",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 2
+      },
+      "automaticDeepRecognition": {
+        "model": "gpt-5.6-sol",
+        "timingsMs": {
+          "sol": 20339
+        },
+        "engineVersion": "simple-sol-premium.v2",
+        "placesRequests": 2,
+        "knownModelCostUsd": 0.046764
+      },
+      "modelProvider": "gemini+simple-sol",
+      "durationMs": 55962,
+      "taskStatus": "completed",
+      "taskFailureCode": null,
+      "diagnostics": {
+        "multiple": false,
+        "modelPath": "current_fresh_recognition",
+        "placeCount": 2,
+        "insufficient": false,
+        "automaticDeep": {
+          "needed": true,
+          "invoked": true,
+          "version": "automatic-deep-recognition.v2",
+          "attempts": 1,
+          "top3Count": 2,
+          "specificResult": true,
+          "recoveryInvoked": false,
+          "normalCandidates": [],
+          "noUsableSourceEvidence": false,
+          "normalResultSpecificity": "WEAK",
+          "recoverySpecificHypotheses": 0,
+          "firstAttemptSpecificHypotheses": 2
+        },
+        "cacheReadUsed": false,
+        "moments_split": 0,
+        "moments_merged": 0,
+        "modelPlacesValid": 0,
+        "raw_moment_count": 0,
+        "analysisAttempted": true,
+        "destinationPlaces": 1,
+        "partialPlaceCount": 0,
+        "cacheReadSuspended": true,
+        "explicitPlaceCount": 2,
+        "modelPlacesEmitted": 1,
+        "recognitionVersion": "vayrin-recognition-2026-08-26.v3-generic-guard-same-place-groups",
+        "logical_place_count": 0,
+        "modelPlacesRejected": 1,
+        "recognitionCacheRead": false,
+        "grouping_reason_codes": [],
+        "evidenceRejectionPaths": [
+          "places.0.name:invalid_type"
+        ],
+        "sharedGeoCountrySource": "multiple_places_agree",
+        "recognitionFailureClass": "none",
+        "sharedGeoCountryApplied": true,
+        "automaticDeepRecognition": {
+          "model": "gpt-5.6-sol",
+          "timingsMs": {
+            "sol": 20339
+          },
+          "engineVersion": "simple-sol-premium.v2",
+          "placesRequests": 2,
+          "knownModelCostUsd": 0.046764
+        },
+        "sharedGeoCountryStrength": "strong",
+        "modelValidationErrorClass": "candidate_field_invalid",
+        "peerGeographicDestinations": 0,
+        "same_place_confidence_band": "none",
+        "sharedGeoCountryCandidates": 1,
+        "modelPartialPlacesPreserved": 1,
+        "recognitionCacheWritesEnabled": true,
+        "sourceGeographicContextDropped": 0,
+        "distinct_place_evidence_present": false
+      }
+    },
+    {
+      "caseId": "B06",
+      "suite": "FOUNDER_12",
+      "category": null,
+      "sourceUrl": "https://www.instagram.com/reel/DaTCcpvIJWU/",
+      "expectedRoute": "AUTO_DEEP",
+      "recordedLead": "Ponta da Piedade",
+      "jobId": "7877657d-761d-433c-b40c-2abe4bf71f2b",
+      "status": "needs_help",
+      "decision": "candidate_picker",
+      "savedPlaceId": null,
+      "failureCategory": null,
+      "failureCode": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Ponta da Piedade",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 37.0798758,
+          "longitude": -8.6685911,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        },
+        {
+          "rank": 2,
+          "name": "Ponta de São Lourenço",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 32.7433696,
+          "longitude": -16.7009394,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        },
+        {
+          "rank": 3,
+          "name": "Praia da Ingrina coasteering cliffs",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": null,
+          "longitude": null,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "normalCandidates": [],
+      "automaticDeep": {
+        "needed": true,
+        "invoked": true,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 1,
+        "top3Count": 3,
+        "specificResult": true,
+        "recoveryInvoked": false,
+        "normalCandidates": [],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "WEAK",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 3
+      },
+      "automaticDeepRecognition": {
+        "model": "gpt-5.6-sol",
+        "timingsMs": {
+          "sol": 130665
+        },
+        "engineVersion": "simple-sol-premium.v2",
+        "placesRequests": 3,
+        "knownModelCostUsd": 0.14126
+      },
+      "modelProvider": "gemini+simple-sol",
+      "durationMs": 153723,
+      "taskStatus": "completed",
+      "taskFailureCode": null,
+      "diagnostics": {
+        "multiple": false,
+        "modelPath": "current_fresh_recognition",
+        "placeCount": 3,
+        "insufficient": false,
+        "automaticDeep": {
+          "needed": true,
+          "invoked": true,
+          "version": "automatic-deep-recognition.v2",
+          "attempts": 1,
+          "top3Count": 3,
+          "specificResult": true,
+          "recoveryInvoked": false,
+          "normalCandidates": [],
+          "noUsableSourceEvidence": false,
+          "normalResultSpecificity": "WEAK",
+          "recoverySpecificHypotheses": 0,
+          "firstAttemptSpecificHypotheses": 3
+        },
+        "cacheReadUsed": false,
+        "moments_split": 0,
+        "moments_merged": 0,
+        "modelPlacesValid": 0,
+        "raw_moment_count": 0,
+        "analysisAttempted": true,
+        "destinationPlaces": 1,
+        "partialPlaceCount": 0,
+        "cacheReadSuspended": true,
+        "explicitPlaceCount": 3,
+        "modelPlacesEmitted": 0,
+        "recognitionVersion": "vayrin-recognition-2026-08-26.v3-generic-guard-same-place-groups",
+        "logical_place_count": 0,
+        "modelPlacesRejected": 0,
+        "recognitionCacheRead": false,
+        "grouping_reason_codes": [],
+        "sharedGeoCountrySource": "multiple_places_agree",
+        "recognitionFailureClass": "none",
+        "sharedGeoCountryApplied": true,
+        "automaticDeepRecognition": {
+          "model": "gpt-5.6-sol",
+          "timingsMs": {
+            "sol": 130665
+          },
+          "engineVersion": "simple-sol-premium.v2",
+          "placesRequests": 3,
+          "knownModelCostUsd": 0.14126
+        },
+        "sharedGeoCountryStrength": "strong",
+        "modelValidationErrorClass": "none",
+        "peerGeographicDestinations": 0,
+        "same_place_confidence_band": "none",
+        "sharedGeoCountryCandidates": 1,
+        "modelPartialPlacesPreserved": 0,
+        "recognitionCacheWritesEnabled": true,
+        "sourceGeographicContextDropped": 0,
+        "distinct_place_evidence_present": false
+      }
+    },
+    {
+      "caseId": "B07",
+      "suite": "FOUNDER_12",
+      "category": null,
+      "sourceUrl": "https://www.instagram.com/reel/DFlnzJHy3hA/",
+      "expectedRoute": "AUTO_DEEP",
+      "recordedLead": "Cedar Creek Falls",
+      "jobId": "719be966-50a5-4811-a890-919d28c0da90",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "failureCategory": null,
+      "failureCode": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Cedar Creek Falls Trail",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 32.9933844,
+          "longitude": -116.7442667,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        },
+        {
+          "rank": 2,
+          "name": "Cedar Creek Falls",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": null,
+          "longitude": null,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "normalCandidates": [],
+      "automaticDeep": {
+        "needed": true,
+        "invoked": true,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 1,
+        "top3Count": 1,
+        "specificResult": true,
+        "recoveryInvoked": false,
+        "normalCandidates": [],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "WEAK",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 1
+      },
+      "automaticDeepRecognition": {
+        "model": "gpt-5.6-sol",
+        "timingsMs": {
+          "sol": 10004
+        },
+        "engineVersion": "simple-sol-premium.v2",
+        "placesRequests": 1,
+        "knownModelCostUsd": 0.021164
+      },
+      "modelProvider": "gemini+simple-sol",
+      "durationMs": 30465,
+      "taskStatus": "completed",
+      "taskFailureCode": null,
+      "diagnostics": {
+        "multiple": false,
+        "modelPath": "current_fresh_recognition",
+        "placeCount": 1,
+        "insufficient": false,
+        "automaticDeep": {
+          "needed": true,
+          "invoked": true,
+          "version": "automatic-deep-recognition.v2",
+          "attempts": 1,
+          "top3Count": 1,
+          "specificResult": true,
+          "recoveryInvoked": false,
+          "normalCandidates": [],
+          "noUsableSourceEvidence": false,
+          "normalResultSpecificity": "WEAK",
+          "recoverySpecificHypotheses": 0,
+          "firstAttemptSpecificHypotheses": 1
+        },
+        "cacheReadUsed": false,
+        "moments_split": 0,
+        "moments_merged": 0,
+        "modelPlacesValid": 0,
+        "raw_moment_count": 0,
+        "analysisAttempted": true,
+        "destinationPlaces": 1,
+        "partialPlaceCount": 0,
+        "cacheReadSuspended": true,
+        "explicitPlaceCount": 1,
+        "modelPlacesEmitted": 1,
+        "recognitionVersion": "vayrin-recognition-2026-08-26.v3-generic-guard-same-place-groups",
+        "logical_place_count": 0,
+        "modelPlacesRejected": 1,
+        "recognitionCacheRead": false,
+        "grouping_reason_codes": [],
+        "evidenceRejectionPaths": [
+          "places.0.name:invalid_type"
+        ],
+        "recognitionFailureClass": "none",
+        "sharedGeoCountryApplied": false,
+        "automaticDeepRecognition": {
+          "model": "gpt-5.6-sol",
+          "timingsMs": {
+            "sol": 10004
+          },
+          "engineVersion": "simple-sol-premium.v2",
+          "placesRequests": 1,
+          "knownModelCostUsd": 0.021164
+        },
+        "sharedGeoCountryStrength": "weak",
+        "modelValidationErrorClass": "candidate_field_invalid",
+        "peerGeographicDestinations": 0,
+        "same_place_confidence_band": "none",
+        "sharedGeoCountryCandidates": 1,
+        "modelPartialPlacesPreserved": 1,
+        "recognitionCacheWritesEnabled": true,
+        "sourceGeographicContextDropped": 0,
+        "distinct_place_evidence_present": false
+      }
+    },
+    {
+      "caseId": "B08",
+      "suite": "FOUNDER_12",
+      "category": null,
+      "sourceUrl": "https://www.instagram.com/reel/DaKfoWjtFqT/",
+      "expectedRoute": "AUTO_DEEP",
+      "recordedLead": "Oeschinen Lake",
+      "jobId": "e9d43900-fa71-48b2-b5cb-7ad5093d4c2a",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "failureCategory": null,
+      "failureCode": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Oeschinen Lake (Oeschinensee)",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": null,
+          "longitude": null,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        },
+        {
+          "rank": 2,
+          "name": "Oeschinen Lake",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 46.498908899999996,
+          "longitude": 7.7291063,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "normalCandidates": [],
+      "automaticDeep": {
+        "needed": true,
+        "invoked": true,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 1,
+        "top3Count": 1,
+        "specificResult": true,
+        "recoveryInvoked": false,
+        "normalCandidates": [],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "WEAK",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 1
+      },
+      "automaticDeepRecognition": {
+        "model": "gpt-5.6-sol",
+        "timingsMs": {
+          "sol": 9927
+        },
+        "engineVersion": "simple-sol-premium.v2",
+        "placesRequests": 2,
+        "knownModelCostUsd": 0.039936
+      },
+      "modelProvider": "gemini+simple-sol",
+      "durationMs": 39837,
+      "taskStatus": "completed",
+      "taskFailureCode": null,
+      "diagnostics": {
+        "multiple": false,
+        "modelPath": "current_fresh_recognition",
+        "placeCount": 1,
+        "insufficient": true,
+        "automaticDeep": {
+          "needed": true,
+          "invoked": true,
+          "version": "automatic-deep-recognition.v2",
+          "attempts": 1,
+          "top3Count": 1,
+          "specificResult": true,
+          "recoveryInvoked": false,
+          "normalCandidates": [],
+          "noUsableSourceEvidence": false,
+          "normalResultSpecificity": "WEAK",
+          "recoverySpecificHypotheses": 0,
+          "firstAttemptSpecificHypotheses": 1
+        },
+        "cacheReadUsed": false,
+        "moments_split": 0,
+        "moments_merged": 0,
+        "modelPlacesValid": 0,
+        "raw_moment_count": 0,
+        "analysisAttempted": true,
+        "destinationPlaces": 0,
+        "partialPlaceCount": 0,
+        "cacheReadSuspended": true,
+        "explicitPlaceCount": 0,
+        "modelPlacesEmitted": 2,
+        "recognitionVersion": "vayrin-recognition-2026-08-26.v3-generic-guard-same-place-groups",
+        "logical_place_count": 0,
+        "modelPlacesRejected": 2,
+        "recognitionCacheRead": false,
+        "grouping_reason_codes": [],
+        "evidenceRejectionPaths": [
+          "places.0.name:invalid_type",
+          "places.1.distinctPlaceSignals.0:invalid_enum_value",
+          "places.1.name:invalid_type"
+        ],
+        "recognitionFailureClass": "none",
+        "sharedGeoCountryApplied": false,
+        "automaticDeepRecognition": {
+          "model": "gpt-5.6-sol",
+          "timingsMs": {
+            "sol": 9927
+          },
+          "engineVersion": "simple-sol-premium.v2",
+          "placesRequests": 2,
+          "knownModelCostUsd": 0.039936
+        },
+        "sharedGeoCountryStrength": "none",
+        "modelValidationErrorClass": "candidate_field_invalid",
+        "peerGeographicDestinations": 0,
+        "same_place_confidence_band": "none",
+        "sharedGeoCountryCandidates": 0,
+        "modelPartialPlacesPreserved": 2,
+        "recognitionCacheWritesEnabled": true,
+        "sourceGeographicContextDropped": 0,
+        "distinct_place_evidence_present": false
+      }
+    },
+    {
+      "caseId": "B09",
+      "suite": "FOUNDER_12",
+      "category": null,
+      "sourceUrl": "https://www.instagram.com/reel/DZDZ4hQI1ih/",
+      "expectedRoute": "NORMAL_ONLY",
+      "recordedLead": "Tanque Verde Falls",
+      "jobId": "8f669395-b459-401d-891e-e6347156313e",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "failureCategory": null,
+      "failureCode": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Boulder Plunge",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": null,
+          "longitude": null,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "normalCandidates": [
+        {
+          "city": null,
+          "name": "Boulder Plunge",
+          "region": null,
+          "country": null,
+          "category": "scenic_spot"
+        }
+      ],
+      "automaticDeep": {
+        "needed": false,
+        "invoked": false,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 0,
+        "top3Count": 0,
+        "specificResult": false,
+        "recoveryInvoked": false,
+        "rejectionReason": null,
+        "normalCandidates": [
+          {
+            "city": null,
+            "name": "Boulder Plunge",
+            "region": null,
+            "country": null,
+            "category": "scenic_spot"
+          }
+        ],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "SPECIFIC_ACTIONABLE",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 0
+      },
+      "automaticDeepRecognition": null,
+      "modelProvider": "gemini",
+      "durationMs": 27732,
+      "taskStatus": "completed",
+      "taskFailureCode": null,
+      "diagnostics": {
+        "multiple": false,
+        "modelPath": "current_fresh_recognition",
+        "placeCount": 1,
+        "insufficient": false,
+        "automaticDeep": {
+          "needed": false,
+          "invoked": false,
+          "version": "automatic-deep-recognition.v2",
+          "attempts": 0,
+          "top3Count": 0,
+          "specificResult": false,
+          "recoveryInvoked": false,
+          "rejectionReason": null,
+          "normalCandidates": [
+            {
+              "city": null,
+              "name": "Boulder Plunge",
+              "region": null,
+              "country": null,
+              "category": "scenic_spot"
+            }
+          ],
+          "noUsableSourceEvidence": false,
+          "normalResultSpecificity": "SPECIFIC_ACTIONABLE",
+          "recoverySpecificHypotheses": 0,
+          "firstAttemptSpecificHypotheses": 0
+        },
+        "cacheReadUsed": false,
+        "moments_split": 0,
+        "moments_merged": 0,
+        "finalResultClass": "canonical_evidence",
+        "modelPlacesValid": 1,
+        "raw_moment_count": 1,
+        "analysisAttempted": true,
+        "destinationPlaces": 1,
+        "partialPlaceCount": 0,
+        "cacheReadSuspended": true,
+        "explicitPlaceCount": 1,
+        "modelPlacesEmitted": 1,
+        "recognitionVersion": "vayrin-recognition-2026-08-26.v3-generic-guard-same-place-groups",
+        "logical_place_count": 1,
+        "modelPlacesRejected": 0,
+        "recognitionCacheRead": false,
+        "grouping_reason_codes": [],
+        "recognitionFailureClass": "none",
+        "sharedGeoCountryApplied": false,
+        "sharedGeoCountryStrength": "none",
+        "modelValidationErrorClass": "none",
+        "peerGeographicDestinations": 0,
+        "same_place_confidence_band": "none",
+        "sharedGeoCountryCandidates": 0,
+        "modelPartialPlacesPreserved": 0,
+        "recognitionCacheWritesEnabled": true,
+        "sourceGeographicContextDropped": 0,
+        "distinct_place_evidence_present": false
+      }
+    },
+    {
+      "caseId": "B10",
+      "suite": "FOUNDER_12",
+      "category": null,
+      "sourceUrl": "https://www.instagram.com/reel/Db_26wNPuWb/",
+      "expectedRoute": "AUTO_DEEP",
+      "recordedLead": "God's Bath on the Clavey River",
+      "jobId": "68ad02a5-c06c-4252-8f09-20896af4bd5a",
+      "status": "needs_help",
+      "decision": "multi_candidate_confirmation",
+      "savedPlaceId": null,
+      "failureCategory": null,
+      "failureCode": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Angeles National Forest",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 34.4113389,
+          "longitude": -118.17510019999999,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        },
+        {
+          "rank": 2,
+          "name": "Stanislaus National Forest",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 38.158336999999996,
+          "longitude": -119.92779469999998,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        },
+        {
+          "rank": 3,
+          "name": "Eldorado National Forest",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 38.7647674,
+          "longitude": -120.32956929999999,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "normalCandidates": [
+        {
+          "city": null,
+          "name": "Cruzado National Forest",
+          "region": "California",
+          "country": null,
+          "category": "scenic_spot"
+        }
+      ],
+      "automaticDeep": {
+        "needed": false,
+        "invoked": false,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 0,
+        "top3Count": 0,
+        "specificResult": false,
+        "recoveryInvoked": false,
+        "rejectionReason": null,
+        "normalCandidates": [
+          {
+            "city": null,
+            "name": "Cruzado National Forest",
+            "region": "California",
+            "country": null,
+            "category": "scenic_spot"
+          }
+        ],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "SPECIFIC_ACTIONABLE",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 0
+      },
+      "automaticDeepRecognition": null,
+      "modelProvider": "gemini",
+      "durationMs": 43557,
+      "taskStatus": "completed",
+      "taskFailureCode": null,
+      "diagnostics": {
+        "multiple": false,
+        "modelPath": "current_fresh_recognition",
+        "placeCount": 1,
+        "insufficient": false,
+        "automaticDeep": {
+          "needed": false,
+          "invoked": false,
+          "version": "automatic-deep-recognition.v2",
+          "attempts": 0,
+          "top3Count": 0,
+          "specificResult": false,
+          "recoveryInvoked": false,
+          "rejectionReason": null,
+          "normalCandidates": [
+            {
+              "city": null,
+              "name": "Cruzado National Forest",
+              "region": "California",
+              "country": null,
+              "category": "scenic_spot"
+            }
+          ],
+          "noUsableSourceEvidence": false,
+          "normalResultSpecificity": "SPECIFIC_ACTIONABLE",
+          "recoverySpecificHypotheses": 0,
+          "firstAttemptSpecificHypotheses": 0
+        },
+        "cacheReadUsed": false,
+        "moments_split": 0,
+        "moments_merged": 0,
+        "finalResultClass": "canonical_evidence",
+        "modelPlacesValid": 1,
+        "raw_moment_count": 1,
+        "analysisAttempted": true,
+        "destinationPlaces": 1,
+        "partialPlaceCount": 0,
+        "cacheReadSuspended": true,
+        "explicitPlaceCount": 1,
+        "modelPlacesEmitted": 1,
+        "recognitionVersion": "vayrin-recognition-2026-08-26.v3-generic-guard-same-place-groups",
+        "logical_place_count": 1,
+        "modelPlacesRejected": 0,
+        "recognitionCacheRead": false,
+        "grouping_reason_codes": [],
+        "recognitionFailureClass": "none",
+        "sharedGeoCountryApplied": false,
+        "sharedGeoCountryStrength": "none",
+        "modelValidationErrorClass": "none",
+        "peerGeographicDestinations": 0,
+        "same_place_confidence_band": "none",
+        "sharedGeoCountryCandidates": 0,
+        "modelPartialPlacesPreserved": 0,
+        "recognitionCacheWritesEnabled": true,
+        "sourceGeographicContextDropped": 0,
+        "distinct_place_evidence_present": false
+      }
+    },
+    {
+      "caseId": "B11",
+      "suite": "FOUNDER_12",
+      "category": null,
+      "sourceUrl": "https://www.instagram.com/reel/DZ34ib4siQL/",
+      "expectedRoute": "AUTO_DEEP",
+      "recordedLead": "Smith River",
+      "jobId": "27041887-0b1f-4984-90a7-27c176a5c0ba",
+      "status": "needs_help",
+      "decision": "multi_candidate_confirmation",
+      "savedPlaceId": null,
+      "failureCategory": null,
+      "failureCode": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Roaring River Falls, Kings Canyon National Park",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 36.7818628,
+          "longitude": -118.62196139999999,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        },
+        {
+          "rank": 2,
+          "name": "Scenic vista",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 38.98685450000001,
+          "longitude": -122.98335259999999,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        },
+        {
+          "rank": 3,
+          "name": "California's Great America",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 37.3973529,
+          "longitude": -121.9744083,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "normalCandidates": [
+        {
+          "city": null,
+          "name": "California's Clearest River",
+          "region": "California",
+          "country": null,
+          "category": "scenic_spot"
+        }
+      ],
+      "automaticDeep": {
+        "needed": false,
+        "invoked": false,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 0,
+        "top3Count": 0,
+        "specificResult": false,
+        "recoveryInvoked": false,
+        "rejectionReason": null,
+        "normalCandidates": [
+          {
+            "city": null,
+            "name": "California's Clearest River",
+            "region": "California",
+            "country": null,
+            "category": "scenic_spot"
+          }
+        ],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "SPECIFIC_ACTIONABLE",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 0
+      },
+      "automaticDeepRecognition": null,
+      "modelProvider": "gemini",
+      "durationMs": 43768,
+      "taskStatus": "completed",
+      "taskFailureCode": null,
+      "diagnostics": {
+        "multiple": false,
+        "modelPath": "current_fresh_recognition",
+        "placeCount": 1,
+        "insufficient": false,
+        "automaticDeep": {
+          "needed": false,
+          "invoked": false,
+          "version": "automatic-deep-recognition.v2",
+          "attempts": 0,
+          "top3Count": 0,
+          "specificResult": false,
+          "recoveryInvoked": false,
+          "rejectionReason": null,
+          "normalCandidates": [
+            {
+              "city": null,
+              "name": "California's Clearest River",
+              "region": "California",
+              "country": null,
+              "category": "scenic_spot"
+            }
+          ],
+          "noUsableSourceEvidence": false,
+          "normalResultSpecificity": "SPECIFIC_ACTIONABLE",
+          "recoverySpecificHypotheses": 0,
+          "firstAttemptSpecificHypotheses": 0
+        },
+        "cacheReadUsed": false,
+        "moments_split": 0,
+        "moments_merged": 0,
+        "finalResultClass": "canonical_evidence",
+        "modelPlacesValid": 1,
+        "raw_moment_count": 1,
+        "analysisAttempted": true,
+        "destinationPlaces": 1,
+        "partialPlaceCount": 0,
+        "cacheReadSuspended": true,
+        "explicitPlaceCount": 1,
+        "modelPlacesEmitted": 1,
+        "recognitionVersion": "vayrin-recognition-2026-08-26.v3-generic-guard-same-place-groups",
+        "logical_place_count": 1,
+        "modelPlacesRejected": 0,
+        "recognitionCacheRead": false,
+        "grouping_reason_codes": [],
+        "recognitionFailureClass": "none",
+        "sharedGeoCountryApplied": false,
+        "sharedGeoCountryStrength": "none",
+        "modelValidationErrorClass": "none",
+        "peerGeographicDestinations": 0,
+        "same_place_confidence_band": "none",
+        "sharedGeoCountryCandidates": 0,
+        "modelPartialPlacesPreserved": 0,
+        "recognitionCacheWritesEnabled": true,
+        "sourceGeographicContextDropped": 0,
+        "distinct_place_evidence_present": false
+      }
+    },
+    {
+      "caseId": "B12",
+      "suite": "FOUNDER_12",
+      "category": null,
+      "sourceUrl": "https://www.instagram.com/reel/DbTo6bsR-9U/",
+      "expectedRoute": "AUTO_DEEP",
+      "recordedLead": "Emerald Pools on South Yuba River",
+      "jobId": "76a3df16-bebe-41c5-bfe3-2556e0de6d72",
+      "status": "needs_help",
+      "decision": "candidate_picker",
+      "savedPlaceId": null,
+      "failureCategory": null,
+      "failureCode": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Clavey River",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 37.8638148,
+          "longitude": -120.1162974,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        },
+        {
+          "rank": 2,
+          "name": "Aztec Falls",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 34.2798612,
+          "longitude": -117.1282589,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        },
+        {
+          "rank": 3,
+          "name": "Emerald Pools on the South Yuba River",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": null,
+          "longitude": null,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "normalCandidates": [],
+      "automaticDeep": {
+        "needed": true,
+        "invoked": true,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 1,
+        "top3Count": 3,
+        "specificResult": true,
+        "recoveryInvoked": false,
+        "normalCandidates": [],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "WEAK",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 3
+      },
+      "automaticDeepRecognition": {
+        "model": "gpt-5.6-sol",
+        "timingsMs": {
+          "sol": 39217
+        },
+        "engineVersion": "simple-sol-premium.v2",
+        "placesRequests": 3,
+        "knownModelCostUsd": 0.063484
+      },
+      "modelProvider": "gemini+simple-sol",
+      "durationMs": 67857,
+      "taskStatus": "completed",
+      "taskFailureCode": null,
+      "diagnostics": {
+        "multiple": false,
+        "modelPath": "current_fresh_recognition",
+        "placeCount": 3,
+        "insufficient": false,
+        "automaticDeep": {
+          "needed": true,
+          "invoked": true,
+          "version": "automatic-deep-recognition.v2",
+          "attempts": 1,
+          "top3Count": 3,
+          "specificResult": true,
+          "recoveryInvoked": false,
+          "normalCandidates": [],
+          "noUsableSourceEvidence": false,
+          "normalResultSpecificity": "WEAK",
+          "recoverySpecificHypotheses": 0,
+          "firstAttemptSpecificHypotheses": 3
+        },
+        "cacheReadUsed": false,
+        "moments_split": 0,
+        "moments_merged": 0,
+        "modelPlacesValid": 0,
+        "raw_moment_count": 0,
+        "analysisAttempted": true,
+        "destinationPlaces": 1,
+        "partialPlaceCount": 0,
+        "cacheReadSuspended": true,
+        "explicitPlaceCount": 3,
+        "modelPlacesEmitted": 1,
+        "recognitionVersion": "vayrin-recognition-2026-08-26.v3-generic-guard-same-place-groups",
+        "logical_place_count": 0,
+        "modelPlacesRejected": 1,
+        "recognitionCacheRead": false,
+        "grouping_reason_codes": [],
+        "evidenceRejectionPaths": [
+          "places.0.name:too_small"
+        ],
+        "sharedGeoCountrySource": "multiple_places_agree",
+        "recognitionFailureClass": "none",
+        "sharedGeoCountryApplied": true,
+        "automaticDeepRecognition": {
+          "model": "gpt-5.6-sol",
+          "timingsMs": {
+            "sol": 39217
+          },
+          "engineVersion": "simple-sol-premium.v2",
+          "placesRequests": 3,
+          "knownModelCostUsd": 0.063484
+        },
+        "sharedGeoCountryStrength": "strong",
+        "modelValidationErrorClass": "candidate_field_invalid",
+        "peerGeographicDestinations": 0,
+        "same_place_confidence_band": "none",
+        "sharedGeoCountryCandidates": 1,
+        "modelPartialPlacesPreserved": 1,
+        "recognitionCacheWritesEnabled": true,
+        "sourceGeographicContextDropped": 0,
+        "distinct_place_evidence_present": false
+      }
+    },
+    {
+      "caseId": "F4-01",
+      "suite": "FOUNDER_4",
+      "category": null,
+      "sourceUrl": "https://www.instagram.com/reel/DJ1CVA8vbfV/",
+      "expectedRoute": "AUTO_DEEP",
+      "recordedLead": null,
+      "jobId": "504ff51a-6985-4a82-acd1-695113e7307e",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "failureCategory": null,
+      "failureCode": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Dandahra Falls",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": null,
+          "longitude": null,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        },
+        {
+          "rank": 2,
+          "name": "Billyrimba Falls",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": null,
+          "longitude": null,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        },
+        {
+          "rank": 3,
+          "name": "Kings Plains Falls",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": null,
+          "longitude": null,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "normalCandidates": [],
+      "automaticDeep": {
+        "needed": true,
+        "invoked": true,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 1,
+        "top3Count": 3,
+        "specificResult": true,
+        "recoveryInvoked": false,
+        "normalCandidates": [],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "WEAK",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 3
+      },
+      "automaticDeepRecognition": {
+        "model": "gpt-5.6-sol",
+        "timingsMs": {
+          "sol": 98311
+        },
+        "engineVersion": "simple-sol-premium.v2",
+        "placesRequests": 3,
+        "knownModelCostUsd": 0.10688
+      },
+      "modelProvider": "gemini+simple-sol",
+      "durationMs": 123805,
+      "taskStatus": "completed",
+      "taskFailureCode": null,
+      "diagnostics": {
+        "multiple": false,
+        "modelPath": "current_fresh_recognition",
+        "placeCount": 3,
+        "insufficient": false,
+        "automaticDeep": {
+          "needed": true,
+          "invoked": true,
+          "version": "automatic-deep-recognition.v2",
+          "attempts": 1,
+          "top3Count": 3,
+          "specificResult": true,
+          "recoveryInvoked": false,
+          "normalCandidates": [],
+          "noUsableSourceEvidence": false,
+          "normalResultSpecificity": "WEAK",
+          "recoverySpecificHypotheses": 0,
+          "firstAttemptSpecificHypotheses": 3
+        },
+        "cacheReadUsed": false,
+        "moments_split": 0,
+        "moments_merged": 0,
+        "modelPlacesValid": 0,
+        "raw_moment_count": 0,
+        "analysisAttempted": true,
+        "destinationPlaces": 1,
+        "partialPlaceCount": 0,
+        "cacheReadSuspended": true,
+        "explicitPlaceCount": 3,
+        "modelPlacesEmitted": 1,
+        "recognitionVersion": "vayrin-recognition-2026-08-26.v3-generic-guard-same-place-groups",
+        "logical_place_count": 0,
+        "modelPlacesRejected": 1,
+        "recognitionCacheRead": false,
+        "grouping_reason_codes": [],
+        "evidenceRejectionPaths": [
+          "places.0.name:invalid_type"
+        ],
+        "sharedGeoCountrySource": "multiple_places_agree",
+        "recognitionFailureClass": "none",
+        "sharedGeoCountryApplied": true,
+        "automaticDeepRecognition": {
+          "model": "gpt-5.6-sol",
+          "timingsMs": {
+            "sol": 98311
+          },
+          "engineVersion": "simple-sol-premium.v2",
+          "placesRequests": 3,
+          "knownModelCostUsd": 0.10688
+        },
+        "sharedGeoCountryStrength": "strong",
+        "modelValidationErrorClass": "candidate_field_invalid",
+        "peerGeographicDestinations": 0,
+        "same_place_confidence_band": "none",
+        "sharedGeoCountryCandidates": 1,
+        "modelPartialPlacesPreserved": 1,
+        "recognitionCacheWritesEnabled": true,
+        "sourceGeographicContextDropped": 0,
+        "distinct_place_evidence_present": false
+      }
+    },
+    {
+      "caseId": "F4-02",
+      "suite": "FOUNDER_4",
+      "category": null,
+      "sourceUrl": "https://www.instagram.com/reel/DWrKNRujq4X/",
+      "expectedRoute": "AUTO_DEEP",
+      "recordedLead": null,
+      "jobId": "5135fa3b-90eb-4938-927b-6c3e4de8ad66",
+      "status": "needs_help",
+      "decision": "candidate_picker",
+      "savedPlaceId": null,
+      "failureCategory": null,
+      "failureCode": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Cenote Zaci",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 20.6916378,
+          "longitude": -88.19734629999999,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        },
+        {
+          "rank": 2,
+          "name": "Cenote Hubiku",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 20.8182987,
+          "longitude": -88.1729025,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        },
+        {
+          "rank": 3,
+          "name": "Ik Kil",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 20.6610138,
+          "longitude": -88.550438,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "normalCandidates": [],
+      "automaticDeep": {
+        "needed": true,
+        "invoked": true,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 1,
+        "top3Count": 3,
+        "specificResult": true,
+        "recoveryInvoked": false,
+        "normalCandidates": [],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "WEAK",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 3
+      },
+      "automaticDeepRecognition": {
+        "model": "gpt-5.6-sol",
+        "timingsMs": {
+          "sol": 63415
+        },
+        "engineVersion": "simple-sol-premium.v2",
+        "placesRequests": 3,
+        "knownModelCostUsd": 0.082032
+      },
+      "modelProvider": "gemini+simple-sol",
+      "durationMs": 86084,
+      "taskStatus": "completed",
+      "taskFailureCode": null,
+      "diagnostics": {
+        "multiple": false,
+        "modelPath": "current_fresh_recognition",
+        "placeCount": 3,
+        "insufficient": false,
+        "automaticDeep": {
+          "needed": true,
+          "invoked": true,
+          "version": "automatic-deep-recognition.v2",
+          "attempts": 1,
+          "top3Count": 3,
+          "specificResult": true,
+          "recoveryInvoked": false,
+          "normalCandidates": [],
+          "noUsableSourceEvidence": false,
+          "normalResultSpecificity": "WEAK",
+          "recoverySpecificHypotheses": 0,
+          "firstAttemptSpecificHypotheses": 3
+        },
+        "cacheReadUsed": false,
+        "moments_split": 0,
+        "moments_merged": 0,
+        "modelPlacesValid": 0,
+        "raw_moment_count": 0,
+        "analysisAttempted": true,
+        "destinationPlaces": 1,
+        "partialPlaceCount": 0,
+        "cacheReadSuspended": true,
+        "explicitPlaceCount": 3,
+        "modelPlacesEmitted": 1,
+        "recognitionVersion": "vayrin-recognition-2026-08-26.v3-generic-guard-same-place-groups",
+        "logical_place_count": 0,
+        "modelPlacesRejected": 1,
+        "recognitionCacheRead": false,
+        "grouping_reason_codes": [],
+        "evidenceRejectionPaths": [
+          "places.0.name:invalid_type"
+        ],
+        "sharedGeoCountrySource": "multiple_places_agree",
+        "recognitionFailureClass": "none",
+        "sharedGeoCountryApplied": true,
+        "automaticDeepRecognition": {
+          "model": "gpt-5.6-sol",
+          "timingsMs": {
+            "sol": 63415
+          },
+          "engineVersion": "simple-sol-premium.v2",
+          "placesRequests": 3,
+          "knownModelCostUsd": 0.082032
+        },
+        "sharedGeoCountryStrength": "strong",
+        "modelValidationErrorClass": "candidate_field_invalid",
+        "peerGeographicDestinations": 0,
+        "same_place_confidence_band": "none",
+        "sharedGeoCountryCandidates": 1,
+        "modelPartialPlacesPreserved": 1,
+        "recognitionCacheWritesEnabled": true,
+        "sourceGeographicContextDropped": 0,
+        "distinct_place_evidence_present": false
+      }
+    },
+    {
+      "caseId": "F4-03",
+      "suite": "FOUNDER_4",
+      "category": null,
+      "sourceUrl": "https://www.instagram.com/reel/DWJ2zaqEQOk/",
+      "expectedRoute": "NORMAL_ONLY",
+      "recordedLead": null,
+      "jobId": "f68fdc97-81b6-4fe0-8870-2c8c47760900",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "failureCategory": null,
+      "failureCode": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "The Crack at Wet Beaver Creek",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 34.6739472,
+          "longitude": -111.66018299999999,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        },
+        {
+          "rank": 2,
+          "name": "The Crack via Bell Trail",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": null,
+          "longitude": null,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "normalCandidates": [
+        {
+          "city": "Sedona",
+          "name": "The Crack via Bell Trail",
+          "region": "Arizona",
+          "country": "USA",
+          "category": "hiking_trail"
+        }
+      ],
+      "automaticDeep": {
+        "needed": false,
+        "invoked": false,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 0,
+        "top3Count": 0,
+        "specificResult": false,
+        "recoveryInvoked": false,
+        "rejectionReason": null,
+        "normalCandidates": [
+          {
+            "city": "Sedona",
+            "name": "The Crack via Bell Trail",
+            "region": "Arizona",
+            "country": "USA",
+            "category": "hiking_trail"
+          }
+        ],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "SPECIFIC_ACTIONABLE",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 0
+      },
+      "automaticDeepRecognition": null,
+      "modelProvider": "gemini",
+      "durationMs": 35110,
+      "taskStatus": "completed",
+      "taskFailureCode": null,
+      "diagnostics": {
+        "multiple": false,
+        "modelPath": "current_fresh_recognition",
+        "placeCount": 1,
+        "insufficient": false,
+        "automaticDeep": {
+          "needed": false,
+          "invoked": false,
+          "version": "automatic-deep-recognition.v2",
+          "attempts": 0,
+          "top3Count": 0,
+          "specificResult": false,
+          "recoveryInvoked": false,
+          "rejectionReason": null,
+          "normalCandidates": [
+            {
+              "city": "Sedona",
+              "name": "The Crack via Bell Trail",
+              "region": "Arizona",
+              "country": "USA",
+              "category": "hiking_trail"
+            }
+          ],
+          "noUsableSourceEvidence": false,
+          "normalResultSpecificity": "SPECIFIC_ACTIONABLE",
+          "recoverySpecificHypotheses": 0,
+          "firstAttemptSpecificHypotheses": 0
+        },
+        "cacheReadUsed": false,
+        "moments_split": 0,
+        "moments_merged": 0,
+        "finalResultClass": "canonical_evidence",
+        "modelPlacesValid": 1,
+        "raw_moment_count": 1,
+        "analysisAttempted": true,
+        "destinationPlaces": 1,
+        "partialPlaceCount": 0,
+        "cacheReadSuspended": true,
+        "explicitPlaceCount": 1,
+        "modelPlacesEmitted": 1,
+        "recognitionVersion": "vayrin-recognition-2026-08-26.v3-generic-guard-same-place-groups",
+        "logical_place_count": 1,
+        "modelPlacesRejected": 0,
+        "recognitionCacheRead": false,
+        "grouping_reason_codes": [],
+        "recognitionFailureClass": "none",
+        "sharedGeoCountryApplied": false,
+        "sharedGeoCountryStrength": "weak",
+        "modelValidationErrorClass": "none",
+        "peerGeographicDestinations": 0,
+        "same_place_confidence_band": "none",
+        "sharedGeoCountryCandidates": 1,
+        "modelPartialPlacesPreserved": 0,
+        "recognitionCacheWritesEnabled": true,
+        "sourceGeographicContextDropped": 0,
+        "distinct_place_evidence_present": false
+      }
+    },
+    {
+      "caseId": "F4-04",
+      "suite": "FOUNDER_4",
+      "category": null,
+      "sourceUrl": "https://www.instagram.com/reel/DZbppj6IXOt/",
+      "expectedRoute": "AUTO_DEEP",
+      "recordedLead": null,
+      "jobId": "f266e4e9-dc6c-43fb-9bf8-99d8388a1ec6",
+      "status": "needs_help",
+      "decision": "candidate_confirmation",
+      "savedPlaceId": null,
+      "failureCategory": null,
+      "failureCode": null,
+      "candidates": [
+        {
+          "rank": 1,
+          "name": "Toketee Falls",
+          "identityType": "UNKNOWN",
+          "locality": null,
+          "country": null,
+          "latitude": 43.2633418,
+          "longitude": -122.4337113,
+          "evidenceType": null,
+          "canonicalizationStatus": null,
+          "specificity": "SPECIFIC_PHYSICAL_PLACE"
+        }
+      ],
+      "normalCandidates": [],
+      "automaticDeep": {
+        "needed": true,
+        "invoked": true,
+        "version": "automatic-deep-recognition.v2",
+        "attempts": 1,
+        "top3Count": 1,
+        "specificResult": true,
+        "recoveryInvoked": false,
+        "normalCandidates": [],
+        "noUsableSourceEvidence": false,
+        "normalResultSpecificity": "WEAK",
+        "recoverySpecificHypotheses": 0,
+        "firstAttemptSpecificHypotheses": 1
+      },
+      "automaticDeepRecognition": {
+        "model": "gpt-5.6-sol",
+        "timingsMs": {
+          "sol": 25668
+        },
+        "engineVersion": "simple-sol-premium.v2",
+        "placesRequests": 1,
+        "knownModelCostUsd": 0.05002
+      },
+      "modelProvider": "gemini+simple-sol",
+      "durationMs": 55724,
+      "taskStatus": "completed",
+      "taskFailureCode": null,
+      "diagnostics": {
+        "multiple": false,
+        "modelPath": "current_fresh_recognition",
+        "placeCount": 1,
+        "insufficient": false,
+        "automaticDeep": {
+          "needed": true,
+          "invoked": true,
+          "version": "automatic-deep-recognition.v2",
+          "attempts": 1,
+          "top3Count": 1,
+          "specificResult": true,
+          "recoveryInvoked": false,
+          "normalCandidates": [],
+          "noUsableSourceEvidence": false,
+          "normalResultSpecificity": "WEAK",
+          "recoverySpecificHypotheses": 0,
+          "firstAttemptSpecificHypotheses": 1
+        },
+        "cacheReadUsed": false,
+        "moments_split": 0,
+        "moments_merged": 0,
+        "modelPlacesValid": 0,
+        "raw_moment_count": 0,
+        "analysisAttempted": true,
+        "destinationPlaces": 1,
+        "partialPlaceCount": 0,
+        "cacheReadSuspended": true,
+        "explicitPlaceCount": 1,
+        "modelPlacesEmitted": 1,
+        "recognitionVersion": "vayrin-recognition-2026-08-26.v3-generic-guard-same-place-groups",
+        "logical_place_count": 0,
+        "modelPlacesRejected": 1,
+        "recognitionCacheRead": false,
+        "grouping_reason_codes": [],
+        "evidenceRejectionPaths": [
+          "places.0.name:too_small"
+        ],
+        "recognitionFailureClass": "none",
+        "sharedGeoCountryApplied": false,
+        "automaticDeepRecognition": {
+          "model": "gpt-5.6-sol",
+          "timingsMs": {
+            "sol": 25668
+          },
+          "engineVersion": "simple-sol-premium.v2",
+          "placesRequests": 1,
+          "knownModelCostUsd": 0.05002
+        },
+        "sharedGeoCountryStrength": "weak",
+        "modelValidationErrorClass": "candidate_field_invalid",
+        "peerGeographicDestinations": 0,
+        "same_place_confidence_band": "none",
+        "sharedGeoCountryCandidates": 1,
+        "modelPartialPlacesPreserved": 1,
+        "recognitionCacheWritesEnabled": true,
+        "sourceGeographicContextDropped": 0,
+        "distinct_place_evidence_present": false
+      }
+    }
+  ],
+  "infrastructure": {
+    "taskCount": 16,
+    "runCount": 16,
+    "premiumReservations": 0
+  },
+  "regression": null,
+  "founder": {
+    "cases": [
+      {
+        "caseId": "B01",
+        "suite": "FOUNDER_12",
+        "expectedRoute": "AUTO_DEEP",
+        "normalCandidates": [
+          {
+            "city": null,
+            "name": "Lake Havasu",
+            "region": null,
+            "country": null,
+            "category": "lake"
+          },
+          {
+            "city": null,
+            "name": "Parker",
+            "region": null,
+            "country": null,
+            "category": null
+          }
+        ],
+        "deepInvoked": false,
+        "attempts": 0,
+        "candidates": [
+          {
+            "rank": 1,
+            "name": "Lake Havasu",
+            "identityType": "UNKNOWN",
+            "locality": null,
+            "country": null,
+            "latitude": 34.4673498,
+            "longitude": -114.3757397,
+            "evidenceType": null,
+            "canonicalizationStatus": null,
+            "specificity": "SPECIFIC_PHYSICAL_PLACE"
+          }
+        ],
+        "recovered": true,
+        "wrongAutosave": false,
+        "manualFallback": false,
+        "technical": false
+      },
+      {
+        "caseId": "B02",
+        "suite": "FOUNDER_12",
+        "expectedRoute": "AUTO_DEEP",
+        "normalCandidates": [],
+        "deepInvoked": true,
+        "attempts": 1,
+        "candidates": [
+          {
+            "rank": 1,
+            "name": "Tamolitch Falls (Blue Pool)",
+            "identityType": "UNKNOWN",
+            "locality": null,
+            "country": null,
+            "latitude": 44.3120373,
+            "longitude": -122.02704879999997,
+            "evidenceType": null,
+            "canonicalizationStatus": null,
+            "specificity": "SPECIFIC_PHYSICAL_PLACE"
+          },
+          {
+            "rank": 2,
+            "name": "Tamolitch Blue Pool (Tamolitch Falls)",
+            "identityType": "UNKNOWN",
+            "locality": null,
+            "country": null,
+            "latitude": null,
+            "longitude": null,
+            "evidenceType": null,
+            "canonicalizationStatus": null,
+            "specificity": "SPECIFIC_PHYSICAL_PLACE"
+          }
+        ],
+        "recovered": true,
+        "wrongAutosave": false,
+        "manualFallback": false,
+        "technical": false
+      },
+      {
+        "caseId": "B03",
+        "suite": "FOUNDER_12",
+        "expectedRoute": "AUTO_DEEP",
+        "normalCandidates": [],
+        "deepInvoked": true,
+        "attempts": 1,
+        "candidates": [
+          {
+            "rank": 1,
+            "name": "Arch Rock at Little Corona del Mar Beach",
+            "identityType": "UNKNOWN",
+            "locality": null,
+            "country": null,
+            "latitude": null,
+            "longitude": null,
+            "evidenceType": null,
+            "canonicalizationStatus": null,
+            "specificity": "SPECIFIC_PHYSICAL_PLACE"
+          },
+          {
+            "rank": 2,
+            "name": "Little Corona del Mar Beach",
+            "identityType": "UNKNOWN",
+            "locality": null,
+            "country": null,
+            "latitude": 33.5899729,
+            "longitude": -117.86873589999999,
+            "evidenceType": null,
+            "canonicalizationStatus": null,
+            "specificity": "SPECIFIC_PHYSICAL_PLACE"
+          }
+        ],
+        "recovered": true,
+        "wrongAutosave": false,
+        "manualFallback": false,
+        "technical": false
+      },
+      {
+        "caseId": "B04",
+        "suite": "FOUNDER_12",
+        "expectedRoute": "NORMAL_ONLY",
+        "normalCandidates": [],
+        "deepInvoked": true,
+        "attempts": 1,
+        "candidates": [
+          {
+            "rank": 1,
+            "name": "Sunset Cliffs Natural Park",
+            "identityType": "UNKNOWN",
+            "locality": null,
+            "country": null,
+            "latitude": 32.715915,
+            "longitude": -117.25516789999999,
+            "evidenceType": null,
+            "canonicalizationStatus": null,
+            "specificity": "SPECIFIC_PHYSICAL_PLACE"
+          },
+          {
+            "rank": 2,
+            "name": "The Clam cliff-jumping spot, La Jolla",
+            "identityType": "UNKNOWN",
+            "locality": null,
+            "country": null,
+            "latitude": null,
+            "longitude": null,
+            "evidenceType": null,
+            "canonicalizationStatus": null,
+            "specificity": "SPECIFIC_PHYSICAL_PLACE"
+          }
+        ],
+        "recovered": false,
+        "wrongAutosave": false,
+        "manualFallback": false,
+        "technical": false
+      },
+      {
+        "caseId": "B05",
+        "suite": "FOUNDER_12",
+        "expectedRoute": "NORMAL_ONLY",
+        "normalCandidates": [],
+        "deepInvoked": true,
+        "attempts": 1,
+        "candidates": [
+          {
+            "rank": 1,
+            "name": "Upper Angora Lake",
+            "identityType": "UNKNOWN",
+            "locality": null,
+            "country": null,
+            "latitude": null,
+            "longitude": null,
+            "evidenceType": null,
+            "canonicalizationStatus": null,
+            "specificity": "SPECIFIC_PHYSICAL_PLACE"
+          },
+          {
+            "rank": 2,
+            "name": "Lake Alpine",
+            "identityType": "UNKNOWN",
+            "locality": null,
+            "country": null,
+            "latitude": null,
+            "longitude": null,
+            "evidenceType": null,
+            "canonicalizationStatus": null,
+            "specificity": "SPECIFIC_PHYSICAL_PLACE"
+          }
+        ],
+        "recovered": false,
+        "wrongAutosave": false,
+        "manualFallback": false,
+        "technical": false
+      },
+      {
+        "caseId": "B06",
+        "suite": "FOUNDER_12",
+        "expectedRoute": "AUTO_DEEP",
+        "normalCandidates": [],
+        "deepInvoked": true,
+        "attempts": 1,
+        "candidates": [
+          {
+            "rank": 1,
+            "name": "Ponta da Piedade",
+            "identityType": "UNKNOWN",
+            "locality": null,
+            "country": null,
+            "latitude": 37.0798758,
+            "longitude": -8.6685911,
+            "evidenceType": null,
+            "canonicalizationStatus": null,
+            "specificity": "SPECIFIC_PHYSICAL_PLACE"
+          },
+          {
+            "rank": 2,
+            "name": "Ponta de São Lourenço",
+            "identityType": "UNKNOWN",
+            "locality": null,
+            "country": null,
+            "latitude": 32.7433696,
+            "longitude": -16.7009394,
+            "evidenceType": null,
+            "canonicalizationStatus": null,
+            "specificity": "SPECIFIC_PHYSICAL_PLACE"
+          },
+          {
+            "rank": 3,
+            "name": "Praia da Ingrina coasteering cliffs",
+            "identityType": "UNKNOWN",
+            "locality": null,
+            "country": null,
+            "latitude": null,
+            "longitude": null,
+            "evidenceType": null,
+            "canonicalizationStatus": null,
+            "specificity": "SPECIFIC_PHYSICAL_PLACE"
+          }
+        ],
+        "recovered": true,
+        "wrongAutosave": false,
+        "manualFallback": false,
+        "technical": false
+      },
+      {
+        "caseId": "B07",
+        "suite": "FOUNDER_12",
+        "expectedRoute": "AUTO_DEEP",
+        "normalCandidates": [],
+        "deepInvoked": true,
+        "attempts": 1,
+        "candidates": [
+          {
+            "rank": 1,
+            "name": "Cedar Creek Falls Trail",
+            "identityType": "UNKNOWN",
+            "locality": null,
+            "country": null,
+            "latitude": 32.9933844,
+            "longitude": -116.7442667,
+            "evidenceType": null,
+            "canonicalizationStatus": null,
+            "specificity": "SPECIFIC_PHYSICAL_PLACE"
+          },
+          {
+            "rank": 2,
+            "name": "Cedar Creek Falls",
+            "identityType": "UNKNOWN",
+            "locality": null,
+            "country": null,
+            "latitude": null,
+            "longitude": null,
+            "evidenceType": null,
+            "canonicalizationStatus": null,
+            "specificity": "SPECIFIC_PHYSICAL_PLACE"
+          }
+        ],
+        "recovered": true,
+        "wrongAutosave": false,
+        "manualFallback": false,
+        "technical": false
+      },
+      {
+        "caseId": "B08",
+        "suite": "FOUNDER_12",
+        "expectedRoute": "AUTO_DEEP",
+        "normalCandidates": [],
+        "deepInvoked": true,
+        "attempts": 1,
+        "candidates": [
+          {
+            "rank": 1,
+            "name": "Oeschinen Lake (Oeschinensee)",
+            "identityType": "UNKNOWN",
+            "locality": null,
+            "country": null,
+            "latitude": null,
+            "longitude": null,
+            "evidenceType": null,
+            "canonicalizationStatus": null,
+            "specificity": "SPECIFIC_PHYSICAL_PLACE"
+          },
+          {
+            "rank": 2,
+            "name": "Oeschinen Lake",
+            "identityType": "UNKNOWN",
+            "locality": null,
+            "country": null,
+            "latitude": 46.498908899999996,
+            "longitude": 7.7291063,
+            "evidenceType": null,
+            "canonicalizationStatus": null,
+            "specificity": "SPECIFIC_PHYSICAL_PLACE"
+          }
+        ],
+        "recovered": true,
+        "wrongAutosave": false,
+        "manualFallback": false,
+        "technical": false
+      },
+      {
+        "caseId": "B09",
+        "suite": "FOUNDER_12",
+        "expectedRoute": "NORMAL_ONLY",
+        "normalCandidates": [
+          {
+            "city": null,
+            "name": "Boulder Plunge",
+            "region": null,
+            "country": null,
+            "category": "scenic_spot"
+          }
+        ],
+        "deepInvoked": false,
+        "attempts": 0,
+        "candidates": [
+          {
+            "rank": 1,
+            "name": "Boulder Plunge",
+            "identityType": "UNKNOWN",
+            "locality": null,
+            "country": null,
+            "latitude": null,
+            "longitude": null,
+            "evidenceType": null,
+            "canonicalizationStatus": null,
+            "specificity": "SPECIFIC_PHYSICAL_PLACE"
+          }
+        ],
+        "recovered": true,
+        "wrongAutosave": false,
+        "manualFallback": false,
+        "technical": false
+      },
+      {
+        "caseId": "B10",
+        "suite": "FOUNDER_12",
+        "expectedRoute": "AUTO_DEEP",
+        "normalCandidates": [
+          {
+            "city": null,
+            "name": "Cruzado National Forest",
+            "region": "California",
+            "country": null,
+            "category": "scenic_spot"
+          }
+        ],
+        "deepInvoked": false,
+        "attempts": 0,
+        "candidates": [
+          {
+            "rank": 1,
+            "name": "Angeles National Forest",
+            "identityType": "UNKNOWN",
+            "locality": null,
+            "country": null,
+            "latitude": 34.4113389,
+            "longitude": -118.17510019999999,
+            "evidenceType": null,
+            "canonicalizationStatus": null,
+            "specificity": "SPECIFIC_PHYSICAL_PLACE"
+          },
+          {
+            "rank": 2,
+            "name": "Stanislaus National Forest",
+            "identityType": "UNKNOWN",
+            "locality": null,
+            "country": null,
+            "latitude": 38.158336999999996,
+            "longitude": -119.92779469999998,
+            "evidenceType": null,
+            "canonicalizationStatus": null,
+            "specificity": "SPECIFIC_PHYSICAL_PLACE"
+          },
+          {
+            "rank": 3,
+            "name": "Eldorado National Forest",
+            "identityType": "UNKNOWN",
+            "locality": null,
+            "country": null,
+            "latitude": 38.7647674,
+            "longitude": -120.32956929999999,
+            "evidenceType": null,
+            "canonicalizationStatus": null,
+            "specificity": "SPECIFIC_PHYSICAL_PLACE"
+          }
+        ],
+        "recovered": true,
+        "wrongAutosave": false,
+        "manualFallback": false,
+        "technical": false
+      },
+      {
+        "caseId": "B11",
+        "suite": "FOUNDER_12",
+        "expectedRoute": "AUTO_DEEP",
+        "normalCandidates": [
+          {
+            "city": null,
+            "name": "California's Clearest River",
+            "region": "California",
+            "country": null,
+            "category": "scenic_spot"
+          }
+        ],
+        "deepInvoked": false,
+        "attempts": 0,
+        "candidates": [
+          {
+            "rank": 1,
+            "name": "Roaring River Falls, Kings Canyon National Park",
+            "identityType": "UNKNOWN",
+            "locality": null,
+            "country": null,
+            "latitude": 36.7818628,
+            "longitude": -118.62196139999999,
+            "evidenceType": null,
+            "canonicalizationStatus": null,
+            "specificity": "SPECIFIC_PHYSICAL_PLACE"
+          },
+          {
+            "rank": 2,
+            "name": "Scenic vista",
+            "identityType": "UNKNOWN",
+            "locality": null,
+            "country": null,
+            "latitude": 38.98685450000001,
+            "longitude": -122.98335259999999,
+            "evidenceType": null,
+            "canonicalizationStatus": null,
+            "specificity": "SPECIFIC_PHYSICAL_PLACE"
+          },
+          {
+            "rank": 3,
+            "name": "California's Great America",
+            "identityType": "UNKNOWN",
+            "locality": null,
+            "country": null,
+            "latitude": 37.3973529,
+            "longitude": -121.9744083,
+            "evidenceType": null,
+            "canonicalizationStatus": null,
+            "specificity": "SPECIFIC_PHYSICAL_PLACE"
+          }
+        ],
+        "recovered": true,
+        "wrongAutosave": false,
+        "manualFallback": false,
+        "technical": false
+      },
+      {
+        "caseId": "B12",
+        "suite": "FOUNDER_12",
+        "expectedRoute": "AUTO_DEEP",
+        "normalCandidates": [],
+        "deepInvoked": true,
+        "attempts": 1,
+        "candidates": [
+          {
+            "rank": 1,
+            "name": "Clavey River",
+            "identityType": "UNKNOWN",
+            "locality": null,
+            "country": null,
+            "latitude": 37.8638148,
+            "longitude": -120.1162974,
+            "evidenceType": null,
+            "canonicalizationStatus": null,
+            "specificity": "SPECIFIC_PHYSICAL_PLACE"
+          },
+          {
+            "rank": 2,
+            "name": "Aztec Falls",
+            "identityType": "UNKNOWN",
+            "locality": null,
+            "country": null,
+            "latitude": 34.2798612,
+            "longitude": -117.1282589,
+            "evidenceType": null,
+            "canonicalizationStatus": null,
+            "specificity": "SPECIFIC_PHYSICAL_PLACE"
+          },
+          {
+            "rank": 3,
+            "name": "Emerald Pools on the South Yuba River",
+            "identityType": "UNKNOWN",
+            "locality": null,
+            "country": null,
+            "latitude": null,
+            "longitude": null,
+            "evidenceType": null,
+            "canonicalizationStatus": null,
+            "specificity": "SPECIFIC_PHYSICAL_PLACE"
+          }
+        ],
+        "recovered": true,
+        "wrongAutosave": false,
+        "manualFallback": false,
+        "technical": false
+      },
+      {
+        "caseId": "F4-01",
+        "suite": "FOUNDER_4",
+        "expectedRoute": "AUTO_DEEP",
+        "normalCandidates": [],
+        "deepInvoked": true,
+        "attempts": 1,
+        "candidates": [
+          {
+            "rank": 1,
+            "name": "Dandahra Falls",
+            "identityType": "UNKNOWN",
+            "locality": null,
+            "country": null,
+            "latitude": null,
+            "longitude": null,
+            "evidenceType": null,
+            "canonicalizationStatus": null,
+            "specificity": "SPECIFIC_PHYSICAL_PLACE"
+          },
+          {
+            "rank": 2,
+            "name": "Billyrimba Falls",
+            "identityType": "UNKNOWN",
+            "locality": null,
+            "country": null,
+            "latitude": null,
+            "longitude": null,
+            "evidenceType": null,
+            "canonicalizationStatus": null,
+            "specificity": "SPECIFIC_PHYSICAL_PLACE"
+          },
+          {
+            "rank": 3,
+            "name": "Kings Plains Falls",
+            "identityType": "UNKNOWN",
+            "locality": null,
+            "country": null,
+            "latitude": null,
+            "longitude": null,
+            "evidenceType": null,
+            "canonicalizationStatus": null,
+            "specificity": "SPECIFIC_PHYSICAL_PLACE"
+          }
+        ],
+        "recovered": true,
+        "wrongAutosave": false,
+        "manualFallback": false,
+        "technical": false
+      },
+      {
+        "caseId": "F4-02",
+        "suite": "FOUNDER_4",
+        "expectedRoute": "AUTO_DEEP",
+        "normalCandidates": [],
+        "deepInvoked": true,
+        "attempts": 1,
+        "candidates": [
+          {
+            "rank": 1,
+            "name": "Cenote Zaci",
+            "identityType": "UNKNOWN",
+            "locality": null,
+            "country": null,
+            "latitude": 20.6916378,
+            "longitude": -88.19734629999999,
+            "evidenceType": null,
+            "canonicalizationStatus": null,
+            "specificity": "SPECIFIC_PHYSICAL_PLACE"
+          },
+          {
+            "rank": 2,
+            "name": "Cenote Hubiku",
+            "identityType": "UNKNOWN",
+            "locality": null,
+            "country": null,
+            "latitude": 20.8182987,
+            "longitude": -88.1729025,
+            "evidenceType": null,
+            "canonicalizationStatus": null,
+            "specificity": "SPECIFIC_PHYSICAL_PLACE"
+          },
+          {
+            "rank": 3,
+            "name": "Ik Kil",
+            "identityType": "UNKNOWN",
+            "locality": null,
+            "country": null,
+            "latitude": 20.6610138,
+            "longitude": -88.550438,
+            "evidenceType": null,
+            "canonicalizationStatus": null,
+            "specificity": "SPECIFIC_PHYSICAL_PLACE"
+          }
+        ],
+        "recovered": true,
+        "wrongAutosave": false,
+        "manualFallback": false,
+        "technical": false
+      },
+      {
+        "caseId": "F4-03",
+        "suite": "FOUNDER_4",
+        "expectedRoute": "NORMAL_ONLY",
+        "normalCandidates": [
+          {
+            "city": "Sedona",
+            "name": "The Crack via Bell Trail",
+            "region": "Arizona",
+            "country": "USA",
+            "category": "hiking_trail"
+          }
+        ],
+        "deepInvoked": false,
+        "attempts": 0,
+        "candidates": [
+          {
+            "rank": 1,
+            "name": "The Crack at Wet Beaver Creek",
+            "identityType": "UNKNOWN",
+            "locality": null,
+            "country": null,
+            "latitude": 34.6739472,
+            "longitude": -111.66018299999999,
+            "evidenceType": null,
+            "canonicalizationStatus": null,
+            "specificity": "SPECIFIC_PHYSICAL_PLACE"
+          },
+          {
+            "rank": 2,
+            "name": "The Crack via Bell Trail",
+            "identityType": "UNKNOWN",
+            "locality": null,
+            "country": null,
+            "latitude": null,
+            "longitude": null,
+            "evidenceType": null,
+            "canonicalizationStatus": null,
+            "specificity": "SPECIFIC_PHYSICAL_PLACE"
+          }
+        ],
+        "recovered": true,
+        "wrongAutosave": false,
+        "manualFallback": false,
+        "technical": false
+      },
+      {
+        "caseId": "F4-04",
+        "suite": "FOUNDER_4",
+        "expectedRoute": "AUTO_DEEP",
+        "normalCandidates": [],
+        "deepInvoked": true,
+        "attempts": 1,
+        "candidates": [
+          {
+            "rank": 1,
+            "name": "Toketee Falls",
+            "identityType": "UNKNOWN",
+            "locality": null,
+            "country": null,
+            "latitude": 43.2633418,
+            "longitude": -122.4337113,
+            "evidenceType": null,
+            "canonicalizationStatus": null,
+            "specificity": "SPECIFIC_PHYSICAL_PLACE"
+          }
+        ],
+        "recovered": true,
+        "wrongAutosave": false,
+        "manualFallback": false,
+        "technical": false
+      }
+    ],
+    "expectedDeep": 12,
+    "recovered": 12,
+    "manualFallbacks": 0,
+    "technicalFailures": 0,
+    "wrongAutosaves": 0
+  },
+  "assertions": {
+    "allTerminal": true,
+    "zeroPremiumReservations": true,
+    "zeroWrongAutosaves": true,
+    "systemIsolation": true
+  }
+}
