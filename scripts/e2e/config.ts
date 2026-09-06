@@ -64,10 +64,15 @@ export type DeployedConfig = {
 };
 
 function runCli(command: string, args: string[], timeoutMs = 120_000): string {
-  const result = spawnSync(command, args, {
+  const railwayJs = process.platform === 'win32' && command === 'railway'
+    ? path.join(process.env.APPDATA ?? '', 'npm', 'node_modules', '@railway', 'cli', 'bin', 'railway.js')
+    : null;
+  const executable = railwayJs && existsSync(railwayJs) ? process.execPath : command;
+  const executableArgs = railwayJs && existsSync(railwayJs) ? [railwayJs, ...args] : args;
+  const result = spawnSync(executable, executableArgs, {
     encoding: 'utf8',
     timeout: timeoutMs,
-    shell: process.platform === 'win32',
+    shell: process.platform === 'win32' && executable === command,
     windowsHide: true,
   });
   if (result.error) {

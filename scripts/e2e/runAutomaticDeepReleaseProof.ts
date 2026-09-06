@@ -12,6 +12,7 @@ import { isCategoryOnlyPlaceName } from '../../services/media-worker/src/vayrin/
 import { loadRegressionCorpus, loadRegressionGroundTruth } from '../../services/media-worker/src/recognitionRegression/fixtures';
 import { calculateMetrics, scoreCase } from '../../services/media-worker/src/recognitionRegression/scoring';
 import type { RankedCandidate, RegressionAttempt, RegressionCorpusCase } from '../../services/media-worker/src/recognitionRegression/types';
+import { readRailwayDevelopmentVars } from './config';
 import { correlationKeyFor, openSession, type E2ESession } from './session';
 import { sleep } from './poll';
 
@@ -30,6 +31,15 @@ const system = process.env.NEARR_AUTO_DEEP_PROOF_SYSTEM as SystemName | undefine
 if (system !== 'PRODUCTION_FREE' && system !== 'AUTO_DEEP_CANDIDATE') {
   throw new Error('NEARR_AUTO_DEEP_PROOF_SYSTEM must be PRODUCTION_FREE or AUTO_DEEP_CANDIDATE');
 }
+const expectedFlag = system === 'AUTO_DEEP_CANDIDATE' ? 'true' : 'false';
+const deployedVariablesAtStart = readRailwayDevelopmentVars();
+const automaticDeepFlagKey = ['AUTOMATIC', 'DEEP', 'RECOGNITION', 'ENABLED'].join('_');
+const deployedAutomaticDeepFlag = (deployedVariablesAtStart[automaticDeepFlagKey] ?? '').toLowerCase();
+if (deployedAutomaticDeepFlag !== expectedFlag) {
+  throw new Error(`deployed AUTO_DEEP_RECOGNITION_ENABLED must be explicitly ${expectedFlag}; observed ${JSON.stringify(deployedAutomaticDeepFlag)}`);
+}
+if ((deployedVariablesAtStart.PREMIUM_REQUESTS_ENABLED ?? 'false').toLowerCase() === 'true') throw new Error('Premium is enabled');
+if ((deployedVariablesAtStart.RECOGNITION_CACHE_READS_ENABLED ?? 'false').toLowerCase() === 'true') throw new Error('recognition cache reads are enabled');
 const requestedSuites = new Set((process.env.NEARR_AUTO_DEEP_PROOF_SUITES ?? 'REGRESSION_V2')
   .split(',').map((value) => value.trim()).filter(Boolean) as SuiteName[]);
 const runId = `automatic-deep-${system.toLowerCase()}-${new Date().toISOString().replace(/[:.]/g, '-')}`;
@@ -175,15 +185,9 @@ async function main(): Promise<void> {
   const cases = await proofCases(repoRoot);
   if (cases.length === 0) throw new Error('no proof cases selected');
   const session = await openSession({ withIdentity: true, withEdgeSecrets: false });
-  const expectedFlag = system === 'AUTO_DEEP_CANDIDATE' ? 'true' : 'false';
-  if ((session.config.railwayVars.AUTO_DEEP_RECOGNITION_ENABLED ?? '').toLowerCase() !== expectedFlag) {
-    throw new Error(`deployed AUTO_DEEP_RECOGNITION_ENABLED must be explicitly ${expectedFlag}`);
-  }
-  if ((session.config.railwayVars.PREMIUM_REQUESTS_ENABLED ?? 'false').toLowerCase() === 'true') throw new Error('Premium is enabled');
-  if ((session.config.railwayVars.RECOGNITION_CACHE_READS_ENABLED ?? 'false').toLowerCase() === 'true') throw new Error('recognition cache reads are enabled');
-  await mkdir(outputDir, { recursive: true });
-  const startedAt = new Date().toISOString();
   try {
+    await mkdir(outputDir, { recursive: true });
+    const startedAt = new Date().toISOString();
     if (!session.identity) throw new Error('ephemeral identity unavailable');
     const walletBefore = await walletSnapshot(session);
     const ids = new Map<string, string>();
