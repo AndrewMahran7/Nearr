@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
@@ -13,7 +13,6 @@ import type { SavedPlaceWithPlace } from '@/types';
 
 type Props = {
   places: SavedPlaceWithPlace[];
-  selectedId: string | null;
   missingCoordinateIds: ReadonlySet<string>;
   failedCount: number;
   onSelect: (place: SavedPlaceWithPlace) => void;
@@ -26,7 +25,6 @@ const CARD_GAP = 10;
 
 export function MapGroupSelector({
   places,
-  selectedId,
   missingCoordinateIds,
   failedCount,
   onSelect,
@@ -35,20 +33,11 @@ export function MapGroupSelector({
 }: Props) {
   const { colors, typography } = useTheme();
   const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
-  const scrollRef = useRef<ScrollView | null>(null);
-
-  useEffect(() => {
-    if (!selectedId) return;
-    const index = places.findIndex((place) => place.id === selectedId);
-    if (index < 0) return;
-    scrollRef.current?.scrollTo({ x: index * (CARD_WIDTH + CARD_GAP), animated: true });
-  }, [places, selectedId]);
-
   return (
-    <View style={styles.container} pointerEvents="auto" testID="newly-saved-tray">
+    <View style={styles.container} pointerEvents="auto" testID="source-group-tray">
       <View style={styles.header}>
         <View style={styles.headerCopy}>
-          <Text style={styles.title}>{places.length} newly saved</Text>
+          <Text style={styles.title}>{places.length} places from this video</Text>
           {failedCount > 0 ? (
             <Text style={styles.subtitle}>{failedCount} still need attention in your queue</Text>
           ) : null}
@@ -56,7 +45,7 @@ export function MapGroupSelector({
         <Pressable
           onPress={onViewAll}
           accessibilityRole="button"
-          accessibilityLabel="View all newly saved places"
+          accessibilityLabel={`View all ${places.length} places from this video`}
           style={styles.headerAction}
         >
           <Feather name="maximize-2" size={15} color={colors.accent} />
@@ -65,17 +54,16 @@ export function MapGroupSelector({
         <Pressable
           onPress={onClose}
           accessibilityRole="button"
-          accessibilityLabel="Dismiss newly saved places"
+          accessibilityLabel="Dismiss places from this video"
           hitSlop={MAP_GROUP_TRAY_CLOSE_HIT_SLOP}
           pressRetentionOffset={12}
-          testID="newly-saved-tray-close"
+          testID="source-group-tray-close"
           style={({ pressed }) => [styles.closeButton, pressed && styles.closeButtonPressed]}
         >
           <Feather name="x" size={18} color={colors.textSecondary} />
         </Pressable>
       </View>
       <ScrollView
-        ref={scrollRef}
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.list}
@@ -83,16 +71,14 @@ export function MapGroupSelector({
         decelerationRate="fast"
       >
         {places.map((place) => {
-          const selected = selectedId === place.id;
           const missingLocation = missingCoordinateIds.has(place.id);
           return (
             <Pressable
               key={place.id}
               onPress={() => onSelect(place)}
               accessibilityRole="button"
-              accessibilityState={{ selected }}
               accessibilityLabel={`${place.place.name}${missingLocation ? ', location unavailable' : ''}`}
-              style={[styles.card, selected ? styles.cardSelected : null]}
+              style={styles.card}
             >
               <PlaceImage
                 googlePlaceId={place.place.google_place_id}
@@ -179,10 +165,6 @@ function createStyles(
       borderWidth: 1,
       borderColor: colors.border,
       backgroundColor: colors.surface,
-    },
-    cardSelected: {
-      borderColor: colors.accent,
-      backgroundColor: colors.bg,
     },
     cardCopy: { flex: 1, minWidth: 0 },
     name: { ...typography.label, color: colors.text },

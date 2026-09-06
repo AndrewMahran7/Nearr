@@ -16,6 +16,7 @@ import {
 } from '@/services/shareJobsService';
 import type { SavedPlaceWithPlace, SourceType } from '@/types';
 import type { CanonicalSaveOutcome } from '@/lib/canonicalSaveContract';
+import { trackEvent } from '@/lib/analytics';
 
 export type ShareJobCandidateSaveDependencies = {
   save: (input: SaveSavedPlaceInput) => Promise<SaveSavedPlaceResult>;
@@ -110,12 +111,26 @@ export async function persistShareJobCandidate(
       savedPlaceId: result.savedPlaceId,
       result: 'saved',
     });
+    if (args.sourceUrl) {
+      void trackEvent('source_group_manual_save_joined', {
+        job_id: args.jobId,
+        saved_place_id: result.savedPlaceId,
+        save_outcome: result.outcome,
+      });
+    }
     return { savedPlaceId: result.savedPlaceId, duplicate: false, outcome: result.outcome };
   }
   // "Already saved" is an ENRICHED save, not a no-op: the existing row may have
   // just gained this post's source_url / ai_note. Seed the cache from the
   // re-read row so the place page shows the post without a restart.
   if (result.saved) dependencies.cache(result.saved);
+  if (args.sourceUrl && (result.outcome === 'enriched' || result.outcome === 'already_attached')) {
+    void trackEvent('source_group_manual_save_joined', {
+      job_id: args.jobId,
+      saved_place_id: result.savedPlaceId,
+      save_outcome: result.outcome,
+    });
+  }
   recordBreadcrumb('already_saved_response', {
     jobId: args.jobId,
     savedPlaceId: result.savedPlaceId,

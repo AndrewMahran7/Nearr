@@ -168,6 +168,7 @@ const heroScrimBand = {
 };
 
 type RadiusMode = 'default' | 'miles' | 'minutes';
+const MAX_EXPANDED_SOURCE_GROUP_PLACES = 50;
 
 function modeFromSaved(s: SavedPlaceWithPlace): RadiusMode {
   if (s.radius_unit === 'miles') return 'miles';
@@ -209,6 +210,8 @@ type Props = {
   onSeeMap?: (payload: NearbyMapExplorerPayload) => void;
   /** Called after a successful delete so the map can dismiss the sheet. */
   onRequestDismiss: () => void;
+  /** Lets a source-group owner select the next live member after removal. */
+  onRemoved?: (removedSavedPlaceId: string) => void;
   /** Called after a successful save so the map can refresh its `selected`. */
   onSaved?: (updated: SavedPlaceWithPlace) => void;
   onCorrected?: (updated: SavedPlaceWithPlace) => void;
@@ -223,6 +226,7 @@ export function SelectedPlaceDetails({
   onGetDirections,
   onSeeMap,
   onRequestDismiss,
+  onRemoved,
   onSaved,
   onCorrected,
 }: Props) {
@@ -524,7 +528,9 @@ export function SelectedPlaceDetails({
    * the section then renders nothing at all rather than an empty heading.
    */
   const sameSource = useMemo(
-    () => selectSameSourcePlaces(saved, allSavedPlaces ?? []),
+    () => selectSameSourcePlaces(saved, allSavedPlaces ?? [], {
+      limit: MAX_EXPANDED_SOURCE_GROUP_PLACES - 1,
+    }),
     [allSavedPlaces, saved],
   );
   const sameSourceIds = useMemo(
@@ -950,7 +956,8 @@ export function SelectedPlaceDetails({
             removeSavedPlaceFromCache(saved.id);
             try {
               await deleteSavedPlace(saved.id);
-              onRequestDismiss();
+              if (onRemoved) onRemoved(saved.id);
+              else onRequestDismiss();
             } catch (e: any) {
               restoreSavedPlacesCache(snapshot);
               Alert.alert('Delete failed', e?.message ?? 'Unknown error.');
@@ -1351,7 +1358,7 @@ export function SelectedPlaceDetails({
           relationships, two sections, never merged into one opaque score. */}
       {sameSourceEntries.length > 0 && sourceAttribution ? (
         <PlaceCardRow
-          title={sourceAttribution.siblingSectionTitle}
+          title={`${sourceAttribution.siblingSectionTitle} · ${sameSourceEntries.length + 1}`}
           entries={sameSourceEntries}
         />
       ) : null}
@@ -1491,7 +1498,8 @@ export function SelectedPlaceDetails({
         }}
         onRejected={() => {
           setWrongPlaceOpen(false);
-          onRequestDismiss();
+          if (onRemoved) onRemoved(saved.id);
+          else onRequestDismiss();
         }}
       />
       <NoteEditorModal

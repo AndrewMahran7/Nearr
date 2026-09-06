@@ -1,3 +1,5 @@
+import { sourcePlaceGroupFromSeeds, type SourceGroupPlaceLike } from './sourcePlaceGroup';
+
 export type MapGroupFocusSource = 'share_job_saved' | 'share_saved' | 'development_preview';
 
 export type MapGroupFocusRequest = {
@@ -7,7 +9,7 @@ export type MapGroupFocusRequest = {
   failedCount: number;
 };
 
-type GroupResolvablePlace = {
+type GroupResolvablePlace = SourceGroupPlaceLike & {
   id: string;
   place?: {
     latitude?: number | null;
@@ -97,12 +99,19 @@ export function resolveMapGroupPlaces<T extends GroupResolvablePlace>(
   const missingIds: string[] = [];
   const missingCoordinateIds: string[] = [];
 
-  for (const id of normalizeIds(savedPlaceIds)) {
+  const normalizedIds = normalizeIds(savedPlaceIds);
+  const durableGroup = sourcePlaceGroupFromSeeds(allPlaces, normalizedIds);
+  const currentPlaces = durableGroup?.places.length
+    ? durableGroup.places
+    : normalizedIds.map((id) => byId.get(id)).filter((place): place is T => !!place);
+
+  for (const id of normalizedIds) {
     const place = byId.get(id);
     if (!place) {
       missingIds.push(id);
-      continue;
     }
+  }
+  for (const place of currentPlaces) {
     places.push(place);
     if (
       Number.isFinite(place.place?.latitude) &&
@@ -110,7 +119,7 @@ export function resolveMapGroupPlaces<T extends GroupResolvablePlace>(
     ) {
       coordinatePlaces.push(place);
     } else {
-      missingCoordinateIds.push(id);
+      missingCoordinateIds.push(place.id);
     }
   }
   return { places, coordinatePlaces, missingIds, missingCoordinateIds };

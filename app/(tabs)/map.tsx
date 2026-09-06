@@ -92,6 +92,7 @@ import {
   RecommendedPlaceDetails,
   SelectedPlaceDetails,
   ShareQueueButton,
+  SourceGroupSwitcher,
   getSheetPartialHeight,
   type MapSheetMode,
   type SheetSnap,
@@ -136,6 +137,10 @@ import {
   MAP_GROUP_TRAY_OVERLAY_ELEVATION,
   MAP_GROUP_TRAY_OVERLAY_Z_INDEX,
 } from '@/lib/mapGroupTray';
+import {
+  sourcePlaceGroupForAnchor,
+  sourcePlaceGroupFromSeeds,
+} from '@/lib/sourcePlaceGroup';
 import { openExternalMaps as openInExternalMaps } from '@/lib/externalMaps';
 import {
   shouldAcceptSample,
@@ -565,13 +570,13 @@ export default function MapScreen() {
     () => getMapGroupFocusRequest(mapGroupId),
     [mapGroupId],
   );
+  const requestedSourceGroup = useMemo(
+    () => sourcePlaceGroupFromSeeds(places, mapGroupRequest?.savedPlaceIds ?? []),
+    [mapGroupRequest, places],
+  );
   const resolvedMapGroup = useMemo(
     () => resolveMapGroupPlaces(places, mapGroupRequest?.savedPlaceIds ?? []),
     [mapGroupRequest, places],
-  );
-  const mapGroupCoordinateIds = useMemo(
-    () => new Set(resolvedMapGroup.coordinatePlaces.map((place) => place.id)),
-    [resolvedMapGroup.coordinatePlaces],
   );
 
   // Skip any saved place whose coordinates are missing or non-finite. Maps
@@ -626,6 +631,25 @@ export default function MapScreen() {
   const [selected, setSelected] = useState<SavedPlaceWithPlace | null>(null);
   const selectedRef = useRef<SavedPlaceWithPlace | null>(null);
   selectedRef.current = selected;
+  const selectedSourceGroup = useMemo(
+    () => sourcePlaceGroupForAnchor(selected, places, requestedSourceGroup?.identityKey),
+    [places, requestedSourceGroup?.identityKey, selected],
+  );
+  const activeSourceGroupPlaces = useMemo(
+    () => selected && (selectedSourceGroup?.places.length ?? 0) > 1
+      ? selectedSourceGroup!.places
+      : resolvedMapGroup.places,
+    [resolvedMapGroup.places, selected, selectedSourceGroup],
+  );
+  const activeSourceGroupIdentity = selected && (selectedSourceGroup?.places.length ?? 0) > 1
+    ? selectedSourceGroup?.identityKey ?? null
+    : requestedSourceGroup?.identityKey ?? null;
+  const mapGroupCoordinateIds = useMemo(
+    () => new Set(activeSourceGroupPlaces
+      .filter((place) => Number.isFinite(place.place?.latitude) && Number.isFinite(place.place?.longitude))
+      .map((place) => place.id)),
+    [activeSourceGroupPlaces],
+  );
   const explorerSessionRef = useRef(0);
   const explorerUserMovedRef = useRef(false);
   const [nearbyExplorer, setNearbyExplorer] = useState<{
@@ -769,6 +793,18 @@ export default function MapScreen() {
     const live = validPlaces.find((place) => place.id === selected.id);
     if (live && live !== selected) setSelected(live);
   }, [selected, validPlaces]);
+
+  const viewedSourceGroupRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!activeSourceGroupIdentity || activeSourceGroupPlaces.length < 2) return;
+    const key = `${activeSourceGroupIdentity}:${activeSourceGroupPlaces.length}`;
+    if (viewedSourceGroupRef.current === key) return;
+    viewedSourceGroupRef.current = key;
+    void trackEvent('source_group_viewed', {
+      source_identity_key: activeSourceGroupIdentity,
+      place_count: activeSourceGroupPlaces.length,
+    });
+  }, [activeSourceGroupIdentity, activeSourceGroupPlaces.length]);
 
   // Thin V2 adapter: the saved-place list is authoritative. An onboarding
   // attempt advances only when a real row carries the exact expected source
@@ -2730,7 +2766,8 @@ export default function MapScreen() {
   }
 
   function fitCurrentMapGroup() {
-    const coordinatePlaces = resolvedMapGroup.coordinatePlaces;
+    const coordinatePlaces = activeSourceGroupPlaces.filter((place) =>
+      Number.isFinite(place.place.latitude) && Number.isFinite(place.place.longitude));
     if (!mapRef.current || coordinatePlaces.length === 0) {
       showSnackbar('These places do not have map locations yet.', null);
       return;
@@ -2772,7 +2809,44 @@ export default function MapScreen() {
       showSnackbar(`${item.place.name} does not have a map location yet.`, null);
       return;
     }
+    void trackEvent('source_group_place_selected', {
+      source_identity_key: activeSourceGroupIdentity,
+      saved_place_id: item.id,
+      place_count: activeSourceGroupPlaces.length,
+    });
     selectPlace(item);
+  }
+
+  function viewAllSourceGroup() {
+    if (activeSourceGroupPlaces.length < 2) return;
+    void trackEvent('source_group_view_all', {
+      source_identity_key: activeSourceGroupIdentity,
+      place_count: activeSourceGroupPlaces.length,
+    });
+    const target = selected ?? activeSourceGroupPlaces.find((place) => mapGroupCoordinateIds.has(place.id));
+    if (target && target.id !== selected?.id) selectPlace(target);
+    setPreviewExpanded(true);
+  }
+
+  function handleSelectedSourceGroupMemberRemoved(removedId: string) {
+    const removedIndex = activeSourceGroupPlaces.findIndex((place) => place.id === removedId);
+    const remaining = activeSourceGroupPlaces.filter((place) => place.id !== removedId);
+    if (activeSourceGroupIdentity && activeSourceGroupPlaces.length > 1) {
+      void trackEvent('source_group_member_removed', {
+        source_identity_key: activeSourceGroupIdentity,
+        saved_place_id: removedId,
+        place_count: remaining.length,
+      });
+    }
+    const selectable = remaining.filter((place) =>
+      Number.isFinite(place.place.latitude) && Number.isFinite(place.place.longitude));
+    const next = selectable[Math.min(Math.max(removedIndex, 0), selectable.length - 1)];
+    if (next) {
+      selectPlace(next);
+      setPreviewExpanded(true);
+      return;
+    }
+    dismissSelectedPlace();
   }
 
   function closeMapGroup() {
@@ -3507,17 +3581,17 @@ export default function MapScreen() {
               strokeColor={
                 selectedMarkerId === p.id
                   ? 'rgba(255,106,26,0.52)'
-                  : mapGroupRequest && !mapGroupCoordinateIds.has(p.id)
-                    ? 'rgba(255,106,26,0.035)'
-                  : 'rgba(255,106,26,0.14)'
+                  : activeSourceGroupPlaces.length > 1 && mapGroupCoordinateIds.has(p.id)
+                    ? 'rgba(255,106,26,0.30)'
+                    : 'rgba(255,106,26,0.14)'
               }
               strokeWidth={selectedMarkerId === p.id ? 2 : 1}
               fillColor={
                 selectedMarkerId === p.id
                   ? 'rgba(255,106,26,0.12)'
-                  : mapGroupRequest && !mapGroupCoordinateIds.has(p.id)
-                    ? 'rgba(255,106,26,0.012)'
-                  : 'rgba(255,106,26,0.035)'
+                  : activeSourceGroupPlaces.length > 1 && mapGroupCoordinateIds.has(p.id)
+                    ? 'rgba(255,106,26,0.075)'
+                    : 'rgba(255,106,26,0.035)'
               }
             />
           )
@@ -3527,7 +3601,7 @@ export default function MapScreen() {
             key={cluster.id}
             cluster={cluster}
             onPress={handleClusterPress}
-            dimmed={!!mapGroupRequest}
+            dimmed={false}
           />
         ))}
         {individualPlaces.map((p) => (
@@ -3536,8 +3610,13 @@ export default function MapScreen() {
             place={p}
             markerRefs={markerRefs}
             onPress={handleMarkerPress}
-            dimmed={nearbyExplorer ? false : !!mapGroupRequest && !mapGroupCoordinateIds.has(p.id)}
+            dimmed={false}
             selected={selectedMarkerId === p.id}
+            groupMember={
+              !nearbyExplorer &&
+              activeSourceGroupPlaces.length > 1 &&
+              mapGroupCoordinateIds.has(p.id)
+            }
             // Scoped to the selected marker on purpose: an unselected pin's
             // value never changes when a detail opens, so its memo still holds
             // and the Android bitmap path is not re-armed map-wide.
@@ -3686,6 +3765,14 @@ export default function MapScreen() {
                   </Pressable>
                 ) : null}
               </View>
+              {!nearbyExplorer && activeSourceGroupPlaces.length > 1 ? (
+                <SourceGroupSwitcher
+                  places={activeSourceGroupPlaces}
+                  selectedId={selected.id}
+                  onSelect={selectMapGroupPlace}
+                  onViewAll={viewAllSourceGroup}
+                />
+              ) : null}
               {previewExpanded ? null : (
               <View style={styles.previewTopRow}>
                 <View style={styles.previewThumb}>
@@ -3771,6 +3858,7 @@ export default function MapScreen() {
                   // owns every explorer marker, cluster, filter, and camera.
                   onSeeMap={openNearbyExplorer}
                   onRequestDismiss={() => dismissSelectedPlace()}
+                  onRemoved={handleSelectedSourceGroupMemberRemoved}
                   onSaved={(updated) => setSelected(updated)}
                   onCorrected={focusCorrectedPlace}
                 />
@@ -3843,7 +3931,7 @@ export default function MapScreen() {
         </Animated.View>
       ) : null}
 
-      {!nearbyExplorer && mapGroupRequest && resolvedMapGroup.places.length > 0 && !previewExpanded ? (
+      {!nearbyExplorer && mapGroupRequest && resolvedMapGroup.places.length > 1 && !selected ? (
         <View
           style={[
             styles.mapGroupWrap,
@@ -3854,11 +3942,10 @@ export default function MapScreen() {
         >
           <MapGroupSelector
             places={resolvedMapGroup.places}
-            selectedId={selected?.id ?? null}
             missingCoordinateIds={new Set(resolvedMapGroup.missingCoordinateIds)}
             failedCount={mapGroupRequest.failedCount}
             onSelect={selectMapGroupPlace}
-            onViewAll={fitCurrentMapGroup}
+            onViewAll={viewAllSourceGroup}
             onClose={closeMapGroup}
           />
         </View>
