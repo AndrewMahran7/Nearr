@@ -57,6 +57,7 @@ import {
   encodeRetainedFrameSnapshot,
   restoreRetainedFrameSnapshot,
 } from './retainedFrameSnapshot.js';
+import { generateAiSaveNoteWithRetry } from './aiSaveNoteGeneration.js';
 
 export type TaskDeps = {
   cfg: WorkerConfig;
@@ -319,22 +320,26 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
       });
     }
 
-    // Cheapest post-save path: ask for a cue from the bounded place-specific
-    // observations already retained by recognition. Only if this cannot support
-    // a useful cue do we reacquire media and inspect scene-scoped frames.
-    if (
-      task.task_kind === 'ai_note_enrichment' &&
-      task.ai_note_outcome !== 'retry_after_generation' &&
-      aiNoteTarget?.handoff?.evidence.length
-    ) {
-      await setProgress(client, task, 'analyzing_evidence');
-      const preflight = await deps.model.analyze({
+    // Use already-bounded place evidence first. This is the complete generation
+    // cycle: one normal question plus one simpler repair, never a durable style
+    // loop and never a deterministic sentence fallback.
+    if (task.task_kind === 'ai_note_enrichment' && aiNoteTarget &&
+      (aiNoteTarget.handoff?.evidence.length || task.frame_snapshot)) {
+      const retainedFrame = task.frame_snapshot
+        ? await restoreRetainedFrameSnapshot({
+            value: task.frame_snapshot,
+            timestampSeconds: task.frame_snapshot_timestamp_seconds,
+            outputPath: jobTemp.file('retained-ai-note-frame.jpg'),
+          })
+        : null;
+      const retainedEvidence = aiNoteTarget.handoff?.evidence ?? [];
+      const makeInput = (attempt: 'initial' | 'repair') => ({
         platform: task.platform,
         canonicalUrl: task.canonical_url || task.source_url,
         transcript: [],
         ocr: [],
         ocrExtracted: false,
-        frames: [],
+        frames: retainedEvidence.length ? [] : retainedFrame ? [retainedFrame] : [],
         metadataTitle: null,
         metadataDescription: null,
         targetPlace: {
@@ -342,101 +347,47 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
           category: aiNoteTarget.category,
           formattedAddress: aiNoteTarget.formattedAddress,
         },
-        retainedEvidence: aiNoteTarget.handoff.evidence,
+        retainedEvidence,
+        aiNoteAttempt: attempt,
         signal: controller.signal,
       });
-      const preflightHasCue = preflight.evidence.places.some(
-        (place) => !!place.memoryCue?.trim() && place.memoryCueEvidence.length > 0,
+      await setProgress(client, task, 'analyzing_evidence');
+      analysisAttempted = true;
+      const generation = await generateAiSaveNoteWithRetry(
+        () => deps.model.analyze(makeInput('initial')),
+        () => deps.model.analyze(makeInput('repair')),
+        (output) => accumulateModelDiagnostics(diagnostics, output),
       );
-      accumulateModelDiagnostics(diagnostics, preflight);
-      diagnostics.noteStructuredEvidencePreflight = true;
-      diagnostics.noteGenerationPasses = 1;
+      diagnostics.noteGenerationPasses = generation.attempts;
+      diagnostics.noteGenerationRetried = generation.retried;
+      diagnostics.noteGenerationOutcome = generation.outcome;
+      diagnostics.noteStructuredEvidencePreflight = retainedEvidence.length > 0;
+      diagnostics.noteRetainedFrameAttempt = retainedEvidence.length === 0 && !!retainedFrame;
       diagnostics.noteSceneScoped = true;
-      diagnostics.noteInputFrameCount = 0;
-      diagnostics.noteInputEvidenceCount = aiNoteTarget.handoff.evidence.length;
-      diagnostics.modelProvider = preflight.provider;
-      diagnostics.modelName = preflight.modelName;
-      diagnostics.promptVersion = preflight.promptVersion;
-      if (preflightHasCue) {
-        diagnostics.durationMs = Date.now() - startedAt;
-        const fin = await finalizeWithRetry(() => verifyPlaceEvidence(cfg, {
-          taskId: task.id,
-          targetPlaceId: task.target_place_id ?? null,
-          targetSourceUrl: task.canonical_url || task.source_url,
-          outcome: 'evidence',
-          analysisAttempted: true,
-          evidence: preflight.evidence,
-          diagnostics,
-          signal: controller.signal,
-        }));
-        if (!fin.ok) {
-          throw new MediaError('download_failed', `verifying_place:finalize_http_${fin.status}`, fin.retryAfterSeconds);
-        }
-        logFinalizeResult(task, 'evidence', fin);
-        return;
+      diagnostics.noteInputFrameCount = retainedEvidence.length ? 0 : retainedFrame ? 1 : 0;
+      diagnostics.noteInputEvidenceCount = retainedEvidence.length;
+      if (generation.lastOutput) {
+        diagnostics.modelProvider = generation.lastOutput.provider;
+        diagnostics.modelName = generation.lastOutput.modelName;
+        diagnostics.promptVersion = generation.lastOutput.promptVersion;
       }
-      diagnostics.noteStructuredEvidenceInsufficient = true;
-    }
-
-    // A single bounded frame survives only while this exact note obligation is
-    // unresolved. It rescues visual-only saves when the provider was down and
-    // the public source disappeared before the next cooled retry.
-    if (task.task_kind === 'ai_note_enrichment' && aiNoteTarget && task.frame_snapshot) {
-      const retainedFrame = await restoreRetainedFrameSnapshot({
-        value: task.frame_snapshot,
-        timestampSeconds: task.frame_snapshot_timestamp_seconds,
-        outputPath: jobTemp.file('retained-ai-note-frame.jpg'),
-      });
-      if (retainedFrame) {
-        await setProgress(client, task, 'analyzing_evidence');
-        const retainedFrameAnalysis = await deps.model.analyze({
-          platform: task.platform,
-          canonicalUrl: task.canonical_url || task.source_url,
-          transcript: [],
-          ocr: [],
-          ocrExtracted: false,
-          frames: [retainedFrame],
-          metadataTitle: null,
-          metadataDescription: null,
-          targetPlace: {
-            name: aiNoteTarget.name,
-            category: aiNoteTarget.category,
-            formattedAddress: aiNoteTarget.formattedAddress,
-          },
-          retainedEvidence: aiNoteTarget.handoff?.evidence ?? [],
-          signal: controller.signal,
-        });
-        accumulateModelDiagnostics(diagnostics, retainedFrameAnalysis);
-        const retainedFrameHasCue = retainedFrameAnalysis.evidence.places.some(
-          (place) => !!place.memoryCue?.trim() && place.memoryCueEvidence.length > 0,
-        );
-        diagnostics.noteRetainedFrameAttempt = true;
-        diagnostics.noteGenerationPasses = (Number(diagnostics.noteGenerationPasses) || 0) + 1;
-        diagnostics.noteInputFrameCount = 1;
-        diagnostics.noteInputEvidenceCount = aiNoteTarget.handoff?.evidence.length ?? 0;
-        diagnostics.modelProvider = retainedFrameAnalysis.provider;
-        diagnostics.modelName = retainedFrameAnalysis.modelName;
-        diagnostics.promptVersion = retainedFrameAnalysis.promptVersion;
-        if (retainedFrameHasCue) {
-          diagnostics.durationMs = Date.now() - startedAt;
-          const fin = await finalizeWithRetry(() => verifyPlaceEvidence(cfg, {
-            taskId: task.id,
-            targetPlaceId: task.target_place_id ?? null,
-            targetSourceUrl: task.canonical_url || task.source_url,
-            outcome: 'evidence',
-            analysisAttempted: true,
-            evidence: retainedFrameAnalysis.evidence,
-            diagnostics,
-            signal: controller.signal,
-          }));
-          if (!fin.ok) {
-            throw new MediaError('download_failed', `verifying_place:finalize_http_${fin.status}`, fin.retryAfterSeconds);
-          }
-          logFinalizeResult(task, 'evidence', fin);
-          return;
-        }
-        warnings.push('retained_frame_insufficient');
-      }
+      diagnostics.durationMs = Date.now() - startedAt;
+      const outcome: FinalizeOutcome = generation.analysis ? 'evidence'
+        : generation.outcome === 'omitted_provider_failure' ? 'failed' : 'insufficient_evidence';
+      const fin = await finalizeWithRetry(() => verifyPlaceEvidence(cfg, {
+        taskId: task.id,
+        targetPlaceId: task.target_place_id ?? null,
+        targetSourceUrl: task.canonical_url || task.source_url,
+        outcome,
+        failureCode: generation.analysis ? undefined : generation.outcome,
+        analysisAttempted: true,
+        evidence: generation.analysis?.evidence,
+        diagnostics,
+        signal: controller.signal,
+      }));
+      if (!fin.ok) throw new MediaError('finalizer_unavailable', `verifying_place:finalize_http_${fin.status}`, fin.retryAfterSeconds);
+      logFinalizeResult(task, outcome, fin);
+      return;
     }
 
     // 1. Retrieve public media to the isolated temp dir.
@@ -625,7 +576,10 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
       });
       if (frameSnapshot) await recordAiNoteFrameSnapshot(client, task, frameSnapshot);
     }
-    const analyzeTarget = async (context: typeof primaryContext) => {
+    const analyzeTarget = async (
+      context: typeof primaryContext,
+      aiNoteAttempt?: 'initial' | 'repair',
+    ) => {
       const analyzeInput = {
         platform: task.platform,
         canonicalUrl: media.canonicalUrl,
@@ -654,6 +608,7 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
               formattedAddress: aiNoteTarget.formattedAddress,
             }
           : null,
+        aiNoteAttempt,
         retainedEvidence: context.evidence,
         signal: controller.signal,
       };
@@ -668,52 +623,77 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
         evidence: groundClaimedEvidence(rawAnalysis.evidence, analyzeInput),
       };
     };
-    let analysis = await analyzeTarget(primaryContext);
-    accumulateModelDiagnostics(diagnostics, analysis);
-    diagnostics.noteGenerationPasses = (Number(diagnostics.noteGenerationPasses) || 0) + 1;
-    diagnostics.noteSceneScoped = primaryContext.sceneScoped;
-    diagnostics.noteQualityRetryExpanded = task.ai_note_outcome === 'retry_after_generation';
-    diagnostics.noteInputFrameCount = primaryContext.frames.length;
-    diagnostics.noteInputEvidenceCount = primaryContext.evidence.length;
-
-    const focusedCueMissing = task.task_kind === 'ai_note_enrichment' &&
-      !analysis.evidence.places.some(
-        (place) => !!place.memoryCue?.trim() && place.memoryCueEvidence.length > 0,
+    let analysis: AnalyzeOutput;
+    if (task.task_kind === 'ai_note_enrichment') {
+      let generationContext = primaryContext;
+      const generation = await generateAiSaveNoteWithRetry(
+        () => analyzeTarget(primaryContext, 'initial'),
+        async () => {
+          let expandedContext = buildTargetedNoteContext({
+            frames,
+            transcript: transcript.segments,
+            ocr,
+            handoff: aiNoteTarget?.handoff,
+            expanded: true,
+            maxFrames: cfg.maxSelectedFrames,
+          });
+          expandedContext = {
+            ...expandedContext,
+            evidence: buildDurableTargetEvidence({
+              current: expandedContext.evidence,
+              transcript: expandedContext.transcript,
+              transcriptSource: media.captionsTranscript?.length ? 'caption' : 'speech',
+              ocr: expandedContext.ocr,
+              metadataTitle: media.metadataTitle,
+              metadataDescription: media.metadataDescription,
+              includeMetadata: !expandedContext.sceneScoped,
+            }),
+          };
+          generationContext = expandedContext;
+          await recordAiNoteEvidenceSnapshot(client, task, expandedContext.evidence, true);
+          warnings.push('target_scene_expanded_for_repair');
+          return analyzeTarget(expandedContext, 'repair');
+        },
+        (output) => accumulateModelDiagnostics(diagnostics, output),
       );
-    if (focusedCueMissing) {
-      let expandedContext = buildTargetedNoteContext({
-        frames,
-        transcript: transcript.segments,
-        ocr,
-        handoff: aiNoteTarget?.handoff,
-        expanded: true,
-        maxFrames: cfg.maxSelectedFrames,
-      });
-      const widened = expandedContext.frames.length > primaryContext.frames.length ||
-        expandedContext.transcript.length > primaryContext.transcript.length ||
-        expandedContext.ocr.length > primaryContext.ocr.length;
-      if (widened) {
-        expandedContext = {
-          ...expandedContext,
-          evidence: buildDurableTargetEvidence({
-            current: expandedContext.evidence,
-            transcript: expandedContext.transcript,
-            transcriptSource: media.captionsTranscript?.length ? 'caption' : 'speech',
-            ocr: expandedContext.ocr,
-            metadataTitle: media.metadataTitle,
-            metadataDescription: media.metadataDescription,
-            includeMetadata: !expandedContext.sceneScoped,
-          }),
-        };
-        await recordAiNoteEvidenceSnapshot(client, task, expandedContext.evidence, true);
-        analysis = await analyzeTarget(expandedContext);
-        accumulateModelDiagnostics(diagnostics, analysis);
-        diagnostics.noteGenerationPasses = (Number(diagnostics.noteGenerationPasses) || 0) + 1;
-        diagnostics.noteInputFrameCount = expandedContext.frames.length;
-        diagnostics.noteInputEvidenceCount = expandedContext.evidence.length;
-        warnings.push('target_scene_expanded');
+      diagnostics.noteGenerationPasses = generation.attempts;
+      diagnostics.noteGenerationRetried = generation.retried;
+      diagnostics.noteGenerationOutcome = generation.outcome;
+      diagnostics.noteInputFrameCount = generationContext.frames.length;
+      diagnostics.noteInputEvidenceCount = generationContext.evidence.length;
+      if (generation.lastOutput) {
+        diagnostics.modelProvider = generation.lastOutput.provider;
+        diagnostics.modelName = generation.lastOutput.modelName;
+        diagnostics.promptVersion = generation.lastOutput.promptVersion;
       }
+      if (!generation.analysis) {
+        diagnostics.durationMs = Date.now() - startedAt;
+        diagnostics.warnings = warnings.slice(0, 24);
+        diagnostics.errors = errors.slice(0, 24);
+        await setProgress(client, task, 'verifying_place');
+        const failureOutcome: FinalizeOutcome = generation.outcome === 'omitted_provider_failure'
+          ? 'failed'
+          : 'insufficient_evidence';
+        const fin = await finalizeWithRetry(() => verifyPlaceEvidence(cfg, {
+          taskId: task.id,
+          targetPlaceId: task.target_place_id ?? null,
+          targetSourceUrl: task.canonical_url || task.source_url,
+          outcome: failureOutcome,
+          failureCode: generation.outcome,
+          analysisAttempted: true,
+          diagnostics,
+          signal: controller.signal,
+        }));
+        if (!fin.ok) throw new MediaError('finalizer_unavailable', `verifying_place:finalize_http_${fin.status}`, fin.retryAfterSeconds);
+        logFinalizeResult(task, failureOutcome, fin);
+        return;
+      }
+      analysis = generation.analysis;
+    } else {
+      analysis = await analyzeTarget(primaryContext);
+      accumulateModelDiagnostics(diagnostics, analysis);
     }
+    diagnostics.noteSceneScoped = primaryContext.sceneScoped;
 
     if (task.task_kind === 'ai_note_enrichment' && aiNoteTarget) {
       const generated = analysis.evidence.places

@@ -274,24 +274,25 @@ assert.match(migration, /video_derived_saved_places_without_ai_note/i);
 assert.match(migration, /before update of place_id[\s\S]+execute function public\.invalidate_video_ai_note_on_place_change\(\)/i);
 assert.match(migration, /new\.ai_note := null/i);
 
-// Provider/infrastructure failures remain durable. A rejected structured cue
-// gets one expanded-evidence generation cycle, then terminates as an honest
-// omission instead of replaying forever or manufacturing fallback prose.
+// Provider/infrastructure failures remain durable before generation. Note
+// generation itself gets exactly one immediate repair and then a bounded
+// explicit omission instead of replaying forever or manufacturing prose.
 assert.match(worker, /task\.task_kind === 'ai_note_enrichment'[\s\S]+media\.code === 'finalizer_unavailable'[\s\S]+requeueAiNoteTask/i);
 assert.match(worker, /renewAiNoteRetryCycle\(client, task, code\)/);
 assert.match(migration, /retry_cycles = case when mt\.task_kind = 'ai_note_enrichment' then mt\.retry_cycles \+ 1/i);
 assert.match(migration, /least\(86400, 3600 \* power/i);
 assert.match(finalizer, /failure_code: failureCode\.slice\(0, 200\)/);
 assert.match(finalizer, /MAX_AI_NOTE_GENERATION_RETRY_CYCLES = 1/);
-assert.match(finalizer, /omitted_after_generation_failure/);
+assert.match(finalizer, /omitted_invalid_after_retry/);
+assert.match(finalizer, /omitted_provider_failure/);
+assert.match(finalizer, /omitted_no_evidence/);
 assert.match(finalizer, /disposition !== 'awaiting_evidence'/);
 assert.match(finalizer, /retryCount: Number\(task\.attempts\)/);
 assert.match(worker, /noteStructuredEvidencePreflight/);
-assert.match(worker, /task\.ai_note_outcome !== 'retry_after_generation'/);
+assert.match(worker, /generateAiSaveNoteWithRetry/);
 assert.match(worker, /buildTargetedNoteContext/);
-assert.match(worker, /expanded: task\.ai_note_outcome === 'retry_after_generation'/);
-assert.match(worker, /noteQualityRetryExpanded/);
-assert.match(worker, /target_scene_expanded/);
+assert.match(worker, /aiNoteAttempt: attempt/);
+assert.match(worker, /target_scene_expanded_for_repair/);
 assert.match(finalizer, /mediaMentions\.mentions\.map\(\(mention: any\) => \[mention\.id, null\]\)/);
 assert.doesNotMatch(finalizer, /event: 'ai_note_generation'/);
 assert.match(finalizer, /noteEvidenceForLogicalMention/);

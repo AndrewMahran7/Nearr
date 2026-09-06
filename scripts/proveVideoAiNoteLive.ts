@@ -138,7 +138,7 @@ async function main(): Promise<void> {
     if (
       !proof.jobCompleted ||
       !proof.taskClaimed ||
-      proof.taskOutcome !== 'generated' ||
+      !['accepted', 'accepted_after_retry'].includes(String(proof.taskOutcome)) ||
       !proof.aiNoteNonempty ||
       !proof.readbackSucceeded ||
       !proof.realPhysicalLikeSavePathUsed ||

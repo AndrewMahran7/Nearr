@@ -227,12 +227,8 @@ for (const fixture of visualCases) {
     let requestBody: any = null;
     globalThis.fetch = (async (_url: string | URL | Request, init?: RequestInit) => {
       requestBody = JSON.parse(String(init?.body));
-      const modelPayload = {
-        note: fixture.note,
-        evidence: [{ source: 'frame', value: fixture.observation, timestampSeconds: 7 }],
-      };
       return new Response(JSON.stringify({
-        candidates: [{ content: { parts: [{ text: JSON.stringify(modelPayload) }] } }],
+        candidates: [{ content: { parts: [{ text: fixture.note }] } }],
         usageMetadata: {
           promptTokenCount: 900,
           candidatesTokenCount: 80,
@@ -268,12 +264,13 @@ for (const fixture of visualCases) {
       });
       assert.equal(evaluated.note, fixture.note);
       assert.equal(requestBody.contents[0].parts.filter((part: any) => part.inlineData).length, 1);
-      assert.match(requestBody.systemInstruction.parts[0].text, /Saved-place note voice/);
-      assert.doesNotMatch(requestBody.systemInstruction.parts[0].text, /\bVayrin\b/i);
-      assert.match(requestBody.systemInstruction.parts[0].text, /do not summarize videos/i);
+      assert.match(requestBody.systemInstruction.parts[0].text, /Why would someone save this video\?/);
+      assert.match(requestBody.systemInstruction.parts[0].text, /one short natural sentence/i);
+      assert.match(requestBody.systemInstruction.parts[0].text, /Do not add labels or JSON/i);
       assert.match(requestBody.contents[0].parts[0].text, /untrusted_saved_post_evidence/);
-      assert.equal(requestBody.generationConfig.temperature, 1);
-      assert.equal(requestBody.generationConfig.maxOutputTokens, 256);
+      assert.equal(requestBody.generationConfig.responseMimeType, 'text/plain');
+      assert.equal(requestBody.generationConfig.temperature, 0.7);
+      assert.equal(requestBody.generationConfig.maxOutputTokens, 96);
       assert.equal(requestBody.generationConfig.thinkingConfig.thinkingBudget, 0);
       assert.deepEqual(output.usage, {
         inputTokens: 900,
@@ -308,12 +305,8 @@ test('provider outage recovers from durable evidence after frames are gone', asy
   globalThis.fetch = (async () => {
     attempts += 1;
     if (attempts === 1) return new Response('', { status: 503 });
-    const modelPayload = {
-      note: 'That smashburger with crispy edges looked ridiculous.',
-      evidence: retainedEvidence,
-    };
     return new Response(JSON.stringify({
-      candidates: [{ content: { parts: [{ text: JSON.stringify(modelPayload) }] } }],
+      candidates: [{ content: { parts: [{ text: 'That smashburger with crispy edges looked ridiculous.' }] } }],
     }), { status: 200, headers: { 'content-type': 'application/json' } });
   }) as typeof fetch;
   const input = {

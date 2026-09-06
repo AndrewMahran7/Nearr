@@ -1045,7 +1045,7 @@ async function persistBlockedPlaceResult(
 }
 
 const POST_SAVE_ENRICHMENT_RULE_VERSION = 'post-save-enrichment.v1';
-const VIDEO_AI_NOTE_RULE_VERSION = 'video-ai-note-authenticity.v3';
+const VIDEO_AI_NOTE_RULE_VERSION = 'nearr-ai-save-reason-2026-09-05.v16';
 const MAX_AI_NOTE_GENERATION_RETRY_CYCLES = 1;
 
 /**
@@ -1208,13 +1208,26 @@ async function finalizeVideoAiNoteTask(
       mediaAcquiredOnce: task.media_acquired_once === true,
     });
     const retryCycles = Math.max(0, Number(task.retry_cycles) || 0);
-    const generationRetryExhausted =
-      disposition === 'retry_after_generation' &&
+    const explicitGenerationOutcome = [
+      'omitted_provider_failure',
+      'omitted_invalid_after_retry',
+    ].includes(diagnostics.noteGenerationOutcome)
+      ? diagnostics.noteGenerationOutcome
+      : null;
+    const boundedV16GenerationFinished = diagnostics.promptVersion === VIDEO_AI_NOTE_RULE_VERSION &&
+      Number(diagnostics.noteGenerationPasses) > 0;
+    const generationRetryExhausted = disposition === 'retry_after_generation' &&
       retryCycles >= MAX_AI_NOTE_GENERATION_RETRY_CYCLES;
-    const terminalDisposition = generationRetryExhausted
-      ? 'omitted_after_generation_failure'
-      : disposition;
-    if (disposition !== 'awaiting_evidence' && !generationRetryExhausted) {
+    const terminalDisposition = explicitGenerationOutcome ??
+      (boundedV16GenerationFinished
+        ? 'omitted_invalid_after_retry'
+        :
+      (disposition === 'awaiting_evidence'
+        ? 'omitted_no_evidence'
+        : generationRetryExhausted
+          ? 'omitted_invalid_after_retry'
+          : disposition));
+    if (!boundedV16GenerationFinished && !explicitGenerationOutcome && disposition !== 'awaiting_evidence' && !generationRetryExhausted) {
       const delaySeconds = Math.min(86_400, 3_600 * 2 ** Math.min(retryCycles, 5));
       const updatedTask = await markVideoAiNoteTask(admin, task, 'queued', {
         ...diagnosticPatch,
@@ -1251,7 +1264,11 @@ async function finalizeVideoAiNoteTask(
       savedPlaceId: saved.id,
       taskId: task.id,
       videoDerived: true,
-      generationAttempted: outcome === 'evidence' || outcome === 'insufficient_evidence',
+      aiNoteAttempted: Number(diagnostics.noteGenerationPasses) > 0,
+      aiNoteAccepted: false,
+      aiNoteRetried: diagnostics.noteGenerationRetried === true,
+      aiNoteOmitted: true,
+      generationAttempted: outcome === 'evidence' || outcome === 'insufficient_evidence' || outcome === 'failed',
       generationOutcome: terminalDisposition,
       targetMatch,
       retryCount: Number(task.attempts) || 0,
@@ -1268,11 +1285,9 @@ async function finalizeVideoAiNoteTask(
       ruleVersion: VIDEO_AI_NOTE_RULE_VERSION,
     }));
     logFinalStatus(
-      disposition !== 'awaiting_evidence' && !generationRetryExhausted
+      !boundedV16GenerationFinished && !explicitGenerationOutcome && disposition !== 'awaiting_evidence' && !generationRetryExhausted
         ? 'note_retry_scheduled'
-        : generationRetryExhausted
-          ? 'note_omitted_after_generation_failure'
-          : 'note_awaiting_evidence',
+        : 'note_omitted',
       disposition === 'retry_after_outage'
         ? 'transient_provider_error'
         : disposition === 'retry_after_generation'
@@ -1350,7 +1365,9 @@ async function finalizeVideoAiNoteTask(
   await markVideoAiNoteTask(admin, task, 'completed', {
     ...diagnosticPatch,
     failure_code: null,
-    ai_note_outcome: 'generated',
+    ai_note_outcome: diagnostics.noteGenerationOutcome === 'accepted_after_retry'
+      ? 'accepted_after_retry'
+      : 'accepted',
     progress_stage: 'cleanup',
     locked_until: null,
     completed_at: nowIso(),
@@ -1361,8 +1378,15 @@ async function finalizeVideoAiNoteTask(
     taskId: task.id,
     videoDerived: true,
     aiNotePresent: true,
+    aiNoteAttempted: true,
+    aiNoteAccepted: true,
+    aiNoteRetried: diagnostics.noteGenerationRetried === true,
+    aiNoteOmitted: false,
     generationAttempted: true,
-    generationOutcome: 'generated',
+    generationOutcome: diagnostics.noteGenerationOutcome === 'accepted_after_retry'
+      ? 'accepted_after_retry'
+      : 'accepted',
+    noteWordCount: noteResult.note.split(/\s+/).filter(Boolean).length,
     groundedFallbackUsed: noteResult.groundedFallbackUsed,
     targetMatch,
     retryCount: Number(task.attempts) || 0,

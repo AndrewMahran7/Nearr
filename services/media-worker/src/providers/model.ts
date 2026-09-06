@@ -27,7 +27,7 @@ import {
 } from '../prompts/placeEvidencePrompt.js';
 import {
   AI_NOTE_PROMPT_VERSION,
-  VAYRIN_AI_NOTE_SYSTEM_PROMPT,
+  AI_SAVE_NOTE_SYSTEM_PROMPT,
   buildAiNoteUserContext,
 } from '../prompts/aiNotePrompt.js';
 import { log } from '../util/logger.js';
@@ -63,6 +63,8 @@ export type AnalyzeInput = {
     category?: string | null;
     formattedAddress?: string | null;
   } | null;
+  /** A targeted save-note generation gets one normal attempt and one repair. */
+  aiNoteAttempt?: 'initial' | 'repair';
   /** Place-scoped evidence retained from an earlier recognition pass. */
   retainedEvidence?: EvidenceItem[];
   signal: AbortSignal;
@@ -306,28 +308,49 @@ function parseTargetedAiNoteResponse(
       validationErrorClass: 'top_level_invalid' as const,
     },
   });
-  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return invalid('response:invalid_type');
-  const value = raw as Record<string, unknown>;
-  if (Object.keys(value).some((key) => !['note', 'evidence'].includes(key))) {
-    return invalid('response:unrecognized_keys');
+  if (typeof raw !== 'string') return invalid('response:invalid_type');
+  const trimmed = raw.trim();
+  if (!trimmed || /^[\[{]/.test(trimmed)) return invalid('response:malformed_note');
+  let note = trimmed;
+  for (const [open, close] of [['"', '"'], ["'", "'"], ['“', '”'], ['‘', '’']] as const) {
+    if (note.length >= 2 && note.startsWith(open) && note.endsWith(close)) {
+      note = note.slice(open.length, -close.length).trim();
+      break;
+    }
   }
-  const note = value.note === null
-    ? null
-    : typeof value.note === 'string' && value.note.trim().length <= 180
-      ? value.note.replace(/\s+/g, ' ').trim()
-      : undefined;
-  if (note === undefined) return invalid('note:invalid_type');
-  const parsedEvidence = EvidenceItemSchema.array().max(8).safeParse(value.evidence);
-  if (!parsedEvidence.success) return invalid('evidence:invalid_schema');
-  const mergedEvidence = [...parsedEvidence.data];
-  const seenEvidence = new Set(mergedEvidence.map((item) =>
-    `${item.source}|${item.timestampSeconds ?? ''}|${item.value.toLowerCase()}`));
-  for (const item of input.retainedEvidence ?? []) {
+  note = note.replace(/\s+/g, ' ').trim();
+  if (!note || note.length > 220 || /[{}\[\]]/.test(note)) return invalid('response:malformed_note');
+
+  const suppliedEvidence: EvidenceItem[] = [
+    ...(input.retainedEvidence ?? []),
+    ...input.transcript.map((item) => ({ source: 'speech' as const, value: item.text, timestampSeconds: item.startSeconds })),
+    ...input.ocr.map((item) => ({ source: 'visible_text' as const, value: item.text, timestampSeconds: item.timestampSeconds })),
+    ...(input.metadataTitle ? [{ source: 'caption' as const, value: input.metadataTitle, timestampSeconds: null }] : []),
+    ...(input.metadataDescription ? [{ source: 'caption' as const, value: input.metadataDescription, timestampSeconds: null }] : []),
+    ...(input.frames.length > 0 && !(input.retainedEvidence ?? []).some((item) => item.source === 'frame')
+      ? [{ source: 'frame' as const, value: `Visual frames supplied to note model (${input.frames.length})`, timestampSeconds: input.frames[0]?.timestampSeconds ?? null }]
+      : []),
+  ];
+  const mergedEvidence: EvidenceItem[] = [];
+  const seenEvidence = new Set<string>();
+  for (const item of suppliedEvidence) {
     const parsed = EvidenceItemSchema.safeParse(item);
     if (!parsed.success) continue;
     const key = `${parsed.data.source}|${parsed.data.timestampSeconds ?? ''}|${parsed.data.value.toLowerCase()}`;
     if (seenEvidence.has(key)) continue;
     seenEvidence.add(key);
+    mergedEvidence.push(parsed.data);
+    if (mergedEvidence.length === 8) break;
+  }
+  /* Evidence comes from the bounded model input, never from model-authored echo. */
+  const seenRetainedEvidence = new Set(mergedEvidence.map((item) =>
+    `${item.source}|${item.timestampSeconds ?? ''}|${item.value.toLowerCase()}`));
+  for (const item of input.retainedEvidence ?? []) {
+    const parsed = EvidenceItemSchema.safeParse(item);
+    if (!parsed.success) continue;
+    const key = `${parsed.data.source}|${parsed.data.timestampSeconds ?? ''}|${parsed.data.value.toLowerCase()}`;
+    if (seenRetainedEvidence.has(key)) continue;
+    seenRetainedEvidence.add(key);
     mergedEvidence.push(parsed.data);
     if (mergedEvidence.length === 8) break;
   }
@@ -352,14 +375,14 @@ function parseTargetedAiNoteResponse(
     explicitEvidence: mergedEvidence,
     inferredEvidence: [],
     memoryCue: note,
-    memoryCueEvidence: note ? mergedEvidence : [],
+    memoryCueEvidence: mergedEvidence,
   };
   return {
     evidence: {
       places: [place],
       partialPlaces: [],
       multipleIntentionalPlaces: false,
-      insufficientEvidence: !note || mergedEvidence.length === 0,
+      insufficientEvidence: mergedEvidence.length === 0,
       warnings: [],
     },
     diagnostics: {
@@ -404,7 +427,6 @@ class GeminiModel implements ModelProvider {
       .join('\n');
     const userText = input.targetPlace
       ? buildAiNoteUserContext({
-          sourceKey: input.canonicalUrl,
           platform: input.platform,
           transcriptText,
           ocrText,
@@ -413,6 +435,7 @@ class GeminiModel implements ModelProvider {
           metadataDescription: input.metadataDescription,
           targetPlace: input.targetPlace,
           retainedEvidence: input.retainedEvidence,
+          attempt: input.aiNoteAttempt ?? 'initial',
         })
       : buildUserContext({
           platform: input.platform,
@@ -460,14 +483,14 @@ class GeminiModel implements ModelProvider {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           ...(input.targetPlace
-            ? { systemInstruction: { parts: [{ text: VAYRIN_AI_NOTE_SYSTEM_PROMPT }] } }
+            ? { systemInstruction: { parts: [{ text: AI_SAVE_NOTE_SYSTEM_PROMPT }] } }
             : {}),
           contents: [{ role: 'user', parts }],
           generationConfig: input.targetPlace
             ? {
-                responseMimeType: 'application/json',
-                temperature: 1,
-                maxOutputTokens: 256,
+                responseMimeType: 'text/plain',
+                temperature: 0.7,
+                maxOutputTokens: 96,
                 // A short grounded reaction does not benefit from hidden
                 // reasoning. On Gemini 2.5 Flash the dynamic default can spend
                 // the entire response budget thinking and emit zero JSON.
@@ -528,25 +551,21 @@ class GeminiModel implements ModelProvider {
           }
         : undefined;
       const text = json.candidates?.[0]?.content?.parts?.map((p) => p.text ?? '').join('') ?? '';
-      let parsed: unknown;
-      try {
-        parsed = JSON.parse(text);
-      } catch {
-        return {
-          provider: this.name,
-          modelName: this.cfg.geminiModel,
-          promptVersion,
-          evidence: emptyEvidence(['gemini_json_parse_failed']),
-          recognitionFailureClass: 'model_schema_invalid',
-          modelRawPreview: text.slice(0, 500),
-          modelInput,
-          usage,
-          latencyMs,
-        };
-      }
       const { evidence: validated, diagnostics: parseDiag } = input.targetPlace
-        ? parseTargetedAiNoteResponse(parsed, input as AnalyzeInput & { targetPlace: NonNullable<AnalyzeInput['targetPlace']> })
-        : parseEvidenceWithDiagnostics(parsed);
+        ? parseTargetedAiNoteResponse(text, input as AnalyzeInput & { targetPlace: NonNullable<AnalyzeInput['targetPlace']> })
+        : (() => {
+            try { return parseEvidenceWithDiagnostics(JSON.parse(text)); }
+            catch {
+              return {
+                evidence: emptyEvidence(['gemini_json_parse_failed']),
+                diagnostics: {
+                  emitted: 1, accepted: 0, rejected: 1,
+                  rejectionPaths: ['response:json_parse_failed'], topLevelInvalid: true,
+                  partialPreserved: 0, validationErrorClass: 'top_level_invalid' as const,
+                },
+              };
+            }
+          })();
       const evidence = groundClaimedEvidence(validated, input);
       // Bounded, structured record of what validation kept vs dropped. This is
       // what makes a future schema regression diagnosable WITHOUT storing the
@@ -573,7 +592,7 @@ class GeminiModel implements ModelProvider {
         modelName: this.cfg.geminiModel,
         promptVersion,
         evidence,
-        modelRawPreview: text.slice(0, 500),
+        modelRawPreview: input.targetPlace ? undefined : text.slice(0, 500),
         parseDiagnostics: parseDiag,
         recognitionFailureClass: parseDiag.topLevelInvalid
           ? 'model_schema_invalid'

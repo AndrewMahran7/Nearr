@@ -2,116 +2,63 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 import {
-  classifyAiNoteStructure,
   classifyLegacyBadAiNote,
   evaluateAiNoteCorpus,
   evaluateAiPlaceNote,
-  planLegacyAiNoteReenrichment,
   preserveUserNote,
 } from '../lib/aiPlaceNote';
 
-const pizzaEvidence = [{
-  source: 'speech' as const,
-  value: 'The pepperoni is spicy and savory, with crisp edges. The crust is really crunchy.',
-}];
-
-const founderNote = 'That The pepperoni had pepperoni slices that were actually flavorful and had their own character looked unreal.';
-assert.equal(evaluateAiPlaceNote({
-  placeName: 'Brooklyn City Pizzeria & Market',
-  proposedNote: founderNote,
-  evidence: pizzaEvidence,
-}).reason, 'malformed_construction', 'the exact founder example must fail');
-
-assert.equal(evaluateAiPlaceNote({
-  placeName: 'Pizza Counter',
-  proposedNote: 'Pepperoni had pepperoni slices with crisp edges.',
-  evidence: pizzaEvidence,
-}).reason, 'duplicated_subject');
-
-for (const canned of [
+const evidence = [{ source: 'speech' as const, value: 'spicy pepperoni cups with crisp edges and blistered crust' }];
+for (const malformed of [
   'That crisp pepperoni looked unreal.',
-  'The pepperoni looks amazing.',
-  'The crunchy crust looks incredible.',
+  'That The pepperoni looked unreal.',
+  'That So many pepperoni slices looked unreal.',
+  'That spicy pepperoni cups with crisp edges looked unreal.',
 ]) {
-  assert.equal(evaluateAiPlaceNote({ placeName: 'Pizza Counter', proposedNote: canned, evidence: pizzaEvidence }).reason, 'generic_visual_filler');
+  assert.equal(evaluateAiPlaceNote({ placeName: 'Pizza Counter', proposedNote: malformed, evidence }).note, null);
 }
 
-const freshFounderNote = "I'd order the pepperoni.";
-assert.equal(evaluateAiPlaceNote({
-  placeName: 'Brooklyn City Pizzeria & Market',
-  proposedNote: freshFounderNote,
-  evidence: pizzaEvidence,
-}).note, freshFounderNote, 'a fresh grounded personal pizza reaction passes');
-
-const allowed = [
-  ['Ridiculously crunchy crust.', 'FRAGMENT'],
-  ['Would I finish that pepperoni?', 'QUESTION'],
-  ["I'd order the pepperoni.", 'FIRST_PERSON'],
-  ['Order the pepperoni.', 'ACTION_INTENT'],
-  ['Tasting the pepperoni.', 'VERB_LED'],
-] as const;
-for (const [note, family] of allowed) {
-  assert.equal(evaluateAiPlaceNote({ placeName: 'Pizza Counter', proposedNote: note, evidence: pizzaEvidence }).note, note);
-  assert.equal(classifyAiNoteStructure(note), family);
+for (const natural of [
+  'Those crispy pepperoni cups are reason enough to stop here.',
+  'Would absolutely come back for that blistered crust.',
+  'The spicy pepperoni looks worth trying.',
+]) {
+  assert.equal(evaluateAiPlaceNote({ placeName: 'Pizza Counter', proposedNote: natural, evidence }).note, natural);
 }
 
-assert.deepEqual(evaluateAiPlaceNote({
-  placeName: 'Pizza Counter', proposedNote: null, evidence: pizzaEvidence,
-}), { note: null, status: 'not_requested', reason: null }, 'omission is valid');
-
 assert.equal(evaluateAiPlaceNote({
-  placeName: 'Pizza Counter', proposedNote: 'I want the lobster roll.', evidence: pizzaEvidence,
-}).reason, 'ungrounded_claim', 'unsupported concrete claims are rejected');
-
+  placeName: 'Pizza Counter', proposedNote: 'The Eiffel Tower view looks unforgettable.', evidence,
+}).reason, 'ungrounded_claim');
 assert.equal(evaluateAiPlaceNote({
-  placeName: 'Pizza Counter', proposedNote: 'This video shows crunchy pepperoni.', evidence: pizzaEvidence,
+  placeName: 'Pizza Counter', proposedNote: 'This video shows spicy pepperoni.', evidence,
 }).reason, 'summary_like');
 assert.equal(evaluateAiPlaceNote({
-  placeName: 'Pizza Counter', proposedNote: 'A hidden gem for crunchy pepperoni.', evidence: pizzaEvidence,
-}).reason, 'marketing_like');
+  placeName: 'Pizza Counter', proposedNote: '{"note":"Spicy pepperoni."}', evidence,
+}).reason, 'invalid_format');
 
-const repetitiveCorpus = evaluateAiNoteCorpus([
-  ...Array.from({ length: 8 }, (_, index) => `That crust is crisp number ${index}.`),
-  'I want the pepperoni.', 'Order the pizza.', 'Crunchy crust.', 'Could I finish it?',
+const corpus = evaluateAiNoteCorpus([
+  'Those crispy pepperoni cups are reason enough to stop here.',
+  'Would absolutely come back for that blistered crust.',
+  'The swimming hole under the waterfall looks worth the hike.',
 ]);
-assert.equal(repetitiveCorpus.passed, false);
-assert.ok(repetitiveCorpus.demonstrativeDescriptiveRate > 0.15);
-assert.ok(repetitiveCorpus.failures.some((failure) => failure.includes('three-word opener')));
+assert.equal(corpus.phraseCounts['looked unreal'], 0);
+assert.equal(corpus.malformedCount, 0);
+assert.equal(corpus.summaryLikeCount, 0);
 
 assert.equal(classifyLegacyBadAiNote('That crisp pepperoni looked unreal.'), 'historical_looked_unreal_fallback');
-assert.equal(classifyLegacyBadAiNote('That The pepperoni looked good.'), 'malformed_demonstrative_article');
-assert.equal(classifyLegacyBadAiNote('The water looks amazing!'), 'legacy_generic_visual_filler');
-assert.equal(classifyLegacyBadAiNote("I'd order the pepperoni."), null);
-
-const firstPlan = planLegacyAiNoteReenrichment({
-  aiNote: 'That crisp pepperoni looked unreal.',
-  sourceType: 'instagram',
-  sourceUrl: 'https://www.instagram.com/reel/example/',
+assert.deepEqual(preserveUserNote('My exact user note', 'AI reason'), {
+  notes: 'My exact user note', aiNote: 'AI reason',
 });
-assert.equal(firstPlan.action, 'clear_ai_note_and_rearm');
-assert.deepEqual(planLegacyAiNoteReenrichment({
-  aiNote: null,
-  sourceType: 'instagram',
-  sourceUrl: 'https://www.instagram.com/reel/example/',
-}), { action: 'preserve', reason: 'not_legacy_pattern' }, 'a second cleanup pass is a no-op');
-assert.equal(planLegacyAiNoteReenrichment({
-  aiNote: 'That crisp pepperoni looked unreal.',
-  sourceType: 'manual',
-  sourceUrl: null,
-}).action, 'preserve');
-
-assert.deepEqual(preserveUserNote('My exact user note', freshFounderNote), {
-  notes: 'My exact user note', aiNote: freshFounderNote,
-}, 'AI-note validation never mutates the user note');
 
 const finalizer = readFileSync('supabase/functions/process-share-jobs/index.ts', 'utf8');
-const trigger = readFileSync('supabase/migrations/20260821000001_video_ai_note_guarantee.sql', 'utf8');
-assert.match(finalizer, /MAX_AI_NOTE_GENERATION_RETRY_CYCLES = 1/);
-assert.match(finalizer, /omitted_after_generation_failure/);
+assert.match(finalizer, /nearr-ai-save-reason-2026-09-05\.v16/);
+assert.match(finalizer, /omitted_invalid_after_retry/);
+assert.match(finalizer, /omitted_provider_failure/);
+assert.match(finalizer, /omitted_no_evidence/);
 assert.match(finalizer, /\.update\(\{ ai_note: noteResult\.note \}\)/);
-assert.doesNotMatch(finalizer.slice(finalizer.indexOf('async function finalizeVideoAiNoteTask'), finalizer.indexOf('async function finalizePostSaveEnrichment')), /\.update\(\{[^}]*\bnotes\s*:/s);
-assert.match(trigger, /old\.ai_note[\s\S]{0,120}new\.ai_note/);
-assert.match(trigger, /on conflict \(saved_place_id\) where task_kind = 'ai_note_enrichment'/i);
-assert.match(trigger, /then 'queued'/i, 'clearing a legacy note re-arms the normal task idempotently');
+assert.doesNotMatch(
+  finalizer.slice(finalizer.indexOf('async function finalizeVideoAiNoteTask'), finalizer.indexOf('async function finalizePostSaveEnrichment')),
+  /\.update\(\{[^}]*\bnotes\s*:/s,
+);
 
-console.log(`PASS AI-note authenticity contracts; fresh founder note: ${freshFounderNote}`);
+console.log('PASS simple, grounded, high-coverage AI-note authenticity contracts');
