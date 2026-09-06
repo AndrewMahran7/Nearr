@@ -65,6 +65,14 @@ export function isPlaceRecommendationsEnabled(): boolean {
   );
 }
 
+/** Dev-only V1 place media layer. Missing/malformed values always resolve OFF. */
+export function isPlaceVideoGalleryEnabled(): boolean {
+  return resolveBooleanFlag(
+    process.env.EXPO_PUBLIC_PLACE_VIDEO_GALLERY_ENABLED,
+    readExtra('placeVideoGalleryEnabled'),
+  );
+}
+
 /**
  * Saved-place identity markers default on through app config. An explicit
  * false in a newly built/published bundle selects the legacy marker path. No

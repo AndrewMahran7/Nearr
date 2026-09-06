@@ -38,6 +38,8 @@ export type MediaSourceMetadata = {
   creatorId: string | null;
   /** Public extractor location label. Context only, never final place identity. */
   location: string | null;
+  /** Worker proof that the post was retrieved without viewer credentials. */
+  publicAccessVerified?: boolean;
 };
 
 function boundedText(value: unknown, max: number): string | null {
@@ -87,8 +89,9 @@ export function parseMediaSourceMetadata(raw: unknown): MediaSourceMetadata | nu
   const creatorName = boundedText(r.creatorName, 200);
   const creatorId = boundedText(r.creatorId, 120);
   const location = boundedText(r.location, 500);
-  if (!title && !description && !creatorHandle && !postId && !sourceId && !creatorName && !creatorId && !location) return null;
-  return { title, description, creatorHandle, postId, sourceId, creatorName, creatorId, location };
+  const publicAccessVerified = r.publicAccessVerified === true;
+  if (!title && !description && !creatorHandle && !postId && !sourceId && !creatorName && !creatorId && !location && !publicAccessVerified) return null;
+  return { title, description, creatorHandle, postId, sourceId, creatorName, creatorId, location, publicAccessVerified };
 }
 
 /**
@@ -125,6 +128,7 @@ export function mergeRetainedSourceMetadata(
     creatorName: existing.creatorName ?? incoming.creatorName,
     creatorId: existing.creatorId ?? incoming.creatorId,
     location: existing.location ?? incoming.location,
+    publicAccessVerified: existing.publicAccessVerified || incoming.publicAccessVerified,
   };
 }
 

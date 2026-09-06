@@ -848,6 +848,7 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
           creatorName: media.metadataCreatorName,
           creatorId: media.metadataCreatorId,
           location: media.metadataLocation,
+          publicAccessVerified: true,
         },
         canonicalUrl: media.canonicalUrl,
         diagnostics,

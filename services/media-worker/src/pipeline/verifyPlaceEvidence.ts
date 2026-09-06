@@ -40,6 +40,8 @@ export type MediaSourceMetadata = {
   creatorId?: string | null;
   /** Public extractor location label. Geographic context only. */
   location?: string | null;
+  /** True only after no-cookie/no-viewer-auth public retrieval succeeds. */
+  publicAccessVerified?: boolean;
 };
 
 export type FinalizeArgs = {

@@ -238,6 +238,9 @@ module.exports = ({ config }) => {
       // Physically validated Product UI release: enabled in production.
       placeRecommendationsEnabled:
         process.env.EXPO_PUBLIC_PLACE_RECOMMENDATIONS_ENABLED || 'true',
+      // Dev-only until founder physical QA. Production must leave this unset/false.
+      placeVideoGalleryEnabled:
+        process.env.EXPO_PUBLIC_PLACE_VIDEO_GALLERY_ENABLED || '',
       // Presentation-only Vayrin rollout; recognition policy is unchanged.
       vayrinProductUiEnabled:
         process.env.EXPO_PUBLIC_VAYRIN_PRODUCT_UI_ENABLED || 'true',

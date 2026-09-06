@@ -51,9 +51,11 @@ import {
   View,
 } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 
 import { Button, Input } from '@/components';
 import { PhotoRolodexModal } from '@/components/PhotoRolodex';
+import { PlaceVideoGalleryStrip } from '@/components/PlaceVideoGalleryStrip';
 import { WrongPlaceSheet } from '@/components/map/WrongPlaceSheet';
 import { NoteEditorModal } from '@/components/map/NoteEditorModal';
 import { RecommendedPlaceDetails } from '@/components/map/RecommendedPlaceDetails';
@@ -68,7 +70,8 @@ import {
   advanceOnboardingV2PlaceTour,
 } from '@/lib/onboardingV2';
 import type { OnboardingPlaceTourStep } from '@/lib/onboardingV2Core';
-import { isPlaceRecommendationsEnabled } from '@/lib/featureFlags';
+import { isPlaceRecommendationsEnabled, isPlaceVideoGalleryEnabled } from '@/lib/featureFlags';
+import { selectVideoHero, type PlaceVideoItem } from '@/lib/placeVideoGallery';
 import { applySavedPlaceEdit } from '@/lib/savedPlaceEdits';
 import {
   cancelNoteEditor,
@@ -105,6 +108,7 @@ import { placeSourcePreviewCandidates } from '@/lib/placeSourcePreviews';
 import { splitPlaceAddress } from '@/lib/sharePhase1Ui';
 import { deleteSavedPlace, markVisited, updateSavedPlace } from '@/services/savedPlacesService';
 import { loadPlaceSourceEvidencePreviewUrls } from '@/services/placeSourcePreviewsService';
+import { loadPlaceVideos } from '@/services/placeVideosService';
 import { CATEGORY_LABELS, savedPlaceCategory, type NearrCategory } from '@/lib/placeCategory';
 import {
   getSavedPlacesCacheSnapshot,
@@ -231,6 +235,7 @@ export function SelectedPlaceDetails({
   onCorrected,
 }: Props) {
   const { colors, typography } = useTheme();
+  const router = useRouter();
   const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
   const { session } = useAuth();
   const { state: onboardingState } = useOnboardingV2();
@@ -271,6 +276,10 @@ export function SelectedPlaceDetails({
   const [failedPhotoUrls, setFailedPhotoUrls] = useState<Record<string, true>>({});
   const [sourceEvidencePreviewUrls, setSourceEvidencePreviewUrls] = useState<Record<string, string>>({});
   const [failedSourcePreviewUrls, setFailedSourcePreviewUrls] = useState<Record<string, true>>({});
+  const [ownerPlaceVideos, setOwnerPlaceVideos] = useState<PlaceVideoItem[]>([]);
+  const [communityPlaceVideos, setCommunityPlaceVideos] = useState<PlaceVideoItem[]>([]);
+  const [placeVideoCount, setPlaceVideoCount] = useState(0);
+  const videoHeroTrackedRef = useRef('');
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [galleryIndex, setGalleryIndex] = useState(0);
   const [wrongPlaceOpen, setWrongPlaceOpen] = useState(false);
@@ -315,6 +324,7 @@ export function SelectedPlaceDetails({
   }, [saved.id]);
 
   const recommendationsEnabled = isPlaceRecommendationsEnabled();
+  const videoGalleryEnabled = isPlaceVideoGalleryEnabled();
   const recommendationSourceCategory = savedPlaceCategory(saved);
   const savedGooglePlaceIds = useMemo(
     () =>
@@ -459,7 +469,7 @@ export function SelectedPlaceDetails({
     let canceled = false;
     setSourceEvidencePreviewUrls({});
     setFailedSourcePreviewUrls({});
-    if (!shouldShowMoreVideos(sourceCards)) {
+    if (videoGalleryEnabled || !shouldShowMoreVideos(sourceCards)) {
       return () => {
         canceled = true;
       };
@@ -502,6 +512,45 @@ export function SelectedPlaceDetails({
     uri,
     accessibilityLabel: `${saved.place.name}, photo ${index + 1} of ${photoUrls.length}`,
   })), [photoUrls, saved.place.name]);
+
+  // Owner media is requested first; the privacy-filtered community page is a
+  // second, non-blocking request so public discovery never delays Place Detail.
+  useEffect(() => {
+    let canceled = false;
+    setOwnerPlaceVideos([]);
+    setCommunityPlaceVideos([]);
+    setPlaceVideoCount(0);
+    if (!videoGalleryEnabled) return () => { canceled = true; };
+    void loadPlaceVideos({ placeId: saved.place.id, includeCommunity: false, limit: 20 })
+      .then((gallery) => {
+        if (canceled) return;
+        setOwnerPlaceVideos(gallery.ownerVideos);
+        setPlaceVideoCount(gallery.totalVideoCount);
+        return loadPlaceVideos({ placeId: saved.place.id, includeCommunity: true, limit: 5 });
+      })
+      .then((gallery) => {
+        if (!gallery || canceled) return;
+        setOwnerPlaceVideos(gallery.ownerVideos);
+        setCommunityPlaceVideos(gallery.communityVideos);
+        setPlaceVideoCount(gallery.totalVideoCount);
+        if (gallery.totalVideoCount) void trackEvent('place_video_gallery_viewed', { place_id: gallery.placeId, owner_count: gallery.ownerVideos.length, community_count: gallery.communityVideos.length });
+        gallery.communityVideos.forEach((video) => void trackEvent('community_video_impression', { place_id: gallery.placeId, source_id: video.sourceId, platform: video.platform }));
+      })
+      .catch((error) => logDebug('place-video-gallery', `load failed: ${error instanceof Error ? error.message : 'unknown'}`));
+    return () => { canceled = true; };
+  }, [saved.place.id, videoGalleryEnabled]);
+
+  const videoHero = useMemo(
+    () => videoGalleryEnabled ? selectVideoHero(photoUrls, ownerPlaceVideos, communityPlaceVideos) : null,
+    [communityPlaceVideos, ownerPlaceVideos, photoUrls, videoGalleryEnabled],
+  );
+  useEffect(() => {
+    if (!videoHero || videoHero.kind === 'PROVIDER' || !videoHero.video) return;
+    const key = `${saved.place.id}:${videoHero.video.sourceId}`;
+    if (videoHeroTrackedRef.current === key) return;
+    videoHeroTrackedRef.current = key;
+    void trackEvent('hero_video_frame_used', { place_id: saved.place.id, source_id: videoHero.video.sourceId, ownership: videoHero.video.ownership, platform: videoHero.video.platform });
+  }, [saved.place.id, videoHero]);
 
   const locality = splitPlaceAddress(saved.place.formatted_address).locality;
   // A city / island / beach frequently has no street address at all, in which
@@ -768,6 +817,19 @@ export function SelectedPlaceDetails({
     });
   }
 
+  async function openPlaceVideo(video: PlaceVideoItem) {
+    void trackEvent('place_video_thumbnail_tapped', { place_id: saved.place.id, source_id: video.sourceId, ownership: video.ownership, platform: video.platform });
+    try {
+      const canOpen = await Linking.canOpenURL(video.originalUrl);
+      if (!canOpen) throw new Error('unavailable');
+      await Linking.openURL(video.originalUrl);
+      void trackEvent('place_video_original_opened', { place_id: saved.place.id, source_id: video.sourceId, ownership: video.ownership, platform: video.platform });
+      void trackEvent(video.ownership === 'OWNER' ? 'owner_video_opened' : 'community_video_opened', { place_id: saved.place.id, source_id: video.sourceId, platform: video.platform });
+    } catch {
+      Alert.alert('Post unavailable', 'The original post can no longer be opened.');
+    }
+  }
+
   // Sharing is about the canonical place. The original post stays available
   // through the separate source action above, never as the primary payload.
   async function sharePlace() {
@@ -887,6 +949,12 @@ export function SelectedPlaceDetails({
     const nextIndex = Math.max(0, Math.min(index, photoUrls.length - 1));
     setGalleryIndex(nextIndex);
     setGalleryOpen(true);
+  }
+
+  function openHeroMedia() {
+    if (!videoHero) return;
+    if (videoHero.kind === 'PROVIDER') openGalleryAt(0);
+    else if (videoHero.video) void openPlaceVideo(videoHero.video);
   }
 
   // The one close path: the X button, the hardware/system back gesture, and a
@@ -1075,18 +1143,22 @@ export function SelectedPlaceDetails({
           not a stack of equal-weight cards. The same geometry is used when
           there is no photo, so the layout never jumps once photos resolve. */}
       <Pressable
-        disabled={photoUrls.length === 0}
-        onPress={() => openGalleryAt(0)}
-        accessibilityRole={photoUrls.length > 0 ? 'button' : undefined}
-        accessibilityLabel={photoUrls.length > 0 ? `View photos of ${saved.place.name}` : undefined}
+        disabled={!videoHero}
+        onPress={openHeroMedia}
+        accessibilityRole={videoHero ? 'button' : undefined}
+        accessibilityLabel={videoHero?.kind === 'PROVIDER' ? `View photos of ${saved.place.name}` : videoHero ? `Open original video for ${saved.place.name}` : undefined}
         style={({ pressed }) => [styles.hero, pressed && styles.heroPressed]}
       >
-        {photoUrls[0] ? (
+        {videoHero?.uri ? (
           <Image
-            source={{ uri: photoUrls[0] }}
+            source={{ uri: videoHero.uri }}
             style={styles.heroImage}
             resizeMode="cover"
-            onError={() => setFailedPhotoUrls((prev) => ({ ...prev, [photoUrls[0]!]: true }))}
+            onError={() => {
+              if (videoHero.kind === 'PROVIDER') setFailedPhotoUrls((prev) => ({ ...prev, [videoHero.uri]: true }));
+              else if (videoHero.video?.ownership === 'OWNER') setOwnerPlaceVideos((current) => current.filter((video) => video.sourceId !== videoHero.video?.sourceId));
+              else if (videoHero.video) setCommunityPlaceVideos((current) => current.filter((video) => video.sourceId !== videoHero.video?.sourceId));
+            }}
           />
         ) : (
           <View style={styles.heroFallback}>
@@ -1115,6 +1187,13 @@ export function SelectedPlaceDetails({
           </View>
         ) : null}
 
+        {videoHero && videoHero.kind !== 'PROVIDER' ? (
+          <View style={styles.videoHeroPill}>
+            <Feather name="play" size={13} color="#FFFFFF" />
+            <Text style={styles.photoCountText}>{videoHero.kind === 'OWNER_VIDEO' ? 'Saved by you' : 'Nearr community'}</Text>
+          </View>
+        ) : null}
+
         <View pointerEvents="none" style={styles.heroCaption}>
           <Text accessibilityRole="header" style={styles.placeName} numberOfLines={3}>
             {saved.place.name}
@@ -1137,6 +1216,19 @@ export function SelectedPlaceDetails({
           ) : null}
         </View>
       </Pressable>
+
+      {videoGalleryEnabled ? (
+        <PlaceVideoGalleryStrip
+          placeName={saved.place.name}
+          providerPhotos={photoUrls}
+          ownerVideos={ownerPlaceVideos}
+          communityVideos={communityPlaceVideos}
+          totalVideoCount={placeVideoCount}
+          onOpenProvider={openGalleryAt}
+          onOpenVideo={(video) => { void openPlaceVideo(video); }}
+          onSeeAll={() => router.push({ pathname: '/place/[id]/videos', params: { id: saved.place.id } })}
+        />
+      ) : null}
 
       {onboardingTourStep && ['found', 'ai_note'].includes(onboardingTourStep) ? (
         <PlaceTourCallout
@@ -1386,7 +1478,7 @@ export function SelectedPlaceDetails({
         </View>
       ) : null}
 
-      {shouldShowMoreVideos(sourceCards) ? (
+      {!videoGalleryEnabled && shouldShowMoreVideos(sourceCards) ? (
         <View style={styles.moreVideosSection}>
           <Text style={styles.moreVideosTitle}>More videos from this place</Text>
           <FlatList
@@ -1768,6 +1860,11 @@ function createStyles(
       backgroundColor: 'rgba(0,0,0,0.55)',
     },
     photoCountText: { ...typography.caption, color: '#FFFFFF', fontWeight: '700' },
+    videoHeroPill: {
+      position: 'absolute', right: Spacing.md, top: Spacing.md, minHeight: 30,
+      flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10,
+      borderRadius: Radius.pill, backgroundColor: 'rgba(0,0,0,0.64)',
+    },
     heroCaption: {
       paddingHorizontal: Spacing.lg,
       paddingBottom: Spacing.md,

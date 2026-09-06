@@ -105,6 +105,7 @@ import {
   type MediaSourceMetadata,
 } from './mediaSourceMetadata.ts';
 import { buildVenueMentions, normalizeVenueName, sharedCountryForEvidence } from './mediaMentions.ts';
+import { promotePlaceVideoMedia } from './placeVideoMedia.ts';
 import {
   evaluateMediaAutoSave,
   formatMediaAutoSaveDecisionLog,
@@ -1676,9 +1677,10 @@ async function finalizePostSaveEnrichment(
     aiNoteByMentionId: Map<string, string | null>;
     parsed: any;
     sourceMetadata: MediaSourceMetadata | null;
+    evidenceFrames: unknown;
   },
 ): Promise<Response> {
-  const { job, task, taskId, mediaRunId, result, mentionResults, aiNoteByMentionId, parsed, sourceMetadata } = args;
+  const { job, task, taskId, mediaRunId, result, mentionResults, aiNoteByMentionId, parsed, sourceMetadata, evidenceFrames } = args;
   const { data: saved, error: savedError } = await admin
     .from('saved_places')
     .select('id,user_id,place_id,notes,ai_note,place:places(id,google_place_id,name)')
@@ -1816,6 +1818,21 @@ async function finalizePostSaveEnrichment(
     caption: sourceMetadata?.description ?? null,
     aiNote,
   });
+
+  if (identityMatched) {
+    await promotePlaceVideoMedia({
+      admin,
+      placeId: saved.place_id,
+      sourceUrl: task.source_url,
+      resolvedUrl: task.canonical_url || task.source_url,
+      platform: task.platform,
+      creatorHandle: sourceMetadata?.creatorHandle,
+      creatorName: sourceMetadata?.creatorName,
+      evidenceFrames,
+      placeTimestamps: matchedMention?.sourceTimestamps ?? [],
+      publicAccessVerified: sourceMetadata?.publicAccessVerified === true,
+    });
+  }
 
   // Publish the authoritative per-place completion only after the note write.
   // share_job_place_results is already in Supabase Realtime, so this becomes
@@ -2648,6 +2665,7 @@ async function finalizeMediaTask(
       aiNoteByMentionId,
       parsed,
       sourceMetadata,
+      evidenceFrames,
     });
   }
 
@@ -2810,6 +2828,18 @@ async function finalizeMediaTask(
           creatorName: sourceMetadata?.creatorName ?? null,
           caption: sourceMetadata?.description ?? null,
           aiNote: aiNoteByMentionId.get(mention.mentionId) ?? null,
+        });
+        await promotePlaceVideoMedia({
+          admin,
+          placeId: saved.place_id,
+          sourceUrl: canonicalUrl,
+          resolvedUrl: canonicalUrl,
+          platform: source,
+          creatorHandle: sourceMetadata?.creatorHandle,
+          creatorName: sourceMetadata?.creatorName,
+          evidenceFrames,
+          placeTimestamps: mentionResult.sourceTimestamps ?? mention?.timestamps ?? [],
+          publicAccessVerified: sourceMetadata?.publicAccessVerified === true,
         });
         if (aiNote) {
           const aiNoteSave = await persistAiNoteSupplementally(aiNote, async (note) => {

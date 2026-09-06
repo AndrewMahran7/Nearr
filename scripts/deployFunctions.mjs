@@ -47,6 +47,9 @@ const NO_VERIFY_JWT = new Set([
   // Deliberately public, read-only place DTO + bounded acquisition events.
   // The handler owns validation and uses the service role only server-side.
   'public-place',
+  // Auth is validated inside so the service-role query can return a scrubbed,
+  // ownership-aware DTO without exposing other savers through RLS.
+  'get-place-videos',
 ]);
 const DEVELOPMENT_ONLY_FUNCTIONS = new Set(['e2e-place-fixture']);
 
