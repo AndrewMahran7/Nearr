@@ -168,6 +168,7 @@
     "proof:recognition-cache-v2-enabled:dev": "ts-node -P scripts/tsconfig.json scripts/proveRecognitionCacheV2DevEnabled.ts",
     "proof:recognition-cache-v2-db:dev": "ts-node -P scripts/tsconfig.json scripts/proveRecognitionCacheV2DevDatabase.ts",
     "proof:recognition-cache-v2:production": "ts-node -P scripts/tsconfig.json scripts/proveRecognitionCacheV2Production.ts",
+    "proof:recognition-cache-v2-db:production": "ts-node -P scripts/tsconfig.json scripts/proveRecognitionCacheV2ProductionDatabase.ts",
     "proof:canonical-save-return-contract:dev": "ts-node -P scripts/tsconfig.json scripts/proveCanonicalSaveReturnContractDev.ts",
     "proof:context-aware-cache-reranking:dev": "ts-node -P scripts/tsconfig.json scripts/proveContextAwareCacheReranking.ts",
     "proof:context-aware-cache-reranking:production": "ts-node -P scripts/tsconfig.json scripts/proveContextAwareCacheRerankingProduction.ts",

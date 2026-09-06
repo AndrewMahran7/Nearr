@@ -47,7 +47,8 @@ Fresh revalidation produces one of:
   match and conflict gates pass.
 - `SUPPORTS_PREVIOUS` or `SUPPORTS_OTHER`: remains disputed.
 - `INSUFFICIENT_EVIDENCE`: remains disputed and future submissions run fresh.
-- `TECHNICAL_FAILURE`: no answer write; bounded retry with retained quarantine.
+- `TECHNICAL_FAILURE`: no answer-value write; bounded retry with the affected
+  source and answer returned from temporary `REVALIDATING` to `QUARANTINED`.
 
 The model sees reusable source evidence and structured hypotheses, never user
 identity, private notes, support totals, or a claim that the replacement is true.

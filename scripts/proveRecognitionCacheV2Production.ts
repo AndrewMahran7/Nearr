@@ -197,8 +197,9 @@ async function main(): Promise<void> {
       p_answer_ids: [oldRead.data[0].answer_id], p_expected_feedback_revision: 0,
       p_policy_version: RECOGNITION_CACHE_POLICY_VERSION, p_recognition_version: RECOGNITION_VERSION,
     });
-    assert.equal(stale.error, null);
-    assert.equal(stale.data?.length ?? 0, 0, 'stale cache read committed after correction');
+    const staleRejected = stale.error?.code === 'P0001' && stale.error.message === 'recognition_cache_stale';
+    assert.ok(staleRejected || (!stale.error && (stale.data?.length ?? 0) === 0),
+      `stale cache read was not rejected: ${stale.error?.code ?? 'unexpected rows'}`);
     const quarantinedRead = await admin.rpc('read_recognition_answers_v2', {
       p_identity_key: seeded.identity.key, p_identity_version: seeded.identity.identityVersion,
       p_policy_version: RECOGNITION_CACHE_POLICY_VERSION, p_recognition_version: RECOGNITION_VERSION,
@@ -214,9 +215,9 @@ async function main(): Promise<void> {
     assert.equal(replacementHit.agentRuns.length, 0);
     assert.notEqual(replacementHit.job.saved_place_id, wrongHit.job.saved_place_id);
     const { data: replacementSource, error: sourceError } = await admin.from('saved_place_sources')
-      .select('source_url,ai_note').eq('saved_place_id', replacementHit.job.saved_place_id).limit(1).single();
+      .select('canonical_url,ai_note').eq('saved_place_id', replacementHit.job.saved_place_id).limit(1).single();
     if (sourceError) throw sourceError;
-    assert.ok(replacementSource.source_url);
+    assert.ok(replacementSource.canonical_url);
     assert.equal(replacementSource.ai_note, 'Controlled source-grounded Production V2 note.');
 
     const multiIdentity = canonicalContentIdentity(MULTI);

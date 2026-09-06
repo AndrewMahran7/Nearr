@@ -191,6 +191,12 @@ end $$;
   & "$pgBin\psql.exe" -X -w -v ON_ERROR_STOP=1 -h 127.0.0.1 -p $taskPort -U postgres -d postgres `
     -f 'supabase\migrations\20260906000005_recognition_cache_v2_saved_category.sql' | Out-Null
   if ($LASTEXITCODE -ne 0) { throw 'Recognition Cache V2 saved-category migration failed' }
+  & "$pgBin\psql.exe" -X -w -v ON_ERROR_STOP=1 -h 127.0.0.1 -p $taskPort -U postgres -d postgres `
+    -f 'supabase\migrations\20260906000006_recognition_revalidation_failure_quarantine.sql' | Out-Null
+  if ($LASTEXITCODE -ne 0) { throw 'Recognition Cache V2 technical-failure quarantine migration failed' }
+  & "$pgBin\psql.exe" -X -w -v ON_ERROR_STOP=1 -h 127.0.0.1 -p $taskPort -U postgres -d postgres `
+    -f 'supabase\migrations\20260906000007_recognition_revalidation_failure_quarantine_repair.sql' | Out-Null
+  if ($LASTEXITCODE -ne 0) { throw 'Recognition Cache V2 technical-failure quarantine repair migration failed' }
   Write-Host 'DB_V2_STAGE migration_applied'
 
   $fixtureSql = @'
@@ -384,12 +390,17 @@ do $$ begin
 end $$;
 
 -- Technical failure retains quarantine and schedules bounded retry.
+update public.recognition_cache_answers_v2 set state='REVALIDATING'
+ where identity_key='v1:tiktok:111' and slot_key=(
+  select slot_key from public.recognition_revalidation_tasks
+   where identity_key='v1:tiktok:111' and feedback_revision=3);
 select public.complete_recognition_revalidation_v2(
  (select id from public.recognition_revalidation_tasks where identity_key='v1:tiktok:111' and feedback_revision=3),
  'TECHNICAL_FAILURE',null,'{}','provider_timeout');
 do $$ begin
  if (select state from public.recognition_revalidation_tasks where identity_key='v1:tiktok:111' and feedback_revision=3)<>'RETRY_WAIT' then raise exception 'retry not scheduled'; end if;
  if (select state from public.recognition_source_states where identity_key='v1:tiktok:111')<>'QUARANTINED' then raise exception 'outage cleared quarantine'; end if;
+ if exists(select 1 from public.recognition_cache_answers_v2 where identity_key='v1:tiktok:111' and state='REVALIDATING') then raise exception 'technical failure left answer revalidating'; end if;
 end $$;
 
 -- Consensus fixtures: 3-vs-2 is a near tie; 4-vs-1 (including a merged alias)
