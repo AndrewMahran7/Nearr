@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "status": "candidate",
+  "startingMainSha": "ceb1010485e10a77dfac2759028c1a3fc861899a",
+  "newerOriginMainObserved": "d52794c",
+  "implementationSha": null,
+  "releaseSha": null,
+  "finalMainSha": null,
+  "otaPublished": false,
+  "otaReason": "No client JavaScript change",
+  "physicalQaPerformed": false,
+  "cleanupStatus": "pending",
+  "rollbackStatus": "not_needed"
+}
