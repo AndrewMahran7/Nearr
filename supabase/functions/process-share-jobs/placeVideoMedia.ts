@@ -1,20 +1,12 @@
 import { canonicalContentIdentity } from '../../../lib/shareAgent/contentIdentity.ts';
+import { selectRepresentativeFrame } from '../../../lib/placeVideoGallery.ts';
 import { normalizeEvidenceFrames } from '../../../lib/shareJobResult.ts';
 
 const EVIDENCE_BUCKET = 'share-evidence';
 const GALLERY_BUCKET = 'place-video-thumbnails';
 
 function chooseFrame(raw: unknown, timestamps: readonly number[]) {
-  const frames = normalizeEvidenceFrames(raw);
-  if (!frames.length) return null;
-  const moments = timestamps.filter((value) => Number.isFinite(value) && value >= 0);
-  const rank = (value: unknown) => value === 'candidate_evidence' ? 0 : value === 'vayrin_selected' ? 1 : 2;
-  return [...frames].sort((a, b) => {
-    const ad = moments.length ? Math.min(...moments.map((value) => Math.abs(value - a.timestampSeconds))) : 0;
-    const bd = moments.length ? Math.min(...moments.map((value) => Math.abs(value - b.timestampSeconds))) : 0;
-    return ad - bd || rank(a.relevance) - rank(b.relevance) ||
-      a.timestampSeconds - b.timestampSeconds || a.id.localeCompare(b.id);
-  })[0] ?? null;
+  return selectRepresentativeFrame(normalizeEvidenceFrames(raw), timestamps);
 }
 
 async function identityHash(value: string): Promise<string> {

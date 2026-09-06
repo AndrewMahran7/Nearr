@@ -70,6 +70,7 @@ assert.match(migration, /after update of place_id/, '27. place merge association
 assert.match(migration, /default 'UNKNOWN'/, '11/21. unknown is fail-closed');
 assert.match(migration, /explicit[\s\S]*restriction outranks[\s\S]*PRIVATE_SOURCE[\s\S]*OWNER_ONLY[\s\S]*PUBLIC_SOURCE_UNAVAILABLE[\s\S]*PUBLIC_SOURCE_ELIGIBLE/, '27. canonical merge conflicts fail closed');
 assert.match(promotion, /chooseFrame[\s\S]*GALLERY_BUCKET[\s\S]*upload/, '6. one retained frame promoted safely');
+assert.match(promotion, /selectRepresentativeFrame\(normalizeEvidenceFrames\(raw\), timestamps\)/, '4/5. durable promotion uses the shared deterministic place/context scoring rule');
 assert.match(promotion, /place-video-thumbnails/, '7. promoted frame survives share-evidence cleanup');
 assert.match(flags, /EXPO_PUBLIC_PLACE_VIDEO_GALLERY_ENABLED/, '37. client flag exists');
 assert.match(endpoint, /PLACE_VIDEO_GALLERY_ENABLED/, '37/39. server flag exists');
