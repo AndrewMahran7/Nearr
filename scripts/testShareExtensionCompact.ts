@@ -146,6 +146,7 @@ for (const declaration of [
   'override func viewDidLoad',
   'private func setupCompactSurface',
   'private func applyCompactLayout',
+  'private func applyTransparentPresentationBackdrop',
   'private func configureRootView',
   'private func setupNotificationCenterObserver',
   'private func cleanupAfterClose',
@@ -159,7 +160,16 @@ for (const declaration of [
 // dark, rounded, height-constrained, and anchored to the controller bottom.
 assert.match(swift, /view\.backgroundColor = \.clear/);
 assert.match(swift, /view\.isOpaque = false/);
+assert.match(swift, /override func viewIsAppearing\(_ animated: Bool\)/);
+assert.match(swift, /applyTransparentPresentationBackdrop\(\)/);
+assert.match(swift, /var presentationLayer: UIView\? = view/);
+assert.match(swift, /presentationLayer = layer\.superview/);
+assert.match(swift, /layer\.backgroundColor = \.clear/);
+assert.match(swift, /layer\.isOpaque = false/);
+assert.match(swift, /presentationController\?\.containerView\?\.backgroundColor = \.clear/);
+assert.match(swift, /presentationController\?\.containerView\?\.isOpaque = false/);
 assert.match(swift, /compactSurfaceView\.backgroundColor = compactSurfaceColor/);
+assert.match(swift, /compactSurfaceView\.isOpaque = true/);
 assert.match(swift, /compactSurfaceView\.bottomAnchor\.constraint\(equalTo: view\.bottomAnchor\)/);
 assert.match(swift, /compactSurfaceView\.heightAnchor\.constraint\(equalToConstant: requestedCompactHeight\)/);
 assert.match(swift, /layer\.maskedCorners = \[\.layerMinXMinYCorner, \.layerMaxXMinYCorner\]/);
@@ -178,6 +188,35 @@ assert.match(swift, /rootView\.topAnchor\.constraint\(equalTo: compactSurfaceVie
 assert.match(swift, /rootView\.bottomAnchor\.constraint\(equalTo: compactSurfaceView\.bottomAnchor\)/);
 assert.doesNotMatch(swift, /rootView\.topAnchor\.constraint\(equalTo: view\.topAnchor\)/);
 assert.doesNotMatch(swift, /view\.backgroundColor = compactSurfaceColor/);
+
+// Presentation polish is visual-only. The durable handoff, native terminal
+// actions, failure UI, bundle identity, and generated target remain pinned.
+assert.match(react, /const finish = \(\) => completionActionsRef\.current\?\.done\(\)/);
+assert.match(react, /completionActionsRef\.current\?\.openNearr\(SHARE_JOBS_DEEPLINK_PATH\)/);
+assert.match(react, /<Text style={asyncStyles\.title}>{view\.title}<\/Text>/);
+assert.match(react, /<Text style={asyncStyles\.subtle}>{view\.body}<\/Text>/);
+assert.match(react, /ui\.kind === 'network_failure'/);
+assert.match(swift, /Bundle\.main\.object\(forInfoDictionaryKey: "AppGroup"\)/);
+
+const sharePluginRuntime = require('expo-share-extension/plugin/build') as {
+  getAppGroup: (identifier: string) => string;
+  getShareExtensionBundleIdentifier: (config: { ios: { bundleIdentifier: string } }) => string;
+};
+const iosBundleIdentifier = 'com.nearr.ios';
+assert.equal(sharePluginRuntime.getAppGroup(iosBundleIdentifier), 'group.com.nearr.ios');
+assert.equal(
+  sharePluginRuntime.getShareExtensionBundleIdentifier({ ios: { bundleIdentifier: iosBundleIdentifier } }),
+  'com.nearr.ios.ShareExtension',
+);
+const targetPlugin = read('node_modules/expo-share-extension/plugin/build/withShareExtensionTarget.js');
+assert.match(targetPlugin, /withShareExtensionTarget/);
+assert.match(targetPlugin, /addBuildPhases/);
+assert.match(targetPlugin, /getShareExtensionBundleIdentifier/);
+assert.doesNotMatch(
+  [swift, react].join('\n'),
+  /recognitionCacheDecision|runMediaTask|process-share-jobs|premium_recognition/,
+  'visual controller and confirmation UI contain no recognition pipeline logic',
+);
 
 const plugin = appConfig.expo.plugins.find(
   (entry): entry is [string, { height?: number }] =>

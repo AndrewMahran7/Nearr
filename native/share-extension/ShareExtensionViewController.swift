@@ -55,11 +55,23 @@ class ShareExtensionViewController: UIViewController {
 
   override func viewWillAppear(_ animated: Bool) {
     super.viewWillAppear(animated)
+    applyTransparentPresentationBackdrop()
     applyCompactLayout()
+  }
+
+  override func viewIsAppearing(_ animated: Bool) {
+    super.viewIsAppearing(animated)
+    // The system inserts its extension-host wrappers after viewDidLoad. On
+    // iOS 26 those wrappers may carry an opaque default background even when
+    // the principal view is clear, so clear only this controller's ancestor
+    // chain once it is attached. The opaque compactSurfaceView is a child and
+    // is deliberately outside this traversal.
+    applyTransparentPresentationBackdrop()
   }
 
   override func viewDidLayoutSubviews() {
     super.viewDidLayoutSubviews()
+    applyTransparentPresentationBackdrop()
     applyCompactLayout()
   }
 
@@ -82,6 +94,21 @@ class ShareExtensionViewController: UIViewController {
     if preferredContentSize != target {
       preferredContentSize = target
     }
+  }
+
+  private func applyTransparentPresentationBackdrop() {
+    var presentationLayer: UIView? = view
+    while let layer = presentationLayer {
+      layer.backgroundColor = .clear
+      layer.isOpaque = false
+      presentationLayer = layer.superview
+    }
+
+    // UIKit documents the presentation container as an ancestor of the
+    // presented controller. Keep this explicit for hosts that expose it even
+    // when their wrapper hierarchy is installed asynchronously.
+    presentationController?.containerView?.backgroundColor = .clear
+    presentationController?.containerView?.isOpaque = false
   }
 
   override func viewDidLoad() {
