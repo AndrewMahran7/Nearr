@@ -172,7 +172,6 @@ const heroScrimBand = {
 };
 
 type RadiusMode = 'default' | 'miles' | 'minutes';
-const MAX_EXPANDED_SOURCE_GROUP_PLACES = 50;
 
 function modeFromSaved(s: SavedPlaceWithPlace): RadiusMode {
   if (s.radius_unit === 'miles') return 'miles';
@@ -577,9 +576,7 @@ export function SelectedPlaceDetails({
    * the section then renders nothing at all rather than an empty heading.
    */
   const sameSource = useMemo(
-    () => selectSameSourcePlaces(saved, allSavedPlaces ?? [], {
-      limit: MAX_EXPANDED_SOURCE_GROUP_PLACES - 1,
-    }),
+    () => selectSameSourcePlaces(saved, allSavedPlaces ?? []),
     [allSavedPlaces, saved],
   );
   const sameSourceIds = useMemo(

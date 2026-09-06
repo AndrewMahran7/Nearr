@@ -527,8 +527,12 @@ import {
 
   assert.ok(detail.includes('title="Also nearby"'), 'presented by the shared row');
   assert.ok(detail.includes('<PlaceCardRow'), 'via the reusable component');
+  const alsoNearbySelection = detail.slice(
+    detail.indexOf('const alsoNearby = useMemo('),
+    detail.indexOf('const sameSourceEntries = useMemo('),
+  );
   assert.ok(
-    !/ALSO_NEARBY_MAX_METERS|maxMeters:|limit:/.test(detail),
+    !/ALSO_NEARBY_MAX_METERS|maxMeters:|limit:/.test(alsoNearbySelection),
     'the redesign did not quietly retune the distance/limit semantics',
   );
   assert.ok(row.includes('title'), 'the row is titled by its caller, not hardcoded');
