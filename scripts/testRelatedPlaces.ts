@@ -165,8 +165,10 @@ const LEON = place('sp-leon', 'León', {
 {
   const src = read('lib/sameSourcePlaces.ts');
   assert.ok(!/fetch\(|googleapis|placesService|searchText/.test(src), 'no discovery calls');
-  assert.ok(src.includes('isSameSourceUrl'), 'reuses the provenance predicate');
-  assert.ok(src.includes('normalizeShareUrl'), 'and the existing canonicalizer');
+  assert.ok(src.includes('sourcePlaceGroupForAnchor'), 'uses canonical durable source membership');
+  const group = read('lib/sourcePlaceGroup.ts');
+  assert.ok(group.includes('identity_key'), 'keys membership to the durable source identity');
+  assert.ok(group.includes('canonicalContentIdentity'), 'retains legacy URL canonicalization fallback');
   // This task consumes provenance; it must not rewrite the merge policy.
   const merge = read('lib/savedPlaceSourceMerge.ts');
   for (const outcome of ['attached', 'already_attached', 'existing_source_preserved']) {

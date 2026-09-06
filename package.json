@@ -138,6 +138,7 @@
     "test:source-thumbnails": "ts-node -P scripts/tsconfig.json scripts/testPlaceSourceThumbnails.ts",
     "test:long-caption-preservation": "ts-node -P scripts/tsconfig.json scripts/testLongCaptionPreservation.ts",
     "test:map-group-focus": "ts-node -P scripts/tsconfig.json scripts/testMapGroupFocus.ts",
+    "test:source-place-group": "ts-node -P scripts/tsconfig.json scripts/testSourcePlaceGroup.ts",
     "test:multi-save-tray-dismiss": "ts-node -P scripts/tsconfig.json scripts/testMultiSaveTrayDismiss.ts",
     "test:phase2-ui-render": "ts-node -P scripts/tsconfig.json scripts/testPhase2UiRenderContracts.ts",
     "test:share-phase1-ui": "ts-node -P scripts/tsconfig.json scripts/testSharePhase1Ui.ts",

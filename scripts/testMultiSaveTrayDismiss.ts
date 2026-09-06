@@ -91,9 +91,9 @@ check('a genuinely new save event can present a new tray', () => {
   assert.deepEqual(getMapGroupFocusRequest(next.id)?.savedPlaceIds, ['saved-4', 'saved-5']);
   clearMapGroupFocusRequest(next.id);
 });
-check('View all remains wired to group fitting', () => {
+check('View all opens the unified grouped detail', () => {
   assert.match(selectorSource, /onPress=\{onViewAll\}/);
-  assert.match(mapSource, /onViewAll=\{fitCurrentMapGroup\}/);
+  assert.match(mapSource, /onViewAll=\{viewAllSourceGroup\}/);
 });
 check('individual saved cards remain wired to selection', () => {
   assert.match(selectorSource, /onPress=\{\(\) => onSelect\(place\)\}/);
@@ -105,7 +105,7 @@ check('close control has a real 44pt target and accessible semantics', () => {
   assert.match(selectorSource, /width: MAP_GROUP_TRAY_CLOSE_TARGET_SIZE/);
   assert.match(selectorSource, /height: MAP_GROUP_TRAY_CLOSE_TARGET_SIZE/);
   assert.match(selectorSource, /accessibilityRole="button"/);
-  assert.match(selectorSource, /accessibilityLabel="Dismiss newly saved places"/);
+  assert.match(selectorSource, /accessibilityLabel="Dismiss places from this video"/);
 });
 check('tray touch layer is explicitly above the native map', () => {
   assert.ok(MAP_GROUP_TRAY_OVERLAY_Z_INDEX > 0);

@@ -36,6 +36,8 @@ type Props = {
   onPress: (place: SavedPlaceWithPlace) => void;
   dimmed: boolean;
   selected: boolean;
+  /** Another durable member of the selected source-video group. */
+  groupMember?: boolean;
   /**
    * True while the selected place's Place Detail card is on screen. Only the
    * marker's visual name capsule reacts to this; the accessible name is
@@ -74,6 +76,7 @@ function NearrMapMarkerView({
   onPress,
   dimmed,
   selected,
+  groupMember = false,
   detailVisible,
   detailLevel,
   redesignEnabled,
@@ -222,7 +225,7 @@ function NearrMapMarkerView({
     >
       {!redesignEnabled ? (
         <View style={styles.legacyWrap}>
-          <View style={styles.legacyHalo} />
+          <View style={[styles.legacyHalo, groupMember && styles.legacyGroupHalo]} />
           <View style={styles.legacyCore} />
           <View style={styles.legacyDot} />
         </View>
@@ -241,6 +244,7 @@ function NearrMapMarkerView({
               styles.categoryDisc,
               { width: markerSize, height: markerSize, borderRadius: markerSize / 2 },
               selected && styles.selectedDisc,
+              groupMember && !selected && styles.groupMemberDisc,
               detailLevel === 'dense' && !selected && styles.denseDisc,
             ]}
           >
@@ -290,6 +294,7 @@ export const NearrMapMarker = memo(NearrMapMarkerView, (prev, next) =>
   prev.place.place.longitude === next.place.place.longitude &&
   prev.dimmed === next.dimmed &&
   prev.selected === next.selected &&
+  prev.groupMember === next.groupMember &&
   prev.detailVisible === next.detailVisible &&
   prev.detailLevel === next.detailLevel &&
   prev.redesignEnabled === next.redesignEnabled &&
@@ -359,6 +364,18 @@ const styles = StyleSheet.create({
     shadowRadius: 7,
     shadowOffset: { width: 0, height: 3 },
     elevation: 8,
+  },
+  legacyGroupHalo: {
+    backgroundColor: 'rgba(255, 106, 26, 0.42)',
+    borderWidth: 2,
+    borderColor: '#FF6A1A',
+  },
+  groupMemberDisc: {
+    borderWidth: 3,
+    borderColor: '#FF6A1A',
+    shadowOpacity: 0.28,
+    shadowRadius: 5,
+    elevation: 6,
   },
   savedDot: {
     position: 'absolute',

@@ -5,7 +5,6 @@ import * as Notifications from 'expo-notifications';
 
 import { recordBreadcrumb } from '@/lib/breadcrumbs';
 import { setLastNotificationId } from '@/lib/diagnosticContext';
-import { createMapGroupFocusRequest } from '@/lib/mapGroupFocus';
 import {
   notificationShellReady,
   notificationTapQueue,
@@ -119,15 +118,15 @@ export function NotificationTapController({ authReady }: Props) {
           break;
         }
         case 'saved_group': {
-          const request = createMapGroupFocusRequest({
-            savedPlaceIds: destination.savedPlaceIds,
-            source: 'share_job_saved',
-          });
-          href = request
-            ? {
-                pathname: '/(tabs)/map',
-                params: { mapGroupId: request.id, placeSource: request.source },
-              }
+          // The notification payload orders the group's current primary first.
+          // Open that place directly; the map rehydrates its durable source
+          // siblings and presents the compact switcher instead of a queue/tray.
+          const primarySavedPlaceId = destination.savedPlaceIds[0];
+          href = primarySavedPlaceId
+            ? resolveOpenSavedPlaceRoute({
+                savedPlaceId: primarySavedPlaceId,
+                source: 'notification',
+              })
             : '/(tabs)/map';
           break;
         }

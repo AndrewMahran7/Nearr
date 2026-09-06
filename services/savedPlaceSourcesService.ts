@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { canonicalContentIdentity } from '@/lib/shareAgent/contentIdentity';
+import { trackEvent } from '@/lib/analytics';
 import type { SourceType } from '@/types';
 
 /** Attach public source provenance without ever turning a successful save into
@@ -37,7 +38,14 @@ export async function attachSavedPlaceSource(args: {
     });
     if (error) throw error;
     const row = Array.isArray(data) ? data[0] : data;
-    return row?.attached === true ? 'attached' : row?.deduped === true ? 'deduped' : 'skipped';
+    if (row?.attached === true) {
+      void trackEvent('source_group_member_added', {
+        source_identity_key: identity.key,
+        saved_place_id: args.savedPlaceId,
+      });
+      return 'attached';
+    }
+    return row?.deduped === true ? 'deduped' : 'skipped';
   } catch (error) {
     console.warn('[savedPlaceSourcesService] source attach failed (non-fatal)', (error as Error)?.message);
     return 'skipped';
