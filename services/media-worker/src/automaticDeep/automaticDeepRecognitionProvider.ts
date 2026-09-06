@@ -198,7 +198,11 @@ class AutomaticDeepRecognitionModel implements ModelProvider {
     let recoverySpecificHypotheses = 0;
     let execution = first;
     if (firstSpecificHypotheses === 0) {
-      const recovery = reviewSafe(await this.runDeep({ ...deepInput, frameSet: frameSets.F2 }));
+      const recovery = reviewSafe(await this.runDeep({
+        ...deepInput,
+        frameSet: frameSets.F2,
+        recognitionPass: 'ZERO_HYPOTHESIS_RECOVERY',
+      }));
       recoverySpecificHypotheses = specificHypothesisCount(recovery);
       execution = aggregateRecovery(first, recovery, firstSpecificHypotheses, recoverySpecificHypotheses);
     }

@@ -29,6 +29,7 @@ export async function runPremiumRecognitionInference(args: {
   signal?: AbortSignal;
   fetchImpl?: typeof fetch;
   env?: NodeJS.ProcessEnv;
+  recognitionPass?: PremiumRecognitionInput['recognitionPass'];
 }): Promise<SolCallResult> {
   return callSolParity({
     frameSet: args.frameSet,
@@ -40,6 +41,7 @@ export async function runPremiumRecognitionInference(args: {
     signal: args.signal,
     fetchImpl: args.fetchImpl,
     env: args.env,
+    recognitionPass: args.recognitionPass,
   });
 }
 
@@ -188,6 +190,7 @@ export async function runSimpleSolRecognition(input: PremiumRecognitionInput): P
     signal: input.signal,
     fetchImpl: input.fetchImpl,
     env: input.env,
+    recognitionPass: input.recognitionPass,
   });
   const solCompletedAt = new Date();
   return completePremiumRecognition({ input, call, requestedAt, evidenceReadyAt, solStartedAt, solCompletedAt });

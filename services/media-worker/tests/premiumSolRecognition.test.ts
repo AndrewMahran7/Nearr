@@ -100,6 +100,19 @@ test('3 web search is off by default', async () => {
     env: { OPENAI_API_KEY: 'test' }, fetchImpl: solFetch(payload([]), (value) => { body = value; }) });
   assert.equal(out.web_search_enabled, false); assert.equal('tools' in body, false);
 });
+test('3b zero-hypothesis recovery is an independent bounded prompt without web', async () => {
+  let body: any;
+  const out = await runPremiumRecognitionInference({
+    frameSet, platform: 'instagram', evidence: emptyEvidence,
+    recognitionPass: 'ZERO_HYPOTHESIS_RECOVERY',
+    env: { OPENAI_API_KEY: 'test' }, fetchImpl: solFetch(payload([]), (value) => { body = value; }),
+  });
+  assert.match(body.instructions, /independent recovery attempt/);
+  assert.match(out.prompt_version, /zero-hypothesis-recovery\.v1$/);
+  assert.equal(out.web_search_enabled, false);
+  assert.equal('tools' in body, false);
+  assert.equal(out.fingerprint?.prompt.promptVersion, out.prompt_version);
+});
 test('4 no MCP or agent loop is present in the request', async () => {
   let body: any; await runPremiumRecognitionInference({ frameSet, platform: 'instagram', evidence: emptyEvidence,
     env: { OPENAI_API_KEY: 'test' }, fetchImpl: solFetch(payload([]), (value) => { body = value; }) });

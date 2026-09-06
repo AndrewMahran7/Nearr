@@ -12,6 +12,11 @@ Do not invent precision when evidence supports only a broad area. Do not convert
 
 Give only bounded supporting clues and contradictions. Do not provide hidden chain-of-thought.`;
 
+export const SOL_PARITY_RECOVERY_INSTRUCTIONS = `${SOL_PARITY_INSTRUCTIONS}
+
+This is one independent recovery attempt after an earlier pass returned no specific named hypothesis. Re-examine the additional diverse frames and all legitimate source context from scratch. When the evidence supports a bounded destination class and geography but not one certain identity, return up to three defensible specific named physical hypotheses with honest LOW or MEDIUM confidence and contradictions. Never substitute a generic feature type or broad parent, and return UNKNOWN when no named hypothesis is defensible.`;
+export const SOL_PARITY_RECOVERY_PROMPT_VERSION = `${SOL_PARITY_PROMPT_VERSION}+zero-hypothesis-recovery.v1`;
+
 function bound(value: string | null | undefined, max: number): string {
   return (value ?? '').replace(/\s+/g, ' ').trim().slice(0, max);
 }

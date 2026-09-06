@@ -221,10 +221,12 @@ test('35 terminal-state idempotency prevents duplicate deep finalization', async
 
 test('36 a zero-specific F1 result gets exactly one independent F2 recovery attempt', async () => {
   const calls: string[] = [];
+  let recoveryPass: string | undefined;
   const inner: ModelProvider = { name: 'normal', analyze: async () => output([]) };
   const recovered = execution(['Atuh Beach', 'Diamond Beach']);
   const result = await withAutomaticDeepRecognition(inner, cfg, async (args) => {
     calls.push(args.frameSet.arm);
+    recoveryPass = args.recognitionPass;
     return calls.length === 1
       ? { ...execution([]), outcome: 'PREMIUM_NO_USEFUL_RESULT', chargeability: 'NON_CHARGEABLE_NO_RESULT', destinations: [] }
       : recovered;
@@ -237,6 +239,7 @@ test('36 a zero-specific F1 result gets exactly one independent F2 recovery atte
   assert.equal(result.automaticDeepRecognition?.telemetry.automaticRecovery?.attempts, 2);
   assert.equal(result.automaticDeepRecognition?.telemetry.usage.total_tokens, 240);
   assert.equal(result.automaticDeepRecognition?.telemetry.knownModelCostUsd, .02);
+  assert.equal(recoveryPass, 'ZERO_HYPOTHESIS_RECOVERY');
 });
 
 test('37 recovery is bounded at two attempts and generic hypotheses are never surfaced', async () => {

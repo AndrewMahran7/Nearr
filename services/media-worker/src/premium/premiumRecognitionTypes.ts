@@ -196,6 +196,9 @@ export type PremiumRecognitionInput = {
   evidenceReuse?: Partial<PremiumRecognitionTelemetry['evidenceReuse']>;
   googlePlacesApiKey: string | null;
   webSearchEnabled?: boolean;
+  /** Internal Automatic Deep retry mode. It changes only the shared Sol
+   * instruction/fingerprint; it never enables web search or billing. */
+  recognitionPass?: 'PRIMARY' | 'ZERO_HYPOTHESIS_RECOVERY';
   allowDistinctiveVisualAutoSave?: boolean;
   signal?: AbortSignal;
   fetchImpl?: typeof fetch;
