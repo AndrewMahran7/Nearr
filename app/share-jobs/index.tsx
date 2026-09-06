@@ -522,19 +522,12 @@ function ShareJobsQueueScreen() {
   }
 
   /**
-   * Follow a completed row to the exact place that row created.
-   *
-   * The queue already holds the full saved_places row it is rendering, so we
-   * seed the shared saved-places cache with it before navigating. The map's
-   * focus resolver then finds the exact `saved_places.id` on its very first
-   * pass — no network round-trip, no waiting on realtime, and no chance of the
-   * map concluding "this place is no longer available" just because its own
-   * cached list predates a save the worker made seconds ago. (The map still
-   * force-refetches once if the id is genuinely absent.)
+   * Open the completed result screen while seeding the saved-place cache with
+   * the exact row it will render and later focus on the map.
    */
   function openCompletedSave(item: RecentAutoSave) {
     upsertSavedPlaceIntoCache(item.savedPlace);
-    leaveQueueForMap({ savedPlaceId: item.savedPlaceId, source: 'share_job_completed' });
+    router.push({ pathname: '/share-jobs/[jobId]', params: { jobId: item.shareJobId } });
   }
 
   function renderRecentAutoSave(item: RecentAutoSave) {

@@ -9,6 +9,7 @@ const detail = read('app/share-jobs/[jobId].tsx');
 const error = read('app/_layout.tsx');
 const mapEntry = read('components/map/ShareQueueButton.tsx');
 const placeImage = read('components/PlaceImage.tsx');
+const savedPlaceResult = read('components/SavedPlaceResult.tsx');
 const candidateConfirmationCard = read('components/CandidateConfirmationCard.tsx');
 const shareJobsSheet = read('components/ShareJobsSheet.tsx');
 
@@ -39,7 +40,8 @@ assert.match(queue, /icon="close"/);
 // (lib/shareJobDetailState); see scripts/testShareJobDetailState.ts.
 assert.match(detail, /detail\.copy\.title/);
 assert.match(detail, /PHASE_1_COPY\.alreadySavedHeading/);
-assert.match(detail, /PHASE_1_COPY\.viewOnMap/);
+assert.match(detail, /<SavedPlaceResult/, 'completed jobs use the dedicated saved-result screen');
+assert.match(savedPlaceResult, /title="View on map"/, 'saved-result screen keeps the map CTA');
 assert.match(detail, /useState\(false\)/, 'alternative search starts collapsed');
 assert.match(detail, /title=\{broadSingle \? 'Not this area' : 'Not this place'\}/);
 assert.match(detail, /title="None of these"/);
@@ -49,9 +51,9 @@ assert.match(detail, /View original post/);
 assert.match(detail, /PHASE_1_COPY\.removeMessage/);
 assert.match(candidateConfirmationCard, /styles\.nameCompact\} numberOfLines=\{2\}>\{candidate\.name\}/);
 assert.match(candidateConfirmationCard, /styles\.name\} numberOfLines=\{3\}>\{candidate\.name\}/);
-assert.match(detail, /<PlaceImage/);
+assert.match(savedPlaceResult, /<PlaceImage/, 'saved-result hero and alternatives use the shared place image resolver');
 assert.match(detail, /<ShareJobsSheet onDismiss=\{backToQueue\} size="detail">/);
-const completedBranch = detail.slice(detail.indexOf("detailMode === 'completed'"), detail.indexOf("detailMode === 'dismissed'"));
+const completedBranch = detail.slice(detail.indexOf('// Terminal success'), detail.indexOf('// Terminal dismissed'));
 assert.doesNotMatch(completedBranch, /renderJobFooter|Remove this save/, 'terminal saved state has no removal action');
 
 assert.match(error, /Nearr hit a snag/);

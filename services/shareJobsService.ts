@@ -104,23 +104,59 @@ export type ShareJobSoftAlternative = {
   shareJobId: string;
   rank: 2 | 3;
   candidate: ShareJobCandidate;
+  /** Present after a successful Save too mutation. */
+  savedPlaceId: string | null;
 };
+
+export type ShareJobPrimaryResult = {
+  resultId: string;
+  savedPlaceId: string | null;
+  origin: string | null;
+  outcome: string;
+};
+
+/** Authoritative provenance for the primary result currently attached to a job. */
+export async function getShareJobPrimaryResult(jobId: string): Promise<ShareJobPrimaryResult | null> {
+  if (isDemoMode() || isMapPreviewMode()) return null;
+  const { data, error } = await supabase
+    .from('share_job_place_results')
+    .select('id, saved_place_id, origin, outcome')
+    .eq('share_job_id', jobId)
+    .eq('result_role', 'primary')
+    .order('updated_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data?.id || typeof data.outcome !== 'string') return null;
+  return {
+    resultId: data.id,
+    savedPlaceId: typeof data.saved_place_id === 'string' ? data.saved_place_id : null,
+    origin: typeof data.origin === 'string' ? data.origin : null,
+    outcome: data.outcome,
+  };
+}
 
 export async function listShareJobSoftAlternatives(jobId: string): Promise<ShareJobSoftAlternative[]> {
   if (isDemoMode() || isMapPreviewMode()) return [];
   const { data, error } = await supabase
     .from('share_job_place_results')
-    .select('id, share_job_id, candidate_rank, candidate_snapshot')
+    .select('id, share_job_id, candidate_rank, candidate_snapshot, saved_place_id, outcome')
     .eq('share_job_id', jobId)
     .eq('result_role', 'secondary')
-    .eq('outcome', 'secondary_soft_saved')
+    .in('outcome', ['secondary_soft_saved', 'secondary_promoted'])
     .order('candidate_rank', { ascending: true });
   if (error) throw new Error(error.message);
   return (data ?? []).flatMap((row: any) => {
     const candidate = row?.candidate_snapshot as ShareJobCandidate | null;
     const rank = row?.candidate_rank;
     if (!row?.id || !candidate?.googlePlaceId || !candidate?.name || (rank !== 2 && rank !== 3)) return [];
-    return [{ resultId: row.id, shareJobId: row.share_job_id, rank, candidate }];
+    return [{
+      resultId: row.id,
+      shareJobId: row.share_job_id,
+      rank,
+      candidate,
+      savedPlaceId: typeof row.saved_place_id === 'string' ? row.saved_place_id : null,
+    }];
   });
 }
 

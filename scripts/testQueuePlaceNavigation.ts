@@ -18,12 +18,12 @@ import {
   savedPlaceRemovalCopy,
 } from '../lib/savedPlaceRemoval';
 
-// --- 1-3. A saved place from the queue dismisses the queue ------------------
+// --- 1-3. A completed save opens the saved-result detail --------------------
 {
   const completed = { id: 'job-1', status: 'completed', saved_place_id: 'saved-1' };
   const route = routeShareJobCard(completed);
-  assert.deepEqual(route, { kind: 'saved_place', savedPlaceId: 'saved-1' });
-  assert.equal(shouldDismissQueueForRoute(route), true, 'the queue closes behind the place');
+  assert.deepEqual(route, { kind: 'queue_item', jobId: 'job-1' });
+  assert.equal(shouldDismissQueueForRoute(route), false, 'Back from the saved result returns to Recent Finds');
   // A completed job with no saved place still lands on the map, so it also
   // dismisses rather than leaving the queue over a bare map.
   assert.equal(shouldDismissQueueForRoute({ kind: 'map' }), true);

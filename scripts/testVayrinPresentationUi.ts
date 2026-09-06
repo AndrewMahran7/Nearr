@@ -23,7 +23,14 @@ assert.match(asyncDetail, /normalizeVayrinIdentityLeads|vayrinPresentation\.lead
 assert.doesNotMatch(asyncDetail, /Possible lead|Not verified yet/i, 'lead cards use decision language, not system state');
 assert.match(asyncDetail, /CandidateConfirmationCard/, 'candidate confirmation uses the visual card');
 assert.match(asyncDetail, /selectAllEligibleBatchRows/, 'Multi-Select owns safe Save all semantics');
-assert.match(asyncDetail, /title="Not it"/, 'strong result correction uses canonical action');
+assert.match(asyncDetail, /<SavedPlaceResult/, 'durable saved results use the dedicated result surface');
+assert.match(asyncDetail, /onWrongPlace=/, 'durable saved results wire the correction action');
+assert.doesNotMatch(asyncDetail, /title="Not it"/, 'the completed result no longer renders the legacy detached action');
+assert.match(
+  read('components/SavedPlaceResult.tsx'),
+  />Wrong place\?<\/Text>/,
+  'the completed result uses the approved correction label',
+);
 assert.match(sync, /title="Not it"/, 'sync saved-place correction uses canonical action');
 
 assert.match(header, /accessibilityRole="summary"/);
