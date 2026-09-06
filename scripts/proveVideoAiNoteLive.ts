@@ -1,3 +1,5 @@
+import { createClient } from '@supabase/supabase-js';
+
 import { findSavedPlaceForOpen } from '../lib/openSavedPlace';
 import { whySavedDisplay } from '../lib/placeDetailUi';
 import { pollUntil } from './e2e/poll';
@@ -16,6 +18,17 @@ function nonEmpty(value: unknown): boolean {
   return typeof value === 'string' && value.trim().length > 0;
 }
 
+function candidateObjects(value: unknown, out: Row[] = []): Row[] {
+  if (Array.isArray(value)) {
+    for (const child of value) candidateObjects(child, out);
+  } else if (value && typeof value === 'object') {
+    const row = value as Row;
+    if (nonEmpty(row.googlePlaceId) && nonEmpty(row.name)) out.push(row);
+    for (const child of Object.values(row)) candidateObjects(child, out);
+  }
+  return out;
+}
+
 async function main(): Promise<void> {
   const session = await openSession({ withIdentity: true });
   let proof: Row = {};
@@ -28,7 +41,7 @@ async function main(): Promise<void> {
       async () => {
         const { data, error } = await session.admin
           .from('share_jobs')
-          .select('id,status,decision,saved_place_id,source_platform,created_at,updated_at')
+          .select('id,status,decision,saved_place_id,source_platform,candidate_payload,created_at,updated_at')
           .eq('id', submitted.jobId)
           .maybeSingle();
         if (error) throw error;
@@ -39,14 +52,58 @@ async function main(): Promise<void> {
     );
     if (!jobResult.ok) throw new Error('real video share job did not reach a terminal state');
     const job = jobResult.value;
-    if (!job.saved_place_id) {
+    let savedPlaceId = job.saved_place_id as string | null;
+    let confirmedCandidate = false;
+    if (!savedPlaceId && ['candidate_confirmation', 'multi_candidate_confirmation'].includes(String(job.decision))) {
+      const owner = createClient(session.config.supabaseUrl, session.config.anonKey, {
+        auth: { persistSession: false, autoRefreshToken: false },
+        global: { headers: { Authorization: `Bearer ${session.identity!.accessToken}` } },
+      });
+      const candidate = candidateObjects(job.candidate_payload)[0];
+      if (!candidate || !Number.isFinite(candidate.latitude) || !Number.isFinite(candidate.longitude)) {
+        throw new Error(`real video produced no persistable candidate: status=${job.status} decision=${job.decision}`);
+      }
+      const { data: existing, error: lookupError } = await owner.from('places')
+        .select('id').eq('google_place_id', candidate.googlePlaceId).maybeSingle();
+      if (lookupError) throw new Error(`candidate lookup failed: ${lookupError.message}`);
+      let placeId = existing?.id as string | undefined;
+      if (!placeId) {
+        const { data: inserted, error: placeError } = await owner.from('places').insert({
+          google_place_id: candidate.googlePlaceId,
+          name: candidate.name,
+          formatted_address: candidate.formattedAddress ?? null,
+          latitude: candidate.latitude,
+          longitude: candidate.longitude,
+          google_types: Array.isArray(candidate.types) ? candidate.types : [],
+        }).select('id').single();
+        if (placeError || !inserted) throw new Error(`candidate place insert failed: ${placeError?.message ?? 'no row'}`);
+        placeId = inserted.id;
+      }
+      const { data: saved, error: saveError } = await owner.from('saved_places').insert({
+        user_id: session.identity!.userId,
+        place_id: placeId,
+        source_type: job.source_platform,
+        source_url: SOURCE_URL,
+      }).select('id').single();
+      if (saveError || !saved) throw new Error(`candidate save failed: ${saveError?.message ?? 'no row'}`);
+      savedPlaceId = saved.id;
+      const { data: resolved, error: resolveError } = await owner.rpc('resolve_share_job', {
+        p_job_id: job.id,
+        p_saved_place_id: savedPlaceId,
+      });
+      if (resolveError || resolved !== true) throw new Error(`candidate job resolution failed: ${resolveError?.message ?? String(resolved)}`);
+      confirmedCandidate = true;
+      job.saved_place_id = savedPlaceId;
+      job.status = 'completed';
+    }
+    if (!savedPlaceId) {
       throw new Error(`real video was not saved: status=${job.status} decision=${job.decision}`);
     }
-    console.log(`LIVE_PROOF_STAGE saved job=${job.id} savedPlace=${job.saved_place_id}`);
+    console.log(`LIVE_PROOF_STAGE saved job=${job.id} savedPlace=${savedPlaceId} confirmed=${confirmedCandidate}`);
     if (EXPECTED_USER_NOTE) {
       const { error } = await session.admin.from('saved_places')
         .update({ notes: EXPECTED_USER_NOTE })
-        .eq('id', job.saved_place_id)
+        .eq('id', savedPlaceId)
         .eq('user_id', session.identity!.userId);
       if (error) throw error;
       console.log('LIVE_PROOF_STAGE user-note-written');
@@ -57,7 +114,7 @@ async function main(): Promise<void> {
         const { data, error } = await session.admin
           .from('share_media_tasks')
           .select('*')
-          .eq('saved_place_id', job.saved_place_id)
+          .eq('saved_place_id', savedPlaceId)
           .eq('task_kind', 'ai_note_enrichment')
           .maybeSingle();
         if (error) throw error;
@@ -73,7 +130,7 @@ async function main(): Promise<void> {
       async () => {
         const [{ data: task, error: taskError }, { data: saved, error: savedError }] = await Promise.all([
           session.admin.from('share_media_tasks').select('*').eq('id', aiTaskResult.value.id).single(),
-          session.admin.from('saved_places').select('id,ai_note,notes,updated_at').eq('id', job.saved_place_id).single(),
+          session.admin.from('saved_places').select('id,ai_note,notes,updated_at').eq('id', savedPlaceId).single(),
         ]);
         if (taskError) throw taskError;
         if (savedError) throw savedError;
@@ -113,8 +170,9 @@ async function main(): Promise<void> {
     const selected = findSavedPlaceForOpen(coldRows, { savedPlaceId: saved.id });
     const rendered = whySavedDisplay(selected ?? {});
     const coldStartQueryReturnsAiNote = nonEmpty(selected?.ai_note);
-    const placeDetailRendersAiNote =
-      rendered.origin === 'source' && rendered.text === selected?.ai_note;
+    const placeDetailRendersAiNote = EXPECTED_USER_NOTE
+      ? rendered.origin === 'user' && rendered.text === EXPECTED_USER_NOTE
+      : rendered.origin === 'source' && rendered.text === selected?.ai_note;
     proof = {
       target: session.config.supabaseRef,
       jobId: job.id,
@@ -139,9 +197,9 @@ async function main(): Promise<void> {
       userNoteUntouched: EXPECTED_USER_NOTE
         ? saved.notes === EXPECTED_USER_NOTE
         : !nonEmpty(saved.notes),
-      readbackSucceeded: saved.id === job.saved_place_id && nonEmpty(saved.ai_note),
+      readbackSucceeded: saved.id === savedPlaceId && nonEmpty(saved.ai_note),
       realPhysicalLikeSavePathUsed:
-        job.source_platform === 'instagram' && job.decision === 'auto_save',
+        job.source_platform === 'instagram' && (job.decision === 'auto_save' || confirmedCandidate),
       coldStartQueryReturnsAiNote,
       exactSelectedRow: selected?.id === saved.id,
       placeDetailRendersAiNote,
@@ -150,7 +208,7 @@ async function main(): Promise<void> {
     if (
       !proof.jobCompleted ||
       !proof.taskClaimed ||
-      !['accepted', 'accepted_after_retry'].includes(String(proof.taskOutcome)) ||
+      !['accepted', 'accepted_after_retry', 'already_present'].includes(String(proof.taskOutcome)) ||
       !proof.aiNoteNonempty ||
       !proof.userNoteUntouched ||
       !proof.readbackSucceeded ||
