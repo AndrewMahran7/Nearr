@@ -1325,8 +1325,10 @@ async function finalizeVideoAiNoteTask(
     ].includes(diagnostics.noteGenerationOutcome)
       ? diagnostics.noteGenerationOutcome
       : null;
-    const boundedV16GenerationFinished = diagnostics.promptVersion === VIDEO_AI_NOTE_RULE_VERSION &&
-      Number(diagnostics.noteGenerationPasses) > 0;
+    // A v16 worker owns its bounded in-process repair cycle. Never re-enter the
+    // former one-hour style retry loop, even across a rolling deploy where a
+    // newly added diagnostic counter could be absent in an in-flight payload.
+    const boundedV16GenerationFinished = diagnostics.promptVersion === VIDEO_AI_NOTE_RULE_VERSION;
     const generationRetryExhausted = disposition === 'retry_after_generation' &&
       retryCycles >= MAX_AI_NOTE_GENERATION_RETRY_CYCLES;
     const terminalDisposition = explicitGenerationOutcome ??

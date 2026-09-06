@@ -95,6 +95,7 @@ async function retryContracts(): Promise<void> {
   assert.match(finalizerSource, /aiNoteRetried/);
   assert.match(finalizerSource, /accepted_after_retry/);
   assert.match(finalizerSource, /boundedV16GenerationFinished/);
+  assert.match(finalizerSource, /diagnostics\.promptVersion === VIDEO_AI_NOTE_RULE_VERSION/);
   console.log('PASS outcome telemetry is bounded and explicit');
 }
 

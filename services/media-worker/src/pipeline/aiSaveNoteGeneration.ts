@@ -45,7 +45,9 @@ function hasAcceptableCandidate(output: AnalyzeOutput): boolean {
       /^[A-Z][\p{L}\p{N}'-]*$/u.test(word) && !/^I(?:'|$)/.test(word));
     const numbers = words.filter((word) => /^\d+$/.test(word));
     return place.memoryCueEvidence.some((item) => item.value.trim().length >= 3) &&
-      words.length >= 3 && words.length <= 24 && note.length <= 220 &&
+      // Spend the repair call when the model misses the prompt's 20-word
+      // target; Edge remains slightly more permissive at 24 words.
+      words.length >= 3 && words.length <= 20 && note.length <= 180 &&
       !/^[\[{]|[{}\[\]]/.test(note) &&
       !/^That\s+.+\s+looked unreal[.!?]*$/i.test(note) &&
       !/^(?:that|those)\s+(?:the|a|an|this|that|these|those)\b/i.test(note) &&
