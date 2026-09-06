@@ -106,6 +106,30 @@ function object(value: unknown): Record<string, unknown> | null {
   return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : null;
 }
 
+type WalletSnapshot = {
+  present: boolean;
+  availableUses: number;
+  reservedUses: number;
+  version: number;
+};
+
+async function walletSnapshot(session: E2ESession): Promise<WalletSnapshot> {
+  if (!session.identity) throw new Error('ephemeral identity unavailable');
+  const { data, error } = await session.admin
+    .from('place_find_wallets')
+    .select('available_uses,reserved_uses,version')
+    .eq('user_id', session.identity.userId)
+    .limit(1);
+  if (error) throw new Error(`wallet snapshot failed: ${error.message}`);
+  const wallet = data?.[0];
+  return {
+    present: !!wallet,
+    availableUses: Number(wallet?.available_uses ?? 0),
+    reservedUses: Number(wallet?.reserved_uses ?? 0),
+    version: Number(wallet?.version ?? 0),
+  };
+}
+
 function candidateObjects(value: unknown, out: Record<string, unknown>[] = []): Record<string, unknown>[] {
   if (Array.isArray(value)) {
     for (const child of value) candidateObjects(child, out);
@@ -161,6 +185,7 @@ async function main(): Promise<void> {
   const startedAt = new Date().toISOString();
   try {
     if (!session.identity) throw new Error('ephemeral identity unavailable');
+    const walletBefore = await walletSnapshot(session);
     const ids = new Map<string, string>();
     for (const spec of cases) ids.set(`${spec.suite}:${spec.caseId}`, await seed(session, spec));
     let jobs: any[] = [];
@@ -186,6 +211,12 @@ async function main(): Promise<void> {
       session.admin.from('place_find_reservations').select('id,share_job_id,status').in('share_job_id', jobIds),
     ]);
     if (taskError || runError || reservationError) throw new Error(taskError?.message ?? runError?.message ?? reservationError?.message);
+    const walletAfter = await walletSnapshot(session);
+    const walletDelta = {
+      availableUses: walletAfter.availableUses - walletBefore.availableUses,
+      reservedUses: walletAfter.reservedUses - walletBefore.reservedUses,
+      version: walletAfter.version - walletBefore.version,
+    };
     const savedIds = jobs.flatMap((job) => typeof job.saved_place_id === 'string' ? [job.saved_place_id] : []);
     const { data: savedPlaces, error: savedError } = savedIds.length
       ? await session.admin.from('saved_places').select('id,name,latitude,longitude').in('id', savedIds)
@@ -239,6 +270,7 @@ async function main(): Promise<void> {
       productionRowsMutated: false,
       observations,
       infrastructure: { taskCount: tasks?.length ?? 0, runCount: runs?.length ?? 0, premiumReservations: reservations?.length ?? 0 },
+      tokenIsolation: { walletBefore, walletAfter, walletDelta },
     };
     await writeFile(path.join(outputDir, 'observations-before-ground-truth.json'), `${JSON.stringify(observationArtifact, null, 2)}\n`, 'utf8');
 
@@ -299,6 +331,7 @@ async function main(): Promise<void> {
       assertions: {
         allTerminal: true,
         zeroPremiumReservations: (reservations?.length ?? 0) === 0,
+        zeroWalletDelta: walletDelta.availableUses === 0 && walletDelta.reservedUses === 0 && walletDelta.version === 0,
         zeroWrongAutosaves: observations.every((item) => !item.savedPlaceId),
         systemIsolation: system === 'PRODUCTION_FREE'
           ? observations.every((item) => item.automaticDeep?.invoked !== true)
@@ -311,7 +344,7 @@ async function main(): Promise<void> {
     };
     await writeFile(path.join(outputDir, 'results.json'), `${JSON.stringify(report, null, 2)}\n`, 'utf8');
     console.log(JSON.stringify({ outputDir, system, caseCount: cases.length, regression: (regression as any)?.metrics ?? null, founder: report.founder, assertions: report.assertions }, null, 2));
-    if (!report.assertions.zeroPremiumReservations || !report.assertions.zeroWrongAutosaves || !report.assertions.systemIsolation) process.exitCode = 1;
+    if (!report.assertions.zeroPremiumReservations || !report.assertions.zeroWalletDelta || !report.assertions.zeroWrongAutosaves || !report.assertions.systemIsolation) process.exitCode = 1;
   } finally {
     const cleanup = await session.cleanup();
     console.log(JSON.stringify({ cleanup }, null, 2));
