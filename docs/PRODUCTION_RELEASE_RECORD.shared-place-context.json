@@ -2,7 +2,7 @@
   "releaseId": "2026-09-05-shared-place-source-context",
   "previousMainSha": "6b2d27337f9090fcbc7621912ff154c2b40f7ce8",
   "previousOtaGroup": "2373be97-07af-4bc9-a569-f6496a85771d",
-  "currentOtaGroup": null,
+  "currentOtaGroup": "249cc5b0-bf2a-48a9-a7f1-48089149b4c3",
   "implementationSha": "e9bf6e50b208635ea1eb873add57316e474f970c",
   "edgeVersions": {
     "process-share-link": 137,
@@ -15,7 +15,7 @@
     "20260905000010"
   ],
   "rollbackProcedure": "Repeat the concurrency guard; republish previousOtaGroup to production; forward-revert the shared-place source-context commits on current main. Keep the additive share snapshots and attribution rows in place, and set source_context_revoked_at for any context requiring immediate suppression. Edge, Railway, native builds, and hosted video remain unchanged.",
-  "deploymentStatus": "PLANNED",
+  "deploymentStatus": "DEPLOYED",
   "physicalQa": {
     "signedOutColdLaunch": "PENDING",
     "signedInColdLaunch": "PENDING",
@@ -37,5 +37,6 @@
     "privacy": "PASS: unknown/client-only context omitted, revocation blocks transfer, share tables have no anon/authenticated SELECT, and save_shared_place accepts no source or note input",
     "referral": "PASS: one durable public_place_share_saves conversion per share/user, including existing-save flow",
     "infrastructure": "PASS: Railway deployment 31761710-5ecd-4571-9152-c4cdfc1fd5bb remains SUCCESS/RUNNING; public-place Edge remains v1; no EAS Build"
-  }
+  },
+  "deployedAt": "2026-09-06T06:26:53.791Z"
 }
