@@ -15,6 +15,7 @@ const read = (relative: string) => fs.readFileSync(path.join(root, relative), 'u
 const migration = [
   read('supabase/migrations/20260906000004_recognition_cache_v2.sql'),
   read('supabase/migrations/20260906000005_recognition_cache_v2_saved_category.sql'),
+  read('supabase/migrations/20260906000006_recognition_revalidation_failure_quarantine.sql'),
 ].join('\n');
 const cache = read('supabase/functions/process-share-jobs/recognitionCache.ts');
 const worker = read('supabase/functions/process-share-jobs/index.ts');
@@ -133,6 +134,7 @@ const tests: Array<[string, () => void]> = [
     const complete = migration.slice(migration.indexOf('create or replace function public.complete_recognition_revalidation_v2'), migration.indexOf('create or replace function public.admit_recognition_after_media_completion_v2'));
     const technical = complete.slice(complete.indexOf("if p_decision='TECHNICAL_FAILURE'"), complete.indexOf("if p_decision='AGREES_WITH_REPLACEMENT'"));
     assert.doesNotMatch(technical, /state='ELIGIBLE'/);
+    assert.match(migration, /new\.decision = 'TECHNICAL_FAILURE'[\s\S]*state = 'QUARANTINED'/);
   }],
   ['Premium and token ledgers are untouched', () => {
     assert.doesNotMatch(migration, /place_find_ledger|premium_request_ledger|wallet/);
