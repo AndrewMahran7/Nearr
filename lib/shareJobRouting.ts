@@ -168,17 +168,11 @@ export function routeShareJobNotification(
   const savedPlaceIds = ids(data?.savedPlaceIds);
   const googlePlaceId = str(data?.googlePlaceId);
   const outcome = str(data?.outcome);
-  const alternativeCount = typeof data?.alternativeCount === 'number' && Number.isFinite(data.alternativeCount)
-    ? Math.max(0, Math.floor(data.alternativeCount))
-    : 0;
-  const reviewMode = str(data?.reviewMode);
-
-  // Terminal success (incl. already-saved) → the saved place, not the queue.
+  // Terminal success with a job id opens its dedicated saved-result detail.
+  // Legacy payloads without a job id retain their direct-to-map fallback.
   if (type === 'share_job_completed' || outcome === 'completed' || outcome === 'already_saved') {
-    if ((alternativeCount > 0 || reviewMode === 'soft_alternatives') && jobId) {
-      return { kind: 'queue_item', jobId };
-    }
     if (savedPlaceIds.length > 1) return { kind: 'saved_group', savedPlaceIds };
+    if (jobId) return { kind: 'queue_item', jobId };
     if (savedPlaceId) {
       // `googlePlaceId` (when the server includes it) is a stable fallback so
       // the map can still open the existing place if the saved_places row id
@@ -217,9 +211,9 @@ export function shouldDismissQueueForRoute(
 }
 
 /**
- * Decide where tapping a QUEUE CARD (a full job row) should go. Terminal
- * success → the saved place; dismissed / unknown → the queue root (no-op);
- * processing / actionable → the per-job detail route. NEVER throws.
+ * Decide where tapping a QUEUE CARD (a full job row) should go. Terminal,
+ * processing, and actionable jobs open the per-job detail route; dismissed or
+ * unknown rows stay at the queue root. NEVER throws.
  */
 export function routeShareJobCard(
   job: { id: string; status: string; saved_place_id?: string | null } | null | undefined,
@@ -227,8 +221,7 @@ export function routeShareJobCard(
   const mode = classifyShareJobDetail(job);
   switch (mode) {
     case 'completed': {
-      const sp = str(job?.saved_place_id);
-      return sp ? { kind: 'saved_place', savedPlaceId: sp } : { kind: 'map' };
+      return job?.id ? { kind: 'queue_item', jobId: job.id } : { kind: 'map' };
     }
     case 'processing':
     case 'actionable':

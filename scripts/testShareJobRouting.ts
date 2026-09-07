@@ -103,10 +103,10 @@ check('classify undefined => missing', classifyShareJobDetail(undefined) === 'mi
 
 // ---- Notification routing matrix -------------------------------------------
 check(
-  'completed notification opens saved place',
+  'completed notification opens saved result',
   eq(routeShareJobNotification({ type: 'share_job_completed', savedPlaceId: 'sp1', jobId: 'j1' }), {
-    kind: 'saved_place',
-    savedPlaceId: 'sp1',
+    kind: 'queue_item',
+    jobId: 'j1',
   }),
 );
 check(
@@ -118,7 +118,7 @@ check(
       savedPlaceId: 'sp2',
       jobId: 'j1',
     }),
-    { kind: 'saved_place', savedPlaceId: 'sp2' },
+    { kind: 'queue_item', jobId: 'j1' },
   ),
 );
 check(
@@ -131,7 +131,7 @@ check(
       googlePlaceId: 'gp2',
       jobId: 'j1',
     }),
-    { kind: 'saved_place', savedPlaceId: 'sp2', googlePlaceId: 'gp2' },
+    { kind: 'queue_item', jobId: 'j1' },
   ),
 );
 check(
@@ -142,8 +142,8 @@ check(
   ),
 );
 check(
-  'completed without saved place falls back to map',
-  eq(routeShareJobNotification({ type: 'share_job_completed', jobId: 'j1' }), { kind: 'map' }),
+  'completed with job id opens authoritative result even if notification omitted saved id',
+  eq(routeShareJobNotification({ type: 'share_job_completed', jobId: 'j1' }), { kind: 'queue_item', jobId: 'j1' }),
 );
 check(
   'needs-help notification opens the queue item',
@@ -211,15 +211,15 @@ check(
 
 // ---- Queue-card routing (old deep link to accepted/denied job) -------------
 check(
-  'old accepted (completed) card opens saved place, not the queue item',
+  'completed card opens saved result detail',
   eq(routeShareJobCard({ id: 'j', status: 'completed', saved_place_id: 'sp' }), {
-    kind: 'saved_place',
-    savedPlaceId: 'sp',
+    kind: 'queue_item',
+    jobId: 'j',
   }),
 );
 check(
-  'completed card without saved place -> map',
-  eq(routeShareJobCard({ id: 'j', status: 'completed', saved_place_id: null }), { kind: 'map' }),
+  'completed card without saved place still opens safe result detail',
+  eq(routeShareJobCard({ id: 'j', status: 'completed', saved_place_id: null }), { kind: 'queue_item', jobId: 'j' }),
 );
 check(
   'needs_help card -> queue item',

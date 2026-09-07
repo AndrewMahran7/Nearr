@@ -15,7 +15,7 @@ const strong = note({ status: 'completed', placeName: 'Es Pontas', savedPlaceId:
 assert.equal(strong.title, 'Saved Es Pontas to your map');
 assert.equal(strong.body, 'Open Nearr to view your new find.');
 assert.equal(strong.resultClass, 'strong_exact');
-assert.deepEqual(routeShareJobNotification(strong.data), { kind: 'saved_place', savedPlaceId: 'saved-1', googlePlaceId: 'google-1' });
+assert.deepEqual(routeShareJobNotification(strong.data), { kind: 'queue_item', jobId: 'job-1' });
 
 const withAlternatives = note({
   status: 'completed', placeName: 'Pont du Diable', savedPlaceId: 'saved-primary',

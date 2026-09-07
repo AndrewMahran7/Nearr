@@ -81,6 +81,7 @@
     "test:share-failure-presentation": "ts-node -P scripts/tsconfig.json scripts/testShareFailurePresentation.ts",
     "test:share-job-routing": "ts-node -P scripts/tsconfig.json scripts/testShareJobRouting.ts",
     "test:share-job-detail-state": "ts-node -P scripts/tsconfig.json scripts/testShareJobDetailState.ts",
+    "test:saved-place-result-ui": "ts-node -P scripts/tsconfig.json scripts/testSavedPlaceResultUi.ts",
     "test:share-url-validation": "ts-node -P scripts/tsconfig.json scripts/testShareUrlValidation.ts",
     "test:feature-flags": "ts-node -P scripts/tsconfig.json scripts/testFeatureFlags.ts",
     "test:shared-auth-session": "ts-node -P scripts/tsconfig.json scripts/testSharedAuthSession.ts",
@@ -346,8 +347,10 @@
   "devDependencies": {
     "@types/node": "^25.6.0",
     "@types/react": "~18.2.79",
+    "@types/react-test-renderer": "^18.0.7",
     "patch-package": "^8.0.1",
     "ts-node": "^10.9.2",
+    "react-test-renderer": "18.2.0",
     "typescript": "~5.3.3"
   },
   "private": true
