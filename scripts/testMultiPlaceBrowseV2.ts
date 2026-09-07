@@ -5,17 +5,16 @@ import { join } from 'node:path';
 import {
   carouselIndexForSelection,
   carouselIndexFromOffset,
-  carouselRenderWindow,
-  PLACE_BROWSE_MAX_RENDER_BATCH,
 } from '../lib/placeBrowseCarousel';
+import { PLACE_BROWSE_WHEEL_MAX_RENDER_BATCH } from '../lib/placeBrowseWheel';
 import { planFindRightPlace, type FindRightPlaceCandidate } from '../lib/findRightPlace';
 import { sourcePlaceGroupForAnchor } from '../lib/sourcePlaceGroup';
 
 const root = process.cwd();
 const read = (path: string) => readFileSync(join(root, path), 'utf8');
 const map = read('app/(tabs)/map.tsx');
-const switcher = read('components/map/SourceGroupSwitcher.tsx');
-const carousel = read('components/PlaceBrowseCarousel.tsx');
+const sourceWheel = read('components/map/MapGroupSelector.tsx');
+const wheel = read('components/map/PlaceBrowseWheel.tsx');
 const details = read('components/map/SelectedPlaceDetails.tsx');
 const review = read('app/share-jobs/[jobId].tsx');
 const reviewPolicy = read('lib/vayrinMultiPlaceReview.ts');
@@ -41,35 +40,35 @@ const candidate = (overrides: Partial<FindRightPlaceCandidate> = {}): FindRightP
   ...overrides,
 });
 
-check('View all opens the explicit full group inside the selected sheet', () => {
-  assert.match(map, /function viewAllSourceGroup[\s\S]*setPreviewExpanded\(true\)[\s\S]*setSourceGroupExpanded\(true\)/);
-  assert.match(switcher, /testID=\{expanded \? 'source-group-full-view'/);
+check('multiple source places use the shared Nearby-style wheel', () => {
+  assert.match(map, /sourceGroupBrowseActive[\s\S]*<MapGroupSelector/);
+  assert.match(sourceWheel, /<PlaceBrowseWheel/);
 });
-check('View all preserves the selected member', () => {
-  assert.match(map, /const target = selected \?\?/);
-  assert.match(switcher, /selectedId=\{selectedId\}/);
+check('source wheel preserves the canonical selected member', () => {
+  assert.match(map, /sourceGroupWheelSelectedPlace/);
+  assert.match(sourceWheel, /selectedId=\{selectedId\}/);
 });
-check('the full group does not create a duplicate modal or sheet', () => {
-  assert.doesNotMatch(switcher, /\bModal\b|BottomSheet|<ScrollView/);
+check('the source wheel does not create a duplicate modal or sheet', () => {
+  assert.doesNotMatch(sourceWheel, /\bModal\b|BottomSheet|<ScrollView|PlaceBrowseCarousel/);
 });
-check('back and collapse close the full group cleanly', () => {
-  assert.match(map, /BackHandler\.addEventListener\('hardwareBackPress'[\s\S]*setSourceGroupExpanded\(false\)/);
-  assert.match(switcher, /onPress=\{expanded \? onCollapse : onViewAll\}/);
+check('Details opens the existing selected-place detail sheet', () => {
+  assert.match(map, /function openSourceGroupPlaceDetails[\s\S]*setPreviewExpanded\(true\)/);
+  assert.match(sourceWheel, /onOpenDetails=\{/);
 });
 
 check('two-place swipe resolves the second card', () => assert.equal(carouselIndexFromOffset(246, 246, 2), 1));
 check('three-place swipe resolves the third card', () => assert.equal(carouselIndexFromOffset(492, 246, 3), 2));
-check('card taps select directly', () => assert.match(carousel, /onSelect\(item, 'tap'\)/));
+check('card taps select directly', () => assert.match(wheel, /onSelect\(item, 'tap'\)/));
 check('programmatic selection synchronizes scroll position', () => {
   assert.equal(carouselIndexForSelection([{ id: 'a' }, { id: 'b' }], 'b'), 1);
-  assert.match(carousel, /scrollToIndex\(\{ index: selectedIndex/);
+  assert.match(wheel, /scrollToIndex\(\{ index: selectedIndex/);
 });
-check('group selection updates the canonical map selection', () => assert.match(map, /function selectMapGroupPlace[\s\S]*selectPlace\(item\)/));
+check('group selection updates the canonical map selection', () => assert.match(map, /function selectMapGroupPlace[\s\S]*setSelected\(item\)/));
 check('tap selection emits the bounded card-selection event', () => assert.match(map, /source_group_card_selected/));
 check('eight-plus-place rendering stays bounded', () => {
-  assert.deepEqual(carouselRenderWindow(12, 6), { first: 4, last: 8, count: 5 });
-  assert.equal(PLACE_BROWSE_MAX_RENDER_BATCH, 5);
-  assert.match(carousel, /removeClippedSubviews/);
+  assert.equal(PLACE_BROWSE_WHEEL_MAX_RENDER_BATCH, 3);
+  assert.match(wheel, /maxToRenderPerBatch=\{PLACE_BROWSE_WHEEL_MAX_RENDER_BATCH\}/);
+  assert.match(wheel, /removeClippedSubviews/);
 });
 
 check('From this video exposes See all', () => assert.match(details, /actionLabel=\{onViewSourceGroup \? 'See all'/));

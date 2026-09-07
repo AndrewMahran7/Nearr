@@ -239,6 +239,7 @@
     "test:multi-place-progressive-disclosure": "ts-node -P scripts/tsconfig.json scripts/testMultiPlaceProgressiveDisclosure.ts",
     "test:multi-place-review-interactions": "ts-node -P scripts/tsconfig.json scripts/testMultiPlaceReviewInteractions.ts",
     "test:multi-place-browse-v2": "ts-node -P scripts/tsconfig.json scripts/testMultiPlaceBrowseV2.ts",
+    "test:source-group-nearby-wheel": "ts-node -P scripts/tsconfig.json scripts/testSourceGroupNearbyWheel.ts",
     "test:saved-browse": "ts-node -P scripts/tsconfig.json scripts/testSavedPlacesBrowse.ts",
     "test:saved-browse-contracts": "ts-node -P scripts/tsconfig.json scripts/testSavedPlacesBrowseContracts.ts",
     "test:place-detail": "ts-node -P scripts/tsconfig.json scripts/testPlaceDetailExperience.ts",

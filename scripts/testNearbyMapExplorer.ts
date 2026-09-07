@@ -50,6 +50,10 @@ const RECOMMENDED_SOURCE = readFileSync(
   'utf8',
 );
 const CAROUSEL_SOURCE = readFileSync(
+  join(ROOT, 'components/map/PlaceBrowseWheel.tsx'),
+  'utf8',
+);
+const NEARBY_ADAPTER_SOURCE = readFileSync(
   join(ROOT, 'components/map/NearbyMapExplorerCarousel.tsx'),
   'utf8',
 );
@@ -388,8 +392,9 @@ for (const count of [10, 50, 100, 500]) {
   assert.equal(tight.report.missingOnscreenIds.length, 0);
   timings.push(`${count}:${(performance.now() - started).toFixed(1)}ms`);
 }
-assert.match(CAROUSEL_SOURCE, /initialNumToRender=\{3\}/);
-assert.match(CAROUSEL_SOURCE, /maxToRenderPerBatch=\{3\}/);
+assert.match(NEARBY_ADAPTER_SOURCE, /<PlaceBrowseWheel/);
+assert.match(CAROUSEL_SOURCE, /initialNumToRender=\{PLACE_BROWSE_WHEEL_MAX_RENDER_BATCH\}/);
+assert.match(CAROUSEL_SOURCE, /maxToRenderPerBatch=\{PLACE_BROWSE_WHEEL_MAX_RENDER_BATCH\}/);
 assert.match(CAROUSEL_SOURCE, /windowSize=\{5\}/);
 assert.match(CAROUSEL_SOURCE, /removeClippedSubviews/);
 assert.doesNotMatch(CAROUSEL_SOURCE, /photoUrls\.map|<FlatList[^>]*photoUrls/);

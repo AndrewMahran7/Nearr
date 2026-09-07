@@ -13,7 +13,7 @@ export { SavedPlacesLibrary } from './SavedPlacesLibrary';
 export { MapPlaceSearchDropdown } from './MapPlaceSearchDropdown';
 export { MapSnackbar } from './MapSnackbar';
 export { MapGroupSelector } from './MapGroupSelector';
-export { SourceGroupSwitcher } from './SourceGroupSwitcher';
+export { PlaceBrowseWheel } from './PlaceBrowseWheel';
 export { SelectedPlaceDetails } from './SelectedPlaceDetails';
 export { ShareQueueButton } from './ShareQueueButton';
 export { NearrMapMarker } from './NearrMapMarker';

@@ -104,6 +104,8 @@ assert.match(shared, /ai_note\s*=\s*coalesce/i);
 assert.doesNotMatch(shared.slice(shared.indexOf('create or replace function public.save_shared_place')), /notes\s*=/i);
 assert.match(automatic, /perform public\.attach_saved_place_source/);
 assert.match(detail, /<PlaceVideoGalleryStrip[\s\S]*sameSourceEntries/);
-assert.match(map, /<SourceGroupSwitcher[\s\S]*<SelectedPlaceDetails/);
+assert.match(map, /<MapGroupSelector/);
+assert.match(map, /<SelectedPlaceDetails/);
+assert.match(map, /shouldRenderSelectedPlaceDetail =[\s\S]*!sourceGroupBrowseActive/);
 
 console.log('PASS source/media integration: 3-to-4, cold start, current alternatives, gallery, share privacy, existing saves, and canonical merge');

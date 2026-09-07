@@ -142,47 +142,50 @@ check('count and selected position always match live membership', () => {
 
 const map = readFileSync(join(process.cwd(), 'app/(tabs)/map.tsx'), 'utf8');
 const tray = readFileSync(join(process.cwd(), 'components/map/MapGroupSelector.tsx'), 'utf8');
-const switcher = readFileSync(join(process.cwd(), 'components/map/SourceGroupSwitcher.tsx'), 'utf8');
+const wheel = readFileSync(join(process.cwd(), 'components/map/PlaceBrowseWheel.tsx'), 'utf8');
 const details = readFileSync(join(process.cwd(), 'components/map/SelectedPlaceDetails.tsx'), 'utf8');
 const marker = readFileSync(join(process.cwd(), 'components/map/NearrMapMarker.tsx'), 'utf8');
 
-check('no selection shows the large tray', () => {
-  assert.match(map, /resolvedMapGroup\.places\.length > 1 && !selected/);
-  assert.match(tray, /testID="source-group-tray"/);
+check('no selection shows the large Nearby-style wheel', () => {
+  assert.match(map, /sourceGroupBrowseActive && sourceGroupWheelSelectedPlace/);
+  assert.match(tray, /testID="source-group-nearby-wheel"/);
 });
-check('selecting a place collapses the tray', () => assert.match(map, /&& !selected \? \(/));
-check('compact group switcher is visible for a selected group', () => {
-  assert.match(map, /<SourceGroupSwitcher/);
-  assert.match(switcher, /testID="source-group-switcher"/);
+check('selecting a card keeps the source wheel as the collapsed browsing surface', () => {
+  assert.match(map, /function selectMapGroupPlace[\s\S]*setSelected\(item\)[\s\S]*setPreviewExpanded\(false\)/);
 });
-check('selected detail sheet remains the primary surface', () => assert.match(map, /<SelectedPlaceDetails/));
+check('the old compact group switcher is not rendered', () => {
+  assert.doesNotMatch(map, /<SourceGroupSwitcher/);
+  assert.doesNotMatch(tray, /PlaceBrowseCarousel|See all|View all/);
+});
+check('selected detail sheet opens only as the detailed surface', () => {
+  assert.match(map, /function openSourceGroupPlaceDetails[\s\S]*setPreviewExpanded\(true\)/);
+  assert.match(map, /<SelectedPlaceDetails/);
+});
 check('selected map pin remains highlighted', () => assert.match(map, /selected=\{selectedMarkerId === p\.id\}/));
 check('other source-group pins receive related styling', () => {
   assert.match(map, /groupMember=\{/);
   assert.match(marker, /groupMemberDisc/);
 });
 check('unrelated pins remain normal', () => assert.match(map, /dimmed=\{false\}/));
-check('switcher changes selected place by tap', () => {
-  assert.match(switcher, /<PlaceBrowseCarousel/);
-  assert.match(switcher, /if \(place\) onSelect\(place, interaction\)/);
+check('shared wheel changes selected place by tap or swipe', () => {
+  assert.match(tray, /<PlaceBrowseWheel/);
+  assert.match(tray, /if \(place\) onSelect\(place, interaction\)/);
   assert.match(map, /onSelect=\{selectMapGroupPlace\}/);
 });
 check('switching selection updates the canonical detail input', () => assert.match(map, /saved=\{selected\}/));
-check('View all opens the cohesive expanded group detail', () => {
-  const start = map.indexOf('function viewAllSourceGroup()');
-  const body = map.slice(start, map.indexOf('function handleSelectedSourceGroupMemberRemoved', start));
+check('Details opens the cohesive expanded place detail', () => {
+  const start = map.indexOf('function openSourceGroupPlaceDetails');
+  const body = map.slice(start, map.indexOf('function openSourceGroupPlaceDirections', start));
   assert.match(body, /setPreviewExpanded\(true\)/);
 });
 check('expanded detail exposes From this video context', () => {
   assert.match(details, /sameSourceEntries/);
   assert.match(readFileSync(join(process.cwd(), 'lib/placeSource.ts'), 'utf8'), /siblingSectionTitle: 'From this video'/);
 });
-check('one-place source hides group UI', () => assert.match(map, /activeSourceGroupPlaces\.length > 1/));
-check('large groups use bounded pager plus count', () => {
-  assert.match(switcher, /\{position\.label\}/);
-  assert.match(switcher, /testID=\{expanded \? 'source-group-full-view' : 'source-group-selected-carousel'\}/);
-  const carousel = readFileSync(join(process.cwd(), 'components/PlaceBrowseCarousel.tsx'), 'utf8');
-  assert.match(carousel, /maxToRenderPerBatch=\{PLACE_BROWSE_MAX_RENDER_BATCH\}/);
+check('one-place source hides group UI', () => assert.match(map, /activeSourceGroupPlaces\.length < 2/));
+check('large groups use the bounded shared wheel plus one card counter', () => {
+  assert.match(wheel, /\{index \+ 1\}\/\{items\.length\}/);
+  assert.match(wheel, /maxToRenderPerBatch=\{PLACE_BROWSE_WHEEL_MAX_RENDER_BATCH\}/);
 });
 check('removing selected member safely selects next or closes', () => {
   assert.match(details, /onRemoved\?: \(removedSavedPlaceId/);
@@ -194,8 +197,9 @@ check('closing detail restores the tray without moving camera', () => {
   assert.match(map, /closing UI is not a reason to move the map/i);
 });
 check('no duplicate large selected border remains above detail', () => {
-  assert.doesNotMatch(tray, /selectedId|cardSelected|accessibilityState=\{\{ selected \}\}/);
-  assert.match(tray, /places from this video/);
+  assert.match(map, /shouldRenderSelectedPlaceDetail =[\s\S]*!sourceGroupBrowseActive/);
+  assert.match(tray, /title="Places from this video"/);
+  assert.doesNotMatch(tray, /PlaceBrowseCarousel/);
 });
 
 assert.equal(checks, 30);

@@ -92,7 +92,6 @@ import {
   RecommendedPlaceDetails,
   SelectedPlaceDetails,
   ShareQueueButton,
-  SourceGroupSwitcher,
   getSheetPartialHeight,
   type MapSheetMode,
   type SheetSnap,
@@ -629,9 +628,6 @@ export default function MapScreen() {
   const followModeRef = useRef(true);
   followModeRef.current = followMode;
   const [selected, setSelected] = useState<SavedPlaceWithPlace | null>(null);
-  // View-all is a mode of the one selected-place sheet, never a second modal.
-  // It stays open while cards change selection and collapses with the sheet.
-  const [sourceGroupExpanded, setSourceGroupExpanded] = useState(false);
   const selectedRef = useRef<SavedPlaceWithPlace | null>(null);
   selectedRef.current = selected;
   const selectedSourceGroup = useMemo(
@@ -647,10 +643,13 @@ export default function MapScreen() {
   const activeSourceGroupIdentity = selected && (selectedSourceGroup?.places.length ?? 0) > 1
     ? selectedSourceGroup?.identityKey ?? null
     : requestedSourceGroup?.identityKey ?? null;
-  useEffect(() => {
-    if (!sourceGroupExpanded) return;
-    if (!selected || activeSourceGroupPlaces.length < 2) setSourceGroupExpanded(false);
-  }, [activeSourceGroupPlaces.length, selected, sourceGroupExpanded]);
+  const sourceGroupWheelSelectedPlace = useMemo(() => {
+    if (activeSourceGroupPlaces.length < 2) return null;
+    if (selected) {
+      return activeSourceGroupPlaces.some((place) => place.id === selected.id) ? selected : null;
+    }
+    return activeSourceGroupPlaces[0] ?? null;
+  }, [activeSourceGroupPlaces, selected]);
   const mapGroupCoordinateIds = useMemo(
     () => new Set(activeSourceGroupPlaces
       .filter((place) => Number.isFinite(place.place?.latitude) && Number.isFinite(place.place?.longitude))
@@ -864,7 +863,10 @@ export default function MapScreen() {
     () => new Map(nearbyExplorer?.items.map((item) => [item.id, item]) ?? []),
     [nearbyExplorer?.items],
   );
-  const selectedMarkerId = nearbyExplorer?.selectedId ?? selected?.id ?? null;
+  const selectedMarkerId = nearbyExplorer?.selectedId
+    ?? selected?.id
+    ?? sourceGroupWheelSelectedPlace?.id
+    ?? null;
   const mapPlaces = nearbyExplorer ? explorerMarkerPlaces : validPlaces;
 
   // Chips to offer, derived from the map's current semantic dataset. Normal map
@@ -1091,17 +1093,9 @@ export default function MapScreen() {
   const [previewExpanded, setPreviewExpanded] = useState(false);
   const previewExpandedRef = useRef(false);
   previewExpandedRef.current = previewExpanded;
-  useEffect(() => {
-    if (!previewExpanded && sourceGroupExpanded) setSourceGroupExpanded(false);
-  }, [previewExpanded, sourceGroupExpanded]);
-  useEffect(() => {
-    if (!sourceGroupExpanded) return;
-    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
-      setSourceGroupExpanded(false);
-      return true;
-    });
-    return () => subscription.remove();
-  }, [sourceGroupExpanded]);
+  const sourceGroupBrowseActive = !nearbyExplorer
+    && !previewExpanded
+    && !!sourceGroupWheelSelectedPlace;
   const shouldShowMapControls = !nearbyExplorer && shouldRenderMapTopChrome({
     searchVisible,
     hasSelectedPlace: !!selected,
@@ -1118,7 +1112,9 @@ export default function MapScreen() {
    */
   const selectedPlaceDetailVisible = !!selected;
   const shouldRenderSelectedPlaceDetail =
-    selectedPlaceDetailVisible && (!nearbyExplorer || explorerSavedDetailOpen);
+    selectedPlaceDetailVisible
+    && !sourceGroupBrowseActive
+    && (!nearbyExplorer || explorerSavedDetailOpen);
   const didFitRef = useRef(false);
   // Set to true when the user pans or zooms the map so auto-centering
   // effects don't override the user's chosen viewport.
@@ -2824,42 +2820,55 @@ export default function MapScreen() {
 
   function selectMapGroupPlace(
     item: SavedPlaceWithPlace,
-    interaction: 'tap' | 'swipe' = 'tap',
+    interaction: 'tap' | 'swipe' | 'marker' = 'tap',
   ) {
     if (!mapGroupCoordinateIds.has(item.id)) {
       showSnackbar(`${item.place.name} does not have a map location yet.`, null);
-      return;
     }
     void trackEvent('source_group_place_selected', {
       source_identity_key: activeSourceGroupIdentity,
       saved_place_id: item.id,
       place_count: activeSourceGroupPlaces.length,
     });
-    void trackEvent(interaction === 'swipe' ? 'source_group_swiped' : 'source_group_card_selected', {
+    void trackEvent(
+      interaction === 'swipe'
+        ? 'source_group_swiped'
+        : interaction === 'marker'
+          ? 'source_group_marker_selected'
+          : 'source_group_card_selected', {
       source_identity_key: activeSourceGroupIdentity,
       saved_place_id: item.id,
       place_count: activeSourceGroupPlaces.length,
     });
-    const keepExpanded = previewExpandedRef.current;
-    selectPlace(item);
-    if (keepExpanded) setPreviewExpanded(true);
+    followModeRef.current = false;
+    setFollowMode(false);
+    setSelected(item);
+    setPreviewExpanded(false);
+    previewTranslateY.setValue(0);
   }
 
-  function viewAllSourceGroup() {
-    if (activeSourceGroupPlaces.length < 2) return;
-    void trackEvent('source_group_view_all', {
-      source_identity_key: activeSourceGroupIdentity,
-      place_count: activeSourceGroupPlaces.length,
-    });
-    void trackEvent('source_group_see_all_opened', {
-      source_identity_key: activeSourceGroupIdentity,
-      place_count: activeSourceGroupPlaces.length,
-      saved_place_id: selected?.id ?? null,
-    });
-    const target = selected ?? activeSourceGroupPlaces.find((place) => mapGroupCoordinateIds.has(place.id));
-    if (target && target.id !== selected?.id) selectPlace(target);
+  function openSourceGroupPlaceDetails(item: SavedPlaceWithPlace) {
+    selectMapGroupPlace(item, 'tap');
+    if (shouldRefreshVideoAiNoteOnDetailOpen(item, item.ai_note)) void refresh();
     setPreviewExpanded(true);
-    setSourceGroupExpanded(true);
+    void trackEvent('source_group_details_opened', {
+      source_identity_key: activeSourceGroupIdentity,
+      saved_place_id: item.id,
+      place_count: activeSourceGroupPlaces.length,
+    });
+  }
+
+  function openSourceGroupPlaceDirections(item: SavedPlaceWithPlace) {
+    selectMapGroupPlace(item, 'tap');
+    openExternalMaps(item);
+  }
+
+  function closeSourceGroupWheel() {
+    if (mapGroupRequest) {
+      closeMapGroup();
+      return;
+    }
+    if (selected) setPreviewExpanded(true);
   }
 
   function handleSelectedSourceGroupMemberRemoved(removedId: string) {
@@ -2953,6 +2962,10 @@ export default function MapScreen() {
       }
       return;
     }
+    if (sourceGroupBrowseActive && mapGroupCoordinateIds.has(p.id)) {
+      selectMapGroupPlace(p, 'marker');
+      return;
+    }
     recordMapReliabilityDiagnostic('map_pin_tap', {
       datasetGeneration: datasetGenerationRef.current.value,
       placeCount: visiblePlacesRef.current.length,
@@ -2965,7 +2978,7 @@ export default function MapScreen() {
       google_place_id: p.place.google_place_id ?? null,
     });
     selectPlace(p);
-  }, [handleOpenExplorerDetails, selectNearbyExplorerItem]);
+  }, [handleOpenExplorerDetails, mapGroupCoordinateIds, selectNearbyExplorerItem, sourceGroupBrowseActive]);
 
   const handleNearbyReminderGetDirections = useCallback(() => {
     if (!selected) return;
@@ -3799,16 +3812,6 @@ export default function MapScreen() {
                   </Pressable>
                 ) : null}
               </View>
-              {!nearbyExplorer && activeSourceGroupPlaces.length > 1 ? (
-                <SourceGroupSwitcher
-                  places={activeSourceGroupPlaces}
-                  selectedId={selected.id}
-                  expanded={sourceGroupExpanded}
-                  onSelect={selectMapGroupPlace}
-                  onViewAll={viewAllSourceGroup}
-                  onCollapse={() => setSourceGroupExpanded(false)}
-                />
-              ) : null}
               {previewExpanded ? null : (
               <View style={styles.previewTopRow}>
                 <View style={styles.previewThumb}>
@@ -3886,7 +3889,7 @@ export default function MapScreen() {
                     selectPlace(next);
                     setPreviewExpanded(true);
                   }}
-                  onViewSourceGroup={viewAllSourceGroup}
+                  onViewSourceGroup={() => setPreviewExpanded(false)}
                   onSaveRecommendation={async (candidate) =>
                     !!(await handleSavePlaceCandidate(candidate, 'recommendation'))
                   }
@@ -3968,22 +3971,24 @@ export default function MapScreen() {
         </Animated.View>
       ) : null}
 
-      {!nearbyExplorer && mapGroupRequest && resolvedMapGroup.places.length > 1 && !selected ? (
+      {sourceGroupBrowseActive && sourceGroupWheelSelectedPlace ? (
         <View
           style={[
             styles.mapGroupWrap,
-            { bottom: (selected ? 248 : Spacing.lg) + insets.bottom },
+            { bottom: Spacing.lg + insets.bottom },
           ]}
           pointerEvents="box-none"
           onLayout={(event) => setMapGroupSelectorHeight(event.nativeEvent.layout.height)}
         >
           <MapGroupSelector
-            places={resolvedMapGroup.places}
-            missingCoordinateIds={new Set(resolvedMapGroup.missingCoordinateIds)}
-            failedCount={mapGroupRequest.failedCount}
+            places={activeSourceGroupPlaces}
+            selectedId={sourceGroupWheelSelectedPlace.id}
+            sourceIdentityKey={activeSourceGroupIdentity}
+            failedCount={mapGroupRequest?.failedCount ?? 0}
             onSelect={selectMapGroupPlace}
-            onViewAll={viewAllSourceGroup}
-            onClose={closeMapGroup}
+            onOpenDetails={openSourceGroupPlaceDetails}
+            onDirections={openSourceGroupPlaceDirections}
+            onClose={closeSourceGroupWheel}
           />
         </View>
       ) : null}
@@ -4195,8 +4200,8 @@ function createStyles(
 
   mapGroupWrap: {
     position: 'absolute',
-    left: Spacing.md,
-    right: Spacing.md,
+    left: 0,
+    right: 0,
     zIndex: MAP_GROUP_TRAY_OVERLAY_Z_INDEX,
     elevation: MAP_GROUP_TRAY_OVERLAY_ELEVATION,
     overflow: 'visible',

@@ -19,6 +19,10 @@ const selectorSource = readFileSync(
   join(process.cwd(), 'components/map/MapGroupSelector.tsx'),
   'utf8',
 );
+const wheelSource = readFileSync(
+  join(process.cwd(), 'components/map/PlaceBrowseWheel.tsx'),
+  'utf8',
+);
 const mapSource = readFileSync(join(process.cwd(), 'app/(tabs)/map.tsx'), 'utf8');
 
 let passed = 0;
@@ -56,8 +60,9 @@ check('three newly saved places presentation dismisses', () => {
 });
 check('close callback is wired and fires once', () => {
   assert.equal(closeCallbackCount, 1);
-  assert.match(selectorSource, /onPress=\{onClose\}/);
-  assert.match(mapSource, /onClose=\{closeMapGroup\}/);
+  assert.match(wheelSource, /onPress=\{onClose\}/);
+  assert.match(mapSource, /onClose=\{closeSourceGroupWheel\}/);
+  assert.match(mapSource, /function closeSourceGroupWheel[\s\S]*closeMapGroup\(\)/);
 });
 check('dismissal clears presentation state before navigation', () => {
   const start = mapSource.indexOf('function closeMapGroup()');
@@ -91,22 +96,21 @@ check('a genuinely new save event can present a new tray', () => {
   assert.deepEqual(getMapGroupFocusRequest(next.id)?.savedPlaceIds, ['saved-4', 'saved-5']);
   clearMapGroupFocusRequest(next.id);
 });
-check('View all opens the unified grouped detail', () => {
-  assert.match(selectorSource, /onPress=\{onViewAll\}/);
-  assert.match(mapSource, /onViewAll=\{viewAllSourceGroup\}/);
+check('Details opens the unified selected-place detail', () => {
+  assert.match(wheelSource, /onPress=\{\(\) => onOpenDetails\(item\)\}/);
+  assert.match(mapSource, /onOpenDetails=\{openSourceGroupPlaceDetails\}/);
 });
 check('individual saved cards remain wired to selection', () => {
-  assert.match(selectorSource, /<PlaceBrowseCarousel/);
+  assert.match(selectorSource, /<PlaceBrowseWheel/);
   assert.match(selectorSource, /if \(place\) onSelect\(place, interaction\)/);
   assert.match(mapSource, /onSelect=\{selectMapGroupPlace\}/);
 });
 check('close control has a real 44pt target and accessible semantics', () => {
   assert.ok(MAP_GROUP_TRAY_CLOSE_TARGET_SIZE >= 44);
   assert.ok(MAP_GROUP_TRAY_CLOSE_HIT_SLOP >= 0);
-  assert.match(selectorSource, /width: MAP_GROUP_TRAY_CLOSE_TARGET_SIZE/);
-  assert.match(selectorSource, /height: MAP_GROUP_TRAY_CLOSE_TARGET_SIZE/);
-  assert.match(selectorSource, /accessibilityRole="button"/);
-  assert.match(selectorSource, /accessibilityLabel="Dismiss places from this video"/);
+  assert.match(wheelSource, /close: \{ width: 44, height: 44/);
+  assert.match(wheelSource, /accessibilityRole="button"/);
+  assert.match(selectorSource, /closeAccessibilityLabel="Close places from this video"/);
 });
 check('tray touch layer is explicitly above the native map', () => {
   assert.ok(MAP_GROUP_TRAY_OVERLAY_Z_INDEX > 0);
