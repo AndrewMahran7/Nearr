@@ -1,6 +1,7 @@
 {
   "releaseId": "2026-09-06-saved-place-result-ui",
   "startingMainSha": "97428bf23fd3b0dd68eb4411edc3a871b22ad12e",
+  "previousMainSha": "97428bf23fd3b0dd68eb4411edc3a871b22ad12e",
   "previousOtaGroup": "d74170da-410c-410d-bb8a-55ff38a1a75c",
   "previousOtaSourceSha": "823c5778ebbee6f192f9e7a152bce45defd0c5c1",
   "runtimeVersion": "1.4.55",
@@ -16,6 +17,9 @@
     "get-place-videos": 16
   },
   "railwayDeployment": "7379e5d4-8646-42e3-998d-73b5b77c132f @ f4793b721b32256d7b123049d993c491fbb9dc4d; sha256:9b16f183cea9e5829064e24cded63fb67889a14b026089ab4aaa9299492f763e",
+  "migrationLedger": [
+    "20260906000007_recognition_revalidation_failure_quarantine_repair"
+  ],
   "productionFlags": {
     "recognitionCacheReads": true,
     "automaticDeepRecognition": true,
@@ -31,5 +35,11 @@
   "currentOtaGroup": null,
   "otaSourceSha": null,
   "rollbackProcedure": "Repeat the Production concurrency guard and republish previousOtaGroup d74170da-410c-410d-bb8a-55ff38a1a75c only if it is still safe relative to any newer Production update. No database, Edge, Railway, or native rollback belongs to this OTA-only release.",
-  "deploymentStatus": "READY"
+  "deploymentStatus": "READY",
+  "physicalQa": {
+    "signedOutColdLaunch": "PENDING",
+    "signedInColdLaunch": "PENDING",
+    "forceCloseRelaunch": "PENDING",
+    "freshOnboardingLaunch": "NOT_REQUIRED"
+  }
 }
