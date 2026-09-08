@@ -59,6 +59,7 @@ import { PHASE_1_COPY, splitPlaceAddress } from '@/lib/sharePhase1Ui';
 import {
   buildVayrinPresentation,
   mapShareJobToVayrinPresentation,
+  normalizeVayrinIdentityLeads,
   type VayrinIdentityLead,
 } from '@/lib/vayrinPresentation';
 import { buildPhase2PreviewJob, isPhase2PreviewId } from '@/lib/phase2Preview';
@@ -113,6 +114,10 @@ import {
   visibleMentionSearchCandidates,
 } from '@/lib/vayrinMultiPlaceReview';
 import {
+  NAMED_LEAD_AUTO_RECOVERY_POLICY,
+  planNamedLeadAutomaticRecovery,
+} from '@/lib/namedLeadAutomaticRecovery';
+import {
   claimInitialQuickCheckSearch,
   quickCheckSearchKey,
   selectedQuickCheckCandidate,
@@ -124,7 +129,7 @@ import {
   planSaveCompletionNavigation,
 } from '@/lib/saveCompletionNavigation';
 import { usePlacesSearch } from '@/hooks/usePlacesSearch';
-import { getSavedPlacesCacheSnapshot } from '@/hooks/useSavedPlaces';
+import { getSavedPlacesCacheSnapshot, upsertSavedPlaceIntoCache } from '@/hooks/useSavedPlaces';
 import { useSavedPlaces } from '@/hooks/useSavedPlaces';
 import { useOnboardingV2 } from '@/hooks/useOnboardingV2';
 import { observeOnboardingV2Result } from '@/lib/onboardingV2';
@@ -152,7 +157,10 @@ import {
   type ShareJobCandidateSaveOutcome,
 } from '@/services/shareJobCandidateSave';
 import {
+  autoCompleteNamedLead,
   archiveShareJob,
+  claimNamedLeadAutoRecovery,
+  finishNamedLeadAutoRecovery,
   getShareJob,
   getShareJobPrimaryResult,
   listShareJobSoftAlternatives,
@@ -496,6 +504,31 @@ function ShareJobDetailScreen() {
         job_id: job?.id ?? routeJobId,
         candidate_count: 1,
       });
+      const namedLead = normalizeVayrinIdentityLeads(job?.candidate_payload).find((lead) =>
+        lead.evidenceKind === 'observable' &&
+        normalizeResolutionName(lead.displayName) === normalizeResolutionName(rawResolutionQueryRef.current),
+      );
+      if (job && namedLead) {
+        const claim = await claimNamedLeadAutoRecovery(
+          job.id,
+          namedLead.mentionId,
+          `${NAMED_LEAD_AUTO_RECOVERY_POLICY}-explicit`,
+        );
+        if (!claim) throw new Error('This automatic recovery is already being handled.');
+        const outcome = await autoCompleteNamedLead({
+          jobId: job.id,
+          logicalResultId: namedLead.mentionId,
+          attemptToken: claim.attemptToken,
+          candidate: toResultCandidate(resolutionPlan.candidate),
+        });
+        const saved = await getSavedPlace(outcome.savedPlaceId);
+        if (saved) upsertSavedPlaceIntoCache(saved);
+        completeManualSave(
+          outcome.reused ? [] : [outcome.savedPlaceId],
+          outcome.reused ? [outcome.savedPlaceId] : [],
+        );
+        return;
+      }
       await handleSaveManual(resolutionPlan.candidate, true);
       return;
     }
@@ -775,6 +808,88 @@ function ShareJobDetailScreen() {
     () => mapShareJobToVayrinPresentation(detail, job),
     [detail, job],
   );
+
+  // Recover old NAMED_LEAD rows without requiring a Search tap. The database
+  // claim is the cross-launch/device latch; this effect may safely rerun after
+  // realtime updates because terminal/no-match/choice outcomes are durable.
+  useEffect(() => {
+    const targets = planNamedLeadAutomaticRecovery({
+      jobId: job?.id,
+      status: job?.status,
+      savedPlaceId: job?.saved_place_id,
+      leads: vayrinPresentation.leads,
+    });
+    if (!job || targets.length === 0 || __DEV__ && isVayrinCandidateFixtureId(job.id)) return;
+    let cancelled = false;
+    void (async () => {
+      for (const target of targets) {
+        if (cancelled) return;
+        let claim: Awaited<ReturnType<typeof claimNamedLeadAutoRecovery>> = null;
+        try {
+          claim = await claimNamedLeadAutoRecovery(
+            job.id,
+            target.logicalResultId,
+            NAMED_LEAD_AUTO_RECOVERY_POLICY,
+          );
+          if (!claim || cancelled) continue;
+          setManualSearchPhase('searching');
+          const fields = geographicFieldsFromLabel(claim.contextLabel);
+          const coordinates = claim.contextLabel ? await geocodeContextText(claim.contextLabel) : null;
+          const context: PlacesResolutionContext = claim.contextLabel || coordinates
+            ? {
+                mode: 'source', inferredLocality: fields.locality, inferredRegion: fields.region,
+                inferredCountry: fields.country, inferredCoordinates: coordinates,
+                regionConfidence: claim.contextLabel ? 'strong' : 'medium', sourceEvidence: ['video_region'],
+              }
+            : { mode: 'manual', userLocation: null, regionConfidence: 'none' };
+          const found = (await searchPlaces(claim.query, coordinates ?? undefined, context)).map(toResultCandidate);
+          if (cancelled) return;
+          const plan = planFindRightPlace({
+            query: claim.query,
+            expectedName: claim.expectedName,
+            candidates: found,
+            sourceCoordinates: coordinates,
+          });
+          if (plan.action !== 'auto_resolve') {
+            await finishNamedLeadAutoRecovery(
+              job.id, target.logicalResultId, claim.attemptToken,
+              plan.action === 'choose' ? 'choice_required' : 'no_match',
+            );
+            setManualSearchPhase(found.length > 0 ? 'results' : 'empty');
+            continue;
+          }
+          const outcome = await autoCompleteNamedLead({
+            jobId: job.id,
+            logicalResultId: target.logicalResultId,
+            attemptToken: claim.attemptToken,
+            candidate: plan.candidate,
+          });
+          const saved = await getSavedPlace(outcome.savedPlaceId);
+          if (saved) upsertSavedPlaceIntoCache(saved);
+          void trackEvent('find_right_place_auto_resolved', {
+            source: 'named_lead_recovery', job_id: job.id,
+            logical_place_id: target.logicalResultId, candidate_count: 1,
+          });
+          if (outcome.completed && !cancelled) {
+            completeManualSave(
+              outcome.reused ? [] : [outcome.savedPlaceId],
+              outcome.reused ? [outcome.savedPlaceId] : [],
+            );
+            return;
+          }
+          if (!cancelled) await load();
+        } catch {
+          if (claim) {
+            await finishNamedLeadAutoRecovery(
+              job.id, target.logicalResultId, claim.attemptToken, 'technical_failure',
+            ).catch(() => undefined);
+          }
+          if (!cancelled) setManualSearchPhase('error');
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [job?.id, job?.saved_place_id, job?.status, vayrinPresentation.leads]);
   useEffect(() => {
     if (!job || !areaMatchIncomplete || areaMatchIncompleteTrackedRef.current === job.id) return;
     areaMatchIncompleteTrackedRef.current = job.id;

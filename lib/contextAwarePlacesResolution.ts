@@ -172,6 +172,13 @@ function escapeRegExp(value: string): string {
 
 export function normalizeResolutionName(value: string | null | undefined): string {
   return (value ?? '')
+    // Recognition/provider names often differ only because a proper-name
+    // compound is spaced differently (for example ZipCoaster / Zip Coaster).
+    // Split those harmless boundaries before case folding so specificity
+    // checks compare the same identity without fuzzy substring matching.
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .replace(/([A-Za-z])([0-9])/g, '$1 $2')
+    .replace(/([0-9])([A-Za-z])/g, '$1 $2')
     .normalize('NFKD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()

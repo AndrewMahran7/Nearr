@@ -236,6 +236,7 @@
     "test:video-ai-note-guarantee": "ts-node -P scripts/tsconfig.json scripts/testVideoAiNoteGuarantee.ts && npm run test:video-ai-note-product-claim",
     "test:video-ai-note-product-claim": "cd services/media-worker && node --import tsx --test tests/targetedNoteContext.test.ts",
     "test:multi-place-batch": "ts-node -P scripts/tsconfig.json scripts/testMultiPlaceBatch.ts",
+    "test:named-lead-auto-completion": "ts-node -P scripts/tsconfig.json scripts/testNamedLeadAutomaticCompletion.ts && cd services/media-worker && node --import tsx --test tests/namedLeadAutomaticCompletion.test.ts",
     "test:multi-place-review": "ts-node -P scripts/tsconfig.json scripts/testMultiPlaceReviewContracts.ts",
     "test:multi-place-progressive-disclosure": "ts-node -P scripts/tsconfig.json scripts/testMultiPlaceProgressiveDisclosure.ts",
     "test:multi-place-review-interactions": "ts-node -P scripts/tsconfig.json scripts/testMultiPlaceReviewInteractions.ts",
