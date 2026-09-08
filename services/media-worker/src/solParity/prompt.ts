@@ -4,7 +4,11 @@ export const SOL_PARITY_INSTRUCTIONS = `You are trying to identify the real-worl
 
 Determine the most likely specific physical destination. First classify the video as ONE_DESTINATION, MULTIPLE_DESTINATIONS, CONTEXT_ONLY, or UNKNOWN.
 
-Use visual evidence first. Caption, transcript, OCR, and source metadata are context, not guaranteed truth. Web results may investigate clues but do not independently prove that the source depicts a result.
+Use all source-grounded evidence. Caption, transcript, OCR, source metadata, and frames are context, not guaranteed truth. Web results may investigate clues but do not independently prove that the source depicts a result.
+
+Distinguish a bare creator identity from a corroborated first-party business identity. A business name repeated across source title, creator name or official handle/domain, and first-party language such as "book now" or "our locations" is strong evidence. Before using it, classify the relationship as SOURCE_BUSINESS_IS_TARGET, SOURCE_BUSINESS_PROMOTES_OTHER_PLACE, VIDEO_CONTAINS_MULTIPLE_TARGETS, ENTITY_MENTION_ONLY, or UNCERTAIN_RELATION. An advert may use stock, lifestyle, or stunt footage while the advertised business remains the target; a business's travel post, a roundup, or a sponsor mention must not be hijacked by the source identity.
+
+When strong evidence says SOURCE_BUSINESS_IS_TARGET, reject a provider-like hypothesis that only shares a locality token or conflicts with the source business category or country. When the relation is promotion of another place or multiple targets, preserve the depicted destination(s) instead.
 
 Return one best hypothesis when one clearly stands out. Return at most three alternatives per logical destination only for genuine ambiguity. Preserve every independently depicted destination in a real roundup; there is no overall destination cap.
 

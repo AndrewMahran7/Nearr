@@ -137,7 +137,7 @@ test('1 parity/runtime share the bounded evidence builder', () => {
 });
 test('2 parity/runtime share the prompt builder', async () => {
   const call = await inference();
-  assert.equal(call.prompt_version, 'sol-parity-natural-v1');
+  assert.equal(call.prompt_version, 'sol-parity-natural-v2-source-identity-relation');
   assert.equal(call.fingerprint?.prompt.promptHash, sha256(SOL_PARITY_INSTRUCTIONS));
 });
 test('3 parity/runtime share the structured parser', () => {

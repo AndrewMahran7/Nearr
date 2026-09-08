@@ -497,8 +497,15 @@ for (const fx of CONTEXT_ONLY) {
     formattedAddress: 'BiÅ¡evo, Croatia',
     latitude: 42.9833,
     longitude: 16.0167,
+    confidenceScore: 0.8,
+    reasons: ['strong_name_match'],
   };
-  const decision = gate([DESTINATIONS[9], croatia]);
+  const montenegro = {
+    ...DESTINATIONS[9],
+    confidenceScore: 0.8,
+    reasons: ['strong_name_match'],
+  };
+  const decision = gate([montenegro, croatia]);
   assert.equal(decision.plausibleCandidateCount, 2);
   assert.equal(decision.eligible, true, 'current save-first semantics persist top-1');
   assert.equal(decision.selectedProviderId, 'dest-blue-cave-me');
@@ -554,6 +561,8 @@ for (const fx of CONTEXT_ONLY) {
       primaryType: 'restaurant',
       types: ['restaurant', 'food', 'point_of_interest', 'establishment'],
       businessStatus: 'OPERATIONAL',
+      confidenceScore: 0.8,
+      reasons: ['strong_name_match'],
     }),
   );
   const decision = gate([...venues, CONTEXT_ONLY[4]]);

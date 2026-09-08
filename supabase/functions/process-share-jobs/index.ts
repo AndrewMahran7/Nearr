@@ -161,6 +161,7 @@ import {
 } from '../../../lib/premiumRequestMonetization.ts';
 import { premiumRequestsEnabled } from '../_shared/premiumRequests.ts';
 import { areaMatchIncompleteFromPayload } from '../../../lib/areaMatchPremium.ts';
+import { assessSourceEntityCandidate } from '../../../lib/sourceEntitySemanticConsistency.ts';
 
 const CORS_HEADERS: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
@@ -181,6 +182,41 @@ function nowIso(): string {
 
 function addSecondsIso(seconds: number): string {
   return new Date(Date.now() + Math.max(seconds, 1) * 1000).toISOString();
+}
+
+function logModelBusinessIdentityConsistency(args: {
+  jobId: string;
+  evidence: ReturnType<typeof extractEvidence>;
+  parsed: ReturnType<typeof parseMediaEvidence>;
+}): void {
+  const entity = args.evidence.explicitSourceEntity;
+  if (!entity || entity.strength !== 'strong' || !args.parsed.ok) return;
+  let consistent = 0;
+  let inconsistent = 0;
+  for (const place of args.parsed.value.places.slice(0, 10)) {
+    const assessment = assessSourceEntityCandidate(entity, {
+      name: place.name,
+      formattedAddress: [place.address, place.city, place.region, place.country]
+        .filter(Boolean)
+        .join(', '),
+      types: place.category ? [place.category] : [],
+      primaryType: place.category,
+    });
+    if (assessment.verdict === 'SUPPORTS') consistent += 1;
+    if (assessment.hardContradiction) inconsistent += 1;
+  }
+  if (consistent > 0) console.log(JSON.stringify({
+    event: 'model_business_identity_consistent',
+    job_id: args.jobId,
+    count: consistent,
+    relation: entity.relation,
+  }));
+  if (inconsistent > 0) console.log(JSON.stringify({
+    event: 'model_business_identity_inconsistent',
+    job_id: args.jobId,
+    count: inconsistent,
+    relation: entity.relation,
+  }));
 }
 
 function notificationBackoffSeconds(attempts: number): number {
@@ -2069,7 +2105,9 @@ async function finalizeRecognitionRevalidationTask(
       description: mergedCaption.description,
       handles,
       taggedLocation: null,
+      creatorName: sourceMetadata?.creatorName ?? null,
     });
+    logModelBusinessIdentityConsistency({ jobId: revalidation.share_job_id, evidence, parsed });
     const mentions = buildVenueMentions(parsed.value);
     const resolved = await resolveSharedPlace({
       evidence,
@@ -2645,7 +2683,9 @@ async function finalizeMediaTask(
     description: mergedCaption.description,
     handles,
     taggedLocation: null,
+    creatorName: sourceMetadata?.creatorName ?? null,
   });
+  logModelBusinessIdentityConsistency({ jobId: task.share_job_id, evidence: mediaEvidence, parsed });
   console.log(
     `[media-task] source_evidence task_id=${taskId} ` +
       Object.entries(
@@ -4041,13 +4081,52 @@ async function processOne(
     title,
     description,
   });
-  const evidence = extractEvidence({ platform, title, description, handles, taggedLocation });
+  const evidence = extractEvidence({
+    platform,
+    title,
+    description,
+    handles,
+    taggedLocation,
+    creatorName: metadataSourceMetadata?.creatorName ?? null,
+  });
   const result = await resolveSharedPlace({ evidence, env });
 
   // Enforce the user-facing single-option invariant before routing. Media
   // enrichment is scheduled separately after a successful save.
   const metadataAutoSave = evaluateMetadataAutoSave({ result, evidence });
   console.log(formatMetadataAutoSaveDecisionLog({ jobId: job.id, decision: metadataAutoSave }));
+  if (evidence.explicitSourceEntity?.strength === 'strong') {
+    console.log(JSON.stringify({
+      event: 'explicit_source_entity_detected',
+      job_id: job.id,
+      policy_version: metadataAutoSave.sourceEntityPolicyVersion,
+      relation: evidence.explicitSourceEntity.relation,
+      category: evidence.explicitSourceEntity.category ?? 'unknown',
+      corroborating_source_count: evidence.explicitSourceEntity.sources.length,
+    }));
+  }
+  if (metadataAutoSave.sourceEntityCandidateAgreement === 'supports') {
+    console.log(JSON.stringify({
+      event: 'explicit_source_entity_resolved',
+      job_id: job.id,
+      policy_version: metadataAutoSave.sourceEntityPolicyVersion,
+    }));
+  }
+  console.log(JSON.stringify({
+    event: metadataAutoSave.sourceEntityCandidateAgreement === 'contradicts'
+      ? 'source_entity_candidate_conflict'
+      : 'source_entity_candidate_agreement',
+    job_id: job.id,
+    agreement: metadataAutoSave.sourceEntityCandidateAgreement,
+    semantic_conflict_blocked_count: metadataAutoSave.semanticConflictBlockedCount,
+  }));
+  for (const [event, count] of [
+    ['provider_name_collision_blocked', metadataAutoSave.providerNameCollisionBlockedCount],
+    ['provider_category_conflict_blocked', metadataAutoSave.providerCategoryConflictBlockedCount],
+    ['provider_geography_conflict_blocked', metadataAutoSave.providerGeographyConflictBlockedCount],
+  ] as const) {
+    if (count > 0) console.log(JSON.stringify({ event, job_id: job.id, count }));
+  }
 
   const plausibleProviderIds = new Set(metadataAutoSave.plausibleProviderIds);
   const plausibleCandidates = result.candidates.filter((candidate: any) =>

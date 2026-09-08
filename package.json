@@ -184,6 +184,7 @@
     "test:media-mentions": "ts-node -P scripts/tsconfig.json scripts/testMediaMentions.ts",
     "test:media-autosave": "ts-node -P scripts/tsconfig.json scripts/testMediaAutoSaveGate.ts",
     "test:metadata-autosave": "ts-node -P scripts/tsconfig.json scripts/testMetadataAutoSaveGate.ts",
+    "test:source-entity-semantic-consistency": "ts-node -P scripts/tsconfig.json scripts/testSourceEntitySemanticConsistency.ts",
     "test:geographic-context": "ts-node -P scripts/tsconfig.json scripts/testGeographicContextCandidates.ts",
     "test:geographic-context-source": "ts-node -P scripts/tsconfig.json scripts/testGeographicContextSource.ts",
     "test:geographic-destinations": "ts-node -P scripts/tsconfig.json scripts/testGeographicDestinations.ts",

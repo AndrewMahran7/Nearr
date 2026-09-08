@@ -4,7 +4,7 @@
 // persisted into diagnostics so we can correlate evidence quality with prompt
 // changes. Bump PROMPT_VERSION on any wording change.
 
-export const PROMPT_VERSION = 'media-place-evidence-2026-09-06.v14-top1-plausibility';
+export const PROMPT_VERSION = 'media-place-evidence-2026-09-08.v15-source-identity-relation';
 
 export const PLACE_EVIDENCE_SYSTEM_PROMPT = `
 You extract structured evidence about REAL-WORLD PLACES from a short social
@@ -60,6 +60,22 @@ Rules:
 - Treat sponsors, creator bios/handles, products, dishes, and generic category
   text as passing or irrelevant unless the post explicitly features that
   business as a destination.
+- Distinguish a bare creator identity from a corroborated first-party source
+  business identity. A creator/business name repeated across the platform
+  title, official handle/domain, and first-party language such as "book now"
+  or "our locations" is strong evidence, but still classify its relationship
+  to the content before using it.
+- Apply exactly one content relationship when source identity matters:
+  SOURCE_BUSINESS_IS_TARGET, SOURCE_BUSINESS_PROMOTES_OTHER_PLACE,
+  VIDEO_CONTAINS_MULTIPLE_TARGETS, ENTITY_MENTION_ONLY, or UNCERTAIN_RELATION.
+  A first-party advert may use stock, lifestyle, or stunt footage while the
+  advertised business remains the destination. Conversely, a restaurant's
+  travel video, a roundup, or a sponsor mention must not be hijacked by the
+  source business. Use caption, transcript, visible text, frames, and source
+  attribution together to make that distinction.
+- When a strong SOURCE_BUSINESS_IS_TARGET identity exists, do not replace it
+  with a provider result that merely shares a locality token or that conflicts
+  in business category or country. Report uncertainty when evidence conflicts.
 - A city mentioned only as travel context is NOT automatically the destination.
 - Optimize the ordering for TOP-1 PLAUSIBILITY. Put the specific physical
   identity best supported by caption, speech, signage, frames, and geography
@@ -148,6 +164,9 @@ export function buildUserContext(input: {
   ocrExtracted?: boolean;
   metadataTitle?: string | null;
   metadataDescription?: string | null;
+  metadataLocation?: string | null;
+  metadataCreatorHandle?: string | null;
+  metadataCreatorName?: string | null;
   retainedEvidence?: Array<{
     source: 'caption' | 'speech' | 'visible_text' | 'frame';
     value: string;
@@ -157,6 +176,11 @@ export function buildUserContext(input: {
   const parts: string[] = [`platform: ${input.platform}`];
   if (input.metadataTitle) parts.push(`caption_title: ${input.metadataTitle}`);
   if (input.metadataDescription) parts.push(`caption_text: ${input.metadataDescription}`);
+  const creator = [input.metadataCreatorName, input.metadataCreatorHandle]
+    .filter(Boolean)
+    .join(' / ');
+  if (creator) parts.push(`source_creator_attribution: ${creator}`);
+  if (input.metadataLocation) parts.push(`source_location_context: ${input.metadataLocation}`);
   // Transcription genuinely runs, so an empty transcript IS a real observation.
   parts.push(`transcript:\n${input.transcriptText || '(none)'}`);
   parts.push(`visible_text:\n${visibleTextBlock(input.ocrText, input.ocrExtracted === true)}`);

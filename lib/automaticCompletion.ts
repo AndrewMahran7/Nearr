@@ -34,6 +34,7 @@ const BROAD_TYPES = new Set([
 const BLOCKING_REASONS = new Set([
   'location_conflict', 'wrong_location_rejected', 'candidate_semantic_mismatch',
   'semantic_contradiction', 'provider_clearly_unrelated', 'platform_noise_rejected',
+  'source_entity_semantic_conflict',
   'permanently_closed', 'provider_permanently_closed', 'category_only_candidate',
 ]);
 

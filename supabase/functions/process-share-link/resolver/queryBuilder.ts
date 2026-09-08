@@ -7,6 +7,7 @@
 
 import type { Evidence } from '../evidence/extractEvidence.ts';
 import { buildCleanPlacesQueries } from '../../../../lib/shareAgent/queryCleaner.ts';
+import { buildExplicitSourceEntityQuery } from '../../../../lib/sourceEntitySemanticConsistency.ts';
 
 export type QueryPlan = {
   queries: string[];
@@ -20,6 +21,9 @@ export type QueryPlan = {
 };
 
 export function buildQueryPlan(evidence: Evidence): QueryPlan {
+  const sourceEntityQuery = evidence.explicitSourceEntity
+    ? buildExplicitSourceEntityQuery(evidence.explicitSourceEntity)
+    : null;
   // Venue name = caption-derived hint > tagged venue handle. The poster
   // handle / poster display name is a SEPARATE, weaker signal.
   const venueName =
@@ -38,7 +42,9 @@ export function buildQueryPlan(evidence: Evidence): QueryPlan {
   // @oliversamiee into the query "Oliversamiee" and silently saved an
   // unrelated Oliver's business. Independently-derived venue evidence still
   // occupies `venueName` and follows the unchanged query ladder below.
-  const placeNameHint = venueName;
+  const placeNameHint = sourceEntityQuery
+    ? evidence.explicitSourceEntity!.name
+    : venueName;
 
   // Explicit place evidence = something that actually anchors a place
   // (a street address, a caption venue hint like "📍 X" / "X, City", or a
@@ -47,7 +53,8 @@ export function buildQueryPlan(evidence: Evidence): QueryPlan {
   const hasExplicitPlaceEvidence =
     !!evidence.address ||
     evidence.venueNameHints.length > 0 ||
-    evidence.handles.venueHandles.length > 0;
+    evidence.handles.venueHandles.length > 0 ||
+    !!sourceEntityQuery;
   const hasIndependentCaptionSeedEvidence =
     !!evidence.address ||
     evidence.venueNameHints.some(
@@ -62,6 +69,11 @@ export function buildQueryPlan(evidence: Evidence): QueryPlan {
     if (queries.some((existing) => existing.toLowerCase() === trimmed.toLowerCase())) return;
     queries.push(trimmed);
   };
+
+  // A corroborated first-party identity gets the first, most specific query.
+  // The ordinary caption ladder remains intact as fallback; the semantic gate
+  // below independently prevents a broad fallback from becoming a wrong save.
+  push(sourceEntityQuery);
 
   const nameVariants = expandPlaceNameVariants(placeNameHint);
   const cityHint = evidence.cityState?.city ?? evidence.address?.city ?? null;

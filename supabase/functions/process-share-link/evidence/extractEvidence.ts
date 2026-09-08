@@ -15,6 +15,10 @@ import {
 } from './venueHints.ts';
 import { isPlatformSelfReference } from '../../../../lib/shareAgent/recoveryHints.ts';
 import { isCategoryOrDescriptivePlacePhrase } from '../../../../lib/placeIdentityClassification.ts';
+import {
+  detectExplicitSourceEntity,
+  type ExplicitSourceEntity,
+} from '../../../../lib/sourceEntitySemanticConsistency.ts';
 import { extractCityStateContext } from '../places/locationGuards.ts';
 import { looksLikeRoundupPost } from './roundupDetection.ts';
 import type { ExtractedHandles } from './handleExtraction.ts';
@@ -53,6 +57,9 @@ export type Evidence = {
    *  priority evidence source in the resolver, but still verified against
    *  Google Places before any candidate is surfaced. */
   taggedLocation: TaggedLocationSignal | null;
+  /** Corroborated first-party business/place identity and its relationship to
+   * this post. A creator identity alone remains weak and cannot seed a save. */
+  explicitSourceEntity?: ExplicitSourceEntity | null;
   /** Atomic evidence keys (subset of EvidenceKey from
    *  lib/shareAgent/types.ts) for the safety / decision policy. */
   keys: string[];
@@ -65,6 +72,8 @@ export function extractEvidence(args: {
   handles: ExtractedHandles;
   /** Optional structured tagged-location signal from the platform. */
   taggedLocation?: TaggedLocationSignal | null;
+  /** Provider-supplied creator display name, when distinct from title text. */
+  creatorName?: string | null;
 }): Evidence {
   const captionText = [args.title, args.description]
     .filter(Boolean)
@@ -161,6 +170,17 @@ export function extractEvidence(args: {
   const taggedLocation = args.taggedLocation ?? null;
   if (taggedLocation) keys.push('tagged_location');
 
+  const explicitSourceEntity = detectExplicitSourceEntity({
+    platform: args.platform,
+    title: args.title,
+    description: args.description,
+    creatorHandle: args.handles.posterHandle,
+    creatorName: args.creatorName ?? args.handles.posterNameHint,
+    venueNameHints,
+    isRoundup,
+  });
+  if (explicitSourceEntity?.strength === 'strong') keys.push('explicit_source_entity');
+
   return {
     platform: args.platform,
     rawTitle: args.title,
@@ -174,6 +194,7 @@ export function extractEvidence(args: {
     handles: args.handles,
     isRoundup,
     taggedLocation,
+    explicitSourceEntity,
     keys,
   };
 }

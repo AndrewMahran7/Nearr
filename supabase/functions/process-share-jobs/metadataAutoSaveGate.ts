@@ -6,9 +6,14 @@
 // valid provider candidate and there is no explicit contradiction, save it.
 
 import { addressesMatch } from '../../../lib/shareAgent/tools.ts';
+import {
+  assessSourceEntityCandidate,
+  SOURCE_ENTITY_POLICY_VERSION,
+  type ExplicitSourceEntity,
+} from '../../../lib/sourceEntitySemanticConsistency.ts';
 import { geographicContextTypeOf } from '../process-share-link/places/placeNormalization.ts';
 
-export const METADATA_AUTO_SAVE_RULE_VERSION = 'metadata-autosave-2026-09-06.v7-save-first';
+export const METADATA_AUTO_SAVE_RULE_VERSION = 'metadata-autosave-2026-09-08.v8-source-semantic-guard';
 
 // Keep this aligned with decisionPolicy's confirmation floor. A singleton
 // still has to be independently good enough to show as a real place match;
@@ -65,6 +70,7 @@ type MetadataEvidence = {
     posterNameHint?: unknown;
     venueHandles?: unknown;
   } | null;
+  explicitSourceEntity?: ExplicitSourceEntity | null;
 };
 
 export type MetadataCandidateRejection = {
@@ -92,6 +98,13 @@ export type MetadataAutoSaveDecision = {
   explicitConflictFlags: string[];
   independentQualityGatePassed: boolean;
   independentQualityReason: string | null;
+  sourceEntityPolicyVersion: string;
+  explicitSourceEntityDetected: boolean;
+  sourceEntityCandidateAgreement: 'supports' | 'contradicts' | 'unknown';
+  semanticConflictBlockedCount: number;
+  providerNameCollisionBlockedCount: number;
+  providerCategoryConflictBlockedCount: number;
+  providerGeographyConflictBlockedCount: number;
 };
 
 function text(value: unknown): string {
@@ -190,6 +203,12 @@ export function evaluateMetadataAutoSave(input: {
     : [];
   const candidateRejectionReasons: string[] = [];
   const rejectedCandidates: MetadataCandidateRejection[] = [];
+  const sourceConflictFlags: string[] = [];
+  let sourceEntitySupports = 0;
+  let sourceEntityContradicts = 0;
+  let providerNameCollisionBlockedCount = 0;
+  let providerCategoryConflictBlockedCount = 0;
+  let providerGeographyConflictBlockedCount = 0;
   const plausibleByProviderId = new Map<string, Candidate>();
   for (const candidate of raw) {
     const rejection = candidateRejectionReason(candidate);
@@ -199,6 +218,25 @@ export function evaluateMetadataAutoSave(input: {
         providerId: text(candidate.googlePlaceId) || null,
         reason: rejection.reason,
         ...(rejection.detail ? { detail: rejection.detail } : {}),
+      });
+      continue;
+    }
+    const sourceAssessment = assessSourceEntityCandidate(
+      input.evidence.explicitSourceEntity,
+      candidate,
+    );
+    if (sourceAssessment.verdict === 'SUPPORTS') sourceEntitySupports += 1;
+    if (sourceAssessment.hardContradiction) {
+      sourceEntityContradicts += 1;
+      sourceConflictFlags.push(...sourceAssessment.reasons);
+      if (sourceAssessment.reasons.includes('provider_name_collision_blocked')) providerNameCollisionBlockedCount += 1;
+      if (sourceAssessment.reasons.includes('provider_category_conflict_blocked')) providerCategoryConflictBlockedCount += 1;
+      if (sourceAssessment.reasons.includes('provider_geography_conflict_blocked')) providerGeographyConflictBlockedCount += 1;
+      candidateRejectionReasons.push('source_entity_semantic_conflict');
+      rejectedCandidates.push({
+        providerId: text(candidate.googlePlaceId) || null,
+        reason: 'source_entity_semantic_conflict',
+        detail: sourceAssessment.reasons[0],
       });
       continue;
     }
@@ -235,7 +273,12 @@ export function evaluateMetadataAutoSave(input: {
   const viable = plausible.filter(
     (candidate) => qualityByProviderId.get(text(candidate.googlePlaceId))?.passed === true,
   );
-  const explicitConflictFlags: string[] = [];
+  // Contradictory provider rows are filtered like other invalid candidates.
+  // They block the whole decision only when no source-compatible row survived;
+  // an unrelated provider collision must not veto the exact source business.
+  const explicitConflictFlags: string[] = sourceEntitySupports === 0
+    ? [...sourceConflictFlags]
+    : [];
   // A caption may mention another branch/address while resolving one logical
   // provider (the Santa Fe post does). Multi-place intent is already expressed
   // by the resolver decision; raw address count alone must not manufacture a
@@ -316,6 +359,7 @@ export function evaluateMetadataAutoSave(input: {
   let reasonCode: string;
   if (explicitConflictFlags.length > 0) reasonCode = explicitConflictFlags[0]!;
   else if (plausible.length === 0) reasonCode = candidateRejectionReasons[0] ?? 'no_plausible_candidate';
+  else if (viable.length === 0) reasonCode = 'weak_singleton';
   else if (plausible.length > 0) reasonCode = 'top1_plausible_candidate';
   else reasonCode = 'no_plausible_candidate';
 
@@ -342,6 +386,15 @@ export function evaluateMetadataAutoSave(input: {
     explicitConflictFlags: [...new Set(explicitConflictFlags)],
     independentQualityGatePassed: singletonQuality.passed,
     independentQualityReason: singletonQuality.reason,
+    sourceEntityPolicyVersion: SOURCE_ENTITY_POLICY_VERSION,
+    explicitSourceEntityDetected: !!input.evidence.explicitSourceEntity,
+    sourceEntityCandidateAgreement: sourceEntitySupports > 0
+      ? 'supports'
+      : sourceEntityContradicts > 0 ? 'contradicts' : 'unknown',
+    semanticConflictBlockedCount: sourceEntityContradicts,
+    providerNameCollisionBlockedCount,
+    providerCategoryConflictBlockedCount,
+    providerGeographyConflictBlockedCount,
   };
 }
 
@@ -366,6 +419,13 @@ export function formatMetadataAutoSaveDecisionLog(args: {
     `explicit_conflict_flags=${safe(args.decision.explicitConflictFlags.join(','))}`,
     `independent_quality_gate=${args.decision.independentQualityGatePassed ? 'pass' : 'block'}`,
     `independent_quality_reason=${safe(args.decision.independentQualityReason)}`,
+    `source_entity_policy_version=${safe(args.decision.sourceEntityPolicyVersion)}`,
+    `explicit_source_entity_detected=${args.decision.explicitSourceEntityDetected ? 'true' : 'false'}`,
+    `source_entity_candidate_agreement=${args.decision.sourceEntityCandidateAgreement}`,
+    `semantic_conflict_blocked_count=${args.decision.semanticConflictBlockedCount}`,
+    `provider_name_collision_blocked_count=${args.decision.providerNameCollisionBlockedCount}`,
+    `provider_category_conflict_blocked_count=${args.decision.providerCategoryConflictBlockedCount}`,
+    `provider_geography_conflict_blocked_count=${args.decision.providerGeographyConflictBlockedCount}`,
     `final_decision=${args.decision.eligible ? 'auto_save' : 'review'}`,
     `decision_reason=${safe(args.decision.reasonCodes.join(','))}`,
   ].join(' ');

@@ -45,10 +45,45 @@ import {
 import type { TaggedLocationGranularity } from '../evidence/taggedLocation.ts';
 import { Timings, logShareDebug } from '../diagnostics/logger.ts';
 import { rankContextAwareCandidates } from '../../../../lib/contextAwarePlacesResolution.ts';
+import { assessSourceEntityCandidate } from '../../../../lib/sourceEntitySemanticConsistency.ts';
 
 // Score gap below which two tagged-location candidates are treated as an
 // ambiguous picker rather than a single confirmation.
 const TAGGED_PICKER_BAND = 8;
+
+function filterSourceEntityContradictions<T extends {
+  name?: unknown;
+  formattedAddress?: unknown;
+  types?: unknown;
+  primaryType?: unknown;
+}>(evidence: Evidence, candidates: T[], diagnostics: Record<string, unknown>): T[] {
+  if (!evidence.explicitSourceEntity) return candidates;
+  let supports = 0;
+  let contradictions = 0;
+  let nameCollisions = 0;
+  let categoryConflicts = 0;
+  let geographyConflicts = 0;
+  const kept = candidates.filter((candidate) => {
+    const assessment = assessSourceEntityCandidate(evidence.explicitSourceEntity, candidate);
+    if (assessment.verdict === 'SUPPORTS') supports += 1;
+    if (!assessment.hardContradiction) return true;
+    contradictions += 1;
+    if (assessment.reasons.includes('provider_name_collision_blocked')) nameCollisions += 1;
+    if (assessment.reasons.includes('provider_category_conflict_blocked')) categoryConflicts += 1;
+    if (assessment.reasons.includes('provider_geography_conflict_blocked')) geographyConflicts += 1;
+    return false;
+  });
+  diagnostics.sourceEntitySemanticConsistency = {
+    detected: evidence.explicitSourceEntity.strength === 'strong',
+    relation: evidence.explicitSourceEntity.relation,
+    agreement: supports > 0 ? 'supports' : contradictions > 0 ? 'contradicts' : 'unknown',
+    semanticConflictBlockedCount: contradictions,
+    providerNameCollisionBlockedCount: nameCollisions,
+    providerCategoryConflictBlockedCount: categoryConflicts,
+    providerGeographyConflictBlockedCount: geographyConflicts,
+  };
+  return kept;
+}
 
 /**
  * The tag's coordinates as a search bias, or null when it carried none usable.
@@ -204,30 +239,38 @@ export async function resolveSharedPlace(args: {
     });
 
     if (nameDriven.aggregateCandidates.length >= 1) {
-      const cands = nameDriven.aggregateCandidates;
-      // Decision mapping (pure, unit-tested). safeToAutoSave is ALWAYS false.
-      const mapped = nameDrivenDecision(nameDriven, isSingle);
-      return finalize(
-        {
-          decision: mapped.decision,
-          primaryCandidate: cands[0],
-          candidates: cands,
-          safeToAutoSave: false,
-          confidence: mapped.confidence,
-          reasons: [mapped.reason],
-        },
-        {
-          cleanSearchQuery: mentions.map((m) => m.displayName).join(' | '),
-          warnings,
-          diagnostics,
-          evidenceUsed: [
-            ...evidenceUsed,
-            'media_name_mention',
-            isSingle ? 'name_driven_single' : 'name_driven_multi',
-          ],
-          timings,
-        },
+      const cands = filterSourceEntityContradictions(
+        evidence,
+        nameDriven.aggregateCandidates,
+        diagnostics,
       );
+      if (cands.length === 0) {
+        warnings.push('all_candidates_rejected_by_source_entity_semantic_guard');
+      } else {
+        // Decision mapping (pure, unit-tested). safeToAutoSave is ALWAYS false.
+        const mapped = nameDrivenDecision(nameDriven, isSingle);
+        return finalize(
+          {
+            decision: mapped.decision,
+            primaryCandidate: cands[0],
+            candidates: cands,
+            safeToAutoSave: false,
+            confidence: mapped.confidence,
+            reasons: [mapped.reason],
+          },
+          {
+            cleanSearchQuery: mentions.map((m) => m.displayName).join(' | '),
+            warnings,
+            diagnostics,
+            evidenceUsed: [
+              ...evidenceUsed,
+              'media_name_mention',
+              isSingle ? 'name_driven_single' : 'name_driven_multi',
+            ],
+            timings,
+          },
+        );
+      }
     }
     // No mention verified to a canonical place → manual fallback with the venue
     // NAME prefilled so the user can search by hand. The extracted name +
@@ -403,17 +446,22 @@ export async function resolveSharedPlace(args: {
     // Only fire the multi-candidate path when ≥2 distinct real-world
     // places resolved. One match → fall through to the normal
     // single-address path so safety + verification flags apply.
-    if (multiResolved.length >= 2) {
+    const sourceCompatibleMulti = filterSourceEntityContradictions(
+      evidence,
+      multiResolved,
+      diagnostics,
+    );
+    if (sourceCompatibleMulti.length >= 2) {
       diagnostics.resolverPath = 'explicit_address';
       logShareDebug('resolver:multi_address_resolved', {
         addressCount: evidence.addresses.length,
-        candidateCount: multiResolved.length,
+        candidateCount: sourceCompatibleMulti.length,
       });
       return finalize(
         {
           decision: 'multi_candidate_confirmation',
-          primaryCandidate: multiResolved[0],
-          candidates: multiResolved,
+          primaryCandidate: sourceCompatibleMulti[0],
+          candidates: sourceCompatibleMulti,
           safeToAutoSave: false,
           confidence: 'medium',
           reasons: ['multi_address_resolved'],
@@ -533,44 +581,62 @@ export async function resolveSharedPlace(args: {
             : null,
       });
       if (verification.status === 'verified') {
-        diagnostics.resolverPath = 'explicit_address';
-        const resolved = toResolvedCandidate(
-          { candidate: verification.candidate, score: 50, reasons: ['address_verified'], rejected: false, rejectionReason: null },
-          [...evidenceUsed, 'address_verified'],
-        );
-        const decision = decide({
+        const sourceCompatible = filterSourceEntityContradictions(
           evidence,
-          candidates: [resolved],
-          addressVerified: true,
-        });
-        return finalize(decision, {
-          cleanSearchQuery: addrStr,
-          warnings,
+          [verification.candidate],
           diagnostics,
-          evidenceUsed,
-          timings,
-        });
+        );
+        if (sourceCompatible.length === 0) {
+          warnings.push('address_candidate_rejected_by_source_entity_semantic_guard');
+        } else {
+          diagnostics.resolverPath = 'explicit_address';
+          const resolved = toResolvedCandidate(
+            { candidate: sourceCompatible[0], score: 50, reasons: ['address_verified'], rejected: false, rejectionReason: null },
+            [...evidenceUsed, 'address_verified'],
+          );
+          const decision = decide({
+            evidence,
+            candidates: [resolved],
+            addressVerified: true,
+          });
+          return finalize(decision, {
+            cleanSearchQuery: addrStr,
+            warnings,
+            diagnostics,
+            evidenceUsed,
+            timings,
+          });
+        }
       }
       if (verification.status === 'ambiguous') {
-        diagnostics.resolverPath = 'explicit_address';
-        const resolved = verification.candidates.map((c) =>
-          toResolvedCandidate(
-            { candidate: c, score: 40, reasons: ['address_verified_ambiguous'], rejected: false, rejectionReason: null },
-            [...evidenceUsed, 'address_verified'],
-          ),
-        );
-        const decision = decide({
+        const sourceCompatible = filterSourceEntityContradictions(
           evidence,
-          candidates: resolved,
-          addressVerified: true,
-        });
-        return finalize(decision, {
-          cleanSearchQuery: addrStr,
-          warnings,
+          verification.candidates,
           diagnostics,
-          evidenceUsed,
-          timings,
-        });
+        );
+        if (sourceCompatible.length === 0) {
+          warnings.push('address_candidates_rejected_by_source_entity_semantic_guard');
+        } else {
+          diagnostics.resolverPath = 'explicit_address';
+          const resolved = sourceCompatible.map((c) =>
+            toResolvedCandidate(
+              { candidate: c, score: 40, reasons: ['address_verified_ambiguous'], rejected: false, rejectionReason: null },
+              [...evidenceUsed, 'address_verified'],
+            ),
+          );
+          const decision = decide({
+            evidence,
+            candidates: resolved,
+            addressVerified: true,
+          });
+          return finalize(decision, {
+            cleanSearchQuery: addrStr,
+            warnings,
+            diagnostics,
+            evidenceUsed,
+            timings,
+          });
+        }
       }
       // Verification found no business at the address. Fall through to the
       // address-anchored text-search ladder (venue+address, then bare
@@ -798,8 +864,14 @@ export async function resolveSharedPlace(args: {
       }));
   }
 
+  const scoredCandidates = scored.filter((s) => !s.rejected);
+  const sourceCompatibleCandidates = new Set(filterSourceEntityContradictions(
+    evidence,
+    scoredCandidates.map((s) => s.candidate),
+    diagnostics,
+  ));
   const ranked = scored
-    .filter((s) => !s.rejected)
+    .filter((s) => !s.rejected && sourceCompatibleCandidates.has(s.candidate))
     .sort((a, b) => b.score - a.score);
   if (ranked.length === 0) {
     const rejectedCount = scored.length - ranked.length;

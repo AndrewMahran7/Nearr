@@ -259,7 +259,7 @@ test(29, 'the Simple Sol Premium request path is unchanged', () => {
   assert.match(fingerprint, /PREMIUM_ENGINE_VERSION = 'simple-sol-premium\.v2'/);
   assert.match(fingerprint, /PREMIUM_EVIDENCE_VERSION = 'premium-evidence-2026-09-05\.v1'/);
   assert.match(fingerprint, /PREMIUM_SAFETY_VERSION = 'premium-recognition-safety\.v2'/);
-  assert.match(source('services/media-worker/src/solParity/types.ts'), /SOL_PARITY_PROMPT_VERSION = 'sol-parity-natural-v1'/);
+  assert.match(source('services/media-worker/src/solParity/types.ts'), /SOL_PARITY_PROMPT_VERSION = 'sol-parity-natural-v2-source-identity-relation'/);
 });
 test(30, 'C07 Premium safety behavior remains pinned', () => {
   assert.match(source('services/media-worker/tests/premiumSolRecognition.test.ts'), /C07 famous-clip prior cannot unsafe-autosave/);

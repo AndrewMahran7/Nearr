@@ -38,7 +38,7 @@ assert.equal(santaFeDecision.rawCandidateCount, 1);
 assert.equal(santaFeDecision.plausibleCandidateCount, 1);
 assert.equal(santaFeDecision.selectedProviderId, santaFe.googlePlaceId);
 assert.equal(santaFeDecision.confidenceScore, santaFe.confidenceScore);
-assert.deepEqual(santaFeDecision.reasonCodes, ['single_plausible_candidate']);
+assert.deepEqual(santaFeDecision.reasonCodes, ['top1_plausible_candidate']);
 assert.equal(santaFeDecision.eligible, true, 'the exact Santa Fe screenshot shape must auto-save');
 
 const santaFePlan = planFromResolverDecision({
@@ -62,17 +62,6 @@ const cases: Array<[string, Parameters<typeof evaluateMetadataAutoSave>[0], stri
       evidence: { address: { raw: '999 Other St' }, addresses: [{ raw: '999 Other St' }] },
     },
     'location_conflict',
-  ],
-  [
-    'multiple provider candidates',
-    {
-      result: {
-        decision: 'candidate_confirmation',
-        candidates: [santaFe, { ...santaFe, googlePlaceId: 'other-provider' }],
-      },
-      evidence: {},
-    },
-    'multiple_plausible_candidates',
   ],
   [
     'invalid coordinates',
@@ -106,6 +95,20 @@ for (const [name, input, reason] of cases) {
     `${name} must preserve its concrete blocker`,
   );
 }
+
+// Current save-first contract: ordinary 2-3 way ambiguity saves the best
+// defensible provider and retains the rest as soft alternatives. A concrete
+// contradiction still blocks through the cases above.
+const ordinaryAmbiguity = evaluateMetadataAutoSave({
+  result: {
+    decision: 'candidate_picker',
+    candidates: [santaFe, { ...santaFe, googlePlaceId: 'other-provider' }],
+  },
+  evidence: {},
+});
+assert.equal(ordinaryAmbiguity.eligible, true);
+assert.equal(ordinaryAmbiguity.selectedProviderId, santaFe.googlePlaceId);
+assert.equal(ordinaryAmbiguity.plausibleCandidateCount, 2);
 
 const resolverLabelCannotVetoStrongSingleton = evaluateMetadataAutoSave({
   result: { decision: 'manual_fallback', candidates: [santaFe] },

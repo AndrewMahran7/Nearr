@@ -481,6 +481,9 @@ class GeminiModel implements ModelProvider {
           ocrExtracted: input.ocrExtracted === true,
           metadataTitle: input.metadataTitle,
           metadataDescription: input.metadataDescription,
+          metadataLocation: input.metadataLocation,
+          metadataCreatorHandle: input.metadataCreatorHandle,
+          metadataCreatorName: input.metadataCreatorName,
           retainedEvidence: input.retainedEvidence,
         });
 
@@ -505,6 +508,8 @@ class GeminiModel implements ModelProvider {
       textContextCategories: [
         'platform',
         ...([input.metadataTitle, input.metadataDescription].some(Boolean) ? ['caption'] : []),
+        ...([input.metadataCreatorHandle, input.metadataCreatorName].some(Boolean) ? ['creator_attribution'] : []),
+        ...(input.metadataLocation ? ['source_location'] : []),
         ...(input.transcript.length > 0 ? ['transcript'] : []),
         ...(input.ocr.length > 0 ? ['visible_text'] : []),
       ],

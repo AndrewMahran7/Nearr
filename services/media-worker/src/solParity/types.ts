@@ -1,7 +1,7 @@
 import type { SelectedFrame, TranscriptSegment, OcrSegment } from '../types/media.js';
 
 export const SOL_PARITY_MODEL = 'gpt-5.6-sol';
-export const SOL_PARITY_PROMPT_VERSION = 'sol-parity-natural-v1';
+export const SOL_PARITY_PROMPT_VERSION = 'sol-parity-natural-v2-source-identity-relation';
 export const SOL_PARITY_SCHEMA_VERSION = 'sol-parity-destination-schema-v1';
 export const SOL_PARITY_INPUT_BOUNDS = Object.freeze({
   captionCharacters: 4_000,
