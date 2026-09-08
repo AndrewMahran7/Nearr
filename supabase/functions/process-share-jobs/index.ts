@@ -217,6 +217,12 @@ function logModelBusinessIdentityConsistency(args: {
     count: inconsistent,
     relation: entity.relation,
   }));
+  if (inconsistent > 0) console.log(JSON.stringify({
+    event: 'visual_source_entity_disagreement',
+    job_id: args.jobId,
+    count: inconsistent,
+    relation: entity.relation,
+  }));
 }
 
 function notificationBackoffSeconds(attempts: number): number {
@@ -4113,13 +4119,19 @@ async function processOne(
     }));
   }
   console.log(JSON.stringify({
-    event: metadataAutoSave.sourceEntityCandidateAgreement === 'contradicts'
-      ? 'source_entity_candidate_conflict'
-      : 'source_entity_candidate_agreement',
+    event: 'source_entity_candidate_agreement',
     job_id: job.id,
     agreement: metadataAutoSave.sourceEntityCandidateAgreement,
     semantic_conflict_blocked_count: metadataAutoSave.semanticConflictBlockedCount,
   }));
+  if (metadataAutoSave.sourceEntityCandidateAgreement === 'contradicts') {
+    console.log(JSON.stringify({
+      event: 'source_entity_semantic_conflict',
+      job_id: job.id,
+      count: metadataAutoSave.semanticConflictBlockedCount,
+      policy_version: metadataAutoSave.sourceEntityPolicyVersion,
+    }));
+  }
   for (const [event, count] of [
     ['provider_name_collision_blocked', metadataAutoSave.providerNameCollisionBlockedCount],
     ['provider_category_conflict_blocked', metadataAutoSave.providerCategoryConflictBlockedCount],
