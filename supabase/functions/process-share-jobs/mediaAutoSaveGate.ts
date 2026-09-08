@@ -12,7 +12,7 @@ import {
   type SemanticCompatibility,
 } from '../../../lib/recognitionTruth.ts';
 
-export const MEDIA_AUTO_SAVE_RULE_VERSION = 'media-autosave-2026-09-06.v10-save-first';
+export const MEDIA_AUTO_SAVE_RULE_VERSION = 'media-autosave-2026-09-08.v11-source-identity-guard';
 
 // Retained for configuration compatibility and diagnostics. The v7 decision
 // does not apply this value as a second confirmation threshold: the resolver's
@@ -300,7 +300,10 @@ export function evaluateMediaAutoSave(
   let sceneCategory: string | null = null;
   let candidateCategory: string | null = null;
   let semanticOverrideApplied = false;
-  if (input.mention.identityEvidenceKind === 'model_prior') {
+  if (input.mention.creatorHandleEvidenceOnly === true) {
+    reasonCode = 'creator_identity_only';
+    explicitConflictFlags.push('creator_identity_only');
+  } else if (input.mention.identityEvidenceKind === 'model_prior') {
     reasonCode = 'model_prior_unverified';
     explicitConflictFlags.push('model_prior_unverified');
   } else if (plausible.length === 0) {

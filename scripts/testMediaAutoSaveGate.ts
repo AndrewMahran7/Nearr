@@ -106,6 +106,17 @@ check('configured threshold rejects non-number', !resolveMediaAutoSaveThreshold(
   check('model-prior recognition can never auto-save', !d.eligible && d.reasonCodes.includes('model_prior_unverified'));
 }
 {
+  const d = decide(mention({
+    sources: ['caption'],
+    nameEvidenceSources: ['caption'],
+    creatorHandleEvidenceOnly: true,
+  }));
+  check(
+    'creator-handle-only media identity can never auto-save',
+    !d.eligible && d.reasonCodes.includes('creator_identity_only'),
+  );
+}
+{
   const alternative = mention({ displayName: 'South Cove', normalizedName: 'south cove' });
   const d = decide(mention({ identityAlternatives: [alternative] }));
   check('unresolved same-scene identity uncertainty saves the plausible top1', d.eligible);

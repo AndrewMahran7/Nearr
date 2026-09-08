@@ -123,6 +123,27 @@ check('distinctiveTokensOf keeps brand', distinctiveTokensOf('Parlor Woodfire').
   check('grouped mention keeps both timestamps', m.timestamps.length === 2 && m.timestamps[0] === 2 && m.timestamps[1] === 10);
 }
 
+// ---- creator handles are attribution, not independent place identity ------
+{
+  const handleOnly = buildVenueMentions(evidence([
+    place({
+      name: "Oliver's Olive Oil & Balsamic Tasting Gallery",
+      explicitEvidence: [ev('caption', '@olivers_oliveoil_gallery')],
+    }),
+  ])).mentions[0];
+  const independentlyNamed = buildVenueMentions(evidence([
+    place({
+      name: "Oliver's Olive Oil & Balsamic Tasting Gallery",
+      explicitEvidence: [
+        ev('caption', '@olivers_oliveoil_gallery'),
+        ev('speech', "Visit Oliver's Olive Oil & Balsamic Tasting Gallery"),
+      ],
+    }),
+  ])).mentions[0];
+  check('handle-only name evidence is marked as creator identity', handleOnly?.creatorHandleEvidenceOnly === true);
+  check('independent spoken name clears creator-only marker', independentlyNamed?.creatorHandleEvidenceOnly === false);
+}
+
 // ---- punctuation-bearing brand names retain channel evidence -------------
 {
   const r = buildVenueMentions(

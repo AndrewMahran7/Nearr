@@ -111,6 +111,9 @@ export type VenueIdentity = {
   /** Sources whose explicit evidence text supports the venue's distinctive
    *  name tokens. Address/category-only evidence is deliberately excluded. */
   nameEvidenceSources: PlaceEvidenceSource[];
+  /** True when every item that supplied the name is only a social-account
+   *  handle/attribution. A creator identity is not independently a place. */
+  creatorHandleEvidenceOnly?: boolean;
   /** Distinct evidence timestamps (seconds), ascending. */
   timestamps: number[];
   /** How many explicit evidence items referenced this name (repetition signal). */
@@ -230,6 +233,17 @@ export function normalizeVenueName(raw: string): string {
     .replace(/[^a-z0-9&'.\- ]+/g, ' ') // keep & ' . - as meaningful
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+function isCreatorHandleOnlyEvidence(value: string): boolean {
+  const handles = value.match(/@[a-z0-9._]{2,64}/giu) ?? [];
+  if (handles.length === 0) return false;
+  const residual = value
+    .replace(/@[a-z0-9._]{2,64}/giu, ' ')
+    .replace(/\b(?:creator|account|profile|instagram|tiktok|posted\s+by|source|via|follow)\b/giu, ' ')
+    .replace(/[^a-z0-9]+/giu, '')
+    .trim();
+  return residual.length === 0;
 }
 
 /** Distinctive tokens = normalized tokens that are not generic/stop words. */
@@ -762,6 +776,8 @@ export function buildVenueMentions(evidence: MediaPlaceEvidence): BuildMentionsR
   const provisionalMentions: VenueMention[] = liveGroups.map((g, i) => {
     const sources = new Set<PlaceEvidenceSource>();
     const nameEvidenceSources = new Set<PlaceEvidenceSource>();
+    let explicitEvidenceCount = 0;
+    let creatorHandleOnlyEvidenceCount = 0;
     const timestamps = new Set<number>();
     let mentionCount = 0;
     let bestConfidence = 0;
@@ -779,6 +795,8 @@ export function buildVenueMentions(evidence: MediaPlaceEvidence): BuildMentionsR
         categoryEvidenceTags = p.categoryEvidenceTags ?? [];
       }
       for (const e of p.explicitEvidence) {
+        explicitEvidenceCount += 1;
+        if (isCreatorHandleOnlyEvidence(e.value)) creatorHandleOnlyEvidenceCount += 1;
         sources.add(e.source);
         const phraseTokens = new Set(
           normalizePhrase(e.value)
@@ -818,6 +836,8 @@ export function buildVenueMentions(evidence: MediaPlaceEvidence): BuildMentionsR
       categoryEvidenceTags,
       sources: srcList,
       nameEvidenceSources: [...nameEvidenceSources],
+      creatorHandleEvidenceOnly:
+        explicitEvidenceCount > 0 && creatorHandleOnlyEvidenceCount === explicitEvidenceCount,
       timestamps: ts,
       mentionCount,
       repeated,
