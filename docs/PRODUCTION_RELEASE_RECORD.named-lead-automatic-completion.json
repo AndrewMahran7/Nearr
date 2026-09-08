@@ -32,16 +32,31 @@
     "tokenMonetization": false,
     "geminiModel": "gemini-3.5-flash-lite"
   },
-  "changedSurfaces": ["database", "railway-worker", "ota"],
+  "changedSurfaces": [
+    "database",
+    "railway-worker",
+    "ota"
+  ],
   "knownLimitation": "Physical-device cold-launch validation remains a founder follow-up. Automated incident, ambiguity, source-link, idempotency, multi-slot, environment, deployment, and worker readiness gates passed.",
   "testStatus": "PASS",
-  "currentOtaGroup": null,
+  "currentOtaGroup": "c1b2fe5e-739e-4645-9f21-61ea64656777",
+  "otaSourceSha": "0068e2ff35d4d471e4242a55fc9c2ddfbb5d59ca",
+  "otaUpdates": {
+    "android": "01a07e93-841d-7c0f-a719-8b2fb91ed222",
+    "ios": "01a07e93-841d-7d27-a5a4-179186e845e0"
+  },
   "rollbackProcedure": "Repeat the Production concurrency guard, republish previousOtaGroup 146d6ea7-771f-463f-b78f-5fc1485bccd9, redeploy the prior successful Railway image, and leave additive schema in place if rollback is required.",
-  "deploymentStatus": "PLANNED",
+  "deploymentStatus": "DEPLOYED",
   "automatedProductionSmoke": {
     "databaseMigrations": "PASS",
     "workerHealth": "PASS",
     "workerReadiness": "PASS",
+    "namedLeadIncidentFixture": "PASS",
+    "ambiguityAndParentGuards": "PASS",
+    "startupContracts17Of17": "PASS",
+    "notificationNavigation": "PASS",
+    "productionEnvironment": "PASS",
+    "productionOtaHead": "PASS",
     "organicUserDataMutations": 0
   },
   "physicalQa": {
@@ -49,5 +64,6 @@
     "signedInColdLaunch": "PENDING",
     "forceCloseRelaunch": "PENDING",
     "freshOnboardingLaunch": "NOT_REQUIRED"
-  }
+  },
+  "deployedAt": "2026-09-08T01:13:15.864Z"
 }
