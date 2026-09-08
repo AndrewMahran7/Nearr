@@ -27,7 +27,10 @@ const PARENT_NAME_MARKERS = new Set([
 const NOISE = new Set(['the', 'and', 'of', 'in', 'on', 'at', 'inside', 'within', 'near']);
 
 export function canonicalIdentityTokens(value: string): string[] {
-  return value.toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
+  return value.replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .replace(/([A-Za-z])([0-9])/g, '$1 $2')
+    .replace(/([0-9])([A-Za-z])/g, '$1 $2')
+    .toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9]+/g, ' ').split(/\s+/).filter((token) => token.length > 1 && !NOISE.has(token));
 }
 

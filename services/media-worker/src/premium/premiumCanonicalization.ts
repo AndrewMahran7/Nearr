@@ -1,5 +1,6 @@
 import type { SolAlternative, SolDestination } from '../solParity/types.js';
 import {
+  canonicalIdentityTokens,
   classifyCanonicalizationRelation,
   modelIdentityIsSpecific,
 } from '../solParity/canonicalizationSpecificity.js';
@@ -25,8 +26,7 @@ const GENERIC_ONLY = /^(?:a |an |the )?(?:waterfalls?|beaches?|cliff(?: |-)?jump
 const ADMIN_TYPES = new Set(['country', 'administrative_area_level_1', 'administrative_area_level_2', 'locality']);
 
 function tokens(value: string): string[] {
-  return value.toLowerCase().normalize('NFKD').replace(/[^a-z0-9 ]/g, ' ')
-    .split(/\s+/).filter((token) => token.length > 1 && !['the', 'and', 'at', 'of'].includes(token));
+  return canonicalIdentityTokens(value).filter((token) => !['at'].includes(token));
 }
 
 function overlap(left: string, right: string): number {

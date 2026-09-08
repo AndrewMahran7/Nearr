@@ -115,6 +115,81 @@ export type ShareJobPrimaryResult = {
   outcome: string;
 };
 
+export type NamedLeadRecoveryClaim = {
+  attemptToken: string;
+  query: string;
+  expectedName: string;
+  contextLabel: string | null;
+};
+
+export async function claimNamedLeadAutoRecovery(
+  jobId: string,
+  logicalResultId: string,
+  policyVersion: string,
+): Promise<NamedLeadRecoveryClaim | null> {
+  const { data, error } = await supabase.rpc('claim_named_lead_auto_recovery', {
+    p_job_id: jobId,
+    p_logical_result_id: logicalResultId,
+    p_policy_version: policyVersion,
+  });
+  if (error) throw new Error(error.message);
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row?.attempt_token || !row?.query || !row?.expected_name) return null;
+  return {
+    attemptToken: row.attempt_token,
+    query: row.query,
+    expectedName: row.expected_name,
+    contextLabel: row.context_label ?? null,
+  };
+}
+
+export async function finishNamedLeadAutoRecovery(
+  jobId: string,
+  logicalResultId: string,
+  attemptToken: string,
+  outcome: 'no_match' | 'choice_required' | 'technical_failure' | 'stale',
+): Promise<void> {
+  const { error } = await supabase.rpc('finish_named_lead_auto_recovery', {
+    p_job_id: jobId,
+    p_logical_result_id: logicalResultId,
+    p_attempt_token: attemptToken,
+    p_outcome: outcome,
+  });
+  if (error) throw new Error(error.message);
+}
+
+export async function autoCompleteNamedLead(args: {
+  jobId: string;
+  logicalResultId: string;
+  attemptToken: string;
+  candidate: ShareJobCandidate;
+}): Promise<{ savedPlaceId: string; reused: boolean; completed: boolean; idempotent: boolean }> {
+  const candidate = args.candidate;
+  const { data, error } = await supabase.rpc('auto_complete_named_lead', {
+    p_job_id: args.jobId,
+    p_logical_result_id: args.logicalResultId,
+    p_attempt_token: args.attemptToken,
+    p_google_place_id: candidate.googlePlaceId,
+    p_name: candidate.name,
+    p_formatted_address: candidate.formattedAddress ?? null,
+    p_latitude: candidate.latitude,
+    p_longitude: candidate.longitude,
+    p_category: candidate.primaryType ?? candidate.googleMapsTypeLabel ?? null,
+    p_candidate_snapshot: candidate,
+    p_confidence_score: 1,
+    p_rule_version: 'named-lead-auto-v1',
+  });
+  if (error) throw new Error(error.message);
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row?.saved_place_id) throw new Error('Automatic completion returned no saved place.');
+  return {
+    savedPlaceId: row.saved_place_id,
+    reused: row.reused === true,
+    completed: row.completed === true,
+    idempotent: row.idempotent === true,
+  };
+}
+
 /** Authoritative provenance for the primary result currently attached to a job. */
 export async function getShareJobPrimaryResult(jobId: string): Promise<ShareJobPrimaryResult | null> {
   if (isDemoMode() || isMapPreviewMode()) return null;
