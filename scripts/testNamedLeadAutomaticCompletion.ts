@@ -33,10 +33,14 @@ assert.equal(planNamedLeadAutomaticRecovery({ jobId: 'job', status: 'needs_help'
 assert.equal(planNamedLeadAutomaticRecovery({ jobId: 'job', status: 'completed', savedPlaceId: 'saved', leads: [lead] }).length, 0);
 
 const migration = readFileSync('supabase/migrations/20260907000001_named_lead_automatic_completion.sql', 'utf8');
+const ambiguityFix = readFileSync('supabase/migrations/20260907000002_fix_named_lead_saved_place_ambiguity.sql', 'utf8');
+const pointerFix = readFileSync('supabase/migrations/20260907000003_fix_named_lead_job_pointer_ambiguity.sql', 'utf8');
 assert.match(migration, /for update/);
 assert.match(migration, /'automatic',p_confidence_score/);
 assert.match(migration, /attach_saved_place_source/);
 assert.doesNotMatch(migration, /recognition_identity_support|USER_CONFIRMED|apply_recognition_feedback|resolve_share_job/);
+assert.match(ambiguityFix, /sp\.place_id=v_place/);
+assert.match(pointerFix, /sj\.saved_place_id/);
 const screen = readFileSync('app/share-jobs/[jobId].tsx', 'utf8');
 assert.match(screen, /claimNamedLeadAutoRecovery/);
 assert.match(screen, /autoCompleteNamedLead/);

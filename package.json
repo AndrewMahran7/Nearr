@@ -28,6 +28,7 @@
     "report:recognition-live": "npm --prefix services/media-worker run report:recognition-live --",
     "evaluate:premium-sol-recognition": "npm --prefix services/media-worker run evaluate:premium-sol-recognition --",
     "proof:premium-sol-dev": "ts-node -P scripts/tsconfig.json scripts/e2e/runPremiumSolDevProof.ts",
+    "proof:named-lead-auto-completion:dev": "ts-node -P scripts/tsconfig.json scripts/e2e/proveNamedLeadAutomaticCompletionDev.ts",
     "compare:premium-live-parity": "ts-node -P scripts/tsconfig.json scripts/comparePremiumParityFingerprints.ts",
     "eval:share-extraction": "ts-node --project scripts/tsconfig.json scripts/evalShareExtraction.ts",
     "eval:share-agent-shadow": "ts-node --project scripts/tsconfig.json scripts/evalShareAgentShadow.ts",
