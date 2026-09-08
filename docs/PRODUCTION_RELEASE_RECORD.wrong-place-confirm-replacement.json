@@ -1,0 +1,61 @@
+{
+  "releaseId": "2026-09-08-wrong-place-confirm-replacement",
+  "startingMainSha": "8c5e7848e14a9f1a7b11a5a16b854d73216939c7",
+  "previousMainSha": "8c5e7848e14a9f1a7b11a5a16b854d73216939c7",
+  "previousOtaGroup": "c1b2fe5e-739e-4645-9f21-61ea64656777",
+  "runtimeVersion": "1.4.55",
+  "implementationSha": "f4a246cad0f3b9d892e2a1864b57b8811b375d10",
+  "reconciledCandidateSha": "f4a246cad0f3b9d892e2a1864b57b8811b375d10",
+  "approvedDevOtaGroup": "097054de-ffc0-4955-8404-fc9753f2f56d",
+  "devProof": "CACHE_V2_DEV_DATABASE",
+  "edgeVersions": {
+    "process-share-link": 152,
+    "delete-account": 42,
+    "create-share-job": 45,
+    "process-share-jobs": 121,
+    "delete-share-job": 18,
+    "monetization": 19,
+    "public-place": 16,
+    "get-place-videos": 16
+  },
+  "railwayDeployment": "3b8cb23c-17f9-4fad-afd2-9c7f3d85ceb9 @ 0068e2ff35d4d471e4242a55fc9c2ddfbb5d59ca; sha256:35e0d48d5ee02b795bef2fd675c40c7083050a4e39abcbba60ceff64a22eb3ae (UNCHANGED)",
+  "migrationLedger": [
+    "20260907000001_named_lead_automatic_completion",
+    "20260907000002_fix_named_lead_saved_place_ambiguity",
+    "20260907000003_fix_named_lead_job_pointer_ambiguity"
+  ],
+  "productionFlags": {
+    "mediaAutoSave": true,
+    "mediaFallback": true,
+    "recognitionCacheReads": true,
+    "premiumRequests": false,
+    "tokenMonetization": false,
+    "geminiModel": "gemini-3.5-flash-lite"
+  },
+  "changedSurfaces": [
+    "ota"
+  ],
+  "knownLimitation": "No physical iOS or Android device is attached to the release machine. The exact selection/CTA/loading/retry contract, 24 focused cases, full prebuild suite, Cache V2 database/concurrency suite, and controlled Nearr-Dev database proof passed; founder physical-device verification remains pending.",
+  "testStatus": "PASS",
+  "currentOtaGroup": null,
+  "rollbackProcedure": "Repeat the Production concurrency guard and republish previousOtaGroup c1b2fe5e-739e-4645-9f21-61ea64656777 only if it remains safe relative to any newer Production update. No database, Edge, Railway, or native rollback belongs to this OTA-only release.",
+  "deploymentStatus": "PLANNED",
+  "automatedProductionSmoke": {
+    "wrongPlaceConfirmation24Of24": "PASS",
+    "wrongPlaceMutationContracts": "PASS",
+    "recognitionCacheV2DatabaseAndConcurrency": "PASS",
+    "devCacheCorrectionProof": "PASS",
+    "startupContracts17Of17": "PASS",
+    "fullPrebuild": "PASS",
+    "organicUserDataMutations": 0
+  },
+  "physicalQa": {
+    "selectedReplacementShowsCta": "PENDING",
+    "replacementCommitAndColdReopen": "PENDING",
+    "dedupeAndMultiPlace": "PENDING",
+    "signedOutColdLaunch": "PENDING",
+    "signedInColdLaunch": "PENDING",
+    "forceCloseRelaunch": "PENDING",
+    "freshOnboardingLaunch": "NOT_REQUIRED"
+  }
+}
