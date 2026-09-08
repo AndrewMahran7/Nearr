@@ -551,6 +551,9 @@ export async function fixtureMetadataCreatorLive(
     }
   }
   const extractionText = JSON.stringify(job.extraction_payload ?? {});
+  const resultText = JSON.stringify(job.candidate_payload ?? {});
+  const expectedSavedName = (process.env.NEARR_E2E_EXPECTED_SAVED_NAME ?? '').trim();
+  const forbiddenResultText = (process.env.NEARR_E2E_FORBIDDEN_RESULT_TEXT ?? '').trim();
   const poisoned =
     savedProviderId === FORBIDDEN_CREATOR_PROVIDER_ID ||
     /Oliver's\s*-\s*Olive Oil\s*&\s*Balsamic Tasting Gallery/i.test(savedName ?? '') ||
@@ -565,11 +568,43 @@ export async function fixtureMetadataCreatorLive(
     });
     return { name, ok: false };
   }
+  if (
+    expectedSavedName &&
+    !savedName?.toLocaleLowerCase('en-US').includes(expectedSavedName.toLocaleLowerCase('en-US'))
+  ) {
+    reporter.fail(`${name}: expected business saved`, terminal.elapsedMs, 'the live source did not save the expected business identity', {
+      jobId: submitted.jobId,
+      decision: job.decision,
+      saved_place_id: job.saved_place_id,
+      savedProviderId,
+      savedName,
+    });
+    return { name, ok: false };
+  }
+  if (
+    forbiddenResultText &&
+    resultText.toLocaleLowerCase('en-US').includes(forbiddenResultText.toLocaleLowerCase('en-US'))
+  ) {
+    reporter.fail(`${name}: incompatible alternatives absent`, terminal.elapsedMs, 'a forbidden provider result survived in the candidate payload', {
+      jobId: submitted.jobId,
+      decision: job.decision,
+      saved_place_id: job.saved_place_id,
+      savedProviderId,
+      savedName,
+    });
+    return { name, ok: false };
+  }
   reporter.pass(
     `${name}: creator identity did not auto-save`,
     terminal.elapsedMs,
     `decision=${job.decision ?? 'null'} saved_place_id=${job.saved_place_id ?? 'null'} saved_name=${savedName ?? 'null'}`,
   );
+  if (expectedSavedName) {
+    reporter.pass(`${name}: expected business saved`, 0, `saved_name=${savedName}`);
+  }
+  if (forbiddenResultText) {
+    reporter.pass(`${name}: incompatible alternatives absent`, 0, 'forbidden provider text is absent from the candidate payload');
+  }
   return { name, ok: true };
 }
 
