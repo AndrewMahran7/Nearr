@@ -1,0 +1,53 @@
+{
+  "releaseId": "2026-09-07-named-lead-automatic-completion",
+  "startingMainSha": "779ac2f352dc64fc9dd9f4cb697cd3961e9ade38",
+  "previousMainSha": "779ac2f352dc64fc9dd9f4cb697cd3961e9ade38",
+  "previousOtaGroup": "146d6ea7-771f-463f-b78f-5fc1485bccd9",
+  "runtimeVersion": "1.4.55",
+  "implementationSha": "173e69c1ea259bd7044b57e0c2511d0135130562",
+  "reconciledCandidateSha": "64572f19299b0739b36903db2440d4e6bc954c33",
+  "approvedDevOtaGroup": "07a42dee-b6dc-4da5-abe2-a1e073ec3f79",
+  "devProofCorrelation": "nearr-e2e-20260908T010237-9769731d",
+  "edgeVersions": {
+    "process-share-link": 152,
+    "delete-account": 42,
+    "create-share-job": 45,
+    "process-share-jobs": 121,
+    "delete-share-job": 18,
+    "monetization": 19,
+    "public-place": 16,
+    "get-place-videos": 16
+  },
+  "railwayDeployment": "de33f07c-6def-47de-9f31-f42206a8d2e1 @ 64572f19299b0739b36903db2440d4e6bc954c33; sha256:5299e61c5a2f269cd4190748365877ece5fce2d7ac1a680d51cb2164a8fafdeb",
+  "migrationLedger": [
+    "20260907000001_named_lead_automatic_completion",
+    "20260907000002_fix_named_lead_saved_place_ambiguity",
+    "20260907000003_fix_named_lead_job_pointer_ambiguity"
+  ],
+  "productionFlags": {
+    "mediaAutoSave": true,
+    "mediaFallback": true,
+    "recognitionCacheReads": true,
+    "premiumRequests": false,
+    "tokenMonetization": false,
+    "geminiModel": "gemini-3.5-flash-lite"
+  },
+  "changedSurfaces": ["database", "railway-worker", "ota"],
+  "knownLimitation": "Physical-device cold-launch validation remains a founder follow-up. Automated incident, ambiguity, source-link, idempotency, multi-slot, environment, deployment, and worker readiness gates passed.",
+  "testStatus": "PASS",
+  "currentOtaGroup": null,
+  "rollbackProcedure": "Repeat the Production concurrency guard, republish previousOtaGroup 146d6ea7-771f-463f-b78f-5fc1485bccd9, redeploy the prior successful Railway image, and leave additive schema in place if rollback is required.",
+  "deploymentStatus": "PLANNED",
+  "automatedProductionSmoke": {
+    "databaseMigrations": "PASS",
+    "workerHealth": "PASS",
+    "workerReadiness": "PASS",
+    "organicUserDataMutations": 0
+  },
+  "physicalQa": {
+    "signedOutColdLaunch": "PENDING",
+    "signedInColdLaunch": "PENDING",
+    "forceCloseRelaunch": "PENDING",
+    "freshOnboardingLaunch": "NOT_REQUIRED"
+  }
+}
