@@ -753,6 +753,8 @@ async function resolvePlaceRowForCandidate(candidate: PlaceCandidate): Promise<P
 export async function correctSavedPlace(args: {
   savedPlaceId: string;
   replacement: PlaceCandidate;
+  /** Stable across retries so Cache V2 records one correction event. */
+  idempotencyKey: string;
 }): Promise<{
   saved: SavedPlaceWithPlace;
   mergedSavedPlaceId: string | null;
@@ -771,7 +773,7 @@ export async function correctSavedPlace(args: {
   });
 
   const { data: correctionRows, error: correctionError } = await supabase.rpc(
-    'correct_saved_place_provider',
+    'correct_saved_place_provider_v2',
     {
       p_saved_place_id: args.savedPlaceId,
       p_place_id: placeRow.id,
@@ -780,6 +782,7 @@ export async function correctSavedPlace(args: {
       p_category_source: categoryResolution.source,
       p_category_confidence: categoryResolution.confidence,
       p_category_model_version: categoryResolution.modelVersion,
+      p_idempotency_key: args.idempotencyKey,
     },
   );
   if (correctionError) rethrowMutationError('correct place', correctionError);

@@ -19,16 +19,17 @@ assert.match(migration, /delete from public\.saved_places/, 'merged duplicate is
 assert.match(migration, /category_user_overridden/, 'automatic categories recalculate without clobbering user overrides');
 assert.match(migration, /v_source\.place_id = p_place_id/, 'lost-response retry is idempotent');
 
-assert.match(service, /correct_saved_place_provider/);
+assert.match(service, /correct_saved_place_provider_v2/);
+assert.match(service, /p_idempotency_key: args\.idempotencyKey/);
 assert.match(service, /resolvePlaceCategory/);
-assert.match(service, /select\('\*, place:places\(\*\)'\)/);
+assert.match(service, /select\('\*, place:places\(\*\), sources:saved_place_sources\(\*\)'\)/);
 assert.match(sheet, /void runSearch\(initialQuery\)/, 'first correction search runs automatically once');
-assert.match(sheet, /Is this the right place\?/);
-assert.match(sheet, /Which place is it\?/);
+assert.match(sheet, /Find the right place/);
 assert.match(sheet, /Use this place/);
+assert.doesNotMatch(sheet, /void apply\(resolutionPlan\.candidate\)/, 'search results never auto-commit');
 assert.match(sheet, /Search again/);
 assert.match(sheet, /Open original post/);
-assert.match(sheet, /accessibilityState=\{\{ disabled: current \|\| saving, selected: isSelected \}\}/);
+assert.match(sheet, /checked: isSelected/);
 assert.match(sheet, /reconcileCorrectedSavedPlaces/);
 assert.match(sheet, /previous_google_place_id/);
 assert.match(sheet, /source_job_id/);
