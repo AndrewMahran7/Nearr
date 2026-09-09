@@ -56,6 +56,7 @@
     "test:platform-noise": "ts-node -P scripts/tsconfig.json scripts/testPlatformNoise.ts",
     "test:generic-caption-guard": "ts-node -P scripts/tsconfig.json scripts/testGenericCaptionGuard.ts",
     "test:manual-fallback": "ts-node -P scripts/tsconfig.json scripts/testManualFallback.ts",
+    "test:one-tap-fallback-save": "ts-node -P scripts/tsconfig.json scripts/testOneTapFallbackSave.ts",
     "test:multi-address": "ts-node -P scripts/tsconfig.json scripts/testMultiAddressExtraction.ts",
     "test:address-first": "ts-node -P scripts/tsconfig.json scripts/testAddressFirst.ts",
     "test:address-verification": "ts-node -P scripts/tsconfig.json scripts/testAddressVerification.ts",

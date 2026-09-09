@@ -74,5 +74,22 @@ export function usePlacesSearch() {
     }
   }, []);
 
-  return { ...state, search: run, reset };
+  /**
+   * Adopt results from a caller that must use the raw provider promise (for
+   * example, a durable automatic-recovery claim). This keeps one visible
+   * result list without weakening that caller's error handling.
+   */
+  const replaceResults = useCallback((query: string, results: PlaceCandidate[]) => {
+    reqId.current += 1;
+    if (mountedRef.current) {
+      setState({
+        results,
+        loading: false,
+        error: null,
+        lastQuery: query.trim() || null,
+      });
+    }
+  }, []);
+
+  return { ...state, search: run, reset, replaceResults };
 }

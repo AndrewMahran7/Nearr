@@ -59,7 +59,6 @@ import { PHASE_1_COPY, splitPlaceAddress } from '@/lib/sharePhase1Ui';
 import {
   buildVayrinPresentation,
   mapShareJobToVayrinPresentation,
-  normalizeVayrinIdentityLeads,
   type VayrinIdentityLead,
 } from '@/lib/vayrinPresentation';
 import { buildPhase2PreviewJob, isPhase2PreviewId } from '@/lib/phase2Preview';
@@ -120,8 +119,13 @@ import {
 import {
   claimInitialQuickCheckSearch,
   quickCheckSearchKey,
-  selectedQuickCheckCandidate,
 } from '@/lib/quickCheckResolution';
+import {
+  fallbackSaveLabel,
+  preselectedFallbackCandidate,
+  selectFallbackCandidate,
+  usableFallbackCandidates,
+} from '@/lib/oneTapFallbackSave';
 import { createMapGroupFocusRequest } from '@/lib/mapGroupFocus';
 import {
   claimSaveCompletionSignal,
@@ -412,6 +416,7 @@ function ShareJobDetailScreen() {
   const softAlternativesOpenedJobRef = useRef<string | null>(null);
   const softAlternativeLocksRef = useRef(new Set<string>());
   const userLocationRef = useRef<LocationBias | null>(null);
+  const fallbackSuggestionSearchRef = useRef<string | null>(null);
   useEffect(() => {
     mountedRef.current = true;
     return () => {
@@ -435,7 +440,14 @@ function ShareJobDetailScreen() {
     return () => { alive = false; };
   }, []);
 
-  const { results, loading: searching, error: searchError, search, reset: resetSearch } = usePlacesSearch();
+  const {
+    results,
+    loading: searching,
+    error: searchError,
+    search,
+    reset: resetSearch,
+    replaceResults: replaceSearchResults,
+  } = usePlacesSearch();
   const { data: savedPlaces } = useSavedPlaces();
 
   const runManualSearch = useCallback(async (query: string) => {
@@ -459,7 +471,7 @@ function ShareJobDetailScreen() {
     const seed = sourceResolutionSeed(job, trimmed);
     const fields = geographicFieldsFromLabel(seed.contextLabel);
     const sourceCoordinates = seed.contextLabel
-      ? await geocodeContextText(seed.contextLabel)
+      ? await geocodeContextText(seed.contextLabel).catch(() => null)
       : null;
     const sourceContextAvailable = !!(
       seed.contextLabel || sourceCoordinates || seed.nearbyResolvedMentions.length > 0
@@ -496,55 +508,26 @@ function ShareJobDetailScreen() {
       candidates: found,
       sourceCoordinates,
     });
-    if (resolutionPlan.action === 'auto_resolve') {
-      setManualSelectedIds([]);
-      setManualSearchPhase('results');
-      void trackEvent('find_right_place_auto_resolved', {
-        source: 'share_job',
-        job_id: job?.id ?? routeJobId,
-        candidate_count: 1,
-      });
-      const namedLead = normalizeVayrinIdentityLeads(job?.candidate_payload).find((lead) =>
-        lead.evidenceKind === 'observable' &&
-        normalizeResolutionName(lead.displayName) === normalizeResolutionName(rawResolutionQueryRef.current),
-      );
-      if (job && namedLead) {
-        const claim = await claimNamedLeadAutoRecovery(
-          job.id,
-          namedLead.mentionId,
-          `${NAMED_LEAD_AUTO_RECOVERY_POLICY}-explicit`,
-        );
-        if (!claim) throw new Error('This automatic recovery is already being handled.');
-        const outcome = await autoCompleteNamedLead({
-          jobId: job.id,
-          logicalResultId: namedLead.mentionId,
-          attemptToken: claim.attemptToken,
-          candidate: toResultCandidate(resolutionPlan.candidate),
-        });
-        const saved = await getSavedPlace(outcome.savedPlaceId);
-        if (saved) upsertSavedPlaceIntoCache(saved);
-        completeManualSave(
-          outcome.reused ? [] : [outcome.savedPlaceId],
-          outcome.reused ? [outcome.savedPlaceId] : [],
-        );
-        return;
-      }
-      await handleSaveManual(resolutionPlan.candidate, true);
-      return;
-    }
+    // Reaching this function means the user is in fallback. Provider lookup
+    // may choose the initial row, but it must never cross the durable save
+    // boundary. The explicit sticky CTA below is the sole commit action.
+    const usable = usableFallbackCandidates(found);
     void trackEvent(
-      resolutionPlan.action === 'choose'
+      usable.length === 1
+        ? 'find_right_place_single_match_ready'
+        : usable.length > 1
         ? 'find_right_place_multiple_matches'
         : 'find_right_place_no_match',
       {
         source: 'share_job',
         job_id: job?.id ?? routeJobId,
-        candidate_count: resolutionPlan.defensible.length,
+        candidate_count: usable.length,
+        recognition_plan: resolutionPlan.action,
       },
     );
-    const initial = selectedQuickCheckCandidate(trimmed, found);
+    const initial = preselectedFallbackCandidate(usable);
     setManualSelectedIds(initial ? [initial.googlePlaceId] : []);
-    setManualSearchPhase(found.length > 0 ? 'results' : 'empty');
+    setManualSearchPhase(usable.length > 0 ? 'results' : 'empty');
     if (vayrinEnabled && rawResolutionQueryRef.current === trimmed) {
       void trackEvent(found.length > 0
         ? 'vayrin_raw_name_resolution_success'
@@ -831,10 +814,28 @@ function ShareJobDetailScreen() {
             target.logicalResultId,
             NAMED_LEAD_AUTO_RECOVERY_POLICY,
           );
-          if (!claim || cancelled) continue;
+          if (cancelled) return;
+          if (!claim) {
+            // A previous launch may already have durably classified this as a
+            // choice/no-match. Re-run only the presentation lookup so the user
+            // is not sent back to a tappable suggestion dead end.
+            rawResolutionQueryRef.current = target.expectedName;
+            manualQueryEditedRef.current = false;
+            setManualQuery(target.query);
+            setSearchExpanded(true);
+            void runManualSearch(target.query);
+            return;
+          }
+          rawResolutionQueryRef.current = claim.expectedName;
+          manualQueryEditedRef.current = false;
+          setManualQuery(claim.query);
+          setSearchExpanded(true);
+          resetSearch();
           setManualSearchPhase('searching');
           const fields = geographicFieldsFromLabel(claim.contextLabel);
-          const coordinates = claim.contextLabel ? await geocodeContextText(claim.contextLabel) : null;
+          const coordinates = claim.contextLabel
+            ? await geocodeContextText(claim.contextLabel).catch(() => null)
+            : null;
           const context: PlacesResolutionContext = claim.contextLabel || coordinates
             ? {
                 mode: 'source', inferredLocality: fields.locality, inferredRegion: fields.region,
@@ -842,8 +843,10 @@ function ShareJobDetailScreen() {
                 regionConfidence: claim.contextLabel ? 'strong' : 'medium', sourceEvidence: ['video_region'],
               }
             : { mode: 'manual', userLocation: null, regionConfidence: 'none' };
-          const found = (await searchPlaces(claim.query, coordinates ?? undefined, context)).map(toResultCandidate);
+          const providerResults = await searchPlaces(claim.query, coordinates ?? undefined, context);
           if (cancelled) return;
+          replaceSearchResults(claim.query, providerResults);
+          const found = providerResults.map(toResultCandidate);
           const plan = planFindRightPlace({
             query: claim.query,
             expectedName: claim.expectedName,
@@ -855,8 +858,10 @@ function ShareJobDetailScreen() {
               job.id, target.logicalResultId, claim.attemptToken,
               plan.action === 'choose' ? 'choice_required' : 'no_match',
             );
-            setManualSearchPhase(found.length > 0 ? 'results' : 'empty');
-            continue;
+            const initial = preselectedFallbackCandidate(providerResults);
+            setManualSelectedIds(initial ? [initial.googlePlaceId] : []);
+            setManualSearchPhase(initial ? 'results' : 'empty');
+            return;
           }
           const outcome = await autoCompleteNamedLead({
             jobId: job.id,
@@ -884,12 +889,41 @@ function ShareJobDetailScreen() {
               job.id, target.logicalResultId, claim.attemptToken, 'technical_failure',
             ).catch(() => undefined);
           }
-          if (!cancelled) setManualSearchPhase('error');
+          if (!cancelled) {
+            resetSearch();
+            setManualSelectedIds([]);
+            setManualSearchPhase('error');
+          }
         }
       }
     })();
     return () => { cancelled = true; };
-  }, [job?.id, job?.saved_place_id, job?.status, vayrinPresentation.leads]);
+  }, [job?.id, job?.saved_place_id, job?.status, load, replaceSearchResults, resetSearch, runManualSearch, vayrinPresentation.leads]);
+
+  // Search suggestions that are intentionally ineligible for automatic
+  // recognition completion (model priors, broad/textual leads, and previews)
+  // still deserve the same one-tap fallback. Search the first suggestion once
+  // per mounted job, preselect rank 1, and leave persistence to the CTA.
+  useEffect(() => {
+    if (!job || detail.kind !== 'manual' || vayrinPresentation.leads.length === 0) return;
+    const recoveryTargets = planNamedLeadAutomaticRecovery({
+      jobId: job.id,
+      status: job.status,
+      savedPlaceId: job.saved_place_id,
+      leads: vayrinPresentation.leads,
+    });
+    const fixture = __DEV__ && isVayrinCandidateFixtureId(job.id);
+    if (recoveryTargets.length > 0 && !fixture) return;
+    const lead = vayrinPresentation.leads[0]!;
+    const key = `${job.id}:${lead.mentionId}:${lead.suggestedQuery}`;
+    if (fallbackSuggestionSearchRef.current === key) return;
+    fallbackSuggestionSearchRef.current = key;
+    rawResolutionQueryRef.current = lead.displayName;
+    manualQueryEditedRef.current = false;
+    setManualQuery(lead.suggestedQuery);
+    setSearchExpanded(true);
+    void runManualSearch(lead.suggestedQuery);
+  }, [detail.kind, job, runManualSearch, vayrinPresentation.leads]);
   useEffect(() => {
     if (!job || !areaMatchIncomplete || areaMatchIncompleteTrackedRef.current === job.id) return;
     areaMatchIncompleteTrackedRef.current = job.id;
@@ -1228,31 +1262,10 @@ function ShareJobDetailScreen() {
     }
   }
 
-  async function handleSaveManual(candidate: PlaceCandidate, autoResolved = false) {
-    if (!job || resolvingRef.current) return;
-    resolvingRef.current = true;
-    if (mountedRef.current) setBusy(true);
-    try {
-      const { savedPlaceId, duplicate } = await persistCandidate(candidate);
-      if (autoResolved && duplicate) {
-        void trackEvent('existing_place_source_attached', {
-          job_id: job.id,
-          saved_place_id: savedPlaceId,
-          source: 'find_right_place',
-        });
-      }
-      await resolveJobWith(job.id, savedPlaceId, duplicate);
-    } catch (err) {
-      Alert.alert('Could not save', err instanceof Error ? err.message : 'Please try again.');
-    } finally {
-      resolvingRef.current = false;
-      if (mountedRef.current) setBusy(false);
-    }
-  }
-
   async function handleSaveCanonicalCandidates(
     selected: readonly (NormalizedCandidate | ShareJobCandidate | PlaceCandidate)[],
     source: 'async_picker' | 'raw_name_search',
+    fallbackAiNote: string | null = null,
   ) {
     if (!job || resolvingRef.current || selected.length === 0) return;
     const unique = [...new Map(selected.map((candidate) => [candidate.googlePlaceId, candidate])).values()];
@@ -1273,7 +1286,7 @@ function ShareJobDetailScreen() {
             : await getPlaceDetails(candidate.googlePlaceId);
         const result = await persistCandidate(
           hydrated,
-          'aiNote' in candidate ? candidate.aiNote ?? null : null,
+          ('aiNote' in candidate ? candidate.aiNote ?? null : null) ?? fallbackAiNote,
         );
         return result;
       }));
@@ -1485,6 +1498,16 @@ function ShareJobDetailScreen() {
     setSearchExpanded(false);
   }
 
+  function searchAnotherPlace() {
+    manualRequestRef.current += 1;
+    rawResolutionQueryRef.current = null;
+    manualQueryEditedRef.current = true;
+    setManualQuery('');
+    setManualSelectedIds([]);
+    setManualSearchPhase('idle');
+    resetSearch();
+  }
+
   // ONE canonical way to open an EXISTING saved place on the map. Validates the
   // identifiers (lib/openSavedPlace), records a sanitized breadcrumb, and
   // navigates AT MOST ONCE (the once-latch). Resolving by saved_places.id first
@@ -1555,7 +1578,7 @@ function ShareJobDetailScreen() {
       } else {
         const fields = geographicFieldsFromLabel(current.contextLabel);
         const coordinates = current.contextLabel
-          ? await geocodeContextText(current.contextLabel)
+          ? await geocodeContextText(current.contextLabel).catch(() => null)
           : null;
         sourceCoordinates = coordinates;
         const nearbyResolvedMentions: NearbyResolvedMention[] = batch.order
@@ -1752,7 +1775,7 @@ function ShareJobDetailScreen() {
     const showSearchAction = manualSearchPhase === 'empty' || manualSearchPhase === 'error' || (
       manualSearchPhase === 'idle' && !checkingKnownQuery
     );
-    const visibleResults = visibleCandidateShortlist(results);
+    const visibleResults = usableFallbackCandidates(results);
     return (
       <View style={[styles.section, styles.searchSection]}>
         <View style={styles.searchHeaderRow}>
@@ -1778,17 +1801,30 @@ function ShareJobDetailScreen() {
             />
           </View>
           {showSearchAction ? (
-            <Button title={manualSearchPhase === 'error' ? 'Retry' : 'Search'} onPress={() => void runManualSearch(manualQuery)} style={styles.searchBtn} />
+            <Button
+              title={manualSearchPhase === 'error' ? 'Retry' : 'Search'}
+              onPress={() => void runManualSearch(manualQuery)}
+              disabled={!manualQuery.trim()}
+              style={styles.searchBtn}
+            />
           ) : null}
         </View>
         {searching || manualSearchPhase === 'searching' || checkingKnownQuery ? (
           <View style={styles.processingRow}>
             <ActivityIndicator color={colors.primary} />
-            <Text style={[typography.caption, styles.helpCompact]}>Searching for {manualQuery.trim()}…</Text>
+            <Text style={[typography.caption, styles.helpCompact]} accessibilityLiveRegion="polite">
+              Finding the right place…
+            </Text>
           </View>
         ) : null}
         {manualSearchPhase === 'error' ? (
-          <Text style={[typography.caption, styles.help]}>Couldn&apos;t check right now. Your search is ready to retry.</Text>
+          <Text
+            style={[typography.caption, styles.help]}
+            accessibilityRole="alert"
+            accessibilityLiveRegion="assertive"
+          >
+            Couldn&apos;t check right now. Your search is ready to retry.
+          </Text>
         ) : null}
         {manualSearchPhase === 'empty' ? (
           emptyContext.noNearbyMatch && emptyContext.contextLabel ? (
@@ -1810,12 +1846,22 @@ function ShareJobDetailScreen() {
               selectable
               compact
               rank={index + 1}
-              selectionRole="checkbox"
-              onPress={() => setManualSelectedIds((current) =>
-                toggleCandidateSelection(current, c.googlePlaceId, 'multiple'))}
+              selectionRole="radio"
+              saved={Boolean(savedByGoogleId[c.googlePlaceId])}
+              onPress={() => setManualSelectedIds(
+                selectFallbackCandidate(visibleResults, c.googlePlaceId),
+              )}
             />
           );
         })}
+        {manualSearchPhase === 'results' || manualSearchPhase === 'empty' || manualSearchPhase === 'error' ? (
+          <Button
+            title="Search another place"
+            variant="secondary"
+            onPress={searchAnotherPlace}
+            style={styles.secondaryBtn}
+          />
+        ) : null}
       </View>
     );
   }
@@ -2301,6 +2347,11 @@ function ShareJobDetailScreen() {
   const manualSelected = manualSelectedIds
     .map((id) => results.find((candidate) => candidate.googlePlaceId === id))
     .filter((candidate): candidate is PlaceCandidate => Boolean(candidate));
+  const fallbackMentionName = normalizeResolutionName(rawResolutionQueryRef.current ?? manualQuery);
+  const fallbackMention = mentionSlots.find((slot) =>
+    normalizeResolutionName(slot.displayName) === fallbackMentionName,
+  ) ?? mentionSlots[0] ?? null;
+  const manualFallbackAiNote = fallbackMention?.aiNote ?? single?.aiNote ?? null;
   // The user may already have this place (e.g. they saved it manually months
   // ago). That is not a reason to skip the save — running it is how this
   // post's source_url / ai_note reach that existing row. The copy just has to
@@ -2532,14 +2583,24 @@ function ShareJobDetailScreen() {
             testID="quick-check-sticky-save-bar"
           >
             <Button
-              title={candidateSaveLabel(searchExpanded ? manualSelected.length : pickerSelected.length)}
-              accessibilityLabel={`${candidateSaveLabel(searchExpanded ? manualSelected.length : pickerSelected.length)} from selected candidates`}
+              title={busy
+                ? 'Saving…'
+                : candidateSaveLabel(
+                    searchExpanded ? manualSelected.length : pickerSelected.length,
+                    (searchExpanded ? manualSelected[0] : pickerSelected[0])?.name,
+                  )}
+              accessibilityLabel={busy
+                ? 'Saving place'
+                : `${candidateSaveLabel(
+                    searchExpanded ? manualSelected.length : pickerSelected.length,
+                    (searchExpanded ? manualSelected[0] : pickerSelected[0])?.name,
+                  )} from selected candidates`}
               onPress={() => void handleSaveCanonicalCandidates(
                 searchExpanded ? manualSelected : pickerSelected,
                 searchExpanded ? 'raw_name_search' : 'async_picker',
+                searchExpanded ? manualFallbackAiNote : null,
               )}
               disabled={busy || (searchExpanded ? manualSelected.length : pickerSelected.length) === 0}
-              loading={busy}
               style={styles.stickySaveButton}
             />
           </View>
@@ -2784,22 +2845,24 @@ function ShareJobDetailScreen() {
       {manualSelected.length > 0 ? (
         <View style={[styles.stickySaveBar, { paddingBottom: Math.max(safeAreaInsets.bottom, Spacing.sm) }]}>
           <Button
-            title={candidateSaveLabel(manualSelected.length)}
-            accessibilityLabel={`${candidateSaveLabel(manualSelected.length)} from selected search results`}
-            onPress={() => void handleSaveCanonicalCandidates(manualSelected, 'raw_name_search')}
+            title={busy ? 'Saving…' : fallbackSaveLabel(manualSelected[0]?.name)}
+            accessibilityLabel={busy ? 'Saving place' : fallbackSaveLabel(manualSelected[0]?.name)}
+            onPress={() => void handleSaveCanonicalCandidates(
+              manualSelected,
+              'raw_name_search',
+              manualFallbackAiNote,
+            )}
             disabled={busy}
-            loading={busy}
             style={styles.stickySaveButton}
           />
         </View>
       ) : confirmationSingle && !broadSingle && !searchExpanded && !isManual && !isProcessing ? (
         <View style={[styles.stickySaveBar, { paddingBottom: Math.max(safeAreaInsets.bottom, Spacing.sm) }]}>
           <Button
-            title="Save this place"
+            title={busy ? 'Saving…' : fallbackSaveLabel(confirmationSingle.name)}
             accessibilityLabel={`Save ${confirmationSingle.name}`}
             onPress={() => { if (single) void handleSaveStored(single); }}
             disabled={busy || !single}
-            loading={busy}
             style={styles.stickySaveButton}
           />
         </View>

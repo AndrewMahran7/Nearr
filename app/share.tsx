@@ -3200,8 +3200,14 @@ function LegacyShareScreen() {
         {phase === 'choose' && candidateSelectedIds.size > 0 ? (
           <View style={[styles.stickySaveBar, { paddingBottom: Math.max(safeAreaInsets.bottom, Spacing.sm) }]}>
             <Button
-              title={candidateSaveLabel(candidateSelectedIds.size)}
-              accessibilityLabel={`${candidateSaveLabel(candidateSelectedIds.size)} from selected candidates`}
+              title={candidateSaveLabel(
+                candidateSelectedIds.size,
+                renderableCandidates.find((candidate) => candidateSelectedIds.has(candidate.googlePlaceId))?.name,
+              )}
+              accessibilityLabel={`${candidateSaveLabel(
+                candidateSelectedIds.size,
+                renderableCandidates.find((candidate) => candidateSelectedIds.has(candidate.googlePlaceId))?.name,
+              )} from selected candidates`}
               onPress={() => {
                 const selected = renderableCandidates.filter(
                   (candidate) => candidateSelectedIds.has(candidate.googlePlaceId),

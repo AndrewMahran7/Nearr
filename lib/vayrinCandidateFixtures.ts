@@ -90,6 +90,13 @@ const punchBowl = place('fixture-santa-paula-punch-bowls', 'Santa Paula Punch Bo
 const punchTrailhead = place('fixture-santa-paula-canyon', 'Santa Paula Canyon Trailhead', 'Santa Paula, California', ['hiking_area', 'point_of_interest'], { sourceFrameUrl: FRAME_FIXTURE, sourceTimestamps: [0] });
 const inNOutSantaPaula = place('fixture-in-n-out-santa-paula', 'In-N-Out Burger', 'Santa Paula, California', ['restaurant'], { photoUrl: PHOTO_FIXTURE, sourceFrameUrl: FRAME_FIXTURE, sourceTimestamps: [18] });
 const inNOutVentura = place('fixture-in-n-out-ventura', 'In-N-Out Burger', 'Ventura, California', ['restaurant'], { sourceFrameUrl: FRAME_FIXTURE, sourceTimestamps: [18] });
+const catskill = place(
+  'fixture-catskill-new-york',
+  'Catskill',
+  'New York, United States',
+  ['locality', 'political'],
+  { latitude: 42.2146, longitude: -73.8646 },
+);
 
 function evidenceFrame(id: string, timestampSeconds: number): ShareJobEvidenceFrame {
   return { id, storagePath: null, url: FRAME_FIXTURE, timestampSeconds, width: 1080, height: 1920, relevance: 'candidate_evidence' };
@@ -242,6 +249,7 @@ export const VAYRIN_CANDIDATE_FIXTURES: readonly VayrinCandidateFixture[] = [
   ], { evidenceFrames: [] }),
   multiFixture('vayrin-multi-chain-context', 'Chain mention after context ranking', [mention('chain-punch', 'Punchbowl', 0, [punchBowl]), mention('chain-branch', 'In-N-Out', 18, [inNOutSantaPaula, inNOutVentura])]),
   rawFixture('vayrin-confirm-raw-waterfall', 'Raw waterfall phrase', 'Worlds Most Dangerous Waterfall Hole', [sunsetCliffs, sunsetPoint]),
+  rawFixture('vayrin-confirm-catskills', 'Catskills one-tap fallback', 'Catskills New York United States', [catskill]),
   rawFixture('vayrin-confirm-raw-zero', 'Raw name → 0', 'Unfindable Test Landmark Phrase', []),
   rawFixture('vayrin-confirm-raw-two', 'Raw name → 2', 'Sunset overlook', [sunsetCliffs, sunsetPoint]),
 ] as const;

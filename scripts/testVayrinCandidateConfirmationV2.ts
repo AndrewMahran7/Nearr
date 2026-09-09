@@ -76,19 +76,22 @@ assert.deepEqual(toggleCandidateSelection(['a'], 'b', 'multiple'), ['a', 'b']);
 assert.deepEqual(toggleCandidateSelection(['a'], 'b', 'exclusive'), ['b']);
 assert.equal(reviewSelectionMode([{ candidates: [exact('a'), exact('b')], identityHypotheses: [{}, {}] }]), 'exclusive');
 assert.equal(reviewSelectionMode([{ candidates: [exact('a'), exact('b')] }]), 'multiple');
-assert.equal(candidateSaveLabel(1), 'Save this place');
+assert.equal(candidateSaveLabel(1), 'Save place');
+assert.equal(candidateSaveLabel(1, 'Stari Most'), 'Save Stari Most');
 assert.equal(candidateSaveLabel(2), 'Save 2 places');
 assert.equal(candidateSaveLabel(3), 'Save 3 places');
 
 for (const id of [
   'vayrin-confirm-stari-most', 'vayrin-confirm-san-diego', 'vayrin-confirm-sunset-three',
   'vayrin-confirm-five-internal', 'vayrin-confirm-raw-waterfall', 'vayrin-confirm-raw-zero',
-  'vayrin-confirm-raw-two',
+  'vayrin-confirm-raw-two', 'vayrin-confirm-catskills',
 ]) assert.ok(VAYRIN_CANDIDATE_FIXTURES.some((fixture) => fixture.id === id), id);
 assert.equal(getVayrinCandidateFixture('vayrin-confirm-five-internal')?.candidates.length, 5);
 assert.equal(visibleCandidateShortlist(getVayrinCandidateFixture('vayrin-confirm-five-internal')!.candidates).length, 3);
 assert.equal(getVayrinCandidateFixture('vayrin-confirm-raw-zero')?.manualResults?.length, 0);
 assert.equal(getVayrinCandidateFixture('vayrin-confirm-raw-two')?.manualResults?.length, 2);
+assert.equal(getVayrinCandidateFixture('vayrin-confirm-catskills')?.suggestedQuery, 'Catskills New York United States');
+assert.equal(getVayrinCandidateFixture('vayrin-confirm-catskills')?.manualResults?.[0]?.name, 'Catskill');
 
 const rawJob = buildVayrinCandidateFixtureJob('vayrin-confirm-raw-waterfall');
 const rawDetail = buildShareJobDetailState(rawJob);
@@ -106,7 +109,8 @@ assert.equal(resolvedNotification.title, 'Possible place found');
 assert.match(card, /CandidatePhotoCarousel/);
 assert.match(read('components/CandidatePhotoCarousel.tsx'), /height\s*=\s*220/);
 assert.match(card, /accessibilityRole=\{selectionRole\}/);
-assert.match(asyncDetail, /selectionRole="checkbox"/);
+assert.match(asyncDetail, /selectionRole="radio"/);
+assert.match(asyncDetail, /selectFallbackCandidate/);
 assert.match(asyncDetail, /visibleCandidateShortlist/);
 assert.match(asyncDetail, /candidate_count_internal/);
 assert.match(asyncDetail, /candidate_count_shown/);

@@ -205,10 +205,14 @@ export function toggleCandidateSelection(
     : [...new Set([...selectedIds, candidateId])];
 }
 
-export function candidateSaveLabel(count: number): string {
+export function candidateSaveLabel(count: number, selectedName?: string | null): string {
   const safeCount = Math.max(0, Math.floor(count));
   if (safeCount === 0) return 'Select a place to save';
-  return safeCount <= 1 ? 'Save this place' : `Save ${safeCount} places`;
+  if (safeCount <= 1) {
+    const name = selectedName?.trim().replace(/\s+/g, ' ');
+    return name ? `Save ${name}` : 'Save place';
+  }
+  return `Save ${safeCount} places`;
 }
 
 export function isBroadCandidate(candidate: CandidateConfirmationPlace): boolean {

@@ -199,7 +199,7 @@ export function buildVayrinPresentation(
         kind: 'likely',
         headline: 'Is this the place?',
         body: 'Compare it with the video, then save it.',
-        primaryAction: 'Save this place',
+        primaryAction: place ? `Save ${place}` : 'Save place',
         secondaryAction: 'Not this place',
       };
     case 'leads_candidates':

@@ -705,7 +705,7 @@ const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
   assert.match(screen, /title="See places in this area"/, 'broad areas keep their exact-place search action');
   assert.match(
     screen,
-    /title="Save this place"[\s\S]{0,500}handleSaveStored\(single\)/,
+    /fallbackSaveLabel\(confirmationSingle\.name\)[\s\S]{0,500}handleSaveStored\(single\)/,
     'the sticky single-place CTA runs the canonical save, which enriches an existing row',
   );
 }

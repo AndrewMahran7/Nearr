@@ -35,16 +35,16 @@ const cases: Array<[string, () => void]> = [
     assert.match(sheet, /isSelected \? styles\.rowSelected/);
     assert.match(sheet, /check-circle/);
   }],
-  ['Use this place is visible in the persistent footer', () => {
+  ['Use named place is visible in the persistent footer', () => {
     const scrollEnd = sheet.indexOf('</ScrollView>');
-    const action = sheet.indexOf("title={saving ? 'Saving…' : 'Use this place'}");
+    const action = sheet.indexOf("title={saving ? 'Saving…' : fallbackCorrectionLabel(chosen.name)}");
     assert.ok(scrollEnd > -1 && action > scrollEnd);
   }],
   ['Use this place is enabled only with a valid selection', () => {
-    assert.match(sheet, /disabled=\{!chosen \|\| chosen\.googlePlaceId === saved\.place\.google_place_id \|\| saving\}/);
+    assert.match(sheet, /\{chosen \? \([\s\S]*disabled=\{saving\}[\s\S]*\) : null\}/);
   }],
   ['tap commits the canonical correction', () => {
-    assert.match(sheet, /if \(chosen\) void apply\(chosen\)/);
+    assert.match(sheet, /onPress=\{\(\) => void apply\(chosen\)\}/);
     assert.match(service, /'correct_saved_place_provider_v2'/);
   }],
   ['duplicate tap is idempotent', () => {
@@ -65,7 +65,7 @@ const cases: Array<[string, () => void]> = [
   }],
   ['retry reuses the same correction attempt', () => {
     assert.match(sheet, /existingAttempt\?\.candidateId === candidate\.googlePlaceId[\s\S]*\? existingAttempt\.key/);
-    assert.match(sheet, /Select Use this place to try again/);
+    assert.match(sheet, /fallbackCorrectionLabel\(chosen\?\.name\)/);
   }],
   ['existing replacement dedupes', () => {
     assert.match(multiSource, /v_merge_source_id/);
@@ -126,7 +126,7 @@ const cases: Array<[string, () => void]> = [
     assert.match(sheet, /accessibilityRole="radio"/);
     assert.match(sheet, /checked: isSelected/);
     assert.match(sheet, /candidate\.formattedAddress/);
-    assert.match(sheet, /accessibilityLabel=\{saving \? 'Saving correction' : 'Use this place'\}/);
+    assert.match(sheet, /accessibilityLabel=\{saving \? 'Saving correction' : fallbackCorrectionLabel\(chosen\.name\)\}/);
     assert.match(sheet, /accessibilityRole="alert"/);
   }],
 ];

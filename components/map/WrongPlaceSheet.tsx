@@ -34,6 +34,11 @@ import {
   reconcileCorrectedSavedPlaces,
 } from '@/lib/wrongPlaceCorrection';
 import { planFindRightPlace } from '@/lib/findRightPlace';
+import {
+  fallbackCorrectionLabel,
+  preselectedFallbackCandidate,
+  usableFallbackCandidates,
+} from '@/lib/oneTapFallbackSave';
 import { correctSavedPlace, rejectSavedPlaceRecognition } from '@/services/savedPlacesService';
 import {
   getSavedPlacesCacheSnapshot,
@@ -94,8 +99,12 @@ export function WrongPlaceSheet({
     setSaveError(null);
     correctionAttemptRef.current = null;
     void trackEvent('find_right_place_started', { source: 'saved_place_correction' });
-    await search(value);
-  }, [search]);
+    const found = await search(value);
+    const usable = usableFallbackCandidates(
+      found.filter((candidate) => candidate.googlePlaceId !== saved.place.google_place_id),
+    );
+    setSelected(preselectedFallbackCandidate(usable));
+  }, [saved.place.google_place_id, search]);
 
   useEffect(() => {
     if (!visible) {
@@ -121,6 +130,12 @@ export function WrongPlaceSheet({
     candidates: results.filter((candidate) => candidate.googlePlaceId !== saved.place.google_place_id),
   }), [extractedName, lastQuery, query, results, saved.place.google_place_id, saved.place.name]);
   const chosen = selected;
+  const visibleResults = useMemo(
+    () => usableFallbackCandidates(
+      results.filter((candidate) => candidate.googlePlaceId !== saved.place.google_place_id),
+    ),
+    [results, saved.place.google_place_id],
+  );
 
   const selectCandidate = useCallback((candidate: PlaceCandidate) => {
     setSelected(candidate);
@@ -129,6 +144,14 @@ export function WrongPlaceSheet({
       correctionAttemptRef.current = null;
     }
   }, []);
+
+  const changeQuery = useCallback((value: string) => {
+    reset();
+    setQuery(value);
+    setSelected(null);
+    setSaveError(null);
+    correctionAttemptRef.current = null;
+  }, [reset]);
 
   const apply = useCallback(async (candidate: PlaceCandidate) => {
     if (saveInFlightRef.current) return;
@@ -275,6 +298,14 @@ export function WrongPlaceSheet({
     if (!saveInFlightRef.current) onClose();
   }, [onClose]);
 
+  const searchAnotherPlace = useCallback(() => {
+    setSelected(null);
+    setSaveError(null);
+    correctionAttemptRef.current = null;
+    setQuery('');
+    reset();
+  }, [reset]);
+
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={close}>
       <KeyboardAvoidingView
@@ -316,7 +347,7 @@ export function WrongPlaceSheet({
 
           <Input
             value={query}
-            onChangeText={setQuery}
+            onChangeText={changeQuery}
             onSubmitEditing={() => void runSearch(query)}
             placeholder="Search for the right place"
             autoCorrect={false}
@@ -337,27 +368,26 @@ export function WrongPlaceSheet({
               style={styles.list}
               contentContainerStyle={styles.listContent}
             >
-              {results.map((candidate) => {
-                const current = candidate.googlePlaceId === saved.place.google_place_id;
+              {visibleResults.map((candidate) => {
                 const isSelected = chosen?.googlePlaceId === candidate.googlePlaceId;
                 const locality = splitPlaceAddress(candidate.formattedAddress).locality;
                 return (
                   <Pressable
                     key={candidate.googlePlaceId}
                     onPress={() => selectCandidate(candidate)}
-                    disabled={current || saving}
+                    disabled={saving}
                     style={({ pressed }) => [
                       styles.row,
                       isSelected ? styles.rowSelected : null,
-                      pressed && !current ? styles.rowPressed : null,
+                      pressed ? styles.rowPressed : null,
                     ]}
                     accessibilityRole="radio"
                     accessibilityState={{
-                      disabled: current || saving,
+                      disabled: saving,
                       checked: isSelected,
                     }}
                     accessibilityLabel={`${candidate.name}${candidate.formattedAddress ? `, ${candidate.formattedAddress}` : locality ? `, ${locality}` : ''}`}
-                    accessibilityHint={current ? 'This is the current place' : 'Select this result, then use the Use this place button to save the correction'}
+                    accessibilityHint={`Selects ${candidate.name}; use the ${fallbackCorrectionLabel(candidate.name)} button to save the correction`}
                   >
                     <PlaceImage googlePlaceId={candidate.googlePlaceId} size={56} borderRadius={10} />
                     <View style={styles.rowMain}>
@@ -371,9 +401,7 @@ export function WrongPlaceSheet({
                         </Text>
                       ) : null}
                     </View>
-                    {current ? (
-                      <Text style={[typography.caption, styles.currentTag]}>Current</Text>
-                    ) : isSelected ? (
+                    {isSelected ? (
                       <Feather name="check-circle" size={20} color={colors.primary} />
                     ) : (
                       <Feather name="circle" size={20} color={colors.textMuted} />
@@ -382,7 +410,7 @@ export function WrongPlaceSheet({
                 );
               })}
 
-              {!loading && results.length === 0 && lastQuery ? (
+              {!loading && visibleResults.length === 0 && lastQuery ? (
                 <View style={styles.empty} accessibilityLiveRegion="polite">
                   <Text style={[typography.bodyStrong, styles.emptyTitle]}>
                     {error ? 'Could not search places' : 'No places found'}
@@ -401,25 +429,36 @@ export function WrongPlaceSheet({
               accessibilityRole="alert"
               accessibilityLiveRegion="assertive"
             >
-              {saveError} Select Use this place to try again.
+              {saveError} Select {fallbackCorrectionLabel(chosen?.name)} to try again.
             </Text>
           ) : null}
-          <Button
-            title={saving ? 'Saving…' : 'Use this place'}
-            accessibilityLabel={saving ? 'Saving correction' : 'Use this place'}
-            onPress={() => {
-              if (chosen) void apply(chosen);
-            }}
-            disabled={!chosen || chosen.googlePlaceId === saved.place.google_place_id || saving}
-            style={styles.primaryButton}
-          />
-          <Button
-            title="Search again"
-            variant="secondary"
-            onPress={() => void runSearch(query)}
-            disabled={loading || saving || !query.trim()}
-            style={styles.secondaryButton}
-          />
+          {chosen ? (
+            <Button
+              title={saving ? 'Saving…' : fallbackCorrectionLabel(chosen.name)}
+              accessibilityLabel={saving ? 'Saving correction' : fallbackCorrectionLabel(chosen.name)}
+              onPress={() => void apply(chosen)}
+              disabled={saving}
+              style={styles.primaryButton}
+            />
+          ) : null}
+          {error ? (
+            <Button
+              title="Retry"
+              variant="secondary"
+              onPress={() => void runSearch(query)}
+              disabled={loading || saving || !query.trim()}
+              style={styles.secondaryButton}
+            />
+          ) : null}
+          {!loading && lastQuery ? (
+            <Button
+              title="Search another place"
+              variant="secondary"
+              onPress={searchAnotherPlace}
+              disabled={saving}
+              style={styles.secondaryButton}
+            />
+          ) : null}
           <Button
             title="This isn’t the place"
             variant="ghost"

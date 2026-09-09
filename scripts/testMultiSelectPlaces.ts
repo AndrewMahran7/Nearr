@@ -205,7 +205,7 @@ assert.equal(sourceTimestampLabel([75]), 'At 1:15');
   assert.match(detail, /isVayrinProductUiEnabled/);
   assert.match(legacy, /setCandidateSelectedIds/);
   assert.match(legacy, /if \(broad\)/);
-  assert.match(legacy, /candidateSaveLabel\(candidateSelectedIds\.size\)/);
+  assert.match(legacy, /candidateSaveLabel\(\s*candidateSelectedIds\.size,\s*renderableCandidates\.find/);
 }
 
 console.log('PASS multi-select place semantics, persistence, accessibility, and Vayrin integration');

@@ -73,6 +73,9 @@ export function CandidateConfirmationCard({
   const accessibilityLabel = [
     candidate.name,
     locality,
+    candidate.formattedAddress && candidate.formattedAddress !== locality
+      ? candidate.formattedAddress
+      : null,
     broad ? 'Area match' : category,
     matchLabel,
     conciseEvidence,
@@ -87,7 +90,17 @@ export function CandidateConfirmationCard({
 
   if (compact) {
     return (
-      <View style={[styles.card, styles.cardCompact, selected && styles.cardSelected]} testID="compact-candidate-row">
+      <Pressable
+        onPress={selectable ? onPress : undefined}
+        accessible={false}
+        style={({ pressed }) => [
+          styles.card,
+          styles.cardCompact,
+          selected && styles.cardSelected,
+          pressed && selectable && styles.pressed,
+        ]}
+        testID="compact-candidate-row"
+      >
         <View style={styles.compactRow}>
           <CandidatePhotoCarousel
             googlePlaceId={candidate.googlePlaceId}
@@ -167,7 +180,7 @@ export function CandidateConfirmationCard({
           </View>
         ) : null}
         {saved ? <Text style={styles.savedCompact}>Already on your map · this post will be attached</Text> : null}
-      </View>
+      </Pressable>
     );
   }
 
