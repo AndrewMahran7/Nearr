@@ -111,6 +111,13 @@ export type VenueIdentity = {
   /** Sources whose explicit evidence text supports the venue's distinctive
    *  name tokens. Address/category-only evidence is deliberately excluded. */
   nameEvidenceSources: PlaceEvidenceSource[];
+  /** Count of explicit evidence items containing every distinctive name token. */
+  nameEvidenceCount?: number;
+  /** Distinct timestamps for those exact-name evidence items. */
+  nameEvidenceTimestamps?: number[];
+  /** Exact-name evidence counts restricted to visual frame observations. */
+  frameNameEvidenceCount?: number;
+  frameNameEvidenceTimestamps?: number[];
   /** True when every item that supplied the name is only a social-account
    *  handle/attribution. A creator identity is not independently a place. */
   creatorHandleEvidenceOnly?: boolean;
@@ -776,6 +783,10 @@ export function buildVenueMentions(evidence: MediaPlaceEvidence): BuildMentionsR
   const provisionalMentions: VenueMention[] = liveGroups.map((g, i) => {
     const sources = new Set<PlaceEvidenceSource>();
     const nameEvidenceSources = new Set<PlaceEvidenceSource>();
+    const nameEvidenceTimestamps = new Set<number>();
+    let nameEvidenceCount = 0;
+    const frameNameEvidenceTimestamps = new Set<number>();
+    let frameNameEvidenceCount = 0;
     let explicitEvidenceCount = 0;
     let creatorHandleOnlyEvidenceCount = 0;
     const timestamps = new Set<number>();
@@ -806,6 +817,16 @@ export function buildVenueMentions(evidence: MediaPlaceEvidence): BuildMentionsR
         );
         if (nameTokens.length > 0 && nameTokens.every((token) => phraseTokens.has(token))) {
           nameEvidenceSources.add(e.source);
+          nameEvidenceCount += 1;
+          if (typeof e.timestampSeconds === 'number' && Number.isFinite(e.timestampSeconds)) {
+            nameEvidenceTimestamps.add(e.timestampSeconds);
+          }
+          if (e.source === 'frame') {
+            frameNameEvidenceCount += 1;
+            if (typeof e.timestampSeconds === 'number' && Number.isFinite(e.timestampSeconds)) {
+              frameNameEvidenceTimestamps.add(e.timestampSeconds);
+            }
+          }
         }
         if (typeof e.timestampSeconds === 'number' && Number.isFinite(e.timestampSeconds)) {
           timestamps.add(e.timestampSeconds);
@@ -836,6 +857,10 @@ export function buildVenueMentions(evidence: MediaPlaceEvidence): BuildMentionsR
       categoryEvidenceTags,
       sources: srcList,
       nameEvidenceSources: [...nameEvidenceSources],
+      nameEvidenceCount,
+      nameEvidenceTimestamps: [...nameEvidenceTimestamps].sort((a, b) => a - b),
+      frameNameEvidenceCount,
+      frameNameEvidenceTimestamps: [...frameNameEvidenceTimestamps].sort((a, b) => a - b),
       creatorHandleEvidenceOnly:
         explicitEvidenceCount > 0 && creatorHandleOnlyEvidenceCount === explicitEvidenceCount,
       timestamps: ts,

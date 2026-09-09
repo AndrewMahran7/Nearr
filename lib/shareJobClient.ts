@@ -55,7 +55,6 @@ export async function createShareJob(args: {
   url: string;
   accessToken: string;
   clientRequestId?: string;
-  forceRerun?: boolean;
   timeoutMs?: number;
 }): Promise<CreateShareJobResult> {
   const endpoint = (args.endpoint ?? '').trim();
@@ -80,7 +79,6 @@ export async function createShareJob(args: {
       body: JSON.stringify({
         url: args.url,
         clientRequestId: args.clientRequestId,
-        forceRerun: args.forceRerun === true,
       }),
       signal: controller.signal,
     });

@@ -43,6 +43,7 @@ import {
   readRecognitionCachePolicy,
   RECOGNITION_CACHE_POLICY_VERSION,
   recognitionCacheDiagnostics,
+  recognitionCachePolicyForRun,
   type RecognitionCachePolicy,
 } from '../_shared/recognitionCachePolicy.ts';
 import {
@@ -93,9 +94,11 @@ import {
   renderMediaEvidenceCaption,
   summarizeMediaEvidence,
   mediaEvidenceAutoSaveEligible,
+  mediaEvidenceExactIdentityStrength,
   buildVayrinPartialResult,
 } from './mediaEvidence.ts';
 import { buildRecognitionFunnel } from './mediaRunDiagnostics.ts';
+import { qualificationMediaResolverEnabled } from './qualificationMediaPolicy.ts';
 import {
   parseMediaSourceMetadata,
   mergeMediaCaption,
@@ -162,6 +165,7 @@ import {
 import { premiumRequestsEnabled } from '../_shared/premiumRequests.ts';
 import { areaMatchIncompleteFromPayload } from '../../../lib/areaMatchPremium.ts';
 import { assessSourceEntityCandidate } from '../../../lib/sourceEntitySemanticConsistency.ts';
+import { evaluateExactIdentitySafety } from '../../../lib/exactIdentitySafety.ts';
 
 const CORS_HEADERS: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
@@ -729,7 +733,10 @@ async function finalize(
   note: { title: string; body: string; data: Record<string, unknown> } | null,
 ): Promise<void> {
   const updatePatch: Record<string, unknown> = { ...patch };
-  const skipRecognitionCachePersist = updatePatch.__skipRecognitionCachePersist === true;
+  // Qualification runs exercise the real recognition policy but can never
+  // promote experimental outcomes into reusable recognition truth.
+  const skipRecognitionCachePersist = updatePatch.__skipRecognitionCachePersist === true ||
+    job.recognition_run_mode === 'qualification_fresh';
   const skipPremiumEligibility = updatePatch.__skipPremiumEligibility === true;
   const premiumChargeabilityOverride = updatePatch.__premiumChargeability === 'CHARGEABLE_ACTIONABLE'
     ? { chargeable: true, reason: 'premium_specific_candidates' as const }
@@ -1252,7 +1259,7 @@ async function persistAutomaticCompletionResults(
     origin: 'automatic',
     confidence_score: args.confidenceScore ?? args.primary.matchScore ?? 0.5,
     rule_version: ruleVersion,
-    reason_codes: args.reasonCodes ?? ['top1_plausible'],
+    reason_codes: args.reasonCodes ?? ['exact_identity_supported'],
     result_role: 'primary',
     candidate_rank: 1,
     candidate_snapshot: primarySnapshot,
@@ -1287,7 +1294,7 @@ async function persistAutomaticCompletionResults(
   const events = [
     ['automatic_completion', { share_job_id: args.job.id, alternative_count: args.alternatives.length }],
     ['primary_auto_saved', { share_job_id: args.job.id, candidate_rank: 1 }],
-    ...(args.task && !args.reasonCodes?.includes('automatic_deep_top1_plausible')
+    ...(args.task && !args.reasonCodes?.includes('automatic_deep_exact_identity_supported')
       ? [['gemini_only_completion', { share_job_id: args.job.id }]]
       : []),
     ...args.alternatives.slice(0, 2).map((_: any, index: number) =>
@@ -1306,6 +1313,10 @@ function automaticDeepCandidates(plan: NonNullable<ReturnType<typeof premiumRunt
     if (canonical) {
       return [{
         ...canonical,
+        exactIdentityStrength: ranked.safetyDecision === 'AUTO_SAVE'
+          ? 'candidate_bound'
+          : undefined,
+        upstreamSafetyDecision: ranked.safetyDecision,
         reasons: [
           ...(Array.isArray(canonical.reasons) ? canonical.reasons : []),
           ...(ranked.safetyDecision === 'REJECT' ? ['semantic_contradiction'] : []),
@@ -1324,6 +1335,10 @@ function automaticDeepCandidates(plan: NonNullable<ReturnType<typeof premiumRunt
       primaryType: 'nearr_native_identity',
       confidenceScore: ranked.evidenceClass === 'CONTEXTUAL_OR_MEMORY_PRIOR' ? 0.35 : 0.6,
       evidence: [ranked.evidenceClass],
+      exactIdentityStrength: ranked.safetyDecision === 'AUTO_SAVE'
+        ? 'candidate_bound'
+        : undefined,
+      upstreamSafetyDecision: ranked.safetyDecision,
       reasons: [
         'specificity_preserved_provider_parent_metadata_only',
         ...(ranked.safetyDecision === 'REJECT' ? ['semantic_contradiction'] : []),
@@ -2201,6 +2216,7 @@ async function finalizeMediaTask(
   const { data: job } = task.share_job_id
     ? await admin.from('share_jobs').select('*').eq('id', task.share_job_id).maybeSingle()
     : { data: null };
+  policy = recognitionCachePolicyForRun(policy, job?.recognition_run_mode);
 
   const logFinalStatus = (finalStatus: string, errorClass: string | null = null) => {
     console.log(formatFinalizeReliabilityLog({
@@ -2390,7 +2406,15 @@ async function finalizeMediaTask(
       const taskCanonicalUrl = task.canonical_url || task.source_url;
       const candidates = premium.candidatePayload.candidates ?? [];
       const mentionSlots = premium.candidatePayload.mentionSlots ?? [];
-      const canSave = premium.autoSaveCandidate &&
+      const premiumExactIdentity = evaluateExactIdentitySafety({
+        support: {
+          strongSourceEntityAgreement: !!premium.autoSaveCandidate,
+        },
+        plausibleCandidateCount: premium.rankedCandidates.length,
+        unresolvedIdentityAlternativeCount: Math.max(0, premium.rankedCandidates.length - 1),
+        upstreamSafetyDecision: premium.rankedCandidates[0]?.safetyDecision ?? null,
+      });
+      const canSave = premiumExactIdentity.allowed && premium.autoSaveCandidate &&
         typeof premium.autoSaveCandidate.latitude === 'number' &&
         typeof premium.autoSaveCandidate.longitude === 'number';
       if (canSave) {
@@ -2512,7 +2536,7 @@ async function finalizeMediaTask(
           alternatives: completion.alternatives,
           confidenceScore: completion.primary.matchScore ?? 0.5,
           ruleVersion: AUTOMATIC_COMPLETION_RULE_VERSION,
-          reasonCodes: ['automatic_deep_top1_plausible'],
+          reasonCodes: ['automatic_deep_exact_identity_supported'],
         });
         automaticDeep.candidatePayload.candidates = [completion.primary, ...completion.alternatives];
         automaticDeep.candidatePayload.savedPlaceIds = [saved.savedPlaceId];
@@ -2884,6 +2908,9 @@ async function finalizeMediaTask(
             sceneCategory: null,
             candidateCategory: null,
             semanticOverrideApplied: false,
+            exactIdentityRuleVersion: 'exact-identity-safety-2026-09-09.v1',
+            exactIdentityStrength: 'none' as const,
+            exactIdentityReason: 'mention_evidence_missing',
           };
       const blockingReasons = [...gate.reasonCodes];
       if (gate.eligible && !autoSaveAuthorized) blockingReasons.push('auto_save_disabled_or_user_not_allowlisted');
@@ -3290,7 +3317,20 @@ async function finalizeMediaTask(
     cleanSearchQuery: result.cleanSearchQuery,
     failureReason: result.failureReason,
   });
-  const legacyMediaCompletion = planAutomaticCompletion(result.candidates ?? []);
+  const legacyExactIdentityStrength = mediaEvidenceExactIdentityStrength(parsed.value);
+  const legacyMediaCompletion = planAutomaticCompletion(
+    (result.candidates ?? []).map((candidate: any) => ({
+      ...candidate,
+      exactIdentityStrength: legacyExactIdentityStrength === 'none'
+        ? undefined
+        : legacyExactIdentityStrength === 'candidate_bound' &&
+            !candidate.reasons?.some((reason: string) =>
+              reason === 'address_verified' || reason === 'address_verified_multi'
+            )
+        ? undefined
+        : legacyExactIdentityStrength,
+    })),
+  );
   // Post-resolve routing + the EXTRA media auto-save gate (never loosens
   // safeToAutoSave; can only downgrade a resolver auto_save to a confirmation).
   const post = planPostResolve({
@@ -3330,7 +3370,7 @@ async function finalizeMediaTask(
       alternatives: mediaAlternatives,
       confidenceScore: candidate.matchScore ?? candidate.confidenceScore ?? 0.5,
       ruleVersion: AUTOMATIC_COMPLETION_RULE_VERSION,
-      reasonCodes: ['media_top1_plausible'],
+      reasonCodes: ['media_exact_identity_supported'],
     });
     await finalize(
       admin,
@@ -3873,6 +3913,7 @@ async function processOne(
   job: any,
   policy: RecognitionCachePolicy,
 ): Promise<void> {
+  policy = recognitionCachePolicyForRun(policy, job.recognition_run_mode);
   const rawUrl = job.canonical_url || job.source_url;
   const normalized = normalizeShareUrl(rawUrl);
   const requestUrl = normalized.url || rawUrl;
@@ -3906,7 +3947,8 @@ async function processOne(
   if (!meta.ok) {
     if (!policy.readsEnabled) {
       const freshFlags = effectiveMediaFlags(readMediaFlags(), job.user_id);
-      const resolverEnabled = mediaResolverEnabledForPlatform(freshFlags, platform);
+      const resolverEnabled = mediaResolverEnabledForPlatform(freshFlags, platform) ||
+        qualificationMediaResolverEnabled(job.recognition_run_mode, platform);
       if (resolverEnabled) {
         const extractionPayload = {
           ...(job.extraction_payload ?? {}),
@@ -4215,7 +4257,8 @@ async function processOne(
   // input. Historical recognition rows were not queried above.
   if (!policy.readsEnabled) {
     const freshFlags = effectiveMediaFlags(readMediaFlags(), job.user_id);
-    const resolverEnabled = mediaResolverEnabledForPlatform(freshFlags, platform);
+    const resolverEnabled = mediaResolverEnabledForPlatform(freshFlags, platform) ||
+      qualificationMediaResolverEnabled(job.recognition_run_mode, platform);
     if (resolverEnabled) {
       const mediaTaskExists = await mediaTaskExistsFor(admin, job.id);
       (extractionPayload as any).freshInference = {

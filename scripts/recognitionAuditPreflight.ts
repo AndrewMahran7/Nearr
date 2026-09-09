@@ -231,10 +231,10 @@ if (require.main === module) {
             'Do not replace EXPO_PUBLIC_GOOGLE_MAPS_API_KEY with it.',
         );
       }
-      process.exit(result.ready ? 0 : 1);
+      process.exitCode = result.ready ? 0 : 1;
     })
     .catch((err) => {
       console.error(`preflight crashed: ${describeError(err)}`);
-      process.exit(1);
+      process.exitCode = 1;
     });
 }

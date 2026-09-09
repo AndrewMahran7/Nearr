@@ -155,6 +155,7 @@ const cases: Array<[string, () => void]> = [
       cacheReadSuspended: true,
       recognitionCacheWritesEnabled: true,
       recognitionCachePolicyVersion: 'recognition-cache-v2.1',
+      qualificationFresh: false,
     });
     assert.match(edge, /recognitionVersion:\s*RECOGNITION_VERSION/);
     assert.match(edge, /recognition_cache_miss[\s\S]{0,400}reason: 'read_suspended'/);
@@ -176,10 +177,12 @@ const cases: Array<[string, () => void]> = [
     assert.doesNotMatch(premiumPrompt, /RECOGNITION_CACHE_READS_ENABLED/);
     assert.doesNotMatch(read('services/media-worker/src/premium/premiumRecognitionSafety.ts'), /RECOGNITION_CACHE_READS_ENABLED/);
   }],
-  ['26 completed-job reuse is bypassed but request idempotency remains', () => {
+  ['26 normal active-job reuse and qualification bypass are separated', () => {
     assert.match(create, /p_idempotency_key:\s*idempotencyKey/);
-    assert.match(create, /p_force_rerun:\s*true/);
-    assert.match(create, /new logical submission always gets a new job/i);
+    assert.match(create, /completed jobs/);
+    assert.match(create, /new logical request gets[\s\S]*new job/i);
+    assert.doesNotMatch(create, /p_enforce_tokens/);
+    assert.match(create, /create_dev_qualification_share_job_for_user/);
   }],
   ['27 USER_CONFIRMED preservation remains in the cache upsert contract', () => {
     assert.match(migration, /old\.trust_level = 'USER_CONFIRMED'[\s\S]+new\.canonical_place_id := old\.canonical_place_id/);

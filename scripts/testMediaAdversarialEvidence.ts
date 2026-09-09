@@ -86,8 +86,8 @@ check(
 );
 
 check(
-  'natural place without explicit city and region => NOT eligible',
-  !mediaEvidenceAutoSaveEligible(evidence([place({
+  'exact visible natural-place identity remains eligible without redundant geography text',
+  mediaEvidenceAutoSaveEligible(evidence([place({
     name: 'Mystery Trail',
     category: 'hiking_trail',
     categoryConfidence: 0.9,

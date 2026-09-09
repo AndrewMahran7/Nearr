@@ -104,6 +104,32 @@ export function taggedLocationBias(
 }
 
 /**
+ * Prefer an independently caption-named venue at an explicit address over a
+ * different platform location tag. A tag often names the host mall, resort,
+ * park, or district; it is useful geography, but it must not replace the
+ * tenant/child destination that the source actually names.
+ */
+export function captionIdentityOverridesTaggedLocation(evidence: Evidence): boolean {
+  const tagName = normalizeName(evidence.taggedLocation?.placeName ?? '');
+  if (!tagName || !evidence.address) return false;
+  const handleNames = new Set(evidence.venueNameHintsFromHandle.map(normalizeName));
+  const captionWithoutHandles = `${evidence.rawTitle ?? ''} ${evidence.rawDescription ?? ''}`
+    .replace(/@[a-z0-9._-]+/gi, ' ');
+  const compactCaption = normalizeName(captionWithoutHandles).replace(/\s+/g, '');
+  const captionNames = evidence.venueNameHints
+    .map((name) => normalizeName(name))
+    .filter((name) => !!name && (
+      !handleNames.has(name) ||
+      (name.replace(/\s+/g, '').length >= 5 && compactCaption.includes(name.replace(/\s+/g, '')))
+    ));
+  const tagTokens = new Set(tagName.split(/\s+/).filter(Boolean));
+  const captionAgreesWithTag = captionNames.some((name) =>
+    name === tagName || name.split(/\s+/).filter(Boolean).every((token) => tagTokens.has(token))
+  );
+  return captionNames.length > 0 && !captionAgreesWithTag;
+}
+
+/**
  * What a creator's tag DENOTES, decided from the provider's entity types.
  *
  * The test is name IDENTITY, never token overlap. Overlap is what reopens the
@@ -313,19 +339,26 @@ export async function resolveSharedPlace(args: {
         Number.isFinite(evidence.taggedLocation.longitude),
       hasExternalId: !!evidence.taggedLocation.externalPlaceId,
     });
-    const taggedResult = await resolveFromTaggedLocation({
-      evidence,
-      env,
-      warnings,
-      diagnostics,
-    });
-    if (taggedResult) {
-      logShareDebug('resolver:evidence_source', {
-        source: 'tagged_location',
-        decision: taggedResult.decision,
-        candidates: taggedResult.candidates.length,
+    const captionOverridesTag = captionIdentityOverridesTaggedLocation(evidence);
+    if (captionOverridesTag) {
+      warnings.push('tagged_location_parent_or_context_deferred_to_caption_identity');
+      diagnostics.sourceLocationTagConflict = true;
+      diagnostics.sourceLocationTagDeferredReason = 'independent_caption_identity_at_address';
+    } else {
+      const taggedResult = await resolveFromTaggedLocation({
+        evidence,
+        env,
+        warnings,
+        diagnostics,
       });
-      return taggedResult;
+      if (taggedResult) {
+        logShareDebug('resolver:evidence_source', {
+          source: 'tagged_location',
+          decision: taggedResult.decision,
+          candidates: taggedResult.candidates.length,
+        });
+        return taggedResult;
+      }
     }
     // Tag present but not resolvable as the destination → fall through to the
     // normal caption/address pipeline (do not fail on account of a bad tag).
@@ -338,8 +371,10 @@ export async function resolveSharedPlace(args: {
     // caption pipeline runs normally and the existing 0/1/2+ decision policy
     // decides the outcome, so a contradiction can never silently auto-save.
     warnings.push('tagged_location_fell_through_to_caption');
-    diagnostics.sourceLocationTagConflict =
-      diagnostics.sourceLocationTagGranularity === 'geographic_context' ? false : true;
+    if (!captionOverridesTag) {
+      diagnostics.sourceLocationTagConflict =
+        diagnostics.sourceLocationTagGranularity === 'geographic_context' ? false : true;
+    }
   }
 
   // ---- 0. Multi-address verification -----------------------------

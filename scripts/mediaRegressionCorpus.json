@@ -1,8 +1,8 @@
 {
   "$schema": "Nearr cross-platform media regression corpus — see docs/MEDIA_REGRESSION_CORPUS.md",
-  "version": 1,
-  "lastUpdated": "2026-08-15",
-  "note": "STATUS: Phase 1 (honest, individually-verified subset, not the full 5-per-platform target). Each entry's `groundTruth` was established by independently reading the platform's own real title/description/caption/transcript text BEFORE running it through Nearr — never by accepting Nearr's own resolver output as truth. Instagram has zero entries: no public Instagram URL was independently verified during this pass; adding Instagram (and expanding every platform toward 5 diverse examples) is tracked as follow-up work in docs/MEDIA_REGRESSION_CORPUS.md rather than fabricated here. Do not add an entry without filling in `groundTruth.verifiedBy` with how the expected value was actually established.",
+  "version": 3,
+  "lastUpdated": "2026-09-08",
+  "note": "STATUS: Honest, individually verified media controls plus ONB2-01 tutorial qualification metadata. Tutorial eligibility is stricter than ordinary regression coverage. Never derive ground truth from Nearr's own recognition output or include evaluation-only place IDs in recognition requests.",
   "entries": [
     {
       "id": "snapchat_airport_no_place_01",
@@ -36,6 +36,22 @@
         "geographyHints": [],
         "forbiddenCandidates": ["<Null>", "null", "undefined"],
         "minDecision": "manual_fallback_or_no_candidates"
+      },
+      "tutorial": {
+        "groundTruthStatus": "verified",
+        "expectedGooglePlaceId": null,
+        "expectedCanonicalPlaceName": null,
+        "expectedCityRegion": null,
+        "expectedCountry": null,
+        "interestTags": ["animals"],
+        "sourceStatus": "public",
+        "eligibility": "ineligible",
+        "singlePlace": false,
+        "triviallyDisclosed": false,
+        "allowedTerminalOutcomes": ["manual_fallback", "no_candidates"],
+        "qualification": null,
+        "suitabilityNotes": "Useful YouTube no-place safety control, but there is no independently identifiable physical zoo.",
+        "limitations": ["negative_control", "not_a_tutorial_success"]
       }
     },
     {
@@ -71,6 +87,146 @@
         "forbiddenCandidates": ["<Null>", "null", "undefined", "Mammen & Null Lawyers LLC"],
         "forbiddenRegions": ["OR", "NM", "WA"],
         "minDecision": "manual_fallback_no_candidates_or_correct_ca_picker"
+      },
+      "tutorial": {
+        "groundTruthStatus": "provisional",
+        "expectedGooglePlaceId": null,
+        "expectedCanonicalPlaceName": null,
+        "expectedCityRegion": "Orange County, CA",
+        "expectedCountry": "US",
+        "interestTags": ["food", "pizza"],
+        "sourceStatus": "public",
+        "eligibility": "ineligible",
+        "singlePlace": false,
+        "triviallyDisclosed": false,
+        "allowedTerminalOutcomes": ["candidate_picker", "manual_fallback", "no_candidates"],
+        "qualification": null,
+        "suitabilityNotes": "Real YouTube Shorts acquisition control for list detection; intentionally unsuitable as a singleton tutorial.",
+        "limitations": ["roundup", "multiple_places", "place_ids_not_independently_verified"]
+      }
+    },
+    {
+      "id": "youtube_spectra_water_show_hidden_candidate_01",
+      "platform": "youtube",
+      "url": "https://www.youtube.com/shorts/a2bhaS32QVA",
+      "addedDate": "2026-09-08",
+      "groundTruth": {
+        "verifiedBy": "Independently verified 2026-09-08 before any Nearr recognition run: extracted source frames show the open Event Plaza frontage, Singapore central-business-district skyline, and Spectra's waterfront rows of illuminated fountain jets. Marina Bay Sands' official attraction page and factsheet identify the nightly light-and-water show at Event Plaza and document the same fountain-jet, projection, laser, and skyline configuration; the Singapore Tourism Board independently identifies Spectra at Marina Bay Sands. Google Places (New) was used only afterward to canonicalize the independently established attraction.",
+        "hasIdentifiablePlace": true,
+        "notes": "The public title asks which place this is; the description is empty, the channel is not venue-affiliated, there are no captions, and the source contains no visible venue-name overlay in the sampled frames. The recognition value is the specific waterfront attraction, not merely Singapore as a city."
+      },
+      "expected": {
+        "contentCategory": "attraction",
+        "geographyHints": [],
+        "forbiddenCandidates": [],
+        "forbiddenRegions": [],
+        "minDecision": "qualification_required"
+      },
+      "tutorial": {
+        "groundTruthStatus": "verified",
+        "expectedGooglePlaceId": "ChIJJx8l4dkZ2jER4d43CclDwfs",
+        "expectedCanonicalPlaceName": "Spectra - A Light & Water Show",
+        "expectedCityRegion": "Singapore",
+        "expectedCountry": "SG",
+        "expectedCoordinates": {
+          "latitude": 1.2844216,
+          "longitude": 103.8582926
+        },
+        "groundTruthEvidence": [
+          "https://www.marinabaysands.com/attractions/spectra.html",
+          "https://www.marinabaysands.com/content/dam/singapore/marinabaysands/master/main/home/company-information/media-centre/factsheets/spectra-light-and-water-show.pdf",
+          "https://www.visitsingapore.com/see-do-singapore/recreation-leisure/resorts/marina-bay-sands/",
+          "Google Places (New) direct identity lookup on 2026-09-08"
+        ],
+        "interestTags": ["attractions", "nightlife", "architecture", "travel"],
+        "sourceStatus": "public",
+        "sourceHealth": {
+          "lastCheckedAt": "2026-09-09T04:30:00.000Z",
+          "status": "healthy",
+          "identityMarker": "youtube:video:a2bhaS32QVA",
+          "checkMethod": "Public YouTube metadata resolved without login or age restriction; selected video and audio downloaded through yt-dlp and sampled frames were readable; no caption track was present."
+        },
+        "eligibility": "ineligible",
+        "singlePlace": true,
+        "triviallyDisclosed": false,
+        "allowedTerminalOutcomes": ["auto_save", "candidate_confirmation"],
+        "expectedRecognitionPath": "media_fallback",
+        "qualification": {
+          "lastQualifiedAt": "2026-09-09T04:46:32.210Z",
+          "attempts": 3,
+          "freshJobs": 3,
+          "mediaFallbackObserved": 3,
+          "correct": 0,
+          "controlledNonSuccess": 0,
+          "wrong": 3,
+          "wrongSave": 3,
+          "infrastructureFailure": 0,
+          "medianLatencyMs": 40877
+        },
+        "suitabilityNotes": "A short, visually legible reveal of a distinctive waterfront attraction whose identity is absent from title, description, channel identity, narration, captions, and visible sampled overlays.",
+        "limitations": ["young_low_view_count_source", "source_longevity_requires_weekly_health_check", "no_caption_track", "zero_of_three_fresh_dev_runs_passed", "three_wrong_results", "three_wrong_automatic_saves", "not_eligible_for_tutorial"]
+      }
+    },
+    {
+      "id": "youtube_attabad_lake_hidden_candidate_01",
+      "platform": "youtube",
+      "url": "https://www.youtube.com/shorts/rrKmN3zZ0lM",
+      "addedDate": "2026-09-08",
+      "groundTruth": {
+        "verifiedBy": "Independently verified 2026-09-08 before any Nearr recognition run: the source shows the creator walking on a pale rocky shore beside an intensely turquoise lake enclosed by barren, steep Karakoram terrain. The same creator's later explicit Attabad Lake travel video uses a thumbnail from the same shoreline, with the same person, turquoise water, and mountain geometry. The Government of Gilgit-Baltistan tourism page and Pakistan's national tourism portal independently document Attabad Lake's turquoise water among the Karakoram peaks in Gojal, Hunza. Google Places (New) was used only afterward for canonical ID and coordinates.",
+        "hasIdentifiablePlace": true,
+        "notes": "The Short title only asks viewers to guess the lake; its description, hashtags, channel identity, audio, and sampled frames do not name it. The creator's separate explicit travel video is ground-truth evidence and is not part of the recognition request."
+      },
+      "expected": {
+        "contentCategory": "nature",
+        "geographyHints": [],
+        "forbiddenCandidates": [],
+        "forbiddenRegions": [],
+        "minDecision": "qualification_required"
+      },
+      "tutorial": {
+        "groundTruthStatus": "verified",
+        "expectedGooglePlaceId": "ChIJHxRxLN2p6DgRMd2q59otvqI",
+        "expectedCanonicalPlaceName": "Attabad Lake",
+        "expectedCityRegion": "Gojal, Hunza, Gilgit-Baltistan",
+        "expectedCountry": "PK",
+        "expectedCoordinates": {
+          "latitude": 36.3190424,
+          "longitude": 74.8653331
+        },
+        "groundTruthEvidence": [
+          "https://www.youtube.com/watch?v=53mQG8lYz4Q",
+          "https://visitgilgitbaltistan.gov.pk/tour/id/33",
+          "https://salampakistan.gov.pk/where-to-go/category/gilgit-baltistan/location/attabad-lake",
+          "Google Places (New) direct identity lookup on 2026-09-08"
+        ],
+        "interestTags": ["nature", "lakes", "mountains", "travel"],
+        "sourceStatus": "public",
+        "sourceHealth": {
+          "lastCheckedAt": "2026-09-09T04:30:00.000Z",
+          "status": "healthy",
+          "identityMarker": "youtube:video:rrKmN3zZ0lM",
+          "checkMethod": "Public YouTube metadata resolved without login or age restriction; selected video and audio downloaded through yt-dlp and sampled frames were readable; no caption track was present."
+        },
+        "eligibility": "ineligible",
+        "singlePlace": true,
+        "triviallyDisclosed": false,
+        "allowedTerminalOutcomes": ["auto_save", "candidate_confirmation"],
+        "expectedRecognitionPath": "media_fallback",
+        "qualification": {
+          "lastQualifiedAt": "2026-09-09T04:49:21.524Z",
+          "attempts": 3,
+          "freshJobs": 3,
+          "mediaFallbackObserved": 3,
+          "correct": 1,
+          "controlledNonSuccess": 0,
+          "wrong": 2,
+          "wrongSave": 2,
+          "infrastructureFailure": 0,
+          "medianLatencyMs": 46297
+        },
+        "suitabilityNotes": "A stable older hidden-location Short with one striking canonical lake and no direct name disclosure in the recognition-visible source.",
+        "limitations": ["visual_only_exact_natural_feature_canonicalization", "no_caption_track", "one_of_three_fresh_dev_runs_passed", "two_wrong_results", "two_wrong_automatic_saves", "not_eligible_for_tutorial"]
       }
     },
     {
@@ -88,6 +244,22 @@
         "geographyHints": [],
         "forbiddenCandidates": ["Facebook", "Facebook Inc", "Meta", "<Null>", "null"],
         "minDecision": "manual_fallback_or_no_candidates"
+      },
+      "tutorial": {
+        "groundTruthStatus": "verified",
+        "expectedGooglePlaceId": null,
+        "expectedCanonicalPlaceName": null,
+        "expectedCityRegion": null,
+        "expectedCountry": null,
+        "interestTags": ["other"],
+        "sourceStatus": "public",
+        "eligibility": "ineligible",
+        "singlePlace": false,
+        "triviallyDisclosed": false,
+        "allowedTerminalOutcomes": ["manual_fallback", "no_candidates"],
+        "qualification": null,
+        "suitabilityNotes": "Stable Facebook acquisition and platform-identity negative control, not a place tutorial.",
+        "limitations": ["negative_control", "not_a_place_post"]
       }
     },
     {
@@ -106,6 +278,22 @@
         "forbiddenCandidates": ["<Null>", "null", "undefined", "Best Buy", "Staples", "MacTek", "Xfinity Store by Comcast", "The Mac Guy, LLC", "Locavore Market and Grocery - Operated by Central Oregon Locavore Non Profit"],
         "forbiddenRegions": ["OR", "WA"],
         "minDecision": "acquisition_stage_only"
+      },
+      "tutorial": {
+        "groundTruthStatus": "unverified",
+        "expectedGooglePlaceId": null,
+        "expectedCanonicalPlaceName": null,
+        "expectedCityRegion": null,
+        "expectedCountry": null,
+        "interestTags": ["food", "pizza"],
+        "sourceStatus": "blocked",
+        "eligibility": "quarantined",
+        "singlePlace": null,
+        "triviallyDisclosed": null,
+        "allowedTerminalOutcomes": ["source_unavailable", "provider_page_rejected"],
+        "qualification": null,
+        "suitabilityNotes": "Preserves the TikTok redirect/provider-page failure class without pretending the discovery page is a tutorial post.",
+        "limitations": ["discovery_page_not_video", "provider_redirect", "ground_truth_unverified"]
       }
     },
     {
@@ -124,6 +312,22 @@
         "forbiddenCandidates": ["<Null>", "null", "undefined"],
         "forbiddenRegions": [],
         "minDecision": "correct_auto_save_or_matching_picker"
+      },
+      "tutorial": {
+        "groundTruthStatus": "verified",
+        "expectedGooglePlaceId": null,
+        "expectedCanonicalPlaceName": "Tuxedo Cat's Coffee",
+        "expectedCityRegion": "San Antonio, TX",
+        "expectedCountry": "US",
+        "interestTags": ["food", "coffee"],
+        "sourceStatus": "public",
+        "eligibility": "ineligible",
+        "singlePlace": true,
+        "triviallyDisclosed": true,
+        "allowedTerminalOutcomes": ["auto_save", "candidate_confirmation"],
+        "qualification": null,
+        "suitabilityNotes": "Valuable TikTok acquisition anchor, but the public caption states the exact business and street address.",
+        "limitations": ["exact_address_in_caption", "poor_tutorial_magic_moment", "place_id_not_independently_recorded"]
       }
     },
     {
@@ -142,6 +346,179 @@
         "forbiddenCandidates": ["<Null>", "null", "undefined"],
         "forbiddenRegions": [],
         "minDecision": "multi_candidate_confirmation_or_manual_fallback"
+      },
+      "tutorial": {
+        "groundTruthStatus": "verified",
+        "expectedGooglePlaceId": null,
+        "expectedCanonicalPlaceName": null,
+        "expectedCityRegion": "New York, NY",
+        "expectedCountry": "US",
+        "interestTags": ["food", "restaurants"],
+        "sourceStatus": "public",
+        "eligibility": "ineligible",
+        "singlePlace": false,
+        "triviallyDisclosed": false,
+        "allowedTerminalOutcomes": ["candidate_picker", "manual_fallback"],
+        "qualification": null,
+        "suitabilityNotes": "Explicit five-restaurant TikTok list used to ensure a roundup never becomes a fake singleton success.",
+        "limitations": ["roundup", "multiple_places"]
+      }
+    },
+    {
+      "id": "instagram_dorset_quarry_visual_candidate_01",
+      "platform": "instagram",
+      "url": "https://www.instagram.com/reel/C9Z963muLHI/",
+      "addedDate": "2026-09-08",
+      "groundTruth": {
+        "verifiedBy": "Independently verified 2026-09-08: extracted Reel frames show the same distinctive stepped/cut pale-marble walls, flooded quarry geometry, vegetation, and Green Mountain backdrop as the Dorset Chamber's quarry photography. The quarry owner's site independently gives 1848 VT-30, Dorset, VT. A direct Google Places (New) lookup of that independently established identity returned the stored ID and coordinates.",
+        "hasIdentifiablePlace": true,
+        "notes": "The caption and transcript do not name the location; the identity was established from independent visual/reference evidence before evaluating new Dev recognition runs."
+      },
+      "expected": {
+        "contentCategory": "activity",
+        "geographyHints": ["Dorset", "VT"],
+        "forbiddenCandidates": [],
+        "forbiddenRegions": [],
+        "minDecision": "qualification_required"
+      },
+      "tutorial": {
+        "groundTruthStatus": "verified",
+        "expectedGooglePlaceId": "ChIJG9E4hIhd4IkRwN0jnyQ9-F4",
+        "expectedCanonicalPlaceName": "Dorset Marble Quarry",
+        "expectedCityRegion": "Dorset, VT",
+        "expectedCountry": "US",
+        "expectedCoordinates": {
+          "latitude": 43.2359604,
+          "longitude": -73.0834756
+        },
+        "groundTruthEvidence": [
+          "https://www.dorsetvt.com/story-item/take-a-plunge/",
+          "https://dorsetquarry.com/",
+          "https://vermonthistory.org/dorset-quarry",
+          "Google Places (New) direct identity lookup on 2026-09-08"
+        ],
+        "interestTags": ["outdoors", "swimming", "cliffs"],
+        "sourceStatus": "public",
+        "sourceHealth": {
+          "lastCheckedAt": "2026-09-08T22:35:00.000Z",
+          "status": "healthy",
+          "identityMarker": "instagram:reel:C9Z963muLHI",
+          "checkMethod": "Public caption metadata and selected video format fetched with yt-dlp; extracted frames were readable."
+        },
+        "eligibility": "candidate",
+        "singlePlace": true,
+        "triviallyDisclosed": false,
+        "allowedTerminalOutcomes": ["auto_save", "candidate_confirmation", "candidate_picker", "manual_fallback"],
+        "expectedRecognitionPath": "media_fallback",
+        "qualification": {
+          "lastQualifiedAt": "2026-09-08T23:10:38.000Z",
+          "attempts": 3,
+          "freshJobs": 3,
+          "mediaFallbackObserved": 3,
+          "correct": 2,
+          "controlledNonSuccess": 1,
+          "wrong": 0,
+          "wrongSave": 0,
+          "infrastructureFailure": 0,
+          "medianLatencyMs": 51356
+        },
+        "suitabilityNotes": "Visually compelling hidden-place Reel with no dominant venue/address disclosure.",
+        "limitations": ["instagram_login_or_interstitial_may_vary", "two_of_three_fresh_dev_runs_passed", "not_eligible_until_three_of_three_fresh_runs_pass"]
+      }
+    },
+    {
+      "id": "instagram_cedar_creek_falls_visual_candidate_01",
+      "platform": "instagram",
+      "url": "https://www.instagram.com/reel/DFlnzJHy3hA/",
+      "addedDate": "2026-09-08",
+      "groundTruth": {
+        "verifiedBy": "Independently verified 2026-09-08: the public Reel caption describes a six-mile Southern California hike ending at an 80-foot waterfall and deep pool, while extracted frames show Cedar Creek Falls' distinctive bare-granite amphitheater and plunge pool. Recreation.gov independently identifies Cedar Creek Falls as the six-mile out-and-back destination, and San Diego tourism independently describes its 80-foot drop into the Devil's Punchbowl. Google Places (New) supplied the canonical trail ID and coordinates only after the physical identity was established.",
+        "hasIdentifiablePlace": true,
+        "notes": "The exact place name is absent from the source caption/title and visible overlay; regional, distance, waterfall-height, and visual clues support independent identification."
+      },
+      "expected": {
+        "contentCategory": "activity",
+        "geographyHints": ["Southern California"],
+        "forbiddenCandidates": [],
+        "forbiddenRegions": [],
+        "minDecision": "qualification_required"
+      },
+      "tutorial": {
+        "groundTruthStatus": "verified",
+        "expectedGooglePlaceId": "ChIJjfAOhyTc24ARoaGl3uI8l2E",
+        "expectedCanonicalPlaceName": "Cedar Creek Falls Trail",
+        "expectedCityRegion": "Ramona, CA",
+        "expectedCountry": "US",
+        "expectedCoordinates": {
+          "latitude": 32.9933844,
+          "longitude": -116.7442667
+        },
+        "groundTruthEvidence": [
+          "https://www.recreation.gov/permits/234735",
+          "https://www.sandiego.org/article/san-diego-countys-waterfalls",
+          "Google Places (New) direct identity lookup on 2026-09-08"
+        ],
+        "interestTags": ["outdoors", "hiking", "waterfalls", "swimming"],
+        "sourceStatus": "public",
+        "sourceHealth": {
+          "lastCheckedAt": "2026-09-08T22:40:00.000Z",
+          "status": "healthy",
+          "identityMarker": "instagram:reel:DFlnzJHy3hA",
+          "checkMethod": "Public caption metadata and selected video format fetched with yt-dlp; extracted frames were readable."
+        },
+        "eligibility": "candidate",
+        "singlePlace": true,
+        "triviallyDisclosed": false,
+        "allowedTerminalOutcomes": ["auto_save", "candidate_confirmation", "candidate_picker", "manual_fallback"],
+        "expectedRecognitionPath": "media_fallback",
+        "qualification": {
+          "lastQualifiedAt": "2026-09-08T23:12:46.000Z",
+          "attempts": 3,
+          "freshJobs": 3,
+          "mediaFallbackObserved": 3,
+          "correct": 0,
+          "controlledNonSuccess": 3,
+          "wrong": 0,
+          "wrongSave": 0,
+          "infrastructureFailure": 0,
+          "medianLatencyMs": 21933
+        },
+        "suitabilityNotes": "Compelling waterfall reveal with strong non-name clues and one dominant destination.",
+        "limitations": ["instagram_login_or_interstitial_may_vary", "cliff_jumping_is_prohibited_at_the_site", "zero_of_three_fresh_dev_runs_passed", "not_eligible_for_tutorial"]
+      }
+    },
+    {
+      "id": "facebook_villa_invernizzi_trivial_01",
+      "platform": "facebook",
+      "url": "https://www.facebook.com/lesclefsdoritaly/videos/a-hidden-gem-in-milan-pink-flamingos-at-villa-invernizzistep-into-a-fairytale-in/929350391860900/",
+      "addedDate": "2026-09-08",
+      "groundTruth": {
+        "verifiedBy": "Fetched the public Facebook video metadata with yt-dlp on 2026-09-08; its title and description explicitly identify Villa Invernizzi and Via Cappuccini in Milan.",
+        "hasIdentifiablePlace": true,
+        "notes": "Public and single-place, but the answer dominates Facebook's own metadata."
+      },
+      "expected": {
+        "contentCategory": "landmark",
+        "geographyHints": ["Milan", "Italy"],
+        "forbiddenCandidates": [],
+        "forbiddenRegions": [],
+        "minDecision": "correct_match_only"
+      },
+      "tutorial": {
+        "groundTruthStatus": "verified",
+        "expectedGooglePlaceId": null,
+        "expectedCanonicalPlaceName": "Villa Invernizzi",
+        "expectedCityRegion": "Milan",
+        "expectedCountry": "IT",
+        "interestTags": ["landmarks", "animals", "architecture"],
+        "sourceStatus": "public",
+        "eligibility": "ineligible",
+        "singlePlace": true,
+        "triviallyDisclosed": true,
+        "allowedTerminalOutcomes": ["auto_save", "candidate_confirmation"],
+        "qualification": null,
+        "suitabilityNotes": "Useful Facebook acquisition probe, but it demonstrates metadata bookmarking rather than inference.",
+        "limitations": ["exact_place_in_title_and_description", "poor_tutorial_magic_moment", "place_id_not_independently_recorded"]
       }
     }
   ]

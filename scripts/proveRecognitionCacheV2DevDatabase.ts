@@ -23,6 +23,15 @@ async function main(): Promise<void> {
     if (placesError) throw placesError;
     assert.equal(places?.length, 3);
     const fingerprint = 'controlled-frozen-multi-evidence';
+    const { data: coldMiss, error: coldMissError } = await session.admin.rpc('read_recognition_answers_v2', {
+      p_identity_key: `${identity.key}:unseeded`,
+      p_identity_version: identity.identityVersion,
+      p_policy_version: RECOGNITION_CACHE_POLICY_VERSION,
+      p_recognition_version: RECOGNITION_VERSION,
+      p_user_id: session.identity!.userId,
+    });
+    if (coldMissError) throw coldMissError;
+    assert.equal(coldMiss?.length ?? 0, 0, 'an unknown identity must miss Cache V2');
     const { error: stateError } = await session.admin.from('recognition_source_states').insert({
       identity_key: identity.key, platform: identity.platform, content_id: identity.contentId,
       canonical_url: identity.canonicalUrl, identity_version: identity.identityVersion,
@@ -72,16 +81,25 @@ async function main(): Promise<void> {
       p_idempotency_key: `cache-v2-multi-${randomUUID()}`,
     });
     if (correctionError) throw correctionError;
-    const [{ data: sourceState }, { data: answers }, { data: work, error: workError }] = await Promise.all([
+    const [{ data: sourceState }, { data: answers }, { data: work, error: workError },
+      { data: quarantinedRead, error: quarantinedReadError }] = await Promise.all([
       session.admin.from('recognition_source_states').select('*').eq('identity_key', identity.key).single(),
       session.admin.from('recognition_cache_answers_v2').select('slot_key,state,feedback_revision,validated_feedback_revision').eq('identity_key', identity.key).order('slot_key'),
       session.admin.from('recognition_revalidation_tasks').select('*').eq('identity_key', identity.key).single(),
+      session.admin.rpc('read_recognition_answers_v2', {
+        p_identity_key: identity.key,
+        p_identity_version: identity.identityVersion,
+        p_policy_version: RECOGNITION_CACHE_POLICY_VERSION,
+        p_recognition_version: RECOGNITION_VERSION,
+        p_user_id: session.identity!.userId,
+      }),
     ]);
-    if (workError) throw workError;
+    if (workError ?? quarantinedReadError) throw workError ?? quarantinedReadError;
     assert.equal(sourceState.state, 'QUARANTINED');
     assert.equal(sourceState.whole_source_quarantined, false);
     assert.equal(answers?.filter((answer: any) => answer.state === 'QUARANTINED').length, 1);
     assert.equal(answers?.filter((answer: any) => answer.state === 'ELIGIBLE').length, 1);
+    assert.equal(quarantinedRead?.length ?? 0, 0, 'quarantined source must be excluded from Cache V2 reads');
     const sibling = answers?.find((answer: any) => answer.state === 'ELIGIBLE');
     assert.ok(sibling);
     assert.equal(sibling.feedback_revision, 1);
@@ -97,8 +115,10 @@ async function main(): Promise<void> {
     assert.equal(answerCount, 2);
     console.log(`CACHE_V2_DEV_DATABASE ${JSON.stringify({
       multiPlaceCacheHit: true,
+      coldMissAnswerCount: coldMiss?.length ?? 0,
       savedPlaceCount: savedIds.length,
       correctedSlotQuarantined: true,
+      quarantinedReadAnswerCount: quarantinedRead?.length ?? 0,
       siblingEligibleAtCurrentRevision: true,
       alternativesCountedAsLocations: 0,
       technicalFailureDisposition: disposition,

@@ -7,12 +7,18 @@
 
 export const RECOGNITION_CACHE_READS_FLAG = 'RECOGNITION_CACHE_READS_ENABLED';
 export const RECOGNITION_CACHE_POLICY_VERSION = 'recognition-cache-v2.1';
+export const FRESH_RECOGNITION_RUN_MODE = 'qualification_fresh';
 
 export type RecognitionCachePolicy = Readonly<{
   readsEnabled: boolean;
   writesEnabled: true;
   cacheReadSuspended: boolean;
-  source: 'explicit_true' | 'explicit_false' | 'default_suspended' | 'invalid_suspended';
+  source:
+    | 'explicit_true'
+    | 'explicit_false'
+    | 'default_suspended'
+    | 'invalid_suspended'
+    | 'qualification_fresh_override';
 }>;
 
 type EnvReader = (name: string) => string | undefined;
@@ -43,6 +49,21 @@ export function readRecognitionCachePolicy(): RecognitionCachePolicy {
   return resolveRecognitionCachePolicy((name) => deno?.env?.get?.(name));
 }
 
+/** Per-job Dev qualification override. Normal jobs preserve the environment
+ * policy exactly; qualification jobs never read or join recognition answers. */
+export function recognitionCachePolicyForRun(
+  policy: RecognitionCachePolicy,
+  runMode: unknown,
+): RecognitionCachePolicy {
+  if (runMode !== FRESH_RECOGNITION_RUN_MODE) return policy;
+  return Object.freeze({
+    readsEnabled: false,
+    writesEnabled: true as const,
+    cacheReadSuspended: true,
+    source: 'qualification_fresh_override' as const,
+  });
+}
+
 export function forceFreshRecognitionSubmission(policy: RecognitionCachePolicy): boolean {
   return !policy.readsEnabled;
 }
@@ -59,6 +80,7 @@ export function recognitionCacheDiagnostics(policy: RecognitionCachePolicy): Rea
   cacheReadSuspended: boolean;
   recognitionCacheWritesEnabled: true;
   recognitionCachePolicyVersion: string;
+  qualificationFresh: boolean;
 }> {
   return Object.freeze({
     recognitionCacheRead: false,
@@ -66,6 +88,7 @@ export function recognitionCacheDiagnostics(policy: RecognitionCachePolicy): Rea
     cacheReadSuspended: policy.cacheReadSuspended,
     recognitionCacheWritesEnabled: true,
     recognitionCachePolicyVersion: RECOGNITION_CACHE_POLICY_VERSION,
+    qualificationFresh: policy.source === 'qualification_fresh_override',
   });
 }
 

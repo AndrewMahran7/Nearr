@@ -68,7 +68,8 @@ export const SHARE_REGRESSION_FIXTURES: ShareRegressionFixture[] = [
     expectedAddressIncludes: ['19688 Beach Blvd', 'Huntington Beach'],
     expectedSafeToAutoSave: false,
     mustNotIncludeCandidateNames: ['19688 Beach Blvd', 'Instagram', 'Media', 'Foodie'],
-    notes: 'Handle + literal address. Must not pair street fragment Beach Blvd as venue.',
+    notes:
+      'Strong exact-business canary: the source name and literal address agree with one provider. Must not pair street fragment Beach Blvd as venue.',
   },
   {
     id: 'instagram-brooklyn-city-pizzeria-reel',

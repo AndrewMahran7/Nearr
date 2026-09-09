@@ -1,12 +1,14 @@
 /**
  * Product-level policy for the save-first recognition contract.
  *
- * Confidence changes rank; it is not a veto.  Only candidates that are not a
- * specific physical destination, lack usable identity/coordinates, or carry a
- * deterministic semantic/geographic contradiction are excluded.
+ * Confidence changes rank; it is not a veto. Automatic completion additionally
+ * requires an explicit exact-identity authorization produced by an evidence
+ * gate. A plausible top result is never authorization by itself.
  */
 
-export const AUTOMATIC_COMPLETION_RULE_VERSION = 'automatic-completion-2026-09-06.v1';
+import { evaluateExactIdentitySafety, type ExactIdentityStrength } from './exactIdentitySafety.ts';
+
+export const AUTOMATIC_COMPLETION_RULE_VERSION = 'automatic-completion-2026-09-09.v2-exact-identity';
 export const MAX_SOFT_ALTERNATIVES = 2;
 
 export type AutomaticCompletionCandidate = {
@@ -21,11 +23,13 @@ export type AutomaticCompletionCandidate = {
   confidenceScore?: number | null;
   reasons?: string[];
   discoveryOnly?: boolean;
+  exactIdentityStrength?: Exclude<ExactIdentityStrength, 'none'>;
+  upstreamSafetyDecision?: 'AUTO_SAVE' | 'REVIEW' | 'REJECT' | null;
 };
 
 export type AutomaticCompletionPlan<T extends AutomaticCompletionCandidate> =
-  | { action: 'save'; primary: T; alternatives: T[]; reason: 'top1_plausible' }
-  | { action: 'escalate'; primary: null; alternatives: []; reason: 'no_defensible_specific_place' };
+  | { action: 'save'; primary: T; alternatives: T[]; reason: 'exact_identity_supported' }
+  | { action: 'escalate'; primary: null; alternatives: []; reason: 'no_defensible_specific_place' | 'exact_identity_unproven' | 'related_place_not_distinguished' | 'upstream_exact_identity_review_required' };
 
 const BROAD_TYPES = new Set([
   'locality', 'administrative_area_level_1', 'administrative_area_level_2',
@@ -69,11 +73,39 @@ export function planAutomaticCompletion<T extends AutomaticCompletionCandidate>(
   if (plausible.length === 0) {
     return { action: 'escalate', primary: null, alternatives: [], reason: 'no_defensible_specific_place' };
   }
+  const primary = plausible[0]!;
+  const candidateBoundCount = plausible.filter(
+    (candidate) => candidate.exactIdentityStrength === 'candidate_bound',
+  ).length;
+  const exact = evaluateExactIdentitySafety({
+    support: {
+      exactAddress: primary.exactIdentityStrength === 'candidate_bound' && candidateBoundCount === 1,
+      exactSourceNameSources: primary.exactIdentityStrength === 'source_named' ? ['source'] : [],
+      visualNameObservationCount: primary.exactIdentityStrength === 'distinctive_visual' ? 2 : 0,
+      visualNameTimestampCount: primary.exactIdentityStrength === 'distinctive_visual' ? 2 : 0,
+      visualConfidence: primary.exactIdentityStrength === 'distinctive_visual' ? 1 : 0,
+      providerGeographyCorroborated: primary.exactIdentityStrength === 'distinctive_visual',
+    },
+    plausibleCandidateCount: plausible.length,
+    upstreamSafetyDecision: primary.upstreamSafetyDecision,
+  });
+  if (!exact.allowed) {
+    const reason = exact.reason === 'related_place_not_distinguished' ||
+        exact.reason === 'upstream_exact_identity_review_required'
+      ? exact.reason
+      : 'exact_identity_unproven';
+    return {
+      action: 'escalate',
+      primary: null,
+      alternatives: [],
+      reason,
+    };
+  }
   return {
     action: 'save',
-    primary: plausible[0]!,
+    primary,
     alternatives: plausible.slice(1),
-    reason: 'top1_plausible',
+    reason: 'exact_identity_supported',
   };
 }
 

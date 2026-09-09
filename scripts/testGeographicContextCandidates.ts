@@ -461,7 +461,7 @@ for (const fx of CONTEXT_ONLY) {
     confidenceScore: 0.2,
     reasons: [],
   };
-  const decision = gate([tuxedoCat, sanAntonio]);
+  const decision = gate([tuxedoCat, sanAntonio], { venueNameHints: ["Tuxedo Cat's Coffee"] });
   assert.equal(decision.plausibleCandidateCount, 1, 'the city is context, not a second option');
   assert.equal(decision.selectedProviderId, 'dest-tuxedo-cat');
   assert.equal(decision.eligible, true, 'the exactly-one-candidate rule still auto-saves');
@@ -476,7 +476,7 @@ for (const fx of CONTEXT_ONLY) {
 {
   const decision = gate([{
     ...DESTINATIONS[0], confidenceScore: 0.7, reasons: ['business_type', 'strong_name_match'],
-  }]);
+  }], { venueNameHints: [DESTINATIONS[0].name] });
   assert.equal(decision.eligible, true, 'California Pizza Kitchen must auto-save');
   assert.equal(decision.selectedProviderId, 'dest-cpk');
 }
@@ -485,7 +485,7 @@ for (const fx of CONTEXT_ONLY) {
 {
   const decision = gate([{
     ...DESTINATIONS[4], confidenceScore: 0.7, reasons: ['business_type', 'strong_name_match'],
-  }]);
+  }], { venueNameHints: [DESTINATIONS[4].name] });
   assert.equal(decision.eligible, true, 'Central Park must auto-save');
 }
 
@@ -505,9 +505,9 @@ for (const fx of CONTEXT_ONLY) {
     confidenceScore: 0.8,
     reasons: ['strong_name_match'],
   };
-  const decision = gate([montenegro, croatia]);
+  const decision = gate([montenegro, croatia], { venueNameHints: [DESTINATIONS[9].name] });
   assert.equal(decision.plausibleCandidateCount, 2);
-  assert.equal(decision.eligible, true, 'current save-first semantics persist top-1');
+  assert.equal(decision.eligible, false, 'same-name destinations require exact branch evidence');
   assert.equal(decision.selectedProviderId, 'dest-blue-cave-me');
   assert.deepEqual(decisionForPlausibleCandidates(2, false), {
     decision: 'candidate_picker',
@@ -569,7 +569,7 @@ for (const fx of CONTEXT_ONLY) {
   assert.equal(decision.rawCandidateCount, 6);
   assert.equal(decision.plausibleCandidateCount, 5, 'New York is excluded, the 5 venues remain');
   assert.ok(!decision.plausibleProviderIds.includes('ctx-new-york'));
-  assert.equal(decision.eligible, true, 'save-first selects top-1 and retains alternatives');
+  assert.equal(decision.eligible, false, 'a roundup candidate set cannot silently select top-1');
   assert.equal(decision.selectedProviderId, 'dest-nyc-0');
 }
 
@@ -595,7 +595,7 @@ for (const fx of CONTEXT_ONLY) {
     addresses: [{ raw: '12430 Seal Beach Blvd B' }, { raw: '1401 Santa Fe Ave' }],
   });
   assert.equal(decision.eligible, true, 'a candidate with no types is untouched by this rule');
-  assert.deepEqual(decision.reasonCodes, ['top1_plausible_candidate']);
+  assert.deepEqual(decision.reasonCodes, ['exact_identity_supported']);
 }
 
 // A resolver-labelled geographic rejection persisted from an earlier attempt

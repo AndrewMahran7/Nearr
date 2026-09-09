@@ -440,7 +440,10 @@ check(
 check(
   'wrong-save: a country-only place can never satisfy the auto-save gate',
   mediaEvidenceAutoSaveEligible(
-    evidence([place({ name: 'Ometepe Island', category: 'island', country: 'Nicaragua', confidence: 1 })]),
+    evidence([place({
+      name: 'Ometepe Island', category: 'island', country: 'Nicaragua', confidence: 1,
+      explicitEvidence: [ev('visible_text', 'Nicaragua', 1)],
+    })]),
   ) === false,
 );
 check(

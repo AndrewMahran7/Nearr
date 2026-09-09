@@ -175,7 +175,10 @@ const tests: Array<[string, () => void]> = [
   ['15 absurd soft alternative is filtered from automatic completion', () => {
     const exact = provider('Wave Three Smokehouse Hawthorn', 'restaurant', 'Hawthorn East VIC, Australia');
     const absurd = { ...provider('Hawthorn Healing Center', 'wellness_center', 'Bend, OR, USA'), reasons: ['source_entity_semantic_conflict'] };
-    const plan = planAutomaticCompletion([exact, absurd]);
+    const plan = planAutomaticCompletion([
+      { ...exact, exactIdentityStrength: 'candidate_bound' },
+      absurd,
+    ]);
     assert.equal(plan.action, 'save');
     assert.deepEqual(plan.action === 'save' ? plan.alternatives : [], []);
   }],

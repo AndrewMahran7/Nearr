@@ -38,8 +38,72 @@ assert.equal(santaFeDecision.rawCandidateCount, 1);
 assert.equal(santaFeDecision.plausibleCandidateCount, 1);
 assert.equal(santaFeDecision.selectedProviderId, santaFe.googlePlaceId);
 assert.equal(santaFeDecision.confidenceScore, santaFe.confidenceScore);
-assert.deepEqual(santaFeDecision.reasonCodes, ['top1_plausible_candidate']);
+assert.deepEqual(santaFeDecision.reasonCodes, ['exact_identity_supported']);
 assert.equal(santaFeDecision.eligible, true, 'the exact Santa Fe screenshot shape must auto-save');
+
+const sameAddressParentSubstitution = evaluateMetadataAutoSave({
+  result: {
+    decision: 'candidate_confirmation',
+    candidates: [{
+      ...santaFe,
+      googlePlaceId: 'parent-complex-provider',
+      name: 'Example Shopping Center',
+      formattedAddress: '3333 Bristol St, Costa Mesa, CA 92626, USA',
+      confidenceScore: 0.98,
+      reasons: ['business_type', 'compact_name_match', 'address_verified'],
+    }],
+  },
+  evidence: {
+    address: { raw: '3333 Bristol St' },
+    addresses: [{ raw: '3333 Bristol St' }],
+    venueNameHints: ['Example Restaurant'],
+  },
+});
+assert.equal(
+  sameAddressParentSubstitution.eligible,
+  false,
+  'a shared address must not turn a parent complex into the named tenant',
+);
+assert.deepEqual(
+  sameAddressParentSubstitution.explicitConflictFlags,
+  ['source_named_candidate_mismatch'],
+);
+
+const handleSpellingWithIndependentCaptionName = evaluateMetadataAutoSave({
+  result: {
+    decision: 'candidate_confirmation',
+    candidates: [{
+      ...santaFe,
+      googlePlaceId: 'capones-provider',
+      name: "Capone's Italian Cucina",
+      formattedAddress: '19688 Beach Blvd #10, Huntington Beach, CA 92648, USA',
+      confidenceScore: 0.96,
+      reasons: ['business_type', 'address_verified'],
+    }],
+  },
+  evidence: {
+    rawTitle: 'Lily | OC Food + Things to Do in Orange County on Instagram',
+    rawDescription: '@capones_cucina - 19688 Beach Blvd, Huntington Beach, CA',
+    address: {
+      raw: '19688 Beach Blvd',
+      venue: 'Capones Italian Cucina',
+      venueSource: 'tagged_venue_handle',
+    },
+    addresses: [{ raw: '19688 Beach Blvd' }],
+    venueNameHints: ['Things to Do'],
+    venueNameHintsFromHandle: [],
+    handles: {
+      posterHandle: 'ocfeed',
+      posterNameHint: 'Lily | OC Food + Things to Do in Orange County',
+      venueHandles: ['capones_cucina'],
+    },
+  },
+});
+assert.equal(
+  handleSpellingWithIndependentCaptionName.eligible,
+  true,
+  'independently written exact business name plus address must preserve autosave despite handle punctuation',
+);
 
 const santaFePlan = planFromResolverDecision({
   decision: santaFeDecision.eligible ? 'auto_save' : 'candidate_confirmation',
@@ -96,9 +160,8 @@ for (const [name, input, reason] of cases) {
   );
 }
 
-// Current save-first contract: ordinary 2-3 way ambiguity saves the best
-// defensible provider and retains the rest as soft alternatives. A concrete
-// contradiction still blocks through the cases above.
+// Ranking is presentation-only: ordinary 2-3 way ambiguity cannot establish
+// the exact source identity.
 const ordinaryAmbiguity = evaluateMetadataAutoSave({
   result: {
     decision: 'candidate_picker',
@@ -106,9 +169,10 @@ const ordinaryAmbiguity = evaluateMetadataAutoSave({
   },
   evidence: {},
 });
-assert.equal(ordinaryAmbiguity.eligible, true);
+assert.equal(ordinaryAmbiguity.eligible, false);
 assert.equal(ordinaryAmbiguity.selectedProviderId, santaFe.googlePlaceId);
 assert.equal(ordinaryAmbiguity.plausibleCandidateCount, 2);
+assert.deepEqual(ordinaryAmbiguity.reasonCodes, ['related_place_not_distinguished']);
 
 const resolverLabelCannotVetoStrongSingleton = evaluateMetadataAutoSave({
   result: { decision: 'manual_fallback', candidates: [santaFe] },
@@ -116,9 +180,10 @@ const resolverLabelCannotVetoStrongSingleton = evaluateMetadataAutoSave({
 });
 assert.equal(
   resolverLabelCannotVetoStrongSingleton.eligible,
-  true,
-  'an old resolver label cannot veto a candidate that independently passes the singleton quality gate',
+  false,
+  'provider quality without source identity cannot authorize a singleton save',
 );
+assert.deepEqual(resolverLabelCannotVetoStrongSingleton.reasonCodes, ['exact_identity_unproven']);
 
 const weakLoneSurvivor = evaluateMetadataAutoSave({
   result: {

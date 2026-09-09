@@ -221,12 +221,13 @@ assert.ok(visibleIds.every((id) => staleCandidates.some((candidate) => candidate
 assert.equal(cacheCandidateVisibleLimit(), 3);
 assert.ok(visibleIds.length <= cacheCandidateVisibleLimit());
 
-// 17. A context-reranked singleton may save, but stale or weak singletons do not.
+// 17. Context can rerank a candidate set, but cannot manufacture exact identity.
 const contextualSingleton = rerankCachedCandidatePayload(cachedPayload([
   place('ca-ventura', '2070 Harbor Blvd, Ventura, CA, USA', 34.27, -119.27),
 ]))!;
-assert.equal(evaluateCachedSingletonAutoSave(contextualSingleton).eligible, true);
+assert.equal(evaluateCachedSingletonAutoSave(contextualSingleton).eligible, false);
 assert.equal(evaluateCachedSingletonAutoSave(contextualSingleton).selectedProviderId, 'ca-ventura');
+assert.equal(evaluateCachedSingletonAutoSave(contextualSingleton).reason, 'exact_identity_unproven');
 const staleSingleton = rerankCachedCandidatePayload({
   version: 1,
   selectionMode: 'single_identity',

@@ -98,7 +98,7 @@ check('1 zero viable candidates never auto-save', () => {
 });
 
 check('2 one strong canonical candidate auto-saves', () => {
-  const decision = metadata([canonical()]);
+  const decision = metadata([canonical()], { venueNameHints: ['Parlor Woodfire'] });
   assert.equal(decision.plausibleCandidateCount, 1);
   assert.equal(decision.viableCandidateCount, 1);
   assert.equal(decision.independentQualityGatePassed, true);
@@ -135,9 +135,12 @@ check('5 raw textual leads stay search-only before canonical resolution', () => 
 });
 
 check('6 two canonical candidates remain confirmation', () => {
-  const decision = metadata([canonical(), canonical({ googlePlaceId: 'google-parlor-2' })]);
+  const decision = metadata(
+    [canonical(), canonical({ googlePlaceId: 'google-parlor-2' })],
+    { venueNameHints: ['Parlor Woodfire'] },
+  );
   assert.equal(decision.eligible, false);
-  assert.equal(decision.reasonCodes[0], 'multiple_plausible_candidates');
+  assert.equal(decision.reasonCodes[0], 'related_place_not_distinguished');
   assert.equal(decisionForPlausibleCandidates(2).autoSave, false);
 });
 
@@ -145,7 +148,7 @@ check('7 duplicate aliases collapse to one strong canonical identity', () => {
   const decision = metadata([
     canonical({ name: 'Parlor Woodfire' }),
     canonical({ name: 'The Parlor Woodfire' }),
-  ]);
+  ], { address: { raw: '123 Main St' } });
   assert.equal(decision.rawCandidateCount, 2);
   assert.equal(decision.plausibleCandidateCount, 1);
   assert.equal(decision.eligible, true);
@@ -156,9 +159,9 @@ check('8 rejected raw candidates do not weaken an independently strong survivor'
     canonical(),
     canonical({ googlePlaceId: 'weak-reviewable', name: 'Nearby Business', reasons: ['business_type'], confidenceScore: 0.5 }),
     canonical({ googlePlaceId: 'broad-area', primaryType: 'locality', types: ['locality', 'political'] }),
-  ]);
+  ], { venueNameHints: ['Parlor Woodfire'] });
   assert.equal(decision.rawCandidateCount, 3);
-  assert.equal(decision.plausibleCandidateCount, 2);
+  assert.equal(decision.plausibleCandidateCount, 1);
   assert.equal(decision.viableCandidateCount, 1);
   assert.equal(decision.independentQualityGatePassed, true);
   assert.equal(decision.eligible, true);
@@ -217,7 +220,18 @@ check('12 CANDIDATE_SET cache singleton saves only after rerank and safety gate'
       sourceKind: 'exact_source_evidence',
     },
   })!;
-  assert.equal(evaluateCachedSingletonAutoSave(contextual).eligible, true);
+  assert.equal(evaluateCachedSingletonAutoSave(contextual).eligible, false);
+  const addressBound = rerankCachedCandidatePayload({
+    ...row.candidate_payload,
+    candidates: [canonical({ reasons: ['address_verified', 'strong_name_match'] })],
+    selectionMode: 'single_identity',
+    recognitionContext: {
+      locality: 'Los Angeles', region: 'CA', country: 'USA',
+      coordinates: { lat: 34.05, lng: -118.24 }, confidence: 'exact',
+      sourceKind: 'exact_source_evidence',
+    },
+  })!;
+  assert.equal(evaluateCachedSingletonAutoSave(addressBound).eligible, true);
 });
 
 check('13 context-aware reranking singleton still passes the quality gate', () => {
@@ -235,7 +249,7 @@ check('13 context-aware reranking singleton still passes the quality gate', () =
     },
   });
   assert.equal(ranked.visible.length, 1);
-  assert.equal(metadata([ranked.visible[0]!.candidate]).eligible, true);
+  assert.equal(metadata([ranked.visible[0]!.candidate], { venueNameHints: ['Parlor Woodfire'] }).eligible, true);
   assert.equal(metadata([{ ...ranked.visible[0]!.candidate, reasons: ['business_type'] }]).eligible, false);
 });
 

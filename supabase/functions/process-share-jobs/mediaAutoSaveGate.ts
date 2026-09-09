@@ -11,8 +11,13 @@ import {
   semanticCategoryCompatibility,
   type SemanticCompatibility,
 } from '../../../lib/recognitionTruth.ts';
+import {
+  EXACT_IDENTITY_SAFETY_RULE_VERSION,
+  evaluateExactIdentitySafety,
+  type ExactIdentityStrength,
+} from '../../../lib/exactIdentitySafety.ts';
 
-export const MEDIA_AUTO_SAVE_RULE_VERSION = 'media-autosave-2026-09-08.v11-source-identity-guard';
+export const MEDIA_AUTO_SAVE_RULE_VERSION = 'media-autosave-2026-09-09.v12-exact-identity';
 
 // Retained for configuration compatibility and diagnostics. The v7 decision
 // does not apply this value as a second confirmation threshold: the resolver's
@@ -61,6 +66,9 @@ export type MediaAutoSaveGateDecision = {
   sceneCategory: string | null;
   candidateCategory: string | null;
   semanticOverrideApplied: boolean;
+  exactIdentityRuleVersion: string;
+  exactIdentityStrength: ExactIdentityStrength;
+  exactIdentityReason: string;
 };
 
 export function mediaAutoSaveAuthorized(args: {
@@ -276,6 +284,9 @@ export function evaluateMediaAutoSave(
       sceneCategory: input.mention.category ?? null,
       candidateCategory: null,
       semanticOverrideApplied: false,
+      exactIdentityRuleVersion: EXACT_IDENTITY_SAFETY_RULE_VERSION,
+      exactIdentityStrength: 'none',
+      exactIdentityReason: 'category_only_candidate',
     };
   }
   const rawCandidateCount = input.result.scoring.length;
@@ -300,6 +311,8 @@ export function evaluateMediaAutoSave(
   let sceneCategory: string | null = null;
   let candidateCategory: string | null = null;
   let semanticOverrideApplied = false;
+  let exactIdentityStrength: ExactIdentityStrength = 'none';
+  let exactIdentityReason = 'not_evaluated';
   if (input.mention.creatorHandleEvidenceOnly === true) {
     reasonCode = 'creator_identity_only';
     explicitConflictFlags.push('creator_identity_only');
@@ -330,8 +343,13 @@ export function evaluateMediaAutoSave(
       sceneCategory = compatibility.sceneCategory;
       candidateCategory = compatibility.candidateCategory;
       const identity = {
-        exactAddress: selected.score.reasons?.includes('address_verified') ||
-          selected.score.reasons?.includes('address_verified_multi'),
+        exactAddress: plausible.filter(({ score }) =>
+          score.reasons?.includes('address_verified') ||
+          score.reasons?.includes('address_verified_multi')
+        ).length === 1 && (
+          selected.score.reasons?.includes('address_verified') ||
+          selected.score.reasons?.includes('address_verified_multi')
+        ),
         readableSignageExactName: input.mention.sources.includes('visible_text') &&
           input.mention.nameEvidenceSources.includes('visible_text'),
         explicitCaptionExactName: input.mention.nameEvidenceSources.includes('caption'),
@@ -344,17 +362,37 @@ export function evaluateMediaAutoSave(
         candidateRejectionReasons.push('candidate_semantic_mismatch');
         explicitConflictFlags.push('candidate_semantic_mismatch');
       } else {
-        reasonCode = plausible.length > 1
-          ? 'top1_of_multiple_plausible_candidates'
-          : 'single_plausible_candidate';
+        const scoreReasons = new Set(selected.score.reasons ?? []);
+        const exactIdentity = evaluateExactIdentitySafety({
+          support: {
+            exactAddress: identity.exactAddress,
+            exactSourceNameSources: input.mention.nameEvidenceSources,
+            visualNameObservationCount: input.mention.frameNameEvidenceCount ?? 0,
+            visualNameTimestampCount: input.mention.frameNameEvidenceTimestamps?.length ?? 0,
+            visualConfidence: input.mention.confidence,
+            providerGeographyCorroborated: [
+              'state_match', 'city_match', 'country_match', 'distance_nearby', 'address_verified',
+              'address_verified_multi',
+            ].some((value) => scoreReasons.has(value)),
+          },
+          plausibleCandidateCount: plausible.length,
+          unresolvedIdentityAlternativeCount: input.mention.identityAlternatives?.length ?? 0,
+        });
+        exactIdentityStrength = exactIdentity.strength;
+        exactIdentityReason = exactIdentity.reason;
+        reasonCode = exactIdentity.allowed
+          ? 'exact_identity_supported'
+          : exactIdentity.reason;
+        if (!exactIdentity.allowed) candidateRejectionReasons.push(exactIdentity.reason);
         if (semantic.overridden) explicitConflictFlags.push('candidate_semantic_override');
       }
     }
   }
 
   const selected = plausible[0] ?? null;
+  if (exactIdentityReason === 'not_evaluated') exactIdentityReason = reasonCode;
   return {
-    eligible: reasonCode === 'single_plausible_candidate' || reasonCode === 'top1_of_multiple_plausible_candidates',
+    eligible: reasonCode === 'exact_identity_supported',
     confidenceScore: selected?.score.normalizedScore ?? null,
     ruleVersion: MEDIA_AUTO_SAVE_RULE_VERSION,
     reasonCodes: [reasonCode],
@@ -368,6 +406,9 @@ export function evaluateMediaAutoSave(
     sceneCategory,
     candidateCategory,
     semanticOverrideApplied,
+    exactIdentityRuleVersion: EXACT_IDENTITY_SAFETY_RULE_VERSION,
+    exactIdentityStrength,
+    exactIdentityReason,
   };
 }
 
@@ -399,6 +440,9 @@ export function formatMediaAutoSaveDecisionLog(args: {
     `scene_category=${safeLogValue(args.decision.sceneCategory)}`,
     `candidate_category=${safeLogValue(args.decision.candidateCategory)}`,
     `semantic_override=${args.decision.semanticOverrideApplied ? 'true' : 'false'}`,
+    `exact_identity_rule=${safeLogValue(args.decision.exactIdentityRuleVersion)}`,
+    `exact_identity_strength=${safeLogValue(args.decision.exactIdentityStrength)}`,
+    `exact_identity_reason=${safeLogValue(args.decision.exactIdentityReason)}`,
     `final_decision=${args.finalDecision}`,
     `decision_reason=${safeLogValue(args.finalReasonCodes.join(','))}`,
   ].join(' ');

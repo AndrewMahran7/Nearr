@@ -4,6 +4,8 @@
 //
 // Contract:
 //   Request  (POST): { "url": "...", "clientRequestId": "..." }
+//   Internal Dev qualification additionally sends:
+//                    { "qualificationMode": "fresh_media" }
 //                    Authorization: Bearer <supabase access token>
 //   Response (200):  { "jobId": "...", "status": "queued", "duplicate": false,
 //                      "requiresPurchase": false, "availableUses": 4 }
@@ -29,6 +31,10 @@ import { normalizeShareUrl } from '../../../lib/shareAgent/tiktokUrl.ts';
 import { inspectFacebookUrl } from '../../../lib/shareAgent/facebookUrl.ts';
 import { detectPlatform } from '../process-share-link/platform/detectPlatform.ts';
 import { validateShareUrl } from './urlValidation.ts';
+import {
+  authorizeQualificationMode,
+  FRESH_QUALIFICATION_MODE,
+} from './qualificationMode.ts';
 import {
   logRecognitionCachePolicy,
   readRecognitionCachePolicy,
@@ -56,6 +62,14 @@ function hostOf(url: string): string {
   }
 }
 
+function projectRef(url: string): string | null {
+  try {
+    return new URL(url).hostname.split('.')[0] || null;
+  } catch {
+    return null;
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: CORS_HEADERS });
@@ -65,7 +79,11 @@ serve(async (req) => {
   }
 
   // ---- Parse body ------------------------------------------------
-  let body: { url?: string; clientRequestId?: string; forceRerun?: boolean };
+  let body: {
+    url?: string;
+    clientRequestId?: string;
+    qualificationMode?: string;
+  };
   try {
     body = await req.json();
   } catch {
@@ -97,6 +115,16 @@ serve(async (req) => {
     return json({ error: 'invalid_auth' }, 401);
   }
   const userId = userData.user.id;
+  const activeProjectRef = projectRef(supabaseUrl);
+  const qualification = authorizeQualificationMode({
+    requestedMode: body.qualificationMode,
+    projectRef: activeProjectRef,
+    appMetadata: userData.user.app_metadata,
+  });
+  if (!qualification.ok) {
+    console.log(`[share-job] rejected reason=${qualification.error}`);
+    return json({ error: qualification.error }, qualification.status);
+  }
 
   // ---- Validate + normalize URL ----------------------------------
   const validation = validateShareUrl(body.url);
@@ -124,22 +152,33 @@ serve(async (req) => {
   const dedupeWindowSeconds = 90;
   const recognitionCachePolicy = readRecognitionCachePolicy();
   logRecognitionCachePolicy('create-share-job', recognitionCachePolicy);
-  const { data: created, error: createErr } = await admin.rpc('create_share_job_for_user', {
-    p_user_id: userId,
-    p_source_url: originalUrl,
-    p_canonical_url: canonicalUrl,
-    p_source_platform: platform,
-    p_idempotency_key: idempotencyKey,
-    p_dedupe_window_seconds: dedupeWindowSeconds,
-    // Derived from the server-verified auth user. The client cannot choose the
-    // onboarding exemption. The database grants at most one anonymous run.
-    p_is_anonymous: userData.user.is_anonymous === true,
-    // Idempotency-key and in-flight dedupe are handled before this switch in
-    // the RPC. A new logical submission always gets a new job: validated V2
-    // source answers may satisfy that job, but an old completed user job never
-    // acts as recognition truth.
-    p_force_rerun: true,
-  });
+  const rpcName = qualification.requested
+    ? 'create_dev_qualification_share_job_for_user'
+    : 'create_share_job_for_user';
+  const rpcArgs = qualification.requested
+    ? {
+      p_user_id: userId,
+      p_source_url: originalUrl,
+      p_canonical_url: canonicalUrl,
+      p_source_platform: platform,
+      p_idempotency_key: idempotencyKey,
+    }
+    : {
+      p_user_id: userId,
+      p_source_url: originalUrl,
+      p_canonical_url: canonicalUrl,
+      p_source_platform: platform,
+      p_idempotency_key: idempotencyKey,
+      p_dedupe_window_seconds: dedupeWindowSeconds,
+      // Derived from the server-verified auth user. The client cannot choose
+      // the onboarding exemption.
+      p_is_anonymous: userData.user.is_anonymous === true,
+      // The canonical baseline keeps this wire-compatible argument, but the
+      // database no longer reuses completed jobs. A new logical request gets
+      // a new job while exact retries and active same-source work still dedupe.
+      p_force_rerun: true,
+    };
+  const { data: created, error: createErr } = await admin.rpc(rpcName, rpcArgs);
 
   if (createErr || !Array.isArray(created) || created.length === 0) {
     console.log(`[share-job] create_failed host=${hostOf(canonicalUrl)} code=${(createErr as { code?: string })?.code ?? 'unknown'}`);
@@ -158,6 +197,7 @@ serve(async (req) => {
     duplicate: !!row.duplicate,
     requiresPurchase: !!row.requires_purchase,
     availableUses: Number.isFinite(Number(row.available_uses)) ? Number(row.available_uses) : null,
+    recognitionRunMode: qualification.requested ? FRESH_QUALIFICATION_MODE : 'normal',
     ...(recognitionCachePolicy.cacheReadSuspended
       ? { diagnostics: recognitionCacheDiagnostics(recognitionCachePolicy) }
       : {}),

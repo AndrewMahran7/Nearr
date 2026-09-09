@@ -49,6 +49,7 @@ import {
 } from './failureLogging.ts';
 import { normalizeShareUrl } from '../../../lib/shareAgent/tiktokUrl.ts';
 import { inspectFacebookUrl } from '../../../lib/shareAgent/facebookUrl.ts';
+import { evaluateMetadataAutoSave } from '../process-share-jobs/metadataAutoSaveGate.ts';
 
 // ---------------------------------------------------------------------------
 
@@ -213,7 +214,32 @@ serve(async (req) => {
   }
 
   // ---- Resolve --------------------------------------------------
-  const result = await resolveSharedPlace({ evidence, env });
+  const resolverResult = await resolveSharedPlace({ evidence, env });
+  const exactIdentity = evaluateMetadataAutoSave({ result: resolverResult, evidence });
+  const routedResult = exactIdentity.eligible
+    ? { ...resolverResult, decision: 'auto_save', safeToAutoSave: true }
+    : resolverResult.candidates.length > 0
+    ? {
+        ...resolverResult,
+        decision: resolverResult.candidates.length > 1
+          ? 'candidate_picker'
+          : 'candidate_confirmation',
+        safeToAutoSave: false,
+      }
+    : { ...resolverResult, safeToAutoSave: false };
+  const result = {
+    ...routedResult,
+    diagnostics: {
+      ...(routedResult.diagnostics ?? {}),
+      exactIdentitySafety: {
+        ruleVersion: exactIdentity.exactIdentityRuleVersion,
+        eligible: exactIdentity.eligible,
+        strength: exactIdentity.exactIdentityStrength,
+        reasonCodes: exactIdentity.reasonCodes,
+        exactIdentityReason: exactIdentity.exactIdentityReason,
+      },
+    },
+  };
   // Which evidence source produced the result — the resolver records
   // `evidenceSourceWon` for the tagged-location path; otherwise infer from the
   // evidence the caption pipeline used. Purely diagnostic.

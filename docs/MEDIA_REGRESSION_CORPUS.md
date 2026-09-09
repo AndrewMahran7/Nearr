@@ -67,16 +67,20 @@ review.
 The design target is ~5 per platform (25 total), diverse across evidence
 types (explicit speech, on-screen text only, caption-only, transcript city
 mention, list/roundup, hidden-location style, non-food, weak/no evidence).
-**What's actually in the corpus today is smaller** — 8 entries (2 Snapchat, 3
-YouTube, 1 Facebook, 2 TikTok resolution-stage, 1 TikTok acquisition-only, 0
-Instagram) — because building the rest requires the same rigor already
+**What's actually in the corpus today is smaller** — 13 entries (1 Snapchat, 5
+YouTube, 2 Facebook, 2 TikTok resolution-stage, 1 TikTok acquisition-only, and
+2 verified but unqualified Instagram candidates) — because building the rest requires the same rigor already
 applied here: fetching a real public URL, reading its real content BEFORE
 running Nearr on it, and writing down how. That's genuinely slow to do by
 hand and wasn't rushed to hit a count. See "Expanding the corpus" below.
 
-**Instagram has zero entries.** No public Instagram URL was independently
-verified during this pass. Add one the same way as the others: find a real
-public reel/post, read its real caption, THEN add the entry.
+**Instagram has two independently grounded candidates, but neither is
+qualified.** Historical qualification evidence is deliberately not treated as
+part of the canonical runtime contract.
+
+**YouTube has two independently grounded hidden-location controls, but neither
+is qualified.** Their historical wrong saves predate the exact-identity policy;
+they remain regression controls rather than tutorial fixtures.
 
 **TikTok now has two resolution-stage entries**
 (`tiktok_coffee_shop_explicit_address_01`, `tiktok_nyc_restaurant_roundup_01`)
@@ -134,3 +138,106 @@ RUN_LIVE_MEDIA_REGRESSION=1 npm run test:media-live-regression -- --stage=resolu
 The corpus stores URLs and independently-established expectations only.
 Never commit a downloaded video/audio/frame file. The live harness cleans up
 any temp artifacts it produces.
+
+## Tutorial recognition qualification (ONB2-01)
+
+Tutorial qualification is a stricter, Dev-only layer over the same manifest.
+Entries opt in with a `tutorial` object containing independently established
+place ground truth, source health, single-place/trivial-disclosure flags,
+eligibility, allowed terminal outcomes, and repeat-run statistics. Ground truth
+is read only after a job finishes. `buildShareJobRequest` deliberately emits
+only `{ url, clientRequestId, qualificationMode: 'fresh_media' }`; the expected Google Place ID never enters
+extraction, media analysis, candidate generation, or ranking.
+
+Eligibility is fail closed:
+
+- `primary` and `backup` require verified ground truth, a healthy timestamped
+  source identity, a public single-place source, no dominant exact-place
+  disclosure, complete place identity, and at least three fresh all-correct
+  Dev runs. Media-driven fixtures must observe media fallback every time.
+- Any confidently wrong singleton or wrong automatic save is a hard failure.
+- Qualification statistics record wrong results and wrong saves separately;
+  either must be zero for `primary` or `backup` eligibility.
+- A picker, manual fallback, or no candidate is a controlled non-success. It is
+  safe behavior but cannot qualify a tutorial source.
+- Deleted/private/login-wall/provider-page sources and timeouts are tracked as
+  infrastructure/source failures, not recognition passes.
+- `candidate` is unqualified inventory; `quarantined` and `ineligible` are
+  never selected by the qualification runner.
+
+The deterministic contract is in
+`scripts/testTutorialRecognitionCorpus.ts` and
+`scripts/tutorialRecognitionSafetyFixtures.ts`. It includes creator identity,
+tagged collaborator, same-name wrong-city, multiple-branch, roundup, weak
+handle-only, unavailable source, provider redirect, and structurally valid but
+semantically wrong singleton cases. Existing extraction-level coverage remains
+in `scripts/share-extraction-fixtures.json`; redirect/roundup/platform-noise
+bytes remain covered by `scripts/testEvidenceProvenanceRegressions.ts`.
+
+### Real Dev qualification
+
+`scripts/qualifyTutorialRecognition.ts` uses the real asynchronous path:
+`create-share-job` followed by RLS-scoped polling of `share_jobs` and
+`share_job_place_results`. It requires an explicit dedicated Dev test identity;
+the account must have server-controlled `app_metadata` identifying
+`account_class=dedicated_dev_test` and
+`purpose=onb2_tutorial_qualification`. There are no fallback credentials. It
+refuses to run unless both environment
+declarations are `development` and both Supabase/function hosts exactly match
+the checked-in Dev project ref.
+
+```powershell
+$env:RUN_LIVE_TUTORIAL_QUALIFICATION = '1'
+$env:NEARR_TEST_EMAIL = '<dedicated Dev test account>'
+$env:NEARR_TEST_PASSWORD = '<password>'
+npm run qualify:tutorial-recognition -- --id=instagram_dorset_quarry_visual_candidate_01 --attempts=3
+```
+
+An explicit `NEARR_TEST_ACCESS_TOKEN` may be used instead. Useful filters are
+`--platform=instagram`, `--attempts=3`, `--timeout-ms=300000`,
+`--inter-attempt-ms=0`, and `--output=<new-file-path>`. The default delay is
+zero because each distinct request ID now uses the guarded fresh mode. Reports default to
+the OS temporary directory and
+contain job IDs and recognition evidence, never credentials. Runs create real
+Dev jobs and may create saved places in the dedicated test account; do not use a
+personal account. The authenticated client cannot read service-role-only
+`share_media_tasks`, so media fallback is reported from parent-job stage
+transitions and extraction diagnostics rather than private worker rows.
+
+Before a release, run the deterministic test, the acquisition health probe,
+then the real Dev qualification for every `primary`/`backup` entry. Quarantine
+any source that becomes unavailable, ambiguous, or wrong. This is intentionally
+a checked-in manifest plus an on-demand command, not a production monitor.
+
+### Platform audit (2026-09-08)
+
+| Platform | Metadata / normalization | Media fallback | Current tutorial evidence |
+| --- | --- | --- | --- |
+| Instagram | `detectPlatform` accepts Instagram URLs; `fetchPostMetadata` reads public HTML; tagged-location/profile evidence is handled under `evidence/`. Public Reels can also return login/interstitial variants. | `InstagramMediaResolver` uses bounded `yt-dlp`; optional `HttpMediaFetchResolver` exists. | Two public, independently grounded candidates acquired successfully, but 2026-09-08 Dev qualification was only 2/3 and 0/3. Neither is eligible. |
+| TikTok | `normalizeShareUrl` handles canonicalization/short links; `fetchPostMetadata` follows redirects and uses the official keyless oEmbed fallback when metadata is thin. App-store redirects are rejected. | `TikTokMediaResolver` uses the shared bounded `yt-dlp` path; CDN/direct-fetch restrictions remain fragile. | Two real sources exist, but one exposes the exact address and one is a five-place roundup. Neither is tutorial-eligible. |
+| Facebook | `detectPlatform` handles `facebook.com` and `fb.watch`; the generic metadata path captures the post-redirect URL. | `FacebookMediaResolver` uses the shared bounded `yt-dlp` path for video/reel hosts. Login walls and URL-shape changes remain external risks. | The public controls are a no-place how-to and an exact-name Villa Invernizzi post. Neither demonstrates hidden-place recognition. |
+| YouTube | `detectPlatform` handles Shorts, watch URLs, and `youtu.be`; all use the same metadata path. | `YouTubeMediaResolver` uses `yt-dlp`, prefers manual/automatic captions, then falls through to bounded audio transcription and frames. | Acquisition was healthy for two independently grounded hidden-location finalists, but Spectra produced 3/3 wrong saves and Attabad Lake produced 2/3 wrong saves. No tutorial-eligible source is qualified. |
+
+The relevant implementations are
+`supabase/functions/process-share-link/platform/detectPlatform.ts`,
+`supabase/functions/process-share-link/metadata/fetchMetadata.ts`, and the four
+platform resolvers under `services/media-worker/src/resolvers/`.
+
+`scripts/phase2-gold-set.json` also contains 22 Instagram business/restaurant
+rows with exact Google Place IDs. They remain useful resolver regression data,
+but were not silently promoted: that format does not record independent source
+verification, trivial-disclosure suitability, source health, or repeat runs,
+and many entries are deliberately venue/address-forward.
+
+### Cost and scheduling
+
+The deterministic corpus test is network-free and appropriate for CI. The
+acquisition health probe consumes public-platform bandwidth and `yt-dlp` work
+but does not submit Nearr jobs. A real qualification run can consume Supabase
+Edge invocations, Railway worker compute, external media bandwidth, Google
+Places requests, configured Gemini/model calls, configured transcription/OCR
+calls, and any configured HTTP media-provider credits (for example a
+ScrapeCreators-compatible fetch provider). The repository does not expose
+reliable per-run dollar telemetry, so this document intentionally gives no
+invented price. Run repeated qualification manually before releases or after a
+recognition/provider change; do not put it in ordinary CI.

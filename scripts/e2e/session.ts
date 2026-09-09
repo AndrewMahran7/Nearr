@@ -82,6 +82,7 @@ export function correlationKeyFor(correlationId: string, fixture: string): strin
 export async function openSession(options: {
   withIdentity: boolean;
   withEdgeSecrets?: boolean;
+  appMetadata?: Record<string, unknown>;
 }): Promise<E2ESession> {
   const base = loadDeployedConfig();
   const config = options.withEdgeSecrets === false ? base : withEdgeSecrets(base);
@@ -103,7 +104,7 @@ export async function openSession(options: {
   let identity: EphemeralIdentity | null = null;
 
   if (options.withIdentity) {
-    identity = await createEphemeralIdentity(admin, config, correlationId);
+    identity = await createEphemeralIdentity(admin, config, correlationId, options.appMetadata);
   }
 
   const session: E2ESession = {
@@ -121,6 +122,7 @@ export async function createEphemeralIdentity(
   admin: SupabaseClient,
   config: DeployedConfig,
   correlationId: string,
+  appMetadata: Record<string, unknown> = {},
 ): Promise<EphemeralIdentity> {
   if (!config.anonKey) {
     throw new Error(
@@ -137,6 +139,7 @@ export async function createEphemeralIdentity(
     password,
     email_confirm: true,
     user_metadata: { purpose: 'nearr_dev_e2e_regression', correlationId },
+    app_metadata: appMetadata,
   });
   if (createError || !created?.user) {
     throw new Error(`Could not create the ephemeral E2E identity: ${createError?.message ?? 'unknown'}`);

@@ -38,6 +38,7 @@ import {
 } from '../supabase/functions/process-share-link/evidence/taggedLocation';
 import {
   classifyTaggedLocation,
+  captionIdentityOverridesTaggedLocation,
   taggedLocationBias,
 } from '../supabase/functions/process-share-link/resolver/resolveSharedPlace';
 import { extractEvidence } from '../supabase/functions/process-share-link/evidence/extractEvidence';
@@ -320,6 +321,42 @@ check(
 );
 check('the caption address still wins its own extraction', withTag.address?.raw === withoutTag.address?.raw);
 check('a caption address is still found beside a city tag', !!withTag.address);
+check(
+  'an independently named venue at an address defers a different parent/context tag',
+  captionIdentityOverridesTaggedLocation(withTag),
+);
+const matchingBusinessTag = extractEvidence({
+  platform: 'instagram',
+  ...caption,
+  handles,
+  taggedLocation: {
+    ...business!,
+    placeName: 'Brooklyn City Pizzeria & Market',
+  },
+});
+check(
+  'a matching exact-place tag remains the highest-priority identity',
+  !captionIdentityOverridesTaggedLocation(matchingBusinessTag),
+);
+const tenantInsideTaggedParent = extractEvidence({
+  platform: 'instagram',
+  title: 'OC Food on Instagram',
+  description: 'Paradise Dynasty is serving dumplings. @paradisedynasty_usa OC location at @southcoastplaza 3333 Bristol St, Costa Mesa, CA 92626',
+  handles: {
+    posterHandle: 'ocfood',
+    taggedHandles: ['paradisedynasty_usa', 'southcoastplaza'],
+    venueHandles: ['paradisedynasty_usa', 'southcoastplaza'],
+    posterNameHint: 'OC Food',
+  } as ExtractedHandles,
+  taggedLocation: {
+    ...business!,
+    placeName: 'South Coast Plaza',
+  },
+});
+check(
+  'a tenant written in caption prose overrides a different tagged parent complex',
+  captionIdentityOverridesTaggedLocation(tenantInsideTaggedParent),
+);
 
 console.log(failures === 0 ? '\nALL PASS' : `\n${failures} FAILURE(S)`);
 process.exit(failures === 0 ? 0 : 1);

@@ -12,8 +12,13 @@ import {
   type ExplicitSourceEntity,
 } from '../../../lib/sourceEntitySemanticConsistency.ts';
 import { geographicContextTypeOf } from '../process-share-link/places/placeNormalization.ts';
+import {
+  EXACT_IDENTITY_SAFETY_RULE_VERSION,
+  evaluateExactIdentitySafety,
+  type ExactIdentityStrength,
+} from '../../../lib/exactIdentitySafety.ts';
 
-export const METADATA_AUTO_SAVE_RULE_VERSION = 'metadata-autosave-2026-09-08.v8-source-semantic-guard';
+export const METADATA_AUTO_SAVE_RULE_VERSION = 'metadata-autosave-2026-09-09.v9-exact-identity';
 
 // Keep this aligned with decisionPolicy's confirmation floor. A singleton
 // still has to be independently good enough to show as a real place match;
@@ -52,8 +57,10 @@ type MetadataResult = {
 };
 
 type MetadataEvidence = {
+  rawTitle?: unknown;
+  rawDescription?: unknown;
   isRoundup?: unknown;
-  address?: { raw?: unknown } | null;
+  address?: { raw?: unknown; venue?: unknown; venueSource?: unknown } | null;
   addresses?: unknown;
   venueNameHints?: unknown;
   venueNameHintsFromHandle?: unknown;
@@ -105,6 +112,9 @@ export type MetadataAutoSaveDecision = {
   providerNameCollisionBlockedCount: number;
   providerCategoryConflictBlockedCount: number;
   providerGeographyConflictBlockedCount: number;
+  exactIdentityRuleVersion: string;
+  exactIdentityStrength: ExactIdentityStrength;
+  exactIdentityReason: string;
 };
 
 function text(value: unknown): string {
@@ -120,6 +130,10 @@ function normalizedName(value: unknown): string {
     .replace(/[^a-z0-9]+/g, ' ')
     .trim()
     .replace(/\s+/g, ' ');
+}
+
+function compactName(value: unknown): string {
+  return normalizedName(value).replace(/\s+/g, '');
 }
 
 function finiteInRange(value: unknown, min: number, max: number): boolean {
@@ -205,6 +219,7 @@ export function evaluateMetadataAutoSave(input: {
   const rejectedCandidates: MetadataCandidateRejection[] = [];
   const sourceConflictFlags: string[] = [];
   let sourceEntitySupports = 0;
+  const sourceEntitySupportedProviderIds = new Set<string>();
   let sourceEntityContradicts = 0;
   let providerNameCollisionBlockedCount = 0;
   let providerCategoryConflictBlockedCount = 0;
@@ -225,7 +240,10 @@ export function evaluateMetadataAutoSave(input: {
       input.evidence.explicitSourceEntity,
       candidate,
     );
-    if (sourceAssessment.verdict === 'SUPPORTS') sourceEntitySupports += 1;
+    if (sourceAssessment.verdict === 'SUPPORTS') {
+      sourceEntitySupports += 1;
+      sourceEntitySupportedProviderIds.add(text(candidate.googlePlaceId));
+    }
     if (sourceAssessment.hardContradiction) {
       sourceEntityContradicts += 1;
       sourceConflictFlags.push(...sourceAssessment.reasons);
@@ -298,8 +316,20 @@ export function evaluateMetadataAutoSave(input: {
       ? input.evidence.venueNameHintsFromHandle.map(normalizedName).filter(Boolean)
       : [],
   );
+  const captionWithoutHandles = `${text(input.evidence.rawTitle)} ${text(input.evidence.rawDescription)}`
+    .replace(/@[a-z0-9._-]+/gi, ' ');
+  const compactCaptionWithoutHandles = compactName(captionWithoutHandles);
+  const posterNames = [input.evidence.handles?.posterHandle, input.evidence.handles?.posterNameHint]
+    .map(normalizedName)
+    .filter(Boolean);
+  const independentlyWrittenInCaption = (hint: string) => {
+    const compactHint = compactName(hint);
+    return compactHint.length >= 5 && compactCaptionWithoutHandles.includes(compactHint);
+  };
   const independentCaptionHints = venueHints.filter(
-    (hint) => !handleHints.has(normalizedName(hint)) &&
+    (hint) => (!handleHints.has(normalizedName(hint)) || independentlyWrittenInCaption(hint)) &&
+      !posterNames.some((poster) => poster.includes(normalizedName(hint))) &&
+      normalizedName(hint) !== normalizedName(input.evidence.explicitSourceEntity?.locationHint) &&
       normalizedName(hint) !== normalizedName(input.evidence.taggedLocation?.placeName),
   );
   const hasIndependentPlaceIdentity =
@@ -356,15 +386,61 @@ export function evaluateMetadataAutoSave(input: {
     ? qualityByProviderId.get(text(selected.googlePlaceId)) ?? independentSingletonQuality(selected)
     : { passed: false, reason: 'not_singleton' };
 
+  const selectedProviderId = selected ? text(selected.googlePlaceId) : '';
+  const identityHints = [...venueHints, text(input.evidence.address?.venue)].filter(Boolean);
+  const exactSourceName = !!selected && identityHints.some(
+    (hint) => compactName(hint) === compactName(selected.name),
+  );
+  // An address identifies a parcel, not necessarily the intended tenant or
+  // child attraction. If the source explicitly names a venue and the provider
+  // winner has a different name, the shared street address cannot promote the
+  // parent building/complex to exact identity. With no source name, a unique
+  // exact address remains valid candidate-bound evidence.
+  const independentHintNames = independentCaptionHints.map(normalizedName).filter(Boolean);
+  const selectedMatchesIndependentName = !!selected && independentCaptionHints.some(
+    (hint) => compactName(hint) === compactName(selected.name),
+  );
+  const selectedHasStrongSourceEntityAgreement = sourceEntitySupportedProviderIds.size === 1 &&
+    sourceEntitySupportedProviderIds.has(selectedProviderId);
+  const sourceNamedCandidateMismatch = !!selected && independentHintNames.length > 0 &&
+    !selectedMatchesIndependentName && !selectedHasStrongSourceEntityAgreement;
+  if (sourceNamedCandidateMismatch) explicitConflictFlags.push('source_named_candidate_mismatch');
+  const addressBoundProviderIds = plausible.flatMap((candidate) => {
+    const reasons = new Set(
+      Array.isArray(candidate.reasons)
+        ? candidate.reasons.filter((reason): reason is string => typeof reason === 'string')
+        : [],
+    );
+    const bound = reasons.has('address_verified') || reasons.has('address_verified_multi') ||
+      (!!expectedAddress && addressesMatch(expectedAddress, text(candidate.formattedAddress)));
+    return bound ? [text(candidate.googlePlaceId)] : [];
+  });
+  const exactAddress = !sourceNamedCandidateMismatch &&
+    addressBoundProviderIds.length === 1 &&
+    addressBoundProviderIds[0] === selectedProviderId;
+  const explicitProviderIdentity = !sourceNamedCandidateMismatch &&
+    !!selected && !!text(tag?.externalPlaceId) &&
+    text(tag?.externalPlaceId) === selectedProviderId;
+  const exactIdentity = evaluateExactIdentitySafety({
+    support: {
+      exactAddress,
+      explicitProviderIdentity,
+      strongSourceEntityAgreement: selectedHasStrongSourceEntityAgreement,
+      exactSourceNameSources: exactSourceName ? ['caption'] : [],
+    },
+    plausibleCandidateCount: plausible.length,
+  });
+
   let reasonCode: string;
   if (explicitConflictFlags.length > 0) reasonCode = explicitConflictFlags[0]!;
   else if (plausible.length === 0) reasonCode = candidateRejectionReasons[0] ?? 'no_plausible_candidate';
   else if (viable.length === 0) reasonCode = 'weak_singleton';
-  else if (plausible.length > 0) reasonCode = 'top1_plausible_candidate';
+  else if (!exactIdentity.allowed) reasonCode = exactIdentity.reason;
+  else if (plausible.length > 0) reasonCode = 'exact_identity_supported';
   else reasonCode = 'no_plausible_candidate';
 
   return {
-    eligible: reasonCode === 'top1_plausible_candidate',
+    eligible: reasonCode === 'exact_identity_supported',
     ruleVersion: METADATA_AUTO_SAVE_RULE_VERSION,
     rawCandidateCount: raw.length,
     plausibleCandidateCount: plausible.length,
@@ -395,6 +471,9 @@ export function evaluateMetadataAutoSave(input: {
     providerNameCollisionBlockedCount,
     providerCategoryConflictBlockedCount,
     providerGeographyConflictBlockedCount,
+    exactIdentityRuleVersion: EXACT_IDENTITY_SAFETY_RULE_VERSION,
+    exactIdentityStrength: exactIdentity.strength,
+    exactIdentityReason: exactIdentity.reason,
   };
 }
 
@@ -426,6 +505,9 @@ export function formatMetadataAutoSaveDecisionLog(args: {
     `provider_name_collision_blocked_count=${args.decision.providerNameCollisionBlockedCount}`,
     `provider_category_conflict_blocked_count=${args.decision.providerCategoryConflictBlockedCount}`,
     `provider_geography_conflict_blocked_count=${args.decision.providerGeographyConflictBlockedCount}`,
+    `exact_identity_rule=${safe(args.decision.exactIdentityRuleVersion)}`,
+    `exact_identity_strength=${safe(args.decision.exactIdentityStrength)}`,
+    `exact_identity_reason=${safe(args.decision.exactIdentityReason)}`,
     `final_decision=${args.decision.eligible ? 'auto_save' : 'review'}`,
     `decision_reason=${safe(args.decision.reasonCodes.join(','))}`,
   ].join(' ');

@@ -74,6 +74,7 @@ needs_help|failed|cancelled`), `decision`, `saved_place_id` (FK → `saved_place
 **ON DELETE SET NULL** so removing a place never orphans and deleting a job never
 deletes a place), `candidate_payload` / `extraction_payload` (JSONB),
 `suggested_query`, `needs_help_reason`, `failure_reason`, `idempotency_key`,
+`recognition_run_mode` (`normal|qualification_fresh`),
 worker fields (`attempts`, `max_attempts`, `locked_until`, `last_error`), plus
 notification fields:
 - `notification_status` (`pending|sending|submitted|retryable_failed|permanently_failed`)
@@ -83,8 +84,19 @@ notification fields:
 
 **Idempotency / duplicate behavior:**
 - unique `(user_id, idempotency_key)` — client `clientRequestId` retries return the same job.
-- short-window same-URL dedupe is enforced atomically by `create_share_job_for_user(..., p_dedupe_window_seconds)` (default 90s).
-- intentional re-share after the dedupe window is allowed, even if an older job is still in-flight.
+- normal app requests allow one active job per `(user_id, canonical_url)`.
+  Immediate duplicate submissions therefore join the active work, while a new
+  request ID after any terminal result creates a fresh job. Completed jobs are
+  never reused as recognition truth.
+- the legacy `p_dedupe_window_seconds` and `p_force_rerun` arguments remain in
+  the RPC signature for wire compatibility but no longer define behavior.
+- internal tutorial qualification uses a separate service-role RPC and
+  `recognition_run_mode=qualification_fresh`. It retains exact
+  `clientRequestId` retry idempotency but intentionally does not dedupe a new
+  request ID by canonical URL, completed job, answer cache, or singleflight.
+  The Edge Function accepts that mode only on the exact Dev project for an auth
+  user whose server-controlled `app_metadata` identifies a dedicated tutorial
+  qualification account. Ordinary clients and Production fail closed.
 
 **Claiming (`claim_share_jobs`):** `FOR UPDATE SKIP LOCKED` so concurrent worker
 invocations never grab the same row; reclaims rows whose `locked_until` lease

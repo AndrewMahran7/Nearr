@@ -796,11 +796,6 @@ export function renderMediaEvidenceCaption(
 
 export const DEFAULT_MEDIA_AUTOSAVE_MIN_CONFIDENCE = 0.7;
 
-const NATURAL_PLACE_CATEGORIES = new Set<NearrCategory>([
-  'park', 'hiking_trail', 'beach', 'waterfall', 'lake', 'marina', 'island',
-  'scenic_spot', 'attraction',
-]);
-
 function normalizedEvidenceText(value: string): string {
   return value.toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ');
 }
@@ -811,39 +806,81 @@ function explicitGeoGrounding(primary: PlaceCandidateEvidence): boolean {
   return explicit.includes(normalizedEvidenceText(primary.city)) && explicit.includes(normalizedEvidenceText(primary.region));
 }
 
+function exactNameInEvidence(primary: PlaceCandidateEvidence, sources: ReadonlySet<PlaceEvidenceSource>): PlaceEvidenceItem[] {
+  const tokens = normalizedEvidenceText(primary.name)
+    .replace(/[^a-z0-9]+/g, ' ')
+    .split(' ')
+    .filter((token) => token.length >= 2);
+  if (tokens.length === 0) return [];
+  return primary.explicitEvidence.filter((item) => {
+    if (!sources.has(item.source)) return false;
+    const words = new Set(
+      normalizedEvidenceText(item.value).replace(/[^a-z0-9]+/g, ' ').split(' ').filter(Boolean),
+    );
+    return tokens.every((token) => words.has(token));
+  });
+}
+
+export type MediaEvidenceExactIdentityStrength =
+  | 'candidate_bound'
+  | 'source_named'
+  | 'distinctive_visual'
+  | 'none';
+
+export function mediaEvidenceExactIdentityStrength(
+  evidence: MediaPlaceEvidence,
+  minConfidence: number = DEFAULT_MEDIA_AUTOSAVE_MIN_CONFIDENCE,
+): MediaEvidenceExactIdentityStrength {
+  if (evidence.insufficientEvidence || evidence.multipleIntentionalPlaces) return 'none';
+  const primary = selectRenderablePlaces(evidence)[0];
+  if (!primary || primary.identityEvidenceKind === 'model_prior' || primary.confidence < minConfidence) {
+    return 'none';
+  }
+
+  const addressInField = !!primary.address && ADDRESS_LIKE_RE.test(primary.address);
+  const addressInExplicit = primary.explicitEvidence.some((item) => ADDRESS_LIKE_RE.test(item.value));
+  if (addressInField && addressInExplicit) return 'candidate_bound';
+
+  // The legacy post-level path lacks the name-driven mention classifier. A
+  // model-proposed name without a destination category may be a creator,
+  // product, subtitle, or platform chrome; retain it for review only.
+  if (!primary.category) return 'none';
+
+  const directName = exactNameInEvidence(
+    primary,
+    new Set<PlaceEvidenceSource>(['caption', 'speech', 'visible_text']),
+  );
+  if (directName.length > 0) return 'source_named';
+
+  const visualName = exactNameInEvidence(primary, new Set<PlaceEvidenceSource>(['frame']));
+  const timestamps = new Set(
+    visualName.map((item) => item.timestampSeconds).filter((value): value is number => value != null),
+  );
+  if (
+    primary.confidence >= 0.9 && visualName.length >= 2 && timestamps.size >= 2 &&
+    explicitGeoGrounding(primary)
+  ) return 'distinctive_visual';
+
+  return 'none';
+}
+
 /**
  * Whether media evidence is strong enough to permit a SILENT auto-save. This is
  * an EXTRA gate ON TOP OF the resolver's `safeToAutoSave` — it can only make
- * media auto-save STRICTER, never looser. Because a video is a less reliable
- * source than an owner-written caption, we additionally require the primary
- * place to carry an EXPLICIT street address at high model confidence, and we
- * never silent-save multi-intentional content. Model coordinates and Place IDs
- * are never trusted (the schema has no Place ID; coordinates are dropped).
+ * media auto-save STRICTER, never looser. It requires an explicit street
+ * address, an exact name in source text/signage, or repeated exact-name visual
+ * observations with explicit geography. We never silent-save multi-intentional
+ * content. Model coordinates and Place IDs are never trusted.
  *
  * Adversarial inputs (inferred-only, passing mentions, creator handles, dish /
  * product / cuisine names, city-as-context, low-confidence text) all fail this
- * gate because none of them carry an explicit high-confidence street address.
+ * gate because none establishes an exact physical identity.
  */
 export function mediaEvidenceAutoSaveEligible(
   evidence: MediaPlaceEvidence,
   minConfidence: number = DEFAULT_MEDIA_AUTOSAVE_MIN_CONFIDENCE,
 ): boolean {
-  if (evidence.insufficientEvidence) return false;
-  // Multiple intentional places are inherently a confirmation case.
-  if (evidence.multipleIntentionalPlaces) return false;
-
-  const primary = selectRenderablePlaces(evidence)[0];
-  if (!primary) return false;
-  if (!(primary.confidence >= minConfidence)) return false;
-
-  // Built destinations require an explicit street address. Recognized natural
-  // destinations may instead use explicit city+region grounding; the downstream
-  // resolver still independently requires unique provider identity, coordinates,
-  // state agreement, city proximity, and strong repeated name evidence.
-  const addressInField = !!primary.address && ADDRESS_LIKE_RE.test(primary.address);
-  const addressInExplicit = primary.explicitEvidence.some((e) => ADDRESS_LIKE_RE.test(e.value));
-  if (addressInField && addressInExplicit) return true;
-  return !!primary.category && NATURAL_PLACE_CATEGORIES.has(primary.category) && explicitGeoGrounding(primary);
+  return mediaEvidenceExactIdentityStrength(evidence, minConfidence) !== 'none';
 }
 
 /** Small, size-bounded summary for diagnostics logging (no raw evidence). */

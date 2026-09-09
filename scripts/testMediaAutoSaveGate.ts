@@ -99,7 +99,7 @@ check('configured threshold rejects non-number', !resolveMediaAutoSaveThreshold(
   check('one distinctive transcript mention with a strong provider match is eligible', d.eligible);
   check('gate emits versioned rule', d.ruleVersion === MEDIA_AUTO_SAVE_RULE_VERSION);
   check('gate returns deterministic score', d.confidenceScore === 0.97);
-  check('gate explains the successful decision', d.reasonCodes.includes('single_plausible_candidate'));
+  check('gate explains the successful decision', d.reasonCodes.includes('exact_identity_supported'));
 }
 {
   const d = decide(mention({ identityEvidenceKind: 'model_prior' }));
@@ -119,7 +119,7 @@ check('configured threshold rejects non-number', !resolveMediaAutoSaveThreshold(
 {
   const alternative = mention({ displayName: 'South Cove', normalizedName: 'south cove' });
   const d = decide(mention({ identityAlternatives: [alternative] }));
-  check('unresolved same-scene identity uncertainty saves the plausible top1', d.eligible);
+  check('unresolved same-scene identity uncertainty requires review', !d.eligible && d.reasonCodes.includes('related_place_not_distinguished'));
 }
 {
   const naturalMention = mention({
@@ -248,8 +248,8 @@ check('configured threshold rejects non-number', !resolveMediaAutoSaveThreshold(
   });
   const d = decide(mention(), r, [r]);
   check(
-    'gate score 0.95 with a competing candidate saves top1',
-    d.eligible && d.plausibleProviderIds.length === 2,
+    'gate score 0.95 cannot overcome a competing candidate',
+    !d.eligible && d.plausibleProviderIds.length === 2 && d.reasonCodes.includes('related_place_not_distinguished'),
   );
 }
 {
@@ -268,8 +268,8 @@ check('configured threshold rejects non-number', !resolveMediaAutoSaveThreshold(
   });
   const d = decide(mention(), r, [r]);
   check(
-    'two close same-name branches save the ranked top1 and retain both',
-    d.eligible && d.selectedProviderId === 'google-parlor' && d.plausibleProviderIds.length === 2,
+    'two close same-name branches require confirmation',
+    !d.eligible && d.selectedProviderId === 'google-parlor' && d.plausibleProviderIds.length === 2,
   );
 }
 for (const source of ['speech', 'visible_text', 'caption'] as const) {
@@ -278,7 +278,7 @@ for (const source of ['speech', 'visible_text', 'caption'] as const) {
 }
 {
   const d = decide(mention({ sources: [], nameEvidenceSources: [], repeated: false }));
-  check('missing transcript, OCR, caption, and frame channels is not a veto', d.eligible);
+  check('missing transcript, OCR, caption, and frame identity is a veto', !d.eligible && d.reasonCodes.includes('exact_identity_unproven'));
 }
 {
   const r = result();
@@ -305,13 +305,15 @@ for (const source of ['speech', 'visible_text', 'caption'] as const) {
     category: 'park',
     sources: ['frame'],
     nameEvidenceSources: ['frame'],
-    repeated: false,
+    frameNameEvidenceCount: 2,
+    frameNameEvidenceTimestamps: [1, 3],
+    repeated: true,
   });
   const r = result();
   r.scoring[0]!.reasons.push('expected_category_match');
   const d = decide(m, r, [r]);
-  check('one grounded frame identity is sufficient', d.eligible);
-  check('visual evidence is not a separate veto or reason', d.reasonCodes.includes('single_plausible_candidate'));
+  check('repeated exact visual identity plus provider geography is sufficient', d.eligible);
+  check('visual evidence records distinctive support', d.exactIdentityStrength === 'distinctive_visual');
 }
 check('model confidence is diagnostic only', decide(mention({ confidence: 0.01 })).eligible);
 {

@@ -22,13 +22,14 @@ const candidate = (id: string, score = 0.5, over: Record<string, unknown> = {}) 
   types: ['restaurant'],
   matchScore: score,
   reasons: ['meaningful_name_match'],
+  exactIdentityStrength: 'source_named' as const,
   ...over,
 });
 
 const one = planAutomaticCompletion([candidate('a')]);
 assert.equal(one.action, 'save'); // 1
 assert.equal(one.action === 'save' && one.primary.googlePlaceId, 'a'); // 2 low/medium confidence still saves
-const three = planAutomaticCompletion([candidate('a', .4), candidate('b', .35), candidate('c', .25)]);
+const three = planAutomaticCompletion([candidate('a', .4, { exactIdentityStrength: 'candidate_bound' }), candidate('b', .35), candidate('c', .25)]);
 assert.equal(three.action === 'save' && three.alternatives.length, 2); // 3
 assert.deepEqual(three.action === 'save' && three.alternatives.map((c) => c.googlePlaceId), ['b', 'c']); // 4
 assert.equal(planAutomaticCompletion([candidate('city', .9, { types: ['locality'] })]).action, 'escalate'); // 5 broad

@@ -348,7 +348,8 @@ Key columns: `user_id`, `source_url`, `canonical_url`, `source_platform`,
 `status` (`queued|processing_metadata|completed|needs_help|failed|cancelled`),
 `decision`, `saved_place_id` (FK -> `saved_places` **ON DELETE SET NULL**),
 `candidate_payload`/`extraction_payload` (jsonb), `suggested_query`,
-`needs_help_reason`, `failure_reason`, `idempotency_key`, `attempts`,
+`needs_help_reason`, `failure_reason`, `idempotency_key`,
+`recognition_run_mode` (`normal|qualification_fresh`), `attempts`,
 `max_attempts`, `locked_until`, `last_error`,
 `notification_status` (`pending|sending|submitted|retryable_failed|permanently_failed`),
 `notification_attempts`, `notification_last_attempt_at`,
@@ -361,9 +362,15 @@ Notes:
 
 - Owner-only RLS. Jobs are created by the authenticated `create-share-job`
   Edge Function (service role) — there is no anonymous/orphan path.
-- Idempotency: unique `(user_id, idempotency_key)` and unique
-  short-window same-URL dedupe via
-  `create_share_job_for_user(..., p_dedupe_window_seconds)`.
+- Normal idempotency: unique `(user_id, idempotency_key)` plus one active normal
+  job per `(user_id, canonical_url)`. A distinct request ID after a terminal
+  result creates a fresh job; completed jobs are not reused as recognition
+  truth. The older window and force-rerun arguments remain wire-compatible but
+  do not define the canonical behavior.
+- `create_dev_qualification_share_job_for_user(...)` is service-role only. It
+  preserves exact idempotency-key replay while allowing distinct request IDs
+  to create `qualification_fresh` jobs; the Edge layer additionally requires
+  the exact Dev project and dedicated server-controlled auth metadata.
 - `claim_share_jobs(p_limit, p_lock_seconds)` — `SECURITY DEFINER`, service-role
   only, `FOR UPDATE SKIP LOCKED` claim + stale-lease reclaim.
 - Added to the `supabase_realtime` publication for live queue updates.
