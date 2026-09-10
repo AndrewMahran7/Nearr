@@ -10,20 +10,21 @@ import {
   ViewStyle,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { OnboardingPrimaryButton } from '@/components/onboarding';
 
 export const Phase1Colors = {
-  background: '#090908',
-  surface: '#151513',
-  surfaceRaised: '#1D1C19',
-  border: '#2B2925',
-  text: '#FFF7ED',
-  textMuted: '#A9A39A',
-  orange: '#FF6A1A',
-  onOrange: '#17100B',
-  success: '#68D391',
+  background: '#F7F4EE',
+  surface: '#FFFFFF',
+  surfaceRaised: '#EFE9DF',
+  border: '#E3DCCF',
+  text: '#191815',
+  textMuted: '#6D6860',
+  orange: '#FF5B24',
+  onOrange: '#17110E',
+  success: '#2C9B69',
 } as const;
 
 type FrameProps = {
@@ -56,6 +57,7 @@ export function Phase1Frame({
 
   return (
     <View style={[styles.frame, { paddingTop: insets.top }]}>
+      <StatusBar style="dark" />
       <View style={styles.topBar}>
         {onBack ? (
           <Pressable
@@ -107,7 +109,7 @@ export function Phase1Progress({ value, label }: { value: number; label: string 
       accessibilityLabel={label}
       accessibilityValue={{ min: 0, max: 100, now: Math.round(clamped * 100) }}
     >
-      <View style={[styles.progressFill, { width: Math.max(5, 92 * clamped) }]} />
+      <View style={[styles.progressFill, { width: `${Math.max(4, clamped * 100)}%` }]} />
     </View>
   );
 }
@@ -136,8 +138,8 @@ export function Phase1PrimaryButton(props: React.ComponentProps<typeof Onboardin
 const styles = StyleSheet.create({
   frame: { flex: 1, backgroundColor: Phase1Colors.background },
   topBar: {
-    height: 58,
-    paddingHorizontal: 18,
+    height: 64,
+    paddingHorizontal: 20,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -148,29 +150,25 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Phase1Colors.surface,
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: Phase1Colors.border,
   },
   brandMark: { minWidth: 88, height: 44, flexDirection: 'row', alignItems: 'center', gap: 8 },
-  brandLogo: {
-    width: 28,
-    height: 28,
-    borderRadius: 10,
-  },
+  brandLogo: { width: 30, height: 30, borderRadius: 10 },
   brandText: { color: Phase1Colors.text, fontSize: 13, fontWeight: '900', letterSpacing: 1.4 },
   topBarBalance: { width: 44 },
   progressTrack: {
-    width: 92,
-    height: 3,
+    width: 152,
+    height: 6,
     overflow: 'hidden',
     borderRadius: 99,
-    backgroundColor: '#302E2A',
+    backgroundColor: '#DED7CB',
   },
-  progressFill: { height: 3, borderRadius: 99, backgroundColor: Phase1Colors.orange },
+  progressFill: { height: 6, borderRadius: 99, backgroundColor: Phase1Colors.orange },
   scroll: { flex: 1 },
   scrollContent: { flexGrow: 1 },
-  content: { flex: 1, paddingHorizontal: 22, paddingTop: 14, paddingBottom: 24 },
+  content: { flex: 1, paddingHorizontal: 24, paddingTop: 18, paddingBottom: 28 },
   immersiveContent: { paddingHorizontal: 12, paddingTop: 6, paddingBottom: 12 },
   footer: {
     paddingTop: 10,
@@ -189,7 +187,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     backgroundColor: Phase1Colors.text,
   },
-  promptLight: { backgroundColor: '#25231F', borderWidth: 1, borderColor: '#37342F' },
+  promptLight: { backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: Phase1Colors.border },
   promptIcon: {
     width: 28,
     height: 28,
@@ -200,6 +198,6 @@ const styles = StyleSheet.create({
   },
   promptText: { color: Phase1Colors.onOrange, fontSize: 14, fontWeight: '900' },
   promptTextLight: { color: Phase1Colors.text },
-  primaryButton: { backgroundColor: Phase1Colors.orange },
+  primaryButton: { backgroundColor: Phase1Colors.orange, minHeight: 60 },
   pressed: { opacity: 0.72, transform: [{ scale: 0.96 }] },
 });

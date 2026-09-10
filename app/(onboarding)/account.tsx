@@ -45,6 +45,7 @@ import {
   startGoogleSignIn,
 } from '@/services/auth';
 import { useAuth } from '@/hooks/useAuth';
+import { useOnboardingV2 } from '@/hooks/useOnboardingV2';
 import {
   cancelOnboardingAccountTransfer,
   prepareOnboardingAccountTransfer,
@@ -106,8 +107,10 @@ const DEV_PASSWORD_LOGIN_ENABLED =
 export default function AccountAuthScreen() {
   const router = useRouter();
   const { session } = useAuth();
+  const { state: onboardingState } = useOnboardingV2();
   const anonymousOnboarding = session?.user.is_anonymous === true;
   const signedIn = !!session && !anonymousOnboarding;
+  const mapBackupContext = anonymousOnboarding && !!onboardingState?.behavioralCompletedAt && onboardingState.stage === 'account_required';
 
   const [emailState, setEmailState] = useState(() => initialEmailAuthState());
   const { mode, checkEmailReason, email } = emailState;
@@ -195,6 +198,16 @@ export default function AccountAuthScreen() {
     if (mountedRef.current) setActiveOperation(null);
   }
 
+  async function handleBack() {
+    if (anonymousOnboarding) await cancelOnboardingAccountTransfer();
+    if (mapBackupContext) {
+      router.replace('/');
+      return;
+    }
+    if (router.canGoBack()) router.back();
+    else router.replace('/(onboarding)');
+  }
+
   function requireSupabase(): boolean {
     if (isSupabaseConfigured) return true;
     setErrorMessage('App configuration is missing. Reinstall the latest build.');
@@ -210,7 +223,9 @@ export default function AccountAuthScreen() {
       void recordOnboardingV2AuthFailed(activeOperationRef.current ?? 'resume', 'failed');
       console.warn('[onboarding-v2] transfer_prepare_failed', error);
       if (mountedRef.current) {
-        setErrorMessage('Nearr could not secure your tutorial transfer. Check your connection and try again.');
+        setErrorMessage(mapBackupContext
+          ? 'Nearr could not prepare your map backup. Check your connection and try again.'
+          : 'Nearr could not protect your saved place before sign-in. Check your connection and try again.');
       }
       return false;
     }
@@ -530,9 +545,7 @@ export default function AccountAuthScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <OnboardingScreenShell
-        onBack={() =>
-          router.canGoBack() ? router.back() : router.replace('/(onboarding)')
-        }
+        onBack={() => void handleBack()}
       >
         <View style={styles.brand}>
           <View style={styles.glow} />
@@ -546,13 +559,15 @@ export default function AccountAuthScreen() {
           both signs in and creates an account.
         */}
         <Text style={styles.headline}>
-          {sharedPlaceIntent ? `Save ${sharedPlaceIntent.placeName || 'this place'}` : anonymousOnboarding ? 'Keep your Nearr map' : 'Create your map'}
+          {sharedPlaceIntent ? `Save ${sharedPlaceIntent.placeName || 'this place'}` : mapBackupContext ? 'Back up your map' : anonymousOnboarding ? 'Keep your Nearr map' : 'Create your map'}
         </Text>
         <Text style={styles.subtext}>
           {sharedPlaceIntent
             ? 'Sign in or create an account, then Nearr will bring you back here and save it to your map.'
+            : mapBackupContext
+            ? 'Add a sign-in so you can recover your places and use your map on another device.'
             : anonymousOnboarding
-            ? 'Nearr found your first place. Create or connect an account to preserve it and continue.'
+            ? 'Create or connect an account to preserve your places across devices.'
             : 'Sign in or create an account to start saving the places you find online.'}
         </Text>
 

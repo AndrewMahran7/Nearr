@@ -29,6 +29,7 @@ export function expectedOnboardingV2Route(
   if (stage === 'account_required') return '/(onboarding)/account';
   if ([
     'tutorial_loading',
+    'personalized_payoff',
     'tutorial_challenge',
     'tutorial_share_instructions',
     'tutorial_awaiting_share',
@@ -36,11 +37,14 @@ export function expectedOnboardingV2Route(
     'tutorial_reveal',
     'tutorial_celebration',
     'first_magic_moment_complete',
+    'pain_point',
+    'desired_value',
     'why_nearr',
     'nearby_value',
     'location_education',
     'location_background_education',
     'notification_education',
+    'making_nearr_yours',
     'growing_map',
     'auth_success',
     'personalized_activation',

@@ -25,6 +25,8 @@ import {
   bypassExistingUser,
   cancelPermanentAccountLink,
   completeOnboardingSecondHalf,
+  continueOnboardingAfterMakingNearrYours,
+  continueOnboardingFromPersonalizedPayoff,
   closePlaceTour,
   completeOnboardingInterests,
   completeOnboardingPlatforms,
@@ -69,6 +71,8 @@ import {
   recordStarterImpressions,
   selectInterest,
   selectOnboardingPainPoint,
+  selectOnboardingDesiredValue,
+  selectOnboardingPrimaryPlatformDraft,
   selectPracticeSource,
   selectPlatform,
   showOnboardingCelebration,
@@ -77,6 +81,7 @@ import {
   showStarterPrompt,
   startOnboardingV2,
   startOnboardingAuth,
+  requestOnboardingMapBackup,
   tapGetStarted,
   toggleOnboardingInterest,
   toggleOnboardingPlatform,
@@ -84,6 +89,7 @@ import {
   migrateInterruptedOnboardingToFirstMagic,
   type OnboardingInterest,
   type OnboardingActivationChoice,
+  type OnboardingDesiredValue,
   type OnboardingPainPoint,
   type OnboardingPermissionResult,
   type OnboardingPlatform,
@@ -103,11 +109,15 @@ export type OnboardingV2EventName =
   | 'onboarding_v2_started'
   | 'onboarding_platform_selection_completed'
   | 'onboarding_interests_completed'
+  | 'onboarding_personalized_payoff_viewed'
   | 'onboarding_pain_point_completed'
+  | 'onboarding_desired_value_selected'
   | 'onboarding_tutorial_challenge_shown'
   | 'onboarding_magic_post_shown'
+  | 'onboarding_demo_viewed'
   | 'onboarding_find_place_tapped'
   | 'onboarding_fixture_resolution_started'
+  | 'onboarding_magic_processing_started'
   | 'onboarding_tutorial_launched'
   | 'onboarding_tutorial_share_received'
   | 'onboarding_tutorial_processing_started'
@@ -118,12 +128,14 @@ export type OnboardingV2EventName =
   | 'onboarding_first_save_celebration_shown'
   | 'onboarding_why_nearr_viewed'
   | 'onboarding_share_education_shown'
+  | 'onboarding_nearby_value_viewed'
   | 'onboarding_location_education_shown'
   | 'onboarding_location_permission_requested'
   | 'onboarding_location_permission_result'
   | 'onboarding_notification_education_shown'
   | 'onboarding_notification_permission_requested'
   | 'onboarding_notification_permission_result'
+  | 'onboarding_making_nearr_yours_viewed'
   | 'onboarding_growing_map_viewed'
   | 'onboarding_auth_viewed'
   | 'onboarding_auth_started'
@@ -132,6 +144,9 @@ export type OnboardingV2EventName =
   | 'onboarding_personalized_activation_shown'
   | 'onboarding_activation_challenge_shown'
   | 'onboarding_activation_choice'
+  | 'onboarding_map_ready_viewed'
+  | 'onboarding_map_backup_started'
+  | 'onboarding_map_backup_completed'
   | 'onboarding_v2_completed'
   | 'onboarding_overview_viewed'
   | 'onboarding_get_started_tapped'
@@ -248,6 +263,7 @@ async function emitEvents(events: OnboardingTransition['events'], state: Onboard
     primary_platform: state.preferredPlatform,
     interests: state.selectedInterests,
     pain_point: state.painPoint,
+    desired_value: state.desiredValue,
     fixture_id: state.tutorialFixture?.id ?? state.tutorialResult?.fixtureId ?? null,
     time_to_first_save: elapsedMs(state.startedAt, state.tutorialSave?.completedAt ?? null),
     time_to_magic_moment: elapsedMs(state.startedAt, state.firstMagicMomentCompletedAt),
@@ -353,6 +369,10 @@ export function toggleOnboardingV2Platform(platform: OnboardingPlatform): Promis
   return applyTransition((state, now) => toggleOnboardingPlatform(state, platform, now));
 }
 
+export function chooseOnboardingV2PrimaryPlatform(platform: OnboardingPlatform): Promise<OnboardingV2State> {
+  return applyTransition((state, now) => selectOnboardingPrimaryPlatformDraft(state, platform, now));
+}
+
 export function completeOnboardingV2Platforms(): Promise<OnboardingV2State> {
   return applyTransition(completeOnboardingPlatforms);
 }
@@ -372,8 +392,16 @@ export function completeOnboardingV2Interests(): Promise<OnboardingV2State> {
   return applyTransition(completeOnboardingInterests);
 }
 
+export function continueOnboardingV2FromPersonalizedPayoff(): Promise<OnboardingV2State> {
+  return applyTransition(continueOnboardingFromPersonalizedPayoff);
+}
+
 export function setOnboardingV2PainPoint(painPoint: OnboardingPainPoint): Promise<OnboardingV2State> {
   return applyTransition((state, now) => selectOnboardingPainPoint(state, painPoint, now));
+}
+
+export function setOnboardingV2DesiredValue(desiredValue: OnboardingDesiredValue): Promise<OnboardingV2State> {
+  return applyTransition((state, now) => selectOnboardingDesiredValue(state, desiredValue, now));
 }
 
 export function migrateInterruptedOnboardingV2ToFirstMagic(): Promise<OnboardingV2State> {
@@ -452,6 +480,10 @@ export function recordOnboardingV2NotificationResult(result: OnboardingPermissio
   return applyTransition((state, now) => recordOnboardingNotificationResult(state, result, now));
 }
 
+export function continueOnboardingV2AfterMakingNearrYours(): Promise<OnboardingV2State> {
+  return applyTransition(continueOnboardingAfterMakingNearrYours);
+}
+
 export function continueOnboardingV2ToAccount(): Promise<OnboardingV2State> {
   return applyTransition(continueOnboardingToAccount);
 }
@@ -466,6 +498,10 @@ export function showOnboardingV2ActivationChallenge(): Promise<OnboardingV2State
 
 export function completeOnboardingV2SecondHalf(choice: OnboardingActivationChoice): Promise<OnboardingV2State> {
   return applyTransition((state, now) => completeOnboardingSecondHalf(state, choice, now));
+}
+
+export function requestOnboardingV2MapBackup(): Promise<OnboardingV2State> {
+  return applyTransition(requestOnboardingMapBackup);
 }
 
 export function continueOnboardingV2ToTutorial(): Promise<OnboardingV2State> {

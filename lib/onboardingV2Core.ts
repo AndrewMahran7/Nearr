@@ -32,6 +32,12 @@ export type OnboardingPainPoint =
   | 'send_to_friends'
   | 'screenshot';
 
+export type OnboardingDesiredValue =
+  | 'find_real_places'
+  | 'organize_map'
+  | 'nearby_reminders'
+  | 'trip_memory';
+
 export type OnboardingPermissionResult =
   | 'granted'
   | 'provisional'
@@ -85,7 +91,9 @@ export type OnboardingV2Stage =
   | 'platform_selected'
   | 'interest'
   | 'interest_selected'
+  | 'personalized_payoff'
   | 'pain_point'
+  | 'desired_value'
   | 'tutorial_loading'
   | 'tutorial_challenge'
   | 'tutorial_share_instructions'
@@ -105,6 +113,7 @@ export type OnboardingV2Stage =
   | 'location_education'
   | 'location_background_education'
   | 'notification_education'
+  | 'making_nearr_yours'
   | 'growing_map'
   /** Legacy persisted stages; decoded back to tutorial_ready and never emitted by Learn V2. */
   | 'tutorial_external_video_opened'
@@ -126,13 +135,13 @@ export type OnboardingV2Stage =
 
 const ONBOARDING_V2_STAGES = new Set<OnboardingV2Stage>([
   'not_started', 'overview', 'platform', 'platform_selected', 'interest',
-  'interest_selected', 'pain_point', 'tutorial_loading', 'tutorial_challenge',
+  'interest_selected', 'personalized_payoff', 'pain_point', 'desired_value', 'tutorial_loading', 'tutorial_challenge',
   'tutorial_share_instructions', 'tutorial_awaiting_share', 'tutorial_ready', 'tutorial_share_tapped',
   'tutorial_more_tapped', 'tutorial_nearr_selected', 'tutorial_favorite_added',
   'tutorial_processing', 'tutorial_result_seen', 'tutorial_external_video_opened',
   'tutorial_share_returned', 'tutorial_reveal', 'tutorial_celebration',
   'first_magic_moment_complete', 'why_nearr', 'nearby_value', 'location_education',
-  'location_background_education', 'notification_education', 'growing_map',
+  'location_background_education', 'notification_education', 'making_nearr_yours', 'growing_map',
   'account_required', 'auth_success', 'personalized_activation', 'activation_challenge',
   'onboarding_complete', 'place_tour', 'phase1_complete',
   'practice_ready', 'first_independent_external_video_opened',
@@ -207,6 +216,11 @@ export type OnboardingV2State = {
   interest: OnboardingInterest | null;
   selectedInterests: OnboardingInterest[];
   painPoint: OnboardingPainPoint | null;
+  desiredValue: OnboardingDesiredValue | null;
+  personalizedPayoffViewedAt: string | null;
+  desiredValueSelectedAt: string | null;
+  makingNearrYoursViewedAt: string | null;
+  mapReadyViewedAt: string | null;
   tutorialContentId: string | null;
   tutorialFixture: OnboardingTutorialFixture | null;
   tutorialFixtureError: string | null;
@@ -318,6 +332,11 @@ export function createInitialOnboardingV2State(now = new Date().toISOString()): 
     interest: null,
     selectedInterests: [],
     painPoint: null,
+    desiredValue: null,
+    personalizedPayoffViewedAt: null,
+    desiredValueSelectedAt: null,
+    makingNearrYoursViewedAt: null,
+    mapReadyViewedAt: null,
     tutorialContentId: null,
     tutorialFixture: null,
     tutorialFixtureError: null,
@@ -396,6 +415,7 @@ const TUTORIAL_SAVE_REQUIRED_STAGES = new Set<OnboardingV2Stage>([
   'location_education',
   'location_background_education',
   'notification_education',
+  'making_nearr_yours',
   'growing_map',
   'account_required',
   'auth_success',
@@ -453,12 +473,13 @@ export function onboardingV2ResumeEligibility(
   }
   if (
     (state.stage === 'interest' && !state.preferredPlatform) ||
-    (state.stage === 'interest_selected' &&
-      (!state.preferredPlatform || !state.interest || !state.tutorialContentId)) ||
+    (state.stage === 'interest_selected' && (!state.preferredPlatform || !state.interest)) ||
+    (state.stage === 'personalized_payoff' && (!state.preferredPlatform || !state.interest)) ||
     (state.stage === 'pain_point' && (!state.preferredPlatform || !state.interest)) ||
+    (state.stage === 'desired_value' && (!state.tutorialSave || !state.painPoint)) ||
     (['tutorial_challenge', 'tutorial_share_instructions', 'tutorial_awaiting_share',
       'tutorial_processing', 'tutorial_reveal', 'tutorial_celebration'].includes(state.stage) &&
-      (!state.preferredPlatform || !state.interest || !state.painPoint || !state.tutorialFixture)) ||
+      (!state.preferredPlatform || !state.interest || !state.tutorialFixture)) ||
     (TUTORIAL_SAVE_REQUIRED_STAGES.has(state.stage) && !state.tutorialSave?.savedPlaceId)
   ) {
     return { eligible: false, reason: 'inconsistent_checkpoint' };
@@ -687,6 +708,15 @@ export function toggleOnboardingPlatform(
   }, now);
 }
 
+export function selectOnboardingPrimaryPlatformDraft(
+  state: OnboardingV2State,
+  platform: OnboardingPlatform,
+  now: string,
+): OnboardingTransition {
+  if (state.cohort !== 'new_user_v2' || state.stage !== 'platform') return unchanged(state);
+  return transition(state, { selectedPlatforms: [platform], preferredPlatform: platform }, now);
+}
+
 export function completeOnboardingPlatforms(
   state: OnboardingV2State,
   now: string,
@@ -696,6 +726,9 @@ export function completeOnboardingPlatforms(
   return transition(state, { preferredPlatform: primary, stage: 'interest' }, now, [{
     name: 'onboarding_platform_selection_completed',
     properties: { primary_platform: primary, selected_platform_count: state.selectedPlatforms.length },
+  }, {
+    name: 'onboarding_platform_selected',
+    properties: { platform: primary },
   }]);
 }
 
@@ -730,10 +763,33 @@ export function completeOnboardingInterests(
 ): OnboardingTransition {
   if (state.stage !== 'interest' || state.selectedInterests.length === 0) return unchanged(state);
   const interest = state.interest ?? state.selectedInterests[0] ?? null;
-  return transition(state, { interest, stage: 'pain_point' }, now, [{
+  return transition(state, {
+    interest,
+    stage: 'personalized_payoff',
+    personalizedPayoffViewedAt: state.personalizedPayoffViewedAt ?? now,
+  }, now, [{
     name: 'onboarding_interests_completed',
     properties: { selected_interest_count: state.selectedInterests.length },
+  }, {
+    name: 'onboarding_interest_selected',
+    properties: { interest },
+  }, {
+    name: 'onboarding_personalized_payoff_viewed',
+    properties: { primary_platform: state.preferredPlatform, primary_interest: interest },
   }]);
+}
+
+export function continueOnboardingFromPersonalizedPayoff(
+  state: OnboardingV2State,
+  now: string,
+): OnboardingTransition {
+  if (state.stage !== 'personalized_payoff' || !state.preferredPlatform || !state.interest) {
+    return unchanged(state);
+  }
+  return transition(state, {
+    stage: 'tutorial_loading',
+    tutorialFixtureError: null,
+  }, now);
 }
 
 export function selectOnboardingPainPoint(
@@ -741,16 +797,35 @@ export function selectOnboardingPainPoint(
   painPoint: OnboardingPainPoint,
   now: string,
 ): OnboardingTransition {
-  if (state.cohort !== 'new_user_v2' || !['interest', 'pain_point'].includes(state.stage)) return unchanged(state);
-  // Founder-polish combines interests and the pain-point prompt on one screen.
-  // Persist the draft while that screen is visible, then emit completion only
-  // after the interest transition has moved through the durable legacy stage.
-  if (state.stage === 'interest') return transition(state, { painPoint }, now);
+  if (state.cohort !== 'new_user_v2' || state.stage !== 'pain_point') return unchanged(state);
+  const postMagic = !!state.tutorialSave && !!state.firstMagicMomentCompletedAt;
   return transition(state, {
     painPoint,
-    stage: 'tutorial_loading',
-    tutorialFixtureError: null,
+    stage: postMagic ? 'desired_value' : 'tutorial_loading',
+    tutorialFixtureError: postMagic ? state.tutorialFixtureError : null,
   }, now, [{ name: 'onboarding_pain_point_completed', properties: { pain_point: painPoint } }]);
+}
+
+export function selectOnboardingDesiredValue(
+  state: OnboardingV2State,
+  desiredValue: OnboardingDesiredValue,
+  now: string,
+): OnboardingTransition {
+  if (state.cohort !== 'new_user_v2' || state.stage !== 'desired_value' || !state.tutorialSave) {
+    return unchanged(state);
+  }
+  return transition(state, {
+    desiredValue,
+    desiredValueSelectedAt: now,
+    stage: 'why_nearr',
+    whyNearrViewedAt: state.whyNearrViewedAt ?? now,
+  }, now, [{
+    name: 'onboarding_desired_value_selected',
+    properties: { desired_value: desiredValue },
+  }, {
+    name: 'onboarding_share_education_shown',
+    properties: { preferred_platform: state.preferredPlatform, desired_value: desiredValue },
+  }]);
 }
 
 export function migrateInterruptedOnboardingToFirstMagic(
@@ -765,7 +840,12 @@ export function migrateInterruptedOnboardingToFirstMagic(
     ? state.selectedInterests
     : state.interest ? [state.interest] : [];
   if (selectedPlatforms.length === 0 || selectedInterests.length === 0) return unchanged(state);
-  return transition(state, { selectedPlatforms, selectedInterests, stage: 'pain_point' }, now);
+  return transition(state, {
+    selectedPlatforms,
+    selectedInterests,
+    stage: state.painPoint ? 'tutorial_loading' : 'personalized_payoff',
+    personalizedPayoffViewedAt: state.personalizedPayoffViewedAt ?? now,
+  }, now);
 }
 
 export function receiveOnboardingTutorialFixture(
@@ -784,6 +864,9 @@ export function receiveOnboardingTutorialFixture(
     properties: { fixture_id: fixture.id, fixture_role: fixture.role, fixture_platform: fixture.platform },
   }, {
     name: 'onboarding_magic_post_shown',
+    properties: { fixture_id: fixture.id, fixture_platform: fixture.platform },
+  }, {
+    name: 'onboarding_demo_viewed',
     properties: { fixture_id: fixture.id, fixture_platform: fixture.platform },
   }]);
 }
@@ -822,6 +905,7 @@ export function beginOnboardingInAppTutorialResolution(
   }, now, [
     { name: 'onboarding_find_place_tapped', properties: { fixture_id: fixture.id } },
     { name: 'onboarding_fixture_resolution_started', properties: { fixture_id: fixture.id, fixture_platform: fixture.platform } },
+    { name: 'onboarding_magic_processing_started', properties: { fixture_id: fixture.id } },
   ]);
 }
 
@@ -981,9 +1065,6 @@ export function confirmOnboardingFirstMagicMoment(
       fixture_id: fixture.id, fixture_role: fixture.role, fixture_platform: fixture.platform,
       resolution_source: result.resolutionSource, time_to_first_save: elapsed, time_to_magic_moment: elapsed,
     },
-  }, {
-    name: 'onboarding_why_nearr_viewed',
-    properties: { fixture_id: fixture.id, pain_point: state.painPoint },
   }]);
 }
 
@@ -1013,13 +1094,9 @@ export function beginOnboardingSecondHalf(
   if (state.stage !== 'first_magic_moment_complete' || !state.firstMagicMomentCompletedAt ||
       !state.tutorialSave || !state.tutorialResult) return unchanged(state);
   return transition(state, {
-    stage: 'why_nearr',
+    stage: 'pain_point',
     secondHalfStartedAt: state.secondHalfStartedAt ?? now,
-    whyNearrViewedAt: state.whyNearrViewedAt ?? now,
-  }, now, [{
-    name: 'onboarding_share_education_shown',
-    properties: { preferred_platform: state.preferredPlatform },
-  }]);
+  }, now);
 }
 
 export function continueOnboardingToNearbyValue(
@@ -1030,7 +1107,7 @@ export function continueOnboardingToNearbyValue(
   return transition(state, {
     stage: 'nearby_value',
     nearbyEducationShownAt: state.nearbyEducationShownAt ?? now,
-  }, now);
+  }, now, state.nearbyEducationShownAt ? [] : [{ name: 'onboarding_nearby_value_viewed' }]);
 }
 
 export function continueOnboardingToLocationEducation(
@@ -1102,15 +1179,41 @@ export function recordOnboardingNotificationResult(
   if (state.stage !== 'notification_education') return unchanged(state);
   const requested = result !== 'skipped';
   return transition(state, {
-    stage: 'account_required',
+    stage: 'making_nearr_yours',
     notificationPermissionResult: result,
-    accountRequiredAt: state.accountRequiredAt ?? now,
+    makingNearrYoursViewedAt: state.makingNearrYoursViewedAt ?? now,
   }, now, [
     ...(requested ? [{ name: 'onboarding_notification_permission_requested' }] : []),
     { name: 'onboarding_notification_permission_result', properties: { result } },
-    { name: 'onboarding_auth_viewed' },
-    { name: 'onboarding_account_viewed' },
+    { name: 'onboarding_making_nearr_yours_viewed', properties: {
+      location_enabled: state.locationForegroundResult === 'granted',
+      notifications_enabled: result === 'granted' || result === 'provisional',
+    } },
   ]);
+}
+
+export function continueOnboardingAfterMakingNearrYours(
+  state: OnboardingV2State,
+  now: string,
+): OnboardingTransition {
+  if (state.stage !== 'making_nearr_yours' || !state.tutorialSave ||
+      !['anonymous_active', 'permanent_account'].includes(state.identityLifecycle)) return unchanged(state);
+  return transition(state, {
+    stage: 'personalized_activation',
+    personalizedActivationShownAt: state.personalizedActivationShownAt ?? now,
+    mapReadyViewedAt: state.mapReadyViewedAt ?? now,
+  }, now, [{
+    name: 'onboarding_personalized_activation_shown',
+    properties: {
+      primary_platform: state.preferredPlatform,
+      primary_interest: state.interest,
+      pain_point: state.painPoint,
+      desired_value: state.desiredValue,
+    },
+  }, {
+    name: 'onboarding_map_ready_viewed',
+    properties: { account_backed_up: state.identityLifecycle === 'permanent_account' },
+  }]);
 }
 
 export function continueOnboardingToAccount(
@@ -1173,7 +1276,8 @@ export function showOnboardingActivationChallenge(
   state: OnboardingV2State,
   now: string,
 ): OnboardingTransition {
-  if (state.stage !== 'personalized_activation') return unchanged(state);
+  if (state.stage !== 'personalized_activation' ||
+      !['anonymous_active', 'permanent_account'].includes(state.identityLifecycle)) return unchanged(state);
   return transition(state, {
     stage: 'activation_challenge',
     activationChallengeShownAt: state.activationChallengeShownAt ?? now,
@@ -1189,7 +1293,8 @@ export function completeOnboardingSecondHalf(
   choice: OnboardingActivationChoice,
   now: string,
 ): OnboardingTransition {
-  if (state.stage !== 'activation_challenge' || state.identityLifecycle !== 'permanent_account' ||
+  if (state.stage !== 'activation_challenge' ||
+      !['anonymous_active', 'permanent_account'].includes(state.identityLifecycle) ||
       !state.tutorialSave || !['find_another', 'explore_map'].includes(choice)) return unchanged(state);
   const startedMs = state.startedAt ? Date.parse(state.startedAt) : Number.NaN;
   const duration = Number.isFinite(startedMs) ? Math.max(0, Date.parse(now) - startedMs) : null;
@@ -1206,7 +1311,25 @@ export function completeOnboardingSecondHalf(
       location_background_result: state.locationBackgroundResult,
       notification_permission_result: state.notificationPermissionResult,
       auth_provider: state.authProvider,
+      account_backed_up: state.identityLifecycle === 'permanent_account',
+      desired_value: state.desiredValue,
     } },
+  ]);
+}
+
+export function requestOnboardingMapBackup(
+  state: OnboardingV2State,
+  now: string,
+): OnboardingTransition {
+  if (state.stage !== 'onboarding_complete' || state.identityLifecycle !== 'anonymous_active' ||
+      !state.tutorialSave || !state.behavioralCompletedAt) return unchanged(state);
+  return transition(state, {
+    stage: 'account_required',
+    accountRequiredAt: now,
+  }, now, [
+    { name: 'onboarding_map_backup_started' },
+    { name: 'onboarding_auth_viewed', properties: { entry_context: 'map_backup' } },
+    { name: 'onboarding_account_viewed', properties: { entry_context: 'map_backup' } },
   ]);
 }
 
@@ -1317,9 +1440,13 @@ export function backOnboardingV2(state: OnboardingV2State, now: string): Onboard
   const previous: Partial<Record<OnboardingV2Stage, OnboardingV2Stage>> = {
     platform: 'overview',
     interest: 'platform',
-    pain_point: 'interest',
-    tutorial_loading: 'interest',
-    tutorial_challenge: 'interest',
+    personalized_payoff: 'interest',
+    pain_point: state.tutorialSave ? 'first_magic_moment_complete' : 'interest',
+    desired_value: 'pain_point',
+    why_nearr: 'desired_value',
+    nearby_value: 'why_nearr',
+    tutorial_loading: 'personalized_payoff',
+    tutorial_challenge: 'personalized_payoff',
     tutorial_share_instructions: 'tutorial_challenge',
     tutorial_awaiting_share: 'tutorial_share_instructions',
     interest_selected: 'interest',
@@ -1388,10 +1515,15 @@ export function cancelPermanentAccountLink(
   state: OnboardingV2State,
   now: string,
 ): OnboardingTransition {
-  if (state.identityLifecycle !== 'permanent_account_linking' || state.authCompletedAt) {
+  if (state.authCompletedAt || !['anonymous_active', 'permanent_account_linking'].includes(state.identityLifecycle)) {
     return unchanged(state);
   }
-  return transition(state, { identityLifecycle: 'anonymous_active' }, now);
+  if (state.identityLifecycle === 'anonymous_active' &&
+      !(state.behavioralCompletedAt && state.stage === 'account_required')) return unchanged(state);
+  return transition(state, {
+    identityLifecycle: 'anonymous_active',
+    ...(state.behavioralCompletedAt ? { stage: 'onboarding_complete' as const } : {}),
+  }, now);
 }
 
 export function completePermanentAccountLink(
@@ -1407,6 +1539,27 @@ export function completePermanentAccountLink(
   const tutorialSave = input.tutorialSavedPlaceId
     ? { ...state.tutorialSave, savedPlaceId: input.tutorialSavedPlaceId }
     : state.tutorialSave;
+  if (state.behavioralCompletedAt) {
+    return transition(state, {
+      stage: 'onboarding_complete',
+      identityLifecycle: 'permanent_account',
+      boundUserId: input.permanentUserId,
+      permanentUserId: input.permanentUserId,
+      permanentAccountEstablished: input.destinationWasEstablished,
+      authCompletedAt: now,
+      authLastResult: 'completed',
+      tutorialSave,
+    }, now, [
+      { name: 'onboarding_signin_completed', properties: { established_account: input.destinationWasEstablished, entry_context: 'map_backup' } },
+      { name: 'onboarding_auth_completed', properties: {
+        auth_provider: state.authProvider,
+        auth_result: 'completed',
+        established_account: input.destinationWasEstablished,
+        entry_context: 'map_backup',
+      } },
+      { name: 'onboarding_map_backup_completed' },
+    ]);
+  }
   if (state.secondHalfStartedAt) {
     const startedMs = state.startedAt ? Date.parse(state.startedAt) : Number.NaN;
     const timeToAuth = Number.isFinite(startedMs) ? Math.max(0, Date.parse(now) - startedMs) : null;

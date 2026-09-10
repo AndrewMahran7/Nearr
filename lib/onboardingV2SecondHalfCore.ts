@@ -1,6 +1,7 @@
 import { NEARR_DEV_SUPABASE_REF } from './appEnvironmentCore';
 import type {
   OnboardingInterest,
+  OnboardingDesiredValue,
   OnboardingPainPoint,
   OnboardingPermissionResult,
   OnboardingPlatform,
@@ -8,11 +9,14 @@ import type {
 } from './onboardingV2Core';
 
 export const ONBOARDING_V2_SECOND_HALF_STAGES = new Set<OnboardingV2Stage>([
+  'pain_point',
+  'desired_value',
   'why_nearr',
   'nearby_value',
   'location_education',
   'location_background_education',
   'notification_education',
+  'making_nearr_yours',
   'growing_map',
   'account_required',
   'auth_success',
@@ -51,6 +55,15 @@ export function painPointValueCopy(painPoint: OnboardingPainPoint | null): strin
     case 'send_to_friends': return 'Keep the destination useful even after it disappears into a chat.';
     case 'screenshot': return 'A screenshot becomes a place with a name, map, and route back to the source.';
     default: return 'Nearr keeps the place useful after the post disappears into your saves.';
+  }
+}
+
+export function desiredValueCopy(value: OnboardingDesiredValue | null): string {
+  switch (value) {
+    case 'organize_map': return 'Every find stays organized on one personal map.';
+    case 'nearby_reminders': return 'Nearby reminders can bring saved places back at the right moment.';
+    case 'trip_memory': return 'The map keeps future-trip ideas ready for later.';
+    default: return 'Each post becomes a real destination you can use.';
   }
 }
 

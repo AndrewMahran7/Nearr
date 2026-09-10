@@ -5,10 +5,11 @@ import { join } from 'node:path';
 import {
   beginOnboardingSecondHalf,
   beginPermanentAccountLink,
+  cancelPermanentAccountLink,
   completeOnboardingSecondHalf,
   completePermanentAccountLink,
   continueOnboardingAfterAuth,
-  continueOnboardingToAccount,
+  continueOnboardingAfterMakingNearrYours,
   continueOnboardingToLocationEducation,
   continueOnboardingToNearbyValue,
   createInitialOnboardingV2State,
@@ -19,6 +20,9 @@ import {
   recordOnboardingBackgroundLocationResult,
   recordOnboardingForegroundLocationResult,
   recordOnboardingNotificationResult,
+  requestOnboardingMapBackup,
+  selectOnboardingDesiredValue,
+  selectOnboardingPainPoint,
   showOnboardingActivationChallenge,
   startOnboardingAuth,
   type OnboardingTransition,
@@ -26,6 +30,7 @@ import {
 } from '../lib/onboardingV2Core';
 import {
   canRunOnboardingV2SecondHalf,
+  desiredValueCopy,
   interestExample,
   isSignedInOnboardingV2Continuation,
   normalizeOnboardingPermission,
@@ -75,59 +80,73 @@ assert.match(personalizedActivationCopy({ platform: 'instagram', interest: 'outd
 assert.equal(platformLaunchUrl('youtube'), 'https://www.youtube.com/shorts/');
 
 let state = step(initial, beginOnboardingSecondHalf, 2);
-assert.equal(state.stage, 'why_nearr');
+assert.equal(state.stage, 'pain_point', 'pain is asked only after the demonstrated save');
 assert.equal(isOnboardingV2InProgressState(state), true);
-state = step(state, continueOnboardingToNearbyValue, 3);
-state = step(state, continueOnboardingToLocationEducation, 4);
+const painChoice = selectOnboardingPainPoint(state, 'cannot_find_place', at(3));
+state = painChoice.state;
+assert.equal(state.stage, 'desired_value');
+assert.equal(painChoice.events.some((event) => event.name === 'onboarding_pain_point_completed'), true);
+const desiredChoice = selectOnboardingDesiredValue(state, 'organize_map', at(4));
+state = desiredChoice.state;
+assert.equal(state.stage, 'why_nearr');
+assert.equal(desiredChoice.events.some((event) => event.name === 'onboarding_desired_value_selected'), true);
+assert.match(desiredValueCopy(state.desiredValue), /one personal map/);
+const nearbyView = continueOnboardingToNearbyValue(state, at(5));
+state = nearbyView.state;
+assert.equal(nearbyView.events.some((event) => event.name === 'onboarding_nearby_value_viewed'), true);
+state = step(state, continueOnboardingToLocationEducation, 6);
 assert.equal(state.stage, 'location_education');
-state = recordOnboardingForegroundLocationResult(state, 'granted', at(5)).state;
+state = recordOnboardingForegroundLocationResult(state, 'granted', at(7)).state;
 assert.equal(state.stage, 'notification_education', 'onboarding requests foreground location only');
 assert.equal(state.locationBackgroundResult, 'skipped');
-state = recordOnboardingNotificationResult(state, 'provisional', at(7)).state;
-assert.equal(state.stage, 'account_required', 'growing-map value is merged into final activation');
-state = startOnboardingAuth(state, 'google', at(9)).state;
-const cancelledAuth = failOnboardingAuth(state, 'google', 'cancelled', at(10));
-assert.equal(cancelledAuth.state.stage, 'account_required', 'auth cancellation preserves the retryable screen');
-assert.equal(cancelledAuth.state.authLastResult, 'cancelled');
-state = startOnboardingAuth(cancelledAuth.state, 'google', at(10)).state;
-state = step(state, beginPermanentAccountLink, 10);
-const auth = completePermanentAccountLink(state, { permanentUserId: 'new-permanent-user', destinationWasEstablished: false, tutorialSavedPlaceId: save.savedPlaceId }, at(11));
-assert.equal(auth.state.stage, 'auth_success');
-assert.equal(auth.state.tutorialSave?.savedPlaceId, save.savedPlaceId, 'in-place/new-account link preserves the same saved row');
-assert.equal(auth.events.some((event) => event.name === 'onboarding_auth_completed'), true);
-state = step(auth.state, continueOnboardingAfterAuth, 12);
-state = step(state, showOnboardingActivationChallenge, 13);
+const notification = recordOnboardingNotificationResult(state, 'provisional', at(8));
+state = notification.state;
+assert.equal(state.stage, 'making_nearr_yours', 'permissions lead to a branded setup handoff, not auth');
+assert.equal(notification.events.some((event) => event.name === 'onboarding_making_nearr_yours_viewed'), true);
+const mapReady = continueOnboardingAfterMakingNearrYours(state, at(9));
+state = mapReady.state;
+assert.equal(state.stage, 'personalized_activation');
+assert.equal(mapReady.events.some((event) => event.name === 'onboarding_map_ready_viewed'), true);
+state = step(state, showOnboardingActivationChallenge, 10);
 assert.equal(state.stage, 'activation_challenge');
-assert.equal(isSignedInOnboardingV2Continuation(state.stage), true);
 assert.equal(expectedOnboardingV2Route(state.stage), '/(onboarding)');
-const completed = completeOnboardingSecondHalf(state, 'explore_map', at(14));
+const completed = completeOnboardingSecondHalf(state, 'explore_map', at(11));
 assert.equal(completed.state.stage, 'onboarding_complete');
-assert.equal(completed.state.behavioralCompletedAt, at(14));
+assert.equal(completed.state.identityLifecycle, 'anonymous_active', 'permanent auth is not required before map entry');
+assert.equal(completed.state.behavioralCompletedAt, at(11));
 assert.equal(completed.state.tutorialSave?.savedPlaceId, save.savedPlaceId);
 assert.equal(completed.events.some((event) => event.name === 'onboarding_v2_completed'), true);
-assert.equal(completed.events.find((event) => event.name === 'onboarding_v2_completed')?.properties?.time_to_map, 14_000);
+assert.equal(completed.events.find((event) => event.name === 'onboarding_v2_completed')?.properties?.time_to_map, 11_000);
 assert.equal(isOnboardingV2InProgressState(completed.state), false);
 assert.equal(expectedOnboardingV2Route(completed.state.stage), '/(tabs)/map');
 const restored = decodeOnboardingV2State(encodeOnboardingV2State(completed.state));
 assert.equal(restored?.stage, 'onboarding_complete', 'second-half completion survives process restart');
 assert.equal(restored?.activationChoice, 'explore_map');
+assert.equal(restored?.desiredValue, 'organize_map');
 assert.equal(restored?.tutorialSave?.savedPlaceId, save.savedPlaceId);
 
 let denied = step(initial, beginOnboardingSecondHalf, 20);
-denied = step(denied, continueOnboardingToNearbyValue, 21);
-denied = step(denied, continueOnboardingToLocationEducation, 22);
-denied = recordOnboardingForegroundLocationResult(denied, 'restricted', at(23)).state;
+denied = selectOnboardingPainPoint(denied, 'saved_and_forgotten', at(21)).state;
+denied = selectOnboardingDesiredValue(denied, 'find_real_places', at(22)).state;
+denied = step(denied, continueOnboardingToNearbyValue, 23);
+denied = step(denied, continueOnboardingToLocationEducation, 24);
+denied = recordOnboardingForegroundLocationResult(denied, 'restricted', at(25)).state;
 assert.equal(denied.stage, 'notification_education', 'location refusal does not block');
-denied = recordOnboardingNotificationResult(denied, 'skipped', at(24)).state;
-assert.equal(denied.stage, 'account_required', 'notification refusal does not block');
+denied = recordOnboardingNotificationResult(denied, 'skipped', at(26)).state;
+assert.equal(denied.stage, 'making_nearr_yours', 'notification refusal does not block');
 
+const backupRequested = requestOnboardingMapBackup(completed.state, at(27));
+assert.equal(backupRequested.state.stage, 'account_required', 'auth is available later as an explicit map backup action');
+const backupCancelled = cancelPermanentAccountLink(backupRequested.state, at(28));
+assert.equal(backupCancelled.state.stage, 'onboarding_complete', 'backing out of optional auth returns to the map');
 const established = completePermanentAccountLink(
-  { ...state, stage: 'account_required', identityLifecycle: 'permanent_account_linking', tutorialSave: save },
+  beginPermanentAccountLink(backupRequested.state, at(28)).state,
   { permanentUserId: 'existing-user', destinationWasEstablished: true, tutorialSavedPlaceId: 'existing-deduped-place' },
   at(30),
 );
-assert.equal(established.state.stage, 'auth_success', 'an existing account continues the second half');
+assert.equal(established.state.stage, 'onboarding_complete', 'later account conversion returns to the completed map');
 assert.equal(established.state.tutorialSave?.savedPlaceId, 'existing-deduped-place', 'existing canonical place is reused rather than duplicated');
+assert.equal(established.events.some((event) => event.name === 'onboarding_map_backup_completed'), true);
 
 const root = process.cwd();
 const ui = readFileSync(join(root, 'components/onboarding/v2/OnboardingV2SecondHalf.tsx'), 'utf8');
@@ -139,9 +158,11 @@ const migration = readFileSync(join(root, 'supabase/migrations/20260822000001_an
 assert.match(ui, /requestOnboardingForegroundLocation/);
 assert.doesNotMatch(ui, /requestOnboardingBackgroundLocation/);
 assert.match(ui, /requestOnboardingNotifications/);
-assert.match(ui, /Foreground access only during onboarding/);
-assert.match(ui, /Share a post straight to Nearr/);
+assert.match(ui, /Only while you use Nearr/);
+assert.match(ui, /From your feed to your map/);
 assert.match(ui, /Explore my map/);
+assert.match(ui, /MAKING NEARR YOURS/);
+assert.match(ui, /No account setup is needed/);
 assert.match(account, /recordOnboardingV2AuthFailed/);
 assert.match(account, /assets\/icon\.png/);
 assert.match(account, /More options/);
@@ -149,6 +170,7 @@ assert.match(routing, /continueOnboardingV2/);
 assert.match(layout, /signedInSecondHalfContinuation/);
 assert.match(layout, /onboardingV2CompletedAt/);
 assert.match(settings, /Linking\.openSettings\(\)/, 'permission refusal has a durable recovery path in Settings');
+assert.match(settings, /Back up your map/);
 assert.match(migration, /where user_id = v_destination and place_id = v_place_id/);
 assert.match(migration, /delete from public\.saved_places where id = v_source_saved/);
 assert.match(migration, /update public\.saved_places set user_id = v_destination/);

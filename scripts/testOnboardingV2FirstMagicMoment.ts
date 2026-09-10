@@ -7,6 +7,7 @@ import {
   beginOnboardingInAppTutorialResolution,
   completeOnboardingInterests,
   completeOnboardingPlatforms,
+  continueOnboardingFromPersonalizedPayoff,
   confirmOnboardingFirstMagicMoment,
   createInitialOnboardingV2State,
   decodeOnboardingV2State,
@@ -70,13 +71,18 @@ state = bindAnonymousUser(state, 'anon-user', '11111111-1111-4111-8111-111111111
 state = apply(state, tapGetStarted, 3);
 state = toggleOnboardingPlatform(state, 'instagram', at(4)).state;
 state = toggleOnboardingPlatform(state, 'youtube', at(5)).state;
-state = apply(state, completeOnboardingPlatforms, 6);
+const platformCompletion = completeOnboardingPlatforms(state, at(6));
+state = platformCompletion.state;
+assert.equal(platformCompletion.events.some((event) => event.name === 'onboarding_platform_selected'), true);
 assert.deepEqual(state.selectedPlatforms, ['instagram', 'youtube']);
 assert.equal(state.preferredPlatform, 'instagram');
 state = toggleOnboardingInterest(state, 'outdoors', at(7)).state;
 state = toggleOnboardingInterest(state, 'travel', at(8)).state;
-state = apply(state, completeOnboardingInterests, 9);
-assert.equal(state.stage, 'pain_point');
+const interestCompletion = completeOnboardingInterests(state, at(9));
+state = interestCompletion.state;
+assert.equal(state.stage, 'personalized_payoff');
+assert.equal(interestCompletion.events.some((event) => event.name === 'onboarding_interest_selected'), true);
+assert.equal(interestCompletion.events.some((event) => event.name === 'onboarding_personalized_payoff_viewed'), true);
 assert.deepEqual(
   onboardingV2ResumeEligibility(state, {
     userId: state.boundUserId,
@@ -86,12 +92,17 @@ assert.deepEqual(
   { eligible: true, reason: 'eligible' },
   'the server-fixture flow resumes before a local tutorial content id exists',
 );
-state = selectOnboardingPainPoint(state, 'saved_and_forgotten', at(10)).state;
-state = receiveOnboardingTutorialFixture(state, fixture, at(11)).state;
+state = apply(state, continueOnboardingFromPersonalizedPayoff, 10);
+assert.equal(state.stage, 'tutorial_loading');
+const fixtureReceipt = receiveOnboardingTutorialFixture(state, fixture, at(11));
+state = fixtureReceipt.state;
+assert.equal(fixtureReceipt.events.some((event) => event.name === 'onboarding_demo_viewed'), true);
 assert.equal(state.stage, 'tutorial_challenge');
 assert.equal(JSON.stringify(state).includes('Attabad'), false, 'place answer is absent before reveal');
-state = apply(state, beginOnboardingInAppTutorialResolution, 12);
+const processingStart = beginOnboardingInAppTutorialResolution(state, at(12));
+state = processingStart.state;
 assert.equal(state.stage, 'tutorial_processing');
+assert.equal(processingStart.events.some((event) => event.name === 'onboarding_magic_processing_started'), true);
 assert.match(state.pendingShare?.attemptId ?? '', /^tutorial-in-app:/);
 assert.equal(state.pendingShare?.contentIdentity?.contentId, fixture.contentId.toLowerCase());
 assert.equal(retryOnboardingTutorialShare(state, at(13)).state.stage, 'tutorial_challenge', 'an in-app job failure retries without routing into the legacy external share lesson');
@@ -143,7 +154,8 @@ assert.match(ui, /Find this place/);
 assert.doesNotMatch(ui, /Show me how|Add to my map/);
 assert.match(ui, /<PlaceImage/);
 assert.match(ui, /<MapView/);
-assert.match(ui, /AccessibilityInfo\.isReduceMotionEnabled/);
+const visualLanguage = read('components/onboarding/v2/OnboardingVisualLanguage.tsx');
+assert.match(visualLanguage, /AccessibilityInfo\.isReduceMotionEnabled/);
 assert.doesNotMatch(ui, /ImmersiveGuidedSave|InstagramReelMock|fake social/i);
 const endpoint = read('supabase/functions/get-onboarding-tutorial/index.ts');
 assert.match(endpoint, /DEVELOPMENT_HOST/);

@@ -222,6 +222,7 @@
     "test:onboarding-v2-dev-reset": "ts-node -P scripts/tsconfig.json scripts/testOnboardingV2DevReset.ts",
     "test:onboarding-v2-phase1-production": "ts-node -P scripts/tsconfig.json scripts/testOnboardingV2Phase1Production.ts",
     "test:onboarding-v2-visual": "ts-node -P scripts/tsconfig.json scripts/testOnboardingV2Phase1Visual.ts",
+    "test:onboarding-v2-albo-parity": "npm run test:onboarding-v2 && npm run test:onboarding-v2-visual && npm run test:onboarding-routing && npm run test:onboarding-anonymous && npm run test:auth-screen-contracts",
     "test:onboarding-anonymous": "ts-node -P scripts/tsconfig.json scripts/testAnonymousOnboardingV2.ts",
     "test:share-remote": "ts-node -P scripts/tsconfig.json scripts/testProcessShareLinkRemote.ts",
     "test:share-regression": "ts-node -P scripts/tsconfig.json scripts/testShareRegression.ts",

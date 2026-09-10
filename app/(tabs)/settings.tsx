@@ -42,6 +42,7 @@ import { trackEvent } from '@/lib/analytics';
 import { disableDevAuth } from '@/lib/devAuth';
 import { isDemoMode } from '@/lib/demoMode';
 import { setOnboardingPreview } from '@/lib/onboarding';
+import { requestOnboardingV2MapBackup } from '@/lib/onboardingV2';
 import {
   isOnboardingV2DevelopmentResetAvailable,
   resetOnboardingV2ForDevelopment,
@@ -131,6 +132,7 @@ export default function SettingsScreen() {
   const [legalAcceptedVersion, setLegalAcceptedVersion] = useState<string | null>(null);
   const [legalAcceptedAt, setLegalAcceptedAt] = useState<string | null>(null);
   const [deletingAccount, setDeletingAccount] = useState(false);
+  const [openingMapBackup, setOpeningMapBackup] = useState(false);
   const [resettingOnboarding, setResettingOnboarding] = useState(false);
   const onboardingResetAvailable = isOnboardingV2DevelopmentResetAvailable();
   const [placesDiagnosticText, setPlacesDiagnosticText] = useState(
@@ -374,6 +376,19 @@ export default function SettingsScreen() {
   async function handleExitDevMode() {
     await disableDevAuth();
     router.replace('/(onboarding)/account');
+  }
+
+  async function handleBackUpMap() {
+    if (openingMapBackup) return;
+    setOpeningMapBackup(true);
+    try {
+      await requestOnboardingV2MapBackup();
+      router.push('/(onboarding)/account');
+    } catch (error) {
+      console.warn('[settings] map backup entry failed', error);
+      Alert.alert('Could not open map backup', 'Your map is still safe on this device. Try again.');
+      setOpeningMapBackup(false);
+    }
   }
 
   // ---------------------------------------------------------------------
@@ -1059,18 +1074,34 @@ export default function SettingsScreen() {
         <View style={{ height: Spacing.xxl }} />
         <Text style={styles.sectionLabel}>Account</Text>
         <Card style={styles.section}>
+          {user?.is_anonymous === true ? (
+            <>
+              <Text style={typography.bodyStrong}>Back up your map</Text>
+              <Text style={[typography.caption, styles.muted]}>
+                Add a sign-in to recover your saved places and use them on another device. You can keep using Nearr without one.
+              </Text>
+              <View style={{ height: Spacing.md }} />
+              <Button
+                title={openingMapBackup ? 'Opening…' : 'Back up my map'}
+                variant="secondary"
+                onPress={() => void handleBackUpMap()}
+                disabled={openingMapBackup}
+              />
+              <View style={styles.divider} />
+            </>
+          ) : null}
           {profile?.email ? (
             <Text style={[typography.body, styles.muted]}>
               Signed in as {profile.email}
             </Text>
           ) : null}
           <View style={{ height: Spacing.md }} />
-          <Button
+          {user?.is_anonymous !== true ? <Button
             title="Sign out"
             variant="secondary"
             onPress={handleSignOut}
             disabled={deletingAccount}
-          />
+          /> : null}
           <View style={styles.divider} />
           <Pressable
             style={styles.deleteRow}

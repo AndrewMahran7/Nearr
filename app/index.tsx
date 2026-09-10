@@ -18,6 +18,9 @@ export default function Index() {
   }
   if (!session) return <Redirect href="/(onboarding)" />;
   if (isOnboardingV2Enabled() && session.user.is_anonymous === true) {
+    if (onboardingV2?.stage === 'onboarding_complete') {
+      return <Redirect href="/(tabs)/map" />;
+    }
     if (onboardingV2?.stage === 'account_required') {
       return <Redirect href="/(onboarding)/account" />;
     }
