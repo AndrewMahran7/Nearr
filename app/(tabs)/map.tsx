@@ -495,6 +495,10 @@ export default function MapScreen() {
   const savedPlaceId = firstParam(rawSavedPlaceId);
   const savedPlaceGoogleId = firstParam(rawSavedPlaceGoogleId);
   const placeSource = firstParam(rawPlaceSource);
+  // The first post-onboarding landing is a product reveal, not an operations
+  // surface. Keep the saved-place preview, but remove developer and inbox
+  // chrome until the user leaves this route.
+  const cleanOnboardingLanding = placeSource === 'onboarding_tutorial';
   const openRequestId = firstParam(rawOpenRequestId);
   const reminderOpen = parseBoolParam(rawReminderOpen);
   const reminderSourceRaw = firstParam(rawReminderSource);
@@ -3681,7 +3685,7 @@ export default function MapScreen() {
         ))}
       </MapView>
 
-      {__DEV__ ? (
+      {__DEV__ && !cleanOnboardingLanding ? (
         <Pressable
           style={[styles.mapDiagnostics, { top: safeTopInset + 6 }]}
           onPress={() => setDebugClusteringOverride((current) =>
@@ -4031,10 +4035,11 @@ export default function MapScreen() {
           real surface people sit in, and pending shares became unreachable
           without first closing the place. It keeps its exact previous position
           (below the filter row, left-aligned) so nothing else moves, and it
-          still hides behind the search dropdown or dedicated Nearby Explorer,
-          each of which owns the whole interaction surface.
+          still hides behind the one-time clean onboarding reveal, search
+          dropdown, or dedicated Nearby Explorer, each of which owns the whole
+          interaction surface.
           Regression covered by scripts/testMapQueueEntryPoint.ts. */}
-      {!searchVisible && !nearbyExplorer ? (
+      {!cleanOnboardingLanding && !searchVisible && !nearbyExplorer ? (
         <View
           style={[
             styles.queueChrome,

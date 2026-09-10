@@ -14,11 +14,13 @@ import { useStartupWatchdog } from '@/hooks/useStartupWatchdog';
 import { bootstrapAnonymousOnboarding } from '@/lib/anonymousOnboarding';
 import { ANONYMOUS_BOOTSTRAP_TIMEOUT_MS } from '@/lib/anonymousOnboardingCore';
 import { hapticSelection, hapticSuccess } from '@/lib/haptics';
+import { hostShareSubmitter } from '@/lib/hostShareSubmit';
 import { getResolvedEnvironment } from '@/lib/appEnvironment';
 import { canLoadOnboardingTutorialFixture, isShareJobForTutorialFixture, loadActiveOnboardingTutorialFixture, tutorialResultFromShareJob } from '@/lib/onboardingTutorialFixture';
 import { selectTutorialContent } from '@/constants/onboardingStarterContent';
 import {
   completeOnboardingV2Interests, completeOnboardingV2Platforms,
+  beginOnboardingV2InAppTutorialResolution,
   beginOnboardingV2SecondHalf,
   confirmOnboardingV2FirstMagicMoment, continueOnboardingV2ToShareInstructions,
   finishOnboardingV2FirstMagicMoment, goBackOnboardingV2,
@@ -61,9 +63,11 @@ export function OnboardingV2PreAuth() {
   const [bootstrapping, setBootstrapping] = useState(false);
   const [fixtureRetry, setFixtureRetry] = useState(0);
   const [launchError, setLaunchError] = useState(false);
+  const [inAppSubmitError, setInAppSubmitError] = useState(false);
   const firstMagicDev = canLoadOnboardingTutorialFixture(getResolvedEnvironment());
   const bootstrapInFlightRef = useRef(false);
   const fixtureInFlightRef = useRef(false);
+  const inAppSubmitRef = useRef<string | null>(null);
   const mountedRef = useRef(true);
   const anonymousSessionReady = !!(state?.cohort === 'new_user_v2' && state.identityLifecycle === 'anonymous_active' && state.anonymousUserId && session?.user.is_anonymous === true && session.user.id === state.anonymousUserId);
   const permanentSessionReady = !!(state?.cohort === 'new_user_v2' && state.identityLifecycle === 'permanent_account' && state.permanentUserId && session?.user.is_anonymous !== true && session?.user.id === state.permanentUserId);
@@ -89,8 +93,25 @@ export function OnboardingV2PreAuth() {
   useEffect(() => {
     if (!firstMagicDev || state?.stage !== 'tutorial_loading' || fixtureInFlightRef.current) return;
     fixtureInFlightRef.current = true;
-    void loadActiveOnboardingTutorialFixture().then(setOnboardingV2TutorialFixture).catch((error) => setOnboardingV2TutorialFixtureError(error instanceof Error ? error.message : 'fixture_unavailable')).finally(() => { fixtureInFlightRef.current = false; });
-  }, [firstMagicDev, fixtureRetry, state?.revision, state?.stage]);
+    void loadActiveOnboardingTutorialFixture(state.preferredPlatform).then(setOnboardingV2TutorialFixture).catch((error) => setOnboardingV2TutorialFixtureError(error instanceof Error ? error.message : 'fixture_unavailable')).finally(() => { fixtureInFlightRef.current = false; });
+  }, [firstMagicDev, fixtureRetry, state?.preferredPlatform, state?.revision, state?.stage]);
+  useEffect(() => {
+    const attempt = state?.pendingShare;
+    if (!anonymousSessionReady || state?.stage !== 'tutorial_processing' || state.tutorialJobId ||
+        !attempt?.attemptId.startsWith('tutorial-in-app:') || inAppSubmitRef.current === attempt.attemptId) return;
+    inAppSubmitRef.current = attempt.attemptId;
+    setInAppSubmitError(false);
+    void hostShareSubmitter.submit({ url: attempt.sourceUrl, submissionId: attempt.attemptId })
+      .then(async (result) => {
+        if (!result.ok || !result.jobId || result.requiresPurchase) {
+          setInAppSubmitError(true);
+          return;
+        }
+        await observeOnboardingV2TutorialJob({ jobId: result.jobId, sourceUrl: attempt.sourceUrl });
+        await refreshJobs();
+      })
+      .catch(() => setInAppSubmitError(true));
+  }, [anonymousSessionReady, refreshJobs, state?.pendingShare, state?.stage, state?.tutorialJobId]);
   useEffect(() => {
     if (!state?.tutorialFixture || jobs.length === 0 || !watchingJobs) return;
     const intended = jobs.find((job) => isShareJobForTutorialFixture(job, state.tutorialFixture!));
@@ -118,11 +139,9 @@ export function OnboardingV2PreAuth() {
   if (state.stage === 'tutorial_processing') {
     const intended = state.tutorialJobId ? jobs.find((job) => job.id === state.tutorialJobId) : null;
     const terminalProblem = !!(intended && (['failed', 'needs_help', 'cancelled', 'awaiting_purchase'].includes(intended.status) || (intended.status === 'completed' && !tutorialResultFromShareJob(intended, state.tutorialFixture!))));
-    return <ProcessingScreen failed={terminalProblem} onRetry={() => void retryOnboardingV2TutorialShare()} />;
+    return <ProcessingScreen failed={terminalProblem || inAppSubmitError} onRetry={() => { inAppSubmitRef.current = null; setInAppSubmitError(false); void retryOnboardingV2TutorialShare(); }} />;
   }
-  if (state.stage === 'tutorial_reveal' && state.tutorialResult) return <RevealScreen state={state} />;
-  if (state.stage === 'tutorial_celebration') return <CelebrationScreen state={state} />;
-  if (state.stage === 'first_magic_moment_complete') return <CompletionHoldingScreen state={state} />;
+  if (['tutorial_reveal', 'tutorial_celebration', 'first_magic_moment_complete'].includes(state.stage) && state.tutorialResult) return <MagicMomentScreen state={state} />;
   return <OnboardingV2SecondHalf state={state} />;
 }
 
@@ -143,12 +162,18 @@ function ProductionV2Compatibility({ state }: { state: OnboardingV2State }) {
 function WelcomeScreen({ onContinue }: { onContinue: () => void }) { return <Phase1Frame footer={<Phase1PrimaryButton title="Get started" onPress={onContinue} />} contentStyle={styles.centered}><View style={styles.logoHero}><Image source={require('../../../assets/icon.png')} style={styles.logo} accessibilityLabel="Nearr logo" /></View><Text style={styles.headlineXL}>Find the places hiding in your feed.</Text><Text style={styles.body}>Share a social post. Nearr turns it into a real place on your map.</Text><PlatformStrip /></Phase1Frame>; }
 function PlatformStrip() { return <View style={styles.platformStrip} accessibilityLabel="Works with Instagram, TikTok, Facebook, and YouTube">{PLATFORMS.map((item) => <View key={item.value} style={styles.stripItem}><Ionicons name={item.icon} size={20} color={item.tint} /><Text style={styles.stripLabel}>{item.label}</Text></View>)}</View>; }
 function PlatformScreen({ state }: { state: OnboardingV2State }) { return <Phase1Frame onBack={() => void goBackOnboardingV2()} progress={0.18} progressLabel="Setup progress" footer={<Phase1PrimaryButton title="Continue" disabled={state.selectedPlatforms.length === 0} onPress={() => void completeOnboardingV2Platforms()} />}><Text style={styles.eyebrow}>YOUR FEED</Text><Text style={styles.headline}>Where do you find places?</Text><Text style={styles.body}>Choose all that fit. Your first choice personalizes the walkthrough.</Text><View style={styles.choiceGrid}>{PLATFORMS.map((item) => { const selected = state.selectedPlatforms.includes(item.value); return <Pressable key={item.value} onPress={() => { hapticSelection(); void toggleOnboardingV2Platform(item.value); }} accessibilityRole="checkbox" accessibilityState={{ checked: selected }} accessibilityLabel={item.label} style={[styles.platformCard, selected && styles.selectedCard]}><View style={[styles.platformIcon, { backgroundColor: item.tint }]}><Ionicons name={item.icon} size={26} color="#11110F" /></View><Text style={styles.choiceTitle}>{item.label}</Text>{selected ? <Feather name="check-circle" size={19} color={Phase1Colors.orange} /> : null}</Pressable>; })}</View></Phase1Frame>; }
-function InterestScreen({ state }: { state: OnboardingV2State }) { return <Phase1Frame onBack={() => void goBackOnboardingV2()} progress={0.32} progressLabel="Setup progress" footer={<Phase1PrimaryButton title="Continue" disabled={state.selectedInterests.length === 0} onPress={() => void completeOnboardingV2Interests()} />}><Text style={styles.eyebrow}>WHAT CATCHES YOUR EYE?</Text><Text style={styles.headline}>Build the map you actually want.</Text><Text style={styles.body}>Pick a few. We'll use them to keep the walkthrough relevant.</Text><View style={styles.interestWrap}>{INTERESTS.map((item) => { const selected = state.selectedInterests.includes(item.value); return <Pressable key={item.value} onPress={() => { hapticSelection(); void toggleOnboardingV2Interest(item.value); }} accessibilityRole="checkbox" accessibilityState={{ checked: selected }} accessibilityLabel={item.label} style={[styles.interestPill, selected && styles.selectedPill]}><Feather name={item.icon} size={17} color={selected ? Phase1Colors.onOrange : Phase1Colors.text} /><Text style={[styles.interestLabel, selected && styles.selectedPillText]}>{item.label}</Text></Pressable>; })}</View></Phase1Frame>; }
+function InterestScreen({ state }: { state: OnboardingV2State }) {
+  const continueSetup = async () => {
+    const next = await completeOnboardingV2Interests();
+    if (next.stage === 'pain_point' && next.painPoint) await setOnboardingV2PainPoint(next.painPoint);
+  };
+  return <Phase1Frame onBack={() => void goBackOnboardingV2()} progress={0.32} progressLabel="Setup progress" footer={<Phase1PrimaryButton title="Continue" disabled={state.selectedInterests.length === 0 || !state.painPoint} onPress={() => void continueSetup()} />}><Text style={styles.eyebrow}>MAKE IT YOURS</Text><Text style={styles.headline}>What catches your eye?</Text><Text style={styles.body}>Pick a few, then tell us what usually happens to places you find.</Text><View style={styles.interestWrap}>{INTERESTS.map((item) => { const selected = state.selectedInterests.includes(item.value); return <Pressable key={item.value} onPress={() => { hapticSelection(); void toggleOnboardingV2Interest(item.value); }} accessibilityRole="checkbox" accessibilityState={{ checked: selected }} accessibilityLabel={item.label} style={[styles.interestPill, selected && styles.selectedPill]}><Feather name={item.icon} size={17} color={selected ? Phase1Colors.onOrange : Phase1Colors.text} /><Text style={[styles.interestLabel, selected && styles.selectedPillText]}>{item.label}</Text></Pressable>; })}</View><Text style={styles.sectionLabel}>WHAT USUALLY HAPPENS NEXT?</Text><View style={styles.compactPainWrap}>{PAIN_POINTS.map((item) => { const selected = state.painPoint === item.value; return <Pressable key={item.value} onPress={() => { hapticSelection(); void setOnboardingV2PainPoint(item.value); }} accessibilityRole="radio" accessibilityState={{ checked: selected }} style={[styles.compactPain, selected && styles.selectedPain]}><Feather name={item.icon} size={16} color={selected ? Phase1Colors.onOrange : Phase1Colors.orange} /><Text style={[styles.compactPainText, selected && styles.selectedPillText]}>{item.label}</Text></Pressable>; })}</View></Phase1Frame>;
+}
 function PainPointScreen() { return <Phase1Frame onBack={() => void goBackOnboardingV2()} progress={0.45} progressLabel="Setup progress"><Text style={styles.eyebrow}>ONE QUICK THING</Text><Text style={styles.headline}>What usually happens next?</Text><Text style={styles.body}>When you find somewhere you want to go…</Text><View style={styles.stack}>{PAIN_POINTS.map((item) => <Pressable key={item.value} onPress={() => { hapticSelection(); void setOnboardingV2PainPoint(item.value); }} accessibilityRole="button" accessibilityLabel={item.label} style={styles.painCard}><View style={styles.smallIcon}><Feather name={item.icon} size={18} color={Phase1Colors.orange} /></View><Text style={styles.painText}>{item.label}</Text><Feather name="arrow-right" size={18} color={Phase1Colors.textMuted} /></Pressable>)}</View></Phase1Frame>; }
 
 function ChallengeScreen({ state }: { state: OnboardingV2State }) {
-  const fixture = state.tutorialFixture!; const chosen = PLATFORM_LABELS[state.preferredPlatform ?? 'other']; const fixturePlatform = PLATFORM_LABELS[fixture.platform];
-  return <Phase1Frame onBack={() => void goBackOnboardingV2()} progress={0.56} progressLabel="Tutorial progress" footer={<Phase1PrimaryButton title="Show me how" onPress={() => void continueOnboardingV2ToShareInstructions()} />}><Text style={styles.eyebrow}>A REAL POST</Text><Text style={styles.headline}>Let's find this place.</Text><Text style={styles.body}>{state.preferredPlatform === fixture.platform ? `We'll use a real ${fixturePlatform} post.` : `You chose ${chosen}. This guided example uses ${fixturePlatform}; the same Share action works from your other apps.`}</Text><View style={styles.videoPreview}>{fixture.thumbnailUrl ? <Image source={{ uri: fixture.thumbnailUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" accessibilityLabel={`Real ${fixturePlatform} tutorial post preview`} /> : <View style={styles.previewFallback}><Ionicons name={PLATFORMS.find((item) => item.value === fixture.platform)?.icon ?? 'play'} size={52} color="#FFFFFF" /></View>}<View style={styles.previewShade} /><View style={styles.playButton}><Feather name="play" size={24} color="#FFFFFF" /></View><View style={styles.previewBadge}><Text style={styles.previewBadgeText}>{fixturePlatform.toUpperCase()} • REAL POST</Text></View><Text style={styles.previewQuestion}>Think you know where this is?</Text></View><Text style={styles.microcopy}>The answer stays hidden until Nearr resolves your share.</Text></Phase1Frame>;
+  const fixture = state.tutorialFixture!; const fixturePlatform = PLATFORM_LABELS[fixture.platform]; const exactPlatform = state.preferredPlatform === fixture.platform;
+  return <Phase1Frame onBack={() => void goBackOnboardingV2()} progress={0.5} progressLabel="Onboarding progress" footer={<Phase1PrimaryButton title="Find this place" onPress={() => void beginOnboardingV2InAppTutorialResolution()} />}><Text style={styles.eyebrow}>YOUR FIRST MAGIC MOMENT</Text><Text style={styles.headline}>Can Nearr find this place?</Text><Text style={styles.body}>{exactPlatform ? `Here's a real ${fixturePlatform} post from Nearr's verified tutorial set.` : 'Here is a real, verified example post. Nearr keeps it neutral because your chosen platform does not yet have a healthy matching fixture.'}</Text><View style={styles.videoPreview}>{exactPlatform && fixture.thumbnailUrl ? <Image source={{ uri: fixture.thumbnailUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" accessibilityLabel={`Real ${fixturePlatform} tutorial post preview`} /> : <View style={styles.previewFallback}><View style={styles.neutralPostMark}><Image source={require('../../../assets/icon.png')} style={styles.neutralPostLogo} /><Feather name="play" size={24} color="#FFFFFF" /></View><Text style={styles.neutralPostText}>A real place, hidden in a post</Text></View>}<View style={styles.previewShade} /><View style={styles.previewBadge}><Text style={styles.previewBadgeText}>{exactPlatform ? `${fixturePlatform.toUpperCase()} • VERIFIED POST` : 'NEARR • VERIFIED EXAMPLE'}</Text></View><Text style={styles.previewQuestion}>Tap once. Nearr handles the real save in-app.</Text></View><Text style={styles.microcopy}>The answer stays hidden until the server-authoritative save job resolves it.</Text></Phase1Frame>;
 }
 function ShareInstructionsScreen({ state, launchError, onLaunch }: { state: OnboardingV2State; launchError: boolean; onLaunch: () => void }) {
   const platform = PLATFORM_LABELS[state.tutorialFixture?.platform ?? 'youtube'];
@@ -156,20 +181,34 @@ function ShareInstructionsScreen({ state, launchError, onLaunch }: { state: Onbo
 }
 function InstructionStep({ number, title, detail, icon, nearLogo }: { number: string; title: string; detail: string; icon: keyof typeof Feather.glyphMap; nearLogo?: boolean }) { return <View style={styles.instruction}><Text style={styles.stepNumber}>{number}</Text>{nearLogo ? <Image source={require('../../../assets/icon.png')} style={styles.nearrStepLogo} /> : <View style={styles.stepIcon}><Feather name={icon} size={19} color={Phase1Colors.orange} /></View>}<View style={styles.flex}><Text style={styles.instructionTitle}>{title}</Text><Text style={styles.instructionBody}>{detail}</Text></View></View>; }
 function AwaitingShareScreen({ state, launchError, jobsError, onOpen, onRefresh }: { state: OnboardingV2State; launchError: boolean; jobsError: string | null; onOpen: () => void; onRefresh: () => void }) { return <Phase1Frame progress={0.72} progressLabel="Tutorial progress" footer={<Phase1PrimaryButton title="Open the tutorial post again" onPress={onOpen} />}><View style={styles.statusIcon}><Feather name="share-2" size={34} color={Phase1Colors.orange} /></View><Text style={styles.headline}>Share it to Nearr when you're ready.</Text><Text style={styles.body}>After the share extension accepts it, return here. iOS doesn't automatically reopen Nearr.</Text><View style={styles.reminder}><Text style={styles.reminderText}>Share → More → Nearr</Text></View>{state.wrongShareJobId ? <InlineError text="That was a different post. Nearr can process it normally, but it won't complete this walkthrough. Open the tutorial post and try again." /> : null}{launchError ? <InlineError text="The source did not open. Your progress is safe—try again." /> : null}{jobsError ? <Pressable onPress={onRefresh} accessibilityRole="button"><Text style={styles.retryLink}>Having trouble checking the share? Tap to retry.</Text></Pressable> : null}</Phase1Frame>; }
-function ProcessingScreen({ failed, onRetry }: { failed: boolean; onRetry: () => void }) { return failed ? <MessageState eyebrow="SAVE NEEDS A RETRY" title="Nearr couldn't verify the tutorial result." body="We won't turn an uncertain or unrelated result into tutorial success." action="Try the tutorial again" onAction={onRetry} /> : <Phase1Frame progress={0.82} progressLabel="Tutorial progress" contentStyle={styles.centered}><View style={styles.processingRing}><ActivityIndicator size="large" color={Phase1Colors.orange} /></View><Text style={styles.headlineCentered}>Nearr is finding the place.</Text><Text style={styles.bodyCentered}>Your share was received. This screen follows the real save job—even if it takes a little longer.</Text></Phase1Frame>; }
+function ProcessingScreen({ failed, onRetry }: { failed: boolean; onRetry: () => void }) { return failed ? <MessageState eyebrow="SAVE NEEDS A RETRY" title="Nearr couldn't verify the tutorial result." body="We won't turn an uncertain or unrelated result into tutorial success." action="Try again" onAction={onRetry} /> : <Phase1Frame progress={0.62} progressLabel="Onboarding progress" contentStyle={styles.centered}><View style={styles.processingRing}><ActivityIndicator size="large" color={Phase1Colors.orange} /></View><Text style={styles.headlineCentered}>Finding the real place…</Text><Text style={styles.bodyCentered}>Nearr submitted the verified post through the same save pipeline your future shares use.</Text></Phase1Frame>; }
 
-function RevealScreen({ state }: { state: OnboardingV2State }) {
+function MagicMomentScreen({ state }: { state: OnboardingV2State }) {
   const result = state.tutorialResult!;
   const place = result.place;
   const sourceThumb = state.tutorialFixture?.thumbnailUrl ?? null;
   const [showPlacesAttribution, setShowPlacesAttribution] = useState(false);
+  const [reduceMotion, setReduceMotion] = useState<boolean | null>(null);
+  const scale = useRef(new Animated.Value(0.78)).current;
+  const opacity = useRef(new Animated.Value(0)).current;
+  useEffect(() => { void AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotion); }, []);
+  useEffect(() => { if (state.stage === 'tutorial_reveal') void confirmOnboardingV2FirstMagicMoment(); }, [state.stage]);
+  useEffect(() => { if (state.stage === 'tutorial_celebration' && !state.celebrationShownAt) { hapticSuccess(); void recordOnboardingV2CelebrationShown(); } }, [state.celebrationShownAt, state.stage]);
+  useEffect(() => { if (reduceMotion === null) return; if (reduceMotion) { scale.setValue(1); opacity.setValue(1); return; } Animated.parallel([Animated.spring(scale, { toValue: 1, useNativeDriver: true, friction: 7, tension: 70 }), Animated.timing(opacity, { toValue: 1, duration: 300, useNativeDriver: true })]).start(); }, [opacity, reduceMotion, scale]);
+  const continueFlow = async () => {
+    let next = state;
+    if (next.stage === 'tutorial_reveal') next = await confirmOnboardingV2FirstMagicMoment();
+    if (next.stage === 'tutorial_celebration') next = await finishOnboardingV2FirstMagicMoment();
+    if (next.stage === 'first_magic_moment_complete') await beginOnboardingV2SecondHalf();
+  };
   return (
     <Phase1Frame
-      progress={0.92}
-      progressLabel="Tutorial progress"
-      footer={<Phase1PrimaryButton title="Add to my map" onPress={() => void confirmOnboardingV2FirstMagicMoment()} />}
+      progress={0.7}
+      progressLabel="Onboarding progress"
+      footer={<Phase1PrimaryButton title="Continue" onPress={() => void continueFlow()} />}
     >
-      <Text style={styles.eyebrow}>FOUND</Text>
+      <Animated.View style={[styles.revealCheck, { opacity, transform: [{ scale }] }]}><Feather name="check" size={22} color="#FFFFFF" /></Animated.View>
+      <Text style={styles.eyebrow}>FOUND • SAVED TO YOUR MAP</Text>
       <Text style={styles.revealTitle}>{place.name}</Text>
       <Text style={styles.revealAddress}>{place.formattedAddress ?? 'Saved to your Nearr map'}</Text>
       <PlaceImage
@@ -187,7 +226,7 @@ function RevealScreen({ state }: { state: OnboardingV2State }) {
       {showPlacesAttribution ? <Text style={styles.photoAttribution}>Place imagery via Google</Text> : null}
       <View style={styles.metaRow}>
         {place.typeLabel || place.primaryType ? <View style={styles.metaChip}><Feather name="map-pin" size={14} color={Phase1Colors.orange} /><Text style={styles.metaText}>{place.typeLabel ?? place.primaryType}</Text></View> : null}
-        <View style={styles.metaChip}><Feather name="check" size={14} color={Phase1Colors.success} /><Text style={styles.metaText}>Resolved from your post</Text></View>
+        <View style={styles.metaChip}><Feather name="check" size={14} color={Phase1Colors.success} /><Text style={styles.metaText}>Saved automatically</Text></View>
       </View>
       <View style={styles.mapWrap}>
         <MapView style={StyleSheet.absoluteFill} pointerEvents="none" initialRegion={{ latitude: place.latitude, longitude: place.longitude, latitudeDelta: 0.12, longitudeDelta: 0.12 }} accessibilityLabel={`Map showing ${place.name}`}>
@@ -199,18 +238,10 @@ function RevealScreen({ state }: { state: OnboardingV2State }) {
         <View style={styles.flex}><Text style={styles.sourceEyebrow}>SOURCE POST</Text><Text style={styles.sourceTitle}>See the post that became this place</Text></View>
         <Feather name="external-link" size={18} color={Phase1Colors.textMuted} />
       </Pressable>
-      <Text style={styles.microcopy}>The share already created this saved place through Nearr's normal save pipeline. This confirms it as yours—no duplicate is created.</Text>
+      <Text style={styles.whyStatement}>Social apps save the video. Nearr saves the place—with its map, source, and directions ready when you need them.</Text>
     </Phase1Frame>
   );
 }
-function CelebrationScreen({ state }: { state: OnboardingV2State }) {
-  const [reduceMotion, setReduceMotion] = useState<boolean | null>(null); const scale = useRef(new Animated.Value(0.72)).current; const opacity = useRef(new Animated.Value(0)).current;
-  useEffect(() => { void AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotion); }, []);
-  useEffect(() => { if (!state.celebrationShownAt) { hapticSuccess(); void recordOnboardingV2CelebrationShown(); } }, [state.celebrationShownAt]);
-  useEffect(() => { if (reduceMotion === null) return; if (reduceMotion) { scale.setValue(1); opacity.setValue(1); return; } Animated.parallel([Animated.spring(scale, { toValue: 1, useNativeDriver: true, friction: 7, tension: 70 }), Animated.timing(opacity, { toValue: 1, duration: 320, useNativeDriver: true })]).start(); }, [opacity, reduceMotion, scale]);
-  return <Phase1Frame footer={<Phase1PrimaryButton title="Continue" onPress={() => void finishOnboardingV2FirstMagicMoment()} />} contentStyle={styles.centered}><Animated.View style={[styles.celebrationMark, { opacity, transform: [{ scale }] }]}><View style={styles.celebrationHalo} /><Feather name="map-pin" size={48} color={Phase1Colors.onOrange} /><View style={styles.checkBadge}><Feather name="check" size={17} color="#FFFFFF" /></View></Animated.View><Text style={styles.headlineCentered}>That post is now a place on your map.</Text><Text style={styles.celebrationCopy}>Social apps save the video. Nearr saves the place.</Text><View style={styles.savedProof}><Feather name="check-circle" size={20} color={Phase1Colors.success} /><Text style={styles.savedProofText}>{state.tutorialResult?.place.name} is saved</Text></View></Phase1Frame>;
-}
-function CompletionHoldingScreen({ state }: { state: OnboardingV2State }) { return <Phase1Frame footer={<Phase1PrimaryButton title="See why it matters" onPress={() => void beginOnboardingV2SecondHalf()} />} contentStyle={styles.centered}><Image source={require('../../../assets/icon.png')} style={styles.logoSmall} /><Text style={styles.headlineCentered}>Your first Nearr place is ready.</Text><Text style={styles.bodyCentered}>{state.tutorialResult?.place.name} is on your real map. Now make that save useful beyond today.</Text><View style={styles.savedProof}><Feather name="check-circle" size={20} color={Phase1Colors.success} /><Text style={styles.savedProofText}>First magic moment complete</Text></View></Phase1Frame>; }
 function LoadingState({ label }: { label: string }) { return <Phase1Frame contentStyle={styles.centered}><ActivityIndicator size="large" color={Phase1Colors.orange} /><Text style={styles.loadingLabel}>{label}</Text></Phase1Frame>; }
 function MessageState({ eyebrow, title, body, action, onAction, onBack }: { eyebrow: string; title: string; body: string; action: string; onAction: () => void; onBack?: () => void }) { return <Phase1Frame onBack={onBack} footer={<Phase1PrimaryButton title={action} onPress={onAction} />} contentStyle={styles.centered}><Text style={styles.eyebrow}>{eyebrow}</Text><Text style={styles.headlineCentered}>{title}</Text><Text style={styles.bodyCentered}>{body}</Text></Phase1Frame>; }
 function InlineError({ text }: { text: string }) { return <View style={styles.errorBox} accessibilityLiveRegion="polite"><Feather name="alert-circle" size={18} color="#FFB36B" /><Text style={styles.errorText}>{text}</Text></View>; }
@@ -224,10 +255,13 @@ const styles = StyleSheet.create({
   choiceGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 11, marginTop: 28 }, platformCard: { width: '48%', minHeight: 116, padding: 14, borderRadius: 20, backgroundColor: Phase1Colors.surface, borderWidth: 1, borderColor: Phase1Colors.border, justifyContent: 'space-between' }, selectedCard: { borderColor: Phase1Colors.orange, backgroundColor: '#251A13' }, platformIcon: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' }, choiceTitle: { color: Phase1Colors.text, fontSize: 15, fontWeight: '900' },
   disabledCard: { opacity: 0.42 },
   interestWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 28 }, interestPill: { minHeight: 52, flexDirection: 'row', alignItems: 'center', gap: 9, paddingHorizontal: 15, borderRadius: 18, backgroundColor: Phase1Colors.surface, borderWidth: 1, borderColor: Phase1Colors.border }, selectedPill: { backgroundColor: Phase1Colors.orange, borderColor: Phase1Colors.orange }, interestLabel: { color: Phase1Colors.text, fontSize: 14, fontWeight: '800' }, selectedPillText: { color: Phase1Colors.onOrange },
+  sectionLabel: { color: Phase1Colors.textMuted, fontSize: 10, fontWeight: '900', letterSpacing: 1.3, marginTop: 28, marginBottom: 10 }, compactPainWrap: { gap: 8 }, compactPain: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 13, borderRadius: 16, backgroundColor: Phase1Colors.surface, borderWidth: 1, borderColor: Phase1Colors.border }, selectedPain: { backgroundColor: Phase1Colors.orange, borderColor: Phase1Colors.orange }, compactPainText: { flex: 1, color: Phase1Colors.text, fontSize: 13, fontWeight: '800' },
   stack: { gap: 10, marginTop: 26 }, painCard: { minHeight: 66, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 13, borderRadius: 19, backgroundColor: Phase1Colors.surface, borderWidth: 1, borderColor: Phase1Colors.border }, smallIcon: { width: 38, height: 38, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: '#2A1B13' }, painText: { flex: 1, color: Phase1Colors.text, fontSize: 14, lineHeight: 19, fontWeight: '800' },
   videoPreview: { height: 330, marginTop: 26, borderRadius: 26, overflow: 'hidden', backgroundColor: '#22332F', borderWidth: 1, borderColor: '#3A3630' }, previewFallback: { flex: 1, alignItems: 'center', justifyContent: 'center' }, previewShade: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.24)' }, playButton: { position: 'absolute', left: '50%', top: '45%', marginLeft: -30, marginTop: -30, width: 60, height: 60, borderRadius: 30, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.68)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.7)' }, previewBadge: { position: 'absolute', top: 14, left: 14, paddingHorizontal: 10, paddingVertical: 7, borderRadius: 10, backgroundColor: 'rgba(10,10,10,0.78)' }, previewBadgeText: { color: '#FFFFFF', fontSize: 9, letterSpacing: 1.1, fontWeight: '900' }, previewQuestion: { position: 'absolute', left: 17, right: 17, bottom: 18, color: '#FFFFFF', fontSize: 22, lineHeight: 26, fontWeight: '900', textShadowColor: '#000000', textShadowRadius: 8 }, microcopy: { color: Phase1Colors.textMuted, fontSize: 12, lineHeight: 17, marginTop: 12 },
+  neutralPostMark: { width: 88, height: 88, borderRadius: 28, alignItems: 'center', justifyContent: 'center', backgroundColor: '#40281A', borderWidth: 1, borderColor: '#6D452E' }, neutralPostLogo: { position: 'absolute', width: 54, height: 54, borderRadius: 15, opacity: 0.45 }, neutralPostText: { color: '#FFFFFF', fontSize: 14, fontWeight: '900', marginTop: 16 },
   steps: { gap: 12, marginTop: 27 }, instruction: { minHeight: 84, flexDirection: 'row', alignItems: 'center', gap: 11, padding: 13, borderRadius: 20, backgroundColor: Phase1Colors.surface, borderWidth: 1, borderColor: Phase1Colors.border }, stepNumber: { color: Phase1Colors.textMuted, fontSize: 11, fontWeight: '900' }, stepIcon: { width: 42, height: 42, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: '#2B1C14' }, nearrStepLogo: { width: 42, height: 42, borderRadius: 12 }, instructionTitle: { color: Phase1Colors.text, fontSize: 15, fontWeight: '900' }, instructionBody: { color: Phase1Colors.textMuted, fontSize: 12, lineHeight: 17, marginTop: 3 },
   statusIcon: { width: 70, height: 70, borderRadius: 23, alignItems: 'center', justifyContent: 'center', backgroundColor: '#291B13', marginBottom: 26 }, reminder: { minHeight: 58, alignItems: 'center', justifyContent: 'center', marginTop: 28, borderRadius: 18, backgroundColor: Phase1Colors.surface, borderWidth: 1, borderColor: Phase1Colors.border }, reminderText: { color: Phase1Colors.text, fontSize: 17, fontWeight: '900' }, errorBox: { flexDirection: 'row', gap: 10, marginTop: 20, padding: 14, borderRadius: 16, backgroundColor: '#302018', borderWidth: 1, borderColor: '#6A3E25' }, errorText: { flex: 1, color: '#FFD1A8', fontSize: 13, lineHeight: 19 }, retryLink: { color: Phase1Colors.orange, fontSize: 13, fontWeight: '800', marginTop: 18, textDecorationLine: 'underline' }, processingRing: { width: 92, height: 92, borderRadius: 46, alignItems: 'center', justifyContent: 'center', alignSelf: 'center', backgroundColor: Phase1Colors.surface, borderWidth: 1, borderColor: Phase1Colors.border },
   revealTitle: { color: Phase1Colors.text, fontSize: 38, lineHeight: 41, fontWeight: '900', letterSpacing: -1.3 }, revealAddress: { color: Phase1Colors.textMuted, fontSize: 15, lineHeight: 21, marginTop: 8 }, heroPhoto: { marginTop: 20 }, photoAttribution: { color: Phase1Colors.textMuted, fontSize: 10, lineHeight: 14, marginTop: 5, textAlign: 'right' }, metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 }, metaChip: { minHeight: 36, flexDirection: 'row', alignItems: 'center', gap: 7, paddingHorizontal: 10, borderRadius: 12, backgroundColor: Phase1Colors.surface }, metaText: { color: Phase1Colors.text, fontSize: 11, fontWeight: '800' }, mapWrap: { height: 150, marginTop: 14, borderRadius: 20, overflow: 'hidden', borderWidth: 1, borderColor: Phase1Colors.border }, sourceCard: { minHeight: 74, flexDirection: 'row', alignItems: 'center', gap: 11, marginTop: 14, padding: 10, borderRadius: 18, backgroundColor: Phase1Colors.surface, borderWidth: 1, borderColor: Phase1Colors.border }, sourceThumb: { width: 54, height: 54, borderRadius: 12 }, sourceThumbFallback: { width: 54, height: 54, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: '#462C20' }, sourceEyebrow: { color: Phase1Colors.orange, fontSize: 9, fontWeight: '900', letterSpacing: 1 }, sourceTitle: { color: Phase1Colors.text, fontSize: 13, lineHeight: 17, fontWeight: '800', marginTop: 3 },
+  revealCheck: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: Phase1Colors.success, marginBottom: 16 }, whyStatement: { color: Phase1Colors.text, fontSize: 16, lineHeight: 23, fontWeight: '800', marginTop: 18 },
   celebrationMark: { width: 126, height: 126, borderRadius: 63, alignItems: 'center', justifyContent: 'center', alignSelf: 'center', backgroundColor: Phase1Colors.orange }, celebrationHalo: { position: 'absolute', width: 156, height: 156, borderRadius: 78, borderWidth: 1, borderColor: 'rgba(255,106,26,0.38)' }, checkBadge: { position: 'absolute', right: 1, bottom: 6, width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: '#2FA76E', borderWidth: 3, borderColor: Phase1Colors.background }, celebrationCopy: { color: Phase1Colors.textMuted, fontSize: 17, lineHeight: 24, textAlign: 'center', marginTop: 13 }, savedProof: { minHeight: 54, flexDirection: 'row', alignItems: 'center', gap: 10, alignSelf: 'center', marginTop: 28, paddingHorizontal: 16, borderRadius: 18, backgroundColor: Phase1Colors.surface, borderWidth: 1, borderColor: Phase1Colors.border }, savedProofText: { color: Phase1Colors.text, fontSize: 13, fontWeight: '900' }, loadingLabel: { color: Phase1Colors.text, fontSize: 16, fontWeight: '800', marginTop: 18 },
 });

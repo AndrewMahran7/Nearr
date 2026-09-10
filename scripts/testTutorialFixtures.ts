@@ -10,28 +10,33 @@ const root = process.cwd();
 const migration = readFileSync(path.join(root, 'supabase/migrations/20260909000002_curated_tutorial_fixtures_v1.sql'), 'utf8');
 const processor = readFileSync(path.join(root, 'supabase/functions/process-share-jobs/index.ts'), 'utf8');
 const manifest = loadManifest();
-assert.equal(manifest.length, 1);
-validateManifestEntry(manifest[0]!);
+assert.equal(manifest.length, 2);
+manifest.forEach(validateManifestEntry);
+const youtubeFixture = manifest.find((fixture) => fixture.platform === 'youtube')!;
+const instagramFixture = manifest.find((fixture) => fixture.platform === 'instagram')!;
+assert.ok(youtubeFixture && instagramFixture);
+assert.equal(canonicalContentIdentity(instagramFixture.canonicalUrl)?.key, instagramFixture.identityKey);
+assert.ok(instagramFixture.priority > youtubeFixture.priority);
 
 const shorts = canonicalContentIdentity('https://www.youtube.com/shorts/rrKmN3zZ0lM');
 const watch = canonicalContentIdentity('https://www.youtube.com/watch?v=rrKmN3zZ0lM&utm_source=test');
 const shortLink = canonicalContentIdentity('https://youtu.be/rrKmN3zZ0lM?si=tutorial');
 assert.ok(shorts && watch && shortLink);
-assert.equal(shorts.key, manifest[0]!.identityKey);
-assert.deepEqual([shorts.key, watch.key, shortLink.key], Array(3).fill(manifest[0]!.identityKey));
+assert.equal(shorts.key, youtubeFixture.identityKey);
+assert.deepEqual([shorts.key, watch.key, shortLink.key], Array(3).fill(youtubeFixture.identityKey));
 
 const validRow = {
-  fixture_id: manifest[0]!.fixtureId,
+  fixture_id: youtubeFixture.fixtureId,
   fixture_revision: 1,
   fixture_role: 'primary',
   fixture_priority: 100,
   fixture_canonical_url: shorts.canonicalUrl,
   fixture_place_id: '1896322f-b910-4f0c-ab69-0a9648ee3790',
-  google_place_id: manifest[0]!.googlePlaceId,
-  place_name: manifest[0]!.expectedPlaceName,
+  google_place_id: youtubeFixture.googlePlaceId,
+  place_name: youtubeFixture.expectedPlaceName,
   formatted_address: 'Attabad Lake, Hunza Nagar',
-  latitude: manifest[0]!.expectedLatitude,
-  longitude: manifest[0]!.expectedLongitude,
+  latitude: youtubeFixture.expectedLatitude,
+  longitude: youtubeFixture.expectedLongitude,
   google_primary_type: null,
   google_types: [],
   google_type_label: null,
@@ -39,7 +44,7 @@ const validRow = {
 };
 const parsed = parseTutorialFixtureResolution(validRow, shorts);
 assert.ok(parsed);
-assert.equal(parsed.candidate.googlePlaceId, manifest[0]!.googlePlaceId);
+assert.equal(parsed.candidate.googlePlaceId, youtubeFixture.googlePlaceId);
 assert.equal(parseTutorialFixtureResolution({ ...validRow, fixture_canonical_url: 'https://example.com' }, shorts), null);
 assert.equal(parseTutorialFixtureResolution({ ...validRow, business_status: 'CLOSED_PERMANENTLY' }, shorts), null);
 assert.equal(parseTutorialFixtureResolution({ ...validRow, latitude: 999 }, shorts), null);

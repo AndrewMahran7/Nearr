@@ -259,7 +259,39 @@ group by 1
 order by 1 desc;
 ```
 
-## 12. Metrics not currently answerable from code alone
+## 12. Onboarding V2 speed
+
+`time_to_magic_moment` is emitted with the first server-authoritative tutorial
+save; `time_to_map` is emitted when the user chooses the final activation CTA.
+Both values are milliseconds from `onboarding_v2_started`.
+
+```sql
+select
+  date_trunc('day', created_at) as day,
+  count(*) filter (where event_name = 'onboarding_first_tutorial_save_completed') as magic_moments,
+  percentile_cont(0.5) within group (
+    order by (properties->>'time_to_magic_moment')::numeric
+  ) filter (
+    where event_name = 'onboarding_first_tutorial_save_completed'
+      and properties ? 'time_to_magic_moment'
+  ) as median_time_to_magic_moment_ms,
+  count(*) filter (where event_name = 'onboarding_v2_completed') as map_arrivals,
+  percentile_cont(0.5) within group (
+    order by (properties->>'time_to_map')::numeric
+  ) filter (
+    where event_name = 'onboarding_v2_completed'
+      and properties ? 'time_to_map'
+  ) as median_time_to_map_ms
+from public.analytics_events
+where event_name in (
+  'onboarding_first_tutorial_save_completed',
+  'onboarding_v2_completed'
+)
+group by 1
+order by 1 desc;
+```
+
+## 13. Metrics not currently answerable from code alone
 
 - Wrong saves: not directly tracked as a dedicated analytics event.
 - Grouped-notification usage: not directly queryable from `analytics_events` today.

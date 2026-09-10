@@ -4,6 +4,7 @@ import { join } from 'node:path';
 
 import {
   bindAnonymousUser,
+  beginOnboardingInAppTutorialResolution,
   completeOnboardingInterests,
   completeOnboardingPlatforms,
   confirmOnboardingFirstMagicMoment,
@@ -16,6 +17,7 @@ import {
   observeWrongOnboardingTutorialJob,
   onboardingV2ResumeEligibility,
   receiveOnboardingTutorialFixture,
+  retryOnboardingTutorialShare,
   resolveOnboardingTutorialResult,
   selectOnboardingPainPoint,
   showOnboardingCelebration,
@@ -34,6 +36,7 @@ import {
   tutorialResultFromShareJob,
 } from '../lib/onboardingTutorialFixtureCore';
 import { expectedOnboardingV2Route } from '../lib/onboardingV2RoutingCore';
+import { prioritizeOnboardingTutorialFixtures } from '../supabase/functions/get-onboarding-tutorial/selection';
 import type { ShareJob } from '../services/shareJobsService';
 
 const fixture: OnboardingTutorialFixture = {
@@ -56,6 +59,11 @@ assert.equal(parsePublicOnboardingTutorialFixture({
 assert.equal(parsePublicOnboardingTutorialFixture({ fixtureId: fixture.id, fixtureRevision: 7, fixtureRole: 'primary', platform: 'youtube', identityKey: 'wrong', identityVersion: 1, contentId: fixture.contentId, canonicalUrl: fixture.canonicalUrl, launchUrl: fixture.launchUrl, selectedAt: fixture.selectedAt }), null, 'identity mismatches fail closed');
 assert.equal(canLoadOnboardingTutorialFixture({ appEnv: 'development', backendEnv: 'development', appEnvWasDefaulted: false, backendEnvWasDefaulted: false, supabaseProjectRef: 'qnfxnmvxpjzfydgudtvs' }), true);
 assert.equal(canLoadOnboardingTutorialFixture({ appEnv: 'production', backendEnv: 'production', appEnvWasDefaulted: false, backendEnvWasDefaulted: false, supabaseProjectRef: 'rlqvxdwtetxsqxhqztkw' }), false);
+assert.deepEqual(
+  prioritizeOnboardingTutorialFixtures([{ platform: 'instagram', id: 'ig' }, { platform: 'youtube', id: 'yt' }], 'youtube').map((row) => row.id),
+  ['yt', 'ig'],
+  'a healthy exact-platform fixture wins while preserving the ordered fallback set',
+);
 
 let state = apply(createInitialOnboardingV2State(at(0)), startOnboardingV2, 1);
 state = bindAnonymousUser(state, 'anon-user', '11111111-1111-4111-8111-111111111111', at(2)).state;
@@ -82,16 +90,17 @@ state = selectOnboardingPainPoint(state, 'saved_and_forgotten', at(10)).state;
 state = receiveOnboardingTutorialFixture(state, fixture, at(11)).state;
 assert.equal(state.stage, 'tutorial_challenge');
 assert.equal(JSON.stringify(state).includes('Attabad'), false, 'place answer is absent before reveal');
-state = apply(state, showOnboardingShareInstructions, 12);
-state = apply(state, launchOnboardingTutorial, 13);
-assert.equal(state.stage, 'tutorial_awaiting_share');
+state = apply(state, beginOnboardingInAppTutorialResolution, 12);
+assert.equal(state.stage, 'tutorial_processing');
+assert.match(state.pendingShare?.attemptId ?? '', /^tutorial-in-app:/);
 assert.equal(state.pendingShare?.contentIdentity?.contentId, fixture.contentId.toLowerCase());
+assert.equal(retryOnboardingTutorialShare(state, at(13)).state.stage, 'tutorial_challenge', 'an in-app job failure retries without routing into the legacy external share lesson');
 assert.equal(expectedOnboardingV2Route(state.stage), '/(onboarding)');
 
 const wrongJob = { id: 'wrong-job', source_url: 'https://www.youtube.com/watch?v=abcdefghijk', canonical_url: 'https://www.youtube.com/watch?v=abcdefghijk', recognition_identity_key: 'v1:youtube:abcdefghijk' };
 assert.equal(isShareJobForTutorialFixture(wrongJob, fixture), false);
 state = observeWrongOnboardingTutorialJob(state, wrongJob.id, at(14)).state;
-assert.equal(state.stage, 'tutorial_awaiting_share');
+assert.equal(state.stage, 'tutorial_processing');
 assert.equal(state.tutorialSave, null);
 
 const job = {
@@ -113,6 +122,7 @@ assert.equal(state.stage, 'tutorial_reveal');
 assert.equal(state.tutorialResult?.place.name, 'Attabad Lake');
 const confirmation = confirmOnboardingFirstMagicMoment(state, at(18));
 assert.equal(confirmation.events[0]?.properties?.time_to_first_save, 17_000, 'first-save timing starts at onboarding start');
+assert.equal(confirmation.events[0]?.properties?.time_to_magic_moment, 17_000, 'magic-moment timing starts at onboarding start');
 state = confirmation.state;
 assert.equal(state.stage, 'tutorial_celebration');
 assert.equal(state.tutorialSave?.savedPlaceId, 'saved-attabad');
@@ -128,6 +138,9 @@ const ui = read('components/onboarding/v2/OnboardingV2PreAuth.tsx');
 assert.match(ui, /assets\/icon\.png/);
 for (const platform of ['Instagram', 'TikTok', 'Facebook', 'YouTube']) assert.match(ui, new RegExp(platform));
 assert.match(ui, /Linking\.openURL/);
+assert.match(ui, /hostShareSubmitter\.submit/);
+assert.match(ui, /Find this place/);
+assert.doesNotMatch(ui, /Show me how|Add to my map/);
 assert.match(ui, /<PlaceImage/);
 assert.match(ui, /<MapView/);
 assert.match(ui, /AccessibilityInfo\.isReduceMotionEnabled/);
@@ -135,6 +148,7 @@ assert.doesNotMatch(ui, /ImmersiveGuidedSave|InstagramReelMock|fake social/i);
 const endpoint = read('supabase/functions/get-onboarding-tutorial/index.ts');
 assert.match(endpoint, /DEVELOPMENT_HOST/);
 assert.match(endpoint, /admin\.auth\.getUser/);
+assert.match(endpoint, /preferredPlatform/);
 assert.doesNotMatch(endpoint.slice(endpoint.indexOf('return json({'), endpoint.lastIndexOf('});')), /placeName|formattedAddress|latitude|longitude/);
 const deploy = read('scripts/deployFunctions.mjs');
 assert.match(deploy, /DEVELOPMENT_ONLY_FUNCTIONS[\s\S]*'get-onboarding-tutorial'/);

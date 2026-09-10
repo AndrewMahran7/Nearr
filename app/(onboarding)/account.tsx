@@ -116,6 +116,7 @@ export default function AccountAuthScreen() {
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [appleAvailable, setAppleAvailable] = useState<boolean | null>(null);
+  const [moreOptionsOpen, setMoreOptionsOpen] = useState(false);
   const [sharedPlaceIntent, setSharedPlaceIntent] = useState<PendingSharedPlaceIntent | null>(null);
 
   useEffect(() => {
@@ -595,10 +596,24 @@ export default function AccountAuthScreen() {
                 disabled={busy && activeOperation !== 'google'}
               />
             </View>
+            {!moreOptionsOpen ? errorBanner : null}
 
-            <AuthDivider />
+            {!moreOptionsOpen ? (
+              <Pressable
+                onPress={() => setMoreOptionsOpen(true)}
+                disabled={busy}
+                accessibilityRole="button"
+                accessibilityState={{ expanded: false }}
+                style={styles.moreOptionsButton}
+              >
+                <Text style={styles.moreOptionsText}>More options</Text>
+                <Feather name="chevron-down" size={17} color={OnboardingColors.textMuted} />
+              </Pressable>
+            ) : (
+              <>
+                <AuthDivider />
 
-            {mode === 'magic_link' ? (
+                {mode === 'magic_link' ? (
               <View style={styles.emailBlock}>
                 {emailInput}
                 {errorBanner}
@@ -617,9 +632,9 @@ export default function AccountAuthScreen() {
                   disabled={busy}
                 />
               </View>
-            ) : null}
+                ) : null}
 
-            {mode === 'password_sign_in' ? (
+                {mode === 'password_sign_in' ? (
               <View style={styles.emailBlock}>
                 {emailInput}
                 <OnboardingPasswordField
@@ -662,9 +677,9 @@ export default function AccountAuthScreen() {
                   disabled={busy}
                 />
               </View>
-            ) : null}
+                ) : null}
 
-            {mode === 'password_sign_up' ? (
+                {mode === 'password_sign_up' ? (
               <View style={styles.emailBlock}>
                 {emailInput}
                 <OnboardingPasswordField
@@ -716,7 +731,9 @@ export default function AccountAuthScreen() {
                   disabled={busy}
                 />
               </View>
-            ) : null}
+                ) : null}
+              </>
+            )}
 
             {DEV_PASSWORD_LOGIN_ENABLED ? (
               <View style={styles.developerArea}>
@@ -889,6 +906,18 @@ const styles = StyleSheet.create({
   },
   providers: {
     gap: 12,
+  },
+  moreOptionsButton: {
+    minHeight: 50,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+  },
+  moreOptionsText: {
+    color: OnboardingColors.textMuted,
+    fontSize: 14,
+    fontWeight: '700',
   },
   appleButton: {
     height: OnboardingSizes.primaryButtonHeight,

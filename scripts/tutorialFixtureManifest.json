@@ -3,6 +3,24 @@
   "environment": "development",
   "fixtures": [
     {
+      "fixtureId": "93b1ded0-02ae-49c6-a03f-1786162fde2f",
+      "sourceCorpusId": "instagram_dorset_quarry_visual_candidate_01",
+      "sourceUrl": "https://www.instagram.com/reel/C9Z963muLHI/",
+      "identityKey": "v1:instagram:C9Z963muLHI",
+      "identityVersion": 1,
+      "platform": "instagram",
+      "contentId": "C9Z963muLHI",
+      "canonicalUrl": "https://www.instagram.com/reel/C9Z963muLHI/",
+      "googlePlaceId": "ChIJG9E4hIhd4IkRwN0jnyQ9-F4",
+      "expectedPlaceName": "Dorset Marble Quarry",
+      "expectedLatitude": 43.235960399999996,
+      "expectedLongitude": -73.0834756,
+      "role": "primary",
+      "priority": 200,
+      "verifiedBy": "ONB2 independently verified corpus 2026-09-10",
+      "expectedMediaSha256": null
+    },
+    {
       "fixtureId": "1c19f2d2-a020-4508-9fe3-ef9ef8bb052a",
       "sourceCorpusId": "youtube_attabad_lake_hidden_candidate_01",
       "sourceUrl": "https://www.youtube.com/shorts/rrKmN3zZ0lM",

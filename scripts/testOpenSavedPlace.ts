@@ -96,7 +96,7 @@ check('already-saved confirmation opens full details', shouldExpandSavedPlaceDet
 check('notification leaves details collapsed', !shouldExpandSavedPlaceDetails('notification'));
 const onboardingRoute = resolveOpenSavedPlaceRoute({ savedPlaceId: 'sp1', source: 'onboarding_tutorial' });
 check('onboarding continuation carries the exact saved_places.id', onboardingRoute.params.savedPlaceId === 'sp1');
-check('onboarding continuation expands Place Detail', shouldExpandSavedPlaceDetails('onboarding_tutorial'));
+check('onboarding landing keeps Place Detail compact', !shouldExpandSavedPlaceDetails('onboarding_tutorial'));
 check('onboarding continuation is an open-existing source', isOpenExistingPlaceSource('onboarding_tutorial'));
 
 // --- DECISIVE end-to-end: already-saved notification opens the place --------

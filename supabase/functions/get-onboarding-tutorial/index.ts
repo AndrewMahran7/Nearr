@@ -4,6 +4,7 @@
 // @ts-nocheck -- Deno runtime.
 
 import { createClient } from 'npm:@supabase/supabase-js@2.45.0';
+import { prioritizeOnboardingTutorialFixtures } from './selection.ts';
 
 const DEVELOPMENT_HOST = 'qnfxnmvxpjzfydgudtvs.supabase.co';
 const CORS_HEADERS: Record<string, string> = {
@@ -11,6 +12,7 @@ const CORS_HEADERS: Record<string, string> = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
+const SUPPORTED_PLATFORMS = new Set(['instagram', 'tiktok', 'facebook', 'youtube']);
 
 function json(payload: unknown, status = 200): Response {
   return new Response(JSON.stringify(payload), {
@@ -48,6 +50,19 @@ Deno.serve(async (request) => {
   const { data: userData, error: userError } = await admin.auth.getUser(accessToken);
   if (userError || !userData?.user) return json({ error: 'invalid_auth' }, 401);
 
+  let preferredPlatform: string | null = null;
+  try {
+    const body = await request.json();
+    if (body?.preferredPlatform != null) {
+      if (typeof body.preferredPlatform !== 'string' || !SUPPORTED_PLATFORMS.has(body.preferredPlatform)) {
+        return json({ error: 'invalid_preferred_platform' }, 400);
+      }
+      preferredPlatform = body.preferredPlatform;
+    }
+  } catch {
+    // An empty body is backward compatible with older Development clients.
+  }
+
   const { data: rows, error } = await admin
     .from('onboarding_tutorial_fixtures')
     .select('id,identity_key,identity_version,platform,content_id,canonical_url,role,priority,verification_revision')
@@ -60,7 +75,11 @@ Deno.serve(async (request) => {
     .limit(12);
   if (error) return json({ error: 'fixture_lookup_failed' }, 503);
 
-  for (const row of rows ?? []) {
+  // The database ordering remains the fallback authority. A healthy exact
+  // platform match is only moved ahead of otherwise eligible candidates.
+  const orderedRows = prioritizeOnboardingTutorialFixtures(rows ?? [], preferredPlatform);
+
+  for (const row of orderedRows) {
     const { data: eligible, error: eligibilityError } = await admin.rpc('resolve_onboarding_tutorial_fixture', {
       p_identity_key: row.identity_key,
       p_identity_version: row.identity_version,

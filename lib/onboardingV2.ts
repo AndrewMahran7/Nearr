@@ -19,6 +19,7 @@ import {
   advancePlaceTour,
   backOnboardingV2,
   beginOnboardingSecondHalf,
+  beginOnboardingInAppTutorialResolution,
   beginPermanentAccountLink,
   bindAnonymousUser,
   bypassExistingUser,
@@ -104,6 +105,9 @@ export type OnboardingV2EventName =
   | 'onboarding_interests_completed'
   | 'onboarding_pain_point_completed'
   | 'onboarding_tutorial_challenge_shown'
+  | 'onboarding_magic_post_shown'
+  | 'onboarding_find_place_tapped'
+  | 'onboarding_fixture_resolution_started'
   | 'onboarding_tutorial_launched'
   | 'onboarding_tutorial_share_received'
   | 'onboarding_tutorial_processing_started'
@@ -113,6 +117,7 @@ export type OnboardingV2EventName =
   | 'onboarding_first_tutorial_save_completed'
   | 'onboarding_first_save_celebration_shown'
   | 'onboarding_why_nearr_viewed'
+  | 'onboarding_share_education_shown'
   | 'onboarding_location_education_shown'
   | 'onboarding_location_permission_requested'
   | 'onboarding_location_permission_result'
@@ -245,6 +250,8 @@ async function emitEvents(events: OnboardingTransition['events'], state: Onboard
     pain_point: state.painPoint,
     fixture_id: state.tutorialFixture?.id ?? state.tutorialResult?.fixtureId ?? null,
     time_to_first_save: elapsedMs(state.startedAt, state.tutorialSave?.completedAt ?? null),
+    time_to_magic_moment: elapsedMs(state.startedAt, state.firstMagicMomentCompletedAt),
+    time_to_map: elapsedMs(state.startedAt, state.onboardingV2CompletedAt),
     location_foreground_result: state.locationForegroundResult,
     location_background_result: state.locationBackgroundResult,
     notification_permission_result: state.notificationPermissionResult,
@@ -383,6 +390,10 @@ export function setOnboardingV2TutorialFixtureError(reason: string): Promise<Onb
 
 export function continueOnboardingV2ToShareInstructions(): Promise<OnboardingV2State> {
   return applyTransition(showOnboardingShareInstructions);
+}
+
+export function beginOnboardingV2InAppTutorialResolution(): Promise<OnboardingV2State> {
+  return applyTransition(beginOnboardingInAppTutorialResolution);
 }
 
 export function recordOnboardingV2TutorialLaunch(): Promise<OnboardingV2State> {

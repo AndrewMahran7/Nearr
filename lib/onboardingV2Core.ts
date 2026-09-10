@@ -741,7 +741,11 @@ export function selectOnboardingPainPoint(
   painPoint: OnboardingPainPoint,
   now: string,
 ): OnboardingTransition {
-  if (state.cohort !== 'new_user_v2' || state.stage !== 'pain_point') return unchanged(state);
+  if (state.cohort !== 'new_user_v2' || !['interest', 'pain_point'].includes(state.stage)) return unchanged(state);
+  // Founder-polish combines interests and the pain-point prompt on one screen.
+  // Persist the draft while that screen is visible, then emit completion only
+  // after the interest transition has moved through the durable legacy stage.
+  if (state.stage === 'interest') return transition(state, { painPoint }, now);
   return transition(state, {
     painPoint,
     stage: 'tutorial_loading',
@@ -778,7 +782,47 @@ export function receiveOnboardingTutorialFixture(
   }, now, [{
     name: 'onboarding_tutorial_challenge_shown',
     properties: { fixture_id: fixture.id, fixture_role: fixture.role, fixture_platform: fixture.platform },
+  }, {
+    name: 'onboarding_magic_post_shown',
+    properties: { fixture_id: fixture.id, fixture_platform: fixture.platform },
   }]);
+}
+
+/** Start the first save without leaving Nearr. The ordinary share-job endpoint
+ * still performs the save; this transition only creates the same durable,
+ * exact-source attempt that the external share path uses. */
+export function beginOnboardingInAppTutorialResolution(
+  state: OnboardingV2State,
+  now: string,
+): OnboardingTransition {
+  const fixture = state.tutorialFixture;
+  if (state.stage !== 'tutorial_challenge' || !fixture) return unchanged(state);
+  const normalizedSourceUrl = normalizeOnboardingSourceUrl(fixture.canonicalUrl);
+  if (!normalizedSourceUrl) return unchanged(state);
+  const pendingShare: PendingOnboardingShare = {
+    attemptId: `tutorial-in-app:${fixture.id}:${now}`,
+    kind: 'tutorial',
+    contentId: fixture.contentId,
+    sourceUrl: fixture.canonicalUrl,
+    normalizedSourceUrl,
+    contentIdentity: { platform: fixture.platform, contentId: fixture.contentId.toLowerCase() },
+    openedAt: now,
+    shareReceivedAt: null,
+    resultSeenAt: null,
+  };
+  return transition(state, {
+    stage: 'tutorial_processing',
+    pendingShare,
+    tutorialLaunchedAt: now,
+    tutorialShareReceivedAt: null,
+    tutorialJobId: null,
+    tutorialResult: null,
+    wrongShareJobId: null,
+    lastFailure: null,
+  }, now, [
+    { name: 'onboarding_find_place_tapped', properties: { fixture_id: fixture.id } },
+    { name: 'onboarding_fixture_resolution_started', properties: { fixture_id: fixture.id, fixture_platform: fixture.platform } },
+  ]);
 }
 
 export function failOnboardingTutorialFixture(
@@ -893,8 +937,9 @@ export function retryOnboardingTutorialShare(
   now: string,
 ): OnboardingTransition {
   if (!['tutorial_awaiting_share', 'tutorial_processing'].includes(state.stage)) return unchanged(state);
+  const inApp = state.pendingShare?.attemptId.startsWith('tutorial-in-app:') === true;
   return transition(state, {
-    stage: 'tutorial_share_instructions',
+    stage: inApp ? 'tutorial_challenge' : 'tutorial_share_instructions',
     pendingShare: null,
     tutorialLaunchedAt: null,
     tutorialShareReceivedAt: null,
@@ -934,8 +979,11 @@ export function confirmOnboardingFirstMagicMoment(
     name: 'onboarding_first_tutorial_save_completed',
     properties: {
       fixture_id: fixture.id, fixture_role: fixture.role, fixture_platform: fixture.platform,
-      resolution_source: result.resolutionSource, time_to_first_save: elapsed,
+      resolution_source: result.resolutionSource, time_to_first_save: elapsed, time_to_magic_moment: elapsed,
     },
+  }, {
+    name: 'onboarding_why_nearr_viewed',
+    properties: { fixture_id: fixture.id, pain_point: state.painPoint },
   }]);
 }
 
@@ -968,9 +1016,9 @@ export function beginOnboardingSecondHalf(
     stage: 'why_nearr',
     secondHalfStartedAt: state.secondHalfStartedAt ?? now,
     whyNearrViewedAt: state.whyNearrViewedAt ?? now,
-  }, now, state.whyNearrViewedAt ? [] : [{
-    name: 'onboarding_why_nearr_viewed',
-    properties: { fixture_id: state.tutorialFixture?.id, pain_point: state.painPoint },
+  }, now, [{
+    name: 'onboarding_share_education_shown',
+    properties: { preferred_platform: state.preferredPlatform },
   }]);
 }
 
@@ -1016,17 +1064,6 @@ export function recordOnboardingForegroundLocationResult(
 ): OnboardingTransition {
   if (state.stage !== 'location_education') return unchanged(state);
   const requested = result !== 'skipped';
-  if (result === 'granted') {
-    return transition(state, {
-      stage: 'location_background_education',
-      locationForegroundResult: result,
-      locationBackgroundEducationShownAt: state.locationBackgroundEducationShownAt ?? now,
-    }, now, [
-      ...(requested ? [{ name: 'onboarding_location_permission_requested', properties: { permission_scope: 'foreground' } }] : []),
-      { name: 'onboarding_location_permission_result', properties: { permission_scope: 'foreground', result } },
-      { name: 'onboarding_location_education_shown', properties: { permission_scope: 'background' } },
-    ]);
-  }
   const next = notificationEducationPatch(state, now);
   return transition(state, {
     ...next.patch,
@@ -1065,13 +1102,14 @@ export function recordOnboardingNotificationResult(
   if (state.stage !== 'notification_education') return unchanged(state);
   const requested = result !== 'skipped';
   return transition(state, {
-    stage: 'growing_map',
+    stage: 'account_required',
     notificationPermissionResult: result,
-    growingMapViewedAt: state.growingMapViewedAt ?? now,
+    accountRequiredAt: state.accountRequiredAt ?? now,
   }, now, [
     ...(requested ? [{ name: 'onboarding_notification_permission_requested' }] : []),
     { name: 'onboarding_notification_permission_result', properties: { result } },
-    ...(state.growingMapViewedAt ? [] : [{ name: 'onboarding_growing_map_viewed', properties: { selected_interest_count: state.selectedInterests.length } }]),
+    { name: 'onboarding_auth_viewed' },
+    { name: 'onboarding_account_viewed' },
   ]);
 }
 
@@ -1139,7 +1177,11 @@ export function showOnboardingActivationChallenge(
   return transition(state, {
     stage: 'activation_challenge',
     activationChallengeShownAt: state.activationChallengeShownAt ?? now,
-  }, now, state.activationChallengeShownAt ? [] : [{ name: 'onboarding_activation_challenge_shown', properties: { progress: 1 } }]);
+    growingMapViewedAt: state.growingMapViewedAt ?? now,
+  }, now, [
+    ...(state.growingMapViewedAt ? [] : [{ name: 'onboarding_growing_map_viewed', properties: { selected_interest_count: state.selectedInterests.length } }]),
+    ...(state.activationChallengeShownAt ? [] : [{ name: 'onboarding_activation_challenge_shown', properties: { progress: 1 } }]),
+  ]);
 }
 
 export function completeOnboardingSecondHalf(
@@ -1159,7 +1201,7 @@ export function completeOnboardingSecondHalf(
   }, now, [
     { name: 'onboarding_activation_choice', properties: { choice } },
     { name: 'onboarding_v2_completed', properties: {
-      choice, total_onboarding_duration: duration,
+      choice, total_onboarding_duration: duration, time_to_map: duration,
       location_foreground_result: state.locationForegroundResult,
       location_background_result: state.locationBackgroundResult,
       notification_permission_result: state.notificationPermissionResult,
@@ -1276,8 +1318,8 @@ export function backOnboardingV2(state: OnboardingV2State, now: string): Onboard
     platform: 'overview',
     interest: 'platform',
     pain_point: 'interest',
-    tutorial_loading: 'pain_point',
-    tutorial_challenge: 'pain_point',
+    tutorial_loading: 'interest',
+    tutorial_challenge: 'interest',
     tutorial_share_instructions: 'tutorial_challenge',
     tutorial_awaiting_share: 'tutorial_share_instructions',
     interest_selected: 'interest',
