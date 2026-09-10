@@ -27,6 +27,7 @@ export type PlaceBrowseCarouselItem = {
   sourceUri?: string | null;
   fallbackSourceUri?: string | null;
   disabled?: boolean;
+  allowGoogleLookup?: boolean;
 };
 
 type Props = {
@@ -128,6 +129,7 @@ export function PlaceBrowseCarousel({
               sourceUri={item.sourceUri}
               fallbackSourceUri={item.fallbackSourceUri}
               preferPlacePhoto
+              allowGoogleLookup={item.allowGoogleLookup}
               size={expanded ? 64 : 48}
               borderRadius={expanded ? 12 : 9}
               accessibilityLabel={`Photo of ${item.name}`}

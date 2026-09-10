@@ -84,6 +84,7 @@ export function SavedPlaceResult({
         <View style={styles.alternativeIdentity}>
           <PlaceImage
             googlePlaceId={item.candidate.googlePlaceId.startsWith('nearr-native:') ? undefined : item.candidate.googlePlaceId}
+            allowGoogleLookup={!saved}
             sourceUri={item.candidate.photoUrl}
             fallbackSourceUri={item.candidate.sourceFrameUrl}
             preferPlacePhoto
@@ -166,6 +167,7 @@ export function SavedPlaceResult({
           <View style={styles.heroMedia}>
             <PlaceImage
               googlePlaceId={primary.googlePlaceId?.startsWith('nearr-native:') ? undefined : primary.googlePlaceId}
+              allowGoogleLookup={false}
               sourceUri={primary.candidatePhotoUrl ?? primary.sourceThumbnailUrl}
               fallbackSourceUri={primary.sourceFrameUrl ?? primary.sourceThumbnailUrl}
               preferPlacePhoto

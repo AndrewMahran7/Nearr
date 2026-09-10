@@ -53,6 +53,10 @@ import {
 import { normalizeShareUrl } from '@/lib/shareAgent/tiktokUrl';
 import { attachSavedPlaceSource } from '@/services/savedPlaceSourcesService';
 import {
+  invalidateSavedPlaceHydration,
+  persistSavedPlaceSnapshotAfterSave,
+} from '@/lib/savedPlaceHydration';
+import {
   canonicalSaveSuccess,
   type CanonicalSaveOutcome,
   type CanonicalSaveSuccess,
@@ -386,6 +390,14 @@ export async function saveSavedPlace(
       sourceType: input.sourceType,
       aiNote: input.aiNote,
     });
+    const savedAfterEnrichment = await readSavedPlaceAfterEnrichment(existingForUser.id);
+    if (savedAfterEnrichment) {
+      await persistSavedPlaceSnapshotAfterSave({
+        userId,
+        saved: savedAfterEnrichment,
+        candidate,
+      });
+    }
     return canonicalSaveSuccess(existingForUser.id, reusedSaveOutcome({
       enrichment,
       sourceAttachment,
@@ -393,7 +405,7 @@ export async function saveSavedPlace(
     }), {
       status: 'duplicate',
       place: existingForUser.place,
-      saved: await readSavedPlaceAfterEnrichment(existingForUser.id),
+      saved: savedAfterEnrichment,
       enrichment,
     });
   }
@@ -549,6 +561,14 @@ export async function saveSavedPlace(
         aiNote: input.aiNote,
       });
 
+      const savedAfterEnrichment = await readSavedPlaceAfterEnrichment(existingSaved.id);
+      if (savedAfterEnrichment) {
+        await persistSavedPlaceSnapshotAfterSave({
+          userId,
+          saved: savedAfterEnrichment,
+          candidate,
+        });
+      }
       return canonicalSaveSuccess(existingSaved.id, reusedSaveOutcome({
         enrichment,
         sourceAttachment,
@@ -556,7 +576,7 @@ export async function saveSavedPlace(
       }), {
         status: 'duplicate',
         place: placeRow,
-        saved: await readSavedPlaceAfterEnrichment(existingSaved.id),
+        saved: savedAfterEnrichment,
         enrichment,
       });
     }
@@ -577,10 +597,16 @@ export async function saveSavedPlace(
     aiNote: input.aiNote,
   });
   const hydrated = await readSavedPlaceAfterEnrichment(savedPlaceId);
+  const savedWithPlace = hydrated ?? saved as SavedPlace & { place: PlaceRow };
+  await persistSavedPlaceSnapshotAfterSave({
+    userId,
+    saved: savedWithPlace,
+    candidate,
+  });
 
   return canonicalSaveSuccess(savedPlaceId, 'created', {
     status: 'saved',
-    saved: hydrated ?? saved as SavedPlace & { place: PlaceRow },
+    saved: savedWithPlace,
   });
 }
 
@@ -805,8 +831,21 @@ export async function correctSavedPlace(args: {
   if (retainedErr) rethrowMutationError('correct place', retainedErr);
   if (!retained) throw new Error('This saved place is no longer available.');
   triggerGeofenceResync();
+  const retainedSaved = retained as SavedPlaceWithPlace;
+  await persistSavedPlaceSnapshotAfterSave({
+    userId: retainedSaved.user_id,
+    saved: retainedSaved,
+    candidate: args.replacement,
+    trigger: 'correction',
+  });
+  if (correction?.merged_saved_place_id) {
+    await invalidateSavedPlaceHydration(
+      retainedSaved.user_id,
+      correction.merged_saved_place_id,
+    );
+  }
   return {
-    saved: retained as SavedPlaceWithPlace,
+    saved: retainedSaved,
     mergedSavedPlaceId: correction?.merged_saved_place_id ?? null,
     sourceJobId: correction?.source_job_id ?? null,
     sourceResultId: correction?.source_result_id ?? null,
@@ -856,6 +895,8 @@ export async function updateSavedPlace(id: string, patch: SavedPlacePatch): Prom
 export async function deleteSavedPlace(id: string): Promise<void> {
   if (isDemoMode()) return await deleteDemoSavedPlace(id);
   console.log('[savedPlacesService] delete', id);
+  const { data: sessionData } = await supabase.auth.getSession();
+  const userId = sessionData.session?.user?.id ?? null;
   try {
     const { error } = await supabase.from('saved_places').delete().eq('id', id);
     if (error) {
@@ -865,6 +906,7 @@ export async function deleteSavedPlace(id: string): Promise<void> {
   } catch (err) {
     rethrowMutationError('delete', err);
   }
+  if (userId) await invalidateSavedPlaceHydration(userId, id);
   triggerGeofenceResync();
 }
 
@@ -887,6 +929,9 @@ export async function rejectSavedPlaceRecognition(id: string): Promise<number> {
     if (!Number.isFinite(rejected) || rejected < 1) {
       throw new Error('The recognition feedback did not complete. Please retry.');
     }
+    const { data: sessionData } = await supabase.auth.getSession();
+    const userId = sessionData.session?.user?.id ?? null;
+    if (userId) await invalidateSavedPlaceHydration(userId, id);
     triggerGeofenceResync();
     return rejected;
   } catch (err) {

@@ -22,6 +22,8 @@ type Props = {
   fallbackSourceUri?: string | null;
   /** Candidate confirmation prefers an exact Places photo over source media. */
   preferPlacePhoto?: boolean;
+  /** Saved-place surfaces set false so list/card mounts never hydrate Google. */
+  allowGoogleLookup?: boolean;
   size?: number;
   width?: DimensionValue;
   height?: number;
@@ -41,6 +43,7 @@ export function PlaceImage({
   sourceUri,
   fallbackSourceUri,
   preferPlacePhoto = false,
+  allowGoogleLookup = true,
   size = 64,
   width,
   height,
@@ -53,7 +56,7 @@ export function PlaceImage({
   const { colors } = useTheme();
   const [placePhotoUrls, setPlacePhotoUrls] = useState<string[]>([]);
   const [failedUris, setFailedUris] = useState<Record<string, boolean>>({});
-  const [loading, setLoading] = useState(Boolean(googlePlaceId) && (preferPlacePhoto || !sourceUri));
+  const [loading, setLoading] = useState(allowGoogleLookup && Boolean(googlePlaceId) && (preferPlacePhoto || !sourceUri));
   const [resolutionTimedOut, setResolutionTimedOut] = useState(false);
   const lastResolutionRef = useRef<PlaceImageResolutionKind | null>(null);
   const frameStyle = useMemo(
@@ -65,8 +68,9 @@ export function PlaceImage({
     setPlacePhotoUrls([]);
     setFailedUris({});
     setResolutionTimedOut(false);
+    setLoading(allowGoogleLookup && Boolean(googlePlaceId) && (preferPlacePhoto || !sourceUri));
     lastResolutionRef.current = null;
-  }, [fallbackSourceUri, googlePlaceId, sourceUri]);
+  }, [allowGoogleLookup, fallbackSourceUri, googlePlaceId, preferPlacePhoto, sourceUri]);
 
   const holdFallbackForPlacePhoto = preferPlacePhoto && loading && !resolutionTimedOut;
   const resolvedUri = selectPlaceImageUri(
@@ -89,7 +93,7 @@ export function PlaceImage({
       };
     }
 
-    if (!googlePlaceId) {
+    if (!allowGoogleLookup || !googlePlaceId) {
       setLoading(false);
       return () => {
         cancelled = true;
@@ -112,7 +116,7 @@ export function PlaceImage({
       cancelled = true;
       clearTimeout(timeout);
     };
-  }, [failedUris, googlePlaceId, preferPlacePhoto, sourceUri]);
+  }, [allowGoogleLookup, failedUris, googlePlaceId, preferPlacePhoto, sourceUri]);
 
   const resolutionKind: PlaceImageResolutionKind = resolvedUri
     ? placePhotoUrls.includes(resolvedUri)

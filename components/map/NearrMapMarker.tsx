@@ -4,8 +4,8 @@
  * Android custom markers are rasterized into native bitmaps. View tracking is
  * enabled only long enough to capture the current visual (including a selected
  * photo), then disabled to avoid react-native-maps' ViewChangesTracker OOM
- * path. Only the selected marker may request rich details; normal markers are
- * category-only and never fan out network calls.
+ * path. Saved markers never request rich details; recommendation markers can
+ * display a photo already returned by the bounded Nearby Search response.
  */
 
 import {
@@ -22,7 +22,6 @@ import { Image, StyleSheet, Text, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Marker } from 'react-native-maps';
 
-import { getCachedPlaceRichDetails } from '@/lib/placeRichDetailsCache';
 import {
   savedMarkerPresentation,
   type MapMarkerDetailLevel,
@@ -100,26 +99,12 @@ function NearrMapMarkerView({
 
   useEffect(() => {
     let cancelled = false;
-    const googlePlaceId = place.place.google_place_id?.trim() || null;
-
     setPhotoUri(suppliedPhotoUri?.trim() || null);
     setPhotoFailed(false);
     if (suppliedPhotoUri?.trim()) return () => { cancelled = true; };
-    if (!redesignEnabled || !selected || !googlePlaceId) return () => { cancelled = true; };
-
-    // The selected Place Detail uses this same in-memory cache. Concurrent
-    // reads dedupe to one request, so this never adds a per-marker fan-out.
-    recordMapPinDiagnostic('selected-photo-request', { savedPlaceId: place.id });
-    void getCachedPlaceRichDetails(googlePlaceId).then((details) => {
-      if (cancelled) return;
-      const nextPhotoUri = details?.photoUrls.find((uri) => !!uri?.trim()) ?? null;
-      recordMapPinDiagnostic('selected-photo-result', {
-        savedPlaceId: place.id,
-        hasPhoto: !!nextPhotoUri,
-      });
-      setPhotoUri(nextPhotoUri);
-    });
-
+    // Saved markers never hydrate Google on selection. The canonical detail
+    // owner performs the one local-first lookup; recommendation markers may
+    // still receive a photo already returned by Nearby Search.
     return () => {
       cancelled = true;
     };

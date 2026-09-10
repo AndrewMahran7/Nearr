@@ -45,6 +45,7 @@ export function MapGroupSelector({
       googlePlaceId: place.place.google_place_id,
       fallbackSourceUri: sourceThumbnail,
       preferPlacePhoto: true,
+      allowGoogleLookup: false,
       stateLabel: 'Saved',
       stateTone: 'accent',
     };

@@ -46,6 +46,7 @@ export function NearbyMapExplorerCarousel({
       secondaryMeta: item.shortFormattedAddress ?? item.address,
       googlePlaceId: item.providerPlaceId,
       sourceUri: item.photoUrl,
+      allowGoogleLookup: item.savedState !== 'saved',
       stateLabel: item.savedState === 'saved' ? 'Saved' : 'Not saved',
       stateTone: item.savedState === 'saved' ? 'accent' : 'muted',
       contextLabel: item.sourceType === 'anchor' ? 'Starting place' : null,

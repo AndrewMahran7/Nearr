@@ -2333,6 +2333,7 @@ function ShareJobDetailScreen() {
           name: row.primaryVenueName ?? row.extractedName,
           subtitle: mentionSummaryStatus(row),
           googlePlaceId: candidate?.googlePlaceId ?? null,
+          allowGoogleLookup: !row.savedPlaceId,
           fallbackSourceUri: row.sourceFrameUrl,
         };
       })
