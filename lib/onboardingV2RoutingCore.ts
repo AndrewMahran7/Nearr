@@ -36,6 +36,15 @@ export function expectedOnboardingV2Route(
     'tutorial_reveal',
     'tutorial_celebration',
     'first_magic_moment_complete',
+    'why_nearr',
+    'nearby_value',
+    'location_education',
+    'location_background_education',
+    'notification_education',
+    'growing_map',
+    'auth_success',
+    'personalized_activation',
+    'activation_challenge',
   ].includes(stage)) return '/(onboarding)';
   if (stage.startsWith('tutorial_')) return '/activate';
   if (
@@ -47,7 +56,8 @@ export function expectedOnboardingV2Route(
     stage === 'first_independent_save_complete' ||
     stage === 'second_independent_external_video_opened' ||
     stage === 'second_independent_share_returned' ||
-    stage === 'graduated'
+    stage === 'graduated' ||
+    stage === 'onboarding_complete'
   ) return '/(tabs)/map';
   return '/(onboarding)';
 }

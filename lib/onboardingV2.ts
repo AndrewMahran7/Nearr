@@ -18,15 +18,21 @@ import {
   advanceSimulatedTutorial,
   advancePlaceTour,
   backOnboardingV2,
+  beginOnboardingSecondHalf,
   beginPermanentAccountLink,
   bindAnonymousUser,
   bypassExistingUser,
   cancelPermanentAccountLink,
+  completeOnboardingSecondHalf,
   closePlaceTour,
   completeOnboardingInterests,
   completeOnboardingPlatforms,
   confirmOnboardingFirstMagicMoment,
   completePermanentAccountLink,
+  continueOnboardingAfterAuth,
+  continueOnboardingToAccount,
+  continueOnboardingToLocationEducation,
+  continueOnboardingToNearbyValue,
   completePendingSave,
   continueToTutorial,
   createInitialOnboardingV2State,
@@ -35,6 +41,7 @@ import {
   encodeOnboardingV2State,
   failPendingSave,
   failOnboardingTutorialFixture,
+  failOnboardingAuth,
   finishOnboardingFirstMagicMoment,
   freshOnboardingV2StateAfterAccountDeletion,
   isExpectedOnboardingSource,
@@ -48,6 +55,9 @@ import {
   openPlaceTour,
   openStarterShelf,
   recordPracticeHelpOpened,
+  recordOnboardingBackgroundLocationResult,
+  recordOnboardingForegroundLocationResult,
+  recordOnboardingNotificationResult,
   recordPracticeReturnedWithoutShare,
   receiveSharedSource,
   receiveOnboardingTutorialFixture,
@@ -61,16 +71,20 @@ import {
   selectPracticeSource,
   selectPlatform,
   showOnboardingCelebration,
+  showOnboardingActivationChallenge,
   showOnboardingShareInstructions,
   showStarterPrompt,
   startOnboardingV2,
+  startOnboardingAuth,
   tapGetStarted,
   toggleOnboardingInterest,
   toggleOnboardingPlatform,
   launchOnboardingTutorial,
   migrateInterruptedOnboardingToFirstMagic,
   type OnboardingInterest,
+  type OnboardingActivationChoice,
   type OnboardingPainPoint,
+  type OnboardingPermissionResult,
   type OnboardingPlatform,
   type OnboardingTutorialFixture,
   type OnboardingTutorialResult,
@@ -98,6 +112,22 @@ export type OnboardingV2EventName =
   | 'onboarding_place_reveal_shown'
   | 'onboarding_first_tutorial_save_completed'
   | 'onboarding_first_save_celebration_shown'
+  | 'onboarding_why_nearr_viewed'
+  | 'onboarding_location_education_shown'
+  | 'onboarding_location_permission_requested'
+  | 'onboarding_location_permission_result'
+  | 'onboarding_notification_education_shown'
+  | 'onboarding_notification_permission_requested'
+  | 'onboarding_notification_permission_result'
+  | 'onboarding_growing_map_viewed'
+  | 'onboarding_auth_viewed'
+  | 'onboarding_auth_started'
+  | 'onboarding_auth_completed'
+  | 'onboarding_auth_failed'
+  | 'onboarding_personalized_activation_shown'
+  | 'onboarding_activation_challenge_shown'
+  | 'onboarding_activation_choice'
+  | 'onboarding_v2_completed'
   | 'onboarding_overview_viewed'
   | 'onboarding_get_started_tapped'
   | 'onboarding_platform_selected'
@@ -201,11 +231,30 @@ function publish(state: OnboardingV2State): void {
   });
 }
 
-async function emitEvents(events: OnboardingTransition['events']): Promise<void> {
+function elapsedMs(start: string | null, end: string | null): number | null {
+  if (!start || !end) return null;
+  const startMs = Date.parse(start);
+  const endMs = Date.parse(end);
+  return Number.isFinite(startMs) && Number.isFinite(endMs) ? Math.max(0, endMs - startMs) : null;
+}
+
+async function emitEvents(events: OnboardingTransition['events'], state: OnboardingV2State): Promise<void> {
+  const context = {
+    primary_platform: state.preferredPlatform,
+    interests: state.selectedInterests,
+    pain_point: state.painPoint,
+    fixture_id: state.tutorialFixture?.id ?? state.tutorialResult?.fixtureId ?? null,
+    time_to_first_save: elapsedMs(state.startedAt, state.tutorialSave?.completedAt ?? null),
+    location_foreground_result: state.locationForegroundResult,
+    location_background_result: state.locationBackgroundResult,
+    notification_permission_result: state.notificationPermissionResult,
+    auth_provider: state.authProvider,
+  };
   await Promise.all(
     events.map((event) =>
       trackEvent(event.name as OnboardingV2EventName, {
         onboarding_version: 2,
+        ...context,
         ...(event.properties ?? {}),
       }),
     ),
@@ -268,13 +317,11 @@ async function applyTransition(
       console.warn('[onboarding-v2] state_write_failed', error);
     }
     void syncStateToServer(result.state, serverSyncGeneration);
-    void emitEvents(result.events);
-    if (
-      !current.phase1CompletedAt &&
-      !current.behavioralCompletedAt &&
-      (result.state.phase1CompletedAt || result.state.behavioralCompletedAt) &&
-      result.state.boundUserId
-    ) {
+    void emitEvents(result.events, result.state);
+    const reachedDurableCompletion =
+      (!current.phase1CompletedAt && !!result.state.phase1CompletedAt) ||
+      (!current.behavioralCompletedAt && !!result.state.behavioralCompletedAt);
+    if (reachedDurableCompletion && result.state.boundUserId) {
       await markOnboardingComplete(result.state.boundUserId);
     }
     return result.state;
@@ -370,6 +417,46 @@ export function finishOnboardingV2FirstMagicMoment(): Promise<OnboardingV2State>
   return applyTransition(finishOnboardingFirstMagicMoment);
 }
 
+export function beginOnboardingV2SecondHalf(): Promise<OnboardingV2State> {
+  return applyTransition(beginOnboardingSecondHalf);
+}
+
+export function continueOnboardingV2ToNearbyValue(): Promise<OnboardingV2State> {
+  return applyTransition(continueOnboardingToNearbyValue);
+}
+
+export function continueOnboardingV2ToLocationEducation(): Promise<OnboardingV2State> {
+  return applyTransition(continueOnboardingToLocationEducation);
+}
+
+export function recordOnboardingV2ForegroundLocationResult(result: OnboardingPermissionResult): Promise<OnboardingV2State> {
+  return applyTransition((state, now) => recordOnboardingForegroundLocationResult(state, result, now));
+}
+
+export function recordOnboardingV2BackgroundLocationResult(result: OnboardingPermissionResult): Promise<OnboardingV2State> {
+  return applyTransition((state, now) => recordOnboardingBackgroundLocationResult(state, result, now));
+}
+
+export function recordOnboardingV2NotificationResult(result: OnboardingPermissionResult): Promise<OnboardingV2State> {
+  return applyTransition((state, now) => recordOnboardingNotificationResult(state, result, now));
+}
+
+export function continueOnboardingV2ToAccount(): Promise<OnboardingV2State> {
+  return applyTransition(continueOnboardingToAccount);
+}
+
+export function continueOnboardingV2AfterAuth(): Promise<OnboardingV2State> {
+  return applyTransition(continueOnboardingAfterAuth);
+}
+
+export function showOnboardingV2ActivationChallenge(): Promise<OnboardingV2State> {
+  return applyTransition(showOnboardingActivationChallenge);
+}
+
+export function completeOnboardingV2SecondHalf(choice: OnboardingActivationChoice): Promise<OnboardingV2State> {
+  return applyTransition((state, now) => completeOnboardingSecondHalf(state, choice, now));
+}
+
 export function continueOnboardingV2ToTutorial(): Promise<OnboardingV2State> {
   return applyTransition(continueToTutorial);
 }
@@ -414,9 +501,11 @@ export async function saveOnboardingV2TutorialPlace(
 }
 
 export async function recordOnboardingV2SignInStarted(method: string): Promise<void> {
-  const state = await getOnboardingV2State();
-  if (state.cohort !== 'new_user_v2' || state.stage !== 'account_required') return;
-  void trackEvent('onboarding_signin_started', { onboarding_version: 2, method });
+  await applyTransition((state, now) => startOnboardingAuth(state, method, now));
+}
+
+export async function recordOnboardingV2AuthFailed(method: string, result: 'cancelled' | 'failed'): Promise<void> {
+  await applyTransition((state, now) => failOnboardingAuth(state, method, result, now));
 }
 
 export function bindOnboardingV2AnonymousUser(

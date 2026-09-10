@@ -21,6 +21,8 @@ import { clearDevAuth } from '@/lib/devAuth';
 import { isPostAuthRoutingPending } from '@/lib/postAuthRouting';
 import { isOnboardingV2Enabled } from '@/lib/featureFlags';
 import { isOnboardingV2InProgressState } from '@/lib/onboardingV2Core';
+import { getResolvedEnvironment } from '@/lib/appEnvironment';
+import { canRunOnboardingV2SecondHalf, isSignedInOnboardingV2Continuation } from '@/lib/onboardingV2SecondHalfCore';
 import {
   expectedOnboardingV2Route,
   onboardingRouteKey,
@@ -270,7 +272,14 @@ function AuthGate({
     isOnboardingV2Enabled() &&
     !!onboardingV2 &&
     isOnboardingV2InProgressState(onboardingV2);
-  const suppressSetupReminder = !inTabs || authLinkPending || behavioralOnboardingActive;
+  const secondHalfDevelopment = canRunOnboardingV2SecondHalf(getResolvedEnvironment());
+  const signedInSecondHalfContinuation = !!(
+    secondHalfDevelopment &&
+    onboardingV2?.cohort === 'new_user_v2' &&
+    isSignedInOnboardingV2Continuation(onboardingV2.stage)
+  );
+  const suppressSetupReminder = !inTabs || authLinkPending || behavioralOnboardingActive ||
+    !!(secondHalfDevelopment && onboardingV2?.onboardingV2CompletedAt);
   const [setupReminderVisible, setSetupReminderVisible] = useState(false);
   const [needsNotifications, setNeedsNotifications] = useState(false);
   const [needsLocation, setNeedsLocation] = useState(false);
@@ -418,6 +427,7 @@ function AuthGate({
       logDebug('AuthGate', `-> ${expectedRoute}`);
       router.replace(expectedRoute);
     };
+    const expectedV2Route = expectedOnboardingV2Route(onboardingV2?.stage);
 
     // Logged out: onboarding is the PUBLIC landing. Allow the auth and
     // onboarding groups; send everything else into the intro flow.
@@ -455,8 +465,12 @@ function AuthGate({
         replaceOnce('/(onboarding)');
         return;
       }
-      const expectedRoute = expectedOnboardingV2Route(onboardingV2.stage);
-      if (expectedRoute) replaceOnce(expectedRoute);
+      if (expectedV2Route) replaceOnce(expectedV2Route);
+      return;
+    }
+
+    if (signedInSecondHalfContinuation) {
+      if (expectedV2Route) replaceOnce(expectedV2Route);
       return;
     }
 
@@ -488,6 +502,7 @@ function AuthGate({
     onboardingV2?.cohort,
     onboardingV2?.phase1CompletedAt,
     onboardingV2?.stage,
+    signedInSecondHalfContinuation,
   ]);
 
   // Run a one-shot proximity check on sign-in and on app foreground. The

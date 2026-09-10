@@ -164,9 +164,10 @@ export async function clearOnboardingAccountTransferAfterDeletion(): Promise<voi
 
 /** Finalize either an in-place identity link or an allowlisted cross-user transfer. */
 export async function finishOnboardingAccountTransition(user: User): Promise<{
-  route: '/(tabs)/map';
+  route: '/(tabs)/map' | '/(onboarding)';
   destinationWasEstablished: boolean;
   tutorialSavedPlaceId: string;
+  continueOnboardingV2: boolean;
 }> {
   if (isAnonymousSupabaseUser(user)) throw new Error('permanent_identity_not_established');
   const refreshed = await supabase.auth.refreshSession();
@@ -193,7 +194,7 @@ export async function finishOnboardingAccountTransition(user: User): Promise<{
   }
   if (!result) throw new Error('invalid_onboarding_transfer_result');
   if (!result.tutorialSavedPlaceId) throw new Error('tutorial_saved_place_identity_missing');
-  await completeOnboardingV2PermanentAccountLink({
+  const nextState = await completeOnboardingV2PermanentAccountLink({
     permanentUserId: result.permanentUserId,
     destinationWasEstablished: result.destinationWasEstablished,
     tutorialSavedPlaceId: result.tutorialSavedPlaceId,
@@ -202,10 +203,12 @@ export async function finishOnboardingAccountTransition(user: User): Promise<{
     await markOnboardingComplete(result.permanentUserId);
   }
   await AsyncStorage.removeItem(TRANSFER_KEY);
+  const continueOnboardingV2 = nextState.stage === 'auth_success';
   return {
-    route: '/(tabs)/map',
+    route: continueOnboardingV2 ? '/(onboarding)' : '/(tabs)/map',
     destinationWasEstablished: result.destinationWasEstablished,
     tutorialSavedPlaceId: result.tutorialSavedPlaceId,
+    continueOnboardingV2,
   };
 }
 

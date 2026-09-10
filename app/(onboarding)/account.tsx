@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
+  Image,
   Platform,
   Pressable,
   StyleSheet,
@@ -13,7 +14,7 @@ import { Feather } from '@expo/vector-icons';
 import * as AppleAuthentication from 'expo-apple-authentication';
 
 import { trackEvent } from '@/lib/analytics';
-import { recordOnboardingV2SignInStarted } from '@/lib/onboardingV2';
+import { recordOnboardingV2AuthFailed, recordOnboardingV2SignInStarted } from '@/lib/onboardingV2';
 import { isSupabaseConfigured } from '@/lib/supabase';
 import { areDeveloperToolsVisible } from '@/lib/appEnvironment';
 import {
@@ -59,7 +60,6 @@ import {
   OnboardingSecondaryButton,
   OnboardingSizes,
 } from '@/components/onboarding';
-import { NearrAppIcon } from '@/components/onboarding/demo';
 import { getPendingSharedPlaceIntent, type PendingSharedPlaceIntent } from '@/lib/sharedPlaceIntent';
 
 /**
@@ -206,6 +206,7 @@ export default function AccountAuthScreen() {
       await prepareOnboardingAccountTransfer();
       return true;
     } catch (error) {
+      void recordOnboardingV2AuthFailed(activeOperationRef.current ?? 'resume', 'failed');
       console.warn('[onboarding-v2] transfer_prepare_failed', error);
       if (mountedRef.current) {
         setErrorMessage('Nearr could not secure your tutorial transfer. Check your connection and try again.');
@@ -220,12 +221,13 @@ export default function AccountAuthScreen() {
    * own routing. Navigation intentionally runs even if the screen unmounted
    * (an OAuth sheet can outlive it) — only state writes are mount-guarded.
    */
-  async function completeAuthentication(userId: string) {
+  async function completeAuthentication(userId: string, method = activeOperationRef.current ?? 'resume') {
     beginPostAuthRouting();
     try {
       const route = await resolvePostAuthRoute(userId);
       router.replace(route);
     } catch (error) {
+      void recordOnboardingV2AuthFailed(method, 'failed');
       console.warn('[onboarding-v2] account_transition_failed', error);
       if (mountedRef.current) {
         setErrorMessage('Your account signed in, but Nearr could not preserve the tutorial yet. Try Continue again.');
@@ -251,6 +253,7 @@ export default function AccountAuthScreen() {
       const { error } = await sendMagicLink(email);
       if (!mountedRef.current) return;
       if (error) {
+        void recordOnboardingV2AuthFailed('magic_link', 'failed');
         setErrorMessage(toUserFacingAuthError(error, 'magic_link'));
         return;
       }
@@ -281,6 +284,7 @@ export default function AccountAuthScreen() {
       const { data, error } = await signInWithPassword(email, password);
       const user = data.session?.user ?? data.user ?? null;
       if (error || !user) {
+        void recordOnboardingV2AuthFailed('password_sign_in', 'failed');
         void trackEvent('onboarding_password_signin_failed', {});
         if (mountedRef.current) {
           setErrorMessage(toUserFacingAuthError(error, 'password_sign_in'));
@@ -290,6 +294,7 @@ export default function AccountAuthScreen() {
       void trackEvent('onboarding_password_signin_completed', {});
       await completeAuthentication(user.id);
     } catch {
+      void recordOnboardingV2AuthFailed('password_sign_in', 'failed');
       if (anonymousOnboarding) void cancelOnboardingAccountTransfer();
       void trackEvent('onboarding_password_signin_failed', {});
       console.warn('[auth] password sign-in threw');
@@ -327,6 +332,7 @@ export default function AccountAuthScreen() {
       }
 
       void trackEvent('onboarding_password_signup_failed', {});
+      void recordOnboardingV2AuthFailed('password_sign_up', 'failed');
       if (anonymousOnboarding) void cancelOnboardingAccountTransfer();
       if (!mountedRef.current) return;
       setErrorMessage(
@@ -379,12 +385,14 @@ export default function AccountAuthScreen() {
         return;
       }
       if (outcome.status === 'cancelled') {
+        void recordOnboardingV2AuthFailed('google', 'cancelled');
         // Backing out of the browser is a normal action — no error UI.
         void trackEvent('onboarding_google_cancelled', {});
         if (anonymousOnboarding) void cancelOnboardingAccountTransfer();
         return;
       }
       if (anonymousOnboarding) void cancelOnboardingAccountTransfer();
+      void recordOnboardingV2AuthFailed('google', 'failed');
       void trackEvent('onboarding_google_failed', { reason: outcome.code });
       if (mountedRef.current) setErrorMessage(toUserFacingAuthError(null, 'google'));
     } finally {
@@ -406,11 +414,13 @@ export default function AccountAuthScreen() {
         return;
       }
       if (outcome.status === 'cancelled') {
+        void recordOnboardingV2AuthFailed('apple', 'cancelled');
         void trackEvent('onboarding_apple_cancelled', {});
         if (anonymousOnboarding) void cancelOnboardingAccountTransfer();
         return;
       }
       if (anonymousOnboarding) void cancelOnboardingAccountTransfer();
+      void recordOnboardingV2AuthFailed('apple', 'failed');
       void trackEvent('onboarding_apple_failed', { reason: outcome.code });
       if (mountedRef.current) setErrorMessage(toUserFacingAuthError(null, 'apple'));
     } finally {
@@ -525,7 +535,7 @@ export default function AccountAuthScreen() {
       >
         <View style={styles.brand}>
           <View style={styles.glow} />
-          <NearrAppIcon size={64} />
+          <Image source={require('../../assets/icon.png')} style={styles.brandIcon} accessibilityLabel="Nearr logo" />
           <Text style={styles.wordmark}>Nearr</Text>
         </View>
 
@@ -837,6 +847,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 12,
     marginBottom: 24,
+  },
+  brandIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 18,
   },
   glow: {
     position: 'absolute',

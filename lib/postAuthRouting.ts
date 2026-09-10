@@ -10,7 +10,7 @@ import { resolveOpenSavedPlaceRoute, type MapRouteTarget } from '@/lib/openSaved
 import { supabase } from '@/lib/supabase';
 import { pendingSharedPlaceRoute } from '@/lib/sharedPlaceIntent';
 
-export type PostAuthRoute = '/activate' | '/(tabs)/map' | MapRouteTarget | `/p/${string}`;
+export type PostAuthRoute = '/activate' | '/(onboarding)' | '/(tabs)/map' | MapRouteTarget | `/p/${string}`;
 
 /**
  * THE post-authentication resolver.
@@ -28,6 +28,7 @@ export type PostAuthRoute = '/activate' | '/(tabs)/map' | MapRouteTarget | `/p/$
  */
 export async function resolvePostAuthRoute(userId: string): Promise<PostAuthRoute> {
   let onboardingTransferRoute: MapRouteTarget | null = null;
+  let continueOnboardingV2 = false;
   if (isOnboardingV2Enabled()) {
     const state = await getOnboardingV2State();
     if (state.tutorialSave && state.identityLifecycle !== 'permanent_account') {
@@ -36,10 +37,13 @@ export async function resolvePostAuthRoute(userId: string): Promise<PostAuthRout
         throw new Error('permanent_onboarding_session_not_ready');
       }
       const transition = await finishOnboardingAccountTransition(session.user);
-      onboardingTransferRoute = resolveOpenSavedPlaceRoute({
-        savedPlaceId: transition.tutorialSavedPlaceId,
-        source: 'onboarding_tutorial',
-      });
+      continueOnboardingV2 = transition.continueOnboardingV2;
+      if (!continueOnboardingV2) {
+        onboardingTransferRoute = resolveOpenSavedPlaceRoute({
+          savedPlaceId: transition.tutorialSavedPlaceId,
+          source: 'onboarding_tutorial',
+        });
+      }
     }
   }
 
@@ -49,6 +53,7 @@ export async function resolvePostAuthRoute(userId: string): Promise<PostAuthRout
   // above still completes first so an existing tutorial row is never orphaned.
   const sharedPlaceRoute = await pendingSharedPlaceRoute();
   if (sharedPlaceRoute) return sharedPlaceRoute;
+  if (continueOnboardingV2) return '/(onboarding)';
   if (onboardingTransferRoute) return onboardingTransferRoute;
 
   const status = await getOnboardingStatus(userId);

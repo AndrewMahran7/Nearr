@@ -789,6 +789,21 @@ export default function SettingsScreen() {
             onValueChange={setNearbyOn}
             disabled={!notificationsOn}
           />
+          <View style={styles.divider} />
+          <Pressable
+            style={styles.helpRow}
+            onPress={() => void Linking.openSettings().catch(() => undefined)}
+            accessibilityRole="button"
+            accessibilityLabel="Open system permission settings"
+          >
+            <View style={styles.helpCopy}>
+              <Text style={typography.bodyStrong}>System permissions</Text>
+              <Text style={[typography.caption, styles.muted, styles.helpBody]}>
+                Change location or notification access for Nearr.
+              </Text>
+            </View>
+            <Text style={[typography.bodyStrong, styles.helpChevron]}>›</Text>
+          </Pressable>
         </Card>
 
         {/* --- Quiet hours --------------------------------------------- */}

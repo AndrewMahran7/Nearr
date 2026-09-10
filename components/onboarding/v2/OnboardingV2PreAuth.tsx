@@ -6,6 +6,7 @@ import MapView, { Marker } from 'react-native-maps';
 import { PlaceImage } from '@/components/PlaceImage';
 import { StartupSurface } from '@/components/StartupSurface';
 import { Phase1Colors, Phase1Frame, Phase1PrimaryButton } from '@/components/onboarding/v2/Phase1Visuals';
+import { OnboardingV2SecondHalf } from '@/components/onboarding/v2/OnboardingV2SecondHalf';
 import { useAuth } from '@/hooks/useAuth';
 import { useOnboardingTutorialJobs } from '@/hooks/useOnboardingTutorialJobs';
 import { useOnboardingV2 } from '@/hooks/useOnboardingV2';
@@ -18,6 +19,7 @@ import { canLoadOnboardingTutorialFixture, isShareJobForTutorialFixture, loadAct
 import { selectTutorialContent } from '@/constants/onboardingStarterContent';
 import {
   completeOnboardingV2Interests, completeOnboardingV2Platforms,
+  beginOnboardingV2SecondHalf,
   confirmOnboardingV2FirstMagicMoment, continueOnboardingV2ToShareInstructions,
   finishOnboardingV2FirstMagicMoment, goBackOnboardingV2,
   migrateInterruptedOnboardingV2ToFirstMagic,
@@ -64,10 +66,12 @@ export function OnboardingV2PreAuth() {
   const fixtureInFlightRef = useRef(false);
   const mountedRef = useRef(true);
   const anonymousSessionReady = !!(state?.cohort === 'new_user_v2' && state.identityLifecycle === 'anonymous_active' && state.anonymousUserId && session?.user.is_anonymous === true && session.user.id === state.anonymousUserId);
+  const permanentSessionReady = !!(state?.cohort === 'new_user_v2' && state.identityLifecycle === 'permanent_account' && state.permanentUserId && session?.user.is_anonymous !== true && session?.user.id === state.permanentUserId);
+  const identitySessionReady = anonymousSessionReady || permanentSessionReady;
   const screenOwnedStage = !!state && (firstMagicDev
-    ? ['overview', 'platform', 'interest', 'interest_selected', 'pain_point', 'tutorial_loading', 'tutorial_challenge', 'tutorial_share_instructions', 'tutorial_awaiting_share', 'tutorial_processing', 'tutorial_reveal', 'tutorial_celebration', 'first_magic_moment_complete'].includes(state.stage)
+    ? ['overview', 'platform', 'interest', 'interest_selected', 'pain_point', 'tutorial_loading', 'tutorial_challenge', 'tutorial_share_instructions', 'tutorial_awaiting_share', 'tutorial_processing', 'tutorial_reveal', 'tutorial_celebration', 'first_magic_moment_complete', 'why_nearr', 'nearby_value', 'location_education', 'location_background_education', 'notification_education', 'growing_map', 'auth_success', 'personalized_activation', 'activation_challenge'].includes(state.stage)
     : ['overview', 'platform', 'interest', 'interest_selected'].includes(state.stage));
-  const startupPending = loading || authLoading || bootstrapping || !anonymousSessionReady || !screenOwnedStage;
+  const startupPending = loading || authLoading || bootstrapping || !identitySessionReady || !screenOwnedStage;
   const startupWatchdog = useStartupWatchdog(startupPending);
   const watchingJobs = !!state && ['tutorial_awaiting_share', 'tutorial_processing'].includes(state.stage);
   const { jobs, error: jobsError, refresh: refreshJobs } = useOnboardingTutorialJobs(state?.tutorialFixture?.selectedAt ?? state?.tutorialLaunchedAt ?? null, watchingJobs && anonymousSessionReady);
@@ -118,7 +122,8 @@ export function OnboardingV2PreAuth() {
   }
   if (state.stage === 'tutorial_reveal' && state.tutorialResult) return <RevealScreen state={state} />;
   if (state.stage === 'tutorial_celebration') return <CelebrationScreen state={state} />;
-  return <CompletionHoldingScreen state={state} />;
+  if (state.stage === 'first_magic_moment_complete') return <CompletionHoldingScreen state={state} />;
+  return <OnboardingV2SecondHalf state={state} />;
 }
 
 /** Keeps the already-shipped V2 setup contract outside the Development lane.
@@ -205,7 +210,7 @@ function CelebrationScreen({ state }: { state: OnboardingV2State }) {
   useEffect(() => { if (reduceMotion === null) return; if (reduceMotion) { scale.setValue(1); opacity.setValue(1); return; } Animated.parallel([Animated.spring(scale, { toValue: 1, useNativeDriver: true, friction: 7, tension: 70 }), Animated.timing(opacity, { toValue: 1, duration: 320, useNativeDriver: true })]).start(); }, [opacity, reduceMotion, scale]);
   return <Phase1Frame footer={<Phase1PrimaryButton title="Continue" onPress={() => void finishOnboardingV2FirstMagicMoment()} />} contentStyle={styles.centered}><Animated.View style={[styles.celebrationMark, { opacity, transform: [{ scale }] }]}><View style={styles.celebrationHalo} /><Feather name="map-pin" size={48} color={Phase1Colors.onOrange} /><View style={styles.checkBadge}><Feather name="check" size={17} color="#FFFFFF" /></View></Animated.View><Text style={styles.headlineCentered}>That post is now a place on your map.</Text><Text style={styles.celebrationCopy}>Social apps save the video. Nearr saves the place.</Text><View style={styles.savedProof}><Feather name="check-circle" size={20} color={Phase1Colors.success} /><Text style={styles.savedProofText}>{state.tutorialResult?.place.name} is saved</Text></View></Phase1Frame>;
 }
-function CompletionHoldingScreen({ state }: { state: OnboardingV2State }) { return <Phase1Frame contentStyle={styles.centered}><Image source={require('../../../assets/icon.png')} style={styles.logoSmall} /><Text style={styles.headlineCentered}>Your first Nearr place is ready.</Text><Text style={styles.bodyCentered}>{state.tutorialResult?.place.name} is on your real map. The next onboarding chapter will pick up here with permissions and activation—nothing else is requested yet.</Text><View style={styles.savedProof}><Feather name="check-circle" size={20} color={Phase1Colors.success} /><Text style={styles.savedProofText}>First magic moment complete</Text></View></Phase1Frame>; }
+function CompletionHoldingScreen({ state }: { state: OnboardingV2State }) { return <Phase1Frame footer={<Phase1PrimaryButton title="See why it matters" onPress={() => void beginOnboardingV2SecondHalf()} />} contentStyle={styles.centered}><Image source={require('../../../assets/icon.png')} style={styles.logoSmall} /><Text style={styles.headlineCentered}>Your first Nearr place is ready.</Text><Text style={styles.bodyCentered}>{state.tutorialResult?.place.name} is on your real map. Now make that save useful beyond today.</Text><View style={styles.savedProof}><Feather name="check-circle" size={20} color={Phase1Colors.success} /><Text style={styles.savedProofText}>First magic moment complete</Text></View></Phase1Frame>; }
 function LoadingState({ label }: { label: string }) { return <Phase1Frame contentStyle={styles.centered}><ActivityIndicator size="large" color={Phase1Colors.orange} /><Text style={styles.loadingLabel}>{label}</Text></Phase1Frame>; }
 function MessageState({ eyebrow, title, body, action, onAction, onBack }: { eyebrow: string; title: string; body: string; action: string; onAction: () => void; onBack?: () => void }) { return <Phase1Frame onBack={onBack} footer={<Phase1PrimaryButton title={action} onPress={onAction} />} contentStyle={styles.centered}><Text style={styles.eyebrow}>{eyebrow}</Text><Text style={styles.headlineCentered}>{title}</Text><Text style={styles.bodyCentered}>{body}</Text></Phase1Frame>; }
 function InlineError({ text }: { text: string }) { return <View style={styles.errorBox} accessibilityLiveRegion="polite"><Feather name="alert-circle" size={18} color="#FFB36B" /><Text style={styles.errorText}>{text}</Text></View>; }

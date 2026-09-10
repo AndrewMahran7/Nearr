@@ -32,6 +32,17 @@ export type OnboardingPainPoint =
   | 'send_to_friends'
   | 'screenshot';
 
+export type OnboardingPermissionResult =
+  | 'granted'
+  | 'provisional'
+  | 'denied'
+  | 'restricted'
+  | 'unavailable'
+  | 'error'
+  | 'skipped';
+
+export type OnboardingActivationChoice = 'find_another' | 'explore_map';
+
 export type OnboardingTutorialFixture = {
   id: string;
   revision: number;
@@ -89,10 +100,20 @@ export type OnboardingV2Stage =
   | 'tutorial_reveal'
   | 'tutorial_celebration'
   | 'first_magic_moment_complete'
+  | 'why_nearr'
+  | 'nearby_value'
+  | 'location_education'
+  | 'location_background_education'
+  | 'notification_education'
+  | 'growing_map'
   /** Legacy persisted stages; decoded back to tutorial_ready and never emitted by Learn V2. */
   | 'tutorial_external_video_opened'
   | 'tutorial_share_returned'
   | 'account_required'
+  | 'auth_success'
+  | 'personalized_activation'
+  | 'activation_challenge'
+  | 'onboarding_complete'
   | 'place_tour'
   | 'phase1_complete'
   | 'practice_ready'
@@ -110,7 +131,10 @@ const ONBOARDING_V2_STAGES = new Set<OnboardingV2Stage>([
   'tutorial_more_tapped', 'tutorial_nearr_selected', 'tutorial_favorite_added',
   'tutorial_processing', 'tutorial_result_seen', 'tutorial_external_video_opened',
   'tutorial_share_returned', 'tutorial_reveal', 'tutorial_celebration',
-  'first_magic_moment_complete', 'account_required', 'place_tour', 'phase1_complete',
+  'first_magic_moment_complete', 'why_nearr', 'nearby_value', 'location_education',
+  'location_background_education', 'notification_education', 'growing_map',
+  'account_required', 'auth_success', 'personalized_activation', 'activation_challenge',
+  'onboarding_complete', 'place_tour', 'phase1_complete',
   'practice_ready', 'first_independent_external_video_opened',
   'first_independent_share_returned', 'first_independent_save_complete',
   'second_independent_external_video_opened', 'second_independent_share_returned',
@@ -193,6 +217,16 @@ export type OnboardingV2State = {
   wrongShareJobId: string | null;
   firstMagicMomentCompletedAt: string | null;
   celebrationShownAt: string | null;
+  secondHalfStartedAt: string | null;
+  whyNearrViewedAt: string | null;
+  nearbyEducationShownAt: string | null;
+  locationEducationShownAt: string | null;
+  locationForegroundResult: OnboardingPermissionResult | null;
+  locationBackgroundEducationShownAt: string | null;
+  locationBackgroundResult: OnboardingPermissionResult | null;
+  notificationEducationShownAt: string | null;
+  notificationPermissionResult: OnboardingPermissionResult | null;
+  growingMapViewedAt: string | null;
   funnelSessionId: string | null;
   identityLifecycle: OnboardingIdentityLifecycle;
   anonymousUserId: string | null;
@@ -200,6 +234,10 @@ export type OnboardingV2State = {
   authCompletedAt: string | null;
   accountRequiredAt: string | null;
   accountLinkStartedAt: string | null;
+  authProvider: string | null;
+  authStartedAt: string | null;
+  authLastResult: 'completed' | 'cancelled' | 'failed' | null;
+  authSuccessShownAt: string | null;
   permanentUserId: string | null;
   permanentAccountEstablished: boolean | null;
   pendingShare: PendingOnboardingShare | null;
@@ -217,6 +255,10 @@ export type OnboardingV2State = {
   practiceRecovery: OnboardingPracticeRecovery | null;
   lastFailure: { kind: OnboardingSaveKind; at: string; reason: string } | null;
   behavioralCompletedAt: string | null;
+  personalizedActivationShownAt: string | null;
+  activationChallengeShownAt: string | null;
+  activationChoice: OnboardingActivationChoice | null;
+  onboardingV2CompletedAt: string | null;
   graduationAcknowledgedAt: string | null;
   updatedAt: string;
 };
@@ -286,6 +328,16 @@ export function createInitialOnboardingV2State(now = new Date().toISOString()): 
     wrongShareJobId: null,
     firstMagicMomentCompletedAt: null,
     celebrationShownAt: null,
+    secondHalfStartedAt: null,
+    whyNearrViewedAt: null,
+    nearbyEducationShownAt: null,
+    locationEducationShownAt: null,
+    locationForegroundResult: null,
+    locationBackgroundEducationShownAt: null,
+    locationBackgroundResult: null,
+    notificationEducationShownAt: null,
+    notificationPermissionResult: null,
+    growingMapViewedAt: null,
     funnelSessionId: null,
     identityLifecycle: 'none',
     anonymousUserId: null,
@@ -293,6 +345,10 @@ export function createInitialOnboardingV2State(now = new Date().toISOString()): 
     authCompletedAt: null,
     accountRequiredAt: null,
     accountLinkStartedAt: null,
+    authProvider: null,
+    authStartedAt: null,
+    authLastResult: null,
+    authSuccessShownAt: null,
     permanentUserId: null,
     permanentAccountEstablished: null,
     pendingShare: null,
@@ -310,6 +366,10 @@ export function createInitialOnboardingV2State(now = new Date().toISOString()): 
     practiceRecovery: null,
     lastFailure: null,
     behavioralCompletedAt: null,
+    personalizedActivationShownAt: null,
+    activationChallengeShownAt: null,
+    activationChoice: null,
+    onboardingV2CompletedAt: null,
     graduationAcknowledgedAt: null,
     updatedAt: now,
   };
@@ -331,7 +391,17 @@ export type OnboardingV2ResumeEligibility =
 const TUTORIAL_SAVE_REQUIRED_STAGES = new Set<OnboardingV2Stage>([
   'tutorial_celebration',
   'first_magic_moment_complete',
+  'why_nearr',
+  'nearby_value',
+  'location_education',
+  'location_background_education',
+  'notification_education',
+  'growing_map',
   'account_required',
+  'auth_success',
+  'personalized_activation',
+  'activation_challenge',
+  'onboarding_complete',
   'place_tour',
   'phase1_complete',
   'practice_ready',
@@ -888,6 +958,216 @@ export function finishOnboardingFirstMagicMoment(
   return transition(state, { stage: 'first_magic_moment_complete' }, now);
 }
 
+export function beginOnboardingSecondHalf(
+  state: OnboardingV2State,
+  now: string,
+): OnboardingTransition {
+  if (state.stage !== 'first_magic_moment_complete' || !state.firstMagicMomentCompletedAt ||
+      !state.tutorialSave || !state.tutorialResult) return unchanged(state);
+  return transition(state, {
+    stage: 'why_nearr',
+    secondHalfStartedAt: state.secondHalfStartedAt ?? now,
+    whyNearrViewedAt: state.whyNearrViewedAt ?? now,
+  }, now, state.whyNearrViewedAt ? [] : [{
+    name: 'onboarding_why_nearr_viewed',
+    properties: { fixture_id: state.tutorialFixture?.id, pain_point: state.painPoint },
+  }]);
+}
+
+export function continueOnboardingToNearbyValue(
+  state: OnboardingV2State,
+  now: string,
+): OnboardingTransition {
+  if (state.stage !== 'why_nearr') return unchanged(state);
+  return transition(state, {
+    stage: 'nearby_value',
+    nearbyEducationShownAt: state.nearbyEducationShownAt ?? now,
+  }, now);
+}
+
+export function continueOnboardingToLocationEducation(
+  state: OnboardingV2State,
+  now: string,
+): OnboardingTransition {
+  if (state.stage !== 'nearby_value') return unchanged(state);
+  return transition(state, {
+    stage: 'location_education',
+    locationEducationShownAt: state.locationEducationShownAt ?? now,
+  }, now, state.locationEducationShownAt ? [] : [{
+    name: 'onboarding_location_education_shown',
+    properties: { permission_scope: 'foreground' },
+  }]);
+}
+
+function notificationEducationPatch(state: OnboardingV2State, now: string): {
+  patch: Partial<OnboardingV2State>;
+  events: OnboardingTransition['events'];
+} {
+  return {
+    patch: { stage: 'notification_education', notificationEducationShownAt: state.notificationEducationShownAt ?? now },
+    events: state.notificationEducationShownAt ? [] : [{ name: 'onboarding_notification_education_shown' }],
+  };
+}
+
+export function recordOnboardingForegroundLocationResult(
+  state: OnboardingV2State,
+  result: OnboardingPermissionResult,
+  now: string,
+): OnboardingTransition {
+  if (state.stage !== 'location_education') return unchanged(state);
+  const requested = result !== 'skipped';
+  if (result === 'granted') {
+    return transition(state, {
+      stage: 'location_background_education',
+      locationForegroundResult: result,
+      locationBackgroundEducationShownAt: state.locationBackgroundEducationShownAt ?? now,
+    }, now, [
+      ...(requested ? [{ name: 'onboarding_location_permission_requested', properties: { permission_scope: 'foreground' } }] : []),
+      { name: 'onboarding_location_permission_result', properties: { permission_scope: 'foreground', result } },
+      { name: 'onboarding_location_education_shown', properties: { permission_scope: 'background' } },
+    ]);
+  }
+  const next = notificationEducationPatch(state, now);
+  return transition(state, {
+    ...next.patch,
+    locationForegroundResult: result,
+    locationBackgroundResult: 'skipped',
+  }, now, [
+    ...(requested ? [{ name: 'onboarding_location_permission_requested', properties: { permission_scope: 'foreground' } }] : []),
+    { name: 'onboarding_location_permission_result', properties: { permission_scope: 'foreground', result } },
+    ...next.events,
+  ]);
+}
+
+export function recordOnboardingBackgroundLocationResult(
+  state: OnboardingV2State,
+  result: OnboardingPermissionResult,
+  now: string,
+): OnboardingTransition {
+  if (state.stage !== 'location_background_education') return unchanged(state);
+  const next = notificationEducationPatch(state, now);
+  const requested = result !== 'skipped';
+  return transition(state, {
+    ...next.patch,
+    locationBackgroundResult: result,
+  }, now, [
+    ...(requested ? [{ name: 'onboarding_location_permission_requested', properties: { permission_scope: 'background' } }] : []),
+    { name: 'onboarding_location_permission_result', properties: { permission_scope: 'background', result } },
+    ...next.events,
+  ]);
+}
+
+export function recordOnboardingNotificationResult(
+  state: OnboardingV2State,
+  result: OnboardingPermissionResult,
+  now: string,
+): OnboardingTransition {
+  if (state.stage !== 'notification_education') return unchanged(state);
+  const requested = result !== 'skipped';
+  return transition(state, {
+    stage: 'growing_map',
+    notificationPermissionResult: result,
+    growingMapViewedAt: state.growingMapViewedAt ?? now,
+  }, now, [
+    ...(requested ? [{ name: 'onboarding_notification_permission_requested' }] : []),
+    { name: 'onboarding_notification_permission_result', properties: { result } },
+    ...(state.growingMapViewedAt ? [] : [{ name: 'onboarding_growing_map_viewed', properties: { selected_interest_count: state.selectedInterests.length } }]),
+  ]);
+}
+
+export function continueOnboardingToAccount(
+  state: OnboardingV2State,
+  now: string,
+): OnboardingTransition {
+  if (state.stage !== 'growing_map' || state.identityLifecycle !== 'anonymous_active') return unchanged(state);
+  return transition(state, {
+    stage: 'account_required',
+    accountRequiredAt: state.accountRequiredAt ?? now,
+  }, now, [
+    { name: 'onboarding_auth_viewed' },
+    { name: 'onboarding_account_viewed' },
+  ]);
+}
+
+export function startOnboardingAuth(
+  state: OnboardingV2State,
+  provider: string,
+  now: string,
+): OnboardingTransition {
+  if (state.stage !== 'account_required' || !provider) return unchanged(state);
+  return transition(state, {
+    authProvider: provider,
+    authStartedAt: state.authStartedAt ?? now,
+    authLastResult: null,
+  }, now, [
+    { name: 'onboarding_auth_started', properties: { auth_provider: provider } },
+    { name: 'onboarding_signin_started', properties: { method: provider } },
+  ]);
+}
+
+export function failOnboardingAuth(
+  state: OnboardingV2State,
+  provider: string,
+  result: 'cancelled' | 'failed',
+  now: string,
+): OnboardingTransition {
+  if (state.stage !== 'account_required') return unchanged(state);
+  return transition(state, { authProvider: provider, authLastResult: result }, now, [{
+    name: 'onboarding_auth_failed', properties: { auth_provider: provider, auth_result: result },
+  }]);
+}
+
+export function continueOnboardingAfterAuth(
+  state: OnboardingV2State,
+  now: string,
+): OnboardingTransition {
+  if (state.stage !== 'auth_success' || state.identityLifecycle !== 'permanent_account') return unchanged(state);
+  return transition(state, {
+    stage: 'personalized_activation',
+    personalizedActivationShownAt: state.personalizedActivationShownAt ?? now,
+  }, now, state.personalizedActivationShownAt ? [] : [{
+    name: 'onboarding_personalized_activation_shown',
+    properties: { primary_platform: state.preferredPlatform, primary_interest: state.interest, pain_point: state.painPoint },
+  }]);
+}
+
+export function showOnboardingActivationChallenge(
+  state: OnboardingV2State,
+  now: string,
+): OnboardingTransition {
+  if (state.stage !== 'personalized_activation') return unchanged(state);
+  return transition(state, {
+    stage: 'activation_challenge',
+    activationChallengeShownAt: state.activationChallengeShownAt ?? now,
+  }, now, state.activationChallengeShownAt ? [] : [{ name: 'onboarding_activation_challenge_shown', properties: { progress: 1 } }]);
+}
+
+export function completeOnboardingSecondHalf(
+  state: OnboardingV2State,
+  choice: OnboardingActivationChoice,
+  now: string,
+): OnboardingTransition {
+  if (state.stage !== 'activation_challenge' || state.identityLifecycle !== 'permanent_account' ||
+      !state.tutorialSave || !['find_another', 'explore_map'].includes(choice)) return unchanged(state);
+  const startedMs = state.startedAt ? Date.parse(state.startedAt) : Number.NaN;
+  const duration = Number.isFinite(startedMs) ? Math.max(0, Date.parse(now) - startedMs) : null;
+  return transition(state, {
+    stage: 'onboarding_complete',
+    activationChoice: choice,
+    behavioralCompletedAt: now,
+    onboardingV2CompletedAt: now,
+  }, now, [
+    { name: 'onboarding_activation_choice', properties: { choice } },
+    { name: 'onboarding_v2_completed', properties: {
+      choice, total_onboarding_duration: duration,
+      location_foreground_result: state.locationForegroundResult,
+      location_background_result: state.locationBackgroundResult,
+      notification_permission_result: state.notificationPermissionResult,
+      auth_provider: state.authProvider,
+    } },
+  ]);
+}
+
 export function selectPlatform(
   state: OnboardingV2State,
   platform: OnboardingPlatform,
@@ -1085,6 +1365,29 @@ export function completePermanentAccountLink(
   const tutorialSave = input.tutorialSavedPlaceId
     ? { ...state.tutorialSave, savedPlaceId: input.tutorialSavedPlaceId }
     : state.tutorialSave;
+  if (state.secondHalfStartedAt) {
+    const startedMs = state.startedAt ? Date.parse(state.startedAt) : Number.NaN;
+    const timeToAuth = Number.isFinite(startedMs) ? Math.max(0, Date.parse(now) - startedMs) : null;
+    return transition(state, {
+      stage: 'auth_success',
+      identityLifecycle: 'permanent_account',
+      boundUserId: input.permanentUserId,
+      permanentUserId: input.permanentUserId,
+      permanentAccountEstablished: input.destinationWasEstablished,
+      authCompletedAt: now,
+      authLastResult: 'completed',
+      authSuccessShownAt: now,
+      tutorialSave,
+    }, now, [
+      { name: 'onboarding_signin_completed', properties: { established_account: input.destinationWasEstablished } },
+      { name: 'onboarding_auth_completed', properties: {
+        auth_provider: state.authProvider,
+        auth_result: 'completed',
+        established_account: input.destinationWasEstablished,
+        time_to_auth: timeToAuth,
+      } },
+    ]);
+  }
   if (input.destinationWasEstablished) {
     return transition(state, {
       cohort: 'existing_user_bypassed',
@@ -1689,7 +1992,7 @@ export function acknowledgeGraduation(
 export function isOnboardingV2InProgressState(state: OnboardingV2State): boolean {
   return state.cohort === 'new_user_v2' &&
     !state.behavioralCompletedAt &&
-    !state.firstMagicMomentCompletedAt &&
     state.stage !== 'phase1_complete' &&
+    state.stage !== 'onboarding_complete' &&
     state.stage !== 'graduated';
 }
