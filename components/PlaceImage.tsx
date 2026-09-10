@@ -12,6 +12,13 @@ import {
 import { Feather } from '@expo/vector-icons';
 
 import { getCachedPlaceRichDetails } from '@/lib/placeRichDetailsCache';
+import { getCachedCandidatePhotoUrlsWithOutcome } from '@/lib/candidatePhotoDetailsCache';
+import {
+  candidateHydrationDecision,
+  normalizedPhotoUrls,
+  type CandidatePresentationContext,
+} from '@/lib/candidatePresentation';
+import { trackCandidatePresentation } from '@/lib/candidatePresentationTelemetry';
 import { selectPlaceImageUri } from '@/lib/placeImageSource';
 import { useTheme } from '@/lib/theme';
 
@@ -30,6 +37,11 @@ type Props = {
   imageStyle?: StyleProp<ImageStyle>;
   accessibilityLabel?: string;
   onResolvedKind?: (kind: PlaceImageResolutionKind) => void;
+  initialPhotoUrls?: readonly string[] | null;
+  /** Keeps saved-place rich details intact while candidate surfaces use photos-only fallback. */
+  presentationMode?: 'rich' | 'candidate';
+  presentationActive?: boolean;
+  presentationContext?: CandidatePresentationContext;
 };
 
 export type PlaceImageResolutionKind = 'places' | 'source' | 'frame' | 'neutral';
@@ -49,29 +61,107 @@ export function PlaceImage({
   imageStyle,
   accessibilityLabel,
   onResolvedKind,
+  initialPhotoUrls,
+  presentationMode = 'rich',
+  presentationActive = true,
+  presentationContext = { trigger: 'other' },
 }: Props) {
   const { colors } = useTheme();
-  const [placePhotoUrls, setPlacePhotoUrls] = useState<string[]>([]);
+  const initialPhotoSignature = (initialPhotoUrls ?? []).join('\n');
+  const normalizedInitialPhotos = useMemo(
+    () => normalizedPhotoUrls(initialPhotoUrls),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [initialPhotoSignature],
+  );
+  const [placePhotoUrls, setPlacePhotoUrls] = useState<string[]>(normalizedInitialPhotos);
   const [failedUris, setFailedUris] = useState<Record<string, boolean>>({});
-  const [loading, setLoading] = useState(Boolean(googlePlaceId) && (preferPlacePhoto || !sourceUri));
+  const [loading, setLoading] = useState(() => presentationMode === 'candidate'
+    ? candidateHydrationDecision({
+        active: presentationActive,
+        googlePlaceId,
+        photoUrls: normalizedInitialPhotos,
+        sourceUri,
+        fallbackSourceUri,
+      }).shouldRequest
+    : Boolean(googlePlaceId) && (preferPlacePhoto || !sourceUri));
   const [resolutionTimedOut, setResolutionTimedOut] = useState(false);
   const lastResolutionRef = useRef<PlaceImageResolutionKind | null>(null);
+  const photoLoadRef = useRef<string | null>(null);
+  const lastAvoidanceRef = useRef<string | null>(null);
+  const lastActivePlaceIdRef = useRef<string | null>(null);
+  const contextRef = useRef(presentationContext);
+  contextRef.current = presentationContext;
   const frameStyle = useMemo(
     () => ({ width: width ?? size, height: height ?? size, borderRadius }),
     [borderRadius, height, size, width],
   );
 
   useEffect(() => {
-    setPlacePhotoUrls([]);
+    setPlacePhotoUrls(normalizedInitialPhotos);
     setFailedUris({});
     setResolutionTimedOut(false);
+    setLoading(presentationMode === 'candidate'
+      ? candidateHydrationDecision({
+          active: presentationActive,
+          googlePlaceId,
+          photoUrls: normalizedInitialPhotos,
+          sourceUri,
+          fallbackSourceUri,
+        }).shouldRequest
+      : Boolean(googlePlaceId) && (preferPlacePhoto || !sourceUri));
     lastResolutionRef.current = null;
-  }, [fallbackSourceUri, googlePlaceId, sourceUri]);
+    photoLoadRef.current = null;
+  }, [
+    fallbackSourceUri,
+    googlePlaceId,
+    initialPhotoSignature,
+    normalizedInitialPhotos,
+    preferPlacePhoto,
+    presentationMode,
+    sourceUri,
+  ]);
 
+  const candidateDecision = useMemo(() => candidateHydrationDecision({
+    active: presentationActive,
+    googlePlaceId,
+    photoUrls: normalizedInitialPhotos,
+    sourceUri,
+    fallbackSourceUri,
+  }), [fallbackSourceUri, googlePlaceId, normalizedInitialPhotos, presentationActive, sourceUri]);
+
+  useEffect(() => {
+    if (presentationMode !== 'candidate') return;
+    trackCandidatePresentation('candidate_presented', {
+      ...presentationContext,
+      googlePlaceId,
+      active: presentationActive,
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [googlePlaceId, presentationContext.trigger, presentationContext.jobId, presentationContext.candidateIndex]);
+
+  useEffect(() => {
+    if (
+      presentationMode === 'candidate'
+      && presentationActive
+      && lastActivePlaceIdRef.current !== (googlePlaceId ?? 'no_google_place_id')
+    ) {
+      trackCandidatePresentation('candidate_became_active', {
+        ...presentationContext,
+        googlePlaceId,
+        active: true,
+      });
+    }
+    lastActivePlaceIdRef.current = presentationMode === 'candidate' && presentationActive
+      ? googlePlaceId ?? 'no_google_place_id'
+      : null;
+  }, [googlePlaceId, presentationActive, presentationContext, presentationMode]);
+
+  const candidatePhotoUrls = presentationMode === 'candidate' && !presentationActive ? [] : placePhotoUrls;
+  const candidateSourceUri = presentationMode === 'candidate' && !presentationActive ? null : sourceUri;
   const holdFallbackForPlacePhoto = preferPlacePhoto && loading && !resolutionTimedOut;
   const resolvedUri = selectPlaceImageUri(
-    holdFallbackForPlacePhoto ? null : sourceUri,
-    placePhotoUrls,
+    holdFallbackForPlacePhoto ? null : candidateSourceUri,
+    candidatePhotoUrls,
     failedUris,
     {
       preferPlacePhoto,
@@ -81,6 +171,50 @@ export function PlaceImage({
 
   useEffect(() => {
     let cancelled = false;
+
+    if (presentationMode === 'candidate') {
+      if (!candidateDecision.shouldRequest) {
+        setLoading(false);
+        const key = `${googlePlaceId ?? ''}:${presentationActive}:${candidateDecision.reason}`;
+        if (lastAvoidanceRef.current !== key) {
+          lastAvoidanceRef.current = key;
+          trackCandidatePresentation('candidate_google_details_avoided', {
+            ...contextRef.current,
+            googlePlaceId,
+            active: presentationActive,
+            reason: candidateDecision.reason,
+          });
+        }
+        return () => { cancelled = true; };
+      }
+      if (!googlePlaceId) return () => { cancelled = true; };
+      setLoading(true);
+      setResolutionTimedOut(false);
+      const timeout = setTimeout(() => {
+        if (!cancelled) setResolutionTimedOut(true);
+      }, PHOTO_RESOLUTION_TIMEOUT_MS);
+      void getCachedCandidatePhotoUrlsWithOutcome(googlePlaceId, (outcome) => {
+        trackCandidatePresentation(
+          outcome === 'requested'
+            ? 'candidate_google_details_requested'
+            : outcome === 'deduped'
+              ? 'candidate_google_request_deduped'
+              : 'candidate_google_details_avoided',
+          {
+            ...contextRef.current,
+            googlePlaceId,
+            active: true,
+            reason: outcome === 'cache_hit' ? 'cache_hit' : 'required',
+          },
+        );
+      }).then(({ urls }) => {
+        if (cancelled) return;
+        setPlacePhotoUrls(urls);
+        setLoading(false);
+        clearTimeout(timeout);
+      });
+      return () => { cancelled = true; clearTimeout(timeout); };
+    }
 
     if (!preferPlacePhoto && sourceUri && !failedUris[sourceUri]) {
       setLoading(false);
@@ -112,10 +246,18 @@ export function PlaceImage({
       cancelled = true;
       clearTimeout(timeout);
     };
-  }, [failedUris, googlePlaceId, preferPlacePhoto, sourceUri]);
+  }, [
+    candidateDecision,
+    failedUris,
+    googlePlaceId,
+    preferPlacePhoto,
+    presentationActive,
+    presentationMode,
+    sourceUri,
+  ]);
 
   const resolutionKind: PlaceImageResolutionKind = resolvedUri
-    ? placePhotoUrls.includes(resolvedUri)
+    ? candidatePhotoUrls.includes(resolvedUri)
       ? 'places'
       : resolvedUri === sourceUri
         ? 'source'
@@ -145,6 +287,40 @@ export function PlaceImage({
           source={{ uri: resolvedUri }}
           style={[styles.image, frameStyle, imageStyle]}
           resizeMode="cover"
+          onLoadStart={() => {
+            if (presentationMode !== 'candidate' || photoLoadRef.current === resolvedUri) return;
+            photoLoadRef.current = resolvedUri;
+            const googlePhoto = candidatePhotoUrls.includes(resolvedUri);
+            trackCandidatePresentation(
+              googlePhoto ? 'candidate_google_photo_requested' : 'candidate_photo_source_media_used',
+              {
+                ...contextRef.current,
+                googlePlaceId,
+                active: presentationActive,
+                reason: googlePhoto ? 'image_load' : undefined,
+                photoIndex: 0,
+                imageSource: googlePhoto ? 'google' : 'source_media',
+              },
+            );
+            if (googlePhoto) {
+              trackCandidatePresentation('candidate_photo_google_used', {
+                ...contextRef.current,
+                googlePlaceId,
+                active: presentationActive,
+                photoIndex: 0,
+                imageSource: 'google',
+              });
+            }
+            if (googlePhoto && normalizedInitialPhotos.includes(resolvedUri)) {
+              trackCandidatePresentation('candidate_photo_existing_data_used', {
+                ...contextRef.current,
+                googlePlaceId,
+                active: presentationActive,
+                photoIndex: 0,
+                imageSource: 'existing_data',
+              });
+            }
+          }}
           onError={() => setFailedUris((current) => ({ ...current, [resolvedUri]: true }))}
           accessibilityLabel={accessibilityLabel}
           accessible={Boolean(accessibilityLabel)}

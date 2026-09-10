@@ -71,7 +71,7 @@ export function SavedPlaceResult({
     setVisibleAlternativeIndex(index);
   }, [alternatives.length, multiple, snapInterval]);
 
-  const renderAlternative = useCallback(({ item }: { item: ShareJobSoftAlternative }) => {
+  const renderAlternative = useCallback(({ item, index }: { item: ShareJobSoftAlternative; index: number }) => {
     const pending = pendingByResultId[item.resultId];
     const saved = item.savedPlaceId != null;
     const location = item.candidate.shortFormattedAddress
@@ -84,9 +84,18 @@ export function SavedPlaceResult({
         <View style={styles.alternativeIdentity}>
           <PlaceImage
             googlePlaceId={item.candidate.googlePlaceId.startsWith('nearr-native:') ? undefined : item.candidate.googlePlaceId}
-            sourceUri={item.candidate.photoUrl}
+            initialPhotoUrls={item.candidate.photoUrls?.length
+              ? item.candidate.photoUrls
+              : item.candidate.photoUrl ? [item.candidate.photoUrl] : undefined}
             fallbackSourceUri={item.candidate.sourceFrameUrl}
             preferPlacePhoto
+            presentationMode="candidate"
+            presentationActive={index === visibleAlternativeIndex}
+            presentationContext={{
+              trigger: 'recognition_result',
+              candidateIndex: index,
+              candidateCount: alternatives.length,
+            }}
             size={92}
             borderRadius={14}
             accessibilityLabel={`Photo of ${item.candidate.name}`}
@@ -152,7 +161,7 @@ export function SavedPlaceResult({
         </View>
       </View>
     );
-  }, [cardWidth, colors, onAlternativeAction, pendingByResultId, styles, typography]);
+  }, [alternatives.length, cardWidth, colors, onAlternativeAction, pendingByResultId, styles, typography, visibleAlternativeIndex]);
 
   return (
     <View style={styles.screen} testID="saved-place-result">
@@ -166,9 +175,13 @@ export function SavedPlaceResult({
           <View style={styles.heroMedia}>
             <PlaceImage
               googlePlaceId={primary.googlePlaceId?.startsWith('nearr-native:') ? undefined : primary.googlePlaceId}
-              sourceUri={primary.candidatePhotoUrl ?? primary.sourceThumbnailUrl}
+              sourceUri={primary.sourceThumbnailUrl}
+              initialPhotoUrls={primary.candidatePhotoUrl ? [primary.candidatePhotoUrl] : undefined}
               fallbackSourceUri={primary.sourceFrameUrl ?? primary.sourceThumbnailUrl}
               preferPlacePhoto
+              presentationMode="candidate"
+              presentationActive
+              presentationContext={{ trigger: 'recognition_result', candidateIndex: 0, candidateCount: 1 }}
               width="100%"
               height={196}
               size={196}

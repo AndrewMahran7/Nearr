@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -14,7 +14,14 @@ import { Feather } from '@expo/vector-icons';
 import { Spacing } from '@/constants';
 import { PhotoRolodexModal } from '@/components/PhotoRolodex';
 import { pageIndexFromOffset } from '@/lib/photoCarousel';
-import { getCachedPlaceRichDetails } from '@/lib/placeRichDetailsCache';
+import {
+  candidateHydrationDecision,
+  normalizedPhotoUrls,
+  visitCandidatePhoto,
+  type CandidatePresentationContext,
+} from '@/lib/candidatePresentation';
+import { getCachedCandidatePhotoUrlsWithOutcome } from '@/lib/candidatePhotoDetailsCache';
+import { trackCandidatePresentation } from '@/lib/candidatePresentationTelemetry';
 import type { PlaceImageResolutionKind } from '@/components/PlaceImage';
 
 export const MAX_CANDIDATE_PHOTOS = 5;
@@ -36,6 +43,9 @@ type Props = {
   variant?: 'carousel' | 'thumbnail';
   thumbnailWidth?: number;
   onResolvedKind?: (kind: PlaceImageResolutionKind) => void;
+  /** Optional Google presentation hydration is allowed only while active. */
+  active?: boolean;
+  presentationContext?: CandidatePresentationContext;
 };
 
 /** Shared bounded Places-photo carousel used by Quick Check and multi-place review. */
@@ -49,46 +59,142 @@ export function CandidatePhotoCarousel({
   variant = 'carousel',
   thumbnailWidth = 118,
   onResolvedKind,
+  active = true,
+  presentationContext = { trigger: 'other' },
 }: Props) {
   const { width: windowWidth } = useWindowDimensions();
   const [measuredWidth, setMeasuredWidth] = useState(0);
   const width = measuredWidth || Math.max(280, windowWidth - Spacing.lg * 2);
-  const [placePhotoUrls, setPlacePhotoUrls] = useState<string[]>(() => [...(initialPhotoUrls ?? [])].slice(0, MAX_CANDIDATE_PHOTOS));
+  const initialPhotoSignature = (initialPhotoUrls ?? []).join('\n');
+  const normalizedInitialPhotos = useMemo(
+    () => normalizedPhotoUrls(initialPhotoUrls, MAX_CANDIDATE_PHOTOS),
+    // The signature avoids resetting on callers that reconstruct an equal array.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [initialPhotoSignature],
+  );
+  const [placePhotoUrls, setPlacePhotoUrls] = useState<string[]>(normalizedInitialPhotos);
   const [failedUris, setFailedUris] = useState<ReadonlySet<string>>(new Set());
   const [activeIndex, setActiveIndex] = useState(0);
   const [viewerIndex, setViewerIndex] = useState<number | null>(null);
-  const [hydratedThrough, setHydratedThrough] = useState(1);
-  const [loading, setLoading] = useState(!!googlePlaceId);
+  const [visitedPhotoIndexes, setVisitedPhotoIndexes] = useState<ReadonlySet<number>>(
+    () => new Set([0]),
+  );
+  const [loading, setLoading] = useState(false);
   const [timedOut, setTimedOut] = useState(false);
+  const photoLoadsRef = useRef(new Set<string>());
+  const lastAvoidanceRef = useRef<string | null>(null);
+  const lastActivePlaceIdRef = useRef<string | null>(null);
+  const contextRef = useRef(presentationContext);
+  contextRef.current = presentationContext;
+
+  const hydrationDecision = useMemo(() => candidateHydrationDecision({
+    active,
+    googlePlaceId,
+    photoUrls: normalizedInitialPhotos,
+    sourceUri,
+    fallbackSourceUri,
+  }), [active, fallbackSourceUri, googlePlaceId, normalizedInitialPhotos, sourceUri]);
 
   useEffect(() => {
-    let cancelled = false;
-    setPlacePhotoUrls([...(initialPhotoUrls ?? [])].slice(0, MAX_CANDIDATE_PHOTOS));
+    setPlacePhotoUrls(normalizedInitialPhotos);
     setFailedUris(new Set());
     setActiveIndex(0);
     setViewerIndex(null);
-    setHydratedThrough(1);
-    setLoading(!!googlePlaceId && !(initialPhotoUrls?.length));
+    setVisitedPhotoIndexes(new Set([0]));
+    setLoading(false);
     setTimedOut(false);
-    if (!googlePlaceId || initialPhotoUrls?.length) return () => { cancelled = true; };
+    photoLoadsRef.current.clear();
+    return undefined;
+  // Active transitions are handled below without discarding hydrated session data.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [googlePlaceId, initialPhotoSignature, normalizedInitialPhotos]);
+
+  useEffect(() => {
+    trackCandidatePresentation('candidate_presented', {
+      ...presentationContext,
+      googlePlaceId,
+      active,
+    });
+  // Presentation identity, not object identity, controls this event.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [googlePlaceId, presentationContext.trigger, presentationContext.jobId, presentationContext.candidateIndex]);
+
+  useEffect(() => {
+    if (active && lastActivePlaceIdRef.current !== (googlePlaceId ?? 'no_google_place_id')) {
+      trackCandidatePresentation('candidate_became_active', {
+        ...presentationContext,
+        googlePlaceId,
+        active: true,
+      });
+      setVisitedPhotoIndexes((current) => visitCandidatePhoto(current, 0, Math.max(1, placePhotoUrls.length)));
+    }
+    lastActivePlaceIdRef.current = active ? googlePlaceId ?? 'no_google_place_id' : null;
+  }, [active, googlePlaceId, placePhotoUrls.length, presentationContext]);
+
+  useEffect(() => {
+    if (hydrationDecision.shouldRequest) return;
+    const key = `${googlePlaceId ?? ''}:${active}:${hydrationDecision.reason}`;
+    if (lastAvoidanceRef.current === key) return;
+    lastAvoidanceRef.current = key;
+    trackCandidatePresentation('candidate_google_details_avoided', {
+      ...presentationContext,
+      googlePlaceId,
+      active,
+      reason: hydrationDecision.reason,
+    });
+  }, [active, googlePlaceId, hydrationDecision, presentationContext]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!hydrationDecision.shouldRequest || !googlePlaceId) {
+      setLoading(false);
+      return () => { cancelled = true; };
+    }
+    setLoading(true);
+    setTimedOut(false);
     const timeout = setTimeout(() => { if (!cancelled) setTimedOut(true); }, PHOTO_RESOLUTION_TIMEOUT_MS);
-    void getCachedPlaceRichDetails(googlePlaceId).then((details) => {
+    void getCachedCandidatePhotoUrlsWithOutcome(googlePlaceId, (outcome) => {
+      if (outcome === 'requested') {
+        trackCandidatePresentation('candidate_google_details_requested', {
+          ...contextRef.current,
+          googlePlaceId,
+          active: true,
+          reason: 'required',
+        });
+      } else if (outcome === 'deduped') {
+        trackCandidatePresentation('candidate_google_request_deduped', {
+          ...contextRef.current,
+          googlePlaceId,
+          active: true,
+          reason: 'required',
+        });
+      } else {
+        trackCandidatePresentation('candidate_google_details_avoided', {
+          ...contextRef.current,
+          googlePlaceId,
+          active: true,
+          reason: 'cache_hit',
+        });
+      }
+    }).then(({ urls }) => {
       if (cancelled) return;
-      setPlacePhotoUrls((details?.photoUrls ?? []).filter(Boolean).slice(0, MAX_CANDIDATE_PHOTOS));
+      setPlacePhotoUrls(urls);
       setLoading(false);
       clearTimeout(timeout);
     });
     return () => { cancelled = true; clearTimeout(timeout); };
-  }, [googlePlaceId, initialPhotoUrls]);
+  }, [googlePlaceId, hydrationDecision.shouldRequest]);
 
   const items = useMemo<PhotoItem[]>(() => {
-    const places = placePhotoUrls.filter((uri) => !failedUris.has(uri)).map((uri) => ({ uri, kind: 'places' as const }));
+    const places = active
+      ? placePhotoUrls.filter((uri) => !failedUris.has(uri)).map((uri) => ({ uri, kind: 'places' as const }))
+      : [];
     if (places.length > 0) return places;
     if (loading && !timedOut) return [];
-    if (sourceUri && !failedUris.has(sourceUri)) return [{ uri: sourceUri, kind: 'source' }];
+    if (active && sourceUri && !failedUris.has(sourceUri)) return [{ uri: sourceUri, kind: 'source' }];
     if (fallbackSourceUri && !failedUris.has(fallbackSourceUri)) return [{ uri: fallbackSourceUri, kind: 'frame' }];
     return [];
-  }, [failedUris, fallbackSourceUri, loading, placePhotoUrls, sourceUri, timedOut]);
+  }, [active, failedUris, fallbackSourceUri, loading, placePhotoUrls, sourceUri, timedOut]);
 
   useEffect(() => {
     if (loading && !timedOut && items.length === 0) return;
@@ -96,10 +202,50 @@ export function CandidatePhotoCarousel({
   }, [items, loading, onResolvedKind, timedOut]);
 
   const markFailed = (uri: string) => setFailedUris((current) => new Set([...current, uri]));
+  const trackPhotoLoad = useCallback((index: number, uri: string) => {
+    const key = `${googlePlaceId ?? ''}:${uri}`;
+    if (photoLoadsRef.current.has(key)) return;
+    photoLoadsRef.current.add(key);
+    const item = items[index];
+    if (item?.kind === 'places') {
+      trackCandidatePresentation('candidate_google_photo_requested', {
+        ...contextRef.current,
+        googlePlaceId,
+        active,
+        reason: 'image_load',
+        photoIndex: index,
+        imageSource: 'google',
+      });
+      trackCandidatePresentation('candidate_photo_google_used', {
+        ...contextRef.current,
+        googlePlaceId,
+        active,
+        photoIndex: index,
+        imageSource: 'google',
+      });
+    } else if (item?.kind === 'source' || item?.kind === 'frame') {
+      trackCandidatePresentation('candidate_photo_source_media_used', {
+        ...contextRef.current,
+        googlePlaceId,
+        active,
+        photoIndex: index,
+        imageSource: 'source_media',
+      });
+    }
+    if (normalizedInitialPhotos.includes(uri)) {
+      trackCandidatePresentation('candidate_photo_existing_data_used', {
+        ...contextRef.current,
+        googlePlaceId,
+        active,
+        photoIndex: index,
+        imageSource: 'existing_data',
+      });
+    }
+  }, [active, googlePlaceId, items, normalizedInitialPhotos]);
   const updatePageFromOffset = useCallback((offset: number) => {
     const index = pageIndexFromOffset(offset, width, items.length);
     setActiveIndex(index);
-    setHydratedThrough((current) => Math.max(current, index + 1));
+    setVisitedPhotoIndexes((current) => visitCandidatePhoto(current, index, items.length));
   }, [items.length, width]);
   const rolodexItems = useMemo(() => items.map((item, index) => ({
     key: item.uri,
@@ -127,6 +273,7 @@ export function CandidatePhotoCarousel({
               source={{ uri: first.uri }}
               style={styles.image}
               resizeMode="cover"
+              onLoadStart={() => trackPhotoLoad(0, first.uri)}
               onError={() => markFailed(first.uri)}
               accessible={false}
             />
@@ -153,6 +300,9 @@ export function CandidatePhotoCarousel({
           items={rolodexItems}
           initialIndex={viewerIndex ?? 0}
           onClose={() => setViewerIndex(null)}
+          loadOnlyVisited
+          prefetchAdjacent={false}
+          onPhotoLoadStart={trackPhotoLoad}
         />
       </View>
     );
@@ -188,8 +338,8 @@ export function CandidatePhotoCarousel({
                 accessibilityHint="Opens the shared photo gallery"
                 testID={`candidate-photo-${index + 1}`}
               >
-                {index <= hydratedThrough ? (
-                  <Image source={{ uri: item.uri }} style={styles.image} resizeMode="cover" onError={() => markFailed(item.uri)} accessible={false} />
+                {visitedPhotoIndexes.has(index) ? (
+                  <Image source={{ uri: item.uri }} style={styles.image} resizeMode="cover" onLoadStart={() => trackPhotoLoad(index, item.uri)} onError={() => markFailed(item.uri)} accessible={false} />
                 ) : (
                   <View style={styles.lazyPlaceholder} accessibilityLabel="Photo loads when viewed"><Feather name="image" size={23} color={COLORS.muted} /></View>
                 )}
@@ -221,6 +371,9 @@ export function CandidatePhotoCarousel({
         items={rolodexItems}
         initialIndex={viewerIndex ?? activeIndex}
         onClose={() => setViewerIndex(null)}
+        loadOnlyVisited
+        prefetchAdjacent={false}
+        onPhotoLoadStart={trackPhotoLoad}
       />
     </View>
   );

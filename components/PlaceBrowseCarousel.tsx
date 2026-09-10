@@ -26,6 +26,7 @@ export type PlaceBrowseCarouselItem = {
   googlePlaceId?: string | null;
   sourceUri?: string | null;
   fallbackSourceUri?: string | null;
+  initialPhotoUrls?: readonly string[] | null;
   disabled?: boolean;
 };
 
@@ -127,7 +128,15 @@ export function PlaceBrowseCarousel({
               googlePlaceId={item.googlePlaceId}
               sourceUri={item.sourceUri}
               fallbackSourceUri={item.fallbackSourceUri}
+              initialPhotoUrls={item.initialPhotoUrls}
               preferPlacePhoto
+              presentationMode="candidate"
+              presentationActive={selected}
+              presentationContext={{
+                trigger: 'multi_place',
+                candidateIndex: index,
+                candidateCount: items.length,
+              }}
               size={expanded ? 64 : 48}
               borderRadius={expanded ? 12 : 9}
               accessibilityLabel={`Photo of ${item.name}`}

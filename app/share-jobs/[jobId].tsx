@@ -47,6 +47,7 @@ import { Radius, Spacing } from '@/constants';
 import { isVayrinProductUiEnabled } from '@/lib/featureFlags';
 import { useTheme } from '@/lib/theme';
 import { trackEvent } from '@/lib/analytics';
+import { activeCandidatePlaceId } from '@/lib/candidatePresentation';
 import { buildShareJobDetailState } from '@/lib/shareJobDetailState';
 import type { NormalizedCandidate } from '@/lib/shareJobsUi';
 import { planOpenOriginal, validateSourceUrl } from '@/lib/openOriginalPost';
@@ -318,6 +319,8 @@ function toResultCandidate(candidate: PlaceCandidate): ShareJobResultCandidate {
     distanceKm: candidate.distanceKm ?? null,
     localityMatch: candidate.localityMatch === true,
     wideningTierKm: candidate.wideningTierKm ?? null,
+    photoUrl: candidate.photoUrl ?? null,
+    photoUrls: candidate.photoUrls,
   };
 }
 
@@ -1848,6 +1851,16 @@ function ShareJobDetailScreen() {
               rank={index + 1}
               selectionRole="radio"
               saved={Boolean(savedByGoogleId[c.googlePlaceId])}
+              presentationActive={c.googlePlaceId === activeCandidatePlaceId(
+                visibleResults.map((candidate) => candidate.googlePlaceId),
+                manualSelectedIds,
+              )}
+              presentationContext={{
+                trigger: 'manual_correction',
+                jobId: job?.id ?? routeJobId,
+                candidateIndex: index,
+                candidateCount: visibleResults.length,
+              }}
               onPress={() => setManualSelectedIds(
                 selectFallbackCandidate(visibleResults, c.googlePlaceId),
               )}
@@ -1972,6 +1985,16 @@ function ShareJobDetailScreen() {
         compactThumbnailWidth={96}
         rank={rank > 0 ? rank : undefined}
         selectionRole="radio"
+        presentationActive={
+          expandedMentionId === row.logicalPlaceId
+          && row.selectedCandidateId === candidate.googlePlaceId
+        }
+        presentationContext={{
+          trigger: 'multi_place',
+          jobId: job?.id ?? routeJobId,
+          candidateIndex: Math.max(0, rank - 1),
+          candidateCount: visibleMentionCandidates(row).length,
+        }}
       />
     );
   }
@@ -2333,6 +2356,9 @@ function ShareJobDetailScreen() {
           name: row.primaryVenueName ?? row.extractedName,
           subtitle: mentionSummaryStatus(row),
           googlePlaceId: candidate?.googlePlaceId ?? null,
+          initialPhotoUrls: candidate?.photoUrls?.length
+            ? candidate.photoUrls
+            : candidate?.photoUrl ? [candidate.photoUrl] : undefined,
           fallbackSourceUri: row.sourceFrameUrl,
         };
       })
@@ -2525,6 +2551,16 @@ function ShareJobDetailScreen() {
                   bestMatch={index === 0 && confirmationCandidates.length > 1}
                   selectionRole={pickerSelectionMode === 'exclusive' ? 'radio' : 'checkbox'}
                   saved={Boolean(savedByGoogleId[candidate.googlePlaceId])}
+                  presentationActive={candidate.googlePlaceId === activeCandidatePlaceId(
+                    confirmationCandidates.map((item) => item.googlePlaceId),
+                    pickerSelectedIds,
+                  )}
+                  presentationContext={{
+                    trigger: 'recognition_result',
+                    jobId: job.id,
+                    candidateIndex: index,
+                    candidateCount: confirmationCandidates.length,
+                  }}
                   onPress={() => {
                     if (broad) {
                       changeManualQuery(candidate.name);
@@ -2784,6 +2820,13 @@ function ShareJobDetailScreen() {
                 candidate={confirmationSingle}
                 locality={placeAddress.locality ?? confirmationSingle.formattedAddress}
                 saved={Boolean(alreadySavedId)}
+                presentationActive
+                presentationContext={{
+                  trigger: 'recognition_result',
+                  jobId: job.id,
+                  candidateIndex: 0,
+                  candidateCount: 1,
+                }}
               />
             ) : null}
 

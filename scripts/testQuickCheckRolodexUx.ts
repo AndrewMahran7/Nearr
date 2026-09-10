@@ -61,7 +61,7 @@ assert.match(carousel, /const rolodexItems = useMemo\(\(\) => items\.map/);
 assert.match(carousel, /items=\{rolodexItems\}/);
 assert.match(
   carousel,
-  /if \(places\.length > 0\) return places;[\s\S]*if \(sourceUri[\s\S]*if \(fallbackSourceUri/,
+  /if \(places\.length > 0\) return places;[\s\S]*if \(active && sourceUri[\s\S]*if \(fallbackSourceUri/,
   'cached Places photos precede source-frame and neutral fallbacks',
 );
 

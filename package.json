@@ -122,6 +122,7 @@
     "test:map-post-save-reliability": "npm run test:map-conservation",
     "test:map-pin-cluster-reliability": "npm run test:map-camera-transaction-hotfix && npm run test:map-conservation && npm run test:map-clustering && npm run test:map-cluster-expansion && npm run test:map-reliability && npm run test:map-camera",
     "test:place-image": "ts-node -P scripts/tsconfig.json scripts/testPlaceImage.ts",
+    "test:candidate-presentation-cost": "ts-node -P scripts/tsconfig.json scripts/testCandidatePresentationCostControl.ts",
     "test:open-original-post": "ts-node -P scripts/tsconfig.json scripts/testOpenOriginalPost.ts",
     "test:share-jobs-ui": "ts-node -P scripts/tsconfig.json scripts/testShareJobsUi.ts",
     "test:quick-check": "ts-node -P scripts/tsconfig.json scripts/testQuickCheckResolution.ts",

@@ -6,6 +6,7 @@ import { CandidatePhotoCarousel } from '@/components/CandidatePhotoCarousel';
 import type { PlaceImageResolutionKind } from '@/components/PlaceImage';
 import { Radius, Spacing } from '@/constants';
 import { QUICK_CHECK_LAYOUT } from '@/lib/quickCheckDensity';
+import type { CandidatePresentationContext } from '@/lib/candidatePresentation';
 import {
   candidateCategoryLabel,
   candidateMatchLabel,
@@ -43,6 +44,8 @@ type Props = {
   compactThumbnailWidth?: number;
   rank?: number;
   selectionRole?: 'checkbox' | 'radio';
+  presentationActive?: boolean;
+  presentationContext?: CandidatePresentationContext;
 };
 
 export function CandidateConfirmationCard({
@@ -60,6 +63,8 @@ export function CandidateConfirmationCard({
   compactThumbnailWidth = COMPACT_CANDIDATE_THUMB_WIDTH,
   rank,
   selectionRole = 'radio',
+  presentationActive = true,
+  presentationContext = { trigger: 'recognition_result' },
 }: Props) {
   const [expanded, setExpanded] = useState(false);
   const broad = isBroadCandidate(candidate);
@@ -104,14 +109,17 @@ export function CandidateConfirmationCard({
         <View style={styles.compactRow}>
           <CandidatePhotoCarousel
             googlePlaceId={candidate.googlePlaceId}
-            initialPhotoUrls={candidate.photoUrls}
-            sourceUri={candidate.photoUrl}
+            initialPhotoUrls={candidate.photoUrls?.length
+              ? candidate.photoUrls
+              : candidate.photoUrl ? [candidate.photoUrl] : undefined}
             fallbackSourceUri={candidate.sourceFrameUrl}
             accessibilityLabel={`Photo of ${candidate.name}`}
             onResolvedKind={onImageResolved}
             height={compactPhotoHeight}
             thumbnailWidth={compactThumbnailWidth}
             variant="thumbnail"
+            active={presentationActive}
+            presentationContext={presentationContext}
           />
 
           <View style={styles.compactBody}>
@@ -232,12 +240,15 @@ export function CandidateConfirmationCard({
 
       <CandidatePhotoCarousel
         googlePlaceId={candidate.googlePlaceId}
-        initialPhotoUrls={candidate.photoUrls}
-        sourceUri={candidate.photoUrl}
+        initialPhotoUrls={candidate.photoUrls?.length
+          ? candidate.photoUrls
+          : candidate.photoUrl ? [candidate.photoUrl] : undefined}
         fallbackSourceUri={candidate.sourceFrameUrl}
         accessibilityLabel={`Photo of ${candidate.name}`}
         onResolvedKind={onImageResolved}
         height={STANDARD_CANDIDATE_PHOTO_HEIGHT}
+        active={presentationActive}
+        presentationContext={presentationContext}
       />
 
       <View style={styles.evidenceBlock}>
