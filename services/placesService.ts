@@ -80,6 +80,14 @@ export type PlaceRichDetails = {
   utcOffsetMinutes: number | null;
 };
 
+/** Only the provider-owned extras used by the saved-place detail screen. */
+export type SavedPlaceGoogleDisplayDetails = {
+  googlePlaceId: string;
+  photoUrls: string[];
+  openingHours: PlaceOpeningHours | null;
+  utcOffsetMinutes: number | null;
+};
+
 /** Normalized fields returned by one legacy Nearby Search request. */
 export type NearbyPlaceCandidate = PlaceCandidate & {
   rating: number | null;
@@ -170,6 +178,16 @@ const RICH_DETAILS_FIELDS = [
   'website',
   'formatted_phone_number',
   'international_phone_number',
+  'photos',
+  'opening_hours',
+  'utc_offset',
+].join(',');
+
+// Saved-place fallback hydration deliberately excludes the identity/location,
+// website and phone fields already available (or unused) in Nearr's durable
+// row. `opening_hours` determines the legacy Contact Data billing tier; the
+// smaller mask still avoids unnecessary payload and keeps this path explicit.
+export const SAVED_PLACE_DISPLAY_DETAILS_FIELDS = [
   'photos',
   'opening_hours',
   'utc_offset',
@@ -421,6 +439,59 @@ export async function getPlaceRichDetails(
     openingHours: toOpeningHours(result.opening_hours),
     // Google has shipped this field under both names; read either rather than
     // silently losing the venue's clock and suppressing the hours line.
+    utcOffsetMinutes: toUtcOffsetMinutes(result.utc_offset_minutes ?? result.utc_offset),
+  };
+}
+
+/**
+ * Minimum Google fallback for an already-saved place. Provider photo URLs are
+ * returned for the current session only; callers must not persist them.
+ */
+export async function getSavedPlaceGoogleDisplayDetails(
+  placeId: string,
+  options?: { maxPhotos?: number; maxPhotoWidth?: number },
+): Promise<SavedPlaceGoogleDisplayDetails> {
+  if (isDemoMode() || isMapPreviewMode()) {
+    return {
+      googlePlaceId: placeId,
+      photoUrls: [],
+      openingHours: null,
+      utcOffsetMinutes: null,
+    };
+  }
+  if (!placeId) throw new PlacesError('INVALID_REQUEST', 'placeId is required');
+
+  const key = resolveApiKey();
+  if (!key) throw new PlacesError('MISSING_API_KEY', 'Google Maps API key not configured.');
+  const params = new URLSearchParams({
+    place_id: placeId,
+    key,
+    fields: SAVED_PLACE_DISPLAY_DETAILS_FIELDS,
+  });
+  console.log('[placesService] saved-place-display-details', placeId);
+  const json = await safeFetch(`${BASE}/details/json?${params.toString()}`);
+  if (json.status === 'NOT_FOUND' || !json.result) {
+    throw new PlacesError('NOT_FOUND', 'Place not found.');
+  }
+  assertOk(json, false);
+
+  const result = json.result;
+  const maxPhotos = Math.max(0, Math.min(options?.maxPhotos ?? 5, 5));
+  const maxPhotoWidth = Math.max(240, Math.min(options?.maxPhotoWidth ?? 1000, 1200));
+  const photoUrls = maxPhotos === 0 || !Array.isArray(result.photos)
+    ? []
+    : result.photos
+        .map((photo: any) => typeof photo?.photo_reference === 'string'
+          ? photo.photo_reference.trim()
+          : '')
+        .filter((reference: string) => !!reference)
+        .slice(0, maxPhotos)
+        .map((reference: string) => buildPlacePhotoUrl(reference, key, maxPhotoWidth));
+
+  return {
+    googlePlaceId: placeId,
+    photoUrls,
+    openingHours: toOpeningHours(result.opening_hours),
     utcOffsetMinutes: toUtcOffsetMinutes(result.utc_offset_minutes ?? result.utc_offset),
   };
 }

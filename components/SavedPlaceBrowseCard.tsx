@@ -54,6 +54,7 @@ function SavedPlaceBrowseCardView({ saved, onPress }: Props) {
       <View style={styles.imageWrap}>
         <PlaceImage
           googlePlaceId={saved.place.google_place_id}
+          allowGoogleLookup={false}
           size={124}
           borderRadius={Radius.md}
           style={styles.image}

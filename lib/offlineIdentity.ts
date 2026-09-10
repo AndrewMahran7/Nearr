@@ -48,6 +48,8 @@ import {
 } from './offlineIdentityCore';
 import { clearReminderSnapshot } from './reminderSnapshot';
 import { clearSavedPlacesCache } from './savedPlacesCache';
+import { clearSavedPlaceSnapshots } from './savedPlaceSnapshot';
+import { clearSavedPlaceHydrationMemoryForUser } from './savedPlaceHydration';
 
 const LAST_USER_KEY = 'nearr:auth:lastAuthenticatedUserId:v1';
 
@@ -104,8 +106,10 @@ export async function clearOfflineUserData(
   userId: string | null | undefined,
 ): Promise<void> {
   const targetUserId = userId ?? (await readLastAuthenticatedUserId());
+  clearSavedPlaceHydrationMemoryForUser(targetUserId);
   await Promise.all([
     clearSavedPlacesCache(targetUserId).catch(() => undefined),
+    clearSavedPlaceSnapshots(targetUserId).catch(() => undefined),
     clearReminderSnapshot(targetUserId).catch(() => undefined),
   ]);
   await clearLastAuthenticatedUser();

@@ -1,6 +1,8 @@
 export type AsyncValueCache<T> = ((key: string) => Promise<T | null>) & {
   /** Drop a cached entry so the next read refetches. Safe for unknown keys. */
   invalidate: (key: string) => void;
+  /** Synchronous, memory-only read. Never starts provider I/O. */
+  peek: (key: string) => T | null | undefined;
 };
 
 export function createAsyncValueCache<T>(
@@ -37,6 +39,8 @@ export function createAsyncValueCache<T>(
     values.delete(key);
     inFlight.delete(key);
   };
+
+  read.peek = (key: string) => values.get(key);
 
   return read as AsyncValueCache<T>;
 }

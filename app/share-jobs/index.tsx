@@ -544,7 +544,7 @@ function ShareJobsQueueScreen() {
         accessibilityRole="button"
         accessibilityLabel={`Open ${item.savedPlace.place.name}`}
       >
-        <PlaceImage googlePlaceId={item.savedPlace.place.google_place_id} size={64} borderRadius={12} />
+        <PlaceImage googlePlaceId={item.savedPlace.place.google_place_id} allowGoogleLookup={false} size={64} borderRadius={12} />
         <View style={styles.rowMain}>
           <Text style={[typography.bodyStrong, styles.rowTitle]} numberOfLines={2}>{item.savedPlace.place.name}</Text>
           <View style={styles.autoSaveMeta}>
