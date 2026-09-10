@@ -166,6 +166,11 @@ import { premiumRequestsEnabled } from '../_shared/premiumRequests.ts';
 import { areaMatchIncompleteFromPayload } from '../../../lib/areaMatchPremium.ts';
 import { assessSourceEntityCandidate } from '../../../lib/sourceEntitySemanticConsistency.ts';
 import { evaluateExactIdentitySafety } from '../../../lib/exactIdentitySafety.ts';
+import {
+  lookupTutorialFixture,
+  recordTutorialFixtureResolution,
+  TUTORIAL_FIXTURE_RULE_VERSION,
+} from './tutorialFixture.ts';
 
 const CORS_HEADERS: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
@@ -744,6 +749,11 @@ async function finalize(
   delete updatePatch.__skipRecognitionCachePersist;
   delete updatePatch.__premiumChargeability;
   delete updatePatch.__skipPremiumEligibility;
+  if (typeof updatePatch.resolution_source !== 'string') {
+    const cacheHit = (updatePatch.extraction_payload as any)?.recognitionCache?.hit === true;
+    updatePatch.resolution_source = job.resolution_source ??
+      (cacheHit ? 'recognition_cache_v2' : 'fresh_recognition');
+  }
   const finalUrl = typeof patch.canonical_url === 'string'
     ? patch.canonical_url
     : job.canonical_url || job.source_url;
@@ -3830,6 +3840,122 @@ async function useRecognitionCache(args: {
   return true;
 }
 
+async function useTutorialFixture(args: {
+  admin: any;
+  job: any;
+  identity: CanonicalContentIdentity;
+  processingStartedMs: number;
+}): Promise<boolean> {
+  // Qualification must continue exercising real media/model recognition and
+  // may never be short-circuited by deterministic onboarding truth.
+  if (args.job.recognition_run_mode !== 'normal') return false;
+  const lookup = await lookupTutorialFixture(args.admin, args.identity);
+  if (lookup.kind !== 'hit') return false;
+
+  const fixture = lookup.resolution;
+  args.job.recognition_identity_key = args.identity.key;
+  args.job.recognition_identity_version = args.identity.identityVersion;
+  args.job.recognition_content_id = args.identity.contentId;
+  args.job.canonical_url = args.identity.canonicalUrl;
+  await recordIdentityOnJob(args.admin, args.job.id, args.identity);
+
+  const saved = await saveForUser({
+    client: args.admin,
+    userId: args.job.user_id,
+    candidate: fixture.candidate,
+    sourceUrl: args.identity.canonicalUrl,
+    source: legacySourceFor(args.identity.platform),
+    sourceMetadata: { resolvedUrl: args.identity.canonicalUrl },
+  });
+  await persistAutomaticCompletionResults(args.admin, {
+    job: args.job,
+    logicalResultId: 'tutorial-fixture-primary',
+    primary: fixture.candidate,
+    saved,
+    alternatives: [],
+    confidenceScore: 1,
+    ruleVersion: TUTORIAL_FIXTURE_RULE_VERSION,
+    reasonCodes: ['curated_tutorial_fixture', 'exact_canonical_source_identity'],
+  });
+  const totalResolutionLatencyMs = Date.now() - args.processingStartedMs;
+  await recordTutorialFixtureResolution(args.admin, {
+    jobId: args.job.id,
+    userId: args.job.user_id,
+    fixture,
+    lookupLatencyMs: lookup.lookupLatencyMs,
+    totalResolutionLatencyMs,
+  });
+  await finalize(
+    args.admin,
+    args.job,
+    {
+      status: 'completed',
+      decision: 'auto_save',
+      saved_place_id: saved.savedPlaceId,
+      candidate_payload: {
+        ...buildCandidateReviewSnapshot([safeCandidate(fixture.candidate)], 10, 'single'),
+        automaticCompletion: {
+          version: 1,
+          primaryGooglePlaceId: fixture.candidate.googlePlaceId,
+          alternativeCount: 0,
+        },
+      },
+      canonical_url: args.identity.canonicalUrl,
+      source_platform: args.identity.platform,
+      resolution_source: 'tutorial_fixture',
+      tutorial_fixture_id: fixture.fixtureId,
+      tutorial_fixture_revision: fixture.fixtureRevision,
+      tutorial_fixture_role: fixture.fixtureRole,
+      extraction_payload: {
+        ...(args.job.extraction_payload ?? {}),
+        savedPlaceName: fixture.candidate.name,
+        alreadySaved: saved.reused,
+        resolutionSource: 'tutorial_fixture',
+        tutorialFixture: {
+          id: fixture.fixtureId,
+          revision: fixture.fixtureRevision,
+          role: fixture.fixtureRole,
+          lookupLatencyMs: lookup.lookupLatencyMs,
+          totalResolutionLatencyMs,
+          cacheRead: false,
+          cacheAdmitted: false,
+          modelInvoked: false,
+          mediaInvoked: false,
+          placesCalls: 0,
+        },
+        recognitionCache: { hit: false, bypassed: true, reason: 'tutorial_fixture' },
+      },
+      __skipRecognitionCachePersist: true,
+      __skipPremiumEligibility: true,
+      progress_stage: 'completed',
+      completed_at: nowIso(),
+    },
+    composeShareCompletionNotification({
+      status: 'completed',
+      placeName: fixture.candidate.name,
+      jobId: args.job.id,
+      savedPlaceId: saved.savedPlaceId,
+      googlePlaceId: fixture.candidate.googlePlaceId,
+      alreadySaved: saved.reused,
+    }),
+  );
+  console.log(JSON.stringify({
+    event: 'tutorial_fixture_resolved',
+    job_id: args.job.id,
+    fixture_id: fixture.fixtureId,
+    fixture_revision: fixture.fixtureRevision,
+    fixture_role: fixture.fixtureRole,
+    lookup_latency_ms: lookup.lookupLatencyMs,
+    total_resolution_latency_ms: totalResolutionLatencyMs,
+    model_invoked: false,
+    media_invoked: false,
+    cache_read: false,
+    cache_admitted: false,
+    places_calls: 0,
+  }));
+  return true;
+}
+
 function suspendedRecognitionDiagnostics(policy: RecognitionCachePolicy): Record<string, unknown> {
   return {
     ...recognitionCacheDiagnostics(policy),
@@ -3913,6 +4039,7 @@ async function processOne(
   job: any,
   policy: RecognitionCachePolicy,
 ): Promise<void> {
+  const processingStartedMs = Date.now();
   policy = recognitionCachePolicyForRun(policy, job.recognition_run_mode);
   const rawUrl = job.canonical_url || job.source_url;
   const normalized = normalizeShareUrl(rawUrl);
@@ -3921,6 +4048,7 @@ async function processOne(
 
   let activeIdentity = canonicalContentIdentity(job.source_url, requestUrl);
   if (activeIdentity) {
+    if (await useTutorialFixture({ admin, job, identity: activeIdentity, processingStartedMs })) return;
     const preparation = await prepareRecognitionIdentity(admin, job, activeIdentity, policy);
     if (preparation === 'parked') return;
   }
@@ -4118,6 +4246,7 @@ async function processOne(
   if (resolvedIdentity && resolvedIdentity.key !== activeIdentity?.key) {
     if (activeIdentity) await releaseRecognition(admin, activeIdentity.key, job.id);
     activeIdentity = resolvedIdentity;
+    if (await useTutorialFixture({ admin, job, identity: resolvedIdentity, processingStartedMs })) return;
     const preparation = await prepareRecognitionIdentity(admin, job, resolvedIdentity, policy);
     if (preparation === 'parked') return;
   }

@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "environment": "development",
+  "fixtures": [
+    {
+      "fixtureId": "1c19f2d2-a020-4508-9fe3-ef9ef8bb052a",
+      "sourceCorpusId": "youtube_attabad_lake_hidden_candidate_01",
+      "sourceUrl": "https://www.youtube.com/shorts/rrKmN3zZ0lM",
+      "identityKey": "v1:youtube:rrKmN3zZ0lM",
+      "identityVersion": 1,
+      "platform": "youtube",
+      "contentId": "rrKmN3zZ0lM",
+      "canonicalUrl": "https://www.youtube.com/watch?v=rrKmN3zZ0lM",
+      "googlePlaceId": "ChIJHxRxLN2p6DgRMd2q59otvqI",
+      "expectedPlaceName": "Attabad Lake",
+      "expectedLatitude": 36.3190424,
+      "expectedLongitude": 74.8653331,
+      "role": "primary",
+      "priority": 100,
+      "verifiedBy": "ONB2 independently verified corpus 2026-09-08",
+      "expectedMediaSha256": null
+    }
+  ]
+}
