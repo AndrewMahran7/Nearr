@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Image, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Animated, Image, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import MapView, { Marker } from 'react-native-maps';
 
@@ -18,6 +18,7 @@ import { hapticSelection, hapticSuccess } from '@/lib/haptics';
 import { hostShareSubmitter } from '@/lib/hostShareSubmit';
 import { getResolvedEnvironment } from '@/lib/appEnvironment';
 import { canLoadOnboardingTutorialFixture, isShareJobForTutorialFixture, loadActiveOnboardingTutorialFixture, tutorialResultFromShareJob } from '@/lib/onboardingTutorialFixture';
+import { onboardingTutorialPreviewUrl } from '@/lib/onboardingTutorialPreview';
 import { selectTutorialContent } from '@/constants/onboardingStarterContent';
 import {
   completeOnboardingV2Interests, completeOnboardingV2Platforms,
@@ -35,7 +36,7 @@ import {
   setOnboardingV2TutorialFixture, setOnboardingV2TutorialFixtureError,
   toggleOnboardingV2Interest,
 } from '@/lib/onboardingV2';
-import type { OnboardingDesiredValue, OnboardingInterest, OnboardingPainPoint, OnboardingPlatform, OnboardingV2State } from '@/lib/onboardingV2Core';
+import type { OnboardingDesiredValue, OnboardingInterest, OnboardingPainPoint, OnboardingPlatform, OnboardingTutorialFixture, OnboardingV2State } from '@/lib/onboardingV2Core';
 
 const PLATFORMS: Array<{ value: Exclude<OnboardingPlatform, 'other'>; label: string; icon: keyof typeof Ionicons.glyphMap; tint: string }> = [
   { value: 'instagram', label: 'Instagram', icon: 'logo-instagram', tint: '#F173AE' },
@@ -214,9 +215,91 @@ function DesiredValueScreen() {
   return <Phase1Frame onBack={() => void goBackOnboardingV2()} progress={0.67} progressLabel="Onboarding progress"><Text style={styles.eyebrow}>ONE LAST CHOICE</Text><Text style={styles.headline}>What would make Nearr most useful to you?</Text><View style={styles.stack}>{DESIRED_VALUES.map((item) => <Pressable key={item.value} onPress={() => { hapticSelection(); void setOnboardingV2DesiredValue(item.value); }} accessibilityRole="button" accessibilityLabel={item.label} style={styles.painCard}><View style={styles.smallIcon}><Feather name={item.icon} size={20} color={Phase1Colors.orange} /></View><Text style={styles.painText}>{item.label}</Text><Feather name="arrow-right" size={18} color={Phase1Colors.textMuted} /></Pressable>)}</View></Phase1Frame>;
 }
 
-function ChallengeScreen({ state }: { state: OnboardingV2State }) {
+export function ChallengeScreen({ state }: { state: OnboardingV2State }) {
   const fixture = state.tutorialFixture!; const fixturePlatform = PLATFORM_LABELS[fixture.platform]; const exactPlatform = state.preferredPlatform === fixture.platform;
-  return <Phase1Frame onBack={() => void goBackOnboardingV2()} progress={0.38} progressLabel="Onboarding progress" footer={<Phase1PrimaryButton title="Find this place" onPress={() => void beginOnboardingV2InAppTutorialResolution()} />}><Text style={styles.eyebrow}>A REAL POST</Text><Text style={styles.headline}>Want to know where this is?</Text><Text style={styles.body}>{exactPlatform ? `A real ${fixturePlatform} find, framed by Nearr.` : 'A real guided example, kept neutral because your platform does not have a dedicated tutorial post yet.'}</Text><View style={styles.videoPreview}>{exactPlatform && fixture.thumbnailUrl ? <Image source={{ uri: fixture.thumbnailUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" accessibilityLabel={`Real ${fixturePlatform} tutorial post preview`} /> : <View style={styles.previewFallback}><NearrSparkleMark size={72} /><Text style={styles.neutralPostText}>A real place, hidden in a post</Text></View>}<View style={styles.previewShade} /><View style={styles.previewBadge}><Ionicons name={exactPlatform ? PLATFORMS.find((item) => item.value === fixture.platform)?.icon ?? 'play' : 'sparkles-outline'} size={15} color="#FFFFFF" /><Text style={styles.previewBadgeText}>{exactPlatform ? `${fixturePlatform.toUpperCase()} POST` : 'NEARR GUIDED EXAMPLE'}</Text></View><View style={styles.previewPrompt}><Text style={styles.previewQuestion}>The location isn't shown.</Text><Text style={styles.previewHint}>Nearr can turn it into a place.</Text></View></View><Text style={styles.microcopy}>The answer stays hidden until Nearr finishes the real save.</Text></Phase1Frame>;
+  return <Phase1Frame onBack={() => void goBackOnboardingV2()} progress={0.38} progressLabel="Onboarding progress" footer={<Phase1PrimaryButton title="Find this place" onPress={() => void beginOnboardingV2InAppTutorialResolution()} />}><Text style={styles.eyebrow}>A REAL POST</Text><Text style={styles.headline}>Want to know where this is?</Text><Text style={styles.body}>{exactPlatform ? `A real ${fixturePlatform} find, framed by Nearr.` : 'A real guided example, kept neutral because your platform does not have a dedicated tutorial post yet.'}</Text><ChallengeSourcePreview fixture={fixture} preferredPlatform={state.preferredPlatform} /><Text style={styles.microcopy}>The answer stays hidden until Nearr finishes the real save.</Text></Phase1Frame>;
+}
+
+const SOURCE_PREVIEW_TIMEOUT_MS = 12_000;
+
+export function ChallengeSourcePreview({ fixture, preferredPlatform }: {
+  fixture: OnboardingTutorialFixture;
+  preferredPlatform: OnboardingPlatform | null;
+}) {
+  const fixturePlatform = PLATFORM_LABELS[fixture.platform];
+  const exactPlatform = preferredPlatform === fixture.platform;
+  const previewUrl = exactPlatform
+    ? onboardingTutorialPreviewUrl(fixture.platform, fixture.contentId, fixture.thumbnailUrl)
+    : null;
+  const [attempt, setAttempt] = useState(0);
+  const [previewState, setPreviewState] = useState<'loading' | 'loaded' | 'failed' | 'unavailable'>(
+    previewUrl ? 'loading' : 'unavailable',
+  );
+
+  useEffect(() => {
+    setAttempt(0);
+    setPreviewState(previewUrl ? 'loading' : 'unavailable');
+  }, [previewUrl]);
+  useEffect(() => {
+    if (previewState !== 'loading') return;
+    const timeout = setTimeout(() => setPreviewState('failed'), SOURCE_PREVIEW_TIMEOUT_MS);
+    return () => clearTimeout(timeout);
+  }, [attempt, previewState]);
+
+  const retryPreview = () => {
+    setAttempt((value) => value + 1);
+    setPreviewState(previewUrl ? 'loading' : 'unavailable');
+  };
+  const retrySuffix = attempt > 0 ? `${previewUrl?.includes('?') ? '&' : '?'}nearr_preview_retry=${attempt}` : '';
+  const imageUrl = previewUrl ? `${previewUrl}${retrySuffix}` : null;
+
+  return (
+    <View style={styles.videoPreview} testID="onboarding-source-preview">
+      {!exactPlatform ? (
+        <View style={styles.previewFallback} testID="onboarding-source-preview-fallback">
+          <NearrSparkleMark size={72} />
+          <Text style={styles.neutralPostText}>A real place, hidden in a post</Text>
+        </View>
+      ) : imageUrl ? (
+        <Image
+          key={imageUrl}
+          source={{ uri: imageUrl }}
+          style={StyleSheet.absoluteFill}
+          resizeMode="cover"
+          accessibilityLabel={`Real ${fixturePlatform} tutorial post preview`}
+          testID="onboarding-source-preview-image"
+          onLoad={() => setPreviewState('loaded')}
+          onError={() => setPreviewState('failed')}
+        />
+      ) : (
+        <View style={styles.previewUnavailable} testID="onboarding-source-preview-unavailable">
+          <Feather name="image" size={34} color={Phase1Colors.textMuted} />
+          <Text style={styles.previewUnavailableTitle}>Source preview unavailable</Text>
+          <Text style={styles.previewUnavailableBody}>You can still ask Nearr to find the place.</Text>
+        </View>
+      )}
+      {exactPlatform && previewState === 'loading' ? (
+        <View style={styles.previewStatus} testID="onboarding-source-preview-loading">
+          <ActivityIndicator color="#FFFFFF" />
+          <Text style={styles.previewStatusText}>Loading the real source preview…</Text>
+        </View>
+      ) : null}
+      {exactPlatform && previewState === 'failed' ? (
+        <View style={styles.previewStatus} testID="onboarding-source-preview-failed">
+          <Feather name="image" size={28} color="#FFFFFF" />
+          <Text style={styles.previewStatusTitle}>We couldn't load this source preview.</Text>
+          <Pressable onPress={retryPreview} accessibilityRole="button" accessibilityLabel="Retry source preview" style={styles.previewRetry}>
+            <Text style={styles.previewRetryText}>Try preview again</Text>
+          </Pressable>
+        </View>
+      ) : null}
+      {!exactPlatform || previewState === 'loaded' ? <>
+        <View style={styles.previewShade} pointerEvents="none" />
+        <View style={styles.previewBadge} pointerEvents="none"><Ionicons name={exactPlatform ? PLATFORMS.find((item) => item.value === fixture.platform)?.icon ?? 'play' : 'sparkles-outline'} size={15} color="#FFFFFF" /><Text style={styles.previewBadgeText}>{exactPlatform ? `${fixturePlatform.toUpperCase()} POST` : 'NEARR GUIDED EXAMPLE'}</Text></View>
+        <View style={styles.previewPrompt} pointerEvents="none"><Text style={styles.previewQuestion}>The location isn't shown.</Text><Text style={styles.previewHint}>Nearr can turn it into a place.</Text></View>
+      </> : null}
+    </View>
+  );
 }
 function ShareInstructionsScreen({ state, launchError, onLaunch }: { state: OnboardingV2State; launchError: boolean; onLaunch: () => void }) {
   const platform = PLATFORM_LABELS[state.tutorialFixture?.platform ?? 'youtube'];
@@ -224,7 +307,7 @@ function ShareInstructionsScreen({ state, launchError, onLaunch }: { state: Onbo
 }
 function InstructionStep({ number, title, detail, icon, nearLogo }: { number: string; title: string; detail: string; icon: keyof typeof Feather.glyphMap; nearLogo?: boolean }) { return <View style={styles.instruction}><Text style={styles.stepNumber}>{number}</Text>{nearLogo ? <Image source={require('../../../assets/icon.png')} style={styles.nearrStepLogo} /> : <View style={styles.stepIcon}><Feather name={icon} size={19} color={Phase1Colors.orange} /></View>}<View style={styles.flex}><Text style={styles.instructionTitle}>{title}</Text><Text style={styles.instructionBody}>{detail}</Text></View></View>; }
 function AwaitingShareScreen({ state, launchError, jobsError, onOpen, onRefresh }: { state: OnboardingV2State; launchError: boolean; jobsError: string | null; onOpen: () => void; onRefresh: () => void }) { return <Phase1Frame progress={0.72} progressLabel="Tutorial progress" footer={<Phase1PrimaryButton title="Open the tutorial post again" onPress={onOpen} />}><View style={styles.statusIcon}><Feather name="share-2" size={34} color={Phase1Colors.orange} /></View><Text style={styles.headline}>Share it to Nearr when you're ready.</Text><Text style={styles.body}>After the share extension accepts it, return here. iOS doesn't automatically reopen Nearr.</Text><View style={styles.reminder}><Text style={styles.reminderText}>Share → More → Nearr</Text></View>{state.wrongShareJobId ? <InlineError text="That was a different post. Nearr can process it normally, but it won't complete this walkthrough. Open the tutorial post and try again." /> : null}{launchError ? <InlineError text="The source did not open. Your progress is safe—try again." /> : null}{jobsError ? <Pressable onPress={onRefresh} accessibilityRole="button"><Text style={styles.retryLink}>Having trouble checking the share? Tap to retry.</Text></Pressable> : null}</Phase1Frame>; }
-function ProcessingScreen({ state, failed, onRetry }: { state: OnboardingV2State; failed: boolean; onRetry: () => void }) {
+export function ProcessingScreen({ state, failed, onRetry }: { state: OnboardingV2State; failed: boolean; onRetry: () => void }) {
   const [step, setStep] = useState(0);
   const reduceMotion = useOnboardingReduceMotion();
   useEffect(() => {
@@ -235,7 +318,7 @@ function ProcessingScreen({ state, failed, onRetry }: { state: OnboardingV2State
   }, [reduceMotion]);
   if (failed) return <MessageState eyebrow="SAVE NEEDS A RETRY" title="That place needs another look." body="Your progress is safe. Nearr won't save an uncertain result." action="Try again" onAction={onRetry} />;
   const steps = ['Looking at the post', 'Finding visual clues', 'Matching places'];
-  return <Phase1Frame progress={0.46} progressLabel="Onboarding progress" contentStyle={styles.processingContent}><Text style={styles.processingEyebrow}>NEARR IS ON IT</Text><Text style={styles.headlineCentered}>{steps[step]}<Text style={styles.orangeDot}>.</Text></Text><MagicScanner thumbnailUrl={state.tutorialFixture?.thumbnailUrl ?? null} platform={state.preferredPlatform} /><View style={styles.processingSteps}>{steps.map((label, index) => <View key={label} style={[styles.processingStep, index <= step && styles.processingStepActive]}><View style={[styles.processingStepDot, index <= step && styles.processingStepDotActive]} /> <Text style={[styles.processingStepText, index <= step && styles.processingStepTextActive]}>{label}</Text>{index < step ? <Feather name="check" size={15} color={Phase1Colors.success} /> : null}</View>)}</View></Phase1Frame>;
+  return <Phase1Frame progress={0.46} progressLabel="Onboarding progress" contentStyle={styles.processingContent}><Text style={styles.processingEyebrow}>NEARR IS ON IT</Text><Text style={styles.headlineCentered}>{steps[step]}<Text style={styles.orangeDot}>.</Text></Text><MagicScanner thumbnailUrl={state.tutorialFixture?.thumbnailUrl ?? null} platform={state.preferredPlatform} /><View style={styles.processingSteps}>{steps.map((label, index) => <View key={label} style={[styles.processingStep, index <= step && styles.processingStepActive]}><View style={[styles.processingStepDot, index <= step && styles.processingStepDotActive]} /><Text style={[styles.processingStepText, index <= step && styles.processingStepTextActive]}>{label}</Text>{index < step ? <Feather name="check" size={15} color={Phase1Colors.success} /> : null}</View>)}</View></Phase1Frame>;
 }
 
 function MagicMomentScreen({ state }: { state: OnboardingV2State }) {
@@ -311,7 +394,7 @@ const styles = StyleSheet.create({
   payoffContent: { justifyContent: 'center', paddingBottom: 38 }, payoffKicker: { color: Phase1Colors.orange, fontSize: 18, lineHeight: 24, fontWeight: '900', textAlign: 'center', marginBottom: 12 }, payoffHeadline: { color: Phase1Colors.text, fontSize: 34, lineHeight: 39, fontWeight: '900', letterSpacing: -1.1, textAlign: 'center' }, payoffBody: { color: Phase1Colors.textMuted, fontSize: 15, lineHeight: 22, textAlign: 'center', marginTop: 18, paddingHorizontal: 12 },
   sectionLabel: { color: Phase1Colors.textMuted, fontSize: 10, fontWeight: '900', letterSpacing: 1.3, marginTop: 28, marginBottom: 10 }, compactPainWrap: { gap: 8 }, compactPain: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 13, borderRadius: 16, backgroundColor: Phase1Colors.surface, borderWidth: 1, borderColor: Phase1Colors.border }, selectedPain: { backgroundColor: Phase1Colors.orange, borderColor: Phase1Colors.orange }, compactPainText: { flex: 1, color: Phase1Colors.text, fontSize: 13, fontWeight: '800' },
   stack: { gap: 10, marginTop: 26 }, painCard: { minHeight: 70, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 13, borderRadius: 20, backgroundColor: Phase1Colors.surface, borderWidth: 1, borderColor: Phase1Colors.border, shadowColor: '#4B3B2D', shadowOpacity: 0.05, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 1 }, smallIcon: { width: 40, height: 40, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFF0E9' }, painText: { flex: 1, color: Phase1Colors.text, fontSize: 14, lineHeight: 19, fontWeight: '800' },
-  videoPreview: { height: 344, marginTop: 26, borderRadius: 28, overflow: 'hidden', backgroundColor: '#DDE9E4', borderWidth: 5, borderColor: '#FFFFFF', shadowColor: '#30251D', shadowOpacity: 0.16, shadowRadius: 18, shadowOffset: { width: 0, height: 9 }, elevation: 4 }, previewFallback: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#DDE9E4' }, previewShade: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.24)' }, playButton: { position: 'absolute', left: '50%', top: '45%', marginLeft: -30, marginTop: -30, width: 60, height: 60, borderRadius: 30, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.68)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.7)' }, previewBadge: { position: 'absolute', top: 14, left: 14, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 7, borderRadius: 10, backgroundColor: 'rgba(10,10,10,0.78)' }, previewBadgeText: { color: '#FFFFFF', fontSize: 9, letterSpacing: 1.1, fontWeight: '900' }, previewPrompt: { position: 'absolute', left: 17, right: 17, bottom: 17 }, previewQuestion: { color: '#FFFFFF', fontSize: 22, lineHeight: 26, fontWeight: '900', textShadowColor: '#000000', textShadowRadius: 8 }, previewHint: { color: '#FFFFFF', fontSize: 13, lineHeight: 18, fontWeight: '700', marginTop: 5, textShadowColor: '#000000', textShadowRadius: 8 }, microcopy: { color: Phase1Colors.textMuted, fontSize: 12, lineHeight: 17, marginTop: 12 },
+  videoPreview: { height: 344, marginTop: 26, borderRadius: 28, overflow: 'hidden', backgroundColor: '#DDE9E4', borderWidth: 5, borderColor: '#FFFFFF', shadowColor: '#30251D', shadowOpacity: 0.16, shadowRadius: 18, shadowOffset: { width: 0, height: 9 }, elevation: 4 }, previewFallback: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#DDE9E4' }, previewUnavailable: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 28, backgroundColor: '#E8E2D8' }, previewUnavailableTitle: { color: Phase1Colors.text, fontSize: 16, fontWeight: '900', marginTop: 10 }, previewUnavailableBody: { color: Phase1Colors.textMuted, fontSize: 13, lineHeight: 18, textAlign: 'center', marginTop: 5 }, previewShade: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.24)' }, previewStatus: { ...StyleSheet.absoluteFillObject, zIndex: 3, alignItems: 'center', justifyContent: 'center', gap: 10, paddingHorizontal: 28, backgroundColor: 'rgba(19,24,23,0.88)' }, previewStatusText: { color: '#FFFFFF', fontSize: 13, fontWeight: '800' }, previewStatusTitle: { color: '#FFFFFF', fontSize: 15, lineHeight: 20, fontWeight: '900', textAlign: 'center' }, previewRetry: { minHeight: 40, justifyContent: 'center', paddingHorizontal: 16, borderRadius: 20, backgroundColor: '#FFFFFF' }, previewRetryText: { color: Phase1Colors.text, fontSize: 13, fontWeight: '900' }, playButton: { position: 'absolute', left: '50%', top: '45%', marginLeft: -30, marginTop: -30, width: 60, height: 60, borderRadius: 30, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.68)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.7)' }, previewBadge: { position: 'absolute', zIndex: 4, top: 14, left: 14, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 7, borderRadius: 10, backgroundColor: 'rgba(10,10,10,0.78)' }, previewBadgeText: { color: '#FFFFFF', fontSize: 9, letterSpacing: 1.1, fontWeight: '900' }, previewPrompt: { position: 'absolute', zIndex: 4, left: 17, right: 17, bottom: 17 }, previewQuestion: { color: '#FFFFFF', fontSize: 22, lineHeight: 26, fontWeight: '900', textShadowColor: '#000000', textShadowRadius: 8 }, previewHint: { color: '#FFFFFF', fontSize: 13, lineHeight: 18, fontWeight: '700', marginTop: 5, textShadowColor: '#000000', textShadowRadius: 8 }, microcopy: { color: Phase1Colors.textMuted, fontSize: 12, lineHeight: 17, marginTop: 12 },
   neutralPostMark: { width: 88, height: 88, borderRadius: 28, alignItems: 'center', justifyContent: 'center', backgroundColor: '#40281A', borderWidth: 1, borderColor: '#6D452E' }, neutralPostLogo: { position: 'absolute', width: 54, height: 54, borderRadius: 15, opacity: 0.45 }, neutralPostText: { color: '#FFFFFF', fontSize: 14, fontWeight: '900', marginTop: 16 },
   steps: { gap: 12, marginTop: 27 }, instruction: { minHeight: 84, flexDirection: 'row', alignItems: 'center', gap: 11, padding: 13, borderRadius: 20, backgroundColor: Phase1Colors.surface, borderWidth: 1, borderColor: Phase1Colors.border }, stepNumber: { color: Phase1Colors.textMuted, fontSize: 11, fontWeight: '900' }, stepIcon: { width: 42, height: 42, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: '#2B1C14' }, nearrStepLogo: { width: 42, height: 42, borderRadius: 12 }, instructionTitle: { color: Phase1Colors.text, fontSize: 15, fontWeight: '900' }, instructionBody: { color: Phase1Colors.textMuted, fontSize: 12, lineHeight: 17, marginTop: 3 },
   statusIcon: { width: 70, height: 70, borderRadius: 23, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFF0E8', marginBottom: 26 }, reminder: { minHeight: 58, alignItems: 'center', justifyContent: 'center', marginTop: 28, borderRadius: 18, backgroundColor: Phase1Colors.surface, borderWidth: 1, borderColor: Phase1Colors.border }, reminderText: { color: Phase1Colors.text, fontSize: 17, fontWeight: '900' }, errorBox: { flexDirection: 'row', gap: 10, marginTop: 20, padding: 14, borderRadius: 16, backgroundColor: '#FFF2E7', borderWidth: 1, borderColor: '#E7B78E' }, errorText: { flex: 1, color: '#7B3F17', fontSize: 13, lineHeight: 19 }, retryLink: { color: Phase1Colors.orange, fontSize: 13, fontWeight: '800', marginTop: 18, textDecorationLine: 'underline' }, processingRing: { width: 92, height: 92, borderRadius: 46, alignItems: 'center', justifyContent: 'center', alignSelf: 'center', backgroundColor: Phase1Colors.surface, borderWidth: 1, borderColor: Phase1Colors.border },

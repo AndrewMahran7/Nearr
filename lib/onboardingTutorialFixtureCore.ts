@@ -3,6 +3,7 @@ import { canonicalContentIdentity } from './shareAgent/contentIdentity';
 import { normalizeResultCandidates } from './shareJobResult';
 import type { OnboardingPlatform, OnboardingTutorialFixture, OnboardingTutorialResult } from './onboardingV2Core';
 import type { ShareJob } from '../services/shareJobsService';
+import { onboardingTutorialPreviewUrl } from './onboardingTutorialPreview';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const PLATFORMS = new Set<Exclude<OnboardingPlatform, 'other'>>(['instagram', 'tiktok', 'youtube', 'facebook']);
@@ -28,7 +29,8 @@ export function parsePublicOnboardingTutorialFixture(input: unknown): Onboarding
       identityKey !== `v${identityVersion}:${platform}:${contentId}` || !Number.isSafeInteger(revision) || revision < 1 ||
       !Number.isSafeInteger(identityVersion) || identityVersion < 1 || !canonicalUrl.startsWith('https://') || !launchUrl.startsWith('https://') ||
       !Number.isFinite(Date.parse(selectedAt))) return null;
-  return { id, revision, role, platform: platform as Exclude<OnboardingPlatform, 'other'>, identityKey, identityVersion, contentId, canonicalUrl, launchUrl, thumbnailUrl: typeof row.thumbnailUrl === 'string' && row.thumbnailUrl.startsWith('https://') ? row.thumbnailUrl : null, selectedAt };
+  const supportedPlatform = platform as Exclude<OnboardingPlatform, 'other'>;
+  return { id, revision, role, platform: supportedPlatform, identityKey, identityVersion, contentId, canonicalUrl, launchUrl, thumbnailUrl: onboardingTutorialPreviewUrl(supportedPlatform, contentId, row.thumbnailUrl), selectedAt };
 }
 
 export function isShareJobForTutorialFixture(job: Pick<ShareJob, 'source_url' | 'canonical_url' | 'recognition_identity_key'>, fixture: OnboardingTutorialFixture): boolean {

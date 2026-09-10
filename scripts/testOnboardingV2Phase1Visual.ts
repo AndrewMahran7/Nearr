@@ -30,7 +30,8 @@ assert.doesNotMatch(preAuth, /Show me how|Add to my map/);
 console.log('PASS single-job setup screens lead through a personalized payoff to the real in-app job');
 
 assert.match(preAuth, /A REAL POST/);
-assert.match(preAuth, /exactPlatform && fixture\.thumbnailUrl/);
+assert.match(preAuth, /onboardingTutorialPreviewUrl/);
+assert.match(preAuth, /onboarding-source-preview-fallback/);
 assert.doesNotMatch(preAuth, /InstagramReelMock|fake social/i);
 console.log('PASS platform mismatch uses neutral Nearr framing rather than fake social UI');
 

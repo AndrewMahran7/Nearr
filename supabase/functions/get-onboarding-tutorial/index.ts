@@ -4,6 +4,7 @@
 // @ts-nocheck -- Deno runtime.
 
 import { createClient } from 'npm:@supabase/supabase-js@2.45.0';
+import { onboardingTutorialPreviewUrl } from '../../../lib/onboardingTutorialPreview.ts';
 import { prioritizeOnboardingTutorialFixtures } from './selection.ts';
 
 const DEVELOPMENT_HOST = 'qnfxnmvxpjzfydgudtvs.supabase.co';
@@ -23,12 +24,6 @@ function json(payload: unknown, status = 200): Response {
 
 function isDevelopmentDeployment(supabaseUrl: string): boolean {
   try { return new URL(supabaseUrl).hostname === DEVELOPMENT_HOST; } catch { return false; }
-}
-
-function thumbnailUrl(platform: string, contentId: string): string | null {
-  return platform === 'youtube'
-    ? `https://i.ytimg.com/vi/${encodeURIComponent(contentId)}/hqdefault.jpg`
-    : null;
 }
 
 Deno.serve(async (request) => {
@@ -98,7 +93,7 @@ Deno.serve(async (request) => {
       contentId: row.content_id,
       canonicalUrl: row.canonical_url,
       launchUrl: row.canonical_url,
-      thumbnailUrl: thumbnailUrl(row.platform, row.content_id),
+      thumbnailUrl: onboardingTutorialPreviewUrl(row.platform, row.content_id),
       selectedAt: new Date().toISOString(),
     });
   }
