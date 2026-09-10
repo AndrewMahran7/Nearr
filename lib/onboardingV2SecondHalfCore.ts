@@ -4,9 +4,27 @@ import type {
   OnboardingDesiredValue,
   OnboardingPainPoint,
   OnboardingPermissionResult,
+  OnboardingReminderInitializationResult,
   OnboardingPlatform,
   OnboardingV2Stage,
 } from './onboardingV2Core';
+
+export function classifyReminderInitialization(input: {
+  backgroundLocation: OnboardingPermissionResult | null;
+  notifications: OnboardingPermissionResult | null;
+  proximity: 'started' | 'stopped' | 'skipped' | 'rejected';
+  geofence: 'started' | 'stopped' | 'skipped' | 'rejected';
+  push: 'fulfilled' | 'rejected' | 'not_requested';
+}): OnboardingReminderInitializationResult {
+  if (input.backgroundLocation !== 'granted' || !['granted', 'provisional'].includes(input.notifications ?? '')) {
+    return 'not_eligible';
+  }
+  const started = Number(input.proximity === 'started') + Number(input.geofence === 'started');
+  if (started === 2 && input.push !== 'rejected') return 'ready';
+  if (started > 0) return 'partial';
+  if (input.proximity === 'rejected' && input.geofence === 'rejected') return 'failed';
+  return 'pending';
+}
 
 export const ONBOARDING_V2_SECOND_HALF_STAGES = new Set<OnboardingV2Stage>([
   'pain_point',

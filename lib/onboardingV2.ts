@@ -65,6 +65,7 @@ import {
   recordOnboardingBackgroundLocationResult,
   recordOnboardingForegroundLocationResult,
   recordOnboardingNotificationResult,
+  recordOnboardingReminderInitialization,
   recordPracticeReturnedWithoutShare,
   receiveSharedSource,
   receiveOnboardingTutorialFixture,
@@ -97,6 +98,7 @@ import {
   type OnboardingDesiredValue,
   type OnboardingPainPoint,
   type OnboardingPermissionResult,
+  type OnboardingReminderInitializationResult,
   type OnboardingPlatform,
   type OnboardingTutorialFixture,
   type OnboardingTutorialResult,
@@ -140,6 +142,7 @@ export type OnboardingV2EventName =
   | 'onboarding_notification_education_shown'
   | 'onboarding_notification_permission_requested'
   | 'onboarding_notification_permission_result'
+  | 'onboarding_reminder_initialization_result'
   | 'onboarding_making_nearr_yours_viewed'
   | 'onboarding_growing_map_viewed'
   | 'onboarding_auth_viewed'
@@ -493,16 +496,31 @@ export function continueOnboardingV2ToLocationEducation(): Promise<OnboardingV2S
   return applyTransition(continueOnboardingToLocationEducation);
 }
 
-export function recordOnboardingV2ForegroundLocationResult(result: OnboardingPermissionResult): Promise<OnboardingV2State> {
-  return applyTransition((state, now) => recordOnboardingForegroundLocationResult(state, result, now));
+export function recordOnboardingV2ForegroundLocationResult(
+  result: OnboardingPermissionResult,
+  options: { requested?: boolean } = {},
+): Promise<OnboardingV2State> {
+  return applyTransition((state, now) => recordOnboardingForegroundLocationResult(state, result, now, options));
 }
 
-export function recordOnboardingV2BackgroundLocationResult(result: OnboardingPermissionResult): Promise<OnboardingV2State> {
-  return applyTransition((state, now) => recordOnboardingBackgroundLocationResult(state, result, now));
+export function recordOnboardingV2BackgroundLocationResult(
+  result: OnboardingPermissionResult,
+  options: { requested?: boolean; advance?: boolean } = {},
+): Promise<OnboardingV2State> {
+  return applyTransition((state, now) => recordOnboardingBackgroundLocationResult(state, result, now, options));
 }
 
-export function recordOnboardingV2NotificationResult(result: OnboardingPermissionResult): Promise<OnboardingV2State> {
-  return applyTransition((state, now) => recordOnboardingNotificationResult(state, result, now));
+export function recordOnboardingV2NotificationResult(
+  result: OnboardingPermissionResult,
+  options: { requested?: boolean } = {},
+): Promise<OnboardingV2State> {
+  return applyTransition((state, now) => recordOnboardingNotificationResult(state, result, now, options));
+}
+
+export function recordOnboardingV2ReminderInitialization(
+  result: OnboardingReminderInitializationResult,
+): Promise<OnboardingV2State> {
+  return applyTransition((state, now) => recordOnboardingReminderInitialization(state, result, now));
 }
 
 export function continueOnboardingV2AfterMakingNearrYours(): Promise<OnboardingV2State> {

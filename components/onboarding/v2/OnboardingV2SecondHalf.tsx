@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Image, Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, AppState, Image, Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
@@ -16,26 +16,27 @@ import {
   recordOnboardingV2BackgroundLocationResult,
   recordOnboardingV2ForegroundLocationResult,
   recordOnboardingV2NotificationResult,
+  recordOnboardingV2ReminderInitialization,
   showOnboardingV2ActivationChallenge,
 } from '@/lib/onboardingV2';
 import {
+  classifyReminderInitialization,
   desiredValueCopy,
-  interestExample,
   nearbyExample,
   painPointValueCopy,
   personalizedActivationCopy,
   platformLaunchUrl,
   platformName,
 } from '@/lib/onboardingV2SecondHalfCore';
-import { requestOnboardingForegroundLocation, requestOnboardingNotifications } from '@/lib/onboardingV2SecondHalf';
+import { getOnboardingLocationPermissionSnapshot, requestOnboardingBackgroundLocation, requestOnboardingForegroundLocation, requestOnboardingNotifications } from '@/lib/onboardingV2SecondHalf';
 import { resolveOpenSavedPlaceRoute } from '@/lib/openSavedPlace';
 import { registerPushTokenForCurrentUser } from '@/lib/pushTokens';
-import type { OnboardingPermissionResult, OnboardingV2State } from '@/lib/onboardingV2Core';
+import type { OnboardingReminderInitializationResult, OnboardingV2State } from '@/lib/onboardingV2Core';
 
 export function OnboardingV2SecondHalf({ state }: { state: OnboardingV2State }) {
   if (state.stage === 'why_nearr') return <ShareEducationScreen state={state} />;
   if (state.stage === 'nearby_value' || state.stage === 'location_education') return <NearbyPermissionScreen state={state} />;
-  if (state.stage === 'location_background_education') return <LegacyBackgroundSkip />;
+  if (state.stage === 'location_background_education') return <BackgroundLocationScreen state={state} />;
   if (state.stage === 'notification_education') return <NotificationEducationScreen state={state} />;
   if (state.stage === 'making_nearr_yours') return <MakingNearrYoursScreen state={state} />;
   if (state.stage === 'growing_map') return <LegacyGrowingMapAdvance />;
@@ -67,8 +68,12 @@ function NearbyPermissionScreen({ state }: { state: OnboardingV2State }) {
     let next = state;
     if (next.stage === 'nearby_value') next = await continueOnboardingV2ToLocationEducation();
     if (next.stage === 'location_education') {
-      const result: OnboardingPermissionResult = request ? await requestOnboardingForegroundLocation() : 'skipped';
-      await recordOnboardingV2ForegroundLocationResult(result);
+      if (request) {
+        const attempt = await requestOnboardingForegroundLocation();
+        await recordOnboardingV2ForegroundLocationResult(attempt.result, { requested: attempt.requested });
+      } else {
+        await recordOnboardingV2ForegroundLocationResult('skipped', { requested: false });
+      }
     }
     setBusy(false);
   };
@@ -76,18 +81,69 @@ function NearbyPermissionScreen({ state }: { state: OnboardingV2State }) {
     <Text style={styles.eyebrow}>USEFUL AT THE RIGHT MOMENT</Text><Text style={styles.headline}>Remember places when you're nearby.</Text>
     <Text style={styles.body}>Location connects your saved map to what is close—like {nearbyExample(state.selectedInterests).toLowerCase()}.</Text>
     <View style={styles.radar} accessible accessibilityLabel={`Nearby example showing ${state.tutorialResult?.place.name ?? 'your saved place'}`}><View style={styles.radarRingLarge} /><View style={styles.radarRingSmall} /><View style={styles.youDot}><Feather name="navigation" size={18} color="#FFFFFF" /></View><View style={styles.savedNearby}><Feather name="map-pin" size={23} color="#FFFFFF" /><Text style={styles.savedNearbyText} numberOfLines={1}>{state.tutorialResult?.place.name}</Text><Text style={styles.savedNearbyMeta}>saved · nearby</Text></View></View>
-    <View style={styles.privacyCard}><Feather name="shield" size={19} color={Phase1Colors.success} /><Text style={styles.privacyText}>Only while you use Nearr. Your map still works if you choose Not now.</Text></View>
+    <View style={styles.privacyCard}><Feather name="shield" size={19} color={Phase1Colors.success} /><Text style={styles.privacyText}>First, Nearr needs location while the app is open. Background access is explained separately. Your map works if you decline.</Text></View>
   </Phase1Frame>;
 }
 
-function LegacyBackgroundSkip() { useEffect(() => { void recordOnboardingV2BackgroundLocationResult('skipped'); }, []); return <Phase1Frame contentStyle={styles.centered}><Text style={styles.bodyCentered}>Finishing location setup…</Text></Phase1Frame>; }
+function BackgroundLocationScreen({ state }: { state: OnboardingV2State }) {
+  const [busy, setBusy] = useState(false);
+  const settingsOpenedRef = useRef(false);
+  const result = state.locationBackgroundResult;
+  const needsSettings = result != null && result !== 'granted' && result !== 'skipped';
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (next) => {
+      if (next !== 'active' || !settingsOpenedRef.current) return;
+      settingsOpenedRef.current = false;
+      setBusy(true);
+      void getOnboardingLocationPermissionSnapshot()
+        .then((snapshot) => recordOnboardingV2BackgroundLocationResult(snapshot.background, {
+          requested: false,
+          advance: snapshot.background === 'granted',
+        }))
+        .finally(() => setBusy(false));
+    });
+    return () => subscription.remove();
+  }, []);
+
+  const request = async () => {
+    if (busy) return;
+    setBusy(true);
+    const attempt = await requestOnboardingBackgroundLocation();
+    await recordOnboardingV2BackgroundLocationResult(attempt.result, {
+      requested: attempt.requested,
+      advance: attempt.result === 'granted',
+    });
+    setBusy(false);
+  };
+  const openSettings = async () => {
+    settingsOpenedRef.current = true;
+    await Linking.openSettings().catch(() => { settingsOpenedRef.current = false; });
+  };
+  const continueWithout = () => void recordOnboardingV2BackgroundLocationResult(
+    result ?? 'skipped', { requested: false, advance: true },
+  );
+
+  return <Phase1Frame progress={0.84} progressLabel="Onboarding progress" footer={<View style={styles.actions}>
+    <Phase1PrimaryButton title={needsSettings ? 'Open Settings' : 'Allow background location'} onPress={() => void (needsSettings ? openSettings() : request())} loading={busy} />
+    <Pressable disabled={busy} onPress={continueWithout} accessibilityRole="button" style={styles.skipButton}><Text style={styles.skipText}>{needsSettings ? 'Continue without background reminders' : 'Not now'}</Text></Pressable>
+  </View>}>
+    <View style={styles.heroIcon}><Feather name="map-pin" size={32} color="#FFFFFF" /></View>
+    <Text style={styles.eyebrow}>REMEMBER PLACES LATER</Text>
+    <Text style={styles.headline}>Get a reminder even when Nearr isn't open.</Text>
+    <Text style={styles.body}>Allow background location so Nearr can notice when a saved place is nearby. The next control uses the supported system permission or Settings screen.</Text>
+    {Platform.OS === 'ios' ? <PermissionResultNote text="If you chose Allow Once, iOS may not show another prompt now. Nearr will verify the actual background status; you can enable Always in Settings." /> : null}
+    {Platform.OS === 'android' ? <PermissionResultNote text="On newer Android versions, the system may take you to Settings to choose Allow all the time." /> : null}
+    {needsSettings ? <PermissionResultNote text="Background access is not enabled. Saving and browsing still work; choose Open Settings to recover, or continue without reminders." /> : null}
+  </Phase1Frame>;
+}
 
 function NotificationEducationScreen({ state }: { state: OnboardingV2State }) {
   const [busy, setBusy] = useState(false);
-  const choose = async (request: boolean) => { if (busy) return; setBusy(true); const result: OnboardingPermissionResult = request ? await requestOnboardingNotifications() : 'skipped'; await recordOnboardingV2NotificationResult(result); setBusy(false); };
+  const choose = async (request: boolean) => { if (busy) return; setBusy(true); if (request) { const attempt = await requestOnboardingNotifications(); await recordOnboardingV2NotificationResult(attempt.result, { requested: attempt.requested }); } else { await recordOnboardingV2NotificationResult('skipped', { requested: false }); } setBusy(false); };
   return <Phase1Frame progress={0.87} progressLabel="Onboarding progress" footer={<View style={styles.actions}><Phase1PrimaryButton title="Notify me" onPress={() => void choose(true)} loading={busy} /><Pressable disabled={busy} onPress={() => void choose(false)} accessibilityRole="button" style={styles.skipButton}><Text style={styles.skipText}>Not now</Text></Pressable></View>}>
     <View style={styles.heroIcon}><Feather name="bell" size={32} color="#FFFFFF" /></View><Text style={styles.eyebrow}>A QUIET HEADS-UP</Text><Text style={styles.headline}>Know when a saved place is nearby.</Text><Text style={styles.body}>Nearr can remind you at a useful moment. You stay in control in Settings.</Text>
-    {state.locationForegroundResult !== 'granted' ? <PermissionResultNote text="Location is off, so nearby alerts will wait. Your map still works." /> : null}
+    {state.locationForegroundResult !== 'granted' ? <PermissionResultNote text="Location is off, so nearby alerts will wait. Your map still works." /> : state.locationBackgroundResult !== 'granted' ? <PermissionResultNote text="Only in-app location is enabled. Notifications alone cannot enable background nearby reminders." /> : null}
     <View style={styles.notificationCard} accessible accessibilityLabel={`Example Nearr notification for ${nearbyExample(state.selectedInterests)}`}><View style={styles.notificationHeader}><Image source={require('../../../assets/icon.png')} style={styles.notificationLogo} /><Text style={styles.notificationApp}>NEARR · EXAMPLE</Text><Text style={styles.notificationTime}>now</Text></View><Text style={styles.notificationTitle}>A saved place is nearby</Text><Text style={styles.notificationBody}>{nearbyExample(state.selectedInterests)} is close to your route.</Text></View>
   </Phase1Frame>;
 }
@@ -97,17 +153,33 @@ function MakingNearrYoursScreen({ state }: { state: OnboardingV2State }) {
   useEffect(() => {
     if (startedRef.current) return;
     startedRef.current = true;
-    const tasks: Promise<unknown>[] = [syncProximityWatch(), syncGeofencesForSavedPlaces()];
-    if (state.notificationPermissionResult === 'granted' || state.notificationPermissionResult === 'provisional') tasks.push(registerPushTokenForCurrentUser());
-    void Promise.all([Promise.allSettled(tasks), new Promise((resolve) => setTimeout(resolve, 1350))]).then(() => continueOnboardingV2AfterMakingNearrYours());
-  }, [state.notificationPermissionResult]);
-  const platform = platformName(state.preferredPlatform);
-  const locationReady = state.locationForegroundResult === 'granted';
+    const initialize = async () => {
+      const [proximity, geofence, push] = await Promise.allSettled([
+        syncProximityWatch(),
+        syncGeofencesForSavedPlaces(),
+        state.notificationPermissionResult === 'granted' || state.notificationPermissionResult === 'provisional'
+          ? registerPushTokenForCurrentUser()
+          : Promise.resolve('not_requested' as const),
+      ]);
+      const result = classifyReminderInitialization({
+        backgroundLocation: state.locationBackgroundResult,
+        notifications: state.notificationPermissionResult,
+        proximity: proximity.status === 'fulfilled' ? proximity.value : 'rejected',
+        geofence: geofence.status === 'fulfilled' ? geofence.value.state : 'rejected',
+        push: push.status === 'fulfilled' && push.value === 'not_requested' ? 'not_requested' : push.status,
+      });
+      await recordOnboardingV2ReminderInitialization(result);
+      await continueOnboardingV2AfterMakingNearrYours();
+    };
+    void initialize();
+  }, [state.locationBackgroundResult, state.notificationPermissionResult]);
+  const foregroundReady = state.locationForegroundResult === 'granted';
+  const backgroundReady = state.locationBackgroundResult === 'granted';
   const notificationsReady = state.notificationPermissionResult === 'granted' || state.notificationPermissionResult === 'provisional';
   return <Phase1Frame progress={0.93} progressLabel="Onboarding progress" contentStyle={styles.makingContent}>
     <Text style={styles.eyebrowCentered}>MAKING NEARR YOURS</Text><Text style={styles.headlineCentered}>Building your map around what matters to you.</Text>
     <MapFormationIllustration placeName={state.tutorialResult?.place.name ?? 'Your first place'} platform={state.preferredPlatform} interest={state.interest} />
-    <View style={styles.checklist} accessibilityLiveRegion="polite"><SetupRow ready label="First real place saved" /><SetupRow ready label={`${platform} sharing ready`} /><SetupRow ready label={`Personalized for ${interestExample(state.selectedInterests)}`} /><SetupRow ready={locationReady} label={locationReady ? 'Nearby places enabled' : 'Map works without location'} neutral={!locationReady} /><SetupRow ready={notificationsReady} label={notificationsReady ? 'Nearby alerts enabled' : 'Notifications are off'} neutral={!notificationsReady} /></View>
+    <View style={styles.checklist} accessibilityLiveRegion="polite"><SetupRow ready label="Demo place saved" /><SetupRow ready={!!state.sharingRehearsalCompletedAt} label={state.sharingRehearsalCompletedAt ? 'Sharing practice completed' : 'Sharing practice not completed'} neutral={!state.sharingRehearsalCompletedAt} /><SetupRow ready={!!state.practiceCompletedAt} label={state.practiceCompletedAt ? 'External practice place saved' : 'External practice saved for later'} neutral={!state.practiceCompletedAt} /><SetupRow ready={foregroundReady} label={foregroundReady ? 'Location while using Nearr allowed' : 'In-app location not allowed'} neutral={!foregroundReady} /><SetupRow ready={backgroundReady} label={backgroundReady ? 'Background location allowed' : 'Background location not allowed'} neutral={!backgroundReady} /><SetupRow ready={notificationsReady} label={notificationsReady ? 'Notifications allowed' : 'Notifications not allowed'} neutral={!notificationsReady} /><SetupRow ready={state.reminderInitializationResult === 'ready'} label={reminderInitializationLabel(state.reminderInitializationResult)} neutral={state.reminderInitializationResult !== 'ready'} /></View>
   </Phase1Frame>;
 }
 
@@ -140,6 +212,13 @@ function FinalActivationScreen({ state }: { state: OnboardingV2State }) {
 function ShareStep({ icon, label }: { icon: keyof typeof Feather.glyphMap; label: string }) { return <View style={styles.shareStep}><View style={styles.shareIcon}><Feather name={icon} size={20} color={Phase1Colors.orange} /></View><Text style={styles.shareLabel}>{label}</Text></View>; }
 function SetupRow({ label, ready, neutral }: { label: string; ready: boolean; neutral?: boolean }) { return <View style={styles.setupRow}><View style={[styles.setupIcon, neutral && styles.setupIconNeutral]}><Feather name={ready ? 'check' : 'minus'} size={15} color={neutral ? Phase1Colors.textMuted : '#FFFFFF'} /></View><Text style={[styles.setupLabel, neutral && styles.setupLabelNeutral]}>{label}</Text></View>; }
 function PermissionResultNote({ text }: { text: string }) { return <View style={styles.permissionResult}><Feather name="info" size={17} color={Phase1Colors.orange} /><Text style={styles.permissionResultText}>{text}</Text></View>; }
+function reminderInitializationLabel(result: OnboardingReminderInitializationResult | null): string {
+  if (result === 'ready') return 'Background reminder service ready';
+  if (result === 'partial') return 'Reminder service partially ready';
+  if (result === 'failed') return 'Reminder setup needs another try';
+  if (result === 'not_eligible') return 'Reminder setup waiting for permissions';
+  return 'Reminder setup pending';
+}
 function platformIcon(platform: OnboardingV2State['preferredPlatform']): keyof typeof Ionicons.glyphMap { return platform === 'instagram' ? 'logo-instagram' : platform === 'tiktok' ? 'logo-tiktok' : platform === 'facebook' ? 'logo-facebook' : platform === 'youtube' ? 'logo-youtube' : 'compass'; }
 
 const styles = StyleSheet.create({

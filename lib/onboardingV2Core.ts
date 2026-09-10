@@ -47,6 +47,13 @@ export type OnboardingPermissionResult =
   | 'error'
   | 'skipped';
 
+export type OnboardingReminderInitializationResult =
+  | 'ready'
+  | 'partial'
+  | 'pending'
+  | 'not_eligible'
+  | 'failed';
+
 export type OnboardingActivationChoice = 'find_another' | 'explore_map';
 
 export type OnboardingTutorialFixture = {
@@ -249,6 +256,8 @@ export type OnboardingV2State = {
   locationBackgroundResult: OnboardingPermissionResult | null;
   notificationEducationShownAt: string | null;
   notificationPermissionResult: OnboardingPermissionResult | null;
+  reminderInitializationResult: OnboardingReminderInitializationResult | null;
+  reminderInitializationCheckedAt: string | null;
   growingMapViewedAt: string | null;
   funnelSessionId: string | null;
   identityLifecycle: OnboardingIdentityLifecycle;
@@ -374,6 +383,8 @@ export function createInitialOnboardingV2State(now = new Date().toISOString()): 
     locationBackgroundResult: null,
     notificationEducationShownAt: null,
     notificationPermissionResult: null,
+    reminderInitializationResult: null,
+    reminderInitializationCheckedAt: null,
     growingMapViewedAt: null,
     funnelSessionId: null,
     identityLifecycle: 'none',
@@ -1202,14 +1213,27 @@ export function recordOnboardingForegroundLocationResult(
   state: OnboardingV2State,
   result: OnboardingPermissionResult,
   now: string,
+  options: { requested?: boolean } = {},
 ): OnboardingTransition {
   if (state.stage !== 'location_education') return unchanged(state);
-  const requested = result !== 'skipped';
-  const next = notificationEducationPatch(state, now);
+  const requested = options.requested ?? result !== 'skipped';
+  const granted = result === 'granted';
+  const next = granted
+    ? {
+        patch: {
+          stage: 'location_background_education' as const,
+          locationBackgroundEducationShownAt: state.locationBackgroundEducationShownAt ?? now,
+        },
+        events: state.locationBackgroundEducationShownAt ? [] : [{
+          name: 'onboarding_location_education_shown',
+          properties: { permission_scope: 'background' },
+        }],
+      }
+    : notificationEducationPatch(state, now);
   return transition(state, {
     ...next.patch,
     locationForegroundResult: result,
-    locationBackgroundResult: 'skipped',
+    locationBackgroundResult: granted ? state.locationBackgroundResult : 'skipped',
   }, now, [
     ...(requested ? [{ name: 'onboarding_location_permission_requested', properties: { permission_scope: 'foreground' } }] : []),
     { name: 'onboarding_location_permission_result', properties: { permission_scope: 'foreground', result } },
@@ -1221,10 +1245,12 @@ export function recordOnboardingBackgroundLocationResult(
   state: OnboardingV2State,
   result: OnboardingPermissionResult,
   now: string,
+  options: { requested?: boolean; advance?: boolean } = {},
 ): OnboardingTransition {
   if (state.stage !== 'location_background_education') return unchanged(state);
-  const next = notificationEducationPatch(state, now);
-  const requested = result !== 'skipped';
+  const advance = options.advance ?? (result === 'granted' || result === 'skipped');
+  const next = advance ? notificationEducationPatch(state, now) : { patch: {}, events: [] };
+  const requested = options.requested ?? result !== 'skipped';
   return transition(state, {
     ...next.patch,
     locationBackgroundResult: result,
@@ -1239,9 +1265,10 @@ export function recordOnboardingNotificationResult(
   state: OnboardingV2State,
   result: OnboardingPermissionResult,
   now: string,
+  options: { requested?: boolean } = {},
 ): OnboardingTransition {
   if (state.stage !== 'notification_education') return unchanged(state);
-  const requested = result !== 'skipped';
+  const requested = options.requested ?? result !== 'skipped';
   return transition(state, {
     stage: 'making_nearr_yours',
     notificationPermissionResult: result,
@@ -1696,6 +1723,18 @@ function expectedKind(state: OnboardingV2State): OnboardingSaveKind | null {
   if (state.independentSaves.length === 0) return 'independent_1';
   if (state.independentSaves.length === 1 && state.identityLifecycle === 'permanent_account') return 'independent_2';
   return null;
+}
+
+export function recordOnboardingReminderInitialization(
+  state: OnboardingV2State,
+  result: OnboardingReminderInitializationResult,
+  now: string,
+): OnboardingTransition {
+  if (state.stage !== 'making_nearr_yours') return unchanged(state);
+  return transition(state, {
+    reminderInitializationResult: result,
+    reminderInitializationCheckedAt: now,
+  }, now, [{ name: 'onboarding_reminder_initialization_result', properties: { result } }]);
 }
 
 export const ONBOARDING_PRACTICE_MIN_EXTERNAL_DWELL_MS = 3_000;

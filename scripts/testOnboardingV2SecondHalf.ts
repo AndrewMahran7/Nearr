@@ -30,6 +30,7 @@ import {
 } from '../lib/onboardingV2Core';
 import {
   canRunOnboardingV2SecondHalf,
+  classifyReminderInitialization,
   desiredValueCopy,
   interestExample,
   isSignedInOnboardingV2Continuation,
@@ -97,8 +98,10 @@ assert.equal(nearbyView.events.some((event) => event.name === 'onboarding_nearby
 state = step(state, continueOnboardingToLocationEducation, 6);
 assert.equal(state.stage, 'location_education');
 state = recordOnboardingForegroundLocationResult(state, 'granted', at(7)).state;
-assert.equal(state.stage, 'notification_education', 'onboarding requests foreground location only');
-assert.equal(state.locationBackgroundResult, 'skipped');
+assert.equal(state.stage, 'location_background_education', 'foreground permission is followed by a separate background explanation');
+assert.equal(state.locationBackgroundResult, null);
+state = recordOnboardingBackgroundLocationResult(state, 'granted', at(8)).state;
+assert.equal(state.stage, 'notification_education');
 const notification = recordOnboardingNotificationResult(state, 'provisional', at(8));
 state = notification.state;
 assert.equal(state.stage, 'making_nearr_yours', 'permissions lead to a branded setup handoff, not auth');
@@ -150,15 +153,22 @@ assert.equal(established.events.some((event) => event.name === 'onboarding_map_b
 
 const root = process.cwd();
 const ui = readFileSync(join(root, 'components/onboarding/v2/OnboardingV2SecondHalf.tsx'), 'utf8');
+const permissions = readFileSync(join(root, 'lib/onboardingV2SecondHalf.ts'), 'utf8');
 const account = readFileSync(join(root, 'app/(onboarding)/account.tsx'), 'utf8');
 const routing = readFileSync(join(root, 'lib/postAuthRouting.ts'), 'utf8');
 const layout = readFileSync(join(root, 'app/_layout.tsx'), 'utf8');
 const settings = readFileSync(join(root, 'app/(tabs)/settings.tsx'), 'utf8');
 const migration = readFileSync(join(root, 'supabase/migrations/20260822000001_anonymous_onboarding_v2.sql'), 'utf8');
 assert.match(ui, /requestOnboardingForegroundLocation/);
-assert.doesNotMatch(ui, /requestOnboardingBackgroundLocation/);
+assert.match(ui, /requestOnboardingBackgroundLocation/);
+assert.match(ui, /Get a reminder even when Nearr isn't open/);
+assert.match(ui, /Allow Once/);
+assert.match(ui, /AppState\.addEventListener/);
+assert.match(ui, /Linking\.openSettings/);
 assert.match(ui, /requestOnboardingNotifications/);
-assert.match(ui, /Only while you use Nearr/);
+assert.match(ui, /Background access is explained separately/);
+assert.match(permissions, /getBackgroundPermissionsAsync/);
+assert.match(permissions, /requestBackgroundPermissionsAsync/);
 assert.match(ui, /From your feed to your map/);
 assert.match(ui, /Explore my map/);
 assert.match(ui, /MAKING NEARR YOURS/);
@@ -174,5 +184,24 @@ assert.match(settings, /Back up your map/);
 assert.match(migration, /where user_id = v_destination and place_id = v_place_id/);
 assert.match(migration, /delete from public\.saved_places where id = v_source_saved/);
 assert.match(migration, /update public\.saved_places set user_id = v_destination/);
+
+let backgroundDenied = step(initial, beginOnboardingSecondHalf, 31);
+backgroundDenied = selectOnboardingPainPoint(backgroundDenied, 'saved_and_forgotten', at(32)).state;
+backgroundDenied = selectOnboardingDesiredValue(backgroundDenied, 'find_real_places', at(33)).state;
+backgroundDenied = step(backgroundDenied, continueOnboardingToNearbyValue, 34);
+backgroundDenied = step(backgroundDenied, continueOnboardingToLocationEducation, 35);
+backgroundDenied = recordOnboardingForegroundLocationResult(backgroundDenied, 'granted', at(36), { requested: false }).state;
+const deniedAttempt = recordOnboardingBackgroundLocationResult(backgroundDenied, 'restricted', at(37), { requested: true, advance: false });
+backgroundDenied = deniedAttempt.state;
+assert.equal(backgroundDenied.stage, 'location_background_education', 'a denied background request stays recoverable');
+assert.equal(deniedAttempt.events.some((event) => event.name === 'onboarding_location_permission_requested'), true);
+backgroundDenied = recordOnboardingBackgroundLocationResult(backgroundDenied, 'granted', at(38), { requested: false, advance: true }).state;
+assert.equal(backgroundDenied.stage, 'notification_education', 'Settings return advances only after verified background access');
+
+assert.equal(classifyReminderInitialization({ backgroundLocation: 'granted', notifications: 'granted', proximity: 'started', geofence: 'started', push: 'fulfilled' }), 'ready');
+assert.equal(classifyReminderInitialization({ backgroundLocation: 'granted', notifications: 'granted', proximity: 'started', geofence: 'skipped', push: 'rejected' }), 'partial');
+assert.equal(classifyReminderInitialization({ backgroundLocation: 'granted', notifications: 'granted', proximity: 'skipped', geofence: 'stopped', push: 'fulfilled' }), 'pending');
+assert.equal(classifyReminderInitialization({ backgroundLocation: 'denied', notifications: 'granted', proximity: 'skipped', geofence: 'stopped', push: 'fulfilled' }), 'not_eligible');
+assert.equal(classifyReminderInitialization({ backgroundLocation: 'granted', notifications: 'granted', proximity: 'rejected', geofence: 'rejected', push: 'rejected' }), 'failed');
 
 console.log('PASS Onboarding V2 second-half value, permissions, auth transfer, activation, completion, and Development guards');
