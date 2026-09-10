@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Animated, Image, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import MapView, { Marker } from 'react-native-maps';
 
 import { PlaceImage } from '@/components/PlaceImage';
@@ -8,6 +9,7 @@ import { StartupSurface } from '@/components/StartupSurface';
 import { Phase1Colors, Phase1Frame, Phase1PrimaryButton } from '@/components/onboarding/v2/Phase1Visuals';
 import { MagicScanner, NearrSparkleMark, SocialToMapIllustration, useOnboardingReduceMotion } from '@/components/onboarding/v2/OnboardingVisualLanguage';
 import { OnboardingV2SecondHalf } from '@/components/onboarding/v2/OnboardingV2SecondHalf';
+import { ImmersiveGuidedSave } from '@/components/onboarding/v2/ImmersiveGuidedSave';
 import { useAuth } from '@/hooks/useAuth';
 import { useOnboardingTutorialJobs } from '@/hooks/useOnboardingTutorialJobs';
 import { useOnboardingV2 } from '@/hooks/useOnboardingV2';
@@ -19,12 +21,14 @@ import { hostShareSubmitter } from '@/lib/hostShareSubmit';
 import { getResolvedEnvironment } from '@/lib/appEnvironment';
 import { canLoadOnboardingTutorialFixture, isShareJobForTutorialFixture, loadActiveOnboardingTutorialFixture, tutorialResultFromShareJob } from '@/lib/onboardingTutorialFixture';
 import { onboardingTutorialPreviewUrl } from '@/lib/onboardingTutorialPreview';
+import { onboardingTutorialSourceAsset } from '@/lib/onboardingTutorialSourceAsset';
 import { selectTutorialContent } from '@/constants/onboardingStarterContent';
 import {
   completeOnboardingV2Interests, completeOnboardingV2Platforms,
   chooseOnboardingV2PrimaryPlatform, continueOnboardingV2FromPersonalizedPayoff,
   beginOnboardingV2InAppTutorialResolution,
-  beginOnboardingV2SecondHalf,
+  beginOnboardingV2SharingRehearsal,
+  advanceOnboardingV2SharingRehearsal,
   confirmOnboardingV2FirstMagicMoment, continueOnboardingV2ToShareInstructions,
   finishOnboardingV2FirstMagicMoment, goBackOnboardingV2,
   migrateInterruptedOnboardingV2ToFirstMagic,
@@ -66,6 +70,7 @@ const DESIRED_VALUES: Array<{ value: OnboardingDesiredValue; label: string; icon
 const PLATFORM_LABELS: Record<string, string> = { instagram: 'Instagram', tiktok: 'TikTok', facebook: 'Facebook', youtube: 'YouTube', other: 'social apps' };
 
 export function OnboardingV2PreAuth() {
+  const router = useRouter();
   const { state, loading } = useOnboardingV2();
   const { session, loading: authLoading } = useAuth();
   const [bootstrapError, setBootstrapError] = useState<string | null>(null);
@@ -82,7 +87,7 @@ export function OnboardingV2PreAuth() {
   const permanentSessionReady = !!(state?.cohort === 'new_user_v2' && state.identityLifecycle === 'permanent_account' && state.permanentUserId && session?.user.is_anonymous !== true && session?.user.id === state.permanentUserId);
   const identitySessionReady = anonymousSessionReady || permanentSessionReady;
   const screenOwnedStage = !!state && (firstMagicDev
-    ? ['overview', 'platform', 'interest', 'interest_selected', 'personalized_payoff', 'pain_point', 'desired_value', 'tutorial_loading', 'tutorial_challenge', 'tutorial_share_instructions', 'tutorial_awaiting_share', 'tutorial_processing', 'tutorial_reveal', 'tutorial_celebration', 'first_magic_moment_complete', 'why_nearr', 'nearby_value', 'location_education', 'location_background_education', 'notification_education', 'making_nearr_yours', 'growing_map', 'auth_success', 'personalized_activation', 'activation_challenge'].includes(state.stage)
+    ? ['overview', 'platform', 'interest', 'interest_selected', 'personalized_payoff', 'pain_point', 'desired_value', 'tutorial_loading', 'tutorial_challenge', 'tutorial_ready', 'tutorial_share_tapped', 'tutorial_more_tapped', 'tutorial_share_instructions', 'tutorial_awaiting_share', 'tutorial_processing', 'tutorial_reveal', 'tutorial_celebration', 'first_magic_moment_complete', 'why_nearr', 'nearby_value', 'location_education', 'location_background_education', 'notification_education', 'making_nearr_yours', 'growing_map', 'auth_success', 'personalized_activation', 'activation_challenge'].includes(state.stage)
     : ['overview', 'platform', 'interest', 'interest_selected'].includes(state.stage));
   const startupPending = loading || authLoading || bootstrapping || !identitySessionReady || !screenOwnedStage;
   const startupWatchdog = useStartupWatchdog(startupPending);
@@ -150,6 +155,17 @@ export function OnboardingV2PreAuth() {
     ? <MessageState eyebrow="PRACTICE POST UNAVAILABLE" title="The real practice post isn't ready." body="Nearr won't substitute an uncertain result. Check your connection and try again." action="Try again" onAction={() => setFixtureRetry((value) => value + 1)} onBack={() => void goBackOnboardingV2()} />
     : <LoadingState label="Choosing a great post for you…" />;
   if (state.stage === 'tutorial_challenge') return <ChallengeScreen state={state} />;
+  if (['tutorial_ready', 'tutorial_share_tapped', 'tutorial_more_tapped'].includes(state.stage) && state.tutorialFixture) {
+    return <ImmersiveGuidedSave
+      stage={state.stage as 'tutorial_ready' | 'tutorial_share_tapped' | 'tutorial_more_tapped'}
+      fixture={state.tutorialFixture}
+      onBack={() => void goBackOnboardingV2()}
+      onAdvance={(action) => {
+        if (action === 'nearr') void beginOnboardingV2InAppTutorialResolution();
+        else if (action === 'share' || action === 'more') void advanceOnboardingV2SharingRehearsal(action);
+      }}
+    />;
+  }
   if (state.stage === 'tutorial_share_instructions') return <ShareInstructionsScreen state={state} launchError={launchError} onLaunch={async () => { setLaunchError(false); const next = await recordOnboardingV2TutorialLaunch(); try { await Linking.openURL(next.tutorialFixture?.launchUrl ?? ''); } catch { setLaunchError(true); } }} />;
   if (state.stage === 'tutorial_awaiting_share') return <AwaitingShareScreen state={state} launchError={launchError} jobsError={jobsError} onOpen={async () => { setLaunchError(false); try { await Linking.openURL(state.tutorialFixture?.launchUrl ?? ''); } catch { setLaunchError(true); } }} onRefresh={() => void refreshJobs()} />;
   if (state.stage === 'tutorial_processing') {
@@ -157,7 +173,7 @@ export function OnboardingV2PreAuth() {
     const terminalProblem = !!(intended && (['failed', 'needs_help', 'cancelled', 'awaiting_purchase'].includes(intended.status) || (intended.status === 'completed' && !tutorialResultFromShareJob(intended, state.tutorialFixture!))));
     return <ProcessingScreen state={state} failed={terminalProblem || inAppSubmitError} onRetry={() => { inAppSubmitRef.current = null; setInAppSubmitError(false); void retryOnboardingV2TutorialShare(); }} />;
   }
-  if (['tutorial_reveal', 'tutorial_celebration', 'first_magic_moment_complete'].includes(state.stage) && state.tutorialResult) return <MagicMomentScreen state={state} />;
+  if (['tutorial_reveal', 'tutorial_celebration', 'first_magic_moment_complete'].includes(state.stage) && state.tutorialResult) return <MagicMomentScreen state={state} onOpenSavedPlace={() => router.replace('/(tabs)/map')} />;
   return <OnboardingV2SecondHalf state={state} />;
 }
 
@@ -217,7 +233,7 @@ function DesiredValueScreen() {
 
 export function ChallengeScreen({ state }: { state: OnboardingV2State }) {
   const fixture = state.tutorialFixture!; const fixturePlatform = PLATFORM_LABELS[fixture.platform]; const exactPlatform = state.preferredPlatform === fixture.platform;
-  return <Phase1Frame onBack={() => void goBackOnboardingV2()} progress={0.38} progressLabel="Onboarding progress" footer={<Phase1PrimaryButton title="Find this place" onPress={() => void beginOnboardingV2InAppTutorialResolution()} />}><Text style={styles.eyebrow}>A REAL POST</Text><Text style={styles.headline}>Want to know where this is?</Text><Text style={styles.body}>{exactPlatform ? `A real ${fixturePlatform} find, framed by Nearr.` : 'A real guided example, kept neutral because your platform does not have a dedicated tutorial post yet.'}</Text><ChallengeSourcePreview fixture={fixture} preferredPlatform={state.preferredPlatform} /><Text style={styles.microcopy}>The answer stays hidden until Nearr finishes the real save.</Text></Phase1Frame>;
+  return <Phase1Frame onBack={() => void goBackOnboardingV2()} progress={0.38} progressLabel="Onboarding progress" footer={<Phase1PrimaryButton title="Practice sharing it" onPress={() => void beginOnboardingV2SharingRehearsal()} />}><Text style={styles.eyebrow}>A POST WORTH SAVING</Text><Text style={styles.headline}>Want to know where this is?</Text><Text style={styles.body}>{exactPlatform ? `Try the same sharing steps you will use in ${fixturePlatform}.` : `This ${fixturePlatform} example teaches the sharing steps. Practice for ${PLATFORM_LABELS[state.preferredPlatform ?? 'other']} is not available yet.`}</Text><ChallengeSourcePreview fixture={fixture} preferredPlatform={state.preferredPlatform} /><Text style={styles.microcopy}>Nearr will show you the place after you finish the practice.</Text></Phase1Frame>;
 }
 
 const SOURCE_PREVIEW_TIMEOUT_MS = 12_000;
@@ -231,6 +247,7 @@ export function ChallengeSourcePreview({ fixture, preferredPlatform }: {
   const previewUrl = exactPlatform
     ? onboardingTutorialPreviewUrl(fixture.platform, fixture.contentId, fixture.thumbnailUrl)
     : null;
+  const exactSourceAsset = exactPlatform ? onboardingTutorialSourceAsset(fixture.contentId) : null;
   const [attempt, setAttempt] = useState(0);
   const [previewState, setPreviewState] = useState<'loading' | 'loaded' | 'failed' | 'unavailable'>(
     previewUrl ? 'loading' : 'unavailable',
@@ -260,10 +277,10 @@ export function ChallengeSourcePreview({ fixture, preferredPlatform }: {
           <NearrSparkleMark size={72} />
           <Text style={styles.neutralPostText}>A real place, hidden in a post</Text>
         </View>
-      ) : imageUrl ? (
+      ) : exactSourceAsset || imageUrl ? (
         <Image
-          key={imageUrl}
-          source={{ uri: imageUrl }}
+          key={imageUrl ?? fixture.contentId}
+          source={exactSourceAsset ?? { uri: imageUrl! }}
           style={StyleSheet.absoluteFill}
           resizeMode="cover"
           accessibilityLabel={`Real ${fixturePlatform} tutorial post preview`}
@@ -321,7 +338,7 @@ export function ProcessingScreen({ state, failed, onRetry }: { state: Onboarding
   return <Phase1Frame progress={0.46} progressLabel="Onboarding progress" contentStyle={styles.processingContent}><Text style={styles.processingEyebrow}>NEARR IS ON IT</Text><Text style={styles.headlineCentered}>{steps[step]}<Text style={styles.orangeDot}>.</Text></Text><MagicScanner thumbnailUrl={state.tutorialFixture?.thumbnailUrl ?? null} platform={state.preferredPlatform} /><View style={styles.processingSteps}>{steps.map((label, index) => <View key={label} style={[styles.processingStep, index <= step && styles.processingStepActive]}><View style={[styles.processingStepDot, index <= step && styles.processingStepDotActive]} /><Text style={[styles.processingStepText, index <= step && styles.processingStepTextActive]}>{label}</Text>{index < step ? <Feather name="check" size={15} color={Phase1Colors.success} /> : null}</View>)}</View></Phase1Frame>;
 }
 
-function MagicMomentScreen({ state }: { state: OnboardingV2State }) {
+function MagicMomentScreen({ state, onOpenSavedPlace }: { state: OnboardingV2State; onOpenSavedPlace: () => void }) {
   const result = state.tutorialResult!;
   const place = result.place;
   const sourceThumb = state.tutorialFixture?.thumbnailUrl ?? null;
@@ -338,13 +355,13 @@ function MagicMomentScreen({ state }: { state: OnboardingV2State }) {
     let next = state;
     if (next.stage === 'tutorial_reveal') next = await confirmOnboardingV2FirstMagicMoment();
     if (next.stage === 'tutorial_celebration') next = await finishOnboardingV2FirstMagicMoment();
-    if (next.stage === 'first_magic_moment_complete') await beginOnboardingV2SecondHalf();
+    if (next.stage === 'place_tour') onOpenSavedPlace();
   };
   return (
     <Phase1Frame
-      progress={0.54}
+      progress={0.68}
       progressLabel="Onboarding progress"
-      footer={<Phase1PrimaryButton title="Continue" onPress={() => void continueFlow()} />}
+      footer={<Phase1PrimaryButton title="Find it on my map" onPress={() => void continueFlow()} />}
     >
       <View style={styles.revealTopRow}><Text style={styles.revealCount}>1 PLACE FOUND</Text><Animated.View style={[styles.revealCheck, { opacity, transform: [{ scale }] }]}><Feather name="check" size={22} color="#FFFFFF" /></Animated.View></View>
       <Text style={styles.revealFound}>Found it.</Text>

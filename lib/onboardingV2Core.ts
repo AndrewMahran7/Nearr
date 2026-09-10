@@ -230,6 +230,8 @@ export type OnboardingV2State = {
   tutorialResult: OnboardingTutorialResult | null;
   wrongShareJobId: string | null;
   firstMagicMomentCompletedAt: string | null;
+  sharingRehearsalStartedAt: string | null;
+  sharingRehearsalCompletedAt: string | null;
   celebrationShownAt: string | null;
   secondHalfStartedAt: string | null;
   whyNearrViewedAt: string | null;
@@ -346,6 +348,8 @@ export function createInitialOnboardingV2State(now = new Date().toISOString()): 
     tutorialResult: null,
     wrongShareJobId: null,
     firstMagicMomentCompletedAt: null,
+    sharingRehearsalStartedAt: null,
+    sharingRehearsalCompletedAt: null,
     celebrationShownAt: null,
     secondHalfStartedAt: null,
     whyNearrViewedAt: null,
@@ -879,7 +883,7 @@ export function beginOnboardingInAppTutorialResolution(
   now: string,
 ): OnboardingTransition {
   const fixture = state.tutorialFixture;
-  if (state.stage !== 'tutorial_challenge' || !fixture) return unchanged(state);
+  if (state.stage !== 'tutorial_more_tapped' || !fixture) return unchanged(state);
   const normalizedSourceUrl = normalizeOnboardingSourceUrl(fixture.canonicalUrl);
   if (!normalizedSourceUrl) return unchanged(state);
   const pendingShare: PendingOnboardingShare = {
@@ -902,11 +906,54 @@ export function beginOnboardingInAppTutorialResolution(
     tutorialResult: null,
     wrongShareJobId: null,
     lastFailure: null,
+    sharingRehearsalCompletedAt: state.sharingRehearsalCompletedAt ?? now,
   }, now, [
-    { name: 'onboarding_find_place_tapped', properties: { fixture_id: fixture.id } },
+    { name: 'onboarding_sharing_rehearsal_completed', properties: {
+      fixture_id: fixture.id,
+      fixture_platform: fixture.platform,
+      time_to_rehearsal_complete: state.sharingRehearsalStartedAt
+        ? Math.max(0, Date.parse(now) - Date.parse(state.sharingRehearsalStartedAt))
+        : null,
+    } },
+    { name: 'onboarding_demo_submitted', properties: { fixture_id: fixture.id } },
     { name: 'onboarding_fixture_resolution_started', properties: { fixture_id: fixture.id, fixture_platform: fixture.platform } },
     { name: 'onboarding_magic_processing_started', properties: { fixture_id: fixture.id } },
   ]);
+}
+
+export function beginOnboardingSharingRehearsal(
+  state: OnboardingV2State,
+  now: string,
+): OnboardingTransition {
+  const fixture = state.tutorialFixture;
+  if (state.stage !== 'tutorial_challenge' || !fixture) return unchanged(state);
+  return transition(state, {
+    stage: 'tutorial_ready',
+    sharingRehearsalStartedAt: state.sharingRehearsalStartedAt ?? now,
+  }, now, [{
+    name: 'onboarding_sharing_rehearsal_started',
+    properties: { fixture_id: fixture.id, fixture_platform: fixture.platform },
+  }]);
+}
+
+export function advanceOnboardingSharingRehearsal(
+  state: OnboardingV2State,
+  action: 'share' | 'more',
+  now: string,
+): OnboardingTransition {
+  if (action === 'share' && state.stage === 'tutorial_ready') {
+    return transition(state, { stage: 'tutorial_share_tapped' }, now, [{
+      name: 'onboarding_sharing_rehearsal_share_tapped',
+      properties: { fixture_platform: state.tutorialFixture?.platform },
+    }]);
+  }
+  if (action === 'more' && state.stage === 'tutorial_share_tapped') {
+    return transition(state, { stage: 'tutorial_more_tapped' }, now, [{
+      name: 'onboarding_sharing_rehearsal_more_tapped',
+      properties: { fixture_platform: state.tutorialFixture?.platform },
+    }]);
+  }
+  return unchanged(state);
 }
 
 export function failOnboardingTutorialFixture(
@@ -1023,7 +1070,7 @@ export function retryOnboardingTutorialShare(
   if (!['tutorial_awaiting_share', 'tutorial_processing'].includes(state.stage)) return unchanged(state);
   const inApp = state.pendingShare?.attemptId.startsWith('tutorial-in-app:') === true;
   return transition(state, {
-    stage: inApp ? 'tutorial_challenge' : 'tutorial_share_instructions',
+    stage: inApp ? 'tutorial_more_tapped' : 'tutorial_share_instructions',
     pendingShare: null,
     tutorialLaunchedAt: null,
     tutorialShareReceivedAt: null,
@@ -1084,7 +1131,10 @@ export function finishOnboardingFirstMagicMoment(
   now: string,
 ): OnboardingTransition {
   if (state.stage !== 'tutorial_celebration' || !state.firstMagicMomentCompletedAt) return unchanged(state);
-  return transition(state, { stage: 'first_magic_moment_complete' }, now);
+  return transition(state, { stage: 'place_tour', placeTourStep: null }, now, [{
+    name: 'onboarding_saved_card_offered',
+    properties: { saved_place_id: state.tutorialSave?.savedPlaceId },
+  }]);
 }
 
 export function beginOnboardingSecondHalf(

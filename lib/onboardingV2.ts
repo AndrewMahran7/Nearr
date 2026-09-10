@@ -15,9 +15,11 @@ import { supabase } from '@/lib/supabase';
 import type { SavedPlaceWithPlace } from '@/types';
 import {
   acknowledgeGraduation,
+  advanceOnboardingSharingRehearsal,
   advanceSimulatedTutorial,
   advancePlaceTour,
   backOnboardingV2,
+  beginOnboardingSharingRehearsal,
   beginOnboardingSecondHalf,
   beginOnboardingInAppTutorialResolution,
   beginPermanentAccountLink,
@@ -442,6 +444,14 @@ export function resolveOnboardingV2TutorialResult(result: OnboardingTutorialResu
 
 export function retryOnboardingV2TutorialShare(): Promise<OnboardingV2State> {
   return applyTransition(retryOnboardingTutorialShare);
+}
+
+export function beginOnboardingV2SharingRehearsal(): Promise<OnboardingV2State> {
+  return applyTransition(beginOnboardingSharingRehearsal);
+}
+
+export function advanceOnboardingV2SharingRehearsal(action: 'share' | 'more'): Promise<OnboardingV2State> {
+  return applyTransition((state, now) => advanceOnboardingSharingRehearsal(state, action, now));
 }
 
 export function confirmOnboardingV2FirstMagicMoment(): Promise<OnboardingV2State> {

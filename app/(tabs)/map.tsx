@@ -832,9 +832,8 @@ export default function MapScreen() {
           (place) => place.id === result.state.tutorialSave?.savedPlaceId,
         );
         if (!target) return;
-        selectPlace(target);
-        setPreviewExpanded(true);
-        void recordOnboardingV2PlaceTourOpened(target.id);
+        // The first retrieval lesson starts from the real Saved carousel. The
+        // user, not an effect, must open the card to learn where it lives.
       })
       .finally(() => {
         onboardingReconcileRunningRef.current = false;
@@ -851,6 +850,18 @@ export default function MapScreen() {
   // "Recently saved" section, and its header already has "Open list"). The
   // sheet now owns its own mode and the map chrome filters the map instead.
   const [sheetMode, setSheetMode] = useState<MapSheetMode>('nearby');
+  const onboardingPlaceTourPreparedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (onboardingV2State?.stage !== 'place_tour' || !onboardingV2State.tutorialSave || !mapReady) return;
+    const savedPlaceId = onboardingV2State.tutorialSave.savedPlaceId;
+    if (onboardingPlaceTourPreparedRef.current === savedPlaceId) return;
+    const target = validPlaces.find((place) => place.id === savedPlaceId);
+    if (!target) return;
+    onboardingPlaceTourPreparedRef.current = savedPlaceId;
+    setSheetMode('saved');
+    setSheetOpenSignal((value) => value + 1);
+    focusZone(target);
+  }, [mapReady, onboardingV2State?.stage, onboardingV2State?.tutorialSave?.savedPlaceId, validPlaces]);
   // Bumped when something asks a minimized sheet to re-open to its partial snap.
   const [sheetOpenSignal, setSheetOpenSignal] = useState(0);
   // Category visibility for MARKERS. Presentation only: it never mutates a
@@ -2911,6 +2922,9 @@ export default function MapScreen() {
     followModeRef.current = false;
     setFollowMode(false);
     setSelected(item);
+    if (onboardingV2State?.stage === 'place_tour' && onboardingV2State.tutorialSave?.savedPlaceId === item.id) {
+      void recordOnboardingV2PlaceTourOpened(item.id);
+    }
     // AI-note enrichment completes after the save and has no parent share-job
     // row whose realtime event could invalidate this cache. Force exactly one
     // list refresh per detail open while the eligible row is still blank. If

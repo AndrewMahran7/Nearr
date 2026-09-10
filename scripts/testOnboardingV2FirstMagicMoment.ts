@@ -4,6 +4,8 @@ import { join } from 'node:path';
 
 import {
   bindAnonymousUser,
+  advanceOnboardingSharingRehearsal,
+  beginOnboardingSharingRehearsal,
   beginOnboardingInAppTutorialResolution,
   completeOnboardingInterests,
   completeOnboardingPlatforms,
@@ -99,18 +101,25 @@ state = fixtureReceipt.state;
 assert.equal(fixtureReceipt.events.some((event) => event.name === 'onboarding_demo_viewed'), true);
 assert.equal(state.stage, 'tutorial_challenge');
 assert.equal(JSON.stringify(state).includes('Attabad'), false, 'place answer is absent before reveal');
-const processingStart = beginOnboardingInAppTutorialResolution(state, at(12));
+state = beginOnboardingSharingRehearsal(state, at(12)).state;
+assert.equal(state.stage, 'tutorial_ready');
+state = advanceOnboardingSharingRehearsal(state, 'share', at(13)).state;
+assert.equal(state.stage, 'tutorial_share_tapped');
+state = advanceOnboardingSharingRehearsal(state, 'more', at(14)).state;
+assert.equal(state.stage, 'tutorial_more_tapped');
+assert.equal(decodeOnboardingV2State(encodeOnboardingV2State(state), at(15)).stage, 'tutorial_more_tapped', 'rehearsal resumes its exact durable substep');
+const processingStart = beginOnboardingInAppTutorialResolution(state, at(16));
 state = processingStart.state;
 assert.equal(state.stage, 'tutorial_processing');
 assert.equal(processingStart.events.some((event) => event.name === 'onboarding_magic_processing_started'), true);
 assert.match(state.pendingShare?.attemptId ?? '', /^tutorial-in-app:/);
 assert.equal(state.pendingShare?.contentIdentity?.contentId, fixture.contentId.toLowerCase());
-assert.equal(retryOnboardingTutorialShare(state, at(13)).state.stage, 'tutorial_challenge', 'an in-app job failure retries without routing into the legacy external share lesson');
+assert.equal(retryOnboardingTutorialShare(state, at(17)).state.stage, 'tutorial_more_tapped', 'an in-app job failure retries at the final rehearsal tap');
 assert.equal(expectedOnboardingV2Route(state.stage), '/(onboarding)');
 
 const wrongJob = { id: 'wrong-job', source_url: 'https://www.youtube.com/watch?v=abcdefghijk', canonical_url: 'https://www.youtube.com/watch?v=abcdefghijk', recognition_identity_key: 'v1:youtube:abcdefghijk' };
 assert.equal(isShareJobForTutorialFixture(wrongJob, fixture), false);
-state = observeWrongOnboardingTutorialJob(state, wrongJob.id, at(14)).state;
+state = observeWrongOnboardingTutorialJob(state, wrongJob.id, at(18)).state;
 assert.equal(state.stage, 'tutorial_processing');
 assert.equal(state.tutorialSave, null);
 
@@ -122,27 +131,28 @@ const job = {
   candidate_payload: { candidates: [{ googlePlaceId: 'ChIJHxRxLN2p6DgRMd2q59otvqI', name: 'Attabad Lake', formattedAddress: 'Hunza Valley, Gilgit-Baltistan, Pakistan', latitude: 36.318, longitude: 74.87, types: ['tourist_attraction'], primaryType: 'tourist_attraction', primaryTypeDisplayName: 'Tourist attraction', matchScore: 1, photoUrls: [] }] },
 } as unknown as ShareJob;
 assert.equal(isShareJobForTutorialFixture(job, fixture), true);
-state = observeOnboardingTutorialJob(state, { jobId: job.id, sourceUrl: job.canonical_url! }, at(15)).state;
+state = observeOnboardingTutorialJob(state, { jobId: job.id, sourceUrl: job.canonical_url! }, at(19)).state;
 assert.equal(state.stage, 'tutorial_processing');
 const result = tutorialResultFromShareJob(job, fixture);
 assert.ok(result);
-const rejected = resolveOnboardingTutorialResult(state, { ...result!, fixtureRevision: 8 }, at(16)).state;
+const rejected = resolveOnboardingTutorialResult(state, { ...result!, fixtureRevision: 8 }, at(20)).state;
 assert.equal(rejected.stage, 'tutorial_processing', 'mismatched provenance cannot reveal or complete');
-state = resolveOnboardingTutorialResult(state, result!, at(17)).state;
+state = resolveOnboardingTutorialResult(state, result!, at(21)).state;
 assert.equal(state.stage, 'tutorial_reveal');
 assert.equal(state.tutorialResult?.place.name, 'Attabad Lake');
-const confirmation = confirmOnboardingFirstMagicMoment(state, at(18));
-assert.equal(confirmation.events[0]?.properties?.time_to_first_save, 17_000, 'first-save timing starts at onboarding start');
-assert.equal(confirmation.events[0]?.properties?.time_to_magic_moment, 17_000, 'magic-moment timing starts at onboarding start');
+const confirmation = confirmOnboardingFirstMagicMoment(state, at(22));
+assert.equal(confirmation.events[0]?.properties?.time_to_first_save, 21_000, 'first-save timing starts at onboarding start');
+assert.equal(confirmation.events[0]?.properties?.time_to_magic_moment, 21_000, 'magic-moment timing starts at onboarding start');
 state = confirmation.state;
 assert.equal(state.stage, 'tutorial_celebration');
 assert.equal(state.tutorialSave?.savedPlaceId, 'saved-attabad');
-assert.equal(state.firstMagicMomentCompletedAt, at(18));
+assert.equal(state.firstMagicMomentCompletedAt, at(22));
 assert.equal(state.independentSaves.length, 0, 'one save completes this lesson');
-state = apply(state, showOnboardingCelebration, 19);
-state = apply(state, finishOnboardingFirstMagicMoment, 20);
-assert.equal(state.stage, 'first_magic_moment_complete');
-assert.equal(decodeOnboardingV2State(encodeOnboardingV2State(state), at(21)).stage, 'first_magic_moment_complete');
+state = apply(state, showOnboardingCelebration, 23);
+state = apply(state, finishOnboardingFirstMagicMoment, 24);
+assert.equal(state.stage, 'place_tour');
+assert.equal(state.placeTourOpenedAt, null, 'map entry does not pretend the saved card was opened');
+assert.equal(decodeOnboardingV2State(encodeOnboardingV2State(state), at(25)).stage, 'place_tour');
 
 const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 const ui = read('components/onboarding/v2/OnboardingV2PreAuth.tsx');
@@ -150,13 +160,13 @@ assert.match(ui, /assets\/icon\.png/);
 for (const platform of ['Instagram', 'TikTok', 'Facebook', 'YouTube']) assert.match(ui, new RegExp(platform));
 assert.match(ui, /Linking\.openURL/);
 assert.match(ui, /hostShareSubmitter\.submit/);
-assert.match(ui, /Find this place/);
-assert.doesNotMatch(ui, /Show me how|Add to my map/);
+assert.match(ui, /Practice sharing it/);
+assert.match(ui, /ImmersiveGuidedSave/);
 assert.match(ui, /<PlaceImage/);
 assert.match(ui, /<MapView/);
 const visualLanguage = read('components/onboarding/v2/OnboardingVisualLanguage.tsx');
 assert.match(visualLanguage, /AccessibilityInfo\.isReduceMotionEnabled/);
-assert.doesNotMatch(ui, /ImmersiveGuidedSave|InstagramReelMock|fake social/i);
+assert.doesNotMatch(ui, /InstagramReelMock|fake social/i);
 const endpoint = read('supabase/functions/get-onboarding-tutorial/index.ts');
 assert.match(endpoint, /DEVELOPMENT_HOST/);
 assert.match(endpoint, /admin\.auth\.getUser/);

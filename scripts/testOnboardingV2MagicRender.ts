@@ -3,6 +3,8 @@ import React from 'react';
 
 import {
   beginOnboardingInAppTutorialResolution,
+  advanceOnboardingSharingRehearsal,
+  beginOnboardingSharingRehearsal,
   bindAnonymousUser,
   createInitialOnboardingV2State,
   decodeOnboardingV2State,
@@ -44,6 +46,7 @@ Module._load = function mockedLoad(request, parent, isMain) {
     Text: host('Text'), View: host('View'),
   };
   if (request === '@expo/vector-icons') return { Feather: host('Feather'), Ionicons: host('Ionicons') };
+  if (request === 'expo-router') return { useRouter: () => ({ replace() {} }) };
   if (request === 'react-native-maps') return { __esModule: true, default: host('MapView'), Marker: host('Marker') };
   if (request === '@/components/PlaceImage') return { PlaceImage: host('PlaceImage') };
   if (request === '@/components/StartupSurface') return { StartupSurface: host('StartupSurface') };
@@ -201,7 +204,10 @@ try {
   const started = startOnboardingV2(createInitialOnboardingV2State('2026-09-10T12:00:00.000Z'), '2026-09-10T12:00:01.000Z').state;
   const bound = bindAnonymousUser(started, 'anonymous-user', '11111111-1111-4111-8111-111111111111', '2026-09-10T12:00:02.000Z').state;
   const challenge = { ...bound, stage: 'tutorial_challenge' as const, tutorialFixture: instagramFixture, preferredPlatform: 'instagram' as const };
-  const pending = beginOnboardingInAppTutorialResolution(challenge, '2026-09-10T12:00:03.000Z').state;
+  const ready = beginOnboardingSharingRehearsal(challenge, '2026-09-10T12:00:03.000Z').state;
+  const shared = advanceOnboardingSharingRehearsal(ready, 'share', '2026-09-10T12:00:04.000Z').state;
+  const more = advanceOnboardingSharingRehearsal(shared, 'more', '2026-09-10T12:00:05.000Z').state;
+  const pending = beginOnboardingInAppTutorialResolution(more, '2026-09-10T12:00:06.000Z').state;
   assert.equal(pending.stage, 'tutorial_processing');
   assert.equal(pending.tutorialJobId, null, 'pending render is valid before the create-job acknowledgement');
   const resumed = decodeOnboardingV2State(encodeOnboardingV2State(pending), '2026-09-10T12:00:04.000Z');

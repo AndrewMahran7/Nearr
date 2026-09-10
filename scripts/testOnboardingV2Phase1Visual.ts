@@ -23,13 +23,13 @@ assert.match(preAuth, /Where do you usually find places/);
 assert.match(preAuth, /What do you save most/);
 assert.match(preAuth, /Perfect/);
 assert.match(preAuth, /continueOnboardingV2FromPersonalizedPayoff/);
-assert.match(preAuth, /Find this place/);
+assert.match(preAuth, /Practice sharing it/);
 assert.match(preAuth, /hostShareSubmitter\.submit/);
 assert.match(core, /tutorial-in-app:/);
 assert.doesNotMatch(preAuth, /Show me how|Add to my map/);
 console.log('PASS single-job setup screens lead through a personalized payoff to the real in-app job');
 
-assert.match(preAuth, /A REAL POST/);
+assert.match(preAuth, /A POST WORTH SAVING/);
 assert.match(preAuth, /onboardingTutorialPreviewUrl/);
 assert.match(preAuth, /onboarding-source-preview-fallback/);
 assert.doesNotMatch(preAuth, /InstagramReelMock|fake social/i);
@@ -62,7 +62,8 @@ console.log('PASS final activation enters the anonymous map and defers account b
 
 assert.match(map, /cleanOnboardingLanding = placeSource === 'onboarding_tutorial'/);
 assert.match(map, /__DEV__ && !cleanOnboardingLanding/);
-assert.match(map, /!cleanOnboardingLanding && !searchVisible/);
+assert.match(map, /!searchVisible && !nearbyExplorer/);
+assert.doesNotMatch(map, /!cleanOnboardingLanding && !searchVisible/, 'guided entry no longer suppresses Queue');
 console.log('PASS first map landing suppresses diagnostics and queue chrome without global removal');
 
 console.log('\nAll Onboarding V2 Albo-parity presentation contracts passed.');

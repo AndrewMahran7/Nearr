@@ -3,6 +3,7 @@ import { Alert } from 'react-native';
 
 import { MapSnackbar } from '@/components/map';
 import { useAuth } from '@/hooks/useAuth';
+import { useOnboardingV2 } from '@/hooks/useOnboardingV2';
 import {
   getSavedPlacesCacheSnapshot,
   removeSavedPlaceFromCache,
@@ -21,8 +22,12 @@ import {
 
 export function AutoSaveUndoToast() {
   const { session, isDevSession } = useAuth();
+  const { state: onboardingState } = useOnboardingV2();
   const userId = session?.user.id ?? null;
-  const enabled = isAsyncShareJobsEnabled() && !!userId && !isDevSession;
+  const guidedSaveOwnsConfirmation = onboardingState?.cohort === 'new_user_v2' && [
+    'tutorial_processing', 'tutorial_reveal', 'tutorial_celebration', 'place_tour',
+  ].includes(onboardingState.stage);
+  const enabled = isAsyncShareJobsEnabled() && !!userId && !isDevSession && !guidedSaveOwnsConfirmation;
   const [item, setItem] = useState<RecentAutoSave | null>(null);
 
   useEffect(() => {
