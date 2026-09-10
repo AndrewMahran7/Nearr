@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import {
   Pressable,
+  Image,
   ScrollView,
   StyleProp,
   StyleSheet,
@@ -68,7 +69,7 @@ export function Phase1Frame({
           </Pressable>
         ) : (
           <View style={styles.brandMark} accessibilityLabel="Nearr">
-            <View style={styles.brandPin}><Feather name="map-pin" size={15} color={Phase1Colors.onOrange} /></View>
+            <Image source={require('../../../assets/icon.png')} style={styles.brandLogo} />
             <Text style={styles.brandText}>NEARR</Text>
           </View>
         )}
@@ -152,13 +153,10 @@ const styles = StyleSheet.create({
     borderColor: Phase1Colors.border,
   },
   brandMark: { minWidth: 88, height: 44, flexDirection: 'row', alignItems: 'center', gap: 8 },
-  brandPin: {
+  brandLogo: {
     width: 28,
     height: 28,
     borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Phase1Colors.orange,
   },
   brandText: { color: Phase1Colors.text, fontSize: 13, fontWeight: '900', letterSpacing: 1.4 },
   topBarBalance: { width: 44 },

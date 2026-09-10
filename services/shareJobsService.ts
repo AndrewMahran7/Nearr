@@ -48,6 +48,11 @@ export type ShareJob = {
   source_url: string;
   canonical_url: string | null;
   source_platform: string | null;
+  recognition_identity_key?: string | null;
+  resolution_source?: 'tutorial_fixture' | 'recognition_cache_v2' | 'fresh_recognition' | null;
+  tutorial_fixture_id?: string | null;
+  tutorial_fixture_revision?: number | null;
+  tutorial_fixture_role?: 'primary' | 'backup' | null;
   status: ShareJobStatus;
   progress_stage: string | null;
   decision: ShareJobDecision;
@@ -268,6 +273,26 @@ export type UndoAutoSaveResult = {
 
 const JOB_COLUMNS =
   'id, user_id, source_url, canonical_url, source_platform, status, progress_stage, decision, saved_place_id, candidate_payload, extraction_payload, suggested_query, needs_help_reason, failure_reason, failure_category, failure_code, analysis_attempted, notification_status, notification_attempts, notification_last_attempt_at, notification_ticket_ids, notification_error_code, notification_submitted_at, created_at, updated_at, completed_at, queue_archived_at, billing_mode, billing_outcome, billing_settled_at, premium_request_id, premium_state, premium_eligibility_reason, premium_requested_at, premium_started_at, premium_completed_at, premium_settlement_reason, premium_result_chargeable, premium_cost_components';
+const ONBOARDING_JOB_COLUMNS =
+  `${JOB_COLUMNS}, recognition_identity_key, resolution_source, tutorial_fixture_id, tutorial_fixture_revision, tutorial_fixture_role`;
+
+/** Recent jobs, including terminal rows, for the active first-run tutorial.
+ * RLS still scopes this to the current anonymous user. Generic queue behavior
+ * remains unchanged because this read is only used by the onboarding owner. */
+export async function listOnboardingTutorialJobs(
+  sinceIso: string,
+  limit = 12,
+): Promise<ShareJob[]> {
+  if (isDemoMode() || isMapPreviewMode()) return [];
+  const { data, error } = await supabase
+    .from('share_jobs')
+    .select(ONBOARDING_JOB_COLUMNS)
+    .gte('created_at', sinceIso)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (error) throw new Error(error.message);
+  return (data ?? []) as ShareJob[];
+}
 
 /** List the current user's active/actionable jobs, newest first.
  *

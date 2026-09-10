@@ -18,5 +18,10 @@ export function personalizedSavePrompt(platform: string, interest: string): stri
   if (platform === 'Instagram' && interest === 'Food') {
     return "Let's save a restaurant from Instagram.";
   }
-  return `Let's save a ${interest.toLowerCase()} find from ${platform}.`;
+  const normalized = interest.trim().toLowerCase();
+  if (!normalized || normalized === 'anything' || normalized === 'anything interesting') {
+    return `Let's save something interesting from ${platform}.`;
+  }
+  const article = /^[aeiou]/.test(normalized) ? 'an' : 'a';
+  return `Let's save ${article} ${normalized} find from ${platform}.`;
 }

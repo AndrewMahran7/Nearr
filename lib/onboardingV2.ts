@@ -23,6 +23,9 @@ import {
   bypassExistingUser,
   cancelPermanentAccountLink,
   closePlaceTour,
+  completeOnboardingInterests,
+  completeOnboardingPlatforms,
+  confirmOnboardingFirstMagicMoment,
   completePermanentAccountLink,
   completePendingSave,
   continueToTutorial,
@@ -31,10 +34,14 @@ import {
   dismissPracticeRecovery,
   encodeOnboardingV2State,
   failPendingSave,
+  failOnboardingTutorialFixture,
+  finishOnboardingFirstMagicMoment,
   freshOnboardingV2StateAfterAccountDeletion,
   isExpectedOnboardingSource,
   isOnboardingV2InProgressState,
   observeOnboardingResult,
+  observeOnboardingTutorialJob,
+  observeWrongOnboardingTutorialJob,
   onboardingV2SyncCredentialDecision,
   onboardingV2ResumeEligibility,
   openExternalStarter,
@@ -43,17 +50,30 @@ import {
   recordPracticeHelpOpened,
   recordPracticeReturnedWithoutShare,
   receiveSharedSource,
+  receiveOnboardingTutorialFixture,
+  resolveOnboardingTutorialResult,
+  retryOnboardingTutorialShare,
   resumePhase2AfterCompletedPhase1,
   replaceTutorialContent,
   recordStarterImpressions,
   selectInterest,
+  selectOnboardingPainPoint,
   selectPracticeSource,
   selectPlatform,
+  showOnboardingCelebration,
+  showOnboardingShareInstructions,
   showStarterPrompt,
   startOnboardingV2,
   tapGetStarted,
+  toggleOnboardingInterest,
+  toggleOnboardingPlatform,
+  launchOnboardingTutorial,
+  migrateInterruptedOnboardingToFirstMagic,
   type OnboardingInterest,
+  type OnboardingPainPoint,
   type OnboardingPlatform,
+  type OnboardingTutorialFixture,
+  type OnboardingTutorialResult,
   type OnboardingResultClass,
   type OnboardingTransition,
   type OnboardingV2State,
@@ -65,6 +85,19 @@ import { saveSavedPlace } from '@/services/savedPlacesService';
 export const ONBOARDING_V2_STORAGE_KEY = 'nearr:onboarding:v2:state';
 
 export type OnboardingV2EventName =
+  | 'onboarding_v2_started'
+  | 'onboarding_platform_selection_completed'
+  | 'onboarding_interests_completed'
+  | 'onboarding_pain_point_completed'
+  | 'onboarding_tutorial_challenge_shown'
+  | 'onboarding_tutorial_launched'
+  | 'onboarding_tutorial_share_received'
+  | 'onboarding_tutorial_processing_started'
+  | 'onboarding_tutorial_wrong_source'
+  | 'onboarding_tutorial_fixture_resolved'
+  | 'onboarding_place_reveal_shown'
+  | 'onboarding_first_tutorial_save_completed'
+  | 'onboarding_first_save_celebration_shown'
   | 'onboarding_overview_viewed'
   | 'onboarding_get_started_tapped'
   | 'onboarding_platform_selected'
@@ -262,11 +295,79 @@ export function setOnboardingV2Platform(platform: OnboardingPlatform): Promise<O
   return applyTransition((state, now) => selectPlatform(state, platform, now));
 }
 
+export function toggleOnboardingV2Platform(platform: OnboardingPlatform): Promise<OnboardingV2State> {
+  return applyTransition((state, now) => toggleOnboardingPlatform(state, platform, now));
+}
+
+export function completeOnboardingV2Platforms(): Promise<OnboardingV2State> {
+  return applyTransition(completeOnboardingPlatforms);
+}
+
 export function setOnboardingV2Interest(
   interest: OnboardingInterest,
   tutorialContentId: string | null,
 ): Promise<OnboardingV2State> {
   return applyTransition((state, now) => selectInterest(state, interest, tutorialContentId, now));
+}
+
+export function toggleOnboardingV2Interest(interest: OnboardingInterest): Promise<OnboardingV2State> {
+  return applyTransition((state, now) => toggleOnboardingInterest(state, interest, now));
+}
+
+export function completeOnboardingV2Interests(): Promise<OnboardingV2State> {
+  return applyTransition(completeOnboardingInterests);
+}
+
+export function setOnboardingV2PainPoint(painPoint: OnboardingPainPoint): Promise<OnboardingV2State> {
+  return applyTransition((state, now) => selectOnboardingPainPoint(state, painPoint, now));
+}
+
+export function migrateInterruptedOnboardingV2ToFirstMagic(): Promise<OnboardingV2State> {
+  return applyTransition(migrateInterruptedOnboardingToFirstMagic);
+}
+
+export function setOnboardingV2TutorialFixture(fixture: OnboardingTutorialFixture): Promise<OnboardingV2State> {
+  return applyTransition((state, now) => receiveOnboardingTutorialFixture(state, fixture, now));
+}
+
+export function setOnboardingV2TutorialFixtureError(reason: string): Promise<OnboardingV2State> {
+  return applyTransition((state, now) => failOnboardingTutorialFixture(state, reason, now));
+}
+
+export function continueOnboardingV2ToShareInstructions(): Promise<OnboardingV2State> {
+  return applyTransition(showOnboardingShareInstructions);
+}
+
+export function recordOnboardingV2TutorialLaunch(): Promise<OnboardingV2State> {
+  return applyTransition(launchOnboardingTutorial);
+}
+
+export function observeOnboardingV2TutorialJob(input: { jobId: string; sourceUrl: string }): Promise<OnboardingV2State> {
+  return applyTransition((state, now) => observeOnboardingTutorialJob(state, input, now));
+}
+
+export function observeWrongOnboardingV2TutorialJob(jobId: string): Promise<OnboardingV2State> {
+  return applyTransition((state, now) => observeWrongOnboardingTutorialJob(state, jobId, now));
+}
+
+export function resolveOnboardingV2TutorialResult(result: OnboardingTutorialResult): Promise<OnboardingV2State> {
+  return applyTransition((state, now) => resolveOnboardingTutorialResult(state, result, now));
+}
+
+export function retryOnboardingV2TutorialShare(): Promise<OnboardingV2State> {
+  return applyTransition(retryOnboardingTutorialShare);
+}
+
+export function confirmOnboardingV2FirstMagicMoment(): Promise<OnboardingV2State> {
+  return applyTransition(confirmOnboardingFirstMagicMoment);
+}
+
+export function recordOnboardingV2CelebrationShown(): Promise<OnboardingV2State> {
+  return applyTransition(showOnboardingCelebration);
+}
+
+export function finishOnboardingV2FirstMagicMoment(): Promise<OnboardingV2State> {
+  return applyTransition(finishOnboardingFirstMagicMoment);
 }
 
 export function continueOnboardingV2ToTutorial(): Promise<OnboardingV2State> {

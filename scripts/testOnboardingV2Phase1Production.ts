@@ -100,7 +100,8 @@ const settings = readFileSync(join(root, 'app/(tabs)/settings.tsx'), 'utf8');
 const appConfig = readFileSync(join(root, 'app.config.js'), 'utf8');
 assert.match(coach, /const phase1Only = isOnboardingV2Phase1Only\(\)/);
 assert.match(coach, /resolveOnboardingV2VisibleOwner\(\{[\s\S]{0,180}phase1Only/);
-assert.match(picker, /disabled=\{option\.value !== 'instagram'\}/);
+assert.match(picker, /ProductionV2Compatibility/);
+assert.match(picker, /disabled=\{item\.value !== 'instagram'\}/);
 assert.match(
   anonymousRuntime,
   /decision === 'restart_with_new_anonymous_session'/,

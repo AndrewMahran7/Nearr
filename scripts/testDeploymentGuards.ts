@@ -80,7 +80,8 @@ check(
 const functionsSource = readFileSync(path.join(ROOT, 'scripts', 'deployFunctions.mjs'), 'utf8');
 check(
   'production functions refuse the development-only E2E fixture',
-  functionsSource.includes("DEVELOPMENT_ONLY_FUNCTIONS = new Set(['e2e-place-fixture'])") &&
+  functionsSource.includes("'e2e-place-fixture'") &&
+    functionsSource.includes("'get-onboarding-tutorial'") &&
     functionsSource.includes('production && DEVELOPMENT_ONLY_FUNCTIONS.has(name)'),
 );
 

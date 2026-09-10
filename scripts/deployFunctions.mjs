@@ -51,7 +51,10 @@ const NO_VERIFY_JWT = new Set([
   // ownership-aware DTO without exposing other savers through RLS.
   'get-place-videos',
 ]);
-const DEVELOPMENT_ONLY_FUNCTIONS = new Set(['e2e-place-fixture']);
+const DEVELOPMENT_ONLY_FUNCTIONS = new Set([
+  'e2e-place-fixture',
+  'get-onboarding-tutorial',
+]);
 
 function fail(message) {
   console.error(`\n${message}\n`);

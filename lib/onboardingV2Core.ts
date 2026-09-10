@@ -20,8 +20,52 @@ export type OnboardingInterest =
   | 'outdoors'
   | 'travel'
   | 'beaches'
+  | 'cafes'
+  | 'things_to_do'
   | 'shopping'
   | 'anything';
+
+export type OnboardingPainPoint =
+  | 'saved_and_forgotten'
+  | 'cannot_find_place'
+  | 'saved_posts_mess'
+  | 'send_to_friends'
+  | 'screenshot';
+
+export type OnboardingTutorialFixture = {
+  id: string;
+  revision: number;
+  role: 'primary' | 'backup';
+  platform: Exclude<OnboardingPlatform, 'other'>;
+  identityKey: string;
+  identityVersion: number;
+  contentId: string;
+  canonicalUrl: string;
+  launchUrl: string;
+  thumbnailUrl: string | null;
+  selectedAt: string;
+};
+
+export type OnboardingTutorialResult = {
+  jobId: string;
+  savedPlaceId: string;
+  fixtureId: string;
+  fixtureRevision: number;
+  fixtureRole: 'primary' | 'backup';
+  resolutionSource: 'tutorial_fixture';
+  sourceUrl: string;
+  place: {
+    googlePlaceId: string;
+    name: string;
+    formattedAddress: string | null;
+    latitude: number;
+    longitude: number;
+    primaryType: string | null;
+    typeLabel: string | null;
+    photoUrl: string | null;
+    photoUrls: string[];
+  };
+};
 
 export type OnboardingV2Stage =
   | 'not_started'
@@ -30,6 +74,11 @@ export type OnboardingV2Stage =
   | 'platform_selected'
   | 'interest'
   | 'interest_selected'
+  | 'pain_point'
+  | 'tutorial_loading'
+  | 'tutorial_challenge'
+  | 'tutorial_share_instructions'
+  | 'tutorial_awaiting_share'
   | 'tutorial_ready'
   | 'tutorial_share_tapped'
   | 'tutorial_more_tapped'
@@ -37,6 +86,9 @@ export type OnboardingV2Stage =
   | 'tutorial_favorite_added'
   | 'tutorial_processing'
   | 'tutorial_result_seen'
+  | 'tutorial_reveal'
+  | 'tutorial_celebration'
+  | 'first_magic_moment_complete'
   /** Legacy persisted stages; decoded back to tutorial_ready and never emitted by Learn V2. */
   | 'tutorial_external_video_opened'
   | 'tutorial_share_returned'
@@ -53,10 +105,12 @@ export type OnboardingV2Stage =
 
 const ONBOARDING_V2_STAGES = new Set<OnboardingV2Stage>([
   'not_started', 'overview', 'platform', 'platform_selected', 'interest',
-  'interest_selected', 'tutorial_ready', 'tutorial_share_tapped',
+  'interest_selected', 'pain_point', 'tutorial_loading', 'tutorial_challenge',
+  'tutorial_share_instructions', 'tutorial_awaiting_share', 'tutorial_ready', 'tutorial_share_tapped',
   'tutorial_more_tapped', 'tutorial_nearr_selected', 'tutorial_favorite_added',
   'tutorial_processing', 'tutorial_result_seen', 'tutorial_external_video_opened',
-  'tutorial_share_returned', 'account_required', 'place_tour', 'phase1_complete',
+  'tutorial_share_returned', 'tutorial_reveal', 'tutorial_celebration',
+  'first_magic_moment_complete', 'account_required', 'place_tour', 'phase1_complete',
   'practice_ready', 'first_independent_external_video_opened',
   'first_independent_share_returned', 'first_independent_save_complete',
   'second_independent_external_video_opened', 'second_independent_share_returned',
@@ -123,9 +177,22 @@ export type OnboardingV2State = {
   revision: number;
   cohort: 'new_user_v2' | 'existing_user_bypassed' | null;
   stage: OnboardingV2Stage;
+  startedAt: string | null;
   preferredPlatform: OnboardingPlatform | null;
+  selectedPlatforms: OnboardingPlatform[];
   interest: OnboardingInterest | null;
+  selectedInterests: OnboardingInterest[];
+  painPoint: OnboardingPainPoint | null;
   tutorialContentId: string | null;
+  tutorialFixture: OnboardingTutorialFixture | null;
+  tutorialFixtureError: string | null;
+  tutorialLaunchedAt: string | null;
+  tutorialShareReceivedAt: string | null;
+  tutorialJobId: string | null;
+  tutorialResult: OnboardingTutorialResult | null;
+  wrongShareJobId: string | null;
+  firstMagicMomentCompletedAt: string | null;
+  celebrationShownAt: string | null;
   funnelSessionId: string | null;
   identityLifecycle: OnboardingIdentityLifecycle;
   anonymousUserId: string | null;
@@ -203,9 +270,22 @@ export function createInitialOnboardingV2State(now = new Date().toISOString()): 
     revision: 0,
     cohort: null,
     stage: 'not_started',
+    startedAt: null,
     preferredPlatform: null,
+    selectedPlatforms: [],
     interest: null,
+    selectedInterests: [],
+    painPoint: null,
     tutorialContentId: null,
+    tutorialFixture: null,
+    tutorialFixtureError: null,
+    tutorialLaunchedAt: null,
+    tutorialShareReceivedAt: null,
+    tutorialJobId: null,
+    tutorialResult: null,
+    wrongShareJobId: null,
+    firstMagicMomentCompletedAt: null,
+    celebrationShownAt: null,
     funnelSessionId: null,
     identityLifecycle: 'none',
     anonymousUserId: null,
@@ -249,6 +329,8 @@ export type OnboardingV2ResumeEligibility =
     };
 
 const TUTORIAL_SAVE_REQUIRED_STAGES = new Set<OnboardingV2Stage>([
+  'tutorial_celebration',
+  'first_magic_moment_complete',
   'account_required',
   'place_tour',
   'phase1_complete',
@@ -301,8 +383,12 @@ export function onboardingV2ResumeEligibility(
   }
   if (
     (state.stage === 'interest' && !state.preferredPlatform) ||
-    ((state.stage === 'interest_selected' || state.stage.startsWith('tutorial_')) &&
+    (state.stage === 'interest_selected' &&
       (!state.preferredPlatform || !state.interest || !state.tutorialContentId)) ||
+    (state.stage === 'pain_point' && (!state.preferredPlatform || !state.interest)) ||
+    (['tutorial_challenge', 'tutorial_share_instructions', 'tutorial_awaiting_share',
+      'tutorial_processing', 'tutorial_reveal', 'tutorial_celebration'].includes(state.stage) &&
+      (!state.preferredPlatform || !state.interest || !state.painPoint || !state.tutorialFixture)) ||
     (TUTORIAL_SAVE_REQUIRED_STAGES.has(state.stage) && !state.tutorialSave?.savedPlaceId)
   ) {
     return { eligible: false, reason: 'inconsistent_checkpoint' };
@@ -369,6 +455,14 @@ export function decodeOnboardingV2State(
       ...parsed,
       version: ONBOARDING_V2_VERSION,
       stage,
+      selectedPlatforms: Array.isArray(parsed.selectedPlatforms)
+        ? parsed.selectedPlatforms.filter((value): value is OnboardingPlatform =>
+            ['instagram', 'tiktok', 'youtube', 'facebook', 'other'].includes(String(value)))
+        : parsed.preferredPlatform ? [parsed.preferredPlatform] : [],
+      selectedInterests: Array.isArray(parsed.selectedInterests)
+        ? parsed.selectedInterests.filter((value): value is OnboardingInterest =>
+            ['food', 'outdoors', 'travel', 'beaches', 'cafes', 'things_to_do', 'shopping', 'anything'].includes(String(value)))
+        : parsed.interest ? [parsed.interest] : [],
       identityLifecycle: parsed.identityLifecycle ?? (legacyPermanent ? 'permanent_account' : 'none'),
       permanentUserId: parsed.permanentUserId ?? (legacyPermanent ? parsed.boundUserId ?? null : null),
       pendingShare,
@@ -495,15 +589,303 @@ export function startOnboardingV2(
   const fresh = createInitialOnboardingV2State(now);
   return transition(
     fresh,
-    { cohort: 'new_user_v2', stage: 'overview' },
+    { cohort: 'new_user_v2', stage: 'overview', startedAt: now },
     now,
-    [{ name: 'onboarding_overview_viewed' }],
+    [{ name: 'onboarding_v2_started' }, { name: 'onboarding_overview_viewed' }],
   );
 }
 
 export function tapGetStarted(state: OnboardingV2State, now: string): OnboardingTransition {
   if (state.cohort !== 'new_user_v2' || state.stage !== 'overview') return unchanged(state);
   return transition(state, { stage: 'platform' }, now, [{ name: 'onboarding_get_started_tapped' }]);
+}
+
+export function toggleOnboardingPlatform(
+  state: OnboardingV2State,
+  platform: OnboardingPlatform,
+  now: string,
+): OnboardingTransition {
+  if (state.cohort !== 'new_user_v2' || state.stage !== 'platform') return unchanged(state);
+  const selected = state.selectedPlatforms.includes(platform)
+    ? state.selectedPlatforms.filter((value) => value !== platform)
+    : [...state.selectedPlatforms, platform];
+  return transition(state, {
+    selectedPlatforms: selected,
+    preferredPlatform: selected.includes(state.preferredPlatform as OnboardingPlatform)
+      ? state.preferredPlatform
+      : selected[0] ?? null,
+  }, now);
+}
+
+export function completeOnboardingPlatforms(
+  state: OnboardingV2State,
+  now: string,
+): OnboardingTransition {
+  if (state.stage !== 'platform' || state.selectedPlatforms.length === 0) return unchanged(state);
+  const primary = state.preferredPlatform ?? state.selectedPlatforms[0] ?? null;
+  return transition(state, { preferredPlatform: primary, stage: 'interest' }, now, [{
+    name: 'onboarding_platform_selection_completed',
+    properties: { primary_platform: primary, selected_platform_count: state.selectedPlatforms.length },
+  }]);
+}
+
+export function toggleOnboardingInterest(
+  state: OnboardingV2State,
+  interest: OnboardingInterest,
+  now: string,
+): OnboardingTransition {
+  if (state.cohort !== 'new_user_v2' || state.stage !== 'interest') return unchanged(state);
+  let selected: OnboardingInterest[];
+  if (interest === 'anything') {
+    selected = state.selectedInterests.length === 1 && state.selectedInterests[0] === 'anything'
+      ? []
+      : ['anything'];
+  } else {
+    const withoutAnything = state.selectedInterests.filter((value) => value !== 'anything');
+    selected = withoutAnything.includes(interest)
+      ? withoutAnything.filter((value) => value !== interest)
+      : [...withoutAnything, interest];
+  }
+  return transition(state, {
+    selectedInterests: selected,
+    interest: selected.includes(state.interest as OnboardingInterest)
+      ? state.interest
+      : selected[0] ?? null,
+  }, now);
+}
+
+export function completeOnboardingInterests(
+  state: OnboardingV2State,
+  now: string,
+): OnboardingTransition {
+  if (state.stage !== 'interest' || state.selectedInterests.length === 0) return unchanged(state);
+  const interest = state.interest ?? state.selectedInterests[0] ?? null;
+  return transition(state, { interest, stage: 'pain_point' }, now, [{
+    name: 'onboarding_interests_completed',
+    properties: { selected_interest_count: state.selectedInterests.length },
+  }]);
+}
+
+export function selectOnboardingPainPoint(
+  state: OnboardingV2State,
+  painPoint: OnboardingPainPoint,
+  now: string,
+): OnboardingTransition {
+  if (state.cohort !== 'new_user_v2' || state.stage !== 'pain_point') return unchanged(state);
+  return transition(state, {
+    painPoint,
+    stage: 'tutorial_loading',
+    tutorialFixtureError: null,
+  }, now, [{ name: 'onboarding_pain_point_completed', properties: { pain_point: painPoint } }]);
+}
+
+export function migrateInterruptedOnboardingToFirstMagic(
+  state: OnboardingV2State,
+  now: string,
+): OnboardingTransition {
+  if (state.cohort !== 'new_user_v2' || state.stage !== 'interest_selected') return unchanged(state);
+  const selectedPlatforms = state.selectedPlatforms.length > 0
+    ? state.selectedPlatforms
+    : state.preferredPlatform ? [state.preferredPlatform] : [];
+  const selectedInterests = state.selectedInterests.length > 0
+    ? state.selectedInterests
+    : state.interest ? [state.interest] : [];
+  if (selectedPlatforms.length === 0 || selectedInterests.length === 0) return unchanged(state);
+  return transition(state, { selectedPlatforms, selectedInterests, stage: 'pain_point' }, now);
+}
+
+export function receiveOnboardingTutorialFixture(
+  state: OnboardingV2State,
+  fixture: OnboardingTutorialFixture,
+  now: string,
+): OnboardingTransition {
+  if (state.cohort !== 'new_user_v2' || state.stage !== 'tutorial_loading') return unchanged(state);
+  return transition(state, {
+    tutorialFixture: fixture,
+    tutorialFixtureError: null,
+    tutorialContentId: fixture.contentId,
+    stage: 'tutorial_challenge',
+  }, now, [{
+    name: 'onboarding_tutorial_challenge_shown',
+    properties: { fixture_id: fixture.id, fixture_role: fixture.role, fixture_platform: fixture.platform },
+  }]);
+}
+
+export function failOnboardingTutorialFixture(
+  state: OnboardingV2State,
+  reason: string,
+  now: string,
+): OnboardingTransition {
+  if (state.cohort !== 'new_user_v2' || state.stage !== 'tutorial_loading') return unchanged(state);
+  return transition(state, { tutorialFixtureError: reason || 'fixture_unavailable' }, now);
+}
+
+export function showOnboardingShareInstructions(
+  state: OnboardingV2State,
+  now: string,
+): OnboardingTransition {
+  if (state.stage !== 'tutorial_challenge' || !state.tutorialFixture) return unchanged(state);
+  return transition(state, { stage: 'tutorial_share_instructions' }, now);
+}
+
+export function launchOnboardingTutorial(
+  state: OnboardingV2State,
+  now: string,
+): OnboardingTransition {
+  const fixture = state.tutorialFixture;
+  if (!fixture || !['tutorial_share_instructions', 'tutorial_awaiting_share'].includes(state.stage)) {
+    return unchanged(state);
+  }
+  const normalizedSourceUrl = normalizeOnboardingSourceUrl(fixture.canonicalUrl);
+  if (!normalizedSourceUrl) return unchanged(state);
+  const pendingShare: PendingOnboardingShare = {
+    attemptId: `tutorial:${fixture.id}:${now}`,
+    kind: 'tutorial',
+    contentId: fixture.contentId,
+    sourceUrl: fixture.canonicalUrl,
+    normalizedSourceUrl,
+    contentIdentity: { platform: fixture.platform, contentId: fixture.contentId.toLowerCase() },
+    openedAt: now,
+    shareReceivedAt: null,
+    resultSeenAt: null,
+  };
+  return transition(state, {
+    stage: 'tutorial_awaiting_share',
+    pendingShare,
+    tutorialLaunchedAt: now,
+    tutorialShareReceivedAt: null,
+    tutorialJobId: null,
+    tutorialResult: null,
+    wrongShareJobId: null,
+    lastFailure: null,
+  }, now, [{
+    name: 'onboarding_tutorial_launched',
+    properties: { fixture_id: fixture.id, fixture_role: fixture.role, fixture_platform: fixture.platform },
+  }]);
+}
+
+export function observeOnboardingTutorialJob(
+  state: OnboardingV2State,
+  input: { jobId: string; sourceUrl: string },
+  now: string,
+): OnboardingTransition {
+  if (!['tutorial_awaiting_share', 'tutorial_processing'].includes(state.stage) ||
+      !isExpectedOnboardingSource(state.pendingShare, input.sourceUrl)) return unchanged(state);
+  if (state.tutorialJobId && state.tutorialJobId !== input.jobId) return unchanged(state);
+  const launchedMs = state.tutorialLaunchedAt ? Date.parse(state.tutorialLaunchedAt) : Number.NaN;
+  const elapsed = Number.isFinite(launchedMs) ? Math.max(0, Date.parse(now) - launchedMs) : null;
+  return transition(state, {
+    stage: 'tutorial_processing',
+    tutorialJobId: input.jobId,
+    tutorialShareReceivedAt: state.tutorialShareReceivedAt ?? now,
+    pendingShare: state.pendingShare ? { ...state.pendingShare, shareReceivedAt: state.pendingShare.shareReceivedAt ?? now } : null,
+    wrongShareJobId: null,
+  }, now, state.tutorialShareReceivedAt ? [] : [
+    { name: 'onboarding_tutorial_share_received', properties: { fixture_id: state.tutorialFixture?.id, time_to_tutorial_share: elapsed } },
+    { name: 'onboarding_tutorial_processing_started', properties: { fixture_id: state.tutorialFixture?.id } },
+  ]);
+}
+
+export function observeWrongOnboardingTutorialJob(
+  state: OnboardingV2State,
+  jobId: string,
+  now: string,
+): OnboardingTransition {
+  if (state.stage !== 'tutorial_awaiting_share' || !jobId || state.wrongShareJobId === jobId) return unchanged(state);
+  return transition(state, { wrongShareJobId: jobId }, now, [{ name: 'onboarding_tutorial_wrong_source', properties: { fixture_id: state.tutorialFixture?.id } }]);
+}
+
+export function resolveOnboardingTutorialResult(
+  state: OnboardingV2State,
+  result: OnboardingTutorialResult,
+  now: string,
+): OnboardingTransition {
+  const fixture = state.tutorialFixture;
+  if (state.stage !== 'tutorial_processing' || !fixture ||
+      result.jobId !== state.tutorialJobId || result.fixtureId !== fixture.id ||
+      result.fixtureRevision !== fixture.revision || result.fixtureRole !== fixture.role ||
+      result.resolutionSource !== 'tutorial_fixture' || !result.savedPlaceId) return unchanged(state);
+  return transition(state, {
+    stage: 'tutorial_reveal',
+    tutorialResult: result,
+    pendingShare: state.pendingShare ? { ...state.pendingShare, resultSeenAt: now } : null,
+  }, now, [
+    { name: 'onboarding_tutorial_fixture_resolved', properties: {
+      fixture_id: fixture.id, fixture_role: fixture.role, fixture_platform: fixture.platform,
+      resolution_source: result.resolutionSource,
+    } },
+    { name: 'onboarding_place_reveal_shown', properties: { fixture_id: fixture.id, resolution_source: result.resolutionSource } },
+  ]);
+}
+
+export function retryOnboardingTutorialShare(
+  state: OnboardingV2State,
+  now: string,
+): OnboardingTransition {
+  if (!['tutorial_awaiting_share', 'tutorial_processing'].includes(state.stage)) return unchanged(state);
+  return transition(state, {
+    stage: 'tutorial_share_instructions',
+    pendingShare: null,
+    tutorialLaunchedAt: null,
+    tutorialShareReceivedAt: null,
+    tutorialJobId: null,
+    tutorialResult: null,
+    wrongShareJobId: null,
+    lastFailure: null,
+  }, now);
+}
+
+export function confirmOnboardingFirstMagicMoment(
+  state: OnboardingV2State,
+  now: string,
+): OnboardingTransition {
+  const result = state.tutorialResult;
+  const fixture = state.tutorialFixture;
+  if (state.stage !== 'tutorial_reveal' || !result || !fixture ||
+      result.fixtureId !== fixture.id || result.resolutionSource !== 'tutorial_fixture') return unchanged(state);
+  const tutorialSave: CompletedOnboardingSave = {
+    kind: 'tutorial',
+    contentId: fixture.contentId,
+    sourceUrl: result.sourceUrl,
+    normalizedSourceUrl: normalizeOnboardingSourceUrl(result.sourceUrl) ?? result.sourceUrl,
+    contentIdentity: { platform: fixture.platform, contentId: fixture.contentId.toLowerCase() },
+    savedPlaceId: result.savedPlaceId,
+    completedAt: now,
+  };
+  const startedMs = state.startedAt ? Date.parse(state.startedAt) : Number.NaN;
+  const elapsed = Number.isFinite(startedMs) ? Math.max(0, Date.parse(now) - startedMs) : null;
+  return transition(state, {
+    stage: 'tutorial_celebration',
+    tutorialSave,
+    pendingShare: null,
+    firstMagicMomentCompletedAt: now,
+    phase1CompletedAt: now,
+  }, now, [{
+    name: 'onboarding_first_tutorial_save_completed',
+    properties: {
+      fixture_id: fixture.id, fixture_role: fixture.role, fixture_platform: fixture.platform,
+      resolution_source: result.resolutionSource, time_to_first_save: elapsed,
+    },
+  }]);
+}
+
+export function showOnboardingCelebration(
+  state: OnboardingV2State,
+  now: string,
+): OnboardingTransition {
+  if (state.stage !== 'tutorial_celebration' || state.celebrationShownAt) return unchanged(state);
+  return transition(state, { celebrationShownAt: now }, now, [{
+    name: 'onboarding_first_save_celebration_shown',
+    properties: { fixture_id: state.tutorialFixture?.id },
+  }]);
+}
+
+export function finishOnboardingFirstMagicMoment(
+  state: OnboardingV2State,
+  now: string,
+): OnboardingTransition {
+  if (state.stage !== 'tutorial_celebration' || !state.firstMagicMomentCompletedAt) return unchanged(state);
+  return transition(state, { stage: 'first_magic_moment_complete' }, now);
 }
 
 export function selectPlatform(
@@ -613,6 +995,11 @@ export function backOnboardingV2(state: OnboardingV2State, now: string): Onboard
   const previous: Partial<Record<OnboardingV2Stage, OnboardingV2Stage>> = {
     platform: 'overview',
     interest: 'platform',
+    pain_point: 'interest',
+    tutorial_loading: 'pain_point',
+    tutorial_challenge: 'pain_point',
+    tutorial_share_instructions: 'tutorial_challenge',
+    tutorial_awaiting_share: 'tutorial_share_instructions',
     interest_selected: 'interest',
     tutorial_ready: 'interest_selected',
     tutorial_share_tapped: 'tutorial_ready',
@@ -1302,6 +1689,7 @@ export function acknowledgeGraduation(
 export function isOnboardingV2InProgressState(state: OnboardingV2State): boolean {
   return state.cohort === 'new_user_v2' &&
     !state.behavioralCompletedAt &&
+    !state.firstMagicMomentCompletedAt &&
     state.stage !== 'phase1_complete' &&
     state.stage !== 'graduated';
 }

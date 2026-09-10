@@ -27,6 +27,16 @@ export function expectedOnboardingV2Route(
 ): OnboardingV2Route | null {
   if (!stage) return null;
   if (stage === 'account_required') return '/(onboarding)/account';
+  if ([
+    'tutorial_loading',
+    'tutorial_challenge',
+    'tutorial_share_instructions',
+    'tutorial_awaiting_share',
+    'tutorial_processing',
+    'tutorial_reveal',
+    'tutorial_celebration',
+    'first_magic_moment_complete',
+  ].includes(stage)) return '/(onboarding)';
   if (stage.startsWith('tutorial_')) return '/activate';
   if (
     stage === 'place_tour' ||

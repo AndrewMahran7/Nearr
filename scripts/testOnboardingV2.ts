@@ -56,7 +56,7 @@ for (const platform of ['instagram', 'tiktok', 'youtube', 'facebook'] as const) 
 assert.equal(Object.keys(ONBOARDING_TUTORIAL_CONFIG).length, 4, 'one explicit tutorial config exists per supported platform');
 assert.equal(
   Object.values(ONBOARDING_TUTORIAL_CONFIG).flatMap((slots) => Object.values(slots)).length,
-  24,
+  32,
   'every persisted interest has an explicit platform-specific tutorial slot',
 );
 

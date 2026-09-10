@@ -232,6 +232,8 @@ const TUTORIAL_CONTENT_BY_INTEREST: Readonly<Record<OnboardingInterest, string>>
   travel: 'ig-paradise-dynasty-costa-mesa',
   beaches: 'ig-hellfire-bay-western-australia',
   shopping: 'ig-paradise-dynasty-costa-mesa',
+  cafes: 'ig-mad-yolks-santa-cruz',
+  things_to_do: 'ig-hellfire-bay-western-australia',
   anything: 'ig-2nd-floor-huntington-beach',
 };
 
