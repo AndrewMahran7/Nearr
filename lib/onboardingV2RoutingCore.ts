@@ -82,3 +82,19 @@ export function shouldNavigateOnboarding(input: {
     input.pendingNavigation.to === input.expectedRoute
   );
 }
+
+/**
+ * A completed anonymous onboarding checkpoint still needs a canonical map
+ * destination at startup, but it must stop acting like a global tabs guard
+ * after the user has entered the product. Settings and every other real tab
+ * own their own route from that point onward.
+ */
+export function shouldPreserveCompletedOnboardingTab(input: {
+  currentRoute: string;
+  stage: OnboardingV2Stage | null | undefined;
+  behavioralCompletedAt: string | null | undefined;
+}): boolean {
+  return input.currentRoute.startsWith('/(tabs)') &&
+    !!input.behavioralCompletedAt &&
+    (input.stage === 'onboarding_complete' || input.stage === 'graduated');
+}

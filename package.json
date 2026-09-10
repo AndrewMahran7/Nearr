@@ -215,6 +215,7 @@
     "test:onboarding-v2": "ts-node -P scripts/tsconfig.json scripts/testOnboardingV2FirstMagicMoment.ts && ts-node -P scripts/tsconfig.json scripts/testOnboardingV2SecondHalf.ts && npm run test:onboarding-v2-deleted-account && npm run test:onboarding-v2-dev-reset",
     "test:onboarding-v2-phase2": "ts-node -P scripts/tsconfig.json scripts/testOnboardingV2Phase2Practice.ts && npm run test:onboarding-v2-try-another && npm run test:onboarding-v2-phase2-map && npm run test:onboarding-v2-p0-production",
     "test:onboarding-v2-try-another": "ts-node -P scripts/tsconfig.json scripts/testOnboardingV2TryAnother.ts",
+    "test:onboarding-v2-map-settings": "ts-node -P scripts/tsconfig.json scripts/testOnboardingV2MapSettingsNavigation.ts",
     "test:onboarding-v2-phase2-map": "ts-node -P scripts/tsconfig.json scripts/testOnboardingV2Phase2Map.ts",
     "test:onboarding-v2-p0-production": "ts-node -P scripts/tsconfig.json scripts/testOnboardingV2P0ProductionFixture.ts",
     "test:onboarding-v2-deleted-account": "ts-node -P scripts/tsconfig.json scripts/testOnboardingV2DeletedAccount.ts && npm run test:onboarding-v2-post-delete",

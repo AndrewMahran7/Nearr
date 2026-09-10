@@ -132,14 +132,17 @@ const button = read('components/map/ShareQueueButton.tsx');
 
   assert.equal(
     renderGate.trim(),
-    '{!cleanOnboardingLanding && !searchVisible && !nearbyExplorer ? (',
-    'only the onboarding reveal, full-screen search, or Nearby Explorer may hide the Queue',
+    '{!searchVisible && !nearbyExplorer ? (',
+    'only full-screen search or Nearby Explorer may hide the Queue',
   );
   assert.ok(
     !/shouldShowMapControls|previewExpanded|selected/.test(renderGate),
     'the Queue must NOT be hidden along with the selection-gated top chrome',
   );
-  assert.match(map, /cleanOnboardingLanding = placeSource === 'onboarding_tutorial'/);
+  assert.ok(
+    !renderGate.includes('cleanOnboardingLanding'),
+    'the first onboarding map uses the same Queue entry point as later visits',
+  );
   assert.ok(map.includes('styles.queueChrome'), 'it has its own positioned overlay');
 
   // The search bar and filter chips keep the original contract — this fix does

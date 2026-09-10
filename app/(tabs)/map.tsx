@@ -4039,7 +4039,7 @@ export default function MapScreen() {
           dropdown, or dedicated Nearby Explorer, each of which owns the whole
           interaction surface.
           Regression covered by scripts/testMapQueueEntryPoint.ts. */}
-      {!cleanOnboardingLanding && !searchVisible && !nearbyExplorer ? (
+      {!searchVisible && !nearbyExplorer ? (
         <View
           style={[
             styles.queueChrome,

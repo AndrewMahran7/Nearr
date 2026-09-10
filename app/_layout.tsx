@@ -27,6 +27,7 @@ import {
   expectedOnboardingV2Route,
   onboardingRouteKey,
   shouldNavigateOnboarding,
+  shouldPreserveCompletedOnboardingTab,
   type OnboardingV2Route,
   type PendingOnboardingNavigation,
 } from '@/lib/onboardingV2RoutingCore';
@@ -465,6 +466,11 @@ function AuthGate({
         replaceOnce('/(onboarding)');
         return;
       }
+      if (shouldPreserveCompletedOnboardingTab({
+        currentRoute,
+        stage: onboardingV2.stage,
+        behavioralCompletedAt: onboardingV2.behavioralCompletedAt,
+      })) return;
       if (expectedV2Route) replaceOnce(expectedV2Route);
       return;
     }
