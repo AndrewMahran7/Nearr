@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "status": "suspended",
+  "scope": {
+    "appEnvironment": "development",
+    "backendEnvironment": "development",
+    "supabaseProjectRef": "qnfxnmvxpjzfydgudtvs"
+  },
+  "client": {
+    "EXPO_PUBLIC_MONETIZATION_ENABLED": false,
+    "EXPO_PUBLIC_PREMIUM_REQUESTS_ENABLED": false,
+    "EXPO_PUBLIC_TOKEN_MONETIZATION_ENABLED": false
+  },
+  "server": {
+    "TOKEN_MONETIZATION_ENABLED": false,
+    "PREMIUM_REQUESTS_ENABLED": false,
+    "MONETIZATION_DEV_MOCK_ENABLED": false
+  },
+  "safety": {
+    "productionProjectRef": "rlqvxdwtetxsqxhqztkw",
+    "productionBypassAllowed": false,
+    "preserveBalances": true,
+    "preserveLedgerAndPurchaseHistory": true,
+    "preserveRevenueCatConfiguration": true
+  }
+}

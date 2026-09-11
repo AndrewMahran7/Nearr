@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test:monetization-token-ux": "ts-node -P scripts/tsconfig.json scripts/testMonetizationTokenUx.ts",
     "test:monetization-integration": "ts-node -P scripts/tsconfig.json scripts/testMonetizationIntegration.ts",
+    "test:monetization-suspension-contract": "ts-node -P scripts/tsconfig.json scripts/testMonetizationSuspensionContract.ts",
     "test:premium-request-monetization": "ts-node -P scripts/tsconfig.json scripts/testPremiumRequestMonetization.ts",
     "test:premium-suspension": "ts-node -P scripts/tsconfig.json scripts/testPremiumSuspension.ts",
     "test:auto-deep-recognition": "npm --prefix services/media-worker run test:auto-deep-recognition",
