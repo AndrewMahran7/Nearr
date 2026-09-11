@@ -54,6 +54,8 @@ export type OnboardingReminderInitializationResult =
   | 'not_eligible'
   | 'failed';
 
+export type OnboardingMapHandoffResult = 'ready' | 'pending' | 'missing' | 'offline' | 'failed';
+
 export type OnboardingActivationChoice = 'find_another' | 'explore_map';
 
 export type OnboardingTutorialFixture = {
@@ -238,6 +240,8 @@ export type OnboardingV2State = {
   externalPracticeShareReceivedAt: string | null;
   practiceCompletedAt: string | null;
   mapEnteredAt: string | null;
+  mapHandoffResult: OnboardingMapHandoffResult | null;
+  mapHandoffCheckedAt: string | null;
   tutorialLaunchedAt: string | null;
   tutorialShareReceivedAt: string | null;
   tutorialJobId: string | null;
@@ -365,6 +369,8 @@ export function createInitialOnboardingV2State(now = new Date().toISOString()): 
     externalPracticeShareReceivedAt: null,
     practiceCompletedAt: null,
     mapEnteredAt: null,
+    mapHandoffResult: null,
+    mapHandoffCheckedAt: null,
     tutorialLaunchedAt: null,
     tutorialShareReceivedAt: null,
     tutorialJobId: null,
@@ -830,9 +836,13 @@ export function selectOnboardingPainPoint(
   const postMagic = !!state.tutorialSave && !!state.firstMagicMomentCompletedAt;
   return transition(state, {
     painPoint,
-    stage: postMagic ? 'desired_value' : 'tutorial_loading',
+    stage: postMagic ? 'why_nearr' : 'tutorial_loading',
     tutorialFixtureError: postMagic ? state.tutorialFixtureError : null,
-  }, now, [{ name: 'onboarding_pain_point_completed', properties: { pain_point: painPoint } }]);
+    whyNearrViewedAt: postMagic ? state.whyNearrViewedAt ?? now : state.whyNearrViewedAt,
+  }, now, [
+    { name: 'onboarding_pain_point_completed', properties: { pain_point: painPoint } },
+    ...(postMagic ? [{ name: 'onboarding_share_education_shown', properties: { preferred_platform: state.preferredPlatform } }] : []),
+  ]);
 }
 
 export function selectOnboardingDesiredValue(
@@ -1169,9 +1179,10 @@ export function beginOnboardingSecondHalf(
   if (state.stage !== 'first_magic_moment_complete' || !state.firstMagicMomentCompletedAt ||
       !state.tutorialSave || !state.tutorialResult) return unchanged(state);
   return transition(state, {
-    stage: 'pain_point',
+    stage: 'why_nearr',
     secondHalfStartedAt: state.secondHalfStartedAt ?? now,
-  }, now);
+    whyNearrViewedAt: state.whyNearrViewedAt ?? now,
+  }, now, state.whyNearrViewedAt ? [] : [{ name: 'onboarding_share_education_shown', properties: { preferred_platform: state.preferredPlatform } }]);
 }
 
 export function continueOnboardingToNearbyValue(
@@ -1725,6 +1736,38 @@ function expectedKind(state: OnboardingV2State): OnboardingSaveKind | null {
   return null;
 }
 
+export function resumeDeferredOnboardingPractice(
+  state: OnboardingV2State,
+  now: string,
+): OnboardingTransition {
+  if (
+    !['activation_challenge', 'onboarding_complete'].includes(state.stage) ||
+    !state.tutorialSave || state.independentSaves.length > 0 || state.practiceCompletedAt
+  ) return unchanged(state);
+  return transition(state, {
+    stage: 'practice_ready',
+    pendingShare: null,
+    lastFailure: null,
+    practiceRecovery: null,
+  }, now, [{ name: 'onboarding_practice_resumed', properties: { entry_stage: state.stage } }]);
+}
+
+export function recordOnboardingMapEntered(
+  state: OnboardingV2State,
+  tutorialSavedPlaceAvailable: boolean,
+  now: string,
+): OnboardingTransition {
+  if (!state.tutorialSave || state.mapEnteredAt || !tutorialSavedPlaceAvailable) return unchanged(state);
+  const startedMs = state.startedAt ? Date.parse(state.startedAt) : Number.NaN;
+  return transition(state, { mapEnteredAt: now }, now, [{
+    name: 'onboarding_map_entered',
+    properties: {
+      saved_place_id: state.tutorialSave.savedPlaceId,
+      time_to_usable_map: Number.isFinite(startedMs) ? Math.max(0, Date.parse(now) - startedMs) : null,
+    },
+  }]);
+}
+
 export function recordOnboardingReminderInitialization(
   state: OnboardingV2State,
   result: OnboardingReminderInitializationResult,
@@ -1735,6 +1778,17 @@ export function recordOnboardingReminderInitialization(
     reminderInitializationResult: result,
     reminderInitializationCheckedAt: now,
   }, now, [{ name: 'onboarding_reminder_initialization_result', properties: { result } }]);
+}
+
+export function recordOnboardingMapHandoff(
+  state: OnboardingV2State,
+  result: OnboardingMapHandoffResult,
+  now: string,
+): OnboardingTransition {
+  if (state.stage !== 'making_nearr_yours') return unchanged(state);
+  return transition(state, { mapHandoffResult: result, mapHandoffCheckedAt: now }, now, [{
+    name: 'onboarding_map_handoff_prepared', properties: { result },
+  }]);
 }
 
 export const ONBOARDING_PRACTICE_MIN_EXTERNAL_DWELL_MS = 3_000;
@@ -1885,7 +1939,7 @@ export function deferOnboardingPractice(
 ): OnboardingTransition {
   if (state.stage !== 'practice_ready' || !state.tutorialSave) return unchanged(state);
   return transition(state, {
-    stage: 'why_nearr',
+    stage: state.behavioralCompletedAt ? 'onboarding_complete' : 'why_nearr',
     secondHalfStartedAt: state.secondHalfStartedAt ?? now,
   }, now, [{ name: 'onboarding_practice_deferred', properties: { fixture_id: state.practiceFixture?.id } }]);
 }
@@ -1895,7 +1949,7 @@ export function openExternalStarter(
   input: { contentId: string; sourceUrl: string },
   now: string,
 ): OnboardingTransition {
-  if (state.cohort !== 'new_user_v2' || state.behavioralCompletedAt) return unchanged(state);
+  if (state.cohort !== 'new_user_v2' || (state.behavioralCompletedAt && state.stage !== 'practice_ready')) return unchanged(state);
   const kind = expectedKind(state);
   const normalizedSourceUrl = normalizeOnboardingSourceUrl(input.sourceUrl);
   if (!kind || !normalizedSourceUrl) return unchanged(state);
@@ -2104,7 +2158,7 @@ export function completePendingSave(
     return transition(
       state,
       {
-        stage: 'why_nearr', pendingShare: null, independentSaves, practiceRecovery: null,
+        stage: state.behavioralCompletedAt ? 'onboarding_complete' : 'why_nearr', pendingShare: null, independentSaves, practiceRecovery: null,
         practiceCompletedAt: now, secondHalfStartedAt: state.secondHalfStartedAt ?? now,
       },
       now,

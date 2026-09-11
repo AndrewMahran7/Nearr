@@ -62,7 +62,7 @@ const initial: OnboardingV2State = {
   ...createInitialOnboardingV2State(at(0)),
   cohort: 'new_user_v2', stage: 'first_magic_moment_complete', startedAt: at(0),
   preferredPlatform: 'instagram', selectedPlatforms: ['instagram', 'youtube'],
-  interest: 'outdoors', selectedInterests: ['outdoors', 'travel'], painPoint: 'cannot_find_place',
+  interest: 'outdoors', selectedInterests: ['outdoors', 'travel'], painPoint: 'cannot_find_place', desiredValue: 'organize_map',
   firstMagicMomentCompletedAt: at(1), phase1CompletedAt: at(1), tutorialSave: save,
   tutorialResult: result, funnelSessionId: '11111111-1111-4111-8111-111111111111',
   identityLifecycle: 'anonymous_active', anonymousUserId: 'anonymous-user', boundUserId: 'anonymous-user',
@@ -81,16 +81,8 @@ assert.match(personalizedActivationCopy({ platform: 'instagram', interest: 'outd
 assert.equal(platformLaunchUrl('youtube'), 'https://www.youtube.com/shorts/');
 
 let state = step(initial, beginOnboardingSecondHalf, 2);
-assert.equal(state.stage, 'pain_point', 'pain is asked only after the demonstrated save');
+assert.equal(state.stage, 'why_nearr', 'post-reveal momentum bypasses the two legacy questionnaires');
 assert.equal(isOnboardingV2InProgressState(state), true);
-const painChoice = selectOnboardingPainPoint(state, 'cannot_find_place', at(3));
-state = painChoice.state;
-assert.equal(state.stage, 'desired_value');
-assert.equal(painChoice.events.some((event) => event.name === 'onboarding_pain_point_completed'), true);
-const desiredChoice = selectOnboardingDesiredValue(state, 'organize_map', at(4));
-state = desiredChoice.state;
-assert.equal(state.stage, 'why_nearr');
-assert.equal(desiredChoice.events.some((event) => event.name === 'onboarding_desired_value_selected'), true);
 assert.match(desiredValueCopy(state.desiredValue), /one personal map/);
 const nearbyView = continueOnboardingToNearbyValue(state, at(5));
 state = nearbyView.state;
@@ -129,8 +121,6 @@ assert.equal(restored?.desiredValue, 'organize_map');
 assert.equal(restored?.tutorialSave?.savedPlaceId, save.savedPlaceId);
 
 let denied = step(initial, beginOnboardingSecondHalf, 20);
-denied = selectOnboardingPainPoint(denied, 'saved_and_forgotten', at(21)).state;
-denied = selectOnboardingDesiredValue(denied, 'find_real_places', at(22)).state;
 denied = step(denied, continueOnboardingToNearbyValue, 23);
 denied = step(denied, continueOnboardingToLocationEducation, 24);
 denied = recordOnboardingForegroundLocationResult(denied, 'restricted', at(25)).state;
@@ -169,7 +159,7 @@ assert.match(ui, /requestOnboardingNotifications/);
 assert.match(ui, /Background access is explained separately/);
 assert.match(permissions, /getBackgroundPermissionsAsync/);
 assert.match(permissions, /requestBackgroundPermissionsAsync/);
-assert.match(ui, /From your feed to your map/);
+assert.match(ui, /Your map keeps the place, its original post, and directions together/);
 assert.match(ui, /Explore my map/);
 assert.match(ui, /MAKING NEARR YOURS/);
 assert.match(ui, /No account setup is needed/);
@@ -186,8 +176,6 @@ assert.match(migration, /delete from public\.saved_places where id = v_source_sa
 assert.match(migration, /update public\.saved_places set user_id = v_destination/);
 
 let backgroundDenied = step(initial, beginOnboardingSecondHalf, 31);
-backgroundDenied = selectOnboardingPainPoint(backgroundDenied, 'saved_and_forgotten', at(32)).state;
-backgroundDenied = selectOnboardingDesiredValue(backgroundDenied, 'find_real_places', at(33)).state;
 backgroundDenied = step(backgroundDenied, continueOnboardingToNearbyValue, 34);
 backgroundDenied = step(backgroundDenied, continueOnboardingToLocationEducation, 35);
 backgroundDenied = recordOnboardingForegroundLocationResult(backgroundDenied, 'granted', at(36), { requested: false }).state;
@@ -203,5 +191,10 @@ assert.equal(classifyReminderInitialization({ backgroundLocation: 'granted', not
 assert.equal(classifyReminderInitialization({ backgroundLocation: 'granted', notifications: 'granted', proximity: 'skipped', geofence: 'stopped', push: 'fulfilled' }), 'pending');
 assert.equal(classifyReminderInitialization({ backgroundLocation: 'denied', notifications: 'granted', proximity: 'skipped', geofence: 'stopped', push: 'fulfilled' }), 'not_eligible');
 assert.equal(classifyReminderInitialization({ backgroundLocation: 'granted', notifications: 'granted', proximity: 'rejected', geofence: 'rejected', push: 'rejected' }), 'failed');
+
+const legacyPain = selectOnboardingPainPoint({ ...initial, stage: 'pain_point' }, 'saved_and_forgotten', at(39));
+assert.equal(legacyPain.state.stage, 'why_nearr', 'a persisted legacy pain question does not stack a second questionnaire');
+const legacyDesired = selectOnboardingDesiredValue({ ...initial, stage: 'desired_value' }, 'find_real_places', at(40));
+assert.equal(legacyDesired.state.stage, 'why_nearr', 'a persisted desired-value checkpoint remains migratable');
 
 console.log('PASS Onboarding V2 second-half value, permissions, auth transfer, activation, completion, and Development guards');

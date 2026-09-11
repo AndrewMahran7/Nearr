@@ -425,6 +425,43 @@ export function getSavedPlacesCacheSnapshot(): SavedPlaceWithPlace[] | null {
 }
 
 /**
+ * Bounded pre-handoff hydration used by onboarding. A successful fetch primes
+ * the same cache the real map consumes; timeout/offline never blocks entry.
+ */
+export async function prepareSavedPlacesForMapHandoff(
+  requiredSavedPlaceIds: readonly string[],
+  timeoutMs = 4_000,
+): Promise<'ready' | 'pending' | 'missing' | 'offline'> {
+  const required = [...new Set(requiredSavedPlaceIds.filter(Boolean))];
+  const { data: sessionData } = await supabase.auth.getSession();
+  const userId = sessionData.session?.user.id ?? null;
+  if (!userId) return 'offline';
+  const current = getMemory(userId)?.data ?? [];
+  if (required.length > 0 && required.every((id) => current.some((saved) => saved.id === id))) return 'ready';
+
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  const fetchPromise = runListSavedPlaces(userId).then((result) => {
+    if (shouldCommitSavedPlacesFetch(result.startedMutationRevision, cacheMutationRevision)) {
+      setMemoryCache({ userId, data: result.data, fetchedAt: Date.now() });
+    }
+    return result.data;
+  });
+  try {
+    const rows = await Promise.race([
+      fetchPromise,
+      new Promise<null>((resolve) => { timer = setTimeout(() => resolve(null), timeoutMs); }),
+    ]);
+    if (!rows) return 'pending';
+    return required.every((id) => rows.some((saved) => saved.id === id)) ? 'ready' : 'missing';
+  } catch {
+    return current.length > 0 ? 'missing' : 'offline';
+  } finally {
+    if (timer) clearTimeout(timer);
+    void fetchPromise.catch(() => undefined);
+  }
+}
+
+/**
  * Apply a pure updater to the cached saved-places list. Updates the in-memory
  * cache, persists to AsyncStorage, and notifies every mounted hook instance.
  * No-op when there is no cache or the updater returns the same array.

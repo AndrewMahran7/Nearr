@@ -66,6 +66,8 @@ import {
   recordOnboardingForegroundLocationResult,
   recordOnboardingNotificationResult,
   recordOnboardingReminderInitialization,
+  recordOnboardingMapEntered,
+  recordOnboardingMapHandoff,
   recordPracticeReturnedWithoutShare,
   receiveSharedSource,
   receiveOnboardingTutorialFixture,
@@ -88,6 +90,7 @@ import {
   startOnboardingV2,
   startOnboardingAuth,
   requestOnboardingMapBackup,
+  resumeDeferredOnboardingPractice,
   tapGetStarted,
   toggleOnboardingInterest,
   toggleOnboardingPlatform,
@@ -99,6 +102,7 @@ import {
   type OnboardingPainPoint,
   type OnboardingPermissionResult,
   type OnboardingReminderInitializationResult,
+  type OnboardingMapHandoffResult,
   type OnboardingPlatform,
   type OnboardingTutorialFixture,
   type OnboardingTutorialResult,
@@ -143,6 +147,9 @@ export type OnboardingV2EventName =
   | 'onboarding_notification_permission_requested'
   | 'onboarding_notification_permission_result'
   | 'onboarding_reminder_initialization_result'
+  | 'onboarding_map_entered'
+  | 'onboarding_map_handoff_prepared'
+  | 'onboarding_practice_resumed'
   | 'onboarding_making_nearr_yours_viewed'
   | 'onboarding_growing_map_viewed'
   | 'onboarding_auth_viewed'
@@ -523,6 +530,10 @@ export function recordOnboardingV2ReminderInitialization(
   return applyTransition((state, now) => recordOnboardingReminderInitialization(state, result, now));
 }
 
+export function recordOnboardingV2MapHandoff(result: OnboardingMapHandoffResult): Promise<OnboardingV2State> {
+  return applyTransition((state, now) => recordOnboardingMapHandoff(state, result, now));
+}
+
 export function continueOnboardingV2AfterMakingNearrYours(): Promise<OnboardingV2State> {
   return applyTransition(continueOnboardingAfterMakingNearrYours);
 }
@@ -541,6 +552,14 @@ export function showOnboardingV2ActivationChallenge(): Promise<OnboardingV2State
 
 export function completeOnboardingV2SecondHalf(choice: OnboardingActivationChoice): Promise<OnboardingV2State> {
   return applyTransition((state, now) => completeOnboardingSecondHalf(state, choice, now));
+}
+
+export function resumeOnboardingV2DeferredPractice(): Promise<OnboardingV2State> {
+  return applyTransition(resumeDeferredOnboardingPractice);
+}
+
+export function recordOnboardingV2MapEntered(tutorialSavedPlaceAvailable: boolean): Promise<OnboardingV2State> {
+  return applyTransition((state, now) => recordOnboardingMapEntered(state, tutorialSavedPlaceAvailable, now));
 }
 
 export function requestOnboardingV2MapBackup(): Promise<OnboardingV2State> {

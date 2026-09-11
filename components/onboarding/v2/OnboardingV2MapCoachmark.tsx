@@ -16,6 +16,7 @@ import {
   setOnboardingV2PracticeFixture,
   setOnboardingV2PracticeFixtureError,
   observeOnboardingV2ShareReceived,
+  resumeOnboardingV2DeferredPractice,
 } from '@/lib/onboardingV2';
 import {
   isShareJobForTutorialFixture,
@@ -37,8 +38,10 @@ export function OnboardingV2MapCoachmark({ topOffset }: { topOffset: number }) {
   const backgroundedAtRef = useRef<string | null>(null);
   const phase1Only = isOnboardingV2Phase1Only();
   const practiceActive = !!state && !phase1Only && isOnboardingV2Phase2MapState(state) &&
-    !state.behavioralCompletedAt && state.independentSaves.length === 0 &&
+    state.independentSaves.length === 0 &&
     ['practice_ready', 'first_independent_external_video_opened', 'first_independent_share_returned'].includes(state.stage);
+  const deferredPracticeAvailable = !!state && !phase1Only && state.stage === 'onboarding_complete' &&
+    !state.practiceCompletedAt && state.independentSaves.length === 0;
   const fixture = state?.practiceFixture ?? null;
   const independentPending = state?.pendingShare?.kind === 'independent_1';
   const { jobs, refresh } = useOnboardingTutorialJobs(
@@ -83,7 +86,10 @@ export function OnboardingV2MapCoachmark({ topOffset }: { topOffset: number }) {
     return () => { if (timer) clearTimeout(timer); subscription.remove(); };
   }, [refresh, state?.pendingShare]);
 
-  if (!practiceActive) return null;
+  if (!practiceActive) {
+    if (!deferredPracticeAvailable) return null;
+    return <Pressable style={[styles.practicePill, { top: topOffset }]} onPress={() => void resumeOnboardingV2DeferredPractice()} accessibilityRole="button" accessibilityLabel="Practice sharing a selected post"><Feather name="share-2" size={16} color="#FFFFFF" /><Text style={styles.practicePillText}>Practice sharing</Text></Pressable>;
+  }
   if (!fixture) return <View style={[styles.dock, { top: topOffset }]}><Text style={styles.eyebrow}>YOUR TURN</Text><Text style={styles.title}>{state?.practiceFixtureError ? 'Practice is unavailable right now.' : 'Choosing a post for you…'}</Text><Text style={styles.body}>{state?.practiceFixtureError ? 'Your first place is safe. Continue now and try a practice share later.' : 'Your saved card and map stay available while this loads.'}</Text>{state?.practiceFixtureError ? <Pressable style={styles.quiet} onPress={() => void deferOnboardingV2Practice()}><Text style={styles.quietText}>Try later</Text></Pressable> : null}</View>;
 
   const platform = fixture.platform === 'instagram' ? 'Instagram' : fixture.platform === 'youtube' ? 'YouTube' : fixture.platform;
@@ -116,6 +122,7 @@ export function OnboardingV2MapCoachmark({ topOffset }: { topOffset: number }) {
 }
 
 const styles = StyleSheet.create({
+  practicePill: { position: 'absolute', right: 16, zIndex: 80, minHeight: 44, paddingHorizontal: 14, borderRadius: 22, flexDirection: 'row', gap: 8, alignItems: 'center', backgroundColor: '#111111' }, practicePillText: { color: '#FFFFFF', fontSize: 13, fontWeight: '900' },
   dock: { position: 'absolute', left: 16, right: 16, zIndex: 80, elevation: 12, padding: 16, borderRadius: 20, backgroundColor: '#111111', borderWidth: 1, borderColor: '#303030', shadowColor: '#000000', shadowOpacity: 0.3, shadowRadius: 14, shadowOffset: { width: 0, height: 7 } },
   eyebrow: { color: '#FF6B00', fontSize: 10, fontWeight: '900', letterSpacing: 1.2 }, title: { color: '#FFFFFF', fontSize: 19, lineHeight: 23, fontWeight: '900', marginTop: 10 }, body: { color: '#B1B1B1', fontSize: 13, lineHeight: 19, marginTop: 9 },
   preview: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 11 }, poster: { width: 86, height: 104, borderRadius: 15, backgroundColor: '#34281F' }, posterFallback: { alignItems: 'center', justifyContent: 'center' }, previewCopy: { flex: 1 }, platformRow: { flexDirection: 'row', gap: 6, alignItems: 'center' }, platform: { color: '#FF8A38', fontSize: 11, fontWeight: '900' }, previewTitle: { color: '#FFFFFF', fontSize: 18, lineHeight: 22, fontWeight: '900', marginTop: 7 }, previewMeta: { color: '#929292', fontSize: 12, lineHeight: 17, marginTop: 4 },

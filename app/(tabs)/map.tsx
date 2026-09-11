@@ -171,6 +171,7 @@ import {
   closeOnboardingV2PlaceTour,
   isOnboardingV2InProgress,
   reconcileOnboardingV2SavedPlaces,
+  recordOnboardingV2MapEntered,
   recordOnboardingV2PlaceTourOpened,
 } from '@/lib/onboardingV2';
 import { recordBreadcrumb } from '@/lib/breadcrumbs';
@@ -564,6 +565,11 @@ export default function MapScreen() {
     [mapPreview],
   );
   const data = mapPreview ? previewData : liveData;
+  useEffect(() => {
+    const tutorialSavedPlaceId = onboardingV2State?.tutorialSave?.savedPlaceId;
+    if (!tutorialSavedPlaceId || liveLoading || mapPreview || demo || onboardingV2State.mapEnteredAt) return;
+    void recordOnboardingV2MapEntered(liveData.some((saved) => saved.id === tutorialSavedPlaceId));
+  }, [demo, liveData, liveLoading, mapPreview, onboardingV2State?.mapEnteredAt, onboardingV2State?.tutorialSave?.savedPlaceId]);
   // Demo and Map Preview render fixture data and are never 'offline'.
   const offline = !mapPreview && !demo && liveOffline;
   // In Map Preview Mode the saved-places list is the synchronous seed; alias
