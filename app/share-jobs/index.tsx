@@ -671,8 +671,22 @@ function ShareJobsQueueScreen() {
       >
         <PlaceImage
           googlePlaceId={firstCandidate?.googlePlaceId}
+          initialPhotoUrls={firstCandidate?.photoUrls?.length
+            ? firstCandidate.photoUrls
+            : firstCandidate?.photoUrl ? [firstCandidate.photoUrl] : undefined}
+          fallbackSourceUri={firstCandidate?.sourceFrameUrl}
           size={64}
           borderRadius={12}
+          presentationMode="candidate"
+          presentationActive={false}
+          presentationContext={{
+            trigger: 'recognition_result',
+            jobId: job.id,
+            candidateIndex: 0,
+            candidateCount: Array.isArray(job.candidate_payload?.candidates)
+              ? job.candidate_payload.candidates.length
+              : 0,
+          }}
           accessibilityLabel={firstCandidate?.name ? `Photo of ${firstCandidate.name}` : undefined}
         />
         <View style={styles.rowMain}>

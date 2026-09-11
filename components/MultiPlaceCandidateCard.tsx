@@ -47,11 +47,14 @@ export function MultiPlaceCandidateCard({ candidate, meta, selected, alreadySave
       </Pressable>
       <CandidatePhotoCarousel
         googlePlaceId={candidate.googlePlaceId}
-        sourceUri={candidate.photoUrl}
-        initialPhotoUrls={candidate.photoUrls}
+        initialPhotoUrls={candidate.photoUrls?.length
+          ? candidate.photoUrls
+          : candidate.photoUrl ? [candidate.photoUrl] : undefined}
         fallbackSourceUri={candidate.sourceFrameUrl}
         accessibilityLabel={`Photo of ${candidate.name}`}
         height={132}
+        active={selected}
+        presentationContext={{ trigger: 'multi_place' }}
       />
       {alreadySaved ? (
         <Pressable onPress={onPress} disabled={persisted} accessible={false} style={({ pressed }) => [styles.statusRow, pressed && styles.pressed]}>

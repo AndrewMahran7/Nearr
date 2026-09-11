@@ -50,6 +50,10 @@ export type PlaceCandidate = {
   distanceKm?: number | null;
   localityMatch?: boolean;
   wideningTierKm?: 25 | 75 | 200 | null;
+  /** In-memory presentation URLs built from photo refs already returned by search. */
+  photoUrls?: string[];
+  /** First presentation URL for compact consumers. */
+  photoUrl?: string | null;
 };
 
 export type PlaceRichDetails = {
@@ -193,6 +197,10 @@ export const SAVED_PLACE_DISPLAY_DETAILS_FIELDS = [
   'utc_offset',
 ].join(',');
 
+// Candidate review already owns identity/address/geometry from recognition or
+// search. Its optional fallback needs photo references and nothing else.
+export const CANDIDATE_PHOTO_DETAILS_FIELDS = 'photos';
+
 // ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
@@ -231,7 +239,9 @@ export async function searchPlaces(
   const json = await safeFetch(url);
   assertOk(json, true /* allow ZERO_RESULTS */);
 
-  const candidates: PlaceCandidate[] = (json.results ?? []).slice(0, 12).map(toCandidateFromTextSearch);
+  const candidates: PlaceCandidate[] = (json.results ?? [])
+    .slice(0, 12)
+    .map((result: any) => toCandidateFromTextSearch(result, key));
   const context: PlacesResolutionContext = resolutionContext ?? {
     mode: 'manual',
     userLocation: locationBias ?? null,
@@ -460,7 +470,6 @@ export async function getSavedPlaceGoogleDisplayDetails(
     };
   }
   if (!placeId) throw new PlacesError('INVALID_REQUEST', 'placeId is required');
-
   const key = resolveApiKey();
   if (!key) throw new PlacesError('MISSING_API_KEY', 'Google Maps API key not configured.');
   const params = new URLSearchParams({
@@ -494,6 +503,33 @@ export async function getSavedPlaceGoogleDisplayDetails(
     openingHours: toOpeningHours(result.opening_hours),
     utcOffsetMinutes: toUtcOffsetMinutes(result.utc_offset_minutes ?? result.utc_offset),
   };
+}
+
+/**
+ * Minimal UI-only fallback for an active candidate that has no useful image.
+ * This never participates in recognition, ranking, or place resolution.
+ */
+export async function getCandidatePhotoUrls(
+  placeId: string,
+  options?: { maxPhotos?: number; maxPhotoWidth?: number },
+): Promise<string[]> {
+  if (isDemoMode() || isMapPreviewMode()) return [];
+  if (!placeId) throw new PlacesError('INVALID_REQUEST', 'placeId is required');
+  const key = resolveApiKey();
+  if (!key) throw new PlacesError('MISSING_API_KEY', 'Google Maps API key not configured.');
+  const params = new URLSearchParams({
+    place_id: placeId,
+    key,
+    fields: CANDIDATE_PHOTO_DETAILS_FIELDS,
+  });
+  const json = await safeFetch(`${BASE}/details/json?${params.toString()}`);
+  if (json.status === 'NOT_FOUND' || !json.result) {
+    throw new PlacesError('NOT_FOUND', 'Place not found.');
+  }
+  assertOk(json, false);
+  const maxPhotos = Math.max(1, Math.min(options?.maxPhotos ?? 5, 5));
+  const maxPhotoWidth = Math.max(240, Math.min(options?.maxPhotoWidth ?? 1200, 1200));
+  return photoUrlsFromResult(json.result, key, maxPhotoWidth).slice(0, maxPhotos);
 }
 
 /**
@@ -571,7 +607,20 @@ function assertOk(json: any, allowZeroResults: boolean) {
 //   Maps treats as free-text and reports as "No results found." The runtime
 //   helper in lib/externalMaps.ts always falls back to a lat/lng URL with
 //   `query_place_id`, which is the format Google actually documents.
-function toCandidateFromTextSearch(r: any): PlaceCandidate {
+function photoUrlsFromResult(r: any, key: string, maxPhotoWidth = 1000): string[] {
+  return Array.isArray(r?.photos)
+    ? r.photos
+        .map((photo: any) => typeof photo?.photo_reference === 'string'
+          ? photo.photo_reference.trim()
+          : '')
+        .filter(Boolean)
+        .slice(0, 5)
+        .map((reference: string) => buildPlacePhotoUrl(reference, key, maxPhotoWidth))
+    : [];
+}
+
+function toCandidateFromTextSearch(r: any, apiKey?: string): PlaceCandidate {
+  const photoUrls = apiKey ? photoUrlsFromResult(r, apiKey) : [];
   return {
     googlePlaceId: r.place_id,
     name: r.name,
@@ -587,6 +636,8 @@ function toCandidateFromTextSearch(r: any): PlaceCandidate {
     googleMapsTypeLabel: pickCategory(r.types),
     shortFormattedAddress: null,
     businessStatus: typeof r.business_status === 'string' ? r.business_status : null,
+    photoUrls,
+    photoUrl: photoUrls[0] ?? null,
   };
 }
 
@@ -832,7 +883,7 @@ export async function resolveBusinessNearAddress(
   }
 
   const raw: any[] = Array.isArray(json.results) ? json.results : [];
-  const candidates = raw.map(toCandidateFromTextSearch);
+  const candidates = raw.map((result) => toCandidateFromTextSearch(result, key));
 
   // Filter to actual businesses near the address coordinate. We require:
   //   - not address-like itself
@@ -1407,7 +1458,7 @@ export async function verifyPlaceAtAddress(
     return { status: 'failed', reason: 'no_business_near_address', geocoded };
   }
   const raw: any[] = Array.isArray(json.results) ? json.results : [];
-  const all = raw.map(toCandidateFromTextSearch);
+  const all = raw.map((result) => toCandidateFromTextSearch(result, key));
 
   // Keep only real businesses within the strict radius. Reject address-
   // only and locality-only candidates outright — saving "Highland Park"
