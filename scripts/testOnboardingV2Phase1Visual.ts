@@ -42,20 +42,21 @@ assert.match(preAuth, /Saved to your map/);
 assert.match(preAuth, /MagicScanner/);
 console.log('PASS processing, progressive reveal, save proof, and Reduce Motion are integrated');
 
-assert.match(secondHalf, /From your feed to your map/);
-assert.match(secondHalf, /ShareStep icon="share-2"/);
-assert.match(secondHalf, /Only while you use Nearr/);
-assert.doesNotMatch(secondHalf, /requestOnboardingBackgroundLocation/);
+assert.match(secondHalf, /YOUR SAVES HAVE A HOME/);
+assert.match(secondHalf, /original post, and directions together/);
+assert.match(secondHalf, /Allow while using Nearr/);
+assert.match(secondHalf, /requestOnboardingBackgroundLocation/);
+assert.match(secondHalf, /Allow background location/);
 assert.match(secondHalf, /MAKING NEARR YOURS/);
-assert.match(secondHalf, /Map works without location/);
+assert.match(secondHalf, /Your map works if you decline/);
 console.log('PASS post-proof value, permission education, and truthful setup choreography are present');
 
 assert.match(account, /Continue with Apple|AppleAuthenticationButton/);
 assert.match(account, /GoogleSignInButton/);
 assert.match(account, /Back up your map/);
 assert.match(secondHalf, /Phase1PrimaryButton title="Explore my map"/);
-assert.match(secondHalf, /Find another on/);
-assert.match(secondHalf, /No account setup is needed to explore it/);
+assert.match(secondHalf, /Practice with the selected/);
+assert.match(secondHalf, /No account setup is needed to explore them/);
 assert.match(settings, /Back up your map/);
 assert.match(index, /stage === 'onboarding_complete'/);
 console.log('PASS final activation enters the anonymous map and defers account backup to Settings');
@@ -64,6 +65,6 @@ assert.match(map, /cleanOnboardingLanding = placeSource === 'onboarding_tutorial
 assert.match(map, /__DEV__ && !cleanOnboardingLanding/);
 assert.match(map, /!searchVisible && !nearbyExplorer/);
 assert.doesNotMatch(map, /!cleanOnboardingLanding && !searchVisible/, 'guided entry no longer suppresses Queue');
-console.log('PASS first map landing suppresses diagnostics and queue chrome without global removal');
+console.log('PASS first map landing suppresses diagnostics while retaining Queue chrome');
 
 console.log('\nAll Onboarding V2 Albo-parity presentation contracts passed.');
