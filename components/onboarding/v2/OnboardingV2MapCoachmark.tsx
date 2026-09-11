@@ -27,6 +27,7 @@ import {
   isOnboardingV2Phase2MapState,
   planOnboardingPracticeRecovery,
 } from '@/lib/onboardingV2Core';
+import { recordOnboardingV2DevelopmentDiagnostic } from '@/lib/onboardingV2RouteDiagnostics';
 
 export function OnboardingV2MapCoachmark({ topOffset }: { topOffset: number }) {
   const { state } = useOnboardingV2();
@@ -63,7 +64,13 @@ export function OnboardingV2MapCoachmark({ topOffset }: { topOffset: number }) {
   useEffect(() => {
     if (!fixture || !independentPending) return;
     const intended = jobs.find((job) => isShareJobForTutorialFixture(job, fixture));
-    if (intended) void observeOnboardingV2ShareReceived(intended.canonical_url || intended.source_url);
+    if (intended) {
+      recordOnboardingV2DevelopmentDiagnostic('practice_share_matched', {
+        jobId: intended.id,
+        result: `fixture:${fixture.contentId}`,
+      });
+      void observeOnboardingV2ShareReceived(intended.canonical_url || intended.source_url);
+    }
   }, [fixture, independentPending, jobs]);
 
   useEffect(() => {

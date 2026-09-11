@@ -28,9 +28,11 @@ import {
   onboardingRouteKey,
   shouldNavigateOnboarding,
   shouldPreserveCompletedOnboardingTab,
+  shouldPreserveOnboardingV2ProductRoute,
   type OnboardingV2Route,
   type PendingOnboardingNavigation,
 } from '@/lib/onboardingV2RoutingCore';
+import { recordOnboardingV2RouteDiagnostic } from '@/lib/onboardingV2RouteDiagnostics';
 import { trackEvent } from '@/lib/analytics';
 import { sanitizeErrorText, sanitizeStack } from '@/lib/sanitizeError';
 import { buildErrorDiagnostic, recordDiagnostic } from '@/lib/deviceDiagnostics';
@@ -425,8 +427,18 @@ function AuthGate({
         currentRoute,
         expectedRoute,
         pendingNavigation: pendingOnboardingNavigationRef.current,
-      })) return;
+      })) {
+        recordOnboardingV2RouteDiagnostic('auth_route_decision', {
+          route: currentRoute,
+          result: `hold:${expectedRoute}`,
+        });
+        return;
+      }
       pendingOnboardingNavigationRef.current = { from: currentRoute, to: expectedRoute };
+      recordOnboardingV2RouteDiagnostic('auth_route_decision', {
+        route: currentRoute,
+        result: `replace:${expectedRoute}`,
+      });
       logDebug('AuthGate', `-> ${expectedRoute}`);
       router.replace(expectedRoute);
     };
@@ -478,11 +490,31 @@ function AuthGate({
         stage: onboardingV2.stage,
         behavioralCompletedAt: onboardingV2.behavioralCompletedAt,
       })) return;
+      if (shouldPreserveOnboardingV2ProductRoute({
+        currentRoute,
+        stage: onboardingV2.stage,
+      })) {
+        recordOnboardingV2RouteDiagnostic('auth_route_decision', {
+          route: currentRoute,
+          result: `preserve:${onboardingV2.stage}`,
+        });
+        return;
+      }
       if (expectedV2Route) replaceOnce(expectedV2Route);
       return;
     }
 
     if (signedInSecondHalfContinuation) {
+      if (shouldPreserveOnboardingV2ProductRoute({
+        currentRoute,
+        stage: onboardingV2?.stage,
+      })) {
+        recordOnboardingV2RouteDiagnostic('auth_route_decision', {
+          route: currentRoute,
+          result: `preserve:${onboardingV2?.stage ?? 'none'}`,
+        });
+        return;
+      }
       if (expectedV2Route) replaceOnce(expectedV2Route);
       return;
     }

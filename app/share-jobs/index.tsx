@@ -37,6 +37,7 @@ import {
   savedPlaceRemovalCopy,
 } from '@/lib/savedPlaceRemoval';
 import { createMapGroupFocusRequest } from '@/lib/mapGroupFocus';
+import { recordOnboardingV2RouteDiagnostic } from '@/lib/onboardingV2RouteDiagnostics';
 import { PHASE2_PREVIEW_FIXTURES } from '@/lib/phase2Preview';
 import { VAYRIN_CANDIDATE_FIXTURES } from '@/lib/vayrinCandidateFixtures';
 import {
@@ -209,6 +210,12 @@ function shouldShowHost(job: ShareJob): boolean {
 }
 
 function ShareJobsQueueScreen() {
+  useEffect(() => {
+    recordOnboardingV2RouteDiagnostic('screen_mounted', {
+      route: '/share-jobs',
+      result: 'queue',
+    });
+  }, []);
   const router = useRouter();
   const { colors, typography } = useTheme();
   const vayrinEnabled = isVayrinProductUiEnabled();

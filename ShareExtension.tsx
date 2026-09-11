@@ -57,10 +57,16 @@ import {
 } from './lib/shareEnvDiagnostics';
 import { isAsyncShareJobsEnabled, resolveCreateShareJobUrl } from './lib/featureFlags';
 import {
+  areDeveloperToolsVisible,
   describeEnvironment,
   getBlockingEnvironmentViolations,
 } from './lib/appEnvironment';
 import { createShareJob } from './lib/shareJobClient';
+import {
+  shareJobResultDetail,
+  shareSourceIdentity,
+  submitShareJobWithRecovery,
+} from './lib/shareExtensionSubmission';
 import { selectExtensionAuthAction } from './lib/sharedAuthSession';
 import { SHARE_JOBS_DEEPLINK_PATH } from './lib/shareRoutes';
 import {
@@ -545,7 +551,12 @@ type AsyncUi =
   | { kind: 'needs_setup' }
   | { kind: 'signed_out' }
   | { kind: 'session_expired' }
-  | { kind: 'network_failure' }
+  | {
+      kind: 'network_failure';
+      reason: string;
+      httpStatus?: number;
+      responseErrorCode?: string;
+    }
   // The extension's own environment declaration is incoherent (e.g. a
   // development extension resolved a production endpoint). Fail CLOSED: this
   // is the state that makes "a development share can never create a
@@ -682,6 +693,11 @@ function AsyncShareExtension(props: ExtensionInitialProps) {
       close();
       return;
     }
+    sharedAuth.recordShareTrace(
+      submissionIdRef.current,
+      'source_extracted',
+      shareSourceIdentity(url),
+    );
     const endpoint = resolveCreateShareJobUrl();
 
     // ---- Environment identity, checked BEFORE anything is sent ------------
@@ -700,6 +716,11 @@ function AsyncShareExtension(props: ExtensionInitialProps) {
     // Non-secret: lane names and a host, never a token, key or URL query.
     const envSummary = describeEnvironment();
     const blocking = getBlockingEnvironmentViolations();
+    sharedAuth.recordShareTrace(
+      submissionIdRef.current,
+      'environment_checked',
+      blocking.length === 0 ? 'development_coherent' : 'blocked',
+    );
     console.log(
       `[share-extension] env ${envSummary} endpointHost=${hostFromUrl(endpoint) ?? 'none'}`,
     );
@@ -742,7 +763,12 @@ function AsyncShareExtension(props: ExtensionInitialProps) {
     }
     if (!endpoint) {
       console.log('[share-extension] job_accepted=false reason=no_endpoint');
-      setUi({ kind: 'network_failure' });
+      sharedAuth.recordShareTrace(
+        submissionIdRef.current,
+        'submission_failed',
+        'no_endpoint:none:none',
+      );
+      setUi({ kind: 'network_failure', reason: 'no_endpoint' });
       return;
     }
     setUi({ kind: 'submitting' });
@@ -751,14 +777,27 @@ function AsyncShareExtension(props: ExtensionInitialProps) {
       'create_share_job_fetch_started',
       'extension',
     );
-    const result = await createShareJob({
-      endpoint,
-      url,
-      accessToken: token,
-      clientRequestId: submissionIdRef.current,
+    const submission = await submitShareJobWithRecovery({
+      submit: () => createShareJob({
+        endpoint,
+        url,
+        accessToken: token,
+        clientRequestId: submissionIdRef.current,
+        submissionPath: 'share_extension',
+      }),
+      onTrace: ({ event, detail }) => {
+        sharedAuth.recordShareTrace(submissionIdRef.current, event, detail);
+      },
     });
+    const result = submission.result;
     if (result.ok) {
       console.log(`[share-extension] job_accepted=true duplicate=${result.duplicate}`);
+      sharedAuth.recordShareTrace(
+        submissionIdRef.current,
+        'durable_job_accepted',
+        result.jobId,
+      );
+      sharedAuth.recordShareTrace(submissionIdRef.current, 'ui_state', 'accepted');
       // Keep the success screen up so the user can choose Done (stay in
       // Instagram) or View queue (open the host app). The durable job is
       // already persisted server-side, so no auto-dismiss is needed.
@@ -767,11 +806,31 @@ function AsyncShareExtension(props: ExtensionInitialProps) {
       // Server rejected the token we thought was valid (revoked / clock skew).
       // Recover through the host rather than looping on sign-in.
       console.log('[share-extension] job_accepted=false reason=unauthorized');
+      sharedAuth.recordShareTrace(
+        submissionIdRef.current,
+        'ui_state',
+        'session_expired',
+      );
       setUi({ kind: 'session_expired' });
     } else {
       // Never claim the job was queued if the server did not accept it.
       console.log(`[share-extension] job_accepted=false reason=${result.reason}`);
-      setUi({ kind: 'network_failure' });
+      sharedAuth.recordShareTrace(
+        submissionIdRef.current,
+        'submission_failed',
+        shareJobResultDetail(result),
+      );
+      sharedAuth.recordShareTrace(
+        submissionIdRef.current,
+        'ui_state',
+        'submission_failure',
+      );
+      setUi({
+        kind: 'network_failure',
+        reason: result.reason,
+        httpStatus: result.httpStatus,
+        responseErrorCode: result.responseErrorCode,
+      });
     }
   };
 
@@ -935,6 +994,11 @@ function AsyncShareExtension(props: ExtensionInitialProps) {
       <AsyncSurface onClose={finish} showClose={false}>
         <Text style={asyncStyles.title}>{view.title}</Text>
         <Text style={asyncStyles.subtle}>{view.body}</Text>
+        {areDeveloperToolsVisible() ? (
+          <Text style={asyncStyles.diagnosticText}>
+            {`Development diagnostic: ${ui.reason} / HTTP ${ui.httpStatus ?? 'none'} / ${ui.responseErrorCode ?? 'none'}`}
+          </Text>
+        ) : null}
         <Pressable
           style={asyncStyles.primaryBtn}
           onPress={() => void submitOnce()}
@@ -1138,6 +1202,14 @@ const asyncStyles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 21,
     maxWidth: 330,
+  },
+  diagnosticText: {
+    marginTop: 8,
+    fontSize: 11,
+    color: '#8E8E93',
+    textAlign: 'center',
+    lineHeight: 15,
+    maxWidth: 360,
   },
   // Prominent, 56px tall, full-width primary action.
   primaryBtn: {

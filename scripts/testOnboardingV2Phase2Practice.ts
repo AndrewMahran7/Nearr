@@ -117,8 +117,20 @@ assert.ok(state.practiceRecovery?.dismissedAt);
 
 // 10: first authoritative distinct save advances to 2/3.
 state = receiveSharedSource(state, first.sourceUrl, at(17)).state;
-state = completePendingSave(state, { sourceUrl: first.sourceUrl, savedPlaceId: 'saved-first' }, at(18)).state;
+const firstCompletion = completePendingSave(
+  state,
+  { sourceUrl: first.sourceUrl, savedPlaceId: 'saved-first' },
+  at(18),
+);
+state = firstCompletion.state;
 assert.equal(onboardingV2SavedPlaceProgress(state).count, 2);
+const repeatedFirstCompletion = completePendingSave(
+  state,
+  { sourceUrl: first.sourceUrl, savedPlaceId: 'saved-first' },
+  at(19),
+);
+assert.equal(repeatedFirstCompletion.changed, false, 'host foreground/realtime replay completes the exact save once');
+assert.equal(repeatedFirstCompletion.state.independentSaves.length, 1);
 
 // 11: a source resolving to the existing tutorial place cannot increment.
 const second = pool[1]!;

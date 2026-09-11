@@ -175,6 +175,7 @@ import {
   recordOnboardingV2PlaceTourOpened,
 } from '@/lib/onboardingV2';
 import { recordBreadcrumb } from '@/lib/breadcrumbs';
+import { recordOnboardingV2DevelopmentDiagnostic } from '@/lib/onboardingV2RouteDiagnostics';
 import { setLocationWatcherState } from '@/lib/diagnosticContext';
 import { mapMarkerDetailLevel } from '@/lib/mapMarkerPresentation';
 import {
@@ -832,6 +833,12 @@ export default function MapScreen() {
     void reconcileOnboardingV2SavedPlaces(places)
       .then((result) => {
         if (cancelled) return;
+        if (result.matchedSavedPlace) {
+          recordOnboardingV2DevelopmentDiagnostic('practice_save_reconciled', {
+            savedPlaceId: result.matchedSavedPlace.id,
+            result: result.completedKind ?? 'unknown',
+          });
+        }
         if (result.state.stage === 'account_required') return;
         if (result.state.stage !== 'place_tour' || !result.state.tutorialSave) return;
         const target = validPlaces.find(

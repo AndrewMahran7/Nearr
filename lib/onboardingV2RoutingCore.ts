@@ -101,3 +101,48 @@ export function shouldPreserveCompletedOnboardingTab(input: {
     !!input.behavioralCompletedAt &&
     (input.stage === 'onboarding_complete' || input.stage === 'graduated');
 }
+
+/**
+ * Once V2 has deliberately handed ownership to the map, AuthGate must stop
+ * behaving like a global `map` guard. These stages may still be incomplete,
+ * but Settings, Queue, place detail, and the other product routes are real
+ * user navigation and own themselves until the user explicitly advances the
+ * onboarding state machine.
+ */
+export function isOnboardingV2MapOwnedStage(
+  stage: OnboardingV2Stage | null | undefined,
+): boolean {
+  return !!stage && [
+    'place_tour',
+    'phase1_complete',
+    'practice_ready',
+    'first_independent_external_video_opened',
+    'first_independent_share_returned',
+    'first_independent_save_complete',
+    'second_independent_external_video_opened',
+    'second_independent_share_returned',
+    'graduated',
+    'onboarding_complete',
+  ].includes(stage);
+}
+
+const PRODUCT_ROUTE_PREFIXES = [
+  '/(tabs)',
+  '/share-jobs',
+  '/share',
+  '/add-place',
+  '/place',
+  '/opportunity',
+  '/feedback',
+  '/legal',
+] as const;
+
+export function shouldPreserveOnboardingV2ProductRoute(input: {
+  currentRoute: string;
+  stage: OnboardingV2Stage | null | undefined;
+}): boolean {
+  if (!isOnboardingV2MapOwnedStage(input.stage)) return false;
+  return PRODUCT_ROUTE_PREFIXES.some((prefix) =>
+    input.currentRoute === prefix || input.currentRoute.startsWith(`${prefix}/`),
+  );
+}

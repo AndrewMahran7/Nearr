@@ -104,8 +104,9 @@ check(
 );
 
 // The check must happen BEFORE the job is created, or the guarantee is void.
-const guardIndex = extensionCode.indexOf('getBlockingEnvironmentViolations');
-const submitIndex = extensionCode.indexOf('await createShareJob(');
+const asyncFlow = extensionCode.slice(extensionCode.indexOf('function AsyncShareExtension'));
+const guardIndex = asyncFlow.indexOf('getBlockingEnvironmentViolations()');
+const submitIndex = asyncFlow.indexOf('createShareJob({');
 check(
   'the environment guard runs BEFORE createShareJob',
   guardIndex > -1 && submitIndex > -1 && guardIndex < submitIndex,

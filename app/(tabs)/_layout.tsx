@@ -1,9 +1,11 @@
-import { Tabs } from 'expo-router';
+import { Tabs, usePathname } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { useTheme } from '@/lib/theme';
+import { recordOnboardingV2RouteDiagnostic } from '@/lib/onboardingV2RouteDiagnostics';
 
 export default function TabsLayout() {
   const { colors } = useTheme();
+  const pathname = usePathname();
   return (
     <Tabs
       screenOptions={{
@@ -50,6 +52,12 @@ export default function TabsLayout() {
       />
       <Tabs.Screen
         name="settings"
+        listeners={{
+          tabPress: () => recordOnboardingV2RouteDiagnostic('route_request', {
+            route: pathname,
+            result: 'tab:/(tabs)/settings',
+          }),
+        }}
         options={{
           title: 'Settings',
           tabBarIcon: ({ color, size }) => (

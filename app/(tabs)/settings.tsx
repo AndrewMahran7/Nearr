@@ -50,6 +50,7 @@ import { getRecentDiagnostics, formatDiagnosticForCopy, getUpdateInfo } from '@/
 import { areDeveloperToolsVisible, describeEnvironment } from '@/lib/appEnvironment';
 import { getGooglePlacesRuntimeDiagnostic } from '@/lib/googlePlacesConfig';
 import { sharedAuth } from '@/lib/sharedAuth';
+import { decodeJwtClaims } from '@/lib/sharedAuthSession';
 import { LEGAL_ACCEPTANCE_REQUIRED, LEGAL_VERSION } from '@/constants';
 import { getProfile, getLegalAcceptanceStatus, updateProfile } from '@/services/profileService';
 import { signOut } from '@/services/auth';
@@ -75,6 +76,7 @@ import {
   syncGeofencesForSavedPlaces,
 } from '@/lib/geofencing';
 import { useTheme } from '@/lib/theme';
+import { recordOnboardingV2RouteDiagnostic } from '@/lib/onboardingV2RouteDiagnostics';
 
 // TODO(app-store): set to Nearr's numeric App Store app ID once the app is
 // live (e.g. '1234567890'). Until then "Leave a review" shows a friendly
@@ -109,6 +111,12 @@ function isValidHhmm(s: string): boolean {
 // ---------------------------------------------------------------------------
 
 export default function SettingsScreen() {
+  useEffect(() => {
+    recordOnboardingV2RouteDiagnostic('screen_mounted', {
+      route: '/(tabs)/settings',
+      result: 'settings',
+    });
+  }, []);
   const router = useRouter();
   const { user, isDevSession, isLocalUiSession } = useAuth();
   const { colors, typography, themePreference, setThemePreference } = useTheme();
@@ -568,6 +576,9 @@ export default function SettingsScreen() {
       const appGroupIdentifier = sharedAuth.getAppGroup();
       const wroteMarker = sharedAuth.setInitialized();
       const status = sharedAuth.getStatus();
+      const sharedTokenClaims = decodeJwtClaims(sharedAuth.getToken());
+      const sharedTokenUserMatchesHost =
+        !!user?.id && !!sharedTokenClaims?.sub && sharedTokenClaims.sub === user.id;
       const shareTrace = sharedAuth.getShareTrace();
       const hostRoundTripSucceeded =
         !!status && status.appGroupAccessible === true && wroteMarker && status.initialized === true;
@@ -583,6 +594,7 @@ export default function SettingsScreen() {
               ' initialized=' + status.initialized +
               ' tokenPresent=' + status.tokenPresent +
               ' tokenStructurallyValid=' + status.tokenStructurallyValid +
+              ' tokenUserMatchesHost=' + sharedTokenUserMatchesHost +
               ' tokenExpiresAt=' +
               (status.tokenExpiresAt ? new Date(status.tokenExpiresAt).toISOString() : 'null') +
               ' lastSyncAt=' +

@@ -24,6 +24,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { isDemoMode } from '@/lib/demoMode';
 import { canReachShareQueue } from '@/lib/shareQueueAccess';
 import { useActiveQueueCount } from '@/hooks/useShareJobs';
+import { recordOnboardingV2RouteDiagnostic } from '@/lib/onboardingV2RouteDiagnostics';
 
 export function ShareQueueButton() {
   const router = useRouter();
@@ -41,7 +42,13 @@ export function ShareQueueButton() {
 
   return (
     <Pressable
-      onPress={() => router.push('/share-jobs')}
+      onPress={() => {
+        recordOnboardingV2RouteDiagnostic('route_request', {
+          route: '/(tabs)/map',
+          result: 'push:/share-jobs',
+        });
+        router.push('/share-jobs');
+      }}
       style={({ pressed }) => [styles.pill, pressed ? styles.pressed : null]}
       accessibilityRole="button"
       accessibilityLabel={
