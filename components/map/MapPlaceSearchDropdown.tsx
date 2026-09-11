@@ -26,6 +26,7 @@ import {
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
+import { PlaceImage } from '@/components/PlaceImage';
 import { Radius, Spacing } from '@/constants';
 import { usePlacesSearch } from '@/hooks/usePlacesSearch';
 import { useTheme } from '@/lib/theme';
@@ -155,7 +156,7 @@ export function MapPlaceSearchDropdown({
             ) : results.length === 0 ? (
               <Text style={[typography.caption, styles.helper]}>No places found</Text>
             ) : (
-              results.map((place) => (
+              results.map((place, index) => (
                 <Pressable
                   key={place.googlePlaceId ?? `${place.name}-${place.formattedAddress ?? ''}`}
                   onPress={() => onPickPlace(place)}
@@ -163,9 +164,26 @@ export function MapPlaceSearchDropdown({
                   accessibilityLabel={`Add ${place.name}`}
                   style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
                 >
-                  <View style={styles.rowIcon}>
-                    <Feather name="map-pin" size={16} color={colors.accent} />
-                  </View>
+                  <PlaceImage
+                    googlePlaceId={place.googlePlaceId}
+                    initialPhotoUrls={place.photoUrls?.length
+                      ? place.photoUrls
+                      : place.photoUrl ? [place.photoUrl] : undefined}
+                    size={52}
+                    borderRadius={11}
+                    preferPlacePhoto
+                    presentationMode="candidate"
+                    presentationActive={index === 0}
+                    hydrationPolicy={index === 0
+                      ? 'active_manual_search'
+                      : index < 4 ? 'compact_known_only' : 'offscreen_manual_search'}
+                    presentationContext={{
+                      trigger: 'manual_search',
+                      candidateIndex: index,
+                      candidateCount: results.length,
+                    }}
+                    accessibilityLabel={`Photo of ${place.name}`}
+                  />
                   <View style={styles.rowCopy}>
                     <Text style={typography.bodyStrong} numberOfLines={1}>
                       {place.name}
@@ -275,16 +293,6 @@ function createStyles(
     },
     rowPressed: {
       backgroundColor: colors.surfaceElevated,
-    },
-    rowIcon: {
-      width: 36,
-      height: 36,
-      borderRadius: 11,
-      backgroundColor: colors.surfaceElevated,
-      borderWidth: 1,
-      borderColor: colors.border,
-      alignItems: 'center',
-      justifyContent: 'center',
     },
     rowCopy: {
       flex: 1,

@@ -27,6 +27,8 @@ import {
   type MapMarkerDetailLevel,
 } from '@/lib/mapMarkerPresentation';
 import { savedPlacePinOpacity } from '@/lib/savedPlacePinState';
+import { hydrateSavedPlace } from '@/lib/savedPlaceHydration';
+import { placeSourceCards } from '@/lib/placeSources';
 import type { SavedPlaceWithPlace } from '@/types';
 
 type Props = {
@@ -102,13 +104,29 @@ function NearrMapMarkerView({
     setPhotoUri(suppliedPhotoUri?.trim() || null);
     setPhotoFailed(false);
     if (suppliedPhotoUri?.trim()) return () => { cancelled = true; };
-    // Saved markers never hydrate Google on selection. The canonical detail
-    // owner performs the one local-first lookup; recommendation markers may
-    // still receive a photo already returned by Nearby Search.
+    if (!redesignEnabled || !selected || !savedState) return () => { cancelled = true; };
+    // Share the canonical local-first request with Place Detail. Hydration is
+    // coalesced by saved id, so marker + card never produce duplicate recovery.
+    recordMapPinDiagnostic('selected-photo-request', { savedPlaceId: place.id });
+    void hydrateSavedPlace({
+      userId: place.user_id,
+      saved: place,
+      trigger: 'map_detail',
+      knownImageUri: placeSourceCards(place).find((source) => !!source.thumbnailUrl)?.thumbnailUrl ?? null,
+    }).then((hydrated) => {
+      if (cancelled) return;
+      const nextPhotoUri = hydrated.details.photoUrls[0] ?? null;
+      recordMapPinDiagnostic('selected-photo-result', {
+        savedPlaceId: place.id,
+        hasPhoto: !!nextPhotoUri,
+        source: hydrated.source,
+      });
+      setPhotoUri(nextPhotoUri);
+    });
     return () => {
       cancelled = true;
     };
-  }, [place.id, place.place.google_place_id, redesignEnabled, selected, suppliedPhotoUri]);
+  }, [place.id, place.place.google_place_id, place.user_id, redesignEnabled, savedState, selected, suppliedPhotoUri]);
 
   const presentation = useMemo(
     () => savedMarkerPresentation(place, {

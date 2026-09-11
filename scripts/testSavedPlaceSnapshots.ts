@@ -56,6 +56,8 @@ const candidate: PlaceCandidate = {
   googlePlaceId: 'google-1', name: 'Saved Cafe',
   formattedAddress: '1 Main St, Los Angeles, CA', latitude: 34.1, longitude: -118.2,
   category: 'cafe', googleMapsUrl: 'https://maps.google.com/example', rawTypes: ['cafe'],
+  photoUrl: 'https://photos.test/already-acquired.jpg',
+  photoUrls: ['https://photos.test/already-acquired.jpg'],
 };
 
 const googleDetails: SavedPlaceGoogleDisplayDetails = {
@@ -68,6 +70,8 @@ const googleDetails: SavedPlaceGoogleDisplayDetails = {
   utcOffsetMinutes: -420,
 };
 
+const localAssets = new Set<string>();
+
 function dependencies(store: MemoryStore, fetchGoogle: () => Promise<SavedPlaceGoogleDisplayDetails>) {
   const events: string[] = [];
   const deps: SavedPlaceHydrationDependencies = {
@@ -76,6 +80,13 @@ function dependencies(store: MemoryStore, fetchGoogle: () => Promise<SavedPlaceG
     fetchGoogle: async () => fetchGoogle(),
     record: (event) => { events.push(event); },
     peekRichDetails: () => null,
+    persistImage: async ({ savedPlaceId, sourceUri }) => {
+      if (!sourceUri) return null;
+      const uri = `file://saved-place-images/${savedPlaceId}/hero.jpg`;
+      localAssets.add(uri);
+      return uri;
+    },
+    isImageUsable: async (uri) => localAssets.has(uri ?? ''),
   };
   return { deps, events };
 }
@@ -133,11 +144,11 @@ async function run() {
   );
   assert.equal(googleCalls, 0, 'first open after save is satisfied by the save payload');
   assert.equal(firstOpen.source, 'snapshot');
-  assert.equal(firstOpen.details.photoUrls.length, 0);
+  assert.deepEqual(firstOpen.details.photoUrls, ['file://saved-place-images/saved-1/hero.jpg']);
 
   const repeatedOpen = await hydrateSavedPlace({ userId: 'user-a', saved, trigger: 'map_detail' }, first.deps);
   assert.equal(googleCalls, 0, 'repeated open in one process makes zero Google requests');
-  assert.equal(repeatedOpen.details.photoUrls.length, 0, 'repeat open cannot remount a Google photo URL');
+  assert.deepEqual(repeatedOpen.details.photoUrls, ['file://saved-place-images/saved-1/hero.jpg']);
 
   resetSavedPlaceHydrationMemoryForTests();
   const afterRestart = await hydrateSavedPlace(
@@ -146,11 +157,11 @@ async function run() {
   );
   assert.equal(googleCalls, 0, 'app restart plus reopen uses persisted snapshot');
   assert.equal(afterRestart.source, 'snapshot');
-  assert.equal(afterRestart.details.photoUrls.length, 0, 'policy-restricted Google photos remain session-only');
+  assert.deepEqual(afterRestart.details.photoUrls, ['file://saved-place-images/saved-1/hero.jpg']);
   assert.ok(first.events.includes('saved_place_snapshot_hit'));
 
   // A legacy/transitional incomplete snapshot gets exactly one minimal
-  // provider fallback, including session-only photos, then becomes local.
+  // provider fallback and persists the recovered first image locally.
   resetSavedPlaceHydrationMemoryForTests();
   await writeSavedPlaceSnapshot({ ...snapshot, providerHydrationComplete: false });
   const legacy = dependencies(store, async () => {
@@ -163,13 +174,21 @@ async function run() {
   );
   assert.equal(googleCalls, 1, 'incomplete legacy snapshot performs one fallback');
   assert.equal(legacyOpen.source, 'google_fallback');
-  assert.equal(legacyOpen.details.photoUrls.length, 1, 'Google photo is available only on the fallback response');
+  assert.equal(legacyOpen.details.photoUrls[0], 'file://saved-place-images/saved-1/hero.jpg');
   const rawAfterFallback = store.values.get(savedPlaceSnapshotKey('user-a', saved.id)) ?? '';
   assert.doesNotMatch(rawAfterFallback, /photo_reference|maps\/api\/place\/photo/, 'Google photo URI is never persisted');
+  assert.match(rawAfterFallback, /file:\/\/saved-place-images\/saved-1\/hero\.jpg/);
   assert.ok(legacy.events.includes('saved_place_snapshot_miss'));
   assert.ok(legacy.events.includes('saved_place_google_fallback_started'));
   assert.ok(legacy.events.includes('saved_place_google_fallback_succeeded'));
   assert.ok(legacy.events.includes('saved_place_photo_google_fallback'));
+  resetSavedPlaceHydrationMemoryForTests();
+  const recoveredReopen = await hydrateSavedPlace(
+    { userId: 'user-a', saved, trigger: 'map_detail' },
+    legacy.deps,
+  );
+  assert.equal(googleCalls, 1, 'recovered local image prevents an every-open refetch loop');
+  assert.equal(recoveredReopen.details.photoUrls[0], 'file://saved-place-images/saved-1/hero.jpg');
 
   resetSavedPlaceHydrationMemoryForTests();
   const otherUser = await readSavedPlaceSnapshot({

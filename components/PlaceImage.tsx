@@ -20,6 +20,11 @@ import {
 } from '@/lib/candidatePresentation';
 import { trackCandidatePresentation } from '@/lib/candidatePresentationTelemetry';
 import { selectPlaceImageUri } from '@/lib/placeImageSource';
+import { acquirePlacePresentationImage } from '@/lib/savedPlaceImageStore';
+import {
+  allowsPlaceImageLookup,
+  type PlaceImageHydrationPolicy,
+} from '@/lib/placeImagePolicy';
 import { useTheme } from '@/lib/theme';
 
 type Props = {
@@ -31,6 +36,8 @@ type Props = {
   preferPlacePhoto?: boolean;
   /** Saved-place surfaces set false so list/card mounts never hydrate Google. */
   allowGoogleLookup?: boolean;
+  /** Explicit context policy; preferred over the legacy boolean veto. */
+  hydrationPolicy?: PlaceImageHydrationPolicy;
   size?: number;
   width?: DimensionValue;
   height?: number;
@@ -56,6 +63,7 @@ export function PlaceImage({
   fallbackSourceUri,
   preferPlacePhoto = false,
   allowGoogleLookup = true,
+  hydrationPolicy,
   size = 64,
   width,
   height,
@@ -70,6 +78,12 @@ export function PlaceImage({
   presentationContext = { trigger: 'other' },
 }: Props) {
   const { colors } = useTheme();
+  const googleLookupAllowed = hydrationPolicy
+    ? allowsPlaceImageLookup(hydrationPolicy, Boolean(googlePlaceId))
+    : allowGoogleLookup;
+  const knownImageryVisible = hydrationPolicy
+    ? hydrationPolicy !== 'inactive_candidate' && hydrationPolicy !== 'offscreen_manual_search'
+    : presentationMode !== 'candidate' || presentationActive;
   const initialPhotoSignature = (initialPhotoUrls ?? []).join('\n');
   const normalizedInitialPhotos = useMemo(
     () => normalizedPhotoUrls(initialPhotoUrls),
@@ -81,14 +95,15 @@ export function PlaceImage({
   const [loading, setLoading] = useState(() => presentationMode === 'candidate'
     ? candidateHydrationDecision({
         active: presentationActive,
-        allowGoogleLookup,
+        allowGoogleLookup: googleLookupAllowed,
         googlePlaceId,
         photoUrls: normalizedInitialPhotos,
         sourceUri,
         fallbackSourceUri,
       }).shouldRequest
-    : allowGoogleLookup && Boolean(googlePlaceId) && (preferPlacePhoto || !sourceUri));
+    : googleLookupAllowed && Boolean(googlePlaceId) && (preferPlacePhoto || !sourceUri));
   const [resolutionTimedOut, setResolutionTimedOut] = useState(false);
+  const [materializedImage, setMaterializedImage] = useState<{ source: string; uri: string } | null>(null);
   const lastResolutionRef = useRef<PlaceImageResolutionKind | null>(null);
   const photoLoadRef = useRef<string | null>(null);
   const lastAvoidanceRef = useRef<string | null>(null);
@@ -104,20 +119,21 @@ export function PlaceImage({
     setPlacePhotoUrls(normalizedInitialPhotos);
     setFailedUris({});
     setResolutionTimedOut(false);
+    setMaterializedImage(null);
     setLoading(presentationMode === 'candidate'
       ? candidateHydrationDecision({
           active: presentationActive,
-          allowGoogleLookup,
+          allowGoogleLookup: googleLookupAllowed,
           googlePlaceId,
           photoUrls: normalizedInitialPhotos,
           sourceUri,
           fallbackSourceUri,
         }).shouldRequest
-      : allowGoogleLookup && Boolean(googlePlaceId) && (preferPlacePhoto || !sourceUri));
+      : googleLookupAllowed && Boolean(googlePlaceId) && (preferPlacePhoto || !sourceUri));
     lastResolutionRef.current = null;
     photoLoadRef.current = null;
   }, [
-    allowGoogleLookup,
+    googleLookupAllowed,
     fallbackSourceUri,
     googlePlaceId,
     initialPhotoSignature,
@@ -130,12 +146,12 @@ export function PlaceImage({
 
   const candidateDecision = useMemo(() => candidateHydrationDecision({
     active: presentationActive,
-    allowGoogleLookup,
+    allowGoogleLookup: googleLookupAllowed,
     googlePlaceId,
     photoUrls: normalizedInitialPhotos,
     sourceUri,
     fallbackSourceUri,
-  }), [allowGoogleLookup, fallbackSourceUri, googlePlaceId, normalizedInitialPhotos, presentationActive, sourceUri]);
+  }), [fallbackSourceUri, googleLookupAllowed, googlePlaceId, normalizedInitialPhotos, presentationActive, sourceUri]);
 
   useEffect(() => {
     if (presentationMode !== 'candidate') return;
@@ -164,8 +180,10 @@ export function PlaceImage({
       : null;
   }, [googlePlaceId, presentationActive, presentationContext, presentationMode]);
 
-  const candidatePhotoUrls = presentationMode === 'candidate' && !presentationActive ? [] : placePhotoUrls;
-  const candidateSourceUri = presentationMode === 'candidate' && !presentationActive ? null : sourceUri;
+  // Provider hydration and known-image visibility are distinct policy choices:
+  // visible manual rows may render returned metadata while hidden candidates do not.
+  const candidatePhotoUrls = knownImageryVisible ? placePhotoUrls : [];
+  const candidateSourceUri = knownImageryVisible ? sourceUri : null;
   const holdFallbackForPlacePhoto = preferPlacePhoto && loading && !resolutionTimedOut;
   const resolvedUri = selectPlaceImageUri(
     holdFallbackForPlacePhoto ? null : candidateSourceUri,
@@ -176,6 +194,26 @@ export function PlaceImage({
       fallbackSourceUri: holdFallbackForPlacePhoto ? null : fallbackSourceUri,
     },
   );
+  const remoteResolvedUri = resolvedUri && /^https?:\/\//i.test(resolvedUri) ? resolvedUri : null;
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!remoteResolvedUri) {
+      setMaterializedImage(null);
+      return () => { cancelled = true; };
+    }
+    void acquirePlacePresentationImage(remoteResolvedUri).then((localUri) => {
+      if (cancelled) return;
+      if (localUri) setMaterializedImage({ source: remoteResolvedUri, uri: localUri });
+      else setFailedUris((current) => ({ ...current, [remoteResolvedUri]: true }));
+    });
+    return () => { cancelled = true; };
+  }, [remoteResolvedUri]);
+
+  const displayUri = remoteResolvedUri
+    ? materializedImage?.source === remoteResolvedUri ? materializedImage.uri : null
+    : resolvedUri;
+  const imageAcquisitionPending = Boolean(remoteResolvedUri && !displayUri);
 
   useEffect(() => {
     let cancelled = false;
@@ -231,7 +269,7 @@ export function PlaceImage({
       };
     }
 
-    if (!allowGoogleLookup || !googlePlaceId) {
+    if (!googleLookupAllowed || !googlePlaceId) {
       setLoading(false);
       return () => {
         cancelled = true;
@@ -255,7 +293,7 @@ export function PlaceImage({
       clearTimeout(timeout);
     };
   }, [
-    allowGoogleLookup,
+    googleLookupAllowed,
     candidateDecision,
     failedUris,
     googlePlaceId,
@@ -276,11 +314,11 @@ export function PlaceImage({
       : 'neutral';
 
   useEffect(() => {
-    if (!onResolvedKind || (loading && !resolvedUri && !resolutionTimedOut)) return;
+    if (!onResolvedKind || imageAcquisitionPending || (loading && !resolvedUri && !resolutionTimedOut)) return;
     if (lastResolutionRef.current === resolutionKind) return;
     lastResolutionRef.current = resolutionKind;
     onResolvedKind(resolutionKind);
-  }, [loading, onResolvedKind, resolutionKind, resolutionTimedOut, resolvedUri]);
+  }, [imageAcquisitionPending, loading, onResolvedKind, resolutionKind, resolutionTimedOut, resolvedUri]);
 
   return (
     <View
@@ -291,9 +329,9 @@ export function PlaceImage({
         style,
       ]}
     >
-      {resolvedUri ? (
+      {displayUri && resolvedUri ? (
         <Image
-          source={{ uri: resolvedUri }}
+          source={{ uri: displayUri }}
           style={[styles.image, frameStyle, imageStyle]}
           resizeMode="cover"
           onLoadStart={() => {
@@ -334,7 +372,7 @@ export function PlaceImage({
           accessibilityLabel={accessibilityLabel}
           accessible={Boolean(accessibilityLabel)}
         />
-      ) : loading && !resolutionTimedOut ? (
+      ) : imageAcquisitionPending || (loading && !resolutionTimedOut) ? (
         <View style={[styles.skeleton, { backgroundColor: colors.border }]} accessibilityLabel="Loading place photo">
           <ActivityIndicator size="small" color={colors.primary} />
         </View>

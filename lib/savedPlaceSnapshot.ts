@@ -2,7 +2,7 @@ import type { PlaceOpeningHours } from '@/lib/placeHours';
 import type { SavedPlaceWithPlace } from '@/types';
 import type { PlaceCandidate } from '@/services/placesService';
 
-export const SAVED_PLACE_SNAPSHOT_SCHEMA_VERSION = 1 as const;
+export const SAVED_PLACE_SNAPSHOT_SCHEMA_VERSION = 2 as const;
 
 export type SavedPlaceSnapshotSource =
   | 'save_payload'
@@ -22,6 +22,13 @@ export type SavedPlaceSnapshot = {
   googleMapsUrl: string | null;
   openingHours: PlaceOpeningHours | null;
   utcOffsetMinutes: number | null;
+  /** Account-scoped file URI for the saved place's normal hero/list image. */
+  localImageUri: string | null;
+  /**
+   * `not_attempted` permits one bounded recovery. `unavailable` prevents an
+   * every-open retry loop after a completed no-photo or failed-write attempt.
+   */
+  visualRecoveryStatus: 'available' | 'not_attempted' | 'unavailable';
   /**
    * False is reserved for a transitional/migrated snapshot that cannot render
    * the current detail UI. Optional provider fields may legitimately be null.
@@ -111,6 +118,8 @@ export function isSavedPlaceSnapshot(value: unknown): value is SavedPlaceSnapsho
     && nullableString(candidate.googleMapsUrl)
     && validOpeningHours(candidate.openingHours)
     && (candidate.utcOffsetMinutes === null || finiteNumber(candidate.utcOffsetMinutes))
+    && nullableString(candidate.localImageUri)
+    && ['available', 'not_attempted', 'unavailable'].includes(candidate.visualRecoveryStatus ?? '')
     && typeof candidate.providerHydrationComplete === 'boolean'
     && typeof candidate.capturedAt === 'string'
     && ['save_payload', 'google_fallback', 'durable_fallback'].includes(candidate.source ?? '');
@@ -249,6 +258,8 @@ export function buildSavedPlaceSnapshot(args: {
   candidate?: PlaceCandidate | null;
   openingHours?: PlaceOpeningHours | null;
   utcOffsetMinutes?: number | null;
+  localImageUri?: string | null;
+  visualRecoveryStatus?: SavedPlaceSnapshot['visualRecoveryStatus'];
   providerHydrationComplete: boolean;
   source: SavedPlaceSnapshotSource;
 }): SavedPlaceSnapshot {
@@ -266,6 +277,9 @@ export function buildSavedPlaceSnapshot(args: {
     googleMapsUrl: candidate?.googleMapsUrl ?? args.saved.place.google_maps_url ?? null,
     openingHours: args.openingHours ?? null,
     utcOffsetMinutes: args.utcOffsetMinutes ?? null,
+    localImageUri: args.localImageUri?.trim() || null,
+    visualRecoveryStatus: args.visualRecoveryStatus
+      ?? (args.localImageUri?.trim() ? 'available' : 'not_attempted'),
     providerHydrationComplete: args.providerHydrationComplete,
     capturedAt: new Date().toISOString(),
     source: args.source,

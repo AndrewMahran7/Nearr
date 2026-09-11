@@ -59,6 +59,8 @@ const candidate: PlaceCandidate = {
   googlePlaceId: 'google-1', name: 'Integrated Cafe',
   formattedAddress: '1 Main St, Los Angeles, CA', latitude: 34.1, longitude: -118.2,
   category: 'cafe', googleMapsUrl: 'https://maps.google.com/example', rawTypes: ['cafe'],
+  photoUrl: 'https://photos.test/saved/known',
+  photoUrls: ['https://photos.test/saved/known'],
 };
 
 const savedGoogleDetails: SavedPlaceGoogleDisplayDetails = {
@@ -95,6 +97,7 @@ function savedDependencies(
   events: string[],
   offline = false,
 ): SavedPlaceHydrationDependencies {
+  const localUri = 'file://saved-place-images/saved-1/hero.jpg';
   return {
     readSnapshot: readSavedPlaceSnapshot,
     writeSnapshot: writeSavedPlaceSnapshot,
@@ -105,6 +108,8 @@ function savedDependencies(
     },
     record: (event) => { events.push(event); },
     peekRichDetails: () => null,
+    persistImage: async ({ sourceUri }) => sourceUri ? localUri : null,
+    isImageUsable: async (uri) => uri === localUri,
   };
 }
 
@@ -208,7 +213,7 @@ async function run() {
   assert.match(placeImage, /presentationMode === 'candidate'/);
   assert.match(placeImage, /allowGoogleLookup/);
   const savedResult = readFileSync(join(process.cwd(), 'components/SavedPlaceResult.tsx'), 'utf8');
-  assert.match(savedResult, /allowGoogleLookup=\{false\}/);
+  assert.match(savedResult, /hydrationPolicy="saved_snapshot"/);
   assert.match(savedResult, /presentationMode="candidate"/);
   const places = readFileSync(join(process.cwd(), 'services/placesService.ts'), 'utf8');
   assert.match(places, /CANDIDATE_PHOTO_DETAILS_FIELDS = 'photos'/);

@@ -84,7 +84,9 @@ export function SavedPlaceResult({
         <View style={styles.alternativeIdentity}>
           <PlaceImage
             googlePlaceId={item.candidate.googlePlaceId.startsWith('nearr-native:') ? undefined : item.candidate.googlePlaceId}
-            allowGoogleLookup={!saved}
+            hydrationPolicy={saved
+              ? 'saved_snapshot'
+              : index === visibleAlternativeIndex ? 'active_candidate' : 'inactive_candidate'}
             initialPhotoUrls={item.candidate.photoUrls?.length
               ? item.candidate.photoUrls
               : item.candidate.photoUrl ? [item.candidate.photoUrl] : undefined}
@@ -176,9 +178,11 @@ export function SavedPlaceResult({
           <View style={styles.heroMedia}>
             <PlaceImage
               googlePlaceId={primary.googlePlaceId?.startsWith('nearr-native:') ? undefined : primary.googlePlaceId}
-              allowGoogleLookup={false}
+              hydrationPolicy="saved_snapshot"
               sourceUri={primary.sourceThumbnailUrl}
-              initialPhotoUrls={primary.candidatePhotoUrl ? [primary.candidatePhotoUrl] : undefined}
+              initialPhotoUrls={primary.candidatePhotoUrls.length
+                ? primary.candidatePhotoUrls
+                : primary.candidatePhotoUrl ? [primary.candidatePhotoUrl] : undefined}
               fallbackSourceUri={primary.sourceFrameUrl ?? primary.sourceThumbnailUrl}
               preferPlacePhoto
               presentationMode="candidate"

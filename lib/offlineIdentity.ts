@@ -50,6 +50,7 @@ import { clearReminderSnapshot } from './reminderSnapshot';
 import { clearSavedPlacesCache } from './savedPlacesCache';
 import { clearSavedPlaceSnapshots } from './savedPlaceSnapshot';
 import { clearSavedPlaceHydrationMemoryForUser } from './savedPlaceHydration';
+import { clearSavedPlaceImages } from './savedPlaceImageStore';
 
 const LAST_USER_KEY = 'nearr:auth:lastAuthenticatedUserId:v1';
 
@@ -110,6 +111,7 @@ export async function clearOfflineUserData(
   await Promise.all([
     clearSavedPlacesCache(targetUserId).catch(() => undefined),
     clearSavedPlaceSnapshots(targetUserId).catch(() => undefined),
+    clearSavedPlaceImages(targetUserId).catch(() => undefined),
     clearReminderSnapshot(targetUserId).catch(() => undefined),
   ]);
   await clearLastAuthenticatedUser();

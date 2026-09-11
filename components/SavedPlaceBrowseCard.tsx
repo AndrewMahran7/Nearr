@@ -1,4 +1,4 @@
-import { memo, useMemo } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
@@ -12,6 +12,8 @@ import {
 import { CATEGORY_LABELS, savedPlaceCategory } from '@/lib/placeCategory';
 import { splitPlaceAddress } from '@/lib/sharePhase1Ui';
 import { useTheme } from '@/lib/theme';
+import { hydrateSavedPlace } from '@/lib/savedPlaceHydration';
+import { placeSourceCards } from '@/lib/placeSources';
 import type { SavedPlaceWithPlace } from '@/types';
 
 type Props = {
@@ -34,6 +36,25 @@ function SavedPlaceBrowseCardView({ saved, onPress }: Props) {
   const note = savedPlaceNotePreview(saved);
   const hasSource = hasOriginalPost(saved);
   const date = savedDate(saved.created_at);
+  const sourceImageUri = useMemo(
+    () => placeSourceCards(saved).find((source) => !!source.thumbnailUrl)?.thumbnailUrl ?? null,
+    [saved],
+  );
+  const [savedImageUri, setSavedImageUri] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setSavedImageUri(null);
+    void hydrateSavedPlace({
+      userId: saved.user_id,
+      saved,
+      trigger: 'saved_library',
+      knownImageUri: sourceImageUri,
+    }).then((hydrated) => {
+      if (!cancelled) setSavedImageUri(hydrated.details.photoUrls[0] ?? null);
+    });
+    return () => { cancelled = true; };
+  }, [saved.id, saved.place.google_place_id, saved.user_id, sourceImageUri]);
   const label = [
     saved.place.name,
     locality,
@@ -54,7 +75,9 @@ function SavedPlaceBrowseCardView({ saved, onPress }: Props) {
       <View style={styles.imageWrap}>
         <PlaceImage
           googlePlaceId={saved.place.google_place_id}
-          allowGoogleLookup={false}
+          hydrationPolicy="saved_snapshot"
+          initialPhotoUrls={savedImageUri ? [savedImageUri] : undefined}
+          sourceUri={sourceImageUri}
           size={124}
           borderRadius={Radius.md}
           style={styles.image}

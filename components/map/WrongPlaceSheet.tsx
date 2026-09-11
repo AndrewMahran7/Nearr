@@ -406,6 +406,9 @@ export function WrongPlaceSheet({
                       preferPlacePhoto
                       presentationMode="candidate"
                       presentationActive={activePhotoPlaceId === candidate.googlePlaceId}
+                      hydrationPolicy={activePhotoPlaceId === candidate.googlePlaceId
+                        ? 'active_candidate'
+                        : 'inactive_candidate'}
                       presentationContext={{
                         trigger: 'wrong_place',
                         candidateIndex: index,

@@ -5,6 +5,7 @@ export type CandidatePresentationTrigger =
   | 'automatic_correction'
   | 'manual_correction'
   | 'map_candidate'
+  | 'manual_search'
   | 'other';
 
 export type CandidatePresentationContext = {

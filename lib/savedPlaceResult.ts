@@ -10,6 +10,7 @@ export type SavedPlaceResultCandidate = {
   formattedAddress?: string | null;
   shortFormattedAddress?: string | null;
   photoUrl?: string | null;
+  photoUrls?: readonly string[] | null;
   sourceFrameUrl?: string | null;
 };
 
@@ -23,6 +24,7 @@ export type SavedPlaceResultViewModel = {
   sourceCopy: string | null;
   sourceThumbnailUrl: string | null;
   candidatePhotoUrl: string | null;
+  candidatePhotoUrls: string[];
   sourceFrameUrl: string | null;
 };
 
@@ -115,6 +117,10 @@ export function buildSavedPlaceResultViewModel(args: {
     sourceCopy: source ? `Saved from ${source.platformName === 'Link' ? 'a shared link' : source.platformName}` : null,
     sourceThumbnailUrl: clean(matchedSource?.thumbnail_url),
     candidatePhotoUrl: clean(args.candidate?.photoUrl),
+    candidatePhotoUrls: (args.candidate?.photoUrls ?? [])
+      .map(clean)
+      .filter((url): url is string => !!url)
+      .slice(0, 5),
     sourceFrameUrl: clean(args.candidate?.sourceFrameUrl),
   };
 }

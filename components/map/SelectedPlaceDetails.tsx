@@ -415,7 +415,8 @@ export function SelectedPlaceDetails({
     }
 
     setDetailsLoading(true);
-    void hydrateSavedPlace({ userId, saved, trigger: 'map_detail' })
+    const knownImageUri = placeSourceCards(saved).find((source) => !!source.thumbnailUrl)?.thumbnailUrl ?? null;
+    void hydrateSavedPlace({ userId, saved, trigger: 'map_detail', knownImageUri })
       .then((hydrated) => {
         if (!canceled) setRichDetails(hydrated.details);
       })
@@ -550,9 +551,15 @@ export function SelectedPlaceDetails({
   }, [saved.place.id, videoGalleryEnabled]);
 
   const videoHero = useMemo(
-    () => videoGalleryEnabled ? selectVideoHero(photoUrls, ownerPlaceVideos, communityPlaceVideos) : null,
+    () => selectVideoHero(
+      photoUrls,
+      videoGalleryEnabled ? ownerPlaceVideos : [],
+      videoGalleryEnabled ? communityPlaceVideos : [],
+    ),
     [communityPlaceVideos, ownerPlaceVideos, photoUrls, videoGalleryEnabled],
   );
+  const sourceHeroUri = primarySource?.thumbnailUrl?.trim() || null;
+  const heroUri = videoHero?.uri ?? sourceHeroUri;
   useEffect(() => {
     if (!videoHero || videoHero.kind === 'PROVIDER' || !videoHero.video) return;
     const key = `${saved.place.id}:${videoHero.video.sourceId}`;
@@ -1156,15 +1163,15 @@ export function SelectedPlaceDetails({
         accessibilityLabel={videoHero?.kind === 'PROVIDER' ? `View photos of ${saved.place.name}` : videoHero ? `Open original video for ${saved.place.name}` : undefined}
         style={({ pressed }) => [styles.hero, pressed && styles.heroPressed]}
       >
-        {videoHero?.uri ? (
+        {heroUri ? (
           <Image
-            source={{ uri: videoHero.uri }}
+            source={{ uri: heroUri }}
             style={styles.heroImage}
             resizeMode="cover"
             onError={() => {
-              if (videoHero.kind === 'PROVIDER') setFailedPhotoUrls((prev) => ({ ...prev, [videoHero.uri]: true }));
-              else if (videoHero.video?.ownership === 'OWNER') setOwnerPlaceVideos((current) => current.filter((video) => video.sourceId !== videoHero.video?.sourceId));
-              else if (videoHero.video) setCommunityPlaceVideos((current) => current.filter((video) => video.sourceId !== videoHero.video?.sourceId));
+              if (videoHero?.kind === 'PROVIDER') setFailedPhotoUrls((prev) => ({ ...prev, [videoHero.uri]: true }));
+              else if (videoHero?.video?.ownership === 'OWNER') setOwnerPlaceVideos((current) => current.filter((video) => video.sourceId !== videoHero.video?.sourceId));
+              else if (videoHero?.video) setCommunityPlaceVideos((current) => current.filter((video) => video.sourceId !== videoHero.video?.sourceId));
             }}
           />
         ) : (
@@ -1277,6 +1284,8 @@ export function SelectedPlaceDetails({
         items={photoRolodexItems}
         initialIndex={galleryIndex}
         onClose={closeGallery}
+        prefetchAdjacent={false}
+        loadOnlyVisited
       />
 
       {/* Why this place is on the user's map at all.
