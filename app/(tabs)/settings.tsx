@@ -32,12 +32,9 @@ import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 
 import { Button, Card, DemoModeBanner, DevModeBanner, EmptyState, HowNearrWorksModal, Input, Screen, SetupChecklist } from '@/components';
-import { PlaceFindBalance } from '@/components/PlaceFindBalance';
-import { TokenSymbol } from '@/components/TokenSymbol';
 import { Radius, Spacing } from '@/constants';
 
 import { useAuth } from '@/hooks/useAuth';
-import { usePlaceFindBalance } from '@/hooks/usePlaceFindBalance';
 import { trackEvent } from '@/lib/analytics';
 import { disableDevAuth } from '@/lib/devAuth';
 import { isDemoMode } from '@/lib/demoMode';
@@ -45,7 +42,8 @@ import { setOnboardingPreview } from '@/lib/onboarding';
 import { requestOnboardingV2MapBackup } from '@/lib/onboardingV2';
 import {
   isOnboardingV2DevelopmentResetAvailable,
-  resetOnboardingV2ForDevelopment,
+  resetOnboardingV2OnlyForDevelopment,
+  resetOnboardingV2WithFreshAnonymousUserForDevelopment,
 } from '@/lib/onboardingV2DevReset';
 import * as Clipboard from 'expo-clipboard';
 import { getRecentDiagnostics, formatDiagnosticForCopy, getUpdateInfo } from '@/lib/deviceDiagnostics';
@@ -115,7 +113,6 @@ export default function SettingsScreen() {
   const { user, isDevSession, isLocalUiSession } = useAuth();
   const { colors, typography, themePreference, setThemePreference } = useTheme();
   const styles = useMemo(() => createStyles(colors, typography), [colors, typography]);
-  const placeFindBalance = usePlaceFindBalance();
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -635,39 +632,65 @@ export default function SettingsScreen() {
     router.push('/(onboarding)?preview=1');
   }
 
-  function handleResetOnboarding() {
+  function handleResetOnboardingOnly() {
     if (resettingOnboarding) return;
     Alert.alert(
       'Reset onboarding?',
-      'Reset onboarding progress for this development app? This signs out this device and removes only a verified tutorial place. Other saved places and settings stay.',
+      'Clear onboarding progress and server checkpoints while keeping this anonymous identity, its saves, and its jobs?',
       [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Reset onboarding',
           style: 'destructive',
-          onPress: () => void runOnboardingReset(),
+          onPress: () => void runOnboardingReset('onboarding_only'),
         },
       ],
       { cancelable: true },
     );
   }
 
-  async function runOnboardingReset() {
+  function handleFreshAnonymousReset() {
+    if (resettingOnboarding) return;
+    Alert.alert(
+      'Create a fresh QA user?',
+      'Sign out only this device and create a brand-new anonymous identity? Existing account data, saves, and jobs stay untouched.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Fresh anonymous user',
+          style: 'destructive',
+          onPress: () => void runOnboardingReset('fresh_anonymous'),
+        },
+      ],
+      { cancelable: true },
+    );
+  }
+
+  async function runOnboardingReset(mode: 'onboarding_only' | 'fresh_anonymous') {
     if (resettingOnboarding) return;
     setResettingOnboarding(true);
-    const result = await resetOnboardingV2ForDevelopment();
+    const result = mode === 'onboarding_only'
+      ? await resetOnboardingV2OnlyForDevelopment()
+      : await resetOnboardingV2WithFreshAnonymousUserForDevelopment();
     if (!result.ok) {
       setResettingOnboarding(false);
       Alert.alert(
         'Reset blocked',
         result.code === 'ONBOARDING_DEV_RESET_BLOCKED_NON_DEV'
           ? 'Onboarding reset is available only in the development app connected to Nearr-Dev.'
+          : result.code === 'ONBOARDING_DEV_RESET_REQUIRES_ANONYMOUS'
+            ? 'Reset onboarding only requires an anonymous QA user. Use Fresh anonymous QA user to leave this account without deleting it.'
           : 'Onboarding could not be reset. Try again.',
       );
       return;
     }
     router.replace('/(onboarding)');
-    Alert.alert('Onboarding reset', 'Fresh state is ready. Start again from Welcome.');
+    Alert.alert(
+      mode === 'onboarding_only' ? 'Onboarding reset' : 'Fresh anonymous QA user ready',
+      mode === 'onboarding_only'
+        ? 'Progress is cleared; the current anonymous identity and its saves are preserved.'
+        : `Identity ${result.anonymousUserId.slice(0, 8)}… is ready. Start again from Welcome.`,
+    );
   }
 
   // Open the App Store review flow. Public App Store rating — distinct from
@@ -867,40 +890,6 @@ export default function SettingsScreen() {
           </>
         ) : null}
 
-        {placeFindBalance.enabled ? (
-          <>
-            <View style={{ height: Spacing.xxl }} />
-            <Text style={styles.sectionLabel}>Tokens</Text>
-            <Card style={styles.section}>
-              <Pressable
-                style={styles.tokenRow}
-                onPress={() => router.push({ pathname: '/monetization', params: { entry: 'settings' } })}
-                accessibilityRole="button"
-                accessibilityLabel={placeFindBalance.loading
-                  ? 'Token balance, loading'
-                  : `${placeFindBalance.snapshot?.available ?? 0} ${(placeFindBalance.snapshot?.available ?? 0) === 1 ? 'token' : 'tokens'}. Open token store`}
-              >
-                <View style={styles.tokenIconWell} importantForAccessibility="no-hide-descendants">
-                  <TokenSymbol size={22} />
-                </View>
-                <View style={styles.helpCopy}>
-                  <Text style={typography.bodyStrong}>Token balance</Text>
-                  <Text style={[typography.caption, styles.muted, styles.helpBody]}>
-                    Used for Premium Requests.
-                  </Text>
-                </View>
-                <View importantForAccessibility="no-hide-descendants">
-                  <PlaceFindBalance
-                    available={placeFindBalance.snapshot?.available ?? null}
-                    loading={placeFindBalance.loading}
-                  />
-                </View>
-                <Text style={[typography.bodyStrong, styles.helpChevron]}>›</Text>
-              </Pressable>
-            </Card>
-          </>
-        ) : null}
-
         {/* --- Help ---------------------------------------------------- */}
         <View style={{ height: Spacing.xxl }} />
         <Text style={styles.sectionLabel}>Help</Text>
@@ -1022,13 +1011,27 @@ export default function SettingsScreen() {
             <Text style={styles.sectionLabel}>Development QA</Text>
             <Card style={styles.section}>
               <Text style={[typography.caption, styles.muted]}>
-                Clears only Onboarding V2 QA state, signs out this device, and returns to Welcome.
+                Reset progress in place, or rotate to a truly fresh anonymous identity. Both operations are hard-gated to Nearr-Dev.
               </Text>
               <Button
-                title="Reset onboarding"
+                title="Reset onboarding only"
                 variant="secondary"
                 loading={resettingOnboarding}
-                onPress={handleResetOnboarding}
+                onPress={handleResetOnboardingOnly}
+              />
+              <View style={{ height: Spacing.sm }} />
+              <Button
+                title="Fresh anonymous QA user"
+                variant="secondary"
+                loading={resettingOnboarding}
+                onPress={handleFreshAnonymousReset}
+              />
+              <View style={{ height: Spacing.sm }} />
+              <Button
+                title="Open standalone QA reset"
+                variant="ghost"
+                disabled={resettingOnboarding}
+                onPress={() => router.push('/dev-qa')}
               />
             </Card>
           </>
@@ -1256,22 +1259,6 @@ function createStyles(
     helpRow: {
       flexDirection: 'row',
       alignItems: 'center',
-    },
-    tokenRow: {
-      minHeight: 52,
-      flexDirection: 'row',
-      alignItems: 'center',
-    },
-    tokenIconWell: {
-      width: 40,
-      height: 40,
-      marginRight: Spacing.md,
-      borderRadius: 20,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: colors.accentSoft,
-      borderWidth: 1,
-      borderColor: colors.accentBorder,
     },
     helpCopy: {
       flex: 1,

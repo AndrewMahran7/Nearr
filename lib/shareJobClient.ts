@@ -55,6 +55,7 @@ export async function createShareJob(args: {
   url: string;
   accessToken: string;
   clientRequestId?: string;
+  submissionPath?: 'share_extension' | 'host_app' | 'background_import';
   timeoutMs?: number;
 }): Promise<CreateShareJobResult> {
   const endpoint = (args.endpoint ?? '').trim();
@@ -79,6 +80,7 @@ export async function createShareJob(args: {
       body: JSON.stringify({
         url: args.url,
         clientRequestId: args.clientRequestId,
+        submissionPath: args.submissionPath,
       }),
       signal: controller.signal,
     });

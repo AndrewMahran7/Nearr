@@ -67,6 +67,7 @@ import { NotificationTapController } from '@/components/NotificationTapControlle
 import { StartupSurface } from '@/components/StartupSurface';
 import { useStartupWatchdog } from '@/hooks/useStartupWatchdog';
 import { ownerForStartupRoute, resolveStartupPresentation } from '@/lib/startupWatchdogCore';
+import { isOnboardingV2DevelopmentResetAvailable } from '@/lib/onboardingV2DevReset';
 
 logInfo('APP_START', '_layout module loaded');
 
@@ -257,6 +258,7 @@ function AuthGate({
   const inResetPassword = currentRoute === '/reset-password';
   const inSharedPlace = currentRoute.startsWith('/p/');
   const inTabs = currentRoute.startsWith('/(tabs)');
+  const inDevelopmentQa = currentRoute === '/dev-qa';
   const pendingOnboardingNavigationRef = useRef<PendingOnboardingNavigation>(null);
   if (pendingOnboardingNavigationRef.current?.to === currentRoute) {
     pendingOnboardingNavigationRef.current = null;
@@ -430,6 +432,11 @@ function AuthGate({
     };
     const expectedV2Route = expectedOnboardingV2Route(onboardingV2?.stage);
 
+    // Development QA is an intentionally independent recovery owner. It must
+    // remain reachable while logged out, anonymous, or permanently signed in,
+    // even when the normal Settings/tab route is the bug under investigation.
+    if (inDevelopmentQa && isOnboardingV2DevelopmentResetAvailable()) return;
+
     // Logged out: onboarding is the PUBLIC landing. Allow the auth and
     // onboarding groups; send everything else into the intro flow.
     if (!session) {
@@ -502,6 +509,7 @@ function AuthGate({
     inAuthCallback,
     inResetPassword,
     inSharedPlace,
+    inDevelopmentQa,
     authLinkPending,
     isAnonymousSession,
     onboardingV2?.boundUserId,
@@ -748,6 +756,7 @@ function RootLayoutContent() {
               <Stack.Screen name="auth-callback" />
               <Stack.Screen name="reset-password" />
               <Stack.Screen name="activate" />
+              <Stack.Screen name="dev-qa" />
               <Stack.Screen
                 name="add-place"
                 options={{ presentation: 'modal', headerShown: true, title: 'Save place' }}
@@ -786,15 +795,6 @@ function RootLayoutContent() {
                   presentation: 'transparentModal',
                   animation: 'slide_from_bottom',
                   contentStyle: { backgroundColor: 'transparent' },
-                }}
-              />
-              <Stack.Screen
-                name="monetization"
-                options={{
-                  headerShown: false,
-                  title: 'Nearr Tokens',
-                  presentation: 'modal',
-                  gestureEnabled: true,
                 }}
               />
               <Stack.Screen name="legal/terms" options={{ headerShown: true, title: 'Terms of Service' }} />

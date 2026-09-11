@@ -53,7 +53,11 @@ const NO_VERIFY_JWT = new Set([
 ]);
 const DEVELOPMENT_ONLY_FUNCTIONS = new Set([
   'e2e-place-fixture',
+  // This branch intentionally replaces the ordinary share contract with a
+  // Nearr-Dev-only onboarding QA RPC. Never publish that replacement to Prod.
+  'create-share-job',
   'get-onboarding-tutorial',
+  'reset-onboarding-qa',
 ]);
 
 function fail(message) {

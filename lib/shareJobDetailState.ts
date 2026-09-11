@@ -291,7 +291,7 @@ export function buildShareJobDetailState(
         kind: 'dismissed',
         copy: {
           title: 'This post is waiting',
-          body: 'Choose a token pack to continue.',
+          body: 'This legacy job is unavailable in the onboarding QA environment.',
         },
         reason: 'purchase_required',
       };

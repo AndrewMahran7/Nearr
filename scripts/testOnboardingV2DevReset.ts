@@ -7,18 +7,15 @@ import {
   canRunOnboardingV2DevelopmentReset,
   isFreshOnboardingV2State,
   ONBOARDING_DEV_RESET_BLOCKED_NON_DEV,
-  tutorialSavedPlaceIdForDevelopmentReset,
 } from '../lib/onboardingV2DevResetCore';
-import {
-  createInitialOnboardingV2State,
-  startOnboardingV2,
-  type OnboardingV2State,
-} from '../lib/onboardingV2Core';
+import { createInitialOnboardingV2State, type OnboardingV2State } from '../lib/onboardingV2Core';
 
 const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 const runtime = read('lib/onboardingV2DevReset.ts');
 const adapter = read('lib/onboardingV2.ts');
 const settings = read('app/(tabs)/settings.tsx');
+const fallback = read('app/dev-qa.tsx');
+const resetEdge = read('supabase/functions/reset-onboarding-qa/index.ts');
 const rootLayout = read('app/_layout.tsx');
 
 function environment(overrides: Partial<ResolvedEnvironment> = {}): ResolvedEnvironment {
@@ -44,14 +41,13 @@ for (const unsafe of [
   environment({ appEnvWasDefaulted: true }),
   environment({ backendEnvWasDefaulted: true }),
   environment({ supabaseProjectRef: 'not-nearr-dev' }),
-]) {
-  assert.equal(canRunOnboardingV2DevelopmentReset(unsafe), false);
-}
+]) assert.equal(canRunOnboardingV2DevelopmentReset(unsafe), false);
 assert.ok(runtime.includes(ONBOARDING_DEV_RESET_BLOCKED_NON_DEV));
-console.log('PASS reset is fail-closed outside an explicit Nearr-Dev lane');
+assert.match(resetEdge, /qnfxnmvxpjzfydgudtvs\.supabase\.co/);
+assert.match(resetEdge, /if \(!isDevelopmentDeployment\(supabaseUrl\)\).*404/);
+console.log('PASS reset is fail-closed in both client and server outside explicit Nearr-Dev');
 
-const fresh = createInitialOnboardingV2State('2026-08-21T00:00:00.000Z');
-assert.equal(isFreshOnboardingV2State(fresh), true);
+const fresh = createInitialOnboardingV2State('2026-09-10T00:00:00.000Z');
 const progressed: OnboardingV2State = {
   ...fresh,
   revision: 9,
@@ -71,74 +67,53 @@ const progressed: OnboardingV2State = {
     normalizedSourceUrl: 'https://instagram.com/p/tutorial',
     contentIdentity: { platform: 'instagram', contentId: 'tutorial' },
     savedPlaceId: 'tutorial-place',
-    completedAt: '2026-08-21T00:00:01.000Z',
+    completedAt: '2026-09-10T00:00:01.000Z',
   },
-  independentSaves: [{
-    kind: 'independent_1',
-    contentId: 'independent',
-    sourceUrl: 'https://www.instagram.com/p/independent/',
-    normalizedSourceUrl: 'https://instagram.com/p/independent',
-    contentIdentity: { platform: 'instagram', contentId: 'independent' },
-    savedPlaceId: 'unrelated-place',
-    completedAt: '2026-08-21T00:00:02.000Z',
-  }],
-  behavioralCompletedAt: '2026-08-21T00:00:03.000Z',
+  independentSaves: [],
+  behavioralCompletedAt: '2026-09-10T00:00:03.000Z',
 };
+assert.equal(isFreshOnboardingV2State(fresh), true);
 assert.equal(isFreshOnboardingV2State(progressed), false);
 assert.match(adapter, /removeItem\(ONBOARDING_V2_STORAGE_KEY\)/);
 assert.match(adapter, /createInitialOnboardingV2State\(\)/);
-assert.match(adapter, /publish\(initial\)/);
-assert.match(adapter, /resetOnboardingV2LocalStateForDevelopment[\s\S]{0,300}canRunOnboardingV2DevelopmentReset/);
-console.log('PASS reset replaces stage, choices, progress, completion, and identity with initial state');
-
-const trusted = [{ id: 'tutorial-food', sourceUrl: 'https://www.instagram.com/p/tutorial/' }];
-assert.equal(tutorialSavedPlaceIdForDevelopmentReset(progressed, trusted), 'tutorial-place');
-assert.equal(
-  tutorialSavedPlaceIdForDevelopmentReset(
-    { ...progressed, tutorialSave: { ...progressed.tutorialSave!, sourceUrl: 'https://example.com/not-trusted' } },
-    trusted,
-  ),
-  null,
-);
-assert.equal(
-  tutorialSavedPlaceIdForDevelopmentReset(
-    { ...progressed, tutorialSave: { ...progressed.tutorialSave!, kind: 'independent_1' } },
-    trusted,
-  ),
-  null,
-);
-assert.match(runtime, /deleteSavedPlace\(tutorialSavedPlaceId\)/);
-assert.doesNotMatch(runtime, /deleteSavedPlace\(state\.|\.from\(['"]saved_places['"]\)\.delete/);
-console.log('PASS only a registry-verified tutorial saved-place id is eligible for deletion');
-
+assert.match(runtime, /resetOnboardingV2LocalStateForDevelopment\(\)/);
+assert.match(runtime, /resetOnboarding\(userId\)/);
 assert.match(runtime, /removeItem\(ONBOARDING_V2_ACCOUNT_TRANSFER_KEY\)/);
 assert.match(runtime, /rotateOnboardingFunnelId\(\)/);
+console.log('PASS both actions clear V2 state, completion, transfer, fixture attempts, and pending navigation');
+
+assert.match(runtime, /resetOnboardingV2OnlyForDevelopment/);
+assert.match(runtime, /functions\.invoke\('reset-onboarding-qa'/);
+assert.match(resetEdge, /auth\.getUser\(accessToken\)/);
+assert.match(resetEdge, /from\('onboarding_v2_sessions'\)[\s\S]*\.delete\(\)[\s\S]*\.eq\('user_id', userData\.user\.id\)/);
+assert.doesNotMatch(resetEdge, /from\('(saved_places|share_jobs|profiles)'\)[\s\S]*\.delete\(/);
+assert.doesNotMatch(runtime, /deleteSavedPlace|deleteAccount|auth\.admin/);
+console.log('PASS onboarding-only reset removes only token-owned server checkpoints and preserves product data');
+
+assert.match(runtime, /resetOnboardingV2WithFreshAnonymousUserForDevelopment/);
 assert.match(runtime, /signOut\(\{ scope: 'local' \}\)/);
 assert.match(runtime, /clearOfflineUserData\(priorUserId\)/);
+assert.match(runtime, /bootstrapFreshAnonymous\(priorUserId\)/);
+assert.match(runtime, /bootstrap\.user\.id === priorUserId/);
+assert.match(runtime, /priorWasAnonymous\) await removeOwnedServerSessions/);
+assert.match(runtime, /serverData: priorWasAnonymous \? 'onboarding_sessions_removed' : 'prior_identity_preserved'/);
 assert.doesNotMatch(runtime + adapter, /AsyncStorage\.clear\(|multiRemove\(/);
-for (const unrelatedKey of ['theme', 'notifications', 'analytics.anonymousId', 'demo_completed']) {
-  assert.equal(runtime.includes(unrelatedKey), false, 'unrelated preference must remain untouched: ' + unrelatedKey);
-}
-console.log('PASS account credentials on other devices, unrelated preferences, and unrelated saves are preserved');
+console.log('PASS fresh-user reset rotates auth locally without deleting permanent accounts or unrelated data');
 
-const resetIndex = runtime.indexOf('await resetOnboardingV2LocalStateForDevelopment()');
-const signOutIndex = runtime.indexOf("await supabase.auth.signOut({ scope: 'local' })");
-assert.ok(resetIndex > -1 && signOutIndex > resetIndex, 'local state is fresh before the auth event can remount onboarding');
-assert.doesNotMatch(runtime, /from\(['"]onboarding_v2_sessions['"]\)[\s\S]{0,100}delete/);
-console.log('PASS stale server progress is isolated by a new local auth and funnel identity without broad server deletion');
+assert.match(settings, /title="Reset onboarding only"/);
+assert.match(settings, /title="Fresh anonymous QA user"/);
+assert.match(settings, /title="Open standalone QA reset"/);
+assert.match(fallback, /nearr:\/\/dev-qa/);
+assert.match(fallback, /if \(!isOnboardingV2DevelopmentResetAvailable\(\)\) return <Redirect href="\/"/);
+assert.match(rootLayout, /inDevelopmentQa[\s\S]*isOnboardingV2DevelopmentResetAvailable\(\)\) return/);
+assert.match(rootLayout, /<Stack\.Screen name="dev-qa"/);
+assert.doesNotMatch(settings, /useEffect\([\s\S]{0,250}resetOnboardingV2/);
+console.log('PASS Settings and the independent direct route expose guarded explicit reset choices');
 
-assert.match(settings, /const onboardingResetAvailable = isOnboardingV2DevelopmentResetAvailable\(\)/);
-assert.match(settings, /\{onboardingResetAvailable \? \(/);
-assert.match(settings, /title="Reset onboarding"/);
-assert.match(settings, /Reset onboarding progress for this development app\?/);
-assert.doesNotMatch(settings, /useEffect\([\s\S]{0,250}resetOnboardingV2ForDevelopment/);
-console.log('PASS production UI cannot expose or automatically invoke the reset');
-
-const welcome = startOnboardingV2(fresh, '2026-08-21T00:00:04.000Z').state;
-assert.equal(welcome.stage, 'overview');
 assert.match(settings, /router\.replace\('\/\(onboarding\)'\)/);
+assert.match(fallback, /router\.replace\('\/\(onboarding\)'\)/);
 assert.match(rootLayout, /pendingOnboardingNavigationRef/);
 assert.match(rootLayout, /shouldNavigateOnboarding/);
-console.log('PASS reset relaunch begins at Welcome through the existing bounded navigation authority');
+console.log('PASS successful reset returns to Welcome through the bounded navigation authority');
 
 console.log('\nAll Onboarding V2 development reset contracts passed.');

@@ -40,7 +40,6 @@ import {
 } from '@/components/SavedPlaceResult';
 import { SourceEvidenceGallery } from '@/components/SourceEvidenceGallery';
 import { ShareJobsSheet } from '@/components/ShareJobsSheet';
-import { TokenSymbol } from '@/components/TokenSymbol';
 import { VayrinPresentationHeader } from '@/components/VayrinPresentationHeader';
 import { WrongPlaceSheet } from '@/components/map/WrongPlaceSheet';
 import { Radius, Spacing } from '@/constants';
@@ -70,7 +69,6 @@ import {
 import {
   planShareSaveCompletion,
   normalizeResultCandidates,
-  partialResultFromPayload,
   saveSelectedLabel,
   sourceTimestampLabel,
   type ShareJobResultCandidate,
@@ -177,12 +175,6 @@ import {
   type ShareJobSoftAlternative,
 } from '@/services/shareJobsService';
 import { CATEGORY_LABELS, resolvePlaceCategory } from '@/lib/placeCategory';
-import { requestPremiumRecognition } from '@/lib/monetizationClient';
-import { premiumRequestsEnabled } from '@/lib/premiumRequests';
-import {
-  clearPendingPremiumRequestJobId,
-  setPendingPremiumRequestJobId,
-} from '@/lib/pendingPremiumRequest';
 import {
   confirmationMode,
   confirmationPrompt,
@@ -364,7 +356,6 @@ function ShareJobDetailScreen() {
   const routeJobId = typeof jobId === 'string' ? jobId.trim() : '';
   const { colors, typography } = useTheme();
   const vayrinEnabled = isVayrinProductUiEnabled();
-  const premiumRequestsAvailable = premiumRequestsEnabled();
   const { state: onboardingV2 } = useOnboardingV2();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
@@ -378,9 +369,6 @@ function ShareJobDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [loadFailure, setLoadFailure] = useState<DetailLoadFailure | null>(null);
   const [busy, setBusy] = useState(false);
-  const [premiumBusy, setPremiumBusy] = useState(false);
-  const [premiumOfferDismissed, setPremiumOfferDismissed] = useState(false);
-  const premiumOfferTrackedRef = useRef<string | null>(null);
   const areaMatchIncompleteTrackedRef = useRef<string | null>(null);
   const [manualQuery, setManualQuery] = useState('');
   const [manualSearchPhase, setManualSearchPhase] = useState<SearchPhase>('idle');
@@ -722,48 +710,6 @@ function ShareJobDetailScreen() {
     return () => clearInterval(id);
   }, [isProcessing, load]);
 
-  useEffect(() => {
-    if (job?.status !== 'awaiting_purchase') return;
-    router.replace({ pathname: '/monetization', params: { jobId: job.id, entry: 'job' } });
-  }, [job?.id, job?.status, router]);
-
-  useEffect(() => {
-    if (!premiumRequestsAvailable || job?.premium_state !== 'eligible' || premiumOfferTrackedRef.current === job.id) return;
-    premiumOfferTrackedRef.current = job.id;
-    void trackEvent('premium_request_offer_viewed', { job_id: job.id });
-  }, [job?.id, job?.premium_state, premiumRequestsAvailable]);
-
-  const startPremiumRequest = useCallback(async () => {
-    if (!premiumRequestsAvailable || !job || premiumBusy) return;
-    setPremiumBusy(true);
-    const partial = partialResultFromPayload(job.candidate_payload);
-    void trackEvent('premium_request_cta_tapped', {
-      job_id: job.id,
-      token_cost: 1,
-      ...(partial?.resultClass === 'area_match_incomplete' ? {
-        resolved_specificity: partial.resolvedSpecificity,
-        intended_specificity: partial.intendedSpecificity,
-        source_platform: job.source_platform ?? null,
-        premium_eligible: job.premium_state === 'eligible',
-      } : {}),
-    });
-    try {
-      const result = await requestPremiumRecognition(job.id);
-      if (result.requiresPurchase) {
-        await setPendingPremiumRequestJobId(job.id);
-        router.push({ pathname: '/monetization', params: { premiumJobId: job.id, entry: 'premium_request' } });
-        return;
-      }
-      await clearPendingPremiumRequestJobId(job.id);
-      await load();
-    } catch {
-      Alert.alert('Premium Request unavailable', 'Nothing was charged. Please try again.');
-      void trackEvent('premium_request_failed', { job_id: job.id, stage: 'request' });
-    } finally {
-      if (mountedRef.current) setPremiumBusy(false);
-    }
-  }, [job, load, premiumBusy, premiumRequestsAvailable, router]);
-
   const platform = job?.source_platform ?? null;
   const sourceUrl = job?.canonical_url ?? job?.source_url ?? null;
   const extractionPayload = job?.extraction_payload && typeof job.extraction_payload === 'object'
@@ -786,7 +732,6 @@ function ShareJobDetailScreen() {
       .filter((value, index, values): value is string => !!value && values.indexOf(value) === index)
       .join(', ')
     : null;
-  const premiumState = job?.premium_state ?? 'not_eligible';
   const vayrinPresentation = useMemo(
     () => mapShareJobToVayrinPresentation(detail, job),
     [detail, job],
@@ -2156,67 +2101,6 @@ function ShareJobDetailScreen() {
     );
   }
 
-  if (premiumRequestsAvailable && !premiumOfferDismissed && !areaMatchIncomplete && (premiumState === 'eligible' || premiumState === 'awaiting_token')) {
-    return (
-      <ShareJobsSheet onDismiss={backToQueue} size="detail">
-        <ShareJobsHeader title="Premium Request" onBack={backToQueue} backLabel="Back to queue" />
-        <View style={styles.centered} testID="premium-request-offer">
-          <View style={styles.premiumIcon}><TokenSymbol size={26} /></View>
-          <Text style={[typography.heading, styles.centeredTitle]}>We couldn&apos;t find enough identifying information.</Text>
-          <Text style={[typography.body, styles.help, styles.premiumBody]}>
-            Normal recognition was free, but couldn&apos;t identify a specific place. A Premium Request uses stronger analysis on this same post.
-          </Text>
-          <Button
-            title={premiumState === 'awaiting_token' ? 'Choose tokens' : 'Try Premium Request · 1 token'}
-            onPress={() => {
-              if (premiumState === 'awaiting_token') {
-                void setPendingPremiumRequestJobId(job.id);
-                router.push({ pathname: '/monetization', params: { premiumJobId: job.id, entry: 'premium_request' } });
-              } else {
-                void startPremiumRequest();
-              }
-            }}
-            disabled={premiumBusy}
-            loading={premiumBusy}
-            style={styles.centeredPrimary}
-          />
-          <Text style={[typography.caption, styles.premiumReassurance]}>Charged only if Premium finds a useful, specific result.</Text>
-          <Button title="Find the right place" variant="secondary" onPress={() => setPremiumOfferDismissed(true)} style={styles.secondaryBtn} />
-        </View>
-      </ShareJobsSheet>
-    );
-  }
-
-  if (premiumState === 'reserved' || premiumState === 'processing') {
-    return (
-      <ShareJobsSheet onDismiss={backToQueue} size="detail">
-        <ShareJobsHeader title="Premium Request" onBack={backToQueue} backLabel="Back to queue" />
-        <View style={styles.centered} testID="premium-request-processing">
-          <ActivityIndicator color={colors.primary} size="large" />
-          <Text style={[typography.heading, styles.centeredTitle]}>Digging deeper</Text>
-          <Text style={[typography.body, styles.help, styles.premiumBody]}>Using deeper analysis on your original shared post. You can leave this screen—we&apos;ll keep working.</Text>
-        </View>
-      </ShareJobsSheet>
-    );
-  }
-
-  if (!premiumOfferDismissed && (premiumState === 'no_useful_result' || premiumState === 'failed' || premiumState === 'cancelled')) {
-    return (
-      <ShareJobsSheet onDismiss={backToQueue} size="detail">
-        <ShareJobsHeader title="Premium Request" onBack={backToQueue} backLabel="Back to queue" />
-        <View style={styles.centered} testID="premium-request-returned">
-          <View style={styles.premiumIcon}><Feather name="rotate-ccw" size={25} color={colors.primary} /></View>
-          <Text style={[typography.heading, styles.centeredTitle]}>We still couldn&apos;t pin this one down.</Text>
-          <Text style={[typography.body, styles.help, styles.premiumBody]}>
-            Premium didn&apos;t produce a useful, specific place. Your token was returned.
-          </Text>
-          <Button title="Find the right place" onPress={() => setPremiumOfferDismissed(true)} style={styles.centeredPrimary} />
-          <Button title="Done" variant="secondary" onPress={backToQueue} style={styles.secondaryBtn} />
-        </View>
-      </ShareJobsSheet>
-    );
-  }
-
   // Terminal success (incl. already-saved) — offer the saved place. NEVER render
   // candidate/save controls for a job that is already resolved.
   if (detail.kind === 'completed') {
@@ -2288,9 +2172,6 @@ function ShareJobDetailScreen() {
             onCorrected={(updated) => {
               void trackEvent('vayrin_saved', { job_id: job.id, source: 'correction' });
               void trackEvent('manual_correction_used', { job_id: job.id, source: 'grouped_result_review' });
-              if (premiumState === 'useful_result') {
-                void trackEvent('premium_result_corrected', { job_id: job.id });
-              }
               setCorrectionOpen(false);
               openExistingPlace({ savedPlaceId: updated.id, source: 'share_job_saved' });
             }}
@@ -2698,30 +2579,6 @@ function ShareJobDetailScreen() {
                 {areaLocation ? <Text style={[typography.caption, styles.areaLocation]}>{areaLocation}</Text> : null}
               </View>
             ) : null}
-            {premiumRequestsAvailable && areaMatchIncomplete && (premiumState === 'eligible' || premiumState === 'awaiting_token') ? (
-              <View style={styles.premiumInlineCard} testID="area-match-premium-offer">
-                <View style={styles.premiumInlineHeading}>
-                  <TokenSymbol size={20} />
-                  <Text style={[typography.heading, styles.premiumInlineTitle]}>Want us to dig deeper?</Text>
-                </View>
-                <Text style={[typography.body, styles.premiumInlineBody]}>Use a Premium Request to look for the exact place.</Text>
-                <Button
-                  title={premiumState === 'awaiting_token' ? 'Choose tokens' : 'Make Premium Request · 1 token'}
-                  onPress={() => {
-                    if (premiumState === 'awaiting_token') {
-                      void setPendingPremiumRequestJobId(job.id);
-                      router.push({ pathname: '/monetization', params: { premiumJobId: job.id, entry: 'premium_request' } });
-                    } else {
-                      void startPremiumRequest();
-                    }
-                  }}
-                  disabled={premiumBusy}
-                  loading={premiumBusy}
-                  style={styles.primaryBtn}
-                />
-                <Text style={[typography.caption, styles.premiumInlineReassurance]}>Charged only if Premium finds a useful, specific result.</Text>
-              </View>
-            ) : null}
             {areaMatchIncomplete ? (
               !searchExpanded ? <>
                 <Button
@@ -2941,19 +2798,6 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
       borderWidth: 1,
       borderColor: 'rgba(255,106,26,0.3)',
     },
-    premiumIcon: {
-      width: 60,
-      height: 60,
-      borderRadius: 20,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: 'rgba(255,106,26,0.14)',
-      borderWidth: 1,
-      borderColor: 'rgba(255,106,26,0.3)',
-    },
-    premiumBody: { textAlign: 'center', maxWidth: 340 },
-    premiumReassurance: { color: colors.textMuted, textAlign: 'center', marginTop: Spacing.sm },
-    premiumResultLabel: { color: colors.accent, fontSize: 11, fontWeight: '800', letterSpacing: 1.4, marginTop: Spacing.sm },
     areaSummary: {
       padding: Spacing.md,
       borderRadius: Radius.md,
@@ -2965,18 +2809,6 @@ function createStyles(colors: ReturnType<typeof useTheme>['colors']) {
     areaResultLabel: { color: colors.accent, fontSize: 11, fontWeight: '800', letterSpacing: 1.4 },
     areaName: { color: colors.text, marginTop: Spacing.xs },
     areaLocation: { color: colors.textSecondary, marginTop: 2 },
-    premiumInlineCard: {
-      padding: Spacing.md,
-      borderRadius: Radius.lg,
-      backgroundColor: colors.surfaceElevated,
-      borderWidth: 1,
-      borderColor: 'rgba(255,106,26,0.3)',
-      marginBottom: Spacing.md,
-    },
-    premiumInlineHeading: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-    premiumInlineTitle: { color: colors.text, flex: 1 },
-    premiumInlineBody: { color: colors.textSecondary, marginTop: Spacing.sm },
-    premiumInlineReassurance: { color: colors.textMuted, marginTop: Spacing.sm },
     sourceRow: {
       flexDirection: 'row',
       alignItems: 'center',

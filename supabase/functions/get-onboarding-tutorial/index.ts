@@ -72,27 +72,78 @@ Deno.serve(async (request) => {
 
   if (mode === 'practice') {
     if (!onboardingSessionId) return json({ error: 'missing_onboarding_session' }, 400);
-    const { data: selected, error: selectionError } = await admin.rpc('select_onboarding_practice_fixture', {
-      p_user_id: userData.user.id,
-      p_onboarding_session_id: onboardingSessionId,
-      p_preferred_platform: preferredPlatform,
-    });
-    if (selectionError) return json({ error: 'practice_fixture_lookup_failed' }, 503);
-    const row = Array.isArray(selected) ? selected[0] : null;
-    if (!row) return json({ error: 'practice_fixture_unavailable' }, 409);
-    return json({
-      fixtureId: row.fixture_id,
-      fixtureRevision: row.fixture_revision,
-      fixtureRole: row.fixture_role,
-      platform: row.platform,
-      identityKey: row.identity_key,
-      identityVersion: row.identity_version,
-      contentId: row.content_id,
-      canonicalUrl: row.canonical_url,
-      launchUrl: row.canonical_url,
-      thumbnailUrl: onboardingTutorialPreviewUrl(row.platform, row.content_id),
-      selectedAt: new Date().toISOString(),
-    });
+    const { data: session, error: sessionError } = await admin
+      .from('onboarding_v2_sessions')
+      .select('tutorial_saved_place_id')
+      .eq('id', onboardingSessionId)
+      .eq('user_id', userData.user.id)
+      .maybeSingle();
+    if (sessionError) return json({ error: 'practice_session_lookup_failed' }, 503);
+    if (!session?.tutorial_saved_place_id) return json({ error: 'practice_not_ready' }, 409);
+
+    // Practice is available only after this authenticated onboarding owner has
+    // a completed, fixture-proven demo save. This is product sequencing, not a
+    // wallet entitlement or client-controlled free-share exception.
+    const { data: demoJob, error: demoError } = await admin
+      .from('share_jobs')
+      .select('tutorial_fixture_id')
+      .eq('user_id', userData.user.id)
+      .eq('saved_place_id', session.tutorial_saved_place_id)
+      .eq('status', 'completed')
+      .eq('resolution_source', 'tutorial_fixture')
+      .not('tutorial_fixture_id', 'is', null)
+      .order('completed_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (demoError) return json({ error: 'practice_demo_lookup_failed' }, 503);
+    if (!demoJob?.tutorial_fixture_id) return json({ error: 'practice_not_ready' }, 409);
+
+    const { data: demoFixture, error: demoFixtureError } = await admin
+      .from('onboarding_tutorial_fixtures')
+      .select('place_id')
+      .eq('id', demoJob.tutorial_fixture_id)
+      .maybeSingle();
+    if (demoFixtureError || !demoFixture?.place_id) return json({ error: 'practice_demo_fixture_missing' }, 503);
+
+    const { data: practiceRows, error: practiceError } = await admin
+      .from('onboarding_tutorial_fixtures')
+      .select('id,identity_key,identity_version,platform,content_id,canonical_url,role,priority,verification_revision,place_id')
+      .eq('status', 'active')
+      .in('tutorial_use', ['practice', 'both'])
+      .eq('health_state', 'healthy')
+      .gt('health_expires_at', new Date().toISOString())
+      .neq('id', demoJob.tutorial_fixture_id)
+      .neq('place_id', demoFixture.place_id)
+      .order('role', { ascending: false })
+      .order('priority', { ascending: false })
+      .order('created_at', { ascending: true })
+      .limit(12);
+    if (practiceError) return json({ error: 'practice_fixture_lookup_failed' }, 503);
+
+    for (const row of prioritizeOnboardingTutorialFixtures(practiceRows ?? [], preferredPlatform)) {
+      const { data: eligible, error: eligibilityError } = await admin.rpc('resolve_onboarding_tutorial_fixture', {
+        p_identity_key: row.identity_key,
+        p_identity_version: row.identity_version,
+        p_platform: row.platform,
+        p_content_id: row.content_id,
+        p_canonical_url: row.canonical_url,
+      });
+      if (eligibilityError || !Array.isArray(eligible) || eligible.length !== 1) continue;
+      return json({
+        fixtureId: row.id,
+        fixtureRevision: row.verification_revision,
+        fixtureRole: row.role,
+        platform: row.platform,
+        identityKey: row.identity_key,
+        identityVersion: row.identity_version,
+        contentId: row.content_id,
+        canonicalUrl: row.canonical_url,
+        launchUrl: row.canonical_url,
+        thumbnailUrl: onboardingTutorialPreviewUrl(row.platform, row.content_id),
+        selectedAt: new Date().toISOString(),
+      });
+    }
+    return json({ error: 'practice_fixture_unavailable' }, 409);
   }
 
   const { data: rows, error } = await admin

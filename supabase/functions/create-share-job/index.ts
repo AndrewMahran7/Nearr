@@ -41,6 +41,8 @@ import {
   recognitionCacheDiagnostics,
 } from '../_shared/recognitionCachePolicy.ts';
 
+const DEVELOPMENT_PROJECT_REF = 'qnfxnmvxpjzfydgudtvs';
+
 const CORS_HEADERS: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -83,6 +85,7 @@ serve(async (req) => {
     url?: string;
     clientRequestId?: string;
     qualificationMode?: string;
+    submissionPath?: string;
   };
   try {
     body = await req.json();
@@ -154,7 +157,10 @@ serve(async (req) => {
   logRecognitionCachePolicy('create-share-job', recognitionCachePolicy);
   const rpcName = qualification.requested
     ? 'create_dev_qualification_share_job_for_user'
-    : 'create_share_job_for_user';
+    : 'create_onboarding_qa_share_job_for_user';
+  if (!qualification.requested && activeProjectRef !== DEVELOPMENT_PROJECT_REF) {
+    return json({ error: 'onboarding_qa_dev_only' }, 404);
+  }
   const rpcArgs = qualification.requested
     ? {
       p_user_id: userId,
@@ -170,13 +176,6 @@ serve(async (req) => {
       p_source_platform: platform,
       p_idempotency_key: idempotencyKey,
       p_dedupe_window_seconds: dedupeWindowSeconds,
-      // Derived from the server-verified auth user. The client cannot choose
-      // the onboarding exemption.
-      p_is_anonymous: userData.user.is_anonymous === true,
-      // The canonical baseline keeps this wire-compatible argument, but the
-      // database no longer reuses completed jobs. A new logical request gets
-      // a new job while exact retries and active same-source work still dedupe.
-      p_force_rerun: true,
     };
   const { data: created, error: createErr } = await admin.rpc(rpcName, rpcArgs);
 
@@ -186,6 +185,25 @@ serve(async (req) => {
   }
 
   const row = created[0];
+  if (!qualification.requested && (row.status === 'awaiting_purchase' || row.requires_purchase === true)) {
+    console.warn(`[share-job] onboarding_qa_contract_violation job_id=${row.job_id}`);
+    return json({ error: 'onboarding_qa_contract_violation' }, 503);
+  }
+  if (!qualification.requested) {
+    const submissionPath = ['share_extension', 'background_import', 'host_app'].includes(body.submissionPath ?? '')
+      ? body.submissionPath
+      : null;
+    if (submissionPath) {
+      const { error: provenanceError } = await admin.rpc('record_onboarding_qa_submission_path', {
+        p_user_id: userId,
+        p_job_id: row.job_id,
+        p_path: submissionPath,
+      });
+      if (provenanceError) {
+        console.warn(`[share-job] qa_provenance_write_failed job_id=${row.job_id} code=${provenanceError.code ?? 'unknown'}`);
+      }
+    }
+  }
   if (row.duplicate) {
     console.log(`[share-job] duplicate_returned job_id=${row.job_id}`);
   } else {

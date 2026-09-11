@@ -52,6 +52,7 @@ export const hostShareSubmitter = createShareSubmitter(
       url,
       accessToken: token,
       clientRequestId: submissionId,
+      submissionPath: 'host_app',
     });
     const result = await reconcileDurableShareAcceptance({
       result: requestResult,
