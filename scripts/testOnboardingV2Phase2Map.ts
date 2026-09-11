@@ -139,7 +139,8 @@ assert.doesNotMatch(
   /const handleSelectMapCategory[\s\S]{0,700}(closeOnboarding|router\.|replace\(|dismiss)/,
   'filter selection does not dismiss or navigate onboarding',
 );
-assert.match(coach, /resolveOnboardingV2VisibleOwner/);
+assert.match(coach, /isOnboardingV2Phase2MapState/);
+assert.match(coach, /loadOnboardingPracticeFixture/);
 assert.match(coach, /style=\{\[styles\.dock, \{ top: topOffset \}\]\}/);
 assert.doesNotMatch(coach, /useSafeAreaInsets|PHASE2_MAP_CHROME_CLEARANCE/);
 

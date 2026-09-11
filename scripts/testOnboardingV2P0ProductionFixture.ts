@@ -179,7 +179,8 @@ assert.match(mapSource, /mapFilterOptions\(\s*mapPlaces,\s*phase2MapActive && !n
 assert.match(mapSource, /<MapCategoryFilterBar\s+options=\{mapFilterChoices\}/);
 assert.match(mapSource, /!searchVisible && !nearbyExplorer \? \([\s\S]{0,700}<ShareQueueButton \/>/);
 assert.match(mapSource, /<OnboardingV2MapCoachmark topOffset=\{phase2MapLayout\.dockTop\} \/>/);
-assert.match(coachSource, /resolveOnboardingV2VisibleOwner/);
+assert.match(coachSource, /isOnboardingV2Phase2MapState/);
+assert.match(coachSource, /const practiceActive = !!state && !phase1Only/);
 assert.doesNotMatch(coachSource, /PHASE2_MAP_CHROME_CLEARANCE|useSafeAreaInsets/);
 
 const detailSource = readFileSync(join(root, 'components/map/SelectedPlaceDetails.tsx'), 'utf8');

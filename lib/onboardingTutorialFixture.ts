@@ -19,3 +19,25 @@ export async function loadActiveOnboardingTutorialFixture(
   if (!fixture) throw new Error('fixture_unavailable');
   return fixture;
 }
+
+export async function loadOnboardingPracticeFixture(input: {
+  preferredPlatform?: OnboardingPlatform | null;
+  onboardingSessionId: string;
+}): Promise<OnboardingTutorialFixture> {
+  if (!canLoadOnboardingTutorialFixture(getResolvedEnvironment())) throw new Error('development_fixture_unavailable');
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    const { data, error } = await supabase.functions.invoke('get-onboarding-tutorial', {
+      body: {
+        mode: 'practice',
+        preferredPlatform: input.preferredPlatform === 'other' ? null : input.preferredPlatform ?? null,
+        onboardingSessionId: input.onboardingSessionId,
+      },
+    });
+    const fixture = !error ? parsePublicOnboardingTutorialFixture(data) : null;
+    if (fixture) return fixture;
+    // The local checkpoint is published before its best-effort server sync.
+    // Give that bounded handoff time to settle without inventing a fixture.
+    if (attempt < 3) await new Promise((resolve) => setTimeout(resolve, 500 * (attempt + 1)));
+  }
+  throw new Error('practice_fixture_unavailable');
+}

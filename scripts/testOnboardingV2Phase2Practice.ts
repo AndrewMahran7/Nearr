@@ -73,12 +73,15 @@ assert.match(
   'map dismissal owns the single durable Place Detail close transition',
 );
 
-// 5-7: personalization, preview-before-open, and real external URL.
+// 5-7: the legacy permanent-account pool remains deterministic while the
+// first-run anonymous flow uses a server-selected exact fixture.
 const pool = selectPracticeContent({ platform: 'tiktok', interest: 'food', excludeContentIds: [tutorialSave.contentId] });
 assert.equal(pool[0]?.platform, 'tiktok');
 assert.equal(pool[0]?.category, 'food');
-assert.match(coach, /TRY THIS ONE[\s\S]*openSource\(selected\)/);
-assert.match(coach, /Linking\.openURL\(card\.sourceUrl\)/);
+assert.match(coach, /loadOnboardingPracticeFixture/);
+assert.match(coach, /onboardingTutorialPreviewUrl\(fixture\.platform, fixture\.contentId/);
+assert.match(coach, /Linking\.openURL\(fixture\.launchUrl\)/);
+assert.match(coach, /A verified.*practice pair is not available yet/);
 
 const first = pool[0]!;
 state = practiceState();

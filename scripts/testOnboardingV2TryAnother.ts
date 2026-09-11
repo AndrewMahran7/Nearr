@@ -135,7 +135,8 @@ assert.equal(restoredTwo.stage, 'first_independent_save_complete');
 assert.equal(restoredTwo.practiceContentIds[1], replacementTwo.source.id);
 pass(7, '2/3 Try another and force-close preserve the replacement preview');
 
-// 8-10. Exhaustion is explicit and no transition completes or reroutes onboarding.
+// 8-10. Legacy pool exhaustion remains pure; the first-run surface now uses
+// one server-selected fixture with an explicit unavailable/deferral state.
 const exhausted = getNextPracticeSource({
   platform: 'instagram',
   interest: 'food',
@@ -144,12 +145,12 @@ const exhausted = getNextPracticeSource({
 });
 assert.deepEqual(exhausted, { kind: 'EXHAUSTED' });
 const coachmark = readFileSync(join(process.cwd(), 'components/onboarding/v2/OnboardingV2MapCoachmark.tsx'), 'utf8');
-assert.match(coachmark, /No more suggestions right now/);
-assert.match(coachmark, /Retry current source/);
-pass(8, 'exhausted source pool has a visible bounded fallback');
-const tryAnotherBody = coachmark.slice(coachmark.indexOf('async function tryAnother'), coachmark.indexOf('async function showHelp'));
-assert.doesNotMatch(tryAnotherBody, /router\.(replace|push)|\/(tabs)\/map/);
-pass(9, 'Try another never performs a route reset');
+assert.match(coachmark, /Practice is unavailable right now/);
+assert.match(coachmark, /Try later/);
+pass(8, 'server fixture exhaustion has a visible bounded fallback');
+const openBody = coachmark.slice(coachmark.indexOf('async function openSource'), coachmark.indexOf("if (recoveryVisible)"));
+assert.doesNotMatch(openBody, /router\.(replace|push)|\/(tabs)\/map/);
+pass(9, 'practice launch never performs a route reset');
 assert.equal(one.behavioralCompletedAt, null);
 assert.equal(two.behavioralCompletedAt, null);
 assert.notEqual(one.stage, 'graduated');

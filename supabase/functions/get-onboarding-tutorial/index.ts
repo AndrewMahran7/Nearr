@@ -46,6 +46,8 @@ Deno.serve(async (request) => {
   if (userError || !userData?.user) return json({ error: 'invalid_auth' }, 401);
 
   let preferredPlatform: string | null = null;
+  let mode: 'demo' | 'practice' = 'demo';
+  let onboardingSessionId: string | null = null;
   try {
     const body = await request.json();
     if (body?.preferredPlatform != null) {
@@ -54,14 +56,50 @@ Deno.serve(async (request) => {
       }
       preferredPlatform = body.preferredPlatform;
     }
+    if (body?.mode != null) {
+      if (body.mode !== 'demo' && body.mode !== 'practice') return json({ error: 'invalid_mode' }, 400);
+      mode = body.mode;
+    }
+    if (body?.onboardingSessionId != null) {
+      if (typeof body.onboardingSessionId !== 'string' || !/^[0-9a-f-]{36}$/i.test(body.onboardingSessionId)) {
+        return json({ error: 'invalid_onboarding_session' }, 400);
+      }
+      onboardingSessionId = body.onboardingSessionId;
+    }
   } catch {
     // An empty body is backward compatible with older Development clients.
+  }
+
+  if (mode === 'practice') {
+    if (!onboardingSessionId) return json({ error: 'missing_onboarding_session' }, 400);
+    const { data: selected, error: selectionError } = await admin.rpc('select_onboarding_practice_fixture', {
+      p_user_id: userData.user.id,
+      p_onboarding_session_id: onboardingSessionId,
+      p_preferred_platform: preferredPlatform,
+    });
+    if (selectionError) return json({ error: 'practice_fixture_lookup_failed' }, 503);
+    const row = Array.isArray(selected) ? selected[0] : null;
+    if (!row) return json({ error: 'practice_fixture_unavailable' }, 409);
+    return json({
+      fixtureId: row.fixture_id,
+      fixtureRevision: row.fixture_revision,
+      fixtureRole: row.fixture_role,
+      platform: row.platform,
+      identityKey: row.identity_key,
+      identityVersion: row.identity_version,
+      contentId: row.content_id,
+      canonicalUrl: row.canonical_url,
+      launchUrl: row.canonical_url,
+      thumbnailUrl: onboardingTutorialPreviewUrl(row.platform, row.content_id),
+      selectedAt: new Date().toISOString(),
+    });
   }
 
   const { data: rows, error } = await admin
     .from('onboarding_tutorial_fixtures')
     .select('id,identity_key,identity_version,platform,content_id,canonical_url,role,priority,verification_revision')
     .eq('status', 'active')
+    .in('tutorial_use', ['demo', 'both'])
     .eq('health_state', 'healthy')
     .gt('health_expires_at', new Date().toISOString())
     .order('role', { ascending: false })

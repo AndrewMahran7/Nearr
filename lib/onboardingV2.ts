@@ -42,10 +42,12 @@ import {
   continueToTutorial,
   createInitialOnboardingV2State,
   decodeOnboardingV2State,
+  deferOnboardingPractice,
   dismissPracticeRecovery,
   encodeOnboardingV2State,
   failPendingSave,
   failOnboardingTutorialFixture,
+  failOnboardingPracticeFixture,
   failOnboardingAuth,
   finishOnboardingFirstMagicMoment,
   freshOnboardingV2StateAfterAccountDeletion,
@@ -66,6 +68,7 @@ import {
   recordPracticeReturnedWithoutShare,
   receiveSharedSource,
   receiveOnboardingTutorialFixture,
+  receiveOnboardingPracticeFixture,
   resolveOnboardingTutorialResult,
   retryOnboardingTutorialShare,
   resumePhase2AfterCompletedPhase1,
@@ -444,6 +447,18 @@ export function resolveOnboardingV2TutorialResult(result: OnboardingTutorialResu
 
 export function retryOnboardingV2TutorialShare(): Promise<OnboardingV2State> {
   return applyTransition(retryOnboardingTutorialShare);
+}
+
+export function setOnboardingV2PracticeFixture(fixture: OnboardingTutorialFixture): Promise<OnboardingV2State> {
+  return applyTransition((state, now) => receiveOnboardingPracticeFixture(state, fixture, now));
+}
+
+export function setOnboardingV2PracticeFixtureError(reason: string): Promise<OnboardingV2State> {
+  return applyTransition((state, now) => failOnboardingPracticeFixture(state, reason, now));
+}
+
+export function deferOnboardingV2Practice(): Promise<OnboardingV2State> {
+  return applyTransition(deferOnboardingPractice);
 }
 
 export function beginOnboardingV2SharingRehearsal(): Promise<OnboardingV2State> {

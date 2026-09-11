@@ -224,6 +224,13 @@ export type OnboardingV2State = {
   tutorialContentId: string | null;
   tutorialFixture: OnboardingTutorialFixture | null;
   tutorialFixtureError: string | null;
+  practiceFixture: OnboardingTutorialFixture | null;
+  practiceFixtureError: string | null;
+  practiceOfferedAt: string | null;
+  practiceLaunchedAt: string | null;
+  externalPracticeShareReceivedAt: string | null;
+  practiceCompletedAt: string | null;
+  mapEnteredAt: string | null;
   tutorialLaunchedAt: string | null;
   tutorialShareReceivedAt: string | null;
   tutorialJobId: string | null;
@@ -342,6 +349,13 @@ export function createInitialOnboardingV2State(now = new Date().toISOString()): 
     tutorialContentId: null,
     tutorialFixture: null,
     tutorialFixtureError: null,
+    practiceFixture: null,
+    practiceFixtureError: null,
+    practiceOfferedAt: null,
+    practiceLaunchedAt: null,
+    externalPracticeShareReceivedAt: null,
+    practiceCompletedAt: null,
+    mapEnteredAt: null,
     tutorialLaunchedAt: null,
     tutorialShareReceivedAt: null,
     tutorialJobId: null,
@@ -1680,7 +1694,7 @@ export function bypassExistingUser(
 function expectedKind(state: OnboardingV2State): OnboardingSaveKind | null {
   if (!state.tutorialSave) return 'tutorial';
   if (state.independentSaves.length === 0) return 'independent_1';
-  if (state.independentSaves.length === 1) return 'independent_2';
+  if (state.independentSaves.length === 1 && state.identityLifecycle === 'permanent_account') return 'independent_2';
   return null;
 }
 
@@ -1767,13 +1781,13 @@ export function selectPracticeSource(
 ): OnboardingTransition {
   if (
     state.cohort !== 'new_user_v2' ||
-    state.identityLifecycle !== 'permanent_account' ||
+    !['anonymous_active','permanent_account_linking','permanent_account'].includes(state.identityLifecycle) ||
     state.behavioralCompletedAt ||
     !state.tutorialSave ||
     !contentId
   ) return unchanged(state);
   const slot = state.independentSaves.length;
-  if (slot > 1) return unchanged(state);
+  if (slot > 1 || (slot > 0 && state.identityLifecycle !== 'permanent_account')) return unchanged(state);
   const excluded = new Set([
     state.tutorialContentId,
     ...state.independentSaves.map((save) => save.contentId),
@@ -1797,6 +1811,44 @@ export function selectPracticeSource(
     lastFailure: replace ? null : state.lastFailure,
     practiceRecovery: null,
   }, now, [{ name: 'practice_started', properties: { content_id: contentId, save_number: slot + 2 } }]);
+}
+
+export function receiveOnboardingPracticeFixture(
+  state: OnboardingV2State,
+  fixture: OnboardingTutorialFixture,
+  now: string,
+): OnboardingTransition {
+  if (state.stage !== 'practice_ready' || !state.tutorialSave || state.independentSaves.length > 0) return unchanged(state);
+  if (fixture.identityKey === state.tutorialFixture?.identityKey || fixture.id === state.tutorialFixture?.id) return unchanged(state);
+  return transition(state, {
+    practiceFixture: fixture,
+    practiceFixtureError: null,
+    practiceOfferedAt: state.practiceOfferedAt ?? now,
+    practiceContentIds: [fixture.contentId],
+  }, now, state.practiceOfferedAt ? [] : [{
+    name: 'onboarding_practice_offered',
+    properties: { fixture_id: fixture.id, fixture_platform: fixture.platform },
+  }]);
+}
+
+export function failOnboardingPracticeFixture(
+  state: OnboardingV2State,
+  reason: string,
+  now: string,
+): OnboardingTransition {
+  if (state.stage !== 'practice_ready') return unchanged(state);
+  return transition(state, { practiceFixtureError: reason || 'practice_fixture_unavailable' }, now);
+}
+
+export function deferOnboardingPractice(
+  state: OnboardingV2State,
+  now: string,
+): OnboardingTransition {
+  if (state.stage !== 'practice_ready' || !state.tutorialSave) return unchanged(state);
+  return transition(state, {
+    stage: 'why_nearr',
+    secondHalfStartedAt: state.secondHalfStartedAt ?? now,
+  }, now, [{ name: 'onboarding_practice_deferred', properties: { fixture_id: state.practiceFixture?.id } }]);
 }
 
 export function openExternalStarter(
@@ -1843,6 +1895,7 @@ export function openExternalStarter(
     stage,
     lastFailure: null,
     practiceRecovery: null,
+    practiceLaunchedAt: kind === 'tutorial' ? state.practiceLaunchedAt : now,
     practiceAttemptedContentIds: kind === 'tutorial' || state.practiceAttemptedContentIds.includes(input.contentId)
       ? state.practiceAttemptedContentIds
       : [...state.practiceAttemptedContentIds, input.contentId],
@@ -1895,7 +1948,11 @@ export function receiveSharedSource(
       : 'second_independent_save_started';
   return transition(
     state,
-    { stage, pendingShare: { ...pending, shareReceivedAt: now } },
+    {
+      stage,
+      pendingShare: { ...pending, shareReceivedAt: now },
+      externalPracticeShareReceivedAt: pending.kind === 'tutorial' ? state.externalPracticeShareReceivedAt : now,
+    },
     now,
     [
       ...(pending.kind === 'tutorial'
@@ -1991,17 +2048,38 @@ export function completePendingSave(
 
   const independentSaves = [...state.independentSaves, save];
   if (independentSaves.length === 1) {
+    if (state.identityLifecycle === 'permanent_account') {
+      return transition(
+        state,
+        { stage: 'first_independent_save_complete', pendingShare: null, independentSaves, practiceRecovery: null },
+        now,
+        [
+          ...(pending.shareReceivedAt ? [] : [{ name: 'first_independent_save_started', properties: { content_id: pending.contentId } }]),
+          { name: 'first_independent_save_completed', properties: { saved_place_id: input.savedPlaceId } },
+          { name: 'practice_place_saved', properties: { saved_place_id: input.savedPlaceId, progress: 2 } },
+          { name: 'practice_progress_2_of_3' },
+        ],
+      );
+    }
+    const practiceStartedMs = state.practiceLaunchedAt ? Date.parse(state.practiceLaunchedAt) : Number.NaN;
     return transition(
       state,
-      { stage: 'first_independent_save_complete', pendingShare: null, independentSaves, practiceRecovery: null },
+      {
+        stage: 'why_nearr', pendingShare: null, independentSaves, practiceRecovery: null,
+        practiceCompletedAt: now, secondHalfStartedAt: state.secondHalfStartedAt ?? now,
+      },
       now,
       [
         ...(pending.shareReceivedAt
           ? []
           : [{ name: 'first_independent_save_started', properties: { content_id: pending.contentId } }]),
         { name: 'first_independent_save_completed', properties: { saved_place_id: input.savedPlaceId } },
-        { name: 'practice_place_saved', properties: { saved_place_id: input.savedPlaceId, progress: 2 } },
-        { name: 'practice_progress_2_of_3' },
+        { name: 'practice_place_saved', properties: {
+          saved_place_id: input.savedPlaceId,
+          fixture_id: state.practiceFixture?.id,
+          time_to_real_practice_save: Number.isFinite(practiceStartedMs) ? Math.max(0, Date.parse(now) - practiceStartedMs) : null,
+        } },
+        { name: 'onboarding_real_external_practice_completed', properties: { fixture_id: state.practiceFixture?.id } },
       ],
     );
   }
