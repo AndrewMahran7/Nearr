@@ -60,6 +60,11 @@ type Props = {
   initialIndex?: number;
   onClose: () => void;
   resizeMode?: ImageResizeMode;
+  /** Candidate galleries load only pages explicitly reached by the user. */
+  loadOnlyVisited?: boolean;
+  /** Saved-place galleries keep their existing adjacent warming behavior. */
+  prefetchAdjacent?: boolean;
+  onPhotoLoadStart?: (index: number, uri: string) => void;
 };
 
 /**
@@ -73,11 +78,15 @@ export function PhotoRolodexModal({
   initialIndex = 0,
   onClose,
   resizeMode = 'cover',
+  loadOnlyVisited = false,
+  prefetchAdjacent = true,
+  onPhotoLoadStart,
 }: Props) {
   const { width: viewportWidth, height: viewportHeight } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const [activeIndex, setActiveIndex] = useState(0);
   const [openSeed, setOpenSeed] = useState(0);
+  const [visitedIndexes, setVisitedIndexes] = useState<ReadonlySet<number>>(new Set());
   const listRef = useRef<FlatList<PhotoRolodexItem> | null>(null);
   const visibleRef = useRef(false);
   const dismissLatchRef = useRef<OnceLatch | null>(null);
@@ -108,6 +117,7 @@ export function PhotoRolodexModal({
     if (visibleRef.current || items.length === 0) return;
     visibleRef.current = true;
     setActiveIndex(safeInitialIndex);
+    setVisitedIndexes(new Set([safeInitialIndex]));
     scrollX.setValue(safeInitialIndex * snapInterval);
     dragY.value = 0;
     dismissLatchRef.current = createOnceLatch();
@@ -132,14 +142,14 @@ export function PhotoRolodexModal({
   }, [visible, openSeed, items.length, snapInterval]);
 
   useEffect(() => {
-    if (!visible) return;
+    if (!visible || !prefetchAdjacent) return;
     const urls = items.map((item) => item.uri);
     for (const uri of adjacentPrefetchTargets(urls, activeIndex)) {
       if (prefetchedUrisRef.current.has(uri)) continue;
       prefetchedUrisRef.current.add(uri);
       void Image.prefetch(uri).catch(() => undefined);
     }
-  }, [activeIndex, items, visible]);
+  }, [activeIndex, items, prefetchAdjacent, visible]);
 
   const handleScroll = useMemo(
     () => Animated.event(
@@ -156,6 +166,7 @@ export function PhotoRolodexModal({
             if (current === next) return current;
             return next;
           });
+          setVisitedIndexes((current) => current.has(next) ? current : new Set([...current, next]));
         },
       },
     ),
@@ -286,13 +297,20 @@ export function PhotoRolodexModal({
                           },
                         ]}>
                           <View style={[styles.photoShell, { width: cardWidth, height: cardHeight }]}>
-                            <Image
-                              source={{ uri: item.uri }}
-                              style={styles.image}
-                              resizeMode={resizeMode}
-                              accessible
-                              accessibilityLabel={item.accessibilityLabel}
-                            />
+                            {!loadOnlyVisited || visitedIndexes.has(index) ? (
+                              <Image
+                                source={{ uri: item.uri }}
+                                style={styles.image}
+                                resizeMode={resizeMode}
+                                onLoadStart={() => onPhotoLoadStart?.(index, item.uri)}
+                                accessible
+                                accessibilityLabel={item.accessibilityLabel}
+                              />
+                            ) : (
+                              <View style={styles.unvisitedPhoto} accessibilityLabel="Photo loads when viewed">
+                                <Feather name="image" size={28} color="rgba(255,255,255,0.55)" />
+                              </View>
+                            )}
                           </View>
                         </Animated.View>
                       );
@@ -335,6 +353,7 @@ const styles = StyleSheet.create({
     width: '100%', height: '100%', borderRadius: 18, shadowColor: '#000000',
     shadowOpacity: 0.26, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 6,
   },
+  unvisitedPhoto: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   dots: {
     position: 'absolute', bottom: 82, left: 0, right: 0, flexDirection: 'row',
     justifyContent: 'center', alignItems: 'center', gap: 8, zIndex: 4,

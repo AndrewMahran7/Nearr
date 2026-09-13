@@ -78,6 +78,7 @@ const DARK_MAP_STYLE = [
 ];
 
 import { Button, Card, DemoModeBanner, MapFallbackList } from '@/components';
+import { PlaceImage } from '@/components/PlaceImage';
 import {
   FloatingMapActions,
   MapBottomSheet,
@@ -125,6 +126,8 @@ import {
 } from '@/hooks/useSavedPlaces';
 import { isDemoMode } from '@/lib/demoMode';
 import { isMapPreviewMode } from '@/lib/mapPreview';
+import { hydrateSavedPlace } from '@/lib/savedPlaceHydration';
+import { placeSourceCards } from '@/lib/placeSources';
 import {
   clearMapGroupFocusRequest,
   decideMapGroupFit,
@@ -639,6 +642,21 @@ export default function MapScreen() {
   const followModeRef = useRef(true);
   followModeRef.current = followMode;
   const [selected, setSelected] = useState<SavedPlaceWithPlace | null>(null);
+  const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    setSelectedImageUri(null);
+    if (!selected) return () => { cancelled = true; };
+    void hydrateSavedPlace({
+      userId: selected.user_id,
+      saved: selected,
+      trigger: 'map_detail',
+      knownImageUri: placeSourceCards(selected).find((source) => !!source.thumbnailUrl)?.thumbnailUrl ?? null,
+    }).then((hydrated) => {
+      if (!cancelled) setSelectedImageUri(hydrated.details.photoUrls[0] ?? null);
+    });
+    return () => { cancelled = true; };
+  }, [selected?.id, selected?.place.google_place_id, selected?.user_id]);
   const selectedRef = useRef<SavedPlaceWithPlace | null>(null);
   selectedRef.current = selected;
   const selectedSourceGroup = useMemo(
@@ -3846,11 +3864,23 @@ export default function MapScreen() {
               {previewExpanded ? null : (
               <View style={styles.previewTopRow}>
                 <View style={styles.previewThumb}>
-                  <Feather
-                    name={selectedIconName(selected)}
-                    size={18}
-                    color={colors.accent}
-                  />
+                  {selectedImageUri ? (
+                    <PlaceImage
+                      googlePlaceId={selected.place.google_place_id}
+                      initialPhotoUrls={[selectedImageUri]}
+                      hydrationPolicy="saved_snapshot"
+                      size={52}
+                      borderRadius={16}
+                      style={styles.previewThumbImage}
+                      accessibilityLabel={`Photo of ${selected.place.name}`}
+                    />
+                  ) : (
+                    <Feather
+                      name={selectedIconName(selected)}
+                      size={18}
+                      color={colors.accent}
+                    />
+                  )}
                 </View>
                 <View style={styles.previewCopy}>
                   <View style={styles.previewHeader}>
@@ -4417,6 +4447,7 @@ function createStyles(
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 3 },
   },
+  previewThumbImage: { borderWidth: 0 },
   previewCopy: {
     flex: 1,
   },

@@ -31,6 +31,7 @@ const worker = read('services/media-worker/src/pipeline/runMediaTask.ts');
 const premium = read('services/media-worker/src/premium/premiumRecognition.ts');
 const premiumPrompt = read('services/media-worker/src/premium/premiumRecognitionPrompt.ts');
 const migration = read('supabase/migrations/20260822000002_vayrin_recognition_cache_and_place_sources.sql');
+const canonicalJobMigration = read('supabase/migrations/20260909000001_canonical_development_recognition_baseline.sql');
 
 const row = (trust: RecognitionCacheRow['trust_level']): RecognitionCacheRow => ({
   id: `cache-${trust}`,
@@ -179,8 +180,8 @@ const cases: Array<[string, () => void]> = [
   }],
   ['26 normal active-job reuse and qualification bypass are separated', () => {
     assert.match(create, /p_idempotency_key:\s*idempotencyKey/);
-    assert.match(create, /completed jobs/);
-    assert.match(create, /new logical request gets[\s\S]*new job/i);
+    assert.match(canonicalJobMigration, /completed jobs are never reused for a new request key/);
+    assert.match(canonicalJobMigration, /each distinct request ID creates independent fresh-media work/i);
     assert.doesNotMatch(create, /p_enforce_tokens/);
     assert.match(create, /create_dev_qualification_share_job_for_user/);
   }],

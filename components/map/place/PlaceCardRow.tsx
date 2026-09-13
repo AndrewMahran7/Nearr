@@ -112,6 +112,7 @@ function PlaceCardRowImpl({
                   make VoiceOver announce the card twice. */}
               <PlaceImage
                 googlePlaceId={entry.googlePlaceId}
+                hydrationPolicy="compact_known_only"
                 sourceUri={entry.photoUrl}
                 size={CARD_WIDTH}
                 borderRadius={0}

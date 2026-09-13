@@ -36,6 +36,7 @@ export type PlaceBrowseWheelItem = {
   sourceUri?: string | null;
   fallbackSourceUri?: string | null;
   preferPlacePhoto?: boolean;
+  allowGoogleLookup?: boolean;
   stateLabel: string;
   stateTone?: 'accent' | 'muted';
   contextLabel?: string | null;
@@ -170,6 +171,7 @@ export function PlaceBrowseWheel({
               sourceUri={item.sourceUri}
               fallbackSourceUri={item.fallbackSourceUri}
               preferPlacePhoto={item.preferPlacePhoto}
+              allowGoogleLookup={item.allowGoogleLookup}
               size={cardWidth}
               borderRadius={0}
               style={[styles.imageFrame, { width: cardWidth }]}

@@ -26,6 +26,7 @@ import { onboardingTutorialPreviewUrl } from '@/lib/onboardingTutorialPreview';
 import {
   isOnboardingV2Phase2MapState,
   planOnboardingPracticeRecovery,
+  resolveOnboardingV2VisibleOwner,
 } from '@/lib/onboardingV2Core';
 import { recordOnboardingV2DevelopmentDiagnostic } from '@/lib/onboardingV2RouteDiagnostics';
 
@@ -38,9 +39,15 @@ export function OnboardingV2MapCoachmark({ topOffset }: { topOffset: number }) {
   const appStateRef = useRef(AppState.currentState);
   const backgroundedAtRef = useRef<string | null>(null);
   const phase1Only = isOnboardingV2Phase1Only();
+  const visibleOwner = resolveOnboardingV2VisibleOwner({
+    state,
+    phase1Only,
+    selectedSourceAvailable: !!state?.practiceFixture,
+    poolExhausted: !!state?.practiceFixtureError,
+  });
   const practiceActive = !!state && !phase1Only && isOnboardingV2Phase2MapState(state) &&
-    state.independentSaves.length === 0 &&
-    ['practice_ready', 'first_independent_external_video_opened', 'first_independent_share_returned'].includes(state.stage);
+    visibleOwner.startsWith('practice_') &&
+    state.independentSaves.length === 0;
   const deferredPracticeAvailable = !!state && !phase1Only && state.stage === 'onboarding_complete' &&
     !state.practiceCompletedAt && state.independentSaves.length === 0;
   const fixture = state?.practiceFixture ?? null;

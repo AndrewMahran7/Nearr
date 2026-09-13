@@ -25,9 +25,13 @@ assert.match(service, /resolvePlaceCategory/);
 assert.match(service, /select\('\*, place:places\(\*\), sources:saved_place_sources\(\*\)'\)/);
 assert.match(sheet, /void runSearch\(initialQuery\)/, 'first correction search runs automatically once');
 assert.match(sheet, /Find the right place/);
-assert.match(sheet, /Use this place/);
+assert.match(
+  sheet,
+  /title=\{saving \? 'Saving…' : fallbackCorrectionLabel\(chosen\.name\)\}/,
+  'the confirmation CTA names the selected replacement place',
+);
 assert.doesNotMatch(sheet, /void apply\(resolutionPlan\.candidate\)/, 'search results never auto-commit');
-assert.match(sheet, /Search again/);
+assert.match(sheet, /Search another place/);
 assert.match(sheet, /Open original post/);
 assert.match(sheet, /checked: isSelected/);
 assert.match(sheet, /reconcileCorrectedSavedPlaces/);

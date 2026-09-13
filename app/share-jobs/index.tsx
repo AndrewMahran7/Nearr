@@ -540,7 +540,7 @@ function ShareJobsQueueScreen() {
         accessibilityRole="button"
         accessibilityLabel={`Open ${item.savedPlace.place.name}`}
       >
-        <PlaceImage googlePlaceId={item.savedPlace.place.google_place_id} size={64} borderRadius={12} />
+        <PlaceImage googlePlaceId={item.savedPlace.place.google_place_id} allowGoogleLookup={false} size={64} borderRadius={12} />
         <View style={styles.rowMain}>
           <Text style={[typography.bodyStrong, styles.rowTitle]} numberOfLines={2}>{item.savedPlace.place.name}</Text>
           <View style={styles.autoSaveMeta}>
@@ -663,8 +663,22 @@ function ShareJobsQueueScreen() {
       >
         <PlaceImage
           googlePlaceId={firstCandidate?.googlePlaceId}
+          initialPhotoUrls={firstCandidate?.photoUrls?.length
+            ? firstCandidate.photoUrls
+            : firstCandidate?.photoUrl ? [firstCandidate.photoUrl] : undefined}
+          fallbackSourceUri={firstCandidate?.sourceFrameUrl}
           size={64}
           borderRadius={12}
+          presentationMode="candidate"
+          presentationActive={false}
+          presentationContext={{
+            trigger: 'recognition_result',
+            jobId: job.id,
+            candidateIndex: 0,
+            candidateCount: Array.isArray(job.candidate_payload?.candidates)
+              ? job.candidate_payload.candidates.length
+              : 0,
+          }}
           accessibilityLabel={firstCandidate?.name ? `Photo of ${firstCandidate.name}` : undefined}
         />
         <View style={styles.rowMain}>

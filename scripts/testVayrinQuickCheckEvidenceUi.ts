@@ -71,8 +71,10 @@ assert.ok([320, 375, 390, 430].every((width) => quickCheckEvidenceFrameWidth(wid
 assert.equal(getVayrinCandidateFixture('vayrin-confirm-five-photos')?.candidates[0]?.photoUrls?.length, 5);
 assert.equal(getVayrinCandidateFixture('vayrin-confirm-one-photo')?.candidates[0]?.photoUrls?.length, 1);
 assert.match(candidateCarousel, /MAX_CANDIDATE_PHOTOS = 5/);
-assert.match(candidateCarousel, /index <= hydratedThrough/);
-assert.match(candidateCarousel, /getCachedPlaceRichDetails/);
+assert.match(candidateCarousel, /visitedPhotoIndexes\.has\(index\)/);
+assert.match(candidateCarousel, /getCachedCandidatePhotoUrlsWithOutcome/);
+assert.doesNotMatch(candidateCarousel, /getCachedPlaceRichDetails/);
+assert.match(candidateCarousel, /prefetchAdjacent=\{false\}/);
 assert.match(candidateCarousel, /PHOTO_RESOLUTION_TIMEOUT_MS/);
 
 // 6–8. Confidence is supported, qualitative, and never presented as probability.

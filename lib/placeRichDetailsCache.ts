@@ -23,3 +23,11 @@ export function invalidatePlaceRichDetails(googlePlaceId: string | null | undefi
   const key = (googlePlaceId ?? '').trim();
   if (key) getCachedPlaceRichDetails.invalidate(key);
 }
+
+/** Read details already acquired by candidate/recognition UI without I/O. */
+export function peekCachedPlaceRichDetails(
+  googlePlaceId: string | null | undefined,
+): PlaceRichDetails | null {
+  const key = (googlePlaceId ?? '').trim();
+  return key ? getCachedPlaceRichDetails.peek(key) ?? null : null;
+}

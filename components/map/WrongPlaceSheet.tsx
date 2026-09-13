@@ -78,6 +78,9 @@ export function WrongPlaceSheet({
   const { results, loading, error, lastQuery, search, reset } = usePlacesSearch();
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<PlaceCandidate | null>(null);
+  // Auto-selection keeps the one-tap correction CTA, but only an explicit row
+  // interaction makes an alternative eligible for photo hydration.
+  const [activePhotoPlaceId, setActivePhotoPlaceId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const seededRef = useRef(false);
@@ -96,6 +99,7 @@ export function WrongPlaceSheet({
 
   const runSearch = useCallback(async (value: string) => {
     setSelected(null);
+    setActivePhotoPlaceId(null);
     setSaveError(null);
     correctionAttemptRef.current = null;
     void trackEvent('find_right_place_started', { source: 'saved_place_correction' });
@@ -112,6 +116,7 @@ export function WrongPlaceSheet({
       reset();
       setQuery('');
       setSelected(null);
+      setActivePhotoPlaceId(null);
       setSaveError(null);
       resolutionEventRef.current = null;
       saveInFlightRef.current = false;
@@ -139,6 +144,7 @@ export function WrongPlaceSheet({
 
   const selectCandidate = useCallback((candidate: PlaceCandidate) => {
     setSelected(candidate);
+    setActivePhotoPlaceId(candidate.googlePlaceId);
     setSaveError(null);
     if (correctionAttemptRef.current?.candidateId !== candidate.googlePlaceId) {
       correctionAttemptRef.current = null;
@@ -149,6 +155,7 @@ export function WrongPlaceSheet({
     reset();
     setQuery(value);
     setSelected(null);
+    setActivePhotoPlaceId(null);
     setSaveError(null);
     correctionAttemptRef.current = null;
   }, [reset]);
@@ -368,7 +375,7 @@ export function WrongPlaceSheet({
               style={styles.list}
               contentContainerStyle={styles.listContent}
             >
-              {visibleResults.map((candidate) => {
+              {visibleResults.map((candidate, index) => {
                 const isSelected = chosen?.googlePlaceId === candidate.googlePlaceId;
                 const locality = splitPlaceAddress(candidate.formattedAddress).locality;
                 return (
@@ -389,7 +396,25 @@ export function WrongPlaceSheet({
                     accessibilityLabel={`${candidate.name}${candidate.formattedAddress ? `, ${candidate.formattedAddress}` : locality ? `, ${locality}` : ''}`}
                     accessibilityHint={`Selects ${candidate.name}; use the ${fallbackCorrectionLabel(candidate.name)} button to save the correction`}
                   >
-                    <PlaceImage googlePlaceId={candidate.googlePlaceId} size={56} borderRadius={10} />
+                    <PlaceImage
+                      googlePlaceId={candidate.googlePlaceId}
+                      initialPhotoUrls={candidate.photoUrls?.length
+                        ? candidate.photoUrls
+                        : candidate.photoUrl ? [candidate.photoUrl] : undefined}
+                      size={56}
+                      borderRadius={10}
+                      preferPlacePhoto
+                      presentationMode="candidate"
+                      presentationActive={activePhotoPlaceId === candidate.googlePlaceId}
+                      hydrationPolicy={activePhotoPlaceId === candidate.googlePlaceId
+                        ? 'active_candidate'
+                        : 'inactive_candidate'}
+                      presentationContext={{
+                        trigger: 'wrong_place',
+                        candidateIndex: index,
+                        candidateCount: visibleResults.length,
+                      }}
+                    />
                     <View style={styles.rowMain}>
                       <Text style={[typography.bodyStrong, styles.rowTitle]} numberOfLines={2}>
                         {candidate.name}

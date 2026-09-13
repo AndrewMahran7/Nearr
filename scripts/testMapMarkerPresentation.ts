@@ -204,7 +204,9 @@ assert.match(
   componentSource,
   /selected && showsLabel[\s\S]{0,40}width: selectedWidth, height: selectedHeight/,
 );
-assert.match(componentSource, /!redesignEnabled \|\| !selected \|\| !googlePlaceId/);
+assert.match(componentSource, /!redesignEnabled \|\| !selected \|\| !savedState/);
+assert.match(componentSource, /hydrateSavedPlace\(\{/);
+assert.match(componentSource, /const nextPhotoUri = hydrated\.details\.photoUrls\[0\]/);
 assert.match(componentSource, /tracksViewChanges=\{tracksViewChanges\}/);
 assert.match(componentSource, /setPhotoFailed\(true\)/);
 assert.match(componentSource, /MAP_PIN_DIAGNOSTIC_LIMIT = 30/);

@@ -186,6 +186,7 @@ export default function GroupedOpportunityScreen() {
               >
                 <PlaceImage
                   googlePlaceId={saved.place.google_place_id}
+                  allowGoogleLookup={false}
                   size={96}
                   borderRadius={14}
                   accessibilityLabel={`Photo of ${saved.place.name}`}

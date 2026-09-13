@@ -45,6 +45,7 @@ import { isAsyncShareJobsEnabled, isVayrinProductUiEnabled } from '@/lib/feature
 import { sharedAuth } from '@/lib/sharedAuth';
 import { mapSyncShareToVayrinPresentation } from '@/lib/vayrinPresentation';
 import { getActivationSaveFeedback } from '@/lib/activation';
+import { activeCandidatePlaceId } from '@/lib/candidatePresentation';
 import { createMapGroupFocusRequest } from '@/lib/mapGroupFocus';
 import {
   claimSaveCompletionSignal,
@@ -2569,6 +2570,10 @@ function LegacyShareScreen() {
   // manual fallback at the decision layer; this is the last line of defense.)
   const internalRenderableCandidates = filterRenderableCandidates(candidates).valid;
   const renderableCandidates = visibleCandidateShortlist(internalRenderableCandidates);
+  const activeConfirmationPlaceId = activeCandidatePlaceId(
+    renderableCandidates.map((candidate) => candidate.googlePlaceId),
+    candidateSelectedIds,
+  );
   const syncCandidateMode = confirmationMode(renderableCandidates);
   const syncVayrinPresentation = vayrinPresentation && phase === 'choose' && renderableCandidates.length > 0
     ? {
@@ -2721,7 +2726,7 @@ function LegacyShareScreen() {
                   <View style={{ height: Spacing.sm }} />
                 </>
               ) : null}
-              {renderableCandidates.map((c) => {
+              {renderableCandidates.map((c, index) => {
                 const selected = candidateSelectedIds.has(c.googlePlaceId);
                 const broad = isBroadCandidate(c);
                 const address = splitPlaceAddress(c.formattedAddress);
@@ -2734,6 +2739,12 @@ function LegacyShareScreen() {
                     selectable
                     compact={renderableCandidates.length > 1}
                     selectionRole="checkbox"
+                    presentationActive={c.googlePlaceId === activeConfirmationPlaceId}
+                    presentationContext={{
+                      trigger: 'recognition_result',
+                      candidateIndex: index,
+                      candidateCount: renderableCandidates.length,
+                    }}
                     onPress={() => {
                       if (broad) {
                         setCandidates([]);

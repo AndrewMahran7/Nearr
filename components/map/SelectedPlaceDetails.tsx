@@ -70,7 +70,7 @@ import {
   advanceOnboardingV2PlaceTour,
 } from '@/lib/onboardingV2';
 import type { OnboardingPlaceTourStep } from '@/lib/onboardingV2Core';
-import { isPlaceRecommendationsEnabled, isPlaceVideoGalleryEnabled } from '@/lib/featureFlags';
+import { isPlaceVideoGalleryEnabled } from '@/lib/featureFlags';
 import { selectVideoHero, type PlaceVideoItem } from '@/lib/placeVideoGallery';
 import { applySavedPlaceEdit } from '@/lib/savedPlaceEdits';
 import {
@@ -116,7 +116,7 @@ import {
   restoreSavedPlacesCache,
   updateSavedPlacesCache,
 } from '@/hooks/useSavedPlaces';
-import { getCachedPlaceRichDetails } from '@/lib/placeRichDetailsCache';
+import { hydrateSavedPlace } from '@/lib/savedPlaceHydration';
 import { loadPlaceRecommendations } from '@/services/placeRecommendationsService';
 import type { PlaceRecommendation } from '@/lib/placeRecommendations';
 import type { NearbyMapExplorerPayload } from '@/lib/nearbyMapExplorer';
@@ -325,7 +325,10 @@ export function SelectedPlaceDetails({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [saved.id]);
 
-  const recommendationsEnabled = isPlaceRecommendationsEnabled();
+  // Provider-backed "Also nearby" previously ran a Nearby Search whenever a
+  // saved detail mounted. That violates the saved-open zero-request contract;
+  // the user's own locally computed "Saved nearby" section remains available.
+  const recommendationsEnabled = false;
   const videoGalleryEnabled = isPlaceVideoGalleryEnabled();
   const recommendationSourceCategory = savedPlaceCategory(saved);
   const savedGooglePlaceIds = useMemo(
@@ -402,7 +405,8 @@ export function SelectedPlaceDetails({
   useEffect(() => {
     let canceled = false;
     setFailedPhotoUrls({});
-    if (!googlePlaceId) {
+    const userId = session?.user?.id ?? null;
+    if (!userId) {
       setRichDetails(null);
       setDetailsLoading(false);
       return () => {
@@ -411,9 +415,10 @@ export function SelectedPlaceDetails({
     }
 
     setDetailsLoading(true);
-    void getCachedPlaceRichDetails(googlePlaceId)
-      .then((details) => {
-        if (!canceled) setRichDetails(details);
+    const knownImageUri = placeSourceCards(saved).find((source) => !!source.thumbnailUrl)?.thumbnailUrl ?? null;
+    void hydrateSavedPlace({ userId, saved, trigger: 'map_detail', knownImageUri })
+      .then((hydrated) => {
+        if (!canceled) setRichDetails(hydrated.details);
       })
       .finally(() => {
         if (!canceled) setDetailsLoading(false);
@@ -422,7 +427,10 @@ export function SelectedPlaceDetails({
     return () => {
       canceled = true;
     };
-  }, [googlePlaceId]);
+    // Re-run only for a new saved/provider identity. Unrelated cache updates
+    // while the sheet is open are not additional "opens" for cost telemetry.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [googlePlaceId, saved.id, session?.user?.id]);
 
   const radiusHelperText = useMemo(() => {
     if (mode === 'default') {
@@ -543,9 +551,15 @@ export function SelectedPlaceDetails({
   }, [saved.place.id, videoGalleryEnabled]);
 
   const videoHero = useMemo(
-    () => videoGalleryEnabled ? selectVideoHero(photoUrls, ownerPlaceVideos, communityPlaceVideos) : null,
+    () => selectVideoHero(
+      photoUrls,
+      videoGalleryEnabled ? ownerPlaceVideos : [],
+      videoGalleryEnabled ? communityPlaceVideos : [],
+    ),
     [communityPlaceVideos, ownerPlaceVideos, photoUrls, videoGalleryEnabled],
   );
+  const sourceHeroUri = primarySource?.thumbnailUrl?.trim() || null;
+  const heroUri = videoHero?.uri ?? sourceHeroUri;
   useEffect(() => {
     if (!videoHero || videoHero.kind === 'PROVIDER' || !videoHero.video) return;
     const key = `${saved.place.id}:${videoHero.video.sourceId}`;
@@ -1149,15 +1163,15 @@ export function SelectedPlaceDetails({
         accessibilityLabel={videoHero?.kind === 'PROVIDER' ? `View photos of ${saved.place.name}` : videoHero ? `Open original video for ${saved.place.name}` : undefined}
         style={({ pressed }) => [styles.hero, pressed && styles.heroPressed]}
       >
-        {videoHero?.uri ? (
+        {heroUri ? (
           <Image
-            source={{ uri: videoHero.uri }}
+            source={{ uri: heroUri }}
             style={styles.heroImage}
             resizeMode="cover"
             onError={() => {
-              if (videoHero.kind === 'PROVIDER') setFailedPhotoUrls((prev) => ({ ...prev, [videoHero.uri]: true }));
-              else if (videoHero.video?.ownership === 'OWNER') setOwnerPlaceVideos((current) => current.filter((video) => video.sourceId !== videoHero.video?.sourceId));
-              else if (videoHero.video) setCommunityPlaceVideos((current) => current.filter((video) => video.sourceId !== videoHero.video?.sourceId));
+              if (videoHero?.kind === 'PROVIDER') setFailedPhotoUrls((prev) => ({ ...prev, [videoHero.uri]: true }));
+              else if (videoHero?.video?.ownership === 'OWNER') setOwnerPlaceVideos((current) => current.filter((video) => video.sourceId !== videoHero.video?.sourceId));
+              else if (videoHero?.video) setCommunityPlaceVideos((current) => current.filter((video) => video.sourceId !== videoHero.video?.sourceId));
             }}
           />
         ) : (
@@ -1270,6 +1284,8 @@ export function SelectedPlaceDetails({
         items={photoRolodexItems}
         initialIndex={galleryIndex}
         onClose={closeGallery}
+        prefetchAdjacent={false}
+        loadOnlyVisited
       />
 
       {/* Why this place is on the user's map at all.

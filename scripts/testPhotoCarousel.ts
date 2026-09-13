@@ -117,8 +117,9 @@ assert.doesNotMatch(
 assert.match(rolodex, /`photo-rolodex-\$\{openSeed\}-\$\{items\.length\}`/);
 assert.doesNotMatch(rolodex, /key=\{`photo-rolodex-\$\{safeActiveIndex/, 'never key the list by active index');
 assert.match(rolodex, /keyExtractor=\{\(item\) => item\.key\}/, 'stable per-photo identity');
-// Prefetch stays bounded and only while the gallery is open.
-assert.match(rolodex, /if \(!visible\) return;[\s\S]{0,160}adjacentPrefetchTargets/);
+// Prefetch stays bounded, opt-in, and only while the gallery is open.
+assert.match(rolodex, /if \(!visible \|\| !prefetchAdjacent\) return;[\s\S]{0,160}adjacentPrefetchTargets/);
 assert.match(rolodex, /prefetchedUrisRef\.current\.has\(uri\)/, 'requests are deduped');
+assert.match(sheet, /prefetchAdjacent=\{false\}[\s\S]{0,80}loadOnlyVisited/, 'saved detail defers photo #2+ until visited');
 
 console.log('PASS photo carousel paging, bounded prefetch window, and native focus wiring');

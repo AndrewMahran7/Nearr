@@ -321,7 +321,7 @@ const JST = 9 * 60; // Asia/Tokyo, no DST
   // The hours row renders ONLY from the helper's own result, so there is no
   // branch that can print "Unknown hours" or an invented schedule.
   const hoursStart = detail.indexOf('{todayHours ? (');
-  const hoursEnd = detail.indexOf('{photoUrls.length > 0 ? (', hoursStart);
+  const hoursEnd = detail.indexOf('<PhotoRolodexModal', hoursStart);
   assert.ok(hoursStart > -1 && hoursEnd > hoursStart, 'the hours row exists');
   assert.ok(
     hoursStart < detail.indexOf('Why this place is on'),
