@@ -1,6 +1,6 @@
 import type { VayrinIdentityLead } from './vayrinPresentation';
 
-export const NAMED_LEAD_AUTO_RECOVERY_POLICY = 'named-lead-auto-v1';
+export const NAMED_LEAD_AUTO_RECOVERY_POLICY = 'named-lead-auto-v2';
 
 export type NamedLeadRecoveryTarget = {
   logicalResultId: string;
@@ -9,9 +9,8 @@ export type NamedLeadRecoveryTarget = {
 };
 
 /**
- * Only observable, machine-produced named leads qualify. This planner does
- * not accept arbitrary user text, broad areas, model priors, or correction
- * flows, which keeps ordinary map/manual searches outside automatic saving.
+ * Review is sticky: a provider lookup cannot promote a weak model lead into
+ * an automatic save. Only an already-decisive upstream identity may recover.
  */
 export function planNamedLeadAutomaticRecovery(args: {
   jobId: string | null | undefined;
@@ -24,6 +23,7 @@ export function planNamedLeadAutomaticRecovery(args: {
   if (!args.jobId || !['needs_help', 'failed'].includes(args.status ?? '')) return [];
   return args.leads
     .filter((lead) => lead.evidenceKind === 'observable' && lead.resultType === 'RAW_NAME')
+    .filter((lead) => (lead.confidence ?? 0) >= 0.9 && lead.upstreamSafetyDecision === 'AUTO_SAVE')
     .filter((lead) => lead.mentionId.trim() && lead.displayName.trim())
     .map((lead) => ({
       logicalResultId: lead.mentionId.trim(),

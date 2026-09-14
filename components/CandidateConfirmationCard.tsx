@@ -92,6 +92,7 @@ export function CandidateConfirmationCard({
     : matchLabel?.startsWith('Medium')
       ? styles.matchMedium
       : styles.matchLow;
+  const rankLabel = matchLabel?.startsWith('Low') ? 'Possible match' : 'Best match';
 
   if (compact) {
     return (
@@ -153,7 +154,7 @@ export function CandidateConfirmationCard({
             {locality ? <Text style={styles.localityCompact} numberOfLines={1}>{locality}</Text> : null}
             <View style={styles.compactMatchRow}>
               {matchLabel ? <Text style={[styles.matchCompact, matchTone]}>{matchLabel}</Text> : null}
-              {bestMatch && !broad ? <Text style={styles.bestCompact}>Best match</Text> : null}
+              {bestMatch && !broad ? <Text style={styles.bestCompact}>{rankLabel}</Text> : null}
               {broad ? <Text style={styles.bestCompact}>Area match</Text> : null}
             </View>
             {compactEvidence ? (
@@ -197,7 +198,7 @@ export function CandidateConfirmationCard({
         <View style={styles.titleCopy}>
           <View style={styles.badgeRow}>
             {broad ? <Text style={styles.areaLabel}>AREA MATCH</Text> : null}
-            {bestMatch && !broad ? <Text style={styles.bestLabel}>BEST MATCH</Text> : null}
+            {bestMatch && !broad ? <Text style={styles.bestLabel}>{rankLabel.toUpperCase()}</Text> : null}
           </View>
           <Text style={styles.name} numberOfLines={3}>{candidate.name}</Text>
           {locality ? (

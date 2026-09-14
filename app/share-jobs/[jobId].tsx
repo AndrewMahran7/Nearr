@@ -115,6 +115,7 @@ import {
   NAMED_LEAD_AUTO_RECOVERY_POLICY,
   planNamedLeadAutomaticRecovery,
 } from '@/lib/namedLeadAutomaticRecovery';
+import { sourceGeographyFromExtractionPayload, sourceGeographyLabel } from '@/lib/geographyConsistency';
 import {
   claimInitialQuickCheckSearch,
   quickCheckSearchKey,
@@ -780,15 +781,19 @@ function ShareJobDetailScreen() {
           setSearchExpanded(true);
           resetSearch();
           setManualSearchPhase('searching');
-          const fields = geographicFieldsFromLabel(claim.contextLabel);
-          const coordinates = claim.contextLabel
-            ? await geocodeContextText(claim.contextLabel).catch(() => null)
-            : null;
-          const context: PlacesResolutionContext = claim.contextLabel || coordinates
+          const retainedGeography = sourceGeographyFromExtractionPayload(job.extraction_payload);
+          const retainedLabel = sourceGeographyLabel(retainedGeography);
+          const locationSearchLabel = retainedLabel ?? claim.contextLabel;
+          const fields = geographicFieldsFromLabel(locationSearchLabel);
+          const coordinates = retainedGeography?.coordinates ?? (locationSearchLabel
+            ? await geocodeContextText(locationSearchLabel).catch(() => null)
+            : null);
+          const context: PlacesResolutionContext = retainedLabel || claim.contextLabel || coordinates
             ? {
                 mode: 'source', inferredLocality: fields.locality, inferredRegion: fields.region,
                 inferredCountry: fields.country, inferredCoordinates: coordinates,
-                regionConfidence: claim.contextLabel ? 'strong' : 'medium', sourceEvidence: ['video_region'],
+                regionConfidence: retainedGeography?.strength === 'strong' ? 'exact' : claim.contextLabel ? 'strong' : 'medium',
+                sourceEvidence: retainedGeography ? ['exact_source_evidence'] : ['video_region'],
               }
             : { mode: 'manual', userLocation: null, regionConfidence: 'none' };
           const providerResults = await searchPlaces(claim.query, coordinates ?? undefined, context);
@@ -799,7 +804,7 @@ function ShareJobDetailScreen() {
             query: claim.query,
             expectedName: claim.expectedName,
             candidates: found,
-            sourceCoordinates: coordinates,
+            sourceCoordinates: retainedGeography?.coordinates ?? coordinates,
           });
           if (plan.action !== 'auto_resolve') {
             await finishNamedLeadAutoRecovery(

@@ -34,6 +34,8 @@ export type VayrinIdentityLead = {
   displayName: string;
   contextLabel: string | null;
   evidenceKind: 'observable' | 'model_prior';
+  confidence: number | null;
+  upstreamSafetyDecision: 'AUTO_SAVE' | 'REVIEW' | 'NO_MATCH' | null;
   timestamps: number[];
   suggestedQuery: string;
   resultType: Extract<VayrinResultType, 'RAW_NAME' | 'TEXTUAL_LEAD'>;
@@ -116,6 +118,12 @@ export function normalizeVayrinIdentityLeads(payload: unknown): VayrinIdentityLe
         displayName,
         contextLabel,
         evidenceKind: identity.evidenceKind === 'model_prior' ? 'model_prior' : 'observable',
+        confidence: typeof identity.confidence === 'number' && Number.isFinite(identity.confidence)
+          ? Math.max(0, Math.min(1, identity.confidence))
+          : null,
+        upstreamSafetyDecision: ['AUTO_SAVE', 'REVIEW', 'NO_MATCH'].includes(String(identity.upstreamSafetyDecision))
+          ? identity.upstreamSafetyDecision as VayrinIdentityLead['upstreamSafetyDecision']
+          : null,
         timestamps: timestamps(identity.timestamps),
         suggestedQuery: [displayName, contextLabel].filter(Boolean).join(' '),
         resultType: classifyUnresolvedText(displayName, 'identity') as Extract<VayrinResultType, 'RAW_NAME' | 'TEXTUAL_LEAD'>,

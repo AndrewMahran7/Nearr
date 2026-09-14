@@ -51,6 +51,12 @@ import {
   planFacebookDiscoveredCanonicalUrl,
 } from '../../../lib/shareAgent/facebookUrl.ts';
 import { buildShareJobCandidatePayload, normalizeEvidenceFrames } from '../../../lib/shareJobResult.ts';
+import {
+  evaluateGeographyAutoSave,
+  sourceGeographyFromExtractionPayload,
+  sourceGeographyFromTaggedLocation,
+  sourceGeographyLabel,
+} from '../../../lib/geographyConsistency.ts';
 import { selectionModeForPlaceResult } from '../../../lib/placeSelection.ts';
 import {
   classifyShareFailure,
@@ -285,6 +291,36 @@ function safeCandidate(c: any, aiNote: string | null = null) {
   };
 }
 
+function recognitionGeographyDecision(args: {
+  job: any;
+  candidate: any;
+  path: string;
+  decisiveIndependentEvidence?: boolean;
+}) {
+  const source = sourceGeographyFromExtractionPayload(args.job?.extraction_payload);
+  const decision = evaluateGeographyAutoSave({
+    source,
+    candidate: args.candidate,
+    decisiveIndependentEvidence: args.decisiveIndependentEvidence === true,
+  });
+  console.log(JSON.stringify({
+    event: 'recognition_final_decision',
+    job_id: args.job?.id ?? null,
+    recognition_path: args.path,
+    source_geography_kind: decision.sourceKind,
+    source_geography_strength: decision.sourceStrength,
+    candidate_place_id: args.candidate?.googlePlaceId ?? null,
+    geography_status: decision.status,
+    geographic_contradiction: decision.contradiction,
+    distance_km: decision.distanceKm,
+    distance_limit_km: decision.distanceLimitKm,
+    decisive_override: decision.overrideApplied,
+    auto_save_eligible: decision.autoSaveEligible,
+    resolution_reason: decision.resolutionReason,
+  }));
+  return decision;
+}
+
 const MEDIA_FAILURE_CODES = new Set([
   'unsupported_platform',
   'unsupported_url',
@@ -410,6 +446,9 @@ function premiumRuntimePlan(value: any): null | {
         name: typeof hypothesis?.name === 'string' ? hypothesis.name.slice(0, 200) : 'Unknown',
         contextLabel: [hypothesis?.city, hypothesis?.region, hypothesis?.country].filter(Boolean).join(', ') || null,
         confidence: hypothesis?.confidence === 'HIGH' ? 0.9 : hypothesis?.confidence === 'MEDIUM' ? 0.65 : 0.35,
+        upstreamSafetyDecision: destination?.decision === 'AUTO_SAVE'
+          ? 'AUTO_SAVE'
+          : destination?.decision === 'NO_MATCH' ? 'NO_MATCH' : 'REVIEW',
         evidenceKind: hypothesis?.evidenceBasis === 'CONTEXTUAL_OR_MEMORY_PRIOR' ? 'model_prior' : 'observable',
         timestamps: Array.isArray(hypothesis?.timestamps) ? hypothesis.timestamps.slice(0, 12) : [],
         providerParent: hypothesis?.providerParent && typeof hypothesis.providerParent === 'object'
@@ -754,6 +793,17 @@ async function finalize(
     updatePatch.resolution_source = job.resolution_source ??
       (cacheHit ? 'recognition_cache_v2' : 'fresh_recognition');
   }
+  if (updatePatch.candidate_payload && typeof updatePatch.candidate_payload === 'object' &&
+      !Array.isArray(updatePatch.candidate_payload) &&
+      typeof (updatePatch.candidate_payload as any).resolutionReason !== 'string') {
+    const cacheResolution = updatePatch.resolution_source === 'recognition_cache_v2';
+    updatePatch.candidate_payload = {
+      ...(updatePatch.candidate_payload as Record<string, unknown>),
+      resolutionReason: cacheResolution
+        ? 'trusted_cache'
+        : updatePatch.status === 'completed' ? 'fresh_recognition' : 'review_required',
+    };
+  }
   const finalUrl = typeof patch.canonical_url === 'string'
     ? patch.canonical_url
     : job.canonical_url || job.source_url;
@@ -1069,6 +1119,7 @@ async function enqueueMediaTask(
   sourceUrl: string,
   options: { parkParent?: boolean; parkPatch?: Record<string, unknown> } = {},
 ): Promise<void> {
+  const sourceGeography = sourceGeographyFromExtractionPayload(options.parkPatch?.extraction_payload);
   // Persist the best metadata review contract before the media task can run.
   // A failed media lookup may enrich this state, but must never erase known
   // candidates and strand the user in blank manual search.
@@ -1088,6 +1139,7 @@ async function enqueueMediaTask(
     platform,
     status: 'queued',
     progress_stage: 'queued',
+    evidence_snapshot: sourceGeography ? { sourceGeography } : null,
   });
   // A concurrent insert (unique share_job_id) is fine — one task per job.
   if (insErr && !/duplicate key|unique|23505/i.test(insErr.message ?? '')) {
@@ -2424,7 +2476,19 @@ async function finalizeMediaTask(
         unresolvedIdentityAlternativeCount: Math.max(0, premium.rankedCandidates.length - 1),
         upstreamSafetyDecision: premium.rankedCandidates[0]?.safetyDecision ?? null,
       });
+      const premiumGeography = premium.autoSaveCandidate
+        ? recognitionGeographyDecision({
+            job,
+            candidate: premium.autoSaveCandidate,
+            path: 'premium',
+            decisiveIndependentEvidence: premiumExactIdentity.allowed &&
+              premium.autoSaveCandidate.matchScore >= 0.9 &&
+              ['DIRECT_VISIBLE_IDENTITY', 'SOURCE_TEXT_IDENTITY', 'DISTINCTIVE_VISUAL_MATCH']
+                .includes(premium.rankedCandidates[0]?.evidenceClass),
+          })
+        : null;
       const canSave = premiumExactIdentity.allowed && premium.autoSaveCandidate &&
+        premiumGeography?.autoSaveEligible !== false &&
         typeof premium.autoSaveCandidate.latitude === 'number' &&
         typeof premium.autoSaveCandidate.longitude === 'number';
       if (canSave) {
@@ -2522,7 +2586,17 @@ async function finalizeMediaTask(
     automaticDeep.candidatePayload.evidenceFrames = evidenceFrames;
     if (automaticDeep.outcome === 'PREMIUM_ACTIONABLE_RESULT' && automaticDeep.rankedCandidates.length > 0) {
       const completion = planAutomaticCompletion(automaticDeepCandidates(automaticDeep));
-      if (completion.action === 'save' && mentionSlots.length <= 1) {
+      const automaticDeepGeography = completion.action === 'save'
+        ? recognitionGeographyDecision({
+            job,
+            candidate: completion.primary,
+            path: 'automatic_deep',
+            decisiveIndependentEvidence: (completion.primary.matchScore ?? 0) >= 0.9 &&
+              completion.primary.exactIdentityStrength === 'candidate_bound',
+          })
+        : null;
+      if (completion.action === 'save' && mentionSlots.length <= 1 &&
+          automaticDeepGeography?.autoSaveEligible !== false) {
         const saved = await saveForUser({
           client: admin,
           userId: job.user_id,
@@ -2925,12 +2999,25 @@ async function finalizeMediaTask(
       const blockingReasons = [...gate.reasonCodes];
       if (gate.eligible && !autoSaveAuthorized) blockingReasons.push('auto_save_disabled_or_user_not_allowlisted');
       if (gate.eligible && !mediaRunId) blockingReasons.push('media_run_audit_missing');
-      const mayAutoSave = gate.eligible && autoSaveAuthorized && !!mediaRunId;
       const candidate = gate.selectedProviderId
         ? mentionResult.candidates?.find(
             (entry: any) => entry.googlePlaceId === gate.selectedProviderId,
           ) ?? null
         : null;
+      const geography = candidate
+        ? recognitionGeographyDecision({
+            job,
+            candidate,
+            path: 'media_mention',
+            decisiveIndependentEvidence: (gate.confidenceScore ?? 0) >= 0.9 &&
+              ['candidate_bound', 'distinctive_visual'].includes(gate.exactIdentityStrength),
+          })
+        : null;
+      const mayAutoSave = gate.eligible && autoSaveAuthorized && !!mediaRunId &&
+        geography?.autoSaveEligible !== false;
+      if (gate.eligible && geography?.autoSaveEligible === false) {
+        blockingReasons.push('source_geography_conflict');
+      }
       console.log(formatMediaAutoSaveDecisionLog({
         jobId: job.id,
         logicalPlaceId: mentionResult.mentionId,
@@ -3341,18 +3428,30 @@ async function finalizeMediaTask(
         : legacyExactIdentityStrength,
     })),
   );
+  const legacyCandidate = legacyMediaCompletion.action === 'save'
+    ? legacyMediaCompletion.primary
+    : result.primaryCandidate;
+  const legacyGeography = legacyCandidate
+    ? recognitionGeographyDecision({
+        job,
+        candidate: legacyCandidate,
+        path: 'legacy_media',
+        decisiveIndependentEvidence: legacyMediaCompletion.action === 'save' &&
+          (legacyCandidate.matchScore ?? legacyCandidate.confidenceScore ?? 0) >= 0.9 &&
+          ['candidate_bound', 'distinctive_visual'].includes(legacyCandidate.exactIdentityStrength),
+      })
+    : null;
   // Post-resolve routing + the EXTRA media auto-save gate (never loosens
   // safeToAutoSave; can only downgrade a resolver auto_save to a confirmation).
   const post = planPostResolve({
     route: legacyMediaCompletion.action === 'save' ? 'auto_save' : 'needs_help',
     needsHelpMode: plan.route === 'needs_help' ? plan.mode : 'manual',
-    autoSaveEligible: legacyMediaCompletion.action === 'save' && mediaEvidenceAutoSaveEligible(parsed.value),
+    autoSaveEligible: legacyMediaCompletion.action === 'save' && mediaEvidenceAutoSaveEligible(parsed.value) &&
+      legacyGeography?.autoSaveEligible !== false,
   });
 
   if (post.action === 'auto_save') {
-    const candidate = legacyMediaCompletion.action === 'save'
-      ? legacyMediaCompletion.primary
-      : result.primaryCandidate;
+    const candidate = legacyCandidate;
     const source = legacySourceFor(task.platform);
     const saved = await saveForUser({
       client: admin,
@@ -3547,6 +3646,12 @@ async function useRecognitionCache(args: {
     }));
     if (ordered.some((entry) => !entry.candidate ||
       !Number.isFinite(entry.candidate.latitude) || !Number.isFinite(entry.candidate.longitude))) return false;
+    if (ordered.some((entry) => !recognitionGeographyDecision({
+      job,
+      candidate: entry.candidate,
+      path: 'recognition_cache_v2',
+      decisiveIndependentEvidence: false,
+    }).autoSaveEligible)) return false;
 
     // One short transaction locks the source revision, verifies every answer,
     // and creates all recipient-owned saves. A correction that wins this race
@@ -3664,6 +3769,12 @@ async function useRecognitionCache(args: {
     const singletonGate = evaluateCachedSingletonAutoSave(reranked);
     if (!disputedHit && singletonGate.eligible && singletonGate.candidate) {
       const candidate = singletonGate.candidate as any;
+      if (!recognitionGeographyDecision({
+        job,
+        candidate,
+        path: 'recognition_cache_candidate_set',
+        decisiveIndependentEvidence: false,
+      }).autoSaveEligible) return false;
       const saved = await saveForUser({
         client: admin,
         userId: job.user_id,
@@ -3793,6 +3904,12 @@ async function useRecognitionCache(args: {
   if (error || !place) return false;
   const candidate = cacheCandidateFromPlace(place);
   if (!candidate || !Number.isFinite(candidate.latitude) || !Number.isFinite(candidate.longitude)) return false;
+  if (!recognitionGeographyDecision({
+    job,
+    candidate,
+    path: 'recognition_cache_trusted',
+    decisiveIndependentEvidence: false,
+  }).autoSaveEligible) return false;
 
   const saved = await saveForUser({
     client: admin,
@@ -4230,7 +4347,7 @@ async function processOne(
   // A provider retry can return a thinner caption than an earlier attempt.
   // Resolve and persist from the richer retained source instead of shortening
   // evidence merely because this fetch degraded.
-  const metadataSourceMetadata = mergeRetainedSourceMetadata(
+  let metadataSourceMetadata = mergeRetainedSourceMetadata(
     sourceMetadataFromExtractionPayload(job.extraction_payload),
     parseMediaSourceMetadata({
       title: fetchedTitle,
@@ -4258,6 +4375,12 @@ async function processOne(
     title,
     description,
   });
+  metadataSourceMetadata = mergeRetainedSourceMetadata(
+    metadataSourceMetadata,
+    parseMediaSourceMetadata({
+      location: taggedLocation?.placeName ?? taggedLocation?.address ?? taggedLocation?.rawText ?? null,
+    }),
+  );
   const evidence = extractEvidence({
     platform,
     title,
@@ -4340,6 +4463,12 @@ async function processOne(
     safeToAutoSave: effectiveDecision === 'auto_save',
   };
 
+  const sourceGeography = sourceGeographyFromTaggedLocation({
+    taggedLocation,
+    granularity: (result.diagnostics as any)?.sourceLocationTagGranularity ?? null,
+    resolvedCandidate: result.candidates[0] ?? null,
+  });
+
   const extractionPayload = withRetainedSourceMetadata(
     job.extraction_payload,
     {
@@ -4369,6 +4498,8 @@ async function processOne(
       evidenceUsed: result.evidenceUsed,
       warnings: result.warnings,
       autoSaveDecision: metadataAutoSave,
+      sourceGeography,
+      sourceGeographyLabel: sourceGeographyLabel(sourceGeography),
       rawResolverCandidates: result.candidates.slice(0, 10).map(safeCandidate),
       plausibleCandidates: plausibleCandidates.slice(0, 10).map(safeCandidate),
       viableCandidates: viableCandidates.slice(0, 10).map(safeCandidate),
@@ -4531,9 +4662,23 @@ async function processOne(
     return;
   }
 
+  const metadataCandidate = metadataAutoSave.selectedProviderId
+    ? result.candidates.find(
+        (entry: any) => entry.googlePlaceId === metadataAutoSave.selectedProviderId,
+      ) ?? metadataResult.primaryCandidate
+    : metadataResult.primaryCandidate;
+  const metadataGeography = metadataCandidate
+    ? recognitionGeographyDecision({
+        job: { ...job, extraction_payload: extractionPayload },
+        candidate: metadataCandidate,
+        path: 'metadata',
+        decisiveIndependentEvidence: metadataAutoSave.confidenceScore >= 0.9 &&
+          ['candidate_bound', 'distinctive_visual'].includes(metadataAutoSave.exactIdentityStrength),
+      })
+    : null;
   const plan = planFromResolverDecision({
     decision: metadataResult.decision,
-    safeToAutoSave: metadataResult.safeToAutoSave,
+    safeToAutoSave: metadataResult.safeToAutoSave && metadataGeography?.autoSaveEligible !== false,
     hasPrimaryCandidate: !!metadataResult.primaryCandidate,
     candidateCount: metadataResult.candidates.length,
     cleanSearchQuery: metadataResult.cleanSearchQuery,
@@ -4541,11 +4686,7 @@ async function processOne(
   });
 
   if (plan.route === 'auto_save') {
-    const candidate = metadataAutoSave.selectedProviderId
-      ? result.candidates.find(
-          (entry: any) => entry.googlePlaceId === metadataAutoSave.selectedProviderId,
-        ) ?? metadataResult.primaryCandidate
-      : metadataResult.primaryCandidate;
+    const candidate = metadataCandidate;
     const source = legacySourceFor(platform);
     const saved = await saveForUser({
       client: admin,

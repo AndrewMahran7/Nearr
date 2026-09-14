@@ -25,11 +25,14 @@ assert.equal(planFindRightPlace({
 
 const lead = { mentionId: 'premium-destination-1', displayName: 'Nagarkot ZipCoaster',
   contextLabel: 'Nagarkot, Bagmati Province, Nepal', evidenceKind: 'observable' as const,
+  confidence: 0.9, upstreamSafetyDecision: 'AUTO_SAVE' as const,
   timestamps: [1], suggestedQuery: 'Nagarkot ZipCoaster Nagarkot Nepal', resultType: 'RAW_NAME' as const };
 assert.equal(planNamedLeadAutomaticRecovery({ jobId: 'job', status: 'needs_help', savedPlaceId: null, leads: [lead] }).length, 1);
 assert.equal(planNamedLeadAutomaticRecovery({ jobId: 'job', status: 'needs_help', savedPlaceId: null,
   leads: [{ ...lead, evidenceKind: 'model_prior' }] }).length, 0);
 assert.equal(planNamedLeadAutomaticRecovery({ jobId: 'job', status: 'needs_help', savedPlaceId: 'partial-save', leads: [lead] }).length, 1);
+assert.equal(planNamedLeadAutomaticRecovery({ jobId: 'job', status: 'needs_help', savedPlaceId: null,
+  leads: [{ ...lead, confidence: 0.35, upstreamSafetyDecision: 'REVIEW' }] }).length, 0);
 assert.equal(planNamedLeadAutomaticRecovery({ jobId: 'job', status: 'completed', savedPlaceId: 'saved', leads: [lead] }).length, 0);
 
 const migration = readFileSync('supabase/migrations/20260907000001_named_lead_automatic_completion.sql', 'utf8');

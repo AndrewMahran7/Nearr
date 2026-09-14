@@ -78,6 +78,20 @@ type AiNoteTarget = {
   handoff: TargetEvidenceHandoff | null;
 };
 
+function retainedSourceGeographyLabel(snapshot: unknown): string | null {
+  if (!snapshot || typeof snapshot !== 'object' || Array.isArray(snapshot)) return null;
+  const geography = (snapshot as Record<string, unknown>).sourceGeography;
+  if (!geography || typeof geography !== 'object' || Array.isArray(geography)) return null;
+  const value = geography as Record<string, unknown>;
+  const direct = typeof value.label === 'string' ? value.label.trim() : '';
+  if (direct) return direct.slice(0, 500);
+  const composed = [value.locality, value.region, value.country]
+    .filter((part): part is string => typeof part === 'string' && !!part.trim())
+    .map((part) => part.trim())
+    .join(', ');
+  return composed ? composed.slice(0, 500) : null;
+}
+
 function accumulateModelDiagnostics(
   diagnostics: Record<string, unknown>,
   output: AnalyzeOutput,
@@ -294,12 +308,14 @@ function logFinalizeResult(
 }
 
 export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<void> {
+  const retainedMetadataLocation = retainedSourceGeographyLabel(task.evidence_snapshot);
   const { cfg, client } = deps;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), cfg.jobTimeoutMs);
   const jobTemp = await createJobTemp(cfg.tempDir, task.id);
   const startedAt = Date.now();
   const diagnostics: Record<string, unknown> = {};
+  diagnostics.sourceGeographyRetained = !!retainedMetadataLocation;
   let analysisAttempted = false;
   const warnings: string[] = [];
   const errors: string[] = [];
@@ -592,7 +608,7 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
         metadataDescription: context.sceneScoped
           ? null
           : sourceDescriptionForModel(media.metadataDescription),
-        metadataLocation: context.sceneScoped ? null : media.metadataLocation,
+        metadataLocation: context.sceneScoped ? null : (media.metadataLocation ?? retainedMetadataLocation),
         metadataCreatorHandle: context.sceneScoped ? null : media.metadataCreatorHandle,
         metadataCreatorName: context.sceneScoped ? null : media.metadataCreatorName,
         premiumRequestedAt: task.task_kind === 'premium_recognition' && task.created_at
@@ -847,7 +863,7 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
           sourceId: media.sourceId,
           creatorName: media.metadataCreatorName,
           creatorId: media.metadataCreatorId,
-          location: media.metadataLocation,
+          location: media.metadataLocation ?? retainedMetadataLocation,
           publicAccessVerified: true,
         },
         canonicalUrl: media.canonicalUrl,
