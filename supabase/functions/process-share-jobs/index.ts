@@ -303,20 +303,47 @@ function recognitionGeographyDecision(args: {
     candidate: args.candidate,
     decisiveIndependentEvidence: args.decisiveIndependentEvidence === true,
   });
+  const candidateConfidence = [
+    args.candidate?.confidenceScore,
+    args.candidate?.matchScore,
+    args.candidate?.confidence,
+  ].find((value) => typeof value === 'number' && Number.isFinite(value)) ?? null;
   console.log(JSON.stringify({
     event: 'recognition_final_decision',
     job_id: args.job?.id ?? null,
     recognition_path: args.path,
+    policy_version: decision.policyVersion,
     source_geography_kind: decision.sourceKind,
     source_geography_strength: decision.sourceStrength,
+    source_geography_scope: source?.scope ?? null,
+    source_geography: source ? {
+      locality: source.locality,
+      region: source.region,
+      country: source.country,
+      coordinates: source.coordinates,
+      provenance: source.provenance,
+    } : null,
     candidate_place_id: args.candidate?.googlePlaceId ?? null,
+    candidate_coordinates: {
+      latitude: args.candidate?.latitude ?? null,
+      longitude: args.candidate?.longitude ?? null,
+    },
+    candidate_city: args.candidate?.city ?? args.candidate?.locality ?? null,
+    candidate_region: args.candidate?.region ?? args.candidate?.administrativeArea ?? null,
+    candidate_country: args.candidate?.country ?? args.candidate?.countryCode ?? null,
+    candidate_confidence: candidateConfidence,
+    visual_confidence: args.candidate?.visualConfidence ?? null,
+    metadata_confidence: args.candidate?.metadataConfidence ?? null,
+    cache_used: args.path.startsWith('recognition_cache_'),
     geography_status: decision.status,
     geographic_contradiction: decision.contradiction,
     distance_km: decision.distanceKm,
     distance_limit_km: decision.distanceLimitKm,
     decisive_override: decision.overrideApplied,
     auto_save_eligible: decision.autoSaveEligible,
+    auto_save_decision: decision.autoSaveEligible ? 'eligible' : 'blocked',
     resolution_reason: decision.resolutionReason,
+    review_required: !decision.autoSaveEligible,
   }));
   return decision;
 }
