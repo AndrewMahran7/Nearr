@@ -296,6 +296,7 @@ function recognitionGeographyDecision(args: {
   candidate: any;
   path: string;
   decisiveIndependentEvidence?: boolean;
+  upstreamAutoSaveEligible?: boolean;
 }) {
   const source = sourceGeographyFromExtractionPayload(args.job?.extraction_payload);
   const decision = evaluateGeographyAutoSave({
@@ -308,6 +309,7 @@ function recognitionGeographyDecision(args: {
     args.candidate?.matchScore,
     args.candidate?.confidence,
   ].find((value) => typeof value === 'number' && Number.isFinite(value)) ?? null;
+  const autoSaveEligible = args.upstreamAutoSaveEligible !== false && decision.autoSaveEligible;
   console.log(JSON.stringify({
     event: 'recognition_final_decision',
     job_id: args.job?.id ?? null,
@@ -340,10 +342,12 @@ function recognitionGeographyDecision(args: {
     distance_km: decision.distanceKm,
     distance_limit_km: decision.distanceLimitKm,
     decisive_override: decision.overrideApplied,
-    auto_save_eligible: decision.autoSaveEligible,
-    auto_save_decision: decision.autoSaveEligible ? 'eligible' : 'blocked',
+    upstream_auto_save_eligible: args.upstreamAutoSaveEligible ?? null,
+    geography_auto_save_eligible: decision.autoSaveEligible,
+    auto_save_eligible: autoSaveEligible,
+    auto_save_decision: autoSaveEligible ? 'auto_save' : 'review',
     resolution_reason: decision.resolutionReason,
-    review_required: !decision.autoSaveEligible,
+    review_required: !autoSaveEligible,
   }));
   return decision;
 }
@@ -2512,6 +2516,7 @@ async function finalizeMediaTask(
               premium.autoSaveCandidate.matchScore >= 0.9 &&
               ['DIRECT_VISIBLE_IDENTITY', 'SOURCE_TEXT_IDENTITY', 'DISTINCTIVE_VISUAL_MATCH']
                 .includes(premium.rankedCandidates[0]?.evidenceClass),
+            upstreamAutoSaveEligible: premiumExactIdentity.allowed,
           })
         : null;
       const canSave = premiumExactIdentity.allowed && premium.autoSaveCandidate &&
@@ -2620,6 +2625,7 @@ async function finalizeMediaTask(
             path: 'automatic_deep',
             decisiveIndependentEvidence: (completion.primary.matchScore ?? 0) >= 0.9 &&
               completion.primary.exactIdentityStrength === 'candidate_bound',
+            upstreamAutoSaveEligible: completion.action === 'save' && mentionSlots.length <= 1,
           })
         : null;
       if (completion.action === 'save' && mentionSlots.length <= 1 &&
@@ -3038,6 +3044,7 @@ async function finalizeMediaTask(
             path: 'media_mention',
             decisiveIndependentEvidence: (gate.confidenceScore ?? 0) >= 0.9 &&
               ['candidate_bound', 'distinctive_visual'].includes(gate.exactIdentityStrength),
+            upstreamAutoSaveEligible: gate.eligible && autoSaveAuthorized && !!mediaRunId,
           })
         : null;
       const mayAutoSave = gate.eligible && autoSaveAuthorized && !!mediaRunId &&
@@ -3466,6 +3473,8 @@ async function finalizeMediaTask(
         decisiveIndependentEvidence: legacyMediaCompletion.action === 'save' &&
           (legacyCandidate.matchScore ?? legacyCandidate.confidenceScore ?? 0) >= 0.9 &&
           ['candidate_bound', 'distinctive_visual'].includes(legacyCandidate.exactIdentityStrength),
+        upstreamAutoSaveEligible: legacyMediaCompletion.action === 'save' &&
+          mediaEvidenceAutoSaveEligible(parsed.value),
       })
     : null;
   // Post-resolve routing + the EXTRA media auto-save gate (never loosens
@@ -3678,6 +3687,7 @@ async function useRecognitionCache(args: {
       candidate: entry.candidate,
       path: 'recognition_cache_v2',
       decisiveIndependentEvidence: false,
+      upstreamAutoSaveEligible: true,
     }).autoSaveEligible)) return false;
 
     // One short transaction locks the source revision, verifies every answer,
@@ -3801,6 +3811,7 @@ async function useRecognitionCache(args: {
         candidate,
         path: 'recognition_cache_candidate_set',
         decisiveIndependentEvidence: false,
+        upstreamAutoSaveEligible: singletonGate.eligible,
       }).autoSaveEligible) return false;
       const saved = await saveForUser({
         client: admin,
@@ -3936,6 +3947,7 @@ async function useRecognitionCache(args: {
     candidate,
     path: 'recognition_cache_trusted',
     decisiveIndependentEvidence: false,
+    upstreamAutoSaveEligible: true,
   }).autoSaveEligible) return false;
 
   const saved = await saveForUser({
@@ -4701,6 +4713,7 @@ async function processOne(
         path: 'metadata',
         decisiveIndependentEvidence: metadataAutoSave.confidenceScore >= 0.9 &&
           ['candidate_bound', 'distinctive_visual'].includes(metadataAutoSave.exactIdentityStrength),
+        upstreamAutoSaveEligible: metadataResult.safeToAutoSave,
       })
     : null;
   const plan = planFromResolverDecision({
