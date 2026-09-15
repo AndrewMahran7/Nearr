@@ -171,6 +171,28 @@ with checks(check_name, passed, detail) as (
       'owner-transfer helper contains the canonical audited job/media/save rewiring contract'
     ),
     (
+      '14000002_registry',
+      exists(select 1 from supabase_migrations.schema_migrations
+        where version='20260914000002'
+          and name='recognition_entity_role_latency_state'),
+      'new recognition migration is registered under the exact version and name'
+    ),
+    (
+      '14000002_source_geography_contract',
+      exists(select 1 from information_schema.columns
+        where table_schema='public' and table_name='share_media_tasks'
+          and column_name='source_geography' and data_type='jsonb' and is_nullable='YES')
+      and exists(select 1 from pg_constraint
+        where conname='share_media_tasks_source_geography_check'
+          and pg_get_constraintdef(oid) ilike '%jsonb_typeof(source_geography) = ''object''%'
+          and pg_get_constraintdef(oid) ilike '%octet_length((source_geography)::text) <= 4000%')
+      and col_description('public.share_media_tasks'::regclass,
+        (select attnum from pg_attribute
+         where attrelid='public.share_media_tasks'::regclass and attname='source_geography')) =
+        'Bounded source-location evidence for recognition; never candidate geography or AI-note evidence.',
+      'nullable bounded object column, check, and semantic comment are exact'
+    ),
+    (
       'service_role_table_grants',
       (select count(*)=10 from information_schema.role_table_grants
        where grantee='service_role' and table_schema='public' and privilege_type='SELECT'
