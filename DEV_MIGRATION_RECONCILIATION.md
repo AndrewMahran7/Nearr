@@ -41,8 +41,8 @@ Versions `000001`-`000005` are monetization/RevenueCat schema and RPC work. Vers
 
 ## Structural proof and reconciliation result
 
-`scripts/verifyDevelopmentMigrationReconciliation.sql` is a bounded, read-only `information_schema`/`pg_catalog` proof. It returned 14/14 passing checks and reads no user rows, balances, purchase events, or secrets. `scripts/testDevelopmentMigrationHistory.mjs` independently validates exact Git blob SHAs, exact remote statement fingerprints, uniqueness, monotonic ordering, required Dev-only provenance, unknown-remote refusal, and no-replay protection.
+`scripts/verifyDevelopmentMigrationReconciliation.sql` is a bounded, read-only `information_schema`/`pg_catalog` proof. It returned 14/14 historical checks before deployment and 16/16 checks after deployment, including the new migration registry and column contract; it reads no user rows, balances, purchase events, or secrets. `scripts/testDevelopmentMigrationHistory.mjs` independently validates exact Git blob SHAs, exact remote statement fingerprints, uniqueness, monotonic ordering, required Dev-only provenance, unknown-remote refusal, and no-replay protection.
 
-After restoring the seven blobs, `supabase migration list --linked` aligned every historical local/remote version and showed only `20260914000002` pending. No `migration repair` command was used. No historical SQL was executed. No database reset occurred.
+After restoring the seven blobs, `supabase migration list --linked` aligned every historical local/remote version and showed only `20260914000002` pending. The guarded push subsequently executed that migration alone; all 78 versions now align. No `migration repair` command was used. No historical SQL was executed. No database reset occurred.
 
 The historical database row keeps the experiment's catalog binding and ledger schema intact. Runtime suspension is separate: the three Development Edge secrets and three EAS client flags are explicitly `false` and remain the enablement authority for QA.
