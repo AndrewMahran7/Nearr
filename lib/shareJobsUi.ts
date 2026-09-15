@@ -120,6 +120,9 @@ export type NormalizedCandidate = {
   photoUrl: string | null;
   sourceFrameUrl: string | null;
   sourceTimestamps: number[];
+  matchStrength?: 'high' | 'medium' | 'low' | null;
+  discoveryOnly?: boolean;
+  provenance?: { identityEvidence?: string[] };
 };
 
 function optionalText(value: unknown): string | null {
@@ -170,6 +173,19 @@ export function normalizeShareJobCandidates(input: unknown): NormalizedCandidate
         photoUrl: optionalText(row.photoUrl ?? row.photo_url),
         sourceFrameUrl: optionalText(row.sourceFrameUrl ?? row.source_frame_url ?? row.frameUrl),
         sourceTimestamps: timestamps(row.sourceTimestamps ?? row.source_timestamps),
+        matchStrength: ['high', 'medium', 'low'].includes(String(row.matchStrength))
+          ? row.matchStrength as 'high' | 'medium' | 'low'
+          : null,
+        discoveryOnly: row.discoveryOnly === true,
+        provenance: row.provenance && typeof row.provenance === 'object' && !Array.isArray(row.provenance)
+          ? {
+              identityEvidence: Array.isArray((row.provenance as Record<string, unknown>).identityEvidence)
+                ? ((row.provenance as Record<string, unknown>).identityEvidence as unknown[])
+                    .filter((item): item is string => typeof item === 'string')
+                    .slice(0, 12)
+                : undefined,
+            }
+          : undefined,
       };
     })
     .filter((row) => row.googlePlaceId.length > 0 && row.name.length > 0);

@@ -136,7 +136,8 @@ function resultCopy(
     context.analysisAttempted === true ||
     context.technicalFailure === true;
   const hasUsefulResult = candidateCount > 0 || multiTotal > 0 || !!locality || !!leadName || observableLeadCount > 0;
-  if (hasStructuredFailure && !hasUsefulResult) {
+  const authoritativeFailure = context.status === 'failed' || context.technicalFailure === true;
+  if (authoritativeFailure || (hasStructuredFailure && !hasUsefulResult)) {
     const failure = presentShareFailure({
       failureCategory: context.technicalFailure ? 'technical_failure' : context.failureCategory,
       failureCode: context.failureCode,

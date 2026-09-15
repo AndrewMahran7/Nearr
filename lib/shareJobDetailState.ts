@@ -9,19 +9,17 @@
  * resolver already persisted.
  *
  * Why this exists:
- *   1. The metadata resolver now parks candidates on the job BEFORE media
- *      fallback runs (`parkPatch.candidate_payload`). If the media task later
- *      fails, `status`/`decision` can say "failed"/"manual_fallback" while the
- *      row still holds perfectly good candidates. Keying the view off status or
- *      decision alone threw those candidates away and dropped the user into an
- *      empty manual search.
+ *   1. The metadata resolver parks speculative candidates on the job BEFORE
+ *      media fallback runs (`parkPatch.candidate_payload`). If that later stage
+ *      fails, those candidates remain useful diagnostics but must not overrule
+ *      the authoritative terminal failure or resurrect Quick Check.
  *   2. Payload shape has drifted across releases (bare array, `{candidates}`,
  *      `{options}`, `{candidate}`, snake_case keys, v2 `{version, candidates,
  *      mentionSlots}`). Normalisation is centralised in shareJobsUi /
  *      shareJobResult; this module decides what to DO with the result.
  *
- * PERSISTED CANDIDATE DATA IS AUTHORITATIVE. `status` and `decision` choose
- * between review styles; they never decide whether candidates exist.
+ * PERSISTED JOB STATUS IS AUTHORITATIVE. Candidate data controls review style
+ * only for a review-ready `needs_help` outcome.
  *
  * Unit-tested from Node (scripts/testShareJobDetailState.ts).
  */
@@ -340,6 +338,22 @@ export function buildShareJobDetailState(
   });
   const canRetry = job.status === 'failed' && !savedPlaceId && failure.retryable;
 
+  // Terminal failure is authoritative. Parked speculative candidates remain
+  // stored for diagnostics, but cannot resurrect a contradictory Quick Check.
+  if (job.status === 'failed') {
+    return {
+      ...base,
+      candidates: [],
+      mentionSlots: [],
+      canRetry,
+      canSearchManually: failure.actions.includes('manual_search'),
+      failureCategory: failure.category,
+      kind: 'manual',
+      copy: { title: failure.title, body: failure.body },
+      reason: failure.category,
+    };
+  }
+
   // Several logical places from one post are reviewed together. The decision
   // column is the primary signal; the persisted slots are the fallback so a row
   // written before that column existed still opens the grouped review.
@@ -359,10 +373,8 @@ export function buildShareJobDetailState(
     };
   }
 
-  // From here the ONLY thing that decides the review style is how many
-  // candidates the row actually holds. `status: failed` and
-  // `decision: manual_fallback` deliberately do NOT force manual search —
-  // media fallback can fail long after good metadata candidates were parked.
+  // From here the job is review-ready (`needs_help`), so persisted candidate
+  // count decides the review style.
   if (candidates.length > 1) {
     const automaticDeep = text(job.needs_help_reason)?.startsWith('automatic_deep') === true;
     return {

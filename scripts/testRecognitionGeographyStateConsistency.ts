@@ -71,7 +71,9 @@ const worker = readFileSync('services/media-worker/src/pipeline/runMediaTask.ts'
 const migration = readFileSync('supabase/migrations/20260914000001_recognition_geography_state_consistency.sql', 'utf8');
 const card = readFileSync('components/CandidateConfirmationCard.tsx', 'utf8');
 // 12. Source geography crosses both queue boundaries and is applied on all auto-save families.
-assert.match(edge, /evidence_snapshot: sourceGeography/);
+assert.match(edge, /evidence_snapshot: \[\]/);
+assert.match(edge, /source_geography: sourceGeography/);
+assert.match(worker, /retainedSourceGeographyLabel\(task\.source_geography\)/);
 assert.match(worker, /media\.metadataLocation \?\? retainedMetadataLocation/);
 for (const path of ['premium', 'automatic_deep', 'media_mention', 'legacy_media', 'metadata',
   'recognition_cache_v2', 'recognition_cache_candidate_set', 'recognition_cache_trusted']) {

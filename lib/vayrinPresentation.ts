@@ -9,6 +9,7 @@
 import type { ShareJobDetailState } from './shareJobDetailState';
 import { classifyUnresolvedText, type VayrinResultType } from './vayrinCandidateConfirmation';
 import { isMachineGeneratedIdentityPhrase } from './placeIdentityClassification';
+import { RECOGNITION_LONG_RUNNING_MS } from './recognitionQueueState';
 
 export type VayrinPresentationKind =
   | 'ready'
@@ -176,7 +177,7 @@ export function buildVayrinPresentation(
         secondaryAction: null,
       };
     case 'looking': {
-      const long = (state.ageMs ?? 0) >= 15_000;
+      const long = (state.ageMs ?? 0) >= RECOGNITION_LONG_RUNNING_MS;
       return {
         ...base,
         kind: 'looking',

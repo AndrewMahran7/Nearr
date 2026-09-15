@@ -191,17 +191,17 @@ for (const status of ['queued', 'processing_metadata']) {
   );
 }
 
-// Regression: media fallback failed AFTER metadata parked good candidates.
-// The row says failed / manual_fallback, but the candidates are still there and
-// must be shown rather than dropping the user into an empty manual search.
+// Authoritative failure: parked speculative candidates remain diagnostic data,
+// but cannot contradict a true terminal failure with an actionable picker.
 {
   const parked = { candidates: [candidate('g1', 'B+C Pizza'), candidate('g2', 'B+C Pizza')] };
 
   const failedWithCandidates = buildShareJobDetailState(
     job({ status: 'failed', decision: 'manual_fallback', candidate_payload: parked }),
   );
-  assert.equal(failedWithCandidates.kind, 'picker', 'failed job keeps its persisted candidates');
-  assert.equal(failedWithCandidates.candidates.length, 2);
+  assert.equal(failedWithCandidates.kind, 'manual', 'failed status wins over parked candidates');
+  assert.equal(failedWithCandidates.candidates.length, 0);
+  assert.equal(failedWithCandidates.failureCategory, 'technical_failure');
   assert.equal(failedWithCandidates.canRetry, true);
 
   const failedNoCandidates = buildShareJobDetailState(

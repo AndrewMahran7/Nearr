@@ -80,6 +80,12 @@ import {
 import { PHASE_1_COPY, processingMessage, queueIntro, splitPlaceAddress } from '@/lib/sharePhase1Ui';
 import { isVayrinProductUiEnabled } from '@/lib/featureFlags';
 import { normalizeVayrinIdentityLeads } from '@/lib/vayrinPresentation';
+import { sourceGeographyFromExtractionPayload, sourceGeographyLabel } from '@/lib/geographyConsistency';
+import {
+  RECOGNITION_LONG_RUNNING_MS,
+  recognitionQueueLabel,
+  recognitionQueueState,
+} from '@/lib/recognitionQueueState';
 import { hapticSuccess } from '@/lib/haptics';
 import { isLikelyOfflineError } from '@/lib/savedPlacesCache';
 import {
@@ -98,7 +104,7 @@ import {
 // claimed it). We surface an honest "taking longer than expected" state with a
 // safe escape hatch instead of an eternal spinner — WITHOUT pretending the job
 // is progressing.
-const STALE_PROCESSING_MS = 3 * 60 * 1000;
+const STALE_PROCESSING_MS = RECOGNITION_LONG_RUNNING_MS;
 
 function isStalledProcessing(job: ShareJob): boolean {
   if (job.status !== 'queued' && job.status !== 'processing_metadata') return false;
@@ -178,23 +184,29 @@ function jobTitle(job: ShareJob): string {
 }
 
 function jobSubtitle(job: ShareJob, stalled = false): string {
+  const created = new Date(job.created_at).getTime();
+  const queueState = recognitionQueueState({
+    status: job.status,
+    progressStage: job.progress_stage,
+    ageMs: Number.isFinite(created) ? Math.max(0, Date.now() - created) : 0,
+  });
   const vayrin = isVayrinProductUiEnabled();
   switch (job.status) {
     case 'queued':
     case 'processing_metadata':
       return vayrin
-        ? stalled ? 'Still finding the place. You can leave while Nearr keeps working.' : 'Finding the place…'
+        ? recognitionQueueLabel(queueState)
         : processingMessage(job.status, stalled ? STALE_PROCESSING_MS + 1 : 0);
     case 'needs_help':
       if (vayrin && normalizeVayrinIdentityLeads(job.candidate_payload).length > 0) {
-        return 'Open to search for the exact place';
+        return 'Needs your review · Open to search for the exact place';
       }
       if (Array.isArray(job.candidate_payload?.candidates) && job.candidate_payload.candidates.length > 1) {
-        return vayrin ? 'Choose the place that matches' : 'Pick the one you meant';
+        return vayrin ? 'Needs your review · Choose the place that matches' : 'Pick the one you meant';
       }
       if (!Array.isArray(job.candidate_payload?.candidates) || job.candidate_payload.candidates.length === 0)
         return buildShareJobDetailState(job).copy.body;
-      return vayrin ? 'Is this the place?' : 'Does this look right?';
+      return vayrin ? 'Needs your review · Is this the place?' : 'Does this look right?';
     case 'failed':
       return buildShareJobDetailState(job).copy.body;
     default:
@@ -592,8 +604,8 @@ function ShareJobsQueueScreen() {
     });
     buttons.push({ text: 'Keep waiting', style: 'cancel' });
     Alert.alert(
-      'Taking longer than expected',
-      "This one hasn't finished yet. You can open the original post or remove it from your queue.",
+      'Still working in the background',
+      "Nearr will let you know when this is ready. You can keep waiting or open the original post.",
       buttons,
     );
   }
@@ -652,7 +664,10 @@ function ShareJobsQueueScreen() {
     const firstCandidate = Array.isArray(job.candidate_payload?.candidates)
       ? job.candidate_payload?.candidates[0]
       : null;
-    const locality = splitPlaceAddress(firstCandidate?.formattedAddress).locality;
+    const retainedSourceGeography = sourceGeographyFromExtractionPayload(job.extraction_payload);
+    const locality = isProcessing
+      ? sourceGeographyLabel(retainedSourceGeography)
+      : splitPlaceAddress(firstCandidate?.formattedAddress).locality;
     return (
       <Pressable
         onPress={() => openJob(job)}

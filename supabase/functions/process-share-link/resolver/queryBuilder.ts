@@ -76,7 +76,7 @@ export function buildQueryPlan(evidence: Evidence): QueryPlan {
   push(sourceEntityQuery);
 
   const nameVariants = expandPlaceNameVariants(placeNameHint);
-  const cityHint = evidence.cityState?.city ?? evidence.address?.city ?? null;
+  const cityHint = evidence.cityState?.city ?? evidence.address?.city ?? evidence.captionGeography?.country ?? null;
   const namesToTry = nameVariants.length > 0 ? nameVariants : [null];
   for (const nameVariant of namesToTry) {
     const subQueries = buildCleanPlacesQueries({
@@ -96,7 +96,12 @@ export function buildQueryPlan(evidence: Evidence): QueryPlan {
       allowGenericCaptionSeed: hasIndependentCaptionSeedEvidence,
       max: 6,
     });
-    for (const q of subQueries) push(q);
+    for (const q of subQueries) {
+      const country = evidence.captionGeography?.country;
+      push(country && !q.toLocaleLowerCase().includes(country.toLocaleLowerCase())
+        ? `${q} ${country}`
+        : q);
+    }
   }
 
   return { queries, placeNameHint, hasExplicitPlaceEvidence };

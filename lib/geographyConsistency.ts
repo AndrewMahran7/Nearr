@@ -3,6 +3,7 @@ import {
   geographicFieldsFromLabel,
   haversineDistanceKm,
   normalizeResolutionName,
+  countryCodeForContext,
   type GeoPoint,
 } from './contextAwarePlacesResolution.ts';
 
@@ -133,6 +134,44 @@ export function sourceGeographyFromTaggedLocation(args: {
       .filter((value): value is string => !!value)
       .slice(0, 4),
   };
+}
+
+/**
+ * Extract only explicit locative references to a recognized country. This is
+ * intentionally narrower than general NER: a country adjective or unrelated
+ * capitalized word is not enough. Platform tags still win at the call site.
+ */
+export function sourceGeographyFromCaptionText(
+  captionText: string | null | undefined,
+): SourceGeographyEvidence | null {
+  const text = bounded(captionText, 4_000);
+  if (!text) return null;
+  const words = [...text.matchAll(/[\p{L}][\p{L}'.-]*/gu)];
+  for (let start = 0; start < words.length; start += 1) {
+    for (let size = Math.min(4, words.length - start); size >= 1; size -= 1) {
+      const selected = words.slice(start, start + size);
+      const label = selected.map((entry) => entry[0]).join(' ');
+      if (!countryCodeForContext(label)) continue;
+      const offset = selected[0]!.index ?? 0;
+      const prefix = text.slice(Math.max(0, offset - 36), offset);
+      if (!/(?:^|\b)(?:in|to|from|visit(?:ed|ing)?|arriv(?:e|ed|ing)\s+in|made\s+it\s+to)\s*$/iu.test(prefix)) {
+        continue;
+      }
+      return {
+        version: GEOGRAPHY_CONSISTENCY_POLICY_VERSION,
+        kind: 'explicit_caption_place',
+        strength: 'strong',
+        scope: 'country',
+        label,
+        locality: null,
+        region: null,
+        country: label,
+        coordinates: null,
+        provenance: ['caption_locative_country', 'country_dictionary_match'],
+      };
+    }
+  }
+  return null;
 }
 
 export function parseSourceGeography(raw: unknown): SourceGeographyEvidence | null {

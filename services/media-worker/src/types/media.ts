@@ -200,6 +200,8 @@ export type MediaTask = {
   retry_cycles?: number;
   /** Bounded place-specific observations retained across retries. Never raw media. */
   evidence_snapshot?: unknown;
+  /** Recognition source geography is separate from AI-note evidence arrays. */
+  source_geography?: unknown;
   /** True once any attempt acquired usable media/text. */
   media_acquired_once?: boolean;
   frame_snapshot?: unknown;

@@ -29,6 +29,7 @@ import {
 import { isGenericAddressCard } from '../places/genericAddressCard.ts';
 import { compactNameMatches } from '../../../../lib/shareAgent/recoveryHints.ts';
 import { isPlatformNoiseName } from '../../../../lib/shareAgent/platformNoise.ts';
+import { roleAllowsStrongPlaceNameEvidence } from '../../../../lib/entityRolePolicy.ts';
 
 export type ScoredCandidate = {
   candidate: PlacesCandidate;
@@ -101,9 +102,21 @@ export function scoreCandidates(
       reasons.push('locality_like_type_penalty');
     }
 
-    // Name match.
+    // Name match. Account/name equality proves place identity only when the
+    // entity role is LOCATION/VENUE, or independent address/location evidence
+    // corroborates it. A brand, creator, product, event, or bare ambiguous tag
+    // may remain a low-ranked lead but cannot manufacture a High match.
+    const independentPlaceSupport = !!evidence.address || !!evidence.taggedLocation ||
+      evidence.venueNameHints.some((hint) => !evidence.venueNameHintsFromHandle.includes(hint));
+    const strongNameEvidenceAllowed = independentPlaceSupport ||
+      roleAllowsStrongPlaceNameEvidence(evidence.placeNameRole);
     if (placeNameHint) {
-      if (compactNameMatches(candidate.name, placeNameHint)) {
+      if (!strongNameEvidenceAllowed) {
+        score -= evidence.placeNameRole === 'AMBIGUOUS' ? 20 : 35;
+        reasons.push(evidence.placeNameRole === 'AMBIGUOUS'
+          ? 'ambiguous_entity_text_only'
+          : 'non_location_entity_text_only');
+      } else if (compactNameMatches(candidate.name, placeNameHint)) {
         score += 30;
         reasons.push('compact_name_match');
       } else if (hasStrongNameMatch(candidate.name, placeNameHint)) {
@@ -113,7 +126,7 @@ export function scoreCandidates(
         score += 10;
         reasons.push('meaningful_name_match');
       }
-      score += nameOverlapScore(candidate.name, placeNameHint) * 6;
+      if (strongNameEvidenceAllowed) score += nameOverlapScore(candidate.name, placeNameHint) * 6;
     }
 
     // Generic-address-card hard demotion. Only meaningful when

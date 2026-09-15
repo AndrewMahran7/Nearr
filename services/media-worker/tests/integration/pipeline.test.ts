@@ -92,7 +92,7 @@ test('FFmpeg pipeline over synthetic media', async (t) => {
   }
 
   const work = await mkdtemp(path.join(tmpdir(), 'nearr-media-itest-'));
-  let media;
+  let media: Awaited<ReturnType<typeof generateSyntheticMedia>>;
   try {
     media = await generateSyntheticMedia(work);
   } catch {

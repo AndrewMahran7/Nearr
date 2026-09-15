@@ -68,7 +68,7 @@ const allMulti = note({
 });
 assert.equal(allMulti.title, 'We found all 3 places');
 assert.equal(allMulti.resultClass, 'multi_place_complete');
-assert.deepEqual(routeShareJobNotification(allMulti.data), { kind: 'saved_group', savedPlaceIds: ['s1', 's2', 's3'] });
+assert.deepEqual(routeShareJobNotification(allMulti.data), { kind: 'queue_item', jobId: 'job-1' });
 
 const partialMulti = note({
   multiPlace: { totalCount: 3, savedCount: 2, unresolvedCandidateGroupCount: 1 },

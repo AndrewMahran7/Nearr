@@ -72,7 +72,7 @@ assert.deepEqual(
     savedPlaceId: 'sp-1',
     savedPlaceIds: ['sp-1', 'sp-2', 'sp-2'],
   }),
-  { kind: 'saved_group', savedPlaceIds: ['sp-1', 'sp-2'] },
+  { kind: 'share_job', jobId: 'job-multi' },
 );
 
 // H. Deleted saved-place data is resolved locally by the canonical map owner.

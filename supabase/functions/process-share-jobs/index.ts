@@ -54,6 +54,7 @@ import { buildShareJobCandidatePayload, normalizeEvidenceFrames } from '../../..
 import {
   evaluateGeographyAutoSave,
   sourceGeographyFromExtractionPayload,
+  sourceGeographyFromCaptionText,
   sourceGeographyFromTaggedLocation,
   sourceGeographyLabel,
 } from '../../../lib/geographyConsistency.ts';
@@ -250,6 +251,34 @@ function truncate(s: string | null | undefined, max = 300): string {
   return s.length > max ? `${s.slice(0, max)}…` : s;
 }
 
+type RecognitionStageTimingInput = {
+  jobId: string;
+  stage: string;
+  startedMs: number;
+  attempt?: number;
+  provider?: string | null;
+  outcome: 'success' | 'failure' | 'skipped';
+  timeout?: boolean;
+  retryReason?: string | null;
+};
+
+function logRecognitionStageTiming(input: RecognitionStageTimingInput): void {
+  const completedMs = Date.now();
+  console.log(JSON.stringify({
+    event: 'recognition_stage_timing',
+    job_id: input.jobId,
+    stage: input.stage,
+    started_at: new Date(input.startedMs).toISOString(),
+    completed_at: new Date(completedMs).toISOString(),
+    duration_ms: Math.max(0, completedMs - input.startedMs),
+    attempt: input.attempt ?? 1,
+    provider: input.provider ?? null,
+    outcome: input.outcome,
+    timeout: input.timeout === true,
+    retry_reason: input.retryReason ?? null,
+  }));
+}
+
 function isMultiPlaceCachePayload(value: unknown): boolean {
   if (!value || typeof value !== 'object') return false;
   const payload = value as Record<string, unknown>;
@@ -259,6 +288,9 @@ function isMultiPlaceCachePayload(value: unknown): boolean {
 }
 
 function safeCandidate(c: any, aiNote: string | null = null) {
+  const roleLimited = Array.isArray(c.reasons) && c.reasons.some((reason: unknown) =>
+    reason === 'ambiguous_entity_text_only' || reason === 'non_location_entity_text_only'
+  );
   return {
     googlePlaceId: c.googlePlaceId,
     name: c.name,
@@ -278,6 +310,9 @@ function safeCandidate(c: any, aiNote: string | null = null) {
       : null,
     evidence: Array.isArray(c.evidence) ? c.evidence.filter((value: unknown) => typeof value === 'string').slice(0, 12) : [],
     reasons: Array.isArray(c.reasons) ? c.reasons.filter((value: unknown) => typeof value === 'string').slice(0, 12) : [],
+    matchStrength: roleLimited ? 'low' : (['high', 'medium', 'low'].includes(c.matchStrength) ? c.matchStrength : null),
+    discoveryOnly: roleLimited || c.discoveryOnly === true,
+    provenance: roleLimited ? { identityEvidence: [] } : c.provenance ?? null,
     contextReason: typeof c.contextReason === 'string' ? c.contextReason : null,
     contextLabel: typeof c.contextLabel === 'string' ? c.contextLabel : null,
     distanceKm: typeof c.distanceKm === 'number' && Number.isFinite(c.distanceKm)
@@ -1026,17 +1061,27 @@ async function handleProcessingError(admin: any, job: any, err: unknown): Promis
   const message = truncate(err instanceof Error ? err.message : String(err));
   const attempts = typeof job.attempts === 'number' ? job.attempts : 1;
   const maxAttempts = typeof job.max_attempts === 'number' ? job.max_attempts : 5;
+  const permanentContractError = /^enqueue_media_task_failed:/i.test(message) &&
+    /(?:not[- ]null|violates not-null|check constraint|foreign key|invalid input syntax|column .* does not exist)/i.test(message);
   await releaseRecognition(admin, job.recognition_identity_key, job.id);
 
-  if (attempts >= maxAttempts) {
+  if (permanentContractError || attempts >= maxAttempts) {
+    logRecognitionStageTiming({
+      jobId: job.id,
+      stage: 'processing_error_classification',
+      startedMs: Date.now(),
+      attempt: attempts,
+      outcome: 'failure',
+      retryReason: permanentContractError ? 'permanent_schema_contract' : 'attempts_exhausted',
+    });
     await finalize(
       admin,
       job,
       {
         status: 'failed',
         decision: 'failed',
-        failure_reason: 'processing_error',
-        failure_code: 'processing_error',
+        failure_reason: permanentContractError ? 'processing_contract_error' : 'processing_error',
+        failure_code: permanentContractError ? 'processing_contract_error' : 'processing_error',
         failure_category: 'technical_failure',
         analysis_attempted: false,
         last_error: message,
@@ -1046,7 +1091,7 @@ async function handleProcessingError(admin: any, job: any, err: unknown): Promis
         jobId: job.id,
         status: 'failed',
         failureCategory: 'technical_failure',
-        failureCode: 'processing_error',
+        failureCode: permanentContractError ? 'processing_contract_error' : 'processing_error',
         analysisAttempted: false,
         reviewMode: 'manual',
       }),
@@ -1150,6 +1195,7 @@ async function enqueueMediaTask(
   sourceUrl: string,
   options: { parkParent?: boolean; parkPatch?: Record<string, unknown> } = {},
 ): Promise<void> {
+  const enqueueStartedMs = Date.now();
   const sourceGeography = sourceGeographyFromExtractionPayload(options.parkPatch?.extraction_payload);
   // Persist the best metadata review contract before the media task can run.
   // A failed media lookup may enrich this state, but must never erase known
@@ -1170,12 +1216,30 @@ async function enqueueMediaTask(
     platform,
     status: 'queued',
     progress_stage: 'queued',
-    evidence_snapshot: sourceGeography ? { sourceGeography } : null,
+    evidence_snapshot: [],
+    source_geography: sourceGeography,
   });
   // A concurrent insert (unique share_job_id) is fine — one task per job.
   if (insErr && !/duplicate key|unique|23505/i.test(insErr.message ?? '')) {
+    logRecognitionStageTiming({
+      jobId: job.id,
+      stage: 'media_task_enqueue',
+      startedMs: enqueueStartedMs,
+      attempt: Number(job.attempts) || 1,
+      provider: 'supabase',
+      outcome: 'failure',
+      retryReason: 'database_insert',
+    });
     throw new Error(`enqueue_media_task_failed: ${insErr.message}`);
   }
+  logRecognitionStageTiming({
+    jobId: job.id,
+    stage: 'media_task_enqueue',
+    startedMs: enqueueStartedMs,
+    attempt: Number(job.attempts) || 1,
+    provider: 'supabase',
+    outcome: 'success',
+  });
   // Park the parent WITHOUT a lease. claim_share_jobs only reclaims a
   // processing_metadata row when locked_until IS NOT NULL and in the past, so a
   // NULL lease means the metadata claim NEVER steals it. Bounded recovery is
@@ -4227,7 +4291,17 @@ async function processOne(
     return;
   }
 
+  const metadataStartedMs = Date.now();
   const meta = await fetchPostMetadata(requestUrl, platform);
+  logRecognitionStageTiming({
+    jobId: job.id,
+    stage: 'metadata_acquisition',
+    startedMs: metadataStartedMs,
+    attempt: Number(job.attempts) || 1,
+    provider: platform,
+    outcome: meta.ok ? 'success' : 'failure',
+    retryReason: meta.ok ? null : meta.reason,
+  });
   if (!meta.ok) {
     if (!policy.readsEnabled) {
       const freshFlags = effectiveMediaFlags(readMediaFlags(), job.user_id);
@@ -4420,6 +4494,7 @@ async function processOne(
       location: taggedLocation?.placeName ?? taggedLocation?.address ?? taggedLocation?.rawText ?? null,
     }),
   );
+  const resolutionStartedMs = Date.now();
   const evidence = extractEvidence({
     platform,
     title,
@@ -4429,6 +4504,27 @@ async function processOne(
     creatorName: metadataSourceMetadata?.creatorName ?? null,
   });
   const result = await resolveSharedPlace({ evidence, env });
+  logRecognitionStageTiming({
+    jobId: job.id,
+    stage: 'metadata_entity_and_places_resolution',
+    startedMs: resolutionStartedMs,
+    attempt: Number(job.attempts) || 1,
+    provider: 'google_places',
+    outcome: result.decision === 'failed' ? 'failure' : 'success',
+    retryReason: result.decision === 'failed' ? result.failureReason ?? 'resolver_failed' : null,
+  });
+  console.log(JSON.stringify({
+    event: 'recognition_entity_roles',
+    job_id: job.id,
+    policy_version: 'recognition-entity-role-2026-09-14.v1',
+    roles: (evidence.entityRoles ?? []).reduce((counts: Record<string, number>, entity: any) => {
+      counts[entity.role] = (counts[entity.role] ?? 0) + 1;
+      return counts;
+    }, {}),
+    place_name_role: evidence.placeNameRole,
+    source_geography_kind: evidence.captionGeography?.kind ?? null,
+    source_geography_country: evidence.captionGeography?.country ?? null,
+  }));
 
   // Enforce the user-facing single-option invariant before routing. Media
   // enrichment is scheduled separately after a successful save.
@@ -4506,7 +4602,7 @@ async function processOne(
     taggedLocation,
     granularity: (result.diagnostics as any)?.sourceLocationTagGranularity ?? null,
     resolvedCandidate: result.candidates[0] ?? null,
-  });
+  }) ?? sourceGeographyFromCaptionText(evidence.captionText);
 
   const extractionPayload = withRetainedSourceMetadata(
     job.extraction_payload,

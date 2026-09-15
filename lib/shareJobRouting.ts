@@ -168,11 +168,13 @@ export function routeShareJobNotification(
   const savedPlaceIds = ids(data?.savedPlaceIds);
   const googlePlaceId = str(data?.googlePlaceId);
   const outcome = str(data?.outcome);
+  // A delivered payload is a snapshot. Modern notifications carry jobId, so
+  // always fetch the job's current durable outcome before presenting it.
+  if (jobId) return { kind: 'queue_item', jobId };
   // Terminal success with a job id opens its dedicated saved-result detail.
   // Legacy payloads without a job id retain their direct-to-map fallback.
   if (type === 'share_job_completed' || outcome === 'completed' || outcome === 'already_saved') {
     if (savedPlaceIds.length > 1) return { kind: 'saved_group', savedPlaceIds };
-    if (jobId) return { kind: 'queue_item', jobId };
     if (savedPlaceId) {
       // `googlePlaceId` (when the server includes it) is a stable fallback so
       // the map can still open the existing place if the saved_places row id
@@ -187,7 +189,6 @@ export function routeShareJobNotification(
 
   // Awaiting user action → the queue item.
   if (type === 'share_job_needs_help') {
-    if (jobId) return { kind: 'queue_item', jobId };
     return { kind: 'queue_root' };
   }
 

@@ -24,6 +24,16 @@ import { looksLikeRoundupPost } from './roundupDetection.ts';
 import type { ExtractedHandles } from './handleExtraction.ts';
 import type { TaggedLocationSignal } from './taggedLocation.ts';
 import type { SourcePlatform } from '../types.ts';
+import {
+  classifyTaggedAccounts,
+  roleForTaggedHandle,
+  type RecognitionEntity,
+  type RecognitionEntityRole,
+} from '../../../../lib/entityRolePolicy.ts';
+import {
+  sourceGeographyFromCaptionText,
+  type SourceGeographyEvidence,
+} from '../../../../lib/geographyConsistency.ts';
 
 export type Evidence = {
   platform: SourcePlatform;
@@ -60,6 +70,13 @@ export type Evidence = {
   /** Corroborated first-party business/place identity and its relationship to
    * this post. A creator identity alone remains weak and cannot seed a save. */
   explicitSourceEntity?: ExplicitSourceEntity | null;
+  /** Role attribution for creator/tagged accounts. Bare tags remain ambiguous
+   * until a caption establishes a venue/person/brand/product/event relation. */
+  entityRoles?: RecognitionEntity[];
+  /** Role of the name that will seed the text-search ladder. */
+  placeNameRole?: RecognitionEntityRole | null;
+  /** Explicit caption geography, lower priority than a platform location tag. */
+  captionGeography?: SourceGeographyEvidence | null;
   /** Atomic evidence keys (subset of EvidenceKey from
    *  lib/shareAgent/types.ts) for the safety / decision policy. */
   keys: string[];
@@ -97,6 +114,11 @@ export function extractEvidence(args: {
   // Hints traceable to an owner-asserted @handle. Kept as a parallel list so
   // the existing `venueNameHints` contract and ordering are untouched.
   const venueNameHintsFromHandle: string[] = [];
+  const entityRoles = classifyTaggedAccounts({
+    captionText,
+    posterHandle: args.handles.posterHandle,
+    taggedHandles: args.handles.taggedHandles,
+  });
   // Hint priority (high precision first):
   //   1. extractCaptionVenueHints  (📍 / "Name, City" patterns)
   //      with known-city false positives filtered out.
@@ -180,6 +202,18 @@ export function extractEvidence(args: {
     isRoundup,
   });
   if (explicitSourceEntity?.strength === 'strong') keys.push('explicit_source_entity');
+  const firstHint = venueNameHints[0] ?? null;
+  const firstHandle = args.handles.venueHandles[0] ?? null;
+  const placeNameRole: RecognitionEntityRole | null = explicitSourceEntity?.strength === 'strong'
+    ? 'VENUE'
+    : address?.venue || (firstHint && !venueNameHintsFromHandle.includes(firstHint))
+      ? 'VENUE'
+      : firstHandle
+        ? roleForTaggedHandle(entityRoles, firstHandle)
+        : null;
+  const captionGeography = sourceGeographyFromCaptionText(captionText);
+  if (captionGeography) keys.push('caption_explicit_geography');
+  if (placeNameRole) keys.push(`entity_role_${placeNameRole.toLowerCase()}`);
 
   return {
     platform: args.platform,
@@ -195,6 +229,9 @@ export function extractEvidence(args: {
     isRoundup,
     taggedLocation,
     explicitSourceEntity,
+    entityRoles,
+    placeNameRole,
+    captionGeography,
     keys,
   };
 }

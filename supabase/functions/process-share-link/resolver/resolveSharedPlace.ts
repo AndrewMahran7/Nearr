@@ -839,10 +839,13 @@ export async function resolveSharedPlace(args: {
       mode: 'source',
       inferredLocality: evidence.cityState?.city ?? null,
       inferredRegion: evidence.cityState?.state ?? null,
+      inferredCountry: evidence.captionGeography?.country ?? null,
       inferredCoordinates: bias,
       regionConfidence: evidence.cityState || tagBias ? 'strong' : 'none',
       sourceEvidence: evidence.cityState
         ? ['creator_caption_geo']
+        : evidence.captionGeography
+          ? ['creator_caption_geo']
         : tagBias
           ? ['exact_source_evidence']
           : [],

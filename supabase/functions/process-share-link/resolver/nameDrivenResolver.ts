@@ -596,6 +596,14 @@ export function scoreMentionCandidate(
     reasons.push('weak_generic_name_match');
   }
 
+  // A social-account attribution is not physical-place evidence. Preserve it
+  // as a weak lead, but require an independent spoken/visual/address/location
+  // observation before name equality can verify the business.
+  if (mention.creatorHandleEvidenceOnly === true) {
+    score -= 55;
+    reasons.push('non_location_entity_text_only');
+  }
+
   // State consistency.
   if (opts.expectedState) {
     const candState = extractStateFromFormattedAddress(candidate.formattedAddress ?? null);

@@ -80,7 +80,7 @@ type AiNoteTarget = {
 
 function retainedSourceGeographyLabel(snapshot: unknown): string | null {
   if (!snapshot || typeof snapshot !== 'object' || Array.isArray(snapshot)) return null;
-  const geography = (snapshot as Record<string, unknown>).sourceGeography;
+  const geography = (snapshot as Record<string, unknown>).sourceGeography ?? snapshot;
   if (!geography || typeof geography !== 'object' || Array.isArray(geography)) return null;
   const value = geography as Record<string, unknown>;
   const direct = typeof value.label === 'string' ? value.label.trim() : '';
@@ -307,8 +307,49 @@ function logFinalizeResult(
   });
 }
 
+async function measuredRecognitionStage<T>(
+  task: MediaTask,
+  stage: string,
+  provider: string | null,
+  run: () => Promise<T>,
+): Promise<T> {
+  const startedAt = Date.now();
+  try {
+    const value = await run();
+    log.info('recognition_stage_timing', {
+      job_id: task.share_job_id,
+      task_id: task.id,
+      stage,
+      started_at: new Date(startedAt).toISOString(),
+      completed_at: new Date().toISOString(),
+      duration_ms: Date.now() - startedAt,
+      attempt: task.attempts,
+      provider,
+      outcome: 'success',
+      timeout: false,
+      retry_reason: null,
+    });
+    return value;
+  } catch (error) {
+    log.info('recognition_stage_timing', {
+      job_id: task.share_job_id,
+      task_id: task.id,
+      stage,
+      started_at: new Date(startedAt).toISOString(),
+      completed_at: new Date().toISOString(),
+      duration_ms: Date.now() - startedAt,
+      attempt: task.attempts,
+      provider,
+      outcome: 'failure',
+      timeout: error instanceof Error && /abort|timeout/i.test(error.message),
+      retry_reason: error instanceof MediaError ? error.code : 'stage_error',
+    });
+    throw error;
+  }
+}
+
 export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<void> {
-  const retainedMetadataLocation = retainedSourceGeographyLabel(task.evidence_snapshot);
+  const retainedMetadataLocation = retainedSourceGeographyLabel(task.source_geography);
   const { cfg, client } = deps;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), cfg.jobTimeoutMs);
@@ -427,15 +468,16 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
       resolver = selectResolver(deps.resolvers, { platform: task.platform, url: parsedUrl });
     }
     if (!resolver) throw new MediaError('unsupported_platform', task.platform);
-    diagnostics.resolverName = resolver.name;
+    const selectedResolver = resolver;
+    diagnostics.resolverName = selectedResolver.name;
 
-    const media = await resolver.resolve({
+    const media = await measuredRecognitionStage(task, 'media_acquisition', selectedResolver.name, () => selectedResolver.resolve({
       jobId: task.share_job_id ?? task.id,
       sourceUrl: task.source_url,
       canonicalUrl: task.canonical_url ?? undefined,
       workDir: jobTemp.dir,
       signal: controller.signal,
-    });
+    }));
     warnings.push(...media.warnings);
     if (media.acquisition) {
       diagnostics.mediaAcquisitionProvider = media.acquisition.provider;
@@ -476,7 +518,7 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
     const sha = await sha256File(media.localFilePath);
     const persistedResolverName = media.acquisition?.provider === 'scrapecreators'
       ? `${task.platform}/scrapecreators`
-      : resolver.name;
+      : selectedResolver.name;
     diagnostics.resolverName = persistedResolverName;
     await client
       .from('share_media_tasks')
@@ -485,13 +527,17 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
 
     // 2. Inspect (ffprobe) + normalize only if required.
     await setProgress(client, task, 'inspecting_media');
-    const probe = await inspectMedia(cfg, media.localFilePath, controller.signal);
+    const inspected = await measuredRecognitionStage(task, 'media_inspection_and_normalization', 'ffmpeg', async () => {
+      const probe = await inspectMedia(cfg, media.localFilePath, controller.signal);
+      const playable = await normalizeMedia(cfg, media.localFilePath, probe, jobTemp.dir, controller.signal);
+      return { probe, playable };
+    });
+    const { probe, playable } = inspected;
     diagnostics.mediaDurationSeconds = probe.durationSeconds;
     await client
       .from('share_media_tasks')
       .update({ media_duration_seconds: probe.durationSeconds })
       .eq('id', task.id);
-    const playable = await normalizeMedia(cfg, media.localFilePath, probe, jobTemp.dir, controller.signal);
 
     // 3. Transcript hierarchy: (1) platform captions when the resolver
     //    already obtained them — skip paying for audio + speech-to-text
@@ -510,14 +556,16 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
       };
       await setProgress(client, task, 'transcribing_audio');
     } else {
-      const audioPath = await extractAudio(cfg, playable, probe, jobTemp.dir, controller.signal);
-      await setProgress(client, task, 'transcribing_audio');
-      transcript = await deps.transcription.transcribe({
-        audioPath,
-        hasAudio: probe.hasAudio,
-        signal: controller.signal,
-        sourceUrl: media.canonicalUrl,
-        platform: task.platform,
+      transcript = await measuredRecognitionStage(task, 'audio_extraction_and_transcription', cfg.transcriptionProvider, async () => {
+        const audioPath = await extractAudio(cfg, playable, probe, jobTemp.dir, controller.signal);
+        await setProgress(client, task, 'transcribing_audio');
+        return deps.transcription.transcribe({
+          audioPath,
+          hasAudio: probe.hasAudio,
+          signal: controller.signal,
+          sourceUrl: media.canonicalUrl,
+          platform: task.platform,
+        });
       });
     }
     diagnostics.transcriptionProvider = transcript.provider;
@@ -527,7 +575,8 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
 
     // 4. Frames + perceptual dedup.
     await setProgress(client, task, 'extracting_frames');
-    const rawFrames = await extractFrames(cfg, probe, playable, jobTemp.dir, controller.signal);
+    const rawFrames = await measuredRecognitionStage(task, 'frame_extraction', 'ffmpeg', () =>
+      extractFrames(cfg, probe, playable, jobTemp.dir, controller.signal));
     const frames = deduplicateFrames(rawFrames);
     diagnostics.framesExtracted = rawFrames.length;
     diagnostics.framesConsidered = frames.length;
@@ -535,7 +584,8 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
 
     // 5. Visible text (OCR provider; default noop → model reads frames).
     await setProgress(client, task, 'extracting_visible_text');
-    const ocr = deduplicateOcrSegments(await deps.ocr.extract({ frames, signal: controller.signal }));
+    const ocr = deduplicateOcrSegments(await measuredRecognitionStage(task, 'visible_text_extraction', cfg.ocrProvider, () =>
+      deps.ocr.extract({ frames, signal: controller.signal })));
     diagnostics.ocrSegmentCount = ocr.length;
 
     // 6. Analyze → propose structured place evidence.
@@ -707,7 +757,7 @@ export async function runMediaTask(deps: TaskDeps, task: MediaTask): Promise<voi
       }
       analysis = generation.analysis;
     } else {
-      analysis = await analyzeTarget(primaryContext);
+      analysis = await measuredRecognitionStage(task, 'model_analysis', cfg.analysisProvider, () => analyzeTarget(primaryContext));
       accumulateModelDiagnostics(diagnostics, analysis);
     }
     diagnostics.noteSceneScoped = primaryContext.sceneScoped;

@@ -351,9 +351,9 @@ test('17. policy permits one attempt maximum and excludes cancellation', async (
 
 test('18-19. successful fallback feeds the existing frames and recognition sequence', async () => {
   const worker = await readFile(new URL('../src/pipeline/runMediaTask.ts', import.meta.url), 'utf8');
-  const resolveAt = worker.indexOf('await resolver.resolve({');
-  const framesAt = worker.indexOf('await extractFrames(', resolveAt);
-  const recognitionAt = worker.indexOf('await deps.model.analyze(', framesAt);
+  const resolveAt = worker.indexOf("measuredRecognitionStage(task, 'media_acquisition'");
+  const framesAt = worker.indexOf("measuredRecognitionStage(task, 'frame_extraction'", resolveAt);
+  const recognitionAt = worker.indexOf("measuredRecognitionStage(task, 'model_analysis'", framesAt);
   assert.ok(resolveAt >= 0 && framesAt > resolveAt && recognitionAt > framesAt);
   assert.match(worker, /media\.acquisition\?\.provider === 'scrapecreators'/);
   assert.match(worker, /modelPipelineReached = true/);
