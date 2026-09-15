@@ -299,6 +299,7 @@
     "test:app-environment": "ts-node -P scripts/tsconfig.json scripts/testAppEnvironment.ts",
     "test:google-places-config": "ts-node -P scripts/tsconfig.json scripts/testGooglePlacesConfig.ts",
     "test:dev-db-guard": "ts-node -P scripts/tsconfig.json scripts/testDevDatabaseGuard.ts",
+    "test:dev-migration-history": "node scripts/testDevelopmentMigrationHistory.mjs",
     "dev:build": "node scripts/buildApp.mjs development",
     "dev:update": "node scripts/publishUpdate.mjs development",
     "dev:rollback": "node scripts/rollbackUpdate.mjs development",

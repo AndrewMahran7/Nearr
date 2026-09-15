@@ -25,7 +25,8 @@ const client = source('lib/monetizationClient.ts');
 const balanceHook = source('hooks/usePlaceFindBalance.ts');
 const detail = source('app/share-jobs/[jobId].tsx');
 const queue = source('app/share-jobs/index.tsx');
-const store = source('app/monetization.tsx');
+const storePath = path.resolve(process.cwd(), 'app/monetization.tsx');
+const storeExists = fs.existsSync(storePath);
 const settings = source('app/(tabs)/settings.tsx');
 const edgePolicy = source('supabase/functions/_shared/premiumRequests.ts');
 const monetizationEdge = source('supabase/functions/monetization/index.ts');
@@ -33,6 +34,9 @@ const processor = source('supabase/functions/process-share-jobs/index.ts');
 const premiumMigration = source('supabase/migrations/20260904000001_premium_request_monetization.sql');
 const normalMigration = source('supabase/migrations/20260903000001_place_find_monetization.sql');
 const workerPremium = source('services/media-worker/src/premium/premiumRecognitionAdapter.ts');
+const developmentSuspension = JSON.parse(
+  source('config/development-monetization-suspension.json'),
+) as { client: Record<string, boolean>; server: Record<string, boolean> };
 
 const requestGuard = monetizationEdge.indexOf('if (!premiumRequestsEnabled())');
 const walletCall = monetizationEdge.indexOf("admin.rpc('ensure_place_find_wallet'");
@@ -56,18 +60,18 @@ test('3. Production Premium eligibility may still compute', () => {
   assert.match(processor, /updatePatch\.premium_state = eligibility\.eligible \? 'eligible'/);
 });
 test('4. Production Premium CTA hidden', () => {
-  assert.match(detail, /premiumRequestsAvailable && !premiumOfferDismissed/);
-  assert.match(detail, /premiumRequestsAvailable && areaMatchIncomplete/);
+  assert.doesNotMatch(detail, /requestPremiumRecognition|premiumOfferDismissed/);
+  assert.match(detail, /areaMatchIncomplete/);
   assert.equal(premiumRequestsEnabledForEnvironment({ environment: 'production' }), false);
 });
 test('5. Production Premium offer event not emitted', () => {
   assert.match(processor, /premiumRequestsEnabled\(\)[\s\S]*?'premium_request_offered'[\s\S]*?'premium_eligible_while_suspended'/);
-  assert.match(detail, /if \(!premiumRequestsAvailable \|\| job\?\.premium_state !== 'eligible'/);
+  assert.doesNotMatch(detail, /premium_request_offered|requestPremiumRecognition/);
 });
 test('6. Production token balance and store entry hidden', () => {
   assert.match(client, /return premiumRequestsEnabled\(\) && monetizationMode\(\) !== 'disabled'/);
   assert.match(balanceHook, /const enabled = isMonetizationEnabled\(\)/);
-  assert.match(settings, /placeFindBalance\.enabled \?/);
+  assert.doesNotMatch(settings, /usePlaceFindBalance|placeFindBalance\.enabled/);
 });
 test('7. Direct Production Premium request rejected', () => {
   assert.match(monetizationEdge, /PREMIUM_REQUESTS_SUSPENDED_REASON }, 503/);
@@ -84,8 +88,8 @@ test('10. Rejection invokes zero Sol calls', () => {
   assert.ok(requestGuard >= 0 && requestGuard < premiumRpcCall);
   assert.match(workerPremium, /runPremiumRecognition\(/);
 });
-test('11. Stale Production token-store route is safe', () => {
-  assert.match(store, /if \(!premiumRequestsAvailable\)[\s\S]*premium-requests-suspended[\s\S]*Premium Requests are temporarily unavailable\.[\s\S]*>Done</);
+test('11. Stale token-store route is removed', () => {
+  assert.equal(storeExists, false);
 });
 test('12. Production zero-balance user still uses free Nearr', () => {
   const normalCreate = premiumMigration.match(/create or replace function public\.create_share_job_for_user[\s\S]*?end;\s*\$\$;/)?.[0] ?? '';
@@ -120,12 +124,12 @@ test('14. Production manual search still works', () => {
   assert.match(detail, /manualSearch/);
 });
 test('15. Existing completed Premium result still opens', () => {
-  assert.doesNotMatch(detail, /premiumRequestsAvailable[^\n]*premiumState === 'useful_result'/);
-  assert.match(detail, /premiumState === 'reserved' \|\| premiumState === 'processing'/);
+  assert.doesNotMatch(detail, /premiumState === 'useful_result'|requestPremiumRecognition/);
+  assert.match(detail, /getShareJobPrimaryResult/);
 });
-test('16. Existing processing Premium request can finish', () => {
-  assert.match(detail, /if \(premiumState === 'reserved' \|\| premiumState === 'processing'\)/);
-  assert.doesNotMatch(detail.match(/if \(premiumState === 'reserved'[\s\S]*?\n  }/)?.[0] ?? '', /premiumRequestsAvailable/);
+test('16. Existing processing Premium request can finish server-side', () => {
+  assert.match(workerPremium, /runPremiumRecognition\(/);
+  assert.match(processor, /premiumSettlement/);
 });
 test('17. Existing reservation consumes on useful result', () => {
   assert.match(processor, /p_action: premiumSettlement\.chargeable \? 'consume' : 'release'/);
@@ -145,29 +149,35 @@ test('21. Ledger history is preserved', () => {
   assert.match(normalMigration, /place_find_ledger/);
   assert.doesNotMatch([policy, clientPolicy, client, monetizationEdge, processor].join('\n'), /delete from public\.place_find_ledger|truncate[^\n]*place_find_ledger/i);
 });
-test('22. Development Premium CTA visible', () => {
-  assert.equal(premiumRequestsEnabledForEnvironment({ environment: 'development' }), true);
-  assert.match(detail, /Try Premium Request/);
+test('22. Development Premium CTA remains suspended', () => {
+  assert.equal(
+    premiumRequestsEnabledForEnvironment({ configured: 'false', environment: 'development' }),
+    false,
+  );
+  assert.doesNotMatch(detail, /requestPremiumRecognition|premiumOfferDismissed/);
+  assert.equal(developmentSuspension.client.EXPO_PUBLIC_PREMIUM_REQUESTS_ENABLED, false);
 });
-test('23. Development Premium initiation works', () => {
-  assert.equal(premiumRequestsEnabledForEnvironment({ configured: 'true', environment: 'development' }), true);
-  assert.match(monetizationEdge, /action === 'request_premium'/);
+test('23. Development Premium initiation is rejected before the RPC', () => {
+  assert.ok(requestGuard >= 0 && requestGuard < premiumRpcCall);
+  assert.equal(developmentSuspension.server.PREMIUM_REQUESTS_ENABLED, false);
 });
-test('24. Development reserves one token', () => {
-  assert.match(premiumMigration, /reserve_place_find_use\(p_user_id,p_job_id\)/);
-  assert.match(normalMigration, /available_uses=available_uses-1/);
+test('24. Development suspension reserves zero tokens', () => {
+  assert.ok(requestGuard >= 0 && requestGuard < walletCall && requestGuard < premiumRpcCall);
+  assert.equal(developmentSuspension.server.TOKEN_MONETIZATION_ENABLED, false);
 });
-test('25. Development Simple Sol still executes', () => {
+test('25. Historical in-flight Simple Sol code remains but new initiation is gated', () => {
   assert.match(workerPremium, /runPremiumRecognition\(/);
   assert.doesNotMatch(workerPremium, /PREMIUM_REQUESTS_ENABLED/);
+  assert.ok(requestGuard >= 0 && requestGuard < premiumRpcCall);
 });
-test('26. Development token store remains', () => {
-  assert.equal(premiumRequestsEnabledForEnvironment({ environment: 'development' }), true);
-  assert.match(store, /Nearr Tokens/);
+test('26. Development token store remains absent', () => {
+  assert.equal(storeExists, false);
+  assert.equal(developmentSuspension.client.EXPO_PUBLIC_MONETIZATION_ENABLED, false);
 });
-test('27. Development mock checkout unchanged', () => {
+test('27. Development mock checkout remains configured off', () => {
   assert.match(monetizationEdge, /MONETIZATION_DEV_MOCK_ENABLED/);
   assert.match(client, /monetizationMode\(\) !== 'dev_mock'/);
+  assert.equal(developmentSuspension.server.MONETIZATION_DEV_MOCK_ENABLED, false);
 });
 test('28. Re-enable flag restores offer', () => {
   assert.equal(premiumRequestsEnabledForEnvironment({ configured: 'true', environment: 'production' }), true);

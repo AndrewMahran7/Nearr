@@ -31,7 +31,14 @@
 import { readdirSync } from 'node:fs';
 import path from 'node:path';
 
-import { runCli } from './lib/cliRunner.js';
+import { captureCli, runCli } from './lib/cliRunner.js';
+import {
+  assertRemoteHistoryKnown,
+  assertRequiredLocalMigrations,
+  inventoryLocalMigrations,
+  parseSupabaseMigrationList,
+  readDevelopmentHistoryConfig,
+} from './lib/migrationHistory.mjs';
 import { assertProductionSource } from './lib/productionSource.mjs';
 
 import {
@@ -92,6 +99,15 @@ const migrationsDir = path.join(REPO_ROOT, 'supabase', 'migrations');
 const migrations = readdirSync(migrationsDir)
   .filter((f) => f.endsWith('.sql'))
   .sort();
+const localHistory = inventoryLocalMigrations(migrationsDir);
+const developmentHistory = production
+  ? null
+  : readDevelopmentHistoryConfig(
+      path.join(REPO_ROOT, 'config', 'development-migration-history.json'),
+    );
+if (developmentHistory) {
+  assertRequiredLocalMigrations(localHistory, developmentHistory.requiredAppliedMigrations);
+}
 
 console.log(`${production ? 'PRODUCTION' : 'Development'} database push`);
 console.log(`  target ref   ${describeRef(projectRef)}`);
@@ -106,6 +122,29 @@ if (!confirmed) {
   );
   process.exit(0);
 }
+
+// Before a write-capable push, compare the linked registry to local source.
+// A remote-only version is provenance drift; a missing required-applied Dev
+// version would replay historical DDL/data. Both conditions fail closed.
+let migrationList;
+try {
+  migrationList = captureCli('supabase', ['migration', 'list', '--linked'], { cwd: REPO_ROOT });
+} catch (error) {
+  fail(`Could not verify remote migration history: ${error instanceof Error ? error.message : error}`);
+}
+const remoteVersions = parseSupabaseMigrationList(migrationList);
+let pendingVersions;
+try {
+  pendingVersions = assertRemoteHistoryKnown(
+    localHistory,
+    remoteVersions,
+    developmentHistory?.requiredAppliedMigrations ?? [],
+  );
+} catch (error) {
+  fail(`REFUSING migration push: ${error instanceof Error ? error.message : error}`);
+}
+console.log(`  remote known ${remoteVersions.length} applied migration(s)`);
+console.log(`  pending      ${pendingVersions.join(', ') || '(none)'}`);
 
 const wrapperFlags = new Set(['--yes', '--production']);
 const passthrough = argv.filter(

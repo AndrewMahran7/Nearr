@@ -18,6 +18,9 @@ const migration = [
   read('supabase/migrations/20260906000006_recognition_revalidation_failure_quarantine.sql'),
   read('supabase/migrations/20260906000007_recognition_revalidation_failure_quarantine_repair.sql'),
 ].join('\n');
+const canonicalDevelopment = read(
+  'supabase/migrations/20260909000001_canonical_development_recognition_baseline.sql',
+);
 const cache = read('supabase/functions/process-share-jobs/recognitionCache.ts');
 const worker = read('supabase/functions/process-share-jobs/index.ts');
 const createJob = read('supabase/functions/create-share-job/index.ts');
@@ -31,9 +34,16 @@ const tests: Array<[string, () => void]> = [
     assert.equal(RECOGNITION_CACHE_POLICY_VERSION, 'recognition-cache-v2.1');
     assert.equal(recognitionCacheDiagnostics(resolveRecognitionCachePolicy(() => undefined)).cacheReadUsed, false);
   }],
-  ['source-only reuse stays retired even when enabled', () => {
+  ['source-only reuse stays retired under the canonical Dev request contracts', () => {
     assert.equal(reuseSavedPlaceBySourceOnly(resolveRecognitionCachePolicy(() => 'true')), false);
-    assert.match(createJob, /p_force_rerun:\s*true/);
+    assert.match(createJob, /create_dev_qualification_share_job_for_user/);
+    assert.match(createJob, /create_onboarding_qa_share_job_for_user/);
+    assert.doesNotMatch(createJob, /p_force_rerun:\s*true/);
+    assert.match(canonicalDevelopment, /completed jobs are never reused for a new request key/);
+    assert.match(
+      canonicalDevelopment,
+      /each distinct request ID creates independent fresh-media work/,
+    );
   }],
   ['URL variants converge on provider content identity', () => {
     const plain = canonicalContentIdentity('https://www.tiktok.com/@near/video/7673607812571876630')!;

@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "environment": "development",
+  "supabaseProjectRef": "qnfxnmvxpjzfydgudtvs",
+  "requiredAppliedMigrations": [
+    {
+      "version": "20260910000001",
+      "name": "token_monetization_v1",
+      "filename": "20260910000001_token_monetization_v1.sql",
+      "sourceBranch": "feat/nearr-monetization-experiment-v2",
+      "sourceCommit": "42214ce467ff1ae5d64c69603d7818c153c9654b",
+      "blobSha": "ed1dc790c172c85114c70e6a03d3021a69552371",
+      "registryStatementCount": 56,
+      "registryStatementMd5": "b4e870db18311dc15af66a972318d0f8"
+    },
+    {
+      "version": "20260910000002",
+      "name": "nearr_monetization_experiment_v2",
+      "filename": "20260910000002_nearr_monetization_experiment_v2.sql",
+      "sourceBranch": "feat/nearr-monetization-experiment-v2",
+      "sourceCommit": "2159f11be2d4b2b794c5877893dcb164ef53ad15",
+      "blobSha": "9d39992749bd17d701da14f544b255c868ef929c",
+      "registryStatementCount": 61,
+      "registryStatementMd5": "17b0f1aeb724957109421a48766ecab8"
+    },
+    {
+      "version": "20260910000003",
+      "name": "nearr_monetization_dev_revenuecat_binding",
+      "filename": "20260910000003_nearr_monetization_dev_revenuecat_binding.sql",
+      "sourceBranch": "feat/nearr-monetization-experiment-v2",
+      "sourceCommit": "bdc7bb19c2caa2c190a19a369b16c985271f6806",
+      "blobSha": "987146b7436153be0be53cddb095718ce5a7fbf6",
+      "registryStatementCount": 1,
+      "registryStatementMd5": "c92f1e3d8e31381df9afd229044d28fb"
+    },
+    {
+      "version": "20260910000004",
+      "name": "nearr_pro_event_column_qualification",
+      "filename": "20260910000004_nearr_pro_event_column_qualification.sql",
+      "sourceBranch": "feat/nearr-monetization-experiment-v2",
+      "sourceCommit": "bdc7bb19c2caa2c190a19a369b16c985271f6806",
+      "blobSha": "f71cdd4b49421c22beb83e138dadb97620191dbc",
+      "registryStatementCount": 3,
+      "registryStatementMd5": "d6fec1ed75942172248b1a55475cbb8b"
+    },
+    {
+      "version": "20260910000005",
+      "name": "fix_create_share_job_status_ambiguity",
+      "filename": "20260910000005_fix_create_share_job_status_ambiguity.sql",
+      "sourceBranch": "fix/dev-monetization-rpc-status",
+      "sourceCommit": "75adec8afc527e2bc48d9115527ac032e6ab42f8",
+      "blobSha": "d480dc4946cdd04bf4845f9df3e355f1540b1e92",
+      "registryStatementCount": 7,
+      "registryStatementMd5": "580d9a08a59dde0ff6f56e47997d1d0e"
+    },
+    {
+      "version": "20260910000006",
+      "name": "onboarding_practice_entitlement",
+      "filename": "20260910000006_onboarding_practice_entitlement.sql",
+      "sourceBranch": "fix/onboarding-v2-hands-on-activation",
+      "sourceCommit": "12afff69f8fbcc538ba17ae3942190ff80813683",
+      "blobSha": "737e683f296276c302862952a9f076874584e1e8",
+      "registryStatementCount": 30,
+      "registryStatementMd5": "a25daa32d6fb1d754e76161d6b71ffc3"
+    },
+    {
+      "version": "20260910000007",
+      "name": "transfer_onboarding_practice_ownership",
+      "filename": "20260910000007_transfer_onboarding_practice_ownership.sql",
+      "sourceBranch": "fix/onboarding-v2-hands-on-activation",
+      "sourceCommit": "d30f0214a0be639b50d08f807a712a22b2c2c02a",
+      "blobSha": "b2b68036574ebfa7acce0d91ac21950cb5797d7d",
+      "registryStatementCount": 3,
+      "registryStatementMd5": "b3c64d3bb10c2a321837d3a49000d9c5"
+    }
+  ]
+}
