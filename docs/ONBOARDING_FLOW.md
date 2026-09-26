@@ -1,8 +1,10 @@
 # Nearr — First-Run / Onboarding Flow
 
-> Last updated: 2026-05-26
+> Last updated: 2026-09-25
 > Owner: Stage 0 stabilization
 > Scope: cold-start UX from fresh install through first saved place.
+
+> Current Development V2: Phase 1 is an offline authentic-video lesson ending on an auto-open fixture map card. Closing the card begins optional Phase 2 real sharing. The first screen also offers existing-account sign-in. See [ONBOARDING_V2_INTEGRATION.md](ONBOARDING_V2_INTEGRATION.md) and [the fixture audit](../ONBOARDING_FIXTURE_MEDIA_AUDIT.md).
 
 This document is the source of truth for what a brand-new Nearr user is
 supposed to see, where the state lives, and what we now do when something

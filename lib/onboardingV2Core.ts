@@ -116,6 +116,8 @@ export type OnboardingV2Stage =
   | 'tutorial_result_seen'
   | 'tutorial_reveal'
   | 'tutorial_celebration'
+  | 'fixture_map_payoff'
+  | 'phase2_intro'
   | 'first_magic_moment_complete'
   | 'why_nearr'
   | 'nearby_value'
@@ -149,6 +151,7 @@ const ONBOARDING_V2_STAGES = new Set<OnboardingV2Stage>([
   'tutorial_more_tapped', 'tutorial_nearr_selected', 'tutorial_favorite_added',
   'tutorial_processing', 'tutorial_result_seen', 'tutorial_external_video_opened',
   'tutorial_share_returned', 'tutorial_reveal', 'tutorial_celebration',
+  'fixture_map_payoff', 'phase2_intro',
   'first_magic_moment_complete', 'why_nearr', 'nearby_value', 'location_education',
   'location_background_education', 'notification_education', 'making_nearr_yours', 'growing_map',
   'account_required', 'auth_success', 'personalized_activation', 'activation_challenge',
@@ -444,6 +447,8 @@ export type OnboardingV2ResumeEligibility =
 
 const TUTORIAL_SAVE_REQUIRED_STAGES = new Set<OnboardingV2Stage>([
   'tutorial_celebration',
+  'fixture_map_payoff',
+  'phase2_intro',
   'first_magic_moment_complete',
   'why_nearr',
   'nearby_value',
@@ -1089,16 +1094,47 @@ export function resolveOnboardingTutorialResult(
       result.fixtureRevision !== fixture.revision || result.fixtureRole !== fixture.role ||
       !['tutorial_fixture', 'onboarding_scripted'].includes(result.resolutionSource) ||
       !result.savedPlaceId) return unchanged(state);
+  const scripted = result.resolutionSource === 'onboarding_scripted';
+  const tutorialSave: CompletedOnboardingSave = {
+    kind: 'tutorial',
+    contentId: fixture.contentId,
+    sourceUrl: result.sourceUrl,
+    normalizedSourceUrl: normalizeOnboardingSourceUrl(result.sourceUrl) ?? result.sourceUrl,
+    contentIdentity: { platform: fixture.platform, contentId: fixture.contentId.toLowerCase() },
+    savedPlaceId: result.savedPlaceId,
+    completedAt: now,
+  };
+  const startedMs = state.startedAt ? Date.parse(state.startedAt) : Number.NaN;
+  const elapsed = Number.isFinite(startedMs) ? Math.max(0, Date.parse(now) - startedMs) : null;
   return transition(state, {
-    stage: 'tutorial_reveal',
+    stage: scripted ? 'fixture_map_payoff' : 'tutorial_reveal',
     tutorialResult: result,
-    pendingShare: state.pendingShare ? { ...state.pendingShare, resultSeenAt: now } : null,
+    tutorialSave: scripted ? tutorialSave : state.tutorialSave,
+    firstMagicMomentCompletedAt: scripted ? (state.firstMagicMomentCompletedAt ?? now) : state.firstMagicMomentCompletedAt,
+    placeTourOpenedAt: scripted ? (state.placeTourOpenedAt ?? now) : state.placeTourOpenedAt,
+    placeTourStep: scripted ? 'found' : state.placeTourStep,
+    // The scripted save is terminal at this point. Do not carry its tutorial
+    // attempt into Phase 2, where it could intercept the user's first real
+    // share before an independent practice attempt is created.
+    pendingShare: scripted
+      ? null
+      : state.pendingShare
+        ? { ...state.pendingShare, resultSeenAt: now }
+        : null,
   }, now, [
     { name: 'onboarding_tutorial_fixture_resolved', properties: {
       fixture_id: fixture.id, fixture_role: fixture.role, fixture_platform: fixture.platform,
       resolution_source: result.resolutionSource,
     } },
     { name: 'onboarding_place_reveal_shown', properties: { fixture_id: fixture.id, resolution_source: result.resolutionSource } },
+    ...(scripted ? [
+      { name: 'onboarding_first_tutorial_save_completed', properties: {
+        fixture_id: fixture.id, fixture_role: fixture.role, fixture_platform: fixture.platform,
+        resolution_source: result.resolutionSource, time_to_first_save: elapsed, time_to_magic_moment: elapsed,
+      } },
+      { name: 'first_place_opened_after_signup', properties: { saved_place_id: result.savedPlaceId } },
+      { name: 'place_tour_started', properties: { saved_place_id: result.savedPlaceId } },
+    ] : []),
   ]);
 }
 
@@ -1952,11 +1988,50 @@ export function deferOnboardingPractice(
   state: OnboardingV2State,
   now: string,
 ): OnboardingTransition {
-  if (state.stage !== 'practice_ready' || !state.tutorialSave) return unchanged(state);
+  if (!['practice_ready', 'phase2_intro'].includes(state.stage) || !state.tutorialSave) return unchanged(state);
   return transition(state, {
     stage: state.behavioralCompletedAt ? 'onboarding_complete' : 'why_nearr',
     secondHalfStartedAt: state.secondHalfStartedAt ?? now,
   }, now, [{ name: 'onboarding_practice_deferred', properties: { fixture_id: state.practiceFixture?.id } }]);
+}
+
+/** Existing-account entry from Welcome has no anonymous owner to transfer. */
+export function bypassExistingUserFromWelcome(
+  state: OnboardingV2State,
+  userId: string,
+  now: string,
+): OnboardingTransition {
+  if (!userId || state.tutorialSave || state.independentSaves.length > 0) return unchanged(state);
+  if (!['not_started', 'overview'].includes(state.stage)) return unchanged(state);
+  return transition(state, {
+    cohort: 'existing_user_bypassed',
+    stage: 'graduated',
+    identityLifecycle: 'permanent_account',
+    boundUserId: userId,
+    permanentUserId: userId,
+    permanentAccountEstablished: true,
+    authCompletedAt: now,
+    graduationAcknowledgedAt: now,
+    pendingShare: null,
+  }, now, [{ name: 'onboarding_signin_completed', properties: { established_account: true, entry: 'welcome' } }]);
+}
+
+/** Enter the real share-extension boundary only after anonymous auth succeeds. */
+export function beginOnboardingRealPractice(
+  state: OnboardingV2State,
+  now: string,
+): OnboardingTransition {
+  if (
+    state.stage !== 'phase2_intro' ||
+    !state.tutorialSave ||
+    !['anonymous_active', 'permanent_account'].includes(state.identityLifecycle)
+  ) return unchanged(state);
+  return transition(state, {
+    stage: 'practice_ready',
+    practiceLaunchedAt: state.practiceLaunchedAt ?? now,
+    pendingShare: null,
+    lastFailure: null,
+  }, now, [{ name: 'practice_started', properties: { real_share_boundary: true } }]);
 }
 
 export function openExternalStarter(
@@ -2298,7 +2373,7 @@ export function openPlaceTour(
   savedPlaceId: string,
   now: string,
 ): OnboardingTransition {
-  if (state.stage !== 'place_tour' || state.tutorialSave?.savedPlaceId !== savedPlaceId) {
+  if (!['place_tour', 'fixture_map_payoff'].includes(state.stage) || state.tutorialSave?.savedPlaceId !== savedPlaceId) {
     return unchanged(state);
   }
   if (state.placeTourOpenedAt) return unchanged(state);
@@ -2339,13 +2414,19 @@ export function closePlaceTour(
   now: string,
   options: { phase1Only?: boolean } = {},
 ): OnboardingTransition {
-  if (state.stage !== 'place_tour' || state.tutorialSave?.savedPlaceId !== savedPlaceId) {
+  if (!['place_tour', 'fixture_map_payoff'].includes(state.stage) || state.tutorialSave?.savedPlaceId !== savedPlaceId) {
     return unchanged(state);
   }
   return transition(
     state,
     state.tutorialResult?.resolutionSource === 'onboarding_scripted'
-      ? { stage: 'first_magic_moment_complete', placeTourClosedAt: now, placeTourStep: null }
+      ? {
+          stage: 'phase2_intro',
+          placeTourClosedAt: now,
+          placeTourStep: null,
+          phase1CompletedAt: state.phase1CompletedAt ?? now,
+          practiceOfferedAt: state.practiceOfferedAt ?? now,
+        }
       : options.phase1Only
       ? {
           stage: 'phase1_complete',
@@ -2357,7 +2438,12 @@ export function closePlaceTour(
     now,
     [
       { name: 'place_tour_closed', properties: { saved_place_id: savedPlaceId } },
-      ...(options.phase1Only ? [{ name: 'onboarding_phase1_completed' }] : []),
+      ...((options.phase1Only || state.tutorialResult?.resolutionSource === 'onboarding_scripted')
+        ? [{ name: 'onboarding_phase1_completed' }]
+        : []),
+      ...(state.tutorialResult?.resolutionSource === 'onboarding_scripted'
+        ? [{ name: 'onboarding_practice_offered', properties: { fixture_id: state.tutorialFixture?.id } }]
+        : []),
     ],
   );
 }

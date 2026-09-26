@@ -1,10 +1,10 @@
-import { Image, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { NearrAppIcon } from '@/components/onboarding/demo';
 import { Phase1Colors } from '@/components/onboarding/v2/Phase1Visuals';
-import { offlineOnboardingAsset } from '@/onboarding/assets/offlineOnboardingAssets';
+import { OfflineFixtureVideo } from '@/components/onboarding/v2/OfflineFixtureVideo';
 import { offlineFixtureById } from '@/onboarding/fixtures/offlineOnboardingFixtures';
 import type { OnboardingTutorialFixture, OnboardingV2Stage } from '@/lib/onboardingV2Core';
 
@@ -41,7 +41,6 @@ export function ImmersiveGuidedSave({ stage, fixture, onBack, onAdvance }: Props
   const platformKey = fixture?.platform ?? 'instagram';
   const platform = fixture ? PLATFORM_LABELS[fixture.platform] : 'Instagram';
   const localFixture = offlineFixtureById(fixture?.id);
-  const source = localFixture ? offlineOnboardingAsset(localFixture.assetKey) : null;
   const sheetHeight = Math.min(510, Math.max(360, height * 0.56));
 
   return <View style={styles.root}>
@@ -49,7 +48,7 @@ export function ImmersiveGuidedSave({ stage, fixture, onBack, onAdvance }: Props
       <View style={[styles.progressFill, { width: `${PROGRESS[stage] * 100}%` }]} />
     </View>
     <View style={styles.sourceCard} accessibilityLabel={`Practice sharing the selected ${platform} post`}>
-      {source ? <Image source={source} style={StyleSheet.absoluteFill} resizeMode="cover" /> : <View style={styles.missingFrame}><Feather name="image" size={32} color="#FFFFFF" /></View>}
+      {localFixture ? <OfflineFixtureVideo assetKey={localFixture.assetKey} style={StyleSheet.absoluteFill} accessibilityLabel={`${platform} bundled practice video`} /> : <View style={styles.missingFrame}><Feather name="image" size={32} color="#FFFFFF" /></View>}
       <View style={styles.shade} />
       <View style={[styles.header, { top: insets.top + 18 }]}><View style={styles.practiceBadge}><Text style={styles.practiceBadgeText}>PRACTICE INSIDE NEARR</Text></View><Text style={styles.platformLabel}>{platform}</Text></View>
       <View style={styles.sourceAttribution}><Ionicons name={platformKey === 'instagram' ? 'logo-instagram' : platformKey === 'youtube' ? 'logo-youtube' : 'play-circle'} size={18} color="#FFFFFF" /><View style={styles.sourceCopy}><Text style={styles.sourceTitle}>A post worth saving</Text><Text style={styles.sourceMeta}>{fixture ? `Bundled ${platform} practice post` : 'Guided sharing practice'}</Text></View></View>

@@ -116,7 +116,7 @@ import { useOnboardingV2 } from '@/hooks/useOnboardingV2';
 import { trackEvent } from '@/lib/analytics';
 import {
   observeOnboardingV2Result,
-  observeOnboardingV2ShareReceived,
+  prepareOnboardingV2RealPracticeShare,
 } from '@/lib/onboardingV2';
 import { isExpectedOnboardingSource } from '@/lib/onboardingV2Core';
 import { logDebug, logInfo } from '@/lib/logger';
@@ -649,7 +649,7 @@ function LegacyShareScreen() {
     if (!incoming || !isLikelyUrl(incoming)) return;
     if (lastProcessedUrlRef.current === incoming) return;
     lastProcessedUrlRef.current = incoming;
-    void observeOnboardingV2ShareReceived(incoming);
+    void prepareOnboardingV2RealPracticeShare(incoming);
     logDebug('share', 'auto-running from incoming url param', incoming);
     // Cold/warm start from share extension (or deep link with ?url=...).
     void trackEvent('share_received', {

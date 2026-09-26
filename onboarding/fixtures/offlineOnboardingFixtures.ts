@@ -6,7 +6,7 @@ import type {
 } from '../../lib/onboardingV2Core';
 
 export type OfflineOnboardingCategory = 'outdoors' | 'food' | 'travel';
-export type OfflineOnboardingAssetKey = 'dorset_quarry' | 'food_cafe' | 'travel_town';
+export type OfflineOnboardingAssetKey = 'dorset_quarry' | 'mad_yolks' | 'hydra_old_town';
 
 export type OfflineOnboardingFixture = {
   id: string;
@@ -19,6 +19,10 @@ export type OfflineOnboardingFixture = {
   comments: readonly string[];
   shareSheetTitle: string;
   assetKey: OfflineOnboardingAssetKey;
+  provenance: {
+    sourceUrl: string;
+    sourceKind: 'nearr_development' | 'exact_place_external_fallback';
+  };
   place: {
     id: string;
     name: string;
@@ -78,8 +82,8 @@ const CATEGORY_CONTENT: Record<OfflineOnboardingCategory, {
       id: 'onboarding-place-dorset-quarry',
       name: 'Dorset Quarry',
       address: '1848 VT-30, Dorset, VT 05251',
-      latitude: 43.2496,
-      longitude: -73.0958,
+      latitude: 43.2359604,
+      longitude: -73.0834756,
       category: 'outdoors',
       typeLabel: 'Swimming hole',
       aiNote: 'A scenic former marble quarry known for clear water and a relaxed outdoor stop.',
@@ -89,15 +93,15 @@ const CATEGORY_CONTENT: Record<OfflineOnboardingCategory, {
     },
   },
   food: {
-    assetKey: 'food_cafe',
+    assetKey: 'mad_yolks',
     caption: 'The brunch plate people keep asking about: poached eggs, avocado toast, crispy potatoes, and a proper latte.',
     comments: ['The potatoes look perfect', 'Saving this for Sunday'],
     place: {
       id: 'onboarding-place-mad-yolks',
       name: 'Mad Yolks',
       address: '1411 Pacific Ave, Santa Cruz, CA 95060',
-      latitude: 36.9744,
-      longitude: -122.0308,
+      latitude: 36.9750378,
+      longitude: -122.0266371,
       category: 'food',
       typeLabel: 'Breakfast restaurant',
       aiNote: 'A casual downtown breakfast stop known for egg sandwiches, brunch plates, and coffee.',
@@ -107,7 +111,7 @@ const CATEGORY_CONTENT: Record<OfflineOnboardingCategory, {
     },
   },
   travel: {
-    assetKey: 'travel_town',
+    assetKey: 'hydra_old_town',
     caption: 'Stone lanes, sea views, and a sunset worth planning a whole afternoon around.',
     comments: ['This view belongs on the itinerary', 'Adding it to the trip map'],
     place: {
@@ -131,6 +135,21 @@ const SUPPORTED_PLATFORMS: Array<Exclude<OnboardingPlatform, 'other'>> = [
 ];
 const SUPPORTED_CATEGORIES: OfflineOnboardingCategory[] = ['outdoors', 'food', 'travel'];
 
+const PROVENANCE_BY_ASSET: Record<OfflineOnboardingAssetKey, OfflineOnboardingFixture['provenance']> = {
+  dorset_quarry: {
+    sourceUrl: 'https://www.instagram.com/reel/C9Z963muLHI/',
+    sourceKind: 'nearr_development',
+  },
+  mad_yolks: {
+    sourceUrl: 'https://www.instagram.com/p/C-BEtdnyGdR/',
+    sourceKind: 'nearr_development',
+  },
+  hydra_old_town: {
+    sourceUrl: 'https://www.youtube.com/watch?v=6e38Z0ErVoU',
+    sourceKind: 'exact_place_external_fallback',
+  },
+};
+
 export const OFFLINE_ONBOARDING_FIXTURES: readonly OfflineOnboardingFixture[] = SUPPORTED_PLATFORMS.flatMap(
   (platform) => SUPPORTED_CATEGORIES.map((category) => {
     const platformCopy = PLATFORM_COPY[platform];
@@ -147,6 +166,7 @@ export const OFFLINE_ONBOARDING_FIXTURES: readonly OfflineOnboardingFixture[] = 
       comments: categoryContent.comments,
       shareSheetTitle: platformCopy.shareSheetTitle,
       assetKey: categoryContent.assetKey,
+      provenance: PROVENANCE_BY_ASSET[categoryContent.assetKey],
       place: categoryContent.place,
     };
   }),

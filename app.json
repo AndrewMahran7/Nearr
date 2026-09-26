@@ -3,7 +3,7 @@
     "name": "Nearr",
     "slug": "nearr",
     "scheme": "nearr",
-    "version": "1.4.55",
+    "version": "1.4.56",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "icon": "./assets/icon.png",

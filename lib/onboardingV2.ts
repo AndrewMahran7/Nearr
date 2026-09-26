@@ -21,10 +21,12 @@ import {
   backOnboardingV2,
   beginOnboardingSharingRehearsal,
   beginOnboardingSecondHalf,
+  beginOnboardingRealPractice,
   beginOnboardingInAppTutorialResolution,
   beginPermanentAccountLink,
   bindAnonymousUser,
   bypassExistingUser,
+  bypassExistingUserFromWelcome,
   cancelPermanentAccountLink,
   completeOnboardingSecondHalf,
   continueOnboardingAfterMakingNearrYours,
@@ -45,6 +47,7 @@ import {
   deferOnboardingPractice,
   dismissPracticeRecovery,
   encodeOnboardingV2State,
+  extractOnboardingContentIdentity,
   failPendingSave,
   failOnboardingTutorialFixture,
   failOnboardingPracticeFixture,
@@ -56,6 +59,7 @@ import {
   observeOnboardingResult,
   observeOnboardingTutorialJob,
   observeWrongOnboardingTutorialJob,
+  normalizeOnboardingSourceUrl,
   onboardingV2SyncCredentialDecision,
   onboardingV2ResumeEligibility,
   openExternalStarter,
@@ -479,6 +483,10 @@ export function deferOnboardingV2Practice(): Promise<OnboardingV2State> {
   return applyTransition(deferOnboardingPractice);
 }
 
+export function beginOnboardingV2RealPractice(): Promise<OnboardingV2State> {
+  return applyTransition(beginOnboardingRealPractice);
+}
+
 export function beginOnboardingV2SharingRehearsal(): Promise<OnboardingV2State> {
   return applyTransition(beginOnboardingSharingRehearsal);
 }
@@ -652,6 +660,10 @@ export function bypassOnboardingV2ForExistingUser(userId: string): Promise<Onboa
   return applyTransition((state, now) => bypassExistingUser(state, userId, now));
 }
 
+export function bypassOnboardingV2ForExistingUserFromWelcome(userId: string): Promise<OnboardingV2State> {
+  return applyTransition((state, now) => bypassExistingUserFromWelcome(state, userId, now));
+}
+
 export async function shouldResumeOnboardingV2(userId: string): Promise<boolean> {
   const state = await getOnboardingV2State();
   return onboardingV2ResumeEligibility(state, {
@@ -728,6 +740,33 @@ export function replaceOnboardingV2TutorialContent(contentId: string): Promise<O
 
 export function observeOnboardingV2ShareReceived(sourceUrl: string): Promise<OnboardingV2State> {
   return applyTransition((state, now) => receiveSharedSource(state, sourceUrl, now));
+}
+
+/**
+ * Attach an arbitrary real share to Phase 2. Unlike Phase 1, this deliberately
+ * crosses into the normal share pipeline and accepts the user's own URL.
+ */
+export function prepareOnboardingV2RealPracticeShare(sourceUrl: string): Promise<OnboardingV2State> {
+  return applyTransition((state, now) => {
+    if (
+      state.pendingShare?.kind === 'independent_1' ||
+      state.pendingShare?.kind === 'independent_2'
+    ) return receiveSharedSource(state, sourceUrl, now);
+    if (state.stage !== 'practice_ready') return { state, changed: false, events: [] };
+    const normalized = normalizeOnboardingSourceUrl(sourceUrl);
+    if (!normalized) return { state, changed: false, events: [] };
+    const contentId = extractOnboardingContentIdentity(sourceUrl)?.contentId ?? normalized;
+    const slot = state.independentSaves.length;
+    const current = state.practiceContentIds[slot];
+    const selected = selectPracticeSource(state, contentId, now, !!current && current !== contentId);
+    const opened = openExternalStarter(selected.state, { contentId, sourceUrl }, now);
+    const received = receiveSharedSource(opened.state, sourceUrl, now);
+    return {
+      state: received.state,
+      changed: selected.changed || opened.changed || received.changed,
+      events: [...selected.events, ...opened.events, ...received.events],
+    };
+  });
 }
 
 export function observeOnboardingV2Result(

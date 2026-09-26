@@ -1,8 +1,20 @@
 # Onboarding V2 integration notes
 
+## 2026-09-25 Development architecture
+
+Phase 1 is now a deterministic local lesson. Platform/category selection resolves to an atomic bundled package (silent looping video, poster, place images, and matching place metadata). The scripted save opens an offline map payoff focused on the fixture with its card already open. `phase1CompletedAt` is written only when that card closes.
+
+Card close enters `phase2_intro`. “I’ll try this later” continues the approved second half without error. “Try with a real video” is the explicit network boundary: it establishes/reuses anonymous Supabase auth and hands an arbitrary user-shared URL to the existing Development share job, recognition, and save pipeline. Failure to establish the boundary leaves the intro visible and skippable. While Phase 2 is active, the scripted fixture is injected as a presentation-only map row; it never becomes a backend save and a real result cannot mutate it.
+
+The Welcome screen has a secondary existing-account sign-in action. A signed-in identity bypasses only when a `profiles` row exists and durable evidence predates the attempt (profile creation, an owned saved place, or completed onboarding session). A newly created OAuth identity is signed out and returned to Welcome with a clear setup message; the same identity can later complete normal signup/sign-in without a duplicate client insert.
+
+Provider names use nullable `profiles.first_name` and `profiles.last_name`. Only structured `given_name`/`family_name` (or Apple credential equivalents) are mapped; display names are never split. Merge policy is provider-wins for a changed, non-empty structured value. Missing/null values produce no column in the patch, preserving earlier Apple values. Names are not shown or required by onboarding.
+
+This revision adds the native `expo-av` playback module. It therefore requires a fresh Development client/runtime; it must not be published as an OTA to a binary that lacks the module.
+
 Onboarding V2 remains isolated behind `EXPO_PUBLIC_ONBOARDING_V2_ENABLED` and
-is off by default. This branch contains code and local Supabase artifacts only;
-it does not deploy or alter either Supabase project, Railway, or EAS.
+is off by default. The rollout target for this revision is Development only;
+Production Supabase, Railway, EAS channels, and users remain out of scope.
 
 ## Final architecture
 

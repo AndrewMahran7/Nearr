@@ -9,13 +9,13 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import * as AppleAuthentication from 'expo-apple-authentication';
 
 import { trackEvent } from '@/lib/analytics';
 import { recordOnboardingV2AuthFailed, recordOnboardingV2SignInStarted } from '@/lib/onboardingV2';
-import { isSupabaseConfigured } from '@/lib/supabase';
+import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 import { areDeveloperToolsVisible } from '@/lib/appEnvironment';
 import {
   beginPostAuthRouting,
@@ -62,6 +62,8 @@ import {
   OnboardingSizes,
 } from '@/components/onboarding';
 import { getPendingSharedPlaceIntent, type PendingSharedPlaceIntent } from '@/lib/sharedPlaceIntent';
+import { QUALIFIED_EXISTING_ACCOUNT_ROUTE, resolveExistingAccountSignIn } from '@/lib/existingAccountSignIn';
+import { persistNamesFromAuthUser } from '@/services/profileService';
 
 /**
  * Gate for the DEBUGGING-ONLY developer login panel.
@@ -106,6 +108,7 @@ const DEV_PASSWORD_LOGIN_ENABLED =
  */
 export default function AccountAuthScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ reason?: string }>();
   const { session } = useAuth();
   const { state: onboardingState } = useOnboardingV2();
   const anonymousOnboarding = session?.user.is_anonymous === true;
@@ -117,7 +120,11 @@ export default function AccountAuthScreen() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordVisible, setPasswordVisible] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(
+    params.reason === 'new_account'
+      ? 'This account still needs Nearr’s quick setup. Start there, then use the same sign-in.'
+      : null,
+  );
   const [appleAvailable, setAppleAvailable] = useState<boolean | null>(null);
   const [moreOptionsOpen, setMoreOptionsOpen] = useState(false);
   const [sharedPlaceIntent, setSharedPlaceIntent] = useState<PendingSharedPlaceIntent | null>(null);
@@ -240,6 +247,17 @@ export default function AccountAuthScreen() {
   async function completeAuthentication(userId: string, method = activeOperationRef.current ?? 'resume') {
     beginPostAuthRouting();
     try {
+      const current = await supabase.auth.getUser();
+      if (current.data.user?.id === userId) await persistNamesFromAuthUser(current.data.user);
+      const existing = await resolveExistingAccountSignIn(userId);
+      if (existing.kind === 'qualified') {
+        router.replace(QUALIFIED_EXISTING_ACCOUNT_ROUTE);
+        return;
+      }
+      if (existing.kind === 'new_account') {
+        router.replace({ pathname: '/(onboarding)', params: { reason: 'new_account' } });
+        return;
+      }
       const route = await resolvePostAuthRoute(userId);
       router.replace(route);
     } catch (error) {

@@ -1,16 +1,20 @@
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { StartupSurface } from '@/components/StartupSurface';
 import { Phase1Colors, Phase1Frame, Phase1PrimaryButton } from '@/components/onboarding/v2/Phase1Visuals';
 import { NearrSparkleMark, SocialToMapIllustration, useOnboardingReduceMotion } from '@/components/onboarding/v2/OnboardingVisualLanguage';
 import { OnboardingV2SecondHalf } from '@/components/onboarding/v2/OnboardingV2SecondHalf';
 import { ImmersiveGuidedSave } from '@/components/onboarding/v2/ImmersiveGuidedSave';
+import { OfflineFixtureVideo } from '@/components/onboarding/v2/OfflineFixtureVideo';
 import { useOnboardingV2 } from '@/hooks/useOnboardingV2';
 import { useStartupWatchdog } from '@/hooks/useStartupWatchdog';
 import { hapticSelection, hapticSuccess } from '@/lib/haptics';
-import { offlineOnboardingAsset } from '@/onboarding/assets/offlineOnboardingAssets';
+import { offlineOnboardingAsset, offlineOnboardingMedia } from '@/onboarding/assets/offlineOnboardingAssets';
+import { bootstrapAnonymousOnboarding } from '@/lib/anonymousOnboarding';
+import { beginExistingAccountSignIn } from '@/lib/existingAccountSignIn';
 import {
   buildOfflineOnboardingResult,
   offlineFixtureById,
@@ -25,6 +29,8 @@ import {
   beginOnboardingV2SharingRehearsal,
   advanceOnboardingV2SharingRehearsal,
   confirmOnboardingV2FirstMagicMoment,
+  beginOnboardingV2RealPractice,
+  deferOnboardingV2Practice,
   beginOnboardingV2SecondHalf,
   finishOnboardingV2FirstMagicMoment, goBackOnboardingV2,
   migrateInterruptedOnboardingV2ToFirstMagic,
@@ -65,13 +71,15 @@ const DESIRED_VALUES: Array<{ value: OnboardingDesiredValue; label: string; icon
 const PLATFORM_LABELS: Record<string, string> = { instagram: 'Instagram', tiktok: 'TikTok', facebook: 'Facebook', youtube: 'YouTube', other: 'social apps' };
 
 export function OnboardingV2PreAuth() {
+  const params = useLocalSearchParams<{ reason?: string }>();
   const { state, loading } = useOnboardingV2();
   const fixtureInFlightRef = useRef(false);
   const screenOwnedStage = !!state && [
     'overview', 'platform', 'interest', 'interest_selected', 'personalized_payoff', 'pain_point',
     'desired_value', 'tutorial_loading', 'tutorial_challenge', 'tutorial_ready',
     'tutorial_share_tapped', 'tutorial_more_tapped', 'tutorial_processing', 'tutorial_reveal',
-    'tutorial_celebration', 'place_tour', 'first_magic_moment_complete', 'why_nearr',
+    'tutorial_celebration', 'place_tour', 'fixture_map_payoff', 'phase2_intro',
+    'first_magic_moment_complete', 'why_nearr',
     'nearby_value', 'location_education', 'location_background_education',
     'notification_education', 'making_nearr_yours', 'growing_map', 'auth_success',
     'personalized_activation', 'activation_challenge',
@@ -103,7 +111,7 @@ export function OnboardingV2PreAuth() {
   }, [state?.stage, state?.tutorialFixture?.id, state?.tutorialLaunchedAt]);
 
   if (!state || startupPending) return <StartupSurface owner={startupWatchdog.timedOut ? 'ERROR_RECOVERY' : 'ONBOARDING'} recovery={startupWatchdog.timedOut} onRetry={startupWatchdog.timedOut ? startupWatchdog.retry : undefined} />;
-  if (state.stage === 'overview') return <WelcomeScreen onContinue={() => void recordOnboardingV2GetStarted()} />;
+  if (state.stage === 'overview') return <WelcomeScreen onContinue={() => void recordOnboardingV2GetStarted()} showNewAccountNotice={params.reason === 'new_account'} />;
   if (state.stage === 'platform') return <PlatformScreen state={state} />;
   if (state.stage === 'interest') return <InterestScreen state={state} />;
   if (state.stage === 'personalized_payoff') return <PersonalizedPayoffScreen state={state} />;
@@ -124,17 +132,25 @@ export function OnboardingV2PreAuth() {
   }
   if (state.stage === 'tutorial_processing') return <ProcessingScreen state={state} />;
   if (['tutorial_reveal', 'tutorial_celebration'].includes(state.stage) && state.tutorialResult) return <MagicMomentScreen state={state} />;
+  if (state.stage === 'fixture_map_payoff' && state.tutorialResult) return <FixtureMapPayoffScreen state={state} />;
+  if (state.stage === 'phase2_intro' && state.tutorialResult) return <Phase2IntroScreen state={state} />;
   if (state.stage === 'place_tour' && state.tutorialResult) return <OfflinePlaceDetailScreen state={state} />;
   if (state.stage === 'first_magic_moment_complete') return <FirstMagicCompleteScreen />;
   return <OnboardingV2SecondHalf state={state} />;
 }
 
-function WelcomeScreen({ onContinue }: { onContinue: () => void }) {
-  return <Phase1Frame footer={<Phase1PrimaryButton title="Get started" onPress={onContinue} />}>
+function WelcomeScreen({ onContinue, showNewAccountNotice }: { onContinue: () => void; showNewAccountNotice: boolean }) {
+  const router = useRouter();
+  const signIn = async () => {
+    await beginExistingAccountSignIn();
+    router.push({ pathname: '/(onboarding)/account', params: { intent: 'existing' } });
+  };
+  return <Phase1Frame footer={<View style={styles.welcomeFooter}><Phase1PrimaryButton title="Get started" onPress={onContinue} /><Pressable onPress={() => void signIn()} accessibilityRole="button" accessibilityLabel="Already have an account? Sign in" style={styles.signInLink}><Text style={styles.signInLinkText}>Already have an account? Sign in</Text></Pressable></View>}>
     <View style={styles.welcomeBrand}><NearrSparkleMark size={54} /><Text style={styles.wordmark}>NEARR</Text></View>
     <SocialToMapIllustration />
     <Text style={styles.headlineXL}>Find the places hiding in your feed.</Text>
     <Text style={styles.body}>Share something you want to visit. Nearr turns the post into a real place on your map.</Text>
+    {showNewAccountNotice ? <View style={styles.newAccountNotice}><Feather name="info" size={16} color={Phase1Colors.orange} /><Text style={styles.newAccountNoticeText}>That account is new to Nearr. Finish this quick setup, then keep using the same sign-in.</Text></View> : null}
     <PlatformStrip />
     <View style={styles.credibilityRow} accessibilityLabel="Private personal map with real saved places"><View style={styles.credibilityItem}><Feather name="shield" size={15} color={Phase1Colors.success} /><Text style={styles.credibilityText}>Your private map</Text></View><View style={styles.credibilityDot} /><View style={styles.credibilityItem}><Feather name="check-circle" size={15} color={Phase1Colors.success} /><Text style={styles.credibilityText}>Real saved places</Text></View></View>
   </Phase1Frame>;
@@ -184,7 +200,7 @@ export function ChallengeSourcePreview({ fixture, preferredPlatform: _preferredP
   const fixturePlatform = PLATFORM_LABELS[fixture.platform];
   return (
     <View style={styles.videoPreview} testID="onboarding-source-preview">
-      <Image source={offlineOnboardingAsset(offlineFixture.assetKey)} style={StyleSheet.absoluteFill} resizeMode="cover" accessibilityLabel={`${fixturePlatform} ${offlineFixture.category} practice post`} testID="onboarding-source-preview-image" />
+      <OfflineFixtureVideo assetKey={offlineFixture.assetKey} style={StyleSheet.absoluteFill} accessibilityLabel={`${fixturePlatform} ${offlineFixture.category} practice video`} testID="onboarding-source-preview-video" />
       <View style={styles.previewShade} pointerEvents="none" />
       <View style={styles.previewBadge} pointerEvents="none"><Ionicons name={PLATFORMS.find((item) => item.value === fixture.platform)?.icon ?? 'play'} size={15} color="#FFFFFF" /><Text style={styles.previewBadgeText}>{fixturePlatform.toUpperCase()} POST</Text></View>
       <View style={styles.previewPrompt} pointerEvents="none"><Text style={styles.previewQuestion}>The location isn't shown.</Text><Text style={styles.previewHint}>{offlineFixture.caption}</Text></View>
@@ -204,7 +220,7 @@ export function ProcessingScreen({ state }: { state: OnboardingV2State; failed?:
   const fixture = offlineFixtureById(state.tutorialFixture?.id);
   if (!fixture) throw new Error(`offline_onboarding_fixture_invariant:${state.tutorialFixture?.id ?? 'missing'}`);
   const steps = ['Post received', 'Scanning video', 'Looking for clues', 'Matching the place'];
-  return <Phase1Frame progress={0.6} progressLabel="Onboarding progress" contentStyle={styles.processingContent}><Text style={styles.processingEyebrow}>NEARR IS ON IT</Text><Text style={styles.headlineCentered}>{steps[step]}<Text style={styles.orangeDot}>.</Text></Text><View style={styles.localScanner}><Image source={offlineOnboardingAsset(fixture.assetKey)} style={StyleSheet.absoluteFill} resizeMode="cover" /><View style={styles.previewShade} /><View style={styles.scanLineStatic} /><View style={styles.scannerPin}><Feather name="map-pin" size={22} color="#FFFFFF" /></View></View><View style={styles.processingSteps}>{steps.map((label, index) => <View key={label} style={[styles.processingStep, index <= step && styles.processingStepActive]}><View style={[styles.processingStepDot, index <= step && styles.processingStepDotActive]} /><Text style={[styles.processingStepText, index <= step && styles.processingStepTextActive]}>{label}</Text>{index < step ? <Feather name="check" size={15} color={Phase1Colors.success} /> : null}</View>)}</View></Phase1Frame>;
+  return <Phase1Frame progress={0.6} progressLabel="Onboarding progress" contentStyle={styles.processingContent}><Text style={styles.processingEyebrow}>NEARR IS ON IT</Text><Text style={styles.headlineCentered}>{steps[step]}<Text style={styles.orangeDot}>.</Text></Text><View style={styles.localScanner}><OfflineFixtureVideo assetKey={fixture.assetKey} style={StyleSheet.absoluteFill} accessibilityLabel={`${fixture.place.name} bundled processing video`} /><View style={styles.previewShade} /><View style={styles.scanLineStatic} /><View style={styles.scannerPin}><Feather name="map-pin" size={22} color="#FFFFFF" /></View></View><View style={styles.processingSteps}>{steps.map((label, index) => <View key={label} style={[styles.processingStep, index <= step && styles.processingStepActive]}><View style={[styles.processingStepDot, index <= step && styles.processingStepDotActive]} /><Text style={[styles.processingStepText, index <= step && styles.processingStepTextActive]}>{label}</Text>{index < step ? <Feather name="check" size={15} color={Phase1Colors.success} /> : null}</View>)}</View></Phase1Frame>;
 }
 
 function MagicMomentScreen({ state }: { state: OnboardingV2State }) {
@@ -248,6 +264,74 @@ function MagicMomentScreen({ state }: { state: OnboardingV2State }) {
   );
 }
 
+function FixtureMapPayoffScreen({ state }: { state: OnboardingV2State }) {
+  const fixture = offlineFixtureById(state.tutorialFixture?.id);
+  const savedPlaceId = state.tutorialSave?.savedPlaceId;
+  if (!fixture || !savedPlaceId) throw new Error('offline_fixture_map_payoff_invariant');
+  const media = offlineOnboardingMedia(fixture.assetKey);
+  const closeRef = useRef(false);
+  const closeCard = () => {
+    if (closeRef.current) return;
+    closeRef.current = true;
+    hapticSuccess();
+    void closeOnboardingV2PlaceTour(savedPlaceId);
+  };
+  return (
+    <Phase1Frame progress={0.7} progressLabel="Onboarding progress" scroll={false} contentStyle={styles.mapPayoffContent}>
+      <View style={styles.fixtureMap} accessibilityLabel={`Offline map focused on ${fixture.place.name}`}>
+        <View style={styles.mapRoadWide} /><View style={styles.mapRoadThin} /><View style={styles.mapWater} />
+        <View style={styles.focusRing} /><View style={styles.payoffPin}><Feather name="map-pin" size={25} color="#FFFFFF" /></View>
+        <View style={styles.mapSavedPill}><Feather name="check-circle" size={15} color={Phase1Colors.success} /><Text style={styles.mapSavedPillText}>Saved to your map</Text></View>
+        <View style={styles.openPlaceCard} accessibilityLabel={`${fixture.place.name} saved place card open`}>
+          <Pressable onPress={closeCard} accessibilityRole="button" accessibilityLabel="Close saved place card" hitSlop={10} style={styles.cardClose}><Feather name="x" size={21} color={Phase1Colors.text} /></Pressable>
+          <Image source={media.placePhotoAssets[1]} style={styles.cardPhoto} resizeMode="cover" />
+          <Text style={styles.cardEyebrow}>PLACE FOUND</Text>
+          <Text style={styles.cardTitle}>{fixture.place.name}</Text>
+          <Text style={styles.cardAddress}>{fixture.place.address}</Text>
+          <View style={styles.cardNote}><Feather name="star" size={16} color={Phase1Colors.orange} /><Text style={styles.cardNoteText}>{fixture.place.aiNote}</Text></View>
+          <Text style={styles.cardCloseHint}>Close this card to keep going</Text>
+        </View>
+      </View>
+    </Phase1Frame>
+  );
+}
+
+function Phase2IntroScreen({ state }: { state: OnboardingV2State }) {
+  const fixture = offlineFixtureById(state.tutorialFixture?.id);
+  const [starting, setStarting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  if (!fixture) throw new Error('offline_phase2_intro_invariant');
+  const tryRealVideo = async () => {
+    if (starting) return;
+    setStarting(true);
+    setError(null);
+    try {
+      const result = await bootstrapAnonymousOnboarding();
+      if (result.kind === 'failed') {
+        setError('A connection is needed for real sharing. Retry when you’re online or do this later.');
+        return;
+      }
+      await beginOnboardingV2RealPractice();
+    } catch {
+      setError('A connection is needed for real sharing. Retry when you’re online or do this later.');
+    } finally {
+      setStarting(false);
+    }
+  };
+  return (
+    <Phase1Frame progress={0.74} progressLabel="Onboarding progress" scroll={false} contentStyle={styles.phase2Content} footer={<View style={styles.phase2Actions}><Phase1PrimaryButton title={starting ? 'Connecting…' : 'Try with a real video'} disabled={starting} onPress={() => void tryRealVideo()} /><Pressable onPress={() => void deferOnboardingV2Practice()} accessibilityRole="button" accessibilityLabel="I'll try this later" style={styles.laterButton}><Text style={styles.laterButtonText}>I’ll try this later</Text></Pressable></View>}>
+      <View style={styles.phase2MapBackdrop}><View style={styles.mapRoadWide} /><View style={styles.mapRoadThin} /><View style={styles.smallPayoffPin}><Feather name="map-pin" size={17} color="#FFFFFF" /></View></View>
+      <View style={styles.phase2Sheet}>
+        <Text style={styles.eyebrow}>OPTIONAL REAL-WORLD PRACTICE</Text>
+        <Text style={styles.headline}>Ready to save one of your own?</Text>
+        <Text style={styles.body}>Open a real social video, use Share, then choose Nearr. This step uses the Development backend and needs a connection.</Text>
+        <View style={styles.phase2Proof}><Image source={offlineOnboardingAsset(fixture.assetKey)} style={styles.phase2ProofImage} /><View style={styles.flex}><Text style={styles.detailLabel}>YOUR PRACTICE SAVE</Text><Text style={styles.detailText}>{fixture.place.name} stays visible while you try the real flow.</Text></View></View>
+        {error ? <Text style={styles.phase2Error} accessibilityRole="alert">{error}</Text> : null}
+      </View>
+    </Phase1Frame>
+  );
+}
+
 function OfflinePlaceDetailScreen({ state }: { state: OnboardingV2State }) {
   const fixture = offlineFixtureById(state.tutorialFixture?.id);
   const savedPlaceId = state.tutorialSave?.savedPlaceId;
@@ -272,6 +356,8 @@ const styles = StyleSheet.create({
   flex: { flex: 1 }, centered: { justifyContent: 'center', paddingBottom: 52 }, eyebrow: { color: Phase1Colors.orange, fontSize: 11, fontWeight: '900', letterSpacing: 1.7, marginBottom: 10 },
   headline: { color: Phase1Colors.text, fontSize: 33, lineHeight: 37, fontWeight: '900', letterSpacing: -1 }, headlineXL: { color: Phase1Colors.text, fontSize: 42, lineHeight: 44, fontWeight: '900', letterSpacing: -1.7 }, headlineCentered: { color: Phase1Colors.text, fontSize: 34, lineHeight: 38, fontWeight: '900', letterSpacing: -1, textAlign: 'center', marginTop: 24 }, body: { color: Phase1Colors.textMuted, fontSize: 16, lineHeight: 23, marginTop: 12 }, bodyCentered: { color: Phase1Colors.textMuted, fontSize: 16, lineHeight: 23, marginTop: 12, textAlign: 'center' },
   welcomeBrand: { flexDirection: 'row', alignItems: 'center', gap: 11, marginBottom: 18 }, wordmark: { color: Phase1Colors.text, fontSize: 22, fontWeight: '900', letterSpacing: 3.4 },
+  welcomeFooter: { gap: 4 }, signInLink: { minHeight: 44, alignItems: 'center', justifyContent: 'center' }, signInLinkText: { color: Phase1Colors.text, fontSize: 14, fontWeight: '800', textDecorationLine: 'underline' },
+  newAccountNotice: { flexDirection: 'row', gap: 9, marginTop: 16, padding: 12, borderRadius: 15, backgroundColor: '#FFF0E8' }, newAccountNoticeText: { flex: 1, color: Phase1Colors.text, fontSize: 12, lineHeight: 17, fontWeight: '700' },
   credibilityRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, marginTop: 18 }, credibilityItem: { flexDirection: 'row', alignItems: 'center', gap: 5 }, credibilityText: { color: Phase1Colors.textMuted, fontSize: 11, fontWeight: '800' }, credibilityDot: { width: 3, height: 3, borderRadius: 2, backgroundColor: '#B6AEA2' },
   logoHero: { width: 88, height: 88, borderRadius: 25, overflow: 'hidden', marginBottom: 28, borderWidth: 1, borderColor: '#33302B' }, logo: { width: '100%', height: '100%' }, logoSmall: { width: 72, height: 72, borderRadius: 20 },
   platformStrip: { flexDirection: 'row', flexWrap: 'wrap', gap: 9, marginTop: 28 }, stripItem: { minHeight: 42, flexDirection: 'row', alignItems: 'center', gap: 7, paddingHorizontal: 11, borderRadius: 14, backgroundColor: Phase1Colors.surface, borderWidth: 1, borderColor: Phase1Colors.border }, stripLabel: { color: Phase1Colors.text, fontSize: 12, fontWeight: '800' },
@@ -288,6 +374,8 @@ const styles = StyleSheet.create({
   statusIcon: { width: 70, height: 70, borderRadius: 23, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFF0E8', marginBottom: 26 }, reminder: { minHeight: 58, alignItems: 'center', justifyContent: 'center', marginTop: 28, borderRadius: 18, backgroundColor: Phase1Colors.surface, borderWidth: 1, borderColor: Phase1Colors.border }, reminderText: { color: Phase1Colors.text, fontSize: 17, fontWeight: '900' },
   processingContent: { justifyContent: 'center', paddingBottom: 34 }, processingEyebrow: { color: Phase1Colors.orange, fontSize: 11, fontWeight: '900', letterSpacing: 1.7, textAlign: 'center' }, orangeDot: { color: Phase1Colors.orange }, processingSteps: { gap: 8, marginTop: 23 }, processingStep: { minHeight: 42, flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, borderRadius: 14, backgroundColor: '#F0EBE3', opacity: 0.65 }, processingStepActive: { backgroundColor: '#FFFFFF', opacity: 1 }, processingStepDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#C8C0B5' }, processingStepDotActive: { backgroundColor: Phase1Colors.orange }, processingStepText: { flex: 1, color: Phase1Colors.textMuted, fontSize: 13, fontWeight: '800' }, processingStepTextActive: { color: Phase1Colors.text },
   localScanner: { height: 330, marginTop: 26, borderRadius: 34, overflow: 'hidden', backgroundColor: '#23322F', borderWidth: 6, borderColor: '#FFFFFF', shadowColor: '#513B2C', shadowOpacity: 0.2, shadowRadius: 24, shadowOffset: { width: 0, height: 12 }, elevation: 7 }, scanLineStatic: { position: 'absolute', left: 20, right: 20, top: '52%', height: 3, borderRadius: 2, backgroundColor: '#FF8252', shadowColor: '#FF5B24', shadowOpacity: 0.95, shadowRadius: 12 }, scannerPin: { position: 'absolute', right: 24, bottom: 24, width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center', backgroundColor: Phase1Colors.orange },
+  mapPayoffContent: { flex: 1, paddingHorizontal: 0, paddingBottom: 0 }, fixtureMap: { flex: 1, overflow: 'hidden', backgroundColor: '#DDE9E2' }, mapRoadWide: { position: 'absolute', width: '150%', height: 35, left: '-24%', top: '31%', backgroundColor: '#F8F6EF', transform: [{ rotate: '-19deg' }] }, mapRoadThin: { position: 'absolute', width: 24, height: '120%', left: '24%', top: '-8%', backgroundColor: '#F3F0E8', transform: [{ rotate: '27deg' }] }, mapWater: { position: 'absolute', width: '58%', height: '45%', right: '-20%', top: '-7%', borderRadius: 120, backgroundColor: '#B7D9D9' }, focusRing: { position: 'absolute', width: 84, height: 84, borderRadius: 42, left: '50%', top: '20%', marginLeft: -42, borderWidth: 2, borderColor: 'rgba(255,91,36,0.5)', backgroundColor: 'rgba(255,91,36,0.12)' }, payoffPin: { position: 'absolute', width: 52, height: 52, borderRadius: 26, left: '50%', top: '23%', marginLeft: -26, alignItems: 'center', justifyContent: 'center', backgroundColor: Phase1Colors.orange }, smallPayoffPin: { position: 'absolute', width: 36, height: 36, borderRadius: 18, left: '52%', top: '30%', alignItems: 'center', justifyContent: 'center', backgroundColor: Phase1Colors.orange }, mapSavedPill: { position: 'absolute', top: 18, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 7, paddingHorizontal: 13, paddingVertical: 9, borderRadius: 18, backgroundColor: '#FFFFFF' }, mapSavedPillText: { color: Phase1Colors.text, fontSize: 12, fontWeight: '900' }, openPlaceCard: { position: 'absolute', left: 12, right: 12, bottom: 12, padding: 16, borderRadius: 26, backgroundColor: '#FFFFFF', shadowColor: '#362B23', shadowOpacity: 0.2, shadowRadius: 20, shadowOffset: { width: 0, height: 8 }, elevation: 8 }, cardClose: { position: 'absolute', zIndex: 4, right: 12, top: 12, width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.94)' }, cardPhoto: { width: '100%', height: 150, borderRadius: 18, marginBottom: 13 }, cardEyebrow: { color: Phase1Colors.success, fontSize: 10, fontWeight: '900', letterSpacing: 1.3 }, cardTitle: { color: Phase1Colors.text, fontSize: 27, fontWeight: '900', marginTop: 4 }, cardAddress: { color: Phase1Colors.textMuted, fontSize: 12, lineHeight: 17, marginTop: 3 }, cardNote: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginTop: 11, padding: 10, borderRadius: 13, backgroundColor: '#FFF4EE' }, cardNoteText: { flex: 1, color: Phase1Colors.text, fontSize: 12, lineHeight: 17, fontWeight: '700' }, cardCloseHint: { color: Phase1Colors.textMuted, fontSize: 11, textAlign: 'center', marginTop: 10 },
+  phase2Content: { flex: 1, paddingHorizontal: 0, paddingBottom: 0 }, phase2MapBackdrop: { height: '35%', overflow: 'hidden', backgroundColor: '#DDE9E2' }, phase2Sheet: { flex: 1, marginTop: -25, paddingHorizontal: 22, paddingTop: 27, borderTopLeftRadius: 28, borderTopRightRadius: 28, backgroundColor: Phase1Colors.background }, phase2Actions: { gap: 4 }, laterButton: { minHeight: 46, alignItems: 'center', justifyContent: 'center' }, laterButtonText: { color: Phase1Colors.text, fontSize: 14, fontWeight: '800' }, phase2Proof: { minHeight: 75, flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 22, padding: 10, borderRadius: 18, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: Phase1Colors.border }, phase2ProofImage: { width: 58, height: 58, borderRadius: 13 }, phase2Error: { color: '#A33A25', fontSize: 12, lineHeight: 17, fontWeight: '700', marginTop: 14 },
   revealTitle: { color: Phase1Colors.text, fontSize: 38, lineHeight: 41, fontWeight: '900', letterSpacing: -1.3 }, revealAddress: { color: Phase1Colors.textMuted, fontSize: 15, lineHeight: 21, marginTop: 8 }, heroPhoto: { marginTop: 20 }, photoAttribution: { color: Phase1Colors.textMuted, fontSize: 10, lineHeight: 14, marginTop: 5, textAlign: 'right' }, metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 }, metaChip: { minHeight: 36, flexDirection: 'row', alignItems: 'center', gap: 7, paddingHorizontal: 10, borderRadius: 12, backgroundColor: Phase1Colors.surface }, metaText: { color: Phase1Colors.text, fontSize: 11, fontWeight: '800' }, mapWrap: { height: 150, marginTop: 14, borderRadius: 20, overflow: 'hidden', borderWidth: 1, borderColor: Phase1Colors.border }, sourceCard: { minHeight: 74, flexDirection: 'row', alignItems: 'center', gap: 11, marginTop: 14, padding: 10, borderRadius: 18, backgroundColor: Phase1Colors.surface, borderWidth: 1, borderColor: Phase1Colors.border }, sourceThumb: { width: 54, height: 54, borderRadius: 12 }, sourceThumbFallback: { width: 54, height: 54, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: '#462C20' }, sourceEyebrow: { color: Phase1Colors.orange, fontSize: 9, fontWeight: '900', letterSpacing: 1 }, sourceTitle: { color: Phase1Colors.text, fontSize: 13, lineHeight: 17, fontWeight: '800', marginTop: 3 },
   localHeroPhoto: { width: '100%', height: 292, borderRadius: 30 }, localMapRoadOne: { position: 'absolute', width: 220, borderTopWidth: 2, borderColor: '#AFC5B4', top: 30, left: -20, transform: [{ rotate: '-14deg' }] }, localMapRoadTwo: { position: 'absolute', height: 130, borderLeftWidth: 2, borderColor: '#BDCEBF', left: 88, top: -24, transform: [{ rotate: '30deg' }] }, localMapPin: { position: 'absolute', left: '48%', top: '31%', width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: Phase1Colors.orange }, detailNote: { flexDirection: 'row', gap: 10, marginTop: 14, padding: 14, borderRadius: 18, backgroundColor: Phase1Colors.surface, borderWidth: 1, borderColor: Phase1Colors.border }, detailLabel: { color: Phase1Colors.orange, fontSize: 9, fontWeight: '900', letterSpacing: 1 }, detailText: { color: Phase1Colors.text, fontSize: 13, lineHeight: 19, fontWeight: '700', marginTop: 4 }, localMapCard: { height: 130, marginTop: 14, borderRadius: 20, overflow: 'hidden', backgroundColor: '#DDE9E0', borderWidth: 1, borderColor: Phase1Colors.border }, localMapCopy: { position: 'absolute', left: 12, right: 12, bottom: 10, padding: 8, borderRadius: 11, backgroundColor: 'rgba(255,255,255,0.9)' }, nearbyList: { gap: 7 }, nearbyRow: { minHeight: 38, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 11, borderRadius: 12, backgroundColor: Phase1Colors.surface }, nearbyText: { flex: 1, color: Phase1Colors.text, fontSize: 12, fontWeight: '800' },
   revealTopRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }, revealCount: { color: Phase1Colors.orange, fontSize: 10, fontWeight: '900', letterSpacing: 1.5 }, revealFound: { color: Phase1Colors.textMuted, fontSize: 16, fontWeight: '800', marginBottom: 4 }, revealCheck: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: Phase1Colors.success }, savedBanner: { minHeight: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, marginTop: 12, borderRadius: 17, backgroundColor: '#E8F6EF' }, savedBannerIcon: { width: 27, height: 27, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: Phase1Colors.success }, savedBannerText: { color: '#1D7150', fontSize: 13, fontWeight: '900' }, transformationCard: { minHeight: 88, flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 14, padding: 9, borderRadius: 21, backgroundColor: Phase1Colors.surface, borderWidth: 1, borderColor: Phase1Colors.border }, transformSource: { width: 78, height: 68, borderRadius: 14, overflow: 'hidden', backgroundColor: '#2E2B28' }, transformThumb: { width: '100%', height: '100%' }, transformThumbFallback: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#423B36' }, transformArrow: { width: 30, alignItems: 'center' }, transformMap: { flex: 1, height: 68, borderRadius: 14, overflow: 'hidden', backgroundColor: '#D9E5DD' }, transformLabel: { position: 'absolute', left: 6, bottom: 6, color: '#FFFFFF', fontSize: 8, fontWeight: '900', letterSpacing: 1, paddingHorizontal: 6, paddingVertical: 3, borderRadius: 6, overflow: 'hidden', backgroundColor: 'rgba(22,20,18,0.72)' }, whyStatement: { color: Phase1Colors.text, fontSize: 16, lineHeight: 23, fontWeight: '900', marginTop: 18 }, whyBody: { color: Phase1Colors.textMuted, fontSize: 13, lineHeight: 19, marginTop: 5 },

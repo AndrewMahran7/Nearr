@@ -11,11 +11,19 @@ import { logDebug } from '@/lib/logger';
 import { LEGAL_VERSION } from '@/constants';
 import { getDemoProfile, updateDemoProfile } from '@/services/demo';
 import type { Profile } from '@/types';
+import type { User } from '@supabase/supabase-js';
+import {
+  providerNamePatch,
+  structuredProviderNames,
+  type StructuredProviderNames,
+} from '@/lib/providerNameCore';
+
+export { structuredProviderNames } from '@/lib/providerNameCore';
 
 // The legacy default_radius_* columns remain in production for older-client
 // compatibility, but the current client neither selects nor writes them.
 const PROFILE_SELECT =
-  'id, email, notifications_enabled, nearby_notifications_enabled, quiet_hours_enabled, quiet_hours_start, quiet_hours_end, terms_accepted_at, privacy_accepted_at, legal_version, created_at, updated_at';
+  'id, email, first_name, last_name, notifications_enabled, nearby_notifications_enabled, quiet_hours_enabled, quiet_hours_start, quiet_hours_end, terms_accepted_at, privacy_accepted_at, legal_version, created_at, updated_at';
 
 export type LegalAcceptanceStatus = {
   termsAcceptedAt: string | null;
@@ -100,6 +108,8 @@ export async function getProfile(): Promise<Profile | null> {
 }
 
 export type ProfilePatch = {
+  first_name?: string | null;
+  last_name?: string | null;
   notifications_enabled?: boolean;
   nearby_notifications_enabled?: boolean;
   quiet_hours_enabled?: boolean;
@@ -110,6 +120,34 @@ export type ProfilePatch = {
   privacy_accepted_at?: string | null;
   legal_version?: string | null;
 };
+
+/**
+ * Non-empty provider values win; missing values are omitted so later Apple
+ * sign-ins (which normally return null names) cannot erase stored data.
+ */
+export async function persistProviderProfileNames(
+  userId: string,
+  names: StructuredProviderNames,
+): Promise<void> {
+  const patch = providerNamePatch(names);
+  if (Object.keys(patch).length === 0) return;
+  // PK upsert makes the provider callback resilient to a delayed/missing
+  // profile trigger without ever creating a duplicate row.
+  const { error } = await supabase.from('profiles').upsert(
+    { id: userId, ...patch },
+    { onConflict: 'id' },
+  );
+  if (error) throw error;
+}
+
+export async function persistNamesFromAuthUser(user: User): Promise<void> {
+  const names = structuredProviderNames(user.user_metadata ?? null);
+  try {
+    await persistProviderProfileNames(user.id, names);
+  } catch (error) {
+    console.warn('[profileService] provider name persistence failed', error);
+  }
+}
 
 /** Patch the current user's profile row. Throws on auth or DB errors. */
 export async function updateProfile(patch: ProfilePatch): Promise<Profile> {

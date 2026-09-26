@@ -39,6 +39,8 @@ export function expectedOnboardingV2Route(
     'tutorial_processing',
     'tutorial_reveal',
     'tutorial_celebration',
+    'fixture_map_payoff',
+    'phase2_intro',
     'first_magic_moment_complete',
     'pain_point',
     'desired_value',

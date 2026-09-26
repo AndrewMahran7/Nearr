@@ -27,7 +27,7 @@ import { logDebug } from '@/lib/logger';
 import { recordDiagnostic } from '@/lib/deviceDiagnostics';
 import { sharedAuth } from '@/lib/sharedAuth';
 import { useOnboardingV2 } from '@/hooks/useOnboardingV2';
-import { observeOnboardingV2ShareReceived } from '@/lib/onboardingV2';
+import { prepareOnboardingV2RealPracticeShare } from '@/lib/onboardingV2';
 import { isExpectedOnboardingSource } from '@/lib/onboardingV2Core';
 
 type UiState =
@@ -65,7 +65,7 @@ export function ShareJobHandoff({ url, submissionId }: { url: string; submission
       );
       setUi({ kind: 'submitting' });
       if (vayrinEnabled) void trackEvent('vayrin_started', { source: 'async_handoff' });
-      await observeOnboardingV2ShareReceived(url);
+      await prepareOnboardingV2RealPracticeShare(url);
       const result = await hostShareSubmitter.submit({
         url,
         submissionId: submissionIdRef.current,

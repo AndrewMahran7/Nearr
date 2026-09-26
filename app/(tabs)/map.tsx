@@ -98,6 +98,7 @@ import {
   type SheetSnap,
 } from '@/components/map';
 import { OnboardingV2MapCoachmark } from '@/components/onboarding/v2';
+import { offlineFixtureById } from '@/onboarding/fixtures/offlineOnboardingFixtures';
 import { Colors, Radius, Spacing, Typography } from '@/constants';
 import {
   isMeaningfulInteraction,
@@ -568,7 +569,51 @@ export default function MapScreen() {
     () => (mapPreview ? getDemoSeededSavedPlacesSync() : []),
     [mapPreview],
   );
-  const data = mapPreview ? previewData : liveData;
+  const fixtureSavedPlace = useMemo<SavedPlaceWithPlace | null>(() => {
+    if (!phase2MapActive || onboardingV2State?.tutorialResult?.resolutionSource !== 'onboarding_scripted') return null;
+    const fixture = offlineFixtureById(onboardingV2State.tutorialFixture?.id);
+    const save = onboardingV2State.tutorialSave;
+    if (!fixture || !save) return null;
+    const timestamp = save.completedAt;
+    return {
+      id: save.savedPlaceId,
+      user_id: onboardingV2State.boundUserId ?? 'onboarding-local-fixture',
+      place_id: fixture.place.id,
+      radius_value: null,
+      radius_unit: null,
+      notes: null,
+      ai_note: fixture.place.aiNote,
+      source_type: fixture.platform,
+      source_url: save.sourceUrl,
+      notifications_enabled: false,
+      last_notified_at: null,
+      notification_count: 0,
+      reminder_opportunity_count: 0,
+      archived_at: null,
+      visited_at: null,
+      reminders_exhausted_at: null,
+      category: fixture.place.category as SavedPlaceWithPlace['category'],
+      created_at: timestamp,
+      updated_at: timestamp,
+      place: {
+        id: fixture.place.id,
+        google_place_id: fixture.place.id,
+        name: fixture.place.name,
+        formatted_address: fixture.place.address,
+        latitude: fixture.place.latitude,
+        longitude: fixture.place.longitude,
+        category: fixture.place.category,
+        google_type_label: fixture.place.typeLabel,
+        google_maps_url: null,
+        created_at: timestamp,
+      },
+    };
+  }, [onboardingV2State, phase2MapActive]);
+  const data = useMemo(() => {
+    const base = mapPreview ? previewData : liveData;
+    if (!fixtureSavedPlace || base.some((place) => place.id === fixtureSavedPlace.id)) return base;
+    return [fixtureSavedPlace, ...base];
+  }, [fixtureSavedPlace, liveData, mapPreview, previewData]);
   useEffect(() => {
     const tutorialSavedPlaceId = onboardingV2State?.tutorialSave?.savedPlaceId;
     if (!tutorialSavedPlaceId || liveLoading || mapPreview || demo || onboardingV2State.mapEnteredAt) return;

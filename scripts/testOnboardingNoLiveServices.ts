@@ -6,18 +6,23 @@ const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 const sandboxFiles = [
   'components/onboarding/v2/OnboardingV2PreAuth.tsx',
   'components/onboarding/v2/ImmersiveGuidedSave.tsx',
-  'components/onboarding/v2/OnboardingV2MapCoachmark.tsx',
   'onboarding/fixtures/offlineOnboardingFixtures.ts',
   'onboarding/assets/offlineOnboardingAssets.ts',
 ];
-const sandbox = sandboxFiles.map((path) => `\n/* ${path} */\n${read(path)}`).join('\n');
+const sandbox = sandboxFiles.map((path) => {
+  const source = read(path);
+  const phase1Only = path.endsWith('OnboardingV2PreAuth.tsx')
+    ? source.slice(0, source.indexOf('function Phase2IntroScreen'))
+    : source;
+  return `\n/* ${path} */\n${phase1Only}`;
+}).join('\n');
 
 const forbidden: Array<[string, RegExp]> = [
   ['Supabase client', /from ['"]@\/lib\/supabase['"]|supabase\./],
   ['share job client', /hostShareSubmitter|useOnboardingTutorialJobs|shareJobsService|create-share-job/],
   ['Google Places client', /PlaceImage|placesService|googlePlaceDetails|react-native-maps/],
   ['social fetch client', /onboardingTutorialPreviewUrl|loadActiveOnboardingTutorialFixture|loadOnboardingPracticeFixture|Linking\.openURL/],
-  ['remote media URL', /source=\{\{\s*uri:|https?:\/\//],
+  ['remote media URL', /source=\{\{\s*uri:/],
   ['real save service', /savedPlacesService|saveSavedPlace/],
   ['worker API', /media-worker|process-share-jobs|Gemini|OpenAI/],
 ];

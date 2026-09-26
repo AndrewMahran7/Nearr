@@ -181,7 +181,8 @@ assert.match(mapSource, /!searchVisible && !nearbyExplorer \? \([\s\S]{0,700}<Sh
 assert.match(mapSource, /<OnboardingV2MapCoachmark topOffset=\{phase2MapLayout\.dockTop\} \/>/);
 assert.match(coachSource, /state\?\.stage !== 'practice_ready'/);
 assert.match(coachSource, /deferOnboardingV2Practice/);
-assert.doesNotMatch(coachSource, /loadOnboardingPracticeFixture|useOnboardingTutorialJobs|Linking\.openURL/);
+assert.doesNotMatch(coachSource, /loadOnboardingPracticeFixture|useOnboardingTutorialJobs/);
+assert.match(coachSource, /Linking\.openURL/);
 assert.doesNotMatch(coachSource, /PHASE2_MAP_CHROME_CLEARANCE|useSafeAreaInsets/);
 
 const detailSource = readFileSync(join(root, 'components/map/SelectedPlaceDetails.tsx'), 'utf8');

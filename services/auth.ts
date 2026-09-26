@@ -9,6 +9,7 @@ import { supabase } from '@/lib/supabase';
 import { handleAuthDeepLink } from '@/lib/authDeepLink';
 import { buildAppleNameMetadata } from '@/lib/appleName';
 import { classifySignUpResult, type SignUpOutcomeKind } from '@/lib/authScreenState';
+import { persistNamesFromAuthUser, persistProviderProfileNames } from '@/services/profileService';
 
 /**
  * The single Nearr auth callback URL.
@@ -362,6 +363,11 @@ export async function signInWithApple(): Promise<SocialSignInOutcome> {
   }
 
   await persistAppleFullName(credential.fullName, data.user);
+  await persistProviderProfileNames(data.user.id, {
+    firstName: credential.fullName?.givenName ?? null,
+    lastName: credential.fullName?.familyName ?? null,
+  }).catch(() => console.warn('[auth] apple profile_name_persist_failed'));
+  await persistNamesFromAuthUser(data.user);
   return { status: 'signed_in', user: data.user };
 }
 

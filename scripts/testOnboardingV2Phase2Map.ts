@@ -141,7 +141,8 @@ assert.doesNotMatch(
 );
 assert.match(coach, /state\?\.stage !== 'practice_ready'/);
 assert.match(coach, /deferOnboardingV2Practice/);
-assert.doesNotMatch(coach, /loadOnboardingPracticeFixture|useOnboardingTutorialJobs|Linking\.openURL/);
+assert.doesNotMatch(coach, /loadOnboardingPracticeFixture|useOnboardingTutorialJobs/);
+assert.match(coach, /Linking\.openURL/);
 assert.match(coach, /style=\{\[styles\.dock, \{ top: topOffset \}\]\}/);
 assert.doesNotMatch(coach, /useSafeAreaInsets|PHASE2_MAP_CHROME_CLEARANCE/);
 

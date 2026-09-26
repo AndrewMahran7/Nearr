@@ -11,6 +11,8 @@ import { parseAuthCallbackUrl } from '@/lib/authDeepLink';
 import { resolvePostAuthRoute, type PostAuthRoute } from '@/lib/postAuthRouting';
 import { decideAuthCallbackNavigation } from '@/lib/authDeepLinkCore';
 import { useAuthLinkStatus } from '@/lib/authLinkStatus';
+import { resolveExistingAccountSignIn } from '@/lib/existingAccountSignIn';
+import { persistNamesFromAuthUser } from '@/services/profileService';
 
 // Last-resort safety net ONLY. Primary resolution is the sticky terminal
 // auth-link status (`succeeded`/`failed`) plus session presence, which is
@@ -72,6 +74,16 @@ export default function AuthCallbackScreen() {
         let route: PostAuthRoute = '/(tabs)/map';
         try {
           if (current) {
+            await persistNamesFromAuthUser(current.user);
+            const existing = await resolveExistingAccountSignIn(current.user.id);
+            if (existing.kind === 'qualified') {
+              router.replace('/(tabs)/map');
+              return;
+            }
+            if (existing.kind === 'new_account') {
+              router.replace({ pathname: '/(onboarding)', params: { reason: 'new_account' } });
+              return;
+            }
             route = await resolvePostAuthRoute(current.user.id);
             void trackEvent('onboarding_auth_completed', {
               destination: route === '/activate' ? 'activate' : 'map',

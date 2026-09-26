@@ -71,6 +71,8 @@ Columns:
 
 - `id uuid primary key references auth.users(id) on delete cascade`
 - `email text`
+- `first_name text null` — structured provider given name; added by `20260925000001_profile_provider_names.sql`
+- `last_name text null` — structured provider family name; added by `20260925000001_profile_provider_names.sql`
 - `default_radius_value numeric not null default 1` — legacy compatibility only; current clients do not read or write it
 - `default_radius_unit text not null default 'miles' check in ('miles','minutes')` — legacy compatibility only; current clients do not read or write it
 - `notifications_enabled boolean not null default true`
@@ -87,6 +89,8 @@ Columns:
 Behavior:
 
 - `handle_new_user()` auto-creates a profile row on auth signup.
+- The signup trigger copies only non-empty structured `given_name` and `family_name` metadata. Existing rows are not backfilled.
+- Later provider sign-ins update only non-empty structured values; missing values never erase stored names.
 - `set_updated_at()` trigger maintains `updated_at`.
 
 ## `places`

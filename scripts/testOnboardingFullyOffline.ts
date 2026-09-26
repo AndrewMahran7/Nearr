@@ -9,13 +9,10 @@ import {
   closePlaceTour,
   completeOnboardingInterests,
   completeOnboardingPlatforms,
-  confirmOnboardingFirstMagicMoment,
   continueOnboardingFromPersonalizedPayoff,
   createInitialOnboardingV2State,
   decodeOnboardingV2State,
   encodeOnboardingV2State,
-  finishOnboardingFirstMagicMoment,
-  openPlaceTour,
   receiveOnboardingTutorialFixture,
   resolveOnboardingTutorialResult,
   startOnboardingV2,
@@ -49,7 +46,11 @@ for (const platform of ['instagram', 'tiktok', 'facebook', 'youtube'] as const) 
 }
 console.log('PASS 1–2 local platform/content fixture matrix is complete and render-ready');
 
-for (const asset of ['assets/onboarding/dorset-quarry-source-frame.jpg', 'assets/onboarding/offline/food-cafe-poster.png', 'assets/onboarding/offline/travel-town-poster.png']) {
+for (const asset of [
+  'assets/onboarding/authentic/dorset-quarry-loop.mp4',
+  'assets/onboarding/authentic/mad-yolks-loop.mp4',
+  'assets/onboarding/authentic/hydra-old-town-loop.mp4',
+]) {
   assert.equal(existsSync(join(process.cwd(), asset)), true, `${asset} is bundled`);
 }
 console.log('PASS 3 bundled post and place media exists without remote URLs');
@@ -80,18 +81,14 @@ console.log('PASS 4–5 Share → More → Nearr enters local scripted processin
 
 const result = buildOfflineOnboardingResult(local);
 state = resolveOnboardingTutorialResult(state, result, at(14)).state;
-assert.equal(state.stage, 'tutorial_reveal');
+assert.equal(state.stage, 'fixture_map_payoff');
 assert.equal(state.tutorialResult?.place.name, local.place.name);
-state = confirmOnboardingFirstMagicMoment(state, at(15)).state;
-assert.equal(state.stage, 'tutorial_celebration');
 assert.match(state.tutorialSave?.savedPlaceId ?? '', /^onboarding-scripted-save:/);
 assert.equal(state.independentSaves.length, 0);
-state = finishOnboardingFirstMagicMoment(state, at(16)).state;
-assert.equal(state.stage, 'place_tour');
-state = openPlaceTour(state, state.tutorialSave!.savedPlaceId, at(17)).state;
 assert.equal(state.placeTourStep, 'found');
 state = closePlaceTour(state, state.tutorialSave!.savedPlaceId, at(18)).state;
-assert.equal(state.stage, 'first_magic_moment_complete');
+assert.equal(state.stage, 'phase2_intro');
+assert.equal(state.phase1CompletedAt, at(18));
 console.log('PASS 6–7 recognition, local save, and saved-place detail are deterministic');
 
 const resumed = decodeOnboardingV2State(encodeOnboardingV2State(state), at(19));

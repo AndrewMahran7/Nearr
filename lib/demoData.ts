@@ -22,6 +22,8 @@ import type { Profile, RadiusUnit, SourceType } from '@/types';
 export const DEMO_PROFILE: Profile = {
   id: 'demo-user',
   email: 'demo@nearr.local',
+  first_name: null,
+  last_name: null,
   notifications_enabled: true,
   nearby_notifications_enabled: true,
   quiet_hours_enabled: false,

@@ -1,29 +1,43 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
 import { useOnboardingV2 } from '@/hooks/useOnboardingV2';
 import { deferOnboardingV2Practice } from '@/lib/onboardingV2';
 
 /**
- * Compatibility surface for checkpoints written by the retired live-practice
- * flow. New onboarding never routes through the real map. An older
- * `practice_ready` checkpoint gets one local continuation and cannot open a
- * social app, poll share jobs, or create a save.
+ * Phase 2 is the explicit real-world boundary. It uses the installed share
+ * extension and normal Development recognition/save pipeline.
  */
 export function OnboardingV2MapCoachmark({ topOffset }: { topOffset: number }) {
   const { state } = useOnboardingV2();
   if (state?.stage !== 'practice_ready') return null;
 
+  const platform = state.preferredPlatform === 'other' || !state.preferredPlatform
+    ? 'instagram'
+    : state.preferredPlatform;
+  const targets: Record<string, { app: string; web: string; label: string }> = {
+    instagram: { app: 'instagram://app', web: 'https://www.instagram.com/', label: 'Instagram' },
+    tiktok: { app: 'tiktok://', web: 'https://www.tiktok.com/', label: 'TikTok' },
+    facebook: { app: 'fb://', web: 'https://www.facebook.com/', label: 'Facebook' },
+    youtube: { app: 'youtube://', web: 'https://www.youtube.com/', label: 'YouTube' },
+  };
+  const target = targets[platform] ?? targets.instagram;
+  const openSocialApp = async () => {
+    const supported = await Linking.canOpenURL(target.app).catch(() => false);
+    await Linking.openURL(supported ? target.app : target.web);
+  };
+
   return <View style={[styles.dock, { top: topOffset }]}>
-    <View style={styles.icon}><Feather name="check" size={18} color="#FFFFFF" /></View>
+    <View style={styles.icon}><Feather name="share-2" size={18} color="#FFFFFF" /></View>
     <View style={styles.copy}>
-      <Text style={styles.eyebrow}>PRACTICE COMPLETE</Text>
-      <Text style={styles.title}>Continue with your local walkthrough.</Text>
-      <Text style={styles.body}>This checkpoint came from an older build. Nearr no longer asks onboarding to open or process a live post.</Text>
+      <Text style={styles.eyebrow}>TRY A REAL SAVE · OPTIONAL</Text>
+      <Text style={styles.title}>Share any place video to Nearr.</Text>
+      <Text style={styles.body}>Open {target.label}, choose a video, tap Share, then choose Nearr. The real Development pipeline will add the place here.</Text>
     </View>
-    <Pressable style={styles.primary} onPress={() => void deferOnboardingV2Practice()} accessibilityRole="button" accessibilityLabel="Continue onboarding">
-      <Text style={styles.primaryText}>Continue</Text>
+    <Pressable style={styles.primary} onPress={() => void openSocialApp()} accessibilityRole="button" accessibilityLabel={`Open ${target.label}`}>
+      <Text style={styles.primaryText}>Open {target.label}</Text>
     </Pressable>
+    <Pressable style={styles.secondary} onPress={() => void deferOnboardingV2Practice()} accessibilityRole="button" accessibilityLabel="I'll try this later"><Text style={styles.secondaryText}>I’ll try this later</Text></Pressable>
   </View>;
 }
 
@@ -36,4 +50,6 @@ const styles = StyleSheet.create({
   body: { color: '#B1B1B1', fontSize: 13, lineHeight: 19, marginTop: 7 },
   primary: { minHeight: 48, marginTop: 14, borderRadius: 14, backgroundColor: '#FF6B00', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 14 },
   primaryText: { color: '#111111', fontSize: 14, fontWeight: '900' },
+  secondary: { minHeight: 42, alignItems: 'center', justifyContent: 'center' },
+  secondaryText: { color: '#FFFFFF', fontSize: 13, fontWeight: '800' },
 });

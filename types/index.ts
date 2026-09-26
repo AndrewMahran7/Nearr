@@ -9,6 +9,8 @@ export type SourceType = 'manual' | 'tiktok' | 'instagram' | 'youtube' | 'facebo
 export type Profile = {
   id: string;
   email: string | null;
+  first_name: string | null;
+  last_name: string | null;
   /** @deprecated Physical schema compatibility only; the current client never reads this. */
   default_radius_value?: number;
   /** @deprecated Physical schema compatibility only; the current client never reads this. */

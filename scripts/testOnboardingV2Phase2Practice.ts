@@ -73,14 +73,15 @@ assert.match(
   'map dismissal owns the single durable Place Detail close transition',
 );
 
-// 5-7: the retired permanent-account practice pool stays deterministic, while
-// first-run onboarding no longer reaches any live practice loader or social app.
+// 5-7: the practice pool remains deterministic and Phase 2 explicitly opens
+// the selected social app while Phase 1 remains local.
 const pool = selectPracticeContent({ platform: 'tiktok', interest: 'food', excludeContentIds: [tutorialSave.contentId] });
 assert.equal(pool[0]?.platform, 'tiktok');
 assert.equal(pool[0]?.category, 'food');
 assert.match(coach, /deferOnboardingV2Practice/);
-assert.match(coach, /Continue with your local walkthrough/);
-assert.doesNotMatch(coach, /loadOnboardingPracticeFixture|onboardingTutorialPreviewUrl|Linking\.openURL|useOnboardingTutorialJobs/);
+assert.match(coach, /Share any place video to Nearr/);
+assert.match(coach, /Linking\.openURL/);
+assert.doesNotMatch(coach, /loadOnboardingPracticeFixture|onboardingTutorialPreviewUrl|useOnboardingTutorialJobs/);
 
 const first = pool[0]!;
 state = practiceState();
